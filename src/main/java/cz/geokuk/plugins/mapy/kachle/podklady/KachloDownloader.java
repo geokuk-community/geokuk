@@ -3,6 +3,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.EnumMap;
 
@@ -44,7 +45,13 @@ public class KachloDownloader {
 		// throw new IOException("Nasimulovaná chyba hybrid");
 		// }
 
-		final DataHoldingInputStream dhis = new DataHoldingInputStream(url.openStream());
+		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+		if (url.getHost().endsWith("mapy.cz")) {
+			// Pro mapy.cz je nutný referer, jinak se vrací 403
+			conn.setRequestProperty("Referer", "https://en.mapy.cz/");
+		}
+
+		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
 		final Image img;
 		try (InputStream stm = new BufferedInputStream(dhis)) {
 			img = ImageIO.read(stm);
