@@ -18,6 +18,7 @@ public enum EKaType {
 	ZEMEPIS_M(false, 0, 18, 18, "Zeměpisná", "Zeměpisná mapa", KeyEvent.VK_G, KeyStroke.getKeyStroke('g'), new MapyCzUrlBuilder("zemepis-m")),
 	BASE_M_TRAF_DOWN(false, 0, 19, 19, "Dopravní", "Dopravní mapa taková vyšedlá.", 0, null, new MapyCzUrlBuilder("base-m-traf-down")),
 	ARMY2_M(true, 0, 15, 15, "Historická", "Historická mapa z let 1836-52", KeyEvent.VK_H, KeyStroke.getKeyStroke('h'), new MapyCzUrlBuilder("army2-m")),
+	OPHOTO_GOOGLE(true, 0, 20, 20, "Letecká Google", "Letecká mapa Google", 0, null, new GoogleOphotoMapUrlBuilder("https://khms0.google.com/kh")),
 
 // Nefunkční mapy k 16.11.2019
 //	OPEN_STREAT(false, 0, 18, 18, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("https://b.tile.openstreetmap.org/")),
