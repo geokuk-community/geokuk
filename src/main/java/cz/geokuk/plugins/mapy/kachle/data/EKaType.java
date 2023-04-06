@@ -6,7 +6,7 @@ import javax.swing.KeyStroke;
 
 public enum EKaType {
 
-    // Mapové podklady, dále neprůhledné
+	// Mapové podklady, dále neprůhledné
 	BASE_M(false, 0, 19, 19, "Základní", "Základní mapa se silnicemi.", KeyEvent.VK_Z, KeyStroke.getKeyStroke('z'), new MapyCzUrlBuilder("base-m")),
 	TURIST_M(false, 0, 19, 19, "Turistická", "Turistická mapa.", KeyEvent.VK_T, KeyStroke.getKeyStroke('t'), new MapyCzUrlBuilder("turist-m")),
 	OPHOTO_M(true, 0, 20, 20, "Letecká", "Letecká ortho foto mapa", KeyEvent.VK_L, KeyStroke.getKeyStroke('f'), new MapyCzUrlBuilder("ophoto-m")),
@@ -19,6 +19,8 @@ public enum EKaType {
 	BASE_M_TRAF_DOWN(false, 0, 19, 19, "Dopravní", "Dopravní mapa taková vyšedlá.", 0, null, new MapyCzUrlBuilder("base-m-traf-down")),
 	ARMY2_M(true, 0, 15, 15, "Historická", "Historická mapa z let 1836-52", KeyEvent.VK_H, KeyStroke.getKeyStroke('h'), new MapyCzUrlBuilder("army2-m")),
 	OPHOTO_GOOGLE(true, 0, 20, 20, "Letecká Google", "Letecká mapa Google", 0, null, new GoogleOphotoMapUrlBuilder("https://khms0.google.com/kh")),
+
+	OPEN_STREET(false, 0, 19, 19, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("http://tile.openstreetmap.org/")),
 
 // Nefunkční mapy k 16.11.2019
 //	OPEN_STREAT(false, 0, 18, 18, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("https://b.tile.openstreetmap.org/")),
@@ -75,7 +77,7 @@ public enum EKaType {
 	 *            Implementace třídy, která sestaví URL pro zobrazení mapy.
 	 */
 	private EKaType(final boolean jeMozneNavrsitTexty, final int minMoumer, final int maxMoumer, final int maxAutoMoumer, final String nazev, final String popis, final int klavesa,
-	        final KeyStroke keyStroke, final KachleUrlBuilder urlBuilder) {
+			final KeyStroke keyStroke, final KachleUrlBuilder urlBuilder) {
 		this.minMoumer = minMoumer;
 		this.maxMoumer = maxMoumer;
 		this.maxAutoMoumer = maxAutoMoumer;

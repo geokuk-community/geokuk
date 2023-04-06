@@ -50,6 +50,9 @@ public class KachloDownloader {
 			// Pro mapy.cz je nutný referer, jinak se vrací 403
 			conn.setRequestProperty("Referer", "https://en.mapy.cz/");
 		}
+		else if (url.getHost().endsWith("openstreetmap.org")) {
+			conn.setRequestProperty("User-Agent", "Geokuk");  // jinak vrací 403
+		}
 
 		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
 		final Image img;
