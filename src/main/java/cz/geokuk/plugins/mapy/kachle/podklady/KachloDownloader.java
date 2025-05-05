@@ -48,7 +48,7 @@ public class KachloDownloader {
 		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 		if (url.getHost().endsWith("mapy.cz")) {
 			// Pro mapy.cz je nutný referer, jinak se vrací 403
-			conn.setRequestProperty("Referer", "https://en.mapy.cz/");
+			conn.setRequestProperty("Referer", "https://en.mapy.com/");
 		}
 		else if (url.getHost().endsWith("openstreetmap.org")) {
 			conn.setRequestProperty("User-Agent", "Geokuk");  // jinak vrací 403
