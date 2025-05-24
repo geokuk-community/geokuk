@@ -6,9 +6,11 @@ import java.net.URL;
 class OpenStreatMapUrlBuilder implements KachleUrlBuilder {
 
 	private final String urlBase;
+	private final String extension;
 
-	public OpenStreatMapUrlBuilder(final String urlBase) {
+	public OpenStreatMapUrlBuilder(final String urlBase, final String extension) {
 		this.urlBase = urlBase;
+		this.extension = extension;
 	}
 
 	@Override
@@ -22,7 +24,7 @@ class OpenStreatMapUrlBuilder implements KachleUrlBuilder {
 		sb.append(kaloc.getFromSzUnsignedX());
 		sb.append('/');
 		sb.append(kaloc.getFromSzUnsignedY());
-		sb.append(".png");
+		sb.append(extension);
 		final URL url = new URL(sb.toString());
 		return url;
 	}

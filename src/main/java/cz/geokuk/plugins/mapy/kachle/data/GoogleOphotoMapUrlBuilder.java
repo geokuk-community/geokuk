@@ -20,7 +20,8 @@ public class GoogleOphotoMapUrlBuilder implements KachleUrlBuilder {
 		//http://khm1.googleapis.com/kh?v=702&hl=cs&&x=7813&y=6367&z=14
 
 		sb.append(urlBase);
-		sb.append("?v=953&x=");
+//		sb.append("?v=953&x=");
+		sb.append("?x=");
 		sb.append(kaloc.getFromSzUnsignedX());
 		sb.append("&y=");
 		sb.append(kaloc.getFromSzUnsignedY());

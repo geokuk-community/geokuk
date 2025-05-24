@@ -18,15 +18,16 @@ public enum EKaType {
 	ZEMEPIS_M(false, 0, 18, 18, "Zeměpisná", "Zeměpisná mapa", KeyEvent.VK_G, KeyStroke.getKeyStroke('g'), new MapyCzUrlBuilder("zemepis-m")),
 	BASE_M_TRAF_DOWN(false, 0, 19, 19, "Dopravní", "Dopravní mapa taková vyšedlá.", 0, null, new MapyCzUrlBuilder("base-m-traf-down")),
 	ARMY2_M(true, 0, 15, 15, "Historická", "Historická mapa z let 1836-52", KeyEvent.VK_H, KeyStroke.getKeyStroke('h'), new MapyCzUrlBuilder("army2-m")),
-	OPHOTO_GOOGLE(true, 0, 20, 20, "Letecká Google", "Letecká mapa Google", 0, null, new GoogleOphotoMapUrlBuilder("https://khms0.google.com/kh")),
+	OPHOTO_GOOGLE(true, 0, 20, 20, "Letecká Google", "Letecká mapa Google", 0, null, new GoogleOphotoMapUrlBuilder("https://khms0.google.com/kh/v=997")),
 
-	OPEN_STREET(false, 0, 19, 19, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("http://tile.openstreetmap.org/")),
+	OPEN_STREET(false, 0, 19, 19, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("http://tile.openstreetmap.org/", ".png")),
 
 // Nefunkční mapy k 16.11.2019
 //	OPEN_STREAT(false, 0, 18, 18, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("https://b.tile.openstreetmap.org/")),
 //    // http://otile{switch:1,2,3,4}.mqcdn.com/tiles/1.0.0/osm/{zoom}/{x}/{y}.png
 //	MAPBOX(false, 0, 18, 18, "Map box", "Open streat map box.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("http://otile1.mqcdn.com/tiles/1.0.0/osm/")),
-//	TUR_FREEMAP_SK_T(false, 0, 18, 18, "Slovensko turistická", "turistika.freemap.sk - turisktická mapa", 0, null, new OpenStreatMapUrlBuilder("http://c.freemap.sk/T/")),
+	TUR_FREEMAP_SK_T(false, 0, 18, 18, "Slovensko turistická", "Freemap Slovakia - turistická mapa", 0, null, new OpenStreatMapUrlBuilder("https://outdoor.tiles.freemap.sk/", ".png")),
+	TUR_FREEMAP_SK_F(false, 0, 18, 18, "Slovensko ortofoto", "Freemap Slovakia - letecká mapa", 0, null, new OpenStreatMapUrlBuilder("https://ortofoto.tiles.freemap.sk/", ".jpg")),
 //	TUR_FREEMAP_SK_A(false, 0, 18, 18, "Slovensko automapa", "turistika.freemap.sk - automapa", 0, null, new OpenStreatMapUrlBuilder("http://c.freemap.sk/A/")),
 //	TUR_FREEMAP_SK_C(false, 0, 18, 18, "Slovensko cyklomapa", "turistika.freemap.sk - cyklomapa", 0, null, new OpenStreatMapUrlBuilder("http://c.freemap.sk/C/")),
 //	TUR_FREEMAP_SK_K(false, 0, 18, 18, "Slovensko lyžařská  ", "turistika.freemap.sk - lyžařská mapa", 0, null, new OpenStreatMapUrlBuilder("http://c.freemap.sk/K/")),
@@ -35,8 +36,8 @@ public enum EKaType {
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
-	// Todo vyřešit problémy s certifikátem
-	// OPEN_CYKLO(true, false, 0, 18, 18, "Open cyclo", "Open streat map.", KeyEvent.VK_Y, KeyStroke.getKeyStroke('c') , new OpenStreatMapUrlBuilder("https://b.tile.thunderforest.com/cycle/")),
+	// Použit testovací apikey
+	OPEN_CYKLO(false, 0, 22, 22, "Open cyclo", "Open cycle map", 0, null, new OpenStreatMapUrlBuilder("https://c.tile.thunderforest.com/cycle/",".png?apikey=6a53e8b25d114a5e9216df5bf9b5e9c8")),
 
 	;
 
@@ -52,7 +53,7 @@ public enum EKaType {
 	private final String popis;
 	private final int klavesa;
 	private final KeyStroke keyStroke;
-	private KachleUrlBuilder urlBuilder;
+	private final KachleUrlBuilder urlBuilder;
 
 	/**
 	 * @param podklad
