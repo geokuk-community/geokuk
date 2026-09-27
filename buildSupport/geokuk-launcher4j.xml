@@ -1,7 +1,7 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>../target/geokuk-5.1.1c.jar</jar>
+  <jar>../target/geokuk-6.0.0.jar</jar>
   <outfile>..\target\geokuk.exe</outfile>
   <errTitle>Geokuk ERROR</errTitle>
   <cmdLine></cmdLine>
@@ -25,12 +25,12 @@
     <maxHeapSize>1300</maxHeapSize>
   </jre>
   <versionInfo>
-    <fileVersion>5.1.1.0</fileVersion>
-    <txtFileVersion>5.1.1c</txtFileVersion>
+    <fileVersion>6.0.0.0</fileVersion>
+    <txtFileVersion>6.0.0</txtFileVersion>
     <fileDescription>GEOKUK - program pro praci s gaocache nad mapami.</fileDescription>
     <copyright>(c) Martin Veverka, 2009 - 2016, Dan Stahr 2014 - 2016</copyright>
-    <productVersion>0.0.0.0</productVersion>
-    <txtProductVersion>5.1.1c</txtProductVersion>
+    <productVersion>6.0.0.0</productVersion>
+    <txtProductVersion>6.0.0</txtProductVersion>
     <productName>Geokuk</productName>
     <companyName></companyName>
     <internalName>geokuk</internalName>
