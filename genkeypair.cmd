@@ -1,1 +1,0 @@
-keytool -genkeypair -keystore geokuk.keystore -alias marvertin -storepass keydrob -validity 10000
