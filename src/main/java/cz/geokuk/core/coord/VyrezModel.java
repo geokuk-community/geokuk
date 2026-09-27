@@ -154,8 +154,14 @@ public class VyrezModel extends Model0 {
 		setMoord(moord.derive(moumer, moustred));
 	}
 
+	private static final int GLOBAL_MIN_MOUMER = 3;
+
 	private int nastavitelneMeritkoZChteneho(int moumer, final boolean autoMeritko) {
 		moumer = FMath.fit(moumer, podkladMap.getMinMoumer(), autoMeritko ? podkladMap.getMaxAutoMoumer() : podkladMap.getMaxMoumer());
+		// pod 3 přetékají souřadnice při zoomu kurzorem
+		if (moumer < GLOBAL_MIN_MOUMER) {
+			moumer = GLOBAL_MIN_MOUMER;
+		}
 		return moumer;
 	}
 }
