@@ -58,7 +58,7 @@
 	<repositories>
 		<repository>
 			<id>tmate</id>
-			<url>http://maven.tmatesoft.com/content/repositories/releases</url>
+			<url>https://maven.tmatesoft.com/content/repositories/releases</url>
 		</repository>
 	</repositories>
 
@@ -143,7 +143,7 @@
 		<dependency>
 		    <groupId>org.projectlombok</groupId>
 		    <artifactId>lombok</artifactId>
-		    <version>1.18.10</version>
+		    <version>1.18.34</version>
 		    <scope>provided</scope>
 		</dependency>
 
