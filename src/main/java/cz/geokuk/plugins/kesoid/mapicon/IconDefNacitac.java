@@ -24,7 +24,9 @@ public class IconDefNacitac {
 
 
 	// TODO : The alelas should have a more generic name
-	private static Pattern pat = Pattern.compile("([a-z0-9]+!)*([^_]*)((?:_[ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-z -]+)*)(_x-?[0-9]+)*(_y-?[0-9]+)*(_p[0-9])*\\.([a-z]+)");
+	//private static Pattern pat = Pattern.compile("([a-z0-9]+!)*([^_]*)((?:_[ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-z -]+)*)(_x-?[0-9]+)*(_y-?[0-9]+)*(_p[0-9])*\\.([a-z]+)");
+	// JB: Rozšíření možných názvů alel
+	private static Pattern pat = Pattern.compile("([a-z0-9]+!)*([^_]*)((?:(?:_[ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-z -]+)|(?:_[^xyp][a-z0-9-]+))*)(_x-?[0-9]+)*(_y-?[0-9]+)*(_p[0-9])*\\.([a-z]+)");
 
 	private final String jmenoSPriponou;
 	// private IconDef iconDef;

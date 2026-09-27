@@ -10,3 +10,5 @@ Geokuk/bin
 *.ear
 *.exe
 !buildSupport/*
+!releases/*
+
