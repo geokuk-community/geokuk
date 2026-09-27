@@ -15,6 +15,7 @@ public class JZpravyUzivatelumDialog extends JMyDialog0 {
 
 	JScrollPane jZpravy;
 	JButton jPrecteno;
+	JButton jOznacitVse;
 	JButton jDalsi;
 	JButton jPredchozi;
 
@@ -59,10 +60,12 @@ public class JZpravyUzivatelumDialog extends JMyDialog0 {
 		jZpravy.setMinimumSize(new Dimension(10, 10));
 
 		jPrecteno = new JButton("Přečteno");
+		jOznacitVse = new JButton("Označit vše jako přečtené");
 		jDalsi = new JButton(">>>");
 		jPredchozi = new JButton("<<<");
 		jZpravy.setAlignmentX(CENTER_ALIGNMENT);
 		jPrecteno.setAlignmentX(CENTER_ALIGNMENT);
+		jOznacitVse.setAlignmentX(CENTER_ALIGNMENT);
 		final JPanel panel = new JPanel();
 		add(panel);
 
@@ -86,6 +89,17 @@ public class JZpravyUzivatelumDialog extends JMyDialog0 {
 			naplndaty();
 		});
 
+		jOznacitVse.addActionListener(e -> {
+			int maxMsgNum = 0;
+			for (final ZpravaUzivateli zprava : zpravyUzivatelum) {
+				if (zprava.msgnum > maxMsgNum) {
+					maxMsgNum = zprava.msgnum;
+				}
+			}
+			napovedaModel.setLastViewedMsgNum(maxMsgNum);
+			dispose();
+		});
+
 	}
 
 	private void grlay(final JPanel panel) {
@@ -101,9 +115,9 @@ public class JZpravyUzivatelumDialog extends JMyDialog0 {
 		// panel.add(jSimplewaypontPatternEdit);
 
 		layout.setHorizontalGroup(layout.createParallelGroup(Alignment.CENTER).addGroup(layout.createParallelGroup() // hroup
-		        .addComponent(jZpravy).addGroup(layout.createSequentialGroup().addComponent(jPredchozi).addComponent(jDalsi).addComponent(jPrecteno))));
+		        .addComponent(jZpravy).addGroup(layout.createSequentialGroup().addComponent(jPredchozi).addComponent(jDalsi).addComponent(jPrecteno).addComponent(jOznacitVse))));
 		layout.setVerticalGroup(layout.createSequentialGroup() // hroup
-		        .addComponent(jZpravy).addGroup(layout.createParallelGroup().addComponent(jDalsi).addComponent(jPredchozi).addComponent(jPrecteno)));
+		        .addComponent(jZpravy).addGroup(layout.createParallelGroup().addComponent(jDalsi).addComponent(jPredchozi).addComponent(jPrecteno).addComponent(jOznacitVse)));
 	}
 
 	private void naplndaty() {
