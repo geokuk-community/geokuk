@@ -86,6 +86,10 @@ public class Coord {
 		// Point zommstred = zoomMouStred == null ? new Point(cur) : transform(zoomMouStred);
 		// získat střed zoomování na obrazovce, podle tohoto zoomujeme
 		final Point pointZoomStred = zoomMouStred == null ? transform(getMoustred()) : transform(zoomMouStred); // střed zůmování v bodech
+		// střed mohl přetéct přes okraj světa, vrátit ho na obrazovku
+		final long worldPixels = 1L << 32 - mpShift;
+		pointZoomStred.x = (int) ((pointZoomStred.x % worldPixels + worldPixels) % worldPixels);
+		pointZoomStred.y = (int) ((pointZoomStred.y % worldPixels + worldPixels) % worldPixels);
 		final Mou mouZoomStred = transform(pointZoomStred); // a střed v mou
 		final Coord c = derive(newMoumer); // pokusne tam nastavit nové měřítko
 		final Moud rozdil = c.transform(pointZoomStred).sub(mouZoomStred); // korigovat střed map, aby zůstal střed zůmování
@@ -238,11 +242,14 @@ public class Coord {
 	}
 
 	public Mou getMouJ() {
-		return getMoustred().add(0, -getMouSize().dyy / 2);
+		final long dy = ((long) dim.height << mpShift) / 2;
+		return new Mou(moustred.xx, (int) (moustred.yy - dy));
 	}
 
 	public Mou getMouJV() {
-		return getMouJZ().add(getMouSize().dxx, 0);
+		final Mou jz = getMouJZ();
+		final long dx = (long) dim.width << mpShift;
+		return new Mou((int) (jz.xx + dx), jz.yy);
 	}
 
 	/**
@@ -251,10 +258,10 @@ public class Coord {
 	 * @return
 	 */
 	public Mou getMouJZ() {
-		final Moud d = new Moud(dim.width / 2 << mpShift, dim.height / 2 << mpShift);
-		final Mou mou = moustred.sub(d);
-		// System.out.printf("mpShift=%d, dim=%s | moustred=%s=%s + %s = moujz=%s=%s%n", mpShift, dim, moustred, moustred.toWgs(), d, mou, mou.toWgs());
-		return mou;
+		// v long, při velkém mpShift by int přetekl
+		final long dx = ((long) dim.width / 2) << mpShift;
+		final long dy = ((long) dim.height / 2) << mpShift;
+		return new Mou((int) (moustred.xx - dx), (int) (moustred.yy - dy));
 	}
 
 	public int getMoumer() {
@@ -262,13 +269,14 @@ public class Coord {
 	}
 
 	public Mou getMouS() {
-		return getMoustred().add(0, getMouSize().dyy / 2);
+		final long dy = ((long) dim.height << mpShift) / 2;
+		return new Mou(moustred.xx, (int) (moustred.yy + dy));
 	}
 
 	public Moud getMouSize() {
 		// pozor na to, že pokud půjde moumer k nule a v mapš se bude opakovat motiv, tak to přeteče
 		// a vlastně je rozměr menší
-		return new Moud(dim.width << mpShift, dim.height << mpShift);
+		return new Moud((int) ((long) dim.width << mpShift), (int) ((long) dim.height << mpShift));
 	}
 
 	public Mou getMoustred() {
@@ -277,19 +285,26 @@ public class Coord {
 	}
 
 	public Mou getMouSV() {
-		return getMouJZ().add(getMouSize());
+		final Mou jz = getMouJZ();
+		final long dx = (long) dim.width << mpShift;
+		final long dy = (long) dim.height << mpShift;
+		return new Mou((int) (jz.xx + dx), (int) (jz.yy + dy));
 	}
 
 	public Mou getMouSZ() {
-		return getMouJZ().add(0, getMouSize().dyy);
+		final Mou jz = getMouJZ();
+		final long dy = (long) dim.height << mpShift;
+		return new Mou(jz.xx, (int) (jz.yy + dy));
 	}
 
 	public Mou getMouV() {
-		return getMoustred().add(getMouSize().dxx / 2, 0);
+		final long dx = ((long) dim.width << mpShift) / 2;
+		return new Mou((int) (moustred.xx + dx), moustred.yy);
 	}
 
 	public Mou getMouZ() {
-		return getMoustred().add(-getMouSize().dxx / 2, 0);
+		final long dx = ((long) dim.width << mpShift) / 2;
+		return new Mou((int) (moustred.xx - dx), moustred.yy);
 	}
 
 	/**
@@ -361,8 +376,8 @@ public class Coord {
 		// souřadnice mohou být i záporné
 		final Point p = new Point();
 		final Mou moujz = getMouJZ();
-		p.x = mou.xx - moujz.xx >> mpShift;
-		p.y = dim.height - (mou.yy - moujz.yy >> mpShift);
+		p.x = (int) (((long) mou.xx - (long) moujz.xx) >> mpShift);
+		p.y = dim.height - (int) (((long) mou.yy - (long) moujz.yy) >> mpShift);
 		if (tam != null) {
 			tam.transform(p, p);
 		}
@@ -398,11 +413,11 @@ public class Coord {
 			zpet.transform(p, p);
 		}
 		// pozor na to, že pro moumer blížící se k nule může dojít k přetečení při posunu
-		// pro případ, kdy se v okně objeví celá mapa světa vícekrát
+		// pro případ, kdy se v okně objeví celá mapa světa vícekrát, proto v long
 		final Mou moujz = getMouJZ();
-		// System.out.println("TRANSUJEME: " + p + " / " + moustred + " -/- " + moujz + " -+++- " + moustred.toWgs() + " -/- " + moujz.toWgs());
-
-		return new Mou(moujz.xx + (p.x << mpShift), moujz.yy + (dim.height - p.y << mpShift));
+		final long xx = (long) moujz.xx + ((long) p.x << mpShift);
+		final long yy = (long) moujz.yy + ((long) (dim.height - p.y) << mpShift);
+		return new Mou((int) xx, (int) yy);
 	}
 
 	public MouRect transform(final Rectangle rect) {
@@ -414,7 +429,7 @@ public class Coord {
 	 * Transformuje vzdálnost v pixlech na vzdálenost v mouřadnicích.
 	 */
 	public int transformPoindDiff(final int pointDiff) {
-		return pointDiff << mpShift;
+		return (int) ((long) pointDiff << mpShift);
 	}
 
 	/** transformuje posun v pixlech na posun v mouřadnicích */
