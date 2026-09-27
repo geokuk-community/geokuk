@@ -23,13 +23,17 @@ public class BoundingRect {
 	 * @param aYy2
 	 */
 	public BoundingRect(final int aXx1, final int aYy1, final int aXx2, final int aYy2) {
-		xx1 = aXx1;
-		yy1 = aYy1;
-		xx2 = aXx2;
-		yy2 = aYy2;
-
-		if (xx2 < xx1 || yy2 < yy1) {
-			throw new RuntimeException("Spatne presahy " + this);
+		if (aXx2 < aXx1 || aYy2 < aYy1) {
+			// přetečení při extrémním odzoomu, místo výjimky celý svět
+			xx1 = Integer.MIN_VALUE;
+			yy1 = Integer.MIN_VALUE;
+			xx2 = Integer.MAX_VALUE;
+			yy2 = Integer.MAX_VALUE;
+		} else {
+			xx1 = aXx1;
+			yy1 = aYy1;
+			xx2 = aXx2;
+			yy2 = aYy2;
 		}
 	}
 
