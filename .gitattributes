@@ -1,0 +1,6 @@
+# Maven wrapper skript musí mít LF, jinak nejde spustit v Linuxu/cloudu
+mvnw text eol=lf
+*.sh text eol=lf
+
+# Windows batch soubory zůstávají CRLF
+*.cmd text eol=crlf
