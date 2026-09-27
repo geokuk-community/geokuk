@@ -59,8 +59,8 @@ public class Inicializator {
 		bb.registerSigleton(new KruhyModel());
 		bb.registerSigleton(new ObsazenostModel());
 
-		bb.registerSigleton(new MrizkaModel("Dd", true));
-		bb.registerSigleton(new MrizkaModel("DdMmMmm", true));
+		bb.registerSigleton(new MrizkaModel("Dd", false));
+		bb.registerSigleton(new MrizkaModel("DdMmMmm", false));
 		bb.registerSigleton(new MrizkaModel("DdMmSs", false));
 		bb.registerSigleton(new MrizkaModel("Utm", false));
 		bb.registerSigleton(new MrizkaModel("S42", false));

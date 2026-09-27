@@ -42,7 +42,7 @@ public class PopiskyModel extends PodkladMapSpecificModel0<PopiskyModel, Popisky
 	 */
 	@Override
 	protected boolean getVisibleFromPreferences(final boolean defaultOnoff) {
-		return currPrefe().node(FPref.VSEOBECNE_node).getBoolean(FPref.ZOBRAZ_POPISY_KESI_value, defaultOnoff);
+		return currPrefe().node(FPref.VSEOBECNE_node).getBoolean(FPref.ZOBRAZ_POPISY_KESI_value, false);
 	}
 
 	/*

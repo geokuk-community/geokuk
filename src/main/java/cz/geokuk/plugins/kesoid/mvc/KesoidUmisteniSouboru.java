@@ -21,8 +21,8 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 
 	public static final Filex GEOKUK_DATA_DIR = new Filex(new File(FConst.HOME_DIR, "geokuk"), false, true);
 	public static final Filex CESTY_DIR = new Filex(new File(FConst.HOME_DIR, "geokuk/cesty"), false, true);
-	public static final Filex GEOGET_DATA_DIR = new Filex(new File("C:\\geoget\\data"), false, true);
-	public static final Filex GSAK_DATA_DIR = new Filex(new File(FConst.HOME_DIR, "AppData/Roaming/gsak/data"), false, true);
+	public static final Filex GEOGET_DATA_DIR = new Filex(new File("C:\\geoget\\data"), false, false);
+	public static final Filex GSAK_DATA_DIR = new Filex(new File(FConst.HOME_DIR, "AppData/Roaming/gsak/data"), false, false);
 
 	public static final Filex IMAGE_3RDPARTY_DIR = new Filex(new File(GEOKUK_DATA_DIR.getFile(), "images3rdParty"), false, false);
 	public static final Filex IMAGE_MY_DIR = new Filex(new File(GEOKUK_DATA_DIR.getFile(), "imagesMy"), false, false);
