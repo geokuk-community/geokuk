@@ -64,18 +64,13 @@ public class FGeoKonvertor {
 
 	}
 
-	public static double normalizujUhel(double uhel) {
-		// TODO optimálněji, ale možná to v praxi stačí
-		if (Math.abs(uhel) > 10000) {
-			throw new RuntimeException("Proč se má normalizovat takový obludný úhel: " + uhel + " stupňů");
+	public static double normalizujUhel(final double uhel) {
+		if (Double.isNaN(uhel) || Double.isInfinite(uhel)) {
+			throw new RuntimeException("Nelze normalizovat NaN/Inf uhel: " + uhel);
 		}
-		while (uhel >= 180) {
-			uhel -= 360;
-		}
-		while (uhel < -180) {
-			uhel += 360;
-		}
-		return uhel;
+		// výsledek v [-180, 180), IEEEremainder vrací i +180
+		final double r = Math.IEEEremainder(uhel, 360.0);
+		return r >= 180 ? r - 360 : r;
 	}
 
 	public static Mercator toMercator(final Mou mou) {

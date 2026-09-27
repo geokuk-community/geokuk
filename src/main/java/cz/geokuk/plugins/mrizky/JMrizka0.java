@@ -69,15 +69,18 @@ public abstract class JMrizka0 extends JSingleSlide0 implements BeanSubtypable {
 			{
 				double x = x0;
 				Point p;
+				int iter = 0; // pojistka proti nekonečné smyčce při přetočení světa
 				do {
 					p = convert(x, y0);
 					a.add(p);
 					x -= xkrok;
+					if (++iter > 720) break;
 				} while (p.x >= 0 - 100); // přidáme něco ať při otočení nezmizí
 				a.add(convert(x, y0)); // a ještě jeden
 			}
 
 			double y = y0;
+			int yIter = 0;
 			do {
 				y -= ykrok;
 				final List<Point> b = new ArrayList<>(a.size());
@@ -109,6 +112,7 @@ public abstract class JMrizka0 extends JSingleSlide0 implements BeanSubtypable {
 				}
 				a = b; // tam ta se stává referenční
 				// vykreslení řádku
+				if (++yIter > 720) break;
 			} while (convert(x0, y).y >= 0 - 100); // přidáme něco, ať nezmizí při otočení
 
 			// a teď texty
