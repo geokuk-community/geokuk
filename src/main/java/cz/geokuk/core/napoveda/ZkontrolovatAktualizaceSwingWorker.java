@@ -62,7 +62,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 				Dlg.info("Používaná verze programu Geokuk " + FConst.VERSION + " je poslední distribuovanou verzí.", "Oznámení");
 			}
 		} else {
-			final Object[] options = { "Zobrazit web", "Stáhnout nejnovější verzi", "Připomenout příště" };
+			final Object[] options = { "Zobrazit web", "Stáhnout nejnovější verzi", "Připomenout za měsíc" };
 			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(),
 					"<html></b>Používaná verze programu Geokuk <b>" + FConst.VERSION + "</b> " + "není poslední distribuovanou verzí. Poslední distribuovaná verze je " + vysledek.lastVersion + ".",
 					"Spuštění nové verze", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
@@ -74,6 +74,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 				stahnoutJar();
 				break;
 			default:
+				napovedaModel.odlozKontroluAktualizaci(30L);
 				break;
 			}
 			System.out.println(n);

@@ -43,10 +43,23 @@ public class NapovedaModel extends Model0 {
 	}
 
 	public void zkontrolujNoveAktualizace(final boolean zobrazovatInfoPriSpravneVerzi) {
-		if (onlineMode) {
-			new ZkontrolovatAktualizaceSwingWorker(zobrazovatInfoPriSpravneVerzi, this).execute();
+		if (!onlineMode) {
+			return;
 		}
+		// ruční kontrola z menu odklad ignoruje
+		if (!zobrazovatInfoPriSpravneVerzi) {
+			final long nextCheck = currPrefe().node(FPref.VSEOBECNE_node)
+					.getLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, 0L);
+			if (System.currentTimeMillis() < nextCheck) {
+				return;
+			}
+		}
+		new ZkontrolovatAktualizaceSwingWorker(zobrazovatInfoPriSpravneVerzi, this).execute();
+	}
 
+	public void odlozKontroluAktualizaci(final long dnu) {
+		final long ms = System.currentTimeMillis() + dnu * 24L * 60L * 60L * 1000L;
+		currPrefe().node(FPref.VSEOBECNE_node).putLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, ms);
 	}
 
 	public void zobrazNapovedu(final String tema) {
