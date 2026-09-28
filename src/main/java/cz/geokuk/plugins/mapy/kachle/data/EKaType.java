@@ -144,6 +144,11 @@ public enum EKaType {
 		}
 	}
 
+	/** Podmínky OpenStreetMap hromadné stahování dlaždic zakazují. */
+	public boolean isHromadneStahovaniPovoleno() {
+		return this != OPEN_STREET;
+	}
+
 	public KachleUrlBuilder getUrlBuilder() {
 		return urlBuilder;
 	}

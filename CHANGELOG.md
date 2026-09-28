@@ -15,7 +15,8 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
-- OpenStreetMap se načítá přes https.
+- OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
+  do cache.
 
 ### Odstraněno
 - Položka nápovědy „Zprávy uživatelům“, která neměla odkud zprávy brát.
