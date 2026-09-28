@@ -40,6 +40,28 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		return FConst.JAR_DIR_EXISTUJE && System.getProperty("os.name", "").startsWith("Windows");
 	}
 
+	/** Uloží spouštěč vedle geokuk.jar, pokud tam ještě není. */
+	public static void vytvorSpoustecPokudChybi() {
+		if (lzeInstalovat()) {
+			vytvorSpoustecPokudChybi(FConst.JAR_DIR);
+		}
+	}
+
+	static void vytvorSpoustecPokudChybi(final File adresar) {
+		final File spoustec = new File(adresar, SPOUSTEC);
+		if (spoustec.exists() || !new File(adresar, JAR).isFile()) {
+			return;
+		}
+		try (InputStream in = StahnoutAktualizaciSwingWorker.class.getResourceAsStream("/" + SPOUSTEC)) {
+			if (in != null) {
+				Files.copy(in, spoustec.toPath());
+				log.info("Vytvořen spouštěč {}", spoustec);
+			}
+		} catch (final IOException e) {
+			log.warn("Spouštěč " + spoustec + " nelze vytvořit.", e);
+		}
+	}
+
 	static void stahni(final String zakladUrl, final File adresar) throws IOException {
 		final String ocekavanySoucet = precti(zakladUrl + JAR + ".sha256").trim().split("\\s+")[0];
 		final File docasny = new File(adresar, JAR + ".part");
