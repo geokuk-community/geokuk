@@ -194,10 +194,13 @@ public final class EKaType {
 		if (urlBuilder instanceof MapyCzUrlBuilder) {
 			return "© Seznam.cz, a.s. a další";
 		}
-		if (this == TUR_FREEMAP_SK_T || this == TUR_FREEMAP_SK_F) {
-			return "© Freemap Slovakia, data © přispěvatelé OpenStreetMap";
+		if (this == TUR_FREEMAP_SK_T) {
+			return "© Freemap Slovakia, © OpenStreetMap contributors";
 		}
-		return "© přispěvatelé OpenStreetMap";
+		if (this == TUR_FREEMAP_SK_F) {
+			return "© GKÚ, NLC, © ČÚZK";
+		}
+		return "© OpenStreetMap contributors";
 	}
 
 	/** OpenStreetMap hromadné stahování dlaždic nepovoluje, uživatelské mapy jen když to uživatel zapne. */
