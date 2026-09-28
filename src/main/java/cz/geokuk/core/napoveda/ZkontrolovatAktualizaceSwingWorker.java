@@ -15,7 +15,7 @@ import cz.geokuk.util.process.BrowserOpener;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVerze, Void> {
+public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, Void> {
 
 	private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
 
@@ -80,7 +80,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 	}
 
 	@Override
-	protected ZpravyAVerze doInBackground() throws Exception {
+	protected String doInBackground() throws Exception {
 		try {
 			final URLConnection connection = new URL(Diagnostika.betaKanal() ? FConst.RELEASES_API_URL : FConst.LATEST_RELEASE_API_URL).openConnection();
 			connection.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")");
@@ -94,31 +94,31 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 			final String lastVersion = nejnovejsiVerze(json);
 			log.info("Posledni verze: '" + lastVersion + "' ");
 			Diagnostika.zaznamenej("Kontrola aktualizací: poslední verze " + lastVersion + (Diagnostika.betaKanal() ? " (beta kanál)" : ""));
-			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), lastVersion);
+			return lastVersion;
 		} catch (final IOException e) {
 			log.error("An error has occurred while retrieving the info!", e);
 			Diagnostika.zaznamenej("Kontrola aktualizací selhala: " + e);
-			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), null);
+			return null;
 		}
 	}
 
 	@Override
 	protected void donex() throws Exception {
-		final ZpravyAVerze vysledek = get();
+		final String lastVersion = get();
 		if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {
-			log.info("LAST VERSION: " + vysledek.lastVersion + " i have no version, i am in development environment");
-		} else if (vysledek.lastVersion == null) {
+			log.info("LAST VERSION: " + lastVersion + " i have no version, i am in development environment");
+		} else if (lastVersion == null) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Nepodařilo se zjistit poslední verzi programu Geokuk.", "Oznámení");
 			}
-		} else if (!nabidnout(vysledek.lastVersion, FConst.VERSION, Diagnostika.betaKanal())) {
+		} else if (!nabidnout(lastVersion, FConst.VERSION, Diagnostika.betaKanal())) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Používaná verze programu Geokuk " + FConst.VERSION + " je poslední distribuovanou verzí.", "Oznámení");
 			}
 		} else {
 			final Object[] options = { "Zobrazit web", "Stáhnout nejnovější verzi", "Připomenout za měsíc" };
 			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(),
-					"<html></b>Používaná verze programu Geokuk <b>" + FConst.VERSION + "</b> " + "není poslední distribuovanou verzí. Poslední distribuovaná verze je " + vysledek.lastVersion + ".",
+					"<html></b>Používaná verze programu Geokuk <b>" + FConst.VERSION + "</b> " + "není poslední distribuovanou verzí. Poslední distribuovaná verze je " + lastVersion + ".",
 					"Spuštění nové verze", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
 			switch (n) {
 			case 0:
@@ -126,7 +126,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 				break;
 			case 1:
 				if (StahnoutAktualizaciSwingWorker.lzeInstalovat()) {
-					new StahnoutAktualizaciSwingWorker(vysledek.lastVersion).execute();
+					new StahnoutAktualizaciSwingWorker(lastVersion).execute();
 				} else {
 					stahnoutJar();
 				}
@@ -136,8 +136,6 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 				break;
 			}
 		}
-		napovedaModel.setZpravyUzivatelum(vysledek.zpravy);
-
 		super.donex();
 	}
 

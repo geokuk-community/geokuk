@@ -35,7 +35,6 @@ public class FPref {
 	public static final String KESOID_POPISKY_node = "kesoid/popisky";
 	public static final String KESOID_VISIBLE_value = "visible";
 
-	public static final String LAST_VIEWED_MSG_NUM_value = "lastViewedMsgNum";
 	public static final String NEXT_UPDATE_CHECK_TIMESTAMP_value = "nextUpdateCheckTimestamp";
 	// Uzly
 	public static final String MAPICON_FENOTYP_node = "mapicon/fenotyp";

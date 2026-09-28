@@ -11,6 +11,13 @@
   skupině „Uživatelské mapy“.
 - Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap a Freemap Slovakia,
   zobrazují se vpravo dole v mapě.
+- Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap, Freemap Slovakia
+  a Thunderforest, zobrazují se vpravo dole v mapě.
+- „Zadat problém“ a nové tlačítko „Nahlásit na GitHubu“ v „Informace
+  pro hlášení chyby“ otevřou nové issue s předvyplněnými informacemi
+  o programu.
+- Program zapisuje log do `%TEMP%\geokuk\geokuk.log`. Cesta k němu
+  a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
 - OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
@@ -19,6 +26,7 @@
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
   mapu s vlastním klíčem, příklad je v `priklady/uzivatelske-mapy.properties`.
+- Položka nápovědy „Zprávy uživatelům“, která neměla odkud zprávy brát.
 - Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu
   Mapy.cz.
 
@@ -26,6 +34,8 @@
 - Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
   sqlite-jdbc 3.41.2.2, metadata-extractor 2.18.0, v testech logback
   1.2.13 a junit 4.13.1.
+- Popis vydání na GitHubu se bere z tohoto souboru.
+- Program se vydává jen jako jar, konfigurace Launch4j je odstraněná.
 
 ## 6.0.0
 
