@@ -1,0 +1,58 @@
+name: Mapové podklady
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kontrola:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NAZEV: Nefunkční mapové podklady
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Stažení dlaždic ze všech podkladů
+        id: test
+        continue-on-error: true
+        run: ./mvnw -B test -Dtest=MapovePodkladyIT -Dsurefire.failIfNoSpecifiedTests=false
+
+      - name: Issue s výsledkem
+        run: |
+          CISLO=$(gh issue list --state open --search "in:title \"$NAZEV\"" --json number,title \
+            --jq ".[] | select(.title == \"$NAZEV\") | .number" | head -1)
+          if [ "${{ steps.test.outcome }}" = success ]; then
+            if [ -n "$CISLO" ]; then
+              gh issue close "$CISLO" --comment "Všechny podklady opět fungují ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+            fi
+            exit 0
+          fi
+          {
+            echo "Automatická kontrola $(date -u +%F) našla nefunkční podklady."
+            echo
+            cat target/mapove-podklady.md 2>/dev/null || echo "Test nedoběhl, viz log."
+            echo
+            echo "Běh: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > telo.md
+          if [ -n "$CISLO" ]; then
+            gh issue edit "$CISLO" --body-file telo.md
+          else
+            gh issue create --title "$NAZEV" --body-file telo.md
+          fi
+          exit 1
