@@ -10,5 +10,12 @@ Geokuk/bin
 *.ear
 *.exe
 !buildSupport/*
-!releases/*
 
+# Lokální nastavení nástrojů
+.claude/settings.local.json
+.idea/
+*.iml
+.vscode/
+*.log
+Thumbs.db
+.DS_Store
