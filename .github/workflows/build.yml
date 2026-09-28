@@ -25,15 +25,15 @@ jobs:
           cache: maven
 
       - name: Build a testy
-        run: ./mvnw -B clean package
+        run: |
+          ./mvnw -B clean package
+          mv target/geokuk-*.jar target/geokuk.jar
 
       - name: Jar jako artefakt
         uses: actions/upload-artifact@v4
         with:
           name: geokuk-jar
-          path: |
-            target/geokuk-*.jar
-            dist/geokuk.cmd
+          path: target/geokuk.jar
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -48,9 +48,7 @@ jobs:
 
       - name: Soubory pro stažení a aktualizaci
         run: |
-          VERZE="${GITHUB_REF_NAME#v}"
-          mv "target/geokuk-$VERZE.jar" geokuk.jar
-          mv dist/geokuk.cmd geokuk.cmd
+          unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${GITHUB_REF_NAME#v}"
           sha256sum geokuk.jar > geokuk.jar.sha256
 
       - name: GitHub Release
@@ -59,4 +57,3 @@ jobs:
           files: |
             geokuk.jar
             geokuk.jar.sha256
-            geokuk.cmd

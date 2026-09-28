@@ -16,8 +16,9 @@
 Aktuální verze je v [Releases](https://github.com/geokuk-community/geokuk/releases).
 Ke spuštění je potřeba Java 8 nebo novější.
 
-Ve Windows uložte `geokuk.jar` a `geokuk.cmd` do jedné složky a spouštějte
-`geokuk.cmd`. Když Geokuk najde novou verzi, stáhne ji a spouštěč ji při
+Ve Windows stačí stáhnout `geokuk.jar` a poprvé ho spustit dvojklikem.
+Geokuk vedle sebe vytvoří spouštěč `geokuk.cmd`, přes který ho pak
+spouštějte. Když Geokuk najde novou verzi, stáhne ji a spouštěč ji při
 dalším spuštění nainstaluje. Aktualizace přepisuje `geokuk.cmd`, pokud
 potřebujete svůj upravený spouštěč, tak si ho prosím uložte pod jiným jménem.
 

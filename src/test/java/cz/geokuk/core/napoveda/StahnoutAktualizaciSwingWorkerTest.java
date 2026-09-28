@@ -55,4 +55,26 @@ public class StahnoutAktualizaciSwingWorkerTest {
 			Assert.assertEquals(0, instalace.list().length);
 		}
 	}
+
+	@Test
+	public void vytvoriChybejiciSpoustec() throws Exception {
+		Files.write(new File(instalace, "geokuk.jar").toPath(), new byte[0]);
+		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi(instalace);
+		final String spoustec = new String(Files.readAllBytes(new File(instalace, "geokuk.cmd").toPath()), StandardCharsets.UTF_8);
+		Assert.assertTrue(spoustec.contains("geokuk.jar.new"));
+	}
+
+	@Test
+	public void existujiciSpoustecNeprepise() throws Exception {
+		Files.write(new File(instalace, "geokuk.jar").toPath(), new byte[0]);
+		Files.write(new File(instalace, "geokuk.cmd").toPath(), "vlastni".getBytes(StandardCharsets.US_ASCII));
+		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi(instalace);
+		Assert.assertEquals("vlastni", new String(Files.readAllBytes(new File(instalace, "geokuk.cmd").toPath()), StandardCharsets.US_ASCII));
+	}
+
+	@Test
+	public void bezGeokukJarNevytvoriSpoustec() throws Exception {
+		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi(instalace);
+		Assert.assertFalse(new File(instalace, "geokuk.cmd").exists());
+	}
 }
