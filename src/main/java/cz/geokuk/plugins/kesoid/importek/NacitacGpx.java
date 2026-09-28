@@ -388,7 +388,7 @@ public class NacitacGpx extends NacitacInputStream0 {
 						if (jmeno3.equals(LINK_TEXT)) {
 							wpt.link.text = rdr.getElementText();
 						}
-						if (jmeno.equals(LINK_TYPE)) {
+						if (jmeno3.equals(LINK_TYPE)) {
 							wpt.link.type = rdr.getElementText();
 						}
 					}
