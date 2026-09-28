@@ -9,7 +9,6 @@ Geokuk/bin
 *.war
 *.ear
 *.exe
-!buildSupport/*
 
 # Lokální nastavení nástrojů
 .claude/settings.local.json
