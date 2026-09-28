@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVerze, Void> {
 
-
+	private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
 
 	private final boolean zobrazitDialogPriPosledniVerzi;
 	private final NapovedaModel napovedaModel;
@@ -27,25 +27,42 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 		this.napovedaModel = napovedaModel;
 	}
 
+	/**
+	 * Porovná verze po číselných částech, písmena a jiné oddělovače ignoruje.
+	 */
+	static boolean jeNovejsi(final String verze, final String oproti) {
+		final int[] a = cislaVerze(verze);
+		final int[] b = cislaVerze(oproti);
+		for (int i = 0; i < Math.max(a.length, b.length); i++) {
+			final int x = i < a.length ? a[i] : 0;
+			final int y = i < b.length ? b[i] : 0;
+			if (x != y) {
+				return x > y;
+			}
+		}
+		return false;
+	}
+
+	private static int[] cislaVerze(final String verze) {
+		return Arrays.stream(verze.split("\\D+")).filter(s -> !s.isEmpty()).mapToInt(Integer::parseInt).toArray();
+	}
+
 	@Override
 	protected ZpravyAVerze doInBackground() throws Exception {
 		try {
-			final int msgnad = napovedaModel.getLastViewedMsgNum();
-			final URL url = new URL(FConst.WEB_PAGE_URL + "version.php?verze=" + FConst.VERSION + "&msgnad=" + msgnad);
-
-			final URLConnection connection = url.openConnection();
+			final URLConnection connection = new URL(FConst.LATEST_RELEASE_API_URL).openConnection();
 			connection.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")");
+			connection.setRequestProperty("Accept", "application/vnd.github+json");
 			connection.setConnectTimeout(60000);
-			final BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
-			final String lastVersion = readVersion(br);
-
-			final List<ZpravaUzivateli> zpravy = nactiSeznamZprav(br);
-			br.close();
-			for (final ZpravaUzivateli zpravaUzivateli : zpravy) {
-				log.debug("Zprava uzivateli: {}", zpravaUzivateli);
+			connection.setReadTimeout(60000);
+			final String json;
+			try (Scanner sc = new Scanner(connection.getInputStream(), "UTF-8").useDelimiter("\\A")) {
+				json = sc.hasNext() ? sc.next() : "";
 			}
+			final Matcher matcher = TAG_NAME.matcher(json);
+			final String lastVersion = matcher.find() ? matcher.group(1) : null;
 			log.info("Posledni verze: '" + lastVersion + "' ");
-			return new ZpravyAVerze(zpravy, lastVersion);
+			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), lastVersion);
 		} catch (final IOException e) {
 			log.error("An error has occurred while retrieving the info!", e);
 			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), null);
@@ -57,7 +74,11 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 		final ZpravyAVerze vysledek = get();
 		if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {
 			log.info("LAST VERSION: " + vysledek.lastVersion + " i have no version, i am in development environment");
-		} else if (FConst.VERSION.equals(vysledek.lastVersion)) {
+		} else if (vysledek.lastVersion == null) {
+			if (zobrazitDialogPriPosledniVerzi) {
+				Dlg.info("Nepodařilo se zjistit poslední verzi programu Geokuk.", "Oznámení");
+			}
+		} else if (!jeNovejsi(vysledek.lastVersion, FConst.VERSION)) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Používaná verze programu Geokuk " + FConst.VERSION + " je poslední distribuovanou verzí.", "Oznámení");
 			}
@@ -77,66 +98,10 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 				napovedaModel.odlozKontroluAktualizaci(30L);
 				break;
 			}
-			System.out.println(n);
-
-			// http://geokuk.cz/geokuk.jar
 		}
 		napovedaModel.setZpravyUzivatelum(vysledek.zpravy);
 
 		super.donex();
-	}
-
-	private List<ZpravaUzivateli> nactiSeznamZprav(final BufferedReader br) throws IOException {
-		String line;
-		final Pattern pat = Pattern.compile("<h1>==(.*)==</h1>");
-		StringBuilder sb = null;
-		int msgnum = 0;
-		final List<ZpravaUzivateli> list = new ArrayList<>();
-		while ((line = br.readLine()) != null) {
-			final Matcher matcher = pat.matcher(line);
-			if (matcher.matches()) {
-				if (sb != null && sb.length() > 0) {
-					list.add(new ZpravaUzivateli(msgnum, sb.toString()));
-				}
-				sb = new StringBuilder();
-				msgnum = Integer.parseInt(matcher.group(1));
-			} else {
-				if (sb != null) {
-					sb.append(line);
-					sb.append("\n");
-				}
-			}
-
-		}
-		if (sb != null && sb.length() > 0) {
-			list.add(new ZpravaUzivateli(msgnum, sb.toString()));
-		}
-		return list;
-	}
-
-	private String readVersion(final BufferedReader br) throws IOException {
-		final Pattern pat = Pattern.compile("<h1>\\[\\[(.*)\\]\\]</h1>");
-		String line;
-		while ((line = br.readLine()) != null) {
-			final Matcher matcher = pat.matcher(line);
-			if (matcher.matches()) {
-				return matcher.group(1);
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Dočasně zablokováno.
-	 */
-	@SuppressWarnings("unused")
-	private void spustitJavaWebStart() {
-		try {
-			BrowserOpener.displayURL(new URL(FConst.WEB_PAGE_URL + "geokuk.jnlp"));
-			System.exit(0);
-		} catch (final MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	private void stahnoutJar() {

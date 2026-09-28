@@ -25,7 +25,7 @@ public class ZadatProblemAction extends Action0 {
 	 */
 	public ZadatProblemAction() {
 		super("Zadat problém ...");
-		putValue(SHORT_DESCRIPTION, "Zobrazí stránku na code.google.com, která umožní zadat chybu v Geokuku nebo požadavek na novou funkcionalitu.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí stránku na GitHubu, která umožní zadat chybu v Geokuku nebo požadavek na novou funkcionalitu.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_P);
 	}
 

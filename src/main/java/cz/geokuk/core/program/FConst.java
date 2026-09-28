@@ -27,10 +27,11 @@ public class FConst {
 
 	public static final File PREFERENCES_FILE;
 
-	public static final String LATEST_RELEASE_URL = "https://github.com/marvertin/geokuk/releases/latest";
-	public static final String POST_PROBLEM_URL = "https://github.com/marvertin/geokuk/issues/new";
+	public static final String LATEST_RELEASE_URL = "https://github.com/geokuk-community/geokuk/releases/latest";
+	public static final String LATEST_RELEASE_API_URL = "https://api.github.com/repos/geokuk-community/geokuk/releases/latest";
+	public static final String POST_PROBLEM_URL = "https://github.com/geokuk-community/geokuk/issues/new";
 
-	public static final String WEB_PAGE_URL = "http://geokuk.cz/";
+	public static final String WEB_PAGE_URL = "https://github.com/geokuk-community/geokuk";
 
 	public static final String WEB_PAGE_WIKI = "  http://wiki.geocaching.cz/wiki/Geokuk";
 
