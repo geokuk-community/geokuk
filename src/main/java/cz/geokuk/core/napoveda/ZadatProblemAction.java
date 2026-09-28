@@ -5,8 +5,10 @@ package cz.geokuk.core.napoveda;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Action0;
@@ -19,13 +21,15 @@ import cz.geokuk.util.process.BrowserOpener;
 public class ZadatProblemAction extends Action0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
+	/** Delší odkaz prohlížeče nebo GitHub odmítnou. */
+	private static final int MAX_DELKA_URL = 6000;
 
 	/**
 	 * @param aBoard
 	 */
 	public ZadatProblemAction() {
 		super("Zadat problém ...");
-		putValue(SHORT_DESCRIPTION, "Zobrazí stránku na GitHubu, která umožní zadat chybu v Geokuku nebo požadavek na novou funkcionalitu.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí stránku na GitHubu, která umožní zadat chybu v Geokuku nebo požadavek na novou funkcionalitu. Informace o programu budou předvyplněné.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_P);
 	}
 
@@ -36,10 +40,33 @@ public class ZadatProblemAction extends Action0 {
 	 */
 	@Override
 	public void actionPerformed(final ActionEvent aE) {
+		otevri(Diagnostika.text());
+	}
+
+	static void otevri(final String diagnostika) {
 		try {
-			BrowserOpener.displayURL(new URL(FConst.POST_PROBLEM_URL));
+			BrowserOpener.displayURL(new URL(odkaz(diagnostika)));
 		} catch (final MalformedURLException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	static String odkaz(final String diagnostika) {
+		String text = diagnostika;
+		String url = odkazS(text);
+		while (url.length() > MAX_DELKA_URL) {
+			text = text.substring(0, text.length() * 9 / 10);
+			url = odkazS(text + "\n… zkráceno");
+		}
+		return url;
+	}
+
+	private static String odkazS(final String diagnostika) {
+		final String telo = "Co se stalo a jak to zopakovat:\n\n\n\nInformace o programu:\n```\n" + diagnostika + "\n```\n";
+		try {
+			return FConst.POST_PROBLEM_URL + "?body=" + URLEncoder.encode(telo, "UTF-8").replace("+", "%20");
+		} catch (final UnsupportedEncodingException e) {
+			throw new IllegalStateException(e);
 		}
 	}
 
