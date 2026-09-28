@@ -3,9 +3,15 @@
  */
 package cz.geokuk.core.program;
 
+import java.io.File;
+import java.util.List;
+
+import javax.swing.SwingUtilities;
+
 import cz.geokuk.core.coord.PoziceModel;
 import cz.geokuk.core.coord.VyrezModel;
 import cz.geokuk.core.hledani.HledaciSluzba;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.NapovedaModel;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.core.profile.ProfileModel;
@@ -22,6 +28,7 @@ import cz.geokuk.plugins.kesoidpopisky.PopiskyModel;
 import cz.geokuk.plugins.mapy.*;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
+import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachloDownloader;
 import cz.geokuk.plugins.mrizky.MrizkaModel;
@@ -104,6 +111,11 @@ public class Inicializator {
 	}
 
 	public void intMapAkce(final BeanBag bb, final Akce akce) {
+		final List<String> chyby = UzivatelskeMapy.nacti();
+		if (!chyby.isEmpty()) {
+			chyby.forEach(Diagnostika::zaznamenejChybu);
+			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.JAR_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
+		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);
 			akce.mapoakce.add(jednamapoakce);

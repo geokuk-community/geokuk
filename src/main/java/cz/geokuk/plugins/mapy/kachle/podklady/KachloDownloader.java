@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.EnumMap;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 
@@ -41,6 +41,10 @@ public class KachloDownloader {
 	}
 
 	public ImageWithData downloadImage(final URL url) throws IOException {
+		return downloadImage(url, Collections.emptyMap());
+	}
+
+	public ImageWithData downloadImage(final URL url, final Map<String, String> hlavicky) throws IOException {
 		log.debug("Loading kachle from URL: \"{}\"", url);
 		// if (Math.random() > 0.5 && url.toString().contains("hybrid")) {
 		// throw new IOException("Nasimulovaná chyba hybrid");
@@ -55,6 +59,7 @@ public class KachloDownloader {
 			// Pravidla OSM vyžadují User-Agent, který program jednoznačně identifikuje.
 			conn.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")");
 		}
+		hlavicky.forEach(conn::setRequestProperty);
 
 		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
 		final Image img;

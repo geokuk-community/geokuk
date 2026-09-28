@@ -24,6 +24,13 @@ potřebujete svůj upravený spouštěč, tak si ho prosím uložte pod jiným j
 
 Jinde stačí `java -jar geokuk.jar`.
 
+## Uživatelské mapy
+
+Vlastní mapové podklady se zadávají v souboru `uzivatelske-mapy.properties`
+vedle `geokuk.jar` a v menu Mapy jsou ve skupině „Uživatelské mapy“.
+Popis a příklady jsou v
+[`priklady/uzivatelske-mapy.properties`](priklady/uzivatelske-mapy.properties).
+
 ## Původ
 
 GeoKuk napsal Martin Veverka se spoluautory. Toto repo navazuje na jeho

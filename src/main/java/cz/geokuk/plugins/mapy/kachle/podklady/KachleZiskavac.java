@@ -427,7 +427,7 @@ public class KachleZiskavac {
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
 			ImageWithData imageWithData;
 			try {
-				imageWithData = downloader.downloadImage(url);
+				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
 				diagnosticsData.send("Web download - end success");
 				return imageWithData;

@@ -21,14 +21,14 @@ public class MapyModel extends Model0 {
 			return;
 		}
 		this.podklad = podklad;
-		currPrefe().node(FPref.NODE_KTERE_MAPY_node).putEnum(FPref.VALUE_MAPOVE_PODKLADY_value, podklad);
+		currPrefe().node(FPref.NODE_KTERE_MAPY_node).put(FPref.VALUE_MAPOVE_PODKLADY_value, podklad.name());
 		fajruj();
 	}
 
 	@Override
 	protected void initAndFire() {
-		final EKaType podklad = currPrefe().node(FPref.NODE_KTERE_MAPY_node).getEnum(FPref.VALUE_MAPOVE_PODKLADY_value, EKaType.TURIST_M, EKaType.class);
-		setPodklad(podklad);
+		final EKaType podklad = EKaType.podleJmena(currPrefe().node(FPref.NODE_KTERE_MAPY_node).get(FPref.VALUE_MAPOVE_PODKLADY_value, EKaType.TURIST_M.name()));
+		setPodklad(podklad == null ? EKaType.TURIST_M : podklad);
 	}
 
 	private void fajruj() {

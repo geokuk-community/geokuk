@@ -42,8 +42,16 @@ public class Menu extends MenuStrujce {
 
 	public void makeMapSubmenuPart(final Akce akce) {
 		final ButtonGroup mapPodkladButtonGroup = new ButtonGroup();
+		boolean uzivatelske = false;
 		for (final MapyAction0 mapoakce1 : akce.mapoakce) {
 			if (mapoakce1 instanceof PodkladAction) {
+				if (!uzivatelske && ((PodkladAction) mapoakce1).getPodklad().isUzivatelska()) {
+					uzivatelske = true;
+					separator();
+					final JMenuItem nadpis = new JMenuItem("Uživatelské mapy");
+					nadpis.setEnabled(false);
+					menu.add(nadpis);
+				}
 				item(mapoakce1, mapPodkladButtonGroup);
 			}
 		}
