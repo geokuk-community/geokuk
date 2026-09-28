@@ -18,6 +18,10 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Dlouhé nastavení (seznamy souborů a podobně) po zkrácení nebo smazání
+  nenechává zbytky, které se dřív přilepily k nové hodnotě.
+- Převod na UTM určuje správně pásmo, souřadnice na jižní polokouli
+  se převádějí zpět správně.
 - Načítání keší potřebuje zhruba polovinu paměti, 40 tisíc keší se
   vejde do 128 MB. Hodnocení, známka, BestOf, favority, nadmořská výška
   a vlastní hodnoty z databáze GeoGetu a GSAK se přenesou ke keším.

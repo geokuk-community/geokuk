@@ -121,7 +121,7 @@ public class FGeoKonvertor {
 		final double easting = Double.parseDouble(utm[2]);
 		final double northing = Double.parseDouble(utm[3]);
 		final int polednikovaZona = Integer.parseInt(utm[0]);
-		final char rovnobezkovaZona = utm[3].charAt(0);
+		final char rovnobezkovaZona = utm[1].charAt(0);
 		return new Utm(easting, northing, polednikovaZona, rovnobezkovaZona);
 	}
 
