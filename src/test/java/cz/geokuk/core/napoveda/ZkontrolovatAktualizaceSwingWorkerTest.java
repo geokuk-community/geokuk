@@ -1,6 +1,7 @@
 package cz.geokuk.core.napoveda;
 
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.jeNovejsi;
+import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.nabidnout;
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.nejnovejsiVerze;
 
 import org.junit.Assert;
@@ -41,5 +42,15 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 		Assert.assertEquals("6.0.1-beta.2", nejnovejsiVerze(json));
 		Assert.assertEquals("6.0.0", nejnovejsiVerze("{\"tag_name\":\"v6.0.0\",\"name\":\"x\"}"));
 		Assert.assertNull(nejnovejsiVerze("[]"));
+	}
+
+	@Test
+	public void navratZBety() {
+		Assert.assertTrue(nabidnout("6.0.0", "6.0.1-beta.2", false));
+		Assert.assertTrue(nabidnout("6.0.0", "6.0.1-dev.20", false));
+		Assert.assertFalse(nabidnout("6.0.0", "6.0.1-beta.2", true));
+		Assert.assertFalse(nabidnout("6.0.0", "6.0.0", false));
+		Assert.assertTrue(nabidnout("6.0.1", "6.0.0", false));
+		Assert.assertFalse(nabidnout("5.9.0", "6.0.0", false));
 	}
 }

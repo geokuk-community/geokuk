@@ -56,6 +56,14 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 		return 0;
 	}
 
+	/**
+	 * Nabídne novější verzi. Testovací verzi bez beta kanálu nabídne i starší poslední vydanou verzi, aby šlo
+	 * odebráním souboru beta přejít zpět na verzi, kterou mají uživatelé.
+	 */
+	static boolean nabidnout(final String posledni, final String pouzivana, final boolean betaKanal) {
+		return jeNovejsi(posledni, pouzivana) || !betaKanal && pouzivana.contains("-") && !posledni.equals(pouzivana);
+	}
+
 	static String nejnovejsiVerze(final String json) {
 		String nejnovejsi = null;
 		final Matcher matcher = TAG_NAME.matcher(json);
@@ -103,7 +111,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Nepodařilo se zjistit poslední verzi programu Geokuk.", "Oznámení");
 			}
-		} else if (!jeNovejsi(vysledek.lastVersion, FConst.VERSION)) {
+		} else if (!nabidnout(vysledek.lastVersion, FConst.VERSION, Diagnostika.betaKanal())) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Používaná verze programu Geokuk " + FConst.VERSION + " je poslední distribuovanou verzí.", "Oznámení");
 			}
