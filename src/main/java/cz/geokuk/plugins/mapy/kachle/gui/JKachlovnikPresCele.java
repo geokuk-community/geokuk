@@ -33,7 +33,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	@Override
 	protected void paintChildren(final Graphics g) {
 		super.paintChildren(g);
-		if (getKachloType() == null) {
+		if (getKachloType() == null || getKachloType().getAtribuce().isEmpty()) {
 			return;
 		}
 		final String text = getKachloType().getAtribuce();

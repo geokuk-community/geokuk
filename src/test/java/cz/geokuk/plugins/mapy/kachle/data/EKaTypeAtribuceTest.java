@@ -14,7 +14,7 @@ public class EKaTypeAtribuceTest {
 
 	@Test
 	public void vrstvyZOpenStreetMapUvadejiOsm() {
-		for (final EKaType ka : new EKaType[] { EKaType.OPEN_STREET, EKaType.TUR_FREEMAP_SK_T, EKaType.OPEN_CYKLO }) {
+		for (final EKaType ka : new EKaType[] { EKaType.OPEN_STREET, EKaType.TUR_FREEMAP_SK_T }) {
 			Assert.assertTrue(ka.name(), ka.getAtribuce().contains("OpenStreetMap"));
 		}
 		Assert.assertTrue(EKaType.TURIST_M.getAtribuce().contains("Seznam.cz"));

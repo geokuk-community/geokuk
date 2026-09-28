@@ -6,8 +6,11 @@
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
-- Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap, Freemap Slovakia
-  a Thunderforest, zobrazují se vpravo dole v mapě.
+- Uživatelské mapy: vlastní mapové podklady ze souboru
+  `uzivatelske-mapy.properties` vedle `geokuk.jar`, v menu Mapy ve
+  skupině „Uživatelské mapy“.
+- Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap a Freemap Slovakia,
+  zobrazují se vpravo dole v mapě.
 - „Zadat problém“ a nové tlačítko „Nahlásit na GitHubu“ v „Informace
   pro hlášení chyby“ otevřou nové issue s předvyplněnými informacemi
   o programu.
@@ -19,6 +22,8 @@
   do cache.
 
 ### Odstraněno
+- Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
+  mapu s vlastním klíčem, příklad je v `priklady/uzivatelske-mapy.properties`.
 - Položka nápovědy „Zprávy uživatelům“, která neměla odkud zprávy brát.
 - Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu
   Mapy.cz.
