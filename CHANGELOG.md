@@ -6,6 +6,7 @@
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
+- Vpravo dole v mapě je uvedený autor mapového podkladu.
 
 ### Opravy
 - OpenStreetMap se načítá přes https.

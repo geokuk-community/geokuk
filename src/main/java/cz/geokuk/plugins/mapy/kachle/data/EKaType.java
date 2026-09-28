@@ -127,6 +127,22 @@ public enum EKaType {
 		return popis;
 	}
 
+	/** Text, který podmínky poskytovatele vyžadují zobrazit u mapy. */
+	public String getAtribuce() {
+		if (urlBuilder instanceof MapyCzUrlBuilder) {
+			return "© Seznam.cz, a.s. a další";
+		}
+		switch (this) {
+		case OPEN_CYKLO:
+			return "Mapa © Thunderforest, data © přispěvatelé OpenStreetMap";
+		case TUR_FREEMAP_SK_T:
+		case TUR_FREEMAP_SK_F:
+			return "© Freemap Slovakia, data © přispěvatelé OpenStreetMap";
+		default:
+			return "© přispěvatelé OpenStreetMap";
+		}
+	}
+
 	public KachleUrlBuilder getUrlBuilder() {
 		return urlBuilder;
 	}
