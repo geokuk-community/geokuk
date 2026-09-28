@@ -575,12 +575,13 @@ public class MyPreferences extends Preferences {
 
 	@Override
 	public void put(final String key, final String value) {
-		if (key.matches(PART_PATTERN + "[0-9]+")) {
+		if (key.matches(".*" + PART_PATTERN + "[0-9]+")) {
 			throw new IllegalArgumentException("Unable to insert a key with name " + key + "! This" + "key name is reserved for multi-part values");
 		}
 		if (value == null) {
 			put(key, NULL);
 		} else {
+			odstranPokracovani(key);
 			if (value.length() <= Preferences.MAX_VALUE_LENGTH) {
 				pref.put(key, value);
 			} else {
@@ -747,6 +748,14 @@ public class MyPreferences extends Preferences {
 	@Override
 	public void remove(final String key) {
 		pref.remove(key);
+		odstranPokracovani(key);
+	}
+
+	/** Smaže pokračování dřívější dlouhé hodnoty, jinak by je get přilepil k nové. */
+	private void odstranPokracovani(final String key) {
+		for (int part = 0; pref.get(key + String.format(NUMBERED_PART_PATTERN, part), null) != null; part++) {
+			pref.remove(key + String.format(NUMBERED_PART_PATTERN, part));
+		}
 	}
 
 	@Override
