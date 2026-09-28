@@ -16,8 +16,8 @@ Navazuje na verzi 5.1.1c Jiřího Bílka.
 ### Změny
 - Nápověda → „Informace pro hlášení chyby“ ukáže verzi, prostředí,
   poslední události a chyby a umí je zkopírovat do schránky. Testovací
-  a vývojová verze má číslo trvale vpravo v menu, kliknutím se otevře
-  totéž.
+  a vývojová verze i instalace s beta kanálem má číslo trvale vpravo
+  v menu, kliknutím se otevře totéž.
 - Ve Windows Geokuk vedle sebe vytvoří spouštěč `geokuk.cmd`, pokud
   chybí. Novou verzi Geokuk stáhne a spouštěč ji při dalším spuštění
   nainstaluje. Předchozí verze zůstane jako
