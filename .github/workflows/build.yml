@@ -31,7 +31,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: geokuk-jar
-          path: target/geokuk-*.jar
+          path: |
+            target/geokuk-*.jar
+            dist/geokuk.cmd
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -44,7 +46,17 @@ jobs:
         with:
           name: geokuk-jar
 
+      - name: Soubory pro stažení a aktualizaci
+        run: |
+          VERZE="${GITHUB_REF_NAME#v}"
+          mv "target/geokuk-$VERZE.jar" geokuk.jar
+          mv dist/geokuk.cmd geokuk.cmd
+          sha256sum geokuk.jar > geokuk.jar.sha256
+
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: geokuk-*.jar
+          files: |
+            geokuk.jar
+            geokuk.jar.sha256
+            geokuk.cmd

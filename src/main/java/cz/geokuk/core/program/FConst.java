@@ -1,9 +1,6 @@
 package cz.geokuk.core.program;
 
 import java.io.File;
-import java.net.URL;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.jcabi.manifests.Manifests;
 
@@ -29,6 +26,7 @@ public class FConst {
 
 	public static final String LATEST_RELEASE_URL = "https://github.com/geokuk-community/geokuk/releases/latest";
 	public static final String LATEST_RELEASE_API_URL = "https://api.github.com/repos/geokuk-community/geokuk/releases/latest";
+	public static final String RELEASE_DOWNLOAD_URL = "https://github.com/geokuk-community/geokuk/releases/download/";
 	public static final String POST_PROBLEM_URL = "https://github.com/geokuk-community/geokuk/issues/new";
 
 	public static final String WEB_PAGE_URL = "https://github.com/geokuk-community/geokuk";
@@ -39,21 +37,10 @@ public class FConst {
 
 	public static final File HOME_DIR = new File(System.getProperty("user.home"));
 
-	private static final URL zarazkatxt;
-
 	static {
-		final String ZARAZKA_TXT = "zarazka.txt";
-		zarazkatxt = FConst.class.getClassLoader().getResource(ZARAZKA_TXT);
-		final String s = zarazkatxt.toExternalForm();
-		final Pattern pat1 = Pattern.compile("jar:file:/(.*)!/geokuk/" + ZARAZKA_TXT);
-		final Pattern pat2 = Pattern.compile("file:/(.*)/geokuk/" + ZARAZKA_TXT);
-		final Matcher mat1 = pat1.matcher(s);
-		final Matcher mat2 = pat2.matcher(s);
-		if (mat1.matches()) { // je to z jaru
-			JAR_DIR = new File(mat1.group(1)).getParentFile();
-			JAR_DIR_EXISTUJE = true;
-		} else if (mat2.matches()) {
-			JAR_DIR = new File(mat2.group(1));
+		final File umisteni = umisteniTrid();
+		if (umisteni != null && umisteni.isFile()) { // je to z jaru
+			JAR_DIR = umisteni.getParentFile();
 			JAR_DIR_EXISTUJE = true;
 		} else {
 			JAR_DIR = new File("").getAbsoluteFile();
@@ -78,6 +65,15 @@ public class FConst {
 	}
 
 	public static final String NL = System.getProperty("line.separator");
+
+	private static File umisteniTrid() {
+		try {
+			return new File(FConst.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+		} catch (final Exception e) {
+			log.warn("Nelze zjistit umístění programu.", e);
+			return null;
+		}
+	}
 
 	public static void logInit() {
 		log.info("GEOKUK " + VERSION);
