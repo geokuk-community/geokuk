@@ -8,6 +8,8 @@
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
 
 ### Opravy
+- Stahování mapových dlaždic se všem serverům představuje jako Geokuk
+  s verzí a odkazem na web.
 - OpenStreetMap se načítá přes https.
 
 ### Odstraněno

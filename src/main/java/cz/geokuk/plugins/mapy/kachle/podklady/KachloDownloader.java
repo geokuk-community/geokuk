@@ -17,6 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class KachloDownloader {
 
+	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
+	static final String USER_AGENT = "Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")";
+
 	/**
 	 * Nepřejmenovávat hodnoty, odvozuje se z něj název resourcu
 	 */
@@ -47,13 +50,10 @@ public class KachloDownloader {
 		// }
 
 		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+		conn.setRequestProperty("User-Agent", USER_AGENT);
 		if (url.getHost().endsWith("mapy.cz")) {
 			// Pro mapy.cz je nutný referer, jinak se vrací 403
 			conn.setRequestProperty("Referer", "https://en.mapy.com/");
-		}
-		else if (url.getHost().endsWith("openstreetmap.org")) {
-			// Pravidla OSM vyžadují User-Agent, který program jednoznačně identifikuje.
-			conn.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")");
 		}
 
 		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
