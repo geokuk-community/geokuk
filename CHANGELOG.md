@@ -7,6 +7,13 @@
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
 
+### Opravy
+- OpenStreetMap se načítá přes https.
+
+### Odstraněno
+- Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu
+  Mapy.cz.
+
 ### Vývoj
 - Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
   sqlite-jdbc 3.41.2.2, metadata-extractor 2.18.0, v testech logback

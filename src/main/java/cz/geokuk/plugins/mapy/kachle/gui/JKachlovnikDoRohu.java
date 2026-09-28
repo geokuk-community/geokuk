@@ -14,8 +14,7 @@ public class JKachlovnikDoRohu extends JKachlovnik {
 	@Override
 	public void setKachloType(final EKaType aKachloSet) {
 		// nehezké takto přepsat metodu
-//		super.setKachloType(EKaType.OPHOTO_M);
-		super.setKachloType(EKaType.OPHOTO_GOOGLE);
+		super.setKachloType(EKaType.OPHOTO_M);
 	}
 
 }
