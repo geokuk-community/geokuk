@@ -8,7 +8,8 @@
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
 
 ### Opravy
-- OpenStreetMap se načítá přes https.
+- OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
+  do cache.
 
 ### Odstraněno
 - Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu

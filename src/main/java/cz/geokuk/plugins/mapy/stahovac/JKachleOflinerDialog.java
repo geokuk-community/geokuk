@@ -202,6 +202,11 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 	}
 
 	private void nastavCudl(final int pocetDlazdic) {
+		if (!totoSeTaha.katype.isHromadneStahovaniPovoleno()) {
+			spustit.setEnabled(false);
+			spustit.setText("Mapu " + totoSeTaha.katype.getNazev() + " nelze stahovat hromadně");
+			return;
+		}
 		final boolean b = pocetDlazdic > 0 && pocetDlazdic <= LIMIT_DLAZDIC;
 		spustit.setEnabled(b);
 		if (b) {
