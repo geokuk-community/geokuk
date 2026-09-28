@@ -6,6 +6,11 @@
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze.
 
+### Vývoj
+- Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
+  sqlite-jdbc 3.41.2.2, metadata-extractor 2.18.0, v testech logback
+  1.2.13 a junit 4.13.1.
+
 ## 6.0.0
 
 Navazuje na verzi 5.1.1c Jiřího Bílka.
