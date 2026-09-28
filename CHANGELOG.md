@@ -11,6 +11,7 @@
 - OpenStreetMap se načítá přes https.
 
 ### Odstraněno
+- Položka nápovědy „Zprávy uživatelům“, která neměla odkud zprávy brát.
 - Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu
   Mapy.cz.
 
