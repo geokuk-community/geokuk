@@ -26,7 +26,12 @@ jobs:
 
       - name: Build a testy
         run: |
-          ./mvnw -B clean package
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            VERZE="${GITHUB_REF_NAME#v}"
+          else
+            VERZE="$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)-dev.$GITHUB_RUN_NUMBER"
+          fi
+          ./mvnw -B clean package -Dgeokuk.version="$VERZE" -Dgeokuk.commit="${GITHUB_SHA::7}"
           mv target/geokuk-*.jar target/geokuk.jar
 
       - name: Jar jako artefakt
@@ -54,6 +59,7 @@ jobs:
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             geokuk.jar
             geokuk.jar.sha256
