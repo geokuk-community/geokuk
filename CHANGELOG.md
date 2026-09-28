@@ -18,6 +18,9 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Načítání keší potřebuje zhruba polovinu paměti, 40 tisíc keší se
+  vejde do 128 MB. Hodnocení, známka, BestOf, favority, nadmořská výška
+  a vlastní hodnoty z databáze GeoGetu a GSAK se přenesou ke keším.
 - Stahování mapových dlaždic se všem serverům představuje jako Geokuk
   s verzí a odkazem na web.
 - OpenStreetMap se načítá přes https.

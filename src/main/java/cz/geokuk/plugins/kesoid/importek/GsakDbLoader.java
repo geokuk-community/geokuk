@@ -61,9 +61,10 @@ public class GsakDbLoader extends Nacitac0 {
 			}
 			final int pocet = dao.cacheCount() * PROGRESS_VAHA_CACHES + dao.waypointCount() * PROGRESS_VAHA_WAYPOINTS + dao.tagCount() * PROGRESS_VAHA_TAGS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + aDbFile.toString());
-			loadCaches(dao, aBuilder, aFuture, progressor);
+			// Vlastní hodnoty před kešemi, keš si je přebírá už při přidání.
+			final Map<String, Map<String, String>> vlastniHodnoty = loadCustomValues(dao, aFuture, progressor);
+			loadCaches(dao, aBuilder, vlastniHodnoty, aFuture, progressor);
 			loadWaypoints(dao, aBuilder, aFuture, progressor);
-			loadCustomValues(dao, aBuilder, aFuture, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
 			if (e.getMessage().contains("no such collation sequence:")) {
@@ -97,7 +98,8 @@ public class GsakDbLoader extends Nacitac0 {
 
 	//------------------------------------------------------------------------------------------------------  implementation  -----
 
-	private void loadCaches(final GsakDao aDao, final IImportBuilder aBuilder, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {
+	private void loadCaches(final GsakDao aDao, final IImportBuilder aBuilder, final Map<String, Map<String, String>> aVlastniHodnoty, final Future<?> aFuture, final Progressor aProgressor)
+			throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
 		final Counter čítač = new Counter();
 
@@ -159,6 +161,10 @@ public class GsakDbLoader extends Nacitac0 {
 				//                gpxWpt.gpxg.hodnoceniPocet = ???;
 				//                gpxWpt.gpxg.znamka = ???;
 			}
+			final Map<String, String> vlastni = aVlastniHodnoty.get(record.Code);
+			if (vlastni != null) {
+				prevezmiVlastniHodnoty(vlastni, cache);
+			}
 			aBuilder.addGpxWpt(cache);
 			//
 			// Corrected Coordinates:
@@ -208,36 +214,35 @@ public class GsakDbLoader extends Nacitac0 {
 		logResult("Custom Values", startTime, čítač.getCount());
 	}
 
-	private void loadCustomValues(final GsakDao aDao, final IImportBuilder aBuilder, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {
+	private Map<String, Map<String, String>> loadCustomValues(final GsakDao aDao, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
 		final Counter čítač = new Counter();
+		final Map<String, Map<String, String>> vysledek = new HashMap<>();
 
 		aDao.forEachCustomValue(record -> {
 			if (isCancelled(aFuture)) {
 				return false;
 			}
 			aProgressor.addProgress(PROGRESS_VAHA_TAGS);
-			//
-			final GpxWpt cache = aBuilder.get(record.get(GsakDao.CACHE_CODE_KEY));
-			if (cache == null) {
-				// Nějaká nekonzistence databáze, custom hodnoty existují, ale keš k nim ne. Asi se to někdy GSAK stane.
-				return true;
-			}
-			record.entrySet().stream().forEach(e -> cache.gpxg.putUserTag(e.getKey(), Objects.toString(e.getValue())));
-			//
-			if (!StringUtils.isBlank(cache.gpxg.found) && !cache.gpxg.found.contains("T")) {
-				final String time = _getFoundByMeTimeField(record);
-				if (!StringUtils.isBlank(time)) {
-					cache.gpxg.found += "T" + time;
-				}
-			}
-			//
+			vysledek.put(record.get(GsakDao.CACHE_CODE_KEY), record);
 			čítač.inc();
 			return true;
 		});
 
 		aProgressor.finish();
 		logResult("Custom Values", startTime, čítač.getCount());
+		return vysledek;
+	}
+
+	private void prevezmiVlastniHodnoty(final Map<String, String> record, final GpxWpt cache) {
+		record.entrySet().stream().forEach(e -> cache.gpxg.putUserTag(e.getKey(), Objects.toString(e.getValue())));
+		//
+		if (!StringUtils.isBlank(cache.gpxg.found) && !cache.gpxg.found.contains("T")) {
+			final String time = _getFoundByMeTimeField(record);
+			if (!StringUtils.isBlank(time)) {
+				cache.gpxg.found += "T" + time;
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------------------  utility  -----
