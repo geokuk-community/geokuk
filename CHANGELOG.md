@@ -18,6 +18,7 @@
 - Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
   sqlite-jdbc 3.41.2.2, metadata-extractor 2.18.0, v testech logback
   1.2.13 a junit 4.13.1.
+- Popis vydání na GitHubu se bere z tohoto souboru.
 
 ## 6.0.0
 
