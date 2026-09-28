@@ -52,7 +52,6 @@ jobs:
           mv "target/geokuk-$VERZE.jar" geokuk.jar
           mv dist/geokuk.cmd geokuk.cmd
           sha256sum geokuk.jar > geokuk.jar.sha256
-          printf '%s' "$VERZE" > version.txt
 
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
@@ -61,4 +60,3 @@ jobs:
             geokuk.jar
             geokuk.jar.sha256
             geokuk.cmd
-            version.txt
