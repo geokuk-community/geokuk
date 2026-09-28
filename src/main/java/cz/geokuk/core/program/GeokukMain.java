@@ -10,6 +10,7 @@ import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.StahnoutAktualizaciSwingWorker;
 import cz.geokuk.core.profile.FPreferencesInNearFile;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.plugins.mapy.kachle.data.KonfiguraceMap;
 import cz.geokuk.util.exception.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +29,7 @@ public class GeokukMain {
 		FConst.logInit();
 		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi();
 		Diagnostika.sledujKliknuti();
+		new Thread(KonfiguraceMap::aktualizuj, "Konfigurace map").start();
 		log.info("Default character encoding: {}", Charset.defaultCharset());
 		nastavSkin();
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());

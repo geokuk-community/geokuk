@@ -6,6 +6,9 @@
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
+- Adresy a hlavičky mapových podkladů jsou v `mapy.properties`. Geokuk
+  si aktuální verzi stáhne při startu, vlastní úpravy jdou do
+  `mapy.properties` vedle `geokuk.jar`.
 
 ### Opravy
 - OpenStreetMap se načítá přes https.

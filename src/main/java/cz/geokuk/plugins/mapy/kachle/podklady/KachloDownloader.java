@@ -9,7 +9,7 @@ import java.util.EnumMap;
 
 import javax.imageio.ImageIO;
 
-import cz.geokuk.core.program.FConst;
+import cz.geokuk.plugins.mapy.kachle.data.KonfiguraceMap;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.PocitadloRoste;
 import lombok.extern.slf4j.Slf4j;
@@ -47,14 +47,7 @@ public class KachloDownloader {
 		// }
 
 		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-		if (url.getHost().endsWith("mapy.cz")) {
-			// Pro mapy.cz je nutný referer, jinak se vrací 403
-			conn.setRequestProperty("Referer", "https://en.mapy.com/");
-		}
-		else if (url.getHost().endsWith("openstreetmap.org")) {
-			// Pravidla OSM vyžadují User-Agent, který program jednoznačně identifikuje.
-			conn.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")");
-		}
+		KonfiguraceMap.hlavicky(url.getHost()).forEach(conn::setRequestProperty);
 
 		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
 		final Image img;

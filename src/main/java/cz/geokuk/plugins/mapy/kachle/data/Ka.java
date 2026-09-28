@@ -31,7 +31,7 @@ public class Ka {
 	/** Zbuilduje URL ke kachli 256*256 mapy */
 	public URL getUrl() {
 		try {
-			return type.getUrlBuilder().buildUrl(this);
+			return new URL(KonfiguraceMap.url(type, getLoc()));
 		} catch (final MalformedURLException e) {
 			// nemůže nastat
 			throw new RuntimeException(e);

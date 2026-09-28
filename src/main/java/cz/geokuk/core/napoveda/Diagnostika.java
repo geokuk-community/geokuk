@@ -12,6 +12,7 @@ import javax.swing.Action;
 import com.jcabi.manifests.Manifests;
 
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.plugins.mapy.kachle.data.KonfiguraceMap;
 import cz.geokuk.util.exception.FExceptionDumper;
 
 /**
@@ -101,6 +102,7 @@ public final class Diagnostika {
 		}
 		sb.append("Složka programu: ").append(bezDomova(FConst.JAR_DIR)).append(FConst.JAR_DIR_EXISTUJE ? "" : " (nerozpoznána)").append('\n');
 		sb.append("Spouštěč geokuk.cmd: ").append(ano(new File(FConst.JAR_DIR, "geokuk.cmd").exists())).append('\n');
+		sb.append("Konfigurace map: ").append(KonfiguraceMap.zdroj()).append('\n');
 		sb.append("Výpisy chyb: ").append(bezDomova(FExceptionDumper.getExcrepFolder())).append('\n');
 		sb.append("Běží: ").append((System.currentTimeMillis() - START) / 60000).append(" min\n");
 		vypis(sb, "Poslední události", udalosti);

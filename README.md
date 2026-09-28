@@ -24,6 +24,14 @@ potřebujete svůj upravený spouštěč, tak si ho prosím uložte pod jiným j
 
 Jinde stačí `java -jar geokuk.jar`.
 
+## Mapové podklady
+
+Adresy mapových dlaždic jsou v
+[`mapy.properties`](src/main/resources/mapy.properties). Geokuk si ho při
+startu stáhne z tohoto repozitáře, takže oprava zdroje map nečeká na novou
+verzi. Vlastní úpravy uložte do `mapy.properties` vedle `geokuk.jar`,
+jeho hodnoty mají přednost.
+
 ## Původ
 
 GeoKuk napsal Martin Veverka se spoluautory. Toto repo navazuje na jeho
