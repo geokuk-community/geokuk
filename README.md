@@ -18,8 +18,8 @@ Ke spuštění je potřeba Java 8 nebo novější.
 
 Ve Windows uložte `geokuk.jar` a `geokuk.cmd` do jedné složky a spouštějte
 `geokuk.cmd`. Když Geokuk najde novou verzi, stáhne ji a spouštěč ji při
-dalším spuštění nainstaluje. Aktualizace přepisuje jen `geokuk.cmd`, upravený
-spouštěč si uložte pod jiným jménem.
+dalším spuštění nainstaluje. Aktualizace přepisuje `geokuk.cmd`, pokud
+potřebujete svůj upravený spouštěč, tak si ho prosím uložte pod jiným jménem.
 
 Jinde stačí `java -jar geokuk.jar`.
 
