@@ -18,6 +18,9 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Stahování mapových dlaždic se všem serverům představuje jako Geokuk
+  s verzí a odkazem na web.
+- OpenStreetMap se načítá přes https.
 - OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
   do cache.
 
