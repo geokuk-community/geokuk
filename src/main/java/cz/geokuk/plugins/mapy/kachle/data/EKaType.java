@@ -127,7 +127,7 @@ public enum EKaType {
 		return popis;
 	}
 
-	/** Text, který podmínky poskytovatele vyžadují zobrazit u mapy. */
+	/** Atribuce zobrazená vpravo dole v mapě. */
 	public String getAtribuce() {
 		if (urlBuilder instanceof MapyCzUrlBuilder) {
 			return "© Seznam.cz, a.s. a další";
