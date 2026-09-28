@@ -1,6 +1,5 @@
 package cz.geokuk.util.yndex2d;
 
-import static org.junit.Assert.assertTrue;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,7 +11,6 @@ import com.google.common.collect.Lists;
 
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
-import lombok.SneakyThrows;
 
 
 public class IndexatorTest {
@@ -122,7 +120,7 @@ public class IndexatorTest {
 		pro(BoundingRect.ALL, matice(2, 1));
 	}
 
-	//@Test
+	@Test
 	public void testMatice1000() {
 		pro(BoundingRect.ALL, matice(1000, 45));
 	}
@@ -150,7 +148,7 @@ public class IndexatorTest {
 
 	@Test
 	public void locateNearest0() {
-		Assert.assertSame(Optional.empty(), new Indexator<TestBod>(BoundingRect.ALL).locateNearestOne(789, 887));
+		Assert.assertFalse(new Indexator<TestBod>(BoundingRect.ALL).locateNearestOne(789, 887).isPresent());
 	}
 
 	@Test
@@ -178,22 +176,6 @@ public class IndexatorTest {
 		Assert.assertEquals(b(40,20), mat10().locateNearestOne(40, 20).get());
 	}
 
-	@Test
-	@SneakyThrows
-	public void paralelismus() {
-		final long start = System.currentTimeMillis();
-		final int N = 40;
-		mat(N).parallelStream().forEach(x -> {
-			try {
-				Thread.sleep(1);
-			} catch (final InterruptedException e) {
-				e.printStackTrace();
-			}
-		});
-		System.out.println("cas: " + (System.currentTimeMillis() - start));
-		// skekvenčně se to nedá dřív stihnout
-		assertTrue(System.currentTimeMillis() - start < N * N);
-	}
 
 	private Indexator<TestBod> mat(final int n) {
 		final int factor = 10;

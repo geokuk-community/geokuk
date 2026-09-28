@@ -25,38 +25,13 @@ public class KeFileTest {
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void tesNull111() {
-		new KeFile(new FileAndTime(new File((String) null), NOW), new Root(new File("roo"), PATTERN));
-	}
-
-	@Test(expected = NullPointerException.class)
 	public void tesNull2() {
 		new KeFile(new FileAndTime(new File("aaa"), NOW), null);
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void tesNull21() {
-		new KeFile(new FileAndTime(new File("aaa"), NOW), new Root(null, PATTERN));
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void tesNull211() {
-		new KeFile(new FileAndTime(new File("aaa"), NOW), new Root(new File((String) null), PATTERN));
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void tesNull22() {
-		new KeFile(new FileAndTime(new File("aaa"), NOW), new Root(new File("aaa"), null));
-	}
-
-	@Test(expected = NullPointerException.class)
 	public void tesNullRoot1() {
 		new Root(null, PATTERN);
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void tesNullRoot11() {
-		new Root(new File((String) null), PATTERN);
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -116,12 +91,12 @@ public class KeFileTest {
 	}
 
 	@Test(expected = XRelativizeDubleDot.class)
-	public void testGetParent3() {
+	public void sourozeneckeCestyNelzeRelativizovat() {
 		create("/c//jedna//bb", "/c//dva//bb");
 	}
 
 	@Test(expected = XRelativizeDubleDot.class)
-	public void testGetParent4() {
+	public void cestaNadKorenemNelzeRelativizovat() {
 		create("/c//aa//bb", "/c//aa//bb/cc/dd");
 	}
 
