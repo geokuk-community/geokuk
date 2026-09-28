@@ -11,8 +11,6 @@
   skupině „Uživatelské mapy“.
 - Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap a Freemap Slovakia,
   zobrazují se vpravo dole v mapě.
-- Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap, Freemap Slovakia
-  a Thunderforest, zobrazují se vpravo dole v mapě.
 - „Zadat problém“ a nové tlačítko „Nahlásit na GitHubu“ v „Informace
   pro hlášení chyby“ otevřou nové issue s předvyplněnými informacemi
   o programu.
