@@ -1,5 +1,11 @@
 # Změny
 
+## 6.0.1
+
+### Změny
+- Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
+  trvale vpravo v menu i u ostré verze.
+
 ## 6.0.0
 
 Navazuje na verzi 5.1.1c Jiřího Bílka.

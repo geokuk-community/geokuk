@@ -252,7 +252,7 @@ public class Menu extends MenuStrujce {
 		separator();
 		item(akce.oProgramuAction);
 
-		if (Diagnostika.jeTestovaciVerze()) {
+		if (Diagnostika.zobrazovatVerzi()) {
 			menuBar.add(Box.createHorizontalGlue());
 			final JButton verze = new JButton(akce.diagnostikaAction);
 			verze.setText(Diagnostika.popisVerze());

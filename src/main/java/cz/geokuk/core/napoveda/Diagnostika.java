@@ -27,13 +27,19 @@ public final class Diagnostika {
 
 	public static final String COMMIT = Manifests.exists("Geokuk-Commit") ? Manifests.read("Geokuk-Commit") : "";
 
-	/** Verze s příponou (beta, vývojové sestavení) se ukazuje trvale v okně. */
-	public static boolean jeTestovaciVerze() {
-		return FConst.VERSION.contains("-");
+	/** Soubor beta vedle jaru zapne nabízení testovacích verzí. */
+	public static boolean betaKanal() {
+		return FConst.JAR_DIR_EXISTUJE && new File(FConst.JAR_DIR, "beta").exists();
+	}
+
+	/** Testovací verze a instalace s beta kanálem ukazují verzi trvale v okně. */
+	public static boolean zobrazovatVerzi() {
+		return FConst.VERSION.contains("-") || betaKanal();
 	}
 
 	public static String popisVerze() {
-		return COMMIT.isEmpty() ? FConst.VERSION : FConst.VERSION + " (" + COMMIT + ")";
+		final String verze = COMMIT.isEmpty() ? FConst.VERSION : FConst.VERSION + " (" + COMMIT + ")";
+		return betaKanal() ? verze + " · beta kanál" : verze;
 	}
 
 	public static void zaznamenej(final String udalost) {
@@ -85,7 +91,7 @@ public final class Diagnostika {
 		final Runtime runtime = Runtime.getRuntime();
 		final long mb = 1024 * 1024;
 		sb.append("Geokuk ").append(popisVerze()).append('\n');
-		sb.append("Beta kanál: ").append(ano(FConst.JAR_DIR_EXISTUJE && new File(FConst.JAR_DIR, "beta").exists())).append('\n');
+		sb.append("Beta kanál: ").append(ano(betaKanal())).append('\n');
 		sb.append("Java: ").append(System.getProperty("java.version")).append(" (").append(System.getProperty("java.vendor")).append(")\n");
 		sb.append("Systém: ").append(System.getProperty("os.name")).append(' ').append(System.getProperty("os.version")).append(' ').append(System.getProperty("os.arch")).append('\n');
 		sb.append("Paměť: ").append((runtime.totalMemory() - runtime.freeMemory()) / mb).append(" MB z max ").append(runtime.maxMemory() / mb).append(" MB\n");

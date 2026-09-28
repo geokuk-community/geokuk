@@ -67,11 +67,6 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 		return nejnovejsi;
 	}
 
-	/** Soubor beta vedle jaru zapne nabízení testovacích verzí. */
-	private static boolean betaKanal() {
-		return FConst.JAR_DIR_EXISTUJE && new File(FConst.JAR_DIR, "beta").exists();
-	}
-
 	private static int[] cislaVerze(final String verze) {
 		return Arrays.stream(verze.split("\\D+")).filter(s -> !s.isEmpty()).mapToInt(Integer::parseInt).toArray();
 	}
@@ -79,7 +74,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 	@Override
 	protected ZpravyAVerze doInBackground() throws Exception {
 		try {
-			final URLConnection connection = new URL(betaKanal() ? FConst.RELEASES_API_URL : FConst.LATEST_RELEASE_API_URL).openConnection();
+			final URLConnection connection = new URL(Diagnostika.betaKanal() ? FConst.RELEASES_API_URL : FConst.LATEST_RELEASE_API_URL).openConnection();
 			connection.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")");
 			connection.setRequestProperty("Accept", "application/vnd.github+json");
 			connection.setConnectTimeout(60000);
@@ -90,7 +85,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 			}
 			final String lastVersion = nejnovejsiVerze(json);
 			log.info("Posledni verze: '" + lastVersion + "' ");
-			Diagnostika.zaznamenej("Kontrola aktualizací: poslední verze " + lastVersion + (betaKanal() ? " (beta kanál)" : ""));
+			Diagnostika.zaznamenej("Kontrola aktualizací: poslední verze " + lastVersion + (Diagnostika.betaKanal() ? " (beta kanál)" : ""));
 			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), lastVersion);
 		} catch (final IOException e) {
 			log.error("An error has occurred while retrieving the info!", e);
