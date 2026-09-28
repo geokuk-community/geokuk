@@ -10,6 +10,8 @@ Navazuje na verzi 5.1.1c Jiřího Bílka.
   monitorech.
 - Mapu nejde oddálit víc, než kolik program spolehlivě zvládne.
 - Mřížky se nezacyklí při přetočení mapy přes okraj světa.
+- Program spuštěný z jaru pozná svou složku, takže funguje nastavení
+  uložené u programu a cesty relativní k programu.
 
 ### Změny
 - Kontrola nové verze a stažení míří na GitHub Releases tohoto repa,
