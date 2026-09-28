@@ -19,7 +19,7 @@ public final class UzivatelskeMapy {
 
 	public static final String SOUBOR = "uzivatelske-mapy.properties";
 	static final String PREFIX = "user-";
-	private static final List<String> VLASTNOSTI = Arrays.asList("nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka");
+	private static final List<String> VLASTNOSTI = Arrays.asList("nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce");
 	private static final String HLAVICKA = "hlavicka.";
 	private static final int MAX_MERITKO = 22;
 
@@ -120,6 +120,7 @@ public final class UzivatelskeMapy {
 			}
 		});
 		return EKaType.uzivatelska(id, nazev, v.getOrDefault("popis", nazev), min, max, maxauto, klavesa.isEmpty() ? 0 : Character.toUpperCase(klavesa.charAt(0)), keyStroke, hlavicky,
+				v.getOrDefault("atribuce", ""),
 				new UzivatelskyUrlBuilder(url));
 	}
 

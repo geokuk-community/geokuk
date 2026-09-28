@@ -53,6 +53,7 @@ public final class EKaType {
 
 	private final String jmeno;
 	private Map<String, String> hlavicky = Collections.emptyMap();
+	private String atribuce = "";
 	private final int minMoumer;
 	private final int maxMoumer;
 	private final int maxAutoMoumer;
@@ -99,9 +100,10 @@ public final class EKaType {
 	}
 
 	static EKaType uzivatelska(final String id, final String nazev, final String popis, final int minMoumer, final int maxMoumer, final int maxAutoMoumer, final int klavesa,
-			final KeyStroke keyStroke, final Map<String, String> hlavicky, final KachleUrlBuilder urlBuilder) {
+			final KeyStroke keyStroke, final Map<String, String> hlavicky, final String atribuce, final KachleUrlBuilder urlBuilder) {
 		final EKaType mapa = new EKaType(UzivatelskeMapy.PREFIX + id, false, minMoumer, maxMoumer, maxAutoMoumer, nazev, popis, klavesa, keyStroke, urlBuilder);
 		mapa.hlavicky = Collections.unmodifiableMap(new TreeMap<>(hlavicky));
+		mapa.atribuce = atribuce;
 		return mapa;
 	}
 
@@ -180,6 +182,23 @@ public final class EKaType {
 
 	public String getPopis() {
 		return popis;
+	}
+
+	/** Atribuce zobrazená vpravo dole v mapě. */
+	public String getAtribuce() {
+		if (isUzivatelska()) {
+			return atribuce;
+		}
+		if (urlBuilder instanceof MapyCzUrlBuilder) {
+			return "© Seznam.cz, a.s. a další";
+		}
+		if (this == OPEN_CYKLO) {
+			return "Mapa © Thunderforest, data © přispěvatelé OpenStreetMap";
+		}
+		if (this == TUR_FREEMAP_SK_T || this == TUR_FREEMAP_SK_F) {
+			return "© Freemap Slovakia, data © přispěvatelé OpenStreetMap";
+		}
+		return "© přispěvatelé OpenStreetMap";
 	}
 
 	public KachleUrlBuilder getUrlBuilder() {

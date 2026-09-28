@@ -50,7 +50,7 @@ public class UzivatelskeMapyTest {
 	public void vseCoUmiVestavene() throws Exception {
 		final List<String> chyby = new ArrayList<>();
 		final List<EKaType> mapy = zpracuj("m.nazev=M\nm.url=http://mapserver.mapy.cz/x/{z}-{x}-{y}\nm.min=3\nm.max=19\nm.maxauto=17\nm.klavesa=u\nm.zkratka=ctrl U\n"
-				+ "m.hlavicka.Referer=https://mapy.com/\nm.hlavicka.User-Agent=Geokuk/{verze}\n", chyby);
+				+ "m.hlavicka.Referer=https://mapy.com/\nm.hlavicka.User-Agent=Geokuk/{verze}\nm.atribuce=© Autor\n", chyby);
 		Assert.assertEquals(Collections.emptyList(), chyby);
 		final EKaType m = mapy.get(0);
 		Assert.assertEquals(3, m.getMinMoumer());
@@ -59,6 +59,7 @@ public class UzivatelskeMapyTest {
 		Assert.assertEquals(KeyStroke.getKeyStroke("ctrl U"), m.getKeyStroke());
 		Assert.assertEquals("https://mapy.com/", m.getHlavicky().get("Referer"));
 		Assert.assertEquals("Geokuk/" + FConst.VERSION, m.getHlavicky().get("User-Agent"));
+		Assert.assertEquals("© Autor", m.getAtribuce());
 	}
 
 	@Test

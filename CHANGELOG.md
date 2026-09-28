@@ -9,6 +9,8 @@
 - Uživatelské mapy: vlastní mapové podklady ze souboru
   `uzivatelske-mapy.properties` vedle `geokuk.jar`, v menu Mapy ve
   skupině „Uživatelské mapy“.
+- Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap, Freemap Slovakia
+  a Thunderforest, zobrazují se vpravo dole v mapě.
 
 ### Opravy
 - OpenStreetMap se načítá přes https.
