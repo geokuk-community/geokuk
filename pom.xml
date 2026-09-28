@@ -51,6 +51,7 @@
 						</manifest>
 						<manifestEntries>
 							<Geokuk-Version>${geokuk.version}</Geokuk-Version>
+							<Geokuk-Commit>${geokuk.commit}</Geokuk-Commit>
 							<SplashScreen-Image>img/geokuk400.jpg</SplashScreen-Image>
 						</manifestEntries>
 					</archive>
@@ -166,5 +167,6 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<geokuk.version>${project.version}</geokuk.version>
+		<geokuk.commit></geokuk.commit>
 	</properties>
 </project>

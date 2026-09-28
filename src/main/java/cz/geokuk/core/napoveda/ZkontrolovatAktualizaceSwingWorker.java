@@ -90,9 +90,11 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 			}
 			final String lastVersion = nejnovejsiVerze(json);
 			log.info("Posledni verze: '" + lastVersion + "' ");
+			Diagnostika.zaznamenej("Kontrola aktualizací: poslední verze " + lastVersion + (betaKanal() ? " (beta kanál)" : ""));
 			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), lastVersion);
 		} catch (final IOException e) {
 			log.error("An error has occurred while retrieving the info!", e);
+			Diagnostika.zaznamenej("Kontrola aktualizací selhala: " + e);
 			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), null);
 		}
 	}

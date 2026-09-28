@@ -6,6 +6,7 @@ import java.util.prefs.BackingStoreException;
 import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.lookandfeel.LafSupport;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.StahnoutAktualizaciSwingWorker;
 import cz.geokuk.core.profile.FPreferencesInNearFile;
 import cz.geokuk.framework.MyPreferences;
@@ -26,6 +27,7 @@ public class GeokukMain {
 	public void execute(final String[] args) {
 		FConst.logInit();
 		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi();
+		Diagnostika.sledujKliknuti();
 		log.info("Default character encoding: {}", Charset.defaultCharset());
 		nastavSkin();
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());

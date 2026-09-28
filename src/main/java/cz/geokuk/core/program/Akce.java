@@ -109,6 +109,7 @@ public class Akce {
 
 	public final NapovedaAction napovedaAction = new NapovedaAction(null);
 	public final ZadatProblemAction zadatProblemAction = new ZadatProblemAction();
+	public final DiagnostikaAction diagnostikaAction = new DiagnostikaAction();
 
 	public final OtevriAction nactiAction = new OtevriAction();
 	public final UlozAction ulozAction = new UlozAction();

@@ -114,9 +114,11 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 	protected void donex() throws Exception {
 		try {
 			get();
+			Diagnostika.zaznamenej("Stažena verze " + verze);
 			Dlg.info("Verze " + verze + " je stažená. Nainstaluje se, až Geokuk ukončíte a spustíte znovu přes " + new File(FConst.JAR_DIR, SPOUSTEC) + ".", "Aktualizace");
 		} catch (final ExecutionException e) {
 			log.error("Stažení aktualizace selhalo.", e.getCause());
+			Diagnostika.zaznamenej("Stažení verze " + verze + " selhalo: " + e.getCause());
 			Dlg.error("Novou verzi se nepodařilo stáhnout: " + e.getCause().getMessage() + "\nStáhněte ji ručně z " + FConst.LATEST_RELEASE_URL);
 		}
 	}

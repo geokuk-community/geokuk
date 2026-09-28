@@ -3,6 +3,7 @@ package cz.geokuk.util.exception;
 import java.io.*;
 import java.net.URL;
 
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.util.file.TPumpReaderToWriter;
 import cz.geokuk.util.lang.FThrowable;
 import cz.geokuk.util.lang.StringUtils;
@@ -38,6 +39,7 @@ public final class FExceptionDumper {
 	 */
 	public static AExcId dump(final Throwable aThrowable, final EExceptionSeverity aExceptionSeverity, final String aCircumstance) {
 		final AExcId excid = getExceptionDumper().dump(aThrowable, aExceptionSeverity, aCircumstance, getDefaultRepository());
+		Diagnostika.zaznamenejChybu(excid + ": " + aCircumstance + ": " + aThrowable);
 		if (aExceptionSeverity == EExceptionSeverity.DISPLAY || aExceptionSeverity == EExceptionSeverity.WORKARROUND) {
 			FError.report(aThrowable.getMessage(), excid);
 		}
@@ -179,7 +181,7 @@ public final class FExceptionDumper {
 	 *
 	 * @since [2009-04-30 12:58, roztocil]
 	 */
-	private static File getExcrepFolder() {
+	public static File getExcrepFolder() {
 		File result;
 		// Nejprve zkusíme Systenm.properties - dá se změnit zvnějšku, nejlepší kandidát na ad hoc změnu.
 		final String path = getExcrepPathViaSystemProperty();

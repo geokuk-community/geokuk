@@ -1,11 +1,13 @@
 package cz.geokuk.core.program;
 
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.util.List;
 
 import javax.swing.*;
 
 import cz.geokuk.core.lookandfeel.LafSupport;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.plugins.kesoid.kind.kes.*;
 import cz.geokuk.plugins.kesoid.mapicon.JMenuIkony;
 import cz.geokuk.plugins.kesoid.mvc.JVybiracVyletu;
@@ -244,10 +246,23 @@ public class Menu extends MenuStrujce {
 		item(akce.napovedaAction);
 		item(akce.webovaStrankaAction);
 		item(akce.zadatProblemAction);
+		item(akce.diagnostikaAction);
 		item(akce.zkontrolovatAktualizaceAction);
 		item(akce.zpravyUzivatelumAction);
 		separator();
 		item(akce.oProgramuAction);
+
+		if (Diagnostika.jeTestovaciVerze()) {
+			menuBar.add(Box.createHorizontalGlue());
+			final JButton verze = new JButton(akce.diagnostikaAction);
+			verze.setText(Diagnostika.popisVerze());
+			verze.setIcon(null);
+			verze.setForeground(new Color(0xC0, 0x50, 0x00));
+			verze.setBorderPainted(false);
+			verze.setContentAreaFilled(false);
+			verze.setFocusable(false);
+			menuBar.add(verze);
+		}
 
 		tb.addSeparator();
 		tb.addOvladaceAlel();
