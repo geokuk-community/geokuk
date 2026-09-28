@@ -127,6 +127,23 @@ public enum EKaType {
 		return popis;
 	}
 
+	/** Atribuce zobrazená vpravo dole v mapě. */
+	public String getAtribuce() {
+		if (urlBuilder instanceof MapyCzUrlBuilder) {
+			return "© Seznam.cz, a.s. a další";
+		}
+		switch (this) {
+		case OPEN_CYKLO:
+			return "Maps © Thunderforest, Data © OpenStreetMap contributors";
+		case TUR_FREEMAP_SK_T:
+			return "© Freemap Slovakia, © OpenStreetMap contributors";
+		case TUR_FREEMAP_SK_F:
+			return "© GKÚ, NLC, © ČÚZK";
+		default:
+			return "© OpenStreetMap contributors";
+		}
+	}
+
 	public KachleUrlBuilder getUrlBuilder() {
 		return urlBuilder;
 	}
