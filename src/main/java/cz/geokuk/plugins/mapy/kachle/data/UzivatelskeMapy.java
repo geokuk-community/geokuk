@@ -19,7 +19,7 @@ public final class UzivatelskeMapy {
 
 	public static final String SOUBOR = "uzivatelske-mapy.properties";
 	static final String PREFIX = "user-";
-	private static final List<String> VLASTNOSTI = Arrays.asList("nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce");
+	private static final List<String> VLASTNOSTI = Arrays.asList("nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce", "hromadne");
 	private static final String HLAVICKA = "hlavicka.";
 	private static final int MAX_MERITKO = 22;
 
@@ -116,6 +116,11 @@ public final class UzivatelskeMapy {
 				return null;
 			}
 		}
+		final String hromadne = v.getOrDefault("hromadne", "ne");
+		if (!hromadne.equals("ano") && !hromadne.equals("ne")) {
+			chyby.add(id + ".hromadne musí být ano, nebo ne");
+			return null;
+		}
 		final Map<String, String> hlavicky = new TreeMap<>();
 		v.forEach((vlastnost, hodnota) -> {
 			if (vlastnost.startsWith(HLAVICKA)) {
@@ -123,7 +128,7 @@ public final class UzivatelskeMapy {
 			}
 		});
 		return EKaType.uzivatelska(id, nazev, v.getOrDefault("popis", nazev), min, max, maxauto, klavesa.isEmpty() ? 0 : Character.toUpperCase(klavesa.charAt(0)), keyStroke, hlavicky,
-				v.getOrDefault("atribuce", ""),
+				v.getOrDefault("atribuce", ""), hromadne.equals("ano"),
 				new UzivatelskyUrlBuilder(url));
 	}
 

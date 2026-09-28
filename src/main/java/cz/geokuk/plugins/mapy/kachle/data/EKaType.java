@@ -39,11 +39,7 @@ public final class EKaType {
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
-	// Použit testovací apikey
-	public static final EKaType OPEN_CYKLO = new EKaType("OPEN_CYKLO", false, 0, 22, 22, "Open cyclo", "Open cycle map", 0, null, new OpenStreatMapUrlBuilder("https://c.tile.thunderforest.com/cycle/",".png?apikey=6a53e8b25d114a5e9216df5bf9b5e9c8"));
-
-
-	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, OPEN_CYKLO));
+	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
 
 	// super("Turistické trasy");
@@ -54,6 +50,7 @@ public final class EKaType {
 	private final String jmeno;
 	private Map<String, String> hlavicky = Collections.emptyMap();
 	private String atribuce = "";
+	private boolean hromadne;
 	private final int minMoumer;
 	private final int maxMoumer;
 	private final int maxAutoMoumer;
@@ -100,10 +97,11 @@ public final class EKaType {
 	}
 
 	static EKaType uzivatelska(final String id, final String nazev, final String popis, final int minMoumer, final int maxMoumer, final int maxAutoMoumer, final int klavesa,
-			final KeyStroke keyStroke, final Map<String, String> hlavicky, final String atribuce, final KachleUrlBuilder urlBuilder) {
+			final KeyStroke keyStroke, final Map<String, String> hlavicky, final String atribuce, final boolean hromadne, final KachleUrlBuilder urlBuilder) {
 		final EKaType mapa = new EKaType(UzivatelskeMapy.PREFIX + id, false, minMoumer, maxMoumer, maxAutoMoumer, nazev, popis, klavesa, keyStroke, urlBuilder);
 		mapa.hlavicky = Collections.unmodifiableMap(new TreeMap<>(hlavicky));
 		mapa.atribuce = atribuce;
+		mapa.hromadne = hromadne;
 		return mapa;
 	}
 
@@ -196,13 +194,15 @@ public final class EKaType {
 		if (urlBuilder instanceof MapyCzUrlBuilder) {
 			return "© Seznam.cz, a.s. a další";
 		}
-		if (this == OPEN_CYKLO) {
-			return "Mapa © Thunderforest, data © přispěvatelé OpenStreetMap";
-		}
 		if (this == TUR_FREEMAP_SK_T || this == TUR_FREEMAP_SK_F) {
 			return "© Freemap Slovakia, data © přispěvatelé OpenStreetMap";
 		}
 		return "© přispěvatelé OpenStreetMap";
+	}
+
+	/** OpenStreetMap hromadné stahování dlaždic nepovoluje, uživatelské mapy jen když to uživatel zapne. */
+	public boolean isHromadneStahovaniPovoleno() {
+		return isUzivatelska() ? hromadne : this != OPEN_STREET;
 	}
 
 	public KachleUrlBuilder getUrlBuilder() {

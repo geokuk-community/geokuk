@@ -73,12 +73,13 @@ public class UzivatelskeMapyTest {
 		Assert.assertNull(m.getKeyStroke());
 		Assert.assertTrue(m.getHlavicky().isEmpty());
 		Assert.assertEquals("", m.getAtribuce());
+		Assert.assertFalse(m.isHromadneStahovaniPovoleno());
 	}
 
 	@Test
 	public void vsechnyVlastnosti() throws Exception {
 		final EKaType m = jedna("m.nazev=Moje mapa", "m.url=http://mapserver.mapy.cz/x/{z}-{x}-{y}", "m.popis=Popis v nápovědě", "m.min=3", "m.max=19", "m.maxauto=17",
-				"m.klavesa=u", "m.zkratka=ctrl U", "m.atribuce=© Autor", "m.hlavicka.Referer=https://mapy.com/", "m.hlavicka.User-Agent=Geokuk/{verze} (test)");
+				"m.klavesa=u", "m.zkratka=ctrl U", "m.atribuce=© Autor", "m.hromadne=ano", "m.hlavicka.Referer=https://mapy.com/", "m.hlavicka.User-Agent=Geokuk/{verze} (test)");
 		Assert.assertEquals("Moje mapa", m.getNazev());
 		Assert.assertEquals("Popis v nápovědě", m.getPopis());
 		Assert.assertEquals(3, m.getMinMoumer());
@@ -90,6 +91,7 @@ public class UzivatelskeMapyTest {
 		Assert.assertEquals("https://mapy.com/", m.getHlavicky().get("Referer"));
 		Assert.assertEquals("Geokuk/" + FConst.VERSION + " (test)", m.getHlavicky().get("User-Agent"));
 		Assert.assertEquals(2, m.getHlavicky().size());
+		Assert.assertTrue(m.isHromadneStahovaniPovoleno());
 	}
 
 	@Test
@@ -256,6 +258,12 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void hromadneJenAnoNeboNe() throws Exception {
+		Assert.assertFalse(jedna("m.nazev=M", "m.url=" + URL, "m.hromadne=ne").isHromadneStahovaniPovoleno());
+		chyba("hromadne", "n.nazev=N", "n.url=" + URL, "n.hromadne=true");
+	}
+
+	@Test
 	public void platneZkratky() throws Exception {
 		Assert.assertEquals(KeyStroke.getKeyStroke('u'), jedna("m.nazev=M", "m.url=" + URL, "m.zkratka=u").getKeyStroke());
 		Assert.assertEquals(KeyStroke.getKeyStroke("F5"), jedna("n.nazev=N", "n.url=" + URL, "n.zkratka=F5").getKeyStroke());
@@ -329,6 +337,14 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void vestaveneMapyNemajiVAdreseKlic() throws Exception {
+		for (final EKaType ka : EKaType.vestavene()) {
+			final String url = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 10), ka).getUrl().toString();
+			Assert.assertFalse(url, url.toLowerCase().contains("key"));
+		}
+	}
+
+	@Test
 	public void vestaveneNejsouUzivatelske() {
 		for (final EKaType ka : EKaType.vestavene()) {
 			Assert.assertFalse(ka.name(), ka.isUzivatelska());
@@ -391,7 +407,7 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void prikladPopisujeVsechnyVlastnosti() throws Exception {
 		final String priklad = new String(Files.readAllBytes(Paths.get("priklady", UzivatelskeMapy.SOUBOR)), StandardCharsets.UTF_8);
-		for (final String vlastnost : new String[] { "nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce", "hlavicka" }) {
+		for (final String vlastnost : new String[] { "nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce", "hromadne", "hlavicka" }) {
 			Assert.assertTrue(vlastnost, priklad.contains("<označení>." + vlastnost));
 		}
 	}
