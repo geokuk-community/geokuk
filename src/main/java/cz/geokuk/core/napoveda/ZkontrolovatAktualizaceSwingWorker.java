@@ -92,7 +92,11 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 				zobrazitWeb();
 				break;
 			case 1:
-				stahnoutJar();
+				if (StahnoutAktualizaciSwingWorker.lzeInstalovat()) {
+					new StahnoutAktualizaciSwingWorker(vysledek.lastVersion).execute();
+				} else {
+					stahnoutJar();
+				}
 				break;
 			default:
 				napovedaModel.odlozKontroluAktualizaci(30L);

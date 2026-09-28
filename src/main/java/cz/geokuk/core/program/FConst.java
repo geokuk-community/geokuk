@@ -26,6 +26,7 @@ public class FConst {
 
 	public static final String LATEST_RELEASE_URL = "https://github.com/geokuk-community/geokuk/releases/latest";
 	public static final String LATEST_RELEASE_API_URL = "https://api.github.com/repos/geokuk-community/geokuk/releases/latest";
+	public static final String RELEASE_DOWNLOAD_URL = "https://github.com/geokuk-community/geokuk/releases/download/";
 	public static final String POST_PROBLEM_URL = "https://github.com/geokuk-community/geokuk/issues/new";
 
 	public static final String WEB_PAGE_URL = "https://github.com/geokuk-community/geokuk";

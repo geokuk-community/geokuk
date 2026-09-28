@@ -14,6 +14,9 @@ Navazuje na verzi 5.1.1c Jiřího Bílka.
   uložené u programu a cesty relativní k programu.
 
 ### Změny
+- Ve Windows Geokuk novou verzi stáhne a spouštěč `geokuk.cmd` ji při
+  dalším spuštění nainstaluje. Předchozí verze zůstane jako
+  `geokuk.jar.bak`.
 - Kontrola nové verze a stažení míří na GitHub Releases tohoto repa,
   „Zadat problém“ a webová stránka programu na jeho GitHub.
 - V dialogu o nové verzi tlačítko „Připomenout za měsíc“ odloží další
@@ -24,4 +27,6 @@ Navazuje na verzi 5.1.1c Jiřího Bílka.
 
 ### Vývoj
 - Build na JDK 21 přes Maven Wrapper, CI na GitHub Actions.
+- Release obsahuje `geokuk.jar`, `geokuk.jar.sha256`, `geokuk.cmd`
+  a `version.txt`.
 - Odstraněn build přes Ant a NetBeans a zdroj webu geokuk.cz.
