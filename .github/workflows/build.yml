@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      verze:
+        description: "Vydat verzi (např. 6.0.1-beta.3), jen z main; prázdné = jen build"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -25,9 +30,14 @@ jobs:
           cache: maven
 
       - name: Build a testy
+        env:
+          VSTUP: ${{ inputs.verze }}
         run: |
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             VERZE="${GITHUB_REF_NAME#v}"
+          elif [ -n "$VSTUP" ]; then
+            echo "$VSTUP" | grep -qxE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || { echo "Neplatná verze: $VSTUP"; exit 1; }
+            VERZE="$VSTUP"
           else
             VERZE="$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)-dev.$GITHUB_RUN_NUMBER"
           fi
@@ -41,11 +51,13 @@ jobs:
           path: target/geokuk.jar
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (inputs.verze != '' && github.ref == 'refs/heads/main')
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', inputs.verze) }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -53,17 +65,19 @@ jobs:
 
       - name: Soubory pro stažení a aktualizaci
         run: |
-          unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${GITHUB_REF_NAME#v}"
+          unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${TAG#v}"
           sha256sum geokuk.jar > geokuk.jar.sha256
 
       # Release je neměnný, soubory jdou nahrát jen do konceptu před publikováním.
+      # Při ručním vydání vznikne tag na sestaveném commitu až publikováním.
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           PRE=""
-          case "$GITHUB_REF_NAME" in *-*) PRE="--prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" geokuk.jar geokuk.jar.sha256 \
-            --draft --verify-tag --title "$GITHUB_REF_NAME" --notes "" $PRE
-          gh release edit "$GITHUB_REF_NAME" --draft=false
+          case "$TAG" in *-*) PRE="--prerelease" ;; esac
+          if [ "$GITHUB_REF_TYPE" = tag ]; then CIL="--verify-tag"; else CIL="--target $GITHUB_SHA"; fi
+          gh release create "$TAG" geokuk.jar geokuk.jar.sha256 \
+            --draft $CIL --title "$TAG" --notes "" $PRE
+          gh release edit "$TAG" --draft=false
