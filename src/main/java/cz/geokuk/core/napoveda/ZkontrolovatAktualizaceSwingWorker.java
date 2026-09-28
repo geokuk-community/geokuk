@@ -29,18 +29,47 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 
 	/**
 	 * Porovná verze po číselných částech, písmena a jiné oddělovače ignoruje.
+	 * Testovací verze (s příponou za pomlčkou, např. 6.0.1-beta.2) je starší
+	 * než stejná verze bez přípony.
 	 */
 	static boolean jeNovejsi(final String verze, final String oproti) {
-		final int[] a = cislaVerze(verze);
-		final int[] b = cislaVerze(oproti);
+		final String[] a = verze.split("-", 2);
+		final String[] b = oproti.split("-", 2);
+		final int hlavni = porovnej(cislaVerze(a[0]), cislaVerze(b[0]));
+		if (hlavni != 0) {
+			return hlavni > 0;
+		}
+		if (a.length == 1 || b.length == 1) {
+			return a.length < b.length;
+		}
+		return porovnej(cislaVerze(a[1]), cislaVerze(b[1])) > 0;
+	}
+
+	private static int porovnej(final int[] a, final int[] b) {
 		for (int i = 0; i < Math.max(a.length, b.length); i++) {
 			final int x = i < a.length ? a[i] : 0;
 			final int y = i < b.length ? b[i] : 0;
 			if (x != y) {
-				return x > y;
+				return Integer.compare(x, y);
 			}
 		}
-		return false;
+		return 0;
+	}
+
+	static String nejnovejsiVerze(final String json) {
+		String nejnovejsi = null;
+		final Matcher matcher = TAG_NAME.matcher(json);
+		while (matcher.find()) {
+			if (nejnovejsi == null || jeNovejsi(matcher.group(1), nejnovejsi)) {
+				nejnovejsi = matcher.group(1);
+			}
+		}
+		return nejnovejsi;
+	}
+
+	/** Soubor beta vedle jaru zapne nabízení testovacích verzí. */
+	private static boolean betaKanal() {
+		return FConst.JAR_DIR_EXISTUJE && new File(FConst.JAR_DIR, "beta").exists();
 	}
 
 	private static int[] cislaVerze(final String verze) {
@@ -50,7 +79,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 	@Override
 	protected ZpravyAVerze doInBackground() throws Exception {
 		try {
-			final URLConnection connection = new URL(FConst.LATEST_RELEASE_API_URL).openConnection();
+			final URLConnection connection = new URL(betaKanal() ? FConst.RELEASES_API_URL : FConst.LATEST_RELEASE_API_URL).openConnection();
 			connection.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")");
 			connection.setRequestProperty("Accept", "application/vnd.github+json");
 			connection.setConnectTimeout(60000);
@@ -59,8 +88,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<ZpravyAVe
 			try (Scanner sc = new Scanner(connection.getInputStream(), "UTF-8").useDelimiter("\\A")) {
 				json = sc.hasNext() ? sc.next() : "";
 			}
-			final Matcher matcher = TAG_NAME.matcher(json);
-			final String lastVersion = matcher.find() ? matcher.group(1) : null;
+			final String lastVersion = nejnovejsiVerze(json);
 			log.info("Posledni verze: '" + lastVersion + "' ");
 			return new ZpravyAVerze(Collections.<ZpravaUzivateli> emptyList(), lastVersion);
 		} catch (final IOException e) {

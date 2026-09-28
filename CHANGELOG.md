@@ -28,5 +28,8 @@ Navazuje na verzi 5.1.1c Jiřího Bílka.
 
 ### Vývoj
 - Build na JDK 21 přes Maven Wrapper, CI na GitHub Actions.
-- Release obsahuje `geokuk.jar` a `geokuk.jar.sha256`.
+- Release obsahuje `geokuk.jar` a `geokuk.jar.sha256`. Verze v jaru
+  se bere z tagu; tag s příponou (`v6.0.1-beta.1`) vydá testovací verzi
+  jako pre-release. Geokuk ji nabídne, jen když vedle `geokuk.jar` leží
+  soubor `beta`.
 - Odstraněn build přes Ant a NetBeans a zdroj webu geokuk.cz.

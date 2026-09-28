@@ -50,7 +50,7 @@
 							<mainClass>cz.geokuk.core.program.GeokukMain</mainClass>
 						</manifest>
 						<manifestEntries>
-							<Geokuk-Version>${project.version}</Geokuk-Version>
+							<Geokuk-Version>${geokuk.version}</Geokuk-Version>
 							<SplashScreen-Image>img/geokuk400.jpg</SplashScreen-Image>
 						</manifestEntries>
 					</archive>
@@ -165,5 +165,6 @@
 	</dependencies>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<geokuk.version>${project.version}</geokuk.version>
 	</properties>
 </project>
