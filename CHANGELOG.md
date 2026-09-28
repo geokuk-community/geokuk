@@ -4,7 +4,8 @@
 
 ### Změny
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
-  trvale vpravo v menu i u ostré verze.
+  trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
+  nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
 
 ### Vývoj
 - Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
