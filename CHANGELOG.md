@@ -18,6 +18,8 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Cesta s názvem obsahujícím `&`, `<` nebo `%` se uloží a jde znovu
+  otevřít.
 - Dlouhé nastavení (seznamy souborů a podobně) po zkrácení nebo smazání
   nenechává zbytky, které se dřív přilepily k nové hodnotě.
 - Převod na UTM určuje správně pásmo, souřadnice na jižní polokouli

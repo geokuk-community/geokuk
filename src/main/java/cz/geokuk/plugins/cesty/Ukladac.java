@@ -3,6 +3,8 @@ package cz.geokuk.plugins.cesty;
 import java.io.*;
 import java.util.Locale;
 
+import com.google.common.xml.XmlEscapers;
+
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.cesty.data.*;
@@ -35,7 +37,7 @@ public class Ukladac {
 	private void uloz(final Cesta cesta) {
 		p("<trk>");
 		if (cesta.getNazev() != null) {
-			p("  <name>" + cesta.getNazev() + "</name>");
+			p("  <name>%s</name>", XmlEscapers.xmlContentEscaper().escape(cesta.getNazev()));
 		}
 		p("  <trkseg>");
 		for (final Bod b : cesta.getBody()) {
