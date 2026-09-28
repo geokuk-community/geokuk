@@ -56,10 +56,14 @@ jobs:
           unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${GITHUB_REF_NAME#v}"
           sha256sum geokuk.jar > geokuk.jar.sha256
 
+      # Release je neměnný, soubory jdou nahrát jen do konceptu před publikováním.
       - name: GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            geokuk.jar
-            geokuk.jar.sha256
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          PRE=""
+          case "$GITHUB_REF_NAME" in *-*) PRE="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" geokuk.jar geokuk.jar.sha256 \
+            --draft --verify-tag --title "$GITHUB_REF_NAME" --notes "" $PRE
+          gh release edit "$GITHUB_REF_NAME" --draft=false
