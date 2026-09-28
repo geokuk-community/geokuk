@@ -6,6 +6,8 @@
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
+- Program zapisuje log do `%TEMP%\geokuk\geokuk.log`. Cesta k němu
+  a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
 - OpenStreetMap se načítá přes https.
@@ -19,6 +21,7 @@
   sqlite-jdbc 3.41.2.2, metadata-extractor 2.18.0, v testech logback
   1.2.13 a junit 4.13.1.
 - Popis vydání na GitHubu se bere z tohoto souboru.
+- Program se vydává jen jako jar, konfigurace Launch4j je odstraněná.
 
 ## 6.0.0
 
