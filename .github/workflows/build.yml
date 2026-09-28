@@ -59,6 +59,11 @@ jobs:
     env:
       TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', inputs.verze) }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: CHANGELOG.md
+          sparse-checkout-cone-mode: false
+
       - uses: actions/download-artifact@v4
         with:
           name: geokuk-jar
@@ -67,6 +72,14 @@ jobs:
         run: |
           unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${TAG#v}"
           sha256sum geokuk.jar > geokuk.jar.sha256
+
+      # Popis vydání je oddíl CHANGELOG.md pro verzi bez přípony (6.0.1-beta.3 → 6.0.1).
+      - name: Popis vydání
+        run: |
+          VERZE="${TAG#v}"
+          awk -v z="## ${VERZE%%-*}" '$0==z{f=1;next} /^## /{f=0} f' CHANGELOG.md \
+            | perl -0pe 's/\n  +/ /g; s/\A\n+//' > popis.md
+          cat popis.md
 
       # Release je neměnný, soubory jdou nahrát jen do konceptu před publikováním.
       # Při ručním vydání vznikne tag na sestaveném commitu až publikováním.
@@ -79,5 +92,5 @@ jobs:
           case "$TAG" in *-*) PRE="--prerelease" ;; esac
           if [ "$GITHUB_REF_TYPE" = tag ]; then CIL="--verify-tag"; else CIL="--target $GITHUB_SHA"; fi
           gh release create "$TAG" geokuk.jar geokuk.jar.sha256 \
-            --draft $CIL --title "$TAG" --notes "" $PRE
+            --draft $CIL --title "$TAG" --notes-file popis.md $PRE
           gh release edit "$TAG" --draft=false
