@@ -114,6 +114,10 @@ public final class EKaType {
 		return vse.toArray(new EKaType[vse.size()]);
 	}
 
+	static List<EKaType> vestavene() {
+		return VESTAVENE;
+	}
+
 	/** Podklad podle jména, null když takový není. */
 	public static EKaType podleJmena(final String jmeno) {
 		for (final EKaType ka : values()) {

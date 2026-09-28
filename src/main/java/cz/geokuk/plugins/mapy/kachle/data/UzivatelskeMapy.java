@@ -25,10 +25,11 @@ public final class UzivatelskeMapy {
 
 	/** Načte mapy ze souboru vedle jaru a vrátí popis chyb v něm. */
 	public static List<String> nacti() {
-		if (!FConst.JAR_DIR_EXISTUJE) {
-			return Collections.emptyList();
-		}
-		final File soubor = new File(FConst.JAR_DIR, SOUBOR);
+		return FConst.JAR_DIR_EXISTUJE ? nacti(new File(FConst.JAR_DIR, SOUBOR)) : Collections.emptyList();
+	}
+
+	static List<String> nacti(final File soubor) {
+		EKaType.setUzivatelske(Collections.emptyList());
 		if (!soubor.isFile()) {
 			return Collections.emptyList();
 		}
@@ -62,7 +63,7 @@ public final class UzivatelskeMapy {
 		}
 		final List<EKaType> vysledek = new ArrayList<>();
 		for (final Map.Entry<String, Map<String, String>> e : mapy.entrySet()) {
-			final EKaType mapa = vytvor(e.getKey(), e.getValue(), chyby);
+			final EKaType mapa = vytvor(e.getKey(), e.getValue(), vysledek, chyby);
 			if (mapa != null) {
 				vysledek.add(mapa);
 			}
@@ -70,7 +71,7 @@ public final class UzivatelskeMapy {
 		return vysledek;
 	}
 
-	private static EKaType vytvor(final String id, final Map<String, String> v, final List<String> chyby) {
+	private static EKaType vytvor(final String id, final Map<String, String> v, final List<EKaType> predchozi, final List<String> chyby) {
 		final String nazev = v.getOrDefault("nazev", "");
 		final String url = v.getOrDefault("url", "");
 		if (nazev.isEmpty()) {
@@ -107,7 +108,9 @@ public final class UzivatelskeMapy {
 			chyby.add(id + ".zkratka není platná klávesová zkratka (např. u, F5, ctrl U)");
 			return null;
 		}
-		for (final EKaType jina : EKaType.values()) {
+		final List<EKaType> jine = new ArrayList<>(EKaType.vestavene());
+		jine.addAll(predchozi);
+		for (final EKaType jina : jine) {
 			if (keyStroke != null && keyStroke.equals(jina.getKeyStroke())) {
 				chyby.add(id + ".zkratka " + zkratka + " už používá mapa " + jina.getNazev());
 				return null;
