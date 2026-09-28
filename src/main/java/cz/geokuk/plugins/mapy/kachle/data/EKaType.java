@@ -134,12 +134,13 @@ public enum EKaType {
 		}
 		switch (this) {
 		case OPEN_CYKLO:
-			return "Mapa © Thunderforest, data © přispěvatelé OpenStreetMap";
+			return "Maps © Thunderforest, Data © OpenStreetMap contributors";
 		case TUR_FREEMAP_SK_T:
+			return "© Freemap Slovakia, © OpenStreetMap contributors";
 		case TUR_FREEMAP_SK_F:
-			return "© Freemap Slovakia, data © přispěvatelé OpenStreetMap";
+			return "© GKÚ, NLC, © ČÚZK";
 		default:
-			return "© přispěvatelé OpenStreetMap";
+			return "© OpenStreetMap contributors";
 		}
 	}
 
