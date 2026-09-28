@@ -2,7 +2,9 @@ package cz.geokuk.core.napoveda;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -20,6 +22,9 @@ import cz.geokuk.util.exception.FExceptionDumper;
 public final class Diagnostika {
 
 	private static final int MAX_ZAZNAMU = 30;
+	private static final int RADKU_LOGU = 20;
+	/** Stejné umístění jako v logback.xml. */
+	static final File LOG = new File(new File(System.getProperty("java.io.tmpdir"), "geokuk"), "geokuk.log");
 	private static final long START = System.currentTimeMillis();
 	private static final Deque<String> udalosti = new ArrayDeque<>();
 	private static final Deque<String> chyby = new ArrayDeque<>();
@@ -102,11 +107,13 @@ public final class Diagnostika {
 		sb.append("Složka programu: ").append(bezDomova(FConst.JAR_DIR)).append(FConst.JAR_DIR_EXISTUJE ? "" : " (nerozpoznána)").append('\n');
 		sb.append("Spouštěč geokuk.cmd: ").append(ano(new File(FConst.JAR_DIR, "geokuk.cmd").exists())).append('\n');
 		sb.append("Výpisy chyb: ").append(bezDomova(FExceptionDumper.getExcrepFolder())).append('\n');
+		sb.append("Log: ").append(bezDomova(LOG)).append('\n');
 		sb.append("Běží: ").append((System.currentTimeMillis() - START) / 60000).append(" min\n");
 		vypis(sb, "Poslední události", udalosti);
 		synchronized (chyby) {
 			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby);
 		}
+		vypis(sb, "Konec logu", konecLogu(LOG, RADKU_LOGU));
 		return sb.toString();
 	}
 
@@ -120,6 +127,26 @@ public final class Diagnostika {
 				sb.append(s).append('\n');
 			}
 		}
+	}
+
+	static Deque<String> konecLogu(final File soubor, final int radku) {
+		final Deque<String> konec = new ArrayDeque<>();
+		if (!soubor.isFile()) {
+			return konec;
+		}
+		final String domov = FConst.HOME_DIR.getAbsolutePath();
+		try (BufferedReader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
+			String radek;
+			while ((radek = reader.readLine()) != null) {
+				konec.addLast(radek.replace(domov, "~"));
+				if (konec.size() > radku) {
+					konec.removeFirst();
+				}
+			}
+		} catch (final IOException e) {
+			konec.addLast("Log nelze přečíst: " + e);
+		}
+		return konec;
 	}
 
 	private static String ano(final boolean b) {
