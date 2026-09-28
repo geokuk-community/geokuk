@@ -98,6 +98,10 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		init(false);
 	}
 
+	protected EKaType getKachloType() {
+		return katype;
+	}
+
 	protected JKachle createJKachle(final Ka ka) {
 		return new JKachle(this, ka);
 	}

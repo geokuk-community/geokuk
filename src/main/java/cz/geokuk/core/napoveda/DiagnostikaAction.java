@@ -25,10 +25,12 @@ public class DiagnostikaAction extends Action0 {
 		area.setEditable(false);
 		area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, area.getFont().getSize()));
 		area.setCaretPosition(0);
-		final Object[] options = { "Kopírovat do schránky", "Zavřít" };
+		final Object[] options = { "Kopírovat do schránky", "Nahlásit na GitHubu", "Zavřít" };
 		final int n = JOptionPane.showOptionDialog(getMainFrame(), new JScrollPane(area), "Informace pro hlášení chyby", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 		if (n == 0) {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+		} else if (n == 1) {
+			ZadatProblemAction.otevri(text);
 		}
 	}
 }
