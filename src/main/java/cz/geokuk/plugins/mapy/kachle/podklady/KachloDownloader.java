@@ -74,6 +74,7 @@ public class KachloDownloader {
 			if (img == null) {
 				throw new RuntimeException("image is null");
 			}
+			docti(stm);
 		}
 		zkontrolujUplnost(conn, dhis.getData());
 		final ImageWithData imda = new ImageWithData(img, dhis.getData());
@@ -85,6 +86,14 @@ public class KachloDownloader {
 
 		return imda;
 
+	}
+
+	/** Dekodér obrázku se zastaví, jakmile má obrázek; zbytek těla odpovědi je potřeba dočíst, aby šlo poznat useknutou dlaždici. */
+	private static void docti(final InputStream stm) throws IOException {
+		final byte[] zbytek = new byte[4096];
+		while (stm.read(zbytek) >= 0) {
+			// jen dočíst do konce
+		}
 	}
 
 	/** Useknutou dlaždici někdy obrázek přijme a uložila by se do cache poškozená. */

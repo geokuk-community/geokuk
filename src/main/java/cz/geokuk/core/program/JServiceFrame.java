@@ -3,6 +3,7 @@
  */
 package cz.geokuk.core.program;
 
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.*;
@@ -23,6 +24,8 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 	private static final long serialVersionUID = 5761908785083097975L;
 
 	private final Map<Pocitadlo, JLabel> hodmap = new WeakHashMap<>();
+
+	private final JPanel obsah = new JPanel(new BorderLayout());
 
 	public static void main(final String[] args) {
 		final JServiceFrame serviceFrame = new JServiceFrame();
@@ -65,9 +68,10 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 	public JServiceFrame() {
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		initComponents();
-		pack();
 		Pocitadlo.callback = this;
 		registerEvents();
+		// naplnit hned; u nečinné mapy se žádné počítadlo nemusí změnit a okno by zůstalo prázdné
+		onChange();
 
 		// TODO při zavírání JServiceFramese musí zlikvidovat také odkaz v počítadlech
 	}
@@ -97,12 +101,14 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 	}
 
 	@Override
-	protected void initComponents() {}
+	protected void initComponents() {
+		getContentPane().add(obsah);
+	}
 
 	protected void initComponents(final List<Pocitadlo> pocitadla) {
 		final Box b = createtComponents(pocitadla);
-		getContentPane().removeAll();
-		getContentPane().add(b);
+		obsah.removeAll();
+		obsah.add(b);
 	}
 
 	Set<String> seznamTypu(final List<Pocitadlo> pocitadla) {
@@ -201,12 +207,17 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(final WindowEvent e) {
-				Pocitadlo.callback = null;
+				zastav();
 			}
 
 			@Override
 			public void windowClosing(final WindowEvent e) {
+				zastav();
+			}
+
+			private void zastav() {
 				Pocitadlo.callback = null;
+				SystemovaPocitadla.zastavPocitani();
 			}
 		});
 	}
