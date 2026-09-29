@@ -5,9 +5,12 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Třída je zodpovědna projití zadaných rootu a držení informací o tom, zda nedošlo ke změně.
  */
+@Slf4j
 public class DirScanner {
 
 	// case insensitive, TODO : other image formats than JPG, raw and tif
@@ -78,6 +81,13 @@ public class DirScanner {
 					if (matches(path.getFileName().toString(), root.def)) {
 						list.add(new KeFile(new FileAndTime(path.toFile()), root));
 					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFileFailed(final Path path, final IOException e) {
+					// nečitelná složka ani zacyklený odkaz nesmí shodit celý sken
+					log.warn("Přeskakuji {}: {}", path, e.toString());
 					return FileVisitResult.CONTINUE;
 				}
 			});

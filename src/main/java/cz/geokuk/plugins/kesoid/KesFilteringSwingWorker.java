@@ -4,6 +4,7 @@
 package cz.geokuk.plugins.kesoid;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
@@ -58,6 +59,7 @@ public class KesFilteringSwingWorker extends MySwingWorker0<KesBag, Void> {
 			log.debug("FILTERING {} - start, source: {} caches, {}={} waypoints.", cisloFiltrovani, vsechny2.getKesoidy().size(), pocetvsech, vsechny2.getIndexator().count(BoundingRect.ALL));
 			startTime = System.currentTimeMillis();
 			final KesoidFilter filter = kesoidFilterModel.createKesoidFilter();
+			final AtomicReference<RuntimeException> chyba = new AtomicReference<>();
 			new Thread((Runnable) () -> {
 				try {
 					int citac = 0;
@@ -75,8 +77,12 @@ public class KesFilteringSwingWorker extends MySwingWorker0<KesBag, Void> {
 						}
 
 					}
-					queue.put(Wpt.ZARAZKA);
 				} catch (final InterruptedException ignored) {
+				} catch (final RuntimeException e) {
+					chyba.set(e);
+				} finally {
+					// zarážka musí přijít i po chybě, jinak by se na ni čekalo navždy
+					queue.offer(Wpt.ZARAZKA);
 				}
 			}, "Filtrovani kesoidu").start();
 			for (;;) {
@@ -85,6 +91,9 @@ public class KesFilteringSwingWorker extends MySwingWorker0<KesBag, Void> {
 					break;
 				}
 				kesbag.add(wpt);
+			}
+			if (chyba.get() != null) {
+				throw chyba.get();
 			}
 			log.debug("FILTERING {} - prepared result, {} ms.", cisloFiltrovani, System.currentTimeMillis() - startTime);
 			kesbag.done();

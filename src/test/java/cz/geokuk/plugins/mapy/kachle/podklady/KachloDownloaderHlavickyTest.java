@@ -18,6 +18,7 @@ import cz.geokuk.core.program.FConst;
 public class KachloDownloaderHlavickyTest {
 
 	private HttpServer server;
+	private boolean neuplne;
 	private final List<Map<String, List<String>>> hlavicky = new ArrayList<>();
 
 	@Before
@@ -27,7 +28,8 @@ public class KachloDownloaderHlavickyTest {
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", ex -> {
 			hlavicky.add(new TreeMap<>(ex.getRequestHeaders()));
-			ex.sendResponseHeaders(200, png.size());
+			// neúplná odpověď: hlavička slíbí víc bajtů, než server pošle
+			ex.sendResponseHeaders(200, neuplne ? png.size() + 100 : png.size());
 			try (OutputStream out = ex.getResponseBody()) {
 				png.writeTo(out);
 			}
@@ -38,6 +40,12 @@ public class KachloDownloaderHlavickyTest {
 	@After
 	public void tearDown() {
 		server.stop(0);
+	}
+
+	@Test(expected = java.io.IOException.class)
+	public void neuplnaDlazdiceSeOdmitne() throws Exception {
+		neuplne = true;
+		new KachloDownloader().downloadImage(new URL("http://127.0.0.1:" + server.getAddress().getPort() + "/1/2/3.png"));
 	}
 
 	@Test

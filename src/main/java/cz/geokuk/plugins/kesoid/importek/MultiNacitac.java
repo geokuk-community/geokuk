@@ -78,8 +78,8 @@ public class MultiNacitac {
 			try {
 				zpracujJedenFile(file, builder, future);
 			} catch (final Exception e) {
+				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem pri cteni souboru " + file);
-				ds.nulujLastScaned(); // ať se načte znovu
 			}
 		}
 
@@ -109,6 +109,16 @@ public class MultiNacitac {
 	 * @param future
 	 * @throws IOException
 	 */
+	/** Cizí soubor s naší příponou jen přeskočíme, není to chyba uživatele. */
+	private boolean umiNacist(final Nacitac0 nacitac, final File file) {
+		try {
+			return nacitac.umiNacist(file);
+		} catch (final Exception e) {
+			log.warn("Soubor {} nelze rozpoznat, přeskakuji: {}", file, e.toString());
+			return false;
+		}
+	}
+
 	private void zpracujJedenFile(final KeFile kefile, final KesoidImportBuilder builder, final Future<?> future) throws IOException {
 		final File file = kefile.getFile();
 		if (isZipFile(file)) {
@@ -128,7 +138,7 @@ public class MultiNacitac {
 			for (final Nacitac0 nacitac : nacitace) {
 				final boolean nacitat = kesoidModel.maSeNacist(kefile);
 				builder.setCurrentlyLoading(kefile, nacitat);
-				if (nacitat && nacitac.umiNacist(file)) {
+				if (nacitat && umiNacist(nacitac, file)) {
 					nacitac.nactiBezVyjimky(file, builder, future, kesoidModel.getProgressModel());
 				}
 			}
