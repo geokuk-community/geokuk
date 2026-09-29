@@ -26,10 +26,12 @@ public class SmokeIT {
 
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
+	private int proxyPort;
 
 	@Before
 	public void spustServer() throws IOException {
 		server = new FalesnyDlazdicovyServer();
+		proxyPort = server.getPort();
 	}
 
 	@After
@@ -83,6 +85,24 @@ public class SmokeIT {
 				.collect(Collectors.toList());
 		assertTrue("Dlaždice se stahovaly dokola: " + dokola, dokola.isEmpty());
 		assertTrue("ka33 WEB #chyb má zlobení zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
+	}
+
+	@Test
+	public void bezSite() throws Exception {
+		final File adresar = pripravAdresar("bezsite");
+		// Uživatelská mapa i proxy pro Mapy.cz míří na zavřený port, jako když notebook nemá síť.
+		final int zavreny;
+		try (java.net.ServerSocket s = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"))) {
+			zavreny = s.getLocalPort();
+		}
+		final File mapy = new File(adresar, "pracovni/uzivatelske-mapy.properties");
+		Files.write(mapy.toPath(), new String(Files.readAllBytes(mapy.toPath()), StandardCharsets.UTF_8).replace(":" + server.getPort() + "/", ":" + zavreny + "/").getBytes(StandardCharsets.UTF_8));
+		proxyPort = zavreny;
+		final Properties zprava = spust(adresar, "bezsite", "meritka,posun");
+		zkontrolujBezChyb(adresar, zprava, false);
+		assertTrue("ka33 WEB #chyb má výpadek zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
+		final long oken = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).count();
+		assertTrue("Bez sítě zůstalo otevřených " + oken + " oken: " + zprava, oken <= 2);
 	}
 
 	@Test
@@ -154,7 +174,7 @@ public class SmokeIT {
 		prikaz.add("-Djava.util.prefs.userRoot=" + new File(adresar, "prefs"));
 		// Vestavěné mapy (Mapy.cz po http) jdou přes falešný server jako proxy.
 		prikaz.add("-Dhttp.proxyHost=127.0.0.1");
-		prikaz.add("-Dhttp.proxyPort=" + server.getPort());
+		prikaz.add("-Dhttp.proxyPort=" + proxyPort);
 		prikaz.add("-Dhttp.nonProxyHosts=localhost|127.*");
 		prikaz.add("-Dfile.encoding=UTF-8");
 		// Program běží ze sestaveného jaru v pracovním adresáři, jen tak si vedle sebe najde uživatelské mapy.

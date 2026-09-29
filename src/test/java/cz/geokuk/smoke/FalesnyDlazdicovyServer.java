@@ -36,7 +36,10 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 		server.start();
 	}
 
-	/** Když zlobí, desetina dlaždic vrací 404, desetina 500, desetina má useknuté tělo a desetina přijde až po 2 s. */
+	/**
+	 * Když zlobí, vždy desetina dlaždic vrací 404, 500, useknuté tělo, přijde až po 2 s, místo obrázku HTML stránku (přihlášení k Wi-Fi, proxy)
+	 * a prázdné tělo.
+	 */
 	public void setZlobi(final boolean zlobi) {
 		this.zlobi = zlobi;
 	}
@@ -52,6 +55,10 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 			return "useknutá";
 		case 3:
 			return "pomalá";
+		case 4:
+			return "html";
+		case 5:
+			return "prázdná";
 		default:
 			return null;
 		}
@@ -117,6 +124,15 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 				ex.getResponseBody().write(obrazek, 0, obrazek.length / 2);
 				ex.getResponseBody().flush();
 				ex.close();
+				return;
+			}
+			if ("html".equals(zlobeni) || "prázdná".equals(zlobeni)) {
+				final byte[] telo = "html".equals(zlobeni) ? "<!DOCTYPE html><html><body>Přihlaste se k síti</body></html>".getBytes(StandardCharsets.UTF_8) : new byte[0];
+				ex.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+				ex.sendResponseHeaders(200, telo.length == 0 ? -1 : telo.length);
+				try (OutputStream os = ex.getResponseBody()) {
+					os.write(telo);
+				}
 				return;
 			}
 			if ("pomalá".equals(zlobeni)) {
