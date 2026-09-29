@@ -128,6 +128,12 @@ public class SmokeScenar {
 			case "vzhled":
 				prepniVzhledy();
 				break;
+			case "zbesile":
+				zbesile();
+				break;
+			case "okno":
+				menOkno();
+				break;
 			default:
 				throw new IllegalArgumentException(krok);
 			}
@@ -356,6 +362,46 @@ public class SmokeScenar {
 	private static String textPolozky(final JMenuItem polozka) {
 		final Container menu = polozka.getParent() instanceof JPopupMenu ? (Container) ((JPopupMenu) polozka.getParent()).getInvoker() : null;
 		return (menu instanceof JMenu ? ((JMenu) menu).getText() + " > " : "") + polozka.getText();
+	}
+
+	/** Uživatel mačká klávesy rychleji, než se dlaždice stihnou načíst. */
+	private void zbesile() throws Exception {
+		final VyrezModel vyrez = vyrezModel();
+		naEdt(() -> {
+			vyrez.presunMapuNaMoustred(new Wgs(50.08, 14.42).toMou());
+			vyrez.setMeritkoMapy(12);
+		});
+		final String[] zkratky = { "PAGE_UP", "PAGE_DOWN", "UP", "DOWN", "LEFT", "RIGHT", "ctrl UP", "ctrl DOWN", "ctrl LEFT", "ctrl RIGHT" };
+		final Random r = new Random(1);
+		for (int i = 0; i < 300; i++) {
+			final Action a = akce(KeyStroke.getKeyStroke(zkratky[r.nextInt(zkratky.length)]));
+			SwingUtilities.invokeLater(() -> {
+				if (a.isEnabled()) {
+					a.actionPerformed(null);
+				}
+			});
+			Thread.sleep(r.nextInt(30));
+		}
+		pockejNaKlid("zběsilé klikání");
+	}
+
+	/** Změny velikosti okna za běhu, i na nesmyslně malé a zpět. */
+	private void menOkno() throws Exception {
+		final int[][] velikosti = { { 1300, 850 }, { 120, 80 }, { 1, 1 }, { 400, 900 }, { 1400, 200 }, { 1050, 675 } };
+		for (final int[] v : velikosti) {
+			naEdt(() -> {
+				hlavniOkno.setExtendedState(Frame.NORMAL);
+				hlavniOkno.setSize(v[0], v[1]);
+				hlavniOkno.validate();
+			});
+			pockejNaKlid("okno " + v[0] + "x" + v[1]);
+		}
+		naEdt(() -> hlavniOkno.setExtendedState(Frame.MAXIMIZED_BOTH));
+		pockejNaKlid("okno maximalizované");
+		naEdt(() -> hlavniOkno.setExtendedState(Frame.ICONIFIED));
+		pockejNaKlid("okno minimalizované");
+		naEdt(() -> hlavniOkno.setExtendedState(Frame.NORMAL));
+		pockejNaKlid("okno obnovené");
 	}
 
 	/** Čeká, až jsou všechny fronty dlaždic prázdné aspoň sekundu v kuse. */

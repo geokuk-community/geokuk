@@ -127,6 +127,46 @@ public class SmokeIT {
 	}
 
 	@Test
+	public void netrpelivyUzivatel() throws Exception {
+		final File adresar = pripravAdresar("netrpelivy");
+		final Properties zprava = spust(adresar, "netrpelivy", "zbesile,okno");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals(0, pocitadlo(zprava, "ka33 WEB #chyb"));
+		assertEquals(0, pocitadlo(zprava, "ka24 DISK cache #chyb čtení"));
+		final long stazeno = pocitadlo(zprava, "Downloadlé dlaždice");
+		final Map<String, Integer> pozadavky = server.getPozadavky();
+		assertEquals("Každá stažená dlaždice se má uložit, i když byl požadavek mezitím zrušen", pozadavky.size(), dlazdicVCache(adresar));
+		// Znovu se stáhne jen to, co se ještě nestihlo zapsat.
+		final long vicekrat = pozadavky.values().stream().filter(p -> p > 1).count();
+		assertTrue("Opakovaně staženo " + vicekrat + " z " + pozadavky.size(), vicekrat <= pozadavky.size() / 5);
+		assertTrue(stazeno >= pozadavky.size());
+	}
+
+	/** Uživatel spustí Geokuk dvakrát (dvojklik dvakrát), obě instance sdílí cache dlaždic i datovou složku. */
+	@Test
+	public void dveInstanceNajednou() throws Exception {
+		final File adresar = pripravAdresar("dve");
+		final java.util.concurrent.ExecutorService vlakna = java.util.concurrent.Executors.newFixedThreadPool(2);
+		try {
+			final java.util.concurrent.Future<Properties> prvni = vlakna.submit(() -> spust(adresar, "prvni", "meritka,posun"));
+			final java.util.concurrent.Future<Properties> druha = vlakna.submit(() -> spust(adresar, "druha", "meritka,posun"));
+			for (final Properties zprava : Arrays.asList(prvni.get(), druha.get())) {
+				zkontrolujBezChyb(adresar, zprava, false);
+				assertEquals("Načtené waypointy", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+				assertEquals(0, pocitadlo(zprava, "ka33 WEB #chyb"));
+			}
+		} finally {
+			vlakna.shutdown();
+		}
+		// Po obou běhech musí být cache zdravá a použitelná.
+		final Properties treti = spust(adresar, "treti", "meritka,posun");
+		zkontrolujBezChyb(adresar, treti, false);
+		assertEquals(0, pocitadlo(treti, "ka24 DISK cache #chyb čtení"));
+		assertFalse("Cache se nesmí odložit jako vadná", new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite.vadna").exists());
+		assertTrue("Třetí běh bere dlaždice z cache", pocitadlo(treti, "ka22 DISK cache #zásahů") > 100);
+	}
+
+	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
 		final File data = new File(adresar, "home/geokuk");
@@ -239,6 +279,21 @@ public class SmokeIT {
 			problemy.add("Výpisy chyb v " + excrep + ": " + Arrays.toString(vypisy));
 		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
+	/** Počet dlaždic v cache po ukončení programu. */
+	private static long dlazdicVCache(final File adresar) throws Exception {
+		try (java.sql.Connection c = java.sql.DriverManager.getConnection("jdbc:sqlite:" + new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite"))) {
+			final String tabulka;
+			try (java.sql.ResultSet t = c.createStatement().executeQuery("select name from sqlite_master where type = 'table'")) {
+				t.next();
+				tabulka = t.getString(1);
+			}
+			try (java.sql.ResultSet pocet = c.createStatement().executeQuery("select count(*) from " + tabulka)) {
+				pocet.next();
+				return pocet.getLong(1);
+			}
+		}
 	}
 
 	private static long pocitadlo(final Properties zprava, final String jmeno) {
