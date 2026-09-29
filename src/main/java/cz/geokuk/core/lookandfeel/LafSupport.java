@@ -134,7 +134,7 @@ public class LafSupport {
 		// Create these menu items for the first SwingSet only.
 		// ***** create laf switcher menu
 		lafMenu = new JMenu("Skin");
-		lafMenu.setMnemonic('N');
+		lafMenu.setMnemonic('I');
 
 		for (final LafItem li : lafitems) {
 			li.mi = lafMenu.add(new JRadioButtonMenuItem(li.info.getName()));

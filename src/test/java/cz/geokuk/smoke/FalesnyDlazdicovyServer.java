@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -63,6 +64,17 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 			final String host = ex.getRequestURI().getHost();
 			final String cesta = ex.getRequestURI().getPath();
 			pozadavky.computeIfAbsent(host == null ? cesta : host + cesta, k -> new AtomicInteger()).incrementAndGet();
+			if ("maps.googleapis.com".equals(host)) {
+				// Geokódování Googlu bez API klíče odpovídá takhle.
+				final byte[] odpoved = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<GeocodeResponse>\n <status>REQUEST_DENIED</status>\n"
+						+ " <error_message>You must use an API key to authenticate each request to Google Maps Platform APIs.</error_message>\n</GeocodeResponse>\n").getBytes(StandardCharsets.UTF_8);
+				ex.getResponseHeaders().set("Content-Type", "application/xml; charset=UTF-8");
+				ex.sendResponseHeaders(200, odpoved.length);
+				try (OutputStream os = ex.getResponseBody()) {
+					os.write(odpoved);
+				}
+				return;
+			}
 			final Matcher m = CESTA.matcher(cesta);
 			if (!m.matches()) {
 				ex.sendResponseHeaders(404, -1);

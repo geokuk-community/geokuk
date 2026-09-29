@@ -67,6 +67,14 @@ public class SmokeIT {
 		assertTrue(pocitadlo(druhy, "ka22 DISK cache #zásahů") > 100);
 	}
 
+	@Test
+	public void vsechnyPolozkyMenu() throws Exception {
+		final File adresar = pripravAdresar("menu");
+		final Properties zprava = spust(adresar, "menu", "menu");
+		zkontrolujBezChyb(adresar, zprava);
+		assertTrue(zprava.stringPropertyNames().stream().filter(k -> k.startsWith("menu.")).count() > 50);
+	}
+
 	private static int pocetWpt;
 
 	private static File pripravAdresar(final String jmeno) throws IOException {
@@ -122,6 +130,10 @@ public class SmokeIT {
 	private static void zkontrolujBezChyb(final File adresar, final Properties zprava) {
 		final List<String> problemy = new ArrayList<>();
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
+		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
+		if (edt > 3000) {
+			problemy.add("Událost na EDT trvala " + edt + " ms: " + zprava.getProperty("edt.pomala.0"));
+		}
 		final File excrep = new File(adresar, "tmp/geokuk/excrep");
 		final String[] vypisy = excrep.list();
 		if (vypisy != null && vypisy.length > 0) {

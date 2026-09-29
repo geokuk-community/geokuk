@@ -191,7 +191,7 @@ public class Menu extends MenuStrujce {
 		item(akce.vyletSmazNeAction);
 
 		menu("Cesty", "Plánování cest");
-		menu.setMnemonic(KeyEvent.VK_V);
+		menu.setMnemonic(KeyEvent.VK_C);
 		item(akce.pridatDoCestyAction);
 		item(akce.odebratZCestyAction);
 		separator(); // nad celým výletem

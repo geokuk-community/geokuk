@@ -36,9 +36,12 @@ public class SmokeScenar {
 	private final Properties zprava = new Properties();
 	private final List<String> nezachycene = new CopyOnWriteArrayList<>();
 	private final List<String> chyby = new ArrayList<>();
+	private final List<String> varovani = new ArrayList<>();
 	private JFrame hlavniOkno;
+	private HlidacEdt hlidac;
 	private final List<Action> akce = new ArrayList<>();
 	private final Map<Action, JMenuItem> polozky = new HashMap<>();
+	private final List<JMenuItem> polozkyMenu = new ArrayList<>();
 
 	public static void main(final String[] args) throws Exception {
 		final File soubor = new File(args[0]);
@@ -57,6 +60,7 @@ public class SmokeScenar {
 
 	private void proved(final String[] kroky) throws Exception {
 		MyPreferences.current().node(FPref.VSEOBECNE_node).putLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, Long.MAX_VALUE);
+		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(new String[0]);
 		final Thread.UncaughtExceptionHandler puvodni = Thread.getDefaultUncaughtExceptionHandler();
@@ -96,6 +100,9 @@ public class SmokeScenar {
 				break;
 			case "posun":
 				posouvej();
+				break;
+			case "menu":
+				projdiMenu();
 				break;
 			default:
 				throw new IllegalArgumentException(krok);
@@ -149,6 +156,154 @@ public class SmokeScenar {
 				pockejNaKlid("posun " + usek[0]);
 			}
 		}
+	}
+
+	/** Akce, které se v průchodu menu nespouštějí: ukončí program, otevřou prohlížeč nebo sahají na internet, přepnou vzhled či mapu. */
+	private static final Set<String> NESPOUSTET = new HashSet<>(Arrays.asList("CloseAction", "FullScreenAction", "NapovedaAction", "WebovaStrankaAction", "ZadatProblemAction",
+			"ZkontrolovatAktualizaceAction", "ChangeLookAndFeelAction", "ChangeThemeAction", "PodkladAction", "OnlineModeAction"));
+
+	/**
+	 * Klikne na každou položku menu. Na každém okně, které se tím otevře, ověří, že je vidět, má rozumnou velikost a nějaký obsah, a zase ho
+	 * zavře. Zaškrtávací položky vrátí do původního stavu.
+	 */
+	private void projdiMenu() throws Exception {
+		naEdt(this::zkontrolujMnemoniky);
+		int n = 0;
+		for (final JMenuItem polozka : polozkyMenu) {
+			final Action a = polozka.getAction();
+			final String jmeno = n++ + " " + textPolozky(polozka) + " (" + a.getClass().getSimpleName() + ")";
+			if (NESPOUSTET.contains(a.getClass().getSimpleName())) {
+				continue;
+			}
+			final boolean[] povolena = new boolean[1];
+			naEdt(() -> povolena[0] = polozka.isEnabled());
+			if (!povolena[0]) {
+				zprava.setProperty("menu." + jmeno, "nepovolená");
+				continue;
+			}
+			final List<String> okna = klikni(polozka, jmeno);
+			if (polozka instanceof JCheckBoxMenuItem) {
+				okna.addAll(klikni(polozka, jmeno + " zpět"));
+			}
+			zprava.setProperty("menu." + jmeno, okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
+		}
+	}
+
+	/** Podtržené písmeno smí být v liště i v každém menu jen jednou, jinak Alt+písmeno jen přepíná mezi položkami. */
+	private void zkontrolujMnemoniky() {
+		final JMenuBar lista = hlavniOkno.getJMenuBar();
+		final List<JMenuItem> menu = new ArrayList<>();
+		for (int i = 0; i < lista.getMenuCount(); i++) {
+			if (lista.getMenu(i) != null) {
+				menu.add(lista.getMenu(i));
+			}
+		}
+		zkontrolujMnemoniky("lišta menu", menu, chyby);
+		for (final JMenuItem m : menu) {
+			final List<JMenuItem> polozkyJednohoMenu = new ArrayList<>();
+			for (final Component c : ((JMenu) m).getMenuComponents()) {
+				if (c instanceof JMenuItem) {
+					polozkyJednohoMenu.add((JMenuItem) c);
+				}
+			}
+			// Uvnitř menu shodné písmeno jen přepíná mezi položkami, proto jen varování.
+			zkontrolujMnemoniky("menu " + m.getText(), polozkyJednohoMenu, varovani);
+		}
+	}
+
+	private static void zkontrolujMnemoniky(final String kde, final List<JMenuItem> polozkyMenu, final List<String> kam) {
+		final Map<Integer, List<String>> podlePismene = new TreeMap<>();
+		for (final JMenuItem p : polozkyMenu) {
+			if (p.getMnemonic() != 0) {
+				podlePismene.computeIfAbsent(p.getMnemonic(), k -> new ArrayList<>()).add(p.getText());
+			}
+		}
+		podlePismene.forEach((pismeno, texty) -> {
+			if (texty.size() > 1) {
+				kam.add("V " + kde + " má víc položek podtržené " + java.awt.event.KeyEvent.getKeyText(pismeno) + ": " + texty);
+			}
+		});
+	}
+
+	private List<String> klikni(final JMenuItem polozka, final String jmeno) throws Exception {
+		final Set<Window> predtim = new HashSet<>(Arrays.asList(Window.getWindows()));
+		SwingUtilities.invokeLater(() -> polozka.doClick(0));
+		// Modální dialog má vlastní smyčku událostí, značka za kliknutím proto doběhne i s otevřeným dialogem.
+		final boolean[] znacka = new boolean[1];
+		SwingUtilities.invokeLater(() -> znacka[0] = true);
+		try {
+			cekej("obsluha kliknutí", 20_000, () -> znacka[0]);
+		} catch (final IllegalStateException e) {
+			chyby.add("Kliknutí na " + jmeno + " zablokovalo EDT");
+			throw e;
+		}
+		Thread.sleep(500); // některé akce otevírají okno až ze SwingWorkeru
+		final List<String> popisy = new ArrayList<>();
+		naEdt(() -> {
+			for (final Window w : Window.getWindows()) {
+				if (!predtim.contains(w) && w.isShowing()) {
+					final String popis = popisOkna(w);
+					popisy.add(popis);
+					final int obsah = w instanceof RootPaneContainer ? ((RootPaneContainer) w).getContentPane().getComponentCount() : w.getComponentCount();
+					if (w.getWidth() < 100 || w.getHeight() < 50 || obsah == 0) {
+						chyby.add("Po kliknutí na " + jmeno + " je okno prázdné nebo malé: " + popis);
+					}
+				}
+			}
+		});
+		zavriNovaOkna(predtim);
+		pockejNaKlid(jmeno);
+		return popisy;
+	}
+
+	private void zavriNovaOkna(final Set<Window> predtim) throws Exception {
+		for (int pokus = 0; pokus < 3; pokus++) {
+			final List<Window> nova = new ArrayList<>();
+			naEdt(() -> {
+				for (final Window w : Window.getWindows()) {
+					if (!predtim.contains(w) && w.isShowing()) {
+						nova.add(w);
+					}
+				}
+			});
+			if (nova.isEmpty()) {
+				return;
+			}
+			for (final Window w : nova) {
+				// Zavřít jako uživatel křížkem, ať proběhne i úklid okna. Modální dialog vrátí řízení až po zavření, proto invokeLater.
+				SwingUtilities.invokeLater(() -> {
+					w.dispatchEvent(new java.awt.event.WindowEvent(w, java.awt.event.WindowEvent.WINDOW_CLOSING));
+					if (w.isShowing()) {
+						w.dispose();
+					}
+				});
+			}
+			Thread.sleep(300);
+		}
+		chyby.add("Nová okna nejdou zavřít");
+	}
+
+	private static String popisOkna(final Window w) {
+		String titulek = w instanceof Dialog ? ((Dialog) w).getTitle() : w instanceof Frame ? ((Frame) w).getTitle() : "";
+		final StringBuilder texty = new StringBuilder();
+		sesbirejTexty(w, texty);
+		return w.getClass().getSimpleName() + " \"" + titulek + "\" " + w.getWidth() + "x" + w.getHeight() + (texty.length() > 0 ? " [" + texty.toString().trim() + "]" : "");
+	}
+
+	/** Texty z hlášek (JOptionPane), ať je ve zprávě vidět, co program řekl. */
+	private static void sesbirejTexty(final Container kde, final StringBuilder texty) {
+		for (final Component c : kde.getComponents()) {
+			if (c instanceof JOptionPane) {
+				texty.append(String.valueOf(((JOptionPane) c).getMessage()).replace('\n', ' ')).append(' ');
+			} else if (c instanceof Container) {
+				sesbirejTexty((Container) c, texty);
+			}
+		}
+	}
+
+	private static String textPolozky(final JMenuItem polozka) {
+		final Container menu = polozka.getParent() instanceof JPopupMenu ? (Container) ((JPopupMenu) polozka.getParent()).getInvoker() : null;
+		return (menu instanceof JMenu ? ((JMenu) menu).getText() + " > " : "") + polozka.getText();
 	}
 
 	/** Čeká, až jsou všechny fronty dlaždic prázdné aspoň sekundu v kuse. */
@@ -224,6 +379,7 @@ public class SmokeScenar {
 		if (polozka.getAction() != null) {
 			akce.add(polozka.getAction());
 			polozky.put(polozka.getAction(), polozka);
+			polozkyMenu.add(polozka);
 		}
 		if (polozka instanceof JMenu) {
 			for (final Component c : ((JMenu) polozka).getMenuComponents()) {
@@ -265,6 +421,16 @@ public class SmokeScenar {
 		}
 		for (int i = 0; i < chyby.size(); i++) {
 			zprava.setProperty("chyba." + i, chyby.get(i));
+		}
+		for (int i = 0; i < varovani.size(); i++) {
+			zprava.setProperty("varovani." + i, varovani.get(i));
+		}
+		if (hlidac != null) {
+			zprava.setProperty("edt.nejdelsiMs", String.valueOf(hlidac.getNejdelsiMs()));
+			final List<String> pomale = hlidac.getPomale();
+			for (int j = 0; j < pomale.size(); j++) {
+				zprava.setProperty("edt.pomala." + j, pomale.get(j));
+			}
 		}
 		int i = 0;
 		for (final Window w : Window.getWindows()) {
