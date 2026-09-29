@@ -380,6 +380,18 @@ public class KachleZiskavac {
 			}
 
 		}, 1l, 1l, TimeUnit.SECONDS);
+		// Konec programu volá System.exit, dlaždice čekající na zápis by se jinak ztratily.
+		Runtime.getRuntime().addShutdownHook(new Thread(this::dopisNaDisk, "Dopsání dlaždic na disk"));
+	}
+
+	private void dopisNaDisk() {
+		ukladac.submitChunks();
+		execDiskWrite.shutdown();
+		try {
+			execDiskWrite.awaitTermination(5, TimeUnit.SECONDS);
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	/** Smazat se musí třeba při zapnutí online módi */
