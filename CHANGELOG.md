@@ -18,6 +18,10 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Chybný soubor v datové složce už nezpůsobí opakované načítání dat
+  a chybová hlášení dokola; nečitelná nebo zacyklená složka se přeskočí.
+- Stahování mapových dlaždic má časový limit, takže neodpovídající server
+  nezastaví mapu, a neúplně stažená dlaždice se nepoužije.
 - Program nastartuje i s poškozeným nastavením vedle programu nebo
   s nesmyslnou uloženou hodnotou; poškozený soubor odloží stranou
   a upozorní na to.

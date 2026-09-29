@@ -17,6 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class KachloDownloader {
 
+	/** Bez limitu by nedostupný server držel stahovací frontu navždy. */
+	private static final int TIMEOUT_PRIPOJENI = 15000;
+	private static final int TIMEOUT_CTENI = 30000;
+
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
 	static final String USER_AGENT = "Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")";
 
@@ -54,6 +58,8 @@ public class KachloDownloader {
 		// }
 
 		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+		conn.setConnectTimeout(TIMEOUT_PRIPOJENI);
+		conn.setReadTimeout(TIMEOUT_CTENI);
 		conn.setRequestProperty("User-Agent", USER_AGENT);
 		if (url.getHost().endsWith("mapy.cz")) {
 			// Pro mapy.cz je nutný referer, jinak se vrací 403
@@ -69,6 +75,7 @@ public class KachloDownloader {
 				throw new RuntimeException("image is null");
 			}
 		}
+		zkontrolujUplnost(conn, dhis.getData());
 		final ImageWithData imda = new ImageWithData(img, dhis.getData());
 		pocitDownloadleDlazdice.inc();
 		log.debug("Loaded {} bytes", imda.getData().length);
@@ -78,6 +85,14 @@ public class KachloDownloader {
 
 		return imda;
 
+	}
+
+	/** Useknutou dlaždici někdy obrázek přijme a uložila by se do cache poškozená. */
+	private static void zkontrolujUplnost(final HttpURLConnection conn, final byte[] data) throws IOException {
+		final int ocekavano = conn.getContentLength();
+		if (ocekavano >= 0 && conn.getContentEncoding() == null && data.length != ocekavano) {
+			throw new IOException("Stažená dlaždice je neúplná: " + data.length + " z " + ocekavano + " bajtů.");
+		}
 	}
 
 	/**
