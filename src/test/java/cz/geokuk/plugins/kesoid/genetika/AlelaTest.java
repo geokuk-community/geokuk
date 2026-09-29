@@ -62,10 +62,6 @@ public class AlelaTest {
 		Assert.assertNotEquals("x189:xqq", xqq_189.qualName());
 	}
 
-	public void locate0() {
-		Assert.assertEquals(":", genom.ODDELOVAC_KVALIFOVANY);
-	}
-
 	@Test
 	public void locate1() {
 		final Alela alela = genom.gen("xx").alela("11");

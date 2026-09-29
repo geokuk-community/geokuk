@@ -408,7 +408,9 @@ public class Coord {
 		return new Rectangle(r.x - insets.left, r.y - insets.top, r.width + insets.left + insets.right, r.height + insets.top + insets.bottom);
 	}
 
-	public Mou transform(final Point p) {
+	public Mou transform(final Point bod) {
+		// kopie, volající s bodem dál počítá
+		final Point p = new Point(bod);
 		if (zpet != null) {
 			zpet.transform(p, p);
 		}

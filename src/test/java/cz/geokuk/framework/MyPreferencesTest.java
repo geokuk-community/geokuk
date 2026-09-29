@@ -89,9 +89,51 @@ public class MyPreferencesTest {
 
 	@Test
 	public void test_longStringStorage() {
-		final String storingString = Strings.repeat("FOOBAR@;", 1000);
+		final String storingString = Strings.repeat("FOOBAR@;", 3000);
 		preferences.put("@jhka", storingString);
 		assertThat(preferences.get("@jhka", null)).isEqualTo(storingString);
+	}
+
+	@Test
+	public void kratkaHodnotaPoDlouheNemaPrilepky() {
+		preferences.put("klic", Strings.repeat("x", 20000));
+		preferences.put("klic", "kratka");
+		assertThat(preferences.get("klic", null)).isEqualTo("kratka");
+	}
+
+	@Test
+	public void kratsiDlouhaHodnotaPoDelsi() {
+		preferences.put("klic", Strings.repeat("x", 30000));
+		final String kratsi = Strings.repeat("y", 10000);
+		preferences.put("klic", kratsi);
+		assertThat(preferences.get("klic", null)).isEqualTo(kratsi);
+	}
+
+	@Test
+	public void odstraneniDlouheHodnoty() {
+		preferences.put("klic", Strings.repeat("x", 20000));
+		preferences.remove("klic");
+		assertThat(preferences.get("klic", "vychozi")).isEqualTo("vychozi");
+		preferences.put("klic", "nova");
+		assertThat(preferences.get("klic", null)).isEqualTo("nova");
+	}
+
+	@Test
+	public void nullHodnota() {
+		preferences.put("klic", null);
+		assertThat(preferences.get("klic", "vychozi")).isNull();
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void vyhrazenyKlic() {
+		preferences.put("klic;cont0", "x");
+	}
+
+	@Test
+	public void seznamSeZnakyOddelovace() {
+		final List<String> toStore = ImmutableList.of("a;b", "c\\d", ";", "\\", "");
+		preferences.putStringList("seznam", toStore);
+		assertThat(preferences.getStringList("seznam", null)).isEqualTo(toStore);
 	}
 
 	@Test
@@ -117,7 +159,7 @@ public class MyPreferencesTest {
 
 	@Test
 	public void test_putStringSet() {
-		final Set<String> toStore = ImmutableSet.of("12345", "qwert", "asdfgh", "yxcvb", "12345", "@{}^<");
+		final Set<String> toStore = ImmutableSet.of("12345", "qwert", "asdfgh", "yxcvb", "@{}^<");
 		preferences.putStringSet("jhka", toStore);
 		assertThat((Iterable<String>) preferences.getStringSet("jhka", null)).isEqualTo(toStore);
 	}
