@@ -3,6 +3,8 @@
  */
 package cz.geokuk.plugins.kesoid.kind.kes;
 
+import cz.geokuk.plugins.kesoid.genetika.Alela;
+import cz.geokuk.plugins.kesoid.genetika.Gen;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
 
@@ -81,8 +83,15 @@ class GenotypBuilderKes {
 		}
 
 		g = g
-				.with(genom.GEN_teren.alela("ter" + kes.getTerrain().to2DigitNumberString()))
-				.with(genom.GEN_obtiznost.alela("dif" + kes.getDifficulty().to2DigitNumberString()));
+				.with(hodnoceni(genom.GEN_teren, "ter", kes.getTerrain()))
+				.with(hodnoceni(genom.GEN_obtiznost, "dif", kes.getDifficulty()));
 		return g;
+	}
+
+	private static Alela hodnoceni(final Gen gen, final String prefix, final EKesDiffTerRating hodnoceni) {
+		if (hodnoceni == EKesDiffTerRating.UNKNOWN) {
+			return gen.getVychoziAlela();
+		}
+		return gen.alela(prefix + hodnoceni.to2DigitNumberString());
 	}
 }

@@ -143,4 +143,12 @@ public class ImportKesiTest {
 	public void pocetWaypointuBezDuplicit() throws Exception {
 		Assert.assertEquals(7, importuj(GPX).getWpts().size());
 	}
+
+	@Test
+	public void neplatnaObtiznostNezahodiImport() throws Exception {
+		final KesBag bag = importuj(gpx(kes("GC6666", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "0", ""),
+				kes("GC7777", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "x", ""),
+				kes("GC8888", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "")));
+		Assert.assertEquals(3, bag.getKesoidy().size());
+	}
 }
