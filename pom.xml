@@ -163,6 +163,39 @@
 		</dependency>
 				
 	</dependencies>
+	<profiles>
+		<profile>
+			<!-- Ručně spouštěný smoke test celého programu, potřebuje displej: xvfb-run -a ./mvnw -B -P smoke verify -->
+			<id>smoke</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<version>3.5.4</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>integration-test</goal>
+									<goal>verify</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<includes>
+								<include>cz/geokuk/smoke/*IT.java</include>
+							</includes>
+							<systemPropertyVariables>
+								<smoke.jar>${project.build.directory}/${project.build.finalName}.jar</smoke.jar>
+								<smoke.testClasses>${project.build.testOutputDirectory}</smoke.testClasses>
+							</systemPropertyVariables>
+							<argLine>-Dfile.encoding=UTF-8</argLine>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<geokuk.version>${project.version}</geokuk.version>
