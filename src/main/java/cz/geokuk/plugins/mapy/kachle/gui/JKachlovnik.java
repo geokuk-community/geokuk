@@ -22,7 +22,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	private static final long serialVersionUID = -6300199882447791157L;
 
-	private static Pocitadlo pocitZustalychKachli = new PocitadloRoste("Počet zůstalých kachlí",
+	private static Pocitadlo pocitZustalychKachli = new PocitadloRoste("Počet znovu použitých kachlí",
 			"Počet kachlí jKachle, které jako kompoenty zůstaly a jen se změnila její lokace, protože po reinicializaci "
 					+ "byly na svém místě (obvykle posun) a nebylo je tudíž nutné znovu vytvářet");
 
