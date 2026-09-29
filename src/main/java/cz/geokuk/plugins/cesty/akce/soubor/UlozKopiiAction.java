@@ -3,6 +3,7 @@ package cz.geokuk.plugins.cesty.akce.soubor;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFileChooser;
 
@@ -37,8 +38,11 @@ public class UlozKopiiAction extends SouboeCestaAction0 {
 					return;
 				}
 			}
-			cestyModel.uloz(selectedFile, doc, false);
-			System.out.println("Uložena cesta do: " + doc.getFile());
+			try {
+				cestyModel.uloz(selectedFile, doc, false);
+			} catch (final IOException ex) {
+				oznamNeulozeno(selectedFile, ex);
+			}
 		}
 	}
 

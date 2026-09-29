@@ -3,6 +3,7 @@
  */
 package cz.geokuk.plugins.vylety;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import cz.geokuk.framework.MySwingWorker0;
@@ -17,11 +18,14 @@ public class VyletSaveSwingWorker extends MySwingWorker0<Vylet, Void> {
 
 
 	private final VyletovyZperzistentnovac vyletovyZperzistentnovac;
-	private final Vylet vylet;
+	private final List<String> ano;
+	private final List<String> ne;
 
 	public VyletSaveSwingWorker(final VyletovyZperzistentnovac vyletovyZperzistentnovac, final Vylet vylet) {
 		this.vyletovyZperzistentnovac = vyletovyZperzistentnovac;
-		this.vylet = vylet;
+		// snímek, zapisuje se na pozadí, zatímco uživatel může výlet dál měnit
+		ano = vylet.kody(EVylet.ANO);
+		ne = vylet.kody(EVylet.NE);
 	}
 
 	/*
@@ -31,7 +35,7 @@ public class VyletSaveSwingWorker extends MySwingWorker0<Vylet, Void> {
 	 */
 	@Override
 	protected Vylet doInBackground() throws Exception {
-		vyletovyZperzistentnovac.immediatlyZapisVylet(vylet);
+		vyletovyZperzistentnovac.immediatlyZapisVylet(ano, ne);
 		return null;
 	}
 

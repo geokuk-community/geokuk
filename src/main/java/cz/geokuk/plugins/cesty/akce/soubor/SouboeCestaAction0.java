@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.cesty.akce.soubor;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -9,7 +10,9 @@ import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.cesty.CestyModel;
 import cz.geokuk.plugins.cesty.data.Doc;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class SouboeCestaAction0 extends Action0 {
 
 	private static final long serialVersionUID = -2637836928166450446L;
@@ -63,9 +66,19 @@ public abstract class SouboeCestaAction0 extends Action0 {
 			}
 		}
 		// TODO ukládat na pozadí a také mít jinde ukládací dialog
-		cestyModel.uloz(xdoc.getFile(), xdoc, true);
-		System.out.println("Uložena cesta do: " + xdoc.getFile());
+		try {
+			cestyModel.uloz(xdoc.getFile(), xdoc, true);
+		} catch (final IOException e) {
+			oznamNeulozeno(xdoc.getFile(), e);
+			return false;
+		}
 		return true;
+	}
+
+	/** Neuložené cesty se nesmí ztratit mlčky. */
+	static void oznamNeulozeno(final File file, final IOException e) {
+		log.error("Cestu nelze uložit do " + file, e);
+		Dlg.error("Cesty se nepodařilo uložit do " + file + ":\n" + e.getMessage() + "\nPůvodní soubor zůstal beze změny.");
 	}
 
 	File doplnGgtPriponuProUkladani(final File file) {

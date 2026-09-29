@@ -4,10 +4,12 @@
 package cz.geokuk.core.profile;
 
 import java.io.*;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.util.file.BezpecnyZapis;
 
 /**
  * @author Martin Veverka
@@ -67,9 +69,14 @@ public final class FPreferencesInNearFile {
 	}
 
 	private static File saveNearToProgram() {
-		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(FConst.PREFERENCES_FILE))) {
-			MyPreferences.root().exportSubtree(bos);
-			bos.close();
+		try {
+			BezpecnyZapis.zapis(FConst.PREFERENCES_FILE, out -> {
+				try {
+					MyPreferences.root().exportSubtree(out);
+				} catch (final BackingStoreException e) {
+					throw new IOException(e);
+				}
+			});
 			updateLastModified();
 			ukladatDoSouboru = true;
 			System.out.printf("FPreferencesInNearFile: Ulozena vesera nastaveni do souboru \"%s\"\n", FConst.PREFERENCES_FILE);

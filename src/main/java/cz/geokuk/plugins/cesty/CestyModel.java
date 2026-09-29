@@ -6,6 +6,7 @@ package cz.geokuk.plugins.cesty;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -177,7 +178,7 @@ public class CestyModel extends Model0 {
 		return new File(kesoidModel.getUmisteniSouboru().getGeogetDataDir().getEffectiveFile(), "lovim.ggt");
 	}
 
-	public void exportujDoGgt(final File file, final Doc doc2) {
+	public void exportujDoGgt(final File file, final Doc doc2) throws IOException {
 		cestyZperzistentnovac.zapisGgt(doc, file);
 	}
 
@@ -466,7 +467,7 @@ public class CestyModel extends Model0 {
 		fireCesta();
 	}
 
-	public void uloz(final File file, final Doc doc, final boolean statSeImplicitniProDokument) {
+	public void uloz(final File file, final Doc doc, final boolean statSeImplicitniProDokument) throws IOException {
 		new Ukladac().uloz(file, doc);
 		if (statSeImplicitniProDokument) {
 			doc.setFile(file);

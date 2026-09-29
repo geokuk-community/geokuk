@@ -1,12 +1,14 @@
 package cz.geokuk.plugins.vylety;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.util.file.BezpecnyZapis;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -27,9 +29,10 @@ public class VyletovyZperzistentnovac {
 		}
 	}
 
-	public void immediatlyZapisVylet(final Vylet vylet) {
-		zapis(vylet, kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile(), EVylet.ANO);
-		zapis(vylet, kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile(), EVylet.NE);
+	/** Synchronizovaně, aby se dva zápisy nepřekryly a soubor nezůstal zpřeházený. */
+	public synchronized void immediatlyZapisVylet(final List<String> ano, final List<String> ne) {
+		zapis(ano, kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile(), EVylet.ANO);
+		zapis(ne, kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile(), EVylet.NE);
 	}
 
 	public void inject(final KesoidModel kesoidModel) {
@@ -43,17 +46,6 @@ public class VyletovyZperzistentnovac {
 					novyvylet.add(evyl, kes);
 				}
 			}
-		}
-	}
-
-	private void flushToFile(final Collection<String> lines, final File file, final boolean append) {
-		try (BufferedWriter wrt = new BufferedWriter(new FileWriter(file, append))) {
-			// TODO : portability
-			for (final String s : lines) {
-				wrt.write(String.format("%s%s", s, FConst.NL));
-			}
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -78,42 +70,17 @@ public class VyletovyZperzistentnovac {
 		}
 	}
 
-	private void zapis(final Vylet vylet, final File file, final EVylet evyl) {
-		final Set<Kesoid> caches = vylet.get(evyl);
-		final Set<String> tripGeocodes = new HashSet<>(caches.size());
-		for (final Kesoid cache : caches) {
-			tripGeocodes.add(cache.getIdentifier());
-		}
-		final List<String> toWrite = new ArrayList<>();
-
-		boolean rewrite = false;
-
-		if (file.exists() && file.canRead()) {
-			try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-				String line;
-				while ((line = br.readLine()) != null) {
-					if (tripGeocodes.contains(line)) {
-						toWrite.add(line);
-						tripGeocodes.remove(line);
-					} else {
-						rewrite = true;
-					}
+	private void zapis(final List<String> kody, final File file, final EVylet evyl) {
+		try {
+			BezpecnyZapis.zapisText(file, Charset.defaultCharset(), wrt -> {
+				for (final String kod : kody) {
+					wrt.print(kod);
+					wrt.print(FConst.NL);
 				}
-			} catch (final IOException e) {
-				rewrite = true;
-				log.error("Error while reading a trip file!", e);
-			}
+			});
+		} catch (final IOException e) {
+			throw new RuntimeException("Výlet nelze uložit do souboru " + file, e);
 		}
-
-		if (rewrite) {
-			toWrite.addAll(tripGeocodes);
-			flushToFile(toWrite, file, false);
-			log.info("Rewritten all for trip {}.", evyl);
-		} else if (!tripGeocodes.isEmpty()) {
-			flushToFile(tripGeocodes, file, true);
-			log.info("Appended {} caches(s) for trip {}", tripGeocodes.size(), evyl);
-		} else {
-			log.info("No changes detected, keeping the original file for trip {}.", evyl);
-		}
+		log.info("Uloženo {} keší pro výlet {}.", kody.size(), evyl);
 	}
 }
