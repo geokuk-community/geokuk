@@ -68,18 +68,27 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 				ex.sendResponseHeaders(404, -1);
 				return;
 			}
-			final byte[] png = nakresli(m.group(1) + "/" + m.group(2) + "/" + m.group(3));
-			ex.getResponseHeaders().set("Content-Type", "image/png");
-			ex.sendResponseHeaders(200, png.length);
+			// Mapy.cz posílají JPEG, u něj dekodér nedočte konec těla odpovědi.
+			final String format = m.group(4) == null ? "jpeg" : "png";
+			final byte[] obrazek = nakresli(m.group(1) + "/" + m.group(2) + "/" + m.group(3), format);
+			ex.getResponseHeaders().set("Content-Type", "image/" + format);
+			ex.sendResponseHeaders(200, obrazek.length);
+			// Konec těla dorazí zvlášť jako po skutečné síti, ať se pozná, kdo ho nedočte.
+			final int konec = Math.min(16, obrazek.length);
 			try (OutputStream os = ex.getResponseBody()) {
-				os.write(png);
+				os.write(obrazek, 0, obrazek.length - konec);
+				os.flush();
+				Thread.sleep(20);
+				os.write(obrazek, obrazek.length - konec, konec);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
 			}
 		} finally {
 			ex.close();
 		}
 	}
 
-	static byte[] nakresli(final String text) throws IOException {
+	static byte[] nakresli(final String text, final String format) throws IOException {
 		final BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
 		final Graphics2D g = img.createGraphics();
 		g.setColor(new Color(0xE8F0E0));
@@ -91,7 +100,7 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 		g.drawString(text, 20, 128);
 		g.dispose();
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ImageIO.write(img, "png", baos);
+		ImageIO.write(img, format, baos);
 		return baos.toByteArray();
 	}
 }
