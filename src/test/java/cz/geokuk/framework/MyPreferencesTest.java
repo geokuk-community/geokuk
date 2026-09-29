@@ -2,6 +2,8 @@ package cz.geokuk.framework;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.awt.Dimension;
+import java.awt.Point;
 import java.io.File;
 import java.util.*;
 import java.util.prefs.AbstractPreferences;
@@ -16,6 +18,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.kesoid.mapicon.ASada;
 
 /**
@@ -134,6 +138,29 @@ public class MyPreferencesTest {
 		final List<String> toStore = ImmutableList.of("a;b", "c\\d", ";", "\\", "");
 		preferences.putStringList("seznam", toStore);
 		assertThat(preferences.getStringList("seznam", null)).isEqualTo(toStore);
+	}
+
+	@Test
+	public void nesmyslneHodnotySeNahradiVychozimi() {
+		final Mou vychoziMou = new Mou(1, 2);
+		preferences.put("mou", "123");
+		assertThat(preferences.getMou("mou", vychoziMou)).isEqualTo(vychoziMou);
+		preferences.put("mou", "abc,def");
+		assertThat(preferences.getMou("mou", vychoziMou)).isEqualTo(vychoziMou);
+
+		final Point vychoziBod = new Point(3, 4);
+		preferences.put("bod", "5");
+		assertThat(preferences.getPoint("bod", vychoziBod)).isEqualTo(vychoziBod);
+
+		final Dimension vychoziRozmer = new Dimension(800, 600);
+		preferences.put("rozmer", "prazdno");
+		assertThat(preferences.getDimension("rozmer", vychoziRozmer)).isEqualTo(vychoziRozmer);
+
+		final Wgs vychoziWgs = new Wgs(50, 14);
+		preferences.put("wgs", "50.1");
+		assertThat(preferences.getWgs("wgs", vychoziWgs)).isEqualTo(vychoziWgs);
+		preferences.put("wgs", "NaN,NaN");
+		assertThat(preferences.getWgs("wgs", vychoziWgs)).isEqualTo(vychoziWgs);
 	}
 
 	@Test

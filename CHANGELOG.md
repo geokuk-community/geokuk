@@ -18,6 +18,11 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Program nastartuje i s poškozeným nastavením vedle programu nebo
+  s nesmyslnou uloženou hodnotou; poškozený soubor odloží stranou
+  a upozorní na to.
+- Poškozená cache mapových dlaždic se založí znovu, místo aby se tiše
+  přestala používat.
 - Ukládání cest, nastavení a výletů zapíše soubor celý, nebo nechá původní
   beze změny; chybu zápisu (plný disk, disk jen pro čtení) program ohlásí
   a cesty zůstanou rozpracované, ne ztracené.

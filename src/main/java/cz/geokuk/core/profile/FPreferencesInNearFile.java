@@ -9,6 +9,8 @@ import java.util.prefs.Preferences;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.BezpecnyZapis;
 
 /**
@@ -18,6 +20,7 @@ import cz.geokuk.util.file.BezpecnyZapis;
 public final class FPreferencesInNearFile {
 
 	private static boolean ukladatDoSouboru = false;
+	private static String varovani;
 
 	public static void deleteAndSwitchOff() {
 		FConst.PREFERENCES_FILE.delete();
@@ -57,14 +60,37 @@ public final class FPreferencesInNearFile {
 		}
 	}
 
+	/** Varování pro uživatele, jednou po zobrazení hlavního okna. */
+	public static String prevzitVarovani() {
+		final String v = varovani;
+		varovani = null;
+		return v;
+	}
+
 	private static void loadNearToProgram() {
-		try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FConst.PREFERENCES_FILE))) {
-			Preferences.importPreferences(bis);
-			bis.close();
+		varovani = nacti(FConst.PREFERENCES_FILE);
+		if (varovani == null) {
 			updateLastModified();
 			System.out.printf("FPreferencesInNearFile: Nactena vesera nastaveni do souboru \"%s\"\n", FConst.PREFERENCES_FILE);
+		}
+	}
+
+	/**
+	 * Načte nastavení ze souboru. Poškozený soubor nesmí bránit spuštění, proto
+	 * se odloží stranou a vrátí se varování pro uživatele; jinak null.
+	 */
+	static String nacti(final File soubor) {
+		try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(soubor))) {
+			Preferences.importPreferences(bis);
+			return null;
 		} catch (final Exception e) {
-			throw new RuntimeException("Problem while saving preferences to \"" + FConst.PREFERENCES_FILE + "\"", e);
+			final File vadne = new File(soubor.getPath() + ".vadne");
+			vadne.delete();
+			final boolean odlozeno = soubor.renameTo(vadne);
+			final String hlaska = "Nastavení ze souboru " + soubor + " nelze načíst, program pokračuje s výchozím nastavením."
+					+ (odlozeno ? "\nPůvodní soubor je uložený jako " + vadne + "." : "");
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, hlaska);
+			return hlaska;
 		}
 	}
 

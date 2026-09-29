@@ -76,6 +76,9 @@ class KachleDBManager implements KachleManager {
 	@Override
 	public Image load(final Ka ki) {
 		final SqlJetDb database = getDatabaseConnection();
+		if (database == null) {
+			return null;
+		}
 		Image img = null;
 		ISqlJetCursor cursor = null;
 
@@ -117,6 +120,9 @@ class KachleDBManager implements KachleManager {
 	@Override
 	public boolean save(final Collection<ItemToSave> imagesToSave) {
 		final SqlJetDb database = getDatabaseConnection();
+		if (database == null) {
+			return false;
+		}
 
 		// in case something goes wrong, rollback the transaction
 		boolean failed = false;
@@ -170,34 +176,69 @@ class KachleDBManager implements KachleManager {
 		if (connections.containsKey(mapKey)) {
 			// Got a valid connection
 			return connections.get(mapKey);
-		} else {
-			try {
-				// create a new connection
-				final SqlJetDb database = SqlJetDb.open(f, true);
-
-				// Initialize the DB if needed
-				if (!isDbInitialized(database)) {
-					initDb(database);
+		}
+		SqlJetDb database = otevri(f);
+		if (database == null && odlozVadnouCache(f)) {
+			database = otevri(f);
+		}
+		if (database == null) {
+			return null;
+		}
+		try {
+			// Close all deprecated connections (should be exactly one or zero)
+			// Done here for synchronization reasons. This way, we never close an active connection that's
+			// needed elsewhere at the same moment and there's always at most one connection per thread.
+			for (final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn : connections.entrySet()) {
+				if (conn.getKey().getKey().equals(t)) {
+					conn.getValue().close();
+					connections.remove(conn.getKey());
 				}
+			}
+		} catch (final SqlJetException e) {
+			log.error("Unable to close the deprecated DB connection!", e);
+		}
 
-				// Close all deprecated connections (should be exactly one or zero)
-				// Done here for synchronization reasons. This way, we never close an active connection that's
-				// needed elsewhere at the same moment and there's always at most one connection per thread.
-				for (final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn : connections.entrySet()) {
-					if (conn.getKey().getKey().equals(t)) {
-						conn.getValue().close();
-						connections.remove(conn.getKey());
-					}
-				}
+		connections.put(mapKey, database);
+		return database;
+	}
 
-				// Now, store the new connection and return it
-				connections.put(mapKey, database);
+	private SqlJetDb otevri(final File f) {
+		SqlJetDb database = null;
+		try {
+			database = SqlJetDb.open(f, true);
+			if (!isDbInitialized(database)) {
+				initDb(database);
+			}
+			if (isDbInitialized(database)) {
 				return database;
+			}
+			log.error("Cache dlaždic {} nelze použít.", f);
+		} catch (final SqlJetException e) {
+			log.error("Unable to establish the DB connection!", e);
+		}
+		if (database != null) {
+			try {
+				database.close();
 			} catch (final SqlJetException e) {
-				log.error("Unable to establish the DB connection!", e);
-				return null;
+				log.error("Couldn't close the database!", e);
 			}
 		}
+		return null;
+	}
+
+	/** Poškozená cache je k ničemu, odložíme ji a založíme prázdnou. */
+	private boolean odlozVadnouCache(final File f) {
+		if (!f.isFile()) {
+			return false;
+		}
+		final File vadna = new File(f.getPath() + ".vadna");
+		vadna.delete();
+		if (!f.renameTo(vadna) && !f.delete()) {
+			log.error("Poškozenou cache dlaždic {} nelze odložit.", f);
+			return false;
+		}
+		log.warn("Poškozená cache dlaždic {} odložena, zakládám novou.", f);
+		return true;
 	}
 
 	/**
