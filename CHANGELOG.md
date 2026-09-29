@@ -18,6 +18,8 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Keše bez hodnocení, BestOf nebo favoritů filtr podle těchto prahů
+  neskryje.
 - Cesta s názvem obsahujícím `&`, `<` nebo `%` se uloží a jde znovu
   otevřít.
 - Dlouhé nastavení (seznamy souborů a podobně) po zkrácení nebo smazání

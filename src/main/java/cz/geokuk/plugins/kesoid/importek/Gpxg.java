@@ -15,11 +15,14 @@ public class Gpxg {
 	public int elevation;
 	public String found;
 	public int flag;
-	public int hodnoceni;
-	public int hodnoceniPocet;
-	public int bestOf;
-	public int favorites;
-	public int znamka;
+	/** Hodnota, která ve zdroji není uvedená. */
+	public static final int NEUVEDENO = -1;
+
+	public int hodnoceni = NEUVEDENO;
+	public int hodnoceniPocet = NEUVEDENO;
+	public int bestOf = NEUVEDENO;
+	public int favorites = NEUVEDENO;
+	public int znamka = NEUVEDENO;
 	public String czkraj;
 	public String czokres;
 	public Map<String, String> userTags = new HashMap<>();

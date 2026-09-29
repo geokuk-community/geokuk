@@ -68,6 +68,6 @@ public class GeogetLoaderTest {
 		new GeogetLoader().nacti(db, builder, null, new ProgressModel());
 
 		Assert.assertEquals("80/75/12/450/3/{barva=modra}", priPridani.get("GC12345"));
-		Assert.assertEquals("0/0/0/0/0/{}", priPridani.get("GC99999"));
+		Assert.assertEquals("keš bez tagů má hodnocení neuvedené", "-1/-1/-1/0/-1/{}", priPridani.get("GC99999"));
 	}
 }

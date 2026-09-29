@@ -11,6 +11,10 @@ public final class ImportKesiTestPristup {
 		return ImportKesiTest.kes(kod, sym, typ, "Cizí", 1, true, false, "2", tagy);
 	}
 
+	public static String kesBezHodnoceni(final String kod) {
+		return ImportKesiTest.kes(kod, "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "");
+	}
+
 	public static KesBag importuj(final String... wpt) throws Exception {
 		return ImportKesiTest.importuj(ImportKesiTest.gpx(wpt));
 	}
