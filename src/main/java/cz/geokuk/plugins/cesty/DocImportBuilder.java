@@ -51,11 +51,6 @@ public class DocImportBuilder implements IImportBuilder {
 	public void endTrackSegment() {}
 
 	@Override
-	public GpxWpt get(final String aName) {
-		throw new RuntimeException("Neimplementovano");
-	}
-
-	@Override
 	public void setTrackName(final String aTrackName) {
 		updator.setNazev(cesta, aTrackName);
 	}

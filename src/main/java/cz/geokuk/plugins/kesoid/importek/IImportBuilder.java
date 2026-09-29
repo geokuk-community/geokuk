@@ -18,7 +18,5 @@ public interface IImportBuilder {
 
 	void endTrackSegment();
 
-	GpxWpt get(String name);
-
 	void setTrackName(String aTrackName);
 }

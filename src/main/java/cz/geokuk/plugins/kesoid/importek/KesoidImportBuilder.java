@@ -40,7 +40,8 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	private List<Wpt> wpts;
 
-	private final Map<String, GpxWpt> gpxwpts = new HashMap<String, GpxWpt>(1023);
+	/** Jen jména, celé waypointy by při načítání zdvojnásobily potřebnou paměť. */
+	private final Set<String> jmenaWaypointu = new HashSet<>(1023);
 
 	public KesoidImportBuilder(final Genom genom, final GccomNick gccomNick, final ProgressModel progressModel, final KesoidPluginManager kesoidPluginManager) {
 		this.genom = genom;
@@ -67,21 +68,12 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 			gpxwpt.name = PREFIX_BEZEJMENNYCH_WAYPOINTU + citacBezejmennychWaypintu;
 		}
 
-		// Přeplácnout nějaký, který tam už je
-		final GpxWpt old = gpxwpts.put(gpxwpt.name, gpxwpt);
+		final boolean novy = jmenaWaypointu.add(gpxwpt.name);
 
 		gpxwpt.iInformaceOZdroji = infoOCurrentnimZdroji; // aby si pamatoval, ze kterého je zdroje
 		// a teď výpočty počtů
 		infoOCurrentnimZdroji.pocetWaypointuCelkem++; // tak samozřejmě, že celkem je tam
-		// TODO [veverka] Těžká kešovina to je, to musí býti jinde. -- 19. 12. 2019 17:43:13 veverka
-		if (old != null) { // už tam byl
-			// A pokud byl původní nalezen a tento ne, tak je tento už také nalezen.
-			// ale až po výstupu do keše samozřejmě, aby při smazání souboru se z keše nebraly nesmysly
-			if (old != null && GEOCACHE_FOUND.equals(old.sym) && GEOCACHE.equals(gpxwpt.sym)) {
-				gpxwpt.sym = GEOCACHE_FOUND;
-			}
-
-		} else {
+		if (novy) {
 			infoOCurrentnimZdroji.pocetWaypointuBranych++; // tak samozřejmě, že těch braných je také tam
 			gpxWptDispatcher.dispatch(gpxwpt);
 		}
@@ -268,11 +260,6 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	@Override
 	public GccomNick getGccomNick() {
 		return gccomNick;
-	}
-
-	@Override
-	public GpxWpt get(final String name) {
-		return gpxwpts.get(name);
 	}
 
 	@Override

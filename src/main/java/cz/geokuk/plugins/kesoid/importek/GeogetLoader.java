@@ -2,6 +2,8 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.zip.*;
 
@@ -66,9 +68,10 @@ public class GeogetLoader extends Nacitac0 {
 			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS
 					+ count(statement, GEOGET_TAGS_COUNT) * PROGRESS_VAHA_TAGS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file.toString());
-			loadCaches(statement, builder, future, progressor);
+			// Tagy před kešemi, keš si hodnoty přebírá už při přidání.
+			final Map<String, Gpxg> tagy = loadTags(statement, future, progressor);
+			loadCaches(statement, builder, tagy, future, progressor);
 			loadWaypoints(statement, builder, future, progressor);
-			loadTags(statement, builder, future, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
 			throw new IOException("Unable to load from " + file, e);
@@ -108,7 +111,7 @@ public class GeogetLoader extends Nacitac0 {
 		return String.format(DATE_FORMAT_TEMPLATE, year, month, day);
 	}
 
-	private void loadCaches(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
+	private void loadCaches(final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(GEOGET_CACHES_QUERY)) {
@@ -178,6 +181,11 @@ public class GeogetLoader extends Nacitac0 {
 					gpxWpt.gpxg.found = Long.toString(dtfound);
 				}
 
+				final Gpxg tagyKese = tagy.get(gpxWpt.name);
+				if (tagyKese != null) {
+					prevezmiTagy(tagyKese, gpxWpt.gpxg);
+				}
+
 				builder.addGpxWpt(gpxWpt);
 				citac++;
 
@@ -188,51 +196,61 @@ public class GeogetLoader extends Nacitac0 {
 		}
 	}
 
-	private void loadTags(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
+	private static void prevezmiTagy(final Gpxg z, final Gpxg kam) {
+		kam.favorites = z.favorites;
+		kam.elevation = z.elevation;
+		kam.bestOf = z.bestOf;
+		kam.hodnoceni = z.hodnoceni;
+		kam.hodnoceniPocet = z.hodnoceniPocet;
+		kam.znamka = z.znamka;
+		kam.userTags.putAll(z.userTags);
+	}
+
+	private Map<String, Gpxg> loadTags(final Statement statement, final Future<?> future, final Progressor progressor) throws SQLException {
 		final ATimestamp startTime = ATimestamp.now();
+		final Map<String, Gpxg> tagy = new HashMap<>();
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(GEOGET_TAGS_QUERY)) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
-					return;
+					return tagy;
 				}
 				progressor.addProgress(PROGRESS_VAHA_TAGS);
 
 				final String name = rs.getString("id");
 				final String category = rs.getString("category");
 				final String value = rs.getString("value");
-				final GpxWpt gpxWpt = builder.get(name);
-
-				if (name == null || category == null || value == null || gpxWpt == null) {
+				if (name == null || category == null || value == null) {
 					continue;
 				}
+				final Gpxg gpxg = tagy.computeIfAbsent(name, k -> new Gpxg());
 
 				try {
 					if (category.startsWith(PREFIX_USERDEFINOANYCH_GENU)) {
-						gpxWpt.gpxg.putUserTag(category.substring(PREFIX_USERDEFINOANYCH_GENU.length()), value);
+						gpxg.putUserTag(category.substring(PREFIX_USERDEFINOANYCH_GENU.length()), value);
 					} else {
 						switch (category) {
 						case "favorites":
-							gpxWpt.gpxg.favorites = Integer.parseInt(value);
+							gpxg.favorites = Integer.parseInt(value);
 							break;
 						case "Elevation":
-							gpxWpt.gpxg.elevation = Integer.parseInt(value);
+							gpxg.elevation = Integer.parseInt(value);
 							break;
 						case "BestOf":
-							gpxWpt.gpxg.bestOf = Integer.parseInt(value);
+							gpxg.bestOf = Integer.parseInt(value);
 							break;
 						case "Hodnoceni":
 							if (!value.isEmpty()) {
-								gpxWpt.gpxg.hodnoceni = Integer.parseInt(value.substring(0, value.length() - 1)); // odříznout procenta
+								gpxg.hodnoceni = Integer.parseInt(value.substring(0, value.length() - 1)); // odříznout procenta
 							}
 							break;
 						case "Hodnoceni-Pocet":
 							if (!value.isEmpty()) {
-								gpxWpt.gpxg.hodnoceniPocet = Integer.parseInt(value.substring(0, value.length() - 1)); // odříznout x
+								gpxg.hodnoceniPocet = Integer.parseInt(value.substring(0, value.length() - 1)); // odříznout x
 							}
 							break;
 						case "Znamka":
-							gpxWpt.gpxg.znamka = Integer.parseInt(value);
+							gpxg.znamka = Integer.parseInt(value);
 							break;
 						default:
 							log.warn("Unknown tag category: {}", category);
@@ -247,6 +265,7 @@ public class GeogetLoader extends Nacitac0 {
 			progressor.finish();
 			logResult("Tags", startTime, citac);
 		}
+		return tagy;
 	}
 
 	private void loadWaypoints(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
