@@ -427,8 +427,7 @@ public class GsakDbLoader extends Nacitac0 {
 		private final Statement iStatement;
 
 		public GsakDao(final File aSqliteDatabaseFile) throws SQLException {
-			final String url = "jdbc:sqlite:" + aSqliteDatabaseFile.getAbsolutePath();
-			iConnection = DriverManager.getConnection(url);
+			iConnection = DatabazeJinehoProgramu.otevri(aSqliteDatabaseFile);
 			iStatement = iConnection.createStatement();
 		}
 

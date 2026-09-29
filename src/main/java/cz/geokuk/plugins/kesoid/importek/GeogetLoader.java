@@ -64,7 +64,7 @@ public class GeogetLoader extends Nacitac0 {
 		if (!umiNacist(file)) {
 			throw new IllegalArgumentException("Cannot load from file " + file);
 		}
-		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath()); Statement statement = c.createStatement()) {
+		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
 			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS
 					+ count(statement, GEOGET_TAGS_COUNT) * PROGRESS_VAHA_TAGS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file.toString());
