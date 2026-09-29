@@ -24,7 +24,8 @@ public class Mou extends Misto0 {
 	}
 
 	public Mou add(final Moud moud) {
-		return new Mou(xx + moud.dxx, yy + moud.dyy);
+		// posun větší než svět se přetočí, to je správně, svět je dokola
+		return new Mou((int) (xx + moud.dxx), (int) (yy + moud.dyy));
 	}
 
 	@Override
@@ -56,7 +57,8 @@ public class Mou extends Misto0 {
 	}
 
 	public Mou sub(final Moud moud) {
-		return new Mou(xx - moud.dxx, yy - moud.dyy);
+		// posun větší než svět se přetočí, to je správně, svět je dokola
+		return new Mou((int) (xx - moud.dxx), (int) (yy - moud.dyy));
 	}
 
 	@Override

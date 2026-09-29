@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.imageio.ImageIO;
 
+import org.tmatesoft.sqljet.core.SqlJetErrorCode;
 import org.tmatesoft.sqljet.core.SqlJetException;
 import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.schema.SqlJetConflictAction;
@@ -53,6 +54,16 @@ class KachleDBManager implements KachleManager {
 	 */
 	final KachleCacheFolderHolder folderHolder;
 
+	private final OpakovaneChyby chybyCteni = new OpakovaneChyby("Nepodařilo se přečíst dlaždici z databáze");
+
+	private final OpakovaneChyby chybyZavreni = new OpakovaneChyby("Nepodařilo se zavřít kurzor databáze dlaždic");
+
+	private final OpakovaneChyby chybyDokonceni = new OpakovaneChyby("Nepodařilo se dokončit transakci databáze dlaždic");
+
+	private final OpakovaneChyby chybyZapisu = new OpakovaneChyby("Nepodařilo se zapsat dlaždice do databáze");
+
+	private final OpakovaneChyby chybyOtevreni = new OpakovaneChyby("Nepodařilo se otevřít databázi dlaždic");
+
 	/**
 	 * Constructs a new instance of the DB Manager.
 	 */
@@ -81,6 +92,7 @@ class KachleDBManager implements KachleManager {
 		}
 		Image img = null;
 		ISqlJetCursor cursor = null;
+		boolean vadne = false;
 
 		try {
 			final ISqlJetTable table = database.getTable(TABLE_NAME);
@@ -95,20 +107,24 @@ class KachleDBManager implements KachleManager {
 				log.debug("Loaded DB image is null!");
 			}
 		} catch (SqlJetException | IOException e) {
-			log.error("A database error has occurred!", e);
+			chybyCteni.ohlas(e);
+			vadne = e instanceof SqlJetException;
 			throw new RuntimeException(e);
 		} finally {
 			if (cursor != null) {
 				try {
 					cursor.close();
 				} catch (final SqlJetException e) {
-					log.error("Couldn't close the cursor!", e);
+					chybyZavreni.ohlas(e);
 				}
 			}
 			try {
 				database.commit();
 			} catch (final SqlJetException e) {
-				log.error("Couldn't commit to the database!", e);
+				chybyDokonceni.ohlas(e);
+			}
+			if (vadne) {
+				zahod(database);
 			}
 		}
 		return img;
@@ -143,7 +159,7 @@ class KachleDBManager implements KachleManager {
 				database.getTable(TABLE_NAME).insertOr(SqlJetConflictAction.REPLACE, kx, ky, kaloc.getMoumer(), ki.typToString(), dataToSave);
 			}
 		} catch (final SqlJetException e) {
-			log.error("A database error has occurred!", e);
+			chybyZapisu.ohlas(e);
 			failed = true;
 		} finally {
 			try {
@@ -153,11 +169,31 @@ class KachleDBManager implements KachleManager {
 					database.commit();
 				}
 			} catch (final SqlJetException e) {
-				log.error("Couldn't commit/rollback to the database!", e);
+				chybyDokonceni.ohlas(e);
 				failed = true;
+			}
+			if (failed) {
+				zahod(database);
 			}
 		}
 		return !failed;
+	}
+
+	/**
+	 * Spojení po chybě už může být nepoužitelné (přerušení vlákna zavře kanál souboru),
+	 * proto ho zahodíme a příští požadavek otevře nové.
+	 */
+	private void zahod(final SqlJetDb database) {
+		connections.values().remove(database);
+		zavri(database);
+	}
+
+	private static void zavri(final SqlJetDb database) {
+		try {
+			database.close();
+		} catch (final SqlJetException e) {
+			log.debug("Spojení s cache dlaždic nejde zavřít.", e);
+		}
 	}
 
 	/**
@@ -177,12 +213,20 @@ class KachleDBManager implements KachleManager {
 			// Got a valid connection
 			return connections.get(mapKey);
 		}
-		SqlJetDb database = otevri(f);
-		if (database == null && odlozVadnouCache(f)) {
+		SqlJetDb database;
+		try {
 			database = otevri(f);
-		}
-		if (database == null) {
-			return null;
+		} catch (final SqlJetException e) {
+			if (!jePoskozena(e) || !odlozVadnouCache(f)) {
+				chybyOtevreni.ohlas(e);
+				return null;
+			}
+			try {
+				database = otevri(f);
+			} catch (final SqlJetException e2) {
+				chybyOtevreni.ohlas(e2);
+				return null;
+			}
 		}
 		try {
 			// Close all deprecated connections (should be exactly one or zero)
@@ -202,28 +246,28 @@ class KachleDBManager implements KachleManager {
 		return database;
 	}
 
-	private SqlJetDb otevri(final File f) {
-		SqlJetDb database = null;
+	private SqlJetDb otevri(final File f) throws SqlJetException {
+		final SqlJetDb database = SqlJetDb.open(f, true);
 		try {
-			database = SqlJetDb.open(f, true);
+			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.
+			database.getSchema();
 			if (!isDbInitialized(database)) {
 				initDb(database);
 			}
 			if (isDbInitialized(database)) {
 				return database;
 			}
-			log.error("Cache dlaždic {} nelze použít.", f);
 		} catch (final SqlJetException e) {
-			log.error("Unable to establish the DB connection!", e);
+			zavri(database);
+			throw e;
 		}
-		if (database != null) {
-			try {
-				database.close();
-			} catch (final SqlJetException e) {
-				log.error("Couldn't close the database!", e);
-			}
-		}
-		return null;
+		zavri(database);
+		throw new SqlJetException(SqlJetErrorCode.ERROR, "Cache dlaždic " + f + " nelze použít.");
+	}
+
+	/** Jen skutečně poškozený soubor se smí odložit, ne chyba čtení nebo přerušené vlákno. */
+	private static boolean jePoskozena(final SqlJetException e) {
+		return e.getErrorCode() == SqlJetErrorCode.CORRUPT || e.getErrorCode() == SqlJetErrorCode.NOTADB;
 	}
 
 	/** Poškozená cache je k ničemu, odložíme ji a založíme prázdnou. */

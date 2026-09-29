@@ -278,9 +278,7 @@ public class Coord {
 	}
 
 	public Moud getMouSize() {
-		// pozor na to, že pokud půjde moumer k nule a v mapš se bude opakovat motiv, tak to přeteče
-		// a vlastně je rozměr menší
-		return new Moud((int) ((long) dim.width << mpShift), (int) ((long) dim.height << mpShift));
+		return new Moud((long) dim.width << mpShift, (long) dim.height << mpShift);
 	}
 
 	public Mou getMoustred() {
@@ -425,8 +423,9 @@ public class Coord {
 	/*
 	 * Transformuje vzdálnost v pixlech na vzdálenost v mouřadnicích.
 	 */
-	public int transformPoindDiff(final int pointDiff) {
-		return (int) ((long) pointDiff << mpShift);
+	public long transformPoindDiff(final int pointDiff) {
+		// v long, při malém měřítku je vzdálenost přes celou obrazovku větší než svět
+		return (long) pointDiff << mpShift;
 	}
 
 	/** transformuje posun v pixlech na posun v mouřadnicích */

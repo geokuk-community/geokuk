@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.coordinates.Moud;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.util.index2d.BoundingRect;
 
@@ -16,6 +17,27 @@ public class CoordTest {
 
 	private static final Dimension OKNO = new Dimension(800, 600);
 	private static final Mou PRAHA = new Wgs(50.0755, 14.4378).toMou();
+
+	@Test
+	public void rozmerVyrezuPriOdzoomuNepretece() {
+		// při měřítku 0 je okno širší než celý svět; v intu vyšel rozměr menší, nebo dokonce prázdný
+		final Dimension okno = new Dimension(2560, 1440);
+		final Coord c = new Coord(0, PRAHA, okno, 0);
+
+		final Moud rozmer = c.getMouSize();
+		Assert.assertEquals((long) okno.width << Coord.MAX_MOUMER, rozmer.dxx);
+		Assert.assertEquals((long) okno.height << Coord.MAX_MOUMER, rozmer.dyy);
+		Assert.assertFalse(rozmer.isAnyRozmerEmpty());
+	}
+
+	@Test
+	public void posunPresCelouObrazovkuPriOdzoomuNepretece() {
+		// tažení mapy o celou šířku okna je při měřítku 0 posun o víc než celý svět
+		final Coord c = new Coord(0, PRAHA, new Dimension(2560, 1440), 0);
+
+		Assert.assertEquals(2560L << Coord.MAX_MOUMER, c.transformPoindDiff(2560));
+		Assert.assertEquals(-(1440L << Coord.MAX_MOUMER), c.transformShift(0, 1440).dyy);
+	}
 
 	@Test
 	public void priOdzoomuNaCelySvetJeVyrezCelySvet() {
