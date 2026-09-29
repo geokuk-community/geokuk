@@ -101,6 +101,7 @@ public class GsakDbLoader extends Nacitac0 {
 	private void loadCaches(final GsakDao aDao, final IImportBuilder aBuilder, final Map<String, Map<String, String>> aVlastniHodnoty, final Future<?> aFuture, final Progressor aProgressor)
 			throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
+		final Preskocene preskocene = new Preskocene("keš");
 		final Counter čítač = new Counter();
 
 		aDao.forEachCache(record -> {
@@ -108,82 +109,87 @@ public class GsakDbLoader extends Nacitac0 {
 				return false;
 			}
 			aProgressor.addProgress(PROGRESS_VAHA_CACHES);
-			//
-			// Příprava dat:
-			final EGsakCacheType cacheType = EGsakCacheType.fromGsakCode(record.CacheType);
-			final Wgs coordinates = record.Latitude == 0.0 && record.Longitude == 0.0 ? null : new Wgs(record.Latitude, record.Longitude);
-			final Wgs original = record.LatOriginal == 0.0 && record.LonOriginal == 0.0 ? null : new Wgs(record.LatOriginal, record.LonOriginal);
-			//
-			// Plnění dat:
-			final GpxWpt cache = new GpxWpt();
-			{
-				cache.name = record.Code;
-				cache.sym = cacheType.getGeokukSymbol();
-				cache.wgs = isCorrected(original, coordinates) ? original : coordinates;
-				cache.time = record.PlacedDate;
-
-				final Groundspeak groundspeak = new Groundspeak();
+			try {
+				//
+				// Příprava dat:
+				final EGsakCacheType cacheType = EGsakCacheType.fromGsakCode(record.CacheType);
+				final Wgs coordinates = record.Latitude == 0.0 && record.Longitude == 0.0 ? null : new Wgs(record.Latitude, record.Longitude);
+				final Wgs original = record.LatOriginal == 0.0 && record.LonOriginal == 0.0 ? null : new Wgs(record.LatOriginal, record.LonOriginal);
+				//
+				// Plnění dat:
+				final GpxWpt cache = new GpxWpt();
 				{
-					groundspeak.ownerid = record.OwnerId;
-					groundspeak.name = record.Name;
-					groundspeak.owner = intern(record.OwnerName);
-					groundspeak.placedBy = intern(record.PlacedBy);
-					groundspeak.type = cacheType.toGroundspeakName();
-					groundspeak.container = intern(record.Container);
-					groundspeak.difficulty = intern(record.Difficulty);
-					groundspeak.terrain = intern(record.Terrain);
-					groundspeak.country = intern(record.Country);
-					groundspeak.state = intern(record.State);
-					groundspeak.encodedHints = record.Hints;
-					groundspeak.shortDescription = record.ShortDescription;
-					groundspeak.archived = record.Archived;
-					groundspeak.availaible = !record.TempDisabled;
-				}
-				cache.groundspeak = groundspeak;
-				cache.desc = String.format("%s by %s (%s / %s)", cache.groundspeak.name, cache.groundspeak.placedBy, cache.groundspeak.difficulty, cache.groundspeak.terrain);
-				cache.link.href = "http://coord.info/" + cache.name;
-				cache.link.text = String.format("%s by %s", cache.groundspeak.name, cache.groundspeak.placedBy);
+					cache.name = record.Code;
+					cache.sym = cacheType.getGeokukSymbol();
+					cache.wgs = isCorrected(original, coordinates) ? original : coordinates;
+					cache.time = record.PlacedDate;
 
-				if (!StringUtils.isBlank(record.FoundByMeDate)) {
-					cache.sym = "Geocache Found";
-					cache.gpxg.found = record.FoundByMeDate;
-					final String time = _getFoundByMeTimeField(record.values);
-					if (!StringUtils.isBlank(time)) {
-						cache.gpxg.found += "T" + time;
+					final Groundspeak groundspeak = new Groundspeak();
+					{
+						groundspeak.ownerid = record.OwnerId;
+						groundspeak.name = record.Name;
+						groundspeak.owner = intern(record.OwnerName);
+						groundspeak.placedBy = intern(record.PlacedBy);
+						groundspeak.type = cacheType.toGroundspeakName();
+						groundspeak.container = intern(record.Container);
+						groundspeak.difficulty = intern(record.Difficulty);
+						groundspeak.terrain = intern(record.Terrain);
+						groundspeak.country = intern(record.Country);
+						groundspeak.state = intern(record.State);
+						groundspeak.encodedHints = record.Hints;
+						groundspeak.shortDescription = record.ShortDescription;
+						groundspeak.archived = record.Archived;
+						groundspeak.availaible = !record.TempDisabled;
 					}
+					cache.groundspeak = groundspeak;
+					cache.desc = String.format("%s by %s (%s / %s)", cache.groundspeak.name, cache.groundspeak.placedBy, cache.groundspeak.difficulty, cache.groundspeak.terrain);
+					cache.link.href = "http://coord.info/" + cache.name;
+					cache.link.text = String.format("%s by %s", cache.groundspeak.name, cache.groundspeak.placedBy);
+
+					if (!StringUtils.isBlank(record.FoundByMeDate)) {
+						cache.sym = "Geocache Found";
+						cache.gpxg.found = record.FoundByMeDate;
+						final String time = _getFoundByMeTimeField(record.values);
+						if (!StringUtils.isBlank(time)) {
+							cache.gpxg.found += "T" + time;
+						}
+					}
+					cache.gpxg.favorites = record.FavPoints;
+					cache.gpxg.elevation = record.Elevation;
+					cache.gpxg.czkraj = record.State;
+					cache.gpxg.czokres = record.County;
+					//                gpxWpt.gpxg.bestOf = ???;
+					//                gpxWpt.gpxg.hodnoceni = ???;
+					//                gpxWpt.gpxg.hodnoceniPocet = ???;
+					//                gpxWpt.gpxg.znamka = ???;
 				}
-				cache.gpxg.favorites = record.FavPoints;
-				cache.gpxg.elevation = record.Elevation;
-				cache.gpxg.czkraj = record.State;
-				cache.gpxg.czokres = record.County;
-				//                gpxWpt.gpxg.bestOf = ???;
-				//                gpxWpt.gpxg.hodnoceni = ???;
-				//                gpxWpt.gpxg.hodnoceniPocet = ???;
-				//                gpxWpt.gpxg.znamka = ???;
-			}
-			final Map<String, String> vlastni = aVlastniHodnoty.get(record.Code);
-			if (vlastni != null) {
-				prevezmiVlastniHodnoty(vlastni, cache);
-			}
-			aBuilder.addGpxWpt(cache);
-			//
-			// Corrected Coordinates:
-			if (isCorrected(original, coordinates)) {
-				final GpxWpt correctedCoordinateWaypoint = new GpxWpt();
-				{
-					correctedCoordinateWaypoint.wgs = coordinates;
-					correctedCoordinateWaypoint.name = "##" + record.Code.substring(2);
-					correctedCoordinateWaypoint.sym = "Final Location";
-					correctedCoordinateWaypoint.desc = "Final (" + record.Name + ")";
+				final Map<String, String> vlastni = aVlastniHodnoty.get(record.Code);
+				if (vlastni != null) {
+					prevezmiVlastniHodnoty(vlastni, cache);
 				}
-				aBuilder.addGpxWpt(correctedCoordinateWaypoint);
+				aBuilder.addGpxWpt(cache);
+				//
+				// Corrected Coordinates:
+				if (isCorrected(original, coordinates)) {
+					final GpxWpt correctedCoordinateWaypoint = new GpxWpt();
+					{
+						correctedCoordinateWaypoint.wgs = coordinates;
+						correctedCoordinateWaypoint.name = "##" + record.Code.substring(2);
+						correctedCoordinateWaypoint.sym = "Final Location";
+						correctedCoordinateWaypoint.desc = "Final (" + record.Name + ")";
+					}
+					aBuilder.addGpxWpt(correctedCoordinateWaypoint);
+				}
+				//
+				čítač.inc();
+			} catch (final RuntimeException e) {
+				preskocene.preskoc(record.Code, e);
 			}
-			//
-			čítač.inc();
 			return true;
 		});
 
 		aProgressor.finish();
+		preskocene.ohlas();
 		logResult("Geocaches", startTime, čítač.getCount());
 	}
 

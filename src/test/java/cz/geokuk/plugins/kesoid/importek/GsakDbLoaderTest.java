@@ -129,4 +129,16 @@ public class GsakDbLoaderTest {
 		Assert.assertEquals("Parkoviště", w.get("PK2222").desc);
 		Assert.assertEquals("Parking Area", w.get("PK2222").sym);
 	}
+	/** Vadný záznam nesmí připravit uživatele o zbytek databáze. */
+	@Test
+	public void vadnyZaznamNeshodiCelouDatabazi() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("INSERT INTO Caches VALUES ('G', 'Zmrzačený kód', 'Nikdo', 0, 'T', 'Micro', 'Praha', 'Czech Republic', '1', '', 50.3, 14.7, 9, 'Nikdo',"
+					+ " '2018-01-01', 'Praha', 0, '1', 50.31, 14.71, 0, 0)");
+			s.execute("INSERT INTO CacheMemo VALUES ('G', '', '')");
+		}
+		final Map<String, GpxWpt> w = nacti();
+		Assert.assertNotNull("ostatní keše se načtou", w.get("GC1111"));
+		Assert.assertNotNull(w.get("GC2222"));
+	}
 }
