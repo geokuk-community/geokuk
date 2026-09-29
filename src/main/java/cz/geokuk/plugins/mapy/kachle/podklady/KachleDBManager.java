@@ -53,6 +53,14 @@ class KachleDBManager implements KachleManager {
 	 */
 	final KachleCacheFolderHolder folderHolder;
 
+	private final OpakovaneChyby chybyCteni = new OpakovaneChyby("Nepodařilo se přečíst dlaždici z databáze");
+
+	private final OpakovaneChyby chybyZavreni = new OpakovaneChyby("Nepodařilo se zavřít kurzor databáze dlaždic");
+
+	private final OpakovaneChyby chybyDokonceni = new OpakovaneChyby("Nepodařilo se dokončit transakci databáze dlaždic");
+
+	private final OpakovaneChyby chybyZapisu = new OpakovaneChyby("Nepodařilo se zapsat dlaždice do databáze");
+
 	/**
 	 * Constructs a new instance of the DB Manager.
 	 */
@@ -95,20 +103,20 @@ class KachleDBManager implements KachleManager {
 				log.debug("Loaded DB image is null!");
 			}
 		} catch (SqlJetException | IOException e) {
-			log.error("A database error has occurred!", e);
+			chybyCteni.ohlas(e);
 			throw new RuntimeException(e);
 		} finally {
 			if (cursor != null) {
 				try {
 					cursor.close();
 				} catch (final SqlJetException e) {
-					log.error("Couldn't close the cursor!", e);
+					chybyZavreni.ohlas(e);
 				}
 			}
 			try {
 				database.commit();
 			} catch (final SqlJetException e) {
-				log.error("Couldn't commit to the database!", e);
+				chybyDokonceni.ohlas(e);
 			}
 		}
 		return img;
@@ -143,7 +151,7 @@ class KachleDBManager implements KachleManager {
 				database.getTable(TABLE_NAME).insertOr(SqlJetConflictAction.REPLACE, kx, ky, kaloc.getMoumer(), ki.typToString(), dataToSave);
 			}
 		} catch (final SqlJetException e) {
-			log.error("A database error has occurred!", e);
+			chybyZapisu.ohlas(e);
 			failed = true;
 		} finally {
 			try {
@@ -153,7 +161,7 @@ class KachleDBManager implements KachleManager {
 					database.commit();
 				}
 			} catch (final SqlJetException e) {
-				log.error("Couldn't commit/rollback to the database!", e);
+				chybyDokonceni.ohlas(e);
 				failed = true;
 			}
 		}

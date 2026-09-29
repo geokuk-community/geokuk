@@ -20,7 +20,7 @@ public class MouRect {
 	public MouRect(final Mou roh1, final Mou roh2) {
 		add(roh1);
 		add(roh2);
-		sstre = new Mou((roh1.xx + roh2.xx) / 2, (roh1.yy + roh2.yy) / 2);
+		sstre = new Mou(stred(roh1.xx, roh2.xx), stred(roh1.yy, roh2.yy));
 		// assert roh1.xx == xx1;
 		// assert roh2.xx == xx2;
 		// assert roh1.yy == yy1 : roh1.yy + " " + yy1;
@@ -89,16 +89,16 @@ public class MouRect {
 		return new Mou(xx1, yy1);
 	}
 
-	public int getMouHeight() {
-		return yy2 - yy1;
+	public long getMouHeight() {
+		return (long) yy2 - yy1;
 	}
 
-	public int getMouWidth() {
-		return xx2 - xx1;
+	public long getMouWidth() {
+		return (long) xx2 - xx1;
 	}
 
 	public Mou getStred() {
-		return new Mou((xx1 + xx2) / 2, (yy1 + yy2) / 2);
+		return new Mou(stred(xx1, xx2), stred(yy1, yy2));
 	}
 
 	public Mou getSv() {
@@ -148,12 +148,25 @@ public class MouRect {
 	 * Zvětší nebo zmenší velikost v daném poměru
 	 */
 	public void resize(final double pomer) {
-		final int dx = (int) ((getMouWidth() * pomer - getMouWidth()) / 2);
-		final int dy = (int) ((getMouHeight() * pomer - getMouHeight()) / 2);
-		xx1 -= dx;
-		xx2 += dx;
-		yy1 -= dy;
-		yy2 += dy;
+		final long dx = (long) ((getMouWidth() * pomer - getMouWidth()) / 2);
+		final long dy = (long) ((getMouHeight() * pomer - getMouHeight()) / 2);
+		xx1 = orizni((long) xx1 - dx);
+		xx2 = orizni((long) xx2 + dx);
+		yy1 = orizni((long) yy1 - dy);
+		yy2 = orizni((long) yy2 + dy);
+	}
+
+	/** Střed dvou souřadnic; součet dvou velkých mouřadnic by v intu přetekl. */
+	private static int stred(final int souradnice1, final int souradnice2) {
+		return (int) (((long) souradnice1 + souradnice2) / 2);
+	}
+
+	/**
+	 * Zvětšený obdélník nesmí přesáhnout okraj světa; přetočil by se a vyšel by
+	 * z něj výřez, ve kterém skoro nic neleží.
+	 */
+	private static int orizni(final long souradnice) {
+		return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, souradnice));
 	}
 
 	@Override

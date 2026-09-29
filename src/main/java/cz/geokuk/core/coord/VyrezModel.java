@@ -133,7 +133,8 @@ public class VyrezModel extends Model0 {
 		// setMoucur(moustred);
 		// odspodu hledáme měřítko, které tam vleze
 		int mer = 20;
-		for (;; mer--) {
+		// pod nulu se nesmí, tam už je vidět celý svět a 1 << (20 - mer) by přeteklo
+		for (; mer > 0; mer--) {
 			final int pom = 1 << 20 - mer; // pomer pro toto meritko
 			if (mourect.getMouWidth() / pom <= moord.getDim().getWidth() && mourect.getMouHeight() / pom <= moord.getDim().getHeight()) {
 				break; // hledáme nejbližší nejlepší

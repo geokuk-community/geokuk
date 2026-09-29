@@ -1,13 +1,18 @@
 package cz.geokuk.core.coordinates;
 
+/**
+ * Rozdíl dvou mouřadnic nebo rozměr v mouřadnicích. Na rozdíl od polohy je
+ * v longu, protože rozdíl může být větší než celý svět (při malém měřítku,
+ * kdy se svět v okně opakuje).
+ */
 public class Moud {
 
-	public int dxx;
-	public int dyy;
+	public long dxx;
+	public long dyy;
 
 	public Moud() {}
 
-	public Moud(final int dxx, final int dyy) {
+	public Moud(final long dxx, final long dyy) {
 		this.dxx = dxx;
 		this.dyy = dyy;
 	}
@@ -17,7 +22,7 @@ public class Moud {
 		dyy = mou.dyy;
 	}
 
-	public Moud add(final int dxx, final int dyy) {
+	public Moud add(final long dxx, final long dyy) {
 		return new Moud(this.dxx + dxx, this.dyy + dyy);
 	}
 
@@ -34,26 +39,24 @@ public class Moud {
 	}
 
 	public long getKvadratVzdalenosti() {
-		final long lxx = dxx;
-		final long lyy = dyy;
-		return lxx * lxx + lyy * lyy;
+		return dxx * dxx + dyy * dyy;
 	}
 
 	@Override
 	public int hashCode() {
-		return dxx ^ dyy;
+		return (int) (dxx ^ dyy);
 	}
 
 	public boolean isAnyRozmerEmpty() {
 		return dxx <= 0 || dyy <= 0;
 	}
 
-	public Moud sub(final int dxx, final int dyy) {
+	public Moud sub(final long dxx, final long dyy) {
 		return new Moud(this.dxx - dxx, this.dyy - dyy);
 	}
 
 	@Override
 	public String toString() {
-		return "[" + Integer.toHexString(dxx) + "," + Integer.toHexString(dyy) + "]";
+		return "[" + Long.toHexString(dxx) + "," + Long.toHexString(dyy) + "]";
 	}
 }
