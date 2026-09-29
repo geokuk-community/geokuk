@@ -17,8 +17,9 @@ import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.GeokukMain;
-import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.mapy.PodkladAction;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
@@ -56,6 +57,7 @@ public class SmokeScenar {
 
 	private void proved(final String[] kroky) throws Exception {
 		MyPreferences.current().node(FPref.VSEOBECNE_node).putLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, Long.MAX_VALUE);
+		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(new String[0]);
 		final Thread.UncaughtExceptionHandler puvodni = Thread.getDefaultUncaughtExceptionHandler();
 		Thread.setDefaultUncaughtExceptionHandler((vlakno, t) -> {
@@ -66,12 +68,25 @@ public class SmokeScenar {
 		});
 
 		cekej("hlavní okno", 60_000, () -> najdiHlavniOkno() != null);
+		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
 		naEdt(() -> {
 			hlavniOkno = najdiHlavniOkno();
 			for (int i = 0; i < hlavniOkno.getJMenuBar().getMenuCount(); i++) {
 				sesbirejAkce(hlavniOkno.getJMenuBar().getMenu(i));
 			}
 		});
+		final KesoidModel kesoidModel = bean(KesoidModel.class);
+		final Field vsechny = KesoidModel.class.getDeclaredField("vsechny");
+		vsechny.setAccessible(true);
+		cekej("načtení keší", 120_000, () -> {
+			try {
+				return vsechny.get(kesoidModel) != null;
+			} catch (final IllegalAccessException e) {
+				throw new IllegalStateException(e);
+			}
+		});
+		zprava.setProperty("start.keseMs", String.valueOf(System.currentTimeMillis() - start));
+		zprava.setProperty("kese.wpt", String.valueOf(((KesBag) vsechny.get(kesoidModel)).getWpts().size()));
 		zapniMapu();
 		pockejNaKlid("start");
 		for (final String krok : kroky) {
@@ -172,9 +187,25 @@ public class SmokeScenar {
 	}
 
 	private VyrezModel vyrezModel() throws Exception {
-		final Field f = Action0.class.getDeclaredField("vyrezModel");
-		f.setAccessible(true);
-		return (VyrezModel) f.get(akce(PriblizMapuAction.class));
+		return bean(VyrezModel.class);
+	}
+
+	/** Najde model programu v některé akci z menu, akce ho mají injektovaný. */
+	private <T> T bean(final Class<T> trida) throws IllegalAccessException {
+		for (final Action a : akce) {
+			for (Class<?> c = a.getClass(); c != null; c = c.getSuperclass()) {
+				for (final Field f : c.getDeclaredFields()) {
+					if (f.getType() == trida) {
+						f.setAccessible(true);
+						final Object hodnota = f.get(a);
+						if (hodnota != null) {
+							return trida.cast(hodnota);
+						}
+					}
+				}
+			}
+		}
+		throw new IllegalStateException("Žádná akce nemá " + trida.getSimpleName());
 	}
 
 	private Action akce(final Class<?> trida) {

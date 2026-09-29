@@ -42,6 +42,7 @@ public class SmokeIT {
 
 		final Properties prvni = spust(adresar, "prvni", "meritka,posun");
 		zkontrolujBezChyb(adresar, prvni);
+		assertEquals("Načtené waypointy", String.valueOf(pocetWpt), prvni.getProperty("kese.wpt"));
 		final Map<String, Integer> pozadavky = server.getPozadavky();
 		final List<String> vicekrat = pozadavky.entrySet().stream().filter(e -> e.getValue() > 1).map(e -> e.getKey() + " " + e.getValue() + "x").collect(Collectors.toList());
 		assertTrue("Tytéž dlaždice se stahovaly opakovaně: " + vicekrat, vicekrat.isEmpty());
@@ -66,11 +67,14 @@ public class SmokeIT {
 		assertTrue(pocitadlo(druhy, "ka22 DISK cache #zásahů") > 100);
 	}
 
+	private static int pocetWpt;
+
 	private static File pripravAdresar(final String jmeno) throws IOException {
 		final File adresar = new File(KOREN, jmeno).getAbsoluteFile();
 		smaz(adresar);
 		final File pracovni = new File(adresar, "pracovni");
-		new File(adresar, "home").mkdirs();
+		new File(adresar, "home/geokuk").mkdirs();
+		pocetWpt = SyntetickeKese.zapis(new File(adresar, "home/geokuk/kese.gpx"), 3000, 50.08, 14.42, 0.05);
 		new File(adresar, "tmp").mkdirs();
 		pracovni.mkdirs();
 		final String mapy = "smoke.nazev=" + SmokeScenar.MAPA + "\n" //
