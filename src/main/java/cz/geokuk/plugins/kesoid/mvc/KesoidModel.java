@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.mvc;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -127,8 +128,16 @@ public class KesoidModel extends Model0 {
 		if (kes == null) {
 			return;
 		}
+		// Tisková URL existuje jen u starých odkazů s guid, jinak stačí běžná URL listingu.
+		URL url = kes.getUrlPrint();
+		if (url == null) {
+			url = kes.getUrlShow();
+		}
+		if (url == null) {
+			return;
+		}
 		final Clipboard scl = getSystemClipboard();
-		final StringSelection ss = new StringSelection(kes.getUrlPrint().toExternalForm());
+		final StringSelection ss = new StringSelection(url.toExternalForm());
 		try {
 			scl.setContents(ss, null);
 		} catch (final IllegalStateException e2) {
@@ -140,8 +149,12 @@ public class KesoidModel extends Model0 {
 		if (kes == null) {
 			return;
 		}
+		final URL url = kes.getUrlShow();
+		if (url == null) {
+			return;
+		}
 		final Clipboard scl = getSystemClipboard();
-		final StringSelection ss = new StringSelection(kes.getUrlShow().toExternalForm());
+		final StringSelection ss = new StringSelection(url.toExternalForm());
 		try {
 			scl.setContents(ss, null);
 		} catch (final IllegalStateException e2) {
