@@ -23,7 +23,9 @@ class DataHoldingInputStream extends FilterInputStream {
 	@Override
 	public int read() throws IOException {
 		final int c = super.read();
-		baos.write(c);
+		if (c >= 0) { // konec streamu není data
+			baos.write(c);
+		}
 		return c;
 	}
 
