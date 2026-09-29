@@ -22,15 +22,16 @@ public class SmokeIT {
 
 	private static final File KOREN = new File("target/smoke");
 
-	private static FalesnyDlazdicovyServer server;
+	private FalesnyDlazdicovyServer server;
+	private int pocetWpt;
 
-	@BeforeClass
-	public static void spustServer() throws IOException {
+	@Before
+	public void spustServer() throws IOException {
 		server = new FalesnyDlazdicovyServer();
 	}
 
-	@AfterClass
-	public static void zastavServer() {
+	@After
+	public void zastavServer() {
 		if (server != null) {
 			server.close();
 		}
@@ -68,6 +69,21 @@ public class SmokeIT {
 	}
 
 	@Test
+	public void zlobivyServer() throws Exception {
+		final File adresar = pripravAdresar("zlobivy");
+		server.setZlobi(true);
+		final Properties zprava = spust(adresar, "zlobivy", "meritka,posun");
+		// Výpisy chyb v excrep tu jsou v pořádku, jde o to, že program nespadne, nezamrzne a nezahltí server.
+		zkontrolujBezChyb(adresar, zprava, false);
+		final Map<String, Integer> pozadavky = server.getPozadavky();
+		final List<String> dokola = pozadavky.entrySet().stream().filter(e -> e.getKey().startsWith("/"))
+				.filter(e -> e.getValue() > (FalesnyDlazdicovyServer.zlobeni(e.getKey()) == null ? 1 : 3)).map(e -> e.getKey() + " " + e.getValue() + "x " + FalesnyDlazdicovyServer.zlobeni(e.getKey()))
+				.collect(Collectors.toList());
+		assertTrue("Dlaždice se stahovaly dokola: " + dokola, dokola.isEmpty());
+		assertTrue("ka33 WEB #chyb má zlobení zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
+	}
+
+	@Test
 	public void vsechnyPolozkyMenu() throws Exception {
 		final File adresar = pripravAdresar("menu");
 		final Properties zprava = spust(adresar, "menu", "menu");
@@ -75,9 +91,7 @@ public class SmokeIT {
 		assertTrue(zprava.stringPropertyNames().stream().filter(k -> k.startsWith("menu.")).count() > 50);
 	}
 
-	private static int pocetWpt;
-
-	private static File pripravAdresar(final String jmeno) throws IOException {
+	private File pripravAdresar(final String jmeno) throws IOException {
 		final File adresar = new File(KOREN, jmeno).getAbsoluteFile();
 		smaz(adresar);
 		final File pracovni = new File(adresar, "pracovni");
@@ -94,7 +108,7 @@ public class SmokeIT {
 		return adresar;
 	}
 
-	private static Properties spust(final File adresar, final String beh, final String kroky) throws Exception {
+	private Properties spust(final File adresar, final String beh, final String kroky) throws Exception {
 		final File zprava = new File(adresar, beh + ".properties");
 		final List<String> prikaz = new ArrayList<>();
 		prikaz.add(new File(System.getProperty("java.home"), "bin/java").getPath());
@@ -128,6 +142,10 @@ public class SmokeIT {
 	}
 
 	private static void zkontrolujBezChyb(final File adresar, final Properties zprava) {
+		zkontrolujBezChyb(adresar, zprava, true);
+	}
+
+	private static void zkontrolujBezChyb(final File adresar, final Properties zprava, final boolean bezVypisu) {
 		final List<String> problemy = new ArrayList<>();
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
 		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
@@ -136,7 +154,7 @@ public class SmokeIT {
 		}
 		final File excrep = new File(adresar, "tmp/geokuk/excrep");
 		final String[] vypisy = excrep.list();
-		if (vypisy != null && vypisy.length > 0) {
+		if (bezVypisu && vypisy != null && vypisy.length > 0) {
 			problemy.add("Výpisy chyb v " + excrep + ": " + Arrays.toString(vypisy));
 		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());

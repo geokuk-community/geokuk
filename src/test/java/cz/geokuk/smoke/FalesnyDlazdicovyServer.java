@@ -27,12 +27,34 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 
 	private final HttpServer server;
 	private final Map<String, AtomicInteger> pozadavky = new ConcurrentHashMap<>();
+	private volatile boolean zlobi;
 
 	public FalesnyDlazdicovyServer() throws IOException {
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", this::obsluz);
 		server.setExecutor(Executors.newFixedThreadPool(8));
 		server.start();
+	}
+
+	/** Když zlobí, desetina dlaždic vrací 404, desetina 500, desetina má useknuté tělo a desetina přijde až po 2 s. */
+	public void setZlobi(final boolean zlobi) {
+		this.zlobi = zlobi;
+	}
+
+	/** Jak dlaždice na dané cestě zlobí, nebo null. */
+	public static String zlobeni(final String cesta) {
+		switch (Math.floorMod(cesta.hashCode(), 10)) {
+		case 0:
+			return "404";
+		case 1:
+			return "500";
+		case 2:
+			return "useknutá";
+		case 3:
+			return "pomalá";
+		default:
+			return null;
+		}
 	}
 
 	public int getPort() {
@@ -83,6 +105,27 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 			// Mapy.cz posílají JPEG, u něj dekodér nedočte konec těla odpovědi.
 			final String format = m.group(4) == null ? "jpeg" : "png";
 			final byte[] obrazek = nakresli(m.group(1) + "/" + m.group(2) + "/" + m.group(3), format);
+			final String zlobeni = zlobi ? zlobeni(cesta) : null;
+			if ("404".equals(zlobeni) || "500".equals(zlobeni)) {
+				ex.sendResponseHeaders(Integer.parseInt(zlobeni), -1);
+				return;
+			}
+			if ("useknutá".equals(zlobeni)) {
+				ex.getResponseHeaders().set("Content-Type", "image/" + format);
+				ex.sendResponseHeaders(200, obrazek.length);
+				// Pošle půlku a spojení zavře, klient dostane méně, než slibuje Content-Length.
+				ex.getResponseBody().write(obrazek, 0, obrazek.length / 2);
+				ex.getResponseBody().flush();
+				ex.close();
+				return;
+			}
+			if ("pomalá".equals(zlobeni)) {
+				try {
+					Thread.sleep(2000);
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
 			ex.getResponseHeaders().set("Content-Type", "image/" + format);
 			ex.sendResponseHeaders(200, obrazek.length);
 			// Konec těla dorazí zvlášť jako po skutečné síti, ať se pozná, kdo ho nedočte.
