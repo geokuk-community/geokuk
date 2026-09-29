@@ -2,18 +2,41 @@ package cz.geokuk.core.coord;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.util.index2d.BoundingRect;
 
 /** Převody mezi body obrazovky a souřadnicemi a přibližování ke kurzoru. */
 public class CoordTest {
 
 	private static final Dimension OKNO = new Dimension(800, 600);
 	private static final Mou PRAHA = new Wgs(50.0755, 14.4378).toMou();
+
+	@Test
+	public void priOdzoomuNaCelySvetJeVyrezCelySvet() {
+		// při malém měřítku se svět v okně opakuje; výřez se nesmí přetočit na skoro prázdný,
+		// jinak počítaný výřez nic neobsahuje, kreslený je celý svět a vykreslí se všechny keše
+		final Dimension okno = new Dimension(2560, 1080);
+		final Coord c = new Coord(0, PRAHA, okno, 0);
+
+		final BoundingRect pocitany = c.getBoundingRect();
+		Assert.assertEquals(BoundingRect.ALL.xx1, pocitany.xx1);
+		Assert.assertEquals(BoundingRect.ALL.xx2, pocitany.xx2);
+		Assert.assertEquals(BoundingRect.ALL.yy1, pocitany.yy1);
+		Assert.assertEquals(BoundingRect.ALL.yy2, pocitany.yy2);
+
+		// tak, jak se ptá vykreslování: okno zvětšené o okraje ikon
+		final BoundingRect kresleny = c.transforToBounding(new Rectangle(-20, -20, okno.width + 40, okno.height + 40));
+		Assert.assertEquals(pocitany.xx1, kresleny.xx1);
+		Assert.assertEquals(pocitany.xx2, kresleny.xx2);
+		Assert.assertEquals(pocitany.yy1, kresleny.yy1);
+		Assert.assertEquals(pocitany.yy2, kresleny.yy2);
+	}
 
 	@Test
 	public void bodTamAZpet() {

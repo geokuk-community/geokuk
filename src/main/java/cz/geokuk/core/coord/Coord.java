@@ -45,6 +45,9 @@ public class Coord {
 
 	private final int mpShift;
 
+	/** Šířka i výška celého světa v mouřadnicích. */
+	private static final long SVET = 1L << MOU_BITS;
+
 	private AffineTransform tam;
 	private AffineTransform zpet;
 
@@ -215,8 +218,9 @@ public class Coord {
 
 	public BoundingRect getBoundingRect() {
 		final Mou jz = getMouJZ();
-		final Mou sv = getMouSV();
-		return new BoundingRect(jz.xx, jz.yy, sv.xx, sv.yy);
+		final long xx2 = (long) jz.xx + ((long) dim.width << mpShift);
+		final long yy2 = (long) jz.yy + ((long) dim.height << mpShift);
+		return bounding(jz.xx, jz.yy, xx2, yy2);
 	}
 
 	/**
@@ -409,17 +413,8 @@ public class Coord {
 	}
 
 	public Mou transform(final Point bod) {
-		// kopie, volající s bodem dál počítá
-		final Point p = new Point(bod);
-		if (zpet != null) {
-			zpet.transform(p, p);
-		}
-		// pozor na to, že pro moumer blížící se k nule může dojít k přetečení při posunu
-		// pro případ, kdy se v okně objeví celá mapa světa vícekrát, proto v long
-		final Mou moujz = getMouJZ();
-		final long xx = (long) moujz.xx + ((long) p.x << mpShift);
-		final long yy = (long) moujz.yy + ((long) (dim.height - p.y) << mpShift);
-		return new Mou((int) xx, (int) yy);
+		final long[] mou = transformDoLongu(bod);
+		return new Mou((int) mou[0], (int) mou[1]);
 	}
 
 	public MouRect transform(final Rectangle rect) {
@@ -441,12 +436,34 @@ public class Coord {
 	}
 
 	public BoundingRect transforToBounding(final Rectangle rect) {
-		final Point p1 = new Point(rect.x, rect.y);
-		final Point p2 = new Point(rect.x + rect.width, rect.y + rect.height);
-		final Mou mou1 = transform(p1);
-		final Mou mou2 = transform(p2);
+		final long[] mou1 = transformDoLongu(new Point(rect.x, rect.y));
+		final long[] mou2 = transformDoLongu(new Point(rect.x + rect.width, rect.y + rect.height));
 		// To je spravne, protoze souradnice jdou opacne
-		return new BoundingRect(mou1.xx, mou2.yy, mou2.xx, mou1.yy);
+		return bounding(mou1[0], mou2[1], mou2[0], mou1[1]);
+	}
+
+	/**
+	 * Mouřadnice bodu v longu, aby při odzoomu, kdy se svět v okně opakuje, nepřetekly.
+	 */
+	private long[] transformDoLongu(final Point bod) {
+		// kopie, volající s bodem dál počítá
+		final Point p = new Point(bod);
+		if (zpet != null) {
+			zpet.transform(p, p);
+		}
+		final Mou moujz = getMouJZ();
+		return new long[] { (long) moujz.xx + ((long) p.x << mpShift), (long) moujz.yy + ((long) (dim.height - p.y) << mpShift) };
+	}
+
+	/**
+	 * Obdélník z mouřadnic v longu. Když je širší nebo vyšší než celý svět, je to celý svět;
+	 * v intu by se přetočil a vyšel z něj výřez, ve kterém skoro nic neleží.
+	 */
+	private static BoundingRect bounding(final long xx1, final long yy1, final long xx2, final long yy2) {
+		if (xx2 - xx1 >= SVET || yy2 - yy1 >= SVET) {
+			return BoundingRect.ALL;
+		}
+		return new BoundingRect((int) xx1, (int) yy1, (int) xx2, (int) yy2);
 	}
 
 	private void computeAffineTransforms() {

@@ -9,6 +9,7 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.util.pocitadla.PocitadloRoste;
 
 public class DiagnostikaTest {
 
@@ -27,6 +28,15 @@ public class DiagnostikaTest {
 		Assert.assertTrue(text.contains("událost 59"));
 		Assert.assertFalse(text.contains("první"));
 		Assert.assertTrue(text.contains("chyba stahování"));
+	}
+
+	@Test
+	public void textObsahujeServisniHodnoty() {
+		final PocitadloRoste pocitadlo = new PocitadloRoste("zk01 zkušební počítadlo", "Jen pro test.");
+		pocitadlo.add(7);
+		final String text = Diagnostika.text();
+		Assert.assertTrue(text.contains("Servisní hodnoty:"));
+		Assert.assertTrue(text.contains("zk01 zkušební počítadlo: 7"));
 	}
 
 	@Test

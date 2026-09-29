@@ -64,6 +64,7 @@ public class KachleZiskavac {
 			this.ka = ka;
 			this.des = des;
 			this.diagnosticsData = diagnosticsData;
+			pocitKachlice.inc();
 			//System.out.println("Vytvořena kachlice pro: " + ka);
 		}
 
