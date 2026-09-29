@@ -11,6 +11,7 @@ import javax.swing.Icon;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
+import cz.geokuk.util.lang.FString;
 
 public abstract class Kesoid extends Weikoid0 implements Cloneable {
 
@@ -187,7 +188,7 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 	}
 
 	public void setHidden(final String hidden) {
-		this.hidden = hidden;
+		this.hidden = FString.intern(hidden);
 	}
 
 	public void setIdentifier(final String identifier) {

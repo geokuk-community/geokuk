@@ -208,7 +208,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 			genom.UNIVERZALNI_DRUH.addGen(alela.getGen());
 		}
 
-		return alely;
+		return alely.isEmpty() ? Collections.emptySet() : alely;
 	}
 
 

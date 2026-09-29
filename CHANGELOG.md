@@ -18,6 +18,9 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Zavřené hledání keší už nedrží v paměti keše z předchozího načtení.
+- Mapové dlaždice v paměti mají strop, při dlouhé práci s mapou paměť
+  neroste.
 - Keše bez hodnocení, BestOf nebo favoritů filtr podle těchto prahů
   neskryje.
 - Cesta s názvem obsahujícím `&`, `<` nebo `%` se uloží a jde znovu

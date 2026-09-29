@@ -149,6 +149,7 @@ public class KachleZiskavac {
 			for (final ImageReceiver ir : irs) {
 				ir.send(new KachloStav(t));
 			}
+			irs.clear();
 		}
 
 		@Override
@@ -332,7 +333,10 @@ public class KachleZiskavac {
 	private final ScheduledExecutorService tikacVelikostiFront = Executors.newSingleThreadScheduledExecutor();
 	private final KachloDownloader downloader = new KachloDownloader();
 
-	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().softValues().build();
+	/** Dlaždic v paměti je nejvýš pár obrazovek, dál se berou z disku. */
+	private static final int MAX_KACHLI_V_PAMETI = 300;
+
+	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(MAX_KACHLI_V_PAMETI).softValues().build();
 
 	private KachleManager kachleManager;
 

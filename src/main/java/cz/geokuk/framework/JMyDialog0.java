@@ -94,9 +94,11 @@ public abstract class JMyDialog0 extends JDialog {
 			@Override
 			public void windowClosed(final WindowEvent aE) {
 				if (eventManager != null) { // jen když byl tento dialog registrován a tak má event managera
-					eventManager.unregister(this);
+					eventManager.unregister(JMyDialog0.this);
 					odregistrujUdalosti();
 				}
+				// ToolTipManager si jinak pamatuje komponentu zavřeného dialogu
+				ToolTipManager.sharedInstance().mouseExited(new MouseEvent(JMyDialog0.this, MouseEvent.MOUSE_EXITED, System.currentTimeMillis(), 0, 0, 0, 0, false));
 			}
 		});
 
@@ -105,7 +107,7 @@ public abstract class JMyDialog0 extends JDialog {
 	protected abstract void initComponents();
 
 	private void odregistrujUdalosti(final Component comp) {
-		eventManager.unregister(this);
+		eventManager.unregister(comp);
 		if (comp instanceof Container) {
 			final Container container = (Container) comp;
 			for (final Component c : container.getComponents()) {
