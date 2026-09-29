@@ -106,14 +106,13 @@ public class KachleZiskavac {
 
 						private void submitDownload() {
 							if (onofflineModel.isOnlineMode()) {
-								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData);
+								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData, Kachlice.this);
 								futura = future;
 								Futures.addCallback(future, new FutureCallback<ImageWithData>() {
 
 									@Override
 									public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
 										pocitDownloadWebOk.inc();
-										ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), Kachlice.this));
 										onImageLoaded(imageWithData.getImg());
 									}
 
@@ -431,7 +430,7 @@ public class KachleZiskavac {
 
 	}
 
-	private ListenableFuture<ImageWithData> submitDownloadx(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData) {
+	private ListenableFuture<ImageWithData> submitDownloadx(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice) {
 		final Logger log = dvojiceExekucnichSluzeb.log;
 		final URL url = ka.getUrl();
 		log.debug("SUBMITTING WEB DOWNLOAD  \"{}\" | {}", url, diagnosticsData);
@@ -448,6 +447,8 @@ public class KachleZiskavac {
 			ImageWithData imageWithData;
 			try {
 				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
+				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
 				diagnosticsData.send("Web download - end success");
 				return imageWithData;
