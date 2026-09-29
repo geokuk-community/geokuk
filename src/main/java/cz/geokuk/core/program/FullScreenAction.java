@@ -25,9 +25,7 @@ public class FullScreenAction extends Action0 {
 	public FullScreenAction() {
 		super("Celá obrazovka");
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0));
-		final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		final GraphicsDevice gs = ge.getDefaultScreenDevice();
-		setEnabled(gs.isFullScreenSupported());
+		setEnabled(!GraphicsEnvironment.isHeadless() && GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().isFullScreenSupported());
 	}
 
 	/*
