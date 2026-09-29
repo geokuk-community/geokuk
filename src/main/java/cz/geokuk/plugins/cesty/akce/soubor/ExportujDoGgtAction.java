@@ -3,6 +3,7 @@ package cz.geokuk.plugins.cesty.akce.soubor;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFileChooser;
 
@@ -41,8 +42,11 @@ public class ExportujDoGgtAction extends SouboeCestaAction0 {
 					return;
 				}
 			}
-			cestyModel.exportujDoGgt(selectedFile, doc);
-			log.info("Uložena cesta do: " + doc.getFile());
+			try {
+				cestyModel.exportujDoGgt(selectedFile, doc);
+			} catch (final IOException ex) {
+				oznamNeulozeno(selectedFile, ex);
+			}
 		}
 		// TODO ukládat na pozadí
 	}

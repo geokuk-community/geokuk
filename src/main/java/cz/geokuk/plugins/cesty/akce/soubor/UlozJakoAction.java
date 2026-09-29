@@ -3,6 +3,7 @@ package cz.geokuk.plugins.cesty.akce.soubor;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFileChooser;
 
@@ -38,8 +39,11 @@ public class UlozJakoAction extends SouboeCestaAction0 {
 				}
 			}
 			doc.setFile(selectedFile);
-			cestyModel.uloz(doc.getFile(), doc, true);
-			System.out.println("Uložena cesta do: " + doc.getFile());
+			try {
+				cestyModel.uloz(doc.getFile(), doc, true);
+			} catch (final IOException ex) {
+				oznamNeulozeno(doc.getFile(), ex);
+			}
 		}
 		// TODO ukládat na pozadí
 	}

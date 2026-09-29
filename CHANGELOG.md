@@ -18,6 +18,9 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Ukládání cest, nastavení a výletů zapíše soubor celý, nebo nechá původní
+  beze změny; chybu zápisu (plný disk, disk jen pro čtení) program ohlásí
+  a cesty zůstanou rozpracované, ne ztracené.
 - Zavřené hledání keší už nedrží v paměti keše z předchozího načtení.
 - Mapové dlaždice v paměti mají strop, při dlouhé práci s mapou paměť
   neroste.

@@ -117,6 +117,22 @@ public class UlozeniCestTest {
 	}
 
 	@Test
+	public void neulozitelnaCestaNechaPuvodniSoubor() throws Exception {
+		final Doc doc = new Doc();
+		cesta(doc, "Okruh", BODY);
+		final File soubor = tmp.newFile("cesty.gpx");
+		new Ukladac().uloz(soubor, doc);
+		final long delka = soubor.length();
+		try {
+			new Ukladac().uloz(new File(soubor, "nelze"), doc);
+			Assert.fail("chyba zápisu se má ohlásit");
+		} catch (final java.io.IOException e) {
+			// čekáno
+		}
+		Assert.assertEquals("původní soubor zůstal", delka, soubor.length());
+	}
+
+	@Test
 	public void jednobodovaCesta() throws Exception {
 		final Doc doc = new Doc();
 		cesta(doc, "Bod", BODY[0]);

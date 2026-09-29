@@ -24,6 +24,15 @@ public class Vylet {
 		return Collections.unmodifiableSet(set);
 	}
 
+	/** Snímek kódů, se kterým může pracovat jiné vlákno. */
+	public List<String> kody(final EVylet evyl) {
+		final List<String> kody = new ArrayList<>();
+		for (final Kesoid kes : get(evyl)) {
+			kody.add(kes.getIdentifier());
+		}
+		return kody;
+	}
+
 	public EVylet get(final Kesoid kes) {
 		if (ano.contains(kes)) {
 			return EVylet.ANO;

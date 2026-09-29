@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.cesty;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import com.google.common.xml.XmlEscapers;
@@ -8,25 +9,20 @@ import com.google.common.xml.XmlEscapers;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.cesty.data.*;
+import cz.geokuk.util.file.BezpecnyZapis;
 
 public class Ukladac {
 
 	private PrintWriter pwrt;
 
-	public void uloz(final File f, final Doc doc) {
-
-		try {
-			pwrt = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), "UTF-8")));
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		p("<?xml version=\"1.0\" encoding=\"UTF-8\"  ?>");
-		p("<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\" creator=\"http://geokuk.cz\" >");
-		uloz(doc);
-
-		p("</gpx>");
-		pwrt.close();
+	public void uloz(final File f, final Doc doc) throws IOException {
+		BezpecnyZapis.zapisText(f, StandardCharsets.UTF_8, wrt -> {
+			pwrt = wrt;
+			p("<?xml version=\"1.0\" encoding=\"UTF-8\"  ?>");
+			p("<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\" creator=\"http://geokuk.cz\" >");
+			uloz(doc);
+			p("</gpx>");
+		});
 	}
 
 	private void p(final String format, final Object... p) {

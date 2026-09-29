@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.cesty;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import cz.geokuk.core.coordinates.Mou;
@@ -9,6 +10,7 @@ import cz.geokuk.core.program.FConst;
 import cz.geokuk.plugins.cesty.data.*;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.importek.NacitacGpx;
+import cz.geokuk.util.file.BezpecnyZapis;
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
 import lombok.extern.slf4j.Slf4j;
@@ -65,13 +67,11 @@ public class CestyZperzistentnovac {
 		}
 	}
 
-	void zapisGgt(final Doc doc, final File file) {
-		BufferedWriter wrt = null;
+	void zapisGgt(final Doc doc, final File file) throws IOException {
 		smimCist++;
 		final Set<String> exportovano = new HashSet<>();
 		try {
-			try {
-				wrt = new BufferedWriter(new FileWriter(file));
+			BezpecnyZapis.zapisText(file, Charset.defaultCharset(), wrt -> {
 				for (final Bod bod : doc.getBody()) {
 					final Mouable mouable = bod.getMouable();
 					if (mouable instanceof Wpt) {
@@ -79,18 +79,8 @@ public class CestyZperzistentnovac {
 						zapisKdyzNeni(wrt, wpt.getName(), exportovano);
 						zapisKdyzNeni(wrt, wpt.getKesoid().getIdentifier(), exportovano);
 					}
-
 				}
-				wrt.close();
-			} catch (final IOException e) {
-				if (wrt != null) {
-					try {
-						wrt.close();
-					} catch (final IOException e1) { // co s tím jiného
-					}
-				}
-				throw new RuntimeException(e);
-			}
+			});
 		} finally {
 			smimCist--;
 		}
@@ -135,7 +125,7 @@ public class CestyZperzistentnovac {
 		return indexator.bound(br).locateAnyOne().orElse(null);
 	}
 
-	private void zapisKdyzNeni(final BufferedWriter wrt, final String kod, final Set<String> exportovano) throws IOException {
+	private void zapisKdyzNeni(final Writer wrt, final String kod, final Set<String> exportovano) throws IOException {
 		if (kod == null) {
 			return;
 		}
