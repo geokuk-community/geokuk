@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.*;
 
@@ -81,6 +83,40 @@ public class SmokeIT {
 				.collect(Collectors.toList());
 		assertTrue("Dlaždice se stahovaly dokola: " + dokola, dokola.isEmpty());
 		assertTrue("ka33 WEB #chyb má zlobení zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
+	}
+
+	@Test
+	public void neporadnaDataVDatoveSlozce() throws Exception {
+		final File adresar = pripravAdresar("data");
+		final File data = new File(adresar, "home/geokuk");
+		int dobre = pocetWpt;
+		dobre += SyntetickeKese.zapis(new File(data, "druhe.gpx"), 10_000, 5, 50.1, 14.4, 0.05);
+		// Kopie téhož souboru, keše se nemají načíst dvakrát.
+		Files.copy(new File(data, "druhe.gpx").toPath(), new File(data, "druhe - kopie.gpx").toPath());
+		try (OutputStream os = new FileOutputStream(new File(data, "bom.gpx"))) {
+			os.write(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF });
+			dobre += SyntetickeKese.zapis(os, 11_000, 5, 50.1, 14.4, 0.05);
+		}
+		try (ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(new File(data, "pq.zip")))) {
+			zip.putNextEntry(new ZipEntry("12345.gpx"));
+			dobre += SyntetickeKese.zapis(zip, 12_000, 5, 50.1, 14.4, 0.05);
+			zip.closeEntry();
+		}
+		final ByteArrayOutputStream cely = new ByteArrayOutputStream();
+		SyntetickeKese.zapis(cely, 13_000, 20, 50.1, 14.4, 0.05);
+		Files.write(new File(data, "useknuty.gpx").toPath(), Arrays.copyOf(cely.toByteArray(), cely.size() / 2));
+		Files.write(new File(data, "prazdny.gpx").toPath(), new byte[0]);
+		final byte[] smeti = new byte[5000];
+		new Random(1).nextBytes(smeti);
+		Files.write(new File(data, "smeti.gpx").toPath(), smeti);
+		Files.write(new File(data, "stranka.gpx").toPath(), "<!DOCTYPE html><html><body>Přihlaste se k Wi-Fi</body></html>".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(data, "rozbity.zip").toPath(), Arrays.copyOf(smeti, 100));
+
+		final Properties zprava = spust(adresar, "data", "meritka");
+		zkontrolujBezChyb(adresar, zprava, false);
+		final long nacteno = Long.parseLong(zprava.getProperty("kese.wpt"));
+		// Z useknutého souboru se může načíst začátek.
+		assertTrue("Načteno " + nacteno + " waypointů, z dobrých souborů jich je " + dobre, nacteno >= dobre && nacteno < dobre + 60);
 	}
 
 	@Test
