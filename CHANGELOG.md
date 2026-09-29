@@ -28,6 +28,8 @@
   míří tam, kam mají.
 - Opakovaná chyba při čtení dlaždic z diskové cache se do logu hlásí
   souhrnně, ne u každé dlaždice zvlášť.
+- Disková cache dlaždic funguje i po rychlém posouvání mapy; dlaždice
+  se zbytečně nestahují znovu a zdravá cache se neodkládá jako poškozená.
 - Klávesa F3 patří akci „Listing do Geogetu“; „Otevřít cesty (gpx)“ ji
   už nemá, dřív se obě hlásily o tutéž klávesu.
 - Měřítko „1 : 0“ pro tisk a uložení mapy se neuplatní ani neuloží.

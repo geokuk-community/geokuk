@@ -168,7 +168,8 @@ public class KachleZiskavac {
 			}
 			irs.remove(imageReceiver); // už nechce, tak mu nebudeme nic říkat
 			if (irs.isEmpty() && futura != null) {
-				futura.cancel(true);
+				// Bez přerušení vlákna: přerušení zavře kanál souboru diskové cache.
+				futura.cancel(false);
 				futura = null;
 			}
 		}
