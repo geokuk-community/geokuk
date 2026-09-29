@@ -102,6 +102,15 @@ public class ImportKesiTest {
 	}
 
 	@Test
+	public void kesBezRozsireniGeogetuNemaHodnoceni() {
+		final Kes kes = kes("GC5555");
+		Assert.assertEquals(Kes.NENI_HODNOCENI, kes.getHodnoceni());
+		Assert.assertEquals(Kes.NENI_HODNOCENI, kes.getBestOf());
+		Assert.assertEquals(Kes.NENI_HODNOCENI, kes.getFavorit());
+		Assert.assertEquals(Kes.NENI_HODNOCENI, kes.getZnamka());
+	}
+
+	@Test
 	public void finalPatriKeKesi() {
 		final Kes mystery = kes("GC2222");
 		Assert.assertEquals(2, mystery.getWptsCount());

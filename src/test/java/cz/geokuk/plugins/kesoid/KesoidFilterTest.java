@@ -20,7 +20,8 @@ public class KesoidFilterTest {
 		wpts = ImportKesiTestPristup.importuj(
 				ImportKesiTestPristup.kes("GC1111", "Geocache Found", "Traditional Cache", 80, 3, 15), PARKOVISTE,
 				ImportKesiTestPristup.kes("GC2222", "Geocache", "Unknown Cache", 95, 10, 50), FINAL, PARKOVISTE_MYSTERY,
-				ImportKesiTestPristup.kes("GC3333", "Geocache", "Traditional Cache", 60, 1, 2)).getWpts();
+				ImportKesiTestPristup.kes("GC3333", "Geocache", "Traditional Cache", 60, 1, 2),
+				ImportKesiTestPristup.kesBezHodnoceni("GC4444")).getWpts();
 	}
 
 	private Set<String> zobrazene(final FilterDefinition definice) {
@@ -43,7 +44,7 @@ public class KesoidFilterTest {
 
 	@Test
 	public void bezOmezeniJeVidetVse() {
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC1111", "PK1111", "GC2222", "FI2222", "PK2222", "GC3333")), zobrazene(definice(false, false)));
+		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC1111", "PK1111", "GC2222", "FI2222", "PK2222", "GC3333", "GC4444")), zobrazene(definice(false, false)));
 	}
 
 	@Test
@@ -68,7 +69,16 @@ public class KesoidFilterTest {
 		final FilterDefinition d = definice(false, false);
 		d.setPrahHodnoceni(90);
 		final Set<String> z = zobrazene(d);
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222")), z);
+		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222", "GC4444")), z);
+	}
+
+	@Test
+	public void kesBezHodnoceniPrahyNeskryji() {
+		final FilterDefinition d = definice(false, false);
+		d.setPrahHodnoceni(90);
+		d.setPrahBestOf(5);
+		d.setPrahFavorit(20);
+		Assert.assertTrue(zobrazene(d).contains("GC4444"));
 	}
 
 	@Test
@@ -79,6 +89,6 @@ public class KesoidFilterTest {
 		Assert.assertTrue(zobrazene(d).contains("GC1111"));
 		d.setPrahBestOf(0);
 		d.setPrahFavorit(20);
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222")), zobrazene(d));
+		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222", "GC4444")), zobrazene(d));
 	}
 }
