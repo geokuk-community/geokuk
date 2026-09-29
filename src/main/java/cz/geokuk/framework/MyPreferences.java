@@ -314,7 +314,8 @@ public class MyPreferences extends Preferences {
 		final String[] ss = s.split(",");
 		try {
 			return new Dimension(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
-		} catch (final NumberFormatException e) {
+		} catch (final RuntimeException e) {
+			// nesmysl v nastavení nesmí zabránit spuštění
 			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
@@ -437,7 +438,8 @@ public class MyPreferences extends Preferences {
 		final String[] ss = s.split(",");
 		try {
 			return new Mou(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
-		} catch (final NumberFormatException e) {
+		} catch (final RuntimeException e) {
+			// nesmysl v nastavení nesmí zabránit spuštění
 			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
@@ -452,7 +454,8 @@ public class MyPreferences extends Preferences {
 		final String[] ss = s.split(",");
 		try {
 			return new Point(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
-		} catch (final NumberFormatException e) {
+		} catch (final RuntimeException e) {
+			// nesmysl v nastavení nesmí zabránit spuštění
 			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
@@ -526,7 +529,8 @@ public class MyPreferences extends Preferences {
 		final String[] ss = s.split(",");
 		try {
 			return new Wgs(Double.parseDouble(ss[0]), Double.parseDouble(ss[1]));
-		} catch (final NumberFormatException e) {
+		} catch (final RuntimeException e) {
+			// nesmysl v nastavení nesmí zabránit spuštění
 			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;

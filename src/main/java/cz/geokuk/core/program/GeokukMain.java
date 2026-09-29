@@ -9,6 +9,7 @@ import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.StahnoutAktualizaciSwingWorker;
 import cz.geokuk.core.profile.FPreferencesInNearFile;
+import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.exception.*;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,10 @@ public class GeokukMain {
 			inicializator.setMainFrame(mainFrame);
 			mainFrame.init();
 			mainFrame.setVisible(true);
+			final String varovani = FPreferencesInNearFile.prevzitVarovani();
+			if (varovani != null) {
+				Dlg.error(varovani);
+			}
 			inicializator.zkontrolovatAktualizace();
 		});
 	}
