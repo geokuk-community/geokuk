@@ -18,6 +18,11 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 
 ### Opravy
+- Klávesa F3 patří akci „Listing do Geogetu“; „Otevřít cesty (gpx)“ ji
+  už nemá, dřív se obě hlásily o tutéž klávesu.
+- Měřítko „1 : 0“ pro tisk a uložení mapy se neuplatní ani neuloží.
+- Složka s hlášeními o chybách (`%TEMP%\geokuk\excrep`) si drží jen
+  posledních dvacet spuštění, starší se při startu smažou.
 - Vadný záznam v databázi GeoGetu nebo GSAKu se přeskočí a zbytek keší
   se načte; dřív kvůli němu zůstala databáze celá nenačtená.
 - Chybný soubor v datové složce už nezpůsobí opakované načítání dat

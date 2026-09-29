@@ -5,7 +5,6 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 
 import javax.swing.JFileChooser;
-import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
 import cz.geokuk.framework.Dlg;
@@ -40,7 +39,6 @@ public class OtevriAction extends SouboeCestaAction0 {
 		super("Otevřít cesty (gpx)");
 		putValue(SHORT_DESCRIPTION, "Otevře zadaný výlet v GPX a nahradí jim všechyn načtené cesty.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_V);
-		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}
 
