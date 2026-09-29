@@ -29,7 +29,6 @@
   a vlastní hodnoty z databáze GeoGetu a GSAK se přenesou ke keším.
 - Stahování mapových dlaždic se všem serverům představuje jako Geokuk
   s verzí a odkazem na web.
-- OpenStreetMap se načítá přes https.
 - OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
   do cache.
 
