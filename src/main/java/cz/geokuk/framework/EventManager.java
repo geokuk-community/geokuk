@@ -88,7 +88,7 @@ public class EventManager implements EventFirer {
 					try {
 						final Reference<?> ref = referencequeue.remove();
 						final ObserverInvocation obsin = (ObserverInvocation) ref;
-						synchronized (this) {
+						synchronized (EventManager.this) {
 							obsin.iParentList.remove(obsin);
 							aktualizujPocitadla();
 						}

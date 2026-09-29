@@ -31,6 +31,8 @@
 
 package cz.geokuk.plugins.kesoid.hledani;
 
+import java.util.ArrayList;
+
 /*
  * TextFieldDemo.java requires one additional file:
  * content.txt
@@ -208,6 +210,17 @@ public class JTextoveHledaniDialog extends JMyDialog0 implements AfterInjectInit
 		podm.setJenVZobrazenych(jJenVZobrazenych.isSelected());
 		final KesBag kde = jJenVZobrazenych.isSelected() ? filtrovane : vsechny;
 		hledaciSluzba.spustHledani(new Hledac(kde), podm, this);
+	}
+
+	@Override
+	public void dispose() {
+		super.dispose();
+		// zavřený dialog může ještě chvíli držet Swing, ať nedrží i všechny keše
+		vsechny = null;
+		filtrovane = null;
+		if (jKeskovaciTabulka != null) {
+			jKeskovaciTabulka.setKeslist(new ArrayList<>());
+		}
 	}
 
 	public void setFiltrovane(final KesBag filtrovane) {
