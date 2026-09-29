@@ -19,6 +19,9 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 
 	private static Pattern pat = Pattern.compile(ExceptionDumperRepositorySpi.EXC_PREFIX + "([0-9]+)([a-z]+)([0-9]+)");
 
+	/** Kolik posledních spuštění se v repozitáři nechává; starší se mažou. */
+	private static final int POCET_UCHOVANYCH_SPUSTENI = 20;
+
 	/**
 	 * APrověřený adresář
 	 */
@@ -167,8 +170,40 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 		// Natáhne číslo spuštění, bude to vždy nové číslo
 		iRunNumber = loadAndIncrementNumberInFile(spusteniFile);
 
+		smazatStaraSpusteni(aDir);
+
 		// A zkusíme, zda lze v adresáři opravdu pracovat
 		zkusitPraciVAdresari(aDir);
+	}
+
+	/** Bez úklidu by repozitář rostl donekonečna, každá chybná dlaždice je soubor. */
+	private void smazatStaraSpusteni(final File aDir) {
+		final File[] slozky = aDir.listFiles();
+		if (slozky == null) {
+			return;
+		}
+		for (final File slozka : slozky) {
+			if (!slozka.isDirectory() || !slozka.getName().matches("[0-9]+")) {
+				continue;
+			}
+			try {
+				if (Integer.parseInt(slozka.getName()) <= iRunNumber - POCET_UCHOVANYCH_SPUSTENI) {
+					smazatRekurzivne(slozka);
+				}
+			} catch (final RuntimeException e) {
+				// úklid nesmí zabránit spuštění
+			}
+		}
+	}
+
+	private static void smazatRekurzivne(final File soubor) {
+		final File[] obsah = soubor.listFiles();
+		if (obsah != null) {
+			for (final File f : obsah) {
+				smazatRekurzivne(f);
+			}
+		}
+		soubor.delete();
 	}
 
 	/**

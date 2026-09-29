@@ -418,6 +418,9 @@ public class RenderSettings implements Copyable<RenderSettings> {
 	 *            the papiroveMeritko to set
 	 */
 	public void setPapiroveMeritko(final int papiroveMeritko) {
+		if (papiroveMeritko <= 0) {
+			return; // měřítkem se dělí, nula ani záporné číslo nedávají smysl
+		}
 		this.papiroveMeritko = papiroveMeritko;
 	}
 

@@ -61,11 +61,14 @@ public class JPapirMeritkoComboBox extends JComboBox<String> {
 			}
 		}
 		try {
-			return Integer.parseInt(sb.toString());
+			final int mer = Integer.parseInt(sb.toString());
+			if (mer > 0) {
+				return mer;
+			}
 		} catch (final NumberFormatException e) {
 			// když to nejde, tak to nejde
-			setMeritko(naposledZadana);
-			return naposledZadana;
 		}
+		setMeritko(naposledZadana);
+		return naposledZadana;
 	}
 }
