@@ -143,6 +143,9 @@ public class Filex {
 		if (relativeToProgram != other.relativeToProgram) {
 			return false;
 		}
+		if (active != other.active) {
+			return false;
+		}
 		return true;
 	}
 
@@ -178,6 +181,7 @@ public class Filex {
 		int result = 1;
 		result = prime * result + (file == null ? 0 : file.hashCode());
 		result = prime * result + (relativeToProgram ? 1231 : 1237);
+		result = prime * result + (active ? 1231 : 1237);
 		return result;
 	}
 
