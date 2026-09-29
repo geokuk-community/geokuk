@@ -106,6 +106,27 @@ public class SmokeIT {
 	}
 
 	@Test
+	public void poskozeneSouboryPriStartu() throws Exception {
+		final File adresar = pripravAdresar("poskozene");
+		final byte[] smeti = new byte[20_000];
+		new Random(2).nextBytes(smeti);
+		final File cache = new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite");
+		cache.getParentFile().mkdirs();
+		Files.write(cache.toPath(), smeti);
+		Files.write(new File(adresar, "home/geokuk/lovim.ggt").toPath(), Arrays.copyOf(smeti, 3000));
+		Files.write(new File(adresar, "home/geokuk/tedne.ggt").toPath(), "GC1\nnesmysl;;;\n\u0000\n".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "pracovni/geokuk-preferences.xml").toPath(), "<?xml version=\"1.0\"?><preferences><useknute".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "pracovni/uzivatelske-mapy.properties").toPath(), "rozbita.url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+
+		final Properties zprava = spust(adresar, "poskozene", "meritka");
+		zkontrolujBezChyb(adresar, zprava, false);
+		assertTrue("Poškozená cache se má odložit", new File(cache.getPath() + ".vadna").isFile());
+		assertTrue("Mapa se má i tak načíst", pocitadlo(zprava, "ka32 WEB #načtených") > 50);
+		assertTrue("Nová cache se má při ukončení dopsat", cache.length() > 100_000);
+		assertEquals("Načtené waypointy", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+	}
+
+	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
 		final File data = new File(adresar, "home/geokuk");

@@ -15,6 +15,7 @@ import javax.swing.*;
 
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.program.CloseAction;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.GeokukMain;
 import cz.geokuk.framework.MyPreferences;
@@ -55,7 +56,27 @@ public class SmokeScenar {
 		}
 		s.snimek(snimek);
 		s.zapis(soubor);
-		System.exit(0);
+		s.ukonci();
+	}
+
+	/** Ukončí program jako uživatel přes Soubor > Konec, pojistka pro případ, že se Konec zasekne na dotazu. */
+	private void ukonci() {
+		final Thread pojistka = new Thread(() -> {
+			try {
+				Thread.sleep(30_000);
+			} catch (final InterruptedException e) {
+				// konec tak jako tak
+			}
+			System.exit(0);
+		}, "Pojistka ukončení");
+		pojistka.setDaemon(true);
+		pojistka.start();
+		try {
+			final Action konec = akce(CloseAction.class);
+			SwingUtilities.invokeLater(() -> konec.actionPerformed(null));
+		} catch (final IllegalStateException e) {
+			System.exit(0);
+		}
 	}
 
 	private void proved(final String[] kroky) throws Exception {
