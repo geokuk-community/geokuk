@@ -27,6 +27,7 @@ public class SmokeIT {
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
 	private int proxyPort;
+	private String vlastnosti;
 
 	@Before
 	public void spustServer() throws IOException {
@@ -167,6 +168,17 @@ public class SmokeIT {
 	}
 
 	@Test
+	public void zmeneneProstredi() throws Exception {
+		final File adresar = pripravAdresar("prostredi");
+		vlastnosti = "-Dsmoke.zmeneneProstredi=true";
+		final Properties zprava = spust(adresar, "prostredi", "meritka,posun");
+		zkontrolujBezChyb(adresar, zprava, false);
+		assertTrue("Mapa se má načíst i bez cache", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
+		assertEquals("Bez datové složky nejsou keše", "0", zprava.getProperty("kese.wpt"));
+		assertEquals("Do nedostupné cache se nic nezapíše", 0, pocitadlo(zprava, "ka42 disk write #dlaždic"));
+	}
+
+	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
 		final File data = new File(adresar, "home/geokuk");
@@ -238,6 +250,9 @@ public class SmokeIT {
 		prikaz.add("-Dhttp.proxyPort=" + proxyPort);
 		prikaz.add("-Dhttp.nonProxyHosts=localhost|127.*");
 		prikaz.add("-Dfile.encoding=UTF-8");
+		if (vlastnosti != null) {
+			prikaz.add(vlastnosti);
+		}
 		// Program běží ze sestaveného jaru v pracovním adresáři, jen tak si vedle sebe najde uživatelské mapy.
 		prikaz.add("-cp");
 		prikaz.add(new File(adresar, "pracovni/geokuk.jar") + File.pathSeparator + System.getProperty("smoke.testClasses"));

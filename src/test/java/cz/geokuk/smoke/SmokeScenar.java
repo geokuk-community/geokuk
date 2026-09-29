@@ -17,11 +17,13 @@ import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.CloseAction;
 import cz.geokuk.core.program.FPref;
+import cz.geokuk.core.program.OknoUmisteniDto;
 import cz.geokuk.core.program.GeokukMain;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.mapy.PodkladAction;
+import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
 
@@ -81,6 +83,9 @@ public class SmokeScenar {
 
 	private void proved(final String[] kroky) throws Exception {
 		MyPreferences.current().node(FPref.VSEOBECNE_node).putLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, Long.MAX_VALUE);
+		if (Boolean.getBoolean("smoke.zmeneneProstredi")) {
+			zmenProstredi();
+		}
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(new String[0]);
@@ -94,6 +99,14 @@ public class SmokeScenar {
 
 		cekej("hlavní okno", 60_000, () -> najdiHlavniOkno() != null);
 		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
+		naEdt(() -> {
+			final Rectangle obrazovka = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+			final Rectangle okno = najdiHlavniOkno().getBounds();
+			zprava.setProperty("okno.hlavni", okno.x + "," + okno.y + " " + okno.width + "x" + okno.height);
+			if (!obrazovka.intersects(okno) || obrazovka.intersection(okno).width < 200 || obrazovka.intersection(okno).height < 100) {
+				chyby.add("Hlavní okno není na obrazovce: " + okno + ", obrazovka " + obrazovka);
+			}
+		});
 		naEdt(() -> {
 			hlavniOkno = najdiHlavniOkno();
 			for (int i = 0; i < hlavniOkno.getJMenuBar().getMenuCount(); i++) {
@@ -362,6 +375,21 @@ public class SmokeScenar {
 	private static String textPolozky(final JMenuItem polozka) {
 		final Container menu = polozka.getParent() instanceof JPopupMenu ? (Container) ((JPopupMenu) polozka.getParent()).getInvoker() : null;
 		return (menu instanceof JMenu ? ((JMenu) menu).getText() + " > " : "") + polozka.getText();
+	}
+
+	/** Od minula se změnil počítač: odpojený druhý monitor, odpojený disk s daty a cache, přesunutý GeoGet. */
+	private static void zmenProstredi() throws IOException {
+		// Pod obyčejným souborem složku nevytvoří nikdo, ani root.
+		final File odpojeny = new File(System.getProperty("java.io.tmpdir"), "odpojeny-disk");
+		odpojeny.createNewFile();
+		final OknoUmisteniDto okno = new OknoUmisteniDto();
+		okno.setPozice(new Point(3000, 2000));
+		okno.setVelikost(new Dimension(1200, 800));
+		MyPreferences.current().putStructure(FPref.OKNO_structure_node, okno);
+		final MyPreferences umisteni = MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node);
+		umisteni.putFilex("kesDir", new Filex(new File(odpojeny, "geokuk"), false, true));
+		umisteni.putFilex("geogetDataDir", new Filex(new File(odpojeny, "geoget"), false, true));
+		umisteni.putFilex(FPref.KACHLE_CACHE_DIR_value, new Filex(new File(odpojeny, "kachle"), false, true));
 	}
 
 	/** Uživatel mačká klávesy rychleji, než se dlaždice stihnou načíst. */
