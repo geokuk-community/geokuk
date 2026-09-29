@@ -119,7 +119,9 @@ public class KachleZiskavac {
 
 									@Override
 									public void onFailure(final Throwable t) { // čtení z webu
-										pocitDownloadWebError.inc();
+										if (!(t instanceof CancellationException)) { // zrušený požadavek není chyba stahování
+											pocitDownloadWebError.inc();
+										}
 										onImageFailure(t);
 									}
 								}, MoreExecutors.directExecutor());
