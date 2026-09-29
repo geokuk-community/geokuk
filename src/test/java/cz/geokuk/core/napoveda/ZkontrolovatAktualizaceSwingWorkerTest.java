@@ -28,6 +28,8 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 	@Test
 	public void testovaciVerze() {
 		Assert.assertTrue(jeNovejsi("6.0.1-beta.1", "6.0.0"));
+		Assert.assertTrue(jeNovejsi("6.1.0-beta.1", "6.0.1-beta.5"));
+		Assert.assertTrue(jeNovejsi("6.1.0", "6.0.1-beta.5"));
 		Assert.assertTrue(jeNovejsi("6.0.1-beta.2", "6.0.1-beta.1"));
 		Assert.assertTrue(jeNovejsi("6.0.1-beta.10", "6.0.1-beta.9"));
 		Assert.assertTrue(jeNovejsi("6.0.1", "6.0.1-beta.2"));

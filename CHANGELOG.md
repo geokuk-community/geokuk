@@ -1,6 +1,6 @@
 # Změny
 
-## 6.0.1
+## 6.1.0
 
 ### Změny
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
