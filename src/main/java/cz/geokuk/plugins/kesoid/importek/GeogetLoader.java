@@ -113,6 +113,7 @@ public class GeogetLoader extends Nacitac0 {
 
 	private void loadCaches(final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
+		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(GEOGET_CACHES_QUERY)) {
 			while (rs.next()) {
@@ -120,78 +121,83 @@ public class GeogetLoader extends Nacitac0 {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_CACHES);
-				final GpxWpt gpxWpt = new GpxWpt();
-				gpxWpt.wgs = new Wgs(rs.getDouble("lat"), rs.getDouble("lon"));
-				gpxWpt.name = rs.getString("id");
-				if (gpxWpt.name != null && gpxWpt.name.length() > 1) {
-					final String prefix = gpxWpt.name.substring(0, 2);
-					final String sym = ID_PREFIX_TO_SYM.get(prefix);
-					if (sym != null) {
-						gpxWpt.sym = sym;
+				final String kod = rs.getString("id");
+				try {
+					final GpxWpt gpxWpt = new GpxWpt();
+					gpxWpt.wgs = new Wgs(rs.getDouble("lat"), rs.getDouble("lon"));
+					gpxWpt.name = kod;
+					if (gpxWpt.name != null && gpxWpt.name.length() > 1) {
+						final String prefix = gpxWpt.name.substring(0, 2);
+						final String sym = ID_PREFIX_TO_SYM.get(prefix);
+						if (sym != null) {
+							gpxWpt.sym = sym;
+						}
 					}
-				}
 
-				gpxWpt.time = formatDateTime(rs.getInt("dthidden"));
+					gpxWpt.time = formatDateTime(rs.getInt("dthidden"));
 
-				final Groundspeak groundspeak = new Groundspeak();
-				groundspeak.ownerid = rs.getInt("gs_ownerid");
-				groundspeak.name = rs.getString("name");
-				groundspeak.placedBy = intern(rs.getString("author"));
-				groundspeak.owner = intern(groundspeak.placedBy);
-				groundspeak.type = intern(rs.getString("cachetype"));
-				groundspeak.container = intern(rs.getString("cachesize"));
-				groundspeak.difficulty = intern(rs.getString("difficulty"));
-				groundspeak.terrain = intern(rs.getString("terrain"));
-				groundspeak.country = intern(rs.getString("country"));
-				groundspeak.state = intern(rs.getString("state"));
-				groundspeak.encodedHints = rs.getString("hint");
+					final Groundspeak groundspeak = new Groundspeak();
+					groundspeak.ownerid = rs.getInt("gs_ownerid");
+					groundspeak.name = rs.getString("name");
+					groundspeak.placedBy = intern(rs.getString("author"));
+					groundspeak.owner = intern(groundspeak.placedBy);
+					groundspeak.type = intern(rs.getString("cachetype"));
+					groundspeak.container = intern(rs.getString("cachesize"));
+					groundspeak.difficulty = intern(rs.getString("difficulty"));
+					groundspeak.terrain = intern(rs.getString("terrain"));
+					groundspeak.country = intern(rs.getString("country"));
+					groundspeak.state = intern(rs.getString("state"));
+					groundspeak.encodedHints = rs.getString("hint");
 
-				final byte[] shortDescBytes = rs.getBytes("shortdesc");
-				if (shortDescBytes != null) {
-					try (InputStream is = new InflaterInputStream(new ByteArrayInputStream(shortDescBytes))) {
-						groundspeak.shortDescription = CharStreams.toString(new InputStreamReader(is, Charsets.UTF_8));
+					final byte[] shortDescBytes = rs.getBytes("shortdesc");
+					if (shortDescBytes != null) {
+						try (InputStream is = new InflaterInputStream(new ByteArrayInputStream(shortDescBytes))) {
+							groundspeak.shortDescription = CharStreams.toString(new InputStreamReader(is, Charsets.UTF_8));
+						}
 					}
+
+					final int cacheStatus = rs.getInt("cachestatus");
+					switch (cacheStatus) {
+					case 0:
+						groundspeak.archived = false;
+						groundspeak.availaible = true;
+						break;
+					case 1:
+						groundspeak.availaible = false;
+						groundspeak.archived = false;
+						break;
+					case 2:
+						groundspeak.archived = true;
+						groundspeak.availaible = false;
+						break;
+					}
+
+					gpxWpt.groundspeak = groundspeak;
+					gpxWpt.desc = String.format("%s by %s (%s / %s)", gpxWpt.groundspeak.name, gpxWpt.groundspeak.placedBy, gpxWpt.groundspeak.difficulty, gpxWpt.groundspeak.terrain);
+
+					gpxWpt.link.href = "http://coord.info/" + gpxWpt.name;
+					gpxWpt.link.text = String.format("%s by %s", gpxWpt.groundspeak.name, gpxWpt.groundspeak.placedBy);
+
+					final long dtfound = rs.getLong("dtfound");
+					if (dtfound != 0) {
+						gpxWpt.sym = "Geocache Found";
+						gpxWpt.gpxg.found = Long.toString(dtfound);
+					}
+
+					final Gpxg tagyKese = tagy.get(gpxWpt.name);
+					if (tagyKese != null) {
+						prevezmiTagy(tagyKese, gpxWpt.gpxg);
+					}
+
+					builder.addGpxWpt(gpxWpt);
+					citac++;
+				} catch (final IOException | RuntimeException e) {
+					preskocene.preskoc(kod, e);
 				}
-
-				final int cacheStatus = rs.getInt("cachestatus");
-				switch (cacheStatus) {
-				case 0:
-					groundspeak.archived = false;
-					groundspeak.availaible = true;
-					break;
-				case 1:
-					groundspeak.availaible = false;
-					groundspeak.archived = false;
-					break;
-				case 2:
-					groundspeak.archived = true;
-					groundspeak.availaible = false;
-					break;
-				}
-
-				gpxWpt.groundspeak = groundspeak;
-				gpxWpt.desc = String.format("%s by %s (%s / %s)", gpxWpt.groundspeak.name, gpxWpt.groundspeak.placedBy, gpxWpt.groundspeak.difficulty, gpxWpt.groundspeak.terrain);
-
-				gpxWpt.link.href = "http://coord.info/" + gpxWpt.name;
-				gpxWpt.link.text = String.format("%s by %s", gpxWpt.groundspeak.name, gpxWpt.groundspeak.placedBy);
-
-				final long dtfound = rs.getLong("dtfound");
-				if (dtfound != 0) {
-					gpxWpt.sym = "Geocache Found";
-					gpxWpt.gpxg.found = Long.toString(dtfound);
-				}
-
-				final Gpxg tagyKese = tagy.get(gpxWpt.name);
-				if (tagyKese != null) {
-					prevezmiTagy(tagyKese, gpxWpt.gpxg);
-				}
-
-				builder.addGpxWpt(gpxWpt);
-				citac++;
-
 			}
 		} finally {
 			progressor.finish();
+			preskocene.ohlas();
 			logResult("Geocaches", startTime, citac);
 		}
 	}
@@ -208,6 +214,7 @@ public class GeogetLoader extends Nacitac0 {
 
 	private Map<String, Gpxg> loadTags(final Statement statement, final Future<?> future, final Progressor progressor) throws SQLException {
 		final ATimestamp startTime = ATimestamp.now();
+		final Preskocene preskocene = new Preskocene("tag");
 		final Map<String, Gpxg> tagy = new HashMap<>();
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(GEOGET_TAGS_QUERY)) {
@@ -257,12 +264,13 @@ public class GeogetLoader extends Nacitac0 {
 						}
 					}
 				} catch (final NumberFormatException e) {
-					log.warn("Unable to parse number!", e);
+					preskocene.preskoc(name + "/" + category, e);
 				}
 				citac++;
 			}
 		} finally {
 			progressor.finish();
+			preskocene.ohlas();
 			logResult("Tags", startTime, citac);
 		}
 		return tagy;
