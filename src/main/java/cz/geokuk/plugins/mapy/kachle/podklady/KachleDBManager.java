@@ -217,14 +217,8 @@ class KachleDBManager implements KachleManager {
 		try {
 			database = otevri(f);
 		} catch (final SqlJetException e) {
-			if (!jePoskozena(e) || !odlozVadnouCache(f)) {
-				chybyOtevreni.ohlas(e);
-				return null;
-			}
-			try {
-				database = otevri(f);
-			} catch (final SqlJetException e2) {
-				chybyOtevreni.ohlas(e2);
+			database = otevriPoskozenou(f, e);
+			if (database == null) {
 				return null;
 			}
 		}
@@ -263,6 +257,31 @@ class KachleDBManager implements KachleManager {
 		}
 		zavri(database);
 		throw new SqlJetException(SqlJetErrorCode.ERROR, "Cache dlaždic " + f + " nelze použít.");
+	}
+
+	/**
+	 * Na poškozený soubor narazí často víc vláken najednou. Odkládá se proto jen v jednom a až po novém pokusu o otevření, jinak by se
+	 * odložila i nová cache, kterou mezitím založilo jiné vlákno.
+	 */
+	private synchronized SqlJetDb otevriPoskozenou(final File f, final SqlJetException chyba) {
+		if (!jePoskozena(chyba)) {
+			chybyOtevreni.ohlas(chyba);
+			return null;
+		}
+		try {
+			return otevri(f);
+		} catch (final SqlJetException e) {
+			if (!jePoskozena(e) || !odlozVadnouCache(f)) {
+				chybyOtevreni.ohlas(e);
+				return null;
+			}
+		}
+		try {
+			return otevri(f);
+		} catch (final SqlJetException e) {
+			chybyOtevreni.ohlas(e);
+			return null;
+		}
 	}
 
 	/** Jen skutečně poškozený soubor se smí odložit, ne chyba čtení nebo přerušené vlákno. */
