@@ -104,6 +104,9 @@ public class SmokeScenar {
 			case "menu":
 				projdiMenu();
 				break;
+			case "vzhled":
+				prepniVzhledy();
+				break;
 			default:
 				throw new IllegalArgumentException(krok);
 			}
@@ -171,6 +174,9 @@ public class SmokeScenar {
 		int n = 0;
 		for (final JMenuItem polozka : polozkyMenu) {
 			final Action a = polozka.getAction();
+			if (a == null) {
+				continue; // vzhledy a témata, ty přepíná krok vzhled
+			}
 			final String jmeno = n++ + " " + textPolozky(polozka) + " (" + a.getClass().getSimpleName() + ")";
 			if (NESPOUSTET.contains(a.getClass().getSimpleName())) {
 				continue;
@@ -186,6 +192,31 @@ public class SmokeScenar {
 				okna.addAll(klikni(polozka, jmeno + " zpět"));
 			}
 			zprava.setProperty("menu." + jmeno, okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
+		}
+	}
+
+	/** Přepne postupně všechny vzhledy (menu Skin) a vrátí ten původní. */
+	private void prepniVzhledy() throws Exception {
+		final List<JMenuItem> vzhledy = new ArrayList<>();
+		JMenuItem puvodni = null;
+		for (final JMenuItem p : polozkyMenu) {
+			if (Arrays.stream(p.getActionListeners()).anyMatch(l -> l.getClass().getSimpleName().equals("ChangeLookAndFeelAction"))) {
+				vzhledy.add(p);
+				if (p.isSelected()) {
+					puvodni = p;
+				}
+			}
+		}
+		if (vzhledy.isEmpty()) {
+			chyby.add("V menu nejsou žádné vzhledy");
+			return;
+		}
+		if (puvodni != null) {
+			vzhledy.add(puvodni);
+		}
+		for (final JMenuItem p : vzhledy) {
+			final List<String> okna = klikni(p, "vzhled " + p.getText());
+			zprava.setProperty("vzhled." + p.getText(), okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
 		}
 	}
 
@@ -379,6 +410,8 @@ public class SmokeScenar {
 		if (polozka.getAction() != null) {
 			akce.add(polozka.getAction());
 			polozky.put(polozka.getAction(), polozka);
+		}
+		if (!(polozka instanceof JMenu)) {
 			polozkyMenu.add(polozka);
 		}
 		if (polozka instanceof JMenu) {

@@ -86,7 +86,7 @@ public class SmokeIT {
 	@Test
 	public void vsechnyPolozkyMenu() throws Exception {
 		final File adresar = pripravAdresar("menu");
-		final Properties zprava = spust(adresar, "menu", "menu");
+		final Properties zprava = spust(adresar, "menu", "menu,vzhled");
 		zkontrolujBezChyb(adresar, zprava);
 		assertTrue(zprava.stringPropertyNames().stream().filter(k -> k.startsWith("menu.")).count() > 50);
 	}
@@ -151,6 +151,10 @@ public class SmokeIT {
 		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
 		if (edt > 3000) {
 			problemy.add("Událost na EDT trvala " + edt + " ms: " + zprava.getProperty("edt.pomala.0"));
+		}
+		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
+		if (pamet > 400) {
+			problemy.add("Po scénáři zůstalo obsazeno " + pamet + " MB paměti");
 		}
 		final File excrep = new File(adresar, "tmp/geokuk/excrep");
 		final String[] vypisy = excrep.list();
