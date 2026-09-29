@@ -165,7 +165,7 @@
 	</dependencies>
 	<profiles>
 		<profile>
-			<!-- Ručně spouštěný smoke test celého programu, potřebuje displej: xvfb-run -a ./mvnw -B -P smoke verify -->
+			<!-- Ručně spouštěný smoke test celého programu, potřebuje displej: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify -->
 			<id>smoke</id>
 			<build>
 				<plugins>

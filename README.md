@@ -65,7 +65,7 @@ Smoke test celého programu nad falešným mapovým serverem (projde mapu,
 menu a otevřené dialogy) potřebuje displej, na Linuxu třeba přes xvfb:
 
 ```sh
-xvfb-run -a ./mvnw -B -P smoke verify
+xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
 ```
 
 Na GitHubu se spouští ručně workflow Smoke.
