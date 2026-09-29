@@ -34,6 +34,8 @@
   takže se uloží do cache a nestahuje se dokola znovu.
 - Okno „Soubor > Servis“ ukazuje hodnoty hned po otevření, i když se
   s mapou zrovna nepracuje. Po zavření okna se hodnoty přestanou měřit.
+- „Listing do Geogetu“ (F3) funguje i u keší, které mají jen běžný odkaz
+  na listing; do schránky se vloží ten.
 - Klávesa F3 patří akci „Listing do Geogetu“; „Otevřít cesty (gpx)“ ji
   už nemá, dřív se obě hlásily o tutéž klávesu.
 - Měřítko „1 : 0“ pro tisk a uložení mapy se neuplatní ani neuloží.
