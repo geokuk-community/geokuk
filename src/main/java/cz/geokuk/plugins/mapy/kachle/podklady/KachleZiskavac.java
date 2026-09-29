@@ -217,9 +217,10 @@ public class KachleZiskavac {
 			execDiskWrite.submit(() -> {
 				log.info("Ukladani kachle na disk #{}:", ukladanci.size());
 				final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getRawData())).collect(Collectors.toList());
-				kachleManager.save(list);
-				pocitZapsanoChunkuNaDisk.inc();
-				pocitZapsanoNaDisk.add(list.size());
+				if (kachleManager.save(list)) {
+					pocitZapsanoChunkuNaDisk.inc();
+					pocitZapsanoNaDisk.add(list.size());
+				}
 				return null;
 
 			});
