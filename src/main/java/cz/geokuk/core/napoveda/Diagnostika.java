@@ -15,6 +15,8 @@ import com.jcabi.manifests.Manifests;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.pocitadla.Pocitadlo;
+import cz.geokuk.util.pocitadla.SpravcePocitadel;
 
 /**
  * Informace pro hlášení chyby: verze, prostředí a posledních pár událostí v programu.
@@ -113,8 +115,28 @@ public final class Diagnostika {
 		synchronized (chyby) {
 			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby);
 		}
+		vypisPocitadla(sb);
 		vypis(sb, "Konec logu", konecLogu(LOG, RADKU_LOGU));
 		return sb.toString();
+	}
+
+	/** Totéž, co ukazuje servisní okno, ať to uživatel nemusí opisovat ze snímku obrazovky. */
+	private static void vypisPocitadla(final StringBuilder sb) {
+		final Map<String, java.util.List<Pocitadlo>> podleTypu = new TreeMap<>();
+		for (final Pocitadlo pocitadlo : new ArrayList<>(SpravcePocitadel.getPocitadla())) {
+			podleTypu.computeIfAbsent(pocitadlo.getTextovyPopisTypu(), typ -> new ArrayList<>()).add(pocitadlo);
+		}
+		if (podleTypu.isEmpty()) {
+			return;
+		}
+		sb.append("\nServisní hodnoty:\n");
+		for (final Map.Entry<String, java.util.List<Pocitadlo>> skupina : podleTypu.entrySet()) {
+			sb.append("  ").append(skupina.getKey()).append(":\n");
+			skupina.getValue().sort(Comparator.comparing(Pocitadlo::getName));
+			for (final Pocitadlo pocitadlo : skupina.getValue()) {
+				sb.append("    ").append(pocitadlo.getName()).append(": ").append(pocitadlo.get()).append('\n');
+			}
+		}
 	}
 
 	private static void vypis(final StringBuilder sb, final String nadpis, final Deque<String> seznam) {
