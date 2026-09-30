@@ -88,6 +88,9 @@ public class SmokeScenar {
 		if (Boolean.getBoolean("smoke.zmeneneProstredi")) {
 			zmenProstredi();
 		}
+		if (System.getProperty("smoke.geoget") != null) {
+			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex("geogetDataDir", new Filex(new File(System.getProperty("smoke.geoget")), false, true));
+		}
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(System.getProperty("smoke.args", "").isEmpty() ? new String[0] : System.getProperty("smoke.args").split(" "));

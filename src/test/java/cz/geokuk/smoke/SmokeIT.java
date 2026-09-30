@@ -27,7 +27,7 @@ public class SmokeIT {
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
 	private int proxyPort;
-	private String vlastnosti;
+	private final List<String> vlastnosti = new ArrayList<>();
 
 	@Before
 	public void spustServer() throws IOException {
@@ -169,7 +169,7 @@ public class SmokeIT {
 	@Test
 	public void zmeneneProstredi() throws Exception {
 		final File adresar = pripravAdresar("prostredi");
-		vlastnosti = "-Dsmoke.zmeneneProstredi=true";
+		vlastnosti.add("-Dsmoke.zmeneneProstredi=true");
 		final Properties zprava = spust(adresar, "prostredi", "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava, false);
 		assertTrue("Mapa se má načíst i bez cache", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
@@ -182,7 +182,7 @@ public class SmokeIT {
 	@Test
 	public void dalkoveOvladani() throws Exception {
 		final File adresar = pripravAdresar("ovladani");
-		vlastnosti = "-Dsmoke.args=--ovladani=0";
+		vlastnosti.add("-Dsmoke.args=--ovladani=0");
 		final Properties zprava = spust(adresar, "ovladani", "ovladani");
 		zkontrolujBezChyb(adresar, zprava);
 		assertTrue(zprava.getProperty("ovladani.stav"), zprava.getProperty("ovladani.stav").contains("\"podklad\":\"TURIST_M\""));
@@ -361,6 +361,23 @@ public class SmokeIT {
 		assertTrue("Načtení " + pocetWpt + " waypointů trvalo " + nacteni + " ms", nacteni < 60_000);
 	}
 
+	/** Databáze GeoGetu s 200 tisíci keší a 200 tisíci waypointů, jak ji mají uživatelé s daty větší než ČR. */
+	@Test
+	public void velkaDatabazeGeogetu() throws Exception {
+		final File adresar = pripravAdresar("geoget", 0);
+		final File geoget = new File(adresar, "home/geoget");
+		geoget.mkdirs();
+		final long zacatek = System.currentTimeMillis();
+		final int wpt = SyntetickaDatabazeGeogetu.zapis(new File(geoget, "geoget.db3"), 200_000, 200_000);
+		final long vyroba = System.currentTimeMillis() - zacatek;
+		vlastnosti.add("-Dsmoke.geoget=" + geoget);
+		vlastnosti.add("-Xmx2g");
+		final Properties zprava = spust(adresar, "geoget", "meritka,posun");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals(String.valueOf(wpt), zprava.getProperty("kese.wpt"));
+		System.out.println("Databáze GeoGetu: výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
+	}
+
 	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
@@ -436,9 +453,7 @@ public class SmokeIT {
 		prikaz.add("-Dhttp.proxyPort=" + proxyPort);
 		prikaz.add("-Dhttp.nonProxyHosts=localhost|127.*");
 		prikaz.add("-Dfile.encoding=UTF-8");
-		if (vlastnosti != null) {
-			prikaz.add(vlastnosti);
-		}
+		prikaz.addAll(vlastnosti);
 		return prikaz;
 	}
 
