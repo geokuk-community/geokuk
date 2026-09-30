@@ -1,7 +1,14 @@
 package cz.geokuk.util.process;
 
 import java.awt.Desktop;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.net.URL;
+
+import javax.swing.*;
+
+import cz.geokuk.framework.Dlg;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
@@ -21,6 +28,7 @@ import java.net.URL;
  *
  * Note - you must include the url type -- either "http://" or "file://".
  */
+@Slf4j
 public class BrowserOpener {
 	/**
 	 * Display a file in the system browser. If you want to display a file, you must include the absolute path name.
@@ -36,8 +44,24 @@ public class BrowserOpener {
 				final Runtime runtime = Runtime.getRuntime();
 				runtime.exec("xdg-open " + url);
 			} catch (final Exception e1) {
-				throw new RuntimeException(String.format("Nedari se otevrit browser na pro \"%s\"", url), e);
+				log.warn("Prohlížeč nejde otevřít pro {}", url, e);
+				if (SwingUtilities.isEventDispatchThread()) {
+					nelzeOtevrit(url);
+				} else {
+					SwingUtilities.invokeLater(() -> nelzeOtevrit(url));
+				}
 			}
+		}
+	}
+
+	private static void nelzeOtevrit(final URL url) {
+		final JTextField adresa = new JTextField(url.toString());
+		adresa.setEditable(false);
+		final String zkopirovat = "Zkopírovat adresu";
+		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "Geokuk",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] { zkopirovat, "Zavřít" }, zkopirovat);
+		if (volba == 0) {
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(url.toString()), null);
 		}
 	}
 }
