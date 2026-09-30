@@ -148,6 +148,9 @@ public class SmokeScenar {
 			case "vzhled":
 				prepniVzhledy();
 				break;
+			case "mrizky":
+				zapniMrizky();
+				break;
 			case "zbesile":
 				zbesile();
 				break;
@@ -457,6 +460,16 @@ public class SmokeScenar {
 		}
 		is.close();
 		return baos.toByteArray();
+	}
+
+	/** Zapne všechny mřížky a měřítko z menu Mřížky. */
+	private void zapniMrizky() throws Exception {
+		for (final JMenuItem p : polozkyMenu) {
+			if (p instanceof JCheckBoxMenuItem && textPolozky(p).startsWith("Mřížky > ") && !p.isSelected()) {
+				naEdt(p::doClick);
+			}
+		}
+		pockejNaKlid("mřížky");
 	}
 
 	/** Uživatel mačká klávesy rychleji, než se dlaždice stihnou načíst. */

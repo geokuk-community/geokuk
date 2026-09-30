@@ -378,6 +378,14 @@ public class SmokeIT {
 		System.out.println("Databáze GeoGetu: výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
 	}
 
+	/** Všechny mřížky zapnuté ve všech měřítkách: nesmí zdržet vykreslování. */
+	@Test
+	public void mrizkyVeVsechMeritkach() throws Exception {
+		final File adresar = pripravAdresar("mrizky");
+		final Properties zprava = spust(adresar, "mrizky", "mrizky,meritka,posun");
+		zkontrolujBezChyb(adresar, zprava);
+	}
+
 	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
