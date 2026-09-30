@@ -350,6 +350,17 @@ public class SmokeIT {
 		}
 	}
 
+	/** 50 tisíc keší (asi 100 tisíc waypointů) po celých Čechách: načtení, měřítka, posun. */
+	@Test
+	public void velkaData() throws Exception {
+		final File adresar = pripravAdresar("velka", 50_000);
+		final Properties zprava = spust(adresar, "velka", "meritka,posun");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals(String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+		final long nacteni = Long.parseLong(zprava.getProperty("start.keseMs"));
+		assertTrue("Načtení " + pocetWpt + " waypointů trvalo " + nacteni + " ms", nacteni < 60_000);
+	}
+
 	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
@@ -393,11 +404,15 @@ public class SmokeIT {
 	}
 
 	private File pripravAdresar(final String jmeno) throws IOException {
+		return pripravAdresar(jmeno, 3000);
+	}
+
+	private File pripravAdresar(final String jmeno, final int kesi) throws IOException {
 		final File adresar = new File(KOREN, jmeno).getAbsoluteFile();
 		smaz(adresar);
 		final File pracovni = new File(adresar, "pracovni");
 		new File(adresar, "home/geokuk").mkdirs();
-		pocetWpt = SyntetickeKese.zapis(new File(adresar, "home/geokuk/kese.gpx"), 3000, 50.08, 14.42, 0.05);
+		pocetWpt = SyntetickeKese.zapis(new File(adresar, "home/geokuk/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
 		new File(adresar, "tmp").mkdirs();
 		pracovni.mkdirs();
 		final String mapy = "smoke.nazev=" + SmokeScenar.MAPA + "\n" //
