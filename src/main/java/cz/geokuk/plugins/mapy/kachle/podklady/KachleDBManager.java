@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.imageio.ImageIO;
+import javax.swing.SwingUtilities;
 
 import org.tmatesoft.sqljet.core.SqlJetErrorCode;
 import org.tmatesoft.sqljet.core.SqlJetException;
@@ -14,6 +15,7 @@ import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.schema.SqlJetConflictAction;
 import org.tmatesoft.sqljet.core.table.*;
 
+import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +65,10 @@ class KachleDBManager implements KachleManager {
 	private final OpakovaneChyby chybyZapisu = new OpakovaneChyby("Nepodařilo se zapsat dlaždice do databáze");
 
 	private final OpakovaneChyby chybyOtevreni = new OpakovaneChyby("Nepodařilo se otevřít databázi dlaždic");
+
+	private volatile int neuspesnychOtevreniZaSebou;
+
+	private boolean uzivatelUpozornen;
 
 	/**
 	 * Constructs a new instance of the DB Manager.
@@ -217,14 +223,8 @@ class KachleDBManager implements KachleManager {
 		try {
 			database = otevri(f);
 		} catch (final SqlJetException e) {
-			if (!jePoskozena(e) || !odlozVadnouCache(f)) {
-				chybyOtevreni.ohlas(e);
-				return null;
-			}
-			try {
-				database = otevri(f);
-			} catch (final SqlJetException e2) {
-				chybyOtevreni.ohlas(e2);
+			database = otevriPoskozenou(f, e);
+			if (database == null) {
 				return null;
 			}
 		}
@@ -242,6 +242,7 @@ class KachleDBManager implements KachleManager {
 			log.error("Unable to close the deprecated DB connection!", e);
 		}
 
+		neuspesnychOtevreniZaSebou = 0;
 		connections.put(mapKey, database);
 		return database;
 	}
@@ -263,6 +264,41 @@ class KachleDBManager implements KachleManager {
 		}
 		zavri(database);
 		throw new SqlJetException(SqlJetErrorCode.ERROR, "Cache dlaždic " + f + " nelze použít.");
+	}
+
+	/**
+	 * Na poškozený soubor narazí často víc vláken najednou. Odkládá se proto jen v jednom a až po novém pokusu o otevření, jinak by se
+	 * odložila i nová cache, kterou mezitím založilo jiné vlákno.
+	 */
+	private synchronized SqlJetDb otevriPoskozenou(final File f, final SqlJetException chyba) {
+		if (!jePoskozena(chyba)) {
+			neslaOtevrit(f, chyba);
+			return null;
+		}
+		try {
+			return otevri(f);
+		} catch (final SqlJetException e) {
+			if (!jePoskozena(e) || !odlozVadnouCache(f)) {
+				neslaOtevrit(f, e);
+				return null;
+			}
+		}
+		try {
+			return otevri(f);
+		} catch (final SqlJetException e) {
+			neslaOtevrit(f, e);
+			return null;
+		}
+	}
+
+	/** Opakované selhání znamená, že cache nejde použít (odpojený disk, chybějící práva), a to se uživateli řekne jednou. */
+	private synchronized void neslaOtevrit(final File f, final SqlJetException e) {
+		chybyOtevreni.ohlas(e);
+		if (++neuspesnychOtevreniZaSebou == 3 && !uzivatelUpozornen) {
+			uzivatelUpozornen = true;
+			SwingUtilities.invokeLater(() -> Dlg.upozorneni("Cache dlaždic ve složce " + f.getParent() + " nejde použít, mapy se budou pokaždé stahovat znovu.\n"
+					+ "Složku můžete změnit v menu Soubor > Umístění souborů."));
+		}
 	}
 
 	/** Jen skutečně poškozený soubor se smí odložit, ne chyba čtení nebo přerušené vlákno. */

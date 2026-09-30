@@ -104,4 +104,39 @@ public class KachleDBManagerTest {
 			vlakno.shutdown();
 		}
 	}
+
+	/** Poškozený soubor potká najednou víc vláken, odložit se smí jen on, ne nová cache, kterou mezitím založilo jiné vlákno. */
+	@Test
+	public void poskozenouCacheOdlozJenJednou() throws Exception {
+		final byte[] smeti = new byte[20_000];
+		new java.util.Random(1).nextBytes(smeti);
+		for (int pokus = 0; pokus < 5; pokus++) {
+			for (final SqlJetDb db : manager.connections.values()) {
+				db.close();
+			}
+			manager = new KachleDBManager(manager.folderHolder);
+			new File(soubor.getPath() + ".vadna").delete();
+			Files.write(soubor.toPath(), smeti);
+			final ExecutorService vlakna = Executors.newFixedThreadPool(8);
+			final java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+			final java.util.List<java.util.concurrent.Future<Boolean>> ulozeni = new java.util.ArrayList<>();
+			try {
+				for (int i = 0; i < 8; i++) {
+					ulozeni.add(vlakna.submit(() -> {
+						start.await();
+						manager.load(KACHLE);
+						return manager.save(Collections.singleton(new ItemToSave(KACHLE, png())));
+					}));
+				}
+				start.countDown();
+				for (final java.util.concurrent.Future<Boolean> u : ulozeni) {
+					Assert.assertTrue("uložení do nové cache", u.get());
+				}
+			} finally {
+				vlakna.shutdown();
+			}
+			Assert.assertEquals("odložený je původní poškozený soubor", smeti.length, new File(soubor.getPath() + ".vadna").length());
+			Assert.assertNotNull("dlaždice je v nové cache", manager.load(KACHLE));
+		}
+	}
 }

@@ -106,14 +106,13 @@ public class KachleZiskavac {
 
 						private void submitDownload() {
 							if (onofflineModel.isOnlineMode()) {
-								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData);
+								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData, Kachlice.this);
 								futura = future;
 								Futures.addCallback(future, new FutureCallback<ImageWithData>() {
 
 									@Override
 									public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
 										pocitDownloadWebOk.inc();
-										ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), Kachlice.this));
 										onImageLoaded(imageWithData.getImg());
 									}
 
@@ -218,9 +217,10 @@ public class KachleZiskavac {
 			execDiskWrite.submit(() -> {
 				log.info("Ukladani kachle na disk #{}:", ukladanci.size());
 				final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getRawData())).collect(Collectors.toList());
-				kachleManager.save(list);
-				pocitZapsanoChunkuNaDisk.inc();
-				pocitZapsanoNaDisk.add(list.size());
+				if (kachleManager.save(list)) {
+					pocitZapsanoChunkuNaDisk.inc();
+					pocitZapsanoNaDisk.add(list.size());
+				}
 				return null;
 
 			});
@@ -346,6 +346,9 @@ public class KachleZiskavac {
 
 	private final KachleUkladac ukladac = new KachleUkladac();
 
+	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
+	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
+
 	private OnofflineModel onofflineModel;
 
 	private KachleModel kachleModel;
@@ -380,6 +383,18 @@ public class KachleZiskavac {
 			}
 
 		}, 1l, 1l, TimeUnit.SECONDS);
+		// Konec programu volá System.exit, dlaždice čekající na zápis by se jinak ztratily.
+		Runtime.getRuntime().addShutdownHook(new Thread(this::dopisNaDisk, "Dopsání dlaždic na disk"));
+	}
+
+	private void dopisNaDisk() {
+		ukladac.submitChunks();
+		execDiskWrite.shutdown();
+		try {
+			execDiskWrite.awaitTermination(5, TimeUnit.SECONDS);
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	/** Smazat se musí třeba při zapnutí online módi */
@@ -419,7 +434,7 @@ public class KachleZiskavac {
 
 	}
 
-	private ListenableFuture<ImageWithData> submitDownloadx(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData) {
+	private ListenableFuture<ImageWithData> submitDownloadx(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice) {
 		final Logger log = dvojiceExekucnichSluzeb.log;
 		final URL url = ka.getUrl();
 		log.debug("SUBMITTING WEB DOWNLOAD  \"{}\" | {}", url, diagnosticsData);
@@ -436,13 +451,15 @@ public class KachleZiskavac {
 			ImageWithData imageWithData;
 			try {
 				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
+				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
 				diagnosticsData.send("Web download - end success");
 				return imageWithData;
 			} catch (final Exception e) {
 				log.debug("DOWNLOAD ERROR  : \"{}\" | {}", url, e);
-				final AExcId excId = FExceptionDumper.dump(e, EExceptionSeverity.RETHROW, "Chyba při stahování:" + ka + " z " + url);
-				diagnosticsData.send(excId + " " + e.getMessage());
+				chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
+				diagnosticsData.send(e.toString());
 				throw e;
 			}
 		});

@@ -117,7 +117,7 @@ public class KesGpxWptProcak implements GpxWptProcak {
 
 		final Wpt wpt = builder.createWpt(gpxwpt, KesPlugin.KES);
 		wpt.setSym(gpxwpt.groundspeak.type);
-		wpt.setNazev(gpxwpt.groundspeak.name); // název hlavního waypointu shodný s názvem keše
+		wpt.setNazev(gpxwpt.groundspeak.name != null ? gpxwpt.groundspeak.name : gpxwpt.name); // název hlavního waypointu shodný s názvem keše
 		wpt.setZorder(EZOrder.FIRST);
 
 		kes.addWpt(wpt);
