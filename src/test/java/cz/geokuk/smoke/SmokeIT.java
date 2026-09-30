@@ -452,6 +452,27 @@ public class SmokeIT {
 		zkontrolujBezChyb(adresar, zprava);
 	}
 
+	/** Obrázky v datové složce: bez GPS, poškozený JPG, velký PNG, vyrendrovaná mapa. */
+	@Test
+	public void obrazkyVDatoveSlozce() throws Exception {
+		final File adresar = pripravAdresar("obrazky");
+		final File data = new File(adresar, "home/geokuk");
+		final java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(4000, 3000, java.awt.image.BufferedImage.TYPE_INT_RGB);
+		javax.imageio.ImageIO.write(img, "jpg", new File(data, "bez-gps.jpg"));
+		javax.imageio.ImageIO.write(img, "png", new File(data, "velky.png"));
+		final byte[] jpg = Files.readAllBytes(new File(data, "bez-gps.jpg").toPath());
+		Files.write(new File(data, "useknuty.jpg").toPath(), Arrays.copyOf(jpg, jpg.length / 3));
+		final byte[] smeti = new byte[3000];
+		new Random(3).nextBytes(smeti);
+		Files.write(new File(data, "smeti.jpg").toPath(), smeti);
+		final Properties zprava = spust(adresar, "obrazky", "meritka");
+		zkontrolujBezChyb(adresar, zprava, false);
+		assertEquals("Keše z GPX se načtou i vedle obrázků", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+		final String[] vypisy = new File(adresar, "tmp/geokuk/excrep").list();
+		System.out.println("Obrázky: okna " + zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).map(zprava::getProperty).collect(Collectors.toList())
+				+ ", výpisy " + (vypisy == null ? 0 : vypisy.length) + ", načtení " + zprava.getProperty("start.keseMs") + " ms");
+	}
+
 	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
