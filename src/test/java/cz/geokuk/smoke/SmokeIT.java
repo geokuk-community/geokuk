@@ -220,6 +220,72 @@ public class SmokeIT {
 		assertTrue("Proxy obsloužila i vestavěné mapy nebo uživatelskou mapu", server.getPocetPozadavku() > 0);
 	}
 
+	/** Náhodné akce zvenku (skoky po mapě, měřítka, výběr keší, položky menu) bez chyb, zaseknutí a růstu paměti. */
+	@Test
+	public void nahodneAkceZvenku() throws Exception {
+		final File adresar = pripravAdresar("opice");
+		final Process p = spustZvenku(adresar);
+		final List<String> problemy = new ArrayList<>();
+		final StringBuilder prubeh = new StringBuilder();
+		final Random r = new Random(Long.getLong("smoke.seed", 1));
+		try {
+			final KlientOvladani k = pripojSe(adresar);
+			final List<String> menu = new ArrayList<>();
+			for (final Map<String, Object> polozka : k.seznam("/menu")) {
+				final String cesta = (String) polozka.get("cesta");
+				if (NESPOUSTET_ZVENKU.stream().noneMatch(cesta::startsWith) && !(cesta.startsWith("Mapy > ") && polozka.containsKey("zaskrtnuto") && !cesta.equals("Mapy > Ukládat mapy"))
+						&& !cesta.startsWith("Cesty > Otevřít") && !cesta.startsWith("Cesty > Importovat")) {
+					menu.add(cesta);
+				}
+			}
+			final int pred = pametPoUklidu(k);
+			for (int i = 0; i < Integer.getInteger("smoke.akci", 400); i++) {
+				final int volba = r.nextInt(10);
+				String akce;
+				try {
+					if (volba < 3) {
+						akce = "pozice";
+						k.post("/pozice", "lat", String.valueOf(49.9 + r.nextDouble() * 0.4), "lon", String.valueOf(14.2 + r.nextDouble() * 0.4), "meritko", String.valueOf(3 + r.nextInt(16)));
+					} else if (volba < 5) {
+						akce = "keš";
+						k.post("/kes", "kod", "GC" + Integer.toString(0x10000 + r.nextInt(3000), 36).toUpperCase(Locale.ROOT));
+					} else {
+						akce = menu.get(r.nextInt(menu.size()));
+						k.post("/menu", "cesta", akce);
+						Thread.sleep(300);
+						k.post("/okna/zavri");
+					}
+				} catch (final IOException e) {
+					if (e.getMessage().contains("není povolená") || e.getMessage().contains("v menu není")) {
+						continue;
+					}
+					throw e;
+				}
+				prubeh.append(i).append(' ').append(akce).append('\n');
+				if (i % 50 == 49) {
+					cekej(30, () -> k.seznam("/okna").size() == 1);
+					pockejNaKlid(k);
+				}
+			}
+			cekej(30, () -> k.seznam("/okna").size() == 1);
+			pockejNaKlid(k);
+			final int po = pametPoUklidu(k);
+			prubeh.append("Paměť po úklidu: ").append(pred).append(" → ").append(po).append(" MB\n");
+			if (po - pred > 100) {
+				problemy.add("Paměť po náhodných akcích vzrostla z " + pred + " na " + po + " MB");
+			}
+			ukonciZvenku(p, k, prubeh, problemy);
+		} finally {
+			p.destroyForcibly();
+			Files.write(new File(adresar, "opice-prubeh.txt").toPath(), prubeh.toString().getBytes(StandardCharsets.UTF_8));
+		}
+		final String[] vypisy = new File(adresar, "tmp/geokuk/excrep").list();
+		if (vypisy != null && vypisy.length > 0) {
+			problemy.add("Výpisy chyb v excrep: " + Arrays.toString(vypisy));
+		}
+		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
 	/** Opakované otevírání a zavírání všech dialogů nesmí zvyšovat obsazenou paměť. */
 	@Test
 	public void opakovaneDialogyNeunikaji() throws Exception {
