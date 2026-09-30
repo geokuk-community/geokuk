@@ -19,6 +19,11 @@
 - „Informace pro hlášení chyby“ obsahují i servisní hodnoty ze servisního
   okna.
 - Program si bere až 3 GB paměti, když ji Java přijme; jinak 2 GB nebo 1 GB.
+- Kešoidy → Limity kreslení: do kolika waypointů ve výřezu se kreslí
+  keše, popisky, zvýrazňovací kruhy a obsazenost. Změna platí hned
+  a dialog ukazuje, jak dlouho vrstvy kreslily.
+- Obsazenost se nad limitem nekreslí.
+- Načítání velkých GPX je asi o 15 % rychlejší.
 
 ### Opravy
 - Při oddálení, kdy se svět v okně opakuje, se nevykreslí všechny keše

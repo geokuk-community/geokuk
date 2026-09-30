@@ -190,6 +190,9 @@ public class NacitacGpx extends NacitacInputStream0 {
 	}
 
 	private void initNamesGroundspeak(final String groundspeakNameSpaceUri) {
+		if (GS_CACHE != null && GS_CACHE.getNamespaceURI().equals(groundspeakNameSpaceUri)) {
+			return; // volá se u každého elementu, jména se mění jen se jmenným prostorem
+		}
 		GS_CACHE = new QName(groundspeakNameSpaceUri, "cache");
 
 		// <groundspeak:name>Vyroba vapna</groundspeak:name>
@@ -437,7 +440,12 @@ public class NacitacGpx extends NacitacInputStream0 {
 		}
 
 		private boolean is(final QName qname) {
-			return qNames.stream().anyMatch(q -> q.equals(qname));
+			for (final QName q : qNames) {
+				if (q.equals(qname)) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 	}

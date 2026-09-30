@@ -10,6 +10,7 @@ import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.MouseGestureContext;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
 import cz.geokuk.util.gui.JBarvovyDvojSlider;
@@ -101,6 +102,11 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		g.setColor(obsazenost.getColor());
 		final int mouokraj = (int) (getSoord().getMouboduNaMetr() * POLOMER_OBSAZENOSTI);
 		final BoundingRect boundingRect = getSoord().getBoundingRect().rozsir(mouokraj);
+		final long t0 = System.nanoTime();
+		if (LimityKresleni.prekroceno(LimityKresleni.Vrstva.OBSAZENOST, iIndexator.count(getSoord().getBoundingRect()))) {
+			LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.OBSAZENOST, 0);
+			return;
+		}
 		// final Area area = new Area();
 		iIndexator.bound(boundingRect).stream().forEach(wpt -> {
 			if (!wpt.obsazujeOblast()) {
@@ -113,6 +119,7 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 			// area.add(areakruh);
 			g.fillOval(p.x - r, p.y - r, d, d);
 		});
+		LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.OBSAZENOST, System.nanoTime() - t0);
 
 		// g.fill(area);
 	}

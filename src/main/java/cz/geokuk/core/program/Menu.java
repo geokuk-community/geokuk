@@ -155,6 +155,7 @@ public class Menu extends MenuStrujce {
 		item(akce.kruhyOnoffAction);
 
 		item(akce.nastavParametryZvyraznovacichKruhuAction);
+		item(akce.limityKresleniAction);
 
 		separator();
 		item(akce.implicitniVyberZobrazenychKesi);

@@ -19,6 +19,7 @@ import cz.geokuk.plugins.cesty.CestyChangedEvent;
 import cz.geokuk.plugins.cesty.data.Doc;
 import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
@@ -425,7 +426,7 @@ public class JStatusBar extends JPanel {
 
 	private void setVarujPrekroceni(final boolean b) {
 		if (b) {
-			varovaniPoctuPrekrocenych.setText("Překročen limit " + FConst.MAX_POC_WPT_NA_MAPE + " waypointů");
+			varovaniPoctuPrekrocenych.setText("Překročen limit " + LimityKresleni.get(LimityKresleni.Vrstva.KESE) + " waypointů");
 			varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
 			varovaniPoctuPrekrocenych.setForeground(Color.RED);
 			varovaniPoctuPrekrocenych.setVisible(true);

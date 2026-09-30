@@ -4,7 +4,7 @@ import java.awt.*;
 
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.program.FConst;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
@@ -52,8 +52,10 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		if (iIndexator == null) {
 			return;
 		}
-		final boolean prekrocenLimit = iIndexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
+		final long t0 = System.nanoTime();
+		final boolean prekrocenLimit = LimityKresleni.prekroceno(LimityKresleni.Vrstva.KRUHY, iIndexator.count(getSoord().getBoundingRect()));
 		if (prekrocenLimit) {
+			LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.KRUHY, 0);
 			return;
 		}
 
@@ -81,7 +83,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 
 			}
 		});
-
+		LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.KRUHY, System.nanoTime() - t0);
 	}
 
 	/**

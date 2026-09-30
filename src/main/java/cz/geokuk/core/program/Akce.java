@@ -17,6 +17,7 @@ import cz.geokuk.plugins.cesty.akce.doc.CestyZoomAction;
 import cz.geokuk.plugins.cesty.akce.doc.PromazatJednobodoveAPrazdneCesty;
 import cz.geokuk.plugins.cesty.akce.soubor.*;
 import cz.geokuk.plugins.geocoding.GeocodingAdrAction;
+import cz.geokuk.plugins.kesoid.LimityKresleniAction;
 import cz.geokuk.plugins.kesoid.filtr.FiltrIkonyAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenDoTerenuUNenalezenychAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenFinalUNalezenychAction;
@@ -56,6 +57,7 @@ public class Akce {
 	public final KruhyOnoffAction kruhyOnoffAction = new KruhyOnoffAction();
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();
+	public final LimityKresleniAction limityKresleniAction = new LimityKresleniAction();
 
 	public final MrizkaDdAction mrizkaDdAction = new MrizkaDdAction();
 	public final MrizkaDdMmMmmAction mrizkaDdMmMmmAction = new MrizkaDdMmMmmAction();

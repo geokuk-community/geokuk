@@ -14,7 +14,6 @@ import javax.swing.*;
 import cz.geokuk.api.mapicon.Imagant;
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.*;
-import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.cesty.CestyModel;
 import cz.geokuk.plugins.cesty.akce.OdebratZCestyAction;
@@ -397,8 +396,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		if (ikonBag == null) {
 			return;
 		}
+		final long t0 = System.nanoTime();
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
-		final boolean prekrocenLimit = !vykreslovatOkamtiteAleDlouho && indexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
+		final int pocetVeVyrezu = indexator.count(getSoord().getBoundingRect());
+		final boolean prekrocenLimit = !vykreslovatOkamtiteAleDlouho && LimityKresleni.prekroceno(LimityKresleni.Vrstva.KESE, pocetVeVyrezu);
 		SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
 
 		// vytvoření prázdných seznamů
@@ -434,6 +435,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 					paintWaypoint(gg, wpt, null, i);
 				}
 			}
+		}
+		if (!vykreslovatOkamtiteAleDlouho) {
+			LimityKresleni.zapisPocetVeVyrezu(pocetVeVyrezu);
+			LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.KESE, prekrocenLimit ? 0 : System.nanoTime() - t0);
 		}
 	}
 

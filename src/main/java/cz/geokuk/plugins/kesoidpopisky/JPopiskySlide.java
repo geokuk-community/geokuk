@@ -9,8 +9,8 @@ import javax.swing.Box;
 import cz.geokuk.core.coord.EJakOtacetPriRendrovani;
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.program.FConst;
 import cz.geokuk.plugins.kesoid.Kepodr;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
 import cz.geokuk.util.index2d.Indexator;
@@ -68,8 +68,10 @@ public class JPopiskySlide extends JSingleSlide0 {
 		if (pose == null) {
 			return;
 		}
-		final boolean prekrocenLimit = iIndexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
+		final long t0 = System.nanoTime();
+		final boolean prekrocenLimit = LimityKresleni.prekroceno(LimityKresleni.Vrstva.POPISKY, iIndexator.count(getSoord().getBoundingRect()));
 		if (prekrocenLimit) {
+			LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.POPISKY, 0);
 			return;
 		}
 
@@ -118,6 +120,7 @@ public class JPopiskySlide extends JSingleSlide0 {
 			}
 			// g.fillOval(p.x -r, p.y - r, d, d);
 		});
+		LimityKresleni.zapisKresleni(LimityKresleni.Vrstva.POPISKY, System.nanoTime() - t0);
 
 	}
 
