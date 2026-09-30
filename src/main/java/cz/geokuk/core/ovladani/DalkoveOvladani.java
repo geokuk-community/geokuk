@@ -1,18 +1,19 @@
 package cz.geokuk.core.ovladani;
 
-import java.awt.Frame;
-import java.awt.Window;
+import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -42,6 +43,11 @@ import lombok.extern.slf4j.Slf4j;
  * POST /podklad?jmeno=TURIST_M
  * POST /kes?kod=GC12345                   vybere keš a vystředí na ni mapu
  * POST /prenacti                          znovu načte keše
+ * GET  /menu                              položky menu hlavního okna s cestou, povolením, zkratkou a stavem přepínače
+ * POST /menu?cesta=Soubor%20%3E%20Servis...   spustí položku menu jako kliknutí (nečeká na zavření dialogu)
+ * GET  /okna                              otevřená okna s titulkem, velikostí, textem hlášek a tlačítky
+ * POST /okna/zavri[?titulek=...]          zavře okno s titulkem, bez titulku všechna kromě hlavního
+ * POST /okna/tlacitko?titulek=...&amp;text=...   stiskne tlačítko s textem v okně s titulkem
  * </pre>
  */
 @Slf4j
@@ -165,6 +171,24 @@ public class DalkoveOvladani {
 				vyzadujPost(post);
 				odpovez(ex, 200, naEdt(() -> kes(param.get("kod"))));
 				break;
+			case "/menu":
+				if (post) {
+					odpovez(ex, 200, naEdt(() -> spustMenu(param.get("cesta"))));
+				} else {
+					odpovez(ex, 200, naEdt(this::menu));
+				}
+				break;
+			case "/okna":
+				odpovez(ex, 200, naEdt(DalkoveOvladani::okna));
+				break;
+			case "/okna/zavri":
+				vyzadujPost(post);
+				odpovez(ex, 200, naEdt(() -> zavriOkna(param.get("titulek"))));
+				break;
+			case "/okna/tlacitko":
+				vyzadujPost(post);
+				odpovez(ex, 200, naEdt(() -> stiskni(param.get("titulek"), param.get("text"))));
+				break;
 			case "/prenacti":
 				vyzadujPost(post);
 				odpovez(ex, 200, naEdt(() -> {
@@ -234,12 +258,175 @@ public class DalkoveOvladani {
 		boolean prvni = true;
 		for (final Window w : Window.getWindows()) {
 			if (w.isShowing()) {
-				final String titulek = w instanceof Frame ? ((Frame) w).getTitle() : w instanceof java.awt.Dialog ? ((java.awt.Dialog) w).getTitle() : "";
-				sb.append(prvni ? "" : ",").append(json(titulek));
+				sb.append(prvni ? "" : ",").append(json(titulek(w)));
 				prvni = false;
 			}
 		}
 		return sb.append("]}").toString();
+	}
+
+	private static JFrame hlavniOkno() {
+		for (final Frame f : Frame.getFrames()) {
+			if (f instanceof JFrame && f.isShowing() && ((JFrame) f).getJMenuBar() != null) {
+				return (JFrame) f;
+			}
+		}
+		throw new IllegalArgumentException("hlavní okno není otevřené");
+	}
+
+	private static List<JMenuItem> polozkyMenu() {
+		final List<JMenuItem> polozky = new ArrayList<>();
+		final JMenuBar lista = hlavniOkno().getJMenuBar();
+		for (int i = 0; i < lista.getMenuCount(); i++) {
+			if (lista.getMenu(i) != null) {
+				pridejPolozky(lista.getMenu(i), polozky);
+			}
+		}
+		return polozky;
+	}
+
+	private static void pridejPolozky(final JMenu menu, final List<JMenuItem> polozky) {
+		for (final Component c : menu.getMenuComponents()) {
+			if (c instanceof JMenu) {
+				pridejPolozky((JMenu) c, polozky);
+			} else if (c instanceof JMenuItem) {
+				polozky.add((JMenuItem) c);
+			}
+		}
+	}
+
+	static String cesta(final JMenuItem polozka) {
+		final Deque<String> cesta = new ArrayDeque<>();
+		Component c = polozka;
+		while (c instanceof JMenuItem) {
+			cesta.addFirst(String.valueOf(((JMenuItem) c).getText()).replaceAll("<[^>]*>", "").trim());
+			c = c.getParent() instanceof JPopupMenu ? ((JPopupMenu) c.getParent()).getInvoker() : null;
+		}
+		return String.join(" > ", cesta);
+	}
+
+	private String menu() {
+		final StringBuilder sb = new StringBuilder("[");
+		for (final JMenuItem p : polozkyMenu()) {
+			sb.append(sb.length() == 1 ? "" : ",").append("{\"cesta\":").append(json(cesta(p))).append(",\"povoleno\":").append(p.isEnabled());
+			sb.append(",\"zkratka\":").append(json(p.getAccelerator() == null ? null : p.getAccelerator().toString()));
+			sb.append(",\"pismeno\":").append(json(p.getMnemonic() == 0 ? null : String.valueOf((char) p.getMnemonic())));
+			if (p instanceof JCheckBoxMenuItem || p instanceof JRadioButtonMenuItem) {
+				sb.append(",\"zaskrtnuto\":").append(p.isSelected());
+			}
+			sb.append('}');
+		}
+		return sb.append(']').toString();
+	}
+
+	private String spustMenu(final String cesta) {
+		for (final JMenuItem p : polozkyMenu()) {
+			if (cesta(p).equals(cesta)) {
+				if (!p.isEnabled()) {
+					throw new IllegalArgumentException("položka " + cesta + " není povolená");
+				}
+				// Dialog otevřený položkou může být modální, odpověď proto na jeho zavření nečeká.
+				SwingUtilities.invokeLater(() -> p.doClick(0));
+				return "{\"spusteno\":" + json(cesta) + "}";
+			}
+		}
+		throw new IllegalArgumentException("v menu není " + cesta);
+	}
+
+	private static String okna() {
+		final StringBuilder sb = new StringBuilder("[");
+		for (final Window w : Window.getWindows()) {
+			if (!w.isShowing()) {
+				continue;
+			}
+			final StringBuilder texty = new StringBuilder();
+			if (w instanceof RootPaneContainer) {
+				hledejTexty(((RootPaneContainer) w).getContentPane(), texty);
+			}
+			final int obsah = w instanceof RootPaneContainer ? ((RootPaneContainer) w).getContentPane().getComponentCount() : w.getComponentCount();
+			sb.append(sb.length() == 1 ? "" : ",").append("{\"titulek\":").append(json(titulek(w))).append(",\"trida\":").append(json(w.getClass().getSimpleName()));
+			sb.append(",\"sirka\":").append(w.getWidth()).append(",\"vyska\":").append(w.getHeight()).append(",\"komponent\":").append(obsah);
+			sb.append(",\"modalni\":").append(w instanceof Dialog && ((Dialog) w).isModal()).append(",\"text\":").append(json(texty.toString().trim()));
+			final List<String> tlacitka = new ArrayList<>();
+			hledejTlacitka(w, tlacitka);
+			sb.append(",\"tlacitka\":[");
+			for (int i = 0; i < tlacitka.size(); i++) {
+				sb.append(i == 0 ? "" : ",").append(json(tlacitka.get(i)));
+			}
+			sb.append("]}");
+		}
+		return sb.append(']').toString();
+	}
+
+	private static void hledejTexty(final Container kde, final StringBuilder texty) {
+		for (final Component c : kde.getComponents()) {
+			if (c instanceof JOptionPane) {
+				final Object m = ((JOptionPane) c).getMessage();
+				texty.append(m instanceof Object[] ? Arrays.toString((Object[]) m) : String.valueOf(m)).append(' ');
+			} else if (c instanceof Container) {
+				hledejTexty((Container) c, texty);
+			}
+		}
+	}
+
+	private static void hledejTlacitka(final Container kde, final List<String> tlacitka) {
+		for (final Component c : kde.getComponents()) {
+			if (c instanceof JButton && c.isShowing() && ((JButton) c).getText() != null && !((JButton) c).getText().isEmpty()) {
+				tlacitka.add(((JButton) c).getText());
+			} else if (c instanceof Container) {
+				hledejTlacitka((Container) c, tlacitka);
+			}
+		}
+	}
+
+	private static String titulek(final Window w) {
+		return w instanceof Frame ? ((Frame) w).getTitle() : w instanceof Dialog ? ((Dialog) w).getTitle() : "";
+	}
+
+	private static String stiskni(final String titulek, final String text) {
+		for (final Window w : Window.getWindows()) {
+			if (w.isShowing() && Objects.equals(titulek, titulek(w))) {
+				final AbstractButton tlacitko = najdiTlacitko(w, text);
+				if (tlacitko != null) {
+					SwingUtilities.invokeLater(() -> tlacitko.doClick(0));
+					return "{\"stisknuto\":" + json(text) + "}";
+				}
+			}
+		}
+		throw new IllegalArgumentException("okno " + titulek + " s tlačítkem " + text + " není otevřené");
+	}
+
+	private static AbstractButton najdiTlacitko(final Container kde, final String text) {
+		for (final Component c : kde.getComponents()) {
+			if (c instanceof AbstractButton && c.isShowing() && text != null && text.equals(((AbstractButton) c).getText())) {
+				return (AbstractButton) c;
+			}
+			if (c instanceof Container) {
+				final AbstractButton b = najdiTlacitko((Container) c, text);
+				if (b != null) {
+					return b;
+				}
+			}
+		}
+		return null;
+	}
+
+	private static String zavriOkna(final String titulek) {
+		final JFrame hlavni = hlavniOkno();
+		int zavreno = 0;
+		for (final Window w : Window.getWindows()) {
+			if (w.isShowing() && w != hlavni && (titulek == null || titulek.equals(titulek(w)))) {
+				// Jako křížkem, ať proběhne i úklid okna; modální dialog vrací řízení až po zavření.
+				SwingUtilities.invokeLater(() -> {
+					w.dispatchEvent(new WindowEvent(w, WindowEvent.WINDOW_CLOSING));
+					if (w.isShowing()) {
+						w.dispose();
+					}
+				});
+				zavreno++;
+			}
+		}
+		return "{\"zavreno\":" + zavreno + "}";
 	}
 
 	private String pozice(final Map<String, String> param) {
