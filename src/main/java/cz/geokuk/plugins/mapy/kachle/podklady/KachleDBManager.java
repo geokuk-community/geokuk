@@ -141,6 +141,13 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public boolean save(final Collection<ItemToSave> imagesToSave) {
+		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.
+		synchronized (this) {
+			return saveJednoVlakno(imagesToSave);
+		}
+	}
+
+	private boolean saveJednoVlakno(final Collection<ItemToSave> imagesToSave) {
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
 			return false;
@@ -247,7 +254,8 @@ class KachleDBManager implements KachleManager {
 		return database;
 	}
 
-	private SqlJetDb otevri(final File f) throws SqlJetException {
+	/** Nová cache se při prvním čtení schématu zapisuje, proto otevírání pod stejným zámkem jako zápis. */
+	private synchronized SqlJetDb otevri(final File f) throws SqlJetException {
 		final SqlJetDb database = SqlJetDb.open(f, true);
 		try {
 			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.
