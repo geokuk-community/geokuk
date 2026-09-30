@@ -1,11 +1,15 @@
 package cz.geokuk.core.program;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.*;
+
+import javax.swing.Action;
+import javax.swing.KeyStroke;
 
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.ESmer;
 import cz.geokuk.core.napoveda.*;
+import cz.geokuk.core.ovladani.DalkoveOvladaniAction;
 import cz.geokuk.core.profile.UlozitNastaveniKProgramuAction;
 import cz.geokuk.core.render.RenderAction;
 import cz.geokuk.framework.NapovedaAction;
@@ -22,6 +26,7 @@ import cz.geokuk.plugins.kesoid.kind.kes.JenDoTerenuUNenalezenychAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenFinalUNalezenychAction;
 import cz.geokuk.plugins.kesoid.mapicon.*;
 import cz.geokuk.plugins.kesoid.mvc.*;
+import cz.geokuk.plugins.kesoidkruhy.JednotkoveKruhyAction;
 import cz.geokuk.plugins.kesoidkruhy.KruhyOnoffAction;
 import cz.geokuk.plugins.kesoidkruhy.NastavParametryZvyraznovacichKruhuAction;
 import cz.geokuk.plugins.kesoidobsazenost.ObsazenostOnoffAction;
@@ -54,6 +59,7 @@ public class Akce {
 	public final OdebratZCestyAction odebratZCestyAction = new OdebratZCestyAction(null);
 	public final CestyPresClipboardDoGeogetuAction cestyPresClipboardDoGeogetuAction = new CestyPresClipboardDoGeogetuAction();
 	public final KruhyOnoffAction kruhyOnoffAction = new KruhyOnoffAction();
+	public final JednotkoveKruhyAction jednotkoveKruhyAction = new JednotkoveKruhyAction();
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();
 
@@ -82,6 +88,7 @@ public class Akce {
 	public final FenotypIkonyAction fenotypIkonyAction = new FenotypIkonyAction();
 
 	public final ZobrazServisniOknoAction zobrazServisniOknoAction = new ZobrazServisniOknoAction();
+	public final DalkoveOvladaniAction dalkoveOvladaniAction = new DalkoveOvladaniAction();
 
 	public final RefreshIkonAction refreshIkonAction = new RefreshIkonAction();
 	public final DebugIkonyAction debugIkonyAction = new DebugIkonyAction();
@@ -154,5 +161,27 @@ public class Akce {
 	public final VyletSmazNeAction vyletSmazNeAction = new VyletSmazNeAction();
 
 	public final List<MapyAction0> mapoakce = new LinkedList<>();
+
+	/** Klávesové zkratky akcí a jejich názvy. */
+	public Map<KeyStroke, String> zkratky() {
+		final Map<KeyStroke, String> zkratky = new HashMap<>();
+		for (final Field f : Akce.class.getFields()) {
+			try {
+				if (f.get(this) instanceof Action) {
+					final Action a = (Action) f.get(this);
+					if (a.getValue(Action.ACCELERATOR_KEY) != null) {
+						zkratky.put((KeyStroke) a.getValue(Action.ACCELERATOR_KEY), "akce " + a.getValue(Action.NAME));
+					}
+				}
+			} catch (final IllegalAccessException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+		// Referenční body dostávají Alt+číslo postupně až při sestavení menu.
+		for (int i = 1; i <= 9; i++) {
+			zkratky.putIfAbsent(KeyStroke.getKeyStroke("alt " + i), "referenční bod");
+		}
+		return zkratky;
+	}
 
 }

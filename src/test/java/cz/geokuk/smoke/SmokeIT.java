@@ -27,7 +27,7 @@ public class SmokeIT {
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
 	private int proxyPort;
-	private String vlastnosti;
+	private final List<String> vlastnosti = new ArrayList<>();
 
 	@Before
 	public void spustServer() throws IOException {
@@ -169,7 +169,7 @@ public class SmokeIT {
 	@Test
 	public void zmeneneProstredi() throws Exception {
 		final File adresar = pripravAdresar("prostredi");
-		vlastnosti = "-Dsmoke.zmeneneProstredi=true";
+		vlastnosti.add("-Dsmoke.zmeneneProstredi=true");
 		final Properties zprava = spust(adresar, "prostredi", "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava, false);
 		assertTrue("Mapa se má načíst i bez cache", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
@@ -177,6 +177,205 @@ public class SmokeIT {
 		assertEquals("Do nedostupné cache se nic nezapíše", 0, pocitadlo(zprava, "ka42 disk write #dlaždic"));
 		assertTrue("Uživatel se má dozvědět, že cache nejde použít: " + zprava,
 				zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).anyMatch(k -> zprava.getProperty(k).contains("Cache dlaždic ve složce")));
+	}
+
+	@Test
+	public void dalkoveOvladani() throws Exception {
+		final File adresar = pripravAdresar("ovladani");
+		vlastnosti.add("-Dsmoke.args=--ovladani=0");
+		final Properties zprava = spust(adresar, "ovladani", "ovladani");
+		zkontrolujBezChyb(adresar, zprava);
+		assertTrue(zprava.getProperty("ovladani.stav"), zprava.getProperty("ovladani.stav").contains("\"podklad\":\"TURIST_M\""));
+		assertTrue("Mapy.cz přes proxy", server.getPozadavky().keySet().stream().anyMatch(k -> k.contains("turist-m")));
+	}
+
+	/** Položky menu, které program ukončí, otevřou prohlížeč, přepnou vzhled nebo ovládání samo vypnou. */
+	private static final List<String> NESPOUSTET_ZVENKU = Arrays.asList("Soubor > Konec", "Soubor > Celá obrazovka", "Soubor > Dálkové ovládání", "Mapy > Online", "Nápověda > Nápověda",
+			"Nápověda > Webová stránka", "Nápověda > Zadat problém", "Nápověda > Zkontrolovat aktualizace", "Skin > ");
+
+	/**
+	 * Program spuštěný jako obyčejný {@code java -jar geokuk.jar --ovladani=0} se řídí jen zvenku přes dálkové ovládání: projde všechny položky
+	 * menu, zkontroluje otevřená okna a skončí přes Soubor > Konec.
+	 */
+	@Test
+	public void zvenkuPresDalkoveOvladani() throws Exception {
+		final File adresar = pripravAdresar("zvenku");
+		final Process p = spustZvenku(adresar);
+		final List<String> problemy = new ArrayList<>();
+		final StringBuilder prubeh = new StringBuilder();
+		try {
+			final KlientOvladani k = pripojSe(adresar);
+			projdiMenuZvenku(k, prubeh, problemy);
+			prubeh.append("Stav: ").append(k.stav()).append('\n');
+			ukonciZvenku(p, k, prubeh, problemy);
+		} finally {
+			p.destroyForcibly();
+			Files.write(new File(adresar, "zvenku-prubeh.txt").toPath(), prubeh.toString().getBytes(StandardCharsets.UTF_8));
+		}
+		final String[] vypisy = new File(adresar, "tmp/geokuk/excrep").list();
+		if (vypisy != null && vypisy.length > 0) {
+			problemy.add("Výpisy chyb v excrep: " + Arrays.toString(vypisy));
+		}
+		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+		assertTrue("Proxy obsloužila i vestavěné mapy nebo uživatelskou mapu", server.getPocetPozadavku() > 0);
+	}
+
+	/** Opakované otevírání a zavírání všech dialogů nesmí zvyšovat obsazenou paměť. */
+	@Test
+	public void opakovaneDialogyNeunikaji() throws Exception {
+		final File adresar = pripravAdresar("unik");
+		final Process p = spustZvenku(adresar);
+		final List<String> problemy = new ArrayList<>();
+		final StringBuilder prubeh = new StringBuilder();
+		try {
+			final KlientOvladani k = pripojSe(adresar);
+			projdiMenuZvenku(k, prubeh, problemy);
+			final int pred = pametPoUklidu(k);
+			for (int i = 0; i < 5; i++) {
+				projdiMenuZvenku(k, new StringBuilder(), problemy);
+			}
+			final int po = pametPoUklidu(k);
+			prubeh.append("Paměť po úklidu: po 1. průchodu ").append(pred).append(" MB, po dalších 5 ").append(po).append(" MB\n");
+			if (po - pred > 30) {
+				problemy.add("Paměť po 5 průchodech menu vzrostla z " + pred + " na " + po + " MB");
+			}
+			ukonciZvenku(p, k, prubeh, problemy);
+		} finally {
+			p.destroyForcibly();
+			Files.write(new File(adresar, "unik-prubeh.txt").toPath(), prubeh.toString().getBytes(StandardCharsets.UTF_8));
+		}
+		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
+	private static int pametPoUklidu(final KlientOvladani k) throws Exception {
+		int nejmene = Integer.MAX_VALUE;
+		for (int i = 0; i < 3; i++) {
+			nejmene = Math.min(nejmene, ((Number) ((Map<?, ?>) k.get("/stav?gc=ano")).get("pametMb")).intValue());
+			Thread.sleep(500);
+		}
+		return nejmene;
+	}
+
+	private Process spustZvenku(final File adresar) throws IOException {
+		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
+		prefs.getParentFile().mkdirs();
+		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
+		final List<String> prikaz = new ArrayList<>(jvm(adresar));
+		prikaz.add("-jar");
+		prikaz.add(new File(adresar, "pracovni/geokuk.jar").getPath());
+		prikaz.add("--ovladani=0");
+		return new ProcessBuilder(prikaz).directory(new File(adresar, "pracovni")).redirectErrorStream(true).redirectOutput(new File(adresar, adresar.getName() + ".log")).start();
+	}
+
+	private KlientOvladani pripojSe(final File adresar) throws Exception {
+		final File soubor = new File(adresar, "home/.geokuk/ovladani.properties");
+		cekej(60, soubor::isFile);
+		final KlientOvladani k = new KlientOvladani(soubor);
+		cekej(120, () -> ((Number) k.stav().get("waypointu")).intValue() == pocetWpt);
+		k.post("/podklad", "jmeno", "user-smoke");
+		// Vybraná keš zpřístupní položky pro keše, výlety a cesty.
+		k.post("/kes", "kod", "GC" + Integer.toString(0x10000 + 7, 36).toUpperCase(Locale.ROOT));
+		pockejNaKlid(k);
+		return k;
+	}
+
+	private static void projdiMenuZvenku(final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy) throws Exception {
+		for (final Map<String, Object> polozka : k.seznam("/menu")) {
+			final String cesta = (String) polozka.get("cesta");
+			if (!Boolean.TRUE.equals(polozka.get("povoleno")) || NESPOUSTET_ZVENKU.stream().anyMatch(cesta::startsWith) || cesta.startsWith("Mapy > ") && polozka.containsKey("zaskrtnuto")
+					&& !cesta.equals("Mapy > Ukládat mapy")) {
+				continue;
+			}
+			final int kolikrat = polozka.containsKey("zaskrtnuto") ? 2 : 1;
+			for (int i = 0; i < kolikrat; i++) {
+				try {
+					k.post("/menu", "cesta", cesta);
+				} catch (final IOException e) {
+					if (e.getMessage().contains("není povolená") || e.getMessage().contains("v menu není")) {
+						continue; // předchozí akce ji vypnula nebo přejmenovala (délka cesty v názvu)
+					}
+					throw e;
+				}
+				Thread.sleep(700);
+				for (final Map<String, Object> okno : k.seznam("/okna")) {
+					if (!"GeoKuk".equals(okno.get("titulek"))) {
+						prubeh.append(cesta).append(" → ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
+						if (((Number) okno.get("sirka")).intValue() < 100 || ((Number) okno.get("vyska")).intValue() < 50 || ((Number) okno.get("komponent")).intValue() == 0) {
+							problemy.add("Po " + cesta + " je okno prázdné nebo malé: " + okno);
+						}
+					}
+				}
+				k.post("/okna/zavri");
+				cekej(20, () -> k.seznam("/okna").size() == 1);
+				pockejNaKlid(k);
+			}
+		}
+	}
+
+	private static void ukonciZvenku(final Process p, final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy) throws Exception {
+		k.post("/menu", "cesta", "Soubor > Konec");
+		// Přidat do cesty v průchodu menu založí cestu, Konec se proto zeptá na uložení.
+		if (!p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+			for (final Map<String, Object> okno : k.seznam("/okna")) {
+				prubeh.append("Při Konci: ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
+				if (!"GeoKuk".equals(okno.get("titulek"))) {
+					prubeh.append("  tlačítka ").append(okno.get("tlacitka")).append('\n');
+					final String neukladat = ((List<?>) okno.get("tlacitka")).stream().map(String::valueOf).filter(t -> t.matches("(?i)ne|no|neukládat|zahodit.*")).findFirst()
+							.orElseThrow(() -> new AssertionError("Dialog při Konci nemá tlačítko pro neukládání: " + okno));
+					k.post("/okna/tlacitko", "titulek", (String) okno.get("titulek"), "text", neukladat);
+				}
+			}
+		}
+		if (!p.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)) {
+			problemy.add("Program po Soubor > Konec neskončil");
+		}
+	}
+
+	private static void pockejNaKlid(final KlientOvladani k) throws Exception {
+		cekej(60, () -> ((Number) k.stav().get("frontyDlazdic")).intValue() == 0);
+	}
+
+	private interface Podminka {
+		boolean plati() throws Exception;
+	}
+
+	private static void cekej(final int sekund, final Podminka podminka) throws Exception {
+		final long konec = System.currentTimeMillis() + sekund * 1000L;
+		while (!podminka.plati()) {
+			if (System.currentTimeMillis() > konec) {
+				fail("Nedočkal jsem se do " + sekund + " s");
+			}
+			Thread.sleep(200);
+		}
+	}
+
+	/** 50 tisíc keší (asi 100 tisíc waypointů) po celých Čechách: načtení, měřítka, posun. */
+	@Test
+	public void velkaData() throws Exception {
+		final File adresar = pripravAdresar("velka", 50_000);
+		final Properties zprava = spust(adresar, "velka", "meritka,posun");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals(String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+		final long nacteni = Long.parseLong(zprava.getProperty("start.keseMs"));
+		assertTrue("Načtení " + pocetWpt + " waypointů trvalo " + nacteni + " ms", nacteni < 60_000);
+	}
+
+	/** Databáze GeoGetu s 200 tisíci keší a 200 tisíci waypointů, jak ji mají uživatelé s daty větší než ČR. */
+	@Test
+	public void velkaDatabazeGeogetu() throws Exception {
+		final File adresar = pripravAdresar("geoget", 0);
+		final File geoget = new File(adresar, "home/geoget");
+		geoget.mkdirs();
+		final long zacatek = System.currentTimeMillis();
+		final int wpt = SyntetickaDatabazeGeogetu.zapis(new File(geoget, "geoget.db3"), 200_000, 200_000);
+		final long vyroba = System.currentTimeMillis() - zacatek;
+		vlastnosti.add("-Dsmoke.geoget=" + geoget);
+		vlastnosti.add("-Xmx2g");
+		final Properties zprava = spust(adresar, "geoget", "meritka,posun");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals(String.valueOf(wpt), zprava.getProperty("kese.wpt"));
+		System.out.println("Databáze GeoGetu: výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
 	}
 
 	@Test
@@ -222,11 +421,15 @@ public class SmokeIT {
 	}
 
 	private File pripravAdresar(final String jmeno) throws IOException {
+		return pripravAdresar(jmeno, 3000);
+	}
+
+	private File pripravAdresar(final String jmeno, final int kesi) throws IOException {
 		final File adresar = new File(KOREN, jmeno).getAbsoluteFile();
 		smaz(adresar);
 		final File pracovni = new File(adresar, "pracovni");
 		new File(adresar, "home/geokuk").mkdirs();
-		pocetWpt = SyntetickeKese.zapis(new File(adresar, "home/geokuk/kese.gpx"), 3000, 50.08, 14.42, 0.05);
+		pocetWpt = SyntetickeKese.zapis(new File(adresar, "home/geokuk/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
 		new File(adresar, "tmp").mkdirs();
 		pracovni.mkdirs();
 		final String mapy = "smoke.nazev=" + SmokeScenar.MAPA + "\n" //
@@ -238,8 +441,7 @@ public class SmokeIT {
 		return adresar;
 	}
 
-	private Properties spust(final File adresar, final String beh, final String kroky) throws Exception {
-		final File zprava = new File(adresar, beh + ".properties");
+	private List<String> jvm(final File adresar) {
 		final List<String> prikaz = new ArrayList<>();
 		prikaz.add(new File(System.getProperty("java.home"), "bin/java").getPath());
 		prikaz.add("-Xmx768m");
@@ -251,9 +453,13 @@ public class SmokeIT {
 		prikaz.add("-Dhttp.proxyPort=" + proxyPort);
 		prikaz.add("-Dhttp.nonProxyHosts=localhost|127.*");
 		prikaz.add("-Dfile.encoding=UTF-8");
-		if (vlastnosti != null) {
-			prikaz.add(vlastnosti);
-		}
+		prikaz.addAll(vlastnosti);
+		return prikaz;
+	}
+
+	private Properties spust(final File adresar, final String beh, final String kroky) throws Exception {
+		final File zprava = new File(adresar, beh + ".properties");
+		final List<String> prikaz = new ArrayList<>(jvm(adresar));
 		// Program běží ze sestaveného jaru v pracovním adresáři, jen tak si vedle sebe najde uživatelské mapy.
 		prikaz.add("-cp");
 		prikaz.add(new File(adresar, "pracovni/geokuk.jar") + File.pathSeparator + System.getProperty("smoke.testClasses"));

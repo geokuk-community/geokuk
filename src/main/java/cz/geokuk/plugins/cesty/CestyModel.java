@@ -522,7 +522,9 @@ public class CestyModel extends Model0 {
 	}
 
 	void prevezmiNoveOtevrenyDokument(final Doc doc) {
-		setDefaultProAktualniVyletFile(doc.getFile());
+		if (doc.getFile() != null) {
+			setDefaultProAktualniVyletFile(doc.getFile());
+		}
 		doc.resetChanged();
 		invalidate(doc);
 		invalidate(this.doc);

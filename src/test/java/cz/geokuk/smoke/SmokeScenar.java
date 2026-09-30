@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -17,6 +18,7 @@ import javax.swing.*;
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.program.CloseAction;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.OknoUmisteniDto;
@@ -88,9 +90,12 @@ public class SmokeScenar {
 		if (Boolean.getBoolean("smoke.zmeneneProstredi")) {
 			zmenProstredi();
 		}
+		if (System.getProperty("smoke.geoget") != null) {
+			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex("geogetDataDir", new Filex(new File(System.getProperty("smoke.geoget")), false, true));
+		}
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
-		new GeokukMain().execute(new String[0]);
+		new GeokukMain().execute(System.getProperty("smoke.args", "").isEmpty() ? new String[0] : System.getProperty("smoke.args").split(" "));
 		final Thread.UncaughtExceptionHandler puvodni = Thread.getDefaultUncaughtExceptionHandler();
 		Thread.setDefaultUncaughtExceptionHandler((vlakno, t) -> {
 			nezachycene.add(vlakno.getName() + ": " + vypis(t));
@@ -148,6 +153,9 @@ public class SmokeScenar {
 				break;
 			case "okno":
 				menOkno();
+				break;
+			case "ovladani":
+				ovladejPresHttp();
 				break;
 			default:
 				throw new IllegalArgumentException(krok);
@@ -392,6 +400,63 @@ public class SmokeScenar {
 		umisteni.putFilex("kesDir", new Filex(new File(odpojeny, "geokuk"), false, true));
 		umisteni.putFilex("geogetDataDir", new Filex(new File(odpojeny, "geoget"), false, true));
 		umisteni.putFilex(FPref.KACHLE_CACHE_DIR_value, new Filex(new File(odpojeny, "kachle"), false, true));
+	}
+
+	/** Ovládá program přes dálkové ovládání tak, jak by to dělal jiný program. */
+	private void ovladejPresHttp() throws Exception {
+		final Properties p = new Properties();
+		try (Reader r = new InputStreamReader(new FileInputStream(DalkoveOvladani.SOUBOR), StandardCharsets.UTF_8)) {
+			p.load(r);
+		}
+		final String zaklad = "http://127.0.0.1:" + p.getProperty("port");
+		final String token = p.getProperty("token");
+		final String stav = http("GET", zaklad + "/stav", token, 200);
+		overObsahuje(stav, "\"waypointu\":" + zprava.getProperty("kese.wpt"));
+		overObsahuje(http("POST", zaklad + "/pozice?lat=50.1&lon=14.5&meritko=13", token, 200), "\"meritko\":13");
+		final Wgs stred = vyrezModel().getMoord().getMoustred().toWgs();
+		if (Math.abs(stred.lat - 50.1) > 0.001 || Math.abs(stred.lon - 14.5) > 0.001) {
+			chyby.add("Po /pozice je střed mapy " + stred);
+		}
+		pockejNaKlid("ovládání pozice");
+		overObsahuje(http("POST", zaklad + "/podklad?jmeno=TURIST_M", token, 200), "\"podklad\":\"TURIST_M\"");
+		pockejNaKlid("ovládání podklad");
+		http("POST", zaklad + "/podklad?jmeno=nesmysl", token, 400);
+		http("POST", zaklad + "/kes?kod=GC" + Integer.toString(0x10000 + 7, 36).toUpperCase(Locale.ROOT), token, 200);
+		http("POST", zaklad + "/kes?kod=GCNENI", token, 400);
+		http("GET", zaklad + "/pozice?lat=1&lon=1", token, 400);
+		http("GET", zaklad + "/stav", "spatny", 401);
+		http("POST", zaklad + "/prenacti", token, 200);
+		pockejNaKlid("ovládání přenačtení");
+		zprava.setProperty("ovladani.stav", http("GET", zaklad + "/stav", token, 200));
+	}
+
+	private void overObsahuje(final String odpoved, final String co) {
+		if (!odpoved.contains(co)) {
+			chyby.add("Odpověď ovládání neobsahuje " + co + ": " + odpoved);
+		}
+	}
+
+	private String http(final String metoda, final String url, final String token, final int ocekavano) throws IOException {
+		final HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection(Proxy.NO_PROXY);
+		c.setRequestMethod(metoda);
+		c.setRequestProperty("Authorization", "Bearer " + token);
+		final int kod = c.getResponseCode();
+		final InputStream is = kod < 400 ? c.getInputStream() : c.getErrorStream();
+		final String telo = is == null ? "" : new String(readAll(is), StandardCharsets.UTF_8);
+		if (kod != ocekavano) {
+			chyby.add(metoda + " " + url + " vrátil " + kod + " místo " + ocekavano + ": " + telo);
+		}
+		return telo;
+	}
+
+	private static byte[] readAll(final InputStream is) throws IOException {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final byte[] buf = new byte[8192];
+		for (int n; (n = is.read(buf)) > 0;) {
+			baos.write(buf, 0, n);
+		}
+		is.close();
+		return baos.toByteArray();
 	}
 
 	/** Uživatel mačká klávesy rychleji, než se dlaždice stihnou načíst. */

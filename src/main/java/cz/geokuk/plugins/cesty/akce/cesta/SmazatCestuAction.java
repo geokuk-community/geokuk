@@ -1,5 +1,7 @@
 package cz.geokuk.plugins.cesty.akce.cesta;
 
+import java.awt.event.KeyEvent;
+
 import cz.geokuk.plugins.cesty.data.Cesta;
 
 public class SmazatCestuAction extends CestaAction0 {
@@ -12,6 +14,7 @@ public class SmazatCestuAction extends CestaAction0 {
 		putValue(NAME, "Smazat cestu");
 		putValue(SHORT_DESCRIPTION, "Vybranou cestu zcela odstraní z výletu se všemi jejími body a úseky");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_V);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_S);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

@@ -25,8 +25,28 @@
   Události se zapisují i do logu, z něhož hlášení ukazuje posledních
   50 řádků.
 - Program si bere až 3 GB paměti, když ji Java přijme; jinak 2 GB nebo 1 GB.
+- Dálkové ovládání: Soubor > Dálkové ovládání (nebo parametr
+  `--ovladani[=port]`) povolí jiným programům na tomto počítači ovládat
+  Geokuk přes HTTP – přesunout mapu, přepnout podklad, vybrat keš, znovu
+  načíst keše a zjistit stav. Port a přístupový token jsou v souboru
+  `.geokuk\ovladani.properties` v domovské složce uživatele.
 
 ### Opravy
+- Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
+- GPX soubor nemůže při načtení číst jiné soubory ani volat adresy
+  na internetu (externí entity a DTD se nenačítají).
+- Cesty: GPX, který nevytvořil Geokuk (tracklog z GPS, Locusu), Uložit
+  nepřepíše a nabídne Uložit jako, aby se neztratily výšky, časy a body.
+- Výlet (`lovim.ggt`, `tedne.ggt`): kódy keší, které zrovna nejsou
+  v načtených datech, zůstanou v souboru; změny se zapisují v pořadí
+  a při Konci se dopíšou.
+- Useknutá dlaždice ve formátu JPEG se nepřijme ani nevezme z cache
+  a stáhne se znovu.
+- Při plném disku nebo nezapisovatelné složce TEMP se ikony a mapa
+  načtou. Když nejde uložit nastavení, Konec nabídne ukončení bez uložení.
+- Databáze GeoGetu a GSAKu se otevírají jen pro čtení, Geokuk v jejich
+  složce nic nezaloží ani nezmění.
+- O programu uvádí licenci GNU GPL v3.
 - Při oddálení, kdy se svět v okně opakuje, se nevykreslí všechny keše
   najednou; výřez se v takovém měřítku bere jako celý svět.
 - Při měřítku v tisících kilometrů nepřetékají souřadnice, takže tažení
@@ -95,6 +115,19 @@
   souhrnně a nezakládají výpis chyby u každé dlaždice.
 - Menu Cesty má podtržené C a Skin I, dřív se o písmeno přetahovaly
   s Výlety a Nápovědou.
+- Písmeno napsané v otevřeném menu nebo do pole na liště (Hodnocení,
+  BestOf, Favorit) nepřepne mapový podklad.
+- Uživatelská mapa nemůže převzít klávesovou zkratku programu (třeba F3
+  nebo Ctrl+S), program ji s hláškou vynechá.
+- Kešoidy > Implicitní výběr (Alt+F2) vrátí filtr i zobrazené typy keší
+  na výchozí hodnoty.
+- Kešoidy > Jednotkové kruhy (Alt+F8) jsou v menu.
+- Položky v menu Výlety, Cesty a Kešoidy mají různá podtržená písmena,
+  která jsou v jejich textu.
+- Po výběru v seznamu Výlet na liště ovládají šipky a PageUp/PageDown
+  dál mapu.
+- Když nejde otevřít prohlížeč (nápověda, web), program ukáže adresu
+  a nabídne ji zkopírovat.
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou

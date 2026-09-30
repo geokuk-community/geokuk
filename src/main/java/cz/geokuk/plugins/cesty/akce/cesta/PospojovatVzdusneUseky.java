@@ -1,5 +1,7 @@
 package cz.geokuk.plugins.cesty.akce.cesta;
 
+import java.awt.event.KeyEvent;
+
 import cz.geokuk.plugins.cesty.data.Cesta;
 
 public class PospojovatVzdusneUseky extends CestaAction0 {
@@ -13,6 +15,7 @@ public class PospojovatVzdusneUseky extends CestaAction0 {
 		putValue(NAME, "Pospojovat vzdušné úseky");
 		putValue(SHORT_DESCRIPTION, "Nalezne všechny vzdušné úseky v cestě a pospojuje je.");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_V);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_D);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

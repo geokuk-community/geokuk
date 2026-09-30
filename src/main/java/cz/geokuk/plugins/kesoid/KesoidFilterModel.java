@@ -36,11 +36,6 @@ public class KesoidFilterModel {
 
 
 
-	public void setDefaults() {
-		// Atom.of(AWptType.FINAL_LOCATION);
-		filterDefinition = new FilterDefinition();
-	}
-
 	/**
 	 * @param filterDefinition
 	 *            the filterDefinition to set

@@ -12,7 +12,7 @@ public class JednotkoveKruhyAction extends ToggleAction0 {
 	private KruhyModel model;
 
 	public JednotkoveKruhyAction() {
-		super("Jednotokové kruhy");
+		super("Jednotkové kruhy");
 		putValue(SHORT_DESCRIPTION, "Kruhy mají velikost 10m, 100m, 10km atd.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_J);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("alt F8"));

@@ -30,6 +30,9 @@ import lombok.Getter;
  */
 public class KesoidModel extends Model0 {
 
+	// FIXME tady nemohou být takovéto konstant, mohou se změnit
+	private static final QualAlelaNames VYCHOZI_NECHTENE_ALELY = new QualAlelaNames("fnd:vztah", "dsbl:stav", "arch:stav");
+
 	// Datamodelu
 	private KesoidFilterModel filter;
 	private QualAlelaNames jmenaAlelNaToolbaru;
@@ -73,6 +76,15 @@ public class KesoidModel extends Model0 {
 
 	public KesoidFilterModel getFilter() {
 		return filter;
+	}
+
+	/** Všechny načtené kešoidy, nebo null, dokud se nenačetly. */
+	public KesBag getVsechnyKesoidy() {
+		return vsechny;
+	}
+
+	public void prenactiKese() {
+		startKesLoading();
 	}
 
 	public GccomNick getGccomNick() {
@@ -173,6 +185,12 @@ public class KesoidModel extends Model0 {
 		} catch (final IllegalStateException e2) {
 			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Do clipboardu to nejde dáti.");
 		}
+	}
+
+	/** Vrátí filtr i skryté typy keší na výchozí hodnoty. */
+	public void nastavImplicitniFiltr() {
+		setDefinition(new FilterDefinition());
+		setJmenaNechtenychAlel(VYCHOZI_NECHTENE_ALELY);
 	}
 
 	public void setDefinition(final FilterDefinition filterDefinition) {
@@ -359,11 +377,8 @@ public class KesoidModel extends Model0 {
 		}
 		filter.setFilterDefinition(filterDefinition);
 
-		// FIXME tady nemohou být takovéto konstant, mohou se změnit
-		final QualAlelaNames defval = new QualAlelaNames("fnd:vztah", "dsbl:stav", "arch:stav");
-
-		filter.setJmenaNechtenychAlel(currPrefe().node(FPref.KESOID_FILTR_node).getQualAlelaNames(FPref.KESOID_FILTER_ALELY_value, defval));
-		jmenaAlelNaToolbaru = currPrefe().node(FPref.KESOID_FILTR_node).getQualAlelaNames(FPref.KESOID_FILTER_NATOOLBARU_value, defval);
+		filter.setJmenaNechtenychAlel(currPrefe().node(FPref.KESOID_FILTR_node).getQualAlelaNames(FPref.KESOID_FILTER_ALELY_value, VYCHOZI_NECHTENE_ALELY));
+		jmenaAlelNaToolbaru = currPrefe().node(FPref.KESOID_FILTR_node).getQualAlelaNames(FPref.KESOID_FILTER_NATOOLBARU_value, VYCHOZI_NECHTENE_ALELY);
 
 		final ASada jmenoAktualniSadyIkon = currPrefe().node(FPref.JMENO_VYBRANE_SADY_IKON_node).getAtom(FPref.JMENO_VYBRANE_SADY_IKON_value, ASada.STANDARD, ASada.class);
 		this.jmenoAktualniSadyIkon = jmenoAktualniSadyIkon;

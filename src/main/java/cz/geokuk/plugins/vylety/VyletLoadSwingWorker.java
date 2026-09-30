@@ -17,14 +17,16 @@ public class VyletLoadSwingWorker extends MySwingWorker0<Vylet, Void> {
 
 
 
-	private final VyletovyZperzistentnovac vyletovyZperzistentnovac;
 	private final KesBag vsechny;
 	private final VyletModel vyletModel;
+	private final int generace;
+	private final int pocetZmenPriStartu;
 
-	public VyletLoadSwingWorker(final VyletovyZperzistentnovac vyletovyZperzistentnovac2, final KesBag vsechny, final VyletModel vyletModel) {
-		vyletovyZperzistentnovac = vyletovyZperzistentnovac2;
+	public VyletLoadSwingWorker(final VyletModel vyletModel, final KesBag vsechny, final int generace, final int pocetZmenPriStartu) {
 		this.vsechny = vsechny;
 		this.vyletModel = vyletModel;
+		this.generace = generace;
+		this.pocetZmenPriStartu = pocetZmenPriStartu;
 	}
 
 	/*
@@ -34,7 +36,7 @@ public class VyletLoadSwingWorker extends MySwingWorker0<Vylet, Void> {
 	 */
 	@Override
 	public Vylet doInBackground() throws Exception {
-		return vyletovyZperzistentnovac.immediatlyNactiVylet(vsechny);
+		return vyletModel.nactiPoZapisech(vsechny);
 	}
 
 	/*
@@ -49,7 +51,7 @@ public class VyletLoadSwingWorker extends MySwingWorker0<Vylet, Void> {
 			return; // asi zkanclváno
 		}
 		log.info("Nahran vylet, {} lovenych a {} ignorovanych.", result.get(EVylet.ANO).size(), result.get(EVylet.NE).size());
-		vyletModel.setNewVylet(result);
+		vyletModel.prevezmiNactenyVylet(result, generace, pocetZmenPriStartu);
 	}
 
 }
