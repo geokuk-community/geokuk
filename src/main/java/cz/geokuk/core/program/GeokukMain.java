@@ -3,6 +3,7 @@ package cz.geokuk.core.program;
 import java.nio.charset.Charset;
 import java.util.prefs.BackingStoreException;
 
+import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.lookandfeel.LafSupport;
@@ -27,6 +28,8 @@ public class GeokukMain {
 
 	public void execute(final String[] args) {
 		FConst.logInit();
+		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
+		ImageIO.setUseCache(false);
 		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi();
 		Diagnostika.sledujKliknuti();
 		log.info("Default character encoding: {}", Charset.defaultCharset());

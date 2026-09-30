@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 
 import org.tmatesoft.sqljet.core.SqlJetErrorCode;
@@ -108,10 +107,14 @@ class KachleDBManager implements KachleManager {
 				return null;
 			}
 			log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
-			img = ImageIO.read(cursor.getBlobAsStream("image"));
+			img = KachloDownloader.precti(cursor.getBlobAsStream("image"));
 			if (img == null) {
 				log.debug("Loaded DB image is null!");
 			}
+		} catch (final KachloDownloader.UseknutaDlazdice e) {
+			// Useknutou dlaždici z dřívějška bere jako chybějící, stáhne se znovu a přepíše.
+			log.debug("{}: {}", ki, e.getMessage());
+			return null;
 		} catch (SqlJetException | IOException e) {
 			chybyCteni.ohlas(e);
 			vadne = e instanceof SqlJetException;
@@ -141,6 +144,13 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public boolean save(final Collection<ItemToSave> imagesToSave) {
+		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.
+		synchronized (this) {
+			return saveJednoVlakno(imagesToSave);
+		}
+	}
+
+	private boolean saveJednoVlakno(final Collection<ItemToSave> imagesToSave) {
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
 			return false;
@@ -247,7 +257,8 @@ class KachleDBManager implements KachleManager {
 		return database;
 	}
 
-	private SqlJetDb otevri(final File f) throws SqlJetException {
+	/** Nová cache se při prvním čtení schématu zapisuje, proto otevírání pod stejným zámkem jako zápis. */
+	private synchronized SqlJetDb otevri(final File f) throws SqlJetException {
 		final SqlJetDb database = SqlJetDb.open(f, true);
 		try {
 			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.

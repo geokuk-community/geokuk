@@ -43,7 +43,10 @@ public class CestyOtevriSwingWorker extends MySwingWorker0<Doc, Void> {
 	@Override
 	public Doc doInBackground() throws Exception {
 		final Doc doc = new Doc();
-		doc.setFile(file);
+		// Cizí GPX by uložení ochudilo o výšky, časy a body, proto ho Uložit nesmí přepsat bez dotazu.
+		if (Ukladac.jeZGeokuku(file)) {
+			doc.setFile(file);
+		}
 		final List<Cesta> cesty = cestyZperzistentnovac.nacti(Collections.singletonList(file), kesBag);
 		for (final Cesta cesta : cesty) {
 			doc.xadd(cesta);
@@ -62,7 +65,7 @@ public class CestyOtevriSwingWorker extends MySwingWorker0<Doc, Void> {
 		if (doc == null) {
 			return; // asi zkanclváno
 		}
-		log.info("Načten dokument {}.", doc.getFile());
+		log.info("Načten dokument {}.", file);
 		cestyModel.prevezmiNoveOtevrenyDokument(doc);
 	}
 

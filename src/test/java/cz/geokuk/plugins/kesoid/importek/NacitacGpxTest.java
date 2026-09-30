@@ -224,4 +224,25 @@ public class NacitacGpxTest {
 	public void poskozeneXml() throws Exception {
 		nacti("<gpx xmlns=\"http://www.topografix.com/GPX/1/0\"><wpt lat=\"1\" lon=\"2\"><name>X</name>");
 	}
+	@Test
+	public void externiEntitaSeNenacte() throws Exception {
+		final java.io.File tajny = java.io.File.createTempFile("geokuk-xxe", ".txt");
+		tajny.deleteOnExit();
+		java.nio.file.Files.write(tajny.toPath(), "TAJNE".getBytes(StandardCharsets.UTF_8));
+		final String gpx = "<?xml version=\"1.0\"?>\n<!DOCTYPE gpx [<!ENTITY x SYSTEM \"" + tajny.toURI() + "\">]>\n"
+				+ "<gpx version=\"1.0\" xmlns=\"http://www.topografix.com/GPX/1/0\"><wpt lat=\"50\" lon=\"14\"><name>&x;</name></wpt></gpx>";
+		try {
+			for (final GpxWpt w : nacti(gpx).waypointy) {
+				Assert.assertFalse(String.valueOf(w.name).contains("TAJNE"));
+			}
+		} catch (final java.io.IOException e) {
+			// Odmítnutí souboru je v pořádku.
+		}
+	}
+
+	@Test
+	public void doctypeBezEntitSeNacte() throws Exception {
+		final String gpx = GPX_GEOGET.replace("<gpx ", "<!DOCTYPE gpx SYSTEM \"http://127.0.0.1:9/gpx.dtd\">\n<gpx ");
+		Assert.assertEquals("GC12345", nacti(gpx).waypointy.get(0).name);
+	}
 }

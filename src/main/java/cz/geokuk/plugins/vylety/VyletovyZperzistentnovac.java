@@ -40,18 +40,21 @@ public class VyletovyZperzistentnovac {
 	}
 
 	private void aktualizujVylet(final Vylet novyvylet, final VyletPul vyletPul, final EVylet evyl, final KesBag vsechny) {
+		final Set<String> nezname = new LinkedHashSet<>(vyletPul.kesides);
 		if (vsechny != null) {
 			for (final Kesoid kes : vsechny.getKesoidy()) {
 				if (vyletPul.kesides.contains(kes.getIdentifier())) {
 					novyvylet.add(evyl, kes);
+					nezname.remove(kes.getIdentifier());
 				}
 			}
 		}
+		novyvylet.pridejNezname(evyl, nezname);
 	}
 
 	private VyletPul loadGgt(final BufferedReader reader) throws IOException {
 		String line;
-		final Set<String> set = new HashSet<>();
+		final Set<String> set = new LinkedHashSet<>();
 		while ((line = reader.readLine()) != null) {
 			line = line.trim();
 			if (line.isEmpty()) {
