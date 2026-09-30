@@ -4,6 +4,7 @@
 package cz.geokuk.core.program;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import javax.swing.SwingUtilities;
@@ -14,6 +15,7 @@ import cz.geokuk.core.hledani.HledaciSluzba;
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.NapovedaModel;
 import cz.geokuk.core.onoffline.OnofflineModel;
+import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.profile.ProfileModel;
 import cz.geokuk.core.render.RenderModel;
 import cz.geokuk.framework.*;
@@ -44,6 +46,7 @@ public class Inicializator {
 
 	private final MainFrameHolder mainFrameHolder = new MainFrameHolder();
 	private NapovedaModel napovedaModel;
+	private DalkoveOvladani dalkoveOvladani;
 
 	public void inicializace() {
 		final BeanBag bb = new BeanBag();
@@ -91,6 +94,7 @@ public class Inicializator {
 		bb.registerSigleton(new GeocodingModel());
 
 		bb.registerSigleton(new HledaciSluzba());
+		dalkoveOvladani = bb.registerSigleton(new DalkoveOvladani());
 
 		bb.registerSigleton(new KachleZiskavac());
 
@@ -126,6 +130,14 @@ public class Inicializator {
 
 	public void setMainFrame(final JMainFrame frame) {
 		mainFrameHolder.setMainFrame(frame);
+	}
+
+	public void spustDalkoveOvladani(final int port) {
+		try {
+			dalkoveOvladani.spust(port);
+		} catch (final IOException e) {
+			Dlg.error("Dálkové ovládání nejde spustit na portu " + port + ": " + e.getMessage());
+		}
 	}
 
 	public void zkontrolovatAktualizace() {

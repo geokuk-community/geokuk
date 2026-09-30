@@ -7,6 +7,7 @@ import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.napoveda.StahnoutAktualizaciSwingWorker;
 import cz.geokuk.core.profile.FPreferencesInNearFile;
 import cz.geokuk.framework.Dlg;
@@ -34,6 +35,7 @@ public class GeokukMain {
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());
 		promazPreferencePokudJeToPrikazano(args);
 		FPreferencesInNearFile.loadNearToProgramIfNewer(); // Načíst ze souboru preferencový sobor, pokud došlo k jeho změně od minula
+		final Integer portOvladani = DalkoveOvladani.portZParametru(args);
 
 		SwingUtilities.invokeLater(() -> {
 			final Inicializator inicializator = new Inicializator();
@@ -45,6 +47,9 @@ public class GeokukMain {
 			final String varovani = FPreferencesInNearFile.prevzitVarovani();
 			if (varovani != null) {
 				Dlg.error(varovani);
+			}
+			if (portOvladani != null) {
+				inicializator.spustDalkoveOvladani(portOvladani);
 			}
 			inicializator.zkontrolovatAktualizace();
 		});

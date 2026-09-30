@@ -75,6 +75,15 @@ public class KesoidModel extends Model0 {
 		return filter;
 	}
 
+	/** Všechny načtené kešoidy, nebo null, dokud se nenačetly. */
+	public KesBag getVsechnyKesoidy() {
+		return vsechny;
+	}
+
+	public void prenactiKese() {
+		startKesLoading();
+	}
+
 	public GccomNick getGccomNick() {
 		return gccomNick;
 	}
