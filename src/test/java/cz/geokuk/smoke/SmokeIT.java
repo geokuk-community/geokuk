@@ -269,7 +269,7 @@ public class SmokeIT {
 	}
 
 	private KlientOvladani pripojSe(final File adresar) throws Exception {
-		final File soubor = new File(adresar, "tmp/geokuk/ovladani.properties");
+		final File soubor = new File(adresar, "home/.geokuk/ovladani.properties");
 		cekej(60, soubor::isFile);
 		final KlientOvladani k = new KlientOvladani(soubor);
 		cekej(120, () -> ((Number) k.stav().get("waypointu")).intValue() == pocetWpt);

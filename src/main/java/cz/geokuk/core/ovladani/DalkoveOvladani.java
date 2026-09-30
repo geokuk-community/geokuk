@@ -5,13 +5,13 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.*;
 
 import javax.swing.*;
 
@@ -55,7 +55,8 @@ public class DalkoveOvladani {
 
 	public static final int VYCHOZI_PORT = 48321;
 	private static final String ZAPNUTO_value = "dalkoveOvladani";
-	public static final File SOUBOR = new File(new File(System.getProperty("java.io.tmpdir"), "geokuk"), "ovladani.properties");
+	/** V domovské složce, sdílený TEMP na Linuxu by token prozradil ostatním uživatelům. */
+	public static final File SOUBOR = new File(new File(System.getProperty("user.home"), ".geokuk"), "ovladani.properties");
 
 	private VyrezModel vyrezModel;
 	private PoziceModel poziceModel;
@@ -63,6 +64,8 @@ public class DalkoveOvladani {
 	private KesoidModel kesoidModel;
 
 	private HttpServer server;
+	private ExecutorService vlakno;
+	private boolean uklidPriKonci;
 	private String token;
 
 	public void inject(final VyrezModel vyrezModel) {
@@ -98,7 +101,8 @@ public class DalkoveOvladani {
 		if (server != null) {
 			server.stop(0);
 			server = null;
-			SOUBOR.delete();
+			vlakno.shutdownNow();
+			smazSouborJestliJeNas();
 			log.info("Dálkové ovládání vypnuto");
 		}
 	}
@@ -111,7 +115,16 @@ public class DalkoveOvladani {
 				return VYCHOZI_PORT;
 			}
 			if (s.startsWith("--ovladani=")) {
-				return Integer.valueOf(s.substring("--ovladani=".length()));
+				try {
+					final int port = Integer.parseInt(s.substring("--ovladani=".length()));
+					if (port >= 0 && port <= 65535) {
+						return port;
+					}
+				} catch (final NumberFormatException e) {
+					// ohlásí se níže
+				}
+				log.warn("Neplatný port dálkového ovládání: {}", s);
+				return null;
 			}
 		}
 		return null;
@@ -124,26 +137,66 @@ public class DalkoveOvladani {
 		final byte[] nahodne = new byte[24];
 		new SecureRandom().nextBytes(nahodne);
 		token = Base64.getUrlEncoder().withoutPadding().encodeToString(nahodne);
-		server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 0);
-		server.createContext("/", this::obsluz);
-		server.setExecutor(Executors.newSingleThreadExecutor(r -> {
+		final HttpServer novy = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 0);
+		final int skutecnyPort = novy.getAddress().getPort();
+		try {
+			zapisSoubor(skutecnyPort);
+		} catch (final IOException | RuntimeException e) {
+			novy.stop(0);
+			throw e;
+		}
+		novy.createContext("/", this::obsluz);
+		vlakno = Executors.newSingleThreadExecutor(r -> {
 			final Thread t = new Thread(r, "Dálkové ovládání");
 			t.setDaemon(true);
 			return t;
-		}));
-		server.start();
-		final int skutecnyPort = server.getAddress().getPort();
-		SOUBOR.getParentFile().mkdirs();
-		final Properties p = new Properties();
-		p.setProperty("port", String.valueOf(skutecnyPort));
-		p.setProperty("token", token);
-		try (Writer w = new OutputStreamWriter(new FileOutputStream(SOUBOR), StandardCharsets.UTF_8)) {
-			p.store(w, "Geokuk: dalkove ovladani");
+		});
+		novy.setExecutor(vlakno);
+		novy.start();
+		server = novy;
+		if (!uklidPriKonci) {
+			uklidPriKonci = true;
+			Runtime.getRuntime().addShutdownHook(new Thread(this::smazSouborJestliJeNas, "Úklid dálkového ovládání"));
 		}
-		SOUBOR.setReadable(false, false);
-		SOUBOR.setReadable(true, true);
-		SOUBOR.deleteOnExit();
 		log.info("Dálkové ovládání na http://127.0.0.1:{}/", skutecnyPort);
+	}
+
+	/** Soubor vznikne rovnou jen pro vlastníka a na místo se přesune celý, i přes podvržený odkaz. */
+	private void zapisSoubor(final int port) throws IOException {
+		final Path adresar = SOUBOR.getParentFile().toPath();
+		final boolean posix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+		if (!Files.isDirectory(adresar)) {
+			if (posix) {
+				Files.createDirectories(adresar, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+			} else {
+				Files.createDirectories(adresar);
+			}
+		}
+		final Path tmp = Files.createTempFile(adresar, "ovladani", ".tmp");
+		try {
+			final Properties p = new Properties();
+			p.setProperty("port", String.valueOf(port));
+			p.setProperty("token", token);
+			try (Writer w = new OutputStreamWriter(Files.newOutputStream(tmp), StandardCharsets.UTF_8)) {
+				p.store(w, "Geokuk: dalkove ovladani");
+			}
+			Files.move(tmp, SOUBOR.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+		} finally {
+			Files.deleteIfExists(tmp);
+		}
+	}
+
+	/** Druhá instance mohla soubor přepsat svým tokenem, ten jí nesmíme smazat. */
+	private synchronized void smazSouborJestliJeNas() {
+		final Properties p = new Properties();
+		try (Reader r = new InputStreamReader(new FileInputStream(SOUBOR), StandardCharsets.UTF_8)) {
+			p.load(r);
+		} catch (final IOException e) {
+			return;
+		}
+		if (token != null && token.equals(p.getProperty("token"))) {
+			SOUBOR.delete();
+		}
 	}
 
 	private void obsluz(final HttpExchange ex) throws IOException {
@@ -435,7 +488,12 @@ public class DalkoveOvladani {
 	}
 
 	private String pozice(final Map<String, String> param) {
-		final Wgs wgs = new Wgs(cislo(param, "lat"), cislo(param, "lon"));
+		final double lat = cislo(param, "lat");
+		final double lon = cislo(param, "lon");
+		if (!(Math.abs(lat) <= 85) || !(Math.abs(lon) <= 180)) {
+			throw new IllegalArgumentException("lat musí být v rozsahu -85 až 85 a lon -180 až 180");
+		}
+		final Wgs wgs = new Wgs(lat, lon);
 		vyrezModel.presunMapuNaMoustred(wgs.toMou());
 		if (param.containsKey("meritko")) {
 			vyrezModel.setMeritkoMapy((int) cislo(param, "meritko"));
@@ -469,7 +527,11 @@ public class DalkoveOvladani {
 
 	private static double cislo(final Map<String, String> param, final String jmeno) {
 		try {
-			return Double.parseDouble(param.get(jmeno));
+			final double d = Double.parseDouble(param.get(jmeno));
+			if (Double.isNaN(d) || Double.isInfinite(d)) {
+				throw new NumberFormatException();
+			}
+			return d;
 		} catch (final NullPointerException | NumberFormatException e) {
 			throw new IllegalArgumentException("parametr " + jmeno + " musí být číslo");
 		}

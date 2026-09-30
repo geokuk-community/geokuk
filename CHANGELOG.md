@@ -23,7 +23,7 @@
   `--ovladani[=port]`) povolí jiným programům na tomto počítači ovládat
   Geokuk přes HTTP – přesunout mapu, přepnout podklad, vybrat keš, znovu
   načíst keše a zjistit stav. Port a přístupový token jsou v souboru
-  `%TEMP%\geokuk\ovladani.properties`.
+  `.geokuk\ovladani.properties` v domovské složce uživatele.
 
 ### Opravy
 - Při oddálení, kdy se svět v okně opakuje, se nevykreslí všechny keše
