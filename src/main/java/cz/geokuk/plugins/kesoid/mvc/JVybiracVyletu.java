@@ -21,6 +21,8 @@ public class JVybiracVyletu extends JComboBox<EVylet>implements AfterEventReceiv
 	public JVybiracVyletu() {
 		setModel(model);
 		setMaximumSize(new Dimension(100, 22));
+		// Po výběru myší by si seznam nechal fokus a šipky a PageUp/PageDown by místo mapy přepínaly výlet.
+		setFocusable(false);
 		setToolTipText("Filtr dle zařazení keší do výletu. Vybírá se, zda se zobrazí všechny keše nebo všechny bez ignorovaných nebo jen vybrané");
 	}
 

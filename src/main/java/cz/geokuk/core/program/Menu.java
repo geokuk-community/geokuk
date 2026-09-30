@@ -135,8 +135,8 @@ public class Menu extends MenuStrujce {
 		menu.setMnemonic(KeyEvent.VK_K);
 		// ////////////////////////////// keškový filtr
 		item(akce.filtrIkonyAction);
-		tb.add(akce.filtrIkonyAction);
-		tb.add(akce.renderAction);
+		tb.add(akce.filtrIkonyAction).setFocusable(false);
+		tb.add(akce.renderAction).setFocusable(false);
 
 		item(akce.kesoidyOnoffAction);
 		item(akce.popiskyOnoffAction);
