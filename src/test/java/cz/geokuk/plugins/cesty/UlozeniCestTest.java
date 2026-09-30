@@ -139,4 +139,19 @@ public class UlozeniCestTest {
 		final Cesta cesta = ulozANacti(doc).get(0);
 		Assert.assertTrue(cesta.isJednobodova());
 	}
+
+	@Test
+	public void ciziGpxSeRozpozna() throws Exception {
+		final Doc doc = new Doc();
+		cesta(doc, "Moje", BODY);
+		final File nas = tmp.newFile("nas.gpx");
+		new Ukladac().uloz(nas, doc);
+		Assert.assertTrue(Ukladac.jeZGeokuku(nas));
+
+		final File cizi = tmp.newFile("garmin.gpx");
+		java.nio.file.Files.write(cizi.toPath(), ("<?xml version=\"1.0\"?>\n<gpx version=\"1.1\" creator=\"eTrex 30\" xmlns=\"http://www.topografix.com/GPX/1/1\">"
+				+ "<trk><trkseg><trkpt lat=\"50\" lon=\"14\"><ele>250</ele></trkpt></trkseg></trk></gpx>").getBytes("UTF-8"));
+		Assert.assertFalse(Ukladac.jeZGeokuku(cizi));
+		Assert.assertFalse(Ukladac.jeZGeokuku(new File(tmp.getRoot(), "neni.gpx")));
+	}
 }
