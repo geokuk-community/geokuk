@@ -14,7 +14,7 @@ public class PromazatJednobodoveAPrazdneCesty extends DocAction0 {
 		super(doc);
 		putValue(NAME, "Promazat jednobodové cesty");
 		putValue(SHORT_DESCRIPTION, "Promaže bšechny jednobodové a prázdné vesty, pokud však nejsou nad waypointy.");
-		// putValue(MNEMONIC_KEY, KeyEvent.VK_Z);
+		// putValue(MNEMONIC_KEY, KeyEvent.VK_J);
 	}
 
 	@Override

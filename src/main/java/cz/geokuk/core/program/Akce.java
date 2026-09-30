@@ -25,6 +25,7 @@ import cz.geokuk.plugins.kesoid.kind.kes.JenDoTerenuUNenalezenychAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenFinalUNalezenychAction;
 import cz.geokuk.plugins.kesoid.mapicon.*;
 import cz.geokuk.plugins.kesoid.mvc.*;
+import cz.geokuk.plugins.kesoidkruhy.JednotkoveKruhyAction;
 import cz.geokuk.plugins.kesoidkruhy.KruhyOnoffAction;
 import cz.geokuk.plugins.kesoidkruhy.NastavParametryZvyraznovacichKruhuAction;
 import cz.geokuk.plugins.kesoidobsazenost.ObsazenostOnoffAction;
@@ -57,6 +58,7 @@ public class Akce {
 	public final OdebratZCestyAction odebratZCestyAction = new OdebratZCestyAction(null);
 	public final CestyPresClipboardDoGeogetuAction cestyPresClipboardDoGeogetuAction = new CestyPresClipboardDoGeogetuAction();
 	public final KruhyOnoffAction kruhyOnoffAction = new KruhyOnoffAction();
+	public final JednotkoveKruhyAction jednotkoveKruhyAction = new JednotkoveKruhyAction();
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();
 

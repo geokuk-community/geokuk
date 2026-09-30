@@ -153,6 +153,7 @@ public class Menu extends MenuStrujce {
 		separator();
 		item(akce.obsazenostOnoffAction);
 		item(akce.kruhyOnoffAction);
+		item(akce.jednotkoveKruhyAction);
 
 		item(akce.nastavParametryZvyraznovacichKruhuAction);
 

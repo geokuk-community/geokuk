@@ -12,7 +12,7 @@ public class VyletSmazNeAction extends VyletAction0 {
 	public VyletSmazNeAction() {
 		super("Žádné neignoruji");
 		putValue(SHORT_DESCRIPTION, "Odstraní příznak ignorace u všech keší.");
-		putValue(MNEMONIC_KEY, KeyEvent.VK_N);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_R);
 	}
 
 	@Override
