@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 
 import com.jcabi.manifests.Manifests;
 
@@ -58,7 +59,7 @@ public final class Diagnostika {
 	}
 
 	private static void zapis(final String udalost) {
-		log.info("Událost: {}", udalost);
+		log.info("Událost: {}", soukrome(udalost));
 		pridej(udalosti, udalost);
 	}
 
@@ -98,7 +99,7 @@ public final class Diagnostika {
 	}
 
 	private static void pridej(final Deque<String> seznam, final String text) {
-		final String radek = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " " + text;
+		final String radek = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " " + soukrome(text);
 		synchronized (seznam) {
 			seznam.addLast(radek);
 			if (seznam.size() > MAX_ZAZNAMU) {
@@ -110,11 +111,18 @@ public final class Diagnostika {
 	/** Zaznamenává kliknutí na tlačítka a otevírání a zavírání oken. Položky menu sleduje {@link #sledujMenu(JMenuBar)}. */
 	public static void sledujKliknuti() {
 		Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-			if (event.getID() == MouseEvent.MOUSE_RELEASED && event.getSource() instanceof AbstractButton && !(event.getSource() instanceof JMenuItem)) {
+			if (event.getID() == MouseEvent.MOUSE_RELEASED && event.getSource() instanceof AbstractButton) {
 				final AbstractButton button = (AbstractButton) event.getSource();
-				if (button.isEnabled()) {
+				if (!button.isEnabled()) {
+					return;
+				}
+				if (button instanceof JMenuItem) {
+					if (!(button instanceof JMenu) && !jeVListeMenu((JMenuItem) button)) {
+						SwingUtilities.invokeLater(() -> zaznamenej("Kontextové menu: " + cesta((JMenuItem) button)));
+					}
+				} else {
 					// Stav přepínače je známý až po obsloužení kliknutí.
-					SwingUtilities.invokeLater(() -> zaznamenej("Klik: " + popis(button) + stav(button)));
+					SwingUtilities.invokeLater(() -> zaznamenej("Klik: " + text(button) + stav(button)));
 				}
 			}
 		}, AWTEvent.MOUSE_EVENT_MASK);
@@ -136,7 +144,21 @@ public final class Diagnostika {
 		}
 	}
 
+	private static final String SLEDOVANO = "geokuk.diagnostika.sledovano";
+
+	/** Položka se může do menu přidat víckrát (menu Ikony), zaznamenat se má jen jednou. */
+	private static boolean uzSledovano(final JComponent c) {
+		if (c.getClientProperty(SLEDOVANO) != null) {
+			return true;
+		}
+		c.putClientProperty(SLEDOVANO, Boolean.TRUE);
+		return false;
+	}
+
 	private static void sledujMenu(final JMenu menu) {
+		if (uzSledovano(menu)) {
+			return;
+		}
 		for (final Component c : menu.getMenuComponents()) {
 			sledujPolozku(c);
 		}
@@ -153,6 +175,9 @@ public final class Diagnostika {
 			sledujMenu((JMenu) c);
 		} else if (c instanceof JMenuItem) {
 			final JMenuItem polozka = (JMenuItem) c;
+			if (uzSledovano(polozka)) {
+				return;
+			}
 			polozka.addActionListener(e -> zaznamenej(zpusob(polozka) + ": " + cesta(polozka) + stav(polozka)));
 		}
 	}
@@ -160,8 +185,11 @@ public final class Diagnostika {
 	private static String zpusob(final JMenuItem polozka) {
 		final AWTEvent udalost = EventQueue.getCurrentEvent();
 		if (udalost instanceof KeyEvent) {
+			final KeyEvent ke = (KeyEvent) udalost;
 			final KeyStroke zkratka = polozka.getAccelerator();
-			return zkratka != null && zkratka.equals(KeyStroke.getKeyStrokeForEvent((KeyEvent) udalost)) ? "Klávesa " + popisZkratky(zkratka) : "Menu klávesnicí";
+			// Napsaný znak (+, *) přijde se Shiftem, zkratka ho má bez modifikátorů.
+			final boolean znak = zkratka != null && zkratka.getKeyEventType() == KeyEvent.KEY_TYPED && ke.getID() == KeyEvent.KEY_TYPED && zkratka.getKeyChar() == ke.getKeyChar();
+			return znak || zkratka != null && zkratka.equals(KeyStroke.getKeyStrokeForEvent(ke)) ? "Klávesa " + popisZkratky(zkratka) : "Menu klávesnicí";
 		}
 		return "Menu";
 	}
@@ -170,6 +198,15 @@ public final class Diagnostika {
 		final String modifikatory = InputEvent.getModifiersExText(zkratka.getModifiers());
 		final String klavesa = zkratka.getKeyCode() == KeyEvent.VK_UNDEFINED ? String.valueOf(zkratka.getKeyChar()) : KeyEvent.getKeyText(zkratka.getKeyCode());
 		return modifikatory.isEmpty() ? klavesa : modifikatory + "+" + klavesa;
+	}
+
+	/** Položky hlavního menu zaznamenává {@link #sledujMenu(JMenuBar)}, kliknutím se zaznamenají jen položky kontextových menu. */
+	static boolean jeVListeMenu(final JMenuItem polozka) {
+		Component c = polozka;
+		while (c instanceof JMenuItem) {
+			c = c.getParent() instanceof JPopupMenu ? ((JPopupMenu) c.getParent()).getInvoker() : c.getParent();
+		}
+		return c instanceof JMenuBar;
 	}
 
 	static String cesta(final JMenuItem polozka) {
@@ -200,7 +237,7 @@ public final class Diagnostika {
 		if (w instanceof RootPaneContainer) {
 			hledejZpravu(((RootPaneContainer) w).getContentPane(), zprava);
 		}
-		final String text = zprava.toString().replaceAll("\\s+", " ").trim();
+		final String text = zprava.toString().replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
 		return titulek(w) + (text.isEmpty() ? "" : " – " + (text.length() > 200 ? text.substring(0, 200) + "…" : text));
 	}
 
@@ -208,11 +245,30 @@ public final class Diagnostika {
 		for (final Component c : kde.getComponents()) {
 			if (c instanceof JOptionPane) {
 				final Object m = ((JOptionPane) c).getMessage();
-				zprava.append(m instanceof Object[] ? Arrays.toString((Object[]) m) : String.valueOf(m)).append(' ');
+				for (final Object cast : m instanceof Object[] ? (Object[]) m : new Object[] { m }) {
+					zprava.append(textZpravy(cast)).append(' ');
+				}
 			} else if (c instanceof Container) {
 				hledejZpravu((Container) c, zprava);
 			}
 		}
+	}
+
+	static String textZpravy(final Object cast) {
+		if (cast instanceof JTextComponent) {
+			return ((JTextComponent) cast).getText();
+		}
+		if (cast instanceof JLabel) {
+			return ((JLabel) cast).getText();
+		}
+		if (cast instanceof Container) {
+			final StringBuilder sb = new StringBuilder();
+			for (final Component c : ((Container) cast).getComponents()) {
+				sb.append(textZpravy(c)).append(' ');
+			}
+			return sb.toString();
+		}
+		return cast instanceof Component ? "" : String.valueOf(cast);
 	}
 
 	private static String popis(final AbstractButton button) {
@@ -227,6 +283,11 @@ public final class Diagnostika {
 	}
 
 	public static String text() {
+		return text(MAX_ZAZNAMU, RADKU_LOGU);
+	}
+
+	/** Text s nejvýš daným počtem posledních událostí, chyb a řádků logu, ať se vejde do odkazu na nové issue. */
+	public static String text(final int zaznamu, final int radkuLogu) {
 		final StringBuilder sb = new StringBuilder();
 		final Runtime runtime = Runtime.getRuntime();
 		final long mb = 1024 * 1024;
@@ -247,12 +308,12 @@ public final class Diagnostika {
 		synchronized (udalosti) {
 			dokonciMapu();
 		}
-		vypis(sb, "Poslední události", udalosti);
 		synchronized (chyby) {
-			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby);
+			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby, zaznamu);
 		}
+		vypis(sb, "Poslední události", udalosti, zaznamu);
 		vypisPocitadla(sb);
-		vypis(sb, "Konec logu", konecLogu(LOG, RADKU_LOGU));
+		vypis(sb, "Konec logu", konecLogu(LOG, radkuLogu), radkuLogu);
 		return sb.toString();
 	}
 
@@ -275,14 +336,20 @@ public final class Diagnostika {
 		}
 	}
 
-	private static void vypis(final StringBuilder sb, final String nadpis, final Deque<String> seznam) {
+	private static void vypis(final StringBuilder sb, final String nadpis, final Deque<String> seznam, final int nejvys) {
 		sb.append('\n').append(nadpis).append(":\n");
 		synchronized (seznam) {
 			if (seznam.isEmpty()) {
 				sb.append("(žádné)\n");
 			}
+			int preskocit = seznam.size() - nejvys;
+			if (preskocit > 0) {
+				sb.append("… ").append(preskocit).append(" starších vynecháno\n");
+			}
 			for (final String s : seznam) {
-				sb.append(s).append('\n');
+				if (preskocit-- <= 0) {
+					sb.append(s).append('\n');
+				}
 			}
 		}
 	}
@@ -309,6 +376,11 @@ public final class Diagnostika {
 
 	private static String ano(final boolean b) {
 		return b ? "ano" : "ne";
+	}
+
+	/** Hlášení je veřejné: bez jména uživatele v cestách a bez parametrů v adresách (mohou obsahovat klíč k mapám). */
+	static String soukrome(final String text) {
+		return text == null ? null : text.replace(FConst.HOME_DIR.getAbsolutePath(), "~").replaceAll("(https?://[^\\s?\"']+)\\?[^\\s\"']*", "$1?…");
 	}
 
 	/** Domovskou složku zkrátí na ~, ať text neobsahuje jméno uživatele. */

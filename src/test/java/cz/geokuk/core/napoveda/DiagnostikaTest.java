@@ -83,4 +83,57 @@ public class DiagnostikaTest {
 	public void chybejiciLogJePrazdny() {
 		Assert.assertTrue(Diagnostika.konecLogu(new File(tmp.getRoot(), "neni.log"), 3).isEmpty());
 	}
+
+	@Test
+	public void bezCestUzivateleAParametruAdres() {
+		final String text = Diagnostika.soukrome("Chyby v souboru " + new File(FConst.HOME_DIR, "geokuk").getAbsolutePath() + ", https://tile.example.org/1/2/3.png?apikey=TAJNE");
+		Assert.assertFalse(text, text.contains(FConst.HOME_DIR.getAbsolutePath()));
+		Assert.assertFalse(text, text.contains("TAJNE"));
+		Assert.assertTrue(text, text.contains("https://tile.example.org/1/2/3.png?…"));
+	}
+
+	@Test
+	public void textPoleVHlasceNeniPopisKomponenty() {
+		final javax.swing.JTextField pole = new javax.swing.JTextField("https://example.org/");
+		Assert.assertEquals("https://example.org/", Diagnostika.textZpravy(pole));
+	}
+
+	@Test
+	public void kontextoveMenuNeniVListe() {
+		final javax.swing.JMenuBar lista = new javax.swing.JMenuBar();
+		final javax.swing.JMenu soubor = new javax.swing.JMenu("Soubor");
+		final javax.swing.JMenuItem vListe = new javax.swing.JMenuItem("Konec");
+		lista.add(soubor);
+		soubor.add(vListe);
+		final javax.swing.JPopupMenu kontextove = new javax.swing.JPopupMenu();
+		final javax.swing.JMenuItem vKontextovem = new javax.swing.JMenuItem("Přidat do cesty");
+		kontextove.add(vKontextovem);
+		Assert.assertTrue(Diagnostika.jeVListeMenu(vListe));
+		Assert.assertFalse(Diagnostika.jeVListeMenu(vKontextovem));
+	}
+
+	@Test
+	public void polozkaPridanaZnovuSeSledujeJednou() {
+		final javax.swing.JMenuBar lista = new javax.swing.JMenuBar();
+		final javax.swing.JMenu ikony = new javax.swing.JMenu("Ikony");
+		final javax.swing.JMenuItem sada = new javax.swing.JMenuItem("Standardní");
+		lista.add(ikony);
+		Diagnostika.sledujMenu(lista);
+		ikony.add(sada);
+		ikony.remove(sada);
+		ikony.insert(sada, 0);
+		Diagnostika.sledujMenu(lista);
+		Assert.assertEquals(1, sada.getActionListeners().length);
+	}
+
+	@Test
+	public void chybySeVejdouDoOdkazuIPoMnohaUdalostech() throws Exception {
+		Diagnostika.zaznamenejChybu("důležitá chyba");
+		for (int i = 0; i < 150; i++) {
+			Diagnostika.zaznamenej("Otevřeno okno: Přehled problémů – ěščřžýáíé ěščřžýáíé ěščřžýáíé " + i);
+		}
+		final String odkaz = ZadatProblemAction.odkaz();
+		Assert.assertTrue(odkaz.length() <= 6000);
+		Assert.assertTrue(java.net.URLDecoder.decode(odkaz, "UTF-8").contains("důležitá chyba"));
+	}
 }

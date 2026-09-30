@@ -40,15 +40,27 @@ public class ZadatProblemAction extends Action0 {
 	 */
 	@Override
 	public void actionPerformed(final ActionEvent aE) {
-		otevri(Diagnostika.text());
+		otevri();
 	}
 
-	static void otevri(final String diagnostika) {
+	static void otevri() {
 		try {
-			BrowserOpener.displayURL(new URL(odkaz(diagnostika)));
+			BrowserOpener.displayURL(new URL(odkaz()));
 		} catch (final MalformedURLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/** Nejdřív ubírá nejstarší události a řádky logu, chyby a servisní hodnoty jsou cennější. */
+	static String odkaz() {
+		final int[][] limity = { { 100, 50 }, { 50, 25 }, { 25, 12 }, { 12, 6 }, { 6, 0 } };
+		for (final int[] limit : limity) {
+			final String url = odkazS(Diagnostika.text(limit[0], limit[1]));
+			if (url.length() <= MAX_DELKA_URL) {
+				return url;
+			}
+		}
+		return odkaz(Diagnostika.text(3, 0));
 	}
 
 	static String odkaz(final String diagnostika) {
