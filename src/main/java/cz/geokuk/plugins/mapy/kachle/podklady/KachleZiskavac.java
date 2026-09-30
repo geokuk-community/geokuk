@@ -346,6 +346,9 @@ public class KachleZiskavac {
 
 	private final KachleUkladac ukladac = new KachleUkladac();
 
+	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
+	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
+
 	private OnofflineModel onofflineModel;
 
 	private KachleModel kachleModel;
@@ -455,8 +458,8 @@ public class KachleZiskavac {
 				return imageWithData;
 			} catch (final Exception e) {
 				log.debug("DOWNLOAD ERROR  : \"{}\" | {}", url, e);
-				final AExcId excId = FExceptionDumper.dump(e, EExceptionSeverity.RETHROW, "Chyba při stahování:" + ka + " z " + url);
-				diagnosticsData.send(excId + " " + e.getMessage());
+				chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
+				diagnosticsData.send(e.toString());
 				throw e;
 			}
 		});
