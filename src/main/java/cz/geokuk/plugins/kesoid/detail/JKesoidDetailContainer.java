@@ -239,13 +239,17 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		vyletAnoButton = new JSmallPictureButton(ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 		vyletAnoButton.setAction(akce.vyletAnoAction);
 		vyletAnoButton.setText(null);
+		// Mnemonika patří jen položkám menu, na tlačítku by kolidovala s menu hlavního okna.
+		vyletAnoButton.setMnemonic(0);
 		// vyletAnoButton.setPreferredSize(new Dimension(30,10));
 		vyletNeButton = new JSmallPictureButton(ImageLoader.seekResIcon("x16/vylet/vyletNe.png"));
 		vyletNeButton.setAction(akce.vyletNeAction);
 		vyletNeButton.setText(null);
+		vyletNeButton.setMnemonic(0);
 		vyletNevimButton = new JSmallPictureButton(ImageLoader.seekResIcon("x16/vylet/vyletNevim.png"));
 		vyletNevimButton.setAction(akce.vyletNevimAction);
 		vyletNevimButton.setText(null);
+		vyletNevimButton.setMnemonic(0);
 
 		jKesoidCode.setForeground(Color.RED);
 		jKesoidNazev.setFont(jKesoidNazev.getFont().deriveFont(Font.BOLD));
