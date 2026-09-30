@@ -6,6 +6,9 @@ package cz.geokuk.plugins.vylety;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -54,11 +57,29 @@ public class VyletModel extends Model0 {
 
 	private Worker worker;
 
+	/** Zápisy i čtení výletu jdou jedno po druhém, aby starší stav nepřepsal novější. */
+	private final ExecutorService zapisovac = Executors.newSingleThreadExecutor(r -> {
+		final Thread t = new Thread(r, "Zápis výletu");
+		t.setDaemon(true);
+		return t;
+	});
+	private final AtomicReference<List<List<String>>> snimekKZapisu = new AtomicReference<>();
+
+	/** Do prvního načtení je model prázdný, jeho zápis by soubor vymazal; změny se přehrají po načtení. */
+	private List<Consumer<Vylet>> zmenyPredNactenim = new ArrayList<>();
+	private KesBag posledniVsechny;
+	private int pocetZmen;
+	private int generaceNacitani;
+
+	public VyletModel() {
+		// Konec programu volá System.exit, rozepsaný výlet by se jinak ztratil.
+		Runtime.getRuntime().addShutdownHook(new Thread(this::dopisNaDisk, "Dopsání výletu"));
+	}
+
 	public void add(final EVylet evyl, final Kesoid kes) {
 		final EVylet evylPuvodni = vylet.add(evyl, kes);
 		if (evyl != evylPuvodni) {
-			final VyletSaveSwingWorker worker = new VyletSaveSwingWorker(vyletovyZperzistentnovac, vylet);
-			worker.execute();
+			ulozit(v -> v.add(evyl, kes));
 			onChange(kes, evylPuvodni, evyl);
 		}
 
@@ -70,6 +91,10 @@ public class VyletModel extends Model0 {
 
 	public EVylet get(final Kesoid kes) {
 		return vylet.get(kes);
+	}
+
+	List<String> vyletKody(final EVylet evyl) {
+		return vylet.kody(evyl);
 	}
 
 	public void inject(final VyletovyZperzistentnovac vyletovyZperzistentnovac) {
@@ -86,8 +111,7 @@ public class VyletModel extends Model0 {
 
 	public void removeAll(final EVylet evyl) {
 		vylet.removeAll(evyl);
-		final VyletSaveSwingWorker worker = new VyletSaveSwingWorker(vyletovyZperzistentnovac, vylet);
-		worker.execute();
+		ulozit(v -> v.removeAll(evyl));
 		onChange(null, null, null);
 	}
 
@@ -100,8 +124,59 @@ public class VyletModel extends Model0 {
 	 * @param vsechny
 	 */
 	public void startLoadingVylet(final KesBag vsechny) {
-		final VyletLoadSwingWorker worker = new VyletLoadSwingWorker(vyletovyZperzistentnovac, vsechny, this);
+		posledniVsechny = vsechny;
+		final VyletLoadSwingWorker worker = new VyletLoadSwingWorker(this, vsechny, ++generaceNacitani, pocetZmen);
 		worker.execute();
+	}
+
+	/** Přečte výlet ze souboru až po dokončení všech zápisů, které před ním čekají. */
+	Vylet nactiPoZapisech(final KesBag vsechny) throws InterruptedException, ExecutionException {
+		return zapisovac.submit(() -> vyletovyZperzistentnovac.immediatlyNactiVylet(vsechny)).get();
+	}
+
+	void prevezmiNactenyVylet(final Vylet nacteny, final int generace, final int pocetZmenPriStartu) {
+		if (generace != generaceNacitani) {
+			return; // mezitím začalo novější načítání
+		}
+		if (pocetZmenPriStartu != pocetZmen) {
+			// Změny během načítání jsou už zapsané v souboru, načte se znovu i s nimi.
+			startLoadingVylet(posledniVsechny);
+			return;
+		}
+		final List<Consumer<Vylet>> odlozene = zmenyPredNactenim;
+		zmenyPredNactenim = null;
+		if (odlozene != null) {
+			odlozene.forEach(zmena -> zmena.accept(nacteny));
+		}
+		setNewVylet(nacteny);
+		if (odlozene != null && !odlozene.isEmpty()) {
+			ulozit(null);
+		}
+	}
+
+	private void ulozit(final Consumer<Vylet> zmena) {
+		if (zmenyPredNactenim != null) {
+			zmenyPredNactenim.add(zmena);
+			return;
+		}
+		pocetZmen++;
+		if (snimekKZapisu.getAndSet(Arrays.asList(vylet.kody(EVylet.ANO), vylet.kody(EVylet.NE))) == null) {
+			zapisovac.execute(() -> {
+				final List<List<String>> snimek = snimekKZapisu.getAndSet(null);
+				if (snimek != null) {
+					vyletovyZperzistentnovac.immediatlyZapisVylet(snimek.get(0), snimek.get(1));
+				}
+			});
+		}
+	}
+
+	private void dopisNaDisk() {
+		zapisovac.shutdown();
+		try {
+			zapisovac.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	/*
