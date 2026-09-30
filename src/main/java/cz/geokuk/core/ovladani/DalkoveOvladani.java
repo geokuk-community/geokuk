@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  * souboru {@link #SOUBOR}, klient je posílá v hlavičce {@code Authorization: Bearer <token>}.
  *
  * <pre>
- * GET  /stav                              verze, střed mapy, měřítko, podklad, keše, fronty dlaždic, počítadla, okna
+ * GET  /stav[?gc=ano]                     verze, střed mapy, měřítko, podklad, keše, fronty dlaždic, počítadla, okna, obsazená paměť (po úklidu)
  * POST /pozice?lat=50.08&amp;lon=14.42[&amp;meritko=15]
  * POST /podklad?jmeno=TURIST_M
  * POST /kes?kod=GC12345                   vybere keš a vystředí na ni mapu
@@ -157,6 +157,9 @@ public class DalkoveOvladani {
 			final boolean post = "POST".equals(ex.getRequestMethod());
 			switch (cesta) {
 			case "/stav":
+				if ("ano".equals(param.get("gc"))) {
+					System.gc();
+				}
 				odpovez(ex, 200, naEdt(this::stav));
 				break;
 			case "/pozice":
@@ -253,6 +256,8 @@ public class DalkoveOvladani {
 			pocitadla.append(pocitadla.length() == 0 ? "" : ",").append("[").append(json(p.getName())).append(",").append(p.get()).append("]");
 		}
 		sb.append(",\"frontyDlazdic\":").append(fronty);
+		final Runtime rt = Runtime.getRuntime();
+		sb.append(",\"pametMb\":").append((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024);
 		sb.append(",\"pocitadla\":[").append(pocitadla).append("]");
 		sb.append(",\"okna\":[");
 		boolean prvni = true;
