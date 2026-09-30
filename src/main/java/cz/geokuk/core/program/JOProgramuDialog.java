@@ -64,8 +64,8 @@ public class JOProgramuDialog extends JMyDialog0 {
 		box.add(bgccom);
 
 		box.add(Box.createVerticalStrut(10));
-		final JLabel zdarma1 = new JLabel("Program GeoKuk můžete zdarma používat");
-		final JLabel zdarma2 = new JLabel("pro nekomerční rekreační aktivity.");
+		final JLabel zdarma1 = new JLabel("GeoKuk je svobodný software");
+		final JLabel zdarma2 = new JLabel("pod licencí GNU GPL v3.");
 		zdarma1.setFont(new Font("Serif", Font.ITALIC, 12));
 		zdarma1.setAlignmentX(CENTER_ALIGNMENT);
 		box.add(zdarma1);
