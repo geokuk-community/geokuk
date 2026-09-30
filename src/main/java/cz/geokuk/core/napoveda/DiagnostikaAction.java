@@ -30,7 +30,7 @@ public class DiagnostikaAction extends Action0 {
 		if (n == 0) {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
 		} else if (n == 1) {
-			ZadatProblemAction.otevri(text);
+			ZadatProblemAction.otevri();
 		}
 	}
 }

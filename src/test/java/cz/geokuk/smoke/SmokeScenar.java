@@ -6,6 +6,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -16,6 +17,7 @@ import javax.swing.*;
 
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.program.CloseAction;
 import cz.geokuk.core.program.FPref;
@@ -637,6 +639,7 @@ public class SmokeScenar {
 		try (Writer w = new OutputStreamWriter(new FileOutputStream(soubor), StandardCharsets.UTF_8)) {
 			zprava.store(w, "Smoke test");
 		}
+		Files.write(new File(soubor.getPath().replace(".properties", "-diagnostika.txt")).toPath(), Diagnostika.text().getBytes(StandardCharsets.UTF_8));
 	}
 
 	private void cekej(final String co, final long limitMs, final BooleanSupplier podminka) throws Exception {

@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 
 import cz.geokuk.core.coord.*;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.render.JRenderSlide;
 import cz.geokuk.framework.*;
 import cz.geokuk.img.ImageLoader;
@@ -172,6 +173,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 
 		// Menu a toolbar
 		setJMenuBar(menux.getMenuBar());
+		Diagnostika.sledujMenu(menux.getMenuBar());
 		toolBar = menux.getToolBar();
 		getContentPane().add(toolBar, BorderLayout.NORTH);
 

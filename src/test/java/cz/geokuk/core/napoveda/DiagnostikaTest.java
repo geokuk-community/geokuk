@@ -20,14 +20,37 @@ public class DiagnostikaTest {
 	public void textObsahujeVerziAUdalosti() {
 		Diagnostika.zaznamenej("první");
 		Diagnostika.zaznamenejChybu("chyba stahování");
-		for (int i = 0; i < 60; i++) {
+		for (int i = 0; i < 120; i++) {
 			Diagnostika.zaznamenej("událost " + i);
 		}
 		final String text = Diagnostika.text();
 		Assert.assertTrue(text.startsWith("Geokuk " + FConst.VERSION));
-		Assert.assertTrue(text.contains("událost 59"));
+		Assert.assertTrue(text.contains("událost 119"));
 		Assert.assertFalse(text.contains("první"));
 		Assert.assertTrue(text.contains("chyba stahování"));
+	}
+
+	@Test
+	public void praceSMapouSeZapiseSouhrnne() {
+		Diagnostika.zaznamenej("před mapou");
+		Diagnostika.zaznamenejVyrez(13, "a");
+		Diagnostika.zaznamenejVyrez(13, "b");
+		Diagnostika.zaznamenejVyrez(13, "c");
+		Diagnostika.zaznamenejVyrez(14, "c");
+		Diagnostika.zaznamenej("po mapě");
+		final String text = Diagnostika.text();
+		Assert.assertTrue(text, text.contains("Mapa: 2× posun, měřítko 13 → 14"));
+		Assert.assertTrue(text.indexOf("Mapa: 2×") < text.indexOf("po mapě"));
+	}
+
+	@Test
+	public void cestaVMenu() {
+		final javax.swing.JMenu soubor = new javax.swing.JMenu("Soubor");
+		final javax.swing.JMenu podmenu = new javax.swing.JMenu("Mapy");
+		final javax.swing.JMenuItem polozka = new javax.swing.JMenuItem("<html>Základní <i>mapa</i>");
+		soubor.add(podmenu);
+		podmenu.add(polozka);
+		Assert.assertEquals("Soubor > Mapy > Základní mapa", Diagnostika.cesta(polozka));
 	}
 
 	@Test
@@ -59,5 +82,58 @@ public class DiagnostikaTest {
 	@Test
 	public void chybejiciLogJePrazdny() {
 		Assert.assertTrue(Diagnostika.konecLogu(new File(tmp.getRoot(), "neni.log"), 3).isEmpty());
+	}
+
+	@Test
+	public void bezCestUzivateleAParametruAdres() {
+		final String text = Diagnostika.soukrome("Chyby v souboru " + new File(FConst.HOME_DIR, "geokuk").getAbsolutePath() + ", https://tile.example.org/1/2/3.png?apikey=TAJNE");
+		Assert.assertFalse(text, text.contains(FConst.HOME_DIR.getAbsolutePath()));
+		Assert.assertFalse(text, text.contains("TAJNE"));
+		Assert.assertTrue(text, text.contains("https://tile.example.org/1/2/3.png?…"));
+	}
+
+	@Test
+	public void textPoleVHlasceNeniPopisKomponenty() {
+		final javax.swing.JTextField pole = new javax.swing.JTextField("https://example.org/");
+		Assert.assertEquals("https://example.org/", Diagnostika.textZpravy(pole));
+	}
+
+	@Test
+	public void kontextoveMenuNeniVListe() {
+		final javax.swing.JMenuBar lista = new javax.swing.JMenuBar();
+		final javax.swing.JMenu soubor = new javax.swing.JMenu("Soubor");
+		final javax.swing.JMenuItem vListe = new javax.swing.JMenuItem("Konec");
+		lista.add(soubor);
+		soubor.add(vListe);
+		final javax.swing.JPopupMenu kontextove = new javax.swing.JPopupMenu();
+		final javax.swing.JMenuItem vKontextovem = new javax.swing.JMenuItem("Přidat do cesty");
+		kontextove.add(vKontextovem);
+		Assert.assertTrue(Diagnostika.jeVListeMenu(vListe));
+		Assert.assertFalse(Diagnostika.jeVListeMenu(vKontextovem));
+	}
+
+	@Test
+	public void polozkaPridanaZnovuSeSledujeJednou() {
+		final javax.swing.JMenuBar lista = new javax.swing.JMenuBar();
+		final javax.swing.JMenu ikony = new javax.swing.JMenu("Ikony");
+		final javax.swing.JMenuItem sada = new javax.swing.JMenuItem("Standardní");
+		lista.add(ikony);
+		Diagnostika.sledujMenu(lista);
+		ikony.add(sada);
+		ikony.remove(sada);
+		ikony.insert(sada, 0);
+		Diagnostika.sledujMenu(lista);
+		Assert.assertEquals(1, sada.getActionListeners().length);
+	}
+
+	@Test
+	public void chybySeVejdouDoOdkazuIPoMnohaUdalostech() throws Exception {
+		Diagnostika.zaznamenejChybu("důležitá chyba");
+		for (int i = 0; i < 150; i++) {
+			Diagnostika.zaznamenej("Otevřeno okno: Přehled problémů – ěščřžýáíé ěščřžýáíé ěščřžýáíé " + i);
+		}
+		final String odkaz = ZadatProblemAction.odkaz();
+		Assert.assertTrue(odkaz.length() <= 6000);
+		Assert.assertTrue(java.net.URLDecoder.decode(odkaz, "UTF-8").contains("důležitá chyba"));
 	}
 }
