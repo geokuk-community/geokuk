@@ -200,67 +200,14 @@ public class SmokeIT {
 	@Test
 	public void zvenkuPresDalkoveOvladani() throws Exception {
 		final File adresar = pripravAdresar("zvenku");
-		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
-		prefs.getParentFile().mkdirs();
-		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
-				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
-		final List<String> prikaz = new ArrayList<>(jvm(adresar));
-		prikaz.add("-jar");
-		prikaz.add(new File(adresar, "pracovni/geokuk.jar").getPath());
-		prikaz.add("--ovladani=0");
-		final Process p = new ProcessBuilder(prikaz).directory(new File(adresar, "pracovni")).redirectErrorStream(true).redirectOutput(new File(adresar, "zvenku.log")).start();
+		final Process p = spustZvenku(adresar);
 		final List<String> problemy = new ArrayList<>();
 		final StringBuilder prubeh = new StringBuilder();
 		try {
-			final File soubor = new File(adresar, "tmp/geokuk/ovladani.properties");
-			cekej(60, soubor::isFile);
-			final KlientOvladani k = new KlientOvladani(soubor);
-			cekej(120, () -> ((Number) k.stav().get("waypointu")).intValue() == pocetWpt);
-			k.post("/podklad", "jmeno", "user-smoke");
-			// Vybraná keš zpřístupní položky pro keše, výlety a cesty.
-			k.post("/kes", "kod", "GC" + Integer.toString(0x10000 + 7, 36).toUpperCase(Locale.ROOT));
-			pockejNaKlid(k);
-			for (final Map<String, Object> polozka : k.seznam("/menu")) {
-				final String cesta = (String) polozka.get("cesta");
-				if (!Boolean.TRUE.equals(polozka.get("povoleno")) || NESPOUSTET_ZVENKU.stream().anyMatch(cesta::startsWith) || cesta.startsWith("Mapy > ") && polozka.containsKey("zaskrtnuto")
-						&& !cesta.equals("Mapy > Ukládat mapy")) {
-					continue;
-				}
-				final int kolikrat = polozka.containsKey("zaskrtnuto") ? 2 : 1;
-				for (int i = 0; i < kolikrat; i++) {
-					k.post("/menu", "cesta", cesta);
-					Thread.sleep(700);
-					for (final Map<String, Object> okno : k.seznam("/okna")) {
-						if (!"GeoKuk".equals(okno.get("titulek"))) {
-							prubeh.append(cesta).append(" → ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
-							if (((Number) okno.get("sirka")).intValue() < 100 || ((Number) okno.get("vyska")).intValue() < 50 || ((Number) okno.get("komponent")).intValue() == 0) {
-								problemy.add("Po " + cesta + " je okno prázdné nebo malé: " + okno);
-							}
-						}
-					}
-					k.post("/okna/zavri");
-					cekej(20, () -> k.seznam("/okna").size() == 1);
-					pockejNaKlid(k);
-				}
-			}
-			final Map<String, Object> stav = k.stav();
-			prubeh.append("Stav: ").append(stav).append('\n');
-			k.post("/menu", "cesta", "Soubor > Konec");
-			// Přidat do cesty v průchodu menu založí cestu, Konec se proto zeptá na uložení.
-			if (!p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
-				for (final Map<String, Object> okno : k.seznam("/okna")) {
-					prubeh.append("Při Konci: ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
-					if (!"GeoKuk".equals(okno.get("titulek"))) {
-						prubeh.append("  tlačítka ").append(okno.get("tlacitka")).append('\n');
-						final String neukladat = ((List<?>) okno.get("tlacitka")).stream().map(String::valueOf).filter(t -> t.matches("(?i)ne|no|neukládat|zahodit.*")).findFirst()
-								.orElseThrow(() -> new AssertionError("Dialog při Konci nemá tlačítko pro neukládání: " + okno));
-						k.post("/okna/tlacitko", "titulek", (String) okno.get("titulek"), "text", neukladat);
-					}
-				}
-			}
-			if (!p.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)) {
-				problemy.add("Program po Soubor > Konec neskončil");
-			}
+			final KlientOvladani k = pripojSe(adresar);
+			projdiMenuZvenku(k, prubeh, problemy);
+			prubeh.append("Stav: ").append(k.stav()).append('\n');
+			ukonciZvenku(p, k, prubeh, problemy);
 		} finally {
 			p.destroyForcibly();
 			Files.write(new File(adresar, "zvenku-prubeh.txt").toPath(), prubeh.toString().getBytes(StandardCharsets.UTF_8));
@@ -271,6 +218,118 @@ public class SmokeIT {
 		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
 		assertTrue("Proxy obsloužila i vestavěné mapy nebo uživatelskou mapu", server.getPocetPozadavku() > 0);
+	}
+
+	/** Opakované otevírání a zavírání všech dialogů nesmí zvyšovat obsazenou paměť. */
+	@Test
+	public void opakovaneDialogyNeunikaji() throws Exception {
+		final File adresar = pripravAdresar("unik");
+		final Process p = spustZvenku(adresar);
+		final List<String> problemy = new ArrayList<>();
+		final StringBuilder prubeh = new StringBuilder();
+		try {
+			final KlientOvladani k = pripojSe(adresar);
+			projdiMenuZvenku(k, prubeh, problemy);
+			final int pred = pametPoUklidu(k);
+			for (int i = 0; i < 5; i++) {
+				projdiMenuZvenku(k, new StringBuilder(), problemy);
+			}
+			final int po = pametPoUklidu(k);
+			prubeh.append("Paměť po úklidu: po 1. průchodu ").append(pred).append(" MB, po dalších 5 ").append(po).append(" MB\n");
+			if (po - pred > 30) {
+				problemy.add("Paměť po 5 průchodech menu vzrostla z " + pred + " na " + po + " MB");
+			}
+			ukonciZvenku(p, k, prubeh, problemy);
+		} finally {
+			p.destroyForcibly();
+			Files.write(new File(adresar, "unik-prubeh.txt").toPath(), prubeh.toString().getBytes(StandardCharsets.UTF_8));
+		}
+		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
+	private static int pametPoUklidu(final KlientOvladani k) throws Exception {
+		int nejmene = Integer.MAX_VALUE;
+		for (int i = 0; i < 3; i++) {
+			nejmene = Math.min(nejmene, ((Number) ((Map<?, ?>) k.get("/stav?gc=ano")).get("pametMb")).intValue());
+			Thread.sleep(500);
+		}
+		return nejmene;
+	}
+
+	private Process spustZvenku(final File adresar) throws IOException {
+		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
+		prefs.getParentFile().mkdirs();
+		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
+		final List<String> prikaz = new ArrayList<>(jvm(adresar));
+		prikaz.add("-jar");
+		prikaz.add(new File(adresar, "pracovni/geokuk.jar").getPath());
+		prikaz.add("--ovladani=0");
+		return new ProcessBuilder(prikaz).directory(new File(adresar, "pracovni")).redirectErrorStream(true).redirectOutput(new File(adresar, adresar.getName() + ".log")).start();
+	}
+
+	private KlientOvladani pripojSe(final File adresar) throws Exception {
+		final File soubor = new File(adresar, "tmp/geokuk/ovladani.properties");
+		cekej(60, soubor::isFile);
+		final KlientOvladani k = new KlientOvladani(soubor);
+		cekej(120, () -> ((Number) k.stav().get("waypointu")).intValue() == pocetWpt);
+		k.post("/podklad", "jmeno", "user-smoke");
+		// Vybraná keš zpřístupní položky pro keše, výlety a cesty.
+		k.post("/kes", "kod", "GC" + Integer.toString(0x10000 + 7, 36).toUpperCase(Locale.ROOT));
+		pockejNaKlid(k);
+		return k;
+	}
+
+	private static void projdiMenuZvenku(final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy) throws Exception {
+		for (final Map<String, Object> polozka : k.seznam("/menu")) {
+			final String cesta = (String) polozka.get("cesta");
+			if (!Boolean.TRUE.equals(polozka.get("povoleno")) || NESPOUSTET_ZVENKU.stream().anyMatch(cesta::startsWith) || cesta.startsWith("Mapy > ") && polozka.containsKey("zaskrtnuto")
+					&& !cesta.equals("Mapy > Ukládat mapy")) {
+				continue;
+			}
+			final int kolikrat = polozka.containsKey("zaskrtnuto") ? 2 : 1;
+			for (int i = 0; i < kolikrat; i++) {
+				try {
+					k.post("/menu", "cesta", cesta);
+				} catch (final IOException e) {
+					if (e.getMessage().contains("není povolená") || e.getMessage().contains("v menu není")) {
+						continue; // předchozí akce ji vypnula nebo přejmenovala (délka cesty v názvu)
+					}
+					throw e;
+				}
+				Thread.sleep(700);
+				for (final Map<String, Object> okno : k.seznam("/okna")) {
+					if (!"GeoKuk".equals(okno.get("titulek"))) {
+						prubeh.append(cesta).append(" → ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
+						if (((Number) okno.get("sirka")).intValue() < 100 || ((Number) okno.get("vyska")).intValue() < 50 || ((Number) okno.get("komponent")).intValue() == 0) {
+							problemy.add("Po " + cesta + " je okno prázdné nebo malé: " + okno);
+						}
+					}
+				}
+				k.post("/okna/zavri");
+				cekej(20, () -> k.seznam("/okna").size() == 1);
+				pockejNaKlid(k);
+			}
+		}
+	}
+
+	private static void ukonciZvenku(final Process p, final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy) throws Exception {
+		k.post("/menu", "cesta", "Soubor > Konec");
+		// Přidat do cesty v průchodu menu založí cestu, Konec se proto zeptá na uložení.
+		if (!p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+			for (final Map<String, Object> okno : k.seznam("/okna")) {
+				prubeh.append("Při Konci: ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
+				if (!"GeoKuk".equals(okno.get("titulek"))) {
+					prubeh.append("  tlačítka ").append(okno.get("tlacitka")).append('\n');
+					final String neukladat = ((List<?>) okno.get("tlacitka")).stream().map(String::valueOf).filter(t -> t.matches("(?i)ne|no|neukládat|zahodit.*")).findFirst()
+							.orElseThrow(() -> new AssertionError("Dialog při Konci nemá tlačítko pro neukládání: " + okno));
+					k.post("/okna/tlacitko", "titulek", (String) okno.get("titulek"), "text", neukladat);
+				}
+			}
+		}
+		if (!p.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)) {
+			problemy.add("Program po Soubor > Konec neskončil");
+		}
 	}
 
 	private static void pockejNaKlid(final KlientOvladani k) throws Exception {
