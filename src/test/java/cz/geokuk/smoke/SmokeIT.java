@@ -286,6 +286,50 @@ public class SmokeIT {
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
 	}
 
+	/** Program zabitý uprostřed stahování a zápisu dlaždic (pád, vypnutý počítač): cache musí přežít. */
+	@Test
+	public void tvrdeUkonceniUprostredZapisu() throws Exception {
+		final File adresar = pripravAdresar("kill");
+		final List<String> problemy = new ArrayList<>();
+		final Random r = new Random(5);
+		for (int kolo = 0; kolo < 4; kolo++) {
+			// Zabitý program po sobě soubor s portem nesmaže.
+			new File(adresar, "tmp/geokuk/ovladani.properties").delete();
+			final Process p = spustZvenku(adresar);
+			try {
+				final KlientOvladani k = pripojSe(adresar);
+				if (kolo > 0) {
+					final Map<String, Object> stav = k.stav();
+					for (final Object o : (List<?>) stav.get("pocitadla")) {
+						final List<?> pocitadlo = (List<?>) o;
+						if ("ka24 DISK cache #chyb čtení".equals(pocitadlo.get(0)) && ((Number) pocitadlo.get(1)).intValue() > 0) {
+							problemy.add("Kolo " + kolo + ": chyby čtení cache po tvrdém ukončení: " + pocitadlo.get(1));
+						}
+					}
+				}
+				// Rozjet stahování a zápis a zabít program uprostřed.
+				for (int i = 0; i < 30; i++) {
+					k.post("/pozice", "lat", String.valueOf(49.9 + r.nextDouble() * 0.4), "lon", String.valueOf(14.2 + r.nextDouble() * 0.4), "meritko", String.valueOf(12 + r.nextInt(6)));
+					Thread.sleep(100);
+				}
+				Thread.sleep(r.nextInt(6000));
+			} finally {
+				p.destroyForcibly();
+				p.waitFor();
+			}
+			if (new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite.vadna").exists()) {
+				problemy.add("Kolo " + kolo + ": cache se po tvrdém ukončení odložila jako poškozená");
+				break;
+			}
+		}
+		final String[] vypisy = new File(adresar, "tmp/geokuk/excrep").list();
+		if (vypisy != null && vypisy.length > 0) {
+			problemy.add("Výpisy chyb v excrep: " + Arrays.toString(vypisy));
+		}
+		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+		assertTrue("Cache se má plnit", new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite").length() > 100_000);
+	}
+
 	/** Opakované otevírání a zavírání všech dialogů nesmí zvyšovat obsazenou paměť. */
 	@Test
 	public void opakovaneDialogyNeunikaji() throws Exception {
