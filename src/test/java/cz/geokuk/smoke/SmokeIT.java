@@ -330,6 +330,39 @@ public class SmokeIT {
 		assertTrue("Cache se má plnit", new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite").length() > 100_000);
 	}
 
+	/** GeoGet průběžně zapisuje do databáze: kolikrát Geokuk za minutu přenačte všechny keše. */
+	@Test
+	public void geogetMeniDatabazi() throws Exception {
+		final File adresar = pripravAdresar("meni", 0);
+		final File geoget = new File(adresar, "home/geoget");
+		geoget.mkdirs();
+		final File db = new File(geoget, "geoget.db3");
+		pocetWpt = SyntetickaDatabazeGeogetu.zapis(db, 20_000, 20_000);
+		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/umisteniSouboru/prefs.xml");
+		prefs.getParentFile().mkdirs();
+		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"geogetDataDir\" value=\"" + geoget.getPath() + "\"/>\n  <entry key=\"geogetDataDir_active\" value=\"true\"/>\n"
+				+ "  <entry key=\"geogetDataDir_relativeToProgram\" value=\"false\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
+		final Process p = spustZvenku(adresar);
+		try {
+			final File soubor = new File(adresar, "tmp/geokuk/ovladani.properties");
+			cekej(60, soubor::isFile);
+			final KlientOvladani k = new KlientOvladani(soubor);
+			cekej(120, () -> ((Number) k.stav().get("waypointu")).intValue() == pocetWpt);
+			for (int i = 0; i < 12; i++) {
+				Thread.sleep(5000);
+				// Jako zápis GeoGetu: změní se čas úpravy souboru.
+				db.setLastModified(System.currentTimeMillis());
+			}
+			Thread.sleep(15_000);
+		} finally {
+			p.destroyForcibly();
+		}
+		final List<String> log = Files.readAllLines(new File(adresar, "tmp/geokuk/geokuk.log").toPath(), StandardCharsets.UTF_8);
+		final long nacteni = log.stream().filter(r -> r.contains("GeogetLoader") && r.contains("Geocaches loaded")).count();
+		System.out.println("GeoGet mění databázi 12× za 60 s: Geokuk načetl databázi " + nacteni + "×");
+	}
+
 	/** Opakované otevírání a zavírání všech dialogů nesmí zvyšovat obsazenou paměť. */
 	@Test
 	public void opakovaneDialogyNeunikaji() throws Exception {
