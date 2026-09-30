@@ -78,8 +78,7 @@ public class SmokeIT {
 		final File adresar = pripravAdresar("zlobivy");
 		server.setZlobi(true);
 		final Properties zprava = spust(adresar, "zlobivy", "meritka,posun");
-		// Výpisy chyb v excrep tu jsou v pořádku, jde o to, že program nespadne, nezamrzne a nezahltí server.
-		zkontrolujBezChyb(adresar, zprava, false);
+		zkontrolujBezChyb(adresar, zprava);
 		final Map<String, Integer> pozadavky = server.getPozadavky();
 		final List<String> dokola = pozadavky.entrySet().stream().filter(e -> e.getKey().startsWith("/"))
 				.filter(e -> e.getValue() > (FalesnyDlazdicovyServer.zlobeni(e.getKey()) == null ? 1 : 3)).map(e -> e.getKey() + " " + e.getValue() + "x " + FalesnyDlazdicovyServer.zlobeni(e.getKey()))
@@ -100,7 +99,7 @@ public class SmokeIT {
 		Files.write(mapy.toPath(), new String(Files.readAllBytes(mapy.toPath()), StandardCharsets.UTF_8).replace(":" + server.getPort() + "/", ":" + zavreny + "/").getBytes(StandardCharsets.UTF_8));
 		proxyPort = zavreny;
 		final Properties zprava = spust(adresar, "bezsite", "meritka,posun");
-		zkontrolujBezChyb(adresar, zprava, false);
+		zkontrolujBezChyb(adresar, zprava);
 		assertTrue("ka33 WEB #chyb má výpadek zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
 		final long oken = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).count();
 		assertTrue("Bez sítě zůstalo otevřených " + oken + " oken: " + zprava, oken <= 2);
