@@ -1,7 +1,10 @@
 package cz.geokuk.core.program;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.*;
+
+import javax.swing.Action;
+import javax.swing.KeyStroke;
 
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.ESmer;
@@ -154,5 +157,23 @@ public class Akce {
 	public final VyletSmazNeAction vyletSmazNeAction = new VyletSmazNeAction();
 
 	public final List<MapyAction0> mapoakce = new LinkedList<>();
+
+	/** Klávesové zkratky akcí a jejich názvy. */
+	public Map<KeyStroke, String> zkratky() {
+		final Map<KeyStroke, String> zkratky = new HashMap<>();
+		for (final Field f : Akce.class.getFields()) {
+			try {
+				if (f.get(this) instanceof Action) {
+					final Action a = (Action) f.get(this);
+					if (a.getValue(Action.ACCELERATOR_KEY) != null) {
+						zkratky.put((KeyStroke) a.getValue(Action.ACCELERATOR_KEY), "akce " + a.getValue(Action.NAME));
+					}
+				}
+			} catch (final IllegalAccessException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+		return zkratky;
+	}
 
 }
