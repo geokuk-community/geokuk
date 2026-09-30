@@ -32,6 +32,7 @@
   `.geokuk\ovladani.properties` v domovské složce uživatele.
 
 ### Opravy
+- User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy
   na internetu (externí entity a DTD se nenačítají).
@@ -96,7 +97,7 @@
   vejde do 128 MB. Hodnocení, známka, BestOf, favority, nadmořská výška
   a vlastní hodnoty z databáze GeoGetu a GSAK se přenesou ke keším.
 - Stahování mapových dlaždic se všem serverům představuje jako Geokuk
-  s verzí a odkazem na web.
+  s verzí.
 - OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
   do cache.
 - Keš bez názvu nebo s nesmyslnou obtížností či terénem nezpůsobí,

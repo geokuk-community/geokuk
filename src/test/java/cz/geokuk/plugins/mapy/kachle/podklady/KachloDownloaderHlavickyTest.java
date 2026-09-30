@@ -83,7 +83,7 @@ public class KachloDownloaderHlavickyTest {
 	@Test
 	public void kazdyPozadavekIdentifikujeGeokuk() throws Exception {
 		new KachloDownloader().downloadImage(url());
-		Assert.assertEquals(Collections.singletonList("Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")"), hlavicky.get(0).get("User-agent"));
+		Assert.assertEquals(Collections.singletonList("Geokuk/" + FConst.VERSION), hlavicky.get(0).get("User-agent"));
 		Assert.assertNull(hlavicky.get(0).get("Referer"));
 	}
 
