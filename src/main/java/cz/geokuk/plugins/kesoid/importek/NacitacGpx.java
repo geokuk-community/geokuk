@@ -170,6 +170,9 @@ public class NacitacGpx extends NacitacInputStream0 {
 	@Override
 	public void nacti(final InputStream istm, final String name, final IImportBuilder builder, final Future<?> future) throws FactoryConfigurationError, IOException {
 		final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+		// GPX nepotřebuje DTD ani externí entity; s nimi by soubor mohl číst jiné soubory nebo volat URL.
+		inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+		inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 		XMLStreamReader reader;
 		try {
 			reader = inputFactory.createXMLStreamReader(istm);
