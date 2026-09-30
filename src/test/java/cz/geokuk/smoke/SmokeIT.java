@@ -180,6 +180,16 @@ public class SmokeIT {
 	}
 
 	@Test
+	public void dalkoveOvladani() throws Exception {
+		final File adresar = pripravAdresar("ovladani");
+		vlastnosti = "-Dsmoke.args=--ovladani=0";
+		final Properties zprava = spust(adresar, "ovladani", "ovladani");
+		zkontrolujBezChyb(adresar, zprava);
+		assertTrue(zprava.getProperty("ovladani.stav"), zprava.getProperty("ovladani.stav").contains("\"podklad\":\"TURIST_M\""));
+		assertTrue("Mapy.cz přes proxy", server.getPozadavky().keySet().stream().anyMatch(k -> k.contains("turist-m")));
+	}
+
+	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
 		final File data = new File(adresar, "home/geokuk");
