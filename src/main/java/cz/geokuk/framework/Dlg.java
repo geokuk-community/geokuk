@@ -2,6 +2,7 @@ package cz.geokuk.framework;
 
 import java.io.File;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -20,6 +21,13 @@ public final class Dlg {
 
 	public static void info(final String informace, final String titulek) {
 		JOptionPane.showMessageDialog(parentFrame(), informace, titulek, JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	/** Upozornění, na které program nečeká. */
+	public static void upozorneni(final String informace) {
+		final JDialog dialog = new JOptionPane(informace, JOptionPane.WARNING_MESSAGE).createDialog(parentFrame(), "Geokuk: Upozornění");
+		dialog.setModal(false);
+		dialog.setVisible(true);
 	}
 
 	public static void natavMainFrameProMaleDialogy(final JFrame frame) {
