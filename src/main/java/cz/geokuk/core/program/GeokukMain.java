@@ -50,6 +50,8 @@ public class GeokukMain {
 			}
 			if (portOvladani != null) {
 				inicializator.spustDalkoveOvladani(portOvladani);
+			} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {
+				inicializator.spustDalkoveOvladani(DalkoveOvladani.VYCHOZI_PORT);
 			}
 			inicializator.zkontrolovatAktualizace();
 		});

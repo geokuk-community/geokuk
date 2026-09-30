@@ -21,6 +21,8 @@ import cz.geokuk.core.coord.PoziceModel;
 import cz.geokuk.core.coord.VyrezModel;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.core.program.FPref;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
@@ -46,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DalkoveOvladani {
 
 	public static final int VYCHOZI_PORT = 48321;
+	private static final String ZAPNUTO_value = "dalkoveOvladani";
 	public static final File SOUBOR = new File(new File(System.getProperty("java.io.tmpdir"), "geokuk"), "ovladani.properties");
 
 	private VyrezModel vyrezModel;
@@ -72,6 +75,28 @@ public class DalkoveOvladani {
 		this.kesoidModel = kesoidModel;
 	}
 
+	/** Zapnuté volbou v menu, platí pro každé spuštění. */
+	public static boolean jeZapnuteVNastaveni() {
+		return MyPreferences.current().node(FPref.VSEOBECNE_node).getBoolean(ZAPNUTO_value, false);
+	}
+
+	public static void setZapnuteVNastaveni(final boolean zapnuto) {
+		MyPreferences.current().node(FPref.VSEOBECNE_node).putBoolean(ZAPNUTO_value, zapnuto);
+	}
+
+	public boolean bezi() {
+		return server != null;
+	}
+
+	public synchronized void zastav() {
+		if (server != null) {
+			server.stop(0);
+			server = null;
+			SOUBOR.delete();
+			log.info("Dálkové ovládání vypnuto");
+		}
+	}
+
 	/** Port z parametru {@code --ovladani[=port]}, nebo null, když ovládání není zapnuté. */
 	public static Integer portZParametru(final String[] args) {
 		for (final String a : args) {
@@ -86,7 +111,10 @@ public class DalkoveOvladani {
 		return null;
 	}
 
-	public void spust(final int port) throws IOException {
+	public synchronized void spust(final int port) throws IOException {
+		if (server != null) {
+			return;
+		}
 		final byte[] nahodne = new byte[24];
 		new SecureRandom().nextBytes(nahodne);
 		token = Base64.getUrlEncoder().withoutPadding().encodeToString(nahodne);
@@ -160,7 +188,11 @@ public class DalkoveOvladani {
 	/** Token a hlavička Host, aby na ovládání nedosáhla webová stránka v prohlížeči (DNS rebinding). */
 	private boolean povoleno(final HttpExchange ex) {
 		final String host = ex.getRequestHeaders().getFirst("Host");
-		final int port = server.getAddress().getPort();
+		final HttpServer s = server;
+		if (s == null) {
+			return false;
+		}
+		final int port = s.getAddress().getPort();
 		if (host == null || !(host.equals("127.0.0.1:" + port) || host.equals("localhost:" + port))) {
 			return false;
 		}
