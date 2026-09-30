@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.mapy.kachle.data;
 
+import java.awt.event.InputEvent;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,9 +31,15 @@ public final class UzivatelskeMapy {
 		zkratkyProgramu = zkratky;
 	}
 
-	/** Písmeno nebo číslice jako stisk klávesy, aby zkratku nespustilo písmeno napsané do otevřeného menu. */
+	/**
+	 * Písmeno jako stisk klávesy, aby zkratku nespustilo písmeno napsané do otevřeného menu; velké písmeno se Shiftem. Číslice a ostatní znaky jako
+	 * napsaný znak, na české klávesnici se číslice píšou se Shiftem.
+	 */
 	static KeyStroke jednaKlavesa(final char c) {
-		return Character.isLetterOrDigit(c) && c < 128 ? KeyStroke.getKeyStroke(Character.toUpperCase(c), 0) : KeyStroke.getKeyStroke(c);
+		if (c < 128 && Character.isLetter(c)) {
+			return KeyStroke.getKeyStroke(Character.toUpperCase(c), Character.isUpperCase(c) ? InputEvent.SHIFT_DOWN_MASK : 0);
+		}
+		return KeyStroke.getKeyStroke(c);
 	}
 
 	/** Načte mapy ze souboru vedle jaru a vrátí popis chyb v něm. */

@@ -267,6 +267,8 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void platneZkratky() throws Exception {
 		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_U, 0), jedna("m.nazev=M", "m.url=" + URL, "m.zkratka=u").getKeyStroke());
+		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_U, java.awt.event.InputEvent.SHIFT_DOWN_MASK), jedna("p.nazev=P", "p.url=" + URL, "p.zkratka=U").getKeyStroke());
+		Assert.assertEquals(KeyStroke.getKeyStroke('2'), jedna("q.nazev=Q", "q.url=" + URL, "q.zkratka=2").getKeyStroke());
 		Assert.assertEquals(KeyStroke.getKeyStroke("F5"), jedna("n.nazev=N", "n.url=" + URL, "n.zkratka=F5").getKeyStroke());
 		Assert.assertEquals(KeyStroke.getKeyStroke("alt shift U"), jedna("o.nazev=O", "o.url=" + URL, "o.zkratka=alt shift U").getKeyStroke());
 	}

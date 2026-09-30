@@ -57,6 +57,7 @@ public class BrowserOpener {
 	private static void nelzeOtevrit(final URL url) {
 		final JTextField adresa = new JTextField(url.toString());
 		adresa.setEditable(false);
+		adresa.setColumns(50);
 		final String zkopirovat = "Zkopírovat adresu";
 		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "Geokuk",
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] { zkopirovat, "Zavřít" }, zkopirovat);

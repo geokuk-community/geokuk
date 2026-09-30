@@ -175,6 +175,10 @@ public class Akce {
 				throw new IllegalStateException(e);
 			}
 		}
+		// Referenční body dostávají Alt+číslo postupně až při sestavení menu.
+		for (int i = 1; i <= 9; i++) {
+			zkratky.putIfAbsent(KeyStroke.getKeyStroke("alt " + i), "referenční bod");
+		}
 		return zkratky;
 	}
 

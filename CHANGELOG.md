@@ -89,7 +89,8 @@
   souhrnně a nezakládají výpis chyby u každé dlaždice.
 - Menu Cesty má podtržené C a Skin I, dřív se o písmeno přetahovaly
   s Výlety a Nápovědou.
-- Písmeno napsané v otevřeném menu už nepřepne zároveň mapový podklad.
+- Písmeno napsané v otevřeném menu nebo do pole na liště (Hodnocení,
+  BestOf, Favorit) nepřepne mapový podklad.
 - Uživatelská mapa nemůže převzít klávesovou zkratku programu (třeba F3
   nebo Ctrl+S), program ji s hláškou vynechá.
 - Kešoidy > Implicitní výběr (Alt+F2) vrátí filtr i zobrazené typy keší

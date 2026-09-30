@@ -3,6 +3,8 @@
  */
 package cz.geokuk.plugins.cesty.akce.bod;
 
+import java.awt.event.KeyEvent;
+
 import cz.geokuk.plugins.cesty.data.Bod;
 
 /**
@@ -23,7 +25,8 @@ public class RozdelitCestuVBoduAction extends BodAction0 {
 		super(bod);
 		putValue(NAME, "Rozdělit cestu");
 		putValue(SHORT_DESCRIPTION, "Rozdělí cestu na dvě cesty kratší.");
-		// putValue(MNEMONIC_KEY, KeyEvent.VK_R);
+		// putValue(MNEMONIC_KEY, KeyEvent.VK_P);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_R);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("RIGHT"));
 	}
 
