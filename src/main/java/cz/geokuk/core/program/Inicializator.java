@@ -13,6 +13,7 @@ import cz.geokuk.core.coord.PoziceModel;
 import cz.geokuk.core.coord.VyrezModel;
 import cz.geokuk.core.hledani.HledaciSluzba;
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.core.napoveda.DiagnostikaMapy;
 import cz.geokuk.core.napoveda.NapovedaModel;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.core.ovladani.DalkoveOvladani;
@@ -95,6 +96,7 @@ public class Inicializator {
 
 		bb.registerSigleton(new HledaciSluzba());
 		dalkoveOvladani = bb.registerSigleton(new DalkoveOvladani());
+		bb.registerSigleton(new DiagnostikaMapy());
 
 		bb.registerSigleton(new KachleZiskavac());
 

@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
+import cz.geokuk.core.napoveda.Diagnostika;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -27,5 +28,6 @@ class OpakovaneChyby {
 		}
 		dalsiHlaseni = pocet * 10;
 		log.error("{} ({}. výskyt)", co, pocet, chyba);
+		Diagnostika.zaznamenejChybu(co + " (" + pocet + ". výskyt): " + chyba);
 	}
 }

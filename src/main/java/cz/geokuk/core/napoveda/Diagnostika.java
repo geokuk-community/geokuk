@@ -1,15 +1,14 @@
 package cz.geokuk.core.napoveda;
 
 import java.awt.*;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import javax.swing.AbstractButton;
-import javax.swing.Action;
+import javax.swing.*;
 
 import com.jcabi.manifests.Manifests;
 
@@ -17,14 +16,16 @@ import cz.geokuk.core.program.FConst;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Informace pro hlášení chyby: verze, prostředí a posledních pár událostí v programu.
  */
+@Slf4j
 public final class Diagnostika {
 
-	private static final int MAX_ZAZNAMU = 30;
-	private static final int RADKU_LOGU = 20;
+	private static final int MAX_ZAZNAMU = 100;
+	private static final int RADKU_LOGU = 50;
 	/** Stejné umístění jako v logback.xml. */
 	static final File LOG = new File(new File(System.getProperty("java.io.tmpdir"), "geokuk"), "geokuk.log");
 	private static final long START = System.currentTimeMillis();
@@ -50,7 +51,43 @@ public final class Diagnostika {
 	}
 
 	public static void zaznamenej(final String udalost) {
+		synchronized (udalosti) {
+			dokonciMapu();
+			zapis(udalost);
+		}
+	}
+
+	private static void zapis(final String udalost) {
+		log.info("Událost: {}", udalost);
 		pridej(udalosti, udalost);
+	}
+
+	// Práce s mapou se zapisuje souhrnně, jinak by každý posun vytlačil ostatní události.
+	private static int posunu;
+	private static int meritkoOd = -1;
+	private static int meritko = -1;
+	private static Object stred;
+
+	/** Změna výřezu mapy, bez polohy. */
+	public static void zaznamenejVyrez(final int noveMeritko, final Object novyStred) {
+		synchronized (udalosti) {
+			if (meritkoOd < 0) {
+				meritkoOd = meritko < 0 ? noveMeritko : meritko;
+			}
+			if (meritko == noveMeritko && !Objects.equals(stred, novyStred)) {
+				posunu++;
+			}
+			meritko = noveMeritko;
+			stred = novyStred;
+		}
+	}
+
+	private static void dokonciMapu() {
+		if (meritkoOd >= 0 && (posunu > 0 || meritkoOd != meritko)) {
+			zapis("Mapa: " + (posunu > 0 ? posunu + "× posun, " : "") + (meritkoOd != meritko ? "měřítko " + meritkoOd + " → " + meritko : "měřítko " + meritko));
+		}
+		posunu = 0;
+		meritkoOd = -1;
 	}
 
 	public static void zaznamenejChybu(final String chyba) {
@@ -70,16 +107,112 @@ public final class Diagnostika {
 		}
 	}
 
-	/** Zaznamenává kliknutí na tlačítka a položky menu. */
+	/** Zaznamenává kliknutí na tlačítka a otevírání a zavírání oken. Položky menu sleduje {@link #sledujMenu(JMenuBar)}. */
 	public static void sledujKliknuti() {
 		Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-			if (event.getID() == MouseEvent.MOUSE_RELEASED && event.getSource() instanceof AbstractButton) {
+			if (event.getID() == MouseEvent.MOUSE_RELEASED && event.getSource() instanceof AbstractButton && !(event.getSource() instanceof JMenuItem)) {
 				final AbstractButton button = (AbstractButton) event.getSource();
 				if (button.isEnabled()) {
-					zaznamenej("Klik: " + popis(button));
+					// Stav přepínače je známý až po obsloužení kliknutí.
+					SwingUtilities.invokeLater(() -> zaznamenej("Klik: " + popis(button) + stav(button)));
 				}
 			}
 		}, AWTEvent.MOUSE_EVENT_MASK);
+		Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+			if (event.getID() == WindowEvent.WINDOW_OPENED) {
+				zaznamenej("Otevřeno okno: " + popisOkna(((WindowEvent) event).getWindow()));
+			} else if (event.getID() == WindowEvent.WINDOW_CLOSED) {
+				zaznamenej("Zavřeno okno: " + titulek(((WindowEvent) event).getWindow()));
+			}
+		}, AWTEvent.WINDOW_EVENT_MASK);
+	}
+
+	/** Zaznamenává spuštění položek menu i s cestou v menu, způsobem spuštění a stavem přepínače. */
+	public static void sledujMenu(final JMenuBar lista) {
+		for (int i = 0; i < lista.getMenuCount(); i++) {
+			if (lista.getMenu(i) != null) {
+				sledujMenu(lista.getMenu(i));
+			}
+		}
+	}
+
+	private static void sledujMenu(final JMenu menu) {
+		for (final Component c : menu.getMenuComponents()) {
+			sledujPolozku(c);
+		}
+		menu.getPopupMenu().addContainerListener(new ContainerAdapter() {
+			@Override
+			public void componentAdded(final ContainerEvent e) {
+				sledujPolozku(e.getChild());
+			}
+		});
+	}
+
+	private static void sledujPolozku(final Component c) {
+		if (c instanceof JMenu) {
+			sledujMenu((JMenu) c);
+		} else if (c instanceof JMenuItem) {
+			final JMenuItem polozka = (JMenuItem) c;
+			polozka.addActionListener(e -> zaznamenej(zpusob(polozka) + ": " + cesta(polozka) + stav(polozka)));
+		}
+	}
+
+	private static String zpusob(final JMenuItem polozka) {
+		final AWTEvent udalost = EventQueue.getCurrentEvent();
+		if (udalost instanceof KeyEvent) {
+			final KeyStroke zkratka = polozka.getAccelerator();
+			return zkratka != null && zkratka.equals(KeyStroke.getKeyStrokeForEvent((KeyEvent) udalost)) ? "Klávesa " + popisZkratky(zkratka) : "Menu klávesnicí";
+		}
+		return "Menu";
+	}
+
+	private static String popisZkratky(final KeyStroke zkratka) {
+		final String modifikatory = InputEvent.getModifiersExText(zkratka.getModifiers());
+		final String klavesa = zkratka.getKeyCode() == KeyEvent.VK_UNDEFINED ? String.valueOf(zkratka.getKeyChar()) : KeyEvent.getKeyText(zkratka.getKeyCode());
+		return modifikatory.isEmpty() ? klavesa : modifikatory + "+" + klavesa;
+	}
+
+	static String cesta(final JMenuItem polozka) {
+		final Deque<String> cesta = new ArrayDeque<>();
+		Component c = polozka;
+		while (c instanceof JMenuItem) {
+			cesta.addFirst(text((JMenuItem) c));
+			c = c.getParent() instanceof JPopupMenu ? ((JPopupMenu) c.getParent()).getInvoker() : null;
+		}
+		return String.join(" > ", cesta);
+	}
+
+	private static String text(final AbstractButton b) {
+		return popis(b).replaceAll("<[^>]*>", "").trim();
+	}
+
+	private static String stav(final AbstractButton b) {
+		return b instanceof JCheckBoxMenuItem || b instanceof JToggleButton ? (b.isSelected() ? " → zapnuto" : " → vypnuto") : "";
+	}
+
+	private static String titulek(final Window w) {
+		final String titulek = w instanceof Frame ? ((Frame) w).getTitle() : w instanceof Dialog ? ((Dialog) w).getTitle() : null;
+		return titulek == null || titulek.isEmpty() ? w.getClass().getSimpleName() : titulek;
+	}
+
+	private static String popisOkna(final Window w) {
+		final StringBuilder zprava = new StringBuilder();
+		if (w instanceof RootPaneContainer) {
+			hledejZpravu(((RootPaneContainer) w).getContentPane(), zprava);
+		}
+		final String text = zprava.toString().replaceAll("\\s+", " ").trim();
+		return titulek(w) + (text.isEmpty() ? "" : " – " + (text.length() > 200 ? text.substring(0, 200) + "…" : text));
+	}
+
+	private static void hledejZpravu(final Container kde, final StringBuilder zprava) {
+		for (final Component c : kde.getComponents()) {
+			if (c instanceof JOptionPane) {
+				final Object m = ((JOptionPane) c).getMessage();
+				zprava.append(m instanceof Object[] ? Arrays.toString((Object[]) m) : String.valueOf(m)).append(' ');
+			} else if (c instanceof Container) {
+				hledejZpravu((Container) c, zprava);
+			}
+		}
 	}
 
 	private static String popis(final AbstractButton button) {
@@ -111,6 +244,9 @@ public final class Diagnostika {
 		sb.append("Výpisy chyb: ").append(bezDomova(FExceptionDumper.getExcrepFolder())).append('\n');
 		sb.append("Log: ").append(bezDomova(LOG)).append('\n');
 		sb.append("Běží: ").append((System.currentTimeMillis() - START) / 60000).append(" min\n");
+		synchronized (udalosti) {
+			dokonciMapu();
+		}
 		vypis(sb, "Poslední události", udalosti);
 		synchronized (chyby) {
 			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby);

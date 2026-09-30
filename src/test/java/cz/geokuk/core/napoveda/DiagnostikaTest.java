@@ -20,14 +20,37 @@ public class DiagnostikaTest {
 	public void textObsahujeVerziAUdalosti() {
 		Diagnostika.zaznamenej("první");
 		Diagnostika.zaznamenejChybu("chyba stahování");
-		for (int i = 0; i < 60; i++) {
+		for (int i = 0; i < 120; i++) {
 			Diagnostika.zaznamenej("událost " + i);
 		}
 		final String text = Diagnostika.text();
 		Assert.assertTrue(text.startsWith("Geokuk " + FConst.VERSION));
-		Assert.assertTrue(text.contains("událost 59"));
+		Assert.assertTrue(text.contains("událost 119"));
 		Assert.assertFalse(text.contains("první"));
 		Assert.assertTrue(text.contains("chyba stahování"));
+	}
+
+	@Test
+	public void praceSMapouSeZapiseSouhrnne() {
+		Diagnostika.zaznamenej("před mapou");
+		Diagnostika.zaznamenejVyrez(13, "a");
+		Diagnostika.zaznamenejVyrez(13, "b");
+		Diagnostika.zaznamenejVyrez(13, "c");
+		Diagnostika.zaznamenejVyrez(14, "c");
+		Diagnostika.zaznamenej("po mapě");
+		final String text = Diagnostika.text();
+		Assert.assertTrue(text, text.contains("Mapa: 2× posun, měřítko 13 → 14"));
+		Assert.assertTrue(text.indexOf("Mapa: 2×") < text.indexOf("po mapě"));
+	}
+
+	@Test
+	public void cestaVMenu() {
+		final javax.swing.JMenu soubor = new javax.swing.JMenu("Soubor");
+		final javax.swing.JMenu podmenu = new javax.swing.JMenu("Mapy");
+		final javax.swing.JMenuItem polozka = new javax.swing.JMenuItem("<html>Základní <i>mapa</i>");
+		soubor.add(podmenu);
+		podmenu.add(polozka);
+		Assert.assertEquals("Soubor > Mapy > Základní mapa", Diagnostika.cesta(polozka));
 	}
 
 	@Test
