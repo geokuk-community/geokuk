@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
@@ -73,6 +74,9 @@ public class MultiNacitac {
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
+		final long start = System.currentTimeMillis();
+		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
+		final List<String> vadne = new ArrayList<>();
 		for (final KeFile file : list) {
 			log.debug("Nacitam: " + file);
 			try {
@@ -80,12 +84,26 @@ public class MultiNacitac {
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem pri cteni souboru " + file);
+				vadne.add(file.getFile().getName());
 			}
 		}
 
 		builder.done();
+		final KesBag bag = builder.getKesBag();
+		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
+				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne));
 
 		return builder.getKesBag();
+	}
+
+	/** Počet souborů podle přípony, bez cest (hlášení je veřejné). */
+	private static String popisSouboru(final List<KeFile> soubory) {
+		final Map<String, Integer> podlePripony = new TreeMap<>();
+		for (final KeFile f : soubory) {
+			final String jmeno = f.getFile().getName().toLowerCase(Locale.ROOT);
+			podlePripony.merge(jmeno.contains(".") ? jmeno.substring(jmeno.lastIndexOf('.') + 1) : "bez přípony", 1, Integer::sum);
+		}
+		return soubory.size() + " souborů " + podlePripony;
 	}
 
 	// TODO Proč jsou tu ty File parametry, když máme k dispozici kesoidModel, odkud se jejich hodnoty vždy berou? [2016-04-09, Bohusz]

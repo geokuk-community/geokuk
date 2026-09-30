@@ -18,6 +18,12 @@
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 - „Informace pro hlášení chyby“ obsahují i servisní hodnoty ze servisního
   okna.
+- „Informace pro hlášení chyby“ zaznamenávají posledních 100 událostí:
+  spuštěné položky menu s cestou v menu, klávesovou zkratkou a stavem
+  přepínače, otevřená a zavřená okna s textem hlášek, souhrnně práci
+  s mapou (podklad, měřítko, počet posunů, bez polohy) a načítání keší.
+  Události se zapisují i do logu, z něhož hlášení ukazuje posledních
+  50 řádků.
 - Program si bere až 3 GB paměti, když ji Java přijme; jinak 2 GB nebo 1 GB.
 
 ### Opravy
