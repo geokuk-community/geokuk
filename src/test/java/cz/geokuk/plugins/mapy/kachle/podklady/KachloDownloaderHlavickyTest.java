@@ -23,6 +23,7 @@ public class KachloDownloaderHlavickyTest {
 	private boolean neuplne;
 	private boolean sBajtyZaObrazkem;
 	private final ByteArrayOutputStream png = new ByteArrayOutputStream();
+	private byte[] jineTelo;
 	private final List<Map<String, List<String>>> hlavicky = new ArrayList<>();
 
 	@Before
@@ -31,6 +32,13 @@ public class KachloDownloaderHlavickyTest {
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", ex -> {
 			hlavicky.add(new TreeMap<>(ex.getRequestHeaders()));
+			if (jineTelo != null) {
+				ex.sendResponseHeaders(200, jineTelo.length);
+				try (OutputStream out = ex.getResponseBody()) {
+					out.write(jineTelo);
+				}
+				return;
+			}
 			// neúplná odpověď: hlavička slíbí víc bajtů, než server pošle
 			ex.sendResponseHeaders(200, neuplne || sBajtyZaObrazkem ? png.size() + ZA_OBRAZKEM : png.size());
 			try (OutputStream out = ex.getResponseBody()) {
@@ -77,5 +85,31 @@ public class KachloDownloaderHlavickyTest {
 		new KachloDownloader().downloadImage(url());
 		Assert.assertEquals(Collections.singletonList("Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")"), hlavicky.get(0).get("User-agent"));
 		Assert.assertNull(hlavicky.get(0).get("Referer"));
+	}
+
+	private static byte[] jpeg() throws Exception {
+		final BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
+		final Random rnd = new Random(1);
+		for (int x = 0; x < 256; x++) {
+			for (int y = 0; y < 256; y++) {
+				img.setRGB(x, y, rnd.nextInt());
+			}
+		}
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ImageIO.write(img, "jpg", out);
+		return out.toByteArray();
+	}
+
+	@Test(expected = java.io.IOException.class)
+	public void useknutyJpegSeOdmitneIBezNesouhlasuDelky() throws Exception {
+		final byte[] cely = jpeg();
+		jineTelo = Arrays.copyOf(cely, cely.length / 2);
+		new KachloDownloader().downloadImage(url());
+	}
+
+	@Test
+	public void celyJpegSePrijme() throws Exception {
+		jineTelo = jpeg();
+		Assert.assertEquals(jineTelo.length, new KachloDownloader().downloadImage(url()).getData().length);
 	}
 }

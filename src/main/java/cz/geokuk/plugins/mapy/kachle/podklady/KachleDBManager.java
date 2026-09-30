@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 
 import org.tmatesoft.sqljet.core.SqlJetErrorCode;
@@ -108,10 +107,14 @@ class KachleDBManager implements KachleManager {
 				return null;
 			}
 			log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
-			img = ImageIO.read(cursor.getBlobAsStream("image"));
+			img = KachloDownloader.precti(cursor.getBlobAsStream("image"));
 			if (img == null) {
 				log.debug("Loaded DB image is null!");
 			}
+		} catch (final KachloDownloader.UseknutaDlazdice e) {
+			// Useknutou dlaždici z dřívějška bere jako chybějící, stáhne se znovu a přepíše.
+			log.debug("{}: {}", ki, e.getMessage());
+			return null;
 		} catch (SqlJetException | IOException e) {
 			chybyCteni.ohlas(e);
 			vadne = e instanceof SqlJetException;

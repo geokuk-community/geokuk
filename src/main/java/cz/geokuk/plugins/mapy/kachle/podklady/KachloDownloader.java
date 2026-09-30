@@ -8,6 +8,8 @@ import java.net.URL;
 import java.util.*;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.util.pocitadla.Pocitadlo;
@@ -40,6 +42,14 @@ public class KachloDownloader {
 
 
 
+	static class UseknutaDlazdice extends IOException {
+		private static final long serialVersionUID = 1L;
+
+		UseknutaDlazdice(final String varovani) {
+			super("Dlaždice je useknutá: " + varovani);
+		}
+	}
+
 	private final Pocitadlo pocitDownloadleDlazdice = new PocitadloRoste("Downloadlé dlaždice", "Počet dlaždic, které byly downloadovány.");
 
 	private final EnumMap<EPraznyObrazek, Image> prazdneObrazky = new EnumMap<>(EPraznyObrazek.class);
@@ -70,7 +80,7 @@ public class KachloDownloader {
 		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
 		final Image img;
 		try (InputStream stm = new BufferedInputStream(dhis)) {
-			img = ImageIO.read(stm);
+			img = precti(stm);
 			if (img == null) {
 				throw new RuntimeException("image is null");
 			}
@@ -86,6 +96,34 @@ public class KachloDownloader {
 
 		return imda;
 
+	}
+
+	/** Dekodér JPEG useknutá data nepovažuje za chybu a zbytek dlaždice doplní šedou, ohlásí to jen varováním. */
+	static Image precti(final InputStream stm) throws IOException {
+		try (ImageInputStream iis = ImageIO.createImageInputStream(stm)) {
+			final Iterator<ImageReader> readery = ImageIO.getImageReaders(iis);
+			if (!readery.hasNext()) {
+				return null;
+			}
+			final ImageReader reader = readery.next();
+			try {
+				final java.util.List<String> useknuto = new ArrayList<>();
+				reader.addIIOReadWarningListener((zdroj, varovani) -> {
+					final String v = varovani.toLowerCase(Locale.ROOT);
+					if (v.contains("truncated") || v.contains("premature end") || v.contains("missing eoi")) {
+						useknuto.add(varovani);
+					}
+				});
+				reader.setInput(iis, true, true);
+				final BufferedImage img = reader.read(0);
+				if (!useknuto.isEmpty()) {
+					throw new UseknutaDlazdice(useknuto.get(0));
+				}
+				return img;
+			} finally {
+				reader.dispose();
+			}
+		}
 	}
 
 	/** Dekodér obrázku se zastaví, jakmile má obrázek; zbytek těla odpovědi je potřeba dočíst, aby šlo poznat useknutou dlaždici. */
