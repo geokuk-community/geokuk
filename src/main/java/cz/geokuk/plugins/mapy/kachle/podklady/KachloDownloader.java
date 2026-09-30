@@ -24,7 +24,7 @@ public class KachloDownloader {
 	private static final int TIMEOUT_CTENI = 30000;
 
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
-	static final String USER_AGENT = "Geokuk/" + FConst.VERSION + " (+" + FConst.WEB_PAGE_URL + ")";
+	static final String USER_AGENT = "Geokuk/" + FConst.VERSION;
 
 	/**
 	 * Nepřejmenovávat hodnoty, odvozuje se z něj název resourcu
