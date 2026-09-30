@@ -115,6 +115,7 @@ public class Inicializator {
 	}
 
 	public void intMapAkce(final BeanBag bb, final Akce akce) {
+		UzivatelskeMapy.setZkratkyProgramu(akce.zkratky());
 		final List<String> chyby = UzivatelskeMapy.nacti();
 		if (!chyby.isEmpty()) {
 			chyby.forEach(Diagnostika::zaznamenejChybu);

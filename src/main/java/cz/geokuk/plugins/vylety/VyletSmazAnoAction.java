@@ -12,7 +12,7 @@ public class VyletSmazAnoAction extends VyletAction0 {
 	public VyletSmazAnoAction() {
 		super("Žádné nelovím");
 		putValue(SHORT_DESCRIPTION, "Odstraní příznak lovení u všech keší.");
-		putValue(MNEMONIC_KEY, KeyEvent.VK_N);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_D);
 	}
 
 	@Override

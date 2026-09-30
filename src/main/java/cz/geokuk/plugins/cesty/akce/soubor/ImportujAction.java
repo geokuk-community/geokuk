@@ -45,7 +45,7 @@ public class ImportujAction extends Action0 {
 	public ImportujAction() {
 		super("Importovat cesty (gpx, ggt)");
 		putValue(SHORT_DESCRIPTION, "Do otevřeného výletu importuje cesty z GPX souborů a GGT soubory.");
-		putValue(MNEMONIC_KEY, KeyEvent.VK_V);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_I);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

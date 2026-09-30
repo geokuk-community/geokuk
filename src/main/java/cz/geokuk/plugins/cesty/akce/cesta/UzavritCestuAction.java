@@ -23,7 +23,7 @@ public class UzavritCestuAction extends CestaAction0 {
 		super(cesta);
 		putValue(NAME, "Uzavřít cestu");
 		putValue(SHORT_DESCRIPTION, "Rozdělí cestu na dvě cesty kratší.");
-		// putValue(MNEMONIC_KEY, KeyEvent.VK_P);
+		// putValue(MNEMONIC_KEY, KeyEvent.VK_C);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("RIGHT"));
 	}
 

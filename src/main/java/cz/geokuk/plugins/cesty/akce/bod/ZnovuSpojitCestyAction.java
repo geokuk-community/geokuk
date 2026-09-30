@@ -23,7 +23,7 @@ public class ZnovuSpojitCestyAction extends BodAction0 {
 		super(bod);
 		putValue(NAME, "Znovu spojit cesty");
 		putValue(SHORT_DESCRIPTION, "Pokud došlo v některém bodě k rozdělení cest, je možné je zde znovu spojit.");
-		// putValue(MNEMONIC_KEY, KeyEvent.VK_P);
+		// putValue(MNEMONIC_KEY, KeyEvent.VK_N);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("RIGHT"));
 	}
 

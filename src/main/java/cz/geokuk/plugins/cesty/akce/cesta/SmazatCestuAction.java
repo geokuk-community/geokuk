@@ -11,7 +11,7 @@ public class SmazatCestuAction extends CestaAction0 {
 		// putValue(NAME, "<html>Odstraň cestu <i>" + jCestaMenu.getNazev() + "</i> " + (jCestaMenu.getMouDelkaCesta() + " mou"));
 		putValue(NAME, "Smazat cestu");
 		putValue(SHORT_DESCRIPTION, "Vybranou cestu zcela odstraní z výletu se všemi jejími body a úseky");
-		// putValue(MNEMONIC_KEY, KeyEvent.VK_V);
+		// putValue(MNEMONIC_KEY, KeyEvent.VK_S);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

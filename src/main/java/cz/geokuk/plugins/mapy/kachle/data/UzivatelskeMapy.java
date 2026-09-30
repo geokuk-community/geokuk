@@ -23,6 +23,18 @@ public final class UzivatelskeMapy {
 	private static final String HLAVICKA = "hlavicka.";
 	private static final int MAX_MERITKO = 22;
 
+	private static Map<KeyStroke, String> zkratkyProgramu = Collections.emptyMap();
+
+	/** Zkratky akcí programu, které uživatelská mapa nesmí převzít. */
+	public static void setZkratkyProgramu(final Map<KeyStroke, String> zkratky) {
+		zkratkyProgramu = zkratky;
+	}
+
+	/** Písmeno nebo číslice jako stisk klávesy, aby zkratku nespustilo písmeno napsané do otevřeného menu. */
+	static KeyStroke jednaKlavesa(final char c) {
+		return Character.isLetterOrDigit(c) && c < 128 ? KeyStroke.getKeyStroke(Character.toUpperCase(c), 0) : KeyStroke.getKeyStroke(c);
+	}
+
 	/** Načte mapy ze souboru vedle jaru a vrátí popis chyb v něm. */
 	public static List<String> nacti() {
 		return FConst.JAR_DIR_EXISTUJE ? nacti(new File(FConst.JAR_DIR, SOUBOR)) : Collections.emptyList();
@@ -103,9 +115,14 @@ public final class UzivatelskeMapy {
 			return null;
 		}
 		final String zkratka = v.getOrDefault("zkratka", "");
-		final KeyStroke keyStroke = zkratka.isEmpty() ? null : zkratka.length() == 1 ? KeyStroke.getKeyStroke(zkratka.charAt(0)) : KeyStroke.getKeyStroke(zkratka);
+		final KeyStroke keyStroke = zkratka.isEmpty() ? null : zkratka.length() == 1 ? jednaKlavesa(zkratka.charAt(0)) : KeyStroke.getKeyStroke(zkratka);
 		if (!zkratka.isEmpty() && keyStroke == null) {
 			chyby.add(id + ".zkratka není platná klávesová zkratka (např. u, F5, ctrl U)");
+			return null;
+		}
+		final String akce = keyStroke == null ? null : zkratkyProgramu.get(keyStroke);
+		if (akce != null) {
+			chyby.add(id + ".zkratka " + zkratka + " už používá " + akce);
 			return null;
 		}
 		final List<EKaType> jine = new ArrayList<>(EKaType.vestavene());

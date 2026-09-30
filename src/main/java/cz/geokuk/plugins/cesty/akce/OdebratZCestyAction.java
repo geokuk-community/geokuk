@@ -16,7 +16,7 @@ public class OdebratZCestyAction extends CestyActionIndividual0 {
 		super(uchopenec);
 		putValue(NAME, "Odebrat z cesty");
 		putValue(SHORT_DESCRIPTION, "Odstraní bod z cesty.");
-		putValue(MNEMONIC_KEY, KeyEvent.VK_N);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_O);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("DELETE"));
 		putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletNevim.png"));
 	}

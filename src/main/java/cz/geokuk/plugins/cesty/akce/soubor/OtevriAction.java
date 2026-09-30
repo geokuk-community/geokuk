@@ -38,7 +38,7 @@ public class OtevriAction extends SouboeCestaAction0 {
 	public OtevriAction() {
 		super("Otevřít cesty (gpx)");
 		putValue(SHORT_DESCRIPTION, "Otevře zadaný výlet v GPX a nahradí jim všechyn načtené cesty.");
-		putValue(MNEMONIC_KEY, KeyEvent.VK_V);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_T);
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}
 
