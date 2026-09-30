@@ -19,6 +19,11 @@
 - „Informace pro hlášení chyby“ obsahují i servisní hodnoty ze servisního
   okna.
 - Program si bere až 3 GB paměti, když ji Java přijme; jinak 2 GB nebo 1 GB.
+- Dálkové ovládání: Soubor > Dálkové ovládání (nebo parametr
+  `--ovladani[=port]`) povolí jiným programům na tomto počítači ovládat
+  Geokuk přes HTTP – přesunout mapu, přepnout podklad, vybrat keš, znovu
+  načíst keše a zjistit stav. Port a přístupový token jsou v souboru
+  `.geokuk\ovladani.properties` v domovské složce uživatele.
 
 ### Opravy
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.

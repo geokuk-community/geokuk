@@ -6,6 +6,7 @@ import java.util.List;
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.ESmer;
 import cz.geokuk.core.napoveda.*;
+import cz.geokuk.core.ovladani.DalkoveOvladaniAction;
 import cz.geokuk.core.profile.UlozitNastaveniKProgramuAction;
 import cz.geokuk.core.render.RenderAction;
 import cz.geokuk.framework.NapovedaAction;
@@ -82,6 +83,7 @@ public class Akce {
 	public final FenotypIkonyAction fenotypIkonyAction = new FenotypIkonyAction();
 
 	public final ZobrazServisniOknoAction zobrazServisniOknoAction = new ZobrazServisniOknoAction();
+	public final DalkoveOvladaniAction dalkoveOvladaniAction = new DalkoveOvladaniAction();
 
 	public final RefreshIkonAction refreshIkonAction = new RefreshIkonAction();
 	public final DebugIkonyAction debugIkonyAction = new DebugIkonyAction();

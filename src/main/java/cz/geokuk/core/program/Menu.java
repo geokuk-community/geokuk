@@ -72,6 +72,7 @@ public class Menu extends MenuStrujce {
 		item(akce.ulozitNastaveniKProgramuAction);
 		item(akce.tadyJsemDomaAction);
 		item(akce.zobrazServisniOknoAction);
+		item(akce.dalkoveOvladaniAction);
 		if (!FConst.ZAKAZAT_PRIPRAVOVANOU_FUNKCIONALITU) {
 			item(akce.renderAction);
 		}
