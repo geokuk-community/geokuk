@@ -11,19 +11,19 @@ import javax.swing.KeyStroke;
 public final class EKaType {
 
 	// Mapové podklady, dále neprůhledné
-	public static final EKaType BASE_M = new EKaType("BASE_M", false, 0, 19, 19, "Základní", "Základní mapa se silnicemi.", KeyEvent.VK_Z, KeyStroke.getKeyStroke('z'), new MapyCzUrlBuilder("base-m"));
-	public static final EKaType TURIST_M = new EKaType("TURIST_M", false, 0, 19, 19, "Turistická", "Turistická mapa.", KeyEvent.VK_T, KeyStroke.getKeyStroke('t'), new MapyCzUrlBuilder("turist-m"));
-	public static final EKaType OPHOTO_M = new EKaType("OPHOTO_M", true, 0, 20, 20, "Letecká", "Letecká ortho foto mapa", KeyEvent.VK_L, KeyStroke.getKeyStroke('f'), new MapyCzUrlBuilder("ophoto-m"));
-	public static final EKaType WTURIST_WINTER_M = new EKaType("WTURIST_WINTER_M", false, 0, 19, 19, "Turistická zimní", "Zimní turistická mapa.", KeyEvent.VK_M, KeyStroke.getKeyStroke('w'), new MapyCzUrlBuilder("wturist_winter-m"));
+	public static final EKaType BASE_M = new EKaType("BASE_M", false, 0, 19, 19, "Základní", "Základní mapa se silnicemi.", KeyEvent.VK_Z, KeyStroke.getKeyStroke(KeyEvent.VK_Z, 0), new MapyCzUrlBuilder("base-m"));
+	public static final EKaType TURIST_M = new EKaType("TURIST_M", false, 0, 19, 19, "Turistická", "Turistická mapa.", KeyEvent.VK_T, KeyStroke.getKeyStroke(KeyEvent.VK_T, 0), new MapyCzUrlBuilder("turist-m"));
+	public static final EKaType OPHOTO_M = new EKaType("OPHOTO_M", true, 0, 20, 20, "Letecká", "Letecká ortho foto mapa", KeyEvent.VK_L, KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), new MapyCzUrlBuilder("ophoto-m"));
+	public static final EKaType WTURIST_WINTER_M = new EKaType("WTURIST_WINTER_M", false, 0, 19, 19, "Turistická zimní", "Zimní turistická mapa.", KeyEvent.VK_M, KeyStroke.getKeyStroke(KeyEvent.VK_W, 0), new MapyCzUrlBuilder("wturist_winter-m"));
 	public static final EKaType OPHOTO1415_M = new EKaType("OPHOTO1415_M", true, 0, 20, 20, "Letecká 2015", "Starší fotomapa", 0, null, new MapyCzUrlBuilder("ophoto1415-m"));
 	public static final EKaType OPHOTO1012_M = new EKaType("OPHOTO1012_M", true, 0, 19, 19, "Letecká 2012", "Starší fotomapa", 0, null, new MapyCzUrlBuilder("ophoto1012-m"));
 	public static final EKaType OPHOTO0406_M = new EKaType("OPHOTO0406_M", true, 0, 19, 19, "Letecká 2006", "Starší fotomapa", KeyEvent.VK_6, null, new MapyCzUrlBuilder("ophoto0406-m"));
 	public static final EKaType OPHOTO0203_M = new EKaType("OPHOTO0203_M", true, 0, 18, 18, "Letecká 2003", "Starší fotomapa", KeyEvent.VK_3, null, new MapyCzUrlBuilder("ophoto0203-m"));
-	public static final EKaType ZEMEPIS_M = new EKaType("ZEMEPIS_M", false, 0, 18, 18, "Zeměpisná", "Zeměpisná mapa", KeyEvent.VK_G, KeyStroke.getKeyStroke('g'), new MapyCzUrlBuilder("zemepis-m"));
+	public static final EKaType ZEMEPIS_M = new EKaType("ZEMEPIS_M", false, 0, 18, 18, "Zeměpisná", "Zeměpisná mapa", KeyEvent.VK_G, KeyStroke.getKeyStroke(KeyEvent.VK_G, 0), new MapyCzUrlBuilder("zemepis-m"));
 	public static final EKaType BASE_M_TRAF_DOWN = new EKaType("BASE_M_TRAF_DOWN", false, 0, 19, 19, "Dopravní", "Dopravní mapa taková vyšedlá.", 0, null, new MapyCzUrlBuilder("base-m-traf-down"));
-	public static final EKaType ARMY2_M = new EKaType("ARMY2_M", true, 0, 15, 15, "Historická", "Historická mapa z let 1836-52", KeyEvent.VK_H, KeyStroke.getKeyStroke('h'), new MapyCzUrlBuilder("army2-m"));
+	public static final EKaType ARMY2_M = new EKaType("ARMY2_M", true, 0, 15, 15, "Historická", "Historická mapa z let 1836-52", KeyEvent.VK_H, KeyStroke.getKeyStroke(KeyEvent.VK_H, 0), new MapyCzUrlBuilder("army2-m"));
 
-	public static final EKaType OPEN_STREET = new EKaType("OPEN_STREET", false, 0, 19, 19, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("https://tile.openstreetmap.org/", ".png"));
+	public static final EKaType OPEN_STREET = new EKaType("OPEN_STREET", false, 0, 19, 19, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke(KeyEvent.VK_O, 0), new OpenStreatMapUrlBuilder("https://tile.openstreetmap.org/", ".png"));
 
 // Nefunkční mapy k 16.11.2019
 //	OPEN_STREAT(false, 0, 18, 18, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("https://b.tile.openstreetmap.org/")),

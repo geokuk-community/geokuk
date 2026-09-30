@@ -115,6 +115,7 @@ public class JToolbarOvladaceAlel extends JPanel {
 		if (cb == null) {
 			final SwitchKesoidUrciteAlelyAction action = factory.init(new SwitchKesoidUrciteAlelyAction(alela));
 			cb = new JIconCheckBox();
+			cb.setFocusable(false);
 			action.join(cb);
 			tb.add(cb);
 			cb.setText(null);

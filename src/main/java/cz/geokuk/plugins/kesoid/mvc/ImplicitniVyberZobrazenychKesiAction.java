@@ -36,7 +36,7 @@ public class ImplicitniVyberZobrazenychKesiAction extends Action0 {
 	 */
 	@Override
 	public void actionPerformed(final ActionEvent aE) {
-		kesoidModel.getFilter().setDefaults();
+		kesoidModel.nastavImplicitniFiltr();
 	}
 
 	public void inject(final KesoidModel kesoidModel) {

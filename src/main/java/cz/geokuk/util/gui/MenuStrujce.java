@@ -1,6 +1,11 @@
 package cz.geokuk.util.gui;
 
+import java.awt.KeyboardFocusManager;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 
 import cz.geokuk.core.program.JGeokukToolbar;
 import cz.geokuk.framework.Factory;
@@ -42,10 +47,26 @@ public abstract class MenuStrujce {
 	}
 
 	protected void item(final ToggleAction0 action, final ButtonGroup bg) {
-		item = new JRadioButtonMenuItem(action);
+		item = new JRadioButtonMenuItem(action) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected boolean processKeyBinding(final KeyStroke ks, final KeyEvent e, final int condition, final boolean pressed) {
+				if (condition == WHEN_IN_FOCUSED_WINDOW && (ks.getModifiers() & ~(InputEvent.SHIFT_MASK | InputEvent.SHIFT_DOWN_MASK)) == 0 && pisePismeno()) {
+					return false;
+				}
+				return super.processKeyBinding(ks, e, condition, pressed);
+			}
+		};
 		action.join(item);
 		menu.add(item);
 		bg.add(item);
+	}
+
+	/** Písmeno napsané do textového pole nebo do otevřeného menu nesmí spustit zkratku bez modifikátoru nebo se Shiftem (třeba přepnout mapu). */
+	static boolean pisePismeno() {
+		return KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() instanceof JTextComponent
+				|| MenuSelectionManager.defaultManager().getSelectedPath().length > 0;
 	}
 
 	protected abstract void makeMenu();

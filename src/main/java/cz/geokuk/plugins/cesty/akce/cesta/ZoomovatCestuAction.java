@@ -1,5 +1,7 @@
 package cz.geokuk.plugins.cesty.akce.cesta;
 
+import java.awt.event.KeyEvent;
+
 import cz.geokuk.core.coordinates.MouRect;
 import cz.geokuk.plugins.cesty.data.Bod;
 import cz.geokuk.plugins.cesty.data.Cesta;
@@ -14,6 +16,7 @@ public class ZoomovatCestuAction extends CestaAction0 {
 		putValue(NAME, "Zoomovat cestu");
 		putValue(SHORT_DESCRIPTION, "Vybranou cestu nazoomuje do mapy tak, aby byla celá vidět.");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_V);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_M);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

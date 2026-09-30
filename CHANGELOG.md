@@ -109,6 +109,19 @@
   souhrnně a nezakládají výpis chyby u každé dlaždice.
 - Menu Cesty má podtržené C a Skin I, dřív se o písmeno přetahovaly
   s Výlety a Nápovědou.
+- Písmeno napsané v otevřeném menu nebo do pole na liště (Hodnocení,
+  BestOf, Favorit) nepřepne mapový podklad.
+- Uživatelská mapa nemůže převzít klávesovou zkratku programu (třeba F3
+  nebo Ctrl+S), program ji s hláškou vynechá.
+- Kešoidy > Implicitní výběr (Alt+F2) vrátí filtr i zobrazené typy keší
+  na výchozí hodnoty.
+- Kešoidy > Jednotkové kruhy (Alt+F8) jsou v menu.
+- Položky v menu Výlety, Cesty a Kešoidy mají různá podtržená písmena,
+  která jsou v jejich textu.
+- Po výběru v seznamu Výlet na liště ovládají šipky a PageUp/PageDown
+  dál mapu.
+- Když nejde otevřít prohlížeč (nápověda, web), program ukáže adresu
+  a nabídne ji zkopírovat.
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
