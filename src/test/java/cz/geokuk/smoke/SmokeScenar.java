@@ -563,7 +563,7 @@ public class SmokeScenar {
 		int i = 0;
 		for (final Window w : Window.getWindows()) {
 			if (w.isShowing()) {
-				zprava.setProperty("okno." + i++, w.getClass().getName() + " " + w.getWidth() + "x" + w.getHeight());
+				zprava.setProperty("okno." + i++, popisOkna(w));
 			}
 		}
 		final Runtime rt = Runtime.getRuntime();

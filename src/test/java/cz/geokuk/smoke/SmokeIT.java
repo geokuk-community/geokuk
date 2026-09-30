@@ -175,6 +175,8 @@ public class SmokeIT {
 		assertTrue("Mapa se má načíst i bez cache", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
 		assertEquals("Bez datové složky nejsou keše", "0", zprava.getProperty("kese.wpt"));
 		assertEquals("Do nedostupné cache se nic nezapíše", 0, pocitadlo(zprava, "ka42 disk write #dlaždic"));
+		assertTrue("Uživatel se má dozvědět, že cache nejde použít: " + zprava,
+				zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).anyMatch(k -> zprava.getProperty(k).contains("Cache dlaždic ve složce")));
 	}
 
 	@Test
