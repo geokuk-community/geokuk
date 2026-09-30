@@ -73,6 +73,22 @@
   s verzí a odkazem na web.
 - OpenStreetMap se načítá přes https a nejde ji hromadně stahovat
   do cache.
+- Keš bez názvu nebo s nesmyslnou obtížností či terénem nezpůsobí,
+  že se nenačte celý soubor.
+- Databáze GeoGetu nebo GSAKu, do které ten program právě zapisuje
+  (třeba import), se načte po dokončení zápisu, místo aby se ohlásila
+  chyba a keše z ní zmizely.
+- Stažené mapové dlaždice se uloží do cache i při rychlém posouvání
+  a zoomování a dlaždice z posledních sekund se uloží i při ukončení
+  programu.
+- Poškozenou cache mapových dlaždic odloží program jen jednou a odložený
+  soubor je ten poškozený, ne nově založená cache.
+- Když cache mapových dlaždic nejde použít (třeba odpojený disk), program
+  na to jednou upozorní.
+- Bez připojení k internetu se chyby stahování dlaždic hlásí do logu
+  souhrnně a nezakládají výpis chyby u každé dlaždice.
+- Menu Cesty má podtržené C a Skin I, dřív se o písmeno přetahovaly
+  s Výlety a Nápovědou.
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
@@ -87,6 +103,8 @@
   1.2.13 a junit 4.13.1.
 - Popis vydání na GitHubu se bere z tohoto souboru.
 - Program se vydává jen jako jar, konfigurace Launch4j je odstraněná.
+- Ručně spouštěný smoke test celého programu nad falešným mapovým
+  serverem (workflow Smoke) a test kolizí klávesových zkratek.
 
 ## 6.0.0
 
