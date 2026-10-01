@@ -80,6 +80,10 @@
   Nápověda z okna O programu otevře hlavní stránku nápovědy.
 - „Stáhnout nejnovější verzi“ mimo Windows otevře stránku nabízené
   verze, u bety tedy betu, ne poslední ostrou verzi.
+- GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
+  načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN) nebo výškou
+  s čárkou nezahodí zbytek souboru. Keš bez nápovědy nepřebírá typ
+  a název z logů a travel bugů.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

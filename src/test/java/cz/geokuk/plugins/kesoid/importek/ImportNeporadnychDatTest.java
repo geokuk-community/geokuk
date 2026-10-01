@@ -48,6 +48,12 @@ public class ImportNeporadnychDatTest {
 		for (final String s : new String[] { "lat=\"50,1\"", "lat=\"\"", "lat=\"91\"", "lat=\"-0\"", "lat=\"1e1\"" }) {
 			p.add(new Object[] { "souřadnice " + s, "lat=\"50.1\"", s });
 		}
+		for (final String s : new String[] { "lat=\"NaN\"", "lat=\"Infinity\"" }) {
+			p.add(new Object[] { "souřadnice " + s, "lat=\"50.1\"", s });
+		}
+		for (final String v : new String[] { "250,5", "", "x" }) {
+			p.add(new Object[] { "výška '" + v + "'", "<name>GC9999</name>", "<ele>" + v + "</ele><name>GC9999</name>" });
+		}
 		p.add(new Object[] { "délka 180", "lon=\"14.4\"", "lon=\"180\"" });
 		p.add(new Object[] { "délka -181", "lon=\"14.4\"", "lon=\"-181\"" });
 		// stav a jména
