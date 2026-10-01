@@ -10,6 +10,8 @@ import cz.geokuk.core.program.FConst;
 import cz.geokuk.plugins.cesty.data.*;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.importek.NacitacGpx;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.BezpecnyZapis;
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
@@ -29,6 +31,8 @@ public class CestyZperzistentnovac {
 
 	List<Cesta> nacti(final List<File> files, final KesBag kesBag) {
 		final List<Cesta> cesty = new ArrayList<>();
+		final List<String> problemy = new ArrayList<>();
+		RuntimeException prvniChyba = null;
 		for (final File file : files) {
 			try {
 				log.debug("Nacitam z: " + file);
@@ -40,15 +44,29 @@ public class CestyZperzistentnovac {
 				} else if (pureName.endsWith(".gpx")) {
 					final DocImportBuilder builder = new DocImportBuilder();
 					builder.init();
-					final InputStream istm = new BufferedInputStream(new FileInputStream(file));
-					final NacitacGpx nacitac = new NacitacGpx();
-					nacitac.nacti(istm, file.toString(), builder, null);
+					try (InputStream istm = new BufferedInputStream(new FileInputStream(file))) {
+						new NacitacGpx().nacti(istm, file.toString(), builder, null);
+					}
 					builder.done();
+					if (builder.getCesty().isEmpty()) {
+						problemy.add("\"" + file + "\" neobsahuje žádnou trasu (trk ani rte).");
+					}
 					cesty.addAll(builder.getCesty());
 				}
 			} catch (final Exception e) {
-				throw new RuntimeException("Problém se souborem: \"" + file + "\"", e);
+				// Vadný soubor nesmí zahodit cesty z ostatních vybraných souborů.
+				problemy.add("\"" + file + "\" nejde načíst: " + e.getMessage());
+				if (prvniChyba == null) {
+					prvniChyba = new RuntimeException("Problém se souborem: \"" + file + "\"", e);
+				}
 			}
+		}
+		if (!problemy.isEmpty()) {
+			final RuntimeException chyba = new RuntimeException("Některé cesty se nenačetly:\n" + String.join("\n", problemy), prvniChyba);
+			if (cesty.isEmpty()) {
+				throw chyba;
+			}
+			FExceptionDumper.dump(chyba, EExceptionSeverity.DISPLAY, "Načítání cest");
 		}
 		pripniNaWayponty(cesty, kesBag);
 		return cesty;

@@ -53,6 +53,10 @@ public class NacitacGpx extends NacitacInputStream0 {
 
 	private static QName TRKPT;
 
+	private static QName RTE;
+
+	private static QName RTEPT;
+
 	private QName WPT;
 
 	private QName TYPE;
@@ -162,6 +166,23 @@ public class NacitacGpx extends NacitacInputStream0 {
 					}
 					builder.endTrack();
 				}
+				// Plán trasy (rte) je pro cesty totéž co trasa s jedním segmentem.
+				if (rdr.getName().equals(RTE)) {
+					builder.begTrack();
+					builder.begTrackSegment();
+					for (; !(rdr.isEndElement() && rdr.getName().equals(RTE)); rdr.next()) {
+						if (rdr.isStartElement() && rdr.getName().equals(NAME)) {
+							builder.setTrackName(rdr.getElementText());
+						}
+						if (rdr.isStartElement() && rdr.getName().equals(RTEPT)) {
+							final GpxWpt wpt = new GpxWpt();
+							readWpt(rdr, wpt, RTEPT);
+							builder.addTrackWpt(wpt);
+						}
+					}
+					builder.endTrackSegment();
+					builder.endTrack();
+				}
 			}
 			rdr.next();
 		}
@@ -244,6 +265,8 @@ public class NacitacGpx extends NacitacInputStream0 {
 		TRK = new QName(topograficNamespaceUri, "trk");
 		TRKSEG = new QName(topograficNamespaceUri, "trkseg");
 		TRKPT = new QName(topograficNamespaceUri, "trkpt");
+		RTE = new QName(topograficNamespaceUri, "rte");
+		RTEPT = new QName(topograficNamespaceUri, "rtept");
 	}
 
 	private void readGeogetExtension(final XMLStreamReader rdr, final GpxWpt wpt) throws XMLStreamException {

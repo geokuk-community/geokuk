@@ -59,6 +59,11 @@
 - Složka cest a složky ikon uvnitř datové složky se neprocházejí jako
   zdroj keší; uložení cesty už nepřenačte všechna data a body cest se
   neukazují jako keše.
+- Cesty: plán trasy (`<rte>`) z GPX se načte jako cesta, soubor bez
+  trasy se ohlásí. Vadný soubor při importu více souborů nezahodí cesty
+  z ostatních. Nepovedené uložení nezmění soubor, ke kterému cesta patří.
+- Když nejde uložit výlet (`lovim.ggt`, `tedne.ggt`), program to ohlásí
+  a zkusí ho uložit znovu při další změně.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

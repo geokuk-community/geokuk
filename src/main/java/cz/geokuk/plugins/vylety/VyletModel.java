@@ -5,6 +5,7 @@ package cz.geokuk.plugins.vylety;
 
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,6 +17,8 @@ import javax.swing.SwingWorker;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 
 /**
  * @author Martin Veverka
@@ -64,6 +67,8 @@ public class VyletModel extends Model0 {
 		return t;
 	});
 	private final AtomicReference<List<List<String>>> snimekKZapisu = new AtomicReference<>();
+
+	private volatile boolean zapisSelhal;
 
 	/** Do prvního načtení je model prázdný, jeho zápis by soubor vymazal; změny se přehrají po načtení. */
 	private List<Consumer<Vylet>> zmenyPredNactenim = new ArrayList<>();
@@ -164,7 +169,18 @@ public class VyletModel extends Model0 {
 			zapisovac.execute(() -> {
 				final List<List<String>> snimek = snimekKZapisu.getAndSet(null);
 				if (snimek != null) {
-					vyletovyZperzistentnovac.immediatlyZapisVylet(snimek.get(0), snimek.get(1));
+					try {
+						vyletovyZperzistentnovac.immediatlyZapisVylet(snimek.get(0), snimek.get(1));
+						zapisSelhal = false;
+					} catch (final RuntimeException e) {
+						// Celý výlet se zapíše znovu při další změně, hlásit stačí jednou.
+						if (!zapisSelhal) {
+							zapisSelhal = true;
+							FExceptionDumper.dump(new IOException(e.getMessage() + ": " + e.getCause()
+									+ ". Výlet zůstává v programu a zkusí se uložit znovu při další změně; zkontrolujte, jestli jde do složky zapisovat.", e), EExceptionSeverity.DISPLAY,
+									"Zápis výletu");
+						}
+					}
 				}
 			});
 		}
