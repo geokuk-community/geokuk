@@ -25,8 +25,9 @@
 - Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
   zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
   žádná keš není.
-- Instalace s beta kanálem (soubor `beta` ve složce `data`) má verzi
-  trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
+- Nápověda > Nabízet testovací verze (beta) zapne beta kanál; soubor
+  `beta` vedle `geokuk.jar` z předchozích verzí se převezme. Instalace s beta
+  kanálem má verzi trvale vpravo v menu i u ostré verze. Po vypnutí
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
 - Uživatelské mapy: vlastní mapové podklady ze souboru
   `data/uzivatelske-mapy.properties`, v menu Mapy ve

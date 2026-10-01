@@ -260,6 +260,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zadatProblemAction);
 		item(akce.diagnostikaAction);
 		item(akce.zkontrolovatAktualizaceAction);
+		item(akce.betaKanalAction);
 		separator();
 		item(akce.oProgramuAction);
 

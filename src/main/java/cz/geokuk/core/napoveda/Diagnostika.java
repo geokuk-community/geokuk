@@ -14,7 +14,9 @@ import javax.swing.text.JTextComponent;
 import com.jcabi.manifests.Manifests;
 
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.UmisteniProgramu;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
@@ -37,9 +39,20 @@ public final class Diagnostika {
 
 	public static final String COMMIT = Manifests.exists("Geokuk-Commit") ? Manifests.read("Geokuk-Commit") : "";
 
-	/** Soubor beta vedle jaru zapne nabízení testovacích verzí. */
+	private static final String BETA_KANAL_value = "betaKanal";
+	/** Soubor beta vedle jaru z předchozích verzí, převezme se do nastavení. */
+	private static final File SOUBOR_BETA = new File(FConst.JAR_DIR, "beta");
+
+	/** Nabízet při kontrole aktualizací i testovací verze. */
 	public static boolean betaKanal() {
-		return new File(FConst.DATA_DIR, "beta").exists();
+		if (SOUBOR_BETA.isFile() && SOUBOR_BETA.delete()) {
+			setBetaKanal(true);
+		}
+		return MyPreferences.current().node(FPref.VSEOBECNE_node).getBoolean(BETA_KANAL_value, false);
+	}
+
+	public static void setBetaKanal(final boolean zapnuto) {
+		MyPreferences.current().node(FPref.VSEOBECNE_node).putBoolean(BETA_KANAL_value, zapnuto);
 	}
 
 	/** Testovací verze a instalace s beta kanálem ukazují verzi trvale v okně. */
