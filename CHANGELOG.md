@@ -47,6 +47,12 @@
 - Hromadné stahování dlaždic ukazuje průběh, počet chyb a konec, jde
   zastavit a samo přestane, když server mapy stahování omezí
   (HTTP 429 nebo 503).
+- Dlaždice, kterou se nepodařilo stáhnout (výpadek sítě), se po chvíli
+  zkusí stáhnout znovu a místo technického výpisu ukazuje srozumitelný
+  důvod.
+- Chybějící nebo neúplná vybraná sada ikon (smazaná složka, chybí
+  `skla.txt`, vypnutá složka vlastních ikon) se nahradí sadou Standard;
+  dřív se kvůli ní nenačetly žádné keše.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

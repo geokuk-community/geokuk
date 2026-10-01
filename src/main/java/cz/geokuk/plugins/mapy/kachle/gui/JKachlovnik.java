@@ -46,6 +46,9 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	private final Priority priorita;
 
+	/** Po výpadku sítě se chybné dlaždice zkoušejí znovu, i když uživatel s mapou nehne. */
+	private final javax.swing.Timer opakovaniChybnych = new javax.swing.Timer((int) JKachle.PRVNI_POKUS_PO_CHYBE_MS, e -> zkusZnovuChybne());
+
 	// je to jen kvuli garbage collectoru, aby nezrusil, NERUSIT PROMENNU i kdyz zdanlive je to na nic
 	public JKachlovnik(final String nazevKachlovniku, final Priority priority) {
 		this.nazevKachlovniku = nazevKachlovniku;
@@ -156,6 +159,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 				} else { // použije se původní kachle
 					jkachle = seznamStejnychKachli.remove(0); // jednu z nich vezmeme, je jedno kterou, všechny mají stejný obsah
 					pocitZustalychKachli.inc();
+					jkachle.zkusZnovuPoChybe(kachleModel, priorita);
 				}
 				// napozicujeme každou kachli do správné podoby
 				final Point p = kaputer.getKachlePoint(xi, yi);
@@ -177,6 +181,21 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	}
 
 	void kachleZpracovana(final JKachle jKachle) {
+		if (jKachle.jeChybna()) {
+			EventQueue.invokeLater(opakovaniChybnych::start);
+		}
+	}
+
+	private void zkusZnovuChybne() {
+		boolean nejakaChybna = false;
+		for (final Component c : getComponents()) {
+			final JKachle jkachle = (JKachle) c;
+			jkachle.zkusZnovuPoChybe(kachleModel, priorita);
+			nejakaChybna |= jkachle.jeChybna();
+		}
+		if (!nejakaChybna) {
+			opakovaniChybnych.stop();
+		}
 	}
 
 	private void registerEvents() {
