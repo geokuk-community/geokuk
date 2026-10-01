@@ -18,6 +18,8 @@ public abstract class JVyberIkon0 extends Box {
 	private JComponent jvyber2;
 	private final boolean iOdskrtnutiVybira;
 	private final boolean iRadioButton;
+	/** Vybrané alely, které dialog nevykreslil (v datech nejsou), aby se výběrem neztratily. */
+	private Set<String> nevykreslenaVybrana = new HashSet<>();
 
 	public JVyberIkon0(final boolean aRadioButton, final boolean aOdskrtnutiVybira) {
 		super(BoxLayout.LINE_AXIS);
@@ -53,6 +55,7 @@ public abstract class JVyberIkon0 extends Box {
 		jvyber1.removeAll();
 		jvyber2.removeAll();
 		final Set<Alela> vybraneAlely = new HashSet<>();
+		final Set<String> nevykreslena = new HashSet<>(jmenaVybranychAlel.getQualNames());
 
 		for (final Gen gen : genom.getGeny()) {
 			final ButtonGroup bg = new ButtonGroup();
@@ -92,6 +95,7 @@ public abstract class JVyberIkon0 extends Box {
 								bg.add(rb);
 							}
 							boxgen.add(radiosikonou);
+							nevykreslena.remove(alela.qualName());
 							if (jmenaVybranychAlel.getQualNames().contains(alela.qualName())) {
 								rb.setSelected(!iOdskrtnutiVybira);
 								vybraneAlely.add(alela);
@@ -128,6 +132,7 @@ public abstract class JVyberIkon0 extends Box {
 			}
 		}
 		// }
+		nevykreslenaVybrana = nevykreslena;
 		zmenaVyberu(vybraneAlely);
 
 		repaint();
@@ -157,6 +162,13 @@ public abstract class JVyberIkon0 extends Box {
 	protected abstract boolean shouldRender(Gen aGen);
 
 	protected abstract void zmenaVyberu(Set<Alela> aVybraneAlely);
+
+	/** Jména vybraných alel včetně těch, které dialog nevykreslil. */
+	protected final QualAlelaNames jmenaVcetneNevykreslenych(final Set<Alela> aVybraneAlely) {
+		final Set<String> jmena = new HashSet<>(nevykreslenaVybrana);
+		jmena.addAll(Alela.alelyToQualNames(aVybraneAlely).getQualNames());
+		return new QualAlelaNames(jmena);
+	}
 
 	/**
 	 * @return

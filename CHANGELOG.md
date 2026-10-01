@@ -40,6 +40,8 @@
   chybí některé sloupce nebo tabulky, i když jsou poškozené jen tagy
   nebo popisy, a i keš GeoGetu bez autora. Vadný waypoint se přeskočí,
   ostatní se načtou.
+- Otevření filtru (F2) nad daty, ve kterých nejsou nalezené, archivované
+  nebo jiné skryté keše, z filtru nevyhodí jejich skrytí.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy
