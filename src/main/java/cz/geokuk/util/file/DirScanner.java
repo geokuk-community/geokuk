@@ -76,6 +76,12 @@ public class DirScanner {
 			final List<KeFile> list = new ArrayList<>();
 			Files.walkFileTree(root.dir.toPath(), EnumSet.of(FileVisitOption.FOLLOW_LINKS), root.def.maxDepth, new SimpleFileVisitor<Path>() {
 				@Override
+				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) {
+					final boolean vynechat = !dir.equals(root.dir.toPath()) && root.vynechane.contains(dir.toAbsolutePath().normalize().toFile());
+					return vynechat ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+				}
+
+				@Override
 				public FileVisitResult visitFile(final Path path, final BasicFileAttributes aAttrs) throws IOException {
 
 					if (matches(path.getFileName().toString(), root.def)) {

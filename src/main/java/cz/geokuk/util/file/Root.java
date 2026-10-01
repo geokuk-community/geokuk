@@ -1,6 +1,8 @@
 package cz.geokuk.util.file;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class Root {
@@ -68,10 +70,18 @@ public class Root {
 
 	public final Def def;
 
+	/** Podsložky, které se neprocházejí (třeba složka cest uvnitř datové složky). */
+	public final Set<File> vynechane;
+
 	public Root(final File aRoot, final Def aDef) {
+		this(aRoot, aDef, Collections.emptySet());
+	}
+
+	public Root(final File aRoot, final Def aDef, final Set<File> aVynechane) {
 		super();
 		dir = aRoot;
 		def = aDef;
+		vynechane = aVynechane;
 		if (def == null) {
 			throw new NullPointerException("aDef not specified");
 		}
@@ -99,7 +109,7 @@ public class Root {
 		} else if (!dir.equals(other.dir)) {
 			return false;
 		}
-		return true;
+		return vynechane.equals(other.vynechane);
 	}
 
 	@Override
@@ -107,6 +117,7 @@ public class Root {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (dir == null ? 0 : dir.hashCode());
+		result = prime * result + vynechane.hashCode();
 		return result;
 	}
 

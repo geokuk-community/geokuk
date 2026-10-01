@@ -56,6 +56,9 @@
 - Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
   při startu ohlásí jako chybná. Dlaždice se stáhnou i ze serveru,
   který adresu `http://` přesměruje na `https://`.
+- Složka cest a složky ikon uvnitř datové složky se neprocházejí jako
+  zdroj keší; uložení cesty už nepřenačte všechna data a body cest se
+  neukazují jako keše.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

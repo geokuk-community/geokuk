@@ -1,11 +1,13 @@
 package cz.geokuk.plugins.kesoid.importek;
 
-import java.util.List;
+import java.io.File;
+import java.util.*;
 
 import javax.swing.Timer;
 
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.file.KeFile;
 
@@ -28,8 +30,13 @@ public class MultiNacitacLoaderManager {
 		if (iTimer != null) {
 			iTimer.stop();
 		}
-		multiNacitac.setRootDirs(prenacti, kesoidModel.getUmisteniSouboru().getKesDir().getEffectiveFileIfActive(), kesoidModel.getUmisteniSouboru().getGeogetDataDir().getEffectiveFileIfActive(),
-		        kesoidModel.getUmisteniSouboru().getGsakDataDir().getEffectiveFileIfActive());
+		final KesoidUmisteniSouboru u = kesoidModel.getUmisteniSouboru();
+		// Uložená cesta ani ikony nejsou keše; leží-li v datové složce, každé uložení by přenačetlo všechna data.
+		final Set<File> vynechane = new HashSet<>();
+		for (final Filex f : Arrays.asList(u.getCestyDir(), u.getImageMyDir(), u.getImage3rdPartyDir())) {
+			vynechane.add(f.getEffectiveFile().toPath().toAbsolutePath().normalize().toFile());
+		}
+		multiNacitac.setRootDirs(prenacti, u.getKesDir().getEffectiveFileIfActive(), u.getGeogetDataDir().getEffectiveFileIfActive(), u.getGsakDataDir().getEffectiveFileIfActive(), vynechane);
 		if (klsw == null || klsw.isDone()) {
 			klsw = new MultiNacitacSwingWorker(multiNacitac, genom, kesoidModel);
 			klsw.execute();

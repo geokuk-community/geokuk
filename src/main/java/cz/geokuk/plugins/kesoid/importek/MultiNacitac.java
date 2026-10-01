@@ -123,10 +123,10 @@ public class MultiNacitac {
 	}
 
 	// TODO Proč jsou tu ty File parametry, když máme k dispozici kesoidModel, odkud se jejich hodnoty vždy berou? [2016-04-09, Bohusz]
-	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir) {
+	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final Set<File> vynechane) {
 		final List<Root> roots = new ArrayList<>();
 		if (kesDir != null) {
-			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR));
+			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR, vynechane));
 		}
 		if (geogetDir != null) {
 			roots.add(new Root(geogetDir, FILE_NAME_REGEX_GEOGET_DIR));
