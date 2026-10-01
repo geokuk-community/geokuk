@@ -34,10 +34,14 @@ public abstract class Nacitac0 {
 			try {
 				nacti(file, builder, future, aProgressModel);
 			} catch (final IOException e) {
-				throw new RuntimeException("Problem reading \"" + file + "\"", e);
+				final String popis = DatabazeJinehoProgramu.popisChyby(file, e);
+				throw new RuntimeException(popis != null ? popis : "Chyba při čtení \"" + file + "\"", e);
 			}
 		} catch (final Exception e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem při načítání kešek, ale jedeme dál");
+			if (DatabazeJinehoProgramu.jeZamcena(e)) {
+				throw new DatabazeJinehoProgramu.Zamcena(file, e);
+			}
+			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
 		}
 	}
 
@@ -46,10 +50,10 @@ public abstract class Nacitac0 {
 			try {
 				nacti(zipFile, zipEntry, builder, future, aProgressModel);
 			} catch (final IOException e) {
-				throw new RuntimeException("Problem reading \"" + zipEntry + "\"", e);
+				throw new RuntimeException("Chyba při čtení \"" + zipEntry + "\"", e);
 			}
 		} catch (final Exception e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem při načítání kešek, ale jedeme dál");
+			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
 		}
 	}
 

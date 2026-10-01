@@ -30,6 +30,9 @@ public class MultiNacitac {
 
 	private final DirScanner ds;
 
+	/** Zamčení se ohlásí jednou, ne při každém dalším pokusu o načtení. */
+	private volatile boolean hlasenoZamceni;
+
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
 
@@ -77,10 +80,17 @@ public class MultiNacitac {
 		final long start = System.currentTimeMillis();
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
 		final List<String> vadne = new ArrayList<>();
+		final List<String> zamcene = new ArrayList<>();
 		for (final KeFile file : list) {
 			log.debug("Nacitam: " + file);
 			try {
 				zpracujJedenFile(file, builder, future);
+			} catch (final DatabazeJinehoProgramu.Zamcena e) {
+				zamcene.add(file.getFile().getName());
+				if (!hlasenoZamceni) {
+					hlasenoZamceni = true;
+					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Zamčená databáze " + file);
+				}
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem pri cteni souboru " + file);
@@ -91,9 +101,15 @@ public class MultiNacitac {
 		builder.done();
 		final KesBag bag = builder.getKesBag();
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
-				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne));
+				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamcene.isEmpty() ? "" : ", zamčené " + zamcene));
 
-		return builder.getKesBag();
+		if (zamcene.isEmpty()) {
+			hlasenoZamceni = false;
+			return bag;
+		}
+		// Zamčenou databázi zkusíme při příštím skenu znovu a do té doby necháme zobrazené, co už je načtené.
+		ds.nulujLastScaned();
+		return kesoidModel.getVsechnyKesoidy() == null ? bag : null;
 	}
 
 	/** Počet souborů podle přípony, bez cest (hlášení je veřejné). */
@@ -127,11 +143,18 @@ public class MultiNacitac {
 	 * @param future
 	 * @throws IOException
 	 */
-	/** Cizí soubor s naší příponou jen přeskočíme, není to chyba uživatele. */
+	/** Cizí soubor s naší příponou jen přeskočíme, není to chyba uživatele. Databázi, kterou nejde přečíst, ale ohlásíme. */
 	private boolean umiNacist(final Nacitac0 nacitac, final File file) {
 		try {
 			return nacitac.umiNacist(file);
 		} catch (final Exception e) {
+			if (DatabazeJinehoProgramu.jeZamcena(e)) {
+				throw new DatabazeJinehoProgramu.Zamcena(file, e);
+			}
+			final String popis = DatabazeJinehoProgramu.popisChyby(file, e);
+			if (popis != null) {
+				throw new RuntimeException(popis, e);
+			}
 			log.warn("Soubor {} nelze rozpoznat, přeskakuji: {}", file, e.toString());
 			return false;
 		}

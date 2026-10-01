@@ -32,6 +32,14 @@
   `.geokuk\ovladani.properties` v domovské složce uživatele.
 
 ### Opravy
+- Databáze GeoGetu nebo GSAKu, do které program dlouho zapisuje, se
+  načte po skončení zápisu; do té doby zůstanou zobrazené dříve načtené
+  keše. Poškozenou databázi nebo soubor, který není databáze, program
+  ohlásí česky, místo aby ho tiše přeskočil.
+- Keše se načtou i z databáze starší verze GeoGetu nebo GSAKu, které
+  chybí některé sloupce nebo tabulky, i když jsou poškozené jen tagy
+  nebo popisy, a i keš GeoGetu bez autora. Vadný waypoint se přeskočí,
+  ostatní se načtou.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy
