@@ -4,9 +4,11 @@
 package cz.geokuk.core.coord;
 
 import java.awt.Graphics;
+import java.awt.Rectangle;
 
 import cz.geokuk.framework.Factory;
 import cz.geokuk.framework.JSlide0;
+import cz.geokuk.util.index2d.BoundingRect;
 
 /**
  * Předek všech jednoduchých, tedy nesložených slidů
@@ -34,6 +36,17 @@ public abstract class JSingleSlide0 extends JSlide0 {
 	public Coord getSoord() {
 		assert soord != null;
 		return soord;
+	}
+
+	/**
+	 * Oblast mapy, kterou je potřeba překreslit, rozšířená o okraj v pixelech. Po dorazení jedné dlaždice se tak nekreslí znovu celý výřez.
+	 */
+	protected BoundingRect oblastKresleni(final Graphics g, final int okraj) {
+		final Rectangle clip = g.getClipBounds();
+		if (clip == null) {
+			return getSoord().getBoundingRect();
+		}
+		return getSoord().transforToBounding(new Rectangle(clip.x - okraj, clip.y - okraj, clip.width + 2 * okraj, clip.height + 2 * okraj));
 	}
 
 	public void inject(final Factory factory) {

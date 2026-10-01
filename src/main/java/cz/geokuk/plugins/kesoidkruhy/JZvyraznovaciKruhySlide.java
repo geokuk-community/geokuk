@@ -69,7 +69,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		final Color barva = kruhy.getBarva();
 		final Stroke prerus = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1, new float[] { 5.0f, 5.0f }, 0);
 		g.setColor(barva);
-		iIndexator.bound(getSoord().getBoundingRect()).stream().forEach(wpt -> {
+		iIndexator.bound(oblastKresleni(g, r + 1)).stream().forEach(wpt -> {
 			final Mou mou = wpt.getMou();
 			final Point p = getSoord().transform(mou);
 			g.setStroke(prerus);

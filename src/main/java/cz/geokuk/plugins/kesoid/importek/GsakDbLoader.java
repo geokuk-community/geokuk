@@ -75,7 +75,7 @@ public class GsakDbLoader extends Nacitac0 {
 						EExceptionSeverity.DISPLAY, "Poškozená databáze GSAKu");
 				vlastniHodnoty = new HashMap<>();
 			}
-			loadCaches(dao, aBuilder, vlastniHodnoty, aFuture, progressor);
+			loadCaches(aDbFile, dao, aBuilder, vlastniHodnoty, aFuture, progressor);
 			loadWaypoints(dao, aBuilder, aFuture, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
@@ -109,7 +109,7 @@ public class GsakDbLoader extends Nacitac0 {
 
 	//------------------------------------------------------------------------------------------------------  implementation  -----
 
-	private void loadCaches(final GsakDao aDao, final IImportBuilder aBuilder, final Map<String, Map<String, String>> aVlastniHodnoty, final Future<?> aFuture, final Progressor aProgressor)
+	private void loadCaches(final File aDbFile, final GsakDao aDao, final IImportBuilder aBuilder, final Map<String, Map<String, String>> aVlastniHodnoty, final Future<?> aFuture, final Progressor aProgressor)
 			throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
@@ -147,8 +147,7 @@ public class GsakDbLoader extends Nacitac0 {
 						groundspeak.terrain = intern(record.Terrain);
 						groundspeak.country = intern(record.Country);
 						groundspeak.state = intern(record.State);
-						groundspeak.encodedHints = record.Hints;
-						groundspeak.shortDescription = record.ShortDescription;
+						groundspeak.hintZDatabaze = HintZDatabaze.dotahovac(aDbFile, HintZDatabaze.GSAK, record.Code);
 						groundspeak.archived = record.Archived;
 						groundspeak.availaible = !record.TempDisabled;
 					}
@@ -434,7 +433,7 @@ public class GsakDbLoader extends Nacitac0 {
 		private static final String CACHE_COUNT = "SELECT COUNT(*) FROM Caches";
 		private static final String WAYPOINT_COUNT = "SELECT COUNT(*) FROM Waypoints";
 		private static final String TAG_COUNT = "SELECT COUNT(*) FROM Caches";
-		private static final String SELECT_CACHES = "SELECT c.*, m.ShortDescription, m.Hints FROM Caches c LEFT JOIN CacheMemo m ON m.Code = c.Code";
+		private static final String SELECT_CACHES = "SELECT * FROM Caches";
 		private static final String SELECT_WAYPOINTS = "SELECT * FROM Waypoints";
 		private static final String SELECT_CUSTOMVALUES = "SELECT * FROM Custom";
 
@@ -664,9 +663,9 @@ public class GsakDbLoader extends Nacitac0 {
 
 		// TABLE CacheMemo
 		//          public String LongDescription;
-		public String ShortDescription;
+		//          public String ShortDescription;
 		//          public String Url;
-		public String Hints;
+		//          public String Hints;
 		//          public String UserNote;
 		//          public String TravelBugs;
 		//

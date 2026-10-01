@@ -6,11 +6,9 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.*;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 
 import cz.geokuk.core.coordinates.Wgs;
@@ -38,7 +36,6 @@ public class GeogetLoader extends Nacitac0 {
 
 	private static final String[] SLOUPCE_GEOCACHE = { "x as lat", "y as lon", "name", "author", "cachetype", "cachesize", "difficulty", "terrain", "cachestatus", "gs_ownerid", "dthidden",
 			"country", "state", "dtfound" };
-	private static final String[] SLOUPCE_GEOLIST = { "shortdesc", "hint" };
 
 	private static final String GEOGET_CACHES_COUNT = "SELECT count(*) FROM geocache";
 
@@ -77,12 +74,7 @@ public class GeogetLoader extends Nacitac0 {
 				ohlasPoskozeni(file, "Tagy (hodnocení, favority)", e);
 				tagy = new HashMap<>();
 			}
-			try {
-				loadCaches(statement, builder, tagy, true, future, progressor);
-			} catch (final SQLException e) {
-				ohlasPoskozeni(file, "Popisy a nápovědy", e);
-				loadCaches(statement, builder, tagy, false, future, progressor);
-			}
+			loadCaches(file, statement, builder, tagy, future, progressor);
 			loadWaypoints(statement, builder, future, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
@@ -131,11 +123,11 @@ public class GeogetLoader extends Nacitac0 {
 		return String.format(DATE_FORMAT_TEMPLATE, year, month, day);
 	}
 
-	private void loadCaches(final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final boolean sPopisy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
+	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
-		final String dotaz = "SELECT geocache.id as id, " + vyber(statement, "geocache", SLOUPCE_GEOCACHE) + ", " + (sPopisy ? vyber(statement, "geolist", SLOUPCE_GEOLIST) + " FROM geocache LEFT JOIN geolist ON geocache.id = geolist.id" : "NULL as shortdesc, NULL as hint FROM geocache");
+		final String dotaz = "SELECT geocache.id as id, " + vyber(statement, "geocache", SLOUPCE_GEOCACHE) + " FROM geocache";
 		try (ResultSet rs = statement.executeQuery(dotaz)) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
@@ -168,14 +160,7 @@ public class GeogetLoader extends Nacitac0 {
 					groundspeak.terrain = intern(rs.getString("terrain"));
 					groundspeak.country = intern(rs.getString("country"));
 					groundspeak.state = intern(rs.getString("state"));
-					groundspeak.encodedHints = rs.getString("hint");
-
-					final byte[] shortDescBytes = rs.getBytes("shortdesc");
-					if (shortDescBytes != null) {
-						try (InputStream is = new InflaterInputStream(new ByteArrayInputStream(shortDescBytes))) {
-							groundspeak.shortDescription = CharStreams.toString(new InputStreamReader(is, Charsets.UTF_8));
-						}
-					}
+					groundspeak.hintZDatabaze = HintZDatabaze.dotahovac(file, HintZDatabaze.GEOGET, kod);
 
 					final int cacheStatus = rs.getInt("cachestatus");
 					switch (cacheStatus) {
@@ -212,7 +197,7 @@ public class GeogetLoader extends Nacitac0 {
 
 					builder.addGpxWpt(gpxWpt);
 					citac++;
-				} catch (final IOException | RuntimeException e) {
+				} catch (final RuntimeException e) {
 					preskocene.preskoc(kod, e);
 				}
 			}

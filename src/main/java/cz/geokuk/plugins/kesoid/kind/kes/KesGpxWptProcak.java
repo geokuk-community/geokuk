@@ -98,6 +98,7 @@ public class KesGpxWptProcak implements GpxWptProcak {
 		// kes.setCountry(gpxwpt.groundspeak.country);
 		kes.setHidden(gpxwpt.time);
 		kes.setHint(gpxwpt.groundspeak.encodedHints);
+		kes.setHintZDatabaze(gpxwpt.groundspeak.hintZDatabaze);
 
 		kes.setTerrain(EKesDiffTerRating.parse(gpxwpt.groundspeak.terrain));
 		kes.setDifficulty(EKesDiffTerRating.parse(gpxwpt.groundspeak.difficulty));

@@ -18,6 +18,8 @@ import cz.geokuk.util.index2d.Indexator;
 public class JPopiskySlide extends JSingleSlide0 {
 
 	private static final long serialVersionUID = -5858146658366237217L;
+	/** Nejširší popisek, se kterým se při kreslení po částech počítá, v pixelech. */
+	private static final int OKRAJ_POPISKU = 600;
 
 	private Indexator<Wpt> iIndexator;
 
@@ -85,7 +87,9 @@ public class JPopiskySlide extends JSingleSlide0 {
 		final int height2 = fontMetrics.getHeight();
 		final int posuny = fontMetrics.getDescent() - height2;
 		final Map<Kepodr, SestavovacPopisku> sestavmapa = new HashMap<>();
-		iIndexator.bound(getSoord().getBoundingRect()).stream().forEach(wpt -> {
+		// Popisek je vpravo dole od bodu a jeho šířku předem neznáme, proto velkorysý okraj.
+		final int okraj = OKRAJ_POPISKU + Math.abs(pose.posuX) + Math.abs(pose.posuY);
+		iIndexator.bound(oblastKresleni(g, okraj)).stream().forEach(wpt -> {
 			if (!wpt.isMainWpt()) {
 				return;
 			}
