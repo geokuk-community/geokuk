@@ -128,6 +128,12 @@ public class KesoidModel extends Model0 {
 
 	public void onEvent(final IkonyNactenyEvent event) {
 		jmenoSady = event.getBag().getSada().getName();
+		if (!jmenoSady.equals(jmenoAktualniSadyIkon.name())) {
+			// Vybraná sada chybí a načetla se náhradní, ať se příště nezkouší znovu.
+			jmenoAktualniSadyIkon = Atom.valueOf(ASada.class, jmenoSady);
+			currPrefe().node(FPref.JMENO_VYBRANE_SADY_IKON_node).putAtom(FPref.JMENO_VYBRANE_SADY_IKON_value, jmenoAktualniSadyIkon);
+			fire(new JmenoAktualniSadyIkonChangeEvent(jmenoAktualniSadyIkon));
+		}
 		setJmenaNefenotypovanychAlel(currPrefe().node(FPref.MAPICON_FENOTYP_node).getQualAlelaNames(jmenoSady, QualAlelaNames.EMPTY));
 	}
 
