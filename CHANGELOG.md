@@ -1,6 +1,6 @@
 # Změny
 
-## 6.1.0
+## 6.2.0
 
 ### Změny
 - Přenosný GeoKuk: nic se neinstaluje, program si všechno ukládá do
