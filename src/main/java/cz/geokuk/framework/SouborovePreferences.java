@@ -21,7 +21,7 @@ import cz.geokuk.util.file.BezpecnyZapis;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Nastavení v jednom souboru místo registru Windows. Drží se v paměti, změny se zapisují chvíli po poslední změně, při {@link #flush()} a při ukončení
+ * Nastavení v jednom souboru místo registru Windows. Drží se v paměti, změny se zapisují nejpozději za dvě sekundy, při {@link #flush()} a při ukončení
  * programu. Soubor má formát exportu {@link Preferences#exportSubtree(OutputStream)}.
  */
 @Slf4j
@@ -35,6 +35,7 @@ public final class SouborovePreferences extends AbstractPreferences {
 		private final SouborovePreferences koren;
 		private Timer casovac;
 		private boolean zmeneno;
+		private boolean naplanovano;
 		private boolean chybaOhlasena;
 
 		Uloziste(final File soubor, final SouborovePreferences koren) {
@@ -44,12 +45,19 @@ public final class SouborovePreferences extends AbstractPreferences {
 
 		synchronized void zmeneno() {
 			zmeneno = true;
+			if (naplanovano) {
+				return;
+			}
+			naplanovano = true;
 			if (casovac == null) {
 				casovac = new Timer("Zápis nastavení", true);
 			}
 			casovac.schedule(new TimerTask() {
 				@Override
 				public void run() {
+					synchronized (Uloziste.this) {
+						naplanovano = false;
+					}
 					try {
 						uloz(false);
 					} catch (final IOException e) {
