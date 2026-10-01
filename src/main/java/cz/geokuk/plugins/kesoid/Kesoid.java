@@ -184,7 +184,7 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 	}
 
 	public void setAuthor(final String author) {
-		this.author = author.intern();
+		this.author = author == null ? "" : author.intern();
 	}
 
 	public void setHidden(final String hidden) {

@@ -102,6 +102,7 @@ public class Akce {
 	public final OProgramuAction oProgramuAction = new OProgramuAction();
 	public final FullScreenAction fullScreenAction = new FullScreenAction();
 	public final NastavMapuCeskaAction nastavMapuCeskaAction = new NastavMapuCeskaAction();
+	public final ZobrazVsechnyKeseAction zobrazVsechnyKeseAction = new ZobrazVsechnyKeseAction();
 	public final CloseAction closeAction = new CloseAction();
 	public final NastaveniAction nastaveniAction = new NastaveniAction();
 	public final UmisteniSouboruAction umisteniSouboruAction = new UmisteniSouboruAction(null);

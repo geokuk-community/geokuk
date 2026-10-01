@@ -101,7 +101,8 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		if (!jenAdresare) {
 			dir = dir.getParentFile();
 		}
-		if (dir.isDirectory() && dir.canRead()) {
+		// Neaktivní složku (třeba GSAK u toho, kdo ho nemá) zakládat nemá smysl.
+		if (!filex.isActive() || dir.isDirectory() && dir.canRead()) {
 			return filex;
 		}
 		final boolean vysl = dir.mkdirs();

@@ -111,6 +111,69 @@ public class GeogetLoaderTest {
 		Assert.assertEquals("ostatní tagy se načtou", 7, nactene.get("GC00001").gpxg.favorites);
 	}
 
+	/** Starší GeoGet nemá některé sloupce, keše se přesto načtou. */
+	@Test
+	public void starsiSchemaBezNepovinnychSloupcu() throws Exception {
+		final File db = new File(tmp.getRoot(), "stary.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("CREATE TABLE geocache (id TEXT, x REAL, y REAL, name TEXT, author TEXT, cachetype TEXT, cachesize TEXT, difficulty TEXT, terrain TEXT,"
+					+ " cachestatus INTEGER, gs_ownerid INTEGER, dthidden INTEGER, country TEXT, state TEXT)");
+			s.execute("CREATE TABLE geolist (id TEXT, shortdesc BLOB)");
+			s.execute("CREATE TABLE waypoint (id TEXT, x REAL, y REAL, wpttype TEXT, name TEXT)");
+			s.execute("CREATE TABLE geotag (id TEXT, ptrkat INTEGER, ptrvalue INTEGER)");
+			s.execute("CREATE TABLE geotagcategory (key INTEGER, value TEXT)");
+			s.execute("CREATE TABLE geotagvalue (key INTEGER, value TEXT)");
+			s.execute("INSERT INTO geocache VALUES ('GC00001', 50.1, 14.4, 'První', NULL, 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha')");
+			s.execute("INSERT INTO waypoint VALUES ('GC00001', 50.11, 14.41, 'Parking Area', 'Parkoviště')");
+		}
+
+		final Map<String, GpxWpt> nactene = nacti(db);
+		Assert.assertTrue(nactene.containsKey("GC00001"));
+		Assert.assertNull(nactene.get("GC00001").groundspeak.encodedHints);
+		Assert.assertEquals("waypoint se načte i bez prefixu", 2, nactene.size());
+	}
+
+	/** Nesmyslná souřadnice jednoho waypointu nesmí zahodit ostatní. */
+	@Test
+	public void vadnyWaypointNeshodiOstatni() throws Exception {
+		final File db = new File(tmp.getRoot(), "wpt.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			vytvorTabulky(s);
+			s.execute("INSERT INTO waypoint VALUES ('GC00001', 50.1, 14.4, 'PK', 'Parking Area', 'První')");
+			s.execute("INSERT INTO waypoint VALUES ('GC00002', 9e999, 14.4, 'PK', 'Parking Area', 'Nekonečná')");
+			s.execute("INSERT INTO waypoint VALUES ('GC00003', 50.3, 14.6, 'PK', 'Parking Area', 'Třetí')");
+		}
+
+		Assert.assertEquals(new HashSet<>(Arrays.asList("PK00001", "PK00003")), nacti(db).keySet());
+	}
+
+	/** Poškozená tabulka tagů nesmí připravit uživatele o keše. */
+	@Test
+	public void poskozeneTagyNeshodiKese() throws Exception {
+		final File db = new File(tmp.getRoot(), "poskozene.db3");
+		final int stranka;
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("PRAGMA page_size = 1024");
+			vytvorTabulky(s);
+			s.execute("INSERT INTO geocache VALUES ('GC00001', 50.1, 14.4, 'První', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+			s.execute("INSERT INTO geotagcategory VALUES (3, 'favorites')");
+			s.execute("INSERT INTO geotagvalue VALUES (2, '7')");
+			s.execute("INSERT INTO geotag VALUES ('GC00001', 3, 2)");
+			try (ResultSet rs = s.executeQuery("SELECT rootpage FROM sqlite_master WHERE name = 'geotag'")) {
+				stranka = rs.getInt(1);
+			}
+		}
+		try (RandomAccessFile f = new RandomAccessFile(db, "rw")) {
+			f.seek((stranka - 1) * 1024L);
+			final byte[] smeti = new byte[1024];
+			Arrays.fill(smeti, (byte) 0x7f);
+			f.write(smeti);
+		}
+
+		final Map<String, GpxWpt> nactene = nacti(db);
+		Assert.assertEquals(Collections.singleton("GC00001"), nactene.keySet());
+	}
+
 	private static void vytvorTabulky(final Statement s) throws SQLException {
 		s.execute("CREATE TABLE geocache (id TEXT, x REAL, y REAL, name TEXT, author TEXT, cachetype TEXT, cachesize TEXT, difficulty TEXT, terrain TEXT,"
 				+ " cachestatus INTEGER, gs_ownerid INTEGER, dthidden INTEGER, country TEXT, state TEXT, dtfound INTEGER)");

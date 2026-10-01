@@ -129,6 +129,37 @@ public class GsakDbLoaderTest {
 		Assert.assertEquals("Parkoviště", w.get("PK2222").desc);
 		Assert.assertEquals("Parking Area", w.get("PK2222").sym);
 	}
+	/** Starší GSAK nemá některé sloupce a tabulky, keše se přesto načtou. */
+	@Test
+	public void starsiSchemaBezNepovinnychSloupcu() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			for (final String t : new String[] { "Attributes", "CacheImages", "Corrected", "Filter", "Ignore", "LogImages", "LogMemo", "Logs", "Waypoints", "Custom", "Caches" }) {
+				s.execute("DROP TABLE " + t);
+			}
+			s.execute("CREATE TABLE Caches (Code TEXT, Name TEXT, PlacedBy TEXT, Archived INTEGER, CacheType TEXT, Container TEXT, County TEXT, Country TEXT, Difficulty TEXT,"
+					+ " FoundByMeDate TEXT, Latitude REAL, Longitude REAL, OwnerId INTEGER, OwnerName TEXT, PlacedDate TEXT, State TEXT, TempDisabled INTEGER, Terrain TEXT)");
+			s.execute("INSERT INTO Caches VALUES ('GC3333', 'Stará', 'Kačer', 0, 'T', 'Small', 'Praha', 'Czech Republic', '1', '', 50.2, 14.5, 7, 'Kačer',"
+					+ " '2015-06-01', 'Praha', 0, '2')");
+		}
+		Assert.assertTrue(new GsakDbLoader(GsakParametryNacitani::new).umiNacist(db));
+		final Map<String, GpxWpt> w = nacti();
+		Assert.assertEquals("keš bez řádku v CacheMemo se načte", Collections.singleton("GC3333"), w.keySet());
+		Assert.assertEquals(0, w.get("GC3333").gpxg.favorites);
+	}
+
+	/** Nesmyslná souřadnice jednoho waypointu nesmí zahodit ostatní. */
+	@Test
+	public void vadnyWaypointNeshodiOstatni() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("INSERT INTO Waypoints VALUES ('GC2222', 'S12222', 'S1', 'Nekonečná', 'Stages', 9e999, 16.61, 0, '', 0, 0)");
+			s.execute("INSERT INTO Waypoints VALUES ('GC2222', 'S22222', 'S2', 'Další', 'Stages', 49.22, 16.62, 0, '', 0, 0)");
+		}
+		final Map<String, GpxWpt> w = nacti();
+		Assert.assertTrue(w.containsKey("PK2222"));
+		Assert.assertTrue(w.containsKey("S22222"));
+		Assert.assertFalse(w.containsKey("S12222"));
+	}
+
 	/** Vadný záznam nesmí připravit uživatele o zbytek databáze. */
 	@Test
 	public void vadnyZaznamNeshodiCelouDatabazi() throws Exception {

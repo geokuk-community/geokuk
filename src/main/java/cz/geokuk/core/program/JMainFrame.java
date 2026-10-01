@@ -209,7 +209,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 
 	public void onEvent(final OknoStatusChangedEvent event) {
 		final OknoUmisteniDto oknoStatus = event.getOknoStatus();
-		if (!jeRozumneNaObrazovce(oknoStatus)) {
+		final Rectangle naObrazovce = umistiNaObrazovku(oknoStatus);
+		if (naObrazovce == null) {
 			// Implicitní veliksot a umístění
 			final Toolkit toolkit = getToolkit();
 			final Dimension screenSize = toolkit.getScreenSize();
@@ -217,8 +218,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			setLocation(new Point(screenSize.width / 2 - getWidth() / 2, screenSize.height / 2 - getHeight() / 2));
 			// event.getModel().setOknoUmisteni(oknoUmisteni); // a aktualizovat model
 		} else {
-			setLocation(oknoStatus.getPozice());
-			setSize(oknoStatus.getVelikost());
+			setBounds(naObrazovce);
 		}
 		setExtendedState(event.getStavOkna());
 	}
@@ -363,31 +363,35 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		return detailRoh;
 	}
 
-	private boolean jeRozumneNaObrazovce(final OknoUmisteniDto u) {
-		final Toolkit toolkit = getToolkit();
-		final Dimension screenSize = toolkit.getScreenSize();
+	/**
+	 * Uložené umístění posunuté a zmenšené tak, aby bylo celé na monitoru, kterého se nejvíc dotýká (okno z většího nebo odpojeného monitoru), nebo null,
+	 * když okno není vidět vůbec nebo je nesmyslně malé.
+	 */
+	private static Rectangle umistiNaObrazovku(final OknoUmisteniDto u) {
 		final Dimension velikost = u.getVelikost();
-		final Point pozice = u.getPozice();
-		if (velikost.width < 200 || velikost.width >= screenSize.width) {
-			return false; // moc uzke nebo siroke
+		if (velikost.width < 200 || velikost.height < 200) {
+			return null;
 		}
-		if (velikost.height < 200 || velikost.height >= screenSize.height) {
-			return false; // moc nizke nebo vysoke
+		final Rectangle okno = new Rectangle(u.getPozice(), velikost);
+		Rectangle nejlepsi = null;
+		long nejvic = 0;
+		for (final GraphicsDevice gd : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
+			final Rectangle plocha = JMyDialog0.pracovniPlocha(gd.getDefaultConfiguration());
+			final Rectangle prunik = plocha.intersection(okno);
+			final long obsah = prunik.isEmpty() ? 0 : (long) prunik.width * prunik.height;
+			if (obsah > nejvic) {
+				nejvic = obsah;
+				nejlepsi = plocha;
+			}
 		}
-		if (pozice.x + velikost.width < 200) {
-			return false; // prilis vlevo
+		if (nejlepsi == null) {
+			return null;
 		}
-		if (screenSize.width - pozice.x < 200) {
-			return false; // prilis vpravo
-		}
-		if (pozice.y < 0) {
-			return false; // prilis nahore
-		}
-		if (screenSize.height - pozice.y < 200) {
-			return false; // prilis dole
-		}
-		return true;
-
+		final int w = Math.min(okno.width, nejlepsi.width);
+		final int h = Math.min(okno.height, nejlepsi.height);
+		final int x = Math.max(nejlepsi.x, Math.min(okno.x, nejlepsi.x + nejlepsi.width - w));
+		final int y = Math.max(nejlepsi.y, Math.min(okno.y, nejlepsi.y + nejlepsi.height - h));
+		return new Rectangle(x, y, w, h);
 	}
 
 	private void ulozeStav() {

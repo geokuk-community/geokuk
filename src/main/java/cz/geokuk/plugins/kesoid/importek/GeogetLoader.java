@@ -2,8 +2,7 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.*;
 
@@ -17,6 +16,8 @@ import com.google.common.io.Files;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.ProgressModel;
 import cz.geokuk.framework.Progressor;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.lang.ATimestamp;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,14 +36,13 @@ public class GeogetLoader extends Nacitac0 {
 	private static int PROGRESS_VAHA_WAYPOINTS = 16;
 	private static int PROGRESS_VAHA_TAGS = 18;
 
-	private static final String GEOGET_CACHES_QUERY = Joiner.on('\n').join("SELECT", "  geocache.id as id,", "  geocache.x as lat,", "  geocache.y as lon,", "  geocache.name as name,",
-			"  geocache.author as author,", "  geocache.cachetype as cachetype,", "  geocache.cachesize as cachesize,", "  geocache.difficulty as difficulty,", "  geocache.terrain as terrain,",
-			"  geocache.cachestatus as cachestatus,", "  geocache.gs_ownerid as gs_ownerid,", "  geocache.dthidden as dthidden,", "  geocache.country as country,", "  geocache.state as state,",
-			"  geocache.dtfound as dtfound,", "  geolist.shortdesc as shortdesc,", "  geolist.hint as hint", "FROM geocache", "LEFT JOIN geolist", "  ON geocache.id = geolist.id");
+	private static final String[] SLOUPCE_GEOCACHE = { "x as lat", "y as lon", "name", "author", "cachetype", "cachesize", "difficulty", "terrain", "cachestatus", "gs_ownerid", "dthidden",
+			"country", "state", "dtfound" };
+	private static final String[] SLOUPCE_GEOLIST = { "shortdesc", "hint" };
 
 	private static final String GEOGET_CACHES_COUNT = "SELECT count(*) FROM geocache";
 
-	private static final String GEOGET_WAYPOINTS_QUERY = "SELECT id, x as lat, y as lon, prefixid, wpttype, name" + " FROM waypoint";
+	private static final String[] SLOUPCE_WAYPOINT = { "x as lat", "y as lon", "prefixid", "wpttype", "name" };
 
 	private static final String GEOGET_WAYPOINTS_COUNT = "SELECT count(*) FROM waypoint";
 
@@ -65,12 +65,24 @@ public class GeogetLoader extends Nacitac0 {
 			throw new IllegalArgumentException("Cannot load from file " + file);
 		}
 		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
-			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS
-					+ count(statement, GEOGET_TAGS_COUNT) * PROGRESS_VAHA_TAGS;
+			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file.toString());
 			// Tagy před kešemi, keš si hodnoty přebírá už při přidání.
-			final Map<String, Gpxg> tagy = loadTags(statement, future, progressor);
-			loadCaches(statement, builder, tagy, future, progressor);
+			// Bez tagů a popisů se keše dají zobrazit, jejich poškození nesmí připravit uživatele o celou databázi.
+			Map<String, Gpxg> tagy;
+			try {
+				progressor.setMax(pocet + count(statement, GEOGET_TAGS_COUNT) * PROGRESS_VAHA_TAGS);
+				tagy = loadTags(statement, future, progressor);
+			} catch (final SQLException e) {
+				ohlasPoskozeni(file, "Tagy (hodnocení, favority)", e);
+				tagy = new HashMap<>();
+			}
+			try {
+				loadCaches(statement, builder, tagy, true, future, progressor);
+			} catch (final SQLException e) {
+				ohlasPoskozeni(file, "Popisy a nápovědy", e);
+				loadCaches(statement, builder, tagy, false, future, progressor);
+			}
 			loadWaypoints(statement, builder, future, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
@@ -98,6 +110,14 @@ public class GeogetLoader extends Nacitac0 {
 		return false;
 	}
 
+	private static void ohlasPoskozeni(final File file, final String co, final SQLException e) throws SQLException {
+		if (DatabazeJinehoProgramu.jeZamcena(e)) {
+			throw e;
+		}
+		FExceptionDumper.dump(new IOException(co + " z databáze \"" + file + "\" nejde přečíst, keše se načtou bez nich. Databáze je asi poškozená, spusťte v GeoGetu její údržbu.", e),
+				EExceptionSeverity.DISPLAY, "Poškozená databáze GeoGetu");
+	}
+
 	private int count(final Statement statement, final String countQuery) throws SQLException {
 		try (ResultSet rs = statement.executeQuery(countQuery)) {
 			return rs.getInt(1);
@@ -111,11 +131,12 @@ public class GeogetLoader extends Nacitac0 {
 		return String.format(DATE_FORMAT_TEMPLATE, year, month, day);
 	}
 
-	private void loadCaches(final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
+	private void loadCaches(final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final boolean sPopisy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
-		try (ResultSet rs = statement.executeQuery(GEOGET_CACHES_QUERY)) {
+		final String dotaz = "SELECT geocache.id as id, " + vyber(statement, "geocache", SLOUPCE_GEOCACHE) + ", " + (sPopisy ? vyber(statement, "geolist", SLOUPCE_GEOLIST) + " FROM geocache LEFT JOIN geolist ON geocache.id = geolist.id" : "NULL as shortdesc, NULL as hint FROM geocache");
+		try (ResultSet rs = statement.executeQuery(dotaz)) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
@@ -278,29 +299,50 @@ public class GeogetLoader extends Nacitac0 {
 
 	private void loadWaypoints(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
 		final ATimestamp startTime = ATimestamp.now();
+		final Preskocene preskocene = new Preskocene("waypoint");
 		int citac = 0;
-		try (ResultSet rs = statement.executeQuery(GEOGET_WAYPOINTS_QUERY)) {
+		try (ResultSet rs = statement.executeQuery("SELECT id, " + vyber(statement, "waypoint", SLOUPCE_WAYPOINT) + " FROM waypoint")) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
-				final GpxWpt gpxWpt = new GpxWpt();
-				gpxWpt.wgs = new Wgs(rs.getDouble("lat"), rs.getDouble("lon"));
 				final String parentId = rs.getString("id");
-				if (parentId != null && parentId.length() > 1) {
-					final String suffix = parentId.substring(2);
-					gpxWpt.name = rs.getString("prefixid") + suffix;
+				try {
+					final GpxWpt gpxWpt = new GpxWpt();
+					gpxWpt.wgs = new Wgs(rs.getDouble("lat"), rs.getDouble("lon"));
+					if (parentId != null && parentId.length() > 1) {
+						final String suffix = parentId.substring(2);
+						gpxWpt.name = rs.getString("prefixid") + suffix;
+					}
+					gpxWpt.sym = rs.getString("wpttype");
+					gpxWpt.desc = rs.getString("name");
+					builder.addGpxWpt(gpxWpt);
+					citac++;
+				} catch (final RuntimeException e) {
+					preskocene.preskoc(parentId, e);
 				}
-				gpxWpt.sym = rs.getString("wpttype");
-				gpxWpt.desc = rs.getString("name");
-				builder.addGpxWpt(gpxWpt);
-				citac++;
 			}
 		} finally {
 			progressor.finish();
+			preskocene.ohlas();
 			logResult("Waypoints", startTime, citac);
 		}
+	}
+
+	/** Sloupce pro SELECT; ty, které starší GeoGet v tabulce nemá, budou NULL. */
+	private static String vyber(final Statement statement, final String tabulka, final String[] sloupce) throws SQLException {
+		final Set<String> existujici = DatabazeJinehoProgramu.sloupce(statement, tabulka);
+		final StringBuilder sb = new StringBuilder();
+		for (final String sloupec : sloupce) {
+			final String[] jmenoAlias = sloupec.split(" as ");
+			final String alias = jmenoAlias[jmenoAlias.length - 1];
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			sb.append(existujici.contains(jmenoAlias[0]) ? tabulka + "." + jmenoAlias[0] : "NULL").append(" as ").append(alias);
+		}
+		return sb.toString();
 	}
 
 	private void logResult(final String nazev, final ATimestamp startTime, final int pocet) {

@@ -47,7 +47,8 @@ public abstract class SouboeCestaAction0 extends Action0 {
 
 	protected boolean ulozit() {
 		final Doc xdoc = cestyModel.getDoc();
-		if (xdoc.getFile() == null) { // ještě nebyl určen soubor, musíme se zeptat
+		File kam = xdoc.getFile();
+		if (kam == null) { // ještě nebyl určen soubor, musíme se zeptat
 			final JFileChooser fc = new JFileChooser();
 			fc.addChoosableFileFilter(new GpxFilter());
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -60,16 +61,17 @@ public abstract class SouboeCestaAction0 extends Action0 {
 						return false;
 					}
 				}
-				xdoc.setFile(selectedFile);
+				// Soubor dokumentu se změní až po úspěšném uložení.
+				kam = selectedFile;
 			} else {
 				return false;
 			}
 		}
 		// TODO ukládat na pozadí a také mít jinde ukládací dialog
 		try {
-			cestyModel.uloz(xdoc.getFile(), xdoc, true);
+			cestyModel.uloz(kam, xdoc, true);
 		} catch (final IOException e) {
-			oznamNeulozeno(xdoc.getFile(), e);
+			oznamNeulozeno(kam, e);
 			return false;
 		}
 		return true;

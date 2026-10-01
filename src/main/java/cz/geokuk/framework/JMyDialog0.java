@@ -26,7 +26,7 @@ public abstract class JMyDialog0 extends JDialog {
 	private EventManager eventManager;
 	private final JFrame frame;
 
-	private final NapovedaAction napovedaAction = new NapovedaAction("Dialog/" + getTemaNapovedyDialogu());
+	private final NapovedaAction napovedaAction = new NapovedaAction(getTemaNapovedyDialogu() == null ? null : "Dialog/" + getTemaNapovedyDialogu());
 
 	public JMyDialog0() {
 		super(Dlg.parentFrame());
@@ -66,19 +66,17 @@ public abstract class JMyDialog0 extends JDialog {
 		initComponents();
 		pack();
 
-		final Toolkit toolkit = getToolkit();
-		final Dimension screenSize = toolkit.getScreenSize();
+		// Pracovní plocha monitoru s hlavním oknem, bez hlavního panelu Windows, ať tlačítka dialogu nejsou pod ním.
+		final Rectangle plocha = pracovniPlocha(frame.getGraphicsConfiguration());
 		final Dimension frmSize = frame.getSize();
 		final Dimension mySize = getSize();
 		final int xo = (frmSize.width - mySize.width) / 2;
 		final int yo = (frmSize.height - mySize.height) / 2;
 		final Point loc = frame.getLocation();
 		final Point p = new Point(loc.x + xo, loc.y + yo);
-		p.x = Math.max(Math.min(p.x, screenSize.width - mySize.width), 0);
-		p.y = Math.max(Math.min(p.y, screenSize.height - mySize.height), 0);
-		final Dimension novy = new Dimension(Math.min(mySize.width, screenSize.width - p.x), Math.min(mySize.height, screenSize.height - p.y)
-
-				);
+		p.x = Math.max(Math.min(p.x, plocha.x + plocha.width - mySize.width), plocha.x);
+		p.y = Math.max(Math.min(p.y, plocha.y + plocha.height - mySize.height), plocha.y);
+		final Dimension novy = new Dimension(Math.min(mySize.width, plocha.x + plocha.width - p.x), Math.min(mySize.height, plocha.y + plocha.height - p.y));
 		setLocation(p);
 		setSize(novy);
 
@@ -105,6 +103,13 @@ public abstract class JMyDialog0 extends JDialog {
 	}
 
 	protected abstract void initComponents();
+
+	/** Část obrazovky, kterou nezakrývá hlavní panel systému. */
+	public static Rectangle pracovniPlocha(final GraphicsConfiguration gc) {
+		final Rectangle obrazovka = gc.getBounds();
+		final Insets okraje = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+		return new Rectangle(obrazovka.x + okraje.left, obrazovka.y + okraje.top, obrazovka.width - okraje.left - okraje.right, obrazovka.height - okraje.top - okraje.bottom);
+	}
 
 	private void odregistrujUdalosti(final Component comp) {
 		eventManager.unregister(comp);

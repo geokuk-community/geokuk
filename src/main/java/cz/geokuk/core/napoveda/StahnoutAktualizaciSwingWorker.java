@@ -119,7 +119,7 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		} catch (final ExecutionException e) {
 			log.error("Stažení aktualizace selhalo.", e.getCause());
 			Diagnostika.zaznamenej("Stažení verze " + verze + " selhalo: " + e.getCause());
-			Dlg.error("Novou verzi se nepodařilo stáhnout: " + e.getCause().getMessage() + "\nStáhněte ji ručně z " + FConst.LATEST_RELEASE_URL);
+			Dlg.error("Novou verzi se nepodařilo stáhnout: " + e.getCause().getMessage() + "\nStáhněte ji ručně z " + FConst.RELEASE_TAG_URL + verze);
 		}
 	}
 }

@@ -62,7 +62,7 @@ public class JFiltrVyberIkon extends JVyberIkon0 {
 
 	@Override
 	protected void zmenaVyberu(final Set<Alela> aAlely) {
-		kesoidModel.setJmenaNechtenychAlel(Alela.alelyToQualNames(aAlely));
+		kesoidModel.setJmenaNechtenychAlel(jmenaVcetneNevykreslenych(aAlely));
 	}
 
 }

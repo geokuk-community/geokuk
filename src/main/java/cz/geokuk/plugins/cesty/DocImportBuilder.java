@@ -23,6 +23,9 @@ public class DocImportBuilder implements IImportBuilder {
 
 	@Override
 	public void addTrackWpt(final GpxWpt wpt) {
+		if (wpt.wgs == null) {
+			return; // bod s nečitelnými souřadnicemi
+		}
 		final Bod bod = updator.pridejNaKonec(cesta, wpt.wgs.toMou());
 		final Usek usek = bod.getUvzad(); // právě přidaný úsek, pokud nějaký
 		if (usek != null && zacatekSegmentu) {

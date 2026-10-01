@@ -38,11 +38,10 @@ public class UlozJakoAction extends SouboeCestaAction0 {
 					return;
 				}
 			}
-			doc.setFile(selectedFile);
 			try {
-				cestyModel.uloz(doc.getFile(), doc, true);
+				cestyModel.uloz(selectedFile, doc, true);
 			} catch (final IOException ex) {
-				oznamNeulozeno(doc.getFile(), ex);
+				oznamNeulozeno(selectedFile, ex);
 			}
 		}
 		// TODO ukládat na pozadí

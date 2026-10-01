@@ -22,6 +22,8 @@ public class KachloDownloader {
 	/** Bez limitu by nedostupný server držel stahovací frontu navždy. */
 	private static final int TIMEOUT_PRIPOJENI = 15000;
 	private static final int TIMEOUT_CTENI = 30000;
+	static final int TIMEOUT_CELKEM = 60000;
+	private static final int MAX_PRESMEROVANI = 3;
 
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
 	static final String USER_AGENT = "Geokuk/" + FConst.VERSION;
@@ -41,6 +43,27 @@ public class KachloDownloader {
 	}
 
 
+
+	/** Server odpověděl chybou místo dlaždice. */
+	public static class ChybaServeru extends IOException {
+		private static final long serialVersionUID = 1L;
+
+		private final int kod;
+
+		public ChybaServeru(final int kod, final String zprava) {
+			super("Server mapy vrátil chybu HTTP " + kod + (zprava == null ? "" : " " + zprava) + ".");
+			this.kod = kod;
+		}
+
+		public int getKod() {
+			return kod;
+		}
+
+		/** Server žádá, abychom stahovali méně nebo počkali. */
+		public boolean jeOmezeni() {
+			return kod == 429 || kod == 503;
+		}
+	}
 
 	static class UseknutaDlazdice extends IOException {
 		private static final long serialVersionUID = 1L;
@@ -67,22 +90,28 @@ public class KachloDownloader {
 		// throw new IOException("Nasimulovaná chyba hybrid");
 		// }
 
-		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-		conn.setConnectTimeout(TIMEOUT_PRIPOJENI);
-		conn.setReadTimeout(TIMEOUT_CTENI);
-		conn.setRequestProperty("User-Agent", USER_AGENT);
-		if (url.getHost().endsWith("mapy.cz")) {
-			// Pro mapy.cz je nutný referer, jinak se vrací 403
-			conn.setRequestProperty("Referer", "https://en.mapy.com/");
+		HttpURLConnection conn = otevri(url, hlavicky);
+		int kod = conn.getResponseCode();
+		// Java přesměrování z http na https sama nesleduje a řada serverů už http přesměrovává.
+		for (int presmerovani = 0; presmerovani < MAX_PRESMEROVANI && kod >= 300 && kod < 400 && conn.getHeaderField("Location") != null; presmerovani++) {
+			final URL kam = new URL(url, conn.getHeaderField("Location"));
+			conn.disconnect();
+			if (!"https".equals(kam.getProtocol()) && !kam.getProtocol().equals(url.getProtocol())) {
+				break;
+			}
+			conn = otevri(kam, hlavicky);
+			kod = conn.getResponseCode();
 		}
-		hlavicky.forEach(conn::setRequestProperty);
-
-		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
+		if (kod >= 300) {
+			conn.disconnect();
+			throw new ChybaServeru(kod, conn.getResponseMessage());
+		}
+		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream(), TIMEOUT_CELKEM);
 		final Image img;
 		try (InputStream stm = new BufferedInputStream(dhis)) {
 			img = precti(stm);
 			if (img == null) {
-				throw new RuntimeException("image is null");
+				throw new IOException("Server místo obrázku poslal něco jiného, třeba přihlašovací stránku Wi-Fi.");
 			}
 			docti(stm);
 		}
@@ -96,6 +125,19 @@ public class KachloDownloader {
 
 		return imda;
 
+	}
+
+	private static HttpURLConnection otevri(final URL url, final Map<String, String> hlavicky) throws IOException {
+		final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setConnectTimeout(TIMEOUT_PRIPOJENI);
+		conn.setReadTimeout(TIMEOUT_CTENI);
+		conn.setRequestProperty("User-Agent", USER_AGENT);
+		if (url.getHost().endsWith("mapy.cz")) {
+			// Pro mapy.cz je nutný referer, jinak se vrací 403
+			conn.setRequestProperty("Referer", "https://en.mapy.com/");
+		}
+		hlavicky.forEach(conn::setRequestProperty);
+		return conn;
 	}
 
 	/** Dekodér JPEG useknutá data nepovažuje za chybu a zbytek dlaždice doplní šedou, ohlásí to jen varováním. */

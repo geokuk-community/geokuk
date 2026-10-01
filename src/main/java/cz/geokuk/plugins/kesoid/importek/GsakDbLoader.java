@@ -20,6 +20,8 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.kind.kes.EKesType;
 import cz.geokuk.plugins.kesoid.mvc.GsakParametryNacitani;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.lang.ATimestamp;
 import cz.geokuk.util.lang.StringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +45,7 @@ public class GsakDbLoader extends Nacitac0 {
 	private static final String ISO_TIME_FORMAT_REGEXP = "[0-2]?\\d:[0-5]\\d";
 
 	private static final ImmutableSet<String> SUPPORTED_FILE_EXTENSIONS = ImmutableSet.of("db3");
-	private static final ImmutableSet<String> EXPECTED_TABLES = ImmutableSet.of("Attributes", "CacheImages", "CacheMemo", "Caches", "Corrected", "Custom", "Filter", "Ignore", "LogImages", "LogMemo",
-			"Logs");
+	private static final ImmutableSet<String> EXPECTED_TABLES = ImmutableSet.of("CacheMemo", "Caches");
 
 	private final Supplier<GsakParametryNacitani> parametryNačítání;
 
@@ -62,16 +63,26 @@ public class GsakDbLoader extends Nacitac0 {
 			final int pocet = dao.cacheCount() * PROGRESS_VAHA_CACHES + dao.waypointCount() * PROGRESS_VAHA_WAYPOINTS + dao.tagCount() * PROGRESS_VAHA_TAGS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + aDbFile.toString());
 			// Vlastní hodnoty před kešemi, keš si je přebírá už při přidání.
-			final Map<String, Map<String, String>> vlastniHodnoty = loadCustomValues(dao, aFuture, progressor);
+			// Bez nich se keše dají zobrazit, jejich poškození nesmí připravit uživatele o celou databázi.
+			Map<String, Map<String, String>> vlastniHodnoty;
+			try {
+				vlastniHodnoty = loadCustomValues(dao, aFuture, progressor);
+			} catch (final SQLException e) {
+				if (DatabazeJinehoProgramu.jeZamcena(e)) {
+					throw e;
+				}
+				FExceptionDumper.dump(new IOException("Vlastní hodnoty z databáze \"" + aDbFile + "\" nejde přečíst, keše se načtou bez nich. Databáze je asi poškozená, spusťte v GSAKu její údržbu.", e),
+						EExceptionSeverity.DISPLAY, "Poškozená databáze GSAKu");
+				vlastniHodnoty = new HashMap<>();
+			}
 			loadCaches(dao, aBuilder, vlastniHodnoty, aFuture, progressor);
 			loadWaypoints(dao, aBuilder, aFuture, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
-			if (e.getMessage().contains("no such collation sequence:")) {
-				// TODO: Nějak lépe zakomunikovat s uživatelem, nelíbí se mi, že že v BIZ třídě je interakce, ale nevím jak jinak. [ISSUE#48, 2016-04-09, Bohusz]
-				Dlg.info("Databázový soubor \"" + aDbFile + "\" obsahuje nestandardní řazení.\n\nMělo by postačit databázi na chvíli vybrat jako aktivní, GSAK ji automaticky opraví.",
-						"GSAK soubor je zastaralý");
-				return;
+			if (String.valueOf(e.getMessage()).contains("no such collation sequence:")) {
+				// Modální okno by tu zastavilo načítání všech dat, než ho uživatel zavře.
+				log.warn("Nestandardní řazení v {}", aDbFile, e);
+				throw new IOException("Databáze GSAKu \"" + aDbFile + "\" obsahuje nestandardní řazení, a proto se nenačetla. Mělo by stačit ji v GSAKu na chvíli vybrat jako aktivní, GSAK ji opraví.");
 			}
 			throw new IOException("Unable to load from " + aDbFile, e);
 		}
@@ -195,6 +206,7 @@ public class GsakDbLoader extends Nacitac0 {
 
 	private void loadWaypoints(final GsakDao aDao, final IImportBuilder aBuilder, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {
 		final ATimestamp startTime = ATimestamp.now();
+		final Preskocene preskocene = new Preskocene("waypoint");
 		final Counter čítač = new Counter();
 
 		aDao.forEachWaypoint(record -> {
@@ -202,22 +214,25 @@ public class GsakDbLoader extends Nacitac0 {
 				return false;
 			}
 			aProgressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
-			//
-			final GpxWpt childWaypoint = new GpxWpt();
-			{
-				childWaypoint.wgs = new Wgs(record.cLat, record.cLon);
-				childWaypoint.name = record.cCode;
-				childWaypoint.sym = record.cType;
-				childWaypoint.desc = record.cName;
+			try {
+				final GpxWpt childWaypoint = new GpxWpt();
+				{
+					childWaypoint.wgs = new Wgs(record.cLat, record.cLon);
+					childWaypoint.name = record.cCode;
+					childWaypoint.sym = record.cType;
+					childWaypoint.desc = record.cName;
+				}
+				aBuilder.addGpxWpt(childWaypoint);
+				čítač.inc();
+			} catch (final RuntimeException e) {
+				preskocene.preskoc(record.cCode, e);
 			}
-			aBuilder.addGpxWpt(childWaypoint);
-			//
-			čítač.inc();
 			return true;
 		});
 
 		aProgressor.finish();
-		logResult("Custom Values", startTime, čítač.getCount());
+		preskocene.ohlas();
+		logResult("Waypoints", startTime, čítač.getCount());
 	}
 
 	private Map<String, Map<String, String>> loadCustomValues(final GsakDao aDao, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {
@@ -258,7 +273,7 @@ public class GsakDbLoader extends Nacitac0 {
 	}
 
 	private boolean isCorrected(final Wgs aOriginalCoordinates, final Wgs aCurrentCoordinates) {
-		if (aOriginalCoordinates == null) {
+		if (aOriginalCoordinates == null || aCurrentCoordinates == null) {
 			return false;
 		}
 		return !aCurrentCoordinates.equals(aOriginalCoordinates);
@@ -419,7 +434,7 @@ public class GsakDbLoader extends Nacitac0 {
 		private static final String CACHE_COUNT = "SELECT COUNT(*) FROM Caches";
 		private static final String WAYPOINT_COUNT = "SELECT COUNT(*) FROM Waypoints";
 		private static final String TAG_COUNT = "SELECT COUNT(*) FROM Caches";
-		private static final String SELECT_CACHES = "SELECT c.*, m.ShortDescription, m.Hints FROM Caches c JOIN CacheMemo m ON m.Code = c.Code";
+		private static final String SELECT_CACHES = "SELECT c.*, m.ShortDescription, m.Hints FROM Caches c LEFT JOIN CacheMemo m ON m.Code = c.Code";
 		private static final String SELECT_WAYPOINTS = "SELECT * FROM Waypoints";
 		private static final String SELECT_CUSTOMVALUES = "SELECT * FROM Custom";
 
@@ -449,7 +464,7 @@ public class GsakDbLoader extends Nacitac0 {
 		}
 
 		public int waypointCount() throws SQLException {
-			return count(WAYPOINT_COUNT);
+			return containsTables(Collections.singleton("Waypoints")) ? count(WAYPOINT_COUNT) : 0;
 		}
 
 		public int tagCount() throws SQLException {
@@ -461,11 +476,12 @@ public class GsakDbLoader extends Nacitac0 {
 		}
 
 		public boolean forEachWaypoint(final Function<GsakWaypoint, Boolean> aAction) throws SQLException {
-			return forEach(SELECT_WAYPOINTS, GsakWaypoint::new, aAction);
+			// Waypointy a vlastní hodnoty starší GSAK mít nemusí.
+			return !containsTables(Collections.singleton("Waypoints")) || forEach(SELECT_WAYPOINTS, GsakWaypoint::new, aAction);
 		}
 
 		public boolean forEachCustomValue(final Function<Map<String, String>, Boolean> aAction) throws SQLException {
-			return forEach(SELECT_CUSTOMVALUES, LinkedHashMap::new, aAction);
+			return !containsTables(Collections.singleton("Custom")) || forEach(SELECT_CUSTOMVALUES, LinkedHashMap::new, aAction);
 		}
 
 		public boolean schemaMatches() throws SQLException {
@@ -533,10 +549,13 @@ public class GsakDbLoader extends Nacitac0 {
 		}
 
 		private <T> void loadPojo(final ResultSet aResultSet, final T aPojo) throws SQLException {
-			//System.out.println("***** " + columnNames(aResultSet));
+			// Sloupec, který starší GSAK nemá, zůstane na výchozí hodnotě.
+			final Set<String> sloupce = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+			sloupce.addAll(columnNames(aResultSet));
 			Arrays.stream(aPojo.getClass().getDeclaredFields()) //
 			.filter(f -> Modifier.isPublic(f.getModifiers())) //
 			.filter(f -> !Modifier.isStatic(f.getModifiers())) //
+			.filter(f -> sloupce.contains(f.getName())) //
 			.forEach(f -> {
 				try {
 					final String name = f.getName();

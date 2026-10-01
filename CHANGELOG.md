@@ -3,6 +3,9 @@
 ## 6.1.0
 
 ### Změny
+- Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
+  zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
+  žádná keš není.
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
@@ -32,6 +35,55 @@
   `.geokuk\ovladani.properties` v domovské složce uživatele.
 
 ### Opravy
+- Databáze GeoGetu nebo GSAKu, do které program dlouho zapisuje, se
+  načte po skončení zápisu; do té doby zůstanou zobrazené dříve načtené
+  keše. Poškozenou databázi nebo soubor, který není databáze, program
+  ohlásí česky, místo aby ho tiše přeskočil.
+- Keše se načtou i z databáze starší verze GeoGetu nebo GSAKu, které
+  chybí některé sloupce nebo tabulky, i když jsou poškozené jen tagy
+  nebo popisy, a i keš GeoGetu bez autora. Vadný waypoint se přeskočí,
+  ostatní se načtou.
+- Otevření filtru (F2) nad daty, ve kterých nejsou nalezené, archivované
+  nebo jiné skryté keše, z filtru nevyhodí jejich skrytí.
+- Server, který posílá dlaždici extrémně pomalu, nezablokuje stahování
+  mapy; stažení jedné dlaždice má celkový limit 60 s.
+- Hromadné stahování dlaždic ukazuje průběh, počet chyb a konec, jde
+  zastavit a samo přestane, když server mapy stahování omezí
+  (HTTP 429 nebo 503).
+- Dlaždice, kterou se nepodařilo stáhnout (výpadek sítě), se po chvíli
+  zkusí stáhnout znovu a místo technického výpisu ukazuje srozumitelný
+  důvod.
+- Chybějící nebo neúplná vybraná sada ikon (smazaná složka, chybí
+  `skla.txt`, vypnutá složka vlastních ikon) se nahradí sadou Standard;
+  dřív se kvůli ní nenačetly žádné keše.
+- Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
+  při startu ohlásí jako chybná. Dlaždice se stáhnou i ze serveru,
+  který adresu `http://` přesměruje na `https://`.
+- Složka cest a složky ikon uvnitř datové složky se neprocházejí jako
+  zdroj keší; uložení cesty už nepřenačte všechna data a body cest se
+  neukazují jako keše.
+- Cesty: plán trasy (`<rte>`) z GPX se načte jako cesta, soubor bez
+  trasy se ohlásí. Vadný soubor při importu více souborů nezahodí cesty
+  z ostatních. Nepovedené uložení nezmění soubor, ke kterému cesta patří.
+- Když nejde uložit výlet (`lovim.ggt`, `tedne.ggt`), program to ohlásí
+  a zkusí ho uložit znovu při další změně.
+- Databáze GSAKu s nestandardním řazením nezastaví načítání ostatních
+  dat dialogem, ohlásí se v přehledu problémů. Okno nečeká, než doběhne
+  procházení velké datové složky.
+- Dialogy se vejdou nad hlavní panel Windows. Okno uložené na větším
+  nebo odpojeném monitoru se při startu posune a zmenší, aby bylo celé
+  vidět.
+- Zoom na obdélník (Shift + tažení), na keš, cestu, cesty a výlet
+  vybere správné měřítko; dřív mapu oddálil o čtyři měřítka.
+- Aktivní datová složka GeoGetu nebo GSAKu bez databází se ohlásí.
+  Uložení v Umístění souborů nezakládá složky u neaktivních položek.
+  Nápověda z okna O programu otevře hlavní stránku nápovědy.
+- „Stáhnout nejnovější verzi“ mimo Windows otevře stránku nabízené
+  verze, u bety tedy betu, ne poslední ostrou verzi.
+- GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
+  načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN) nebo výškou
+  s čárkou nezahodí zbytek souboru. Keš bez nápovědy nepřebírá typ
+  a název z logů a travel bugů.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

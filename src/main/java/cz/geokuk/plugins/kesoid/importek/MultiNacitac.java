@@ -30,6 +30,13 @@ public class MultiNacitac {
 
 	private final DirScanner ds;
 
+	private volatile File geogetDir;
+	private volatile File gsakDir;
+	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
+
+	/** Zamčení se ohlásí jednou, ne při každém dalším pokusu o načtení. */
+	private volatile boolean hlasenoZamceni;
+
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
 
@@ -72,15 +79,23 @@ public class MultiNacitac {
 		if (list == null) {
 			return null;
 		}
+		ohlasPrazdneSlozky(list);
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
 		final long start = System.currentTimeMillis();
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
 		final List<String> vadne = new ArrayList<>();
+		final List<String> zamcene = new ArrayList<>();
 		for (final KeFile file : list) {
 			log.debug("Nacitam: " + file);
 			try {
 				zpracujJedenFile(file, builder, future);
+			} catch (final DatabazeJinehoProgramu.Zamcena e) {
+				zamcene.add(file.getFile().getName());
+				if (!hlasenoZamceni) {
+					hlasenoZamceni = true;
+					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Zamčená databáze " + file);
+				}
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem pri cteni souboru " + file);
@@ -91,9 +106,35 @@ public class MultiNacitac {
 		builder.done();
 		final KesBag bag = builder.getKesBag();
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
-				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne));
+				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamcene.isEmpty() ? "" : ", zamčené " + zamcene));
 
-		return builder.getKesBag();
+		if (zamcene.isEmpty()) {
+			hlasenoZamceni = false;
+			return bag;
+		}
+		// Zamčenou databázi zkusíme při příštím skenu znovu a do té doby necháme zobrazené, co už je načtené.
+		ds.nulujLastScaned();
+		return kesoidModel.getVsechnyKesoidy() == null ? bag : null;
+	}
+
+	/** Aktivní složka GeoGetu nebo GSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
+	private void ohlasPrazdneSlozky(final List<KeFile> list) {
+		final Map<File, String> slozky = new LinkedHashMap<>();
+		if (geogetDir != null) {
+			slozky.put(geogetDir, "GeoGetu");
+		}
+		if (gsakDir != null) {
+			slozky.put(gsakDir, "GSAKu");
+		}
+		for (final KeFile f : list) {
+			slozky.remove(f.root.dir);
+		}
+		for (final Map.Entry<File, String> e : slozky.entrySet()) {
+			if (ohlasenePrazdne.add(e.getKey())) {
+				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue() + " \"" + e.getKey() + "\" nejsou žádné databáze (.db3). Zkontrolujte složku v Soubor > Umístění souborů."),
+						EExceptionSeverity.DISPLAY, "Prázdná datová složka");
+			}
+		}
 	}
 
 	/** Počet souborů podle přípony, bez cest (hlášení je veřejné). */
@@ -107,10 +148,12 @@ public class MultiNacitac {
 	}
 
 	// TODO Proč jsou tu ty File parametry, když máme k dispozici kesoidModel, odkud se jejich hodnoty vždy berou? [2016-04-09, Bohusz]
-	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir) {
+	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final Set<File> vynechane) {
+		this.geogetDir = geogetDir;
+		this.gsakDir = gsakDir;
 		final List<Root> roots = new ArrayList<>();
 		if (kesDir != null) {
-			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR));
+			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR, vynechane));
 		}
 		if (geogetDir != null) {
 			roots.add(new Root(geogetDir, FILE_NAME_REGEX_GEOGET_DIR));
@@ -127,11 +170,18 @@ public class MultiNacitac {
 	 * @param future
 	 * @throws IOException
 	 */
-	/** Cizí soubor s naší příponou jen přeskočíme, není to chyba uživatele. */
+	/** Cizí soubor s naší příponou jen přeskočíme, není to chyba uživatele. Databázi, kterou nejde přečíst, ale ohlásíme. */
 	private boolean umiNacist(final Nacitac0 nacitac, final File file) {
 		try {
 			return nacitac.umiNacist(file);
 		} catch (final Exception e) {
+			if (DatabazeJinehoProgramu.jeZamcena(e)) {
+				throw new DatabazeJinehoProgramu.Zamcena(file, e);
+			}
+			final String popis = DatabazeJinehoProgramu.popisChyby(file, e);
+			if (popis != null) {
+				throw new RuntimeException(popis, e);
+			}
 			log.warn("Soubor {} nelze rozpoznat, přeskakuji: {}", file, e.toString());
 			return false;
 		}

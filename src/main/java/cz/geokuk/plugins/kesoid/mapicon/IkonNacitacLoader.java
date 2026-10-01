@@ -53,6 +53,17 @@ public class IkonNacitacLoader {
 		}
 		lastScan = mf;
 
+		final IkonBag ikonBag = sestav(mf, jmenoSady);
+		if (ikonBag != null || ASada.STANDARD.equals(jmenoSady)) {
+			return ikonBag;
+		}
+		// Bez sady ikon se nenačtou ani keše, proto raději standardní sada než nic.
+		FExceptionDumper.dump(new IOException("Sada ikon \"" + jmenoSady.name() + "\" nebyla nalezena nebo je neúplná (chybí v ní soubor skla.txt). Použije se sada Standard."),
+				EExceptionSeverity.DISPLAY, "Sada ikon " + jmenoSady);
+		return sestav(mf, ASada.STANDARD);
+	}
+
+	private IkonBag sestav(final MultiFolder mf, final ASada jmenoSady) throws IOException {
 		final IkonBag ikonBag = new IkonBag();
 		final KeyNode<String, LamUrl> mapNode = mf.getNode(MAPUZEL);
 
@@ -60,9 +71,15 @@ public class IkonNacitacLoader {
 		ikonBag.setJmenaAIkonySad(nactiIkonySad(mapNode));
 
 		final IkonNacitacSada ikonNacitacSada = new IkonNacitacSada(ikonBag.getGenom());
-		final String key = MAPUZEL + "/" + jmenoSady;
+		final String key = MAPUZEL + "/" + jmenoSady.name();
 		final KeyNode<String, LamUrl> node = mf.getNode(key);
+		if (node == null) {
+			return null;
+		}
 		final Sada sada = ikonNacitacSada.loadSada(node);
+		if (sada == null) {
+			return null;
+		}
 		ikonBag.setSada(sada);
 		return ikonBag;
 	}

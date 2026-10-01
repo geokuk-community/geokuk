@@ -60,7 +60,7 @@ public class JFenotypVyberIkon extends JVyberIkon0 {
 
 	@Override
 	protected void zmenaVyberu(final Set<Alela> aAlely) {
-		kesoidModel.setJmenaNefenotypovanychAlel(Alela.alelyToQualNames(aAlely));
+		kesoidModel.setJmenaNefenotypovanychAlel(jmenaVcetneNevykreslenych(aAlely));
 	}
 
 }

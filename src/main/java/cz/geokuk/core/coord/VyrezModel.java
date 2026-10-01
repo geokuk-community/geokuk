@@ -131,16 +131,20 @@ public class VyrezModel extends Model0 {
 		vystredovatNaPozici();
 		// coord.setMoustred(moustred);
 		// setMoucur(moustred);
-		// odspodu hledáme měřítko, které tam vleze
-		int mer = 20;
-		// pod nulu se nesmí, tam už je vidět celý svět a 1 << (20 - mer) by přeteklo
+		setMeritkoMapyAutomaticky(meritkoProObdelnik(mourect, moord.getDim()));
+	}
+
+	/** Největší měřítko, ve kterém se obdélník vejde do okna dané velikosti. */
+	static int meritkoProObdelnik(final MouRect mourect, final Dimension dim) {
+		int mer = Coord.MAX_MOUMER;
+		// pod nulu se nesmí, tam už je vidět celý svět
 		for (; mer > 0; mer--) {
-			final int pom = 1 << 20 - mer; // pomer pro toto meritko
-			if (mourect.getMouWidth() / pom <= moord.getDim().getWidth() && mourect.getMouHeight() / pom <= moord.getDim().getHeight()) {
+			final int pom = 1 << Coord.MAX_MOUMER - mer; // mou na pixel v tomto měřítku
+			if (mourect.getMouWidth() / pom <= dim.getWidth() && mourect.getMouHeight() / pom <= dim.getHeight()) {
 				break; // hledáme nejbližší nejlepší
 			}
 		}
-		setMeritkoMapyAutomaticky(mer);
+		return mer;
 	}
 
 	/*

@@ -41,6 +41,16 @@ public class DirScannerTest {
 	}
 
 	@Test
+	public void vynechanaSlozkaSeNeprochazi() throws Exception {
+		Files.write(tmp.newFile("a.gpx").toPath(), "x".getBytes(StandardCharsets.UTF_8));
+		final File cesty = tmp.newFolder("cesty");
+		Files.write(new File(cesty, "cesta.gpx").toPath(), "y".getBytes(StandardCharsets.UTF_8));
+		final java.util.Set<File> vynechane = java.util.Collections.singleton(cesty.toPath().toAbsolutePath().normalize().toFile());
+		Assert.assertEquals(1, new DirScanner().scan(new Root(tmp.getRoot(), VSE, vynechane)).size());
+		Assert.assertEquals("vynechaná složka jako kořen se projde", 1, new DirScanner().scan(new Root(cesty, VSE, vynechane)).size());
+	}
+
+	@Test
 	public void chybejiciSlozkaDaPrazdnySeznam() {
 		Assert.assertTrue(new DirScanner().scan(new Root(new File(tmp.getRoot(), "neni"), VSE)).isEmpty());
 	}

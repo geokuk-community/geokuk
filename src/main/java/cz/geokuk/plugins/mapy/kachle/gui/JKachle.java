@@ -35,6 +35,9 @@ public class JKachle extends JComponent {
 
 	private static final long serialVersionUID = -5445121736003161730L;
 
+	static final long PRVNI_POKUS_PO_CHYBE_MS = 15_000;
+	private static final long POSLEDNI_POKUS_PO_CHYBE_MS = 300_000;
+
 	private static final PocitadloMalo pocitJKAchle = new PocitadloMalo("#JKachle", "Počet kompomnent JKachle přes hlavní okno, okno v rohu, rendry, stahování, prostě všude.");
 	private final JKachlovnik jKachlovnik;
 	// private static int cictac;
@@ -44,6 +47,12 @@ public class JKachle extends JComponent {
 	private Image image;
 
 	private boolean jeTamUzCelyObrazek;
+
+	/** Chyba posledního získání dlaždice, null když chyba není. */
+	private Throwable chyba;
+	/** Kdy se chybná dlaždice zkusí znovu; odstup se s každou další chybou zdvojnásobí. */
+	private long dalsiPokus;
+	private int chybVRade;
 	private final Set<DiagnosticsData> diagnosticsDatas = Collections.synchronizedSet(new LinkedHashSet<>());
 
 	private String diagnosticesFazeStr;
@@ -80,6 +89,23 @@ public class JKachle extends JComponent {
 		return jeTamUzCelyObrazek;
 	}
 
+	public synchronized boolean jeChybna() {
+		return chyba != null;
+	}
+
+	/** Dlaždici, kterou se nepodařilo získat (třeba při výpadku sítě), zkusí získat znovu, když už je na to čas. */
+	void zkusZnovuPoChybe(final KachleModel kachleModel, final Priority priorita) {
+		synchronized (this) {
+			if (chyba == null || System.currentTimeMillis() < dalsiPokus) {
+				return;
+			}
+			chyba = null;
+			jeTamUzCelyObrazek = false;
+		}
+		uzTeNepotrebuju();
+		ziskejObsah(kachleModel, priorita);
+	}
+
 	/**
 	 * Už nebudu výsledek potřebovat, tak všechnoi můžeme stornovat
 	 */
@@ -114,6 +140,12 @@ public class JKachle extends JComponent {
 			synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
 				if (kastat.getImg() != null) {
 					image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
+					chyba = null;
+					chybVRade = 0;
+				} else {
+					chyba = kastat.getThr();
+					dalsiPokus = System.currentTimeMillis() + Math.min(PRVNI_POKUS_PO_CHYBE_MS << Math.min(chybVRade, 5), POSLEDNI_POKUS_PO_CHYBE_MS);
+					chybVRade++;
 				}
 				jeTamUzCelyObrazek = true;
 				ziskanPlnyObrazek(image);
@@ -154,7 +186,11 @@ public class JKachle extends JComponent {
 		if (image != null) {
 			g.drawImage(image, 0, 0, null);
 		}
-		if (image == null || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+			g.setColor(Color.GRAY);
+			drawPsanicko(g);
+			vypisChybu(g);
+		} else if (image == null || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
 			g.setColor(Color.blue);
 			drawPsanicko(g);
 			g.setColor(Color.RED);
@@ -195,6 +231,36 @@ public class JKachle extends JComponent {
 	 */
 	protected void ziskanPlnyObrazek(final Image img) {
 
+	}
+
+	private void vypisChybu(final Graphics2D g) {
+		final String[] radky = { "Dlaždici se nepodařilo načíst:", popisChyby(chyba), "Zkusí se znovu." };
+		final FontMetrics fm = g.getFontMetrics();
+		int y = getHeight() / 2 - fm.getHeight();
+		for (final String radek : radky) {
+			final int sirka = fm.stringWidth(radek);
+			g.setColor(new Color(255, 255, 255, 200));
+			g.fillRect((getWidth() - sirka) / 2 - 3, y - fm.getAscent(), sirka + 6, fm.getHeight());
+			g.setColor(Color.BLACK);
+			g.drawString(radek, (getWidth() - sirka) / 2, y);
+			y += fm.getHeight();
+		}
+	}
+
+	static String popisChyby(final Throwable t) {
+		if (t instanceof java.net.UnknownHostException || t instanceof java.net.ConnectException || t instanceof java.net.NoRouteToHostException) {
+			return "bez připojení k serveru mapy";
+		}
+		if (t instanceof java.net.SocketTimeoutException) {
+			return "server mapy neodpovídá";
+		}
+		if (t instanceof KachloDownloader.ChybaServeru) {
+			return "server mapy vrátil chybu " + ((KachloDownloader.ChybaServeru) t).getKod();
+		}
+		if (t instanceof java.io.IOException) {
+			return "chyba při stahování";
+		}
+		return "chyba";
 	}
 
 	private void drawPsanicko(final Graphics2D g) {

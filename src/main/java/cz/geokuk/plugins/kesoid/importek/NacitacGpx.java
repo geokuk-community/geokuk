@@ -31,6 +31,7 @@ public class NacitacGpx extends NacitacInputStream0 {
 	private static String TOPOGRAFIC_NAMESPACE_1_1 = "http://www.topografix.com/GPX/1/1";
 	private static String GROUNSPEAK_NAMESPACE_1_0 = "http://www.groundspeak.com/cache/1/0";
 	private static String GROUNSPEAK_NAMESPACE_1_0_1 = "http://www.groundspeak.com/cache/1/0/1";
+	private static String GROUNSPEAK_NAMESPACE_1_0_2 = "http://www.groundspeak.com/cache/1/0/2";
 	private static Set<String> GPXG_NAMESPACES = Sets.newHashSet("https://www.geoget.cz/GpxExtensions/v2", "http://geoget.ararat.cz/GpxExtensions/v2");
 
 	private static QName URL = new QName(TOPOGRAFIC_NAMESPACE_1_0, "url");
@@ -52,6 +53,10 @@ public class NacitacGpx extends NacitacInputStream0 {
 	private static QName TRKSEG;
 
 	private static QName TRKPT;
+
+	private static QName RTE;
+
+	private static QName RTEPT;
 
 	private QName WPT;
 
@@ -116,6 +121,9 @@ public class NacitacGpx extends NacitacInputStream0 {
 	private QName GS_STATE;
 	// <groundspeak:encoded_hints>U balvanu. Hluboko zastrcit levou ruku a doprava.</groundspeak:encoded_hints>
 	private QName GS_ENCODED_HINTS;
+	// logy a travel bugy mají vlastní groundspeak:type a groundspeak:name
+	private QName GS_LOGS;
+	private QName GS_TRAVELBUGS;
 	// <groundspeak:short_description html;
 	private QName GS_SHORT_DESCRIPTION;
 
@@ -162,6 +170,23 @@ public class NacitacGpx extends NacitacInputStream0 {
 					}
 					builder.endTrack();
 				}
+				// Plán trasy (rte) je pro cesty totéž co trasa s jedním segmentem.
+				if (rdr.getName().equals(RTE)) {
+					builder.begTrack();
+					builder.begTrackSegment();
+					for (; !(rdr.isEndElement() && rdr.getName().equals(RTE)); rdr.next()) {
+						if (rdr.isStartElement() && rdr.getName().equals(NAME)) {
+							builder.setTrackName(rdr.getElementText());
+						}
+						if (rdr.isStartElement() && rdr.getName().equals(RTEPT)) {
+							final GpxWpt wpt = new GpxWpt();
+							readWpt(rdr, wpt, RTEPT);
+							builder.addTrackWpt(wpt);
+						}
+					}
+					builder.endTrackSegment();
+					builder.endTrack();
+				}
 			}
 			rdr.next();
 		}
@@ -194,6 +219,8 @@ public class NacitacGpx extends NacitacInputStream0 {
 
 	private void initNamesGroundspeak(final String groundspeakNameSpaceUri) {
 		GS_CACHE = new QName(groundspeakNameSpaceUri, "cache");
+		GS_LOGS = new QName(groundspeakNameSpaceUri, "logs");
+		GS_TRAVELBUGS = new QName(groundspeakNameSpaceUri, "travelbugs");
 
 		// <groundspeak:name>Vyroba vapna</groundspeak:name>
 		GS_NAME = new QName(groundspeakNameSpaceUri, "name");
@@ -244,6 +271,8 @@ public class NacitacGpx extends NacitacInputStream0 {
 		TRK = new QName(topograficNamespaceUri, "trk");
 		TRKSEG = new QName(topograficNamespaceUri, "trkseg");
 		TRKPT = new QName(topograficNamespaceUri, "trkpt");
+		RTE = new QName(topograficNamespaceUri, "rte");
+		RTEPT = new QName(topograficNamespaceUri, "rtept");
 	}
 
 	private void readGeogetExtension(final XMLStreamReader rdr, final GpxWpt wpt) throws XMLStreamException {
@@ -289,6 +318,15 @@ public class NacitacGpx extends NacitacInputStream0 {
 			if (GPXG_FLAG.is(jmeno4)) {
 				wpt.gpxg.flag = parseCislo(rdr.getElementText());
 			}
+		}
+	}
+
+	/** Výška je nepovinná a pro keše nepodstatná, nečitelná nesmí zahodit zbytek souboru. */
+	private static double vyska(final String text, final double puvodni) {
+		try {
+			return Double.parseDouble(text.trim().replace(',', '.'));
+		} catch (final NumberFormatException e) {
+			return puvodni;
 		}
 	}
 
@@ -348,6 +386,9 @@ public class NacitacGpx extends NacitacInputStream0 {
 				wpt.groundspeak.encodedHints = rdr.getElementText();
 				break; // už mě ten cyklus kolem groundspeak:cache nezajímá
 			}
+			if (jmeno2.equals(GS_LOGS) || jmeno2.equals(GS_TRAVELBUGS)) {
+				break; // keš bez nápovědy, typ a jméno dál patří logům a travel bugům
+			}
 		}
 	}
 
@@ -361,7 +402,8 @@ public class NacitacGpx extends NacitacInputStream0 {
 				final Double dlat = Double.parseDouble(lat);
 				final Double dlon = Double.parseDouble(lon);
 				wpt.wgs = new Wgs(dlat, dlon);
-			} catch (final NumberFormatException e) {
+			} catch (final RuntimeException e) {
+				// i NaN a nekonečno; waypoint bez souřadnic se přeskočí, zbytek souboru se načte
 				log.error("Invalid latitude or longitude string! Lat : [" + lat + "], lon : [" + lon + lon + "]", e);
 			}
 		}
@@ -373,7 +415,7 @@ public class NacitacGpx extends NacitacInputStream0 {
 					wpt.time = rdr.getElementText(); // nemůžeme to hend použít
 				}
 				if (jmeno.equals(ELE)) {
-					wpt.ele = Double.parseDouble(rdr.getElementText()); // nemůžeme to hend použít
+					wpt.ele = vyska(rdr.getElementText(), wpt.ele);
 				}
 				if (jmeno.equals(NAME)) {
 					wpt.name = rdr.getElementText();
@@ -417,6 +459,9 @@ public class NacitacGpx extends NacitacInputStream0 {
 				}
 				if (rdr.getName().getNamespaceURI().equals(GROUNSPEAK_NAMESPACE_1_0_1)) {
 					initNamesGroundspeak(GROUNSPEAK_NAMESPACE_1_0_1);
+				}
+				if (rdr.getName().getNamespaceURI().equals(GROUNSPEAK_NAMESPACE_1_0_2)) {
+					initNamesGroundspeak(GROUNSPEAK_NAMESPACE_1_0_2);
 				}
 				if (jmeno.equals(GS_CACHE)) {
 					readGroudspeak(rdr, wpt);
