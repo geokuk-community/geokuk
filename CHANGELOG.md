@@ -42,6 +42,8 @@
   ostatní se načtou.
 - Otevření filtru (F2) nad daty, ve kterých nejsou nalezené, archivované
   nebo jiné skryté keše, z filtru nevyhodí jejich skrytí.
+- Server, který posílá dlaždici extrémně pomalu, nezablokuje stahování
+  mapy; stažení jedné dlaždice má celkový limit 60 s.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

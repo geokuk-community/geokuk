@@ -145,9 +145,6 @@ public class KachleZiskavac {
 
 		public synchronized void onImageFailure(final Throwable t) {
 			futura = null;
-			if (!(t instanceof CancellationException)) {
-				t.printStackTrace();
-			}
 			for (final ImageReceiver ir : irs) {
 				ir.send(new KachloStav(t));
 			}

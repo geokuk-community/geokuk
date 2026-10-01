@@ -22,6 +22,7 @@ public class KachloDownloader {
 	/** Bez limitu by nedostupný server držel stahovací frontu navždy. */
 	private static final int TIMEOUT_PRIPOJENI = 15000;
 	private static final int TIMEOUT_CTENI = 30000;
+	static final int TIMEOUT_CELKEM = 60000;
 
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
 	static final String USER_AGENT = "Geokuk/" + FConst.VERSION;
@@ -41,6 +42,27 @@ public class KachloDownloader {
 	}
 
 
+
+	/** Server odpověděl chybou místo dlaždice. */
+	public static class ChybaServeru extends IOException {
+		private static final long serialVersionUID = 1L;
+
+		private final int kod;
+
+		ChybaServeru(final int kod, final String zprava) {
+			super("Server mapy vrátil chybu HTTP " + kod + (zprava == null ? "" : " " + zprava) + ".");
+			this.kod = kod;
+		}
+
+		public int getKod() {
+			return kod;
+		}
+
+		/** Server žádá, abychom stahovali méně nebo počkali. */
+		public boolean jeOmezeni() {
+			return kod == 429 || kod == 503;
+		}
+	}
 
 	static class UseknutaDlazdice extends IOException {
 		private static final long serialVersionUID = 1L;
@@ -77,12 +99,17 @@ public class KachloDownloader {
 		}
 		hlavicky.forEach(conn::setRequestProperty);
 
-		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream());
+		final int kod = conn.getResponseCode();
+		if (kod >= 300) {
+			conn.disconnect();
+			throw new ChybaServeru(kod, conn.getResponseMessage());
+		}
+		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream(), TIMEOUT_CELKEM);
 		final Image img;
 		try (InputStream stm = new BufferedInputStream(dhis)) {
 			img = precti(stm);
 			if (img == null) {
-				throw new RuntimeException("image is null");
+				throw new IOException("Server místo obrázku poslal něco jiného, třeba přihlašovací stránku Wi-Fi.");
 			}
 			docti(stm);
 		}
