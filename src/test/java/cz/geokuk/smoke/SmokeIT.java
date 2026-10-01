@@ -173,11 +173,9 @@ public class SmokeIT {
 		vlastnosti.add("-Dsmoke.zmeneneProstredi=true");
 		final Properties zprava = spust(adresar, "prostredi", "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava, false);
-		assertTrue("Mapa se má načíst i bez cache", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
+		assertTrue("Mapa se má načíst", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
 		assertEquals("Bez datové složky nejsou keše", "0", zprava.getProperty("kese.wpt"));
-		assertEquals("Do nedostupné cache se nic nezapíše", 0, pocitadlo(zprava, "ka42 disk write #dlaždic"));
-		assertTrue("Uživatel se má dozvědět, že cache nejde použít: " + zprava,
-				zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).anyMatch(k -> zprava.getProperty(k).contains("Cache dlaždic ve složce")));
+		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
 	}
 
 	@Test
@@ -192,7 +190,7 @@ public class SmokeIT {
 
 	/** Položky menu, které program ukončí, otevřou prohlížeč, přepnou vzhled nebo ovládání samo vypnou. */
 	private static final List<String> NESPOUSTET_ZVENKU = Arrays.asList("Soubor > Konec", "Soubor > Celá obrazovka", "Soubor > Dálkové ovládání", "Mapy > Online", "Nápověda > Nápověda",
-			"Nápověda > Webová stránka", "Nápověda > Zadat problém", "Nápověda > Zkontrolovat aktualizace", "Skin > ");
+			"Nápověda > Webová stránka", "Nápověda > Zadat problém", "Nápověda > Zkontrolovat aktualizace", "Nápověda > Nabízet testovací verze", "Skin > ");
 
 	/**
 	 * Program spuštěný jako obyčejný {@code java -jar geokuk.jar --ovladani=0} se řídí jen zvenku přes dálkové ovládání: projde všechny položky

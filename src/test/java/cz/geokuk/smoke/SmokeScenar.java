@@ -213,7 +213,7 @@ public class SmokeScenar {
 
 	/** Akce, které se v průchodu menu nespouštějí: ukončí program, otevřou prohlížeč nebo sahají na internet, přepnou vzhled či mapu. */
 	private static final Set<String> NESPOUSTET = new HashSet<>(Arrays.asList("CloseAction", "FullScreenAction", "NapovedaAction", "WebovaStrankaAction", "ZadatProblemAction",
-			"ZkontrolovatAktualizaceAction", "ChangeLookAndFeelAction", "ChangeThemeAction", "PodkladAction", "OnlineModeAction"));
+			"ZkontrolovatAktualizaceAction", "BetaKanalAction", "VytvoritZastupceAction", "ChangeLookAndFeelAction", "ChangeThemeAction", "PodkladAction", "OnlineModeAction"));
 
 	/**
 	 * Klikne na každou položku menu. Na každém okně, které se tím otevře, ověří, že je vidět, má rozumnou velikost a nějaký obsah, a zase ho
