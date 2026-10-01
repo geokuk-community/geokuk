@@ -64,6 +64,9 @@
   z ostatních. Nepovedené uložení nezmění soubor, ke kterému cesta patří.
 - Když nejde uložit výlet (`lovim.ggt`, `tedne.ggt`), program to ohlásí
   a zkusí ho uložit znovu při další změně.
+- Databáze GSAKu s nestandardním řazením nezastaví načítání ostatních
+  dat dialogem, ohlásí se v přehledu problémů. Okno nečeká, než doběhne
+  procházení velké datové složky.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

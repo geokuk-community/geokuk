@@ -79,11 +79,10 @@ public class GsakDbLoader extends Nacitac0 {
 			loadWaypoints(dao, aBuilder, aFuture, progressor);
 			progressor.finish();
 		} catch (final SQLException e) {
-			if (e.getMessage().contains("no such collation sequence:")) {
-				// TODO: Nějak lépe zakomunikovat s uživatelem, nelíbí se mi, že že v BIZ třídě je interakce, ale nevím jak jinak. [ISSUE#48, 2016-04-09, Bohusz]
-				Dlg.info("Databázový soubor \"" + aDbFile + "\" obsahuje nestandardní řazení.\n\nMělo by postačit databázi na chvíli vybrat jako aktivní, GSAK ji automaticky opraví.",
-						"GSAK soubor je zastaralý");
-				return;
+			if (String.valueOf(e.getMessage()).contains("no such collation sequence:")) {
+				// Modální okno by tu zastavilo načítání všech dat, než ho uživatel zavře.
+				log.warn("Nestandardní řazení v {}", aDbFile, e);
+				throw new IOException("Databáze GSAKu \"" + aDbFile + "\" obsahuje nestandardní řazení, a proto se nenačetla. Mělo by stačit ji v GSAKu na chvíli vybrat jako aktivní, GSAK ji opraví.");
 			}
 			throw new IOException("Unable to load from " + aDbFile, e);
 		}

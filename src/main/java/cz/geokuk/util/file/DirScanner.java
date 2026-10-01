@@ -16,8 +16,10 @@ public class DirScanner {
 	// case insensitive, TODO : other image formats than JPG, raw and tif
 
 	// TODO : Use file watchers
-	private List<Root> roots;
+	private volatile List<Root> roots;
 	private List<KeFile> lastScaned = null;
+	/** Bez zámku, aby GUI nečekalo, než doběhne sken velké složky. */
+	private volatile boolean nacistZnovu = true;
 
 	/**
 	 * Vrátí null, pokud není co načítat, protože nedošlo ke změně. Prázdný seznam je něco jiného, to ke změně došlo takové, že zmizely všechny soubory. Když se změní byť jediný soubor, je to změna a načítá se.
@@ -25,21 +27,23 @@ public class DirScanner {
 	 * @return
 	 */
 	public synchronized List<KeFile> coMamNacist() {
+		final boolean vynutit = nacistZnovu;
+		nacistZnovu = false;
 		final Set<KeFile> set = new HashSet<>();
 		for (final Root dir : roots) {
 			final List<KeFile> li = scanDir(dir);
 			set.addAll(li);
 		}
 		final List<KeFile> list = new ArrayList<>(set);
-		if (list.equals(lastScaned)) {
+		if (!vynutit && list.equals(lastScaned)) {
 			return null; // nezměnilo se nic
 		}
 		lastScaned = list;
 		return list;
 	}
 
-	public synchronized void nulujLastScaned() {
-		lastScaned = null;
+	public void nulujLastScaned() {
+		nacistZnovu = true;
 	}
 
 	public void seRootDirs(final boolean prenacti, final Root... roots) {
