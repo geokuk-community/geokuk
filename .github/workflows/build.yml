@@ -43,16 +43,57 @@ jobs:
           fi
           ./mvnw -B clean package -Dgeokuk.version="$VERZE" -Dgeokuk.commit="${GITHUB_SHA::7}"
           mv target/geokuk-*.jar target/geokuk.jar
+          mv target/temporary-start.jar target/start.jar
 
       - name: Jar jako artefakt
         uses: actions/upload-artifact@v4
         with:
           name: geokuk-jar
-          path: target/geokuk.jar
+          path: |
+            target/geokuk.jar
+            target/start.jar
+
+  # Přenosná verze pro Windows: přibalená Java z Temurinu, jehož podepsaný javaw.exe jlink zachová.
+  windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: distribuce/windows
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: geokuk-jar
+
+      - name: Zip s přibalenou Javou
+        shell: pwsh
+        run: |
+          $moduly = "java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.prefs,java.sql,java.xml," +
+            "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.unsupported,jdk.zipfs"
+          jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --output GeoKuk/runtime
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $podpis = Get-AuthenticodeSignature GeoKuk/runtime/bin/javaw.exe
+          if ($podpis.Status -ne "Valid") { throw "javaw.exe není podepsaný: $($podpis.Status)" }
+          Copy-Item geokuk.jar, start.jar, distribuce/windows/GeoKuk.cmd, distribuce/windows/geokuk.ico GeoKuk/
+          GeoKuk/runtime/bin/java -version
+          Compress-Archive GeoKuk -DestinationPath GeoKuk-windows.zip
+
+      - name: Zip jako artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: geokuk-windows
+          path: GeoKuk-windows.zip
 
   release:
     if: startsWith(github.ref, 'refs/tags/v') || (inputs.verze != '' && github.ref == 'refs/heads/main')
-    needs: build
+    needs: [build, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -61,17 +102,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: CHANGELOG.md
+          sparse-checkout: |
+            CHANGELOG.md
+            src/main/resources/java.properties
           sparse-checkout-cone-mode: false
 
       - uses: actions/download-artifact@v4
         with:
           name: geokuk-jar
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: geokuk-windows
+
       - name: Soubory pro stažení a aktualizaci
         run: |
           unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${TAG#v}"
-          sha256sum geokuk.jar > geokuk.jar.sha256
+          cp src/main/resources/java.properties java.properties
+          for f in geokuk.jar start.jar GeoKuk-windows.zip; do sha256sum "$f" > "$f.sha256"; done
 
       # Popis vydání je oddíl CHANGELOG.md pro verzi bez přípony (6.0.1-beta.3 → 6.0.1).
       - name: Popis vydání
@@ -91,6 +139,7 @@ jobs:
           PRE=""
           case "$TAG" in *-*) PRE="--prerelease" ;; esac
           if [ "$GITHUB_REF_TYPE" = tag ]; then CIL="--verify-tag"; else CIL="--target $GITHUB_SHA"; fi
-          gh release create "$TAG" geokuk.jar geokuk.jar.sha256 \
+          gh release create "$TAG" geokuk.jar geokuk.jar.sha256 start.jar start.jar.sha256 \
+            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 java.properties \
             --draft $CIL --title "$TAG" --notes-file popis.md $PRE
           gh release edit "$TAG" --draft=false

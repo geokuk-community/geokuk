@@ -134,7 +134,7 @@ public final class Start {
 		return null;
 	}
 
-	static long fyzickaPametMb() {
+	public static long fyzickaPametMb() {
 		final OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
 		for (final String metoda : new String[] { "getTotalMemorySize", "getTotalPhysicalMemorySize" }) {
 			try {

@@ -88,6 +88,8 @@ public class Akce {
 
 	public final ZobrazServisniOknoAction zobrazServisniOknoAction = new ZobrazServisniOknoAction();
 	public final DalkoveOvladaniAction dalkoveOvladaniAction = new DalkoveOvladaniAction();
+	public final VytvoritZastupceAction vytvoritZastupceAction = new VytvoritZastupceAction();
+	public final PametProgramuAction pametProgramuAction = new PametProgramuAction();
 
 	public final RefreshIkonAction refreshIkonAction = new RefreshIkonAction();
 	public final DebugIkonyAction debugIkonyAction = new DebugIkonyAction();
