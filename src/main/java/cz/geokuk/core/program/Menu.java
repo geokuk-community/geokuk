@@ -125,6 +125,7 @@ public class Menu extends MenuStrujce {
 		item(akce.priblizMapuAction);
 		item(akce.oddalMapuAction);
 		item(akce.nastavMapuCeskaAction);
+		item(akce.zobrazVsechnyKeseAction);
 
 		separator();
 		item(akce.onlineModeAction);

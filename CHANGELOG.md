@@ -3,6 +3,9 @@
 ## 6.1.0
 
 ### Změny
+- Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
+  zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
+  žádná keš není.
 - Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
