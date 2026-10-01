@@ -4,9 +4,7 @@
 package cz.geokuk.plugins.mapy.kachle;
 
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
-import cz.geokuk.core.program.FPref;
 import cz.geokuk.framework.Model0;
-import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -93,9 +91,6 @@ public class KachleModel extends Model0 {
 		}
 		this.umisteniSouboru = umisteniSouboru;
 		kachleCacheFolderHolder.setKachleCacheDir(umisteniSouboru.getKachleCacheDir());
-		final MyPreferences pref = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
-		pref.putFilex(FPref.KACHLE_CACHE_DIR_value, umisteniSouboru.getKachleCacheDir());
-		pref.remove("vyjimkyDir"); // mazat ze starych verzi
 		fire(new KachleUmisteniSouboruChangedEvent(umisteniSouboru));
 	}
 
@@ -112,8 +107,7 @@ public class KachleModel extends Model0 {
 
 	private KachleUmisteniSouboru loadUmisteniSouboru() {
 		final KachleUmisteniSouboru u = new KachleUmisteniSouboru();
-		final MyPreferences pref = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
-		u.setKachleCacheDir(pref.getFilex("kachleCacheDir", KachleUmisteniSouboru.KACHLE_CACHE_DIR));
+		u.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
 		return u;
 	}
 }

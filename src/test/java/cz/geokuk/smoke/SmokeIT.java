@@ -95,7 +95,7 @@ public class SmokeIT {
 		try (java.net.ServerSocket s = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"))) {
 			zavreny = s.getLocalPort();
 		}
-		final File mapy = new File(adresar, "pracovni/uzivatelske-mapy.properties");
+		final File mapy = new File(adresar, "data/uzivatelske-mapy.properties");
 		Files.write(mapy.toPath(), new String(Files.readAllBytes(mapy.toPath()), StandardCharsets.UTF_8).replace(":" + server.getPort() + "/", ":" + zavreny + "/").getBytes(StandardCharsets.UTF_8));
 		proxyPort = zavreny;
 		final Properties zprava = spust(adresar, "bezsite", "meritka,posun");
@@ -110,13 +110,14 @@ public class SmokeIT {
 		final File adresar = pripravAdresar("poskozene");
 		final byte[] smeti = new byte[20_000];
 		new Random(2).nextBytes(smeti);
-		final File cache = new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite");
+		final File cache = new File(adresar, "data/cache/tiles.sqlite");
 		cache.getParentFile().mkdirs();
 		Files.write(cache.toPath(), smeti);
-		Files.write(new File(adresar, "home/geokuk/lovim.ggt").toPath(), Arrays.copyOf(smeti, 3000));
-		Files.write(new File(adresar, "home/geokuk/tedne.ggt").toPath(), "GC1\nnesmysl;;;\n\u0000\n".getBytes(StandardCharsets.UTF_8));
-		Files.write(new File(adresar, "pracovni/geokuk-preferences.xml").toPath(), "<?xml version=\"1.0\"?><preferences><useknute".getBytes(StandardCharsets.UTF_8));
-		Files.write(new File(adresar, "pracovni/uzivatelske-mapy.properties").toPath(), "rozbita.url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+		new File(adresar, "data/vylety").mkdirs();
+		Files.write(new File(adresar, "data/vylety/lovim.ggt").toPath(), Arrays.copyOf(smeti, 3000));
+		Files.write(new File(adresar, "data/vylety/tedne.ggt").toPath(), "GC1\nnesmysl;;;\n\u0000\n".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), "<?xml version=\"1.0\"?><preferences><useknute".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), "rozbita.url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
 
 		final Properties zprava = spust(adresar, "poskozene", "meritka");
 		zkontrolujBezChyb(adresar, zprava, false);
@@ -162,7 +163,7 @@ public class SmokeIT {
 		final Properties treti = spust(adresar, "treti", "meritka,posun");
 		zkontrolujBezChyb(adresar, treti, false);
 		assertEquals(0, pocitadlo(treti, "ka24 DISK cache #chyb čtení"));
-		assertFalse("Cache se nesmí odložit jako vadná", new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite.vadna").exists());
+		assertFalse("Cache se nesmí odložit jako vadná", new File(adresar, "data/cache/tiles.sqlite.vadna").exists());
 		assertTrue("Třetí běh bere dlaždice z cache", pocitadlo(treti, "ka22 DISK cache #zásahů") > 100);
 	}
 
@@ -172,17 +173,15 @@ public class SmokeIT {
 		vlastnosti.add("-Dsmoke.zmeneneProstredi=true");
 		final Properties zprava = spust(adresar, "prostredi", "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava, false);
-		assertTrue("Mapa se má načíst i bez cache", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
+		assertTrue("Mapa se má načíst", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
 		assertEquals("Bez datové složky nejsou keše", "0", zprava.getProperty("kese.wpt"));
-		assertEquals("Do nedostupné cache se nic nezapíše", 0, pocitadlo(zprava, "ka42 disk write #dlaždic"));
-		assertTrue("Uživatel se má dozvědět, že cache nejde použít: " + zprava,
-				zprava.stringPropertyNames().stream().filter(k -> k.startsWith("okno.")).anyMatch(k -> zprava.getProperty(k).contains("Cache dlaždic ve složce")));
+		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
 	}
 
 	@Test
 	public void dalkoveOvladani() throws Exception {
 		final File adresar = pripravAdresar("ovladani");
-		vlastnosti.add("-Dsmoke.args=--ovladani=0");
+		vlastnosti.add("-Dsmoke.args=--ovladani=0 --ovladani-devel");
 		final Properties zprava = spust(adresar, "ovladani", "ovladani");
 		zkontrolujBezChyb(adresar, zprava);
 		assertTrue(zprava.getProperty("ovladani.stav"), zprava.getProperty("ovladani.stav").contains("\"podklad\":\"TURIST_M\""));
@@ -191,7 +190,7 @@ public class SmokeIT {
 
 	/** Položky menu, které program ukončí, otevřou prohlížeč, přepnou vzhled nebo ovládání samo vypnou. */
 	private static final List<String> NESPOUSTET_ZVENKU = Arrays.asList("Soubor > Konec", "Soubor > Celá obrazovka", "Soubor > Dálkové ovládání", "Mapy > Online", "Nápověda > Nápověda",
-			"Nápověda > Webová stránka", "Nápověda > Zadat problém", "Nápověda > Zkontrolovat aktualizace", "Skin > ");
+			"Nápověda > Webová stránka", "Nápověda > Zadat problém", "Nápověda > Zkontrolovat aktualizace", "Nápověda > Nabízet testovací verze", "Skin > ");
 
 	/**
 	 * Program spuštěný jako obyčejný {@code java -jar geokuk.jar --ovladani=0} se řídí jen zvenku přes dálkové ovládání: projde všechny položky
@@ -212,7 +211,7 @@ public class SmokeIT {
 			p.destroyForcibly();
 			Files.write(new File(adresar, "zvenku-prubeh.txt").toPath(), prubeh.toString().getBytes(StandardCharsets.UTF_8));
 		}
-		final String[] vypisy = new File(adresar, "tmp/geokuk/excrep").list();
+		final String[] vypisy = new File(adresar, "data/log/chyby").list();
 		if (vypisy != null && vypisy.length > 0) {
 			problemy.add("Výpisy chyb v excrep: " + Arrays.toString(vypisy));
 		}
@@ -265,11 +264,12 @@ public class SmokeIT {
 		prikaz.add("-jar");
 		prikaz.add(new File(adresar, "pracovni/geokuk.jar").getPath());
 		prikaz.add("--ovladani=0");
+		prikaz.add("--ovladani-devel");
 		return new ProcessBuilder(prikaz).directory(new File(adresar, "pracovni")).redirectErrorStream(true).redirectOutput(new File(adresar, adresar.getName() + ".log")).start();
 	}
 
 	private KlientOvladani pripojSe(final File adresar) throws Exception {
-		final File soubor = new File(adresar, "home/.geokuk/ovladani.properties");
+		final File soubor = new File(adresar, "data/ovladani.properties");
 		cekej(60, soubor::isFile);
 		final KlientOvladani k = new KlientOvladani(soubor);
 		cekej(120, () -> ((Number) k.stav().get("waypointu")).intValue() == pocetWpt);
@@ -381,7 +381,7 @@ public class SmokeIT {
 	@Test
 	public void neporadnaDataVDatoveSlozce() throws Exception {
 		final File adresar = pripravAdresar("data");
-		final File data = new File(adresar, "home/geokuk");
+		final File data = new File(adresar, "data/gpx");
 		int dobre = pocetWpt;
 		dobre += SyntetickeKese.zapis(new File(data, "druhe.gpx"), 10_000, 5, 50.1, 14.4, 0.05);
 		// Kopie téhož souboru, keše se nemají načíst dvakrát.
@@ -428,15 +428,15 @@ public class SmokeIT {
 		final File adresar = new File(KOREN, jmeno).getAbsoluteFile();
 		smaz(adresar);
 		final File pracovni = new File(adresar, "pracovni");
-		new File(adresar, "home/geokuk").mkdirs();
-		pocetWpt = SyntetickeKese.zapis(new File(adresar, "home/geokuk/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
+		new File(adresar, "data/gpx").mkdirs();
+		pocetWpt = SyntetickeKese.zapis(new File(adresar, "data/gpx/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
 		new File(adresar, "tmp").mkdirs();
 		pracovni.mkdirs();
 		final String mapy = "smoke.nazev=" + SmokeScenar.MAPA + "\n" //
 				+ "smoke.url=" + server.getUrl() + "\n" //
 				+ "smoke.max=18\n" //
 				+ "smoke.hromadne=ano\n";
-		Files.write(new File(pracovni, "uzivatelske-mapy.properties").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
 		Files.copy(new File(System.getProperty("smoke.jar")).toPath(), new File(pracovni, "geokuk.jar").toPath());
 		return adresar;
 	}
@@ -448,6 +448,7 @@ public class SmokeIT {
 		prikaz.add("-Duser.home=" + new File(adresar, "home"));
 		prikaz.add("-Djava.io.tmpdir=" + new File(adresar, "tmp"));
 		prikaz.add("-Djava.util.prefs.userRoot=" + new File(adresar, "prefs"));
+		prikaz.add("-Dgeokuk.data=" + new File(adresar, "data"));
 		// Vestavěné mapy (Mapy.cz po http) jdou přes falešný server jako proxy.
 		prikaz.add("-Dhttp.proxyHost=127.0.0.1");
 		prikaz.add("-Dhttp.proxyPort=" + proxyPort);
@@ -460,7 +461,7 @@ public class SmokeIT {
 	private Properties spust(final File adresar, final String beh, final String kroky) throws Exception {
 		final File zprava = new File(adresar, beh + ".properties");
 		final List<String> prikaz = new ArrayList<>(jvm(adresar));
-		// Program běží ze sestaveného jaru v pracovním adresáři, jen tak si vedle sebe najde uživatelské mapy.
+		// Program běží ze sestaveného jaru v pracovním adresáři jako z přenosné složky.
 		prikaz.add("-cp");
 		prikaz.add(new File(adresar, "pracovni/geokuk.jar") + File.pathSeparator + System.getProperty("smoke.testClasses"));
 		prikaz.add(SmokeScenar.class.getName());
@@ -495,7 +496,7 @@ public class SmokeIT {
 		if (pamet > 400) {
 			problemy.add("Po scénáři zůstalo obsazeno " + pamet + " MB paměti");
 		}
-		final File excrep = new File(adresar, "tmp/geokuk/excrep");
+		final File excrep = new File(adresar, "data/log/chyby");
 		final String[] vypisy = excrep.list();
 		if (bezVypisu && vypisy != null && vypisy.length > 0) {
 			problemy.add("Výpisy chyb v " + excrep + ": " + Arrays.toString(vypisy));
@@ -505,7 +506,7 @@ public class SmokeIT {
 
 	/** Počet dlaždic v cache po ukončení programu. */
 	private static long dlazdicVCache(final File adresar) throws Exception {
-		try (java.sql.Connection c = java.sql.DriverManager.getConnection("jdbc:sqlite:" + new File(adresar, "home/geokuk/prchave/kachle/tiles.sqlite"))) {
+		try (java.sql.Connection c = java.sql.DriverManager.getConnection("jdbc:sqlite:" + new File(adresar, "data/cache/tiles.sqlite"))) {
 			final String tabulka;
 			try (java.sql.ResultSet t = c.createStatement().executeQuery("select name from sqlite_master where type = 'table'")) {
 				t.next();

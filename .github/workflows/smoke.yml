@@ -32,5 +32,5 @@ jobs:
             target/smoke/*/*.properties
             target/smoke/*/*.log
             target/smoke/*/*.png
-            target/smoke/*/tmp/geokuk/excrep/
+            target/smoke/*/data/log/
             target/failsafe-reports/

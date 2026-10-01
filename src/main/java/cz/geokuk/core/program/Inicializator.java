@@ -121,7 +121,7 @@ public class Inicializator {
 		final List<String> chyby = UzivatelskeMapy.nacti();
 		if (!chyby.isEmpty()) {
 			chyby.forEach(Diagnostika::zaznamenejChybu);
-			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.JAR_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
+			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.DATA_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
 		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);
@@ -135,9 +135,9 @@ public class Inicializator {
 		mainFrameHolder.setMainFrame(frame);
 	}
 
-	public void spustDalkoveOvladani(final int port) {
+	public void spustDalkoveOvladani(final int port, final boolean vyvojova) {
 		try {
-			dalkoveOvladani.spust(port);
+			dalkoveOvladani.spust(port, vyvojova);
 		} catch (final IOException | RuntimeException e) {
 			Dlg.error("Dálkové ovládání nejde spustit na portu " + port + ": " + e.getMessage());
 		}

@@ -213,7 +213,7 @@ public class SmokeScenar {
 
 	/** Akce, které se v průchodu menu nespouštějí: ukončí program, otevřou prohlížeč nebo sahají na internet, přepnou vzhled či mapu. */
 	private static final Set<String> NESPOUSTET = new HashSet<>(Arrays.asList("CloseAction", "FullScreenAction", "NapovedaAction", "WebovaStrankaAction", "ZadatProblemAction",
-			"ZkontrolovatAktualizaceAction", "ChangeLookAndFeelAction", "ChangeThemeAction", "PodkladAction", "OnlineModeAction"));
+			"ZkontrolovatAktualizaceAction", "BetaKanalAction", "VytvoritZastupceAction", "ChangeLookAndFeelAction", "ChangeThemeAction", "PodkladAction", "OnlineModeAction"));
 
 	/**
 	 * Klikne na každou položku menu. Na každém okně, které se tím otevře, ověří, že je vidět, má rozumnou velikost a nějaký obsah, a zase ho
@@ -387,7 +387,7 @@ public class SmokeScenar {
 		return (menu instanceof JMenu ? ((JMenu) menu).getText() + " > " : "") + polozka.getText();
 	}
 
-	/** Od minula se změnil počítač: odpojený druhý monitor, odpojený disk s daty a cache, přesunutý GeoGet. */
+	/** Od minula se změnil počítač: odpojený druhý monitor, odpojený disk s daty, přesunutý GeoGet. */
 	private static void zmenProstredi() throws IOException {
 		// Pod obyčejným souborem složku nevytvoří nikdo, ani root.
 		final File odpojeny = new File(System.getProperty("java.io.tmpdir"), "odpojeny-disk");
@@ -399,7 +399,6 @@ public class SmokeScenar {
 		final MyPreferences umisteni = MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node);
 		umisteni.putFilex("kesDir", new Filex(new File(odpojeny, "geokuk"), false, true));
 		umisteni.putFilex("geogetDataDir", new Filex(new File(odpojeny, "geoget"), false, true));
-		umisteni.putFilex(FPref.KACHLE_CACHE_DIR_value, new Filex(new File(odpojeny, "kachle"), false, true));
 	}
 
 	/** Ovládá program přes dálkové ovládání tak, jak by to dělal jiný program. */

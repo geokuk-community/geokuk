@@ -69,10 +69,11 @@ public class Menu extends MenuStrujce {
 		item(akce.informaceoZdrojichAction);
 		item(akce.umisteniSouboruAction);
 		item(akce.nickEditAction);
-		item(akce.ulozitNastaveniKProgramuAction);
 		item(akce.tadyJsemDomaAction);
 		item(akce.zobrazServisniOknoAction);
 		item(akce.dalkoveOvladaniAction);
+		item(akce.vytvoritZastupceAction);
+		item(akce.pametProgramuAction);
 		if (!FConst.ZAKAZAT_PRIPRAVOVANOU_FUNKCIONALITU) {
 			item(akce.renderAction);
 		}
@@ -259,6 +260,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zadatProblemAction);
 		item(akce.diagnostikaAction);
 		item(akce.zkontrolovatAktualizaceAction);
+		item(akce.betaKanalAction);
 		separator();
 		item(akce.oProgramuAction);
 

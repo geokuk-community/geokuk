@@ -10,7 +10,6 @@ import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.ESmer;
 import cz.geokuk.core.napoveda.*;
 import cz.geokuk.core.ovladani.DalkoveOvladaniAction;
-import cz.geokuk.core.profile.UlozitNastaveniKProgramuAction;
 import cz.geokuk.core.render.RenderAction;
 import cz.geokuk.framework.NapovedaAction;
 import cz.geokuk.plugins.cesty.akce.*;
@@ -89,6 +88,9 @@ public class Akce {
 
 	public final ZobrazServisniOknoAction zobrazServisniOknoAction = new ZobrazServisniOknoAction();
 	public final DalkoveOvladaniAction dalkoveOvladaniAction = new DalkoveOvladaniAction();
+	public final VytvoritZastupceAction vytvoritZastupceAction = new VytvoritZastupceAction();
+	public final PametProgramuAction pametProgramuAction = new PametProgramuAction();
+	public final BetaKanalAction betaKanalAction = new BetaKanalAction();
 
 	public final RefreshIkonAction refreshIkonAction = new RefreshIkonAction();
 	public final DebugIkonyAction debugIkonyAction = new DebugIkonyAction();
@@ -96,7 +98,6 @@ public class Akce {
 	public final UrlToClipboardForGeogetAction urlToClipboardForGeogetAction = new UrlToClipboardForGeogetAction(null);
 	public final UrlToListingForGeogetAction urlToListingForGeogetAction = new UrlToListingForGeogetAction(null);
 
-	public final UlozitNastaveniKProgramuAction ulozitNastaveniKProgramuAction = new UlozitNastaveniKProgramuAction();
 
 	public final WebovaStrankaAction webovaStrankaAction = new WebovaStrankaAction();
 	public final OProgramuAction oProgramuAction = new OProgramuAction();

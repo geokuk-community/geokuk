@@ -311,13 +311,8 @@ public class KesoidModel extends Model0 {
 
 		final MyPreferences pref = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
 		pref.putFilex(FPref.KES_DIR_value, aUmisteniSouboru.getKesDir());
-		pref.putFilex(FPref.CESTY_DIR_value, aUmisteniSouboru.getCestyDir());
 		pref.putFilex(FPref.GEOGET_DATA_DIR_value, aUmisteniSouboru.getGeogetDataDir());
 		pref.putFilex(FPref.GSAK_DATA_DIR_value, aUmisteniSouboru.getGsakDataDir());
-		pref.putFilex(FPref.IMAGE_3RD_PARTY_DIR_value, aUmisteniSouboru.getImage3rdPartyDir());
-		pref.putFilex(FPref.IMAGE_MY_DIR_value, aUmisteniSouboru.getImageMyDir());
-		pref.putFilex(FPref.ANO_GGT_FILE_value, aUmisteniSouboru.getAnoGgtFile());
-		pref.putFilex(FPref.NE_GGT_FILE_value, aUmisteniSouboru.getNeGgtFile());
 		pref.remove("vyjimkyDir"); // mazat ze starých verzí
 		blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
 		blokovaneZdroje.addAll(zakázat);
@@ -406,14 +401,14 @@ public class KesoidModel extends Model0 {
 	private KesoidUmisteniSouboru loadUmisteniSouboru() {
 		final KesoidUmisteniSouboru u = new KesoidUmisteniSouboru();
 		final MyPreferences pref = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
-		u.setKesDir(pref.getFilex("kesDir", KesoidUmisteniSouboru.GEOKUK_DATA_DIR));
-		u.setCestyDir(pref.getFilex(FPref.CESTY_DIR_value, KesoidUmisteniSouboru.CESTY_DIR));
+		u.setKesDir(pref.getFilex("kesDir", KesoidUmisteniSouboru.KES_DIR));
+		u.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
 		u.setGeogetDataDir(pref.getFilex("geogetDataDir", KesoidUmisteniSouboru.GEOGET_DATA_DIR));
 		u.setGsakDataDir(pref.getFilex("gsakDataDir", KesoidUmisteniSouboru.GSAK_DATA_DIR));
-		u.setImage3rdPartyDir(pref.getFilex("image3rdPartyDir", KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR));
-		u.setImageMyDir(pref.getFilex("imageMyDir", KesoidUmisteniSouboru.IMAGE_MY_DIR));
-		u.setAnoGgtFile(pref.getFilex(FPref.ANO_GGT_FILE_value, KesoidUmisteniSouboru.ANO_GGT));
-		u.setNeGgtFile(pref.getFilex(FPref.NE_GGT_FILE_value, KesoidUmisteniSouboru.NE_GGT));
+		u.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
+		u.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
+		u.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
+		u.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
 		return u;
 	}
 

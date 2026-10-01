@@ -18,3 +18,4 @@ Geokuk/bin
 *.log
 Thumbs.db
 .DS_Store
+/data/

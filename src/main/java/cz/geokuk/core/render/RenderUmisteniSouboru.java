@@ -5,8 +5,8 @@ package cz.geokuk.core.render;
 
 import java.io.File;
 
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.UmisteniSouboru0;
-import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.util.file.Filex;
 
 /**
@@ -15,11 +15,13 @@ import cz.geokuk.util.file.Filex;
  */
 public class RenderUmisteniSouboru extends UmisteniSouboru0 {
 
-	public static final Filex KMZ_DIR = new Filex(new File(KesoidUmisteniSouboru.GEOKUK_DATA_DIR.getFile(), "kmz"), false, true);
+	public static final File RENDER_DIR = new File(FConst.DATA_DIR, "render");
 
-	public static final Filex OZI_DIR = new Filex(new File(KesoidUmisteniSouboru.GEOKUK_DATA_DIR.getFile(), "ozi"), false, true);
+	public static final Filex KMZ_DIR = new Filex(new File(RENDER_DIR, "kmz"), false, true);
 
-	public static final Filex PICURE_DIR = new Filex(new File(KesoidUmisteniSouboru.GEOKUK_DATA_DIR.getFile(), "picture"), false, true);
+	public static final Filex OZI_DIR = new Filex(new File(RENDER_DIR, "ozi"), false, true);
+
+	public static final Filex PICURE_DIR = new Filex(new File(RENDER_DIR, "obrazky"), false, true);
 
 	private Filex kmzDir;
 

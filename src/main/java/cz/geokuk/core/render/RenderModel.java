@@ -298,7 +298,7 @@ public class RenderModel extends Model0 {
 		final MyPreferences pref = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
 		pref.putFilex(FPref.RENDER_KMZ_DIR_value, umisteniSouboru.getKmzDir());
 		pref.putFilex(FPref.RENDER_OZI_DIR_value, umisteniSouboru.getOziDir());
-		pref.putFilex(FPref.RENDER_PICTURE_DIR_value, umisteniSouboru.getOziDir());
+		pref.putFilex(FPref.RENDER_PICTURE_DIR_value, umisteniSouboru.getPictureDir());
 		fire(new RenderUmisteniSouboruChangedEvent(umisteniSouboru));
 		fire();
 	}

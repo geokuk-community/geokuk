@@ -14,6 +14,9 @@ import javax.swing.text.JTextComponent;
 import com.jcabi.manifests.Manifests;
 
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.core.program.FPref;
+import cz.geokuk.core.program.UmisteniProgramu;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
@@ -28,7 +31,7 @@ public final class Diagnostika {
 	private static final int MAX_ZAZNAMU = 100;
 	private static final int RADKU_LOGU = 50;
 	/** Stejné umístění jako v logback.xml. */
-	static final File LOG = new File(new File(System.getProperty("java.io.tmpdir"), "geokuk"), "geokuk.log");
+	static final File LOG = new File(UmisteniProgramu.log(), "geokuk.log");
 	private static final long START = System.currentTimeMillis();
 	private static final Deque<String> udalosti = new ArrayDeque<>();
 	private static final Deque<String> chyby = new ArrayDeque<>();
@@ -36,9 +39,20 @@ public final class Diagnostika {
 
 	public static final String COMMIT = Manifests.exists("Geokuk-Commit") ? Manifests.read("Geokuk-Commit") : "";
 
-	/** Soubor beta vedle jaru zapne nabízení testovacích verzí. */
+	private static final String BETA_KANAL_value = "betaKanal";
+	/** Soubor beta vedle jaru z předchozích verzí, převezme se do nastavení. */
+	private static final File SOUBOR_BETA = new File(FConst.JAR_DIR, "beta");
+
+	/** Nabízet při kontrole aktualizací i testovací verze. */
 	public static boolean betaKanal() {
-		return FConst.JAR_DIR_EXISTUJE && new File(FConst.JAR_DIR, "beta").exists();
+		if (SOUBOR_BETA.isFile() && SOUBOR_BETA.delete()) {
+			setBetaKanal(true);
+		}
+		return MyPreferences.current().node(FPref.VSEOBECNE_node).getBoolean(BETA_KANAL_value, false);
+	}
+
+	public static void setBetaKanal(final boolean zapnuto) {
+		MyPreferences.current().node(FPref.VSEOBECNE_node).putBoolean(BETA_KANAL_value, zapnuto);
 	}
 
 	/** Testovací verze a instalace s beta kanálem ukazují verzi trvale v okně. */
@@ -301,7 +315,8 @@ public final class Diagnostika {
 			sb.append("Obrazovka: ").append(obrazovka.width).append('x').append(obrazovka.height).append(", monitorů ").append(GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length).append('\n');
 		}
 		sb.append("Složka programu: ").append(bezDomova(FConst.JAR_DIR)).append(FConst.JAR_DIR_EXISTUJE ? "" : " (nerozpoznána)").append('\n');
-		sb.append("Spouštěč geokuk.cmd: ").append(ano(new File(FConst.JAR_DIR, "geokuk.cmd").exists())).append('\n');
+		sb.append("Data: ").append(bezDomova(FConst.DATA_DIR)).append('\n');
+		sb.append("Přenosná verze (start.jar): ").append(ano(new File(FConst.JAR_DIR, "start.jar").exists())).append(", přibalená Java: ").append(ano(VerzeJavy.jePribalena())).append('\n');
 		sb.append("Výpisy chyb: ").append(bezDomova(FExceptionDumper.getExcrepFolder())).append('\n');
 		sb.append("Log: ").append(bezDomova(LOG)).append('\n');
 		sb.append("Běží: ").append((System.currentTimeMillis() - START) / 60000).append(" min\n");

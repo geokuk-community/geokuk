@@ -1,5 +1,37 @@
 # Změny
 
+## 6.2.0
+
+### Změny
+- Přenosný GeoKuk: nic se neinstaluje, program si všechno ukládá do
+  složky `data` vedle sebe: nastavení (`nastaveni.xml`), uživatelské mapy
+  (`uzivatelske-mapy.properties`), cache map (`cache`), cesty, ikony
+  (`ikony/moje`, `ikony/ostatni`), výlety (`vylety`), log a chybová
+  hlášení (`log`). Rozhoduje jen to, odkud se spustí, složku jde
+  přesunout i s daty. Nastavení už není v registru Windows, při prvním
+  spuštění se odtud převezme. Volba „Ukládat nastavení k programu“
+  odpadla.
+- Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou:
+  poprvé se spustí `GeoKuk.cmd`, Soubor > Vytvořit zástupce přidá
+  GeoKuk do nabídky Start nebo na plochu. Spouštěč `start.jar`
+  nainstaluje staženou novou verzi a zvolí paměť (polovina paměti
+  počítače, 1 až 3 GB), změnit ji jde v Soubor > Paměť programu.
+  Spouštěč `geokuk.cmd` odpadl.
+- V Umístění souborů zůstaly k nastavení jen složky s daty jiných
+  programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
+  záložka Program.
+- GeoKuk upozorní, když do své složky nemůže zapisovat (třeba v Program
+  Files), nebo když je ve složce synchronizované přes OneDrive, Dropbox
+  nebo Google Disk.
+- Když nová verze potřebuje novější Javu, než je přibalená, nebo je
+  k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
+- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál; soubor
+  `beta` vedle `geokuk.jar` se převezme.
+- Dálkové ovládání: stav, posun mapy, výběr keše, podklad a přenačtení
+  jdou bez tokenu na portu 48321 (výchozí); požadavky z webového
+  prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`
+  v domovské složce odpadl.
+
 ## 6.1.0
 
 ### Změny

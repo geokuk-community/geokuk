@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -23,26 +21,48 @@ public class StahnoutAktualizaciSwingWorkerTest {
 	public void setUp() throws Exception {
 		release = tmp.newFolder("release");
 		instalace = tmp.newFolder("instalace");
-		final File jar = new File(release, "geokuk.jar");
-		try (ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(jar))) {
-			zip.putNextEntry(new ZipEntry("geokuk.cmd"));
-			zip.write("@echo off\r\n".getBytes(StandardCharsets.US_ASCII));
-			zip.closeEntry();
-		}
-		final byte[] soucet = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(jar.toPath()));
-		zapis("geokuk.jar.sha256", String.format("%064x", new BigInteger(1, soucet)) + "  geokuk.jar\n");
+		vydej("geokuk.jar", "novy jar");
+		vydej("start.jar", "novy start");
+	}
+
+	private void vydej(final String jmeno, final String obsah) throws Exception {
+		final byte[] data = obsah.getBytes(StandardCharsets.US_ASCII);
+		Files.write(new File(release, jmeno).toPath(), data);
+		final byte[] soucet = MessageDigest.getInstance("SHA-256").digest(data);
+		zapis(jmeno + ".sha256", String.format("%064x", new BigInteger(1, soucet)) + "  " + jmeno + "\n");
 	}
 
 	private void zapis(final String jmeno, final String obsah) throws IOException {
 		Files.write(new File(release, jmeno).toPath(), obsah.getBytes(StandardCharsets.US_ASCII));
 	}
 
+	private String obsah(final String jmeno) throws IOException {
+		return new String(Files.readAllBytes(new File(instalace, jmeno).toPath()), StandardCharsets.US_ASCII);
+	}
+
+	private void instaluj(final String jmeno, final String obsah) throws IOException {
+		Files.write(new File(instalace, jmeno).toPath(), obsah.getBytes(StandardCharsets.US_ASCII));
+	}
+
 	@Test
-	public void stahneJarASpoustec() throws Exception {
+	public void prenosnaStahneJarProSpoustecANahradiStart() throws Exception {
+		instaluj("geokuk.jar", "stary jar");
+		instaluj("start.jar", "stary start");
 		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
-		Assert.assertArrayEquals(Files.readAllBytes(new File(release, "geokuk.jar").toPath()), Files.readAllBytes(new File(instalace, "geokuk.jar.new").toPath()));
-		Assert.assertEquals("@echo off\r\n", new String(Files.readAllBytes(new File(instalace, "geokuk.cmd").toPath()), StandardCharsets.US_ASCII));
+		Assert.assertEquals("stary jar", obsah("geokuk.jar"));
+		Assert.assertEquals("novy jar", obsah("geokuk.jar.new"));
+		Assert.assertEquals("novy start", obsah("start.jar"));
 		Assert.assertFalse(new File(instalace, "geokuk.jar.part").exists());
+		Assert.assertFalse(new File(instalace, "start.jar.part").exists());
+	}
+
+	@Test
+	public void bezSpoustceNahradiJarHned() throws Exception {
+		instaluj("geokuk.jar", "stary jar");
+		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
+		Assert.assertEquals("novy jar", obsah("geokuk.jar"));
+		Assert.assertEquals("stary jar", obsah("geokuk.jar.bak"));
+		Assert.assertFalse(new File(instalace, "start.jar").exists());
 	}
 
 	@Test
@@ -57,24 +77,21 @@ public class StahnoutAktualizaciSwingWorkerTest {
 	}
 
 	@Test
-	public void vytvoriChybejiciSpoustec() throws Exception {
-		Files.write(new File(instalace, "geokuk.jar").toPath(), new byte[0]);
-		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi(instalace);
-		final String spoustec = new String(Files.readAllBytes(new File(instalace, "geokuk.cmd").toPath()), StandardCharsets.UTF_8);
-		Assert.assertTrue(spoustec.contains("geokuk.jar.new"));
+	public void novaJavaNicNestahne() throws Exception {
+		instaluj("start.jar", "stary start");
+		zapis("java.properties", "minimalni=999\n");
+		try {
+			StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
+			Assert.fail();
+		} catch (final StahnoutAktualizaciSwingWorker.YNovaJava e) {
+			Assert.assertEquals(1, instalace.list().length);
+		}
 	}
 
 	@Test
-	public void existujiciSpoustecNeprepise() throws Exception {
-		Files.write(new File(instalace, "geokuk.jar").toPath(), new byte[0]);
-		Files.write(new File(instalace, "geokuk.cmd").toPath(), "vlastni".getBytes(StandardCharsets.US_ASCII));
-		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi(instalace);
-		Assert.assertEquals("vlastni", new String(Files.readAllBytes(new File(instalace, "geokuk.cmd").toPath()), StandardCharsets.US_ASCII));
-	}
-
-	@Test
-	public void bezGeokukJarNevytvoriSpoustec() throws Exception {
-		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi(instalace);
-		Assert.assertFalse(new File(instalace, "geokuk.cmd").exists());
+	public void dostatecnaJavaStahne() throws Exception {
+		zapis("java.properties", "doporucena=999\nminimalni=1.8\n");
+		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
+		Assert.assertEquals("novy jar", obsah("geokuk.jar"));
 	}
 }

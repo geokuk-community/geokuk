@@ -28,17 +28,32 @@ public class DalkoveOvladaniTest {
 	}
 
 	@Test
-	public void bezTokenuNeboSCizimHostemOdmitne() throws Exception {
+	public void cizihoHostaOriginASpatnyTokenOdmitne() throws Exception {
 		final DalkoveOvladani ovladani = new DalkoveOvladani();
-		ovladani.spust(0);
+		ovladani.spust(0, true);
 		try {
 			final Properties p = nactiSoubor();
 			final int port = Integer.parseInt(p.getProperty("port"));
 			final String token = p.getProperty("token");
-			assertEquals(401, zavolej(port, null, null));
-			assertEquals(401, zavolej(port, "Bearer spatny", null));
-			assertEquals("webová stránka přes DNS rebinding", 401, zavolej(port, "Bearer " + token, "zlo.example:" + port));
-			assertEquals(404, zavolej(port, "Bearer " + token, null));
+			final String host = "127.0.0.1:" + port;
+			assertEquals("veřejná část bez tokenu", 404, zavolej(port, "/neznamy", null, host, null));
+			assertEquals("vývojová část bez tokenu", 401, zavolej(port, "/menu", null, host, null));
+			assertEquals(401, zavolej(port, "/neznamy", "Bearer spatny", host, null));
+			assertEquals("webová stránka přes DNS rebinding", 403, zavolej(port, "/neznamy", "Bearer " + token, "zlo.example:" + port, null));
+			assertEquals("webová stránka (CSRF)", 403, zavolej(port, "/neznamy", null, host, "https://zlo.example"));
+			assertEquals(404, zavolej(port, "/neznamy", "Bearer " + token, host, null));
+		} finally {
+			ovladani.zastav();
+		}
+	}
+
+	@Test
+	public void bezVyvojoveCastiNeniTokenAniSoubor() throws Exception {
+		DalkoveOvladani.SOUBOR.delete();
+		final DalkoveOvladani ovladani = new DalkoveOvladani();
+		ovladani.spust(0);
+		try {
+			assertFalse(DalkoveOvladani.SOUBOR.exists());
 		} finally {
 			ovladani.zastav();
 		}
@@ -47,7 +62,7 @@ public class DalkoveOvladaniTest {
 	@Test
 	public void souborJeJenProVlastnika() throws Exception {
 		final DalkoveOvladani ovladani = new DalkoveOvladani();
-		ovladani.spust(0);
+		ovladani.spust(0, true);
 		try {
 			if (java.nio.file.FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
 				assertEquals("rw-------", java.nio.file.attribute.PosixFilePermissions.toString(java.nio.file.Files.getPosixFilePermissions(DalkoveOvladani.SOUBOR.toPath())));
@@ -62,8 +77,8 @@ public class DalkoveOvladaniTest {
 	public void souborDruheInstanceSeNesmaze() throws Exception {
 		final DalkoveOvladani prvni = new DalkoveOvladani();
 		final DalkoveOvladani druha = new DalkoveOvladani();
-		prvni.spust(0);
-		druha.spust(0);
+		prvni.spust(0, true);
+		druha.spust(0, true);
 		try {
 			final String tokenDruhe = nactiSoubor().getProperty("token");
 			prvni.zastav();
@@ -77,7 +92,7 @@ public class DalkoveOvladaniTest {
 	@Test
 	public void neplatnaPoziceSeOdmitne() throws Exception {
 		final DalkoveOvladani ovladani = new DalkoveOvladani();
-		ovladani.spust(0);
+		ovladani.spust(0, true);
 		try {
 			final Properties p = nactiSoubor();
 			final HttpURLConnection c = (HttpURLConnection) new URL("http://127.0.0.1:" + p.getProperty("port") + "/pozice?lat=NaN&lon=0").openConnection();
@@ -97,21 +112,15 @@ public class DalkoveOvladaniTest {
 		return p;
 	}
 
-	private static int zavolej(final int port, final String autorizace, final String host) throws IOException {
-		if (host != null) {
-			// HttpURLConnection hlavičku Host nastavit nedovolí, pošleme ji ručně.
-			try (Socket s = new Socket(InetAddress.getLoopbackAddress(), port)) {
-				final OutputStream os = s.getOutputStream();
-				os.write(("GET /neznamy HTTP/1.1\r\nHost: " + host + "\r\nAuthorization: " + autorizace + "\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
-				os.flush();
-				final String radek = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.US_ASCII)).readLine();
-				return Integer.parseInt(radek.split(" ")[1]);
-			}
+	private static int zavolej(final int port, final String cesta, final String autorizace, final String host, final String origin) throws IOException {
+		// HttpURLConnection hlavičky Host a Origin nastavit nedovolí, pošleme je ručně.
+		try (Socket s = new Socket(InetAddress.getLoopbackAddress(), port)) {
+			final OutputStream os = s.getOutputStream();
+			os.write(("GET " + cesta + " HTTP/1.1\r\nHost: " + host + "\r\n" + (autorizace == null ? "" : "Authorization: " + autorizace + "\r\n")
+					+ (origin == null ? "" : "Origin: " + origin + "\r\n") + "Connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+			os.flush();
+			final String radek = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.US_ASCII)).readLine();
+			return Integer.parseInt(radek.split(" ")[1]);
 		}
-		final HttpURLConnection c = (HttpURLConnection) new URL("http://127.0.0.1:" + port + "/neznamy").openConnection();
-		if (autorizace != null) {
-			c.setRequestProperty("Authorization", autorizace);
-		}
-		return c.getResponseCode();
 	}
 }
