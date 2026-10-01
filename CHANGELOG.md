@@ -70,6 +70,8 @@
 - Dialogy se vejdou nad hlavní panel Windows. Okno uložené na větším
   nebo odpojeném monitoru se při startu posune a zmenší, aby bylo celé
   vidět.
+- Zoom na obdélník (Shift + tažení), na keš, cestu, cesty a výlet
+  vybere správné měřítko; dřív mapu oddálil o čtyři měřítka.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy
