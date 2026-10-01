@@ -81,7 +81,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           $podpis = Get-AuthenticodeSignature GeoKuk/runtime/bin/javaw.exe
           if ($podpis.Status -ne "Valid") { throw "javaw.exe není podepsaný: $($podpis.Status)" }
-          Copy-Item geokuk.jar, start.jar, distribuce/windows/GeoKuk.cmd, distribuce/windows/geokuk.ico GeoKuk/
+          Copy-Item geokuk.jar, start.jar, distribuce/windows/GeoKuk.cmd, distribuce/windows/geokuk.ico, distribuce/windows/CTIMNE.txt GeoKuk/
           GeoKuk/runtime/bin/java -version
           Compress-Archive GeoKuk -DestinationPath GeoKuk-windows.zip
 

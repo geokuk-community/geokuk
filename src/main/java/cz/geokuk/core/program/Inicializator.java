@@ -135,9 +135,9 @@ public class Inicializator {
 		mainFrameHolder.setMainFrame(frame);
 	}
 
-	public void spustDalkoveOvladani(final int port) {
+	public void spustDalkoveOvladani(final int port, final boolean vyvojova) {
 		try {
-			dalkoveOvladani.spust(port);
+			dalkoveOvladani.spust(port, vyvojova);
 		} catch (final IOException | RuntimeException e) {
 			Dlg.error("Dálkové ovládání nejde spustit na portu " + port + ": " + e.getMessage());
 		}

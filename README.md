@@ -14,22 +14,89 @@
 ## Stažení
 
 Aktuální verze je v [Releases](https://github.com/geokuk-community/geokuk/releases).
-Ke spuštění je potřeba Java 8 nebo novější.
+GeoKuk se neinstaluje: rozbalí se do složky a spouští se z ní. Všechno,
+co si program ukládá, je ve složce `data` vedle něj, takže rozhoduje jen to,
+odkud ho spustíte. Složku s programem můžete přesunout nebo zkopírovat
+i s daty a nastavením.
 
-Ve Windows stačí stáhnout `geokuk.jar` a poprvé ho spustit dvojklikem.
-Geokuk vedle sebe vytvoří spouštěč `geokuk.cmd`, přes který ho pak
-spouštějte. Když Geokuk najde novou verzi, stáhne ji a spouštěč ji při
-dalším spuštění nainstaluje. Aktualizace přepisuje `geokuk.cmd`, pokud
-potřebujete svůj upravený spouštěč, tak si ho prosím uložte pod jiným jménem.
+### Windows
 
-Jinde stačí `java -jar geokuk.jar`.
+Stáhněte `GeoKuk-windows.zip` a rozbalte ho třeba do `C:\GeoKuk`. Zip
+obsahuje i Javu, žádnou jinou není potřeba instalovat. Nerozbalujte ho do
+`Program Files` (tam program nesmí zapisovat) ani do složky, kterou
+synchronizuje OneDrive, Dropbox nebo Google Disk (pozor, OneDrive často
+zálohuje i Plochu a Dokumenty).
+
+Poprvé spusťte `GeoKuk.cmd`. Windows se zeptají, jestli soubor od
+neznámého vydavatele spustit; zrušte „Vždy se zeptat před otevřením
+tohoto souboru“ a zvolte Spustit. Dotazu se vyhnete, když před
+rozbalením ve vlastnostech staženého zipu zaškrtnete Odblokovat.
+Pak v GeoKuku zvolte Soubor > Vytvořit zástupce a dál ho spouštějte
+z nabídky Start nebo z plochy.
+
+Když GeoKuk najde novou verzi, stáhne ji a nainstaluje se při příštím
+spuštění. Javu aktualizuje nový zip, který stačí rozbalit přes
+stávající složku; data a nastavení zůstanou.
+
+### Linux a macOS
+
+Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
+(potřeba je Java 8 nebo novější). Nové verze se instalují samy.
+
+### Složka s programem
+
+```
+GeoKuk
+├── GeoKuk.cmd                   první spuštění ve Windows
+├── geokuk.jar                   program
+├── start.jar                    spouštěč pro zástupce
+├── geokuk.ico
+├── runtime                      Java
+└── data                         všechno, co si GeoKuk ukládá
+    ├── nastaveni.xml
+    ├── uzivatelske-mapy.properties
+    ├── cache                    dlaždice map, lze smazat
+    ├── gpx                      výchozí složka pro keše z GPX
+    ├── cesty
+    ├── ikony                    vlastní ikony (moje) a od jiných (ostatni)
+    ├── vylety                   lovim.ggt a tedne.ggt
+    ├── render
+    └── log                      log a chybová hlášení
+```
+
+Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 až
+3 GB), změnit ji jde v Soubor > Paměť programu.
+
+### Přechod ze starší verze
+
+Nastavení se při prvním spuštění převezme samo. Dlaždice map stažené
+starší verzí zkopírujte z `%USERPROFILE%\geokuk\prchave\kachle` do
+`data\cache`, vlastní ikony z `%USERPROFILE%\geokuk\imagesMy` do
+`data\ikony\moje` a ikony od jiných z `images3rdParty` do
+`data\ikony\ostatni`. Výlety (`lovim.ggt`, `tedne.ggt`) patří do
+`data\vylety`, cesty do `data\cesty`.
 
 ## Uživatelské mapy
 
-Vlastní mapové podklady se zadávají v souboru `uzivatelske-mapy.properties`
-vedle `geokuk.jar` a v menu Mapy jsou ve skupině „Uživatelské mapy“.
+Vlastní mapové podklady se zadávají v souboru `data/uzivatelske-mapy.properties`
+a v menu Mapy jsou ve skupině „Uživatelské mapy“.
 Popis a příklady jsou v
 [`priklady/uzivatelske-mapy.properties`](priklady/uzivatelske-mapy.properties).
+
+## Dálkové ovládání
+
+Soubor > Dálkové ovládání (nebo parametr `--ovladani[=port]`, výchozí port
+48321) povolí jiným programům na tomto počítači ovládat GeoKuk přes HTTP:
+
+```
+GET  http://127.0.0.1:48321/stav
+POST http://127.0.0.1:48321/pozice?lat=50.08&lon=14.42&meritko=15
+POST http://127.0.0.1:48321/kes?kod=GC12345
+POST http://127.0.0.1:48321/podklad?jmeno=TURIST_M
+POST http://127.0.0.1:48321/prenacti
+```
+
+Požadavky z webového prohlížeče program odmítá.
 
 ## Původ
 
@@ -59,7 +126,8 @@ Schönmannovi.
 ./mvnw -B clean package
 ```
 
-Stačí JDK 21, výsledek je v `target/`.
+Stačí JDK 21, výsledek je v `target/`. Zip pro Windows s přibalenou Javou
+staví workflow Build na Windows runneru.
 
 Smoke test celého programu nad falešným mapovým serverem (projde mapu,
 menu a otevřené dialogy) potřebuje displej, na Linuxu třeba přes xvfb:

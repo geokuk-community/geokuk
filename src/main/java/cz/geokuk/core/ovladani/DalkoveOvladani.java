@@ -34,15 +34,25 @@ import cz.geokuk.util.pocitadla.SpravcePocitadel;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Ovládání běžícího programu přes HTTP jen z tohoto počítače. Zapíná se parametrem {@code --ovladani[=port]}. Port a přístupový token zapíše do
- * souboru {@link #SOUBOR}, klient je posílá v hlavičce {@code Authorization: Bearer <token>}.
+ * Ovládání běžícího programu přes HTTP jen z tohoto počítače. Zapíná se volbou v menu nebo parametrem {@code --ovladani[=port]}. Požadavky
+ * s hlavičkou {@code Origin} nebo s jinou hlavičkou {@code Host} než 127.0.0.1 a localhost odmítá, aby na ovládání nedosáhla webová stránka
+ * v prohlížeči.
+ *
+ * Veřejná část, bez tokenu:
  *
  * <pre>
- * GET  /stav[?gc=ano]                     verze, střed mapy, měřítko, podklad, keše, fronty dlaždic, počítadla, okna, obsazená paměť (po úklidu)
+ * GET  /stav                              verze, střed mapy, měřítko, podklad, počet waypointů
  * POST /pozice?lat=50.08&amp;lon=14.42[&amp;meritko=15]
  * POST /podklad?jmeno=TURIST_M
  * POST /kes?kod=GC12345                   vybere keš a vystředí na ni mapu
  * POST /prenacti                          znovu načte keše
+ * </pre>
+ *
+ * Vývojová část pro testy, zapíná se parametrem {@code --ovladani-devel}. Port a token zapíše do souboru {@link #SOUBOR}, klient token posílá
+ * v hlavičce {@code Authorization: Bearer <token>}:
+ *
+ * <pre>
+ * GET  /stav[?gc=ano]                     navíc fronty dlaždic, počítadla, okna, obsazená paměť (po úklidu)
  * GET  /menu                              položky menu hlavního okna s cestou, povolením, zkratkou a stavem přepínače
  * POST /menu?cesta=Soubor%20%3E%20Servis...   spustí položku menu jako kliknutí (nečeká na zavření dialogu)
  * GET  /okna                              otevřená okna s titulkem, velikostí, textem hlášek a tlačítky
@@ -54,9 +64,11 @@ import lombok.extern.slf4j.Slf4j;
 public class DalkoveOvladani {
 
 	public static final int VYCHOZI_PORT = 48321;
+	private static final Set<String> VYVOJOVE = new HashSet<>(Arrays.asList("/menu", "/okna", "/okna/zavri", "/okna/tlacitko"));
 	private static final String ZAPNUTO_value = "dalkoveOvladani";
-	/** V domovské složce, sdílený TEMP na Linuxu by token prozradil ostatním uživatelům. */
-	public static final File SOUBOR = new File(new File(System.getProperty("user.home"), ".geokuk"), "ovladani.properties");
+	public static final String VYVOJOVA_PARAMETR = "--ovladani-devel";
+	/** Port a token vývojové části, v datové složce programu. */
+	public static final File SOUBOR = new File(FConst.DATA_DIR, "ovladani.properties");
 
 	private VyrezModel vyrezModel;
 	private PoziceModel poziceModel;
@@ -103,6 +115,7 @@ public class DalkoveOvladani {
 			server = null;
 			vlakno.shutdownNow();
 			smazSouborJestliJeNas();
+			token = null;
 			log.info("Dálkové ovládání vypnuto");
 		}
 	}
@@ -130,20 +143,37 @@ public class DalkoveOvladani {
 		return null;
 	}
 
+	/** Vývojová část zapnutá parametrem {@value #VYVOJOVA_PARAMETR}. */
+	public static boolean vyvojovaZParametru(final String[] args) {
+		for (final String a : args) {
+			if (a.trim().equals(VYVOJOVA_PARAMETR)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public synchronized void spust(final int port) throws IOException {
+		spust(port, false);
+	}
+
+	/** Spustí ovládání, s vývojovou částí vytvoří token a zapíše ho do {@link #SOUBOR}. Běžícímu ovládání vývojovou část jen přidá. */
+	public synchronized void spust(final int port, final boolean vyvojova) throws IOException {
 		if (server != null) {
+			if (vyvojova && token == null) {
+				zapnoutVyvojovou(server.getAddress().getPort());
+			}
 			return;
 		}
-		final byte[] nahodne = new byte[24];
-		new SecureRandom().nextBytes(nahodne);
-		token = Base64.getUrlEncoder().withoutPadding().encodeToString(nahodne);
 		final HttpServer novy = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 0);
 		final int skutecnyPort = novy.getAddress().getPort();
-		try {
-			zapisSoubor(skutecnyPort);
-		} catch (final IOException | RuntimeException e) {
-			novy.stop(0);
-			throw e;
+		if (vyvojova) {
+			try {
+				zapnoutVyvojovou(skutecnyPort);
+			} catch (final IOException | RuntimeException e) {
+				novy.stop(0);
+				throw e;
+			}
 		}
 		novy.createContext("/", this::obsluz);
 		vlakno = Executors.newSingleThreadExecutor(r -> {
@@ -159,6 +189,18 @@ public class DalkoveOvladani {
 			Runtime.getRuntime().addShutdownHook(new Thread(this::smazSouborJestliJeNas, "Úklid dálkového ovládání"));
 		}
 		log.info("Dálkové ovládání na http://127.0.0.1:{}/", skutecnyPort);
+	}
+
+	private void zapnoutVyvojovou(final int port) throws IOException {
+		final byte[] nahodne = new byte[24];
+		new SecureRandom().nextBytes(nahodne);
+		token = Base64.getUrlEncoder().withoutPadding().encodeToString(nahodne);
+		try {
+			zapisSoubor(port);
+		} catch (final IOException | RuntimeException e) {
+			token = null;
+			throw e;
+		}
 	}
 
 	/** Soubor vznikne rovnou jen pro vlastníka a na místo se přesune celý, i přes podvržený odkaz. */
@@ -201,19 +243,29 @@ public class DalkoveOvladani {
 
 	private void obsluz(final HttpExchange ex) throws IOException {
 		try {
-			if (!povoleno(ex)) {
-				odpovez(ex, 401, "{\"chyba\":\"chybí nebo nesedí token\"}");
+			if (!zTohotoPocitace(ex)) {
+				odpovez(ex, 403, "{\"chyba\":\"požadavek z prohlížeče nebo z jiného počítače\"}");
+				return;
+			}
+			final String autorizace = ex.getRequestHeaders().getFirst("Authorization");
+			final boolean vyvojovy = spravnyToken(autorizace);
+			if (autorizace != null && !vyvojovy) {
+				odpovez(ex, 401, "{\"chyba\":\"nesedí token\"}");
 				return;
 			}
 			final String cesta = ex.getRequestURI().getPath();
 			final Map<String, String> param = parametry(ex.getRequestURI().getRawQuery());
 			final boolean post = "POST".equals(ex.getRequestMethod());
+			if (VYVOJOVE.contains(cesta) && !vyvojovy) {
+				odpovez(ex, 401, "{\"chyba\":\"příkaz jen pro vývoj, chybí token\"}");
+				return;
+			}
 			switch (cesta) {
 			case "/stav":
-				if ("ano".equals(param.get("gc"))) {
+				if (vyvojovy && "ano".equals(param.get("gc"))) {
 					System.gc();
 				}
-				odpovez(ex, 200, naEdt(this::stav));
+				odpovez(ex, 200, naEdt(() -> stav(vyvojovy)));
 				break;
 			case "/pozice":
 				vyzadujPost(post);
@@ -265,19 +317,23 @@ public class DalkoveOvladani {
 		}
 	}
 
-	/** Token a hlavička Host, aby na ovládání nedosáhla webová stránka v prohlížeči (DNS rebinding). */
-	private boolean povoleno(final HttpExchange ex) {
+	/** Hlavičky Origin a Host prohlížeč podvrhnout nedovolí: tak se pozná webová stránka (CSRF) i DNS rebinding. */
+	private boolean zTohotoPocitace(final HttpExchange ex) {
+		if (ex.getRequestHeaders().containsKey("Origin")) {
+			return false;
+		}
 		final String host = ex.getRequestHeaders().getFirst("Host");
 		final HttpServer s = server;
 		if (s == null) {
 			return false;
 		}
 		final int port = s.getAddress().getPort();
-		if (host == null || !(host.equals("127.0.0.1:" + port) || host.equals("localhost:" + port))) {
-			return false;
-		}
-		final String autorizace = ex.getRequestHeaders().getFirst("Authorization");
-		return autorizace != null && MessageDigest.isEqual(autorizace.getBytes(StandardCharsets.UTF_8), ("Bearer " + token).getBytes(StandardCharsets.UTF_8));
+		return host != null && (host.equals("127.0.0.1:" + port) || host.equals("localhost:" + port));
+	}
+
+	private boolean spravnyToken(final String autorizace) {
+		final String t = token;
+		return t != null && autorizace != null && MessageDigest.isEqual(autorizace.getBytes(StandardCharsets.UTF_8), ("Bearer " + t).getBytes(StandardCharsets.UTF_8));
 	}
 
 	private static void vyzadujPost(final boolean post) {
@@ -286,7 +342,7 @@ public class DalkoveOvladani {
 		}
 	}
 
-	private String stav() {
+	private String stav(final boolean vyvojovy) {
 		final StringBuilder sb = new StringBuilder("{");
 		final Wgs stred = vyrezModel.getMoord().getMoustred().toWgs();
 		sb.append("\"verze\":").append(json(FConst.VERSION));
@@ -295,6 +351,9 @@ public class DalkoveOvladani {
 		sb.append(",\"podklad\":").append(json(mapyModel.getPodklad() == null ? null : mapyModel.getPodklad().name()));
 		final KesBag kese = kesoidModel.getVsechnyKesoidy();
 		sb.append(",\"waypointu\":").append(kese == null ? -1 : kese.getWpts().size());
+		if (!vyvojovy) {
+			return sb.append("}").toString();
+		}
 		long fronty = 0;
 		final StringBuilder pocitadla = new StringBuilder();
 		final List<Pocitadlo> seznam;
@@ -498,7 +557,7 @@ public class DalkoveOvladani {
 		if (param.containsKey("meritko")) {
 			vyrezModel.setMeritkoMapy((int) cislo(param, "meritko"));
 		}
-		return stav();
+		return stav(false);
 	}
 
 	private String podklad(final String jmeno) {
@@ -507,7 +566,7 @@ public class DalkoveOvladani {
 			throw new IllegalArgumentException("neznámý podklad " + jmeno);
 		}
 		mapyModel.setPodklad(ka);
-		return stav();
+		return stav(false);
 	}
 
 	private String kes(final String kod) {
@@ -519,7 +578,7 @@ public class DalkoveOvladani {
 			if (kod.equalsIgnoreCase(k.getIdentifier())) {
 				poziceModel.setPozice(k.getMainWpt());
 				vyrezModel.vystredovatNaPozici();
-				return stav();
+				return stav(false);
 			}
 		}
 		throw new IllegalArgumentException("keš " + kod + " není načtená");

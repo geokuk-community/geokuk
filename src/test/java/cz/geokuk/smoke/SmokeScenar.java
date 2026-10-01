@@ -387,7 +387,7 @@ public class SmokeScenar {
 		return (menu instanceof JMenu ? ((JMenu) menu).getText() + " > " : "") + polozka.getText();
 	}
 
-	/** Od minula se změnil počítač: odpojený druhý monitor, odpojený disk s daty a cache, přesunutý GeoGet. */
+	/** Od minula se změnil počítač: odpojený druhý monitor, odpojený disk s daty, přesunutý GeoGet. */
 	private static void zmenProstredi() throws IOException {
 		// Pod obyčejným souborem složku nevytvoří nikdo, ani root.
 		final File odpojeny = new File(System.getProperty("java.io.tmpdir"), "odpojeny-disk");
@@ -399,7 +399,6 @@ public class SmokeScenar {
 		final MyPreferences umisteni = MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node);
 		umisteni.putFilex("kesDir", new Filex(new File(odpojeny, "geokuk"), false, true));
 		umisteni.putFilex("geogetDataDir", new Filex(new File(odpojeny, "geoget"), false, true));
-		umisteni.putFilex(FPref.KACHLE_CACHE_DIR_value, new Filex(new File(odpojeny, "kachle"), false, true));
 	}
 
 	/** Ovládá program přes dálkové ovládání tak, jak by to dělal jiný program. */

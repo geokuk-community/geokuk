@@ -36,6 +36,7 @@ public class GeokukMain {
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());
 		promazPreferencePokudJeToPrikazano(args);
 		final Integer portOvladani = DalkoveOvladani.portZParametru(args);
+		final boolean vyvojoveOvladani = DalkoveOvladani.vyvojovaZParametru(args);
 
 		SwingUtilities.invokeLater(() -> {
 			final Inicializator inicializator = new Inicializator();
@@ -50,9 +51,11 @@ public class GeokukMain {
 			}
 			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
 			if (portOvladani != null) {
-				inicializator.spustDalkoveOvladani(portOvladani);
+				inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);
 			} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {
-				inicializator.spustDalkoveOvladani(DalkoveOvladani.VYCHOZI_PORT);
+				inicializator.spustDalkoveOvladani(DalkoveOvladani.VYCHOZI_PORT, vyvojoveOvladani);
+			} else if (vyvojoveOvladani) {
+				inicializator.spustDalkoveOvladani(0, true);
 			}
 			inicializator.zkontrolovatAktualizace();
 		});

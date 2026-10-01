@@ -3,21 +3,40 @@
 ## 6.1.0
 
 ### Změny
+- Přenosný GeoKuk: nic se neinstaluje, program si všechno ukládá do
+  složky `data` vedle sebe (nastavení, cache map, cesty, ikony, výlety,
+  logy a chybová hlášení). Rozhoduje jen to, odkud se spustí, složku jde
+  přesunout i s daty. Nastavení už není v registru Windows, při prvním
+  spuštění se odtud převezme. Volba „Ukládat nastavení k programu“
+  odpadla.
+- Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou:
+  poprvé se spustí `GeoKuk.cmd`, Soubor > Vytvořit zástupce přidá
+  GeoKuk do nabídky Start nebo na plochu. Spouštěč `start.jar`
+  nainstaluje staženou novou verzi a zvolí paměť (polovina paměti
+  počítače, 1 až 3 GB), změnit ji jde v Soubor > Paměť programu.
+- V Umístění souborů zůstaly k nastavení jen složky mimo program
+  (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje záložka
+  Program.
+- GeoKuk upozorní, když do své složky nemůže zapisovat (třeba v Program
+  Files), nebo když je ve složce synchronizované přes OneDrive, Dropbox
+  nebo Google Disk.
+- Když nová verze potřebuje novější Javu, než je přibalená, nebo je
+  k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
 - Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
   zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
   žádná keš není.
-- Instalace s beta kanálem (soubor `beta` vedle `geokuk.jar`) má verzi
+- Instalace s beta kanálem (soubor `beta` ve složce `data`) má verzi
   trvale vpravo v menu i u ostré verze. Po odebrání souboru `beta`
   nabídne kontrola aktualizací poslední vydanou verzi, i když je starší.
 - Uživatelské mapy: vlastní mapové podklady ze souboru
-  `uzivatelske-mapy.properties` vedle `geokuk.jar`, v menu Mapy ve
+  `data/uzivatelske-mapy.properties`, v menu Mapy ve
   skupině „Uživatelské mapy“.
 - Přidání atribucí pro mapy: Mapy.cz, OpenStreetMap a Freemap Slovakia,
   zobrazují se vpravo dole v mapě.
 - „Zadat problém“ a nové tlačítko „Nahlásit na GitHubu“ v „Informace
   pro hlášení chyby“ otevřou nové issue s předvyplněnými informacemi
   o programu.
-- Program zapisuje log do `%TEMP%\geokuk\geokuk.log`. Cesta k němu
+- Program zapisuje log do `data/log/geokuk.log`. Cesta k němu
   a jeho posledních 20 řádků jsou v „Informace pro hlášení chyby“.
 - „Informace pro hlášení chyby“ obsahují i servisní hodnoty ze servisního
   okna.
@@ -27,12 +46,11 @@
   s mapou (podklad, měřítko, počet posunů, bez polohy) a načítání keší.
   Události se zapisují i do logu, z něhož hlášení ukazuje posledních
   50 řádků.
-- Program si bere až 3 GB paměti, když ji Java přijme; jinak 2 GB nebo 1 GB.
 - Dálkové ovládání: Soubor > Dálkové ovládání (nebo parametr
   `--ovladani[=port]`) povolí jiným programům na tomto počítači ovládat
   Geokuk přes HTTP – přesunout mapu, přepnout podklad, vybrat keš, znovu
-  načíst keše a zjistit stav. Port a přístupový token jsou v souboru
-  `.geokuk\ovladani.properties` v domovské složce uživatele.
+  načíst keše a zjistit stav, výchozí port je 48321. Požadavky
+  z webového prohlížeče program odmítá.
 
 ### Opravy
 - Databáze GeoGetu nebo GSAKu, do které program dlouho zapisuje, se
@@ -118,7 +136,7 @@
 - Klávesa F3 patří akci „Listing do Geogetu“; „Otevřít cesty (gpx)“ ji
   už nemá, dřív se obě hlásily o tutéž klávesu.
 - Měřítko „1 : 0“ pro tisk a uložení mapy se neuplatní ani neuloží.
-- Složka s hlášeními o chybách (`%TEMP%\geokuk\excrep`) si drží jen
+- Složka s hlášeními o chybách (`data/log/chyby`) si drží jen
   posledních dvacet spuštění, starší se při startu smažou.
 - Vadný záznam v databázi GeoGetu nebo GSAKu se přeskočí a zbytek keší
   se načte; dřív kvůli němu zůstala databáze celá nenačtená.
@@ -126,7 +144,7 @@
   a chybová hlášení dokola; nečitelná nebo zacyklená složka se přeskočí.
 - Stahování mapových dlaždic má časový limit, takže neodpovídající server
   nezastaví mapu, a neúplně stažená dlaždice se nepoužije.
-- Program nastartuje i s poškozeným nastavením vedle programu nebo
+- Program nastartuje i s poškozeným nastavením nebo
   s nesmyslnou uloženou hodnotou; poškozený soubor odloží stranou
   a upozorní na to.
 - Poškozená cache mapových dlaždic se založí znovu, místo aby se tiše
