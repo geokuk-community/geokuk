@@ -32,7 +32,7 @@ public class FConst {
 
 	public static final String WEB_PAGE_URL = "https://github.com/geokuk-community/geokuk";
 
-	public static final String WEB_PAGE_WIKI = "  http://wiki.geocaching.cz/wiki/Geokuk";
+	public static final String WEB_PAGE_WIKI = "http://wiki.geocaching.cz/wiki/Geokuk";
 
 	public static final int MAX_POC_WPT_NA_MAPE = 30000;
 

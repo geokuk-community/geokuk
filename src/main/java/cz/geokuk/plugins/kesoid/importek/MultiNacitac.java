@@ -30,6 +30,10 @@ public class MultiNacitac {
 
 	private final DirScanner ds;
 
+	private volatile File geogetDir;
+	private volatile File gsakDir;
+	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
+
 	/** Zamčení se ohlásí jednou, ne při každém dalším pokusu o načtení. */
 	private volatile boolean hlasenoZamceni;
 
@@ -75,6 +79,7 @@ public class MultiNacitac {
 		if (list == null) {
 			return null;
 		}
+		ohlasPrazdneSlozky(list);
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
 		final long start = System.currentTimeMillis();
@@ -112,6 +117,26 @@ public class MultiNacitac {
 		return kesoidModel.getVsechnyKesoidy() == null ? bag : null;
 	}
 
+	/** Aktivní složka GeoGetu nebo GSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
+	private void ohlasPrazdneSlozky(final List<KeFile> list) {
+		final Map<File, String> slozky = new LinkedHashMap<>();
+		if (geogetDir != null) {
+			slozky.put(geogetDir, "GeoGetu");
+		}
+		if (gsakDir != null) {
+			slozky.put(gsakDir, "GSAKu");
+		}
+		for (final KeFile f : list) {
+			slozky.remove(f.root.dir);
+		}
+		for (final Map.Entry<File, String> e : slozky.entrySet()) {
+			if (ohlasenePrazdne.add(e.getKey())) {
+				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue() + " \"" + e.getKey() + "\" nejsou žádné databáze (.db3). Zkontrolujte složku v Soubor > Umístění souborů."),
+						EExceptionSeverity.DISPLAY, "Prázdná datová složka");
+			}
+		}
+	}
+
 	/** Počet souborů podle přípony, bez cest (hlášení je veřejné). */
 	private static String popisSouboru(final List<KeFile> soubory) {
 		final Map<String, Integer> podlePripony = new TreeMap<>();
@@ -124,6 +149,8 @@ public class MultiNacitac {
 
 	// TODO Proč jsou tu ty File parametry, když máme k dispozici kesoidModel, odkud se jejich hodnoty vždy berou? [2016-04-09, Bohusz]
 	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final Set<File> vynechane) {
+		this.geogetDir = geogetDir;
+		this.gsakDir = gsakDir;
 		final List<Root> roots = new ArrayList<>();
 		if (kesDir != null) {
 			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR, vynechane));

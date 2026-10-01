@@ -75,6 +75,9 @@
   vidět.
 - Zoom na obdélník (Shift + tažení), na keš, cestu, cesty a výlet
   vybere správné měřítko; dřív mapu oddálil o čtyři měřítka.
+- Aktivní datová složka GeoGetu nebo GSAKu bez databází se ohlásí.
+  Uložení v Umístění souborů nezakládá složky u neaktivních položek.
+  Nápověda z okna O programu otevře hlavní stránku nápovědy.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

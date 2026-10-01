@@ -26,7 +26,7 @@ public abstract class JMyDialog0 extends JDialog {
 	private EventManager eventManager;
 	private final JFrame frame;
 
-	private final NapovedaAction napovedaAction = new NapovedaAction("Dialog/" + getTemaNapovedyDialogu());
+	private final NapovedaAction napovedaAction = new NapovedaAction(getTemaNapovedyDialogu() == null ? null : "Dialog/" + getTemaNapovedyDialogu());
 
 	public JMyDialog0() {
 		super(Dlg.parentFrame());
