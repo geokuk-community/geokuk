@@ -33,6 +33,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 			if (zafrontovati) {
 				new Thread(() -> {
 					postahovatNeboSpocitat(true);
+					davka.zarazovaniSkonceno();
 				}, "pro-offline").start();
 				return 0;
 			} else {
@@ -43,8 +44,9 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 		@Override
 		protected void donex() throws Exception {
-			if (!isCancelled()) {
+			if (!isCancelled() && !zafrontovati) {
 				final Integer pocet = get();
+				pocetDlazdic = pocet;
 				nastavCudl(pocet);
 			}
 		}
@@ -62,7 +64,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 			// a teď projet směrem nahoru
 			int pocetKachli = 0;
-			while (moumer > totoSeTaha.minmoumer) {
+			while (moumer > totoSeTaha.minmoumer && !(zafrontovat && davka.jeZastavena())) {
 				w /= 2;
 				h /= 2;
 				moumer--;
@@ -82,17 +84,10 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 							final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
 								log.trace("Stahování offline kache: {}: {}", diagnosticesFazeStr, diagnosticsData);
 							};
-							final KaOneReq req = new KaOneReq(kaall, kastat -> {
-								log.debug("Stahování offline kache: STAŽENO: {} -> {}", kastat);
-							}, Priority.STAHOVANI);
+							final KaOneReq req = new KaOneReq(kaall, davka.prijemce(), Priority.STAHOVANI);
 							// kachleModel.getZiskavac().hloupěČekejAžNebudeZabránoMocZdrojů();
-							kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, "Stathování pro offline", diagListener).with("kaAllReq", req));
-							// kachleModel.getZiskavac().hloupěČekejAžNebudeZabránoMocZdrojů();
-							final int p = pocetKachli;
-							if (jVysledek != null) {
-								SwingUtilities.invokeLater(() -> {
-									jVysledek.setPocetStazenych(p);
-								});
+							if (!davka.zarazeno(kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, "Stathování pro offline", diagListener).with("kaAllReq", req)))) {
+								return pocetKachli;
 							}
 						}
 					}
@@ -132,7 +127,9 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 	private ZobrazServisniOknoAction zobrazServisniOknoAction;
 
-	private JKachleOflinerPocetStazenychDialog jVysledek;
+	private DavkaStahovani davka;
+
+	private int pocetDlazdic;
 
 	public JKachleOflinerDialog() {
 		setTitle("Hromadné dotažení mapových dlaždic");
@@ -227,7 +224,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 	private String pokecani() {
 		return String.format("<html>Budou stahovány dlaždice mapových pokladů <b>%s</b> v rozmění měřítek " + " <b>&lt;%d,%d&gt;</b>"
 				+ " nyní natavte v hlavním okně výřez mapy který chcete stáhnout. Výřez můžete" + " nastavit v libovolném měřítku a v na libovolném mapovém podkladu. "
-				+ " Pak spusťte stahování tlačítkem. Stahování poběží na pozadí. V servisním okně lze sledovat," + " jak se zkracují frony. Stahování nelze zastavit jinak než ukončením programu.",
+				+ " Pak spusťte stahování tlačítkem. Stahování poběží na pozadí, průběh uvidíte v samostatném okně, kde ho lze i zastavit.",
 				totoSeTaha.katype, totoSeTaha.minmoumer, totoSeTaha.maxmoumer);
 	}
 
@@ -250,7 +247,9 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 			}
 			zobrazServisniOknoAction.actionPerformed(null);
 			dispose();
-			jVysledek = factory.init(new JKachleOflinerPocetStazenychDialog());
+			final JKachleOflinerPocetStazenychDialog jVysledek = factory.init(new JKachleOflinerPocetStazenychDialog());
+			davka = new DavkaStahovani(pocetDlazdic, () -> SwingUtilities.invokeLater(jVysledek::obnov));
+			jVysledek.setDavka(davka);
 			jVysledek.setVisible(true);
 			kosw = new KachleOflinerSwingWorker(true);
 			kosw.execute();

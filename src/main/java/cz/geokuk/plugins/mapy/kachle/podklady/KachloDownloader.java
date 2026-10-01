@@ -49,7 +49,7 @@ public class KachloDownloader {
 
 		private final int kod;
 
-		ChybaServeru(final int kod, final String zprava) {
+		public ChybaServeru(final int kod, final String zprava) {
 			super("Server mapy vrátil chybu HTTP " + kod + (zprava == null ? "" : " " + zprava) + ".");
 			this.kod = kod;
 		}

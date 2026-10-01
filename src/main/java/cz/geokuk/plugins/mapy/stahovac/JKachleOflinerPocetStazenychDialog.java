@@ -2,8 +2,7 @@ package cz.geokuk.plugins.mapy.stahovac;
 
 import java.awt.Dimension;
 
-import javax.swing.Box;
-import javax.swing.JLabel;
+import javax.swing.*;
 
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.JMyDialog0;
@@ -14,8 +13,12 @@ public class JKachleOflinerPocetStazenychDialog extends JMyDialog0 implements Af
 
 	private JLabel pocetStazenychKachli;
 
+	private JButton zastavit;
+
+	private DavkaStahovani davka;
+
 	public JKachleOflinerPocetStazenychDialog() {
-		setTitle("Průběh hrromadného dotažení mapových dlaždic");
+		setTitle("Průběh hromadného dotažení mapových dlaždic");
 		init();
 	}
 
@@ -24,8 +27,14 @@ public class JKachleOflinerPocetStazenychDialog extends JMyDialog0 implements Af
 
 	}
 
-	public void setPocetStazenych(final int pocet) {
-		pocetStazenychKachli.setText("Požadováno ke stažení jž " + pocet + " dlaždic");
+	void setDavka(final DavkaStahovani davka) {
+		this.davka = davka;
+		obnov();
+	}
+
+	void obnov() {
+		pocetStazenychKachli.setText("<html>" + davka.popis());
+		zastavit.setEnabled(!davka.jeHotova());
 	}
 
 	@Override
@@ -40,8 +49,13 @@ public class JKachleOflinerPocetStazenychDialog extends JMyDialog0 implements Af
 		pocetStazenychKachli = new JLabel();
 		box.add(Box.createVerticalStrut(20));
 		pocetStazenychKachli.setAlignmentX(CENTER_ALIGNMENT);
-		pocetStazenychKachli.setPreferredSize(new Dimension(400, 30));
+		pocetStazenychKachli.setPreferredSize(new Dimension(400, 60));
 		box.add(pocetStazenychKachli);
+		box.add(Box.createVerticalStrut(10));
+		zastavit = new JButton("Zastavit stahování");
+		zastavit.setAlignmentX(CENTER_ALIGNMENT);
+		zastavit.addActionListener(e -> davka.zastav("na přání uživatele."));
+		box.add(zastavit);
 		box.add(Box.createVerticalStrut(20));
 		pack();
 		add(box);
