@@ -121,7 +121,7 @@ public class Inicializator {
 		final List<String> chyby = UzivatelskeMapy.nacti();
 		if (!chyby.isEmpty()) {
 			chyby.forEach(Diagnostika::zaznamenejChybu);
-			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.JAR_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
+			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.DATA_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
 		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);

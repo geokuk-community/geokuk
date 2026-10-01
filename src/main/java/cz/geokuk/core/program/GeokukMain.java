@@ -9,8 +9,7 @@ import javax.swing.SwingUtilities;
 import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.ovladani.DalkoveOvladani;
-import cz.geokuk.core.napoveda.StahnoutAktualizaciSwingWorker;
-import cz.geokuk.core.profile.FPreferencesInNearFile;
+import cz.geokuk.core.profile.Nastaveni;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.exception.*;
@@ -31,13 +30,11 @@ public class GeokukMain {
 		FConst.logInit();
 		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
 		ImageIO.setUseCache(false);
-		StahnoutAktualizaciSwingWorker.vytvorSpoustecPokudChybi();
 		Diagnostika.sledujKliknuti();
 		log.info("Default character encoding: {}", Charset.defaultCharset());
 		nastavSkin();
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());
 		promazPreferencePokudJeToPrikazano(args);
-		FPreferencesInNearFile.loadNearToProgramIfNewer(); // Načíst ze souboru preferencový sobor, pokud došlo k jeho změně od minula
 		final Integer portOvladani = DalkoveOvladani.portZParametru(args);
 
 		SwingUtilities.invokeLater(() -> {
@@ -47,10 +44,11 @@ public class GeokukMain {
 			inicializator.setMainFrame(mainFrame);
 			mainFrame.init();
 			mainFrame.setVisible(true);
-			final String varovani = FPreferencesInNearFile.prevzitVarovani();
+			final String varovani = Nastaveni.prevzitVarovani();
 			if (varovani != null) {
 				Dlg.error(varovani);
 			}
+			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
 			if (portOvladani != null) {
 				inicializator.spustDalkoveOvladani(portOvladani);
 			} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {

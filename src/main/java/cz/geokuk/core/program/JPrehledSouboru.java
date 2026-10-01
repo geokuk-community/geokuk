@@ -1,7 +1,6 @@
 package cz.geokuk.core.program;
 
 import java.awt.Dimension;
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -11,9 +10,6 @@ import cz.geokuk.core.render.*;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
-import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
-import cz.geokuk.plugins.mapy.kachle.KachleModel;
-import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.lang.StringUtils;
 
@@ -33,28 +29,19 @@ public class JPrehledSouboru extends JPanel {
 
 	private static final long serialVersionUID = -2491414463002815835L;
 	private JJedenSouborPanel jKesDir;
-	private JJedenSouborPanel jCestyDir;
-	private JJedenSouborPanel jNeGgtFile;
-	private JJedenSouborPanel jAnoGgtFile;
-
-	private JJedenSouborPanel jKachleCacheDir;
 	private JJedenSouborPanel jGeogetDataDir;
-	private JJedenSouborPanel jImage3rdPartyDir;
 
 	private JJedenSouborPanel jGsakDataDir;
 	private JCheckBox jGsakNacitatAzPoVybrani;
 	private JTextField jGsakCasNalezu;
 	private JTextField jGsakCasNenalezu;
 
-	private JJedenSouborPanel jImageMyDir;
 	private JJedenSouborPanel jOziDir;
 	private JJedenSouborPanel jKmzDir;
 
 	private JJedenSouborPanel jPictureDir;
 
 	private KesoidModel kesoidModel;
-
-	private KachleModel kachleModel;
 
 	private RenderModel renderModel;
 
@@ -74,10 +61,6 @@ public class JPrehledSouboru extends JPanel {
 		panel.fokusniSe();
 	}
 
-	public void inject(final KachleModel kachleModel) {
-		this.kachleModel = kachleModel;
-	}
-
 	public void inject(final KesoidModel kesoidModel) {
 		this.kesoidModel = kesoidModel;
 	}
@@ -86,22 +69,11 @@ public class JPrehledSouboru extends JPanel {
 		this.renderModel = renderModel;
 	}
 
-	public void onEvent(final KachleUmisteniSouboruChangedEvent event) {
-		final KachleUmisteniSouboru u = event.getUmisteniSouboru();
-		jKachleCacheDir.setFilex(u.getKachleCacheDir());
-	}
-
 	public void onEvent(final KesoidUmisteniSouboruChangedEvent event) {
 		final KesoidUmisteniSouboru u = event.getUmisteniSouboru();
 		jKesDir.setFilex(u.getKesDir());
-		jCestyDir.setFilex(u.getCestyDir());
 		jGeogetDataDir.setFilex(u.getGeogetDataDir());
 		jGsakDataDir.setFilex(u.getGsakDataDir());
-
-		jNeGgtFile.setFilex(u.getNeGgtFile());
-		jAnoGgtFile.setFilex(u.getAnoGgtFile());
-		jImage3rdPartyDir.setFilex(u.getImage3rdPartyDir());
-		jImageMyDir.setFilex(u.getImageMyDir());
 	}
 
 	public void onEvent(final GsakParametryNacitaniChangedEvent event) {
@@ -133,23 +105,17 @@ public class JPrehledSouboru extends JPanel {
 		jTabbedPane = new JTabbedPane();
 
 		final JComponent tab1 = createTab();
-		jTabbedPane.addTab("Data", null, tab1, "Základní datové složky.");
+		jTabbedPane.addTab("Keše", null, tab1, "Odkud program načítá keše.");
 		final JComponent tab1a = createTab();
-		jTabbedPane.addTab("Data 2", null, tab1a, "Další datové složky.");
-		final JComponent tab2 = createTab();
-		jTabbedPane.addTab("Ikony", null, tab2, "Složky s uživatelskými ikonami.");
+		jTabbedPane.addTab("GSAK", null, tab1a, "Načítání keší z GSAK.");
 		final JComponent tab3 = createTab();
 		jTabbedPane.addTab("Rendr", null, tab3, "Výstupní složky pro rendrování.");
 		final JComponent tab4 = createTab();
-		jTabbedPane.addTab("Technické", null, tab4, "Technické složky jako jseou programové cache a podobně.");
+		jTabbedPane.addTab("Program", null, tab4, "Složky a soubory programu, všechny jsou ve složce s programem.");
 		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
-		jKesDir = pridejJednuPolozkuproEdit(null, tab1, "Složka s keškami získaný z Geogetu nebo jiného programu.", true, false);
-		jCestyDir = pridejJednuPolozkuproEdit(null, tab1, "Složka, do které se implicitně ukládají cesty.", true, false);
+		jKesDir = pridejJednuPolozkuproEdit(null, tab1, "Složka s keškami (GPX) získanými z Geogetu nebo jiného programu.", true, false);
 		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka geogetu.", true, true);
-
-		jNeGgtFile = pridejJednuPolozkuproEdit(null, tab1, "Seznam keší, na které teď na výlet nepůjdeme (GGT pro Geoget).", false, false);
-		jAnoGgtFile = pridejJednuPolozkuproEdit(null, tab1, "Seznam keší, které se chystáme jít lovit (GGT pro Geoget).", false, false);
 
 		jGsakDataDir = pridejJednuPolozkuproEdit(null, tab1a, "Datová složka GSAK.", true, true);
 		jGsakNacitatAzPoVybrani = pridejLogickePole(jGsakDataDir, "Načítat až po vybrání",
@@ -171,23 +137,19 @@ public class JPrehledSouboru extends JPanel {
 		                + "<br/>Můžete uvést více políček, použije se první časový údaj, který bude nalezen." //
 		                + "</html>");
 
-		jImage3rdPartyDir = pridejJednuPolozkuproEdit(null, tab2, "Složka s rozšiřujícími obrázky jiných geokolegů.", true, true);
-		jImageMyDir = pridejJednuPolozkuproEdit(null, tab2, "Složka s mými vlastními rozšiřujícími obrázky.", true, true);
-
 		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných mapy pro OziExplorer", true, false);
 		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (GoogleEarthj)", true, false);
 		jPictureDir = pridejJednuPolozkuproEdit(ESouborPanelName.PICTURE, tab3, "Složka pro rendrování obrázků map", true, false);
 
-		jKachleCacheDir = pridejJednuPolozkuproEdit(null, tab4, "Složka s kachlemi uloženými na disk (možno promazávat).", true, false);
-
-		pridejJednuPolozkuProCteni(null, tab4, "Složka s exporty výjimek (chybových hlášení)", new Filex(FExceptionDumper.EXCEPTION_DIR, false, true), true);
-		if (FConst.JAR_DIR_EXISTUJE) {
-			pridejJednuPolozkuProCteni(null, tab4, "Složka s programem (zde je geokuk.jar)", new Filex(FConst.JAR_DIR, false, true), true);
-		}
-		pridejJednuPolozkuProCteni(null, tab4, "Aktuální složka", new Filex(new File("").getAbsoluteFile(), false, true), true);
+		pridejJednuPolozkuProCteni(null, tab4, "Složka s programem (zde je geokuk.jar)", new Filex(FConst.JAR_DIR, false, true), true);
+		pridejJednuPolozkuProCteni(null, tab4, "Data programu: nastavení, cache, cesty, ikony, výlety a logy", new Filex(FConst.DATA_DIR, false, true), true);
+		pridejJednuPolozkuProCteni(null, tab4, "Cesty: výchozí složka pro ukládání cest", KesoidUmisteniSouboru.CESTY_DIR, true);
+		pridejJednuPolozkuProCteni(null, tab4, "Ikony: vlastní ikony (moje) a ikony od jiných geokolegů (ostatni)", new Filex(KesoidUmisteniSouboru.IKONY_DIR, false, true), true);
+		pridejJednuPolozkuProCteni(null, tab4, "Výlety: keše, které jdeme lovit (lovim.ggt) a na které teď nepůjdeme (tedne.ggt)", new Filex(KesoidUmisteniSouboru.VYLETY_DIR, false, true), true);
+		pridejJednuPolozkuProCteni(null, tab4, "Cache: dlaždice map uložené na disk (lze smazat)", KachleUmisteniSouboru.KACHLE_CACHE_DIR, true);
+		pridejJednuPolozkuProCteni(null, tab4, "Log a chybová hlášení", new Filex(UmisteniProgramu.log(), false, true), true);
 		ukonciPanel(tab1);
 		ukonciPanel(tab1a);
-		ukonciPanel(tab2);
 		ukonciPanel(tab3);
 		ukonciPanel(tab4);
 		add(jTabbedPane);
@@ -264,14 +226,13 @@ public class JPrehledSouboru extends JPanel {
 				{
 					final KesoidUmisteniSouboru u1 = new KesoidUmisteniSouboru();
 					u1.setKesDir(jKesDir.vezmiSouborAProver());
-					u1.setCestyDir(jCestyDir.vezmiSouborAProver());
-
+					u1.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
 					u1.setGeogetDataDir(jGeogetDataDir.vezmiSouborAProver());
 					u1.setGsakDataDir(jGsakDataDir.vezmiSouborAProver());
-					u1.setImage3rdPartyDir(jImage3rdPartyDir.vezmiSouborAProver());
-					u1.setImageMyDir(jImageMyDir.vezmiSouborAProver());
-					u1.setNeGgtFile(jNeGgtFile.vezmiSouborAProver());
-					u1.setAnoGgtFile(jAnoGgtFile.vezmiSouborAProver());
+					u1.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
+					u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
+					u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
+					u1.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
 					kesoidModel.setUmisteniSouboru(u1);
 				}
 				{
@@ -280,11 +241,6 @@ public class JPrehledSouboru extends JPanel {
 					g.setCasNenalezu(_split(jGsakCasNenalezu.getText()));
 					g.setNacistVsechnyDatabaze(!jGsakNacitatAzPoVybrani.isSelected());
 					kesoidModel.setGsakParametryNacitani(g);
-				}
-				{
-					final KachleUmisteniSouboru u2 = new KachleUmisteniSouboru();
-					u2.setKachleCacheDir(jKachleCacheDir.vezmiSouborAProver());
-					kachleModel.setUmisteniSouboru(u2);
 				}
 				{
 					final RenderUmisteniSouboru u3 = new RenderUmisteniSouboru();

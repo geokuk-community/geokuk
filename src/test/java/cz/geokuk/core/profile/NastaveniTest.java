@@ -1,0 +1,66 @@
+package cz.geokuk.core.profile;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.prefs.Preferences;
+
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import cz.geokuk.framework.SouborovePreferences;
+
+public class NastaveniTest {
+
+	@Rule
+	public TemporaryFolder tmp = new TemporaryFolder();
+
+	@Test
+	public void zapsaneNastaveniSeNacte() throws Exception {
+		final File soubor = new File(tmp.getRoot(), "data/nastaveni.xml");
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
+		final Preferences uzel = koren.node("geokuk/current/vseobecne");
+		uzel.put("text", "Žluťoučký kůň <&> \"x\"");
+		uzel.putInt("cislo", 42);
+		koren.node("geokuk/current/prazdny");
+		koren.flush();
+		final SouborovePreferences nacteny = Nastaveni.otevri(soubor, null, false);
+		Assert.assertEquals("Žluťoučký kůň <&> \"x\"", nacteny.node("geokuk/current/vseobecne").get("text", null));
+		Assert.assertEquals(42, nacteny.node("geokuk/current/vseobecne").getInt("cislo", 0));
+		Assert.assertTrue(nacteny.nodeExists("geokuk/current"));
+	}
+
+	@Test
+	public void odstranenyUzelSeNeulozi() throws Exception {
+		final File soubor = new File(tmp.getRoot(), "nastaveni.xml");
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
+		koren.node("geokuk/a").put("k", "v");
+		koren.node("geokuk/a").removeNode();
+		koren.flush();
+		Assert.assertFalse(Nastaveni.otevri(soubor, null, false).nodeExists("geokuk/a"));
+	}
+
+	@Test
+	public void prevezmeStaryExportVedleProgramu() throws Exception {
+		final File stary = tmp.newFile("geokuk-preferences.xml");
+		Files.write(stary.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map><entry key=\"lastModified\" value=\"1\"/></map>"
+				+ "<node name=\"current\"><map/><node name=\"vseobecne\"><map><entry key=\"nick\" value=\"Kačer\"/></map></node></node></node></root></preferences>")
+						.getBytes(StandardCharsets.UTF_8));
+		final File soubor = new File(tmp.getRoot(), "data/nastaveni.xml");
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, stary, false);
+		Assert.assertEquals("Kačer", koren.node("geokuk/current/vseobecne").get("nick", null));
+		Assert.assertTrue("převzaté nastavení se hned uloží", soubor.isFile());
+	}
+
+	@Test
+	public void vadnySouborSeOdlozi() throws Exception {
+		final File soubor = tmp.newFile("nastaveni.xml");
+		Files.write(soubor.toPath(), "<preferences><root ".getBytes(StandardCharsets.UTF_8));
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
+		Assert.assertNotNull("uživatel se to musí dozvědět", Nastaveni.prevzitVarovani());
+		Assert.assertTrue(new File(soubor.getPath() + ".vadne").isFile());
+		Assert.assertEquals(0, koren.childrenNames().length);
+	}
+}

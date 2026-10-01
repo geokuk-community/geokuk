@@ -22,7 +22,13 @@ public class FConst {
 
 	public static final File JAR_DIR;
 
-	public static final File PREFERENCES_FILE;
+	/** Nastavení, cache, data a logy programu. */
+	public static final File DATA_DIR = UmisteniProgramu.DATA_DIR;
+
+	public static final File NASTAVENI_FILE = new File(DATA_DIR, "nastaveni.xml");
+
+	/** Soubor, do kterého staré verze ukládaly nastavení k programu na přání uživatele. */
+	public static final File STARE_NASTAVENI_FILE = new File(UmisteniProgramu.JAR_DIR, "geokuk-preferences.xml");
 
 	/** Za adresu se doplní číslo verze. */
 	public static final String RELEASE_TAG_URL = "https://github.com/geokuk-community/geokuk/releases/tag/v";
@@ -40,14 +46,8 @@ public class FConst {
 	public static final File HOME_DIR = new File(System.getProperty("user.home"));
 
 	static {
-		final File umisteni = umisteniTrid();
-		if (umisteni != null && umisteni.isFile()) { // je to z jaru
-			JAR_DIR = umisteni.getParentFile();
-			JAR_DIR_EXISTUJE = true;
-		} else {
-			JAR_DIR = new File("").getAbsoluteFile();
-			JAR_DIR_EXISTUJE = false;
-		}
+		JAR_DIR = UmisteniProgramu.JAR_DIR;
+		JAR_DIR_EXISTUJE = UmisteniProgramu.JAR_DIR_EXISTUJE;
 		log.debug("Jar dir: {}", JAR_DIR);
 		// versionproperties.
 		String version;
@@ -61,26 +61,16 @@ public class FConst {
 		}
 		VERSION = version;
 		I_AM_IN_DEVELOPMENT_ENVIRONMENT = iamindevelopmentenvi;
-		// preferenčník
-		PREFERENCES_FILE = new File(JAR_DIR, "geokuk-preferences.xml");
 
 	}
 
 	public static final String NL = System.getProperty("line.separator");
 
-	private static File umisteniTrid() {
-		try {
-			return new File(FConst.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-		} catch (final Exception e) {
-			log.warn("Nelze zjistit umístění programu.", e);
-			return null;
-		}
-	}
-
 	public static void logInit() {
 		log.info("GEOKUK " + VERSION);
 		log.info("JAR_DIR = " + JAR_DIR);
 		log.info("JAR_DIR_EXISTUJE = " + JAR_DIR_EXISTUJE);
+		log.info("DATA_DIR = " + DATA_DIR);
 		log.info("HOME_DIR = " + HOME_DIR);
 		log.info("WEB_PAGE_URL = " + WEB_PAGE_URL);
 	}

@@ -42,9 +42,9 @@ public final class UzivatelskeMapy {
 		return KeyStroke.getKeyStroke(c);
 	}
 
-	/** Načte mapy ze souboru vedle jaru a vrátí popis chyb v něm. */
+	/** Načte mapy ze souboru v datové složce a vrátí popis chyb v něm. */
 	public static List<String> nacti() {
-		return FConst.JAR_DIR_EXISTUJE ? nacti(new File(FConst.JAR_DIR, SOUBOR)) : Collections.emptyList();
+		return nacti(new File(FConst.DATA_DIR, SOUBOR));
 	}
 
 	static List<String> nacti(final File soubor) {

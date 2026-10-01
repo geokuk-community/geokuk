@@ -16,6 +16,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Collections2;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.profile.Nastaveni;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
 import cz.geokuk.util.exception.EExceptionSeverity;
@@ -122,7 +123,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	public static MyPreferences userRoot() {
-		return new MyPreferences(Preferences.userRoot());
+		return new MyPreferences(Nastaveni.koren());
 	}
 
 	private static Duo duo(final Class<?> cls) {

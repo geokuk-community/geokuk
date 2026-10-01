@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.URL;
 
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.core.program.UmisteniProgramu;
 import cz.geokuk.util.file.TPumpReaderToWriter;
 import cz.geokuk.util.lang.FThrowable;
 import cz.geokuk.util.lang.StringUtils;
@@ -15,7 +16,7 @@ import cz.geokuk.util.lang.StringUtils;
  * @since 15.9.2006 8:18:58
  */
 public final class FExceptionDumper {
-	public static final File EXCEPTION_DIR = new File(new File(System.getProperty("java.io.tmpdir"), "geokuk"), "excrep");
+	public static final File EXCEPTION_DIR = new File(UmisteniProgramu.log(), "chyby");
 
 	// private static final String EXCREP = "excrep";
 	private static final String TC_EXCREP_DIR_PROPERTY = "tc.excrep.dir";
@@ -186,7 +187,7 @@ public final class FExceptionDumper {
 		// Nejprve zkusíme Systenm.properties - dá se změnit zvnějšku, nejlepší kandidát na ad hoc změnu.
 		final String path = getExcrepPathViaSystemProperty();
 		if (StringUtils.isBlank(path)) {
-			// Poslední, co zkusíme, je umístění v home adresáři. Bude fungovat vždycky.
+			// Jinak ve složce logu programu.
 			result = EXCEPTION_DIR;
 		} else {
 			result = new File(path);

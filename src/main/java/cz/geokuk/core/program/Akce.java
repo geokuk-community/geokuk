@@ -10,7 +10,6 @@ import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.ESmer;
 import cz.geokuk.core.napoveda.*;
 import cz.geokuk.core.ovladani.DalkoveOvladaniAction;
-import cz.geokuk.core.profile.UlozitNastaveniKProgramuAction;
 import cz.geokuk.core.render.RenderAction;
 import cz.geokuk.framework.NapovedaAction;
 import cz.geokuk.plugins.cesty.akce.*;
@@ -96,7 +95,6 @@ public class Akce {
 	public final UrlToClipboardForGeogetAction urlToClipboardForGeogetAction = new UrlToClipboardForGeogetAction(null);
 	public final UrlToListingForGeogetAction urlToListingForGeogetAction = new UrlToListingForGeogetAction(null);
 
-	public final UlozitNastaveniKProgramuAction ulozitNastaveniKProgramuAction = new UlozitNastaveniKProgramuAction();
 
 	public final WebovaStrankaAction webovaStrankaAction = new WebovaStrankaAction();
 	public final OProgramuAction oProgramuAction = new OProgramuAction();

@@ -55,7 +55,7 @@ public class CloseAction extends Action0 {
 	/** Když nastavení nejde uložit (plný disk, složka jen pro čtení), musí jít program přesto ukončit. */
 	private boolean ulozNastaveniNeboPresto() {
 		try {
-			profileModel.ulozJenKdyzJeulozPreferenceDoSouboruJenKdyzSeUklaatMaji();
+			profileModel.ulozNastaveni();
 			return true;
 		} catch (final RuntimeException | Error e) {
 			log.error("Nastavení nelze uložit", e);

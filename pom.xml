@@ -12,9 +12,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
-			<resource>
-				<directory>dist</directory>
-			</resource>
 		</resources>
 		<plugins>
 			<plugin>
@@ -32,6 +29,37 @@
 				<version>2.3.2</version>
 				<configuration>
 					<finalName>temporary</finalName>
+				</configuration>
+				<executions>
+					<!-- Spouštěč přenosné verze pro Windows, jen třídy cz.geokuk.start. -->
+					<execution>
+						<id>start</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>start</classifier>
+							<includes>
+								<include>cz/geokuk/start/**</include>
+							</includes>
+							<archive>
+								<manifest>
+									<mainClass>cz.geokuk.start.Start</mainClass>
+								</manifest>
+							</archive>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.5.4</version>
+				<configuration>
+					<systemPropertyVariables>
+						<geokuk.data>${project.build.directory}/test-data</geokuk.data>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 			<plugin>

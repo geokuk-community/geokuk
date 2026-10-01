@@ -9,10 +9,10 @@ import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
@@ -20,14 +20,23 @@ import cz.geokuk.framework.MySwingWorker0;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Stáhne novou verzi jako geokuk.jar.new vedle běžícího jaru a uloží k ní
- * spouštěč geokuk.cmd, který jar při příštím spuštění vymění.
+ * Stáhne novou verzi. V přenosné verzi ji uloží jako geokuk.jar.new, kterou při příštím spuštění vymění spouštěč start.jar, a rovnou nahradí i
+ * start.jar. Jinde než ve Windows jde běžící jar nahradit hned, starý zůstane jako .bak.
  */
 @Slf4j
 public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 
 	static final String JAR = "geokuk.jar";
-	static final String SPOUSTEC = "geokuk.cmd";
+	static final String START = "start.jar";
+
+	/** Nová verze potřebuje novější Javu, než je přibalená. */
+	static class YNovaJava extends IOException {
+		private static final long serialVersionUID = 1L;
+
+		YNovaJava(final String minimalni) {
+			super("Nová verze potřebuje Javu " + minimalni + ", program běží v Javě " + VerzeJavy.aktualni() + ".");
+		}
+	}
 
 	private final String verze;
 
@@ -35,59 +44,68 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		this.verze = verze;
 	}
 
-	/** Výměnu jaru umí jen spouštěč pro Windows. */
+	static boolean prenosna(final File adresar) {
+		return new File(adresar, START).isFile();
+	}
+
+	private static boolean windows() {
+		return System.getProperty("os.name", "").startsWith("Windows");
+	}
+
+	/** Ve Windows jar vymění jen spouštěč přenosné verze. */
 	static boolean lzeInstalovat() {
-		return FConst.JAR_DIR_EXISTUJE && System.getProperty("os.name", "").startsWith("Windows");
-	}
-
-	/** Uloží spouštěč vedle geokuk.jar, pokud tam ještě není. */
-	public static void vytvorSpoustecPokudChybi() {
-		if (lzeInstalovat()) {
-			vytvorSpoustecPokudChybi(FConst.JAR_DIR);
-		}
-	}
-
-	static void vytvorSpoustecPokudChybi(final File adresar) {
-		final File spoustec = new File(adresar, SPOUSTEC);
-		if (spoustec.exists() || !new File(adresar, JAR).isFile()) {
-			return;
-		}
-		try (InputStream in = StahnoutAktualizaciSwingWorker.class.getResourceAsStream("/" + SPOUSTEC)) {
-			if (in != null) {
-				Files.copy(in, spoustec.toPath());
-				log.info("Vytvořen spouštěč {}", spoustec);
-			}
-		} catch (final IOException e) {
-			log.warn("Spouštěč " + spoustec + " nelze vytvořit.", e);
-		}
+		return FConst.JAR_DIR_EXISTUJE && (prenosna(FConst.JAR_DIR) || !windows());
 	}
 
 	static void stahni(final String zakladUrl, final File adresar) throws IOException {
-		final String ocekavanySoucet = precti(zakladUrl + JAR + ".sha256").trim().split("\\s+")[0];
-		final File docasny = new File(adresar, JAR + ".part");
+		final String minimalni = minimalniJava(zakladUrl);
+		if (VerzeJavy.jeStarsi(VerzeJavy.aktualni(), minimalni)) {
+			throw new YNovaJava(minimalni);
+		}
+		final File jar = stahniOverene(zakladUrl, JAR, adresar);
+		if (prenosna(adresar)) {
+			Files.move(jar.toPath(), new File(adresar, JAR + ".new").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			final File start = stahniOverene(zakladUrl, START, adresar);
+			Files.move(start.toPath(), new File(adresar, START).toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} else {
+			final File stary = new File(adresar, JAR);
+			if (stary.isFile()) {
+				Files.copy(stary.toPath(), new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			}
+			Files.move(jar.toPath(), stary.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		}
+	}
+
+	/** Nejnižší Java nové verze, starší vydání soubor nemají. */
+	private static String minimalniJava(final String zakladUrl) {
+		try (InputStream in = otevri(zakladUrl + VerzeJavy.SOUBOR)) {
+			final Properties p = new Properties();
+			p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+			return p.getProperty("minimalni");
+		} catch (final IOException e) {
+			return null;
+		}
+	}
+
+	/** Stáhne soubor jako .part a ověří kontrolní součet. */
+	private static File stahniOverene(final String zakladUrl, final String jmeno, final File adresar) throws IOException {
+		final String ocekavanySoucet = precti(zakladUrl + jmeno + ".sha256").trim().split("\\s+")[0];
+		final File docasny = new File(adresar, jmeno + ".part");
 		final MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-256");
 		} catch (final NoSuchAlgorithmException e) {
 			throw new IllegalStateException(e);
 		}
-		try (InputStream in = new DigestInputStream(otevri(zakladUrl + JAR), md)) {
+		try (InputStream in = new DigestInputStream(otevri(zakladUrl + jmeno), md)) {
 			Files.copy(in, docasny.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		}
 		final String soucet = String.format("%064x", new BigInteger(1, md.digest()));
 		if (!soucet.equalsIgnoreCase(ocekavanySoucet)) {
 			Files.delete(docasny.toPath());
-			throw new IOException("Kontrolní součet staženého souboru nesouhlasí.");
+			throw new IOException("Kontrolní součet staženého souboru " + jmeno + " nesouhlasí.");
 		}
-		try (ZipFile zip = new ZipFile(docasny)) {
-			final ZipEntry spoustec = zip.getEntry(SPOUSTEC);
-			if (spoustec != null) {
-				try (InputStream in = zip.getInputStream(spoustec)) {
-					Files.copy(in, new File(adresar, SPOUSTEC).toPath(), StandardCopyOption.REPLACE_EXISTING);
-				}
-			}
-		}
-		Files.move(docasny.toPath(), new File(adresar, JAR + ".new").toPath(), StandardCopyOption.REPLACE_EXISTING);
+		return docasny;
 	}
 
 	private static InputStream otevri(final String url) throws IOException {
@@ -115,8 +133,14 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		try {
 			get();
 			Diagnostika.zaznamenej("Stažena verze " + verze);
-			Dlg.info("Verze " + verze + " je stažená. Nainstaluje se, až Geokuk ukončíte a spustíte znovu přes " + new File(FConst.JAR_DIR, SPOUSTEC) + ".", "Aktualizace");
+			Dlg.info("Verze " + verze + " je stažená. Nainstaluje se, až GeoKuk ukončíte a spustíte znovu.", "Aktualizace");
 		} catch (final ExecutionException e) {
+			if (e.getCause() instanceof YNovaJava) {
+				Diagnostika.zaznamenej("Verze " + verze + " potřebuje novější Javu");
+				Dlg.info(e.getCause().getMessage() + "\nStáhněte nový zip s programem GeoKuk z " + FConst.RELEASE_TAG_URL + verze
+						+ "\na rozbalte ho přes stávající složku s programem, data a nastavení zůstanou.", "Aktualizace");
+				return;
+			}
 			log.error("Stažení aktualizace selhalo.", e.getCause());
 			Diagnostika.zaznamenej("Stažení verze " + verze + " selhalo: " + e.getCause());
 			Dlg.error("Novou verzi se nepodařilo stáhnout: " + e.getCause().getMessage() + "\nStáhněte ji ručně z " + FConst.RELEASE_TAG_URL + verze);

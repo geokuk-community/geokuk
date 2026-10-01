@@ -69,7 +69,6 @@ public class Menu extends MenuStrujce {
 		item(akce.informaceoZdrojichAction);
 		item(akce.umisteniSouboruAction);
 		item(akce.nickEditAction);
-		item(akce.ulozitNastaveniKProgramuAction);
 		item(akce.tadyJsemDomaAction);
 		item(akce.zobrazServisniOknoAction);
 		item(akce.dalkoveOvladaniAction);

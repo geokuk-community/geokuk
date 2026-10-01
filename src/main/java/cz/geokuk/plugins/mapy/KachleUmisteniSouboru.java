@@ -5,8 +5,8 @@ package cz.geokuk.plugins.mapy;
 
 import java.io.File;
 
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.UmisteniSouboru0;
-import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.util.file.Filex;
 
 /**
@@ -15,9 +15,8 @@ import cz.geokuk.util.file.Filex;
  */
 public class KachleUmisteniSouboru extends UmisteniSouboru0 {
 
-	public static final File PRCHAVE_DIR = new File(KesoidUmisteniSouboru.GEOKUK_DATA_DIR.getFile(), "prchave"); // keš, kterou je vždymožno smazat
-
-	public static final Filex KACHLE_CACHE_DIR = new Filex(new File(PRCHAVE_DIR, "kachle"), false, true);
+	/** Dlaždice map uložené na disk, celou složku lze smazat. */
+	public static final Filex KACHLE_CACHE_DIR = new Filex(new File(FConst.DATA_DIR, "cache"), false, true);
 
 	private Filex kachleCacheDir;
 
