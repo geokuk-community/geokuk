@@ -128,7 +128,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 				if (StahnoutAktualizaciSwingWorker.lzeInstalovat()) {
 					new StahnoutAktualizaciSwingWorker(lastVersion).execute();
 				} else {
-					stahnoutJar();
+					stahnoutJar(lastVersion);
 				}
 				break;
 			default:
@@ -139,9 +139,10 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 		super.donex();
 	}
 
-	private void stahnoutJar() {
+	private void stahnoutJar(final String verze) {
 		try {
-			BrowserOpener.displayURL(new URL(FConst.LATEST_RELEASE_URL));
+			// Beta kanál nabízí i testovací verze, které na stránce „latest“ nejsou.
+			BrowserOpener.displayURL(new URL(FConst.RELEASE_TAG_URL + verze));
 		} catch (final MalformedURLException e) {
 			throw new RuntimeException(e);
 		}

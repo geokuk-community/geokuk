@@ -78,6 +78,8 @@
 - Aktivní datová složka GeoGetu nebo GSAKu bez databází se ohlásí.
   Uložení v Umístění souborů nezakládá složky u neaktivních položek.
   Nápověda z okna O programu otevře hlavní stránku nápovědy.
+- „Stáhnout nejnovější verzi“ mimo Windows otevře stránku nabízené
+  verze, u bety tedy betu, ne poslední ostrou verzi.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

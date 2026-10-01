@@ -24,7 +24,8 @@ public class FConst {
 
 	public static final File PREFERENCES_FILE;
 
-	public static final String LATEST_RELEASE_URL = "https://github.com/geokuk-community/geokuk/releases/latest";
+	/** Za adresu se doplní číslo verze. */
+	public static final String RELEASE_TAG_URL = "https://github.com/geokuk-community/geokuk/releases/tag/v";
 	public static final String LATEST_RELEASE_API_URL = "https://api.github.com/repos/geokuk-community/geokuk/releases/latest";
 	public static final String RELEASES_API_URL = "https://api.github.com/repos/geokuk-community/geokuk/releases";
 	public static final String RELEASE_DOWNLOAD_URL = "https://github.com/geokuk-community/geokuk/releases/download/";
