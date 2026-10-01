@@ -101,6 +101,10 @@ public final class UzivatelskeMapy {
 			chyby.add(id + ".url musí začínat http:// nebo https:// a obsahovat {z}, {x} a {y}");
 			return null;
 		}
+		if (url.replace("{z}", "").replace("{x}", "").replace("{y}", "").matches(".*[{}].*")) {
+			chyby.add(id + ".url smí z proměnných ve složených závorkách obsahovat jen {z}, {x} a {y}; místo {s} napište jednu subdoménu, třeba a");
+			return null;
+		}
 		final int min;
 		final int max;
 		final int maxauto;

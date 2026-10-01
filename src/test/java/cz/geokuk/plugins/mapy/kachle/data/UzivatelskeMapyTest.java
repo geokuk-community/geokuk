@@ -158,6 +158,11 @@ public class UzivatelskeMapyTest {
 	// Chyby
 
 	@Test
+	public void subdomenaSeOdmitne() throws Exception {
+		chyba("{s}", "m.nazev=M", "m.url=https://{s}.tile.example.org/{z}/{x}/{y}.png");
+	}
+
+	@Test
 	public void chybiNazev() throws Exception {
 		chyba("m.nazev", "m.url=" + URL);
 	}

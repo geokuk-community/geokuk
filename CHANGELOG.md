@@ -53,6 +53,9 @@
 - Chybějící nebo neúplná vybraná sada ikon (smazaná složka, chybí
   `skla.txt`, vypnutá složka vlastních ikon) se nahradí sadou Standard;
   dřív se kvůli ní nenačetly žádné keše.
+- Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
+  při startu ohlásí jako chybná. Dlaždice se stáhnou i ze serveru,
+  který adresu `http://` přesměruje na `https://`.
 - User-Agent stahování map neobsahuje adresu webu.
 - Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako ignorovanou.
 - GPX soubor nemůže při načtení číst jiné soubory ani volat adresy

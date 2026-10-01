@@ -23,6 +23,7 @@ public class KachloDownloader {
 	private static final int TIMEOUT_PRIPOJENI = 15000;
 	private static final int TIMEOUT_CTENI = 30000;
 	static final int TIMEOUT_CELKEM = 60000;
+	private static final int MAX_PRESMEROVANI = 3;
 
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
 	static final String USER_AGENT = "Geokuk/" + FConst.VERSION;
@@ -89,17 +90,18 @@ public class KachloDownloader {
 		// throw new IOException("Nasimulovaná chyba hybrid");
 		// }
 
-		final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-		conn.setConnectTimeout(TIMEOUT_PRIPOJENI);
-		conn.setReadTimeout(TIMEOUT_CTENI);
-		conn.setRequestProperty("User-Agent", USER_AGENT);
-		if (url.getHost().endsWith("mapy.cz")) {
-			// Pro mapy.cz je nutný referer, jinak se vrací 403
-			conn.setRequestProperty("Referer", "https://en.mapy.com/");
+		HttpURLConnection conn = otevri(url, hlavicky);
+		int kod = conn.getResponseCode();
+		// Java přesměrování z http na https sama nesleduje a řada serverů už http přesměrovává.
+		for (int presmerovani = 0; presmerovani < MAX_PRESMEROVANI && kod >= 300 && kod < 400 && conn.getHeaderField("Location") != null; presmerovani++) {
+			final URL kam = new URL(url, conn.getHeaderField("Location"));
+			conn.disconnect();
+			if (!"https".equals(kam.getProtocol()) && !kam.getProtocol().equals(url.getProtocol())) {
+				break;
+			}
+			conn = otevri(kam, hlavicky);
+			kod = conn.getResponseCode();
 		}
-		hlavicky.forEach(conn::setRequestProperty);
-
-		final int kod = conn.getResponseCode();
 		if (kod >= 300) {
 			conn.disconnect();
 			throw new ChybaServeru(kod, conn.getResponseMessage());
@@ -123,6 +125,19 @@ public class KachloDownloader {
 
 		return imda;
 
+	}
+
+	private static HttpURLConnection otevri(final URL url, final Map<String, String> hlavicky) throws IOException {
+		final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setConnectTimeout(TIMEOUT_PRIPOJENI);
+		conn.setReadTimeout(TIMEOUT_CTENI);
+		conn.setRequestProperty("User-Agent", USER_AGENT);
+		if (url.getHost().endsWith("mapy.cz")) {
+			// Pro mapy.cz je nutný referer, jinak se vrací 403
+			conn.setRequestProperty("Referer", "https://en.mapy.com/");
+		}
+		hlavicky.forEach(conn::setRequestProperty);
+		return conn;
 	}
 
 	/** Dekodér JPEG useknutá data nepovažuje za chybu a zbytek dlaždice doplní šedou, ohlásí to jen varováním. */
