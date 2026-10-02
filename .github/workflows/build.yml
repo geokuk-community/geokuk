@@ -94,12 +94,13 @@ jobs:
         run: |
           $moduly = "java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.prefs,java.sql,java.xml," +
             "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.management,jdk.unsupported,jdk.zipfs"
-          jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --output GeoKuk/runtime
+          jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --output GeoKuk/program/runtime
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          $podpis = Get-AuthenticodeSignature GeoKuk/runtime/bin/javaw.exe
+          $podpis = Get-AuthenticodeSignature GeoKuk/program/runtime/bin/javaw.exe
           if ($podpis.Status -ne "Valid") { throw "javaw.exe není podepsaný: $($podpis.Status)" }
-          Copy-Item geokuk.jar, start.jar, distribuce/windows/GeoKuk.cmd, distribuce/windows/geokuk.ico, distribuce/windows/CTIMNE.txt GeoKuk/
-          GeoKuk/runtime/bin/java -version
+          Copy-Item geokuk.jar, start.jar, distribuce/windows/geokuk.ico GeoKuk/program/
+          Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt GeoKuk/
+          GeoKuk/program/runtime/bin/java -version
           Compress-Archive GeoKuk -DestinationPath GeoKuk-windows.zip
 
       - name: Zkouška zipu

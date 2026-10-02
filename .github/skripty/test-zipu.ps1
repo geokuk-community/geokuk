@@ -1,5 +1,5 @@
-# Zkouška hotového zipu pro Windows: rozbalí ho, spustí přes GeoKuk.cmd a start.jar a ověří složku data,
-# výměnu staženého jaru, paměť a upozornění na nevhodné umístění.
+# Zkouška hotového zipu pro Windows: rozbalí ho, spustí přes GeoKuk-prvni-spusteni.cmd a start.jar a ověří složku data,
+# výměnu staženého jaru, paměť, zástupce ve složce a jeho opravu po přesunu a upozornění na nevhodné umístění.
 param([string]$Zip = "GeoKuk-windows.zip")
 
 $ErrorActionPreference = "Stop"
@@ -49,13 +49,13 @@ function Rozbal([string]$cil) {
     $slozka
 }
 
-# Spustí program jako uživatel dvojklikem na GeoKuk.cmd a vrátí proces GeoKuku (ne spouštěče).
-function Spust([string]$slozka, [string[]]$parametry) {
+# Spustí program jako uživatel dvojklikem (na GeoKuk-prvni-spusteni.cmd, nebo na $soubor) a vrátí proces GeoKuku (ne spouštěče).
+function Spust([string]$slozka, [string[]]$parametry, [string]$soubor = (Join-Path $slozka "GeoKuk-prvni-spusteni.cmd")) {
     $zacatek = Get-Date
-    $spust = @{ FilePath = (Join-Path $slozka "GeoKuk.cmd"); WorkingDirectory = $slozka; WindowStyle = "Hidden" }
+    $spust = @{ FilePath = $soubor; WorkingDirectory = $slozka; WindowStyle = "Hidden" }
     if ($parametry) { $spust.ArgumentList = $parametry }
     Start-Process @spust
-    $jar = Join-Path $slozka "geokuk.jar"
+    $jar = Join-Path $slozka "program\geokuk.jar"
     for ($i = 0; $i -lt 60; $i++) {
         $p = Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$jar*" }
         if ($p) { return [pscustomobject]@{ Proces = $p; Zacatek = $zacatek } }
@@ -76,6 +76,16 @@ function Cekej([int]$sekund, [scriptblock]$podminka) {
         Start-Sleep -Milliseconds 300
     }
     return $null
+}
+
+function Konec($o, $beh) {
+    Volej $o POST "/menu?cesta=$([uri]::EscapeDataString('Soubor > Konec'))" | Out-Null
+    $proces = Get-Process -Id $beh.Proces.ProcessId -ErrorAction SilentlyContinue
+    (-not $proces) -or $proces.WaitForExit(30000)
+}
+
+function Zastupce([string]$soubor) {
+    if (Test-Path -LiteralPath $soubor) { (New-Object -ComObject WScript.Shell).CreateShortcut($soubor) }
 }
 
 function Ovladani([string]$slozka) {
@@ -111,7 +121,7 @@ function ZapsanoMimo([datetime]$od, [string]$slozka) {
 $slozka = Rozbal (Join-Path $koren "obvykle")
 $predSpustenim = Get-Date
 $registrPred = Registr
-Copy-Item (Join-Path $slozka "geokuk.jar") (Join-Path $slozka "geokuk.jar.new")
+Copy-Item (Join-Path $slozka "program\geokuk.jar") (Join-Path $slozka "program\geokuk.jar.new")
 $beh = Spust $slozka @("--ovladani=0", "--ovladani-devel")
 try {
     $o = Ovladani $slozka
@@ -126,22 +136,24 @@ try {
     $okna = @(Volej $o GET "/okna")
     Ocekavej (($okna.Count -eq 1) -and ($okna[0].titulek -eq "GeoKuk")) "otevřené je jen hlavní okno: $(($okna | ForEach-Object { $_.titulek + ': ' + $_.text }) -join ' | ')"
 
-    Ocekavej (Test-Path (Join-Path $slozka "geokuk.jar.bak")) "stažený jar vyměněn, starý zůstal jako .bak"
-    Ocekavej (-not (Test-Path (Join-Path $slozka "geokuk.jar.new"))) "geokuk.jar.new po výměně nezůstal"
+    Ocekavej (Test-Path (Join-Path $slozka "program\geokuk.jar.bak")) "stažený jar vyměněn, starý zůstal jako .bak"
+    Ocekavej (-not (Test-Path (Join-Path $slozka "program\geokuk.jar.new"))) "geokuk.jar.new po výměně nezůstal"
 
     $xmx = [regex]::Match($beh.Proces.CommandLine, "-Xmx(\d+)m")
     $ram = [long]((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1MB)
     $cekana = [math]::Min(3072, [math]::Max(1024, [math]::Floor($ram / 2)))
     Ocekavej ($xmx.Success -and [math]::Abs([int]$xmx.Groups[1].Value - $cekana) -le 64) "paměť $($xmx.Value) odpovídá polovině RAM $ram MB v mezích 1–3 GB (čekáno $cekana)"
     $souhrn.Add("| Paměť | $($xmx.Value), RAM $ram MB |")
-    Ocekavej ($beh.Proces.ExecutablePath -eq (Join-Path $slozka "runtime\bin\javaw.exe")) "běží přibalená Java: $($beh.Proces.ExecutablePath)"
+    $javaw = Join-Path $slozka "program\runtime\bin\javaw.exe"
+    Ocekavej ($beh.Proces.ExecutablePath -eq $javaw) "běží přibalená Java: $($beh.Proces.ExecutablePath)"
+    $lnk = Cekej 60 { Zastupce (Join-Path $slozka "GeoKuk.lnk") }
+    Ocekavej ($lnk -and $lnk.TargetPath -eq $javaw -and $lnk.Arguments -like "*$(Join-Path $slozka 'program\start.jar')*" -and $lnk.WorkingDirectory -eq (Join-Path $slozka "program")) `
+        "ve složce vznikl zástupce GeoKuk.lnk: $($lnk.TargetPath) $($lnk.Arguments)"
 
     foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni") {
         Ocekavej (Test-Path (Join-Path $slozka $d)) "vzniklo $d"
     }
-    Volej $o POST "/menu?cesta=$([uri]::EscapeDataString('Soubor > Konec'))" | Out-Null
-    $proces = Get-Process -Id $beh.Proces.ProcessId -ErrorAction SilentlyContinue
-    Ocekavej ((-not $proces) -or $proces.WaitForExit(30000)) "program po Soubor > Konec skončil"
+    Ocekavej (Konec $o $beh) "program po Soubor > Konec skončil"
     $xml = [xml](Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml"))
     Ocekavej ($null -ne $xml.preferences.root) "data\nastaveni.xml je po ukončení platné"
     $chyby = @(Get-ChildItem (Join-Path $slozka "data\log\chyby") -ErrorAction SilentlyContinue)
@@ -170,9 +182,9 @@ $slozka = Rozbal (Join-Path $koren "jen-cteni")
 try {
     # Výslovný zákaz i na data, zděděný by přebilo výslovné povolení pro správce.
     foreach ($d in $slozka, (Join-Path $slozka "data")) { icacls $d /deny "$($env:USERNAME):(OI)(CI)(AD,WD)" | Out-Null }
-    Start-Process -FilePath (Join-Path $slozka "runtime\bin\javaw.exe") -ArgumentList "-jar", "`"$(Join-Path $slozka 'start.jar')`"" -WorkingDirectory $slozka | Out-Null
+    Start-Process -FilePath (Join-Path $slozka "program\runtime\bin\javaw.exe") -ArgumentList "-jar", "`"$(Join-Path $slozka 'program\start.jar')`"" -WorkingDirectory $slozka | Out-Null
     $beh = Cekej 60 {
-        Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$(Join-Path $slozka 'geokuk.jar')*" }
+        Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$(Join-Path $slozka 'program\geokuk.jar')*" }
     }
     Ocekavej ($null -ne $beh) "program ze složky bez práva zápisu se spustil"
     if ($beh) {
@@ -187,6 +199,44 @@ try {
 } finally {
     Ukonci $slozka
     icacls $slozka /remove:d $env:USERNAME /T /C | Out-Null
+}
+
+# 4. Přesun složky: zástupce ve složce i jeho kopie na ploše se opraví a GeoKuk jde z kopie spustit.
+$puvodni = Rozbal (Join-Path $koren "presun")
+$plocha = [Environment]::GetFolderPath("Desktop")
+New-Item -ItemType Directory -Force $plocha | Out-Null
+$naPlose = Join-Path $plocha "GeoKuk zkouska.lnk"
+$slozka = Join-Path $koren "presunuto\GeoKuk"
+try {
+    $beh = Spust $puvodni @("--ovladani=0", "--ovladani-devel")
+    $o = Ovladani $puvodni
+    $lnk = Cekej 60 { Zastupce (Join-Path $puvodni "GeoKuk.lnk") }
+    Ocekavej ($null -ne $lnk) "před přesunem vznikl zástupce"
+    $ulozeno = Cekej 30 { (Get-Content -Raw -Encoding utf8 (Join-Path $puvodni "data\nastaveni.xml")) -like "*zastupcePro*" }
+    Ocekavej ($ulozeno -eq $true) "GeoKuk si uložil, pro kterou složku zástupce vytvořil"
+    Ocekavej (Konec $o $beh) "program před přesunem skončil"
+    Copy-Item (Join-Path $puvodni "GeoKuk.lnk") $naPlose
+    Remove-Item (Join-Path $puvodni "data\ovladani.properties") -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force (Split-Path $slozka) | Out-Null
+    Move-Item $puvodni $slozka
+
+    $beh = Spust $slozka @("--ovladani=0", "--ovladani-devel")
+    $o = Ovladani $slozka
+    $javaw = Join-Path $slozka "program\runtime\bin\javaw.exe"
+    $veSlozce = Cekej 60 { $z = Zastupce (Join-Path $slozka "GeoKuk.lnk"); if ($z.TargetPath -eq $javaw) { $z } }
+    Ocekavej ($null -ne $veSlozce) "zástupce ve složce po přesunu vede na $javaw"
+    $kopie = Cekej 30 { $z = Zastupce $naPlose; if ($z.TargetPath -eq $javaw) { $z } }
+    Ocekavej ($null -ne $kopie) "zástupce na ploše po přesunu opraven: $((Zastupce $naPlose).TargetPath)"
+    Ocekavej (Konec $o $beh) "program po přesunu skončil"
+    if ($kopie) {
+        $zKopie = $null
+        try { $zKopie = Spust $slozka @() $naPlose } catch { }
+        Ocekavej ($null -ne $zKopie) "GeoKuk se spustil ze zástupce na ploše"
+    }
+} finally {
+    Ukonci $puvodni
+    Ukonci $slozka
+    Remove-Item $naPlose -ErrorAction SilentlyContinue
 }
 
 if ($env:GITHUB_STEP_SUMMARY) {

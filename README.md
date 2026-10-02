@@ -27,12 +27,14 @@ obsahuje i Javu, žádnou jinou není potřeba instalovat. Nerozbalujte ho do
 synchronizuje OneDrive, Dropbox nebo Google Disk (pozor, OneDrive často
 zálohuje i Plochu a Dokumenty).
 
-Poprvé spusťte `GeoKuk.cmd`. Windows se zeptají, jestli soubor od
-neznámého vydavatele spustit; zrušte „Vždy se zeptat před otevřením
-tohoto souboru“ a zvolte Spustit. Dotazu se vyhnete, když před
-rozbalením ve vlastnostech staženého zipu zaškrtnete Odblokovat.
-Pak v GeoKuku zvolte Soubor > Vytvořit zástupce a dál ho spouštějte
-z nabídky Start nebo z plochy.
+Poprvé spusťte `GeoKuk-prvni-spusteni.cmd`. Windows se zeptají, jestli
+soubor od neznámého vydavatele spustit; zvolte Spustit. Dotazu se
+vyhnete, když před rozbalením ve vlastnostech staženého zipu zaškrtnete
+Odblokovat. GeoKuk pak vedle vytvoří zástupce `GeoKuk.lnk`; dál
+spouštějte jeho, klidně ho zkopírujte na plochu nebo připněte na hlavní
+panel. Do nabídky Start ho přidá Soubor > Vytvořit zástupce. Když
+složku přesunete, spusťte znovu `GeoKuk-prvni-spusteni.cmd`, zástupce
+ve složce i jeho kopie na ploše a v nabídce Start se opraví.
 
 Když GeoKuk najde novou verzi, stáhne ji a nainstaluje se při příštím
 spuštění. Javu aktualizuje nový zip, který stačí rozbalit přes
@@ -47,11 +49,13 @@ Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
 
 ```
 GeoKuk
-├── GeoKuk.cmd                   první spuštění ve Windows
-├── geokuk.jar                   program
-├── start.jar                    spouštěč pro zástupce
-├── geokuk.ico
-├── runtime                      Java
+├── GeoKuk-prvni-spusteni.cmd    první spuštění ve Windows
+├── GeoKuk.lnk                   zástupce, vytvoří ho GeoKuk
+├── program
+│   ├── geokuk.jar               program
+│   ├── start.jar                spouštěč
+│   ├── geokuk.ico
+│   └── runtime                  Java
 └── data                         všechno, co si GeoKuk ukládá
     ├── nastaveni.xml
     ├── uzivatelske-mapy.properties

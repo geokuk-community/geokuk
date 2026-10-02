@@ -6,11 +6,12 @@ programu. Složku s programem nedávejte do Program Files ani do složky,
 kterou synchronizuje OneDrive, Dropbox nebo Google Disk (OneDrive často
 zálohuje i Plochu a Dokumenty). Dobré místo je třeba C:\GeoKuk.
 
-První spuštění: dvakrát klikněte na GeoKuk.cmd. Windows se zeptají, jestli
-soubor od neznámého vydavatele spustit; zrušte „Vždy se zeptat před
-otevřením tohoto souboru“ a zvolte Spustit. Pak v GeoKuku zvolte
-Soubor > Vytvořit zástupce a dál ho spouštějte z nabídky Start nebo
-z plochy.
+První spuštění: dvakrát klikněte na GeoKuk-prvni-spusteni.cmd. Windows se
+zeptají, jestli soubor od neznámého vydavatele spustit; zvolte Spustit.
+GeoKuk pak vedle vytvoří zástupce GeoKuk.lnk. Dál spouštějte jeho, klidně
+ho zkopírujte na plochu nebo připněte na hlavní panel. Když složku
+s programem přesunete, spusťte znovu GeoKuk-prvni-spusteni.cmd, zástupce
+se opraví.
 
 Nové verze programu se instalují samy. Nový zip stačí rozbalit přes
 stávající složku, data a nastavení zůstanou.

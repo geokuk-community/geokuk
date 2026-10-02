@@ -2,6 +2,8 @@ package cz.geokuk.core.program;
 
 import java.io.File;
 
+import cz.geokuk.start.Start;
+
 /**
  * Adresář programu a jeho datová složka. Všechno, co program zapisuje, je v datové složce vedle programu, takže rozhoduje jen to, odkud se spustí.
  * Třída nesmí logovat, používá ji i konfigurace logu.
@@ -14,6 +16,8 @@ public final class UmisteniProgramu {
 	/** Složka s {@code geokuk.jar}, při běhu mimo jar aktuální složka. */
 	public static final File JAR_DIR;
 	public static final boolean JAR_DIR_EXISTUJE;
+	/** Složka, kterou uživatel vidí; u přenosného GeoKuku nad podsložkou program. */
+	public static final File KOREN;
 	public static final File DATA_DIR;
 
 	static {
@@ -25,8 +29,9 @@ public final class UmisteniProgramu {
 			JAR_DIR = new File("").getAbsoluteFile();
 			JAR_DIR_EXISTUJE = false;
 		}
+		KOREN = Start.koren(JAR_DIR);
 		final String data = System.getProperty(DATA_PROPERTY);
-		DATA_DIR = data != null && !data.isEmpty() ? new File(data).getAbsoluteFile() : new File(JAR_DIR, "data");
+		DATA_DIR = data != null && !data.isEmpty() ? new File(data).getAbsoluteFile() : new File(KOREN, "data");
 	}
 
 	public static File log() {

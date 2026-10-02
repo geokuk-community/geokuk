@@ -26,6 +26,8 @@ import org.xml.sax.InputSource;
 public final class Start {
 
 	static final String JAR = "geokuk.jar";
+	/** Podsložka přenosného GeoKuku s programem a Javou, vedle ní je složka data. */
+	public static final String SLOZKA_PROGRAMU = "program";
 	static final long MB = 1024L * 1024;
 	static final int MIN_PAMET_MB = 1024;
 	static final int MAX_PAMET_MB = 3072;
@@ -43,10 +45,11 @@ public final class Start {
 			}
 			final List<String> prikaz = new ArrayList<>();
 			prikaz.add(java().getPath());
-			prikaz.add("-Xmx" + pametMb(new File(new File(adresar, "data"), "nastaveni.xml"), fyzickaPametMb()) + "m");
+			final File data = new File(koren(adresar), "data");
+			prikaz.add("-Xmx" + pametMb(new File(data, "nastaveni.xml"), fyzickaPametMb()) + "m");
 			prikaz.add("-Djava.net.useSystemProxies=true");
 			// Mimo složku programu nic: dočasné soubory do data/tmp, bez hsperfdata v systémovém TEMP.
-			final File docasne = new File(new File(adresar, "data"), "tmp");
+			final File docasne = new File(data, "tmp");
 			docasne.mkdirs();
 			prikaz.add("-Djava.io.tmpdir=" + docasne.getPath());
 			prikaz.add("-XX:-UsePerfData");
@@ -63,6 +66,12 @@ public final class Start {
 	static File adresarSpoustece() throws URISyntaxException {
 		final File umisteni = new File(Start.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		return umisteni.isFile() ? umisteni.getParentFile() : new File("").getAbsoluteFile();
+	}
+
+	/** Složka, kterou uživatel vidí: nad podsložkou program přenosného GeoKuku, jinak složka programu. */
+	public static File koren(final File adresarProgramu) {
+		final File nad = adresarProgramu.getParentFile();
+		return nad != null && SLOZKA_PROGRAMU.equalsIgnoreCase(adresarProgramu.getName()) && new File(adresarProgramu, "start.jar").isFile() ? nad : adresarProgramu;
 	}
 
 	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */

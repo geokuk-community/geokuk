@@ -10,6 +10,7 @@ import javax.swing.*;
 
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
+import cz.geokuk.framework.MyPreferences;
 import lombok.extern.slf4j.Slf4j;
 
 /** Vytvoří zástupce přenosného GeoKuku v nabídce Start nebo na ploše Windows. */
@@ -21,10 +22,19 @@ public class VytvoritZastupceAction extends Action0 {
 	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
 	private static final String SKRIPT = "$ErrorActionPreference='Stop';"
 			+ "$sh=New-Object -ComObject WScript.Shell;"
-			+ "foreach($kam in $env:GK_KAM.Split(';')){"
-			+ "$s=$sh.CreateShortcut((Join-Path ([Environment]::GetFolderPath($kam)) 'GeoKuk.lnk'));"
-			+ "$s.TargetPath=$env:GK_JAVAW;$s.Arguments=$env:GK_ARGUMENTY;$s.WorkingDirectory=$env:GK_SLOZKA;"
-			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save()}";
+			+ "function Nastav($s){$s.TargetPath=$env:GK_JAVAW;$s.Arguments=$env:GK_ARGUMENTY;$s.WorkingDirectory=$env:GK_SLOZKA;"
+			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save()}"
+			+ "if($env:GK_KAM){foreach($kam in $env:GK_KAM.Split(';')){Nastav ($sh.CreateShortcut((Join-Path ([Environment]::GetFolderPath($kam)) 'GeoKuk.lnk')))}}"
+			+ "if($env:GK_SOUBOR){Nastav ($sh.CreateShortcut($env:GK_SOUBOR));Unblock-File -LiteralPath $env:GK_JAVAW -ErrorAction SilentlyContinue}"
+			// Zástupci na ploše, v nabídce Start a na hlavním panelu, kteří vedou do složky, odkud se GeoKuk přesunul.
+			+ "if($env:GK_STARY_JAVAW -and -not (Test-Path -LiteralPath $env:GK_STARY_JAVAW)){"
+			+ "foreach($d in @([Environment]::GetFolderPath('Desktop'),[Environment]::GetFolderPath('Programs'),"
+			+ "(Join-Path $env:APPDATA 'Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar'))){"
+			+ "if($d -and (Test-Path -LiteralPath $d)){Get-ChildItem -LiteralPath $d -Filter *.lnk -File|ForEach-Object{"
+			+ "$s=$sh.CreateShortcut($_.FullName);if($s.TargetPath -ieq $env:GK_STARY_JAVAW){Nastav $s;'Opraven '+$_.FullName}}}}}";
+
+	/** Program, pro který je zástupce ve složce s programem. */
+	private static final String ZASTUPCE_PRO_value = "zastupcePro";
 
 	public VytvoritZastupceAction() {
 		super("Vytvořit zástupce...");
@@ -34,7 +44,46 @@ public class VytvoritZastupceAction extends Action0 {
 	}
 
 	static File javaw() {
-		return new File(FConst.JAR_DIR, "runtime\\bin\\javaw.exe");
+		return javaw(FConst.JAR_DIR);
+	}
+
+	private static File javaw(final File adresarProgramu) {
+		return new File(adresarProgramu, "runtime\\bin\\javaw.exe");
+	}
+
+	/**
+	 * Zástupce GeoKuk.lnk ve složce s programem, ať ho uživatel může zkopírovat, kam chce. Po přesunu složky opraví i zástupce, kteří vedou na
+	 * původní místo.
+	 */
+	public static void aktualizujZastupceVeSlozce() {
+		if (!lzeVytvorit() || FConst.KOREN.equals(FConst.JAR_DIR)) {
+			return;
+		}
+		final MyPreferences pref = MyPreferences.current().node(FPref.VSEOBECNE_node);
+		final String program = FConst.JAR_DIR.getAbsolutePath();
+		final String puvodni = pref.get(ZASTUPCE_PRO_value, null);
+		final File zastupce = new File(FConst.KOREN, "GeoKuk.lnk");
+		if (program.equals(puvodni) && zastupce.isFile()) {
+			return;
+		}
+		final Map<String, String> env = new HashMap<>();
+		env.put("GK_SOUBOR", zastupce.getAbsolutePath());
+		if (puvodni != null && !program.equals(puvodni)) {
+			env.put("GK_STARY_JAVAW", javaw(new File(puvodni)).getAbsolutePath());
+		}
+		final Thread vlakno = new Thread(() -> {
+			try {
+				if (spust(env) == null) {
+					pref.put(ZASTUPCE_PRO_value, program);
+				}
+			} catch (final IOException e) {
+				log.warn("Zástupce ve složce s programem nelze vytvořit", e);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}, "Zástupce");
+		vlakno.setDaemon(true);
+		vlakno.start();
 	}
 
 	static boolean lzeVytvorit() {
@@ -60,7 +109,7 @@ public class VytvoritZastupceAction extends Action0 {
 		new SwingWorker<String, Void>() {
 			@Override
 			protected String doInBackground() throws Exception {
-				return vytvor(String.join(";", kam));
+				return spust(Collections.singletonMap("GK_KAM", String.join(";", kam)));
 			}
 
 			@Override
@@ -68,7 +117,7 @@ public class VytvoritZastupceAction extends Action0 {
 				try {
 					final String chyba = get();
 					if (chyba == null) {
-						Dlg.info("Zástupce je vytvořený. Když GeoKuk přesunete, vytvořte ho znovu.", "Vytvořit zástupce");
+						Dlg.info("Zástupce je vytvořený.", "Vytvořit zástupce");
 					} else {
 						Dlg.error("Zástupce se nepodařilo vytvořit:\n" + chyba);
 					}
@@ -80,10 +129,10 @@ public class VytvoritZastupceAction extends Action0 {
 	}
 
 	/** Vrátí popis chyby, nebo null. */
-	private static String vytvor(final String kam) throws IOException, InterruptedException {
+	private static String spust(final Map<String, String> promenne) throws IOException, InterruptedException {
 		final ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", SKRIPT);
 		final Map<String, String> env = pb.environment();
-		env.put("GK_KAM", kam);
+		env.putAll(promenne);
 		env.put("GK_JAVAW", javaw().getAbsolutePath());
 		env.put("GK_ARGUMENTY", "-XX:-UsePerfData -jar \"" + new File(FConst.JAR_DIR, "start.jar").getAbsolutePath() + "\"");
 		env.put("GK_SLOZKA", FConst.JAR_DIR.getAbsolutePath());
@@ -100,11 +149,11 @@ public class VytvoritZastupceAction extends Action0 {
 			}
 		}
 		final int kod = p.waitFor();
+		final String text = new String(vystup.toByteArray(), StandardCharsets.UTF_8).trim();
 		if (kod == 0) {
-			log.info("Vytvořen zástupce: {}", kam);
+			log.info("Vytvořen zástupce: {} {}", promenne, text);
 			return null;
 		}
-		final String text = new String(vystup.toByteArray(), StandardCharsets.UTF_8).trim();
 		log.warn("Zástupce nelze vytvořit ({}): {}", kod, text);
 		return text.isEmpty() ? "PowerShell skončil s kódem " + kod : text;
 	}

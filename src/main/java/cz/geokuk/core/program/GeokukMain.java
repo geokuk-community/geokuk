@@ -50,6 +50,7 @@ public class GeokukMain {
 				Dlg.error(varovani);
 			}
 			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
+			VytvoritZastupceAction.aktualizujZastupceVeSlozce();
 			if (portOvladani != null) {
 				inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);
 			} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {
