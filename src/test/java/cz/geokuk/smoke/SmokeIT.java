@@ -494,7 +494,9 @@ public class SmokeIT {
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
 		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
 		if (edt > 3000) {
-			problemy.add("Událost na EDT trvala " + edt + " ms: " + zprava.getProperty("edt.pomala.0"));
+			final String nejpomalejsi = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.pomala.")).map(zprava::getProperty)
+					.filter(p -> p.startsWith(edt + " ms")).findFirst().orElse(zprava.getProperty("edt.pomala.0"));
+			problemy.add("Událost na EDT trvala " + edt + " ms: " + nejpomalejsi);
 		}
 		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
 		if (pamet > 400) {
