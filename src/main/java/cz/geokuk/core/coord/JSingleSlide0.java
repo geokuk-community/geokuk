@@ -57,10 +57,6 @@ public abstract class JSingleSlide0 extends JSlide0 {
 		return EJakOtacetPriRendrovani.GRAPH2D;
 	}
 
-	// protected final void onEvent(VyrezChangedEvent0 event ) {
-	//
-	// }
-
 	public void render(final Graphics g) throws InterruptedException {
 		paintComponent(g);
 	}

@@ -56,10 +56,6 @@ public class Utm extends Misto0 {
 
 	@Override
 	public Mou toMou() {
-		// Takto to bylo v seznamových mapách
-		// double xx = (ux + 3700000) / MOU_FACTOR;
-		// double yy = (uy - 1300000) / MOU_FACTOR;
-		// return new Mou((int)xx, (int)yy);
 		return toWgs().toMou();
 	}
 

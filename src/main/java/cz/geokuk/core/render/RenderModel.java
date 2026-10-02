@@ -115,10 +115,6 @@ public class RenderModel extends Model0 {
 		return moord;
 	}
 
-	// public void onEvent(ZmenaMapNastalaEvent event) {
-	// kaSet = event.getKaSet();
-	// }
-
 	/**
 	 * Bere natočení mapy od severu na aktuálním středu. Nebere v úvahu inforamci o tom, jak se má moc natáčet.
 	 *
@@ -168,31 +164,6 @@ public class RenderModel extends Model0 {
 	public int getRenderedMoumer() {
 		return renderSettings.getRenderedMoumer();
 	}
-
-	// /**
-	// *
-	// */
-	// public void vypisChybySouradnic(double pixlunametr) {
-	// Utm utmSZ = SZ.toUtm();
-	// Utm utmSV = SV.toUtm();
-	// Utm utmJZ = JZ.toUtm();
-	// Utm utmJV = JV.toUtm();
-	//
-	//
-	//
-	// double chybaMetruS = Math.abs(utmSZ.uy - utmSV.uy);
-	// double chybaMetruJ = Math.abs(utmJZ.uy - utmJV.uy);
-	// double chybaMetruZ = Math.abs(utmSZ.ux - utmJZ.ux);
-	// double chybaMetruV = Math.abs(utmSV.ux - utmJV.ux);
-	// System.out.println("SZ: " + SZ.toWgs() + " " + utmSZ + " " + SZ.toWgs().lat);
-	// System.out.println("SV: " + SV.toWgs() + " " + utmSV);
-	// System.out.println("JZ: " + JZ.toWgs() + " " + utmJZ);
-	// System.out.println("JV: " + JV.toWgs() + " " + utmJV);
-	//
-	// System.out.printf("Chyby v metrech: S=%d, J=%d, V=%d, Z=%d\n", (int) chybaMetruS, (int)chybaMetruJ, (int)chybaMetruZ, (int)chybaMetruV);
-	// //System.out.printf("Chyby v pixlech: S=%d, J=%d, V=%d, Z=%d\n", pixlunametr*chybaMetruS, pixlunametr*chybaMetruJ, pixlunametr*chybaMetruZ, pixlunametr*chybaMetruV);
-	//
-	// }
 
 	/**
 	 * @return the renderSettings

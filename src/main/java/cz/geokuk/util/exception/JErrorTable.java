@@ -182,22 +182,6 @@ public class JErrorTable extends JPanel {
 		// Add the scroll pane to this panel.
 		add(scrollPane);
 		nastavVlastnostiSLoupcu();
-		// table.setDefaultRenderer(AExcId.class, new TableCellRenderer() {
-		//
-		// @Override
-		// public Component getTableCellRendererComponent(JTable aTable, Object aValue, boolean aIsSelected, boolean aHasFocus, int aRow, int aColumn) {
-		// JButton jButton = new JButton(aValue == null ? "nuull" : aValue.toString());
-		// jButton.addActionListener(new ActionListener() {
-		//
-		// @Override
-		// public void actionPerformed(ActionEvent aE) {
-		// System.out.println("aaaaaaaaaaaaaaaaaaaaaaa");
-		//
-		// }
-		// });
-		// return jButton;
-		// }
-		// });
 
 	}
 
@@ -242,14 +226,5 @@ public class JErrorTable extends JPanel {
 		column = table.getColumnModel().getColumn(2);
 		// column.setMaxWidth(25);
 
-		// column = table.getColumnModel().getColumn(3);
-		// column.setMaxWidth(100);
-		// column.setResizable(false);
-		//
-		// column = table.getColumnModel().getColumn(4);
-		// column.setPreferredWidth(400);
-		//
-		// column = table.getColumnModel().getColumn(5);
-		// column.setPreferredWidth(100);
 	}
 }

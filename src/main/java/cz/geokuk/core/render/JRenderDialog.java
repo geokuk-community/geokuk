@@ -262,12 +262,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		final Box box = Box.createVerticalBox();
 		add(box);
 
-		// jUvod = new JTextPane();
-		// jUvod.setContentType("text/html");
-		// jUvod.setText("Tady bude kecání");
-		// jUvod.setPreferredSize(new Dimension(500, 250));
-		// jUvod.setAlignmentX(CENTER_ALIGNMENT);
-
 		jSrovnatDoSeveru = new JCheckBox();
 		jSrovnatDoSeveru.setText("Srovnat do severu");
 		jNastaveniAktualnihoMeritkaButton = new JButton("čudl bude něco umět");
@@ -334,9 +328,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		box.add(jVystup);
 
 		add(box);
-		// for (Component comp : getComponents()) {
-		// ((JComponent)comp).setAlignmentX(CENTER_ALIGNMENT);
-		// }
 
 	}
 
@@ -617,15 +608,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 			settings.setSrovnatDoSeveru(jSrovnatDoSeveru.isSelected());
 			renderModel.setRenderSettings(settings);
 		});
-
-		// jKmzFolderDescription.addChangeListener(new ChangeListener() {
-		// @Override
-		// public void stateChanged(ChangeEvent e) {
-		// RenderSettings settings = renderModel.getRenderSettings();
-		// settings.setSrovnatDoSeveru(jSrovnatDoSeveru.isSelected());
-		// renderModel.setRenderSettings(settings);
-		// }
-		// });
 
 		jKmzDrawOrder.addChangeListener(e -> {
 			final RenderSettings settings = renderModel.getRenderSettings();

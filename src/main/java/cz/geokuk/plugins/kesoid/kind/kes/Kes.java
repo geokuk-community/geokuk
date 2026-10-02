@@ -132,10 +132,6 @@ public class Kes extends Kesoid {
 		return EKesoidKind.KES;
 	}
 
-	// public Wpt getGc() {
-	// return gc;
-	// }
-
 	/**
 	 * @return the mainWpt
 	 */

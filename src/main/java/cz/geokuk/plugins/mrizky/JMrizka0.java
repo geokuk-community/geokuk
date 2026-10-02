@@ -260,11 +260,6 @@ public abstract class JMrizka0 extends JSingleSlide0 implements BeanSubtypable {
 		}
 	}
 
-	// @Override
-	// public void finalize() {
-	// System.out.println("Mřížky finalizovány");
-	// }
-
 	private String kterouMamMrizku() {
 		final String kn = getClass().getName();
 		final int poz = kn.indexOf("JMrizka");

@@ -180,16 +180,6 @@ public class JAdrTable extends JPanel {
 		// Nalezenec current = getCurrent();
 		tableModel.setAdressList(aAdresList);
 		nastavVlastnostiSLoupcu();
-		// if (current != null) {
-		// int index = 0;
-		// for (Nalezenec nalezenec : aKeslist) {
-		// if (current.getKes() == nalezenec.getKes()) {
-		// table.getSelectionModel().setSelectionInterval(index, index);
-		// return;
-		// }
-		// index ++;
-		// }
-		// }
 		if (aAdresList.size() > 0) {
 			table.getSelectionModel().setSelectionInterval(0, 0);
 		} else {

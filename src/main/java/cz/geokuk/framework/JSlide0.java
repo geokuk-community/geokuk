@@ -48,9 +48,6 @@ public class JSlide0 extends JComponent implements MySlideListener {
 	@Override
 	public Mouable getUpravenaMys() {
 		final Mouable upravenaMys = chain().getUpravenaMys();
-		// if (upravenaMys == null) {
-		// new Throwable().printStackTrace();
-		// }
 		return upravenaMys;
 	}
 

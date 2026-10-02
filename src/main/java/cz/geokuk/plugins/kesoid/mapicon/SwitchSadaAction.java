@@ -30,16 +30,6 @@ public class SwitchSadaAction extends ToggleAction0 {
 
 	}
 
-	// /* (non-Javadoc)
-	// * @see cz.geokuk.program.AfterEventReceiverRegistrationInit#initAfterEventReceiverRegistration()
-	// */
-	// @Override
-	// public void initAfterEventReceiverRegistration() {
-	// super.putValue(NAME, sestavJmeno());
-	// super.putValue(SMALL_ICON, ikonBag.seekIkon(ikonBag.getGenom().getGenotypProAlelu(alela)));
-	// super.putValue(SHORT_DESCRIPTION, sestavJmeno());
-	// }
-
 	public void inject(final KesoidModel kesoidModel) {
 		this.kesoidModel = kesoidModel;
 	}

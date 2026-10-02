@@ -72,12 +72,6 @@ public class JKachlovnikRendrovaci extends JKachlovnik {
 	protected JKachle createJKachle(final Ka ka) {
 		return new JKachleRendrovaci(this, ka);
 	}
-	// @Override
-	// protected JKachle createKachle(KaAll plny, KachleModel kachleModel, boolean vykreslovatOkamzite, JKachlovnik jKachlovnik) {
-	// JKachleRendrovaci jkachle = new JKachleRendrovaci(jKachlovnik);
-	// jkachle.setKachle(new KachleRendrovaci(plny, kachleModel, vykreslovatOkamzite, jkachle));
-	// return jkachle;
-	// }
 
 	@Override
 	void kachleZpracovana(final JKachle jKachle) {

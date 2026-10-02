@@ -195,9 +195,6 @@ public class JSouradnicovyFrame extends JMyDialog0 implements AfterEventReceiver
 
 		jButtonCentruj.setAlignmentY(CENTER_ALIGNMENT);
 		jUtm.setText("?");
-		// panel.add(jSirka);
-		// panel.add(jDelka);
-		// panel.add(jButtonCentruj);
 
 		layout.setAutoCreateGaps(true);
 		layout.setAutoCreateContainerGaps(true);
@@ -251,13 +248,6 @@ public class JSouradnicovyFrame extends JMyDialog0 implements AfterEventReceiver
 		return ok;
 	}
 
-	// private final class SpousteniVyhledavace implements ChangeListener {
-	// @Override
-	// public void stateChanged(ChangeEvent e) {
-	// search();
-	// }
-	// }
-
 	private void edituj() {
 		// if (souradnice == null) return;
 		boolean ok;
@@ -278,19 +268,6 @@ public class JSouradnicovyFrame extends JMyDialog0 implements AfterEventReceiver
 		}
 		vyhodnotEnableCentrovacihoTlacitka();
 	}
-
-	// public static void main(String args[]) {
-	// //Schedule a job for the event dispatch thread:
-	// //creating and showing this application's GUI.
-	//
-	// SwingUtilities.invokeLater(new Runnable() {
-	// public void run() {
-	// //Turn off metal's use of bold fonts
-	//// UIManager.put("swing.boldMetal", Boolean.FALSE);
-	// new JSouradnicovyFrame(null).setVisible(true);
-	// }
-	// });
-	// }
 
 	/**
 	 * @return

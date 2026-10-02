@@ -201,8 +201,4 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	private void registerEvents() {
 	}
 
-	// @Override
-	// public void finalize() {
-	// System.out.println("Kachlovník finalizován");
-	// }
 }

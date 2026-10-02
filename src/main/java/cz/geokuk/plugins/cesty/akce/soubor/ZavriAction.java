@@ -25,23 +25,6 @@ public class ZavriAction extends SouboeCestaAction0 {
 			return; // mělo se ukládat a řeklo se, že ne
 		}
 		cestyModel.zavri();
-		// if (doc.getFile() == null) { // ještě nebyl určen soubor, musíme se zeptat
-		// JFileChooser fc = new JFileChooser();
-		// fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		// fc.setSelectedFile(cestyModel.getImplicitniVyletNovyFile());
-		// int result = fc.showDialog(Dlg.parentFrame(), "Uložit");
-		// if (result == JFileChooser.APPROVE_OPTION) {
-		// File selectedFile = fc.getSelectedFile();
-		// if (selectedFile.exists()) { // dtaz na přepsání
-		// if (! Dlg.prepsatSoubor(selectedFile)) return;
-		// }
-		// doc.setFile(selectedFile);
-		// } else
-		// return;
-		// }
-		// // TODO ukládat na pozadí a také mít jinde ukládací dialog
-		// cestyModel.uloz(doc.getFile(), doc, true);
-		// System.out.println("Uložena cesta do: " + doc.getFile());
 	}
 
 	public void onEvent(final CestyChangedEvent event) {

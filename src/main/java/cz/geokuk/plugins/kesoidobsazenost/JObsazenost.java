@@ -107,9 +107,6 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 			}
 			final Mou mou = wpt.getMou();
 			final Point p = getSoord().transform(mou);
-			// Ellipse2D kruh = new Ellipse2D.Float(p.x -r, p.y - r, d, d);
-			// Area areakruh = new Area(kruh);
-			// area.add(areakruh);
 			g.fillOval(p.x - r, p.y - r, d, d);
 		});
 

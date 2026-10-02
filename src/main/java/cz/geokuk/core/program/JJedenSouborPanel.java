@@ -193,9 +193,4 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		prepocitej();
 	}
 
-	// @Override
-	// public void requestFocus() {
-	// super.requestFocus();
-	// jtext.requestFocus();
-	// }
 }

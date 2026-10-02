@@ -83,19 +83,6 @@ public class JZoomovaciObdelnik extends JSingleSlide0 {
 			final Mou stred = getSoord().transform(getRectangle()).getStred();
 			final Point p = getSoord().transform(stred);
 			g.fillOval(p.x - 5, p.y - 5, 10, 10);
-			// Rectangle r = getRectangle();
-			//
-			// p = new Point(r.x + r.width /2, r.y + r.height /2);
-			// g.setColor(Color.BLUE);
-			// g.fillOval(p.x-5, p.y-5, 10, 10);
-			//
-			// p = coord.transform(coord.transform(p));
-			// g.setColor(Color.MAGENTA);
-			// g.fillOval(p.x-5, p.y-5, 10, 10);
-			//
-			// p = coord.transform(coord.transform(getRectangle()).sstre);
-			// g.setColor(Color.GREEN);
-			// g.fillOval(p.x-5, p.y-5, 10, 10);
 
 		}
 	}

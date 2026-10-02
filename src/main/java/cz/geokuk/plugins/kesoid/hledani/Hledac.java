@@ -109,9 +109,4 @@ public class Hledac extends Hledac0<Nalezenec> {
 		return list;
 	}
 
-	// public static void main(String[] args) {
-	// System.out.println(FUtil.cestinuPryc("Příliš žluťoučký kůň úpěl ďábelské ódy"));
-	// System.out.println(FUtil.cestinuPryc("Tady neni cestina"));
-	// System.out.println(FUtil.cestinuPryc("Tady je čeština"));
-	// }
 }

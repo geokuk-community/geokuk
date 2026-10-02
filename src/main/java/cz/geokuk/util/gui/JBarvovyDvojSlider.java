@@ -90,12 +90,6 @@ public class JBarvovyDvojSlider extends JPanel {
 		add(Box.createRigidArea(new Dimension(0, 20)));
 	}
 
-	// public void setModel(BarvovyDvojSliderModel model) {
-	// iModel = model;
-	// iBarvovnik.setModel(model.getBarvovnikModel());
-	// iPruhlednik.setModel(model.getPruhlednikModel());
-	// }
-
 	// /**
 	// * @return
 	// */

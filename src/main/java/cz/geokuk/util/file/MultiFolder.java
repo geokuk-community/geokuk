@@ -23,15 +23,6 @@ public class MultiFolder {
 
 	private final KeyTree<String, LamUrl> tree = new KeyTree<>();
 
-//	public static void main(final String[] args) {
-//
-//		final MultiFolder mf = new MultiFolder();
-//		mf.addResourceTree("geokuk/image");
-//		mf.addFolderTree(new File("img2"));
-//		mf.addFolderTree(new File("img3"));
-//		mf.print();
-//	}
-
 	public void addFolderTree(final File dir) {
 		final List<String> emptyList = Collections.emptyList();
 		addOneFord(dir, emptyList);

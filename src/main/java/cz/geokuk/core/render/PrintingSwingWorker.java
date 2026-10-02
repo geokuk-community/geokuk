@@ -42,10 +42,6 @@ public class PrintingSwingWorker extends RendererSwingWorker0 implements Printab
 		log.debug("Tisk strany {} - {}", pageIndex, graphics.getClipBounds());
 		if (pageIndex > 0) {
 			return NO_SUCH_PAGE;
-			// if (posledneTistenaStrana == pageIndex) return PAGE_EXISTS;
-			// posledneTistenaStrana = pageIndex;
-			// pocetPokusu --;
-			// if (pocetPokusu < 0) return PAGE_EXISTS;
 		}
 
 		Graphics2D g = (Graphics2D) graphics;
@@ -58,9 +54,6 @@ public class PrintingSwingWorker extends RendererSwingWorker0 implements Printab
 		p.pruhledne = false;
 
 		final Coord roord = renderModel.getRoord();
-		// g.scale(pf.getImageableWidth() / roord.getWidth(),
-		// pf.getImageableHeight() / roord.getHeight());
-		// PapirovaMetrika pm = renderModel.getPapirovaMetrika();
 		final int papiroveMeritko = renderModel.getRenderSettings().getPapiroveMeritko();
 		final double pixluNaMetr = roord.getPixluNaMetr();
 		final double pixluNaMilimetrMapy = pixluNaMetr / 1000 * papiroveMeritko;

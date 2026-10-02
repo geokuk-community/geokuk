@@ -85,17 +85,6 @@ public class JToolbarOvladaceAlel extends JPanel {
 				ovladac(vsechny, alela);
 			}
 		}
-		// for (Gen gen : genom.getGeny()) {
-		// System.out.println("1");
-		// System.out.println("GEN: " + gen);
-		// System.out.println("2");
-		// for (Grupa grp : gen.getGrupy().values()) {
-		// System.out.println(" GRUPA: " + grp);
-		// for (Alela alela : grp.getAlely()) {
-		// System.out.println(" ALELA: " + alela);
-		// }
-		// }
-		// }
 		setVisible(true);
 	}
 

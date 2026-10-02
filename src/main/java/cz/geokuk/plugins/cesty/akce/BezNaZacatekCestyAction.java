@@ -48,8 +48,4 @@ public class BezNaZacatekCestyAction extends CestyAction0 {
 		setEnabled(!curdoc().isEmpty());
 	}
 
-	// public void onEvent(PoziceChangedEvent event) {
-	// setEnabled(! event.poziceq.isNoPosition());
-	// }
-
 }

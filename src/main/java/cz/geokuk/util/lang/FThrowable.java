@@ -58,10 +58,6 @@ public final class FThrowable {
 				final String pfx = "EXC-" + getExceptionNumber(th) + "-" + (aPrefix == null ? "" : aPrefix);
 				wrt.setPrefix(pfx + ": ");
 				pwrt.println("Exception printed at " + ATimestamp.now().toIsoStringLocal());
-				// StackTraceElement trace = inferCaller(FThrowable.class);
-				// if (trace != null) {
-				// pwrt.println("Exception printed at " + trace);
-				// }
 				_printStackTrace(new XTopRenderingException(th), pwrt);
 				pwrt.flush();
 				return pfx;
@@ -105,9 +101,6 @@ public final class FThrowable {
 		}
 
 		private void _printStackTrace(final Throwable thr, final PrintWriter wrt) {
-			// System.err.p rintln("======================ZZZZZZZZZZZZZZZZ=================");
-			// thr.printStackTrace();
-			// System.err.p rintln("======================KKKKKKKKKKKKK=================");
 			boolean vypisujJmenoMetody = true;
 			synchronized (wrt) {
 				final ThrowableAndSourceMethod[] vazy = ThrowableChainPicker.from(thr).poskládejŘetězVýjimek();

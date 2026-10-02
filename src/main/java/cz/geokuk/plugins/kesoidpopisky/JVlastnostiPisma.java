@@ -42,12 +42,6 @@ public class JVlastnostiPisma extends JPanel {
 	 */
 	// Nedáváme, museli bychom pak testovat, zda se správně mění model asprávně reagovat na lsitenery.
 
-	// private void setVlastnostiPismaModel(final VlastnostiPismaModel newModel ) {
-	// final VlastnostiPismaModel oldModel = vlastnostiPismaModel;
-	// vlastnostiPismaModel = newModel;
-	// firePropertyChange(VLASTNOSI_PISMA_MODEL_PROPERTY, oldModel, newModel);
-	// }
-
 	public VlastnostiPismaModel getVlastnostiPismaModel() {
 		return vlastnostiPismaModel;
 	}

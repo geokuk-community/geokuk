@@ -58,9 +58,4 @@ public abstract class CestyActionIndividual0 extends CestyAction0 {
 		return null; // a nic jiného nelze odstranit
 	}
 
-	// protected Mouable effectiveMouable() {
-	// if (uchopenec != null) return uchopenec.getProOdsraneniZVyletu();
-	// return pozice == null ? null : pozice.getProOdsraneniZVyletu();
-	// }
-
 }

@@ -136,23 +136,6 @@ public class WgsParser {
 		}
 	}
 
-	// private void test1(String s) {
-	// System.out.println("----------------------------------------------------------");
-	// Matcher m = pat.matcher(s);
-	// if (m.find()) {
-	// System.out.println(s.substring(0, m.start()));
-	// System.out.println(s.substring(m.start(), m.end()));
-	// int poz = m.end();
-	// if (m.find()) {
-	// System.out.println(s.substring(poz, m.start()));
-	// System.out.println(s.substring(m.start(), m.end()));
-	// System.out.println(s.substring(m.end()));
-	//
-	// }
-	// }
-	//
-	// }
-
 	private class Vzorek {
 		Souradky sou1;
 		Souradky sou2;

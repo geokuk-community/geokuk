@@ -127,11 +127,6 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 
 	@Override
 	public void refreshVysledekHledani(final VysledekHledani<Nalezenec> vysledekHledani) {
-		// if (nalezenci.size() == 0) {
-		// jButtonCentruj.setEnabled(false);
-		// } else {
-		// jButtonCentruj.setEnabled(true);
-		// }
 		if (vysledekHledani.nalezenci != null) {
 			jAdrTabulka.setNalezenci(vysledekHledani.nalezenci);
 			if (vysledekHledani.nalezenci.size() > 0) { // match found

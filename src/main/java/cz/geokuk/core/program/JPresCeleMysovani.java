@@ -197,9 +197,6 @@ public final class JPresCeleMysovani extends JSingleSlide0 implements MouseInput
 	}
 
 	private MouseGestureContext ctx() {
-		// protected void setMouseCursor(Cursor cursor) {
-		// getMainFrame().setCursor(cursor);
-		// }
 
 		return new MouseGestureContext() {
 

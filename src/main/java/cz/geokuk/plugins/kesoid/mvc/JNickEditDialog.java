@@ -48,9 +48,6 @@ public class JNickEditDialog extends JMyDialog0 {
 		jNickId.setAlignmentX(CENTER_ALIGNMENT);
 		jUlozit = new JButton("Uložit");
 		jUlozit.setAlignmentX(CENTER_ALIGNMENT);
-		// box.add(jNickName);
-		// box.add(jNickId);
-		// box.add(jUlozit, BorderLayout.SOUTH);
 		final JLabel upozorneni = new JLabel("Po změně nicku nutno program znovu spustit.");
 		upozorneni.setAlignmentX(CENTER_ALIGNMENT);
 		// box.add(upozorneni);
@@ -78,11 +75,6 @@ public class JNickEditDialog extends JMyDialog0 {
 		panel.setLayout(layout);
 		layout.setAutoCreateGaps(true);
 		layout.setAutoCreateContainerGaps(true);
-
-		// panel.add(jKesPatternEdit);
-		// panel.add(jWaymarkPatternEdit);
-		// panel.add(jCgpPatternEdit);
-		// panel.add(jSimplewaypontPatternEdit);
 
 		layout.setHorizontalGroup(layout.createParallelGroup(Alignment.CENTER)
 		        .addGroup(layout.createSequentialGroup() // hroup

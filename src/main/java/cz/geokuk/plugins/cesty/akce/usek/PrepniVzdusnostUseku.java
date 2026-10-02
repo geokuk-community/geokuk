@@ -9,9 +9,6 @@ public class PrepniVzdusnostUseku extends UsekAction0 {
 
 	public PrepniVzdusnostUseku(final Usek usek, final Mou mouMysi) {
 		super(usek, mouMysi);
-		// putValue(MNEMONIC_KEY, KeyEvent.VK_V);
-		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F3"));
-		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}
 
 	@Override

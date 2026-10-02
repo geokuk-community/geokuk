@@ -76,9 +76,6 @@ public class JPopiskySlide extends JSingleSlide0 {
 		}
 
 		final Graphics2D g = (Graphics2D) aG;
-		// final Color barvaTextu = iSlidovnikText.getColor();
-		// final Color barvaPodkladu = iSlidovnikPodklad.getColor();
-		// g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
 
 		g.setFont(pose.font);
 		final Color barvaTextu = pose.foreground;

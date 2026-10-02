@@ -169,11 +169,6 @@ public class JTextoveHledaniDialog extends JMyDialog0 implements AfterInjectInit
 
 	@Override
 	public void refreshVysledekHledani(final VysledekHledani<Nalezenec> vysledekHledani) {
-		// if (nalezenci.size() == 0) {
-		// jButtonCentruj.setEnabled(false);
-		// } else {
-		// jButtonCentruj.setEnabled(true);
-		// }
 		if (vysledekHledani.nalezenci != null) {
 			jKeskovaciTabulka.setKeslist(vysledekHledani.nalezenci);
 			if (vysledekHledani.nalezenci.size() > 0) { // match found

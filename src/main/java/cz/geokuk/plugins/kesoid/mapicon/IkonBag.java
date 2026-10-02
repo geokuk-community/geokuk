@@ -50,10 +50,6 @@ public class IkonBag {
 			log.debug("   *** sklo: {}", skloAplikant.aplikaceSkla);
 			// for (Vrstva vrstva : skloAplikant.sklo.vrstvy) {
 			log.debug("        ### vrstva");
-			// for (IconDef iconDef : vrstva.getAllIconDefs()) {
-			// System.out.println(" " + iconDef.getSubdefs() + " ::: " + iconDef.idp.url);
-			// }
-			// }
 		}
 	}
 

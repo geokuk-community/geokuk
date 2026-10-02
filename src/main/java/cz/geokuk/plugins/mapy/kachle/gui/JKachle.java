@@ -182,10 +182,6 @@ public class JKachle extends JComponent {
 		super.paintComponent(aG);
 		// if (true) return;
 		final Graphics2D g = (Graphics2D) aG.create();
-		// if (isVykreslovatOkamzite()) {
-		// // Pokud rendruji do KMZ č souboru, a ne naobrazovku tak mám možná otočeno a nestojím o žádné uříznuití.
-		// g.setClip(null);
-		// }
 		if (image != null) {
 			g.drawImage(image, 0, 0, null);
 		}

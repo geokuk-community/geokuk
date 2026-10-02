@@ -144,9 +144,6 @@ public class NacitacGpx extends NacitacInputStream0 {
 					final GpxWpt wpt = new GpxWpt();
 					readWpt(rdr, wpt, WPT);
 					builder.addGpxWpt(wpt);
-					// System.out.println(wpt);
-					// System.out.println(kes);
-					// System.out.println(jmeno + " " + lat + " " + lon );
 				}
 				if (rdr.getName().equals(TRK)) {
 					builder.begTrack();

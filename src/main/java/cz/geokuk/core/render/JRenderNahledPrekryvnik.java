@@ -22,9 +22,6 @@ public class JRenderNahledPrekryvnik extends JCoordPrekryvnik0 {
 	 *
 	 */
 	public JRenderNahledPrekryvnik() {
-		// TODO To by mělo jít jistojistě odstranit
-		// getCoord().setMoustred(new Wgs(50.284, 14.3563).toMou());
-		// getCoord().setMoumer(17);
 
 	}
 

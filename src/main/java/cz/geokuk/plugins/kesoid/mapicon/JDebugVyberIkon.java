@@ -118,9 +118,6 @@ public class JDebugVyberIkon extends JVyberIkon0 {
 			panel.setMinimumSize(new Dimension(150, 100));
 			panel.setPreferredSize(new Dimension(150, 100));
 
-			// JLabel jJmenoSady = new JLabel(skloAplikant.sklo.getName());
-			// jJmenoSady.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-			// jskelneikony.add(jJmenoSady);
 			jskelneikony.add(panel);
 			jskelneikony.add(Box.createVerticalStrut(10));
 		}

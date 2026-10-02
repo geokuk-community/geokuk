@@ -31,11 +31,6 @@ public class Updator {
 		return cesta.pridejNaKonec(mouable);
 	}
 
-	// public void odeberBod(Cesta cesta, Mouable mouable) {
-	// cesta.setChanged();
-	// cesta.odeberBod(mouable);
-	// }
-
 	public Bod pridejNaMisto(final Cesta cesta, final Mouable mouable) {
 		cesta.setChanged();
 		return cesta.pridejNaMisto(mouable);

@@ -42,11 +42,6 @@ public final class EKaType {
 	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
 
-	// super("Turistické trasy");
-	// putValue(SHORT_DESCRIPTION, "Turistické trasy, červená, modrá, zelená, žlutá.");
-	// putValue(MNEMONIC_KEY, KeyEvent.VK_U);
-	// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('u'));
-
 	private final String jmeno;
 	private Map<String, String> hlavicky = Collections.emptyMap();
 	private String atribuce = "";

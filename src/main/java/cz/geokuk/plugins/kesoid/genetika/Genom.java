@@ -128,13 +128,6 @@ public class Genom {
 	public final Alela ALELA_dif45 = GEN_obtiznost.alela("dif45").displayName("4,5");
 	public final Alela ALELA_dif50 = GEN_obtiznost.alela("dif50").displayName("5");
 
-	// Toto jen dočasně, protože nefunguje vytváření uživatelských alel až za pochodu, nefunguje pak filtr.
-//	public final Gen GEN_mysterstav = genu("mysterstav", true);
-//	public final Alela ALELA_nic = GEN_mysterstav.alela(":mysterstav").displayName("Nic");
-//	public final Alela ALELA_teren = GEN_mysterstav.alela("teren:mysterstav").displayName("Terén");
-//	public final Alela ALELA_zasek = GEN_mysterstav.alela("zasek:mysterstav").displayName("Zásek");
-//	public final Alela ALELA_lusteni = GEN_mysterstav.alela("lusteni:mysterstav").displayName("Luštění");
-
 	{
 		GEN_postavenikMysi.lock();
 		GEN_Postaveni.lock();

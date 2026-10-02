@@ -45,9 +45,6 @@ public class Kaputer {
 		final int yd = moustred.yy >> Coord.MAX_MOUMER - moumer & KACHLE_MASKA; // o tolik pixklů dolů od středu bude vodorovná hranice kachlí
 		assert xd >= 0 && xd < KACHLE_PIXELS;
 		assert yd >= 0 && yd < KACHLE_PIXELS;
-		// if (log.isTraceEnabled()) {
-		// log.trace("moukrok ={} moumer={} - [{},{}] maskaHorni={}", Integer.toHexString(moukrok), moumer, Integer.toHexString(xx0), Integer.toHexString(yy0), Integer.toHexString(maskaHorni));
-		// }
 		int x0, y0;
 		// for (x0 = xn / 2 - xd; x0 > 0; x0 -= KACHLE_PIXELS, xx0-=moukrok); // nastavit x0 i xx zleva před kreslenou plochu (- je zde, protože nalevo od středu)
 		// for (y0 = yn / 2 + yd; y0 > 0; y0 -= KACHLE_PIXELS, yy0+=moukrok); // nastavit x0 i yy shora před kreslenou plochu (+ je zde, protože dolů od středu, druhé plus, ptotož mouy jde sdola nahoru)

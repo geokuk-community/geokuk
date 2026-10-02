@@ -65,18 +65,6 @@ public class JErrorDialog extends JMyDialog0 {
 			FError.report("To je teda texytik " + System.currentTimeMillis());
 		}).start();
 
-		// SwingUtilities.invokeLater(new Runnable() {
-		// public void run() {
-		// //Turn off metal's use of bold fonts
-		// // UIManager.put("swing.boldMetal", Boolean.FALSE);
-		// JErrorDialog jErrorDialog = new JErrorDialog(null);
-		// jErrorDialog.setVisible(true);
-		// for (int i = 0; i < 100; i++) {
-		// AExcId excid = FExceptionDumper.dump(new RuntimeException("Jen takova pokusna"), EExceptionSeverity.DISPLAY, "Pokusnik.");
-		// jErrorDialog.addProblem("Problem: " + i, excid);
-		// }
-		// }
-		// });
 	}
 
 	public JErrorDialog() {

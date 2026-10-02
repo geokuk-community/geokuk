@@ -36,10 +36,6 @@ public class SelectionModel<T> {
 
 	private Item<T> selectedItem;
 
-	// public void add(Map<? extends T, String> map) {
-	// this.map.putAll(map);
-	// }
-
 	private final List<SelectionListener<T>> listeners = new ArrayList<>();
 
 	public void add(final T item, final String displayText) {

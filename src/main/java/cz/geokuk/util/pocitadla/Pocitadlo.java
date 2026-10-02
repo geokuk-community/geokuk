@@ -100,8 +100,4 @@ public abstract class Pocitadlo {
 		return "Pocitadlo [val=" + val + ", name=" + name + "]";
 	}
 
-	// @Override
-	// public void finalize() {
-	// System.out.println("Pocitadlo finalizováno");
-	// }
 }

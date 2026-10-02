@@ -35,15 +35,6 @@ public class DlazdicovaMetrikaXY implements Iterable<Dlazdice> {
 		this.yy = yy;
 	}
 
-	// public void drz() {
-	// //int xDlazdice = 0, yDlazdice = 0;
-	// for (int x = xx.dlaSize / 2, xDlazdice=0; x < xx.sizeCele; x += xx.dlaRoztec, xDlazdice++) {
-	// for (int y = yy.dlaSize / 2, yDlazdice=0; y < yy.sizeCele; y += yy.dlaRoztec, yDlazdice++) {
-	// Rectangle r = new Rectangle(x, y, xx.dlaSize, yy.dlaSize);
-	// }
-	// }
-	// }
-
 	public int getPcoetDlazdic() {
 		return xx.dlaPocet * yy.dlaPocet;
 	}

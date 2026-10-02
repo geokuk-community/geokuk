@@ -15,9 +15,6 @@ public class FKurzory {
 		void nakresli() {
 			vystreduj();
 
-			// Area a1 = new Area([triangle 0,0 => 8,0 => 0,8]);
-			// Area a2 = new Area([triangle 0,0 => 8,0 => 8,8]);
-			// a1.add(a2);
 			final Area poly = new Area(new Polygon(new int[] { 0, 1, 1, 5, 0 }, new int[] { 0, 1, 7, 7, 12 }, 5));
 			final Area a = new Area();
 

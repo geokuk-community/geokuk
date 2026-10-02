@@ -53,9 +53,6 @@ public class Rendrovadlo {
 		synchronized (image) {
 			log.debug("Vytvořen obrázek [{},{}]", image.getWidth(), image.getHeight());
 			final Graphics ggOriginal = image.getGraphics();
-			// final Graphics gg = ggOriginal.create();
-			// gg.setColor(Color.CYAN);
-			// gg.fillOval(0, 0, image.getWidth(), image.getHeight());
 			log.debug("Vybarven obrázek [{},{}]", image.getWidth(), image.getHeight());
 			rendruj(p, progressor, ggOriginal);
 		}
@@ -77,17 +74,8 @@ public class Rendrovadlo {
 		log.debug("Rendrování rendrovadlem spuštěno: {}", ++citac);
 		for (final JSingleSlide0 slidePuvodni : slides) {
 			if (slidePuvodni.isVisible()) {
-				// for (int i=0; i<100; i++) {
-				// slidePuvodni.createRenderableSlide();
-				// }
 				final JSingleSlide0 slide = slidePuvodni.createRenderableSlide();
 				if (slide != null) {
-					//// if (slide instanceof JKachlovnikRendrovaci) {
-					//// continue;
-					// }
-					// if (slide instanceof JKesoidy) {
-					// continue;
-					// }
 					log.debug("Rendrování: {}", slide.getClass());
 					final Graphics2D g = (Graphics2D) ggOriginal.create();
 					Coord coco = p.roord;

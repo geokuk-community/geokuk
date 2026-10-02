@@ -216,19 +216,6 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 		return new File(iDir, toRelativePath(aCode));
 	}
 
-	// public static void main(String[] args) throws IOException {
-	// //ExceptionDumperRepositorySpi dr = new FileBasedExceptionDumperRepository(new File("c:/a/b/c/edure"));
-	// ExceptionDumperRepositorySpi dr = FExceptionDumper.getDefaultRepository();
-	// System.out.p rintln("Run number: " + dr.getRunNumber());
-	// dr.write("123xx13", "Vyjima AA");
-	// dr.write("123xx148", "Vyjima BB");
-	// dr.write("123xx513", "Vyjima CC");
-	// dr.write("123xx613", "Vyjima CC");
-	// dr.write("123xx613a", "Vyjima CC");
-	// //System.out.p rintln(dr.read("123xx14"));
-	//
-	// }
-
 	/**
 	 * Převede kód výjimky do relativní cesty, kde bude uložena
 	 *

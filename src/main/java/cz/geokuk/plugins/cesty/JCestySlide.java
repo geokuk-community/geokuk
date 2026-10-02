@@ -200,9 +200,6 @@ public class JCestySlide extends JSingleSlide0 {
 			return; // důvěřuj, ale prověřuj
 		}
 		boolean propagovatDal = true;
-		// System.out.println("UDALOST " + e);
-		// kesky.mouseClicked(e);
-		// if (e.isConsumed()) return;
 		if (SwingUtilities.isRightMouseButton(e)) {
 			cestyModel.setCurta(null);
 		}
@@ -228,9 +225,6 @@ public class JCestySlide extends JSingleSlide0 {
 				zrusPridavaniBodu();
 				zahajPridavaniBodux();
 			}
-			// Wpt wptPodMysi = getWptPodMysi();
-			// Mouable mouable = wptPodMysi == null ? moucur : wptPodMysi;
-			// je presně ten okamžik, kdy se má přidat bod
 		}
 		zobrazeniDalky();
 		if (propagovatDal) {

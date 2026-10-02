@@ -18,16 +18,6 @@ public class GrupaSym implements Grupa {
 	}
 
 	public synchronized void add(final Alela alela) {
-//		final Grupa puvodniGrupa = alela.getGrupa();
-//		if (puvodniGrupa != this) {
-//			// System.out.printf("Prerazovani alely mezi grupami %s: %s -> %s\n", alela, puvodniGrupa, this);
-//			// new RuntimeException().printStackTrace();
-//			if (puvodniGrupa != null) {
-//				puvodniGrupa.alely.remove(alela);
-//			}
-//			alely.add(alela);
-//			alela.setGrupa(this);
-//		}
 		alely.add(alela);
 	}
 
