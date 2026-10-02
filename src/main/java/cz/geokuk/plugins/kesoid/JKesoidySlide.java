@@ -135,7 +135,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
 	/** Od tohoto zoomu výš ikony, níž tečky. */
-	static final int ZOOM_IKON = 11;
+	static final int ZOOM_IKON = 13;
 
 	private final Tecky tecky = new Tecky();
 	private int prumer;
