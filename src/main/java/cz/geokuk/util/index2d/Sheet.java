@@ -2,6 +2,8 @@ package cz.geokuk.util.index2d;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import com.google.common.math.LongMath;
@@ -135,8 +137,16 @@ class Sheet<T> extends NodeB<T> {
 			if (left.count > right.count) {
 				return join(right, left); // vždy kvůli rychlosti menší velvo
 			}
-			// ani jeden není null, musíme spojit
-			return new Lst<>(left.value, join(left.next, right));
+			// Cyklem, ne rekurzí: tisíce bodů na stejném místě by přetekly zásobník.
+			final List<T> hodnoty = new ArrayList<>(left.count);
+			for (Lst<T> l = left; l != null; l = l.next) {
+				hodnoty.add(l.value);
+			}
+			Lst<T> vysledek = right;
+			for (int i = hodnoty.size() - 1; i >= 0; i--) {
+				vysledek = new Lst<>(hodnoty.get(i), vysledek);
+			}
+			return vysledek;
 
 		}
 
