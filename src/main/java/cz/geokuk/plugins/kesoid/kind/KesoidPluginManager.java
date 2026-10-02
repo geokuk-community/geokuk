@@ -5,14 +5,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.reflections.Reflections;
-
 import cz.geokuk.framework.Factory;
 import cz.geokuk.plugins.kesoid.Kepodr;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.detail.JKesoidDetail0;
 import cz.geokuk.plugins.kesoid.importek.GpxWpt;
+import cz.geokuk.plugins.kesoid.kind.cgp.CgpPlugin;
+import cz.geokuk.plugins.kesoid.kind.kes.KesPlugin;
+import cz.geokuk.plugins.kesoid.kind.munzee.MunzeePlugin;
+import cz.geokuk.plugins.kesoid.kind.photo.PhotoPlugin;
+import cz.geokuk.plugins.kesoid.kind.waymark.WaymarkPlugin;
 import cz.geokuk.plugins.kesoid.kind.simplewaypoint.SimpleWaypointGpxWptProcak;
+import cz.geokuk.plugins.kesoid.kind.simplewaypoint.SimpleWaypointPlugin;
 import cz.geokuk.util.procak.ProcakDispatcher;
 import lombok.*;
 
@@ -36,18 +40,13 @@ public class KesoidPluginManager {
 
 	public KesoidPluginManager() {
 		log.debug("Found kesoid plugins:");
-		plugins = new Reflections(this.getClass()).getSubTypesOf(KesoidPlugin.class).stream()
-				.map(this::newInstance)
+		plugins = Stream.of(new KesPlugin(), new CgpPlugin(), new WaymarkPlugin(), new MunzeePlugin(), new PhotoPlugin(), new SimpleWaypointPlugin())
 				.sorted( (p1, p2) -> p1.getOrder() - p2.getOrder())
 				.peek(plugin -> log.debug("   {}", plugin.getClass().getName()))
 				.collect(Collectors.toList());
 		log.debug("Found {} kesoid plugins total.", plugins.size());
 	}
 
-	@SneakyThrows
-	private KesoidPlugin newInstance(final Class<? extends KesoidPlugin> clazz) {
-		return clazz.newInstance();
-	}
 
 	/**
 	 * Zřídíme procák dispatchera, který bude jednotlivými poskytovateli publikovat waypointy do buldera.

@@ -11,8 +11,6 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 
-import com.jcabi.manifests.Manifests;
-
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.UmisteniProgramu;
@@ -37,7 +35,7 @@ public final class Diagnostika {
 	private static final Deque<String> chyby = new ArrayDeque<>();
 	private static int pocetChyb;
 
-	public static final String COMMIT = Manifests.exists("Geokuk-Commit") ? Manifests.read("Geokuk-Commit") : "";
+	public static final String COMMIT = commit();
 
 	private static final String BETA_KANAL_value = "betaKanal";
 	/** Soubor beta vedle jaru z předchozích verzí, převezme se do nastavení. */
@@ -406,4 +404,12 @@ public final class Diagnostika {
 	}
 
 	private Diagnostika() {}
+
+	private static String commit() {
+		try {
+			return FConst.atributManifestu("Geokuk-Commit");
+		} catch (final IllegalArgumentException e) {
+			return "";
+		}
+	}
 }

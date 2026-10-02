@@ -7,11 +7,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.reflections.Reflections;
-import org.reflections.scanners.ResourcesScanner;
 
 /**
  * Nese informace z několika složek, ať resourcových nebo normálních. Informace se překrývají.
@@ -47,10 +43,8 @@ public class MultiFolder {
 	 */
 	public void addResourceTree() {
 		final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		final Set<String> obrazky = obohatOAdresare(new Reflections(RESOURCE_FOLDER_IMG + "." + RESOURCE_FOLDER_MAP, new ResourcesScanner())
-				.getResources(Pattern.compile(".*")));
+		final Set<String> obrazky = obohatOAdresare(Resourcy.vypis(classLoader, RESOURCE_FOLDER_IMG + "/" + RESOURCE_FOLDER_MAP));
 		obrazky.remove(RESOURCE_FOLDER_IMG); // ten tam dělal problém
-		obrazky.forEach(System.out::println);
 
 		obohatOAdresare(obrazky);
 
