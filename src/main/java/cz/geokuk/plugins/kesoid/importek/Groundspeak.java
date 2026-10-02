@@ -19,6 +19,8 @@ public class Groundspeak {
 	public String difficulty;
 	public String container;
 	public String shortDescription;
+	/** Hint, který se načte až při zobrazení, když není v {@link #encodedHints}. */
+	public java.util.function.Supplier<String> hintZDatabaze;
 
 	@Override
 	public String toString() {

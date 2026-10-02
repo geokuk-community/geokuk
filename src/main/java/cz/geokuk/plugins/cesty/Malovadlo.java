@@ -86,13 +86,29 @@ public class Malovadlo {
 			paintKoncoveBody();
 			// vykreslování bodů přes již vykreslené úseky
 			final Bod cilovyBodyKruhoveCesty = cesta.isKruh() ? cesta.getCil() : null;
+			Point posledniZnacka = null;
 			for (final Bod bod : cesta.getBody()) {
+				// Mimo vybranou cestu se kreslí jen zvýraznění blízkého bodu, tisíce bodů dlouhé cesty se nemusí přepočítávat.
+				if (!jeCurta && bod != blizkyBousek) {
+					continue;
+				}
+				final Point p = soord.transform(bod.getMou());
+				if (!vKresleneOblasti(p, p)) {
+					continue;
+				}
+				// Značka těsně u předchozí se nekreslí, v přehledu dlouhého záznamu by jich byly statisíce přes sebe.
+				final boolean zvyrazneny = bod == blizkyBousek || bod == poziceMouable;
+				if (!zvyrazneny && posledniZnacka != null && Math.abs(p.x - posledniZnacka.x) < ROZESTUP_ZNACEK && Math.abs(p.y - posledniZnacka.y) < ROZESTUP_ZNACEK) {
+					continue;
+				}
+				if (!zvyrazneny) {
+					posledniZnacka = p;
+				}
 				if (bod == poziceMouable) {
 					g.setColor(Color.RED);
 				} else {
 					g.setColor(barvaCestyPredKurzorem);
 				}
-				final Point p = soord.transform(bod.getMou());
 				if (jeBlizkyBousekVTetoCeste) {
 					if (blizkyBousek == bod || blizkyBousek == bod.getUvzad()) {
 						g.setColor(barvaCestyZaKurzorem);
@@ -179,13 +195,28 @@ public class Malovadlo {
 
 			// Vykreslování úseků této cesty
 			g.setColor(barvaCestyPredKurzorem);
+			// Konec posledního nakresleného úseku. Úseky mimo kreslenou oblast a úseky, které nevyjdou z pixelu, se nekreslí;
+			// u záznamu se statisíci bodů jich je většina.
+			Point konec = null;
 			for (final Usek usek : cesta.getUseky()) {
-				final Point p1 = soord.transform(usek.getBvzad().getMou());
+				final Point p1 = konec != null ? konec : soord.transform(usek.getBvzad().getMou());
 				final Point p2 = soord.transform(usek.getBvpred().getMou());
-				g.setStroke(new BasicStroke(SIRKA_CARY_VYBRANE));
-				if (jeCurta) {
-					g.setStroke(new BasicStroke(SIRKA_CARY_VYBRANE));
+				if (blizkyBousek == usek.getBousekVzad()) {
+					g.setColor(barvaCestyZaKurzorem);
 				}
+				if (blizkyBousek != usek) {
+					if (p1.equals(p2)) {
+						konec = p1;
+						continue;
+					}
+					konec = p2;
+					if (!vKresleneOblasti(p1, p2)) {
+						continue;
+					}
+				} else {
+					konec = p2;
+				}
+				g.setStroke(strokeUseku);
 				if (usek.isVzdusny()) {
 					g.setStroke(strokeVzdusny);
 				}
@@ -203,9 +234,6 @@ public class Malovadlo {
 					gg.setStroke(new BasicStroke(1));
 					gg.drawLine(p1.x, p1.y, p2.x, p2.y);
 				} else {
-					if (blizkyBousek == usek.getBousekVzad()) {
-						g.setColor(barvaCestyZaKurzorem);
-					}
 					// Hlavní vykreslování úseku
 					g.drawLine(p1.x, p1.y, p2.x, p2.y);
 				}
@@ -230,6 +258,10 @@ public class Malovadlo {
 	} // MalovadloCesty
 
 	private static final int SIRKA_CARY_VYBRANE = 6;
+	/** Největší přesah kreslení přes bod: koncová šipka, kolečko startu. */
+	private static final int OKRAJ = 12;
+	/** Značka bodu vybrané cesty má 8 px. */
+	private static final int ROZESTUP_ZNACEK = 4;
 
 	private static final Polygon bodovaSipecka = new Polygon(new int[] { -3, 2, 5, 2, -3 }, new int[] { 3, 3, 0, -3, -3 }, 5);
 
@@ -238,6 +270,10 @@ public class Malovadlo {
 	private final Graphics2D g;
 
 	private final Stroke strokeVzdusny = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 3, 3 }, 0);
+	private final Stroke strokeUseku = new BasicStroke(SIRKA_CARY_VYBRANE);
+
+	/** Překreslovaná oblast s okrajem na šířku čáry a značky bodu, null = celá komponenta. */
+	private final Rectangle kreslenaOblast;
 
 	private final Doc doc;
 	private final Bousek0 blizkyBousek;
@@ -265,6 +301,14 @@ public class Malovadlo {
 		soord = params.soord;
 		mouDeliciNaBlizkemBousku = params.mouDeliciNaBlizkemBousku;
 		poziceMouable = params.poziceMouable;
+		final Rectangle clip = g2.getClipBounds();
+		kreslenaOblast = clip == null ? null : new Rectangle(clip.x - OKRAJ, clip.y - OKRAJ, clip.width + 2 * OKRAJ, clip.height + 2 * OKRAJ);
+	}
+
+	/** Úsečka z p1 do p2 může zasáhnout do kreslené oblasti. */
+	private boolean vKresleneOblasti(final Point p1, final Point p2) {
+		final Rectangle r = kreslenaOblast;
+		return r == null || !(p1.x < r.x && p2.x < r.x || p1.y < r.y && p2.y < r.y || p1.x > r.x + r.width && p2.x > r.x + r.width || p1.y > r.y + r.height && p2.y > r.y + r.height);
 	}
 
 	public void paint() {

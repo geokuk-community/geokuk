@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.kind.kes;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
+import java.io.UncheckedIOException;
 
 import javax.swing.*;
 
@@ -77,13 +78,28 @@ public class JKesDetail extends JKesoidDetail0 {
 	public void napln(final Wpt wpt) {
 		kes = (Kes) wpt.getKesoid();
 		napln();
-		final boolean mameHint = kes.getHint() != null && !kes.getHint().trim().isEmpty();
-		zobrazHint.setEnabled(mameHint);
+		zobrazHint.setEnabled(kes.moznaMaHint());
 	}
 
 	public void onEvent(final DomaciSouradniceSeZmenilyEvent aEvent) {
 		if (isVisible() && kes != null) {
 			napln();
+		}
+	}
+
+	private void zobrazHint() {
+		final String hint;
+		try {
+			hint = kes.getHint();
+		} catch (final UncheckedIOException e) {
+			Dlg.error(e.getCause().getMessage());
+			return;
+		}
+		if (hint == null || hint.trim().isEmpty()) {
+			zobrazHint.setEnabled(false);
+			Dlg.info("Keš nemá hint.", "Hint");
+		} else {
+			Dlg.info(hint, "Hint");
 		}
 	}
 
@@ -158,7 +174,7 @@ public class JKesDetail extends JKesoidDetail0 {
 		// box5.add(zobrazHint);
 		// hlav.add(box5);
 
-		zobrazHint.addActionListener(e -> Dlg.info(kes.getHint(), "Hint"));
+		zobrazHint.addActionListener(e -> zobrazHint());
 	}
 
 	private void napln() {

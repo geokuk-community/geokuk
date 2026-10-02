@@ -32,6 +32,17 @@
   prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`
   v domovské složce odpadl.
 
+### Opravy
+- Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
+  nemusí projít celou databázi včetně dlouhých listingů. Hint se načte
+  až po kliknutí na Hint v detailu keše.
+- Zvýrazňovací kruhy, popisky a obsazenost se po dorazení dlaždice
+  kreslí jen v jejím místě, ne v celém okně.
+- Dlouhý záznam trasy (statisíce bodů) se kreslí rychleji: úseky mimo
+  překreslovanou oblast a kratší než pixel se vynechají a body vybrané
+  trasy těsně u sebe mají jednu značku.
+- Kreslení obsazenosti nezdržuje zjišťování typu waypointu.
+
 ## 6.1.0
 
 ### Změny

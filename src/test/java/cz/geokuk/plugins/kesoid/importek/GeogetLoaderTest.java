@@ -72,9 +72,9 @@ public class GeogetLoaderTest {
 		Assert.assertEquals("80/75/12/450/3/{barva=modra}", priPridani.get("GC12345"));
 		Assert.assertEquals("keš bez tagů má hodnocení neuvedené", "-1/-1/-1/0/-1/{}", priPridani.get("GC99999"));
 	}
-	/** Vadný popis jedné keše nesmí připravit uživatele o celou databázi. */
+	/** Popisy se při načítání nečtou, hint se dotáhne až na požádání. */
 	@Test
-	public void vadnyPopisNeshodiCelouDatabazi() throws Exception {
+	public void popisyANapovedyAzNaPozadani() throws Exception {
 		final File db = new File(tmp.getRoot(), "vadny.db3");
 		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
 			vytvorTabulky(s);
@@ -82,15 +82,16 @@ public class GeogetLoaderTest {
 			s.execute("INSERT INTO geocache VALUES ('GC00002', 50.2, 14.5, 'Druhá', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
 			s.execute("INSERT INTO geocache VALUES ('GC00003', 50.3, 14.6, 'Třetí', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
 			try (PreparedStatement ps = c.prepareStatement("INSERT INTO geolist VALUES (?,?,?)")) {
-				zapisPopis(ps, "GC00001", zabal("První popis"));
-				zapisPopis(ps, "GC00002", "tohle není zabalené".getBytes(StandardCharsets.UTF_8));
-				zapisPopis(ps, "GC00003", zabal("Třetí popis"));
+				zapisPopis(ps, "GC00001", zabal("První popis"), "Pod kamenem");
+				zapisPopis(ps, "GC00002", "tohle není zabalené".getBytes(StandardCharsets.UTF_8), "");
 			}
 		}
 
 		final Map<String, GpxWpt> nactene = nacti(db);
-		Assert.assertEquals("vadná keš se přeskočí, ostatní se načtou", new HashSet<>(Arrays.asList("GC00001", "GC00003")), nactene.keySet());
-		Assert.assertEquals("První popis", nactene.get("GC00001").groundspeak.shortDescription);
+		Assert.assertEquals("vadný popis nevadí, popisy se nečtou", new HashSet<>(Arrays.asList("GC00001", "GC00002", "GC00003")), nactene.keySet());
+		Assert.assertNull(nactene.get("GC00001").groundspeak.encodedHints);
+		Assert.assertEquals("Pod kamenem", nactene.get("GC00001").groundspeak.hintZDatabaze.get());
+		Assert.assertNull("keš bez řádku v geolist nemá hint", nactene.get("GC00003").groundspeak.hintZDatabaze.get());
 	}
 
 	/** Nesmyslná hodnota tagu nesmí zabránit načtení keše. */
@@ -130,6 +131,12 @@ public class GeogetLoaderTest {
 		final Map<String, GpxWpt> nactene = nacti(db);
 		Assert.assertTrue(nactene.containsKey("GC00001"));
 		Assert.assertNull(nactene.get("GC00001").groundspeak.encodedHints);
+		try {
+			nactene.get("GC00001").groundspeak.hintZDatabaze.get();
+			Assert.fail("bez sloupce hint se má ohlásit chyba");
+		} catch (final java.io.UncheckedIOException e) {
+			Assert.assertTrue(e.getCause().getMessage().contains("GC00001"));
+		}
 		Assert.assertEquals("waypoint se načte i bez prefixu", 2, nactene.size());
 	}
 
@@ -184,10 +191,10 @@ public class GeogetLoaderTest {
 		s.execute("CREATE TABLE geotagvalue (key INTEGER, value TEXT)");
 	}
 
-	private static void zapisPopis(final PreparedStatement ps, final String kod, final byte[] popis) throws SQLException {
+	private static void zapisPopis(final PreparedStatement ps, final String kod, final byte[] popis, final String hint) throws SQLException {
 		ps.setString(1, kod);
 		ps.setBytes(2, popis);
-		ps.setString(3, "");
+		ps.setString(3, hint);
 		ps.executeUpdate();
 	}
 

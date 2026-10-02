@@ -99,8 +99,7 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		}
 		// obsazenost.setColor(new Color(128,128,128,128));
 		g.setColor(obsazenost.getColor());
-		final int mouokraj = (int) (getSoord().getMouboduNaMetr() * POLOMER_OBSAZENOSTI);
-		final BoundingRect boundingRect = getSoord().getBoundingRect().rozsir(mouokraj);
+		final BoundingRect boundingRect = oblastKresleni(g, r + 1);
 		// final Area area = new Area();
 		iIndexator.bound(boundingRect).stream().forEach(wpt -> {
 			if (!wpt.obsazujeOblast()) {
