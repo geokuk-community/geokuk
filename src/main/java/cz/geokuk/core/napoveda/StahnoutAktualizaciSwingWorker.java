@@ -14,6 +14,8 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
+import javax.swing.JOptionPane;
+
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MySwingWorker0;
@@ -133,7 +135,17 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		try {
 			get();
 			Diagnostika.zaznamenej("Stažena verze " + verze);
-			Dlg.info("Verze " + verze + " je stažená. Nainstaluje se, až GeoKuk ukončíte a spustíte znovu.", "Aktualizace");
+			if (!Restart.lze()) {
+				Dlg.info("Verze " + verze + " je stažená. Nainstaluje se, až GeoKuk ukončíte a spustíte znovu.", "Aktualizace");
+				return;
+			}
+			final Object[] volby = { "Restartovat", "Později" };
+			final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), "Verze " + verze + " je stažená a nainstaluje se při příštím spuštění.\nRestartovat GeoKuk teď?",
+					"Aktualizace", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, volby, volby[0]);
+			if (volba == 0) {
+				Diagnostika.zaznamenej("Restart po aktualizaci");
+				Restart.restartuj();
+			}
 		} catch (final ExecutionException e) {
 			if (e.getCause() instanceof YNovaJava) {
 				Diagnostika.zaznamenej("Verze " + verze + " potřebuje novější Javu");

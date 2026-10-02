@@ -1,5 +1,5 @@
 # Zkouška hotového zipu pro Windows: rozbalí ho, spustí přes GeoKuk-prvni-spusteni.cmd a start.jar a ověří složku data,
-# výměnu staženého jaru, paměť, zástupce ve složce a jeho opravu po přesunu a upozornění na nevhodné umístění.
+# výměnu staženého jaru, paměť, zástupce ve složce a jeho opravu po přesunu, restart po aktualizaci a upozornění na nevhodné umístění.
 param([string]$Zip = "GeoKuk-windows.zip")
 
 $ErrorActionPreference = "Stop"
@@ -237,6 +237,27 @@ try {
     Ukonci $puvodni
     Ukonci $slozka
     Remove-Item $naPlose -ErrorAction SilentlyContinue
+}
+
+# 5. Restart po aktualizaci: spouštěč počká, až GeoKuk skončí, vymění jar a spustí novou verzi.
+$slozka = Rozbal (Join-Path $koren "restart")
+try {
+    $beh = Spust $slozka @("--ovladani=0", "--ovladani-devel")
+    $o = Ovladani $slozka
+    Cekej 60 { Volej $o GET "/stav" } | Out-Null
+    $jar = Join-Path $slozka "program\geokuk.jar"
+    Copy-Item $jar "$jar.new"
+    Volej $o POST "/restart" | Out-Null
+    $stary = Get-Process -Id $beh.Proces.ProcessId -ErrorAction SilentlyContinue
+    Ocekavej ((-not $stary) -or $stary.WaitForExit(30000)) "původní GeoKuk po restartu skončil"
+    $novy = Cekej 60 {
+        Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$jar*" -and $_.ProcessId -ne $beh.Proces.ProcessId }
+    }
+    Ocekavej ($null -ne $novy) "po restartu běží nová instance"
+    Ocekavej (Test-Path "$jar.bak") "při restartu se jar vyměnil, starý zůstal jako .bak"
+    Ocekavej (-not (Test-Path "$jar.new")) "geokuk.jar.new po restartu nezůstal"
+} finally {
+    Ukonci $slozka
 }
 
 if ($env:GITHUB_STEP_SUMMARY) {

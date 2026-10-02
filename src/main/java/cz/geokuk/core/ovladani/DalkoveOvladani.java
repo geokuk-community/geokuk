@@ -21,6 +21,7 @@ import com.sun.net.httpserver.HttpServer;
 import cz.geokuk.core.coord.PoziceModel;
 import cz.geokuk.core.coord.VyrezModel;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Restart;
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.framework.MyPreferences;
@@ -64,7 +65,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DalkoveOvladani {
 
 	public static final int VYCHOZI_PORT = 48321;
-	private static final Set<String> VYVOJOVE = new HashSet<>(Arrays.asList("/menu", "/okna", "/okna/zavri", "/okna/tlacitko"));
+	private static final Set<String> VYVOJOVE = new HashSet<>(Arrays.asList("/menu", "/okna", "/okna/zavri", "/okna/tlacitko", "/restart"));
 	private static final String ZAPNUTO_value = "dalkoveOvladani";
 	public static final String VYVOJOVA_PARAMETR = "--ovladani-devel";
 	/** Port a token vývojové části, v datové složce programu. */
@@ -296,6 +297,11 @@ public class DalkoveOvladani {
 			case "/okna/tlacitko":
 				vyzadujPost(post);
 				odpovez(ex, 200, naEdt(() -> stiskni(param.get("titulek"), param.get("text"))));
+				break;
+			case "/restart":
+				vyzadujPost(post);
+				SwingUtilities.invokeLater(Restart::restartuj);
+				odpovez(ex, 200, "{}");
 				break;
 			case "/prenacti":
 				vyzadujPost(post);

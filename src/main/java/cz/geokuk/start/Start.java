@@ -5,6 +5,9 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,12 +34,22 @@ public final class Start {
 	static final long MB = 1024L * 1024;
 	static final int MIN_PAMET_MB = 1024;
 	static final int MAX_PAMET_MB = 3072;
+	/** Spustit GeoKuk, až skončí ten, který spouštěč pustil (restart po aktualizaci). */
+	public static final String PO_UKONCENI = "--po-ukonceni";
+	/** Zámek, který běžící GeoKuk drží ve složce data. */
+	public static final String ZAMEK = "bezi.lock";
+	static final long CEKANI_NA_UKONCENI_MS = 60_000;
 	/** Klíč nastavení v uzlu {@code geokuk/current/vseobecne}, 0 = zvolí spouštěč. */
 	public static final String PAMET_KLIC = "pametMb";
 
 	public static void main(final String[] args) {
 		try {
 			final File adresar = adresarSpoustece();
+			final List<String> parametry = new ArrayList<>(Arrays.asList(args));
+			if (parametry.remove(PO_UKONCENI) && !pockejNaUkonceni(new File(new File(koren(adresar), "data"), ZAMEK), CEKANI_NA_UKONCENI_MS)) {
+				chyba("GeoKuk se neukončil, novou verzi nejde spustit.\nUkončete GeoKuk a spusťte ho znovu.");
+				return;
+			}
 			vymenJar(adresar);
 			final File jar = new File(adresar, JAR);
 			if (!jar.isFile()) {
@@ -55,7 +68,7 @@ public final class Start {
 			prikaz.add("-XX:-UsePerfData");
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
-			prikaz.addAll(Arrays.asList(args));
+			prikaz.addAll(parametry);
 			final File nic = new File(System.getProperty("os.name", "").startsWith("Windows") ? "NUL" : "/dev/null");
 			new ProcessBuilder(prikaz).directory(adresar).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.appendTo(nic)).start();
 		} catch (final Exception e) {
@@ -72,6 +85,40 @@ public final class Start {
 	public static File koren(final File adresarProgramu) {
 		final File nad = adresarProgramu.getParentFile();
 		return nad != null && SLOZKA_PROGRAMU.equalsIgnoreCase(adresarProgramu.getName()) && new File(adresarProgramu, "start.jar").isFile() ? nad : adresarProgramu;
+	}
+
+	/** Zamkne zámek běžícího programu na celou dobu běhu, nebo vrátí null, když ho drží jiná instance. */
+	public static FileLock zamkni(final File zamek) {
+		try {
+			zamek.getParentFile().mkdirs();
+			@SuppressWarnings("resource") // kanál musí zůstat otevřený, dokud program běží
+			final FileChannel kanal = new RandomAccessFile(zamek, "rw").getChannel();
+			final FileLock lock = kanal.tryLock();
+			if (lock == null) {
+				kanal.close();
+			}
+			return lock;
+		} catch (final IOException | OverlappingFileLockException e) {
+			return null;
+		}
+	}
+
+	/** Počká, až zámek nikdo nedrží. */
+	static boolean pockejNaUkonceni(final File zamek, final long maxMs) throws InterruptedException {
+		final long konec = System.currentTimeMillis() + maxMs;
+		do {
+			final FileLock lock = zamkni(zamek);
+			if (lock != null) {
+				try {
+					lock.channel().close();
+				} catch (final IOException e) {
+					// zámek se uvolní i tak
+				}
+				return true;
+			}
+			Thread.sleep(200);
+		} while (System.currentTimeMillis() < konec);
+		return false;
 	}
 
 	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */

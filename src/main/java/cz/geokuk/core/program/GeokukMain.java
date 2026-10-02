@@ -1,5 +1,7 @@
 package cz.geokuk.core.program;
 
+import java.io.File;
+import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.util.prefs.BackingStoreException;
 
@@ -12,6 +14,7 @@ import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.profile.Nastaveni;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.start.Start;
 import cz.geokuk.util.exception.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,12 +25,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GeokukMain {
 
+	/** Drží se po celý běh, spouštěč podle něj pozná, že GeoKuk skončil. */
+	@SuppressWarnings("unused")
+	private static FileLock zamek;
+
 	public static void main(final String[] args) {
 		new GeokukMain().execute(args);
 	}
 
 	public void execute(final String[] args) {
 		FConst.logInit();
+		zamek = Start.zamkni(new File(FConst.DATA_DIR, Start.ZAMEK));
 		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
 		ImageIO.setUseCache(false);
 		Diagnostika.sledujKliknuti();

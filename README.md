@@ -36,8 +36,8 @@ panel. Do nabídky Start ho přidá Soubor > Vytvořit zástupce. Když
 složku přesunete, spusťte znovu `GeoKuk-prvni-spusteni.cmd`, zástupce
 ve složce i jeho kopie na ploše a v nabídce Start se opraví.
 
-Když GeoKuk najde novou verzi, stáhne ji a nainstaluje se při příštím
-spuštění. Javu aktualizuje nový zip, který stačí rozbalit přes
+Když GeoKuk najde novou verzi, stáhne ji a nabídne restart; jinak se
+nainstaluje při příštím spuštění. Javu aktualizuje nový zip, který stačí rozbalit přes
 stávající složku; data a nastavení zůstanou.
 
 ### Linux a macOS
