@@ -127,7 +127,7 @@ Schönmannovi.
 Autorům aplikace aDrake pro Android za inspiraci: zobrazení keší na
 oddálené mapě jako barevných teček podle typu vychází z ní. Jsou to
 [LudekV](https://www.geocaching.com/p/?u=LudekV) (původní autor),
-Karas0911 (Trnkáči, sada ikon) a
+[Karas0911](https://www.geocaching.com/p/?u=Karas0911) (Trnkáči, sada ikon) a
 [lnavrat](https://www.geocaching.com/p/?u=lnavrat), který pokračuje
 ve vývoji.
 
