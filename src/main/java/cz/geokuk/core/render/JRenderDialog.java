@@ -66,6 +66,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	private JLabel jPriponaSouboruLabel;
 
 	private GeocodingModel geocodingModel;
+	private final javax.swing.Timer zpozdeniGeocodingu = jednorazovyCasovac(1500, this::hledejAdresu);
 
 	protected SortedMap<String, String> geotagingPatterns;
 
@@ -200,7 +201,15 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	public void onEvent(final ReferencniBodSeZmenilEvent event) {
 		referecniBod = event.wgs;
 		nastavZakladyDoComboboxu(true);
-		geocodingModel.spustHledani(event.wgs, new RefreshorVysledkuHledani<Nalezenec>() {
+		// Adresa se hledá až po zastavení mapy, ne při každém posunu.
+		zpozdeniGeocodingu.restart();
+	}
+
+	private void hledejAdresu() {
+		if (referecniBod == null) {
+			return;
+		}
+		geocodingModel.spustHledani(referecniBod, new RefreshorVysledkuHledani<Nalezenec>() {
 
 			private SortedMap<String, String> patsPureFileName;
 			private SortedMap<String, String> patsFolderName;
@@ -653,5 +662,11 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		default:
 			return "???";
 		}
+	}
+
+	private static javax.swing.Timer jednorazovyCasovac(final int ms, final Runnable akce) {
+		final javax.swing.Timer casovac = new javax.swing.Timer(ms, e -> akce.run());
+		casovac.setRepeats(false);
+		return casovac;
 	}
 }
