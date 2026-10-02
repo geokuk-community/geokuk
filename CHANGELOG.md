@@ -54,6 +54,8 @@
   záložka Program.
 
 ### Opravy
+- Dlaždice, kterou se nepodařilo stáhnout, se 30 sekund znovu
+  nestahuje, takže ji program nezkouší při každém překreslení mapy.
 - Toolbar s přepínači ikon má stálou výšku, mapa se po načtení keší
   (třeba Munzee nebo databáze) neposouvá.
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
