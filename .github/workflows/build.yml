@@ -93,7 +93,7 @@ jobs:
         shell: pwsh
         run: |
           $moduly = "java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.prefs,java.sql,java.xml," +
-            "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.unsupported,jdk.zipfs"
+            "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.management,jdk.unsupported,jdk.zipfs"
           jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --output GeoKuk/runtime
           if ($LASTEXITCODE -ne 0) { exit 1 }
           $podpis = Get-AuthenticodeSignature GeoKuk/runtime/bin/javaw.exe

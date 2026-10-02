@@ -95,7 +95,8 @@ public final class KontrolaUmisteni {
 		return null;
 	}
 
-	private static boolean jePod(final String cesta, final String koren) {
+	private static boolean jePod(final String cesta, final String promenna) {
+		final String koren = new File(promenna).getAbsolutePath();
 		final String k = koren.endsWith(File.separator) ? koren : koren + File.separator;
 		return cesta.equalsIgnoreCase(koren) || cesta.toLowerCase(Locale.ROOT).startsWith(k.toLowerCase(Locale.ROOT));
 	}

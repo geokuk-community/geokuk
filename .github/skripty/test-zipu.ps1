@@ -165,14 +165,20 @@ try {
 
 # 3. Složka, kam uživatel nesmí zapisovat (jako Program Files bez práv správce).
 $slozka = Rozbal (Join-Path $koren "jen-cteni")
-icacls $slozka /deny "$($env:USERNAME):(OI)(CI)(W,AD,WD,DC)" | Out-Null
-$beh = Spust $slozka @()
 try {
-    $titulky = Cekej 60 { $t = [Okna]::Titulky([uint32]$beh.Proces.ProcessId); if ($t -like "Geokuk: Chyba") { $t } }
-    Ocekavej ($null -ne $titulky) "chyba o složce bez práva zápisu: okna $([Okna]::Titulky([uint32]$beh.Proces.ProcessId) -join ', ')"
+    icacls $slozka /deny "$($env:USERNAME):(OI)(CI)(AD,WD)" | Out-Null
+    Start-Process -FilePath (Join-Path $slozka "runtime\bin\javaw.exe") -ArgumentList "-jar", "`"$(Join-Path $slozka 'start.jar')`"" -WorkingDirectory $slozka | Out-Null
+    $beh = Cekej 60 {
+        Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$(Join-Path $slozka 'geokuk.jar')*" }
+    }
+    Ocekavej ($null -ne $beh) "program ze složky bez práva zápisu se spustil"
+    if ($beh) {
+        $titulky = Cekej 60 { $t = [Okna]::Titulky([uint32]$beh.ProcessId); if ($t -like "Geokuk: Chyba") { $t } }
+        Ocekavej ($null -ne $titulky) "chyba o složce bez práva zápisu: okna $([Okna]::Titulky([uint32]$beh.ProcessId) -join ', ')"
+    }
 } finally {
     Ukonci $slozka
-    icacls $slozka /remove:d $env:USERNAME | Out-Null
+    icacls $slozka /remove:d $env:USERNAME /T /C | Out-Null
 }
 
 if ($env:GITHUB_STEP_SUMMARY) {
