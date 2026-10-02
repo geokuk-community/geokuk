@@ -133,6 +133,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	private final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
+	/** Plocha typické ikony keše v pixelech; když by ikony okno pokryly víc než dvakrát, kreslí se tečky. */
+	private static final double PLOCHA_IKONY = 20 * 20;
+
+	private final Tecky tecky = new Tecky();
 	private Boolean oznamenePrekroceni;
 	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
 	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
@@ -396,8 +400,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		if (ikonBag == null) {
 			return;
 		}
+		final int pocet = indexator.count(getSoord().getBoundingRect());
+		final boolean husteTecky = prilisHuste(pocet, PLOCHA_IKONY);
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
-		final boolean prekrocenLimit = !vykreslovatOkamtiteAleDlouho && indexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
+		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
 		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
 			oznamenePrekroceni = prekrocenLimit;
 			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
@@ -405,7 +411,14 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
 		try {
-			kresli(gg, mapa, prekrocenLimit);
+			if (husteTecky) {
+				kresliTecky(gg, mapa, Tecky.prumer(pocet, getSoord().getDim()));
+				for (final List<Wpt> list : mapa.values()) {
+					list.clear();
+				}
+			}
+			// Při tečkách už jen zvýrazněná keš pod myší.
+			kresli(gg, mapa, prekrocenLimit || husteTecky);
 		} finally {
 			// Nedržet waypointy po přenačtení keší.
 			for (final List<Wpt> list : mapa.values()) {
@@ -439,6 +452,31 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				for (final Wpt wpt : kesoidPodMysi.getWpts()) {
 					paintWaypoint(gg, wpt, null, i);
 				}
+			}
+		}
+	}
+
+	/** Nalezené dospod, neaktivní pod aktivní; seznamy podle z-orderu se tu jen půjčí. */
+	private void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int prumer) {
+		final List<Wpt> nalezene = mapa.get(Wpt.EZOrder.OTHER);
+		final List<Wpt> neaktivni = mapa.get(Wpt.EZOrder.KESWPT);
+		final List<Wpt> ostatni = mapa.get(Wpt.EZOrder.FINAL);
+		indexator.bound(oblastKresleni(gg, Tecky.MAX_PRUMER)).stream().forEach(wpt -> {
+			if (!wpt.isMainWpt()) {
+				return;
+			}
+			final Kesoid kesoid = wpt.getKesoid();
+			if (kesoid.getVztah() == EKesVztah.FOUND) {
+				nalezene.add(wpt);
+			} else if (Tecky.neaktivni(kesoid)) {
+				neaktivni.add(wpt);
+			} else {
+				ostatni.add(wpt);
+			}
+		});
+		for (final List<Wpt> list : Arrays.asList(nalezene, neaktivni, ostatni)) {
+			for (final Wpt wpt : list) {
+				tecky.kresli(gg, wpt, getSoord().transform(wpt.getMou()), prumer);
 			}
 		}
 	}
