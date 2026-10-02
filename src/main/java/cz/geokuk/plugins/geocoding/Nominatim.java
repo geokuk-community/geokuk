@@ -96,7 +96,7 @@ public final class Nominatim {
 		n.locationType = trida.isEmpty() ? typ : typ.isEmpty() ? trida : trida + "/" + typ;
 		if (casti != null) {
 			n.administrativeArea = prvni(casti, "state", "region");
-			n.subAdministrativeArea = prvni(casti, "county", "city_district", "municipality");
+			n.subAdministrativeArea = prvni(casti, "county", "district", "city_district", "municipality");
 			n.locality = prvni(casti, "city", "town", "village", "hamlet", "suburb", "neighbourhood");
 			final String ulice = prvni(casti, "road", "pedestrian", "square");
 			final String cislo = prvni(casti, "house_number");

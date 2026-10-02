@@ -40,7 +40,7 @@ public class NominatimTest {
 	@Test
 	public void zpetne() throws IOException {
 		final Nalezenec n = Nominatim.ctiZpetne(xml("<reversegeocode><result lat=\"49.2077\" lon=\"16.6128\">Lidická 1880/50, Černá Pole, Brno, Jihomoravský kraj, 602 00, Česko</result>"
-				+ "<addressparts><house_number>1880/50</house_number><road>Lidická</road><suburb>Černá Pole</suburb><city>Brno</city><county>okres Brno-město</county>"
+				+ "<addressparts><house_number>1880/50</house_number><road>Lidická</road><suburb>Černá Pole</suburb><borough>Brno-sever</borough><city>Brno</city><district>okres Brno-město</district>"
 				+ "<state>Jihomoravský kraj</state><postcode>602 00</postcode><country>Česko</country></addressparts></reversegeocode>"));
 		assertEquals("Lidická 1880/50, Černá Pole, Brno, Jihomoravský kraj, 602 00, Česko", n.adresa);
 		assertEquals("Jihomoravský kraj", n.administrativeArea);
