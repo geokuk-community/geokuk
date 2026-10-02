@@ -9,8 +9,8 @@ import java.util.Map;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 
 /**
- * Keše jako barevné tečky, když jsou na mapě tak hustě, že by se ikony překrývaly. Barva podle typu keše, nalezené jsou menší a bez lemu, vlastní
- * mají tmavý obrys, neaktivní a archivované jsou poloprůhledné.
+ * Keše jako barevné tečky při oddálené mapě. Barva podle typu keše, nalezené jsou menší a bez lemu, vlastní mají tmavý obrys, neaktivní
+ * a archivované jsou světlejší. Bílý lem jen u největších teček, v hustých místech by převládl.
  */
 public final class Tecky {
 
@@ -107,14 +107,16 @@ public final class Tecky {
 		return obrazky.computeIfAbsent(klic, k -> nakresli(barva, styl, neaktivni, prumer));
 	}
 
-	private static BufferedImage nakresli(final Color barva, final Styl styl, final boolean neaktivni, final int prumer) {
+	private static Color zesvetli(final Color c) {
+		return new Color((c.getRed() + 255) / 2, (c.getGreen() + 255) / 2, (c.getBlue() + 255) / 2);
+	}
+
+	private static BufferedImage nakresli(final Color barvaTypu, final Styl styl, final boolean neaktivni, final int prumer) {
 		final int d = styl == Styl.NALEZENA ? Math.max(3, prumer * 2 / 3) : prumer;
-		final BufferedImage img = new BufferedImage(d + 1, d + 1, BufferedImage.TYPE_INT_ARGB_PRE);
+		// Bez vyhlazení a bez průhlednosti, pixely jsou jen plné nebo prázdné, takže se tečka kreslí bez míchání barev.
+		final BufferedImage img = new BufferedImage(d + 1, d + 1, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = img.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		if (neaktivni) {
-			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-		}
+		final Color barva = neaktivni ? zesvetli(barvaTypu) : barvaTypu;
 		switch (styl) {
 		case VLASTNI:
 			g.setColor(barva);
@@ -132,7 +134,7 @@ public final class Tecky {
 			}
 			break;
 		default:
-			if (d >= 8) {
+			if (d >= MAX_PRUMER) {
 				g.setColor(LEM);
 				g.fillOval(0, 0, d, d);
 				g.setColor(barva);

@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -133,10 +134,12 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	private final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
-	/** Plocha typické ikony keše v pixelech; když by ikony okno pokryly víc než dvakrát, kreslí se tečky. */
-	private static final double PLOCHA_IKONY = 20 * 20;
+	/** Od tohoto zoomu výš ikony, níž tečky. */
+	static final int ZOOM_IKON = 11;
 
 	private final Tecky tecky = new Tecky();
+	private int prumer;
+	private int moumerPrumeru;
 	private Boolean oznamenePrekroceni;
 	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
 	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
@@ -332,6 +335,30 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	}
 
+	@Override
+	public void mouseDragged(final MouseEvent e, final MouseGestureContext ctx) {
+		zrusPodMysi();
+		super.mouseDragged(e, ctx);
+	}
+
+	@Override
+	public void mouseWheelMoved(final MouseWheelEvent e, final MouseGestureContext ctx) {
+		zrusPodMysi();
+		super.mouseWheelMoved(e, ctx);
+	}
+
+	/** Zvýraznění a popisek by při posunu mapy zůstaly viset na starém místě. */
+	private void zrusPodMysi() {
+		if (kesoidPodMysi == null && wptPodMysi == null && !jakoTooltip.isVisible()) {
+			return;
+		}
+		jakoTooltip.setVisible(false);
+		final Kesoid stara = kesoidPodMysi;
+		kesoidPodMysi = null;
+		wptPodMysi = null;
+		repaintKes(stara);
+	}
+
 	public void onEvent(final FenotypPreferencesChangedEvent aEvent) {
 		iJmenaAlel = aEvent.getJmenaNefenotypovanychAlel();
 		repaintIfVse();
@@ -401,7 +428,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 			return;
 		}
 		final int pocet = indexator.count(getSoord().getBoundingRect());
-		final boolean husteTecky = prilisHuste(pocet, PLOCHA_IKONY);
+		final boolean husteTecky = getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE;
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
 		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
 		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
@@ -412,7 +439,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
 		try {
 			if (husteTecky) {
-				kresliTecky(gg, mapa, Tecky.prumer(pocet, getSoord().getDim()));
+				kresliTecky(gg, mapa, prumerTecek(pocet));
 				for (final List<Wpt> list : mapa.values()) {
 					list.clear();
 				}
@@ -454,6 +481,17 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				}
 			}
 		}
+	}
+
+	/** Průměr podle hustoty; při posunu mapy se mění až o dva pixely, aby tečky neskákaly. */
+	private int prumerTecek(final int pocet) {
+		final int d = Tecky.prumer(pocet, getSoord().getDim());
+		final int moumer = getSoord().getMoumer();
+		if (moumer != moumerPrumeru || Math.abs(d - prumer) >= 2) {
+			moumerPrumeru = moumer;
+			prumer = d;
+		}
+		return prumer;
 	}
 
 	/** Nalezené dospod, neaktivní pod aktivní; seznamy podle z-orderu se tu jen půjčí. */
