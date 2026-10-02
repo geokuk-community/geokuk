@@ -93,8 +93,22 @@ function Ocekavej([bool]$plati, [string]$popis) {
     if (-not $plati) { $problemy.Add($popis); Write-Host "CHYBA: $popis" } else { Write-Host "OK: $popis" }
 }
 
+function Registr { @(Get-ChildItem "HKCU:\Software\JavaSoft" -Recurse -ErrorAction SilentlyContinue | ForEach-Object Name) }
+
+# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu.
+function ZapsanoMimo([datetime]$od, [string]$slozka) {
+    $mista = @($env:APPDATA, $env:LOCALAPPDATA, $env:TEMP, (Join-Path $env:USERPROFILE ".java")) | Where-Object { $_ -and (Test-Path $_) }
+    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) } |
+        ForEach-Object FullName)
+    $zmeny += @(Get-ChildItem $env:USERPROFILE -Force -ErrorAction SilentlyContinue | Where-Object { $_.CreationTime -gt $od } | ForEach-Object FullName)
+    $zmeny += @(Registr | Where-Object { $_ -notin $registrPred })
+    $zmeny
+}
+
 # 1. Obvyklé spuštění z rozbaleného zipu, včetně výměny jaru staženého aktualizací.
 $slozka = Rozbal (Join-Path $koren "obvykle")
+$predSpustenim = Get-Date
+$registrPred = Registr
 Copy-Item (Join-Path $slozka "geokuk.jar") (Join-Path $slozka "geokuk.jar.new")
 $beh = Spust $slozka @("--ovladani=0", "--ovladani-devel")
 try {
@@ -130,6 +144,10 @@ try {
     Ocekavej ($null -ne $xml.preferences.root) "data\nastaveni.xml je po ukončení platné"
     $chyby = @(Get-ChildItem (Join-Path $slozka "data\log\chyby") -ErrorAction SilentlyContinue)
     Ocekavej ($chyby.Count -eq 0) "bez výpisů chyb v data\log\chyby: $($chyby.Name -join ', ')"
+    $mimo = @(ZapsanoMimo $predSpustenim $slozka)
+    Write-Host "Zapsáno mimo složku programu:"; $mimo | ForEach-Object { Write-Host "  $_" }
+    $souhrn.Add("| Zapsáno mimo složku | $($mimo.Count) |")
+    Ocekavej ($mimo.Count -eq 0) "mimo složku programu se nic nezapsalo: $($mimo -join ', ')"
 } finally {
     Ukonci $slozka
 }
