@@ -95,10 +95,11 @@ function Ocekavej([bool]$plati, [string]$popis) {
 
 function Registr { @(Get-ChildItem "HKCU:\Software\JavaSoft" -Recurse -ErrorAction SilentlyContinue | ForEach-Object Name) }
 
-# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu (bez složek Windows a PowerShellu).
+# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu (bez složek Windows a PowerShellu a ikon oznamovací oblasti jiných programů).
 function ZapsanoMimo([datetime]$od, [string]$slozka) {
     $mista = @($env:APPDATA, $env:LOCALAPPDATA, $env:TEMP, (Join-Path $env:USERPROFILE ".java")) | Where-Object { $_ -and (Test-Path $_) }
     $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and
+            $_.Name -notlike "NotifyIconGeneratedAumid_*" -and
             -not ($_.PSIsContainer -and $_.CreationTime -le $od) } |
         ForEach-Object FullName)
     $zmeny += @(Get-ChildItem $env:USERPROFILE -Force -ErrorAction SilentlyContinue | Where-Object { $_.CreationTime -gt $od } | ForEach-Object FullName)
@@ -167,7 +168,8 @@ try {
 # 3. Složka, kam uživatel nesmí zapisovat (jako Program Files bez práv správce).
 $slozka = Rozbal (Join-Path $koren "jen-cteni")
 try {
-    icacls $slozka /deny "$($env:USERNAME):(OI)(CI)(AD,WD)" | Out-Null
+    # Výslovný zákaz i na data, zděděný by přebilo výslovné povolení pro správce.
+    foreach ($d in $slozka, (Join-Path $slozka "data")) { icacls $d /deny "$($env:USERNAME):(OI)(CI)(AD,WD)" | Out-Null }
     Start-Process -FilePath (Join-Path $slozka "runtime\bin\javaw.exe") -ArgumentList "-jar", "`"$(Join-Path $slozka 'start.jar')`"" -WorkingDirectory $slozka | Out-Null
     $beh = Cekej 60 {
         Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$(Join-Path $slozka 'geokuk.jar')*" }
