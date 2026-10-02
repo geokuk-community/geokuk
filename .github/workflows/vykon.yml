@@ -1,0 +1,68 @@
+name: Výkon
+
+on:
+  workflow_dispatch:
+    inputs:
+      stara:
+        description: "Stará verze (commit, větev, tag)"
+        default: "origin/main"
+      nova:
+        description: "Nová verze"
+        default: "HEAD"
+      co:
+        description: "Části: db hint kresleni program"
+        default: "db hint kresleni program"
+      n:
+        description: "Keší v databázích"
+        default: "100000"
+  pull_request:
+    branches: [main]
+    paths:
+      - "vykon/**"
+      - ".github/workflows/vykon.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  vykon:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Měření
+        shell: bash
+        env:
+          STARA: ${{ inputs.stara || github.event.pull_request.base.sha || 'origin/main' }}
+          NOVA: ${{ inputs.nova || 'HEAD' }}
+          CO: ${{ inputs.co || 'db hint kresleni program' }}
+          N: ${{ inputs.n || '100000' }}
+          PRACOVNI: ${{ runner.temp }}/vykon
+          VYSTUP: ${{ runner.temp }}/vykon-${{ runner.os }}.txt
+        run: |
+          vykon/mer.sh "$STARA" "$NOVA"
+          { echo "### Výkon na $RUNNER_OS"; echo '```'; cat "$VYSTUP"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Výsledek
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vykon-${{ runner.os }}
+          path: |
+            ${{ runner.temp }}/vykon-${{ runner.os }}.txt
+            ${{ runner.temp }}/vykon/*/smoke.log
+            ${{ runner.temp }}/vykon/*/target/smoke/*/*.properties

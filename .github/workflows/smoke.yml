@@ -8,7 +8,11 @@ permissions:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -21,13 +25,18 @@ jobs:
           cache: maven
 
       - name: Smoke test
+        if: runner.os == 'Linux'
         run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
+
+      - name: Smoke test
+        if: runner.os == 'Windows'
+        run: ./mvnw.cmd -B -P smoke verify
 
       - name: Zprávy, logy a snímky obrazovky
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke
+          name: smoke-${{ runner.os }}
           path: |
             target/smoke/*/*.properties
             target/smoke/*/*.log

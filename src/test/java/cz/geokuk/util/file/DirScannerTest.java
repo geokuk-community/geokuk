@@ -2,6 +2,7 @@ package cz.geokuk.util.file;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -34,8 +35,8 @@ public class DirScannerTest {
 		final File podslozka = tmp.newFolder("smycka");
 		try {
 			Files.createSymbolicLink(Paths.get(podslozka.getPath(), "zpet"), tmp.getRoot().toPath());
-		} catch (final UnsupportedOperationException e) {
-			return; // systém odkazy neumí, není co testovat
+		} catch (final UnsupportedOperationException | FileSystemException e) {
+			Assume.assumeNoException("systém nebo uživatel odkazy vytvářet neumí", e);
 		}
 		Assert.assertTrue("ostatní soubory se najdou", scan().size() >= 1);
 	}
