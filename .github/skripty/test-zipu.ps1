@@ -159,11 +159,12 @@ try {
     $chyby = @(Get-ChildItem (Join-Path $slozka "data\log\chyby") -ErrorAction SilentlyContinue)
     Ocekavej ($chyby.Count -eq 0) "bez výpisů chyb v data\log\chyby: $($chyby.Name -join ', ')"
     $mimo = @(ZapsanoMimo $predSpustenim $slozka)
-    # Zatím jen výpis: zápisy kamkoli do profilu uživatele mimo AppData, ať je vidět šum runneru, než se z toho stane kontrola.
+    # Zápisy kamkoli do profilu uživatele mimo AppData, i do existujících složek.
     $vProfilu = @(Get-ChildItem $env:USERPROFILE -Recurse -Force -File -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTime -gt $predSpustenim -and $_.FullName -notlike "$env:USERPROFILE\AppData\*" -and $_.Name -notlike "NTUSER*" -and $_.Name -notlike "ntuser*" } |
         ForEach-Object FullName)
-    Write-Host "Zapsáno v profilu mimo AppData (jen výpis, $($vProfilu.Count)):"; $vProfilu | Select-Object -First 30 | ForEach-Object { Write-Host "  $_" }
+    Write-Host "Zapsáno v profilu mimo AppData:"; $vProfilu | Select-Object -First 30 | ForEach-Object { Write-Host "  $_" }
+    Ocekavej ($vProfilu.Count -eq 0) "do profilu uživatele se nic nezapsalo: $(($vProfilu | Select-Object -First 5) -join ', ')"
     Write-Host "Zapsáno mimo složku programu:"; $mimo | ForEach-Object { Write-Host "  $_" }
     $souhrn.Add("| Zapsáno mimo složku | $($mimo.Count) |")
     Ocekavej ($mimo.Count -eq 0) "mimo složku programu se nic nezapsalo: $($mimo -join ', ')"
