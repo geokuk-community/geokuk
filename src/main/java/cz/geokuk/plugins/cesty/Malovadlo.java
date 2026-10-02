@@ -86,6 +86,7 @@ public class Malovadlo {
 			paintKoncoveBody();
 			// vykreslování bodů přes již vykreslené úseky
 			final Bod cilovyBodyKruhoveCesty = cesta.isKruh() ? cesta.getCil() : null;
+			Point posledniZnacka = null;
 			for (final Bod bod : cesta.getBody()) {
 				// Mimo vybranou cestu se kreslí jen zvýraznění blízkého bodu, tisíce bodů dlouhé cesty se nemusí přepočítávat.
 				if (!jeCurta && bod != blizkyBousek) {
@@ -94,6 +95,14 @@ public class Malovadlo {
 				final Point p = soord.transform(bod.getMou());
 				if (!vKresleneOblasti(p, p)) {
 					continue;
+				}
+				// Značka těsně u předchozí se nekreslí, v přehledu dlouhého záznamu by jich byly statisíce přes sebe.
+				final boolean zvyrazneny = bod == blizkyBousek || bod == poziceMouable;
+				if (!zvyrazneny && posledniZnacka != null && Math.abs(p.x - posledniZnacka.x) < ROZESTUP_ZNACEK && Math.abs(p.y - posledniZnacka.y) < ROZESTUP_ZNACEK) {
+					continue;
+				}
+				if (!zvyrazneny) {
+					posledniZnacka = p;
 				}
 				if (bod == poziceMouable) {
 					g.setColor(Color.RED);
@@ -251,6 +260,8 @@ public class Malovadlo {
 	private static final int SIRKA_CARY_VYBRANE = 6;
 	/** Největší přesah kreslení přes bod: koncová šipka, kolečko startu. */
 	private static final int OKRAJ = 12;
+	/** Značka bodu vybrané cesty má 8 px. */
+	private static final int ROZESTUP_ZNACEK = 4;
 
 	private static final Polygon bodovaSipecka = new Polygon(new int[] { -3, 2, 5, 2, -3 }, new int[] { 3, 3, 0, -3, -3 }, 5);
 
