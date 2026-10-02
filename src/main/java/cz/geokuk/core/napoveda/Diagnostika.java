@@ -39,7 +39,7 @@ public final class Diagnostika {
 
 	private static final String BETA_KANAL_value = "betaKanal";
 	/** Soubor beta vedle jaru z předchozích verzí, převezme se do nastavení. */
-	private static final File SOUBOR_BETA = new File(FConst.JAR_DIR, "beta");
+	private static final File SOUBOR_BETA = new File(FConst.KOREN, "beta");
 
 	/** Nabízet při kontrole aktualizací i testovací verze. */
 	public static boolean betaKanal() {

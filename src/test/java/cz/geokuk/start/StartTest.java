@@ -63,4 +63,20 @@ public class StartTest {
 		zapis(n, "<preferences><root");
 		Assert.assertEquals(2048, Start.pametMb(n, 4096));
 	}
+
+	@Test
+	public void korenNadSlozkouProgram() throws Exception {
+		final File program = tmp.newFolder("GeoKuk", "program");
+		zapis(new File(program, "start.jar"), "start");
+		Assert.assertEquals(program.getParentFile(), Start.koren(program));
+	}
+
+	@Test
+	public void korenJeSlozkaJaruMimoPrenosnouVerzi() throws Exception {
+		final File program = tmp.newFolder("program");
+		Assert.assertEquals(program, Start.koren(program));
+		final File jinde = tmp.newFolder("jinde");
+		zapis(new File(jinde, "start.jar"), "start");
+		Assert.assertEquals(jinde, Start.koren(jinde));
+	}
 }

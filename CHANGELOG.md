@@ -12,8 +12,12 @@
   v registru Windows, při prvním
   spuštění se odtud převezme. Volba „Ukládat nastavení k programu“
   odpadla.
-- Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou:
-  poprvé se spustí `GeoKuk.cmd`, Soubor > Vytvořit zástupce přidá
+- Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou,
+  program a Java jsou v podsložce `program`. Poprvé se spustí
+  `GeoKuk-prvni-spusteni.cmd`, GeoKuk pak vedle vytvoří zástupce
+  `GeoKuk.lnk`, který jde zkopírovat na plochu nebo připnout. Po
+  přesunu složky se zástupce ve složce i jeho kopie na ploše
+  a v nabídce Start opraví. Soubor > Vytvořit zástupce přidá
   GeoKuk do nabídky Start nebo na plochu. Spouštěč `start.jar`
   nainstaluje staženou novou verzi a zvolí paměť (polovina paměti
   počítače, 1 až 3 GB), změnit ji jde v Soubor > Paměť programu.
@@ -27,7 +31,7 @@
 - Když nová verze potřebuje novější Javu, než je přibalená, nebo je
   k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
 - Nápověda > Nabízet testovací verze (beta) zapíná beta kanál; soubor
-  `beta` vedle `geokuk.jar` se převezme.
+  `beta` vedle složky `data` se převezme.
 - Dálkové ovládání: stav, posun mapy, výběr keše, podklad a přenačtení
   jdou bez tokenu na portu 48321 (výchozí); požadavky z webového
   prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`

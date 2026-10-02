@@ -25,6 +25,9 @@ public class FConst {
 
 	public static final File JAR_DIR;
 
+	/** Složka, kterou uživatel vidí; u přenosného GeoKuku nad podsložkou program. */
+	public static final File KOREN = UmisteniProgramu.KOREN;
+
 	/** Nastavení, cache, data a logy programu. */
 	public static final File DATA_DIR = UmisteniProgramu.DATA_DIR;
 
@@ -73,6 +76,7 @@ public class FConst {
 		log.info("GEOKUK " + VERSION);
 		log.info("JAR_DIR = " + JAR_DIR);
 		log.info("JAR_DIR_EXISTUJE = " + JAR_DIR_EXISTUJE);
+		log.info("KOREN = " + KOREN);
 		log.info("DATA_DIR = " + DATA_DIR);
 		log.info("HOME_DIR = " + HOME_DIR);
 		log.info("WEB_PAGE_URL = " + WEB_PAGE_URL);

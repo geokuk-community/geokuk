@@ -31,10 +31,10 @@ public final class KontrolaUmisteni {
 		}
 		pripravSlozky();
 		final MyPreferences pref = MyPreferences.current().node(FPref.VSEOBECNE_node);
-		final String sluzba = synchronizovanaSluzba(FConst.JAR_DIR, System.getenv());
-		if (sluzba != null && !FConst.JAR_DIR.getPath().equals(pref.get(UPOZORNENO_SYNC_value, null))) {
-			pref.put(UPOZORNENO_SYNC_value, FConst.JAR_DIR.getPath());
-			Dlg.upozorneni("GeoKuk je ve složce, kterou synchronizuje " + sluzba + ":\n" + FConst.JAR_DIR + "\n\n"
+		final String sluzba = synchronizovanaSluzba(FConst.KOREN, System.getenv());
+		if (sluzba != null && !FConst.KOREN.getPath().equals(pref.get(UPOZORNENO_SYNC_value, null))) {
+			pref.put(UPOZORNENO_SYNC_value, FConst.KOREN.getPath());
+			Dlg.upozorneni("GeoKuk je ve složce, kterou synchronizuje " + sluzba + ":\n" + FConst.KOREN + "\n\n"
 					+ "Cache map a nastavení se mění při každém spuštění, synchronizace je bude stále nahrávat\n"
 					+ "a soubory, které program právě používá, může poškodit. Ukončete GeoKuk a přesuňte celou složku\n"
 					+ "s programem mimo synchronizovanou složku, třeba do " + DOPORUCENE_UMISTENI + ".");
