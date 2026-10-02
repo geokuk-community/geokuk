@@ -99,7 +99,7 @@ function Registr { @(Get-ChildItem "HKCU:\Software\JavaSoft" -Recurse -ErrorActi
 function ZapsanoMimo([datetime]$od, [string]$slozka) {
     $mista = @($env:APPDATA, $env:LOCALAPPDATA, $env:TEMP, (Join-Path $env:USERPROFILE ".java")) | Where-Object { $_ -and (Test-Path $_) }
     $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and
-            -not ($_.PSIsContainer -and $_.FullName -in $mista) } |
+            -not ($_.PSIsContainer -and $_.CreationTime -le $od) } |
         ForEach-Object FullName)
     $zmeny += @(Get-ChildItem $env:USERPROFILE -Force -ErrorAction SilentlyContinue | Where-Object { $_.CreationTime -gt $od } | ForEach-Object FullName)
     $zmeny += @(Registr | Where-Object { $_ -notin $registrPred })
