@@ -95,10 +95,11 @@ function Ocekavej([bool]$plati, [string]$popis) {
 
 function Registr { @(Get-ChildItem "HKCU:\Software\JavaSoft" -Recurse -ErrorAction SilentlyContinue | ForEach-Object Name) }
 
-# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu.
+# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu (bez složek Windows a PowerShellu).
 function ZapsanoMimo([datetime]$od, [string]$slozka) {
     $mista = @($env:APPDATA, $env:LOCALAPPDATA, $env:TEMP, (Join-Path $env:USERPROFILE ".java")) | Where-Object { $_ -and (Test-Path $_) }
-    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) } |
+    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and
+            -not ($_.PSIsContainer -and $_.FullName -in $mista) } |
         ForEach-Object FullName)
     $zmeny += @(Get-ChildItem $env:USERPROFILE -Force -ErrorAction SilentlyContinue | Where-Object { $_.CreationTime -gt $od } | ForEach-Object FullName)
     $zmeny += @(Registr | Where-Object { $_ -notin $registrPred })
@@ -134,7 +135,7 @@ try {
     $souhrn.Add("| Paměť | $($xmx.Value), RAM $ram MB |")
     Ocekavej ($beh.Proces.ExecutablePath -eq (Join-Path $slozka "runtime\bin\javaw.exe")) "běží přibalená Java: $($beh.Proces.ExecutablePath)"
 
-    foreach ($d in "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni") {
+    foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni") {
         Ocekavej (Test-Path (Join-Path $slozka $d)) "vzniklo $d"
     }
     Volej $o POST "/menu?cesta=$([uri]::EscapeDataString('Soubor > Konec'))" | Out-Null
