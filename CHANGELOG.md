@@ -71,6 +71,8 @@
   klávesou Esc a otevírá se uprostřed hlavního okna.
 - Dialog Nastavení popisků se vejde na obrazovku: barva písma a podkladu
   jsou na kartách a pole pro vzorky popisků jsou dost široká.
+- Čáry UTM mřížky jsou na správném místě i u okraje zóny, převod z UTM
+  na zeměpisné souřadnice byl až o 7 metrů posunutý k jihu.
 
 ## 6.1.0
 
