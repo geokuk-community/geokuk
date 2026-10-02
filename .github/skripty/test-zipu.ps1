@@ -176,6 +176,11 @@ try {
     if ($beh) {
         $titulky = Cekej 60 { $t = [Okna]::Titulky([uint32]$beh.ProcessId); if ($t -like "Geokuk: Chyba") { $t } }
         Ocekavej ($null -ne $titulky) "chyba o složce bez práva zápisu: okna $([Okna]::Titulky([uint32]$beh.ProcessId) -join ', ')"
+        if (-not $titulky) {
+            icacls (Join-Path $slozka "data")
+            Get-ChildItem -Recurse -Force (Join-Path $slozka "data") | ForEach-Object FullName
+            Get-Content -Tail 40 -ErrorAction SilentlyContinue (Join-Path $slozka "data\log\geokuk.log")
+        }
     }
 } finally {
     Ukonci $slozka
