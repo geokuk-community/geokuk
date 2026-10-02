@@ -20,6 +20,7 @@ import cz.geokuk.plugins.cesty.akce.doc.CestyZoomAction;
 import cz.geokuk.plugins.cesty.akce.doc.PromazatJednobodoveAPrazdneCesty;
 import cz.geokuk.plugins.cesty.akce.soubor.*;
 import cz.geokuk.plugins.geocoding.GeocodingAdrAction;
+import cz.geokuk.plugins.kesoid.EZobrazeniKesi;
 import cz.geokuk.plugins.kesoid.filtr.FiltrIkonyAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenDoTerenuUNenalezenychAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenFinalUNalezenychAction;
@@ -58,6 +59,10 @@ public class Akce {
 	public final OdebratZCestyAction odebratZCestyAction = new OdebratZCestyAction(null);
 	public final CestyPresClipboardDoGeogetuAction cestyPresClipboardDoGeogetuAction = new CestyPresClipboardDoGeogetuAction();
 	public final KruhyOnoffAction kruhyOnoffAction = new KruhyOnoffAction();
+	public final ZobrazeniKesiAction zobrazeniKesiAutomatickyAction = new ZobrazeniKesiAction(EZobrazeniKesi.AUTOMATICKY, "Tečky při oddálení",
+			"Na oddálené mapě (zoom 12 a menší) keše jako barevné tečky, při přiblížení ikony.");
+	public final ZobrazeniKesiAction zobrazeniKesiIkonyAction = new ZobrazeniKesiAction(EZobrazeniKesi.IKONY, "Vždy ikony", "Keše vždy jako ikony.");
+	public final ZobrazeniKesiAction zobrazeniKesiTeckyAction = new ZobrazeniKesiAction(EZobrazeniKesi.TECKY, "Vždy tečky", "Keše vždy jako barevné tečky.");
 	public final JednotkoveKruhyAction jednotkoveKruhyAction = new JednotkoveKruhyAction();
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();

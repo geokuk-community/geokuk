@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -133,6 +134,18 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	private final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
+	/** Od tohoto zoomu výš ikony, níž tečky. */
+	static final int ZOOM_IKON = 13;
+	/** Od tohoto zoomu výš popisek a zvýraznění keše pod myší. */
+	static final int ZOOM_POPISKU = 8;
+
+	private final Tecky tecky = new Tecky();
+	private EZobrazeniKesi zobrazeni = EZobrazeniKesi.AUTOMATICKY;
+	private int prumer;
+	private int moumerPrumeru;
+	private Boolean oznamenePrekroceni;
+	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
+	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
 
 	private CestyModel cestyModel;
 
@@ -293,6 +306,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	 */
 	@Override
 	public void mouseMoved(final MouseEvent e, final MouseGestureContext ctx) {
+		if (getSoord().getMoumer() < ZOOM_POPISKU) {
+			zrusPodMysi();
+			return;
+		}
 		final Wpt wpt = najdiWptVBlizkosti(new Point(e.getX(), e.getY()));
 		wptPodMysi = wpt;
 		final Kesoid kes = wpt == null ? null : wpt.getKesoid();
@@ -323,6 +340,35 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		}
 		// setToolTipText();
 
+	}
+
+	@Override
+	public void mouseDragged(final MouseEvent e, final MouseGestureContext ctx) {
+		zrusPodMysi();
+		super.mouseDragged(e, ctx);
+	}
+
+	@Override
+	public void mouseWheelMoved(final MouseWheelEvent e, final MouseGestureContext ctx) {
+		zrusPodMysi();
+		super.mouseWheelMoved(e, ctx);
+	}
+
+	/** Zvýraznění a popisek by při posunu mapy zůstaly viset na starém místě. */
+	private void zrusPodMysi() {
+		if (kesoidPodMysi == null && wptPodMysi == null && !jakoTooltip.isVisible()) {
+			return;
+		}
+		jakoTooltip.setVisible(false);
+		final Kesoid stara = kesoidPodMysi;
+		kesoidPodMysi = null;
+		wptPodMysi = null;
+		repaintKes(stara);
+	}
+
+	public void onEvent(final ZobrazeniKesiEvent event) {
+		zobrazeni = event.getZobrazeni();
+		repaint();
 	}
 
 	public void onEvent(final FenotypPreferencesChangedEvent aEvent) {
@@ -393,22 +439,39 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		if (ikonBag == null) {
 			return;
 		}
+		final int pocet = indexator.count(getSoord().getBoundingRect());
+		final boolean husteTecky = zobrazeni == EZobrazeniKesi.TECKY
+				|| zobrazeni != EZobrazeniKesi.IKONY && (getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE);
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
-		final boolean prekrocenLimit = !vykreslovatOkamtiteAleDlouho && indexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
-		SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
-
-		// vytvoření prázdných seznamů
-		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = new EnumMap<>(Wpt.EZOrder.class);
-		for (final Wpt.EZOrder zorder : Wpt.EZOrder.values()) {
-			mapa.put(zorder, new ArrayList<Wpt>(10000));
+		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
+		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
+			oznamenePrekroceni = prekrocenLimit;
+			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
 		}
 
+		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
+		try {
+			if (husteTecky) {
+				kresliTecky(gg, mapa, prumerTecek(pocet));
+				for (final List<Wpt> list : mapa.values()) {
+					list.clear();
+				}
+			}
+			// Při tečkách už jen zvýrazněná keš pod myší.
+			kresli(gg, mapa, prekrocenLimit || husteTecky);
+		} finally {
+			// Nedržet waypointy po přenačtení keší.
+			for (final List<Wpt> list : mapa.values()) {
+				list.clear();
+			}
+		}
+	}
+
+	private void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
 		// Roztřídit waypointy podle pořadí vykreslování
 		if (!prekrocenLimit) {
 			final BoundingRect hranice = coVykreslovat(gg);
-			indexator.bound(hranice).stream().forEach(wpt -> {
-				mapa.get(wpt.getZorder()).add(wpt);
-			});
+			indexator.bound(hranice).stream().forEach(wpt -> mapa.get(wpt.getZorder()).add(wpt));
 		}
 
 		final List<SkloAplikant> skloAplikanti = ikonBag.getSada().getSkloAplikanti();
@@ -431,6 +494,50 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				}
 			}
 		}
+	}
+
+	/** Průměr podle hustoty; při posunu mapy se mění až o dva pixely, aby tečky neskákaly. */
+	private int prumerTecek(final int pocet) {
+		final int d = Tecky.prumer(pocet, getSoord().getDim());
+		final int moumer = getSoord().getMoumer();
+		if (moumer != moumerPrumeru || Math.abs(d - prumer) >= 2) {
+			moumerPrumeru = moumer;
+			prumer = d;
+		}
+		return prumer;
+	}
+
+	/** Nalezené dospod, neaktivní pod aktivní; seznamy podle z-orderu se tu jen půjčí. */
+	private void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int prumer) {
+		final List<Wpt> nalezene = mapa.get(Wpt.EZOrder.OTHER);
+		final List<Wpt> neaktivni = mapa.get(Wpt.EZOrder.KESWPT);
+		final List<Wpt> ostatni = mapa.get(Wpt.EZOrder.FINAL);
+		indexator.bound(oblastKresleni(gg, Tecky.MAX_PRUMER)).stream().forEach(wpt -> {
+			if (!wpt.isMainWpt()) {
+				return;
+			}
+			final Kesoid kesoid = wpt.getKesoid();
+			if (kesoid.getVztah() == EKesVztah.FOUND) {
+				nalezene.add(wpt);
+			} else if (Tecky.neaktivni(kesoid)) {
+				neaktivni.add(wpt);
+			} else {
+				ostatni.add(wpt);
+			}
+		});
+		for (final List<Wpt> list : Arrays.asList(nalezene, neaktivni, ostatni)) {
+			for (final Wpt wpt : list) {
+				tecky.kresli(gg, wpt, getSoord().transform(wpt.getMou()), prumer);
+			}
+		}
+	}
+
+	private static EnumMap<Wpt.EZOrder, List<Wpt>> noveSeznamy() {
+		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = new EnumMap<>(Wpt.EZOrder.class);
+		for (final Wpt.EZOrder zorder : Wpt.EZOrder.values()) {
+			mapa.put(zorder, new ArrayList<Wpt>());
+		}
+		return mapa;
 	}
 
 	private Genotyp computeGenotyp(final Wpt wpt) {

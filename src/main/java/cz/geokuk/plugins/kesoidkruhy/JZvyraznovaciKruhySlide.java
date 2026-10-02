@@ -52,12 +52,6 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		if (iIndexator == null) {
 			return;
 		}
-		final boolean prekrocenLimit = iIndexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
-		if (prekrocenLimit) {
-			return;
-		}
-
-		final Graphics2D g = (Graphics2D) aG;
 		final int r;
 		final boolean jednotkove = kruhy.isJednotkovaVelikost();
 		if (jednotkove) {
@@ -65,6 +59,12 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		} else {
 			r = kruhy.getVelikost();
 		}
+		final int pocet = iIndexator.count(getSoord().getBoundingRect());
+		if (pocet > FConst.MAX_POC_WPT_NA_MAPE || prilisHuste(pocet, Math.PI * r * r)) {
+			return;
+		}
+
+		final Graphics2D g = (Graphics2D) aG;
 		final int d = 2 * r;
 		final Color barva = kruhy.getBarva();
 		final Stroke prerus = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1, new float[] { 5.0f, 5.0f }, 0);

@@ -142,6 +142,10 @@ public class Menu extends MenuStrujce {
 		tb.add(akce.renderAction).setFocusable(false);
 
 		item(akce.kesoidyOnoffAction);
+		final ButtonGroup zobrazeniKesi = new ButtonGroup();
+		item(akce.zobrazeniKesiAutomatickyAction, zobrazeniKesi);
+		item(akce.zobrazeniKesiIkonyAction, zobrazeniKesi);
+		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
 		item(akce.popiskyOnAction);
