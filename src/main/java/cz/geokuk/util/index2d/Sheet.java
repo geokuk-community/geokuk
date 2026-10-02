@@ -133,7 +133,6 @@ class Sheet<T> extends NodeB<T> {
 				return left;
 			}
 			if (left.count > right.count) {
-				System.out.println("vym");
 				return join(right, left); // vždy kvůli rychlosti menší velvo
 			}
 			// ani jeden není null, musíme spojit

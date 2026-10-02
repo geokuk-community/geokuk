@@ -9,10 +9,13 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class NacitacGeokuk extends NacitacInputStream0 {
 
 	/**
@@ -28,7 +31,7 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 		if (hlavicka.charAt(0) == 0xfeff) {
 			hlavicka = hlavicka.substring(1);
 		}
-		System.out.println(Integer.toHexString(hlavicka.charAt(0)));
+		log.debug("Hlavička: {}", Integer.toHexString(hlavicka.charAt(0)));
 		if (!HLAVICKA.equals(hlavicka)) {
 			throw new RuntimeException("Přečtena hlavička: \"" + hlavicka + "\", ale má tam být\"" + HLAVICKA + "\"");
 		}
@@ -109,7 +112,7 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 				FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, positionInfo);
 			}
 		}
-		System.out.println("Precteno: " + ncaches + " keší a " + nwpts + " waypointů.");
+		log.debug("Přečteno: {} keší a {} waypointů.", ncaches, nwpts);
 	}
 
 	@Override

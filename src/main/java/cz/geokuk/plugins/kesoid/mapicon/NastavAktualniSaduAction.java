@@ -31,7 +31,6 @@ public class NastavAktualniSaduAction extends AbstractAction {
 
 	@Override
 	public void actionPerformed(final ActionEvent e) {
-		System.out.println("Sada nastavena");
 	}
 
 	public void onEvent(final IkonyNactenyEvent event) {

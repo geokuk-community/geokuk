@@ -8,6 +8,9 @@ import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.coord.Coord;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class PrintingSwingWorker extends RendererSwingWorker0 implements Printable {
 
 	private int citac;
@@ -29,14 +32,14 @@ public class PrintingSwingWorker extends RendererSwingWorker0 implements Printab
 		pj.print();
 		// System.out.printf("Zapis obrazku [%d,%d] do souboru \"%s\"%n", image.getWidth(), image.getHeight(), imagePathName);
 
-		System.out.println("Konec tisku");
+		log.debug("Konec tisku");
 
 		return new RenderResult();
 	}
 
 	@Override
 	public int print(final Graphics graphics, final PageFormat pf, final int pageIndex) throws PrinterException {
-		System.out.println("TISK STRANY " + pageIndex + " - " + graphics.getClipBounds());
+		log.debug("Tisk strany {} - {}", pageIndex, graphics.getClipBounds());
 		if (pageIndex > 0) {
 			return NO_SUCH_PAGE;
 			// if (posledneTistenaStrana == pageIndex) return PAGE_EXISTS;
@@ -76,7 +79,7 @@ public class PrintingSwingWorker extends RendererSwingWorker0 implements Printab
 		// g.setClip(0, 0, roord.getWidth(), roord.getHeight());
 		g = (Graphics2D) g.create();
 
-		System.out.println("Chce to po me tisk: " + ++citac);
+		log.debug("Požadavek na tisk: {}", ++citac);
 		try {
 			final BufferedImage bi = rendrovadlo.rendruj(p, progressor);
 			g.drawImage(bi, 0, 0, null);

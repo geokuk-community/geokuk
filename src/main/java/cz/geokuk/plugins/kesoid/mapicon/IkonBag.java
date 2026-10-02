@@ -10,6 +10,9 @@ import cz.geokuk.api.mapicon.Imagant;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class IkonBag {
 
 	private Set<String> jmenaSad;
@@ -42,11 +45,11 @@ public class IkonBag {
 	}
 
 	public void print() {
-		System.out.println("Sady: " + jmenaSad);
+		log.debug("Sady: {}", jmenaSad);
 		for (final SkloAplikant skloAplikant : sada.skloAplikanti) {
-			System.out.println("   *** sklo: " + skloAplikant.aplikaceSkla);
+			log.debug("   *** sklo: {}", skloAplikant.aplikaceSkla);
 			// for (Vrstva vrstva : skloAplikant.sklo.vrstvy) {
-			System.out.println("        ### vrstva");
+			log.debug("        ### vrstva");
 			// for (IconDef iconDef : vrstva.getAllIconDefs()) {
 			// System.out.println(" " + iconDef.getSubdefs() + " ::: " + iconDef.idp.url);
 			// }

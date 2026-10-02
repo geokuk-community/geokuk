@@ -26,7 +26,6 @@ public class JFavorit extends JComponent {
 		jFavorit.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(final MouseEvent mouseevent) {
-				System.out.println("Prasteno do mysi " + jFavorit.kolik);
 			}
 		});
 

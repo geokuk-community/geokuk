@@ -3,6 +3,8 @@
  */
 package cz.geokuk.core.program;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -19,6 +21,7 @@ import cz.geokuk.util.pocitadla.*;
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 
 	private static final long serialVersionUID = 5761908785083097975L;
@@ -131,13 +134,13 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 
 			@Override
 			public void actionPerformed(final ActionEvent e) {
-				System.out.println("Garbage collector spuštěn");
+				log.debug("Garbage collector spuštěn");
 				System.gc();
 				final long pouzitaPamet = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 				final long narustPameti = pouzitaPamet - minulePouzitaPamet;
 				minulePouzitaPamet = pouzitaPamet;
 				jMemoryPoGc.setText(pouzitaPamet / 1000 + " KiB  |  rozdil=" + narustPameti / 1000 + " KiB");
-				System.out.println("Garbage collector ukončen");
+				log.debug("Garbage collector ukončen");
 			}
 		});
 		return jGcPanel;

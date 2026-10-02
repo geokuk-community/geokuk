@@ -31,6 +31,8 @@
 
 package cz.geokuk.plugins.kesoidkruhy;
 
+import lombok.extern.slf4j.Slf4j;
+
 /*
  * TextFieldDemo.java requires one additional file:
  * content.txt
@@ -44,6 +46,7 @@ import javax.swing.event.ChangeListener;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.JMyDialog0;
 
+@Slf4j
 public class JKruhyDialog extends JMyDialog0 implements AfterEventReceiverRegistrationInit {
 
 	private static final long serialVersionUID = 7087453419069194768L;
@@ -123,12 +126,12 @@ public class JKruhyDialog extends JMyDialog0 implements AfterEventReceiverRegist
 			// Board.mainFrame.parametryZvyraznovaceKruhuSeZmenily();
 			final KruhySettings kruhy = new KruhySettings();
 			final Color barva = alfaColorChooser.getSelectionModel().getSelectedColor();
-			System.out.println("KRUHY1: " + barva + barva.getAlpha());
+			log.debug("Kruhy: {} {}", barva, barva.getAlpha());
 			kruhy.setBarva(barva);
-			System.out.println("KRUHY2: " + barva + barva.getAlpha());
+			log.debug("Kruhy: {} {}", barva, barva.getAlpha());
 			kruhy.setVelikost(velikostSlider.getValue());
 			kruhy.setJednotkovaVelikost(jJednotkoveKruhy.isSelected());
-			System.out.println("KRUHY3: " + barva + barva.getAlpha());
+			log.debug("Kruhy: {} {}", barva, barva.getAlpha());
 			kruhyModel.setData(kruhy);
 		};
 		velikostSlider.getModel().addChangeListener(chlist);

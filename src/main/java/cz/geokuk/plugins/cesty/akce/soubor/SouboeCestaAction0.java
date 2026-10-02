@@ -36,7 +36,7 @@ public abstract class SouboeCestaAction0 extends Action0 {
 		final String hlaska = cestyModel.getDoc().getFile() != null ? "<html>Soubor s výletem byl změněn <b>" + cestyModel.getDoc().getFile() + "</b> "
 		        : "Byl vytvořen nový výlet, ale nebyl doposud uložen do souboru." + ".";
 		final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), hlaska, "Uložení změn ve výletu", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
-		System.out.println(n);
+		log.debug("{}", n);
 		if (n == 0) {
 			return ulozit();
 		} else {

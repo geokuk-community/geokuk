@@ -62,7 +62,6 @@ public class JErrorDialog extends JMyDialog0 {
 		frm.setVisible(true);
 
 		new Timer(1000, aE -> {
-			System.out.println("LOPU");
 			FError.report("To je teda texytik " + System.currentTimeMillis());
 		}).start();
 

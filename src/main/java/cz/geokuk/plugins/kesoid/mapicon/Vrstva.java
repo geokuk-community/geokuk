@@ -7,6 +7,9 @@ import java.util.stream.Stream;
 import cz.geokuk.plugins.kesoid.genetika.*;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class Vrstva {
 
 	@RequiredArgsConstructor
@@ -116,9 +119,9 @@ public class Vrstva {
 	 * @param vybrane
 	 */
 	private void error(final String aString, final Genotyp genotyp, final List<IconDef> vybrane) {
-		System.err.println("Našlo se toho moc na zobrazení pro: " + genotyp);
+		log.warn("Našlo se toho moc na zobrazení pro: {}", genotyp);
 		for (final IconDef iconDef : vybrane) {
-			System.err.println("    " + iconDef.getSubdefs() + "  -  " + iconDef.idp.url);
+			log.warn("    {}  -  {}", iconDef.getSubdefs(), iconDef.idp.url);
 		}
 	}
 

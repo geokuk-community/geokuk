@@ -12,6 +12,9 @@ import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.cesty.CestyModel;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ImportujAction extends Action0 {
 
 	private class AllAkceptableFilter extends FileFilter {
@@ -66,7 +69,7 @@ public class ImportujAction extends Action0 {
 		if (result == JFileChooser.APPROVE_OPTION) {
 			final File[] selectedFiles = fc.getSelectedFiles();
 			cestyModel.importuj(Arrays.asList(selectedFiles));
-			System.out.println("Nactena cesta z: " + Arrays.asList(selectedFiles));
+			log.debug("Načtena cesta z: {}", Arrays.asList(selectedFiles));
 		}
 	}
 

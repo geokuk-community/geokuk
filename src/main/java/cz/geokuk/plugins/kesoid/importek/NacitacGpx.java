@@ -351,7 +351,7 @@ public class NacitacGpx extends NacitacInputStream0 {
 					try {
 						wpt.groundspeak.ownerid = Integer.parseInt(ownerIdStr);
 					} catch (final NumberFormatException e) {
-						System.err.println("Nenumerické číslo vlastníka: \"" + ownerIdStr + "\" " + wpt);
+						log.warn("Nenumerické číslo vlastníka: \"{}\" {}", ownerIdStr, wpt);
 						wpt.groundspeak.ownerid = -999;
 					}
 				}

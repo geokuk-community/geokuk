@@ -3,6 +3,8 @@
  */
 package cz.geokuk.plugins.geocoding;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.UnsupportedEncodingException;
 import java.net.*;
 
@@ -12,6 +14,7 @@ import cz.geokuk.core.hledani.HledaciPodminka0;
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class HledaciPodminka extends HledaciPodminka0 {
 
 	// private static final String URL_PREFIX = "http://maps.google.com/maps/geo?output=xml&sensor=false&key=geokuk&gl=CZ";
@@ -34,7 +37,7 @@ public class HledaciPodminka extends HledaciPodminka0 {
 			// sb.append("&spn=");
 			// sb.append("1,1");
 			url = new URL(URL_PREFIX + "&address=" + URLEncoder.encode(getVzorek(), "utf8") + "&language=cs");
-			System.out.println("Hledaci URL: " + url);
+			log.debug("Hledací URL: {}", url);
 		} catch (MalformedURLException | UnsupportedEncodingException e1) {
 			throw new RuntimeException(e1);
 		}

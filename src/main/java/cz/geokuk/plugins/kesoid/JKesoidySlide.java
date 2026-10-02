@@ -28,6 +28,9 @@ import cz.geokuk.util.index2d.Indexator;
 import cz.geokuk.util.pocitadla.PocitadloNula;
 import cz.geokuk.util.process.BrowserOpener;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRegistrationInit {
 
 	private static class PaintovaciVlakno extends Thread {
@@ -475,7 +478,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		final Insets bii = ikonBag.getSada().getBigiestIconInsets();
 		Rectangle rect = gg.getClipBounds();
 		if (vykreslovatOkamtiteAleDlouho) {
-			System.out.println("Omezeni: " + rect);
+			log.debug("Omezení: {}", rect);
 		}
 		if (rect == null) {
 			rect = new Rectangle(getSize());

@@ -49,7 +49,6 @@ public class JCestySlide extends JSingleSlide0 {
 
 		void mouseReleased() {
 			if (stavPropojovaniCest == 2 && jeMoznostSpojovani()) {
-				System.out.println("Spojujeme !!!!!!!!!!!!!!!!!");
 				cestyModel.spojCestyVPrekryvnemBode((Bod) blizkyBousek);
 			}
 			stavPropojovaniCest = 0;

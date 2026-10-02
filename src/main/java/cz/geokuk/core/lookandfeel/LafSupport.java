@@ -15,12 +15,15 @@ import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * A demo that shows all of the Swing components.
  *
  * @version 1.54 05/31/06
  * @author Jeff Dinkins
  */
+@Slf4j
 public class LafSupport {
 
 	static class ChangeLookAndFeelAction extends AbstractAction {
@@ -118,7 +121,7 @@ public class LafSupport {
 			if (lafInfo.getClassName().equals(prefferencedLookAndFeel)) {
 				current = li;
 			}
-			System.out.println("LookAndFeel: " + lafInfo.getName() + "  " + lafInfo.getClassName());
+			log.debug("LookAndFeel: {} {}", lafInfo.getName(), lafInfo.getClassName());
 			if (lafInfo.getClassName().equals(metal)) {
 				metalli = li;
 			}

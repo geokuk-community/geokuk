@@ -16,6 +16,9 @@ import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.util.file.Filex;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class RenderModel extends Model0 {
 
 	static class Dvoj {
@@ -313,7 +316,7 @@ public class RenderModel extends Model0 {
 		final int height = cocox.getDim().height;
 		final int kalistrana = (int) Math.ceil(Math.sqrt(kalibrBodu)); // počet kalibračních bodů rastru ve sloupci a řádku
 		final double kalifaktor = (kalistrana * kalistrana - 1) / ((double) kalibrBodu - 1); // po jaké vzdálenosti kalibrační bod
-		System.out.println("kalistrana: " + kalistrana);
+		log.debug("kalistrana: {}", kalistrana);
 		double kalicitac = 0;
 		int bodocitac = 0;
 		for (int x = 0; x < kalistrana; x++) {

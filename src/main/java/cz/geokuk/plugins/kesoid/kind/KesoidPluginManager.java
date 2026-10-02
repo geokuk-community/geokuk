@@ -16,6 +16,8 @@ import cz.geokuk.plugins.kesoid.kind.simplewaypoint.SimpleWaypointGpxWptProcak;
 import cz.geokuk.util.procak.ProcakDispatcher;
 import lombok.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Manager kesouidových pluginů.
  * Je to vstupní bod pro práci s pluginy.
@@ -24,6 +26,7 @@ import lombok.*;
  * @author Martin
  *
  */
+@Slf4j
 public class KesoidPluginManager {
 
 
@@ -32,13 +35,13 @@ public class KesoidPluginManager {
 	private Factory factory;
 
 	public KesoidPluginManager() {
-		System.out.println("Found kesoid plugins:");
+		log.debug("Found kesoid plugins:");
 		plugins = new Reflections(this.getClass()).getSubTypesOf(KesoidPlugin.class).stream()
 				.map(this::newInstance)
 				.sorted( (p1, p2) -> p1.getOrder() - p2.getOrder())
-				.peek(plugin -> System.out.println("   " + plugin.getClass().getName()))
+				.peek(plugin -> log.debug("   {}", plugin.getClass().getName()))
 				.collect(Collectors.toList());
-		System.out.println("Found " + plugins.size() + " kesoid plugins total.");
+		log.debug("Found {} kesoid plugins total.", plugins.size());
 	}
 
 	@SneakyThrows

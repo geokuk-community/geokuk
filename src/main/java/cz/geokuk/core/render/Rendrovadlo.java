@@ -3,6 +3,8 @@
  */
 package cz.geokuk.core.render;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -17,6 +19,7 @@ import cz.geokuk.plugins.mapy.kachle.gui.JKachlovnikRendrovaci;
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class Rendrovadlo {
 
 	private static int citac;
@@ -45,15 +48,15 @@ public class Rendrovadlo {
 
 	public synchronized BufferedImage rendruj(final RenderParams p, final Progressor progressor) throws InterruptedException {
 
-		System.out.printf("Vytvarim obrazek [%d,%d]\n", p.roord.getWidth(), p.roord.getHeight());
+		log.debug("Vytvářím obrázek [{},{}]", p.roord.getWidth(), p.roord.getHeight());
 		final BufferedImage image = createImage(p);
 		synchronized (image) {
-			System.out.printf("Vytvoren obrazek [%d,%d]\n", image.getWidth(), image.getHeight());
+			log.debug("Vytvořen obrázek [{},{}]", image.getWidth(), image.getHeight());
 			final Graphics ggOriginal = image.getGraphics();
 			// final Graphics gg = ggOriginal.create();
 			// gg.setColor(Color.CYAN);
 			// gg.fillOval(0, 0, image.getWidth(), image.getHeight());
-			System.out.printf("Vybarvern obrazek [%d,%d]\n", image.getWidth(), image.getHeight());
+			log.debug("Vybarven obrázek [{},{}]", image.getWidth(), image.getHeight());
 			rendruj(p, progressor, ggOriginal);
 		}
 		return image;
@@ -71,7 +74,7 @@ public class Rendrovadlo {
 		// TODO řešit kanclování
 		// if (isCancelled()) return null;
 
-		System.out.println("Rendrovani rendrovadlem spusteno: " + ++citac);
+		log.debug("Rendrování rendrovadlem spuštěno: {}", ++citac);
 		for (final JSingleSlide0 slidePuvodni : slides) {
 			if (slidePuvodni.isVisible()) {
 				// for (int i=0; i<100; i++) {
@@ -85,7 +88,7 @@ public class Rendrovadlo {
 					// if (slide instanceof JKesoidy) {
 					// continue;
 					// }
-					System.out.println("    RENDROVANI: " + slide.getClass());
+					log.debug("Rendrování: {}", slide.getClass());
 					final Graphics2D g = (Graphics2D) ggOriginal.create();
 					Coord coco = p.roord;
 					switch (slide.jakOtacetProRendrovani()) {

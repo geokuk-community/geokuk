@@ -41,15 +41,15 @@ public class JKachlovnikRendrovaci extends JKachlovnik {
 			paint(g);
 			final Component[] components = getComponents();
 			celkovyPocetKachliKtereRendruejeme = components.length;
-			System.out.println("waitNaDotazeni: start");
+			log.debug("waitNaDotazeni: start");
 			for (final Component component : components) {
 				if (component instanceof JKachle) {
 					final JKachle kachle = (JKachle) component;
-					System.out.println("waitNaDotazeni: " + kachle.getKaLoc());
+					log.debug("waitNaDotazeni: {}", kachle.getKaLoc());
 					kachle.waitNaDotazeniDlazdice();
 				}
 			}
-			System.out.println("waitNaDotazeni: stop");
+			log.debug("waitNaDotazeni: stop");
 		} finally {
 			// KDyž končíme, třeba i výjimkou, rychle kachlím řekneme, že je nepotřebujeme
 			// a ona se v mžiku vyprázdní front
@@ -82,7 +82,7 @@ public class JKachlovnikRendrovaci extends JKachlovnik {
 	@Override
 	void kachleZpracovana(final JKachle jKachle) {
 		++citacZpracovanychKachli;
-		System.out.printf("CITACE: %d/%d\n", citacZpracovanychKachli, celkovyPocetKachliKtereRendruejeme);
+		log.debug("Zpracováno dlaždic: {}/{}", citacZpracovanychKachli, celkovyPocetKachliKtereRendruejeme);
 		if (progressor != null) {
 			progressor.setProgress(++citacZpracovanychKachli, celkovyPocetKachliKtereRendruejeme);
 		}
