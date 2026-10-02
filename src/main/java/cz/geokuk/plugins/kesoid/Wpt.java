@@ -98,10 +98,6 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 		return elevation;
 	}
 
-	// public void setPrefix(String prefix) {
-	// this.prefix = prefix.intern();
-	// }
-
 	public Genotyp getGenotyp() {
 		if (genotyp == null) {
 			throw new IllegalStateException("Prázdný genotyp waypointu: " + this);
@@ -136,10 +132,6 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 			weikoid = weikoid.next;
 		} while (weikoid != this);
 	}
-
-	// public String getPrefix() {
-	// return prefix;
-	// }
 
 	public Kesoid getKesoid() {
 		for (Weikoid0 weik = next;; weik = weik.next) {
@@ -294,32 +286,8 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 		final Wpt wpt = this;
 		final StringBuilder sb = new StringBuilder();
 		sb.append("<html>");
-		// TODO Zpbrazení tooltipu nutno dořešit
-		// if (wpt.getType() != EKesWptType.CACHE && wpt.getType() != EKesWptType.FINAL_LOCATION) {
-		// sb.append("<i>" + wpt.getName() + ": " + wpt.getNazev() + "</i><br>");
-		// }
-		// sb.append("<b>");
-		// sb.append(wpt.getKesoid().getNazev());
-		// sb.append("</b>");
-		// sb.append("<small>");
-		// sb.append(" - ");
-		// sb.append(sym);
-		// sb.append(" (" + wpt.getKesoid().getIdentifier() + ")");
-		// sb.append("</small>");
-		// sb.append("<br>");
 
 		getKesoid().prispejDoTooltipu(sb, wpt);
-
-		// sb.append("<br>");
-		// sb.append("<br>");
-		// sb.append("<b>");
-		// sb.append(wpt.getNazev());
-		// sb.append("</b>");
-		// sb.append("<small>");
-		// sb.append(" - ");
-		// sb.append(sym);
-		// sb.append(" (" + wpt.getName() + ")");
-		// sb.append("</small>");
 
 		return sb.toString();
 	}

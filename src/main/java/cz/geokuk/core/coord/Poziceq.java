@@ -83,9 +83,4 @@ public class Poziceq {
 		return mouable == null;
 	}
 
-	// public Utm getUtm() {
-	// Mou mou = getPoziceMou();
-	// return mou == null ? null : mou.toUtm();
-	// }
-
 }

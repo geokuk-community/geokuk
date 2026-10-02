@@ -21,29 +21,6 @@ public class PoziceModel extends Model0 implements AfterInjectInit {
 
 	private Poziceq poziceq = new Poziceq();
 
-	// /**
-	// * @param pozice the pozice to set
-	// */
-	// public void setPozice(Mouable mouable) {
-	// if (mouable == null) {
-	// if (poziceq.isNoPosition())
-	// return;
-	// else { // pozice se ruší
-	// poziceq = new Poziceq();
-	// }
-	// } else {
-	// if (poziceq.isNoPosition()) { // pozice nově vzniká
-	// poziceq = new Poziceq(new Pozice(mouable));
-	// } else { // pozice se mění
-	// if (mouable == poziceq.getPozice().toMouable()) return; // úplně stejný objekt jako minule
-	// if (! (mouable instanceof Uchopenec) && !(poziceq.getPozice().toMouable() instanceof Uchopenec) && mouable.getMou().equals(poziceq.getPozice().getMou()))
-	// return; // není to uchopenec, takž žádný konkrétní a přitom se jedná o stejné souřadky
-	// poziceq = new Poziceq(new Pozice(mouable));
-	// }
-	// }
-	// fire(new PoziceChangedEvent(poziceq));
-	// }
-
 	public void clearPozice() {
 		setPozice(null);
 	}

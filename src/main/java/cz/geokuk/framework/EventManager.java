@@ -173,7 +173,7 @@ public class EventManager implements EventFirer {
 			}
 			final Class<?>[] parameterTypes = m.getParameterTypes();
 			if (parameterTypes.length != 1) {
-				return;
+				continue;
 			}
 			register(observer, m, aOnlyInvoke);
 		}

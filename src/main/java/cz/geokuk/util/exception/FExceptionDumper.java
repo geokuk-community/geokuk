@@ -137,9 +137,6 @@ public final class FExceptionDumper {
 		final AExcId excid = dump(new RuntimeException("bbb"), EExceptionSeverity.DISPLAY, "Tak tady neco napíšu\na dva řádky");
 		System.out.println("Dumpovano: " + excid);
 		System.out.println(dump(new RuntimeException("ccc"), EExceptionSeverity.DISPLAY, "Tak tady neco napíšu\na dva řádky"));
-		// for (int i=0; i < 120; i++) {
-		// dump(new RuntimeException("Opakovana"), EExceptionSeverity.DISPLAY, "Tak tady neco napíšu\na dva řádky");
-		// }
 
 		// System.out.p rintln(getDefaultRepository().toString());
 

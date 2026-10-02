@@ -14,13 +14,16 @@ import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.Progressor;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class GoogleEarthRenderSwingWorker extends RendererSwingWorker0 {
 
 	GoogleEarthRenderSwingWorker() {}
 
 	@Override
 	protected RenderResult doInBackground() throws Exception {
-		System.out.println("Ukladam KMZ");
+		log.debug("Ukládám KMZ");
 		final File file = computeFileName();
 		if (!Dlg.prepsatSoubor(file)) {
 			return null;
@@ -49,7 +52,7 @@ public class GoogleEarthRenderSwingWorker extends RendererSwingWorker0 {
 			}
 
 			kmzwrt.finish();
-			System.out.println("Konec rendrovani");
+			log.debug("Konec rendrování");
 			final RenderResult result = new RenderResult();
 			result.file = file;
 			return result;

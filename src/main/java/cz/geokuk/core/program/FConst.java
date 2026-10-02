@@ -1,8 +1,11 @@
 package cz.geokuk.core.program;
 
 import java.io.File;
-
-import com.jcabi.manifests.Manifests;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Collections;
+import java.util.jar.Manifest;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,7 +56,7 @@ public class FConst {
 		String version;
 		boolean iamindevelopmentenvi;
 		try {
-			version = Manifests.read("Geokuk-Version");
+			version = atributManifestu("Geokuk-Version");
 			iamindevelopmentenvi = false;
 		} catch (final IllegalArgumentException e) {
 			version = NOT_VERSION_I_AM_IN_DEVELOP;
@@ -75,4 +78,21 @@ public class FConst {
 		log.info("WEB_PAGE_URL = " + WEB_PAGE_URL);
 	}
 
+
+	/** Atribut z manifestu jaru, který ho má; chybí-li všude, IllegalArgumentException. */
+	public static String atributManifestu(final String jmeno) {
+		try {
+			for (final URL url : Collections.list(FConst.class.getClassLoader().getResources("META-INF/MANIFEST.MF"))) {
+				try (InputStream is = url.openStream()) {
+					final String hodnota = new Manifest(is).getMainAttributes().getValue(jmeno);
+					if (hodnota != null) {
+						return hodnota;
+					}
+				}
+			}
+		} catch (final IOException e) {
+			throw new IllegalArgumentException(jmeno, e);
+		}
+		throw new IllegalArgumentException(jmeno);
+	}
 }

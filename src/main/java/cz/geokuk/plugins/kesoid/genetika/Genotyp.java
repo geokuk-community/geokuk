@@ -8,9 +8,12 @@ import java.util.stream.Collectors;
 
 import cz.geokuk.plugins.kesoid.genetika.Genom.CitacAlel;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Genotyp jako množina alel. Typ je immutable, různé instance mají různou množinu alel.
  */
+@Slf4j
 public class Genotyp implements Indexable {
 
 	private final Druh druh;
@@ -173,7 +176,7 @@ public class Genotyp implements Indexable {
 	private Set<Alela> vymenAlelu(final Alela alela) {
 		if (!druh.hasGen(alela.getGen())) {
 			druh.addGen(alela.getGen());
-			System.err.println("Pri vymene alely " + alela.qualName() + " v genotypu " + this + " bylo zjisteno, ze v hjeho druhu neni gen " + alela.getGen());
+			log.warn("Při výměně alely {} v genotypu {} bylo zjištěno, že v jeho druhu není gen {}", alela.qualName(), this, alela.getGen());
 		}
 		final Set<Alela> alely = getNevychoziAlely(); // stávající alely
 		alely.remove(getAlela(alela.getGen())); // pokud tam byla alela tohoto genu, zahubíme ji

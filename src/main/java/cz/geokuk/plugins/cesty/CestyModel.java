@@ -108,15 +108,6 @@ public class CestyModel extends Model0 {
 
 	private boolean probihaPridavani;
 
-	// public EVylet get(Wpt wpt) {
-	// boolean onIgnoreList = vylet.isOnIgnoreList(wpt.getKesoid());
-	// if (onIgnoreList) return EVylet.NE;
-	// boolean jeVCeste = cestyModel.getCesta().hasWpt(wpt);
-	// if (jeVCeste) return EVylet.ANO;
-	// // Není tam ani tam, tak nevím, kam na výlet
-	// return EVylet.NEVIM;
-	// }
-
 	public void addToVylet(final Mouable mouable) {
 		pridejBodNaMisto(mouable);
 	}
@@ -316,15 +307,6 @@ public class CestyModel extends Model0 {
 	}
 
 	public void presunBod(final Bod bb, Mouable mouable) {
-		// if (mouable instanceof Wpt) {
-		// Wpt wpt = (Wpt) mouable;
-		// wpt.invalidate();
-		// }
-		// if (bb.getMouable() instanceof Wpt) {
-		// Wpt wpt = (Wpt) bb.getMouable();
-		// wpt.invalidate();
-		// }
-		// musime odstranit reference bodi na bod
 		while (mouable instanceof Bod) {
 			final Bod bod = (Bod) mouable;
 			mouable = bod.getMouable();

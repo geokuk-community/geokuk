@@ -9,15 +9,6 @@ public class KaLoc {
 	private final int ksx;
 	private final int ksy;
 
-	public static void main(final String[] args) {
-
-		for (int i = -20; i < 20; i++) {
-
-			System.out.println(i + " " + maskuj(i, 3));
-
-		}
-	}
-
 	/**
 	 * Konstruuje lokaci kachle na základě snalosti souřadnic jihozápadního rohu.
 	 *

@@ -21,10 +21,6 @@ public class MouRect {
 		add(roh1);
 		add(roh2);
 		sstre = new Mou(stred(roh1.xx, roh2.xx), stred(roh1.yy, roh2.yy));
-		// assert roh1.xx == xx1;
-		// assert roh2.xx == xx2;
-		// assert roh1.yy == yy1 : roh1.yy + " " + yy1;
-		// assert roh2.yy == yy2;
 	}
 
 	public void add(final Mou mou) {

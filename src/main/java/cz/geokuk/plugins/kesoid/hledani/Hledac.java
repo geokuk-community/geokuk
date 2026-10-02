@@ -14,10 +14,13 @@ import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.util.lang.FUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class Hledac extends Hledac0<Nalezenec> {
 
 	private class Porovnavac {
@@ -78,7 +81,7 @@ public class Hledac extends Hledac0<Nalezenec> {
 
 	@Override
 	public List<Nalezenec> hledej(final HledaciPodminka0 podm) {
-		System.out.println("Hledy, hledy, hledy: " + kesBag.getKesoidy().size() + " " + podm.getVzorek());
+		log.debug("Hledání v {} kešoidech: {}", kesBag.getKesoidy().size(), podm.getVzorek());
 		final Porovnavac poro = new Porovnavac(podm.getVzorek(), ((HledaciPodminka) podm).isRegularniVyraz());
 		final List<Nalezenec> list = new ArrayList<>();
 		for (final Kesoid kesoid : kesBag.getKesoidy()) {
@@ -106,9 +109,4 @@ public class Hledac extends Hledac0<Nalezenec> {
 		return list;
 	}
 
-	// public static void main(String[] args) {
-	// System.out.println(FUtil.cestinuPryc("Příliš žluťoučký kůň úpěl ďábelské ódy"));
-	// System.out.println(FUtil.cestinuPryc("Tady neni cestina"));
-	// System.out.println(FUtil.cestinuPryc("Tady je čeština"));
-	// }
 }

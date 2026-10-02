@@ -75,8 +75,4 @@ public class KeFile {
 		return "KeFile [fat=" + fat + ", root=" + root + "]";
 	}
 
-	// public static void main(String[] args) {
-	// System.out.println(Paths.get("C:/aa/bb/xx").relativize(Paths.get("D:/aa/bb/cc/dd")));
-	// }
-
 }

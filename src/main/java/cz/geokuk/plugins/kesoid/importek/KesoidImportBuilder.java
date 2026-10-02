@@ -120,17 +120,6 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 		// přesypeme do seznamu
 
-		// FIXME vyřešit jednoduché waypointy
-//		// A všechno, co zbylo jsou obyčejné jednoduché waypointy
-//		for (final ListIterator<GpxWpt> it = list.listIterator(); it.hasNext();) {
-//			final GpxWpt gpxwpt = it.next();
-//			final SimpleWaypoint simpleWaypoint = createSimpleWaypoint(gpxwpt);
-//			resultKesoidsByName.put(gpxwpt.name, simpleWaypoint);
-//			it.remove();
-//		}
-//
-//		progressor.finish();
-
 		//////////////////////////////////////
 		log.debug("Indexuji waypointy: " + wpts.size());
 
@@ -157,11 +146,6 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	@Override
 	public void endTrackSegment() {}
-
-//	@Override
-//	public GpxWpt get(final String aName) {
-//		return gpxwpts.get(aName);
-//	}
 
 	/*
 	 * (non-Javadoc)

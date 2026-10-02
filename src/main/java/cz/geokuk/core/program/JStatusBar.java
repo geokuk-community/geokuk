@@ -82,16 +82,6 @@ public class JStatusBar extends JPanel {
 			return preferredSize;
 		}
 
-		// @Override
-		// public void setText(String s) {
-		// super.setText(s);
-		// //super.setColumns(s.length());
-		// Dimension preferredSize = super.getPreferredSize();
-		// preferredSize.width +=3;
-		// setPreferredSize(preferredSize);
-		// System.out.println(preferredSize);
-		// }
-
 	}
 
 	private static final long serialVersionUID = -6267502844907253041L;
@@ -202,11 +192,6 @@ public class JStatusBar extends JPanel {
 	public void onEvent(final PoziceChangedEvent event) {
 		poziceq = event.poziceq;
 		prepocitejVzdalenostAAzimut();
-		// vzdalenost.setText("");
-		// azimutCislo.setText("");
-		// azimutSmer.setText("");
-		// azimutSmer.setIcon(null);
-		// System.out.println("VELIKOST STAVOVEHO RADKU: " + JStatusBar.this.getSize());
 
 		if (poziceq.isNoPosition()) {
 			// souradnicePozice.setVisible(false);
@@ -216,12 +201,6 @@ public class JStatusBar extends JPanel {
 			// souradnicePozice.setVisible(true);
 		}
 	}
-
-	// public void onEvent(IgnoreListChangedEvent aEvent) {
-	// CestyModel cestyModel = aEvent.getModel();
-	// //vyletAno.setText(cestyModel.get(EVylet.ANO).size()+"");
-	// vyletNe.setText(cestyModel.getPocetIgnorovanychKesoidu()+"");
-	// }
 
 	public void onEvent(final PrekrocenLimitWaypointuVeVyrezuEvent event) {
 		setVarujPrekroceni(event.isPrekrocen());
@@ -337,15 +316,8 @@ public class JStatusBar extends JPanel {
 
 		// add(Box.createHorizontalGlue());
 
-		// add(new JLabel("Meritko:"));
-		// add(meritkoMapy);
-		// meritkoMapy.setToolTipText("Aktuální měřítko zobrazené mapy, čím menší číslo, tím oddálenější mapa.");
-
 		///////////////////////////////
 		final JPanel poctyKesi = createPanel();
-		// poctyKesi.setBorder(BorderFactory.createLoweredBevelBorder());
-		// poctyKesi.setBorder(BorderFactory.createRaisedBevelBorder());
-		// poctyKesi.setBorder(BorderFactory.createEtchedBorder());
 		poctyKesi.add(new JLabel("Vše:"));
 		poctyKesi.add(celkovePoctyVsude);
 		celkovePoctyVsude.setToolTipText("Počet waypointů celkem / počet kešoidů celkem.");

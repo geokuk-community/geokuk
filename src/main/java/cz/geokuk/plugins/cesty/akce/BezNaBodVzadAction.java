@@ -49,8 +49,4 @@ public class BezNaBodVzadAction extends CestyAction0 {
 		super.vyletChanged();
 	}
 
-	// public void onEvent(PoziceChangedEvent event) {
-	// setEnabled(! event.poziceq.isNoPosition());
-	// }
-
 }

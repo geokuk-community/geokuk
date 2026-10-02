@@ -247,21 +247,6 @@ public class JFontChooser extends JComponent {
 			return null;
 		}
 
-		// create the font
-		// // first create the font attributes
-		// HashMap map = new HashMap();
-		// map.put(TextAttribute.BACKGROUND, Color.white);
-		// map.put(TextAttribute.FAMILY, fontName);
-		// map.put(TextAttribute.FOREGROUND, Color.black);
-		// map.put(TextAttribute.SIZE , new Float(size));
-		// map.put(TextAttribute.UNDERLINE, italicCheckBox.isSelected() ? TextAttribute.UNDERLINE_LOW_ONE_PIXEL : TextAttribute.UNDERLINE_LOW_TWO_PIXEL);
-		// map.put(TextAttribute.STRIKETHROUGH, italicCheckBox.isSelected() ? TextAttribute.STRIKETHROUGH_ON : Boolean.FALSE);
-		// map.put(TextAttribute.WEIGHT, boldCheckBox.isSelected() ? TextAttribute.WEIGHT_BOLD : TextAttribute.WEIGHT_REGULAR);
-		// map.put(TextAttribute.POSTURE,
-		// italicCheckBox.isSelected() ? TextAttribute.POSTURE_OBLIQUE : TextAttribute.POSTURE_REGULAR);
-		//
-		// return new Font(map);
-
 		return new Font(fontName, (italicCheckBox.isSelected() ? Font.ITALIC : Font.PLAIN) | (boldCheckBox.isSelected() ? Font.BOLD : Font.PLAIN), sizeInt);
 	}
 
@@ -459,12 +444,6 @@ class FontChooserDialog extends JDialog {
 
 			@Override
 			public void actionPerformed(final ActionEvent e) {
-				// todo make it in 1.3
-				// ActionListener[] listeners
-				// = ((AbstractButton) e.getSource()).getActionListeners();
-				// for (int i = 0; i < listeners.length; i++) {
-				// listeners[i].actionPerformed(e);
-				// }
 			}
 		};
 		final KeyStroke cancelKeyStroke = KeyStroke.getKeyStroke((char) KeyEvent.VK_ESCAPE);

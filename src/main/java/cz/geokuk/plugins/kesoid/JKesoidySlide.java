@@ -28,6 +28,9 @@ import cz.geokuk.util.index2d.Indexator;
 import cz.geokuk.util.pocitadla.PocitadloNula;
 import cz.geokuk.util.process.BrowserOpener;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRegistrationInit {
 
 	private static class PaintovaciVlakno extends Thread {
@@ -105,10 +108,6 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 			});
 		}
 
-		// @Override
-		// public void finalize() {
-		// System.out.println("Paintovací vlákno fanalizováno");
-		// }
 	}
 
 	private static class WptPaintRequest {
@@ -250,9 +249,6 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	public void inject(final KesoidModel kesoidModel) {
 		this.kesoidModel = kesoidModel;
 	}
-	// public void inject(VyrezModel vyrezModel) {
-	// this.vyrezModel = vyrezModel;
-	// }
 
 	public void inject(final PoziceModel poziceModel) {
 		this.poziceModel = poziceModel;
@@ -440,10 +436,6 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private Genotyp computeGenotyp(final Wpt wpt) {
 		Genotyp g = wpt.getGenotyp();
 		final Genom genom = g.getGenom();
-		// switch (cestyModel.get(wpt.getKesoid())) {
-		// // case ANO: g = g.with(ikonBag.getGenom().ALELA_lovime); break;
-		// case NE: g = g.with(ikonBag.getGenom().ALELA_ignoru); break;
-		// }
 		switch (vyletModel.get(wpt.getKesoid())) {
 		case ANO:
 			g = g.with(genom.ALELA_lovime);
@@ -475,7 +467,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		final Insets bii = ikonBag.getSada().getBigiestIconInsets();
 		Rectangle rect = gg.getClipBounds();
 		if (vykreslovatOkamtiteAleDlouho) {
-			System.out.println("Omezeni: " + rect);
+			log.debug("Omezení: {}", rect);
 		}
 		if (rect == null) {
 			rect = new Rectangle(getSize());
@@ -579,9 +571,6 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		final Imagant imagant = sklivec.imaganti.get(i);
 		if (imagant == null) {
 			return; // neni co vykreslovat
-			// if (vykreslovatOkamtiteAleDlouho) {
-			// System.out.println("Malujem kesika " + x + " " + y + " --- " +imagant.getImage().getWidth() + " " + imagant.getImage().getHeight());
-			// }
 		}
 
 		// getScale() vrací vždy 1, ale tento kód zde chceme, protože se někdy zřejmě hodil
@@ -616,11 +605,6 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		repaint();
 	}
 
-	// @Override
-	// public void finalize() {
-	// System.out.println("Kesoidy finalizovány");
-	// }
-
 	private void repaintKes(final Kesoid kes) {
 		if (kes == null) {
 			return;
@@ -633,22 +617,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private void repaintWpt(final Wpt wpt) {
 		wpt.invalidate();
 
-		// Point p = coord.transform(wpt.getWgs().toMou());
-		// Rectangle rect1 = new Rectangle(p.x - POLOMER_KESE, p.y - POLOMER_KESE,
-		// POLOMER_KESE * 2, POLOMER_KESE * 2);
-
 		frontaWaypointu.add(new WptPaintRequest(wpt, null));
-		// Repaintanger repaintanger = new Repaintanger();
-		// repaintanger.includeInsetsOnly(wpt);
-		// repaintanger.include(wpt.getWgs().toMou());
-		//
-		// Rectangle rect2 = repaintanger.computeRectangle(coord);
-		// // new Rectangle(p.x - POLOMER_KESE, p.y - POLOMER_KESE,
-		// // POLOMER_KESE * 2, POLOMER_KESE * 2);
-		// // repaintovaneCtverce .add(rect);
-		// // System.out.println("REKTANGLE-1: " + rect1 + " -- " + p);
-		// // System.out.println("REKTANGLE-2: " + rect2);
-		// repaint(rect2);
 	}
 
 	private void zaplanujNaplneniSklivce(final Wpt wpt, final Mou mou) {

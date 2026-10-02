@@ -14,10 +14,6 @@ public class Ikonizer {
 
 	// private static final Icon[] smery = {smer("N"), smer("NE"), smer("E"), smer("SE"), smer("S"), smer("SW"), smer("W"), smer("NW")};
 
-	// private static Icon smer(String smer) {
-	// return ImageLoader.seekResIcon("x16/smery/" + smer + ".gif");
-	// }
-
 	public static Icon findSmerIcon(final double smer) {
 		final BufferedImage sm = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = (Graphics2D) sm.getGraphics();

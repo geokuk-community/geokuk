@@ -60,26 +60,6 @@ public class Malovadlo {
 
 			paintBody();
 
-			// // průsečíková kolečka
-			// for (Usek usek : cesta.getUseky()) {
-			// {
-			// g.setColor(Color.BLUE);
-			// Mou nejblizsiBod = usek.getNejblizsiBodKolmoKUsecce(moucur);
-			// if (nejblizsiBod != null) {
-			// Point p = getSoord().transform(nejblizsiBod);
-			// fillCircle(g, p, 4);
-			// }
-			// }
-			// {
-			// g.setColor(Color.PINK);
-			// Mou nejblizsiBod = usek.getNejblizsiBodKPrimce(moucur);
-			// if (nejblizsiBod != null) {
-			// Point p = getSoord().transform(nejblizsiBod);
-			// fillCircle(g, p, 2);
-			// }
-			// }
-			// }
-
 		}
 
 		private void paintBody() {
@@ -114,11 +94,6 @@ public class Malovadlo {
 						g.setColor(barvaCestyZaKurzorem);
 					}
 				} else {}
-				// boolean blizkyBod = bod.jeDoKvadratuVzdalenosti(moucur,
-				// kvadratMaximalniVzdalenosti);
-				// if (blizkyBod) {
-				// g.setColor(Color.ORANGE);
-				// }
 				if (jeCurta && bod != cilovyBodyKruhoveCesty && !bod.isWpt()) {
 					final Graphics2D gg = (Graphics2D) g.create();
 					gg.translate(p.x, p.y);
@@ -135,28 +110,10 @@ public class Malovadlo {
 					gg.setColor(FBarvy.ZVYRAZNOVAC_BLIZKEHO_BOUSKU);
 					gg.translate(p.x, p.y);
 					natocVeSmeru(gg, bod);
-					// if (bod.isWpt()) {
-					// // gg.drawLine(- 7, - 7, + 70, + 70);
-					// // gg.drawLine( + 7, - 7, - 7, + 7);
-					// } else {
-					// //gg.fillRect(p.x - 7, p.y - 7, 14, 14);
-					// }
 					gg.fillPolygon(bodovaSipecka);
 				} else {}
 
 			}
-			// zvýrazňování
-			// if (bod == nejblizsi) {
-			// g.setColor(Color.BLACK);
-			// g.setStroke(new BasicStroke(4));
-			// g.drawRect(p.x - 15, p.y - 15, 30, 30);
-			// }
-			// if (bod == usbodKamNejlepeVlozit) {
-			// g.setColor(Color.WHITE);
-			// g.setStroke(new BasicStroke(4));
-			// g.drawRect(p.x - 18, p.y - 18, 36, 36);
-			// }
-			// Vykreslení přidáváného bodu pře CTRL
 		}
 
 		private void paintKoncoveBody() {
@@ -189,9 +146,6 @@ public class Malovadlo {
 		}
 
 		private void paintUseky() {
-			// Bousek0 usbodKamNejlepeVlozit =
-			// cesta.locateBousekKamNejlepeVlozit(moucur);
-			// Bousek0 nejblizsi = cesta.locateNejblizsi(moucur);
 
 			// Vykreslování úseků této cesty
 			g.setColor(barvaCestyPredKurzorem);
@@ -237,23 +191,8 @@ public class Malovadlo {
 					// Hlavní vykreslování úseku
 					g.drawLine(p1.x, p1.y, p2.x, p2.y);
 				}
-				// if (usek == nejblizsi) {
-				// g.setColor(Color.BLACK);
-				// g.setStroke(new BasicStroke(1));
-				// g.drawLine(p1.x, p1.y, p2.x, p2.y);
-				// }
-				// if (usek == usbodKamNejlepeVlozit) {
-				// g.setColor(Color.WHITE);
-				// g.setStroke(new BasicStroke(2));
-				// g.drawLine(p1.x, p1.y, p2.x, p2.y);
-				// }
 			}
 		}
-
-		// private void fillCircle(Graphics2D g, Point p, int r) {
-		// int r2 = 2 * r;
-		// g.fillOval(p.x - r, p.y - r, r2, r2);
-		// }
 
 	} // MalovadloCesty
 

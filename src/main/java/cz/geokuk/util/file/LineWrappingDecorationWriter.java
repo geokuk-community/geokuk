@@ -20,7 +20,6 @@ public class LineWrappingDecorationWriter extends LineDecorationWriter {
 	private String iSuffix;
 
 	public static void main(final String[] args) {
-		System.out.println("JEDU");
 		final LineWrappingDecorationWriter wrt = new LineWrappingDecorationWriter(new OutputStreamWriter(System.out));
 		wrt.setPrefix("[[[[[[[[");
 		wrt.setSuffix("]]]]]]]");

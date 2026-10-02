@@ -24,10 +24,13 @@ import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.KeFile;
 import lombok.Getter;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class KesoidModel extends Model0 {
 
 	// FIXME tady nemohou být takovéto konstant, mohou se změnit
@@ -266,7 +269,7 @@ public class KesoidModel extends Model0 {
 	public void setNacitatSoubor(final KeFile jmenoZdroje, final boolean nacitat) {
 		// TODO : speed up
 		final Collection<File> changedFiles = Collections2.transform(vsechny.getInformaceOZdrojich().getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
-		System.out.println((nacitat ? "++++" : "----") + "XNASTAVENI " + changedFiles);
+		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
 		final boolean zmena = nacitat ? blokovaneZdroje.removeAll(changedFiles) : blokovaneZdroje.addAll(changedFiles);
 		if (zmena) {
 			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);

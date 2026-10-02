@@ -15,10 +15,13 @@ import javax.swing.*;
 import cz.geokuk.framework.JMyDialog0;
 import cz.geokuk.util.pocitadla.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 
 	private static final long serialVersionUID = 5761908785083097975L;
@@ -66,14 +69,20 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 	}
 
 	public JServiceFrame() {
-		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		initComponents();
+		setTitle("Servis");
+		init();
 		Pocitadlo.callback = this;
 		registerEvents();
 		// naplnit hned; u nečinné mapy se žádné počítadlo nemusí změnit a okno by zůstalo prázdné
 		onChange();
-
-		// TODO při zavírání JServiceFramese musí zlikvidovat také odkaz v počítadlech
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(final WindowEvent e) {
+				if (Pocitadlo.callback == JServiceFrame.this) {
+					Pocitadlo.callback = null;
+				}
+			}
+		});
 	}
 
 	@Override
@@ -131,13 +140,13 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 
 			@Override
 			public void actionPerformed(final ActionEvent e) {
-				System.out.println("Garbage collector spuštěn");
+				log.debug("Garbage collector spuštěn");
 				System.gc();
 				final long pouzitaPamet = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 				final long narustPameti = pouzitaPamet - minulePouzitaPamet;
 				minulePouzitaPamet = pouzitaPamet;
 				jMemoryPoGc.setText(pouzitaPamet / 1000 + " KiB  |  rozdil=" + narustPameti / 1000 + " KiB");
-				System.out.println("Garbage collector ukončen");
+				log.debug("Garbage collector ukončen");
 			}
 		});
 		return jGcPanel;

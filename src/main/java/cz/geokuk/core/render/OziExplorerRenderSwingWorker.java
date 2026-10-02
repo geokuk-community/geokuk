@@ -13,6 +13,9 @@ import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.Dlg;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 
 	private final EWhatRender whatRender;
@@ -57,7 +60,7 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 			final BufferedImage image = rendrovadlo.rendruj(p, progressor);
 			// renderModel.vypisChybySouradnic(cocox.getPixluNaMetr());
 
-			System.out.printf("Zapis obrazku [%d,%d] do souboru \"%s\"%n", image.getWidth(), image.getHeight(), imagePathName);
+			log.debug("Zápis obrázku [{},{}] do souboru \"{}\"", image.getWidth(), image.getHeight(), imagePathName);
 			ImageIO.write(image, imageType.getType(), imagePathName);
 
 			File vytvorenySoubor;
@@ -73,11 +76,11 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 			} else {
 				vytvorenySoubor = imagePathName;
 			}
-			System.out.println("Konec rendrovani");
+			log.debug("Konec rendrování");
 
 			final RenderResult result = new RenderResult();
 			result.file = vytvorenySoubor;
-			System.out.println("Konecc OZI rendrování");
+			log.debug("Konec OZI rendrování");
 			return result;
 		} catch (final Exception e) {
 			try {

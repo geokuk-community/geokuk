@@ -168,12 +168,6 @@ public class JKesDetail extends JKesoidDetail0 {
 		box4.add(jFavorit);
 		hlav.add(box4);
 
-		// Box box5 = Box.createHorizontalBox();
-		//
-		// box5.add(Box.createGlue());
-		// box5.add(zobrazHint);
-		// hlav.add(box5);
-
 		zobrazHint.addActionListener(e -> zobrazHint());
 	}
 

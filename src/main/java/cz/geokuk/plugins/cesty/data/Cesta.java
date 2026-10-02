@@ -168,8 +168,6 @@ public class Cesta implements Iterable<Bousek0> {
 	}
 
 	public int getPocetWaypointu() {
-		// System.out.println("Volá se getPocetWaypointu");
-		// new Throwable().printStackTrace();
 		// TODO-vylet Optimalizovat, volá se často.
 		int sum = 0;
 		for (final Bod bod : getBody()) {

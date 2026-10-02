@@ -160,10 +160,6 @@ public class IconDefNacitac {
 	}
 
 	private void otestujAVydefinujSkutecnyObrazek(final ImageProvider imageProvider) throws IOException {
-		// @SuppressWarnings("unused") // jen pro kontrolu
-		// BufferedImage bi = ImageIO.read(idp.url);
-		// idp.width = bi.getWidth();
-		// idp.height = bi.getHeight();
 		idp.properties = new Properties();
 		idp.vykreslovac = new DefaultVykreslovac(imageProvider);
 		naplnVykreslovac(idp.vykreslovac);

@@ -29,10 +29,6 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 	@Override
 	public void initAfterInject() {
 		factory.init(meritko);
-		// for (Component comp : getComponents()) {
-		// factory.init(comp);
-		// comp.setMaximumSize(new Dimension(50, 50));
-		// }
 	}
 
 	@BeanSubtype("Meritkovnik")
@@ -44,9 +40,6 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 	public void render(final Graphics gg) throws InterruptedException {
 		// paint(g);
 		final Graphics2D g = (Graphics2D) gg.create();
-		// g.translate(0, 500);
-		// meritko.setMaximalniSirkaMeritka(getWidth() * 3 / 4);
-		// meritko.setPixluNaMetr(getSoord().getPixluNaMetr());
 		final Coord soord = getSoord();
 		meritko.setMaximalniSirkaMeritka(soord.getWidth() * 3 / 4);
 		meritko.setPixluNaMetr(soord.getPixluNaMetr());
@@ -78,11 +71,6 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		meritko = new JMeritko();
 		meritko.setBorder(BorderFactory.createEmptyBorder(0, 0, 25, 0));
 		add(meritko, BorderLayout.SOUTH);
-		// //add(new JMeritko(), BorderLayout.SOUTH);
-		// add(new JMeritko(), BorderLayout.WEST);
-		// add(new JMeritko(), BorderLayout.EAST);
-		// add(new JMeritko(), BorderLayout.NORTH);
-		// add(new JMeritko());
 
 	}
 

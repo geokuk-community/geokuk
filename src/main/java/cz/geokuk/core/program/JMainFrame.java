@@ -72,14 +72,6 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		final JGeokukToolbar jGeokukToolbar = factory.init(new JGeokukToolbar());
 		menux = factory.init(new Menu(this, jGeokukToolbar));
 
-		// Settings.prefbag = new PreferencableBag(new Runnable() {
-		// @Override
-		// public void run() {
-		// detailCoord.setMoustred(coord.getMoustred()); // iniciální nastavení náhledu na střed
-		// }
-		// });
-		// Nahraje hodnoty preferencí a také již posílá eventy
-		// Settings.loadCurrentPreferences();
 		menux.makeMenu();
 
 		final JComponent srohama = new JSRohamaPrekryvnik();
@@ -224,22 +216,6 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 	}
 
 	public void setFullScreen(final boolean fs) {
-		// JMenuBar menubar = getJMenuBar();
-		// if (fs) {
-		// menubar.setVisible(false);
-		// menubar.setPreferredSize(new Dimension(0, 0));
-		// menubar.setVisible(true);
-		// statusbar.setVisible(false);
-		// toolBar.setVisible(false);
-		// //setUndecorated(true);
-		// } else {
-		// menubar.setVisible(false);
-		// menubar.setPreferredSize(null);
-		// menubar.setVisible(true);
-		// statusbar.setVisible(true);
-		// toolBar.setVisible(true);
-		// //setUndecorated(false);
-		// }
 
 	}
 

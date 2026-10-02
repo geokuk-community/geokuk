@@ -23,6 +23,9 @@ import cz.geokuk.plugins.refbody.ReferencniBodSeZmenilEvent;
 import cz.geokuk.util.gui.*;
 import cz.geokuk.util.lang.FUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterEventReceiverRegistrationInit {
 
 	private static final long serialVersionUID = 7180968190465321695L;
@@ -259,12 +262,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		final Box box = Box.createVerticalBox();
 		add(box);
 
-		// jUvod = new JTextPane();
-		// jUvod.setContentType("text/html");
-		// jUvod.setText("Tady bude kecání");
-		// jUvod.setPreferredSize(new Dimension(500, 250));
-		// jUvod.setAlignmentX(CENTER_ALIGNMENT);
-
 		jSrovnatDoSeveru = new JCheckBox();
 		jSrovnatDoSeveru.setText("Srovnat do severu");
 		jNastaveniAktualnihoMeritkaButton = new JButton("čudl bude něco umět");
@@ -331,9 +328,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		box.add(jVystup);
 
 		add(box);
-		// for (Component comp : getComponents()) {
-		// ((JComponent)comp).setAlignmentX(CENTER_ALIGNMENT);
-		// }
 
 	}
 
@@ -565,14 +559,14 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		jNastaveniAktualnihoMeritkaButton.addActionListener(e -> renderModel.uschovejAktualniMeritko());
 
 		jWhatRenderRadioPanel.getSelectionModel().addListener(event -> {
-			System.out.println("Vybrano: " + event.getSelected());
+			log.debug("Vybráno: {}", event.getSelected());
 			final RenderSettings ss = renderModel.getRenderSettings().copy();
 			ss.setWhatRender(event.getSelected());
 			renderModel.setRenderSettings(ss);
 		});
 
 		jImgTypeRadioPanel.getSelectionModel().addListener(event -> {
-			System.out.println("Vybrano: " + event.getSelected());
+			log.debug("Vybráno: {}", event.getSelected());
 			final RenderSettings ss = renderModel.getRenderSettings().copy();
 			ss.setImageType(event.getSelected());
 			renderModel.setRenderSettings(ss);
@@ -580,8 +574,8 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 
 		jKmzFolderNazevCombo.addListener(patterned -> {
 			final RenderSettings rs = renderModel.getRenderSettings();
-			System.out.println("pattern 1: " + rs.getKmzFolder());
-			System.out.println("pattern 2: " + patterned);
+			log.debug("pattern 1: {}", rs.getKmzFolder());
+			log.debug("pattern 2: {}", patterned);
 			rs.setKmzFolder(patterned);
 			renderModel.setRenderSettings(rs);
 		});
@@ -614,15 +608,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 			settings.setSrovnatDoSeveru(jSrovnatDoSeveru.isSelected());
 			renderModel.setRenderSettings(settings);
 		});
-
-		// jKmzFolderDescription.addChangeListener(new ChangeListener() {
-		// @Override
-		// public void stateChanged(ChangeEvent e) {
-		// RenderSettings settings = renderModel.getRenderSettings();
-		// settings.setSrovnatDoSeveru(jSrovnatDoSeveru.isSelected());
-		// renderModel.setRenderSettings(settings);
-		// }
-		// });
 
 		jKmzDrawOrder.addChangeListener(e -> {
 			final RenderSettings settings = renderModel.getRenderSettings();

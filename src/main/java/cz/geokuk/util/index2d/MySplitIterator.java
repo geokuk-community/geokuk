@@ -30,7 +30,7 @@ public class MySplitIterator<T> implements Spliterator<Sheet<T>> {
 	@Override
 	public Spliterator<Sheet<T>> trySplit() {
 		if (advancnuto) {
-			System.err.println("Nepodporujeme trySpli, když se advanclo");
+			log.warn("Nepodporujeme trySplit, když se advanclo");
 			return null;
 		}
 		final Splitenec<T> splitenec = node.trySplit(0);
@@ -39,14 +39,12 @@ public class MySplitIterator<T> implements Spliterator<Sheet<T>> {
 			return null; // vlastně jsme nesplitli
 		}
 		if (log.isDebugEnabled()) {
-			System.out.println("------------((-------------------");
-			System.out.println("SPLITNUTO: " + splitenec.nahrazenec.count + "|" + splitenec.odriznuto.count);
+			log.debug("SPLITNUTO: {}|{}", splitenec.nahrazenec.count, splitenec.odriznuto.count);
 			if (log.isTraceEnabled()) {
 				node.vypis("node", 1);
 				splitenec.odriznuto.vypis("odriznuto", 1);
 				splitenec.nahrazenec.vypis("nahrazenec", 1);
 			}
-			System.out.println("------------))-------------------");
 		}
 
 		node = splitenec.nahrazenec;

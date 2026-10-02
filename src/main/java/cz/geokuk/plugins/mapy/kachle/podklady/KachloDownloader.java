@@ -86,9 +86,6 @@ public class KachloDownloader {
 
 	public ImageWithData downloadImage(final URL url, final Map<String, String> hlavicky) throws IOException {
 		log.debug("Loading kachle from URL: \"{}\"", url);
-		// if (Math.random() > 0.5 && url.toString().contains("hybrid")) {
-		// throw new IOException("Nasimulovaná chyba hybrid");
-		// }
 
 		HttpURLConnection conn = otevri(url, hlavicky);
 		int kod = conn.getResponseCode();
@@ -119,9 +116,6 @@ public class KachloDownloader {
 		final ImageWithData imda = new ImageWithData(img, dhis.getData());
 		pocitDownloadleDlazdice.inc();
 		log.debug("Loaded {} bytes", imda.getData().length);
-//		if (Math.random() > 0.9) {
-//			throw new RuntimeException("Nepovedlo se");
-//		}
 
 		return imda;
 

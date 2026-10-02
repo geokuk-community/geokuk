@@ -44,7 +44,7 @@ public class GeogetZamcenaDatabazeTest {
 		zamceno.await();
 		final List<String> nactene = new ArrayList<>();
 		try {
-			new GeogetLoader().nacti(db, new SbiraciBuilder(nactene), null, new ProgressModel());
+			new GeogetLoader().nacti(db, new SbiraciBuilder(nactene), null, progress());
 			Assert.assertEquals("načte se stav po zápisu", Arrays.asList("GC00001", "GC00002"), nactene);
 		} finally {
 			zapis.get();
@@ -87,5 +87,11 @@ public class GeogetZamcenaDatabazeTest {
 
 		@Override
 		public void setTrackName(final String aTrackName) {}
+	}
+
+	private static ProgressModel progress() {
+		final ProgressModel progress = new ProgressModel();
+		progress.inject(udalost -> {});
+		return progress;
 	}
 }

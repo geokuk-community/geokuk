@@ -43,6 +43,10 @@
   překreslovanou oblast a kratší než pixel se vynechají a body vybrané
   trasy těsně u sebe mají jednu značku.
 - Kreslení obsazenosti nezdržuje zjišťování typu waypointu.
+- Servisní okno má titulek, tlačítka Zavřít a Nápověda, zavírá se
+  klávesou Esc a otevírá se uprostřed hlavního okna.
+- Dialog Nastavení popisků se vejde na obrazovku: barva písma a podkladu
+  jsou na kartách a pole pro vzorky popisků jsou dost široká.
 
 ## 6.1.0
 

@@ -9,6 +9,9 @@ import javax.swing.filechooser.FileFilter;
 
 import cz.geokuk.framework.Dlg;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class OtevriAction extends SouboeCestaAction0 {
 
 	private class GpxFilter extends FileFilter {
@@ -62,7 +65,7 @@ public class OtevriAction extends SouboeCestaAction0 {
 				Dlg.error("Soubor \"" + selectedFile + "\" nemá příponu GPX!");
 			} else { // je to dobré, otvíráme
 				cestyModel.otevri(selectedFile);
-				System.out.println("Nactena cesta z: " + selectedFile);
+				log.debug("Načtena cesta z: {}", selectedFile);
 			}
 		}
 	}

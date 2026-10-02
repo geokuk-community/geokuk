@@ -3,6 +3,8 @@
  */
 package cz.geokuk.util.exception;
 
+import java.awt.GraphicsEnvironment;
+
 import javax.swing.SwingUtilities;
 
 /**
@@ -18,6 +20,9 @@ public class FError {
 	}
 
 	public static void report(final String text, final AExcId excid) {
+		if (GraphicsEnvironment.isHeadless()) {
+			return; // bez displeje zůstane jen výpis výjimky, který už je uložený
+		}
 		SwingUtilities.invokeLater(() -> {
 			if (jErrorDialog == null) {
 				jErrorDialog = new JErrorDialog();

@@ -30,9 +30,6 @@ public class JIconCheckBox extends JCheckBox {
 			final int iconHeight = icon.getIconHeight();
 			g.drawRect(x - 4, y - 4, iconWidth - 1 + 8, iconHeight - 1 + 8);
 			g.setColor(Color.RED);
-			// int width2 = c.getWidth()-1;
-			// int height2 = c.getHeight()-1;
-			// g.drawRect(0, 0, width2, height2);
 		}
 
 	}

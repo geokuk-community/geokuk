@@ -7,6 +7,9 @@ import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.util.file.KeyNode;
 import cz.geokuk.util.file.LamUrl;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class IkonNacitacSada {
 
 	private static final String SKLA_TXT = "skla.txt";
@@ -66,7 +69,7 @@ public class IkonNacitacSada {
 	}
 
 	private void error(final String errstr) {
-		System.err.println(errstr);
+		log.warn(errstr);
 	}
 
 	/**

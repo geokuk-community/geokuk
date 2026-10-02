@@ -157,9 +157,6 @@ public class JPrehledSouboru extends JPanel {
 
 		final Box ulobox = Box.createHorizontalBox();
 		final JButton ulozit = new JButton("Uložit");
-		// ulozit.setAlignmentX(CENTER_ALIGNMENT);
-		// JLabel ulozlabel = new JLabel("Po uložení změn v souborech bude program ukončen");
-		// ulozlabel.setForeground(Color.RED);
 
 		// ulobox.add(ulozlabel);
 		ulobox.add(Box.createHorizontalGlue());

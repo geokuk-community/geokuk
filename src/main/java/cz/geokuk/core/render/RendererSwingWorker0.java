@@ -54,8 +54,4 @@ public abstract class RendererSwingWorker0 extends MySwingWorker0<RenderResult, 
 		renderModel.rendrovaniSkoncilo(renderResult);
 	}
 
-	// protected Progressor createProgressor(int pocetKachli) {
-	//// return progressModel.start(pocetKachli * Rendrovadlo.KOLIK_PROGRESUJEME_NA_KACHLICH, "Rendrování");
-	// return null;
-	// }
 }

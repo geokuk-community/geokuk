@@ -50,26 +50,12 @@ public class JRenderSlide extends JSingleSlide0 {
 	@Override
 	protected void paintComponent(final Graphics aG) {
 		final Graphics2D g = (Graphics2D) aG.create();
-		// paintRožek(g, renderModel.SZ);
-		// paintRožek(g, renderModel.SV);
-		// paintRožek(g, renderModel.JZ);
-		// paintRožek(g, renderModel.JV);
 		final int a = getWidth();
 		final int b = getHeight();
-
-		// Nakreslíme kříž vodorovný středový
-		// g.drawLine(0, b/2, a, b/2);
-		// g.drawLine(a/2, 0, a/2, b);
-		// Vypíšeme o jaký se jedná úhel
-		// g.drawString((uhel / Math.PI * 180 ) + "", a/2, b/2);
 
 		// if (! probihaNastavovaniRendrovani) return;
 		final double uhel = -renderModel.getOKolikNatacet();
 		// Dvoj d = renderModel.spoctiOrezavaciOblednik(a, b);
-
-		// // Vykreslíme bez transformací
-		// g.setColor(Color.BLUE);
-		// draw(g, d);
 
 		g.drawLine(0, 0, getWidth(), getHeight());
 		g.drawLine(0, getHeight(), getWidth(), 0);
@@ -109,24 +95,6 @@ public class JRenderSlide extends JSingleSlide0 {
 			drawKalibody(aG);
 		}
 	}
-
-	// /**
-	// * @param g
-	// * @param sZ
-	// */
-	// private void paintRožek(Graphics2D gg, Mou mou) {
-	// if (mou == null) return;
-	// Graphics2D g = (Graphics2D) gg.create();
-	// g.setStroke(new BasicStroke(3));
-	// g.setColor(Color.GREEN);
-	//
-	// Point p = getSoord().transform(mou);
-	// // g.translate(p.x, p.y);
-	// g.drawLine(p.x-20, p.y-20, p.x+20, p.y+20);
-	// g.drawLine(p.x-20, p.y+20, p.x+20, p.y-20);
-	// //g.fillOval(p.x-20, p.y-20, 40, 40);
-	//
-	// }
 
 	/**
 	 * @param g
@@ -173,9 +141,5 @@ public class JRenderSlide extends JSingleSlide0 {
 		}
 
 	}
-
-	// public void inject(RenderModel stahovaciModel) {
-	// this.stahovaciModel = stahovaciModel;
-	// }
 
 }

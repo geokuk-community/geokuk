@@ -6,12 +6,15 @@ import java.util.Map;
 import cz.geokuk.plugins.kesoid.genetika.Alela;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Převod legacy jmen alel na kvalifikvoaná jména jménem genu.
  * Do tohot seznamu se nic nebude přidávat, je jen z důvodu zpětné kompatibility.
  * @author Martin
  *
  */
+@Slf4j
 public class LegacyAlelaNames {
 
 	private static Map<String, String> prekladMap = new HashMap<>();
@@ -113,7 +116,7 @@ public class LegacyAlelaNames {
 
 	public static String preloz(final String nazev) {
 		if (nazev.contains("-")) {
-			System.out.println("Uz prellozeno: " + nazev);
+			log.debug("Už přeloženo: {}", nazev);
 			return nazev;
 		} else {
 			final String novy = prekladMap.get(nazev);
@@ -136,7 +139,7 @@ public class LegacyAlelaNames {
 
 		public X alela(final String novyNazevAlely, final String staryNazev) {
 			prekladMap.put(staryNazev, nazevGenu + "-" + novyNazevAlely);
-			System.out.println("Preklad: " + staryNazev + " ==> " + preloz(staryNazev));
+			log.debug("Překlad: {} ==> {}", staryNazev, preloz(staryNazev));
 			return this;
 		}
 

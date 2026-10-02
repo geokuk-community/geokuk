@@ -19,12 +19,5 @@ public class RenderParams {
 	RenderParams() {
 
 	}
-	//
-	// String computePureFileName() {
-	// Mou moustred = coord.getMoustred();
-	// int moumer = coord.getMoumer();
-	// String result = String.format(Locale.ENGLISH, "n%7fe%7f%d", moustred.toWgs().lat, moustred.toWgs().lon, moumer).replace(".", "");
-	// return result;
-	// }
 
 }

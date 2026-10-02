@@ -14,6 +14,9 @@ import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
 import cz.geokuk.util.pocitadla.PocitadloMalo;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JKachle extends JComponent {
 
 	private static final boolean ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE = false;
@@ -115,7 +118,7 @@ public class JKachle extends JComponent {
 				kanceler.cancel();
 			}
 		} catch (final CancellationException e) {
-			System.out.println("kanclovací výjimka letěla");
+			log.debug("Stahování dlaždice zrušeno");
 		}
 	}
 
@@ -135,7 +138,7 @@ public class JKachle extends JComponent {
 		final KaOneReq req = new KaOneReq(ka, kastat -> {
 
 			if (priorita == Priority.STAHOVANI) {
-				System.out.println("ziskanObsah: " + ka + (kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage()));
+				log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
 			}
 			synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
 				if (kastat.getImg() != null) {
@@ -179,10 +182,6 @@ public class JKachle extends JComponent {
 		super.paintComponent(aG);
 		// if (true) return;
 		final Graphics2D g = (Graphics2D) aG.create();
-		// if (isVykreslovatOkamzite()) {
-		// // Pokud rendruji do KMZ č souboru, a ne naobrazovku tak mám možná otočeno a nestojím o žádné uříznuití.
-		// g.setClip(null);
-		// }
 		if (image != null) {
 			g.drawImage(image, 0, 0, null);
 		}

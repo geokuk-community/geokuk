@@ -56,9 +56,6 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 			// add(new ZoomKesAction(kesoid));
 			if (wgs != null) {
 				final JMenuItem item = new JMenuItem(factory.init(new CenterPoziceAction()));
-				// item.setText("Centruj");
-				// TODO Dát ikonu středování
-				// item.setIcon(null);
 
 				add(item);
 			}
@@ -105,9 +102,6 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 	 */
 	@Override
 	public void mouseClicked(final MouseEvent e, final MouseGestureContext ctx) {
-		// System.out.println("UDALOST " + e);
-		// kesky.mouseClicked(e);
-		// if (e.isConsumed()) return;
 		if (SwingUtilities.isRightMouseButton(e)) {
 			// Board.eveman.fire(new PoziceChangedEvent(new Pozice(), false));
 			poziceModel.clearPozice();
