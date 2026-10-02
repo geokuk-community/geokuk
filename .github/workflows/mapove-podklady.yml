@@ -31,7 +31,7 @@ jobs:
       - name: Stažení dlaždic ze všech podkladů
         id: test
         continue-on-error: true
-        run: ./mvnw -B test -Dtest=MapovePodkladyIT -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -B test -Dtest=MapovePodkladyIT
 
       - name: Issue s výsledkem
         run: |
