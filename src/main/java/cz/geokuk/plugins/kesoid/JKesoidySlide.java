@@ -140,6 +140,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	static final int ZOOM_POPISKU = 8;
 
 	private final Tecky tecky = new Tecky();
+	private EZobrazeniKesi zobrazeni = EZobrazeniKesi.AUTOMATICKY;
 	private int prumer;
 	private int moumerPrumeru;
 	private Boolean oznamenePrekroceni;
@@ -365,6 +366,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		repaintKes(stara);
 	}
 
+	public void onEvent(final ZobrazeniKesiEvent event) {
+		zobrazeni = event.getZobrazeni();
+		repaint();
+	}
+
 	public void onEvent(final FenotypPreferencesChangedEvent aEvent) {
 		iJmenaAlel = aEvent.getJmenaNefenotypovanychAlel();
 		repaintIfVse();
@@ -434,7 +440,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 			return;
 		}
 		final int pocet = indexator.count(getSoord().getBoundingRect());
-		final boolean husteTecky = getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE;
+		final boolean husteTecky = zobrazeni == EZobrazeniKesi.TECKY
+				|| zobrazeni != EZobrazeniKesi.IKONY && (getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE);
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
 		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
 		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {

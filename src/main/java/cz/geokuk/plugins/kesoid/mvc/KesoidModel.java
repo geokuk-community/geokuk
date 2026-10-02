@@ -55,6 +55,7 @@ public class KesoidModel extends Model0 {
 	private KesFilteringSwingWorker filteringSwingWorker;
 	private ProgressModel progressModel;
 	private Boolean onoff;
+	private EZobrazeniKesi zobrazeniKesi;
 
 	@Getter
 	private KesoidPluginManager kesopidPluginManager;
@@ -286,6 +287,15 @@ public class KesoidModel extends Model0 {
 		fire(new KesoidOnoffEvent(onoff));
 	}
 
+	public void setZobrazeniKesi(final EZobrazeniKesi zobrazeniKesi) {
+		if (this.zobrazeniKesi == zobrazeniKesi) {
+			return;
+		}
+		this.zobrazeniKesi = zobrazeniKesi;
+		currPrefe().node(FPref.KESOID_node).putEnum(FPref.ZOBRAZENI_KESI_value, zobrazeniKesi);
+		fire(new ZobrazeniKesiEvent(zobrazeniKesi));
+	}
+
 	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {
 		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit));
 	}
@@ -393,6 +403,7 @@ public class KesoidModel extends Model0 {
 		setUmisteniSouboru(loadUmisteniSouboru());
 
 		setOnoff(currPrefe().node(FPref.KESOID_node).getBoolean(FPref.KESOID_VISIBLE_value, true));
+		setZobrazeniKesi(currPrefe().node(FPref.KESOID_node).getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
 		fajruj();
 	}
 

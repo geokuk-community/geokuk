@@ -41,6 +41,17 @@
   Enter nebo tlačítkem Hledat, souřadnice v poli najdou adresu místa.
   Položka „Geocoding“ v kontextovém menu mapy je nahrazena položkou
   „Na OpenStreetMap...“, která místo otevře v prohlížeči.
+- Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
+  tradiční zelené, multi žluté, mystery, letterbox a wherigo modré,
+  virtuální, webcam a earthcache bílé, eventy červené, ostatní objekty
+  šedé. Nalezené jsou menší, vlastní mají tmavý obrys, neaktivní
+  a archivované jsou světlejší. Velikost teček se řídí hustotou keší.
+  Tečky se vykreslí i u statisíců keší, limit 30 000 keší na mapě pro ně
+  neplatí. Kešoidy > Tečky při oddálení / Vždy ikony / Vždy tečky.
+- Zvýrazňovací kruhy a popisky se nekreslí, když by se na mapě slily
+  do jedné plochy; kruhy obsazenosti, když mají poloměr pod 3 pixely.
+  Popisek keše pod myší se při posunu mapy schová a na zoomu 7 a menším
+  se nezobrazuje.
 
 ### Opravy
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
