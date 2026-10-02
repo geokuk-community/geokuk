@@ -136,6 +136,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private Indexator<Wpt> indexator;
 	/** Od tohoto zoomu výš ikony, níž tečky. */
 	static final int ZOOM_IKON = 13;
+	/** Od tohoto zoomu výš popisek a zvýraznění keše pod myší. */
+	static final int ZOOM_POPISKU = 8;
 
 	private final Tecky tecky = new Tecky();
 	private int prumer;
@@ -303,6 +305,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	 */
 	@Override
 	public void mouseMoved(final MouseEvent e, final MouseGestureContext ctx) {
+		if (getSoord().getMoumer() < ZOOM_POPISKU) {
+			zrusPodMysi();
+			return;
+		}
 		final Wpt wpt = najdiWptVBlizkosti(new Point(e.getX(), e.getY()));
 		wptPodMysi = wpt;
 		final Kesoid kes = wpt == null ? null : wpt.getKesoid();
