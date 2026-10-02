@@ -67,7 +67,7 @@ public class GeogetLoaderTest {
 			public void setTrackName(final String aTrackName) {}
 		};
 
-		new GeogetLoader().nacti(db, builder, null, new ProgressModel());
+		new GeogetLoader().nacti(db, builder, null, progress());
 
 		Assert.assertEquals("80/75/12/450/3/{barva=modra}", priPridani.get("GC12345"));
 		Assert.assertEquals("keš bez tagů má hodnocení neuvedené", "-1/-1/-1/0/-1/{}", priPridani.get("GC99999"));
@@ -208,7 +208,7 @@ public class GeogetLoaderTest {
 
 	private static Map<String, GpxWpt> nacti(final File db) throws IOException {
 		final Map<String, GpxWpt> nactene = new LinkedHashMap<>();
-		new GeogetLoader().nacti(db, new SbiraciBuilder(nactene), null, new ProgressModel());
+		new GeogetLoader().nacti(db, new SbiraciBuilder(nactene), null, progress());
 		return nactene;
 	}
 
@@ -249,5 +249,11 @@ public class GeogetLoaderTest {
 
 		@Override
 		public void setTrackName(final String aTrackName) {}
+	}
+
+	private static ProgressModel progress() {
+		final ProgressModel progress = new ProgressModel();
+		progress.inject(udalost -> {});
+		return progress;
 	}
 }
