@@ -3,6 +3,7 @@
  */
 package cz.geokuk.core.coord;
 
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
@@ -16,6 +17,9 @@ import cz.geokuk.util.index2d.BoundingRect;
 public abstract class JSingleSlide0 extends JSlide0 {
 
 	private static final long serialVersionUID = 8758817189971703053L;
+
+	/** Kolikrát smějí značky jedné vrstvy pokrýt okno. */
+	private static final double MAX_POKRYTI = 2;
 
 	private Coord soord;
 
@@ -47,6 +51,19 @@ public abstract class JSingleSlide0 extends JSlide0 {
 			return getSoord().getBoundingRect();
 		}
 		return getSoord().transforToBounding(new Rectangle(clip.x - okraj, clip.y - okraj, clip.width + 2 * okraj, clip.height + 2 * okraj));
+	}
+
+	/**
+	 * Značky by okno pokryly víckrát, než má smysl: splynuly by v jednu plochu a kreslily se zbytečně dlouho.
+	 *
+	 * @param pocet
+	 *            počet značek ve výřezu
+	 * @param plochaZnacky
+	 *            plocha jedné značky v pixelech
+	 */
+	protected boolean prilisHuste(final int pocet, final double plochaZnacky) {
+		final Dimension dim = getSoord().getDim();
+		return pocet * plochaZnacky > MAX_POKRYTI * dim.width * dim.height;
 	}
 
 	public void inject(final Factory factory) {

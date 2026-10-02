@@ -133,6 +133,9 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	private final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
+	private Boolean oznamenePrekroceni;
+	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
+	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
 
 	private CestyModel cestyModel;
 
@@ -395,20 +398,27 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		}
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
 		final boolean prekrocenLimit = !vykreslovatOkamtiteAleDlouho && indexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
-		SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
-
-		// vytvoření prázdných seznamů
-		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = new EnumMap<>(Wpt.EZOrder.class);
-		for (final Wpt.EZOrder zorder : Wpt.EZOrder.values()) {
-			mapa.put(zorder, new ArrayList<Wpt>(10000));
+		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
+			oznamenePrekroceni = prekrocenLimit;
+			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
 		}
 
+		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
+		try {
+			kresli(gg, mapa, prekrocenLimit);
+		} finally {
+			// Nedržet waypointy po přenačtení keší.
+			for (final List<Wpt> list : mapa.values()) {
+				list.clear();
+			}
+		}
+	}
+
+	private void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
 		// Roztřídit waypointy podle pořadí vykreslování
 		if (!prekrocenLimit) {
 			final BoundingRect hranice = coVykreslovat(gg);
-			indexator.bound(hranice).stream().forEach(wpt -> {
-				mapa.get(wpt.getZorder()).add(wpt);
-			});
+			indexator.bound(hranice).stream().forEach(wpt -> mapa.get(wpt.getZorder()).add(wpt));
 		}
 
 		final List<SkloAplikant> skloAplikanti = ikonBag.getSada().getSkloAplikanti();
@@ -431,6 +441,14 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				}
 			}
 		}
+	}
+
+	private static EnumMap<Wpt.EZOrder, List<Wpt>> noveSeznamy() {
+		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = new EnumMap<>(Wpt.EZOrder.class);
+		for (final Wpt.EZOrder zorder : Wpt.EZOrder.values()) {
+			mapa.put(zorder, new ArrayList<Wpt>());
+		}
+		return mapa;
 	}
 
 	private Genotyp computeGenotyp(final Wpt wpt) {

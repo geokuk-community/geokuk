@@ -70,11 +70,6 @@ public class JPopiskySlide extends JSingleSlide0 {
 		if (pose == null) {
 			return;
 		}
-		final boolean prekrocenLimit = iIndexator.count(getSoord().getBoundingRect()) > FConst.MAX_POC_WPT_NA_MAPE;
-		if (prekrocenLimit) {
-			return;
-		}
-
 		final Graphics2D g = (Graphics2D) aG;
 
 		g.setFont(pose.font);
@@ -82,6 +77,11 @@ public class JPopiskySlide extends JSingleSlide0 {
 		final Color barvaPodkladu = pose.background;
 		final FontMetrics fontMetrics = g.getFontMetrics();
 		final int height2 = fontMetrics.getHeight();
+		final int pocet = iIndexator.count(getSoord().getBoundingRect());
+		// Odhad popisku: dva řádky po zhruba patnácti znacích.
+		if (pocet > FConst.MAX_POC_WPT_NA_MAPE || prilisHuste(pocet, 2.0 * height2 * 8 * height2)) {
+			return;
+		}
 		final int posuny = fontMetrics.getDescent() - height2;
 		final Map<Kepodr, SestavovacPopisku> sestavmapa = new HashMap<>();
 		// Popisek je vpravo dole od bodu a jeho šířku předem neznáme, proto velkorysý okraj.

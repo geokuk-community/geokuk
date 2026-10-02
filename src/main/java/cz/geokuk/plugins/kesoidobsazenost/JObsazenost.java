@@ -33,6 +33,8 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 	}
 
 	private static final int POLOMER_OBSAZENOSTI = 161;
+	/** Menší kroužky splývají s ikonami keší a obsazenost z nich není poznat. */
+	private static final int MIN_POLOMER = 3;
 
 	private static final long serialVersionUID = -5858146658366237217L;
 
@@ -94,8 +96,8 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		final Graphics2D g = (Graphics2D) aG;
 		final int r = polomerObsazenosti();
 		final int d = 2 * r;
-		if (d < 4) {
-			return; // nemá smysl kreslit malé kroužky
+		if (r < MIN_POLOMER) {
+			return;
 		}
 		// obsazenost.setColor(new Color(128,128,128,128));
 		g.setColor(obsazenost.getColor());

@@ -10,10 +10,12 @@ import cz.geokuk.core.coordinates.*;
 import cz.geokuk.plugins.cesty.data.*;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.kind.kes.EKesWptType;
+import cz.geokuk.plugins.kesoid.kind.kes.Kes;
 import cz.geokuk.plugins.kesoidkruhy.*;
+import cz.geokuk.plugins.kesoidobsazenost.*;
 import cz.geokuk.util.index2d.*;
 
-/** Měření kreslení: obří cesta, zvýrazňovací kruhy, zjišťování typu waypointu. */
+/** Měření kreslení: obří cesta, zvýrazňovací kruhy, obsazenost, zjišťování typu waypointu. */
 public class MerKresleni {
 
 	static final Dimension OKNO = new Dimension(1400, 900);
@@ -23,6 +25,7 @@ public class MerKresleni {
 		decode();
 		cesta();
 		kruhy();
+		obsazenost();
 	}
 
 	/** Medián v ms z opakování. */
@@ -116,6 +119,38 @@ public class MerKresleni {
 		final double cele = mer(() -> kresliSlide(slide, null), 7);
 		final double dlazdice = mer(() -> kresliSlide(slide, new Rectangle(512, 256, 256, 256)), 7);
 		System.out.printf("kruhy %d wpt ve výřezu: celé okno %.0f ms, jedna dlaždice %.0f ms%n", wpt, cele, dlazdice);
+	}
+
+	/** Tradiční keše rovnoměrně ve výřezu. */
+	static Indexator<Wpt> nahodne(final Coord soord, final int pocet) {
+		final BoundingRect br = soord.getBoundingRect();
+		Indexator<Wpt> idx = new Indexator<>(BoundingRect.ALL);
+		final Random r = new Random(3);
+		for (int i = 0; i < pocet; i++) {
+			final Wpt w = new Wpt();
+			w.setSym(Wpt.TRADITIONAL_CACHE);
+			new Kes().addWpt(w);
+			final int xx = (int) (br.xx1 + (long) (r.nextDouble() * ((long) br.xx2 - br.xx1)));
+			final int yy = (int) (br.yy1 + (long) (r.nextDouble() * ((long) br.yy2 - br.yy1)));
+			w.setWgs(new Mou(xx, yy).toWgs());
+			idx = idx.add(xx, yy, w);
+		}
+		return idx;
+	}
+
+	static void obsazenost() throws Exception {
+		final Mou stred = new Wgs(50.0, 14.4).toMou();
+		final int wpt = 25_000;
+		for (final int meritko : new int[] { 10, 11, 12, 13 }) {
+			final Coord soord = new Coord(meritko, stred, OKNO, 0);
+			final JObsazenost slide = new JObsazenost();
+			nastav(slide, "iIndexator", nahodne(soord, wpt));
+			nastav(slide, "obsazenost", new ObsazenostSettings());
+			slide.setSoord(soord);
+			slide.setSize(OKNO);
+			final double cele = mer(() -> kresliSlide(slide, null), 5);
+			System.out.printf("obsazenost %d wpt ve výřezu, měřítko %d (poloměr %.1f px): celé okno %.0f ms%n", wpt, meritko, soord.getPixluNaMetr() * 161, cele);
+		}
 	}
 
 	static void kresliSlide(final Component c, final Rectangle clip) {
