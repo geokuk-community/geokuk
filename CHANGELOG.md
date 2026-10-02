@@ -56,6 +56,8 @@
   se nezobrazuje.
 
 ### Opravy
+- Toolbar s přepínači ikon má stálou výšku, mapa se po načtení keší
+  (třeba Munzee nebo databáze) neposouvá.
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
   nemusí projít celou databázi včetně dlouhých listingů. Hint se načte
   až po kliknutí na Hint v detailu keše.
