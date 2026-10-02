@@ -9,40 +9,19 @@
   (`ikony/moje`, `ikony/ostatni`), výlety (`vylety`), log a chybová
   hlášení (`log`) i dočasné soubory Javy (`tmp`). Rozhoduje jen to,
   odkud se spustí, složku jde přesunout i s daty. Nastavení už není
-  v registru Windows, při prvním
-  spuštění se odtud převezme. Volba „Ukládat nastavení k programu“
-  odpadla.
+  v registru Windows, při prvním spuštění se odtud převezme. Volba
+  „Ukládat nastavení k programu“ odpadla.
 - Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou,
   program a Java jsou v podsložce `program`. Poprvé se spustí
   `GeoKuk-prvni-spusteni.cmd`, GeoKuk pak vedle vytvoří zástupce
   `GeoKuk.lnk`, který jde zkopírovat na plochu nebo připnout. Po
   přesunu složky se zástupce ve složce i jeho kopie na ploše
   a v nabídce Start opraví. Soubor > Vytvořit zástupce přidá
-  GeoKuk do nabídky Start nebo na plochu. Spouštěč `start.jar`
-  nainstaluje staženou novou verzi a zvolí paměť (polovina paměti
-  počítače, 1 až 3 GB), změnit ji jde v Soubor > Paměť programu.
-  Po stažení nové verze GeoKuk nabídne restart: uloží se jako při
-  Soubor > Konec a spustí se znovu už v nové verzi.
-  Spouštěč `geokuk.cmd` odpadl.
-- V Umístění souborů zůstaly k nastavení jen složky s daty jiných
-  programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
-  záložka Program.
-- GeoKuk upozorní, když do své složky nemůže zapisovat (třeba v Program
-  Files), nebo když je ve složce synchronizované přes OneDrive, Dropbox
-  nebo Google Disk.
-- Když nová verze potřebuje novější Javu, než je přibalená, nebo je
-  k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
-- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál; soubor
-  `beta` vedle složky `data` se převezme.
-- Dálkové ovládání: stav, posun mapy, výběr keše, podklad a přenačtení
-  jdou bez tokenu na portu 48321 (výchozí); požadavky z webového
-  prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`
-  v domovské složce odpadl.
-- Hledání adresy (Jít > Adresa) a návrh názvu souboru u renderu podle
-  místa používají Nominatim nad daty OpenStreetMap. Hledá se klávesou
-  Enter nebo tlačítkem Hledat, souřadnice v poli najdou adresu místa.
-  Položka „Geocoding“ v kontextovém menu mapy je nahrazena položkou
-  „Na OpenStreetMap...“, která místo otevře v prohlížeči.
+  GeoKuk do nabídky Start nebo na plochu. Spouštěč `geokuk.cmd` odpadl.
+- Spouštěč `start.jar` nainstaluje staženou novou verzi a zvolí paměť
+  (polovina paměti počítače, 1 až 3 GB), změnit ji jde v Soubor >
+  Paměť programu. Po stažení nové verze GeoKuk nabídne restart: uloží
+  se jako při Soubor > Konec a spustí se znovu už v nové verzi.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
   tradiční zelené, multi žluté, mystery, letterbox a wherigo modré,
   virtuální, webcam a earthcache bílé, eventy červené, ostatní objekty
@@ -54,8 +33,29 @@
   do jedné plochy; kruhy obsazenosti, když mají poloměr pod 3 pixely.
   Popisek keše pod myší se při posunu mapy schová a na zoomu 7 a menším
   se nezobrazuje.
+- Hledání adresy (Jít > Adresa) a návrh názvu souboru u renderu podle
+  místa používají Nominatim nad daty OpenStreetMap. Hledá se klávesou
+  Enter nebo tlačítkem Hledat, souřadnice v poli najdou adresu místa.
+  Položka „Geocoding“ v kontextovém menu mapy je nahrazena položkou
+  „Na OpenStreetMap...“, která místo otevře v prohlížeči.
+- GeoKuk upozorní, když do své složky nemůže zapisovat (třeba v Program
+  Files), nebo když je ve složce synchronizované přes OneDrive, Dropbox
+  nebo Google Disk.
+- Když nová verze potřebuje novější Javu, než je přibalená, nebo je
+  k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
+- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál; soubor
+  `beta` vedle složky `data` se převezme.
+- Dálkové ovládání: stav, posun mapy, výběr keše, podklad a přenačtení
+  jdou bez tokenu na portu 48321 (výchozí); požadavky z webového
+  prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`
+  v domovské složce odpadl.
+- V Umístění souborů zůstaly k nastavení jen složky s daty jiných
+  programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
+  záložka Program.
 
 ### Opravy
+- Toolbar s přepínači ikon má stálou výšku, mapa se po načtení keší
+  (třeba Munzee nebo databáze) neposouvá.
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
   nemusí projít celou databázi včetně dlouhých listingů. Hint se načte
   až po kliknutí na Hint v detailu keše.

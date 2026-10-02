@@ -9,15 +9,14 @@ import java.util.Map;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 
 /**
- * Keše jako barevné tečky při oddálené mapě. Barva podle typu keše, nalezené jsou menší a bez lemu, vlastní mají tmavý obrys, neaktivní
- * a archivované jsou světlejší. Bílý lem jen u největších teček, v hustých místech by převládl.
+ * Keše jako barevné tečky při oddálené mapě. Barva podle typu keše s tenkým tmavým obrysem, nalezené jsou menší, vlastní mají silnější
+ * obrys, neaktivní a archivované jsou světlejší.
  */
 public final class Tecky {
 
 	static final int MIN_PRUMER = 4;
 	static final int MAX_PRUMER = 14;
 
-	private static final Color LEM = Color.WHITE;
 	private static final Color OBRYS = new Color(0x444444);
 	private static final Color OBRYS_VLASTNI = new Color(0x111111);
 
@@ -125,29 +124,12 @@ public final class Tecky {
 			g.setStroke(new BasicStroke(d >= 8 ? 2f : 1f));
 			g.drawOval(1, 1, d - 2, d - 2);
 			break;
-		case NALEZENA:
+		default:
 			g.setColor(barva);
 			g.fillOval(0, 0, d, d);
 			if (d >= 5) {
 				g.setColor(OBRYS);
 				g.drawOval(0, 0, d - 1, d - 1);
-			}
-			break;
-		default:
-			if (d >= MAX_PRUMER) {
-				g.setColor(LEM);
-				g.fillOval(0, 0, d, d);
-				g.setColor(barva);
-				g.fillOval(2, 2, d - 4, d - 4);
-				g.setColor(OBRYS);
-				g.drawOval(2, 2, d - 5, d - 5);
-			} else {
-				g.setColor(barva);
-				g.fillOval(0, 0, d, d);
-				if (d >= 5) {
-					g.setColor(OBRYS);
-					g.drawOval(0, 0, d - 1, d - 1);
-				}
 			}
 		}
 		g.dispose();

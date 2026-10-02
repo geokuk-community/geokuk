@@ -3,6 +3,8 @@
  */
 package cz.geokuk.plugins.kesoid.mapicon;
 
+import java.awt.Component;
+import java.awt.Dimension;
 import java.util.*;
 
 import javax.swing.*;
@@ -31,6 +33,7 @@ public class JToolbarOvladaceAlel extends JPanel {
 	//////////////////////////////////////////
 	// TODO Celkově nějak refactorovat
 	private final Map<String, JIconCheckBox> mapka = new HashMap<>();
+	private int vyska;
 
 	/**
 	 *
@@ -86,6 +89,17 @@ public class JToolbarOvladaceAlel extends JPanel {
 			}
 		}
 		setVisible(true);
+	}
+
+	/** Výška podle nejvyšší ikony všech alel, i skrytých, ať se toolbar a s ním mapa nemění podle toho, co je v datech. */
+	@Override
+	public Dimension getPreferredSize() {
+		final Dimension d = super.getPreferredSize();
+		for (final Component c : getComponents()) {
+			vyska = Math.max(vyska, c.getPreferredSize().height);
+		}
+		d.height = Math.max(d.height, vyska);
+		return d;
 	}
 
 	/*
