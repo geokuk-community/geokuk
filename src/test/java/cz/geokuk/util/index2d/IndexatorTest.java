@@ -1,4 +1,4 @@
-package cz.geokuk.util.yndex2d;
+package cz.geokuk.util.index2d;
 
 
 import java.util.*;
@@ -9,8 +9,6 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
-import cz.geokuk.util.index2d.BoundingRect;
-import cz.geokuk.util.index2d.Indexator;
 
 
 public class IndexatorTest {
@@ -29,7 +27,6 @@ public class IndexatorTest {
 		final Indexator<TestBod> indexator = col.parallelStream().reduce(new Indexator<TestBod>(BoundingRect.ALL),
 				(ind, b) -> ind.add(b.getX(), b.getY(), b),
 				Indexator::merge).bound(br);
-		System.out.println(indexator.getCount());
 		//indexator.vypis();
 		final List<TestBod> result = indexator.parallelStream().collect(Collectors.toList());
 		Collections.sort(result);
@@ -186,7 +183,6 @@ public class IndexatorTest {
 				indr = indr.add(bod.getX(), bod.getY(), bod);
 			}
 		}
-		System.out.println("V matici je: " + indr.getCount());
 		return indr;
 	}
 
