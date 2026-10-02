@@ -39,7 +39,7 @@ public class MapovePodkladyIT {
 					final int z = typ.fitMoumer(zoom);
 					final URL url = new Ka(KaLoc.ofJZ(misto.toMou(), z), typ).getUrl();
 					try {
-						final Future<ImageWithData> stazeni = executor.submit(() -> downloader.downloadImage(url));
+						final Future<ImageWithData> stazeni = executor.submit(() -> downloader.downloadImage(url, typ.getHlavicky()));
 						final ImageWithData img;
 						try {
 							img = stazeni.get(TIMEOUT_S, TimeUnit.SECONDS);

@@ -102,6 +102,18 @@ public class IndexatorTest {
 		pro(BoundingRect.ALL, matice(100, 0));
 	}
 
+	/** Statisíce bodů na stejném místě (třeba waypointy bez souřadnic) nesmí přetéct zásobník. */
+	@Test
+	public void mnohoBoduNaJednomMiste() {
+		Indexator<TestBod> a = new Indexator<>(BoundingRect.ALL);
+		Indexator<TestBod> c = new Indexator<>(BoundingRect.ALL);
+		for (int i = 0; i < 100_000; i++) {
+			a = a.add(0, 0, b(0, 0));
+			c = c.add(0, 0, b(0, 0));
+		}
+		Assert.assertEquals(200_000, a.merge(c).getCount());
+	}
+
 	@Test
 	public void testMatice100c() {
 		pro(BoundingRect.ALL, matice(100, -1));

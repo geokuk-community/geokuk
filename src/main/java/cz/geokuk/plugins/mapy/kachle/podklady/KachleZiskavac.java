@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.Image;
+import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
@@ -345,6 +347,8 @@ public class KachleZiskavac {
 
 	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
 	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
+	/** Dlaždice, které se nedávno nepodařilo stáhnout; jinak by se při každém překreslení stahovaly znovu. */
+	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).maximumSize(10_000).build();
 
 	private OnofflineModel onofflineModel;
 
@@ -443,6 +447,10 @@ public class KachleZiskavac {
 				pocitBrzdeniOfflineKdyzJeOnline.inc();
 				Thread.sleep(100);
 			}
+			final String klic = url.toExternalForm();
+			if (nedavnoNestazene.getIfPresent(klic) != null) {
+				throw new IOException("Dlaždici se nedávno nepodařilo stáhnout: " + url);
+			}
 			diagnosticsData.send("Web download - start");
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
 			ImageWithData imageWithData;
@@ -455,6 +463,9 @@ public class KachleZiskavac {
 				return imageWithData;
 			} catch (final Exception e) {
 				log.debug("DOWNLOAD ERROR  : \"{}\" | {}", url, e);
+				if (!(e instanceof InterruptedException || e instanceof InterruptedIOException || Thread.currentThread().isInterrupted())) {
+					nedavnoNestazene.put(klic, Boolean.TRUE);
+				}
 				chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
 				diagnosticsData.send(e.toString());
 				throw e;

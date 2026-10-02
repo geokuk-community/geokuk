@@ -492,6 +492,9 @@ public class SmokeIT {
 	private static void zkontrolujBezChyb(final File adresar, final Properties zprava, final boolean bezVypisu) {
 		final List<String> problemy = new ArrayList<>();
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
+		if (zprava.getProperty("edt.nejdelsiMs") == null) {
+			problemy.add("Zpráva nemá edt.nejdelsiMs, hlídač EDT neběžel");
+		}
 		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
 		if (edt > 3000) {
 			final String nejpomalejsi = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.pomala.")).map(zprava::getProperty)
