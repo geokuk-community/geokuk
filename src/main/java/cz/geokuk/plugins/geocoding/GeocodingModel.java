@@ -46,7 +46,12 @@ public class GeocodingModel extends Model0 {
 	}
 
 	public synchronized void spustHledani(final Wgs wgs, final RefreshorVysledkuHledani<Nalezenec> refreshor) {
-		spustHledani(wgs.lat + "," + wgs.lon, refreshor);
+		if (onlineMode && wgs != null) {
+			final HledaciPodminka hledaciPodminka = new HledaciPodminka();
+			hledaciPodminka.setStredHledani(wgs);
+			hledaciPodminka.setZpetne(wgs);
+			hledaciSluzba.spustHledani(hledac, hledaciPodminka, refreshor);
+		}
 	}
 
 	/*

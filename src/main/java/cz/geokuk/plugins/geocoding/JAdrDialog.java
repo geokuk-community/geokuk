@@ -72,6 +72,7 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 
 	private JLabel jLabel1;
 	private JButton jButtonCentruj;
+	private JButton jButtonHledat;
 	private JAdrTable jAdrTabulka;
 
 	private JLabel status;
@@ -112,12 +113,12 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 
 	@Override
 	public void insertUpdate(final DocumentEvent ev) {
-		search();
+		entry.setBackground(entryBg);
 	}
 
 	public void onEvent(final ReferencniBodSeZmenilEvent aEvent) {
 		if (naVstupuJsouSouradkyNeboNic()) {
-			entry.setText(aEvent.wgs.lat + "," + aEvent.wgs.lon);
+			entry.setText(String.format(java.util.Locale.ROOT, "%.6f,%.6f", aEvent.wgs.lat, aEvent.wgs.lon));
 			entry.selectAll();
 		}
 		setReferencniBod(aEvent.wgs);
@@ -127,7 +128,10 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 
 	@Override
 	public void refreshVysledekHledani(final VysledekHledani<Nalezenec> vysledekHledani) {
-		if (vysledekHledani.nalezenci != null) {
+		if (vysledekHledani.exception != null) {
+			final Throwable pricina = vysledekHledani.exception.getCause() != null ? vysledekHledani.exception.getCause() : vysledekHledani.exception;
+			message("Hledání se nepodařilo: " + pricina.getMessage());
+		} else if (vysledekHledani.nalezenci != null) {
 			jAdrTabulka.setNalezenci(vysledekHledani.nalezenci);
 			if (vysledekHledani.nalezenci.size() > 0) { // match found
 				entry.setBackground(entryBg);
@@ -141,16 +145,37 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 
 	@Override
 	public void removeUpdate(final DocumentEvent ev) {
-		search();
+		entry.setBackground(entryBg);
 	}
 
+	/** Hledá jen na pokyn uživatele, služba nedovoluje dotaz při každém stisku klávesy. */
 	public void search() {
 		if (referencniBod == null) {
 			return;
 		}
-		message("Hleda se ...");
-		final String s = entry.getText();
-		geocodingModel.spustHledani(s, this);
+		final String text = entry.getText().trim();
+		if (text.isEmpty()) {
+			return;
+		}
+		message("Hledá se ...");
+		final Wgs souradnice = souradnice(text);
+		if (souradnice != null) {
+			geocodingModel.spustHledani(souradnice, this);
+		} else {
+			geocodingModel.spustHledani(text, this);
+		}
+	}
+
+	private static Wgs souradnice(final String text) {
+		final String[] casti = text.split(",");
+		if (casti.length != 2) {
+			return null;
+		}
+		try {
+			return new Wgs(Double.parseDouble(casti[0].trim()), Double.parseDouble(casti[1].trim()));
+		} catch (final NumberFormatException e) {
+			return null;
+		}
 	}
 
 	@Override
@@ -168,6 +193,8 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 		status = new JLabel();
 		jLabel1 = new JLabel();
 		jButtonCentruj = new JButton("Centruj");
+		jButtonHledat = new JButton("Hledat");
+		final JLabel atribuce = new JLabel(Nominatim.ATRIBUCE);
 		getRootPane().setDefaultButton(jButtonCentruj);
 
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -191,14 +218,15 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 		                layout.createSequentialGroup() // h1
 		                        .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING) // h2
 		                                .addComponent(jAdrTabulka, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
-		                                .addComponent(status, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE).addGroup(layout.createSequentialGroup() // h3
-		                                        .addComponent(jLabel1).addComponent(entry, GroupLayout.DEFAULT_SIZE, 321, Short.MAX_VALUE).addComponent(jButtonCentruj)))));
+		                                .addComponent(status, GroupLayout.Alignment.LEADING, 0, 450, Short.MAX_VALUE).addGroup(layout.createSequentialGroup() // h3
+		                                        .addComponent(jLabel1).addComponent(entry, GroupLayout.DEFAULT_SIZE, 321, Short.MAX_VALUE).addComponent(jButtonHledat).addComponent(jButtonCentruj))
+		                                .addComponent(atribuce))));
 
 		layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING) // vGrou
 		        .addGroup(layout.createSequentialGroup() // v1
 		                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE) // v2
-		                        .addComponent(jLabel1).addComponent(entry, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE).addComponent(jButtonCentruj))
-		                .addComponent(status).addComponent(jAdrTabulka, GroupLayout.DEFAULT_SIZE, 233, Short.MAX_VALUE)));
+		                        .addComponent(jLabel1).addComponent(entry, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE).addComponent(jButtonHledat).addComponent(jButtonCentruj))
+		                .addComponent(status).addComponent(jAdrTabulka, GroupLayout.DEFAULT_SIZE, 233, Short.MAX_VALUE).addComponent(atribuce)));
 
 		pack();
 	}
@@ -208,7 +236,6 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 			return;
 		}
 		referencniBod = wgs;
-		search();
 	}
 
 	void message(final String msg) {
@@ -227,6 +254,8 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 	}
 
 	private void registerEvents() {
+		jButtonHledat.addActionListener(e -> search());
+		entry.addActionListener(e -> search());
 		jButtonCentruj.addActionListener(e -> {
 
 			final Nalezenec nalezenec = jAdrTabulka.getCurrent();

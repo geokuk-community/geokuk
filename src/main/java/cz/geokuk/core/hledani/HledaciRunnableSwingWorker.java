@@ -25,7 +25,7 @@ class HledaciRunnableSwingWorker<T extends Nalezenec0> extends MySwingWorker0<Vy
 		hledac.setFuture(this);
 		try {
 			result.nalezenci = hledac.najdiASerad(podminka);
-		} catch (final PatternSyntaxException e) {
+		} catch (final PatternSyntaxException | java.io.UncheckedIOException e) {
 			result.exception = e;
 		}
 		if (isCancelled()) {

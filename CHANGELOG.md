@@ -32,6 +32,11 @@
   jdou bez tokenu na portu 48321 (výchozí); požadavky z webového
   prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`
   v domovské složce odpadl.
+- Hledání adresy (Jít > Adresa) a návrh názvu souboru u renderu podle
+  místa používají Nominatim nad daty OpenStreetMap. Hledá se klávesou
+  Enter nebo tlačítkem Hledat, souřadnice v poli najdou adresu místa.
+  Položka „Geocoding“ v kontextovém menu mapy je nahrazena položkou
+  „Na OpenStreetMap...“, která místo otevře v prohlížeči.
 
 ### Opravy
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
