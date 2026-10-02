@@ -45,6 +45,11 @@ public final class Start {
 			prikaz.add(java().getPath());
 			prikaz.add("-Xmx" + pametMb(new File(new File(adresar, "data"), "nastaveni.xml"), fyzickaPametMb()) + "m");
 			prikaz.add("-Djava.net.useSystemProxies=true");
+			// Mimo složku programu nic: dočasné soubory do data/tmp, bez hsperfdata v systémovém TEMP.
+			final File docasne = new File(new File(adresar, "data"), "tmp");
+			docasne.mkdirs();
+			prikaz.add("-Djava.io.tmpdir=" + docasne.getPath());
+			prikaz.add("-XX:-UsePerfData");
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
 			prikaz.addAll(Arrays.asList(args));

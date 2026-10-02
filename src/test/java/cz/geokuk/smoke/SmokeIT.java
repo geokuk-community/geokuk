@@ -215,6 +215,10 @@ public class SmokeIT {
 		if (vypisy != null && vypisy.length > 0) {
 			problemy.add("Výpisy chyb v excrep: " + Arrays.toString(vypisy));
 		}
+		final List<String> mimo = zapsanoMimo(adresar);
+		if (!mimo.isEmpty()) {
+			problemy.add("Zapsáno mimo složku programu: " + mimo);
+		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
 		assertTrue("Proxy obsloužila i vestavěné mapy nebo uživatelskou mapu", server.getPocetPozadavku() > 0);
 	}
@@ -490,7 +494,9 @@ public class SmokeIT {
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
 		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
 		if (edt > 3000) {
-			problemy.add("Událost na EDT trvala " + edt + " ms: " + zprava.getProperty("edt.pomala.0"));
+			final String nejpomalejsi = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.pomala.")).map(zprava::getProperty)
+					.filter(p -> p.startsWith(edt + " ms")).findFirst().orElse(zprava.getProperty("edt.pomala.0"));
+			problemy.add("Událost na EDT trvala " + edt + " ms: " + nejpomalejsi);
 		}
 		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
 		if (pamet > 400) {
@@ -501,7 +507,34 @@ public class SmokeIT {
 		if (bezVypisu && vypisy != null && vypisy.length > 0) {
 			problemy.add("Výpisy chyb v " + excrep + ": " + Arrays.toString(vypisy));
 		}
+		final List<String> mimo = zapsanoMimo(adresar);
+		if (!mimo.isEmpty()) {
+			problemy.add("Zapsáno mimo složku programu: " + mimo);
+		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
+	/**
+	 * Soubory v domovské složce a v úložišti Java Preferences. Povolené je jen to, co zapisuje Java sama: cache fontů a zámky Preferences při
+	 * převzetí starého nastavení, a data, která tam připravil test.
+	 */
+	private static List<String> zapsanoMimo(final File adresar) {
+		final List<String> povolene = Arrays.asList("home/.java/fonts/", "home/geoget/", "prefs/.java/.userPrefs/.userRootModFile.", "prefs/.java/.userPrefs/.user.lock.",
+				"prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
+		final List<String> mimo = new ArrayList<>();
+		for (final String koren : Arrays.asList("home", "prefs")) {
+			final File slozka = new File(adresar, koren);
+			if (!slozka.isDirectory()) {
+				continue;
+			}
+			try (java.util.stream.Stream<java.nio.file.Path> soubory = Files.walk(slozka.toPath())) {
+				soubory.filter(Files::isRegularFile).map(f -> adresar.toPath().relativize(f).toString().replace(File.separatorChar, '/'))
+						.filter(f -> povolene.stream().noneMatch(f::startsWith)).forEach(mimo::add);
+			} catch (final IOException e) {
+				mimo.add(slozka + ": " + e);
+			}
+		}
+		return mimo;
 	}
 
 	/** Počet dlaždic v cache po ukončení programu. */

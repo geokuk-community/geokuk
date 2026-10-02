@@ -85,7 +85,7 @@ public class VytvoritZastupceAction extends Action0 {
 		final Map<String, String> env = pb.environment();
 		env.put("GK_KAM", kam);
 		env.put("GK_JAVAW", javaw().getAbsolutePath());
-		env.put("GK_ARGUMENTY", "-jar \"" + new File(FConst.JAR_DIR, "start.jar").getAbsolutePath() + "\"");
+		env.put("GK_ARGUMENTY", "-XX:-UsePerfData -jar \"" + new File(FConst.JAR_DIR, "start.jar").getAbsolutePath() + "\"");
 		env.put("GK_SLOZKA", FConst.JAR_DIR.getAbsolutePath());
 		env.put("GK_IKONA", new File(FConst.JAR_DIR, "geokuk.ico").getAbsolutePath());
 		pb.redirectErrorStream(true);

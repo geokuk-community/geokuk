@@ -7,8 +7,9 @@
   složky `data` vedle sebe: nastavení (`nastaveni.xml`), uživatelské mapy
   (`uzivatelske-mapy.properties`), cache map (`cache`), cesty, ikony
   (`ikony/moje`, `ikony/ostatni`), výlety (`vylety`), log a chybová
-  hlášení (`log`). Rozhoduje jen to, odkud se spustí, složku jde
-  přesunout i s daty. Nastavení už není v registru Windows, při prvním
+  hlášení (`log`) i dočasné soubory Javy (`tmp`). Rozhoduje jen to,
+  odkud se spustí, složku jde přesunout i s daty. Nastavení už není
+  v registru Windows, při prvním
   spuštění se odtud převezme. Volba „Ukládat nastavení k programu“
   odpadla.
 - Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou:

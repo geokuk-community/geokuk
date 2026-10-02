@@ -53,6 +53,21 @@ jobs:
             target/geokuk.jar
             target/start.jar
 
+  testy-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Testy
+        run: ./mvnw.cmd -B test
+
   # Přenosná verze pro Windows: přibalená Java z Temurinu, jehož podepsaný javaw.exe jlink zachová.
   windows:
     needs: build
@@ -60,7 +75,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: distribuce/windows
+          sparse-checkout: |
+            distribuce/windows
+            .github/skripty
 
       - name: JDK 21 (Temurin)
         uses: actions/setup-java@v4
@@ -76,7 +93,7 @@ jobs:
         shell: pwsh
         run: |
           $moduly = "java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.prefs,java.sql,java.xml," +
-            "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.unsupported,jdk.zipfs"
+            "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.management,jdk.unsupported,jdk.zipfs"
           jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --output GeoKuk/runtime
           if ($LASTEXITCODE -ne 0) { exit 1 }
           $podpis = Get-AuthenticodeSignature GeoKuk/runtime/bin/javaw.exe
@@ -84,6 +101,17 @@ jobs:
           Copy-Item geokuk.jar, start.jar, distribuce/windows/GeoKuk.cmd, distribuce/windows/geokuk.ico, distribuce/windows/CTIMNE.txt GeoKuk/
           GeoKuk/runtime/bin/java -version
           Compress-Archive GeoKuk -DestinationPath GeoKuk-windows.zip
+
+      - name: Zkouška zipu
+        shell: pwsh
+        run: .github/skripty/test-zipu.ps1 GeoKuk-windows.zip
+
+      - name: Logy zkoušky zipu
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkouska-zipu
+          path: ${{ runner.temp }}/zkouska-zipu/*/GeoKuk/data/log/
 
       - name: Zip jako artefakt
         uses: actions/upload-artifact@v4
@@ -93,7 +121,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v') || (inputs.verze != '' && github.ref == 'refs/heads/main')
-    needs: [build, windows]
+    needs: [build, testy-windows, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
