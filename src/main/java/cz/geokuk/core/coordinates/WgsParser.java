@@ -199,27 +199,6 @@ public class WgsParser {
 		povolVariaci(' ', 'W');
 	}
 
-	public static void main(final String[] args) {
-
-		final WgsParser parser = new WgsParser();
-
-		parser.zkousej(";;111 222 333 444 555 666\";");
-		parser.zkousej(";;111 222 333E;N444 555 666++");
-		parser.zkousej("49 16 17 21");
-		parser.zkousej("N49.156, 16.788E");
-		parser.zkousej("n49°16'21\";16°18.425");
-		parser.zkousej("N49°45\" 16 18 425");
-		parser.zkousej("49 16,7 17 21 23.45");
-		parser.zkousej("49,12345°16,12345");
-		parser.zkousej("aaa49bbb16ccc");
-		parser.zkousej("49°16°21 45");
-		parser.zkousej("17°W49°S");
-		parser.zkousej("33°Z49°E");
-		parser.zkousej("11,22,33,44");
-		parser.zkousej("11,22,33");
-		System.out.println("----------------------------------------------------------");
-	}
-
 	private static void povolVariaci(final char p1, final char p2) {
 		final PovolenaVariacePismen variace = new PovolenaVariacePismen(p1, p2);
 		povoleneVariace.add(variace);
@@ -349,18 +328,4 @@ public class WgsParser {
 		return null; // neprošlo sítem písmen
 	}
 
-	private void zkousej(final String s) {
-		System.out.println("-----------" + s + "-----------------------------------------------");
-		// Matcher m = pat.matcher(s);
-		// for (int i=2; i < s.length()-2; i++) {
-		// Vzorek vzorek = rozeber(s, m, i);
-		// if (vzorek != null) {
-		// System.out.println(vzorek);
-		// }
-		// }
-
-		final Vzorek vzorek = najdiNejvhodnejsi(s);
-		System.out.println(vzorek);
-
-	}
 }

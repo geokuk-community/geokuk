@@ -49,10 +49,6 @@ public class FGeoKonvertor {
 		return dalka;
 	}
 
-	public static void main(final String[] args) {
-		System.out.println(-3.25 % 1);
-	}
-
 	/**
 	 * Kolik metrůpřipadá na jeden krok mou, na dané šířce
 	 *
