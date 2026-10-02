@@ -3,8 +3,6 @@
  */
 package cz.geokuk.core.program;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -16,6 +14,8 @@ import javax.swing.*;
 
 import cz.geokuk.framework.JMyDialog0;
 import cz.geokuk.util.pocitadla.*;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Martin Veverka
@@ -69,14 +69,20 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 	}
 
 	public JServiceFrame() {
-		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		initComponents();
+		setTitle("Servis");
+		init();
 		Pocitadlo.callback = this;
 		registerEvents();
 		// naplnit hned; u nečinné mapy se žádné počítadlo nemusí změnit a okno by zůstalo prázdné
 		onChange();
-
-		// TODO při zavírání JServiceFramese musí zlikvidovat také odkaz v počítadlech
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(final WindowEvent e) {
+				if (Pocitadlo.callback == JServiceFrame.this) {
+					Pocitadlo.callback = null;
+				}
+			}
+		});
 	}
 
 	@Override

@@ -3,8 +3,6 @@
  */
 package cz.geokuk.plugins.kesoid.hledani;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -15,6 +13,8 @@ import cz.geokuk.core.hledani.HledaciPodminka0;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.util.lang.FUtil;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Martin Veverka

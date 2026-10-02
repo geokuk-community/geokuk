@@ -31,8 +31,6 @@
 
 package cz.geokuk.plugins.kesoidkruhy;
 
-import lombok.extern.slf4j.Slf4j;
-
 /*
  * TextFieldDemo.java requires one additional file:
  * content.txt
@@ -45,6 +43,8 @@ import javax.swing.event.ChangeListener;
 
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.JMyDialog0;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JKruhyDialog extends JMyDialog0 implements AfterEventReceiverRegistrationInit {

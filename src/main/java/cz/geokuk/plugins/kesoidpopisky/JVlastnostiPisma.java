@@ -65,17 +65,28 @@ public class JVlastnostiPisma extends JPanel {
 		backgroudChooser.setToolTipText("Barva podkladu včetně průhlednosti");
 		fontChooser.setToolTipText("Font popisků na mapě");
 
-		foregroundChooser.setBorder(BorderFactory.createTitledBorder("Písmo"));
-		backgroudChooser.setBorder(BorderFactory.createTitledBorder("Podklad"));
+		// Barvy na kartách pod sebou, vedle sebe by dialog byl širší než obrazovka.
+		final JTabbedPane barvy = new JTabbedPane();
+		barvy.addTab("Barva písma", foregroundChooser);
+		barvy.addTab("Barva podkladu", backgroudChooser);
+
+		final JPanel posun = new JPanel();
+		posun.setBorder(BorderFactory.createTitledBorder("Posun popisku"));
+		for (final JSpinner spinner : new JSpinner[] { xspinner, yspinner }) {
+			((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(4);
+		}
+		posun.add(new JLabel("vodorovně"));
+		posun.add(xspinner);
+		posun.add(new JLabel("svisle"));
+		posun.add(yspinner);
+
+		final Box vpravo = Box.createVerticalBox();
+		vpravo.add(fontChooser);
+		vpravo.add(posun);
 
 		final Box box = Box.createHorizontalBox();
-
-		box.add(foregroundChooser);
-		box.add(xspinner);
-		box.add(yspinner);
-		// box.add(Box.createVerticalStrut(10));
-		box.add(fontChooser);
-		box.add(backgroudChooser);
+		box.add(barvy);
+		box.add(vpravo);
 		add(box);
 	}
 

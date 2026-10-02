@@ -3,8 +3,6 @@
  */
 package cz.geokuk.core.render;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -14,6 +12,8 @@ import java.util.concurrent.Future;
 import cz.geokuk.core.coord.*;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.mapy.kachle.gui.JKachlovnikRendrovaci;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Martin Veverka

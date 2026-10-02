@@ -3,12 +3,12 @@
  */
 package cz.geokuk.plugins.kesoid.genetika;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 import cz.geokuk.plugins.kesoid.genetika.Genom.CitacAlel;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Genotyp jako množina alel. Typ je immutable, různé instance mají různou množinu alel.

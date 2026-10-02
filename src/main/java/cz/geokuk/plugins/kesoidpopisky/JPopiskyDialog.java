@@ -75,7 +75,7 @@ public class JPopiskyDialog extends JMyDialog0 implements AfterEventReceiverRegi
 	private List<Radek> jradky;
 
 	public JPopiskyDialog(final KesoidPluginManager kesoidPluginManager) {
-		setTitle("Nastavení paramtrů popisek keší na mapě");
+		setTitle("Nastavení popisků keší na mapě");
 		this.kesoidPluginManager = kesoidPluginManager;
 		init();
 	}
@@ -122,7 +122,7 @@ public class JPopiskyDialog extends JMyDialog0 implements AfterEventReceiverRegi
 	@Override
 	protected void initComponents() {
 		jradky = kesoidPluginManager.getPopisekDefMap().entrySet().stream()
-				.map(po -> new Radek(po.getKey(), new JLabel(po.getValue().getLabel()), new JTextField(), new JLabel(po.getValue().geHelpNahrazovace())))
+				.map(po -> new Radek(po.getKey(), new JLabel(po.getValue().getLabel()), new JTextField(25), napovedaNahrazovacu(po.getValue().geHelpNahrazovace())))
 				.collect(Collectors.toList());
 
 		jVlastnostiPisma = new JVlastnostiPisma();
@@ -137,11 +137,15 @@ public class JPopiskyDialog extends JMyDialog0 implements AfterEventReceiverRegi
 		pack();
 	}
 
+	/** Seznam náhražek zalomený do rozumné šířky, jinak by dialog byl širší než obrazovka. */
+	private static JLabel napovedaNahrazovacu(final String nahrazovace) {
+		final String text = nahrazovace.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+		return new JLabel("<html><div style='width:320px'>" + text + "</div></html>");
+	}
+
 	private void grlay(final JPanel panel) {
 		final GroupLayout layout = new GroupLayout(panel);
-		// FIXME řešit nápovědu popisků
-		panel.setBorder(BorderFactory.createTitledBorder("Vzorky popisků: TODO"));
-		// + SestavovacPopisku.getNahrazovaceDisplay()));
+		panel.setBorder(BorderFactory.createTitledBorder("Vzorky popisků"));
 		panel.setLayout(layout);
 		layout.setAutoCreateGaps(true);
 		layout.setAutoCreateContainerGaps(true);
