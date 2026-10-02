@@ -21,6 +21,8 @@
   GeoKuk do nabídky Start nebo na plochu. Spouštěč `start.jar`
   nainstaluje staženou novou verzi a zvolí paměť (polovina paměti
   počítače, 1 až 3 GB), změnit ji jde v Soubor > Paměť programu.
+  Po stažení nové verze GeoKuk nabídne restart: uloží se jako při
+  Soubor > Konec a spustí se znovu už v nové verzi.
   Spouštěč `geokuk.cmd` odpadl.
 - V Umístění souborů zůstaly k nastavení jen složky s daty jiných
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje

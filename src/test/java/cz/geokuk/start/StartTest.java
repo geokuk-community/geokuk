@@ -79,4 +79,15 @@ public class StartTest {
 		zapis(new File(jinde, "start.jar"), "start");
 		Assert.assertEquals(jinde, Start.koren(jinde));
 	}
+
+	@Test
+	public void cekaNaUkonceniBeziciInstance() throws Exception {
+		final File zamek = new File(tmp.getRoot(), "data/" + Start.ZAMEK);
+		final java.nio.channels.FileLock drzeny = Start.zamkni(zamek);
+		Assert.assertNotNull(drzeny);
+		Assert.assertNull("Druhá instance zámek nedostane", Start.zamkni(zamek));
+		Assert.assertFalse(Start.pockejNaUkonceni(zamek, 500));
+		drzeny.channel().close();
+		Assert.assertTrue(Start.pockejNaUkonceni(zamek, 500));
+	}
 }
