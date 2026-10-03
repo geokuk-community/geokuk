@@ -82,6 +82,9 @@
 ### Opravy
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
+- Přehled problémů ukazuje u každého problému, co se dělo a proč to
+  selhalo; sloupce se jmenují Č. a Hlášení. Stavový řádek bez načtených
+  zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text
   a při souběhu automatické a ruční kontroly aktualizací se ukáže jen
   jednou.

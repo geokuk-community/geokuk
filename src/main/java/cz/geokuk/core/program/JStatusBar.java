@@ -172,9 +172,15 @@ public class JStatusBar extends JPanel {
 		jZdrojeKesoiduPocetNenactenych.setText(pocetNenactenych + "");
 		jZdrojeKesoiduPocetNenactenych.setVisible(pocetNenactenych > 0);
 
-		final String formatedCas = String.format("%tF %<tR", informaceOZdrojich.getYungest());
-		jZdrojeKesoiduCas.setText(formatedCas);
+		jZdrojeKesoiduCas.setText(casZdroju(informaceOZdrojich.getYungest()));
 		revalidate();
+	}
+
+	static final String BEZ_POZICE = "–";
+
+	/** Bez načtených zdrojů se čas nezobrazuje. */
+	static String casZdroju(final long nejmladsi) {
+		return nejmladsi <= 0 ? "" : String.format("%tF %<tR", nejmladsi);
 	}
 
 	public void onEvent(final KeskyVyfiltrovanyEvent aEvent) {
@@ -195,7 +201,7 @@ public class JStatusBar extends JPanel {
 
 		if (poziceq.isNoPosition()) {
 			// souradnicePozice.setVisible(false);
-			souradnicePozice.setText("N/A");
+			souradnicePozice.setText(BEZ_POZICE);
 		} else {
 			souradnicePozice.setText(poziceq.getWgs().toString());
 			// souradnicePozice.setVisible(true);
