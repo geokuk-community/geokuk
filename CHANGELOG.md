@@ -62,9 +62,9 @@
   Enter nebo tlačítkem Hledat, souřadnice v poli najdou adresu místa.
   Položka „Geocoding“ v kontextovém menu mapy je nahrazena položkou
   „Na OpenStreetMap...“, která místo otevře v prohlížeči.
-- Hlášení chyb: „Zadat problém“ a tlačítko „Nahlásit na GitHubu“
-  v „Informace pro hlášení chyby“ otevřou nové issue s předvyplněnými
-  informacemi o programu. „Informace pro hlášení chyby“ obsahují cestu
+- Hlášení chyb: „Zadat problém“ i „Informace pro hlášení chyby“ nejdřív
+  ukážou informace o programu, tlačítko „Nahlásit na GitHubu“ pak otevře
+  nové issue, kde jsou předvyplněné. „Informace pro hlášení chyby“ obsahují cestu
   k logu a jeho posledních 50 řádků, servisní hodnoty ze servisního okna
   a posledních 100 událostí: spuštěné položky menu s cestou v menu,
   klávesovou zkratkou a stavem přepínače, otevřená a zavřená okna
