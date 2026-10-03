@@ -135,6 +135,34 @@ public final class FString {
 		return s;
 	}
 
+	/** Text pro vložení do HTML (popisky Swingu začínající {@code <html>}), aby se z něj nestaly značky. */
+	public static String html(final String s) {
+		if (s == null) {
+			return null;
+		}
+		final StringBuilder sb = new StringBuilder(s.length());
+		for (int i = 0; i < s.length(); i++) {
+			final char c = s.charAt(i);
+			switch (c) {
+			case '&':
+				sb.append("&amp;");
+				break;
+			case '<':
+				sb.append("&lt;");
+				break;
+			case '>':
+				sb.append("&gt;");
+				break;
+			case '"':
+				sb.append("&quot;");
+				break;
+			default:
+				sb.append(c);
+			}
+		}
+		return sb.toString();
+	}
+
 	/** {@link TwString} je jen knihovna funkcí, nikoliv instanciovatelný objekt. */
 	private FString() {
 		/* INTENDED: zabránění externí instanciace. */ }

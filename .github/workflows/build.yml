@@ -102,7 +102,7 @@ jobs:
           $podpis = Get-AuthenticodeSignature GeoKuk/program/runtime/bin/javaw.exe
           if ($podpis.Status -ne "Valid") { throw "javaw.exe není podepsaný: $($podpis.Status)" }
           Copy-Item geokuk.jar, start.jar, distribuce/windows/geokuk.ico GeoKuk/program/
-          Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt GeoKuk/
+          Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt, LICENSE, THIRD-PARTY.txt GeoKuk/
           GeoKuk/program/runtime/bin/java -version
           $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
           $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()

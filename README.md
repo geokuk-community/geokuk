@@ -59,6 +59,9 @@ v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
 GeoKuk
 ├── GeoKuk-prvni-spusteni.cmd    první spuštění ve Windows
 ├── GeoKuk.lnk                   zástupce, vytvoří ho GeoKuk
+├── CTIMNE.txt
+├── LICENSE                      licence GNU GPL v3
+├── THIRD-PARTY.txt              použité knihovny a jejich licence
 ├── program
 │   ├── geokuk.jar               program
 │   ├── start.jar                spouštěč
@@ -81,12 +84,25 @@ Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 a�
 
 ### Přechod ze starší verze
 
-Nastavení se při prvním spuštění převezme samo. Dlaždice map stažené
-starší verzí zkopírujte z `%USERPROFILE%\geokuk\prchave\kachle` do
-`data\cache`, vlastní ikony z `%USERPROFILE%\geokuk\imagesMy` do
-`data\ikony\moje` a ikony od jiných z `images3rdParty` do
-`data\ikony\ostatni`. Výlety (`lovim.ggt`, `tedne.ggt`) patří do
-`data\vylety`, cesty do `data\cesty`.
+Nastavení se při prvním spuštění převezme samo. Data starší verze
+zůstanou ve složce `%USERPROFILE%\geokuk` (na Linuxu a macOS
+`~/geokuk`), GeoKuk je odtud nečte. Co chcete dál používat, zkopírujte
+do složky `data`:
+
+- keše z GPX uložené přímo v `%USERPROFILE%\geokuk` (výchozí složka
+  starší verze) do `data\gpx`, nebo jejich složku nastavte v Soubor >
+  Umístění souborů,
+- výlety `lovim.ggt` a `tedne.ggt` do `data\vylety`,
+- cesty ze složky `cesty` do `data\cesty`,
+- vlastní ikony z `imagesMy` do `data\ikony\moje` a ikony od jiných
+  z `images3rdParty` do `data\ikony\ostatni`,
+- dlaždice map z `prchave\kachle` do `data\cache`.
+
+Ve Windows se verze 6.0.0 na novou verzi aktualizuje sama, ale jen
+samotný program ve stávající složce, bez přibalené Javy. Další
+aktualizace pak už sama nenainstaluje. Pro automatické aktualizace
+a přibalenou Javu stáhněte `GeoKuk-windows.zip` a data přeneste podle
+postupu výše.
 
 ## Uživatelské mapy
 
@@ -160,4 +176,5 @@ spustit pro Linux i Windows.
 
 ## Licence
 
-[GNU GPL v3](LICENSE)
+[GNU GPL v3](LICENSE). Použité knihovny a jejich licence jsou
+v [THIRD-PARTY.txt](THIRD-PARTY.txt).
