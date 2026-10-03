@@ -116,7 +116,7 @@ public class JErrorDialog extends JMyDialog0 {
 			jErrorTable.getProblemList().clear();
 			jErrorTable.revalidate();
 			jErrorTable.repaint();
-			jOtviracVyjimky.setText("Tabulka problemu vymazana");
+			jOtviracVyjimky.setText("Tabulka problémů je vymazaná");
 			jOtviracVyjimky.setEnabled(false);
 		});
 

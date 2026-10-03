@@ -541,7 +541,7 @@ class KachleDBManager implements KachleManager {
 		if (++neuspesnychOtevreniZaSebou == 3 && !uzivatelUpozornen) {
 			uzivatelUpozornen = true;
 			SwingUtilities.invokeLater(() -> Dlg.upozorneni("Cache dlaždic ve složce " + f.getParent() + " nejde použít, mapy se budou pokaždé stahovat znovu.\n"
-					+ "Složku můžete změnit v menu Soubor > Umístění souborů."));
+					+ "Zkontrolujte disk a práva ke složce, cache můžete i smazat."));
 		}
 	}
 

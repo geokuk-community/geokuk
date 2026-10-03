@@ -25,7 +25,7 @@ public class WebovaStrankaAction extends Action0 {
 	 */
 	public WebovaStrankaAction() {
 		super("Webová stránka");
-		putValue(SHORT_DESCRIPTION, "Zobrazí webovou stránku programu s nápovědou a jinými infroamcemi.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí webovou stránku programu s nápovědou a jinými informacemi.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_W);
 	}
 

@@ -45,7 +45,7 @@ public class TadyJsemDomaAction extends Action0 {
 		boolean zapsat = true;
 		if (!VyrezModel.DEFAULTNI_DOMACI_SOURADNICE.equals(stareGc)) {
 			// ještě neukládal, tak se nemusíme ptát
-			zapsat = Dlg.anone("Uložit " + hc + " jako domací souřadnice a přepsat tak původní " + stareGc + "?");
+			zapsat = Dlg.anone("Uložit " + hc + " jako domácí souřadnice a přepsat tak původní " + stareGc + "?");
 		}
 		if (zapsat) {
 			refbodyModel.setHc(hc);

@@ -7,6 +7,8 @@ import java.lang.Thread.UncaughtExceptionHandler;
 
 import javax.swing.JOptionPane;
 
+import cz.geokuk.core.program.PametProgramuAction;
+
 /**
  * @author Martin Veverka
  *
@@ -27,7 +29,7 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 			if (t instanceof OutOfMemoryError) {
 				zpracujMaloPameti((OutOfMemoryError) t);
 			}
-			final AExcId excId = FExceptionDumper.dump(t, EExceptionSeverity.DISPLAY, "Výjimka vypadla až z vlákna " + vlakno);
+			final AExcId excId = FExceptionDumper.dump(t, EExceptionSeverity.DISPLAY, "Neošetřená výjimka ve vlákně " + vlakno);
 			System.err.println("Exception: " + excId);
 		} catch (final Throwable tt) {
 			// Tak když výjimku nešlo ani vypsat
@@ -44,8 +46,8 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 		spunt = null; // uvolníme špunt, čímž umožníme ještě zobrazit okno a ukončit program
 		final AExcId excId = FExceptionDumper.dump(oome, EExceptionSeverity.DISPLAY, "Málo paměti odchyceno.");
 		System.err.println("Exception: " + excId);
-		JOptionPane.showMessageDialog(null,
-		        excId + ": došla paměť, total=" + totalMemory + " KiB, free=" + freeMemory + " KiB, proces bude ukončen, zkus: \"java -Xmx1024m -jar geokuk.jar\"; " + oome.toString(), "Chyba",
+		System.err.println("Paměť: total=" + totalMemory + " KiB, free=" + freeMemory + " KiB");
+		JOptionPane.showMessageDialog(null, "Programu došla paměť, GeoKuk se ukončí.\n" + PametProgramuAction.jakZvysitPamet() + "\n\nHlášení chyby: " + excId, "GeoKuk",
 		        JOptionPane.ERROR_MESSAGE);
 		System.exit(1);
 	}

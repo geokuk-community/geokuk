@@ -26,7 +26,7 @@ public class SwitchKesoidUrciteAlelyAction extends ToggleAction0 implements Afte
 	 *
 	 */
 	public SwitchKesoidUrciteAlelyAction(final Alela alela) {
-		super("Zapnuti vypnuti alely");
+		super("Zapnutí a vypnutí alely");
 		this.alela = alela;
 		// putValue(MNEMONIC_KEY, InputEvent.)
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
