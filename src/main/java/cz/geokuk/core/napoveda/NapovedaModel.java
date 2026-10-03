@@ -12,6 +12,7 @@ import cz.geokuk.util.process.BrowserOpener;
 public class NapovedaModel extends Model0 {
 
 	private boolean onlineMode;
+	private ZkontrolovatAktualizaceSwingWorker probihajiciKontrola;
 
 	public void onEvent(final OnofflineModelChangeEvent event) {
 		onlineMode = event.isOnlineMOde();
@@ -29,7 +30,25 @@ public class NapovedaModel extends Model0 {
 				return;
 			}
 		}
-		new ZkontrolovatAktualizaceSwingWorker(zobrazovatInfoPriSpravneVerzi, this).execute();
+		// Běžící kontrola ukáže výsledek, druhý dialog by byl stejný.
+		if (probihajiciKontrola != null && probihajiciKontrola.isBetaKanal() == Diagnostika.betaKanal()) {
+			if (zobrazovatInfoPriSpravneVerzi) {
+				probihajiciKontrola.zobrazitDialogPriPosledniVerzi();
+			}
+			return;
+		}
+		probihajiciKontrola = new ZkontrolovatAktualizaceSwingWorker(zobrazovatInfoPriSpravneVerzi, this);
+		spust(probihajiciKontrola);
+	}
+
+	void spust(final ZkontrolovatAktualizaceSwingWorker kontrola) {
+		kontrola.execute();
+	}
+
+	void kontrolaSkoncila(final ZkontrolovatAktualizaceSwingWorker kontrola) {
+		if (probihajiciKontrola == kontrola) {
+			probihajiciKontrola = null;
+		}
 	}
 
 	public void odlozKontroluAktualizaci(final long dnu) {
