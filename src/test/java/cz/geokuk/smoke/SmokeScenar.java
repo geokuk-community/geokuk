@@ -134,6 +134,7 @@ public class SmokeScenar {
 		zprava.setProperty("kese.wpt", String.valueOf(((KesBag) vsechny.get(kesoidModel)).getWpts().size()));
 		zapniMapu();
 		pockejNaKlid("start");
+		hlidac.konecStartu();
 		for (final String krok : kroky) {
 			switch (krok) {
 			case "meritka":
@@ -621,6 +622,7 @@ public class SmokeScenar {
 		}
 		if (hlidac != null) {
 			zprava.setProperty("edt.nejdelsiMs", String.valueOf(hlidac.getNejdelsiMs()));
+			zprava.setProperty("edt.startMs", String.valueOf(hlidac.getNejdelsiStartMs()));
 			final List<String> pomale = hlidac.getPomale();
 			for (int j = 0; j < pomale.size(); j++) {
 				zprava.setProperty("edt.pomala." + j, pomale.get(j));

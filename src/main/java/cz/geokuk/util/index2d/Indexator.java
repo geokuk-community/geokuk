@@ -2,6 +2,7 @@ package cz.geokuk.util.index2d;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.stream.Stream;
@@ -47,16 +48,12 @@ public class Indexator<T> {
 	}
 
 	public Optional<T> locateNearestOne(final int xx, final int yy) {
-		return streamSheet(true)
-				.min( (s1, s2) -> {
-					final long dx1 = s1.xx - xx;
-					final long dy1 = s1.yy - yy;
-					final long d1 = dx1 * dx1 + dy1 * dy1;
-					final long dx2 = s2.xx - xx;
-					final long dy2 = s2.yy - yy;
-					final long d2 = dx2 * dx2 + dy2 * dy2;
-					return (int) (d1 - d2);
-				})
+		return streamSheet(false)
+				.min(Comparator.comparingLong(s -> {
+					final long dx = (long) s.xx - xx;
+					final long dy = (long) s.yy - yy;
+					return dx * dx + dy * dy;
+				}))
 				.map(Sheet::get);
 
 	}
