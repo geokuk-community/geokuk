@@ -23,13 +23,19 @@ public class ZadatProblemAction extends Action0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 	/** Delší odkaz prohlížeče nebo GitHub odmítnou. */
 	private static final int MAX_DELKA_URL = 6000;
+	private final transient Runnable dialog;
 
 	/**
 	 * @param aBoard
 	 */
 	public ZadatProblemAction() {
+		this(null);
+	}
+
+	ZadatProblemAction(final Runnable dialog) {
 		super("Zadat problém ...");
-		putValue(SHORT_DESCRIPTION, "Zobrazí stránku na GitHubu, která umožní zadat chybu v Geokuku nebo požadavek na novou funkcionalitu. Informace o programu budou předvyplněné.");
+		this.dialog = dialog != null ? dialog : () -> DiagnostikaAction.ukaz(getMainFrame());
+		putValue(SHORT_DESCRIPTION, "Ukáže informace o programu a pak otevře stránku na GitHubu, kde jde zadat chybu nebo požadavek na novou funkci. Informace o programu budou předvyplněné.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_P);
 	}
 
@@ -40,7 +46,7 @@ public class ZadatProblemAction extends Action0 {
 	 */
 	@Override
 	public void actionPerformed(final ActionEvent aE) {
-		otevri();
+		dialog.run();
 	}
 
 	static void otevri() {
