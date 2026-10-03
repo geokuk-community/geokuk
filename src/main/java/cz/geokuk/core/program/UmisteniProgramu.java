@@ -19,6 +19,7 @@ public final class UmisteniProgramu {
 	/** Složka, kterou uživatel vidí; u přenosného GeoKuku nad podsložkou program. */
 	public static final File KOREN;
 	public static final File DATA_DIR;
+	private static final File LOG;
 
 	static {
 		final File umisteni = umisteniTrid();
@@ -32,10 +33,18 @@ public final class UmisteniProgramu {
 		KOREN = Start.koren(JAR_DIR);
 		final String data = System.getProperty(DATA_PROPERTY);
 		DATA_DIR = data != null && !data.isEmpty() ? new File(data).getAbsoluteFile() : new File(KOREN, "data");
+		LOG = log(DATA_DIR, new File(System.getProperty("java.io.tmpdir")));
 	}
 
+	/** Složka logu a výpisů chyb. */
 	public static File log() {
-		return new File(DATA_DIR, "log");
+		return LOG;
+	}
+
+	/** Log patří do datové složky, když do ní nejde zapisovat, tak do dočasné složky systému. */
+	static File log(final File data, final File docasna) {
+		final File log = new File(data, "log");
+		return Start.lzeZapsat(log) ? log : new File(new File(docasna, "GeoKuk"), "log");
 	}
 
 	private static File umisteniTrid() {

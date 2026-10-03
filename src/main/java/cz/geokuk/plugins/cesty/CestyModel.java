@@ -8,6 +8,7 @@ import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,8 @@ import cz.geokuk.plugins.cesty.data.*;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.lang.FUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,6 +85,20 @@ public class CestyModel extends Model0 {
 				Thread.sleep(100);
 			}
 			return null;
+		}
+
+		@Override
+		protected void done() {
+			if (isCancelled()) {
+				return;
+			}
+			try {
+				get();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			} catch (final ExecutionException e) {
+				FExceptionDumper.dump(e.getCause(), EExceptionSeverity.DISPLAY, "Kopírování odkazů do schránky");
+			}
 		}
 
 	}

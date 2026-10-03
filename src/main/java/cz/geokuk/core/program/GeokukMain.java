@@ -8,6 +8,8 @@ import java.util.prefs.BackingStoreException;
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
+
 import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.ovladani.DalkoveOvladani;
@@ -35,6 +37,7 @@ public class GeokukMain {
 
 	public void execute(final String[] args) {
 		FConst.logInit();
+		presmerujJulDoSlf4j();
 		zamek = Start.zamkni(new File(FConst.DATA_DIR, Start.ZAMEK));
 		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
 		ImageIO.setUseCache(false);
@@ -68,6 +71,14 @@ public class GeokukMain {
 			}
 			inicializator.zkontrolovatAktualizace();
 		});
+	}
+
+	/** Zprávy z java.util.logging do logu programu. */
+	static void presmerujJulDoSlf4j() {
+		if (!SLF4JBridgeHandler.isInstalled()) {
+			SLF4JBridgeHandler.removeHandlersForRootLogger();
+			SLF4JBridgeHandler.install();
+		}
 	}
 
 	private void nastavSkin() {

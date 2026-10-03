@@ -541,7 +541,7 @@ public class GsakDbLoader extends Nacitac0 {
 			for (final String columnName : columnNames(aResultSet)) {
 				final String key = columnName.equalsIgnoreCase("cCode") ? CACHE_CODE_KEY : columnName;
 				final Object value = aResultSet.getObject(columnName);
-				if (value != null || value instanceof String && !StringUtils.isBlank((String)value)) {
+				if (value != null && !(value instanceof String && StringUtils.isBlank((String) value))) {
 					aMap.put(key, value);
 				}
 			}

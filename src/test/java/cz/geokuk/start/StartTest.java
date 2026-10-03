@@ -3,6 +3,7 @@ package cz.geokuk.start;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.*;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -89,5 +90,22 @@ public class StartTest {
 		Assert.assertFalse(Start.pockejNaUkonceni(zamek, 500));
 		drzeny.channel().close();
 		Assert.assertTrue(Start.pockejNaUkonceni(zamek, 500));
+	}
+
+	@Test
+	public void docasneSouboryDoData() throws Exception {
+		final File data = tmp.newFolder("data");
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejDocasnouSlozku(prikaz, data);
+		Assert.assertEquals(Collections.singletonList("-Djava.io.tmpdir=" + new File(data, "tmp").getPath()), prikaz);
+		Assert.assertTrue(new File(data, "tmp").isDirectory());
+	}
+
+	@Test
+	public void doNezapisovatelnychDatDocasneSouboryNe() throws Exception {
+		final File data = tmp.newFile("data"); // soubor místo složky, do data/tmp nejde zapsat ani jako správce
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejDocasnouSlozku(prikaz, data);
+		Assert.assertEquals(Collections.emptyList(), prikaz);
 	}
 }
