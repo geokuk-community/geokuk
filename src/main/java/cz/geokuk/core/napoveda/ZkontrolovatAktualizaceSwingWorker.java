@@ -41,6 +41,11 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 		return betaKanal;
 	}
 
+	/** Beta kanál se během kontroly přepnul, výsledek patří ke starému kanálu. */
+	boolean jeZastarala() {
+		return betaKanal != Diagnostika.betaKanal();
+	}
+
 	/**
 	 * Porovná verze po číselných částech, písmena a jiné oddělovače ignoruje.
 	 * Testovací verze (s příponou za pomlčkou, např. 6.0.1-beta.2) je starší
@@ -131,7 +136,9 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 
 	private void ukazVysledek() throws Exception {
 		final String lastVersion = get();
-		if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {
+		if (jeZastarala()) {
+			log.info("Kontrola aktualizací pro jiný beta kanál, výsledek se neukáže: " + lastVersion);
+		} else if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {
 			log.info("LAST VERSION: " + lastVersion + " i have no version, i am in development environment");
 		} else if (lastVersion == null) {
 			if (zobrazitDialogPriPosledniVerzi) {
