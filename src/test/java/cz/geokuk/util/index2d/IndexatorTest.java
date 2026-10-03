@@ -201,4 +201,14 @@ public class IndexatorTest {
 	private Indexator<TestBod> mat10() {
 		return mat(10);
 	}
+	@Test
+	public void nejblizsiPriVelkychVzdalenostech() {
+		final TestBod daleko = b(60000, 0);
+		final TestBod blizko = b(0, 10);
+		final Indexator<TestBod> indexator = new Indexator<TestBod>(BoundingRect.ALL)
+				.add(daleko.getX(), daleko.getY(), daleko)
+				.add(blizko.getX(), blizko.getY(), blizko);
+		Assert.assertSame(blizko, indexator.locateNearestOne(0, 0).get());
+	}
+
 }

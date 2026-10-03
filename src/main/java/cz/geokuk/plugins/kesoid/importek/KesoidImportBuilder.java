@@ -129,9 +129,9 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		try {
 			for (final Wpt wpt : wpts) {
 				kesBag.add(wpt);
-			}
-			if (citac++ % 1000 == 0) {
-				progressor.setProgress(citac);
+				if (++citac % 1000 == 0) {
+					progressor.setProgress(citac);
+				}
 			}
 			kesBag.setInformaceOZdrojich(informaceOZdrojich);
 			kesBag.done();

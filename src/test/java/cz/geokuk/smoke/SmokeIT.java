@@ -23,6 +23,8 @@ import org.junit.*;
 public class SmokeIT {
 
 	private static final File KOREN = new File("target/smoke");
+	private static final long EDT_LIMIT_MS = 3000;
+	private static final long EDT_LIMIT_START_MS = 10_000;
 
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
@@ -77,11 +79,17 @@ public class SmokeIT {
 	public void zlobivyServer() throws Exception {
 		final File adresar = pripravAdresar("zlobivy");
 		server.setZlobi(true);
+		final long zacatek = System.currentTimeMillis();
 		final Properties zprava = spust(adresar, "zlobivy", "meritka,posun");
+		final long trvani = System.currentTimeMillis() - zacatek;
 		zkontrolujBezChyb(adresar, zprava);
 		final Map<String, Integer> pozadavky = server.getPozadavky();
+		// Program si nestažené dlaždice pamatuje 30 s, na pomalém stroji je scénář delší a smí je po každém vypršení zkusit znovu.
+		final Map<String, Integer> zaPametChyb = server.getNejvicPozadavkuZaDobu(30_000);
+		final long nejvicCelkem = 3 + (trvani + 29_999) / 30_000;
 		final List<String> dokola = pozadavky.entrySet().stream().filter(e -> e.getKey().startsWith("/"))
-				.filter(e -> e.getValue() > (FalesnyDlazdicovyServer.zlobeni(e.getKey()) == null ? 1 : 3)).map(e -> e.getKey() + " " + e.getValue() + "x " + FalesnyDlazdicovyServer.zlobeni(e.getKey()))
+				.filter(e -> FalesnyDlazdicovyServer.zlobeni(e.getKey()) == null ? e.getValue() > 1 : zaPametChyb.getOrDefault(e.getKey(), 0) > 3 || e.getValue() > nejvicCelkem)
+				.map(e -> e.getKey() + " " + e.getValue() + "x (nejvýš " + nejvicCelkem + "), za 30 s nejvýš " + zaPametChyb.get(e.getKey()) + "x " + FalesnyDlazdicovyServer.zlobeni(e.getKey()))
 				.collect(Collectors.toList());
 		assertTrue("Dlaždice se stahovaly dokola: " + dokola, dokola.isEmpty());
 		assertTrue("ka33 WEB #chyb má zlobení zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
@@ -165,6 +173,10 @@ public class SmokeIT {
 		assertEquals(0, pocitadlo(treti, "ka24 DISK cache #chyb čtení"));
 		assertFalse("Cache se nesmí odložit jako vadná", new File(adresar, "data/cache/tiles.sqlite.vadna").exists());
 		assertTrue("Třetí běh bere dlaždice z cache", pocitadlo(treti, "ka22 DISK cache #zásahů") > 100);
+		for (final String beh : Arrays.asList("prvni", "druha", "treti")) {
+			final String log = new String(Files.readAllBytes(new File(adresar, beh + ".log").toPath()), StandardCharsets.UTF_8);
+			assertFalse("Instance " + beh + " nezapsala dlaždice do sdílené cache, viz " + beh + ".log", log.contains("Nepodařilo se zapsat dlaždice do databáze"));
+		}
 	}
 
 	@Test
@@ -176,6 +188,36 @@ public class SmokeIT {
 		assertTrue("Mapa se má načíst", pocitadlo(zprava, "ka32 WEB #načtených") > 100);
 		assertEquals("Bez datové složky nejsou keše", "0", zprava.getProperty("kese.wpt"));
 		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
+	}
+
+	/** První start bez nastavení převezme nastavení starší verze z Java Preferences. Jen na Linuxu, jinde jsou v registru nebo v plistu uživatele. */
+	@Test
+	public void prevzetiNastaveniZJavaPreferences() throws Exception {
+		Assume.assumeTrue("Java Preferences jen v souborech", System.getProperty("os.name").startsWith("Linux"));
+		final File adresar = pripravAdresar("prevzeti");
+		final File nastaveni = new File(adresar, "data/nastaveni.xml");
+		Files.delete(nastaveni.toPath());
+		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
+		prefs.getParentFile().mkdirs();
+		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"smokePrevzato\" value=\"ano\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
+		final Properties zprava = spust(adresar, "prevzeti", "meritka");
+		zkontrolujBezChyb(adresar, zprava);
+		final String ulozene = new String(Files.readAllBytes(nastaveni.toPath()), StandardCharsets.UTF_8);
+		assertTrue("Nastavení z Java Preferences se má převzít: " + ulozene, ulozene.contains("smokePrevzato"));
+	}
+
+	/** Úplně první start: bez nastavení a bez čeho převzít. */
+	@Test
+	public void prvniStartBezNastaveni() throws Exception {
+		Assume.assumeTrue("Java Preferences jen v souborech", System.getProperty("os.name").startsWith("Linux"));
+		final File adresar = pripravAdresar("prvni-start");
+		final File nastaveni = new File(adresar, "data/nastaveni.xml");
+		Files.delete(nastaveni.toPath());
+		final Properties zprava = spust(adresar, "prvni-start", "meritka");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals("Načtené waypointy", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+		assertTrue("Nastavení se má uložit", nastaveni.isFile());
 	}
 
 	@Test
@@ -260,10 +302,6 @@ public class SmokeIT {
 	}
 
 	private Process spustZvenku(final File adresar) throws IOException {
-		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
-		prefs.getParentFile().mkdirs();
-		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
-				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
 		final List<String> prikaz = new ArrayList<>(jvm(adresar));
 		prikaz.add("-jar");
 		prikaz.add(new File(adresar, "pracovni/geokuk.jar").getPath());
@@ -452,6 +490,11 @@ public class SmokeIT {
 				+ "smoke.max=18\n" //
 				+ "smoke.hromadne=ano\n";
 		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
+		// Hotové nastavení: program pak nepřebírá nastavení z Java Preferences, ve Windows z registru uživatele, který test spustil.
+		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map/><node name=\"current\"><map/><node name=\"vseobecne\"><map>"
+				+ "<entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/></map></node></node></node></root></preferences>\n").getBytes(StandardCharsets.UTF_8));
 		Files.copy(new File(System.getProperty("smoke.jar")).toPath(), new File(pracovni, "geokuk.jar").toPath());
 		return adresar;
 	}
@@ -506,12 +549,9 @@ public class SmokeIT {
 		if (zprava.getProperty("edt.nejdelsiMs") == null) {
 			problemy.add("Zpráva nemá edt.nejdelsiMs, hlídač EDT neběžel");
 		}
-		final long edt = Long.parseLong(zprava.getProperty("edt.nejdelsiMs", "0"));
-		if (edt > 3000) {
-			final String nejpomalejsi = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.pomala.")).map(zprava::getProperty)
-					.filter(p -> p.startsWith(edt + " ms")).findFirst().orElse(zprava.getProperty("edt.pomala.0"));
-			problemy.add("Událost na EDT trvala " + edt + " ms: " + nejpomalejsi);
-		}
+		zkontrolujEdt(zprava, "edt.nejdelsiMs", EDT_LIMIT_MS, "", problemy);
+		// Start programu (okno, načtení keší, první vykreslení) běží na EDT naráz a na pomalém stroji trvá déle.
+		zkontrolujEdt(zprava, "edt.startMs", EDT_LIMIT_START_MS, "při startu: ", problemy);
 		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
 		if (pamet > 400) {
 			problemy.add("Po scénáři zůstalo obsazeno " + pamet + " MB paměti");
@@ -526,6 +566,15 @@ public class SmokeIT {
 			problemy.add("Zapsáno mimo složku programu: " + mimo);
 		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
+	private static void zkontrolujEdt(final Properties zprava, final String klic, final long limitMs, final String druh, final List<String> problemy) {
+		final long edt = Long.parseLong(zprava.getProperty(klic, "0"));
+		if (edt > limitMs) {
+			final String nejpomalejsi = zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.pomala.")).map(zprava::getProperty)
+					.filter(p -> p.startsWith(edt + " ms: " + druh)).findFirst().orElse(zprava.getProperty("edt.pomala.0"));
+			problemy.add("Událost na EDT " + druh + "trvala " + edt + " ms (limit " + limitMs + " ms): " + nejpomalejsi);
+		}
 	}
 
 	/**
