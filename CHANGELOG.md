@@ -143,6 +143,8 @@
   sekund i při ukončení programu.
   Zdravá cache se neodkládá jako poškozená a opakovaná chyba čtení
   z cache se do logu hlásí souhrnně.
+- Při rychlém posouvání mapy se nezobrazí cizí dlaždice a souběžný
+  zápis cache map nepoškodí.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
