@@ -74,10 +74,6 @@ public class Wgs extends Misto0 {
 		return new Wgs(lat + dlat, lon + dlon);
 	}
 
-	public Wgs add(final Wgsd wgsd) {
-		return new Wgs(lat + wgsd.lat, lon + wgsd.lon);
-	}
-
 	public double azimut(final Wgs bod) {
 		return azimut(this, bod);
 	}
@@ -126,14 +122,6 @@ public class Wgs extends Misto0 {
 	 */
 	public double metryNaMou() {
 		return FGeoKonvertor.metryNaMou(lat);
-	}
-
-	public Wgsd sub(final Wgs wgs) {
-		return new Wgsd(lat - wgs.lat, lon - wgs.lon);
-	}
-
-	public Wgs sub(final Wgsd wgsd) {
-		return new Wgs(lat - wgsd.lat, lon - wgsd.lon);
 	}
 
 	@Override
