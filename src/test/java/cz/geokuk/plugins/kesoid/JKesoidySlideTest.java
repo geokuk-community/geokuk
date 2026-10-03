@@ -4,7 +4,11 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
+
+import javax.swing.SwingUtilities;
 
 import org.junit.Test;
 
@@ -18,6 +22,8 @@ public class JKesoidySlideTest {
 	public void paintovaciVlaknoPrezijeVyjimku() throws Exception {
 		JKesoidySlide.ohlaseneChyby.clear();
 		final long vypisuPred = pocetVypisu();
+		final List<Throwable> naEdt = new CopyOnWriteArrayList<>();
+		SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler((t, e) -> naEdt.add(e)));
 		final JKesoidySlide slide = new JKesoidySlide(false);
 		slide.zaplanujNaplneniSklivce(new Wpt(), new Mou(0, 0));
 		pockejNaPrazdnouFrontu(slide);
@@ -27,6 +33,8 @@ public class JKesoidySlideTest {
 		pockejNaPrazdnouFrontu(slide);
 		assertTrue(JKesoidySlide.ohlaseneChyby.contains(NullPointerException.class));
 		assertEquals("chyba se ohlásí jen jednou", vypisuPred + 1, pocetVypisu());
+		SwingUtilities.invokeAndWait(() -> {});
+		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
 	}
 
 	private static long pocetVypisu() throws IOException {
