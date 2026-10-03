@@ -54,7 +54,7 @@ public class JErrorTable extends JPanel {
 
 		private final List<Problem> problemlist = new ArrayList<>();
 
-		private final String[] columnNames = { "Závažnost", "Výjimka", "Popis",
+		private final String[] columnNames = { "Č.", "Hlášení", "Popis",
 
 		};
 
