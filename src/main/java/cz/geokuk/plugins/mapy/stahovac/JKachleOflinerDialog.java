@@ -184,7 +184,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 		uvod = new JTextPane();
 		uvod.setContentType("text/html");
-		uvod.setText("Tady bude kecání");
+		uvod.setText("");
 		uvod.setPreferredSize(new Dimension(400, 200));
 		uvod.setAlignmentX(CENTER_ALIGNMENT);
 

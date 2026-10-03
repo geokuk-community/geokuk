@@ -9,6 +9,7 @@ import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
+import cz.geokuk.util.lang.FString;
 
 /**
  * Kesoid representing coordinates loaded from EXIF of a picture.
@@ -43,6 +44,6 @@ public class Photo extends Kesoid {
 
 	@Override
 	public void prispejDoTooltipu(final StringBuilder sb, final Wpt wpt) {
-		sb.append("<b>").append(wpt.getName()).append("<b>");
+		sb.append("<b>").append(FString.html(wpt.getName())).append("</b>");
 	}
 }
