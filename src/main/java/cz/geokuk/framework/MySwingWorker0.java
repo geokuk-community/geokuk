@@ -24,8 +24,15 @@ public abstract class MySwingWorker0<T, V> extends SwingWorker<T, V> {
 			donex();
 		} catch (final Exception e) {
 			final Throwable pricina = e instanceof ExecutionException && e.getCause() != null ? e.getCause() : e;
-			throw new RuntimeException("Výjimka při zpracování na pozadí: " + pricina, e);
+			throw new RuntimeException(popis(pricina), e);
 		}
+	}
+
+	/** Text pro Přehled problémů: zpráva výjimky bez jména třídy Javy, jen když zprávu nemá, aspoň její druh. */
+	static String popis(final Throwable pricina) {
+		final String zprava = pricina.getLocalizedMessage();
+		return zprava != null && !zprava.trim().isEmpty() ? "Chyba při práci na pozadí: " + zprava
+				: "Chyba při práci na pozadí (" + pricina.getClass().getSimpleName() + ")";
 	}
 
 	protected void donex() throws Exception {}
