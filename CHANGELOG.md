@@ -30,8 +30,8 @@
   v dočasné složce systému.
 - Když nová verze potřebuje novější Javu, než je přibalená, nebo je
   k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
-- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál, verze
-  je pak trvale vidět vpravo v menu. Po vypnutí nabídne ruční kontrola
+- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál, dokud
+  je zapnutý, je verze vidět vpravo v menu. Po vypnutí nabídne ruční kontrola
   aktualizací přechod na poslední stabilní verzi.
 - „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
   nainstaluje; kde to nejde, otevře stránku nabízené verze, u bety

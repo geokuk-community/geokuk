@@ -268,22 +268,26 @@ public class Menu extends MenuStrujce {
 		separator();
 		item(akce.oProgramuAction);
 
-		if (Diagnostika.zobrazovatVerzi()) {
-			menuBar.add(Box.createHorizontalGlue());
-			final JButton verze = new JButton(akce.diagnostikaAction);
-			verze.setText(Diagnostika.popisVerze());
-			verze.setIcon(null);
-			verze.setForeground(new Color(0xC0, 0x50, 0x00));
-			verze.setBorderPainted(false);
-			verze.setContentAreaFilled(false);
-			verze.setFocusable(false);
-			menuBar.add(verze);
-		}
+		menuBar.add(Box.createHorizontalGlue());
+		final JButton verze = new JButton(akce.diagnostikaAction);
+		verze.setIcon(null);
+		verze.setForeground(new Color(0xC0, 0x50, 0x00));
+		verze.setBorderPainted(false);
+		verze.setContentAreaFilled(false);
+		verze.setFocusable(false);
+		nastavStitekVerze(verze);
+		Diagnostika.poZmeneBetaKanalu(() -> SwingUtilities.invokeLater(() -> nastavStitekVerze(verze)));
+		menuBar.add(verze);
 
 		tb.addSeparator();
 		tb.addOvladaceAlel();
 		tb.add(Box.createHorizontalGlue());
 
+	}
+
+	static void nastavStitekVerze(final AbstractButton verze) {
+		verze.setText(Diagnostika.popisVerze());
+		verze.setVisible(Diagnostika.zobrazovatVerzi());
 	}
 
 }
