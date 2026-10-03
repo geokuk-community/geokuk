@@ -78,7 +78,6 @@
 - V Umístění souborů zůstaly k nastavení jen složky s daty jiných
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
   záložka Program.
-
 - O programu ukáže licenci a seznam použitých knihoven s jejich
   licencemi. Program i zip pro Windows obsahují soubory `LICENSE`
   a `THIRD-PARTY.txt`.

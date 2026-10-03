@@ -88,6 +88,7 @@ public class JOProgramuDialog extends JMyDialog0 {
 	private void ukazLicence() {
 		final JTextArea text = new JTextArea(textLicence());
 		text.setEditable(false);
+		text.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		text.setCaretPosition(0);
 		final JScrollPane posuv = new JScrollPane(text);
 		posuv.setPreferredSize(new Dimension(640, 480));

@@ -11,5 +11,10 @@ public class LicenceTest {
 		Assert.assertTrue(text.contains("SQLJet"));
 		Assert.assertTrue(text.contains("Sun Microsystems"));
 		Assert.assertTrue(text.contains("GNU GENERAL PUBLIC LICENSE"));
+		Assert.assertTrue(text.contains("Copyright (c) 2004-2023 QOS.ch"));
+		Assert.assertTrue(text.contains("Copyright (c) 2005-2009 Terence Parr"));
+		Assert.assertTrue(text.contains("Copyright (c) Adobe Systems Incorporated"));
+		Assert.assertTrue(text.contains("Copyright (c) 2006, David Crawshaw"));
+		Assert.assertTrue(text.contains("lgpl-2.1"));
 	}
 }
