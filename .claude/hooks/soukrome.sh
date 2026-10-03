@@ -18,6 +18,15 @@ DIR="$ROOT/poznamky"
 # Token se čte z prostředí při každém volání, na disk se nezapisuje.
 HELPER='!f() { test "$1" = get || exit 0; echo "username=${POZNAMKY_USER:-git}"; echo "password=${POZNAMKY_TOKEN:-}"; }; f'
 
+# Git nad poznámkami; s tokenem i u kopie, která helper v konfiguraci nemá.
+gp() {
+  if [ -n "${POZNAMKY_TOKEN:-}" ]; then
+    git -C "$DIR" -c credential.helper= -c "credential.helper=$HELPER" "$@"
+  else
+    git -C "$DIR" "$@"
+  fi
+}
+
 case "${1:-}" in
   start)
     EXCLUDE="$ROOT/.git/info/exclude"
@@ -25,7 +34,7 @@ case "${1:-}" in
       grep -qxF "$p" "$EXCLUDE" 2>/dev/null || echo "$p" >> "$EXCLUDE"
     done
     if [ -d "$DIR/.git" ]; then
-      git -C "$DIR" pull -q --rebase || echo "soukrome: pull selhal, pracuj s lokální kopií"
+      gp pull -q --rebase --autostash || echo "soukrome: pull selhal, pracuj s lokální kopií"
     else
       if [ -n "${POZNAMKY_TOKEN:-}" ]; then
         git -c credential.helper= -c "credential.helper=$HELPER" clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
@@ -47,8 +56,8 @@ case "${1:-}" in
     if [ -n "$(git -C "$DIR" status --porcelain)" ]; then
       git -C "$DIR" add -A && git -C "$DIR" commit -q -m "Uložení na konci session"
     fi
-    git -C "$DIR" pull -q --rebase || true
-    git -C "$DIR" push -q || echo "soukrome: push selhal"
+    gp pull -q --rebase || true
+    gp push -q || echo "soukrome: push selhal"
     ;;
 esac
 exit 0

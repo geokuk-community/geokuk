@@ -7,7 +7,9 @@
   složky `data` vedle sebe: nastavení (`nastaveni.xml`), uživatelské mapy
   (`uzivatelske-mapy.properties`), cache map (`cache`), cesty, ikony
   (`ikony/moje`, `ikony/ostatni`), výlety (`vylety`), log a chybová
-  hlášení (`log`) i dočasné soubory Javy (`tmp`). Rozhoduje jen to,
+  hlášení (`log`) i dočasné soubory Javy (`tmp`). Když do složky `data`
+  nejde zapisovat, log a chybová hlášení jsou v `%TEMP%\GeoKuk\log`
+  a dočasné soubory v dočasné složce systému. Rozhoduje jen to,
   odkud se spustí, složku jde přesunout i s daty. Nastavení už není
   v registru Windows, při prvním spuštění se odtud převezme. Volba
   „Ukládat nastavení k programu“ odpadla.
@@ -86,6 +88,26 @@
   render západně od Greenwiche nebo na jižní polokouli sedí na mapě.
 - Souřadnice ve stupních a minutách (i vteřinách v mřížce a renderu) se
   zaokrouhlují správně, místo například 49°60.000 se ukáže 50°00.000.
+- Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
+  česky. Položka menu Kešoidy > Filtr... má správný název.
+- Když do složky cache map nejde zapisovat (třeba v Program Files),
+  mapa se zobrazí a dlaždice zůstanou jen v paměti.
+- Rendr mapy nepřichází o dlaždice, které si najednou vyžádalo víc míst.
+- Chyba při výpočtu ikon keší nezastaví jejich kreslení a do přehledu
+  problémů se zapíše jen jednou.
+- Rendr pro OziExplorer ohlásí, když se soubor `.map` nepodaří zapsat
+  (třeba na plný disk), a nenechá po sobě neúplné soubory.
+- Chyba při práci na pozadí je v přehledu problémů česky a s příčinou.
+- Spuštění z nezapisovatelné složky (třeba Program Files): keše
+  z GeoGetu a GSAKu se načtou a log a chybová hlášení se uloží,
+  v Přehledu problémů jdou otevřít.
+- Nastavení se ukládá i po neočekávané chybě při zápisu.
+- Načtené soubory GPX, `.geokuk` a fotky nezůstávají ve Windows zamčené.
+- GSAK: prázdné vlastní hodnoty se nezobrazují jako tagy.
+- Souřadnice zadané mimo rozsah (šířka nad 90°, délka nad 180°, minuty
+  nebo vteřiny od 60) program odmítne, místo aby přeskočil jinam.
+- Pruh „Indexování“ při načítání keší ukazuje průběh.
+- Chyba při kopírování odkazů výletu nebo cesty do schránky se ohlásí.
 
 ## 6.1.0
 

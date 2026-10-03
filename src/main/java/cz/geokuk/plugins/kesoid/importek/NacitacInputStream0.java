@@ -14,7 +14,9 @@ public abstract class NacitacInputStream0 extends Nacitac0 {
 		if (!umiNacist(file)) {
 			throw new IllegalArgumentException("Cannot load file " + file);
 		}
-		nacti(wrapByProgressor(new FileInputStream(file), file.toString(), progressModel), file.toString(), builder, future);
+		try (InputStream istm = wrapByProgressor(new FileInputStream(file), file.toString(), progressModel)) {
+			nacti(istm, file.toString(), builder, future);
+		}
 	}
 
 	protected abstract void nacti(InputStream aIstm, String name, IImportBuilder builder, Future<?> future) throws IOException;
@@ -25,7 +27,9 @@ public abstract class NacitacInputStream0 extends Nacitac0 {
 			throw new IllegalArgumentException("Cannot load zipped entry " + zipEntry + " from file " + zipFile);
 		}
 		final String name = zipFile.getName() + "/" + zipEntry.getName();
-		nacti(wrapByProgressor(zipFile.getInputStream(zipEntry), name, progressModel), name, builder, future);
+		try (InputStream istm = wrapByProgressor(zipFile.getInputStream(zipEntry), name, progressModel)) {
+			nacti(istm, name, builder, future);
+		}
 	}
 
 }
