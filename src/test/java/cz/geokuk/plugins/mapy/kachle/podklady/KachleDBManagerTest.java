@@ -62,6 +62,26 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(KACHLE));
 	}
 
+	@Test
+	public void doNezapisovatelneSlozkyCacheNezaklada() throws Exception {
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			boolean lzeZapsat(final File s) {
+				return false;
+			}
+		};
+		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertFalse("cache se nezaložila", soubor.exists());
+	}
+
+	@Test
+	public void zkouskaZapisu() throws Exception {
+		Assert.assertTrue(manager.lzeZapsat(slozka));
+		Assert.assertEquals("po zkoušce nic nezůstane", 0, slozka.list().length);
+		Assert.assertFalse("místo složky soubor", manager.lzeZapsat(new File(tmp.newFile("soubor"), "cache")));
+	}
+
 	/** Přerušení vlákna při čtení zavře kanál souboru databáze. */
 	private void nactiPrerusene(final ExecutorService vlakno) throws Exception {
 		vlakno.submit(() -> {

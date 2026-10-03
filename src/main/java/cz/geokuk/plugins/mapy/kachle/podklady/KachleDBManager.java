@@ -3,6 +3,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,6 +67,9 @@ class KachleDBManager implements KachleManager {
 	private final OpakovaneChyby chybyOtevreni = new OpakovaneChyby("Nepodařilo se otevřít databázi dlaždic");
 
 	private volatile int neuspesnychOtevreniZaSebou;
+
+	/** Výsledek zkoušky zápisu pro každou složku cache. */
+	private final Map<File, Boolean> zapisovatelneSlozky = new ConcurrentHashMap<>();
 
 	private boolean uzivatelUpozornen;
 
@@ -222,6 +226,9 @@ class KachleDBManager implements KachleManager {
 	private SqlJetDb getDatabaseConnection() {
 		final Thread t = Thread.currentThread();
 		final File folder = folderHolder.getKachleCacheFolder().getEffectiveFile();
+		if (!zapisovatelneSlozky.computeIfAbsent(folder, this::lzeZapsat)) {
+			return null; // dlaždice zůstanou jen v paměti
+		}
 		final File f = new File(folder, FILE_NAME);
 		final AbstractMap.SimpleImmutableEntry<Thread, File> mapKey = new AbstractMap.SimpleImmutableEntry<>(t, f);
 
@@ -255,6 +262,21 @@ class KachleDBManager implements KachleManager {
 		neuspesnychOtevreniZaSebou = 0;
 		connections.put(mapKey, database);
 		return database;
+	}
+
+	/** Do složky, kam nejde zapisovat (třeba Program Files), se cache nezakládá a dlaždice zůstávají jen v paměti. */
+	boolean lzeZapsat(final File slozka) {
+		try {
+			Files.createDirectories(slozka.toPath());
+			final File zkouska = File.createTempFile("zapis", ".tmp", slozka);
+			if (zkouska.delete()) {
+				return true;
+			}
+		} catch (final IOException | RuntimeException e) {
+			log.debug("Zkouška zápisu do {}: {}", slozka, e.toString());
+		}
+		log.warn("Do složky cache dlaždic {} nelze zapisovat, dlaždice zůstanou jen v paměti.", slozka);
+		return false;
 	}
 
 	/** Nová cache se při prvním čtení schématu zapisuje, proto otevírání pod stejným zámkem jako zápis. */

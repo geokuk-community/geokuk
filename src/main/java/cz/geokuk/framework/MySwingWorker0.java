@@ -3,6 +3,8 @@
  */
 package cz.geokuk.framework;
 
+import java.util.concurrent.ExecutionException;
+
 import javax.swing.SwingWorker;
 
 /**
@@ -21,7 +23,8 @@ public abstract class MySwingWorker0<T, V> extends SwingWorker<T, V> {
 		try {
 			donex();
 		} catch (final Exception e) {
-			throw new RuntimeException("Vyjimka pri zpracovani na pozadi.", e);
+			final Throwable pricina = e instanceof ExecutionException && e.getCause() != null ? e.getCause() : e;
+			throw new RuntimeException("Výjimka při zpracování na pozadí: " + pricina, e);
 		}
 	}
 
