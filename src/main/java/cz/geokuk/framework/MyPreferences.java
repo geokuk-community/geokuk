@@ -409,7 +409,7 @@ public class MyPreferences extends Preferences {
 		if (defalt == null) {
 			defalt = new Filex(null, false, false);
 		}
-		final Filex result = new Filex(getFile(key, defalt.getFile()), getBoolean(key + "_relativeToProgram", defalt.isRelativeToProgram()), getBoolean(key + "_active", defalt.isActive()));
+		final Filex result = Filex.zNastaveni(getFile(key, defalt.getFile()), getBoolean(key + "_relativeToProgram", defalt.isRelativeToProgram()), getBoolean(key + "_active", defalt.isActive()));
 		return result.getFile() == null ? null : result;
 	}
 

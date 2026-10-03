@@ -79,6 +79,10 @@ GeoKuk
     └── log                      log a chybová hlášení
 ```
 
+Keše načte GeoKuk ze souborů GPX, `.geokuk` a zip ve složce `data\gpx`;
+načítání z databáze GeoGetu nebo GSAKu a jinou složku s kešemi zapnete
+v Soubor > Umístění souborů.
+
 Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 až
 3 GB), změnit ji jde v Soubor > Paměť programu.
 
