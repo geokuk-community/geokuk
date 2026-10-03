@@ -75,6 +75,8 @@
   na zeměpisné souřadnice byl až o 7 metrů posunutý k jihu.
 - Hledání keší s regulárním výrazem: `\D`, `\W`, `\S` a `\Q…\E` fungují
   podle očekávání.
+- Dialog renderu ukazuje rozměr terénu ve skutečných kilometrech, ne
+  desetinásobek.
 
 ## 6.1.0
 

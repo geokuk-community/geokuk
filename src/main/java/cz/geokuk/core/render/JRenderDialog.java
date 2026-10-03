@@ -168,7 +168,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		jJakouHustotuLabel.setText(
 		        String.format("<html>%.0f * %.0f mm - %.0f DPI = %.2f px/mm = %.1f \u03BCm/px", papirovaMetrika.xsize * 1000, papirovaMetrika.ysize * 1000, dpi, pixluNaMilimetrMapy, vzdalenostBodu));
 
-		jTerenniRozmerField.setText(String.format("%.1f * %.1f km", roord.getWidth() / pixluNaMetr / 100, roord.getHeight() / pixluNaMetr / 100));
+		jTerenniRozmerField.setText(String.format("%.1f * %.1f km", roord.getWidthMetru() / 1000, roord.getHeightMetru() / 1000));
 
 		jIkonkaPapiru.setMetrikia(papirovaMetrika);
 
