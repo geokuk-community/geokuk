@@ -1,7 +1,7 @@
 package cz.geokuk.plugins.vylety;
 
 import java.io.*;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import cz.geokuk.core.program.FConst;
@@ -9,6 +9,7 @@ import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.util.file.BezpecnyZapis;
+import cz.geokuk.util.file.TextovySoubor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -66,16 +67,14 @@ public class VyletovyZperzistentnovac {
 	}
 
 	private VyletPul loadGgt(final File file) throws IOException {
-		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+		try (BufferedReader br = new BufferedReader(new StringReader(TextovySoubor.nacti(file)))) {
 			return loadGgt(br);
-		} catch (final FileNotFoundException e) {
-			return new VyletPul(new HashSet<>());
 		}
 	}
 
 	private void zapis(final List<String> kody, final File file, final EVylet evyl) {
 		try {
-			BezpecnyZapis.zapisText(file, Charset.defaultCharset(), wrt -> {
+			BezpecnyZapis.zapisText(file, StandardCharsets.UTF_8, wrt -> {
 				for (final String kod : kody) {
 					wrt.print(kod);
 					wrt.print(FConst.NL);
