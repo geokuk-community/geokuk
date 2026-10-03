@@ -78,12 +78,15 @@ jobs:
           sparse-checkout: |
             distribuce/windows
             .github/skripty
+            src/main/resources
 
+      # Přibalená Java: vždy poslední vydaná Temurin 21, ne starší z cache runneru.
       - name: JDK 21 (Temurin)
         uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
+          check-latest: true
 
       - uses: actions/download-artifact@v8
         with:
@@ -101,6 +104,11 @@ jobs:
           Copy-Item geokuk.jar, start.jar, distribuce/windows/geokuk.ico GeoKuk/program/
           Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt, LICENSE, THIRD-PARTY.txt GeoKuk/
           GeoKuk/program/runtime/bin/java -version
+          $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
+          $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()
+          "Přibalená Java $java, doporučená $doporucena" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if (-not $java.StartsWith("21.")) { throw "Přibalená Java $java není 21" }
+          if ([version]$java -lt [version]$doporucena) { throw "Přibalená Java $java je starší než doporučená $doporucena" }
           Compress-Archive GeoKuk -DestinationPath GeoKuk-windows.zip
 
       - name: Zkouška zipu

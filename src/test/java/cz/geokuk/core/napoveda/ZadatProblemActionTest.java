@@ -29,4 +29,11 @@ public class ZadatProblemActionTest {
 		Assert.assertTrue(telo.contains("Geokuk 6.0.1"));
 		Assert.assertTrue(telo.contains("zkráceno"));
 	}
+
+	@Test
+	public void nejdrivUkazeInformace() {
+		final boolean[] ukazano = new boolean[1];
+		new ZadatProblemAction(() -> ukazano[0] = true).actionPerformed(null);
+		Assert.assertTrue(ukazano[0]);
+	}
 }
