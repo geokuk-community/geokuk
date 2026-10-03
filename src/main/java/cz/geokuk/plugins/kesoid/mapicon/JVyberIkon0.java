@@ -47,6 +47,7 @@ public abstract class JVyberIkon0 extends Box {
 
 	}
 
+	@SuppressWarnings("deprecation")
 	protected final void refresh(final IkonBag bag, final QualAlelaNames aJmenaVybranychAlel, final CounterMap<Alela> aPoctyVybranychAlel) {
 		// onInitRefreshing();
 
