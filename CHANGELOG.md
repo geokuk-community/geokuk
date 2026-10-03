@@ -112,6 +112,10 @@
 - Dálkové ovládání jde spustit i ze složky, do které nejde zapisovat
   (třeba Program Files). Když spustit nejde, například kvůli obsazenému
   portu, hlášení řekne proč.
+- Nastavení s neobvyklými znaky (třeba řídicími znaky ze schránky) se
+  uloží a znovu načte; dřív se přestalo ukládat nebo se při dalším
+  spuštění celé zahodilo. Nečitelný soubor nastavení, který nejde odložit
+  stranou, program nepřepíše.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
   načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN), výškou
   s čárkou, bez názvu nebo s nesmyslnou obtížností či terénem nezahodí
