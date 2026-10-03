@@ -61,7 +61,8 @@
   žádná keš není.
 - Uživatelské mapy: vlastní mapové podklady ze souboru
   `data/uzivatelske-mapy.properties`, v menu Mapy ve skupině
-  „Uživatelské mapy“.
+  „Uživatelské mapy“. Zip pro Windows obsahuje ukázku
+  `data/uzivatelske-mapy.properties.priklad`.
 - Mapy mají atribuci (Mapy.cz, OpenStreetMap, Freemap Slovakia) vpravo
   dole v mapě.
 - Hledání adresy (Jít > Adresa) a návrh názvu souboru u rendru podle

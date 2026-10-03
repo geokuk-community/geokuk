@@ -78,6 +78,7 @@ jobs:
           sparse-checkout: |
             distribuce/windows
             .github/skripty
+            priklady
             src/main/resources
 
       # Přibalená Java: vždy poslední vydaná Temurin 21, ne starší z cache runneru.
@@ -103,6 +104,8 @@ jobs:
           if ($podpis.Status -ne "Valid") { throw "javaw.exe není podepsaný: $($podpis.Status)" }
           Copy-Item geokuk.jar, start.jar, distribuce/windows/geokuk.ico GeoKuk/program/
           Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt, LICENSE, THIRD-PARTY.txt GeoKuk/
+          New-Item -ItemType Directory GeoKuk/data | Out-Null
+          Copy-Item priklady/uzivatelske-mapy.properties GeoKuk/data/uzivatelske-mapy.properties.priklad
           GeoKuk/program/runtime/bin/java -version
           $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
           $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()
