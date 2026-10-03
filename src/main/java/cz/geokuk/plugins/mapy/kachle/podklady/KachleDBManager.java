@@ -48,6 +48,9 @@ class KachleDBManager implements KachleManager {
 	 */
 	private static final String TABLE_CREATE_QUERY = String.format("CREATE TABLE %s (x int, y int, " + "z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))", TABLE_NAME);
 
+	/** Kolikrát se zkusí zápis, když cache zamyká čtení z jiného vlákna. */
+	private static final int POKUSU_O_ZAPIS = 10;
+
 	/**
 	 * Since we've got multiple threads that can write to the database, using a single connection is hardly possible (would require synchronization on code level, which is not the way to go). We also want to avoid exposing the implementation details further. Since the number of threads is small
 	 * enough, we don't need a connection pool and instead we've got a connection for each thread.
@@ -70,9 +73,6 @@ class KachleDBManager implements KachleManager {
 	private final OpakovaneChyby chybyOtevreni = new OpakovaneChyby("Nepodařilo se otevřít databázi dlaždic");
 
 	private volatile int neuspesnychOtevreniZaSebou;
-
-	/** Čtení z jiných vláken drží zámek jen chvíli, zápis na něj počká. */
-	private static final int POKUSU_O_ZAPIS = 10;
 
 	private static final long ZNOVU_ZKUSIT_ZAPIS_MS = 60_000;
 
