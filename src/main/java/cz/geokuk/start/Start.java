@@ -61,10 +61,7 @@ public final class Start {
 			final File data = new File(koren(adresar), "data");
 			prikaz.add("-Xmx" + pametMb(new File(data, "nastaveni.xml"), fyzickaPametMb()) + "m");
 			prikaz.add("-Djava.net.useSystemProxies=true");
-			// Mimo složku programu nic: dočasné soubory do data/tmp, bez hsperfdata v systémovém TEMP.
-			final File docasne = new File(data, "tmp");
-			docasne.mkdirs();
-			prikaz.add("-Djava.io.tmpdir=" + docasne.getPath());
+			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
@@ -73,6 +70,26 @@ public final class Start {
 			new ProcessBuilder(prikaz).directory(adresar).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.appendTo(nic)).start();
 		} catch (final Exception e) {
 			chyba("GeoKuk se nepodařilo spustit:\n" + e);
+		}
+	}
+
+	/** Mimo složku programu nic: dočasné soubory do data/tmp, bez hsperfdata v systémovém TEMP. */
+	static void pridejDocasnouSlozku(final List<String> prikaz, final File data) {
+		final File docasne = new File(data, "tmp");
+		// Do nezapisovatelné data/tmp by sqlite-jdbc nerozbalil knihovnu, pak zůstane systémový TEMP.
+		if (lzeZapsat(docasne)) {
+			prikaz.add("-Djava.io.tmpdir=" + docasne.getPath());
+		}
+	}
+
+	/** Složku vytvoří, když chybí, a zkusí do ní zapsat soubor. */
+	public static boolean lzeZapsat(final File slozka) {
+		try {
+			Files.createDirectories(slozka.toPath());
+			final File zkouska = File.createTempFile("zapis", ".tmp", slozka);
+			return zkouska.delete();
+		} catch (final IOException | RuntimeException e) {
+			return false;
 		}
 	}
 

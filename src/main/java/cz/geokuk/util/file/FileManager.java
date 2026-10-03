@@ -100,23 +100,21 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	public void copyInputStreamToFile(final InputStream aIs, final File aOut) throws IOException {
-		final FileOutputStream out = new FileOutputStream(aOut);
-		final FileChannel outc = out.getChannel();
-		final ByteBuffer buffer = ByteBuffer.allocate(iBufferSize);
-		final byte[] bb = new byte[iBufferSize];
-		while (true) {
-			final int len = aIs.read(bb);
-			if (len <= 0) {
-				break;
+		try (InputStream is = aIs; FileOutputStream out = new FileOutputStream(aOut)) {
+			final FileChannel outc = out.getChannel();
+			final ByteBuffer buffer = ByteBuffer.allocate(iBufferSize);
+			final byte[] bb = new byte[iBufferSize];
+			while (true) {
+				final int len = is.read(bb);
+				if (len <= 0) {
+					break;
+				}
+				buffer.put(bb, 0, len);
+				buffer.flip();
+				outc.write(buffer);
+				buffer.clear(); // Make room for the next read
 			}
-			buffer.put(bb, 0, len);
-			buffer.flip();
-			outc.write(buffer);
-			buffer.clear(); // Make room for the next read
 		}
-		outc.close();
-		out.close();
-		aIs.close();
 	}
 
 	/**
@@ -277,11 +275,9 @@ public class FileManager {
 	///////////////////////////////////// privátní metody /////////////
 
 	private void _copy(final File aIn, final File aOut) throws IOException {
-		final FileInputStream in = new FileInputStream(aIn);
-		final FileOutputStream out = new FileOutputStream(aOut);
-		pumpFileChannels(in.getChannel(), out.getChannel());
-		in.close();
-		out.close();
+		try (FileInputStream in = new FileInputStream(aIn); FileOutputStream out = new FileOutputStream(aOut)) {
+			pumpFileChannels(in.getChannel(), out.getChannel());
+		}
 		aOut.setLastModified(aIn.lastModified());
 	}
 

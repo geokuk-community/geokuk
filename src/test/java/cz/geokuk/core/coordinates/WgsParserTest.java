@@ -1,5 +1,7 @@
 package cz.geokuk.core.coordinates;
 
+import java.util.Random;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -62,5 +64,61 @@ public class WgsParserTest {
 		neplatne("ahoj");
 		neplatne("aaa49bbb16ccc");
 		neplatne("33°Z49°E");
+	}
+
+	@Test
+	public void souradniceMimoRozsahNejsouSouradnice() {
+		neplatne("95 14");
+		neplatne("N 95° 00.000 E 014° 00.000");
+		neplatne("50 200");
+		neplatne("N 50° 00.000 E 181° 00.000");
+		neplatne("N 50° 60.000 E 014° 00.000");
+		neplatne("N 50° 10' 60\" E 014° 00' 00\"");
+		neplatne("1" + new String(new char[400]).replace('\0', '0') + " 14");
+		ocekavej("S 90 W 180", -90, -180);
+		ocekavej("N 50° 59.999 E 014° 59' 59.9\"", 50 + 59.999 / 60, 14 + 59 / 60.0 + 59.9 / 3600);
+	}
+
+	/** Náhodné vstupy z typických znaků: parser nespadne a nevrátí souřadnice mimo rozsah. */
+	@Test
+	public void nahodneVstupy() {
+		final String znaky = "0123456789  .,°'\"NSEWnsew-x";
+		final Random random = new Random(20261003);
+		final WgsParser parser = new WgsParser();
+		for (int i = 0; i < 50_000; i++) {
+			final StringBuilder sb = new StringBuilder();
+			final int delka = 3 + random.nextInt(25);
+			for (int j = 0; j < delka; j++) {
+				sb.append(znaky.charAt(random.nextInt(znaky.length())));
+			}
+			final String vstup = sb.toString();
+			final Wgs wgs = parser.parsruj(vstup);
+			if (wgs != null) {
+				Assert.assertTrue(vstup + " -> " + wgs, Math.abs(wgs.lat) <= 90);
+			}
+		}
+	}
+
+	/** Náhodné stupně a minuty s písmeny světových stran: platné se načtou přesně, ostatní vůbec. */
+	@Test
+	public void nahodneStupneAMinuty() {
+		final Random random = new Random(3102026);
+		final WgsParser parser = new WgsParser();
+		for (int i = 0; i < 20_000; i++) {
+			final int lat = random.nextInt(120);
+			final int lon = random.nextInt(240);
+			final int latMin = random.nextInt(80);
+			final int lonMin = random.nextInt(80);
+			final String vstup = String.format("N %d° %d.5 E %d° %d.5", lat, latMin, lon, lonMin);
+			final Wgs wgs = parser.parsruj(vstup);
+			final boolean platne = lat + (latMin + 0.5) / 60 <= 90 && lon + (lonMin + 0.5) / 60 <= 180 && latMin < 60 && lonMin < 60;
+			if (platne) {
+				Assert.assertNotNull(vstup, wgs);
+				Assert.assertEquals(vstup, lat + (latMin + 0.5) / 60, wgs.lat, PRESNOST);
+				Assert.assertEquals(vstup, FGeoKonvertor.normalizujUhel(lon + (lonMin + 0.5) / 60), wgs.lon, PRESNOST);
+			} else {
+				Assert.assertNull(vstup, wgs);
+			}
+		}
 	}
 }
