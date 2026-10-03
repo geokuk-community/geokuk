@@ -108,4 +108,41 @@ public class StartTest {
 		Start.pridejDocasnouSlozku(prikaz, data);
 		Assert.assertEquals(Collections.emptyList(), prikaz);
 	}
+
+	@Test
+	public void kdyzVymenaSelzeSpustiStavajiciJar() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "stary".getBytes());
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
+		final File jar = Start.vyberJar(d, a -> {
+			throw new java.nio.file.AccessDeniedException("geokuk.jar.new");
+		});
+		Assert.assertEquals(new File(d, "geokuk.jar"), jar);
+	}
+
+	@Test
+	public void kdyzJarChybiSpustiBak() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar.bak").toPath(), "predchozi".getBytes());
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
+		final File jar = Start.vyberJar(d, a -> {
+			throw new java.nio.file.AccessDeniedException("geokuk.jar.new");
+		});
+		Assert.assertEquals(new File(d, "geokuk.jar.bak"), jar);
+	}
+
+	@Test
+	public void bezJaruNeniCoSpustit() throws Exception {
+		final File d = tmp.newFolder();
+		Assert.assertNull(Start.vyberJar(d, Start::vymenJar));
+	}
+
+	@Test
+	public void uspesnaVymenaSpustiNovy() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "stary".getBytes());
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
+		final File jar = Start.vyberJar(d, Start::vymenJar);
+		Assert.assertEquals("novy", new String(Files.readAllBytes(jar.toPath())));
+	}
 }
