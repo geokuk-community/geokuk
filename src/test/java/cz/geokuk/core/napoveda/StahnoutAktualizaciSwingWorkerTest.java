@@ -23,6 +23,7 @@ public class StahnoutAktualizaciSwingWorkerTest {
 		instalace = tmp.newFolder("instalace");
 		vydej("geokuk.jar", "novy jar");
 		vydej("start.jar", "novy start");
+		zapis("java.properties", "minimalni=1.8\n");
 	}
 
 	private void vydej(final String jmeno, final String obsah) throws Exception {
@@ -93,5 +94,44 @@ public class StahnoutAktualizaciSwingWorkerTest {
 		zapis("java.properties", "doporucena=999\nminimalni=1.8\n");
 		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
 		Assert.assertEquals("novy jar", obsah("geokuk.jar"));
+	}
+
+	@Test
+	public void bezJavaPropertiesNicNeinstaluje() throws Exception {
+		instaluj("start.jar", "stary start");
+		Files.delete(new File(release, "java.properties").toPath());
+		try {
+			StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
+			Assert.fail();
+		} catch (final IOException e) {
+			Assert.assertArrayEquals(new String[] { "start.jar" }, instalace.list());
+		}
+	}
+
+	@Test
+	public void poStazeniNezustanouDocasneSoubory() throws Exception {
+		instaluj("start.jar", "stary start");
+		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
+		for (final String jmeno : instalace.list()) {
+			Assert.assertFalse(jmeno, jmeno.endsWith(".part"));
+		}
+	}
+
+	@Test
+	public void souberneStazeniNejdeSpustit() {
+		StahnoutAktualizaciSwingWorker.skoncilo();
+		Assert.assertTrue(StahnoutAktualizaciSwingWorker.zacni());
+		Assert.assertFalse(StahnoutAktualizaciSwingWorker.zacni());
+		StahnoutAktualizaciSwingWorker.skoncilo();
+		Assert.assertTrue(StahnoutAktualizaciSwingWorker.zacni());
+		StahnoutAktualizaciSwingWorker.skoncilo();
+	}
+
+	@Test
+	public void soucetSouboruNaDisku() throws Exception {
+		final File f = new File(instalace, "x");
+		Files.write(f.toPath(), "novy jar".getBytes(StandardCharsets.US_ASCII));
+		final byte[] soucet = MessageDigest.getInstance("SHA-256").digest("novy jar".getBytes(StandardCharsets.US_ASCII));
+		Assert.assertEquals(String.format("%064x", new BigInteger(1, soucet)), StahnoutAktualizaciSwingWorker.soucet(f.toPath()));
 	}
 }

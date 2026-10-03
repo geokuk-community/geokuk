@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JOptionPane;
 
@@ -40,10 +42,29 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		}
 	}
 
+	private static final AtomicBoolean STAHUJE_SE = new AtomicBoolean();
+
 	private final String verze;
 
-	public StahnoutAktualizaciSwingWorker(final String verze) {
+	private StahnoutAktualizaciSwingWorker(final String verze) {
 		this.verze = verze;
+	}
+
+	/** Spustí stažení, když zrovna neběží jiné; vrátí false, když už se stahuje. */
+	public static boolean spust(final String verze) {
+		if (!zacni()) {
+			return false;
+		}
+		new StahnoutAktualizaciSwingWorker(verze).execute();
+		return true;
+	}
+
+	static boolean zacni() {
+		return STAHUJE_SE.compareAndSet(false, true);
+	}
+
+	static void skoncilo() {
+		STAHUJE_SE.set(false);
 	}
 
 	static boolean prenosna(final File adresar) {
@@ -64,50 +85,87 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		if (VerzeJavy.jeStarsi(VerzeJavy.aktualni(), minimalni)) {
 			throw new YNovaJava(minimalni);
 		}
-		final File jar = stahniOverene(zakladUrl, JAR, adresar);
+		final Stazeny jar = stahniOverene(zakladUrl, JAR, adresar);
 		if (prenosna(adresar)) {
-			Files.move(jar.toPath(), new File(adresar, JAR + ".new").toPath(), StandardCopyOption.REPLACE_EXISTING);
-			final File start = stahniOverene(zakladUrl, START, adresar);
-			Files.move(start.toPath(), new File(adresar, START).toPath(), StandardCopyOption.REPLACE_EXISTING);
+			presun(jar, new File(adresar, JAR + ".new"));
+			presun(stahniOverene(zakladUrl, START, adresar), new File(adresar, START));
 		} else {
 			final File stary = new File(adresar, JAR);
 			if (stary.isFile()) {
 				Files.copy(stary.toPath(), new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
 			}
-			Files.move(jar.toPath(), stary.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			presun(jar, stary);
 		}
 	}
 
-	/** Nejnižší Java nové verze, starší vydání soubor nemají. */
-	private static String minimalniJava(final String zakladUrl) {
+	/** Stažený a ověřený dočasný soubor. */
+	private static class Stazeny {
+		final Path soubor;
+		final String soucet;
+
+		Stazeny(final Path soubor, final String soucet) {
+			this.soubor = soubor;
+			this.soucet = soucet;
+		}
+	}
+
+	/** Přesune soubor na místo a znovu ověří součet toho, co na místě opravdu je. */
+	private static void presun(final Stazeny stazeny, final File cil) throws IOException {
+		Files.move(stazeny.soubor, cil.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		if (!soucet(cil.toPath()).equalsIgnoreCase(stazeny.soucet)) {
+			Files.delete(cil.toPath());
+			throw new IOException("Soubor " + cil.getName() + " se po stažení změnil.");
+		}
+	}
+
+	/** Nejnižší Java nové verze. Když ji nejde zjistit, nová verze se neinstaluje. */
+	private static String minimalniJava(final String zakladUrl) throws IOException {
 		try (InputStream in = otevri(zakladUrl + VerzeJavy.SOUBOR)) {
 			final Properties p = new Properties();
 			p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
 			return p.getProperty("minimalni");
 		} catch (final IOException e) {
-			return null;
+			throw new IOException("Nepodařilo se zjistit, jakou Javu nová verze potřebuje: " + e.getMessage(), e);
 		}
 	}
 
-	/** Stáhne soubor jako .part a ověří kontrolní součet. */
-	private static File stahniOverene(final String zakladUrl, final String jmeno, final File adresar) throws IOException {
+	/** Stáhne soubor do vlastního dočasného souboru, zapíše ho na disk a ověří kontrolní součet. */
+	private static Stazeny stahniOverene(final String zakladUrl, final String jmeno, final File adresar) throws IOException {
 		final String ocekavanySoucet = precti(zakladUrl + jmeno + ".sha256").trim().split("\\s+")[0];
-		final File docasny = new File(adresar, jmeno + ".part");
+		final Path docasny = Files.createTempFile(adresar.toPath(), jmeno + ".", ".part");
+		try {
+			try (InputStream in = otevri(zakladUrl + jmeno); FileOutputStream out = new FileOutputStream(docasny.toFile())) {
+				final byte[] buf = new byte[64 * 1024];
+				int n;
+				while ((n = in.read(buf)) >= 0) {
+					out.write(buf, 0, n);
+				}
+				out.getFD().sync();
+			}
+			if (!soucet(docasny).equalsIgnoreCase(ocekavanySoucet)) {
+				throw new IOException("Kontrolní součet staženého souboru " + jmeno + " nesouhlasí.");
+			}
+			return new Stazeny(docasny, ocekavanySoucet);
+		} catch (final IOException | RuntimeException e) {
+			Files.deleteIfExists(docasny);
+			throw e;
+		}
+	}
+
+	static String soucet(final Path soubor) throws IOException {
 		final MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-256");
 		} catch (final NoSuchAlgorithmException e) {
 			throw new IllegalStateException(e);
 		}
-		try (InputStream in = new DigestInputStream(otevri(zakladUrl + jmeno), md)) {
-			Files.copy(in, docasny.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		try (InputStream in = new DigestInputStream(Files.newInputStream(soubor), md)) {
+			final byte[] buf = new byte[64 * 1024];
+			while (in.read(buf) >= 0) {
+				// jen čte kvůli součtu
+			}
 		}
-		final String soucet = String.format("%064x", new BigInteger(1, md.digest()));
-		if (!soucet.equalsIgnoreCase(ocekavanySoucet)) {
-			Files.delete(docasny.toPath());
-			throw new IOException("Kontrolní součet staženého souboru " + jmeno + " nesouhlasí.");
-		}
-		return docasny;
+		return String.format("%064x", new BigInteger(1, md.digest()));
 	}
 
 	private static InputStream otevri(final String url) throws IOException {
@@ -132,6 +190,14 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 
 	@Override
 	protected void donex() throws Exception {
+		try {
+			ukazVysledek();
+		} finally {
+			skoncilo();
+		}
+	}
+
+	private void ukazVysledek() throws Exception {
 		try {
 			get();
 			Diagnostika.zaznamenej("Stažena verze " + verze);

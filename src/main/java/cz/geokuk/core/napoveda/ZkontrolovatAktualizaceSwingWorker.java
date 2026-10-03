@@ -166,7 +166,9 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 				break;
 			case 1:
 				if (StahnoutAktualizaciSwingWorker.lzeInstalovat()) {
-					new StahnoutAktualizaciSwingWorker(lastVersion).execute();
+					if (!StahnoutAktualizaciSwingWorker.spust(lastVersion)) {
+						Dlg.info("Nová verze se už stahuje.", "Aktualizace");
+					}
 				} else {
 					stahnoutJar(lastVersion);
 				}
