@@ -1,5 +1,7 @@
 package cz.geokuk.core.coordinates;
 
+import java.util.Locale;
+
 public class Wgs extends Misto0 {
 
 	public final double lat;
@@ -31,10 +33,9 @@ public class Wgs extends Misto0 {
 	}
 
 	public static String toGeoFormat(final double d) {
-		final double stupne = Math.floor(d);
-		final double minuty = (d - stupne) * 60.0;
-		final String s = String.format("%02d°%06.3f", (int) stupne, minuty).replace(',', '.');
-		return s;
+		// Zaokrouhlit celé, jinak 14,9999999° vyjde jako 14°60.000.
+		final long tisicinyMinut = Math.round(d * 60_000);
+		return String.format(Locale.ROOT, "%02d°%06.3f", tisicinyMinut / 60_000, tisicinyMinut % 60_000 / 1000.0);
 	}
 
 	public static double vzdalenost(final Wgs bod1, final Wgs bod2) {

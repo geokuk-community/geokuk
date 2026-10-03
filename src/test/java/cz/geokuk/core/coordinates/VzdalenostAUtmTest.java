@@ -60,6 +60,8 @@ public class VzdalenostAUtmTest {
 		Assert.assertEquals("50°04.530", Wgs.toGeoFormat(50.0755));
 		Assert.assertEquals("14°26.268", Wgs.toGeoFormat(14.4378));
 		Assert.assertEquals("05°00.000", Wgs.toGeoFormat(5));
+		Assert.assertEquals("minuty se nezaokrouhlí na 60", "15°00.000", Wgs.toGeoFormat(14.99999999));
+		Assert.assertEquals("N50°00.000 W00°07.800", new Wgs(49.9999999999, -0.13).toString());
 	}
 
 	@Test
