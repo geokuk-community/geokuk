@@ -3,6 +3,7 @@ package cz.geokuk.core.render;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Locale;
@@ -68,10 +69,11 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 				final int width = p.roord.getDim().width;
 				final int height = p.roord.getDim().height;
 				final Coord cocox = p.roord;
-				final PrintWriter pwrt = new PrintWriter(mapPathName);
 				final List<Wgs> kalibody = renderModel.spocitejKalibracniBody();
-				printOziMetafile(pwrt, imageShortName, width, height, cocox, renderModel.getRenderSettings().getKalibrBodu(), kalibody);
-				pwrt.close();
+				try (PrintWriter pwrt = new PrintWriter(mapPathName)) {
+					printOziMetafile(pwrt, imageShortName, width, height, cocox, renderModel.getRenderSettings().getKalibrBodu(), kalibody);
+					zkontrolujZapis(pwrt, mapPathName);
+				}
 				vytvorenySoubor = mapPathName;
 			} else {
 				vytvorenySoubor = imagePathName;
@@ -97,7 +99,14 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 		}
 	}
 
-	private void printOziKalibracniBod(final PrintWriter p, final int cisloBodu, final int x, final int y, final Wgs wgs) {
+	/** PrintWriter chyby zápisu (plný disk) nehlásí výjimkou. */
+	static void zkontrolujZapis(final PrintWriter p, final File soubor) throws IOException {
+		if (p.checkError()) {
+			throw new IOException("Nepodařilo se zapsat soubor " + soubor);
+		}
+	}
+
+		private void printOziKalibracniBod(final PrintWriter p, final int cisloBodu, final int x, final int y, final Wgs wgs) {
 		p.println(oziKalibracniBod(cisloBodu, x, y, wgs));
 	}
 
