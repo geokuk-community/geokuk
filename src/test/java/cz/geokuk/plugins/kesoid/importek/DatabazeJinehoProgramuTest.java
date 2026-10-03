@@ -5,6 +5,8 @@ import java.sql.*;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.sqlite.SQLiteErrorCode;
+import org.sqlite.SQLiteException;
 
 /** Databázi GeoGetu nebo GSAKu Geokuk jen čte. */
 public class DatabazeJinehoProgramuTest {
@@ -82,5 +84,14 @@ public class DatabazeJinehoProgramuTest {
 			Assert.assertTrue(popis, popis.contains("Otevřete ji v GeoGetu nebo GSAKu"));
 			Assert.assertFalse(popis, popis.contains("smíte zapisovat"));
 		}
+	}
+
+	/** WAL databáze v nezapisovatelné složce: rada o právech, ne o nedokončeném zápisu. */
+	@Test
+	public void nezapisovatelnaSlozkaRadiKontroluPrav() {
+		final String popis = DatabazeJinehoProgramu.popisChyby(new File("geoget.db3"),
+				new SQLiteException("attempt to write a readonly database", SQLiteErrorCode.SQLITE_READONLY_DIRECTORY));
+		Assert.assertTrue(popis, popis.contains("smíte zapisovat"));
+		Assert.assertFalse(popis, popis.contains("nedokončený zápis"));
 	}
 }

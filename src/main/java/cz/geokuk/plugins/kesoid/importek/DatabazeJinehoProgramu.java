@@ -77,7 +77,7 @@ final class DatabazeJinehoProgramu {
 		final String proc;
 		final SQLiteException sqlite = chybaSqlite(chyba);
 		if (sqlite != null && sqlite.getResultCode().code == SQLITE_READONLY_ROLLBACK) {
-			return "Databáze \"" + soubor + "\" má nedokončený zápis z GeoGetu nebo GSAKu. Otevřete ji v GeoGetu nebo GSAKu, ten zápis dokončí, a GeoKuk ji pak načte.";
+			return "Databáze \"" + soubor + "\" má nedokončený zápis z GeoGetu nebo GSAKu. Otevřete ji v GeoGetu nebo GSAKu, ten ji uvede do pořádku, a GeoKuk ji pak načte.";
 		}
 		switch (kodSqlite(chyba)) {
 		case -1:
