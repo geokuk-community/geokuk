@@ -377,6 +377,51 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(KACHLE));
 	}
 
+	/** Při opakovaném nedostatku místa se uživatel dozví jen jednou. */
+	@Test
+	public void naNedostatekMistaUpozorniJednou() throws Exception {
+		final int[] upozorneni = { 0 };
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			long volneMisto(final File slozka) {
+				return 0;
+			}
+
+			@Override
+			void upozorniNaMisto(final File slozka, final long volne) {
+				upozorneni[0]++;
+			}
+		};
+		for (int i = 0; i < 3; i++) {
+			Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(i), png()))));
+		}
+		Assert.assertEquals(1, upozorneni[0]);
+	}
+
+	/** Poškození zjištěné při zápisu dlaždic cache odloží a založí novou. */
+	@Test
+	public void poskozeniPriZapisuCacheOdlozi() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
+		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue("nová cache funguje", manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
+		Assert.assertNotNull(manager.load(kachle(5)));
+	}
+
+	/** Chyba starého spojení zjištěná až po odložení poškozené cache neodloží novou. */
+	@Test
+	public void chybaStarehoSpojeniNeodloziNovouCache() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		final int pred = manager.odlozeni;
+		Assert.assertNull(manager.load(kachle(1)));
+		Assert.assertTrue(new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		manager.odlozZaBehu(soubor, pred);
+		Assert.assertNotNull("nová cache zůstala", manager.load(kachle(1)));
+	}
+
 	/** Poškození zjištěné až při čtení dlaždice cache odloží a založí novou. */
 	@Test
 	public void poskozeniPriCteniCacheOdlozi() throws Exception {

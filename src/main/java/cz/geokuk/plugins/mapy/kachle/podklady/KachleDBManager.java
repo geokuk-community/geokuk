@@ -96,7 +96,7 @@ class KachleDBManager implements KachleManager {
 	private boolean upozornenoNaMisto;
 
 	/** Zvýší se při odložení poškozené cache, aby chyba starého spojení neodložila i novou cache. */
-	private volatile int odlozeni;
+	volatile int odlozeni;
 
 	/** Cache, ve které po pádu programu zůstal rozepsaný zápis; před použitím se zkontroluje. */
 	private final Set<File> kOvereni = ConcurrentHashMap.newKeySet();
@@ -308,12 +308,16 @@ class KachleDBManager implements KachleManager {
 			return false;
 		}
 		upozornenoNaMisto = true;
+		upozorniNaMisto(slozka, volne);
+		return false;
+	}
+
+	void upozorniNaMisto(final File slozka, final long volne) {
 		log.warn("Na disku se složkou cache dlaždic {} zbývá {} MB, dlaždice se do cache neukládají.", slozka, volne >> 20);
 		if (!GraphicsEnvironment.isHeadless()) {
 			SwingUtilities.invokeLater(() -> Dlg.upozorneni("Na disku se složkou " + slozka + " dochází místo, mapy se přestaly ukládat do cache.\n"
 					+ "Po uvolnění místa se začnou ukládat znovu."));
 		}
-		return false;
 	}
 
 	/** Volné místo v bajtech, záporné, když ho systém nezjistí. */
@@ -326,7 +330,7 @@ class KachleDBManager implements KachleManager {
 	 * Poškození zjištěné při čtení nebo zápisu: zavřou se všechna spojení a cache se odloží. Odkládá se jen cache, ve které chyba
 	 * vznikla, ne nová, kterou mezitím založilo jiné vlákno.
 	 */
-	private synchronized void odlozZaBehu(final File f, final int odlozeniPred) {
+	synchronized void odlozZaBehu(final File f, final int odlozeniPred) {
 		zamek.writeLock().lock();
 		try {
 			if (odlozeniPred != odlozeni) {
