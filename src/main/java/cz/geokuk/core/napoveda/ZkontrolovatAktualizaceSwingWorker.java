@@ -19,12 +19,31 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 
 	private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
 
-	private final boolean zobrazitDialogPriPosledniVerzi;
+	private boolean zobrazitDialogPriPosledniVerzi;
 	private final NapovedaModel napovedaModel;
+	private final boolean betaKanal = Diagnostika.betaKanal();
 
 	public ZkontrolovatAktualizaceSwingWorker(final boolean zobrazitDialogPriPosledniVerzi, final NapovedaModel napovedaModel) {
 		this.zobrazitDialogPriPosledniVerzi = zobrazitDialogPriPosledniVerzi;
 		this.napovedaModel = napovedaModel;
+	}
+
+	/** Ruční kontrola během automatické: výsledek se ukáže i bez nové verze a s nabídkou stabilní verze. */
+	void zobrazitDialogPriPosledniVerzi() {
+		zobrazitDialogPriPosledniVerzi = true;
+	}
+
+	boolean isZobrazitDialogPriPosledniVerzi() {
+		return zobrazitDialogPriPosledniVerzi;
+	}
+
+	boolean isBetaKanal() {
+		return betaKanal;
+	}
+
+	/** Beta kanál se během kontroly přepnul, výsledek patří ke starému kanálu. */
+	boolean jeZastarala() {
+		return betaKanal != Diagnostika.betaKanal();
 	}
 
 	/**
@@ -86,7 +105,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 	@Override
 	protected String doInBackground() throws Exception {
 		try {
-			final URLConnection connection = new URL(Diagnostika.betaKanal() ? FConst.RELEASES_API_URL : FConst.LATEST_RELEASE_API_URL).openConnection();
+			final URLConnection connection = new URL(betaKanal ? FConst.RELEASES_API_URL : FConst.LATEST_RELEASE_API_URL).openConnection();
 			connection.setRequestProperty("User-Agent", "Geokuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")");
 			connection.setRequestProperty("Accept", "application/vnd.github+json");
 			connection.setConnectTimeout(60000);
@@ -97,7 +116,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 			}
 			final String lastVersion = nejnovejsiVerze(json);
 			log.info("Posledni verze: '" + lastVersion + "' ");
-			Diagnostika.zaznamenej("Kontrola aktualizací: poslední verze " + lastVersion + (Diagnostika.betaKanal() ? " (beta kanál)" : ""));
+			Diagnostika.zaznamenej("Kontrola aktualizací: poslední verze " + lastVersion + (betaKanal ? " (beta kanál)" : ""));
 			return lastVersion;
 		} catch (final IOException e) {
 			log.error("An error has occurred while retrieving the info!", e);
@@ -108,19 +127,29 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 
 	@Override
 	protected void donex() throws Exception {
+		try {
+			ukazVysledek();
+		} finally {
+			napovedaModel.kontrolaSkoncila(this);
+		}
+	}
+
+	private void ukazVysledek() throws Exception {
 		final String lastVersion = get();
-		if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {
+		if (jeZastarala()) {
+			log.info("Kontrola aktualizací pro jiný beta kanál, výsledek se neukáže: " + lastVersion);
+		} else if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {
 			log.info("LAST VERSION: " + lastVersion + " i have no version, i am in development environment");
 		} else if (lastVersion == null) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Nepodařilo se zjistit poslední verzi programu Geokuk.", "Oznámení");
 			}
-		} else if (!nabidnout(lastVersion, FConst.VERSION, Diagnostika.betaKanal(), zobrazitDialogPriPosledniVerzi)) {
+		} else if (!nabidnout(lastVersion, FConst.VERSION, betaKanal, zobrazitDialogPriPosledniVerzi)) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Používaná verze programu Geokuk " + FConst.VERSION + " je poslední distribuovanou verzí.", "Oznámení");
 			}
 		} else {
-			final boolean prechod = jePrechodNaStabilni(lastVersion, FConst.VERSION, Diagnostika.betaKanal());
+			final boolean prechod = jePrechodNaStabilni(lastVersion, FConst.VERSION, betaKanal);
 			final Object[] options = prechod
 					? new Object[] { "Zobrazit web", "Přejít na stabilní verzi", "Zůstat u testovací verze" }
 					: new Object[] { "Zobrazit web", "Stáhnout novou verzi", "Připomenout za měsíc" };
@@ -147,7 +176,6 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 				break;
 			}
 		}
-		super.donex();
 	}
 
 	private void stahnoutJar(final String verze) {

@@ -255,7 +255,9 @@ public class GsakDbLoader extends Nacitac0 {
 	}
 
 	private void prevezmiVlastniHodnoty(final Map<String, String> record, final GpxWpt cache) {
-		record.entrySet().stream().forEach(e -> cache.gpxg.putUserTag(e.getKey(), Objects.toString(e.getValue())));
+		// Kód keše je klíč řádku, jako tag by každé keši vytvořil vlastní alelu.
+		record.entrySet().stream().filter(e -> !GsakDao.CACHE_CODE_KEY.equalsIgnoreCase(e.getKey()))
+				.forEach(e -> cache.gpxg.putUserTag(e.getKey(), Objects.toString(e.getValue())));
 		//
 		if (!StringUtils.isBlank(cache.gpxg.found) && !cache.gpxg.found.contains("T")) {
 			final String time = _getFoundByMeTimeField(record);

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.SwingUtilities;
 
@@ -48,7 +49,10 @@ class KachleDBManager implements KachleManager {
 	 */
 	private static final String TABLE_CREATE_QUERY = String.format("CREATE TABLE %s (x int, y int, " + "z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))", TABLE_NAME);
 
-	/** Kolikrát se zkusí zápis, když cache zamyká čtení z jiného vlákna. */
+	/** Cache nejde použít (složka, otevření), dlaždice zůstanou jen v paměti. */
+	private static final SqlJetException BEZ_CACHE = new SqlJetException(SqlJetErrorCode.CANTOPEN);
+
+	/** Kolikrát se zkusí zápis, když cache zamyká jiný program. */
 	private static final int POKUSU_O_ZAPIS = 10;
 
 	/**
@@ -73,6 +77,9 @@ class KachleDBManager implements KachleManager {
 	private final OpakovaneChyby chybyOtevreni = new OpakovaneChyby("Nepodařilo se otevřít databázi dlaždic");
 
 	private volatile int neuspesnychOtevreniZaSebou;
+
+	/** Zámky SqlJet mezi spojeními v jednom procesu nevylučují čtení a zápis, proto vlastní zámek. */
+	final ReentrantReadWriteLock zamek = new ReentrantReadWriteLock(true);
 
 	private static final long ZNOVU_ZKUSIT_ZAPIS_MS = 60_000;
 
@@ -109,7 +116,13 @@ class KachleDBManager implements KachleManager {
 		if (database == null) {
 			return null;
 		}
-		final byte[] data = nactiData(database, ki);
+		final byte[] data;
+		zamek.readLock().lock();
+		try {
+			data = nactiData(database, ki);
+		} finally {
+			zamek.readLock().unlock();
+		}
 		if (data == null) {
 			return null;
 		}
@@ -171,39 +184,51 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public boolean save(final Collection<ItemToSave> imagesToSave) {
-		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.
-		synchronized (this) {
-			return saveJednoVlakno(imagesToSave);
+		for (int pokus = 1;; pokus++) {
+			final SqlJetException chyba = zapisJednou(imagesToSave);
+			if (chyba == null) {
+				return true;
+			}
+			if (chyba == BEZ_CACHE) {
+				return false;
+			}
+			if (chyba.getErrorCode() != SqlJetErrorCode.BUSY || pokus >= POKUSU_O_ZAPIS) {
+				chybyZapisu.ohlas(chyba);
+				return false;
+			}
+			log.debug("Cache dlaždic je zamčená jiným programem, zápis zkusím znovu ({}. pokus)", pokus);
+			// Čekání bez zámků, aby mezitím mohlo číst tohle i jiné vlákno.
+			try {
+				Thread.sleep(20L * pokus);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				chybyZapisu.ohlas(chyba);
+				return false;
+			}
 		}
 	}
 
-	private boolean saveJednoVlakno(final Collection<ItemToSave> imagesToSave) {
-		final SqlJetDb database = getDatabaseConnection();
-		if (database == null) {
-			return false;
-		}
-
-		for (int pokus = 1;; pokus++) {
+	/** Jeden pokus o zápis; vrátí chybu, {@link #BEZ_CACHE}, nebo null, když se zapsalo. */
+	private SqlJetException zapisJednou(final Collection<ItemToSave> imagesToSave) {
+		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.
+		synchronized (this) {
+			zamek.writeLock().lock();
 			try {
-				zapis(database, imagesToSave);
-				return true;
-			} catch (final SqlJetException e) {
-				if (e.getErrorCode() == SqlJetErrorCode.BUSY && pokus < POKUSU_O_ZAPIS) {
-					log.debug("Cache dlaždic je zamčená čtením, zápis zkusím znovu ({}. pokus)", pokus);
-					try {
-						Thread.sleep(20L * pokus);
-					} catch (final InterruptedException e1) {
-						Thread.currentThread().interrupt();
-						chybyZapisu.ohlas(e);
-						return false;
+				final SqlJetDb database = getDatabaseConnection();
+				if (database == null) {
+					return BEZ_CACHE;
+				}
+				try {
+					zapis(database, imagesToSave);
+					return null;
+				} catch (final SqlJetException e) {
+					if (e.getErrorCode() != SqlJetErrorCode.BUSY) {
+						zahod(database);
 					}
-					continue;
+					return e;
 				}
-				chybyZapisu.ohlas(e);
-				if (e.getErrorCode() != SqlJetErrorCode.BUSY) {
-					zahod(database);
-				}
-				return false;
+			} finally {
+				zamek.writeLock().unlock();
 			}
 		}
 	}
@@ -306,6 +331,7 @@ class KachleDBManager implements KachleManager {
 		if (zapisovatelneSlozky.contains(slozka)) {
 			return true;
 		}
+		final boolean poprve;
 		synchronized (nezapisovatelneDo) {
 			final Long nezapisovatelnaDo = nezapisovatelneDo.get(slozka);
 			if (nezapisovatelnaDo != null && System.currentTimeMillis() < nezapisovatelnaDo) {
@@ -316,13 +342,15 @@ class KachleDBManager implements KachleManager {
 				zapisovatelneSlozky.add(slozka);
 				return true;
 			}
-			if (nezapisovatelnaDo == null) {
-				log.warn("Do složky cache dlaždic {} nelze zapisovat, dlaždice zůstanou jen v paměti.", slozka);
-				upozorniNaZapis(slozka);
-			}
+			poprve = nezapisovatelnaDo == null;
 			nezapisovatelneDo.put(slozka, System.currentTimeMillis() + ZNOVU_ZKUSIT_ZAPIS_MS);
-			return false;
 		}
+		// Mimo zámek složky: upozornění bere zámek manažeru a ten může držet zápis, který čeká na zámek složky.
+		if (poprve) {
+			log.warn("Do složky cache dlaždic {} nelze zapisovat, dlaždice zůstanou jen v paměti.", slozka);
+			upozorniNaZapis(slozka);
+		}
+		return false;
 	}
 
 	/** Na nezapisovatelnou složku data už upozorňuje kontrola umístění programu. */
@@ -350,6 +378,15 @@ class KachleDBManager implements KachleManager {
 
 	/** Nová cache se při prvním čtení schématu zapisuje, proto otevírání pod stejným zámkem jako zápis. */
 	private synchronized SqlJetDb otevri(final File f) throws SqlJetException {
+		zamek.writeLock().lock();
+		try {
+			return otevriZamcene(f);
+		} finally {
+			zamek.writeLock().unlock();
+		}
+	}
+
+	private SqlJetDb otevriZamcene(final File f) throws SqlJetException {
 		final SqlJetDb database = SqlJetDb.open(f, true);
 		try {
 			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.
@@ -373,6 +410,16 @@ class KachleDBManager implements KachleManager {
 	 * odložila i nová cache, kterou mezitím založilo jiné vlákno.
 	 */
 	private synchronized SqlJetDb otevriPoskozenou(final File f, final SqlJetException chyba) {
+		// Odkládá se soubor, ze kterého mohou jiná vlákna číst.
+		zamek.writeLock().lock();
+		try {
+			return otevriPoskozenouZamcene(f, chyba);
+		} finally {
+			zamek.writeLock().unlock();
+		}
+	}
+
+	private SqlJetDb otevriPoskozenouZamcene(final File f, final SqlJetException chyba) {
 		if (!jePoskozena(chyba)) {
 			neslaOtevrit(f, chyba);
 			return null;

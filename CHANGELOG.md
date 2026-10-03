@@ -80,7 +80,9 @@
 ### Opravy
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
-- Dialog nové verze má titulek „Nová verze programu“ a čitelný text.
+- Dialog nové verze má titulek „Nová verze programu“ a čitelný text
+  a při souběhu automatické a ruční kontroly aktualizací se ukáže jen
+  jednou.
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
   nemusí projít celou databázi včetně dlouhých listingů. Hint se načte
   až po kliknutí na Hint v detailu keše. Načítání keší potřebuje zhruba
@@ -101,6 +103,8 @@
   dat dialogem, ohlásí se v přehledu problémů. Okno nečeká, než doběhne
   procházení velké datové složky.
 - GSAK: prázdné vlastní hodnoty se nezobrazují jako tagy.
+- GSAK: kód keše z vlastních hodnot se nebere jako tag. Databáze GSAKu
+  s vlastními hodnotami tak zabírá výrazně méně paměti.
 - Aktivní datová složka GeoGetu nebo GSAKu bez databází se ohlásí.
   Uložení v Umístění souborů nezakládá složky u neaktivních položek.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
@@ -143,6 +147,9 @@
   sekund i při ukončení programu.
   Zdravá cache se neodkládá jako poškozená a opakovaná chyba čtení
   z cache se do logu hlásí souhrnně.
+- Při rychlém posouvání mapy se nezobrazí cizí dlaždice a souběžný
+  zápis cache map nepoškodí.
+- Ve filtru se stav aktivních keší jmenuje „Aktivní“.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
