@@ -81,7 +81,7 @@ jobs:
                 echo "| ${beh#*:} | bez výsledku (program nedoběhl, viz artefakt) | | | | | | |"
               fi
             done
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Zprávy a logy
         if: always()
