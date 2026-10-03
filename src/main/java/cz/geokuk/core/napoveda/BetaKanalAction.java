@@ -12,7 +12,7 @@ public class BetaKanalAction extends ToggleAction0 {
 
 	public BetaKanalAction() {
 		super("Nabízet testovací verze (beta)");
-		putValue(SHORT_DESCRIPTION, "Kontrola aktualizací nabídne i testovací verze. Po vypnutí nabídne poslední ostrou verzi.");
+		putValue(SHORT_DESCRIPTION, "Kontrola aktualizací nabídne i testovací verze. Po vypnutí nabídne přechod na poslední stabilní verzi.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_B);
 		setSelected(Diagnostika.betaKanal());
 	}
