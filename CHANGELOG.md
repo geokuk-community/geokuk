@@ -54,6 +54,8 @@
   záložka Program.
 
 ### Opravy
+- Stažené dlaždice se uloží do cache map i během souvislého čtení
+  z cache (rychlé posouvání mapy) a znovu se nestahují.
 - Dlaždice, kterou se nepodařilo stáhnout, se 30 sekund znovu
   nestahuje, takže ji program nezkouší při každém překreslení mapy.
 - Toolbar s přepínači ikon má stálou výšku, mapa se po načtení keší
