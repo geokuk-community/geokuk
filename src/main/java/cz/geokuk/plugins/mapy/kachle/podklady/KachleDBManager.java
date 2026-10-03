@@ -106,7 +106,9 @@ class KachleDBManager implements KachleManager {
 			if (cursor.eof()) {
 				return null;
 			}
-			log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
+			if (log.isDebugEnabled()) {
+				log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
+			}
 			img = KachloDownloader.precti(cursor.getBlobAsStream("image"));
 			if (img == null) {
 				log.debug("Loaded DB image is null!");
