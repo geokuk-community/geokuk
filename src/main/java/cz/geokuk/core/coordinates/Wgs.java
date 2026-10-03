@@ -23,13 +23,9 @@ public class Wgs extends Misto0 {
 	}
 
 	public static String toDdMmSsFormat(final double stupne) {
-		final int istupne = (int) Math.floor(stupne);
-		final double minuty = (stupne - istupne) * 60.0;
-		final int iminuty = (int) Math.floor(minuty);
-		final double vteriny = (minuty - iminuty) * 60.0;
-		final int ivteriny = (int) Math.floor(vteriny);
-		final String s = String.format("%02d°%02d'%02d\"", istupne, iminuty, ivteriny);
-		return s;
+		// Vteřiny se uřezávají, nepatrná chyba výpočtu pod celou vteřinou se ale nesmí projevit jako 49°59'59".
+		final long vteriny = (long) Math.floor(stupne * 3600 + 1e-6);
+		return String.format("%02d°%02d'%02d\"", vteriny / 3600, vteriny / 60 % 60, vteriny % 60);
 	}
 
 	public static String toGeoFormat(final double d) {

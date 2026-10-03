@@ -68,6 +68,8 @@ public class VzdalenostAUtmTest {
 	public void formatStupneMinutyVteriny() {
 		Assert.assertEquals("50°04'31\"", Wgs.toDdMmSsFormat(50.0755));
 		Assert.assertEquals("49°16'21\"", Wgs.toDdMmSsFormat(49 + 16 / 60.0 + 21.5 / 3600));
+		Assert.assertEquals("15°00'00\"", Wgs.toDdMmSsFormat(14.99999999999));
+		Assert.assertEquals("čára mřížky po 10\"", "50°00'10\"", Wgs.toDdMmSsFormat(50 + 10 / 3600.0));
 	}
 
 	@Test

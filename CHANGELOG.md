@@ -79,8 +79,8 @@
   desetinásobek.
 - Kalibrační body v souboru `.map` pro OziExplorer mají polokouli S a W,
   render západně od Greenwiche nebo na jižní polokouli sedí na mapě.
-- Souřadnice ve stupních a minutách se zaokrouhlují správně, místo
-  například 49°60.000 se ukáže 50°00.000.
+- Souřadnice ve stupních a minutách (i vteřinách v mřížce a renderu) se
+  zaokrouhlují správně, místo například 49°60.000 se ukáže 50°00.000.
 
 ## 6.1.0
 
