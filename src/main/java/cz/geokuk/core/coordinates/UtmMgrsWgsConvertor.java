@@ -389,7 +389,7 @@ class UtmMgrsWgsConvertor {
 			setVariables();
 
 			double latitude = 0;
-			latitude = 180 * (phi1 - fact1 * (fact2 + fact3 + fact4)) / Math.PI;
+			latitude = 180 * (phi1 - fact1 * (fact2 - fact3 + fact4)) / Math.PI;
 
 			if (latBandDegree < 0) {
 				latitude = 90 - latitude;
@@ -490,7 +490,7 @@ class UtmMgrsWgsConvertor {
 				northing = 10000000 - northing;
 			}
 			setVariables();
-			latitude = 180 * (phi1 - fact1 * (fact2 + fact3 + fact4)) / Math.PI;
+			latitude = 180 * (phi1 - fact1 * (fact2 - fact3 + fact4)) / Math.PI;
 
 			if (zone > 0) {
 				zoneCM = 6 * zone - 183.0;
