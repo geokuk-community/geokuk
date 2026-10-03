@@ -79,6 +79,10 @@
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
   záložka Program.
 
+- O programu ukáže licenci a seznam použitých knihoven s jejich
+  licencemi. Program i zip pro Windows obsahují soubory `LICENSE`
+  a `THIRD-PARTY.txt`.
+
 ### Opravy
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
@@ -265,6 +269,7 @@
   v testech junit 4.13.2.
 - Popis vydání na GitHubu se bere z tohoto souboru. Soubory vydání mají
   ověřitelný původ (`gh attestation verify`).
+- SQLJet 1.1.15 (GPL 3 nebo novější).
 - Program se vydává jako `geokuk.jar` a zip pro Windows s Javou,
   konfigurace Launch4j je odstraněná.
 - Smoke test celého programu nad falešným mapovým serverem (workflow
