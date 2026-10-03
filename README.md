@@ -89,10 +89,11 @@ do složky `data`:
   z `images3rdParty` do `data\ikony\ostatni`,
 - dlaždice map z `prchave\kachle` do `data\cache`.
 
-Verze 6.0.0 se na novou verzi aktualizuje sama, ale jen samotný program
-ve stávající složce, bez přibalené Javy. Další aktualizace pak už sama
-nenainstaluje. Pro automatické aktualizace a přibalenou Javu stáhněte
-`GeoKuk-windows.zip` a data přeneste podle postupu výše.
+Ve Windows se verze 6.0.0 na novou verzi aktualizuje sama, ale jen
+samotný program ve stávající složce, bez přibalené Javy. Další
+aktualizace pak už sama nenainstaluje. Pro automatické aktualizace
+a přibalenou Javu stáhněte `GeoKuk-windows.zip` a data přeneste podle
+postupu výše.
 
 ## Uživatelské mapy
 
