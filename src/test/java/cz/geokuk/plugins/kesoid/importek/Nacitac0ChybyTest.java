@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.util.concurrent.Future;
 import java.util.zip.*;
 
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -16,6 +18,22 @@ public class Nacitac0ChybyTest {
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
+
+	private final java.util.function.LongSupplier puvodniVolnaPamet = Nacitac0.volnaPamet;
+
+	@After
+	public void obnovVolnouPamet() {
+		Nacitac0.volnaPamet = puvodniVolnaPamet;
+	}
+
+	private File zip() throws IOException {
+		final File zip = tmp.newFile("a.zip");
+		try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zip.toPath()))) {
+			out.putNextEntry(new ZipEntry("a.jpg"));
+			out.closeEntry();
+		}
+		return zip;
+	}
 
 	private static final class PadajiciNacitac extends Nacitac0 {
 		private final Error chyba;
@@ -57,13 +75,39 @@ public class Nacitac0ChybyTest {
 
 	@Test
 	public void preteceniZasobnikuVZipu() throws Exception {
-		final File zip = tmp.newFile("a.zip");
-		try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zip.toPath()))) {
-			out.putNextEntry(new ZipEntry("a.jpg"));
-			out.closeEntry();
-		}
-		try (ZipFile zf = new ZipFile(zip)) {
+		try (ZipFile zf = new ZipFile(zip())) {
 			new PadajiciNacitac(new StackOverflowError()).nactiBezVyjimky(zf, zf.getEntry("a.jpg"), null, null, null);
+		}
+	}
+
+	@Test
+	public void nedostatekPametiVZipu() throws Exception {
+		try (ZipFile zf = new ZipFile(zip())) {
+			new PadajiciNacitac(new OutOfMemoryError("Java heap space")).nactiBezVyjimky(zf, zf.getEntry("a.jpg"), null, null, null);
+		}
+	}
+
+	@Test
+	public void plnaHaldaVSouboruUkonciImport() throws Exception {
+		Nacitac0.volnaPamet = () -> 0;
+		final OutOfMemoryError oom = new OutOfMemoryError("Java heap space");
+		try {
+			new PadajiciNacitac(oom).nactiBezVyjimky(tmp.newFile("a.jpg"), null, null, null);
+			Assert.fail("Nedostatek paměti se nesmí schovat za poškozený soubor");
+		} catch (final OutOfMemoryError e) {
+			Assert.assertSame(oom, e);
+		}
+	}
+
+	@Test
+	public void plnaHaldaVZipuUkonciImport() throws Exception {
+		Nacitac0.volnaPamet = () -> 0;
+		final OutOfMemoryError oom = new OutOfMemoryError("Java heap space");
+		try (ZipFile zf = new ZipFile(zip())) {
+			new PadajiciNacitac(oom).nactiBezVyjimky(zf, zf.getEntry("a.jpg"), null, null, null);
+			Assert.fail("Nedostatek paměti se nesmí schovat za poškozený soubor");
+		} catch (final OutOfMemoryError e) {
+			Assert.assertSame(oom, e);
 		}
 	}
 }
