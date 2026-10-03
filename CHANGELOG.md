@@ -179,6 +179,8 @@
 - Ve filtru se stav aktivních keší jmenuje „Aktivní“.
 - Oddíl Výstup v dialogu Rendrování se vejde i s dlouhou výstupní složkou:
   složka se zkrátí uprostřed, celá je v bublině nápovědy.
+- Zrušené nebo neúspěšné rendrování nesmaže obrázek a kalibraci `.map`
+  z dřívějšího rendrování; rendr obrázku kalibrace pro Ozi nemaže vůbec.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
