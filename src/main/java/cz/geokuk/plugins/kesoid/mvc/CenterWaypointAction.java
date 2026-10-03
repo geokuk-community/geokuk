@@ -9,6 +9,7 @@ import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mapicon.IkonBag;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -48,7 +49,7 @@ public class CenterWaypointAction extends Action0 implements AfterEventReceiverR
 	 */
 	@Override
 	public void initAfterEventReceiverRegistration() {
-		super.putValue(NAME, wpt.getName() + " - " + wpt.getNazev());
+		super.putValue(NAME, FString.text(wpt.getName() + " - " + wpt.getNazev()));
 		// super.putValue(SMALL_ICON, Board.ikonizer.findIcon(wpt, "x16", true));
 		super.putValue(SMALL_ICON, ikonBag.seekIkon(wpt.getGenotyp()));
 		super.putValue(SHORT_DESCRIPTION, "Vycentruje daný waypoint keše.");
