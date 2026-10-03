@@ -172,9 +172,15 @@ public class JStatusBar extends JPanel {
 		jZdrojeKesoiduPocetNenactenych.setText(pocetNenactenych + "");
 		jZdrojeKesoiduPocetNenactenych.setVisible(pocetNenactenych > 0);
 
-		final String formatedCas = String.format("%tF %<tR", informaceOZdrojich.getYungest());
-		jZdrojeKesoiduCas.setText(formatedCas);
+		jZdrojeKesoiduCas.setText(casZdroju(informaceOZdrojich.getYungest()));
 		revalidate();
+	}
+
+	static final String BEZ_POZICE = "–";
+
+	/** Bez načtených zdrojů se čas nezobrazuje. */
+	static String casZdroju(final long nejmladsi) {
+		return nejmladsi <= 0 ? "" : String.format("%tF %<tR", nejmladsi);
 	}
 
 	public void onEvent(final KeskyVyfiltrovanyEvent aEvent) {
@@ -195,7 +201,7 @@ public class JStatusBar extends JPanel {
 
 		if (poziceq.isNoPosition()) {
 			// souradnicePozice.setVisible(false);
-			souradnicePozice.setText("N/A");
+			souradnicePozice.setText(BEZ_POZICE);
 		} else {
 			souradnicePozice.setText(poziceq.getWgs().toString());
 			// souradnicePozice.setVisible(true);
@@ -293,7 +299,7 @@ public class JStatusBar extends JPanel {
 
 		final JPanel jPozicePanel = createPanel();
 
-		souradnicePozice.setToolTipText("Spouřadnice aktuálně vybrané pozice, možno vybrat a dát do clipboardu");
+		souradnicePozice.setToolTipText("Souřadnice aktuálně vybrané pozice, možno vybrat a dát do clipboardu");
 		jPozicePanel.add(new JLabel("Pozice:"));
 		jPozicePanel.add(souradnicePozice);
 		add(jPozicePanel);
@@ -324,7 +330,7 @@ public class JStatusBar extends JPanel {
 
 		poctyKesi.add(new JLabel("Filtr:"));
 		poctyKesi.add(filtrovanePocetyVsude);
-		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po apliakci filtru.");
+		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po aplikaci filtru.");
 
 		poctyKesi.add(celkovePoctyVyrez);
 		celkovePoctyVyrez.setToolTipText("Počet všech waypointů ve výřezu, které by byly zobrazeny, pokud by nebyl filtr.");
@@ -357,7 +363,7 @@ public class JStatusBar extends JPanel {
 		add(jFilterProgressPanel);
 
 		final JPanel zdrojeKesoiduPanel = createPanel();
-		zdrojeKesoiduPanel.setToolTipText("Klikni a uvidíš detaily");
+		zdrojeKesoiduPanel.setToolTipText("Kliknutím zobrazíte podrobnosti");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNactenych);
 		jZdrojeKesoiduPocetNactenych.setToolTipText("Počet načtených souborů s kešoidy.");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNenactenych);

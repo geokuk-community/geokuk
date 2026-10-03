@@ -32,7 +32,7 @@ public class CloseAction extends Action0 {
 	 */
 	public CloseAction() {
 		super("Konec");
-		putValue(SHORT_DESCRIPTION, "Zavřít okno a ukončit process");
+		putValue(SHORT_DESCRIPTION, "Zavřít okno a ukončit program");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_K);
 	}
 	/*

@@ -49,6 +49,7 @@ import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.mapicon.IkonBag;
 import cz.geokuk.plugins.kesoid.mvc.IkonyNactenyEvent;
+import cz.geokuk.util.lang.FString;
 
 /**
  * TableDemo is just like SimpleTableDemo, except that it uses a custom TableModel.
@@ -161,7 +162,8 @@ public class JKesTable extends JPanel {
 			if (nal.getKdeNalezeno() != s) {
 				return s;
 			}
-			return "<html>" + s.substring(0, nal.getPoc()) + "<b bgcolor='yellow'>" + s.substring(nal.getPoc(), nal.getKon()) + "</b>" + s.substring(nal.getKon()) + "</html>";
+			return "<html>" + FString.html(s.substring(0, nal.getPoc())) + "<b bgcolor='yellow'>" + FString.html(s.substring(nal.getPoc(), nal.getKon())) + "</b>"
+					+ FString.html(s.substring(nal.getKon())) + "</html>";
 		}
 
 		private Icon kesIkona(final Kesoid kes) {

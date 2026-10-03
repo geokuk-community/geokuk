@@ -20,6 +20,7 @@ import cz.geokuk.plugins.kesoid.mvc.ZobrazNaGcComAction;
 import cz.geokuk.plugins.refbody.DomaciSouradniceSeZmenilyEvent;
 import cz.geokuk.plugins.refbody.RefbodyModel;
 import cz.geokuk.util.gui.JSmallPictureButton;
+import cz.geokuk.util.lang.FString;
 
 /**
  * Detailní informace o vybrané keši.
@@ -86,12 +87,12 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		if (status == EKesStatus.ARCHIVED) {
 			sb.append("<font color=\"red\">");
 		}
-		sb.append(s);
+		sb.append(FString.html(s));
 		if (status == EKesStatus.ARCHIVED) {
-			sb.append("</font");
+			sb.append("</font>");
 		}
 		if (status == EKesStatus.DISABLED) {
-			sb.append("</font");
+			sb.append("</font>");
 		}
 		if (status != EKesStatus.ACTIVE) {
 			sb.append("</strike>");

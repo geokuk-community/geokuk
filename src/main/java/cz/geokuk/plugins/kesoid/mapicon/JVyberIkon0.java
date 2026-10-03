@@ -10,6 +10,7 @@ import javax.swing.border.BevelBorder;
 import cz.geokuk.plugins.kesoid.genetika.*;
 import cz.geokuk.util.gui.FComponent;
 import cz.geokuk.util.lang.CounterMap;
+import cz.geokuk.util.lang.FString;
 
 public abstract class JVyberIkon0 extends Box {
 
@@ -81,12 +82,12 @@ public abstract class JVyberIkon0 extends Box {
 							// // FIXME [veverka] genetika: podivné porovnání, co se tady lastně porovnává a proč. Vysvětlit zde -- 11. 12. 2019 9:41:41 veverka
 							if (alela.simpleName().equals(alela.getDisplayName()) || !iRadioButton) {
 								if (aPoctyVybranychAlel != null) {
-									rb.setText("<html>" + alela.getDisplayName() + "  (<i>" + aPoctyVybranychAlel.count(alela) + "</i>)");
+									rb.setText("<html>" + FString.html(alela.getDisplayName()) + "  (<i>" + aPoctyVybranychAlel.count(alela) + "</i>)");
 								} else {
 									rb.setText(alela.getDisplayName());
 								}
 							} else {
-								rb.setText("<html>" + alela.getDisplayName() + "  (<b><tt>" + alela.qualName() + "</tt></b>)");
+								rb.setText("<html>" + FString.html(alela.getDisplayName()) + "  (<b><tt>" + FString.html(alela.qualName()) + "</tt></b>)");
 							}
 							rb.setEnabled(shouldEnable(alelax));
 							radiosikonou.add(rb);

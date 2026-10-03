@@ -20,7 +20,7 @@ public class NastavMapuCeskaAction extends Action0 {
 	 */
 	public NastavMapuCeskaAction() {
 		super("Na mapu Česka");
-		putValue(SHORT_DESCRIPTION, "Změna pozice a měřítka mapy, aby ukazovala českou republiku.");
+		putValue(SHORT_DESCRIPTION, "Změna pozice a měřítka mapy, aby ukazovala Českou republiku.");
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
 
 	}

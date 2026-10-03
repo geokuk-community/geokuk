@@ -5,6 +5,8 @@ import java.sql.*;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.sqlite.SQLiteErrorCode;
+import org.sqlite.SQLiteException;
 
 /** Databázi GeoGetu nebo GSAKu Geokuk jen čte. */
 public class DatabazeJinehoProgramuTest {
@@ -53,5 +55,43 @@ public class DatabazeJinehoProgramuTest {
 			final String popis = DatabazeJinehoProgramu.popisChyby(db, e);
 			Assert.assertTrue(popis, popis.contains("není databáze"));
 		}
+	}
+
+	/** GeoGet nebo GSAK spadl uprostřed zápisu: vedle databáze zůstal rozepsaný žurnál. */
+	@Test
+	public void nedokoncenyZapisRadiOtevritDatabaziVGeogetu() throws Exception {
+		final File zdroj = new File(tmp.newFolder("zdroj"), "geoget.db3");
+		final File db = new File(tmp.newFolder("kopie"), "geoget.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + zdroj); Statement s = c.createStatement()) {
+			s.execute("PRAGMA journal_mode=DELETE");
+			s.execute("CREATE TABLE geocache (id TEXT)");
+			c.setAutoCommit(false);
+			for (int i = 0; i < 2000; i++) {
+				s.execute("INSERT INTO geocache VALUES ('GC" + i + "')");
+			}
+			s.execute("PRAGMA cache_size=1"); // stránky se zapíší do souboru ještě před commitem
+			s.execute("UPDATE geocache SET id = id || 'x'");
+			// Kopie v půli transakce = stav po pádu programu, který zapisoval.
+			java.nio.file.Files.copy(zdroj.toPath(), db.toPath());
+			java.nio.file.Files.copy(new File(zdroj.getPath() + "-journal").toPath(), new File(db.getPath() + "-journal").toPath());
+			c.rollback();
+		}
+		try (Connection c = DatabazeJinehoProgramu.otevri(db); Statement s = c.createStatement()) {
+			s.executeQuery("SELECT count(*) FROM geocache").close();
+			Assert.fail("databáze s rozepsaným žurnálem se jen pro čtení otevřít nemá");
+		} catch (final SQLException e) {
+			final String popis = DatabazeJinehoProgramu.popisChyby(db, e);
+			Assert.assertTrue(popis, popis.contains("Otevřete ji v GeoGetu nebo GSAKu"));
+			Assert.assertFalse(popis, popis.contains("smíte zapisovat"));
+		}
+	}
+
+	/** WAL databáze v nezapisovatelné složce: rada o právech, ne o nedokončeném zápisu. */
+	@Test
+	public void nezapisovatelnaSlozkaRadiKontroluPrav() {
+		final String popis = DatabazeJinehoProgramu.popisChyby(new File("geoget.db3"),
+				new SQLiteException("attempt to write a readonly database", SQLiteErrorCode.SQLITE_READONLY_DIRECTORY));
+		Assert.assertTrue(popis, popis.contains("smíte zapisovat"));
+		Assert.assertFalse(popis, popis.contains("nedokončený zápis"));
 	}
 }

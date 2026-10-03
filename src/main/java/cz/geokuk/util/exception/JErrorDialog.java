@@ -116,7 +116,7 @@ public class JErrorDialog extends JMyDialog0 {
 			jErrorTable.getProblemList().clear();
 			jErrorTable.revalidate();
 			jErrorTable.repaint();
-			jOtviracVyjimky.setText("Tabulka problemu vymazana");
+			jOtviracVyjimky.setText("Tabulka problémů je vymazaná");
 			jOtviracVyjimky.setEnabled(false);
 		});
 
@@ -142,7 +142,7 @@ public class JErrorDialog extends JMyDialog0 {
 		jOtviracVyjimky.addActionListener(aE -> {
 			final URL url = vypis(currentExcId);
 			if (url != null) {
-				BrowserOpener.displayURL(url);
+				BrowserOpener.displayFile(url);
 			}
 		});
 
