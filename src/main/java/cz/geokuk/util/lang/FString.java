@@ -2,6 +2,8 @@ package cz.geokuk.util.lang;
 
 import java.lang.reflect.Array;
 
+import javax.swing.plaf.basic.BasicHTML;
+
 /**
  * Třída opbsahuje užitečnou práci s řetězci.
  *
@@ -133,6 +135,11 @@ public final class FString {
 			return s.substring(0, maxlen);
 		}
 		return s;
+	}
+
+	/** Text z dat (GPX, databáze) pro popisek Swingu bez vlastního HTML: když začíná {@code <html>}, Swing by ho vykreslil jako HTML, proto se ukáže jako text. */
+	public static String text(final String s) {
+		return s != null && BasicHTML.isHTMLString(s) ? "<html>" + html(s).replace("\n", "<br>") : s;
 	}
 
 	/** Text pro vložení do HTML (popisky Swingu začínající {@code <html>}), aby se z něj nestaly značky. */
