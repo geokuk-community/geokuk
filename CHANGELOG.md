@@ -112,6 +112,10 @@
 - Dálkové ovládání jde spustit i ze složky, do které nejde zapisovat
   (třeba Program Files). Když spustit nejde, například kvůli obsazenému
   portu, hlášení řekne proč.
+- Druhé spuštění GeoKuku nad stejnou složkou `data` jen oznámí, že
+  GeoKuk už běží, a skončí; dvě instance by si přepisovaly nastavení
+  a výlety. Restart po aktualizaci funguje i ve složce, do které nejde
+  zapisovat.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
   načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN), výškou
   s čárkou, bez názvu nebo s nesmyslnou obtížností či terénem nezahodí

@@ -108,4 +108,26 @@ public class StartTest {
 		Start.pridejDocasnouSlozku(prikaz, data);
 		Assert.assertEquals(Collections.emptyList(), prikaz);
 	}
+
+	@Test
+	public void zamekDrzenyInstanciJeZamceny() throws Exception {
+		final File soubor = new File(tmp.newFolder("data-z"), Start.ZAMEK);
+		final java.nio.channels.FileLock lock = Start.zamkni(soubor);
+		Assert.assertNotNull(lock);
+		try {
+			Assert.assertTrue(Start.jeZamceno(soubor));
+		} finally {
+			lock.channel().close();
+		}
+		Assert.assertFalse(Start.jeZamceno(soubor));
+	}
+
+	@Test
+	public void vNezapisovatelneSlozceNikdoNebezi() throws Exception {
+		final File soubor = new File(tmp.newFile("data-soubor"), Start.ZAMEK); // soubor místo složky, nejde zapsat ani jako správce
+		Assert.assertFalse(Start.jeZamceno(soubor));
+		final long zacatek = System.currentTimeMillis();
+		Assert.assertTrue(Start.pockejNaUkonceni(soubor, 5_000));
+		Assert.assertTrue(System.currentTimeMillis() - zacatek < 2_000);
+	}
 }
