@@ -149,7 +149,8 @@ menu a otevřené dialogy) potřebuje displej, na Linuxu třeba přes xvfb:
 xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
 ```
 
-Na GitHubu se spouští ručně workflow Smoke.
+Na GitHubu běží workflow Smoke každou noc na Linuxu, ručně ho jde
+spustit pro Linux i Windows.
 
 ## Licence
 
