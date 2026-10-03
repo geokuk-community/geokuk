@@ -204,7 +204,7 @@ public class SmokeIT {
 		final StringBuilder prubeh = new StringBuilder();
 		try {
 			final KlientOvladani k = pripojSe(adresar);
-			projdiMenuZvenku(k, prubeh, problemy);
+			projdiMenuZvenku(k, prubeh, problemy, true);
 			prubeh.append("Stav: ").append(k.stav()).append('\n');
 			ukonciZvenku(p, k, prubeh, problemy);
 		} finally {
@@ -232,10 +232,10 @@ public class SmokeIT {
 		final StringBuilder prubeh = new StringBuilder();
 		try {
 			final KlientOvladani k = pripojSe(adresar);
-			projdiMenuZvenku(k, prubeh, problemy);
+			projdiMenuZvenku(k, prubeh, problemy, false);
 			final int pred = pametPoUklidu(k);
 			for (int i = 0; i < 5; i++) {
-				projdiMenuZvenku(k, new StringBuilder(), problemy);
+				projdiMenuZvenku(k, new StringBuilder(), problemy, false);
 			}
 			final int po = pametPoUklidu(k);
 			prubeh.append("Paměť po úklidu: po 1. průchodu ").append(pred).append(" MB, po dalších 5 ").append(po).append(" MB\n");
@@ -284,7 +284,9 @@ public class SmokeIT {
 		return k;
 	}
 
-	private static void projdiMenuZvenku(final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy) throws Exception {
+	/** @param hlidatEdt hlídat odezvu EDT; opakované průchody slouží k měření paměti a úklid paměti v nich odezvu zkresluje */
+	private static void projdiMenuZvenku(final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy, final boolean hlidatEdt) throws Exception {
+		long nejdelsiOdezva = 0;
 		for (final Map<String, Object> polozka : k.seznam("/menu")) {
 			final String cesta = (String) polozka.get("cesta");
 			if (!Boolean.TRUE.equals(polozka.get("povoleno")) || NESPOUSTET_ZVENKU.stream().anyMatch(cesta::startsWith) || cesta.startsWith("Mapy > ") && polozka.containsKey("zaskrtnuto")
@@ -306,7 +308,8 @@ public class SmokeIT {
 				final long pred = System.currentTimeMillis();
 				final List<Map<String, Object>> okna = k.seznam("/okna");
 				final long odezva = System.currentTimeMillis() - pred;
-				if (odezva > 3000) {
+				nejdelsiOdezva = Math.max(nejdelsiOdezva, odezva);
+				if (hlidatEdt && odezva > 3000) {
 					problemy.add("Po " + cesta + " EDT neodpovídal " + odezva + " ms");
 				}
 				for (final Map<String, Object> okno : okna) {
@@ -322,6 +325,7 @@ public class SmokeIT {
 				pockejNaKlid(k);
 			}
 		}
+		prubeh.append("Nejdelší odezva EDT po akci menu: ").append(nejdelsiOdezva).append(" ms\n");
 	}
 
 	private static void ukonciZvenku(final Process p, final KlientOvladani k, final StringBuilder prubeh, final List<String> problemy) throws Exception {
