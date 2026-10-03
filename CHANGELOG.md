@@ -263,6 +263,7 @@
 - Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
   sqlite-jdbc 3.53.4.0, metadata-extractor 2.21.0, logback 1.3.16,
   v testech junit 4.13.2.
+- SqlJet 1.1.15 (licence GPLv3 nebo novější).
 - Popis vydání na GitHubu se bere z tohoto souboru. Soubory vydání mají
   ověřitelný původ (`gh attestation verify`).
 - Program se vydává jako `geokuk.jar` a zip pro Windows s Javou,
