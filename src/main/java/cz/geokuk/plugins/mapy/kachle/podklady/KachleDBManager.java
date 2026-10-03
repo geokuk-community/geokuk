@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,6 +47,9 @@ class KachleDBManager implements KachleManager {
 	 * A query to create the appropriate table
 	 */
 	private static final String TABLE_CREATE_QUERY = String.format("CREATE TABLE %s (x int, y int, " + "z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))", TABLE_NAME);
+
+	/** Kolikrát se zkusí zápis, když cache zamyká čtení z jiného vlákna. */
+	private static final int POKUSU_O_ZAPIS = 10;
 
 	/**
 	 * Since we've got multiple threads that can write to the database, using a single connection is hardly possible (would require synchronization on code level, which is not the way to go). We also want to avoid exposing the implementation details further. Since the number of threads is small
@@ -105,7 +109,28 @@ class KachleDBManager implements KachleManager {
 		if (database == null) {
 			return null;
 		}
-		Image img = null;
+		final byte[] data = nactiData(database, ki);
+		if (data == null) {
+			return null;
+		}
+		try {
+			final Image img = KachloDownloader.precti(new ByteArrayInputStream(data));
+			if (img == null) {
+				log.debug("Loaded DB image is null!");
+			}
+			return img;
+		} catch (final KachloDownloader.UseknutaDlazdice e) {
+			// Useknutou dlaždici z dřívějška bere jako chybějící, stáhne se znovu a přepíše.
+			log.debug("{}: {}", ki, e.getMessage());
+			return null;
+		} catch (final IOException e) {
+			chybyCteni.ohlas(e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	/** Čtecí transakce blokuje zápis, proto se v ní jen přečtou bajty a obrázek se dekóduje až po ní. */
+	private byte[] nactiData(final SqlJetDb database, final Ka ki) {
 		ISqlJetCursor cursor = null;
 		boolean vadne = false;
 
@@ -117,17 +142,10 @@ class KachleDBManager implements KachleManager {
 				return null;
 			}
 			log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
-			img = KachloDownloader.precti(cursor.getBlobAsStream("image"));
-			if (img == null) {
-				log.debug("Loaded DB image is null!");
-			}
-		} catch (final KachloDownloader.UseknutaDlazdice e) {
-			// Useknutou dlaždici z dřívějška bere jako chybějící, stáhne se znovu a přepíše.
-			log.debug("{}: {}", ki, e.getMessage());
-			return null;
-		} catch (SqlJetException | IOException e) {
+			return cursor.getBlobAsArray("image");
+		} catch (final SqlJetException e) {
 			chybyCteni.ohlas(e);
-			vadne = e instanceof SqlJetException;
+			vadne = true;
 			throw new RuntimeException(e);
 		} finally {
 			if (cursor != null) {
@@ -146,7 +164,6 @@ class KachleDBManager implements KachleManager {
 				zahod(database);
 			}
 		}
-		return img;
 	}
 
 	/**
@@ -166,9 +183,33 @@ class KachleDBManager implements KachleManager {
 			return false;
 		}
 
-		// in case something goes wrong, rollback the transaction
-		boolean failed = false;
+		for (int pokus = 1;; pokus++) {
+			try {
+				zapis(database, imagesToSave);
+				return true;
+			} catch (final SqlJetException e) {
+				if (e.getErrorCode() == SqlJetErrorCode.BUSY && pokus < POKUSU_O_ZAPIS) {
+					log.debug("Cache dlaždic je zamčená čtením, zápis zkusím znovu ({}. pokus)", pokus);
+					try {
+						Thread.sleep(20L * pokus);
+					} catch (final InterruptedException e1) {
+						Thread.currentThread().interrupt();
+						chybyZapisu.ohlas(e);
+						return false;
+					}
+					continue;
+				}
+				chybyZapisu.ohlas(e);
+				if (e.getErrorCode() != SqlJetErrorCode.BUSY) {
+					zahod(database);
+				}
+				return false;
+			}
+		}
+	}
 
+	/** Zapíše dávku v jedné transakci, při chybě ji vrátí. */
+	private void zapis(final SqlJetDb database, final Collection<ItemToSave> imagesToSave) throws SqlJetException {
 		byte[] dataToSave;
 		try {
 			database.beginTransaction(SqlJetTransactionMode.WRITE);
@@ -184,25 +225,15 @@ class KachleDBManager implements KachleManager {
 				log.debug("Adding {} {} {} {}", kx, ky, kaloc.getMoumer(), ki.typToString());
 				database.getTable(TABLE_NAME).insertOr(SqlJetConflictAction.REPLACE, kx, ky, kaloc.getMoumer(), ki.typToString(), dataToSave);
 			}
+			database.commit();
 		} catch (final SqlJetException e) {
-			chybyZapisu.ohlas(e);
-			failed = true;
-		} finally {
 			try {
-				if (failed) {
-					database.rollback();
-				} else {
-					database.commit();
-				}
-			} catch (final SqlJetException e) {
-				chybyDokonceni.ohlas(e);
-				failed = true;
+				database.rollback();
+			} catch (final SqlJetException e1) {
+				chybyDokonceni.ohlas(e1);
 			}
-			if (failed) {
-				zahod(database);
-			}
+			throw e;
 		}
-		return !failed;
 	}
 
 	/**

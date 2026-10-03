@@ -139,7 +139,8 @@
   zastavit a samo přestane, když server mapy stahování omezí
   (HTTP 429 nebo 503).
 - Stažené dlaždice se uloží do diskové cache i při rychlém posouvání
-  a zoomování, dlaždice z posledních sekund i při ukončení programu.
+  a zoomování a během souvislého čtení z cache, dlaždice z posledních
+  sekund i při ukončení programu.
   Zdravá cache se neodkládá jako poškozená a opakovaná chyba čtení
   z cache se do logu hlásí souhrnně.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
