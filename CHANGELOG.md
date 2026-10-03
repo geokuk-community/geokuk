@@ -42,8 +42,8 @@
 - „Připomenout za týden“ (i zavření dialogu nové verze) odloží nabídku
   té verze o 7 dní. Novější verze se nabídne hned.
 - „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
-  nainstaluje; kde to nejde, otevře stránku nabízené verze, u bety
-  tedy betu.
+  nainstaluje místo jaru, ze kterého GeoKuk běží; kde to nejde, otevře
+  stránku nabízené verze, u bety tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
   tradiční zelené, multi žluté, mystery, letterbox a wherigo tmavě
   modré, virtuální, webcam a earthcache bílé, eventy červené, Lab keše
@@ -312,9 +312,9 @@
   a nabídne ji zkopírovat. Nápověda z okna O programu otevře hlavní
   stránku nápovědy.
 - Odkaz u keše nebo waypointu otevře jen webovou stránku (http, https),
-  ne soubor. Značky HTML v názvech keší, waypointů, cest a typů
-  waypointů se v bublině, detailu keše, hledání a nabídkách zobrazí
-  jako text.
+  ne soubor. Značky HTML v kódech, názvech a autorech keší, názvech
+  waypointů, cest a typů waypointů a v hintu se v bublině, detailu keše,
+  hledání, nabídkách a výběru ikon zobrazí jako text.
 - O programu uvádí licenci GNU GPL v3.
 - Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
   (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.

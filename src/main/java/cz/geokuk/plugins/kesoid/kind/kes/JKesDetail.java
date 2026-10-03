@@ -13,6 +13,7 @@ import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.detail.JKesoidDetail0;
 import cz.geokuk.plugins.refbody.DomaciSouradniceSeZmenilyEvent;
 import cz.geokuk.util.gui.JSmallPictureButton;
+import cz.geokuk.util.lang.FString;
 
 /**
  * Detailní informace o vybrané keši.
@@ -99,7 +100,7 @@ public class JKesDetail extends JKesoidDetail0 {
 			zobrazHint.setEnabled(false);
 			Dlg.info("Keš nemá hint.", "Hint");
 		} else {
-			Dlg.info(hint, "Hint");
+			Dlg.info(FString.text(hint), "Hint");
 		}
 	}
 
