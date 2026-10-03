@@ -145,6 +145,7 @@
   z cache se do logu hlásí souhrnně.
 - Při rychlém posouvání mapy se nezobrazí cizí dlaždice a souběžný
   zápis cache map nepoškodí.
+- Ve filtru se stav aktivních keší jmenuje „Aktivní“.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
