@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.SwingUtilities;
 
@@ -74,6 +75,9 @@ class KachleDBManager implements KachleManager {
 
 	private volatile int neuspesnychOtevreniZaSebou;
 
+	/** Zámky SqlJet mezi spojeními v jednom procesu nevylučují čtení a zápis, proto vlastní zámek. */
+	private final ReentrantReadWriteLock zamek = new ReentrantReadWriteLock(true);
+
 	private static final long ZNOVU_ZKUSIT_ZAPIS_MS = 60_000;
 
 	private final Set<File> zapisovatelneSlozky = ConcurrentHashMap.newKeySet();
@@ -109,7 +113,13 @@ class KachleDBManager implements KachleManager {
 		if (database == null) {
 			return null;
 		}
-		final byte[] data = nactiData(database, ki);
+		final byte[] data;
+		zamek.readLock().lock();
+		try {
+			data = nactiData(database, ki);
+		} finally {
+			zamek.readLock().unlock();
+		}
 		if (data == null) {
 			return null;
 		}
@@ -173,7 +183,12 @@ class KachleDBManager implements KachleManager {
 	public boolean save(final Collection<ItemToSave> imagesToSave) {
 		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.
 		synchronized (this) {
-			return saveJednoVlakno(imagesToSave);
+			zamek.writeLock().lock();
+			try {
+				return saveJednoVlakno(imagesToSave);
+			} finally {
+				zamek.writeLock().unlock();
+			}
 		}
 	}
 
@@ -350,6 +365,15 @@ class KachleDBManager implements KachleManager {
 
 	/** Nová cache se při prvním čtení schématu zapisuje, proto otevírání pod stejným zámkem jako zápis. */
 	private synchronized SqlJetDb otevri(final File f) throws SqlJetException {
+		zamek.writeLock().lock();
+		try {
+			return otevriZamcene(f);
+		} finally {
+			zamek.writeLock().unlock();
+		}
+	}
+
+	private SqlJetDb otevriZamcene(final File f) throws SqlJetException {
 		final SqlJetDb database = SqlJetDb.open(f, true);
 		try {
 			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.
