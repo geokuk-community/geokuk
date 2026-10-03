@@ -23,15 +23,6 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 		}
 
 		/**
-		 * Vrací datum, které je v časové zóně, se kterou bylo info vytvořeno.
-		 *
-		 * @return
-		 */
-		public ADate getDate() {
-			return ADate.from(getYearNumber(), getMonthNumber(), getDayNumber());
-		}
-
-		/**
 		 * Vrací číslo dne odpovídající časové zóně, pro kterou bylo Info vytvořeno
 		 *
 		 * @return 1 až 31
@@ -593,17 +584,6 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	@Override
 	public ATimestamp getAnother(final long aNthObject) {
 		return add(aNthObject);
-	}
-
-	/**
-	 * Vrací datum odpovídající zadanému časovému pásmu.
-	 *
-	 * @return Datum, které je v zadaný čas v odpovídajícím časovém, =ásmu.
-	 */
-	public ADate getDate(final TimeZone aZone) {
-		final GregorianCalendar cal = new GregorianCalendar(aZone);
-		cal.setTime(iJavaDate); // nastavím sám sebe do kalenfářč
-		return ADate.from(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
 	}
 
 	/**
