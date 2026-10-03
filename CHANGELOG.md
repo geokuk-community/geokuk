@@ -25,13 +25,17 @@
 - GeoKuk upozorní, když do své složky nemůže zapisovat (třeba v Program
   Files), nebo když je ve složce synchronizované přes OneDrive, Dropbox
   nebo Google Disk. Ve složce bez práva zápisu se keše z GeoGetu
-  a GSAKu načtou, mapa se zobrazí (dlaždice zůstanou jen v paměti)
-  a log a chybová hlášení jsou v `%TEMP%\GeoKuk\log`.
+  a GSAKu načtou, mapa se zobrazí (dlaždice zůstanou jen v paměti),
+  log a chybová hlášení jsou v `%TEMP%\GeoKuk\log` a dočasné soubory
+  v dočasné složce systému.
 - Když nová verze potřebuje novější Javu, než je přibalená, nebo je
   k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
 - Nápověda > Nabízet testovací verze (beta) zapíná beta kanál, verze
   je pak trvale vidět vpravo v menu. Po vypnutí nabídne ruční kontrola
   aktualizací přechod na poslední stabilní verzi.
+- „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
+  nainstaluje; kde to nejde, otevře stránku nabízené verze, u bety
+  tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
   tradiční zelené, multi žluté, mystery, letterbox a wherigo modré,
   virtuální, webcam a earthcache bílé, eventy červené, ostatní objekty
@@ -242,14 +246,14 @@
 
 ### Vývoj
 - Aktualizace knihoven se známými zranitelnostmi: guava 33.4.8,
-  sqlite-jdbc 3.41.2.2, metadata-extractor 2.18.0, v testech logback
-  1.2.13 a junit 4.13.1.
+  sqlite-jdbc 3.53.4.0, metadata-extractor 2.21.0, logback 1.3.16,
+  v testech junit 4.13.2.
 - Popis vydání na GitHubu se bere z tohoto souboru. Soubory vydání mají
   ověřitelný původ (`gh attestation verify`).
 - Program se vydává jako `geokuk.jar` a zip pro Windows s Javou,
   konfigurace Launch4j je odstraněná.
 - Smoke test celého programu nad falešným mapovým serverem (workflow
-  Smoke) a test kolizí klávesových zkratek.
+  Smoke, každou noc na `main`) a test kolizí klávesových zkratek.
 
 ## 6.0.0
 
