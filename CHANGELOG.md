@@ -260,8 +260,9 @@
   a nabídne ji zkopírovat. Nápověda z okna O programu otevře hlavní
   stránku nápovědy.
 - Odkaz u keše nebo waypointu otevře jen webovou stránku (http, https),
-  ne soubor. Značky HTML v názvech keší, waypointů a cest se v bublině,
-  detailu keše a hledání zobrazí jako text.
+  ne soubor. Značky HTML v názvech keší, waypointů, cest a typů
+  waypointů se v bublině, detailu keše, hledání a nabídkách zobrazí
+  jako text.
 - O programu uvádí licenci GNU GPL v3.
 
 ### Odstraněno
