@@ -26,7 +26,12 @@ public class MySwingWorker0Test {
 			worker.done();
 			fail();
 		} catch (final RuntimeException e) {
-			assertEquals("Výjimka při zpracování na pozadí: java.lang.UnsatisfiedLinkError: nativní knihovna", e.getMessage());
+			assertEquals("Chyba při práci na pozadí: nativní knihovna", e.getMessage());
 		}
+	}
+
+	@Test
+	public void bezZpravyAsponDruhChyby() {
+		assertEquals("Chyba při práci na pozadí (NullPointerException)", MySwingWorker0.popis(new NullPointerException()));
 	}
 }

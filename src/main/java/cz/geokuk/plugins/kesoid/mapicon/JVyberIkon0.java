@@ -84,7 +84,7 @@ public abstract class JVyberIkon0 extends Box {
 								if (aPoctyVybranychAlel != null) {
 									rb.setText("<html>" + FString.html(alela.getDisplayName()) + "  (<i>" + aPoctyVybranychAlel.count(alela) + "</i>)");
 								} else {
-									rb.setText(alela.getDisplayName());
+									rb.setText(FString.text(alela.getDisplayName()));
 								}
 							} else {
 								rb.setText("<html>" + FString.html(alela.getDisplayName()) + "  (<b><tt>" + FString.html(alela.qualName()) + "</tt></b>)");
