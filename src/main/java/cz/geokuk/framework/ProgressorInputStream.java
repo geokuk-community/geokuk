@@ -119,7 +119,7 @@ public class ProgressorInputStream extends FilterInputStream {
 	public long skip(final long n) throws IOException {
 		final long nr = in.skip(n);
 		if (nr > 0) {
-			progressor.setProgress(nread += nr);
+			progressor.setProgress(nread += (int) nr);
 		}
 		return nr;
 	}

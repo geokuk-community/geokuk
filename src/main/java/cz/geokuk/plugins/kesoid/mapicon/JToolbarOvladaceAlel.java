@@ -54,6 +54,7 @@ public class JToolbarOvladaceAlel extends JPanel {
 		this.factory = factory;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void onEvent(final KeskyNactenyEvent event) {
 		// TODO Nějak ty separátory a layoutování lépe řešit.
 		removeAll();

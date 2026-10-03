@@ -20,6 +20,11 @@
 				<version>3.14.0</version>
 				<configuration>
 					<release>8</release>
+					<showWarnings>true</showWarnings>
+					<failOnWarning>true</failOnWarning>
+					<compilerArgs>
+						<arg>-Xlint:all,-serial,-this-escape,-path,-options,-processing</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -59,6 +64,12 @@
 					<systemPropertyVariables>
 						<geokuk.data>${project.build.directory}/test-data</geokuk.data>
 					</systemPropertyVariables>
+					<properties>
+						<property>
+							<name>listener</name>
+							<value>cz.geokuk.testy.NezachyceneVyjimky</value>
+						</property>
+					</properties>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -161,8 +172,8 @@
 		<!-- testing: Mockito -->
 		<dependency>
 			<groupId>org.mockito</groupId>
-			<artifactId>mockito-all</artifactId>
-			<version>1.10.19</version>
+			<artifactId>mockito-core</artifactId>
+			<version>4.11.0</version>
 			<scope>test</scope>
 		</dependency>
 
