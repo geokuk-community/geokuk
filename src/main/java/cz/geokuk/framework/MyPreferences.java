@@ -16,6 +16,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Collections2;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.profile.Nastaveni;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
@@ -28,6 +29,8 @@ import cz.geokuk.util.file.Filex;
  *
  */
 public class MyPreferences extends Preferences {
+
+	static final String ZNACKA_KORENE = "${GeoKuk}";
 
 	private static final class Duo {
 		Method get;
@@ -386,7 +389,7 @@ public class MyPreferences extends Preferences {
 		File result;
 		try {
 			final String fileStr = get(key, defalt == null ? null : defalt.getPath());
-			result = fileStr == null ? null : new File(fileStr);
+			result = fileStr == null ? null : cestaZNastaveni(fileStr, FConst.KOREN);
 		} catch (final RuntimeException e) {
 			throw new RuntimeException("key=" + key + ", defalt=" + defalt, e);
 		}
@@ -398,7 +401,7 @@ public class MyPreferences extends Preferences {
 		if (s == null) {
 			return def;
 		}
-		return unpack(s, s1 -> new File(s1));
+		return unpack(s, s1 -> cestaZNastaveni(s1, FConst.KOREN));
 	}
 
 	public Filex getFilex(final String key, Filex defalt) {
@@ -662,7 +665,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	public void putFile(final String key, final File file) {
-		put(key, file.getPath());
+		put(key, cestaDoNastaveni(file, FConst.KOREN));
 	}
 
 	public void putFileCollection(final String key, final Collection<File> fileCollection) {
@@ -670,7 +673,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	public void putFilex(final String key, final Filex filex) {
-		put(key, filex.getFile().getPath());
+		put(key, cestaDoNastaveni(filex.getFile(), FConst.KOREN));
 		putBoolean(key + "_relativeToProgram", filex.isRelativeToProgram());
 		putBoolean(key + "_active", filex.isActive());
 	}
@@ -819,6 +822,25 @@ public class MyPreferences extends Preferences {
 		return sb;
 	}
 
+	/** Cesta uvnitř složky GeoKuku se ukládá relativně se značkou, ať nastavení přežije přesun složky. */
+	static String cestaDoNastaveni(final File f, final File koren) {
+		if (f.isAbsolute()) {
+			final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
+			final java.nio.file.Path cesta = f.toPath().normalize();
+			if (cesta.startsWith(k) && !cesta.equals(k)) {
+				return ZNACKA_KORENE + "/" + k.relativize(cesta).toString().replace(File.separatorChar, '/');
+			}
+		}
+		return f.getPath();
+	}
+
+	static File cestaZNastaveni(final String s, final File koren) {
+		if (s.startsWith(ZNACKA_KORENE + "/")) {
+			return new File(koren.getAbsoluteFile(), s.substring(ZNACKA_KORENE.length() + 1).replace('/', File.separatorChar));
+		}
+		return new File(s);
+	}
+
 	private String pack(final Atom val) {
 		return val == null ? null : val.name();
 	}
@@ -841,7 +863,7 @@ public class MyPreferences extends Preferences {
 
 	private String pack(final File f) {
 		try {
-			return f.getCanonicalPath();
+			return cestaDoNastaveni(f.getCanonicalFile(), FConst.KOREN);
 		} catch (final IOException e) {
 			throw new IllegalArgumentException("Unable to retrieve canonical path from " + f, e);
 		}

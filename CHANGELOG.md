@@ -71,6 +71,16 @@
   klávesou Esc a otevírá se uprostřed hlavního okna.
 - Dialog Nastavení popisků se vejde na obrazovku: barva písma a podkladu
   jsou na kartách a pole pro vzorky popisků jsou dost široká.
+- Čáry UTM mřížky jsou na správném místě i u okraje zóny, převod z UTM
+  na zeměpisné souřadnice byl až o 7 metrů posunutý k jihu.
+- Hledání keší s regulárním výrazem: `\D`, `\W`, `\S` a `\Q…\E` fungují
+  podle očekávání.
+- Dialog renderu ukazuje rozměr terénu ve skutečných kilometrech, ne
+  desetinásobek.
+- Kalibrační body v souboru `.map` pro OziExplorer mají polokouli S a W,
+  render západně od Greenwiche nebo na jižní polokouli sedí na mapě.
+- Souřadnice ve stupních a minutách (i vteřinách v mřížce a renderu) se
+  zaokrouhlují správně, místo například 49°60.000 se ukáže 50°00.000.
 
 ## 6.1.0
 
