@@ -42,6 +42,9 @@ public abstract class Nacitac0 {
 				throw new DatabazeJinehoProgramu.Zamcena(file, e);
 			}
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
+		} catch (final StackOverflowError | OutOfMemoryError e) {
+			// Poškozený soubor (třeba EXIF fotky) nesmí ukončit načítání ostatních.
+			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Soubor \"" + file + "\" je asi poškozený, ostatní soubory se načtou");
 		}
 	}
 
@@ -54,6 +57,8 @@ public abstract class Nacitac0 {
 			}
 		} catch (final Exception e) {
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
+		} catch (final StackOverflowError | OutOfMemoryError e) {
+			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Soubor \"" + zipEntry + "\" je asi poškozený, ostatní soubory se načtou");
 		}
 	}
 
