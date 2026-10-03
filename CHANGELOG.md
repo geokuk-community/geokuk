@@ -144,6 +144,9 @@
   paměť, už neukončí načítání ostatních souborů s kešemi.
 - Databáze GeoGetu nebo GSAKu s nedokončeným zápisem (program spadl
   při importu) se ohlásí s radou otevřít ji v GeoGetu nebo GSAKu.
+- Při přechodu z verze 6.0.0 GeoKuk jednou upozorní na keše, cesty,
+  výlety a ikony ve staré složce `geokuk` v domovské složce a řekne,
+  kam je zkopírovat.
 - Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
   v kódování Windows se načtou správně, i s diakritikou v názvech
   fotek a waypointů.
