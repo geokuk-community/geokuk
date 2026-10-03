@@ -11,6 +11,12 @@
   odkud se spustí, složku jde přesunout i s daty. Nastavení už není
   v registru Windows, při prvním spuštění se odtud převezme. Volba
   „Ukládat nastavení k programu“ odpadla.
+- Data starší verze ve složce `%USERPROFILE%\geokuk` (keše z GPX,
+  výlety, cesty, ikony, dlaždice map) GeoKuk nečte, jdou zkopírovat do
+  složky `data`, postup je v README v oddílu Přechod ze starší verze.
+- Ve Windows se verze 6.0.0 aktualizuje sama, ale bez přibalené Javy
+  a další verze už sama nenainstaluje. Pro automatické aktualizace
+  stáhněte `GeoKuk-windows.zip` a data přeneste podle README.
 - Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou,
   program a Java jsou v podsložce `program`. Poprvé se spustí
   `GeoKuk-prvni-spusteni.cmd`, GeoKuk pak vedle vytvoří zástupce
@@ -79,6 +85,9 @@
 - V Umístění souborů zůstaly k nastavení jen složky s daty jiných
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
   záložka Program.
+- O programu ukáže licenci a seznam použitých knihoven s jejich
+  licencemi. Program i zip pro Windows obsahují soubory `LICENSE`
+  a `THIRD-PARTY.txt`.
 
 ### Opravy
 - Nová verze se stahuje jen jednou najednou a po stažení se ověří
@@ -118,6 +127,10 @@
 - Dálkové ovládání jde spustit i ze složky, do které nejde zapisovat
   (třeba Program Files). Když spustit nejde, například kvůli obsazenému
   portu, hlášení řekne proč.
+- Druhé spuštění GeoKuku nad stejnou složkou `data` jen oznámí, že
+  GeoKuk už běží, a skončí; dvě instance by si přepisovaly nastavení
+  a výlety. Restart po aktualizaci funguje i ve složce, do které nejde
+  zapisovat.
 - Nastavení s neobvyklými znaky (třeba řídicími znaky ze schránky) se
   uloží a znovu načte; dřív se přestalo ukládat nebo se při dalším
   spuštění celé zahodilo. Nečitelný soubor nastavení, který nejde odložit
@@ -173,6 +186,11 @@
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
+- Cache mapových dlaždic poškozená plným diskem nebo pádem programu
+  uprostřed zápisu se odloží a založí znovu, i když se poškození
+  ukáže až při čtení nebo zápisu dlaždic. Po pádu programu se cache při
+  příštím startu zkontroluje. Když na disku zbývá méně než 100 MB,
+  dlaždice se do cache neukládají a program na to jednou upozorní.
 - Mapové dlaždice v paměti mají strop, při dlouhé práci s mapou paměť
   neroste.
 - Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
@@ -278,6 +296,7 @@
   v testech junit 4.13.2.
 - Popis vydání na GitHubu se bere z tohoto souboru. Soubory vydání mají
   ověřitelný původ (`gh attestation verify`).
+- SQLJet 1.1.15 (GPL 3 nebo novější).
 - Program se vydává jako `geokuk.jar` a zip pro Windows s Javou,
   konfigurace Launch4j je odstraněná.
 - Smoke test celého programu nad falešným mapovým serverem (workflow
