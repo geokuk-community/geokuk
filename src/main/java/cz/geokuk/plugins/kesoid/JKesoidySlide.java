@@ -58,16 +58,15 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 		@Override
 		public void run() {
-			JKesoidySlide jKesoidy = wrKesoidy.get();
-			if (jKesoidy == null) {
-				return; // slide kešoidů už je pryč, takže ani nemá cenu dál něco řešit
-			}
 			for (;;) {
 				try {
-					final BlockingQueue<WptPaintRequest> frontaWaypointu2 = jKesoidy.frontaWaypointu;
-					jKesoidy = null; // přičekání na požadavek ve froně nesmím držet slide waypointů, aby mohl být garbage collectorem sebrán
+					// přičekání na požadavek ve froně nesmím držet slide waypointů, aby mohl být garbage collectorem sebrán
+					final BlockingQueue<WptPaintRequest> frontaWaypointu2 = frontaSlidu();
+					if (frontaWaypointu2 == null) {
+						return; // slide kešoidů už je pryč, takže ani nemá cenu dál něco řešit
+					}
 					WptPaintRequest wpr = frontaWaypointu2.poll(10000, TimeUnit.MILLISECONDS); // aby umělo vlákno skončit, musí být timeout
-					jKesoidy = wrKesoidy.get();
+					final JKesoidySlide jKesoidy = wrKesoidy.get();
 					if (jKesoidy == null) {
 						return; // slide kešoidů už je pryč, takže ani nemá cenu dál něco řešit
 					}
@@ -97,6 +96,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 			}
 		}
 
+		private BlockingQueue<WptPaintRequest> frontaSlidu() {
+			final JKesoidySlide jKesoidy = wrKesoidy.get();
+			return jKesoidy == null ? null : jKesoidy.frontaWaypointu;
+		}
+
 		/** Stejná chyba by se jinak hlásila u každého waypointu, do přehledu problémů jde jen první výskyt. */
 		private static void ohlasChybu(final RuntimeException e) {
 			if (ohlaseneChyby.add(e.getClass())) {
@@ -120,6 +124,9 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				return;
 			}
 			SwingUtilities.invokeLater(() -> {
+				if (jKesoidy.ikonBag == null) {
+					return; // sada ikon ještě není načtená
+				}
 				final Insets bigiestIconInsets = jKesoidy.ikonBag.getSada().getBigiestIconInsets();
 				final Rectangle rect = jKesoidy.getSoord().transform(aMouRect, bigiestIconInsets);
 				jKesoidy.repaint(rect);
