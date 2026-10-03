@@ -81,6 +81,8 @@
   render západně od Greenwiche nebo na jižní polokouli sedí na mapě.
 - Souřadnice ve stupních a minutách (i vteřinách v mřížce a renderu) se
   zaokrouhlují správně, místo například 49°60.000 se ukáže 50°00.000.
+- Zdroje keší vypnuté v Přehledu zdrojů kešoidů zůstanou vypnuté i po
+  přesunu složky GeoKuku.
 
 ## 6.1.0
 

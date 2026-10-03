@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Collections2;
 
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.*;
@@ -21,6 +22,7 @@ import cz.geokuk.plugins.kesoid.mapicon.*;
 import cz.geokuk.plugins.vylety.EVylet;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.file.KeFile;
 import lombok.Getter;
 
@@ -273,7 +275,7 @@ public class KesoidModel extends Model0 {
 		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
 		final boolean zmena = nacitat ? blokovaneZdroje.removeAll(changedFiles) : blokovaneZdroje.addAll(changedFiles);
 		if (zmena) {
-			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);
+			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, relativneKeKorenu(blokovaneZdroje, FConst.KOREN));
 			startKesLoading();
 		}
 	}
@@ -327,7 +329,7 @@ public class KesoidModel extends Model0 {
 		pref.putFilex(FPref.GEOGET_DATA_DIR_value, aUmisteniSouboru.getGeogetDataDir());
 		pref.putFilex(FPref.GSAK_DATA_DIR_value, aUmisteniSouboru.getGsakDataDir());
 		pref.remove("vyjimkyDir"); // mazat ze starých verzí
-		blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
+		blokovaneZdroje = absolutne(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()), FConst.KOREN);
 		blokovaneZdroje.addAll(zakázat);
 		fire(new KesoidUmisteniSouboruChangedEvent(aUmisteniSouboru));
 		if (nacistIkony) {
@@ -435,6 +437,25 @@ public class KesoidModel extends Model0 {
 		return g;
 	}
 
+	/** Soubory ve složce programu se ukládají relativně, ať výběr zdrojů přežije přesun složky. */
+	static Collection<File> relativneKeKorenu(final Collection<File> soubory, final File koren) {
+		final java.nio.file.Path k = Filex.canonize(koren).toPath();
+		final List<File> vysledek = new ArrayList<>();
+		for (final File f : soubory) {
+			final java.nio.file.Path cesta = f.getAbsoluteFile().toPath();
+			vysledek.add(cesta.startsWith(k) ? k.relativize(cesta).toFile() : f);
+		}
+		return vysledek;
+	}
+
+	static Set<File> absolutne(final Collection<File> soubory, final File koren) {
+		final Set<File> vysledek = new HashSet<>();
+		for (final File f : soubory) {
+			vysledek.add(f.isAbsolute() ? f : Filex.canonize(new File(koren.getAbsoluteFile(), f.getPath())));
+		}
+		return vysledek;
+	}
+
 	private void startKesLoading() {
 		if (ikonBag != null && gccomNick != null) {
 			multiNacitacLoaderManager.startLoad(true, ikonBag.getGenom());
@@ -443,7 +464,7 @@ public class KesoidModel extends Model0 {
 
 	private void vycistiBlokovaneZdroje(final InformaceOZdrojich informaceOZdrojich) {
 		if (blokovaneZdroje.retainAll(informaceOZdrojich.getJmenaZdroju())) {
-			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);
+			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, relativneKeKorenu(blokovaneZdroje, FConst.KOREN));
 		}
 	}
 
