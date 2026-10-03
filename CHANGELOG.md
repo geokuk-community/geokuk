@@ -102,8 +102,7 @@
   procházení velké datové složky.
 - GSAK: prázdné vlastní hodnoty se nezobrazují jako tagy.
 - GSAK: kód keše z vlastních hodnot se nebere jako tag. Databáze GSAKu
-  s vlastními hodnotami tak zabírá v paměti asi třetinu co dřív a načte
-  se rychleji.
+  s vlastními hodnotami tak zabírá výrazně méně paměti.
 - Aktivní datová složka GeoGetu nebo GSAKu bez databází se ohlásí.
   Uložení v Umístění souborů nezakládá složky u neaktivních položek.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
