@@ -142,7 +142,7 @@ public class JErrorDialog extends JMyDialog0 {
 		jOtviracVyjimky.addActionListener(aE -> {
 			final URL url = vypis(currentExcId);
 			if (url != null) {
-				BrowserOpener.displayURL(url);
+				BrowserOpener.displayFile(url);
 			}
 		});
 

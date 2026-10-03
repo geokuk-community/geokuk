@@ -115,7 +115,7 @@ public class ZhasniKeseUrciteAlelyAction extends Action0 implements AfterEventRe
 	}
 
 	private String sestavJmeno() {
-		return String.format("<html>%s: <b>%s</b> <i>(%d)</i>", alela.getGen().getDisplayName(), alela.getDisplayName(), vsechny.getPoctyAlel().count(alela));
+		return SwitchKesoidUrciteAlelyAction.jmeno(alela, vsechny.getPoctyAlel().count(alela));
 	}
 
 }
