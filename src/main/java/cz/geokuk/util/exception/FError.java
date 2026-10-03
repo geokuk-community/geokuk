@@ -31,14 +31,20 @@ public class FError {
 		if (GraphicsEnvironment.isHeadless()) {
 			return; // bez displeje zůstane jen výpis výjimky, který už je uložený
 		}
-		SwingUtilities.invokeLater(() -> {
-			if (jErrorDialog == null) {
-				jErrorDialog = new JErrorDialog();
-			}
-			jErrorDialog.setVisible(true);
-			jErrorDialog.addProblem(text, excid);
-		});
+		SwingUtilities.invokeLater(() -> prehled().addProblem(text, excid));
+	}
 
+	/** Otevře Přehled problémů i po jeho zavření, s dosavadními hlášeními. Volat na EDT. */
+	public static void zobrazPrehled() {
+		prehled();
+	}
+
+	private static JErrorDialog prehled() {
+		if (jErrorDialog == null) {
+			jErrorDialog = new JErrorDialog();
+		}
+		jErrorDialog.setVisible(true);
+		return jErrorDialog;
 	}
 
 }

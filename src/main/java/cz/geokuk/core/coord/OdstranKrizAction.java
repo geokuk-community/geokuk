@@ -19,7 +19,7 @@ public class OdstranKrizAction extends Action0 {
 	 *
 	 */
 	public OdstranKrizAction() {
-		super.putValue(NAME, "Odstraňit kříž...");
+		super.putValue(NAME, "Odstranit kříž");
 		// super.putValue(SMALL_ICON, Board.ikonizer.findIcon(wpt, "x16", true));
 		// super.putValue(SMALL_ICON, ikonBag.seekIkon(wpt.getGenotyp(ikonBag.getGenom())));
 		putValue(SHORT_DESCRIPTION, "Odstraní záměrný kříž z mapy.");

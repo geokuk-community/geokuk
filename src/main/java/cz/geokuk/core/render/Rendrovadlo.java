@@ -111,8 +111,7 @@ public class Rendrovadlo {
 		} catch (final OutOfMemoryError e) {
 			Dlg.error("Na rendrování nestačí paměť. Zmenšete obrázek. " + PametProgramuAction.jakZvysitPamet());
 			future.cancel(true);
-			return null;
-			// throw new InterruptedException("Není paměť: " + e.toString());
+			throw new InterruptedException("Na rendrování nestačí paměť");
 		}
 	}
 

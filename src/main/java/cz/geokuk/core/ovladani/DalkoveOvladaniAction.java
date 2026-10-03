@@ -21,6 +21,11 @@ public class DalkoveOvladaniAction extends ToggleAction0 {
 		this.dalkoveOvladani = dalkoveOvladani;
 	}
 
+	/** Zaškrtne položku podle toho, zda ovládání běží, i když ho zapnul parametr {@code --ovladani}. */
+	public void ukazStav() {
+		setSelected(dalkoveOvladani.bezi());
+	}
+
 	@Override
 	protected void onSlectedChange(final boolean nastaveno) {
 		DalkoveOvladani.setZapnuteVNastaveni(nastaveno);

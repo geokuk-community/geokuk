@@ -262,6 +262,7 @@ public class Menu extends MenuStrujce {
 		item(akce.napovedaAction);
 		item(akce.webovaStrankaAction);
 		item(akce.zadatProblemAction);
+		item(akce.prehledProblemuAction);
 		item(akce.diagnostikaAction);
 		item(akce.zkontrolovatAktualizaceAction);
 		item(akce.betaKanalAction);
