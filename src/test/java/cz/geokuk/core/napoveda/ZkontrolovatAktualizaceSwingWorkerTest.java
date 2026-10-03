@@ -1,6 +1,7 @@
 package cz.geokuk.core.napoveda;
 
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.jeNovejsi;
+import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.jePrechodNaStabilni;
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.nabidnout;
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.nejnovejsiVerze;
 
@@ -48,11 +49,27 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 
 	@Test
 	public void navratZBety() {
-		Assert.assertTrue(nabidnout("6.0.0", "6.0.1-beta.2", false));
-		Assert.assertTrue(nabidnout("6.0.0", "6.0.1-dev.20", false));
-		Assert.assertFalse(nabidnout("6.0.0", "6.0.1-beta.2", true));
-		Assert.assertFalse(nabidnout("6.0.0", "6.0.0", false));
-		Assert.assertTrue(nabidnout("6.0.1", "6.0.0", false));
-		Assert.assertFalse(nabidnout("5.9.0", "6.0.0", false));
+		Assert.assertTrue(nabidnout("6.0.0", "6.0.1-beta.2", false, true));
+		Assert.assertTrue(nabidnout("6.0.0", "6.0.1-dev.20", false, true));
+		Assert.assertFalse(nabidnout("6.0.0", "6.0.1-beta.2", true, true));
+		Assert.assertFalse(nabidnout("6.0.0", "6.0.0", false, true));
+		Assert.assertTrue(nabidnout("6.0.1", "6.0.0", false, true));
+		Assert.assertFalse(nabidnout("5.9.0", "6.0.0", false, true));
+	}
+
+	@Test
+	public void navratZBetyJenPriRucniKontrole() {
+		Assert.assertFalse(nabidnout("6.0.0", "6.2.0-beta.8", false, false));
+		Assert.assertTrue(nabidnout("6.2.0", "6.2.0-beta.8", false, false));
+		Assert.assertTrue(nabidnout("6.0.1", "6.0.0", false, false));
+	}
+
+	@Test
+	public void prechodNaStabilni() {
+		Assert.assertTrue(jePrechodNaStabilni("6.0.0", "6.2.0-beta.8", false));
+		Assert.assertFalse(jePrechodNaStabilni("6.0.0", "6.2.0-beta.8", true));
+		Assert.assertFalse(jePrechodNaStabilni("6.2.0", "6.2.0-beta.8", false));
+		Assert.assertFalse(jePrechodNaStabilni("6.0.0", "6.0.1", false));
+		Assert.assertFalse(jePrechodNaStabilni("6.2.0-beta.7", "6.2.0-beta.8", false));
 	}
 }
