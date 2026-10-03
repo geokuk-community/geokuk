@@ -80,6 +80,8 @@
   záložka Program.
 
 ### Opravy
+- Když spouštěč nemůže nainstalovat staženou verzi (soubor drží jiný
+  program), spustí dosavadní verzi a novou zkusí nainstalovat příště.
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text
