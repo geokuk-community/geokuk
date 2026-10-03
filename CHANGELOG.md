@@ -80,6 +80,9 @@
   záložka Program.
 
 ### Opravy
+- Nová verze se stahuje jen jednou najednou a po stažení se ověří
+  soubor na disku, takže se nenainstaluje neúplný program. Když nejde
+  zjistit, jakou Javu nová verze potřebuje, neinstaluje se.
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text
