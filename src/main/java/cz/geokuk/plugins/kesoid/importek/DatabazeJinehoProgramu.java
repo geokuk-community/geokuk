@@ -21,6 +21,8 @@ final class DatabazeJinehoProgramu {
 	private static final int SQLITE_READONLY = 8;
 	private static final int SQLITE_IOERR = 10;
 	private static final int SQLITE_CANTOPEN = 14;
+	/** Rozšířený kód: databáze má rozepsaný zápis (hot journal), jen pro čtení ho nejde vrátit. */
+	private static final int SQLITE_READONLY_ROLLBACK = 776;
 
 	/** Databázi drží zamčenou jiný program déle, než na něj čekáme. Načte se při dalším pokusu. */
 	static class Zamcena extends RuntimeException {
@@ -73,6 +75,10 @@ final class DatabazeJinehoProgramu {
 	/** Srozumitelný popis, proč databázi nejde přečíst, nebo null, když nejde o chybu SQLite. */
 	static String popisChyby(final File soubor, final Throwable chyba) {
 		final String proc;
+		final SQLiteException sqlite = chybaSqlite(chyba);
+		if (sqlite != null && sqlite.getResultCode().code == SQLITE_READONLY_ROLLBACK) {
+			return "Databáze \"" + soubor + "\" má nedokončený zápis z GeoGetu nebo GSAKu. Otevřete ji v GeoGetu nebo GSAKu, ten zápis dokončí, a GeoKuk ji pak načte.";
+		}
 		switch (kodSqlite(chyba)) {
 		case -1:
 			return null;
