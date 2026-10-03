@@ -78,6 +78,7 @@ jobs:
           sparse-checkout: |
             distribuce/windows
             .github/skripty
+            priklady
             src/main/resources
 
       # Přibalená Java: vždy poslední vydaná Temurin 21, ne starší z cache runneru.
