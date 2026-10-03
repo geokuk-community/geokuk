@@ -1,5 +1,7 @@
 package cz.geokuk.core.coordinates;
 
+import java.util.Locale;
+
 public class Wgs extends Misto0 {
 
 	public final double lat;
@@ -21,20 +23,15 @@ public class Wgs extends Misto0 {
 	}
 
 	public static String toDdMmSsFormat(final double stupne) {
-		final int istupne = (int) Math.floor(stupne);
-		final double minuty = (stupne - istupne) * 60.0;
-		final int iminuty = (int) Math.floor(minuty);
-		final double vteriny = (minuty - iminuty) * 60.0;
-		final int ivteriny = (int) Math.floor(vteriny);
-		final String s = String.format("%02d°%02d'%02d\"", istupne, iminuty, ivteriny);
-		return s;
+		// Vteřiny se uřezávají, nepatrná chyba výpočtu pod celou vteřinou se ale nesmí projevit jako 49°59'59".
+		final long vteriny = (long) Math.floor(stupne * 3600 + 1e-6);
+		return String.format("%02d°%02d'%02d\"", vteriny / 3600, vteriny / 60 % 60, vteriny % 60);
 	}
 
 	public static String toGeoFormat(final double d) {
-		final double stupne = Math.floor(d);
-		final double minuty = (d - stupne) * 60.0;
-		final String s = String.format("%02d°%06.3f", (int) stupne, minuty).replace(',', '.');
-		return s;
+		// Zaokrouhlit celé, jinak 14,9999999° vyjde jako 14°60.000.
+		final long tisicinyMinut = Math.round(d * 60_000);
+		return String.format(Locale.ROOT, "%02d°%06.3f", tisicinyMinut / 60_000, tisicinyMinut % 60_000 / 1000.0);
 	}
 
 	public static double vzdalenost(final Wgs bod1, final Wgs bod2) {
@@ -72,10 +69,6 @@ public class Wgs extends Misto0 {
 
 	public Wgs add(final double dlat, final double dlon) {
 		return new Wgs(lat + dlat, lon + dlon);
-	}
-
-	public Wgs add(final Wgsd wgsd) {
-		return new Wgs(lat + wgsd.lat, lon + wgsd.lon);
 	}
 
 	public double azimut(final Wgs bod) {
@@ -126,14 +119,6 @@ public class Wgs extends Misto0 {
 	 */
 	public double metryNaMou() {
 		return FGeoKonvertor.metryNaMou(lat);
-	}
-
-	public Wgsd sub(final Wgs wgs) {
-		return new Wgsd(lat - wgs.lat, lon - wgs.lon);
-	}
-
-	public Wgs sub(final Wgsd wgsd) {
-		return new Wgs(lat - wgsd.lat, lon - wgsd.lon);
 	}
 
 	@Override
