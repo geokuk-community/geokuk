@@ -106,7 +106,7 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 		}
 	}
 
-		private void printOziKalibracniBod(final PrintWriter p, final int cisloBodu, final int x, final int y, final Wgs wgs) {
+	private void printOziKalibracniBod(final PrintWriter p, final int cisloBodu, final int x, final int y, final Wgs wgs) {
 		p.println(oziKalibracniBod(cisloBodu, x, y, wgs));
 	}
 

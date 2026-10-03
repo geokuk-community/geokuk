@@ -76,6 +76,21 @@ public class KachleDBManagerTest {
 	}
 
 	@Test
+	public void nezapisovatelnouSlozkuZkusiPoChvileZnovu() throws Exception {
+		final int[] zkousek = new int[1];
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			boolean lzeZapsat(final File s) {
+				zkousek[0]++;
+				return false;
+			}
+		};
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertEquals("výsledek zkoušky platí chvíli", 1, zkousek[0]);
+	}
+
+	@Test
 	public void zkouskaZapisu() throws Exception {
 		Assert.assertTrue(manager.lzeZapsat(slozka));
 		Assert.assertEquals("po zkoušce nic nezůstane", 0, slozka.list().length);

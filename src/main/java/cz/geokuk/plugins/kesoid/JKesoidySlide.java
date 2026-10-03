@@ -77,7 +77,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 					final MouRect mouRect = new MouRect();
 					while (wpr != null) {
 						if (wpr.wpt.getSklivec() == null) {
-							spocitejSklivece(wpr.wpt, jKesoidy);
+							try {
+								spocitejSklivece(wpr.wpt, jKesoidy);
+							} catch (final RuntimeException e) {
+								ohlasChybu(e);
+							}
 						}
 						mouRect.add(wpr.mou);
 						wpr = jKesoidy.frontaWaypointu.poll();
@@ -88,8 +92,17 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 					// System.out.println("Paintovaci vlakno konci diky intrerupci.");
 					return;
 				} catch (final RuntimeException e) {
-					FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Výpočet ikon kešoidů na pozadí");
+					ohlasChybu(e);
 				}
+			}
+		}
+
+		/** Stejná chyba by se jinak hlásila u každého waypointu, do přehledu problémů jde jen první výskyt. */
+		private static void ohlasChybu(final RuntimeException e) {
+			if (ohlaseneChyby.add(e.getClass())) {
+				FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Výpočet ikon kešoidů na pozadí");
+			} else {
+				log.debug("Výpočet ikon kešoidů na pozadí: {}", e.toString());
 			}
 		}
 
@@ -129,6 +142,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	// static int POLOMER_KESE = 15; // je to v pixlech
 	private static final int POLOMER_CITLIVOSTI = 10;
+
+	static final Set<Class<?>> ohlaseneChyby = ConcurrentHashMap.newKeySet();
 
 	private static final PocitadloNula pocitVelikostFrontyWaypointu = new PocitadloNula("Velikost vykreslovací waypointové fronty", "Kolik waypointů čeká na vykreslení.");
 
