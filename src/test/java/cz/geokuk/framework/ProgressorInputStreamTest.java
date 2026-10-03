@@ -104,6 +104,28 @@ public class ProgressorInputStreamTest {
 		try (InputStream in = new ProgressorInputStream(z, "test", obri)) {
 			in.skip(3_000_000_000L);
 			assertThat(z.posledni).isAtLeast(0);
+			in.skip(1_500_000_000L);
+			in.skip(1_500_000_000L);
+			assertThat(z.posledni).isEqualTo(Integer.MAX_VALUE);
 		}
+	}
+
+	/** Pruh se ukončí, i když zavření proudu selže. */
+	@Test
+	public void chybaPriZavreniUkonciPruh() throws Exception {
+		final Zaznam z = new Zaznam();
+		final InputStream vadny = new ByteArrayInputStream(new byte[10]) {
+			@Override
+			public void close() throws IOException {
+				throw new IOException("test");
+			}
+		};
+		try {
+			new ProgressorInputStream(z, "test", vadny).close();
+			org.junit.Assert.fail("chyba zavření se má ohlásit");
+		} catch (final IOException e) {
+			assertThat(e.getMessage()).isEqualTo("test");
+		}
+		assertThat(z.ukoncen).isTrue();
 	}
 }
