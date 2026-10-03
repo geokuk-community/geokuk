@@ -182,6 +182,14 @@ public class JKachle extends JComponent {
 		super.paintComponent(aG);
 		// if (true) return;
 		final Graphics2D g = (Graphics2D) aG.create();
+		try {
+			kresli(g);
+		} finally {
+			g.dispose();
+		}
+	}
+
+	private void kresli(final Graphics2D g) {
 		if (image != null) {
 			g.drawImage(image, 0, 0, null);
 		}
@@ -222,7 +230,6 @@ public class JKachle extends JComponent {
 			}
 
 		}
-		super.paintComponent(aG);
 	}
 
 	/*
