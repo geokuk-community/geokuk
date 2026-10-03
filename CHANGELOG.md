@@ -86,6 +86,16 @@
   render západně od Greenwiche nebo na jižní polokouli sedí na mapě.
 - Souřadnice ve stupních a minutách (i vteřinách v mřížce a renderu) se
   zaokrouhlují správně, místo například 49°60.000 se ukáže 50°00.000.
+- Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
+  česky. Položka menu Kešoidy > Filtr... má správný název.
+- Když do složky cache map nejde zapisovat (třeba v Program Files),
+  mapa se zobrazí a dlaždice zůstanou jen v paměti.
+- Rendr mapy nepřichází o dlaždice, které si najednou vyžádalo víc míst.
+- Chyba při výpočtu ikon keší nezastaví jejich kreslení a do přehledu
+  problémů se zapíše jen jednou.
+- Rendr pro OziExplorer ohlásí, když se soubor `.map` nepodaří zapsat
+  (třeba na plný disk), a nenechá po sobě neúplné soubory.
+- Chyba při práci na pozadí je v přehledu problémů česky a s příčinou.
 - Spuštění z nezapisovatelné složky (třeba Program Files): keše
   z GeoGetu a GSAKu se načtou a log a chybová hlášení se uloží,
   v Přehledu problémů jdou otevřít.

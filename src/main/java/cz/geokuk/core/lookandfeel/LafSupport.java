@@ -103,6 +103,7 @@ public class LafSupport {
 	 */
 	public static void updateLookAndFeel() {
 		try {
+			CeskeTexty.nastav();
 			UIManager.setLookAndFeel(current.info.getClassName());
 			updateThisSwingSet();
 			MyPreferences.current().put(LOOK_AND_FEEL, current.info.getClassName());
