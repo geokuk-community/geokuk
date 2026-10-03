@@ -23,7 +23,7 @@ public class KachloDownloader {
 	private static final int TIMEOUT_PRIPOJENI = 15000;
 	private static final int TIMEOUT_CTENI = 30000;
 	static final int TIMEOUT_CELKEM = 60000;
-	private static final int MAX_PRESMEROVANI = 3;
+	private static final int MAX_PRESMEROVANI = 5;
 
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
 	static final String USER_AGENT = "Geokuk/" + FConst.VERSION;
@@ -89,14 +89,15 @@ public class KachloDownloader {
 
 		HttpURLConnection conn = otevri(url, hlavicky);
 		int kod = conn.getResponseCode();
-		// Java přesměrování z http na https sama nesleduje a řada serverů už http přesměrovává.
+		// Řada serverů už http přesměrovává na https.
 		for (int presmerovani = 0; presmerovani < MAX_PRESMEROVANI && kod >= 300 && kod < 400 && conn.getHeaderField("Location") != null; presmerovani++) {
 			final URL kam = new URL(url, conn.getHeaderField("Location"));
 			conn.disconnect();
 			if (!"https".equals(kam.getProtocol()) && !kam.getProtocol().equals(url.getProtocol())) {
 				break;
 			}
-			conn = otevri(kam, hlavicky);
+			// Hlavičky uživatelské mapy (třeba klíč API) patří jen jejímu serveru.
+			conn = otevri(kam, kam.getHost().equalsIgnoreCase(url.getHost()) ? hlavicky : Collections.emptyMap());
 			kod = conn.getResponseCode();
 		}
 		if (kod >= 300) {
@@ -125,6 +126,8 @@ public class KachloDownloader {
 		final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 		conn.setConnectTimeout(TIMEOUT_PRIPOJENI);
 		conn.setReadTimeout(TIMEOUT_CTENI);
+		// Všechna přesměrování řeší downloadImage, Java by hlavičky poslala i na jiný server.
+		conn.setInstanceFollowRedirects(false);
 		conn.setRequestProperty("User-Agent", USER_AGENT);
 		if (url.getHost().endsWith("mapy.cz")) {
 			// Pro mapy.cz je nutný referer, jinak se vrací 403

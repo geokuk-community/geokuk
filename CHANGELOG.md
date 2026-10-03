@@ -191,8 +191,9 @@
   neroste.
 - Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
   při startu ohlásí jako chybná. Dlaždice se stáhnou i ze serveru,
-  který adresu `http://` přesměruje na `https://`. Uživatelská mapa
-  nemůže převzít klávesovou zkratku programu (třeba F3 nebo Ctrl+S),
+  který adresu `http://` přesměruje na `https://`; hlavičky uživatelské
+  mapy (`hlavicka.*`) se při přesměrování na jiný server neposílají.
+  Uživatelská mapa nemůže převzít klávesovou zkratku programu (třeba F3 nebo Ctrl+S),
   program ji s hláškou vynechá.
 - Stahování mapových dlaždic se všem serverům představuje jako GeoKuk
   s verzí, bez adresy webu. OpenStreetMap se načítá přes https a nejde
