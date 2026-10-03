@@ -109,7 +109,8 @@ postupu výše.
 Vlastní mapové podklady se zadávají v souboru `data/uzivatelske-mapy.properties`
 a v menu Mapy jsou ve skupině „Uživatelské mapy“.
 Popis a příklady jsou v
-[`priklady/uzivatelske-mapy.properties`](priklady/uzivatelske-mapy.properties).
+[`priklady/uzivatelske-mapy.properties`](priklady/uzivatelske-mapy.properties);
+zip pro Windows ho obsahuje jako `data/uzivatelske-mapy.properties.priklad`.
 
 ## Dálkové ovládání
 
