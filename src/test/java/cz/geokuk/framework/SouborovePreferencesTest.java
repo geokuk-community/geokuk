@@ -5,6 +5,8 @@ import static com.google.common.truth.Truth.assertThat;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,8 +24,11 @@ public class SouborovePreferencesTest {
 
 	/** Tovární třída, která selže výjimkou za běhu, jako by selhalo sestavení dokumentu. */
 	public static final class PadajiciTovarna extends DocumentBuilderFactory {
+		static final AtomicInteger POKUSU = new AtomicInteger();
+
 		@Override
 		public DocumentBuilder newDocumentBuilder() {
+			POKUSU.incrementAndGet();
 			throw new IllegalStateException("test");
 		}
 
@@ -46,6 +51,17 @@ public class SouborovePreferencesTest {
 		}
 	}
 
+	/** Počká na podmínku nejvýš 30 s, pomalý stroj nevadí. */
+	private static void cekej(final BooleanSupplier podminka) throws InterruptedException {
+		final long konec = System.currentTimeMillis() + 30_000;
+		while (!podminka.getAsBoolean()) {
+			if (System.currentTimeMillis() > konec) {
+				throw new AssertionError("Podmínka nenastala do 30 s");
+			}
+			Thread.sleep(50);
+		}
+	}
+
 	@Test
 	public void odlozenyZapisPrezijeVyjimkuZaBehu() throws Exception {
 		final File soubor = new File(tmp.getRoot(), "nastaveni.xml");
@@ -53,8 +69,9 @@ public class SouborovePreferencesTest {
 		final String puvodni = System.getProperty(VLASTNOST_TOVARNY);
 		System.setProperty(VLASTNOST_TOVARNY, PadajiciTovarna.class.getName());
 		try {
+			final int pred = PadajiciTovarna.POKUSU.get();
 			pref.put("a", "1");
-			Thread.sleep(3000);
+			cekej(() -> PadajiciTovarna.POKUSU.get() > pred);
 		} finally {
 			if (puvodni == null) {
 				System.clearProperty(VLASTNOST_TOVARNY);
@@ -65,10 +82,7 @@ public class SouborovePreferencesTest {
 		assertThat(soubor.exists()).isFalse();
 
 		pref.put("b", "2");
-		final long konec = System.currentTimeMillis() + 10_000;
-		while (!soubor.exists() && System.currentTimeMillis() < konec) {
-			Thread.sleep(100);
-		}
+		cekej(soubor::exists);
 		final String obsah = new String(Files.readAllBytes(soubor.toPath()), StandardCharsets.UTF_8);
 		assertThat(obsah).contains("key=\"a\"");
 		assertThat(obsah).contains("key=\"b\"");
