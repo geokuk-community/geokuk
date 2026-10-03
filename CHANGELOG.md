@@ -39,11 +39,12 @@
   nainstaluje; kde to nejde, otevře stránku nabízené verze, u bety
   tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
-  tradiční zelené, multi žluté, mystery, letterbox a wherigo modré,
-  virtuální, webcam a earthcache bílé, eventy červené, ostatní objekty
-  šedé. Nalezené jsou menší, vlastní mají tmavý obrys, neaktivní
+  tradiční zelené, multi žluté, mystery, letterbox a wherigo tmavě
+  modré, virtuální, webcam a earthcache bílé, eventy červené, Lab keše
+  světle tyrkysové, ostatní typy keší modré a objekty, které nejsou
+  keše, šedé. Nalezené jsou menší, vlastní mají tmavý obrys, neaktivní
   a archivované jsou světlejší. Velikost teček se řídí hustotou keší.
-  Tečky se vykreslí i u statisíců keší, limit 30 000 keší na mapě pro ně
+  Tečky se vykreslí i u statisíců keší, limit 30 000 waypointů na mapě pro ně
   neplatí. Kešoidy > Tečky při oddálení / Vždy ikony / Vždy tečky.
 - Zvýrazňovací kruhy a popisky se nekreslí, když by se na mapě slily
   do jedné plochy; kruhy obsazenosti, když mají poloměr pod 3 pixely.
@@ -74,7 +75,7 @@
   `--ovladani[=port]`, výchozí port 48321) povolí jiným programům na
   tomto počítači ovládat GeoKuk přes HTTP – přesunout mapu, přepnout
   podklad, vybrat keš, znovu načíst keše a zjistit stav. Požadavky
-  z webového prohlížeče program odmítá.
+  z webových stránek program odmítá.
 - V Umístění souborů zůstaly k nastavení jen složky s daty jiných
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
   záložka Program.
