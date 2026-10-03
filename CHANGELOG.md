@@ -250,6 +250,9 @@
 - Když nejde otevřít prohlížeč (nápověda, web), program ukáže adresu
   a nabídne ji zkopírovat. Nápověda z okna O programu otevře hlavní
   stránku nápovědy.
+- Odkaz u keše nebo waypointu otevře jen webovou stránku (http, https),
+  ne soubor. Značky HTML v názvech keší, waypointů a cest se v bublině,
+  detailu keše a hledání zobrazí jako text.
 - O programu uvádí licenci GNU GPL v3.
 
 ### Odstraněno

@@ -7,6 +7,7 @@ import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
+import cz.geokuk.util.lang.FString;
 
 public class CzechGeodeticPoint extends Kesoid {
 
@@ -45,13 +46,13 @@ public class CzechGeodeticPoint extends Kesoid {
 	@Override
 	public void prispejDoTooltipu(final StringBuilder sb, final Wpt wpt) {
 		sb.append("<b>");
-		sb.append(wpt.getName());
+		sb.append(FString.html(wpt.getName()));
 		sb.append("</b>  - ");
-		sb.append(wpt.getNazev());
+		sb.append(FString.html(wpt.getNazev()));
 		if (!wpt.getNazev().contains(wpt.getSym())) {
 			sb.append("<small>");
 			sb.append(" - ");
-			sb.append(wpt.getSym());
+			sb.append(FString.html(wpt.getSym()));
 			sb.append("</small>");
 		}
 	}
