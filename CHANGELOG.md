@@ -83,6 +83,8 @@
 - Nová verze se stahuje jen jednou najednou a po stažení se ověří
   soubor na disku, takže se nenainstaluje neúplný program. Když nejde
   zjistit, jakou Javu nová verze potřebuje, neinstaluje se.
+- Když spouštěč nemůže nainstalovat staženou verzi (soubor drží jiný
+  program), spustí dosavadní verzi a novou zkusí nainstalovat příště.
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text
@@ -118,6 +120,9 @@
 - Při přechodu z verze 6.0.0 GeoKuk jednou upozorní na keše, cesty,
   výlety a ikony ve staré složce `geokuk` v domovské složce a řekne,
   kam je zkopírovat.
+- Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
+  v kódování Windows se načtou správně, i s diakritikou v názvech
+  fotek a waypointů.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
   načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN), výškou
   s čárkou, bez názvu nebo s nesmyslnou obtížností či terénem nezahodí
