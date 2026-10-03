@@ -42,7 +42,7 @@ public class JOProgramuDialog extends JMyDialog0 {
 		box.add(c2);
 
 		box.add(Box.createVerticalStrut(10));
-		final JLabel c3 = new JLabel("(c) 2009 Matin Veverka");
+		final JLabel c3 = new JLabel("(c) 2009 Martin Veverka");
 		c3.setAlignmentX(CENTER_ALIGNMENT);
 		box.add(c3);
 

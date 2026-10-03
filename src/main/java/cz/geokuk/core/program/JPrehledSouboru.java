@@ -115,7 +115,7 @@ public class JPrehledSouboru extends JPanel {
 		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
 		jKesDir = pridejJednuPolozkuproEdit(null, tab1, "Složka s keškami (GPX) získanými z Geogetu nebo jiného programu.", true, false);
-		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka geogetu.", true, true);
+		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka GeoGetu.", true, true);
 
 		jGsakDataDir = pridejJednuPolozkuproEdit(null, tab1a, "Datová složka GSAK.", true, true);
 		jGsakNacitatAzPoVybrani = pridejLogickePole(jGsakDataDir, "Načítat až po vybrání",
@@ -137,8 +137,8 @@ public class JPrehledSouboru extends JPanel {
 		                + "<br/>Můžete uvést více políček, použije se první časový údaj, který bude nalezen." //
 		                + "</html>");
 
-		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných mapy pro OziExplorer", true, false);
-		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (GoogleEarthj)", true, false);
+		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných map pro OziExplorer", true, false);
+		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (Google Earth)", true, false);
 		jPictureDir = pridejJednuPolozkuproEdit(ESouborPanelName.PICTURE, tab3, "Složka pro rendrování obrázků map", true, false);
 
 		pridejJednuPolozkuProCteni(null, tab4, "Složka s programem (zde je geokuk.jar)", new Filex(FConst.JAR_DIR, false, true), true);

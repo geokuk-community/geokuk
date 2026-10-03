@@ -293,7 +293,7 @@ public class JStatusBar extends JPanel {
 
 		final JPanel jPozicePanel = createPanel();
 
-		souradnicePozice.setToolTipText("Spouřadnice aktuálně vybrané pozice, možno vybrat a dát do clipboardu");
+		souradnicePozice.setToolTipText("Souřadnice aktuálně vybrané pozice, možno vybrat a dát do clipboardu");
 		jPozicePanel.add(new JLabel("Pozice:"));
 		jPozicePanel.add(souradnicePozice);
 		add(jPozicePanel);
@@ -324,7 +324,7 @@ public class JStatusBar extends JPanel {
 
 		poctyKesi.add(new JLabel("Filtr:"));
 		poctyKesi.add(filtrovanePocetyVsude);
-		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po apliakci filtru.");
+		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po aplikaci filtru.");
 
 		poctyKesi.add(celkovePoctyVyrez);
 		celkovePoctyVyrez.setToolTipText("Počet všech waypointů ve výřezu, které by byly zobrazeny, pokud by nebyl filtr.");

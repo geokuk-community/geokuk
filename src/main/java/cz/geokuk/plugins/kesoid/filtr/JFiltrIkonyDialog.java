@@ -25,7 +25,7 @@ public class JFiltrIkonyDialog extends JMyDialog0 implements AfterInjectInit {
 
 	public JFiltrIkonyDialog() {
 		super();
-		setTitle("Výběr Filtru");
+		setTitle("Výběr filtru");
 		init();
 	}
 
