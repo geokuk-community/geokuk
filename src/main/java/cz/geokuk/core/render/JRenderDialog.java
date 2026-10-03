@@ -58,6 +58,9 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	private JSpinner jKmzDrawOrder;
 	private JCheckBox jSrovnatDoSeveru;
 
+	static final int MAX_ZNAKU_CESTY = 45;
+	private static final int SIRKA_JMENA_SOUBORU = 300;
+
 	private JTextField jKmzFolderDescription;
 	private JPapirMeritkoComboBox jPapirMeritkoComboBox;
 
@@ -166,7 +169,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		final double vzdalenostBodu = 1000 / pixluNaMilimetrMapy;
 		final PapirovaMetrika papirovaMetrika = renderModel.getPapirovaMetrika();
 		jJakouHustotuLabel.setText(
-		        String.format("<html>%.0f * %.0f mm - %.0f DPI = %.2f px/mm = %.1f \u03BCm/px", papirovaMetrika.xsize * 1000, papirovaMetrika.ysize * 1000, dpi, pixluNaMilimetrMapy, vzdalenostBodu));
+		        String.format("%.0f * %.0f mm - %.0f DPI = %.2f px/mm = %.1f \u03BCm/px", papirovaMetrika.xsize * 1000, papirovaMetrika.ysize * 1000, dpi, pixluNaMilimetrMapy, vzdalenostBodu));
 
 		jTerenniRozmerField.setText(String.format("%.1f * %.1f km", roord.getWidthMetru() / 1000, roord.getHeightMetru() / 1000));
 
@@ -182,7 +185,9 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		nastavViditelnost(renderSettings.getWhatRender());
 
 		final File outputFolder = renderModel.getOutputFolder();
-		jOutputFolderLabel.setText(outputFolder == null ? "" : outputFolder.toString());
+		final String cesta = outputFolder == null ? "" : outputFolder.toString();
+		jOutputFolderLabel.setText(zkratCestu(cesta, MAX_ZNAKU_CESTY));
+		jOutputFolderLabel.setToolTipText(cesta.isEmpty() ? null : cesta);
 		jChangeOutputFolderButton.setAction(factory.init(new UmisteniSouboruAction(urciFokusovanouSlozku(renderSettings))));
 		jChangeOutputFolderButton.setText("Změň...");
 	}
@@ -380,6 +385,30 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		jWhatRenderRadioPanel.setAlignmentX(0.5f);
 	}
 
+	/**
+	 * Dlouhá cesta by roztáhla oddíl Výstup a ostatní popisky by se nevešly. Zkrátí ji uprostřed, kořen a poslední složky zůstanou.
+	 */
+	static String zkratCestu(final String cesta, final int maxZnaku) {
+		if (cesta.length() <= maxZnaku) {
+			return cesta;
+		}
+		final char oddelovac = cesta.indexOf('\\') >= 0 ? '\\' : '/';
+		final int zacatek = cesta.indexOf(oddelovac, cesta.startsWith("\\\\") ? 2 : 0) + 1;
+		final String koren = cesta.substring(0, zacatek);
+		String konec = "";
+		for (int i = cesta.lastIndexOf(oddelovac); i >= zacatek; i = cesta.lastIndexOf(oddelovac, i - 1)) {
+			final String kandidat = cesta.substring(i);
+			if (koren.length() + 1 + kandidat.length() > maxZnaku) {
+				break;
+			}
+			konec = kandidat;
+		}
+		if (konec.isEmpty()) {
+			return "…" + cesta.substring(cesta.length() - (maxZnaku - 1));
+		}
+		return koren + "…" + konec;
+	}
+
 	private void initOziComponents() {
 		jOziPanel = new JTwoColumnsPanel("OZI Explorer");
 		jKalibrBodu = new JKalibrBoduSpinner();
@@ -396,6 +425,10 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		// jOutputFolder.setMinimumSize(dm1);
 		jChangeOutputFolderButton = new JButton("Změň");
 		jPureJmenoSouboruCombo = new JGeocodingComboBox();
+		// Šířka podle nejdelšího názvu by oddíl roztáhla a ostatní popisky by se nevešly.
+		final Dimension sirkaJmena = jPureJmenoSouboruCombo.getPreferredSize();
+		sirkaJmena.width = SIRKA_JMENA_SOUBORU;
+		jPureJmenoSouboruCombo.setPreferredSize(sirkaJmena);
 		jPriponaSouboruLabel = new JLabel();
 		jIkonkaPapiru = new JIkonkaPapiru();
 		jPapirMeritkoComboBox = new JPapirMeritkoComboBox();
