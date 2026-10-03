@@ -244,8 +244,8 @@
   a Kešoidy mají různá podtržená písmena, která jsou v jejich textu.
   Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako
   ignorovanou.
-- Opravené překlepy a nesmyslné texty v menu, bublinách a hláškách
-  („Grrrr!“ u špatného formátu souřadnic, „musí číslem býti“ a další).
+- Opravené překlepy a nesrozumitelné texty v menu, bublinách
+  a hláškách.
   Hláška o nedostatku paměti radí Soubor > Paměť programu, hláška
   o nepoužitelné cache dlaždic radí zkontrolovat disk a práva ke složce.
 - Písmeno napsané v otevřeném menu nebo do pole na liště (Hodnocení,
