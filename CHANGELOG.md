@@ -140,6 +140,8 @@
   uloží a znovu načte; dřív se přestalo ukládat nebo se při dalším
   spuštění celé zahodilo. Nečitelný soubor nastavení, který nejde odložit
   stranou, program nepřepíše.
+- Poškozená fotka (EXIF), na které se čtení zacyklí nebo mu dojde
+  paměť, už neukončí načítání ostatních souborů s kešemi.
 - Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
   v kódování Windows se načtou správně, i s diakritikou v názvech
   fotek a waypointů.
