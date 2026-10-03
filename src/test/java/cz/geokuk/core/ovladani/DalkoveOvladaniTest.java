@@ -104,6 +104,19 @@ public class DalkoveOvladaniTest {
 		}
 	}
 
+	@Test
+	public void prikazPresGetSeOdmitne() throws Exception {
+		final DalkoveOvladani ovladani = new DalkoveOvladani();
+		ovladani.spust(0, true);
+		try {
+			final Properties p = nactiSoubor();
+			final int port = Integer.parseInt(p.getProperty("port"));
+			assertEquals(400, zavolej(port, "/pozice?lat=50&lon=14", "Bearer " + p.getProperty("token"), "127.0.0.1:" + port, null));
+		} finally {
+			ovladani.zastav();
+		}
+	}
+
 	private static Properties nactiSoubor() throws IOException {
 		final Properties p = new Properties();
 		try (Reader r = new InputStreamReader(new FileInputStream(DalkoveOvladani.SOUBOR), StandardCharsets.UTF_8)) {

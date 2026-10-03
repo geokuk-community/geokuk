@@ -60,12 +60,16 @@ public class VzdalenostAUtmTest {
 		Assert.assertEquals("50°04.530", Wgs.toGeoFormat(50.0755));
 		Assert.assertEquals("14°26.268", Wgs.toGeoFormat(14.4378));
 		Assert.assertEquals("05°00.000", Wgs.toGeoFormat(5));
+		Assert.assertEquals("minuty se nezaokrouhlí na 60", "15°00.000", Wgs.toGeoFormat(14.99999999));
+		Assert.assertEquals("N50°00.000 W00°07.800", new Wgs(49.9999999999, -0.13).toString());
 	}
 
 	@Test
 	public void formatStupneMinutyVteriny() {
 		Assert.assertEquals("50°04'31\"", Wgs.toDdMmSsFormat(50.0755));
 		Assert.assertEquals("49°16'21\"", Wgs.toDdMmSsFormat(49 + 16 / 60.0 + 21.5 / 3600));
+		Assert.assertEquals("15°00'00\"", Wgs.toDdMmSsFormat(14.99999999999));
+		Assert.assertEquals("čára mřížky po 10\"", "50°00'10\"", Wgs.toDdMmSsFormat(50 + 10 / 3600.0));
 	}
 
 	@Test
@@ -92,6 +96,34 @@ public class VzdalenostAUtmTest {
 			final Wgs zpet = w.toUtm().toWgs();
 			Assert.assertEquals(w + " lat", w.lat, zpet.lat, 2e-5);
 			Assert.assertEquals(w + " lon", w.lon, zpet.lon, 3e-5);
+		}
+	}
+
+	/** Lat, lon, zóna, x, y podle nezávislého výpočtu (pyproj); body i u okraje zóny, kde se uplatní členy vyšších řádů. */
+	private static final double[][] UTM_REFERENCE = { //
+			{ 50.0, 12.05, 33, 288598.3, 5542801.4 }, //
+			{ 49.0, 17.95, 33, 715757.3, 5431649.4 }, //
+			{ 48.5, 22.5, 34, 610806.2, 5372962.0 }, //
+			{ 60.17, 24.94, 35, 385700.4, 6672126.7 }, //
+			{ 51.5, -0.13, 30, 699195.9, 5709335.0 }, //
+			{ -45.0, 170.0, 59, 421184.7, 5016563.2 }, //
+			{ 64.1, -21.9, 27, 456137.6, 7108467.4 }, //
+			{ 36.0, -5.6, 30, 265643.1, 3987075.2 }, //
+			{ 0.1, 0.1, 31, 177164.3, 11067.3 }, //
+	};
+
+	@Test
+	public void utmPodleNezavislehoVypoctu() {
+		for (final double[] r : UTM_REFERENCE) {
+			final Utm utm = new Wgs(r[0], r[1]).toUtm();
+			final String bod = r[0] + ", " + r[1];
+			Assert.assertEquals(bod + " zóna", (int) r[2], utm.polednikovaZona);
+			// Převod na UTM vrací celé metry (oříznuté).
+			Assert.assertEquals(bod + " x", r[3], utm.ux, 1.5);
+			Assert.assertEquals(bod + " y", r[4], utm.uy, 1.5);
+			final Wgs zpet = new Utm(r[3], r[4], (int) r[2], utm.rovnobezkovaZona).toWgs();
+			Assert.assertEquals(bod + " zpět lat", r[0], zpet.lat, 1e-5);
+			Assert.assertEquals(bod + " zpět lon", r[1], zpet.lon, 1e-5);
 		}
 	}
 }
