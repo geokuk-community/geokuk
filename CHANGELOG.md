@@ -11,6 +11,9 @@
   odkud se spustí, složku jde přesunout i s daty. Nastavení už není
   v registru Windows, při prvním spuštění se odtud převezme. Volba
   „Ukládat nastavení k programu“ odpadla.
+- Data starší verze ve složce `%USERPROFILE%\geokuk` (keše z GPX,
+  výlety, cesty, ikony, dlaždice map) GeoKuk nečte, jdou zkopírovat do
+  složky `data`, postup je v README v oddílu Přechod ze starší verze.
 - Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou,
   program a Java jsou v podsložce `program`. Poprvé se spustí
   `GeoKuk-prvni-spusteni.cmd`, GeoKuk pak vedle vytvoří zástupce
