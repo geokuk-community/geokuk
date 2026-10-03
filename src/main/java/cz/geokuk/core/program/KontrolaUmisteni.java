@@ -42,7 +42,7 @@ public final class KontrolaUmisteni {
 					+ "s programem mimo synchronizovanou složku, třeba do " + DOPORUCENE_UMISTENI + ".");
 		}
 		final Filex kesDir = MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).getFilex(FPref.KES_DIR_value, KesoidUmisteniSouboru.KES_DIR);
-		final String staraData = staraData(new File(FConst.HOME_DIR, "geokuk"), FConst.DATA_DIR, kesDir == null ? null : kesDir.getFile());
+		final String staraData = staraData(new File(FConst.HOME_DIR, "geokuk"), FConst.DATA_DIR, kesDir == null ? null : kesDir.getEffectiveFile());
 		if (staraData != null && !pref.getBoolean(UPOZORNENO_STARA_DATA_value, false)) {
 			pref.putBoolean(UPOZORNENO_STARA_DATA_value, true);
 			Dlg.info(staraData, "Data ze starší verze");
