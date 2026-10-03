@@ -1,8 +1,13 @@
 package cz.geokuk.core.program;
 
+import java.awt.Dimension;
 import java.awt.Font;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 import javax.swing.*;
 
@@ -42,7 +47,7 @@ public class JOProgramuDialog extends JMyDialog0 {
 		box.add(c2);
 
 		box.add(Box.createVerticalStrut(10));
-		final JLabel c3 = new JLabel("(c) 2009 Matin Veverka");
+		final JLabel c3 = new JLabel("(c) 2009 Martin Veverka");
 		c3.setAlignmentX(CENTER_ALIGNMENT);
 		box.add(c3);
 
@@ -72,8 +77,38 @@ public class JOProgramuDialog extends JMyDialog0 {
 		zdarma2.setFont(new Font("Serif", Font.ITALIC, 12));
 		zdarma2.setAlignmentX(CENTER_ALIGNMENT);
 		box.add(zdarma2);
+		final JButton licence = new JButton("Licence a použité knihovny");
+		licence.addActionListener(e -> ukazLicence());
+		licence.setAlignmentX(CENTER_ALIGNMENT);
+		box.add(licence);
 		box.add(Box.createVerticalStrut(20));
 		box.add(Box.createGlue());
 	}
 
+	private void ukazLicence() {
+		final JTextArea text = new JTextArea(textLicence());
+		text.setEditable(false);
+		text.setCaretPosition(0);
+		final JScrollPane posuv = new JScrollPane(text);
+		posuv.setPreferredSize(new Dimension(640, 480));
+		JOptionPane.showMessageDialog(this, posuv, "Licence a použité knihovny", JOptionPane.PLAIN_MESSAGE);
+	}
+
+	/** Seznam knihoven a jejich licencí a text licence GNU GPL v3, přibalené v programu. */
+	static String textLicence() {
+		return precti("/THIRD-PARTY.txt") + "\n\n" + precti("/LICENSE");
+	}
+
+	private static String precti(final String zdroj) {
+		try (InputStream in = JOProgramuDialog.class.getResourceAsStream(zdroj)) {
+			if (in == null) {
+				return "";
+			}
+			try (Scanner sc = new Scanner(in, StandardCharsets.UTF_8.name()).useDelimiter("\\A")) {
+				return sc.hasNext() ? sc.next() : "";
+			}
+		} catch (final IOException e) {
+			return "";
+		}
+	}
 }

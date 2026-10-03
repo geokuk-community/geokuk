@@ -1,0 +1,61 @@
+GeoKuk – součásti třetích stran / Third-party components
+==========================================================
+
+GeoKuk je svobodný software pod licencí GNU GPL verze 3 (soubor LICENSE).
+Program obsahuje tyto knihovny, každá je pod svou licencí:
+
+| Knihovna                                   | Verze       | Licence                                    |
+|--------------------------------------------|-------------|--------------------------------------------|
+| Logback (logback-classic, logback-core)    | 1.3.16      | EPL 1.0 nebo LGPL 2.1                      |
+| SLF4J (slf4j-api, jul-to-slf4j)            | 2.0.7       | MIT                                        |
+| SQLJet                                     | 1.1.15      | GPL 3 nebo novější                         |
+| ANTLR runtime                              | 3.4         | BSD                                        |
+| metadata-extractor                         | 2.21.0      | Apache 2.0                                 |
+| Adobe XMP Core                             | 6.1.11      | BSD 3-Clause                               |
+| SwingX                                     | 1.6.4       | LGPL 2.1                                   |
+| Guava, failureaccess                       | 33.4.8, 1.0.3 | Apache 2.0                               |
+| Error Prone annotations                    | 2.36.0      | Apache 2.0                                 |
+| J2ObjC annotations                         | 3.0.0       | Apache 2.0                                 |
+| JSpecify                                   | 1.0.0       | Apache 2.0                                 |
+| sqlite-jdbc (s knihovnou SQLite)           | 3.53.4.0    | Apache 2.0, část BSD (Zentus); SQLite je volné dílo |
+
+Zip pro Windows obsahuje i běhové prostředí Javy (Eclipse Temurin,
+OpenJDK) pod licencí GPL 2 s výjimkou Classpath Exception; jeho licence
+a upozornění jsou ve složce program/runtime/legal.
+
+Barevná schémata vzhledu (Aqua, Charcoal, Contrast, Emerald, Ruby)
+vycházejí z ukázkového kódu Sun Microsystems pod tímto upozorněním:
+
+  Copyright (c) 2006 Sun Microsystems, Inc. All Rights Reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  -Redistribution of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+  -Redistribution in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+  Neither the name of Sun Microsystems, Inc. or the names of contributors may
+  be used to endorse or promote products derived from this software without
+  specific prior written permission.
+
+  This software is provided "AS IS," without a warranty of any kind. ALL
+  EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES, INCLUDING
+  ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+  OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED. SUN MIDROSYSTEMS, INC. ("SUN")
+  AND ITS LICENSORS SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY LICENSEE
+  AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS
+  DERIVATIVES. IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR ANY LOST
+  REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL,
+  INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY
+  OF LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE,
+  EVEN IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+  You acknowledge that this software is not designed, licensed or intended
+  for use in the design, construction, operation or maintenance of any
+  nuclear facility.
+
+Zdrojový kód GeoKuku: https://github.com/geokuk-community/geokuk
