@@ -98,12 +98,17 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 	}
 
 	private void printOziKalibracniBod(final PrintWriter p, final int cisloBodu, final int x, final int y, final Wgs wgs) {
-		final int latStup = (int) Math.floor(wgs.lat);
-		final int lonStup = (int) Math.floor(wgs.lon);
-		final double latMinut = (wgs.lat - latStup) * 60;
-		final double lonMinut = (wgs.lon - lonStup) * 60;
-		p.printf(Locale.ENGLISH, "Point%02d,xy,%d,%d,in, deg,%d,%10.3f,N,%d, %10.3f,E, grid,,,,N%n", cisloBodu, x, y, latStup, latMinut, lonStup, lonMinut);
+		p.println(oziKalibracniBod(cisloBodu, x, y, wgs));
+	}
 
+	/** Ozi chce kladné stupně a minuty s polokoulí N/S a E/W. */
+	static String oziKalibracniBod(final int cisloBodu, final int x, final int y, final Wgs wgs) {
+		return String.format(Locale.ENGLISH, "Point%02d,xy,%d,%d,in, deg,%s,%s, grid,,,,N", cisloBodu, x, y, stupneMinuty(wgs.lat, 'N', 'S'), stupneMinuty(wgs.lon, 'E', 'W'));
+	}
+
+	private static String stupneMinuty(final double uhel, final char kladna, final char zaporna) {
+		final long tisicinyMinut = Math.round(Math.abs(uhel) * 60_000);
+		return String.format(Locale.ENGLISH, "%d,%10.3f,%c", tisicinyMinut / 60_000, tisicinyMinut % 60_000 / 1000.0, uhel < 0 ? zaporna : kladna);
 	}
 
 	private void printOziMetafile(final PrintWriter p, final String fileName, final int width, final int height, final Coord cocox, final int kalibrBodu, final List<Wgs> kalibody) {

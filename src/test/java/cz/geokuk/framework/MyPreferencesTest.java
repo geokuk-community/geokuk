@@ -92,6 +92,36 @@ public class MyPreferencesTest {
 	}
 
 	@Test
+	public void cestaVeSlozceProgramuPreziePresun() {
+		final File stary = new File("/tmp/stary/GeoKuk").getAbsoluteFile();
+		final File novy = new File("/tmp/novy/GeoKuk").getAbsoluteFile();
+		final String ulozeno = MyPreferences.cestaDoNastaveni(new File(stary, "data/gpx"), stary);
+		assertThat(ulozeno).isEqualTo("${GeoKuk}/data/gpx");
+		assertThat(MyPreferences.cestaZNastaveni(ulozeno, novy)).isEqualTo(new File(novy, "data/gpx"));
+	}
+
+	@Test
+	public void cestaMimoSlozkuProgramuZustaneAbsolutni() {
+		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
+		final File venku = new File("/tmp/geoget/data").getAbsoluteFile();
+		assertThat(MyPreferences.cestaDoNastaveni(venku, koren)).isEqualTo(venku.getPath());
+		assertThat(MyPreferences.cestaDoNastaveni(new File("/tmp/GeoKuk2/data").getAbsoluteFile(), koren)).isEqualTo(new File("/tmp/GeoKuk2/data").getAbsolutePath());
+		assertThat(MyPreferences.cestaDoNastaveni(new File("data/relativni"), koren)).isEqualTo(new File("data/relativni").getPath());
+		assertThat(MyPreferences.cestaZNastaveni(venku.getPath(), koren)).isEqualTo(venku);
+	}
+
+	@Test
+	public void souboryVeSlozceProgramuSeUkladajiRelativne() {
+		final File soubor = new File(cz.geokuk.core.program.FConst.KOREN, "data/gpx/a.gpx");
+		preferences.putFile("f", soubor);
+		assertThat(preferences.get("f", null)).isEqualTo("${GeoKuk}/data/gpx/a.gpx");
+		assertThat(preferences.getFile("f", null)).isEqualTo(new File(cz.geokuk.core.program.FConst.KOREN.getAbsoluteFile(), "data/gpx/a.gpx"));
+		preferences.putFileCollection("c", Collections.singleton(soubor));
+		assertThat(preferences.get("c", null)).contains("${GeoKuk}/data/gpx/a.gpx");
+		assertThat(preferences.getFileCollection("c", null)).containsExactly(new File(cz.geokuk.core.program.FConst.KOREN.getAbsoluteFile(), "data/gpx/a.gpx"));
+	}
+
+	@Test
 	public void test_longStringStorage() {
 		final String storingString = Strings.repeat("FOOBAR@;", 3000);
 		preferences.put("@jhka", storingString);

@@ -72,6 +72,59 @@ public class GeogetLoaderTest {
 		Assert.assertEquals("80/75/12/450/3/{barva=modra}", priPridani.get("GC12345"));
 		Assert.assertEquals("keš bez tagů má hodnocení neuvedené", "-1/-1/-1/0/-1/{}", priPridani.get("GC99999"));
 	}
+	/** Sloupce databáze se převedou na správné položky keše a waypointu. */
+	@Test
+	public void polozkyKeseAWaypointu() throws Exception {
+		final File db = new File(tmp.getRoot(), "polozky.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			vytvorTabulky(s);
+			s.execute("INSERT INTO geocache VALUES ('GC00001', 50.125, 14.375, 'Nalezená', 'Autor', 'Multi-cache', 'Small', '2.5', '3', 1, 42, 20190305, 'Czech Republic', 'Praha', 20210510)");
+			s.execute("INSERT INTO geocache VALUES ('GC00002', 49.5, 16.25, 'Archivovaná', 'Jiný', 'Traditional Cache', 'Regular', '1', '1.5', 2, 7, 20001231, 'Czech Republic', 'Brno', 0)");
+			s.execute("INSERT INTO geocache VALUES ('WM00003', 49.0, 15.0, 'Waymark', 'Někdo', 'Waymark', 'Other', '1', '1', 0, 0, 20101010, '', '', 0)");
+			s.execute("INSERT INTO waypoint VALUES ('GC00001', 50.126, 14.376, 'PK', 'Parking Area', 'Parkoviště')");
+		}
+
+		final Map<String, GpxWpt> nactene = nacti(db);
+		Assert.assertEquals(new HashSet<>(Arrays.asList("GC00001", "GC00002", "WM00003", "PK00001")), nactene.keySet());
+
+		final GpxWpt nalezena = nactene.get("GC00001");
+		Assert.assertEquals(50.125, nalezena.wgs.lat, 1e-9);
+		Assert.assertEquals(14.375, nalezena.wgs.lon, 1e-9);
+		Assert.assertEquals("2019-03-05T00:00:00.000", nalezena.time);
+		Assert.assertEquals("Geocache Found", nalezena.sym);
+		Assert.assertEquals("20210510", nalezena.gpxg.found);
+		Assert.assertEquals("Nalezená", nalezena.groundspeak.name);
+		Assert.assertEquals("Autor", nalezena.groundspeak.placedBy);
+		Assert.assertEquals("Autor", nalezena.groundspeak.owner);
+		Assert.assertEquals(42, nalezena.groundspeak.ownerid);
+		Assert.assertEquals("Multi-cache", nalezena.groundspeak.type);
+		Assert.assertEquals("Small", nalezena.groundspeak.container);
+		Assert.assertEquals("2.5", nalezena.groundspeak.difficulty);
+		Assert.assertEquals("3", nalezena.groundspeak.terrain);
+		Assert.assertEquals("Czech Republic", nalezena.groundspeak.country);
+		Assert.assertEquals("Praha", nalezena.groundspeak.state);
+		Assert.assertFalse("stav 1 je neaktivní", nalezena.groundspeak.availaible);
+		Assert.assertFalse(nalezena.groundspeak.archived);
+		Assert.assertEquals("http://coord.info/GC00001", nalezena.link.href);
+
+		final GpxWpt archivovana = nactene.get("GC00002");
+		Assert.assertEquals("2000-12-31T00:00:00.000", archivovana.time);
+		Assert.assertEquals("Geocache", archivovana.sym);
+		Assert.assertTrue("stav 2 je archivovaná", archivovana.groundspeak.archived);
+		Assert.assertFalse(archivovana.groundspeak.availaible);
+
+		final GpxWpt waymark = nactene.get("WM00003");
+		Assert.assertEquals("Waymark", waymark.sym);
+		Assert.assertTrue("stav 0 je aktivní", waymark.groundspeak.availaible);
+		Assert.assertFalse(waymark.groundspeak.archived);
+
+		final GpxWpt parkoviste = nactene.get("PK00001");
+		Assert.assertEquals(50.126, parkoviste.wgs.lat, 1e-9);
+		Assert.assertEquals(14.376, parkoviste.wgs.lon, 1e-9);
+		Assert.assertEquals("Parking Area", parkoviste.sym);
+		Assert.assertEquals("Parkoviště", parkoviste.desc);
+	}
+
 	/** Popisy se při načítání nečtou, hint se dotáhne až na požádání. */
 	@Test
 	public void popisyANapovedyAzNaPozadani() throws Exception {
