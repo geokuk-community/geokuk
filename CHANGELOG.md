@@ -150,6 +150,8 @@
 - Při rychlém posouvání mapy se nezobrazí cizí dlaždice a souběžný
   zápis cache map nepoškodí.
 - Ve filtru se stav aktivních keší jmenuje „Aktivní“.
+- Oddíl Výstup v dialogu Rendrování se vejde i s dlouhou výstupní složkou:
+  složka se zkrátí uprostřed, celá je v bublině nápovědy.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
