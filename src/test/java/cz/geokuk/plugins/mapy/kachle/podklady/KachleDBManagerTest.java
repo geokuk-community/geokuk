@@ -62,6 +62,47 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(KACHLE));
 	}
 
+	/** Souvislé čtení z více vláken nesmí zablokovat zápis nových dlaždic. */
+	@Test(timeout = 120000)
+	public void zapisProjdePriSouvislemCteni() throws Exception {
+		final byte[] png = velkePng();
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png))));
+		final java.util.concurrent.atomic.AtomicBoolean konec = new java.util.concurrent.atomic.AtomicBoolean();
+		final ExecutorService ctenari = Executors.newFixedThreadPool(4);
+		try {
+			for (int i = 0; i < 4; i++) {
+				ctenari.submit(() -> {
+					while (!konec.get()) {
+						Assert.assertNotNull(manager.load(KACHLE));
+					}
+					return null;
+				});
+			}
+			Thread.sleep(200);
+			for (int i = 0; i < 4; i++) {
+				final Ka dalsi = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14 + i), EKaType.TURIST_M);
+				Assert.assertTrue("zápis " + i + " při čtení", manager.save(Collections.singleton(new ItemToSave(dalsi, png))));
+			}
+		} finally {
+			konec.set(true);
+			ctenari.shutdown();
+		}
+	}
+
+	/** Dlaždice s kresbou, aby dekódování trvalo jako u skutečné mapy. */
+	private static byte[] velkePng() throws Exception {
+		final BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
+		final java.util.Random r = new java.util.Random(1);
+		for (int x = 0; x < 256; x++) {
+			for (int y = 0; y < 256; y++) {
+				img.setRGB(x, y, r.nextInt());
+			}
+		}
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ImageIO.write(img, "png", out);
+		return out.toByteArray();
+	}
+
 	/** Přerušení vlákna při čtení zavře kanál souboru databáze. */
 	private void nactiPrerusene(final ExecutorService vlakno) throws Exception {
 		vlakno.submit(() -> {
