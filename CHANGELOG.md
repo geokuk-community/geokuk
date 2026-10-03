@@ -80,7 +80,9 @@
 ### Opravy
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
-- Dialog nové verze má titulek „Nová verze programu“ a čitelný text.
+- Dialog nové verze má titulek „Nová verze programu“ a čitelný text
+  a při souběhu automatické a ruční kontroly aktualizací se ukáže jen
+  jednou.
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
   nemusí projít celou databázi včetně dlouhých listingů. Hint se načte
   až po kliknutí na Hint v detailu keše. Načítání keší potřebuje zhruba
