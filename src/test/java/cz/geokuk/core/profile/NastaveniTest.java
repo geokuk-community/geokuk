@@ -63,4 +63,19 @@ public class NastaveniTest {
 		Assert.assertTrue(new File(soubor.getPath() + ".vadne").isFile());
 		Assert.assertEquals(0, koren.childrenNames().length);
 	}
+
+	@Test
+	public void vadnySouborKteryNejdeOdlozitSeNeprepise() throws Exception {
+		final File soubor = tmp.newFile("nastaveni.xml");
+		final byte[] puvodni = "<preferences><root ".getBytes(StandardCharsets.UTF_8);
+		Files.write(soubor.toPath(), puvodni);
+		// Neprázdná složka .vadne: soubor se nepodaří přejmenovat.
+		final File vadne = tmp.newFolder("nastaveni.xml.vadne");
+		new File(vadne, "x").createNewFile();
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
+		Assert.assertTrue(Nastaveni.prevzitVarovani().contains("beze změny"));
+		koren.node("geokuk").put("a", "1");
+		koren.ulozHned();
+		Assert.assertArrayEquals(puvodni, Files.readAllBytes(soubor.toPath()));
+	}
 }
