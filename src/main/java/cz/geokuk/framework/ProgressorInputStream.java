@@ -1,126 +1,74 @@
-/*
- * @(#)ProgressMonitorInputStream.java	1.20 05/11/17
- *
- * Copyright 2006 Sun Microsystems, Inc. All rights reserved.
- * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
-
 package cz.geokuk.framework;
 
-import java.io.*;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
-import javax.swing.JOptionPane;
-import javax.swing.ProgressMonitor;
-
-/**
- * Monitors the progress of reading from some InputStream. This ProgressMonitor is normally invoked in roughly this form:
- *
- * <pre>
- * InputStream in = new BufferedInputStream(new ProgressMonitorInputStream(parentComponent, "Reading " + fileName, new FileInputStream(fileName)));
- * </pre>
- * <p>
- * This creates a progress monitor to monitor the progress of reading the input stream. If it's taking a while, a ProgressDialog will be popped up to inform the user. If the user hits the Cancel button an InterruptedIOException will be thrown on the next read. All the right cleanup is done when the
- * stream is closed.
- *
- *
- * <p>
- *
- * For further documentation and examples see <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/progress.html">How to Monitor Progress</a>, a section in <em>The Java Tutorial.</em>
- *
- * @see ProgressMonitor
- * @see JOptionPane
- * @author James Gosling
- * @version 1.20 11/17/05
- */
+/** Vstupní proud, který hlásí počet přečtených bajtů do pruhu průběhu; zavřením se pruh ukončí. */
 public class ProgressorInputStream extends FilterInputStream {
-	private final Progressor progressor;
-	private int nread = 0;
-	private int size = 0;
 
-	/**
-	 * Constructs an object to monitor the progress of an input stream.
-	 *
-	 * @param message
-	 *            Descriptive text to be placed in the dialog box if one is popped up.
-	 * @param parentComponent
-	 *            The component triggering the operation being monitored.
-	 * @param in
-	 *            The input stream to be monitored.
-	 */
+	private final Progressor progressor;
+	/** Velikost dat zjištěná na začátku, 0 když není známa. */
+	private final long celkem;
+	private long precteno;
+
 	public ProgressorInputStream(final ProgressModel progressModel, final String message, final InputStream in) {
 		super(in);
+		long velikost;
 		try {
-			size = in.available();
-		} catch (final IOException ioe) {
-			size = 0;
+			velikost = in.available();
+		} catch (final IOException e) {
+			velikost = 0;
 		}
-		progressor = progressModel.start(size, message);
+		celkem = velikost;
+		progressor = progressModel.start((int) celkem, message);
 	}
 
-	/**
-	 * Overrides <code>FilterInputStream.close</code> to close the progress monitor as well as the stream.
-	 */
-	@Override
-	public void close() throws IOException {
-		in.close();
-		progressor.finish();
-	}
-
-	/**
-	 * Overrides <code>FilterInputStream.read</code> to update the progress monitor after the read.
-	 */
 	@Override
 	public int read() throws IOException {
-		final int c = in.read();
-		if (c >= 0) {
-			progressor.setProgress(++nread);
+		final int bajt = in.read();
+		if (bajt >= 0) {
+			pricti(1);
 		}
-		return c;
+		return bajt;
 	}
 
-	/**
-	 * Overrides <code>FilterInputStream.read</code> to update the progress monitor after the read.
-	 */
 	@Override
-	public int read(final byte b[]) throws IOException {
-		final int nr = in.read(b);
-		if (nr > 0) {
-			progressor.setProgress(nread += nr);
+	public int read(final byte[] b, final int off, final int len) throws IOException {
+		final int pocet = in.read(b, off, len);
+		if (pocet > 0) {
+			pricti(pocet);
 		}
-		return nr;
+		return pocet;
 	}
 
-	/**
-	 * Overrides <code>FilterInputStream.read</code> to update the progress monitor after the read.
-	 */
 	@Override
-	public int read(final byte b[], final int off, final int len) throws IOException {
-		final int nr = in.read(b, off, len);
-		if (nr > 0) {
-			progressor.setProgress(nread += nr);
+	public long skip(final long n) throws IOException {
+		final long pocet = in.skip(n);
+		if (pocet > 0) {
+			pricti(pocet);
 		}
-		return nr;
+		return pocet;
 	}
 
-	/**
-	 * Overrides <code>FilterInputStream.reset</code> to reset the progress monitor as well as the stream.
-	 */
 	@Override
 	public synchronized void reset() throws IOException {
 		in.reset();
-		nread = size - in.available();
-		progressor.setProgress(nread);
+		precteno = Math.max(0, celkem - in.available());
+		progressor.setProgress((int) Math.min(precteno, Integer.MAX_VALUE));
 	}
 
-	/**
-	 * Overrides <code>FilterInputStream.skip</code> to update the progress monitor after the skip.
-	 */
 	@Override
-	public long skip(final long n) throws IOException {
-		final long nr = in.skip(n);
-		if (nr > 0) {
-			progressor.setProgress(nread += nr);
+	public void close() throws IOException {
+		try {
+			in.close();
+		} finally {
+			progressor.finish();
 		}
-		return nr;
+	}
+
+	private void pricti(final long pocet) {
+		precteno += pocet;
+		progressor.setProgress((int) Math.min(precteno, Integer.MAX_VALUE));
 	}
 }
