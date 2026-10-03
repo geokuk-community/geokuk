@@ -290,7 +290,7 @@ public class MyPreferences extends Preferences {
 			set.addAll(atoms);
 			return set;
 		} catch (final Exception e) { // pokud je tam něco blbě, bere se default
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + ss);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + ss);
 			remove(key);
 			return def;
 		}
@@ -320,7 +320,7 @@ public class MyPreferences extends Preferences {
 			return new Dimension(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -343,7 +343,7 @@ public class MyPreferences extends Preferences {
 			// nebudeme nic dělat ani odstraňovat. Může se to hodit jiné verzi
 			return def; // vrátit default, jako by tam nic nebylo
 		} catch (final Exception e) { // když je to špatná hodnota, jako by nebyla žádná
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key);
 			return def;
 		}
@@ -361,7 +361,7 @@ public class MyPreferences extends Preferences {
 			set.addAll(enums);
 			return set;
 		} catch (final Exception e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + ss);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + ss);
 			remove(key);
 			return def;
 		}
@@ -378,7 +378,7 @@ public class MyPreferences extends Preferences {
 		try {
 			result = Enum.valueOf(cls, s);
 		} catch (final Exception e) { // když je to špatná hodnota, jako by nebyla žádná
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key);
 			return def;
 		}
@@ -444,7 +444,7 @@ public class MyPreferences extends Preferences {
 			return new Mou(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -460,7 +460,7 @@ public class MyPreferences extends Preferences {
 			return new Point(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -535,7 +535,7 @@ public class MyPreferences extends Preferences {
 			return new Wgs(Double.parseDouble(ss[0]), Double.parseDouble(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}

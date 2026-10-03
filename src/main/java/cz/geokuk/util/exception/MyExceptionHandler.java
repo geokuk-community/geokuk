@@ -27,7 +27,7 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 			if (t instanceof OutOfMemoryError) {
 				zpracujMaloPameti((OutOfMemoryError) t);
 			}
-			final AExcId excId = FExceptionDumper.dump(t, EExceptionSeverity.DISPLAY, "Výjimka vypadla až z vlákna " + vlakno);
+			final AExcId excId = FExceptionDumper.dump(t, EExceptionSeverity.DISPLAY, "Neošetřená chyba ve vlákně " + vlakno.getName());
 			System.err.println("Exception: " + excId);
 		} catch (final Throwable tt) {
 			// Tak když výjimku nešlo ani vypsat
@@ -42,7 +42,7 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 		final long freeMemory = runtime.freeMemory() / 1024;
 		final long totalMemory = runtime.totalMemory() / 1024;
 		spunt = null; // uvolníme špunt, čímž umožníme ještě zobrazit okno a ukončit program
-		final AExcId excId = FExceptionDumper.dump(oome, EExceptionSeverity.DISPLAY, "Málo paměti odchyceno.");
+		final AExcId excId = FExceptionDumper.dump(oome, EExceptionSeverity.DISPLAY, "Nedostatek paměti");
 		System.err.println("Exception: " + excId);
 		JOptionPane.showMessageDialog(null,
 		        excId + ": došla paměť, total=" + totalMemory + " KiB, free=" + freeMemory + " KiB, proces bude ukončen, zkus: \"java -Xmx1024m -jar geokuk.jar\"; " + oome.toString(), "Chyba",

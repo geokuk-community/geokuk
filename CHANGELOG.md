@@ -91,6 +91,8 @@
 - Přehled problémů ukazuje u každého problému, co se dělo a proč to
   selhalo; sloupce se jmenují Č. a Hlášení. Stavový řádek bez načtených
   zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku.
+- Hlášení v Přehledu problémů jsou česky a srozumitelně, opravené
+  překlepy a oslovení v nápovědách tlačítek.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text
   a při souběhu automatické a ruční kontroly aktualizací se ukáže jen
   jednou.
