@@ -10,6 +10,7 @@ public class LicenceTest {
 		final String text = JOProgramuDialog.textLicence();
 		Assert.assertTrue(text.contains("SQLJet"));
 		Assert.assertTrue(text.contains("Sun Microsystems"));
+		Assert.assertTrue(text.contains("Copyright (c) 1995 - 2008 Sun Microsystems"));
 		Assert.assertTrue(text.contains("GNU GENERAL PUBLIC LICENSE"));
 		Assert.assertTrue(text.contains("Copyright (c) 2004-2023 QOS.ch"));
 		Assert.assertTrue(text.contains("Copyright (c) 2005-2009 Terence Parr"));
