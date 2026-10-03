@@ -87,4 +87,20 @@ public class SouborovePreferencesTest {
 		assertThat(obsah).contains("key=\"a\"");
 		assertThat(obsah).contains("key=\"b\"");
 	}
+
+	@Test
+	public void znakyMimoXmlSeVynechajiANastaveniZustaneCitelne() throws Exception {
+		final File soubor = new File(tmp.getRoot(), "znaky.xml");
+		final SouborovePreferences pref = SouborovePreferences.prazdne(soubor);
+		pref.node("geokuk").put("ridici", "a\u0001\u001Bb");
+		pref.node("geokuk").put("nonchar", "a\uFFFEb");
+		pref.node("geokuk").put("pulka", "a\uD800b");
+		pref.node("geokuk").put("bezne", "ěščř \uD83D\uDE00 tab\tnl\n");
+		pref.ulozHned();
+		final SouborovePreferences nactene = SouborovePreferences.nacti(soubor);
+		assertThat(nactene.node("geokuk").get("ridici", null)).isEqualTo("ab");
+		assertThat(nactene.node("geokuk").get("nonchar", null)).isEqualTo("ab");
+		assertThat(nactene.node("geokuk").get("pulka", null)).isEqualTo("ab");
+		assertThat(nactene.node("geokuk").get("bezne", null)).isEqualTo("ěščř \uD83D\uDE00 tab\tnl\n");
+	}
 }
