@@ -26,4 +26,30 @@ public class GeokukMainTest {
 			cil.detachAppender(zachycene);
 		}
 	}
+
+	@Test
+	public void druhaInstancePoznaZeUzBezi() throws Exception {
+		final java.io.File slozka = java.nio.file.Files.createTempDirectory("geokuk-zamek").toFile();
+		final java.io.File soubor = new java.io.File(slozka, cz.geokuk.start.Start.ZAMEK);
+		final java.nio.channels.FileLock prvni = cz.geokuk.start.Start.zamkni(soubor);
+		try {
+			Assert.assertNotNull(prvni);
+			Assert.assertTrue(GeokukMain.uzBezi(null, soubor));
+			Assert.assertFalse(GeokukMain.uzBezi(prvni, soubor));
+		} finally {
+			prvni.channel().close();
+			soubor.delete();
+			slozka.delete();
+		}
+	}
+
+	@Test
+	public void nezapisovatelnaSlozkaNebraniSpusteni() throws Exception {
+		final java.io.File soubor = java.io.File.createTempFile("geokuk-data", ".soubor");
+		try {
+			Assert.assertFalse(GeokukMain.uzBezi(null, new java.io.File(soubor, cz.geokuk.start.Start.ZAMEK)));
+		} finally {
+			soubor.delete();
+		}
+	}
 }

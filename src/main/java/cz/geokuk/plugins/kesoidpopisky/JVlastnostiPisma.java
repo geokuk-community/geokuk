@@ -54,7 +54,7 @@ public class JVlastnostiPisma extends JPanel {
 		fontChooser = new JVyberPisma();
 
 		xspinner.setToolTipText("Posun popisku vůči ikoně v horizontálním směru");
-		yspinner.setToolTipText("Posun popisku vůči ikoně ve vertkálním směru");
+		yspinner.setToolTipText("Posun popisku vůči ikoně ve svislém směru");
 		foregroundChooser.setToolTipText("Barva písma včetně průhlednosti");
 		backgroudChooser.setToolTipText("Barva podkladu včetně průhlednosti");
 		fontChooser.setToolTipText("Font popisků na mapě");

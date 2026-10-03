@@ -9,6 +9,7 @@ import cz.geokuk.core.coord.PoziceChangedEvent;
 import cz.geokuk.core.coord.Poziceq;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -21,11 +22,15 @@ public class KesoidCodeToClipboard extends Action0 {
 	private Poziceq poziceq = new Poziceq();
 	private KesoidModel kesoidModel;
 
+	static String nazev(final String identifikator) {
+		return "<html>Identifikátor <i>" + FString.html(identifikator) + "</i> do schráky";
+	}
+
 	/**
 	 *
 	 */
 	public KesoidCodeToClipboard(final Kesoid aKesoid) {
-		super("<html>Identifikátor <i>" + aKesoid.getIdentifier() + "</i> do schráky");
+		super(nazev(aKesoid.getIdentifier()));
 		kesoid = aKesoid;
 		putValue(SHORT_DESCRIPTION, "Do systémového clipboardu vloží kód kešoidu.");
 		// putValue(MNEMONIC_KEY, InputEvent.)

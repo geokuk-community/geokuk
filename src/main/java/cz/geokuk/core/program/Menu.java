@@ -224,7 +224,7 @@ public class Menu extends MenuStrujce {
 		item(akce.rozdelitCestuAction);
 		item(akce.znovuSpojitCestyAction);
 
-		menu("Mřížky", "Různo dekorace na mapě");
+		menu("Mřížky", "Různé dekorace na mapě");
 		menu.setMnemonic('Y');
 
 		item(akce.meritkovnikAction);
@@ -257,7 +257,7 @@ public class Menu extends MenuStrujce {
 		item(akce.refreshIkonAction);
 		item(akce.debugIkonyAction);
 
-		menu("Nápověda", "Nápověda, odkazy na web, kotnrola aktualiozací");
+		menu("Nápověda", "Nápověda, odkazy na web, kontrola aktualizací");
 		menu.setMnemonic(KeyEvent.VK_N);
 		item(akce.napovedaAction);
 		item(akce.webovaStrankaAction);
