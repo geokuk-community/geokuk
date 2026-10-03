@@ -58,7 +58,7 @@ public class Genom {
 	public final Alela ALELA_cpt = GEN_vztah.alela("cpt").displayName("Captured");
 	public final Alela ALELA_dpl = GEN_vztah.alela("dpl").displayName("Deployed");
 
-	public final Gen GEN_stav = genu("stav", "Stav", "Aktivmíx", true);
+	public final Gen GEN_stav = genu("stav", "Stav", "Aktivní", true);
 	//public final Alela ALELA_actv = GEN_stav.alela("actv").displayName("Aktivmí");
 	public final Alela ALELA_actv = GEN_stav.getVychoziAlela();
 	public final Alela ALELA_dsbl = GEN_stav.alela("dsbl").displayName("Disablovaná");
