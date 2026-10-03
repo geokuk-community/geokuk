@@ -10,8 +10,10 @@ První spuštění: dvakrát klikněte na GeoKuk-prvni-spusteni.cmd. Windows se
 zeptají, jestli soubor od neznámého vydavatele spustit; zvolte Spustit.
 GeoKuk pak vedle vytvoří zástupce GeoKuk.lnk. Dál spouštějte jeho, klidně
 ho zkopírujte na plochu nebo připněte na hlavní panel. Když složku
-s programem přesunete, spusťte znovu GeoKuk-prvni-spusteni.cmd, zástupce
-se opraví.
+s programem přesunete, spusťte nejdřív znovu GeoKuk-prvni-spusteni.cmd,
+zástupce se opraví. Do té doby zástupce hlásí chybu „Unable to access
+jarfile“.
 
-Nové verze programu se instalují samy. Nový zip stačí rozbalit přes
-stávající složku, data a nastavení zůstanou.
+Nové verze programu se instalují samy. Nový zip rozbalte tam, kam ten
+první (třeba do C:\), přes stávající složku GeoKuk. Data a nastavení
+zůstanou.
