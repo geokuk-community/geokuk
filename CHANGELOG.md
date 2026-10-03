@@ -117,7 +117,7 @@
   portu, hlášení řekne proč.
 - Při přechodu z verze 6.0.0 GeoKuk jednou upozorní na keše, cesty,
   výlety a ikony ve staré složce `geokuk` v domovské složce a řekne,
-  kam je zkopírovat do složky `data`.
+  kam je zkopírovat.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
   načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN), výškou
   s čárkou, bez názvu nebo s nesmyslnou obtížností či terénem nezahodí

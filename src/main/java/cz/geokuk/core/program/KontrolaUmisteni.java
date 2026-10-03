@@ -8,6 +8,7 @@ import cz.geokuk.core.napoveda.VerzeJavy;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
+import cz.geokuk.util.file.Filex;
 import cz.geokuk.start.Start;
 
 /** Upozornění na nevhodné umístění přenosného programu a na starou přibalenou Javu, ukazují se po zobrazení hlavního okna. */
@@ -40,7 +41,8 @@ public final class KontrolaUmisteni {
 					+ "a soubory, které program právě používá, může poškodit. Ukončete GeoKuk a přesuňte celou složku\n"
 					+ "s programem mimo synchronizovanou složku, třeba do " + DOPORUCENE_UMISTENI + ".");
 		}
-		final String staraData = staraData(new File(FConst.HOME_DIR, "geokuk"), FConst.DATA_DIR);
+		final Filex kesDir = MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).getFilex(FPref.KES_DIR_value, KesoidUmisteniSouboru.KES_DIR);
+		final String staraData = staraData(new File(FConst.HOME_DIR, "geokuk"), FConst.DATA_DIR, kesDir == null ? null : kesDir.getFile());
 		if (staraData != null && !pref.getBoolean(UPOZORNENO_STARA_DATA_value, false)) {
 			pref.putBoolean(UPOZORNENO_STARA_DATA_value, true);
 			Dlg.info(staraData, "Data ze starší verze");
@@ -65,16 +67,15 @@ public final class KontrolaUmisteni {
 
 	/**
 	 * Verze 6.0.0 měla keše, cesty, výlety a ikony ve složce {@code geokuk} v domovské složce. Vrátí, co z toho je potřeba zkopírovat do složky
-	 * data, nebo null, když nic.
+	 * data a do složky s kešemi, nebo null, když nic.
 	 */
-	static String staraData(final File stara, final File data) {
+	static String staraData(final File stara, final File data, final File kesDir) {
 		if (!stara.isDirectory()) {
 			return null;
 		}
 		final List<String> co = new ArrayList<>();
-		final File gpx = new File(data, "gpx");
-		if (maSouborySKesemi(stara, true) && !maSouborySKesemi(gpx, false)) {
-			co.add("soubory s kešemi (GPX, .geokuk, zip) ze složky " + stara + " do " + gpx);
+		if (kesDir != null && maSouborySKesemi(stara, data, true) && !maSouborySKesemi(kesDir, null, false)) {
+			co.add("soubory s kešemi (GPX, .geokuk, zip) ze složky " + stara + " do " + kesDir);
 		}
 		pridej(co, "cesty", new File(stara, "cesty"), new File(data, "cesty"));
 		pridej(co, "vlastní ikony", new File(stara, "imagesMy"), new File(data, "ikony/moje"));
@@ -104,8 +105,8 @@ public final class KontrolaUmisteni {
 		return soubory != null && soubory.length > 0;
 	}
 
-	/** Soubory s kešemi ve složce, u staré složky i v podsložkách mimo cesty a ikony. */
-	private static boolean maSouborySKesemi(final File slozka, final boolean stara) {
+	/** Soubory s kešemi ve složce i v podsložkách, bez složky data (a složky s programem); u staré složky navíc bez cest a ikon. */
+	private static boolean maSouborySKesemi(final File slozka, final File data, final boolean stara) {
 		final File[] soubory = slozka.listFiles();
 		if (soubory == null) {
 			return false;
@@ -114,7 +115,18 @@ public final class KontrolaUmisteni {
 			if (f.isFile() && SOUBOR_S_KESEMI.matcher(f.getName()).matches()) {
 				return true;
 			}
-			if (f.isDirectory() && !(stara && Arrays.asList("cesty", "imagesMy", "images3rdParty").contains(f.getName())) && maSouborySKesemi(f, false)) {
+			final boolean vynechat = stara && Arrays.asList("cesty", "imagesMy", "images3rdParty").contains(f.getName()) || data != null && jeUvnitr(data, f);
+			if (f.isDirectory() && !vynechat && maSouborySKesemi(f, data, false)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean jeUvnitr(final File soubor, final File slozka) {
+		final File cil = slozka.getAbsoluteFile();
+		for (File f = soubor.getAbsoluteFile(); f != null; f = f.getParentFile()) {
+			if (f.equals(cil)) {
 				return true;
 			}
 		}
