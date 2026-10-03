@@ -5,6 +5,8 @@ import java.util.*;
 import org.junit.Assert;
 import org.junit.Test;
 
+import cz.geokuk.core.program.MainFrameHolder;
+import cz.geokuk.framework.ChybyVDiagnostice;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.kind.kes.Kes;
@@ -105,5 +107,16 @@ public class VyletModelTest {
 		model.add(EVylet.ANO, kes("GC4"));
 		model.prevezmiNactenyVylet(stary, 0, 0);
 		Assert.assertTrue("model nesmí přepsat změnu starším čtením", model.vyletKody(EVylet.ANO).contains("GC4"));
+	}
+
+	@Test
+	public void chybaKopirovaniDoSchrankySeOhlasi() throws Exception {
+		final VyletModel model = model();
+		nacti(model);
+		model.inject(new MainFrameHolder()); // bez hlavního okna schránka selže
+		final String okolnost = "Kopírování odkazů do schránky";
+		final int puvodne = ChybyVDiagnostice.pocet(okolnost);
+		model.nasypVypetDoGeogetu();
+		Assert.assertTrue(ChybyVDiagnostice.pribude(okolnost, puvodne));
 	}
 }
