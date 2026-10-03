@@ -12,9 +12,14 @@ import cz.geokuk.util.pocitadla.*;
 public class ImageProviderCached implements ImageProvider {
 
 	private static Pocitadlo pocitSourceImaguZasah = new PocitadloRoste("Zdrojové obrázky - zásah cache", "");
-	private final Pocitadlo pocitSourceImagu = new PocitadloMalo("Zdrojové obrázky - počet", "Kolik vlastně máme typů konkrétních vzhledů ikon");
+	private final Pocitadlo pocitSourceImagu;
 
 	private final Map<URL, BufferedImage> sourceImageCache = Collections.synchronizedMap(new HashMap<URL, BufferedImage>());
+
+	/** Jméno skla odliší počitadla jednotlivých skel. */
+	public ImageProviderCached(final String jmenoSkla) {
+		pocitSourceImagu = new PocitadloMalo("Zdrojové obrázky - počet (" + jmenoSkla + ")", "Kolik vlastně máme typů konkrétních vzhledů ikon");
+	}
 
 	@Override
 	public BufferedImage getImage(final URL url) {
