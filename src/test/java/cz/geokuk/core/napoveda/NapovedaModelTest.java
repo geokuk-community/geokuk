@@ -110,10 +110,27 @@ public class NapovedaModelTest {
 	}
 
 	@Test
+	public void staryOdkladBezVerzeTrvaNejvysTyden() {
+		final long den = 24L * 60L * 60L * 1000L;
+		Assert.assertTrue(NapovedaModel.odlozenoVse(0, 7 * den));
+		Assert.assertFalse(NapovedaModel.odlozenoVse(0, 30 * den));
+		Assert.assertFalse(NapovedaModel.odlozenoVse(10, 5));
+		Assert.assertTrue(NapovedaModel.odlozenoVse(0, Long.MAX_VALUE));
+	}
+
+	@Test
 	public void behemOdkladuSeKontrolujeANovejsiVerzeNabidne() {
 		model.odlozKontroluAktualizaci("6.2.0");
 		Assert.assertTrue(model.jeOdlozena("6.2.0"));
 		Assert.assertFalse(model.jeOdlozena("6.2.1"));
+		model.zkontrolujNoveAktualizace(false);
+		Assert.assertEquals(1, spustene.size());
+	}
+
+	@Test
+	public void staryMesicniOdkladKontroluNevynecha() {
+		vseobecne().putLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+		vseobecne().remove("odlozenaVerze");
 		model.zkontrolujNoveAktualizace(false);
 		Assert.assertEquals(1, spustene.size());
 	}

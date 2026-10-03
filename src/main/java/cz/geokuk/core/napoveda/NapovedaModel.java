@@ -25,8 +25,8 @@ public class NapovedaModel extends Model0 {
 		if (!onlineMode) {
 			return;
 		}
-		// Odklad bez uložené verze platí na všechny verze; s verzí rozhodne kontrola až podle nalezené verze.
-		if (!zobrazovatInfoPriSpravneVerzi && System.currentTimeMillis() < konecOdkladu() && odlozenaVerze() == null) {
+		// S uloženou verzí rozhodne o odkladu kontrola až podle nalezené verze.
+		if (!zobrazovatInfoPriSpravneVerzi && odlozenaVerze() == null && odlozenoVse(System.currentTimeMillis(), konecOdkladu())) {
 			return;
 		}
 		// Běžící kontrola ukáže výsledek, druhý dialog by byl stejný.
@@ -62,7 +62,15 @@ public class NapovedaModel extends Model0 {
 	}
 
 	static boolean odlozeno(final long ted, final long konecOdkladu, final String odlozena, final String nabizena) {
-		return ted < konecOdkladu && (odlozena == null || !ZkontrolovatAktualizaceSwingWorker.jeNovejsi(nabizena, odlozena));
+		if (odlozena == null) {
+			return odlozenoVse(ted, konecOdkladu);
+		}
+		return ted < konecOdkladu && !ZkontrolovatAktualizaceSwingWorker.jeNovejsi(nabizena, odlozena);
+	}
+
+	/** Odklad bez verze: trvale vypnutá kontrola, nebo starší odklad zkrácený na nejvýš {@link #DNU_ODKLADU} dní. */
+	static boolean odlozenoVse(final long ted, final long konecOdkladu) {
+		return konecOdkladu == Long.MAX_VALUE || ted < konecOdkladu && konecOdkladu - ted <= DNU_ODKLADU * 24L * 60L * 60L * 1000L;
 	}
 
 	private long konecOdkladu() {
