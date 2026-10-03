@@ -37,15 +37,21 @@ složku přesunete, spusťte nejdřív znovu `GeoKuk-prvni-spusteni.cmd`,
 zástupce ve složce i jeho kopie na ploše a v nabídce Start se opraví.
 Do té doby zástupce hlásí chybu „Unable to access jarfile“.
 
-Když GeoKuk najde novou verzi, stáhne ji a nabídne restart; jinak se
-nainstaluje při příštím spuštění. Javu aktualizuje nový zip. Rozbalte ho
+Když GeoKuk najde novou verzi, nabídne ji. Po volbě Stáhnout novou
+verzi ji stáhne a nabídne restart; jinak se nainstaluje při příštím
+spuštění. Javu aktualizuje nový zip. Rozbalte ho
 tam, kam ten první (třeba do `C:\`), přes stávající složku `GeoKuk`;
 data a nastavení zůstanou.
 
 ### Linux a macOS
 
 Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
-(potřeba je Java 8 nebo novější). Nové verze se instalují samy.
+(potřeba je Java 8 nebo novější). Když GeoKuk najde novou verzi,
+nabídne ji. Po volbě Stáhnout novou verzi nahradí `geokuk.jar`
+(předchozí zůstane jako `geokuk.jar.bak`) a nová verze se spustí při
+příštím spuštění. Paměť programu a restart po aktualizaci jsou jen
+v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
+`java -Xmx2g -jar geokuk.jar`.
 
 ### Složka s programem
 
@@ -102,7 +108,7 @@ POST http://127.0.0.1:48321/podklad?jmeno=TURIST_M
 POST http://127.0.0.1:48321/prenacti
 ```
 
-Požadavky z webového prohlížeče program odmítá.
+Požadavky z webových stránek program odmítá.
 
 ## Původ
 
