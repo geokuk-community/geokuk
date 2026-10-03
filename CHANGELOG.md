@@ -77,6 +77,8 @@
   podle očekávání.
 - Dialog renderu ukazuje rozměr terénu ve skutečných kilometrech, ne
   desetinásobek.
+- Kalibrační body v souboru `.map` pro OziExplorer mají polokouli S a W,
+  render západně od Greenwiche nebo na jižní polokouli sedí na mapě.
 
 ## 6.1.0
 
