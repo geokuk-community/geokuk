@@ -9,6 +9,7 @@ import cz.geokuk.core.coordinates.FGeoKonvertor;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.cesty.data.Bousek0;
 import cz.geokuk.plugins.cesty.data.Cesta;
+import cz.geokuk.util.lang.FString;
 
 public class JCestaTooltip extends JComponent {
 
@@ -32,7 +33,7 @@ public class JCestaTooltip extends JComponent {
 		jVzad.setText("<html>" + blizkyBousek.dalkaCestaVzadHtml(aMou));
 		jVpred.setVisible(true);
 		jVzad.setVisible(true);
-		jNazevCesty.setText(blizkyBousek.getCesta().getNazev());
+		jNazevCesty.setText(FString.text(blizkyBousek.getCesta().getNazev()));
 		jNazevCesty.setVisible(blizkyBousek.getCesta().getNazev() != null);
 
 	}
@@ -44,7 +45,7 @@ public class JCestaTooltip extends JComponent {
 		jVzad.setText("<html>" + Cesta.dalkaHtml(dalkaPuvodni, FBarvy.CURTA_NORMALNE) + "<font color=white> +</font>" + Cesta.dalkaHtml(dalkaDodana, Color.WHITE));
 		jVzad.setVisible(true);
 		jVpred.setVisible(false);
-		jNazevCesty.setText(cesta.getNazev());
+		jNazevCesty.setText(FString.text(cesta.getNazev()));
 		jNazevCesty.setVisible(cesta.getNazev() != null);
 
 	}
