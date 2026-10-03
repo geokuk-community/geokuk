@@ -59,6 +59,9 @@ v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
 GeoKuk
 ├── GeoKuk-prvni-spusteni.cmd    první spuštění ve Windows
 ├── GeoKuk.lnk                   zástupce, vytvoří ho GeoKuk
+├── CTIMNE.txt
+├── LICENSE                      licence GNU GPL v3
+├── THIRD-PARTY.txt              použité knihovny a jejich licence
 ├── program
 │   ├── geokuk.jar               program
 │   ├── start.jar                spouštěč
@@ -160,4 +163,5 @@ spustit pro Linux i Windows.
 
 ## Licence
 
-[GNU GPL v3](LICENSE)
+[GNU GPL v3](LICENSE). Použité knihovny a jejich licence jsou
+v [THIRD-PARTY.txt](THIRD-PARTY.txt).

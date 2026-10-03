@@ -79,6 +79,9 @@
 - V Umístění souborů zůstaly k nastavení jen složky s daty jiných
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
   záložka Program.
+- O programu ukáže licenci a seznam použitých knihoven s jejich
+  licencemi. Program i zip pro Windows obsahují soubory `LICENSE`
+  a `THIRD-PARTY.txt`.
 
 ### Opravy
 - Nová verze se stahuje jen jednou najednou a po stažení se ověří
@@ -278,6 +281,7 @@
   v testech junit 4.13.2.
 - Popis vydání na GitHubu se bere z tohoto souboru. Soubory vydání mají
   ověřitelný původ (`gh attestation verify`).
+- SQLJet 1.1.15 (GPL 3 nebo novější).
 - Program se vydává jako `geokuk.jar` a zip pro Windows s Javou,
   konfigurace Launch4j je odstraněná.
 - Smoke test celého programu nad falešným mapovým serverem (workflow
