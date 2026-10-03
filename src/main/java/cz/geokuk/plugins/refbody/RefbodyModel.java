@@ -61,7 +61,7 @@ public class RefbodyModel extends Model0 {
 							final NaKonkretniBodAction action = factory.init(new NaKonkretniBodAction(aa[2], wgs));
 							list.add(action);
 						} catch (final Throwable e) {
-							FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Pokus nacist data ze souboru " + file + ", radek " + (list.size() + 1));
+							FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Čtení souboru " + file + ", řádek " + (list.size() + 1));
 						}
 					}
 				}
@@ -70,7 +70,7 @@ public class RefbodyModel extends Model0 {
 			}
 			return list;
 		} catch (final IOException e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Pokus nacist data ze souboru " + file + ", radek " + (list.size() + 1));
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Čtení souboru " + file + ", řádek " + (list.size() + 1));
 			return list;
 		}
 	}

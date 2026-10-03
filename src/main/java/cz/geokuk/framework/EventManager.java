@@ -93,7 +93,7 @@ public class EventManager implements EventFirer {
 							aktualizujPocitadla();
 						}
 					} catch (final InterruptedException e) {
-						FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Přerušení metodou interrupt(), taková výjimka asi nikdy nenastane.");
+						FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Přerušené zpracování událostí");
 					}
 				}
 			}

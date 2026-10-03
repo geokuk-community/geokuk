@@ -360,4 +360,129 @@ public class KachleDBManagerTest {
 			Assert.assertNotNull("dlaždice je v nové cache", manager.load(KACHLE));
 		}
 	}
+	/** Na skoro plný disk se dlaždice neukládají, po uvolnění místa zase ano. */
+	@Test
+	public void priNedostatkuMistaNezapisuje() throws Exception {
+		final long[] volne = { KachleDBManager.MIN_VOLNE_MISTO / 2 };
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			long volneMisto(final File slozka) {
+				return volne[0];
+			}
+		};
+		Assert.assertFalse("bez místa se neukládá", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNull(manager.load(KACHLE));
+		volne[0] = Long.MAX_VALUE;
+		Assert.assertTrue("po uvolnění místa se ukládá", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNotNull(manager.load(KACHLE));
+	}
+
+	/** Při opakovaném nedostatku místa se uživatel dozví jen jednou. */
+	@Test
+	public void naNedostatekMistaUpozorniJednou() throws Exception {
+		final int[] upozorneni = { 0 };
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			long volneMisto(final File slozka) {
+				return 0;
+			}
+
+			@Override
+			void upozorniNaMisto(final File slozka, final long volne) {
+				upozorneni[0]++;
+			}
+		};
+		for (int i = 0; i < 3; i++) {
+			Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(i), png()))));
+		}
+		Assert.assertEquals(1, upozorneni[0]);
+	}
+
+	/** Poškození zjištěné při zápisu dlaždic cache odloží a založí novou. */
+	@Test
+	public void poskozeniPriZapisuCacheOdlozi() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
+		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue("nová cache funguje", manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
+		Assert.assertNotNull(manager.load(kachle(5)));
+	}
+
+	/** Chyba starého spojení zjištěná až po odložení poškozené cache neodloží novou. */
+	@Test
+	public void chybaStarehoSpojeniNeodloziNovouCache() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		final int pred = manager.odlozeni;
+		Assert.assertNull(manager.load(kachle(1)));
+		Assert.assertTrue(new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		manager.odlozZaBehu(soubor, pred);
+		Assert.assertNotNull("nová cache zůstala", manager.load(kachle(1)));
+	}
+
+	/** Poškození zjištěné až při čtení dlaždice cache odloží a založí novou. */
+	@Test
+	public void poskozeniPriCteniCacheOdlozi() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		for (int i = 0; i < 200; i++) {
+			Assert.assertNull("dlaždice z poškozené cache se stáhne znovu", manager.load(kachle(i)));
+		}
+		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue("nová cache funguje", manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		Assert.assertNotNull(manager.load(kachle(1)));
+	}
+
+	/** Žurnál po pádu programu znamená možné poškození, cache se před použitím projde. */
+	@Test
+	public void poPaduSeCacheZkontroluje() throws Exception {
+		poskodStranku(-1);
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		manager = new KachleDBManager(manager.folderHolder);
+		// Hledání dlaždice mimo cache poslední stránku nečte, poškození najde jen kontrola.
+		Assert.assertNull(manager.load(KACHLE_MIMO));
+		Assert.assertTrue("poškozená cache se odloží hned při otevření", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		Assert.assertNotNull(manager.load(kachle(1)));
+	}
+
+	/** Zdravou cache s žurnálem kontrola neodloží. */
+	@Test
+	public void kontrolaPoPaduZdravouCacheNeodlozi() throws Exception {
+		ulozKachle();
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertNotNull(manager.load(kachle(150)));
+		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
+	}
+
+	private static final Ka KACHLE_MIMO = new Ka(KaLoc.ofJZ(new Mou(0x10000000, 0x10000000), 13), EKaType.TURIST_M);
+
+	private static Ka kachle(final int i) {
+		return new Ka(KaLoc.ofJZ(new Mou(0x40000000 + i * 0x100000, 0x20000000), 13), EKaType.TURIST_M);
+	}
+
+	private void ulozKachle() throws Exception {
+		final byte[] png = png();
+		final java.util.List<ItemToSave> davka = new java.util.ArrayList<>();
+		for (int i = 0; i < 200; i++) {
+			davka.add(new ItemToSave(kachle(i), png));
+		}
+		Assert.assertTrue(manager.save(davka));
+		for (final SqlJetDb db : manager.connections.values()) {
+			db.close();
+		}
+	}
+
+	/** Stránka (od 1, záporná od konce) dostane neplatný typ; schéma na první stránce zůstane čitelné. */
+	private void poskodStranku(final int cislo) throws Exception {
+		ulozKachle();
+		final byte[] obsah = Files.readAllBytes(soubor.toPath());
+		final int velikost = (obsah[16] & 0xff) << 8 | obsah[17] & 0xff;
+		final int stranka = cislo > 0 ? cislo : obsah.length / velikost + 1 + cislo;
+		obsah[(stranka - 1) * velikost] = 7;
+		Files.write(soubor.toPath(), obsah);
+	}
 }

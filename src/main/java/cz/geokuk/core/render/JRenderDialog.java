@@ -150,7 +150,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		        renderModel.getDim().height, pametMiB));
 		jPrerusitButton.setText(renderSettings.getWhatRender() != EWhatRender.TISK ? "Přerušit rendrování" : "Přerušit tisk");
 		// jRendrovaneMeritko.setText(renderModel.getRenderedMoumer() + "");
-		jNastaveniAktualnihoMeritkaButton.setText("Nastav na meritko: " + renderModel.getCurrentMoumer());
+		jNastaveniAktualnihoMeritkaButton.setText("Nastavit na měřítko: " + renderModel.getCurrentMoumer());
 		jNastaveniAktualnihoMeritkaButton.setEnabled(maBytEnablovano && renderModel.getCurrentMoumer() != renderModel.getRenderedMoumer());
 
 		jPureJmenoSouboruCombo.setPatterned(renderSettings.getPureFileName());
@@ -278,7 +278,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 
 		jSrovnatDoSeveru = new JCheckBox();
 		jSrovnatDoSeveru.setText("Srovnat do severu");
-		jNastaveniAktualnihoMeritkaButton = new JButton("čudl bude něco umět");
+		jNastaveniAktualnihoMeritkaButton = new JButton("Nastavit na měřítko");
 		jNastavovecMeritka = new JNastavovecMeritka();
 		jTerenniRozmerField = new JTextField();
 		jTerenniRozmerField.setEditable(false);

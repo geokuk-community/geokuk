@@ -98,7 +98,7 @@ public class MultiNacitac {
 				}
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
-				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem pri cteni souboru " + file);
+				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
 				vadne.add(file.getFile().getName());
 			}
 		}
