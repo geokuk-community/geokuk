@@ -225,15 +225,21 @@ try {
     Remove-Item (Join-Path $puvodni "data\ovladani.properties") -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force (Split-Path $slozka) | Out-Null
     Move-Item $puvodni $slozka
+    New-Item -ItemType Directory -Force (Join-Path $slozka "data\gpx") | Out-Null
+    Set-Content -Encoding ascii (Join-Path $slozka "data\gpx\presun.gpx") '<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="zkouska" xmlns="http://www.topografix.com/GPX/1/1"><wpt lat="50.1" lon="14.4"><name>GCPRESUN</name><sym>Geocache</sym></wpt></gpx>'
 
     $beh = Spust $slozka @("--ovladani=0", "--ovladani-devel")
     $o = Ovladani $slozka
+    $nacteno = Cekej 60 { $s = Volej $o GET "/stav"; if ($s.waypointu -ge 1) { $s } }
+    Ocekavej ($null -ne $nacteno) "po přesunu se načtou keše z data\gpx v nové složce"
     $javaw = Join-Path $slozka "program\runtime\bin\javaw.exe"
     $veSlozce = Cekej 60 { $z = Zastupce (Join-Path $slozka "GeoKuk.lnk"); if ($z.TargetPath -eq $javaw) { $z } }
     Ocekavej ($null -ne $veSlozce) "zástupce ve složce po přesunu vede na $javaw"
     $kopie = Cekej 30 { $z = Zastupce $naPlose; if ($z.TargetPath -eq $javaw) { $z } }
     Ocekavej ($null -ne $kopie) "zástupce na ploše po přesunu opraven: $((Zastupce $naPlose).TargetPath)"
     Ocekavej (Konec $o $beh) "program po přesunu skončil"
+    $nastaveni = Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml")
+    Ocekavej (-not $nastaveni.Contains($puvodni)) "nastavení po přesunu neodkazuje na původní složku"
     if ($kopie) {
         $zKopie = $null
         try { $zKopie = Spust $slozka @() $naPlose } catch { }

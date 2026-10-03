@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Hledac extends Hledac0<Nalezenec> {
 
-	private class Porovnavac {
+	static class Porovnavac {
 		private final String vzorek;
 		private final boolean regularniVyraz;
 
@@ -35,14 +35,15 @@ public class Hledac extends Hledac0<Nalezenec> {
 		 */
 		public Porovnavac(final String aVzorek, final boolean aRegularniVyraz) {
 			super();
-			vzorek = FUtil.cestinuPryc(aVzorek.toLowerCase());
 			regularniVyraz = aRegularniVyraz;
+			// Velká písmena v regulárním výrazu mají význam (\D, \W, \S, \Q), na velikosti nezáleží díky CASE_INSENSITIVE.
+			vzorek = FUtil.cestinuPryc(regularniVyraz ? aVzorek : aVzorek.toLowerCase());
 			pat = regularniVyraz ? Pattern.compile(vzorek, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE) : null;
 		}
 
 		public Nalezenec porovnej(final String vCem) {
 			if (regularniVyraz) {
-				final Matcher mat = pat.matcher(FUtil.cestinuPryc(vCem));
+				final Matcher mat = pat.matcher(FUtil.cestinuPryc(vCem.toLowerCase()));
 				final boolean found = mat.find();
 				if (found) {
 					final Nalezenec nal = new Nalezenec();
