@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,6 +28,7 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 
 	private final HttpServer server;
 	private final Map<String, AtomicInteger> pozadavky = new ConcurrentHashMap<>();
+	private final Map<String, List<Long>> casyPozadavku = new ConcurrentHashMap<>();
 	private volatile boolean zlobi;
 
 	public FalesnyDlazdicovyServer() throws IOException {
@@ -79,6 +81,27 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 		return kopie;
 	}
 
+	/** Nejvyšší počet požadavků na cestu v libovolném okně dané délky. */
+	public Map<String, Integer> getNejvicPozadavkuZaDobu(final long oknoMs) {
+		final Map<String, Integer> vysledek = new TreeMap<>();
+		casyPozadavku.forEach((cesta, casy) -> {
+			final List<Long> serazene;
+			synchronized (casy) {
+				serazene = new ArrayList<>(casy);
+			}
+			Collections.sort(serazene);
+			int nejvic = 0;
+			for (int od = 0, i = 0; i < serazene.size(); i++) {
+				while (serazene.get(i) - serazene.get(od) >= oknoMs) {
+					od++;
+				}
+				nejvic = Math.max(nejvic, i - od + 1);
+			}
+			vysledek.put(cesta, nejvic);
+		});
+		return vysledek;
+	}
+
 	public int getPocetPozadavku() {
 		return pozadavky.values().stream().mapToInt(AtomicInteger::get).sum();
 	}
@@ -92,7 +115,9 @@ public class FalesnyDlazdicovyServer implements AutoCloseable {
 		try {
 			final String host = ex.getRequestURI().getHost();
 			final String cesta = ex.getRequestURI().getPath();
-			pozadavky.computeIfAbsent(host == null ? cesta : host + cesta, k -> new AtomicInteger()).incrementAndGet();
+			final String klic = host == null ? cesta : host + cesta;
+			pozadavky.computeIfAbsent(klic, k -> new AtomicInteger()).incrementAndGet();
+			casyPozadavku.computeIfAbsent(klic, k -> Collections.synchronizedList(new ArrayList<>())).add(System.currentTimeMillis());
 			if ("maps.googleapis.com".equals(host)) {
 				// Geokódování Googlu bez API klíče odpovídá takhle.
 				final byte[] odpoved = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<GeocodeResponse>\n <status>REQUEST_DENIED</status>\n"

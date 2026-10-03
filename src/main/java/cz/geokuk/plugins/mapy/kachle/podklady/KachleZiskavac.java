@@ -139,18 +139,23 @@ public class KachleZiskavac {
 		public synchronized void onImageLoaded(final Image image) {
 			futura = null;
 			this.image = image;
-			for (final ImageReceiver ir : irs) {
+			for (final ImageReceiver ir : odeberPrijemce()) {
 				ir.send(new KachloStav(image));
 			}
-			irs.clear(); // vymazat příjemce, když už to věichni mají
 		}
 
 		public synchronized void onImageFailure(final Throwable t) {
 			futura = null;
-			for (final ImageReceiver ir : irs) {
+			for (final ImageReceiver ir : odeberPrijemce()) {
 				ir.send(new KachloStav(t));
 			}
+		}
+
+		/** Příjemce se během rozesílání může odhlásit (rendr), proto se rozesílá z kopie. */
+		private List<ImageReceiver> odeberPrijemce() {
+			final List<ImageReceiver> prijemci = new ArrayList<>(irs);
 			irs.clear();
+			return prijemci;
 		}
 
 		@Override
@@ -203,7 +208,11 @@ public class KachleZiskavac {
 				submitChunks();
 			} else { // plánuji zahájit ukládání pro případ, že nová kachle nepřijde.
 				future = planovacUkladani.schedule(() -> {
-					submitChunks();
+					try {
+						submitChunks();
+					} catch (final RuntimeException e) {
+						log.error("Naplánované ukládání dlaždic na disk selhalo", e);
+					}
 				}, CAS_PO_KTEREM_SE_ZAHAJI_UKLADANI_NA_DISK, TimeUnit.SECONDS);
 			}
 		}
@@ -213,15 +222,17 @@ public class KachleZiskavac {
 				return; // zakázáno ukládat
 			}
 			log.debug("Submitujeme ukladani kachle na disk #{}", ukladanci.size());
-			execDiskWrite.submit(() -> {
-				log.info("Ukladani kachle na disk #{}:", ukladanci.size());
-				final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getRawData())).collect(Collectors.toList());
-				if (kachleManager.save(list)) {
-					pocitZapsanoChunkuNaDisk.inc();
-					pocitZapsanoNaDisk.add(list.size());
+			execDiskWrite.execute(() -> {
+				try {
+					log.info("Ukladani kachle na disk #{}:", ukladanci.size());
+					final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getRawData())).collect(Collectors.toList());
+					if (kachleManager.save(list)) {
+						pocitZapsanoChunkuNaDisk.inc();
+						pocitZapsanoNaDisk.add(list.size());
+					}
+				} catch (final RuntimeException e) {
+					log.error("Ukládání dlaždic na disk selhalo", e);
 				}
-				return null;
-
 			});
 		}
 
@@ -343,7 +354,7 @@ public class KachleZiskavac {
 
 	private KachleManager kachleManager;
 
-	private final KachleUkladac ukladac = new KachleUkladac();
+	final KachleUkladac ukladac = new KachleUkladac();
 
 	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
 	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();

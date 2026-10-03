@@ -13,7 +13,7 @@ public class FiltrIkonyAction extends DialogOpeningAction0 {
 	private static final long serialVersionUID = -2637836928166450446L;
 
 	public FiltrIkonyAction() {
-		super("Fitr...");
+		super("Filtr...");
 		putValue(SHORT_DESCRIPTION, "Nastavení Filtrování zobrazených waypointů.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_F);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F2"));
