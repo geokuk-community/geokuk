@@ -124,18 +124,28 @@ public final class Start {
 	static boolean pockejNaUkonceni(final File zamek, final long maxMs) throws InterruptedException {
 		final long konec = System.currentTimeMillis() + maxMs;
 		do {
-			final FileLock lock = zamkni(zamek);
-			if (lock != null) {
-				try {
-					lock.channel().close();
-				} catch (final IOException e) {
-					// zámek se uvolní i tak
-				}
+			if (!jeZamceno(zamek)) {
 				return true;
 			}
 			Thread.sleep(200);
 		} while (System.currentTimeMillis() < konec);
 		return false;
+	}
+
+	/** Zámek drží jiná instance. Zámek, který nejde ani vytvořit (nezapisovatelná složka), nikdo nedrží. */
+	public static boolean jeZamceno(final File zamek) {
+		try (FileChannel kanal = new RandomAccessFile(zamek, "rw").getChannel()) {
+			final FileLock lock = kanal.tryLock();
+			if (lock == null) {
+				return true;
+			}
+			lock.release();
+			return false;
+		} catch (final OverlappingFileLockException e) {
+			return true;
+		} catch (final IOException e) {
+			return false;
+		}
 	}
 
 	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */
