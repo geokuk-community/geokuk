@@ -169,6 +169,10 @@ public class SmokeIT {
 		assertEquals(0, pocitadlo(treti, "ka24 DISK cache #chyb čtení"));
 		assertFalse("Cache se nesmí odložit jako vadná", new File(adresar, "data/cache/tiles.sqlite.vadna").exists());
 		assertTrue("Třetí běh bere dlaždice z cache", pocitadlo(treti, "ka22 DISK cache #zásahů") > 100);
+		for (final String beh : Arrays.asList("prvni", "druha", "treti")) {
+			final String log = new String(Files.readAllBytes(new File(adresar, beh + ".log").toPath()), StandardCharsets.UTF_8);
+			assertFalse("Instance " + beh + " nezapsala dlaždice do sdílené cache, viz " + beh + ".log", log.contains("Nepodařilo se zapsat dlaždice do databáze"));
+		}
 	}
 
 	@Test
