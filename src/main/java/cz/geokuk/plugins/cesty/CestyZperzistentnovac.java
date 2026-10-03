@@ -1,7 +1,7 @@
 package cz.geokuk.plugins.cesty;
 
 import java.io.*;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import cz.geokuk.core.coordinates.Mou;
@@ -13,6 +13,7 @@ import cz.geokuk.plugins.kesoid.importek.NacitacGpx;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.BezpecnyZapis;
+import cz.geokuk.util.file.TextovySoubor;
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +90,7 @@ public class CestyZperzistentnovac {
 		smimCist++;
 		final Set<String> exportovano = new HashSet<>();
 		try {
-			BezpecnyZapis.zapisText(file, Charset.defaultCharset(), wrt -> {
+			BezpecnyZapis.zapisText(file, StandardCharsets.UTF_8, wrt -> {
 				for (final Bod bod : doc.getBody()) {
 					final Mouable mouable = bod.getMouable();
 					if (mouable instanceof Wpt) {
@@ -119,18 +120,8 @@ public class CestyZperzistentnovac {
 	}
 
 	private Ggt loadGgt(final File file) throws IOException {
-		FileReader filere = null;
-		try {
-			filere = new FileReader(file);
-			final BufferedReader br = new BufferedReader(filere);
+		try (BufferedReader br = new BufferedReader(new StringReader(TextovySoubor.nacti(file)))) {
 			return loadGgt(br);
-		} catch (final FileNotFoundException e) {
-			// FExceptionDumper.dump(e, EExceptionSeverity.CATCHE, "Nacitani vyletu.");
-			return new Ggt(new HashSet<String>());
-		} finally {
-			if (filere != null) {
-				filere.close();
-			}
 		}
 	}
 
