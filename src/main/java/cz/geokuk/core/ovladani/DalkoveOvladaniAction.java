@@ -31,7 +31,7 @@ public class DalkoveOvladaniAction extends ToggleAction0 {
 		try {
 			dalkoveOvladani.spust(DalkoveOvladani.VYCHOZI_PORT);
 		} catch (final IOException e) {
-			Dlg.error("Dálkové ovládání nejde spustit na portu " + DalkoveOvladani.VYCHOZI_PORT + ": " + e.getMessage());
+			Dlg.error(DalkoveOvladani.popisChyby(DalkoveOvladani.VYCHOZI_PORT, e));
 		}
 	}
 }
