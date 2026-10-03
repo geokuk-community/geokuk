@@ -45,6 +45,8 @@
   k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
 - Nápověda > Nabízet testovací verze (beta) zapíná beta kanál; soubor
   `beta` vedle složky `data` se převezme.
+  Po vypnutí nabídne ruční kontrola aktualizací přechod na poslední
+  stabilní verzi.
 - Dálkové ovládání: stav, posun mapy, výběr keše, podklad a přenačtení
   jdou bez tokenu na portu 48321 (výchozí); požadavky z webového
   prohlížeče program odmítá. Soubor `.geokuk\ovladani.properties`
@@ -54,6 +56,7 @@
   záložka Program.
 
 ### Opravy
+- Dialog nové verze má titulek „Nová verze programu“ a čitelný text.
 - Dlaždice, kterou se nepodařilo stáhnout, se 30 sekund znovu
   nestahuje, takže ji program nezkouší při každém překreslení mapy.
 - Toolbar s přepínači ikon má stálou výšku, mapa se po načtení keší
