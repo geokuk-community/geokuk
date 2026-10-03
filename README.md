@@ -21,8 +21,8 @@ i s daty a nastavením.
 
 ### Windows
 
-Stáhněte `GeoKuk-windows.zip` a rozbalte ho třeba do `C:\GeoKuk`. Zip
-obsahuje i Javu, žádnou jinou není potřeba instalovat. Nerozbalujte ho do
+Stáhněte `GeoKuk-windows.zip` a rozbalte ho třeba do `C:\`. Zip obsahuje
+složku `GeoKuk`, vznikne tedy `C:\GeoKuk`. Je v ní i Java, žádnou jinou není potřeba instalovat. Nerozbalujte ho do
 `Program Files` (tam program nesmí zapisovat) ani do složky, kterou
 synchronizuje OneDrive, Dropbox nebo Google Disk (pozor, OneDrive často
 zálohuje i Plochu a Dokumenty).
@@ -33,12 +33,14 @@ vyhnete, když před rozbalením ve vlastnostech staženého zipu zaškrtnete
 Odblokovat. GeoKuk pak vedle vytvoří zástupce `GeoKuk.lnk`; dál
 spouštějte jeho, klidně ho zkopírujte na plochu nebo připněte na hlavní
 panel. Do nabídky Start ho přidá Soubor > Vytvořit zástupce. Když
-složku přesunete, spusťte znovu `GeoKuk-prvni-spusteni.cmd`, zástupce
-ve složce i jeho kopie na ploše a v nabídce Start se opraví.
+složku přesunete, spusťte nejdřív znovu `GeoKuk-prvni-spusteni.cmd`,
+zástupce ve složce i jeho kopie na ploše a v nabídce Start se opraví.
+Do té doby zástupce hlásí chybu „Unable to access jarfile“.
 
 Když GeoKuk najde novou verzi, stáhne ji a nabídne restart; jinak se
-nainstaluje při příštím spuštění. Javu aktualizuje nový zip, který stačí rozbalit přes
-stávající složku; data a nastavení zůstanou.
+nainstaluje při příštím spuštění. Javu aktualizuje nový zip. Rozbalte ho
+tam, kam ten první (třeba do `C:\`), přes stávající složku `GeoKuk`;
+data a nastavení zůstanou.
 
 ### Linux a macOS
 
