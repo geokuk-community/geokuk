@@ -33,6 +33,8 @@
 - Nápověda > Nabízet testovací verze (beta) zapíná beta kanál. Dokud
   je zapnutý, je verze vidět vpravo v menu. Po vypnutí nabídne ruční kontrola
   aktualizací přechod na poslední stabilní verzi.
+- „Připomenout za týden“ (i zavření dialogu nové verze) odloží nabídku
+  té verze o 7 dní. Novější verze se nabídne hned.
 - „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
   nainstaluje; kde to nejde, otevře stránku nabízené verze, u bety
   tedy betu.
