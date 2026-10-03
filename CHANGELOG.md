@@ -58,6 +58,8 @@
   záložka Program.
 
 ### Opravy
+- Stažené dlaždice se uloží do cache map i během souvislého čtení
+  z cache (rychlé posouvání mapy) a znovu se nestahují.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text.
 - Dlaždice, kterou se nepodařilo stáhnout, se 30 sekund znovu
   nestahuje, takže ji program nezkouší při každém překreslení mapy.

@@ -13,6 +13,9 @@ import javax.imageio.ImageIO;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
+import org.tmatesoft.sqljet.core.table.ISqlJetCursor;
+import org.tmatesoft.sqljet.core.table.ISqlJetTable;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
 
 import cz.geokuk.core.coordinates.Mou;
@@ -60,6 +63,85 @@ public class KachleDBManagerTest {
 		Assert.assertTrue("poškozený soubor se odloží", new File(soubor.getPath() + ".vadna").isFile());
 		Assert.assertTrue("cache dál funguje", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
 		Assert.assertNotNull(manager.load(KACHLE));
+	}
+
+	/** Souvislé čtení z více vláken nesmí zablokovat zápis nových dlaždic. */
+	@Test(timeout = 120000)
+	public void zapisProjdePriSouvislemCteni() throws Exception {
+		final byte[] png = velkePng();
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png))));
+		final java.util.concurrent.atomic.AtomicBoolean konec = new java.util.concurrent.atomic.AtomicBoolean();
+		final java.util.concurrent.atomic.AtomicInteger precteno = new java.util.concurrent.atomic.AtomicInteger();
+		final ExecutorService ctenari = Executors.newFixedThreadPool(4);
+		final java.util.List<java.util.concurrent.Future<?>> cteni = new java.util.ArrayList<>();
+		try {
+			for (int i = 0; i < 4; i++) {
+				cteni.add(ctenari.submit(() -> {
+					while (!konec.get()) {
+						try {
+							if (manager.load(KACHLE) != null) {
+								precteno.incrementAndGet();
+							}
+						} catch (final RuntimeException e) {
+							// Souběžné čtení SqlJet občas hlásí chybu, dlaždice se pak stáhne znovu.
+						}
+					}
+				}));
+			}
+			Thread.sleep(200);
+			for (int i = 0; i < 4; i++) {
+				final Ka dalsi = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14 + i), EKaType.TURIST_M);
+				Assert.assertTrue("zápis " + i + " při čtení", manager.save(Collections.singleton(new ItemToSave(dalsi, png))));
+			}
+		} finally {
+			konec.set(true);
+			ctenari.shutdown();
+			Assert.assertTrue(ctenari.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS));
+		}
+		for (final java.util.concurrent.Future<?> f : cteni) {
+			f.get();
+		}
+		Assert.assertTrue("čtenáři četli", precteno.get() > 0);
+	}
+
+	/** Zápis počká, až jiné spojení dokončí čtecí transakci, i když trvá déle než čekání SqlJet. */
+	@Test(timeout = 120000)
+	public void zapisPockaNaDlouheCteni() throws Exception {
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		final SqlJetDb jine = SqlJetDb.open(soubor, false);
+		final ExecutorService ctenar = Executors.newSingleThreadExecutor();
+		try {
+			jine.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+			final ISqlJetTable tabulka = jine.getTable("tiles");
+			final ISqlJetCursor kurzor = tabulka.open();
+			Assert.assertFalse(kurzor.eof());
+			kurzor.close();
+			ctenar.submit(() -> {
+				Thread.sleep(1500);
+				jine.commit();
+				return null;
+			});
+			final Ka dalsi = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14), EKaType.TURIST_M);
+			Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(dalsi, png()))));
+		} finally {
+			ctenar.shutdown();
+			ctenar.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
+			jine.close();
+		}
+	}
+
+	/** Dlaždice s kresbou, aby dekódování trvalo jako u skutečné mapy. */
+	private static byte[] velkePng() throws Exception {
+		final BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
+		final java.util.Random r = new java.util.Random(1);
+		for (int x = 0; x < 256; x++) {
+			for (int y = 0; y < 256; y++) {
+				img.setRGB(x, y, r.nextInt());
+			}
+		}
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ImageIO.write(img, "png", out);
+		return out.toByteArray();
 	}
 
 	@Test
