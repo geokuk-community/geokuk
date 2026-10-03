@@ -57,11 +57,15 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 	}
 
 	/**
-	 * Nabídne novější verzi. Testovací verzi bez beta kanálu nabídne i starší poslední vydanou verzi, aby šlo
-	 * odebráním souboru beta přejít zpět na verzi, kterou mají uživatelé.
+	 * Nabídne novější verzi. Při ruční kontrole nabídne testovací verzi bez beta kanálu i přechod na starší
+	 * stabilní verzi.
 	 */
-	static boolean nabidnout(final String posledni, final String pouzivana, final boolean betaKanal) {
-		return jeNovejsi(posledni, pouzivana) || !betaKanal && pouzivana.contains("-") && !posledni.equals(pouzivana);
+	static boolean nabidnout(final String posledni, final String pouzivana, final boolean betaKanal, final boolean rucne) {
+		return jeNovejsi(posledni, pouzivana) || rucne && jePrechodNaStabilni(posledni, pouzivana, betaKanal);
+	}
+
+	static boolean jePrechodNaStabilni(final String posledni, final String pouzivana, final boolean betaKanal) {
+		return !betaKanal && pouzivana.contains("-") && !posledni.contains("-") && !jeNovejsi(posledni, pouzivana);
 	}
 
 	static String nejnovejsiVerze(final String json) {
@@ -111,15 +115,20 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Nepodařilo se zjistit poslední verzi programu Geokuk.", "Oznámení");
 			}
-		} else if (!nabidnout(lastVersion, FConst.VERSION, Diagnostika.betaKanal())) {
+		} else if (!nabidnout(lastVersion, FConst.VERSION, Diagnostika.betaKanal(), zobrazitDialogPriPosledniVerzi)) {
 			if (zobrazitDialogPriPosledniVerzi) {
 				Dlg.info("Používaná verze programu Geokuk " + FConst.VERSION + " je poslední distribuovanou verzí.", "Oznámení");
 			}
 		} else {
-			final Object[] options = { "Zobrazit web", "Stáhnout nejnovější verzi", "Připomenout za měsíc" };
-			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(),
-					"<html></b>Používaná verze programu Geokuk <b>" + FConst.VERSION + "</b> " + "není poslední distribuovanou verzí. Poslední distribuovaná verze je " + lastVersion + ".",
-					"Spuštění nové verze", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
+			final boolean prechod = jePrechodNaStabilni(lastVersion, FConst.VERSION, Diagnostika.betaKanal());
+			final Object[] options = prechod
+					? new Object[] { "Zobrazit web", "Přejít na stabilní verzi", "Zůstat u testovací verze" }
+					: new Object[] { "Zobrazit web", "Stáhnout novou verzi", "Připomenout za měsíc" };
+			final String text = prechod
+					? "<html>Používáte testovací verzi <b>" + FConst.VERSION + "</b>.<br>Poslední stabilní verze je <b>" + lastVersion + "</b>."
+					: "<html>Používaná verze programu Geokuk je <b>" + FConst.VERSION + "</b>.<br>Nová verze je <b>" + lastVersion + "</b>.";
+			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), text, prechod ? "Přechod na stabilní verzi" : "Nová verze programu",
+					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
 			switch (n) {
 			case 0:
 				zobrazitWeb();
@@ -132,7 +141,9 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 				}
 				break;
 			default:
-				napovedaModel.odlozKontroluAktualizaci(30L);
+				if (!prechod) {
+					napovedaModel.odlozKontroluAktualizaci(30L);
+				}
 				break;
 			}
 		}
