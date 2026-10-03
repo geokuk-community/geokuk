@@ -79,7 +79,7 @@ class KachleDBManager implements KachleManager {
 	private volatile int neuspesnychOtevreniZaSebou;
 
 	/** Zámky SqlJet mezi spojeními v jednom procesu nevylučují čtení a zápis, proto vlastní zámek. */
-	private final ReentrantReadWriteLock zamek = new ReentrantReadWriteLock(true);
+	final ReentrantReadWriteLock zamek = new ReentrantReadWriteLock(true);
 
 	private static final long ZNOVU_ZKUSIT_ZAPIS_MS = 60_000;
 
