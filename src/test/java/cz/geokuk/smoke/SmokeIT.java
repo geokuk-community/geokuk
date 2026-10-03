@@ -302,7 +302,14 @@ public class SmokeIT {
 					throw e;
 				}
 				Thread.sleep(700);
-				for (final Map<String, Object> okno : k.seznam("/okna")) {
+				// Seznam oken se zjišťuje na EDT, dlouhá odpověď znamená, že akce EDT zablokovala.
+				final long pred = System.currentTimeMillis();
+				final List<Map<String, Object>> okna = k.seznam("/okna");
+				final long odezva = System.currentTimeMillis() - pred;
+				if (odezva > 3000) {
+					problemy.add("Po " + cesta + " EDT neodpovídal " + odezva + " ms");
+				}
+				for (final Map<String, Object> okno : okna) {
 					if (!"GeoKuk".equals(okno.get("titulek"))) {
 						prubeh.append(cesta).append(" → ").append(okno.get("titulek")).append(' ').append(okno.get("text")).append('\n');
 						if (((Number) okno.get("sirka")).intValue() < 100 || ((Number) okno.get("vyska")).intValue() < 50 || ((Number) okno.get("komponent")).intValue() == 0) {
