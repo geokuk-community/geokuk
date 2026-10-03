@@ -260,6 +260,8 @@
   a nabídne ji zkopírovat. Nápověda z okna O programu otevře hlavní
   stránku nápovědy.
 - O programu uvádí licenci GNU GPL v3.
+- Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
+  (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
