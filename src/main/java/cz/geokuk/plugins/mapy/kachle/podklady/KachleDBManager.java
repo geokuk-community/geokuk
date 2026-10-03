@@ -90,6 +90,17 @@ class KachleDBManager implements KachleManager {
 
 	private boolean uzivatelUpozornen;
 
+	/** Volné místo, pod které se do cache nezapisuje; plný disk cache poškodí. */
+	static final long MIN_VOLNE_MISTO = 100L << 20;
+
+	private boolean upozornenoNaMisto;
+
+	/** Zvýší se při odložení poškozené cache, aby chyba starého spojení neodložila i novou cache. */
+	volatile int odlozeni;
+
+	/** Cache, ve které po pádu programu zůstal rozepsaný zápis; před použitím se zkontroluje. */
+	private final Set<File> kOvereni = ConcurrentHashMap.newKeySet();
+
 	/**
 	 * Constructs a new instance of the DB Manager.
 	 */
@@ -112,16 +123,31 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public Image load(final Ka ki) {
+		final int odlozeniPred = odlozeni;
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
 			return null;
 		}
-		final byte[] data;
+		byte[] data = null;
+		boolean poskozena = false;
 		zamek.readLock().lock();
 		try {
+			if (odlozeniPred != odlozeni) {
+				return null; // spojení k odložené cache je zavřené
+			}
 			data = nactiData(database, ki);
+		} catch (final RuntimeException e) {
+			if (!(e.getCause() instanceof SqlJetException) || !jePoskozena((SqlJetException) e.getCause())) {
+				throw e;
+			}
+			poskozena = true;
 		} finally {
 			zamek.readLock().unlock();
+		}
+		if (poskozena) {
+			// Odložit jde až po uvolnění čtecího zámku; dlaždice se zatím stáhne znovu.
+			odlozZaBehu(database.getFile(), odlozeniPred);
+			return null;
 		}
 		if (data == null) {
 			return null;
@@ -218,12 +244,18 @@ class KachleDBManager implements KachleManager {
 				if (database == null) {
 					return BEZ_CACHE;
 				}
+				if (!dostMista(database.getFile().getParentFile(), imagesToSave)) {
+					return BEZ_CACHE;
+				}
 				try {
 					zapis(database, imagesToSave);
 					return null;
 				} catch (final SqlJetException e) {
 					if (e.getErrorCode() != SqlJetErrorCode.BUSY) {
 						zahod(database);
+					}
+					if (jePoskozena(e)) {
+						odlozZaBehu(database.getFile(), odlozeni);
 					}
 					return e;
 				}
@@ -258,6 +290,62 @@ class KachleDBManager implements KachleManager {
 				chybyDokonceni.ohlas(e1);
 			}
 			throw e;
+		}
+	}
+
+	/** Při nedostatku místa se dlaždice neukládají a uživatel se to dozví jednou. */
+	private boolean dostMista(final File slozka, final Collection<ItemToSave> imagesToSave) {
+		long potreba = MIN_VOLNE_MISTO;
+		for (final ItemToSave item : imagesToSave) {
+			// Žurnál drží kopie přepisovaných stránek, proto dvakrát.
+			potreba += 2L * item.imageData.length;
+		}
+		final long volne = volneMisto(slozka);
+		if (volne < 0 || volne >= potreba) {
+			return true;
+		}
+		if (upozornenoNaMisto) {
+			return false;
+		}
+		upozornenoNaMisto = true;
+		upozorniNaMisto(slozka, volne);
+		return false;
+	}
+
+	void upozorniNaMisto(final File slozka, final long volne) {
+		log.warn("Na disku se složkou cache dlaždic {} zbývá {} MB, dlaždice se do cache neukládají.", slozka, volne >> 20);
+		if (!GraphicsEnvironment.isHeadless()) {
+			SwingUtilities.invokeLater(() -> Dlg.upozorneni("Na disku se složkou " + slozka + " dochází místo, mapy se přestaly ukládat do cache.\n"
+					+ "Po uvolnění místa se začnou ukládat znovu."));
+		}
+	}
+
+	/** Volné místo v bajtech, záporné, když ho systém nezjistí. */
+	long volneMisto(final File slozka) {
+		final long volne = slozka.getUsableSpace();
+		return volne == 0 && slozka.getTotalSpace() == 0 ? -1 : volne;
+	}
+
+	/**
+	 * Poškození zjištěné při čtení nebo zápisu: zavřou se všechna spojení a cache se odloží. Odkládá se jen cache, ve které chyba
+	 * vznikla, ne nová, kterou mezitím založilo jiné vlákno.
+	 */
+	synchronized void odlozZaBehu(final File f, final int odlozeniPred) {
+		zamek.writeLock().lock();
+		try {
+			if (odlozeniPred != odlozeni) {
+				return;
+			}
+			for (final Iterator<Map.Entry<Map.Entry<Thread, File>, SqlJetDb>> it = connections.entrySet().iterator(); it.hasNext();) {
+				final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn = it.next();
+				if (conn.getKey().getValue().equals(f)) {
+					it.remove();
+					zavri(conn.getValue());
+				}
+			}
+			odlozVadnouCache(f);
+		} finally {
+			zamek.writeLock().unlock();
 		}
 	}
 
@@ -387,6 +475,9 @@ class KachleDBManager implements KachleManager {
 	}
 
 	private SqlJetDb otevriZamcene(final File f) throws SqlJetException {
+		if (zurnal(f).isFile()) {
+			kOvereni.add(f);
+		}
 		final SqlJetDb database = SqlJetDb.open(f, true);
 		try {
 			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.
@@ -395,6 +486,10 @@ class KachleDBManager implements KachleManager {
 				initDb(database);
 			}
 			if (isDbInitialized(database)) {
+				if (kOvereni.contains(f)) {
+					projdi(database);
+					kOvereni.remove(f);
+				}
 				return database;
 			}
 		} catch (final SqlJetException e) {
@@ -450,6 +545,33 @@ class KachleDBManager implements KachleManager {
 		}
 	}
 
+	private static File zurnal(final File f) {
+		return new File(f.getPath() + "-journal");
+	}
+
+	/** Pád uprostřed zápisu může cache poškodit; průchod tabulkou a indexem bez obrázků poškození většinou najde. */
+	private static void projdi(final SqlJetDb database) throws SqlJetException {
+		final ISqlJetTable table = database.getTable(TABLE_NAME);
+		database.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+		try {
+			projdi(table.open());
+			projdi(table.order(table.getPrimaryKeyIndexName()));
+		} finally {
+			database.commit();
+		}
+	}
+
+	private static void projdi(final ISqlJetCursor cursor) throws SqlJetException {
+		try {
+			while (!cursor.eof()) {
+				cursor.getRowId();
+				cursor.next();
+			}
+		} finally {
+			cursor.close();
+		}
+	}
+
 	/** Jen skutečně poškozený soubor se smí odložit, ne chyba čtení nebo přerušené vlákno. */
 	private static boolean jePoskozena(final SqlJetException e) {
 		return e.getErrorCode() == SqlJetErrorCode.CORRUPT || e.getErrorCode() == SqlJetErrorCode.NOTADB;
@@ -465,6 +587,16 @@ class KachleDBManager implements KachleManager {
 		if (!f.renameTo(vadna) && !f.delete()) {
 			log.error("Poškozenou cache dlaždic {} nelze odložit.", f);
 			return false;
+		}
+		odlozeni++;
+		final File zurnal = zurnal(f);
+		if (zurnal.isFile()) {
+			// Žurnál k odložené cache by se jinak použil na novou.
+			final File vadnyZurnal = new File(vadna.getPath() + "-journal");
+			vadnyZurnal.delete();
+			if (!zurnal.renameTo(vadnyZurnal)) {
+				zurnal.delete();
+			}
 		}
 		log.warn("Poškozená cache dlaždic {} odložena, zakládám novou.", f);
 		return true;
