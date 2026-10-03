@@ -4,10 +4,10 @@ Hlášení chyb, nápady i úpravy kódu jsou vítané.
 
 ## Hlášení chyby
 
-V programu zvolte Nápověda > Zadat problém. Otevře se nové issue na
-GitHubu s předvyplněnými informacemi o programu, stačí doplnit, co se
-stalo a jak to zopakovat. Informace o programu jdou zobrazit
-i zkopírovat v Nápověda > Informace pro hlášení chyby.
+V programu zvolte Nápověda > Zadat problém. Ukážou se informace
+o programu, které jdou zkopírovat do schránky. Tlačítko Nahlásit na
+GitHubu otevře nové issue s těmito informacemi, stačí doplnit, co se
+stalo a jak to zopakovat.
 
 Zranitelnosti nehlaste veřejně, postup je v [SECURITY.md](SECURITY.md).
 
