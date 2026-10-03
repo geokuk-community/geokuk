@@ -60,23 +60,22 @@ public final class SouborovePreferences extends AbstractPreferences {
 					}
 					try {
 						uloz(false);
-					} catch (final IOException e) {
-						// ohlásí se v uloz
+					} catch (final IOException | RuntimeException e) {
+						// ohlásí se v uloz, časovač musí přežít
 					}
 				}
 			}, ODLOZENI_ZAPISU_MS);
 		}
 
 		void uloz(final boolean vzdy) throws IOException {
-			final Document doc;
 			synchronized (this) {
 				if (!zmeneno && !vzdy) {
 					return;
 				}
 				zmeneno = false;
 			}
-			doc = koren.doDokumentu();
 			try {
+				final Document doc = koren.doDokumentu();
 				BezpecnyZapis.zapis(soubor, out -> zapisDokument(doc, out));
 				synchronized (this) {
 					chybaOhlasena = false;

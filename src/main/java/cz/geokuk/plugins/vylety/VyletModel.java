@@ -52,6 +52,20 @@ public class VyletModel extends Model0 {
 			return null;
 		}
 
+		@Override
+		protected void done() {
+			if (isCancelled()) {
+				return;
+			}
+			try {
+				get();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			} catch (final ExecutionException e) {
+				FExceptionDumper.dump(e.getCause(), EExceptionSeverity.DISPLAY, "Kopírování odkazů do schránky");
+			}
+		}
+
 	}
 
 	private Vylet vylet;
