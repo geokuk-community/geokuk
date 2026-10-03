@@ -1,9 +1,11 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +17,7 @@ import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.schema.SqlJetConflictAction;
 import org.tmatesoft.sqljet.core.table.*;
 
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
@@ -45,6 +48,9 @@ class KachleDBManager implements KachleManager {
 	 */
 	private static final String TABLE_CREATE_QUERY = String.format("CREATE TABLE %s (x int, y int, " + "z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))", TABLE_NAME);
 
+	/** Kolikrát se zkusí zápis, když cache zamyká čtení z jiného vlákna. */
+	private static final int POKUSU_O_ZAPIS = 10;
+
 	/**
 	 * Since we've got multiple threads that can write to the database, using a single connection is hardly possible (would require synchronization on code level, which is not the way to go). We also want to avoid exposing the implementation details further. Since the number of threads is small
 	 * enough, we don't need a connection pool and instead we've got a connection for each thread.
@@ -68,8 +74,12 @@ class KachleDBManager implements KachleManager {
 
 	private volatile int neuspesnychOtevreniZaSebou;
 
-	/** Čtení z jiných vláken drží zámek jen chvíli, zápis na něj počká. */
-	private static final int POKUSU_O_ZAPIS = 10;
+	private static final long ZNOVU_ZKUSIT_ZAPIS_MS = 60_000;
+
+	private final Set<File> zapisovatelneSlozky = ConcurrentHashMap.newKeySet();
+
+	/** Nezapisovatelnou složku (třeba odpojený disk) zkouší po chvíli znovu. */
+	private final Map<File, Long> nezapisovatelneDo = new ConcurrentHashMap<>();
 
 	private boolean uzivatelUpozornen;
 
@@ -255,6 +265,9 @@ class KachleDBManager implements KachleManager {
 	private SqlJetDb getDatabaseConnection() {
 		final Thread t = Thread.currentThread();
 		final File folder = folderHolder.getKachleCacheFolder().getEffectiveFile();
+		if (!lzePouzit(folder)) {
+			return null; // dlaždice zůstanou jen v paměti
+		}
 		final File f = new File(folder, FILE_NAME);
 		final AbstractMap.SimpleImmutableEntry<Thread, File> mapKey = new AbstractMap.SimpleImmutableEntry<>(t, f);
 
@@ -288,6 +301,53 @@ class KachleDBManager implements KachleManager {
 		neuspesnychOtevreniZaSebou = 0;
 		connections.put(mapKey, database);
 		return database;
+	}
+
+	/** Do složky, kam nejde zapisovat (třeba Program Files), se cache nezakládá a dlaždice zůstávají jen v paměti. */
+	private boolean lzePouzit(final File slozka) {
+		if (zapisovatelneSlozky.contains(slozka)) {
+			return true;
+		}
+		synchronized (nezapisovatelneDo) {
+			final Long nezapisovatelnaDo = nezapisovatelneDo.get(slozka);
+			if (nezapisovatelnaDo != null && System.currentTimeMillis() < nezapisovatelnaDo) {
+				return false;
+			}
+			if (lzeZapsat(slozka)) {
+				nezapisovatelneDo.remove(slozka);
+				zapisovatelneSlozky.add(slozka);
+				return true;
+			}
+			if (nezapisovatelnaDo == null) {
+				log.warn("Do složky cache dlaždic {} nelze zapisovat, dlaždice zůstanou jen v paměti.", slozka);
+				upozorniNaZapis(slozka);
+			}
+			nezapisovatelneDo.put(slozka, System.currentTimeMillis() + ZNOVU_ZKUSIT_ZAPIS_MS);
+			return false;
+		}
+	}
+
+	/** Na nezapisovatelnou složku data už upozorňuje kontrola umístění programu. */
+	private synchronized void upozorniNaZapis(final File slozka) {
+		if (uzivatelUpozornen || GraphicsEnvironment.isHeadless()) {
+			return;
+		}
+		if (slozka.toPath().toAbsolutePath().startsWith(FConst.DATA_DIR.toPath().toAbsolutePath()) && !lzeZapsat(FConst.DATA_DIR)) {
+			return;
+		}
+		uzivatelUpozornen = true;
+		SwingUtilities.invokeLater(() -> Dlg.upozorneni("Do složky " + slozka + " nelze zapisovat, mapy se budou pokaždé stahovat znovu."));
+	}
+
+	boolean lzeZapsat(final File slozka) {
+		try {
+			Files.createDirectories(slozka.toPath());
+			final File zkouska = File.createTempFile("zapis", ".tmp", slozka);
+			return zkouska.delete();
+		} catch (final IOException | RuntimeException e) {
+			log.debug("Zkouška zápisu do {}: {}", slozka, e.toString());
+			return false;
+		}
 	}
 
 	/** Nová cache se při prvním čtení schématu zapisuje, proto otevírání pod stejným zámkem jako zápis. */

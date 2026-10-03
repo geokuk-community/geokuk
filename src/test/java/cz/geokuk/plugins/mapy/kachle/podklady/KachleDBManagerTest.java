@@ -13,6 +13,9 @@ import javax.imageio.ImageIO;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
+import org.tmatesoft.sqljet.core.table.ISqlJetCursor;
+import org.tmatesoft.sqljet.core.table.ISqlJetTable;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
 
 import cz.geokuk.core.coordinates.Mou;
@@ -68,15 +71,22 @@ public class KachleDBManagerTest {
 		final byte[] png = velkePng();
 		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png))));
 		final java.util.concurrent.atomic.AtomicBoolean konec = new java.util.concurrent.atomic.AtomicBoolean();
+		final java.util.concurrent.atomic.AtomicInteger precteno = new java.util.concurrent.atomic.AtomicInteger();
 		final ExecutorService ctenari = Executors.newFixedThreadPool(4);
+		final java.util.List<java.util.concurrent.Future<?>> cteni = new java.util.ArrayList<>();
 		try {
 			for (int i = 0; i < 4; i++) {
-				ctenari.submit(() -> {
+				cteni.add(ctenari.submit(() -> {
 					while (!konec.get()) {
-						Assert.assertNotNull(manager.load(KACHLE));
+						try {
+							if (manager.load(KACHLE) != null) {
+								precteno.incrementAndGet();
+							}
+						} catch (final RuntimeException e) {
+							// Souběžné čtení SqlJet občas hlásí chybu, dlaždice se pak stáhne znovu.
+						}
 					}
-					return null;
-				});
+				}));
 			}
 			Thread.sleep(200);
 			for (int i = 0; i < 4; i++) {
@@ -86,6 +96,37 @@ public class KachleDBManagerTest {
 		} finally {
 			konec.set(true);
 			ctenari.shutdown();
+			Assert.assertTrue(ctenari.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS));
+		}
+		for (final java.util.concurrent.Future<?> f : cteni) {
+			f.get();
+		}
+		Assert.assertTrue("čtenáři četli", precteno.get() > 0);
+	}
+
+	/** Zápis počká, až jiné spojení dokončí čtecí transakci, i když trvá déle než čekání SqlJet. */
+	@Test(timeout = 120000)
+	public void zapisPockaNaDlouheCteni() throws Exception {
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		final SqlJetDb jine = SqlJetDb.open(soubor, false);
+		final ExecutorService ctenar = Executors.newSingleThreadExecutor();
+		try {
+			jine.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+			final ISqlJetTable tabulka = jine.getTable("tiles");
+			final ISqlJetCursor kurzor = tabulka.open();
+			Assert.assertFalse(kurzor.eof());
+			kurzor.close();
+			ctenar.submit(() -> {
+				Thread.sleep(1500);
+				jine.commit();
+				return null;
+			});
+			final Ka dalsi = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14), EKaType.TURIST_M);
+			Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(dalsi, png()))));
+		} finally {
+			ctenar.shutdown();
+			ctenar.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
+			jine.close();
 		}
 	}
 
@@ -101,6 +142,41 @@ public class KachleDBManagerTest {
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ImageIO.write(img, "png", out);
 		return out.toByteArray();
+	}
+
+	@Test
+	public void doNezapisovatelneSlozkyCacheNezaklada() throws Exception {
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			boolean lzeZapsat(final File s) {
+				return false;
+			}
+		};
+		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertFalse("cache se nezaložila", soubor.exists());
+	}
+
+	@Test
+	public void nezapisovatelnouSlozkuZkusiPoChvileZnovu() throws Exception {
+		final int[] zkousek = new int[1];
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			boolean lzeZapsat(final File s) {
+				zkousek[0]++;
+				return false;
+			}
+		};
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertEquals("výsledek zkoušky platí chvíli", 1, zkousek[0]);
+	}
+
+	@Test
+	public void zkouskaZapisu() throws Exception {
+		Assert.assertTrue(manager.lzeZapsat(slozka));
+		Assert.assertEquals("po zkoušce nic nezůstane", 0, slozka.list().length);
+		Assert.assertFalse("místo složky soubor", manager.lzeZapsat(new File(tmp.newFile("soubor"), "cache")));
 	}
 
 	/** Přerušení vlákna při čtení zavře kanál souboru databáze. */

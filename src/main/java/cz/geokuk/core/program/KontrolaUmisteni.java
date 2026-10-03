@@ -1,8 +1,6 @@
 package cz.geokuk.core.program;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -10,6 +8,7 @@ import cz.geokuk.core.napoveda.VerzeJavy;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
+import cz.geokuk.start.Start;
 
 /** Upozornění na nevhodné umístění přenosného programu a na starou přibalenou Javu, ukazují se po zobrazení hlavního okna. */
 public final class KontrolaUmisteni {
@@ -58,13 +57,7 @@ public final class KontrolaUmisteni {
 	}
 
 	static boolean lzeZapsat(final File slozka) {
-		try {
-			Files.createDirectories(slozka.toPath());
-			final File zkouska = File.createTempFile("zapis", ".tmp", slozka);
-			return zkouska.delete();
-		} catch (final IOException | RuntimeException e) {
-			return false;
-		}
+		return Start.lzeZapsat(slozka);
 	}
 
 	/** Jméno služby, která složku synchronizuje, nebo null. */

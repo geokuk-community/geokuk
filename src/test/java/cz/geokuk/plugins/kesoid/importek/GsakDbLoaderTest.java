@@ -122,6 +122,16 @@ public class GsakDbLoaderTest {
 	}
 
 	@Test
+	public void prazdnaVlastniHodnotaNeniTag() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("INSERT INTO Custom VALUES ('GC2222', '  ', NULL)");
+		}
+		final GpxWpt kes = nacti().get("GC2222");
+		Assert.assertFalse(kes.gpxg.userTags.containsKey("barva"));
+		Assert.assertFalse(kes.gpxg.userTags.containsKey("CasNalezu"));
+	}
+
+	@Test
 	public void archivovanaAPridavnyWaypoint() throws Exception {
 		final Map<String, GpxWpt> w = nacti();
 		Assert.assertTrue(w.get("GC2222").groundspeak.archived);
