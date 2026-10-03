@@ -179,6 +179,110 @@ public class KachleDBManagerTest {
 		Assert.assertFalse("místo složky soubor", manager.lzeZapsat(new File(tmp.newFile("soubor"), "cache")));
 	}
 
+	/**
+	 * Poškozená cache se odkládá pod výhradním zámkem. Test pustí otevírající vlákno jen tehdy, když samo drží zámek pro čtení, a pak
+	 * kontroluje stav souborů: odložená cache bez nové by znamenala přejmenování během čtení.
+	 */
+	@Test(timeout = 60000)
+	public void odlozeniPoskozenePodVyhradnimZamkem() throws Exception {
+		Files.write(soubor.toPath(), "tohle není databáze".getBytes(StandardCharsets.UTF_8));
+		final File vadna = new File(soubor.getPath() + ".vadna");
+		final java.util.concurrent.locks.ReentrantReadWriteLock z = manager.zamek;
+		final java.util.concurrent.atomic.AtomicReference<Throwable> chyba = new java.util.concurrent.atomic.AtomicReference<>();
+		final Thread otevirac = new Thread(() -> {
+			try {
+				manager.load(KACHLE);
+			} catch (final Throwable e) {
+				chyba.set(e);
+			}
+		}, "otevirac");
+		otevirac.setDaemon(true);
+		z.readLock().lock();
+		otevirac.start();
+		try {
+			for (;;) {
+				final long konec = System.currentTimeMillis() + 10_000;
+				while (!z.hasQueuedThread(otevirac) && otevirac.isAlive()) {
+					Assert.assertTrue("otevírající vlákno nečeká na zámek", System.currentTimeMillis() < konec);
+					Thread.sleep(1);
+				}
+				if (!otevirac.isAlive()) {
+					break;
+				}
+				z.readLock().unlock();
+				z.readLock().lock(); // spravedlivý zámek: až za otevírajícím vláknem
+				Thread.sleep(200);
+				Assert.assertFalse("odloženo mimo výhradní zámek", vadna.exists() && !soubor.exists());
+			}
+		} finally {
+			z.readLock().unlock();
+		}
+		otevirac.join(10000);
+		Assert.assertNull(chyba.get());
+		Assert.assertTrue("poškozená cache se odložila", vadna.isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNotNull(manager.load(KACHLE));
+	}
+
+	/** Zápis, který čeká na jiný program, mezi pokusy nesmí blokovat čtení. */
+	@Test(timeout = 120000)
+	public void cekaniZapisuNeblokujeCteni() throws Exception {
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		final SqlJetDb jine = SqlJetDb.open(soubor, false);
+		final ExecutorService vlakna = Executors.newFixedThreadPool(2);
+		try {
+			jine.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+			final ISqlJetCursor kurzor = jine.getTable("tiles").open();
+			Assert.assertFalse(kurzor.eof());
+			kurzor.close();
+			final Ka dalsi = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14), EKaType.TURIST_M);
+			final byte[] png = png();
+			final java.util.concurrent.Future<Boolean> zapis = vlakna.submit(() -> manager.save(Collections.singleton(new ItemToSave(dalsi, png))));
+			Thread.sleep(300);
+			Assert.assertNotNull(vlakna.submit(() -> manager.load(KACHLE)).get());
+			Assert.assertFalse("zápis ještě čeká", zapis.isDone());
+			jine.commit();
+			Assert.assertTrue(zapis.get());
+		} finally {
+			vlakna.shutdown();
+			jine.close();
+		}
+	}
+
+	/** První kontrola nezapisovatelné složky při čtení nesmí zablokovat souběžný zápis. */
+	@Test(timeout = 60000)
+	public void kontrolaSlozkyPriCteniNezablokujeZapis() throws Exception {
+		final java.util.concurrent.CountDownLatch vKontrole = new java.util.concurrent.CountDownLatch(1);
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			boolean lzeZapsat(final File s) {
+				if ("ctenar".equals(Thread.currentThread().getName())) {
+					vKontrole.countDown();
+					try {
+						Thread.sleep(500);
+					} catch (final InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+					return false;
+				}
+				return true;
+			}
+		};
+		final KachleDBManager m = manager;
+		final byte[] png = png();
+		final Thread ctenar = new Thread(() -> m.load(KACHLE), "ctenar");
+		ctenar.setDaemon(true);
+		ctenar.start();
+		vKontrole.await();
+		final Thread zapisovac = new Thread(() -> m.save(Collections.singleton(new ItemToSave(KACHLE, png))), "zapisovac");
+		zapisovac.setDaemon(true);
+		zapisovac.start();
+		ctenar.join(10000);
+		zapisovac.join(10000);
+		Assert.assertFalse("čtení skončilo", ctenar.isAlive());
+		Assert.assertFalse("zápis skončil", zapisovac.isAlive());
+	}
+
 	/** Přerušení vlákna při čtení zavře kanál souboru databáze. */
 	private void nactiPrerusene(final ExecutorService vlakno) throws Exception {
 		vlakno.submit(() -> {
