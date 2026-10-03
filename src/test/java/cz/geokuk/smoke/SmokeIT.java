@@ -403,10 +403,11 @@ public class SmokeIT {
 		}
 	}
 
-	/** 50 tisíc keší (asi 100 tisíc waypointů) po celých Čechách: načtení, měřítka, posun. */
+	/** 50 tisíc keší (asi 100 tisíc waypointů) po celých Čechách: načtení, měřítka, posun. Počet keší mění {@code smoke.velka.kesi}. */
 	@Test
 	public void velkaData() throws Exception {
-		final File adresar = pripravAdresar("velka", 50_000);
+		final File adresar = pripravAdresar("velka", Integer.getInteger("smoke.velka.kesi", 50_000));
+		pridejXmx();
 		final Properties zprava = spust(adresar, "velka", "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava);
 		assertEquals(String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
@@ -414,21 +415,46 @@ public class SmokeIT {
 		assertTrue("Načtení " + pocetWpt + " waypointů trvalo " + nacteni + " ms", nacteni < 60_000);
 	}
 
-	/** Databáze GeoGetu s 200 tisíci keší a 200 tisíci waypointů, jak ji mají uživatelé s daty větší než ČR. */
+	/**
+	 * Databáze GeoGetu s 200 tisíci keší a 200 tisíci waypointů, jak ji mají uživatelé s daty větší než ČR. Počty mění {@code smoke.db.kesi}
+	 * a {@code smoke.db.wpt}.
+	 */
 	@Test
 	public void velkaDatabazeGeogetu() throws Exception {
-		final File adresar = pripravAdresar("geoget", 0);
-		final File geoget = new File(adresar, "home/geoget");
-		geoget.mkdirs();
+		velkaDatabaze("geoget", "geoget.db3", SyntetickaDatabazeGeogetu::zapis);
+	}
+
+	/** Databáze GSAKu, velikost jako u {@link #velkaDatabazeGeogetu()}. */
+	@Test
+	public void velkaDatabazeGsaku() throws Exception {
+		velkaDatabaze("gsak", "Velka/sqlite.db3", SyntetickaDatabazeGsaku::zapis);
+	}
+
+	private interface Databaze {
+		int zapis(File soubor, int kesi, int waypointu) throws Exception;
+	}
+
+	private void velkaDatabaze(final String beh, final String soubor, final Databaze databaze) throws Exception {
+		final File adresar = pripravAdresar(beh, 0);
+		final File slozka = new File(adresar, "home/" + beh);
+		final File db = new File(slozka, soubor);
+		db.getParentFile().mkdirs();
 		final long zacatek = System.currentTimeMillis();
-		final int wpt = SyntetickaDatabazeGeogetu.zapis(new File(geoget, "geoget.db3"), 200_000, 200_000);
+		final int wpt = databaze.zapis(db, Integer.getInteger("smoke.db.kesi", 200_000), Integer.getInteger("smoke.db.wpt", 200_000));
 		final long vyroba = System.currentTimeMillis() - zacatek;
-		vlastnosti.add("-Dsmoke.geoget=" + geoget);
-		vlastnosti.add("-Xmx2g");
-		final Properties zprava = spust(adresar, "geoget", "meritka,posun");
+		vlastnosti.add("-Dsmoke." + beh + "=" + slozka);
+		vlastnosti.add("-Xmx" + System.getProperty("smoke.xmx", "2g"));
+		final Properties zprava = spust(adresar, beh, "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava);
 		assertEquals(String.valueOf(wpt), zprava.getProperty("kese.wpt"));
-		System.out.println("Databáze GeoGetu: výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
+		System.out.println("Databáze " + beh + ": výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
+	}
+
+	/** Paměť programu ze {@code smoke.xmx} (třeba 3g), jinak výchozí. */
+	private void pridejXmx() {
+		if (System.getProperty("smoke.xmx") != null) {
+			vlastnosti.add("-Xmx" + System.getProperty("smoke.xmx"));
+		}
 	}
 
 	@Test
@@ -582,7 +608,7 @@ public class SmokeIT {
 	 * převzetí starého nastavení, a data, která tam připravil test.
 	 */
 	private static List<String> zapsanoMimo(final File adresar) {
-		final List<String> povolene = Arrays.asList("home/.java/fonts/", "home/geoget/", "prefs/.java/.userPrefs/.userRootModFile.", "prefs/.java/.userPrefs/.user.lock.",
+		final List<String> povolene = Arrays.asList("home/.java/fonts/", "home/geoget/", "home/gsak/", "prefs/.java/.userPrefs/.userRootModFile.", "prefs/.java/.userPrefs/.user.lock.",
 				"prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
 		final List<String> mimo = new ArrayList<>();
 		for (final String koren : Arrays.asList("home", "prefs")) {
