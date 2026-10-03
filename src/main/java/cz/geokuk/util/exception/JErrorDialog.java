@@ -125,7 +125,10 @@ public class JErrorDialog extends JMyDialog0 {
 			if (!event.getValueIsAdjusting()) {
 				final int row = lsm.getLeadSelectionIndex();
 				currentExcId = jErrorTable.tableModel.getProblemlist().get(row).excId;
-				if (currentExcId != null) {
+				if (currentExcId != null && vypis(currentExcId) == null) {
+					jOtviracVyjimky.setText(currentExcId + ": výpis chyby není uložen");
+					jOtviracVyjimky.setEnabled(false);
+				} else if (currentExcId != null) {
 					jOtviracVyjimky.setText("Zobraz " + currentExcId + "");
 					jOtviracVyjimky.setEnabled(true);
 				} else {
@@ -137,11 +140,18 @@ public class JErrorDialog extends JMyDialog0 {
 		});
 
 		jOtviracVyjimky.addActionListener(aE -> {
-			final URL url = FExceptionDumper.getExceptionUrl(currentExcId);
-			BrowserOpener.displayURL(url);
+			final URL url = vypis(currentExcId);
+			if (url != null) {
+				BrowserOpener.displayURL(url);
+			}
 		});
 
 		pack();
+	}
+
+	/** Adresa uloženého výpisu chyby, null když výpis není. */
+	static URL vypis(final AExcId excId) {
+		return excId == null ? null : FExceptionDumper.getExceptionUrl(excId);
 	}
 
 	private void registerEvents() {
