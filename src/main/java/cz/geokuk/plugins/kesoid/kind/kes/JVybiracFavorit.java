@@ -10,6 +10,7 @@ public class JVybiracFavorit extends JVybiracCiselny0 {
 
 	public JVybiracFavorit() {
 		super("Favorit:");
+		setToolTipText("Filtr podle prahu počtu favoritů, zobrazí se jen keše mající počet favoritů větší nebo rovný prahu.");
 	}
 
 	@Override

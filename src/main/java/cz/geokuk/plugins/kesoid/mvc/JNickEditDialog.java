@@ -19,7 +19,7 @@ public class JNickEditDialog extends JMyDialog0 {
 	private KesoidModel kesoidModel;
 
 	public JNickEditDialog() {
-		setTitle("Nick na geocaching.com (přihlašovací jméno");
+		setTitle("Nick na geocaching.com (přihlašovací jméno)");
 		init();
 	}
 

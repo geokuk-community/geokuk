@@ -101,7 +101,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	}
 
 	public JRenderDialog() {
-		setTitle("Rendrování / tisk");
+		setTitle("Tisknout/Rendrovat");
 	}
 
 	/*
@@ -347,7 +347,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 
 	private void createImgType() {
 		final SelectionModel<EImageType> whrm = new SelectionModel<>();
-		whrm.add(EImageType.bmp, "<html><i>BMP</i> - nekomprimovaný obrázek (pro volný OziExplorer");
+		whrm.add(EImageType.bmp, "<html><i>BMP</i> - nekomprimovaný obrázek (pro volný OziExplorer).");
 		whrm.add(EImageType.jpg, "<html><i>JPG</i> - ztrátová komprimace, vhodné pro fotky, nutné pro Garmin.");
 		whrm.add(EImageType.png, "<html><i>PNG</i> - bezeztrátová komprimace, umožňuje průhlednost.");
 		jImgTypeRadioPanel = new JMvRadioPanel<>("Typ obrázku");
@@ -499,7 +499,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	}
 
 	private void intKmzComponents() {
-		jKmzPanel = new JTwoColumnsPanel("KMZx (GoogleEarth či Oregon)");
+		jKmzPanel = new JTwoColumnsPanel("KMZ (Google Earth či Oregon)");
 		jKmzPanel.setFont(getFont().deriveFont(Font.BOLD));
 		jKmzFolderNazevCombo = new JGeocodingComboBox();
 		jKmzFolderDescription = new JTextField();
@@ -514,7 +514,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		jKmzPanel.addx("Název:", jKmzFolderNazevCombo);
 		jKmzPanel.gbc.fill = GridBagConstraints.HORIZONTAL;
 		jKmzPanel.addx("Popis:", jKmzFolderDescription);
-		jKmzPanel.addx("Draw order:", jKmzDrawOrder);
+		jKmzPanel.addx("Pořadí vykreslení:", jKmzDrawOrder);
 		jKmzPanel.addx("Dlaždice X:", jNastavovacVelikostiDlazdicX);
 		// jPanKmz.gbc.insets = new Insets(0, 0, 0, 0);
 		jKmzPanel.addx("Dlaždice Y:", jNastavovacVelikostiDlazdicY);

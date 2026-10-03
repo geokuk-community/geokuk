@@ -22,8 +22,7 @@ public class PridatDoCestyAction extends CestyAction0 {
 		this.kontextoveMouable = kontextoveMouable;
 
 		putValue(NAME, "Přidat do cesty");
-		putValue(SHORT_DESCRIPTION, "Zařadí waypoint nebo pozici vybrané cesty, pokud žádná cesta není vybraná, vybere se automaticky nejbližší cesta. Když však žádná cesta neexistuje, je založena."
-		        + " Pokud se jedná o waypoint keše, která byla je na ignore listu, je z ignore listu odstraněna.");
+		putValue(SHORT_DESCRIPTION, "Zařadí waypoint nebo pozici do vybrané cesty. Když žádná cesta není vybraná, vybere se nejbližší cesta, a když žádná cesta neexistuje, založí se.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_P);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("INSERT"));
 	}

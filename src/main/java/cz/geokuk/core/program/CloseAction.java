@@ -65,7 +65,7 @@ public class CloseAction extends Action0 {
 			}
 			final Object[] volby = { "Ukončit bez uložení", "Neukončovat" };
 			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), "Nastavení se nepodařilo uložit:\n" + pricina.getMessage() + "\n\nUkončit program bez uložení nastavení?",
-					"Geokuk: Chyba", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null, volby, volby[0]);
+					"GeoKuk: Chyba", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null, volby, volby[0]);
 			return n == 0;
 		}
 	}

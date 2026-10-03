@@ -97,6 +97,13 @@
   program), spustí dosavadní verzi a novou zkusí nainstalovat příště.
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
+- Opravené bublinové nápovědy, které popisovaly jinou funkci (mřížky,
+  Uzavřít cestu, Ladění ikon, Lovím, Přidat do cesty, Zobrazení na webu
+  a další), překlepy v oknech Postahovat dlaždice a Tisknout/Rendrovat
+  a v detailu keše a nápovědy k filtrům BestOf a Favorit. Program se v textech
+  jmenuje jednotně GeoKuk, u souborů s cestami se mluví o cestách, ne
+  o výletu, a okna Umístění souborů a Tisknout/Rendrovat se jmenují
+  stejně jako položky menu.
 - Přehled problémů ukazuje u každého problému, co se dělo a proč to
   selhalo; sloupce se jmenují Č. a Hlášení. Stavový řádek bez načtených
   zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku.

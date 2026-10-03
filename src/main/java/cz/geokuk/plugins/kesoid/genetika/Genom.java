@@ -97,7 +97,7 @@ public class Genom {
 	public final Alela ALELA_nevyluste = GEN_vylustenost.getVychoziAlela();
 	public final Alela ALELA_vylusteno = GEN_vylustenost.alela("vylusteno").displayName("Je vyluštěno");
 
-	public final Gen GEN_zdroj = genu("zdroj", "Zdroj", "Imporotvané z PQ", false);
+	public final Gen GEN_zdroj = genu("zdroj", "Zdroj", "Importované z PQ", false);
 	//public final Alela ALELA_pqimported = GEN_zdroj.alela("pqimported").displayName("Imporotvané z PQ");
 	public final Alela ALELA_pqimported = GEN_zdroj.getVychoziAlela();
 	public final Alela ALELA_handedited = GEN_zdroj.alela("handedited").displayName("Ručně přidané");

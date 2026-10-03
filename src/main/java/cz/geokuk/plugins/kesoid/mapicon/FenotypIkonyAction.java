@@ -13,7 +13,7 @@ public class FenotypIkonyAction extends DialogOpeningAction0 {
 
 	public FenotypIkonyAction() {
 		super("Výběr fenotypu...");
-		putValue(SHORT_DESCRIPTION, "Nastavení jaké dekorace se objeví na ikonách keších i jiných waypointů.");
+		putValue(SHORT_DESCRIPTION, "Nastavení, jaké dekorace se objeví na ikonách keší i jiných waypointů.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_F);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F6"));
 	}
