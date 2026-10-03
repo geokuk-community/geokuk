@@ -84,14 +84,17 @@ Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 a�
 
 ### Přechod ze starší verze
 
-Nastavení se při prvním spuštění převezme samo. Data starší verze
-zůstanou ve složce `%USERPROFILE%\geokuk` (na Linuxu a macOS
-`~/geokuk`), GeoKuk je odtud nečte. Co chcete dál používat, zkopírujte
-do složky `data`:
+Nastavení se při prvním spuštění převezme samo, kromě umístění složek:
+keše se čtou ze složky `data\gpx`, výstupy rendru jdou do `data\render`
+a načítání z GeoGetu a GSAKu je vypnuté, zapnout ho jde v Soubor >
+Umístění souborů. Data starší verze zůstanou beze změny ve složce
+`%USERPROFILE%\geokuk` (na Linuxu a macOS `~/geokuk`), GeoKuk je odtud
+nečte. Co chcete dál používat, zkopírujte do složky `data`:
 
 - keše z GPX uložené přímo v `%USERPROFILE%\geokuk` (výchozí složka
   starší verze) do `data\gpx`, nebo jejich složku nastavte v Soubor >
-  Umístění souborů,
+  Umístění souborů (relativní cesta, třeba `data\gpx`, se počítá od
+  složky GeoKuk),
 - výlety `lovim.ggt` a `tedne.ggt` do `data\vylety`,
 - cesty ze složky `cesty` do `data\cesty`,
 - vlastní ikony z `imagesMy` do `data\ikony\moje` a ikony od jiných

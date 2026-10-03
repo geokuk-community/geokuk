@@ -150,16 +150,12 @@ public class Filex {
 	}
 
 	public File getEffectiveFile() {
-		File f = file;
-		if (!file.isAbsolute()) {
-			if (relativeToProgram) {
-				f = new File(FConst.JAR_DIR, file.getPath());
-			} else {
-				f = new File(new File("").getAbsoluteFile(), file.getPath());
-			}
-		}
-		f = canonize(f);
-		return f;
+		return efektivni(file, FConst.KOREN);
+	}
+
+	/** Relativní cesta se počítá od složky GeoKuk (v přenosné verzi ta, ve které jsou složky program a data). */
+	static File efektivni(final File file, final File koren) {
+		return canonize(file.isAbsolute() ? file : new File(koren, file.getPath()));
 	}
 
 	/**

@@ -13,12 +13,17 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Nastavení programu v souboru {@link FConst#NASTAVENI_FILE} v datové složce. Při prvním spuštění se jednou převezme nastavení starší verze: ze
- * souboru vedle programu, nebo z Java Preferences (ve Windows registr).
+ * souboru vedle programu, nebo z Java Preferences (ve Windows registr). Cesty ke složkám a souborům se nepřebírají, platí výchozí složky
+ * u programu.
  */
 @Slf4j
 public final class Nastaveni {
 
 	private static final String UZEL = "geokuk";
+	/** Uzly a klíče s cestami starší verze; mířily do původní složky dat, tak se nepřebírají. */
+	private static final String UMISTENI_SOUBORU = "umisteniSouboru";
+	private static final String VYLET = "vylet";
+	private static final String AKTUALNI_SOUBOR = "aktualniSoubor";
 
 	private static SouborovePreferences koren;
 	private static String varovani;
@@ -70,7 +75,7 @@ public final class Nastaveni {
 			try {
 				final SouborovePreferences nacteno = SouborovePreferences.nacti(stary);
 				final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
-				((SouborovePreferences) nove.node(UZEL)).zkopirujZ(nacteno.node(UZEL));
+				prevezmi(nove, nacteno.node(UZEL));
 				log.info("Převzato nastavení ze souboru {}", stary);
 				return nove;
 			} catch (final IOException | BackingStoreException | RuntimeException e) {
@@ -82,7 +87,7 @@ public final class Nastaveni {
 			try {
 				final Preferences registr = Preferences.userRoot();
 				if (registr.nodeExists(UZEL)) {
-					((SouborovePreferences) nove.node(UZEL)).zkopirujZ(registr.node(UZEL));
+					prevezmi(nove, registr.node(UZEL));
 					log.info("Převzato nastavení z Java Preferences");
 				}
 			} catch (final BackingStoreException | RuntimeException e) {
@@ -90,6 +95,25 @@ public final class Nastaveni {
 			}
 		}
 		return nove;
+	}
+
+	static void prevezmi(final SouborovePreferences nove, final Preferences zdroj) throws BackingStoreException {
+		final SouborovePreferences uzel = (SouborovePreferences) nove.node(UZEL);
+		uzel.zkopirujZ(zdroj);
+		vynechCesty(uzel);
+	}
+
+	private static void vynechCesty(final Preferences uzel) throws BackingStoreException {
+		if (VYLET.equals(uzel.name())) {
+			uzel.remove(AKTUALNI_SOUBOR);
+		}
+		for (final String dite : uzel.childrenNames()) {
+			if (UMISTENI_SOUBORU.equals(dite)) {
+				uzel.node(dite).removeNode();
+			} else {
+				vynechCesty(uzel.node(dite));
+			}
+		}
 	}
 
 	private Nastaveni() {}
