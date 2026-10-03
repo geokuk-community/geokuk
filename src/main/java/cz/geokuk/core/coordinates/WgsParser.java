@@ -123,7 +123,7 @@ public class WgsParser {
 			if (pismeno1 == null || pismeno2 == null) {
 				return null;
 			}
-			if (pismeno1 == pismeno2) {
+			if (pismeno1.equals(pismeno2)) {
 				return pismeno1; // i neuvedeni pismene se sem vleze
 			}
 			if (pismeno1 == ' ') {
@@ -152,6 +152,10 @@ public class WgsParser {
 		 */
 		int symetrie() {
 			return Math.abs(sou1.pocetSlozek() - sou2.pocetSlozek());
+		}
+
+		boolean jeVRozsahu() {
+			return Math.abs(sou1.toDouble()) <= 90 && Math.abs(sou2.toDouble()) <= 180;
 		}
 
 		Wgs toWgs() {
@@ -228,6 +232,9 @@ public class WgsParser {
 			if (sou.vteriny.isVyplneno() && sou.minuty.isDesetinne()) {
 				return null; // když desetinné minuty, tak žádné vteřiny nesmí být
 			}
+			if (sou.minuty.toDouble() >= 60 || sou.vteriny.toDouble() >= 60) {
+				return null;
+			}
 			return sou;
 		} else {
 			return null;
@@ -294,7 +301,7 @@ public class WgsParser {
 
 		for (final PovolenaVariacePismen povapi : povoleneVariace) {
 			if (povapi.p1 == pismeno1 && povapi.p2 == pismeno2) {
-				return v; // je to OK
+				return v.jeVRozsahu() ? v : null; // je to OK
 			}
 			if (povapi.p1 == pismeno2 && povapi.p2 == pismeno1) {
 				vymenitSouradnice = true;
@@ -305,7 +312,7 @@ public class WgsParser {
 			final Souradky pom = v.sou1;
 			v.sou1 = v.sou2;
 			v.sou2 = pom;
-			return v; // je to OK, ale museli jsme vyměnit strany
+			return v.jeVRozsahu() ? v : null; // je to OK, ale museli jsme vyměnit strany
 		}
 
 		return null; // neprošlo sítem písmen
