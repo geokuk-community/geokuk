@@ -160,6 +160,11 @@
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
+- Cache mapových dlaždic poškozená plným diskem nebo pádem programu
+  uprostřed zápisu se odloží a založí znovu, i když se poškození
+  ukáže až při čtení nebo zápisu dlaždic. Po pádu programu se cache při
+  příštím startu zkontroluje. Když na disku zbývá méně než 100 MB,
+  dlaždice se do cache neukládají a program na to jednou upozorní.
 - Mapové dlaždice v paměti mají strop, při dlouhé práci s mapou paměť
   neroste.
 - Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
