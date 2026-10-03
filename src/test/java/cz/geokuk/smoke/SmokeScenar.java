@@ -640,6 +640,7 @@ public class SmokeScenar {
 		final Runtime rt = Runtime.getRuntime();
 		System.gc();
 		zprava.setProperty("pamet.mb", String.valueOf((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024));
+		// Součet špiček jednotlivých poolů, tedy odhad shora.
 		zprava.setProperty("pamet.spickaMb", String.valueOf(java.lang.management.ManagementFactory.getMemoryPoolMXBeans().stream()
 				.filter(p -> p.getType() == java.lang.management.MemoryType.HEAP).mapToLong(p -> p.getPeakUsage().getUsed()).sum() / 1024 / 1024));
 		try (Writer w = new OutputStreamWriter(new FileOutputStream(soubor), StandardCharsets.UTF_8)) {

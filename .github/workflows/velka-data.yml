@@ -70,7 +70,7 @@ jobs:
             echo "### Velká data na $RUNNER_OS"
             echo "GPX $GPX_KESI keší, databáze $DB_KESI keší + $DB_WPT waypointů, -Xmx ${XMX:-výchozí}"
             echo
-            echo "| Data | Waypointů | Okno (ms) | Načtení keší (ms) | Paměť po scénáři (MB) | Špička paměti (MB) | Nejdelší událost EDT (ms) | Chyby |"
+            echo "| Data | Waypointů | Okno (ms) | Načtení keší (ms) | Paměť po scénáři (MB) | Špička paměti, odhad shora (MB) | Nejdelší událost EDT (ms) | Chyby |"
             echo "|---|---|---|---|---|---|---|---|"
             for beh in "velka:GPX" "geoget:GeoGet" "gsak:GSAK"; do
               z="target/smoke/${beh%%:*}/${beh%%:*}.properties"

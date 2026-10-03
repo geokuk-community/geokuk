@@ -443,8 +443,7 @@ public class SmokeIT {
 		final int wpt = databaze.zapis(db, Integer.getInteger("smoke.db.kesi", 200_000), Integer.getInteger("smoke.db.wpt", 200_000));
 		final long vyroba = System.currentTimeMillis() - zacatek;
 		vlastnosti.add("-Dsmoke." + beh + "=" + slozka);
-		vlastnosti.add("-Xmx2g");
-		pridejXmx();
+		vlastnosti.add("-Xmx" + System.getProperty("smoke.xmx", "2g"));
 		final Properties zprava = spust(adresar, beh, "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava);
 		assertEquals(String.valueOf(wpt), zprava.getProperty("kese.wpt"));
