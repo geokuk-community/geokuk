@@ -5,7 +5,7 @@ import java.awt.Color;
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 
-import cz.geokuk.util.gui.fontchoser.JFontChooser;
+import cz.geokuk.util.gui.JVyberPisma;
 
 public class JVlastnostiPisma extends JPanel {
 
@@ -18,7 +18,7 @@ public class JVlastnostiPisma extends JPanel {
 	private JSpinner xspinner;
 	private JSpinner yspinner;
 	private JColorChooser foregroundChooser;
-	private JFontChooser fontChooser;
+	JVyberPisma fontChooser;
 	private JColorChooser backgroudChooser;
 
 	public JVlastnostiPisma() {
@@ -51,7 +51,7 @@ public class JVlastnostiPisma extends JPanel {
 		yspinner = new JSpinner();
 		foregroundChooser = new JColorChooser(Color.BLACK);
 		backgroudChooser = new JColorChooser(Color.WHITE);
-		fontChooser = new JFontChooser();
+		fontChooser = new JVyberPisma();
 
 		xspinner.setToolTipText("Posun popisku vůči ikoně v horizontálním směru");
 		yspinner.setToolTipText("Posun popisku vůči ikoně ve svislém směru");
@@ -94,14 +94,14 @@ public class JVlastnostiPisma extends JPanel {
 			m.setPosuX((Integer) xspinner.getValue());
 			m.setPosuY((Integer) yspinner.getValue());
 			m.setBackground(backgroudChooser.getSelectionModel().getSelectedColor());
-			m.setFont(fontChooser.getFont());
+			m.setFont(fontChooser.getVybranePismo());
 		};
 
 		final ChangeListener chlistenerModel2Gui = e -> {
 			final VlastnostiPismaModel m = getVlastnostiPismaModel();
 			foregroundChooser.getSelectionModel().setSelectedColor(m.getForeground());
 			backgroudChooser.getSelectionModel().setSelectedColor(m.getBackground());
-			fontChooser.getSelectionModel().setSelectedFont(m.getFont());
+			fontChooser.setVybranePismo(m.getFont());
 			xspinner.setValue(m.getPosuX());
 			yspinner.setValue(m.getPosuY());
 		};
@@ -110,7 +110,7 @@ public class JVlastnostiPisma extends JPanel {
 		xspinner.addChangeListener(chlistenerGui2Model);
 		yspinner.addChangeListener(chlistenerGui2Model);
 		backgroudChooser.getSelectionModel().addChangeListener(chlistenerGui2Model);
-		fontChooser.getSelectionModel().addChangeListener(chlistenerGui2Model);
+		fontChooser.addChangeListener(chlistenerGui2Model);
 
 		getVlastnostiPismaModel().addChangeListener(chlistenerModel2Gui);
 
