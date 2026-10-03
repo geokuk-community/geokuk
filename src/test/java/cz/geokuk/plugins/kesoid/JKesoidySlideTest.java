@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import javax.swing.SwingUtilities;
@@ -23,17 +24,25 @@ public class JKesoidySlideTest {
 		JKesoidySlide.ohlaseneChyby.clear();
 		final long vypisuPred = pocetVypisu();
 		final List<Throwable> naEdt = new CopyOnWriteArrayList<>();
-		SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler((t, e) -> naEdt.add(e)));
-		final JKesoidySlide slide = new JKesoidySlide(false);
-		slide.zaplanujNaplneniSklivce(new Wpt(), new Mou(0, 0));
-		pockejNaPrazdnouFrontu(slide);
-		for (int i = 0; i < 20; i++) {
-			slide.zaplanujNaplneniSklivce(new Wpt(), new Mou(i, i));
+		final AtomicReference<Thread.UncaughtExceptionHandler> puvodni = new AtomicReference<>();
+		SwingUtilities.invokeAndWait(() -> {
+			puvodni.set(Thread.currentThread().getUncaughtExceptionHandler());
+			Thread.currentThread().setUncaughtExceptionHandler((t, e) -> naEdt.add(e));
+		});
+		try {
+			final JKesoidySlide slide = new JKesoidySlide(false);
+			slide.zaplanujNaplneniSklivce(new Wpt(), new Mou(0, 0));
+			pockejNaPrazdnouFrontu(slide);
+			for (int i = 0; i < 20; i++) {
+				slide.zaplanujNaplneniSklivce(new Wpt(), new Mou(i, i));
+			}
+			pockejNaPrazdnouFrontu(slide);
+			assertTrue(JKesoidySlide.ohlaseneChyby.contains(NullPointerException.class));
+			assertEquals("chyba se ohlásí jen jednou", vypisuPred + 1, pocetVypisu());
+			SwingUtilities.invokeAndWait(() -> {});
+		} finally {
+			SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler(puvodni.get()));
 		}
-		pockejNaPrazdnouFrontu(slide);
-		assertTrue(JKesoidySlide.ohlaseneChyby.contains(NullPointerException.class));
-		assertEquals("chyba se ohlásí jen jednou", vypisuPred + 1, pocetVypisu());
-		SwingUtilities.invokeAndWait(() -> {});
 		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
 	}
 
