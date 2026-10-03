@@ -134,6 +134,10 @@
   GeoKuk už běží, a skončí; dvě instance by si přepisovaly nastavení
   a výlety. Restart po aktualizaci funguje i ve složce, do které nejde
   zapisovat.
+- Nastavení s neobvyklými znaky (třeba řídicími znaky ze schránky) se
+  uloží a znovu načte; dřív se přestalo ukládat nebo se při dalším
+  spuštění celé zahodilo. Nečitelný soubor nastavení, který nejde odložit
+  stranou, program nepřepíše.
 - Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
   v kódování Windows se načtou správně, i s diakritikou v názvech
   fotek a waypointů.

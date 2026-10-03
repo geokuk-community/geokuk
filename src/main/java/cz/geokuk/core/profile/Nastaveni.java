@@ -50,9 +50,10 @@ public final class Nastaveni {
 				vadne.delete();
 				final boolean odlozeno = soubor.renameTo(vadne);
 				varovani = "Nastavení ze souboru " + soubor + " nelze načíst, program pokračuje s výchozím nastavením."
-						+ (odlozeno ? "\nPůvodní soubor je uložený jako " + vadne + "." : "");
+						+ (odlozeno ? "\nPůvodní soubor je uložený jako " + vadne + "." : "\nPůvodní soubor zůstal beze změny.");
 				FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, varovani);
-				return SouborovePreferences.prazdne(soubor);
+				// Původní soubor, který nejde odložit, se nepřepíše; zkusí se znovu při příštím spuštění.
+				return SouborovePreferences.prazdne(odlozeno ? soubor : new File(soubor.getPath() + ".nove"));
 			}
 		}
 		final SouborovePreferences nove = prevezmiStare(soubor, stary, zRegistru);
