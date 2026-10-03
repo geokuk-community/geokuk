@@ -46,7 +46,7 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 
 	private final String verze;
 
-	private StahnoutAktualizaciSwingWorker(final String verze) {
+	StahnoutAktualizaciSwingWorker(final String verze) {
 		this.verze = verze;
 	}
 
@@ -85,6 +85,7 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		if (VerzeJavy.jeStarsi(VerzeJavy.aktualni(), minimalni)) {
 			throw new YNovaJava(minimalni);
 		}
+		uklidPart(adresar);
 		final Stazeny jar = stahniOverene(zakladUrl, JAR, adresar);
 		if (prenosna(adresar)) {
 			presun(jar, new File(adresar, JAR + ".new"));
@@ -98,8 +99,21 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		}
 	}
 
+	/** Smaže dočasné soubory, které zůstaly po přerušeném stahování. */
+	private static void uklidPart(final File adresar) {
+		final long hodinaZpet = System.currentTimeMillis() - 60L * 60 * 1000;
+		final File[] parts = adresar.listFiles((d, n) -> (n.startsWith(JAR + ".") || n.startsWith(START + ".")) && n.endsWith(".part"));
+		if (parts != null) {
+			for (final File f : parts) {
+				if (f.lastModified() < hodinaZpet && !f.delete()) {
+					log.warn("Nepodařilo se smazat {}", f);
+				}
+			}
+		}
+	}
+
 	/** Stažený a ověřený dočasný soubor. */
-	private static class Stazeny {
+	static class Stazeny {
 		final Path soubor;
 		final String soucet;
 
@@ -109,11 +123,20 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		}
 	}
 
-	/** Přesune soubor na místo a znovu ověří součet toho, co na místě opravdu je. */
-	private static void presun(final Stazeny stazeny, final File cil) throws IOException {
+	/**
+	 * Ověří součet a přesune soubor na místo, pak ověří, co na místě opravdu je. Při nesouhlasu smaže jen vlastní dočasný soubor nebo .new,
+	 * stávající program nechá.
+	 */
+	static void presun(final Stazeny stazeny, final File cil) throws IOException {
+		if (!soucet(stazeny.soubor).equalsIgnoreCase(stazeny.soucet)) {
+			Files.deleteIfExists(stazeny.soubor);
+			throw new IOException("Soubor " + cil.getName() + " se po stažení změnil.");
+		}
 		Files.move(stazeny.soubor, cil.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		if (!soucet(cil.toPath()).equalsIgnoreCase(stazeny.soucet)) {
-			Files.delete(cil.toPath());
+			if (cil.getName().endsWith(".new")) {
+				Files.deleteIfExists(cil.toPath());
+			}
 			throw new IOException("Soubor " + cil.getName() + " se po stažení změnil.");
 		}
 	}
@@ -132,7 +155,8 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 	/** Stáhne soubor do vlastního dočasného souboru, zapíše ho na disk a ověří kontrolní součet. */
 	private static Stazeny stahniOverene(final String zakladUrl, final String jmeno, final File adresar) throws IOException {
 		final String ocekavanySoucet = precti(zakladUrl + jmeno + ".sha256").trim().split("\\s+")[0];
-		final Path docasny = Files.createTempFile(adresar.toPath(), jmeno + ".", ".part");
+		// File.createTempFile dá běžná práva podle umask, aby jar mohli spustit i ostatní uživatelé.
+		final Path docasny = File.createTempFile(jmeno + ".", ".part", adresar).toPath();
 		try {
 			try (InputStream in = otevri(zakladUrl + jmeno); FileOutputStream out = new FileOutputStream(docasny.toFile())) {
 				final byte[] buf = new byte[64 * 1024];
@@ -197,7 +221,7 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		}
 	}
 
-	private void ukazVysledek() throws Exception {
+	void ukazVysledek() throws Exception {
 		try {
 			get();
 			Diagnostika.zaznamenej("Stažena verze " + verze);
