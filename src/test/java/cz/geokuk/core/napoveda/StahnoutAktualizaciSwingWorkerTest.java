@@ -68,6 +68,26 @@ public class StahnoutAktualizaciSwingWorkerTest {
 	}
 
 	@Test
+	public void bezSpoustceNahradiJarZKterehoProgramBezi() throws Exception {
+		instaluj("geokuk-6.2.0.jar", "stary jar");
+		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace, "geokuk-6.2.0.jar");
+		Assert.assertEquals("novy jar", obsah("geokuk-6.2.0.jar"));
+		Assert.assertEquals("stary jar", obsah("geokuk-6.2.0.jar.bak"));
+		Assert.assertFalse(new File(instalace, "geokuk.jar").exists());
+	}
+
+	@Test
+	public void jmenoJaruZKterehoProgramBezi() throws Exception {
+		final File jinde = tmp.newFolder("jinde");
+		instaluj("geokuk-6.2.0.jar", "stary jar");
+		Files.write(new File(jinde, "geokuk-6.2.0.jar").toPath(), new byte[0]);
+		Assert.assertEquals("geokuk-6.2.0.jar", StahnoutAktualizaciSwingWorker.jmenoJaru(new File(instalace, "geokuk-6.2.0.jar"), instalace));
+		Assert.assertEquals("geokuk.jar", StahnoutAktualizaciSwingWorker.jmenoJaru(new File(jinde, "geokuk-6.2.0.jar"), instalace));
+		Assert.assertEquals("geokuk.jar", StahnoutAktualizaciSwingWorker.jmenoJaru(instalace, instalace.getParentFile()));
+		Assert.assertEquals("geokuk.jar", StahnoutAktualizaciSwingWorker.jmenoJaru(null, instalace));
+	}
+
+	@Test
 	public void spatnySoucetNicNeulozi() throws Exception {
 		zapis("geokuk.jar.sha256", "0000  geokuk.jar\n");
 		try {
