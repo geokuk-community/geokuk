@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: smoke-${{ github.ref }}
+
 jobs:
   smoke:
     strategy:

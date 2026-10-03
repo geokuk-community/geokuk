@@ -79,14 +79,18 @@ public class SmokeIT {
 	public void zlobivyServer() throws Exception {
 		final File adresar = pripravAdresar("zlobivy");
 		server.setZlobi(true);
+		final long zacatek = System.currentTimeMillis();
 		final Properties zprava = spust(adresar, "zlobivy", "meritka,posun");
+		final long trvani = System.currentTimeMillis() - zacatek;
 		zkontrolujBezChyb(adresar, zprava);
 		final Map<String, Integer> pozadavky = server.getPozadavky();
-		// Program si nestažené dlaždice pamatuje 30 s, na pomalém stroji je scénář delší a smí je zkusit znovu.
+		// Program si nestažené dlaždice pamatuje 30 s, na pomalém stroji je scénář delší a smí je po každém vypršení zkusit znovu.
 		final Map<String, Integer> zaPametChyb = server.getNejvicPozadavkuZaDobu(30_000);
+		final long nejvicCelkem = 3 + (trvani + 29_999) / 30_000;
 		final List<String> dokola = pozadavky.entrySet().stream().filter(e -> e.getKey().startsWith("/"))
-				.filter(e -> FalesnyDlazdicovyServer.zlobeni(e.getKey()) == null ? e.getValue() > 1 : zaPametChyb.get(e.getKey()) > 3)
-				.map(e -> e.getKey() + " " + e.getValue() + "x, za 30 s nejvýš " + zaPametChyb.get(e.getKey()) + "x " + FalesnyDlazdicovyServer.zlobeni(e.getKey())).collect(Collectors.toList());
+				.filter(e -> FalesnyDlazdicovyServer.zlobeni(e.getKey()) == null ? e.getValue() > 1 : zaPametChyb.getOrDefault(e.getKey(), 0) > 3 || e.getValue() > nejvicCelkem)
+				.map(e -> e.getKey() + " " + e.getValue() + "x (nejvýš " + nejvicCelkem + "), za 30 s nejvýš " + zaPametChyb.get(e.getKey()) + "x " + FalesnyDlazdicovyServer.zlobeni(e.getKey()))
+				.collect(Collectors.toList());
 		assertTrue("Dlaždice se stahovaly dokola: " + dokola, dokola.isEmpty());
 		assertTrue("ka33 WEB #chyb má zlobení zachytit", pocitadlo(zprava, "ka33 WEB #chyb") > 0);
 	}
@@ -186,10 +190,10 @@ public class SmokeIT {
 		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
 	}
 
-	/** První start bez nastavení převezme nastavení starší verze z Java Preferences. Ve Windows jsou v registru, proto jen jinde. */
+	/** První start bez nastavení převezme nastavení starší verze z Java Preferences. Jen na Linuxu, jinde jsou v registru nebo v plistu uživatele. */
 	@Test
 	public void prevzetiNastaveniZJavaPreferences() throws Exception {
-		Assume.assumeFalse("Windows: Java Preferences jsou v registru uživatele", System.getProperty("os.name").startsWith("Windows"));
+		Assume.assumeTrue("Java Preferences jen v souborech", System.getProperty("os.name").startsWith("Linux"));
 		final File adresar = pripravAdresar("prevzeti");
 		final File nastaveni = new File(adresar, "data/nastaveni.xml");
 		Files.delete(nastaveni.toPath());
@@ -201,6 +205,19 @@ public class SmokeIT {
 		zkontrolujBezChyb(adresar, zprava);
 		final String ulozene = new String(Files.readAllBytes(nastaveni.toPath()), StandardCharsets.UTF_8);
 		assertTrue("Nastavení z Java Preferences se má převzít: " + ulozene, ulozene.contains("smokePrevzato"));
+	}
+
+	/** Úplně první start: bez nastavení a bez čeho převzít. */
+	@Test
+	public void prvniStartBezNastaveni() throws Exception {
+		Assume.assumeTrue("Java Preferences jen v souborech", System.getProperty("os.name").startsWith("Linux"));
+		final File adresar = pripravAdresar("prvni-start");
+		final File nastaveni = new File(adresar, "data/nastaveni.xml");
+		Files.delete(nastaveni.toPath());
+		final Properties zprava = spust(adresar, "prvni-start", "meritka");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals("Načtené waypointy", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+		assertTrue("Nastavení se má uložit", nastaveni.isFile());
 	}
 
 	@Test
