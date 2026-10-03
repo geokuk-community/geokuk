@@ -67,6 +67,22 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		STAHUJE_SE.set(false);
 	}
 
+	/** Jméno jaru, z kterého program běží, když leží v {@code adresar}; jinak {@code geokuk.jar}. */
+	static String jmenoJaru(final File spusteny, final File adresar) {
+		if (spusteny != null && spusteny.isFile() && spusteny.getName().endsWith(".jar") && adresar.equals(spusteny.getParentFile())) {
+			return spusteny.getName();
+		}
+		return JAR;
+	}
+
+	private static File spustenyJar() {
+		try {
+			return new File(StahnoutAktualizaciSwingWorker.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+		} catch (final Exception e) {
+			return null;
+		}
+	}
+
 	static boolean prenosna(final File adresar) {
 		return new File(adresar, START).isFile();
 	}
@@ -81,6 +97,11 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 	}
 
 	static void stahni(final String zakladUrl, final File adresar) throws IOException {
+		stahni(zakladUrl, adresar, JAR);
+	}
+
+	/** Bez spouštěče nahradí jar se jménem {@code spusteny}, z kterého program běží. */
+	static void stahni(final String zakladUrl, final File adresar, final String spusteny) throws IOException {
 		final String minimalni = minimalniJava(zakladUrl);
 		if (VerzeJavy.jeStarsi(VerzeJavy.aktualni(), minimalni)) {
 			throw new YNovaJava(minimalni);
@@ -91,9 +112,9 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 			presun(jar, new File(adresar, JAR + ".new"));
 			presun(stahniOverene(zakladUrl, START, adresar), new File(adresar, START));
 		} else {
-			final File stary = new File(adresar, JAR);
+			final File stary = new File(adresar, spusteny);
 			if (stary.isFile()) {
-				Files.copy(stary.toPath(), new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+				Files.copy(stary.toPath(), new File(adresar, spusteny + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
 			}
 			presun(jar, stary);
 		}
@@ -208,7 +229,7 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 
 	@Override
 	protected Void doInBackground() throws Exception {
-		stahni(FConst.RELEASE_DOWNLOAD_URL + "v" + verze + "/", FConst.JAR_DIR);
+		stahni(FConst.RELEASE_DOWNLOAD_URL + "v" + verze + "/", FConst.JAR_DIR, jmenoJaru(spustenyJar(), FConst.JAR_DIR));
 		return null;
 	}
 
