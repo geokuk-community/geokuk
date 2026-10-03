@@ -118,6 +118,10 @@
 - Dálkové ovládání jde spustit i ze složky, do které nejde zapisovat
   (třeba Program Files). Když spustit nejde, například kvůli obsazenému
   portu, hlášení řekne proč.
+- Druhé spuštění GeoKuku nad stejnou složkou `data` jen oznámí, že
+  GeoKuk už běží, a skončí; dvě instance by si přepisovaly nastavení
+  a výlety. Restart po aktualizaci funguje i ve složce, do které nejde
+  zapisovat.
 - Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
   v kódování Windows se načtou správně, i s diakritikou v názvech
   fotek a waypointů.
