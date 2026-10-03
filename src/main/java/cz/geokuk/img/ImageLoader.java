@@ -60,7 +60,7 @@ public class ImageLoader {
 			}
 			return ImageIO.read(imgURL);
 		} catch (final IOException e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Vyhledavani obrazku \"" + path + "\"");
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Načtení obrázku \"" + path + "\"");
 			// neexistující image
 			return null;
 		}

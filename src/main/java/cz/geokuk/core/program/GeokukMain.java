@@ -100,7 +100,7 @@ public class GeokukMain {
 		try {
 			LafSupport.updateLookAndFeel();
 		} catch (final Throwable t) {
-			FExceptionDumper.dump(t, EExceptionSeverity.WORKARROUND, "Nastavení skinu");
+			FExceptionDumper.dump(t, EExceptionSeverity.WORKARROUND, "Nastavení vzhledu programu");
 		}
 	}
 
@@ -110,7 +110,7 @@ public class GeokukMain {
 				try {
 					MyPreferences.root().removeNode();
 				} catch (final BackingStoreException e) {
-					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém s promazáváním preferencí");
+					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Mazání nastavení (--reset)");
 				}
 			}
 		}

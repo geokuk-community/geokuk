@@ -163,7 +163,7 @@ public class KesoidModel extends Model0 {
 		try {
 			scl.setContents(ss, null);
 		} catch (final IllegalStateException e2) {
-			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Do clipboardu to nejde dáti.");
+			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Kopírování do schránky");
 		}
 	}
 
@@ -180,7 +180,7 @@ public class KesoidModel extends Model0 {
 		try {
 			scl.setContents(ss, null);
 		} catch (final IllegalStateException e2) {
-			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Do clipboardu to nejde dáti.");
+			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Kopírování do schránky");
 		}
 	}
 
@@ -193,7 +193,7 @@ public class KesoidModel extends Model0 {
 		try {
 			scl.setContents(ss, null);
 		} catch (final IllegalStateException e2) {
-			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Do clipboardu to nejde dáti.");
+			FExceptionDumper.dump(e2, EExceptionSeverity.WORKARROUND, "Kopírování do schránky");
 		}
 	}
 

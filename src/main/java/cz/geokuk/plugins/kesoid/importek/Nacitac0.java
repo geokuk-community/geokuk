@@ -69,7 +69,7 @@ public abstract class Nacitac0 {
 		try {
 			return Integer.parseInt(s);
 		} catch (final NumberFormatException e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Problem s parsrovanim cisla \"" + s + "\" pri cteni hodnoceni nebo bestofu");
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatné číslo \"" + s + "\" v hodnocení nebo BestOf");
 			return 0; // je to španě, vrátíme nuli
 		}
 	}

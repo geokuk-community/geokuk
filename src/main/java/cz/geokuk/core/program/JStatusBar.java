@@ -363,7 +363,7 @@ public class JStatusBar extends JPanel {
 		add(jFilterProgressPanel);
 
 		final JPanel zdrojeKesoiduPanel = createPanel();
-		zdrojeKesoiduPanel.setToolTipText("Klikni a uvidíš detaily");
+		zdrojeKesoiduPanel.setToolTipText("Kliknutím zobrazíte podrobnosti");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNactenych);
 		jZdrojeKesoiduPocetNactenych.setToolTipText("Počet načtených souborů s kešoidy.");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNenactenych);
