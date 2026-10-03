@@ -53,7 +53,7 @@ jobs:
             printf "### Pokrytí testy\n\n| | pokryto |\n|---|---|\n| řádky | %.1f %% (%d z %d) |\n| větve | %.1f %% (%d z %d) |\n",
               100 * lc / (lc + lm), lc, lc + lm, 100 * bc / (bc + bm), bc, bc + bm }' target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Pokrytí a SpotBugs jako artefakt
+      - name: Pokrytí, SpotBugs a rozdíly snímků jako artefakt
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -61,6 +61,7 @@ jobs:
           path: |
             target/site/jacoco/
             target/spotbugsXml.xml
+            target/golden/
           if-no-files-found: ignore
 
       - name: Jar jako artefakt
