@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import org.junit.Test;
 
 import cz.geokuk.plugins.kesoid.Tecky.Styl;
+import cz.geokuk.plugins.kesoid.kind.kes.Kes;
 
 public class TeckyTest {
 
@@ -102,5 +103,31 @@ public class TeckyTest {
 		assertSame(tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10), tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10));
 		assertNotSame(tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10), tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, true, 10));
 		assertNotSame(tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10), tecky.obrazek(Tecky.EVENT, Styl.BEZNA, false, 10));
+	}
+
+	@Test
+	public void dalsiWaypointyKeseJsouSede() {
+		final Kes kes = new Kes();
+		final Wpt hlavni = new Wpt();
+		hlavni.setSym("Geocache|Traditional Cache");
+		kes.addWpt(hlavni);
+		final Wpt parkoviste = new Wpt();
+		parkoviste.setSym("Parking Area");
+		kes.addWpt(parkoviste);
+		assertEquals(Tecky.TRADICNI, new Tecky().barva(hlavni));
+		assertEquals(Tecky.NEKES, new Tecky().barva(parkoviste));
+	}
+
+	@Test
+	public void obrazkyRuznychBarevAPrumeruSeNepletou() {
+		final Tecky tecky = new Tecky();
+		final BufferedImage tradicni = tecky.obrazek(Tecky.TRADICNI, Styl.BEZNA, false, 10);
+		final BufferedImage multi = tecky.obrazek(Tecky.MULTI, Styl.BEZNA, false, 10);
+		assertNotSame(tradicni, multi);
+		assertEquals(Tecky.MULTI.getRGB(), multi.getRGB(5, 5));
+		assertEquals(Tecky.TRADICNI.getRGB(), tradicni.getRGB(5, 5));
+		assertEquals(Tecky.MIN_PRUMER + 1, tecky.obrazek(Tecky.MULTI, Styl.BEZNA, false, Tecky.MIN_PRUMER).getWidth());
+		assertEquals(Tecky.MAX_PRUMER + 1, tecky.obrazek(Tecky.MULTI, Styl.BEZNA, false, Tecky.MAX_PRUMER).getWidth());
+		assertEquals("mimo rozsah se nakreslí bez uložení", 21, tecky.obrazek(Tecky.MULTI, Styl.BEZNA, false, 20).getWidth());
 	}
 }

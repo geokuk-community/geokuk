@@ -63,6 +63,7 @@ public class Akce {
 			"Na oddálené mapě (zoom 12 a menší) keše jako barevné tečky, při přiblížení ikony.");
 	public final ZobrazeniKesiAction zobrazeniKesiIkonyAction = new ZobrazeniKesiAction(EZobrazeniKesi.IKONY, "Vždy ikony", "Keše vždy jako ikony.");
 	public final ZobrazeniKesiAction zobrazeniKesiTeckyAction = new ZobrazeniKesiAction(EZobrazeniKesi.TECKY, "Vždy tečky", "Keše vždy jako barevné tečky.");
+	public final LimityKresleniAction limityKresleniAction = new LimityKresleniAction();
 	public final JednotkoveKruhyAction jednotkoveKruhyAction = new JednotkoveKruhyAction();
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();

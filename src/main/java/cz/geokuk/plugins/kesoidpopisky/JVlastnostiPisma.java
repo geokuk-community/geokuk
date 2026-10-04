@@ -52,6 +52,9 @@ public class JVlastnostiPisma extends JPanel {
 		foregroundChooser = new JColorChooser(Color.BLACK);
 		backgroudChooser = new JColorChooser(Color.WHITE);
 		fontChooser = new JVyberPisma();
+		// Výchozí náhled kreslí vybranou barvu jako čtverce, barvy ukazuje ukázka písma.
+		foregroundChooser.setPreviewPanel(new JPanel());
+		backgroudChooser.setPreviewPanel(new JPanel());
 
 		xspinner.setToolTipText("Posun popisku vůči ikoně v horizontálním směru");
 		yspinner.setToolTipText("Posun popisku vůči ikoně ve svislém směru");
@@ -95,6 +98,7 @@ public class JVlastnostiPisma extends JPanel {
 			m.setPosuY((Integer) yspinner.getValue());
 			m.setBackground(backgroudChooser.getSelectionModel().getSelectedColor());
 			m.setFont(fontChooser.getVybranePismo());
+			obarviNahled();
 		};
 
 		final ChangeListener chlistenerModel2Gui = e -> {
@@ -104,6 +108,7 @@ public class JVlastnostiPisma extends JPanel {
 			fontChooser.setVybranePismo(m.getFont());
 			xspinner.setValue(m.getPosuX());
 			yspinner.setValue(m.getPosuY());
+			obarviNahled();
 		};
 
 		foregroundChooser.getSelectionModel().addChangeListener(chlistenerGui2Model);
@@ -113,7 +118,11 @@ public class JVlastnostiPisma extends JPanel {
 		fontChooser.addChangeListener(chlistenerGui2Model);
 
 		getVlastnostiPismaModel().addChangeListener(chlistenerModel2Gui);
+		obarviNahled();
+	}
 
+	private void obarviNahled() {
+		fontChooser.setBarvyNahledu(foregroundChooser.getColor(), backgroudChooser.getColor());
 	}
 
 }

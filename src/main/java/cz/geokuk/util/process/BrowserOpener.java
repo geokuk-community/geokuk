@@ -41,6 +41,9 @@ public class BrowserOpener {
 		// Odkaz z GPX může vést na soubor nebo jiný protokol, otevírají se jen webové stránky.
 		if (!jeWebova(url)) {
 			log.warn("Odkaz {} není webová stránka, neotevře se.", url);
+			if (url != null) {
+				neniWebova.accept(url);
+			}
 			return;
 		}
 		prohlizec.accept(url);
@@ -57,6 +60,8 @@ public class BrowserOpener {
 
 	static Consumer<URL> prohlizec = BrowserOpener::otevri;
 
+	static Consumer<URL> neniWebova = url -> naEdt(() -> ukazAdresu(url, "Odkaz nevede na webovou stránku:"));
+
 	private static void otevri(final URL url) {
 		try {
 			Desktop.getDesktop().browse(url.toURI());
@@ -66,21 +71,25 @@ public class BrowserOpener {
 				runtime.exec("xdg-open " + url);
 			} catch (final Exception e1) {
 				log.warn("Prohlížeč nejde otevřít pro {}", url, e);
-				if (SwingUtilities.isEventDispatchThread()) {
-					nelzeOtevrit(url);
-				} else {
-					SwingUtilities.invokeLater(() -> nelzeOtevrit(url));
-				}
+				naEdt(() -> ukazAdresu(url, "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:"));
 			}
 		}
 	}
 
-	private static void nelzeOtevrit(final URL url) {
+	private static void naEdt(final Runnable r) {
+		if (SwingUtilities.isEventDispatchThread()) {
+			r.run();
+		} else {
+			SwingUtilities.invokeLater(r);
+		}
+	}
+
+	private static void ukazAdresu(final URL url, final String text) {
 		final JTextField adresa = new JTextField(url.toString());
 		adresa.setEditable(false);
 		adresa.setColumns(50);
 		final String zkopirovat = "Zkopírovat adresu";
-		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "GeoKuk",
+		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { text, adresa }, "GeoKuk",
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] { zkopirovat, "Zavřít" }, zkopirovat);
 		if (volba == 0) {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(url.toString()), null);

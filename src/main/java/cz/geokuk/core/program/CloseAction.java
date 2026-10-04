@@ -5,6 +5,7 @@ package cz.geokuk.core.program;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
 
 import javax.swing.JOptionPane;
 
@@ -44,7 +45,7 @@ public class CloseAction extends Action0 {
 	@Override
 	public void actionPerformed(final ActionEvent e) {
 		if (ulozAction.ulozitSDotazem()) {
-			if (!ulozNastaveniNeboPresto()) {
+			if (!ulozNastaveniNeboPresto(FConst.DATA_DIR)) {
 				return;
 			}
 			getMainFrame().dispose();
@@ -53,7 +54,12 @@ public class CloseAction extends Action0 {
 	}
 
 	/** Když nastavení nejde uložit (plný disk, složka jen pro čtení), musí jít program přesto ukončit. */
-	private boolean ulozNastaveniNeboPresto() {
+	boolean ulozNastaveniNeboPresto(final File data) {
+		// Že do složky nejde zapisovat, ohlásil už start; při ukončení se znovu neptáme.
+		if (!KontrolaUmisteni.lzeZapsat(data)) {
+			log.info("Nastavení se neuloží, do {} nelze zapisovat", data);
+			return true;
+		}
 		try {
 			profileModel.ulozNastaveni();
 			return true;

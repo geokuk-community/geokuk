@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.SwingUtilities;
@@ -98,8 +99,14 @@ class KachleDBManager implements KachleManager {
 	/** Zvýší se při odložení poškozené cache, aby chyba starého spojení neodložila i novou cache. */
 	volatile int odlozeni;
 
-	/** Cache, ve které po pádu programu zůstal rozepsaný zápis; před použitím se zkontroluje. */
+	/** Cache, ve které po pádu programu zůstal rozepsaný zápis; před prvním zápisem se zkontroluje. */
 	private final Set<File> kOvereni = ConcurrentHashMap.newKeySet();
+
+	/** Běžící kontroly cache po pádu; zápis do kontrolované cache počká, čtení ne. */
+	final Map<File, CountDownLatch> kontroly = new ConcurrentHashMap<>();
+
+	/** Kontrola po pádu ještě běží, zápis se zopakuje po jejím dokončení. */
+	private static final SqlJetException KONTROLA_BEZI = new SqlJetException(SqlJetErrorCode.BUSY);
 
 	/**
 	 * Constructs a new instance of the DB Manager.
@@ -220,6 +227,13 @@ class KachleDBManager implements KachleManager {
 			if (chyba == null) {
 				return true;
 			}
+			if (chyba == KONTROLA_BEZI) {
+				if (!pockejNaKontroly()) {
+					return false;
+				}
+				pokus--;
+				continue;
+			}
 			if (chyba == BEZ_CACHE) {
 				return false;
 			}
@@ -248,6 +262,9 @@ class KachleDBManager implements KachleManager {
 				final SqlJetDb database = getDatabaseConnection();
 				if (database == null) {
 					return BEZ_CACHE;
+				}
+				if (kontroly.containsKey(database.getFile())) {
+					return KONTROLA_BEZI;
 				}
 				if (!dostMista(database.getFile().getParentFile(), imagesToSave)) {
 					return BEZ_CACHE;
@@ -295,6 +312,19 @@ class KachleDBManager implements KachleManager {
 				chybyDokonceni.ohlas(e1);
 			}
 			throw e;
+		}
+	}
+
+	/** Vrátí false, když bylo vlákno při čekání přerušeno. */
+	private boolean pockejNaKontroly() {
+		try {
+			for (final CountDownLatch kontrola : kontroly.values()) {
+				kontrola.await();
+			}
+			return true;
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return false;
 		}
 	}
 
@@ -491,9 +521,8 @@ class KachleDBManager implements KachleManager {
 				initDb(database);
 			}
 			if (isDbInitialized(database)) {
-				if (kOvereni.contains(f)) {
-					projdi(database);
-					kOvereni.remove(f);
+				if (kOvereni.remove(f)) {
+					spustKontrolu(f);
 				}
 				return database;
 			}
@@ -554,8 +583,62 @@ class KachleDBManager implements KachleManager {
 		return new File(f.getPath() + "-journal");
 	}
 
+	/** Velká cache se prochází i desítky sekund, proto vlastním spojením na pozadí; dlaždice se mezitím čtou. */
+	private void spustKontrolu(final File f) {
+		final CountDownLatch hotovo = new CountDownLatch(1);
+		kontroly.put(f, hotovo);
+		final int odlozeniPred = odlozeni;
+		try {
+			spustVlakno(() -> {
+				try {
+					zkontroluj(f, odlozeniPred);
+				} finally {
+					kontroly.remove(f);
+					hotovo.countDown();
+				}
+			});
+		} catch (final Throwable e) {
+			// Bez kontroly by zápis čekal navždy; cache se použije nezkontrolovaná.
+			kontroly.remove(f);
+			hotovo.countDown();
+			log.warn("Kontrolu cache dlaždic {} nejde spustit: {}", f, e.toString());
+		}
+	}
+
+	void spustVlakno(final Runnable kontrola) {
+		final Thread vlakno = new Thread(kontrola, "Kontrola cache dlaždic");
+		vlakno.setDaemon(true);
+		vlakno.start();
+	}
+
+	private void zkontroluj(final File f, final int odlozeniPred) {
+		final Map.Entry<Thread, File> klic = new AbstractMap.SimpleImmutableEntry<>(Thread.currentThread(), f);
+		log.info("Kontroluji cache dlaždic {} po nedokončeném zápisu.", f);
+		try {
+			final SqlJetDb database = SqlJetDb.open(f, false);
+			// Mezi spojeními, aby ho při odložení cache zavřelo i čtení, které poškození najde dřív.
+			connections.put(klic, database);
+			try {
+				projdi(database);
+				log.info("Cache dlaždic {} je v pořádku.", f);
+			} finally {
+				if (connections.remove(klic) != null) {
+					zavri(database);
+				}
+			}
+		} catch (final SqlJetException e) {
+			if (jePoskozena(e)) {
+				odlozZaBehu(f, odlozeniPred);
+			} else {
+				log.warn("Cache dlaždic {} nejde zkontrolovat: {}", f, e.toString());
+			}
+		} catch (final RuntimeException e) {
+			log.warn("Cache dlaždic {} nejde zkontrolovat: {}", f, e.toString());
+		}
+	}
+
 	/** Pád uprostřed zápisu může cache poškodit; průchod tabulkou a indexem bez obrázků poškození většinou najde. */
-	private static void projdi(final SqlJetDb database) throws SqlJetException {
+	void projdi(final SqlJetDb database) throws SqlJetException {
 		final ISqlJetTable table = database.getTable(TABLE_NAME);
 		database.beginTransaction(SqlJetTransactionMode.READ_ONLY);
 		try {
