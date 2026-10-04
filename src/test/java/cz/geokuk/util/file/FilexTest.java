@@ -36,13 +36,14 @@ public class FilexTest {
 		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), Filex.efektivni(new File("program/../data/gpx"), koren));
 	}
 
-	/** Beta 9 až 13: „..\data\gpx“ relativně ke složce program míří dál do data\gpx, uloží se pak přenosně. */
+	/** Beta 9 až 13: „..\data\gpx“ se počítalo od složky program (se zaškrtnutím i bez něj), míří dál do data\gpx. */
 	@Test
 	public void relativniKProgramuZeStarsiVerze() {
 		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
 		final Filex f = Filex.zNastaveni(new File("../data/gpx"), true, true, new File(koren, "program"));
 		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), f.getFile());
 		Assert.assertFalse(f.isRelativeToProgram());
-		Assert.assertEquals(new File("data/gpx"), Filex.zNastaveni(new File("data/gpx"), false, true, new File(koren, "program")).getFile());
+		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), Filex.zNastaveni(new File("../data/gpx"), false, true, new File(koren, "program")).getFile());
+		Assert.assertEquals(new File("/tmp/jinde").getAbsoluteFile(), Filex.zNastaveni(new File("/tmp/jinde").getAbsoluteFile(), false, true, new File(koren, "program")).getFile());
 	}
 }
