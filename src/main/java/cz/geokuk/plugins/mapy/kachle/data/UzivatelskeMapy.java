@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.data;
 
 import java.awt.event.InputEvent;
 import java.io.*;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -59,7 +60,9 @@ public final class UzivatelskeMapy {
 		final List<String> chyby = nactiSlozku(slozka);
 		final List<String> zpravy = new ArrayList<>();
 		if (!chyby.isEmpty()) {
-			zpravy.add("Chyby v uživatelských mapách ve složce " + slozka + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby));
+			final List<String> nezobrazene = nezobrazene(slozka);
+			zpravy.add("Chyby v uživatelských mapách ve složce " + slozka + ":\n" + String.join("\n", chyby)
+					+ (nezobrazene.isEmpty() ? "" : "\nNezobrazí se: " + String.join(", ", nezobrazene)));
 		}
 		final File stary = new File(dataDir, STARY_SOUBOR);
 		final String oznaceni = oznaceniVeStaremSouboru(stary);
@@ -69,6 +72,28 @@ public final class UzivatelskeMapy {
 					+ ".url=…. Potom soubor " + stary + " smažte.");
 		}
 		return zpravy.isEmpty() ? null : String.join("\n\n", zpravy);
+	}
+
+	/** Soubory map, ze kterých se mapa nenačetla. */
+	private static List<String> nezobrazene(final File slozka) {
+		final List<String> vysledek = new ArrayList<>();
+		for (final File soubor : mapy(slozka)) {
+			final String jmeno = soubor.getName();
+			if (EKaType.podleJmena(PREFIX + jmeno.substring(0, jmeno.length() - PRIPONA.length()).toLowerCase(Locale.ROOT)) == null) {
+				vysledek.add(jmeno);
+			}
+		}
+		return vysledek;
+	}
+
+	/** Soubory s příponou .mapa seřazené podle jména; bez průvodních souborů ._*, které vytváří macOS. */
+	private static List<File> mapy(final File slozka) {
+		final File[] soubory = slozka.listFiles(f -> f.isFile() && f.getName().toLowerCase(Locale.ROOT).endsWith(PRIPONA) && !f.getName().startsWith("._"));
+		if (soubory == null) {
+			return Collections.emptyList();
+		}
+		Arrays.sort(soubory);
+		return Arrays.asList(soubory);
 	}
 
 	/** Zalomí řádky delší než {@code sirka} na mezerách, dlouhé slovo (cestu) za lomítkem nebo natvrdo, ať dialog nepřeteče obrazovku. */
@@ -141,7 +166,7 @@ public final class UzivatelskeMapy {
 			if (jmeno.endsWith(PRIPONA + ".txt")) {
 				chyby.add(soubor.getName() + ": soubor má příponu .txt, přejmenujte ho na " + soubor.getName().substring(0, soubor.getName().length() - 4));
 			}
-			if (!jmeno.endsWith(PRIPONA)) {
+			if (!jmeno.endsWith(PRIPONA) || jmeno.startsWith("._")) {
 				continue;
 			}
 			try (BufferedReader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
@@ -153,6 +178,8 @@ public final class UzivatelskeMapy {
 				final Properties p = new Properties();
 				p.load(reader);
 				obsah.put(soubor.getName(), p);
+			} catch (final CharacterCodingException e) {
+				chyby.add(soubor.getName() + ": soubor není v kódování UTF-8, uložte ho znovu s kódováním UTF-8");
 			} catch (final IOException | IllegalArgumentException e) {
 				chyby.add(soubor.getName() + ": soubor nelze přečíst: " + e.getMessage());
 			}
@@ -189,7 +216,7 @@ public final class UzivatelskeMapy {
 				if (VLASTNOSTI.contains(klic) || klic.matches(HLAVICKA.replace(".", "\\.") + "[A-Za-z0-9-]+")) {
 					vlastnosti.put(klic, p.getProperty(klic).trim());
 				} else {
-					chyby.add(jmeno + ": " + klic + " je neznámá vlastnost, povolené jsou " + VLASTNOSTI + " a " + HLAVICKA + "<jméno hlavičky>");
+					chyby.add(jmeno + ": " + klic + " je neznámá vlastnost, povolené jsou " + String.join(", ", VLASTNOSTI) + " a " + HLAVICKA + "<jméno hlavičky>");
 				}
 			}
 			final EKaType mapa = vytvor(e.getKey(), jmeno, vlastnosti, chyby);
