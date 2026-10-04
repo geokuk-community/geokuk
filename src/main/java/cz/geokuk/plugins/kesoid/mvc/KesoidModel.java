@@ -62,6 +62,7 @@ public class KesoidModel extends Model0 {
 	private Boolean onoff;
 	private EZobrazeniKesi zobrazeniKesi;
 	private volatile List<String> zamceneDatabaze = Collections.emptyList();
+	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
 
 	@Getter
 	private KesoidPluginManager kesopidPluginManager;
@@ -332,8 +333,28 @@ public class KesoidModel extends Model0 {
 		fire(new ZobrazeniKesiEvent(zobrazeniKesi));
 	}
 
-	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {
-		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit));
+	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit, final boolean tecky, final int limit) {
+		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit, tecky, limit));
+	}
+
+	public LimityKresleni getLimityKresleni() {
+		return limityKresleni;
+	}
+
+	public void setLimityKresleni(final LimityKresleni limity) {
+		if (limity.equals(limityKresleni)) {
+			return;
+		}
+		limityKresleni = limity;
+		currPrefe().node(FPref.KESOID_node).putInt(FPref.LIMIT_IKON_value, limity.getIkon());
+		currPrefe().node(FPref.KESOID_node).putInt(FPref.LIMIT_TECEK_value, limity.getTecek());
+		fire(new LimityKresleniEvent(limity));
+	}
+
+	void nactiLimityKresleni(final MyPreferences kesoid) {
+		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
+				.sVlastnostmi();
+		fire(new LimityKresleniEvent(limityKresleni));
 	}
 
 	/** Voláno po každém načtení; událost jen při změně, doručená v EDT. */
@@ -438,8 +459,10 @@ public class KesoidModel extends Model0 {
 		setGsakParametryNacitani(loadGsakParametryNacitani());
 		setUmisteniSouboru(loadUmisteniSouboru());
 
-		setOnoff(currPrefe().node(FPref.KESOID_node).getBoolean(FPref.KESOID_VISIBLE_value, true));
-		setZobrazeniKesi(currPrefe().node(FPref.KESOID_node).getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
+		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
+		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
+		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
+		nactiLimityKresleni(kesoid);
 		fajruj();
 	}
 
