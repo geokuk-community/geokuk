@@ -20,6 +20,7 @@ import org.tmatesoft.sqljet.core.table.ISqlJetTable;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.framework.ChybyVDiagnostice;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleManager.ItemToSave;
 import cz.geokuk.util.file.Filex;
@@ -473,7 +474,9 @@ public class KachleDBManagerTest {
 				Assert.assertNotNull("druhý program skončil bez zámku", radek);
 			}
 			final SqlJetDb spojeni = manager.connections.values().iterator().next();
+			final int chybPred = ChybyVDiagnostice.pocet("Nepodařilo se");
 			Assert.assertNull("zamčená cache = dlaždice není v cache", manager.load(kachle(2)));
+			Assert.assertEquals("zámek se nehlásí jako chyba", chybPred, ChybyVDiagnostice.pocet("Nepodařilo se"));
 			Assert.assertTrue("spojení se nezahodí", manager.connections.containsValue(spojeni));
 		} finally {
 			jiny.getOutputStream().write('\n');
