@@ -2,6 +2,10 @@
 
 ## 6.3.0
 
+### Vývoj
+- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
+  vznikne složka `data/mapy`.
+
 ## 6.2.0
 
 ### Změny
