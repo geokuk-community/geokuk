@@ -6,7 +6,7 @@ import java.util.*;
 import javax.swing.KeyStroke;
 
 /**
- * Mapový podklad: vestavěný, nebo uživatelský ze souboru {@value UzivatelskeMapy#SOUBOR}.
+ * Mapový podklad: vestavěný, nebo uživatelský ze souboru ve složce {@value UzivatelskeMapy#SLOZKA}.
  */
 public final class EKaType {
 

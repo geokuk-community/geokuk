@@ -69,8 +69,8 @@ GeoKuk
 │   └── runtime                  Java
 └── data                         všechno, co si GeoKuk ukládá
     ├── nastaveni.xml
-    ├── uzivatelske-mapy.properties
-    ├── uzivatelske-mapy.properties.priklad  ukázka uživatelských map
+    ├── mapy                     uživatelské mapy, co mapa to soubor *.mapa
+    ├── mapy-priklady            ukázky uživatelských map
     ├── cache                    dlaždice map, lze smazat
     ├── gpx                      výchozí složka pro keše z GPX
     ├── cesty
@@ -114,11 +114,11 @@ postupu výše.
 
 ## Uživatelské mapy
 
-Vlastní mapové podklady se zadávají v souboru `data/uzivatelske-mapy.properties`
-a v menu Mapy jsou ve skupině „Uživatelské mapy“.
-Popis a příklady jsou v
-[`priklady/uzivatelske-mapy.properties`](priklady/uzivatelske-mapy.properties);
-zip pro Windows ho obsahuje jako `data/uzivatelske-mapy.properties.priklad`.
+Vlastní mapové podklady se zadávají ve složce `data/mapy`, každá mapa
+v samostatném souboru `<označení>.mapa`, a v menu Mapy jsou ve skupině
+„Uživatelské mapy“. Popis a příklady jsou v [`priklady/mapy`](priklady/mapy);
+zip pro Windows je obsahuje ve složce `data/mapy-priklady`. Mapu začnete
+používat zkopírováním jejího souboru do `data/mapy`.
 
 ## Dálkové ovládání
 

@@ -5,7 +5,7 @@
 ### Změny
 - Přenosný GeoKuk: nic se neinstaluje, program si všechno ukládá do
   složky `data` vedle sebe: nastavení (`nastaveni.xml`), uživatelské mapy
-  (`uzivatelske-mapy.properties`), cache map (`cache`), cesty, ikony
+  (`mapy`), cache map (`cache`), cesty, ikony
   (`ikony/moje`, `ikony/ostatni`), výlety (`vylety`), log a chybová
   hlášení (`log`) i dočasné soubory Javy (`tmp`). Rozhoduje jen to,
   odkud se spustí, složku jde přesunout i s daty. Nastavení už není
@@ -63,10 +63,12 @@
 - Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
   zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
   žádná keš není.
-- Uživatelské mapy: vlastní mapové podklady ze souboru
-  `data/uzivatelske-mapy.properties`, v menu Mapy ve skupině
-  „Uživatelské mapy“. Zip pro Windows obsahuje ukázku
-  `data/uzivatelske-mapy.properties.priklad`.
+- Uživatelské mapy: vlastní mapové podklady ve složce `data/mapy`, každá
+  mapa v samostatném souboru `<označení>.mapa`, v menu Mapy ve skupině
+  „Uživatelské mapy“. Mapy se stejným názvem v menu nebo stejnou zkratkou
+  se nezobrazí a GeoKuk je ohlásí při startu. Ukázky jsou
+  v `priklady/mapy`, zip pro Windows je obsahuje ve složce
+  `data/mapy-priklady`.
 - Mapy mají atribuci (Mapy.cz, OpenStreetMap, Freemap Slovakia) vpravo
   dole v mapě.
 - Hledání adresy (Jít > Adresa) a návrh názvu souboru u rendru podle
@@ -335,7 +337,7 @@
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
-  mapu s vlastním klíčem, příklad je v `priklady/uzivatelske-mapy.properties`.
+  mapu s vlastním klíčem, příklad je v `priklady/mapy/cyklo.mapa`.
 - Položka nápovědy „Zprávy uživatelům“, která neměla odkud zprávy brát.
 - Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu
   Mapy.cz.

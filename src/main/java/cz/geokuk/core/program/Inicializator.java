@@ -3,9 +3,7 @@
  */
 package cz.geokuk.core.program;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 import javax.swing.SwingUtilities;
 
@@ -119,10 +117,10 @@ public class Inicializator {
 
 	public void intMapAkce(final BeanBag bb, final Akce akce) {
 		UzivatelskeMapy.setZkratkyProgramu(akce.zkratky());
-		final List<String> chyby = UzivatelskeMapy.nacti();
-		if (!chyby.isEmpty()) {
-			chyby.forEach(Diagnostika::zaznamenejChybu);
-			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.DATA_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
+		final String chyby = UzivatelskeMapy.nacti();
+		if (chyby != null) {
+			Diagnostika.zaznamenejChybu(chyby);
+			SwingUtilities.invokeLater(() -> Dlg.error(chyby));
 		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);

@@ -25,9 +25,9 @@ public class PodkladActionUzivatelskaTest {
 
 	@Test
 	public void polozkaMenu() throws Exception {
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), "m.nazev=Moje mapa\nm.url=https://t.example.org/{z}/{x}/{y}\nm.popis=Nápověda\nm.klavesa=j\nm.zkratka=F5\n".getBytes(StandardCharsets.UTF_8));
-		UzivatelskeMapyPristup.nacti(soubor);
+		final File soubor = new File(tmp.getRoot(), "m" + UzivatelskeMapy.PRIPONA);
+		Files.write(soubor.toPath(), "nazev=Moje mapa\nurl=https://t.example.org/{z}/{x}/{y}\npopis=Nápověda\nklavesa=j\nzkratka=F5\n".getBytes(StandardCharsets.UTF_8));
+		UzivatelskeMapyPristup.nacti(tmp.getRoot());
 		final EKaType mapa = EKaType.podleJmena("user-m");
 		final PodkladAction akce = new PodkladAction(mapa);
 		Assert.assertEquals("Moje mapa", akce.getValue(Action.NAME));
@@ -39,9 +39,9 @@ public class PodkladActionUzivatelskaTest {
 
 	@Test
 	public void bezKlavesyAZkratky() throws Exception {
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), "m.nazev=M\nm.url=https://t.example.org/{z}/{x}/{y}\n".getBytes(StandardCharsets.UTF_8));
-		UzivatelskeMapyPristup.nacti(soubor);
+		final File soubor = new File(tmp.getRoot(), "m" + UzivatelskeMapy.PRIPONA);
+		Files.write(soubor.toPath(), "nazev=M\nurl=https://t.example.org/{z}/{x}/{y}\n".getBytes(StandardCharsets.UTF_8));
+		UzivatelskeMapyPristup.nacti(tmp.getRoot());
 		final PodkladAction akce = new PodkladAction(EKaType.podleJmena("user-m"));
 		Assert.assertNull(akce.getValue(Action.MNEMONIC_KEY));
 		Assert.assertNull(akce.getValue(Action.ACCELERATOR_KEY));

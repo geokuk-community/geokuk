@@ -1,0 +1,36 @@
+# Uživatelská mapa pro GeoKuk
+#
+# Soubor zkopírujte do složky mapy ve složce data GeoKuku (v zipu pro Windows
+# je složka data vedle složky program, jinak vedle geokuk.jar). Mapa se objeví
+# v menu Mapy ve skupině „Uživatelské mapy“. Po změně souboru GeoKuk
+# restartujte, chyby v souboru ohlásí při startu.
+#
+# Každá mapa je v samostatném souboru s příponou .mapa. Název souboru je
+# označení mapy (písmena bez diakritiky, číslice, pomlčky), velikost písmen
+# se nerozlišuje. Vlastnosti:
+#   nazev    název v menu (povinné)
+#   url      adresa dlaždice, {z} měřítko, {x} a {y} číslo dlaždice (povinné)
+#   popis    bublinová nápověda v menu
+#   min      nejmenší měřítko, výchozí 0
+#   max      největší měřítko, nejvýš 22, výchozí 18
+#   maxauto  největší měřítko při automatickém přibližování,
+#            výchozí stejné jako max
+#   klavesa  podtržené písmeno v menu (např. u)
+#   zkratka  klávesová zkratka (např. u, U pro Shift+U, F5, ctrl U), nesmí
+#            kolidovat s vestavěnými mapami ani zkratkami programu
+#   atribuce text vpravo dole v mapě (např. © autor mapy)
+#   hromadne ano, pokud mapu jde stahovat hromadně do cache
+#            (Mapy → Postahovat dlaždice), výchozí ne
+#   hlavicka.<jméno>  hlavička požadavku (např. Referer, User-Agent),
+#            {verze} se nahradí verzí GeoKuku
+# Dvě mapy se stejným názvem v menu nebo stejnou zkratkou se nezobrazí.
+#
+# Soubor ukládejte v kódování UTF-8.
+
+# Vestavěná mapa zapsaná jako uživatelská, například když poskytovatel
+# změní adresu a oprava v GeoKuku ještě nevyšla.
+atribuce=© Seznam.cz, a.s. a další
+nazev=Turistická zimní (vlastní)
+url=http://mapserver.mapy.cz/wturist_winter-m/{z}-{x}-{y}
+hlavicka.Referer=https://en.mapy.com/
+max=19

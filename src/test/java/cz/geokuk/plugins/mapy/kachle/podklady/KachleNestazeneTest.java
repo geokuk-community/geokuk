@@ -39,9 +39,9 @@ public class KachleNestazeneTest {
 			ex.close();
 		});
 		server.start();
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), ("chybna.nazev=Chybná\nchybna.url=http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{x}/{y}.png\n").getBytes(StandardCharsets.UTF_8));
-		UzivatelskeMapyPristup.nacti(soubor);
+		final File soubor = new File(tmp.getRoot(), "chybna" + UzivatelskeMapy.PRIPONA);
+		Files.write(soubor.toPath(), ("nazev=Chybná\nurl=http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{x}/{y}.png\n").getBytes(StandardCharsets.UTF_8));
+		UzivatelskeMapyPristup.nacti(tmp.getRoot());
 		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 12), EKaType.podleJmena("user-chybna"));
 
 		ziskavac = new KachleZiskavac();
