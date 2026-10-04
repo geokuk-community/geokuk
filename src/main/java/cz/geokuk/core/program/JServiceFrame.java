@@ -177,7 +177,7 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 		pan.setLayout(new GridBagLayout());
 		pan.removeAll();
 		if (pocitadla == null || pocitadla.size() == 0) {
-			pan.add(new JLabel("Nejsou pocitadla"));
+			pan.add(new JLabel("Nejsou počítadla"));
 			return pan;
 		}
 		final GridBagConstraints c = new GridBagConstraints();

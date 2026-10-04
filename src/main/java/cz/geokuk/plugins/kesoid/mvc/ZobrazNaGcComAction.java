@@ -26,7 +26,7 @@ public class ZobrazNaGcComAction extends Action0 {
 
 		super("Zobrazení na webu", kesoid.getUrlIcon());
 		url = kesoid.getUrlShow();
-		putValue(SHORT_DESCRIPTION, "Zobrazí listing keše na geocaching COM.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí listing kešoidu na jeho webu.");
 		// putValue(MNEMONIC_KEY, InputEvent.)
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
 

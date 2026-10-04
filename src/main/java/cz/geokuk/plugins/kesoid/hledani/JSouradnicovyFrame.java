@@ -222,7 +222,7 @@ public class JSouradnicovyFrame extends JMyDialog0 implements AfterEventReceiver
 	private boolean aplikuj(final JLabel jHotova, final JTextField editacni, final double val, final double min, final double max, final String pismena) {
 		boolean ok;
 		if (val == SPATNY_FORMAT) {
-			jHotova.setText("Grrrr!");
+			jHotova.setText("Špatný formát");
 			jHotova.setBackground(Color.RED);
 			editacni.setBackground(ERROR_COLOR);
 			ok = false;

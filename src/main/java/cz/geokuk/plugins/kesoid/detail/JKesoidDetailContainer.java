@@ -20,6 +20,7 @@ import cz.geokuk.plugins.kesoid.mvc.ZobrazNaGcComAction;
 import cz.geokuk.plugins.refbody.DomaciSouradniceSeZmenilyEvent;
 import cz.geokuk.plugins.refbody.RefbodyModel;
 import cz.geokuk.util.gui.JSmallPictureButton;
+import cz.geokuk.util.lang.FString;
 
 /**
  * Detailní informace o vybrané keši.
@@ -86,12 +87,12 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		if (status == EKesStatus.ARCHIVED) {
 			sb.append("<font color=\"red\">");
 		}
-		sb.append(s);
+		sb.append(FString.html(s));
 		if (status == EKesStatus.ARCHIVED) {
-			sb.append("</font");
+			sb.append("</font>");
 		}
 		if (status == EKesStatus.DISABLED) {
-			sb.append("</font");
+			sb.append("</font>");
 		}
 		if (status != EKesStatus.ACTIVE) {
 			sb.append("</strike>");
@@ -184,18 +185,18 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 
 	protected void napln() {
 		final Kesoid kesoid = wpt.getKesoid();
-		jKesoidCode.setText(kesoid.getKesoidKind() == EKesoidKind.CGP ? wpt.getName() : kesoid.getIdentifier());
+		jKesoidCode.setText(FString.text(kesoid.getKesoidKind() == EKesoidKind.CGP ? wpt.getName() : kesoid.getIdentifier()));
 		jKesoidNazev.setText(formatuj(kesoid.getNazev(), kesoid.getStatus()));
-		jKesoidSym.setText(kesoid.getFirstWpt().getSym());
+		jKesoidSym.setText(FString.text(kesoid.getFirstWpt().getSym()));
 
-		jWptName.setText(wpt.getName());
+		jWptName.setText(FString.text(wpt.getName()));
 		jWptNazev.setText(formatuj(wpt.getNazev(), kesoid.getStatus()));
-		jWptSym.setText(wpt.getSym());
+		jWptSym.setText(FString.text(wpt.getSym()));
 		jRucnePridany.setText(wpt.isRucnePridany() ? "+" : "*");
 		jRucnePridany.setToolTipText(wpt.isRucnePridany() ? "Waypoint byl ručně přidán v Geogetu nebo podobném programu." : "Waypoint byl obsažen v PQ");
 		final int elevation = wpt.getElevation();
 		jElevation.setText(elevation == 0 ? null : elevation + " m n. m.");
-		jAuthor.setText(kesoid.getAuthor());
+		jAuthor.setText(FString.text(kesoid.getAuthor()));
 		jHiddenTime.setText(JKesoidDetail0.formatujDatum(kesoid.getHidden()));
 		jVztah.setIcon(vztah(kesoid.getVztah()));
 		if (ikonBag != null) {

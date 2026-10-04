@@ -33,6 +33,10 @@ public class GeocodingModel extends Model0 {
 		referencniBod = event.wgs;
 	}
 
+	public boolean isOnlineMode() {
+		return onlineMode;
+	}
+
 	public synchronized void spustHledani(final String coHledat, final RefreshorVysledkuHledani<Nalezenec> refreshor) {
 		if (onlineMode) {
 			final HledaciPodminka hledaciPodminka = new HledaciPodminka();

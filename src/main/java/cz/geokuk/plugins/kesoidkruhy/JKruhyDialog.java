@@ -59,7 +59,7 @@ public class JKruhyDialog extends JMyDialog0 implements AfterEventReceiverRegist
 	private KruhyModel kruhyModel;
 
 	public JKruhyDialog() {
-		setTitle("Nastavení parametrů zvýrazňovaích kruhů");
+		setTitle("Nastavení parametrů zvýrazňovacích kruhů");
 		init();
 	}
 
@@ -101,9 +101,9 @@ public class JKruhyDialog extends JMyDialog0 implements AfterEventReceiverRegist
 	protected void initComponents() {
 		velikostLabel = new JLabel("Velikost kruhů");
 		velikostSlider = new JSlider();
-		velikostSlider.setToolTipText("Nastavení velikosti výrazňovacího kruhu.");
+		velikostSlider.setToolTipText("Nastavení velikosti zvýrazňovacího kruhu.");
 		alfaColorChooser = new JColorChooser(Color.WHITE);
-		alfaColorChooser.setToolTipText("Nastavení barvy a průhlednosti zvýrazňovaího kruhu");
+		alfaColorChooser.setToolTipText("Nastavení barvy a průhlednosti zvýrazňovacího kruhu");
 		jJednotkoveKruhy = new JCheckBox();
 		jJednotkoveKruhy.setText("Jednotkové kruhy");
 		jJednotkoveKruhy.setToolTipText("Nastavení jednotkovosti kruhů");

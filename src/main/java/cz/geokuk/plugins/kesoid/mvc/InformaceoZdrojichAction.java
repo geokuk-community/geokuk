@@ -19,7 +19,7 @@ public class InformaceoZdrojichAction extends DialogOpeningAction0 {
 	 */
 	public InformaceoZdrojichAction() {
 		super("Přehled zdrojů...");
-		super.putValue(SHORT_DESCRIPTION, "Zobrazí dialog s informací o zdrojích ,z nichž byly načteny kešoidy a umožní vybírat, ze kterých zdrojů se bude číst.");
+		super.putValue(SHORT_DESCRIPTION, "Zobrazí dialog s informací o zdrojích, z nichž byly načteny kešoidy a umožní vybírat, ze kterých zdrojů se bude číst.");
 		setEnabled(false);
 	}
 

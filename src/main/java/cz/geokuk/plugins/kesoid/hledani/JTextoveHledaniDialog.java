@@ -196,7 +196,7 @@ public class JTextoveHledaniDialog extends JMyDialog0 implements AfterInjectInit
 		if (vsechny == null || filtrovane == null || referencniBod == null) {
 			return;
 		}
-		message("Hleda se ...");
+		message("Hledá se...");
 		final String s = entry.getText();
 		final HledaciPodminka podm = new HledaciPodminka();
 		podm.setStredHledani(referencniBod);

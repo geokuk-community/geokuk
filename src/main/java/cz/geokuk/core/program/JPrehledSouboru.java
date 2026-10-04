@@ -115,7 +115,7 @@ public class JPrehledSouboru extends JPanel {
 		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
 		jKesDir = pridejJednuPolozkuproEdit(null, tab1, "Složka s keškami (GPX) získanými z Geogetu nebo jiného programu.", true, false);
-		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka geogetu.", true, true);
+		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka GeoGetu.", true, true);
 
 		jGsakDataDir = pridejJednuPolozkuproEdit(null, tab1a, "Datová složka GSAK.", true, true);
 		jGsakNacitatAzPoVybrani = pridejLogickePole(jGsakDataDir, "Načítat až po vybrání",
@@ -137,8 +137,8 @@ public class JPrehledSouboru extends JPanel {
 		                + "<br/>Můžete uvést více políček, použije se první časový údaj, který bude nalezen." //
 		                + "</html>");
 
-		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných mapy pro OziExplorer", true, false);
-		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (GoogleEarthj)", true, false);
+		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných map pro OziExplorer", true, false);
+		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (Google Earth)", true, false);
 		jPictureDir = pridejJednuPolozkuproEdit(ESouborPanelName.PICTURE, tab3, "Složka pro rendrování obrázků map", true, false);
 
 		pridejJednuPolozkuProCteni(null, tab4, "Složka s programem (zde je geokuk.jar)", new Filex(FConst.JAR_DIR, false, true), true);
@@ -220,33 +220,7 @@ public class JPrehledSouboru extends JPanel {
 	private void registerEvents(final JButton ulozit) {
 		ulozit.addActionListener(aE -> {
 			try {
-				{
-					final KesoidUmisteniSouboru u1 = new KesoidUmisteniSouboru();
-					u1.setKesDir(jKesDir.vezmiSouborAProver());
-					u1.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
-					u1.setGeogetDataDir(jGeogetDataDir.vezmiSouborAProver());
-					u1.setGsakDataDir(jGsakDataDir.vezmiSouborAProver());
-					u1.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
-					u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
-					u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
-					u1.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
-					kesoidModel.setUmisteniSouboru(u1);
-				}
-				{
-					final GsakParametryNacitani g = new GsakParametryNacitani();
-					g.setCasNalezu(_split(jGsakCasNalezu.getText()));
-					g.setCasNenalezu(_split(jGsakCasNenalezu.getText()));
-					g.setNacistVsechnyDatabaze(!jGsakNacitatAzPoVybrani.isSelected());
-					kesoidModel.setGsakParametryNacitani(g);
-				}
-				{
-					final RenderUmisteniSouboru u3 = new RenderUmisteniSouboru();
-					u3.setOziDir(jOziDir.vezmiSouborAProver());
-					u3.setKmzDir(jKmzDir.vezmiSouborAProver());
-					u3.setPictureDir(jPictureDir.vezmiSouborAProver());
-					renderModel.setUmisteniSouboru(u3);
-				}
-
+				uloz();
 				// Board.multiNacitacLoaderManager.startLoad(true);
 
 				((JUmisteniSouboruDialog) SwingUtilities.getRoot(JPrehledSouboru.this)).dispose();
@@ -254,6 +228,33 @@ public class JPrehledSouboru extends JPanel {
 				Dlg.error(e.getMessage());
 			}
 		});
+	}
+
+	void uloz() throws YNejdeTo {
+		final GsakParametryNacitani g = new GsakParametryNacitani();
+		g.setCasNalezu(_split(jGsakCasNalezu.getText()));
+		g.setCasNenalezu(_split(jGsakCasNenalezu.getText()));
+		g.setNacistVsechnyDatabaze(!jGsakNacitatAzPoVybrani.isSelected());
+
+		final KesoidUmisteniSouboru u1 = new KesoidUmisteniSouboru();
+		u1.setKesDir(jKesDir.vezmiSouborAProver());
+		u1.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
+		u1.setGeogetDataDir(jGeogetDataDir.vezmiSouborAProver());
+		u1.setGsakDataDir(jGsakDataDir.vezmiSouborAProver());
+		u1.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
+		u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
+		u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
+		u1.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
+
+		final RenderUmisteniSouboru u3 = new RenderUmisteniSouboru();
+		u3.setOziDir(jOziDir.vezmiSouborAProver());
+		u3.setKmzDir(jKmzDir.vezmiSouborAProver());
+		u3.setPictureDir(jPictureDir.vezmiSouborAProver());
+
+		// Změna složky GSAK podle volby „Načítat až po vybrání“ zakazuje nové databáze, volba proto musí být uložená dřív.
+		kesoidModel.setGsakParametryNacitani(g);
+		kesoidModel.setUmisteniSouboru(u1);
+		renderModel.setUmisteniSouboru(u3);
 	}
 
 	private String _join(final Collection<String> aValues) {
