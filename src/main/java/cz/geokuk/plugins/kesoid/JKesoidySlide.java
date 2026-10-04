@@ -551,9 +551,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				ostatni.add(wpt);
 			}
 		});
+		final Coord soord = getSoord();
+		final Point bod = new Point();
 		for (final List<Wpt> list : Arrays.asList(nalezene, neaktivni, ostatni)) {
 			for (final Wpt wpt : list) {
-				tecky.kresli(gg, wpt, getSoord().transform(wpt.getMou()), prumer);
+				tecky.kresli(gg, wpt, soord.transform(wpt.getMou(), bod), prumer);
 			}
 		}
 	}
