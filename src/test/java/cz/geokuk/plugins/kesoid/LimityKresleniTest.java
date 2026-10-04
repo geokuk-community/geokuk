@@ -23,7 +23,8 @@ public class LimityKresleniTest {
 
 	@Test
 	public void mimoRozsahSeOrizne() {
-		assertEquals(LimityKresleni.of(30_000, 30_000), LimityKresleni.of(10, -5));
+		assertEquals(30_000, LimityKresleni.of(10, -5).getIkon());
+		assertEquals(60_000, LimityKresleni.of(10, -5).getTecek());
 		assertEquals(LimityKresleni.of(2_000_000, 2_000_000), LimityKresleni.of(5_000_000, Integer.MAX_VALUE));
 	}
 
@@ -64,7 +65,7 @@ public class LimityKresleniTest {
 
 	@Test
 	public void doSouboruBezLimitu() {
-		final LimityKresleni l = LimityKresleni.of(30_000, 30_000);
+		final LimityKresleni l = LimityKresleni.of(30_000, 60_000);
 		assertEquals(Kresleni.IKONY, JKesoidySlide.kresleni(EZobrazeniKesi.IKONY, 15, 1_000_000, l, true));
 		assertEquals(Kresleni.TECKY, JKesoidySlide.kresleni(EZobrazeniKesi.TECKY, 15, 1_000_000, l, true));
 	}

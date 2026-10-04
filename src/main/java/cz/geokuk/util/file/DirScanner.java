@@ -1,5 +1,6 @@
 package cz.geokuk.util.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -20,6 +21,7 @@ public class DirScanner {
 	private List<KeFile> lastScaned = null;
 	/** Bez zámku, aby GUI nečekalo, než doběhne sken velké složky. */
 	private volatile boolean nacistZnovu = true;
+	private volatile Set<File> nedostupne = Collections.emptySet();
 
 	/**
 	 * Vrátí null, pokud není co načítat, protože nedošlo ke změně. Prázdný seznam je něco jiného, to ke změně došlo takové, že zmizely všechny soubory. Když se změní byť jediný soubor, je to změna a načítá se.
@@ -30,16 +32,23 @@ public class DirScanner {
 		final boolean vynutit = nacistZnovu;
 		nacistZnovu = false;
 		final Set<KeFile> set = new HashSet<>();
+		final Set<File> nedostupneTed = new HashSet<>();
 		for (final Root dir : roots) {
-			final List<KeFile> li = scanDir(dir);
+			final List<KeFile> li = scanDir(dir, nedostupneTed);
 			set.addAll(li);
 		}
+		nedostupne = nedostupneTed;
 		final List<KeFile> list = new ArrayList<>(set);
 		if (!vynutit && list.equals(lastScaned)) {
 			return null; // nezměnilo se nic
 		}
 		lastScaned = list;
 		return list;
+	}
+
+	/** Kořeny a složky, které se při posledním {@link #coMamNacist()} nepodařilo přečíst; nevíme, co v nich je. */
+	public Set<File> getNedostupne() {
+		return nedostupne;
 	}
 
 	public void nulujLastScaned() {
@@ -69,11 +78,12 @@ public class DirScanner {
 	}
 
 	public List<KeFile> scan(final Root root) {
-		return scanDir(root);
+		return scanDir(root, new HashSet<>());
 	}
 
-	private List<KeFile> scanDir(final Root root) {
+	private List<KeFile> scanDir(final Root root, final Set<File> nedostupneSlozky) {
 		if (!root.dir.exists()) {
+			nedostupneSlozky.add(root.dir);
 			return Collections.emptyList();
 		}
 		try {
@@ -98,6 +108,7 @@ public class DirScanner {
 				public FileVisitResult visitFileFailed(final Path path, final IOException e) {
 					// nečitelná složka ani zacyklený odkaz nesmí shodit celý sken
 					log.warn("Přeskakuji {}: {}", path, e.toString());
+					nedostupneSlozky.add(path.toFile());
 					return FileVisitResult.CONTINUE;
 				}
 			});
