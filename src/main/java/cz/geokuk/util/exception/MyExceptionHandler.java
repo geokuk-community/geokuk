@@ -4,7 +4,6 @@
 package cz.geokuk.util.exception;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.*;
 
 import javax.swing.JOptionPane;
 
@@ -42,8 +41,9 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 
 	/** Došlá paměť i tehdy, když ji vlákno na pozadí zabalilo do jiné výjimky. */
 	static OutOfMemoryError najdiOom(final Throwable t) {
-		final Set<Throwable> videne = Collections.newSetFromMap(new IdentityHashMap<>());
-		for (Throwable x = t; x != null && videne.add(x); x = x.getCause()) {
+		// Bez alokace, paměť už došla; limit hloubky chrání před zacyklenými příčinami.
+		int hloubka = 0;
+		for (Throwable x = t; x != null && hloubka < 100; x = x.getCause(), hloubka++) {
 			if (x instanceof OutOfMemoryError) {
 				return (OutOfMemoryError) x;
 			}
