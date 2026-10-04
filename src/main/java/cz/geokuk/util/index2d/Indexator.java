@@ -11,7 +11,6 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.common.primitives.Ints;
 
 import cz.geokuk.util.index2d.Sheet.Lst;
 
@@ -70,10 +69,10 @@ public class Indexator<T> {
 			for (int i = od; i < doo; i++) {
 				lst = new Lst<>(objekty.get(poradi[i]), lst);
 			}
-			return new Sheet<>(x0, y0, xx1, yy1, xx2, yy2, lst);
+			return new Sheet<>(x0, y0, lst);
 		}
-		final int xMid = Ints.checkedCast(((long) xx1 + xx2) / 2);
-		final int yMid = Ints.checkedCast(((long) yy1 + yy2) / 2);
+		final int xMid = mid(xx1, xx2);
+		final int yMid = mid(yy1, yy2);
 		// Stabilní rozdělení do čtvrtí jz, jv, sz, sv, pořadí uvnitř čtvrti zůstává.
 		final int[] zacatky = new int[5];
 		for (int i = od; i < doo; i++) {
@@ -137,12 +136,13 @@ public class Indexator<T> {
 	}
 
 	public Indexator<T> add(final int xx, final int yy, final T mapobj) {
-		return with(merge(root, newSheet(xx, yy, mapobj)));
+		checkArgument(xx >= br.xx1 && xx < br.xx2 && yy >= br.yy1 && yy < br.yy2, "Hodnoty %s %s jsou mimo rozsah %s", xx, yy, br);
+		return with(merge(root, new Sheet<>(xx, yy, mapobj), br.xx1, br.yy1, br.xx2, br.yy2));
 	}
 
 	public Indexator<T> merge(final Indexator<T> indexator) {
-		checkArgument(checkSameBounding(indexator.root, root), "Bounding %s %s není stejný.", indexator.root, root);
-		return with(merge(indexator.root, root));
+		checkArgument(checkSameBounding(indexator.br, br), "Bounding %s %s není stejný.", indexator.br, br);
+		return with(merge(indexator.root, root, br.xx1, br.yy1, br.xx2, br.yy2));
 	}
 
 	/**
@@ -163,43 +163,40 @@ public class Indexator<T> {
 		return new MySplitIterator<T>(root);
 	}
 
-	private Sheet<T> newSheet(final int xx, final int yy, final T mapobj) {
-		return new Sheet<T>(xx, yy, br.xx1, br.yy1, br.xx2, br.yy2, new Lst<T>(mapobj));
-	}
 	public void vypis() {
 		root.vypis("root", 1);
 	}
 
 
-	private static <T> Node<T> merge(final Node<T> node1, final Node<T> node2) {
+	private static <T> Node<T> merge(final Node<T> node1, final Node<T> node2, final int xx1, final int yy1, final int xx2, final int yy2) {
 		if (node1.isEmpty()) {
 			return node2;
 		}
 		if (node2.isEmpty()) {
 			return node1;
 		}
-		assert checkSameBounding(node1, node2);
 		if (node1.hasSameCoordinates(node2)) {
 			return node1.joinWithSameCoordinates(node2);
 		} else {
-			final Ctverecnik<T> ctv1 = node1.rozčtvrť();
-			final Ctverecnik<T> ctv2 = node2.rozčtvrť();
-
-			return ctv1.newCtverecnik(
-					merge(ctv1.jz, ctv2.jz),
-					merge(ctv1.jv, ctv2.jv),
-					merge(ctv1.sz, ctv2.sz),
-					merge(ctv1.sv, ctv2.sv));
+			final Ctverecnik<T> ctv1 = node1.rozčtvrť(xx1, yy1, xx2, yy2);
+			final Ctverecnik<T> ctv2 = node2.rozčtvrť(xx1, yy1, xx2, yy2);
+			final int xMid = mid(xx1, xx2);
+			final int yMid = mid(yy1, yy2);
+			return new Ctverecnik<>(xx1, yy1, xx2, yy2,
+					merge(ctv1.jz, ctv2.jz, xx1, yy1, xMid, yMid),
+					merge(ctv1.jv, ctv2.jv, xMid, yy1, xx2, yMid),
+					merge(ctv1.sz, ctv2.sz, xx1, yMid, xMid, yy2),
+					merge(ctv1.sv, ctv2.sv, xMid, yMid, xx2, yy2));
 		}
 	}
 
-	private static boolean checkSameBounding(final Node<?> nodea, final Node<?> nodeb) {
-		if (nodea.isEmpty() || nodeb.isEmpty()) {
-			return true;
-		}
-		final NodeB<?> na = (NodeB<?>) nodea;
-		final NodeB<?> nb = (NodeB<?>) nodeb;
-		return na.xx1 == nb.xx1 && na.xx2 == nb.xx2 && na.yy1 == nb.yy1 && na.yy2 == nb.yy2;
+	/** Jediné místo, kde se dělí čtverec. */
+	static int mid(final int a, final int b) {
+		return (int) (((long) a + b) / 2);
+	}
+
+	private static boolean checkSameBounding(final BoundingRect a, final BoundingRect b) {
+		return a.xx1 == b.xx1 && a.xx2 == b.xx2 && a.yy1 == b.yy1 && a.yy2 == b.yy2;
 	}
 
 	public int count(final BoundingRect rect) {
