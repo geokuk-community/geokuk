@@ -2,6 +2,9 @@
 
 ## 6.3.0
 
+### Opravy
+- Změna vzhledu (Skin) se projeví i v otevřených dialozích.
+
 ## 6.2.0
 
 ### Změny
