@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
 import java.util.concurrent.Future;
+import java.util.function.LongSupplier;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -20,6 +21,18 @@ public abstract class Nacitac0 {
 
 	protected static final String PREFIX_USERDEFINOANYCH_GENU = "geokuk_";
 	static Pattern osetriCislo = Pattern.compile("[^0-9]");
+
+	/** Volná halda v bajtech, v testu jde podvrhnout. */
+	static LongSupplier volnaPamet = () -> {
+		System.gc();
+		final Runtime r = Runtime.getRuntime();
+		return r.maxMemory() - (r.totalMemory() - r.freeMemory());
+	};
+
+	/** Selhala jen obří alokace kvůli vadnému souboru; když je halda opravdu plná, import má selhat celý. */
+	static boolean jeMaloPameti() {
+		return volnaPamet.getAsLong() < Runtime.getRuntime().maxMemory() / 4;
+	}
 
 	protected String intern(final String aString) {
 		return FString.intern(aString);
@@ -42,6 +55,12 @@ public abstract class Nacitac0 {
 				throw new DatabazeJinehoProgramu.Zamcena(file, e);
 			}
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
+		} catch (final StackOverflowError | OutOfMemoryError e) {
+			// Poškozený soubor (třeba EXIF fotky) nesmí ukončit načítání ostatních.
+			if (e instanceof OutOfMemoryError && jeMaloPameti()) {
+				throw e;
+			}
+			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Soubor \"" + file + "\" je asi poškozený, ostatní soubory se načtou");
 		}
 	}
 
@@ -54,6 +73,11 @@ public abstract class Nacitac0 {
 			}
 		} catch (final Exception e) {
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
+		} catch (final StackOverflowError | OutOfMemoryError e) {
+			if (e instanceof OutOfMemoryError && jeMaloPameti()) {
+				throw e;
+			}
+			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Soubor \"" + zipEntry + "\" je asi poškozený, ostatní soubory se načtou");
 		}
 	}
 
@@ -69,7 +93,7 @@ public abstract class Nacitac0 {
 		try {
 			return Integer.parseInt(s);
 		} catch (final NumberFormatException e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Problem s parsrovanim cisla \"" + s + "\" pri cteni hodnoceni nebo bestofu");
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatné číslo \"" + s + "\" v hodnocení nebo BestOf");
 			return 0; // je to španě, vrátíme nuli
 		}
 	}

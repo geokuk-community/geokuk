@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.kesoid.mapicon.ASada;
+import cz.geokuk.util.file.Filex;
 
 /**
  * Unit tests for {@link MyPreferences}.
@@ -100,6 +101,14 @@ public class MyPreferencesTest {
 		assertThat(MyPreferences.cestaZNastaveni(ulozeno, novy)).isEqualTo(new File(novy, "data/gpx"));
 	}
 
+	/** Značku složky GeoKuk jde napsat i se zpětným lomítkem jako ve Windows. */
+	@Test
+	public void znackaSeZpetnymLomitkem() {
+		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
+		assertThat(MyPreferences.cestaZNastaveni("${GeoKuk}\\data\\gpx", koren).getAbsoluteFile().toPath().normalize().startsWith(koren.toPath())).isTrue();
+		assertThat(MyPreferences.cestaZNastaveni("${GeoKuk}/data/gpx", koren)).isEqualTo(new File(koren, "data/gpx"));
+	}
+
 	@Test
 	public void cestaMimoSlozkuProgramuZustaneAbsolutni() {
 		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
@@ -119,6 +128,21 @@ public class MyPreferencesTest {
 		preferences.putFileCollection("c", Collections.singleton(soubor));
 		assertThat(preferences.get("c", null)).contains("${GeoKuk}/data/gpx/a.gpx");
 		assertThat(preferences.getFileCollection("c", null)).containsExactly(new File(cz.geokuk.core.program.FConst.KOREN.getAbsoluteFile(), "data/gpx/a.gpx"));
+	}
+
+	/** Relativní cesta zadaná v Umístění souborů se uloží tak, aby po dalším startu mířila na stejné místo. */
+	@Test
+	public void relativniCestaSeUloziPrenosne() {
+		final Filex zadana = new Filex(new File("data/gpx"), false, true);
+		preferences.putFilex("kesDir", zadana);
+		assertThat(preferences.get("kesDir", null)).isEqualTo("${GeoKuk}/data/gpx");
+		assertThat(preferences.getFilex("kesDir", null).getEffectiveFile()).isEqualTo(zadana.getEffectiveFile());
+	}
+
+	@Test
+	public void vychoziCestaSeNemeni() {
+		final Filex vychozi = new Filex(new File("data/gpx"), false, true);
+		assertThat(preferences.getFilex("kesDir", vychozi)).isEqualTo(vychozi);
 	}
 
 	@Test

@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -34,8 +35,9 @@ public class MultiNacitac {
 	private volatile File gsakDir;
 	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
 
-	/** Zamčení se ohlásí jednou, ne při každém dalším pokusu o načtení. */
-	private volatile boolean hlasenoZamceni;
+	/** Databáze, které při posledním načítání zamykal jiný program; znovu se načítá, až je pustí. */
+	private volatile Set<File> zamcene = Collections.emptySet();
+	private List<KeFile> posledniSeznam;
 
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
@@ -70,35 +72,46 @@ public class MultiNacitac {
 		nacitace.add(new GsakDbLoader(kesoidModel::getGsakParametryNacitani));
 	}
 
-	public List<KeFile> gsakSoubory(final Filex aDataDir) {
-		return ds.scan(new Root(aDataDir.getFile(), GSAK_ROOTDIR_DEF));
+	public boolean jeZamcena(final File databaze) {
+		return zamcene.contains(databaze);
 	}
 
 	public KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
-		final List<KeFile> list = ds.coMamNacist();
+		List<KeFile> list = ds.coMamNacist();
+		if (!zamcene.isEmpty()) {
+			if (zamcene.stream().noneMatch(DatabazeJinehoProgramu::jeZamcena)) {
+				ds.nulujLastScaned();
+				list = ds.coMamNacist();
+			} else if (list != null && bezZamcenych(list).equals(bezZamcenych(posledniSeznam))) {
+				return null; // změnila se jen zamčená databáze, jiný program do ní pořád zapisuje
+			}
+		}
 		if (list == null) {
 			return null;
 		}
+		posledniSeznam = list;
 		ohlasPrazdneSlozky(list);
+		final File gsak = gsakDir;
+		// Dočasně nedostupná složka (síť, USB) neznamená, že databáze zmizely; známé zůstanou známé.
+		if (gsak == null || jeCitelnaSlozka(gsak)) {
+			kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
+		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
 		final long start = System.currentTimeMillis();
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
 		final List<String> vadne = new ArrayList<>();
-		final List<String> zamcene = new ArrayList<>();
+		final Set<File> zamceneTed = new HashSet<>();
 		for (final KeFile file : list) {
 			log.debug("Nacitam: " + file);
 			try {
 				zpracujJedenFile(file, builder, future);
 			} catch (final DatabazeJinehoProgramu.Zamcena e) {
-				zamcene.add(file.getFile().getName());
-				if (!hlasenoZamceni) {
-					hlasenoZamceni = true;
-					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Zamčená databáze " + file);
-				}
+				log.info(e.getMessage());
+				zamceneTed.add(file.getFile());
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
-				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problem pri cteni souboru " + file);
+				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
 				vadne.add(file.getFile().getName());
 			}
 		}
@@ -106,15 +119,10 @@ public class MultiNacitac {
 		builder.done();
 		final KesBag bag = builder.getKesBag();
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
-				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamcene.isEmpty() ? "" : ", zamčené " + zamcene));
-
-		if (zamcene.isEmpty()) {
-			hlasenoZamceni = false;
-			return bag;
-		}
-		// Zamčenou databázi zkusíme při příštím skenu znovu a do té doby necháme zobrazené, co už je načtené.
-		ds.nulujLastScaned();
-		return kesoidModel.getVsechnyKesoidy() == null ? bag : null;
+				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
+		zamcene = zamceneTed;
+		// Dokud je některá databáze zamčená, zůstane zobrazené, co už je načtené.
+		return zamceneTed.isEmpty() || kesoidModel.getVsechnyKesoidy() == null ? bag : null;
 	}
 
 	/** Aktivní složka GeoGetu nebo GSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
@@ -135,6 +143,33 @@ public class MultiNacitac {
 						EExceptionSeverity.DISPLAY, "Prázdná datová složka");
 			}
 		}
+	}
+
+	private List<KeFile> bezZamcenych(final List<KeFile> seznam) {
+		if (seznam == null) {
+			return null;
+		}
+		final List<KeFile> vysledek = new ArrayList<>();
+		for (final KeFile f : seznam) {
+			if (!zamcene.contains(f.getFile())) {
+				vysledek.add(f);
+			}
+		}
+		Collections.sort(vysledek, Comparator.comparing(f -> f.getFile().getPath()));
+		return vysledek;
+	}
+
+	private static List<String> jmena(final Set<File> soubory) {
+		final List<String> vysledek = new ArrayList<>();
+		for (final File f : soubory) {
+			vysledek.add(DatabazeJinehoProgramu.jmeno(f));
+		}
+		Collections.sort(vysledek);
+		return vysledek;
+	}
+
+	public static boolean jeCitelnaSlozka(final File slozka) {
+		return slozka.isDirectory() && slozka.list() != null;
 	}
 
 	/** Počet souborů podle přípony, bez cest (hlášení je veřejné). */

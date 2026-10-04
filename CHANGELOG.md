@@ -5,12 +5,24 @@
 ### Změny
 - Přenosný GeoKuk: nic se neinstaluje, program si všechno ukládá do
   složky `data` vedle sebe: nastavení (`nastaveni.xml`), uživatelské mapy
-  (`uzivatelske-mapy.properties`), cache map (`cache`), cesty, ikony
+  (`mapy`), cache map (`cache`), cesty, ikony
   (`ikony/moje`, `ikony/ostatni`), výlety (`vylety`), log a chybová
   hlášení (`log`) i dočasné soubory Javy (`tmp`). Rozhoduje jen to,
   odkud se spustí, složku jde přesunout i s daty. Nastavení už není
   v registru Windows, při prvním spuštění se odtud převezme. Volba
   „Ukládat nastavení k programu“ odpadla.
+- Data starší verze ve složce `%USERPROFILE%\geokuk` (keše z GPX,
+  výlety, cesty, ikony, dlaždice map) GeoKuk nečte a umístění složek
+  z jejího nastavení nepřevezme: keše čte z `data/gpx`, rendruje do
+  `data/render` a GeoGet a GSAK má vypnuté. Data jdou zkopírovat do
+  složky `data`, postup je v README v oddílu Přechod ze starší verze.
+- Umístění souborů: relativní cesta, třeba `data/gpx`, se počítá od
+  složky GeoKuk; volba „Relativně k umístění programu“ odpadla. Cesta
+  uvnitř složky GeoKuk se ukazuje jako `${GeoKuk}/data/gpx` a při
+  přesunu složky se posune s ní, pod ní je výsledná cesta.
+- Ve Windows se verze 6.0.0 aktualizuje sama, ale bez přibalené Javy
+  a další verze už sama nenainstaluje. Pro automatické aktualizace
+  stáhněte `GeoKuk-windows.zip` a data přeneste podle README.
 - Pro Windows je ke stažení `GeoKuk-windows.zip` s přibalenou Javou,
   program a Java jsou v podsložce `program`. Poprvé se spustí
   `GeoKuk-prvni-spusteni.cmd`, GeoKuk pak vedle vytvoří zástupce
@@ -21,7 +33,10 @@
 - Spouštěč `start.jar` nainstaluje staženou novou verzi a zvolí paměť
   (polovina paměti počítače, 1 až 3 GB), změnit ji jde v Soubor >
   Paměť programu. Po stažení nové verze GeoKuk nabídne restart: uloží
-  se jako při Soubor > Konec a spustí se znovu už v nové verzi.
+  se jako při Soubor > Konec a spustí se znovu už v nové verzi, i ve
+  složce, do které nejde zapisovat. Když spouštěč nemůže staženou verzi
+  nainstalovat (soubor drží jiný program), spustí dosavadní verzi a novou
+  zkusí nainstalovat příště.
 - GeoKuk upozorní, když do své složky nemůže zapisovat (třeba v Program
   Files), nebo když je ve složce synchronizované přes OneDrive, Dropbox
   nebo Google Disk. Ve složce bez práva zápisu se keše z GeoGetu
@@ -30,18 +45,22 @@
   v dočasné složce systému.
 - Když nová verze potřebuje novější Javu, než je přibalená, nebo je
   k dispozici zip s novější Javou, GeoKuk nabídne stažení nového zipu.
-- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál, verze
-  je pak trvale vidět vpravo v menu. Po vypnutí nabídne ruční kontrola
+  Když nejde zjistit, jakou Javu nová verze potřebuje, neinstaluje se.
+- Nápověda > Nabízet testovací verze (beta) zapíná beta kanál. Dokud
+  je zapnutý, je verze vidět vpravo v menu. Po vypnutí nabídne ruční kontrola
   aktualizací přechod na poslední stabilní verzi.
-- „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
-  nainstaluje; kde to nejde, otevře stránku nabízené verze, u bety
-  tedy betu.
+- „Připomenout za týden“ (i zavření dialogu nové verze) odloží nabídku
+  té verze o 7 dní. Novější verze se nabídne hned.
+- „Aktualizovat“ na Linuxu a macOS novou verzi rovnou
+  nainstaluje místo jaru, ze kterého GeoKuk běží; kde to nejde, otevře
+  stránku nabízené verze, u bety tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
-  tradiční zelené, multi žluté, mystery, letterbox a wherigo modré,
-  virtuální, webcam a earthcache bílé, eventy červené, ostatní objekty
-  šedé. Nalezené jsou menší, vlastní mají tmavý obrys, neaktivní
+  tradiční zelené, multi žluté, mystery, letterbox a wherigo tmavě
+  modré, virtuální, webcam a earthcache bílé, eventy červené, Lab keše
+  světle tyrkysové, ostatní typy keší modré a objekty, které nejsou
+  keše, šedé. Nalezené jsou menší, vlastní mají tmavý obrys, neaktivní
   a archivované jsou světlejší. Velikost teček se řídí hustotou keší.
-  Tečky se vykreslí i u statisíců keší, limit 30 000 keší na mapě pro ně
+  Tečky se vykreslí i u statisíců keší, limit 30 000 waypointů na mapě pro ně
   neplatí. Kešoidy > Tečky při oddálení / Vždy ikony / Vždy tečky.
 - Zvýrazňovací kruhy a popisky se nekreslí, když by se na mapě slily
   do jedné plochy; kruhy obsazenosti, když mají poloměr pod 3 pixely.
@@ -50,9 +69,17 @@
 - Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
   zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
   žádná keš není.
-- Uživatelské mapy: vlastní mapové podklady ze souboru
-  `data/uzivatelske-mapy.properties`, v menu Mapy ve skupině
-  „Uživatelské mapy“.
+- Uživatelské mapy: vlastní mapové podklady ve složce `data/mapy`, kterou
+  GeoKuk založí při startu, každá mapa v samostatném souboru
+  `<označení>.mapa`, v menu Mapy ve skupině „Uživatelské mapy“. Dvě
+  uživatelské mapy se stejným názvem v menu nebo stejnou zkratkou se
+  nezobrazí a GeoKuk je ohlásí při startu, stejně jako mapu s neznámou
+  proměnnou v adrese (třeba `{s}`). Název vestavěné mapy uživatelská mapa
+  mít smí, zkratku vestavěné mapy nebo akce programu (třeba F3 nebo
+  Ctrl+S) ne. Hlavičky mapy (`hlavicka.*`) se při přesměrování na jiný
+  server neposílají. Ukázky jsou
+  v `priklady/mapy`, zip pro Windows je obsahuje ve složce
+  `data/mapy-priklady`.
 - Mapy mají atribuci (Mapy.cz, OpenStreetMap, Freemap Slovakia) vpravo
   dole v mapě.
 - Hledání adresy (Jít > Adresa) a návrh názvu souboru u rendru podle
@@ -60,9 +87,9 @@
   Enter nebo tlačítkem Hledat, souřadnice v poli najdou adresu místa.
   Položka „Geocoding“ v kontextovém menu mapy je nahrazena položkou
   „Na OpenStreetMap...“, která místo otevře v prohlížeči.
-- Hlášení chyb: „Zadat problém“ a tlačítko „Nahlásit na GitHubu“
-  v „Informace pro hlášení chyby“ otevřou nové issue s předvyplněnými
-  informacemi o programu. „Informace pro hlášení chyby“ obsahují cestu
+- Hlášení chyb: „Zadat problém“ i „Informace pro hlášení chyby“ nejdřív
+  ukážou informace o programu, tlačítko „Nahlásit na GitHubu“ pak otevře
+  nové issue, kde jsou předvyplněné. „Informace pro hlášení chyby“ obsahují cestu
   k logu a jeho posledních 50 řádků, servisní hodnoty ze servisního okna
   a posledních 100 událostí: spuštěné položky menu s cestou v menu,
   klávesovou zkratkou a stavem přepínače, otevřená a zavřená okna
@@ -72,25 +99,60 @@
   `--ovladani[=port]`, výchozí port 48321) povolí jiným programům na
   tomto počítači ovládat GeoKuk přes HTTP – přesunout mapu, přepnout
   podklad, vybrat keš, znovu načíst keše a zjistit stav. Požadavky
-  z webového prohlížeče program odmítá.
+  z webových stránek program odmítá. Když ovládání spustit nejde, třeba
+  kvůli obsazenému portu, hlášení řekne proč.
 - V Umístění souborů zůstaly k nastavení jen složky s daty jiných
   programů (keše z GPX, GeoGet, GSAK, výstupy rendru); ostatní ukazuje
   záložka Program.
+- O programu ukáže licenci a seznam použitých knihoven s jejich
+  licencemi. Program i zip pro Windows obsahují soubory `LICENSE`
+  a `THIRD-PARTY.txt`.
+- Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
+  (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.
 
 ### Opravy
+- Nová verze se stahuje jen jednou najednou a po stažení se ověří
+  soubor na disku, takže se nenainstaluje neúplný program.
 - Tlačítka dialogů (Ano, Ne, Zrušit) a dialog pro výběr souboru jsou
   česky. Položka menu Kešoidy > Filtr... má správný název.
-- Dialog nové verze má titulek „Nová verze programu“ a čitelný text.
+- Opravené bublinové nápovědy, které popisovaly jinou funkci (mřížky,
+  Uzavřít cestu, Ladění ikon, Lovím, Přidat do cesty, Zobrazení na webu
+  a další), překlepy v oknech Postahovat dlaždice a Tisknout/Rendrovat
+  a v detailu keše a nápovědy k filtrům BestOf a Favorit. Program se v textech
+  jmenuje jednotně GeoKuk, u souborů s cestami se mluví o cestách, ne
+  o výletu, a okna Umístění souborů a Tisknout/Rendrovat se jmenují
+  stejně jako položky menu.
+- Přehled problémů ukazuje u každého problému, co se dělo a proč to
+  selhalo; sloupce se jmenují Č. a Hlášení. Stavový řádek bez načtených
+  zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku. Vzdálenost
+  a směr od pozice ukazuje, až když je myš nad mapou.
+- Hlášení v Přehledu problémů jsou česky a srozumitelně, opravené
+  překlepy a oslovení v nápovědách tlačítek.
+- Přehled problémů jde po zavření znovu otevřít v Nápověda > Přehled
+  problémů.
+- Hledání adresy v režimu offline hned ohlásí, že potřebuje připojení
+  (Mapy > Online), a nezůstane na „Hledá se ...“.
+- Po nedostatku paměti při rendrování přijde jen hláška o paměti, bez
+  „Rendrování bylo přerušeno uživatelem“.
+- Kontextové menu záměrného kříže nabízí Vystředit na kříž.
+- „Načítat až po vybrání“ u GSAKu: databáze, kterou GeoKuk ještě
+  neviděl (nová v GSAKu, po zapnutí GSAKu nebo změně jeho složky), se
+  načte až po vybrání v Přehledu zdrojů.
+- Dialog nové verze má titulek „Nová verze programu“ a čitelný text
+  a při souběhu automatické a ruční kontroly aktualizací se ukáže jen
+  jednou.
 - Načtení keší z databáze GeoGetu nebo GSAKu nečte popisy keší, takže
   nemusí projít celou databázi včetně dlouhých listingů. Hint se načte
-  až po kliknutí na Hint v detailu keše. Načítání keší potřebuje zhruba
-  polovinu paměti, 40 tisíc keší se vejde do 128 MB. Hodnocení, známka,
+  až po kliknutí na Hint v detailu keše. Hodnocení, známka,
   BestOf, favority, nadmořská výška a vlastní hodnoty z databáze GeoGetu
   a GSAK se přenesou ke keším.
 - Databáze GeoGetu nebo GSAKu, do které ten program právě zapisuje
-  (třeba import), se načte po dokončení zápisu; do té doby zůstanou
-  zobrazené dříve načtené keše. Poškozenou databázi nebo soubor, který
-  není databáze, program ohlásí česky.
+  (třeba import), nezdrží při startu načtení ostatních zdrojů a načte se
+  po dokončení zápisu. Do té doby zůstanou zobrazené dříve načtené keše,
+  Přehled zdrojů u ní ukazuje „čeká na dokončení zápisu“ a další změny
+  zdrojů (nový soubor, Znovu načíst, zapnutí zdroje) se projeví až po
+  dokončení zápisu. Poškozenou databázi nebo soubor, který není databáze,
+  program ohlásí česky.
 - Databáze GeoGetu a GSAKu se otevírají jen pro čtení, GeoKuk v jejich
   složce nic nezaloží ani nezmění.
 - Keše se načtou i z databáze starší verze GeoGetu nebo GSAKu, které
@@ -101,8 +163,24 @@
   dat dialogem, ohlásí se v přehledu problémů. Okno nečeká, než doběhne
   procházení velké datové složky.
 - GSAK: prázdné vlastní hodnoty se nezobrazují jako tagy.
+- GSAK: kód keše z vlastních hodnot se nebere jako tag. Databáze GSAKu
+  s vlastními hodnotami tak zabírá výrazně méně paměti.
 - Aktivní datová složka GeoGetu nebo GSAKu bez databází se ohlásí.
   Uložení v Umístění souborů nezakládá složky u neaktivních položek.
+- Druhé spuštění GeoKuku nad stejnou složkou `data` jen oznámí, že
+  GeoKuk už běží, a skončí; dvě instance by si přepisovaly nastavení
+  a výlety.
+- Nastavení s neobvyklými znaky (třeba řídicími znaky ze schránky) se
+  uloží a znovu načte; dřív se přestalo ukládat nebo se při dalším
+  spuštění celé zahodilo. Nečitelný soubor nastavení, který nejde odložit
+  stranou, program nepřepíše.
+- Poškozená fotka (EXIF), na které se čtení zacyklí nebo mu dojde
+  paměť, už neukončí načítání ostatních souborů s kešemi.
+- Databáze GeoGetu nebo GSAKu s nedokončeným zápisem (program spadl
+  při importu) se ohlásí s radou otevřít ji v GeoGetu nebo GSAKu.
+- Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
+  v kódování Windows se načtou správně, i s diakritikou v názvech
+  fotek a waypointů.
 - GPX: keše ve jmenném prostoru Groundspeak `cache/1/0/2` (GPX 1.1) se
   načtou jako keše. Keš s nesmyslnými souřadnicemi (NaN), výškou
   s čárkou, bez názvu nebo s nesmyslnou obtížností či terénem nezahodí
@@ -116,7 +194,7 @@
   Složka cest a složky ikon uvnitř datové složky se neprocházejí jako
   zdroj keší.
 - Chybějící nebo neúplná vybraná sada ikon (smazaná složka, chybí
-  `skla.txt`, vypnutá složka vlastních ikon) se nahradí sadou Standard;
+  `skla.txt`) se nahradí sadou Standard;
   dřív se kvůli ní nenačetly žádné keše.
 - Pruh „Indexování“ při načítání keší ukazuje průběh.
 - Zavřené hledání keší už nedrží v paměti keše z předchozího načtení.
@@ -131,8 +209,9 @@
   takže pomalý nebo neodpovídající server nezastaví mapu. Neúplně
   stažená nebo useknutá dlaždice se nepoužije, nevezme z cache a stáhne
   se znovu; dlaždici, kterou server pošle celou, program nezahodí.
-- Dlaždice, kterou se nepodařilo stáhnout (výpadek sítě), se po 30
-  sekundách zkusí stáhnout znovu, ne při každém překreslení mapy,
+- Dlaždice, kterou se nepodařilo stáhnout (výpadek sítě), se zkusí
+  stáhnout znovu s rostoucím odstupem (nejdéle po 5 minutách), ne při
+  každém překreslení mapy,
   a místo technického výpisu ukazuje srozumitelný důvod. Bez připojení
   k internetu se chyby stahování hlásí do logu souhrnně.
 - Hromadné stahování dlaždic ukazuje průběh, počet chyb a konec, jde
@@ -145,16 +224,23 @@
   z cache se do logu hlásí souhrnně.
 - Při rychlém posouvání mapy se nezobrazí cizí dlaždice a souběžný
   zápis cache map nepoškodí.
+- Ve filtru se stav aktivních keší jmenuje „Aktivní“.
+- Oddíl Výstup v okně Tisknout/Rendrovat se vejde i s dlouhou výstupní složkou:
+  složka se zkrátí uprostřed, celá je v bublině nápovědy.
+- Zrušené nebo neúspěšné rendrování nesmaže obrázek a kalibraci `.map`
+  z dřívějšího rendrování; rendr obrázku kalibrace pro Ozi nemaže vůbec.
 - Poškozená cache mapových dlaždic se odloží stranou (jen jednou a ta
   poškozená) a založí znovu. Když cache nejde použít (třeba odpojený
   disk), program na to jednou upozorní.
+- Cache mapových dlaždic poškozená plným diskem nebo pádem programu
+  uprostřed zápisu se odloží a založí znovu, i když se poškození
+  ukáže až při čtení nebo zápisu dlaždic. Po pádu programu se cache při
+  příštím startu zkontroluje. Když na disku zbývá méně než 100 MB,
+  dlaždice se do cache neukládají a program na to jednou upozorní.
 - Mapové dlaždice v paměti mají strop, při dlouhé práci s mapou paměť
   neroste.
-- Uživatelská mapa s `{s}` nebo jinou neznámou proměnnou v adrese se
-  při startu ohlásí jako chybná. Dlaždice se stáhnou i ze serveru,
-  který adresu `http://` přesměruje na `https://`. Uživatelská mapa
-  nemůže převzít klávesovou zkratku programu (třeba F3 nebo Ctrl+S),
-  program ji s hláškou vynechá.
+- Dlaždice se stáhnou i ze serveru, který adresu `http://` přesměruje
+  na `https://`.
 - Stahování mapových dlaždic se všem serverům představuje jako GeoKuk
   s verzí, bez adresy webu. OpenStreetMap se načítá přes https a nejde
   ji hromadně stahovat do cache.
@@ -232,17 +318,27 @@
   a Kešoidy mají různá podtržená písmena, která jsou v jejich textu.
   Alt+I otevře menu Skin i s vybranou keší a neoznačí ji jako
   ignorovanou.
+- Opravené překlepy a nesrozumitelné texty v menu, bublinách
+  a hláškách.
+  Hláška o nedostatku paměti radí, jak paměť zvýšit, hláška
+  o nepoužitelné cache dlaždic radí zkontrolovat disk a práva ke složce.
 - Písmeno napsané v otevřeném menu nebo do pole na liště (Hodnocení,
   BestOf, Favorit) nepřepne mapový podklad. Po výběru v seznamu Výlet
   na liště ovládají šipky a PageUp/PageDown dál mapu.
 - Když nejde otevřít prohlížeč (nápověda, web), program ukáže adresu
   a nabídne ji zkopírovat. Nápověda z okna O programu otevře hlavní
   stránku nápovědy.
-- O programu uvádí licenci GNU GPL v3.
+- Odkaz u keše nebo waypointu otevře jen webovou stránku (http, https),
+  ne soubor. Značky HTML v kódech, názvech a autorech keší, názvech
+  waypointů, cest a typů waypointů, v hintu, ve jménech souborů, v adresách
+  z hledání adresy a v souborech uživatelských map se v bublině, detailu
+  keše, hledání, nabídkách, výběru ikon, Přehledu zdrojů a hlášce při
+  startu zobrazí jako text.
+- Při pomalém startu programu se už neobjeví chyba při načítání ikon.
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
-  mapu s vlastním klíčem, příklad je v `priklady/uzivatelske-mapy.properties`.
+  mapu s vlastním klíčem, příklad je v `priklady/mapy/cyklo.mapa`.
 - Položka nápovědy „Zprávy uživatelům“, která neměla odkud zprávy brát.
 - Vrstva „Letecká Google“, náhled vlevo dole ukazuje leteckou mapu
   Mapy.cz.
@@ -253,7 +349,9 @@
   v testech junit 4.13.2.
 - Popis vydání na GitHubu se bere z tohoto souboru. Soubory vydání mají
   ověřitelný původ (`gh attestation verify`).
-- Program se vydává jako `geokuk.jar` a zip pro Windows s Javou,
+- SQLJet 1.1.15 (GPL 3 nebo novější).
+- Program se vydává jako `geokuk.jar`, spouštěč `start.jar`,
+  `java.properties` a zip pro Windows s Javou,
   konfigurace Launch4j je odstraněná.
 - Smoke test celého programu nad falešným mapovým serverem (workflow
   Smoke, každou noc na `main`) a test kolizí klávesových zkratek.

@@ -21,7 +21,7 @@ public class JenDoTerenuUNenalezenychAction extends ToggleAction0 {
 
 	public JenDoTerenuUNenalezenychAction() {
 		super("Jen něco u NEnalezených");
-		putValue(SHORT_DESCRIPTION, "U ještě nenalezených vyluštěných mysterek a multin zhasne úvodní souřadnice a všechny stage.");
+		putValue(SHORT_DESCRIPTION, "U ještě nenalezených vyluštěných mysterek a multin zhasne úvodní souřadnice a waypointy, které nejsou potřeba k luštění.");
 	}
 
 	public void inject(final KesoidModel model) {

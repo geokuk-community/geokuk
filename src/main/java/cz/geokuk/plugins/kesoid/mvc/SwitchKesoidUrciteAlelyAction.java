@@ -8,6 +8,7 @@ import cz.geokuk.framework.ToggleAction0;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.mapicon.IkonBag;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -25,7 +26,7 @@ public class SwitchKesoidUrciteAlelyAction extends ToggleAction0 implements Afte
 	 *
 	 */
 	public SwitchKesoidUrciteAlelyAction(final Alela alela) {
-		super("Zapnuti vypnuti alely");
+		super("Zapnutí a vypnutí alely");
 		this.alela = alela;
 		// putValue(MNEMONIC_KEY, InputEvent.)
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
@@ -75,8 +76,13 @@ public class SwitchKesoidUrciteAlelyAction extends ToggleAction0 implements Afte
 		kesoidModel.filtrujDleAlely(alela.qualName(), nastaveno);
 	}
 
+	/** Název alely (u symbolů text z GPX) se zobrazí jako text. */
+	static String jmeno(final Alela alela, final int pocet) {
+		return String.format("<html>%s: <b>%s</b> <i>(%d)</i>", FString.html(alela.getGen().getDisplayName()), FString.html(alela.getDisplayName()), pocet);
+	}
+
 	private String sestavJmeno() {
-		return String.format("<html>%s: <b>%s</b> <i>(%d)</i>", alela.getGen().getDisplayName(), alela.getDisplayName(), vsechny.getPoctyAlel().count(alela));
+		return jmeno(alela, vsechny.getPoctyAlel().count(alela));
 	}
 
 }

@@ -13,7 +13,7 @@ public class OnlineModeAction extends ToggleAction0 {
 
 	public OnlineModeAction() {
 		super("Online");
-		putValue(SHORT_DESCRIPTION, "Režim online, kdy se stahují mapy z webu, v offlinu se berou mapy pouze z diskové keše.");
+		putValue(SHORT_DESCRIPTION, "Režim online, kdy se stahují mapy z webu, v offlinu se berou mapy pouze z cache na disku.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_O);
 
 	}

@@ -16,7 +16,7 @@ public final class Dlg {
 	}
 
 	public static void error(final String informace) {
-		JOptionPane.showMessageDialog(parentFrame(), informace, "Geokuk: Chyba", JOptionPane.ERROR_MESSAGE);
+		JOptionPane.showMessageDialog(parentFrame(), informace, "GeoKuk: Chyba", JOptionPane.ERROR_MESSAGE);
 	}
 
 	public static void info(final String informace, final String titulek) {
@@ -25,7 +25,7 @@ public final class Dlg {
 
 	/** Upozornění, na které program nečeká. */
 	public static void upozorneni(final String informace) {
-		final JDialog dialog = new JOptionPane(informace, JOptionPane.WARNING_MESSAGE).createDialog(parentFrame(), "Geokuk: Upozornění");
+		final JDialog dialog = new JOptionPane(informace, JOptionPane.WARNING_MESSAGE).createDialog(parentFrame(), "GeoKuk: Upozornění");
 		dialog.setModal(false);
 		dialog.setVisible(true);
 	}

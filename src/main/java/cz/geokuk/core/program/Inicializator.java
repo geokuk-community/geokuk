@@ -3,9 +3,7 @@
  */
 package cz.geokuk.core.program;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 import javax.swing.SwingUtilities;
 
@@ -38,6 +36,7 @@ import cz.geokuk.plugins.mrizky.MrizkaModel;
 import cz.geokuk.plugins.refbody.HlidacReferencnihoBodu;
 import cz.geokuk.plugins.refbody.RefbodyModel;
 import cz.geokuk.plugins.vylety.*;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -48,6 +47,7 @@ public class Inicializator {
 	private final MainFrameHolder mainFrameHolder = new MainFrameHolder();
 	private NapovedaModel napovedaModel;
 	private DalkoveOvladani dalkoveOvladani;
+	private Akce akce;
 
 	public void inicializace() {
 		final BeanBag bb = new BeanBag();
@@ -105,7 +105,7 @@ public class Inicializator {
 		kpm.getPlugins().stream().forEach(bb::registerSigleton);
 
 		// akce
-		final Akce akce = new Akce();
+		akce = new Akce();
 		bb.registerSigleton(akce);
 		bb.registrFieldsAsSingleton(akce);
 
@@ -118,10 +118,10 @@ public class Inicializator {
 
 	public void intMapAkce(final BeanBag bb, final Akce akce) {
 		UzivatelskeMapy.setZkratkyProgramu(akce.zkratky());
-		final List<String> chyby = UzivatelskeMapy.nacti();
-		if (!chyby.isEmpty()) {
-			chyby.forEach(Diagnostika::zaznamenejChybu);
-			SwingUtilities.invokeLater(() -> Dlg.error("Chyby v souboru " + new File(FConst.DATA_DIR, UzivatelskeMapy.SOUBOR) + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby)));
+		final String chyby = UzivatelskeMapy.nacti();
+		if (chyby != null) {
+			Diagnostika.zaznamenejChybu(chyby);
+			SwingUtilities.invokeLater(() -> Dlg.error(FString.text(UzivatelskeMapy.zalom(chyby, 100))));
 		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);
@@ -139,8 +139,9 @@ public class Inicializator {
 		try {
 			dalkoveOvladani.spust(port, vyvojova);
 		} catch (final IOException | RuntimeException e) {
-			Dlg.error("Dálkové ovládání nejde spustit na portu " + port + ": " + e.getMessage());
+			Dlg.error(DalkoveOvladani.popisChyby(port, e));
 		}
+		akce.dalkoveOvladaniAction.ukazStav();
 	}
 
 	public void zkontrolovatAktualizace() {

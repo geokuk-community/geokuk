@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy;
 
 import cz.geokuk.framework.ToggleAction0;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
+import cz.geokuk.util.lang.FString;
 
 public abstract class MapyAction0 extends ToggleAction0 {
 
@@ -10,9 +11,9 @@ public abstract class MapyAction0 extends ToggleAction0 {
 	private final EKaType katype;
 
 	public MapyAction0(final EKaType katype) {
-		super(katype.getNazev());
+		super(FString.text(katype.getNazev()));
 		this.katype = katype;
-		putValue(SHORT_DESCRIPTION, katype.getPopis());
+		putValue(SHORT_DESCRIPTION, FString.text(katype.getPopis()));
 		if (katype.getKlavesa() != 0) {
 			putValue(MNEMONIC_KEY, katype.getKlavesa());
 		}
