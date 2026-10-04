@@ -56,4 +56,13 @@ public class LimityKresleniUlozeniTest {
 		model.nactiLimityKresleni(pref.node(FPref.KESOID_node));
 		Assert.assertEquals(LimityKresleni.VYCHOZI, model.getLimityKresleni());
 	}
+
+	@Test
+	public void ulozeneTeckyPodMinimemSeZvednou() {
+		pref.node(FPref.KESOID_node).putInt(FPref.LIMIT_IKON_value, 30_000);
+		pref.node(FPref.KESOID_node).putInt(FPref.LIMIT_TECEK_value, 40_000);
+		model.nactiLimityKresleni(pref.node(FPref.KESOID_node));
+		Assert.assertEquals(30_000, model.getLimityKresleni().getIkon());
+		Assert.assertEquals(LimityKresleni.MIN_TECEK, model.getLimityKresleni().getTecek());
+	}
 }
