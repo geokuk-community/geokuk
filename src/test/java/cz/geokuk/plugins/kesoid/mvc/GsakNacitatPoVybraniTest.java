@@ -113,6 +113,23 @@ public class GsakNacitatPoVybraniTest {
 		Assert.assertTrue(nacte(treti));
 	}
 
+	/** Databáze ve složce GSAKu zadané přes symbolický odkaz se při dalším prohledání znovu nezablokuje. */
+	@Test
+	public void znamaDatabazePresOdkazSeNezablokuje() throws Exception {
+		final File skutecna = tmp.newFolder("skutecna");
+		final File odkaz = new File(tmp.getRoot(), "odkaz");
+		try {
+			java.nio.file.Files.createSymbolicLink(odkaz.toPath(), skutecna.toPath());
+		} catch (final UnsupportedOperationException | java.io.IOException e) {
+			Assume.assumeNoException("symbolický odkaz nejde vytvořit", e);
+		}
+		final File db = new File(odkaz, "Default/sqlite.db3").getAbsoluteFile();
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(db));
+		model.zaradGsakDatabaze(set(db));
+		Assert.assertTrue(nacte(db));
+	}
+
 	private static Set<File> set(final File... f) {
 		return new HashSet<>(Arrays.asList(f));
 	}
