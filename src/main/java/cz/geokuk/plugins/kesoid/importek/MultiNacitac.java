@@ -168,7 +168,7 @@ public class MultiNacitac {
 		return vysledek;
 	}
 
-	private static boolean jeCitelnaSlozka(final File slozka) {
+	public static boolean jeCitelnaSlozka(final File slozka) {
 		return slozka.isDirectory() && slozka.list() != null;
 	}
 
