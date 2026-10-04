@@ -2,9 +2,10 @@
 
 ## 6.3.0
 
-### Vývoj
-- Workflow Velká data: zkouška celého programu nad velkým GPX a velkými
-  databázemi GeoGetu a GSAKu, spouští se ručně.
+### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
 
 ## 6.2.0
 

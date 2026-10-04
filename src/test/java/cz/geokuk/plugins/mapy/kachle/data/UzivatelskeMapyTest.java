@@ -557,6 +557,7 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void dlouhyRadekSeZalomiNaMezerach() {
 		Assert.assertEquals("aaa bbb\nccc ddd\ne", UzivatelskeMapy.zalom("aaa bbb ccc ddd e", 7));
+		Assert.assertEquals("aaa\nbbbb", UzivatelskeMapy.zalom("aaa bbbb", 7));
 	}
 
 	@Test
