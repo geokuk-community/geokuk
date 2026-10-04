@@ -137,9 +137,21 @@ public final class FString {
 		return s;
 	}
 
-	/** Text z dat (GPX, databáze) pro popisek Swingu bez vlastního HTML: když začíná {@code <html>}, Swing by ho vykreslil jako HTML, proto se ukáže jako text. */
+	/**
+	 * Text z dat (GPX, databáze) pro popisek Swingu bez vlastního HTML: když text nebo některý jeho řádek začíná {@code <html>}, Swing by ho vykreslil
+	 * jako HTML (JOptionPane dělí zprávu po řádcích), proto se ukáže jako text.
+	 */
 	public static String text(final String s) {
-		return s != null && BasicHTML.isHTMLString(s) ? "<html>" + html(s).replace("\n", "<br>") : s;
+		return s != null && maHtmlRadek(s) ? "<html>" + html(s).replaceAll("\r\n|\r|\n", "<br>") : s;
+	}
+
+	private static boolean maHtmlRadek(final String s) {
+		for (final String radek : s.split("\r\n|\r|\n", -1)) {
+			if (BasicHTML.isHTMLString(radek)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Text pro vložení do HTML (popisky Swingu začínající {@code <html>}), aby se z něj nestaly značky. */
