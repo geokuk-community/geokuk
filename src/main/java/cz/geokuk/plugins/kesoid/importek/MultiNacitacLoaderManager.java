@@ -9,7 +9,6 @@ import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.util.file.Filex;
-import cz.geokuk.util.file.KeFile;
 
 public class MultiNacitacLoaderManager {
 
@@ -48,10 +47,6 @@ public class MultiNacitacLoaderManager {
 		iTimer = new Timer(10000, e -> startLoad(false, genom));
 		iTimer.start();
 
-	}
-
-	public List<KeFile> gsakSoubory(final Filex aDataDir) {
-		return multiNacitac.gsakSoubory(aDataDir);
 	}
 
 }
