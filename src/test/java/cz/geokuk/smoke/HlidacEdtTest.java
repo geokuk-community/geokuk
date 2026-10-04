@@ -16,6 +16,8 @@ public class HlidacEdtTest {
 			EventQueue.invokeAndWait(() -> {});
 			EventQueue.invokeAndWait(HlidacEdtTest::dlouhaObsluha);
 			EventQueue.invokeAndWait(HlidacEdtTest::kratkaPomalaObsluha);
+			// invokeAndWait se vrátí před koncem dispatchEvent hlídače, zápis pomalé události počká na další událost.
+			EventQueue.invokeAndWait(() -> {});
 			final List<String> pomale = hlidac.getPomale();
 			Assert.assertEquals(pomale.toString(), 2, pomale.size());
 			Assert.assertTrue(pomale.get(0), pomale.get(0).contains("Zásobník EDT po 1500 ms:"));
