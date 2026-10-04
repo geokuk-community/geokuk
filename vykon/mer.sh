@@ -5,7 +5,8 @@
 #
 # Proměnné:
 #   CO        části: db (načtení databází GeoGetu a GSAKu), hint, kresleni, program (spuštěný program),
-#             výchozí všechny
+#             kesoidy (kreslení ikon a teček pro počty v IKONY a TECKY, jen nová verze; ve výchozích není),
+#             výchozí db hint kresleni program
 #   N, POPIS  keší v databázích a délka popisu (100000, 20000)
 #   PRACOVNI  složka pro worktree a databáze (výchozí target/vykon)
 #   VYSTUP    soubor s výsledkem (výchozí PRACOVNI/<stroj>-<datum>.txt)
@@ -126,6 +127,10 @@ fi
 			echo "### $v"
 			java_ -cp "$cp" cz.geokuk.plugins.cesty.MerKresleni
 		done
+	fi
+	if [[ "$CO" == *kesoidy* ]]; then
+		echo "## Kreslení kešoidů (nová verze, medián 7 překreslení, okno 1400x900, ikony bez limitu)"
+		java_ -cp "$CP_NOVA" cz.geokuk.plugins.kesoid.importek.MerKesoidy ikony "${IKONY:-30000,60000,90000,120000}" tecky "${TECKY:-100000,300000,600000,1000000}" | grep "N="
 	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"
