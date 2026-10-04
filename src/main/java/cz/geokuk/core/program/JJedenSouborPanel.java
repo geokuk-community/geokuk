@@ -26,7 +26,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 
 	private final String label;
 	private JTextField jtext;
-	private JCheckBox jRelativneKProgramu;
 	private JCheckBox jActive;
 	private JTextField jCurrVal;
 
@@ -89,7 +88,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 
 	public void setFilex(final Filex filex) {
 		jtext.setText(filex.getFile().getPath());
-		jRelativneKProgramu.setSelected(filex.isRelativeToProgram());
 		jActive.setSelected(filex.isActive() || !lzeDeaktivovat);
 		prepocitej();
 	}
@@ -122,8 +120,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 
 		jtext = new JTextField();
 		// jtext.setText(defalt.getFile().getPath());
-		jRelativneKProgramu = new JCheckBox("Relativně k umístění programu");
-		jRelativneKProgramu.setEnabled(FConst.JAR_DIR_EXISTUJE);
 		jActive = new JCheckBox("Aktivní");
 		jActive.setEnabled(lzeDeaktivovat);
 		jCurrVal = new JTextField();
@@ -139,9 +135,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 			box2.add(jtext);
 			box2.add(jbut);
 			final Box panel3 = Box.createHorizontalBox();
-			if (FConst.JAR_DIR_EXISTUJE) {
-				panel3.add(jRelativneKProgramu);
-			}
 			if (jActive.isEnabled()) {
 				panel3.add(jActive);
 			}
@@ -164,7 +157,7 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 				if (fc == null) { // dlouho to trvá, tak vytvoříme vždy nový
 					fc = new JFileChooser();
 				}
-				fc.setCurrentDirectory(new File(jtext.getText()));
+				fc.setCurrentDirectory(filex.getEffectiveFile());
 				if (jenAdresare) {
 					fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				}
@@ -178,15 +171,13 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		prepocitej();
 		jtext.getDocument().addDocumentListener(this);
 
-		jRelativneKProgramu.addActionListener(e -> prepocitej());
 		jActive.addActionListener(e -> prepocitej());
 	}
 
 	private void prepocitej() {
-		filex = new Filex(new File(jtext.getText()), jRelativneKProgramu.isSelected(), jActive.isSelected());
+		filex = new Filex(new File(jtext.getText()), false, jActive.isSelected());
 		jCurrVal.setText(filex.getEffectiveFile().getPath());
 		jtext.setEnabled(jActive.isSelected());
-		jRelativneKProgramu.setEnabled(jActive.isSelected());
 	}
 
 	private void zmemniliNamTo() {
