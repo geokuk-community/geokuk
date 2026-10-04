@@ -6,7 +6,6 @@
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
   se načtou.
-- Menší spotřeba paměti u velkých dat, i při přenačtení keší.
 
 ## 6.2.0
 
