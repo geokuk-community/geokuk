@@ -1,5 +1,50 @@
 # Změny
 
+## 6.3.0
+
+### Změny
+- Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
+- Přehled zdrojů se otevírá rychleji a po novém načtení keší ukazuje
+  aktuální stav.
+- Menší spotřeba paměti u velkých dat, i při přenačtení keší.
+- Rychlejší načítání keší.
+- Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
+  zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
+- Kreslení teček při velkém počtu keší zatěžuje paměť poloviční měrou,
+  posun mapy je plynulejší.
+- Kešoidy > Limity kreslení…: nastavitelný nejvyšší počet ikon
+  (výchozí 90 000, dosud 30 000) a teček (výchozí 300 000) ve výřezu.
+  Limit ikon platí i pro popisky a zvýrazňovací kruhy; nad limitem
+  teček se nic nekreslí a stavový řádek to ohlásí.
+- Když databázi GeoGetu nebo GSAKu drží zamčenou jiný program, stavový
+  řádek ukáže „Zamčeno: N“ a v bublině jejich jména.
+
+### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
+- Změna vzhledu (Skin) se projeví i v otevřených dialozích.
+- Když jiný program zamyká víc databází, každá se načte, jakmile ji
+  pustí; změny ostatních zdrojů se ukážou hned. Změna Umístění souborů
+  zruší rozběhnuté načítání a začne znovu.
+- Nečitelné nastavení, které drží jiný program, už nesmaže dříve
+  odložený soubor `nastaveni.xml.vadne`. Hláška řekne, že se změny při
+  tomto spuštění neuloží.
+- Chyba při vytváření zástupce se zobrazí se správnou diakritikou.
+- Program spuštěný ze složky, kam nejde zapisovat, se ukončí bez
+  dalšího dotazu.
+- Final tradiční keše na stejném místě jako keš se už neukazuje na mapě
+  jako samostatný bod.
+- Databáze GSAKu ve složce zadané přes symbolický odkaz se po vybrání
+  znovu nezablokuje.
+- Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
+  hlášení.
+
+### Vývoj
+- Odstraněna knihovna SwingX.
+- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
+  vznikne složka `data/mapy`.
+
 ## 6.2.0
 
 ### Změny
