@@ -278,11 +278,15 @@ public final class UzivatelskeMapy {
 			return null;
 		}
 		final Map<String, String> hlavicky = new TreeMap<>();
-		v.forEach((vlastnost, hodnota) -> {
-			if (vlastnost.startsWith(HLAVICKA)) {
-				hlavicky.put(vlastnost.substring(HLAVICKA.length()), hodnota.replace("{verze}", FConst.VERSION));
+		for (final Map.Entry<String, String> e : v.entrySet()) {
+			if (e.getKey().startsWith(HLAVICKA)) {
+				if (e.getValue().matches("(?s).*\\p{Cntrl}.*")) {
+					chyby.add(jmeno + ": " + e.getKey() + " nesmí obsahovat řídicí znaky (\\r, \\n, \\t)");
+					return null;
+				}
+				hlavicky.put(e.getKey().substring(HLAVICKA.length()), e.getValue().replace("{verze}", FConst.VERSION));
 			}
-		});
+		}
 		return EKaType.uzivatelska(id, nazev, v.getOrDefault("popis", nazev), min, max, maxauto, klavesa.isEmpty() ? 0 : Character.toUpperCase(klavesa.charAt(0)), keyStroke, hlavicky,
 				v.getOrDefault("atribuce", ""), hromadne.equals("ano"),
 				new UzivatelskyUrlBuilder(url));
