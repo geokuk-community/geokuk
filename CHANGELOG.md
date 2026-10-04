@@ -2,6 +2,10 @@
 
 ## 6.3.0
 
+### Vývoj
+- Workflow Velká data: zkouška celého programu nad velkým GPX a velkými
+  databázemi GeoGetu a GSAKu, spouští se ručně.
+
 ## 6.2.0
 
 ### Změny
