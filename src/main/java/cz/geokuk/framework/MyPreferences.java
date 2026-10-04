@@ -828,10 +828,14 @@ public class MyPreferences extends Preferences {
 	/** Cesta uvnitř složky GeoKuku se ukládá relativně se značkou, ať nastavení přežije přesun složky. */
 	public static String cestaDoNastaveni(final File f, final File koren) {
 		if (f.isAbsolute()) {
-			final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
-			final java.nio.file.Path cesta = f.toPath().normalize();
-			if (cesta.startsWith(k) && !cesta.equals(k)) {
-				return ZNACKA_KORENE + "/" + k.relativize(cesta).toString().replace(File.separatorChar, '/');
+			try {
+				final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
+				final java.nio.file.Path cesta = f.toPath().normalize();
+				if (cesta.startsWith(k) && !cesta.equals(k)) {
+					return ZNACKA_KORENE + "/" + k.relativize(cesta).toString().replace(File.separatorChar, '/');
+				}
+			} catch (final java.nio.file.InvalidPathException e) {
+				// Rozepsaná cesta (třeba „C:“ složené se složkou programu) se uloží, jak ji uživatel napsal.
 			}
 		}
 		return f.getPath();
