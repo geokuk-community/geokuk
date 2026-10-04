@@ -12,6 +12,9 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
@@ -164,11 +167,26 @@ public final class Start {
 			System.err.println("Výměna " + JAR + " selhala: " + e);
 		}
 		final File jar = new File(adresar, JAR);
+		final File bak = new File(adresar, JAR + ".bak");
 		if (jar.isFile()) {
+			// Poškozený jar (třeba přerušený zápis po aktualizaci) by se nespustil a uživatel by nic neviděl.
+			if (!jeSpustitelny(jar) && bak.isFile() && jeSpustitelny(bak)) {
+				System.err.println(JAR + " nejde spustit, spouštím předchozí verzi " + bak);
+				return bak;
+			}
 			return jar;
 		}
-		final File bak = new File(adresar, JAR + ".bak");
 		return bak.isFile() ? bak : null;
+	}
+
+	/** Jar s manifestem, který říká, co spustit. */
+	static boolean jeSpustitelny(final File jar) {
+		try (JarFile jf = new JarFile(jar)) {
+			final Manifest manifest = jf.getManifest();
+			return manifest != null && manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS) != null;
+		} catch (final IOException | RuntimeException e) {
+			return false;
+		}
 	}
 
 	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */

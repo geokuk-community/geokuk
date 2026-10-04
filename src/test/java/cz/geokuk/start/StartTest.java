@@ -200,4 +200,30 @@ public class StartTest {
 		final File jar = Start.vyberJar(d, Start::vymenJar);
 		Assert.assertEquals("novy", new String(Files.readAllBytes(jar.toPath())));
 	}
+
+	@Test
+	public void poskozenyJarSpustiBak() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "useknutý".getBytes());
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		Assert.assertEquals(new File(d, "geokuk.jar.bak"), Start.vyberJar(d, Start::vymenJar));
+	}
+
+	@Test
+	public void spustitelnyJarSeSpusti() throws Exception {
+		final File d = tmp.newFolder();
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		Assert.assertEquals(new File(d, "geokuk.jar"), Start.vyberJar(d, Start::vymenJar));
+	}
+
+	private static void spustitelnyJar(final File f) throws Exception {
+		final java.util.jar.Manifest m = new java.util.jar.Manifest();
+		m.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+		m.getMainAttributes().put(java.util.jar.Attributes.Name.MAIN_CLASS, "cz.geokuk.Hlavni");
+		try (java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(new java.io.FileOutputStream(f), m)) {
+			out.putNextEntry(new java.util.zip.ZipEntry("a.txt"));
+			out.write(1);
+		}
+	}
 }
