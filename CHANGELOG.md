@@ -2,10 +2,6 @@
 
 ## 6.3.0
 
-### Změny
-- Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
-  zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
-
 ### Opravy
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje

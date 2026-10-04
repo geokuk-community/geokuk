@@ -35,7 +35,8 @@ public class OpensakSlozkaTest {
 	public void setUp() throws Exception {
 		gpx = tmp.newFolder("gpx");
 		Files.write(new File(gpx, "a.gpx").toPath(), ImportKesiTest.gpx(ImportKesiTest.kes("GC9999", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "")).getBytes(StandardCharsets.UTF_8));
-		slozka = tmp.newFolder("opensak");
+		// Známé databáze se ukládají s kanonickou cestou, ve Windows je TEMP zkrácený (RUNNER~1).
+		slozka = tmp.newFolder("opensak").getCanonicalFile();
 	}
 
 	@After
