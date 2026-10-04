@@ -49,6 +49,8 @@ public class KesoidModel extends Model0 {
 	private KesoidUmisteniSouboru umisteniSouboru;
 	/** Mění se z EDT i z vlákna načítání: jen celou novou kopií v upravBlokovaneZdroje. */
 	private volatile Set<File> blokovaneZdroje = Collections.emptySet();
+	/** Složky, které se při posledním prohledání nepodařilo přečíst. */
+	private volatile Set<File> nedostupnePriNacitani = Collections.emptySet();
 	private GsakParametryNacitani gsakParametryNacitani;
 
 	// injektovanci
@@ -131,7 +133,12 @@ public class KesoidModel extends Model0 {
 	/**
 	 * Databáze GSAKu z aktuálního prohledání. Při „Načítat až po vybrání“ se databáze, kterou GeoKuk při minulém prohledání neviděl, nenačte, dokud ji uživatel nevybere.
 	 */
-	public synchronized void zaradGsakDatabaze(final Set<File> databaze) {
+	public void zaradGsakDatabaze(final Set<File> databaze) {
+		zaradGsakDatabaze(databaze, Collections.emptySet());
+	}
+
+	/** Známé databáze v nedostupných složkách zůstanou známé. */
+	public synchronized void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
 		final MyPreferences pref = currPrefe().node(FPref.KESOID_node);
 		final Collection<File> zname = pref.getFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, null);
 		if (zname != null && !getGsakParametryNacitani().isNacistVsechnyDatabaze()) {
@@ -139,9 +146,26 @@ public class KesoidModel extends Model0 {
 			nove.removeAll(zname);
 			upravBlokovaneZdroje(b -> b.addAll(nove));
 		}
-		if (zname == null || !databaze.equals(new HashSet<>(zname))) {
-			pref.putFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, databaze);
+		final Set<File> noveZname = new HashSet<>(databaze);
+		if (zname != null) {
+			for (final File f : zname) {
+				if (jePod(f, nedostupne)) {
+					noveZname.add(f);
+				}
+			}
 		}
+		if (zname == null || !noveZname.equals(new HashSet<>(zname))) {
+			pref.putFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, noveZname);
+		}
+	}
+
+	public void setNedostupnePriNacitani(final Set<File> nedostupne) {
+		nedostupnePriNacitani = nedostupne;
+	}
+
+	private static boolean jePod(final File f, final Collection<File> slozky) {
+		final Path cesta = f.toPath();
+		return slozky.stream().anyMatch(s -> cesta.startsWith(s.toPath()));
 	}
 
 	/** Databáze, do které jiný program právě zapisuje; načte se, až zápis skončí. */
@@ -463,7 +487,8 @@ public class KesoidModel extends Model0 {
 				}
 			}
 		}
-		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && nedostupne.stream().noneMatch(f.toPath()::startsWith)));
+		final Set<File> priNacitani = nedostupnePriNacitani;
+		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && nedostupne.stream().noneMatch(f.toPath()::startsWith) && !jePod(f, priNacitani)));
 	}
 
 	/** Upraví kopii blokovaných zdrojů; když se změnila, uloží ji. */

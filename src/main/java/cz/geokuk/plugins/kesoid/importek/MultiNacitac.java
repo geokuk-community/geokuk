@@ -63,8 +63,12 @@ public class MultiNacitac {
 	}
 
 	public MultiNacitac(final KesoidModel kesoidModel) {
+		this(kesoidModel, new DirScanner());
+	}
+
+	MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds) {
 		this.kesoidModel = kesoidModel;
-		ds = new DirScanner();
+		this.ds = ds;
 		nacitace.add(new NacitacGeokuk());
 		nacitace.add(new NacitacGpx());
 		nacitace.add(new NacitacImageMetadata());
@@ -92,9 +96,12 @@ public class MultiNacitac {
 		posledniSeznam = list;
 		ohlasPrazdneSlozky(list);
 		final File gsak = gsakDir;
+		// Platí čitelnost z doby skenu, pozdější kontrola by mohla vidět složku, která se mezitím vrátila.
+		final Set<File> nedostupne = ds.getNedostupne();
+		kesoidModel.setNedostupnePriNacitani(nedostupne);
 		// Dočasně nedostupná složka (síť, USB) neznamená, že databáze zmizely; známé zůstanou známé.
-		if (gsak == null || jeCitelnaSlozka(gsak)) {
-			kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
+		if (gsak == null || !nedostupne.contains(gsak)) {
+			kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()), nedostupne);
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
