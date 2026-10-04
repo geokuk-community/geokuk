@@ -2,7 +2,6 @@ package cz.geokuk.plugins.kesoid;
 
 import java.util.*;
 
-import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.kesoid.genetika.*;
 import cz.geokuk.plugins.kesoid.genetika.Genom.CitacAlel;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
@@ -60,13 +59,12 @@ public class KesBag {
 
 	public KesBag(final Genom genom) {
 		this.genom = genom;
-		indexator = new Indexator<>(BoundingRect.ALL);
 		kesoidyset = new HashSet<>();
 		citacAlel = genom.createCitacAlel();
 	}
 
 	public void add(final Wpt wpt) {
-		if (indexatorOdevzdan) {
+		if (indexatorOdevzdan || indexator != null) {
 			throw new IllegalStateException("Indexator uz byl odevztdan");
 		}
 		// Následné volání má vedlejší efekt spočívající ve výpočtu genotypu a schování ve Wpt.
@@ -83,8 +81,6 @@ public class KesBag {
 
 		final Genotyp genotyp = wpt.getGenotyp();
 
-		final Mou mou = wpt.getMou();
-		indexator = indexator.add(mou.xx, mou.yy, wpt);
 		final Kesoid kesoid = wpt.getKesoid();
 		kesoidyset.add(kesoid);
 		wpts.add(wpt);
@@ -98,6 +94,7 @@ public class KesBag {
 	}
 
 	public void done() {
+		postavIndex();
 		kesoidy = new ArrayList<>(kesoidyset.size());
 		kesoidy.addAll(kesoidyset);
 		kesoidyset = null;
@@ -113,8 +110,16 @@ public class KesBag {
 	}
 
 	public Indexator<Wpt> getIndexator() {
+		postavIndex();
 		indexatorOdevzdan = true;
 		return indexator;
+	}
+
+	/** Index se staví najednou ze všech přidaných waypointů. */
+	private void postavIndex() {
+		if (indexator == null) {
+			indexator = Indexator.postav(BoundingRect.ALL, wpts, wpt -> wpt.getMou().xx, wpt -> wpt.getMou().yy);
+		}
 	}
 
 	/**
