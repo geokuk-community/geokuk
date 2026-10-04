@@ -11,6 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
+import javax.swing.SwingUtilities;
+
+import cz.geokuk.framework.Event0;
 import cz.geokuk.framework.ProgressModel;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
@@ -18,6 +21,7 @@ import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.kesoid.mvc.ZamceneDatabazeEvent;
 import cz.geokuk.util.file.KeFile;
 
 /** Opakované načítání, když jiný program drží některou databázi zamčenou. */
@@ -32,6 +36,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private File gpx;
 	private File slozkaGeogetu;
 	private MultiNacitac nacitac;
+	private final List<List<String>> ohlasenaZamceni = new CopyOnWriteArrayList<>();
 	private final AtomicInteger zpracovanychSouboru = new AtomicInteger();
 
 	@Before
@@ -85,6 +90,30 @@ public class ZamcenaDatabazeOpakovaniTest {
 		zamkni(a);
 		zapisGpx("b.gpx", "GC2222");
 		Assert.assertNull(nacti());
+	}
+
+	/** Zamčené databáze se ohlásí jednou při změně, po uvolnění prázdným seznamem. */
+	@Test
+	public void zamceneDatabazeSeOhlasi() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final CountDownLatch pustitA = zamkni(a);
+		start();
+		nacti();
+		Assert.assertEquals(Collections.singletonList(Collections.singletonList("a.db3")), ohlasenaZamceni());
+
+		zapisGpx("b.gpx", "GC2222");
+		nacti();
+		Assert.assertEquals("beze změny se neohlašuje znovu", 1, ohlasenaZamceni().size());
+
+		pustitA.countDown();
+		Thread.sleep(300);
+		nacti();
+		Assert.assertEquals(Collections.emptyList(), ohlasenaZamceni().get(1));
+	}
+
+	private List<List<String>> ohlasenaZamceni() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {});
+		return ohlasenaZamceni;
 	}
 
 	/** Zrušené načítání se při dalším pokusu zopakuje celé. */
@@ -171,6 +200,13 @@ public class ZamcenaDatabazeOpakovaniTest {
 			@Override
 			public KesBag getVsechnyKesoidy() {
 				return zobrazene;
+			}
+
+			@Override
+			public void fire(final Event0<?> udalost) {
+				if (udalost instanceof ZamceneDatabazeEvent) {
+					ohlasenaZamceni.add(((ZamceneDatabazeEvent) udalost).getJmena());
+				}
 			}
 
 			@Override

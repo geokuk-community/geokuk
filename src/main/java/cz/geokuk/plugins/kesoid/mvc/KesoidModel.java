@@ -7,6 +7,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
 
+import javax.swing.SwingUtilities;
+
 import com.google.common.collect.Collections2;
 
 import cz.geokuk.core.program.FPref;
@@ -58,6 +60,7 @@ public class KesoidModel extends Model0 {
 	private ProgressModel progressModel;
 	private Boolean onoff;
 	private EZobrazeniKesi zobrazeniKesi;
+	private volatile List<String> zamceneDatabaze = Collections.emptyList();
 
 	@Getter
 	private KesoidPluginManager kesopidPluginManager;
@@ -319,6 +322,15 @@ public class KesoidModel extends Model0 {
 
 	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {
 		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit));
+	}
+
+	/** Voláno po každém načtení; událost jen při změně, doručená v EDT. */
+	public void setZamceneDatabaze(final List<String> jmena) {
+		if (jmena.equals(zamceneDatabaze)) {
+			return;
+		}
+		zamceneDatabaze = jmena;
+		SwingUtilities.invokeLater(() -> fire(new ZamceneDatabazeEvent(jmena)));
 	}
 
 	public void setGsakParametryNacitani(final GsakParametryNacitani aGsakParametryNacitani) {
