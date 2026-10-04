@@ -18,6 +18,46 @@ public class BezpecnyZapisTest {
 		return new String(Files.readAllBytes(soubor.toPath()), StandardCharsets.UTF_8);
 	}
 
+	/** Kdo soubor čte během přepisování, vidí vždy celý starý nebo celý nový obsah (přejmenování, ne přepis na místě). */
+	@Test
+	public void ctenarNevidiRozepsanySoubor() throws Exception {
+		// Ve Windows čtení během přejmenování selhává sdílením souboru, ne poloviční obsah.
+		Assume.assumeFalse(System.getProperty("os.name").toLowerCase().startsWith("windows"));
+		final File soubor = new File(tmp.getRoot(), "data.bin");
+		final int velikost = 1 << 20;
+		BezpecnyZapis.zapis(soubor, out -> vypln(out, 'A', velikost));
+		final java.util.concurrent.atomic.AtomicBoolean konec = new java.util.concurrent.atomic.AtomicBoolean();
+		final java.util.concurrent.atomic.AtomicReference<String> chyba = new java.util.concurrent.atomic.AtomicReference<>();
+		final Thread ctenar = new Thread(() -> {
+			while (!konec.get() && chyba.get() == null) {
+				try {
+					final byte[] b = Files.readAllBytes(soubor.toPath());
+					if (b.length != velikost || b[0] != b[b.length - 1]) {
+						chyba.set("rozepsaný soubor: " + b.length + " B");
+					}
+				} catch (final IOException e) {
+					chyba.set("soubor chvíli neexistoval: " + e);
+				}
+			}
+		});
+		ctenar.start();
+		for (int i = 0; i < 50 && chyba.get() == null; i++) {
+			final char znak = i % 2 == 0 ? 'B' : 'A';
+			BezpecnyZapis.zapis(soubor, out -> vypln(out, znak, velikost));
+		}
+		konec.set(true);
+		ctenar.join();
+		Assert.assertNull(chyba.get());
+	}
+
+	private static void vypln(final java.io.OutputStream out, final char znak, final int velikost) throws IOException {
+		final byte[] blok = new byte[64 * 1024];
+		java.util.Arrays.fill(blok, (byte) znak);
+		for (int i = 0; i < velikost; i += blok.length) {
+			out.write(blok);
+		}
+	}
+
 	@Test
 	public void zapiseSoubor() throws Exception {
 		final File soubor = new File(tmp.getRoot(), "data.txt");
