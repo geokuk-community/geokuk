@@ -152,19 +152,17 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 			}
 		} else {
 			final boolean prechod = jePrechodNaStabilni(lastVersion, FConst.VERSION, betaKanal);
-			final Object[] options = prechod
-					? new Object[] { "Zobrazit web", "Přejít na stabilní verzi", "Zůstat u testovací verze" }
-					: new Object[] { "Zobrazit web", "Stáhnout novou verzi", "Připomenout za týden" };
+			final Object[] options = tlacitka(prechod);
 			final String text = prechod
 					? "<html>Používáte testovací verzi <b>" + FConst.VERSION + "</b>.<br>Poslední stabilní verze je <b>" + lastVersion + "</b>."
 					: "<html>Používaná verze programu GeoKuk je <b>" + FConst.VERSION + "</b>.<br>Nová verze je <b>" + lastVersion + "</b>.";
 			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), text, prechod ? "Přechod na stabilní verzi" : "Nová verze programu",
-					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
+					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[POZDEJI]);
 			switch (n) {
-			case 0:
+			case WEB:
 				zobrazitWeb();
 				break;
-			case 1:
+			case AKTUALIZOVAT:
 				if (StahnoutAktualizaciSwingWorker.lzeInstalovat()) {
 					if (!StahnoutAktualizaciSwingWorker.spust(lastVersion)) {
 						Dlg.info("Nová verze se už stahuje.", "Aktualizace");
@@ -180,6 +178,17 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 				break;
 			}
 		}
+	}
+
+	static final int AKTUALIZOVAT = 0;
+	static final int WEB = 1;
+	static final int POZDEJI = 2;
+
+	/** Tlačítka dialogu nové verze v pořadí indexů AKTUALIZOVAT, WEB, POZDEJI. */
+	static Object[] tlacitka(final boolean prechod) {
+		return prechod
+				? new Object[] { "Přejít na stabilní verzi", "Zobrazit na webu", "Zůstat u testovací verze" }
+				: new Object[] { "Aktualizovat", "Zobrazit na webu", "Připomenout za týden" };
 	}
 
 	private void stahnoutJar(final String verze) {
