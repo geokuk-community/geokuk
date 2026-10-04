@@ -496,6 +496,27 @@ public class KachleDBManagerTest {
 		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
 	}
 
+	/** Když vlákno kontroly nejde spustit (nedostatek paměti), zápis nesmí čekat navždy. */
+	@Test(timeout = 60000)
+	public void nespustenaKontrolaNeblokujeZapis() throws Exception {
+		ulozKachle();
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			void spustVlakno(final Runnable kontrola) {
+				throw new OutOfMemoryError("unable to create native thread");
+			}
+		};
+		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
+		try {
+			final Future<Boolean> ulozeni = vlakno.submit(() -> manager.save(Collections.singleton(new ItemToSave(kachle(300), png()))));
+			Assert.assertTrue(ulozeni.get(10, TimeUnit.SECONDS));
+			Assert.assertNotNull(manager.load(kachle(300)));
+		} finally {
+			vlakno.shutdownNow();
+		}
+	}
+
 	private static final Ka KACHLE_MIMO = new Ka(KaLoc.ofJZ(new Mou(0x10000000, 0x10000000), 13), EKaType.TURIST_M);
 
 	private static Ka kachle(final int i) {

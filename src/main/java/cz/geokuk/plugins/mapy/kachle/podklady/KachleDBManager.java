@@ -583,14 +583,25 @@ class KachleDBManager implements KachleManager {
 		final CountDownLatch hotovo = new CountDownLatch(1);
 		kontroly.put(f, hotovo);
 		final int odlozeniPred = odlozeni;
-		final Thread vlakno = new Thread(() -> {
-			try {
-				zkontroluj(f, odlozeniPred);
-			} finally {
-				kontroly.remove(f);
-				hotovo.countDown();
-			}
-		}, "Kontrola cache dlaždic");
+		try {
+			spustVlakno(() -> {
+				try {
+					zkontroluj(f, odlozeniPred);
+				} finally {
+					kontroly.remove(f);
+					hotovo.countDown();
+				}
+			});
+		} catch (final Throwable e) {
+			// Bez kontroly by zápis čekal navždy; cache se použije nezkontrolovaná.
+			kontroly.remove(f);
+			hotovo.countDown();
+			log.warn("Kontrolu cache dlaždic {} nejde spustit: {}", f, e.toString());
+		}
+	}
+
+	void spustVlakno(final Runnable kontrola) {
+		final Thread vlakno = new Thread(kontrola, "Kontrola cache dlaždic");
 		vlakno.setDaemon(true);
 		vlakno.start();
 	}
