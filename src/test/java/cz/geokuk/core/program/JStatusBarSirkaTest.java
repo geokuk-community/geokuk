@@ -68,6 +68,30 @@ public class JStatusBarSirkaTest {
 		Assert.assertEquals(predDaty.height, radek.getPreferredSize().height);
 	}
 
+	@Test
+	public void varovaniSeVzdyVejdeCele() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JStatusBar radek = new JStatusBar();
+		final JPanel okno = new JPanel(new BorderLayout());
+		okno.add(radek, BorderLayout.SOUTH);
+		final JLabel varovani = (JLabel) pole(radek, "varovaniPoctuPrekrocenych");
+		final java.lang.reflect.Method varuj = JStatusBar.class.getDeclaredMethod("setVarujPrekroceni", boolean.class);
+		varuj.setAccessible(true);
+		final int plna = radek.getPreferredSize().width;
+		for (int sirka = plna / 2; sirka <= plna + 50; sirka += 7) {
+			varuj.invoke(radek, false);
+			okno.setSize(sirka, 400);
+			okno.doLayout();
+			final int vyska = radek.getPreferredSize().height;
+			varuj.invoke(radek, true);
+			okno.doLayout();
+			radek.doLayout();
+			Assert.assertEquals("šířka " + sirka, vyska, radek.getHeight());
+			Assert.assertEquals("šířka " + sirka, varovani.getPreferredSize().width, varovani.getWidth());
+			Assert.assertTrue("šířka " + sirka, varovani.getX() + varovani.getWidth() <= radek.getWidth());
+		}
+	}
+
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
 		f.setAccessible(true);

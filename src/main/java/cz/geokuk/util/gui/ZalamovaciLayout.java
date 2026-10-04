@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Komponenty vedle sebe zleva v přirozené šířce; co se do řádku nevejde, přejde celé na další řádek.
  * Rezervovaná komponenta se při zalamování počítá i neviditelná, aby se počet řádků neměnil s její viditelností.
- * Plovoucí komponenta (průběh, varování) o řádcích nerozhoduje, dostane zbylé místo v posledním řádku.
+ * Plovoucí komponenta (třeba průběh) o řádcích nerozhoduje, dostane zbylé místo v posledním řádku.
  */
 public class ZalamovaciLayout implements LayoutManager {
 

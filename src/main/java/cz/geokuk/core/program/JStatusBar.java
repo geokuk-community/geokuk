@@ -381,8 +381,12 @@ public class JStatusBar extends JPanel {
 		jPocetKesiVCestach.setToolTipText("Počet waypointů dohromady / počet cest.");
 		add(vylety);
 
+		varovaniPoctuPrekrocenych.setText("Překročen limit " + FConst.MAX_POC_WPT_NA_MAPE + " waypointů");
+		varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
+		varovaniPoctuPrekrocenych.setForeground(Color.RED);
+		varovaniPoctuPrekrocenych.setVisible(false);
 		add(varovaniPoctuPrekrocenych);
-		layout.plovouci(varovaniPoctuPrekrocenych);
+		layout.rezervuj(varovaniPoctuPrekrocenych);
 		jFilterProgressPanel = createPanel();
 		// jFilterProgress.setVisible(false);
 		// jFilterProgress.setStringPainted(true);
@@ -443,14 +447,7 @@ public class JStatusBar extends JPanel {
 	}
 
 	private void setVarujPrekroceni(final boolean b) {
-		if (b) {
-			varovaniPoctuPrekrocenych.setText("Překročen limit " + FConst.MAX_POC_WPT_NA_MAPE + " waypointů");
-			varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
-			varovaniPoctuPrekrocenych.setForeground(Color.RED);
-			varovaniPoctuPrekrocenych.setVisible(true);
-		} else {
-			varovaniPoctuPrekrocenych.setVisible(false);
-		}
+		varovaniPoctuPrekrocenych.setVisible(b);
 		revalidate();
 	}
 
