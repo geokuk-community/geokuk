@@ -15,7 +15,6 @@ import javax.swing.*;
 import cz.geokuk.api.mapicon.Imagant;
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.*;
-import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.cesty.CestyModel;
 import cz.geokuk.plugins.cesty.akce.OdebratZCestyAction;
@@ -169,7 +168,10 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private EZobrazeniKesi zobrazeni = EZobrazeniKesi.AUTOMATICKY;
 	private int prumer;
 	private int moumerPrumeru;
-	private Boolean oznamenePrekroceni;
+	private String oznamenePrekroceni;
+	private volatile LimityKresleni limity = LimityKresleni.VYCHOZI;
+	/** Pro měření limitů: čas každého vykreslení na obrazovku do logu. */
+	private static final boolean MERIT = Boolean.getBoolean("geokuk.merKresleni");
 	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
 	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
 
@@ -397,6 +399,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		repaint();
 	}
 
+	public void onEvent(final LimityKresleniEvent event) {
+		limity = event.getLimity();
+		repaint();
+	}
+
 	public void onEvent(final FenotypPreferencesChangedEvent aEvent) {
 		iJmenaAlel = aEvent.getJmenaNefenotypovanychAlel();
 		repaintIfVse();
@@ -465,32 +472,55 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		if (ikonBag == null) {
 			return;
 		}
+		final long zacatek = System.nanoTime();
 		final int pocet = indexator.count(getSoord().getBoundingRect());
-		final boolean husteTecky = zobrazeni == EZobrazeniKesi.TECKY
-				|| zobrazeni != EZobrazeniKesi.IKONY && (getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE);
-		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
-		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
-		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
-			oznamenePrekroceni = prekrocenLimit;
-			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
+		final LimityKresleni l = limity;
+		final Kresleni kresleni = kresleni(zobrazeni, getSoord().getMoumer(), pocet, l, vykreslovatOkamtiteAleDlouho);
+		final boolean husteTecky = kresleni == Kresleni.TECKY || kresleni == Kresleni.NAD_LIMITEM_TECEK;
+		final boolean prekrocenLimit = kresleni == Kresleni.NAD_LIMITEM_IKON;
+		final boolean prekrocenLimitTecek = kresleni == Kresleni.NAD_LIMITEM_TECEK;
+		final String prekroceni = prekrocenLimitTecek ? "tecky " + l.getTecek() : prekrocenLimit ? "ikony " + l.getIkon() : "";
+		if (!prekroceni.equals(oznamenePrekroceni)) {
+			oznamenePrekroceni = prekroceni;
+			final int limit = prekrocenLimitTecek ? l.getTecek() : l.getIkon();
+			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(!prekroceni.isEmpty(), prekrocenLimitTecek, limit));
 		}
 
 		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
 		try {
 			if (husteTecky) {
-				kresliTecky(gg, mapa, prumerTecek(pocet));
+				if (!prekrocenLimitTecek) {
+					kresliTecky(gg, mapa, prumerTecek(pocet));
+				}
 				for (final List<Wpt> list : mapa.values()) {
 					list.clear();
 				}
 			}
 			// Při tečkách už jen zvýrazněná keš pod myší.
 			kresli(gg, mapa, prekrocenLimit || husteTecky);
+			if (MERIT && !vykreslovatOkamtiteAleDlouho) {
+				log.info("Kreslení kešoidů: {}, waypointů {}, {} ms", prekrocenLimitTecek || prekrocenLimit ? "nad limitem" : husteTecky ? "tečky" : "ikony", pocet,
+						(System.nanoTime() - zacatek) / 1_000_000);
+			}
 		} finally {
 			// Nedržet waypointy po přenačtení keší.
 			for (final List<Wpt> list : mapa.values()) {
 				list.clear();
 			}
 		}
+	}
+
+	enum Kresleni {
+		IKONY, TECKY, NAD_LIMITEM_IKON, NAD_LIMITEM_TECEK
+	}
+
+	/** Nad limitem se na obrazovku nekreslí nic, do souboru (render) vždy. */
+	static Kresleni kresleni(final EZobrazeniKesi zobrazeni, final int moumer, final int pocet, final LimityKresleni limity, final boolean doSouboru) {
+		final boolean tecky = zobrazeni == EZobrazeniKesi.TECKY || zobrazeni != EZobrazeniKesi.IKONY && (moumer < ZOOM_IKON || pocet > limity.getIkon());
+		if (tecky) {
+			return !doSouboru && pocet > limity.getTecek() ? Kresleni.NAD_LIMITEM_TECEK : Kresleni.TECKY;
+		}
+		return !doSouboru && pocet > limity.getIkon() ? Kresleni.NAD_LIMITEM_IKON : Kresleni.IKONY;
 	}
 
 	private void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
