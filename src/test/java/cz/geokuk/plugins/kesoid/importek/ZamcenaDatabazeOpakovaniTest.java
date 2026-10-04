@@ -1,0 +1,179 @@
+package cz.geokuk.plugins.kesoid.importek;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import cz.geokuk.framework.ProgressModel;
+import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.plugins.kesoid.genetika.Genom;
+import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
+import cz.geokuk.plugins.kesoid.mvc.GccomNick;
+import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+
+/** Opakované načítání, když jiný program drží některou databázi zamčenou. */
+public class ZamcenaDatabazeOpakovaniTest {
+
+	@Rule
+	public TemporaryFolder tmp = new TemporaryFolder();
+
+	private final ExecutorService geoget = Executors.newCachedThreadPool();
+	private final List<CountDownLatch> zamky = new ArrayList<>();
+	private KesBag zobrazene;
+	private File gpx;
+	private File slozkaGeogetu;
+	private MultiNacitac nacitac;
+
+	@Before
+	public void setUp() throws Exception {
+		gpx = tmp.newFolder("gpx");
+		slozkaGeogetu = tmp.newFolder("geoget");
+		zapisGpx("a.gpx", "GC1111");
+		nacitac = new MultiNacitac(model());
+	}
+
+	@After
+	public void uklid() {
+		zamky.forEach(CountDownLatch::countDown);
+		geoget.shutdown();
+	}
+
+	/** Každá databáze se načte, jakmile ji jiný program pustí, i když jiná je pořád zamčená. */
+	@Test
+	public void dveDatabazeSeUvolniSamostatne() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final File b = zalozGeoget("b.db3", "GC000B");
+		final CountDownLatch pustitA = zamkni(a);
+		zamkni(b);
+		start();
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+		Assert.assertTrue(nacitac.jeZamcena(b));
+	}
+
+	/** Změna jiného zdroje se ukáže hned, když zamčená databáze ještě nic nezobrazila. */
+	@Test
+	public void zmenaJinehoZdrojeNecekaNaZamek() throws Exception {
+		zamkni(zalozGeoget("a.db3", "GC000A"));
+		start();
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+
+		zapisGpx("b.gpx", "GC2222");
+		Assert.assertEquals(set("GC1111", "GC2222"), kody(nacti()));
+	}
+
+	/** Keše ze zamčené databáze, které už jsou zobrazené, nezmizí. */
+	@Test
+	public void zobrazeneKeseZamceneDatabazeZustanou() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		zamkni(a);
+		zapisGpx("b.gpx", "GC2222");
+		Assert.assertNull(nacti());
+	}
+
+	/** Zrušené načítání se při dalším pokusu zopakuje celé. */
+	@Test
+	public void zruseneNacitaniSeZopakuje() throws Exception {
+		start();
+		final CompletableFuture<Void> zruseno = new CompletableFuture<>();
+		zruseno.cancel(false);
+		Assert.assertNull(nacitac.nacti(zruseno, new Genom()));
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+	}
+
+	private void start() {
+		nacitac.setRootDirs(true, gpx, slozkaGeogetu, null, Collections.emptySet());
+	}
+
+	private KesBag nacti() throws Exception {
+		final KesBag bag = nacitac.nacti(null, new Genom());
+		if (bag != null) {
+			zobrazene = bag;
+		}
+		return bag;
+	}
+
+	private CountDownLatch zamkni(final File db) throws Exception {
+		final CountDownLatch zamceno = new CountDownLatch(1);
+		final CountDownLatch pustit = new CountDownLatch(1);
+		zamky.add(pustit);
+		geoget.submit(() -> {
+			try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+				s.execute("BEGIN EXCLUSIVE");
+				zamceno.countDown();
+				pustit.await();
+				s.execute("COMMIT");
+			}
+			return null;
+		});
+		zamceno.await();
+		return pustit;
+	}
+
+	private void zapisGpx(final String jmeno, final String kod) throws Exception {
+		Files.write(new File(gpx, jmeno).toPath(), ImportKesiTest.gpx(ImportKesiTest.kes(kod, "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "")).getBytes(StandardCharsets.UTF_8));
+	}
+
+	private File zalozGeoget(final String jmeno, final String kod) throws SQLException {
+		final File db = new File(slozkaGeogetu, jmeno);
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("CREATE TABLE geocache (id TEXT, x REAL, y REAL, name TEXT, author TEXT, cachetype TEXT, cachesize TEXT, difficulty TEXT, terrain TEXT,"
+					+ " cachestatus INTEGER, gs_ownerid INTEGER, dthidden INTEGER, country TEXT, state TEXT, dtfound INTEGER)");
+			s.execute("CREATE TABLE geolist (id TEXT, shortdesc BLOB, hint TEXT)");
+			s.execute("CREATE TABLE waypoint (id TEXT, x REAL, y REAL, prefixid TEXT, wpttype TEXT, name TEXT)");
+			s.execute("CREATE TABLE geotag (id TEXT, ptrkat INTEGER, ptrvalue INTEGER)");
+			s.execute("CREATE TABLE geotagcategory (key INTEGER, value TEXT)");
+			s.execute("CREATE TABLE geotagvalue (key INTEGER, value TEXT)");
+			s.execute("INSERT INTO geocache VALUES ('" + kod + "', 50.1, 14.4, 'Keš', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+		}
+		return db;
+	}
+
+	private static Set<String> set(final String... kody) {
+		return new HashSet<>(Arrays.asList(kody));
+	}
+
+	private static Set<String> kody(final KesBag bag) {
+		Assert.assertNotNull("má se načíst a zobrazit", bag);
+		final Set<String> kody = new HashSet<>();
+		for (final Kesoid k : bag.getKesoidy()) {
+			kody.add(k.getIdentifier());
+		}
+		return kody;
+	}
+
+	private KesoidModel model() {
+		final ProgressModel progress = new ProgressModel();
+		progress.inject(udalost -> {});
+		final KesoidModel model = new KesoidModel() {
+			@Override
+			public GccomNick getGccomNick() {
+				return new GccomNick("Ja", 42);
+			}
+
+			@Override
+			public KesBag getVsechnyKesoidy() {
+				return zobrazene;
+			}
+
+			@Override
+			public void zaradGsakDatabaze(final Set<File> databaze) {}
+		};
+		model.inject(progress);
+		model.inject(new KesoidPluginManager());
+		return model;
+	}
+}

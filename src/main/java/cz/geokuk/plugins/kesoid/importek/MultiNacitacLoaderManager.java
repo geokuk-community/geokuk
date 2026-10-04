@@ -36,6 +36,10 @@ public class MultiNacitacLoaderManager {
 			vynechane.add(f.getEffectiveFile().toPath().toAbsolutePath().normalize().toFile());
 		}
 		multiNacitac.setRootDirs(prenacti, u.getKesDir().getEffectiveFileIfActive(), u.getGeogetDataDir().getEffectiveFileIfActive(), u.getGsakDataDir().getEffectiveFileIfActive(), vynechane);
+		if (prenacti && klsw != null && !klsw.isDone()) {
+			// Rozběhnuté načítání by doběhlo se starým nastavením; začne se znovu s novým.
+			klsw.cancel(false);
+		}
 		if (klsw == null || klsw.isDone()) {
 			klsw = new MultiNacitacSwingWorker(multiNacitac, genom, kesoidModel);
 			klsw.execute();
