@@ -77,7 +77,11 @@ public class MultiNacitac {
 			return null;
 		}
 		ohlasPrazdneSlozky(list);
-		kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
+		final File gsak = gsakDir;
+		// Dočasně nedostupná složka (síť, USB) neznamená, že databáze zmizely; známé zůstanou známé.
+		if (gsak == null || jeCitelnaSlozka(gsak)) {
+			kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
+		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
 		final long start = System.currentTimeMillis();
@@ -133,6 +137,10 @@ public class MultiNacitac {
 						EExceptionSeverity.DISPLAY, "Prázdná datová složka");
 			}
 		}
+	}
+
+	private static boolean jeCitelnaSlozka(final File slozka) {
+		return slozka.isDirectory() && slozka.list() != null;
 	}
 
 	/** Počet souborů podle přípony, bez cest (hlášení je veřejné). */
