@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,7 +23,7 @@ import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 
-/** Dlaždice, jejíž stahování už běží, se po zrušení a novém vyžádání nestahuje podruhé. */
+/** Dlaždice, jejíž stahování už běží, se po zrušení a novém vyžádání nestahuje podruhé; zrušená, která ještě nezačala, se nestáhne. */
 public class KachleRozbehnuteStazeniTest {
 
 	@Rule
@@ -30,6 +31,7 @@ public class KachleRozbehnuteStazeniTest {
 
 	private HttpServer server;
 	private final AtomicInteger pozadavku = new AtomicInteger();
+	private final List<String> cesty = new CopyOnWriteArrayList<>();
 	private final CountDownLatch serverDostal = new CountDownLatch(1);
 	private final CountDownLatch serverOdpovi = new CountDownLatch(1);
 	private KachleZiskavac ziskavac;
@@ -43,6 +45,7 @@ public class KachleRozbehnuteStazeniTest {
 		server.setExecutor(Executors.newCachedThreadPool());
 		server.createContext("/", ex -> {
 			pozadavku.incrementAndGet();
+			cesty.add(ex.getRequestURI().getPath());
 			serverDostal.countDown();
 			try {
 				serverOdpovi.await(10, TimeUnit.SECONDS);
@@ -107,5 +110,45 @@ public class KachleRozbehnuteStazeniTest {
 		Assert.assertNull(String.valueOf(stav.getThr()), stav.getThr());
 		Assert.assertNotNull(stav.getImg());
 		Assert.assertEquals("server dostal jediný požadavek", 1, pozadavku.get());
+	}
+
+	private Ka dlazdice(final int i) {
+		return new Ka(KaLoc.ofJZ(new Mou(0x40000000 + i * 0x100000, 0x20000000), 12), EKaType.podleJmena("user-pomala"));
+	}
+
+	/** Obsadí všechna vlákna online stahování a jednu dlaždici nechá ve frontě: dávkové stahování pak čeká, ještě než pošle požadavek. */
+	private void obsadOnlineStahovani() throws InterruptedException {
+		for (int i = 1; i <= 6; i++) {
+			ziskavac.ziskejObsah(new KaOneReq(dlazdice(i), stav -> {}, Priority.KACHLE), DiagnosticsData.create(null, null, null));
+		}
+		Assert.assertTrue("online stahování začalo", serverDostal.await(10, TimeUnit.SECONDS));
+		Thread.sleep(500);
+	}
+
+	@Test(timeout = 30000)
+	public void zrusenaCekajiciDlazdiceSeNestahuje() throws Exception {
+		obsadOnlineStahovani();
+		final Ka davkova = dlazdice(100);
+		final Kanceler kanceler = ziskavac.ziskejObsah(new KaOneReq(davkova, stav -> {}, Priority.STAHOVANI), DiagnosticsData.create(null, null, null));
+		Thread.sleep(500);
+		kanceler.cancel();
+		serverOdpovi.countDown();
+		Thread.sleep(1500);
+		Assert.assertFalse("zrušená dlaždice se nestahovala: " + cesty, cesty.stream().anyMatch(c -> c.startsWith("/12/" + davkova.getLoc().getFromSzUnsignedX() + "/")));
+	}
+
+	@Test(timeout = 30000)
+	public void novyPozadavekPoZruseniDostaneObrazek() throws Exception {
+		obsadOnlineStahovani();
+		final Ka davkova = dlazdice(100);
+		final Kanceler kanceler = ziskavac.ziskejObsah(new KaOneReq(davkova, stav -> {}, Priority.STAHOVANI), DiagnosticsData.create(null, null, null));
+		Thread.sleep(500);
+		kanceler.cancel();
+		final CompletableFuture<KachloStav> novy = new CompletableFuture<>();
+		ziskavac.ziskejObsah(new KaOneReq(davkova, novy::complete, Priority.STAHOVANI), DiagnosticsData.create(null, null, null));
+		serverOdpovi.countDown();
+		final KachloStav stav = novy.get(10, TimeUnit.SECONDS);
+		Assert.assertNull(String.valueOf(stav.getThr()), stav.getThr());
+		Assert.assertNotNull(stav.getImg());
 	}
 }
