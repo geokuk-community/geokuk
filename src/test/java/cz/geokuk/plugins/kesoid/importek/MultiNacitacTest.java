@@ -38,6 +38,11 @@ public class MultiNacitacTest {
 		}
 
 		@Override
+		protected cz.geokuk.framework.MyPreferences currPrefe() {
+			return cz.geokuk.framework.MyPreferences.current().node("test-multinacitac");
+		}
+
+		@Override
 		public GccomNick getGccomNick() {
 			return new GccomNick("Ja", 42);
 		}
