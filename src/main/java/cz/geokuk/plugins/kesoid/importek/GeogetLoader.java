@@ -37,6 +37,9 @@ public class GeogetLoader extends Nacitac0 {
 	private static final String[] SLOUPCE_GEOCACHE = { "x as lat", "y as lon", "name", "author", "cachetype", "cachesize", "difficulty", "terrain", "cachestatus", "gs_ownerid", "dthidden",
 			"country", "state", "dtfound" };
 
+	/** Bez nich by keše skončily bez kódu nebo na souřadnicích 0, 0. */
+	private static final Map<String, List<String>> POVINNE_SLOUPCE = ImmutableMap.of("geocache", Arrays.asList("id", "x", "y"), "waypoint", Arrays.asList("id", "x", "y"));
+
 	private static final String GEOGET_CACHES_COUNT = "SELECT count(*) FROM geocache";
 
 	private static final String[] SLOUPCE_WAYPOINT = { "x as lat", "y as lon", "prefixid", "wpttype", "name" };
@@ -62,6 +65,7 @@ public class GeogetLoader extends Nacitac0 {
 			throw new IllegalArgumentException("Cannot load from file " + file);
 		}
 		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
+			DatabazeJinehoProgramu.zkontrolujSloupce(statement, file, "GeoGetu", POVINNE_SLOUPCE, Collections.emptySet());
 			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file.toString());
 			// Tagy před kešemi, keš si hodnoty přebírá už při přidání.
