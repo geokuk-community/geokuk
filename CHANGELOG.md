@@ -63,10 +63,12 @@
 - Mapy > Zobrazit všechny keše nastaví mapu tak, aby byly vidět všechny
   zobrazené keše. Po prvním načtení dat se to stane samo, když ve výřezu
   žádná keš není.
-- Uživatelské mapy: vlastní mapové podklady ve složce `data/mapy`, každá
-  mapa v samostatném souboru `<označení>.mapa`, v menu Mapy ve skupině
-  „Uživatelské mapy“. Mapy se stejným názvem v menu nebo stejnou zkratkou
-  se nezobrazí a GeoKuk je ohlásí při startu. Ukázky jsou
+- Uživatelské mapy: vlastní mapové podklady ve složce `data/mapy`, kterou
+  GeoKuk založí při startu, každá mapa v samostatném souboru
+  `<označení>.mapa`, v menu Mapy ve skupině „Uživatelské mapy“. Dvě
+  uživatelské mapy se stejným názvem v menu nebo stejnou zkratkou se
+  nezobrazí a GeoKuk je ohlásí při startu. Název vestavěné mapy uživatelská
+  mapa mít smí, zkratku vestavěné mapy nebo akce programu ne. Ukázky jsou
   v `priklady/mapy`, zip pro Windows je obsahuje ve složce
   `data/mapy-priklady`.
 - Mapy mají atribuci (Mapy.cz, OpenStreetMap, Freemap Slovakia) vpravo
@@ -139,9 +141,11 @@
   BestOf, favority, nadmořská výška a vlastní hodnoty z databáze GeoGetu
   a GSAK se přenesou ke keším.
 - Databáze GeoGetu nebo GSAKu, do které ten program právě zapisuje
-  (třeba import), nezdrží načtení ostatních zdrojů a načte se po
-  dokončení zápisu; do té doby zůstanou zobrazené dříve načtené keše
-  a Přehled zdrojů u ní ukazuje „čeká na dokončení zápisu“. Poškozenou
+  (třeba import), nezdrží při startu načtení ostatních zdrojů a načte se
+  po dokončení zápisu. Do té doby zůstanou zobrazené dříve načtené keše,
+  Přehled zdrojů u ní ukazuje „čeká na dokončení zápisu“ a další změny
+  zdrojů (nový soubor, Znovu načíst, zapnutí zdroje) se projeví až po
+  dokončení zápisu. Poškozenou
   databázi nebo soubor, který není databáze, program ohlásí česky.
 - Databáze GeoGetu a GSAKu se otevírají jen pro čtení, GeoKuk v jejich
   složce nic nezaloží ani nezmění.
@@ -327,9 +331,10 @@
   stránku nápovědy.
 - Odkaz u keše nebo waypointu otevře jen webovou stránku (http, https),
   ne soubor. Značky HTML v kódech, názvech a autorech keší, názvech
-  waypointů, cest a typů waypointů, v hintu, ve jménech souborů a v adresách
-  z hledání adresy se v bublině, detailu keše, hledání, nabídkách, výběru
-  ikon a Přehledu zdrojů zobrazí jako text.
+  waypointů, cest a typů waypointů, v hintu, ve jménech souborů, v adresách
+  z hledání adresy a v souborech uživatelských map se v bublině, detailu
+  keše, hledání, nabídkách, výběru ikon, Přehledu zdrojů a hlášce při
+  startu zobrazí jako text.
 - O programu uvádí licenci GNU GPL v3.
 - Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
   (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.

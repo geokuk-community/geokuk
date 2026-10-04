@@ -38,6 +38,16 @@ public class PodkladActionUzivatelskaTest {
 	}
 
 	@Test
+	public void htmlVNazvuAPopisuSeZobraziJakoText() throws Exception {
+		Files.write(new File(tmp.getRoot(), "h" + UzivatelskeMapy.PRIPONA).toPath(),
+				"nazev=<html><img src=http://127.0.0.1/n>\nurl=https://t.example.org/{z}/{x}/{y}\npopis=<html><img src=http://127.0.0.1/p>\n".getBytes(StandardCharsets.UTF_8));
+		UzivatelskeMapyPristup.nacti(tmp.getRoot());
+		final PodkladAction akce = new PodkladAction(EKaType.podleJmena("user-h"));
+		Assert.assertEquals("<html>&lt;html&gt;&lt;img src=http://127.0.0.1/n&gt;", akce.getValue(Action.NAME));
+		Assert.assertEquals("<html>&lt;html&gt;&lt;img src=http://127.0.0.1/p&gt;", akce.getValue(Action.SHORT_DESCRIPTION));
+	}
+
+	@Test
 	public void bezKlavesyAZkratky() throws Exception {
 		final File soubor = new File(tmp.getRoot(), "m" + UzivatelskeMapy.PRIPONA);
 		Files.write(soubor.toPath(), "nazev=M\nurl=https://t.example.org/{z}/{x}/{y}\n".getBytes(StandardCharsets.UTF_8));

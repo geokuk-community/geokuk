@@ -5,7 +5,10 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+
+import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 
 public class KontrolaUmisteniTest {
 
@@ -18,6 +21,16 @@ public class KontrolaUmisteniTest {
 		Assert.assertEquals("Google Disk", KontrolaUmisteni.synchronizovanaSluzba(new File("/G/Můj disk/GeoKuk"), NIC));
 		Assert.assertEquals("OneDrive", KontrolaUmisteni.synchronizovanaSluzba(new File("/home/kacer/Dokumenty/GeoKuk"),
 				Collections.singletonMap("OneDrive", "/home/kacer/Dokumenty")));
+	}
+
+	@Test
+	public void pripraviSlozkuUzivatelskychMap() {
+		final File mapy = UzivatelskeMapy.slozka();
+		mapy.delete();
+		Assume.assumeFalse("složka už obsahuje soubory", mapy.exists());
+		KontrolaUmisteni.pripravSlozky();
+		Assert.assertTrue(mapy.isDirectory());
+		Assert.assertEquals(new File(FConst.DATA_DIR, "mapy"), mapy);
 	}
 
 	@Test
