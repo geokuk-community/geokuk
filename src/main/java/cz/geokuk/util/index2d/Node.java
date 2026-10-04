@@ -17,7 +17,8 @@ abstract class Node<T> {
 	 */
 	abstract void vypis(String aPrefix, int aLevel);
 
-	abstract Ctverecnik<T> rozčtvrť();
+	/** Rozdělí na čtvrtě uvnitř daných hranic, ty list sám nezná. */
+	abstract Ctverecnik<T> rozčtvrť(int xx1, int yy1, int xx2, int yy2);
 
 	/** Zda má stejné souřasnice jak ozadaný, to může mít jen sheet, nikdo jiný */
 	abstract boolean hasSameCoordinates(Node<T> node);

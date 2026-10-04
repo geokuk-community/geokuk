@@ -48,7 +48,7 @@ public class KesGpxWptProcak implements GpxWptProcak {
 						if (Wpt.TRADITIONAL_CACHE.equals(kes.getFirstWpt().getSym()) && Math.abs(kes.getFirstWpt().lat - wpt.lat) < 0.001 && Math.abs(kes.getFirstWpt().lon - wpt.lon) < 0.001) {
 							log.debug("Vypouštíme finální waypointy tradičních keší na úvodních souřadnicích: {} {} {} {} {}", kes.getNazev(), kes.getFirstWpt().lat, wpt.lat, kes.getFirstWpt().lon,
 									wpt.lon);
-							return  EProcakResult.NEVER;
+							return EProcakResult.DONE;
 						} else {
 							kes.setMainWpt(wpt);
 							kesoid.addWpt(wpt);
