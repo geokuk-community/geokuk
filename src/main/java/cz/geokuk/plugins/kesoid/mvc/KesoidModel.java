@@ -336,6 +336,12 @@ public class KesoidModel extends Model0 {
 		fire(new LimityKresleniEvent(limity));
 	}
 
+	void nactiLimityKresleni(final MyPreferences kesoid) {
+		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
+				.sVlastnostmi();
+		fire(new LimityKresleniEvent(limityKresleni));
+	}
+
 	public void setGsakParametryNacitani(final GsakParametryNacitani aGsakParametryNacitani) {
 		gsakParametryNacitani = aGsakParametryNacitani;
 		final MyPreferences pref = currPrefe().node(FPref.GSAK_node);
@@ -430,9 +436,7 @@ public class KesoidModel extends Model0 {
 		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
 		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
 		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
-		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
-				.sVlastnostmi();
-		fire(new LimityKresleniEvent(limityKresleni));
+		nactiLimityKresleni(kesoid);
 		fajruj();
 	}
 

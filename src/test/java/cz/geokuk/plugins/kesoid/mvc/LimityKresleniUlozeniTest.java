@@ -41,4 +41,19 @@ public class LimityKresleniUlozeniTest {
 		model.setLimityKresleni(LimityKresleni.of(60_000, 600_000));
 		Assert.assertEquals("beze změny se neohlásí", 1, udalosti.size());
 	}
+
+	@Test
+	public void nacteniZNastaveni() {
+		pref.node(FPref.KESOID_node).putInt(FPref.LIMIT_IKON_value, 60_000);
+		pref.node(FPref.KESOID_node).putInt(FPref.LIMIT_TECEK_value, 600_000);
+		model.nactiLimityKresleni(pref.node(FPref.KESOID_node));
+		Assert.assertEquals(LimityKresleni.of(60_000, 600_000), model.getLimityKresleni());
+		Assert.assertEquals(LimityKresleni.of(60_000, 600_000), ((LimityKresleniEvent) udalosti.get(0)).getLimity());
+	}
+
+	@Test
+	public void nacteniBezNastaveniDaVychozi() {
+		model.nactiLimityKresleni(pref.node(FPref.KESOID_node));
+		Assert.assertEquals(LimityKresleni.VYCHOZI, model.getLimityKresleni());
+	}
 }
