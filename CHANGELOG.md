@@ -12,8 +12,12 @@
   v registru Windows, při prvním spuštění se odtud převezme. Volba
   „Ukládat nastavení k programu“ odpadla.
 - Data starší verze ve složce `%USERPROFILE%\geokuk` (keše z GPX,
-  výlety, cesty, ikony, dlaždice map) GeoKuk nečte, jdou zkopírovat do
+  výlety, cesty, ikony, dlaždice map) GeoKuk nečte a umístění složek
+  z jejího nastavení nepřevezme: keše čte z `data/gpx`, rendruje do
+  `data/render` a GeoGet a GSAK má vypnuté. Data jdou zkopírovat do
   složky `data`, postup je v README v oddílu Přechod ze starší verze.
+- Umístění souborů: relativní cesta, třeba `data/gpx`, se počítá od
+  složky GeoKuk; volba „Relativně k umístění programu“ odpadla.
 - Ve Windows se verze 6.0.0 aktualizuje sama, ale bez přibalené Javy
   a další verze už sama nenainstaluje. Pro automatické aktualizace
   stáhněte `GeoKuk-windows.zip` a data přeneste podle README.
@@ -163,9 +167,6 @@
   paměť, už neukončí načítání ostatních souborů s kešemi.
 - Databáze GeoGetu nebo GSAKu s nedokončeným zápisem (program spadl
   při importu) se ohlásí s radou otevřít ji v GeoGetu nebo GSAKu.
-- Při přechodu z verze 6.0.0 GeoKuk jednou upozorní na keše, cesty,
-  výlety a ikony ve staré složce `geokuk` v domovské složce a řekne,
-  kam je zkopírovat.
 - Výlety a cesty se ukládají v UTF-8; soubory ze starší verze
   v kódování Windows se načtou správně, i s diakritikou v názvech
   fotek a waypointů.

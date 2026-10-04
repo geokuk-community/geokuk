@@ -27,4 +27,22 @@ public class FilexTest {
 		Assert.assertNotEquals(puvodni, nove);
 		Assert.assertFalse(nove.equalsDataLocations(puvodni));
 	}
+
+	/** Relativní cesta (třeba data\gpx) se počítá od složky GeoKuk, ve které jsou složky program a data. */
+	@Test
+	public void relativniCestaOdSlozkyGeokuk() {
+		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
+		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), Filex.efektivni(new File("data/gpx"), koren));
+		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), Filex.efektivni(new File("program/../data/gpx"), koren));
+	}
+
+	/** Beta 9 až 13: „..\data\gpx“ relativně ke složce program míří dál do data\gpx, uloží se pak přenosně. */
+	@Test
+	public void relativniKProgramuZeStarsiVerze() {
+		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
+		final Filex f = Filex.zNastaveni(new File("../data/gpx"), true, true, new File(koren, "program"));
+		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), f.getFile());
+		Assert.assertFalse(f.isRelativeToProgram());
+		Assert.assertEquals(new File("data/gpx"), Filex.zNastaveni(new File("data/gpx"), false, true, new File(koren, "program")).getFile());
+	}
 }
