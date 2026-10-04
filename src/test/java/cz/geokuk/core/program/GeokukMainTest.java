@@ -28,6 +28,13 @@ public class GeokukMainTest {
 	}
 
 	@Test
+	public void hlaskaZalohyRikaProcARadi() {
+		Assert.assertTrue(GeokukMain.textZalohy("poskozeny").contains("poškozený"));
+		Assert.assertTrue(GeokukMain.textZalohy("chybi").contains("nepodařilo nainstalovat"));
+		Assert.assertTrue(GeokukMain.textZalohy("chybi").contains("Zkontrolovat aktualizace"));
+	}
+
+	@Test
 	public void druhaInstancePoznaZeUzBezi() throws Exception {
 		final java.io.File slozka = java.nio.file.Files.createTempDirectory("geokuk-zamek").toFile();
 		final java.io.File soubor = new java.io.File(slozka, cz.geokuk.start.Start.ZAMEK);

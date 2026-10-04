@@ -53,6 +53,10 @@ public class GeokukMain {
 		ImageIO.setUseCache(false);
 		Diagnostika.sledujKliknuti();
 		log.info("Default character encoding: {}", Charset.defaultCharset());
+		final String zaloha = System.getProperty(Start.ZALOHA);
+		if (zaloha != null) {
+			log.warn("Spouštěč spustil zálohu geokuk.jar.bak, důvod: {}", zaloha);
+		}
 		nastavSkin();
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());
 		promazPreferencePokudJeToPrikazano(args);
@@ -70,6 +74,9 @@ public class GeokukMain {
 			if (varovani != null) {
 				Dlg.error(varovani);
 			}
+			if (zaloha != null) {
+				Dlg.upozorneni(textZalohy(zaloha));
+			}
 			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
 			VytvoritZastupceAction.aktualizujZastupceVeSlozce();
 			if (portOvladani != null) {
@@ -81,6 +88,14 @@ public class GeokukMain {
 			}
 			inicializator.zkontrolovatAktualizace();
 		});
+	}
+
+	/** Hláška pro uživatele, když spouštěč spustil předchozí verzi ze zálohy. */
+	static String textZalohy(final String duvod) {
+		final String proc = Start.ZALOHA_CHYBI.equals(duvod)
+				? "Novou verzi GeoKuku se nepodařilo nainstalovat, proto běží předchozí verze."
+				: "Nová verze GeoKuku nejde spustit (soubor geokuk.jar je poškozený), proto běží předchozí verze.";
+		return proc + "\nNainstalujte novou verzi znovu (Nápověda → Zkontrolovat aktualizace), nebo rozbalte znovu celý zip s programem.";
 	}
 
 	/** Druhá instance nad stejnými daty by si s první přepisovaly nastavení a výlety. */
