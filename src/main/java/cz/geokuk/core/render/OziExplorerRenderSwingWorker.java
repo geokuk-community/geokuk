@@ -3,9 +3,12 @@ package cz.geokuk.core.render;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 
@@ -56,44 +59,49 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 		progressor.setTooltip("Probíhá rendrování pro " + whatRender + " do soubor: \"" + imagePathName + "\"");
 		p.pruhledne = imageType.isUmoznujePruhlednost();
 
+		final File mapa = whatRender == EWhatRender.OZI_EXPLORER ? mapPathName : null;
+		zapisVystupy(() -> rendrovadlo.rendruj(p, progressor), imageType.getType(), imagePathName, mapa, pwrt -> {
+			final List<Wgs> kalibody = renderModel.spocitejKalibracniBody();
+			printOziMetafile(pwrt, imageShortName, p.roord.getDim().width, p.roord.getDim().height, p.roord, renderModel.getRenderSettings().getKalibrBodu(), kalibody);
+		});
+		log.debug("Konec rendrování");
+
+		final RenderResult result = new RenderResult();
+		result.file = mapa != null ? mapa : imagePathName;
+		return result;
+	}
+
+	interface ZapisMapy {
+		void zapis(PrintWriter p) throws IOException;
+	}
+
+	/** Při chybě nebo zrušení smaže jen soubory, které tento běh začal zapisovat; dřívější výstupy zůstanou. */
+	static void zapisVystupy(final Callable<BufferedImage> rendr, final String typ, final File obrazek, final File mapa, final ZapisMapy zapisMapy) throws Exception {
+		final List<File> zapisovane = new ArrayList<>();
 		try {
-			final BufferedImage image = rendrovadlo.rendruj(p, progressor);
-			// renderModel.vypisChybySouradnic(cocox.getPixluNaMetr());
-
-			log.debug("Zápis obrázku [{},{}] do souboru \"{}\"", image.getWidth(), image.getHeight(), imagePathName);
-			ImageIO.write(image, imageType.getType(), imagePathName);
-
-			File vytvorenySoubor;
-			if (whatRender == EWhatRender.OZI_EXPLORER) {
-				final int width = p.roord.getDim().width;
-				final int height = p.roord.getDim().height;
-				final Coord cocox = p.roord;
-				final PrintWriter pwrt = new PrintWriter(mapPathName);
-				final List<Wgs> kalibody = renderModel.spocitejKalibracniBody();
-				printOziMetafile(pwrt, imageShortName, width, height, cocox, renderModel.getRenderSettings().getKalibrBodu(), kalibody);
-				pwrt.close();
-				vytvorenySoubor = mapPathName;
-			} else {
-				vytvorenySoubor = imagePathName;
+			final BufferedImage image = rendr.call();
+			log.debug("Zápis obrázku [{},{}] do souboru \"{}\"", image.getWidth(), image.getHeight(), obrazek);
+			zapisovane.add(obrazek);
+			ImageIO.write(image, typ, obrazek);
+			if (mapa != null) {
+				zapisovane.add(mapa);
+				try (PrintWriter pwrt = new PrintWriter(mapa)) {
+					zapisMapy.zapis(pwrt);
+					zkontrolujZapis(pwrt, mapa);
+				}
 			}
-			log.debug("Konec rendrování");
-
-			final RenderResult result = new RenderResult();
-			result.file = vytvorenySoubor;
-			log.debug("Konec OZI rendrování");
-			return result;
 		} catch (final Exception e) {
-			try {
-				imagePathName.delete();
-			} catch (final Exception e1) {
-				e.fillInStackTrace();
-			}
-			try {
-				mapPathName.delete();
-			} catch (final Exception e1) {
-				e.fillInStackTrace();
+			for (final File f : zapisovane) {
+				f.delete();
 			}
 			throw e;
+		}
+	}
+
+	/** PrintWriter chyby zápisu (plný disk) nehlásí výjimkou. */
+	static void zkontrolujZapis(final PrintWriter p, final File soubor) throws IOException {
+		if (p.checkError()) {
+			throw new IOException("Nepodařilo se zapsat soubor " + soubor);
 		}
 	}
 

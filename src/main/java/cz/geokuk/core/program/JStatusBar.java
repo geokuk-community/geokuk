@@ -22,6 +22,7 @@ import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -86,7 +87,7 @@ public class JStatusBar extends JPanel {
 
 	private static final long serialVersionUID = -6267502844907253041L;
 
-	private Mou cur = new Mou(0, 0);
+	private Mou cur;
 
 	private Poziceq poziceq = new Poziceq();
 	private final JValue souradnice = new JValue();
@@ -148,7 +149,7 @@ public class JStatusBar extends JPanel {
 		} else {
 			if (doc.getFile() != null) {
 				jSouborSVyletem.setText(doc.getFile().getName());
-				jSouborSVyletem.setToolTipText(doc.getFile().toString());
+				jSouborSVyletem.setToolTipText(FString.text(doc.getFile().toString()));
 				jSouborSVyletemPotrebujeUlozit.setText(doc.isChanged() ? "*" : "");
 			} else {
 				jSouborSVyletem.setText("-");
@@ -172,9 +173,15 @@ public class JStatusBar extends JPanel {
 		jZdrojeKesoiduPocetNenactenych.setText(pocetNenactenych + "");
 		jZdrojeKesoiduPocetNenactenych.setVisible(pocetNenactenych > 0);
 
-		final String formatedCas = String.format("%tF %<tR", informaceOZdrojich.getYungest());
-		jZdrojeKesoiduCas.setText(formatedCas);
+		jZdrojeKesoiduCas.setText(casZdroju(informaceOZdrojich.getYungest()));
 		revalidate();
+	}
+
+	static final String BEZ_POZICE = "–";
+
+	/** Bez načtených zdrojů se čas nezobrazuje. */
+	static String casZdroju(final long nejmladsi) {
+		return nejmladsi <= 0 ? "" : String.format("%tF %<tR", nejmladsi);
 	}
 
 	public void onEvent(final KeskyVyfiltrovanyEvent aEvent) {
@@ -195,7 +202,7 @@ public class JStatusBar extends JPanel {
 
 		if (poziceq.isNoPosition()) {
 			// souradnicePozice.setVisible(false);
-			souradnicePozice.setText("N/A");
+			souradnicePozice.setText(BEZ_POZICE);
 		} else {
 			souradnicePozice.setText(poziceq.getWgs().toString());
 			// souradnicePozice.setVisible(true);
@@ -293,7 +300,7 @@ public class JStatusBar extends JPanel {
 
 		final JPanel jPozicePanel = createPanel();
 
-		souradnicePozice.setToolTipText("Spouřadnice aktuálně vybrané pozice, možno vybrat a dát do clipboardu");
+		souradnicePozice.setToolTipText("Souřadnice aktuálně vybrané pozice, možno vybrat a dát do clipboardu");
 		jPozicePanel.add(new JLabel("Pozice:"));
 		jPozicePanel.add(souradnicePozice);
 		add(jPozicePanel);
@@ -324,7 +331,7 @@ public class JStatusBar extends JPanel {
 
 		poctyKesi.add(new JLabel("Filtr:"));
 		poctyKesi.add(filtrovanePocetyVsude);
-		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po apliakci filtru.");
+		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po aplikaci filtru.");
 
 		poctyKesi.add(celkovePoctyVyrez);
 		celkovePoctyVyrez.setToolTipText("Počet všech waypointů ve výřezu, které by byly zobrazeny, pokud by nebyl filtr.");
@@ -339,10 +346,10 @@ public class JStatusBar extends JPanel {
 		// vylety.setBorder(BorderFactory.createEtchedBorder());
 		vylety.add(new JLabel("Výlet:"));
 		vylety.add(vyletAno);
-		vyletAno.setToolTipText("Počet keší, u kterých má vyznačen příznak, že je chci lovit.");
+		vyletAno.setToolTipText("Počet keší, u kterých je vyznačeno, že je chci lovit.");
 		vylety.add(new JLabel("/"));
 		vylety.add(vyletNe);
-		vyletAno.setToolTipText("Počet keší, u kterých má vyznačen příznak, že je budu ignorovat.");
+		vyletNe.setToolTipText("Počet keší, u kterých je vyznačeno, že je budu ignorovat.");
 
 		vylety.add(jSouborSVyletemPotrebujeUlozit);
 		vylety.add(jSouborSVyletem);
@@ -357,7 +364,7 @@ public class JStatusBar extends JPanel {
 		add(jFilterProgressPanel);
 
 		final JPanel zdrojeKesoiduPanel = createPanel();
-		zdrojeKesoiduPanel.setToolTipText("Klikni a uvidíš detaily");
+		zdrojeKesoiduPanel.setToolTipText("Kliknutím zobrazíte podrobnosti");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNactenych);
 		jZdrojeKesoiduPocetNactenych.setToolTipText("Počet načtených souborů s kešoidy.");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNenactenych);

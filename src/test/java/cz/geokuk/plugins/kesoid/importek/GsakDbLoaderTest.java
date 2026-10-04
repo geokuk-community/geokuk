@@ -121,6 +121,7 @@ public class GsakDbLoaderTest {
 		Assert.assertEquals("Geocache Found", kes.sym);
 		Assert.assertEquals("2020-05-01T10:15", kes.gpxg.found);
 		Assert.assertEquals("modra", kes.gpxg.userTags.get("barva"));
+		Assert.assertFalse("kód keše není tag", kes.gpxg.userTags.containsKey("Code"));
 	}
 
 	@Test

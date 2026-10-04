@@ -244,16 +244,33 @@ public final class SouborovePreferences extends AbstractPreferences {
 		element.appendChild(map);
 		for (final Map.Entry<String, String> e : kopieHodnot.entrySet()) {
 			final Element entry = doc.createElement("entry");
-			entry.setAttribute("key", e.getKey());
-			entry.setAttribute("value", e.getValue());
+			entry.setAttribute("key", platneXml(e.getKey()));
+			entry.setAttribute("value", platneXml(e.getValue()));
 			map.appendChild(entry);
 		}
 		for (final SouborovePreferences dite : kopieDeti) {
 			final Element node = doc.createElement("node");
-			node.setAttribute("name", dite.name());
+			node.setAttribute("name", platneXml(dite.name()));
 			element.appendChild(node);
 			dite.zapisUzel(doc, node);
 		}
+	}
+
+	/** Vynechá znaky, které XML 1.0 nedovolí; jinak by nešlo nastavení zapsat nebo znovu načíst. */
+	static String platneXml(final String s) {
+		StringBuilder sb = null;
+		for (int i = 0; i < s.length();) {
+			final int cp = s.codePointAt(i);
+			final int delka = Character.charCount(cp);
+			final boolean platny = cp == 0x9 || cp == 0xA || cp == 0xD || cp >= 0x20 && cp <= 0xD7FF || cp >= 0xE000 && cp <= 0xFFFD || cp >= 0x10000 && cp <= 0x10FFFF;
+			if (!platny && sb == null) {
+				sb = new StringBuilder(s.length()).append(s, 0, i);
+			} else if (platny && sb != null) {
+				sb.appendCodePoint(cp);
+			}
+			i += delka;
+		}
+		return sb == null ? s : sb.toString();
 	}
 
 	private static void zapisDokument(final Document doc, final OutputStream out) throws IOException {

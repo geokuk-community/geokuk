@@ -24,6 +24,7 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Restart;
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.FPref;
+import cz.geokuk.core.program.UmisteniProgramu;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
@@ -68,8 +69,8 @@ public class DalkoveOvladani {
 	private static final Set<String> VYVOJOVE = new HashSet<>(Arrays.asList("/menu", "/okna", "/okna/zavri", "/okna/tlacitko", "/restart"));
 	private static final String ZAPNUTO_value = "dalkoveOvladani";
 	public static final String VYVOJOVA_PARAMETR = "--ovladani-devel";
-	/** Port a token vývojové části, v datové složce programu. */
-	public static final File SOUBOR = new File(FConst.DATA_DIR, "ovladani.properties");
+	/** Port a token vývojové části, vedle složky logu: v datové složce, když do ní nejde zapisovat, v dočasné složce systému. */
+	public static final File SOUBOR = soubor(UmisteniProgramu.log());
 
 	private VyrezModel vyrezModel;
 	private PoziceModel poziceModel;
@@ -158,6 +159,23 @@ public class DalkoveOvladani {
 		spust(port, false);
 	}
 
+	public static File soubor(final File slozkaLogu) {
+		return new File(slozkaLogu.getParentFile(), "ovladani.properties");
+	}
+
+	/** Hlášení pro uživatele, když ovládání nejde spustit. */
+	public static String popisChyby(final int port, final Exception e) {
+		final String duvod;
+		if (e instanceof BindException) {
+			duvod = "Port " + port + " už používá jiný program. Ukončete ho, nebo zvolte jiný port parametrem --ovladani=ČÍSLO.";
+		} else if (e instanceof FileSystemException) {
+			duvod = "Nejde zapsat soubor " + ((FileSystemException) e).getFile() + ".";
+		} else {
+			duvod = e.getMessage() != null ? e.getMessage() : e.toString();
+		}
+		return "Dálkové ovládání nejde spustit. " + duvod;
+	}
+
 	/** Spustí ovládání, s vývojovou částí vytvoří token a zapíše ho do {@link #SOUBOR}. Běžícímu ovládání vývojovou část jen přidá. */
 	public synchronized void spust(final int port, final boolean vyvojova) throws IOException {
 		if (server != null) {
@@ -202,6 +220,7 @@ public class DalkoveOvladani {
 			token = null;
 			throw e;
 		}
+		log.info("Port a token dálkového ovládání v {}", SOUBOR);
 	}
 
 	/** Soubor vznikne rovnou jen pro vlastníka a na místo se přesune celý, i přes podvržený odkaz. */

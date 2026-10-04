@@ -22,7 +22,7 @@ public class JMenuIkony extends JMenu {
 
 	public JMenuIkony() {
 		super("Ikony");
-		setToolTipText("Výběr sady ikok, řízení, co se na ikonách zobrazuje");
+		setToolTipText("Výběr sady ikon, řízení, co se na ikonách zobrazuje");
 		menu = this;
 	}
 

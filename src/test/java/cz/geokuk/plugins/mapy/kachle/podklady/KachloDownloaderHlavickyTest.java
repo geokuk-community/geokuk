@@ -55,8 +55,16 @@ public class KachloDownloaderHlavickyTest {
 				}
 			}
 		});
+		server.createContext("/presmeruj/", ex -> {
+			hlavicky.add(new TreeMap<>(ex.getRequestHeaders()));
+			ex.getResponseHeaders().add("Location", presmerovatNa);
+			ex.sendResponseHeaders(302, -1);
+			ex.close();
+		});
 		server.start();
 	}
+
+	private String presmerovatNa;
 
 	private URL url() throws Exception {
 		return new URL("http://127.0.0.1:" + server.getAddress().getPort() + "/1/2/3.png");
@@ -111,5 +119,23 @@ public class KachloDownloaderHlavickyTest {
 	public void celyJpegSePrijme() throws Exception {
 		jineTelo = jpeg();
 		Assert.assertEquals(jineTelo.length, new KachloDownloader().downloadImage(url()).getData().length);
+	}
+
+	@Test
+	public void hlavickyUzivatelskeMapyNejdouNaJinyServer() throws Exception {
+		final int port = server.getAddress().getPort();
+		presmerovatNa = "http://localhost:" + port + "/1/2/3.png";
+		new KachloDownloader().downloadImage(new URL("http://127.0.0.1:" + port + "/presmeruj/1/2/3.png"), Collections.singletonMap("X-Api-Key", "Bearer tajne"));
+		Assert.assertEquals(2, hlavicky.size());
+		Assert.assertEquals(Collections.singletonList("Bearer tajne"), hlavicky.get(0).get("X-api-key"));
+		Assert.assertNull("jiný server hlavičku nedostane", hlavicky.get(1).get("X-api-key"));
+	}
+
+	@Test
+	public void hlavickyUzivatelskeMapyZustanouPriPresmerovaniNaStejnyServer() throws Exception {
+		final int port = server.getAddress().getPort();
+		presmerovatNa = "http://127.0.0.1:" + port + "/1/2/3.png";
+		new KachloDownloader().downloadImage(new URL("http://127.0.0.1:" + port + "/presmeruj/1/2/3.png"), Collections.singletonMap("X-Api-Key", "Bearer tajne"));
+		Assert.assertEquals(Collections.singletonList("Bearer tajne"), hlavicky.get(1).get("X-api-key"));
 	}
 }

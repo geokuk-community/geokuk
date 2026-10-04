@@ -47,7 +47,7 @@ public class IconDefNacitac {
 		try {
 			return load(imageProvider);
 		} catch (final IOException e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Selhalo čtení obrázku ikony, tak obrázek nemůžeme použít");
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Načtení obrázku ikony");
 			log.error("Selhalo čtení obrázku ikony, tak obrázek nemůžeme použít", e);
 			return null;
 		}

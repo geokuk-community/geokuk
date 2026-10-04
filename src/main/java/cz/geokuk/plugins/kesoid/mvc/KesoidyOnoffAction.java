@@ -13,7 +13,7 @@ public class KesoidyOnoffAction extends ToggleAction0 {
 		super("Zobrazovat kešoidy");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_Y);
 		putValue(MNEMONIC_KEY, KeyEvent.VK_B);
-		putValue(SHORT_DESCRIPTION, "Řídí, zda se vůbec budou zorbazovat kešoidy.");
+		putValue(SHORT_DESCRIPTION, "Řídí, zda se vůbec budou zobrazovat kešoidy.");
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F12, 0));
 	}
 

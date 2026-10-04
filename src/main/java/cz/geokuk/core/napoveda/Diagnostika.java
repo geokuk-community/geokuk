@@ -40,6 +40,7 @@ public final class Diagnostika {
 	private static final String BETA_KANAL_value = "betaKanal";
 	/** Soubor beta vedle jaru z předchozích verzí, převezme se do nastavení. */
 	private static final File SOUBOR_BETA = new File(FConst.KOREN, "beta");
+	private static final java.util.List<Runnable> poZmeneBetaKanalu = new java.util.concurrent.CopyOnWriteArrayList<>();
 
 	/** Nabízet při kontrole aktualizací i testovací verze. */
 	public static boolean betaKanal() {
@@ -51,6 +52,11 @@ public final class Diagnostika {
 
 	public static void setBetaKanal(final boolean zapnuto) {
 		MyPreferences.current().node(FPref.VSEOBECNE_node).putBoolean(BETA_KANAL_value, zapnuto);
+		poZmeneBetaKanalu.forEach(Runnable::run);
+	}
+
+	public static void poZmeneBetaKanalu(final Runnable akce) {
+		poZmeneBetaKanalu.add(akce);
 	}
 
 	/** Testovací verze a instalace s beta kanálem ukazují verzi trvale v okně. */
@@ -303,7 +309,7 @@ public final class Diagnostika {
 		final StringBuilder sb = new StringBuilder();
 		final Runtime runtime = Runtime.getRuntime();
 		final long mb = 1024 * 1024;
-		sb.append("Geokuk ").append(popisVerze()).append('\n');
+		sb.append("GeoKuk ").append(popisVerze()).append('\n');
 		sb.append("Beta kanál: ").append(ano(betaKanal())).append('\n');
 		sb.append("Java: ").append(System.getProperty("java.version")).append(" (").append(System.getProperty("java.vendor")).append(")\n");
 		sb.append("Systém: ").append(System.getProperty("os.name")).append(' ').append(System.getProperty("os.version")).append(' ').append(System.getProperty("os.arch")).append('\n');

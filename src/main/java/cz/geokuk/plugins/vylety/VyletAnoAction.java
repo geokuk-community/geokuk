@@ -15,7 +15,7 @@ public class VyletAnoAction extends VyletActionIndividual0 {
 	public VyletAnoAction(final Kesoid kes) {
 		super("Lovím", kes);
 
-		putValue(SHORT_DESCRIPTION, "Zařadí keš mezi favority, které chci lovit.");
+		putValue(SHORT_DESCRIPTION, "Zařadí keš mezi keše, které chci lovit.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_L);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('+'));
 		putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));

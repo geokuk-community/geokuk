@@ -24,7 +24,7 @@ public class DiagnostikaTest {
 			Diagnostika.zaznamenej("událost " + i);
 		}
 		final String text = Diagnostika.text();
-		Assert.assertTrue(text.startsWith("Geokuk " + FConst.VERSION));
+		Assert.assertTrue(text.startsWith("GeoKuk " + FConst.VERSION));
 		Assert.assertTrue(text.contains("událost 119"));
 		Assert.assertFalse(text.contains("první"));
 		Assert.assertTrue(text.contains("chyba stahování"));
