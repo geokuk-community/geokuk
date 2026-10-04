@@ -19,6 +19,16 @@ public class CoordTest {
 	private static final Mou PRAHA = new Wgs(50.0755, 14.4378).toMou();
 
 	@Test
+	public void prevodDoPrepouzitehoBoduDaStejnyVysledek() {
+		final Coord c = new Coord(12, PRAHA, OKNO, 0);
+		final Point bod = new Point(-1, -1);
+		for (final Mou mou : new Mou[] { PRAHA, new Wgs(50.1, 14.5).toMou(), new Wgs(49.9, 14.3).toMou() }) {
+			Assert.assertEquals(c.transform(mou), c.transform(mou, bod));
+			Assert.assertEquals(c.transform(mou), bod);
+		}
+	}
+
+	@Test
 	public void rozmerVyrezuPriOdzoomuNepretece() {
 		// při měřítku 0 je okno širší než celý svět; v intu vyšel rozměr menší, nebo dokonce prázdný
 		final Dimension okno = new Dimension(2560, 1440);
