@@ -453,6 +453,10 @@ public class KesoidModel extends Model0 {
 
 	/** Zapomene blokované zdroje, které už nejsou; zdroje v dočasně nedostupné složce (síť, USB) zůstanou blokované. */
 	void vycistiBlokovaneZdroje(final Set<File> zdroje) {
+		// Volá se na EDT po každém načtení; zjišťovat dostupnost složek (síťový disk) má smysl, jen když je co čistit.
+		if (blokovaneZdroje.isEmpty()) {
+			return;
+		}
 		final List<Path> nedostupne = new ArrayList<>();
 		final KesoidUmisteniSouboru u = getUmisteniSouboru();
 		if (u != null) {
