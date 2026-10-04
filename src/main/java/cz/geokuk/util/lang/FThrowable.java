@@ -207,7 +207,7 @@ public final class FThrowable {
 		@Override
 		protected void printlnExceptionMessage(final PrintWriter wrt, final String message) {
 			wrt.print("<span style='color: red'>");
-			wrt.print(message);
+			wrt.print(FString.html(message));
 			wrt.println("</span>");
 		}
 

@@ -5,6 +5,7 @@ import java.util.*;
 
 import cz.geokuk.util.file.RefinedWhiteWriter;
 import cz.geokuk.util.lang.ATimestamp;
+import cz.geokuk.util.lang.FString;
 import cz.geokuk.util.lang.FThrowable;
 import cz.geokuk.util.lang.FThrowable.ThrowableAndSourceMethod;
 import lombok.extern.slf4j.Slf4j;
@@ -171,7 +172,7 @@ public class ExceptionDumper {
 				// Okolnosti, za jakých výjimka nastala
 				if (circumstance != null) {
 					pwrt.println("<p>");
-					pwrt.println(circumstance);
+					pwrt.println(FString.html(circumstance));
 					pwrt.println("</p>");
 					pwrt.println();
 				}
@@ -297,7 +298,7 @@ public class ExceptionDumper {
 			final String prefix = "EXC-" + FThrowable.getExceptionNumber(aThrowable) + ": ";
 			pwrt.println("    " + prefix + "<span style='color: green'>" + (i + 1) + "/" + throwableChain.length + "</span> "
 					+ (method.getSourceMethod() == null ? "" : "<span style='color: darkmagenta'>" + method.getSourceMethod().getName() + "()" + "</span>: ") + "<span style='color: blue'>"
-					+ method.getThrowable().getClass().getName() + "</span> : <span style='color: red'>" + method.getThrowable().getMessage() + "</span>");
+					+ method.getThrowable().getClass().getName() + "</span> : <span style='color: red'>" + FString.html(method.getThrowable().getMessage()) + "</span>");
 		}
 	}
 
