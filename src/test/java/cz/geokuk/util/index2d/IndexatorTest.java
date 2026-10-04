@@ -211,4 +211,36 @@ public class IndexatorTest {
 		Assert.assertSame(blizko, indexator.locateNearestOne(0, 0).get());
 	}
 
+
+	/** Index drží na bod nejvýš jeden objekt listu, a čtverečníky; u milionů keší jde o stovky MB. */
+	@Test
+	public void malObjektuNaBod() throws Exception {
+		final Random r = new Random(3);
+		Indexator<TestBod> indexator = new Indexator<>(BoundingRect.ALL);
+		final int n = 10_000;
+		for (int i = 0; i < n; i++) {
+			final TestBod bod = b(r.nextInt(1_000_000), r.nextInt(1_000_000));
+			indexator = indexator.add(bod.getX(), bod.getY(), bod);
+		}
+		final java.lang.reflect.Field koren = Indexator.class.getDeclaredField("root");
+		koren.setAccessible(true);
+		final int objektu = pocetObjektu(koren.get(indexator), Collections.newSetFromMap(new IdentityHashMap<>()));
+		Assert.assertTrue("objektů indexu " + objektu + " na " + n + " bodů", objektu < 1.8 * n);
+	}
+
+	private static int pocetObjektu(final Object o, final Set<Object> videne) throws IllegalAccessException {
+		if (o == null || o instanceof TestBod || !videne.add(o)) {
+			return 0;
+		}
+		int pocet = 1;
+		for (Class<?> c = o.getClass(); c != Object.class; c = c.getSuperclass()) {
+			for (final java.lang.reflect.Field f : c.getDeclaredFields()) {
+				if (!f.getType().isPrimitive() && !java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+					f.setAccessible(true);
+					pocet += pocetObjektu(f.get(o), videne);
+				}
+			}
+		}
+		return pocet;
+	}
 }
