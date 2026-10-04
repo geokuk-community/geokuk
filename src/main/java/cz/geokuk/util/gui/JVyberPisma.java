@@ -23,7 +23,20 @@ public class JVyberPisma extends JPanel {
 	final JList<String> seznamRodin = new JList<>(rodiny);
 	final JComboBox<String> rez = new JComboBox<>(REZY);
 	final JSpinner velikost = new JSpinner(new SpinnerNumberModel(12, 4, 72, 1));
-	private final JLabel nahled = new JLabel(NAHLED, SwingConstants.CENTER);
+	final JLabel nahled = new JLabel(NAHLED, SwingConstants.CENTER) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected void paintComponent(final Graphics g) {
+			// Podklad může být průhledný, pod ním je běžné pozadí dialogu.
+			if (pozadiNahledu != null) {
+				g.setColor(pozadiNahledu);
+				g.fillRect(0, 0, getWidth(), getHeight());
+			}
+			super.paintComponent(g);
+		}
+	};
+	private Color pozadiNahledu;
 
 	private Font pismo;
 	private boolean nastavuji;
@@ -86,6 +99,13 @@ public class JVyberPisma extends JPanel {
 			nastavuji = false;
 		}
 		zmen(font);
+	}
+
+	/** Barvy ukázky písma; null ponechá výchozí barvu. */
+	public void setBarvyNahledu(final Color popredi, final Color pozadi) {
+		nahled.setForeground(popredi);
+		pozadiNahledu = pozadi;
+		nahled.repaint();
 	}
 
 	public void addChangeListener(final ChangeListener l) {

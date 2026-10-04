@@ -48,9 +48,9 @@ public final class Tecky {
 		return Math.max(MIN_PRUMER, Math.min(MAX_PRUMER, d));
 	}
 
-	private Color barva(final Wpt wpt) {
+	Color barva(final Wpt wpt) {
 		final Kesoid kesoid = wpt.getKesoid();
-		if (kesoid.getKesoidKind() != EKesoidKind.KES) {
+		if (kesoid.getKesoidKind() != EKesoidKind.KES || !wpt.isMainWpt()) {
 			return NEKES;
 		}
 		final String typ = wpt.getSym();

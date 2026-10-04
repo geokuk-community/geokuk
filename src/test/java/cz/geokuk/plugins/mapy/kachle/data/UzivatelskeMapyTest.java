@@ -244,7 +244,7 @@ public class UzivatelskeMapyTest {
 		final List<EKaType> mapy = zpracuj("m.nazev=M", "m.url=" + URL, "m.barva=modrá", "m.m.nazev=X");
 		Assert.assertEquals("platné vlastnosti mapu nezruší", 1, mapy.size());
 		Assert.assertEquals(chyby.toString(), 2, chyby.size());
-		Assert.assertTrue(chyby.toString(), chyby.contains("m.mapa: barva je neznámá vlastnost, povolené jsou [nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne] a hlavicka.<jméno hlavičky>"));
+		Assert.assertTrue(chyby.toString(), chyby.contains("m.mapa: barva je neznámá vlastnost, povolené jsou nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne a hlavicka.<jméno hlavičky>"));
 		Assert.assertTrue(chyby.toString(), chyby.stream().anyMatch(ch -> ch.startsWith("m.mapa: m.nazev je neznámá vlastnost")));
 	}
 
@@ -474,6 +474,12 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void pruvodniSouborMacOsSPriponouTxtSeNehlasi() throws Exception {
+		final File slozka = slozka("._a.mapa.txt", "x");
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapy.nactiSlozku(slozka));
+	}
+
+	@Test
 	public void chybejiciSlozkaNicNezmeni() throws Exception {
 		Assert.assertTrue(UzivatelskeMapy.nactiSlozku(new File(tmp.getRoot(), "neni")).isEmpty());
 		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
@@ -512,9 +518,32 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void chybyVeZprave() throws Exception {
 		final File slozka = slozka("a.mapa", "nazev=A", "b.mapa", "nazev=B\nurl=" + URL);
-		Assert.assertEquals("Chyby v uživatelských mapách ve složce " + slozka + ", tyto mapy se nezobrazí:\na.mapa: url musí začínat http:// nebo https:// a obsahovat {z}, {x} a {y}",
+		Assert.assertEquals("Chyby v uživatelských mapách ve složce " + slozka + ":\na.mapa: url musí začínat http:// nebo https:// a obsahovat {z}, {x} a {y}\nNezobrazí se: a.mapa",
 				UzivatelskeMapy.nacti(tmp.getRoot()));
 		Assert.assertNotNull(EKaType.podleJmena("user-b"));
+	}
+
+	@Test
+	public void mapaSNeznamouVlastnostiSeVeZpraveNeuvadiJakoNezobrazena() throws Exception {
+		final File slozka = slozka("a.mapa", "nazev=A\nurl=" + URL + "\nbarva=modrá");
+		Assert.assertEquals("Chyby v uživatelských mapách ve složce " + slozka + ":\na.mapa: barva je neznámá vlastnost, povolené jsou nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne a hlavicka.<jméno hlavičky>",
+				UzivatelskeMapy.nacti(tmp.getRoot()));
+		Assert.assertNotNull(EKaType.podleJmena("user-a"));
+	}
+
+	@Test
+	public void souborVJinemKodovaniSeOhlasiSrozumitelne() throws Exception {
+		final File slozka = slozka();
+		Files.write(new File(slozka, "ansi.mapa").toPath(), ("nazev=Turistická\nurl=" + URL + "\n").getBytes("windows-1250"));
+		Assert.assertEquals(Collections.singletonList("ansi.mapa: soubor není v kódování UTF-8, uložte ho znovu s kódováním UTF-8"), UzivatelskeMapy.nactiSlozku(slozka));
+	}
+
+	@Test
+	public void pruvodniSouboryMacuSeIgnoruji() throws Exception {
+		final File slozka = slozka("a.mapa", "nazev=A\nurl=" + URL);
+		Files.write(new File(slozka, "._a.mapa").toPath(), new byte[] { 0, 5, 22, 7, (byte) 0xff, (byte) 0xfe });
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapy.nactiSlozku(slozka));
+		Assert.assertNotNull(EKaType.podleJmena("user-a"));
 	}
 
 	@Test
@@ -653,7 +682,7 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void neznamyKlicZkracenyBezRidicichZnaku() throws Exception {
 		zpracuj("m.nazev=M", "m.url=https://a/{z}/{x}/{y}.png", "m.b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn");
-		Assert.assertTrue(chyby.toString(), chyby.contains("m.mapa: b3BlbnNzaC1rZXktdjEAAAAABG5vbm… je neznámá vlastnost, povolené jsou [nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne] a hlavicka.<jméno hlavičky>"));
+		Assert.assertTrue(chyby.toString(), chyby.contains("m.mapa: b3BlbnNzaC1rZXktdjEAAAAABG5vbm… je neznámá vlastnost, povolené jsou nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne a hlavicka.<jméno hlavičky>"));
 		Assert.assertEquals("a?b", UzivatelskeMapy.zkrat("a\u0007b"));
 	}
 }
