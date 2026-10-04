@@ -153,13 +153,13 @@ public class Filex {
 		return efektivni(file, FConst.KOREN);
 	}
 
-	/** Cesta uložená v nastavení; relativní cesta „k umístění programu“ ze starší verze se převede na absolutní, ať míří tam co dřív. */
+	/** Cesta uložená v nastavení; relativní cestu zapsala starší verze, která ji počítala od složky programu, převede se proto na absolutní, ať míří tam co dřív. */
 	public static Filex zNastaveni(final File file, final boolean relativeToProgram, final boolean active) {
 		return zNastaveni(file, relativeToProgram, active, FConst.JAR_DIR);
 	}
 
 	static Filex zNastaveni(final File file, final boolean relativeToProgram, final boolean active, final File adresarProgramu) {
-		if (relativeToProgram && file != null && !file.isAbsolute()) {
+		if (file != null && !file.isAbsolute()) {
 			return new Filex(canonize(new File(adresarProgramu, file.getPath())), false, active);
 		}
 		return new Filex(file, relativeToProgram, active);

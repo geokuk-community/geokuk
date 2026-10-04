@@ -409,7 +409,10 @@ public class MyPreferences extends Preferences {
 		if (defalt == null) {
 			defalt = new Filex(null, false, false);
 		}
-		final Filex result = Filex.zNastaveni(getFile(key, defalt.getFile()), getBoolean(key + "_relativeToProgram", defalt.isRelativeToProgram()), getBoolean(key + "_active", defalt.isActive()));
+		final File file = getFile(key, defalt.getFile());
+		final boolean active = getBoolean(key + "_active", defalt.isActive());
+		final Filex result = get(key, null) == null ? new Filex(file, defalt.isRelativeToProgram(), active)
+				: Filex.zNastaveni(file, getBoolean(key + "_relativeToProgram", defalt.isRelativeToProgram()), active);
 		return result.getFile() == null ? null : result;
 	}
 
@@ -673,7 +676,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	public void putFilex(final String key, final Filex filex) {
-		put(key, cestaDoNastaveni(filex.getFile(), FConst.KOREN));
+		put(key, cestaDoNastaveni(filex.getEffectiveFile(), FConst.KOREN));
 		putBoolean(key + "_relativeToProgram", filex.isRelativeToProgram());
 		putBoolean(key + "_active", filex.isActive());
 	}
