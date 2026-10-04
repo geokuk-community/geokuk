@@ -231,6 +231,35 @@ public class StartTest {
 		Assert.assertFalse(new File(d, "geokuk.jar.new").exists());
 	}
 
+	@Test
+	public void zalohaPoskozenehoJaruSeOhlasi() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "useknutý".getBytes());
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejZalohu(prikaz, d, Start.vyberJar(d, Start::vymenJar));
+		Assert.assertEquals(Collections.singletonList("-Dgeokuk.zaloha=poskozeny"), prikaz);
+	}
+
+	@Test
+	public void zalohaChybejicihoJaruSeOhlasi() throws Exception {
+		final File d = tmp.newFolder();
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejZalohu(prikaz, d, Start.vyberJar(d, Start::vymenJar));
+		Assert.assertEquals(Collections.singletonList("-Dgeokuk.zaloha=chybi"), prikaz);
+	}
+
+	@Test
+	public void beznySpustNicNeohlasi() throws Exception {
+		final File d = tmp.newFolder();
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejZalohu(prikaz, d, Start.vyberJar(d, Start::vymenJar));
+		Assert.assertTrue(prikaz.isEmpty());
+	}
+
 	private static void spustitelnyJar(final File f) throws Exception {
 		final java.util.jar.Manifest m = new java.util.jar.Manifest();
 		m.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
