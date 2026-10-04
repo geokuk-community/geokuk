@@ -150,4 +150,38 @@ public class DalkoveOvladaniTest {
 		final String text = DalkoveOvladani.popisChyby(0, new java.nio.file.AccessDeniedException("C:\\Program Files\\GeoKuk\\data"));
 		assertEquals("Dálkové ovládání nejde spustit. Nejde zapsat soubor C:\\Program Files\\GeoKuk\\data.", text);
 	}
+
+	private static java.nio.file.Path posixSlozka(final String prava) throws IOException {
+		org.junit.Assume.assumeTrue(java.nio.file.FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+		final java.nio.file.Path d = java.nio.file.Files.createTempDirectory("geokuk-ovladani");
+		java.nio.file.Files.setPosixFilePermissions(d, java.nio.file.attribute.PosixFilePermissions.fromString(prava));
+		return d;
+	}
+
+	@Test
+	public void vlastniSlozkaProjde() throws Exception {
+		DalkoveOvladani.overSlozku(posixSlozka("rwx------"));
+	}
+
+	@Test(expected = IOException.class)
+	public void slozkaZapisovatelnaVsemiSeOdmitne() throws Exception {
+		DalkoveOvladani.overSlozku(posixSlozka("rwxrwxrwx"));
+	}
+
+	@Test(expected = IOException.class)
+	public void odkazNaSlozkuSeOdmitne() throws Exception {
+		final java.nio.file.Path cil = posixSlozka("rwx------");
+		final java.nio.file.Path odkaz = cil.resolveSibling(cil.getFileName() + "-odkaz");
+		java.nio.file.Files.createSymbolicLink(odkaz, cil);
+		DalkoveOvladani.overSlozku(odkaz);
+	}
+
+	@Test(expected = IOException.class)
+	public void ciziSlozkaSeOdmitne() throws Exception {
+		final java.nio.file.Path d = posixSlozka("rwx------");
+		// Změnit vlastníka smí jen root.
+		org.junit.Assume.assumeTrue("root".equals(System.getProperty("user.name")));
+		java.nio.file.Files.setOwner(d, d.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName("nobody"));
+		DalkoveOvladani.overSlozku(d);
+	}
 }
