@@ -123,6 +123,16 @@ public class GsakDbLoaderTest {
 	}
 
 	@Test
+	public void casNalezuZeSloupceKese() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("DELETE FROM Custom");
+			s.execute("ALTER TABLE Caches ADD COLUMN casnalezu TEXT");
+			s.execute("UPDATE Caches SET casnalezu = '9:05' WHERE Code = 'GC1111'");
+		}
+		Assert.assertEquals("2020-05-01T9:05", nacti().get("GC1111").gpxg.found);
+	}
+
+	@Test
 	public void prazdnaVlastniHodnotaNeniTag() throws Exception {
 		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
 			s.execute("INSERT INTO Custom VALUES ('GC2222', '  ', NULL)");
