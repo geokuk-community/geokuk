@@ -55,10 +55,14 @@ jobs:
             fi
             exit 0
           fi
+          if [ ! -s rozdil.md ]; then
+            echo "::error::Kontrola schématu nedoběhla, viz log kroku Schéma OpenSAKu."
+            exit 1
+          fi
           {
             echo "Týdenní kontrola $(date -u +%F): schéma databáze v OpenSAKu se liší od src/test/resources/opensak-schema.txt."
             echo
-            if [ -s rozdil.md ]; then cat rozdil.md; else echo "Kontrola nedoběhla, viz log."; fi
+            cat rozdil.md
             echo "Zkontrolujte načítání OpenSAKu a soubor se schématem aktualizujte výstupem .github/skripty/opensak_schema.py."
             echo
             echo "Běh: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
