@@ -139,9 +139,10 @@
   BestOf, favority, nadmořská výška a vlastní hodnoty z databáze GeoGetu
   a GSAK se přenesou ke keším.
 - Databáze GeoGetu nebo GSAKu, do které ten program právě zapisuje
-  (třeba import), se načte po dokončení zápisu; do té doby zůstanou
-  zobrazené dříve načtené keše. Poškozenou databázi nebo soubor, který
-  není databáze, program ohlásí česky.
+  (třeba import), nezdrží načtení ostatních zdrojů a načte se po
+  dokončení zápisu; do té doby zůstanou zobrazené dříve načtené keše
+  a Přehled zdrojů u ní ukazuje „čeká na dokončení zápisu“. Poškozenou
+  databázi nebo soubor, který není databáze, program ohlásí česky.
 - Databáze GeoGetu a GSAKu se otevírají jen pro čtení, GeoKuk v jejich
   složce nic nezaloží ani nezmění.
 - Keše se načtou i z databáze starší verze GeoGetu nebo GSAKu, které

@@ -12,7 +12,10 @@ import org.sqlite.SQLiteException;
 final class DatabazeJinehoProgramu {
 
 	/** Import do GeoGetu nebo GSAKu drží databázi zamčenou i desítky sekund, počkáme na něj. */
-	private static final int CEKANI_NA_ZAMEK_MS = 60_000;
+	static final int CEKANI_NA_ZAMEK_MS = 60_000;
+
+	/** Při zjišťování, co je soubor zač, dlouho nečekáme: zamčená databáze by zdržela načtení všech ostatních zdrojů. */
+	static final int CEKANI_PRI_ZJISTOVANI_MS = 2_000;
 
 	private static final int SQLITE_CORRUPT = 11;
 	private static final int SQLITE_NOTADB = 26;
@@ -29,13 +32,23 @@ final class DatabazeJinehoProgramu {
 		private static final long serialVersionUID = 1L;
 
 		Zamcena(final File soubor, final Throwable pricina) {
-			super("Databáze \"" + soubor.getName() + "\" je zamčená, GeoGet nebo GSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
+			super("Databáze \"" + jmeno(soubor) + "\" je zamčená, GeoGet nebo GSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
 		}
 	}
 
+	/** Databáze GSAKu se jmenují všechny sqlite.db3, uživatel je zná podle jména složky. */
+	static String jmeno(final File soubor) {
+		final File slozka = soubor.getParentFile();
+		return "sqlite.db3".equalsIgnoreCase(soubor.getName()) && slozka != null ? slozka.getName() : soubor.getName();
+	}
+
 	static Connection otevri(final File soubor) throws SQLException {
+		return otevri(soubor, CEKANI_NA_ZAMEK_MS);
+	}
+
+	static Connection otevri(final File soubor, final int cekaniNaZamekMs) throws SQLException {
 		final SQLiteConfig config = new SQLiteConfig();
-		config.setBusyTimeout(CEKANI_NA_ZAMEK_MS);
+		config.setBusyTimeout(cekaniNaZamekMs);
 		// Cizí databázi nesmí Geokuk založit ani změnit.
 		config.setReadOnly(true);
 		return DriverManager.getConnection("jdbc:sqlite:" + soubor.getAbsolutePath(), config.toProperties());
@@ -50,6 +63,15 @@ final class DatabazeJinehoProgramu {
 			}
 		}
 		return vysledek;
+	}
+
+	/** Zda databázi pořád drží zamčenou jiný program, bez čekání. */
+	static boolean jeZamcena(final File soubor) {
+		try (Connection c = otevri(soubor, 0); Statement s = c.createStatement(); ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM sqlite_master")) {
+			return false;
+		} catch (final SQLException e) {
+			return jeZamcena(e);
+		}
 	}
 
 	static boolean jeZamcena(final Throwable chyba) {
