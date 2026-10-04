@@ -122,7 +122,6 @@ public class Menu extends MenuStrujce {
 
 		makeMapSubmenuPart(akce);
 
-		separator();
 		item(akce.priblizMapuAction);
 		item(akce.oddalMapuAction);
 		item(akce.nastavMapuCeskaAction);
@@ -224,7 +223,7 @@ public class Menu extends MenuStrujce {
 		item(akce.rozdelitCestuAction);
 		item(akce.znovuSpojitCestyAction);
 
-		menu("Mřížky", "Různo dekorace na mapě");
+		menu("Mřížky", "Různé dekorace na mapě");
 		menu.setMnemonic('Y');
 
 		item(akce.meritkovnikAction);
@@ -257,33 +256,38 @@ public class Menu extends MenuStrujce {
 		item(akce.refreshIkonAction);
 		item(akce.debugIkonyAction);
 
-		menu("Nápověda", "Nápověda, odkazy na web, kotnrola aktualiozací");
+		menu("Nápověda", "Nápověda, odkazy na web, kontrola aktualizací");
 		menu.setMnemonic(KeyEvent.VK_N);
 		item(akce.napovedaAction);
 		item(akce.webovaStrankaAction);
 		item(akce.zadatProblemAction);
+		item(akce.prehledProblemuAction);
 		item(akce.diagnostikaAction);
 		item(akce.zkontrolovatAktualizaceAction);
 		item(akce.betaKanalAction);
 		separator();
 		item(akce.oProgramuAction);
 
-		if (Diagnostika.zobrazovatVerzi()) {
-			menuBar.add(Box.createHorizontalGlue());
-			final JButton verze = new JButton(akce.diagnostikaAction);
-			verze.setText(Diagnostika.popisVerze());
-			verze.setIcon(null);
-			verze.setForeground(new Color(0xC0, 0x50, 0x00));
-			verze.setBorderPainted(false);
-			verze.setContentAreaFilled(false);
-			verze.setFocusable(false);
-			menuBar.add(verze);
-		}
+		menuBar.add(Box.createHorizontalGlue());
+		final JButton verze = new JButton(akce.diagnostikaAction);
+		verze.setIcon(null);
+		verze.setForeground(new Color(0xC0, 0x50, 0x00));
+		verze.setBorderPainted(false);
+		verze.setContentAreaFilled(false);
+		verze.setFocusable(false);
+		nastavStitekVerze(verze);
+		Diagnostika.poZmeneBetaKanalu(() -> SwingUtilities.invokeLater(() -> nastavStitekVerze(verze)));
+		menuBar.add(verze);
 
 		tb.addSeparator();
 		tb.addOvladaceAlel();
 		tb.add(Box.createHorizontalGlue());
 
+	}
+
+	static void nastavStitekVerze(final AbstractButton verze) {
+		verze.setText(Diagnostika.popisVerze());
+		verze.setVisible(Diagnostika.zobrazovatVerzi());
 	}
 
 }

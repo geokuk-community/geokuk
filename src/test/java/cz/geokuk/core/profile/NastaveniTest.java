@@ -63,4 +63,51 @@ public class NastaveniTest {
 		Assert.assertTrue(new File(soubor.getPath() + ".vadne").isFile());
 		Assert.assertEquals(0, koren.childrenNames().length);
 	}
+
+	@Test
+	public void vadnySouborKteryNejdeOdlozitSeNeprepise() throws Exception {
+		final File soubor = tmp.newFile("nastaveni.xml");
+		final byte[] puvodni = "<preferences><root ".getBytes(StandardCharsets.UTF_8);
+		Files.write(soubor.toPath(), puvodni);
+		// Neprázdná složka .vadne: soubor se nepodaří přejmenovat.
+		final File vadne = tmp.newFolder("nastaveni.xml.vadne");
+		new File(vadne, "x").createNewFile();
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
+		Assert.assertTrue(Nastaveni.prevzitVarovani().contains("beze změny"));
+		koren.node("geokuk").put("a", "1");
+		koren.ulozHned();
+		Assert.assertArrayEquals(puvodni, Files.readAllBytes(soubor.toPath()));
+	}
+
+	/** Nastavení verze 6.0.0: cesty míří do původní složky dat, převezme se jen to ostatní. */
+	@Test
+	public void cestyStarsiVerzeSeNeprevezmou() throws Exception {
+		final File stary = tmp.newFile("geokuk-preferences.xml");
+		Files.write(stary.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map/><node name=\"current\"><map/>"
+				+ "<node name=\"vseobecne\"><map><entry key=\"nick\" value=\"Kačer\"/></map></node>"
+				+ "<node name=\"umisteniSouboru\"><map><entry key=\"kesDir\" value=\"C:\\Users\\Kacer\\geokuk\"/>"
+				+ "<entry key=\"kesDir_active\" value=\"true\"/><entry key=\"kmzDir\" value=\"C:\\Users\\Kacer\\geokuk\\kmz\"/></map></node>"
+				+ "<node name=\"vylet\"><map><entry key=\"aktualniSoubor\" value=\"C:\\Users\\Kacer\\geokuk\\cesty\\a.gpx\"/>"
+				+ "<entry key=\"jeOtevrenyVylet\" value=\"true\"/></map></node>"
+				+ "</node></node></root></preferences>").getBytes(StandardCharsets.UTF_8));
+		final SouborovePreferences koren = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), stary, false);
+		Assert.assertEquals("Kačer", koren.node("geokuk/current/vseobecne").get("nick", null));
+		Assert.assertFalse(koren.nodeExists("geokuk/current/umisteniSouboru"));
+		Assert.assertNull(koren.node("geokuk/current/vylet").get("aktualniSoubor", null));
+		Assert.assertTrue(koren.node("geokuk/current/vylet").getBoolean("jeOtevrenyVylet", false));
+	}
+
+	/** Stejně se převezme nastavení z registru. */
+	@Test
+	public void zRegistruSeCestyNeprevezmou() throws Exception {
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		registr.node("current/umisteniSouboru").put("kesDir", "C:\\Users\\Kacer\\geokuk");
+		registr.node("current/vzhled").put("lookAndFeel", "Metal");
+		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "nastaveni.xml"));
+		Nastaveni.prevezmi(nove, registr);
+		Assert.assertEquals("Metal", nove.node("geokuk/current/vzhled").get("lookAndFeel", null));
+		Assert.assertFalse(nove.nodeExists("geokuk/current/umisteniSouboru"));
+	}
 }

@@ -122,6 +122,7 @@ public class Akce {
 
 	public final NapovedaAction napovedaAction = new NapovedaAction(null);
 	public final ZadatProblemAction zadatProblemAction = new ZadatProblemAction();
+	public final PrehledProblemuAction prehledProblemuAction = new PrehledProblemuAction();
 	public final DiagnostikaAction diagnostikaAction = new DiagnostikaAction();
 
 	public final OtevriAction nactiAction = new OtevriAction();

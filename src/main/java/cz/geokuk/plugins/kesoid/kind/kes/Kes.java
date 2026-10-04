@@ -13,6 +13,7 @@ import cz.geokuk.img.ImageLoader;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -234,28 +235,28 @@ public class Kes extends Kesoid {
 	@Override
 	public void prispejDoTooltipu(final StringBuilder sb, final Wpt wpt) {
 		sb.append("<b>");
-		sb.append(getNazev());
+		sb.append(FString.html(getNazev()));
 		sb.append("</b>");
 		sb.append("<small>");
 		sb.append(" - ");
-		sb.append(getFirstWpt().getSym());
-		sb.append("  (").append(getIdentifier()).append(")");
+		sb.append(FString.html(getFirstWpt().getSym()));
+		sb.append("  (").append(FString.html(getIdentifier())).append(")");
 		sb.append("</small>");
 		sb.append("<br>");
 		if (wpt != getFirstWpt()) {
 			if (!getNazev().contains(wpt.getNazev())) {
 				sb.append(wpt.isRucnePridany() ? "+ " : "");
 				sb.append("<i>");
-				sb.append(wpt.getName().substring(0, 2));
+				sb.append(FString.html(wpt.getName().substring(0, 2)));
 				sb.append(": ");
-				sb.append(wpt.getNazev());
+				sb.append(FString.html(wpt.getNazev()));
 				sb.append("</i>");
 			}
 			// if (! getSym().equals(wpt.getSym())) {
 			sb.append("<small>");
 			sb.append(" - ");
-			sb.append(wpt.getSym());
-			sb.append("  (").append(wpt.getName()).append(")");
+			sb.append(FString.html(wpt.getSym()));
+			sb.append("  (").append(FString.html(wpt.getName())).append(")");
 			sb.append("</small>");
 		}
 		// }

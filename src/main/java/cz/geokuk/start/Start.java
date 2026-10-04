@@ -50,10 +50,11 @@ public final class Start {
 				chyba("GeoKuk se neukončil, novou verzi nejde spustit.\nUkončete GeoKuk a spusťte ho znovu.");
 				return;
 			}
-			vymenJar(adresar);
-			final File jar = new File(adresar, JAR);
-			if (!jar.isFile()) {
-				chyba("Ve složce " + adresar + " chybí soubor " + JAR + ".\nRozbalte znovu celý zip s programem GeoKuk.");
+			final File jar = vyberJar(adresar, Start::vymenJar);
+			if (jar == null) {
+				chyba(new File(adresar, JAR + ".new").isFile()
+						? "Novou verzi GeoKuku se nepodařilo nainstalovat.\nZavřete GeoKuk, pokud ještě běží, a spusťte ho znovu."
+						: "Ve složce " + adresar + " chybí soubor " + JAR + ".\nRozbalte znovu celý zip s programem GeoKuk.");
 				return;
 			}
 			final List<String> prikaz = new ArrayList<>();
@@ -124,18 +125,50 @@ public final class Start {
 	static boolean pockejNaUkonceni(final File zamek, final long maxMs) throws InterruptedException {
 		final long konec = System.currentTimeMillis() + maxMs;
 		do {
-			final FileLock lock = zamkni(zamek);
-			if (lock != null) {
-				try {
-					lock.channel().close();
-				} catch (final IOException e) {
-					// zámek se uvolní i tak
-				}
+			if (!jeZamceno(zamek)) {
 				return true;
 			}
 			Thread.sleep(200);
 		} while (System.currentTimeMillis() < konec);
 		return false;
+	}
+
+	/** Zámek drží jiná instance. Zámek, který nejde ani vytvořit (nezapisovatelná složka), nikdo nedrží. */
+	public static boolean jeZamceno(final File zamek) {
+		try (FileChannel kanal = new RandomAccessFile(zamek, "rw").getChannel()) {
+			final FileLock lock = kanal.tryLock();
+			if (lock == null) {
+				return true;
+			}
+			lock.release();
+			return false;
+		} catch (final OverlappingFileLockException e) {
+			return true;
+		} catch (final IOException e) {
+			return false;
+		}
+	}
+
+	interface Vymena {
+		void vymen(File adresar) throws IOException;
+	}
+
+	/**
+	 * Vymění staženou novou verzi a vrátí jar ke spuštění. Když výměna selže (soubor drží jiný program), spustí se stávající verze, a když
+	 * chybí, předchozí verze z .bak; nová verze se zkusí nainstalovat při dalším spuštění. Vrátí null, když není co spustit.
+	 */
+	static File vyberJar(final File adresar, final Vymena vymena) {
+		try {
+			vymena.vymen(adresar);
+		} catch (final IOException e) {
+			System.err.println("Výměna " + JAR + " selhala: " + e);
+		}
+		final File jar = new File(adresar, JAR);
+		if (jar.isFile()) {
+			return jar;
+		}
+		final File bak = new File(adresar, JAR + ".bak");
+		return bak.isFile() ? bak : null;
 	}
 
 	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */

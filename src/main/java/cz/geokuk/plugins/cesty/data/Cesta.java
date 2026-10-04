@@ -6,6 +6,7 @@ import java.util.*;
 import cz.geokuk.core.coordinates.*;
 import cz.geokuk.plugins.cesty.FBarvy;
 import cz.geokuk.plugins.kesoid.Wpt;
+import cz.geokuk.util.lang.FString;
 import cz.geokuk.util.lang.FUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -134,7 +135,7 @@ public class Cesta implements Iterable<Bousek0> {
 	public String getNazevHtml() {
 		if (nazev != null) {
 			// Ta mezera je tam kvůli bezejmenným cestám
-			return " <i>\"" + nazev + "\"</i>";
+			return " <i>\"" + FString.html(nazev) + "\"</i>";
 		} else {
 			return "";
 		}

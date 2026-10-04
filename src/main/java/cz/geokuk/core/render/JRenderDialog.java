@@ -58,6 +58,9 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	private JSpinner jKmzDrawOrder;
 	private JCheckBox jSrovnatDoSeveru;
 
+	static final int MAX_ZNAKU_CESTY = 45;
+	private static final int SIRKA_JMENA_SOUBORU = 300;
+
 	private JTextField jKmzFolderDescription;
 	private JPapirMeritkoComboBox jPapirMeritkoComboBox;
 
@@ -98,7 +101,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	}
 
 	public JRenderDialog() {
-		setTitle("Rendrování / tisk");
+		setTitle("Tisknout/Rendrovat");
 	}
 
 	/*
@@ -147,7 +150,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		        renderModel.getDim().height, pametMiB));
 		jPrerusitButton.setText(renderSettings.getWhatRender() != EWhatRender.TISK ? "Přerušit rendrování" : "Přerušit tisk");
 		// jRendrovaneMeritko.setText(renderModel.getRenderedMoumer() + "");
-		jNastaveniAktualnihoMeritkaButton.setText("Nastav na meritko: " + renderModel.getCurrentMoumer());
+		jNastaveniAktualnihoMeritkaButton.setText("Nastavit na měřítko: " + renderModel.getCurrentMoumer());
 		jNastaveniAktualnihoMeritkaButton.setEnabled(maBytEnablovano && renderModel.getCurrentMoumer() != renderModel.getRenderedMoumer());
 
 		jPureJmenoSouboruCombo.setPatterned(renderSettings.getPureFileName());
@@ -166,7 +169,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		final double vzdalenostBodu = 1000 / pixluNaMilimetrMapy;
 		final PapirovaMetrika papirovaMetrika = renderModel.getPapirovaMetrika();
 		jJakouHustotuLabel.setText(
-		        String.format("<html>%.0f * %.0f mm - %.0f DPI = %.2f px/mm = %.1f \u03BCm/px", papirovaMetrika.xsize * 1000, papirovaMetrika.ysize * 1000, dpi, pixluNaMilimetrMapy, vzdalenostBodu));
+		        String.format("%.0f * %.0f mm - %.0f DPI = %.2f px/mm = %.1f \u03BCm/px", papirovaMetrika.xsize * 1000, papirovaMetrika.ysize * 1000, dpi, pixluNaMilimetrMapy, vzdalenostBodu));
 
 		jTerenniRozmerField.setText(String.format("%.1f * %.1f km", roord.getWidthMetru() / 1000, roord.getHeightMetru() / 1000));
 
@@ -182,7 +185,9 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		nastavViditelnost(renderSettings.getWhatRender());
 
 		final File outputFolder = renderModel.getOutputFolder();
-		jOutputFolderLabel.setText(outputFolder == null ? "" : outputFolder.toString());
+		final String cesta = outputFolder == null ? "" : outputFolder.toString();
+		jOutputFolderLabel.setText(zkratCestu(cesta, MAX_ZNAKU_CESTY));
+		jOutputFolderLabel.setToolTipText(cesta.isEmpty() ? null : cesta);
 		jChangeOutputFolderButton.setAction(factory.init(new UmisteniSouboruAction(urciFokusovanouSlozku(renderSettings))));
 		jChangeOutputFolderButton.setText("Změň...");
 	}
@@ -273,7 +278,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 
 		jSrovnatDoSeveru = new JCheckBox();
 		jSrovnatDoSeveru.setText("Srovnat do severu");
-		jNastaveniAktualnihoMeritkaButton = new JButton("čudl bude něco umět");
+		jNastaveniAktualnihoMeritkaButton = new JButton("Nastavit na měřítko");
 		jNastavovecMeritka = new JNastavovecMeritka();
 		jTerenniRozmerField = new JTextField();
 		jTerenniRozmerField.setEditable(false);
@@ -342,7 +347,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 
 	private void createImgType() {
 		final SelectionModel<EImageType> whrm = new SelectionModel<>();
-		whrm.add(EImageType.bmp, "<html><i>BMP</i> - nekomprimovaný obrázek (pro volný OziExplorer");
+		whrm.add(EImageType.bmp, "<html><i>BMP</i> - nekomprimovaný obrázek (pro volný OziExplorer).");
 		whrm.add(EImageType.jpg, "<html><i>JPG</i> - ztrátová komprimace, vhodné pro fotky, nutné pro Garmin.");
 		whrm.add(EImageType.png, "<html><i>PNG</i> - bezeztrátová komprimace, umožňuje průhlednost.");
 		jImgTypeRadioPanel = new JMvRadioPanel<>("Typ obrázku");
@@ -380,6 +385,30 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		jWhatRenderRadioPanel.setAlignmentX(0.5f);
 	}
 
+	/**
+	 * Dlouhá cesta by roztáhla oddíl Výstup a ostatní popisky by se nevešly. Zkrátí ji uprostřed, kořen a poslední složky zůstanou.
+	 */
+	static String zkratCestu(final String cesta, final int maxZnaku) {
+		if (cesta.length() <= maxZnaku) {
+			return cesta;
+		}
+		final char oddelovac = cesta.indexOf('\\') >= 0 ? '\\' : '/';
+		final int zacatek = cesta.indexOf(oddelovac, cesta.startsWith("\\\\") ? 2 : 0) + 1;
+		final String koren = cesta.substring(0, zacatek);
+		String konec = "";
+		for (int i = cesta.lastIndexOf(oddelovac); i >= zacatek; i = cesta.lastIndexOf(oddelovac, i - 1)) {
+			final String kandidat = cesta.substring(i);
+			if (koren.length() + 1 + kandidat.length() > maxZnaku) {
+				break;
+			}
+			konec = kandidat;
+		}
+		if (konec.isEmpty()) {
+			return "…" + cesta.substring(cesta.length() - (maxZnaku - 1));
+		}
+		return koren + "…" + konec;
+	}
+
 	private void initOziComponents() {
 		jOziPanel = new JTwoColumnsPanel("OZI Explorer");
 		jKalibrBodu = new JKalibrBoduSpinner();
@@ -396,6 +425,10 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		// jOutputFolder.setMinimumSize(dm1);
 		jChangeOutputFolderButton = new JButton("Změň");
 		jPureJmenoSouboruCombo = new JGeocodingComboBox();
+		// Šířka podle nejdelšího názvu by oddíl roztáhla a ostatní popisky by se nevešly.
+		final Dimension sirkaJmena = jPureJmenoSouboruCombo.getPreferredSize();
+		sirkaJmena.width = SIRKA_JMENA_SOUBORU;
+		jPureJmenoSouboruCombo.setPreferredSize(sirkaJmena);
 		jPriponaSouboruLabel = new JLabel();
 		jIkonkaPapiru = new JIkonkaPapiru();
 		jPapirMeritkoComboBox = new JPapirMeritkoComboBox();
@@ -466,7 +499,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	}
 
 	private void intKmzComponents() {
-		jKmzPanel = new JTwoColumnsPanel("KMZx (GoogleEarth či Oregon)");
+		jKmzPanel = new JTwoColumnsPanel("KMZ (Google Earth či Oregon)");
 		jKmzPanel.setFont(getFont().deriveFont(Font.BOLD));
 		jKmzFolderNazevCombo = new JGeocodingComboBox();
 		jKmzFolderDescription = new JTextField();
@@ -481,7 +514,7 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 		jKmzPanel.addx("Název:", jKmzFolderNazevCombo);
 		jKmzPanel.gbc.fill = GridBagConstraints.HORIZONTAL;
 		jKmzPanel.addx("Popis:", jKmzFolderDescription);
-		jKmzPanel.addx("Draw order:", jKmzDrawOrder);
+		jKmzPanel.addx("Pořadí vykreslení:", jKmzDrawOrder);
 		jKmzPanel.addx("Dlaždice X:", jNastavovacVelikostiDlazdicX);
 		// jPanKmz.gbc.insets = new Insets(0, 0, 0, 0);
 		jKmzPanel.addx("Dlaždice Y:", jNastavovacVelikostiDlazdicY);
