@@ -71,6 +71,48 @@ public final class UzivatelskeMapy {
 		return zpravy.isEmpty() ? null : String.join("\n\n", zpravy);
 	}
 
+	/** Zalomí řádky delší než {@code sirka} na mezerách, dlouhé slovo (cestu) za lomítkem nebo natvrdo, ať dialog nepřeteče obrazovku. */
+	public static String zalom(final String text, final int sirka) {
+		final StringBuilder vysledek = new StringBuilder();
+		for (final String radek : text.split("\n", -1)) {
+			if (vysledek.length() > 0) {
+				vysledek.append('\n');
+			}
+			int delka = 0;
+			for (final String slovo : radek.split(" ", -1)) {
+				final List<String> kusy = rozdelSlovo(slovo, sirka);
+				for (int i = 0; i < kusy.size(); i++) {
+					final String kus = kusy.get(i);
+					if (i > 0 || delka > 0 && delka + 1 + kus.length() > sirka) {
+						vysledek.append('\n');
+						delka = 0;
+					} else if (delka > 0) {
+						vysledek.append(' ');
+						delka++;
+					}
+					vysledek.append(kus);
+					delka += kus.length();
+				}
+			}
+		}
+		return vysledek.toString();
+	}
+
+	private static List<String> rozdelSlovo(final String slovo, final int sirka) {
+		final List<String> kusy = new ArrayList<>();
+		String zbytek = slovo;
+		while (zbytek.length() > sirka) {
+			int konec = Math.max(zbytek.lastIndexOf('/', sirka - 1), zbytek.lastIndexOf('\\', sirka - 1)) + 1;
+			if (konec <= 0) {
+				konec = sirka;
+			}
+			kusy.add(zbytek.substring(0, konec));
+			zbytek = zbytek.substring(konec);
+		}
+		kusy.add(zbytek);
+		return kusy;
+	}
+
 	/** První označení mapy ve starém souboru, null když soubor není nebo v něm žádná mapa nezůstala. */
 	private static String oznaceniVeStaremSouboru(final File stary) {
 		if (!stary.isFile()) {
