@@ -82,7 +82,10 @@ GeoKuk
 
 Keše načte GeoKuk ze souborů GPX, `.geokuk` a zip ve složce `data\gpx`;
 načítání z databáze GeoGetu nebo GSAKu a jinou složku s kešemi zapnete
-v Soubor > Umístění souborů.
+v Soubor > Umístění souborů. Cesta uvnitř složky GeoKuk se tam ukazuje
+jako `${GeoKuk}/data/gpx` a při přesunu nebo přejmenování složky se
+posune s ní, pod polem je výsledná cesta. Cesta mimo složku GeoKuk
+zůstává pevná.
 
 Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 až
 3 GB), změnit ji jde v Soubor > Paměť programu.
