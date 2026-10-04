@@ -67,8 +67,12 @@ public class MultiNacitac {
 	}
 
 	public MultiNacitac(final KesoidModel kesoidModel) {
+		this(kesoidModel, new DirScanner());
+	}
+
+	MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds) {
 		this.kesoidModel = kesoidModel;
-		ds = new DirScanner();
+		this.ds = ds;
 		nacitace.add(new NacitacGeokuk());
 		nacitace.add(new NacitacGpx());
 		nacitace.add(new NacitacImageMetadata());
@@ -98,13 +102,16 @@ public class MultiNacitac {
 		posledniSeznam = list;
 		ohlasPrazdneSlozky(list);
 		final File gsak = gsakDir;
+		// Platí čitelnost z doby skenu, pozdější kontrola by mohla vidět složku, která se mezitím vrátila.
+		final Set<File> nedostupne = ds.getNedostupne();
+		kesoidModel.setNedostupnePriNacitani(nedostupne);
 		// Dočasně nedostupná složka (síť, USB) neznamená, že databáze zmizely; známé zůstanou známé.
-		if (gsak == null || jeCitelnaSlozka(gsak)) {
-			kesoidModel.zaradGsakDatabaze(databaze(list, GSAK_ROOTDIR_DEF));
+		if (gsak == null || !nedostupne.contains(gsak)) {
+			kesoidModel.zaradGsakDatabaze(databaze(list, GSAK_ROOTDIR_DEF), nedostupne);
 		}
 		final File opensak = opensakDir;
-		if (opensak == null || jeCitelnaSlozka(opensak)) {
-			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF));
+		if (opensak == null || !nedostupne.contains(opensak)) {
+			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
@@ -138,6 +145,7 @@ public class MultiNacitac {
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
 				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
+		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
 		// Keše ze zamčené databáze, které už jsou zobrazené, zůstanou zobrazené, dokud ji jiný program nepustí.
 		if (!zamceneTed.isEmpty() && kesoidModel.getVsechnyKesoidy() != null && !Collections.disjoint(zamceneTed, zobrazene)) {
 			return null;

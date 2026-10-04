@@ -30,10 +30,12 @@ public class GsakNacitatPoVybraniTest {
 
 		@Override
 		public KesoidUmisteniSouboru getUmisteniSouboru() {
+			dotazuNaUmisteni++;
 			return umisteni;
 		}
 	};
 	private KesoidUmisteniSouboru umisteni;
+	private int dotazuNaUmisteni;
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
@@ -121,6 +123,23 @@ public class GsakNacitatPoVybraniTest {
 		Assert.assertTrue(nacte(treti));
 	}
 
+	/** Databáze ve složce GSAKu zadané přes symbolický odkaz se při dalším prohledání znovu nezablokuje. */
+	@Test
+	public void znamaDatabazePresOdkazSeNezablokuje() throws Exception {
+		final File skutecna = tmp.newFolder("skutecna");
+		final File odkaz = new File(tmp.getRoot(), "odkaz");
+		try {
+			java.nio.file.Files.createSymbolicLink(odkaz.toPath(), skutecna.toPath());
+		} catch (final UnsupportedOperationException | java.io.IOException e) {
+			Assume.assumeNoException("symbolický odkaz nejde vytvořit", e);
+		}
+		final File db = new File(odkaz, "Default/sqlite.db3").getAbsoluteFile();
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(db));
+		model.zaradGsakDatabaze(set(db));
+		Assert.assertTrue(nacte(db));
+	}
+
 	/** Neplatná cesta k aktivní složce (ručně upravené nastavení) nesmí shodit úklid zablokovaných zdrojů. */
 	@Test
 	public void neplatnaSlozkaNevadi() throws Exception {
@@ -132,6 +151,47 @@ public class GsakNacitatPoVybraniTest {
 		model.zaradGsakDatabaze(set(a));
 		model.zaradGsakDatabaze(set(a, b)); // b je zablokovaná, úklid má co dělat
 		model.vycistiBlokovaneZdroje(set());
+	}
+
+	/** Bez zablokovaných zdrojů se po načtení nezjišťuje dostupnost složek (souborové operace na EDT). */
+	@Test
+	public void bezBlokovanychSeSlozkyNekontroluji() throws Exception {
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, true));
+		model.vycistiBlokovaneZdroje(set());
+		Assert.assertEquals(0, dotazuNaUmisteni);
+	}
+
+	/** Podsložky byly při prohledání nečitelné a pak se vrátily: vybraná databáze zůstane vybraná, zablokovaná zablokovaná. */
+	@Test
+	public void necitelnaPodslozkaPriSkenuNicNezapomene() throws Exception {
+		final File slozka = tmp.newFolder("gsak").getCanonicalFile(); // nastavení ukládá kanonické cesty (Windows: RUNNER~1)
+		final File vybrana = new File(slozka, "Default/sqlite.db3");
+		final File treti = new File(slozka, "Treti/sqlite.db3");
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(slozka, false, true));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(vybrana));
+		model.zaradGsakDatabaze(set(vybrana, treti));
+		Assert.assertTrue(nacte(vybrana));
+		Assert.assertFalse(nacte(treti));
+
+		final Set<File> nedostupne = set(vybrana.getParentFile(), treti.getParentFile());
+		model.setNedostupnePriNacitani(nedostupne);
+		model.zaradGsakDatabaze(set(), nedostupne);
+		Assert.assertTrue(new File(slozka, "Treti").mkdirs()); // složka je zpátky dřív, než se uklízí
+		model.vycistiBlokovaneZdroje(set());
+		Assert.assertFalse(nacte(treti));
+
+		model.setNedostupnePriNacitani(set());
+		model.zaradGsakDatabaze(set(vybrana, treti), set());
+		model.vycistiBlokovaneZdroje(set(vybrana, treti));
+		Assert.assertTrue(nacte(vybrana));
+		Assert.assertFalse(nacte(treti));
 	}
 
 	private static Set<File> set(final File... f) {

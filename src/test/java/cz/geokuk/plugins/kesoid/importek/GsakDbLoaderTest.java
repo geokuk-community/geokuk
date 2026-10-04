@@ -100,6 +100,8 @@ public class GsakDbLoaderTest {
 		Assert.assertEquals(12, kes.gpxg.favorites);
 		Assert.assertEquals(250, kes.gpxg.elevation);
 		Assert.assertEquals("http://coord.info/GC1111", kes.link.href);
+		Assert.assertEquals("Mystery u řeky by Kačer", kes.link.text);
+		Assert.assertEquals("Mystery u řeky by Kačer (3.5 / 2)", kes.desc);
 	}
 
 	@Test

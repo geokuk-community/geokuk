@@ -157,9 +157,9 @@ public class GsakDbLoader extends Nacitac0 {
 						groundspeak.availaible = !record.TempDisabled;
 					}
 					cache.groundspeak = groundspeak;
-					cache.desc = String.format("%s by %s (%s / %s)", cache.groundspeak.name, cache.groundspeak.placedBy, cache.groundspeak.difficulty, cache.groundspeak.terrain);
+					cache.desc = cache.groundspeak.name + " by " + cache.groundspeak.placedBy + " (" + cache.groundspeak.difficulty + " / " + cache.groundspeak.terrain + ")";
 					cache.link.href = "http://coord.info/" + cache.name;
-					cache.link.text = String.format("%s by %s", cache.groundspeak.name, cache.groundspeak.placedBy);
+					cache.link.text = cache.groundspeak.name + " by " + cache.groundspeak.placedBy;
 
 					if (!StringUtils.isBlank(record.FoundByMeDate)) {
 						cache.sym = "Geocache Found";

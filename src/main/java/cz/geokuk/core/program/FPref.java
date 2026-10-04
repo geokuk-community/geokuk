@@ -38,6 +38,8 @@ public class FPref {
 	public static final String KESOID_POPISKY_node = "kesoid/popisky";
 	public static final String KESOID_VISIBLE_value = "visible";
 	public static final String ZOBRAZENI_KESI_value = "zobrazeni";
+	public static final String LIMIT_IKON_value = "limitIkon";
+	public static final String LIMIT_TECEK_value = "limitTecek";
 
 	public static final String NEXT_UPDATE_CHECK_TIMESTAMP_value = "nextUpdateCheckTimestamp";
 	// Uzly
