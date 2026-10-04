@@ -106,7 +106,7 @@ public class GsakNedostupnaSlozkaTest {
 			}
 
 			@Override
-			public void zaradOpensakDatabaze(final Set<File> databaze) {}
+			public void zaradOpensakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {}
 		};
 		model.inject(progress);
 		model.inject(new KesoidPluginManager());
