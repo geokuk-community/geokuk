@@ -4,6 +4,7 @@ package cz.geokuk.core.lookandfeel;
  * @(#)SwingSet2.java	1.54 06/05/31
  */
 
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +79,6 @@ public class LafSupport {
 	private static List<LafItem> lafitems = new ArrayList<>();
 
 	// Used only if swingset is an application
-	private static JFrame frame;
 
 	static {
 		createLafList(); // vytvořit seznam a vybrat aktuální
@@ -93,10 +93,6 @@ public class LafSupport {
 	// *******************************************************
 	// ****************** Utility Methods ********************
 	// *******************************************************
-
-	public static void setFrame(final JFrame frame) {
-		LafSupport.frame = frame;
-	}
 
 	/**
 	 * Sets the current L&F on each demo module
@@ -213,9 +209,12 @@ public class LafSupport {
 		updateLookAndFeel();
 	}
 
-	private static void updateThisSwingSet() {
-		if (frame != null) {
-			SwingUtilities.updateComponentTreeUI(frame);
+	/** Nový vzhled dostanou všechna otevřená okna, i nemodální dialogy. */
+	static void updateThisSwingSet() {
+		for (final Window okno : Window.getWindows()) {
+			if (okno.isDisplayable()) {
+				SwingUtilities.updateComponentTreeUI(okno);
+			}
 		}
 	}
 

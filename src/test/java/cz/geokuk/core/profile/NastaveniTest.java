@@ -73,7 +73,9 @@ public class NastaveniTest {
 		final File vadne = tmp.newFolder("nastaveni.xml.vadne");
 		new File(vadne, "x").createNewFile();
 		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
-		Assert.assertTrue(Nastaveni.prevzitVarovani().contains("beze změny"));
+		final String varovani = Nastaveni.prevzitVarovani();
+		Assert.assertTrue(varovani.contains("beze změny"));
+		Assert.assertTrue("uživatel musí vědět, že se změny neuloží", varovani.contains("neuloží"));
 		koren.node("geokuk").put("a", "1");
 		koren.ulozHned();
 		Assert.assertArrayEquals(puvodni, Files.readAllBytes(soubor.toPath()));
@@ -109,5 +111,20 @@ public class NastaveniTest {
 		Nastaveni.prevezmi(nove, registr);
 		Assert.assertEquals("Metal", nove.node("geokuk/current/vzhled").get("lookAndFeel", null));
 		Assert.assertFalse(nove.nodeExists("geokuk/current/umisteniSouboru"));
+	}
+
+	/** Soubor drží jiný program (antivirus): starší odložený soubor zůstane. */
+	@Test
+	public void drzenySouborNesmazeStarsiOdlozeny() throws Exception {
+		Assume.assumeTrue("otevřený soubor nejde přejmenovat jen ve Windows", System.getProperty("os.name").startsWith("Windows"));
+		final File soubor = tmp.newFile("nastaveni.xml");
+		Files.write(soubor.toPath(), "<preferences><root ".getBytes(StandardCharsets.UTF_8));
+		final File vadne = new File(soubor.getPath() + ".vadne");
+		Files.write(vadne.toPath(), "starší".getBytes(StandardCharsets.UTF_8));
+		try (java.io.FileInputStream drzi = new java.io.FileInputStream(soubor)) {
+			Nastaveni.otevri(soubor, null, false);
+		}
+		Assert.assertTrue(Nastaveni.prevzitVarovani().contains("neuloží"));
+		Assert.assertEquals("starší", new String(Files.readAllBytes(vadne.toPath()), StandardCharsets.UTF_8));
 	}
 }
