@@ -30,10 +30,12 @@ public class GsakNacitatPoVybraniTest {
 
 		@Override
 		public KesoidUmisteniSouboru getUmisteniSouboru() {
+			dotazuNaUmisteni++;
 			return umisteni;
 		}
 	};
 	private KesoidUmisteniSouboru umisteni;
+	private int dotazuNaUmisteni;
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
@@ -141,6 +143,17 @@ public class GsakNacitatPoVybraniTest {
 		model.zaradGsakDatabaze(set(a));
 		model.zaradGsakDatabaze(set(a, b)); // b je zablokovaná, úklid má co dělat
 		model.vycistiBlokovaneZdroje(set());
+	}
+
+	/** Bez zablokovaných zdrojů se po načtení nezjišťuje dostupnost složek (souborové operace na EDT). */
+	@Test
+	public void bezBlokovanychSeSlozkyNekontroluji() throws Exception {
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, true));
+		model.vycistiBlokovaneZdroje(set());
+		Assert.assertEquals(0, dotazuNaUmisteni);
 	}
 
 	private static Set<File> set(final File... f) {
