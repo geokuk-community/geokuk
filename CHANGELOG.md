@@ -7,10 +7,6 @@
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
   se načtou.
 
-### Vývoj
-- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
-  vznikne složka `data/mapy`.
-
 ## 6.2.0
 
 ### Změny
