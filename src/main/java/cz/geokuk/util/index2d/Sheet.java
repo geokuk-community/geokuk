@@ -24,7 +24,7 @@ class Sheet<T> extends Node<T> {
 		hodnoty = Objects.requireNonNull(mapobj, "Nesmi byt null v hodnotách ctvrecnickych");
 	}
 
-	private Sheet(final int xx, final int yy, final Lst<T> lst) {
+	Sheet(final int xx, final int yy, final Lst<T> lst) {
 		super(lst.count);
 		this.xx = xx;
 		this.yy = yy;
