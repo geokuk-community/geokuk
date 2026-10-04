@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -70,16 +71,13 @@ public class MultiNacitac {
 		nacitace.add(new GsakDbLoader(kesoidModel::getGsakParametryNacitani));
 	}
 
-	public List<KeFile> gsakSoubory(final Filex aDataDir) {
-		return ds.scan(new Root(aDataDir.getFile(), GSAK_ROOTDIR_DEF));
-	}
-
 	public KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
 		final List<KeFile> list = ds.coMamNacist();
 		if (list == null) {
 			return null;
 		}
 		ohlasPrazdneSlozky(list);
+		kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
 		final long start = System.currentTimeMillis();

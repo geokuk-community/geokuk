@@ -122,8 +122,9 @@
 - Po nedostatku paměti při rendrování přijde jen hláška o paměti, bez
   „Rendrování bylo přerušeno uživatelem“.
 - Kontextové menu záměrného kříže nabízí Vystředit na kříž.
-- Umístění souborů: zaškrtnutí „Načítat až po vybrání“ platí i pro
-  složku GSAKu změněnou ve stejném uložení.
+- „Načítat až po vybrání“ u GSAKu: databáze, kterou GeoKuk ještě
+  neviděl (nová v GSAKu, po zapnutí GSAKu nebo změně jeho složky), se
+  načte až po vybrání v Přehledu zdrojů.
 - Při spuštění s `--ovladani` je položka Soubor > Dálkové ovládání
   zaškrtnutá.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text

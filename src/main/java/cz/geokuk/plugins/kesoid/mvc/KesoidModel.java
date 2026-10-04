@@ -5,7 +5,6 @@ import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.Collections2;
 
@@ -46,7 +45,7 @@ public class KesoidModel extends Model0 {
 	private GccomNick gccomNick;
 	private ASada jmenoAktualniSadyIkon;
 	private KesoidUmisteniSouboru umisteniSouboru;
-	private Set<File> blokovaneZdroje;
+	private Set<File> blokovaneZdroje = new HashSet<>();
 	private GsakParametryNacitani gsakParametryNacitani;
 
 	// injektovanci
@@ -124,6 +123,24 @@ public class KesoidModel extends Model0 {
 
 	public void inject(final KesoidPluginManager kesopidPluginManager) {
 		this.kesopidPluginManager = kesopidPluginManager;
+	}
+
+	/**
+	 * Databáze GSAKu z aktuálního prohledání. Při „Načítat až po vybrání“ se databáze, kterou GeoKuk při minulém prohledání neviděl, nenačte, dokud ji uživatel nevybere.
+	 */
+	public synchronized void zaradGsakDatabaze(final Set<File> databaze) {
+		final MyPreferences pref = currPrefe().node(FPref.KESOID_node);
+		final Collection<File> zname = pref.getFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, null);
+		if (zname != null && !getGsakParametryNacitani().isNacistVsechnyDatabaze()) {
+			final Set<File> nove = new HashSet<>(databaze);
+			nove.removeAll(zname);
+			if (blokovaneZdroje.addAll(nove)) {
+				pref.putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);
+			}
+		}
+		if (zname == null || !databaze.equals(new HashSet<>(zname))) {
+			pref.putFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, databaze);
+		}
 	}
 
 	public boolean maSeNacist(final KeFile jmenoZdroje) {
@@ -319,7 +336,6 @@ public class KesoidModel extends Model0 {
 		}
 		final boolean nacistIkony = !aUmisteniSouboru.equalsImageLocations(umisteniSouboru);
 		final boolean nacistKese = !aUmisteniSouboru.equalsDataLocations(umisteniSouboru);
-		final Set<File> zakázat = gsakSouboryKZakazání(umisteniSouboru, aUmisteniSouboru);
 		umisteniSouboru = aUmisteniSouboru;
 
 		final MyPreferences pref = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
@@ -328,7 +344,6 @@ public class KesoidModel extends Model0 {
 		pref.putFilex(FPref.GSAK_DATA_DIR_value, aUmisteniSouboru.getGsakDataDir());
 		pref.remove("vyjimkyDir"); // mazat ze starých verzí
 		blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
-		blokovaneZdroje.addAll(zakázat);
 		fire(new KesoidUmisteniSouboruChangedEvent(aUmisteniSouboru));
 		if (nacistIkony) {
 			startIkonLoad(true);
@@ -337,17 +352,6 @@ public class KesoidModel extends Model0 {
 				startKesLoading();
 			}
 		}
-	}
-
-	private Set<File> gsakSouboryKZakazání(final KesoidUmisteniSouboru aAktuální, final KesoidUmisteniSouboru aNové) {
-		if (gsakParametryNacitani.isNacistVsechnyDatabaze() || /* Tohle se stává jen při startu programu. */ aAktuální == null) {
-			return Collections.emptySet();
-		}
-		final Set<File> nové = multiNacitacLoaderManager.gsakSoubory(aNové.getGsakDataDir()).stream().map(f -> f.getFile()).collect(Collectors.toSet());
-		final Set<File> stávající = multiNacitacLoaderManager.gsakSoubory(aAktuální.getGsakDataDir()).stream().map(f -> f.getFile()).collect(Collectors.toSet());
-		// Pokud totiž některé stávající v seznamu blokovaných nejsou, tak je někdo předtím povolil. A tak je nebudeme znovu zakazovat, že.
-		nové.removeAll(stávající);
-		return nové;
 	}
 
 	public void setVsechnyKesoidy(final KesBag vsechnyKesoidy) {
