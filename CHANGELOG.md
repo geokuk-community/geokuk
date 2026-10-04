@@ -1,5 +1,12 @@
 # Změny
 
+## 6.3.0
+
+### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
+
 ## 6.2.0
 
 ### Změny
@@ -51,7 +58,7 @@
   aktualizací přechod na poslední stabilní verzi.
 - „Připomenout za týden“ (i zavření dialogu nové verze) odloží nabídku
   té verze o 7 dní. Novější verze se nabídne hned.
-- „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
+- „Aktualizovat“ na Linuxu a macOS novou verzi rovnou
   nainstaluje místo jaru, ze kterého GeoKuk běží; kde to nejde, otevře
   stránku nabízené verze, u bety tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
