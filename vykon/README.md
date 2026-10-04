@@ -31,6 +31,10 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   nevybraná i vybraná), `JZvyraznovaciKruhySlide` s 25 000 waypointy,
   `EKesWptType.decode`. Kreslí do obrázku 1400×900 celý a s clipem jedné
   dlaždice, medián z opakování.
+- `kesoidy` (jen na vyžádání, jen nová verze): `JKesoidySlide` překreslí
+  okno 1400×900 s N kešemi ve výřezu, ikony na zoomu 14 (bez limitu
+  waypointů) pro počty v `IKONY` a tečky na zoomu 10 pro počty v `TECKY`.
+  Medián ze 7 překreslení, alokace na jedno překreslení a halda s daty.
 - `program`: smoke testy `velkaData` (GPX s 50 000 keší) a
   `velkaDatabazeGeogetu` (200 000 keší) spustí celý program s oknem;
   vypíše čas do zobrazení okna, načtení keší, obsazenou paměť a nejdelší
