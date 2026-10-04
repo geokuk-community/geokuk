@@ -35,6 +35,10 @@ public class MultiNacitacLoaderManager {
 		final Set<File> vynechane = vynechane(u.getCestyDir(), u.getImageMyDir(), u.getImage3rdPartyDir());
 		multiNacitac.setRootDirs(prenacti, u.getKesDir().getEffectiveFileIfActive(), u.getGeogetDataDir().getEffectiveFileIfActive(), u.getGsakDataDir().getEffectiveFileIfActive(),
 				u.getOpensakDataDir() == null ? null : u.getOpensakDataDir().getEffectiveFileIfActive(), vynechane);
+		if (prenacti && klsw != null && !klsw.isDone()) {
+			// Rozběhnuté načítání by doběhlo se starým nastavením; začne se znovu s novým.
+			klsw.cancel(false);
+		}
 		if (klsw == null || klsw.isDone()) {
 			klsw = new MultiNacitacSwingWorker(multiNacitac, genom, kesoidModel);
 			klsw.execute();

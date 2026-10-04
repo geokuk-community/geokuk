@@ -2,10 +2,25 @@
 
 ## 6.3.0
 
+### Změny
+- Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
+- Přehled zdrojů se otevírá rychleji a po novém načtení keší ukazuje
+  aktuální stav.
+- Menší spotřeba paměti u velkých dat, i při přenačtení keší.
+
 ### Opravy
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
   se načtou.
+- Změna vzhledu (Skin) se projeví i v otevřených dialozích.
+- Když jiný program zamyká víc databází, každá se načte, jakmile ji
+  pustí; změny ostatních zdrojů se ukážou hned. Změna Umístění souborů
+  zruší rozběhnuté načítání a začne znovu.
+
+### Vývoj
+- Odstraněna knihovna SwingX.
+- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
+  vznikne složka `data/mapy`.
 
 ## 6.2.0
 
