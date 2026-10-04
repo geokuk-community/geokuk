@@ -138,6 +138,7 @@ public class MultiNacitac {
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
 				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
+		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
 		// Keše ze zamčené databáze, které už jsou zobrazené, zůstanou zobrazené, dokud ji jiný program nepustí.
 		if (!zamceneTed.isEmpty() && kesoidModel.getVsechnyKesoidy() != null && !Collections.disjoint(zamceneTed, zobrazene)) {
 			return null;

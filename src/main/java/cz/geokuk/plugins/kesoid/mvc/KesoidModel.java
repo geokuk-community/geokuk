@@ -8,6 +8,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
 
+import javax.swing.SwingUtilities;
+
 import com.google.common.collect.Collections2;
 
 import cz.geokuk.core.program.FPref;
@@ -59,6 +61,7 @@ public class KesoidModel extends Model0 {
 	private ProgressModel progressModel;
 	private Boolean onoff;
 	private EZobrazeniKesi zobrazeniKesi;
+	private volatile List<String> zamceneDatabaze = Collections.emptyList();
 	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
 
 	@Getter
@@ -352,6 +355,15 @@ public class KesoidModel extends Model0 {
 		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
 				.sVlastnostmi();
 		fire(new LimityKresleniEvent(limityKresleni));
+	}
+
+	/** Voláno po každém načtení; událost jen při změně, doručená v EDT. */
+	public void setZamceneDatabaze(final List<String> jmena) {
+		if (jmena.equals(zamceneDatabaze)) {
+			return;
+		}
+		zamceneDatabaze = jmena;
+		SwingUtilities.invokeLater(() -> fire(new ZamceneDatabazeEvent(jmena)));
 	}
 
 	public void setGsakParametryNacitani(final GsakParametryNacitani aGsakParametryNacitani) {

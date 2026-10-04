@@ -117,6 +117,7 @@ public class JStatusBar extends JPanel {
 	private final JValue jZdrojeKesoiduPocetNactenych = new JValue();
 
 	private final JSkrtnutaValue jZdrojeKesoiduPocetNenactenych = new JSkrtnutaValue();
+	private final JLabel jZamceno = new JLabel();
 	private final JValue jZdrojeKesoiduCas = new JValue();
 
 	private final JValue jSouborSVyletem = new JValue();
@@ -208,6 +209,22 @@ public class JStatusBar extends JPanel {
 			souradnicePozice.setText(poziceq.getWgs().toString());
 			// souradnicePozice.setVisible(true);
 		}
+	}
+
+	public void onEvent(final ZamceneDatabazeEvent event) {
+		final java.util.List<String> jmena = event.getJmena();
+		jZamceno.setText(textZamceno(jmena));
+		jZamceno.setToolTipText(FString.text(tooltipZamceno(jmena)));
+		jZamceno.setVisible(!jmena.isEmpty());
+		revalidate();
+	}
+
+	static String textZamceno(final java.util.List<String> jmena) {
+		return jmena.isEmpty() ? "" : "Zamčeno: " + jmena.size();
+	}
+
+	static String tooltipZamceno(final java.util.List<String> jmena) {
+		return jmena.isEmpty() ? null : String.join("\n", jmena) + "\nZavřete program, který databázi používá; načte se sama.";
 	}
 
 	public void onEvent(final PrekrocenLimitWaypointuVeVyrezuEvent event) {
@@ -372,6 +389,9 @@ public class JStatusBar extends JPanel {
 		jZdrojeKesoiduPocetNenactenych.setToolTipText("Počet souborů s kešoidy, jejichž načtení bylo zabráněno odškrtnutím.");
 		zdrojeKesoiduPanel.add(new JLabel("zdroje:"));
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduCas);
+		jZamceno.setForeground(new Color(0xD06000));
+		jZamceno.setVisible(false);
+		zdrojeKesoiduPanel.add(jZamceno);
 		jZdrojeKesoiduCas.setToolTipText("Čas nejmladšího načteného souboru.");
 		zdrojeKesoiduPanel.setCursor(FKurzory.KAM_SE_DA_KLIKNOUT);
 		add(zdrojeKesoiduPanel);
