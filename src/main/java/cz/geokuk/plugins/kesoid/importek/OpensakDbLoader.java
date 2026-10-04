@@ -1,0 +1,295 @@
+package cz.geokuk.plugins.kesoid.importek;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.Future;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
+
+import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.framework.ProgressModel;
+import cz.geokuk.framework.Progressor;
+import cz.geokuk.util.lang.StringUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/** Načítá keše z databáze OpenSAKu (soubor .db v jeho datové složce). */
+@Slf4j
+public class OpensakDbLoader extends Nacitac0 {
+
+	/** Nejvyšší verze schématu ({@code PRAGMA user_version}), se kterou je načítání ověřené. */
+	static final int OVERENA_VERZE_SCHEMATU = 24;
+
+	private static final int PROGRESS_VAHA_CACHES = 1;
+	private static final int PROGRESS_VAHA_WAYPOINTS = 1;
+
+	/** Bez nich by keše skončily bez kódu, typu nebo na souřadnicích 0, 0. */
+	private static final Map<String, List<String>> POVINNE_SLOUPCE = ImmutableMap.of( //
+			"caches", Arrays.asList("id", "gc_code", "name", "cache_type", "latitude", "longitude"), //
+			"waypoints", Arrays.asList("cache_id", "latitude", "longitude"));
+
+	private static final String[] SLOUPCE_CACHES = { "id", "gc_code", "name", "cache_type", "latitude", "longitude", "container", "difficulty", "terrain", "placed_by", "owner_name",
+			"owner_id", "hidden_date", "available", "archived", "found", "found_date", "country", "state", "favorite_points", "elevation" };
+
+	private static final String[] SLOUPCE_USER_NOTES = { "corrected_lat", "corrected_lon", "is_corrected" };
+
+	private static final String[] SLOUPCE_WAYPOINTS = { "prefix", "wp_type", "name", "wp_code", "description", "latitude", "longitude" };
+
+	/** Typy, které OpenSAK pojmenovává jinak než groundspeak:type v GPX, a zkrácené názvy. */
+	private static final Map<String, String> TYPY_KESI = typyKesi();
+
+	@Override
+	protected void nacti(final File file, final IImportBuilder builder, final Future<?> future, final ProgressModel aProgressModel) throws IOException {
+		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
+			if (!jeDatabazeOpensaku(statement)) {
+				throw new IllegalArgumentException("Cannot load from file " + file);
+			}
+			DatabazeJinehoProgramu.zkontrolujSloupce(statement, file, "OpenSAKu", POVINNE_SLOUPCE, Collections.emptySet());
+			final int verze = verzeSchematu(statement);
+			if (verze > OVERENA_VERZE_SCHEMATU) {
+				log.info("Databáze OpenSAKu {} má schéma {}, GeoKuk je ověřený do verze {}.", file, verze, OVERENA_VERZE_SCHEMATU);
+			}
+			final int pocet = count(statement, "SELECT count(*) FROM caches") * PROGRESS_VAHA_CACHES + count(statement, "SELECT count(*) FROM waypoints") * PROGRESS_VAHA_WAYPOINTS;
+			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file);
+			loadCaches(file, statement, builder, future, progressor);
+			loadWaypoints(statement, builder, future, progressor);
+			progressor.finish();
+		} catch (final SQLException e) {
+			throw new IOException("Unable to load from " + file, e);
+		}
+	}
+
+	@Override
+	protected void nacti(final ZipFile zipFile, final ZipEntry zipEntry, final IImportBuilder builder, final Future<?> f, final ProgressModel aProgressModel) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	boolean umiNacist(final File file) {
+		if (!"db".equals(Files.getFileExtension(file.getName().toLowerCase(Locale.ROOT)))) {
+			return false;
+		}
+		try (Connection c = DatabazeJinehoProgramu.otevri(file, DatabazeJinehoProgramu.CEKANI_PRI_ZJISTOVANI_MS); Statement statement = c.createStatement()) {
+			return jeDatabazeOpensaku(statement);
+		} catch (final SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	boolean umiNacist(final ZipEntry zipEntry) {
+		return false;
+	}
+
+	/** Jiné SQLite databáze s příponou .db mají jiné tabulky; kód keše je jen v OpenSAKu. */
+	private static boolean jeDatabazeOpensaku(final Statement statement) throws SQLException {
+		return DatabazeJinehoProgramu.sloupce(statement, "caches").contains("gc_code") && !DatabazeJinehoProgramu.sloupce(statement, "waypoints").isEmpty();
+	}
+
+	private static int verzeSchematu(final Statement statement) throws SQLException {
+		try (ResultSet rs = statement.executeQuery("PRAGMA user_version")) {
+			return rs.next() ? rs.getInt(1) : 0;
+		}
+	}
+
+	private static int count(final Statement statement, final String dotaz) throws SQLException {
+		try (ResultSet rs = statement.executeQuery(dotaz)) {
+			return rs.getInt(1);
+		}
+	}
+
+	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
+		final Preskocene preskocene = new Preskocene("keš");
+		final boolean hinty = DatabazeJinehoProgramu.sloupce(statement, "caches").contains("encoded_hints");
+		final Set<String> poznamky = DatabazeJinehoProgramu.sloupce(statement, "user_notes");
+		final boolean opravy = poznamky.contains("cache_id");
+		final String dotaz = "SELECT " + DatabazeJinehoProgramu.vyber(statement, "caches", SLOUPCE_CACHES) + ", "
+				+ (opravy ? DatabazeJinehoProgramu.vyber(statement, "user_notes", SLOUPCE_USER_NOTES) : "NULL as corrected_lat, NULL as corrected_lon, NULL as is_corrected")
+				+ " FROM caches" + (opravy ? " LEFT JOIN user_notes ON user_notes.cache_id = caches.id" : "");
+		int citac = 0;
+		try (ResultSet rs = statement.executeQuery(dotaz)) {
+			while (rs.next()) {
+				if (future != null && future.isCancelled()) {
+					return;
+				}
+				progressor.addProgress(PROGRESS_VAHA_CACHES);
+				final String kod = rs.getString("gc_code");
+				try {
+					final GpxWpt cache = new GpxWpt();
+					cache.name = kod;
+					cache.sym = rs.getBoolean("found") ? "Geocache Found" : "Geocache";
+					cache.wgs = new Wgs(rs.getDouble("latitude"), rs.getDouble("longitude"));
+					cache.time = datum(rs.getString("hidden_date"));
+
+					final Groundspeak groundspeak = new Groundspeak();
+					groundspeak.name = rs.getString("name");
+					groundspeak.type = intern(typKese(rs.getString("cache_type")));
+					groundspeak.container = intern(StringUtils.isBlank(rs.getString("container")) ? "Unknown" : rs.getString("container"));
+					groundspeak.difficulty = intern(hodnoceni(rs, "difficulty"));
+					groundspeak.terrain = intern(hodnoceni(rs, "terrain"));
+					groundspeak.placedBy = intern(rs.getString("placed_by"));
+					groundspeak.owner = intern(rs.getString("owner_name"));
+					groundspeak.ownerid = cislo(rs.getString("owner_id"));
+					groundspeak.country = intern(rs.getString("country"));
+					groundspeak.state = intern(rs.getString("state"));
+					groundspeak.archived = rs.getBoolean("archived");
+					groundspeak.availaible = rs.getObject("available") == null || rs.getBoolean("available");
+					if (hinty) {
+						groundspeak.hintZDatabaze = HintZDatabaze.dotahovac(file, HintZDatabaze.OPENSAK, kod);
+					}
+					cache.groundspeak = groundspeak;
+					cache.desc = String.format("%s by %s (%s / %s)", groundspeak.name, groundspeak.placedBy, groundspeak.difficulty, groundspeak.terrain);
+					cache.link.href = "http://coord.info/" + kod;
+					cache.link.text = String.format("%s by %s", groundspeak.name, groundspeak.placedBy);
+
+					if (rs.getBoolean("found")) {
+						cache.gpxg.found = datum(rs.getString("found_date"));
+					}
+					if (rs.getObject("favorite_points") != null) {
+						cache.gpxg.favorites = rs.getInt("favorite_points");
+					}
+					cache.gpxg.elevation = (int) Math.round(rs.getDouble("elevation"));
+					cache.gpxg.czkraj = groundspeak.state;
+					builder.addGpxWpt(cache);
+
+					// Opravené souřadnice jako Final, keš zůstane na místě z listingu (stejně jako u GSAKu).
+					if (rs.getBoolean("is_corrected") && rs.getObject("corrected_lat") != null && rs.getObject("corrected_lon") != null) {
+						final Wgs opravene = new Wgs(rs.getDouble("corrected_lat"), rs.getDouble("corrected_lon"));
+						if (!opravene.equals(cache.wgs)) {
+							final GpxWpt fin = new GpxWpt();
+							fin.wgs = opravene;
+							fin.name = "##" + kod.substring(2);
+							fin.sym = "Final Location";
+							fin.desc = "Final (" + groundspeak.name + ")";
+							builder.addGpxWpt(fin);
+						}
+					}
+					citac++;
+				} catch (final RuntimeException e) {
+					preskocene.preskoc(kod, e);
+				}
+			}
+		} finally {
+			preskocene.ohlas();
+			log.info("{} keší z OpenSAKu načteno", citac);
+		}
+	}
+
+	private void loadWaypoints(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
+		final Preskocene preskocene = new Preskocene("waypoint");
+		final String dotaz = "SELECT caches.gc_code as parent, " + DatabazeJinehoProgramu.vyber(statement, "waypoints", SLOUPCE_WAYPOINTS)
+				+ " FROM waypoints JOIN caches ON caches.id = waypoints.cache_id WHERE waypoints.latitude IS NOT NULL AND waypoints.longitude IS NOT NULL";
+		int citac = 0;
+		try (ResultSet rs = statement.executeQuery(dotaz)) {
+			while (rs.next()) {
+				if (future != null && future.isCancelled()) {
+					return;
+				}
+				progressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
+				final String parent = rs.getString("parent");
+				try {
+					final GpxWpt wpt = new GpxWpt();
+					wpt.wgs = new Wgs(rs.getDouble("latitude"), rs.getDouble("longitude"));
+					wpt.name = kodWaypointu(parent, rs.getString("prefix"), rs.getString("wp_code"));
+					wpt.sym = rs.getString("wp_type");
+					wpt.desc = StringUtils.isBlank(rs.getString("name")) ? rs.getString("description") : rs.getString("name");
+					builder.addGpxWpt(wpt);
+					citac++;
+				} catch (final RuntimeException e) {
+					preskocene.preskoc(parent, e);
+				}
+			}
+		} finally {
+			preskocene.ohlas();
+			log.info("{} waypointů z OpenSAKu načteno", citac);
+		}
+	}
+
+	/** Waypoint se ke keši přiřazuje podle kódu bez prefixu; OpenSAK z GPX ukládá jen prefix. */
+	private static String kodWaypointu(final String parent, final String prefix, final String wpCode) {
+		if (!StringUtils.isBlank(prefix)) {
+			return prefix.trim() + parent.substring(2);
+		}
+		if (!StringUtils.isBlank(wpCode)) {
+			return wpCode.trim();
+		}
+		return "WP" + parent.substring(2);
+	}
+
+	static String typKese(final String typ) {
+		if (typ == null) {
+			return null;
+		}
+		final String gpx = TYPY_KESI.get(typ.trim().toLowerCase(Locale.ROOT));
+		return gpx != null ? gpx : typ.trim();
+	}
+
+	/** OpenSAK ukládá datum jako „2020-05-01 00:00:00.000000“, GPX má „2020-05-01T00:00:00“. */
+	private static String datum(final String s) {
+		if (StringUtils.isBlank(s)) {
+			return null;
+		}
+		final String d = s.trim().replace(' ', 'T');
+		final int tecka = d.indexOf('.');
+		return tecka > 0 ? d.substring(0, tecka) : d;
+	}
+
+	private static String hodnoceni(final ResultSet rs, final String sloupec) throws SQLException {
+		final Object o = rs.getObject(sloupec);
+		if (o == null) {
+			return null;
+		}
+		try {
+			return new BigDecimal(o.toString().trim()).stripTrailingZeros().toPlainString();
+		} catch (final NumberFormatException e) {
+			return o.toString();
+		}
+	}
+
+	private static int cislo(final String s) {
+		if (s == null) {
+			return 0;
+		}
+		try {
+			return Integer.parseInt(s.trim());
+		} catch (final NumberFormatException e) {
+			return 0;
+		}
+	}
+
+	private static Map<String, String> typyKesi() {
+		final Map<String, String> m = new HashMap<>();
+		for (final String[] t : new String[][] { //
+				{ "Traditional Cache", "traditional", "tradi" }, //
+				{ "Multi-cache", "multi", "multicache", "multi cache" }, //
+				{ "Unknown Cache", "unknown", "mystery", "mystery cache", "puzzle" }, //
+				{ "Letterbox Hybrid", "letterbox", "letterbox cache" }, //
+				{ "Wherigo Cache", "wherigo" }, //
+				{ "Earthcache", "earth", "earth cache" }, //
+				{ "Virtual Cache", "virtual" }, //
+				{ "Webcam Cache", "webcam" }, //
+				{ "Event Cache", "event" }, //
+				{ "Cache In Trash Out Event", "cito" }, //
+				{ "Mega-Event Cache", "mega", "mega-event", "mega event" }, //
+				{ "Giga-Event Cache", "giga", "giga-event", "giga event" }, //
+				{ "Lost and Found Event Caches", "community celebration event" }, //
+				{ "Groundspeak Lost and Found Celebration", "geocaching hq celebration" }, //
+				{ "Groundspeak Block Party", "geocaching hq block party" }, //
+				{ "Groundspeak HQ Cache", "geocaching hq cache" }, //
+				{ "GPS Adventures Exhibit", "gps adventures maze" }, //
+				{ "Lab Cache", "lab" }, //
+				{ "Project APE Cache", "project a.p.e. cache" }, //
+				{ "Locationless (Reverse) Cache", "locationless" }, //
+		}) {
+			for (final String alias : t) {
+				m.put(alias.toLowerCase(Locale.ROOT), t[0]);
+			}
+		}
+		return Collections.unmodifiableMap(m);
+	}
+}

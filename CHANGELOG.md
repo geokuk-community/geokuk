@@ -109,6 +109,8 @@
   a `THIRD-PARTY.txt`.
 - Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
   (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.
+- Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
+  zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
 
 ### Opravy
 - Nová verze se stahuje jen jednou najednou a po stažení se ověří
