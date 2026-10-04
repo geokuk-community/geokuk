@@ -547,6 +547,42 @@ public class UzivatelskeMapyTest {
 		Assert.assertTrue(UzivatelskeMapy.nacti(tmp.getRoot()).startsWith("Mapy ze souboru "));
 	}
 
+	// Zalamování hlášky
+
+	@Test
+	public void kratkyTextSeNezmeni() {
+		Assert.assertEquals("a b\n\nc", UzivatelskeMapy.zalom("a b\n\nc", 10));
+	}
+
+	@Test
+	public void dlouhyRadekSeZalomiNaMezerach() {
+		Assert.assertEquals("aaa bbb\nccc ddd\ne", UzivatelskeMapy.zalom("aaa bbb ccc ddd e", 7));
+	}
+
+	@Test
+	public void dlouhaCestaSeZalomiZaLomitkem() {
+		Assert.assertEquals("Soubor\n/home/kacer/\nGeoKuk/data/\nmapy smažte.", UzivatelskeMapy.zalom("Soubor /home/kacer/GeoKuk/data/mapy smažte.", 12));
+		Assert.assertEquals("C:\\Program\\\nGeoKuk\\data", UzivatelskeMapy.zalom("C:\\Program\\GeoKuk\\data", 12));
+	}
+
+	@Test
+	public void slovoBezLomitkaSeRozdeliNatvrdo() {
+		Assert.assertEquals("abcd\nefgh\nij", UzivatelskeMapy.zalom("abcdefghij", 4));
+	}
+
+	@Test
+	public void zadnyRadekHlaskyNepresahneSirku() throws Exception {
+		final File stary = tmp.newFile(UzivatelskeMapy.STARY_SOUBOR);
+		Files.write(stary.toPath(), "turisticka.url=x\n".getBytes(StandardCharsets.UTF_8));
+		slozka("a.mapa", "nazev=A\nbarva=modrá");
+		final String zprava = UzivatelskeMapy.nacti(tmp.getRoot());
+		final String zalomena = UzivatelskeMapy.zalom(zprava, 100);
+		for (final String radek : zalomena.split("\n")) {
+			Assert.assertTrue(radek, radek.length() <= 100);
+		}
+		Assert.assertEquals("zalomení jen nahrazuje mezery koncem řádku", zprava.replaceAll("\\s+", ""), zalomena.replaceAll("\\s+", ""));
+	}
+
 	// Příklady
 
 	@Test
