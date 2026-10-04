@@ -2,6 +2,11 @@
 
 ## 6.3.0
 
+### Opravy
+- Když jiný program zamyká víc databází, každá se načte, jakmile ji
+  pustí; změny ostatních zdrojů se ukážou hned. Změna Umístění souborů
+  zruší rozběhnuté načítání a začne znovu.
+
 ## 6.2.0
 
 ### Změny
