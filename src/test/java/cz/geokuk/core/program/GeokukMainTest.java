@@ -38,7 +38,9 @@ public class GeokukMainTest {
 			Assert.assertNotNull(zamek);
 			Assert.assertFalse(GeokukMain.uzBezi(zamek, soubor));
 		} finally {
-			zamek.channel().close();
+			if (zamek != null) {
+				zamek.channel().close();
+			}
 		}
 	}
 
