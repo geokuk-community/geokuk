@@ -258,12 +258,21 @@ public class DalkoveOvladani {
 		if (Files.isSymbolicLink(adresar)) {
 			throw new IOException("Složka " + adresar + " je odkaz, soubor dálkového ovládání do ní nezapíšu.");
 		}
-		final UserPrincipal ja = adresar.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName(System.getProperty("user.name"));
-		if (!ja.equals(Files.getOwner(adresar, LinkOption.NOFOLLOW_LINKS))) {
+		if (!vlastnikNovehoSouboru(adresar).equals(Files.getOwner(adresar, LinkOption.NOFOLLOW_LINKS))) {
 			throw new IOException("Složka " + adresar + " patří jinému uživateli, soubor dálkového ovládání do ní nezapíšu.");
 		}
 		if (Files.getPosixFilePermissions(adresar, LinkOption.NOFOLLOW_LINKS).contains(PosixFilePermission.OTHERS_WRITE)) {
 			throw new IOException("Do složky " + adresar + " mohou zapisovat všichni, soubor dálkového ovládání do ní nezapíšu.");
+		}
+	}
+
+	/** Uživatel nemusí mít v systému jméno (kontejner), proto vlastník souboru, který jsme právě vytvořili. */
+	private static UserPrincipal vlastnikNovehoSouboru(final Path adresar) throws IOException {
+		final Path soubor = Files.createTempFile(adresar, "vlastnik", ".tmp");
+		try {
+			return Files.getOwner(soubor, LinkOption.NOFOLLOW_LINKS);
+		} finally {
+			Files.deleteIfExists(soubor);
 		}
 	}
 

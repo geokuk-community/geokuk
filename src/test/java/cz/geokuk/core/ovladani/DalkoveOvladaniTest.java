@@ -163,6 +163,18 @@ public class DalkoveOvladaniTest {
 		DalkoveOvladani.overSlozku(posixSlozka("rwx------"));
 	}
 
+	@Test
+	public void uzivatelBezJmenaVlastniSlozkuPozna() throws Exception {
+		final java.nio.file.Path d = posixSlozka("rwx------");
+		final String jmeno = System.getProperty("user.name");
+		System.setProperty("user.name", "?");
+		try {
+			DalkoveOvladani.overSlozku(d);
+		} finally {
+			System.setProperty("user.name", jmeno);
+		}
+	}
+
 	@Test(expected = IOException.class)
 	public void slozkaZapisovatelnaVsemiSeOdmitne() throws Exception {
 		DalkoveOvladani.overSlozku(posixSlozka("rwxrwxrwx"));
