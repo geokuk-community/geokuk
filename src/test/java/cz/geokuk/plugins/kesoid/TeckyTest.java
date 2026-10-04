@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import org.junit.Test;
 
 import cz.geokuk.plugins.kesoid.Tecky.Styl;
+import cz.geokuk.plugins.kesoid.kind.kes.Kes;
 
 public class TeckyTest {
 
@@ -102,5 +103,18 @@ public class TeckyTest {
 		assertSame(tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10), tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10));
 		assertNotSame(tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10), tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, true, 10));
 		assertNotSame(tecky.obrazek(Tecky.EVENT, Styl.VLASTNI, false, 10), tecky.obrazek(Tecky.EVENT, Styl.BEZNA, false, 10));
+	}
+
+	@Test
+	public void dalsiWaypointyKeseJsouSede() {
+		final Kes kes = new Kes();
+		final Wpt hlavni = new Wpt();
+		hlavni.setSym("Geocache|Traditional Cache");
+		kes.addWpt(hlavni);
+		final Wpt parkoviste = new Wpt();
+		parkoviste.setSym("Parking Area");
+		kes.addWpt(parkoviste);
+		assertEquals(Tecky.TRADICNI, Tecky.barva(hlavni));
+		assertEquals(Tecky.NEKES, Tecky.barva(parkoviste));
 	}
 }

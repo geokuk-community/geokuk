@@ -46,7 +46,7 @@ public final class Tecky {
 
 	static Color barva(final Wpt wpt) {
 		final Kesoid kesoid = wpt.getKesoid();
-		if (kesoid.getKesoidKind() != EKesoidKind.KES) {
+		if (kesoid.getKesoidKind() != EKesoidKind.KES || !wpt.isMainWpt()) {
 			return NEKES;
 		}
 		return barvaTypu(wpt.getSym());
