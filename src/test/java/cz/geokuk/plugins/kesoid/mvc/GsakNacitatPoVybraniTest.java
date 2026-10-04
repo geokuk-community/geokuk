@@ -120,6 +120,9 @@ public class GsakNacitatPoVybraniTest {
 		umisteni.setKesDir(new Filex(new File(tmp.getRoot(), "a\0b"), false, true));
 		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
 		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, false));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(a));
+		model.zaradGsakDatabaze(set(a, b)); // b je zablokovaná, úklid má co dělat
 		model.vycistiBlokovaneZdroje(set());
 	}
 
