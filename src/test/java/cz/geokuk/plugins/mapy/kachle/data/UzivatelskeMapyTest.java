@@ -255,6 +255,14 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void hodnotaHlavickySRidicimZnakem() throws Exception {
+		for (final String hodnota : new String[] { "a\\rX-Jina: b", "a\\nb", "a\\tb" }) {
+			chyby.clear();
+			chyba("m.mapa: hlavicka.X-Test nesmí obsahovat řídicí znaky", "m.nazev=M", "m.url=" + URL, "m.hlavicka.X-Test=" + hodnota);
+		}
+	}
+
+	@Test
 	public void meritkaMimoRozsah() throws Exception {
 		for (final String[] meritka : new String[][] { { "min", "-1" }, { "max", "23" }, { "max", "30" } }) {
 			chyby.clear();
