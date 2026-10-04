@@ -46,6 +46,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
 import cz.geokuk.plugins.kesoid.Ikonizer;
+import cz.geokuk.util.lang.FString;
 
 /**
  * TableDemo is just like SimpleTableDemo, except that it uses a custom TableModel.
@@ -95,7 +96,7 @@ public class JAdrTable extends JPanel {
 			Object s = null;
 			switch (col) {
 			case 0:
-				s = nalezenec.locationType;
+				s = FString.text(nalezenec.locationType);
 				break;
 			case 1:
 				s = Math.round(nalezenec.getVzdalenost() / 100) / 10.0;
@@ -104,7 +105,7 @@ public class JAdrTable extends JPanel {
 				s = Ikonizer.findSmerIcon(nalezenec.getAzimut());
 				break;
 			case 3:
-				s = nalezenec.adresa;
+				s = FString.text(nalezenec.adresa);
 				break;
 			}
 			return s;

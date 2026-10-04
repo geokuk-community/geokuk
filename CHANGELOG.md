@@ -322,8 +322,9 @@
   stránku nápovědy.
 - Odkaz u keše nebo waypointu otevře jen webovou stránku (http, https),
   ne soubor. Značky HTML v kódech, názvech a autorech keší, názvech
-  waypointů, cest a typů waypointů a v hintu se v bublině, detailu keše,
-  hledání, nabídkách a výběru ikon zobrazí jako text.
+  waypointů, cest a typů waypointů, v hintu, ve jménech souborů a v adresách
+  z hledání adresy se v bublině, detailu keše, hledání, nabídkách, výběru
+  ikon a Přehledu zdrojů zobrazí jako text.
 - O programu uvádí licenci GNU GPL v3.
 - Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
   (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.
