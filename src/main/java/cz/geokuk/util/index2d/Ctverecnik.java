@@ -67,7 +67,7 @@ class Ctverecnik<T> extends NodeB<T> {
 	 * Není co čtvrtit, už je to rozčtvrceno.
 	 */
 	@Override
-	Ctverecnik<T> rozčtvrť() {
+	Ctverecnik<T> rozčtvrť(final int xx1, final int yy1, final int xx2, final int yy2) {
 		return this;
 	}
 

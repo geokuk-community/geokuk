@@ -1,5 +1,19 @@
 # Změny
 
+## 6.3.0
+
+### Změny
+- Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
+
+### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
+
+### Vývoj
+- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
+  vznikne složka `data/mapy`.
+
 ## 6.2.0
 
 ### Změny
