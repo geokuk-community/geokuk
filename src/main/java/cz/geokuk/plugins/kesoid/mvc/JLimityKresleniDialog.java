@@ -44,8 +44,8 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 
 	@Override
 	protected void initComponents() {
-		jIkon = new JSpinner(new SpinnerNumberModel(LimityKresleni.VYCHOZI_IKON, LimityKresleni.MIN, LimityKresleni.MAX, KROK));
-		jTecek = new JSpinner(new SpinnerNumberModel(LimityKresleni.VYCHOZI_TECEK, LimityKresleni.MIN, LimityKresleni.MAX, KROK));
+		jIkon = new JSpinner(new SpinnerNumberModel(LimityKresleni.VYCHOZI_IKON, LimityKresleni.MIN_IKON, LimityKresleni.MAX, KROK));
+		jTecek = new JSpinner(new SpinnerNumberModel(LimityKresleni.VYCHOZI_TECEK, LimityKresleni.MIN_TECEK, LimityKresleni.MAX, KROK));
 		jIkon.setToolTipText("Při více waypointech ve výřezu se v automatickém zobrazení kreslí tečky a nekreslí se popisky.");
 		jTecek.setToolTipText("Při více waypointech ve výřezu se nekreslí ani tečky, je potřeba mapu přiblížit.");
 		jIkon.addChangeListener(e -> uloz());

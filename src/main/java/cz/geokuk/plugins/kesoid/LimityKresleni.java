@@ -3,7 +3,8 @@ package cz.geokuk.plugins.kesoid;
 /** Nejvíc waypointů ve výřezu, které se ještě kreslí jako ikony a jako tečky. Teček je vždy aspoň tolik jako ikon. */
 public final class LimityKresleni {
 
-	public static final int MIN = 30_000;
+	public static final int MIN_IKON = 30_000;
+	public static final int MIN_TECEK = 30_000;
 	public static final int MAX = 2_000_000;
 	public static final int VYCHOZI_IKON = 90_000;
 	public static final int VYCHOZI_TECEK = 300_000;
@@ -19,8 +20,8 @@ public final class LimityKresleni {
 
 	/** Hodnoty mimo rozsah ořízne, teček nastaví aspoň tolik jako ikon. */
 	public static LimityKresleni of(final int ikon, final int tecek) {
-		final int i = orizni(ikon);
-		return new LimityKresleni(i, Math.max(i, orizni(tecek)));
+		final int i = orizni(ikon, MIN_IKON);
+		return new LimityKresleni(i, Math.max(i, orizni(tecek, MIN_TECEK)));
 	}
 
 	/** Limity zadané vlastnostmi {@code geokuk.limitIkon} a {@code geokuk.limitTecek} (pro měření) přebijí uložené. */
@@ -28,8 +29,8 @@ public final class LimityKresleni {
 		return of(Integer.getInteger("geokuk.limitIkon", ikon), Integer.getInteger("geokuk.limitTecek", tecek));
 	}
 
-	private static int orizni(final int hodnota) {
-		return Math.max(MIN, Math.min(MAX, hodnota));
+	private static int orizni(final int hodnota, final int min) {
+		return Math.max(min, Math.min(MAX, hodnota));
 	}
 
 	public int getIkon() {
