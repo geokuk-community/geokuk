@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
@@ -47,6 +48,8 @@ public class GsakDbLoader extends Nacitac0 {
 
 	private static final ImmutableSet<String> SUPPORTED_FILE_EXTENSIONS = ImmutableSet.of("db3");
 	private static final ImmutableSet<String> EXPECTED_TABLES = ImmutableSet.of("CacheMemo", "Caches");
+	/** Bez nich by keše skončily bez kódu nebo na souřadnicích 0, 0. */
+	private static final Map<String, List<String>> POVINNE_SLOUPCE = ImmutableMap.of("Caches", Arrays.asList("Code", "Latitude", "Longitude"), "Waypoints", Arrays.asList("cParent", "cLat", "cLon"));
 
 	private final Supplier<GsakParametryNacitani> parametryNačítání;
 
@@ -61,6 +64,7 @@ public class GsakDbLoader extends Nacitac0 {
 			if (!dao.schemaMatches()) {
 				throw new IllegalArgumentException("DB schema doesn't match, cannot load from file " + aDbFile);
 			}
+			dao.zkontrolujSloupce(aDbFile);
 			final int pocet = dao.cacheCount() * PROGRESS_VAHA_CACHES + dao.waypointCount() * PROGRESS_VAHA_WAYPOINTS + dao.tagCount() * PROGRESS_VAHA_TAGS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + aDbFile.toString());
 			// Vlastní hodnoty před kešemi, keš si je přebírá už při přidání.
@@ -496,6 +500,10 @@ public class GsakDbLoader extends Nacitac0 {
 
 		public boolean schemaMatches() throws SQLException {
 			return containsTables(EXPECTED_TABLES);
+		}
+
+		void zkontrolujSloupce(final File aDbFile) throws SQLException {
+			DatabazeJinehoProgramu.zkontrolujSloupce(iStatement, aDbFile, "GSAKu", POVINNE_SLOUPCE, Collections.singleton("Waypoints"));
 		}
 
 		public boolean containsTables(final Set<String> aExpectedTables) throws SQLException {

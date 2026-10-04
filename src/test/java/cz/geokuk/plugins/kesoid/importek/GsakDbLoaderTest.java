@@ -193,4 +193,32 @@ public class GsakDbLoaderTest {
 		Assert.assertNotNull("ostatní keše se načtou", w.get("GC1111"));
 		Assert.assertNotNull(w.get("GC2222"));
 	}
+
+	/** Bez souřadnic by keše skončily na 0, 0; databáze se přeskočí se srozumitelnou hláškou. */
+	@Test
+	public void chybejiciPovinnySloupec() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("ALTER TABLE Caches RENAME COLUMN Latitude TO Lat");
+		}
+		try {
+			nacti();
+			Assert.fail();
+		} catch (final DatabazeJinehoProgramu.JineSchema e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("GSAKu") && e.getMessage().contains("Caches.Latitude"));
+		}
+	}
+
+	/** Waypointy jsou volitelné, ale když tabulka je, musí mít souřadnice. */
+	@Test
+	public void waypointyBezSouradnic() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("ALTER TABLE Waypoints RENAME COLUMN cLon TO cLng");
+		}
+		try {
+			nacti();
+			Assert.fail();
+		} catch (final DatabazeJinehoProgramu.JineSchema e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("Waypoints.cLon"));
+		}
+	}
 }
