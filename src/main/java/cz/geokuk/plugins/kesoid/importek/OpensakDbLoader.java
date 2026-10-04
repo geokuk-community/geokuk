@@ -182,8 +182,16 @@ public class OpensakDbLoader extends Nacitac0 {
 
 	private void loadWaypoints(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
 		final Preskocene preskocene = new Preskocene("waypoint");
+		final String sPolohou = "waypoints.latitude IS NOT NULL AND waypoints.longitude IS NOT NULL AND NOT (waypoints.latitude = 0 AND waypoints.longitude = 0)";
 		final String dotaz = "SELECT caches.gc_code as parent, " + DatabazeJinehoProgramu.vyber(statement, "waypoints", SLOUPCE_WAYPOINTS)
-				+ " FROM waypoints JOIN caches ON caches.id = waypoints.cache_id WHERE waypoints.latitude IS NOT NULL AND waypoints.longitude IS NOT NULL";
+				+ " FROM waypoints JOIN caches ON caches.id = waypoints.cache_id WHERE " + sPolohou + " ORDER BY waypoints.cache_id, waypoints.id";
+		final int bezPolohy = count(statement, "SELECT count(*) FROM waypoints WHERE NOT (" + sPolohou + ")");
+		final int bezKese = count(statement, "SELECT count(*) FROM waypoints WHERE " + sPolohou + " AND cache_id NOT IN (SELECT id FROM caches)");
+		if (bezPolohy + bezKese > 0) {
+			log.info("Z OpenSAKu vynecháno {} waypointů bez polohy (nebo na 0, 0) a {} waypointů bez keše", bezPolohy, bezKese);
+		}
+		final Set<String> kodyVKesi = new HashSet<>();
+		String predchoziParent = null;
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(dotaz)) {
 			while (rs.next()) {
@@ -192,10 +200,15 @@ public class OpensakDbLoader extends Nacitac0 {
 				}
 				progressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
 				final String parent = rs.getString("parent");
+				if (!parent.equals(predchoziParent)) {
+					kodyVKesi.clear();
+					kodyVKesi.add(parent);
+					predchoziParent = parent;
+				}
 				try {
 					final GpxWpt wpt = new GpxWpt();
 					wpt.wgs = new Wgs(rs.getDouble("latitude"), rs.getDouble("longitude"));
-					wpt.name = kodWaypointu(parent, rs.getString("prefix"), rs.getString("wp_code"));
+					wpt.name = kodWaypointu(parent, rs.getString("prefix"), rs.getString("wp_code"), kodyVKesi);
 					wpt.sym = rs.getString("wp_type");
 					wpt.desc = StringUtils.isBlank(rs.getString("name")) ? rs.getString("description") : rs.getString("name");
 					builder.addGpxWpt(wpt);
@@ -210,15 +223,36 @@ public class OpensakDbLoader extends Nacitac0 {
 		}
 	}
 
-	/** Waypoint se ke keši přiřazuje podle kódu bez prefixu; OpenSAK z GPX ukládá jen prefix. */
-	private static String kodWaypointu(final String parent, final String prefix, final String wpCode) {
+	/**
+	 * Keš si waypoint přiřadí podle kódu bez prvních dvou znaků. OpenSAK z GPX ukládá jen prefix, který může mít jinou délku než dva znaky
+	 * a v jedné keši se může opakovat, proto se kód doplní na dva znaky a případně změní na volný.
+	 */
+	private static String kodWaypointu(final String parent, final String prefix, final String wpCode, final Set<String> kodyVKesi) {
+		final String pripona = parent.substring(Math.min(2, parent.length()));
+		final String zaklad;
 		if (!StringUtils.isBlank(prefix)) {
-			return prefix.trim() + parent.substring(2);
+			zaklad = prefix.trim();
+		} else if (!StringUtils.isBlank(wpCode)) {
+			final String kod = wpCode.trim();
+			zaklad = kod.endsWith(pripona) && kod.length() > pripona.length() ? kod.substring(0, kod.length() - pripona.length()) : kod;
+		} else {
+			zaklad = "WP";
 		}
-		if (!StringUtils.isBlank(wpCode)) {
-			return wpCode.trim();
+		final String prvni = zaklad.length() >= 2 ? zaklad.substring(0, 2) : (zaklad + "0").substring(0, 2);
+		if (kodyVKesi.add(prvni + pripona)) {
+			return prvni + pripona;
 		}
-		return "WP" + parent.substring(2);
+		final String znaky = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		for (int i = -1; i < znaky.length(); i++) {
+			final char a = i < 0 ? prvni.charAt(0) : znaky.charAt(i);
+			for (int j = 0; j < znaky.length(); j++) {
+				final String kod = "" + a + znaky.charAt(j) + pripona;
+				if (kodyVKesi.add(kod)) {
+					return kod;
+				}
+			}
+		}
+		throw new IllegalStateException("Keš " + parent + " má příliš mnoho waypointů");
 	}
 
 	static String typKese(final String typ) {

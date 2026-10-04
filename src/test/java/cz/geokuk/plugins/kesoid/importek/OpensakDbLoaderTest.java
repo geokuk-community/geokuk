@@ -8,6 +8,11 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.framework.ProgressModel;
+import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.plugins.kesoid.genetika.Genom;
+import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
+import cz.geokuk.plugins.kesoid.mvc.GccomNick;
+import cz.geokuk.util.file.*;
 
 /** Načtení keší z databáze OpenSAKu. */
 public class OpensakDbLoaderTest {
@@ -152,6 +157,41 @@ public class OpensakDbLoaderTest {
 		Assert.assertNotNull(w.keySet().toString(), stage);
 		Assert.assertEquals("Stage 1", stage.desc);
 		Assert.assertNull("waypoint bez souřadnic není na 0, 0", w.get("RP3333"));
+	}
+
+	/** Každý waypoint s polohou patří ke své keši, i když OpenSAK uloží prefix jiné délky nebo stejný prefix víckrát. */
+	@Test
+	public void waypointyPatriKeKesim() throws Exception {
+		final File d = new File(tmp.getRoot(), "Waypointy.db");
+		OpensakTestDb.zaloz(d, OpensakTestDb.verze());
+		OpensakTestDb.vlozKes(d, 1, "GC7A2JF", "Multi-cache", 50.0, 14.0);
+		OpensakTestDb.vlozKes(d, 2, "GC4444", "Unknown Cache", 49.0, 15.0);
+		int id = 0;
+		for (final Object[] w : new Object[][] { { 1, "T", null }, { 1, "PK", null }, { 1, "PK", null }, { 1, "GC", null }, { 1, "STG", null }, { 1, null, null }, { 1, null, null },
+				{ 2, null, "XY4444" }, { 2, "P", null }, { 2, "P0", null } }) {
+			id++;
+			OpensakTestDb.vloz(d, "waypoints", "id", id, "cache_id", w[0], "prefix", w[1], "wp_code", w[2], "wp_type", "Stages of a Multicache", "latitude", 49.0 + id / 100.0,
+					"longitude", 15.0);
+		}
+		OpensakTestDb.vloz(d, "waypoints", "id", 20, "cache_id", 1, "prefix", "RP", "latitude", 0.0, "longitude", 0.0);
+		OpensakTestDb.vloz(d, "waypoints", "id", 21, "cache_id", 99, "prefix", "PK", "latitude", 49.5, "longitude", 15.5);
+
+		final ProgressModel progress = new ProgressModel();
+		progress.inject(udalost -> {});
+		final KesoidImportBuilder builder = new KesoidImportBuilder(new Genom(), new GccomNick("Ja", 42), progress, new KesoidPluginManager());
+		builder.init();
+		builder.setCurrentlyLoading(new KeFile(new FileAndTime(d, 0), new Root(tmp.getRoot(), new Root.Def(0, null, null))), true);
+		new OpensakDbLoader().nacti(d, builder, null, progress);
+		builder.done();
+
+		final Map<String, Kesoid> kesoidy = new HashMap<>();
+		for (final Kesoid k : builder.getKesBag().getKesoidy()) {
+			kesoidy.put(k.getIdentifier(), k);
+		}
+		Assert.assertEquals(kesoidy.keySet().toString(), new HashSet<>(Arrays.asList("GC7A2JF", "GC4444")), kesoidy.keySet());
+		Assert.assertEquals(1 + 7, kesoidy.get("GC7A2JF").getWptsCount());
+		Assert.assertEquals(1 + 3, kesoidy.get("GC4444").getWptsCount());
+		Assert.assertEquals(2 + 10, builder.getKesBag().getWpts().size());
 	}
 
 	/** Starší OpenSAK nemá některé sloupce ani tabulku poznámek, keše se přesto načtou. */
