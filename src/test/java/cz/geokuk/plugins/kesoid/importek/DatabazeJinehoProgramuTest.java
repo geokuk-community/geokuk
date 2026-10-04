@@ -94,4 +94,11 @@ public class DatabazeJinehoProgramuTest {
 		Assert.assertTrue(popis, popis.contains("smíte zapisovat"));
 		Assert.assertFalse(popis, popis.contains("nedokončený zápis"));
 	}
+
+	/** Databáze GSAKu se ohlásí jménem složky, ne společným sqlite.db3. */
+	@Test
+	public void zamcenaDatabazeGsakuJmenemSlozky() {
+		Assert.assertTrue(new DatabazeJinehoProgramu.Zamcena(new File("/data/gsak/data/Default/sqlite.db3"), null).getMessage().startsWith("Databáze \"Default\" je zamčená"));
+		Assert.assertTrue(new DatabazeJinehoProgramu.Zamcena(new File("/data/geoget/Germany.db3"), null).getMessage().startsWith("Databáze \"Germany.db3\" je zamčená"));
+	}
 }

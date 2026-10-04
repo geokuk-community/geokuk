@@ -105,7 +105,10 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 
 			switch (i) {
 			case 0:
-				return vsechny.getInformaceOZdrojich().getRoot() == ioz ? "1:" + ioz.jmenoZdroje.getFile().getAbsolutePath() : FString.text(ioz.getDisplayName());
+				if (vsechny.getInformaceOZdrojich().getRoot() == ioz) {
+					return "1:" + ioz.jmenoZdroje.getFile().getAbsolutePath();
+				}
+				return FString.text(ioz.getDisplayName() + (kesoidModel.jeZamcena(ioz.jmenoZdroje) ? " – čeká na dokončení zápisu" : ""));
 			case 1:
 				return kesoidModel.maSeNacist(ioz.jmenoZdroje);
 			case 2:

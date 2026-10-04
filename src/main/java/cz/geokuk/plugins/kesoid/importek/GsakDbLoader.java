@@ -299,7 +299,11 @@ public class GsakDbLoader extends Nacitac0 {
 
 	// Friendly, aby mohlo být použito i v GeogetLoader.
 	static boolean dbFileContains(final File aFile, final Set<String> aExpectedTables) {
-		try (GsakDao dao = new GsakDao(aFile)) {
+		return dbFileContains(aFile, aExpectedTables, DatabazeJinehoProgramu.CEKANI_PRI_ZJISTOVANI_MS);
+	}
+
+	static boolean dbFileContains(final File aFile, final Set<String> aExpectedTables, final int cekaniNaZamekMs) {
+		try (GsakDao dao = new GsakDao(aFile, cekaniNaZamekMs)) {
 			return dao.containsTables(aExpectedTables);
 		} catch (IOException | SQLException e) {
 			throw new RuntimeException(e);
@@ -443,7 +447,11 @@ public class GsakDbLoader extends Nacitac0 {
 		private final Statement iStatement;
 
 		public GsakDao(final File aSqliteDatabaseFile) throws SQLException {
-			iConnection = DatabazeJinehoProgramu.otevri(aSqliteDatabaseFile);
+			this(aSqliteDatabaseFile, DatabazeJinehoProgramu.CEKANI_NA_ZAMEK_MS);
+		}
+
+		GsakDao(final File aSqliteDatabaseFile, final int cekaniNaZamekMs) throws SQLException {
+			iConnection = DatabazeJinehoProgramu.otevri(aSqliteDatabaseFile, cekaniNaZamekMs);
 			iStatement = iConnection.createStatement();
 		}
 

@@ -43,6 +43,10 @@ public class MultiNacitacLoaderManager {
 		startTimer(genom);
 	}
 
+	public boolean jeZamcena(final File databaze) {
+		return multiNacitac.jeZamcena(databaze);
+	}
+
 	private void startTimer(final Genom genom) {
 		iTimer = new Timer(10000, e -> startLoad(false, genom));
 		iTimer.start();

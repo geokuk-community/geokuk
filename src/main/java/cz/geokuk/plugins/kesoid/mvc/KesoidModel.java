@@ -144,6 +144,11 @@ public class KesoidModel extends Model0 {
 		}
 	}
 
+	/** Databáze, do které jiný program právě zapisuje; načte se, až zápis skončí. */
+	public boolean jeZamcena(final KeFile jmenoZdroje) {
+		return multiNacitacLoaderManager.jeZamcena(jmenoZdroje.getFile());
+	}
+
 	public boolean maSeNacist(final KeFile jmenoZdroje) {
 		return !blokovaneZdroje.contains(jmenoZdroje.getFile());
 	}
