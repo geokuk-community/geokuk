@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.*;
@@ -19,6 +20,7 @@ import cz.geokuk.plugins.cesty.CestyChangedEvent;
 import cz.geokuk.plugins.cesty.data.Doc;
 import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
@@ -130,7 +132,18 @@ public class JStatusBar extends JPanel {
 
 	private final JValue meritkoMapy = new JValue("22");
 
-	private final JLabel varovaniPoctuPrekrocenych = new JLabel();
+	/** Šířka podle nejdelšího textu, aby zalamování stavového řádku nezáviselo na zobrazeném limitu. */
+	private final JLabel varovaniPoctuPrekrocenych = new JLabel() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public Dimension getPreferredSize() {
+			final Dimension d = super.getPreferredSize();
+			final Insets ins = getInsets();
+			d.width = Math.max(d.width, getFontMetrics(getFont()).stringWidth(textPrekroceni(false, LimityKresleni.MAX)) + ins.left + ins.right);
+			return d;
+		}
+	};
 	private JPanel odPozice;
 
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
@@ -138,6 +151,7 @@ public class JStatusBar extends JPanel {
 	private final JValue jZdrojeKesoiduPocetNactenych = new JValue("999");
 
 	private final JSkrtnutaValue jZdrojeKesoiduPocetNenactenych = new JSkrtnutaValue("999");
+	private final JLabel jZamceno = new JLabel();
 	private final JValue jZdrojeKesoiduCas = new JValue("2026-12-31 23:59");
 
 	private final JValue jSouborSVyletem = new JValue("muj-vylet-2026.ggt", true);
@@ -231,8 +245,24 @@ public class JStatusBar extends JPanel {
 		}
 	}
 
+	public void onEvent(final ZamceneDatabazeEvent event) {
+		final java.util.List<String> jmena = event.getJmena();
+		jZamceno.setText(textZamceno(jmena));
+		jZamceno.setToolTipText(FString.text(tooltipZamceno(jmena)));
+		jZamceno.setVisible(!jmena.isEmpty());
+		revalidate();
+	}
+
+	static String textZamceno(final java.util.List<String> jmena) {
+		return jmena.isEmpty() ? "" : "Zamčeno: " + jmena.size();
+	}
+
+	static String tooltipZamceno(final java.util.List<String> jmena) {
+		return jmena.isEmpty() ? null : String.join("\n", jmena) + "\nZavřete program, který databázi používá; načte se sama.";
+	}
+
 	public void onEvent(final PrekrocenLimitWaypointuVeVyrezuEvent event) {
-		setVarujPrekroceni(event.isPrekrocen());
+		setVarujPrekroceni(event.isPrekrocen(), event.isTecky(), event.getLimit());
 	}
 
 	public void onEvent(final ProgressEvent event) {
@@ -381,7 +411,7 @@ public class JStatusBar extends JPanel {
 		jPocetKesiVCestach.setToolTipText("Počet waypointů dohromady / počet cest.");
 		add(vylety);
 
-		varovaniPoctuPrekrocenych.setText("Překročen limit " + FConst.MAX_POC_WPT_NA_MAPE + " waypointů");
+		varovaniPoctuPrekrocenych.setText(textPrekroceni(false, LimityKresleni.VYCHOZI_IKON));
 		varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
 		varovaniPoctuPrekrocenych.setForeground(Color.RED);
 		varovaniPoctuPrekrocenych.setVisible(false);
@@ -415,6 +445,9 @@ public class JStatusBar extends JPanel {
 		jZdrojeKesoiduPocetNenactenych.setToolTipText("Počet souborů s kešoidy, jejichž načtení bylo zabráněno odškrtnutím.");
 		zdrojeKesoiduPanel.add(new JLabel("zdroje:"));
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduCas);
+		jZamceno.setForeground(new Color(0xD06000));
+		jZamceno.setVisible(false);
+		zdrojeKesoiduPanel.add(jZamceno);
 		jZdrojeKesoiduCas.setToolTipText("Čas nejmladšího načteného souboru.");
 		zdrojeKesoiduPanel.setCursor(FKurzory.KAM_SE_DA_KLIKNOUT);
 		add(zdrojeKesoiduPanel);
@@ -446,7 +479,14 @@ public class JStatusBar extends JPanel {
 		// meritkoMapy.setText(coord.getMoumer() + "");
 	}
 
-	private void setVarujPrekroceni(final boolean b) {
+	static String textPrekroceni(final boolean tecky, final int limit) {
+		return String.format(new Locale("cs"), "Překročen limit %,d %s", limit, tecky ? "teček" : "waypointů");
+	}
+
+	private void setVarujPrekroceni(final boolean b, final boolean tecky, final int limit) {
+		if (b) {
+			varovaniPoctuPrekrocenych.setText(textPrekroceni(tecky, limit));
+		}
 		varovaniPoctuPrekrocenych.setVisible(b);
 		revalidate();
 	}

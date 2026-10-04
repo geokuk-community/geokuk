@@ -33,7 +33,11 @@ public final class Tecky {
 		BEZNA, NALEZENA, VLASTNI
 	}
 
-	private final Map<Long, BufferedImage> obrazky = new HashMap<>();
+	private static final int STYLU = Styl.values().length * 2;
+
+	/** Obrázky podle barvy, pak podle stylu, neaktivity a průměru; hledání nealokuje. */
+	private final Map<Color, BufferedImage[]> obrazky = new HashMap<>();
+	private final Map<String, Color> barvyTypu = new HashMap<>();
 
 	/** Průměr tečky, aby tečky pokryly okno zhruba dvakrát. */
 	static int prumer(final int pocet, final Dimension okno) {
@@ -44,12 +48,13 @@ public final class Tecky {
 		return Math.max(MIN_PRUMER, Math.min(MAX_PRUMER, d));
 	}
 
-	static Color barva(final Wpt wpt) {
+	Color barva(final Wpt wpt) {
 		final Kesoid kesoid = wpt.getKesoid();
 		if (kesoid.getKesoidKind() != EKesoidKind.KES || !wpt.isMainWpt()) {
 			return NEKES;
 		}
-		return barvaTypu(wpt.getSym());
+		final String typ = wpt.getSym();
+		return typ == null ? OSTATNI : barvyTypu.computeIfAbsent(typ, Tecky::barvaTypu);
 	}
 
 	/** Barva podle textu typu keše z GPX nebo databáze. */
@@ -102,8 +107,21 @@ public final class Tecky {
 	}
 
 	BufferedImage obrazek(final Color barva, final Styl styl, final boolean neaktivni, final int prumer) {
-		final long klic = (long) barva.getRGB() << 32 | styl.ordinal() << 16 | (neaktivni ? 1 << 8 : 0) | prumer;
-		return obrazky.computeIfAbsent(klic, k -> nakresli(barva, styl, neaktivni, prumer));
+		if (prumer < 0 || prumer > MAX_PRUMER) {
+			return nakresli(barva, styl, neaktivni, prumer);
+		}
+		BufferedImage[] pole = obrazky.get(barva);
+		if (pole == null) {
+			pole = new BufferedImage[STYLU * (MAX_PRUMER + 1)];
+			obrazky.put(barva, pole);
+		}
+		final int i = (styl.ordinal() * 2 + (neaktivni ? 1 : 0)) * (MAX_PRUMER + 1) + prumer;
+		BufferedImage img = pole[i];
+		if (img == null) {
+			img = nakresli(barva, styl, neaktivni, prumer);
+			pole[i] = img;
+		}
+		return img;
 	}
 
 	private static Color zesvetli(final Color c) {
