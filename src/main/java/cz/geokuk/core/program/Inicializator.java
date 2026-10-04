@@ -36,6 +36,7 @@ import cz.geokuk.plugins.mrizky.MrizkaModel;
 import cz.geokuk.plugins.refbody.HlidacReferencnihoBodu;
 import cz.geokuk.plugins.refbody.RefbodyModel;
 import cz.geokuk.plugins.vylety.*;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -120,7 +121,7 @@ public class Inicializator {
 		final String chyby = UzivatelskeMapy.nacti();
 		if (chyby != null) {
 			Diagnostika.zaznamenejChybu(chyby);
-			SwingUtilities.invokeLater(() -> Dlg.error(chyby));
+			SwingUtilities.invokeLater(() -> Dlg.error(FString.text(chyby)));
 		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);

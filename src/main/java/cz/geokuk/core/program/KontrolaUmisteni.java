@@ -8,6 +8,7 @@ import cz.geokuk.core.napoveda.VerzeJavy;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
+import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 import cz.geokuk.start.Start;
 
 /** Upozornění na nevhodné umístění přenosného programu a na starou přibalenou Javu, ukazují se po zobrazení hlavního okna. */
@@ -49,9 +50,9 @@ public final class KontrolaUmisteni {
 	}
 
 	/** Prázdné složky, kam uživatel dává vlastní soubory, ať je najde. */
-	private static void pripravSlozky() {
+	static void pripravSlozky() {
 		for (final File slozka : Arrays.asList(KesoidUmisteniSouboru.KES_DIR.getFile(), KesoidUmisteniSouboru.CESTY_DIR.getFile(),
-				KesoidUmisteniSouboru.IMAGE_MY_DIR.getFile(), KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR.getFile())) {
+				KesoidUmisteniSouboru.IMAGE_MY_DIR.getFile(), KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR.getFile(), UzivatelskeMapy.slozka())) {
 			slozka.mkdirs();
 		}
 	}

@@ -511,20 +511,40 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void staryFormatSeNenacteAleOhlasi() throws Exception {
 		final File stary = tmp.newFile(UzivatelskeMapy.STARY_SOUBOR);
-		Files.write(stary.toPath(), ("a.nazev=A\na.url=" + URL + "\n").getBytes(StandardCharsets.UTF_8));
+		Files.write(stary.toPath(), ("# komentář\nzimni.nazev=Z\nturisticka.url=" + URL + "\nturisticka.nazev=T\n").getBytes(StandardCharsets.UTF_8));
 		final File slozka = new File(tmp.getRoot(), UzivatelskeMapy.SLOZKA);
-		Assert.assertEquals("Mapy ze souboru " + stary + " přesuňte do složky " + slozka + ", každou do vlastního souboru s příponou .mapa.", UzivatelskeMapy.nacti(tmp.getRoot()));
+		Assert.assertEquals("Mapy ze souboru " + stary + " přesuňte do složky " + slozka + ". Každou mapu dejte do vlastního souboru pojmenovaného podle dosavadního označení, "
+				+ "třeba turisticka.mapa pro řádky turisticka.…, aby zůstaly uložené dlaždice i vybraná mapa. Vlastnosti v něm pište bez označení: url=… místo turisticka.url=…. "
+				+ "Potom soubor " + stary + " smažte.", UzivatelskeMapy.nacti(tmp.getRoot()));
 		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
 		Assert.assertFalse("starý soubor se nepřevádí", slozka.exists());
 	}
 
 	@Test
 	public void staryFormatIChybyVJedneZprave() throws Exception {
-		tmp.newFile(UzivatelskeMapy.STARY_SOUBOR);
+		Files.write(tmp.newFile(UzivatelskeMapy.STARY_SOUBOR).toPath(), "b.nazev=B\n".getBytes(StandardCharsets.UTF_8));
 		slozka("a.mapa", "nazev=A");
 		final String zprava = UzivatelskeMapy.nacti(tmp.getRoot());
 		Assert.assertTrue(zprava, zprava.startsWith("Chyby v uživatelských mapách"));
 		Assert.assertTrue(zprava, zprava.contains("\n\nMapy ze souboru "));
+	}
+
+	@Test
+	public void staryFormatJenSKomentariSeNehlasi() throws Exception {
+		Files.write(tmp.newFile(UzivatelskeMapy.STARY_SOUBOR).toPath(), "# Uživatelské mapy\n#osm.nazev=OSM\n\n".getBytes(StandardCharsets.UTF_8));
+		Assert.assertNull(UzivatelskeMapy.nacti(tmp.getRoot()));
+	}
+
+	@Test
+	public void prazdnyStaryFormatSeNehlasi() throws Exception {
+		tmp.newFile(UzivatelskeMapy.STARY_SOUBOR);
+		Assert.assertNull(UzivatelskeMapy.nacti(tmp.getRoot()));
+	}
+
+	@Test
+	public void necitelnyStaryFormatSeOhlasi() throws Exception {
+		Files.write(tmp.newFile(UzivatelskeMapy.STARY_SOUBOR).toPath(), "a.nazev=\\uZZZZ\n".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(UzivatelskeMapy.nacti(tmp.getRoot()).startsWith("Mapy ze souboru "));
 	}
 
 	// Příklady
