@@ -7,7 +7,7 @@ import java.util.*;
 
 /**
  * Měří, jak dlouho trvá obsluha jednotlivých událostí na EDT, a pamatuje si ty pomalé. Události začaté před {@link #konecStartu()} se počítají
- * zvlášť, start programu běží na EDT v jedné události.
+ * zvlášť, start programu běží na EDT v jedné události. Zvlášť se počítá i přepínání vzhledu, které přestaví celé okno.
  */
 public class HlidacEdt extends EventQueue {
 
@@ -15,6 +15,8 @@ public class HlidacEdt extends EventQueue {
 	private final List<String> pomale = Collections.synchronizedList(new ArrayList<>());
 	private volatile long nejdelsiMs;
 	private volatile long nejdelsiStartMs;
+	private volatile long nejdelsiVzhledMs;
+	private volatile boolean vzhled;
 	private volatile boolean startSkoncil;
 	private volatile long konecStartuNs;
 
@@ -31,6 +33,7 @@ public class HlidacEdt extends EventQueue {
 	@Override
 	protected void dispatchEvent(final AWTEvent event) {
 		final long start = System.nanoTime();
+		final boolean priVzhledu = vzhled;
 		try {
 			super.dispatchEvent(event);
 		} finally {
@@ -38,11 +41,13 @@ public class HlidacEdt extends EventQueue {
 			final boolean priStartu = !startSkoncil || start - konecStartuNs < 0;
 			if (priStartu) {
 				nejdelsiStartMs = Math.max(nejdelsiStartMs, ms);
+			} else if (priVzhledu) {
+				nejdelsiVzhledMs = Math.max(nejdelsiVzhledMs, ms);
 			} else {
 				nejdelsiMs = Math.max(nejdelsiMs, ms);
 			}
 			if (ms >= prahMs) {
-				pomale.add(ms + " ms: " + (priStartu ? "při startu: " : "") + popis(event));
+				pomale.add(ms + " ms: " + (priStartu ? "při startu: " : priVzhledu ? "při přepnutí vzhledu: " : "") + popis(event));
 			}
 		}
 	}
@@ -51,6 +56,15 @@ public class HlidacEdt extends EventQueue {
 	public void konecStartu() {
 		konecStartuNs = System.nanoTime();
 		startSkoncil = true;
+	}
+
+	/** Události mezi voláním s true a s false patří k přepínání vzhledu. */
+	public void vzhled(final boolean prepina) {
+		vzhled = prepina;
+	}
+
+	public long getNejdelsiVzhledMs() {
+		return nejdelsiVzhledMs;
 	}
 
 	public long getNejdelsiMs() {
