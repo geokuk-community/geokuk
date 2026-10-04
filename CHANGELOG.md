@@ -17,7 +17,9 @@
   `data/render` a GeoGet a GSAK má vypnuté. Data jdou zkopírovat do
   složky `data`, postup je v README v oddílu Přechod ze starší verze.
 - Umístění souborů: relativní cesta, třeba `data/gpx`, se počítá od
-  složky GeoKuk; volba „Relativně k umístění programu“ odpadla.
+  složky GeoKuk; volba „Relativně k umístění programu“ odpadla. Cesta
+  uvnitř složky GeoKuk se ukazuje jako `${GeoKuk}/data/gpx` a při
+  přesunu složky se posune s ní, pod ní je výsledná cesta.
 - Ve Windows se verze 6.0.0 aktualizuje sama, ale bez přibalené Javy
   a další verze už sama nenainstaluje. Pro automatické aktualizace
   stáhněte `GeoKuk-windows.zip` a data přeneste podle README.
