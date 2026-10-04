@@ -159,6 +159,29 @@ public class OpensakDbLoaderTest {
 		Assert.assertNull("waypoint bez souřadnic není na 0, 0", w.get("RP3333"));
 	}
 
+	/** OpenSAK ukládá neznámou polohu waypointu i jako 0, 0. */
+	@Test
+	public void waypointNaNuleSeVynecha() throws Exception {
+		OpensakTestDb.vloz(db, "waypoints", "id", 10, "cache_id", 2, "prefix", "TR", "latitude", 0.0, "longitude", 0.0);
+		OpensakTestDb.vloz(db, "waypoints", "id", 11, "cache_id", 2, "prefix", "QA", "latitude", 0.0, "longitude", 16.0);
+		final Map<String, GpxWpt> w = nacti(db);
+		Assert.assertNull(w.get("TR2222"));
+		Assert.assertNotNull("jen jedna souřadnice nulová", w.get("QA2222"));
+	}
+
+	/** Kódy waypointů se v keši nesmí opakovat, ani když jsou její waypointy v tabulce prokládané waypointy jiné keše. */
+	@Test
+	public void prokladaneWaypointyMajiJedinecneKody() throws Exception {
+		OpensakTestDb.vloz(db, "waypoints", "id", 10, "cache_id", 2, "prefix", "ST", "latitude", 49.22, "longitude", 16.62);
+		OpensakTestDb.vloz(db, "waypoints", "id", 11, "cache_id", 3, "prefix", "ST", "latitude", 49.52, "longitude", 16.02);
+		OpensakTestDb.vloz(db, "waypoints", "id", 12, "cache_id", 2, "prefix", "ST", "latitude", 49.23, "longitude", 16.63);
+		final Map<String, GpxWpt> w = nacti(db);
+		Assert.assertNotNull(w.keySet().toString(), w.get("ST2222"));
+		Assert.assertNotNull(w.keySet().toString(), w.get("S02222"));
+		Assert.assertEquals(49.22, w.get("ST2222").wgs.lat, 1e-9);
+		Assert.assertEquals(49.23, w.get("S02222").wgs.lat, 1e-9);
+	}
+
 	/** Každý waypoint s polohou patří ke své keši, i když OpenSAK uloží prefix jiné délky nebo stejný prefix víckrát. */
 	@Test
 	public void waypointyPatriKeKesim() throws Exception {
