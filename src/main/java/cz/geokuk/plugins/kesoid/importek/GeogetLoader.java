@@ -46,7 +46,6 @@ public class GeogetLoader extends Nacitac0 {
 
 	private static final String GEOGET_WAYPOINTS_COUNT = "SELECT count(*) FROM waypoint";
 
-	private static final String DATE_FORMAT_TEMPLATE = "%d-%02d-%02dT00:00:00.000";
 
 	private static final ImmutableSet<String> SUPPORTED_FILE_EXTENSIONS = ImmutableSet.of("db3");
 	private static final ImmutableSet<String> EXPECTED_TABLES = ImmutableSet.of("geolist", "geocache", "waypoint", "geotag", "geotagcategory", "geotagvalue");
@@ -124,7 +123,7 @@ public class GeogetLoader extends Nacitac0 {
 		final int day = yyyymmddDate % 100;
 		final int month = yyyymmddDate / 100 % 100;
 		final int year = yyyymmddDate / 10000;
-		return String.format(DATE_FORMAT_TEMPLATE, year, month, day);
+		return year + (month < 10 ? "-0" : "-") + month + (day < 10 ? "-0" : "-") + day + "T00:00:00.000";
 	}
 
 	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
@@ -183,10 +182,10 @@ public class GeogetLoader extends Nacitac0 {
 					}
 
 					gpxWpt.groundspeak = groundspeak;
-					gpxWpt.desc = String.format("%s by %s (%s / %s)", gpxWpt.groundspeak.name, gpxWpt.groundspeak.placedBy, gpxWpt.groundspeak.difficulty, gpxWpt.groundspeak.terrain);
+					gpxWpt.desc = gpxWpt.groundspeak.name + " by " + gpxWpt.groundspeak.placedBy + " (" + gpxWpt.groundspeak.difficulty + " / " + gpxWpt.groundspeak.terrain + ")";
 
 					gpxWpt.link.href = "http://coord.info/" + gpxWpt.name;
-					gpxWpt.link.text = String.format("%s by %s", gpxWpt.groundspeak.name, gpxWpt.groundspeak.placedBy);
+					gpxWpt.link.text = gpxWpt.groundspeak.name + " by " + gpxWpt.groundspeak.placedBy;
 
 					final long dtfound = rs.getLong("dtfound");
 					if (dtfound != 0) {
