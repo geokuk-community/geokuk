@@ -243,4 +243,23 @@ public class IndexatorTest {
 		}
 		return pocet;
 	}
+
+	@Test
+	public void bodMimoRozsahSeOdmitne() {
+		final Indexator<String> ix = new Indexator<>(new BoundingRect(0, 0, 100, 100));
+		ix.add(0, 99, "okraj");
+		for (final int[] mimo : new int[][] { { 100, 5 }, { 5, 100 }, { -1, 5 }, { 5, -1 } }) {
+			try {
+				ix.add(mimo[0], mimo[1], "mimo");
+				Assert.fail("bod " + mimo[0] + " " + mimo[1] + " je mimo rozsah");
+			} catch (final IllegalArgumentException e) {
+				// očekáváno
+			}
+		}
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void nullSeNepridava() {
+		new Indexator<String>(BoundingRect.ALL).add(1, 1, null);
+	}
 }

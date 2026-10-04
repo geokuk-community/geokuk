@@ -2,6 +2,7 @@ package cz.geokuk.util.index2d;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ class Sheet<T> extends Node<T> {
 		super(1);
 		this.xx = xx;
 		this.yy = yy;
-		hodnoty = mapobj;
+		hodnoty = Objects.requireNonNull(mapobj, "Nesmi byt null v hodnotách ctvrecnickych");
 	}
 
 	private Sheet(final int xx, final int yy, final Lst<T> lst) {
