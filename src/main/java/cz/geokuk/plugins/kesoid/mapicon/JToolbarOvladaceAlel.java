@@ -101,6 +101,13 @@ public class JToolbarOvladaceAlel extends JPanel {
 		return d;
 	}
 
+	static JIconCheckBox novyOvladac() {
+		final JIconCheckBox cb = new JIconCheckBox();
+		cb.setFocusable(false);
+		cb.setMaxVyskaIkony(VYSKA_IKONY);
+		return cb;
+	}
+
 	static int vyskaOvladace() {
 		final JIconCheckBox cb = new JIconCheckBox();
 		cb.setIcon(new ImageIcon(new BufferedImage(1, VYSKA_IKONY, BufferedImage.TYPE_INT_ARGB)));
@@ -122,9 +129,7 @@ public class JToolbarOvladaceAlel extends JPanel {
 		JIconCheckBox cb = mapka.get(alela.qualName());
 		if (cb == null) {
 			final SwitchKesoidUrciteAlelyAction action = factory.init(new SwitchKesoidUrciteAlelyAction(alela));
-			cb = new JIconCheckBox();
-			cb.setFocusable(false);
-			cb.setMaxVyskaIkony(VYSKA_IKONY);
+			cb = novyOvladac();
 			action.join(cb);
 			tb.add(cb);
 			cb.setText(null);

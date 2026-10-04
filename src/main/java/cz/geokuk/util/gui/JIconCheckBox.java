@@ -87,7 +87,6 @@ public class JIconCheckBox extends JCheckBox {
 		setRolloverSelectedIcon(new RollOverSelectedIcon());
 	}
 
-
 	static Icon zmensi(final Icon ikona, final int maxVyska) {
 		if (ikona == null || maxVyska <= 0 || ikona.getIconHeight() <= maxVyska) {
 			return ikona;

@@ -14,8 +14,7 @@ import cz.geokuk.util.gui.JIconCheckBox;
 public class JToolbarOvladaceAlelTest {
 
 	private static JIconCheckBox ovladac(final int vyskaIkony) {
-		final JIconCheckBox cb = new JIconCheckBox();
-		cb.setMaxVyskaIkony(JToolbarOvladaceAlel.VYSKA_IKONY);
+		final JIconCheckBox cb = JToolbarOvladaceAlel.novyOvladac();
 		cb.setIcon(new ImageIcon(new BufferedImage(vyskaIkony, vyskaIkony, BufferedImage.TYPE_INT_ARGB)));
 		return cb;
 	}
