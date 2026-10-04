@@ -125,6 +125,16 @@ public class GsakDbLoaderTest {
 	}
 
 	@Test
+	public void casNalezuZeSloupceKese() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("DELETE FROM Custom");
+			s.execute("ALTER TABLE Caches ADD COLUMN casnalezu TEXT");
+			s.execute("UPDATE Caches SET casnalezu = '9:05' WHERE Code = 'GC1111'");
+		}
+		Assert.assertEquals("2020-05-01T9:05", nacti().get("GC1111").gpxg.found);
+	}
+
+	@Test
 	public void prazdnaVlastniHodnotaNeniTag() throws Exception {
 		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
 			s.execute("INSERT INTO Custom VALUES ('GC2222', '  ', NULL)");
@@ -184,5 +194,33 @@ public class GsakDbLoaderTest {
 		final Map<String, GpxWpt> w = nacti();
 		Assert.assertNotNull("ostatní keše se načtou", w.get("GC1111"));
 		Assert.assertNotNull(w.get("GC2222"));
+	}
+
+	/** Bez souřadnic by keše skončily na 0, 0; databáze se přeskočí se srozumitelnou hláškou. */
+	@Test
+	public void chybejiciPovinnySloupec() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("ALTER TABLE Caches RENAME COLUMN Latitude TO Lat");
+		}
+		try {
+			nacti();
+			Assert.fail();
+		} catch (final DatabazeJinehoProgramu.JineSchema e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("GSAKu") && e.getMessage().contains("Caches.Latitude"));
+		}
+	}
+
+	/** Waypointy jsou volitelné, ale když tabulka je, musí mít souřadnice. */
+	@Test
+	public void waypointyBezSouradnic() throws Exception {
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("ALTER TABLE Waypoints RENAME COLUMN cLon TO cLng");
+		}
+		try {
+			nacti();
+			Assert.fail();
+		} catch (final DatabazeJinehoProgramu.JineSchema e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("Waypoints.cLon"));
+		}
 	}
 }

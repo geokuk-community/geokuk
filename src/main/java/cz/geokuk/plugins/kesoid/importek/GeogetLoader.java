@@ -37,6 +37,9 @@ public class GeogetLoader extends Nacitac0 {
 	private static final String[] SLOUPCE_GEOCACHE = { "x as lat", "y as lon", "name", "author", "cachetype", "cachesize", "difficulty", "terrain", "cachestatus", "gs_ownerid", "dthidden",
 			"country", "state", "dtfound" };
 
+	/** Bez nich by keše skončily bez kódu nebo na souřadnicích 0, 0. */
+	private static final Map<String, List<String>> POVINNE_SLOUPCE = ImmutableMap.of("geocache", Arrays.asList("id", "x", "y"), "waypoint", Arrays.asList("id", "x", "y"));
+
 	private static final String GEOGET_CACHES_COUNT = "SELECT count(*) FROM geocache";
 
 	private static final String[] SLOUPCE_WAYPOINT = { "x as lat", "y as lon", "prefixid", "wpttype", "name" };
@@ -61,6 +64,7 @@ public class GeogetLoader extends Nacitac0 {
 			throw new IllegalArgumentException("Cannot load from file " + file);
 		}
 		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
+			DatabazeJinehoProgramu.zkontrolujSloupce(statement, file, "GeoGetu", POVINNE_SLOUPCE, Collections.emptySet());
 			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS;
 			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file.toString());
 			// Tagy před kešemi, keš si hodnoty přebírá už při přidání.
@@ -126,7 +130,7 @@ public class GeogetLoader extends Nacitac0 {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
-		final String dotaz = "SELECT geocache.id as id, " + vyber(statement, "geocache", SLOUPCE_GEOCACHE) + " FROM geocache";
+		final String dotaz = "SELECT geocache.id as id, " + DatabazeJinehoProgramu.vyber(statement, "geocache", SLOUPCE_GEOCACHE) + " FROM geocache";
 		try (ResultSet rs = statement.executeQuery(dotaz)) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
@@ -285,7 +289,7 @@ public class GeogetLoader extends Nacitac0 {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("waypoint");
 		int citac = 0;
-		try (ResultSet rs = statement.executeQuery("SELECT id, " + vyber(statement, "waypoint", SLOUPCE_WAYPOINT) + " FROM waypoint")) {
+		try (ResultSet rs = statement.executeQuery("SELECT id, " + DatabazeJinehoProgramu.vyber(statement, "waypoint", SLOUPCE_WAYPOINT) + " FROM waypoint")) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
@@ -312,21 +316,6 @@ public class GeogetLoader extends Nacitac0 {
 			preskocene.ohlas();
 			logResult("Waypoints", startTime, citac);
 		}
-	}
-
-	/** Sloupce pro SELECT; ty, které starší GeoGet v tabulce nemá, budou NULL. */
-	private static String vyber(final Statement statement, final String tabulka, final String[] sloupce) throws SQLException {
-		final Set<String> existujici = DatabazeJinehoProgramu.sloupce(statement, tabulka);
-		final StringBuilder sb = new StringBuilder();
-		for (final String sloupec : sloupce) {
-			final String[] jmenoAlias = sloupec.split(" as ");
-			final String alias = jmenoAlias[jmenoAlias.length - 1];
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			sb.append(existujici.contains(jmenoAlias[0]) ? tabulka + "." + jmenoAlias[0] : "NULL").append(" as ").append(alias);
-		}
-		return sb.toString();
 	}
 
 	private void logResult(final String nazev, final ATimestamp startTime, final int pocet) {
