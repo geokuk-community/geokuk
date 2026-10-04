@@ -75,15 +75,15 @@ public class JStatusBarSirkaTest {
 		final JPanel okno = new JPanel(new BorderLayout());
 		okno.add(radek, BorderLayout.SOUTH);
 		final JLabel varovani = (JLabel) pole(radek, "varovaniPoctuPrekrocenych");
-		final java.lang.reflect.Method varuj = JStatusBar.class.getDeclaredMethod("setVarujPrekroceni", boolean.class);
+		final java.lang.reflect.Method varuj = JStatusBar.class.getDeclaredMethod("setVarujPrekroceni", boolean.class, boolean.class, int.class);
 		varuj.setAccessible(true);
 		final int plna = radek.getPreferredSize().width;
 		for (int sirka = plna / 2; sirka <= plna + 50; sirka += 7) {
-			varuj.invoke(radek, false);
+			varuj.invoke(radek, false, false, 0);
 			okno.setSize(sirka, 400);
 			okno.doLayout();
 			final int vyska = radek.getPreferredSize().height;
-			varuj.invoke(radek, true);
+			varuj.invoke(radek, true, false, 30_000);
 			okno.doLayout();
 			radek.doLayout();
 			Assert.assertEquals("šířka " + sirka, vyska, radek.getHeight());
