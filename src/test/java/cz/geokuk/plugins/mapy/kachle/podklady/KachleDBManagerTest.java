@@ -179,6 +179,110 @@ public class KachleDBManagerTest {
 		Assert.assertFalse("místo složky soubor", manager.lzeZapsat(new File(tmp.newFile("soubor"), "cache")));
 	}
 
+	/**
+	 * Poškozená cache se odkládá pod výhradním zámkem. Test pustí otevírající vlákno jen tehdy, když samo drží zámek pro čtení, a pak
+	 * kontroluje stav souborů: odložená cache bez nové by znamenala přejmenování během čtení.
+	 */
+	@Test(timeout = 60000)
+	public void odlozeniPoskozenePodVyhradnimZamkem() throws Exception {
+		Files.write(soubor.toPath(), "tohle není databáze".getBytes(StandardCharsets.UTF_8));
+		final File vadna = new File(soubor.getPath() + ".vadna");
+		final java.util.concurrent.locks.ReentrantReadWriteLock z = manager.zamek;
+		final java.util.concurrent.atomic.AtomicReference<Throwable> chyba = new java.util.concurrent.atomic.AtomicReference<>();
+		final Thread otevirac = new Thread(() -> {
+			try {
+				manager.load(KACHLE);
+			} catch (final Throwable e) {
+				chyba.set(e);
+			}
+		}, "otevirac");
+		otevirac.setDaemon(true);
+		z.readLock().lock();
+		otevirac.start();
+		try {
+			for (;;) {
+				final long konec = System.currentTimeMillis() + 10_000;
+				while (!z.hasQueuedThread(otevirac) && otevirac.isAlive()) {
+					Assert.assertTrue("otevírající vlákno nečeká na zámek", System.currentTimeMillis() < konec);
+					Thread.sleep(1);
+				}
+				if (!otevirac.isAlive()) {
+					break;
+				}
+				z.readLock().unlock();
+				z.readLock().lock(); // spravedlivý zámek: až za otevírajícím vláknem
+				Thread.sleep(200);
+				Assert.assertFalse("odloženo mimo výhradní zámek", vadna.exists() && !soubor.exists());
+			}
+		} finally {
+			z.readLock().unlock();
+		}
+		otevirac.join(10000);
+		Assert.assertNull(chyba.get());
+		Assert.assertTrue("poškozená cache se odložila", vadna.isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNotNull(manager.load(KACHLE));
+	}
+
+	/** Zápis, který čeká na jiný program, mezi pokusy nesmí blokovat čtení. */
+	@Test(timeout = 120000)
+	public void cekaniZapisuNeblokujeCteni() throws Exception {
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		final SqlJetDb jine = SqlJetDb.open(soubor, false);
+		final ExecutorService vlakna = Executors.newFixedThreadPool(2);
+		try {
+			jine.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+			final ISqlJetCursor kurzor = jine.getTable("tiles").open();
+			Assert.assertFalse(kurzor.eof());
+			kurzor.close();
+			final Ka dalsi = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14), EKaType.TURIST_M);
+			final byte[] png = png();
+			final java.util.concurrent.Future<Boolean> zapis = vlakna.submit(() -> manager.save(Collections.singleton(new ItemToSave(dalsi, png))));
+			Thread.sleep(300);
+			Assert.assertNotNull(vlakna.submit(() -> manager.load(KACHLE)).get());
+			Assert.assertFalse("zápis ještě čeká", zapis.isDone());
+			jine.commit();
+			Assert.assertTrue(zapis.get());
+		} finally {
+			vlakna.shutdown();
+			jine.close();
+		}
+	}
+
+	/** První kontrola nezapisovatelné složky při čtení nesmí zablokovat souběžný zápis. */
+	@Test(timeout = 60000)
+	public void kontrolaSlozkyPriCteniNezablokujeZapis() throws Exception {
+		final java.util.concurrent.CountDownLatch vKontrole = new java.util.concurrent.CountDownLatch(1);
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			boolean lzeZapsat(final File s) {
+				if ("ctenar".equals(Thread.currentThread().getName())) {
+					vKontrole.countDown();
+					try {
+						Thread.sleep(500);
+					} catch (final InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+					return false;
+				}
+				return true;
+			}
+		};
+		final KachleDBManager m = manager;
+		final byte[] png = png();
+		final Thread ctenar = new Thread(() -> m.load(KACHLE), "ctenar");
+		ctenar.setDaemon(true);
+		ctenar.start();
+		vKontrole.await();
+		final Thread zapisovac = new Thread(() -> m.save(Collections.singleton(new ItemToSave(KACHLE, png))), "zapisovac");
+		zapisovac.setDaemon(true);
+		zapisovac.start();
+		ctenar.join(10000);
+		zapisovac.join(10000);
+		Assert.assertFalse("čtení skončilo", ctenar.isAlive());
+		Assert.assertFalse("zápis skončil", zapisovac.isAlive());
+	}
+
 	/** Přerušení vlákna při čtení zavře kanál souboru databáze. */
 	private void nactiPrerusene(final ExecutorService vlakno) throws Exception {
 		vlakno.submit(() -> {
@@ -255,5 +359,130 @@ public class KachleDBManagerTest {
 			Assert.assertEquals("odložený je původní poškozený soubor", smeti.length, new File(soubor.getPath() + ".vadna").length());
 			Assert.assertNotNull("dlaždice je v nové cache", manager.load(KACHLE));
 		}
+	}
+	/** Na skoro plný disk se dlaždice neukládají, po uvolnění místa zase ano. */
+	@Test
+	public void priNedostatkuMistaNezapisuje() throws Exception {
+		final long[] volne = { KachleDBManager.MIN_VOLNE_MISTO / 2 };
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			long volneMisto(final File slozka) {
+				return volne[0];
+			}
+		};
+		Assert.assertFalse("bez místa se neukládá", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNull(manager.load(KACHLE));
+		volne[0] = Long.MAX_VALUE;
+		Assert.assertTrue("po uvolnění místa se ukládá", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNotNull(manager.load(KACHLE));
+	}
+
+	/** Při opakovaném nedostatku místa se uživatel dozví jen jednou. */
+	@Test
+	public void naNedostatekMistaUpozorniJednou() throws Exception {
+		final int[] upozorneni = { 0 };
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			long volneMisto(final File slozka) {
+				return 0;
+			}
+
+			@Override
+			void upozorniNaMisto(final File slozka, final long volne) {
+				upozorneni[0]++;
+			}
+		};
+		for (int i = 0; i < 3; i++) {
+			Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(i), png()))));
+		}
+		Assert.assertEquals(1, upozorneni[0]);
+	}
+
+	/** Poškození zjištěné při zápisu dlaždic cache odloží a založí novou. */
+	@Test
+	public void poskozeniPriZapisuCacheOdlozi() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
+		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue("nová cache funguje", manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
+		Assert.assertNotNull(manager.load(kachle(5)));
+	}
+
+	/** Chyba starého spojení zjištěná až po odložení poškozené cache neodloží novou. */
+	@Test
+	public void chybaStarehoSpojeniNeodloziNovouCache() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		final int pred = manager.odlozeni;
+		Assert.assertNull(manager.load(kachle(1)));
+		Assert.assertTrue(new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		manager.odlozZaBehu(soubor, pred);
+		Assert.assertNotNull("nová cache zůstala", manager.load(kachle(1)));
+	}
+
+	/** Poškození zjištěné až při čtení dlaždice cache odloží a založí novou. */
+	@Test
+	public void poskozeniPriCteniCacheOdlozi() throws Exception {
+		poskodStranku(2);
+		manager = new KachleDBManager(manager.folderHolder);
+		for (int i = 0; i < 200; i++) {
+			Assert.assertNull("dlaždice z poškozené cache se stáhne znovu", manager.load(kachle(i)));
+		}
+		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue("nová cache funguje", manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		Assert.assertNotNull(manager.load(kachle(1)));
+	}
+
+	/** Žurnál po pádu programu znamená možné poškození, cache se před použitím projde. */
+	@Test
+	public void poPaduSeCacheZkontroluje() throws Exception {
+		poskodStranku(-1);
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		manager = new KachleDBManager(manager.folderHolder);
+		// Hledání dlaždice mimo cache poslední stránku nečte, poškození najde jen kontrola.
+		Assert.assertNull(manager.load(KACHLE_MIMO));
+		Assert.assertTrue("poškozená cache se odloží hned při otevření", new File(soubor.getPath() + ".vadna").isFile());
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		Assert.assertNotNull(manager.load(kachle(1)));
+	}
+
+	/** Zdravou cache s žurnálem kontrola neodloží. */
+	@Test
+	public void kontrolaPoPaduZdravouCacheNeodlozi() throws Exception {
+		ulozKachle();
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertNotNull(manager.load(kachle(150)));
+		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
+	}
+
+	private static final Ka KACHLE_MIMO = new Ka(KaLoc.ofJZ(new Mou(0x10000000, 0x10000000), 13), EKaType.TURIST_M);
+
+	private static Ka kachle(final int i) {
+		return new Ka(KaLoc.ofJZ(new Mou(0x40000000 + i * 0x100000, 0x20000000), 13), EKaType.TURIST_M);
+	}
+
+	private void ulozKachle() throws Exception {
+		final byte[] png = png();
+		final java.util.List<ItemToSave> davka = new java.util.ArrayList<>();
+		for (int i = 0; i < 200; i++) {
+			davka.add(new ItemToSave(kachle(i), png));
+		}
+		Assert.assertTrue(manager.save(davka));
+		for (final SqlJetDb db : manager.connections.values()) {
+			db.close();
+		}
+	}
+
+	/** Stránka (od 1, záporná od konce) dostane neplatný typ; schéma na první stránce zůstane čitelné. */
+	private void poskodStranku(final int cislo) throws Exception {
+		ulozKachle();
+		final byte[] obsah = Files.readAllBytes(soubor.toPath());
+		final int velikost = (obsah[16] & 0xff) << 8 | obsah[17] & 0xff;
+		final int stranka = cislo > 0 ? cislo : obsah.length / velikost + 1 + cislo;
+		obsah[(stranka - 1) * velikost] = 7;
+		Files.write(soubor.toPath(), obsah);
 	}
 }

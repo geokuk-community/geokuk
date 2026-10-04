@@ -4,6 +4,7 @@ import java.awt.Desktop;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.net.URL;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 
@@ -37,6 +38,26 @@ public class BrowserOpener {
 	 *            the file's url (the url must start with either "http://" or "file://").
 	 */
 	public static void displayURL(final URL url) {
+		// Odkaz z GPX může vést na soubor nebo jiný protokol, otevírají se jen webové stránky.
+		if (!jeWebova(url)) {
+			log.warn("Odkaz {} není webová stránka, neotevře se.", url);
+			return;
+		}
+		prohlizec.accept(url);
+	}
+
+	/** Soubor, který vytvořil sám program (třeba výpis chyby). */
+	public static void displayFile(final URL url) {
+		prohlizec.accept(url);
+	}
+
+	static boolean jeWebova(final URL url) {
+		return url != null && ("http".equalsIgnoreCase(url.getProtocol()) || "https".equalsIgnoreCase(url.getProtocol()));
+	}
+
+	static Consumer<URL> prohlizec = BrowserOpener::otevri;
+
+	private static void otevri(final URL url) {
 		try {
 			Desktop.getDesktop().browse(url.toURI());
 		} catch (final Exception e) {
@@ -59,7 +80,7 @@ public class BrowserOpener {
 		adresa.setEditable(false);
 		adresa.setColumns(50);
 		final String zkopirovat = "Zkopírovat adresu";
-		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "Geokuk",
+		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "GeoKuk",
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] { zkopirovat, "Zavřít" }, zkopirovat);
 		if (volba == 0) {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(url.toString()), null);

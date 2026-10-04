@@ -138,7 +138,7 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 				message("Nalezeno " + vysledekHledani.nalezenci.size() + " možných adres.");
 			} else {
 				entry.setBackground(ERROR_COLOR);
-				message("Žádná shoda, stiskni ESC k výmazu hledacího pole.");
+				message("Žádná shoda, zkuste zadat adresu jinak.");
 			}
 		}
 	}
@@ -155,6 +155,10 @@ public class JAdrDialog extends JMyDialog0 implements RefreshorVysledkuHledani<N
 		}
 		final String text = entry.getText().trim();
 		if (text.isEmpty()) {
+			return;
+		}
+		if (!geocodingModel.isOnlineMode()) {
+			message("Hledání adres potřebuje připojení k internetu, zapněte Mapy > Online.");
 			return;
 		}
 		message("Hledá se ...");

@@ -26,7 +26,7 @@ public class TiskniNaGcComAction extends AbstractAction {
 	public TiskniNaGcComAction(final Kesoid kesoid) {
 		super("Tisk na webu", kesoid.getUrlIcon());
 		url = kesoid.getUrlPrint();
-		putValue(SHORT_DESCRIPTION, "Zobrazí listing keše na geocaching COM v tisknutelné podobě.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí listing kešoidu na jeho webu v podobě pro tisk.");
 		// putValue(MNEMONIC_KEY, InputEvent.)
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
 

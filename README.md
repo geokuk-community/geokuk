@@ -37,15 +37,21 @@ složku přesunete, spusťte nejdřív znovu `GeoKuk-prvni-spusteni.cmd`,
 zástupce ve složce i jeho kopie na ploše a v nabídce Start se opraví.
 Do té doby zástupce hlásí chybu „Unable to access jarfile“.
 
-Když GeoKuk najde novou verzi, stáhne ji a nabídne restart; jinak se
-nainstaluje při příštím spuštění. Javu aktualizuje nový zip. Rozbalte ho
+Když GeoKuk najde novou verzi, nabídne ji. Po volbě Stáhnout novou
+verzi ji stáhne a nabídne restart; jinak se nainstaluje při příštím
+spuštění. Javu aktualizuje nový zip. Rozbalte ho
 tam, kam ten první (třeba do `C:\`), přes stávající složku `GeoKuk`;
 data a nastavení zůstanou.
 
 ### Linux a macOS
 
 Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
-(potřeba je Java 8 nebo novější). Nové verze se instalují samy.
+(potřeba je Java 8 nebo novější). Když GeoKuk najde novou verzi,
+nabídne ji. Po volbě Aktualizovat nahradí `geokuk.jar`
+(předchozí zůstane jako `geokuk.jar.bak`) a nová verze se spustí při
+příštím spuštění. Paměť programu a restart po aktualizaci jsou jen
+v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
+`java -Xmx2g -jar geokuk.jar`.
 
 ### Složka s programem
 
@@ -53,6 +59,9 @@ Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
 GeoKuk
 ├── GeoKuk-prvni-spusteni.cmd    první spuštění ve Windows
 ├── GeoKuk.lnk                   zástupce, vytvoří ho GeoKuk
+├── CTIMNE.txt
+├── LICENSE                      licence GNU GPL v3
+├── THIRD-PARTY.txt              použité knihovny a jejich licence
 ├── program
 │   ├── geokuk.jar               program
 │   ├── start.jar                spouštěč
@@ -60,7 +69,8 @@ GeoKuk
 │   └── runtime                  Java
 └── data                         všechno, co si GeoKuk ukládá
     ├── nastaveni.xml
-    ├── uzivatelske-mapy.properties
+    ├── mapy                     uživatelské mapy, co mapa to soubor *.mapa
+    ├── mapy-priklady            ukázky uživatelských map
     ├── cache                    dlaždice map, lze smazat
     ├── gpx                      výchozí složka pro keše z GPX
     ├── cesty
@@ -70,24 +80,48 @@ GeoKuk
     └── log                      log a chybová hlášení
 ```
 
+Keše načte GeoKuk ze souborů GPX, `.geokuk` a zip ve složce `data\gpx`;
+načítání z databáze GeoGetu nebo GSAKu a jinou složku s kešemi zapnete
+v Soubor > Umístění souborů. Cesta uvnitř složky GeoKuk se tam ukazuje
+jako `${GeoKuk}/data/gpx` a při přesunu nebo přejmenování složky se
+posune s ní, pod polem je výsledná cesta. Cesta mimo složku GeoKuk
+zůstává pevná.
+
 Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 až
 3 GB), změnit ji jde v Soubor > Paměť programu.
 
 ### Přechod ze starší verze
 
-Nastavení se při prvním spuštění převezme samo. Dlaždice map stažené
-starší verzí zkopírujte z `%USERPROFILE%\geokuk\prchave\kachle` do
-`data\cache`, vlastní ikony z `%USERPROFILE%\geokuk\imagesMy` do
-`data\ikony\moje` a ikony od jiných z `images3rdParty` do
-`data\ikony\ostatni`. Výlety (`lovim.ggt`, `tedne.ggt`) patří do
-`data\vylety`, cesty do `data\cesty`.
+Nastavení se při prvním spuštění převezme samo, kromě umístění složek:
+keše se čtou ze složky `data\gpx`, výstupy rendru jdou do `data\render`
+a načítání z GeoGetu a GSAKu je vypnuté, zapnout ho jde v Soubor >
+Umístění souborů. Data starší verze zůstanou beze změny ve složce
+`%USERPROFILE%\geokuk` (na Linuxu a macOS `~/geokuk`), GeoKuk je odtud
+nečte. Co chcete dál používat, zkopírujte do složky `data`:
+
+- keše z GPX uložené přímo v `%USERPROFILE%\geokuk` (výchozí složka
+  starší verze) do `data\gpx`, nebo jejich složku nastavte v Soubor >
+  Umístění souborů (relativní cesta, třeba `data\gpx`, se počítá od
+  složky GeoKuk),
+- výlety `lovim.ggt` a `tedne.ggt` do `data\vylety`,
+- cesty ze složky `cesty` do `data\cesty`,
+- vlastní ikony z `imagesMy` do `data\ikony\moje` a ikony od jiných
+  z `images3rdParty` do `data\ikony\ostatni`,
+- dlaždice map z `prchave\kachle` do `data\cache`.
+
+Ve Windows se verze 6.0.0 na novou verzi aktualizuje sama, ale jen
+samotný program ve stávající složce, bez přibalené Javy. Další
+aktualizace pak už sama nenainstaluje. Pro automatické aktualizace
+a přibalenou Javu stáhněte `GeoKuk-windows.zip` a data přeneste podle
+postupu výše.
 
 ## Uživatelské mapy
 
-Vlastní mapové podklady se zadávají v souboru `data/uzivatelske-mapy.properties`
-a v menu Mapy jsou ve skupině „Uživatelské mapy“.
-Popis a příklady jsou v
-[`priklady/uzivatelske-mapy.properties`](priklady/uzivatelske-mapy.properties).
+Vlastní mapové podklady se zadávají ve složce `data/mapy`, každá mapa
+v samostatném souboru `<označení>.mapa`, a v menu Mapy jsou ve skupině
+„Uživatelské mapy“. Popis a příklady jsou v [`priklady/mapy`](priklady/mapy);
+zip pro Windows je obsahuje ve složce `data/mapy-priklady`. Mapu začnete
+používat zkopírováním jejího souboru do `data/mapy`.
 
 ## Dálkové ovládání
 
@@ -102,7 +136,7 @@ POST http://127.0.0.1:48321/podklad?jmeno=TURIST_M
 POST http://127.0.0.1:48321/prenacti
 ```
 
-Požadavky z webového prohlížeče program odmítá.
+Požadavky z webových stránek program odmítá.
 
 ## Původ
 
@@ -149,8 +183,10 @@ menu a otevřené dialogy) potřebuje displej, na Linuxu třeba přes xvfb:
 xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
 ```
 
-Na GitHubu se spouští ručně workflow Smoke.
+Na GitHubu běží workflow Smoke každou noc na Linuxu, ručně ho jde
+spustit pro Linux i Windows.
 
 ## Licence
 
-[GNU GPL v3](LICENSE)
+[GNU GPL v3](LICENSE). Použité knihovny a jejich licence jsou
+v [THIRD-PARTY.txt](THIRD-PARTY.txt).

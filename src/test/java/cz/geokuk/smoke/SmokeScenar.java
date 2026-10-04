@@ -265,9 +265,14 @@ public class SmokeScenar {
 		if (puvodni != null) {
 			vzhledy.add(puvodni);
 		}
-		for (final JMenuItem p : vzhledy) {
-			final List<String> okna = klikni(p, "vzhled " + p.getText());
-			zprava.setProperty("vzhled." + p.getText(), okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
+		hlidac.vzhled(true);
+		try {
+			for (final JMenuItem p : vzhledy) {
+				final List<String> okna = klikni(p, "vzhled " + p.getText());
+				zprava.setProperty("vzhled." + p.getText(), okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
+			}
+		} finally {
+			hlidac.vzhled(false);
 		}
 	}
 
@@ -623,6 +628,7 @@ public class SmokeScenar {
 		if (hlidac != null) {
 			zprava.setProperty("edt.nejdelsiMs", String.valueOf(hlidac.getNejdelsiMs()));
 			zprava.setProperty("edt.startMs", String.valueOf(hlidac.getNejdelsiStartMs()));
+			zprava.setProperty("edt.vzhledMs", String.valueOf(hlidac.getNejdelsiVzhledMs()));
 			final List<String> pomale = hlidac.getPomale();
 			for (int j = 0; j < pomale.size(); j++) {
 				zprava.setProperty("edt.pomala." + j, pomale.get(j));

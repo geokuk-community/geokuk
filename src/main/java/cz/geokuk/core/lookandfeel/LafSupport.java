@@ -108,7 +108,7 @@ public class LafSupport {
 			updateThisSwingSet();
 			MyPreferences.current().put(LOOK_AND_FEEL, current.info.getClassName());
 		} catch (final Exception ex) {
-			FExceptionDumper.dump(ex, EExceptionSeverity.WORKARROUND, "Failed loading L&F: " + current.info.getClassName());
+			FExceptionDumper.dump(ex, EExceptionSeverity.WORKARROUND, "Nastavení vzhledu " + current.info.getName());
 		}
 	}
 
@@ -191,7 +191,7 @@ public class LafSupport {
 			}
 			return s;
 		} catch (final Throwable e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Když nejde nastavit skin, tak nejde!");
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nastavení vzhledu programu");
 			return metal;
 		}
 	}

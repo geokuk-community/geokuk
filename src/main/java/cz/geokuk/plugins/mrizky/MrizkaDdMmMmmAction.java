@@ -7,7 +7,7 @@ public class MrizkaDdMmMmmAction extends MrizkaAction0 {
 
 	public MrizkaDdMmMmmAction() {
 		super("Mřížka DD°MM.MMM");
-		putValue(SHORT_DESCRIPTION, "Zobrazovat popisky keší na mapě.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí na mapě souřadnicovou mřížku.");
 	}
 
 	@BeanSubtype("DdMmMmm")

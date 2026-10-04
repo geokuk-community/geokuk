@@ -12,7 +12,7 @@ public class JenFinalUNalezenychAction extends ToggleAction0 {
 
 	public JenFinalUNalezenychAction() {
 		super("Jen final u nalezených");
-		putValue(SHORT_DESCRIPTION, "U nalezenýc a mých keší skrýt všechny waypointy kromě kromě finálního smailíka.");
+		putValue(SHORT_DESCRIPTION, "U nalezených a mých keší skrýt všechny waypointy kromě finálního smajlíka.");
 	}
 
 	public void inject(final KesoidModel model) {

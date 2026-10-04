@@ -13,12 +13,17 @@ public class DalkoveOvladaniAction extends ToggleAction0 {
 
 	public DalkoveOvladaniAction() {
 		super("Dálkové ovládání");
-		putValue(SHORT_DESCRIPTION, "Povolí ovládání Geokuku jinými programy na tomto počítači, třeba doplňkem Geogetu.");
+		putValue(SHORT_DESCRIPTION, "Povolí ovládání GeoKuku jinými programy na tomto počítači.");
 		setSelected(DalkoveOvladani.jeZapnuteVNastaveni());
 	}
 
 	public void inject(final DalkoveOvladani dalkoveOvladani) {
 		this.dalkoveOvladani = dalkoveOvladani;
+	}
+
+	/** Zaškrtne položku podle toho, zda ovládání běží, i když ho zapnul parametr {@code --ovladani}. */
+	public void ukazStav() {
+		setSelected(dalkoveOvladani.bezi());
 	}
 
 	@Override
@@ -31,7 +36,7 @@ public class DalkoveOvladaniAction extends ToggleAction0 {
 		try {
 			dalkoveOvladani.spust(DalkoveOvladani.VYCHOZI_PORT);
 		} catch (final IOException e) {
-			Dlg.error("Dálkové ovládání nejde spustit na portu " + DalkoveOvladani.VYCHOZI_PORT + ": " + e.getMessage());
+			Dlg.error(DalkoveOvladani.popisChyby(DalkoveOvladani.VYCHOZI_PORT, e));
 		}
 	}
 }

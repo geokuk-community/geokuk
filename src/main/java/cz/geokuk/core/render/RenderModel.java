@@ -42,6 +42,7 @@ public class RenderModel extends Model0 {
 	private RenderSettings renderSettings;
 
 	private RendererSwingWorker0 koswx;
+	private boolean prerusenoUzivatelem;
 
 	// Je true, pokud jsme v dialogu, kde se nastavuje rendrování
 	private boolean jsmeVRendrovani;
@@ -227,6 +228,7 @@ public class RenderModel extends Model0 {
 	}
 
 	public void prerusRendrovani() {
+		prerusenoUzivatelem = true;
 		if (koswx != null) {
 			koswx.cancel(true);
 		}
@@ -238,12 +240,21 @@ public class RenderModel extends Model0 {
 		koswx = null;
 		fire();
 		if (renderResult == null) {
-			Dlg.error("Rendrování bylo přerušeno uživatelem.");
+			if (hlasitPreruseni()) {
+				Dlg.error("Rendrování bylo přerušeno uživatelem.");
+			}
 		} else {
 			if (renderResult.file != null) {
 				Dlg.info("Byl vytvořen soubor \"" + renderResult.file + "\"", "Výsledek rendrování");
 			}
 		}
+	}
+
+	/** Rendrování skončilo bez výsledku: přerušil ho uživatel, nebo ho ukončila chyba, která už je ohlášená (třeba nedostatek paměti). */
+	boolean hlasitPreruseni() {
+		final boolean hlasit = prerusenoUzivatelem;
+		prerusenoUzivatelem = false;
+		return hlasit;
 	}
 
 	/**
@@ -357,6 +368,7 @@ public class RenderModel extends Model0 {
 			koswx = new OziExplorerRenderSwingWorker(whatRender);
 			break;
 		}
+		prerusenoUzivatelem = false;
 		super.factoryInit(koswx);
 		koswx.execute();
 		fire();
