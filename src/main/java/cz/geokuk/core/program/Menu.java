@@ -243,7 +243,6 @@ public class Menu extends MenuStrujce {
 
 		// Look&Feel
 		getMenuBar().add(LafSupport.getLafMenu());
-		LafSupport.setFrame(jMainFrame);
 		///// Nápověda
 
 		final JMenuIkony menuIkony = factory.init(new JMenuIkony());
