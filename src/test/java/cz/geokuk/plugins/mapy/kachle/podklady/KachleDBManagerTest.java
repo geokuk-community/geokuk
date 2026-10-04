@@ -377,6 +377,24 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(KACHLE));
 	}
 
+	/** Dlaždice se přestanou ukládat, když na disku zbývá méně než 100 MB. */
+	@Test
+	public void prahVolnehoMistaJeStoMegabajtu() throws Exception {
+		final long[] volne = { 99L << 20 };
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			long volneMisto(final File slozka) {
+				return volne[0];
+			}
+
+			@Override
+			void upozorniNaMisto(final File slozka, final long volne) {}
+		};
+		Assert.assertFalse("99 MB volna nestačí", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		volne[0] = 101L << 20;
+		Assert.assertTrue("101 MB volna stačí", manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+	}
+
 	/** Při opakovaném nedostatku místa se uživatel dozví jen jednou. */
 	@Test
 	public void naNedostatekMistaUpozorniJednou() throws Exception {
