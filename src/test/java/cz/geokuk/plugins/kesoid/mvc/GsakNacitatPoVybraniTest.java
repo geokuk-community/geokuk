@@ -130,6 +130,19 @@ public class GsakNacitatPoVybraniTest {
 		Assert.assertTrue(nacte(db));
 	}
 
+	/** Neplatná cesta k aktivní složce (ručně upravené nastavení) nesmí shodit úklid zablokovaných zdrojů. */
+	@Test
+	public void neplatnaSlozkaNevadi() throws Exception {
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(new File(tmp.getRoot(), "a\0b"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, false));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(a));
+		model.zaradGsakDatabaze(set(a, b)); // b je zablokovaná, úklid má co dělat
+		model.vycistiBlokovaneZdroje(set());
+	}
+
 	private static Set<File> set(final File... f) {
 		return new HashSet<>(Arrays.asList(f));
 	}
