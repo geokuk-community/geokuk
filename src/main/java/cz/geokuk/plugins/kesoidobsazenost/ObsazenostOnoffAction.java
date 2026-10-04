@@ -13,7 +13,7 @@ public class ObsazenostOnoffAction extends ToggleAction0 {
 
 	public ObsazenostOnoffAction() {
 		super("Obsazenost 161 m");
-		putValue(SHORT_DESCRIPTION, "Zobrazí na mapě oblasti, která je již obsazena kešemi a kde nemohou vzniknout další keše.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí na mapě oblasti, které jsou již obsazené kešemi a kde nemohou vzniknout další keše.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_O);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F9, 0));
 

@@ -33,7 +33,7 @@ public class ZadatProblemAction extends Action0 {
 	}
 
 	ZadatProblemAction(final Runnable dialog) {
-		super("Zadat problém ...");
+		super("Zadat problém...");
 		this.dialog = dialog != null ? dialog : () -> DiagnostikaAction.ukaz(getMainFrame());
 		putValue(SHORT_DESCRIPTION, "Ukáže informace o programu a pak otevře stránku na GitHubu, kde jde zadat chybu nebo požadavek na novou funkci. Informace o programu budou předvyplněné.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_P);

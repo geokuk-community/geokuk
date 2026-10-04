@@ -93,7 +93,7 @@ public class JNastavovacVelikostiDlazdic extends JPanel implements AfterEventRec
 		add(Box.createHorizontalStrut(5));
 		add(new JLabel("(maximum / aktuálně / počet)"));
 
-		jMaximalniVelikost.setToolTipText("Maximální veliksot dlaždice v pixlech ve směru " + smer + ".");
+		jMaximalniVelikost.setToolTipText("Maximální velikost dlaždice v pixelech ve směru " + smer + ".");
 		jSkutecnaVelikost.setToolTipText("Skutečně rendrovaná velikost dlaždice ve směru " + smer + ", není větší než velikost aktuální.");
 		jPocetDlazdic.setToolTipText("Počet rendrovaných dlaždic ve směru " + smer + ".");
 

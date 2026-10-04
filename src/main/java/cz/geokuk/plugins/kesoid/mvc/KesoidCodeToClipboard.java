@@ -23,7 +23,7 @@ public class KesoidCodeToClipboard extends Action0 {
 	private KesoidModel kesoidModel;
 
 	static String nazev(final String identifikator) {
-		return "<html>Identifikátor <i>" + FString.html(identifikator) + "</i> do schráky";
+		return "<html>Identifikátor <i>" + FString.html(identifikator) + "</i> do schránky";
 	}
 
 	/**

@@ -122,7 +122,6 @@ public class Menu extends MenuStrujce {
 
 		makeMapSubmenuPart(akce);
 
-		separator();
 		item(akce.priblizMapuAction);
 		item(akce.oddalMapuAction);
 		item(akce.nastavMapuCeskaAction);

@@ -157,7 +157,7 @@ public class JKesDetail extends JKesoidDetail0 {
 		hlav.add(box2);
 
 		final JPanel box4 = new JPanel();
-		box4.add(new Popisek("Hodnoceni:"));
+		box4.add(new Popisek("Hodnocení:"));
 		box4.add(hodnoceni);
 		box4.add(new JLabel("/"));
 		box4.add(hodnoceniPocet);

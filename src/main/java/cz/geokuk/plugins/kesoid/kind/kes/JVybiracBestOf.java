@@ -14,6 +14,7 @@ public class JVybiracBestOf extends JVybiracCiselny0 implements AfterEventReceiv
 	 */
 	public JVybiracBestOf() {
 		super("BestOf:");
+		setToolTipText("Filtr podle prahu BestOf, zobrazí se jen keše mající BestOf větší nebo rovné prahu.");
 	}
 
 	@Override

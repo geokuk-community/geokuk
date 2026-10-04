@@ -14,7 +14,7 @@ public class HledejKesAction extends DialogOpeningAction0 {
 	private static final long serialVersionUID = -2637836928166450446L;
 
 	public HledejKesAction() {
-		super("Keš ...");
+		super("Keš...");
 		putValue(SHORT_DESCRIPTION, "Zobrazí dialog s možností vyhledat keš podle podřetězců v názvu a podle regulárních výrazů.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_K);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('F', InputEvent.CTRL_DOWN_MASK));

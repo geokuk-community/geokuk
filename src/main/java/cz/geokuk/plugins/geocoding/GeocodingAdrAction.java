@@ -14,7 +14,7 @@ public class GeocodingAdrAction extends DialogOpeningAction0 {
 	private static final long serialVersionUID = -2637836928166450446L;
 
 	public GeocodingAdrAction() {
-		super("Adresa ...");
+		super("Adresa...");
 		putValue(SHORT_DESCRIPTION, "Zobrazí dialog s možností vyhledat dle adresy.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_A);
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('M', InputEvent.CTRL_DOWN_MASK));

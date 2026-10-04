@@ -80,7 +80,7 @@ public class BrowserOpener {
 		adresa.setEditable(false);
 		adresa.setColumns(50);
 		final String zkopirovat = "Zkopírovat adresu";
-		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "Geokuk",
+		final int volba = JOptionPane.showOptionDialog(Dlg.parentFrame(), new Object[] { "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:", adresa }, "GeoKuk",
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] { zkopirovat, "Zavřít" }, zkopirovat);
 		if (volba == 0) {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(url.toString()), null);
