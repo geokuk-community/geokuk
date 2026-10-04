@@ -57,6 +57,9 @@ public class GsakNedostupnaSlozkaTest {
 			public void zaradGsakDatabaze(final Set<File> databaze) {
 				zarazeno.add(databaze);
 			}
+
+			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze) {}
 		};
 		model.inject(progress);
 		model.inject(new KesoidPluginManager());

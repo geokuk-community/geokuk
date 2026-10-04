@@ -34,4 +34,3 @@ nazev=OpenStreetMap (vlastní)
 url=https://tile.openstreetmap.org/{z}/{x}/{y}.png
 max=19
 atribuce=© OpenStreetMap contributors
-hlavicka.User-Agent=Geokuk/{verze} (+https://github.com/geokuk-community/geokuk)

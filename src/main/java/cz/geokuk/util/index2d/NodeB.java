@@ -20,10 +20,4 @@ abstract class NodeB<T> extends Node<T> {
 		xx2 = aXx2;
 		yy2 = aYy2;
 	}
-
-
-	Ctverecnik<T> newCtverecnik (final Node<T> jz, final Node<T> jv, final Node<T> sz, final Node<T> sv) {
-		return new Ctverecnik<T>(xx1, yy1, xx2, yy2, jz, jv, sz, sv);
-	}
-
 }
