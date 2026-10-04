@@ -29,7 +29,15 @@ public abstract class MySwingWorker0<T, V> extends SwingWorker<T, V> {
 	}
 
 	/** Text pro Přehled problémů: zpráva výjimky bez jména třídy Javy, jen když zprávu nemá, aspoň její druh. */
-	static String popis(final Throwable pricina) {
+	static String popis(Throwable pricina) {
+		// Výjimka vytvořená jen z příčiny má za zprávu příčinu i se jménem třídy, vlastní text má až příčina.
+		for (int i = 0; i < 10 && pricina.getCause() != null && pricina.getCause() != pricina; i++) {
+			final String vlastni = pricina.getMessage();
+			if (vlastni != null && !vlastni.trim().isEmpty() && !vlastni.equals(pricina.getCause().toString())) {
+				break;
+			}
+			pricina = pricina.getCause();
+		}
 		final String zprava = pricina.getLocalizedMessage();
 		return zprava != null && !zprava.trim().isEmpty() ? "Chyba při práci na pozadí: " + zprava
 				: "Chyba při práci na pozadí (" + pricina.getClass().getSimpleName() + ")";

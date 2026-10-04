@@ -1,4 +1,4 @@
-# Zkouška hotového zipu pro Windows: rozbalí ho, spustí přes GeoKuk-prvni-spusteni.cmd a start.jar a ověří složku data,
+# Zkouška hotového zipu pro Windows: zkontroluje jeho obsah, rozbalí ho, spustí přes GeoKuk-prvni-spusteni.cmd a start.jar a ověří složku data,
 # výměnu staženého jaru, paměť, zástupce ve složce a jeho opravu po přesunu, restart po aktualizaci a upozornění na nevhodné umístění.
 param([string]$Zip = "GeoKuk-windows.zip")
 
@@ -119,6 +119,13 @@ function ZapsanoMimo([datetime]$od, [string]$slozka) {
 
 # 1. Obvyklé spuštění z rozbaleného zipu, včetně výměny jaru staženého aktualizací.
 $slozka = Rozbal (Join-Path $koren "obvykle")
+foreach ($f in "LICENSE", "THIRD-PARTY.txt", "CTIMNE.txt", "GeoKuk-prvni-spusteni.cmd") {
+    Ocekavej (Test-Path (Join-Path $slozka $f)) "zip obsahuje $f"
+}
+$priklady = @(Get-ChildItem "priklady\mapy\*.mapa" | ForEach-Object Name | Sort-Object)
+$vZipu = @(Get-ChildItem (Join-Path $slozka "data\mapy-priklady") -Filter "*.mapa" -ErrorAction SilentlyContinue | ForEach-Object Name | Sort-Object)
+Ocekavej ($priklady.Count -gt 0 -and ($priklady -join ",") -eq ($vZipu -join ",")) "zip obsahuje ukázky map v data\mapy-priklady: $($vZipu -join ', ')"
+Ocekavej (-not (Test-Path (Join-Path $slozka "data\mapy"))) "zip neobsahuje data\mapy (ukázky by se načetly jako mapy)"
 $predSpustenim = Get-Date
 $registrPred = Registr
 Copy-Item (Join-Path $slozka "program\geokuk.jar") (Join-Path $slozka "program\geokuk.jar.new")
@@ -150,7 +157,7 @@ try {
     Ocekavej ($lnk -and $lnk.TargetPath -eq $javaw -and $lnk.Arguments -like "*$(Join-Path $slozka 'program\start.jar')*" -and $lnk.WorkingDirectory -eq (Join-Path $slozka "program")) `
         "ve složce vznikl zástupce GeoKuk.lnk: $($lnk.TargetPath) $($lnk.Arguments)"
 
-    foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni") {
+    foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni", "data\mapy") {
         Ocekavej (Test-Path (Join-Path $slozka $d)) "vzniklo $d"
     }
     Ocekavej (Konec $o $beh) "program po Soubor > Konec skončil"

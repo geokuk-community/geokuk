@@ -46,6 +46,7 @@ public class JPrehledSouboruTest {
 		u.setKesDir(slozka("kese"));
 		u.setGeogetDataDir(slozka("geoget"));
 		u.setGsakDataDir(slozka("gsak"));
+		u.setOpensakDataDir(slozka("opensak"));
 		panel.onEvent(new KesoidUmisteniSouboruChangedEvent(u));
 		final RenderUmisteniSouboru r = new RenderUmisteniSouboru();
 		r.setOziDir(slozka("ozi"));
