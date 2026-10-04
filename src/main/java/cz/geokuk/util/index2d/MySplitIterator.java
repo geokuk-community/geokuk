@@ -1,26 +1,30 @@
 package cz.geokuk.util.index2d;
 
+import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class MySplitIterator<T> implements Spliterator<Sheet<T>> {
 
 	private Node<T> node;
-	private Stack<T> stack;
+	/** Zásobník v poli: iterace přes velký výřez nesmí alokovat na každý uzel. */
+	private Node<T>[] zasobnik = noveNody(16);
+	private int vyska;
 	private boolean advancnuto;
 
 	public MySplitIterator(final Node<T> node) {
 		this.node = node;
-		stack = node == null ? null : new Stack<>(node, null);
+		if (node != null) {
+			push(node);
+		}
 	}
 
 	@Override
 	public boolean tryAdvance(final Consumer<? super Sheet<T>> action) {
-		if (stack == null) {
+		if (vyska == 0) {
 			return false; // doiterováno jest
 		}
 		advancnuto = true;
@@ -48,7 +52,9 @@ public class MySplitIterator<T> implements Spliterator<Sheet<T>> {
 		}
 
 		node = splitenec.nahrazenec;
-		stack = new Stack<>(node, null);
+		Arrays.fill(zasobnik, 0, vyska, null);
+		vyska = 0;
+		push(node);
 		return new MySplitIterator<T>(splitenec.odriznuto);
 	}
 
@@ -65,22 +71,24 @@ public class MySplitIterator<T> implements Spliterator<Sheet<T>> {
 
 	/** Vytáhn z vrcholu stacku, spadne, pokdu tam nic není */
 	private Node<T> pop() {
-		final Node<T> node = stack.node;
-		stack = stack.next;
+		final Node<T> node = zasobnik[--vyska];
+		zasobnik[vyska] = null;
 		return node;
 	}
 
-	/** Vloží na vrchol stacku */
+	/** Vloží na vrchol stacku, prázdné uzly vynechá. */
 	void push(final Node<T> node) {
-		stack = new Stack<>(node, stack);
+		if (node.isEmpty()) {
+			return;
+		}
+		if (vyska == zasobnik.length) {
+			zasobnik = Arrays.copyOf(zasobnik, vyska * 2);
+		}
+		zasobnik[vyska++] = node;
 	}
 
-	@RequiredArgsConstructor
-	private static class Stack<T> {
-		private final Node<T> node;
-		private final Stack<T> next;
-
+	@SuppressWarnings("unchecked")
+	private static <T> Node<T>[] noveNody(final int velikost) {
+		return new Node[velikost];
 	}
-
-
 }
