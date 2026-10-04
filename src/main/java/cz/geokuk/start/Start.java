@@ -189,7 +189,7 @@ public final class Start {
 		}
 	}
 
-	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */
+	/** Stažená nová verze nahradí starou, ta zůstane jako .bak, když jde spustit. */
 	static void vymenJar(final File adresar) throws IOException {
 		final Path nova = new File(adresar, JAR + ".new").toPath();
 		if (!Files.isRegularFile(nova)) {
@@ -197,7 +197,12 @@ public final class Start {
 		}
 		final Path jar = new File(adresar, JAR).toPath();
 		if (Files.exists(jar)) {
-			Files.move(jar, new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			// Poškozený jar nesmí přepsat funkční zálohu.
+			if (jeSpustitelny(jar.toFile())) {
+				Files.move(jar, new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			} else {
+				Files.delete(jar);
+			}
 		}
 		Files.move(nova, jar);
 	}

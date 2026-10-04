@@ -24,11 +24,12 @@ public class StartTest {
 	@Test
 	public void vymeniStazenyJar() throws Exception {
 		final File d = tmp.getRoot();
-		zapis(new File(d, "geokuk.jar"), "stary");
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		final byte[] stary = Files.readAllBytes(new File(d, "geokuk.jar").toPath());
 		zapis(new File(d, "geokuk.jar.new"), "novy");
 		Start.vymenJar(d);
 		Assert.assertEquals("novy", cti(new File(d, "geokuk.jar")));
-		Assert.assertEquals("stary", cti(new File(d, "geokuk.jar.bak")));
+		Assert.assertArrayEquals(stary, Files.readAllBytes(new File(d, "geokuk.jar.bak").toPath()));
 		Assert.assertFalse(new File(d, "geokuk.jar.new").exists());
 	}
 
@@ -215,6 +216,19 @@ public class StartTest {
 		spustitelnyJar(new File(d, "geokuk.jar"));
 		spustitelnyJar(new File(d, "geokuk.jar.bak"));
 		Assert.assertEquals(new File(d, "geokuk.jar"), Start.vyberJar(d, Start::vymenJar));
+	}
+
+	@Test
+	public void poskozenyJarNeprepiseZalohu() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "useknutý".getBytes());
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final byte[] zaloha = Files.readAllBytes(new File(d, "geokuk.jar.bak").toPath());
+		spustitelnyJar(new File(d, "geokuk.jar.new"));
+		Start.vymenJar(d);
+		Assert.assertArrayEquals(zaloha, Files.readAllBytes(new File(d, "geokuk.jar.bak").toPath()));
+		Assert.assertTrue(Start.jeSpustitelny(new File(d, "geokuk.jar")));
+		Assert.assertFalse(new File(d, "geokuk.jar.new").exists());
 	}
 
 	private static void spustitelnyJar(final File f) throws Exception {
