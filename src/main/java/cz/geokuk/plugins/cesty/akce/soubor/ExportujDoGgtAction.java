@@ -21,8 +21,8 @@ public class ExportujDoGgtAction extends SouboeCestaAction0 {
 	private Doc doc;
 
 	public ExportujDoGgtAction() {
-		super("Exportovat cesty do GGT ...");
-		putValue(SHORT_DESCRIPTION, "Uloží zadaný výlet do souboru GGT, vhodné pro Geoget");
+		super("Exportovat cesty do GGT...");
+		putValue(SHORT_DESCRIPTION, "Uloží cesty do souboru GGT, vhodné pro GeoGet");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_E);
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

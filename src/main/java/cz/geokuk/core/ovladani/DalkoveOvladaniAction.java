@@ -13,7 +13,7 @@ public class DalkoveOvladaniAction extends ToggleAction0 {
 
 	public DalkoveOvladaniAction() {
 		super("Dálkové ovládání");
-		putValue(SHORT_DESCRIPTION, "Povolí ovládání Geokuku jinými programy na tomto počítači.");
+		putValue(SHORT_DESCRIPTION, "Povolí ovládání GeoKuku jinými programy na tomto počítači.");
 		setSelected(DalkoveOvladani.jeZapnuteVNastaveni());
 	}
 

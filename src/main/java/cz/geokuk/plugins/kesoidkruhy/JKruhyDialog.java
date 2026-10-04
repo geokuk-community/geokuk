@@ -103,7 +103,7 @@ public class JKruhyDialog extends JMyDialog0 implements AfterEventReceiverRegist
 		velikostSlider = new JSlider();
 		velikostSlider.setToolTipText("Nastavení velikosti zvýrazňovacího kruhu.");
 		alfaColorChooser = new JColorChooser(Color.WHITE);
-		alfaColorChooser.setToolTipText("Nastavení barvy a průhlednosti zvýrazňovaího kruhu");
+		alfaColorChooser.setToolTipText("Nastavení barvy a průhlednosti zvýrazňovacího kruhu");
 		jJednotkoveKruhy = new JCheckBox();
 		jJednotkoveKruhy.setText("Jednotkové kruhy");
 		jJednotkoveKruhy.setToolTipText("Nastavení jednotkovosti kruhů");

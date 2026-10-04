@@ -378,7 +378,7 @@ public class KesoidModel extends Model0 {
 	 */
 	@Override
 	protected void initAndFire() {
-		final String gccomNickName = currPrefe().node(FPref.NASTAVENI_node).get(FPref.GEOCACHING_COM_NICK_value, "sem napis svuj nick na GC.COM");
+		final String gccomNickName = currPrefe().node(FPref.NASTAVENI_node).get(FPref.GEOCACHING_COM_NICK_value, "sem napište svůj nick na geocaching.com");
 		final int gccomNickId = currPrefe().node(FPref.NASTAVENI_node).getInt(FPref.GEOCACHING_COM_NICK_ID_value, -1);
 
 		setGccomNick(new GccomNick(gccomNickName, gccomNickId));

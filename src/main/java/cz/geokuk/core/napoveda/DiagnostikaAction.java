@@ -14,7 +14,7 @@ public class DiagnostikaAction extends Action0 {
 	private static final long serialVersionUID = 1L;
 
 	public DiagnostikaAction() {
-		super("Informace pro hlášení chyby ...");
+		super("Informace pro hlášení chyby...");
 		putValue(SHORT_DESCRIPTION, "Zobrazí verzi programu, údaje o prostředí a poslední události, které lze zkopírovat do hlášení chyby.");
 	}
 

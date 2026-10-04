@@ -17,8 +17,8 @@ public class UlozJakoAction extends SouboeCestaAction0 {
 	private Doc doc;
 
 	public UlozJakoAction() {
-		super("Uložit cesty (gpx) jako ...");
-		putValue(SHORT_DESCRIPTION, "Uloží zadaný výlet do jiného souboru GPX");
+		super("Uložit cesty (gpx) jako...");
+		putValue(SHORT_DESCRIPTION, "Uloží cesty do jiného souboru GPX");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_A);
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

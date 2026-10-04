@@ -345,10 +345,10 @@ public class JStatusBar extends JPanel {
 		// vylety.setBorder(BorderFactory.createEtchedBorder());
 		vylety.add(new JLabel("Výlet:"));
 		vylety.add(vyletAno);
-		vyletAno.setToolTipText("Počet keší, u kterých má vyznačen příznak, že je chci lovit.");
+		vyletAno.setToolTipText("Počet keší, u kterých je vyznačeno, že je chci lovit.");
 		vylety.add(new JLabel("/"));
 		vylety.add(vyletNe);
-		vyletAno.setToolTipText("Počet keší, u kterých má vyznačen příznak, že je budu ignorovat.");
+		vyletNe.setToolTipText("Počet keší, u kterých je vyznačeno, že je budu ignorovat.");
 
 		vylety.add(jSouborSVyletemPotrebujeUlozit);
 		vylety.add(jSouborSVyletem);

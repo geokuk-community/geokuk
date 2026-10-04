@@ -9,7 +9,7 @@ public class DebugIkonyAction extends DialogOpeningAction0 {
 
 	public DebugIkonyAction() {
 		super("Ladění ikon...");
-		putValue(SHORT_DESCRIPTION, "Zobrazí dialog pro nastavení parametrů zvýrazňovacích kruhů.");
+		putValue(SHORT_DESCRIPTION, "Zobrazí okno pro kontrolu, jak se z vlastností kešoidů skládají ikony.");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_K);
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("ctrl F8"));
 	}

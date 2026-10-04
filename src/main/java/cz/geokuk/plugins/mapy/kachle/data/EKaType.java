@@ -23,7 +23,7 @@ public final class EKaType {
 	public static final EKaType BASE_M_TRAF_DOWN = new EKaType("BASE_M_TRAF_DOWN", false, 0, 19, 19, "Dopravní", "Dopravní mapa taková vyšedlá.", 0, null, new MapyCzUrlBuilder("base-m-traf-down"));
 	public static final EKaType ARMY2_M = new EKaType("ARMY2_M", true, 0, 15, 15, "Historická", "Historická mapa z let 1836-52", KeyEvent.VK_H, KeyStroke.getKeyStroke(KeyEvent.VK_H, 0), new MapyCzUrlBuilder("army2-m"));
 
-	public static final EKaType OPEN_STREET = new EKaType("OPEN_STREET", false, 0, 19, 19, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke(KeyEvent.VK_O, 0), new OpenStreatMapUrlBuilder("https://tile.openstreetmap.org/", ".png"));
+	public static final EKaType OPEN_STREET = new EKaType("OPEN_STREET", false, 0, 19, 19, "OpenStreetMap", "OpenStreetMap.", KeyEvent.VK_O, KeyStroke.getKeyStroke(KeyEvent.VK_O, 0), new OpenStreatMapUrlBuilder("https://tile.openstreetmap.org/", ".png"));
 
 // Nefunkční mapy k 16.11.2019
 //	OPEN_STREAT(false, 0, 18, 18, "Openstreetmap", "Openstreetmap.", KeyEvent.VK_O, KeyStroke.getKeyStroke('o'), new OpenStreatMapUrlBuilder("https://b.tile.openstreetmap.org/")),

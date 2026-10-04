@@ -17,13 +17,15 @@ public class TextyGuiTest {
 			"domací", "\"Filte ", "bšechny", "nalezenýc ", "kromě kromě", "smailíka", "všechyn", "zorbazovat", "infroamcemi", "ze sadama", "sady ikok", "Spouřadnice",
 			"apliakci", "vertkálním", "velikosti výrazňovacího", "zvýrazňovaích", "tak ,aby", "zdrojích ,z", "do GGT soubor,", "kalibrovaných mapy", "GoogleEarthj",
 			"Datová složka geogetu", "ukazovala českou", "ukončit process", "Nejsou pocitadla", "Zapnuti vypnuti", "Výběr Filtru", "z diskové keše",
-			"Výjimka vypadla" };
+			"Výjimka vypadla", "mapových pokladů", "rozmění měřítek", "natavte", "v na libovolném", "do schráky", "\"Hodnoceni:", "KMZx", "Draw order",
+			"veliksot dlaždice", "Imporotvané", "neí vybraná", "přesunena", "zvýrazňovaího", "ikonách keších", "oblasti, která je", "sem napis svuj",
+			"geocaching COM", "\"Geokuk: Chyba", "\"Geokuk: Upozornění", "mezi favority", "Hleda se", "Chech Geodetic" };
 
 	@Test
 	public void textyBezChyb() throws IOException {
 		final List<String> nalezeno = new ArrayList<>();
-		try (Stream<Path> soubory = Files.walk(Paths.get("src/main/java"))) {
-			soubory.filter(p -> p.toString().endsWith(".java")).forEach(p -> {
+		try (Stream<Path> soubory = Files.walk(Paths.get("src/main"))) {
+			soubory.filter(p -> p.toString().endsWith(".java") || p.toString().endsWith(".properties")).forEach(p -> {
 				try {
 					final List<String> radky = Files.readAllLines(p, StandardCharsets.UTF_8);
 					for (int i = 0; i < radky.size(); i++) {

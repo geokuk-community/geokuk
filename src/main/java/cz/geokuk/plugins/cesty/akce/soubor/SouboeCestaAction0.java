@@ -10,6 +10,7 @@ import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.cesty.CestyModel;
 import cz.geokuk.plugins.cesty.data.Doc;
+import cz.geokuk.util.lang.FString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -33,9 +34,9 @@ public abstract class SouboeCestaAction0 extends Action0 {
 			return true; // nezměna znamená uloženo
 		}
 		final Object[] options = { "Uložit změny", "Zahodit změny", "Zrušit" };
-		final String hlaska = cestyModel.getDoc().getFile() != null ? "<html>Soubor s výletem byl změněn <b>" + cestyModel.getDoc().getFile() + "</b> "
-		        : "Byl vytvořen nový výlet, ale nebyl doposud uložen do souboru." + ".";
-		final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), hlaska, "Uložení změn ve výletu", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
+		final String hlaska = cestyModel.getDoc().getFile() != null ? "<html>Cesty v souboru <b>" + FString.html(cestyModel.getDoc().getFile().getPath()) + "</b> byly změněny."
+		        : "Cesty byly změněny, ale ještě nejsou uložené do souboru.";
+		final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), hlaska, "Uložení změn v cestách", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2]);
 		log.debug("{}", n);
 		if (n == 0) {
 			return ulozit();
