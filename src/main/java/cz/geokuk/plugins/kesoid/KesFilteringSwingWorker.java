@@ -3,8 +3,7 @@
  */
 package cz.geokuk.plugins.kesoid;
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ExecutionException;
 
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
@@ -55,45 +54,20 @@ public class KesFilteringSwingWorker extends MySwingWorker0<KesBag, Void> {
 		final Progressor progressor = progresModel.start(pocetvsech, "Filtruji");
 		try {
 			final KesBag kesbag = new KesBag(vsechny2.getGenom());
-			final BlockingQueue<Wpt> queue = new LinkedBlockingDeque<>();
 			log.debug("FILTERING {} - start, source: {} caches, {}={} waypoints.", cisloFiltrovani, vsechny2.getKesoidy().size(), pocetvsech, vsechny2.getIndexator().count(BoundingRect.ALL));
 			startTime = System.currentTimeMillis();
 			final KesoidFilter filter = kesoidFilterModel.createKesoidFilter();
-			final AtomicReference<RuntimeException> chyba = new AtomicReference<>();
-			new Thread((Runnable) () -> {
-				try {
-					int citac = 0;
-					// System.out.println("VSECHNY: " + vsechny2);
-					for (final Wpt wpt : vsechny2.getWpts()) {
-						if (isCancelled()) {
-							return;
-						}
-						if (filter.isFiltered(wpt)) {
-							queue.put(wpt);
-						}
-						citac++;
-						if (citac % 1000 == 0) {
-							progressor.setProgress(citac);
-						}
-
-					}
-				} catch (final InterruptedException ignored) {
-				} catch (final RuntimeException e) {
-					chyba.set(e);
-				} finally {
-					// zarážka musí přijít i po chybě, jinak by se na ni čekalo navždy
-					queue.offer(Wpt.ZARAZKA);
+			int citac = 0;
+			for (final Wpt wpt : vsechny2.getWpts()) {
+				if (isCancelled()) {
+					return null;
 				}
-			}, "Filtrovani kesoidu").start();
-			for (;;) {
-				final Wpt wpt = queue.take();
-				if (wpt == Wpt.ZARAZKA) {
-					break;
+				if (filter.isFiltered(wpt)) {
+					kesbag.add(wpt);
 				}
-				kesbag.add(wpt);
-			}
-			if (chyba.get() != null) {
-				throw chyba.get();
+				if (++citac % 1000 == 0) {
+					progressor.setProgress(citac);
+				}
 			}
 			log.debug("FILTERING {} - prepared result, {} ms.", cisloFiltrovani, System.currentTimeMillis() - startTime);
 			kesbag.done();
