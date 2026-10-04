@@ -75,7 +75,7 @@ public class GeokukMain {
 				Dlg.error(varovani);
 			}
 			if (zaloha != null) {
-				Dlg.upozorneni(textZalohy(zaloha));
+				Dlg.upozorneni(textZalohy());
 			}
 			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
 			VytvoritZastupceAction.aktualizujZastupceVeSlozce();
@@ -91,11 +91,10 @@ public class GeokukMain {
 	}
 
 	/** Hláška pro uživatele, když spouštěč spustil předchozí verzi ze zálohy. */
-	static String textZalohy(final String duvod) {
-		final String proc = Start.ZALOHA_CHYBI.equals(duvod)
-				? "Novou verzi GeoKuku se nepodařilo nainstalovat, proto běží předchozí verze."
-				: "Nová verze GeoKuku nejde spustit (soubor geokuk.jar je poškozený), proto běží předchozí verze.";
-		return proc + "\nNainstalujte novou verzi znovu (Nápověda → Zkontrolovat aktualizace), nebo rozbalte znovu celý zip s programem.";
+	static String textZalohy() {
+		return "Novou verzi GeoKuku se nepodařilo správně nainstalovat, proto se spustila předchozí verze. Můžete s ní normálně pracovat.\n"
+				+ "Novou verzi nainstalujte znovu přes Nápověda > Zkontrolovat aktualizace.\n"
+				+ "Když to nepomůže, stáhněte zip s programem z " + FConst.WEB_PAGE_URL + "/releases/latest a rozbalte ho přes složku s programem. Data a nastavení zůstanou.";
 	}
 
 	/** Druhá instance nad stejnými daty by si s první přepisovaly nastavení a výlety. */

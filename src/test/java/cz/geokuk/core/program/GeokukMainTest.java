@@ -29,9 +29,11 @@ public class GeokukMainTest {
 
 	@Test
 	public void hlaskaZalohyRikaProcARadi() {
-		Assert.assertTrue(GeokukMain.textZalohy("poskozeny").contains("poškozený"));
-		Assert.assertTrue(GeokukMain.textZalohy("chybi").contains("nepodařilo nainstalovat"));
-		Assert.assertTrue(GeokukMain.textZalohy("chybi").contains("Zkontrolovat aktualizace"));
+		final String text = GeokukMain.textZalohy();
+		Assert.assertTrue(text, text.contains("předchozí verze"));
+		Assert.assertTrue(text, text.contains("Zkontrolovat aktualizace"));
+		Assert.assertTrue(text, text.contains(FConst.WEB_PAGE_URL + "/releases/latest"));
+		Assert.assertFalse(text, text.contains("geokuk.jar"));
 	}
 
 	@Test
