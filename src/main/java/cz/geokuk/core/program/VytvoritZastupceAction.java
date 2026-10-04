@@ -19,11 +19,11 @@ public class VytvoritZastupceAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
 
-	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
 	/** Výstup PowerShellu jinak jde v kódování konzole (ve Windows česky CP852). */
-	static final String UTF8_VYSTUP = "[Console]::OutputEncoding=New-Object Text.UTF8Encoding $false;";
+	private static final String UTF8_VYSTUP = "[Console]::OutputEncoding=New-Object Text.UTF8Encoding $false;";
 
-	private static final String SKRIPT = UTF8_VYSTUP + "$ErrorActionPreference='Stop';"
+	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
+	static final String SKRIPT = UTF8_VYSTUP + "$ErrorActionPreference='Stop';"
 			+ "$sh=New-Object -ComObject WScript.Shell;"
 			+ "function Nastav($s){$s.TargetPath=$env:GK_JAVAW;$s.Arguments=$env:GK_ARGUMENTY;$s.WorkingDirectory=$env:GK_SLOZKA;"
 			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save()}"
