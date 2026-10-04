@@ -33,7 +33,8 @@ public class MultiNacitacLoaderManager {
 		final KesoidUmisteniSouboru u = kesoidModel.getUmisteniSouboru();
 		// Uložená cesta ani ikony nejsou keše; leží-li v datové složce, každé uložení by přenačetlo všechna data.
 		final Set<File> vynechane = vynechane(u.getCestyDir(), u.getImageMyDir(), u.getImage3rdPartyDir());
-		multiNacitac.setRootDirs(prenacti, u.getKesDir().getEffectiveFileIfActive(), u.getGeogetDataDir().getEffectiveFileIfActive(), u.getGsakDataDir().getEffectiveFileIfActive(), vynechane);
+		multiNacitac.setRootDirs(prenacti, u.getKesDir().getEffectiveFileIfActive(), u.getGeogetDataDir().getEffectiveFileIfActive(), u.getGsakDataDir().getEffectiveFileIfActive(),
+				u.getOpensakDataDir() == null ? null : u.getOpensakDataDir().getEffectiveFileIfActive(), vynechane);
 		if (prenacti && klsw != null && !klsw.isDone()) {
 			// Rozběhnuté načítání by doběhlo se starým nastavením; začne se znovu s novým.
 			klsw.cancel(false);
