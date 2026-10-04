@@ -36,6 +36,9 @@ public class JPrehledSouboru extends JPanel {
 	private JTextField jGsakCasNalezu;
 	private JTextField jGsakCasNenalezu;
 
+	private JJedenSouborPanel jOpensakDataDir;
+	private JCheckBox jOpensakNacitatAzPoVybrani;
+
 	private JJedenSouborPanel jOziDir;
 	private JJedenSouborPanel jKmzDir;
 
@@ -74,6 +77,7 @@ public class JPrehledSouboru extends JPanel {
 		jKesDir.setFilex(u.getKesDir());
 		jGeogetDataDir.setFilex(u.getGeogetDataDir());
 		jGsakDataDir.setFilex(u.getGsakDataDir());
+		jOpensakDataDir.setFilex(u.getOpensakDataDir());
 	}
 
 	public void onEvent(final GsakParametryNacitaniChangedEvent event) {
@@ -81,6 +85,7 @@ public class JPrehledSouboru extends JPanel {
 		jGsakCasNalezu.setText(_join(g.getCasNalezu()));
 		jGsakCasNenalezu.setText(_join(g.getCasNenalezu()));
 		jGsakNacitatAzPoVybrani.setSelected(!g.isNacistVsechnyDatabaze());
+		jOpensakNacitatAzPoVybrani.setSelected(!g.isNacistVsechnyDatabazeOpensaku());
 	}
 
 	public void onEvent(final RenderUmisteniSouboruChangedEvent event) {
@@ -108,6 +113,8 @@ public class JPrehledSouboru extends JPanel {
 		jTabbedPane.addTab("Keše", null, tab1, "Odkud program načítá keše.");
 		final JComponent tab1a = createTab();
 		jTabbedPane.addTab("GSAK", null, tab1a, "Načítání keší z GSAK.");
+		final JComponent tab1b = createTab();
+		jTabbedPane.addTab("OpenSAK", null, tab1b, "Načítání keší z OpenSAKu.");
 		final JComponent tab3 = createTab();
 		jTabbedPane.addTab("Rendr", null, tab3, "Výstupní složky pro rendrování.");
 		final JComponent tab4 = createTab();
@@ -137,6 +144,11 @@ public class JPrehledSouboru extends JPanel {
 		                + "<br/>Můžete uvést více políček, použije se první časový údaj, který bude nalezen." //
 		                + "</html>");
 
+		jOpensakDataDir = pridejJednuPolozkuproEdit(null, tab1b, "Datová složka OpenSAKu.", true, true);
+		jOpensakNacitatAzPoVybrani = pridejLogickePole(jOpensakDataDir, "Načítat až po vybrání",
+		        "<html>Nové databáze OpenSAKu se načtou, až je vyberete" //
+		                + "<br/>vpravo dole kliknutím na \"zdroje\".</html>");
+
 		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných map pro OziExplorer", true, false);
 		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (Google Earth)", true, false);
 		jPictureDir = pridejJednuPolozkuproEdit(ESouborPanelName.PICTURE, tab3, "Složka pro rendrování obrázků map", true, false);
@@ -150,6 +162,7 @@ public class JPrehledSouboru extends JPanel {
 		pridejJednuPolozkuProCteni(null, tab4, "Log a chybová hlášení", new Filex(UmisteniProgramu.log(), false, true), true);
 		ukonciPanel(tab1);
 		ukonciPanel(tab1a);
+		ukonciPanel(tab1b);
 		ukonciPanel(tab3);
 		ukonciPanel(tab4);
 		add(jTabbedPane);
@@ -235,12 +248,14 @@ public class JPrehledSouboru extends JPanel {
 		g.setCasNalezu(_split(jGsakCasNalezu.getText()));
 		g.setCasNenalezu(_split(jGsakCasNenalezu.getText()));
 		g.setNacistVsechnyDatabaze(!jGsakNacitatAzPoVybrani.isSelected());
+		g.setNacistVsechnyDatabazeOpensaku(!jOpensakNacitatAzPoVybrani.isSelected());
 
 		final KesoidUmisteniSouboru u1 = new KesoidUmisteniSouboru();
 		u1.setKesDir(jKesDir.vezmiSouborAProver());
 		u1.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
 		u1.setGeogetDataDir(jGeogetDataDir.vezmiSouborAProver());
 		u1.setGsakDataDir(jGsakDataDir.vezmiSouborAProver());
+		u1.setOpensakDataDir(jOpensakDataDir.vezmiSouborAProver());
 		u1.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
 		u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
 		u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);

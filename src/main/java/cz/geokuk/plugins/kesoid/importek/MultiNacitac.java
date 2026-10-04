@@ -28,16 +28,20 @@ public class MultiNacitac {
 	private static final Root.Def FILE_NAME_REGEX_GEOKUK_DIR = new Root.Def(Integer.MAX_VALUE, Pattern.compile("(?i).*\\.(geokuk|gpx|zip|jpg|raw|tif)"), null);
 	private static final Root.Def FILE_NAME_REGEX_GEOGET_DIR = new Root.Def(1, Pattern.compile("(?i).*\\.db3"), Pattern.compile("(?i).*\\.[0-9]{8}\\.db3"));
 	private static final Root.Def GSAK_ROOTDIR_DEF = new Root.Def(2, Pattern.compile("sqlite.db3"), null);
+	private static final Root.Def OPENSAK_ROOTDIR_DEF = new Root.Def(1, Pattern.compile("(?i).*\\.db"), null);
 
 	private final DirScanner ds;
 
 	private volatile File geogetDir;
 	private volatile File gsakDir;
+	private volatile File opensakDir;
 	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
 
 	/** Databáze, které při posledním načítání zamykal jiný program; znovu se načítá, až je pustí. */
 	private volatile Set<File> zamcene = Collections.emptySet();
 	private List<KeFile> posledniSeznam;
+	/** Zdroje, jejichž keše jsou v naposledy vráceném (zobrazeném) výsledku. */
+	private Set<File> zobrazene = Collections.emptySet();
 
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
@@ -70,16 +74,18 @@ public class MultiNacitac {
 		nacitace.add(new NacitacImageMetadata());
 		nacitace.add(new GeogetLoader());
 		nacitace.add(new GsakDbLoader(kesoidModel::getGsakParametryNacitani));
+		nacitace.add(new OpensakDbLoader());
 	}
 
 	public boolean jeZamcena(final File databaze) {
 		return zamcene.contains(databaze);
 	}
 
-	public KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
+	/** Synchronizované: zrušené načítání může ještě doběhnout, když už začíná další. */
+	public synchronized KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
 		List<KeFile> list = ds.coMamNacist();
 		if (!zamcene.isEmpty()) {
-			if (zamcene.stream().noneMatch(DatabazeJinehoProgramu::jeZamcena)) {
+			if (!zamcene.stream().allMatch(DatabazeJinehoProgramu::jeZamcena)) {
 				ds.nulujLastScaned();
 				list = ds.coMamNacist();
 			} else if (list != null && bezZamcenych(list).equals(bezZamcenych(posledniSeznam))) {
@@ -94,7 +100,11 @@ public class MultiNacitac {
 		final File gsak = gsakDir;
 		// Dočasně nedostupná složka (síť, USB) neznamená, že databáze zmizely; známé zůstanou známé.
 		if (gsak == null || jeCitelnaSlozka(gsak)) {
-			kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
+			kesoidModel.zaradGsakDatabaze(databaze(list, GSAK_ROOTDIR_DEF));
+		}
+		final File opensak = opensakDir;
+		if (opensak == null || jeCitelnaSlozka(opensak)) {
+			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF));
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
@@ -103,6 +113,9 @@ public class MultiNacitac {
 		final List<String> vadne = new ArrayList<>();
 		final Set<File> zamceneTed = new HashSet<>();
 		for (final KeFile file : list) {
+			if (future != null && future.isCancelled()) {
+				break;
+			}
 			log.debug("Nacitam: " + file);
 			try {
 				zpracujJedenFile(file, builder, future);
@@ -116,31 +129,52 @@ public class MultiNacitac {
 			}
 		}
 
+		if (future != null && future.isCancelled()) {
+			ds.nulujLastScaned();
+			return null;
+		}
 		builder.done();
 		final KesBag bag = builder.getKesBag();
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
 				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
-		// Dokud je některá databáze zamčená, zůstane zobrazené, co už je načtené.
-		return zamceneTed.isEmpty() || kesoidModel.getVsechnyKesoidy() == null ? bag : null;
+		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
+		// Keše ze zamčené databáze, které už jsou zobrazené, zůstanou zobrazené, dokud ji jiný program nepustí.
+		if (!zamceneTed.isEmpty() && kesoidModel.getVsechnyKesoidy() != null && !Collections.disjoint(zamceneTed, zobrazene)) {
+			return null;
+		}
+		final Set<File> nactene = new HashSet<>();
+		for (final KeFile f : list) {
+			nactene.add(f.getFile());
+		}
+		nactene.removeAll(zamceneTed);
+		zobrazene = nactene;
+		return bag;
 	}
 
-	/** Aktivní složka GeoGetu nebo GSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
+	private static Set<File> databaze(final List<KeFile> list, final Root.Def def) {
+		return list.stream().filter(f -> def.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet());
+	}
+
+	/** Aktivní složka GeoGetu, GSAKu nebo OpenSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
 	private void ohlasPrazdneSlozky(final List<KeFile> list) {
-		final Map<File, String> slozky = new LinkedHashMap<>();
+		final Map<File, String[]> slozky = new LinkedHashMap<>();
 		if (geogetDir != null) {
-			slozky.put(geogetDir, "GeoGetu");
+			slozky.put(geogetDir, new String[] { "GeoGetu", ".db3" });
 		}
 		if (gsakDir != null) {
-			slozky.put(gsakDir, "GSAKu");
+			slozky.put(gsakDir, new String[] { "GSAKu", ".db3" });
+		}
+		if (opensakDir != null) {
+			slozky.put(opensakDir, new String[] { "OpenSAKu", ".db" });
 		}
 		for (final KeFile f : list) {
 			slozky.remove(f.root.dir);
 		}
-		for (final Map.Entry<File, String> e : slozky.entrySet()) {
+		for (final Map.Entry<File, String[]> e : slozky.entrySet()) {
 			if (ohlasenePrazdne.add(e.getKey())) {
-				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue() + " \"" + e.getKey() + "\" nejsou žádné databáze (.db3). Zkontrolujte složku v Soubor > Umístění souborů."),
-						EExceptionSeverity.DISPLAY, "Prázdná datová složka");
+				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue()[0] + " \"" + e.getKey() + "\" nejsou žádné databáze (" + e.getValue()[1]
+						+ "). Zkontrolujte složku v Soubor > Umístění souborů."), EExceptionSeverity.DISPLAY, "Prázdná datová složka");
 			}
 		}
 	}
@@ -184,8 +218,13 @@ public class MultiNacitac {
 
 	// TODO Proč jsou tu ty File parametry, když máme k dispozici kesoidModel, odkud se jejich hodnoty vždy berou? [2016-04-09, Bohusz]
 	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final Set<File> vynechane) {
+		setRootDirs(prenacti, kesDir, geogetDir, gsakDir, null, vynechane);
+	}
+
+	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final File opensakDir, final Set<File> vynechane) {
 		this.geogetDir = geogetDir;
 		this.gsakDir = gsakDir;
+		this.opensakDir = opensakDir;
 		final List<Root> roots = new ArrayList<>();
 		if (kesDir != null) {
 			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR, vynechane));
@@ -195,6 +234,9 @@ public class MultiNacitac {
 		}
 		if (gsakDir != null) {
 			roots.add(new Root(gsakDir, GSAK_ROOTDIR_DEF));
+		}
+		if (opensakDir != null) {
+			roots.add(new Root(opensakDir, OPENSAK_ROOTDIR_DEF));
 		}
 		ds.seRootDirs(prenacti, roots.toArray(new Root[roots.size()]));
 	}
