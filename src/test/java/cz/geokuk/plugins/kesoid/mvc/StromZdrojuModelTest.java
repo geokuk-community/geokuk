@@ -6,13 +6,14 @@ import java.util.*;
 import javax.swing.event.TableModelEvent;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdroji;
 import cz.geokuk.util.file.*;
 
-/** Přehled zdrojů: strom jako tabulka bez SwingX. */
+/** Přehled zdrojů: strom jako tabulka. */
 public class StromZdrojuModelTest {
 
 	private static final File KOREN = new File("/data/gpx");
@@ -40,13 +41,19 @@ public class StromZdrojuModelTest {
 		return u;
 	}
 
-	@Before
-	public void setUp() {
-		skrytyKoren = uzel(null, new KeFile(new FileAndTime(new File("[gc]"), 0), new Root(new File("[gc]"), new Root.Def(0, null, null))), 0);
-		final InformaceOZdroji gpx = uzel(skrytyKoren, new KeFile(new FileAndTime(KOREN, 0), ROOT), 0);
+	/** Strom zdrojů, jak ho vytvoří každé načtení: nové objekty se stejnými soubory. */
+	private InformaceOZdroji novyStrom() {
+		final InformaceOZdroji koren = uzel(null, new KeFile(new FileAndTime(new File("[gc]"), 0), new Root(new File("[gc]"), new Root.Def(0, null, null))), 0);
+		final InformaceOZdroji gpx = uzel(koren, new KeFile(new FileAndTime(KOREN, 0), ROOT), 0);
 		slozka = uzel(gpx, soubor("avylet"), 0);
 		uzel(slozka, soubor("avylet/a.gpx"), 3);
 		uzel(gpx, soubor("b.gpx"), 5);
+		return koren;
+	}
+
+	@Before
+	public void setUp() {
+		skrytyKoren = novyStrom();
 		model = new StromZdrojuModel(f -> !blokovane.contains(f), zamcene::contains, (f, nacitat) -> zmeny.add(f.getFile().getName() + "=" + nacitat));
 		model.setKoren(skrytyKoren);
 	}
@@ -89,7 +96,7 @@ public class StromZdrojuModelTest {
 	@Test
 	public void rozbaleniVydrziNoveNacteni() {
 		model.setRozbaleny(0, true);
-		model.setKoren(skrytyKoren);
+		model.setKoren(novyStrom());
 		Assert.assertEquals(Arrays.asList("0:gpx", "1:avylet", "1:b.gpx"), radky());
 	}
 
@@ -112,6 +119,7 @@ public class StromZdrojuModelTest {
 
 	@Test
 	public void htmlVNazvuSeZobraziJakoText() {
+		Assume.assumeFalse("znak < v názvu souboru Windows nedovolí", System.getProperty("os.name").startsWith("Windows"));
 		final InformaceOZdroji gpx = skrytyKoren.getChildren().get(0);
 		uzel(gpx, soubor("<html><b>x.gpx"), 1);
 		model.setKoren(skrytyKoren);

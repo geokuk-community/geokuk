@@ -21,7 +21,7 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 		public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
 			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			final StromZdrojuModel.Radek radek = model.getRadek(row);
-			setIcon(radek.maDeti() ? (model.jeRozbaleny(row) ? rozbaleno : sbaleno) : null);
+			setIcon(radek.maDeti() ? UIManager.getIcon(model.jeRozbaleny(row) ? "Tree.expandedIcon" : "Tree.collapsedIcon") : null);
 			setBorder(BorderFactory.createEmptyBorder(0, odsazeni(radek) + (radek.maDeti() ? 0 : sirkaIkony()), 0, 0));
 			return this;
 		}
@@ -34,10 +34,6 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 	private JTable jTable;
 
 	private StromZdrojuModel model;
-
-	private final Icon rozbaleno = UIManager.getIcon("Tree.expandedIcon");
-
-	private final Icon sbaleno = UIManager.getIcon("Tree.collapsedIcon");
 
 	private KesoidModel kesoidModel;
 
@@ -121,6 +117,8 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 	}
 
 	private int sirkaIkony() {
+		// Ikony se čtou až při použití, aby po změně vzhledu odpovídaly novému vzhledu.
+		final Icon sbaleno = UIManager.getIcon("Tree.collapsedIcon");
 		return Math.max(sbaleno == null ? 0 : sbaleno.getIconWidth(), 12) + 4;
 	}
 
@@ -153,7 +151,9 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 					return;
 				}
 				final int x = e.getX() - jTable.getCellRect(radek, 0, false).x - odsazeni(model.getRadek(radek));
-				if (e.getClickCount() == 2 || x >= 0 && x < sirkaIkony()) {
+				final boolean naIkone = x >= 0 && x < sirkaIkony();
+				// Na ikoně přepíná už první kliknutí, druhé kliknutí dvojkliku by rozbalení hned vrátilo.
+				if (naIkone ? e.getClickCount() == 1 : e.getClickCount() == 2) {
 					model.setRozbaleny(radek, !model.jeRozbaleny(radek));
 					jTable.setRowSelectionInterval(radek, radek);
 				}
