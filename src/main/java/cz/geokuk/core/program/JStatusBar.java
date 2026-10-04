@@ -22,6 +22,7 @@ import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
+import cz.geokuk.util.lang.FString;
 
 /**
  * @author Martin Veverka
@@ -148,7 +149,7 @@ public class JStatusBar extends JPanel {
 		} else {
 			if (doc.getFile() != null) {
 				jSouborSVyletem.setText(doc.getFile().getName());
-				jSouborSVyletem.setToolTipText(doc.getFile().toString());
+				jSouborSVyletem.setToolTipText(FString.text(doc.getFile().toString()));
 				jSouborSVyletemPotrebujeUlozit.setText(doc.isChanged() ? "*" : "");
 			} else {
 				jSouborSVyletem.setText("-");

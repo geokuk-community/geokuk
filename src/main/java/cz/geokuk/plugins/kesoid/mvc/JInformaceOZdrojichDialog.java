@@ -11,6 +11,7 @@ import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.JMyDialog0;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdroji;
+import cz.geokuk.util.lang.FString;
 
 public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventReceiverRegistrationInit {
 
@@ -104,7 +105,7 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 
 			switch (i) {
 			case 0:
-				return vsechny.getInformaceOZdrojich().getRoot() == ioz ? "1:" + ioz.jmenoZdroje.getFile().getAbsolutePath() : ioz.getDisplayName();
+				return vsechny.getInformaceOZdrojich().getRoot() == ioz ? "1:" + ioz.jmenoZdroje.getFile().getAbsolutePath() : FString.text(ioz.getDisplayName());
 			case 1:
 				return kesoidModel.maSeNacist(ioz.jmenoZdroje);
 			case 2:
