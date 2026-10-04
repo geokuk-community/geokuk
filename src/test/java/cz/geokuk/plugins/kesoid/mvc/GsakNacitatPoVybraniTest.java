@@ -3,12 +3,12 @@ package cz.geokuk.plugins.kesoid.mvc;
 import java.io.File;
 import java.util.*;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.file.FileAndTime;
+import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.file.KeFile;
 import cz.geokuk.util.file.Root;
 
@@ -27,7 +27,16 @@ public class GsakNacitatPoVybraniTest {
 		public GsakParametryNacitani getGsakParametryNacitani() {
 			return parametry;
 		}
+
+		@Override
+		public KesoidUmisteniSouboru getUmisteniSouboru() {
+			return umisteni;
+		}
 	};
+	private KesoidUmisteniSouboru umisteni;
+
+	@Rule
+	public TemporaryFolder tmp = new TemporaryFolder();
 
 	private final File a = new File("/tmp/gsak/data/Default/sqlite.db3").getAbsoluteFile();
 	private final File b = new File("/tmp/gsak/data/Nova/sqlite.db3").getAbsoluteFile();
@@ -76,6 +85,32 @@ public class GsakNacitatPoVybraniTest {
 		parametry.setNacistVsechnyDatabaze(false);
 		model.zaradGsakDatabaze(set(a, b));
 		Assert.assertTrue(nacte(b));
+	}
+
+	/** Zablokovaná databáze zůstane zablokovaná, i když byla složka GSAKu chvíli nedostupná. */
+	@Test
+	public void blokovanaZustanePoNedostupneSlozce() throws Exception {
+		final File slozka = new File(tmp.getRoot(), "gsak");
+		final File stara = new File(slozka, "Default/sqlite.db3");
+		final File treti = new File(slozka, "Treti/sqlite.db3");
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(slozka, false, true));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(stara));
+		model.zaradGsakDatabaze(set(stara, treti));
+		Assert.assertFalse(nacte(treti));
+
+		model.vycistiBlokovaneZdroje(set()); // složka nedostupná, nic se nenačetlo
+		Assert.assertFalse(nacte(treti));
+
+		Assert.assertTrue(new File(slozka, "Treti").mkdirs());
+		model.vycistiBlokovaneZdroje(set(stara, treti));
+		Assert.assertFalse(nacte(treti));
+
+		model.vycistiBlokovaneZdroje(set(stara)); // databáze ve složce, která je k dispozici, zmizela
+		Assert.assertTrue(nacte(treti));
 	}
 
 	private static Set<File> set(final File... f) {

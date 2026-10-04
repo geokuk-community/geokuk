@@ -4,6 +4,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.*;
 
 import com.google.common.collect.Collections2;
@@ -13,13 +14,14 @@ import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.filtr.FilterDefinitionChangedEvent;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
-import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
+import cz.geokuk.plugins.kesoid.importek.MultiNacitac;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitacLoaderManager;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mapicon.*;
 import cz.geokuk.plugins.vylety.EVylet;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.file.KeFile;
 import lombok.Getter;
 
@@ -158,7 +160,7 @@ public class KesoidModel extends Model0 {
 	}
 
 	public void onEvent(final KeskyNactenyEvent aEvent) {
-		vycistiBlokovaneZdroje(aEvent.getVsechny().getInformaceOZdrojich());
+		vycistiBlokovaneZdroje(aEvent.getVsechny().getInformaceOZdrojich().getJmenaZdroju());
 		startIkonLoad(false);
 	}
 
@@ -444,8 +446,19 @@ public class KesoidModel extends Model0 {
 		}
 	}
 
-	private void vycistiBlokovaneZdroje(final InformaceOZdrojich informaceOZdrojich) {
-		upravBlokovaneZdroje(b -> b.retainAll(informaceOZdrojich.getJmenaZdroju()));
+	/** Zapomene blokované zdroje, které už nejsou; zdroje v dočasně nedostupné složce (síť, USB) zůstanou blokované. */
+	void vycistiBlokovaneZdroje(final Set<File> zdroje) {
+		final List<Path> nedostupne = new ArrayList<>();
+		final KesoidUmisteniSouboru u = getUmisteniSouboru();
+		if (u != null) {
+			for (final Filex f : Arrays.asList(u.getKesDir(), u.getGeogetDataDir(), u.getGsakDataDir())) {
+				final File slozka = f == null ? null : f.getEffectiveFileIfActive();
+				if (slozka != null && !MultiNacitac.jeCitelnaSlozka(slozka)) {
+					nedostupne.add(slozka.toPath());
+				}
+			}
+		}
+		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && nedostupne.stream().noneMatch(f.toPath()::startsWith)));
 	}
 
 	/** Upraví kopii blokovaných zdrojů; když se změnila, uloží ji. */
