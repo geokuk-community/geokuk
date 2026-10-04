@@ -2,11 +2,15 @@ package cz.geokuk.plugins.mapy.kachle.data;
 
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.KeyStroke;
 
@@ -16,7 +20,7 @@ import org.junit.rules.TemporaryFolder;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.program.FConst;
 
-/** Formát a ověřování souboru uživatelských map. */
+/** Formát a ověřování souborů uživatelských map. */
 public class UzivatelskeMapyTest {
 
 	private static final String URL = "https://tile.example.org/{z}/{x}/{y}.png";
@@ -31,10 +35,31 @@ public class UzivatelskeMapyTest {
 		EKaType.setUzivatelske(Collections.emptyList());
 	}
 
+	/** Řádek {@code m.nazev=M} je vlastnost {@code nazev=M} v souboru {@code m.mapa}. */
 	private List<EKaType> zpracuj(final String... radky) throws Exception {
-		final Properties p = new Properties();
-		p.load(new StringReader(String.join("\n", radky)));
-		return UzivatelskeMapy.zpracuj(p, chyby);
+		final SortedMap<String, Properties> soubory = new TreeMap<>();
+		for (final String radek : radky) {
+			if (!radek.isEmpty() && !radek.startsWith("#")) {
+				final int tecka = radek.indexOf('.');
+				soubory.computeIfAbsent(radek.substring(0, tecka) + UzivatelskeMapy.PRIPONA, k -> new Properties()).load(new StringReader(radek.substring(tecka + 1)));
+			}
+		}
+		return UzivatelskeMapy.zpracuj(soubory, chyby);
+	}
+
+	private File slozka(final String... souboryAObsah) throws Exception {
+		final File slozka = new File(tmp.getRoot(), UzivatelskeMapy.SLOZKA);
+		slozka.mkdirs();
+		for (int i = 0; i < souboryAObsah.length; i += 2) {
+			Files.write(new File(slozka, souboryAObsah[i]).toPath(), souboryAObsah[i + 1].getBytes(StandardCharsets.UTF_8));
+		}
+		return slozka;
+	}
+
+	private static List<Path> priklady() throws Exception {
+		try (Stream<Path> s = Files.list(Paths.get("priklady", "mapy"))) {
+			return s.sorted().collect(Collectors.toList());
+		}
 	}
 
 	private EKaType jedna(final String... radky) throws Exception {
@@ -164,62 +189,62 @@ public class UzivatelskeMapyTest {
 
 	@Test
 	public void chybiNazev() throws Exception {
-		chyba("m.nazev", "m.url=" + URL);
+		chyba("m.mapa: nazev", "m.url=" + URL);
 	}
 
 	@Test
 	public void prazdnyNazev() throws Exception {
-		chyba("m.nazev", "m.nazev= ", "m.url=" + URL);
+		chyba("m.mapa: nazev", "m.nazev= ", "m.url=" + URL);
 	}
 
 	@Test
 	public void chybiUrl() throws Exception {
-		chyba("m.url", "m.nazev=M");
+		chyba("m.mapa: url", "m.nazev=M");
 	}
 
 	@Test
 	public void urlBezZastupnychZnaku() throws Exception {
-		chyba("m.url", "m.nazev=M", "m.url=https://t.example.org/{x}/{y}.png");
+		chyba("m.mapa: url", "m.nazev=M", "m.url=https://t.example.org/{x}/{y}.png");
 		chyby.clear();
-		chyba("m.url", "m.nazev=M", "m.url=https://t.example.org/{z}/{y}.png");
+		chyba("m.mapa: url", "m.nazev=M", "m.url=https://t.example.org/{z}/{y}.png");
 		chyby.clear();
-		chyba("m.url", "m.nazev=M", "m.url=https://t.example.org/{z}/{x}.png");
+		chyba("m.mapa: url", "m.nazev=M", "m.url=https://t.example.org/{z}/{x}.png");
 	}
 
 	@Test
 	public void urlJinehoProtokolu() throws Exception {
-		chyba("m.url", "m.nazev=M", "m.url=ftp://t.example.org/{z}/{x}/{y}");
+		chyba("m.mapa: url", "m.nazev=M", "m.url=ftp://t.example.org/{z}/{x}/{y}");
 		chyby.clear();
-		chyba("m.url", "m.nazev=M", "m.url=file:///{z}/{x}/{y}");
+		chyba("m.mapa: url", "m.nazev=M", "m.url=file:///{z}/{x}/{y}");
 	}
 
 	@Test
 	public void urlSMezerou() throws Exception {
-		chyba("m.url", "m.nazev=M", "m.url=https://t.example.org/{z} /{x}/{y}");
+		chyba("m.mapa: url", "m.nazev=M", "m.url=https://t.example.org/{z} /{x}/{y}");
 	}
 
 	@Test
-	public void neplatneOznaceni() throws Exception {
-		for (final String id : new String[] { "Topo", "mapa_1", "-topo", "mapička" }) {
+	public void neplatnyNazevSouboru() throws Exception {
+		for (final String id : new String[] { "mapa_1", "-topo", "mapička", "a b" }) {
 			chyby.clear();
 			Assert.assertTrue(zpracuj(id + ".nazev=M", id + ".url=" + URL).isEmpty());
-			Assert.assertEquals(id, 2, chyby.size());
-			Assert.assertTrue(chyby.get(0), chyby.get(0).contains("označení"));
+			Assert.assertEquals(id, 1, chyby.size());
+			Assert.assertTrue(chyby.get(0), chyby.get(0).startsWith(id + ".mapa: název souboru"));
 		}
 	}
 
 	@Test
-	public void klicBezVlastnosti() throws Exception {
-		Assert.assertTrue(zpracuj("topo=neco").isEmpty());
-		Assert.assertEquals(1, chyby.size());
+	public void oznaceniJeNazevSouboruMalymiPismeny() throws Exception {
+		Assert.assertEquals("user-topo-25", jedna("Topo-25.nazev=Topo", "Topo-25.url=" + URL).name());
 	}
 
 	@Test
 	public void neznamaVlastnost() throws Exception {
-		final List<EKaType> mapy = zpracuj("m.nazev=M", "m.url=" + URL, "m.barva=modrá");
+		final List<EKaType> mapy = zpracuj("m.nazev=M", "m.url=" + URL, "m.barva=modrá", "m.m.nazev=X");
 		Assert.assertEquals("platné vlastnosti mapu nezruší", 1, mapy.size());
-		Assert.assertEquals(1, chyby.size());
-		Assert.assertTrue(chyby.get(0), chyby.get(0).contains("m.barva"));
+		Assert.assertEquals(chyby.toString(), 2, chyby.size());
+		Assert.assertTrue(chyby.toString(), chyby.contains("m.mapa: barva je neznámá vlastnost, povolené jsou [nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne] a hlavicka.<jméno hlavičky>"));
+		Assert.assertTrue(chyby.toString(), chyby.stream().anyMatch(ch -> ch.startsWith("m.mapa: m.nazev je neznámá vlastnost")));
 	}
 
 	@Test
@@ -303,13 +328,45 @@ public class UzivatelskeMapyTest {
 		}
 	}
 
+	// Kolize
+
 	@Test
-	public void zkratkaJineUzivatelskeMapySeOdmitne() throws Exception {
-		final List<EKaType> mapy = zpracuj("a.nazev=A", "a.url=" + URL, "a.zkratka=F5", "b.nazev=B", "b.url=" + URL, "b.zkratka=F5");
-		Assert.assertEquals(1, mapy.size());
-		Assert.assertEquals("user-a", mapy.get(0).name());
+	public void stejnaZkratkaVyradiObeMapy() throws Exception {
+		final List<EKaType> mapy = zpracuj("a.nazev=A", "a.url=" + URL, "a.zkratka=F5", "b.nazev=B", "b.url=" + URL, "b.zkratka=F5", "c.nazev=C", "c.url=" + URL, "c.zkratka=F6");
+		Assert.assertEquals(Collections.singletonList("user-c"), Arrays.asList(mapy.stream().map(EKaType::name).toArray()));
+		Assert.assertEquals(Collections.singletonList("a.mapa, b.mapa: stejná klávesová zkratka"), chyby);
+	}
+
+	@Test
+	public void stejnaZkratkaZapsanaJinakVyradiObeMapy() throws Exception {
+		Assert.assertTrue(zpracuj("a.nazev=A", "a.url=" + URL, "a.zkratka=U", "b.nazev=B", "b.url=" + URL, "b.zkratka=shift U").isEmpty());
 		Assert.assertEquals(1, chyby.size());
-		Assert.assertTrue(chyby.get(0), chyby.get(0).contains("b.zkratka") && chyby.get(0).contains("A"));
+	}
+
+	@Test
+	public void stejnyNazevVMenuVyradiObeMapy() throws Exception {
+		final List<EKaType> mapy = zpracuj("a.nazev=Topo", "a.url=" + URL, "b.nazev=TOPO", "b.url=" + URL, "c.nazev=Jiná", "c.url=" + URL);
+		Assert.assertEquals(1, mapy.size());
+		Assert.assertEquals("user-c", mapy.get(0).name());
+		Assert.assertEquals(Collections.singletonList("a.mapa, b.mapa: stejný název v menu „Topo“"), chyby);
+	}
+
+	@Test
+	public void triMapySeStejnymNazvemVyradiVsechny() throws Exception {
+		Assert.assertTrue(zpracuj("a.nazev=T", "a.url=" + URL, "b.nazev=T", "b.url=" + URL, "c.nazev=T", "c.url=" + URL).isEmpty());
+	}
+
+	@Test
+	public void nazvySouboruLisiciSeVelikostiPismenVyradiObe() throws Exception {
+		final List<EKaType> mapy = zpracuj("Topo.nazev=A", "Topo.url=" + URL, "topo.nazev=B", "topo.url=" + URL, "jina.nazev=J", "jina.url=" + URL);
+		Assert.assertEquals(1, mapy.size());
+		Assert.assertEquals("user-jina", mapy.get(0).name());
+		Assert.assertEquals(Collections.singletonList("Topo.mapa, topo.mapa: názvy souborů se liší jen velikostí písmen"), chyby);
+	}
+
+	@Test
+	public void nazevShodnySVestavenouNekoliduje() throws Exception {
+		Assert.assertEquals("Turistická", jedna("t.nazev=Turistická", "t.url=" + URL).getNazev());
 	}
 
 	// Více map
@@ -330,7 +387,7 @@ public class UzivatelskeMapyTest {
 
 	@Test
 	public void oznaceniShodneSVestavenouNekoliduje() throws Exception {
-		final EKaType m = jedna("turist-m.nazev=Turistická", "turist-m.url=" + URL);
+		final EKaType m = jedna("turist-m.nazev=Turistická vlastní", "turist-m.url=" + URL);
 		Assert.assertEquals("user-turist-m", m.name());
 		Assert.assertNotSame(EKaType.TURIST_M, m);
 	}
@@ -372,49 +429,138 @@ public class UzivatelskeMapyTest {
 		Assert.assertNull(EKaType.podleJmena("neexistuje"));
 	}
 
-	// Soubor
+	// Složka
 
 	@Test
 	public void nacteSouborVUtf8() throws Exception {
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), ("čeština.nazev=x\nmapa.nazev=Žluťoučká mapa\nmapa.url=" + URL + "\nmapa.atribuce=© Kůň\n").getBytes(StandardCharsets.UTF_8));
-		final List<String> chybySouboru = UzivatelskeMapy.nacti(soubor);
-		Assert.assertEquals(1, chybySouboru.size());
+		final File slozka = slozka("mapa.mapa", "nazev=Žluťoučká mapa\nurl=" + URL + "\natribuce=© Kůň\n");
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapy.nactiSlozku(slozka));
 		final EKaType m = EKaType.podleJmena("user-mapa");
 		Assert.assertEquals("Žluťoučká mapa", m.getNazev());
 		Assert.assertEquals("© Kůň", m.getAtribuce());
 	}
 
 	@Test
-	public void chybejiciSouborNicNezmeni() throws Exception {
-		Assert.assertTrue(UzivatelskeMapy.nacti(new File(tmp.getRoot(), "neni.properties")).isEmpty());
+	public void nactouSeJenSouborySPriponouMapa() throws Exception {
+		final File slozka = slozka("a.mapa", "nazev=A\nurl=" + URL, "B.MAPA", "nazev=B\nurl=" + URL, "c.mapa.priklad", "nazev=C\nurl=" + URL, "d.properties", "nazev=D\nurl=" + URL);
+		new File(slozka, "e.mapa").mkdir();
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapy.nactiSlozku(slozka));
+		Assert.assertEquals(Arrays.asList("user-a", "user-b"), Arrays.asList(EKaType.values()).subList(EKaType.vestavene().size(), EKaType.values().length).stream().map(EKaType::name).collect(Collectors.toList()));
+	}
+
+	@Test
+	public void souborSeZnackouBomSeNacte() throws Exception {
+		final File slozka = slozka();
+		Files.write(new File(slozka, "bom.mapa").toPath(), ("\uFEFFnazev=Mapa s BOM\nurl=" + URL + "\n").getBytes(StandardCharsets.UTF_8));
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapy.nactiSlozku(slozka));
+		Assert.assertEquals("Mapa s BOM", EKaType.podleJmena("user-bom").getNazev());
+	}
+
+	@Test
+	public void priponaTxtSeOhlasi() throws Exception {
+		final File slozka = slozka("topo.mapa.txt", "nazev=Topo\nurl=" + URL, "Jina.MAPA.TXT", "nazev=J\nurl=" + URL, "poznamky.txt", "x");
+		Assert.assertEquals(Arrays.asList("Jina.MAPA.TXT: soubor má příponu .txt, přejmenujte ho na Jina.MAPA", "topo.mapa.txt: soubor má příponu .txt, přejmenujte ho na topo.mapa"),
+				UzivatelskeMapy.nactiSlozku(slozka).stream().sorted().collect(Collectors.toList()));
+		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
+	}
+
+	@Test
+	public void chybejiciSlozkaNicNezmeni() throws Exception {
+		Assert.assertTrue(UzivatelskeMapy.nactiSlozku(new File(tmp.getRoot(), "neni")).isEmpty());
 		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
 	}
 
 	@Test
 	public void nactenimSeNahradiPredchoziUzivatelske() throws Exception {
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), ("a.nazev=A\na.url=" + URL + "\n").getBytes(StandardCharsets.UTF_8));
-		UzivatelskeMapy.nacti(soubor);
-		Files.write(soubor.toPath(), ("b.nazev=B\nb.url=" + URL + "\n").getBytes(StandardCharsets.UTF_8));
-		UzivatelskeMapy.nacti(soubor);
+		final File slozka = slozka("a.mapa", "nazev=A\nurl=" + URL);
+		UzivatelskeMapy.nactiSlozku(slozka);
+		Files.delete(new File(slozka, "a.mapa").toPath());
+		slozka("b.mapa", "nazev=B\nurl=" + URL);
+		UzivatelskeMapy.nactiSlozku(slozka);
 		Assert.assertNull(EKaType.podleJmena("user-a"));
 		Assert.assertNotNull(EKaType.podleJmena("user-b"));
 	}
 
 	@Test
-	public void poskozenySouborSeOhlasi() throws Exception {
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), "a.nazev=\\uZZZZ\n".getBytes(StandardCharsets.UTF_8));
-		final List<String> chybySouboru = UzivatelskeMapy.nacti(soubor);
+	public void poskozenySouborNerusiOstatni() throws Exception {
+		final File slozka = slozka("a.mapa", "nazev=\\uZZZZ\n", "b.mapa", "nazev=B\nurl=" + URL);
+		final List<String> chybySouboru = UzivatelskeMapy.nactiSlozku(slozka);
 		Assert.assertEquals(1, chybySouboru.size());
-		Assert.assertTrue(chybySouboru.get(0), chybySouboru.get(0).contains("nelze přečíst"));
+		Assert.assertTrue(chybySouboru.get(0), chybySouboru.get(0).startsWith("a.mapa: soubor nelze přečíst"));
+		Assert.assertNotNull(EKaType.podleJmena("user-b"));
+	}
+
+	// Zpráva při startu
+
+	@Test
+	public void bezChybBezZpravy() throws Exception {
+		slozka("a.mapa", "nazev=A\nurl=" + URL);
+		Assert.assertNull(UzivatelskeMapy.nacti(tmp.getRoot()));
+		Assert.assertNotNull(EKaType.podleJmena("user-a"));
+		Assert.assertNull(UzivatelskeMapy.nacti(new File(tmp.getRoot(), "neni")));
 	}
 
 	@Test
-	public void prikladJePlatny() throws Exception {
-		final String priklad = new String(Files.readAllBytes(Paths.get("priklady", UzivatelskeMapy.SOUBOR)), StandardCharsets.UTF_8);
-		final List<EKaType> mapy = zpracuj(priklad.replaceAll("(?m)^#([a-z])", "$1"));
+	public void chybyVeZprave() throws Exception {
+		final File slozka = slozka("a.mapa", "nazev=A", "b.mapa", "nazev=B\nurl=" + URL);
+		Assert.assertEquals("Chyby v uživatelských mapách ve složce " + slozka + ", tyto mapy se nezobrazí:\na.mapa: url musí začínat http:// nebo https:// a obsahovat {z}, {x} a {y}",
+				UzivatelskeMapy.nacti(tmp.getRoot()));
+		Assert.assertNotNull(EKaType.podleJmena("user-b"));
+	}
+
+	@Test
+	public void staryFormatSeNenacteAleOhlasi() throws Exception {
+		final File stary = tmp.newFile(UzivatelskeMapy.STARY_SOUBOR);
+		Files.write(stary.toPath(), ("# komentář\nzimni.nazev=Z\nturisticka.url=" + URL + "\nturisticka.nazev=T\n").getBytes(StandardCharsets.UTF_8));
+		final File slozka = new File(tmp.getRoot(), UzivatelskeMapy.SLOZKA);
+		Assert.assertEquals("Mapy ze souboru " + stary + " přesuňte do složky " + slozka + ". Každou mapu dejte do vlastního souboru pojmenovaného podle dosavadního označení, "
+				+ "třeba turisticka.mapa pro řádky turisticka.…, aby zůstaly uložené dlaždice i vybraná mapa. Vlastnosti v něm pište bez označení: url=… místo turisticka.url=…. "
+				+ "Potom soubor " + stary + " smažte.", UzivatelskeMapy.nacti(tmp.getRoot()));
+		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
+		Assert.assertFalse("starý soubor se nepřevádí", slozka.exists());
+	}
+
+	@Test
+	public void staryFormatIChybyVJedneZprave() throws Exception {
+		Files.write(tmp.newFile(UzivatelskeMapy.STARY_SOUBOR).toPath(), "b.nazev=B\n".getBytes(StandardCharsets.UTF_8));
+		slozka("a.mapa", "nazev=A");
+		final String zprava = UzivatelskeMapy.nacti(tmp.getRoot());
+		Assert.assertTrue(zprava, zprava.startsWith("Chyby v uživatelských mapách"));
+		Assert.assertTrue(zprava, zprava.contains("\n\nMapy ze souboru "));
+	}
+
+	@Test
+	public void staryFormatJenSKomentariSeNehlasi() throws Exception {
+		Files.write(tmp.newFile(UzivatelskeMapy.STARY_SOUBOR).toPath(), "# Uživatelské mapy\n#osm.nazev=OSM\n\n".getBytes(StandardCharsets.UTF_8));
+		Assert.assertNull(UzivatelskeMapy.nacti(tmp.getRoot()));
+	}
+
+	@Test
+	public void prazdnyStaryFormatSeNehlasi() throws Exception {
+		tmp.newFile(UzivatelskeMapy.STARY_SOUBOR);
+		Assert.assertNull(UzivatelskeMapy.nacti(tmp.getRoot()));
+	}
+
+	@Test
+	public void necitelnyStaryFormatSeOhlasi() throws Exception {
+		Files.write(tmp.newFile(UzivatelskeMapy.STARY_SOUBOR).toPath(), "a.nazev=\\uZZZZ\n".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(UzivatelskeMapy.nacti(tmp.getRoot()).startsWith("Mapy ze souboru "));
+	}
+
+	// Příklady
+
+	@Test
+	public void prikladyJsouPlatne() throws Exception {
+		final SortedMap<String, Properties> soubory = new TreeMap<>();
+		for (final Path priklad : priklady()) {
+			Assert.assertTrue(priklad.toString(), priklad.getFileName().toString().endsWith(UzivatelskeMapy.PRIPONA));
+			final Properties p = new Properties();
+			try (Reader r = Files.newBufferedReader(priklad, StandardCharsets.UTF_8)) {
+				p.load(r);
+			}
+			soubory.put(priklad.getFileName().toString(), p);
+		}
+		final List<EKaType> mapy = UzivatelskeMapy.zpracuj(soubory, chyby);
 		Assert.assertEquals(Collections.emptyList(), chyby);
 		Assert.assertEquals(7, mapy.size());
 		for (final EKaType m : mapy) {
@@ -423,10 +569,12 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
-	public void prikladPopisujeVsechnyVlastnosti() throws Exception {
-		final String priklad = new String(Files.readAllBytes(Paths.get("priklady", UzivatelskeMapy.SOUBOR)), StandardCharsets.UTF_8);
-		for (final String vlastnost : new String[] { "nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce", "hromadne", "hlavicka" }) {
-			Assert.assertTrue(vlastnost, priklad.contains("<označení>." + vlastnost));
+	public void prikladyPopisujiVsechnyVlastnosti() throws Exception {
+		for (final Path priklad : priklady()) {
+			final String text = new String(Files.readAllBytes(priklad), StandardCharsets.UTF_8);
+			for (final String vlastnost : new String[] { "nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce", "hromadne", "hlavicka" }) {
+				Assert.assertTrue(priklad + " " + vlastnost, text.contains("\n#   " + vlastnost));
+			}
 		}
 	}
 }

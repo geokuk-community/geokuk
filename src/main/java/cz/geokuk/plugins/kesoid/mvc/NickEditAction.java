@@ -19,7 +19,7 @@ public class NickEditAction extends DialogOpeningAction0 {
 	 */
 	public NickEditAction() {
 		super("Nastavit nick...");
-		putValue(SHORT_DESCRIPTION, "Nastaví nick, který používáš na geocaching.com, nutné pro označení tebou založených kešíků.");
+		putValue(SHORT_DESCRIPTION, "Nastaví nick, který používáte na geocaching.com. Podle něj se označí vámi založené keše.");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_D);
 	}
 

@@ -19,7 +19,7 @@ public class JNickEditDialog extends JMyDialog0 {
 	private KesoidModel kesoidModel;
 
 	public JNickEditDialog() {
-		setTitle("Nick na geocaching.com (přihlašovací jméno");
+		setTitle("Nick na geocaching.com (přihlašovací jméno)");
 		init();
 	}
 
@@ -61,7 +61,7 @@ public class JNickEditDialog extends JMyDialog0 {
 			try {
 				gccomNIckId = Integer.parseInt(jNickId.getText());
 			} catch (final NumberFormatException e1) {
-				Dlg.error("Owner ID \"" + jNickId.getText() + "\" musí číslem býti!");
+				Dlg.error("Id vlastníka \"" + jNickId.getText() + "\" musí být číslo.");
 				return;
 			}
 			kesoidModel.setGccomNick(new GccomNick(jNickName.getText(), gccomNIckId));

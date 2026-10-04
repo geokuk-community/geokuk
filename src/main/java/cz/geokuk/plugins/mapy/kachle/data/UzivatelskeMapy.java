@@ -12,13 +12,15 @@ import cz.geokuk.core.program.FConst;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Mapy, které si uživatel zadá v souboru vedle geokuk.jar. Zobrazují se
- * vedle vestavěných pod vlastními jmény, vestavěné nemění.
+ * Mapy, které si uživatel zadá ve složce mapy v datové složce, každou ve vlastním
+ * souboru. Zobrazují se vedle vestavěných pod vlastními jmény, vestavěné nemění.
  */
 @Slf4j
 public final class UzivatelskeMapy {
 
-	public static final String SOUBOR = "uzivatelske-mapy.properties";
+	public static final String SLOZKA = "mapy";
+	public static final String PRIPONA = ".mapa";
+	static final String STARY_SOUBOR = "uzivatelske-mapy.properties";
 	static final String PREFIX = "user-";
 	private static final List<String> VLASTNOSTI = Arrays.asList("nazev", "url", "popis", "min", "max", "maxauto", "klavesa", "zkratka", "atribuce", "hromadne");
 	private static final String HLAVICKA = "hlavicka.";
@@ -42,67 +44,153 @@ public final class UzivatelskeMapy {
 		return KeyStroke.getKeyStroke(c);
 	}
 
-	/** Načte mapy ze souboru v datové složce a vrátí popis chyb v něm. */
-	public static List<String> nacti() {
-		return nacti(new File(FConst.DATA_DIR, SOUBOR));
+	/** Složka s uživatelskými mapami v datové složce. */
+	public static File slozka() {
+		return new File(FConst.DATA_DIR, SLOZKA);
 	}
 
-	static List<String> nacti(final File soubor) {
+	/** Načte mapy z datové složky a vrátí text pro uživatele s chybami v nich, nebo null. */
+	public static String nacti() {
+		return nacti(FConst.DATA_DIR);
+	}
+
+	static String nacti(final File dataDir) {
+		final File slozka = new File(dataDir, SLOZKA);
+		final List<String> chyby = nactiSlozku(slozka);
+		final List<String> zpravy = new ArrayList<>();
+		if (!chyby.isEmpty()) {
+			zpravy.add("Chyby v uživatelských mapách ve složce " + slozka + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby));
+		}
+		final File stary = new File(dataDir, STARY_SOUBOR);
+		final String oznaceni = oznaceniVeStaremSouboru(stary);
+		if (oznaceni != null) {
+			zpravy.add("Mapy ze souboru " + stary + " přesuňte do složky " + slozka + ". Každou mapu dejte do vlastního souboru pojmenovaného podle dosavadního označení, třeba "
+					+ oznaceni + PRIPONA + " pro řádky " + oznaceni + ".…, aby zůstaly uložené dlaždice i vybraná mapa. Vlastnosti v něm pište bez označení: url=… místo " + oznaceni
+					+ ".url=…. Potom soubor " + stary + " smažte.");
+		}
+		return zpravy.isEmpty() ? null : String.join("\n\n", zpravy);
+	}
+
+	/** První označení mapy ve starém souboru, null když soubor není nebo v něm žádná mapa nezůstala. */
+	private static String oznaceniVeStaremSouboru(final File stary) {
+		if (!stary.isFile()) {
+			return null;
+		}
+		final Properties p = new Properties();
+		try (Reader reader = Files.newBufferedReader(stary.toPath(), StandardCharsets.UTF_8)) {
+			p.load(reader);
+		} catch (final IOException | IllegalArgumentException e) {
+			return "mapa";
+		}
+		return p.stringPropertyNames().stream().sorted().map(klic -> klic.contains(".") ? klic.substring(0, klic.indexOf('.')) : klic).findFirst().orElse(null);
+	}
+
+	static List<String> nactiSlozku(final File slozka) {
 		EKaType.setUzivatelske(Collections.emptyList());
-		if (!soubor.isFile()) {
+		final File[] soubory = slozka.listFiles(File::isFile);
+		if (soubory == null) {
 			return Collections.emptyList();
 		}
+		Arrays.sort(soubory);
 		final List<String> chyby = new ArrayList<>();
-		try (Reader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
-			final Properties p = new Properties();
-			p.load(reader);
-			EKaType.setUzivatelske(zpracuj(p, chyby));
-		} catch (final IOException | IllegalArgumentException e) {
-			chyby.add("Soubor nelze přečíst: " + e.getMessage());
+		final SortedMap<String, Properties> obsah = new TreeMap<>();
+		for (final File soubor : soubory) {
+			final String jmeno = soubor.getName().toLowerCase(Locale.ROOT);
+			if (jmeno.endsWith(PRIPONA + ".txt")) {
+				chyby.add(soubor.getName() + ": soubor má příponu .txt, přejmenujte ho na " + soubor.getName().substring(0, soubor.getName().length() - 4));
+			}
+			if (!jmeno.endsWith(PRIPONA)) {
+				continue;
+			}
+			try (BufferedReader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
+				// Poznámkový blok a PowerShell 5 ukládají UTF-8 se značkou BOM.
+				reader.mark(1);
+				if (reader.read() != '\uFEFF') {
+					reader.reset();
+				}
+				final Properties p = new Properties();
+				p.load(reader);
+				obsah.put(soubor.getName(), p);
+			} catch (final IOException | IllegalArgumentException e) {
+				chyby.add(soubor.getName() + ": soubor nelze přečíst: " + e.getMessage());
+			}
 		}
+		EKaType.setUzivatelske(zpracuj(obsah, chyby));
 		if (!chyby.isEmpty()) {
-			log.warn("Chyby v {}: {}", soubor, chyby);
+			log.warn("Chyby v {}: {}", slozka, chyby);
 		}
 		return chyby;
 	}
 
-	static List<EKaType> zpracuj(final Properties p, final List<String> chyby) {
-		final SortedMap<String, Map<String, String>> mapy = new TreeMap<>();
-		for (final String klic : p.stringPropertyNames()) {
-			final int tecka = klic.indexOf('.');
-			final String id = tecka < 0 ? klic : klic.substring(0, tecka);
-			final String vlastnost = tecka < 0 ? "" : klic.substring(tecka + 1);
-			if (!id.matches("[a-z0-9][a-z0-9-]*")) {
-				chyby.add(klic + ": označení mapy smí obsahovat jen malá písmena bez diakritiky, číslice a pomlčky");
-			} else if (!VLASTNOSTI.contains(vlastnost) && !vlastnost.matches(HLAVICKA.replace(".", "\\.") + "[A-Za-z0-9-]+")) {
-				chyby.add(klic + ": neznámá vlastnost, povolené jsou " + VLASTNOSTI + " a " + HLAVICKA + "<jméno hlavičky>");
+	/** Ze souborů (jméno souboru → obsah) udělá mapy seřazené podle označení. Mapy, které spolu kolidují, vyřadí obě. */
+	static List<EKaType> zpracuj(final SortedMap<String, Properties> soubory, final List<String> chyby) {
+		final SortedMap<String, List<String>> podleOznaceni = new TreeMap<>();
+		for (final String jmeno : soubory.keySet()) {
+			final String id = jmeno.substring(0, jmeno.length() - PRIPONA.length()).toLowerCase(Locale.ROOT);
+			if (id.matches("[a-z0-9][a-z0-9-]*")) {
+				podleOznaceni.computeIfAbsent(id, k -> new ArrayList<>()).add(jmeno);
 			} else {
-				mapy.computeIfAbsent(id, k -> new HashMap<>()).put(vlastnost, p.getProperty(klic).trim());
+				chyby.add(jmeno + ": název souboru smí obsahovat jen písmena bez diakritiky, číslice a pomlčky a nesmí začínat pomlčkou");
 			}
 		}
-		final List<EKaType> vysledek = new ArrayList<>();
-		for (final Map.Entry<String, Map<String, String>> e : mapy.entrySet()) {
-			final EKaType mapa = vytvor(e.getKey(), e.getValue(), vysledek, chyby);
+		final List<EKaType> mapy = new ArrayList<>();
+		final Map<EKaType, String> souborMapy = new HashMap<>();
+		for (final Map.Entry<String, List<String>> e : podleOznaceni.entrySet()) {
+			if (e.getValue().size() > 1) {
+				chyby.add(String.join(", ", e.getValue()) + ": názvy souborů se liší jen velikostí písmen");
+				continue;
+			}
+			final String jmeno = e.getValue().get(0);
+			final Properties p = soubory.get(jmeno);
+			final Map<String, String> vlastnosti = new HashMap<>();
+			for (final String klic : p.stringPropertyNames()) {
+				if (VLASTNOSTI.contains(klic) || klic.matches(HLAVICKA.replace(".", "\\.") + "[A-Za-z0-9-]+")) {
+					vlastnosti.put(klic, p.getProperty(klic).trim());
+				} else {
+					chyby.add(jmeno + ": " + klic + " je neznámá vlastnost, povolené jsou " + VLASTNOSTI + " a " + HLAVICKA + "<jméno hlavičky>");
+				}
+			}
+			final EKaType mapa = vytvor(e.getKey(), jmeno, vlastnosti, chyby);
 			if (mapa != null) {
-				vysledek.add(mapa);
+				mapy.add(mapa);
+				souborMapy.put(mapa, jmeno);
 			}
 		}
-		return vysledek;
+		final Set<EKaType> kolize = new HashSet<>();
+		for (int i = 0; i < mapy.size(); i++) {
+			for (int j = i + 1; j < mapy.size(); j++) {
+				final EKaType a = mapy.get(i);
+				final EKaType b = mapy.get(j);
+				final String obe = souborMapy.get(a) + ", " + souborMapy.get(b);
+				if (a.getNazev().equalsIgnoreCase(b.getNazev())) {
+					chyby.add(obe + ": stejný název v menu „" + a.getNazev() + "“");
+					kolize.add(a);
+					kolize.add(b);
+				}
+				if (a.getKeyStroke() != null && a.getKeyStroke().equals(b.getKeyStroke())) {
+					chyby.add(obe + ": stejná klávesová zkratka");
+					kolize.add(a);
+					kolize.add(b);
+				}
+			}
+		}
+		mapy.removeAll(kolize);
+		return mapy;
 	}
 
-	private static EKaType vytvor(final String id, final Map<String, String> v, final List<EKaType> predchozi, final List<String> chyby) {
+	private static EKaType vytvor(final String id, final String jmeno, final Map<String, String> v, final List<String> chyby) {
 		final String nazev = v.getOrDefault("nazev", "");
 		final String url = v.getOrDefault("url", "");
 		if (nazev.isEmpty()) {
-			chyby.add(id + ".nazev chybí");
+			chyby.add(jmeno + ": nazev chybí");
 			return null;
 		}
 		if (!url.matches("https?://\\S+") || !url.contains("{z}") || !url.contains("{x}") || !url.contains("{y}")) {
-			chyby.add(id + ".url musí začínat http:// nebo https:// a obsahovat {z}, {x} a {y}");
+			chyby.add(jmeno + ": url musí začínat http:// nebo https:// a obsahovat {z}, {x} a {y}");
 			return null;
 		}
 		if (url.replace("{z}", "").replace("{x}", "").replace("{y}", "").matches(".*[{}].*")) {
-			chyby.add(id + ".url smí z proměnných ve složených závorkách obsahovat jen {z}, {x} a {y}; místo {s} napište jednu subdoménu, třeba a");
+			chyby.add(jmeno + ": url smí z proměnných ve složených závorkách obsahovat jen {z}, {x} a {y}; místo {s} napište jednu subdoménu, třeba a");
 			return null;
 		}
 		final int min;
@@ -113,40 +201,38 @@ public final class UzivatelskeMapy {
 			max = Integer.parseInt(v.getOrDefault("max", "18"));
 			maxauto = Integer.parseInt(v.getOrDefault("maxauto", String.valueOf(max)));
 		} catch (final NumberFormatException e) {
-			chyby.add(id + ": min, max a maxauto musí být celá čísla");
+			chyby.add(jmeno + ": min, max a maxauto musí být celá čísla");
 			return null;
 		}
 		if (min < 0 || max > MAX_MERITKO || min > max || maxauto < min || maxauto > max) {
-			chyby.add(id + ": měřítka musí splňovat 0 ≤ min ≤ maxauto ≤ max ≤ " + MAX_MERITKO);
+			chyby.add(jmeno + ": měřítka musí splňovat 0 ≤ min ≤ maxauto ≤ max ≤ " + MAX_MERITKO);
 			return null;
 		}
 		final String klavesa = v.getOrDefault("klavesa", "");
 		if (!klavesa.isEmpty() && !klavesa.matches("[A-Za-z0-9]")) {
-			chyby.add(id + ".klavesa musí být jedno písmeno nebo číslice");
+			chyby.add(jmeno + ": klavesa musí být jedno písmeno nebo číslice");
 			return null;
 		}
 		final String zkratka = v.getOrDefault("zkratka", "");
 		final KeyStroke keyStroke = zkratka.isEmpty() ? null : zkratka.length() == 1 ? jednaKlavesa(zkratka.charAt(0)) : KeyStroke.getKeyStroke(zkratka);
 		if (!zkratka.isEmpty() && keyStroke == null) {
-			chyby.add(id + ".zkratka není platná klávesová zkratka (např. u, F5, ctrl U)");
+			chyby.add(jmeno + ": zkratka není platná klávesová zkratka (např. u, F5, ctrl U)");
 			return null;
 		}
 		final String akce = keyStroke == null ? null : zkratkyProgramu.get(keyStroke);
 		if (akce != null) {
-			chyby.add(id + ".zkratka " + zkratka + " už používá " + akce);
+			chyby.add(jmeno + ": zkratka " + zkratka + " už používá " + akce);
 			return null;
 		}
-		final List<EKaType> jine = new ArrayList<>(EKaType.vestavene());
-		jine.addAll(predchozi);
-		for (final EKaType jina : jine) {
+		for (final EKaType jina : EKaType.vestavene()) {
 			if (keyStroke != null && keyStroke.equals(jina.getKeyStroke())) {
-				chyby.add(id + ".zkratka " + zkratka + " už používá mapa " + jina.getNazev());
+				chyby.add(jmeno + ": zkratka " + zkratka + " už používá mapa " + jina.getNazev());
 				return null;
 			}
 		}
 		final String hromadne = v.getOrDefault("hromadne", "ne");
 		if (!hromadne.equals("ano") && !hromadne.equals("ne")) {
-			chyby.add(id + ".hromadne musí být ano, nebo ne");
+			chyby.add(jmeno + ": hromadne musí být ano, nebo ne");
 			return null;
 		}
 		final Map<String, String> hlavicky = new TreeMap<>();

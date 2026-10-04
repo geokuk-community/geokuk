@@ -95,7 +95,7 @@ public class IkonNacitacLoader {
 					try {
 						icon = new ImageIcon(ImageIO.read(node.getData().url));
 					} catch (final IOException e) {
-						FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Problem s nacitanim ikony sady: " + node.getData().url);
+						FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Načtení ikony ze sady: " + node.getData().url);
 					}
 				}
 			}

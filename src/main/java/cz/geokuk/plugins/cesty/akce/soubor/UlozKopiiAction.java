@@ -17,8 +17,8 @@ public class UlozKopiiAction extends SouboeCestaAction0 {
 	private Doc doc;
 
 	public UlozKopiiAction() {
-		super("Uložit kopii cest (gpx) ...");
-		putValue(SHORT_DESCRIPTION, "Uloží zadaný výlet jako kopii do jiného souboru GPX, dále se pak bude pracovat na původním souboru");
+		super("Uložit kopii cest (gpx)...");
+		putValue(SHORT_DESCRIPTION, "Uloží cesty jako kopii do jiného souboru GPX, dále se pak bude pracovat na původním souboru");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_K);
 		// putValue(SMALL_ICON, ImageLoader.seekResIcon("x16/vylet/vyletAno.png"));
 	}

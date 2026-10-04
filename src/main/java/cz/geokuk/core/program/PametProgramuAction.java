@@ -22,7 +22,16 @@ public class PametProgramuAction extends Action0 {
 		super("Paměť programu...");
 		putValue(SHORT_DESCRIPTION, "Kolik paměti si GeoKuk vezme při příštím spuštění.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_M);
-		setEnabled(new File(FConst.JAR_DIR, "start.jar").isFile());
+		setEnabled(lzeNastavit());
+	}
+
+	static boolean lzeNastavit() {
+		return new File(FConst.JAR_DIR, "start.jar").isFile();
+	}
+
+	/** Rada pro hlášky o nedostatku paměti. */
+	public static String jakZvysitPamet() {
+		return lzeNastavit() ? "Paměť zvýšíte v Soubor > Paměť programu." : "Spusťte GeoKuk s větší pamětí, třeba java -Xmx2g -jar geokuk.jar.";
 	}
 
 	@Override

@@ -30,7 +30,7 @@ import cz.geokuk.util.file.Filex;
  */
 public class MyPreferences extends Preferences {
 
-	static final String ZNACKA_KORENE = "${GeoKuk}";
+	public static final String ZNACKA_KORENE = "${GeoKuk}";
 
 	private static final class Duo {
 		Method get;
@@ -290,7 +290,7 @@ public class MyPreferences extends Preferences {
 			set.addAll(atoms);
 			return set;
 		} catch (final Exception e) { // pokud je tam něco blbě, bere se default
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + ss);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + ss);
 			remove(key);
 			return def;
 		}
@@ -320,7 +320,7 @@ public class MyPreferences extends Preferences {
 			return new Dimension(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -343,7 +343,7 @@ public class MyPreferences extends Preferences {
 			// nebudeme nic dělat ani odstraňovat. Může se to hodit jiné verzi
 			return def; // vrátit default, jako by tam nic nebylo
 		} catch (final Exception e) { // když je to špatná hodnota, jako by nebyla žádná
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key);
 			return def;
 		}
@@ -361,7 +361,7 @@ public class MyPreferences extends Preferences {
 			set.addAll(enums);
 			return set;
 		} catch (final Exception e) {
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + ss);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + ss);
 			remove(key);
 			return def;
 		}
@@ -378,7 +378,7 @@ public class MyPreferences extends Preferences {
 		try {
 			result = Enum.valueOf(cls, s);
 		} catch (final Exception e) { // když je to špatná hodnota, jako by nebyla žádná
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key);
 			return def;
 		}
@@ -409,7 +409,10 @@ public class MyPreferences extends Preferences {
 		if (defalt == null) {
 			defalt = new Filex(null, false, false);
 		}
-		final Filex result = new Filex(getFile(key, defalt.getFile()), getBoolean(key + "_relativeToProgram", defalt.isRelativeToProgram()), getBoolean(key + "_active", defalt.isActive()));
+		final File file = getFile(key, defalt.getFile());
+		final boolean active = getBoolean(key + "_active", defalt.isActive());
+		final Filex result = get(key, null) == null ? new Filex(file, defalt.isRelativeToProgram(), active)
+				: Filex.zNastaveni(file, getBoolean(key + "_relativeToProgram", defalt.isRelativeToProgram()), active);
 		return result.getFile() == null ? null : result;
 	}
 
@@ -444,7 +447,7 @@ public class MyPreferences extends Preferences {
 			return new Mou(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -460,7 +463,7 @@ public class MyPreferences extends Preferences {
 			return new Point(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -535,7 +538,7 @@ public class MyPreferences extends Preferences {
 			return new Wgs(Double.parseDouble(ss[0]), Double.parseDouble(ss[1]));
 		} catch (final RuntimeException e) {
 			// nesmysl v nastavení nesmí zabránit spuštění
-			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Nesmysl v preferencich: " + key + "=" + s);
+			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Neplatná hodnota v nastavení, použije se výchozí: " + key + "=" + s);
 			remove(key); // když je tam blbost, raději mažeme
 			return def;
 		}
@@ -673,7 +676,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	public void putFilex(final String key, final Filex filex) {
-		put(key, cestaDoNastaveni(filex.getFile(), FConst.KOREN));
+		put(key, cestaDoNastaveni(filex.getEffectiveFile(), FConst.KOREN));
 		putBoolean(key + "_relativeToProgram", filex.isRelativeToProgram());
 		putBoolean(key + "_active", filex.isActive());
 	}
@@ -823,7 +826,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	/** Cesta uvnitř složky GeoKuku se ukládá relativně se značkou, ať nastavení přežije přesun složky. */
-	static String cestaDoNastaveni(final File f, final File koren) {
+	public static String cestaDoNastaveni(final File f, final File koren) {
 		if (f.isAbsolute()) {
 			final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
 			final java.nio.file.Path cesta = f.toPath().normalize();
@@ -834,8 +837,8 @@ public class MyPreferences extends Preferences {
 		return f.getPath();
 	}
 
-	static File cestaZNastaveni(final String s, final File koren) {
-		if (s.startsWith(ZNACKA_KORENE + "/")) {
+	public static File cestaZNastaveni(final String s, final File koren) {
+		if (s.startsWith(ZNACKA_KORENE + "/") || s.startsWith(ZNACKA_KORENE + "\\")) {
 			return new File(koren.getAbsoluteFile(), s.substring(ZNACKA_KORENE.length() + 1).replace('/', File.separatorChar));
 		}
 		return new File(s);

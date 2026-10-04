@@ -1,6 +1,6 @@
 package cz.geokuk.start;
 
-import java.io.File;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -107,5 +107,97 @@ public class StartTest {
 		final List<String> prikaz = new ArrayList<>();
 		Start.pridejDocasnouSlozku(prikaz, data);
 		Assert.assertEquals(Collections.emptyList(), prikaz);
+	}
+
+	@Test
+	public void zamekDrzenyInstanciJeZamceny() throws Exception {
+		final File soubor = new File(tmp.newFolder("data-z"), Start.ZAMEK);
+		final java.nio.channels.FileLock lock = Start.zamkni(soubor);
+		Assert.assertNotNull(lock);
+		try {
+			Assert.assertTrue(Start.jeZamceno(soubor));
+		} finally {
+			lock.channel().close();
+		}
+		Assert.assertFalse(Start.jeZamceno(soubor));
+	}
+
+	@Test
+	public void vNezapisovatelneSlozceNikdoNebezi() throws Exception {
+		final File soubor = new File(tmp.newFile("data-soubor"), Start.ZAMEK); // soubor místo složky, nejde zapsat ani jako správce
+		Assert.assertFalse(Start.jeZamceno(soubor));
+		final long zacatek = System.currentTimeMillis();
+		Assert.assertTrue(Start.pockejNaUkonceni(soubor, 5_000));
+		Assert.assertTrue(System.currentTimeMillis() - zacatek < 2_000);
+	}
+
+	/** Drží zámek v jiném procesu, dokud se nezavře jeho standardní vstup. */
+	public static class DruhaInstance {
+		public static void main(final String[] args) throws IOException {
+			if (Start.zamkni(new File(args[0])) == null) {
+				System.exit(1);
+			}
+			System.out.println("zamceno");
+			System.out.flush();
+			while (System.in.read() >= 0) {
+				// čeká na zavření vstupu
+			}
+		}
+	}
+
+	@Test
+	public void zamekDrzenyJinymProcesemJeZamceny() throws Exception {
+		final File soubor = new File(tmp.newFolder("data-p"), Start.ZAMEK);
+		final Process p = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
+				DruhaInstance.class.getName(), soubor.getPath()).redirectError(ProcessBuilder.Redirect.INHERIT).start();
+		try {
+			final BufferedReader vystup = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
+			Assert.assertEquals("zamceno", vystup.readLine());
+			Assert.assertTrue(Start.jeZamceno(soubor));
+			Assert.assertNull("Druhá instance zámek nedostane", Start.zamkni(soubor));
+			Assert.assertFalse(Start.pockejNaUkonceni(soubor, 500));
+			p.getOutputStream().close();
+			Assert.assertTrue(p.waitFor(30, java.util.concurrent.TimeUnit.SECONDS));
+			Assert.assertFalse(Start.jeZamceno(soubor));
+		} finally {
+			p.destroyForcibly();
+		}
+	}
+
+	@Test
+	public void kdyzVymenaSelzeSpustiStavajiciJar() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "stary".getBytes());
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
+		final File jar = Start.vyberJar(d, a -> {
+			throw new java.nio.file.AccessDeniedException("geokuk.jar.new");
+		});
+		Assert.assertEquals(new File(d, "geokuk.jar"), jar);
+	}
+
+	@Test
+	public void kdyzJarChybiSpustiBak() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar.bak").toPath(), "predchozi".getBytes());
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
+		final File jar = Start.vyberJar(d, a -> {
+			throw new java.nio.file.AccessDeniedException("geokuk.jar.new");
+		});
+		Assert.assertEquals(new File(d, "geokuk.jar.bak"), jar);
+	}
+
+	@Test
+	public void bezJaruNeniCoSpustit() throws Exception {
+		final File d = tmp.newFolder();
+		Assert.assertNull(Start.vyberJar(d, Start::vymenJar));
+	}
+
+	@Test
+	public void uspesnaVymenaSpustiNovy() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "stary".getBytes());
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
+		final File jar = Start.vyberJar(d, Start::vymenJar);
+		Assert.assertEquals("novy", new String(Files.readAllBytes(jar.toPath())));
 	}
 }

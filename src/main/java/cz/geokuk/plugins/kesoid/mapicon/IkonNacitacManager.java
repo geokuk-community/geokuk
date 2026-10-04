@@ -26,6 +26,9 @@ public class IkonNacitacManager {
 
 	public void startLoad(final boolean prenacti) {
 		final KesoidUmisteniSouboru umisteniSouboru = kesoidModel.getUmisteniSouboru();
+		if (umisteniSouboru == null) {
+			return; // ikony se načtou, až se umístění nastaví (KesoidModel.setUmisteniSouboru)
+		}
 		final Filex thirdParty = umisteniSouboru.getImage3rdPartyDir();
 		final Filex myDir = umisteniSouboru.getImageMyDir();
 

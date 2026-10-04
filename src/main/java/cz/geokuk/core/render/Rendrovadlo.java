@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import cz.geokuk.core.coord.*;
+import cz.geokuk.core.program.PametProgramuAction;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.mapy.kachle.gui.JKachlovnikRendrovaci;
 
@@ -108,10 +109,9 @@ public class Rendrovadlo {
 			final BufferedImage result = new BufferedImage(p.roord.getWidth(), p.roord.getHeight(), p.pruhledne ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_3BYTE_BGR);
 			return result;
 		} catch (final OutOfMemoryError e) {
-			Dlg.error("Nedostatek operační paměti pro rendrování. Zmenši obrázek nebo přidej paměť pro Java Heap");
+			Dlg.error("Na rendrování nestačí paměť. Zmenšete obrázek. " + PametProgramuAction.jakZvysitPamet());
 			future.cancel(true);
-			return null;
-			// throw new InterruptedException("Není paměť: " + e.toString());
+			throw new InterruptedException("Na rendrování nestačí paměť");
 		}
 	}
 

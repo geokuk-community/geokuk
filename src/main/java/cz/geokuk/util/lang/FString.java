@@ -2,6 +2,8 @@ package cz.geokuk.util.lang;
 
 import java.lang.reflect.Array;
 
+import javax.swing.plaf.basic.BasicHTML;
+
 /**
  * Třída opbsahuje užitečnou práci s řetězci.
  *
@@ -133,6 +135,51 @@ public final class FString {
 			return s.substring(0, maxlen);
 		}
 		return s;
+	}
+
+	/**
+	 * Text z dat (GPX, databáze) pro popisek Swingu bez vlastního HTML: když text nebo některý jeho řádek začíná {@code <html>}, Swing by ho vykreslil
+	 * jako HTML (JOptionPane dělí zprávu po řádcích), proto se ukáže jako text.
+	 */
+	public static String text(final String s) {
+		return s != null && maHtmlRadek(s) ? "<html>" + html(s).replaceAll("\r\n|\r|\n", "<br>") : s;
+	}
+
+	private static boolean maHtmlRadek(final String s) {
+		for (final String radek : s.split("\r\n|\r|\n", -1)) {
+			if (BasicHTML.isHTMLString(radek)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Text pro vložení do HTML (popisky Swingu začínající {@code <html>}), aby se z něj nestaly značky. */
+	public static String html(final String s) {
+		if (s == null) {
+			return null;
+		}
+		final StringBuilder sb = new StringBuilder(s.length());
+		for (int i = 0; i < s.length(); i++) {
+			final char c = s.charAt(i);
+			switch (c) {
+			case '&':
+				sb.append("&amp;");
+				break;
+			case '<':
+				sb.append("&lt;");
+				break;
+			case '>':
+				sb.append("&gt;");
+				break;
+			case '"':
+				sb.append("&quot;");
+				break;
+			default:
+				sb.append(c);
+			}
+		}
+		return sb.toString();
 	}
 
 	/** {@link TwString} je jen knihovna funkcí, nikoliv instanciovatelný objekt. */
