@@ -116,7 +116,7 @@ public class GsakNacitatPoVybraniTest {
 	/** Podsložky byly při prohledání nečitelné a pak se vrátily: vybraná databáze zůstane vybraná, zablokovaná zablokovaná. */
 	@Test
 	public void necitelnaPodslozkaPriSkenuNicNezapomene() throws Exception {
-		final File slozka = tmp.newFolder("gsak");
+		final File slozka = tmp.newFolder("gsak").getCanonicalFile(); // nastavení ukládá kanonické cesty (Windows: RUNNER~1)
 		final File vybrana = new File(slozka, "Default/sqlite.db3");
 		final File treti = new File(slozka, "Treti/sqlite.db3");
 		umisteni = new KesoidUmisteniSouboru();
