@@ -52,10 +52,10 @@ public final class Nastaveni {
 				return SouborovePreferences.nacti(soubor);
 			} catch (final IOException e) {
 				final File vadne = new File(soubor.getPath() + ".vadne");
-				vadne.delete();
-				final boolean odlozeno = soubor.renameTo(vadne);
+				final boolean odlozeno = odloz(soubor, vadne);
 				varovani = "Nastavení ze souboru " + soubor + " nelze načíst, program pokračuje s výchozím nastavením."
-						+ (odlozeno ? "\nPůvodní soubor je uložený jako " + vadne + "." : "\nPůvodní soubor zůstal beze změny.");
+						+ (odlozeno ? "\nPůvodní soubor je uložený jako " + vadne + "."
+								: "\nPůvodní soubor zůstal beze změny, změny nastavení se při tomto spuštění neuloží.");
 				FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, varovani);
 				// Původní soubor, který nejde odložit, se nepřepíše; zkusí se znovu při příštím spuštění.
 				return SouborovePreferences.prazdne(odlozeno ? soubor : new File(soubor.getPath() + ".nove"));
@@ -68,6 +68,21 @@ public final class Nastaveni {
 			// ohlásí kontrola zapisovatelnosti datové složky
 		}
 		return nove;
+	}
+
+	/** Starší odložený soubor se smaže, až když jde soubor odsunout (antivirus ho může držet). */
+	private static boolean odloz(final File soubor, final File vadne) {
+		final File docasne = new File(soubor.getPath() + ".odkladani");
+		docasne.delete();
+		if (!soubor.renameTo(docasne)) {
+			return false;
+		}
+		vadne.delete();
+		if (docasne.renameTo(vadne)) {
+			return true;
+		}
+		docasne.renameTo(soubor);
+		return false;
 	}
 
 	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final boolean zRegistru) {
