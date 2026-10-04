@@ -23,7 +23,8 @@
 #            (Mapy → Postahovat dlaždice), výchozí ne
 #   hlavicka.<jméno>  hlavička požadavku (např. Referer, User-Agent),
 #            {verze} se nahradí verzí GeoKuku
-# Dvě mapy se stejným názvem v menu nebo stejnou zkratkou se nezobrazí.
+# Dvě uživatelské mapy se stejným názvem v menu nebo stejnou zkratkou
+# se nezobrazí.
 #
 # Soubor ukládejte v kódování UTF-8.
 

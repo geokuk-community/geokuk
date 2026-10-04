@@ -30,7 +30,7 @@ import cz.geokuk.util.file.Filex;
  */
 public class MyPreferences extends Preferences {
 
-	static final String ZNACKA_KORENE = "${GeoKuk}";
+	public static final String ZNACKA_KORENE = "${GeoKuk}";
 
 	private static final class Duo {
 		Method get;
@@ -826,7 +826,7 @@ public class MyPreferences extends Preferences {
 	}
 
 	/** Cesta uvnitř složky GeoKuku se ukládá relativně se značkou, ať nastavení přežije přesun složky. */
-	static String cestaDoNastaveni(final File f, final File koren) {
+	public static String cestaDoNastaveni(final File f, final File koren) {
 		if (f.isAbsolute()) {
 			final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
 			final java.nio.file.Path cesta = f.toPath().normalize();
@@ -837,8 +837,8 @@ public class MyPreferences extends Preferences {
 		return f.getPath();
 	}
 
-	static File cestaZNastaveni(final String s, final File koren) {
-		if (s.startsWith(ZNACKA_KORENE + "/")) {
+	public static File cestaZNastaveni(final String s, final File koren) {
+		if (s.startsWith(ZNACKA_KORENE + "/") || s.startsWith(ZNACKA_KORENE + "\\")) {
 			return new File(koren.getAbsoluteFile(), s.substring(ZNACKA_KORENE.length() + 1).replace('/', File.separatorChar));
 		}
 		return new File(s);

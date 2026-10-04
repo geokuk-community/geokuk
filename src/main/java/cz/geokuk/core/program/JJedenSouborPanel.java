@@ -12,6 +12,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import cz.geokuk.core.program.JPrehledSouboru.YNejdeTo;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.file.Filex;
 import lombok.extern.slf4j.Slf4j;
 
@@ -87,7 +88,7 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 	}
 
 	public void setFilex(final Filex filex) {
-		jtext.setText(filex.getFile().getPath());
+		jtext.setText(MyPreferences.cestaDoNastaveni(filex.getEffectiveFile(), FConst.KOREN));
 		jActive.setSelected(filex.isActive() || !lzeDeaktivovat);
 		prepocitej();
 	}
@@ -163,7 +164,7 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 				}
 				final int result = fc.showDialog(JJedenSouborPanel.this, "Vybrat");
 				if (result == JFileChooser.APPROVE_OPTION) {
-					jtext.setText(fc.getSelectedFile().getPath());
+					jtext.setText(MyPreferences.cestaDoNastaveni(fc.getSelectedFile(), FConst.KOREN));
 				}
 			}
 		});
@@ -175,9 +176,25 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 	}
 
 	private void prepocitej() {
-		filex = new Filex(new File(jtext.getText()), false, jActive.isSelected());
-		jCurrVal.setText(filex.getEffectiveFile().getPath());
+		filex = new Filex(MyPreferences.cestaZNastaveni(jtext.getText(), FConst.KOREN), false, jActive.isSelected());
+		final String vysledna = popisVysledneCesty(filex.getEffectiveFile(), FConst.KOREN);
+		jCurrVal.setText(vysledna);
+		jtext.setToolTipText(vysledna);
 		jtext.setEnabled(jActive.isSelected());
+	}
+
+	/** Cesta uvnitř složky GeoKuk se ukládá relativně a při přesunu složky se posune s ní. */
+	static String popisVysledneCesty(final File vysledna, final File koren) {
+		final boolean relativni = MyPreferences.cestaDoNastaveni(vysledna, koren).startsWith(MyPreferences.ZNACKA_KORENE);
+		return (relativni ? "Relativně ke složce GeoKuk: " : "") + vysledna.getPath();
+	}
+
+	String getZadanaCesta() {
+		return jtext.getText();
+	}
+
+	String getVyslednaCesta() {
+		return jCurrVal.getText();
 	}
 
 	private void zmemniliNamTo() {

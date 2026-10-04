@@ -70,6 +70,41 @@ public class ZamcenaDatabazeNezdrziTest {
 		Assert.assertFalse(nacitac.jeZamcena(db));
 	}
 
+	@Test
+	public void priZamkuZustanouZobrazeneKese() throws Exception {
+		final File gpx = tmp.newFolder("gpx");
+		Files.write(new File(gpx, "a.gpx").toPath(), ImportKesiTest.gpx(ImportKesiTest.kes("GC1111", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "")).getBytes(StandardCharsets.UTF_8));
+		final File slozkaGeogetu = tmp.newFolder("geoget");
+		final File db = new File(slozkaGeogetu, "geoget.db3");
+		zalozGeoget(db);
+		final KesBag[] zobrazene = new KesBag[1];
+		final KesoidModel model = model(() -> zobrazene[0]);
+		final MultiNacitac nacitac = new MultiNacitac(model);
+		nacitac.setRootDirs(true, gpx, slozkaGeogetu, null, Collections.emptySet());
+		zobrazene[0] = nacitac.nacti(null, new Genom());
+		Assert.assertEquals(new HashSet<>(Arrays.asList("GC1111", "GC00001")), kody(zobrazene[0]));
+
+		final CountDownLatch zamceno = new CountDownLatch(1);
+		final Future<?> zapis = geoget.submit(() -> {
+			try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+				s.execute("BEGIN EXCLUSIVE");
+				zamceno.countDown();
+				pustit.await();
+				s.execute("COMMIT");
+			}
+			return null;
+		});
+		zamceno.await();
+		Files.write(new File(gpx, "b.gpx").toPath(), ImportKesiTest.gpx(ImportKesiTest.kes("GC2222", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "")).getBytes(StandardCharsets.UTF_8));
+
+		Assert.assertNull("keše ze zamčené databáze by zmizely z mapy", nacitac.nacti(null, new Genom()));
+		Assert.assertTrue(nacitac.jeZamcena(db));
+
+		pustit.countDown();
+		zapis.get();
+		Assert.assertEquals(new HashSet<>(Arrays.asList("GC1111", "GC2222", "GC00001")), kody(nacitac.nacti(null, new Genom())));
+	}
+
 	private static Set<String> kody(final KesBag bag) {
 		final Set<String> kody = new HashSet<>();
 		for (final Kesoid k : bag.getKesoidy()) {
@@ -79,6 +114,10 @@ public class ZamcenaDatabazeNezdrziTest {
 	}
 
 	private static KesoidModel model() {
+		return model(() -> null);
+	}
+
+	private static KesoidModel model(final java.util.function.Supplier<KesBag> zobrazene) {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});
 		final KesoidModel model = new KesoidModel() {
@@ -89,6 +128,11 @@ public class ZamcenaDatabazeNezdrziTest {
 
 			@Override
 			public void zaradGsakDatabaze(final Set<File> databaze) {}
+
+			@Override
+			public KesBag getVsechnyKesoidy() {
+				return zobrazene.get();
+			}
 		};
 		model.inject(progress);
 		model.inject(new KesoidPluginManager());

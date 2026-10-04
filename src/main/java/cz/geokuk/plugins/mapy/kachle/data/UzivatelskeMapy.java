@@ -44,6 +44,11 @@ public final class UzivatelskeMapy {
 		return KeyStroke.getKeyStroke(c);
 	}
 
+	/** Složka s uživatelskými mapami v datové složce. */
+	public static File slozka() {
+		return new File(FConst.DATA_DIR, SLOZKA);
+	}
+
 	/** Načte mapy z datové složky a vrátí text pro uživatele s chybami v nich, nebo null. */
 	public static String nacti() {
 		return nacti(FConst.DATA_DIR);
@@ -57,10 +62,27 @@ public final class UzivatelskeMapy {
 			zpravy.add("Chyby v uživatelských mapách ve složce " + slozka + ", tyto mapy se nezobrazí:\n" + String.join("\n", chyby));
 		}
 		final File stary = new File(dataDir, STARY_SOUBOR);
-		if (stary.isFile()) {
-			zpravy.add("Mapy ze souboru " + stary + " přesuňte do složky " + slozka + ", každou do vlastního souboru s příponou " + PRIPONA + ".");
+		final String oznaceni = oznaceniVeStaremSouboru(stary);
+		if (oznaceni != null) {
+			zpravy.add("Mapy ze souboru " + stary + " přesuňte do složky " + slozka + ". Každou mapu dejte do vlastního souboru pojmenovaného podle dosavadního označení, třeba "
+					+ oznaceni + PRIPONA + " pro řádky " + oznaceni + ".…, aby zůstaly uložené dlaždice i vybraná mapa. Vlastnosti v něm pište bez označení: url=… místo " + oznaceni
+					+ ".url=…. Potom soubor " + stary + " smažte.");
 		}
 		return zpravy.isEmpty() ? null : String.join("\n\n", zpravy);
+	}
+
+	/** První označení mapy ve starém souboru, null když soubor není nebo v něm žádná mapa nezůstala. */
+	private static String oznaceniVeStaremSouboru(final File stary) {
+		if (!stary.isFile()) {
+			return null;
+		}
+		final Properties p = new Properties();
+		try (Reader reader = Files.newBufferedReader(stary.toPath(), StandardCharsets.UTF_8)) {
+			p.load(reader);
+		} catch (final IOException | IllegalArgumentException e) {
+			return "mapa";
+		}
+		return p.stringPropertyNames().stream().sorted().map(klic -> klic.contains(".") ? klic.substring(0, klic.indexOf('.')) : klic).findFirst().orElse(null);
 	}
 
 	static List<String> nactiSlozku(final File slozka) {

@@ -101,6 +101,14 @@ public class MyPreferencesTest {
 		assertThat(MyPreferences.cestaZNastaveni(ulozeno, novy)).isEqualTo(new File(novy, "data/gpx"));
 	}
 
+	/** Značku složky GeoKuk jde napsat i se zpětným lomítkem jako ve Windows. */
+	@Test
+	public void znackaSeZpetnymLomitkem() {
+		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
+		assertThat(MyPreferences.cestaZNastaveni("${GeoKuk}\\data\\gpx", koren).getAbsoluteFile().toPath().normalize().startsWith(koren.toPath())).isTrue();
+		assertThat(MyPreferences.cestaZNastaveni("${GeoKuk}/data/gpx", koren)).isEqualTo(new File(koren, "data/gpx"));
+	}
+
 	@Test
 	public void cestaMimoSlozkuProgramuZustaneAbsolutni() {
 		final File koren = new File("/tmp/GeoKuk").getAbsoluteFile();
