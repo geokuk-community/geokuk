@@ -84,6 +84,9 @@ public class JineSchemaTest {
 
 			@Override
 			public void zaradGsakDatabaze(final Set<File> databaze) {}
+
+			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze) {}
 		};
 		model.inject(progress());
 		model.inject(new KesoidPluginManager());

@@ -177,6 +177,9 @@ public class ZamcenaDatabazeOpakovaniTest {
 			public void zaradGsakDatabaze(final Set<File> databaze) {}
 
 			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze) {}
+
+			@Override
 			public boolean maSeNacist(final KeFile soubor) {
 				zpracovanychSouboru.incrementAndGet();
 				return super.maSeNacist(soubor);
