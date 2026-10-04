@@ -20,7 +20,10 @@ public class VytvoritZastupceAction extends Action0 {
 	private static final long serialVersionUID = 1L;
 
 	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
-	private static final String SKRIPT = "$ErrorActionPreference='Stop';"
+	/** Výstup PowerShellu jinak jde v kódování konzole (ve Windows česky CP852). */
+	static final String UTF8_VYSTUP = "[Console]::OutputEncoding=New-Object Text.UTF8Encoding $false;";
+
+	private static final String SKRIPT = UTF8_VYSTUP + "$ErrorActionPreference='Stop';"
 			+ "$sh=New-Object -ComObject WScript.Shell;"
 			+ "function Nastav($s){$s.TargetPath=$env:GK_JAVAW;$s.Arguments=$env:GK_ARGUMENTY;$s.WorkingDirectory=$env:GK_SLOZKA;"
 			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save()}"
@@ -130,13 +133,33 @@ public class VytvoritZastupceAction extends Action0 {
 
 	/** Vrátí popis chyby, nebo null. */
 	private static String spust(final Map<String, String> promenne) throws IOException, InterruptedException {
-		final ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", SKRIPT);
-		final Map<String, String> env = pb.environment();
-		env.putAll(promenne);
+		final Map<String, String> env = new HashMap<>(promenne);
 		env.put("GK_JAVAW", javaw().getAbsolutePath());
 		env.put("GK_ARGUMENTY", "-XX:-UsePerfData -jar \"" + new File(FConst.JAR_DIR, "start.jar").getAbsolutePath() + "\"");
 		env.put("GK_SLOZKA", FConst.JAR_DIR.getAbsolutePath());
 		env.put("GK_IKONA", new File(FConst.JAR_DIR, "geokuk.ico").getAbsolutePath());
+		final Vysledek v = powershell(SKRIPT, env);
+		if (v.kod == 0) {
+			log.info("Vytvořen zástupce: {} {}", promenne, v.text);
+			return null;
+		}
+		log.warn("Zástupce nelze vytvořit ({}): {}", v.kod, v.text);
+		return v.text.isEmpty() ? "PowerShell skončil s kódem " + v.kod : v.text;
+	}
+
+	static final class Vysledek {
+		final int kod;
+		final String text;
+
+		Vysledek(final int kod, final String text) {
+			this.kod = kod;
+			this.text = text;
+		}
+	}
+
+	static Vysledek powershell(final String skript, final Map<String, String> promenne) throws IOException, InterruptedException {
+		final ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", skript);
+		pb.environment().putAll(promenne);
 		pb.redirectErrorStream(true);
 		final Process p = pb.start();
 		p.getOutputStream().close();
@@ -149,12 +172,6 @@ public class VytvoritZastupceAction extends Action0 {
 			}
 		}
 		final int kod = p.waitFor();
-		final String text = new String(vystup.toByteArray(), StandardCharsets.UTF_8).trim();
-		if (kod == 0) {
-			log.info("Vytvořen zástupce: {} {}", promenne, text);
-			return null;
-		}
-		log.warn("Zástupce nelze vytvořit ({}): {}", kod, text);
-		return text.isEmpty() ? "PowerShell skončil s kódem " + kod : text;
+		return new Vysledek(kod, new String(vystup.toByteArray(), StandardCharsets.UTF_8).trim());
 	}
 }
