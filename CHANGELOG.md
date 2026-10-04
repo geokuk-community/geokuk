@@ -51,7 +51,7 @@
   aktualizací přechod na poslední stabilní verzi.
 - „Připomenout za týden“ (i zavření dialogu nové verze) odloží nabídku
   té verze o 7 dní. Novější verze se nabídne hned.
-- „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
+- „Aktualizovat“ na Linuxu a macOS novou verzi rovnou
   nainstaluje místo jaru, ze kterého GeoKuk běží; kde to nejde, otevře
   stránku nabízené verze, u bety tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:
