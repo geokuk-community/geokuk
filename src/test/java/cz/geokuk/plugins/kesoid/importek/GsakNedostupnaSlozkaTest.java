@@ -104,6 +104,9 @@ public class GsakNedostupnaSlozkaTest {
 				nedostupnePriNacitani.add(nedostupne);
 				super.setNedostupnePriNacitani(nedostupne);
 			}
+
+			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze) {}
 		};
 		model.inject(progress);
 		model.inject(new KesoidPluginManager());

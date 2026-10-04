@@ -6,6 +6,8 @@ public class GsakParametryNacitani {
 	private Set<String> casNalezu = Collections.emptySet();
 	private Set<String> casNenalezu = Collections.emptySet();
 	private boolean nacistVsechnyDatabaze = false;
+	/** „Načítat až po vybrání“ pro databáze OpenSAKu. */
+	private boolean nacistVsechnyDatabazeOpensaku = true;
 
 	public Set<String> getCasNalezu() {
 		return casNalezu;
@@ -31,10 +33,18 @@ public class GsakParametryNacitani {
 		this.nacistVsechnyDatabaze = aNacistVsechnyDatabaze;
 	}
 
+	public boolean isNacistVsechnyDatabazeOpensaku() {
+		return nacistVsechnyDatabazeOpensaku;
+	}
+
+	public void setNacistVsechnyDatabazeOpensaku(final boolean aNacistVsechnyDatabazeOpensaku) {
+		this.nacistVsechnyDatabazeOpensaku = aNacistVsechnyDatabazeOpensaku;
+	}
+
 	// ------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "GsakParametryNacitani [casNalezu=" + casNalezu + ", casNenalezu=" + casNenalezu + ", nacistVsechnyDatabaze=" + nacistVsechnyDatabaze + "]";
+		return "GsakParametryNacitani [casNalezu=" + casNalezu + ", casNenalezu=" + casNenalezu + ", nacistVsechnyDatabaze=" + nacistVsechnyDatabaze + ", nacistVsechnyDatabazeOpensaku=" + nacistVsechnyDatabazeOpensaku + "]";
 	}
 
 	@Override
@@ -44,6 +54,7 @@ public class GsakParametryNacitani {
 		result = prime * result + (casNalezu == null ? 0 : casNalezu.hashCode());
 		result = prime * result + (casNenalezu == null ? 0 : casNenalezu.hashCode());
 		result = prime * result + (nacistVsechnyDatabaze ? 1231 : 1237);
+		result = prime * result + (nacistVsechnyDatabazeOpensaku ? 1231 : 1237);
 		return result;
 	}
 
@@ -74,6 +85,9 @@ public class GsakParametryNacitani {
 			return false;
 		}
 		if (nacistVsechnyDatabaze != other.nacistVsechnyDatabaze) {
+			return false;
+		}
+		if (nacistVsechnyDatabazeOpensaku != other.nacistVsechnyDatabazeOpensaku) {
 			return false;
 		}
 		return true;

@@ -30,10 +30,12 @@ public class GsakNacitatPoVybraniTest {
 
 		@Override
 		public KesoidUmisteniSouboru getUmisteniSouboru() {
+			dotazuNaUmisteni++;
 			return umisteni;
 		}
 	};
 	private KesoidUmisteniSouboru umisteni;
+	private int dotazuNaUmisteni;
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
@@ -111,6 +113,47 @@ public class GsakNacitatPoVybraniTest {
 
 		model.vycistiBlokovaneZdroje(set(stara)); // databáze ve složce, která je k dispozici, zmizela
 		Assert.assertTrue(nacte(treti));
+	}
+
+	/** Databáze ve složce GSAKu zadané přes symbolický odkaz se při dalším prohledání znovu nezablokuje. */
+	@Test
+	public void znamaDatabazePresOdkazSeNezablokuje() throws Exception {
+		final File skutecna = tmp.newFolder("skutecna");
+		final File odkaz = new File(tmp.getRoot(), "odkaz");
+		try {
+			java.nio.file.Files.createSymbolicLink(odkaz.toPath(), skutecna.toPath());
+		} catch (final UnsupportedOperationException | java.io.IOException e) {
+			Assume.assumeNoException("symbolický odkaz nejde vytvořit", e);
+		}
+		final File db = new File(odkaz, "Default/sqlite.db3").getAbsoluteFile();
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(db));
+		model.zaradGsakDatabaze(set(db));
+		Assert.assertTrue(nacte(db));
+	}
+
+	/** Neplatná cesta k aktivní složce (ručně upravené nastavení) nesmí shodit úklid zablokovaných zdrojů. */
+	@Test
+	public void neplatnaSlozkaNevadi() throws Exception {
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(new File(tmp.getRoot(), "a\0b"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, false));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(a));
+		model.zaradGsakDatabaze(set(a, b)); // b je zablokovaná, úklid má co dělat
+		model.vycistiBlokovaneZdroje(set());
+	}
+
+	/** Bez zablokovaných zdrojů se po načtení nezjišťuje dostupnost složek (souborové operace na EDT). */
+	@Test
+	public void bezBlokovanychSeSlozkyNekontroluji() throws Exception {
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, true));
+		model.vycistiBlokovaneZdroje(set());
+		Assert.assertEquals(0, dotazuNaUmisteni);
 	}
 
 	/** Podsložky byly při prohledání nečitelné a pak se vrátily: vybraná databáze zůstane vybraná, zablokovaná zablokovaná. */

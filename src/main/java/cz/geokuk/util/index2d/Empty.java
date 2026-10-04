@@ -33,7 +33,7 @@ class Empty<T> extends Node<T> {
 	}
 
 	@Override
-	Ctverecnik<T> rozčtvrť() {
+	Ctverecnik<T> rozčtvrť(final int xx1, final int yy1, final int xx2, final int yy2) {
 		// TODO Auto-generated method stub
 		throw new IllegalStateException("NIC nelze čtvrtit");
 	}
