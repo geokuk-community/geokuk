@@ -65,14 +65,27 @@ public final class UzivatelskeMapy {
 
 	static List<String> nactiSlozku(final File slozka) {
 		EKaType.setUzivatelske(Collections.emptyList());
-		final File[] soubory = slozka.listFiles(f -> f.isFile() && f.getName().toLowerCase(Locale.ROOT).endsWith(PRIPONA));
+		final File[] soubory = slozka.listFiles(File::isFile);
 		if (soubory == null) {
 			return Collections.emptyList();
 		}
+		Arrays.sort(soubory);
 		final List<String> chyby = new ArrayList<>();
 		final SortedMap<String, Properties> obsah = new TreeMap<>();
 		for (final File soubor : soubory) {
-			try (Reader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
+			final String jmeno = soubor.getName().toLowerCase(Locale.ROOT);
+			if (jmeno.endsWith(PRIPONA + ".txt")) {
+				chyby.add(soubor.getName() + ": soubor má příponu .txt, přejmenujte ho na " + soubor.getName().substring(0, soubor.getName().length() - 4));
+			}
+			if (!jmeno.endsWith(PRIPONA)) {
+				continue;
+			}
+			try (BufferedReader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
+				// Poznámkový blok a PowerShell 5 ukládají UTF-8 se značkou BOM.
+				reader.mark(1);
+				if (reader.read() != '\uFEFF') {
+					reader.reset();
+				}
 				final Properties p = new Properties();
 				p.load(reader);
 				obsah.put(soubor.getName(), p);

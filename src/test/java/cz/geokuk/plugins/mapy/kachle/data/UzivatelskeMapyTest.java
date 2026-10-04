@@ -449,6 +449,22 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void souborSeZnackouBomSeNacte() throws Exception {
+		final File slozka = slozka();
+		Files.write(new File(slozka, "bom.mapa").toPath(), ("\uFEFFnazev=Mapa s BOM\nurl=" + URL + "\n").getBytes(StandardCharsets.UTF_8));
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapy.nactiSlozku(slozka));
+		Assert.assertEquals("Mapa s BOM", EKaType.podleJmena("user-bom").getNazev());
+	}
+
+	@Test
+	public void priponaTxtSeOhlasi() throws Exception {
+		final File slozka = slozka("topo.mapa.txt", "nazev=Topo\nurl=" + URL, "Jina.MAPA.TXT", "nazev=J\nurl=" + URL, "poznamky.txt", "x");
+		Assert.assertEquals(Arrays.asList("Jina.MAPA.TXT: soubor má příponu .txt, přejmenujte ho na Jina.MAPA", "topo.mapa.txt: soubor má příponu .txt, přejmenujte ho na topo.mapa"),
+				UzivatelskeMapy.nactiSlozku(slozka).stream().sorted().collect(Collectors.toList()));
+		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
+	}
+
+	@Test
 	public void chybejiciSlozkaNicNezmeni() throws Exception {
 		Assert.assertTrue(UzivatelskeMapy.nactiSlozku(new File(tmp.getRoot(), "neni")).isEmpty());
 		Assert.assertEquals(EKaType.vestavene().size(), EKaType.values().length);
