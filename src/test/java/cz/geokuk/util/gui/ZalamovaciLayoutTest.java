@@ -73,4 +73,17 @@ public class ZalamovaciLayoutTest {
 		Assert.assertEquals(20, panel.getHeight());
 		Assert.assertEquals(new Rectangle(200, 0, 100, 20), c.getBounds());
 	}
+
+	@Test
+	public void plovouciNerozhodujeORadcichADostaneZbyleMisto() {
+		final JComponent a = pridej(200);
+		final JComponent prubeh = pridej(300);
+		layout.plovouci(prubeh);
+		final JComponent b = pridej(100);
+		rozvrhni(320);
+		Assert.assertEquals(20, panel.getHeight());
+		Assert.assertEquals(new Rectangle(0, 0, 200, 20), a.getBounds());
+		Assert.assertEquals(new Rectangle(200, 0, 100, 20), b.getBounds());
+		Assert.assertEquals(new Rectangle(300, 0, 20, 20), prubeh.getBounds());
+	}
 }

@@ -37,6 +37,10 @@ public class JStatusBar extends JPanel {
 
 		private boolean skrtnuto = true;
 
+		JSkrtnutaValue(final String prototyp) {
+			super(prototyp);
+		}
+
 		public void setSkrtnuto(final boolean skrtnuto) {
 			if (this.skrtnuto == skrtnuto) {
 				return;
@@ -64,7 +68,18 @@ public class JStatusBar extends JPanel {
 	private class JValue extends JTextField {
 		private static final long serialVersionUID = 870515243956856500L;
 
-		public JValue() {
+		/** Text nejširšího běžného obsahu, aby šířka pole a tím rozložení řádku nezávisely na datech. */
+		private final String prototyp;
+		private final boolean pevnaSirka;
+
+		public JValue(final String prototyp) {
+			this(prototyp, false);
+		}
+
+		/** Pole s pevnou šířkou delší text ořízne, celý je v tooltipu. */
+		public JValue(final String prototyp, final boolean pevnaSirka) {
+			this.prototyp = prototyp;
+			this.pevnaSirka = pevnaSirka;
 			// setFocusable(false);
 			setEditable(false);
 			setCursor(FKurzory.TEXTOVY_KURZOR);
@@ -79,47 +94,53 @@ public class JStatusBar extends JPanel {
 		 */
 		@Override
 		public Dimension getPreferredSize() {
-			Dimension preferredSize = super.getPreferredSize();
-			preferredSize = new Dimension(preferredSize.width + 1, preferredSize.height);
-			return preferredSize;
+			final Dimension preferredSize = super.getPreferredSize();
+			final Insets ins = getInsets();
+			final int sirkaPrototypu = getFontMetrics(getFont()).stringWidth(prototyp) + ins.left + ins.right;
+			final int sirka = pevnaSirka ? sirkaPrototypu : Math.max(preferredSize.width, sirkaPrototypu);
+			return new Dimension(sirka + 1, preferredSize.height);
 		}
 
 	}
 
 	private static final long serialVersionUID = -6267502844907253041L;
 
+	private static final String SOURADNICE = new Wgs(-88.888, -178.888).toString();
+	private static final String POCTY = "999999/999999";
+	private static final String POCET = "99999";
+
 	private Mou cur;
 
 	private Poziceq poziceq = new Poziceq();
-	private final JValue souradnice = new JValue();
-	private final JValue celkovePoctyVsude = new JValue();
-	private final JValue filtrovanePocetyVsude = new JValue();
+	private final JValue souradnice = new JValue(SOURADNICE);
+	private final JValue celkovePoctyVsude = new JValue(POCTY);
+	private final JValue filtrovanePocetyVsude = new JValue(POCTY);
 
-	private final JSkrtnutaValue celkovePoctyVyrez = new JSkrtnutaValue();
-	private final JSkrtnutaValue filtrovanePocetyVyrez = new JSkrtnutaValue();
-	private final JValue vzdalenost = new JValue();
+	private final JSkrtnutaValue celkovePoctyVyrez = new JSkrtnutaValue(POCET);
+	private final JSkrtnutaValue filtrovanePocetyVyrez = new JSkrtnutaValue(POCET);
+	private final JValue vzdalenost = new JValue("9999 km");
 
 	private final JLabel azimutSmer = new JLabel();
-	private final JValue azimutCislo = new JValue();
+	private final JValue azimutCislo = new JValue("359°");
 
-	private final JValue vyletAno = new JValue();
-	private final JValue vyletNe = new JValue();
+	private final JValue vyletAno = new JValue("9999");
+	private final JValue vyletNe = new JValue("9999");
 
-	private final JValue souradnicePozice = new JValue();
+	private final JValue souradnicePozice = new JValue(SOURADNICE);
 
-	private final JValue meritkoMapy = new JValue();
+	private final JValue meritkoMapy = new JValue("22");
 
 	private final JLabel varovaniPoctuPrekrocenych = new JLabel();
 	private JPanel odPozice;
 
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
 	private JPanel jFilterProgressPanel;
-	private final JValue jZdrojeKesoiduPocetNactenych = new JValue();
+	private final JValue jZdrojeKesoiduPocetNactenych = new JValue("999");
 
-	private final JSkrtnutaValue jZdrojeKesoiduPocetNenactenych = new JSkrtnutaValue();
-	private final JValue jZdrojeKesoiduCas = new JValue();
+	private final JSkrtnutaValue jZdrojeKesoiduPocetNenactenych = new JSkrtnutaValue("999");
+	private final JValue jZdrojeKesoiduCas = new JValue("2026-12-31 23:59");
 
-	private final JValue jSouborSVyletem = new JValue();
+	private final JValue jSouborSVyletem = new JValue("muj-vylet-2026.ggt", true);
 	private final JLabel jSouborSVyletemPotrebujeUlozit = new JLabel();
 
 	private KesBag filtrovane;
@@ -130,7 +151,7 @@ public class JStatusBar extends JPanel {
 
 	private Akce akce;
 
-	private final JValue jPocetKesiVCestach = new JValue();
+	private final JValue jPocetKesiVCestach = new JValue("9999/99");
 
 	public JStatusBar() {
 		initComponents();
@@ -361,12 +382,28 @@ public class JStatusBar extends JPanel {
 		add(vylety);
 
 		add(varovaniPoctuPrekrocenych);
+		layout.plovouci(varovaniPoctuPrekrocenych);
 		jFilterProgressPanel = createPanel();
 		// jFilterProgress.setVisible(false);
 		// jFilterProgress.setStringPainted(true);
 		add(jFilterProgressPanel);
+		layout.plovouci(jFilterProgressPanel);
 
-		final JPanel zdrojeKesoiduPanel = createPanel();
+		// Šířka i se skrytým počtem nenačtených, aby jeho zobrazení neměnilo rozložení řádku.
+		final JPanel zdrojeKesoiduPanel = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Dimension getPreferredSize() {
+				final Dimension d = super.getPreferredSize();
+				if (!jZdrojeKesoiduPocetNenactenych.isVisible()) {
+					d.width += jZdrojeKesoiduPocetNenactenych.getPreferredSize().width + ((FlowLayout) getLayout()).getHgap();
+				}
+				return d;
+			}
+		};
+		zdrojeKesoiduPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+		zdrojeKesoiduPanel.setBorder(BorderFactory.createEtchedBorder());
 		zdrojeKesoiduPanel.setToolTipText("Kliknutím zobrazíte podrobnosti");
 		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNactenych);
 		jZdrojeKesoiduPocetNactenych.setToolTipText("Počet načtených souborů s kešoidy.");
