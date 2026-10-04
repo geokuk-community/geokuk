@@ -31,8 +31,8 @@ public class IndexatorPostavTest {
 			final Sheet<TestBod> sb = (Sheet<TestBod>) b;
 			Assert.assertEquals(cesta, sa.xx, sb.xx);
 			Assert.assertEquals(cesta, sa.yy, sb.yy);
-			Lst<TestBod> la = sa.mapobj;
-			Lst<TestBod> lb = sb.mapobj;
+			Lst<TestBod> la = sa.lst();
+			Lst<TestBod> lb = sb.lst();
 			while (la != null || lb != null) {
 				Assert.assertNotNull(cesta, la);
 				Assert.assertNotNull(cesta, lb);
