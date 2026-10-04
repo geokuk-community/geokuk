@@ -101,7 +101,7 @@ public class MerKesoidy {
 		});
 		slide.inject(new KesoidModel() {
 			@Override
-			public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {}
+			public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit, final boolean tecky, final int limit) {}
 		});
 		slide.setSoord(soord);
 		slide.setSize(OKNO);
