@@ -20,4 +20,12 @@ public class MyExceptionHandlerTest {
 		Assert.assertNull(MyExceptionHandler.najdiOom(new RuntimeException(new IllegalStateException())));
 		Assert.assertNull(MyExceptionHandler.najdiOom(null));
 	}
+
+	@Test(timeout = 5000)
+	public void zacyklenePricinyNezamrznou() {
+		final RuntimeException a = new RuntimeException("a");
+		final RuntimeException b = new RuntimeException("b", a);
+		a.initCause(b);
+		Assert.assertNull(MyExceptionHandler.najdiOom(a));
+	}
 }
