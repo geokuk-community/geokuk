@@ -427,9 +427,9 @@ public class KesoidModel extends Model0 {
 		setGsakParametryNacitani(loadGsakParametryNacitani());
 		setUmisteniSouboru(loadUmisteniSouboru());
 
-		setOnoff(currPrefe().node(FPref.KESOID_node).getBoolean(FPref.KESOID_VISIBLE_value, true));
-		setZobrazeniKesi(currPrefe().node(FPref.KESOID_node).getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
 		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
+		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
+		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
 		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
 				.sVlastnostmi();
 		fire(new LimityKresleniEvent(limityKresleni));

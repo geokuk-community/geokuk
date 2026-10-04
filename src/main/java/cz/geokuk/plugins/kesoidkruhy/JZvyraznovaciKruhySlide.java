@@ -14,7 +14,7 @@ import cz.geokuk.util.index2d.Indexator;
 
 public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	private static final long serialVersionUID = -5858146658366237217L;
-	private int limitIkon = LimityKresleni.VYCHOZI_IKON;
+	private volatile int limitIkon = LimityKresleni.VYCHOZI_IKON;
 	private static final int MINIMALNI_JEDNOTKOVY_KRUH = 25;
 
 	private Indexator<Wpt> iIndexator;

@@ -19,7 +19,7 @@ import cz.geokuk.util.index2d.Indexator;
 public class JPopiskySlide extends JSingleSlide0 {
 
 	private static final long serialVersionUID = -5858146658366237217L;
-	private int limitIkon = LimityKresleni.VYCHOZI_IKON;
+	private volatile int limitIkon = LimityKresleni.VYCHOZI_IKON;
 	/** Nejširší popisek, se kterým se při kreslení po částech počítá, v pixelech. */
 	private static final int OKRAJ_POPISKU = 600;
 

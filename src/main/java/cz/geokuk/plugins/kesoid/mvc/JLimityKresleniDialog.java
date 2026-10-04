@@ -52,6 +52,11 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		jTecek.addChangeListener(e -> uloz());
 		final JButton jVychozi = new JButton("Výchozí");
 		jVychozi.addActionListener(e -> kesoidModel.setLimityKresleni(LimityKresleni.VYCHOZI));
+		if (LimityKresleni.zadanoVlastnostmi()) {
+			jIkon.setEnabled(false);
+			jTecek.setEnabled(false);
+			jVychozi.setEnabled(false);
+		}
 
 		final JPanel panel = new JPanel(new GridBagLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));

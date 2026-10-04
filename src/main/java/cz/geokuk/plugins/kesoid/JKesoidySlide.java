@@ -169,7 +169,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private int prumer;
 	private int moumerPrumeru;
 	private String oznamenePrekroceni;
-	private LimityKresleni limity = LimityKresleni.VYCHOZI;
+	private volatile LimityKresleni limity = LimityKresleni.VYCHOZI;
 	/** Pro měření limitů: čas každého vykreslení na obrazovku do logu. */
 	private static final boolean MERIT = Boolean.getBoolean("geokuk.merKresleni");
 	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */

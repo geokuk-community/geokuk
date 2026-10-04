@@ -29,6 +29,11 @@ public final class LimityKresleni {
 		return of(Integer.getInteger("geokuk.limitIkon", ikon), Integer.getInteger("geokuk.limitTecek", tecek));
 	}
 
+	/** Jsou limity zadané vlastnostmi (měření)? */
+	public static boolean zadanoVlastnostmi() {
+		return Integer.getInteger("geokuk.limitIkon") != null || Integer.getInteger("geokuk.limitTecek") != null;
+	}
+
 	private static int orizni(final int hodnota, final int min) {
 		return Math.max(min, Math.min(MAX, hodnota));
 	}
