@@ -21,6 +21,7 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 	public static final Filex CESTY_DIR = new Filex(new File(FConst.DATA_DIR, "cesty"), false, true);
 	public static final Filex GEOGET_DATA_DIR = new Filex(new File("C:\\geoget\\data"), false, false);
 	public static final Filex GSAK_DATA_DIR = new Filex(new File(FConst.HOME_DIR, "AppData/Roaming/gsak/data"), false, false);
+	public static final Filex OPENSAK_DATA_DIR = new Filex(vychoziSlozkaOpensaku(System.getProperty("os.name", ""), FConst.HOME_DIR, System.getenv("APPDATA")), false, false);
 
 	public static final File IKONY_DIR = new File(FConst.DATA_DIR, "ikony");
 	public static final Filex IMAGE_3RDPARTY_DIR = new Filex(new File(IKONY_DIR, "ostatni"), false, true);
@@ -35,6 +36,7 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 
 	private Filex geogetDataDir;
 	private Filex gsakDataDir;
+	private Filex opensakDataDir;
 	private Filex image3rdPartyDir;
 	private Filex imageMyDir;
 
@@ -62,6 +64,9 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 			return false;
 		}
 		if (!Objects.equals(gsakDataDir, that == null ? null : that.gsakDataDir)) {
+			return false;
+		}
+		if (!Objects.equals(opensakDataDir, that == null ? null : that.opensakDataDir)) {
 			return false;
 		}
 		return true;
@@ -116,6 +121,10 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 
 	public Filex getGsakDataDir() {
 		return gsakDataDir;
+	}
+
+	public Filex getOpensakDataDir() {
+		return opensakDataDir;
 	}
 
 	public Filex getImage3rdPartyDir() {
@@ -181,6 +190,10 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 		gsakDataDir = gsakDir;
 	}
 
+	public void setOpensakDataDir(final Filex opensakDir) {
+		opensakDataDir = opensakDir;
+	}
+
 	public void setImage3rdPartyDir(final Filex image3rdPartyDir) {
 		this.image3rdPartyDir = image3rdPartyDir;
 	}
@@ -203,6 +216,21 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 	 */
 	public void setNeGgtFile(final Filex neGgtFile) {
 		this.neGgtFile = neGgtFile;
+	}
+
+	/** Instalace z Microsoft Store má data v Dokumentech, ostatní ve složce AppData. */
+	static File vychoziSlozkaOpensaku(final String os, final File home, final String appData) {
+		if (os.startsWith("Windows")) {
+			final File dokumenty = new File(home, "Documents/opensak");
+			if (dokumenty.isDirectory()) {
+				return dokumenty;
+			}
+			return appData == null ? new File(home, "AppData/Roaming/opensak") : new File(appData, "opensak");
+		}
+		if (os.startsWith("Mac")) {
+			return new File(home, "Library/Application Support/opensak");
+		}
+		return new File(home, ".local/share/opensak");
 	}
 
 	/**
