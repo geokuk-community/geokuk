@@ -45,7 +45,8 @@ public class KesoidModel extends Model0 {
 	private GccomNick gccomNick;
 	private ASada jmenoAktualniSadyIkon;
 	private KesoidUmisteniSouboru umisteniSouboru;
-	private Set<File> blokovaneZdroje = new HashSet<>();
+	/** Mění se z EDT i z vlákna načítání: jen celou novou kopií v upravBlokovaneZdroje. */
+	private volatile Set<File> blokovaneZdroje = Collections.emptySet();
 	private GsakParametryNacitani gsakParametryNacitani;
 
 	// injektovanci
@@ -134,9 +135,7 @@ public class KesoidModel extends Model0 {
 		if (zname != null && !getGsakParametryNacitani().isNacistVsechnyDatabaze()) {
 			final Set<File> nove = new HashSet<>(databaze);
 			nove.removeAll(zname);
-			if (blokovaneZdroje.addAll(nove)) {
-				pref.putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);
-			}
+			upravBlokovaneZdroje(b -> b.addAll(nove));
 		}
 		if (zname == null || !databaze.equals(new HashSet<>(zname))) {
 			pref.putFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, databaze);
@@ -288,9 +287,7 @@ public class KesoidModel extends Model0 {
 		// TODO : speed up
 		final Collection<File> changedFiles = Collections2.transform(vsechny.getInformaceOZdrojich().getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
 		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
-		final boolean zmena = nacitat ? blokovaneZdroje.removeAll(changedFiles) : blokovaneZdroje.addAll(changedFiles);
-		if (zmena) {
-			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);
+		if (upravBlokovaneZdroje(b -> nacitat ? b.removeAll(changedFiles) : b.addAll(changedFiles))) {
 			startKesLoading();
 		}
 	}
@@ -343,7 +340,9 @@ public class KesoidModel extends Model0 {
 		pref.putFilex(FPref.GEOGET_DATA_DIR_value, aUmisteniSouboru.getGeogetDataDir());
 		pref.putFilex(FPref.GSAK_DATA_DIR_value, aUmisteniSouboru.getGsakDataDir());
 		pref.remove("vyjimkyDir"); // mazat ze starých verzí
-		blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
+		synchronized (this) {
+			blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
+		}
 		fire(new KesoidUmisteniSouboruChangedEvent(aUmisteniSouboru));
 		if (nacistIkony) {
 			startIkonLoad(true);
@@ -446,9 +445,18 @@ public class KesoidModel extends Model0 {
 	}
 
 	private void vycistiBlokovaneZdroje(final InformaceOZdrojich informaceOZdrojich) {
-		if (blokovaneZdroje.retainAll(informaceOZdrojich.getJmenaZdroju())) {
-			currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, blokovaneZdroje);
+		upravBlokovaneZdroje(b -> b.retainAll(informaceOZdrojich.getJmenaZdroju()));
+	}
+
+	/** Upraví kopii blokovaných zdrojů; když se změnila, uloží ji. */
+	private synchronized boolean upravBlokovaneZdroje(final java.util.function.Predicate<Set<File>> uprava) {
+		final Set<File> nove = new HashSet<>(blokovaneZdroje);
+		if (!uprava.test(nove)) {
+			return false;
 		}
+		blokovaneZdroje = nove;
+		currPrefe().node(FPref.KESOID_node).putFileCollection(FPref.BLOKOVANE_ZDROJE_value, nove);
+		return true;
 	}
 
 }
