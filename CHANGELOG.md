@@ -3,6 +3,9 @@
 ## 6.3.0
 
 ### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
 - Když jiný program zamyká víc databází, každá se načte, jakmile ji
   pustí; změny ostatních zdrojů se ukážou hned. Změna Umístění souborů
   zruší rozběhnuté načítání a začne znovu.
