@@ -593,6 +593,24 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void radekPresnePoSirkuSeNezalomiOJednaDelsiAno() {
+		final String presne = "aaaa bbbb";
+		Assert.assertEquals(presne, UzivatelskeMapy.zalom(presne, 9));
+		Assert.assertEquals("aaaa\nbbbb", UzivatelskeMapy.zalom(presne, 8));
+	}
+
+	@Test
+	public void dialogZalamujeDoDefinovaneSirky() {
+		final StringBuilder dlouhy = new StringBuilder("Chyba");
+		for (int i = 0; i < 40; i++) {
+			dlouhy.append(" slovo").append(i);
+		}
+		for (final String radek : UzivatelskeMapy.textDialogu(dlouhy.toString()).split("\n")) {
+			Assert.assertTrue(radek, radek.length() <= UzivatelskeMapy.SIRKA_DIALOGU);
+		}
+	}
+
+	@Test
 	public void dlouhyRadekSeZalomiNaMezerach() {
 		Assert.assertEquals("aaa bbb\nccc ddd\ne", UzivatelskeMapy.zalom("aaa bbb ccc ddd e", 7));
 		Assert.assertEquals("aaa\nbbbb", UzivatelskeMapy.zalom("aaa bbbb", 7));
