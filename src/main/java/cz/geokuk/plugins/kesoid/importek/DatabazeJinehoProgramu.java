@@ -2,16 +2,15 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.File;
 import java.sql.*;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteException;
 
-/** Databáze GeoGetu a GSAKu, do kterých ten program může zrovna zapisovat. */
+/** Databáze GeoGetu, GSAKu a OpenSAKu, do kterých ten program může zrovna zapisovat. */
 final class DatabazeJinehoProgramu {
 
-	/** Import do GeoGetu nebo GSAKu drží databázi zamčenou i desítky sekund, počkáme na něj. */
+	/** Import do GeoGetu, GSAKu nebo OpenSAKu drží databázi zamčenou i desítky sekund, počkáme na něj. */
 	static final int CEKANI_NA_ZAMEK_MS = 60_000;
 
 	/** Při zjišťování, co je soubor zač, dlouho nečekáme: zamčená databáze by zdržela načtení všech ostatních zdrojů. */
@@ -32,7 +31,7 @@ final class DatabazeJinehoProgramu {
 		private static final long serialVersionUID = 1L;
 
 		Zamcena(final File soubor, final Throwable pricina) {
-			super("Databáze \"" + jmeno(soubor) + "\" je zamčená, GeoGet nebo GSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
+			super("Databáze \"" + jmeno(soubor) + "\" je zamčená, GeoGet, GSAK nebo OpenSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
 		}
 	}
 
@@ -65,12 +64,62 @@ final class DatabazeJinehoProgramu {
 		return vysledek;
 	}
 
+	/** Sloupce pro SELECT; ty, které starší verze programu v tabulce nemá, budou NULL. */
+	static String vyber(final Statement statement, final String tabulka, final String[] sloupce) throws SQLException {
+		final Set<String> existujici = sloupce(statement, tabulka);
+		final StringBuilder sb = new StringBuilder();
+		for (final String sloupec : sloupce) {
+			final String[] jmenoAlias = sloupec.split(" as ");
+			final String alias = jmenoAlias[jmenoAlias.length - 1];
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			sb.append(existujici.contains(jmenoAlias[0]) ? tabulka + "." + jmenoAlias[0] : "NULL").append(" as ").append(alias);
+		}
+		return sb.toString();
+	}
+
 	/** Zda databázi pořád drží zamčenou jiný program, bez čekání. */
 	static boolean jeZamcena(final File soubor) {
 		try (Connection c = otevri(soubor, 0); Statement s = c.createStatement(); ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM sqlite_master")) {
 			return false;
 		} catch (final SQLException e) {
 			return jeZamcena(e);
+		}
+	}
+
+	/** Databáze má jinou strukturu, než GeoKuk zná; přeskočí se a ostatní zdroje se načtou. */
+	static class JineSchema extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		JineSchema(final String zprava) {
+			super(zprava);
+		}
+	}
+
+	/**
+	 * Ověří, že tabulky mají sloupce, bez kterých keše nejde načíst. Volitelná tabulka se kontroluje, jen když v databázi je.
+	 *
+	 * @throws JineSchema
+	 *             se srozumitelným popisem, co chybí
+	 */
+	static void zkontrolujSloupce(final Statement statement, final File soubor, final String program, final Map<String, List<String>> povinne, final Set<String> volitelneTabulky)
+			throws SQLException {
+		final List<String> chybi = new ArrayList<>();
+		for (final Map.Entry<String, List<String>> e : povinne.entrySet()) {
+			final Set<String> existujici = sloupce(statement, e.getKey());
+			if (existujici.isEmpty() && volitelneTabulky.contains(e.getKey())) {
+				continue;
+			}
+			for (final String sloupec : e.getValue()) {
+				if (!existujici.contains(sloupec)) {
+					chybi.add(e.getKey() + "." + sloupec);
+				}
+			}
+		}
+		if (!chybi.isEmpty()) {
+			throw new JineSchema("Databáze " + program + " \"" + soubor + "\" má jinou strukturu, než GeoKuk zná (chybí " + String.join(", ", chybi)
+					+ "), a proto se nenačetla. Zkontrolujte, že jde o databázi " + program + ".");
 		}
 	}
 
@@ -106,7 +155,7 @@ final class DatabazeJinehoProgramu {
 			return null;
 		case SQLITE_BUSY:
 		case SQLITE_LOCKED:
-			proc = "je zamčená, GeoGet nebo GSAK do ní právě zapisuje";
+			proc = "je zamčená, GeoGet, GSAK nebo OpenSAK do ní právě zapisuje";
 			break;
 		case SQLITE_CORRUPT:
 			proc = "je poškozená, opravte ji údržbou databáze v GeoGetu nebo GSAKu";
