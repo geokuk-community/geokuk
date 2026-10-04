@@ -2,6 +2,12 @@
 
 ## 6.3.0
 
+### Změny
+- Kešoidy > Limity kreslení…: kolik keší ve výřezu se ještě kreslí jako
+  ikony (výchozí 90 000, dosud pevně 30 000) a jako tečky (výchozí
+  300 000, dosud bez omezení). Nad limitem teček se keše nekreslí
+  a stavový řádek vyzve k přiblížení mapy.
+
 ## 6.2.0
 
 ### Změny

@@ -4,15 +4,17 @@ import java.awt.*;
 
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.program.FConst;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
+import cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.util.index2d.Indexator;
 
 public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	private static final long serialVersionUID = -5858146658366237217L;
+	private int limitIkon = LimityKresleni.VYCHOZI_IKON;
 	private static final int MINIMALNI_JEDNOTKOVY_KRUH = 25;
 
 	private Indexator<Wpt> iIndexator;
@@ -29,6 +31,11 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	@Override
 	public JSingleSlide0 createRenderableSlide() {
 		return new JZvyraznovaciKruhySlide();
+	}
+
+	public void onEvent(final LimityKresleniEvent event) {
+		limitIkon = event.getLimity().getIkon();
+		repaint();
 	}
 
 	public void onEvent(final KeskyVyfiltrovanyEvent event) {
@@ -60,7 +67,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 			r = kruhy.getVelikost();
 		}
 		final int pocet = iIndexator.count(getSoord().getBoundingRect());
-		if (pocet > FConst.MAX_POC_WPT_NA_MAPE || prilisHuste(pocet, Math.PI * r * r)) {
+		if (pocet > limitIkon || prilisHuste(pocet, Math.PI * r * r)) {
 			return;
 		}
 

@@ -9,15 +9,17 @@ import javax.swing.Box;
 import cz.geokuk.core.coord.EJakOtacetPriRendrovani;
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.program.FConst;
 import cz.geokuk.plugins.kesoid.Kepodr;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
+import cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent;
 import cz.geokuk.util.index2d.Indexator;
 
 public class JPopiskySlide extends JSingleSlide0 {
 
 	private static final long serialVersionUID = -5858146658366237217L;
+	private int limitIkon = LimityKresleni.VYCHOZI_IKON;
 	/** Nejširší popisek, se kterým se při kreslení po částech počítá, v pixelech. */
 	private static final int OKRAJ_POPISKU = 600;
 
@@ -45,6 +47,11 @@ public class JPopiskySlide extends JSingleSlide0 {
 	@Override
 	public EJakOtacetPriRendrovani jakOtacetProRendrovani() {
 		return EJakOtacetPriRendrovani.COORD;
+	}
+
+	public void onEvent(final LimityKresleniEvent event) {
+		limitIkon = event.getLimity().getIkon();
+		repaint();
 	}
 
 	public void onEvent(final KeskyVyfiltrovanyEvent event) {
@@ -79,7 +86,7 @@ public class JPopiskySlide extends JSingleSlide0 {
 		final int height2 = fontMetrics.getHeight();
 		final int pocet = iIndexator.count(getSoord().getBoundingRect());
 		// Odhad popisku: dva řádky po zhruba patnácti znacích.
-		if (pocet > FConst.MAX_POC_WPT_NA_MAPE || prilisHuste(pocet, 2.0 * height2 * 8 * height2)) {
+		if (pocet > limitIkon || prilisHuste(pocet, 2.0 * height2 * 8 * height2)) {
 			return;
 		}
 		final int posuny = fontMetrics.getDescent() - height2;
