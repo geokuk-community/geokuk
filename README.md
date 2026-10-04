@@ -120,7 +120,7 @@ postupu výše.
 Vlastní mapové podklady se zadávají ve složce `data/mapy`, každá mapa
 v samostatném souboru `<označení>.mapa`, a v menu Mapy jsou ve skupině
 „Uživatelské mapy“. Popis a příklady jsou v [`priklady/mapy`](priklady/mapy);
-zip pro Windows je obsahuje ve složce `data/mapy-priklady`. Mapu začnete
+GeoKuk je při startu uloží do složky `data/mapy-priklady`. Mapu začnete
 používat zkopírováním jejího souboru do `data/mapy`.
 
 ## Dálkové ovládání

@@ -122,9 +122,6 @@ $slozka = Rozbal (Join-Path $koren "obvykle")
 foreach ($f in "LICENSE", "THIRD-PARTY.txt", "CTIMNE.txt", "GeoKuk-prvni-spusteni.cmd") {
     Ocekavej (Test-Path (Join-Path $slozka $f)) "zip obsahuje $f"
 }
-$priklady = @(Get-ChildItem "priklady\mapy\*.mapa" | ForEach-Object Name | Sort-Object)
-$vZipu = @(Get-ChildItem (Join-Path $slozka "data\mapy-priklady") -Filter "*.mapa" -ErrorAction SilentlyContinue | ForEach-Object Name | Sort-Object)
-Ocekavej ($priklady.Count -gt 0 -and ($priklady -join ",") -eq ($vZipu -join ",")) "zip obsahuje ukázky map v data\mapy-priklady: $($vZipu -join ', ')"
 Ocekavej (-not (Test-Path (Join-Path $slozka "data\mapy"))) "zip neobsahuje data\mapy (ukázky by se načetly jako mapy)"
 $predSpustenim = Get-Date
 $registrPred = Registr
@@ -160,6 +157,10 @@ try {
     foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni", "data\mapy") {
         Ocekavej (Test-Path (Join-Path $slozka $d)) "vzniklo $d"
     }
+    $priklady = @(Get-ChildItem "priklady\mapy\*.mapa" | ForEach-Object Name | Sort-Object)
+    $ukazky = @(Get-ChildItem (Join-Path $slozka "data\mapy-priklady") -Filter "*.mapa" -ErrorAction SilentlyContinue | ForEach-Object Name | Sort-Object)
+    Ocekavej ($priklady.Count -gt 0 -and ($priklady -join ",") -eq ($ukazky -join ",")) "vznikly ukázky map v data\mapy-priklady: $($ukazky -join ', ')"
+    Ocekavej (@(Get-ChildItem (Join-Path $slozka "data\mapy")).Count -eq 0) "data\mapy po startu zůstala prázdná"
     Ocekavej (Konec $o $beh) "program po Soubor > Konec skončil"
     $xml = [xml](Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml"))
     Ocekavej ($null -ne $xml.preferences.root) "data\nastaveni.xml je po ukončení platné"
