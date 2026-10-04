@@ -15,7 +15,7 @@ public class CloseActionTest {
 	public TemporaryFolder tmp = new TemporaryFolder();
 
 	/** Do nezapisovatelné složky (start už varoval) se nastavení neukládá a ukončení se na nic neptá. */
-	@Test
+	@Test(timeout = 30_000)
 	public void zNezapisovatelneSlozkyKonecBezDotazu() throws Exception {
 		final File data = tmp.newFile("data"); // soubor místo složky, do data nejde zapsat ani jako správce
 		final CloseAction akce = new CloseAction();
