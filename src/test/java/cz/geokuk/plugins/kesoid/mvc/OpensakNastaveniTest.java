@@ -31,8 +31,16 @@ public class OpensakNastaveniTest {
 		}
 	};
 
-	private final File a = new File("/tmp/opensak/Default.db").getAbsoluteFile();
-	private final File b = new File("/tmp/opensak/Nova.db").getAbsoluteFile();
+	private final File a = kanon("/tmp/opensak/Default.db");
+	private final File b = kanon("/tmp/opensak/Nova.db");
+
+	private static File kanon(final String cesta) {
+		try {
+			return new File(cesta).getCanonicalFile();
+		} catch (final java.io.IOException e) {
+			throw new java.io.UncheckedIOException(e);
+		}
+	}
 
 	@After
 	public void uklid() throws Exception {
