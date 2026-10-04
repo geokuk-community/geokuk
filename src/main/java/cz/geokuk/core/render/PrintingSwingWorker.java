@@ -22,7 +22,7 @@ public class PrintingSwingWorker extends RendererSwingWorker0 implements Printab
 		progressor.setMax(Rendrovadlo.KOLIK_PROGRESUJEME_NA_KACHLICH);
 
 		final PrinterJob pj = PrinterJob.getPrinterJob();
-		pj.setJobName("Geokuk tisk");
+		pj.setJobName("GeoKuk tisk");
 		pj.setPrintable(this);
 		final boolean[] jedem = new boolean[1];
 		SwingUtilities.invokeAndWait(() -> jedem[0] = pj.printDialog());

@@ -25,6 +25,7 @@ public class SmokeIT {
 	private static final File KOREN = new File("target/smoke");
 	private static final long EDT_LIMIT_MS = 3000;
 	private static final long EDT_LIMIT_START_MS = 10_000;
+	private static final long EDT_LIMIT_VZHLED_MS = 10_000;
 
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
@@ -103,7 +104,7 @@ public class SmokeIT {
 		try (java.net.ServerSocket s = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"))) {
 			zavreny = s.getLocalPort();
 		}
-		final File mapy = new File(adresar, "data/uzivatelske-mapy.properties");
+		final File mapy = new File(adresar, "data/mapy/smoke.mapa");
 		Files.write(mapy.toPath(), new String(Files.readAllBytes(mapy.toPath()), StandardCharsets.UTF_8).replace(":" + server.getPort() + "/", ":" + zavreny + "/").getBytes(StandardCharsets.UTF_8));
 		proxyPort = zavreny;
 		final Properties zprava = spust(adresar, "bezsite", "meritka,posun");
@@ -125,7 +126,8 @@ public class SmokeIT {
 		Files.write(new File(adresar, "data/vylety/lovim.ggt").toPath(), Arrays.copyOf(smeti, 3000));
 		Files.write(new File(adresar, "data/vylety/tedne.ggt").toPath(), "GC1\nnesmysl;;;\n\u0000\n".getBytes(StandardCharsets.UTF_8));
 		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), "<?xml version=\"1.0\"?><preferences><useknute".getBytes(StandardCharsets.UTF_8));
-		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), "rozbita.url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+		Files.write(new File(adresar, "data/mapy/rozbita.mapa").toPath(), "url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), "stara.nazev=Stará\n".getBytes(StandardCharsets.UTF_8));
 
 		final Properties zprava = spust(adresar, "poskozene", "meritka");
 		zkontrolujBezChyb(adresar, zprava, false);
@@ -151,31 +153,44 @@ public class SmokeIT {
 		assertTrue(stazeno >= pozadavky.size());
 	}
 
-	/** Uživatel spustí Geokuk dvakrát (dvojklik dvakrát), obě instance sdílí cache dlaždic i datovou složku. */
+	/** Uživatel spustí GeoKuk dvakrát (dvojklik dvakrát): druhá instance nad stejnou složkou data jen oznámí, že GeoKuk už běží, a skončí; první doběhne a cache zůstane zdravá. */
 	@Test
 	public void dveInstanceNajednou() throws Exception {
 		final File adresar = pripravAdresar("dve");
-		final java.util.concurrent.ExecutorService vlakna = java.util.concurrent.Executors.newFixedThreadPool(2);
+		final java.util.concurrent.ExecutorService vlakna = java.util.concurrent.Executors.newSingleThreadExecutor();
 		try {
 			final java.util.concurrent.Future<Properties> prvni = vlakna.submit(() -> spust(adresar, "prvni", "meritka,posun"));
-			final java.util.concurrent.Future<Properties> druha = vlakna.submit(() -> spust(adresar, "druha", "meritka,posun"));
-			for (final Properties zprava : Arrays.asList(prvni.get(), druha.get())) {
-				zkontrolujBezChyb(adresar, zprava, false);
-				assertEquals("Načtené waypointy", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
-				assertEquals(0, pocitadlo(zprava, "ka33 WEB #chyb"));
+			final File logPrvni = new File(adresar, "prvni.log");
+			final long konec = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
+			while (!(logPrvni.isFile() && new String(Files.readAllBytes(logPrvni.toPath()), StandardCharsets.UTF_8).contains("Otevřeno okno"))) {
+				assertFalse("První instance skončila dřív, než otevřela okno, viz " + logPrvni, prvni.isDone());
+				assertTrue("První instance neotevřela okno do 5 minut, viz " + logPrvni, System.currentTimeMillis() < konec);
+				Thread.sleep(200);
 			}
+			// Bez obrazovky druhá instance hlášku jen zaloguje, dialog by čekal na uživatele.
+			final Process druha = proces(adresar, "druha", "meritka,posun", Collections.singletonList("-Djava.awt.headless=true"));
+			final File logDruhe = new File(adresar, "druha.log");
+			assertTrue("Druhá instance má hned skončit, viz " + logDruhe, druha.waitFor(2, TimeUnit.MINUTES));
+			assertEquals("Návratový kód druhé instance", 0, druha.exitValue());
+			assertTrue("Druhá instance má ohlásit, že GeoKuk už běží, viz " + logDruhe,
+					new String(Files.readAllBytes(logDruhe.toPath()), StandardCharsets.UTF_8).contains("už běží, druhá instance končí"));
+			assertFalse("Druhá instance nesmí spustit scénář", new File(adresar, "druha.properties").exists());
+			final Properties zprava = prvni.get();
+			zkontrolujBezChyb(adresar, zprava, false);
+			assertEquals("Načtené waypointy", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
+			assertEquals(0, pocitadlo(zprava, "ka33 WEB #chyb"));
 		} finally {
-			vlakna.shutdown();
+			vlakna.shutdownNow();
 		}
-		// Po obou běhech musí být cache zdravá a použitelná.
+		// Po obou bězích musí být cache zdravá a použitelná.
 		final Properties treti = spust(adresar, "treti", "meritka,posun");
 		zkontrolujBezChyb(adresar, treti, false);
 		assertEquals(0, pocitadlo(treti, "ka24 DISK cache #chyb čtení"));
 		assertFalse("Cache se nesmí odložit jako vadná", new File(adresar, "data/cache/tiles.sqlite.vadna").exists());
 		assertTrue("Třetí běh bere dlaždice z cache", pocitadlo(treti, "ka22 DISK cache #zásahů") > 100);
-		for (final String beh : Arrays.asList("prvni", "druha", "treti")) {
+		for (final String beh : Arrays.asList("prvni", "treti")) {
 			final String log = new String(Files.readAllBytes(new File(adresar, beh + ".log").toPath()), StandardCharsets.UTF_8);
-			assertFalse("Instance " + beh + " nezapsala dlaždice do sdílené cache, viz " + beh + ".log", log.contains("Nepodařilo se zapsat dlaždice do databáze"));
+			assertFalse("Instance " + beh + " nezapsala dlaždice do cache, viz " + beh + ".log", log.contains("Nepodařilo se zapsat dlaždice do databáze"));
 		}
 	}
 
@@ -485,11 +500,12 @@ public class SmokeIT {
 		pocetWpt = SyntetickeKese.zapis(new File(adresar, "data/gpx/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
 		new File(adresar, "tmp").mkdirs();
 		pracovni.mkdirs();
-		final String mapy = "smoke.nazev=" + SmokeScenar.MAPA + "\n" //
-				+ "smoke.url=" + server.getUrl() + "\n" //
-				+ "smoke.max=18\n" //
-				+ "smoke.hromadne=ano\n";
-		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
+		final String mapy = "nazev=" + SmokeScenar.MAPA + "\n" //
+				+ "url=" + server.getUrl() + "\n" //
+				+ "max=18\n" //
+				+ "hromadne=ano\n";
+		new File(adresar, "data/mapy").mkdirs();
+		Files.write(new File(adresar, "data/mapy/smoke.mapa").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
 		// Hotové nastavení: program pak nepřebírá nastavení z Java Preferences, ve Windows z registru uživatele, který test spustil.
 		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
 				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
@@ -518,15 +534,7 @@ public class SmokeIT {
 
 	private Properties spust(final File adresar, final String beh, final String kroky) throws Exception {
 		final File zprava = new File(adresar, beh + ".properties");
-		final List<String> prikaz = new ArrayList<>(jvm(adresar));
-		// Program běží ze sestaveného jaru v pracovním adresáři jako z přenosné složky.
-		prikaz.add("-cp");
-		prikaz.add(new File(adresar, "pracovni/geokuk.jar") + File.pathSeparator + System.getProperty("smoke.testClasses"));
-		prikaz.add(SmokeScenar.class.getName());
-		prikaz.add(zprava.getPath());
-		prikaz.add(new File(adresar, beh + ".png").getPath());
-		prikaz.add(kroky);
-		final Process p = new ProcessBuilder(prikaz).directory(new File(adresar, "pracovni")).redirectErrorStream(true).redirectOutput(new File(adresar, beh + ".log")).start();
+		final Process p = proces(adresar, beh, kroky, Collections.emptyList());
 		if (!p.waitFor(10, TimeUnit.MINUTES)) {
 			p.destroyForcibly();
 			fail("Scénář " + beh + " nedoběhl do 10 minut, viz " + new File(adresar, beh + ".log"));
@@ -537,6 +545,20 @@ public class SmokeIT {
 			vysledek.load(r);
 		}
 		return vysledek;
+	}
+
+	private Process proces(final File adresar, final String beh, final String kroky, final List<String> navic) throws IOException {
+		final File zprava = new File(adresar, beh + ".properties");
+		final List<String> prikaz = new ArrayList<>(jvm(adresar));
+		prikaz.addAll(navic);
+		// Program běží ze sestaveného jaru v pracovním adresáři jako z přenosné složky.
+		prikaz.add("-cp");
+		prikaz.add(new File(adresar, "pracovni/geokuk.jar") + File.pathSeparator + System.getProperty("smoke.testClasses"));
+		prikaz.add(SmokeScenar.class.getName());
+		prikaz.add(zprava.getPath());
+		prikaz.add(new File(adresar, beh + ".png").getPath());
+		prikaz.add(kroky);
+		return new ProcessBuilder(prikaz).directory(new File(adresar, "pracovni")).redirectErrorStream(true).redirectOutput(new File(adresar, beh + ".log")).start();
 	}
 
 	private static void zkontrolujBezChyb(final File adresar, final Properties zprava) {
@@ -552,6 +574,8 @@ public class SmokeIT {
 		zkontrolujEdt(zprava, "edt.nejdelsiMs", EDT_LIMIT_MS, "", problemy);
 		// Start programu (okno, načtení keší, první vykreslení) běží na EDT naráz a na pomalém stroji trvá déle.
 		zkontrolujEdt(zprava, "edt.startMs", EDT_LIMIT_START_MS, "při startu: ", problemy);
+		// Přepnutí vzhledu přestaví všechny komponenty okna a na Windows runneru trvá jednotky sekund.
+		zkontrolujEdt(zprava, "edt.vzhledMs", EDT_LIMIT_VZHLED_MS, "při přepnutí vzhledu: ", problemy);
 		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
 		if (pamet > 400) {
 			problemy.add("Po scénáři zůstalo obsazeno " + pamet + " MB paměti");

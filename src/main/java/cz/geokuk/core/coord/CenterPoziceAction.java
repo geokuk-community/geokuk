@@ -20,10 +20,10 @@ public class CenterPoziceAction extends Action0 {
 	 */
 	public CenterPoziceAction() {
 		super();
-		super.putValue(NAME, "Centerovat...");
+		super.putValue(NAME, "Vystředit na kříž");
 		// super.putValue(SMALL_ICON, Board.ikonizer.findIcon(wpt, "x16", true));
 		// super.putValue(SMALL_ICON, ikonBag.seekIkon(wpt.getGenotyp(ikonBag.getGenom())));
-		putValue(SHORT_DESCRIPTION, "Vycentruje označenou pozici.");
+		putValue(SHORT_DESCRIPTION, "Posune mapu tak, aby byl záměrný kříž uprostřed.");
 		// putValue(MNEMONIC_KEY, InputEvent.)
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
 

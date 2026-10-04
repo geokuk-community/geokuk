@@ -2,6 +2,7 @@ package cz.geokuk.util.exception;
 
 import java.io.*;
 import java.net.URL;
+import java.util.*;
 
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.program.UmisteniProgramu;
@@ -42,9 +43,32 @@ public final class FExceptionDumper {
 		final AExcId excid = getExceptionDumper().dump(aThrowable, aExceptionSeverity, aCircumstance, getDefaultRepository());
 		Diagnostika.zaznamenejChybu(excid + ": " + aCircumstance + ": " + aThrowable);
 		if (aExceptionSeverity == EExceptionSeverity.DISPLAY || aExceptionSeverity == EExceptionSeverity.WORKARROUND) {
-			FError.report(aThrowable.getMessage(), excid);
+			FError.report(popis(aCircumstance, aThrowable), excid);
 		}
 		return excid;
+	}
+
+	/** Okolnost a zprávy příčin; samotná zpráva výjimky často neřekne, co se dělo ani proč to selhalo. */
+	static String popis(final String aCircumstance, final Throwable aThrowable) {
+		final List<String> casti = new ArrayList<>();
+		if (aCircumstance != null && !aCircumstance.trim().isEmpty()) {
+			casti.add(aCircumstance.trim());
+		}
+		final Set<Throwable> projite = Collections.newSetFromMap(new IdentityHashMap<>());
+		for (Throwable t = aThrowable; t != null && projite.add(t); t = t.getCause()) {
+			final String zprava = t.getMessage();
+			if (zprava == null || zprava.trim().isEmpty() || zprava.equals(String.valueOf(t.getCause()))) {
+				continue;
+			}
+			final String z = zprava.trim();
+			if (casti.stream().noneMatch(c -> c.contains(z))) {
+				casti.add(z);
+			}
+		}
+		if (casti.isEmpty() && aThrowable != null) {
+			casti.add(aThrowable.getClass().getSimpleName());
+		}
+		return String.join(": ", casti);
 	}
 
 	/**

@@ -24,6 +24,8 @@ import cz.geokuk.plugins.kesoid.genetika.*;
 import cz.geokuk.plugins.kesoid.mapicon.*;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
 import cz.geokuk.util.pocitadla.PocitadloNula;
@@ -56,16 +58,15 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 		@Override
 		public void run() {
-			JKesoidySlide jKesoidy = wrKesoidy.get();
-			if (jKesoidy == null) {
-				return; // slide kešoidů už je pryč, takže ani nemá cenu dál něco řešit
-			}
 			for (;;) {
 				try {
-					final BlockingQueue<WptPaintRequest> frontaWaypointu2 = jKesoidy.frontaWaypointu;
-					jKesoidy = null; // přičekání na požadavek ve froně nesmím držet slide waypointů, aby mohl být garbage collectorem sebrán
+					// přičekání na požadavek ve froně nesmím držet slide waypointů, aby mohl být garbage collectorem sebrán
+					final BlockingQueue<WptPaintRequest> frontaWaypointu2 = frontaSlidu();
+					if (frontaWaypointu2 == null) {
+						return; // slide kešoidů už je pryč, takže ani nemá cenu dál něco řešit
+					}
 					WptPaintRequest wpr = frontaWaypointu2.poll(10000, TimeUnit.MILLISECONDS); // aby umělo vlákno skončit, musí být timeout
-					jKesoidy = wrKesoidy.get();
+					final JKesoidySlide jKesoidy = wrKesoidy.get();
 					if (jKesoidy == null) {
 						return; // slide kešoidů už je pryč, takže ani nemá cenu dál něco řešit
 					}
@@ -75,7 +76,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 					final MouRect mouRect = new MouRect();
 					while (wpr != null) {
 						if (wpr.wpt.getSklivec() == null) {
-							spocitejSklivece(wpr.wpt, jKesoidy);
+							try {
+								spocitejSklivece(wpr.wpt, jKesoidy);
+							} catch (final RuntimeException e) {
+								ohlasChybu(e);
+							}
 						}
 						mouRect.add(wpr.mou);
 						wpr = jKesoidy.frontaWaypointu.poll();
@@ -85,7 +90,23 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				} catch (final InterruptedException e) {
 					// System.out.println("Paintovaci vlakno konci diky intrerupci.");
 					return;
+				} catch (final RuntimeException e) {
+					ohlasChybu(e);
 				}
+			}
+		}
+
+		private BlockingQueue<WptPaintRequest> frontaSlidu() {
+			final JKesoidySlide jKesoidy = wrKesoidy.get();
+			return jKesoidy == null ? null : jKesoidy.frontaWaypointu;
+		}
+
+		/** Stejná chyba by se jinak hlásila u každého waypointu, do přehledu problémů jde jen první výskyt. */
+		private static void ohlasChybu(final RuntimeException e) {
+			if (ohlaseneChyby.add(e.getClass())) {
+				FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Výpočet ikon kešoidů na pozadí");
+			} else {
+				log.debug("Výpočet ikon kešoidů na pozadí: {}", e.toString());
 			}
 		}
 
@@ -103,6 +124,9 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				return;
 			}
 			SwingUtilities.invokeLater(() -> {
+				if (jKesoidy.ikonBag == null) {
+					return; // sada ikon ještě není načtená
+				}
 				final Insets bigiestIconInsets = jKesoidy.ikonBag.getSada().getBigiestIconInsets();
 				final Rectangle rect = jKesoidy.getSoord().transform(aMouRect, bigiestIconInsets);
 				jKesoidy.repaint(rect);
@@ -126,13 +150,15 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	// static int POLOMER_KESE = 15; // je to v pixlech
 	private static final int POLOMER_CITLIVOSTI = 10;
 
+	static final Set<Class<?>> ohlaseneChyby = ConcurrentHashMap.newKeySet();
+
 	private static final PocitadloNula pocitVelikostFrontyWaypointu = new PocitadloNula("Velikost vykreslovací waypointové fronty", "Kolik waypointů čeká na vykreslení.");
 
 	private static final long serialVersionUID = -5858146658366237217L;
 
 	private static final double scale = 1;
 
-	private final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
+	final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
 	/** Od tohoto zoomu výš ikony, níž tečky. */
 	static final int ZOOM_IKON = 13;
@@ -727,7 +753,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		frontaWaypointu.add(new WptPaintRequest(wpt, null));
 	}
 
-	private void zaplanujNaplneniSklivce(final Wpt wpt, final Mou mou) {
+	void zaplanujNaplneniSklivce(final Wpt wpt, final Mou mou) {
 
 		frontaWaypointu.add(new WptPaintRequest(wpt, mou));
 		pocitVelikostFrontyWaypointu.set(frontaWaypointu.size());

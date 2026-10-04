@@ -21,7 +21,7 @@ public class RefreshIkonAction extends Action0 {
 	 */
 	public RefreshIkonAction() {
 		super("Přenačíst ikony");
-		putValue(SHORT_DESCRIPTION, "Přenačte všechny ikony ze souborů a obnoví menu ze sadama.");
+		putValue(SHORT_DESCRIPTION, "Přenačte všechny ikony ze souborů a obnoví menu sad ikon.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_R);
 	}
 	/*

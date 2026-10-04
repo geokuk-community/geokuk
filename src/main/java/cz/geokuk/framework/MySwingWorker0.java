@@ -3,6 +3,8 @@
  */
 package cz.geokuk.framework;
 
+import java.util.concurrent.ExecutionException;
+
 import javax.swing.SwingWorker;
 
 /**
@@ -21,8 +23,16 @@ public abstract class MySwingWorker0<T, V> extends SwingWorker<T, V> {
 		try {
 			donex();
 		} catch (final Exception e) {
-			throw new RuntimeException("Vyjimka pri zpracovani na pozadi.", e);
+			final Throwable pricina = e instanceof ExecutionException && e.getCause() != null ? e.getCause() : e;
+			throw new RuntimeException(popis(pricina), e);
 		}
+	}
+
+	/** Text pro Přehled problémů: zpráva výjimky bez jména třídy Javy, jen když zprávu nemá, aspoň její druh. */
+	static String popis(final Throwable pricina) {
+		final String zprava = pricina.getLocalizedMessage();
+		return zprava != null && !zprava.trim().isEmpty() ? "Chyba při práci na pozadí: " + zprava
+				: "Chyba při práci na pozadí (" + pricina.getClass().getSimpleName() + ")";
 	}
 
 	protected void donex() throws Exception {}

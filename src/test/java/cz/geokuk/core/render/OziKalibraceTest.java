@@ -2,6 +2,8 @@ package cz.geokuk.core.render;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.*;
+
 import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Wgs;
@@ -22,5 +24,30 @@ public class OziKalibraceTest {
 	@Test
 	public void minutySeZaokrouhliNa60() {
 		assertEquals("Point04,xy,0,0,in, deg,50,     0.000,N,15,     0.000,E, grid,,,,N", OziExplorerRenderSwingWorker.oziKalibracniBod(4, 0, 0, new Wgs(49.9999999999, 14.99999999999)));
+	}
+
+	@Test
+	public void zapisBezChybyProjde() throws IOException {
+		final PrintWriter p = new PrintWriter(new StringWriter());
+		p.println("OziExplorer Map Data File Version 2.2");
+		OziExplorerRenderSwingWorker.zkontrolujZapis(p, new File("mapa.map"));
+	}
+
+	@Test(expected = IOException.class)
+	public void chybaZapisuSeOhlasi() throws IOException {
+		final PrintWriter p = new PrintWriter(new Writer() {
+			@Override
+			public void write(final char[] cbuf, final int off, final int len) throws IOException {
+				throw new IOException("plný disk");
+			}
+
+			@Override
+			public void flush() {}
+
+			@Override
+			public void close() {}
+		});
+		p.println("OziExplorer Map Data File Version 2.2");
+		OziExplorerRenderSwingWorker.zkontrolujZapis(p, new File("mapa.map"));
 	}
 }

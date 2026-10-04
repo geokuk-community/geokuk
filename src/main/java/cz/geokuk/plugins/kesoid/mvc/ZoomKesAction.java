@@ -25,7 +25,7 @@ public class ZoomKesAction extends Action0 {
 	public ZoomKesAction(final Kesoid kes) {
 		super("Zoom keš (" + kes.getWptsCount() + ")");
 		iKes = kes;
-		putValue(SHORT_DESCRIPTION, "Nastaví výřez a měřítko mapy tak ,aby na ní byla celá keška včetně všech multin. V záborce je počet waypointů keše.");
+		putValue(SHORT_DESCRIPTION, "Nastaví výřez a měřítko mapy tak, aby na ní byla celá keš včetně všech waypointů. V závorce je počet waypointů keše.");
 		// putValue(MNEMONIC_KEY, InputEvent.)
 		// putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
 

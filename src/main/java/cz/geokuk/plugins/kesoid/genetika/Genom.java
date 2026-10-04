@@ -58,7 +58,7 @@ public class Genom {
 	public final Alela ALELA_cpt = GEN_vztah.alela("cpt").displayName("Captured");
 	public final Alela ALELA_dpl = GEN_vztah.alela("dpl").displayName("Deployed");
 
-	public final Gen GEN_stav = genu("stav", "Stav", "Aktivmíx", true);
+	public final Gen GEN_stav = genu("stav", "Stav", "Aktivní", true);
 	//public final Alela ALELA_actv = GEN_stav.alela("actv").displayName("Aktivmí");
 	public final Alela ALELA_actv = GEN_stav.getVychoziAlela();
 	public final Alela ALELA_dsbl = GEN_stav.alela("dsbl").displayName("Disablovaná");
@@ -97,7 +97,7 @@ public class Genom {
 	public final Alela ALELA_nevyluste = GEN_vylustenost.getVychoziAlela();
 	public final Alela ALELA_vylusteno = GEN_vylustenost.alela("vylusteno").displayName("Je vyluštěno");
 
-	public final Gen GEN_zdroj = genu("zdroj", "Zdroj", "Imporotvané z PQ", false);
+	public final Gen GEN_zdroj = genu("zdroj", "Zdroj", "Importované z PQ", false);
 	//public final Alela ALELA_pqimported = GEN_zdroj.alela("pqimported").displayName("Imporotvané z PQ");
 	public final Alela ALELA_pqimported = GEN_zdroj.getVychoziAlela();
 	public final Alela ALELA_handedited = GEN_zdroj.alela("handedited").displayName("Ručně přidané");

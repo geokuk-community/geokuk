@@ -136,4 +136,18 @@ public class DalkoveOvladaniTest {
 			return Integer.parseInt(radek.split(" ")[1]);
 		}
 	}
+
+	@Test
+	public void obsazenyPortCeskyBezTechnickychPodrobnosti() {
+		final String text = DalkoveOvladani.popisChyby(48321, new java.net.BindException("Address already in use"));
+		assertTrue(text, text.startsWith("Dálkové ovládání nejde spustit."));
+		assertTrue(text, text.contains("Port 48321 už používá jiný program"));
+		assertFalse(text, text.contains("Address already in use"));
+	}
+
+	@Test
+	public void nezapisovatelnySouborCesky() {
+		final String text = DalkoveOvladani.popisChyby(0, new java.nio.file.AccessDeniedException("C:\\Program Files\\GeoKuk\\data"));
+		assertEquals("Dálkové ovládání nejde spustit. Nejde zapsat soubor C:\\Program Files\\GeoKuk\\data.", text);
+	}
 }

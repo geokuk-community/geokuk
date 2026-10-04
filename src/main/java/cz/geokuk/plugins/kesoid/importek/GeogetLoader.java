@@ -58,7 +58,7 @@ public class GeogetLoader extends Nacitac0 {
 
 	@Override
 	protected void nacti(final File file, final IImportBuilder builder, final Future<?> future, final ProgressModel aProgressModel) throws IOException {
-		if (!umiNacist(file)) {
+		if (!GsakDbLoader.dbFileContains(file, EXPECTED_TABLES, DatabazeJinehoProgramu.CEKANI_NA_ZAMEK_MS)) {
 			throw new IllegalArgumentException("Cannot load from file " + file);
 		}
 		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
