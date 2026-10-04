@@ -2,6 +2,9 @@
 
 ## 6.3.0
 
+### Změny
+- Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
+
 ## 6.2.0
 
 ### Změny
