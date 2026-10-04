@@ -70,6 +70,7 @@ GeoKuk
 └── data                         všechno, co si GeoKuk ukládá
     ├── nastaveni.xml
     ├── uzivatelske-mapy.properties
+    ├── uzivatelske-mapy.properties.priklad  ukázka uživatelských map
     ├── cache                    dlaždice map, lze smazat
     ├── gpx                      výchozí složka pro keše z GPX
     ├── cesty
