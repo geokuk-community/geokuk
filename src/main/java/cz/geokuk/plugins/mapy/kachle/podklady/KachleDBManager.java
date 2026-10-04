@@ -183,6 +183,11 @@ class KachleDBManager implements KachleManager {
 			log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
 			return cursor.getBlobAsArray("image");
 		} catch (final SqlJetException e) {
+			if (e.getErrorCode() == SqlJetErrorCode.BUSY) {
+				// Cache zamyká zápis jiného programu; dlaždice se zatím stáhne, spojení zůstává použitelné.
+				log.debug("Cache dlaždic je zamčená jiným programem, {} se stáhne.", ki);
+				return null;
+			}
 			chybyCteni.ohlas(e);
 			vadne = true;
 			throw new RuntimeException(e);
