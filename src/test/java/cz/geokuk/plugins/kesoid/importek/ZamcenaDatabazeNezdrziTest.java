@@ -130,6 +130,9 @@ public class ZamcenaDatabazeNezdrziTest {
 			public void zaradGsakDatabaze(final Set<File> databaze) {}
 
 			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze) {}
+
+			@Override
 			public KesBag getVsechnyKesoidy() {
 				return zobrazene.get();
 			}
