@@ -4,6 +4,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -459,7 +460,11 @@ public class KesoidModel extends Model0 {
 			for (final Filex f : Arrays.asList(u.getKesDir(), u.getGeogetDataDir(), u.getGsakDataDir())) {
 				final File slozka = f == null ? null : f.getEffectiveFileIfActive();
 				if (slozka != null && !MultiNacitac.jeCitelnaSlozka(slozka)) {
-					nedostupne.add(slozka.toPath());
+					try {
+						nedostupne.add(slozka.toPath());
+					} catch (final InvalidPathException e) {
+						// neplatná cesta žádnou složku neoznačuje, nic pod ní neleží
+					}
 				}
 			}
 		}

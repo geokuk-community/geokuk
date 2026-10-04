@@ -106,7 +106,7 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		}
 		final boolean vysl = dir.mkdirs();
 		if (!vysl) {
-			throw new JPrehledSouboru.YNejdeTo("Složku \"" + dir + "\" se nepodařilo stvořit pro \"" + label + "\"");
+			throw new JPrehledSouboru.YNejdeTo("Složku \"" + dir + "\" se nepodařilo vytvořit pro \"" + label + "\"");
 		}
 		return filex;
 	}
