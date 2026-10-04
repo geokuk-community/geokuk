@@ -111,7 +111,8 @@
   stejně jako položky menu.
 - Přehled problémů ukazuje u každého problému, co se dělo a proč to
   selhalo; sloupce se jmenují Č. a Hlášení. Stavový řádek bez načtených
-  zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku.
+  zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku. Vzdálenost
+  a směr od pozice ukazuje, až když je myš nad mapou.
 - Hlášení v Přehledu problémů jsou česky a srozumitelně, opravené
   překlepy a oslovení v nápovědách tlačítek.
 - Přehled problémů jde po zavření znovu otevřít v Nápověda > Přehled

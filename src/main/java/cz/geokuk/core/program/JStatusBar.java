@@ -87,7 +87,7 @@ public class JStatusBar extends JPanel {
 
 	private static final long serialVersionUID = -6267502844907253041L;
 
-	private Mou cur = new Mou(0, 0);
+	private Mou cur;
 
 	private Poziceq poziceq = new Poziceq();
 	private final JValue souradnice = new JValue();
