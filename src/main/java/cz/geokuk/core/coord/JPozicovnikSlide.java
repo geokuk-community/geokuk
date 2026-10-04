@@ -55,9 +55,7 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 			final Wgs wgs = poziceq.getWgs();
 			// add(new ZoomKesAction(kesoid));
 			if (wgs != null) {
-				final JMenuItem item = new JMenuItem(factory.init(new CenterPoziceAction()));
-
-				add(item);
+				popupMenu.add(new JMenuItem(factory.init(new CenterPoziceAction())));
 			}
 
 			popupMenu.add(new JMenuItem(factory.init(new ZoomPoziceAction(wgs))));

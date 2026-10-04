@@ -9,7 +9,7 @@ public class JUmisteniSouboruDialog extends JMyDialog0 implements AfterInjectIni
 	private JPrehledSouboru jPrehledSoubor;
 
 	public JUmisteniSouboruDialog() {
-		setTitle("Přehled souborů a složek");
+		setTitle("Umístění souborů");
 		init();
 	}
 

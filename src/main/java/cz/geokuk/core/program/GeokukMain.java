@@ -1,11 +1,13 @@
 package cz.geokuk.core.program;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.util.prefs.BackingStoreException;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -38,7 +40,15 @@ public class GeokukMain {
 	public void execute(final String[] args) {
 		FConst.logInit();
 		presmerujJulDoSlf4j();
-		zamek = Start.zamkni(new File(FConst.DATA_DIR, Start.ZAMEK));
+		final File souborZamku = new File(FConst.DATA_DIR, Start.ZAMEK);
+		zamek = Start.zamkni(souborZamku);
+		if (uzBezi(zamek, souborZamku)) {
+			log.info("GeoKuk nad složkou {} už běží, druhá instance končí.", FConst.DATA_DIR);
+			if (!GraphicsEnvironment.isHeadless()) {
+				JOptionPane.showMessageDialog(null, "GeoKuk už běží. Přepněte se do jeho okna.", "GeoKuk", JOptionPane.INFORMATION_MESSAGE);
+			}
+			System.exit(0);
+		}
 		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
 		ImageIO.setUseCache(false);
 		Diagnostika.sledujKliknuti();
@@ -73,6 +83,11 @@ public class GeokukMain {
 		});
 	}
 
+	/** Druhá instance nad stejnými daty by si s první přepisovaly nastavení a výlety. */
+	static boolean uzBezi(final FileLock zamek, final File souborZamku) {
+		return zamek == null && Start.jeZamceno(souborZamku);
+	}
+
 	/** Zprávy z java.util.logging do logu programu. */
 	static void presmerujJulDoSlf4j() {
 		if (!SLF4JBridgeHandler.isInstalled()) {
@@ -85,7 +100,7 @@ public class GeokukMain {
 		try {
 			LafSupport.updateLookAndFeel();
 		} catch (final Throwable t) {
-			FExceptionDumper.dump(t, EExceptionSeverity.WORKARROUND, "Nastavení skinu");
+			FExceptionDumper.dump(t, EExceptionSeverity.WORKARROUND, "Nastavení vzhledu programu");
 		}
 	}
 
@@ -95,7 +110,7 @@ public class GeokukMain {
 				try {
 					MyPreferences.root().removeNode();
 				} catch (final BackingStoreException e) {
-					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém s promazáváním preferencí");
+					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Mazání nastavení (--reset)");
 				}
 			}
 		}

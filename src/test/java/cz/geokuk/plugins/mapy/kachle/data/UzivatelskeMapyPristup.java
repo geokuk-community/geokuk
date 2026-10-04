@@ -7,8 +7,9 @@ import java.util.List;
 /** Přístup testů z jiných balíků k načítání uživatelských map. */
 public final class UzivatelskeMapyPristup {
 
-	public static List<String> nacti(final File soubor) {
-		return UzivatelskeMapy.nacti(soubor);
+	/** Načte mapy ze složky se soubory {@code *.mapa}. */
+	public static List<String> nacti(final File slozka) {
+		return UzivatelskeMapy.nactiSlozku(slozka);
 	}
 
 	public static void vycisti() {

@@ -63,15 +63,21 @@ public class OpenStreetViewAction extends Action0 {
 
 	@Override
 	public void actionPerformed(final ActionEvent e) {
+		final Wgs wgs = misto();
+		if (wgs != null) {
+			openBrowserWithStreetView(wgs);
+		}
+	}
+
+	Wgs misto() {
 		Mouable m = mouable;
 		if (m == null) {
 			m = poziceq.getPoziceMouable();
 			if (m == null) {
-				return;
+				return null;
 			}
 		}
-		final Wgs wgs = mouable.getMou().toWgs();
-		openBrowserWithStreetView(wgs);
+		return m.getMou().toWgs();
 	}
 
 	public void onEvent(final PoziceChangedEvent event) {

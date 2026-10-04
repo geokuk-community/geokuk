@@ -12,6 +12,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import cz.geokuk.core.program.JPrehledSouboru.YNejdeTo;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.util.file.Filex;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +27,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 
 	private final String label;
 	private JTextField jtext;
-	private JCheckBox jRelativneKProgramu;
 	private JCheckBox jActive;
 	private JTextField jCurrVal;
 
@@ -88,8 +88,7 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 	}
 
 	public void setFilex(final Filex filex) {
-		jtext.setText(filex.getFile().getPath());
-		jRelativneKProgramu.setSelected(filex.isRelativeToProgram());
+		jtext.setText(MyPreferences.cestaDoNastaveni(filex.getEffectiveFile(), FConst.KOREN));
 		jActive.setSelected(filex.isActive() || !lzeDeaktivovat);
 		prepocitej();
 	}
@@ -122,8 +121,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 
 		jtext = new JTextField();
 		// jtext.setText(defalt.getFile().getPath());
-		jRelativneKProgramu = new JCheckBox("Relativně k umístění programu");
-		jRelativneKProgramu.setEnabled(FConst.JAR_DIR_EXISTUJE);
 		jActive = new JCheckBox("Aktivní");
 		jActive.setEnabled(lzeDeaktivovat);
 		jCurrVal = new JTextField();
@@ -139,9 +136,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 			box2.add(jtext);
 			box2.add(jbut);
 			final Box panel3 = Box.createHorizontalBox();
-			if (FConst.JAR_DIR_EXISTUJE) {
-				panel3.add(jRelativneKProgramu);
-			}
 			if (jActive.isEnabled()) {
 				panel3.add(jActive);
 			}
@@ -164,13 +158,13 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 				if (fc == null) { // dlouho to trvá, tak vytvoříme vždy nový
 					fc = new JFileChooser();
 				}
-				fc.setCurrentDirectory(new File(jtext.getText()));
+				fc.setCurrentDirectory(filex.getEffectiveFile());
 				if (jenAdresare) {
 					fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				}
 				final int result = fc.showDialog(JJedenSouborPanel.this, "Vybrat");
 				if (result == JFileChooser.APPROVE_OPTION) {
-					jtext.setText(fc.getSelectedFile().getPath());
+					jtext.setText(MyPreferences.cestaDoNastaveni(fc.getSelectedFile(), FConst.KOREN));
 				}
 			}
 		});
@@ -178,15 +172,29 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		prepocitej();
 		jtext.getDocument().addDocumentListener(this);
 
-		jRelativneKProgramu.addActionListener(e -> prepocitej());
 		jActive.addActionListener(e -> prepocitej());
 	}
 
 	private void prepocitej() {
-		filex = new Filex(new File(jtext.getText()), jRelativneKProgramu.isSelected(), jActive.isSelected());
-		jCurrVal.setText(filex.getEffectiveFile().getPath());
+		filex = new Filex(MyPreferences.cestaZNastaveni(jtext.getText(), FConst.KOREN), false, jActive.isSelected());
+		final String vysledna = popisVysledneCesty(filex.getEffectiveFile(), FConst.KOREN);
+		jCurrVal.setText(vysledna);
+		jtext.setToolTipText(vysledna);
 		jtext.setEnabled(jActive.isSelected());
-		jRelativneKProgramu.setEnabled(jActive.isSelected());
+	}
+
+	/** Cesta uvnitř složky GeoKuk se ukládá relativně a při přesunu složky se posune s ní. */
+	static String popisVysledneCesty(final File vysledna, final File koren) {
+		final boolean relativni = MyPreferences.cestaDoNastaveni(vysledna, koren).startsWith(MyPreferences.ZNACKA_KORENE);
+		return (relativni ? "Relativně ke složce GeoKuk: " : "") + vysledna.getPath();
+	}
+
+	String getZadanaCesta() {
+		return jtext.getText();
+	}
+
+	String getVyslednaCesta() {
+		return jCurrVal.getText();
 	}
 
 	private void zmemniliNamTo() {

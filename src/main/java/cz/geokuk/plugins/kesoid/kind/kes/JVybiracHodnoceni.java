@@ -14,7 +14,7 @@ public class JVybiracHodnoceni extends JVybiracCiselny0 {
 
 	public JVybiracHodnoceni() {
 		super("Hodnocení:");
-		setToolTipText("Filte dle prahu hodnocení keší na geocaching.cz, zobrazí se jen keše mající hodnocení větší nebo rovné prahu.");
+		setToolTipText("Filtr podle prahu hodnocení keší na geocaching.cz, zobrazí se jen keše mající hodnocení větší nebo rovné prahu.");
 	}
 
 	@Override

@@ -20,6 +20,11 @@ public class GenTest {
 	}
 
 	@Test
+	public void aktivniKesVeFiltru() {
+		Assert.assertEquals("Aktivní", genom.ALELA_actv.getDisplayName());
+	}
+
+	@Test
 	public void test1() {
 		Assert.assertEquals("ahoj", genom.gen("ahoj").getDisplayName());
 	}

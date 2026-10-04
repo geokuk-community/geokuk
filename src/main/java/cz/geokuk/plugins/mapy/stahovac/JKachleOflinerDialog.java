@@ -15,6 +15,7 @@ import cz.geokuk.plugins.mapy.kachle.gui.JKachle;
 import cz.geokuk.plugins.mapy.kachle.gui.Kaputer;
 import cz.geokuk.plugins.mapy.kachle.podklady.KaOneReq;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
+import cz.geokuk.util.lang.FString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -184,7 +185,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 		uvod = new JTextPane();
 		uvod.setContentType("text/html");
-		uvod.setText("Tady bude kecání");
+		uvod.setText("");
 		uvod.setPreferredSize(new Dimension(400, 200));
 		uvod.setAlignmentX(CENTER_ALIGNMENT);
 
@@ -222,10 +223,10 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 	 * @return
 	 */
 	private String pokecani() {
-		return String.format("<html>Budou stahovány dlaždice mapových pokladů <b>%s</b> v rozmění měřítek " + " <b>&lt;%d,%d&gt;</b>"
-				+ " nyní natavte v hlavním okně výřez mapy který chcete stáhnout. Výřez můžete" + " nastavit v libovolném měřítku a v na libovolném mapovém podkladu. "
+		return String.format("<html>Budou stahovány dlaždice mapového podkladu <b>%s</b> v rozmezí měřítek " + " <b>&lt;%d,%d&gt;</b>."
+				+ " Nyní nastavte v hlavním okně výřez mapy, který chcete stáhnout. Výřez můžete" + " nastavit v libovolném měřítku a na libovolném mapovém podkladu. "
 				+ " Pak spusťte stahování tlačítkem. Stahování poběží na pozadí, průběh uvidíte v samostatném okně, kde ho lze i zastavit.",
-				totoSeTaha.katype, totoSeTaha.minmoumer, totoSeTaha.maxmoumer);
+				FString.html(totoSeTaha.katype.getNazev()), totoSeTaha.minmoumer, totoSeTaha.maxmoumer);
 	}
 
 	private void prepocetKachli() {
