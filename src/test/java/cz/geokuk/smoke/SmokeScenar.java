@@ -633,6 +633,10 @@ public class SmokeScenar {
 			for (int j = 0; j < pomale.size(); j++) {
 				zprava.setProperty("edt.pomala." + j, pomale.get(j));
 			}
+			final List<String> profil = hlidac.getProfilStartu();
+			for (int j = 0; j < profil.size(); j++) {
+				zprava.setProperty(String.format("edt.profil.%02d", j), profil.get(j));
+			}
 		}
 		int i = 0;
 		for (final Window w : Window.getWindows()) {

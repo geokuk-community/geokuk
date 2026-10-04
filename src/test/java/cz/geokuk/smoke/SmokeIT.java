@@ -566,6 +566,8 @@ public class SmokeIT {
 	}
 
 	private static void zkontrolujBezChyb(final File adresar, final Properties zprava, final boolean bezVypisu) {
+		System.out.println("PROFIL " + adresar.getName() + " start.oknoMs=" + zprava.getProperty("start.oknoMs") + " start.keseMs=" + zprava.getProperty("start.keseMs") + " edt.startMs=" + zprava.getProperty("edt.startMs"));
+		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.profil.") || k.startsWith("edt.pomala.")).sorted().forEach(k -> System.out.println("PROFIL " + adresar.getName() + " " + zprava.getProperty(k)));
 		final List<String> problemy = new ArrayList<>();
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
 		if (zprava.getProperty("edt.nejdelsiMs") == null) {
