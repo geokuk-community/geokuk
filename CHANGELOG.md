@@ -71,10 +71,11 @@
   GeoKuk založí při startu, každá mapa v samostatném souboru
   `<označení>.mapa`, v menu Mapy ve skupině „Uživatelské mapy“. Dvě
   uživatelské mapy se stejným názvem v menu nebo stejnou zkratkou se
-  nezobrazí a GeoKuk je ohlásí při startu, stejně
-  jako mapu s neznámou proměnnou v adrese (třeba `{s}`) nebo s klávesovou
-  zkratkou programu (třeba F3 nebo Ctrl+S). Hlavičky mapy (`hlavicka.*`)
-  se při přesměrování na jiný server neposílají. Ukázky jsou
+  nezobrazí a GeoKuk je ohlásí při startu, stejně jako mapu s neznámou
+  proměnnou v adrese (třeba `{s}`). Název vestavěné mapy uživatelská mapa
+  mít smí, zkratku vestavěné mapy nebo akce programu (třeba F3 nebo
+  Ctrl+S) ne. Hlavičky mapy (`hlavicka.*`) se při přesměrování na jiný
+  server neposílají. Ukázky jsou
   v `priklady/mapy`, zip pro Windows je obsahuje ve složce
   `data/mapy-priklady`.
 - Mapy mají atribuci (Mapy.cz, OpenStreetMap, Freemap Slovakia) vpravo
@@ -146,10 +147,10 @@
 - Databáze GeoGetu nebo GSAKu, do které ten program právě zapisuje
   (třeba import), nezdrží při startu načtení ostatních zdrojů a načte se
   po dokončení zápisu. Do té doby zůstanou zobrazené dříve načtené keše,
-  další změny zdrojů (třeba nové GPX nebo Znovu načíst) se projeví až
-  po dokončení zápisu a Přehled zdrojů u ní ukazuje „čeká na dokončení
-  zápisu“. Poškozenou databázi nebo soubor, který není databáze, program
-  ohlásí česky.
+  Přehled zdrojů u ní ukazuje „čeká na dokončení zápisu“ a další změny
+  zdrojů (nový soubor, Znovu načíst, zapnutí zdroje) se projeví až po
+  dokončení zápisu. Poškozenou databázi nebo soubor, který není databáze,
+  program ohlásí česky.
 - Databáze GeoGetu a GSAKu se otevírají jen pro čtení, GeoKuk v jejich
   složce nic nezaloží ani nezmění.
 - Keše se načtou i z databáze starší verze GeoGetu nebo GSAKu, které
