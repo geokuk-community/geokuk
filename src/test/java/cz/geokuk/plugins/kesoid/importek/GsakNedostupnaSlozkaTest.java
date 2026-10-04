@@ -21,6 +21,8 @@ public class GsakNedostupnaSlozkaTest {
 	public TemporaryFolder tmp = new TemporaryFolder();
 
 	private final List<Set<File>> zarazeno = new ArrayList<>();
+	private final List<Set<File>> nedostupneVZarazeni = new ArrayList<>();
+	private final List<Set<File>> nedostupnePriNacitani = new ArrayList<>();
 
 	@Test
 	public void nedostupnaSlozkaNicNemeni() throws Exception {
@@ -64,6 +66,24 @@ public class GsakNedostupnaSlozkaTest {
 		Assert.assertEquals(Collections.emptyList(), zarazeno);
 	}
 
+	/** Nedostupná podsložka zjištěná při skenu dojde do modelu, aby se její databáze nezablokovaly. */
+	@Test
+	public void nedostupnaPodslozkaZeSkenuDojdeDoModelu() throws Exception {
+		final File gsak = tmp.newFolder("gsak");
+		final Set<File> zeSkenu = Collections.singleton(new File(gsak, "nedostupna"));
+		final DirScanner ds = new DirScanner() {
+			@Override
+			public Set<File> getNedostupne() {
+				return zeSkenu;
+			}
+		};
+		final MultiNacitac nacitac = new MultiNacitac(model(), ds);
+		nacitac.setRootDirs(true, null, null, gsak, Collections.emptySet());
+		nacitac.nacti(null, new Genom());
+		Assert.assertEquals(Collections.singletonList(zeSkenu), nedostupneVZarazeni);
+		Assert.assertEquals(Collections.singletonList(zeSkenu), nedostupnePriNacitani);
+	}
+
 	private KesoidModel model() {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});
@@ -76,6 +96,13 @@ public class GsakNedostupnaSlozkaTest {
 			@Override
 			public void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
 				zarazeno.add(databaze);
+				nedostupneVZarazeni.add(nedostupne);
+			}
+
+			@Override
+			public void setNedostupnePriNacitani(final Set<File> nedostupne) {
+				nedostupnePriNacitani.add(nedostupne);
+				super.setNedostupnePriNacitani(nedostupne);
 			}
 		};
 		model.inject(progress);
