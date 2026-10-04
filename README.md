@@ -47,7 +47,7 @@ data a nastavení zůstanou.
 
 Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
 (potřeba je Java 8 nebo novější). Když GeoKuk najde novou verzi,
-nabídne ji. Po volbě Stáhnout novou verzi nahradí `geokuk.jar`
+nabídne ji. Po volbě Aktualizovat nahradí `geokuk.jar`
 (předchozí zůstane jako `geokuk.jar.bak`) a nová verze se spustí při
 příštím spuštění. Paměť programu a restart po aktualizaci jsou jen
 v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
