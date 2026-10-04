@@ -40,7 +40,7 @@ public final class FThrowable {
 			String s;
 			if (th instanceof SQLException) {
 				final SQLException e = (SQLException) th;
-				s = e + "<b> SQLSTATE=" + e.getSQLState() + " ERRORCODE=" + e.getErrorCode() + "</b>";
+				s = e + " SQLSTATE=" + e.getSQLState() + " ERRORCODE=" + e.getErrorCode();
 			} else {
 				s = th + "";
 			}

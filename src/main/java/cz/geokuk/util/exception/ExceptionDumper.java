@@ -43,7 +43,7 @@ public class ExceptionDumper {
 		}
 
 		private void dump(final PrintWriter pwrt) {
-			pwrt.println("<hr><h2>Additional info (" + iNumber + "/" + iStackx.size() + ") - " + iDescription + "</h2>");
+			pwrt.println("<hr><h2>Additional info (" + iNumber + "/" + iStackx.size() + ") - " + FString.html(iDescription) + "</h2>");
 			pwrt.println("AditionalIfnfo provider class <tt>" + (iProvider == null ? "NULL" : iProvider.getClass().getName()) + "</tt> was pushed by <tt>" + iPushingClass.getName() + "</tt>");
 			pwrt.println("<br/>");
 			pwrt.println("<br/>");
@@ -319,12 +319,12 @@ public class ExceptionDumper {
 			final String[] strings = value.split(pathSeparator);
 			final boolean jeToCesta = strings.length > 1 && (key.endsWith(".path") || key.endsWith(".dirs"));
 			if (jeToCesta) {
-				pwrt.println(key + " = ");
+				pwrt.println(FString.html(key) + " = ");
 				for (final String string : strings) {
-					pwrt.println("        " + string);
+					pwrt.println("        " + FString.html(string));
 				}
 			} else {
-				pwrt.println(key + " = " + value);
+				pwrt.println(FString.html(key) + " = " + FString.html(value));
 			}
 		}
 	}

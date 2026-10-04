@@ -13,8 +13,34 @@ public class ExceptionDumperHtmlTest {
 
 	@Test
 	public void zpravaIOkolnostJsouEscapovane() {
-		new ExceptionDumper().dump(new IllegalStateException("soubor <img src=x onerror=alert(1)>.gpx", new IOException("<b>vnořená</b>")), EExceptionSeverity.DISPLAY,
-				"Načítání <script>x</script>", new ExceptionDumperRepositorySpi() {
+		vypis(new IllegalStateException("soubor <img src=x onerror=alert(1)>.gpx", new IOException("<b>vnořená</b>")), "Načítání <script>x</script>");
+		Assert.assertFalse(vypis, vypis.contains("<img"));
+		Assert.assertFalse(vypis, vypis.contains("<script"));
+		Assert.assertFalse(vypis, vypis.contains("<b>vnořená"));
+		Assert.assertTrue(vypis, vypis.contains("&lt;img"));
+	}
+
+	@Test
+	public void systemoveVlastnostiJsouEscapovane() {
+		System.setProperty("geokuk.test.html", "C:\\Data <i>&</i>");
+		try {
+			vypis(new IllegalStateException("x"), "y");
+		} finally {
+			System.clearProperty("geokuk.test.html");
+		}
+		Assert.assertFalse(vypis, vypis.contains("<i>&</i>"));
+		Assert.assertTrue(vypis, vypis.contains("&lt;i&gt;&amp;&lt;/i&gt;"));
+	}
+
+	@Test
+	public void sqlStavBezZnacek() {
+		vypis(new java.sql.SQLException("zamčeno", "HY000", 5), "y");
+		Assert.assertTrue(vypis, vypis.contains("SQLSTATE=HY000 ERRORCODE=5"));
+		Assert.assertFalse(vypis, vypis.contains("&lt;b&gt; SQLSTATE"));
+	}
+
+	private void vypis(final Throwable t, final String okolnost) {
+		new ExceptionDumper().dump(t, EExceptionSeverity.DISPLAY, okolnost, new ExceptionDumperRepositorySpi() {
 					@Override
 					public int getRunNumber() {
 						return 1;
@@ -36,9 +62,5 @@ public class ExceptionDumperHtmlTest {
 					}
 				});
 		Assert.assertNotNull(vypis);
-		Assert.assertFalse(vypis, vypis.contains("<img"));
-		Assert.assertFalse(vypis, vypis.contains("<script"));
-		Assert.assertFalse(vypis, vypis.contains("<b>vnořená"));
-		Assert.assertTrue(vypis, vypis.contains("&lt;img"));
 	}
 }
