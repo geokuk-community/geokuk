@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -17,6 +18,7 @@ import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.util.file.KeFile;
 
 /** Opakované načítání, když jiný program drží některou databázi zamčenou. */
 public class ZamcenaDatabazeOpakovaniTest {
@@ -30,6 +32,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private File gpx;
 	private File slozkaGeogetu;
 	private MultiNacitac nacitac;
+	private final AtomicInteger zpracovanychSouboru = new AtomicInteger();
 
 	@Before
 	public void setUp() throws Exception {
@@ -91,6 +94,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 		final CompletableFuture<Void> zruseno = new CompletableFuture<>();
 		zruseno.cancel(false);
 		Assert.assertNull(nacitac.nacti(zruseno, new Genom()));
+		Assert.assertEquals("zrušené načítání nemá číst další soubory", 0, zpracovanychSouboru.get());
 		Assert.assertEquals(set("GC1111"), kody(nacti()));
 	}
 
@@ -171,6 +175,12 @@ public class ZamcenaDatabazeOpakovaniTest {
 
 			@Override
 			public void zaradGsakDatabaze(final Set<File> databaze) {}
+
+			@Override
+			public boolean maSeNacist(final KeFile soubor) {
+				zpracovanychSouboru.incrementAndGet();
+				return super.maSeNacist(soubor);
+			}
 		};
 		model.inject(progress);
 		model.inject(new KesoidPluginManager());

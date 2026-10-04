@@ -106,6 +106,9 @@ public class MultiNacitac {
 		final List<String> vadne = new ArrayList<>();
 		final Set<File> zamceneTed = new HashSet<>();
 		for (final KeFile file : list) {
+			if (future != null && future.isCancelled()) {
+				break;
+			}
 			log.debug("Nacitam: " + file);
 			try {
 				zpracujJedenFile(file, builder, future);
