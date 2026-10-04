@@ -14,12 +14,6 @@ import lombok.Setter;
 
 public class Wpt extends Weikoid0 implements Uchopenec {
 
-	/**
-	 * Umísťuje se do fronty, aby se poznalo, že je konec.
-	 * Nic se na tom nevolá, jen se porovnává na objektovou identitu.
-	 */
-	public static Wpt ZARAZKA = new Wpt();
-
 	public static enum EZOrder {
 		OTHER, KESWPT, FIRST, FINAL,
 	}

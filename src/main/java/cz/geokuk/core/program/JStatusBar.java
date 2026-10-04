@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.*;
@@ -210,7 +211,7 @@ public class JStatusBar extends JPanel {
 	}
 
 	public void onEvent(final PrekrocenLimitWaypointuVeVyrezuEvent event) {
-		setVarujPrekroceni(event.isPrekrocen());
+		setVarujPrekroceni(event.isPrekrocen(), event.isTecky(), event.getLimit());
 	}
 
 	public void onEvent(final ProgressEvent event) {
@@ -402,9 +403,13 @@ public class JStatusBar extends JPanel {
 		// meritkoMapy.setText(coord.getMoumer() + "");
 	}
 
-	private void setVarujPrekroceni(final boolean b) {
+	static String textPrekroceni(final boolean tecky, final int limit) {
+		return String.format(new Locale("cs"), "Překročen limit %,d %s", limit, tecky ? "teček" : "waypointů");
+	}
+
+	private void setVarujPrekroceni(final boolean b, final boolean tecky, final int limit) {
 		if (b) {
-			varovaniPoctuPrekrocenych.setText("Překročen limit " + FConst.MAX_POC_WPT_NA_MAPE + " waypointů");
+			varovaniPoctuPrekrocenych.setText(textPrekroceni(tecky, limit));
 			varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
 			varovaniPoctuPrekrocenych.setForeground(Color.RED);
 			varovaniPoctuPrekrocenych.setVisible(true);
