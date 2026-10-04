@@ -4,6 +4,7 @@
 package cz.geokuk.util.exception;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.*;
 
 import javax.swing.JOptionPane;
 
@@ -26,8 +27,9 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 	@Override
 	public void uncaughtException(final Thread vlakno, final Throwable t) {
 		try {
-			if (t instanceof OutOfMemoryError) {
-				zpracujMaloPameti((OutOfMemoryError) t);
+			final OutOfMemoryError oome = najdiOom(t);
+			if (oome != null) {
+				zpracujMaloPameti(oome);
 			}
 			final AExcId excId = FExceptionDumper.dump(t, EExceptionSeverity.DISPLAY, "Neošetřená chyba ve vlákně " + vlakno.getName());
 			System.err.println("Exception: " + excId);
@@ -36,6 +38,17 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 			t.printStackTrace();
 			tt.printStackTrace();
 		}
+	}
+
+	/** Došlá paměť i tehdy, když ji vlákno na pozadí zabalilo do jiné výjimky. */
+	static OutOfMemoryError najdiOom(final Throwable t) {
+		final Set<Throwable> videne = Collections.newSetFromMap(new IdentityHashMap<>());
+		for (Throwable x = t; x != null && videne.add(x); x = x.getCause()) {
+			if (x instanceof OutOfMemoryError) {
+				return (OutOfMemoryError) x;
+			}
+		}
+		return null;
 	}
 
 	private void zpracujMaloPameti(final OutOfMemoryError oome) {
