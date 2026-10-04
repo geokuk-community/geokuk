@@ -156,6 +156,36 @@ public class GsakNacitatPoVybraniTest {
 		Assert.assertEquals(0, dotazuNaUmisteni);
 	}
 
+	/** Podsložky byly při prohledání nečitelné a pak se vrátily: vybraná databáze zůstane vybraná, zablokovaná zablokovaná. */
+	@Test
+	public void necitelnaPodslozkaPriSkenuNicNezapomene() throws Exception {
+		final File slozka = tmp.newFolder("gsak").getCanonicalFile(); // nastavení ukládá kanonické cesty (Windows: RUNNER~1)
+		final File vybrana = new File(slozka, "Default/sqlite.db3");
+		final File treti = new File(slozka, "Treti/sqlite.db3");
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, false));
+		umisteni.setGsakDataDir(new Filex(slozka, false, true));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(vybrana));
+		model.zaradGsakDatabaze(set(vybrana, treti));
+		Assert.assertTrue(nacte(vybrana));
+		Assert.assertFalse(nacte(treti));
+
+		final Set<File> nedostupne = set(vybrana.getParentFile(), treti.getParentFile());
+		model.setNedostupnePriNacitani(nedostupne);
+		model.zaradGsakDatabaze(set(), nedostupne);
+		Assert.assertTrue(new File(slozka, "Treti").mkdirs()); // složka je zpátky dřív, než se uklízí
+		model.vycistiBlokovaneZdroje(set());
+		Assert.assertFalse(nacte(treti));
+
+		model.setNedostupnePriNacitani(set());
+		model.zaradGsakDatabaze(set(vybrana, treti), set());
+		model.vycistiBlokovaneZdroje(set(vybrana, treti));
+		Assert.assertTrue(nacte(vybrana));
+		Assert.assertFalse(nacte(treti));
+	}
+
 	private static Set<File> set(final File... f) {
 		return new HashSet<>(Arrays.asList(f));
 	}
