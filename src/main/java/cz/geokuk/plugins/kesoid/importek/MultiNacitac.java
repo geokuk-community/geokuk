@@ -162,7 +162,7 @@ public class MultiNacitac {
 	private static List<String> jmena(final Set<File> soubory) {
 		final List<String> vysledek = new ArrayList<>();
 		for (final File f : soubory) {
-			vysledek.add(f.getName());
+			vysledek.add(DatabazeJinehoProgramu.jmeno(f));
 		}
 		Collections.sort(vysledek);
 		return vysledek;

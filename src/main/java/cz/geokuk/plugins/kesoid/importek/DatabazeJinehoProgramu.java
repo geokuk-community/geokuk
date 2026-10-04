@@ -32,8 +32,14 @@ final class DatabazeJinehoProgramu {
 		private static final long serialVersionUID = 1L;
 
 		Zamcena(final File soubor, final Throwable pricina) {
-			super("Databáze \"" + soubor.getName() + "\" je zamčená, GeoGet nebo GSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
+			super("Databáze \"" + jmeno(soubor) + "\" je zamčená, GeoGet nebo GSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
 		}
+	}
+
+	/** Databáze GSAKu se jmenují všechny sqlite.db3, uživatel je zná podle jména složky. */
+	static String jmeno(final File soubor) {
+		final File slozka = soubor.getParentFile();
+		return "sqlite.db3".equalsIgnoreCase(soubor.getName()) && slozka != null ? slozka.getName() : soubor.getName();
 	}
 
 	static Connection otevri(final File soubor) throws SQLException {
