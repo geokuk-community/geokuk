@@ -2,6 +2,13 @@
 
 ## 6.3.0
 
+### Změny
+- Přehled zdrojů se otevírá rychleji a po novém načtení keší ukazuje
+  aktuální stav.
+
+### Vývoj
+- Odstraněna knihovna SwingX.
+
 ## 6.2.0
 
 ### Změny
