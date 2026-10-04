@@ -22,6 +22,7 @@ import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
+import cz.geokuk.util.gui.ZalamovaciLayout;
 import cz.geokuk.util.lang.FString;
 
 /**
@@ -283,7 +284,8 @@ public class JStatusBar extends JPanel {
 	}
 
 	private void initComponents() {
-		setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+		final ZalamovaciLayout layout = new ZalamovaciLayout();
+		setLayout(layout);
 
 		final JPanel souradnicePanel = createPanel();
 		// souradnicePanel.setBorder(BorderFactory.createEtchedBorder());
@@ -320,6 +322,7 @@ public class JStatusBar extends JPanel {
 		// add(mapoveMeritko);
 
 		add(odPozice);
+		layout.rezervuj(odPozice);
 
 		// add(Box.createHorizontalGlue());
 
