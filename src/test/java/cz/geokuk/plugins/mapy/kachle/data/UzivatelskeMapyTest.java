@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.data;
 
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -557,6 +558,7 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void dlouhyRadekSeZalomiNaMezerach() {
 		Assert.assertEquals("aaa bbb\nccc ddd\ne", UzivatelskeMapy.zalom("aaa bbb ccc ddd e", 7));
+		Assert.assertEquals("aaa\nbbbb", UzivatelskeMapy.zalom("aaa bbbb", 7));
 	}
 
 	@Test
@@ -612,5 +614,38 @@ public class UzivatelskeMapyTest {
 				Assert.assertTrue(priklad + " " + vlastnost, text.contains("\n#   " + vlastnost));
 			}
 		}
+	}
+
+	/** Odkaz na cizí soubor (třeba s klíči) se nečte, jeho řádky by skončily v hlášce a v hlášení chyby. */
+	@Test
+	public void odkazNaCiziSouborSeNecte() throws Exception {
+		final File cizi = tmp.newFile("id_rsa");
+		Files.write(cizi.toPath(), "ghp_TAJNYTOKEN0123456789abcdef\n".getBytes(StandardCharsets.UTF_8));
+		final File slozka = slozka();
+		try {
+			Files.createSymbolicLink(new File(slozka, "hezka.mapa").toPath(), cizi.toPath());
+		} catch (final UnsupportedOperationException | IOException e) {
+			Assume.assumeNoException("symbolický odkaz nejde vytvořit", e);
+		}
+		final List<String> chyby = UzivatelskeMapy.nactiSlozku(slozka);
+		Assert.assertFalse(chyby.toString(), chyby.toString().contains("TAJNY"));
+		Assert.assertTrue(chyby.toString(), chyby.get(0).startsWith("hezka.mapa: soubor je odkaz"));
+	}
+
+	@Test
+	public void velkySouborSeNecte() throws Exception {
+		final StringBuilder sb = new StringBuilder("nazev=Velká\nurl=https://a/{z}/{x}/{y}.png\n#");
+		while (sb.length() <= UzivatelskeMapy.MAX_VELIKOST) {
+			sb.append("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+		}
+		final List<String> chyby = UzivatelskeMapy.nactiSlozku(slozka("velka.mapa", sb.toString()));
+		Assert.assertTrue(chyby.toString(), chyby.get(0).startsWith("velka.mapa: soubor je větší než 64 kB"));
+	}
+
+	@Test
+	public void neznamyKlicZkracenyBezRidicichZnaku() throws Exception {
+		zpracuj("m.nazev=M", "m.url=https://a/{z}/{x}/{y}.png", "m.b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn");
+		Assert.assertTrue(chyby.toString(), chyby.contains("m.mapa: b3BlbnNzaC1rZXktdjEAAAAABG5vbm… je neznámá vlastnost, povolené jsou [nazev, url, popis, min, max, maxauto, klavesa, zkratka, atribuce, hromadne] a hlavicka.<jméno hlavičky>"));
+		Assert.assertEquals("a?b", UzivatelskeMapy.zkrat("a\u0007b"));
 	}
 }

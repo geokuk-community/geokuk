@@ -3,8 +3,8 @@
  */
 package cz.geokuk.plugins.kesoid.mapicon;
 
-import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.image.BufferedImage;
 import java.util.*;
 
 import javax.swing.*;
@@ -33,7 +33,9 @@ public class JToolbarOvladaceAlel extends JPanel {
 	//////////////////////////////////////////
 	// TODO Celkově nějak refactorovat
 	private final Map<String, JIconCheckBox> mapka = new HashMap<>();
-	private int vyska;
+
+	/** Výška ikon standardní sady, vyšší ikony se na toolbaru zmenší. */
+	static final int VYSKA_IKONY = 24;
 
 	/**
 	 *
@@ -91,15 +93,25 @@ public class JToolbarOvladaceAlel extends JPanel {
 		setVisible(true);
 	}
 
-	/** Výška podle nejvyšší ikony všech alel, i skrytých, ať se toolbar a s ním mapa nemění podle toho, co je v datech. */
+	/** Pevná výška, ať se toolbar a s ním mapa nemění podle toho, co je v datech a kdy se načtou. */
 	@Override
 	public Dimension getPreferredSize() {
 		final Dimension d = super.getPreferredSize();
-		for (final Component c : getComponents()) {
-			vyska = Math.max(vyska, c.getPreferredSize().height);
-		}
-		d.height = Math.max(d.height, vyska);
+		d.height = vyskaOvladace();
 		return d;
+	}
+
+	static JIconCheckBox novyOvladac() {
+		final JIconCheckBox cb = new JIconCheckBox();
+		cb.setFocusable(false);
+		cb.setMaxVyskaIkony(VYSKA_IKONY);
+		return cb;
+	}
+
+	static int vyskaOvladace() {
+		final JIconCheckBox cb = new JIconCheckBox();
+		cb.setIcon(new ImageIcon(new BufferedImage(1, VYSKA_IKONY, BufferedImage.TYPE_INT_ARGB)));
+		return cb.getPreferredSize().height;
 	}
 
 	/*
@@ -117,8 +129,7 @@ public class JToolbarOvladaceAlel extends JPanel {
 		JIconCheckBox cb = mapka.get(alela.qualName());
 		if (cb == null) {
 			final SwitchKesoidUrciteAlelyAction action = factory.init(new SwitchKesoidUrciteAlelyAction(alela));
-			cb = new JIconCheckBox();
-			cb.setFocusable(false);
+			cb = novyOvladac();
 			action.join(cb);
 			tb.add(cb);
 			cb.setText(null);
