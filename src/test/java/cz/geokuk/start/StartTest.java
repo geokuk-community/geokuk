@@ -102,6 +102,13 @@ public class StartTest {
 	}
 
 	@Test
+	public void volbyJvm() throws Exception {
+		final File data = tmp.newFolder("data");
+		Assert.assertEquals(Arrays.asList("-Xmx2048m", "-Djava.net.useSystemProxies=true", "-Djava.io.tmpdir=" + new File(data, "tmp").getPath(), "-XX:-UsePerfData",
+				"-XX:+UseStringDeduplication"), Start.volbyJvm(data, 2048));
+	}
+
+	@Test
 	public void doNezapisovatelnychDatDocasneSouboryNe() throws Exception {
 		final File data = tmp.newFile("data"); // soubor místo složky, do data/tmp nejde zapsat ani jako správce
 		final List<String> prikaz = new ArrayList<>();

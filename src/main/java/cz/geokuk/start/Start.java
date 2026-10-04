@@ -60,10 +60,7 @@ public final class Start {
 			final List<String> prikaz = new ArrayList<>();
 			prikaz.add(java().getPath());
 			final File data = new File(koren(adresar), "data");
-			prikaz.add("-Xmx" + pametMb(new File(data, "nastaveni.xml"), fyzickaPametMb()) + "m");
-			prikaz.add("-Djava.net.useSystemProxies=true");
-			pridejDocasnouSlozku(prikaz, data);
-			prikaz.add("-XX:-UsePerfData");
+			prikaz.addAll(volbyJvm(data, pametMb(new File(data, "nastaveni.xml"), fyzickaPametMb())));
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
 			prikaz.addAll(parametry);
@@ -72,6 +69,17 @@ public final class Start {
 		} catch (final Exception e) {
 			chyba("GeoKuk se nepodařilo spustit:\n" + e);
 		}
+	}
+
+	static List<String> volbyJvm(final File data, final long pametMb) {
+		final List<String> volby = new ArrayList<>();
+		volby.add("-Xmx" + pametMb + "m");
+		volby.add("-Djava.net.useSystemProxies=true");
+		pridejDocasnouSlozku(volby, data);
+		volby.add("-XX:-UsePerfData");
+		// Stejné texty keší (autor, typ, země) sdílí jedno pole znaků; při přenačtení i se starou sadou.
+		volby.add("-XX:+UseStringDeduplication");
+		return volby;
 	}
 
 	/** Mimo složku programu nic: dočasné soubory do data/tmp, bez hsperfdata v systémovém TEMP. */
