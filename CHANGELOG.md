@@ -3,10 +3,16 @@
 ## 6.3.0
 
 ### Změny
-- Kešoidy > Limity kreslení…: kolik keší ve výřezu se ještě kreslí jako
-  ikony (výchozí 90 000, dosud pevně 30 000) a jako tečky (výchozí
-  300 000, dosud bez omezení). Nad limitem teček se keše nekreslí
-  a stavový řádek vyzve k přiblížení mapy.
+- Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
+
+### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
+
+### Vývoj
+- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
+  vznikne složka `data/mapy`.
 
 ## 6.2.0
 
