@@ -53,10 +53,10 @@ public class UzivatelskaMapaStazeniTest {
 	@Test
 	public void stahneDlazdiciSHlavickami() throws Exception {
 		final int port = server.getAddress().getPort();
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), ("mistni.nazev=Místní\n" + "mistni.url=http://127.0.0.1:" + port + "/t/{z}/{x}/{y}.png?klic=abc\n" + "mistni.hlavicka.Referer=https://example.org/\n"
-				+ "mistni.hlavicka.User-Agent=Geokuk/{verze}\n").getBytes(StandardCharsets.UTF_8));
-		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapyPristup.nacti(soubor));
+		final File soubor = new File(tmp.getRoot(), "mistni" + UzivatelskeMapy.PRIPONA);
+		Files.write(soubor.toPath(), ("nazev=Místní\n" + "url=http://127.0.0.1:" + port + "/t/{z}/{x}/{y}.png?klic=abc\n" + "hlavicka.Referer=https://example.org/\n"
+				+ "hlavicka.User-Agent=Geokuk/{verze}\n").getBytes(StandardCharsets.UTF_8));
+		Assert.assertEquals(Collections.emptyList(), UzivatelskeMapyPristup.nacti(tmp.getRoot()));
 		final EKaType mapa = EKaType.podleJmena("user-mistni");
 
 		final KaLoc loc = KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 12);
@@ -71,9 +71,9 @@ public class UzivatelskaMapaStazeniTest {
 	@Test
 	public void bezHlavicekPosleJenVychozi() throws Exception {
 		final int port = server.getAddress().getPort();
-		final File soubor = tmp.newFile(UzivatelskeMapy.SOUBOR);
-		Files.write(soubor.toPath(), ("m.nazev=M\nm.url=http://127.0.0.1:" + port + "/{z}/{x}/{y}\n").getBytes(StandardCharsets.UTF_8));
-		UzivatelskeMapyPristup.nacti(soubor);
+		final File soubor = new File(tmp.getRoot(), "m" + UzivatelskeMapy.PRIPONA);
+		Files.write(soubor.toPath(), ("nazev=M\nurl=http://127.0.0.1:" + port + "/{z}/{x}/{y}\n").getBytes(StandardCharsets.UTF_8));
+		UzivatelskeMapyPristup.nacti(tmp.getRoot());
 		final EKaType mapa = EKaType.podleJmena("user-m");
 		new KachloDownloader().downloadImage(new Ka(KaLoc.ofJZ(new Mou(0, 0), 3), mapa).getUrl(), mapa.getHlavicky());
 		Assert.assertNull(hlavicky.get(0).get("Referer"));

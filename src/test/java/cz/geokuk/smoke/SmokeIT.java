@@ -103,7 +103,7 @@ public class SmokeIT {
 		try (java.net.ServerSocket s = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"))) {
 			zavreny = s.getLocalPort();
 		}
-		final File mapy = new File(adresar, "data/uzivatelske-mapy.properties");
+		final File mapy = new File(adresar, "data/mapy/smoke.mapa");
 		Files.write(mapy.toPath(), new String(Files.readAllBytes(mapy.toPath()), StandardCharsets.UTF_8).replace(":" + server.getPort() + "/", ":" + zavreny + "/").getBytes(StandardCharsets.UTF_8));
 		proxyPort = zavreny;
 		final Properties zprava = spust(adresar, "bezsite", "meritka,posun");
@@ -125,7 +125,8 @@ public class SmokeIT {
 		Files.write(new File(adresar, "data/vylety/lovim.ggt").toPath(), Arrays.copyOf(smeti, 3000));
 		Files.write(new File(adresar, "data/vylety/tedne.ggt").toPath(), "GC1\nnesmysl;;;\n\u0000\n".getBytes(StandardCharsets.UTF_8));
 		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), "<?xml version=\"1.0\"?><preferences><useknute".getBytes(StandardCharsets.UTF_8));
-		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), "rozbita.url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+		Files.write(new File(adresar, "data/mapy/rozbita.mapa").toPath(), "url=http://127.0.0.1/\n".getBytes(StandardCharsets.UTF_8));
+		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), "stara.nazev=Stará\n".getBytes(StandardCharsets.UTF_8));
 
 		final Properties zprava = spust(adresar, "poskozene", "meritka");
 		zkontrolujBezChyb(adresar, zprava, false);
@@ -498,11 +499,12 @@ public class SmokeIT {
 		pocetWpt = SyntetickeKese.zapis(new File(adresar, "data/gpx/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
 		new File(adresar, "tmp").mkdirs();
 		pracovni.mkdirs();
-		final String mapy = "smoke.nazev=" + SmokeScenar.MAPA + "\n" //
-				+ "smoke.url=" + server.getUrl() + "\n" //
-				+ "smoke.max=18\n" //
-				+ "smoke.hromadne=ano\n";
-		Files.write(new File(adresar, "data/uzivatelske-mapy.properties").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
+		final String mapy = "nazev=" + SmokeScenar.MAPA + "\n" //
+				+ "url=" + server.getUrl() + "\n" //
+				+ "max=18\n" //
+				+ "hromadne=ano\n";
+		new File(adresar, "data/mapy").mkdirs();
+		Files.write(new File(adresar, "data/mapy/smoke.mapa").toPath(), mapy.getBytes(StandardCharsets.UTF_8));
 		// Hotové nastavení: program pak nepřebírá nastavení z Java Preferences, ve Windows z registru uživatele, který test spustil.
 		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
 				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
