@@ -328,6 +328,7 @@
 - O programu uvádí licenci GNU GPL v3.
 - Písmo popisků keší se vybírá v novém panelu: rodina písma, řez
   (obyčejné, tučné, kurzíva, tučná kurzíva), velikost a náhled.
+- Při pomalém startu programu se už neobjeví chyba při načítání ikon.
 
 ### Odstraněno
 - Vrstva „Open cyclo“ (Thunderforest). Lze ji přidat jako uživatelskou
