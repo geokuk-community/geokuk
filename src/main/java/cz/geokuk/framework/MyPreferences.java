@@ -868,12 +868,9 @@ public class MyPreferences extends Preferences {
 		return val == null ? null : val.name();
 	}
 
+	/** Bez řešení odkazů, stejně jako cesty z prohledávání složek, jinak by se soubor přes symlink s uloženým nikdy neshodoval. */
 	private String pack(final File f) {
-		try {
-			return cestaDoNastaveni(f.getCanonicalFile(), FConst.KOREN);
-		} catch (final IOException e) {
-			throw new IllegalArgumentException("Unable to retrieve canonical path from " + f, e);
-		}
+		return cestaDoNastaveni(f.getAbsoluteFile().toPath().normalize().toFile(), FConst.KOREN);
 	}
 
 	private String pack(final Mou bod) {
