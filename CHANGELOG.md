@@ -114,6 +114,17 @@
   zdrojů neukazuje čas a bez vybrané pozice ukazuje pomlčku.
 - Hlášení v Přehledu problémů jsou česky a srozumitelně, opravené
   překlepy a oslovení v nápovědách tlačítek.
+- Přehled problémů jde po zavření znovu otevřít v Nápověda > Přehled
+  problémů.
+- Hledání adresy v režimu offline hned ohlásí, že potřebuje připojení
+  (Mapy > Online), a nezůstane na „Hledá se ...“.
+- Po nedostatku paměti při rendrování přijde jen hláška o paměti, bez
+  „Rendrování bylo přerušeno uživatelem“.
+- Kontextové menu záměrného kříže nabízí Vystředit na kříž.
+- Umístění souborů: zaškrtnutí „Načítat až po vybrání“ platí i pro
+  složku GSAKu změněnou ve stejném uložení.
+- Při spuštění s `--ovladani` je položka Soubor > Dálkové ovládání
+  zaškrtnutá.
 - Dialog nové verze má titulek „Nová verze programu“ a čitelný text
   a při souběhu automatické a ruční kontroly aktualizací se ukáže jen
   jednou.

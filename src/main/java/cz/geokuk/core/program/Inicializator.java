@@ -48,6 +48,7 @@ public class Inicializator {
 	private final MainFrameHolder mainFrameHolder = new MainFrameHolder();
 	private NapovedaModel napovedaModel;
 	private DalkoveOvladani dalkoveOvladani;
+	private Akce akce;
 
 	public void inicializace() {
 		final BeanBag bb = new BeanBag();
@@ -105,7 +106,7 @@ public class Inicializator {
 		kpm.getPlugins().stream().forEach(bb::registerSigleton);
 
 		// akce
-		final Akce akce = new Akce();
+		akce = new Akce();
 		bb.registerSigleton(akce);
 		bb.registrFieldsAsSingleton(akce);
 
@@ -141,6 +142,7 @@ public class Inicializator {
 		} catch (final IOException | RuntimeException e) {
 			Dlg.error(DalkoveOvladani.popisChyby(port, e));
 		}
+		akce.dalkoveOvladaniAction.ukazStav();
 	}
 
 	public void zkontrolovatAktualizace() {

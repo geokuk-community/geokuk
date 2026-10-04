@@ -22,7 +22,7 @@ public class ZoomPoziceAction extends Action0 {
 	 */
 	public ZoomPoziceAction(final Wgs wgs) {
 		// this.wgs = wgs;
-		super.putValue(NAME, "Přiblížit..");
+		super.putValue(NAME, "Přiblížit");
 		// super.putValue(SMALL_ICON, Board.ikonizer.findIcon(wpt, "x16", true));
 		// super.putValue(SMALL_ICON, ikonBag.seekIkon(wpt.getGenotyp(ikonBag.getGenom())));
 		putValue(SHORT_DESCRIPTION, "Přiblíží mapu na vybranou pozici.");
