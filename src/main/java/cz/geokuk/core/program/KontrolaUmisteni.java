@@ -8,8 +8,6 @@ import java.util.regex.Pattern;
 import com.google.common.io.ByteStreams;
 
 import cz.geokuk.core.napoveda.VerzeJavy;
-import com.google.common.io.ByteStreams;
-
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
