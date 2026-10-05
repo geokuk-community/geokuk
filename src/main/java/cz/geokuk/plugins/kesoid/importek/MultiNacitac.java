@@ -42,6 +42,11 @@ public class MultiNacitac {
 	private List<KeFile> posledniSeznam;
 	/** Zdroje, jejichž keše jsou v naposledy vráceném (zobrazeném) výsledku. */
 	private Set<File> zobrazene = Collections.emptySet();
+	/**
+	 * Databáze, které jiný program v tomto běhu zamkl, s otiskem souboru z jejich posledního načtení. Import může běžet v několika transakcích a mezi nimi se mohla načíst
+	 * rozpracovaná; změnu po dokončení zápisu sken sám nepozná.
+	 */
+	private final Map<File, String> sledovane = new HashMap<>();
 
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
@@ -96,6 +101,10 @@ public class MultiNacitac {
 				return null; // změnila se jen zamčená databáze, jiný program do ní pořád zapisuje
 			}
 		}
+		if (list == null && zmenilaSeSledovana()) {
+			ds.nulujLastScaned();
+			list = ds.coMamNacist();
+		}
 		if (list == null) {
 			return null;
 		}
@@ -119,6 +128,12 @@ public class MultiNacitac {
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
 		final List<String> vadne = new ArrayList<>();
 		final Set<File> zamceneTed = new HashSet<>();
+		final Map<File, String> otiskyPredCtenim = new HashMap<>();
+		for (final KeFile f : list) {
+			if (sledovane.containsKey(f.getFile())) {
+				otiskyPredCtenim.put(f.getFile(), otisk(f.getFile()));
+			}
+		}
 		for (final KeFile file : list) {
 			if (future != null && future.isCancelled()) {
 				break;
@@ -146,6 +161,13 @@ public class MultiNacitac {
 				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
 		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
+		for (final Map.Entry<File, String> e : otiskyPredCtenim.entrySet()) {
+			sledovane.put(e.getKey(), e.getValue());
+		}
+		// Zamčená databáze se načte po uvolnění zámku, otisk se jí zapíše až po přečtení.
+		for (final File f : zamceneTed) {
+			sledovane.put(f, "");
+		}
 		// Keše ze zamčené databáze, které už jsou zobrazené, zůstanou zobrazené, dokud ji jiný program nepustí.
 		if (!zamceneTed.isEmpty() && kesoidModel.getVsechnyKesoidy() != null && !Collections.disjoint(zamceneTed, zobrazene)) {
 			return null;
@@ -157,6 +179,23 @@ public class MultiNacitac {
 		nactene.removeAll(zamceneTed);
 		zobrazene = nactene;
 		return bag;
+	}
+
+	/** Sledovaná databáze se od načtení změnila a jiný program ji už nedrží. */
+	private boolean zmenilaSeSledovana() {
+		for (final Map.Entry<File, String> e : sledovane.entrySet()) {
+			// Chybějící databázi (odpojený disk) najde sken, až se vrátí, a sledování pokračuje.
+			if (e.getKey().exists() && !zamcene.contains(e.getKey()) && !otisk(e.getKey()).equals(e.getValue()) && !DatabazeJinehoProgramu.jeZamcena(e.getKey())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Čas a velikost databáze i jejího WAL, zápis se projeví aspoň v jednom z nich. */
+	private static String otisk(final File databaze) {
+		final File wal = new File(databaze.getPath() + "-wal");
+		return databaze.lastModified() + ":" + databaze.length() + ":" + wal.lastModified() + ":" + wal.length();
 	}
 
 	private static Set<File> databaze(final List<KeFile> list, final Root.Def def) {

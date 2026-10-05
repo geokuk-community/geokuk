@@ -116,6 +116,64 @@ public class ZamcenaDatabazeOpakovaniTest {
 		return ohlasenaZamceni;
 	}
 
+	/** Import ve více transakcích: načte-li se databáze v mezeře mezi nimi, po dokončení zápisu se načte znovu. */
+	@Test
+	public void rozpracovanyImportSeNactePoDokonceni() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final CountDownLatch pustitA = zamkni(a);
+		start();
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		pridejKes(a, "GC000B");
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000B"), kody(nacti()));
+		Assert.assertNull("beze změny se znovu nenačítá", nacti());
+	}
+
+	/** Databáze, kterou jiný program nezamkl, se podle času změny nesleduje. */
+	@Test
+	public void nezamcenaDatabazeSeNesleduje() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		nacti();
+		pridejKes(a, "GC000B");
+		Assert.assertNull(nacti());
+	}
+
+	/** Sledovaná databáze, která na chvíli zmizí (odpojený disk), se po návratu načte. */
+	@Test
+	public void sledovanaDatabazeSePoNavratuNacte() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final CountDownLatch pustitA = zamkni(a);
+		start();
+		nacti();
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		final File jinde = new File(tmp.getRoot(), "a.db3");
+		Files.move(a.toPath(), jinde.toPath());
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+		Files.move(jinde.toPath(), a.toPath());
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+		pridejKes(a, "GC000B");
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000B"), kody(nacti()));
+	}
+
+	private void pridejKes(final File db, final String kod) throws Exception {
+		final long pred = db.lastModified();
+		Thread.sleep(50);
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute(insertKese(kod));
+		}
+		if (db.lastModified() == pred) {
+			Assert.assertTrue(db.setLastModified(pred + 2000));
+		}
+	}
+
 	/** Zrušené načítání se při dalším pokusu zopakuje celé. */
 	@Test
 	public void zruseneNacitaniSeZopakuje() throws Exception {
@@ -170,9 +228,13 @@ public class ZamcenaDatabazeOpakovaniTest {
 			s.execute("CREATE TABLE geotag (id TEXT, ptrkat INTEGER, ptrvalue INTEGER)");
 			s.execute("CREATE TABLE geotagcategory (key INTEGER, value TEXT)");
 			s.execute("CREATE TABLE geotagvalue (key INTEGER, value TEXT)");
-			s.execute("INSERT INTO geocache VALUES ('" + kod + "', 50.1, 14.4, 'Keš', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+			s.execute(insertKese(kod));
 		}
 		return db;
+	}
+
+	private static String insertKese(final String kod) {
+		return "INSERT INTO geocache VALUES ('" + kod + "', 50.1, 14.4, 'Keš', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)";
 	}
 
 	private static Set<String> set(final String... kody) {
