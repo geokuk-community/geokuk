@@ -17,6 +17,7 @@ import cz.geokuk.framework.Event0;
 import cz.geokuk.framework.ProgressModel;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
@@ -38,6 +39,8 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private MultiNacitac nacitac;
 	private final List<List<String>> ohlasenaZamceni = new CopyOnWriteArrayList<>();
 	private final AtomicInteger zpracovanychSouboru = new AtomicInteger();
+	private final Set<File> vypnute = new HashSet<>();
+	private final Genom genom = new Genom();
 
 	@Before
 	public void setUp() throws Exception {
@@ -80,16 +83,91 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertEquals(set("GC1111", "GC2222"), kody(nacti()));
 	}
 
-	/** Keše ze zamčené databáze, které už jsou zobrazené, nezmizí. */
+	/** Keše ze zamčené databáze, které už jsou zobrazené, nezmizí a změna jiného zdroje se ukáže hned. */
 	@Test
 	public void zobrazeneKeseZamceneDatabazeZustanou() throws Exception {
 		final File a = zalozGeoget("a.db3", "GC000A");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + a); Statement s = c.createStatement()) {
+			s.execute("INSERT INTO waypoint VALUES ('GC000A', 50.2, 14.5, 'PK', 'Parking Area', 'Parkoviště')");
+		}
 		start();
-		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+		final KesBag puvodni = nacti();
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(puvodni));
+		final Set<String> waypointy = jmenaWaypointu(puvodni);
+		Assert.assertEquals(3, waypointy.size());
 
 		zamkni(a);
 		zapisGpx("b.gpx", "GC2222");
-		Assert.assertNull(nacti());
+		final KesBag bag = nacti();
+		Assert.assertEquals(set("GC1111", "GC000A", "GC2222"), kody(bag));
+		Assert.assertTrue("převezmou se i přídavné waypointy", jmenaWaypointu(bag).containsAll(waypointy));
+		Assert.assertTrue(nacitac.jeZamcena(a));
+		Assert.assertEquals("Přehled zdrojů ukazuje počty z minula", informace(puvodni, "a.db3").pocetWaypointuBranych, informace(bag, "a.db3").pocetWaypointuBranych);
+
+		zapisGpx("c.gpx", "GC3333");
+		Assert.assertEquals("převzaté keše se převezmou i podruhé", set("GC1111", "GC000A", "GC2222", "GC3333"), kody(nacti()));
+	}
+
+	/** Dvě zobrazené zamčené databáze: uvolněná se načte znovu, i když druhá je pořád zamčená. */
+	@Test
+	public void dveZobrazeneDatabazeSeUvolniSamostatne() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final File b = zalozGeoget("b.db3", "GC000B");
+		start();
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000B"), kody(nacti()));
+
+		final CountDownLatch pustitA = zamkni(a, "GC000C");
+		zamkni(b);
+		zapisGpx("b.gpx", "GC2222");
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000B", "GC2222"), kody(nacti()));
+
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000C", "GC000B", "GC2222"), kody(nacti()));
+		Assert.assertTrue(nacitac.jeZamcena(b));
+		Assert.assertFalse(nacitac.jeZamcena(a));
+	}
+
+	/** Po změně sady ikon nejde staré keše převzít; zůstane zobrazené všechno, jak bylo. */
+	@Test
+	public void jinyGenomNechaZobrazene() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		nacti();
+
+		zamkni(a);
+		zapisGpx("b.gpx", "GC2222");
+		Assert.assertNull(nacitac.nacti(null, new Genom()));
+	}
+
+	/** Vypnutý zdroj se nepřevezme, i když je zamčený. */
+	@Test
+	public void vypnutaZamcenaDatabazeSeNeprevezme() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		nacti();
+
+		zamkni(a);
+		vypnute.add(a);
+		zapisGpx("b.gpx", "GC2222");
+		Assert.assertEquals(set("GC1111", "GC2222"), kody(nacti()));
+	}
+
+	private static Set<String> jmenaWaypointu(final KesBag bag) {
+		final Set<String> jmena = new HashSet<>();
+		for (final Wpt w : bag.getWpts()) {
+			jmena.add(w.getName());
+		}
+		return jmena;
+	}
+
+	private static InformaceOZdroji informace(final KesBag bag, final String jmeno) {
+		for (final InformaceOZdroji i : bag.getInformaceOZdrojich().getSetInformaciOZdrojich()) {
+			if (i.jmenoZdroje.getFile().getName().equals(jmeno)) {
+				return i;
+			}
+		}
+		throw new AssertionError("zdroj " + jmeno + " chybí");
 	}
 
 	/** Zamčené databáze se ohlásí jednou při změně, po uvolnění prázdným seznamem. */
@@ -190,7 +268,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 	}
 
 	private KesBag nacti() throws Exception {
-		final KesBag bag = nacitac.nacti(null, new Genom());
+		final KesBag bag = nacitac.nacti(null, genom);
 		if (bag != null) {
 			zobrazene = bag;
 		}
@@ -198,12 +276,20 @@ public class ZamcenaDatabazeOpakovaniTest {
 	}
 
 	private CountDownLatch zamkni(final File db) throws Exception {
+		return zamkni(db, null);
+	}
+
+	/** Zamkne databázi; když je zadaný kód, jiný program do ní během zámku přidá keš. */
+	private CountDownLatch zamkni(final File db, final String novaKes) throws Exception {
 		final CountDownLatch zamceno = new CountDownLatch(1);
 		final CountDownLatch pustit = new CountDownLatch(1);
 		zamky.add(pustit);
 		geoget.submit(() -> {
 			try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
 				s.execute("BEGIN EXCLUSIVE");
+				if (novaKes != null) {
+					s.execute(insertKese(novaKes));
+				}
 				zamceno.countDown();
 				pustit.await();
 				s.execute("COMMIT");
@@ -280,7 +366,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 			@Override
 			public boolean maSeNacist(final KeFile soubor) {
 				zpracovanychSouboru.incrementAndGet();
-				return super.maSeNacist(soubor);
+				return !vypnute.contains(soubor.getFile()) && super.maSeNacist(soubor);
 			}
 		};
 		model.inject(progress);

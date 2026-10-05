@@ -10,6 +10,7 @@ import java.util.zip.ZipFile;
 
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
@@ -47,6 +48,10 @@ public class MultiNacitac {
 	 * rozpracovaná; změnu po dokončení zápisu sken sám nepozná.
 	 */
 	private final Map<File, String> sledovane = new HashMap<>();
+	/** Waypointy zobrazených databází; keše databáze, kterou jiný program zamkne, se z nich převezmou do dalšího výsledku. */
+	private Map<File, List<Wpt>> zobrazeneWpty = Collections.emptyMap();
+	private InformaceOZdrojich zobrazeneInformace;
+	private Genom zobrazenyGenom;
 
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
@@ -124,6 +129,7 @@ public class MultiNacitac {
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
+		builder.setSledovaneZdroje(f -> !FILE_NAME_REGEX_GEOKUK_DIR.equals(f.root.def));
 		final long start = System.currentTimeMillis();
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
 		final List<String> vadne = new ArrayList<>();
@@ -134,6 +140,8 @@ public class MultiNacitac {
 				otiskyPredCtenim.put(f.getFile(), otisk(f.getFile()));
 			}
 		}
+		final Set<File> prevzate = new HashSet<>();
+		boolean nelzePrevzit = false;
 		for (final KeFile file : list) {
 			if (future != null && future.isCancelled()) {
 				break;
@@ -144,6 +152,15 @@ public class MultiNacitac {
 			} catch (final DatabazeJinehoProgramu.Zamcena e) {
 				log.info(e.getMessage());
 				zamceneTed.add(file.getFile());
+				if (zobrazene.contains(file.getFile())) {
+					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
+					if (genom == zobrazenyGenom && !builder.maWaypointyZe(file.getFile())) {
+						builder.prevezmi(file, zobrazeneWpty.getOrDefault(file.getFile(), Collections.emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
+						prevzate.add(file.getFile());
+					} else {
+						nelzePrevzit = true;
+					}
+				}
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
@@ -168,16 +185,20 @@ public class MultiNacitac {
 		for (final File f : zamceneTed) {
 			sledovane.put(f, "");
 		}
-		// Keše ze zamčené databáze, které už jsou zobrazené, zůstanou zobrazené, dokud ji jiný program nepustí.
-		if (!zamceneTed.isEmpty() && kesoidModel.getVsechnyKesoidy() != null && !Collections.disjoint(zamceneTed, zobrazene)) {
+		// Keše ze zamčené databáze, které nešly převzít, zůstanou zobrazené se vším ostatním, dokud ji jiný program nepustí.
+		if (nelzePrevzit && kesoidModel.getVsechnyKesoidy() != null) {
 			return null;
 		}
 		final Set<File> nactene = new HashSet<>();
 		for (final KeFile f : list) {
-			nactene.add(f.getFile());
+			if (!zamceneTed.contains(f.getFile()) || prevzate.contains(f.getFile())) {
+				nactene.add(f.getFile());
+			}
 		}
-		nactene.removeAll(zamceneTed);
 		zobrazene = nactene;
+		zobrazeneWpty = builder.getWptyPodleZdroje();
+		zobrazeneInformace = bag.getInformaceOZdrojich();
+		zobrazenyGenom = genom;
 		return bag;
 	}
 
