@@ -8,6 +8,8 @@
   aktuální stav.
 - Menší spotřeba paměti u velkých dat, i při přenačtení keší.
 - Rychlejší načítání keší.
+- Windows: okno GeoKuku se spojí s ikonou připnutou na hlavním panelu (ze zástupce
+  GeoKuku), místo druhé ikony.
 - Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
   zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
 - Kreslení teček při velkém počtu keší potřebuje výrazně méně paměti,
