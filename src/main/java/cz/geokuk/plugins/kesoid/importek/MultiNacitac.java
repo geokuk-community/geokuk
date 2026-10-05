@@ -92,6 +92,15 @@ public class MultiNacitac {
 
 	/** Synchronizované: zrušené načítání může ještě doběhnout, když už začíná další. */
 	public synchronized KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
+		DatabazeJinehoProgramu.setNacitani(future);
+		try {
+			return nactiZmeny(future, genom);
+		} finally {
+			DatabazeJinehoProgramu.setNacitani(null);
+		}
+	}
+
+	private KesBag nactiZmeny(final Future<?> future, final Genom genom) throws IOException {
 		List<KeFile> list = ds.coMamNacist();
 		if (!zamcene.isEmpty()) {
 			if (!zamcene.stream().allMatch(DatabazeJinehoProgramu::jeZamcena)) {
@@ -117,6 +126,9 @@ public class MultiNacitac {
 		final File opensak = opensakDir;
 		if (opensak == null || !nedostupne.contains(opensak)) {
 			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
+		}
+		if (kesoidModel.getVsechnyKesoidy() == null) {
+			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
@@ -178,6 +190,15 @@ public class MultiNacitac {
 		zobrazeneInformace = bag.getInformaceOZdrojich();
 		zobrazenyGenom = genom;
 		return bag;
+	}
+
+	/** Zdroje, které se právě načítají, aby šly v Přehledu zdrojů vypnout dřív, než se načtou. */
+	private static InformaceOZdrojich predbezneZdroje(final List<KeFile> list) {
+		final InformaceOZdrojich.Builder zdroje = InformaceOZdrojich.builder();
+		for (final KeFile f : list) {
+			zdroje.add(f, true);
+		}
+		return zdroje.done();
 	}
 
 	private static Set<File> databaze(final List<KeFile> list, final Root.Def def) {

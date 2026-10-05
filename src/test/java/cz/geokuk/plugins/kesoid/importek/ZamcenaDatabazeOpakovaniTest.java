@@ -37,8 +37,10 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private File gpx;
 	private File slozkaGeogetu;
 	private MultiNacitac nacitac;
+	private volatile File zamknoutPriNacitani;
 	private final List<List<String>> ohlasenaZamceni = new CopyOnWriteArrayList<>();
 	private final AtomicInteger zpracovanychSouboru = new AtomicInteger();
+	private final List<InformaceOZdrojich> predbezneZdroje = new CopyOnWriteArrayList<>();
 	private final Set<File> vypnute = new HashSet<>();
 	private final Genom genom = new Genom();
 
@@ -194,6 +196,20 @@ public class ZamcenaDatabazeOpakovaniTest {
 		return ohlasenaZamceni;
 	}
 
+	/** Před prvním načtením se zdroje ohlásí, aby šly v Přehledu zdrojů vypnout; pak už ne. */
+	@Test
+	public void zdrojeSeOhlasiPredPrvnimNactenim() throws Exception {
+		zalozGeoget("a.db3", "GC000A");
+		start();
+		nacti();
+		Assert.assertEquals(1, predbezneZdroje.size());
+		Assert.assertTrue(predbezneZdroje.get(0).getJmenaZdroju().contains(new File(slozkaGeogetu, "a.db3")));
+
+		zapisGpx("b.gpx", "GC2222");
+		nacti();
+		Assert.assertEquals("po načtení se ukazují načtené zdroje", 1, predbezneZdroje.size());
+	}
+
 	/** Zrušené načítání se při dalším pokusu zopakuje celé. */
 	@Test
 	public void zruseneNacitaniSeZopakuje() throws Exception {
@@ -203,6 +219,23 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertNull(nacitac.nacti(zruseno, new Genom()));
 		Assert.assertEquals("zrušené načítání nemá číst další soubory", 0, zpracovanychSouboru.get());
 		Assert.assertEquals(set("GC1111"), kody(nacti()));
+	}
+
+	/** Zrušení načítání ukončí čekání na zámek databáze, která se zamkla až po zjištění, že ji umíme načíst. */
+	@Test
+	public void zruseniPrerusiCekaniNaZamek() throws Exception {
+		Assert.assertTrue(new File(gpx, "a.gpx").delete());
+		zamknoutPriNacitani = zalozGeoget("a.db3", "GC000A");
+		start();
+		final CompletableFuture<Void> future = new CompletableFuture<>();
+		final Future<KesBag> nacitani = geoget.submit(() -> nacitac.nacti(future, new Genom()));
+		Thread.sleep(300);
+		future.cancel(false);
+		try {
+			nacitani.get(20, TimeUnit.SECONDS);
+		} catch (final TimeoutException e) {
+			Assert.fail("načítání se po zrušení nepřerušilo");
+		}
 	}
 
 	private void start() {
@@ -293,10 +326,30 @@ public class ZamcenaDatabazeOpakovaniTest {
 			}
 
 			@Override
+			public ProgressModel getProgressModel() {
+				final File db = zamknoutPriNacitani;
+				// Zavolá se až po rozpoznání souboru, těsně před čtením.
+				if (db != null && Arrays.stream(new Throwable().getStackTrace()).anyMatch(e -> "zpracujJedenFile".equals(e.getMethodName()))) {
+					zamknoutPriNacitani = null;
+					try {
+						zamkni(db);
+					} catch (final Exception e) {
+						throw new IllegalStateException(e);
+					}
+				}
+				return super.getProgressModel();
+			}
+
+			@Override
 			public void fire(final Event0<?> udalost) {
 				if (udalost instanceof ZamceneDatabazeEvent) {
 					ohlasenaZamceni.add(((ZamceneDatabazeEvent) udalost).getJmena());
 				}
+			}
+
+			@Override
+			public void setNacitaneZdroje(final InformaceOZdrojich zdroje) {
+				predbezneZdroje.add(zdroje);
 			}
 
 			@Override
