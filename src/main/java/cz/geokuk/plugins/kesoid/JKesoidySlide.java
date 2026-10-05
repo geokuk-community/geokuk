@@ -169,7 +169,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private EZobrazeniKesi zobrazeni = EZobrazeniKesi.AUTOMATICKY;
 	private int prumer;
 	private int moumerPrumeru;
-	private Boolean oznamenePrekroceni;
+	private Integer oznamenyLimit;
 	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
 	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
 
@@ -469,22 +469,16 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		final boolean husteTecky = zobrazeni == EZobrazeniKesi.TECKY
 				|| zobrazeni != EZobrazeniKesi.IKONY && (getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE);
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
-		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
-		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
-			oznamenePrekroceni = prekrocenLimit;
-			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
+		final int prekrocenyLimit = prekrocenyLimit(husteTecky, vykreslovatOkamtiteAleDlouho, pocet);
+		final boolean prekrocenLimit = prekrocenyLimit > 0;
+		if (!Integer.valueOf(prekrocenyLimit).equals(oznamenyLimit)) {
+			oznamenyLimit = prekrocenyLimit;
+			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenyLimit));
 		}
 
 		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
 		try {
-			if (husteTecky) {
-				kresliTecky(gg, mapa, prumerTecek(pocet));
-				for (final List<Wpt> list : mapa.values()) {
-					list.clear();
-				}
-			}
-			// Při tečkách už jen zvýrazněná keš pod myší.
-			kresli(gg, mapa, prekrocenLimit || husteTecky);
+			kresliWaypointy(gg, mapa, husteTecky, prekrocenLimit, pocet);
 		} finally {
 			// Nedržet waypointy po přenačtení keší.
 			for (final List<Wpt> list : mapa.values()) {
@@ -493,7 +487,24 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		}
 	}
 
-	private void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
+	/** Překročený limit počtu waypointů pro tečky nebo ikony, 0 když překročen není. */
+	static int prekrocenyLimit(final boolean husteTecky, final boolean vykreslovatOkamtiteAleDlouho, final int pocet) {
+		final int limit = husteTecky ? FConst.MAX_POC_TECEK_NA_MAPE : FConst.MAX_POC_WPT_NA_MAPE;
+		return !vykreslovatOkamtiteAleDlouho && pocet > limit ? limit : 0;
+	}
+
+	void kresliWaypointy(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean husteTecky, final boolean prekrocenLimit, final int pocet) {
+		if (husteTecky && !prekrocenLimit) {
+			kresliTecky(gg, mapa, pocet);
+			for (final List<Wpt> list : mapa.values()) {
+				list.clear();
+			}
+		}
+		// Při tečkách už jen zvýrazněná keš pod myší.
+		kresli(gg, mapa, prekrocenLimit || husteTecky);
+	}
+
+	void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
 		// Roztřídit waypointy podle pořadí vykreslování
 		if (!prekrocenLimit) {
 			final BoundingRect hranice = coVykreslovat(gg);
@@ -534,7 +545,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	}
 
 	/** Nalezené dospod, neaktivní pod aktivní; seznamy podle z-orderu se tu jen půjčí. */
-	private void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int prumer) {
+	void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int pocet) {
+		final int prumer = prumerTecek(pocet);
 		final List<Wpt> nalezene = mapa.get(Wpt.EZOrder.OTHER);
 		final List<Wpt> neaktivni = mapa.get(Wpt.EZOrder.KESWPT);
 		final List<Wpt> ostatni = mapa.get(Wpt.EZOrder.FINAL);

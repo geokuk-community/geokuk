@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid;
 
 import static org.junit.Assert.*;
 
+import java.awt.Graphics2D;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
@@ -14,6 +15,7 @@ import javax.swing.SwingUtilities;
 import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.util.exception.FExceptionDumper;
 
 public class JKesoidySlideTest {
@@ -44,6 +46,36 @@ public class JKesoidySlideTest {
 			SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler(puvodni.get()));
 		}
 		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
+	}
+
+	@Test
+	public void limitTecekAIkon() {
+		assertEquals(0, JKesoidySlide.prekrocenyLimit(true, false, FConst.MAX_POC_TECEK_NA_MAPE));
+		assertEquals(FConst.MAX_POC_TECEK_NA_MAPE, JKesoidySlide.prekrocenyLimit(true, false, FConst.MAX_POC_TECEK_NA_MAPE + 1));
+		assertEquals(0, JKesoidySlide.prekrocenyLimit(false, false, FConst.MAX_POC_WPT_NA_MAPE));
+		assertEquals(FConst.MAX_POC_WPT_NA_MAPE, JKesoidySlide.prekrocenyLimit(false, false, FConst.MAX_POC_WPT_NA_MAPE + 1));
+		assertEquals("při tisku a exportu se limit neuplatní", 0, JKesoidySlide.prekrocenyLimit(true, true, Integer.MAX_VALUE));
+	}
+
+	@Test
+	public void teckySeNekresliNadLimitem() {
+		for (final boolean prekrocenLimit : new boolean[] { false, true }) {
+			final List<String> volani = new ArrayList<>();
+			final JKesoidySlide slide = new JKesoidySlide(false) {
+				@Override
+				void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int pocet) {
+					volani.add("tecky");
+				}
+
+				@Override
+				void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean bezWaypointu) {
+					volani.add(bezWaypointu ? "bezIkon" : "ikony");
+				}
+			};
+			final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = new EnumMap<>(Wpt.EZOrder.class);
+			slide.kresliWaypointy(null, mapa, true, prekrocenLimit, 1);
+			assertEquals(prekrocenLimit ? Arrays.asList("bezIkon") : Arrays.asList("tecky", "bezIkon"), volani);
+		}
 	}
 
 	private static long pocetVypisu() throws IOException {

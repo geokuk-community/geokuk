@@ -210,7 +210,7 @@ public class JStatusBar extends JPanel {
 	}
 
 	public void onEvent(final PrekrocenLimitWaypointuVeVyrezuEvent event) {
-		setVarujPrekroceni(event.isPrekrocen());
+		setVarujPrekroceni(event.getLimit());
 	}
 
 	public void onEvent(final ProgressEvent event) {
@@ -402,9 +402,9 @@ public class JStatusBar extends JPanel {
 		// meritkoMapy.setText(coord.getMoumer() + "");
 	}
 
-	private void setVarujPrekroceni(final boolean b) {
-		if (b) {
-			varovaniPoctuPrekrocenych.setText("Překročen limit " + FConst.MAX_POC_WPT_NA_MAPE + " waypointů");
+	private void setVarujPrekroceni(final int limit) {
+		if (limit > 0) {
+			varovaniPoctuPrekrocenych.setText("Překročen limit " + limit + " waypointů");
 			varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
 			varovaniPoctuPrekrocenych.setForeground(Color.RED);
 			varovaniPoctuPrekrocenych.setVisible(true);
