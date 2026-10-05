@@ -10,6 +10,8 @@
 - Rychlejší načítání keší.
 - Windows: okno GeoKuku se spojí s ikonou připnutou na hlavním panelu (ze zástupce
   GeoKuku), místo druhé ikony.
+- Windows: při prvním spuštění GeoKuk nabídne zástupce v nabídce Start, aby šel
+  připnout na hlavní panel.
 - Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
   zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
 - Kreslení teček při velkém počtu keší potřebuje výrazně méně paměti,

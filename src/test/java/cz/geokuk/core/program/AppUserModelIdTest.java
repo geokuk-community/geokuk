@@ -20,4 +20,15 @@ public class AppUserModelIdTest {
 		Assert.assertTrue(VytvoritZastupceAction.CSHARP.contains("System.AppUserModel.ID"));
 		Assert.assertEquals("GeoKuk", AppUserModelId.ID);
 	}
+
+	/** Nabídka zástupce do Startu se ukáže jen jednou, když to jde a zástupce ještě není. */
+	@Test
+	public void nabidkaStartuSeUkazeJenNaZacatku() {
+		Assert.assertTrue(VytvoritZastupceAction.zeptatSe(true, null, false, false));
+		Assert.assertFalse("nejde vytvořit", VytvoritZastupceAction.zeptatSe(false, null, false, false));
+		Assert.assertFalse("už odpověděl", VytvoritZastupceAction.zeptatSe(true, "ne", false, false));
+		Assert.assertFalse("už odpověděl", VytvoritZastupceAction.zeptatSe(true, "ano", false, false));
+		Assert.assertFalse("automatizace (dálkové ovládání)", VytvoritZastupceAction.zeptatSe(true, null, false, true));
+		Assert.assertFalse("zástupce už je", VytvoritZastupceAction.zeptatSe(true, null, true, false));
+	}
 }

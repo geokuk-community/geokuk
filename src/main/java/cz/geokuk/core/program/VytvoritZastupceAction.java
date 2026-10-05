@@ -57,6 +57,9 @@ public class VytvoritZastupceAction extends Action0 {
 	/** Program, pro který je zástupce ve složce s programem. */
 	private static final String ZASTUPCE_PRO_value = "zastupcePro";
 
+	/** Volba uživatele u nabídky zástupce do nabídky Start; ptá se jen dokud neodpověděl. */
+	private static final String NABIDKA_START_value = "nabidkaStart";
+
 	/** Zástupce ve složce s programem se zapsaným AppUserModelID; starší se jednou přepíše. */
 	private static final String ZASTUPCE_ID_value = "zastupceId";
 
@@ -122,6 +125,45 @@ public class VytvoritZastupceAction extends Action0 {
 		return System.getProperty("os.name", "").startsWith("Windows") && javaw().isFile() && new File(FConst.JAR_DIR, "start.jar").isFile();
 	}
 
+	/** Zda se má při startu nabídnout zástupce do nabídky Start; ne při automatizaci (parametr dálkového ovládání, headless), ať dialog nepřekáží. */
+	static boolean zeptatSe(final boolean lzeVytvorit, final String volba, final boolean zastupceVeStartuJe, final boolean automatizace) {
+		return lzeVytvorit && volba == null && !zastupceVeStartuJe && !automatizace;
+	}
+
+	private static File zastupceVeStartu() {
+		final String appdata = System.getenv("APPDATA");
+		return appdata == null ? null : new File(appdata, "Microsoft\\Windows\\Start Menu\\Programs\\GeoKuk.lnk");
+	}
+
+	/** Při prvním startu jednou nabídne zástupce do nabídky Start, aby šel GeoKuk připnout na hlavní panel. Nemodální, volba se uloží. */
+	public static void nabidniStart(final boolean automatizace) {
+		final MyPreferences pref = MyPreferences.current().node(FPref.VSEOBECNE_node);
+		final File zastupce = zastupceVeStartu();
+		if (!zeptatSe(lzeVytvorit(), pref.get(NABIDKA_START_value, null), zastupce != null && zastupce.isFile(), automatizace)) {
+			return;
+		}
+		final Object[] volby = { "Vytvořit", "Ne, díky" };
+		final JOptionPane pane = new JOptionPane("GeoKuk v nabídce Start?\nPůjde pak připnout na hlavní panel.", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, volby,
+				volby[0]);
+		final JDialog dialog = pane.createDialog(Dlg.parentFrame(), "GeoKuk – zástupce");
+		dialog.setModal(false);
+		pane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, e -> {
+			final Object hodnota = pane.getValue();
+			if (hodnota == JOptionPane.UNINITIALIZED_VALUE) {
+				return;
+			}
+			dialog.dispose();
+			// Zavření křížkem nic neukládá, zeptá se příště.
+			if (volby[0].equals(hodnota)) {
+				pref.put(NABIDKA_START_value, "ano");
+				vytvor(Collections.singletonList("Programs"));
+			} else if (volby[1].equals(hodnota)) {
+				pref.put(NABIDKA_START_value, "ne");
+			}
+		});
+		dialog.setVisible(true);
+	}
+
 	@Override
 	public void actionPerformed(final ActionEvent e) {
 		final JCheckBox start = new JCheckBox("V nabídce Start", true);
@@ -138,6 +180,10 @@ public class VytvoritZastupceAction extends Action0 {
 		if (plocha.isSelected()) {
 			kam.add("Desktop");
 		}
+		vytvor(kam);
+	}
+
+	private static void vytvor(final List<String> kam) {
 		new SwingWorker<Vysledek, Void>() {
 			@Override
 			protected Vysledek doInBackground() throws Exception {
