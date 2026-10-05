@@ -169,7 +169,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private EZobrazeniKesi zobrazeni = EZobrazeniKesi.AUTOMATICKY;
 	private int prumer;
 	private int moumerPrumeru;
-	private Boolean oznamenePrekroceni;
+	private Integer oznamenyLimit;
 	/** Seznamy pro kreslení na obrazovku, mezi snímky si drží kapacitu. */
 	private final EnumMap<Wpt.EZOrder, List<Wpt>> roztridene = noveSeznamy();
 
@@ -469,15 +469,16 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		final boolean husteTecky = zobrazeni == EZobrazeniKesi.TECKY
 				|| zobrazeni != EZobrazeniKesi.IKONY && (getSoord().getMoumer() < ZOOM_IKON || pocet > FConst.MAX_POC_WPT_NA_MAPE);
 		// Nevykresluju. kdyz je prekrocen limit, ale jen kdyz kreslim na obrazovku
-		final boolean prekrocenLimit = !husteTecky && !vykreslovatOkamtiteAleDlouho && pocet > FConst.MAX_POC_WPT_NA_MAPE;
-		if (!Boolean.valueOf(prekrocenLimit).equals(oznamenePrekroceni)) {
-			oznamenePrekroceni = prekrocenLimit;
-			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenLimit));
+		final int prekrocenyLimit = prekrocenyLimit(husteTecky, vykreslovatOkamtiteAleDlouho, pocet);
+		final boolean prekrocenLimit = prekrocenyLimit > 0;
+		if (!Integer.valueOf(prekrocenyLimit).equals(oznamenyLimit)) {
+			oznamenyLimit = prekrocenyLimit;
+			SwingUtilities.invokeLater(() -> kesoidModel.setPrekrocenLimitWaypointuVeVyrezu(prekrocenyLimit));
 		}
 
 		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
 		try {
-			if (husteTecky) {
+			if (husteTecky && !prekrocenLimit) {
 				kresliTecky(gg, mapa, prumerTecek(pocet));
 				for (final List<Wpt> list : mapa.values()) {
 					list.clear();
@@ -491,6 +492,12 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				list.clear();
 			}
 		}
+	}
+
+	/** Překročený limit počtu waypointů pro tečky nebo ikony, 0 když překročen není. */
+	static int prekrocenyLimit(final boolean husteTecky, final boolean vykreslovatOkamtiteAleDlouho, final int pocet) {
+		final int limit = husteTecky ? FConst.MAX_POC_TECEK_NA_MAPE : FConst.MAX_POC_WPT_NA_MAPE;
+		return !vykreslovatOkamtiteAleDlouho && pocet > limit ? limit : 0;
 	}
 
 	private void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {

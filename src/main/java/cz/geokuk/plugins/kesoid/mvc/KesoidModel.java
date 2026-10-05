@@ -317,8 +317,8 @@ public class KesoidModel extends Model0 {
 		fire(new ZobrazeniKesiEvent(zobrazeniKesi));
 	}
 
-	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {
-		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit));
+	public void setPrekrocenLimitWaypointuVeVyrezu(final int limit) {
+		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(limit));
 	}
 
 	public void setGsakParametryNacitani(final GsakParametryNacitani aGsakParametryNacitani) {

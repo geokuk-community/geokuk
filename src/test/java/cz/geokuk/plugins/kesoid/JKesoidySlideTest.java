@@ -14,6 +14,7 @@ import javax.swing.SwingUtilities;
 import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.util.exception.FExceptionDumper;
 
 public class JKesoidySlideTest {
@@ -44,6 +45,15 @@ public class JKesoidySlideTest {
 			SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler(puvodni.get()));
 		}
 		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
+	}
+
+	@Test
+	public void limitTecekAIkon() {
+		assertEquals(0, JKesoidySlide.prekrocenyLimit(true, false, FConst.MAX_POC_TECEK_NA_MAPE));
+		assertEquals(FConst.MAX_POC_TECEK_NA_MAPE, JKesoidySlide.prekrocenyLimit(true, false, FConst.MAX_POC_TECEK_NA_MAPE + 1));
+		assertEquals(0, JKesoidySlide.prekrocenyLimit(false, false, FConst.MAX_POC_WPT_NA_MAPE));
+		assertEquals(FConst.MAX_POC_WPT_NA_MAPE, JKesoidySlide.prekrocenyLimit(false, false, FConst.MAX_POC_WPT_NA_MAPE + 1));
+		assertEquals("při tisku a exportu se limit neuplatní", 0, JKesoidySlide.prekrocenyLimit(true, true, Integer.MAX_VALUE));
 	}
 
 	private static long pocetVypisu() throws IOException {
