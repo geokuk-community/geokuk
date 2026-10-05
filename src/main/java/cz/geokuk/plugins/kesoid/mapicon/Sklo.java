@@ -9,7 +9,7 @@ import cz.geokuk.util.pocitadla.*;
 public class Sklo {
 
 	private static Pocitadlo pocitImangantuZasah = new PocitadloRoste("Imagant - zásahy cache", "");
-	private final Pocitadlo pocitImangantu = new PocitadloMalo("Imagant - počet", "Kolik vlastně máme typů konkrétních vzhledů ikon");
+	private final Pocitadlo pocitImangantu;
 
 	List<Vrstva> vrstvy = new ArrayList<>();
 
@@ -18,13 +18,15 @@ public class Sklo {
 	private final String iName;
 
 	// TODO zjistit proč je keš definována ve skle. Cožpak je ji nutno uvolňovat?
-	private final ImageProvider imageProvider = new ImageProviderCached();
+	private final ImageProvider imageProvider;
 
 	/**
 	 *
 	 */
 	public Sklo(final String name) {
 		iName = name;
+		pocitImangantu = new PocitadloMalo("Imagant - počet (" + name + ")", "Kolik vlastně máme typů konkrétních vzhledů ikon");
+		imageProvider = new ImageProviderCached(name);
 	}
 
 	/**
