@@ -20,6 +20,7 @@ import org.tmatesoft.sqljet.core.table.ISqlJetTable;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.framework.ChybyVDiagnostice;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleManager.ItemToSave;
 import cz.geokuk.util.file.Filex;
@@ -493,6 +494,34 @@ public class KachleDBManagerTest {
 		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
 		manager = new KachleDBManager(manager.folderHolder);
 		Assert.assertNotNull(manager.load(kachle(150)));
+		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
+	}
+
+	/** Zápis jiného programu do cache: dlaždice se bere jako chybějící, bez chyby a se zachovaným spojením. */
+	@Test(timeout = 60000)
+	public void zamekJinehoProgramuJeJenChybejiciDlazdice() throws Exception {
+		ulozKachle();
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertNotNull(manager.load(kachle(1)));
+		final Process jiny = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
+				ZamekJinehoProgramu.class.getName(), soubor.getPath()).redirectErrorStream(true).start();
+		try {
+			final java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(jiny.getInputStream(), StandardCharsets.UTF_8));
+			for (String radek = vystup.readLine(); !"zamceno".equals(radek); radek = vystup.readLine()) {
+				Assert.assertNotNull("druhý program skončil bez zámku", radek);
+			}
+			final SqlJetDb spojeni = manager.connections.values().iterator().next();
+			final int chybPred = ChybyVDiagnostice.pocet("Nepodařilo se");
+			Assert.assertNull("zamčená cache = dlaždice není v cache", manager.load(kachle(2)));
+			Assert.assertEquals("zámek se nehlásí jako chyba", chybPred, ChybyVDiagnostice.pocet("Nepodařilo se"));
+			Assert.assertTrue("spojení se nezahodí", manager.connections.containsValue(spojeni));
+		} finally {
+			jiny.getOutputStream().write('\n');
+			jiny.getOutputStream().flush();
+			jiny.waitFor(10, TimeUnit.SECONDS);
+			jiny.destroyForcibly();
+		}
+		Assert.assertNotNull("po uvolnění se dlaždice přečte", manager.load(kachle(2)));
 		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
 	}
 

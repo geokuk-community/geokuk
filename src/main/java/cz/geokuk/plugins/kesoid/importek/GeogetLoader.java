@@ -209,6 +209,7 @@ public class GeogetLoader extends Nacitac0 {
 			preskocene.ohlas();
 			logResult("Geocaches", startTime, citac);
 		}
+		preskocene.ohlasVetsinuKesi(citac, file, "GeoGetu");
 	}
 
 	private static void prevezmiTagy(final Gpxg z, final Gpxg kam) {
