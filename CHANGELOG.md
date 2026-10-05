@@ -83,6 +83,12 @@
 - Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
   vznikne složka `data/mapy`.
 
+## 6.2.1
+
+### Opravy
+- Nad 200 000 waypointů na mapě se tečky nekreslí a zobrazí se hlášení
+  o překročeném limitu.
+
 ## 6.2.0
 
 ### Změny
