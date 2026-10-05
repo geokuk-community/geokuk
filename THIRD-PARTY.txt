@@ -16,6 +16,7 @@ Program obsahuje tyto knihovny, každá je pod svou licencí:
 | Error Prone annotations                    | 2.36.0      | Apache 2.0                                 |
 | J2ObjC annotations                         | 3.0.0       | Apache 2.0                                 |
 | JSpecify                                   | 1.0.0       | Apache 2.0                                 |
+| JNA (Java Native Access)                   | 5.14.0      | Apache 2.0 (nebo LGPL 2.1)                 |
 | sqlite-jdbc (s knihovnou SQLite)           | 3.53.4.0    | Apache 2.0, část BSD (Zentus); SQLite je volné dílo |
 
 SQLJet je nabízen pod GPL 2 nebo pod GPL 3 a novější (v jeho jaru jsou

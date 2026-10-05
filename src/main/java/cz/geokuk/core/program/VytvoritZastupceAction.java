@@ -22,11 +22,25 @@ public class VytvoritZastupceAction extends Action0 {
 	/** Výstup PowerShellu jinak jde v kódování konzole (ve Windows česky CP852). */
 	private static final String UTF8_VYSTUP = "[Console]::OutputEncoding=New-Object Text.UTF8Encoding $false;";
 
+	/** Zapíše System.AppUserModel.ID do zástupce; Add-Type z proměnné prostředí, ať se nemusí uvozovky v příkazové řádce. */
+	static final String CSHARP = "using System;using System.Runtime.InteropServices;"
+			+ "public static class GkAumid{"
+			+ "[StructLayout(LayoutKind.Sequential)]public struct K{public uint a;public ushort b;public ushort c;public byte d0,d1,d2,d3,d4,d5,d6,d7;public uint pid;}"
+			+ "[StructLayout(LayoutKind.Explicit)]public struct V{[FieldOffset(0)]public ushort vt;[FieldOffset(8)]public IntPtr p;[FieldOffset(16)]public long pad;}"
+			+ "[ComImport,Guid(\"886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99\"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]public interface IPS{"
+			+ "[PreserveSig]int GetCount(out uint c);[PreserveSig]int GetAt(uint i,out K k);[PreserveSig]int GetValue(ref K k,out V v);[PreserveSig]int SetValue(ref K k,ref V v);[PreserveSig]int Commit();}"
+			+ "[ComImport,Guid(\"00021401-0000-0000-C000-000000000046\")]public class SL{}"
+			+ "[ComImport,Guid(\"0000010b-0000-0000-C000-000000000046\"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]public interface IPF{"
+			+ "void GetClassID(out Guid g);[PreserveSig]int IsDirty();void Load([MarshalAs(UnmanagedType.LPWStr)]string f,uint m);void Save([MarshalAs(UnmanagedType.LPWStr)]string f,bool r);void SaveCompleted(string f);void GetCurFile(out string f);}"
+			+ "[DllImport(\"propsys.dll\",CharSet=CharSet.Unicode)]static extern int PSGetPropertyKeyFromName(string n,out K k);"
+			+ "public static void Set(string lnk,string id){object o=new SL();((IPF)o).Load(lnk,2);var ps=(IPS)o;K k;PSGetPropertyKeyFromName(\"System.AppUserModel.ID\",out k);"
+			+ "V v=new V();v.vt=31;v.p=Marshal.StringToCoTaskMemUni(id);ps.SetValue(ref k,ref v);ps.Commit();((IPF)o).Save(lnk,true);}}";
+
 	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
 	static final String SKRIPT = UTF8_VYSTUP + "$ErrorActionPreference='Stop';"
-			+ "$sh=New-Object -ComObject WScript.Shell;"
+			+ "if($env:GK_CS){Add-Type -TypeDefinition $env:GK_CS}$sh=New-Object -ComObject WScript.Shell;"
 			+ "function Nastav($s){$s.TargetPath=$env:GK_JAVAW;$s.Arguments=$env:GK_ARGUMENTY;$s.WorkingDirectory=$env:GK_SLOZKA;"
-			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save()}"
+			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save();if($env:GK_AUMID){[GkAumid]::Set($s.FullName,$env:GK_AUMID)}}"
 			+ "if($env:GK_KAM){foreach($kam in $env:GK_KAM.Split(';')){Nastav ($sh.CreateShortcut((Join-Path ([Environment]::GetFolderPath($kam)) 'GeoKuk.lnk')))}}"
 			+ "if($env:GK_SOUBOR){Nastav ($sh.CreateShortcut($env:GK_SOUBOR));Unblock-File -LiteralPath $env:GK_JAVAW -ErrorAction SilentlyContinue}"
 			// Zástupci na ploše, v nabídce Start a na hlavním panelu, kteří vedou do složky, odkud se GeoKuk přesunul.
@@ -38,6 +52,9 @@ public class VytvoritZastupceAction extends Action0 {
 
 	/** Program, pro který je zástupce ve složce s programem. */
 	private static final String ZASTUPCE_PRO_value = "zastupcePro";
+
+	/** Zástupce ve složce s programem se zapsaným AppUserModelID; starší se jednou přepíše. */
+	private static final String ZASTUPCE_ID_value = "zastupceId";
 
 	public VytvoritZastupceAction() {
 		super("Vytvořit zástupce...");
@@ -66,7 +83,7 @@ public class VytvoritZastupceAction extends Action0 {
 		final String program = FConst.JAR_DIR.getAbsolutePath();
 		final String puvodni = pref.get(ZASTUPCE_PRO_value, null);
 		final File zastupce = new File(FConst.KOREN, "GeoKuk.lnk");
-		if (program.equals(puvodni) && zastupce.isFile()) {
+		if (program.equals(puvodni) && zastupce.isFile() && AppUserModelId.ID.equals(pref.get(ZASTUPCE_ID_value, null))) {
 			return;
 		}
 		final Map<String, String> env = new HashMap<>();
@@ -78,6 +95,7 @@ public class VytvoritZastupceAction extends Action0 {
 			try {
 				if (spust(env) == null) {
 					pref.put(ZASTUPCE_PRO_value, program);
+					pref.put(ZASTUPCE_ID_value, AppUserModelId.ID);
 				}
 			} catch (final IOException e) {
 				log.warn("Zástupce ve složce s programem nelze vytvořit", e);
@@ -134,6 +152,8 @@ public class VytvoritZastupceAction extends Action0 {
 	/** Vrátí popis chyby, nebo null. */
 	private static String spust(final Map<String, String> promenne) throws IOException, InterruptedException {
 		final Map<String, String> env = new HashMap<>(promenne);
+		env.put("GK_CS", CSHARP);
+		env.put("GK_AUMID", AppUserModelId.ID);
 		env.put("GK_JAVAW", javaw().getAbsolutePath());
 		env.put("GK_ARGUMENTY", "-XX:-UsePerfData -jar \"" + new File(FConst.JAR_DIR, "start.jar").getAbsolutePath() + "\"");
 		env.put("GK_SLOZKA", FConst.JAR_DIR.getAbsolutePath());

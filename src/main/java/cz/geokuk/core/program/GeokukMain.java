@@ -40,6 +40,7 @@ public class GeokukMain {
 
 	public void execute(final String[] args) {
 		FConst.logInit();
+		AppUserModelId.nastav();
 		presmerujJulDoSlf4j();
 		final File souborZamku = new File(FConst.DATA_DIR, Start.ZAMEK);
 		zamek = zamkni(souborZamku, Start::zamkni);
