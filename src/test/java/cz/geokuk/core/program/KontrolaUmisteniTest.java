@@ -20,7 +20,6 @@ public class KontrolaUmisteniTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
-
 	private static final Map<String, String> NIC = Collections.emptyMap();
 
 	@Test

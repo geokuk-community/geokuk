@@ -131,13 +131,6 @@
 			<version>2.21.0</version>
 		</dependency>
 
-		<!-- SwingX -->
-		<dependency>
-			<groupId>org.swinglabs.swingx</groupId>
-			<artifactId>swingx-all</artifactId>
-			<version>1.6.4</version>
-		</dependency>
-
 		<!-- Guava -->
 		<dependency>
 			<groupId>com.google.guava</groupId>

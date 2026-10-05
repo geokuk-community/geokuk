@@ -4,8 +4,11 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
+
+import javax.swing.SwingUtilities;
 
 import com.google.common.collect.Collections2;
 
@@ -49,6 +52,8 @@ public class KesoidModel extends Model0 {
 	private KesoidUmisteniSouboru umisteniSouboru;
 	/** Mění se z EDT i z vlákna načítání: jen celou novou kopií v upravBlokovaneZdroje. */
 	private volatile Set<File> blokovaneZdroje = Collections.emptySet();
+	/** Složky, které se při posledním prohledání nepodařilo přečíst. */
+	private volatile Set<File> nedostupnePriNacitani = Collections.emptySet();
 	private GsakParametryNacitani gsakParametryNacitani;
 
 	// injektovanci
@@ -58,6 +63,8 @@ public class KesoidModel extends Model0 {
 	private ProgressModel progressModel;
 	private Boolean onoff;
 	private EZobrazeniKesi zobrazeniKesi;
+	private volatile List<String> zamceneDatabaze = Collections.emptyList();
+	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
 
 	@Getter
 	private KesoidPluginManager kesopidPluginManager;
@@ -131,17 +138,54 @@ public class KesoidModel extends Model0 {
 	/**
 	 * Databáze GSAKu z aktuálního prohledání. Při „Načítat až po vybrání“ se databáze, kterou GeoKuk při minulém prohledání neviděl, nenačte, dokud ji uživatel nevybere.
 	 */
-	public synchronized void zaradGsakDatabaze(final Set<File> databaze) {
+	public void zaradGsakDatabaze(final Set<File> databaze) {
+		zaradGsakDatabaze(databaze, Collections.emptySet());
+	}
+
+	/** Známé databáze v nedostupných složkách zůstanou známé. */
+	public void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
+		zaradDatabaze(FPref.ZNAME_GSAK_DATABAZE_value, () -> getGsakParametryNacitani().isNacistVsechnyDatabaze(), databaze, nedostupne);
+	}
+
+	/** Databáze OpenSAKu z aktuálního prohledání, „Načítat až po vybrání“ stejně jako u GSAKu. */
+	public void zaradOpensakDatabaze(final Set<File> databaze) {
+		zaradOpensakDatabaze(databaze, Collections.emptySet());
+	}
+
+	public void zaradOpensakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
+		zaradDatabaze(FPref.ZNAME_OPENSAK_DATABAZE_value, () -> getGsakParametryNacitani().isNacistVsechnyDatabazeOpensaku(), databaze, nedostupne);
+	}
+
+	private synchronized void zaradDatabaze(final String klicZnamych, final java.util.function.BooleanSupplier nacistVsechny, final Set<File> databaze, final Set<File> nedostupne) {
 		final MyPreferences pref = currPrefe().node(FPref.KESOID_node);
-		final Collection<File> zname = pref.getFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, null);
-		if (zname != null && !getGsakParametryNacitani().isNacistVsechnyDatabaze()) {
+		final Collection<File> zname = pref.getFileCollection(klicZnamych, null);
+		if (zname != null) {
 			final Set<File> nove = new HashSet<>(databaze);
 			nove.removeAll(zname);
-			upravBlokovaneZdroje(b -> b.addAll(nove));
+			if (!nove.isEmpty() && !nacistVsechny.getAsBoolean()) {
+				upravBlokovaneZdroje(b -> b.addAll(nove));
+			}
 		}
-		if (zname == null || !databaze.equals(new HashSet<>(zname))) {
-			pref.putFileCollection(FPref.ZNAME_GSAK_DATABAZE_value, databaze);
+		final Set<File> noveZname = new HashSet<>(databaze);
+		if (zname != null) {
+			for (final File f : zname) {
+				if (jePod(f, nedostupne)) {
+					noveZname.add(f);
+				}
+			}
 		}
+		if (zname == null || !noveZname.equals(new HashSet<>(zname))) {
+			pref.putFileCollection(klicZnamych, noveZname);
+		}
+	}
+
+	public void setNedostupnePriNacitani(final Set<File> nedostupne) {
+		nedostupnePriNacitani = nedostupne;
+	}
+
+	private static boolean jePod(final File f, final Collection<File> slozky) {
+		final Path cesta = f.toPath();
+		return slozky.stream().anyMatch(s -> cesta.startsWith(s.toPath()));
 	}
 
 	/** Databáze, do které jiný program právě zapisuje; načte se, až zápis skončí. */
@@ -317,8 +361,37 @@ public class KesoidModel extends Model0 {
 		fire(new ZobrazeniKesiEvent(zobrazeniKesi));
 	}
 
-	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {
-		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit));
+	public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit, final boolean tecky, final int limit) {
+		fire(new PrekrocenLimitWaypointuVeVyrezuEvent(prekrocenLimit, tecky, limit));
+	}
+
+	public LimityKresleni getLimityKresleni() {
+		return limityKresleni;
+	}
+
+	public void setLimityKresleni(final LimityKresleni limity) {
+		if (limity.equals(limityKresleni)) {
+			return;
+		}
+		limityKresleni = limity;
+		currPrefe().node(FPref.KESOID_node).putInt(FPref.LIMIT_IKON_value, limity.getIkon());
+		currPrefe().node(FPref.KESOID_node).putInt(FPref.LIMIT_TECEK_value, limity.getTecek());
+		fire(new LimityKresleniEvent(limity));
+	}
+
+	void nactiLimityKresleni(final MyPreferences kesoid) {
+		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
+				.sVlastnostmi();
+		fire(new LimityKresleniEvent(limityKresleni));
+	}
+
+	/** Voláno po každém načtení; událost jen při změně, doručená v EDT. */
+	public void setZamceneDatabaze(final List<String> jmena) {
+		if (jmena.equals(zamceneDatabaze)) {
+			return;
+		}
+		zamceneDatabaze = jmena;
+		SwingUtilities.invokeLater(() -> fire(new ZamceneDatabazeEvent(jmena)));
 	}
 
 	public void setGsakParametryNacitani(final GsakParametryNacitani aGsakParametryNacitani) {
@@ -327,6 +400,7 @@ public class KesoidModel extends Model0 {
 		pref.putStringSet(FPref.GSAK_CAS_NALEZU_value, aGsakParametryNacitani.getCasNalezu());
 		pref.putStringSet(FPref.GSAK_CAS_NENALEZU_value, aGsakParametryNacitani.getCasNenalezu());
 		pref.putBoolean(FPref.GSAK_NACITAT_VSECHNO, aGsakParametryNacitani.isNacistVsechnyDatabaze());
+		currPrefe().node(FPref.OPENSAK_node).putBoolean(FPref.GSAK_NACITAT_VSECHNO, aGsakParametryNacitani.isNacistVsechnyDatabazeOpensaku());
 		fire(new GsakParametryNacitaniChangedEvent(gsakParametryNacitani));
 	}
 
@@ -346,6 +420,7 @@ public class KesoidModel extends Model0 {
 		pref.putFilex(FPref.KES_DIR_value, aUmisteniSouboru.getKesDir());
 		pref.putFilex(FPref.GEOGET_DATA_DIR_value, aUmisteniSouboru.getGeogetDataDir());
 		pref.putFilex(FPref.GSAK_DATA_DIR_value, aUmisteniSouboru.getGsakDataDir());
+		pref.putFilex(FPref.OPENSAK_DATA_DIR_value, aUmisteniSouboru.getOpensakDataDir());
 		pref.remove("vyjimkyDir"); // mazat ze starých verzí
 		synchronized (this) {
 			blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
@@ -412,8 +487,10 @@ public class KesoidModel extends Model0 {
 		setGsakParametryNacitani(loadGsakParametryNacitani());
 		setUmisteniSouboru(loadUmisteniSouboru());
 
-		setOnoff(currPrefe().node(FPref.KESOID_node).getBoolean(FPref.KESOID_VISIBLE_value, true));
-		setZobrazeniKesi(currPrefe().node(FPref.KESOID_node).getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
+		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
+		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
+		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
+		nactiLimityKresleni(kesoid);
 		fajruj();
 	}
 
@@ -429,6 +506,7 @@ public class KesoidModel extends Model0 {
 		u.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
 		u.setGeogetDataDir(pref.getFilex("geogetDataDir", KesoidUmisteniSouboru.GEOGET_DATA_DIR));
 		u.setGsakDataDir(pref.getFilex("gsakDataDir", KesoidUmisteniSouboru.GSAK_DATA_DIR));
+		u.setOpensakDataDir(pref.getFilex(FPref.OPENSAK_DATA_DIR_value, KesoidUmisteniSouboru.OPENSAK_DATA_DIR));
 		u.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
 		u.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
 		u.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
@@ -442,6 +520,7 @@ public class KesoidModel extends Model0 {
 		g.setCasNalezu(pref.getStringList(FPref.GSAK_CAS_NALEZU_value, Arrays.asList("UserData")));
 		g.setCasNenalezu(pref.getStringList(FPref.GSAK_CAS_NENALEZU_value, Arrays.asList("UserData")));
 		g.setNacistVsechnyDatabaze(pref.getBoolean(FPref.GSAK_NACITAT_VSECHNO, true));
+		g.setNacistVsechnyDatabazeOpensaku(currPrefe().node(FPref.OPENSAK_node).getBoolean(FPref.GSAK_NACITAT_VSECHNO, true));
 		return g;
 	}
 
@@ -453,17 +532,26 @@ public class KesoidModel extends Model0 {
 
 	/** Zapomene blokované zdroje, které už nejsou; zdroje v dočasně nedostupné složce (síť, USB) zůstanou blokované. */
 	void vycistiBlokovaneZdroje(final Set<File> zdroje) {
+		// Volá se na EDT po každém načtení; zjišťovat dostupnost složek (síťový disk) má smysl, jen když je co čistit.
+		if (blokovaneZdroje.isEmpty()) {
+			return;
+		}
 		final List<Path> nedostupne = new ArrayList<>();
 		final KesoidUmisteniSouboru u = getUmisteniSouboru();
 		if (u != null) {
-			for (final Filex f : Arrays.asList(u.getKesDir(), u.getGeogetDataDir(), u.getGsakDataDir())) {
+			for (final Filex f : Arrays.asList(u.getKesDir(), u.getGeogetDataDir(), u.getGsakDataDir(), u.getOpensakDataDir())) {
 				final File slozka = f == null ? null : f.getEffectiveFileIfActive();
 				if (slozka != null && !MultiNacitac.jeCitelnaSlozka(slozka)) {
-					nedostupne.add(slozka.toPath());
+					try {
+						nedostupne.add(slozka.toPath());
+					} catch (final InvalidPathException e) {
+						// neplatná cesta žádnou složku neoznačuje, nic pod ní neleží
+					}
 				}
 			}
 		}
-		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && nedostupne.stream().noneMatch(f.toPath()::startsWith)));
+		final Set<File> priNacitani = nedostupnePriNacitani;
+		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && nedostupne.stream().noneMatch(f.toPath()::startsWith) && !jePod(f, priNacitani)));
 	}
 
 	/** Upraví kopii blokovaných zdrojů; když se změnila, uloží ji. */

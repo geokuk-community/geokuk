@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import com.google.common.io.ByteStreams;
+
 import cz.geokuk.core.napoveda.VerzeJavy;
 import com.google.common.io.ByteStreams;
 
