@@ -1,5 +1,11 @@
 # Změny
 
+## 6.2.1
+
+### Opravy
+- Nad 200 000 waypointů na mapě se tečky nekreslí a zobrazí se hlášení
+  o překročeném limitu.
+
 ## 6.2.0
 
 ### Změny
