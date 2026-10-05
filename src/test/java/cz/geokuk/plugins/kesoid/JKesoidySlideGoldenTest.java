@@ -107,7 +107,7 @@ public class JKesoidySlideGoldenTest {
 		});
 		slide.inject(new KesoidModel() {
 			@Override
-			public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit) {}
+			public void setPrekrocenLimitWaypointuVeVyrezu(final boolean prekrocenLimit, final boolean tecky, final int limit) {}
 		});
 		slide.setSoord(new Coord(zoom, STRED.toMou(), okno, 0));
 		slide.setSize(okno);
