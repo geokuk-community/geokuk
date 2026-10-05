@@ -175,6 +175,19 @@ public class DalkoveOvladaniTest {
 		}
 	}
 
+	@Test
+	public void slozkaBezPravaZapisuMaSrozumitelnouHlasku() throws Exception {
+		final java.nio.file.Path d = posixSlozka("r-x------");
+		// Root smí zapisovat všude.
+		org.junit.Assume.assumeFalse("root".equals(System.getProperty("user.name")));
+		try {
+			DalkoveOvladani.overSlozku(d);
+			org.junit.Assert.fail();
+		} catch (final IOException e) {
+			org.junit.Assert.assertTrue(e.getMessage(), e.getMessage().contains("nejde zapisovat"));
+		}
+	}
+
 	@Test(expected = IOException.class)
 	public void slozkaZapisovatelnaVsemiSeOdmitne() throws Exception {
 		DalkoveOvladani.overSlozku(posixSlozka("rwxrwxrwx"));
