@@ -3,7 +3,9 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.File;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.Future;
 
+import org.sqlite.BusyHandler;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteException;
 
@@ -45,12 +47,63 @@ final class DatabazeJinehoProgramu {
 		return otevri(soubor, CEKANI_NA_ZAMEK_MS);
 	}
 
+	/** Načítání keší běžící v tomto vlákně; když se zruší, na zámek se dál nečeká. */
+	private static final ThreadLocal<Future<?>> NACITANI = new ThreadLocal<>();
+
+	static void setNacitani(final Future<?> nacitani) {
+		if (nacitani == null) {
+			NACITANI.remove();
+		} else {
+			NACITANI.set(nacitani);
+		}
+	}
+
 	static Connection otevri(final File soubor, final int cekaniNaZamekMs) throws SQLException {
 		final SQLiteConfig config = new SQLiteConfig();
 		config.setBusyTimeout(cekaniNaZamekMs);
 		// Cizí databázi nesmí Geokuk založit ani změnit.
 		config.setReadOnly(true);
-		return DriverManager.getConnection("jdbc:sqlite:" + soubor.getAbsolutePath(), config.toProperties());
+		final Connection c = DriverManager.getConnection("jdbc:sqlite:" + soubor.getAbsolutePath(), config.toProperties());
+		final Future<?> nacitani = NACITANI.get();
+		if (nacitani != null && cekaniNaZamekMs > 0) {
+			try {
+				BusyHandler.setHandler(c, new Cekani(cekaniNaZamekMs, nacitani));
+			} catch (final SQLException e) {
+				c.close();
+				throw e;
+			}
+		}
+		return c;
+	}
+
+	/** Čeká na zámek jako busy timeout, ale skončí hned, když se načítání zruší. Spojení jen čte, přerušené čekání databázi nezmění. */
+	private static final class Cekani extends BusyHandler {
+		private static final int KROK_MS = 20;
+		private final long limitNs;
+		private final Future<?> nacitani;
+		private long zacatek;
+
+		Cekani(final int limitMs, final Future<?> nacitani) {
+			limitNs = limitMs * 1_000_000L;
+			this.nacitani = nacitani;
+		}
+
+		@Override
+		protected int callback(final int pokus) {
+			if (pokus == 0) {
+				zacatek = System.nanoTime();
+			}
+			if (nacitani.isCancelled() || System.nanoTime() - zacatek >= limitNs) {
+				return 0;
+			}
+			try {
+				Thread.sleep(KROK_MS);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return 0;
+			}
+			return 1;
+		}
 	}
 
 	/** Jména sloupců tabulky bez ohledu na velikost písmen, prázdné, když tabulka není. */

@@ -97,6 +97,15 @@ public class MultiNacitac {
 
 	/** Synchronizované: zrušené načítání může ještě doběhnout, když už začíná další. */
 	public synchronized KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
+		DatabazeJinehoProgramu.setNacitani(future);
+		try {
+			return nactiZmeny(future, genom);
+		} finally {
+			DatabazeJinehoProgramu.setNacitani(null);
+		}
+	}
+
+	private KesBag nactiZmeny(final Future<?> future, final Genom genom) throws IOException {
 		List<KeFile> list = ds.coMamNacist();
 		if (!zamcene.isEmpty()) {
 			if (!zamcene.stream().allMatch(DatabazeJinehoProgramu::jeZamcena)) {
@@ -126,6 +135,9 @@ public class MultiNacitac {
 		final File opensak = opensakDir;
 		if (opensak == null || !nedostupne.contains(opensak)) {
 			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
+		}
+		if (kesoidModel.getVsechnyKesoidy() == null) {
+			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
@@ -204,6 +216,14 @@ public class MultiNacitac {
 
 	/** Sledovaná databáze se od načtení změnila a jiný program ji už nedrží. */
 	private boolean zmenilaSeSledovana() {
+		final Set<File> naposledyNactene = new HashSet<>();
+		if (posledniSeznam != null) {
+			for (final KeFile f : posledniSeznam) {
+				naposledyNactene.add(f.getFile());
+			}
+		}
+		// Databáze, která už není ve zdrojích, se nesleduje; chybějící zůstává, až se vrátí.
+		sledovane.keySet().removeIf(f -> !naposledyNactene.contains(f) && f.exists());
 		for (final Map.Entry<File, String> e : sledovane.entrySet()) {
 			// Chybějící databázi (odpojený disk) najde sken, až se vrátí, a sledování pokračuje.
 			if (e.getKey().exists() && !zamcene.contains(e.getKey()) && !otisk(e.getKey()).equals(e.getValue()) && !DatabazeJinehoProgramu.jeZamcena(e.getKey())) {
@@ -217,6 +237,15 @@ public class MultiNacitac {
 	private static String otisk(final File databaze) {
 		final File wal = new File(databaze.getPath() + "-wal");
 		return databaze.lastModified() + ":" + databaze.length() + ":" + wal.lastModified() + ":" + wal.length();
+	}
+
+	/** Zdroje, které se právě načítají, aby šly v Přehledu zdrojů vypnout dřív, než se načtou. */
+	private static InformaceOZdrojich predbezneZdroje(final List<KeFile> list) {
+		final InformaceOZdrojich.Builder zdroje = InformaceOZdrojich.builder();
+		for (final KeFile f : list) {
+			zdroje.add(f, true);
+		}
+		return zdroje.done();
 	}
 
 	private static Set<File> databaze(final List<KeFile> list, final Root.Def def) {

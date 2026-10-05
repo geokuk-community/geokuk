@@ -10,6 +10,7 @@ import javax.swing.table.TableColumn;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.JMyDialog0;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 
 public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventReceiverRegistrationInit {
 
@@ -38,9 +39,11 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 	private KesoidModel kesoidModel;
 
 	private KesBag vsechny;
+	private InformaceOZdrojich nacitaneZdroje;
+	private static final String TITULEK = "Přehled zdrojů kešoidů";
 
 	public JInformaceOZdrojichDialog() {
-		setTitle("Přehled zdrojů kešoidů");
+		setTitle(TITULEK);
 	}
 
 	/*
@@ -88,8 +91,23 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 
 	public void onEvent(final KeskyNactenyEvent event) {
 		vsechny = event.getVsechny();
+		nacitaneZdroje = null;
+		setTitle(TITULEK);
 		if (model != null) {
 			model.setKoren(vsechny.getInformaceOZdrojich().getRoot());
+		}
+		invalidate();
+		pack();
+	}
+
+	public void onEvent(final NacitaneZdrojeEvent event) {
+		if (vsechny != null) {
+			return;
+		}
+		nacitaneZdroje = event.getZdroje();
+		setTitle(TITULEK + " – načítá se");
+		if (model != null) {
+			model.setKoren(nacitaneZdroje.getRoot());
 		}
 		invalidate();
 		pack();
@@ -138,6 +156,8 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 		model = new StromZdrojuModel(kesoidModel::maSeNacist, kesoidModel::jeZamcena, kesoidModel::setNacitatSoubor);
 		if (vsechny != null) {
 			model.setKoren(vsechny.getInformaceOZdrojich().getRoot());
+		} else if (nacitaneZdroje != null) {
+			model.setKoren(nacitaneZdroje.getRoot());
 		}
 		jTable = new JTable(model);
 		jTable.setFillsViewportHeight(true);
