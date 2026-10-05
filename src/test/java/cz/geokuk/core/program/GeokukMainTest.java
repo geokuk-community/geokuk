@@ -28,6 +28,32 @@ public class GeokukMainTest {
 	}
 
 	@Test
+	public void hlaskaZalohyRikaProcARadi() {
+		final String text = GeokukMain.textZalohy();
+		Assert.assertTrue(text, text.contains("předchozí verze"));
+		Assert.assertTrue(text, text.contains("Zkontrolovat aktualizace"));
+		Assert.assertTrue(text, text.contains(FConst.WEB_PAGE_URL + "/releases/latest"));
+		Assert.assertFalse(text, text.contains("geokuk.jar"));
+	}
+
+	@Test
+	public void zamekPustenyBehemPokusuSeZiskaZnovu() throws Exception {
+		final java.io.File slozka = java.nio.file.Files.createTempDirectory("geokuk-zamek").toFile();
+		final java.io.File soubor = new java.io.File(slozka, cz.geokuk.start.Start.ZAMEK);
+		final int[] pokusy = { 0 };
+		// První pokus selže, jako by zámek ještě držela končící instance.
+		final java.nio.channels.FileLock zamek = GeokukMain.zamkni(soubor, f -> ++pokusy[0] == 1 ? null : cz.geokuk.start.Start.zamkni(f));
+		try {
+			Assert.assertNotNull(zamek);
+			Assert.assertFalse(GeokukMain.uzBezi(zamek, soubor));
+		} finally {
+			if (zamek != null) {
+				zamek.channel().close();
+			}
+		}
+	}
+
+	@Test
 	public void druhaInstancePoznaZeUzBezi() throws Exception {
 		final java.io.File slozka = java.nio.file.Files.createTempDirectory("geokuk-zamek").toFile();
 		final java.io.File soubor = new java.io.File(slozka, cz.geokuk.start.Start.ZAMEK);

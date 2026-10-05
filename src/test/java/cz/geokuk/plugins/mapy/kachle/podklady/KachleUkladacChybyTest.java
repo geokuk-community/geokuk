@@ -4,6 +4,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.awt.Image;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.*;
 import org.slf4j.LoggerFactory;
@@ -11,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import ch.qos.logback.core.AppenderBase;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
@@ -22,7 +24,14 @@ public class KachleUkladacChybyTest {
 	private static final Ka KACHLE = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 13), EKaType.TURIST_M);
 
 	private final Logger logger = (Logger) LoggerFactory.getLogger(KachleZiskavac.class);
-	private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+	/** Do seznamu zapisují vlákna ziskávače i z předchozího testu, proto seznam bezpečný pro souběh. */
+	private final List<ILoggingEvent> udalosti = new CopyOnWriteArrayList<>();
+	private final AppenderBase<ILoggingEvent> appender = new AppenderBase<ILoggingEvent>() {
+		@Override
+		protected void append(final ILoggingEvent e) {
+			udalosti.add(e);
+		}
+	};
 
 	@Before
 	public void setUp() {
@@ -82,10 +91,8 @@ public class KachleUkladacChybyTest {
 	private void pockejNaChybu(final String zprava) throws InterruptedException {
 		final long konec = System.currentTimeMillis() + 15000;
 		while (System.currentTimeMillis() < konec) {
-			synchronized (appender.list) {
-				if (appender.list.stream().anyMatch(e -> e.getLevel() == Level.ERROR && zprava.equals(e.getFormattedMessage()))) {
-					return;
-				}
+			if (udalosti.stream().anyMatch(e -> e.getLevel() == Level.ERROR && zprava.equals(e.getFormattedMessage()))) {
+				return;
 			}
 			Thread.sleep(50);
 		}

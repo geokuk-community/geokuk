@@ -55,4 +55,24 @@ public class DirScannerTest {
 	public void chybejiciSlozkaDaPrazdnySeznam() {
 		Assert.assertTrue(new DirScanner().scan(new Root(new File(tmp.getRoot(), "neni"), VSE)).isEmpty());
 	}
+
+	@Test
+	public void nedostupneJsouChybejiciKorenANecitelnaPodslozka() throws Exception {
+		final File chybejici = new File(tmp.getRoot(), "neni");
+		final File slozka = tmp.newFolder("data");
+		final File necitelna = new File(slozka, "zamcena");
+		Assert.assertTrue(necitelna.mkdirs());
+		final DirScanner ds = new DirScanner();
+		ds.seRootDirs(true, new Root(chybejici, VSE), new Root(slozka, VSE));
+		ds.coMamNacist();
+		Assert.assertEquals(java.util.Collections.singleton(chybejici), ds.getNedostupne());
+
+		Assume.assumeTrue("práva složky jdou odebrat", necitelna.setReadable(false) && necitelna.list() == null);
+		try {
+			ds.coMamNacist();
+			Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList(chybejici, necitelna)), ds.getNedostupne());
+		} finally {
+			necitelna.setReadable(true);
+		}
+	}
 }

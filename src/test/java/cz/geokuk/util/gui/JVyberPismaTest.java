@@ -1,6 +1,7 @@
 package cz.geokuk.util.gui;
 
-import java.awt.Font;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,5 +57,17 @@ public class JVyberPismaTest {
 		Assert.assertEquals("Neexistující písmo", vyber.seznamRodin.getSelectedValue());
 		Assert.assertEquals("Neexistující písmo", vyber.getVybranePismo().getName());
 		Assert.assertEquals("tučné", vyber.rez.getSelectedItem());
+	}
+
+	@Test
+	public void ukazkaKresliPodkladABarvuPisma() {
+		vyber.setBarvyNahledu(Color.RED, Color.YELLOW);
+		Assert.assertEquals(Color.RED, vyber.nahled.getForeground());
+		vyber.nahled.setSize(220, 50);
+		final BufferedImage obr = new BufferedImage(220, 50, BufferedImage.TYPE_INT_RGB);
+		final Graphics2D g = obr.createGraphics();
+		vyber.nahled.paint(g);
+		g.dispose();
+		Assert.assertEquals(Color.YELLOW.getRGB(), obr.getRGB(110, 3));
 	}
 }
