@@ -15,13 +15,18 @@
 - Kešoidy > Limity kreslení…: nastavitelný nejvyšší počet ikon
   (výchozí 90 000, dosud 30 000) a teček (výchozí 300 000) ve výřezu.
   Limit ikon platí i pro popisky a zvýrazňovací kruhy; nad limitem
-  teček se nic nekreslí a stavový řádek to ohlásí.
+  teček se nic nekreslí a stavový řádek to ohlásí. Nejnižší nastavitelný
+  limit teček je 60 000.
 - Když databázi GeoGetu, GSAKu nebo OpenSAKu drží zamčenou jiný program,
   stavový řádek ukáže „Zamčeno: N“ a v bublině jejich jména.
 - Uživatelské mapy: soubor uložený jinak než v UTF-8 se ohlásí s radou,
   soubory `._*` z macOS se přeskočí a hláška při startu vyjmenuje jen
   mapy, které se nezobrazí.
 - Na oddálené mapě jsou další waypointy keše (parkoviště, stage) šedé.
+- Po pádu programu se mapa zobrazuje hned, kontrola cache dlaždic běží
+  na pozadí.
+- Nápověda (F1 a tlačítka Nápověda v dialozích) otevírá stránky
+  uživatelské wiki na GitHubu.
 
 ### Opravy
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
@@ -61,6 +66,17 @@
 - Hromadné stahování dlaždic při vypnutém „Mapy > Ukládat mapy“ vyzve
   k jeho zapnutí.
 - Odkaz, který nevede na webovou stránku, ukáže okno s adresou.
+- Vývojové dálkové ovládání nezapíše token do složky, kterou založil
+  jiný uživatel.
+- Když z databáze GeoGetu, GSAKu nebo OpenSAKu nejde přečíst většina
+  keší, GeoKuk na to upozorní.
+- Když do stejné cache map zapisuje jiný spuštěný GeoKuk, dlaždice se
+  stáhnou bez hlášení chyby čtení.
+- Uživatelské mapy: hodnota hlavičky s řídicím znakem (třeba `\r`) se
+  odmítne s chybou při startu.
+- Když programu dojde paměť při načítání nebo jiné práci na pozadí,
+  GeoKuk poradí, jak paměť zvýšit, a ukončí se.
+- Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.

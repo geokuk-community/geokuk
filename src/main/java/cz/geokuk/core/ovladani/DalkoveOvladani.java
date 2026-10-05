@@ -268,7 +268,12 @@ public class DalkoveOvladani {
 
 	/** Uživatel nemusí mít v systému jméno (kontejner), proto vlastník souboru, který jsme právě vytvořili. */
 	private static UserPrincipal vlastnikNovehoSouboru(final Path adresar) throws IOException {
-		final Path soubor = Files.createTempFile(adresar, "vlastnik", ".tmp");
+		final Path soubor;
+		try {
+			soubor = Files.createTempFile(adresar, "vlastnik", ".tmp");
+		} catch (final AccessDeniedException e) {
+			throw new IOException("Do složky " + adresar + " nejde zapisovat (asi patří jinému uživateli), soubor dálkového ovládání do ní nezapíšu.", e);
+		}
 		try {
 			return Files.getOwner(soubor, LinkOption.NOFOLLOW_LINKS);
 		} finally {
