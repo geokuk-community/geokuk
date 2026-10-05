@@ -45,6 +45,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import cz.geokuk.util.lang.FString;
+
 /**
  * TableDemo is just like SimpleTableDemo, except that it uses a custom TableModel.
  */
@@ -113,7 +115,7 @@ public class JErrorTable extends JPanel {
 				s = nalezenec.getExcId();
 				break;
 			case 2:
-				s = nalezenec.getPopis();
+				s = FString.text(nalezenec.getPopis());
 				break;
 			}
 			return s;

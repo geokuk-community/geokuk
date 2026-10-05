@@ -105,7 +105,6 @@ jobs:
           Copy-Item geokuk.jar, start.jar, distribuce/windows/geokuk.ico GeoKuk/program/
           Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt, LICENSE, THIRD-PARTY.txt GeoKuk/
           New-Item -ItemType Directory GeoKuk/data | Out-Null
-          Copy-Item priklady/mapy -Destination GeoKuk/data/mapy-priklady -Recurse
           GeoKuk/program/runtime/bin/java -version
           $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
           $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()

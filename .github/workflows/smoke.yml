@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Noční běh jen na Linuxu, Windows se spouští ručně.
-        os: ${{ github.event_name == 'schedule' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest"]') }}
+        # Noční běh jen na Linuxu, Windows a macOS se spouští ručně.
+        os: ${{ github.event_name == 'schedule' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
@@ -37,6 +37,10 @@ jobs:
       - name: Smoke test
         if: runner.os == 'Windows'
         run: ./mvnw.cmd -B -P smoke verify
+
+      - name: Jednotkové testy
+        if: runner.os == 'macOS'
+        run: ./mvnw -B test
 
       - name: Zprávy, logy a snímky obrazovky
         if: always()

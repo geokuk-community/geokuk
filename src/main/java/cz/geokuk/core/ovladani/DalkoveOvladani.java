@@ -6,7 +6,9 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
@@ -234,6 +236,9 @@ public class DalkoveOvladani {
 				Files.createDirectories(adresar);
 			}
 		}
+		if (posix) {
+			overSlozku(adresar);
+		}
 		final Path tmp = Files.createTempFile(adresar, "ovladani", ".tmp");
 		try {
 			final Properties p = new Properties();
@@ -245,6 +250,34 @@ public class DalkoveOvladani {
 			Files.move(tmp, SOUBOR.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} finally {
 			Files.deleteIfExists(tmp);
+		}
+	}
+
+	/** Ve sdílené dočasné složce ji mohl předem založit jiný uživatel a soubor s tokenem pak podvrhnout. */
+	static void overSlozku(final Path adresar) throws IOException {
+		if (Files.isSymbolicLink(adresar)) {
+			throw new IOException("Složka " + adresar + " je odkaz, soubor dálkového ovládání do ní nezapíšu.");
+		}
+		if (!vlastnikNovehoSouboru(adresar).equals(Files.getOwner(adresar, LinkOption.NOFOLLOW_LINKS))) {
+			throw new IOException("Složka " + adresar + " patří jinému uživateli, soubor dálkového ovládání do ní nezapíšu.");
+		}
+		if (Files.getPosixFilePermissions(adresar, LinkOption.NOFOLLOW_LINKS).contains(PosixFilePermission.OTHERS_WRITE)) {
+			throw new IOException("Do složky " + adresar + " mohou zapisovat všichni, soubor dálkového ovládání do ní nezapíšu.");
+		}
+	}
+
+	/** Uživatel nemusí mít v systému jméno (kontejner), proto vlastník souboru, který jsme právě vytvořili. */
+	private static UserPrincipal vlastnikNovehoSouboru(final Path adresar) throws IOException {
+		final Path soubor;
+		try {
+			soubor = Files.createTempFile(adresar, "vlastnik", ".tmp");
+		} catch (final AccessDeniedException e) {
+			throw new IOException("Do složky " + adresar + " nejde zapisovat (asi patří jinému uživateli), soubor dálkového ovládání do ní nezapíšu.", e);
+		}
+		try {
+			return Files.getOwner(soubor, LinkOption.NOFOLLOW_LINKS);
+		} finally {
+			Files.deleteIfExists(soubor);
 		}
 	}
 

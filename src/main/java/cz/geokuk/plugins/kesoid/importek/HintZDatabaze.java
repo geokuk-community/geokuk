@@ -7,13 +7,14 @@ import java.sql.*;
 import java.util.function.Supplier;
 
 /**
- * Hint keše z databáze jiného programu, načtený až při zobrazení. Popisy jsou v databázích GeoGetu i GSAKu ve stejném řádku jako dlouhý listing,
+ * Hint keše z databáze jiného programu, načtený až při zobrazení. Popisy jsou v databázích GeoGetu, GSAKu i OpenSAKu ve stejném řádku jako dlouhý listing,
  * a jejich čtení při načítání by znamenalo přečíst celou databázi.
  */
 final class HintZDatabaze {
 
 	static final String GEOGET = "SELECT hint FROM geolist WHERE id = ?";
 	static final String GSAK = "SELECT Hints FROM CacheMemo WHERE Code = ?";
+	static final String OPENSAK = "SELECT encoded_hints FROM caches WHERE gc_code = ?";
 
 	private HintZDatabaze() {}
 

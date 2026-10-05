@@ -10,6 +10,7 @@ import cz.geokuk.core.program.ZobrazServisniOknoAction;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.plugins.mapy.kachle.KachleModelChangeEvent;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.gui.JKachle;
 import cz.geokuk.plugins.mapy.kachle.gui.Kaputer;
@@ -166,6 +167,12 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 		prepocetKachli();
 	}
 
+	public void onEvent(final KachleModelChangeEvent event) {
+		if (totoSeTaha != null) {
+			nastavCudl(pocetDlazdic);
+		}
+	}
+
 	public void onEvent(final ZmenaMapNastalaEvent event) {
 		katype = event.getKatype();
 		xminmoumer = katype.getMinMoumer();
@@ -199,10 +206,22 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 	}
 
+	/** Proč nelze stahovat, nebo null. */
+	static String procNelzeStahovat(final EKaType katype, final boolean ukladatMapy) {
+		if (!katype.isHromadneStahovaniPovoleno()) {
+			return "Mapu " + katype.getNazev() + " nelze stahovat hromadně";
+		}
+		if (!ukladatMapy) {
+			return "Nejdřív zapněte Mapy > Ukládat mapy";
+		}
+		return null;
+	}
+
 	private void nastavCudl(final int pocetDlazdic) {
-		if (!totoSeTaha.katype.isHromadneStahovaniPovoleno()) {
+		final String proc = procNelzeStahovat(totoSeTaha.katype, kachleModel.isUkladatMapyNaDisk());
+		if (proc != null) {
 			spustit.setEnabled(false);
-			spustit.setText("Mapu " + totoSeTaha.katype.getNazev() + " nelze stahovat hromadně");
+			spustit.setText(proc);
 			return;
 		}
 		final boolean b = pocetDlazdic > 0 && pocetDlazdic <= LIMIT_DLAZDIC;

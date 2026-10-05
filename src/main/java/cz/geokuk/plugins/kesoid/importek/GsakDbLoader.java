@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -43,7 +44,7 @@ public class GsakDbLoader extends Nacitac0 {
 
 	@SuppressWarnings("unused")
 	private static final String ISO_DATE_FORMAT_TEMPLATE = "%d-%02d-%02dT00:00:00.000";
-	private static final String ISO_TIME_FORMAT_REGEXP = "[0-2]?\\d:[0-5]\\d";
+	private static final Pattern ISO_TIME = Pattern.compile("[0-2]?\\d:[0-5]\\d");
 
 	private static final ImmutableSet<String> SUPPORTED_FILE_EXTENSIONS = ImmutableSet.of("db3");
 	private static final ImmutableSet<String> EXPECTED_TABLES = ImmutableSet.of("CacheMemo", "Caches");
@@ -119,7 +120,7 @@ public class GsakDbLoader extends Nacitac0 {
 		final Preskocene preskocene = new Preskocene("keš");
 		final Counter čítač = new Counter();
 
-		aDao.forEachCache(record -> {
+		aDao.forEachCache(parametryNačítání.get().getCasNalezu(), record -> {
 			if (isCancelled(aFuture)) {
 				return false;
 			}
@@ -156,9 +157,9 @@ public class GsakDbLoader extends Nacitac0 {
 						groundspeak.availaible = !record.TempDisabled;
 					}
 					cache.groundspeak = groundspeak;
-					cache.desc = String.format("%s by %s (%s / %s)", cache.groundspeak.name, cache.groundspeak.placedBy, cache.groundspeak.difficulty, cache.groundspeak.terrain);
+					cache.desc = cache.groundspeak.name + " by " + cache.groundspeak.placedBy + " (" + cache.groundspeak.difficulty + " / " + cache.groundspeak.terrain + ")";
 					cache.link.href = "http://coord.info/" + cache.name;
-					cache.link.text = String.format("%s by %s", cache.groundspeak.name, cache.groundspeak.placedBy);
+					cache.link.text = cache.groundspeak.name + " by " + cache.groundspeak.placedBy;
 
 					if (!StringUtils.isBlank(record.FoundByMeDate)) {
 						cache.sym = "Geocache Found";
@@ -205,6 +206,9 @@ public class GsakDbLoader extends Nacitac0 {
 		aProgressor.finish();
 		preskocene.ohlas();
 		logResult("Geocaches", startTime, čítač.getCount());
+		if (!isCancelled(aFuture)) {
+			preskocene.ohlasVetsinuKesi(čítač.getCount(), aDbFile, "GSAKu");
+		}
 	}
 
 	private void loadWaypoints(final GsakDao aDao, final IImportBuilder aBuilder, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {
@@ -285,10 +289,9 @@ public class GsakDbLoader extends Nacitac0 {
 	}
 
 	private String _getFoundByMeTimeField(final Map<String, ?> values) {
-		final Pattern time = Pattern.compile(ISO_TIME_FORMAT_REGEXP);
 		for (final String name : parametryNačítání.get().getCasNalezu()) {
 			final Object value = values.get(name);
-			final Matcher matcher = time.matcher(Objects.toString(value, ""));
+			final Matcher matcher = ISO_TIME.matcher(Objects.toString(value, ""));
 			if (matcher.find()) {
 				return matcher.group(0);
 			}
@@ -484,17 +487,18 @@ public class GsakDbLoader extends Nacitac0 {
 			return count(TAG_COUNT);
 		}
 
-		public boolean forEachCache(final Function<GsakCache, Boolean> aAction) throws SQLException {
-			return forEach(SELECT_CACHES, GsakCache::new, aAction);
+		/** Hodnoty sloupců z {@code aSloupceHodnot} dostane keš navíc v {@link AllValues#values}. */
+		public boolean forEachCache(final Set<String> aSloupceHodnot, final Function<GsakCache, Boolean> aAction) throws SQLException {
+			return forEach(SELECT_CACHES, GsakCache::new, aSloupceHodnot, aAction);
 		}
 
 		public boolean forEachWaypoint(final Function<GsakWaypoint, Boolean> aAction) throws SQLException {
 			// Waypointy a vlastní hodnoty starší GSAK mít nemusí.
-			return !containsTables(Collections.singleton("Waypoints")) || forEach(SELECT_WAYPOINTS, GsakWaypoint::new, aAction);
+			return !containsTables(Collections.singleton("Waypoints")) || forEach(SELECT_WAYPOINTS, GsakWaypoint::new, Collections.emptySet(), aAction);
 		}
 
 		public boolean forEachCustomValue(final Function<Map<String, String>, Boolean> aAction) throws SQLException {
-			return !containsTables(Collections.singleton("Custom")) || forEach(SELECT_CUSTOMVALUES, LinkedHashMap::new, aAction);
+			return !containsTables(Collections.singleton("Custom")) || forEach(SELECT_CUSTOMVALUES, LinkedHashMap::new, Collections.emptySet(), aAction);
 		}
 
 		public boolean schemaMatches() throws SQLException {
@@ -528,10 +532,15 @@ public class GsakDbLoader extends Nacitac0 {
 			}
 		}
 
-		private <T> boolean forEach(final String aSelectStatement, final Supplier<T> aRecordFactory, final Function<T, Boolean> aAction) throws SQLException {
+		private <T> boolean forEach(final String aSelectStatement, final Supplier<T> aRecordFactory, final Set<String> aSloupceHodnot, final Function<T, Boolean> aAction) throws SQLException {
 			try (ResultSet rs = iStatement.executeQuery(aSelectStatement)) {
+				PrevodRadku prevod = null;
 				while (rs.next()) {
-					final T record = loadRecord(rs, aRecordFactory);
+					final T record = aRecordFactory.get();
+					if (prevod == null) {
+						prevod = new PrevodRadku(rs, record, aSloupceHodnot);
+					}
+					prevod.nacti(rs, record);
 					if (!aAction.apply(record)) {
 						return false;
 					}
@@ -540,61 +549,82 @@ public class GsakDbLoader extends Nacitac0 {
 			return true;
 		}
 
-		private <T> T loadRecord(final ResultSet aResultSet, final Supplier<T> aRecordFactory) throws SQLException {
-			final T record = aRecordFactory.get();
-			if (record instanceof Map) {
-				@SuppressWarnings("unchecked")
-				final Map<String, Object> map = (Map<String, Object>) record;
-				loadMap(aResultSet, map);
-			} else {
-				loadPojo(aResultSet, record);
-				if (record instanceof AllValues) {
-					loadMap(aResultSet, ((AllValues)record).values);
+		/** Převod řádku na záznam, sloupce a pole se hledají jednou pro celý dotaz. */
+		private final class PrevodRadku {
+			private final Field[] pole;
+			private final int[] sloupcePoli;
+			private final int[] sloupceHodnot;
+			private final String[] klice;
+
+			PrevodRadku(final ResultSet aResultSet, final Object aRecord, final Set<String> aSloupceHodnot) throws SQLException {
+				final List<String> sloupce = columnNames(aResultSet);
+				final Map<String, Integer> indexy = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+				for (int i = sloupce.size() - 1; i >= 0; i--) {
+					indexy.put(sloupce.get(i), i + 1);
 				}
-			}
-			return record;
-		}
-
-		private <T extends Map<String, Object>> void loadMap(final ResultSet aResultSet, final T aMap) throws SQLException {
-			for (final String columnName : columnNames(aResultSet)) {
-				final String key = columnName.equalsIgnoreCase("cCode") ? CACHE_CODE_KEY : columnName;
-				final Object value = aResultSet.getObject(columnName);
-				if (value != null && !(value instanceof String && StringUtils.isBlank((String) value))) {
-					aMap.put(key, value);
-				}
-			}
-		}
-
-		private <T> void loadPojo(final ResultSet aResultSet, final T aPojo) throws SQLException {
-			// Sloupec, který starší GSAK nemá, zůstane na výchozí hodnotě.
-			final Set<String> sloupce = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-			sloupce.addAll(columnNames(aResultSet));
-			Arrays.stream(aPojo.getClass().getDeclaredFields()) //
-			.filter(f -> Modifier.isPublic(f.getModifiers())) //
-			.filter(f -> !Modifier.isStatic(f.getModifiers())) //
-			.filter(f -> sloupce.contains(f.getName())) //
-			.forEach(f -> {
-				try {
-					final String name = f.getName();
-					final Class<?> type = f.getType();
-
-					if (type == String.class) {
-						f.set(aPojo, aResultSet.getString(name));
-					} else if (type == boolean.class) {
-						f.set(aPojo, aResultSet.getInt(name) == 1);
-					} else if (type == int.class) {
-						f.set(aPojo, aResultSet.getInt(name));
-					} else if (type == double.class) {
-						f.set(aPojo, aResultSet.getDouble(name));
-					} else if (type == BigDecimal.class) {
-						f.set(aPojo, aResultSet.getBigDecimal(name));
-					} else {
-						throw new IllegalStateException("Unknon type " + type.getSimpleName() + " of field " + name);
+				final List<Field> nalezenaPole = new ArrayList<>();
+				final List<Integer> nalezeneSloupce = new ArrayList<>();
+				if (!(aRecord instanceof Map)) {
+					// Sloupec, který starší GSAK nemá, zůstane na výchozí hodnotě.
+					for (final Field f : aRecord.getClass().getDeclaredFields()) {
+						final Integer index = indexy.get(f.getName());
+						if (Modifier.isPublic(f.getModifiers()) && !Modifier.isStatic(f.getModifiers()) && index != null) {
+							nalezenaPole.add(f);
+							nalezeneSloupce.add(index);
+						}
 					}
-				} catch (final IllegalAccessException | SQLException e) {
-					throw new RuntimeException("Error reading " + aPojo.getClass().getSimpleName(), e);
 				}
-			});
+				pole = nalezenaPole.toArray(new Field[0]);
+				sloupcePoli = nalezeneSloupce.stream().mapToInt(Integer::intValue).toArray();
+				final List<Integer> hodnoty = new ArrayList<>();
+				final List<String> nalezeneKlice = new ArrayList<>();
+				if (aRecord instanceof Map || aRecord instanceof AllValues) {
+					for (int i = 0; i < sloupce.size(); i++) {
+						final String sloupec = sloupce.get(i);
+						if (aRecord instanceof Map || aSloupceHodnot.stream().anyMatch(sloupec::equalsIgnoreCase)) {
+							hodnoty.add(i + 1);
+							nalezeneKlice.add(sloupec.equalsIgnoreCase("cCode") ? CACHE_CODE_KEY : sloupec);
+						}
+					}
+				}
+				sloupceHodnot = hodnoty.stream().mapToInt(Integer::intValue).toArray();
+				klice = nalezeneKlice.toArray(new String[0]);
+			}
+
+			void nacti(final ResultSet aResultSet, final Object aRecord) throws SQLException {
+				for (int i = 0; i < pole.length; i++) {
+					final Field f = pole[i];
+					final int sloupec = sloupcePoli[i];
+					final Class<?> type = f.getType();
+					try {
+						if (type == String.class) {
+							f.set(aRecord, aResultSet.getString(sloupec));
+						} else if (type == boolean.class) {
+							f.setBoolean(aRecord, aResultSet.getInt(sloupec) == 1);
+						} else if (type == int.class) {
+							f.setInt(aRecord, aResultSet.getInt(sloupec));
+						} else if (type == double.class) {
+							f.setDouble(aRecord, aResultSet.getDouble(sloupec));
+						} else if (type == BigDecimal.class) {
+							f.set(aRecord, aResultSet.getBigDecimal(sloupec));
+						} else {
+							throw new IllegalStateException("Unknon type " + type.getSimpleName() + " of field " + f.getName());
+						}
+					} catch (final IllegalAccessException e) {
+						throw new RuntimeException("Error reading " + aRecord.getClass().getSimpleName(), e);
+					}
+				}
+				if (sloupceHodnot.length > 0) {
+					@SuppressWarnings("unchecked")
+					final Map<String, Object> map = aRecord instanceof Map ? (Map<String, Object>) aRecord : ((AllValues) aRecord).values;
+					for (int i = 0; i < sloupceHodnot.length; i++) {
+						final Object value = aResultSet.getObject(sloupceHodnot[i]);
+						if (value != null && !(value instanceof String && StringUtils.isBlank((String) value))) {
+							map.put(klice[i], value);
+						}
+					}
+				}
+			}
 		}
 
 		private List<String> columnNames(final ResultSet aResultSet) throws SQLException {
