@@ -225,7 +225,7 @@ try {
     $o = Ovladani $puvodni
     $lnk = Cekej 60 { Zastupce (Join-Path $puvodni "GeoKuk.lnk") }
     Ocekavej ($null -ne $lnk) "před přesunem vznikl zástupce"
-    $ulozeno = Cekej 30 { (Get-Content -Raw -Encoding utf8 (Join-Path $puvodni "data\nastaveni.xml")) -like "*zastupcePro*" }
+    $ulozeno = Cekej 90 { (Get-Content -Raw -Encoding utf8 (Join-Path $puvodni "data\nastaveni.xml")) -like "*zastupcePro*" }
     Ocekavej ($ulozeno -eq $true) "GeoKuk si uložil, pro kterou složku zástupce vytvořil"
     Ocekavej (Konec $o $beh) "program před přesunem skončil"
     Copy-Item (Join-Path $puvodni "GeoKuk.lnk") $naPlose
@@ -244,6 +244,8 @@ try {
     Ocekavej ($null -ne $veSlozce) "zástupce ve složce po přesunu vede na $javaw"
     $kopie = Cekej 30 { $z = Zastupce $naPlose; if ($z.TargetPath -eq $javaw) { $z } }
     Ocekavej ($null -ne $kopie) "zástupce na ploše po přesunu opraven: $((Zastupce $naPlose).TargetPath)"
+    # Složku pro zástupce si program uloží až po doběhnutí PowerShellu na pozadí.
+    Cekej 90 { -not (Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml")).Contains($puvodni) } | Out-Null
     Ocekavej (Konec $o $beh) "program po přesunu skončil"
     $nastaveni = Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml")
     Ocekavej (-not $nastaveni.Contains($puvodni)) "nastavení po přesunu neodkazuje na původní složku"
