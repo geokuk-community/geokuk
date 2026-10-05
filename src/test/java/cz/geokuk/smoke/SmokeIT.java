@@ -60,8 +60,10 @@ public class SmokeIT {
 		assertEquals(0, pocitadlo(prvni, "ka24 DISK cache #chyb čtení"));
 		assertEquals(0, pocitadlo(prvni, "ka33 WEB #chyb"));
 		final long ulozeno = pocitadlo(prvni, "ka42 disk write #dlaždic");
-		assertEquals("Na disk se má uložit, co se načetlo", pocitadlo(prvni, "ka32 WEB #načtených"), ulozeno);
-		// Dlaždice stažené až po zrušení požadavku se neukládají, ale nesmí jich být víc než pár.
+		// Uloží se i dlaždice, jejíž požadavek se během stahování zrušil; mezi načtené se nezapočte.
+		final long nactenoZWebu = pocitadlo(prvni, "ka32 WEB #načtených");
+		assertTrue("Na disk se má uložit, co se načetlo: uloženo " + ulozeno + ", načteno " + nactenoZWebu, ulozeno >= nactenoZWebu);
+		assertTrue("Uloženo " + ulozeno + " z " + pozadavky.size() + " stažených", ulozeno <= pozadavky.size());
 		final long neulozeno = pozadavky.size() - ulozeno;
 		assertTrue("Neuloženo " + neulozeno + " z " + pozadavky.size(), neulozeno <= pozadavky.size() / 20);
 

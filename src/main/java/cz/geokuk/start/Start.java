@@ -44,6 +44,10 @@ public final class Start {
 	static final long CEKANI_NA_UKONCENI_MS = 60_000;
 	/** Klíč nastavení v uzlu {@code geokuk/current/vseobecne}, 0 = zvolí spouštěč. */
 	public static final String PAMET_KLIC = "pametMb";
+	/** Systémová vlastnost, kterou spouštěč řekne GeoKuku, proč běží záloha {@code geokuk.jar.bak}. */
+	public static final String ZALOHA = "geokuk.zaloha";
+	public static final String ZALOHA_POSKOZENY = "poskozeny";
+	public static final String ZALOHA_CHYBI = "chybi";
 
 	public static void main(final String[] args) {
 		try {
@@ -67,6 +71,7 @@ public final class Start {
 			prikaz.add("-Djava.net.useSystemProxies=true");
 			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
+			pridejZalohu(prikaz, adresar, jar);
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
 			prikaz.addAll(parametry);
@@ -177,6 +182,13 @@ public final class Start {
 			return jar;
 		}
 		return bak.isFile() ? bak : null;
+	}
+
+	/** Když se spouští záloha místo geokuk.jar, GeoKuk se dozví proč. */
+	static void pridejZalohu(final List<String> prikaz, final File adresar, final File jar) {
+		if (jar.getName().equals(JAR + ".bak")) {
+			prikaz.add("-D" + ZALOHA + "=" + (new File(adresar, JAR).isFile() ? ZALOHA_POSKOZENY : ZALOHA_CHYBI));
+		}
 	}
 
 	/** Jar s manifestem, který říká, co spustit. */

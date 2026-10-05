@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 public final class UzivatelskeMapy {
 
 	public static final String SLOZKA = "mapy";
+	static final int SIRKA_DIALOGU = 100;
+
 	public static final String PRIPONA = ".mapa";
 	static final String STARY_SOUBOR = "uzivatelske-mapy.properties";
 	static final String PREFIX = "user-";
@@ -103,6 +105,11 @@ public final class UzivatelskeMapy {
 		}
 		Arrays.sort(soubory);
 		return Arrays.asList(soubory);
+	}
+
+	/** Hlášku o chybách map zalomenou do šířky dialogu. */
+	public static String textDialogu(final String chyby) {
+		return zalom(chyby, SIRKA_DIALOGU);
 	}
 
 	/** Zalomí řádky delší než {@code sirka} na mezerách, dlouhé slovo (cestu) za lomítkem nebo natvrdo, ať dialog nepřeteče obrazovku. */
@@ -323,11 +330,15 @@ public final class UzivatelskeMapy {
 			return null;
 		}
 		final Map<String, String> hlavicky = new TreeMap<>();
-		v.forEach((vlastnost, hodnota) -> {
-			if (vlastnost.startsWith(HLAVICKA)) {
-				hlavicky.put(vlastnost.substring(HLAVICKA.length()), hodnota.replace("{verze}", FConst.VERSION));
+		for (final Map.Entry<String, String> e : v.entrySet()) {
+			if (e.getKey().startsWith(HLAVICKA)) {
+				if (e.getValue().matches("(?s).*\\p{Cntrl}.*")) {
+					chyby.add(jmeno + ": " + e.getKey() + " nesmí obsahovat řídicí znaky (\\r, \\n, \\t)");
+					return null;
+				}
+				hlavicky.put(e.getKey().substring(HLAVICKA.length()), e.getValue().replace("{verze}", FConst.VERSION));
 			}
-		});
+		}
 		return EKaType.uzivatelska(id, nazev, v.getOrDefault("popis", nazev), min, max, maxauto, klavesa.isEmpty() ? 0 : Character.toUpperCase(klavesa.charAt(0)), keyStroke, hlavicky,
 				v.getOrDefault("atribuce", ""), hromadne.equals("ano"),
 				new UzivatelskyUrlBuilder(url));

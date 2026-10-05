@@ -4,7 +4,7 @@ package cz.geokuk.plugins.kesoid;
 public final class LimityKresleni {
 
 	public static final int MIN_IKON = 30_000;
-	public static final int MIN_TECEK = 30_000;
+	public static final int MIN_TECEK = 60_000;
 	public static final int MAX = 2_000_000;
 	public static final int VYCHOZI_IKON = 90_000;
 	public static final int VYCHOZI_TECEK = 300_000;

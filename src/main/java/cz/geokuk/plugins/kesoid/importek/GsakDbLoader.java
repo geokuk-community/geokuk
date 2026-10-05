@@ -206,6 +206,9 @@ public class GsakDbLoader extends Nacitac0 {
 		aProgressor.finish();
 		preskocene.ohlas();
 		logResult("Geocaches", startTime, čítač.getCount());
+		if (!isCancelled(aFuture)) {
+			preskocene.ohlasVetsinuKesi(čítač.getCount(), aDbFile, "GSAKu");
+		}
 	}
 
 	private void loadWaypoints(final GsakDao aDao, final IImportBuilder aBuilder, final Future<?> aFuture, final Progressor aProgressor) throws SQLException, IOException {

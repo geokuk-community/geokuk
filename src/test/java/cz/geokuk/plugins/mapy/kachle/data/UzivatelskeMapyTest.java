@@ -255,6 +255,14 @@ public class UzivatelskeMapyTest {
 	}
 
 	@Test
+	public void hodnotaHlavickySRidicimZnakem() throws Exception {
+		for (final String hodnota : new String[] { "a\\rX-Jina: b", "a\\nb", "a\\tb" }) {
+			chyby.clear();
+			chyba("m.mapa: hlavicka.X-Test nesmí obsahovat řídicí znaky", "m.nazev=M", "m.url=" + URL, "m.hlavicka.X-Test=" + hodnota);
+		}
+	}
+
+	@Test
 	public void meritkaMimoRozsah() throws Exception {
 		for (final String[] meritka : new String[][] { { "min", "-1" }, { "max", "23" }, { "max", "30" } }) {
 			chyby.clear();
@@ -582,6 +590,24 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void kratkyTextSeNezmeni() {
 		Assert.assertEquals("a b\n\nc", UzivatelskeMapy.zalom("a b\n\nc", 10));
+	}
+
+	@Test
+	public void radekPresnePoSirkuSeNezalomiOJednaDelsiAno() {
+		final String presne = "aaaa bbbb";
+		Assert.assertEquals(presne, UzivatelskeMapy.zalom(presne, 9));
+		Assert.assertEquals("aaaa\nbbbb", UzivatelskeMapy.zalom(presne, 8));
+	}
+
+	@Test
+	public void dialogZalamujeDoDefinovaneSirky() {
+		final StringBuilder dlouhy = new StringBuilder("Chyba");
+		for (int i = 0; i < 40; i++) {
+			dlouhy.append(" slovo").append(i);
+		}
+		for (final String radek : UzivatelskeMapy.textDialogu(dlouhy.toString()).split("\n")) {
+			Assert.assertTrue(radek, radek.length() <= UzivatelskeMapy.SIRKA_DIALOGU);
+		}
 	}
 
 	@Test

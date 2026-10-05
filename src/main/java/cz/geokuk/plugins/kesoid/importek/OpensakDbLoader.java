@@ -178,6 +178,7 @@ public class OpensakDbLoader extends Nacitac0 {
 			preskocene.ohlas();
 			log.info("{} keší z OpenSAKu načteno", citac);
 		}
+		preskocene.ohlasVetsinuKesi(citac, file, "OpenSAKu");
 	}
 
 	private void loadWaypoints(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {

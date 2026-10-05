@@ -10,14 +10,18 @@
 - Rychlejší načítání keší.
 - Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
   zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
-- Kreslení teček při velkém počtu keší zatěžuje paměť poloviční měrou,
+- Kreslení teček při velkém počtu keší potřebuje výrazně méně paměti,
   posun mapy je plynulejší.
 - Kešoidy > Limity kreslení…: nastavitelný nejvyšší počet ikon
   (výchozí 90 000, dosud 30 000) a teček (výchozí 300 000) ve výřezu.
   Limit ikon platí i pro popisky a zvýrazňovací kruhy; nad limitem
   teček se nic nekreslí a stavový řádek to ohlásí.
-- Když databázi GeoGetu nebo GSAKu drží zamčenou jiný program, stavový
-  řádek ukáže „Zamčeno: N“ a v bublině jejich jména.
+- Když databázi GeoGetu, GSAKu nebo OpenSAKu drží zamčenou jiný program,
+  stavový řádek ukáže „Zamčeno: N“ a v bublině jejich jména.
+- Uživatelské mapy: soubor uložený jinak než v UTF-8 se ohlásí s radou,
+  soubory `._*` z macOS se přeskočí a hláška při startu vyjmenuje jen
+  mapy, které se nezobrazí.
+- Na oddálené mapě jsou další waypointy keše (parkoviště, stage) šedé.
 
 ### Opravy
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
@@ -39,6 +43,24 @@
   znovu nezablokuje.
 - Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
   hlášení.
+- Uživatelská mapa, která je odkazem na jiný soubor nebo je větší než
+  64 kB, se nenačte; hláška o neznámé vlastnosti ukáže jen její začátek.
+- GSAK, „Načítat až po vybrání“: složka, která byla chvíli nedostupná
+  a vrátila se během načítání, už nezablokuje vybrané databáze.
+- Když se nová verze po aktualizaci nespustí, spustí se předchozí verze
+  a GeoKuk na to upozorní.
+- Když se GeoKuk spustí ve chvíli, kdy se předchozí spuštění právě
+  ukončuje, nemohou omylem běžet dva GeoKuky nad stejnými daty.
+- Panel nástrojů má stálou výšku, mapa se po načtení keší neposune.
+  Vyšší ikony (například symboly Waymarků) jsou na panelu zmenšené.
+- Dlaždice mapy se při rychlém posouvání nestahují dvakrát.
+- Nastavení popisků: ukázka písma je v barvě písma a podkladu, náhled
+  barev s černými čtverci zmizel.
+- Stavový řádek se v úzkém okně zalomí do dvou řádků, žádné pole se
+  neskryje.
+- Hromadné stahování dlaždic při vypnutém „Mapy > Ukládat mapy“ vyzve
+  k jeho zapnutí.
+- Odkaz, který nevede na webovou stránku, ukáže okno s adresou.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.
