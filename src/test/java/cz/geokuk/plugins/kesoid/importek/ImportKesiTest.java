@@ -34,9 +34,13 @@ public class ImportKesiTest {
 	}
 
 	static KesBag importuj(final String gpx) throws Exception {
+		return importuj(new Genom(), gpx);
+	}
+
+	static KesBag importuj(final Genom genom, final String gpx) throws Exception {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});
-		final KesoidImportBuilder builder = new KesoidImportBuilder(new Genom(), new GccomNick("Ja", 42), progress, PLUGINY);
+		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, new GccomNick("Ja", 42), progress, PLUGINY);
 		builder.init();
 		final File adresar = new File("data");
 		builder.setCurrentlyLoading(new KeFile(new FileAndTime(new File(adresar, "test.gpx"), 0), new Root(adresar, new Root.Def(0, null, null))), true);
