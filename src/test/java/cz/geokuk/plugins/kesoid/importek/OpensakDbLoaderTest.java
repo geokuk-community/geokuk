@@ -12,6 +12,7 @@ import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
+import cz.geokuk.util.exception.*;
 import cz.geokuk.util.file.*;
 
 /** Načtení keší z databáze OpenSAKu. */
@@ -215,6 +216,72 @@ public class OpensakDbLoaderTest {
 		Assert.assertEquals(1 + 7, kesoidy.get("GC7A2JF").getWptsCount());
 		Assert.assertEquals(1 + 3, kesoidy.get("GC4444").getWptsCount());
 		Assert.assertEquals(2 + 10, builder.getKesBag().getWpts().size());
+	}
+
+	/** Když nejde přečíst většina keší, uživatel se to dozví, a ty načtené zůstanou. */
+	@Test
+	public void vetsinaNectitelnychKesiSeOhlasi() throws Exception {
+		final File d = new File(tmp.getRoot(), "Vadna.db");
+		OpensakTestDb.zaloz(d, OpensakTestDb.verze());
+		final int dobrych = 10;
+		final int vadnych = Preskocene.MIN_KESI_PRO_HLASKU + 5;
+		for (int i = 1; i <= dobrych + vadnych; i++) {
+			OpensakTestDb.vlozKes(d, i, String.format("GC%04d", i), "Traditional Cache", 50.0, 14.0);
+		}
+		final List<String> hlasky = new ArrayList<>();
+		FExceptionDumper.setExceptionDumper(new ExceptionDumper() {
+			@Override
+			public synchronized AExcId dump(final Throwable t, final EExceptionSeverity s, final String okolnost, final ExceptionDumperRepositorySpi r) {
+				hlasky.add(s + ": " + okolnost + ": " + t.getMessage());
+				return null;
+			}
+		});
+		final Map<String, GpxWpt> w = new LinkedHashMap<>();
+		try {
+			final ProgressModel progress = new ProgressModel();
+			progress.inject(udalost -> {});
+			new OpensakDbLoader().nacti(d, new Builder(w) {
+				@Override
+				public void addGpxWpt(final GpxWpt g) {
+					if (Integer.parseInt(g.name.substring(2)) > dobrych) {
+						throw new IllegalStateException("vadná keš");
+					}
+					super.addGpxWpt(g);
+				}
+			}, null, progress);
+		} finally {
+			FExceptionDumper.setExceptionDumper(null);
+		}
+		Assert.assertEquals(dobrych, w.size());
+		Assert.assertEquals(hlasky.toString(), 1, hlasky.size());
+		Assert.assertTrue(hlasky.get(0), hlasky.get(0).startsWith("DISPLAY") && hlasky.get(0).contains(vadnych + " z " + (dobrych + vadnych)));
+	}
+
+	@Test
+	public void parVadnychKesiSeNeohlasuje() throws Exception {
+		final List<String> hlasky = new ArrayList<>();
+		FExceptionDumper.setExceptionDumper(new ExceptionDumper() {
+			@Override
+			public synchronized AExcId dump(final Throwable t, final EExceptionSeverity s, final String okolnost, final ExceptionDumperRepositorySpi r) {
+				hlasky.add(okolnost);
+				return null;
+			}
+		});
+		try {
+			final Preskocene p = new Preskocene("keš");
+			for (int i = 0; i < Preskocene.MIN_KESI_PRO_HLASKU - 1; i++) {
+				p.preskoc("GC" + i, new IllegalStateException());
+			}
+			p.ohlasVetsinuKesi(0, db, "OpenSAKu");
+			final Preskocene mensina = new Preskocene("keš");
+			for (int i = 0; i < Preskocene.MIN_KESI_PRO_HLASKU; i++) {
+				mensina.preskoc("GC" + i, new IllegalStateException());
+			}
+			mensina.ohlasVetsinuKesi(Preskocene.MIN_KESI_PRO_HLASKU, db, "OpenSAKu");
+		} finally {
+			FExceptionDumper.setExceptionDumper(null);
+		}
+		Assert.assertEquals(hlasky.toString(), 0, hlasky.size());
 	}
 
 	/** Starší OpenSAK nemá některé sloupce ani tabulku poznámek, keše se přesto načtou. */

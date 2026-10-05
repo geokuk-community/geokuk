@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 public final class UzivatelskeMapy {
 
 	public static final String SLOZKA = "mapy";
+	static final int SIRKA_DIALOGU = 100;
+
 	public static final String PRIPONA = ".mapa";
 	static final String STARY_SOUBOR = "uzivatelske-mapy.properties";
 	static final String PREFIX = "user-";
@@ -103,6 +105,11 @@ public final class UzivatelskeMapy {
 		}
 		Arrays.sort(soubory);
 		return Arrays.asList(soubory);
+	}
+
+	/** Hlášku o chybách map zalomenou do šířky dialogu. */
+	public static String textDialogu(final String chyby) {
+		return zalom(chyby, SIRKA_DIALOGU);
 	}
 
 	/** Zalomí řádky delší než {@code sirka} na mezerách, dlouhé slovo (cestu) za lomítkem nebo natvrdo, ať dialog nepřeteče obrazovku. */
