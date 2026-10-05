@@ -24,10 +24,11 @@ public class AppUserModelIdTest {
 	/** Nabídka zástupce do Startu se ukáže jen jednou, když to jde a zástupce ještě není. */
 	@Test
 	public void nabidkaStartuSeUkazeJenNaZacatku() {
-		Assert.assertTrue(VytvoritZastupceAction.zeptatSe(true, null, false));
-		Assert.assertFalse("nejde vytvořit", VytvoritZastupceAction.zeptatSe(false, null, false));
-		Assert.assertFalse("už odpověděl", VytvoritZastupceAction.zeptatSe(true, "ne", false));
-		Assert.assertFalse("už odpověděl", VytvoritZastupceAction.zeptatSe(true, "ano", false));
-		Assert.assertFalse("zástupce už je", VytvoritZastupceAction.zeptatSe(true, null, true));
+		Assert.assertTrue(VytvoritZastupceAction.zeptatSe(true, null, false, false));
+		Assert.assertFalse("nejde vytvořit", VytvoritZastupceAction.zeptatSe(false, null, false, false));
+		Assert.assertFalse("už odpověděl", VytvoritZastupceAction.zeptatSe(true, "ne", false, false));
+		Assert.assertFalse("už odpověděl", VytvoritZastupceAction.zeptatSe(true, "ano", false, false));
+		Assert.assertFalse("automatizace (dálkové ovládání)", VytvoritZastupceAction.zeptatSe(true, null, false, true));
+		Assert.assertFalse("zástupce už je", VytvoritZastupceAction.zeptatSe(true, null, true, false));
 	}
 }

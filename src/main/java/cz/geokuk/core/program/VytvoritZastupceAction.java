@@ -125,9 +125,9 @@ public class VytvoritZastupceAction extends Action0 {
 		return System.getProperty("os.name", "").startsWith("Windows") && javaw().isFile() && new File(FConst.JAR_DIR, "start.jar").isFile();
 	}
 
-	/** Zda se má při startu nabídnout zástupce do nabídky Start. */
-	static boolean zeptatSe(final boolean lzeVytvorit, final String volba, final boolean zastupceVeStartuJe) {
-		return lzeVytvorit && volba == null && !zastupceVeStartuJe;
+	/** Zda se má při startu nabídnout zástupce do nabídky Start; ne při automatizaci (dálkové ovládání), ať dialog nepřekáží. */
+	static boolean zeptatSe(final boolean lzeVytvorit, final String volba, final boolean zastupceVeStartuJe, final boolean automatizace) {
+		return lzeVytvorit && volba == null && !zastupceVeStartuJe && !automatizace;
 	}
 
 	private static File zastupceVeStartu() {
@@ -136,16 +136,16 @@ public class VytvoritZastupceAction extends Action0 {
 	}
 
 	/** Při prvním startu jednou nabídne zástupce do nabídky Start, aby šel GeoKuk připnout na hlavní panel. Nemodální, volba se uloží. */
-	public static void nabidniStart() {
+	public static void nabidniStart(final boolean automatizace) {
 		final MyPreferences pref = MyPreferences.current().node(FPref.VSEOBECNE_node);
 		final File zastupce = zastupceVeStartu();
-		if (!zeptatSe(lzeVytvorit(), pref.get(NABIDKA_START_value, null), zastupce != null && zastupce.isFile())) {
+		if (!zeptatSe(lzeVytvorit(), pref.get(NABIDKA_START_value, null), zastupce != null && zastupce.isFile(), automatizace)) {
 			return;
 		}
 		final Object[] volby = { "Vytvořit", "Ne, díky" };
 		final JOptionPane pane = new JOptionPane("GeoKuk v nabídce Start?\nPůjde pak připnout na hlavní panel.", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, volby,
 				volby[0]);
-		final JDialog dialog = pane.createDialog(Dlg.parentFrame(), "GeoKuk");
+		final JDialog dialog = pane.createDialog(Dlg.parentFrame(), "GeoKuk – zástupce");
 		dialog.setModal(false);
 		pane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, e -> {
 			final Object hodnota = pane.getValue();
