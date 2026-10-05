@@ -1,10 +1,7 @@
 package cz.geokuk.core.napoveda;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
-import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.util.process.BrowserOpener;
@@ -82,12 +79,7 @@ public class NapovedaModel extends Model0 {
 	}
 
 	public void zobrazNapovedu(final String tema) {
-		try {
-			BrowserOpener.displayURL(new URL(tema == null ? FConst.WEB_PAGE_WIKI : FConst.WEB_PAGE_WIKI + "/" + tema));
-		} catch (final MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
-
+		BrowserOpener.displayURL(NapovedaWiki.url(tema));
 	}
 
 	@Override

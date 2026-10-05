@@ -125,6 +125,15 @@ public class ImportKesiTest {
 		Assert.assertFalse(kes("GC1111").hasValidFinal());
 	}
 
+	/** Final tradiční keše na souřadnicích z listingu nic nepřidává a nesmí zůstat ani jako samostatný bod. */
+	@Test
+	public void finalTradicniKeseNaListinguSeVypusti() throws Exception {
+		final KesBag bag = importuj(gpx(kes("GC6666", "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", ""),
+				"<wpt lat=\"50.1\" lon=\"14.4\"><name>FI6666</name><sym>Final Location</sym><type>Waypoint|Final Location</type></wpt>\n"));
+		Assert.assertEquals(1, bag.getKesoidy().size());
+		Assert.assertEquals(1, bag.getWpts().size());
+	}
+
 	@Test
 	public void duplicitniKesSeNacteJednou() throws Exception {
 		Assert.assertEquals(EKesVztah.FOUND, kes("GC1111").getVztah());

@@ -1,0 +1,75 @@
+name: Schéma OpenSAKu
+
+on:
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kontrola:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NAZEV: Schéma OpenSAKu se změnilo
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Schéma OpenSAKu (main a beta)
+        id: porovnani
+        continue-on-error: true
+        run: |
+          rozdil=0
+          : > rozdil.md
+          for vetev in main beta; do
+            git clone -q --depth 1 -b "$vetev" https://github.com/OpenSAK-Org/OpenSAK.git "opensak-$vetev"
+            python3 .github/skripty/opensak_schema.py "opensak-$vetev" > "schema-$vetev.txt"
+            if ! diff -u src/test/resources/opensak-schema.txt "schema-$vetev.txt" > "diff-$vetev.txt"; then
+              rozdil=1
+              {
+                echo "### Větev \`$vetev\` ($(git -C "opensak-$vetev" rev-parse --short HEAD))"
+                echo
+                echo '```diff'
+                cat "diff-$vetev.txt"
+                echo '```'
+                echo
+              } >> rozdil.md
+            fi
+          done
+          cat rozdil.md
+          exit $rozdil
+
+      - name: Issue s výsledkem
+        run: |
+          CISLO=$(gh issue list --state open --search "in:title \"$NAZEV\"" --json number,title \
+            --jq ".[] | select(.title == \"$NAZEV\") | .number" | head -1)
+          if [ "${{ steps.porovnani.outcome }}" = success ]; then
+            if [ -n "$CISLO" ]; then
+              gh issue close "$CISLO" --comment "Schéma OpenSAKu opět odpovídá src/test/resources/opensak-schema.txt ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+            fi
+            exit 0
+          fi
+          if [ ! -s rozdil.md ]; then
+            echo "::error::Kontrola schématu nedoběhla, viz log kroku Schéma OpenSAKu."
+            exit 1
+          fi
+          {
+            echo "Týdenní kontrola $(date -u +%F): schéma databáze v OpenSAKu se liší od src/test/resources/opensak-schema.txt."
+            echo
+            cat rozdil.md
+            echo "Zkontrolujte načítání OpenSAKu a soubor se schématem aktualizujte výstupem .github/skripty/opensak_schema.py."
+            echo
+            echo "Běh: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > telo.md
+          if [ -n "$CISLO" ]; then
+            gh issue edit "$CISLO" --body-file telo.md
+          else
+            gh issue create --title "$NAZEV" --body-file telo.md
+          fi
+          exit 1

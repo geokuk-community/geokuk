@@ -1,8 +1,11 @@
 package cz.geokuk.core.program;
 
-import java.io.File;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import com.google.common.io.ByteStreams;
 
 import cz.geokuk.core.napoveda.VerzeJavy;
 import cz.geokuk.framework.Dlg;
@@ -10,8 +13,10 @@ import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 import cz.geokuk.start.Start;
+import lombok.extern.slf4j.Slf4j;
 
 /** Upozornění na nevhodné umístění přenosného programu a na starou přibalenou Javu, ukazují se po zobrazení hlavního okna. */
+@Slf4j
 public final class KontrolaUmisteni {
 
 	static final String DOPORUCENE_UMISTENI = "C:\\GeoKuk";
@@ -19,6 +24,9 @@ public final class KontrolaUmisteni {
 	private static final Pattern SYNCHRONIZOVANA = Pattern.compile("(?i)onedrive.*|dropbox|google ?drive|my drive|můj disk|icloud ?drive.*");
 	private static final String UPOZORNENO_SYNC_value = "upozornenoSynchronizovana";
 	private static final String UPOZORNENO_JAVA_value = "upozornenoJava";
+
+	static final String SLOZKA_UKAZEK_MAP = "mapy-priklady";
+	static final List<String> UKAZKY_MAP = Arrays.asList("cyklo.mapa", "freemap.mapa", "letecka.mapa", "osm.mapa", "turisticka.mapa", "zakladni.mapa", "zimni.mapa");
 
 	private KontrolaUmisteni() {}
 
@@ -54,6 +62,27 @@ public final class KontrolaUmisteni {
 		for (final File slozka : Arrays.asList(KesoidUmisteniSouboru.KES_DIR.getFile(), KesoidUmisteniSouboru.CESTY_DIR.getFile(),
 				KesoidUmisteniSouboru.IMAGE_MY_DIR.getFile(), KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR.getFile(), UzivatelskeMapy.slozka())) {
 			slozka.mkdirs();
+		}
+		doplnUkazkyMap(new File(FConst.DATA_DIR, SLOZKA_UKAZEK_MAP));
+	}
+
+	/** Ukázky uživatelských map odpovídají verzi programu i po aktualizaci, která dodá jen nový jar. Do složky map se nic nekopíruje. */
+	static void doplnUkazkyMap(final File slozka) {
+		slozka.mkdirs();
+		for (final String jmeno : UKAZKY_MAP) {
+			try (InputStream in = KontrolaUmisteni.class.getResourceAsStream("/priklady/mapy/" + jmeno)) {
+				if (in == null) {
+					log.warn("V programu chybí ukázka mapy {}", jmeno);
+					continue;
+				}
+				final byte[] obsah = ByteStreams.toByteArray(in);
+				final File cil = new File(slozka, jmeno);
+				if (!cil.isFile() || !Arrays.equals(Files.readAllBytes(cil.toPath()), obsah)) {
+					Files.write(cil.toPath(), obsah);
+				}
+			} catch (final IOException e) {
+				log.warn("Ukázku mapy {} nejde zapsat do {}: {}", jmeno, slozka, e.toString());
+			}
 		}
 	}
 
