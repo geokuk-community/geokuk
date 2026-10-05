@@ -77,11 +77,20 @@
 - Když programu dojde paměť při načítání nebo jiné práci na pozadí,
   GeoKuk poradí, jak paměť zvýšit, a ukončí se.
 - Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
+- Hlášení chyby správně zobrazí text se znaky `<`, `>` a `&` (například
+  ze jména souboru).
+- Ukázky uživatelských map ve složce `data/mapy-priklady` se obnoví i při
+  aktualizaci z programu.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.
 - Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
   vznikne složka `data/mapy`.
+- Ruční běh Smoke spouští jednotkové testy i na macOS.
+- Zkouška zipu na Windows počká na uložení nastavení po přesunu složky.
+- Týdenní kontrola schématu databáze OpenSAKu.
+- Workflow Velká data: zkouška celého programu nad velkým GPX a velkými
+  databázemi GeoGetu a GSAKu, spouští se ručně.
 
 ## 6.2.0
 
