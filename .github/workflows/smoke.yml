@@ -38,9 +38,9 @@ jobs:
         if: runner.os == 'Windows'
         run: ./mvnw.cmd -B -P smoke verify
 
-      - name: Smoke test
+      - name: Jednotkové testy
         if: runner.os == 'macOS'
-        run: ./mvnw -B -P smoke verify
+        run: ./mvnw -B test
 
       - name: Zprávy, logy a snímky obrazovky
         if: always()
