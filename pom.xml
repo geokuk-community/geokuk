@@ -19,6 +19,10 @@
 					<include>THIRD-PARTY.txt</include>
 				</includes>
 			</resource>
+			<resource>
+				<directory>${project.basedir}/priklady/mapy</directory>
+				<targetPath>priklady/mapy</targetPath>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>
