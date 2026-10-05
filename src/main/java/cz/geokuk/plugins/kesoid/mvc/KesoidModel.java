@@ -17,6 +17,7 @@ import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.filtr.FilterDefinitionChangedEvent;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
+import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitac;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitacLoaderManager;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
@@ -64,6 +65,8 @@ public class KesoidModel extends Model0 {
 	private Boolean onoff;
 	private EZobrazeniKesi zobrazeniKesi;
 	private volatile List<String> zamceneDatabaze = Collections.emptyList();
+	/** Zdroje rozběhnutého prvního načítání, dokud žádné keše načtené nejsou. */
+	private volatile InformaceOZdrojich nacitaneZdroje;
 	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
 
 	@Getter
@@ -336,7 +339,11 @@ public class KesoidModel extends Model0 {
 
 	public void setNacitatSoubor(final KeFile jmenoZdroje, final boolean nacitat) {
 		// TODO : speed up
-		final Collection<File> changedFiles = Collections2.transform(vsechny.getInformaceOZdrojich().getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
+		final InformaceOZdrojich zdroje = vsechny != null ? vsechny.getInformaceOZdrojich() : nacitaneZdroje;
+		if (zdroje == null) {
+			return;
+		}
+		final Collection<File> changedFiles = Collections2.transform(zdroje.getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
 		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
 		if (upravBlokovaneZdroje(b -> nacitat ? b.removeAll(changedFiles) : b.addAll(changedFiles))) {
 			startKesLoading();
@@ -383,6 +390,12 @@ public class KesoidModel extends Model0 {
 		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
 				.sVlastnostmi();
 		fire(new LimityKresleniEvent(limityKresleni));
+	}
+
+	/** Voláno z vlákna načítání před čtením zdrojů; událost doručená v EDT. */
+	public void setNacitaneZdroje(final InformaceOZdrojich zdroje) {
+		nacitaneZdroje = zdroje;
+		SwingUtilities.invokeLater(() -> fire(new NacitaneZdrojeEvent(zdroje)));
 	}
 
 	/** Voláno po každém načtení; událost jen při změně, doručená v EDT. */

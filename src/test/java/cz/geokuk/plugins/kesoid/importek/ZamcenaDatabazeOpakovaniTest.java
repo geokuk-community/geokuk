@@ -38,6 +38,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private MultiNacitac nacitac;
 	private final List<List<String>> ohlasenaZamceni = new CopyOnWriteArrayList<>();
 	private final AtomicInteger zpracovanychSouboru = new AtomicInteger();
+	private final List<InformaceOZdrojich> predbezneZdroje = new CopyOnWriteArrayList<>();
 
 	@Before
 	public void setUp() throws Exception {
@@ -114,6 +115,20 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private List<List<String>> ohlasenaZamceni() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {});
 		return ohlasenaZamceni;
+	}
+
+	/** Před prvním načtením se zdroje ohlásí, aby šly v Přehledu zdrojů vypnout; pak už ne. */
+	@Test
+	public void zdrojeSeOhlasiPredPrvnimNactenim() throws Exception {
+		zalozGeoget("a.db3", "GC000A");
+		start();
+		nacti();
+		Assert.assertEquals(1, predbezneZdroje.size());
+		Assert.assertTrue(predbezneZdroje.get(0).getJmenaZdroju().contains(new File(slozkaGeogetu, "a.db3")));
+
+		zapisGpx("b.gpx", "GC2222");
+		nacti();
+		Assert.assertEquals("po načtení se ukazují načtené zdroje", 1, predbezneZdroje.size());
 	}
 
 	/** Zrušené načítání se při dalším pokusu zopakuje celé. */
@@ -207,6 +222,11 @@ public class ZamcenaDatabazeOpakovaniTest {
 				if (udalost instanceof ZamceneDatabazeEvent) {
 					ohlasenaZamceni.add(((ZamceneDatabazeEvent) udalost).getJmena());
 				}
+			}
+
+			@Override
+			public void setNacitaneZdroje(final InformaceOZdrojich zdroje) {
+				predbezneZdroje.add(zdroje);
 			}
 
 			@Override
