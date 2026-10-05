@@ -12,6 +12,9 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
@@ -41,6 +44,10 @@ public final class Start {
 	static final long CEKANI_NA_UKONCENI_MS = 60_000;
 	/** Klíč nastavení v uzlu {@code geokuk/current/vseobecne}, 0 = zvolí spouštěč. */
 	public static final String PAMET_KLIC = "pametMb";
+	/** Systémová vlastnost, kterou spouštěč řekne GeoKuku, proč běží záloha {@code geokuk.jar.bak}. */
+	public static final String ZALOHA = "geokuk.zaloha";
+	public static final String ZALOHA_POSKOZENY = "poskozeny";
+	public static final String ZALOHA_CHYBI = "chybi";
 
 	public static void main(final String[] args) {
 		try {
@@ -64,6 +71,7 @@ public final class Start {
 			prikaz.add("-Djava.net.useSystemProxies=true");
 			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
+			pridejZalohu(prikaz, adresar, jar);
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
 			prikaz.addAll(parametry);
@@ -164,14 +172,36 @@ public final class Start {
 			System.err.println("Výměna " + JAR + " selhala: " + e);
 		}
 		final File jar = new File(adresar, JAR);
+		final File bak = new File(adresar, JAR + ".bak");
 		if (jar.isFile()) {
+			// Poškozený jar (třeba přerušený zápis po aktualizaci) by se nespustil a uživatel by nic neviděl.
+			if (!jeSpustitelny(jar) && bak.isFile() && jeSpustitelny(bak)) {
+				System.err.println(JAR + " nejde spustit, spouštím předchozí verzi " + bak);
+				return bak;
+			}
 			return jar;
 		}
-		final File bak = new File(adresar, JAR + ".bak");
 		return bak.isFile() ? bak : null;
 	}
 
-	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */
+	/** Když se spouští záloha místo geokuk.jar, GeoKuk se dozví proč. */
+	static void pridejZalohu(final List<String> prikaz, final File adresar, final File jar) {
+		if (jar.getName().equals(JAR + ".bak")) {
+			prikaz.add("-D" + ZALOHA + "=" + (new File(adresar, JAR).isFile() ? ZALOHA_POSKOZENY : ZALOHA_CHYBI));
+		}
+	}
+
+	/** Jar s manifestem, který říká, co spustit. */
+	static boolean jeSpustitelny(final File jar) {
+		try (JarFile jf = new JarFile(jar)) {
+			final Manifest manifest = jf.getManifest();
+			return manifest != null && manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS) != null;
+		} catch (final IOException | RuntimeException e) {
+			return false;
+		}
+	}
+
+	/** Stažená nová verze nahradí starou, ta zůstane jako .bak, když jde spustit. */
 	static void vymenJar(final File adresar) throws IOException {
 		final Path nova = new File(adresar, JAR + ".new").toPath();
 		if (!Files.isRegularFile(nova)) {
@@ -179,7 +209,12 @@ public final class Start {
 		}
 		final Path jar = new File(adresar, JAR).toPath();
 		if (Files.exists(jar)) {
-			Files.move(jar, new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			// Poškozený jar nesmí přepsat funkční zálohu.
+			if (jeSpustitelny(jar.toFile())) {
+				Files.move(jar, new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			} else {
+				Files.delete(jar);
+			}
 		}
 		Files.move(nova, jar);
 	}

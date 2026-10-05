@@ -28,10 +28,12 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 		final BufferedReader rdr = new BufferedReader(new InputStreamReader(aIstm, Charset.forName("UTF8")));
 
 		String hlavicka = rdr.readLine();
-		if (hlavicka.charAt(0) == 0xfeff) {
+		if (hlavicka == null) {
+			return; // prázdný soubor, nic k načtení
+		}
+		if (!hlavicka.isEmpty() && hlavicka.charAt(0) == 0xfeff) {
 			hlavicka = hlavicka.substring(1);
 		}
-		log.debug("Hlavička: {}", Integer.toHexString(hlavicka.charAt(0)));
 		if (!HLAVICKA.equals(hlavicka)) {
 			throw new RuntimeException("Přečtena hlavička: \"" + hlavicka + "\", ale má tam být\"" + HLAVICKA + "\"");
 		}
