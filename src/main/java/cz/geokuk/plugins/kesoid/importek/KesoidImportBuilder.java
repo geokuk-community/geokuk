@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.kesoid.importek;
 
+import java.io.File;
 import java.util.*;
+import java.util.function.Predicate;
 
 import cz.geokuk.framework.ProgressModel;
 import cz.geokuk.framework.Progressor;
@@ -42,6 +44,9 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	/** Jen jména, celé waypointy by při načítání zdvojnásobily potřebnou paměť. */
 	private final Set<String> jmenaWaypointu = new HashSet<>(1023);
+	private Predicate<KeFile> sledovaneZdroje = zdroj -> false;
+	/** Waypointy sledovaných zdrojů podle souboru, aby šly příště převzít, když zdroj nepůjde přečíst. */
+	private final Map<File, List<Wpt>> wptyPodleZdroje = new HashMap<>();
 
 	public KesoidImportBuilder(final Genom genom, final GccomNick gccomNick, final ProgressModel progressModel, final KesoidPluginManager kesoidPluginManager) {
 		this.genom = genom;
@@ -104,6 +109,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 					wpt.setElevation(urciElevation(gpxwpt));
 					wpt.setName(gpxwpt.name);
 					wpt.setNazev(vytvorNazev(gpxwpt));
+					zaznamenejZdroj(gpxwpt.iInformaceOZdroji, wpt);
 					return wpt;
 				});
 	}
@@ -157,6 +163,46 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	}
 
 
+
+	public void setSledovaneZdroje(final Predicate<KeFile> sledovaneZdroje) {
+		this.sledovaneZdroje = sledovaneZdroje;
+	}
+
+	public Map<File, List<Wpt>> getWptyPodleZdroje() {
+		return wptyPodleZdroje;
+	}
+
+	public boolean maWaypointyZe(final File zdroj) {
+		return wptyPodleZdroje.containsKey(zdroj);
+	}
+
+	private void zaznamenejZdroj(final InformaceOZdroji zdroj, final Wpt wpt) {
+		if (zdroj != null && sledovaneZdroje.test(zdroj.jmenoZdroje)) {
+			wptyPodleZdroje.computeIfAbsent(zdroj.jmenoZdroje.getFile(), f -> new ArrayList<>()).add(wpt);
+		}
+	}
+
+	/**
+	 * Převezme kešoidy zdroje z minulého načtení (hlavní waypoint z toho zdroje) i s jejich waypointy. Kešoid, jehož hlavní waypoint už je načtený z jiného zdroje, se přeskočí.
+	 */
+	public void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty, final InformaceOZdroji stareInformace) {
+		setCurrentlyLoading(zdroj, true);
+		for (final Wpt hlavni : stareWpty) {
+			if (!hlavni.isMainWpt() || jmenaWaypointu.contains(hlavni.getName())) {
+				continue;
+			}
+			for (final Wpt wpt : hlavni.getKesoid().getWpts()) {
+				if (jmenaWaypointu.add(wpt.getName())) {
+					wpts.add(wpt);
+					zaznamenejZdroj(infoOCurrentnimZdroji, wpt);
+				}
+			}
+		}
+		if (stareInformace != null) {
+			infoOCurrentnimZdroji.pocetWaypointuCelkem = stareInformace.pocetWaypointuCelkem;
+			infoOCurrentnimZdroji.pocetWaypointuBranych = stareInformace.pocetWaypointuBranych;
+		}
+	}
 
 	public synchronized void setCurrentlyLoading(final KeFile aJmenoZdroje, final boolean nacteno) {
 		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(aJmenoZdroje, nacteno);
