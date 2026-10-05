@@ -36,6 +36,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private File gpx;
 	private File slozkaGeogetu;
 	private MultiNacitac nacitac;
+	private volatile File zamknoutPriNacitani;
 	private final List<List<String>> ohlasenaZamceni = new CopyOnWriteArrayList<>();
 	private final AtomicInteger zpracovanychSouboru = new AtomicInteger();
 	private final List<InformaceOZdrojich> predbezneZdroje = new CopyOnWriteArrayList<>();
@@ -142,6 +143,23 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertEquals(set("GC1111"), kody(nacti()));
 	}
 
+	/** Zrušení načítání ukončí čekání na zámek databáze, která se zamkla až po zjištění, že ji umíme načíst. */
+	@Test
+	public void zruseniPrerusiCekaniNaZamek() throws Exception {
+		Assert.assertTrue(new File(gpx, "a.gpx").delete());
+		zamknoutPriNacitani = zalozGeoget("a.db3", "GC000A");
+		start();
+		final CompletableFuture<Void> future = new CompletableFuture<>();
+		final Future<KesBag> nacitani = geoget.submit(() -> nacitac.nacti(future, new Genom()));
+		Thread.sleep(300);
+		future.cancel(false);
+		try {
+			nacitani.get(20, TimeUnit.SECONDS);
+		} catch (final TimeoutException e) {
+			Assert.fail("načítání se po zrušení nepřerušilo");
+		}
+	}
+
 	private void start() {
 		nacitac.setRootDirs(true, gpx, slozkaGeogetu, null, Collections.emptySet());
 	}
@@ -215,6 +233,21 @@ public class ZamcenaDatabazeOpakovaniTest {
 			@Override
 			public KesBag getVsechnyKesoidy() {
 				return zobrazene;
+			}
+
+			@Override
+			public ProgressModel getProgressModel() {
+				final File db = zamknoutPriNacitani;
+				// Zavolá se až po rozpoznání souboru, těsně před čtením.
+				if (db != null && Arrays.stream(new Throwable().getStackTrace()).anyMatch(e -> "zpracujJedenFile".equals(e.getMethodName()))) {
+					zamknoutPriNacitani = null;
+					try {
+						zamkni(db);
+					} catch (final Exception e) {
+						throw new IllegalStateException(e);
+					}
+				}
+				return super.getProgressModel();
 			}
 
 			@Override
