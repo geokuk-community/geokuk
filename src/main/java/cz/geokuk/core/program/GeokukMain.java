@@ -4,6 +4,7 @@ import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
+import java.util.function.Function;
 import java.util.prefs.BackingStoreException;
 
 import javax.imageio.ImageIO;
@@ -41,18 +42,25 @@ public class GeokukMain {
 		FConst.logInit();
 		presmerujJulDoSlf4j();
 		final File souborZamku = new File(FConst.DATA_DIR, Start.ZAMEK);
-		zamek = Start.zamkni(souborZamku);
+		zamek = zamkni(souborZamku, Start::zamkni);
 		if (uzBezi(zamek, souborZamku)) {
 			log.info("GeoKuk nad složkou {} už běží, druhá instance končí.", FConst.DATA_DIR);
-			if (!GraphicsEnvironment.isHeadless()) {
-				JOptionPane.showMessageDialog(null, "GeoKuk už běží. Přepněte se do jeho okna.", "GeoKuk", JOptionPane.INFORMATION_MESSAGE);
+			try {
+				if (!GraphicsEnvironment.isHeadless()) {
+					JOptionPane.showMessageDialog(null, "GeoKuk už běží. Přepněte se do jeho okna.", "GeoKuk", JOptionPane.INFORMATION_MESSAGE);
+				}
+			} finally {
+				System.exit(0);
 			}
-			System.exit(0);
 		}
 		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
 		ImageIO.setUseCache(false);
 		Diagnostika.sledujKliknuti();
 		log.info("Default character encoding: {}", Charset.defaultCharset());
+		final String zaloha = System.getProperty(Start.ZALOHA);
+		if (zaloha != null) {
+			log.warn("Spouštěč spustil zálohu geokuk.jar.bak, důvod: {}", zaloha);
+		}
 		nastavSkin();
 		Thread.setDefaultUncaughtExceptionHandler(new MyExceptionHandler());
 		promazPreferencePokudJeToPrikazano(args);
@@ -70,6 +78,9 @@ public class GeokukMain {
 			if (varovani != null) {
 				Dlg.error(varovani);
 			}
+			if (zaloha != null) {
+				Dlg.upozorneni(textZalohy());
+			}
 			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
 			VytvoritZastupceAction.aktualizujZastupceVeSlozce();
 			if (portOvladani != null) {
@@ -81,6 +92,19 @@ public class GeokukMain {
 			}
 			inicializator.zkontrolovatAktualizace();
 		});
+	}
+
+	/** Hláška pro uživatele, když spouštěč spustil předchozí verzi ze zálohy. */
+	static String textZalohy() {
+		return "Novou verzi GeoKuku se nepodařilo správně nainstalovat, proto se spustila předchozí verze. Můžete s ní normálně pracovat.\n"
+				+ "Novou verzi nainstalujte znovu přes Nápověda > Zkontrolovat aktualizace.\n"
+				+ "Když to nepomůže, stáhněte zip s programem z " + FConst.WEB_PAGE_URL + "/releases/latest a rozbalte ho přes složku s programem. Data a nastavení zůstanou.";
+	}
+
+	/** Zámek; když ho jiná instance pustila mezi pokusem a kontrolou, zkusí se ještě jednou. */
+	static FileLock zamkni(final File souborZamku, final Function<File, FileLock> zamykac) {
+		final FileLock prvni = zamykac.apply(souborZamku);
+		return prvni != null || Start.jeZamceno(souborZamku) ? prvni : zamykac.apply(souborZamku);
 	}
 
 	/** Druhá instance nad stejnými daty by si s první přepisovaly nastavení a výlety. */

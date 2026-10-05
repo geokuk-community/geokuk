@@ -1,5 +1,88 @@
 # Změny
 
+## 6.3.0
+
+### Změny
+- Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
+- Přehled zdrojů se otevírá rychleji a po novém načtení keší ukazuje
+  aktuální stav.
+- Menší spotřeba paměti u velkých dat, i při přenačtení keší.
+- Rychlejší načítání keší.
+- Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
+  zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
+- Kreslení teček při velkém počtu keší potřebuje výrazně méně paměti,
+  posun mapy je plynulejší.
+- Kešoidy > Limity kreslení…: nastavitelný nejvyšší počet ikon
+  (výchozí 90 000, dosud 30 000) a teček (výchozí 300 000) ve výřezu.
+  Limit ikon platí i pro popisky a zvýrazňovací kruhy; nad limitem
+  teček se nic nekreslí a stavový řádek to ohlásí. Nejnižší nastavitelný
+  limit teček je 60 000.
+- Když databázi GeoGetu, GSAKu nebo OpenSAKu drží zamčenou jiný program,
+  stavový řádek ukáže „Zamčeno: N“ a v bublině jejich jména.
+- Uživatelské mapy: soubor uložený jinak než v UTF-8 se ohlásí s radou,
+  soubory `._*` z macOS se přeskočí a hláška při startu vyjmenuje jen
+  mapy, které se nezobrazí.
+- Na oddálené mapě jsou další waypointy keše (parkoviště, stage) šedé.
+- Po pádu programu se mapa zobrazuje hned, kontrola cache dlaždic běží
+  na pozadí.
+- Nápověda (F1 a tlačítka Nápověda v dialozích) otevírá stránky
+  uživatelské wiki na GitHubu.
+
+### Opravy
+- Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
+  keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
+  se načtou.
+- Změna vzhledu (Skin) se projeví i v otevřených dialozích.
+- Když jiný program zamyká víc databází, každá se načte, jakmile ji
+  pustí; změny ostatních zdrojů se ukážou hned. Změna Umístění souborů
+  zruší rozběhnuté načítání a začne znovu.
+- Nečitelné nastavení, které drží jiný program, už nesmaže dříve
+  odložený soubor `nastaveni.xml.vadne`. Hláška řekne, že se změny při
+  tomto spuštění neuloží.
+- Chyba při vytváření zástupce se zobrazí se správnou diakritikou.
+- Program spuštěný ze složky, kam nejde zapisovat, se ukončí bez
+  dalšího dotazu.
+- Final tradiční keše na stejném místě jako keš se už neukazuje na mapě
+  jako samostatný bod.
+- Databáze GSAKu ve složce zadané přes symbolický odkaz se po vybrání
+  znovu nezablokuje.
+- Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
+  hlášení.
+- Uživatelská mapa, která je odkazem na jiný soubor nebo je větší než
+  64 kB, se nenačte; hláška o neznámé vlastnosti ukáže jen její začátek.
+- GSAK, „Načítat až po vybrání“: složka, která byla chvíli nedostupná
+  a vrátila se během načítání, už nezablokuje vybrané databáze.
+- Když se nová verze po aktualizaci nespustí, spustí se předchozí verze
+  a GeoKuk na to upozorní.
+- Když se GeoKuk spustí ve chvíli, kdy se předchozí spuštění právě
+  ukončuje, nemohou omylem běžet dva GeoKuky nad stejnými daty.
+- Panel nástrojů má stálou výšku, mapa se po načtení keší neposune.
+  Vyšší ikony (například symboly Waymarků) jsou na panelu zmenšené.
+- Dlaždice mapy se při rychlém posouvání nestahují dvakrát.
+- Nastavení popisků: ukázka písma je v barvě písma a podkladu, náhled
+  barev s černými čtverci zmizel.
+- Stavový řádek se v úzkém okně zalomí do dvou řádků, žádné pole se
+  neskryje.
+- Hromadné stahování dlaždic při vypnutém „Mapy > Ukládat mapy“ vyzve
+  k jeho zapnutí.
+- Odkaz, který nevede na webovou stránku, ukáže okno s adresou.
+- Vývojové dálkové ovládání nezapíše token do složky, kterou založil
+  jiný uživatel.
+- Když z databáze GeoGetu, GSAKu nebo OpenSAKu nejde přečíst většina
+  keší, GeoKuk na to upozorní.
+- Když do stejné cache map zapisuje jiný spuštěný GeoKuk, dlaždice se
+  stáhnou bez hlášení chyby čtení.
+- Uživatelské mapy: hodnota hlavičky s řídicím znakem (třeba `\r`) se
+  odmítne s chybou při startu.
+- Když programu dojde paměť při načítání nebo jiné práci na pozadí,
+  GeoKuk poradí, jak paměť zvýšit, a ukončí se.
+- Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
+
+### Vývoj
+- Odstraněna knihovna SwingX.
+- Zkouška zipu pro Windows kontroluje i jeho obsah a to, že po startu
+  vznikne složka `data/mapy`.
+
 ## 6.2.0
 
 ### Změny
@@ -51,7 +134,7 @@
   aktualizací přechod na poslední stabilní verzi.
 - „Připomenout za týden“ (i zavření dialogu nové verze) odloží nabídku
   té verze o 7 dní. Novější verze se nabídne hned.
-- „Stáhnout novou verzi“ na Linuxu a macOS novou verzi rovnou
+- „Aktualizovat“ na Linuxu a macOS novou verzi rovnou
   nainstaluje místo jaru, ze kterého GeoKuk běží; kde to nejde, otevře
   stránku nabízené verze, u bety tedy betu.
 - Na oddálené mapě (zoom 12 a menší) jsou keše barevné tečky podle typu:

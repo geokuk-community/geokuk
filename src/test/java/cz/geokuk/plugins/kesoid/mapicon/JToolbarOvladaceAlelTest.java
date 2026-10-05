@@ -1,34 +1,33 @@
 package cz.geokuk.plugins.kesoid.mapicon;
 
-import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.image.BufferedImage;
 
-import javax.swing.JLabel;
+import javax.swing.ImageIcon;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-/** Výška panelu s alelami nezávisí na tom, které alely jsou v datech. */
+import cz.geokuk.util.gui.JIconCheckBox;
+
+/** Výška ovladačů alel na toolbaru nezávisí na tom, jaké alely a ikony data přinesou. */
 public class JToolbarOvladaceAlelTest {
 
-	private static JLabel tlacitko(final int vyska) {
-		final JLabel l = new JLabel();
-		l.setPreferredSize(new Dimension(16, vyska));
-		return l;
+	private static JIconCheckBox ovladac(final int vyskaIkony) {
+		final JIconCheckBox cb = JToolbarOvladaceAlel.novyOvladac();
+		cb.setIcon(new ImageIcon(new BufferedImage(vyskaIkony, vyskaIkony, BufferedImage.TYPE_INT_ARGB)));
+		return cb;
 	}
 
 	@Test
-	public void vyskaPodleNejvyssiIkonyIZeSkrytych() {
+	public void vyskaJePevna() {
 		final JToolbarOvladaceAlel panel = new JToolbarOvladaceAlel(null);
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		final JLabel vysoka = tlacitko(24);
-		panel.add(tlacitko(16));
-		panel.add(vysoka);
-		Assert.assertEquals(24, panel.getPreferredSize().height);
-		vysoka.setVisible(false);
-		Assert.assertEquals(24, panel.getPreferredSize().height);
-		panel.removeAll();
-		panel.add(tlacitko(16));
-		Assert.assertEquals("Po přenačtení keší se toolbar nezmenší", 24, panel.getPreferredSize().height);
+		final int prazdny = panel.getPreferredSize().height;
+		panel.add(ovladac(16));
+		Assert.assertEquals(prazdny, panel.getPreferredSize().height);
+		panel.add(ovladac(41));
+		Assert.assertEquals(prazdny, panel.getPreferredSize().height);
+		Assert.assertEquals(prazdny, ovladac(41).getPreferredSize().height);
 	}
 }

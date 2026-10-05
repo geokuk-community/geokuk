@@ -828,10 +828,14 @@ public class MyPreferences extends Preferences {
 	/** Cesta uvnitř složky GeoKuku se ukládá relativně se značkou, ať nastavení přežije přesun složky. */
 	public static String cestaDoNastaveni(final File f, final File koren) {
 		if (f.isAbsolute()) {
-			final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
-			final java.nio.file.Path cesta = f.toPath().normalize();
-			if (cesta.startsWith(k) && !cesta.equals(k)) {
-				return ZNACKA_KORENE + "/" + k.relativize(cesta).toString().replace(File.separatorChar, '/');
+			try {
+				final java.nio.file.Path k = koren.getAbsoluteFile().toPath().normalize();
+				final java.nio.file.Path cesta = f.toPath().normalize();
+				if (cesta.startsWith(k) && !cesta.equals(k)) {
+					return ZNACKA_KORENE + "/" + k.relativize(cesta).toString().replace(File.separatorChar, '/');
+				}
+			} catch (final java.nio.file.InvalidPathException e) {
+				// Rozepsaná cesta (třeba „C:“ složené se složkou programu) se uloží, jak ji uživatel napsal.
 			}
 		}
 		return f.getPath();
@@ -864,12 +868,9 @@ public class MyPreferences extends Preferences {
 		return val == null ? null : val.name();
 	}
 
+	/** Bez řešení odkazů, stejně jako cesty z prohledávání složek, jinak by se soubor přes symlink s uloženým nikdy neshodoval. */
 	private String pack(final File f) {
-		try {
-			return cestaDoNastaveni(f.getCanonicalFile(), FConst.KOREN);
-		} catch (final IOException e) {
-			throw new IllegalArgumentException("Unable to retrieve canonical path from " + f, e);
-		}
+		return cestaDoNastaveni(f.getAbsoluteFile().toPath().normalize().toFile(), FConst.KOREN);
 	}
 
 	private String pack(final Mou bod) {
