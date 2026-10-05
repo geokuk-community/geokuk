@@ -196,6 +196,82 @@ public class ZamcenaDatabazeOpakovaniTest {
 		return ohlasenaZamceni;
 	}
 
+	/** Import ve více transakcích: načte-li se databáze v mezeře mezi nimi, po dokončení zápisu se načte znovu. */
+	@Test
+	public void rozpracovanyImportSeNactePoDokonceni() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final CountDownLatch pustitA = zamkni(a);
+		start();
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		pridejKes(a, "GC000B");
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000B"), kody(nacti()));
+		Assert.assertNull("beze změny se znovu nenačítá", nacti());
+	}
+
+	/** Databáze, kterou jiný program nezamkl, se podle času změny nesleduje. */
+	@Test
+	public void nezamcenaDatabazeSeNesleduje() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		nacti();
+		pridejKes(a, "GC000B");
+		Assert.assertNull(nacti());
+	}
+
+	/** Sledovaná databáze, která na chvíli zmizí (odpojený disk), se po návratu načte. */
+	@Test
+	public void sledovanaDatabazeSePoNavratuNacte() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final CountDownLatch pustitA = zamkni(a);
+		start();
+		nacti();
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		final File jinde = new File(tmp.getRoot(), "a.db3");
+		Files.move(a.toPath(), jinde.toPath());
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+		Assert.assertNull("chybějící databáze se nenačítá pořád dokola", nacti());
+		Files.move(jinde.toPath(), a.toPath());
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+		pridejKes(a, "GC000B");
+		Assert.assertEquals(set("GC1111", "GC000A", "GC000B"), kody(nacti()));
+	}
+
+	/** Databáze, která přestala být ve zdrojích, se po změně jiným programem nenačítá pořád dokola. */
+	@Test
+	public void sledovanaDatabazeMimoZdrojeSeNesleduje() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final CountDownLatch pustitA = zamkni(a);
+		start();
+		nacti();
+		pustitA.countDown();
+		Thread.sleep(300);
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		nacitac.setRootDirs(true, gpx, null, null, Collections.emptySet());
+		Assert.assertEquals(set("GC1111"), kody(nacti()));
+		pridejKes(a, "GC000B");
+		Assert.assertNull(nacti());
+	}
+
+	private void pridejKes(final File db, final String kod) throws Exception {
+		final long pred = db.lastModified();
+		Thread.sleep(50);
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute(insertKese(kod));
+		}
+		if (db.lastModified() == pred) {
+			Assert.assertTrue(db.setLastModified(pred + 2000));
+		}
+	}
+
 	/** Před prvním načtením se zdroje ohlásí, aby šly v Přehledu zdrojů vypnout; pak už ne. */
 	@Test
 	public void zdrojeSeOhlasiPredPrvnimNactenim() throws Exception {
