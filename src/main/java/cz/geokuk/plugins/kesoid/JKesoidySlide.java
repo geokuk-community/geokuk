@@ -478,14 +478,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 		final EnumMap<Wpt.EZOrder, List<Wpt>> mapa = SwingUtilities.isEventDispatchThread() ? roztridene : noveSeznamy();
 		try {
-			if (husteTecky && !prekrocenLimit) {
-				kresliTecky(gg, mapa, prumerTecek(pocet));
-				for (final List<Wpt> list : mapa.values()) {
-					list.clear();
-				}
-			}
-			// Při tečkách už jen zvýrazněná keš pod myší.
-			kresli(gg, mapa, prekrocenLimit || husteTecky);
+			kresliWaypointy(gg, mapa, husteTecky, prekrocenLimit, pocet);
 		} finally {
 			// Nedržet waypointy po přenačtení keší.
 			for (final List<Wpt> list : mapa.values()) {
@@ -500,7 +493,18 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		return !vykreslovatOkamtiteAleDlouho && pocet > limit ? limit : 0;
 	}
 
-	private void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
+	void kresliWaypointy(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean husteTecky, final boolean prekrocenLimit, final int pocet) {
+		if (husteTecky && !prekrocenLimit) {
+			kresliTecky(gg, mapa, pocet);
+			for (final List<Wpt> list : mapa.values()) {
+				list.clear();
+			}
+		}
+		// Při tečkách už jen zvýrazněná keš pod myší.
+		kresli(gg, mapa, prekrocenLimit || husteTecky);
+	}
+
+	void kresli(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final boolean prekrocenLimit) {
 		// Roztřídit waypointy podle pořadí vykreslování
 		if (!prekrocenLimit) {
 			final BoundingRect hranice = coVykreslovat(gg);
@@ -541,7 +545,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	}
 
 	/** Nalezené dospod, neaktivní pod aktivní; seznamy podle z-orderu se tu jen půjčí. */
-	private void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int prumer) {
+	void kresliTecky(final Graphics2D gg, final EnumMap<Wpt.EZOrder, List<Wpt>> mapa, final int pocet) {
+		final int prumer = prumerTecek(pocet);
 		final List<Wpt> nalezene = mapa.get(Wpt.EZOrder.OTHER);
 		final List<Wpt> neaktivni = mapa.get(Wpt.EZOrder.KESWPT);
 		final List<Wpt> ostatni = mapa.get(Wpt.EZOrder.FINAL);
