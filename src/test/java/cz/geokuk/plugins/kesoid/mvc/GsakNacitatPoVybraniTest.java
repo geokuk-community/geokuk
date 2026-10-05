@@ -40,16 +40,8 @@ public class GsakNacitatPoVybraniTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
-	private final File a = kanon("/tmp/gsak/data/Default/sqlite.db3");
-	private final File b = kanon("/tmp/gsak/data/Nova/sqlite.db3");
-
-	private static File kanon(final String cesta) {
-		try {
-			return new File(cesta).getCanonicalFile();
-		} catch (final java.io.IOException e) {
-			throw new java.io.UncheckedIOException(e);
-		}
-	}
+	private final File a = new File("/tmp/gsak/data/Default/sqlite.db3").getAbsoluteFile();
+	private final File b = new File("/tmp/gsak/data/Nova/sqlite.db3").getAbsoluteFile();
 
 	@After
 	public void uklid() throws Exception {
