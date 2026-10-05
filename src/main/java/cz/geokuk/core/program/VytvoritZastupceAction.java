@@ -125,7 +125,7 @@ public class VytvoritZastupceAction extends Action0 {
 		return System.getProperty("os.name", "").startsWith("Windows") && javaw().isFile() && new File(FConst.JAR_DIR, "start.jar").isFile();
 	}
 
-	/** Zda se má při startu nabídnout zástupce do nabídky Start; ne při automatizaci (dálkové ovládání), ať dialog nepřekáží. */
+	/** Zda se má při startu nabídnout zástupce do nabídky Start; ne při automatizaci (parametr dálkového ovládání, headless), ať dialog nepřekáží. */
 	static boolean zeptatSe(final boolean lzeVytvorit, final String volba, final boolean zastupceVeStartuJe, final boolean automatizace) {
 		return lzeVytvorit && volba == null && !zastupceVeStartuJe && !automatizace;
 	}
