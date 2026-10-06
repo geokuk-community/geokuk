@@ -15,6 +15,8 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javax.swing.JOptionPane;
 
@@ -110,13 +112,32 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		final Stazeny jar = stahniOverene(zakladUrl, JAR, adresar);
 		if (prenosna(adresar)) {
 			presun(jar, new File(adresar, JAR + ".new"));
-			presun(stahniOverene(zakladUrl, START, adresar), new File(adresar, START));
+			final File start = new File(adresar, START);
+			presun(stahniOverene(zakladUrl, START, adresar), start, new File(adresar, START + ".bak"), PRESUN, false);
+			// Záloha spouštěče je jen na dobu výměny.
+			Files.deleteIfExists(new File(adresar, START + ".bak").toPath());
 		} else {
 			final File stary = new File(adresar, spusteny);
-			if (stary.isFile()) {
-				Files.copy(stary.toPath(), new File(adresar, spusteny + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
-			}
-			presun(jar, stary);
+			presun(jar, stary, new File(adresar, spusteny + ".bak"), PRESUN, true);
+		}
+	}
+
+	/** Verzi, kterou už čeká {@code geokuk.jar.new} na výměnu spouštěčem, není třeba stahovat znovu. */
+	static boolean uzStazena(final File adresar, final String verze) {
+		return prenosna(adresar) && verze.equals(stazenaVerze(adresar));
+	}
+
+	/** Verze v manifestu {@code geokuk.jar.new}, nebo null, když tam žádná stažená verze není. */
+	static String stazenaVerze(final File adresar) {
+		final File nova = new File(adresar, JAR + ".new");
+		if (!nova.isFile()) {
+			return null;
+		}
+		try (JarFile jf = new JarFile(nova)) {
+			final Manifest manifest = jf.getManifest();
+			return manifest == null ? null : manifest.getMainAttributes().getValue("Geokuk-Version");
+		} catch (final IOException | RuntimeException e) {
+			return null;
 		}
 	}
 
@@ -149,14 +170,37 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 	 * stávající program nechá.
 	 */
 	static void presun(final Stazeny stazeny, final File cil) throws IOException {
+		presun(stazeny, cil, null, PRESUN, false);
+	}
+
+	interface Presun {
+		void presun(Path odkud, Path kam) throws IOException;
+	}
+
+	private static final Presun PRESUN = (odkud, kam) -> Files.move(odkud, kam, StandardCopyOption.REPLACE_EXISTING);
+
+	/**
+	 * Jako {@link #presun(Stazeny, File)}; je-li {@code zaloha}, existující cíl se do ní nejdřív zkopíruje (a nechá tam, když {@code zalohuNechat})
+	 * a při nesouhlasu součtu po přesunu se cíl z ní vrátí.
+	 */
+	static void presun(final Stazeny stazeny, final File cil, final File zaloha, final Presun presun, final boolean zalohuNechat) throws IOException {
 		if (!soucet(stazeny.soubor).equalsIgnoreCase(stazeny.soucet)) {
 			Files.deleteIfExists(stazeny.soubor);
 			throw new IOException("Soubor " + cil.getName() + " se po stažení změnil.");
 		}
-		Files.move(stazeny.soubor, cil.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		final boolean zalohovano = zaloha != null && cil.isFile();
+		if (zalohovano) {
+			Files.copy(cil.toPath(), zaloha.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		}
+		presun.presun(stazeny.soubor, cil.toPath());
 		if (!soucet(cil.toPath()).equalsIgnoreCase(stazeny.soucet)) {
 			if (cil.getName().endsWith(".new")) {
 				Files.deleteIfExists(cil.toPath());
+			} else if (zalohovano) {
+				Files.copy(zaloha.toPath(), cil.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				if (!zalohuNechat) {
+					Files.deleteIfExists(zaloha.toPath());
+				}
 			}
 			throw new IOException("Soubor " + cil.getName() + " se po stažení změnil.");
 		}
@@ -167,7 +211,11 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		try (InputStream in = otevri(zakladUrl + VerzeJavy.SOUBOR)) {
 			final Properties p = new Properties();
 			p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
-			return p.getProperty("minimalni");
+			final String minimalni = p.getProperty("minimalni");
+			if (minimalni == null || minimalni.trim().isEmpty()) {
+				throw new IOException("v souboru " + VerzeJavy.SOUBOR + " chybí nejnižší Java");
+			}
+			return minimalni;
 		} catch (final IOException e) {
 			throw new IOException("Nepodařilo se zjistit, jakou Javu nová verze potřebuje: " + e.getMessage(), e);
 		}
@@ -229,6 +277,10 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 
 	@Override
 	protected Void doInBackground() throws Exception {
+		if (uzStazena(FConst.JAR_DIR, verze)) {
+			log.info("Verze {} je už stažená a čeká na instalaci při příštím spuštění.", verze);
+			return null;
+		}
 		stahni(FConst.RELEASE_DOWNLOAD_URL + "v" + verze + "/", FConst.JAR_DIR, jmenoJaru(spustenyJar(), FConst.JAR_DIR));
 		return null;
 	}

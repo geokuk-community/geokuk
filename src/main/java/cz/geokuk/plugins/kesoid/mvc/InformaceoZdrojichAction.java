@@ -36,4 +36,8 @@ public class InformaceoZdrojichAction extends DialogOpeningAction0 {
 	public void onEvent(final KeskyNactenyEvent event) {
 		setEnabled(true);
 	}
+
+	public void onEvent(final NacitaneZdrojeEvent event) {
+		setEnabled(true);
+	}
 }

@@ -46,7 +46,7 @@ public class PametProgramuAction extends Action0 {
 			if (mb > 0 && mb > fyzicka * 3 / 4) {
 				break;
 			}
-			popisy[pocet] = mb == 0 ? "Automaticky (polovina paměti počítače, 1 až 3 GB)" : mb / 1024 + " GB";
+			popisy[pocet] = mb == 0 ? "Automaticky (polovina paměti počítače, 1 až 3 GB, od 16 GB paměti 4 GB)" : mb / 1024 + " GB";
 			if (mb == ted) {
 				vybrana = pocet;
 			}

@@ -34,4 +34,10 @@ public class MySwingWorker0Test {
 	public void bezZpravyAsponDruhChyby() {
 		assertEquals("Chyba při práci na pozadí (NullPointerException)", MySwingWorker0.popis(new NullPointerException()));
 	}
+
+	@Test
+	public void zabalenaPricinaBezJmenaTridy() {
+		assertEquals("Chyba při práci na pozadí: Soubor nejde číst", MySwingWorker0.popis(new RuntimeException(new java.io.IOException("Soubor nejde číst"))));
+		assertEquals("Chyba při práci na pozadí: Načítání selhalo", MySwingWorker0.popis(new RuntimeException("Načítání selhalo", new java.io.IOException("x"))));
+	}
 }

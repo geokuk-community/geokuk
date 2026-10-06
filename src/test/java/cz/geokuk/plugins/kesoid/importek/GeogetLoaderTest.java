@@ -29,16 +29,18 @@ public class GeogetLoaderTest {
 			s.execute("CREATE TABLE geotagcategory (key INTEGER, value TEXT)");
 			s.execute("CREATE TABLE geotagvalue (key INTEGER, value TEXT)");
 			s.execute("INSERT INTO geocache VALUES ('GC12345', 50.1, 14.4, 'Keš', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
-			s.execute("INSERT INTO geocache VALUES ('GC99999', 50.2, 14.5, 'Bez tagů', 'autor', 'Traditional Cache', 'Regular', '1', '1', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+			s.execute("INSERT INTO geocache VALUES ('GC99999', 50.2, 14.5, 'Bez tagů', 'autor', 'Traditional Cache', 'Regular', '1', '1', 0, 1, 20191123, 'CZ', 'Praha', 0)");
 			s.execute("INSERT INTO geotagcategory VALUES (1, 'Hodnoceni'), (2, 'Znamka'), (3, 'favorites'), (4, 'Elevation'), (5, 'BestOf'), (6, 'geokuk_barva')");
 			s.execute("INSERT INTO geotagvalue VALUES (1, '80%'), (2, '75'), (3, '12'), (4, '450'), (5, '3'), (6, 'modra')");
 			s.execute("INSERT INTO geotag VALUES ('GC12345', 1, 1), ('GC12345', 2, 2), ('GC12345', 3, 3), ('GC12345', 4, 4), ('GC12345', 5, 5), ('GC12345', 6, 6)");
 		}
 
 		final Map<String, String> priPridani = new HashMap<>();
+		final Map<String, String> texty = new HashMap<>();
 		final IImportBuilder builder = new IImportBuilder() {
 			@Override
 			public void addGpxWpt(final GpxWpt w) {
+				texty.put(w.name, w.time + "|" + w.desc + "|" + w.link.text);
 				priPridani.put(w.name, w.gpxg.hodnoceni + "/" + w.gpxg.znamka + "/" + w.gpxg.favorites + "/" + w.gpxg.elevation + "/" + w.gpxg.bestOf + "/" + w.gpxg.userTags);
 			}
 
@@ -71,6 +73,8 @@ public class GeogetLoaderTest {
 
 		Assert.assertEquals("80/75/12/450/3/{barva=modra}", priPridani.get("GC12345"));
 		Assert.assertEquals("keš bez tagů má hodnocení neuvedené", "-1/-1/-1/0/-1/{}", priPridani.get("GC99999"));
+		Assert.assertEquals("2020-01-01T00:00:00.000|Keš by autor (2 / 3)|Keš by autor", texty.get("GC12345"));
+		Assert.assertEquals("2019-11-23T00:00:00.000|Bez tagů by autor (1 / 1)|Bez tagů by autor", texty.get("GC99999"));
 	}
 	/** Sloupce databáze se převedou na správné položky keše a waypointu. */
 	@Test

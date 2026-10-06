@@ -25,6 +25,7 @@ public class SmokeIT {
 	private static final File KOREN = new File("target/smoke");
 	private static final long EDT_LIMIT_MS = 3000;
 	private static final long EDT_LIMIT_START_MS = 10_000;
+	private static final long EDT_LIMIT_VZHLED_MS = 10_000;
 
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
@@ -59,8 +60,10 @@ public class SmokeIT {
 		assertEquals(0, pocitadlo(prvni, "ka24 DISK cache #chyb čtení"));
 		assertEquals(0, pocitadlo(prvni, "ka33 WEB #chyb"));
 		final long ulozeno = pocitadlo(prvni, "ka42 disk write #dlaždic");
-		assertEquals("Na disk se má uložit, co se načetlo", pocitadlo(prvni, "ka32 WEB #načtených"), ulozeno);
-		// Dlaždice stažené až po zrušení požadavku se neukládají, ale nesmí jich být víc než pár.
+		// Uloží se i dlaždice, jejíž požadavek se během stahování zrušil; mezi načtené se nezapočte.
+		final long nactenoZWebu = pocitadlo(prvni, "ka32 WEB #načtených");
+		assertTrue("Na disk se má uložit, co se načetlo: uloženo " + ulozeno + ", načteno " + nactenoZWebu, ulozeno >= nactenoZWebu);
+		assertTrue("Uloženo " + ulozeno + " z " + pozadavky.size() + " stažených", ulozeno <= pozadavky.size());
 		final long neulozeno = pozadavky.size() - ulozeno;
 		assertTrue("Neuloženo " + neulozeno + " z " + pozadavky.size(), neulozeno <= pozadavky.size() / 20);
 
@@ -417,10 +420,11 @@ public class SmokeIT {
 		}
 	}
 
-	/** 50 tisíc keší (asi 100 tisíc waypointů) po celých Čechách: načtení, měřítka, posun. */
+	/** 50 tisíc keší (asi 100 tisíc waypointů) po celých Čechách: načtení, měřítka, posun. Počet keší mění {@code smoke.velka.kesi}. */
 	@Test
 	public void velkaData() throws Exception {
-		final File adresar = pripravAdresar("velka", 50_000);
+		final File adresar = pripravAdresar("velka", Integer.getInteger("smoke.velka.kesi", 50_000));
+		pridejXmx();
 		final Properties zprava = spust(adresar, "velka", "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava);
 		assertEquals(String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
@@ -428,21 +432,46 @@ public class SmokeIT {
 		assertTrue("Načtení " + pocetWpt + " waypointů trvalo " + nacteni + " ms", nacteni < 60_000);
 	}
 
-	/** Databáze GeoGetu s 200 tisíci keší a 200 tisíci waypointů, jak ji mají uživatelé s daty větší než ČR. */
+	/**
+	 * Databáze GeoGetu s 200 tisíci keší a 200 tisíci waypointů, jak ji mají uživatelé s daty větší než ČR. Počty mění {@code smoke.db.kesi}
+	 * a {@code smoke.db.wpt}.
+	 */
 	@Test
 	public void velkaDatabazeGeogetu() throws Exception {
-		final File adresar = pripravAdresar("geoget", 0);
-		final File geoget = new File(adresar, "home/geoget");
-		geoget.mkdirs();
+		velkaDatabaze("geoget", "geoget.db3", SyntetickaDatabazeGeogetu::zapis);
+	}
+
+	/** Databáze GSAKu, velikost jako u {@link #velkaDatabazeGeogetu()}. */
+	@Test
+	public void velkaDatabazeGsaku() throws Exception {
+		velkaDatabaze("gsak", "Velka/sqlite.db3", SyntetickaDatabazeGsaku::zapis);
+	}
+
+	private interface Databaze {
+		int zapis(File soubor, int kesi, int waypointu) throws Exception;
+	}
+
+	private void velkaDatabaze(final String beh, final String soubor, final Databaze databaze) throws Exception {
+		final File adresar = pripravAdresar(beh, 0);
+		final File slozka = new File(adresar, "home/" + beh);
+		final File db = new File(slozka, soubor);
+		db.getParentFile().mkdirs();
 		final long zacatek = System.currentTimeMillis();
-		final int wpt = SyntetickaDatabazeGeogetu.zapis(new File(geoget, "geoget.db3"), 200_000, 200_000);
+		final int wpt = databaze.zapis(db, Integer.getInteger("smoke.db.kesi", 200_000), Integer.getInteger("smoke.db.wpt", 200_000));
 		final long vyroba = System.currentTimeMillis() - zacatek;
-		vlastnosti.add("-Dsmoke.geoget=" + geoget);
-		vlastnosti.add("-Xmx2g");
-		final Properties zprava = spust(adresar, "geoget", "meritka,posun");
+		vlastnosti.add("-Dsmoke." + beh + "=" + slozka);
+		vlastnosti.add("-Xmx" + System.getProperty("smoke.xmx", "2g"));
+		final Properties zprava = spust(adresar, beh, "meritka,posun");
 		zkontrolujBezChyb(adresar, zprava);
 		assertEquals(String.valueOf(wpt), zprava.getProperty("kese.wpt"));
-		System.out.println("Databáze GeoGetu: výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
+		System.out.println("Databáze " + beh + ": výroba " + vyroba + " ms, načtení " + zprava.getProperty("start.keseMs") + " ms, paměť " + zprava.getProperty("pamet.mb") + " MB");
+	}
+
+	/** Paměť programu ze {@code smoke.xmx} (třeba 3g), jinak výchozí. */
+	private void pridejXmx() {
+		if (System.getProperty("smoke.xmx") != null) {
+			vlastnosti.add("-Xmx" + System.getProperty("smoke.xmx"));
+		}
 	}
 
 	@Test
@@ -573,6 +602,8 @@ public class SmokeIT {
 		zkontrolujEdt(zprava, "edt.nejdelsiMs", EDT_LIMIT_MS, "", problemy);
 		// Start programu (okno, načtení keší, první vykreslení) běží na EDT naráz a na pomalém stroji trvá déle.
 		zkontrolujEdt(zprava, "edt.startMs", EDT_LIMIT_START_MS, "při startu: ", problemy);
+		// Přepnutí vzhledu přestaví všechny komponenty okna a na Windows runneru trvá jednotky sekund.
+		zkontrolujEdt(zprava, "edt.vzhledMs", EDT_LIMIT_VZHLED_MS, "při přepnutí vzhledu: ", problemy);
 		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
 		if (pamet > 400) {
 			problemy.add("Po scénáři zůstalo obsazeno " + pamet + " MB paměti");
@@ -603,7 +634,7 @@ public class SmokeIT {
 	 * převzetí starého nastavení, a data, která tam připravil test.
 	 */
 	private static List<String> zapsanoMimo(final File adresar) {
-		final List<String> povolene = Arrays.asList("home/.java/fonts/", "home/geoget/", "prefs/.java/.userPrefs/.userRootModFile.", "prefs/.java/.userPrefs/.user.lock.",
+		final List<String> povolene = Arrays.asList("home/.java/fonts/", "home/geoget/", "home/gsak/", "prefs/.java/.userPrefs/.userRootModFile.", "prefs/.java/.userPrefs/.user.lock.",
 				"prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
 		final List<String> mimo = new ArrayList<>();
 		for (final String koren : Arrays.asList("home", "prefs")) {

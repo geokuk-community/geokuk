@@ -20,6 +20,7 @@ class GenotypBuilderWpt {
 		this.genom = genom;
 	}
 
+	@SuppressWarnings("deprecation")
 	Genotyp build(final Wpt wpt, final Genotyp g) {
 		return g
 				.with(genom.alelaSym(wpt.getSym(), null, null))

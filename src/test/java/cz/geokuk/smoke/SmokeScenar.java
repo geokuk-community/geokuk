@@ -93,6 +93,9 @@ public class SmokeScenar {
 		if (System.getProperty("smoke.geoget") != null) {
 			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex("geogetDataDir", new Filex(new File(System.getProperty("smoke.geoget")), false, true));
 		}
+		if (System.getProperty("smoke.gsak") != null) {
+			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex(FPref.GSAK_DATA_DIR_value, new Filex(new File(System.getProperty("smoke.gsak")), false, true));
+		}
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(System.getProperty("smoke.args", "").isEmpty() ? new String[0] : System.getProperty("smoke.args").split(" "));
@@ -265,9 +268,14 @@ public class SmokeScenar {
 		if (puvodni != null) {
 			vzhledy.add(puvodni);
 		}
-		for (final JMenuItem p : vzhledy) {
-			final List<String> okna = klikni(p, "vzhled " + p.getText());
-			zprava.setProperty("vzhled." + p.getText(), okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
+		hlidac.vzhled(true);
+		try {
+			for (final JMenuItem p : vzhledy) {
+				final List<String> okna = klikni(p, "vzhled " + p.getText());
+				zprava.setProperty("vzhled." + p.getText(), okna.isEmpty() ? "bez okna" : String.join(" | ", okna));
+			}
+		} finally {
+			hlidac.vzhled(false);
 		}
 	}
 
@@ -623,6 +631,7 @@ public class SmokeScenar {
 		if (hlidac != null) {
 			zprava.setProperty("edt.nejdelsiMs", String.valueOf(hlidac.getNejdelsiMs()));
 			zprava.setProperty("edt.startMs", String.valueOf(hlidac.getNejdelsiStartMs()));
+			zprava.setProperty("edt.vzhledMs", String.valueOf(hlidac.getNejdelsiVzhledMs()));
 			final List<String> pomale = hlidac.getPomale();
 			for (int j = 0; j < pomale.size(); j++) {
 				zprava.setProperty("edt.pomala." + j, pomale.get(j));
@@ -637,6 +646,9 @@ public class SmokeScenar {
 		final Runtime rt = Runtime.getRuntime();
 		System.gc();
 		zprava.setProperty("pamet.mb", String.valueOf((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024));
+		// Součet špiček jednotlivých poolů, tedy odhad shora.
+		zprava.setProperty("pamet.spickaMb", String.valueOf(java.lang.management.ManagementFactory.getMemoryPoolMXBeans().stream()
+				.filter(p -> p.getType() == java.lang.management.MemoryType.HEAP).mapToLong(p -> p.getPeakUsage().getUsed()).sum() / 1024 / 1024));
 		try (Writer w = new OutputStreamWriter(new FileOutputStream(soubor), StandardCharsets.UTF_8)) {
 			zprava.store(w, "Smoke test");
 		}

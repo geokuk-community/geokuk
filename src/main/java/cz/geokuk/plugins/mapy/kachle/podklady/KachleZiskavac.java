@@ -6,6 +6,7 @@ import java.io.InterruptedIOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -59,6 +60,8 @@ public class KachleZiskavac {
 		// čili, když je něco v sezanmu pro výslede, je futura, kterou se získává a není image
 		private Image image;
 		private Future<?> futura;
+		/** Stahování už posílá požadavek na server: při zrušení doběhne, aby se tatáž dlaždice nestahovala dvakrát. */
+		private volatile boolean stahujeSe;
 		private final List<ImageReceiver> irs = new ArrayList<ImageReceiver>();
 
 		public Kachlice(final Ka ka, final DvojiceExekucnichSluzeb des, final DiagnosticsData diagnosticsData) {
@@ -76,9 +79,8 @@ public class KachleZiskavac {
 				ir.send(new KachloStav(image));
 				return;
 			} else {
-				final boolean wasEmpty = irs.isEmpty();
 				irs.add(ir);
-				if (wasEmpty) { // jestli byl prázdný, začíná nutnost získat tu potvoru
+				if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
 					pocitDiskLoadSubmit.inc();
 					final ListenableFuture<Image> future = des.disk.submit(() -> kachleManager.load(ka));
 					futura = future;
@@ -107,8 +109,23 @@ public class KachleZiskavac {
 						}
 
 						private void submitDownload() {
+							synchronized (Kachlice.this) {
+								if (futura != future) {
+									return; // čtení z disku bylo mezitím zrušeno
+								}
+								futura = null;
+								if (irs.isEmpty()) {
+									return;
+								}
+								spustDownload();
+							}
+						}
+
+						private void spustDownload() {
 							if (onofflineModel.isOnlineMode()) {
-								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData, Kachlice.this);
+								final AtomicReference<Future<?>> moje = new AtomicReference<>();
+								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData, Kachlice.this, moje);
+								moje.set(future);
 								futura = future;
 								Futures.addCallback(future, new FutureCallback<ImageWithData>() {
 
@@ -120,9 +137,10 @@ public class KachleZiskavac {
 
 									@Override
 									public void onFailure(final Throwable t) { // čtení z webu
-										if (!(t instanceof CancellationException)) { // zrušený požadavek není chyba stahování
-											pocitDownloadWebError.inc();
+										if (t instanceof CancellationException) {
+											return; // zrušilo se, protože dlaždici už nikdo nechce; příjemci nového požadavku čekají na jiné získání
 										}
+										pocitDownloadWebError.inc();
 										onImageFailure(t);
 									}
 								}, MoreExecutors.directExecutor());
@@ -136,8 +154,21 @@ public class KachleZiskavac {
 			}
 		}
 
+		/** Stahování začne posílat požadavek na server, jen když je pořád aktuální a někdo dlaždici chce. */
+		synchronized boolean zahajStahovani(final AtomicReference<Future<?>> moje) {
+			if (futura == null || futura != moje.get() || irs.isEmpty()) {
+				if (futura != null && futura == moje.get()) {
+					futura = null;
+				}
+				return false;
+			}
+			stahujeSe = true;
+			return true;
+		}
+
 		public synchronized void onImageLoaded(final Image image) {
 			futura = null;
+			stahujeSe = false;
 			this.image = image;
 			for (final ImageReceiver ir : odeberPrijemce()) {
 				ir.send(new KachloStav(image));
@@ -146,6 +177,7 @@ public class KachleZiskavac {
 
 		public synchronized void onImageFailure(final Throwable t) {
 			futura = null;
+			stahujeSe = false;
 			for (final ImageReceiver ir : odeberPrijemce()) {
 				ir.send(new KachloStav(t));
 			}
@@ -172,7 +204,7 @@ public class KachleZiskavac {
 				pocitCancelPozde.inc();
 			}
 			irs.remove(imageReceiver); // už nechce, tak mu nebudeme nic říkat
-			if (irs.isEmpty() && futura != null) {
+			if (irs.isEmpty() && futura != null && !stahujeSe) {
 				// Bez přerušení vlákna: přerušení zavře kanál souboru diskové cache.
 				futura.cancel(false);
 				futura = null;
@@ -286,7 +318,8 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
-	private static final int NTHREADS_DISK = 2;
+	/** Čtení z cache je hlavně dekódování obrázků, víc vláken pomůže na víc jádrech. */
+	static final int NTHREADS_DISK = Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors()));
 
 	private final Pocitadlo pocitSubmitJednaDlazdice = new PocitadloRoste("ka01 Počet požadavků na jednu dlaždici",
 			"Kolikrát byl nakonec zadán požadavek na získání jedné dlaždice z jedné vrstvy. Tedy pokud zobrazujeme mapu s turistickými trasami a cyklotrasami, je dlaždice na podklad, na turistickou i na cyklo počítána zvlášť.");
@@ -446,7 +479,8 @@ public class KachleZiskavac {
 
 	}
 
-	private ListenableFuture<ImageWithData> submitDownloadx(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice) {
+	private ListenableFuture<ImageWithData> submitDownloadx(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice,
+			final AtomicReference<Future<?>> moje) {
 		final Logger log = dvojiceExekucnichSluzeb.log;
 		final URL url = ka.getUrl();
 		log.debug("SUBMITTING WEB DOWNLOAD  \"{}\" | {}", url, diagnosticsData);
@@ -461,6 +495,9 @@ public class KachleZiskavac {
 			final String klic = url.toExternalForm();
 			if (nedavnoNestazene.getIfPresent(klic) != null) {
 				throw new IOException("Dlaždici se nedávno nepodařilo stáhnout: " + url);
+			}
+			if (!kachlice.zahajStahovani(moje)) {
+				throw new CancellationException("Dlaždici už nikdo nechce: " + url);
 			}
 			diagnosticsData.send("Web download - start");
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);

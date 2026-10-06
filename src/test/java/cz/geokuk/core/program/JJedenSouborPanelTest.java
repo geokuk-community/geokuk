@@ -35,4 +35,13 @@ public class JJedenSouborPanelTest {
 		Assert.assertEquals("Relativně ke složce GeoKuk: " + new File(koren, "data").getPath(), JJedenSouborPanel.popisVysledneCesty(new File(koren, "data"), koren));
 		Assert.assertEquals(koren.getPath(), JJedenSouborPanel.popisVysledneCesty(koren, koren));
 	}
+
+	/** Rozepsaná cesta, kterou systém nedovolí (ve Windows „C:“ složené se složkou programu, „a?b“), se ukáže, jak je. */
+	@Test
+	public void neplatnaCestaNespadne() {
+		final File neplatna = new File(koren, "a\0b");
+		Assert.assertEquals(neplatna.getPath(), JJedenSouborPanel.popisVysledneCesty(neplatna, koren));
+		JJedenSouborPanel.popisVysledneCesty(new File(koren, "C:"), koren);
+		JJedenSouborPanel.popisVysledneCesty(new File(koren, "a?b"), koren);
+	}
 }

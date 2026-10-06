@@ -1,24 +1,26 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import javax.imageio.ImageIO;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.tmatesoft.sqljet.core.SqlJetException;
 import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.table.ISqlJetCursor;
 import org.tmatesoft.sqljet.core.table.ISqlJetTable;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.framework.ChybyVDiagnostice;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleManager.ItemToSave;
 import cz.geokuk.util.file.Filex;
@@ -461,9 +463,46 @@ public class KachleDBManagerTest {
 		manager = new KachleDBManager(manager.folderHolder);
 		// Hledání dlaždice mimo cache poslední stránku nečte, poškození najde jen kontrola.
 		Assert.assertNull(manager.load(KACHLE_MIMO));
-		Assert.assertTrue("poškozená cache se odloží hned při otevření", new File(soubor.getPath() + ".vadna").isFile());
-		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		Assert.assertTrue("zápis počká na kontrolu a jde do nové cache", manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
+		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
 		Assert.assertNotNull(manager.load(kachle(1)));
+	}
+
+	/** Kontrola po pádu trvá u velké cache i desítky sekund; dlaždice se mezitím čtou a zápis na ni počká. */
+	@Test(timeout = 60000)
+	public void kontrolaPoPaduNeblokujeCteni() throws Exception {
+		ulozKachle();
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		final CountDownLatch kontrolaZacala = new CountDownLatch(1);
+		final CountDownLatch pustKontrolu = new CountDownLatch(1);
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			void projdi(final SqlJetDb database) throws SqlJetException {
+				kontrolaZacala.countDown();
+				try {
+					pustKontrolu.await();
+				} catch (final InterruptedException e) {
+					throw new IllegalStateException(e);
+				}
+				super.projdi(database);
+			}
+		};
+		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
+		try {
+			final Future<Image> nacteni = vlakno.submit(() -> manager.load(kachle(150)));
+			Assert.assertNotNull("dlaždice se načte během kontroly", nacteni.get(10, TimeUnit.SECONDS));
+			Assert.assertTrue(kontrolaZacala.await(10, TimeUnit.SECONDS));
+			final Future<Boolean> ulozeni = vlakno.submit(() -> manager.save(Collections.singleton(new ItemToSave(kachle(300), png()))));
+			Thread.sleep(300);
+			Assert.assertFalse("zápis čeká na konec kontroly", ulozeni.isDone());
+			pustKontrolu.countDown();
+			Assert.assertTrue(ulozeni.get(10, TimeUnit.SECONDS));
+			Assert.assertNotNull(manager.load(kachle(300)));
+			Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
+		} finally {
+			pustKontrolu.countDown();
+			vlakno.shutdownNow();
+		}
 	}
 
 	/** Zdravou cache s žurnálem kontrola neodloží. */
@@ -474,6 +513,55 @@ public class KachleDBManagerTest {
 		manager = new KachleDBManager(manager.folderHolder);
 		Assert.assertNotNull(manager.load(kachle(150)));
 		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
+	}
+
+	/** Zápis jiného programu do cache: dlaždice se bere jako chybějící, bez chyby a se zachovaným spojením. */
+	@Test(timeout = 60000)
+	public void zamekJinehoProgramuJeJenChybejiciDlazdice() throws Exception {
+		ulozKachle();
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertNotNull(manager.load(kachle(1)));
+		final Process jiny = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
+				ZamekJinehoProgramu.class.getName(), soubor.getPath()).redirectErrorStream(true).start();
+		try {
+			final java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(jiny.getInputStream(), StandardCharsets.UTF_8));
+			for (String radek = vystup.readLine(); !"zamceno".equals(radek); radek = vystup.readLine()) {
+				Assert.assertNotNull("druhý program skončil bez zámku", radek);
+			}
+			final SqlJetDb spojeni = manager.connections.values().iterator().next();
+			final int chybPred = ChybyVDiagnostice.pocet("Nepodařilo se");
+			Assert.assertNull("zamčená cache = dlaždice není v cache", manager.load(kachle(2)));
+			Assert.assertEquals("zámek se nehlásí jako chyba", chybPred, ChybyVDiagnostice.pocet("Nepodařilo se"));
+			Assert.assertTrue("spojení se nezahodí", manager.connections.containsValue(spojeni));
+		} finally {
+			jiny.getOutputStream().write('\n');
+			jiny.getOutputStream().flush();
+			jiny.waitFor(10, TimeUnit.SECONDS);
+			jiny.destroyForcibly();
+		}
+		Assert.assertNotNull("po uvolnění se dlaždice přečte", manager.load(kachle(2)));
+		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
+	}
+
+	/** Když vlákno kontroly nejde spustit (nedostatek paměti), zápis nesmí čekat navždy. */
+	@Test(timeout = 60000)
+	public void nespustenaKontrolaNeblokujeZapis() throws Exception {
+		ulozKachle();
+		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
+		manager = new KachleDBManager(manager.folderHolder) {
+			@Override
+			void spustVlakno(final Runnable kontrola) {
+				throw new OutOfMemoryError("unable to create native thread");
+			}
+		};
+		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
+		try {
+			final Future<Boolean> ulozeni = vlakno.submit(() -> manager.save(Collections.singleton(new ItemToSave(kachle(300), png()))));
+			Assert.assertTrue(ulozeni.get(10, TimeUnit.SECONDS));
+			Assert.assertNotNull(manager.load(kachle(300)));
+		} finally {
+			vlakno.shutdownNow();
+		}
 	}
 
 	private static final Ka KACHLE_MIMO = new Ka(KaLoc.ofJZ(new Mou(0x10000000, 0x10000000), 13), EKaType.TURIST_M);

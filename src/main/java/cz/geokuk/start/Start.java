@@ -12,6 +12,9 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
@@ -34,6 +37,9 @@ public final class Start {
 	static final long MB = 1024L * 1024;
 	static final int MIN_PAMET_MB = 1024;
 	static final int MAX_PAMET_MB = 3072;
+	/** Od této fyzické paměti dostane program 4 GB; počítače s 16 GB hlásí systém o něco méně (Windows třeba 16 379 MB, notebooky s grafikou v paměti i 15,7 GB). */
+	static final int PRAH_VELKA_PAMET_MB = 15 * 1024;
+	static final int VELKA_PAMET_MB = 4096;
 	/** Spustit GeoKuk, až skončí ten, který spouštěč pustil (restart po aktualizaci). */
 	public static final String PO_UKONCENI = "--po-ukonceni";
 	/** Zámek, který běžící GeoKuk drží ve složce data. */
@@ -41,6 +47,10 @@ public final class Start {
 	static final long CEKANI_NA_UKONCENI_MS = 60_000;
 	/** Klíč nastavení v uzlu {@code geokuk/current/vseobecne}, 0 = zvolí spouštěč. */
 	public static final String PAMET_KLIC = "pametMb";
+	/** Systémová vlastnost, kterou spouštěč řekne GeoKuku, proč běží záloha {@code geokuk.jar.bak}. */
+	public static final String ZALOHA = "geokuk.zaloha";
+	public static final String ZALOHA_POSKOZENY = "poskozeny";
+	public static final String ZALOHA_CHYBI = "chybi";
 
 	public static void main(final String[] args) {
 		try {
@@ -64,6 +74,7 @@ public final class Start {
 			prikaz.add("-Djava.net.useSystemProxies=true");
 			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
+			pridejZalohu(prikaz, adresar, jar);
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
 			prikaz.addAll(parametry);
@@ -162,16 +173,51 @@ public final class Start {
 			vymena.vymen(adresar);
 		} catch (final IOException e) {
 			System.err.println("Výměna " + JAR + " selhala: " + e);
+			zapisDoLogu(adresar, "Výměna " + JAR + " selhala: " + e);
 		}
 		final File jar = new File(adresar, JAR);
+		final File bak = new File(adresar, JAR + ".bak");
 		if (jar.isFile()) {
+			// Poškozený jar (třeba přerušený zápis po aktualizaci) by se nespustil a uživatel by nic neviděl.
+			if (!jeSpustitelny(jar) && bak.isFile() && jeSpustitelny(bak)) {
+				System.err.println(JAR + " nejde spustit, spouštím předchozí verzi " + bak);
+				return bak;
+			}
 			return jar;
 		}
-		final File bak = new File(adresar, JAR + ".bak");
 		return bak.isFile() ? bak : null;
 	}
 
-	/** Stažená nová verze nahradí starou, ta zůstane jako .bak. */
+	/** Spouštěč nemá logování programu, chyby výměny se zapíšou do data/log/start.log; selhání zápisu nevadí. */
+	static void zapisDoLogu(final File adresar, final String text) {
+		try {
+			final File log = new File(new File(koren(adresar), "data"), "log");
+			Files.createDirectories(log.toPath());
+			Files.write(new File(log, "start.log").toPath(), (java.time.LocalDateTime.now() + " " + text + System.lineSeparator()).getBytes(java.nio.charset.StandardCharsets.UTF_8),
+					StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+		} catch (final IOException | RuntimeException e) {
+			// bez logu se spustí dál
+		}
+	}
+
+	/** Když se spouští záloha místo geokuk.jar, GeoKuk se dozví proč. */
+	static void pridejZalohu(final List<String> prikaz, final File adresar, final File jar) {
+		if (jar.getName().equals(JAR + ".bak")) {
+			prikaz.add("-D" + ZALOHA + "=" + (new File(adresar, JAR).isFile() ? ZALOHA_POSKOZENY : ZALOHA_CHYBI));
+		}
+	}
+
+	/** Jar s manifestem, který říká, co spustit. */
+	static boolean jeSpustitelny(final File jar) {
+		try (JarFile jf = new JarFile(jar)) {
+			final Manifest manifest = jf.getManifest();
+			return manifest != null && manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS) != null;
+		} catch (final IOException | RuntimeException e) {
+			return false;
+		}
+	}
+
+	/** Stažená nová verze nahradí starou, ta zůstane jako .bak, když jde spustit. */
 	static void vymenJar(final File adresar) throws IOException {
 		final Path nova = new File(adresar, JAR + ".new").toPath();
 		if (!Files.isRegularFile(nova)) {
@@ -179,7 +225,12 @@ public final class Start {
 		}
 		final Path jar = new File(adresar, JAR).toPath();
 		if (Files.exists(jar)) {
-			Files.move(jar, new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			// Poškozený jar nesmí přepsat funkční zálohu.
+			if (jeSpustitelny(jar.toFile())) {
+				Files.move(jar, new File(adresar, JAR + ".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			} else {
+				Files.delete(jar);
+			}
 		}
 		Files.move(nova, jar);
 	}
@@ -194,11 +245,14 @@ public final class Start {
 		return javaExe.isFile() ? javaExe : new File(bin, "java");
 	}
 
-	/** Paměť z nastavení, jinak polovina fyzické paměti, nejméně 1 GB a nejvýš 3 GB. */
+	/** Paměť z nastavení, jinak polovina fyzické paměti, nejméně 1 GB a nejvýš 3 GB, od 16 GB počítače (15 GB hlášené paměti) 4 GB. */
 	static int pametMb(final File nastaveni, final long fyzickaMb) {
 		final int zNastaveni = pametZNastaveni(nastaveni);
 		if (zNastaveni >= 256) {
 			return zNastaveni;
+		}
+		if (fyzickaMb >= PRAH_VELKA_PAMET_MB) {
+			return VELKA_PAMET_MB;
 		}
 		return (int) Math.max(MIN_PAMET_MB, Math.min(MAX_PAMET_MB, fyzickaMb / 2));
 	}

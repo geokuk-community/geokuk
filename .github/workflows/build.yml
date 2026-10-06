@@ -41,9 +41,28 @@ jobs:
           else
             VERZE="$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)-dev.$GITHUB_RUN_NUMBER"
           fi
-          ./mvnw -B clean package -Dgeokuk.version="$VERZE" -Dgeokuk.commit="${GITHUB_SHA::7}"
+          ./mvnw -B clean org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent verify org.jacoco:jacoco-maven-plugin:0.8.12:report -Dgeokuk.version="$VERZE" -Dgeokuk.commit="${GITHUB_SHA::7}"
           mv target/geokuk-*.jar target/geokuk.jar
           mv target/temporary-start.jar target/start.jar
+
+      - name: Pokrytí testy
+        if: always()
+        run: |
+          [ -f target/site/jacoco/jacoco.csv ] || exit 0
+          awk -F, 'NR > 1 { lm += $8; lc += $9; bm += $6; bc += $7 } END {
+            printf "### Pokrytí testy\n\n| | pokryto |\n|---|---|\n| řádky | %.1f %% (%d z %d) |\n| větve | %.1f %% (%d z %d) |\n",
+              100 * lc / (lc + lm), lc, lc + lm, 100 * bc / (bc + bm), bc, bc + bm }' target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Pokrytí, SpotBugs a rozdíly snímků jako artefakt
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pokryti-a-spotbugs
+          path: |
+            target/site/jacoco/
+            target/spotbugsXml.xml
+            target/golden/
+          if-no-files-found: ignore
 
       - name: Jar jako artefakt
         uses: actions/upload-artifact@v7
@@ -105,7 +124,6 @@ jobs:
           Copy-Item geokuk.jar, start.jar, distribuce/windows/geokuk.ico GeoKuk/program/
           Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt, LICENSE, THIRD-PARTY.txt GeoKuk/
           New-Item -ItemType Directory GeoKuk/data | Out-Null
-          Copy-Item priklady/mapy -Destination GeoKuk/data/mapy-priklady -Recurse
           GeoKuk/program/runtime/bin/java -version
           $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
           $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()

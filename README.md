@@ -47,7 +47,7 @@ data a nastavení zůstanou.
 
 Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
 (potřeba je Java 8 nebo novější). Když GeoKuk najde novou verzi,
-nabídne ji. Po volbě Stáhnout novou verzi nahradí `geokuk.jar`
+nabídne ji. Po volbě Aktualizovat nahradí `geokuk.jar`
 (předchozí zůstane jako `geokuk.jar.bak`) a nová verze se spustí při
 příštím spuštění. Paměť programu a restart po aktualizaci jsou jen
 v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
@@ -88,7 +88,7 @@ posune s ní, pod polem je výsledná cesta. Cesta mimo složku GeoKuk
 zůstává pevná.
 
 Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 až
-3 GB), změnit ji jde v Soubor > Paměť programu.
+3 GB, od 16 GB paměti počítače 4 GB), změnit ji jde v Soubor > Paměť programu.
 
 ### Přechod ze starší verze
 
@@ -120,8 +120,9 @@ postupu výše.
 Vlastní mapové podklady se zadávají ve složce `data/mapy`, každá mapa
 v samostatném souboru `<označení>.mapa`, a v menu Mapy jsou ve skupině
 „Uživatelské mapy“. Popis a příklady jsou v [`priklady/mapy`](priklady/mapy);
-zip pro Windows je obsahuje ve složce `data/mapy-priklady`. Mapu začnete
-používat zkopírováním jejího souboru do `data/mapy`.
+GeoKuk je při každém startu uloží do složky `data/mapy-priklady`
+a upravené ukázky tam přepíše. Mapu začnete používat zkopírováním jejího
+souboru do `data/mapy` a upravujte ji až tam.
 
 ## Dálkové ovládání
 

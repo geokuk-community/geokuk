@@ -4,6 +4,7 @@ import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.jeNovej
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.jePrechodNaStabilni;
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.nabidnout;
 import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.nejnovejsiVerze;
+import static cz.geokuk.core.napoveda.ZkontrolovatAktualizaceSwingWorker.tlacitka;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,6 +40,20 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 		Assert.assertFalse(jeNovejsi("6.0.0", "6.0.1-beta.1"));
 	}
 
+	/** Verze z odpovědi serveru jde do dialogu i do porovnání, neplatná se ignoruje. */
+	@Test
+	public void neplatneVerzeSeIgnoruji() {
+		Assert.assertEquals("6.0.0", nejnovejsiVerze("[{\"tag_name\": \"v<b>9</b>\"}, {\"tag_name\": \"v6.0.0\"}]"));
+		Assert.assertEquals("6.0.0", nejnovejsiVerze("[{\"tag_name\": \"v99999999999999999999.0.0\"}, {\"tag_name\": \"v6.0.0\"}]"));
+		Assert.assertNull(nejnovejsiVerze("[{\"tag_name\": \"<html>\"}]"));
+		Assert.assertEquals("6.3.0-beta.2", nejnovejsiVerze("[{\"tag_name\": \"v6.3.0-beta.2\"}, {\"tag_name\": \"v6.3.0-beta.1\"}]"));
+	}
+
+	@Test
+	public void obriCisloVeVerziNepadne() {
+		Assert.assertTrue(jeNovejsi("6.0.99999999999999999999", "6.0.0"));
+	}
+
 	@Test
 	public void nejnovejsiZeSeznamu() {
 		final String json = "[{\"tag_name\": \"v6.0.1-beta.1\"}, {\"tag_name\": \"v6.0.1-beta.2\"}, {\"tag_name\": \"v6.0.0\"}]";
@@ -71,5 +86,20 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 		Assert.assertFalse(jePrechodNaStabilni("6.2.0", "6.2.0-beta.8", false));
 		Assert.assertFalse(jePrechodNaStabilni("6.0.0", "6.0.1", false));
 		Assert.assertFalse(jePrechodNaStabilni("6.2.0-beta.7", "6.2.0-beta.8", false));
+	}
+
+	@Test
+	public void tlacitkaNoveVerze() {
+		Assert.assertArrayEquals(new Object[] { "Aktualizovat", "Zobrazit na webu", "Připomenout za týden" }, tlacitka(false));
+		Assert.assertArrayEquals(new Object[] { "Přejít na stabilní verzi", "Zobrazit na webu", "Zůstat u testovací verze" }, tlacitka(true));
+	}
+
+	@Test
+	public void indexyTlacitek() {
+		Assert.assertEquals("Aktualizovat", tlacitka(false)[ZkontrolovatAktualizaceSwingWorker.AKTUALIZOVAT]);
+		Assert.assertEquals("Zobrazit na webu", tlacitka(false)[ZkontrolovatAktualizaceSwingWorker.WEB]);
+		Assert.assertEquals("Připomenout za týden", tlacitka(false)[ZkontrolovatAktualizaceSwingWorker.POZDEJI]);
+		Assert.assertEquals("Přejít na stabilní verzi", tlacitka(true)[ZkontrolovatAktualizaceSwingWorker.AKTUALIZOVAT]);
+		Assert.assertEquals("Zůstat u testovací verze", tlacitka(true)[ZkontrolovatAktualizaceSwingWorker.POZDEJI]);
 	}
 }

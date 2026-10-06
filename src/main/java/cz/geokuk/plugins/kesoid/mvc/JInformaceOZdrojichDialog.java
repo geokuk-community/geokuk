@@ -1,133 +1,30 @@
 package cz.geokuk.plugins.kesoid.mvc;
 
-import javax.swing.Box;
-import javax.swing.JScrollPane;
-import javax.swing.table.TableColumn;
+import java.awt.Component;
+import java.awt.event.*;
 
-import org.jdesktop.swingx.JXTreeTable;
-import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
+import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.JMyDialog0;
 import cz.geokuk.plugins.kesoid.KesBag;
-import cz.geokuk.plugins.kesoid.importek.InformaceOZdroji;
-import cz.geokuk.util.lang.FString;
+import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 
 public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventReceiverRegistrationInit {
 
-	private class Model extends AbstractTreeTableModel {
-		public Model() {
-			super(vsechny.getInformaceOZdrojich().getRoot());
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see javax.swing.table.AbstractTableModel#getColumnClass(int)
-		 */
-		@Override
-		public Class<?> getColumnClass(final int col) {
-			Class<?> r = String.class;
-			switch (col) {
-			case 1:
-				r = Boolean.class;
-				break;
-			case 2:
-				r = String.class;
-				break;
-			case 3:
-				r = Integer.class;
-				break;
-			case 4:
-				r = Integer.class;
-				break;
-			}
-			return r;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see javax.swing.table.TableModel#getColumnCount()
-		 */
-		@Override
-		public int getColumnCount() {
-			return 4;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see javax.swing.table.AbstractTableModel#getColumnName(int)
-		 */
-		@Override
-		public String getColumnName(final int col) {
-			String r = "";
-			switch (col) {
-			case 0:
-				r = "Zdroj";
-				break;
-			case 1:
-				r = "Načíst";
-				break;
-			case 2:
-				r = "WP braných";
-				break;
-			case 3:
-				r = "WP celkem";
-				break;
-			}
-			return r;
-		}
+	/** První sloupec: odsazení podle hloubky a ikona rozbalení. */
+	private class ZdrojRenderer extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 1L;
 
 		@Override
-		public Object getChild(final Object parent, final int index) {
-			final InformaceOZdroji p = (InformaceOZdroji) parent;
-			return p.getChildren().get(index);
-		}
-
-		@Override
-		public int getChildCount(final Object parent) {
-			return ((InformaceOZdroji) parent).getChildren().size();
-		}
-
-		@Override
-		public int getIndexOfChild(final Object parent, final Object child) {
-			return ((InformaceOZdroji) parent).getChildren().indexOf(child);
-		}
-
-		@Override
-		public Object getValueAt(final Object o, final int i) {
-			if (o == null) {
-				return null;
-			}
-			final InformaceOZdroji ioz = (InformaceOZdroji) o;
-
-			switch (i) {
-			case 0:
-				if (vsechny.getInformaceOZdrojich().getRoot() == ioz) {
-					return "1:" + ioz.jmenoZdroje.getFile().getAbsolutePath();
-				}
-				return FString.text(ioz.getDisplayName() + (kesoidModel.jeZamcena(ioz.jmenoZdroje) ? " – čeká na dokončení zápisu" : ""));
-			case 1:
-				return kesoidModel.maSeNacist(ioz.jmenoZdroje);
-			case 2:
-				return ioz.getPocetWaypointuBranychSDetmi();
-			case 3:
-				return ioz.getPocetWaypointuCelkemSDetmi();
-			}
-			return null;
-		}
-
-		@Override
-		public boolean isCellEditable(final Object node, final int column) {
-			return column == 1;
-		}
-
-		@Override
-		public void setValueAt(final Object value, final Object node, final int col) {
-			final InformaceOZdroji ioz = (InformaceOZdroji) node;
-			kesoidModel.setNacitatSoubor(ioz.jmenoZdroje, (Boolean) value);
+		public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+			final StromZdrojuModel.Radek radek = model.getRadek(row);
+			setIcon(radek.maDeti() ? UIManager.getIcon(model.jeRozbaleny(row) ? "Tree.expandedIcon" : "Tree.collapsedIcon") : null);
+			setBorder(BorderFactory.createEmptyBorder(0, odsazeni(radek) + (radek.maDeti() ? 0 : sirkaIkony()), 0, 0));
+			return this;
 		}
 	}
 
@@ -135,14 +32,18 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 
 	// private final InformaceOZdrojich iInformaceOZdrojich;
 
-	private JXTreeTable jTable;
+	private JTable jTable;
+
+	private StromZdrojuModel model;
 
 	private KesoidModel kesoidModel;
 
 	private KesBag vsechny;
+	private InformaceOZdrojich nacitaneZdroje;
+	private static final String TITULEK = "Přehled zdrojů kešoidů";
 
 	public JInformaceOZdrojichDialog() {
-		setTitle("Přehled zdrojů kešoidů");
+		setTitle(TITULEK);
 	}
 
 	/*
@@ -190,16 +91,57 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 
 	public void onEvent(final KeskyNactenyEvent event) {
 		vsechny = event.getVsechny();
-		invalidate();
-		if (jTable != null) {
-			jTable.repaint();
+		nacitaneZdroje = null;
+		setTitle(TITULEK);
+		if (model != null) {
+			model.setKoren(vsechny.getInformaceOZdrojich().getRoot());
 		}
+		invalidate();
+		pack();
+	}
+
+	public void onEvent(final NacitaneZdrojeEvent event) {
+		if (vsechny != null) {
+			return;
+		}
+		nacitaneZdroje = event.getZdroje();
+		setTitle(TITULEK + " – načítá se");
+		if (model != null) {
+			model.setKoren(nacitaneZdroje.getRoot());
+		}
+		invalidate();
 		pack();
 	}
 
 	public void onEvent(final KesoidUmisteniSouboruChangedEvent event) {
 		// Není to pravda, když jich míme více
 		// setTitle("Přehled zdrojů kešoidů: \""+event.getUmisteniSouboru().getKesDir().getEffectiveFile()+ "\"");
+	}
+
+	private void pridejKlavesu(final int klavesa, final String jmeno, final boolean rozbalit) {
+		jTable.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(klavesa, 0), jmeno);
+		jTable.getActionMap().put(jmeno, new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				final int radek = jTable.getSelectedRow();
+				if (radek >= 0) {
+					model.setRozbaleny(radek, rozbalit);
+					jTable.setRowSelectionInterval(radek, radek);
+				}
+			}
+		});
+	}
+
+	private int sirkaIkony() {
+		// Ikony se čtou až při použití, aby po změně vzhledu odpovídaly novému vzhledu.
+		final Icon sbaleno = UIManager.getIcon("Tree.collapsedIcon");
+		return Math.max(sbaleno == null ? 0 : sbaleno.getIconWidth(), 12) + 4;
+	}
+
+	private int odsazeni(final StromZdrojuModel.Radek radek) {
+		return 2 + radek.hloubka * sirkaIkony();
 	}
 
 	@Override
@@ -211,9 +153,34 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 	protected void initComponents() {
 		final Box box = Box.createVerticalBox();
 
-		jTable = new JXTreeTable(new Model());
-		// jTable.setPreferredScrollableViewportSize(new Dimension(600, 70));
+		model = new StromZdrojuModel(kesoidModel::maSeNacist, kesoidModel::jeZamcena, kesoidModel::setNacitatSoubor);
+		if (vsechny != null) {
+			model.setKoren(vsechny.getInformaceOZdrojich().getRoot());
+		} else if (nacitaneZdroje != null) {
+			model.setKoren(nacitaneZdroje.getRoot());
+		}
+		jTable = new JTable(model);
 		jTable.setFillsViewportHeight(true);
+		jTable.setRowSelectionAllowed(true);
+		jTable.getColumnModel().getColumn(0).setCellRenderer(new ZdrojRenderer());
+		jTable.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(final MouseEvent e) {
+				final int radek = jTable.rowAtPoint(e.getPoint());
+				if (radek < 0 || jTable.columnAtPoint(e.getPoint()) != 0) {
+					return;
+				}
+				final int x = e.getX() - jTable.getCellRect(radek, 0, false).x - odsazeni(model.getRadek(radek));
+				final boolean naIkone = x >= 0 && x < sirkaIkony();
+				// Na ikoně přepíná už první kliknutí, druhé kliknutí dvojkliku by rozbalení hned vrátilo.
+				if (naIkone ? e.getClickCount() == 1 : e.getClickCount() == 2) {
+					model.setRozbaleny(radek, !model.jeRozbaleny(radek));
+					jTable.setRowSelectionInterval(radek, radek);
+				}
+			}
+		});
+		pridejKlavesu(KeyEvent.VK_RIGHT, "rozbalit", true);
+		pridejKlavesu(KeyEvent.VK_LEFT, "sbalit", false);
 
 		// Create the scroll pane and add the table to it.
 		final JScrollPane scrollPane = new JScrollPane(jTable);

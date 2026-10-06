@@ -68,7 +68,7 @@ public class KeyTree<K, D> {
 		root.print("");
 	}
 
-	void add(final D data, @SuppressWarnings("unchecked") final K... keys) {
+	void add(final D data, final K[] keys) {
 		add(data, Arrays.asList(keys));
 	}
 
@@ -76,7 +76,7 @@ public class KeyTree<K, D> {
 		root.add(data, keys);
 	}
 
-	void remove(@SuppressWarnings("unchecked") final K... keys) {
+	void remove(final K[] keys) {
 		remove(Arrays.asList(keys));
 	}
 

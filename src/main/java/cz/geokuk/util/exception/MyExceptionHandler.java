@@ -26,8 +26,9 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 	@Override
 	public void uncaughtException(final Thread vlakno, final Throwable t) {
 		try {
-			if (t instanceof OutOfMemoryError) {
-				zpracujMaloPameti((OutOfMemoryError) t);
+			final OutOfMemoryError oome = najdiOom(t);
+			if (oome != null) {
+				zpracujMaloPameti(oome);
 			}
 			final AExcId excId = FExceptionDumper.dump(t, EExceptionSeverity.DISPLAY, "Neošetřená chyba ve vlákně " + vlakno.getName());
 			System.err.println("Exception: " + excId);
@@ -36,6 +37,18 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 			t.printStackTrace();
 			tt.printStackTrace();
 		}
+	}
+
+	/** Došlá paměť i tehdy, když ji vlákno na pozadí zabalilo do jiné výjimky. */
+	public static OutOfMemoryError najdiOom(final Throwable t) {
+		// Bez alokace, paměť už došla; limit hloubky chrání před zacyklenými příčinami.
+		int hloubka = 0;
+		for (Throwable x = t; x != null && hloubka < 100; x = x.getCause(), hloubka++) {
+			if (x instanceof OutOfMemoryError) {
+				return (OutOfMemoryError) x;
+			}
+		}
+		return null;
 	}
 
 	private void zpracujMaloPameti(final OutOfMemoryError oome) {

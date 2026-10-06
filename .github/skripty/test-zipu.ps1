@@ -1,4 +1,4 @@
-# Zkouška hotového zipu pro Windows: rozbalí ho, spustí přes GeoKuk-prvni-spusteni.cmd a start.jar a ověří složku data,
+# Zkouška hotového zipu pro Windows: zkontroluje jeho obsah, rozbalí ho, spustí přes GeoKuk-prvni-spusteni.cmd a start.jar a ověří složku data,
 # výměnu staženého jaru, paměť, zástupce ve složce a jeho opravu po přesunu, restart po aktualizaci a upozornění na nevhodné umístění.
 param([string]$Zip = "GeoKuk-windows.zip")
 
@@ -119,6 +119,10 @@ function ZapsanoMimo([datetime]$od, [string]$slozka) {
 
 # 1. Obvyklé spuštění z rozbaleného zipu, včetně výměny jaru staženého aktualizací.
 $slozka = Rozbal (Join-Path $koren "obvykle")
+foreach ($f in "LICENSE", "THIRD-PARTY.txt", "CTIMNE.txt", "GeoKuk-prvni-spusteni.cmd") {
+    Ocekavej (Test-Path (Join-Path $slozka $f)) "zip obsahuje $f"
+}
+Ocekavej (-not (Test-Path (Join-Path $slozka "data\mapy"))) "zip neobsahuje data\mapy (ukázky by se načetly jako mapy)"
 $predSpustenim = Get-Date
 $registrPred = Registr
 Copy-Item (Join-Path $slozka "program\geokuk.jar") (Join-Path $slozka "program\geokuk.jar.new")
@@ -141,7 +145,8 @@ try {
 
     $xmx = [regex]::Match($beh.Proces.CommandLine, "-Xmx(\d+)m")
     $ram = [long]((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1MB)
-    $cekana = [math]::Min(3072, [math]::Max(1024, [math]::Floor($ram / 2)))
+    # Stejné pravidlo jako Start.pametMb: od ~15 GB hlášené paměti 4 GB, jinak polovina v rozmezí 1 až 3 GB.
+    $cekana = if ($ram -ge 15360) { 4096 } else { [math]::Min(3072, [math]::Max(1024, [math]::Floor($ram / 2))) }
     Ocekavej ($xmx.Success -and [math]::Abs([int]$xmx.Groups[1].Value - $cekana) -le 64) "paměť $($xmx.Value) odpovídá polovině RAM $ram MB v mezích 1–3 GB (čekáno $cekana)"
     $souhrn.Add("| Paměť | $($xmx.Value), RAM $ram MB |")
     $javaw = Join-Path $slozka "program\runtime\bin\javaw.exe"
@@ -150,9 +155,13 @@ try {
     Ocekavej ($lnk -and $lnk.TargetPath -eq $javaw -and $lnk.Arguments -like "*$(Join-Path $slozka 'program\start.jar')*" -and $lnk.WorkingDirectory -eq (Join-Path $slozka "program")) `
         "ve složce vznikl zástupce GeoKuk.lnk: $($lnk.TargetPath) $($lnk.Arguments)"
 
-    foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni") {
+    foreach ($d in "data\tmp", "data\log\geokuk.log", "data\gpx", "data\ikony\moje", "data\ikony\ostatni", "data\mapy") {
         Ocekavej (Test-Path (Join-Path $slozka $d)) "vzniklo $d"
     }
+    $priklady = @(Get-ChildItem "priklady\mapy\*.mapa" | ForEach-Object Name | Sort-Object)
+    $ukazky = @(Get-ChildItem (Join-Path $slozka "data\mapy-priklady") -Filter "*.mapa" -ErrorAction SilentlyContinue | ForEach-Object Name | Sort-Object)
+    Ocekavej ($priklady.Count -gt 0 -and ($priklady -join ",") -eq ($ukazky -join ",")) "vznikly ukázky map v data\mapy-priklady: $($ukazky -join ', ')"
+    Ocekavej (@(Get-ChildItem (Join-Path $slozka "data\mapy")).Count -eq 0) "data\mapy po startu zůstala prázdná"
     Ocekavej (Konec $o $beh) "program po Soubor > Konec skončil"
     $xml = [xml](Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml"))
     Ocekavej ($null -ne $xml.preferences.root) "data\nastaveni.xml je po ukončení platné"
@@ -218,7 +227,7 @@ try {
     $o = Ovladani $puvodni
     $lnk = Cekej 60 { Zastupce (Join-Path $puvodni "GeoKuk.lnk") }
     Ocekavej ($null -ne $lnk) "před přesunem vznikl zástupce"
-    $ulozeno = Cekej 30 { (Get-Content -Raw -Encoding utf8 (Join-Path $puvodni "data\nastaveni.xml")) -like "*zastupcePro*" }
+    $ulozeno = Cekej 90 { (Get-Content -Raw -Encoding utf8 (Join-Path $puvodni "data\nastaveni.xml")) -like "*zastupcePro*" }
     Ocekavej ($ulozeno -eq $true) "GeoKuk si uložil, pro kterou složku zástupce vytvořil"
     Ocekavej (Konec $o $beh) "program před přesunem skončil"
     Copy-Item (Join-Path $puvodni "GeoKuk.lnk") $naPlose
@@ -237,6 +246,8 @@ try {
     Ocekavej ($null -ne $veSlozce) "zástupce ve složce po přesunu vede na $javaw"
     $kopie = Cekej 30 { $z = Zastupce $naPlose; if ($z.TargetPath -eq $javaw) { $z } }
     Ocekavej ($null -ne $kopie) "zástupce na ploše po přesunu opraven: $((Zastupce $naPlose).TargetPath)"
+    # Složku pro zástupce si program uloží až po doběhnutí PowerShellu na pozadí.
+    Cekej 90 { -not (Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml")).Contains($puvodni) } | Out-Null
     Ocekavej (Konec $o $beh) "program po přesunu skončil"
     $nastaveni = Get-Content -Raw -Encoding utf8 (Join-Path $slozka "data\nastaveni.xml")
     Ocekavej (-not $nastaveni.Contains($puvodni)) "nastavení po přesunu neodkazuje na původní složku"

@@ -24,11 +24,12 @@ public class StartTest {
 	@Test
 	public void vymeniStazenyJar() throws Exception {
 		final File d = tmp.getRoot();
-		zapis(new File(d, "geokuk.jar"), "stary");
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		final byte[] stary = Files.readAllBytes(new File(d, "geokuk.jar").toPath());
 		zapis(new File(d, "geokuk.jar.new"), "novy");
 		Start.vymenJar(d);
 		Assert.assertEquals("novy", cti(new File(d, "geokuk.jar")));
-		Assert.assertEquals("stary", cti(new File(d, "geokuk.jar.bak")));
+		Assert.assertArrayEquals(stary, Files.readAllBytes(new File(d, "geokuk.jar.bak").toPath()));
 		Assert.assertFalse(new File(d, "geokuk.jar.new").exists());
 	}
 
@@ -42,11 +43,18 @@ public class StartTest {
 	}
 
 	@Test
-	public void pametPolovinaRamMezi1A3Gb() {
+	public void pametPolovinaRamMezi1A3GbAOd16GbRam4Gb() {
 		final File nic = new File(tmp.getRoot(), "neni.xml");
 		Assert.assertEquals(1024, Start.pametMb(nic, 1024));
 		Assert.assertEquals(2048, Start.pametMb(nic, 4096));
-		Assert.assertEquals(3072, Start.pametMb(nic, 32768));
+		Assert.assertEquals(3072, Start.pametMb(nic, 6144));
+		Assert.assertEquals(3072, Start.pametMb(nic, 8192));
+		Assert.assertEquals(3072, Start.pametMb(nic, 12000));
+		Assert.assertEquals(3072, Start.pametMb(nic, 15000));
+		Assert.assertEquals(4096, Start.pametMb(nic, 16076));
+		Assert.assertEquals(4096, Start.pametMb(nic, 16379));
+		Assert.assertEquals(4096, Start.pametMb(nic, 24000));
+		Assert.assertEquals(4096, Start.pametMb(nic, 32768));
 	}
 
 	@Test
@@ -176,6 +184,17 @@ public class StartTest {
 	}
 
 	@Test
+	public void chybaVymenyJeVLogu() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "stary".getBytes());
+		Start.vyberJar(d, a -> {
+			throw new java.nio.file.AccessDeniedException("geokuk.jar.new");
+		});
+		final String log = new String(Files.readAllBytes(new File(d, "data/log/start.log").toPath()), java.nio.charset.StandardCharsets.UTF_8);
+		Assert.assertTrue(log, log.contains("Výměna geokuk.jar selhala") && log.contains("geokuk.jar.new"));
+	}
+
+	@Test
 	public void kdyzJarChybiSpustiBak() throws Exception {
 		final File d = tmp.newFolder();
 		Files.write(new File(d, "geokuk.jar.bak").toPath(), "predchozi".getBytes());
@@ -199,5 +218,73 @@ public class StartTest {
 		Files.write(new File(d, "geokuk.jar.new").toPath(), "novy".getBytes());
 		final File jar = Start.vyberJar(d, Start::vymenJar);
 		Assert.assertEquals("novy", new String(Files.readAllBytes(jar.toPath())));
+	}
+
+	@Test
+	public void poskozenyJarSpustiBak() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar.new").toPath(), "useknutý".getBytes());
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		Assert.assertEquals(new File(d, "geokuk.jar.bak"), Start.vyberJar(d, Start::vymenJar));
+	}
+
+	@Test
+	public void spustitelnyJarSeSpusti() throws Exception {
+		final File d = tmp.newFolder();
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		Assert.assertEquals(new File(d, "geokuk.jar"), Start.vyberJar(d, Start::vymenJar));
+	}
+
+	@Test
+	public void poskozenyJarNeprepiseZalohu() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "useknutý".getBytes());
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final byte[] zaloha = Files.readAllBytes(new File(d, "geokuk.jar.bak").toPath());
+		spustitelnyJar(new File(d, "geokuk.jar.new"));
+		Start.vymenJar(d);
+		Assert.assertArrayEquals(zaloha, Files.readAllBytes(new File(d, "geokuk.jar.bak").toPath()));
+		Assert.assertTrue(Start.jeSpustitelny(new File(d, "geokuk.jar")));
+		Assert.assertFalse(new File(d, "geokuk.jar.new").exists());
+	}
+
+	@Test
+	public void zalohaPoskozenehoJaruSeOhlasi() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "useknutý".getBytes());
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejZalohu(prikaz, d, Start.vyberJar(d, Start::vymenJar));
+		Assert.assertEquals(Collections.singletonList("-Dgeokuk.zaloha=poskozeny"), prikaz);
+	}
+
+	@Test
+	public void zalohaChybejicihoJaruSeOhlasi() throws Exception {
+		final File d = tmp.newFolder();
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejZalohu(prikaz, d, Start.vyberJar(d, Start::vymenJar));
+		Assert.assertEquals(Collections.singletonList("-Dgeokuk.zaloha=chybi"), prikaz);
+	}
+
+	@Test
+	public void beznySpustNicNeohlasi() throws Exception {
+		final File d = tmp.newFolder();
+		spustitelnyJar(new File(d, "geokuk.jar"));
+		spustitelnyJar(new File(d, "geokuk.jar.bak"));
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejZalohu(prikaz, d, Start.vyberJar(d, Start::vymenJar));
+		Assert.assertTrue(prikaz.isEmpty());
+	}
+
+	private static void spustitelnyJar(final File f) throws Exception {
+		final java.util.jar.Manifest m = new java.util.jar.Manifest();
+		m.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+		m.getMainAttributes().put(java.util.jar.Attributes.Name.MAIN_CLASS, "cz.geokuk.Hlavni");
+		try (java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(new java.io.FileOutputStream(f), m)) {
+			out.putNextEntry(new java.util.zip.ZipEntry("a.txt"));
+			out.write(1);
+		}
 	}
 }

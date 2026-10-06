@@ -121,13 +121,20 @@ public class ZamcenaDatabazeNezdrziTest {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});
 		final KesoidModel model = new KesoidModel() {
+			// Bez EventFireru by události z vlákna načítání spadly na EDT.
+			@Override
+			public void fire(final cz.geokuk.framework.Event0<?> udalost) {}
+
 			@Override
 			public GccomNick getGccomNick() {
 				return new GccomNick("Ja", 42);
 			}
 
 			@Override
-			public void zaradGsakDatabaze(final Set<File> databaze) {}
+			public void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {}
+
+			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {}
 
 			@Override
 			public KesBag getVsechnyKesoidy() {
