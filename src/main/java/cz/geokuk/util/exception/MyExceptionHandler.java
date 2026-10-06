@@ -40,7 +40,7 @@ public class MyExceptionHandler implements UncaughtExceptionHandler {
 	}
 
 	/** Došlá paměť i tehdy, když ji vlákno na pozadí zabalilo do jiné výjimky. */
-	static OutOfMemoryError najdiOom(final Throwable t) {
+	public static OutOfMemoryError najdiOom(final Throwable t) {
 		// Bez alokace, paměť už došla; limit hloubky chrání před zacyklenými příčinami.
 		int hloubka = 0;
 		for (Throwable x = t; x != null && hloubka < 100; x = x.getCause(), hloubka++) {

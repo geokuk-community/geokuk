@@ -6,10 +6,13 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import cz.geokuk.core.program.PametProgramuAction;
+import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MySwingWorker0;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.util.exception.MyExceptionHandler;
 import cz.geokuk.util.index2d.BoundingRect;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +47,10 @@ public class MultiNacitacSwingWorker extends MySwingWorker0<KesBag, Void> {
 		return multiNacitac.nacti(this, iGenom);
 	}
 
+	protected void ohlasMaloPameti(final String text) {
+		Dlg.error(text);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -54,7 +61,18 @@ public class MultiNacitacSwingWorker extends MySwingWorker0<KesBag, Void> {
 		if (isCancelled()) {
 			return;
 		}
-		final KesBag result = get();
+		final KesBag result;
+		try {
+			result = get();
+		} catch (final ExecutionException e) {
+			if (MyExceptionHandler.najdiOom(e) != null) {
+				// Zobrazená data zůstanou, program se kvůli přenačtení neukončí.
+				log.error("Načítání keší selhalo, došla paměť.", e);
+				ohlasMaloPameti("Na načtení keší nestačí paměť programu, zůstala původní data.\n" + PametProgramuAction.jakZvysitPamet());
+				return;
+			}
+			throw e;
+		}
 		if (result == null) {
 			return; // asi zkanclváno
 		}
