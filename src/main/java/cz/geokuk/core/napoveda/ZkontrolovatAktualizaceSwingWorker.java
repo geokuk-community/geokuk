@@ -17,7 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, Void> {
 
-	private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
+	/** Jen platné verze (6.3.0, 6.3.0-beta.2), aby z odpovědi serveru nic jiného neskončilo v dialogu ani v porovnání. */
+	private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?(\\d{1,4}(?:\\.\\d{1,4}){1,3}[a-z]?(?:-[0-9A-Za-z.]{1,24})?)\"");
 
 	private boolean zobrazitDialogPriPosledniVerzi;
 	private final NapovedaModel napovedaModel;
@@ -99,7 +100,7 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 	}
 
 	private static int[] cislaVerze(final String verze) {
-		return Arrays.stream(verze.split("\\D+")).filter(s -> !s.isEmpty()).mapToInt(Integer::parseInt).toArray();
+		return Arrays.stream(verze.split("\\D+")).filter(s -> !s.isEmpty()).mapToInt(c -> c.length() > 9 ? Integer.MAX_VALUE : Integer.parseInt(c)).toArray();
 	}
 
 	@Override

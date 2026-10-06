@@ -211,7 +211,11 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		try (InputStream in = otevri(zakladUrl + VerzeJavy.SOUBOR)) {
 			final Properties p = new Properties();
 			p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
-			return p.getProperty("minimalni");
+			final String minimalni = p.getProperty("minimalni");
+			if (minimalni == null || minimalni.trim().isEmpty()) {
+				throw new IOException("v souboru " + VerzeJavy.SOUBOR + " chybí nejnižší Java");
+			}
+			return minimalni;
 		} catch (final IOException e) {
 			throw new IOException("Nepodařilo se zjistit, jakou Javu nová verze potřebuje: " + e.getMessage(), e);
 		}
