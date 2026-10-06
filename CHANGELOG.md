@@ -8,6 +8,8 @@
   aktuální stav.
 - Menší spotřeba paměti u velkých dat, i při přenačtení keší.
 - Rychlejší načítání keší.
+- Aktualizace: nová verze s neplatným číslem verze nebo bez údaje o nejnižší Javě
+  se nenabídne ani neinstaluje.
 - Windows: okno GeoKuku se spojí s ikonou připnutou na hlavním panelu (ze zástupce
   GeoKuku), místo druhé ikony.
 - Windows: při prvním spuštění GeoKuk nabídne zástupce v nabídce Start, aby šel

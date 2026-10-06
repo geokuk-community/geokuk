@@ -168,6 +168,22 @@ public class StahnoutAktualizaciSwingWorkerTest {
 	}
 
 	@Test
+	public void prazdneNeboChybejiciMinimalniSeNeinstaluje() throws Exception {
+		instaluj("geokuk.jar", "stary jar");
+		for (final String obsah : new String[] { "minimalni=\n", "doporucena=1.8\n" }) {
+			zapis("java.properties", obsah);
+			try {
+				StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
+				Assert.fail(obsah);
+			} catch (final IOException e) {
+				Assert.assertTrue(e.getMessage(), e.getMessage().contains("Javu"));
+			}
+			Assert.assertEquals("stary jar", obsah("geokuk.jar"));
+			Assert.assertFalse(new File(instalace, "geokuk.jar.new").exists());
+		}
+	}
+
+	@Test
 	public void nesouhlasPredPresunemNechaProgram() throws Exception {
 		instaluj("geokuk.jar", "stary jar");
 		instaluj("stazeny.part", "podvrzeny");

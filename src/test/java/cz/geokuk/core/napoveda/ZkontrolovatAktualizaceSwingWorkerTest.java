@@ -40,6 +40,20 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 		Assert.assertFalse(jeNovejsi("6.0.0", "6.0.1-beta.1"));
 	}
 
+	/** Verze z odpovědi serveru jde do dialogu i do porovnání, neplatná se ignoruje. */
+	@Test
+	public void neplatneVerzeSeIgnoruji() {
+		Assert.assertEquals("6.0.0", nejnovejsiVerze("[{\"tag_name\": \"v<b>9</b>\"}, {\"tag_name\": \"v6.0.0\"}]"));
+		Assert.assertEquals("6.0.0", nejnovejsiVerze("[{\"tag_name\": \"v99999999999999999999.0.0\"}, {\"tag_name\": \"v6.0.0\"}]"));
+		Assert.assertNull(nejnovejsiVerze("[{\"tag_name\": \"<html>\"}]"));
+		Assert.assertEquals("6.3.0-beta.2", nejnovejsiVerze("[{\"tag_name\": \"v6.3.0-beta.2\"}, {\"tag_name\": \"v6.3.0-beta.1\"}]"));
+	}
+
+	@Test
+	public void obriCisloVeVerziNepadne() {
+		Assert.assertTrue(jeNovejsi("6.0.99999999999999999999", "6.0.0"));
+	}
+
 	@Test
 	public void nejnovejsiZeSeznamu() {
 		final String json = "[{\"tag_name\": \"v6.0.1-beta.1\"}, {\"tag_name\": \"v6.0.1-beta.2\"}, {\"tag_name\": \"v6.0.0\"}]";
