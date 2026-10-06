@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Typy nálezů, které u desktopové aplikace nejsou chybou. -->
+<FindBugsFilter>
+	<Match>
+		<Bug category="MALICIOUS_CODE"/>
+	</Match>
+	<Match>
+		<Bug pattern="CT_CONSTRUCTOR_THROW,PA_PUBLIC_PRIMITIVE_ATTRIBUTE,SF_SWITCH_NO_DEFAULT,DM_EXIT"/>
+	</Match>
+</FindBugsFilter>

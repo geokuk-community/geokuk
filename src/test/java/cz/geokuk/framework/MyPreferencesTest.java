@@ -127,7 +127,7 @@ public class MyPreferencesTest {
 		assertThat(preferences.getFile("f", null)).isEqualTo(new File(cz.geokuk.core.program.FConst.KOREN.getAbsoluteFile(), "data/gpx/a.gpx"));
 		preferences.putFileCollection("c", Collections.singleton(soubor));
 		assertThat(preferences.get("c", null)).contains("${GeoKuk}/data/gpx/a.gpx");
-		assertThat(preferences.getFileCollection("c", null)).containsExactly(new File(cz.geokuk.core.program.FConst.KOREN.getAbsoluteFile(), "data/gpx/a.gpx"));
+		assertThat((Iterable<File>) preferences.getFileCollection("c", null)).containsExactly(new File(cz.geokuk.core.program.FConst.KOREN.getAbsoluteFile(), "data/gpx/a.gpx"));
 	}
 
 	/** Relativní cesta zadaná v Umístění souborů se uloží tak, aby po dalším startu mířila na stejné místo. */
