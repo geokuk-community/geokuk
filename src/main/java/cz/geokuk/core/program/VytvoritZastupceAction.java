@@ -19,11 +19,31 @@ public class VytvoritZastupceAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
 
+	/** Výstup PowerShellu jinak jde v kódování konzole (ve Windows česky CP852). */
+	private static final String UTF8_VYSTUP = "[Console]::OutputEncoding=New-Object Text.UTF8Encoding $false;";
+
+	/** Zapíše System.AppUserModel.ID do zástupce; Add-Type z proměnné prostředí, ať se nemusí uvozovky v příkazové řádce. */
+	static final String CSHARP = "using System;using System.Runtime.InteropServices;"
+			+ "public static class GkAumid{"
+			+ "[StructLayout(LayoutKind.Sequential)]public struct K{public uint a;public ushort b;public ushort c;public byte d0,d1,d2,d3,d4,d5,d6,d7;public uint pid;}"
+			+ "[StructLayout(LayoutKind.Explicit)]public struct V{[FieldOffset(0)]public ushort vt;[FieldOffset(8)]public IntPtr p;[FieldOffset(16)]public long pad;}"
+			+ "[ComImport,Guid(\"886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99\"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]public interface IPS{"
+			+ "[PreserveSig]int GetCount(out uint c);[PreserveSig]int GetAt(uint i,out K k);[PreserveSig]int GetValue(ref K k,out V v);[PreserveSig]int SetValue(ref K k,ref V v);[PreserveSig]int Commit();}"
+			+ "[ComImport,Guid(\"00021401-0000-0000-C000-000000000046\")]public class SL{}"
+			+ "[ComImport,Guid(\"0000010b-0000-0000-C000-000000000046\"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]public interface IPF{"
+			+ "void GetClassID(out Guid g);[PreserveSig]int IsDirty();void Load([MarshalAs(UnmanagedType.LPWStr)]string f,uint m);void Save([MarshalAs(UnmanagedType.LPWStr)]string f,bool r);void SaveCompleted(string f);void GetCurFile(out string f);}"
+			+ "[DllImport(\"propsys.dll\",CharSet=CharSet.Unicode)]static extern int PSGetPropertyKeyFromName(string n,out K k);"
+			+ "public static void Set(string lnk,string id){object o=new SL();((IPF)o).Load(lnk,2);var ps=(IPS)o;K k;int h=PSGetPropertyKeyFromName(\"System.AppUserModel.ID\",out k);if(h!=0)throw new Exception(\"PSGetPropertyKeyFromName \"+h);"
+			+ "V v=new V();v.vt=31;v.p=Marshal.StringToCoTaskMemUni(id);h=ps.SetValue(ref k,ref v);if(h!=0)throw new Exception(\"SetValue \"+h);h=ps.Commit();if(h!=0)throw new Exception(\"Commit \"+h);((IPF)o).Save(lnk,true);}}";
+
 	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
-	private static final String SKRIPT = "$ErrorActionPreference='Stop';"
+	static final String SKRIPT = UTF8_VYSTUP + "$ErrorActionPreference='Stop';"
+			// ID zástupce je navíc: když ho PowerShell nepovolí (zásady firemního počítače, antivir), zástupce vznikne bez něj a skript to ohlásí.
+			+ "$script:idOk=$false;if($env:GK_CS){try{Add-Type -TypeDefinition $env:GK_CS;$script:idOk=$true}catch{$script:idChyba=$_.Exception.Message}}"
 			+ "$sh=New-Object -ComObject WScript.Shell;"
 			+ "function Nastav($s){$s.TargetPath=$env:GK_JAVAW;$s.Arguments=$env:GK_ARGUMENTY;$s.WorkingDirectory=$env:GK_SLOZKA;"
-			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save()}"
+			+ "$s.IconLocation=$env:GK_IKONA+',0';$s.Description='GeoKuk';$s.Save();"
+			+ "if($env:GK_AUMID -and $script:idOk){try{[GkAumid]::Set($s.FullName,$env:GK_AUMID)}catch{$script:idOk=$false;$script:idChyba=$_.Exception.Message}}}"
 			+ "if($env:GK_KAM){foreach($kam in $env:GK_KAM.Split(';')){Nastav ($sh.CreateShortcut((Join-Path ([Environment]::GetFolderPath($kam)) 'GeoKuk.lnk')))}}"
 			+ "if($env:GK_SOUBOR){Nastav ($sh.CreateShortcut($env:GK_SOUBOR));Unblock-File -LiteralPath $env:GK_JAVAW -ErrorAction SilentlyContinue}"
 			// Zástupci na ploše, v nabídce Start a na hlavním panelu, kteří vedou do složky, odkud se GeoKuk přesunul.
@@ -31,10 +51,22 @@ public class VytvoritZastupceAction extends Action0 {
 			+ "foreach($d in @([Environment]::GetFolderPath('Desktop'),[Environment]::GetFolderPath('Programs'),"
 			+ "(Join-Path $env:APPDATA 'Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar'))){"
 			+ "if($d -and (Test-Path -LiteralPath $d)){Get-ChildItem -LiteralPath $d -Filter *.lnk -File|ForEach-Object{"
-			+ "$s=$sh.CreateShortcut($_.FullName);if($s.TargetPath -ieq $env:GK_STARY_JAVAW){Nastav $s;'Opraven '+$_.FullName}}}}}";
+			+ "$s=$sh.CreateShortcut($_.FullName);if($s.TargetPath -ieq $env:GK_STARY_JAVAW){Nastav $s;'Opraven '+$_.FullName}}}}}"
+			+ "if($env:GK_AUMID){if($script:idOk){'AUMID-OK'}else{'AUMID-CHYBA: '+$script:idChyba}}";
 
 	/** Program, pro který je zástupce ve složce s programem. */
 	private static final String ZASTUPCE_PRO_value = "zastupcePro";
+
+	/** Volba uživatele u nabídky zástupce do nabídky Start; ptá se jen dokud neodpověděl. */
+	private static final String NABIDKA_START_value = "nabidkaStart";
+
+	/** Zástupce ve složce s programem se zapsaným AppUserModelID; starší se jednou přepíše. */
+	private static final String ZASTUPCE_ID_value = "zastupceId";
+
+	private static final String ZASTUPCE_ID_NELZE = "nelze";
+
+	private static final String ID_OK = "AUMID-OK";
+	private static final String ID_CHYBA = "AUMID-CHYBA";
 
 	public VytvoritZastupceAction() {
 		super("Vytvořit zástupce...");
@@ -63,7 +95,7 @@ public class VytvoritZastupceAction extends Action0 {
 		final String program = FConst.JAR_DIR.getAbsolutePath();
 		final String puvodni = pref.get(ZASTUPCE_PRO_value, null);
 		final File zastupce = new File(FConst.KOREN, "GeoKuk.lnk");
-		if (program.equals(puvodni) && zastupce.isFile()) {
+		if (program.equals(puvodni) && zastupce.isFile() && pref.get(ZASTUPCE_ID_value, null) != null) {
 			return;
 		}
 		final Map<String, String> env = new HashMap<>();
@@ -73,8 +105,11 @@ public class VytvoritZastupceAction extends Action0 {
 		}
 		final Thread vlakno = new Thread(() -> {
 			try {
-				if (spust(env) == null) {
+				final Vysledek v = spust(env);
+				if (v.kod == 0) {
 					pref.put(ZASTUPCE_PRO_value, program);
+					// Když ID nešlo zapsat (zásady počítače), nezkouší se při každém startu znovu.
+					pref.put(ZASTUPCE_ID_value, v.text.contains(ID_OK) ? AppUserModelId.ID : ZASTUPCE_ID_NELZE);
 				}
 			} catch (final IOException e) {
 				log.warn("Zástupce ve složce s programem nelze vytvořit", e);
@@ -88,6 +123,45 @@ public class VytvoritZastupceAction extends Action0 {
 
 	static boolean lzeVytvorit() {
 		return System.getProperty("os.name", "").startsWith("Windows") && javaw().isFile() && new File(FConst.JAR_DIR, "start.jar").isFile();
+	}
+
+	/** Zda se má při startu nabídnout zástupce do nabídky Start; ne při automatizaci (parametr dálkového ovládání, headless), ať dialog nepřekáží. */
+	static boolean zeptatSe(final boolean lzeVytvorit, final String volba, final boolean zastupceVeStartuJe, final boolean automatizace) {
+		return lzeVytvorit && volba == null && !zastupceVeStartuJe && !automatizace;
+	}
+
+	private static File zastupceVeStartu() {
+		final String appdata = System.getenv("APPDATA");
+		return appdata == null ? null : new File(appdata, "Microsoft\\Windows\\Start Menu\\Programs\\GeoKuk.lnk");
+	}
+
+	/** Při prvním startu jednou nabídne zástupce do nabídky Start, aby šel GeoKuk připnout na hlavní panel. Nemodální, volba se uloží. */
+	public static void nabidniStart(final boolean automatizace) {
+		final MyPreferences pref = MyPreferences.current().node(FPref.VSEOBECNE_node);
+		final File zastupce = zastupceVeStartu();
+		if (!zeptatSe(lzeVytvorit(), pref.get(NABIDKA_START_value, null), zastupce != null && zastupce.isFile(), automatizace)) {
+			return;
+		}
+		final Object[] volby = { "Vytvořit", "Ne, díky" };
+		final JOptionPane pane = new JOptionPane("GeoKuk v nabídce Start?\nPůjde pak připnout na hlavní panel.", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, volby,
+				volby[0]);
+		final JDialog dialog = pane.createDialog(Dlg.parentFrame(), "GeoKuk – zástupce");
+		dialog.setModal(false);
+		pane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, e -> {
+			final Object hodnota = pane.getValue();
+			if (hodnota == JOptionPane.UNINITIALIZED_VALUE) {
+				return;
+			}
+			dialog.dispose();
+			// Zavření křížkem nic neukládá, zeptá se příště.
+			if (volby[0].equals(hodnota)) {
+				pref.put(NABIDKA_START_value, "ano");
+				vytvor(Collections.singletonList("Programs"));
+			} else if (volby[1].equals(hodnota)) {
+				pref.put(NABIDKA_START_value, "ne");
+			}
+		});
+		dialog.setVisible(true);
 	}
 
 	@Override
@@ -106,20 +180,27 @@ public class VytvoritZastupceAction extends Action0 {
 		if (plocha.isSelected()) {
 			kam.add("Desktop");
 		}
-		new SwingWorker<String, Void>() {
+		vytvor(kam);
+	}
+
+	private static void vytvor(final List<String> kam) {
+		new SwingWorker<Vysledek, Void>() {
 			@Override
-			protected String doInBackground() throws Exception {
+			protected Vysledek doInBackground() throws Exception {
 				return spust(Collections.singletonMap("GK_KAM", String.join(";", kam)));
 			}
 
 			@Override
 			protected void done() {
 				try {
-					final String chyba = get();
-					if (chyba == null) {
-						Dlg.info("Zástupce je vytvořený.", "Vytvořit zástupce");
+					final Vysledek v = get();
+					if (v.kod != 0) {
+						Dlg.error("Zástupce se nepodařilo vytvořit:\n" + (v.text.isEmpty() ? "PowerShell skončil s kódem " + v.kod : v.text));
+					} else if (!v.text.contains(ID_OK)) {
+						Dlg.upozorneni("Zástupce je vytvořený, ale PowerShell na tomto počítači nepovolil označit ho pro hlavní panel.\n"
+								+ "Po připnutí na hlavní panel se může ukázat druhá ikona.");
 					} else {
-						Dlg.error("Zástupce se nepodařilo vytvořit:\n" + chyba);
+						Dlg.info("Zástupce je vytvořený.", "Vytvořit zástupce");
 					}
 				} catch (final Exception ex) {
 					Dlg.error("Zástupce se nepodařilo vytvořit:\n" + ex);
@@ -128,15 +209,39 @@ public class VytvoritZastupceAction extends Action0 {
 		}.execute();
 	}
 
-	/** Vrátí popis chyby, nebo null. */
-	private static String spust(final Map<String, String> promenne) throws IOException, InterruptedException {
-		final ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", SKRIPT);
-		final Map<String, String> env = pb.environment();
-		env.putAll(promenne);
+	/** Výsledek skriptu; kód 0 je zástupce vytvořený, a když text obsahuje {@value #ID_OK}, i s AppUserModelID. */
+	private static Vysledek spust(final Map<String, String> promenne) throws IOException, InterruptedException {
+		final Map<String, String> env = new HashMap<>(promenne);
+		env.put("GK_CS", CSHARP);
+		env.put("GK_AUMID", AppUserModelId.ID);
 		env.put("GK_JAVAW", javaw().getAbsolutePath());
 		env.put("GK_ARGUMENTY", "-XX:-UsePerfData -jar \"" + new File(FConst.JAR_DIR, "start.jar").getAbsolutePath() + "\"");
 		env.put("GK_SLOZKA", FConst.JAR_DIR.getAbsolutePath());
 		env.put("GK_IKONA", new File(FConst.JAR_DIR, "geokuk.ico").getAbsolutePath());
+		final Vysledek v = powershell(SKRIPT, env);
+		if (v.kod != 0) {
+			log.warn("Zástupce nelze vytvořit ({}): {}", v.kod, v.text);
+		} else if (v.text.contains(ID_CHYBA)) {
+			log.warn("Zástupce vytvořen bez AppUserModelID, na hlavním panelu se může ukázat druhá ikona: {} {}", promenne, v.text);
+		} else {
+			log.info("Vytvořen zástupce: {} {}", promenne, v.text);
+		}
+		return v;
+	}
+
+	static final class Vysledek {
+		final int kod;
+		final String text;
+
+		Vysledek(final int kod, final String text) {
+			this.kod = kod;
+			this.text = text;
+		}
+	}
+
+	static Vysledek powershell(final String skript, final Map<String, String> promenne) throws IOException, InterruptedException {
+		final ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", skript);
+		pb.environment().putAll(promenne);
 		pb.redirectErrorStream(true);
 		final Process p = pb.start();
 		p.getOutputStream().close();
@@ -149,12 +254,6 @@ public class VytvoritZastupceAction extends Action0 {
 			}
 		}
 		final int kod = p.waitFor();
-		final String text = new String(vystup.toByteArray(), StandardCharsets.UTF_8).trim();
-		if (kod == 0) {
-			log.info("Vytvořen zástupce: {} {}", promenne, text);
-			return null;
-		}
-		log.warn("Zástupce nelze vytvořit ({}): {}", kod, text);
-		return text.isEmpty() ? "PowerShell skončil s kódem " + kod : text;
+		return new Vysledek(kod, new String(vystup.toByteArray(), StandardCharsets.UTF_8).trim());
 	}
 }

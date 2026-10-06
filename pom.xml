@@ -5,7 +5,7 @@
 
 	<groupId>cz.geokuk</groupId>
 	<artifactId>geokuk</artifactId>
-	<version>6.2.0</version>
+	<version>6.3.0</version>
 
 	<build>
 		<resources>
@@ -18,6 +18,10 @@
 					<include>LICENSE</include>
 					<include>THIRD-PARTY.txt</include>
 				</includes>
+			</resource>
+			<resource>
+				<directory>${project.basedir}/priklady/mapy</directory>
+				<targetPath>priklady/mapy</targetPath>
 			</resource>
 		</resources>
 		<plugins>
@@ -127,18 +131,17 @@
 			<version>2.21.0</version>
 		</dependency>
 
-		<!-- SwingX -->
-		<dependency>
-			<groupId>org.swinglabs.swingx</groupId>
-			<artifactId>swingx-all</artifactId>
-			<version>1.6.4</version>
-		</dependency>
-
 		<!-- Guava -->
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>33.4.8-jre</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
+			<version>5.14.0</version>
 		</dependency>
 
 		<dependency>

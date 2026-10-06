@@ -145,6 +145,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zobrazeniKesiAutomatickyAction, zobrazeniKesi);
 		item(akce.zobrazeniKesiIkonyAction, zobrazeniKesi);
 		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
+		item(akce.limityKresleniAction);
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
 		item(akce.popiskyOnAction);
@@ -243,7 +244,6 @@ public class Menu extends MenuStrujce {
 
 		// Look&Feel
 		getMenuBar().add(LafSupport.getLafMenu());
-		LafSupport.setFrame(jMainFrame);
 		///// Nápověda
 
 		final JMenuIkony menuIkony = factory.init(new JMenuIkony());

@@ -371,12 +371,16 @@ public class Coord {
 	}
 
 	public Point transform(final Mou mou) {
+		return transform(mou, new Point());
+	}
+
+	/** Totéž bez nové instance, výsledek se zapíše do {@code p}. */
+	public Point transform(final Mou mou, final Point p) {
 		// pro moumer blížící se k nule nemusí být transformace jednoznačná, protože plocha v bodech
 		// je větší než rozsah mou, mapa je zobrazena vícekrát, takže jednem mou odpovídá více pointů.
 		// Zde se spočítá nejjihozápadnější bod.
 
 		// souřadnice mohou být i záporné
-		final Point p = new Point();
 		final Mou moujz = getMouJZ();
 		p.x = (int) (((long) mou.xx - (long) moujz.xx) >> mpShift);
 		p.y = dim.height - (int) (((long) mou.yy - (long) moujz.yy) >> mpShift);

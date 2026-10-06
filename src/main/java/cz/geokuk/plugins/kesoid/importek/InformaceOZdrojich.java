@@ -99,8 +99,8 @@ public class InformaceOZdrojich {
 	private InformaceOZdrojich() {}
 
 	public InformaceOZdroji get(final KeFile key) {
-		final InformaceOZdroji informaceOZdroji = stromy.get(key.root).map.get(key);
-		return informaceOZdroji;
+		final Strom strom = stromy.get(key.root);
+		return strom == null ? null : strom.map.get(key);
 	}
 
 	public Set<File> getJmenaZdroju() {

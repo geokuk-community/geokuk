@@ -121,7 +121,7 @@ public class Inicializator {
 		final String chyby = UzivatelskeMapy.nacti();
 		if (chyby != null) {
 			Diagnostika.zaznamenejChybu(chyby);
-			SwingUtilities.invokeLater(() -> Dlg.error(FString.text(UzivatelskeMapy.zalom(chyby, 100))));
+			SwingUtilities.invokeLater(() -> Dlg.error(FString.text(UzivatelskeMapy.textDialogu(chyby))));
 		}
 		for (final EKaType ka : EKaType.values()) {
 			final MapyAction0 jednamapoakce = new PodkladAction(ka);

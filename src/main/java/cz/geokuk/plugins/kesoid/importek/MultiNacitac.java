@@ -10,6 +10,7 @@ import java.util.zip.ZipFile;
 
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
@@ -28,16 +29,29 @@ public class MultiNacitac {
 	private static final Root.Def FILE_NAME_REGEX_GEOKUK_DIR = new Root.Def(Integer.MAX_VALUE, Pattern.compile("(?i).*\\.(geokuk|gpx|zip|jpg|raw|tif)"), null);
 	private static final Root.Def FILE_NAME_REGEX_GEOGET_DIR = new Root.Def(1, Pattern.compile("(?i).*\\.db3"), Pattern.compile("(?i).*\\.[0-9]{8}\\.db3"));
 	private static final Root.Def GSAK_ROOTDIR_DEF = new Root.Def(2, Pattern.compile("sqlite.db3"), null);
+	private static final Root.Def OPENSAK_ROOTDIR_DEF = new Root.Def(1, Pattern.compile("(?i).*\\.db"), null);
 
 	private final DirScanner ds;
 
 	private volatile File geogetDir;
 	private volatile File gsakDir;
+	private volatile File opensakDir;
 	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
 
 	/** Databáze, které při posledním načítání zamykal jiný program; znovu se načítá, až je pustí. */
 	private volatile Set<File> zamcene = Collections.emptySet();
 	private List<KeFile> posledniSeznam;
+	/** Zdroje, jejichž keše jsou v naposledy vráceném (zobrazeném) výsledku. */
+	private Set<File> zobrazene = Collections.emptySet();
+	/**
+	 * Databáze, které jiný program v tomto běhu zamkl, s otiskem souboru z jejich posledního načtení. Import může běžet v několika transakcích a mezi nimi se mohla načíst
+	 * rozpracovaná; změnu po dokončení zápisu sken sám nepozná.
+	 */
+	private final Map<File, String> sledovane = new HashMap<>();
+	/** Waypointy zobrazených databází; keše databáze, kterou jiný program zamkne, se z nich převezmou do dalšího výsledku. */
+	private Map<File, List<Wpt>> zobrazeneWpty = Collections.emptyMap();
+	private InformaceOZdrojich zobrazeneInformace;
+	private Genom zobrazenyGenom;
 
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
@@ -63,28 +77,47 @@ public class MultiNacitac {
 	}
 
 	public MultiNacitac(final KesoidModel kesoidModel) {
+		this(kesoidModel, new DirScanner());
+	}
+
+	MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds) {
 		this.kesoidModel = kesoidModel;
-		ds = new DirScanner();
+		this.ds = ds;
 		nacitace.add(new NacitacGeokuk());
 		nacitace.add(new NacitacGpx());
 		nacitace.add(new NacitacImageMetadata());
 		nacitace.add(new GeogetLoader());
 		nacitace.add(new GsakDbLoader(kesoidModel::getGsakParametryNacitani));
+		nacitace.add(new OpensakDbLoader());
 	}
 
 	public boolean jeZamcena(final File databaze) {
 		return zamcene.contains(databaze);
 	}
 
-	public KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
+	/** Synchronizované: zrušené načítání může ještě doběhnout, když už začíná další. */
+	public synchronized KesBag nacti(final Future<?> future, final Genom genom) throws IOException {
+		DatabazeJinehoProgramu.setNacitani(future);
+		try {
+			return nactiZmeny(future, genom);
+		} finally {
+			DatabazeJinehoProgramu.setNacitani(null);
+		}
+	}
+
+	private KesBag nactiZmeny(final Future<?> future, final Genom genom) throws IOException {
 		List<KeFile> list = ds.coMamNacist();
 		if (!zamcene.isEmpty()) {
-			if (zamcene.stream().noneMatch(DatabazeJinehoProgramu::jeZamcena)) {
+			if (!zamcene.stream().allMatch(DatabazeJinehoProgramu::jeZamcena)) {
 				ds.nulujLastScaned();
 				list = ds.coMamNacist();
 			} else if (list != null && bezZamcenych(list).equals(bezZamcenych(posledniSeznam))) {
 				return null; // změnila se jen zamčená databáze, jiný program do ní pořád zapisuje
 			}
+		}
+		if (list == null && zmenilaSeSledovana()) {
+			ds.nulujLastScaned();
+			list = ds.coMamNacist();
 		}
 		if (list == null) {
 			return null;
@@ -92,23 +125,54 @@ public class MultiNacitac {
 		posledniSeznam = list;
 		ohlasPrazdneSlozky(list);
 		final File gsak = gsakDir;
+		// Platí čitelnost z doby skenu, pozdější kontrola by mohla vidět složku, která se mezitím vrátila.
+		final Set<File> nedostupne = ds.getNedostupne();
+		kesoidModel.setNedostupnePriNacitani(nedostupne);
 		// Dočasně nedostupná složka (síť, USB) neznamená, že databáze zmizely; známé zůstanou známé.
-		if (gsak == null || jeCitelnaSlozka(gsak)) {
-			kesoidModel.zaradGsakDatabaze(list.stream().filter(f -> GSAK_ROOTDIR_DEF.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet()));
+		if (gsak == null || !nedostupne.contains(gsak)) {
+			kesoidModel.zaradGsakDatabaze(databaze(list, GSAK_ROOTDIR_DEF), nedostupne);
+		}
+		final File opensak = opensakDir;
+		if (opensak == null || !nedostupne.contains(opensak)) {
+			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
+		}
+		if (kesoidModel.getVsechnyKesoidy() == null) {
+			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
 		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
 		builder.init();
+		builder.setSledovaneZdroje(f -> !FILE_NAME_REGEX_GEOKUK_DIR.equals(f.root.def));
 		final long start = System.currentTimeMillis();
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list));
 		final List<String> vadne = new ArrayList<>();
 		final Set<File> zamceneTed = new HashSet<>();
+		final Map<File, String> otiskyPredCtenim = new HashMap<>();
+		for (final KeFile f : list) {
+			if (sledovane.containsKey(f.getFile())) {
+				otiskyPredCtenim.put(f.getFile(), otisk(f.getFile()));
+			}
+		}
+		final Set<File> prevzate = new HashSet<>();
+		boolean nelzePrevzit = false;
 		for (final KeFile file : list) {
+			if (future != null && future.isCancelled()) {
+				break;
+			}
 			log.debug("Nacitam: " + file);
 			try {
 				zpracujJedenFile(file, builder, future);
 			} catch (final DatabazeJinehoProgramu.Zamcena e) {
 				log.info(e.getMessage());
 				zamceneTed.add(file.getFile());
+				if (zobrazene.contains(file.getFile())) {
+					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
+					if (genom == zobrazenyGenom && !builder.maWaypointyZe(file.getFile())) {
+						builder.prevezmi(file, zobrazeneWpty.getOrDefault(file.getFile(), Collections.emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
+						prevzate.add(file.getFile());
+					} else {
+						nelzePrevzit = true;
+					}
+				}
 			} catch (final Exception e) {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
@@ -116,31 +180,97 @@ public class MultiNacitac {
 			}
 		}
 
+		if (future != null && future.isCancelled()) {
+			ds.nulujLastScaned();
+			return null;
+		}
 		builder.done();
 		final KesBag bag = builder.getKesBag();
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
 				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
-		// Dokud je některá databáze zamčená, zůstane zobrazené, co už je načtené.
-		return zamceneTed.isEmpty() || kesoidModel.getVsechnyKesoidy() == null ? bag : null;
+		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
+		for (final Map.Entry<File, String> e : otiskyPredCtenim.entrySet()) {
+			sledovane.put(e.getKey(), e.getValue());
+		}
+		// Zamčená databáze se načte po uvolnění zámku, otisk se jí zapíše až po přečtení.
+		for (final File f : zamceneTed) {
+			sledovane.put(f, "");
+		}
+		// Keše ze zamčené databáze, které nešly převzít, zůstanou zobrazené se vším ostatním, dokud ji jiný program nepustí.
+		if (nelzePrevzit && kesoidModel.getVsechnyKesoidy() != null) {
+			return null;
+		}
+		final Set<File> nactene = new HashSet<>();
+		for (final KeFile f : list) {
+			if (!zamceneTed.contains(f.getFile()) || prevzate.contains(f.getFile())) {
+				nactene.add(f.getFile());
+			}
+		}
+		zobrazene = nactene;
+		zobrazeneWpty = builder.getWptyPodleZdroje();
+		zobrazeneInformace = bag.getInformaceOZdrojich();
+		zobrazenyGenom = genom;
+		return bag;
 	}
 
-	/** Aktivní složka GeoGetu nebo GSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
+	/** Sledovaná databáze se od načtení změnila a jiný program ji už nedrží. */
+	private boolean zmenilaSeSledovana() {
+		final Set<File> naposledyNactene = new HashSet<>();
+		if (posledniSeznam != null) {
+			for (final KeFile f : posledniSeznam) {
+				naposledyNactene.add(f.getFile());
+			}
+		}
+		// Databáze, která už není ve zdrojích, se nesleduje; chybějící zůstává, až se vrátí.
+		sledovane.keySet().removeIf(f -> !naposledyNactene.contains(f) && f.exists());
+		for (final Map.Entry<File, String> e : sledovane.entrySet()) {
+			// Chybějící databázi (odpojený disk) najde sken, až se vrátí, a sledování pokračuje.
+			if (e.getKey().exists() && !zamcene.contains(e.getKey()) && !otisk(e.getKey()).equals(e.getValue()) && !DatabazeJinehoProgramu.jeZamcena(e.getKey())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Čas a velikost databáze i jejího WAL, zápis se projeví aspoň v jednom z nich. */
+	private static String otisk(final File databaze) {
+		final File wal = new File(databaze.getPath() + "-wal");
+		return databaze.lastModified() + ":" + databaze.length() + ":" + wal.lastModified() + ":" + wal.length();
+	}
+
+	/** Zdroje, které se právě načítají, aby šly v Přehledu zdrojů vypnout dřív, než se načtou. */
+	private static InformaceOZdrojich predbezneZdroje(final List<KeFile> list) {
+		final InformaceOZdrojich.Builder zdroje = InformaceOZdrojich.builder();
+		for (final KeFile f : list) {
+			zdroje.add(f, true);
+		}
+		return zdroje.done();
+	}
+
+	private static Set<File> databaze(final List<KeFile> list, final Root.Def def) {
+		return list.stream().filter(f -> def.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet());
+	}
+
+	/** Aktivní složka GeoGetu, GSAKu nebo OpenSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
 	private void ohlasPrazdneSlozky(final List<KeFile> list) {
-		final Map<File, String> slozky = new LinkedHashMap<>();
+		final Map<File, String[]> slozky = new LinkedHashMap<>();
 		if (geogetDir != null) {
-			slozky.put(geogetDir, "GeoGetu");
+			slozky.put(geogetDir, new String[] { "GeoGetu", ".db3" });
 		}
 		if (gsakDir != null) {
-			slozky.put(gsakDir, "GSAKu");
+			slozky.put(gsakDir, new String[] { "GSAKu", ".db3" });
+		}
+		if (opensakDir != null) {
+			slozky.put(opensakDir, new String[] { "OpenSAKu", ".db" });
 		}
 		for (final KeFile f : list) {
 			slozky.remove(f.root.dir);
 		}
-		for (final Map.Entry<File, String> e : slozky.entrySet()) {
+		for (final Map.Entry<File, String[]> e : slozky.entrySet()) {
 			if (ohlasenePrazdne.add(e.getKey())) {
-				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue() + " \"" + e.getKey() + "\" nejsou žádné databáze (.db3). Zkontrolujte složku v Soubor > Umístění souborů."),
-						EExceptionSeverity.DISPLAY, "Prázdná datová složka");
+				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue()[0] + " \"" + e.getKey() + "\" nejsou žádné databáze (" + e.getValue()[1]
+						+ "). Zkontrolujte složku v Soubor > Umístění souborů."), EExceptionSeverity.DISPLAY, "Prázdná datová složka");
 			}
 		}
 	}
@@ -184,8 +314,13 @@ public class MultiNacitac {
 
 	// TODO Proč jsou tu ty File parametry, když máme k dispozici kesoidModel, odkud se jejich hodnoty vždy berou? [2016-04-09, Bohusz]
 	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final Set<File> vynechane) {
+		setRootDirs(prenacti, kesDir, geogetDir, gsakDir, null, vynechane);
+	}
+
+	public void setRootDirs(final boolean prenacti, final File kesDir, final File geogetDir, final File gsakDir, final File opensakDir, final Set<File> vynechane) {
 		this.geogetDir = geogetDir;
 		this.gsakDir = gsakDir;
+		this.opensakDir = opensakDir;
 		final List<Root> roots = new ArrayList<>();
 		if (kesDir != null) {
 			roots.add(new Root(kesDir, FILE_NAME_REGEX_GEOKUK_DIR, vynechane));
@@ -195,6 +330,9 @@ public class MultiNacitac {
 		}
 		if (gsakDir != null) {
 			roots.add(new Root(gsakDir, GSAK_ROOTDIR_DEF));
+		}
+		if (opensakDir != null) {
+			roots.add(new Root(opensakDir, OPENSAK_ROOTDIR_DEF));
 		}
 		ds.seRootDirs(prenacti, roots.toArray(new Root[roots.size()]));
 	}
