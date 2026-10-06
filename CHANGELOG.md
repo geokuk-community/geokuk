@@ -8,6 +8,8 @@
   aktuální stav.
 - Menší spotřeba paměti u velkých dat, i při přenačtení keší.
 - Rychlejší načítání keší.
+- Počítače s 16 GB paměti a více dostanou automaticky pro program 4 GB (dosud 3 GB).
+  Když paměť na načtení keší nestačí, GeoKuk to oznámí a už zobrazená data zůstanou.
 - Aktualizace: už stažená nová verze se nestahuje znovu, při chybě stahování se
   vrátí původní jar i spouštěč a chyba výměny jaru se zapíše do data/log/start.log.
 - Aktualizace: nová verze s neplatným číslem verze nebo bez údaje o nejnižší Javě

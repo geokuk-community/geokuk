@@ -37,6 +37,9 @@ public final class Start {
 	static final long MB = 1024L * 1024;
 	static final int MIN_PAMET_MB = 1024;
 	static final int MAX_PAMET_MB = 3072;
+	/** Od této fyzické paměti dostane program 4 GB; počítače s 16 GB hlásí systém o něco méně (Windows třeba 16 379 MB, notebooky s grafikou v paměti i 15,7 GB). */
+	static final int PRAH_VELKA_PAMET_MB = 15 * 1024;
+	static final int VELKA_PAMET_MB = 4096;
 	/** Spustit GeoKuk, až skončí ten, který spouštěč pustil (restart po aktualizaci). */
 	public static final String PO_UKONCENI = "--po-ukonceni";
 	/** Zámek, který běžící GeoKuk drží ve složce data. */
@@ -242,11 +245,14 @@ public final class Start {
 		return javaExe.isFile() ? javaExe : new File(bin, "java");
 	}
 
-	/** Paměť z nastavení, jinak polovina fyzické paměti, nejméně 1 GB a nejvýš 3 GB. */
+	/** Paměť z nastavení, jinak polovina fyzické paměti, nejméně 1 GB a nejvýš 3 GB, od 16 GB počítače (15 GB hlášené paměti) 4 GB. */
 	static int pametMb(final File nastaveni, final long fyzickaMb) {
 		final int zNastaveni = pametZNastaveni(nastaveni);
 		if (zNastaveni >= 256) {
 			return zNastaveni;
+		}
+		if (fyzickaMb >= PRAH_VELKA_PAMET_MB) {
+			return VELKA_PAMET_MB;
 		}
 		return (int) Math.max(MIN_PAMET_MB, Math.min(MAX_PAMET_MB, fyzickaMb / 2));
 	}
