@@ -49,9 +49,11 @@ public class StartTest {
 		Assert.assertEquals(2048, Start.pametMb(nic, 4096));
 		Assert.assertEquals(3072, Start.pametMb(nic, 6144));
 		Assert.assertEquals(3072, Start.pametMb(nic, 8192));
-		Assert.assertEquals(3072, Start.pametMb(nic, 15 * 1024));
-		Assert.assertEquals(4096, Start.pametMb(nic, 16 * 1024));
-		Assert.assertEquals(4096, Start.pametMb(nic, 24 * 1024));
+		Assert.assertEquals(3072, Start.pametMb(nic, 12000));
+		Assert.assertEquals(3072, Start.pametMb(nic, 15000));
+		Assert.assertEquals(4096, Start.pametMb(nic, 16076));
+		Assert.assertEquals(4096, Start.pametMb(nic, 16379));
+		Assert.assertEquals(4096, Start.pametMb(nic, 24000));
 		Assert.assertEquals(4096, Start.pametMb(nic, 32768));
 	}
 

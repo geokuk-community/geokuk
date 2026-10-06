@@ -145,7 +145,8 @@ try {
 
     $xmx = [regex]::Match($beh.Proces.CommandLine, "-Xmx(\d+)m")
     $ram = [long]((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1MB)
-    $cekana = [math]::Min(3072, [math]::Max(1024, [math]::Floor($ram / 2)))
+    # Stejné pravidlo jako Start.pametMb: od ~15 GB hlášené paměti 4 GB, jinak polovina v rozmezí 1 až 3 GB.
+    $cekana = if ($ram -ge 15360) { 4096 } else { [math]::Min(3072, [math]::Max(1024, [math]::Floor($ram / 2))) }
     Ocekavej ($xmx.Success -and [math]::Abs([int]$xmx.Groups[1].Value - $cekana) -le 64) "paměť $($xmx.Value) odpovídá polovině RAM $ram MB v mezích 1–3 GB (čekáno $cekana)"
     $souhrn.Add("| Paměť | $($xmx.Value), RAM $ram MB |")
     $javaw = Join-Path $slozka "program\runtime\bin\javaw.exe"
