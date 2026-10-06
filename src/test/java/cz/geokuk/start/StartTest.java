@@ -43,12 +43,15 @@ public class StartTest {
 	}
 
 	@Test
-	public void pametPolovinaRamMezi1A4Gb() {
+	public void pametPolovinaRamMezi1A3GbAOd16GbRam4Gb() {
 		final File nic = new File(tmp.getRoot(), "neni.xml");
 		Assert.assertEquals(1024, Start.pametMb(nic, 1024));
 		Assert.assertEquals(2048, Start.pametMb(nic, 4096));
 		Assert.assertEquals(3072, Start.pametMb(nic, 6144));
-		Assert.assertEquals(4096, Start.pametMb(nic, 8192));
+		Assert.assertEquals(3072, Start.pametMb(nic, 8192));
+		Assert.assertEquals(3072, Start.pametMb(nic, 15 * 1024));
+		Assert.assertEquals(4096, Start.pametMb(nic, 16 * 1024));
+		Assert.assertEquals(4096, Start.pametMb(nic, 24 * 1024));
 		Assert.assertEquals(4096, Start.pametMb(nic, 32768));
 	}
 

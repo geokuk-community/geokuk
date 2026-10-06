@@ -88,7 +88,7 @@ posune s ní, pod polem je výsledná cesta. Cesta mimo složku GeoKuk
 zůstává pevná.
 
 Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 až
-4 GB), změnit ji jde v Soubor > Paměť programu.
+3 GB, od 16 GB paměti počítače 4 GB), změnit ji jde v Soubor > Paměť programu.
 
 ### Přechod ze starší verze
 
