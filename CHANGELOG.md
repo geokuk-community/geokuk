@@ -35,6 +35,8 @@
 - Na oddálené mapě jsou další waypointy keše (parkoviště, stage) šedé.
 - Po pádu programu se mapa zobrazuje hned, kontrola cache dlaždic běží
   na pozadí.
+- Prázdný soubor nastavení (po výpadku proudu) se při startu bere jako chybějící,
+  bez hlášení; po pádu se uklidí zbylé dočasné soubory `nastaveni.xml.*.tmp`.
 - Nápověda (F1 a tlačítka Nápověda v dialozích) otevírá stránky
   uživatelské wiki na GitHubu.
 
