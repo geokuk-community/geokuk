@@ -171,4 +171,12 @@ public class CestaTest {
 		Assert.assertTrue(uprostredUseku instanceof Usek);
 		Assert.assertEquals(B, ((Usek) uprostredUseku).getBvzad().getMou());
 	}
+
+	/** Název cesty z GPX se v nabídkách zobrazí jako text. */
+	@Test
+	public void nazevVHtmlJeText() {
+		final Cesta cesta = Cesta.create();
+		cesta.setNazev("Výlet <img src=http://sledovac/c> & spol.");
+		Assert.assertEquals(" <i>\"Výlet &lt;img src=http://sledovac/c&gt; &amp; spol.\"</i>", cesta.getNazevHtml());
+	}
 }

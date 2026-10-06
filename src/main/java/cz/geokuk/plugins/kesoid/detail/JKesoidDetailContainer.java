@@ -75,7 +75,7 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 
 	private KesoidPluginManager kesoidPluginManager;
 
-	private static String formatuj(final String s, final EKesStatus status) {
+	static String formatuj(final String s, final EKesStatus status) {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("<html>");
 		if (status != EKesStatus.ACTIVE) {

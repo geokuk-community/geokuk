@@ -32,4 +32,29 @@ public class JKesTableHtmlTest {
 			Assert.assertTrue(hodnota, hodnota.startsWith("<html>&lt;html&gt;"));
 		}
 	}
+
+	@Test
+	public void zvyraznenaShodaNeniHtml() {
+		final String autor = "<s>A<img src=http://sledovac/shoda>B<u>";
+		final Kes kes = new Kes();
+		kes.setIdentifier("GC1");
+		kes.setAuthor(autor);
+		final Wpt wpt = new Wpt();
+		wpt.setName("GC1");
+		wpt.setNazev("Keš");
+		wpt.setSym("Geocache|Traditional Cache");
+		kes.addWpt(wpt);
+		final Nalezenec nal = new Nalezenec();
+		nal.setKes(kes);
+		nal.setKdeNalezeno(autor);
+		nal.setPoc(4);
+		nal.setKon(autor.indexOf('B'));
+		final JKesTable tabulka = new JKesTable();
+		tabulka.setKeslist(Collections.singletonList(nal));
+		final String hodnota = String.valueOf(tabulka.tableModel.getValueAt(0, 5));
+		Assert.assertTrue(hodnota, hodnota.contains("<b bgcolor='yellow'>"));
+		Assert.assertFalse(hodnota, hodnota.contains("<img"));
+		Assert.assertFalse(hodnota, hodnota.contains("<s>"));
+		Assert.assertFalse(hodnota, hodnota.contains("<u>"));
+	}
 }
