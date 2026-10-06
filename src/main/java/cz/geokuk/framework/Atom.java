@@ -20,7 +20,11 @@ public abstract class Atom implements Comparable<Atom> {
 
 	@SafeVarargs
 	public static <E extends Atom> Set<E> of(final E... types) {
-		return new HashSet<>(Arrays.asList(types));
+		final Set<E> set = new HashSet<>();
+		for (final E type : types) {
+			set.add(type);
+		}
+		return set;
 	}
 
 	public static <E extends Atom> E valueOf(final Class<E> clazz, final String jmeno) {

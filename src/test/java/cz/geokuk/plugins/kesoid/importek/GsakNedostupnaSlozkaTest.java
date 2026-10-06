@@ -88,6 +88,10 @@ public class GsakNedostupnaSlozkaTest {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});
 		final KesoidModel model = new KesoidModel() {
+			// Bez EventFireru by události z vlákna načítání spadly na EDT.
+			@Override
+			public void fire(final cz.geokuk.framework.Event0<?> udalost) {}
+
 			@Override
 			public GccomNick getGccomNick() {
 				return new GccomNick("Ja", 42);

@@ -14,7 +14,7 @@ public class MultiNacitacLoaderManagerTest {
 	@Test
 	public void neplatnaVynechanaSlozkaSePreskoci() {
 		final File platna = new File("cesty").getAbsoluteFile();
-		assertThat(MultiNacitacLoaderManager.vynechane(new Filex(new File("a\0b").getAbsoluteFile(), false, true), new Filex(platna, false, true)))
+		assertThat((Iterable<File>) MultiNacitacLoaderManager.vynechane(new Filex(new File("a\0b").getAbsoluteFile(), false, true), new Filex(platna, false, true)))
 				.containsExactly(platna.toPath().normalize().toFile());
 	}
 }

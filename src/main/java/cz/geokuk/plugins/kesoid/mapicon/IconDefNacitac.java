@@ -57,6 +57,7 @@ public class IconDefNacitac {
 		return sufix.equals("properties");
 	}
 
+	@SuppressWarnings("deprecation")
 	private IconDef load(final ImageProvider imageProvider) throws IOException {
 		idp = new IkonDrawingProperties();
 		idp.url = url;

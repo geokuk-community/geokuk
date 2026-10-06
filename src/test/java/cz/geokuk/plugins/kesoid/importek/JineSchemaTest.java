@@ -77,6 +77,10 @@ public class JineSchemaTest {
 
 	private static KesoidModel model() {
 		final KesoidModel model = new KesoidModel() {
+			// Bez EventFireru by události z vlákna načítání spadly na EDT.
+			@Override
+			public void fire(final cz.geokuk.framework.Event0<?> udalost) {}
+
 			@Override
 			public GccomNick getGccomNick() {
 				return new GccomNick("Ja", 42);

@@ -87,7 +87,7 @@ public class MySplitIterator<T> implements Spliterator<Sheet<T>> {
 		zasobnik[vyska++] = node;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static <T> Node<T>[] noveNody(final int velikost) {
 		return new Node[velikost];
 	}

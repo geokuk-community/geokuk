@@ -37,6 +37,10 @@ public class MultiNacitacTest {
 			inject(new KesoidPluginManager());
 		}
 
+		// Bez EventFireru by události z vlákna načítání spadly na EDT.
+		@Override
+		public void fire(final cz.geokuk.framework.Event0<?> udalost) {}
+
 		@Override
 		protected cz.geokuk.framework.MyPreferences currPrefe() {
 			return cz.geokuk.framework.MyPreferences.current().node("test-multinacitac");

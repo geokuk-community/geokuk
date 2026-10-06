@@ -34,8 +34,20 @@ public class LafSupportTest {
 
 	@Test
 	public void otevrenyDialogDostaneNovyVzhledZrusenyNe() throws Exception {
-		// Statická inicializace LafSupport nastavuje vzhled z nastavení, musí proběhnout před testem.
-		Class.forName(LafSupport.class.getName());
+		// Okna a čekající překreslení z jiných testů by přepínání vzhledu zasáhlo také.
+		SwingUtilities.invokeAndWait(() -> {
+			for (final java.awt.Window okno : java.awt.Window.getWindows()) {
+				okno.dispose();
+			}
+			// Statická inicializace LafSupport nastavuje vzhled z nastavení, musí proběhnout před testem a v EDT.
+			try {
+				Class.forName(LafSupport.class.getName());
+			} catch (final ClassNotFoundException e) {
+				throw new IllegalStateException(e);
+			}
+		});
+		SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
 		SwingUtilities.invokeAndWait(() -> {
 			try {
 				UIManager.setLookAndFeel(new MetalLookAndFeel());
@@ -63,9 +75,11 @@ public class LafSupportTest {
 				Assert.assertEquals("otevřený dialog", nimbus, vDialogu.getUI().getClass().getName());
 				Assert.assertEquals("zrušené okno se nepřepíná", metal, vZrusenem.getUI().getClass().getName());
 				hlavni.dispose();
+				UIManager.setLookAndFeel(puvodni);
 			} catch (final UnsupportedLookAndFeelException e) {
 				throw new IllegalStateException(e);
 			}
 		});
+		SwingUtilities.invokeAndWait(() -> {});
 	}
 }
