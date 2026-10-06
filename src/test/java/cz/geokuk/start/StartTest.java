@@ -177,6 +177,17 @@ public class StartTest {
 	}
 
 	@Test
+	public void chybaVymenyJeVLogu() throws Exception {
+		final File d = tmp.newFolder();
+		Files.write(new File(d, "geokuk.jar").toPath(), "stary".getBytes());
+		Start.vyberJar(d, a -> {
+			throw new java.nio.file.AccessDeniedException("geokuk.jar.new");
+		});
+		final String log = new String(Files.readAllBytes(new File(d, "data/log/start.log").toPath()), java.nio.charset.StandardCharsets.UTF_8);
+		Assert.assertTrue(log, log.contains("Výměna geokuk.jar selhala") && log.contains("geokuk.jar.new"));
+	}
+
+	@Test
 	public void kdyzJarChybiSpustiBak() throws Exception {
 		final File d = tmp.newFolder();
 		Files.write(new File(d, "geokuk.jar.bak").toPath(), "predchozi".getBytes());

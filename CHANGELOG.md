@@ -8,6 +8,8 @@
   aktuální stav.
 - Menší spotřeba paměti u velkých dat, i při přenačtení keší.
 - Rychlejší načítání keší.
+- Aktualizace: už stažená nová verze se nestahuje znovu, při chybě stahování se
+  vrátí původní jar i spouštěč a chyba výměny jaru se zapíše do data/log/start.log.
 - Windows: okno GeoKuku se spojí s ikonou připnutou na hlavním panelu (ze zástupce
   GeoKuku), místo druhé ikony.
 - Windows: při prvním spuštění GeoKuk nabídne zástupce v nabídce Start, aby šel

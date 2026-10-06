@@ -170,6 +170,7 @@ public final class Start {
 			vymena.vymen(adresar);
 		} catch (final IOException e) {
 			System.err.println("Výměna " + JAR + " selhala: " + e);
+			zapisDoLogu(adresar, "Výměna " + JAR + " selhala: " + e);
 		}
 		final File jar = new File(adresar, JAR);
 		final File bak = new File(adresar, JAR + ".bak");
@@ -182,6 +183,18 @@ public final class Start {
 			return jar;
 		}
 		return bak.isFile() ? bak : null;
+	}
+
+	/** Spouštěč nemá logování programu, chyby výměny se zapíšou do data/log/start.log; selhání zápisu nevadí. */
+	static void zapisDoLogu(final File adresar, final String text) {
+		try {
+			final File log = new File(new File(koren(adresar), "data"), "log");
+			Files.createDirectories(log.toPath());
+			Files.write(new File(log, "start.log").toPath(), (java.time.LocalDateTime.now() + " " + text + System.lineSeparator()).getBytes(java.nio.charset.StandardCharsets.UTF_8),
+					StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+		} catch (final IOException | RuntimeException e) {
+			// bez logu se spustí dál
+		}
 	}
 
 	/** Když se spouští záloha místo geokuk.jar, GeoKuk se dozví proč. */
