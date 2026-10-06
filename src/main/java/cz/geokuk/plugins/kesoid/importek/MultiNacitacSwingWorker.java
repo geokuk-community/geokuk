@@ -68,7 +68,8 @@ public class MultiNacitacSwingWorker extends MySwingWorker0<KesBag, Void> {
 			if (MyExceptionHandler.najdiOom(e) != null) {
 				// Zobrazená data zůstanou, program se kvůli přenačtení neukončí.
 				log.error("Načítání keší selhalo, došla paměť.", e);
-				ohlasMaloPameti("Na načtení keší nestačí paměť programu, zůstala původní data.\n" + PametProgramuAction.jakZvysitPamet());
+				final String zustala = kesoidModel.getVsechnyKesoidy() == null ? "" : ", zůstala původní data";
+				ohlasMaloPameti("Na načtení keší nestačí paměť programu" + zustala + ".\n" + PametProgramuAction.jakZvysitPamet());
 				return;
 			}
 			throw e;

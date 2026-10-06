@@ -20,9 +20,26 @@ import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 public class MultiNacitacSwingWorkerPametTest {
 
 	@Test
-	public void maloPametiPriNacitaniNechaDataAOhlasi() throws Exception {
+	public void maloPametiPriPrenacteniNechaDataAOhlasi() throws Exception {
+		final String hlaska = zkus(true);
+		Assert.assertTrue(hlaska, hlaska.contains("paměť") && hlaska.contains("zůstala původní data"));
+	}
+
+	@Test
+	public void maloPametiPriPrvnimNacteniNeslibujeData() throws Exception {
+		final String hlaska = zkus(false);
+		Assert.assertTrue(hlaska, hlaska.contains("paměť") && !hlaska.contains("původní"));
+	}
+
+	/** Načítání skončí nedostatkem paměti; vrátí hlášku pro uživatele, zobrazená data se nesmí změnit. */
+	private String zkus(final boolean uzJsouData) throws Exception {
 		final AtomicReference<KesBag> zobrazene = new AtomicReference<>();
 		final KesoidModel model = new KesoidModel() {
+			@Override
+			public KesBag getVsechnyKesoidy() {
+				return uzJsouData ? new KesBag(new Genom()) : null;
+			}
+
 			@Override
 			public void setVsechnyKesoidy(final KesBag bag) {
 				zobrazene.set(bag);
@@ -58,6 +75,7 @@ public class MultiNacitacSwingWorkerPametTest {
 		}
 		Assert.assertNull("zobrazená data se nemění", zobrazene.get());
 		Assert.assertNotNull("uživatel dostane hlášku", hlaska.get());
-		Assert.assertTrue(hlaska.get(), hlaska.get().contains("paměť") && hlaska.get().contains(cz.geokuk.core.program.PametProgramuAction.jakZvysitPamet()));
+		Assert.assertTrue(hlaska.get(), hlaska.get().contains(cz.geokuk.core.program.PametProgramuAction.jakZvysitPamet()));
+		return hlaska.get();
 	}
 }
