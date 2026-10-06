@@ -318,7 +318,8 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
-	private static final int NTHREADS_DISK = 2;
+	/** Čtení z cache je hlavně dekódování obrázků, víc vláken pomůže na víc jádrech. */
+	static final int NTHREADS_DISK = Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors()));
 
 	private final Pocitadlo pocitSubmitJednaDlazdice = new PocitadloRoste("ka01 Počet požadavků na jednu dlaždici",
 			"Kolikrát byl nakonec zadán požadavek na získání jedné dlaždice z jedné vrstvy. Tedy pokud zobrazujeme mapu s turistickými trasami a cyklotrasami, je dlaždice na podklad, na turistickou i na cyklo počítána zvlášť.");

@@ -187,7 +187,9 @@ class KachleDBManager implements KachleManager {
 			if (cursor.eof()) {
 				return null;
 			}
-			log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
+			if (log.isDebugEnabled()) {
+				log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
+			}
 			return cursor.getBlobAsArray("image");
 		} catch (final SqlJetException e) {
 			if (e.getErrorCode() == SqlJetErrorCode.BUSY) {
