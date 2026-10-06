@@ -65,6 +65,32 @@ public class NastaveniTest {
 	}
 
 	@Test
+	public void prazdnySouborPlatiJakoChybejiciBezVarovani() throws Exception {
+		final File soubor = tmp.newFile("nastaveni.xml");
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
+		Assert.assertNull(Nastaveni.prevzitVarovani());
+		Assert.assertFalse(new File(soubor.getPath() + ".vadne").exists());
+		Assert.assertEquals(0, koren.childrenNames().length);
+		Assert.assertTrue("nové nastavení se zapíše", soubor.length() > 0);
+	}
+
+	@Test
+	public void docasneSouboryPoPaduSeUklidi() throws Exception {
+		final File soubor = tmp.newFile("nastaveni.xml");
+		final File stary = tmp.newFile("nastaveni.xml.123.tmp");
+		final File cerstvy = tmp.newFile("nastaveni.xml.456.tmp");
+		final File cizi = tmp.newFile("jiny.xml.789.tmp");
+		final File vadne = tmp.newFile("nastaveni.xml.vadne");
+		Assert.assertTrue(stary.setLastModified(System.currentTimeMillis() - 3_600_000));
+		Assert.assertTrue(cizi.setLastModified(System.currentTimeMillis() - 3_600_000));
+		Nastaveni.otevri(soubor, null, false);
+		Assert.assertFalse(stary.exists());
+		Assert.assertTrue("čerstvý může zapisovat jiný běh", cerstvy.exists());
+		Assert.assertTrue(cizi.exists());
+		Assert.assertTrue(vadne.exists());
+	}
+
+	@Test
 	public void vadnySouborKteryNejdeOdlozitSeNeprepise() throws Exception {
 		final File soubor = tmp.newFile("nastaveni.xml");
 		final byte[] puvodni = "<preferences><root ".getBytes(StandardCharsets.UTF_8);

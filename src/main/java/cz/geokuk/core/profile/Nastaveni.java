@@ -2,6 +2,7 @@ package cz.geokuk.core.profile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class Nastaveni {
 
+	private static final long DOCASNY_MAX_STARI_MS = 60_000;
 	private static final String UZEL = "geokuk";
 	/** Uzly a klíče s cestami starší verze; mířily do původní složky dat, tak se nepřebírají. */
 	private static final String UMISTENI_SOUBORU = "umisteniSouboru";
@@ -47,6 +49,11 @@ public final class Nastaveni {
 	 * Otevře nastavení v souboru. Poškozený soubor nesmí bránit spuštění, proto se odloží stranou a program pokračuje s výchozím nastavením.
 	 */
 	static SouborovePreferences otevri(final File soubor, final File stary, final boolean zRegistru) {
+		uklidDocasne(soubor);
+		if (soubor.isFile() && soubor.length() == 0) {
+			// Prázdný soubor (výpadek proudu, antivir) nemá co zachraňovat, platí jako chybějící.
+			smaz(soubor);
+		}
 		if (soubor.isFile()) {
 			try {
 				return SouborovePreferences.nacti(soubor);
@@ -68,6 +75,31 @@ public final class Nastaveni {
 			// ohlásí kontrola zapisovatelnosti datové složky
 		}
 		return nove;
+	}
+
+	/** Smaže dočasné soubory zápisu, které po pádu zůstaly vedle souboru nastavení; čerstvé nechá, mohl by je právě zapisovat jiný běh. */
+	private static void uklidDocasne(final File soubor) {
+		final File slozka = soubor.getAbsoluteFile().getParentFile();
+		final String predpona = soubor.getName() + ".";
+		final File[] soubory = slozka == null ? null : slozka.listFiles();
+		if (soubory == null) {
+			return;
+		}
+		final long hranice = System.currentTimeMillis() - DOCASNY_MAX_STARI_MS;
+		for (final File f : soubory) {
+			final String jmeno = f.getName();
+			if (f.isFile() && jmeno.startsWith(predpona) && jmeno.endsWith(".tmp") && f.lastModified() < hranice) {
+				smaz(f);
+			}
+		}
+	}
+
+	private static void smaz(final File soubor) {
+		try {
+			Files.deleteIfExists(soubor.toPath());
+		} catch (final IOException e) {
+			log.warn("Soubor {} nelze smazat", soubor, e);
+		}
 	}
 
 	/** Starší odložený soubor se smaže, až když jde soubor odsunout (antivirus ho může držet). */
