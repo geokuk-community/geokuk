@@ -54,6 +54,7 @@ public class StahnoutAktualizaciSwingWorkerTest {
 		Assert.assertEquals("stary jar", obsah("geokuk.jar"));
 		Assert.assertEquals("novy jar", obsah("geokuk.jar.new"));
 		Assert.assertEquals("novy start", obsah("start.jar"));
+		Assert.assertFalse("záloha spouštěče je jen na dobu výměny", new File(instalace, "start.jar.bak").exists());
 		Assert.assertFalse(new File(instalace, "geokuk.jar.part").exists());
 		Assert.assertFalse(new File(instalace, "start.jar.part").exists());
 	}
@@ -180,6 +181,57 @@ public class StahnoutAktualizaciSwingWorkerTest {
 			Assert.assertEquals("stary jar", obsah("geokuk.jar"));
 			Assert.assertFalse(new File(instalace, "stazeny.part").exists());
 		}
+	}
+
+	/** Po přesunu se součet liší (disk, antivir): původní soubor se vrátí ze zálohy. */
+	@Test
+	public void nesouhlasPoPresunuVratiPuvodniSoubor() throws Exception {
+		instaluj("geokuk.jar", "stary jar");
+		instaluj("stazeny.part", "novy jar");
+		final StahnoutAktualizaciSwingWorker.Stazeny stazeny = new StahnoutAktualizaciSwingWorker.Stazeny(new File(instalace, "stazeny.part").toPath(),
+				StahnoutAktualizaciSwingWorker.soucet(new File(release, "geokuk.jar").toPath()));
+		try {
+			StahnoutAktualizaciSwingWorker.presun(stazeny, new File(instalace, "geokuk.jar"), new File(instalace, "geokuk.jar.bak"),
+					(odkud, kam) -> Files.write(kam, "poskozeny".getBytes(StandardCharsets.US_ASCII)), true);
+			Assert.fail();
+		} catch (final IOException e) {
+			Assert.assertEquals("stary jar", obsah("geokuk.jar"));
+			Assert.assertEquals("stary jar", obsah("geokuk.jar.bak"));
+		}
+	}
+
+	/** Při nesouhlasu u spouštěče se vrátí i původní start.jar a záloha se neuchovává. */
+	@Test
+	public void nesouhlasPoPresunuVratiStartJar() throws Exception {
+		instaluj("start.jar", "stary start");
+		instaluj("stazeny.part", "novy start");
+		final StahnoutAktualizaciSwingWorker.Stazeny stazeny = new StahnoutAktualizaciSwingWorker.Stazeny(new File(instalace, "stazeny.part").toPath(),
+				StahnoutAktualizaciSwingWorker.soucet(new File(release, "start.jar").toPath()));
+		try {
+			StahnoutAktualizaciSwingWorker.presun(stazeny, new File(instalace, "start.jar"), new File(instalace, "start.jar.bak"),
+					(odkud, kam) -> Files.write(kam, "poskozeny".getBytes(StandardCharsets.US_ASCII)), false);
+			Assert.fail();
+		} catch (final IOException e) {
+			Assert.assertEquals("stary start", obsah("start.jar"));
+			Assert.assertFalse(new File(instalace, "start.jar.bak").exists());
+		}
+	}
+
+	/** Nová verze, kterou už čeká geokuk.jar.new, se nestahuje znovu. */
+	@Test
+	public void uzStazenaVerzeSeNestahujeZnovu() throws Exception {
+		instaluj("start.jar", "start");
+		Assert.assertFalse(StahnoutAktualizaciSwingWorker.uzStazena(instalace, "9.9.9"));
+		final java.util.jar.Manifest manifest = new java.util.jar.Manifest();
+		manifest.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+		manifest.getMainAttributes().putValue("Geokuk-Version", "9.9.9");
+		try (java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(new FileOutputStream(new File(instalace, "geokuk.jar.new")), manifest)) {
+			out.flush();
+		}
+		Assert.assertTrue(StahnoutAktualizaciSwingWorker.uzStazena(instalace, "9.9.9"));
+		Assert.assertFalse("jiná verze", StahnoutAktualizaciSwingWorker.uzStazena(instalace, "9.9.10"));
+		instaluj("geokuk.jar.new", "neni jar");
+		Assert.assertFalse("poškozený soubor", StahnoutAktualizaciSwingWorker.uzStazena(instalace, "9.9.9"));
 	}
 
 	@Test
