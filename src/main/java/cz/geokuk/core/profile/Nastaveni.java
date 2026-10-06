@@ -2,6 +2,7 @@ package cz.geokuk.core.profile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -51,7 +52,7 @@ public final class Nastaveni {
 		uklidDocasne(soubor);
 		if (soubor.isFile() && soubor.length() == 0) {
 			// Prázdný soubor (výpadek proudu, antivir) nemá co zachraňovat, platí jako chybějící.
-			soubor.delete();
+			smaz(soubor);
 		}
 		if (soubor.isFile()) {
 			try {
@@ -88,8 +89,16 @@ public final class Nastaveni {
 		for (final File f : soubory) {
 			final String jmeno = f.getName();
 			if (f.isFile() && jmeno.startsWith(predpona) && jmeno.endsWith(".tmp") && f.lastModified() < hranice) {
-				f.delete();
+				smaz(f);
 			}
+		}
+	}
+
+	private static void smaz(final File soubor) {
+		try {
+			Files.deleteIfExists(soubor.toPath());
+		} catch (final IOException e) {
+			log.warn("Soubor {} nelze smazat", soubor, e);
 		}
 	}
 
