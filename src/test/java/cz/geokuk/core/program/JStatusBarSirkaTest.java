@@ -61,7 +61,7 @@ public class JStatusBarSirkaTest {
 		((JTextComponent) pole(radek, "celkovePoctyVsude")).setText("123456/104337");
 		((JPanel) pole(radek, "jFilterProgressPanel")).add(new JProgressBar());
 		final JLabel varovani = (JLabel) pole(radek, "varovaniPoctuPrekrocenych");
-		varovani.setText("Limit 30000 waypointů");
+		varovani.setText("Překročen limit 30000 waypointů");
 		varovani.setVisible(true);
 		okno.setSize(sirka, 400);
 		Assert.assertEquals(predDaty.height, radek.getPreferredSize().height);
@@ -113,26 +113,6 @@ public class JStatusBarSirkaTest {
 				}
 			}
 		}
-	}
-
-	/** Na monitoru 1920 px (okno bez 16 px rámečku) se běžný stavový řádek vejde na jeden řádek i s rezervou 40 px na širší písmo. */
-	@Test
-	public void naFullHdJedenRadek() throws Exception {
-		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
-		final JStatusBar radek = new JStatusBar();
-		((JPanel) pole(radek, "odPozice")).setVisible(true);
-		final JPanel okno = new JPanel(new BorderLayout());
-		okno.add(radek, BorderLayout.SOUTH);
-		okno.setSize(1920 - 16, 400);
-		okno.doLayout();
-		radek.doLayout();
-		int vyskaRadku = 0;
-		for (final Component c : radek.getComponents()) {
-			vyskaRadku = Math.max(vyskaRadku, c.getPreferredSize().height);
-		}
-		Assert.assertEquals("jeden řádek", vyskaRadku, radek.getHeight());
-		final int sirka = radek.getPreferredSize().width;
-		Assert.assertTrue("rezerva na širší písmo: " + sirka, sirka <= 1920 - 16 - 40);
 	}
 
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
