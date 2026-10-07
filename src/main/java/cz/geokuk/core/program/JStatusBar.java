@@ -147,7 +147,7 @@ public class JStatusBar extends JPanel {
 	private JPanel jFilterProgressPanel;
 	private final JPrepinaceZdroju prepinaceZdroju = new JPrepinaceZdroju();
 
-	private final JValue jSouborSVyletem = new JValue("muj-vylet-2026.ggt", true);
+	private final JValue jSouborSVyletem = new JValue("vylet-26.ggt", true);
 	private final JLabel jSouborSVyletemPotrebujeUlozit = new JLabel();
 
 	private KesBag filtrovane;
@@ -301,7 +301,7 @@ public class JStatusBar extends JPanel {
 
 	JPanel createPanel() {
 		final JPanel panel = new JPanel();
-		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 3, 0));
 		panel.setBorder(BorderFactory.createEtchedBorder());
 		return panel;
 	}
@@ -426,12 +426,18 @@ public class JStatusBar extends JPanel {
 	}
 
 	static String textPrekroceni(final boolean tecky, final int limit) {
-		return String.format(new Locale("cs"), "Překročen limit %,d %s", limit, tecky ? "teček" : "waypointů");
+		return String.format(new Locale("cs"), "Limit %,d %s", limit, tecky ? "teček" : "waypointů");
+	}
+
+	static String tooltipPrekroceni(final boolean tecky, final int limit) {
+		return String.format(new Locale("cs"), "Ve výřezu je víc než %,d %s, %s se nekreslí. Přibližte mapu nebo vyfiltrujte zbytečné waypointy.", limit, tecky ? "teček" : "waypointů",
+				tecky ? "tečky" : "ikony");
 	}
 
 	private void setVarujPrekroceni(final boolean b, final boolean tecky, final int limit) {
 		if (b) {
 			varovaniPoctuPrekrocenych.setText(textPrekroceni(tecky, limit));
+			varovaniPoctuPrekrocenych.setToolTipText(tooltipPrekroceni(tecky, limit));
 		}
 		varovaniPoctuPrekrocenych.setVisible(b);
 		revalidate();
