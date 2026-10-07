@@ -178,13 +178,12 @@ public class DalkoveOvladaniTest {
 	@Test
 	public void slozkaBezPravaZapisuMaSrozumitelnouHlasku() throws Exception {
 		final java.nio.file.Path d = posixSlozka("r-x------");
-		// Root smí zapisovat všude.
-		org.junit.Assume.assumeFalse("root".equals(System.getProperty("user.name")));
+		org.junit.Assume.assumeFalse("složku smí zapisovat i vlastník (root)", java.nio.file.Files.isWritable(d));
 		try {
 			DalkoveOvladani.overSlozku(d);
 			org.junit.Assert.fail();
 		} catch (final IOException e) {
-			org.junit.Assert.assertTrue(e.getMessage(), e.getMessage().contains("nejde zapisovat"));
+			org.junit.Assert.assertTrue(e.getMessage(), e.getMessage().contains("patří jinému uživateli"));
 		}
 	}
 

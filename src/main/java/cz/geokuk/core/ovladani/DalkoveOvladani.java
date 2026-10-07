@@ -272,7 +272,7 @@ public class DalkoveOvladani {
 		try {
 			soubor = Files.createTempFile(adresar, "vlastnik", ".tmp");
 		} catch (final AccessDeniedException e) {
-			throw new IOException("Do složky " + adresar + " nejde zapisovat (asi patří jinému uživateli), soubor dálkového ovládání do ní nezapíšu.", e);
+			throw new IOException("Složka " + adresar + " patří jinému uživateli, soubor dálkového ovládání do ní nezapíšu.", e);
 		}
 		try {
 			return Files.getOwner(soubor, LinkOption.NOFOLLOW_LINKS);
