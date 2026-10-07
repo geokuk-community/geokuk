@@ -39,6 +39,9 @@ public class ShodaPostupnehoNacteniTest {
 	private File geoget;
 	private MultiNacitac nacitac;
 	private KesBag zobrazene;
+	/** Uložené časy dat zdrojů, jako by byly v nastavení. */
+	private Set<String> nastaveniCasu = new LinkedHashSet<>();
+	private int zapisuCasu;
 	/** Časy souborů řídí test, aby pořadí zdrojů nezáviselo na rychlosti disku. */
 	private long hodiny = 1_700_000_000_000L;
 
@@ -143,6 +146,66 @@ public class ShodaPostupnehoNacteniTest {
 		over("změna s novým překryvem");
 	}
 
+	@Test
+	public void casDatPrezijeRestartProgramu() throws Exception {
+		final File stary = gpxKesi("a-stary.gpx", "stary", "GC0001");
+		gpxKesi("b-novy.gpx", "novy", "GC0001");
+		nacti();
+		dotkniSe(stary);
+		Assert.assertEquals("novy", zdrojKese(nacti(), "GC0001"));
+		// nový program: prázdná paměť, jen uložené nastavení
+		zobrazene = null;
+		nacitac = new MultiNacitac(model(() -> zobrazene), new CasyDatZdroju());
+		Assert.assertEquals("po restartu nevyhraje jen otevřený soubor", "novy", zdrojKese(nacti(), "GC0001"));
+		final int zapisu = zapisuCasu;
+		nacti();
+		Assert.assertEquals("beze změny se nastavení nezapisuje", zapisu, zapisuCasu);
+	}
+
+	@Test
+	public void bezUlozenehoCasuPlatiCasSouboruAZmizelyZdrojSeZapomene() throws Exception {
+		final File stary = gpxKesi("a-stary.gpx", "stary", "GC0001");
+		final File novy = gpxKesi("b-novy.gpx", "novy", "GC0001");
+		nastaveniCasu = new LinkedHashSet<>(Arrays.asList("poškozený", "1;x;" + novy.getPath()));
+		dotkniSe(stary);
+		Assert.assertEquals("stary", zdrojKese(nacti(), "GC0001"));
+		Assert.assertTrue(nastaveniCasu.toString(), nastaveniCasu.stream().anyMatch(r -> r.endsWith(novy.getPath())));
+		Files.delete(novy.toPath());
+		nacti();
+		Assert.assertEquals("smazaný zdroj se z nastavení zapomene", 1, nastaveniCasu.size());
+		Assert.assertTrue(nastaveniCasu.iterator().next().endsWith(stary.getPath()));
+	}
+
+	@Test(timeout = 60_000)
+	public void prevzataKesSWaypointemBezSouradnic() throws Exception {
+		gpx("kes.gpx", kes("GC0001", "kes"), "<wpt lat=\"0\" lon=\"0\"><name>PK0001</name><sym>Parking Area</sym></wpt>\n");
+		final File jiny = gpxKesi("jiny.gpx", "jiny", "GC0002");
+		nacti();
+		for (int i = 0; i < 3; i++) {
+			vypnute.add(jiny);
+			nacti();
+			vypnute.clear();
+			nacti();
+			over("převzetí " + i);
+		}
+	}
+
+	@Test(timeout = 60_000)
+	public void opakovaniBehuSkonciIKdyzSeCasyPoradPreji() throws Exception {
+		gpxKesi("a.gpx", "a", "GC0001");
+		gpxKesi("b.gpx", "b", "GC0001");
+		final int[] volani = { 0 };
+		// každé čtení dá jiný čas dat, jako by oba soubory jiný program pořád přepisoval
+		nacitac = new MultiNacitac(model(() -> zobrazene), new CasyDatZdroju() {
+			@Override
+			synchronized long casPoPrecteni(final File zdroj, final long otiskObsahu, final long casZmeny) {
+				return ++volani[0] * 1000L;
+			}
+		});
+		Assert.assertNotNull(nacti());
+		Assert.assertTrue("čteno " + nacitac.getPosledniPocetCteni(), nacitac.getPosledniPocetCteni() <= 4 * 2);
+	}
+
 	// ---------- náhodné posloupnosti ----------
 
 	@Test
@@ -184,6 +247,7 @@ public class ShodaPostupnehoNacteniTest {
 		zdroje.add(gpx("prazdny.gpx"));
 		nacti();
 		over(denik + " start");
+		final List<String> poradiStavu = poradiStavu();
 		for (int k = 0; k < kroku; k++) {
 			final File f = zdroje.get(r.nextInt(zdroje.size()));
 			final int op = r.nextInt(10);
@@ -215,7 +279,16 @@ public class ShodaPostupnehoNacteniTest {
 			}
 			nacti();
 			over(denik.toString());
+			Assert.assertEquals(denik.toString(), poradiStavu, poradiStavu());
 		}
+	}
+
+	private List<String> poradiStavu() {
+		final List<String> vysledek = new ArrayList<>();
+		for (final StavPolozky p : nacitac.getRegistr().getSnimek().getPolozky()) {
+			vysledek.add(p.getCesta());
+		}
+		return vysledek;
 	}
 
 	// ---------- porovnání ----------
@@ -397,6 +470,17 @@ public class ShodaPostupnehoNacteniTest {
 			@Override
 			public boolean maSeNacist(final KeFile zdroj) {
 				return maSeNacist(zdroj.getFile());
+			}
+
+			@Override
+			public Set<String> getCasyDatZdroju() {
+				return nastaveniCasu;
+			}
+
+			@Override
+			public void setCasyDatZdroju(final Set<String> zaznamy) {
+				nastaveniCasu = new LinkedHashSet<>(zaznamy);
+				zapisuCasu++;
 			}
 		};
 		model.inject(progress);

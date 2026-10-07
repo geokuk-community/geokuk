@@ -172,6 +172,21 @@ public class StavZdrojuNacitaniTest {
 		Assert.assertFalse(novy.isTypVypnut(TypZdroje.GEOGET));
 	}
 
+	@Test
+	public void casyDatZdrojuSeUloziDoNastaveniANovyModelJeNacte() throws Exception {
+		zalozGeoget("a.db3", "GC000A");
+		model.nactiVyberZdroju();
+		start();
+		nacitac.nacti(null, genom);
+		final KesoidModel novy = model();
+		novy.nactiVyberZdroju();
+		final List<String> cesty = new ArrayList<>();
+		for (final String zaznam : novy.getCasyDatZdroju()) {
+			cesty.add(zaznam.substring(zaznam.indexOf(';', zaznam.indexOf(';') + 1) + 1));
+		}
+		Assert.assertEquals(new HashSet<>(Arrays.asList(new File(gpx, "a.gpx").getPath(), new File(slozkaGeogetu, "a.db3").getPath())), new HashSet<>(cesty));
+	}
+
 	/** Nová databáze vypnutá až při zařazení („Načítat až po vybrání“) se v registru nesmí ukazovat jako zapnutá. */
 	@Test
 	public void novaDatabazeVypnutaPriZarazeniJeVRegistruVypnuta() throws Exception {

@@ -60,6 +60,8 @@ public class KesoidModel extends Model0 {
 	private volatile Set<File> blokovaneZdroje = Collections.emptySet();
 	/** Vypnuté celé typy zdrojů; položky si zachovávají vlastní volbu v blokovaných zdrojích. */
 	private volatile Set<TypZdroje> vypnuteTypy = Collections.emptySet();
+	private volatile Set<String> casyDatZdroju = Collections.emptySet();
+	private boolean casyDatZNastaveni;
 	/** Složky, které se při posledním prohledání nepodařilo přečíst. */
 	private volatile Set<File> nedostupnePriNacitani = Collections.emptySet();
 	private GsakParametryNacitani gsakParametryNacitani;
@@ -648,8 +650,22 @@ public class KesoidModel extends Model0 {
 		}
 	}
 
-	/** Načte z nastavení, které zdroje a typy zdrojů uživatel vypnul. */
+	/** Čas dat zdrojů z minulého běhu programu, záznamy ve tvaru, kterému rozumí načítání; chybějící nastavení = žádné záznamy. */
+	public synchronized Set<String> getCasyDatZdroju() {
+		return casyDatZdroju;
+	}
+
+	public synchronized void setCasyDatZdroju(final Set<String> zaznamy) {
+		casyDatZdroju = Collections.unmodifiableSet(new LinkedHashSet<>(zaznamy));
+		if (casyDatZNastaveni) {
+			currPrefe().node(FPref.KESOID_node).putStringSet(FPref.CASY_DAT_ZDROJU_value, casyDatZdroju);
+		}
+	}
+
+	/** Načte z nastavení, které zdroje a typy zdrojů uživatel vypnul, a časy dat zdrojů. */
 	public synchronized void nactiVyberZdroju() {
+		casyDatZdroju = Collections.unmodifiableSet(currPrefe().node(FPref.KESOID_node).getStringSet(FPref.CASY_DAT_ZDROJU_value, Collections.<String>emptySet()));
+		casyDatZNastaveni = true;
 		blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
 		vypnuteTypy = nactiVypnuteTypy();
 	}

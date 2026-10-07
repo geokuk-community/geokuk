@@ -41,6 +41,8 @@ public class MultiNacitac {
 	/** Klíče zdrojů z jejich posledního přečtení, i vypnutých. */
 	private final Map<File, SkupinyZdroju.ZnamyZdroj> znameZdroje = new HashMap<>();
 	private final CasyDatZdroju casyDat;
+	/** Časy dat naposledy zapsané do nastavení; null = ještě nenačtené. */
+	private Set<String> ulozeneCasy;
 	private volatile Set<File> posledniPrectene = Collections.emptySet();
 	private volatile int posledniPocetCteni;
 
@@ -196,6 +198,10 @@ public class MultiNacitac {
 		if (kesoidModel.getVsechnyKesoidy() == null) {
 			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
+		if (ulozeneCasy == null) {
+			ulozeneCasy = kesoidModel.getCasyDatZdroju();
+			casyDat.nacti(ulozeneCasy);
+		}
 		final Object kontext = kontext(genom);
 		final Map<File, KeFile> poSouboru = new HashMap<>();
 		final Map<File, String> otiskyTed = new HashMap<>();
@@ -278,6 +284,12 @@ public class MultiNacitac {
 			return null;
 		}
 		ulozCache(poSouboru.keySet(), cteni, klice, casyPoCteni, otiskyTed, prevzate, kontext);
+		// Zdroj v dočasně nedostupné složce (síť, USB) si čas dat nechá.
+		final Set<String> casy = casyDat.ponechej(f -> poSouboru.containsKey(f) || nedostupne.stream().anyMatch(d -> f.toPath().startsWith(d.toPath())));
+		if (!casy.equals(ulozeneCasy)) {
+			kesoidModel.setCasyDatZdroju(casy);
+			ulozeneCasy = casy;
+		}
 		posledniPrectene = new HashSet<>(cteni.zkouseno);
 		posledniPocetCteni = pocetCteni;
 		final Set<File> nactene = new HashSet<>();

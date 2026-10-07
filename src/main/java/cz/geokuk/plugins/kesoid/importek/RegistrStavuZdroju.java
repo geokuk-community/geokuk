@@ -83,7 +83,10 @@ public class RegistrStavuZdroju {
 		return gen;
 	}
 
-	/** Přepnutí zapnutí z jiného vlákna než načítání: stav se změní hned, bez čekání na načítání. */
+	/**
+	 * Přepnutí zapnutí z jiného vlákna než načítání: stav se změní hned, bez čekání na načítání. Nová generace zahodí zápisy celého běžícího běhu, nejen přepnutých
+	 * položek; to platí jen proto, že každé přepnutí běh zruší a spustí nový ({@code KesoidModel.zmenZapnute}).
+	 */
 	public void prepisZapnuti(final Predicate<File> zapnuto, final Predicate<TypZdroje> typVypnut) {
 		boolean zmena = false;
 		synchronized (this) {
