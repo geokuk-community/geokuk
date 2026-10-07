@@ -116,4 +116,26 @@ public class ZalamovaciLayoutTest {
 		Assert.assertEquals(new Rectangle(200, 0, 100, 20), prubeh.getBounds());
 		Assert.assertEquals(new Rectangle(300, 0, 100, 20), pravy.getBounds());
 	}
+
+	@Test
+	public void neviditelnaPravaMistoNezabira() {
+		final JComponent a = pridej(200);
+		final JComponent pravy = pridej(150);
+		layout.vpravo(pravy);
+		pravy.setVisible(false);
+		final JComponent b = pridej(150);
+		rozvrhni(360);
+		Assert.assertEquals(20, panel.getHeight());
+		Assert.assertEquals(new Rectangle(200, 0, 150, 20), b.getBounds());
+		Assert.assertEquals(new Rectangle(0, 0, 200, 20), a.getBounds());
+	}
+
+	@Test
+	public void vUzsimKontejneruNezajedePravaDoleva() {
+		pridej(100);
+		final JComponent pravy = pridej(300);
+		layout.vpravo(pravy);
+		rozvrhni(200);
+		Assert.assertEquals(0, pravy.getX());
+	}
 }

@@ -32,7 +32,9 @@ public class JPrepinaceZdrojuTest {
 			final JPanel radek = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
 			radek.add(blok);
 			okno.add(radek, BorderLayout.SOUTH);
-			okno.setBounds(20, 100, 1200, 300);
+			// Celé okno na obrazovce (runner Windows má 1024 px), aby se popup nemusel posouvat.
+			final Rectangle obrazovka = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getBounds();
+			okno.setBounds(obrazovka.x, obrazovka.y + 100, Math.min(1200, obrazovka.width), 300);
 			okno.setVisible(true);
 		});
 		naEdt(() -> blok.prizpusob());
@@ -103,8 +105,10 @@ public class JPrepinaceZdrojuTest {
 			for (final JPrepinaceZdroju.Oblast o : oblasti) {
 				Assert.assertEquals(o.druh + " " + o.typ, vyska, o.plocha.height);
 			}
-			final Rectangle z = blok.getZaskrtavatko(TypZdroje.GEOGET).getBounds();
-			final Rectangle i = blok.getIkona(TypZdroje.GEOGET).getBounds();
+			final JComponent zc = blok.getZaskrtavatko(TypZdroje.GEOGET);
+			final JComponent ic = blok.getIkona(TypZdroje.GEOGET);
+			final Rectangle z = SwingUtilities.convertRectangle(zc.getParent(), zc.getBounds(), blok);
+			final Rectangle i = SwingUtilities.convertRectangle(ic.getParent(), ic.getBounds(), blok);
 			Assert.assertTrue("mezera mezi zaškrtávátkem a ikonou", i.x > z.x + z.width);
 			final Point mezera = new Point(z.x + z.width, z.y + z.height / 2);
 			for (final JPrepinaceZdroju.Oblast o : oblasti) {
@@ -188,6 +192,53 @@ public class JPrepinaceZdrojuTest {
 			najed(blok.getIkona(TypZdroje.OPENSAK));
 			Assert.assertSame(blok.getObsahDetailu(TypZdroje.OPENSAK), blok.viditelny());
 			Assert.assertTrue(blok.viditelny().getWidth() <= 800);
+		});
+	}
+
+	@Test
+	public void najetiAZmenaStavuNemeniRozlozeni() throws Exception {
+		final Rectangle[] pred = new Rectangle[2];
+		naEdt(() -> {
+			okno.validate();
+			pred[0] = blok.getBounds();
+			pred[1] = blok.getParent().getBounds();
+			najed(blok.getPopisek());
+			najed(blok.getNazev(TypZdroje.GEOGET));
+			data.registr.zacina(data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor());
+			blok.obnov(data.snimek());
+			okno.validate();
+			Assert.assertEquals(pred[0], blok.getBounds());
+			Assert.assertEquals(pred[1], blok.getParent().getBounds());
+		});
+		data.registr.hotovo(data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor(), 10, 10);
+		naEdt(() -> {
+			blok.obnov(data.snimek());
+			blok.zavriSeznam();
+			okno.validate();
+			Assert.assertEquals(pred[0], blok.getBounds());
+		});
+	}
+
+	@Test
+	public void jenTypyPovoleneVNastaveni() throws Exception {
+		final KesoidUmisteniSouboru u = new KesoidUmisteniSouboru();
+		u.setKesDir(new cz.geokuk.util.file.Filex(new File("/kese"), false, true));
+		u.setGeogetDataDir(new cz.geokuk.util.file.Filex(new File("/geoget"), false, true));
+		u.setGsakDataDir(new cz.geokuk.util.file.Filex(new File("/gsak"), false, false));
+		u.setOpensakDataDir(new cz.geokuk.util.file.Filex(new File("/opensak"), false, false));
+		Assert.assertEquals(java.util.EnumSet.of(TypZdroje.GPX, TypZdroje.GEOGET), JPrepinaceZdroju.povoleneTypy(u));
+		final int plna = rozmer(data.snimek()).width;
+		naEdt(() -> {
+			blok.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(u));
+			okno.validate();
+			Assert.assertFalse(blok.getBunka(TypZdroje.GSAK).isVisible());
+			Assert.assertTrue(blok.getBunka(TypZdroje.GEOGET).isVisible());
+			Assert.assertTrue(blok.getPreferredSize().width < plna);
+			Assert.assertEquals("vpravo zůstává", blok.getParent().getWidth(), blok.getX() + blok.getWidth());
+			Assert.assertEquals(2 + 3, blok.getUplna().getRadky().size());
+			for (final JPrepinaceZdroju.Oblast o : blok.oblasti()) {
+				Assert.assertNotEquals(TypZdroje.GSAK, o.typ);
+			}
 		});
 	}
 }
