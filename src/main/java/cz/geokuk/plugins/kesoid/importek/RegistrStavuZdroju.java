@@ -7,8 +7,8 @@ import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
 
 /**
- * Stav všech položek zdrojů. Píše vlákno načítání a vlákno, které přepíná zdroje, čte kdokoli (snímek je neměnný). Zápis stavu vypnuté položky se ignoruje, aby zpožděné
- * zrušené načítání nepřepsalo vypnutí.
+ * Stav všech položek zdrojů. Píše vlákno načítání a vlákno, které přepíná zdroje, čte kdokoli (snímek je neměnný). Zápis stavu vypnuté položky i zápis
+ * zrušeného běhu (jiná generace) se ignoruje, aby zpožděné zrušené načítání nepřepsalo vypnutí ani nový běh.
  */
 public class RegistrStavuZdroju {
 
@@ -16,10 +16,16 @@ public class RegistrStavuZdroju {
 	private volatile StavZdroju snimek = StavZdroju.PRAZDNY;
 	private volatile Map<File, TypZdroje> typy = Collections.emptyMap();
 	private volatile Runnable posluchac = () -> {};
+	/** Zvyšuje se s každým během načítání i přepnutím zdroje; zápis s jinou generací pochází ze zrušeného běhu. */
+	private int generace;
 
 	/** Volá se po každé změně z vlákna, které ji provedlo. */
 	public void setPosluchac(final Runnable posluchac) {
 		this.posluchac = posluchac;
+	}
+
+	synchronized int getGenerace() {
+		return generace;
 	}
 
 	public StavZdroju getSnimek() {
@@ -41,11 +47,12 @@ public class RegistrStavuZdroju {
 	}
 
 	/**
-	 * Nový seznam položek po skenu. Načítaná položka (zapnutá a s nevypnutým typem) zůstane načtená (nebo chybná, nebo čekající na zápis), dokud na ni nepřijde řada, ostatní
+	 * Nový seznam položek po skenu, vrací generaci pro zápisy běhu načítání. Načítaná položka (zapnutá a s nevypnutým typem) zůstane načtená (nebo chybná, nebo čekající na zápis), dokud na ni nepřijde řada, ostatní
 	 * zapnuté čekají na řadu; ostatní jsou vypnuté. Počty waypointů se pamatují.
 	 */
-	public void prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Function<File, String> nazev, final Predicate<File> zapnuto,
+	public int prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Function<File, String> nazev, final Predicate<File> zapnuto,
 			final Predicate<TypZdroje> typVypnut, final ToLongFunction<File> velikost) {
+		final int gen;
 		synchronized (this) {
 			final Map<File, TypZdroje> noveTypy = new HashMap<>();
 			for (final File f : soubory) {
@@ -70,11 +77,16 @@ public class RegistrStavuZdroju {
 				polozky.put(f, nova.sZapnutim(zap).sTypVypnut(vypnutyTyp).s(stav, 0, stav == StavZdroje.CHYBA && predtim != null ? predtim.getChyba() : null).sVelikosti(velikost.applyAsLong(f)));
 			}
 			obnovSnimek();
+			gen = ++generace;
 		}
 		posluchac.run();
+		return gen;
 	}
 
-	/** Přepnutí zapnutí z jiného vlákna než načítání: stav se změní hned, bez čekání na načítání. */
+	/**
+	 * Přepnutí zapnutí z jiného vlákna než načítání: stav se změní hned, bez čekání na načítání. Nová generace zahodí zápisy celého běžícího běhu, nejen přepnutých
+	 * položek; to platí jen proto, že každé přepnutí běh zruší a spustí nový ({@code KesoidModel.zmenZapnute}).
+	 */
 	public void prepisZapnuti(final Predicate<File> zapnuto, final Predicate<TypZdroje> typVypnut) {
 		boolean zmena = false;
 		synchronized (this) {
@@ -95,6 +107,7 @@ public class RegistrStavuZdroju {
 			}
 			if (zmena) {
 				obnovSnimek();
+				generace++;
 			}
 		}
 		if (zmena) {
@@ -102,31 +115,31 @@ public class RegistrStavuZdroju {
 		}
 	}
 
-	public void zacina(final File soubor) {
-		zmen(soubor, p -> p.s(StavZdroje.NACITA_SE, 0, null));
+	public void zacina(final int gen, final File soubor) {
+		zmen(gen, soubor, p -> p.s(StavZdroje.NACITA_SE, 0, null));
 	}
 
 	/** Postup nikdy neklesá, loader může založit víc průběhů za sebou. */
-	public void postup(final File soubor, final int procent) {
-		zmen(soubor, p -> p.getStav() == StavZdroje.NACITA_SE && procent > p.getPostup() ? p.s(StavZdroje.NACITA_SE, Math.min(99, procent), null) : null);
+	public void postup(final int gen, final File soubor, final int procent) {
+		zmen(gen, soubor, p -> p.getStav() == StavZdroje.NACITA_SE && procent > p.getPostup() ? p.s(StavZdroje.NACITA_SE, Math.min(99, procent), null) : null);
 	}
 
-	public void hotovo(final File soubor, final int celkem, final int brano) {
-		zmen(soubor, p -> p.s(StavZdroje.NACTENO, 0, null).sPocty(celkem, brano));
+	public void hotovo(final int gen, final File soubor, final int celkem, final int brano) {
+		zmen(gen, soubor, p -> p.s(StavZdroje.NACTENO, 0, null).sPocty(celkem, brano));
 	}
 
-	public void cekaNaZapis(final File soubor) {
-		zmen(soubor, p -> p.s(StavZdroje.CEKA_NA_ZAPIS, 0, null));
+	public void cekaNaZapis(final int gen, final File soubor) {
+		zmen(gen, soubor, p -> p.s(StavZdroje.CEKA_NA_ZAPIS, 0, null));
 	}
 
-	public void chyba(final File soubor, final String chyba) {
-		zmen(soubor, p -> p.s(StavZdroje.CHYBA, 0, chyba));
+	public void chyba(final int gen, final File soubor, final String chyba) {
+		zmen(gen, soubor, p -> p.s(StavZdroje.CHYBA, 0, chyba));
 	}
 
-	private void zmen(final File soubor, final Function<StavPolozky, StavPolozky> uprava) {
+	private void zmen(final int gen, final File soubor, final Function<StavPolozky, StavPolozky> uprava) {
 		synchronized (this) {
 			final StavPolozky p = polozky.get(soubor);
-			if (p == null || !p.isNacitat()) {
+			if (gen != generace || p == null || !p.isNacitat()) {
 				return;
 			}
 			final StavPolozky nova = uprava.apply(p);

@@ -18,5 +18,7 @@ public interface GpxToWptContext {
 
 	void expose(Wpt wpt);
 
+	/** Waypoint se páruje s jiným podle textu {@code klic}; zdroje se stejným klíčem se ovlivňují a musí se načítat spolu. */
+	default void vazba(final GpxWpt gpxwpt, final String klic) {}
 
 }

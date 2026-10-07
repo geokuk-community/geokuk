@@ -27,6 +27,7 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 	private static final String GEOCACHE = "Geocache";
 	private static final String GEOCACHE_FOUND = "Geocache Found";
 	private static final String WAYMARK = "Waymark";
+	private static final String VAZBA = "cgp:";
 
 
 	private final GpxToWptContext ctx;
@@ -40,6 +41,9 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 	public EProcakResult process(final GpxWpt gpxwpt) {
 		if (isCzechGeodeticPoint(gpxwpt)) {
 			final EKesType kesType = decodePseudoKesType(gpxwpt);
+			if (kesType != EKesType.EVENT && kesType != EKesType.CACHE_IN_TRASH_OUT_EVENT && kesType != EKesType.MEGA_EVENT) {
+				ctx.vazba(gpxwpt, VAZBA + extrahujPrefixPredTeckou(gpxwpt));
+			}
 			switch (kesType) {
 			case TRADITIONAL:
 			case MULTI:
@@ -85,6 +89,7 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 			if (oznaceniBodu == null) {
 				return EProcakResult.NEVER; // tak ve jméně není označení, zobrazíme jako normální waymark
 			}
+			ctx.vazba(gpxwpt, VAZBA + oznaceniBodu);
 			final CzechGeodeticPoint cgp = mapaPredTeckou.get(oznaceniBodu);
 			if (cgp == null) {
 				if (druheKolo) {
