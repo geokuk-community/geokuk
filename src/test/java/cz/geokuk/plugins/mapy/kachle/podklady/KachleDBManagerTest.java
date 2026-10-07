@@ -73,6 +73,9 @@ public class KachleDBManagerTest {
 		final File vadna = new File(soubor.getPath() + ".vadna");
 		final File vadna1 = new File(soubor.getPath() + ".vadna.1");
 		for (final String obsah : new String[] { "první", "druhá", "třetí" }) {
+			for (final SqlJetDb db : manager.connections.values()) {
+				db.close();
+			}
 			Files.write(soubor.toPath(), obsah.getBytes(StandardCharsets.UTF_8));
 			manager = new KachleDBManager(manager.folderHolder);
 			Assert.assertNull(manager.load(KACHLE));
