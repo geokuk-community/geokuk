@@ -25,6 +25,7 @@ public class JVyletCombo extends JPanel {
 		final JPanel pole = new JPanel(new BorderLayout(6, 0));
 		pole.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor") != null ? UIManager.getColor("Component.borderColor") : Color.GRAY),
 				BorderFactory.createEmptyBorder(0, 6, 0, 4)));
+		nazev.setPreferredSize(new Dimension(150, nazev.getPreferredSize().height + 2));
 		pole.add(nazev, BorderLayout.CENTER);
 		pole.add(new JLabel("▾"), BorderLayout.EAST);
 		pole.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -37,6 +38,7 @@ public class JVyletCombo extends JPanel {
 		});
 		add(pole);
 		pocty.setToolTipText("Počet keší, které chci lovit / budu ignorovat.");
+		pocty.setPreferredSize(new Dimension(pocty.getFontMetrics(pocty.getFont()).stringWidth("9999 / 9999"), pocty.getFontMetrics(pocty.getFont()).getHeight()));
 		add(pocty);
 		model.addPosluchac(this::obnov);
 		obnov();

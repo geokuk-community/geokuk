@@ -48,6 +48,12 @@ final class IkonyZdroju {
 		};
 	}
 
+	/** Prázdná ikona vypnutého zdroje, aby místo zůstalo zachované. */
+	static Icon prazdna() {
+		return ikona(g -> {
+		});
+	}
+
 	static Icon zapnuto() {
 		return ikona(g -> {
 			g.setColor(ZELENA);

@@ -38,8 +38,6 @@ public class JZdrojePopup extends JPanel {
 	private final Typ zobrazenyTyp;
 	private final List<Radek> radky = new ArrayList<>();
 	private final JTable tabulka;
-	private final JToggleButton[] rezimy = new JToggleButton[Rezim.values().length];
-	private final ButtonGroup skupinaRezimu = new ButtonGroup();
 
 	private final AbstractTableModel tm = new AbstractTableModel() {
 		private static final long serialVersionUID = 1L;
@@ -104,19 +102,11 @@ public class JZdrojePopup extends JPanel {
 		this.zobrazenyTyp = zobrazenyTyp;
 		setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-		final JPanel hlavicka = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-		hlavicka.add(new JLabel("Všechny zdroje:"));
-		for (final Rezim rezim : Rezim.values()) {
-			final JToggleButton b = new JToggleButton(rezim.getText());
-			b.setFocusable(false);
-			b.addActionListener(e -> model.setRezim(rezim));
-			skupinaRezimu.add(b);
-			rezimy[rezim.ordinal()] = b;
-			hlavicka.add(b);
-		}
-		if (zobrazenyTyp == null) {
-			add(hlavicka, BorderLayout.NORTH);
-		}
+		final JPanel odkazy = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		odkazy.add(odkaz("Vše zapnout", true));
+		odkazy.add(new JLabel("|"));
+		odkazy.add(odkaz("Vše vypnout", false));
+		add(odkazy, BorderLayout.NORTH);
 
 		tabulka = new JTable(tm) {
 			private static final long serialVersionUID = 1L;
@@ -143,7 +133,7 @@ public class JZdrojePopup extends JPanel {
 			tabulka.getColumnModel().getColumn(i).setPreferredWidth(sirky[i]);
 		}
 		final JScrollPane scroll = new JScrollPane(tabulka);
-		scroll.setPreferredSize(new Dimension(760, 22 * (zobrazenyTyp == null ? Typ.values().length + model.getPolozky().size() : model.getPolozky(zobrazenyTyp).size() + 1) + 26));
+		scroll.setPreferredSize(new Dimension(760, 22 * (zobrazenyTyp == null ? Typ.values().length + model.getPolozky().size() : model.getPolozky(zobrazenyTyp).size() + 1) + 30));
 		add(scroll, BorderLayout.CENTER);
 
 		model.addPosluchac(this::obnov);
@@ -162,12 +152,22 @@ public class JZdrojePopup extends JPanel {
 			}
 		}
 		tm.fireTableDataChanged();
-		final Rezim rezim = model.getRezim();
-		if (rezim == null) {
-			skupinaRezimu.clearSelection();
-		} else {
-			rezimy[rezim.ordinal()].setSelected(true);
-		}
+	}
+
+	private JButton odkaz(final String text, final boolean zapnout) {
+		final JButton b = new JButton("<html><a href=\"#\">" + text + "</a></html>");
+		b.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
+		b.setContentAreaFilled(false);
+		b.setFocusable(false);
+		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.addActionListener(e -> {
+			if (zobrazenyTyp == null) {
+				model.setVse(zapnout);
+			} else {
+				model.setTypZapnut(zobrazenyTyp, zapnout);
+			}
+		});
+		return b;
 	}
 
 	private String souhrnnyStav(final Typ typ) {

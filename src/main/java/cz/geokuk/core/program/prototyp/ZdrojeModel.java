@@ -33,20 +33,6 @@ public class ZdrojeModel {
 		}
 	}
 
-	public enum Rezim {
-		VSE("Zapnuto"), JEN_GPX("Jen GPX"), NIC("Vypnuto");
-
-		private final String text;
-
-		Rezim(final String text) {
-			this.text = text;
-		}
-
-		public String getText() {
-			return text;
-		}
-	}
-
 	public static class Polozka {
 		public final Typ typ;
 		public final String nazev;
@@ -140,30 +126,25 @@ public class ZdrojeModel {
 		zmeneno();
 	}
 
-	public void setRezim(final Rezim rezim) {
+	public void setVse(final boolean nacist) {
 		for (final Polozka p : polozky) {
-			nastav(p, rezim == Rezim.VSE || rezim == Rezim.JEN_GPX && p.typ == Typ.GPX);
+			nastav(p, nacist);
 		}
 		zmeneno();
 	}
 
-	public Rezim getRezim() {
-		boolean vse = true;
-		boolean jenGpx = true;
-		for (final Polozka p : polozky) {
-			vse &= p.nacist;
-			jenGpx &= p.nacist == (p.typ == Typ.GPX);
-		}
-		return vse ? Rezim.VSE : jenGpx ? Rezim.JEN_GPX : isNicZapnuto() ? null : Rezim.NIC;
-	}
-
-	private boolean isNicZapnuto() {
-		for (final Polozka p : polozky) {
-			if (p.nacist) {
-				return true;
+	/** Jen pro ukázku: nastaví stav všech zapnutých položek typu, vypnutí vypne celý typ. */
+	public void setStavTypu(final Typ typ, final Stav stav) {
+		for (final Polozka p : getPolozky(typ)) {
+			if (stav == Stav.VYPNUTO) {
+				nastav(p, false);
+			} else {
+				p.nacist = true;
+				p.stav = stav;
+				p.postup = stav == Stav.NACITA_SE ? 40 : 0;
 			}
 		}
-		return false;
+		zmeneno();
 	}
 
 	private static void nastav(final Polozka p, final boolean nacist) {
