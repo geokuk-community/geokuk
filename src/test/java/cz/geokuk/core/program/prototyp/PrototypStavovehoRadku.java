@@ -128,6 +128,15 @@ public class PrototypStavovehoRadku {
 		snimek(robot, okno[0], new File(slozka, "4-detail-gpx.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			prepinace[0].zavriSeznam();
+			zdroje.setPolozkaZapnuta(zdroje.getPolozky(Typ.GEOGET).get(1), false);
+			zdroje.setStavTypu(Typ.GEOGET, Stav.VYPNUTO);
+			prepinace[0].ukazTyp(Typ.GEOGET);
+		});
+		Thread.sleep(500);
+		snimek(robot, okno[0], new File(slozka, "13-popup-vypnuteho-typu.png"));
+		SwingUtilities.invokeAndWait(() -> {
+			prepinace[0].zavriSeznam();
+			zdroje.setStavTypu(Typ.GEOGET, Stav.NACTENO);
 			final JDialog prehled = new JDialog(okno[0], "Přehled zdrojů", false);
 			prehled.add(new JZdrojePopup(zdroje, null));
 			prehled.pack();
@@ -183,7 +192,9 @@ public class PrototypStavovehoRadku {
 				{ "GeoGet se načítá", new Stav[] { Stav.NACTENO, Stav.NACITA_SE, Stav.NACTENO, Stav.NACTENO } },
 				{ "GSAK zamčený", new Stav[] { Stav.NACTENO, Stav.NACTENO, Stav.ZAMCENO, Stav.NACTENO } },
 				{ "OpenSAK chyba, GPX vypnut", new Stav[] { Stav.VYPNUTO, Stav.NACTENO, Stav.NACTENO, Stav.CHYBA } },
-				{ "Vše vypnuto", new Stav[] { Stav.VYPNUTO, Stav.VYPNUTO, Stav.VYPNUTO, Stav.VYPNUTO } } };
+				{ "Vše vypnuto", new Stav[] { Stav.VYPNUTO, Stav.VYPNUTO, Stav.VYPNUTO, Stav.VYPNUTO } },
+				{ "Tři stavy typu: GPX zapnuto, GeoGet částečně (jedna DB odškrtnuta), GSAK vypnut (výběr položek zůstává), OpenSAK zapnuto",
+						new Stav[] { Stav.NACTENO, Stav.NACTENO, Stav.VYPNUTO, Stav.NACTENO }, (Runnable) () -> zdroje.setPolozkaZapnuta(zdroje.getPolozky(Typ.GEOGET).get(1), false) } };
 		final List<BufferedImage> obrazky = new ArrayList<>();
 		for (final Object[] scenar : scenare) {
 			final Stav[] stavy = (Stav[]) scenar[1];
@@ -191,6 +202,9 @@ public class PrototypStavovehoRadku {
 			SwingUtilities.invokeAndWait(() -> {
 				for (final Typ typ : Typ.values()) {
 					zdroje.setStavTypu(typ, stavy[typ.ordinal()]);
+				}
+				if (scenar.length > 2) {
+					((Runnable) scenar[2]).run();
 				}
 				final Dimension d = lista.getSize();
 				img[0] = new BufferedImage(d.width, d.height + 16, BufferedImage.TYPE_INT_RGB);

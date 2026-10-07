@@ -86,20 +86,41 @@ public class ZdrojeModel {
 		}
 	}
 
-	public boolean isTypZapnut(final Typ typ) {
-		for (final Polozka p : getPolozky(typ)) {
-			if (p.nacist) {
-				return true;
-			}
-		}
-		return false;
+	/** Volba typu na liště: zapnuto, vypnuto, nebo částečně (část položek typu je odškrtnutá). */
+	public enum VolbaTypu {
+		ZAPNUTO, CASTECNE, VYPNUTO
 	}
 
-	/** Stav přepínače typu: nejdůležitější stav jeho zapnutých položek. */
+	private final Set<Typ> vypnuteTypy = EnumSet.noneOf(Typ.class);
+
+	/** Přepínač typu; vypnutý typ si zachovává výběr svých položek. */
+	public boolean isTypZapnut(final Typ typ) {
+		return !vypnuteTypy.contains(typ);
+	}
+
+	public boolean isEfektivni(final Polozka p) {
+		return p.nacist && isTypZapnut(p.typ);
+	}
+
+	public VolbaTypu getVolbaTypu(final Typ typ) {
+		if (!isTypZapnut(typ)) {
+			return VolbaTypu.VYPNUTO;
+		}
+		int zapnute = 0;
+		final List<Polozka> polozkyTypu = getPolozky(typ);
+		for (final Polozka p : polozkyTypu) {
+			if (p.nacist) {
+				zapnute++;
+			}
+		}
+		return zapnute == 0 ? VolbaTypu.VYPNUTO : zapnute == polozkyTypu.size() ? VolbaTypu.ZAPNUTO : VolbaTypu.CASTECNE;
+	}
+
+	/** Stav přepínače typu: nejdůležitější stav jeho načítaných položek. */
 	public Stav getStavTypu(final Typ typ) {
 		Stav stav = Stav.VYPNUTO;
 		for (final Polozka p : getPolozky(typ)) {
-			if (!p.nacist) {
+			if (!isEfektivni(p)) {
 				continue;
 			}
 			if (p.stav == Stav.ZAMCENO || p.stav == Stav.CHYBA) {
@@ -114,31 +135,61 @@ public class ZdrojeModel {
 		return stav;
 	}
 
+	/** Volba jedné položky v tabulce; výběr ostatních položek ani typu se nemění. */
 	public void setPolozkaZapnuta(final Polozka p, final boolean nacist) {
-		nastav(p, nacist);
+		p.nacist = nacist;
+		prepocitej(p);
 		zmeneno();
 	}
 
+	/** Klik na zaškrtávátko typu na liště: vypnutý typ vrátí dřívější výběr položek, vypnutí výběr zachová. */
+	public void klikTyp(final Typ typ) {
+		final VolbaTypu volba = getVolbaTypu(typ);
+		if (volba == VolbaTypu.VYPNUTO && isTypZapnut(typ)) {
+			// Typ je zapnutý, ale nemá žádnou zapnutou položku.
+			nastavPolozkyTypu(typ, true);
+		} else if (volba == VolbaTypu.VYPNUTO) {
+			vypnuteTypy.remove(typ);
+			boolean zadna = true;
+			for (final Polozka p : getPolozky(typ)) {
+				zadna &= !p.nacist;
+			}
+			if (zadna) {
+				nastavPolozkyTypu(typ, true);
+			}
+		} else {
+			vypnuteTypy.add(typ);
+		}
+		prepocitejTyp(typ);
+		zmeneno();
+	}
+
+	/** Výslovné „Vše zapnout / Vše vypnout“ pro typ: přepíše výběr jeho položek. */
 	public void setTypZapnut(final Typ typ, final boolean nacist) {
-		for (final Polozka p : getPolozky(typ)) {
-			nastav(p, nacist);
-		}
+		vypnuteTypy.remove(typ);
+		nastavPolozkyTypu(typ, nacist);
+		prepocitejTyp(typ);
 		zmeneno();
 	}
 
+	/** Výslovné „Vše zapnout / Vše vypnout“ pro všechny zdroje. */
 	public void setVse(final boolean nacist) {
-		for (final Polozka p : polozky) {
-			nastav(p, nacist);
+		for (final Typ typ : Typ.values()) {
+			vypnuteTypy.remove(typ);
+			nastavPolozkyTypu(typ, nacist);
+			prepocitejTyp(typ);
 		}
 		zmeneno();
 	}
 
-	/** Jen pro ukázku: nastaví stav všech zapnutých položek typu, vypnutí vypne celý typ. */
+	/** Jen pro ukázku: nastaví stav načítaných položek typu, vypnutí vypne typ a výběr položek zachová. */
 	public void setStavTypu(final Typ typ, final Stav stav) {
-		for (final Polozka p : getPolozky(typ)) {
-			if (stav == Stav.VYPNUTO) {
-				nastav(p, false);
-			} else {
+		if (stav == Stav.VYPNUTO) {
+			vypnuteTypy.add(typ);
+			prepocitejTyp(typ);
+		} else {
+			vypnuteTypy.remove(typ);
+			for (final Polozka p : getPolozky(typ)) {
 				p.nacist = true;
 				p.stav = stav;
 				p.postup = stav == Stav.NACITA_SE ? 40 : 0;
@@ -147,12 +198,20 @@ public class ZdrojeModel {
 		zmeneno();
 	}
 
-	private static void nastav(final Polozka p, final boolean nacist) {
-		if (p.nacist == nacist) {
-			return;
+	private void nastavPolozkyTypu(final Typ typ, final boolean nacist) {
+		for (final Polozka p : getPolozky(typ)) {
+			p.nacist = nacist;
 		}
-		p.nacist = nacist;
-		if (!nacist) {
+	}
+
+	private void prepocitejTyp(final Typ typ) {
+		for (final Polozka p : getPolozky(typ)) {
+			prepocitej(p);
+		}
+	}
+
+	private void prepocitej(final Polozka p) {
+		if (!isEfektivni(p)) {
 			p.stav = Stav.VYPNUTO;
 			p.postup = 0;
 		} else if (p.stav == Stav.VYPNUTO) {
@@ -161,11 +220,11 @@ public class ZdrojeModel {
 		}
 	}
 
-	/** Posune simulované načítání; zrušené (vypnuté) položky se přeskočí a po dokončení se stav změní na načteno. */
+	/** Posune simulované načítání; vypnuté položky se přeskočí a po dokončení se stav změní na načteno. */
 	public void posunNacitani(final int krok) {
 		boolean zmena = false;
 		for (final Polozka p : polozky) {
-			if (p.nacist && p.stav == Stav.NACITA_SE) {
+			if (isEfektivni(p) && p.stav == Stav.NACITA_SE) {
 				p.postup = Math.min(100, p.postup + krok);
 				if (p.postup >= 100) {
 					p.stav = Stav.NACTENO;
@@ -180,7 +239,7 @@ public class ZdrojeModel {
 
 	public boolean nacitaSe() {
 		for (final Polozka p : polozky) {
-			if (p.nacist && p.stav == Stav.NACITA_SE) {
+			if (isEfektivni(p) && p.stav == Stav.NACITA_SE) {
 				return true;
 			}
 		}

@@ -67,10 +67,10 @@ public class JPrepinaceZdroju extends JPanel {
 			popup.add(detail);
 			popupyTypu.put(typ, popup);
 
-			final JCheckBox zaskrtavatko = new JCheckBox();
+			final JCheckBox zaskrtavatko = new JCheckBox(IkonyZdroju.zaskrtavatko(ZdrojeModel.VolbaTypu.VYPNUTO));
 			zaskrtavatko.setFocusable(false);
 			zaskrtavatko.setMargin(new Insets(0, 0, 0, 0));
-			zaskrtavatko.addActionListener(e -> model.setTypZapnut(typ, zaskrtavatko.isSelected()));
+			zaskrtavatko.addActionListener(e -> model.klikTyp(typ));
 			final JLabel ikona = new JLabel(IkonyZdroju.prazdna());
 			final JLabel nazev = new JLabel(typ.getNazev());
 			nazev.addMouseListener(new MouseAdapter() {
@@ -171,8 +171,11 @@ public class JPrepinaceZdroju extends JPanel {
 		for (final Typ typ : Typ.values()) {
 			final Stav stav = model.getStavTypu(typ);
 			final boolean zapnuto = stav != Stav.VYPNUTO;
-			zaskrtavatka.get(typ).setSelected(model.isTypZapnut(typ));
-			zaskrtavatka.get(typ).setToolTipText(zapnuto ? typ.getNazev() + " vypnout (zruší i probíhající načítání)" : typ.getNazev() + " zapnout");
+			final ZdrojeModel.VolbaTypu volba = model.getVolbaTypu(typ);
+			zaskrtavatka.get(typ).setIcon(IkonyZdroju.zaskrtavatko(volba));
+			zaskrtavatka.get(typ).setSelectedIcon(IkonyZdroju.zaskrtavatko(volba));
+			zaskrtavatka.get(typ).setToolTipText(volba == ZdrojeModel.VolbaTypu.VYPNUTO ? typ.getNazev() + " zapnout (vrátí dřívější výběr položek)"
+					: typ.getNazev() + (volba == ZdrojeModel.VolbaTypu.CASTECNE ? ": zapnuta jen část položek, kliknutím typ vypnete" : " vypnout") + " (zruší i probíhající načítání)");
 			ikony.get(typ).setIcon(zapnuto ? IkonyZdroju.pro(stav) : IkonyZdroju.prazdna());
 			ikony.get(typ).setToolTipText(typ.getNazev() + ": " + stav.getText());
 			nazvy.get(typ).setToolTipText(typ.getNazev());

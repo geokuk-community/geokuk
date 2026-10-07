@@ -96,6 +96,24 @@ final class IkonyZdroju {
 		});
 	}
 
+	/** Zaškrtávátko typu zdroje se třemi stavy; „částečně“ je plný čtverec. */
+	static Icon zaskrtavatko(final ZdrojeModel.VolbaTypu volba) {
+		return ikona(g -> {
+			g.setStroke(new BasicStroke(1.2f));
+			g.setColor(Color.WHITE);
+			g.fillRoundRect(1, 1, 12, 12, 3, 3);
+			g.setColor(new Color(0x5A5A5A));
+			g.drawRoundRect(1, 1, 12, 12, 3, 3);
+			g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g.setColor(new Color(0x2B4F7E));
+			if (volba == ZdrojeModel.VolbaTypu.ZAPNUTO) {
+				g.drawPolyline(new int[] { 4, 6, 10 }, new int[] { 7, 9, 4 }, 3);
+			} else if (volba == ZdrojeModel.VolbaTypu.CASTECNE) {
+				g.fillRect(4, 4, 6, 6);
+			}
+		});
+	}
+
 	static Icon pro(final Stav stav) {
 		switch (stav) {
 		case NACTENO:

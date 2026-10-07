@@ -69,14 +69,14 @@ public class JZdrojePopup extends JPanel {
 
 		@Override
 		public boolean isCellEditable(final int r, final int c) {
-			return c == 0;
+			return c == 0 && (radky.get(r).polozka == null || model.isTypZapnut(radky.get(r).typ));
 		}
 
 		@Override
 		public void setValueAt(final Object v, final int r, final int c) {
 			final Radek radek = radky.get(r);
 			if (radek.polozka == null) {
-				model.setTypZapnut(radek.typ, (Boolean) v);
+				model.klikTyp(radek.typ);
 			} else {
 				model.setPolozkaZapnuta(radek.polozka, (Boolean) v);
 			}
@@ -88,13 +88,13 @@ public class JZdrojePopup extends JPanel {
 			final Polozka p = radek.polozka;
 			switch (c) {
 			case 0:
-				return p != null ? p.nacist : model.isTypZapnut(radek.typ);
+				return p != null ? p.nacist : model.getVolbaTypu(radek.typ) == ZdrojeModel.VolbaTypu.ZAPNUTO;
 			case 1:
 				return p != null ? p.nazev : radek.typ.getNazev();
 			case 2:
 				return velikost(p != null ? p.velikost : soucet(radek.typ, false));
 			case 3:
-				return p != null ? wp(p.wpBrano, p.wpCelkem) : model.isTypZapnut(radek.typ) ? wp(souctoveBrano(radek.typ), soucet(radek.typ, true)) : "–";
+				return p != null ? wp(p.wpBrano, p.wpCelkem) : model.getStavTypu(radek.typ) != Stav.VYPNUTO ? wp(souctoveBrano(radek.typ), soucet(radek.typ, true)) : "–";
 			default:
 				return p == null ? souhrnnyStav(radek.typ) : p.stav == Stav.NACITA_SE ? "Načítá se… " + p.postup + " %" : p.stav.getText();
 			}
@@ -123,7 +123,7 @@ public class JZdrojePopup extends JPanel {
 					return null;
 				}
 				final Polozka p = radky.get(r).polozka;
-				final int dup = p != null ? (p.nacist ? p.getPocetDuplicit() : 0) : duplicitTypu(radky.get(r).typ);
+				final int dup = p != null ? (model.isEfektivni(p) ? p.getPocetDuplicit() : 0) : duplicitTypu(radky.get(r).typ);
 				return dup > 0 ? textDuplicit(dup) : null;
 			}
 		};
@@ -202,7 +202,7 @@ public class JZdrojePopup extends JPanel {
 		int soucet = 0;
 		int pocet = 0;
 		for (final Polozka p : model.getPolozky(typ)) {
-			if (p.nacist) {
+			if (model.isEfektivni(p)) {
 				soucet += p.stav == Stav.NACITA_SE ? p.postup : 100;
 				pocet++;
 			}
@@ -213,7 +213,7 @@ public class JZdrojePopup extends JPanel {
 	private int duplicitTypu(final Typ typ) {
 		int s = 0;
 		for (final Polozka p : model.getPolozky(typ)) {
-			s += p.nacist ? p.getPocetDuplicit() : 0;
+			s += model.isEfektivni(p) ? p.getPocetDuplicit() : 0;
 		}
 		return s;
 	}
@@ -221,7 +221,7 @@ public class JZdrojePopup extends JPanel {
 	private long soucet(final Typ typ, final boolean wp) {
 		long s = 0;
 		for (final Polozka p : model.getPolozky(typ)) {
-			s += wp ? (p.nacist ? p.wpCelkem : 0) : p.velikost;
+			s += wp ? (model.isEfektivni(p) ? p.wpCelkem : 0) : p.velikost;
 		}
 		return s;
 	}
@@ -263,14 +263,14 @@ public class JZdrojePopup extends JPanel {
 			setFont(t.getFont().deriveFont(p == null ? Font.BOLD : Font.PLAIN));
 			setBorder(BorderFactory.createEmptyBorder(0, c == 1 && p != null ? 22 : 6, 0, 6));
 			setBackground(p == null ? new Color(0, 0, 0, 20) : t.getBackground());
-			setForeground(p != null && !p.nacist ? Color.GRAY : t.getForeground());
+			setForeground(p != null && !model.isEfektivni(p) ? Color.GRAY : t.getForeground());
 			if (c == 4) {
 				setIcon(IkonyZdroju.pro(p != null ? p.stav : model.getStavTypu(radek.typ)));
 			}
 			if (p == null) {
 				setForeground(model.isTypZapnut(radek.typ) ? t.getForeground() : Color.GRAY);
 			}
-			if (c == 3 && (p != null ? p.getPocetDuplicit() > 0 && p.nacist : duplicitTypu(radek.typ) > 0)) {
+			if (c == 3 && (p != null ? p.getPocetDuplicit() > 0 && model.isEfektivni(p) : duplicitTypu(radek.typ) > 0)) {
 				setForeground(new Color(0x9A5B00));
 			}
 			setOpaque(true);
