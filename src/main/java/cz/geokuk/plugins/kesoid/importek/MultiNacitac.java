@@ -38,7 +38,11 @@ public class MultiNacitac {
 	private final RegistrStavuZdroju registr;
 	/** Vzájemně se ovlivňující zdroje z posledního dokončeného načtení, každý člen ukazuje na svou skupinu. */
 	private Map<File, SkupinyZdroju.Skupina> cacheSkupin = Collections.emptyMap();
-	private Set<File> posledniPrectene = Collections.emptySet();
+	/** Klíče zdrojů z jejich posledního přečtení, i vypnutých. */
+	private final Map<File, SkupinyZdroju.ZnamyZdroj> znameZdroje = new HashMap<>();
+	private final CasyDatZdroju casyDat;
+	private volatile Set<File> posledniPrectene = Collections.emptySet();
+	private volatile int posledniPocetCteni;
 
 	private volatile File geogetDir;
 	private volatile File gsakDir;
@@ -93,6 +97,16 @@ public class MultiNacitac {
 
 	/** Registr si může předat model, který stav zdrojů rozesílá. */
 	MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds, final RegistrStavuZdroju registr) {
+		this(kesoidModel, ds, registr, new CasyDatZdroju());
+	}
+
+	/** Časy dat zdrojů může sdílet víc načítačů (test shody s plným načtením). */
+	MultiNacitac(final KesoidModel kesoidModel, final CasyDatZdroju casyDat) {
+		this(kesoidModel, new DirScanner(), new RegistrStavuZdroju(), casyDat);
+	}
+
+	private MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds, final RegistrStavuZdroju registr, final CasyDatZdroju casyDat) {
+		this.casyDat = casyDat;
 		this.registr = registr;
 		this.kesoidModel = kesoidModel;
 		this.ds = ds;
@@ -124,12 +138,12 @@ public class MultiNacitac {
 		return soubor.length() + new File(soubor.getPath() + "-wal").length();
 	}
 
-	private void prepisRegistr(final List<KeFile> list) {
+	private int prepisRegistr(final List<KeFile> list) {
 		final Map<File, KeFile> poSouboru = new LinkedHashMap<>();
 		for (final KeFile f : list) {
 			poSouboru.put(f.getFile(), f);
 		}
-		registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), f -> poSouboru.get(f).getRelativePath().toString(), kesoidModel::jeZdrojZapnut, kesoidModel::isTypVypnut, MultiNacitac::velikostNaDisku);
+		return registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), f -> poSouboru.get(f).getRelativePath().toString(), kesoidModel::jeZdrojZapnut, kesoidModel::isTypVypnut, MultiNacitac::velikostNaDisku);
 	}
 
 	public boolean jeZamcena(final File databaze) {
@@ -178,102 +192,78 @@ public class MultiNacitac {
 			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
 		}
 		// Až po zařazení nových databází, ty mohou být vypnuté („Načítat až po vybrání“).
-		prepisRegistr(list);
+		final int generace = prepisRegistr(list);
 		if (kesoidModel.getVsechnyKesoidy() == null) {
 			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
-		final KesoidImportBuilder builder = new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager());
-		builder.init();
-		builder.setSledovaneZdroje(f -> true);
 		final Object kontext = kontext(genom);
-		final Map<File, SkupinyZdroju.Skupina> prevzateSkupiny = platneSkupiny(list, kontext);
+		final Map<File, KeFile> poSouboru = new HashMap<>();
+		final Map<File, String> otiskyTed = new HashMap<>();
+		final Map<File, Long> poradi = new HashMap<>();
+		for (final KeFile f : list) {
+			final File soubor = f.getFile();
+			poSouboru.put(soubor, f);
+			if (kesoidModel.maSeNacist(soubor)) {
+				otiskyTed.put(soubor, otisk(soubor));
+				// Předpoklad: obsah se nezměnil; když ano, ukáže se po přečtení a běh se případně zopakuje.
+				final CasyDatZdroju.Zaznam z = casyDat.get(soubor);
+				poradi.put(soubor, z != null ? z.cas : CasyDatZdroju.casZmeny(soubor));
+			}
+		}
+		final Set<SkupinyZdroju.Skupina> prevzate = platneSkupiny(poSouboru, otiskyTed, kontext);
+		final Set<File> kCteni = new HashSet<>(otiskyTed.keySet());
+		for (final SkupinyZdroju.Skupina g : prevzate) {
+			kCteni.removeAll(g.otisky.keySet());
+		}
+		// Zdroj, jehož klíče známe z dřívějška (vypnutý a znovu zapnutý), se s převzatou skupinou čte rovnou spolu.
+		final Map<File, KliceZdroje> znameKlice = new HashMap<>();
+		for (final File f : kCteni) {
+			final SkupinyZdroju.ZnamyZdroj z = znameZdroje.get(f);
+			if (z != null) {
+				znameKlice.put(f, z.klice);
+			}
+		}
+		rozpustPrekryte(znameKlice, prevzate, kCteni);
 		final long start = System.currentTimeMillis();
-		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list) + (prevzateSkupiny.isEmpty() ? "" : ", beze čtení " + prevzateSkupiny.size()));
-		final List<String> vadne = new ArrayList<>();
-		final Set<File> zamceneTed = new HashSet<>();
+		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list) + (kCteni.size() < otiskyTed.size() ? ", beze čtení " + (otiskyTed.size() - kCteni.size()) : ""));
 		final Map<File, String> otiskyPredCtenim = new HashMap<>();
 		for (final KeFile f : list) {
 			if (sledovane.containsKey(f.getFile())) {
 				otiskyPredCtenim.put(f.getFile(), otisk(f.getFile()));
 			}
 		}
-		final Set<File> prevzate = new HashSet<>();
-		final Set<File> zkouseno = new LinkedHashSet<>();
-		final Set<File> selhalo = new HashSet<>();
-		final Map<File, String> otiskyZdroju = new HashMap<>();
-		final Map<File, int[]> poctyZdroju = new HashMap<>();
-		boolean nelzePrevzit = false;
-		List<KeFile> davka = new ArrayList<>();
-		for (final KeFile f : list) {
-			if (!prevzateSkupiny.containsKey(f.getFile())) {
-				davka.add(f);
+		Cteni cteni;
+		Map<File, KliceZdroje> klice;
+		final Map<File, Long> casyPoCteni = new HashMap<>();
+		int pocetCteni = 0;
+		int pokus = 0;
+		while (true) {
+			cteni = new Cteni(new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager()));
+			precti(serazene(list, poradi), kCteni, prevzate, cteni, future, genom, generace);
+			pocetCteni += cteni.zkouseno.size();
+			if (future != null && future.isCancelled()) {
+				ds.nulujLastScaned();
+				return null;
 			}
-		}
-		boolean druhaDavka = false;
-		while (davka != null) {
-			for (final KeFile file : davka) {
-				if (future != null && future.isCancelled()) {
-					break;
-				}
-				log.debug("Nacitam: " + file);
-				final File soubor = file.getFile();
-				try {
-					if (kesoidModel.maSeNacist(soubor)) {
-						zkouseno.add(soubor);
-						otiskyZdroju.put(soubor, otisk(soubor));
-						registr.zacina(soubor);
-						ProgressModel.setSledovacPostupu(procent -> registr.postup(soubor, procent));
-					}
-					zpracujJedenFile(file, builder, future);
-					if (kesoidModel.maSeNacist(soubor) && !(future != null && future.isCancelled())) {
-						final int[] pocty = builder.getPoctyCurrent();
-						poctyZdroju.put(soubor, pocty);
-						registr.hotovo(soubor, pocty[0], pocty[1]);
-					}
-				} catch (final DatabazeJinehoProgramu.Zamcena e) {
-					registr.cekaNaZapis(soubor);
-					selhalo.add(soubor);
-					log.info(e.getMessage());
-					zamceneTed.add(file.getFile());
-					if (zobrazene.contains(file.getFile())) {
-						// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
-						if (genom == zobrazenyGenom && !builder.maWaypointyZe(file.getFile())) {
-							builder.prevezmi(file, zobrazeneWpty.getOrDefault(file.getFile(), Collections.emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
-							prevzate.add(file.getFile());
-						} else {
-							nelzePrevzit = true;
-						}
-					}
-				} catch (final Exception e) {
-					// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
-					FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
-					vadne.add(file.getFile().getName());
-					selhalo.add(soubor);
-					registr.chyba(soubor, popisChyby(e));
-				} finally {
-					ProgressModel.setSledovacPostupu(null);
-				}
+			klice = cteni.builder.getKliceZdroju();
+			casyPoCteni.clear();
+			for (final File f : cteni.precteno) {
+				casyPoCteni.put(f, casyDat.casPoPrecteni(f, klice.getOrDefault(f, KliceZdroje.PRAZDNE).otiskObsahu, cteni.casyZmeny.get(f)));
 			}
-			davka = druhaDavka || future != null && future.isCancelled() ? null : zrusSkupinyOvlivneneNovymi(list, prevzateSkupiny, builder, zkouseno);
-			druhaDavka = true;
-		}
-
-		if (future != null && future.isCancelled()) {
-			ds.nulujLastScaned();
-			return null;
-		}
-		for (final KeFile file : list) {
-			final SkupinyZdroju.Skupina skupina = prevzateSkupiny.get(file.getFile());
-			if (skupina != null) {
-				final int[] pocty = skupina.pocty.get(file.getFile());
-				builder.prevezmi(file, skupina.wpty.getOrDefault(file.getFile(), Collections.emptyList()), pocty[0], pocty[1]);
-				registr.hotovo(file.getFile(), pocty[0], pocty[1]);
+			// Bez omezení by se zdroj, který jiný program pořád přepisuje, mohl číst dokola.
+			if (++pokus > 3 || !opakovat(cteni, klice, casyPoCteni, poradi, prevzate, kCteni)) {
+				break;
 			}
+			poradi.putAll(casyPoCteni);
 		}
+		final KesoidImportBuilder builder = cteni.builder;
+		final long startDone = System.currentTimeMillis();
 		builder.done();
 		final KesBag bag = builder.getKesBag();
+		final Set<File> zamceneTed = cteni.zamceneTed;
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
-				+ (vadne.isEmpty() ? "" : ", chyba v souborech " + vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
+				+ " (čteno " + pocetCteni + (pokus > 1 ? " v " + pokus + " pokusech" : "") + ", párování a index " + (System.currentTimeMillis() - startDone) / 100 / 10.0 + " s)"
+				+ (cteni.vadne.isEmpty() ? "" : ", chyba v souborech " + cteni.vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
 		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
 		for (final Map.Entry<File, String> e : otiskyPredCtenim.entrySet()) {
@@ -284,14 +274,15 @@ public class MultiNacitac {
 			sledovane.put(f, "");
 		}
 		// Keše ze zamčené databáze, které nešly převzít, zůstanou zobrazené se vším ostatním, dokud ji jiný program nepustí.
-		if (nelzePrevzit && kesoidModel.getVsechnyKesoidy() != null) {
+		if (cteni.nelzePrevzit && kesoidModel.getVsechnyKesoidy() != null) {
 			return null;
 		}
-		ulozSkupiny(list, builder, prevzateSkupiny, selhalo, otiskyZdroju, poctyZdroju, kontext);
-		posledniPrectene = zkouseno;
+		ulozCache(poSouboru.keySet(), cteni, klice, casyPoCteni, otiskyTed, prevzate, kontext);
+		posledniPrectene = new HashSet<>(cteni.zkouseno);
+		posledniPocetCteni = pocetCteni;
 		final Set<File> nactene = new HashSet<>();
 		for (final KeFile f : list) {
-			if (!zamceneTed.contains(f.getFile()) || prevzate.contains(f.getFile())) {
+			if (!zamceneTed.contains(f.getFile()) || cteni.prevzateZamcene.contains(f.getFile())) {
 				nactene.add(f.getFile());
 			}
 		}
@@ -302,132 +293,262 @@ public class MultiNacitac {
 		return bag;
 	}
 
+	/** Jeden průchod zdroji; při opakování běhu se zahodí celý. */
+	private static final class Cteni {
+		final KesoidImportBuilder builder;
+		/** Zdroje, které se začaly číst. */
+		final Set<File> zkouseno = new LinkedHashSet<>();
+		/** Zdroje přečtené celé a bez chyby. */
+		final Set<File> precteno = new HashSet<>();
+		final Map<File, Long> casyZmeny = new HashMap<>();
+		final Map<File, int[]> pocty = new HashMap<>();
+		final List<String> vadne = new ArrayList<>();
+		final Set<File> zamceneTed = new HashSet<>();
+		final Set<File> prevzateZamcene = new HashSet<>();
+		boolean nelzePrevzit;
+
+		Cteni(final KesoidImportBuilder builder) {
+			this.builder = builder;
+			builder.init();
+			builder.setSledovaneZdroje(f -> true);
+		}
+	}
+
+	/** Zapnuté zdroje od nejnovějších dat (při shodě podle cesty), první vyhrává duplicitu; vypnuté na konci, jen do přehledu zdrojů. */
+	private static List<KeFile> serazene(final List<KeFile> list, final Map<File, Long> poradi) {
+		final List<KeFile> vysledek = new ArrayList<>(list);
+		vysledek.sort(Comparator.<KeFile, Boolean> comparing(f -> !poradi.containsKey(f.getFile())).thenComparing(f -> -poradi.getOrDefault(f.getFile(), 0L))
+				.thenComparing(f -> f.getFile().getPath()));
+		return vysledek;
+	}
+
+	private void precti(final List<KeFile> serazene, final Set<File> kCteni, final Set<SkupinyZdroju.Skupina> prevzate, final Cteni cteni, final Future<?> future, final Genom genom,
+			final int generace) {
+		final Map<File, SkupinyZdroju.Skupina> skupinaClena = new HashMap<>();
+		for (final SkupinyZdroju.Skupina g : prevzate) {
+			for (final File clen : g.otisky.keySet()) {
+				skupinaClena.put(clen, g);
+			}
+		}
+		final KesoidImportBuilder builder = cteni.builder;
+		for (final KeFile file : serazene) {
+			if (future != null && future.isCancelled()) {
+				break;
+			}
+			final File soubor = file.getFile();
+			final SkupinyZdroju.Skupina skupina = skupinaClena.get(soubor);
+			if (skupina != null) {
+				final int[] pocty = skupina.pocty.get(soubor);
+				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1]);
+				registr.hotovo(generace, soubor, pocty[0], pocty[1]);
+				continue;
+			}
+			log.debug("Nacitam: " + file);
+			final boolean cist = kCteni.contains(soubor);
+			try {
+				if (cist) {
+					cteni.zkouseno.add(soubor);
+					cteni.casyZmeny.put(soubor, CasyDatZdroju.casZmeny(soubor));
+					registr.zacina(generace, soubor);
+					ProgressModel.setSledovacPostupu(procent -> registr.postup(generace, soubor, procent));
+				}
+				zpracujJedenFile(file, builder, future);
+				if (cist && !(future != null && future.isCancelled())) {
+					final int[] pocty = builder.getPoctyCurrent();
+					cteni.pocty.put(soubor, pocty);
+					cteni.precteno.add(soubor);
+					registr.hotovo(generace, soubor, pocty[0], pocty[1]);
+				}
+			} catch (final DatabazeJinehoProgramu.Zamcena e) {
+				registr.cekaNaZapis(generace, soubor);
+				log.info(e.getMessage());
+				cteni.zamceneTed.add(soubor);
+				if (zobrazene.contains(soubor)) {
+					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
+					if (genom == zobrazenyGenom && !builder.maWaypointyZe(soubor)) {
+						builder.prevezmi(file, zobrazeneWpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
+						cteni.prevzateZamcene.add(soubor);
+					} else {
+						cteni.nelzePrevzit = true;
+					}
+				}
+			} catch (final Exception e) {
+				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
+				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
+				cteni.vadne.add(soubor.getName());
+				registr.chyba(generace, soubor, popisChyby(e));
+			} finally {
+				ProgressModel.setSledovacPostupu(null);
+			}
+		}
+	}
+
+	/** Klíče zdroje, který se nepřečetl celý: co se z něj stihlo přečíst, a co se o něm ví z dřívějška. */
+	private KliceZdroje kliceNeprecteneho(final File f, final Map<File, KliceZdroje> klice) {
+		final SkupinyZdroju.ZnamyZdroj z = znameZdroje.get(f);
+		return KliceZdroje.slouc(Arrays.asList(klice.getOrDefault(f, KliceZdroje.PRAZDNE), z == null ? KliceZdroje.PRAZDNE : z.klice));
+	}
+
+	/**
+	 * Po přečtení: převzatá skupina, která sdílí klíč se čteným zdrojem, by dala jiný výsledek než plné načtení, a čtený zdroj, jehož čas dat vyšel jinak, než se čekalo, se četl
+	 * ve špatném pořadí vůči zdrojům, se kterými se překrývá. Pak se běh opakuje se skupinou mezi čtenými a se správným pořadím.
+	 */
+	private boolean opakovat(final Cteni cteni, final Map<File, KliceZdroje> klice, final Map<File, Long> casyPoCteni, final Map<File, Long> poradi, final Set<SkupinyZdroju.Skupina> prevzate,
+			final Set<File> kCteni) {
+		final Map<File, KliceZdroje> ctene = new HashMap<>();
+		for (final File f : cteni.zkouseno) {
+			ctene.put(f, cteni.precteno.contains(f) ? klice.getOrDefault(f, KliceZdroje.PRAZDNE) : kliceNeprecteneho(f, klice));
+		}
+		final List<File> soubory = new ArrayList<>(ctene.keySet());
+		final List<SkupinyZdroju.Skupina> skupiny = new ArrayList<>(prevzate);
+		final List<KliceZdroje> jednotky = new ArrayList<>();
+		for (final File f : soubory) {
+			jednotky.add(ctene.get(f));
+		}
+		for (final SkupinyZdroju.Skupina g : skupiny) {
+			jednotky.add(g.klice);
+		}
+		final int[] komponenta = SkupinyZdroju.komponenty(jednotky);
+		final Map<Integer, Integer> velikost = new HashMap<>();
+		for (final int k : komponenta) {
+			velikost.merge(k, 1, Integer::sum);
+		}
+		final Set<Integer> sCtenym = new HashSet<>();
+		for (int i = 0; i < soubory.size(); i++) {
+			sCtenym.add(komponenta[i]);
+		}
+		boolean opakovat = false;
+		for (int i = 0; i < skupiny.size(); i++) {
+			if (sCtenym.contains(komponenta[soubory.size() + i])) {
+				prevzate.remove(skupiny.get(i));
+				kCteni.addAll(skupiny.get(i).otisky.keySet());
+				opakovat = true;
+			}
+		}
+		for (int i = 0; i < soubory.size(); i++) {
+			final Long cas = casyPoCteni.get(soubory.get(i));
+			if (cas != null && !cas.equals(poradi.get(soubory.get(i))) && velikost.get(komponenta[i]) > 1) {
+				opakovat = true;
+			}
+		}
+		return opakovat;
+	}
+
+	/** Převzaté skupiny, které sdílejí klíč se zdrojem ke čtení, se přečtou s ním. */
+	private static void rozpustPrekryte(final Map<File, KliceZdroje> ctene, final Set<SkupinyZdroju.Skupina> prevzate, final Set<File> kCteni) {
+		if (ctene.isEmpty() || prevzate.isEmpty()) {
+			return;
+		}
+		final List<KliceZdroje> jednotky = new ArrayList<>(ctene.values());
+		final List<SkupinyZdroju.Skupina> skupiny = new ArrayList<>(prevzate);
+		for (final SkupinyZdroju.Skupina g : skupiny) {
+			jednotky.add(g.klice);
+		}
+		final int[] komponenta = SkupinyZdroju.komponenty(jednotky);
+		final Set<Integer> sCtenym = new HashSet<>();
+		for (int i = 0; i < ctene.size(); i++) {
+			sCtenym.add(komponenta[i]);
+		}
+		for (int i = 0; i < skupiny.size(); i++) {
+			if (sCtenym.contains(komponenta[ctene.size() + i])) {
+				prevzate.remove(skupiny.get(i));
+				kCteni.addAll(skupiny.get(i).otisky.keySet());
+			}
+		}
+	}
+
 	/** Co ovlivňuje obsah načtených keší kromě souborů samotných. */
 	private Object kontext(final Genom genom) {
 		final GccomNick nick = kesoidModel.getGccomNick();
 		final GsakParametryNacitani gsak = kesoidModel.getGsakParametryNacitani();
-		return Arrays.asList(genom, nick == null ? null : nick.name, nick == null ? null : nick.id, gsak == null ? null : gsak.getCasNalezu(), gsak == null ? null : gsak.getCasNenalezu());
+		final List<String> pluginy = new ArrayList<>();
+		if (kesoidModel.getKesopidPluginManager() != null) {
+			for (final Object p : kesoidModel.getKesopidPluginManager().getPlugins()) {
+				pluginy.add(p.getClass().getName());
+			}
+		}
+		return Arrays.asList(genom, nick == null ? null : nick.name, nick == null ? null : nick.id, gsak == null ? null : gsak.getCasNalezu(), gsak == null ? null : gsak.getCasNenalezu(),
+				pluginy);
 	}
 
-	/** Skupiny z minulého dokončeného načtení, jejichž členy se nic nezměnilo: zapnuté, stejný soubor, stejný kontext. */
-	private Map<File, SkupinyZdroju.Skupina> platneSkupiny(final List<KeFile> list, final Object kontext) {
-		final Map<File, KeFile> soubory = new HashMap<>();
-		for (final KeFile f : list) {
-			soubory.put(f.getFile(), f);
-		}
-		final Map<File, SkupinyZdroju.Skupina> vysledek = new HashMap<>();
-		final Set<SkupinyZdroju.Skupina> videne = new HashSet<>();
-		for (final KeFile f : list) {
-			final SkupinyZdroju.Skupina skupina = cacheSkupin.get(f.getFile());
-			if (skupina == null || !videne.add(skupina) || !skupina.kontext.equals(kontext)) {
+	/** Skupiny z minulého dokončeného načtení, jejichž členům se nic nezměnilo: zapnuté, stejný soubor, nezamčené, stejný kontext. */
+	private Set<SkupinyZdroju.Skupina> platneSkupiny(final Map<File, KeFile> soubory, final Map<File, String> otiskyZapnutych, final Object kontext) {
+		final Set<SkupinyZdroju.Skupina> vysledek = new LinkedHashSet<>();
+		for (final SkupinyZdroju.Skupina skupina : new LinkedHashSet<>(cacheSkupin.values())) {
+			if (!skupina.kontext.equals(kontext)) {
 				continue;
 			}
 			boolean beze = true;
 			for (final Map.Entry<File, String> e : skupina.otisky.entrySet()) {
 				final File clen = e.getKey();
-				final KeFile kefile = soubory.get(clen);
 				// Databázi, kterou jiný program právě zamkl, je třeba zkusit číst, aby se zamčení ohlásilo a převzalo se z minula.
-				if (kefile == null || !kesoidModel.maSeNacist(clen) || zamcene.contains(clen) || !otisk(clen).equals(e.getValue())
-						|| typ(kefile) != TypZdroje.GPX && DatabazeJinehoProgramu.jeZamcena(clen)) {
+				if (!e.getValue().equals(otiskyZapnutych.get(clen)) || zamcene.contains(clen) || typ(soubory.get(clen)) != TypZdroje.GPX && DatabazeJinehoProgramu.jeZamcena(clen)) {
 					beze = false;
 					break;
 				}
 			}
 			if (beze) {
-				for (final File clen : skupina.otisky.keySet()) {
-					vysledek.put(clen, skupina);
-				}
+				vysledek.add(skupina);
 			}
 		}
 		return vysledek;
 	}
 
 	/**
-	 * Po přečtení změněných zdrojů se ukáže, že některé nově přečtené sdílejí jména s převzatou skupinou (duplicity, přídavné waypointy v jiném souboru). Taková skupina by dala
-	 * jiný výsledek než plné načtení, proto se přečte znovu. Vrací její členy, nebo null.
+	 * Uloží z dokončeného načtení, co je o zdrojích známo, a skupiny vzájemně se ovlivňujících zdrojů pro příští navázání. Skupina se zdrojem nepřečteným celým (zámek,
+	 * chyba) nebo s bezejmennými waypointy se neukládá.
 	 */
-	private List<KeFile> zrusSkupinyOvlivneneNovymi(final List<KeFile> list, final Map<File, SkupinyZdroju.Skupina> prevzate, final KesoidImportBuilder builder, final Set<File> zkouseno) {
-		if (prevzate.isEmpty()) {
-			return null;
+	private void ulozCache(final Set<File> vSeznamu, final Cteni cteni, final Map<File, KliceZdroje> klice, final Map<File, Long> casyPoCteni, final Map<File, String> otisky,
+			final Set<SkupinyZdroju.Skupina> prevzate, final Object kontext) {
+		znameZdroje.keySet().retainAll(vSeznamu);
+		for (final File f : cteni.precteno) {
+			final KliceZdroje k = klice.getOrDefault(f, KliceZdroje.PRAZDNE);
+			znameZdroje.put(f, new SkupinyZdroju.ZnamyZdroj(otisky.get(f), k));
+			casyDat.put(f, new CasyDatZdroju.Zaznam(k.otiskObsahu, casyPoCteni.get(f)));
 		}
-		final Map<File, KliceZdroje> klice = builder.getKliceZdroju();
-		final List<KliceZdroje> jednotky = new ArrayList<>();
-		for (final File f : zkouseno) {
-			jednotky.add(klice.getOrDefault(f, KliceZdroje.PRAZDNE));
-		}
-		final List<SkupinyZdroju.Skupina> skupiny = new ArrayList<>(new LinkedHashSet<>(prevzate.values()));
-		for (final SkupinyZdroju.Skupina s : skupiny) {
-			jednotky.add(s.kliceSkupiny());
-		}
-		final int[] komponenta = SkupinyZdroju.komponenty(jednotky);
-		final Map<Integer, Integer> velikosti = new HashMap<>();
-		for (final int k : komponenta) {
-			velikosti.merge(k, 1, Integer::sum);
-		}
-		final Set<File> rusene = new HashSet<>();
-		for (int i = 0; i < skupiny.size(); i++) {
-			final int j = zkouseno.size() + i;
-			if (velikosti.get(komponenta[j]) > 1) {
-				rusene.addAll(skupiny.get(i).otisky.keySet());
-			}
-		}
-		if (rusene.isEmpty()) {
-			return null;
-		}
-		prevzate.keySet().removeAll(rusene);
-		final List<KeFile> davka = new ArrayList<>();
-		for (final KeFile f : list) {
-			if (rusene.contains(f.getFile())) {
-				davka.add(f);
-			}
-		}
-		return davka;
-	}
-
-	/** Uloží skupiny vzájemně se ovlivňujících zdrojů z dokončeného načtení pro příští navázání. */
-	private void ulozSkupiny(final List<KeFile> list, final KesoidImportBuilder builder, final Map<File, SkupinyZdroju.Skupina> prevzate, final Set<File> selhalo,
-			final Map<File, String> otisky, final Map<File, int[]> pocty, final Object kontext) {
-		final Map<File, KliceZdroje> klice = builder.getKliceZdroju();
 		final List<File> soubory = new ArrayList<>();
 		final List<KliceZdroje> jednotky = new ArrayList<>();
-		final List<String> otiskyJednotek = new ArrayList<>();
-		final List<int[]> poctyJednotek = new ArrayList<>();
-		for (final KeFile f : list) {
-			final File soubor = f.getFile();
-			if (!kesoidModel.maSeNacist(soubor) || selhalo.contains(soubor)) {
-				continue;
+		final Set<Integer> nepouzitelne = new HashSet<>();
+		for (final File f : cteni.zkouseno) {
+			soubory.add(f);
+			jednotky.add(cteni.precteno.contains(f) ? klice.getOrDefault(f, KliceZdroje.PRAZDNE) : kliceNeprecteneho(f, klice));
+		}
+		for (final File f : cteni.prevzateZamcene) {
+			if (!cteni.zkouseno.contains(f)) {
+				soubory.add(f);
+				jednotky.add(kliceNeprecteneho(f, klice));
 			}
-			final SkupinyZdroju.Skupina stara = prevzate.get(soubor);
-			final String otisk = stara != null ? stara.otisky.get(soubor) : otisky.get(soubor);
-			final int[] p = stara != null ? stara.pocty.get(soubor) : pocty.get(soubor);
-			if (otisk == null || p == null) {
-				continue;
-			}
-			soubory.add(soubor);
-			jednotky.add(stara != null ? stara.klice.get(soubor) : klice.getOrDefault(soubor, KliceZdroje.PRAZDNE));
-			otiskyJednotek.add(otisk);
-			poctyJednotek.add(p);
 		}
 		final int[] komponenta = SkupinyZdroju.komponenty(jednotky);
-		final Set<Integer> zakazane = new HashSet<>();
-		for (int i = 0; i < jednotky.size(); i++) {
-			if (jednotky.get(i).bezejmenne) {
-				zakazane.add(komponenta[i]);
+		for (int i = 0; i < soubory.size(); i++) {
+			if (!cteni.precteno.contains(soubory.get(i)) || jednotky.get(i).bezejmenne) {
+				nepouzitelne.add(komponenta[i]);
 			}
 		}
-		final Map<Integer, SkupinyZdroju.Skupina> skupiny = new HashMap<>();
 		final Map<File, SkupinyZdroju.Skupina> nova = new HashMap<>();
-		for (int i = 0; i < soubory.size(); i++) {
-			if (zakazane.contains(komponenta[i])) {
-				continue;
+		for (final SkupinyZdroju.Skupina g : prevzate) {
+			for (final File clen : g.otisky.keySet()) {
+				nova.put(clen, g);
 			}
-			final File soubor = soubory.get(i);
-			final SkupinyZdroju.Skupina skupina = skupiny.computeIfAbsent(komponenta[i], k -> new SkupinyZdroju.Skupina(kontext));
-			skupina.otisky.put(soubor, otiskyJednotek.get(i));
-			skupina.wpty.put(soubor, builder.getWptyPodleZdroje().getOrDefault(soubor, Collections.emptyList()));
-			skupina.pocty.put(soubor, poctyJednotek.get(i));
-			skupina.klice.put(soubor, jednotky.get(i));
-			nova.put(soubor, skupina);
+		}
+		final Map<Integer, List<Integer>> clenove = new HashMap<>();
+		for (int i = 0; i < soubory.size(); i++) {
+			if (!nepouzitelne.contains(komponenta[i])) {
+				clenove.computeIfAbsent(komponenta[i], k -> new ArrayList<>()).add(i);
+			}
+		}
+		for (final List<Integer> komp : clenove.values()) {
+			final SkupinyZdroju.Skupina skupina = new SkupinyZdroju.Skupina(kontext);
+			final List<KliceZdroje> kliceSkupiny = new ArrayList<>();
+			for (final int i : komp) {
+				final File f = soubory.get(i);
+				skupina.otisky.put(f, otisky.get(f));
+				skupina.wpty.put(f, cteni.builder.getWptyPodleZdroje().getOrDefault(f, Collections.<Wpt> emptyList()));
+				skupina.pocty.put(f, cteni.pocty.get(f));
+				kliceSkupiny.add(jednotky.get(i));
+				nova.put(f, skupina);
+			}
+			skupina.klice = KliceZdroje.slouc(kliceSkupiny);
 		}
 		cacheSkupin = nova;
 	}
@@ -435,6 +556,11 @@ public class MultiNacitac {
 	/** Zdroje, které se při posledním načtení opravdu četly; ostatní se převzaly z minulého načtení. */
 	Set<File> getPosledniPrectene() {
 		return posledniPrectene;
+	}
+
+	/** Kolikrát se při posledním načtení četl nějaký zdroj, včetně opakování běhu. */
+	int getPosledniPocetCteni() {
+		return posledniPocetCteni;
 	}
 
 	/** Sledovaná databáze se od načtení změnila a jiný program ji už nedrží. */

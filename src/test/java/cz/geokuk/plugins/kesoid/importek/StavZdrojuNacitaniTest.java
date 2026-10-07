@@ -248,10 +248,11 @@ public class StavZdrojuNacitaniTest {
 		});
 		edtBlokovan.await();
 		final File a = new File(slozkaGeogetu, "a.db3");
+		final int gen = nacitac.getRegistr().getGenerace();
 		for (int i = 0; i < 50; i++) {
-			nacitac.getRegistr().zacina(a);
-			nacitac.getRegistr().postup(a, i);
-			nacitac.getRegistr().hotovo(a, 1, 1);
+			nacitac.getRegistr().zacina(gen, a);
+			nacitac.getRegistr().postup(gen, a, i);
+			nacitac.getRegistr().hotovo(gen, a, 1, 1);
 		}
 		pustit.countDown();
 		SwingUtilities.invokeAndWait(() -> {});

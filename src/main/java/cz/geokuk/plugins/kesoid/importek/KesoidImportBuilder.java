@@ -47,6 +47,10 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	private Predicate<KeFile> sledovaneZdroje = zdroj -> false;
 	/** Waypointy sledovaných zdrojů podle souboru, aby šly příště převzít, když zdroj nepůjde přečíst. */
 	private final Map<File, List<Wpt>> wptyPodleZdroje = new HashMap<>();
+	private Wpt posledniVytvoreny;
+	private InformaceOZdroji zdrojPoslednihoVytvoreneho;
+	/** Vytvořené waypointy, které se zatím nevystavily (výjimečně, nebo procák waypoint zahodil). */
+	private final Map<Wpt, InformaceOZdroji> nevystavene = new IdentityHashMap<>();
 	private final Map<File, KliceZdroje.Sberac> kliceZdroju = new HashMap<>();
 	private volatile KliceZdroje.Sberac sberacKlicu = new KliceZdroje.Sberac();
 
@@ -64,6 +68,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	 */
 	@Override
 	public void addGpxWpt(final GpxWpt gpxwpt) {
+		sberacKlicu.obsah(gpxwpt);
 		if (gpxwpt.wgs == null || gpxwpt.wgs.lat < -85 || gpxwpt.wgs.lat > 85) {
 			log.debug("Souradnice jsou mimo povoleny rozsah: {} - {}", gpxwpt.wgs, gpxwpt);
 			return;
@@ -77,7 +82,10 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		}
 
 		final boolean novy = jmenaWaypointu.add(gpxwpt.name);
-		sberacKlicu.pridej(gpxwpt.name, generovane);
+		if (generovane) {
+			sberacKlicu.bezejmenny();
+		}
+		sberacKlicu.pridej(KliceZdroje.klicJmena(gpxwpt.name));
 
 		gpxwpt.iInformaceOZdroji = infoOCurrentnimZdroji; // aby si pamatoval, ze kterého je zdroje
 		// a teď výpočty počtů
@@ -113,7 +121,11 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 					wpt.setElevation(urciElevation(gpxwpt));
 					wpt.setName(gpxwpt.name);
 					wpt.setNazev(vytvorNazev(gpxwpt));
-					zaznamenejZdroj(gpxwpt.iInformaceOZdroji, wpt);
+					if (posledniVytvoreny != null) {
+						nevystavene.put(posledniVytvoreny, zdrojPoslednihoVytvoreneho);
+					}
+					posledniVytvoreny = wpt;
+					zdrojPoslednihoVytvoreneho = gpxwpt.iInformaceOZdroji;
 					return wpt;
 				});
 	}
@@ -172,7 +184,15 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		this.sledovaneZdroje = sledovaneZdroje;
 	}
 
-	/** Klíče jmen všech waypointů přečtených z každého zdroje, i těch zahozených jako duplicity. */
+	@Override
+	public void vazba(final GpxWpt gpxwpt, final String klic) {
+		final InformaceOZdroji zdroj = gpxwpt.iInformaceOZdroji;
+		if (zdroj != null) {
+			kliceZdroju.computeIfAbsent(zdroj.jmenoZdroje.getFile(), f -> new KliceZdroje.Sberac()).pridej(KliceZdroje.klic(klic));
+		}
+	}
+
+	/** Klíče vazeb všech waypointů přečtených z každého zdroje (i těch zahozených jako duplicity) a otisk jeho obsahu. */
 	Map<File, KliceZdroje> getKliceZdroju() {
 		final Map<File, KliceZdroje> vysledek = new HashMap<>();
 		for (final Map.Entry<File, KliceZdroje.Sberac> e : kliceZdroju.entrySet()) {
@@ -206,9 +226,18 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		}
 	}
 
-	/** Převezme zdroj i s počty z minulého načtení. */
-	void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano) {
-		prevezmi(zdroj, stareWpty);
+	/**
+	 * Převezme waypointy zdroje ze skupiny minulého načtení, se kterou se nic jiného nepřekrývá: kešoidy už jsou spárované, neposílají se znovu procákům. Waypoint bez
+	 * souřadnic v minulém bagu nebyl a z kruhu kešoidu už je vyřazený, podruhé se přidat nesmí.
+	 */
+	void prevezmiZeSkupiny(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano) {
+		setCurrentlyLoading(zdroj, true);
+		for (final Wpt wpt : stareWpty) {
+			if (!wpt.hasEmptyCoords()) {
+				wpts.add(wpt);
+			}
+		}
+		wptyPodleZdroje.put(zdroj.getFile(), stareWpty);
 		infoOCurrentnimZdroji.pocetWaypointuCelkem = celkem;
 		infoOCurrentnimZdroji.pocetWaypointuBranych = brano;
 	}
@@ -322,9 +351,18 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		return gccomNick;
 	}
 
+	/** Procák waypoint obvykle hned po vytvoření vystaví; vytvořený a zahozený do bagu nepatří, a tak ani do waypointů zdroje. */
 	@Override
 	public void expose(final Wpt wpt) {
 		wpts.add(wpt);
+		final InformaceOZdroji zdroj;
+		if (wpt == posledniVytvoreny) {
+			zdroj = zdrojPoslednihoVytvoreneho;
+			posledniVytvoreny = null;
+		} else {
+			zdroj = nevystavene.remove(wpt);
+		}
+		zaznamenejZdroj(zdroj, wpt);
 	}
 
 

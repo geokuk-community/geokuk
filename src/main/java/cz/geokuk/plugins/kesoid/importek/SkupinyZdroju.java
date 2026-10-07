@@ -8,28 +8,33 @@ import cz.geokuk.plugins.kesoid.Wpt;
 /** Skupiny zdrojů, které se při načítání ovlivňují, a cache jejich načteného výsledku. */
 final class SkupinyZdroju {
 
-	/** Zdroje, které se vzájemně ovlivňují, z dokončeného načtení; počty, klíče a waypointy po členech. */
+	/** Zdroje, které se vzájemně ovlivňují, z dokončeného načtení; otisky souborů, waypointy a počty po členech. */
 	static final class Skupina {
 		final Object kontext;
 		final Map<File, String> otisky = new LinkedHashMap<>();
 		final Map<File, List<Wpt>> wpty = new HashMap<>();
 		final Map<File, int[]> pocty = new HashMap<>();
-		final Map<File, KliceZdroje> klice = new HashMap<>();
+		KliceZdroje klice = KliceZdroje.PRAZDNE;
 
 		Skupina(final Object kontext) {
 			this.kontext = kontext;
 		}
+	}
 
-		KliceZdroje kliceSkupiny() {
-			return KliceZdroje.slouc(klice.values());
+	/** Co je o zdroji známo z jeho posledního úplného přečtení; drží se i pro vypnutý zdroj, aby šlo po zapnutí předem poznat, s čím se překrývá. */
+	static final class ZnamyZdroj {
+		final String otisk;
+		final KliceZdroje klice;
+
+		ZnamyZdroj(final String otisk, final KliceZdroje klice) {
+			this.otisk = otisk;
+			this.klice = klice;
 		}
 	}
 
 	private SkupinyZdroju() {}
 
-	/**
-	 * Rozdělí jednotky do komponent podle klíčů: jednotky se sdíleným klíčem a všechny zvláštní jednotky patří k sobě. Vrací pro každou jednotku označení komponenty.
-	 */
+	/** Rozdělí jednotky do komponent: jednotky se sdíleným klíčem patří k sobě. Vrací pro každou jednotku označení komponenty. */
 	static int[] komponenty(final List<KliceZdroje> jednotky) {
 		final int n = jednotky.size();
 		final int[] otec = new int[n];
@@ -37,7 +42,7 @@ final class SkupinyZdroju {
 			otec[i] = i;
 		}
 		if (n > 0xFFFF) {
-			Arrays.fill(otec, 0); // nad 65 535 zdrojů se nic nepřevezme
+			Arrays.fill(otec, 0); // nad 65 535 jednotek se nic nepřevezme
 			return otec;
 		}
 		int pocet = 0;
@@ -55,16 +60,6 @@ final class SkupinyZdroju {
 		for (int i = 1; i < pary.length; i++) {
 			if (pary[i] >>> 16 == pary[i - 1] >>> 16) {
 				spoj(otec, (int) (pary[i] & 0xFFFF), (int) (pary[i - 1] & 0xFFFF));
-			}
-		}
-		int prvniZvlastni = -1;
-		for (int i = 0; i < n; i++) {
-			if (jednotky.get(i).zvlastni) {
-				if (prvniZvlastni < 0) {
-					prvniZvlastni = i;
-				} else {
-					spoj(otec, prvniZvlastni, i);
-				}
 			}
 		}
 		final int[] vysledek = new int[n];
