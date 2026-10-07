@@ -108,7 +108,7 @@ function Registr { @(Get-ChildItem "HKCU:\Software\JavaSoft" -Recurse -ErrorActi
 # Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu (bez složek Windows a PowerShellu, Firefoxu runneru a ikon oznamovací oblasti jiných programů).
 function ZapsanoMimo([datetime]$od, [string]$slozka) {
     $mista = @($env:APPDATA, $env:LOCALAPPDATA, $env:TEMP, (Join-Path $env:USERPROFILE ".java")) | Where-Object { $_ -and (Test-Path $_) }
-    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and $_.FullName -notmatch '\\Mozilla(\\|$)' -and
+    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and $_.FullName -notlike "$env:APPDATA\Mozilla*" -and $_.FullName -notlike "$env:LOCALAPPDATA\Mozilla*" -and
             $_.Name -notlike "NotifyIconGeneratedAumid_*" -and
             -not ($_.PSIsContainer -and $_.CreationTime -le $od) } |
         ForEach-Object FullName)
@@ -147,7 +147,7 @@ try {
     $ram = [long]((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1MB)
     # Stejné pravidlo jako Start.pametMb: od ~15 GB hlášené paměti 4 GB, jinak polovina v rozmezí 1 až 3 GB.
     $cekana = if ($ram -ge 15360) { 4096 } else { [math]::Min(3072, [math]::Max(1024, [math]::Floor($ram / 2))) }
-    Ocekavej ($xmx.Success -and [math]::Abs([int]$xmx.Groups[1].Value - $cekana) -le 64) "paměť $($xmx.Value) odpovídá polovině RAM $ram MB v mezích 1–3 GB (čekáno $cekana)"
+    Ocekavej ($xmx.Success -and [math]::Abs([int]$xmx.Groups[1].Value - $cekana) -le 64) "paměť $($xmx.Value) odpovídá polovině RAM $ram MB (nejméně 1 GB, nejvýš 3 GB, od 15 GB RAM 4 GB; čekáno $cekana)"
     $souhrn.Add("| Paměť | $($xmx.Value), RAM $ram MB |")
     $javaw = Join-Path $slozka "program\runtime\bin\javaw.exe"
     Ocekavej ($beh.Proces.ExecutablePath -eq $javaw) "běží přibalená Java: $($beh.Proces.ExecutablePath)"
