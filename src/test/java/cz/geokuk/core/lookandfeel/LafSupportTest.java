@@ -11,16 +11,12 @@ import org.junit.*;
 /** Změna vzhledu se projeví ve všech otevřených oknech. */
 public class LafSupportTest {
 
-	private static final String KRUH_FOKUSU = "Table.cellFocusRing";
-
 	private LookAndFeel puvodni;
 
 	@Before
 	public void setUp() {
 		Assume.assumeFalse("potřebuje displej", GraphicsEnvironment.isHeadless());
 		puvodni = UIManager.getLookAndFeel();
-		// Posluchače Aqua (macOS) zůstávají na oknech i po změně vzhledu a při deaktivaci okna čtou barvu, kterou Metal ani Nimbus nemají.
-		UIManager.put(KRUH_FOKUSU, java.awt.Color.BLUE);
 	}
 
 	@After
@@ -32,7 +28,6 @@ public class LafSupportTest {
 				} catch (final UnsupportedLookAndFeelException e) {
 					throw new IllegalStateException(e);
 				}
-				UIManager.put(KRUH_FOKUSU, null);
 			});
 		}
 	}
@@ -86,5 +81,20 @@ public class LafSupportTest {
 			}
 		});
 		SwingUtilities.invokeAndWait(() -> {});
+	}
+
+	@Test
+	public void poZmeneVzhleduMaKruhFokusuProPosluchaceAqua() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			try {
+				Class.forName(LafSupport.class.getName());
+				UIManager.setLookAndFeel(new MetalLookAndFeel());
+				Assert.assertNotNull("Metal", UIManager.getColor(LafSupport.KRUH_FOKUSU_AQUA));
+				UIManager.setLookAndFeel(new NimbusLookAndFeel());
+				Assert.assertNotNull("Nimbus", UIManager.getColor(LafSupport.KRUH_FOKUSU_AQUA));
+			} catch (final ClassNotFoundException | UnsupportedLookAndFeelException e) {
+				throw new IllegalStateException(e);
+			}
+		});
 	}
 }

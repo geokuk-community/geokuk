@@ -58,6 +58,8 @@
   uživatelské wiki na GitHubu.
 
 ### Opravy
+- macOS: změna vzhledu (Skin) z výchozího vzhledu systému už nezpůsobí chybové
+  hlášení při přepnutí do jiného okna.
 - Databáze zamčená jiným programem (třeba otevřeným GeoGetem) nezdrží
   ostatní zdroje: ty se načtou hned a zamčená, jakmile ji program pustí.
   Zapnutí či vypnutí zdroje se projeví i tehdy, když je jiná databáze

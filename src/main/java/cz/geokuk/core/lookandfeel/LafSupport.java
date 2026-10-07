@@ -80,7 +80,16 @@ public class LafSupport {
 
 	// Used only if swingset is an application
 
+	/** Barva, kterou posluchače vzhledu Aqua čtou při deaktivaci okna. */
+	static final String KRUH_FOKUSU_AQUA = "Table.cellFocusRing";
+
 	static {
+		UIManager.addPropertyChangeListener(e -> {
+			if ("lookAndFeel".equals(e.getPropertyName())) {
+				doplnBarvyAqua();
+			}
+		});
+		doplnBarvyAqua();
 		createLafList(); // vytvořit seznam a vybrat aktuální
 		updateLookAndFeel();
 		createLafMenu();
@@ -207,6 +216,16 @@ public class LafSupport {
 		 * The recommended way of synchronizing state between multiple controls that represent the same command is to use Actions. The code below is a workaround and will be replaced in future version of SwingSet2 demo.
 		 */
 		updateLookAndFeel();
+	}
+
+	/**
+	 * Posluchače vzhledu Aqua (macOS) zůstávají na oknech i po změně vzhledu a při deaktivaci okna čtou barvu, kterou ostatní vzhledy nemají; bez ní JDK hodí výjimku.
+	 */
+	static void doplnBarvyAqua() {
+		if (UIManager.getColor(KRUH_FOKUSU_AQUA) == null) {
+			final java.awt.Color vyber = UIManager.getColor("Table.selectionBackground");
+			UIManager.getLookAndFeelDefaults().put(KRUH_FOKUSU_AQUA, new javax.swing.plaf.ColorUIResource(vyber != null ? vyber : java.awt.Color.BLUE));
+		}
 	}
 
 	/** Nový vzhled dostanou všechna otevřená okna, i nemodální dialogy. */
