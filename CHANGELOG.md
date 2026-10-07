@@ -29,8 +29,8 @@
 - Počítače s 16 GB paměti a více dostanou automaticky pro program 4 GB.
   Když paměť na načtení keší nestačí, GeoKuk to oznámí a už zobrazená
   data zůstanou.
-- Paměť uvolněná třeba po vypnutí velkého zdroje keší se po pár minutách
-  nečinnosti vrátí systému.
+- Paměť uvolněná po vypnutí velkého zdroje keší vrátí program systému během
+  několika sekund.
 - Aktualizace: už stažená nová verze se nestahuje znovu a při chybě
   výměny se vrátí původní verze. Nová verze s neplatným číslem verze nebo
   bez údaje o nejnižší Javě se nenabídne ani neinstaluje.

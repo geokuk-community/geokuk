@@ -298,7 +298,25 @@ public class StartTest {
 		for (final String verze : new String[] { "12", "17", "21", "25" }) {
 			final List<String> prikaz = new ArrayList<>();
 			Start.pridejVraceniPameti(prikaz, verze);
-			Assert.assertEquals(verze, Collections.singletonList("-XX:G1PeriodicGCInterval=60000"), prikaz);
+			Assert.assertEquals(verze, Arrays.asList("-XX:G1PeriodicGCInterval=60000", "-XX:+ExplicitGCInvokesConcurrent", "-XX:MinHeapFreeRatio=10", "-XX:MaxHeapFreeRatio=30"), prikaz);
 		}
+	}
+
+	/** Přepínače, které spouštěč přidá, Java, ve které testy běží, zná; neznámý -XX přepínač by program nespustil. */
+	@Test
+	public void javaPrepinaceVraceniPametiZna() throws Exception {
+		final List<String> prikaz = new ArrayList<>();
+		prikaz.add(new File(new File(System.getProperty("java.home"), "bin"), "java").getPath());
+		Start.pridejVraceniPameti(prikaz, System.getProperty("java.specification.version"));
+		Assume.assumeTrue("jen Java 12+", prikaz.size() > 1);
+		prikaz.add("-version");
+		final Process p = new ProcessBuilder(prikaz).redirectErrorStream(true).start();
+		final StringBuilder vystup = new StringBuilder();
+		try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+			for (String radek = r.readLine(); radek != null; radek = r.readLine()) {
+				vystup.append(radek).append('\n');
+			}
+		}
+		Assert.assertEquals(vystup.toString(), 0, p.waitFor());
 	}
 }

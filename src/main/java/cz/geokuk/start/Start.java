@@ -96,6 +96,10 @@ public final class Start {
 			final int hlavni = Integer.parseInt("1".equals(casti[0]) && casti.length > 1 ? casti[1] : casti[0]);
 			if (hlavni >= 12) {
 				prikaz.add("-XX:G1PeriodicGCInterval=60000");
+				// Jednorázový sběr po vypnutí zdroje bez dlouhé pauzy a s vrácením nevyužité haldy.
+				prikaz.add("-XX:+ExplicitGCInvokesConcurrent");
+				prikaz.add("-XX:MinHeapFreeRatio=10");
+				prikaz.add("-XX:MaxHeapFreeRatio=30");
 			}
 		} catch (final RuntimeException e) {
 			// neznámá verze: raději bez přepínače
