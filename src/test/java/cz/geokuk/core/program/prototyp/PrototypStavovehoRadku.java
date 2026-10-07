@@ -55,7 +55,7 @@ public class PrototypStavovehoRadku {
 				dialogy[0] = dialog;
 			});
 			new javax.swing.Timer(400, e -> zdroje.posunNacitani(5)).start();
-			prepinace[0] = new JPrepinaceZdroju(zdroje, () -> JOptionPane.showMessageDialog(okno[0], "Přehled zdrojů (prototyp)"));
+			prepinace[0] = new JPrepinaceZdroju(zdroje);
 			radek.add(prepinace[0]);
 			combo[0] = new JVyletCombo(vylety);
 			radek.add(combo[0]);
@@ -93,16 +93,27 @@ public class PrototypStavovehoRadku {
 		snimek(robot, okno[0], new File(slozka, "4-popup-geoget.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			prepinace[0].zavriSeznam();
+			final JDialog prehled = new JDialog(okno[0], "Přehled zdrojů", false);
+			prehled.add(new JZdrojePopup(zdroje, null));
+			prehled.pack();
+			prehled.setLocation(okno[0].getX() + 200, okno[0].getY() + 40);
+			prehled.setVisible(true);
+			dialogy[0] = prehled;
+		});
+		Thread.sleep(500);
+		snimek(robot, okno[0], new File(slozka, "5-prehled-zdroju-okno.png"));
+		SwingUtilities.invokeAndWait(() -> {
+			dialogy[0].dispose();
 			zdroje.setRezim(ZdrojeModel.Rezim.JEN_GPX);
 		});
 		Thread.sleep(300);
-		snimek(robot, okno[0], new File(slozka, "5-jen-gpx.png"));
+		snimek(robot, okno[0], new File(slozka, "6-jen-gpx.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			zdroje.setRezim(ZdrojeModel.Rezim.VSE);
 			combo[0].ukazMenu(combo[0].getComponent(1));
 		});
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "6-vylety.png"));
+		snimek(robot, okno[0], new File(slozka, "7-vylety.png"));
 		System.exit(0);
 	}
 

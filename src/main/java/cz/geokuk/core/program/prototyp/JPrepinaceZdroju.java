@@ -27,12 +27,12 @@ public class JPrepinaceZdroju extends JPanel {
 	private final Map<Typ, JLabel> prepinace = new EnumMap<>(Typ.class);
 	private final JLabel nadpis = new JLabel("Zdroje:");
 
-	public JPrepinaceZdroju(final ZdrojeModel model, final Runnable prehledZdroju) {
+	public JPrepinaceZdroju(final ZdrojeModel model) {
 		super(new FlowLayout(FlowLayout.CENTER, 8, 0));
 		this.model = model;
 		setBorder(BorderFactory.createEtchedBorder());
 
-		souhrn.add(new JZdrojePopup(model, null, prehledZdroju));
+		souhrn.add(new JZdrojePopup(model, null));
 		nadpis.setToolTipText("Najetím zobrazíte všechny zdroje");
 		nadpis.addMouseListener(najeti(() -> ukaz(souhrn, nadpis)));
 		add(nadpis);
@@ -41,7 +41,7 @@ public class JPrepinaceZdroju extends JPanel {
 
 		for (final Typ typ : Typ.values()) {
 			final JPopupMenu popup = vytvorPopup();
-			popup.add(new JZdrojePopup(model, typ, prehledZdroju));
+			popup.add(new JZdrojePopup(model, typ));
 			popupyTypu.put(typ, popup);
 			final JLabel l = new JLabel(typ.getNazev());
 			l.setIconTextGap(4);

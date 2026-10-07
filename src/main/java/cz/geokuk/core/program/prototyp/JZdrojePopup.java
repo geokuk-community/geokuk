@@ -98,7 +98,7 @@ public class JZdrojePopup extends JPanel {
 		}
 	};
 
-	public JZdrojePopup(final ZdrojeModel model, final Typ zobrazenyTyp, final Runnable prehledZdroju) {
+	public JZdrojePopup(final ZdrojeModel model, final Typ zobrazenyTyp) {
 		super(new BorderLayout(0, 6));
 		this.model = model;
 		this.zobrazenyTyp = zobrazenyTyp;
@@ -145,15 +145,6 @@ public class JZdrojePopup extends JPanel {
 		final JScrollPane scroll = new JScrollPane(tabulka);
 		scroll.setPreferredSize(new Dimension(760, 22 * (zobrazenyTyp == null ? Typ.values().length + model.getPolozky().size() : model.getPolozky(zobrazenyTyp).size() + 1) + 26));
 		add(scroll, BorderLayout.CENTER);
-
-		final JPanel paticka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-		final JButton prehled = new JButton("Přehled zdrojů…");
-		prehled.setFocusable(false);
-		prehled.addActionListener(e -> prehledZdroju.run());
-		paticka.add(prehled);
-		if (zobrazenyTyp == null) {
-			add(paticka, BorderLayout.SOUTH);
-		}
 
 		model.addPosluchac(this::obnov);
 		obnov();
