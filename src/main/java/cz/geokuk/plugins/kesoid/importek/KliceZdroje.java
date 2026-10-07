@@ -44,6 +44,25 @@ final class KliceZdroje {
 		return s.hotovo();
 	}
 
+	/** Počet společných klíčů. */
+	int spolecnych(final KliceZdroje jine) {
+		int n = 0;
+		int i = 0;
+		int j = 0;
+		while (i < klice.length && j < jine.klice.length) {
+			if (klice[i] == jine.klice[j]) {
+				n++;
+				i++;
+				j++;
+			} else if (klice[i] < jine.klice[j]) {
+				i++;
+			} else {
+				j++;
+			}
+		}
+		return n;
+	}
+
 	/** Mají společný klíč. */
 	boolean protina(final KliceZdroje jine) {
 		int i = 0;

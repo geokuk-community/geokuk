@@ -1,5 +1,8 @@
 package cz.geokuk.plugins.kesoid.importek;
 
+import java.sql.SQLException;
+import java.util.Collection;
+
 import java.io.*;
 import java.util.concurrent.Future;
 import java.util.function.LongSupplier;
@@ -103,6 +106,11 @@ public abstract class Nacitac0 {
 	}
 
 	abstract boolean umiNacist(File file);
+
+	/** Jména waypointů zdroje bez čtení ostatních údajů, aby šel předem poznat překryv s jinými zdroji; null, když to načítač neumí. */
+	Collection<String> jmenaPredem(final File file) throws SQLException {
+		return null;
+	}
 
 	abstract boolean umiNacist(ZipEntry zipEntry);
 }

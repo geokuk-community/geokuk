@@ -327,4 +327,10 @@ public class OpensakDbLoader extends Nacitac0 {
 		}
 		return Collections.unmodifiableMap(m);
 	}
+
+	/** Waypointy mají příponu kódu své keše. */
+	@Override
+	Collection<String> jmenaPredem(final File file) throws SQLException {
+		return DatabazeJinehoProgramu.jmena(file, "SELECT gc_code FROM caches");
+	}
 }

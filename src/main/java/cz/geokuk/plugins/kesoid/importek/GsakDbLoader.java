@@ -736,4 +736,9 @@ public class GsakDbLoader extends Nacitac0 {
 	public static abstract class AllValues {
 		public final Map<String, Object> values = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 	}
+
+	@Override
+	Collection<String> jmenaPredem(final File file) throws SQLException {
+		return DatabazeJinehoProgramu.jmena(file, "SELECT Code FROM Caches UNION SELECT cParent FROM Waypoints");
+	}
 }
