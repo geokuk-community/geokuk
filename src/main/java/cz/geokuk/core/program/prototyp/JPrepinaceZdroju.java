@@ -3,8 +3,9 @@ package cz.geokuk.core.program.prototyp;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.*;
@@ -28,6 +29,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private final JPopupMenu souhrn = vytvorPopup();
 	private final Map<Typ, JPopupMenu> popupyTypu = new EnumMap<>(Typ.class);
 	private final javax.swing.Timer casovacZavreni;
+	private final JLabel popisek = new JLabel("Zdroje:");
 	private final Map<Typ, JCheckBox> zaskrtavatka = new EnumMap<>(Typ.class);
 	private final Map<Typ, JLabel> ikony = new EnumMap<>(Typ.class);
 	private final java.util.List<JZdrojePopup> tabulky = new java.util.ArrayList<>();
@@ -38,18 +40,16 @@ public class JPrepinaceZdroju extends JPanel {
 		this.model = model;
 		setBorder(BorderFactory.createEtchedBorder());
 
-		final JLabel popisek = new JLabel("Zdroje:");
+		popisek.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(final MouseEvent e) {
+				ukazSouhrn();
+			}
+		});
 		add(popisek);
 		final JZdrojePopup uplna = new JZdrojePopup(model, null);
 		tabulky.add(uplna);
 		souhrn.add(uplna);
-		// Pohyb nad blokem mimo názvy a ikony (mezery, okraje) ukáže všechny zdroje.
-		addMouseMotionListener(new MouseMotionAdapter() {
-			@Override
-			public void mouseMoved(final MouseEvent e) {
-				ukazSouhrn();
-			}
-		});
 
 		casovacZavreni = new javax.swing.Timer(PRODLEVA_ZAVRENI_MS, e -> zavriKdyzMimo());
 
@@ -66,17 +66,20 @@ public class JPrepinaceZdroju extends JPanel {
 			zaskrtavatko.addActionListener(e -> model.setTypZapnut(typ, zaskrtavatko.isSelected()));
 			final JLabel ikona = new JLabel(IkonyZdroju.prazdna());
 			final JLabel nazev = new JLabel(typ.getNazev());
-			final MouseAdapter najeti = new MouseAdapter() {
+			nazev.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseEntered(final MouseEvent e) {
 					ukaz(popup, zaskrtavatko);
 				}
-			};
-			ikona.addMouseListener(najeti);
-			nazev.addMouseListener(najeti);
-			ikona.addMouseMotionListener(new MouseMotionAdapter() {
 			});
-			nazev.addMouseMotionListener(new MouseMotionAdapter() {
+			// V kompaktním režimu bez názvu otevírá detail ikona, jinak jen ukazuje tooltip.
+			ikona.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseEntered(final MouseEvent e) {
+					if (!nazev.isVisible()) {
+						ukaz(popup, zaskrtavatko);
+					}
+				}
 			});
 
 			final JPanel bunka = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
@@ -165,6 +168,43 @@ public class JPrepinaceZdroju extends JPanel {
 		x = Math.max(-vlevo, Math.min(x, sirkaObrazovky - vlevo - d.width));
 		popup.show(this, x, -d.height);
 		casovacZavreni.start();
+	}
+
+	/** Co oblast dělá. */
+	enum Druh {
+		UPLNA_TABULKA, PREPINA, DETAIL, TOOLTIP
+	}
+
+	/** Plocha bloku, která reaguje na najetí nebo klik; souřadnice jsou v bloku. */
+	static final class Oblast {
+		final Rectangle plocha;
+		final Druh druh;
+		final String popis;
+
+		Oblast(final Rectangle plocha, final Druh druh, final String popis) {
+			this.plocha = plocha;
+			this.druh = druh;
+			this.popis = popis;
+		}
+	}
+
+	/** Přesné oblasti, ve kterých blok reaguje; mezery a okraje mezi nimi nereagují. */
+	List<Oblast> oblasti() {
+		final List<Oblast> oblasti = new ArrayList<>();
+		oblasti.add(new Oblast(plocha(popisek), Druh.UPLNA_TABULKA, "Zdroje"));
+		for (final Typ typ : Typ.values()) {
+			oblasti.add(new Oblast(plocha(zaskrtavatka.get(typ)), Druh.PREPINA, typ.getNazev() + " zaškrtávátko"));
+			final boolean bezNazvu = !nazvy.get(typ).isVisible();
+			oblasti.add(new Oblast(plocha(ikony.get(typ)), bezNazvu ? Druh.DETAIL : Druh.TOOLTIP, typ.getNazev() + " ikona"));
+			if (!bezNazvu) {
+				oblasti.add(new Oblast(plocha(nazvy.get(typ)), Druh.DETAIL, typ.getNazev() + " název"));
+			}
+		}
+		return oblasti;
+	}
+
+	private Rectangle plocha(final Component c) {
+		return SwingUtilities.convertRectangle(c.getParent(), c.getBounds(), this);
 	}
 
 	/** Zobrazí tabulku všech typů zdrojů. */

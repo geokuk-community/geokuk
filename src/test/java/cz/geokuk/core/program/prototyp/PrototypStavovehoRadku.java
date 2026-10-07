@@ -116,6 +116,7 @@ public class PrototypStavovehoRadku {
 		Thread.sleep(800);
 		snimek(robot, okno[0], new File(slozka, "1-okno-6.3.0.png"));
 		stavyListy(zdroje, lista[0], new File(slozka, "2-lista-stavy-6.3.0.png"));
+		aktivniOblasti(prepinace[0], new File(slozka, "11-aktivni-oblasti.png"));
 		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSouhrn());
 		Thread.sleep(500);
 		snimek(robot, okno[0], new File(slozka, "3-uplna-tabulka.png"));
@@ -221,6 +222,93 @@ public class PrototypStavovehoRadku {
 				zdroje.setStavTypu(typ, typ == Typ.GSAK ? Stav.ZAMCENO : Stav.NACTENO);
 			}
 		});
+	}
+
+	/** Zvětšený blok Zdroje s barevně vyznačenými oblastmi, které reagují na najetí a klik, a s jejich rozměry. */
+	private static void aktivniOblasti(final JPrepinaceZdroju blok, final File soubor) throws Exception {
+		final int zvetseni = 4;
+		final BufferedImage[] img = new BufferedImage[1];
+		SwingUtilities.invokeAndWait(() -> {
+			final java.util.List<JPrepinaceZdroju.Oblast> oblasti = blok.oblasti();
+			final int sirka = blok.getWidth() * zvetseni;
+			final int vyska = blok.getHeight() * zvetseni;
+			final int radkuLegendy = 5 + oblasti.size();
+			img[0] = new BufferedImage(sirka, vyska + 60 + radkuLegendy * 20, BufferedImage.TYPE_INT_RGB);
+			final Graphics2D g = img[0].createGraphics();
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setColor(Color.WHITE);
+			g.fillRect(0, 0, img[0].getWidth(), img[0].getHeight());
+			final Graphics2D gb = (Graphics2D) g.create(0, 30, sirka, vyska);
+			gb.scale(zvetseni, zvetseni);
+			blok.paint(gb);
+			gb.dispose();
+			final Font pismo = g.getFont().deriveFont(Font.BOLD, 11f);
+			g.setFont(pismo);
+			int n = 0;
+			for (final JPrepinaceZdroju.Oblast o : oblasti) {
+				final Color barva = barva(o.druh);
+				final Rectangle r = new Rectangle(o.plocha.x * zvetseni, 30 + o.plocha.y * zvetseni, o.plocha.width * zvetseni, o.plocha.height * zvetseni);
+				g.setColor(new Color(barva.getRed(), barva.getGreen(), barva.getBlue(), 90));
+				g.fill(r);
+				g.setColor(barva);
+				g.setStroke(new BasicStroke(2f));
+				g.draw(r);
+				g.setStroke(new BasicStroke(1f));
+				if (o.popis.startsWith("Zdroje") || o.popis.startsWith("GPX")) {
+					g.setColor(Color.BLACK);
+					final String rozmer = o.plocha.width + "×" + o.plocha.height + " px";
+					g.drawString(rozmer, r.x + 2, (n++ % 2 == 0) ? 12 : 26);
+				}
+			}
+			int y = 30 + vyska + 22;
+			g.setFont(pismo.deriveFont(Font.BOLD, 13f));
+			g.setColor(Color.BLACK);
+			g.drawString("Plochy reagující na najetí a klik (skutečné rozměry v px, snímek zvětšen " + zvetseni + "×; mezery mezi nimi nereagují):", 6, y);
+			g.setFont(pismo.deriveFont(Font.PLAIN, 12f));
+			for (final JPrepinaceZdroju.Druh druh : JPrepinaceZdroju.Druh.values()) {
+				y += 20;
+				g.setColor(barva(druh));
+				g.fillRect(6, y - 12, 14, 14);
+				g.setColor(Color.BLACK);
+				g.drawString(popisDruhu(druh), 28, y);
+			}
+			y += 10;
+			for (final JPrepinaceZdroju.Oblast o : oblasti) {
+				y += 20;
+				g.setColor(barva(o.druh));
+				g.fillRect(6, y - 12, 14, 14);
+				g.setColor(Color.BLACK);
+				g.drawString(o.popis + ": " + o.plocha.width + "×" + o.plocha.height + " px", 28, y);
+			}
+			g.dispose();
+		});
+		ImageIO.write(img[0], "png", soubor);
+	}
+
+	private static Color barva(final JPrepinaceZdroju.Druh druh) {
+		switch (druh) {
+		case UPLNA_TABULKA:
+			return new Color(0x1E64D0);
+		case PREPINA:
+			return new Color(0x2E9E4F);
+		case DETAIL:
+			return new Color(0xF08000);
+		default:
+			return new Color(0x808080);
+		}
+	}
+
+	private static String popisDruhu(final JPrepinaceZdroju.Druh druh) {
+		switch (druh) {
+		case UPLNA_TABULKA:
+			return "modrá: najetí otevře úplnou tabulku všech zdrojů";
+		case PREPINA:
+			return "zelená: klik zapne či vypne zdroj (i při načítání)";
+		case DETAIL:
+			return "oranžová: najetí otevře detail zdroje";
+		default:
+			return "šedá: jen tooltip (stav zdroje)";
+		}
 	}
 
 	private static void snimek(final Robot robot, final JFrame okno, final File soubor) throws Exception {
