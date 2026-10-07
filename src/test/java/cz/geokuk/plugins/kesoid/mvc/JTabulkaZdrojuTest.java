@@ -90,10 +90,10 @@ public class JTabulkaZdrojuTest {
 	@Test
 	public void stavyTextem() {
 		final File gsak = data.snimek().getPolozky(TypZdroje.GSAK).get(0).getSoubor();
-		data.registr.cekaNaZapis(gsak);
+		data.registr.cekaNaZapis(data.registr.getGenerace(), gsak);
 		final File gg = data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor();
-		data.registr.zacina(gg);
-		data.registr.postup(gg, 40);
+		data.registr.zacina(data.registr.getGenerace(), gg);
+		data.registr.postup(data.registr.getGenerace(), gg, 40);
 		final JTabulkaZdroju t = tabulka(null);
 		Assert.assertEquals("Zamčeno jiným programem", text(t, TypZdroje.GSAK, "Domov.db3", JTabulkaZdroju.SL_STAV));
 		Assert.assertEquals("Zamčeno jiným programem", text(t, TypZdroje.GSAK, null, JTabulkaZdroju.SL_STAV));

@@ -33,8 +33,8 @@ public class VytvoritZastupceAction extends Action0 {
 			+ "[ComImport,Guid(\"0000010b-0000-0000-C000-000000000046\"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]public interface IPF{"
 			+ "void GetClassID(out Guid g);[PreserveSig]int IsDirty();void Load([MarshalAs(UnmanagedType.LPWStr)]string f,uint m);void Save([MarshalAs(UnmanagedType.LPWStr)]string f,bool r);void SaveCompleted(string f);void GetCurFile(out string f);}"
 			+ "[DllImport(\"propsys.dll\",CharSet=CharSet.Unicode)]static extern int PSGetPropertyKeyFromName(string n,out K k);"
-			+ "public static void Set(string lnk,string id){object o=new SL();((IPF)o).Load(lnk,2);var ps=(IPS)o;K k;int h=PSGetPropertyKeyFromName(\"System.AppUserModel.ID\",out k);if(h!=0)throw new Exception(\"PSGetPropertyKeyFromName \"+h);"
-			+ "V v=new V();v.vt=31;v.p=Marshal.StringToCoTaskMemUni(id);h=ps.SetValue(ref k,ref v);if(h!=0)throw new Exception(\"SetValue \"+h);h=ps.Commit();if(h!=0)throw new Exception(\"Commit \"+h);((IPF)o).Save(lnk,true);}}";
+			+ "public static void Set(string lnk,string id){object o=new SL();((IPF)o).Load(lnk,2);var ps=(IPS)o;K k;int h=PSGetPropertyKeyFromName(\"System.AppUserModel.ID\",out k);if(h<0)throw new Exception(\"PSGetPropertyKeyFromName \"+h);"
+			+ "V v=new V();v.vt=31;v.p=Marshal.StringToCoTaskMemUni(id);h=ps.SetValue(ref k,ref v);if(h<0)throw new Exception(\"SetValue \"+h);h=ps.Commit();if(h<0)throw new Exception(\"Commit \"+h);((IPF)o).Save(lnk,true);}}";
 
 	/** Zástupce přes WScript.Shell, cesty v proměnných prostředí, aby nevadily mezery ani uvozovky. */
 	static final String SKRIPT = UTF8_VYSTUP + "$ErrorActionPreference='Stop';"

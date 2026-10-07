@@ -172,6 +172,21 @@ public class StavZdrojuNacitaniTest {
 		Assert.assertFalse(novy.isTypVypnut(TypZdroje.GEOGET));
 	}
 
+	@Test
+	public void casyDatZdrojuSeUloziDoNastaveniANovyModelJeNacte() throws Exception {
+		zalozGeoget("a.db3", "GC000A");
+		model.nactiVyberZdroju();
+		start();
+		nacitac.nacti(null, genom);
+		final KesoidModel novy = model();
+		novy.nactiVyberZdroju();
+		final List<String> cesty = new ArrayList<>();
+		for (final String zaznam : novy.getCasyDatZdroju()) {
+			cesty.add(zaznam.substring(zaznam.indexOf(';', zaznam.indexOf(';') + 1) + 1));
+		}
+		Assert.assertEquals(new HashSet<>(Arrays.asList(new File(gpx, "a.gpx").getPath(), new File(slozkaGeogetu, "a.db3").getPath())), new HashSet<>(cesty));
+	}
+
 	/** Nová databáze vypnutá až při zařazení („Načítat až po vybrání“) se v registru nesmí ukazovat jako zapnutá. */
 	@Test
 	public void novaDatabazeVypnutaPriZarazeniJeVRegistruVypnuta() throws Exception {
@@ -249,10 +264,11 @@ public class StavZdrojuNacitaniTest {
 		});
 		edtBlokovan.await();
 		final File a = new File(slozkaGeogetu, "a.db3");
+		final int gen = nacitac.getRegistr().getGenerace();
 		for (int i = 0; i < 50; i++) {
-			nacitac.getRegistr().zacina(a);
-			nacitac.getRegistr().postup(a, i);
-			nacitac.getRegistr().hotovo(a, 1, 1);
+			nacitac.getRegistr().zacina(gen, a);
+			nacitac.getRegistr().postup(gen, a, i);
+			nacitac.getRegistr().hotovo(gen, a, 1, 1);
 		}
 		pustit.countDown();
 		SwingUtilities.invokeAndWait(() -> {});

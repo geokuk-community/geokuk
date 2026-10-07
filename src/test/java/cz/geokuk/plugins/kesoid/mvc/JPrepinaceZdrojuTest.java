@@ -67,9 +67,9 @@ public class JPrepinaceZdrojuTest {
 	public void rozmerNezavisiNaStavu() throws Exception {
 		final Dimension nacteno = rozmer(data.snimek());
 		final File gsak = data.snimek().getPolozky(TypZdroje.GSAK).get(0).getSoubor();
-		data.registr.cekaNaZapis(gsak);
+		data.registr.cekaNaZapis(data.registr.getGenerace(), gsak);
 		Assert.assertEquals(nacteno, rozmer(data.snimek()));
-		data.registr.chyba(data.snimek().getPolozky(TypZdroje.GPX).get(0).getSoubor(), "Vadný soubor");
+		data.registr.chyba(data.registr.getGenerace(), data.snimek().getPolozky(TypZdroje.GPX).get(0).getSoubor(), "Vadný soubor");
 		Assert.assertEquals(nacteno, rozmer(data.snimek()));
 		data.vypnuteTypy.addAll(Arrays.asList(TypZdroje.values()));
 		data.prepisZapnuti();
@@ -89,14 +89,14 @@ public class JPrepinaceZdrojuTest {
 
 	@Test
 	public void zamekVBubline() throws Exception {
-		data.registr.cekaNaZapis(data.snimek().getPolozky(TypZdroje.GSAK).get(0).getSoubor());
+		data.registr.cekaNaZapis(data.registr.getGenerace(), data.snimek().getPolozky(TypZdroje.GSAK).get(0).getSoubor());
 		naEdt(() -> blok.obnov(data.snimek()));
 		Assert.assertSame(IkonyZdroju.pro(StavZdroje.CEKA_NA_ZAPIS), blok.getIkona(TypZdroje.GSAK).getIcon());
 		final String tip = blok.getIkona(TypZdroje.GSAK).getToolTipText();
 		Assert.assertTrue(tip, tip.contains("Zamčeno jiným programem") && tip.contains("Domov.db3") && tip.contains("Zavřete program"));
 
 		for (final cz.geokuk.plugins.kesoid.importek.StavPolozky p : data.snimek().getPolozky(TypZdroje.GEOGET)) {
-			data.registr.cekaNaZapis(p.getSoubor());
+			data.registr.cekaNaZapis(data.registr.getGenerace(), p.getSoubor());
 		}
 		naEdt(() -> blok.obnov(data.snimek()));
 		final String dve = blok.getIkona(TypZdroje.GEOGET).getToolTipText();
@@ -229,13 +229,13 @@ public class JPrepinaceZdrojuTest {
 			pred[1] = blok.getParent().getBounds();
 			otevri(blok.getPopisek());
 			otevri(blok.getNazev(TypZdroje.GEOGET));
-			data.registr.zacina(data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor());
+			data.registr.zacina(data.registr.getGenerace(), data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor());
 			blok.obnov(data.snimek());
 			okno.validate();
 			Assert.assertEquals(pred[0], blok.getBounds());
 			Assert.assertEquals(pred[1], blok.getParent().getBounds());
 		});
-		data.registr.hotovo(data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor(), 10, 10);
+		data.registr.hotovo(data.registr.getGenerace(), data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor(), 10, 10);
 		naEdt(() -> {
 			blok.obnov(data.snimek());
 			blok.zavriSeznam();
