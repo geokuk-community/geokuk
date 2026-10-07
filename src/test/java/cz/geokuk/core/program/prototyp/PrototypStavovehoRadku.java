@@ -44,7 +44,6 @@ public class PrototypStavovehoRadku {
 		final JPrepinaceZdroju[] prepinace = new JPrepinaceZdroju[1];
 		final JVyletCombo[] combo = new JVyletCombo[1];
 		final JDialog[] dialogy = new JDialog[1];
-		final JButton[] nastaveniTlacitko = new JButton[1];
 		SwingUtilities.invokeAndWait(() -> {
 			okno[0] = new JFrame("Prototyp stavového řádku");
 			okno[0].setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -60,17 +59,6 @@ public class PrototypStavovehoRadku {
 			vpravo.add(prepinace[0]);
 			combo[0] = new JVyletCombo(vylety);
 			vpravo.add(combo[0]);
-			final JButton nastaveni = new JButton("Nastavení…");
-			nastaveni.addActionListener(e -> {
-				final JDialog dialog = new JDialog(okno[0], "Nastavení (prototyp)", false);
-				dialog.add(new JLabel("  Nastavení se otevře i během načítání zdrojů.  "));
-				dialog.pack();
-				dialog.setLocation(okno[0].getX() + 80, okno[0].getY() + 80);
-				dialog.setVisible(true);
-				dialogy[0] = dialog;
-			});
-			vpravo.add(nastaveni);
-			nastaveniTlacitko[0] = nastaveni;
 			if (args.length == 0) {
 				new javax.swing.Timer(400, e -> zdroje.posunNacitani(5)).start();
 			}
@@ -92,14 +80,10 @@ public class PrototypStavovehoRadku {
 		final Robot robot = new Robot();
 		Thread.sleep(800);
 		stavyListy(zdroje, lista[0], new File(slozka, "1-lista-stavy.png"));
-		SwingUtilities.invokeAndWait(() -> {
-			nastaveniTlacitko[0].doClick();
-			prepinace[0].ukazSouhrn();
-		});
+		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSouhrn());
 		Thread.sleep(500);
 		snimek(robot, okno[0], new File(slozka, "2-uplna-tabulka.png"));
 		SwingUtilities.invokeAndWait(() -> {
-			dialogy[0].dispose();
 			prepinace[0].zavriSeznam();
 			prepinace[0].ukazTyp(Typ.GPX);
 		});
