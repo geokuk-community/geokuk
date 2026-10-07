@@ -23,6 +23,9 @@ public class JPrepinaceZdroju extends JPanel {
 	/** Pod touto šířkou okna se skryjí názvy zdrojů, zůstane zaškrtávátko a ikona. */
 	static final int PRAH_KOMPAKTNI = 900;
 
+	/** Okraj aktivní plochy popisku a názvu; vedle zaškrtávátka a ikony zůstává místo, které popup nevyvolá. */
+	private static final int PADDING = 3;
+
 	private static final int PRODLEVA_ZAVRENI_MS = 350;
 
 	private final ZdrojeModel model;
@@ -36,7 +39,8 @@ public class JPrepinaceZdroju extends JPanel {
 	private final Map<Typ, JLabel> nazvy = new EnumMap<>(Typ.class);
 
 	public JPrepinaceZdroju(final ZdrojeModel model) {
-		super(new FlowLayout(FlowLayout.CENTER, 8, 0));
+		super();
+		setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 		this.model = model;
 		setBorder(BorderFactory.createEtchedBorder());
 
@@ -46,6 +50,9 @@ public class JPrepinaceZdroju extends JPanel {
 				ukazSouhrn();
 			}
 		});
+		popisek.setBorder(BorderFactory.createEmptyBorder(0, PADDING, 0, PADDING));
+		natahni(popisek);
+		add(Box.createHorizontalStrut(5 - PADDING));
 		add(popisek);
 		final JZdrojePopup uplna = new JZdrojePopup(model, null);
 		tabulky.add(uplna);
@@ -82,11 +89,19 @@ public class JPrepinaceZdroju extends JPanel {
 				}
 			});
 
-			final JPanel bunka = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+			nazev.setBorder(BorderFactory.createEmptyBorder(0, PADDING, 0, PADDING));
+			natahni(zaskrtavatko);
+			natahni(ikona);
+			natahni(nazev);
+			final JPanel bunka = new JPanel();
+			bunka.setLayout(new BoxLayout(bunka, BoxLayout.X_AXIS));
 			bunka.setOpaque(false);
 			bunka.add(zaskrtavatko);
+			bunka.add(Box.createHorizontalStrut(2));
 			bunka.add(ikona);
+			bunka.add(Box.createHorizontalStrut(2 - PADDING > 0 ? 2 - PADDING : 0));
 			bunka.add(nazev);
+			add(Box.createHorizontalStrut(8));
 			zaskrtavatka.put(typ, zaskrtavatko);
 			ikony.put(typ, ikona);
 			nazvy.put(typ, nazev);
@@ -106,6 +121,17 @@ public class JPrepinaceZdroju extends JPanel {
 	public void addNotify() {
 		super.addNotify();
 		SwingUtilities.invokeLater(this::prizpusob);
+	}
+
+	/** Komponenta zabere celou výšku bloku, aby byla plocha pro najetí a klik dostatečná, vzhled se nemění. */
+	private static void natahni(final JComponent c) {
+		c.setMaximumSize(new Dimension(c.getPreferredSize().width, Integer.MAX_VALUE));
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		final Dimension d = super.getPreferredSize();
+		return new Dimension(d.width, Math.max(d.height, 24));
 	}
 
 	private int sirkaOkna() {
