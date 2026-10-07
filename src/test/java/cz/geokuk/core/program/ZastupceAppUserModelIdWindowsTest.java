@@ -45,6 +45,18 @@ public class ZastupceAppUserModelIdWindowsTest {
 		Assert.assertEquals(AppUserModelId.ID, idZastupce(lnk));
 	}
 
+	/** Znovu vytvořený zástupce se stejným ID: SetValue vrací S_FALSE (1), to je úspěch, ne chyba. */
+	@Test
+	public void opakovaneVytvoreniSeStejnymIdNeniChyba() throws Exception {
+		final File lnk = new File(tmp.getRoot(), "GeoKuk.lnk");
+		for (int i = 0; i < 2; i++) {
+			final VytvoritZastupceAction.Vysledek v = VytvoritZastupceAction.powershell(VytvoritZastupceAction.SKRIPT, promenne(lnk, VytvoritZastupceAction.CSHARP));
+			Assert.assertEquals(v.text, 0, v.kod);
+			Assert.assertTrue(i + ". " + v.text, v.text.contains("AUMID-OK"));
+		}
+		Assert.assertEquals(AppUserModelId.ID, idZastupce(lnk));
+	}
+
 	/** Když Add-Type nejde, zástupce se vytvoří bez ID a skript to ohlásí. */
 	@Test
 	public void zastupceVzniknePokudIdNejde() throws Exception {
