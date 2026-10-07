@@ -204,6 +204,11 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		}
 	}
 
+	/** Počty waypointů právě načítaného zdroje: celkem a braných. */
+	public synchronized int[] getPoctyCurrent() {
+		return new int[] { infoOCurrentnimZdroji.pocetWaypointuCelkem, infoOCurrentnimZdroji.pocetWaypointuBranych };
+	}
+
 	public synchronized void setCurrentlyLoading(final KeFile aJmenoZdroje, final boolean nacteno) {
 		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(aJmenoZdroje, nacteno);
 	}

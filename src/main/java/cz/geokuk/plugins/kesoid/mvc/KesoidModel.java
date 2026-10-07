@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.SwingUtilities;
 
@@ -18,6 +19,10 @@ import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.filtr.FilterDefinitionChangedEvent;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
+import cz.geokuk.plugins.kesoid.importek.RegistrStavuZdroju;
+import cz.geokuk.plugins.kesoid.importek.StavPolozky;
+import cz.geokuk.plugins.kesoid.importek.StavZdroju;
+import cz.geokuk.plugins.kesoid.importek.TypZdroje;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitac;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitacLoaderManager;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
@@ -68,6 +73,12 @@ public class KesoidModel extends Model0 {
 	/** Zdroje rozběhnutého prvního načítání, dokud žádné keše načtené nejsou. */
 	private volatile InformaceOZdrojich nacitaneZdroje;
 	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
+	private final AtomicBoolean udalostStavuZdrojuCeka = new AtomicBoolean();
+	private volatile StavZdroju stavZdroju = StavZdroju.PRAZDNY;
+
+	{
+		multiNacitacLoaderManager.getRegistr().setPosluchac(this::naplanujUdalostStavuZdroju);
+	}
 
 	@Getter
 	private KesoidPluginManager kesopidPluginManager;
@@ -197,7 +208,59 @@ public class KesoidModel extends Model0 {
 	}
 
 	public boolean maSeNacist(final KeFile jmenoZdroje) {
-		return !blokovaneZdroje.contains(jmenoZdroje.getFile());
+		return maSeNacist(jmenoZdroje.getFile());
+	}
+
+	public boolean maSeNacist(final File zdroj) {
+		return !blokovaneZdroje.contains(zdroj);
+	}
+
+	/** Registr stavu, který model rozesílá událostmi; zapisuje do něj načítání. */
+	public RegistrStavuZdroju getRegistrStavuZdroju() {
+		return multiNacitacLoaderManager.getRegistr();
+	}
+
+	/** Poslední stav všech položek zdrojů; pro změny viz {@link StavZdrojuEvent}. */
+	public StavZdroju getStavZdroju() {
+		return stavZdroju;
+	}
+
+	/** Změny stavu z vlákna načítání i z EDT se slučují do jedné události v EDT. */
+	private void naplanujUdalostStavuZdroju() {
+		if (udalostStavuZdrojuCeka.compareAndSet(false, true)) {
+			SwingUtilities.invokeLater(() -> {
+				udalostStavuZdrojuCeka.set(false);
+				final StavZdroju stav = multiNacitacLoaderManager.getRegistr().getSnimek();
+				stavZdroju = stav;
+				fire(new StavZdrojuEvent(stav));
+			});
+		}
+	}
+
+	/** Zapne nebo vypne všechny položky typu najednou, načítání se spustí jednou. */
+	public void setNacitatTyp(final TypZdroje typ, final boolean nacitat) {
+		final List<File> soubory = multiNacitacLoaderManager.getRegistr().getSoubory(typ);
+		zmenZapnute(nacitat ? soubory : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : soubory);
+	}
+
+	/** Zapne nebo vypne všechny zdroje najednou, načítání se spustí jednou. */
+	public void setNacitatVse(final boolean nacitat) {
+		final List<File> soubory = new ArrayList<>();
+		for (final StavPolozky p : multiNacitacLoaderManager.getRegistr().getSnimek().getPolozky()) {
+			soubory.add(p.getSoubor());
+		}
+		zmenZapnute(nacitat ? soubory : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : soubory);
+	}
+
+	/** Jedna změna zapnutých zdrojů: jeden zápis nastavení, okamžitá změna stavu pro GUI a jedno spuštění načítání. */
+	private void zmenZapnute(final Collection<File> zapnout, final Collection<File> vypnout) {
+		if (upravBlokovaneZdroje(b -> {
+			final boolean zapnuto = b.removeAll(zapnout);
+			return b.addAll(vypnout) | zapnuto;
+		})) {
+			multiNacitacLoaderManager.getRegistr().prepisZapnuti(this::maSeNacist);
+			startKesLoading();
+		}
 	}
 
 	public void onEvent(final IkonyNactenyEvent event) {
@@ -345,9 +408,7 @@ public class KesoidModel extends Model0 {
 		}
 		final Collection<File> changedFiles = Collections2.transform(zdroje.getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
 		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
-		if (upravBlokovaneZdroje(b -> nacitat ? b.removeAll(changedFiles) : b.addAll(changedFiles))) {
-			startKesLoading();
-		}
+		zmenZapnute(nacitat ? changedFiles : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : changedFiles);
 	}
 
 	public void setOnoff(final boolean onoff) {

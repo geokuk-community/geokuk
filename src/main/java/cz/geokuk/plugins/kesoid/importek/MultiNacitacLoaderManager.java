@@ -59,6 +59,10 @@ public class MultiNacitacLoaderManager {
 		return vysledek;
 	}
 
+	public RegistrStavuZdroju getRegistr() {
+		return multiNacitac.getRegistr();
+	}
+
 	public boolean jeZamcena(final File databaze) {
 		return multiNacitac.jeZamcena(databaze);
 	}

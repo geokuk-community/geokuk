@@ -1,0 +1,126 @@
+package cz.geokuk.plugins.kesoid.importek;
+
+import java.io.File;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToLongFunction;
+
+/**
+ * Stav všech položek zdrojů. Píše vlákno načítání a vlákno, které přepíná zdroje, čte kdokoli (snímek je neměnný). Zápis stavu vypnuté položky se ignoruje, aby zpožděné
+ * zrušené načítání nepřepsalo vypnutí.
+ */
+public class RegistrStavuZdroju {
+
+	private final Map<File, StavPolozky> polozky = new LinkedHashMap<>();
+	private volatile StavZdroju snimek = StavZdroju.PRAZDNY;
+	private volatile Runnable posluchac = () -> {};
+
+	/** Volá se po každé změně z vlákna, které ji provedlo. */
+	public void setPosluchac(final Runnable posluchac) {
+		this.posluchac = posluchac;
+	}
+
+	public StavZdroju getSnimek() {
+		return snimek;
+	}
+
+	/** Soubory typu podle posledního skenu. */
+	public List<File> getSoubory(final TypZdroje typ) {
+		final List<File> vysledek = new ArrayList<>();
+		for (final StavPolozky p : snimek.getPolozky(typ)) {
+			vysledek.add(p.getSoubor());
+		}
+		return vysledek;
+	}
+
+	/**
+	 * Nový seznam položek po skenu. Zapnutá položka zůstane načtená (nebo chybná, nebo čekající na zápis), dokud na ni nepřijde řada, ostatní zapnuté čekají na řadu; vypnutá
+	 * je vypnutá. Počty waypointů se pamatují.
+	 */
+	public void prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Predicate<File> zapnuto, final ToLongFunction<File> velikost) {
+		synchronized (this) {
+			final Map<File, StavPolozky> stare = new HashMap<>(polozky);
+			polozky.clear();
+			for (final File f : soubory) {
+				final StavPolozky predtim = stare.get(f);
+				final boolean zap = zapnuto.test(f);
+				final StavZdroje stav;
+				if (!zap) {
+					stav = StavZdroje.VYPNUTO;
+				} else if (predtim != null && predtim.isZapnuto() && (predtim.getStav() == StavZdroje.NACTENO || predtim.getStav() == StavZdroje.CHYBA || predtim.getStav() == StavZdroje.CEKA_NA_ZAPIS)) {
+					stav = predtim.getStav();
+				} else {
+					stav = StavZdroje.CEKA_NA_RADU;
+				}
+				final StavPolozky nova = predtim != null ? predtim.sTypem(typ.apply(f)) : new StavPolozky(f, typ.apply(f), stav, 0, 0, StavPolozky.NEZNAMO, 0, zap, null);
+				polozky.put(f, nova.sZapnutim(zap).s(stav, 0, stav == StavZdroje.CHYBA && predtim != null ? predtim.getChyba() : null).sVelikosti(velikost.applyAsLong(f)));
+			}
+			obnovSnimek();
+		}
+		posluchac.run();
+	}
+
+	/** Přepnutí zapnutí z jiného vlákna než načítání: stav se změní hned, bez čekání na načítání. */
+	public void prepisZapnuti(final Predicate<File> zapnuto) {
+		boolean zmena = false;
+		synchronized (this) {
+			for (final Map.Entry<File, StavPolozky> e : polozky.entrySet()) {
+				final StavPolozky p = e.getValue();
+				final boolean zap = zapnuto.test(e.getKey());
+				if (zap == p.isZapnuto()) {
+					continue;
+				}
+				e.setValue(p.sZapnutim(zap).s(zap ? StavZdroje.CEKA_NA_RADU : StavZdroje.VYPNUTO, 0, null));
+				zmena = true;
+			}
+			if (zmena) {
+				obnovSnimek();
+			}
+		}
+		if (zmena) {
+			posluchac.run();
+		}
+	}
+
+	public void zacina(final File soubor) {
+		zmen(soubor, p -> p.s(StavZdroje.NACITA_SE, 0, null));
+	}
+
+	/** Postup nikdy neklesá, loader může založit víc průběhů za sebou. */
+	public void postup(final File soubor, final int procent) {
+		zmen(soubor, p -> p.getStav() == StavZdroje.NACITA_SE && procent > p.getPostup() ? p.s(StavZdroje.NACITA_SE, Math.min(99, procent), null) : null);
+	}
+
+	public void hotovo(final File soubor, final int celkem, final int brano) {
+		zmen(soubor, p -> p.s(StavZdroje.NACTENO, 0, null).sPocty(celkem, brano));
+	}
+
+	public void cekaNaZapis(final File soubor) {
+		zmen(soubor, p -> p.s(StavZdroje.CEKA_NA_ZAPIS, 0, null));
+	}
+
+	public void chyba(final File soubor, final String chyba) {
+		zmen(soubor, p -> p.s(StavZdroje.CHYBA, 0, chyba));
+	}
+
+	private void zmen(final File soubor, final Function<StavPolozky, StavPolozky> uprava) {
+		synchronized (this) {
+			final StavPolozky p = polozky.get(soubor);
+			if (p == null || !p.isZapnuto()) {
+				return;
+			}
+			final StavPolozky nova = uprava.apply(p);
+			if (nova == null) {
+				return;
+			}
+			polozky.put(soubor, nova);
+			obnovSnimek();
+		}
+		posluchac.run();
+	}
+
+	private void obnovSnimek() {
+		snimek = new StavZdroju(new ArrayList<>(polozky.values()));
+	}
+}
