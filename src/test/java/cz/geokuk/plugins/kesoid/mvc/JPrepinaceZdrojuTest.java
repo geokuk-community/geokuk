@@ -288,8 +288,8 @@ public class JPrepinaceZdrojuTest {
 			Assert.assertSame(blok.getObsahSouhrnu(), blok.viditelny());
 
 			// Vydržení na názvu přepne.
-			final long t3 = System.currentTimeMillis();
 			najed(blok.getNazev(TypZdroje.GSAK));
+			final long t3 = System.currentTimeMillis();
 			blok.tik(stred(blok.getNazev(TypZdroje.GSAK)), t3 + JPrepinaceZdroju.PRODLEVA_PREPNUTI_MS);
 			Assert.assertSame(blok.getObsahDetailu(TypZdroje.GSAK), blok.viditelny());
 		});
