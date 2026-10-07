@@ -47,6 +47,8 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	private Predicate<KeFile> sledovaneZdroje = zdroj -> false;
 	/** Waypointy sledovaných zdrojů podle souboru, aby šly příště převzít, když zdroj nepůjde přečíst. */
 	private final Map<File, List<Wpt>> wptyPodleZdroje = new HashMap<>();
+	private final Map<File, KliceZdroje.Sberac> kliceZdroju = new HashMap<>();
+	private volatile KliceZdroje.Sberac sberacKlicu = new KliceZdroje.Sberac();
 
 	public KesoidImportBuilder(final Genom genom, final GccomNick gccomNick, final ProgressModel progressModel, final KesoidPluginManager kesoidPluginManager) {
 		this.genom = genom;
@@ -68,12 +70,14 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		}
 
 		// vygenerovat jméno, pokud ho ještě nemáme
+		final boolean generovane = gpxwpt.name == null;
 		if (gpxwpt.name == null) {
 			citacBezejmennychWaypintu++;
 			gpxwpt.name = PREFIX_BEZEJMENNYCH_WAYPOINTU + citacBezejmennychWaypintu;
 		}
 
 		final boolean novy = jmenaWaypointu.add(gpxwpt.name);
+		sberacKlicu.pridej(gpxwpt.name, generovane);
 
 		gpxwpt.iInformaceOZdroji = infoOCurrentnimZdroji; // aby si pamatoval, ze kterého je zdroje
 		// a teď výpočty počtů
@@ -168,6 +172,15 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		this.sledovaneZdroje = sledovaneZdroje;
 	}
 
+	/** Klíče jmen všech waypointů přečtených z každého zdroje, i těch zahozených jako duplicity. */
+	Map<File, KliceZdroje> getKliceZdroju() {
+		final Map<File, KliceZdroje> vysledek = new HashMap<>();
+		for (final Map.Entry<File, KliceZdroje.Sberac> e : kliceZdroju.entrySet()) {
+			vysledek.put(e.getKey(), e.getValue().hotovo());
+		}
+		return vysledek;
+	}
+
 	public Map<File, List<Wpt>> getWptyPodleZdroje() {
 		return wptyPodleZdroje;
 	}
@@ -186,6 +199,21 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	 * Převezme kešoidy zdroje z minulého načtení (hlavní waypoint z toho zdroje) i s jejich waypointy. Kešoid, jehož hlavní waypoint už je načtený z jiného zdroje, se přeskočí.
 	 */
 	public void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty, final InformaceOZdroji stareInformace) {
+		prevezmi(zdroj, stareWpty);
+		if (stareInformace != null) {
+			infoOCurrentnimZdroji.pocetWaypointuCelkem = stareInformace.pocetWaypointuCelkem;
+			infoOCurrentnimZdroji.pocetWaypointuBranych = stareInformace.pocetWaypointuBranych;
+		}
+	}
+
+	/** Převezme zdroj i s počty z minulého načtení. */
+	void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano) {
+		prevezmi(zdroj, stareWpty);
+		infoOCurrentnimZdroji.pocetWaypointuCelkem = celkem;
+		infoOCurrentnimZdroji.pocetWaypointuBranych = brano;
+	}
+
+	private void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty) {
 		setCurrentlyLoading(zdroj, true);
 		for (final Wpt hlavni : stareWpty) {
 			if (!hlavni.isMainWpt() || jmenaWaypointu.contains(hlavni.getName())) {
@@ -198,10 +226,6 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 				}
 			}
 		}
-		if (stareInformace != null) {
-			infoOCurrentnimZdroji.pocetWaypointuCelkem = stareInformace.pocetWaypointuCelkem;
-			infoOCurrentnimZdroji.pocetWaypointuBranych = stareInformace.pocetWaypointuBranych;
-		}
 	}
 
 	/** Počty waypointů právě načítaného zdroje: celkem a braných. */
@@ -211,6 +235,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	public synchronized void setCurrentlyLoading(final KeFile aJmenoZdroje, final boolean nacteno) {
 		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(aJmenoZdroje, nacteno);
+		sberacKlicu = kliceZdroju.computeIfAbsent(aJmenoZdroje.getFile(), f -> new KliceZdroje.Sberac());
 	}
 
 	@Override
