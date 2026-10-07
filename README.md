@@ -1,6 +1,6 @@
 # GeoKuk
 
-[![Build](https://github.com/geokuk-community/geokuk/actions/workflows/build.yml/badge.svg)](https://github.com/geokuk-community/geokuk/actions/workflows/build.yml)
+[![Build](https://github.com/geokuk-community/geokuk/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/geokuk-community/geokuk/actions/workflows/build.yml)
 [![Licence: GPL v3](https://img.shields.io/badge/licence-GPL%20v3-blue.svg)](LICENSE)
 
 **Plánování geovýletů na českých mapách.**
@@ -8,8 +8,6 @@
 * podpora pro geocaching
 * desktopový platformově nezávislý program (Java)
 * online i offline režim
-
-![Snímek GeoKuku](doc/img/screenshot-3.6.0.jpg)
 
 ## Stažení
 
@@ -153,6 +151,9 @@ Převzaté commity mají původního autora a v popisu odkaz na zdrojový commit
 (`cherry picked from commit …`). Z Bílkovy větve nejsou převzaté jen
 sestavené jary v `releases/`. Co je nového oproti 5.1.1c, popisuje
 [CHANGELOG](CHANGELOG.md).
+
+GeoKuk je upravená verze od 2026, GeoKuk community; původní dílo © Martin
+Veverka a spoluautoři.
 
 ## Poděkování
 
