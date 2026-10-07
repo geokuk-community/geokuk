@@ -116,7 +116,7 @@ public class PrototypStavovehoRadku {
 		Thread.sleep(800);
 		snimek(robot, okno[0], new File(slozka, "1-okno-6.3.0.png"));
 		stavyListy(zdroje, lista[0], new File(slozka, "2-lista-stavy-6.3.0.png"));
-		aktivniOblasti(prepinace[0], new File(slozka, "11-aktivni-oblasti.png"));
+		aktivniOblasti(prepinace[0], new File(slozka, "11-aktivni-oblasti-siroke.png"));
 		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSouhrn());
 		Thread.sleep(500);
 		snimek(robot, okno[0], new File(slozka, "3-uplna-tabulka.png"));
@@ -163,6 +163,7 @@ public class PrototypStavovehoRadku {
 		});
 		Thread.sleep(800);
 		snimek(robot, okno[0], new File(slozka, "8-uzke-okno-800.png"));
+		aktivniOblasti(prepinace[0], new File(slozka, "12-aktivni-oblasti-uzke.png"));
 		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSouhrn());
 		Thread.sleep(500);
 		snimek(robot, okno[0], new File(slozka, "9-uzke-uplna-tabulka.png"));
