@@ -8,11 +8,14 @@ import java.util.List;
  * Komponenty vedle sebe zleva v přirozené šířce; co se do řádku nevejde, přejde celé na další řádek.
  * Rezervovaná komponenta se při zalamování počítá i neviditelná, aby se počet řádků neměnil s její viditelností.
  * Plovoucí komponenta (třeba průběh) o řádcích nerozhoduje, dostane zbylé místo v posledním řádku.
+ * Pravá komponenta stojí vždy u pravého okraje dole a ostatní se zalamují do šířky vedle ní, takže se při zalomení ani při změně
+ * obsahu řádku nepohne.
  */
 public class ZalamovaciLayout implements LayoutManager {
 
 	private final Set<Component> rezervovane = Collections.newSetFromMap(new IdentityHashMap<>());
 	private final Set<Component> plovouci = Collections.newSetFromMap(new IdentityHashMap<>());
+	private Component pravy;
 
 	public void rezervuj(final Component c) {
 		rezervovane.add(c);
@@ -22,6 +25,10 @@ public class ZalamovaciLayout implements LayoutManager {
 		plovouci.add(c);
 	}
 
+	public void vpravo(final Component c) {
+		pravy = c;
+	}
+
 	@Override
 	public void addLayoutComponent(final String name, final Component comp) {}
 
@@ -29,6 +36,9 @@ public class ZalamovaciLayout implements LayoutManager {
 	public void removeLayoutComponent(final Component comp) {
 		rezervovane.remove(comp);
 		plovouci.remove(comp);
+		if (pravy == comp) {
+			pravy = null;
+		}
 	}
 
 	@Override
@@ -36,15 +46,20 @@ public class ZalamovaciLayout implements LayoutManager {
 		synchronized (parent.getTreeLock()) {
 			int sirka = 0;
 			for (final Component c : parent.getComponents()) {
-				if (zabiraMisto(c) && !plovouci.contains(c)) {
+				if (zabiraMisto(c) && !plovouci.contains(c) && c != pravy) {
 					sirka += c.getPreferredSize().width;
 				}
 			}
+			final int sirkaPraveho = sirkaPraveho(parent);
+			sirka += sirkaPraveho;
 			final Insets ins = parent.getInsets();
 			final int dostupna = dostupnaSirka(parent);
 			int vyska = 0;
-			for (final List<Component> radek : radky(parent, dostupna > 0 ? dostupna - ins.left - ins.right : Integer.MAX_VALUE)) {
+			for (final List<Component> radek : radky(parent, dostupna > 0 ? dostupna - ins.left - ins.right - sirkaPraveho : Integer.MAX_VALUE)) {
 				vyska += vyskaRadku(radek);
+			}
+			if (pravy != null && pravy.getParent() == parent) {
+				vyska = Math.max(vyska, pravy.getPreferredSize().height);
 			}
 			return new Dimension((dostupna > 0 ? Math.min(sirka, dostupna) : sirka) + ins.left + ins.right, vyska + ins.top + ins.bottom);
 		}
@@ -59,7 +74,12 @@ public class ZalamovaciLayout implements LayoutManager {
 	public void layoutContainer(final Container parent) {
 		synchronized (parent.getTreeLock()) {
 			final Insets ins = parent.getInsets();
-			final int prava = parent.getWidth() - ins.right;
+			final int sirkaPraveho = sirkaPraveho(parent);
+			final int prava = parent.getWidth() - ins.right - sirkaPraveho;
+			if (sirkaPraveho > 0) {
+				final int vyskaPraveho = Math.min(pravy.getPreferredSize().height, parent.getHeight() - ins.top - ins.bottom);
+				pravy.setBounds(prava, parent.getHeight() - ins.bottom - vyskaPraveho, sirkaPraveho, vyskaPraveho);
+			}
 			int y = ins.top;
 			int x = ins.left;
 			int vyska = 0;
@@ -85,6 +105,10 @@ public class ZalamovaciLayout implements LayoutManager {
 		}
 	}
 
+	private int sirkaPraveho(final Container parent) {
+		return pravy != null && pravy.getParent() == parent ? pravy.getPreferredSize().width : 0;
+	}
+
 	private boolean zabiraMisto(final Component c) {
 		return c.isVisible() || rezervovane.contains(c);
 	}
@@ -107,7 +131,7 @@ public class ZalamovaciLayout implements LayoutManager {
 		List<Component> radek = new ArrayList<>();
 		int obsazeno = 0;
 		for (final Component c : parent.getComponents()) {
-			if (!zabiraMisto(c) || plovouci.contains(c)) {
+			if (!zabiraMisto(c) || plovouci.contains(c) || c == pravy) {
 				continue;
 			}
 			final int w = c.getPreferredSize().width;

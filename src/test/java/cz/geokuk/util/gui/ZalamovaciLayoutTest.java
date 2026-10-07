@@ -86,4 +86,34 @@ public class ZalamovaciLayoutTest {
 		Assert.assertEquals(new Rectangle(200, 0, 100, 20), b.getBounds());
 		Assert.assertEquals(new Rectangle(300, 0, 20, 20), prubeh.getBounds());
 	}
+
+	@Test
+	public void pravaKomponentaStojiVpravoDoleAOstatniSeZalamujiVedleNi() {
+		final JComponent a = pridej(200);
+		final JComponent b = pridej(100);
+		final JComponent pravy = pridej(150);
+		layout.vpravo(pravy);
+		rozvrhni(500);
+		Assert.assertEquals(20, panel.getHeight());
+		Assert.assertEquals(new Rectangle(350, 0, 150, 20), pravy.getBounds());
+		Assert.assertEquals(new Rectangle(200, 0, 100, 20), b.getBounds());
+
+		rozvrhni(420);
+		Assert.assertEquals(40, panel.getHeight());
+		Assert.assertEquals(new Rectangle(0, 0, 200, 20), a.getBounds());
+		Assert.assertEquals(new Rectangle(0, 20, 100, 20), b.getBounds());
+		Assert.assertEquals(new Rectangle(270, 20, 150, 20), pravy.getBounds());
+	}
+
+	@Test
+	public void plovouciKonciPredPravouKomponentou() {
+		pridej(200);
+		final JComponent prubeh = pridej(300);
+		layout.plovouci(prubeh);
+		final JComponent pravy = pridej(100);
+		layout.vpravo(pravy);
+		rozvrhni(400);
+		Assert.assertEquals(new Rectangle(200, 0, 100, 20), prubeh.getBounds());
+		Assert.assertEquals(new Rectangle(300, 0, 100, 20), pravy.getBounds());
+	}
 }
