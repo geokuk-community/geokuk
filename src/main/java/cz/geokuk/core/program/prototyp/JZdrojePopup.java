@@ -1,0 +1,223 @@
+package cz.geokuk.core.program.prototyp;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+
+import cz.geokuk.core.program.prototyp.ZdrojeModel.*;
+
+/** Seznam zdrojů, který se vysune nad stavovým řádkem: Načíst | Zdroj | Velikost na disku | WP | Stav. */
+public class JZdrojePopup extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+	private static final java.util.Locale CS = new java.util.Locale("cs");
+
+	private static final String[] SLOUPCE = { "Načíst", "Zdroj", "Velikost na disku", "WP", "Stav" };
+
+	/** Řádek tabulky je buď záhlaví typu zdroje, nebo jeden soubor či databáze. */
+	private static final class Radek {
+		final Typ typ;
+		final Polozka polozka;
+
+		Radek(final Typ typ, final Polozka polozka) {
+			this.typ = typ;
+			this.polozka = polozka;
+		}
+	}
+
+	private final ZdrojeModel model;
+	private final List<Radek> radky = new ArrayList<>();
+	private final JTable tabulka;
+	private final JToggleButton[] rezimy = new JToggleButton[Rezim.values().length];
+	private final ButtonGroup skupinaRezimu = new ButtonGroup();
+
+	private final AbstractTableModel tm = new AbstractTableModel() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public int getRowCount() {
+			return radky.size();
+		}
+
+		@Override
+		public int getColumnCount() {
+			return SLOUPCE.length;
+		}
+
+		@Override
+		public String getColumnName(final int c) {
+			return SLOUPCE[c];
+		}
+
+		@Override
+		public Class<?> getColumnClass(final int c) {
+			return c == 0 ? Boolean.class : String.class;
+		}
+
+		@Override
+		public boolean isCellEditable(final int r, final int c) {
+			return c == 0;
+		}
+
+		@Override
+		public void setValueAt(final Object v, final int r, final int c) {
+			final Radek radek = radky.get(r);
+			if (radek.polozka == null) {
+				model.setTypZapnut(radek.typ, (Boolean) v);
+			} else {
+				model.setPolozkaZapnuta(radek.polozka, (Boolean) v);
+			}
+		}
+
+		@Override
+		public Object getValueAt(final int r, final int c) {
+			final Radek radek = radky.get(r);
+			final Polozka p = radek.polozka;
+			switch (c) {
+			case 0:
+				return p != null ? p.nacist : model.isTypZapnut(radek.typ);
+			case 1:
+				return p != null ? p.nazev : radek.typ.getNazev();
+			case 2:
+				return velikost(p != null ? p.velikost : soucet(radek.typ, false));
+			case 3:
+				return p != null ? wp(p.wpBrano, p.wpCelkem) : wp(souctoveBrano(radek.typ), soucet(radek.typ, true));
+			default:
+				return p != null ? p.stav.getText() : "";
+			}
+		}
+	};
+
+	public JZdrojePopup(final ZdrojeModel model, final Runnable prehledZdroju) {
+		super(new BorderLayout(0, 6));
+		this.model = model;
+		setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+		final JPanel hlavicka = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		hlavicka.add(new JLabel("Všechny zdroje:"));
+		for (final Rezim rezim : Rezim.values()) {
+			final JToggleButton b = new JToggleButton(rezim.getText());
+			b.setFocusable(false);
+			b.addActionListener(e -> model.setRezim(rezim));
+			skupinaRezimu.add(b);
+			rezimy[rezim.ordinal()] = b;
+			hlavicka.add(b);
+		}
+		add(hlavicka, BorderLayout.NORTH);
+
+		tabulka = new JTable(tm) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getToolTipText(final java.awt.event.MouseEvent e) {
+				final int r = rowAtPoint(e.getPoint());
+				if (r < 0 || columnAtPoint(e.getPoint()) != 3) {
+					return null;
+				}
+				final Polozka p = radky.get(r).polozka;
+				return p != null && p.getPocetDuplicit() > 0 && p.nacist ? textDuplicit(p.getPocetDuplicit()) : null;
+			}
+		};
+		tabulka.setRowHeight(22);
+		tabulka.setShowGrid(false);
+		tabulka.setIntercellSpacing(new Dimension(0, 0));
+		tabulka.setFocusable(false);
+		tabulka.getTableHeader().setReorderingAllowed(false);
+		tabulka.setDefaultRenderer(String.class, new Vykreslovac());
+		final int[] sirky = { 56, 200, 120, 150, 220 };
+		for (int i = 0; i < sirky.length; i++) {
+			tabulka.getColumnModel().getColumn(i).setPreferredWidth(sirky[i]);
+		}
+		final JScrollPane scroll = new JScrollPane(tabulka);
+		scroll.setPreferredSize(new Dimension(760, 22 * 13 + 4));
+		add(scroll, BorderLayout.CENTER);
+
+		final JPanel paticka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+		final JButton prehled = new JButton("Přehled zdrojů…");
+		prehled.setFocusable(false);
+		prehled.addActionListener(e -> prehledZdroju.run());
+		paticka.add(prehled);
+		add(paticka, BorderLayout.SOUTH);
+
+		model.addPosluchac(this::obnov);
+		obnov();
+	}
+
+	private void obnov() {
+		radky.clear();
+		for (final Typ typ : Typ.values()) {
+			radky.add(new Radek(typ, null));
+			for (final Polozka p : model.getPolozky(typ)) {
+				radky.add(new Radek(typ, p));
+			}
+		}
+		tm.fireTableDataChanged();
+		final Rezim rezim = model.getRezim();
+		if (rezim == null) {
+			skupinaRezimu.clearSelection();
+		} else {
+			rezimy[rezim.ordinal()].setSelected(true);
+		}
+	}
+
+	private long soucet(final Typ typ, final boolean wp) {
+		long s = 0;
+		for (final Polozka p : model.getPolozky(typ)) {
+			s += wp ? p.wpCelkem : p.velikost;
+		}
+		return s;
+	}
+
+	private long souctoveBrano(final Typ typ) {
+		long s = 0;
+		for (final Polozka p : model.getPolozky(typ)) {
+			s += p.wpBrano;
+		}
+		return s;
+	}
+
+	static String textDuplicit(final int pocet) {
+		return String.format(CS, "%,d keší se neukazuje, protože jsou ve více zdrojích.", pocet);
+	}
+
+	static String wp(final long brano, final long celkem) {
+		return brano == celkem ? String.format(CS, "%,d", brano) : String.format(CS, "%,d z %,d  ≠", brano, celkem);
+	}
+
+	static String velikost(final long bajty) {
+		if (bajty < 1_000_000L) {
+			return String.format(CS, "%,d kB", Math.max(1, bajty / 1000));
+		}
+		return bajty < 1_000_000_000L ? String.format(CS, "%.1f MB", bajty / 1e6) : String.format(CS, "%.2f GB", bajty / 1e9);
+	}
+
+	private class Vykreslovac extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public Component getTableCellRendererComponent(final JTable t, final Object v, final boolean sel, final boolean fokus, final int r, final int c) {
+			super.getTableCellRendererComponent(t, v, false, false, r, c);
+			final Radek radek = radky.get(r);
+			final Polozka p = radek.polozka;
+			setIcon(null);
+			setHorizontalAlignment(c == 2 || c == 3 ? RIGHT : LEFT);
+			setFont(t.getFont().deriveFont(p == null ? Font.BOLD : Font.PLAIN));
+			setBorder(BorderFactory.createEmptyBorder(0, c == 1 && p != null ? 22 : 6, 0, 6));
+			setBackground(p == null ? new Color(0, 0, 0, 20) : t.getBackground());
+			setForeground(p != null && !p.nacist ? Color.GRAY : t.getForeground());
+			if (c == 4 && p != null) {
+				setIcon(IkonyZdroju.pro(p.stav));
+			}
+			if (c == 3 && p != null && p.getPocetDuplicit() > 0 && p.nacist) {
+				setForeground(new Color(0x9A5B00));
+			}
+			setOpaque(true);
+			return this;
+		}
+	}
+}
