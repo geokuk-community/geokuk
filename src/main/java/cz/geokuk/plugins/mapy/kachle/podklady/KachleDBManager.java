@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -673,8 +674,11 @@ class KachleDBManager implements KachleManager {
 			return false;
 		}
 		final File vadna = new File(f.getPath() + ".vadna");
-		vadna.delete();
-		if (!f.renameTo(vadna) && !f.delete()) {
+		if (vadna.exists() && !posunPredchoziVadnou(vadna)) {
+			log.error("Poškozenou cache dlaždic {} nelze odložit, předchozí odložená cache se nepodařilo uchovat.", f);
+			return false;
+		}
+		if (!f.renameTo(vadna)) {
 			log.error("Poškozenou cache dlaždic {} nelze odložit.", f);
 			return false;
 		}
@@ -690,6 +694,16 @@ class KachleDBManager implements KachleManager {
 		}
 		log.warn("Poškozená cache dlaždic {} odložena, zakládám novou.", f);
 		return true;
+	}
+
+	/** Uchovají se dvě poslední odložené cache: dosavadní {@code .vadna} se přesune na {@code .vadna.1} a přepíše se jen starší z nich. */
+	private static boolean posunPredchoziVadnou(final File vadna) {
+		try {
+			Files.move(vadna.toPath(), new File(vadna.getPath() + ".1").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			return true;
+		} catch (final IOException e) {
+			return false;
+		}
 	}
 
 	/**

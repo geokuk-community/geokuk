@@ -67,6 +67,37 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(KACHLE));
 	}
 
+	/** Další poškození nesmí smazat dřívější odloženou cache, uchovají se dvě poslední. */
+	@Test
+	public void odlozeneCacheSeUchovajiDveGenerace() throws Exception {
+		final File vadna = new File(soubor.getPath() + ".vadna");
+		final File vadna1 = new File(soubor.getPath() + ".vadna.1");
+		for (final String obsah : new String[] { "první", "druhá", "třetí" }) {
+			for (final SqlJetDb db : manager.connections.values()) {
+				db.close();
+			}
+			Files.write(soubor.toPath(), obsah.getBytes(StandardCharsets.UTF_8));
+			manager = new KachleDBManager(manager.folderHolder);
+			Assert.assertNull(manager.load(KACHLE));
+		}
+		Assert.assertEquals("třetí", new String(Files.readAllBytes(vadna.toPath()), StandardCharsets.UTF_8));
+		Assert.assertEquals("druhá", new String(Files.readAllBytes(vadna1.toPath()), StandardCharsets.UTF_8));
+	}
+
+	/** Když se předchozí odložená cache nedá uchovat, poškozená cache zůstane na místě a nic se nesmaže. */
+	@Test
+	public void neuspesneOdlozeniCacheNezniciCache() throws Exception {
+		final File vadna = new File(soubor.getPath() + ".vadna");
+		Files.write(vadna.toPath(), "stará".getBytes(StandardCharsets.UTF_8));
+		final File blokuje = new File(soubor.getPath() + ".vadna.1");
+		Assert.assertTrue(blokuje.mkdir());
+		Files.write(new File(blokuje, "x").toPath(), new byte[1]);
+		Files.write(soubor.toPath(), "tohle není databáze".getBytes(StandardCharsets.UTF_8));
+		Assert.assertNull(manager.load(KACHLE));
+		Assert.assertTrue("cache zůstala", soubor.isFile());
+		Assert.assertEquals("stará", new String(Files.readAllBytes(vadna.toPath()), StandardCharsets.UTF_8));
+	}
+
 	/** Souvislé čtení z více vláken nesmí zablokovat zápis nových dlaždic. */
 	@Test(timeout = 120000)
 	public void zapisProjdePriSouvislemCteni() throws Exception {
