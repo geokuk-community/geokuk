@@ -4,8 +4,6 @@
 package cz.geokuk.core.program;
 
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -21,7 +19,6 @@ import cz.geokuk.plugins.cesty.data.Doc;
 import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.LimityKresleni;
-import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.vylety.*;
 import cz.geokuk.util.gui.ZalamovaciLayout;
@@ -148,11 +145,7 @@ public class JStatusBar extends JPanel {
 
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
 	private JPanel jFilterProgressPanel;
-	private final JValue jZdrojeKesoiduPocetNactenych = new JValue("999");
-
-	private final JSkrtnutaValue jZdrojeKesoiduPocetNenactenych = new JSkrtnutaValue("999");
-	private final JLabel jZamceno = new JLabel();
-	private final JValue jZdrojeKesoiduCas = new JValue("2026-12-31 23:59");
+	private final JPrepinaceZdroju prepinaceZdroju = new JPrepinaceZdroju();
 
 	private final JValue jSouborSVyletem = new JValue("muj-vylet-2026.ggt", true);
 	private final JLabel jSouborSVyletemPotrebujeUlozit = new JLabel();
@@ -163,19 +156,23 @@ public class JStatusBar extends JPanel {
 
 	private Coord moord;
 
-	private Akce akce;
-
 	private final JValue jPocetKesiVCestach = new JValue("9999/99");
 
-	/** Výlet vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
+	/** Výlet a zdroje vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
 	private final JPanel pravyBlok = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
 	public JStatusBar() {
 		initComponents();
 	}
 
-	public void inject(final Akce akce) {
-		this.akce = akce;
+	public void inject(final KesoidModel kesoidModel) {
+		prepinaceZdroju.setOvladani(kesoidModel);
+		prepinaceZdroju.obnov(kesoidModel.getStavZdroju());
+		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboru()));
+	}
+
+	public void onEvent(final KesoidUmisteniSouboruChangedEvent event) {
+		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(event.getUmisteniSouboru()));
 	}
 
 	public void onEvent(final CestyChangedEvent aEvent) {
@@ -205,14 +202,7 @@ public class JStatusBar extends JPanel {
 		celkovePoctyVsude.setText(celkove(vsechny));
 		celkovePoctyVyrez.setText(veVyrezu(vsechny));
 
-		final InformaceOZdrojich informaceOZdrojich = aEvent.getVsechny().getInformaceOZdrojich();
-		// TODO : reenable
-		jZdrojeKesoiduPocetNactenych.setText(informaceOZdrojich.getSourceCount(true) + "");
-		final int pocetNenactenych = informaceOZdrojich.getSourceCount(false);
-		jZdrojeKesoiduPocetNenactenych.setText(pocetNenactenych + "");
-		jZdrojeKesoiduPocetNenactenych.setVisible(pocetNenactenych > 0);
-
-		jZdrojeKesoiduCas.setText(casZdroju(informaceOZdrojich.getYungest()));
+		prepinaceZdroju.setCasDat(casZdroju(aEvent.getVsechny().getInformaceOZdrojich().getYungest()));
 		revalidate();
 	}
 
@@ -248,20 +238,8 @@ public class JStatusBar extends JPanel {
 		}
 	}
 
-	public void onEvent(final ZamceneDatabazeEvent event) {
-		final java.util.List<String> jmena = event.getJmena();
-		jZamceno.setText(textZamceno(jmena));
-		jZamceno.setToolTipText(FString.text(tooltipZamceno(jmena)));
-		jZamceno.setVisible(!jmena.isEmpty());
-		revalidate();
-	}
-
-	static String textZamceno(final java.util.List<String> jmena) {
-		return jmena.isEmpty() ? "" : "Zamčeno: " + jmena.size();
-	}
-
-	static String tooltipZamceno(final java.util.List<String> jmena) {
-		return jmena.isEmpty() ? null : String.join("\n", jmena) + "\nZavřete program, který databázi používá; načte se sama.";
+	public void onEvent(final StavZdrojuEvent event) {
+		prepinaceZdroju.obnov(event.getStav());
 	}
 
 	public void onEvent(final PrekrocenLimitWaypointuVeVyrezuEvent event) {
@@ -416,6 +394,7 @@ public class JStatusBar extends JPanel {
 		add(cesty);
 
 		pravyBlok.add(vylety);
+		pravyBlok.add(prepinaceZdroju);
 		add(pravyBlok);
 		layout.vpravo(pravyBlok);
 
@@ -430,47 +409,6 @@ public class JStatusBar extends JPanel {
 		// jFilterProgress.setStringPainted(true);
 		add(jFilterProgressPanel);
 		layout.plovouci(jFilterProgressPanel);
-
-		// Šířka i se skrytým počtem nenačtených, aby jeho zobrazení neměnilo rozložení řádku.
-		final JPanel zdrojeKesoiduPanel = new JPanel() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Dimension getPreferredSize() {
-				final Dimension d = super.getPreferredSize();
-				if (!jZdrojeKesoiduPocetNenactenych.isVisible()) {
-					d.width += jZdrojeKesoiduPocetNenactenych.getPreferredSize().width + ((FlowLayout) getLayout()).getHgap();
-				}
-				return d;
-			}
-		};
-		zdrojeKesoiduPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-		zdrojeKesoiduPanel.setBorder(BorderFactory.createEtchedBorder());
-		zdrojeKesoiduPanel.setToolTipText("Kliknutím zobrazíte podrobnosti");
-		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNactenych);
-		jZdrojeKesoiduPocetNactenych.setToolTipText("Počet načtených souborů s kešoidy.");
-		zdrojeKesoiduPanel.add(jZdrojeKesoiduPocetNenactenych);
-		jZdrojeKesoiduPocetNenactenych.setToolTipText("Počet souborů s kešoidy, jejichž načtení bylo zabráněno odškrtnutím.");
-		zdrojeKesoiduPanel.add(new JLabel("zdroje:"));
-		zdrojeKesoiduPanel.add(jZdrojeKesoiduCas);
-		jZamceno.setForeground(new Color(0xD06000));
-		jZamceno.setVisible(false);
-		zdrojeKesoiduPanel.add(jZamceno);
-		jZdrojeKesoiduCas.setToolTipText("Čas nejmladšího načteného souboru.");
-		zdrojeKesoiduPanel.setCursor(FKurzory.KAM_SE_DA_KLIKNOUT);
-		add(zdrojeKesoiduPanel);
-
-		zdrojeKesoiduPanel.addMouseListener(new MouseAdapter() {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.awt.event.MouseAdapter#mouseEntered(java.awt.event.MouseEvent)
-			 */
-			@Override
-			public void mouseClicked(final MouseEvent aE) {
-				akce.informaceoZdrojichAction.fire();
-			}
-		});
 	}
 
 	private void prepocitejVzdalenostAAzimut() {

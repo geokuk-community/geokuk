@@ -30,8 +30,11 @@
   Limit ikon platí i pro popisky a zvýrazňovací kruhy; nad limitem
   teček se nic nekreslí a stavový řádek to ohlásí. Nejnižší nastavitelný
   limit teček je 60 000.
-- Když databázi GeoGetu, GSAKu nebo OpenSAKu drží zamčenou jiný program,
-  stavový řádek ukáže „Zamčeno: N“ a v bublině jejich jména.
+- Stavový řádek vpravo: přepínače zdrojů GPX, GeoGet, GSAK a OpenSAK
+  se zaškrtávátkem a ikonou stavu (načteno, načítá se, zamčeno jiným
+  programem, chyba). Zdroj jde zapnout či vypnout i během načítání.
+  Najetí na „Zdroje:“ ukáže tabulku všech souborů a databází s velikostí,
+  počtem waypointů a stavem, najetí na název zdroje jen jeho položky.
 - Uživatelské mapy: soubor uložený jinak než v UTF-8 se ohlásí s radou,
   soubory `._*` z macOS se přeskočí a hláška při startu vyjmenuje jen
   mapy, které se nezobrazí.

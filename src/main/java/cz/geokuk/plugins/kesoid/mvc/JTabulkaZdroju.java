@@ -1,0 +1,401 @@
+package cz.geokuk.plugins.kesoid.mvc;
+
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.*;
+import java.util.List;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
+
+import cz.geokuk.plugins.kesoid.importek.*;
+import cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu;
+import cz.geokuk.util.lang.FString;
+
+/**
+ * Tabulka zdrojů Načíst | Zdroj | Velikost | WP | Stav: řádek typu zdroje a pod ním jeho soubory či databáze. Bez typu ukazuje všechny typy, s typem jen jeden.
+ * Táž komponenta je v popupech stavového řádku i v okně Přehled zdrojů.
+ */
+public class JTabulkaZdroju extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+	private static final Locale CS = new Locale("cs");
+
+	static final int SL_NACIST = 0;
+	static final int SL_ZDROJ = 1;
+	static final int SL_VELIKOST = 2;
+	static final int SL_WP = 3;
+	static final int SL_STAV = 4;
+	private static final String[] SLOUPCE = { "Načíst", "Zdroj", "Velikost", "WP", "Stav" };
+	private static final int[] SIRKY = { 56, 220, 100, 150, 220 };
+
+	static final int PLNA_SIRKA = 776;
+	/** Pod touto šířkou okna odpadne sloupec Velikost. */
+	static final int PRAH_UZKE = 900;
+	static final int VYSKA_RADKU = 22;
+	private static final int MAX_RADKU_POPUPU = 20;
+
+	static final Color BARVA_DUPLICIT = new Color(0x9A5B00);
+
+	/** Řádek je buď typ zdroje (polozka == null), nebo jeho položka. */
+	static final class Radek {
+		final TypZdroje typ;
+		final StavPolozky polozka;
+
+		Radek(final TypZdroje typ, final StavPolozky polozka) {
+			this.typ = typ;
+			this.polozka = polozka;
+		}
+	}
+
+	/** Typ, jehož položky se ukazují; null jsou všechny typy. */
+	private final TypZdroje zobrazenyTyp;
+	private final List<Radek> radky = new ArrayList<>();
+	private final JTable tabulka;
+	private final JScrollPane scroll;
+	private final TableColumn sloupecVelikost;
+	private final JLabel casDat = new JLabel();
+	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private Set<TypZdroje> povolene = EnumSet.allOf(TypZdroje.class);
+	private OvladaniZdroju ovladani;
+	private boolean uzka;
+	private int sirka = PLNA_SIRKA;
+
+	private final AbstractTableModel tm = new AbstractTableModel() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public int getRowCount() {
+			return radky.size();
+		}
+
+		@Override
+		public int getColumnCount() {
+			return SLOUPCE.length;
+		}
+
+		@Override
+		public String getColumnName(final int c) {
+			return SLOUPCE[c];
+		}
+
+		@Override
+		public Object getValueAt(final int r, final int c) {
+			return text(radky.get(r), c);
+		}
+	};
+
+	public JTabulkaZdroju(final TypZdroje zobrazenyTyp) {
+		super(new BorderLayout(0, 6));
+		this.zobrazenyTyp = zobrazenyTyp;
+		setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+		final JPanel odkazy = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		odkazy.add(odkaz("Vše zapnout", true));
+		odkazy.add(new JLabel("|"));
+		odkazy.add(odkaz("Vše vypnout", false));
+		add(odkazy, BorderLayout.NORTH);
+
+		tabulka = new JTable(tm) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getToolTipText(final MouseEvent e) {
+				final int r = rowAtPoint(e.getPoint());
+				final int c = columnAtPoint(e.getPoint());
+				return r < 0 || c < 0 ? null : tooltip(radky.get(r), convertColumnIndexToModel(c));
+			}
+		};
+		tabulka.setRowHeight(VYSKA_RADKU);
+		tabulka.setShowGrid(false);
+		tabulka.setIntercellSpacing(new Dimension(0, 0));
+		tabulka.setFocusable(false);
+		tabulka.setRowSelectionAllowed(false);
+		tabulka.getTableHeader().setReorderingAllowed(false);
+		tabulka.setDefaultRenderer(Object.class, new Vykreslovac());
+		for (int i = 0; i < SIRKY.length; i++) {
+			tabulka.getColumnModel().getColumn(i).setPreferredWidth(SIRKY[i]);
+		}
+		tabulka.getColumnModel().getColumn(SL_NACIST).setMaxWidth(SIRKY[SL_NACIST]);
+		tabulka.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(final MouseEvent e) {
+				final int r = tabulka.rowAtPoint(e.getPoint());
+				final int c = tabulka.columnAtPoint(e.getPoint());
+				if (r >= 0 && c >= 0 && tabulka.convertColumnIndexToModel(c) == SL_NACIST) {
+					klik(radky.get(r));
+				}
+			}
+		});
+		sloupecVelikost = tabulka.getColumnModel().getColumn(SL_VELIKOST);
+		scroll = new JScrollPane(tabulka);
+		add(scroll, BorderLayout.CENTER);
+
+		casDat.setForeground(Color.GRAY);
+		casDat.setVisible(false);
+		add(casDat, BorderLayout.SOUTH);
+		prepocitejVelikost();
+	}
+
+	public void setOvladani(final OvladaniZdroju ovladani) {
+		this.ovladani = ovladani;
+	}
+
+	public void obnov(final StavZdroju novy) {
+		stav = novy;
+		radky.clear();
+		for (final TypZdroje typ : TypZdroje.values()) {
+			if (zobrazenyTyp != null ? zobrazenyTyp != typ : !povolene.contains(typ)) {
+				continue;
+			}
+			radky.add(new Radek(typ, null));
+			for (final StavPolozky p : stav.getPolozky(typ)) {
+				radky.add(new Radek(typ, p));
+			}
+		}
+		tm.fireTableDataChanged();
+		prepocitejVelikost();
+	}
+
+	/** Typy zdrojů zapnuté v Nastavení; jen ty má tabulka všech typů. */
+	public void setPovoleneTypy(final Set<TypZdroje> nove) {
+		povolene = EnumSet.noneOf(TypZdroje.class);
+		povolene.addAll(nove);
+		obnov(stav);
+	}
+
+	/** Čas nejmladšího načteného souboru; jen v tabulce všech typů. */
+	public void setCasDat(final String cas) {
+		casDat.setText(cas == null || cas.isEmpty() ? "" : "Nejnovější data: " + cas);
+		casDat.setVisible(zobrazenyTyp == null && cas != null && !cas.isEmpty());
+	}
+
+	/** V úzkém okně se tabulka zúží na šířku okna a odpadne sloupec Velikost. */
+	public void nastavDostupnouSirku(final int sirkaOkna) {
+		final boolean nove = sirkaOkna < PRAH_UZKE;
+		if (nove != uzka) {
+			uzka = nove;
+			if (nove) {
+				tabulka.removeColumn(sloupecVelikost);
+			} else {
+				tabulka.addColumn(sloupecVelikost);
+				tabulka.moveColumn(tabulka.getColumnCount() - 1, SL_VELIKOST);
+			}
+		}
+		sirka = Math.min(PLNA_SIRKA, sirkaOkna);
+		prepocitejVelikost();
+	}
+
+	boolean isUzka() {
+		return uzka;
+	}
+
+	private void prepocitejVelikost() {
+		final int vyska = VYSKA_RADKU * Math.max(1, Math.min(radky.size(), MAX_RADKU_POPUPU)) + tabulka.getTableHeader().getPreferredSize().height + 4;
+		scroll.setPreferredSize(new Dimension(sirka - 16, vyska));
+		revalidate();
+	}
+
+	private JButton odkaz(final String text, final boolean zapnout) {
+		final JButton b = new JButton("<html><a href=\"#\">" + text + "</a></html>");
+		b.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
+		b.setContentAreaFilled(false);
+		b.setFocusable(false);
+		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.addActionListener(e -> {
+			if (ovladani == null) {
+				return;
+			}
+			if (zobrazenyTyp == null) {
+				ovladani.setNacitatVse(zapnout);
+			} else {
+				ovladani.setNacitatVseVTypu(zobrazenyTyp, zapnout);
+			}
+		});
+		return b;
+	}
+
+	private void klik(final Radek radek) {
+		if (ovladani == null) {
+			return;
+		}
+		if (radek.polozka == null) {
+			klikTyp(stav, radek.typ, ovladani);
+		} else if (!radek.polozka.isTypVypnut()) {
+			ovladani.setNacitatPolozku(radek.polozka.getSoubor(), !radek.polozka.isZapnuto());
+		}
+	}
+
+	/**
+	 * Klik na zaškrtávátko typu: zapnutý i částečně zapnutý typ se vypne (výběr položek zůstane), vypnutý se zapne s dřívějším výběrem; když žádná položka vybraná není,
+	 * zapnou se všechny.
+	 */
+	static void klikTyp(final StavZdroju stav, final TypZdroje typ, final OvladaniZdroju ovladani) {
+		if (stav.getStavVyberuTypu(typ) != StavVyberu.VYPNUTO) {
+			ovladani.setNacitatTyp(typ, false);
+		} else if (stav.getPolozky(typ).stream().anyMatch(StavPolozky::isZapnuto)) {
+			ovladani.setNacitatTyp(typ, true);
+		} else {
+			ovladani.setNacitatVseVTypu(typ, true);
+		}
+	}
+
+	String text(final Radek radek, final int sloupec) {
+		final StavPolozky p = radek.polozka;
+		switch (sloupec) {
+		case SL_NACIST:
+			return "";
+		case SL_ZDROJ:
+			return p != null ? p.getNazev() : radek.typ.getNazev();
+		case SL_VELIKOST:
+			return velikost(p != null ? p.getVelikostNaDisku() : velikostTypu(radek.typ));
+		case SL_WP:
+			return p != null ? (p.isNacitat() ? wp(p.getWpBrano(), p.getWpCelkem()) : "–") : wpTypu(radek.typ);
+		default:
+			return p != null ? (p.isNacitat() ? textStavu(p.getStav(), p.getPostup()) : StavZdroje.VYPNUTO.getText()) : textStavu(stav.getStavTypu(radek.typ), postupTypu(radek.typ));
+		}
+	}
+
+	private String tooltip(final Radek radek, final int sloupec) {
+		final StavPolozky p = radek.polozka;
+		if (sloupec == SL_ZDROJ && p != null) {
+			return FString.text(p.getCesta());
+		}
+		if (sloupec == SL_WP) {
+			final int dup = p != null ? (p.isNacitat() ? p.getPocetDuplicit() : 0) : duplicityTypu(radek.typ);
+			return dup > 0 ? textDuplicit(dup) : null;
+		}
+		if (sloupec == SL_STAV && p != null && p.isNacitat()) {
+			if (p.getStav() == StavZdroje.CHYBA && p.getChyba() != null) {
+				return FString.text(p.getChyba());
+			}
+			if (p.getStav() == StavZdroje.CEKA_NA_ZAPIS) {
+				return RADA_ZAMCENO;
+			}
+		}
+		return null;
+	}
+
+	static final String ZAMCENO = "Zamčeno jiným programem";
+	static final String RADA_ZAMCENO = "Zavřete program, který databázi používá; načte se sama.";
+
+	static String textStavu(final StavZdroje s, final int postup) {
+		switch (s) {
+		case NACITA_SE:
+			return "Načítá se… " + postup + " %";
+		case CEKA_NA_ZAPIS:
+			return ZAMCENO;
+		default:
+			return s.getText();
+		}
+	}
+
+	private int postupTypu(final TypZdroje typ) {
+		int soucet = 0;
+		int pocet = 0;
+		for (final StavPolozky p : stav.getPolozky(typ)) {
+			if (p.isNacitat()) {
+				soucet += p.getStav() == StavZdroje.NACITA_SE ? p.getPostup() : p.getStav() == StavZdroje.CEKA_NA_RADU ? 0 : 100;
+				pocet++;
+			}
+		}
+		return pocet == 0 ? 0 : soucet / pocet;
+	}
+
+	private long velikostTypu(final TypZdroje typ) {
+		long s = 0;
+		for (final StavPolozky p : stav.getPolozky(typ)) {
+			s += p.getVelikostNaDisku();
+		}
+		return s;
+	}
+
+	private String wpTypu(final TypZdroje typ) {
+		long brano = 0;
+		long celkem = 0;
+		boolean znamo = false;
+		for (final StavPolozky p : stav.getPolozky(typ)) {
+			if (p.isNacitat() && p.getWpCelkem() != StavPolozky.NEZNAMO) {
+				brano += p.getWpBrano();
+				celkem += p.getWpCelkem();
+				znamo = true;
+			}
+		}
+		return znamo ? wp(brano, celkem) : "–";
+	}
+
+	private int duplicityTypu(final TypZdroje typ) {
+		int s = 0;
+		for (final StavPolozky p : stav.getPolozky(typ)) {
+			s += p.isNacitat() ? p.getPocetDuplicit() : 0;
+		}
+		return s;
+	}
+
+	private boolean maDuplicity(final Radek radek) {
+		return radek.polozka != null ? radek.polozka.isNacitat() && radek.polozka.getPocetDuplicit() > 0 : duplicityTypu(radek.typ) > 0;
+	}
+
+	static String textDuplicit(final int pocet) {
+		return String.format(CS, "%,d keší se neukazuje, protože jsou ve více zdrojích.", pocet);
+	}
+
+	static String wp(final long brano, final long celkem) {
+		if (celkem == StavPolozky.NEZNAMO) {
+			return "–";
+		}
+		return brano == celkem ? String.format(CS, "%,d", brano) : String.format(CS, "%,d z %,d  ≠", brano, celkem);
+	}
+
+	static String velikost(final long bajty) {
+		if (bajty < 1_000_000L) {
+			return String.format(CS, "%,d kB", Math.max(bajty > 0 ? 1 : 0, bajty / 1000));
+		}
+		return bajty < 1_000_000_000L ? String.format(CS, "%.1f MB", bajty / 1e6) : String.format(CS, "%.2f GB", bajty / 1e9);
+	}
+
+	JTable getTabulka() {
+		return tabulka;
+	}
+
+	List<Radek> getRadky() {
+		return radky;
+	}
+
+	private class Vykreslovac extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 1L;
+
+		Vykreslovac() {
+			putClientProperty("html.disable", Boolean.TRUE);
+		}
+
+		@Override
+		public Component getTableCellRendererComponent(final JTable t, final Object v, final boolean sel, final boolean fokus, final int r, final int sloupec) {
+			super.getTableCellRendererComponent(t, v, false, false, r, sloupec);
+			final int c = t.convertColumnIndexToModel(sloupec);
+			final Radek radek = radky.get(r);
+			final StavPolozky p = radek.polozka;
+			final boolean aktivni = p != null ? p.isNacitat() : stav.getStavVyberuTypu(radek.typ) != StavVyberu.VYPNUTO;
+			setIcon(null);
+			setHorizontalAlignment(c == SL_NACIST ? CENTER : c == SL_VELIKOST || c == SL_WP ? RIGHT : LEFT);
+			setFont(t.getFont().deriveFont(p == null ? Font.BOLD : Font.PLAIN));
+			setBorder(BorderFactory.createEmptyBorder(0, c == SL_ZDROJ && p != null ? 22 : 6, 0, 6));
+			setBackground(p == null ? new Color(0, 0, 0, 20) : t.getBackground());
+			setForeground(aktivni ? t.getForeground() : Color.GRAY);
+			if (c == SL_NACIST) {
+				final StavVyberu volba = p == null ? stav.getStavVyberuTypu(radek.typ) : p.isZapnuto() ? StavVyberu.ZAPNUTO : StavVyberu.VYPNUTO;
+				setIcon(p != null && p.isTypVypnut() ? IkonyZdroju.zaskrtavatkoSede(volba) : IkonyZdroju.zaskrtavatko(volba));
+			} else if (c == SL_STAV && aktivni) {
+				setIcon(IkonyZdroju.pro(p != null ? p.getStav() : stav.getStavTypu(radek.typ)));
+			} else if (c == SL_WP && maDuplicity(radek)) {
+				setForeground(BARVA_DUPLICIT);
+			}
+			setOpaque(true);
+			return this;
+		}
+	}
+}
