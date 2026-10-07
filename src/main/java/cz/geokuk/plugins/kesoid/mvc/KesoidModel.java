@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.SwingUtilities;
 
@@ -18,6 +19,10 @@ import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.filtr.FilterDefinitionChangedEvent;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
+import cz.geokuk.plugins.kesoid.importek.RegistrStavuZdroju;
+import cz.geokuk.plugins.kesoid.importek.StavPolozky;
+import cz.geokuk.plugins.kesoid.importek.StavZdroju;
+import cz.geokuk.plugins.kesoid.importek.TypZdroje;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitac;
 import cz.geokuk.plugins.kesoid.importek.MultiNacitacLoaderManager;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
@@ -53,6 +58,8 @@ public class KesoidModel extends Model0 {
 	private KesoidUmisteniSouboru umisteniSouboru;
 	/** Mění se z EDT i z vlákna načítání: jen celou novou kopií v upravBlokovaneZdroje. */
 	private volatile Set<File> blokovaneZdroje = Collections.emptySet();
+	/** Vypnuté celé typy zdrojů; položky si zachovávají vlastní volbu v blokovaných zdrojích. */
+	private volatile Set<TypZdroje> vypnuteTypy = Collections.emptySet();
 	/** Složky, které se při posledním prohledání nepodařilo přečíst. */
 	private volatile Set<File> nedostupnePriNacitani = Collections.emptySet();
 	private GsakParametryNacitani gsakParametryNacitani;
@@ -68,6 +75,12 @@ public class KesoidModel extends Model0 {
 	/** Zdroje rozběhnutého prvního načítání, dokud žádné keše načtené nejsou. */
 	private volatile InformaceOZdrojich nacitaneZdroje;
 	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
+	private final AtomicBoolean udalostStavuZdrojuCeka = new AtomicBoolean();
+	private volatile StavZdroju stavZdroju = StavZdroju.PRAZDNY;
+
+	{
+		multiNacitacLoaderManager.getRegistr().setPosluchac(this::naplanujUdalostStavuZdroju);
+	}
 
 	@Getter
 	private KesoidPluginManager kesopidPluginManager;
@@ -197,8 +210,104 @@ public class KesoidModel extends Model0 {
 	}
 
 	public boolean maSeNacist(final KeFile jmenoZdroje) {
-		return !blokovaneZdroje.contains(jmenoZdroje.getFile());
+		return maSeNacist(jmenoZdroje.getFile());
 	}
+
+	/** Zdroj se načítá, když ho uživatel nevypnul a není vypnutý celý jeho typ. */
+	public boolean maSeNacist(final File zdroj) {
+		return jeZdrojZapnut(zdroj) && !isTypVypnut(getRegistrStavuZdroju().getTyp(zdroj));
+	}
+
+	/** Vlastní volba položky, bez ohledu na vypnutý typ. */
+	public boolean jeZdrojZapnut(final File zdroj) {
+		return !blokovaneZdroje.contains(zdroj);
+	}
+
+	public boolean isTypVypnut(final TypZdroje typ) {
+		return typ != null && vypnuteTypy.contains(typ);
+	}
+
+	/** Registr stavu, který model rozesílá událostmi; zapisuje do něj načítání. */
+	public RegistrStavuZdroju getRegistrStavuZdroju() {
+		return multiNacitacLoaderManager.getRegistr();
+	}
+
+	/** Poslední stav všech položek zdrojů; pro změny viz {@link StavZdrojuEvent}. */
+	public StavZdroju getStavZdroju() {
+		return stavZdroju;
+	}
+
+	/** Změny stavu z vlákna načítání i z EDT se slučují do jedné události v EDT. */
+	private void naplanujUdalostStavuZdroju() {
+		if (udalostStavuZdrojuCeka.compareAndSet(false, true)) {
+			SwingUtilities.invokeLater(() -> {
+				udalostStavuZdrojuCeka.set(false);
+				final StavZdroju stav = multiNacitacLoaderManager.getRegistr().getSnimek();
+				stavZdroju = stav;
+				fire(new StavZdrojuEvent(stav));
+			});
+		}
+	}
+
+	/** Zapne nebo vypne celý typ; položky ani jejich volba se nemění, po zapnutí je stejný výběr jako před vypnutím. */
+	public void setNacitatTyp(final TypZdroje typ, final boolean nacitat) {
+		zmenZapnute(Collections.<File>emptyList(), Collections.<File>emptyList(), Collections.singletonMap(typ, !nacitat));
+	}
+
+	/** Výslovné „zapnout vše“ / „vypnout vše“: přepíše volbu všech položek i všech typů. */
+	public void setNacitatVse(final boolean nacitat) {
+		final List<File> soubory = new ArrayList<>();
+		for (final StavPolozky p : getRegistrStavuZdroju().getSnimek().getPolozky()) {
+			soubory.add(p.getSoubor());
+		}
+		final Map<TypZdroje, Boolean> typy = new EnumMap<>(TypZdroje.class);
+		for (final TypZdroje t : TypZdroje.values()) {
+			typy.put(t, !nacitat);
+		}
+		zmenZapnute(nacitat ? soubory : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : soubory, typy);
+	}
+
+	/** Výslovné „zapnout vše“ / „vypnout vše“ jen pro jeden typ: přepíše volbu jeho položek i typu. */
+	public void setNacitatVseVTypu(final TypZdroje typ, final boolean nacitat) {
+		final List<File> soubory = getRegistrStavuZdroju().getSoubory(typ);
+		zmenZapnute(nacitat ? soubory : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : soubory, Collections.singletonMap(typ, !nacitat));
+	}
+
+	/** Jedna změna zapnutých zdrojů a typů: jeden zápis nastavení, okamžitá změna stavu pro GUI a jedno spuštění načítání. */
+	private void zmenZapnute(final Collection<File> zapnout, final Collection<File> vypnout, final Map<TypZdroje, Boolean> typyVypnute) {
+		final boolean zdroje = upravBlokovaneZdroje(b -> {
+			final boolean zapnuto = b.removeAll(zapnout);
+			return b.addAll(vypnout) | zapnuto;
+		});
+		final boolean typy = upravVypnuteTypy(typyVypnute);
+		if (zdroje || typy) {
+			getRegistrStavuZdroju().prepisZapnuti(this::jeZdrojZapnut, this::isTypVypnut);
+			startKesLoading();
+		}
+	}
+
+	private synchronized boolean upravVypnuteTypy(final Map<TypZdroje, Boolean> zmeny) {
+		final Set<TypZdroje> nove = EnumSet.noneOf(TypZdroje.class);
+		nove.addAll(vypnuteTypy);
+		for (final Map.Entry<TypZdroje, Boolean> e : zmeny.entrySet()) {
+			if (e.getValue()) {
+				nove.add(e.getKey());
+			} else {
+				nove.remove(e.getKey());
+			}
+		}
+		if (nove.equals(vypnuteTypy)) {
+			return false;
+		}
+		vypnuteTypy = nove;
+		final Set<String> jmena = new TreeSet<>();
+		for (final TypZdroje t : nove) {
+			jmena.add(t.name());
+		}
+		currPrefe().node(FPref.KESOID_node).putStringSet(FPref.VYPNUTE_TYPY_ZDROJU_value, jmena);
+		return true;
+	}
+
 
 	public void onEvent(final IkonyNactenyEvent event) {
 		jmenoSady = event.getBag().getSada().getName();
@@ -345,9 +454,7 @@ public class KesoidModel extends Model0 {
 		}
 		final Collection<File> changedFiles = Collections2.transform(zdroje.getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
 		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
-		if (upravBlokovaneZdroje(b -> nacitat ? b.removeAll(changedFiles) : b.addAll(changedFiles))) {
-			startKesLoading();
-		}
+		zmenZapnute(nacitat ? changedFiles : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : changedFiles, Collections.<TypZdroje, Boolean>emptyMap());
 	}
 
 	public void setOnoff(final boolean onoff) {
@@ -435,9 +542,7 @@ public class KesoidModel extends Model0 {
 		pref.putFilex(FPref.GSAK_DATA_DIR_value, aUmisteniSouboru.getGsakDataDir());
 		pref.putFilex(FPref.OPENSAK_DATA_DIR_value, aUmisteniSouboru.getOpensakDataDir());
 		pref.remove("vyjimkyDir"); // mazat ze starých verzí
-		synchronized (this) {
-			blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
-		}
+		nactiVyberZdroju();
 		fire(new KesoidUmisteniSouboruChangedEvent(aUmisteniSouboru));
 		if (nacistIkony) {
 			startIkonLoad(true);
@@ -541,6 +646,24 @@ public class KesoidModel extends Model0 {
 		if (ikonBag != null && gccomNick != null) {
 			multiNacitacLoaderManager.startLoad(true, ikonBag.getGenom());
 		}
+	}
+
+	/** Načte z nastavení, které zdroje a typy zdrojů uživatel vypnul. */
+	public synchronized void nactiVyberZdroju() {
+		blokovaneZdroje = new HashSet<>(currPrefe().node(FPref.KESOID_node).getFileCollection(FPref.BLOKOVANE_ZDROJE_value, new HashSet<File>()));
+		vypnuteTypy = nactiVypnuteTypy();
+	}
+
+	private Set<TypZdroje> nactiVypnuteTypy() {
+		final Set<TypZdroje> typy = EnumSet.noneOf(TypZdroje.class);
+		for (final String jmeno : currPrefe().node(FPref.KESOID_node).getStringSet(FPref.VYPNUTE_TYPY_ZDROJU_value, Collections.<String>emptySet())) {
+			try {
+				typy.add(TypZdroje.valueOf(jmeno));
+			} catch (final IllegalArgumentException e) {
+				// neznámý typ z novější verze
+			}
+		}
+		return typy;
 	}
 
 	/** Zapomene blokované zdroje, které už nejsou; zdroje v dočasně nedostupné složce (síť, USB) zůstanou blokované. */

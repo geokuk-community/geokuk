@@ -3,6 +3,8 @@
  */
 package cz.geokuk.framework;
 
+import java.util.function.IntConsumer;
+
 import javax.swing.SwingUtilities;
 
 /**
@@ -10,6 +12,17 @@ import javax.swing.SwingUtilities;
  *
  */
 public class ProgressModel extends Model0 {
+
+	private static final ThreadLocal<IntConsumer> SLEDOVAC_POSTUPU = new ThreadLocal<>();
+
+	/** Průběhy založené ve volajícím vláknu hlásí procenta dokončení do sledovače; null sledování ukončí. */
+	public static void setSledovacPostupu(final IntConsumer sledovac) {
+		if (sledovac == null) {
+			SLEDOVAC_POSTUPU.remove();
+		} else {
+			SLEDOVAC_POSTUPU.set(sledovac);
+		}
+	}
 
 	private class SimpleNotParalelProgressor implements Progressor {
 
@@ -26,6 +39,7 @@ public class ProgressModel extends Model0 {
 		private String tooltip = "";
 		private boolean visible;
 
+		private final IntConsumer sledovac = SLEDOVAC_POSTUPU.get();
 		private final long startTime = System.currentTimeMillis();
 		private long lastFireTime;
 
@@ -94,6 +108,9 @@ public class ProgressModel extends Model0 {
 		@Override
 		public void setProgress(final int nv) {
 			progress = nv;
+			if (sledovac != null && max > 0) {
+				sledovac.accept((int) Math.min(100L, 100L * nv / max));
+			}
 			if (nv >= max) {
 				finish();
 			} else {

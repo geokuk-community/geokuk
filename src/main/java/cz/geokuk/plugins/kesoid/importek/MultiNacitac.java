@@ -9,6 +9,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.framework.ProgressModel;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
@@ -32,6 +33,7 @@ public class MultiNacitac {
 	private static final Root.Def OPENSAK_ROOTDIR_DEF = new Root.Def(1, Pattern.compile("(?i).*\\.db"), null);
 
 	private final DirScanner ds;
+	private final RegistrStavuZdroju registr;
 
 	private volatile File geogetDir;
 	private volatile File gsakDir;
@@ -81,6 +83,12 @@ public class MultiNacitac {
 	}
 
 	MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds) {
+		this(kesoidModel, ds, new RegistrStavuZdroju());
+	}
+
+	/** Registr si může předat model, který stav zdrojů rozesílá. */
+	MultiNacitac(final KesoidModel kesoidModel, final DirScanner ds, final RegistrStavuZdroju registr) {
+		this.registr = registr;
 		this.kesoidModel = kesoidModel;
 		this.ds = ds;
 		nacitace.add(new NacitacGeokuk());
@@ -89,6 +97,34 @@ public class MultiNacitac {
 		nacitace.add(new GeogetLoader());
 		nacitace.add(new GsakDbLoader(kesoidModel::getGsakParametryNacitani));
 		nacitace.add(new OpensakDbLoader());
+	}
+
+	public RegistrStavuZdroju getRegistr() {
+		return registr;
+	}
+
+	static TypZdroje typ(final KeFile f) {
+		final Root.Def def = f.root.def;
+		if (GSAK_ROOTDIR_DEF.equals(def)) {
+			return TypZdroje.GSAK;
+		}
+		if (OPENSAK_ROOTDIR_DEF.equals(def)) {
+			return TypZdroje.OPENSAK;
+		}
+		return FILE_NAME_REGEX_GEOGET_DIR.equals(def) ? TypZdroje.GEOGET : TypZdroje.GPX;
+	}
+
+	/** Velikost souboru i jeho WAL, kde se databáze zapisuje. */
+	private static long velikostNaDisku(final File soubor) {
+		return soubor.length() + new File(soubor.getPath() + "-wal").length();
+	}
+
+	private void prepisRegistr(final List<KeFile> list) {
+		final Map<File, KeFile> poSouboru = new LinkedHashMap<>();
+		for (final KeFile f : list) {
+			poSouboru.put(f.getFile(), f);
+		}
+		registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), f -> poSouboru.get(f).getRelativePath().toString(), kesoidModel::jeZdrojZapnut, kesoidModel::isTypVypnut, MultiNacitac::velikostNaDisku);
 	}
 
 	public boolean jeZamcena(final File databaze) {
@@ -136,6 +172,8 @@ public class MultiNacitac {
 		if (opensak == null || !nedostupne.contains(opensak)) {
 			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
 		}
+		// Až po zařazení nových databází, ty mohou být vypnuté („Načítat až po vybrání“).
+		prepisRegistr(list);
 		if (kesoidModel.getVsechnyKesoidy() == null) {
 			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
@@ -159,9 +197,19 @@ public class MultiNacitac {
 				break;
 			}
 			log.debug("Nacitam: " + file);
+			final File soubor = file.getFile();
 			try {
+				if (kesoidModel.maSeNacist(soubor)) {
+					registr.zacina(soubor);
+					ProgressModel.setSledovacPostupu(procent -> registr.postup(soubor, procent));
+				}
 				zpracujJedenFile(file, builder, future);
+				if (kesoidModel.maSeNacist(soubor) && !(future != null && future.isCancelled())) {
+					final int[] pocty = builder.getPoctyCurrent();
+					registr.hotovo(soubor, pocty[0], pocty[1]);
+				}
 			} catch (final DatabazeJinehoProgramu.Zamcena e) {
+				registr.cekaNaZapis(soubor);
 				log.info(e.getMessage());
 				zamceneTed.add(file.getFile());
 				if (zobrazene.contains(file.getFile())) {
@@ -177,6 +225,9 @@ public class MultiNacitac {
 				// znovu se zkusí, až se soubory změní; jinak by se chyba opakovala každých pár vteřin
 				FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při čtení souboru " + file);
 				vadne.add(file.getFile().getName());
+				registr.chyba(soubor, popisChyby(e));
+			} finally {
+				ProgressModel.setSledovacPostupu(null);
 			}
 		}
 
@@ -273,6 +324,15 @@ public class MultiNacitac {
 						+ "). Zkontrolujte složku v Soubor > Umístění souborů."), EExceptionSeverity.DISPLAY, "Prázdná datová složka");
 			}
 		}
+	}
+
+	private static String popisChyby(final Exception e) {
+		final String zprava = e.getMessage();
+		if (zprava == null || zprava.isEmpty()) {
+			return "Soubor se nepodařilo přečíst.";
+		}
+		final int konec = zprava.indexOf('\n');
+		return konec < 0 ? zprava : zprava.substring(0, konec);
 	}
 
 	private List<KeFile> bezZamcenych(final List<KeFile> seznam) {
