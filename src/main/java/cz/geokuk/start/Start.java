@@ -74,6 +74,7 @@ public final class Start {
 			prikaz.add("-Djava.net.useSystemProxies=true");
 			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
+			pridejVraceniPameti(prikaz, System.getProperty("java.specification.version"));
 			pridejZalohu(prikaz, adresar, jar);
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
@@ -82,6 +83,22 @@ public final class Start {
 			new ProcessBuilder(prikaz).directory(adresar).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.appendTo(nic)).start();
 		} catch (final Exception e) {
 			chyba("GeoKuk se nepodařilo spustit:\n" + e);
+		}
+	}
+
+	/**
+	 * Bez dalšího sběru odpadu by si Java paměť uvolněnou po vypnutí zdroje nechala; pravidelný sběr ji v klidu vrátí systému. Starší Java než 12 přepínač nezná a s ním by
+	 * se nespustila.
+	 */
+	static void pridejVraceniPameti(final List<String> prikaz, final String verzeJavy) {
+		try {
+			final String[] casti = verzeJavy.split("\\.");
+			final int hlavni = Integer.parseInt("1".equals(casti[0]) && casti.length > 1 ? casti[1] : casti[0]);
+			if (hlavni >= 12) {
+				prikaz.add("-XX:G1PeriodicGCInterval=60000");
+			}
+		} catch (final RuntimeException e) {
+			// neznámá verze: raději bez přepínače
 		}
 	}
 
