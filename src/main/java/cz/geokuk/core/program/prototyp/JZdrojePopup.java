@@ -88,7 +88,7 @@ public class JZdrojePopup extends JPanel {
 			case 3:
 				return p != null ? wp(p.wpBrano, p.wpCelkem) : wp(souctoveBrano(radek.typ), soucet(radek.typ, true));
 			default:
-				return p != null ? p.stav.getText() : "";
+				return p == null ? "" : p.stav == Stav.NACITA_SE ? "Načítá se… " + p.postup + " %" : p.stav.getText();
 			}
 		}
 	};
@@ -134,7 +134,7 @@ public class JZdrojePopup extends JPanel {
 			tabulka.getColumnModel().getColumn(i).setPreferredWidth(sirky[i]);
 		}
 		final JScrollPane scroll = new JScrollPane(tabulka);
-		scroll.setPreferredSize(new Dimension(760, 22 * 13 + 4));
+		scroll.setPreferredSize(new Dimension(760, 22 * 14 + 4));
 		add(scroll, BorderLayout.CENTER);
 
 		final JPanel paticka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));

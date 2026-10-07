@@ -71,7 +71,7 @@ public class JPrepinaceZdroju extends JPanel {
 			final Stav stav = model.getStavTypu(typ);
 			l.setIcon(IkonyZdroju.pro(stav));
 			l.setForeground(stav == Stav.VYPNUTO ? Color.GRAY : UIManager.getColor("Label.foreground"));
-			l.setToolTipText(typ.getNazev() + ": " + stav.getText() + " (kliknutím zapnete nebo vypnete)");
+			l.setToolTipText(typ.getNazev() + ": " + stav.getText() + (stav == Stav.NACITA_SE ? " (kliknutím načítání zrušíte)" : " (kliknutím zapnete nebo vypnete)"));
 		}
 	}
 

@@ -34,6 +34,8 @@ public class PrototypStavovehoRadku {
 		final JFrame[] okno = new JFrame[1];
 		final JPrepinaceZdroju[] prepinace = new JPrepinaceZdroju[1];
 		final JVyletCombo[] combo = new JVyletCombo[1];
+		final JDialog[] dialogy = new JDialog[1];
+		final JButton[] nastaveniTlacitko = new JButton[1];
 		SwingUtilities.invokeAndWait(() -> {
 			okno[0] = new JFrame("Prototyp stavového řádku");
 			okno[0].setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -43,10 +45,22 @@ public class PrototypStavovehoRadku {
 			final JPanel radek = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
 			radek.add(panel("Myš:", "50°05'12.3\"N, 14°25'01.7\"E", "Z=14"));
 			radek.add(panel("Vše:", "58211/54008", "Filtr:", "12880/12104"));
+			final JButton nastaveni = new JButton("Nastavení…");
+			nastaveni.addActionListener(e -> {
+				final JDialog dialog = new JDialog(okno[0], "Nastavení (prototyp)", false);
+				dialog.add(new JLabel("  Nastavení se otevře i během načítání zdrojů.  "));
+				dialog.pack();
+				dialog.setLocation(okno[0].getX() + 80, okno[0].getY() + 80);
+				dialog.setVisible(true);
+				dialogy[0] = dialog;
+			});
+			new javax.swing.Timer(400, e -> zdroje.posunNacitani(5)).start();
 			prepinace[0] = new JPrepinaceZdroju(zdroje, () -> JOptionPane.showMessageDialog(okno[0], "Přehled zdrojů (prototyp)"));
 			radek.add(prepinace[0]);
 			combo[0] = new JVyletCombo(vylety);
 			radek.add(combo[0]);
+			radek.add(nastaveni);
+			nastaveniTlacitko[0] = nastaveni;
 			okno[0].add(mapa, BorderLayout.CENTER);
 			okno[0].add(radek, BorderLayout.SOUTH);
 			okno[0].pack();
@@ -61,10 +75,14 @@ public class PrototypStavovehoRadku {
 		final Robot robot = new Robot();
 		Thread.sleep(800);
 		snimek(robot, okno[0], new File(slozka, "1-stavovy-radek.png"));
-		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSeznam());
+		SwingUtilities.invokeAndWait(() -> {
+			nastaveniTlacitko[0].doClick();
+			prepinace[0].ukazSeznam();
+		});
 		Thread.sleep(500);
 		snimek(robot, okno[0], new File(slozka, "2-seznam-zdroju.png"));
 		SwingUtilities.invokeAndWait(() -> {
+			dialogy[0].dispose();
 			prepinace[0].zavriSeznam();
 			zdroje.setRezim(ZdrojeModel.Rezim.JEN_GPX);
 		});

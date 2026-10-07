@@ -55,6 +55,8 @@ public class ZdrojeModel {
 		public int wpBrano;
 		public boolean nacist;
 		public Stav stav;
+		/** Průběh načítání v procentech, jen pro stav NACITA_SE. */
+		public int postup;
 
 		Polozka(final Typ typ, final String nazev, final long velikost, final int wpBrano, final int wpCelkem, final boolean nacist, final Stav stav) {
 			this.typ = typ;
@@ -171,9 +173,37 @@ public class ZdrojeModel {
 		p.nacist = nacist;
 		if (!nacist) {
 			p.stav = Stav.VYPNUTO;
+			p.postup = 0;
 		} else if (p.stav == Stav.VYPNUTO) {
-			p.stav = Stav.NACTENO;
+			p.stav = Stav.NACITA_SE;
+			p.postup = 0;
 		}
+	}
+
+	/** Posune simulované načítání; zrušené (vypnuté) položky se přeskočí a po dokončení se stav změní na načteno. */
+	public void posunNacitani(final int krok) {
+		boolean zmena = false;
+		for (final Polozka p : polozky) {
+			if (p.nacist && p.stav == Stav.NACITA_SE) {
+				p.postup = Math.min(100, p.postup + krok);
+				if (p.postup >= 100) {
+					p.stav = Stav.NACTENO;
+				}
+				zmena = true;
+			}
+		}
+		if (zmena) {
+			zmeneno();
+		}
+	}
+
+	public boolean nacitaSe() {
+		for (final Polozka p : polozky) {
+			if (p.nacist && p.stav == Stav.NACITA_SE) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Ukázková data; počty a velikosti jsou vymyšlené. */
@@ -184,6 +214,7 @@ public class ZdrojeModel {
 		m.polozky.add(new Polozka(Typ.GPX, "geocaching.gpx", 41_000_000L, 9_870, 10_420, true, Stav.NACTENO));
 		m.polozky.add(new Polozka(Typ.GEOGET, "Česko.db3", 912_000_000L, 38_204, 40_100, true, Stav.NACTENO));
 		m.polozky.add(new Polozka(Typ.GEOGET, "Slovensko.db3", 84_000_000L, 4_511, 4_511, true, Stav.NACITA_SE));
+		m.polozky.add(new Polozka(Typ.GEOGET, "Cesko-stare.db3", 650_000_000L, 12_000, 12_000, true, Stav.NACITA_SE));
 		m.polozky.add(new Polozka(Typ.GSAK, "Domov.db3", 365_000_000L, 21_050, 22_340, true, Stav.ZAMCENO));
 		m.polozky.add(new Polozka(Typ.GSAK, "Archiv.db3", 1_420_000_000L, 0, 55_900, false, Stav.VYPNUTO));
 		m.polozky.add(new Polozka(Typ.OPENSAK, "opensak.db", 120_000_000L, 6_020, 6_020, true, Stav.NACTENO));
