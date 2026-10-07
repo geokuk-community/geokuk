@@ -298,7 +298,7 @@ public class StartTest {
 		for (final String verze : new String[] { "12", "17", "21", "25" }) {
 			final List<String> prikaz = new ArrayList<>();
 			Start.pridejVraceniPameti(prikaz, verze);
-			Assert.assertEquals(verze, Arrays.asList("-XX:G1PeriodicGCInterval=60000", "-XX:+ExplicitGCInvokesConcurrent", "-XX:MinHeapFreeRatio=10", "-XX:MaxHeapFreeRatio=30"), prikaz);
+			Assert.assertEquals(verze, Arrays.asList("-XX:G1PeriodicGCInterval=60000", "-XX:MinHeapFreeRatio=10", "-XX:MaxHeapFreeRatio=30"), prikaz);
 		}
 	}
 
