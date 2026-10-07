@@ -104,8 +104,12 @@ public class JPrepinaceZdroju extends JPanel {
 		}
 		zavriSeznam();
 		final Dimension d = popup.getPreferredSize();
-		final int presah = kotva.getLocationOnScreen().x + d.width - Toolkit.getDefaultToolkit().getScreenSize().width;
-		popup.show(kotva, Math.min(0, -presah), -d.height);
+		// Těsně nad blokem, zarovnané k přepínači a uvnitř obrazovky, aby mezi nimi nebyla mezera.
+		final int sirkaObrazovky = Toolkit.getDefaultToolkit().getScreenSize().width;
+		final int zacatek = SwingUtilities.convertPoint(kotva, 0, 0, this).x;
+		final int zleva = getLocationOnScreen().x + zacatek;
+		final int x = Math.max(-getLocationOnScreen().x, zacatek - Math.max(0, zleva + d.width - sirkaObrazovky));
+		popup.show(this, x, -d.height);
 		casovacZavreni.start();
 	}
 

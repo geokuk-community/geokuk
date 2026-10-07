@@ -11,8 +11,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import cz.geokuk.core.program.prototyp.ZdrojeModel.*;
 
 /**
- * Seznam zdrojů, který se vysune nad stavovým řádkem: Načíst | Zdroj | Velikost | WP | Stav. Souhrnný má řádek na každý typ zdroje a globální přepínač, popup jednoho typu
- * má jen jeho soubory nebo databáze.
+ * Tabulka zdrojů, která se vysune nad stavovým řádkem: Načíst | Zdroj | Velikost | WP | Stav, skupiny podle typu zdroje a jejich položky. Úplná má i globální přepínač,
+ * popup jednoho typu je táž tabulka jen pro tento typ.
  */
 public class JZdrojePopup extends JPanel {
 
@@ -143,7 +143,7 @@ public class JZdrojePopup extends JPanel {
 			tabulka.getColumnModel().getColumn(i).setPreferredWidth(sirky[i]);
 		}
 		final JScrollPane scroll = new JScrollPane(tabulka);
-		scroll.setPreferredSize(new Dimension(zobrazenyTyp == null ? 640 : 760, 22 * (zobrazenyTyp == null ? Typ.values().length : Math.max(model.getPolozky(zobrazenyTyp).size(), 1)) + 26));
+		scroll.setPreferredSize(new Dimension(760, 22 * (zobrazenyTyp == null ? Typ.values().length + model.getPolozky().size() : model.getPolozky(zobrazenyTyp).size() + 1) + 26));
 		add(scroll, BorderLayout.CENTER);
 
 		final JPanel paticka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
@@ -161,13 +161,13 @@ public class JZdrojePopup extends JPanel {
 
 	private void obnov() {
 		radky.clear();
-		if (zobrazenyTyp == null) {
-			for (final Typ typ : Typ.values()) {
-				radky.add(new Radek(typ, null));
+		for (final Typ typ : Typ.values()) {
+			if (zobrazenyTyp != null && zobrazenyTyp != typ) {
+				continue;
 			}
-		} else {
-			for (final Polozka p : model.getPolozky(zobrazenyTyp)) {
-				radky.add(new Radek(zobrazenyTyp, p));
+			radky.add(new Radek(typ, null));
+			for (final Polozka p : model.getPolozky(typ)) {
+				radky.add(new Radek(typ, p));
 			}
 		}
 		tm.fireTableDataChanged();
@@ -246,8 +246,8 @@ public class JZdrojePopup extends JPanel {
 			setIcon(null);
 			setHorizontalAlignment(c == 2 || c == 3 ? RIGHT : LEFT);
 			setFont(t.getFont().deriveFont(p == null ? Font.BOLD : Font.PLAIN));
-			setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 6));
-			setBackground(t.getBackground());
+			setBorder(BorderFactory.createEmptyBorder(0, c == 1 && p != null ? 22 : 6, 0, 6));
+			setBackground(p == null ? new Color(0, 0, 0, 20) : t.getBackground());
 			setForeground(p != null && !p.nacist ? Color.GRAY : t.getForeground());
 			if (c == 4) {
 				setIcon(IkonyZdroju.pro(p != null ? p.stav : model.getStavTypu(radek.typ)));
