@@ -3,6 +3,9 @@
 ## 6.3.0
 
 ### Změny
+- Zapnutí nebo vypnutí zdroje v Přehledu zdrojů načte znovu jen změněné zdroje a ty, které
+  se s nimi překrývají (stejné keše ve více zdrojích); ostatní zůstanou načtené.
+- Keš, která je ve více zdrojích, se zobrazí ze zdroje s nejnovějšími daty.
 - Log a soubor dálkového ovládání už nejdou do sdílené dočasné složky, která
   nepatří uživateli; místo ní se použije složka `.geokuk` v domovské složce.
   Hláška o nezapisovatelné cizí složce říká, že patří jinému uživateli.
@@ -48,6 +51,8 @@
   uživatelské wiki na GitHubu.
 
 ### Opravy
+- Windows: znovu vytvořený zástupce GeoKuku se uloží s ID pro spojení s ikonou
+  na hlavním panelu i tehdy, když Windows zápis ID ohlásí jako beze změny.
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
   se načtou.

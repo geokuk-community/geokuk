@@ -22,8 +22,10 @@ public class RegistrStavuZdrojuTest {
 	private final RegistrStavuZdroju registr = new RegistrStavuZdroju();
 	private final AtomicInteger zmen = new AtomicInteger();
 
+	private int gen;
+
 	private void prepis(final File... soubory) {
-		registr.prepis(Arrays.asList(soubory), f -> f == g ? TypZdroje.GPX : TypZdroje.GEOGET, File::getName, f -> !vypnute.contains(f), vypnuteTypy::contains, f -> 7);
+		gen = registr.prepis(Arrays.asList(soubory), f -> f == g ? TypZdroje.GPX : TypZdroje.GEOGET, File::getName, f -> !vypnute.contains(f), vypnuteTypy::contains, f -> 7);
 	}
 
 	private StavPolozky polozka(final File f) {
@@ -45,10 +47,10 @@ public class RegistrStavuZdrojuTest {
 	@Test
 	public void nactenaPolozkaZustaneNactenaPoNovemSkenu() {
 		prepis(a, b);
-		registr.zacina(a);
-		registr.postup(a, 40);
+		registr.zacina(gen, a);
+		registr.postup(gen, a, 40);
 		Assert.assertEquals(40, polozka(a).getPostup());
-		registr.hotovo(a, 10, 8);
+		registr.hotovo(gen, a, 10, 8);
 		prepis(a, b);
 		Assert.assertEquals(StavZdroje.NACTENO, polozka(a).getStav());
 		Assert.assertEquals(10, polozka(a).getWpCelkem());
@@ -59,27 +61,47 @@ public class RegistrStavuZdrojuTest {
 	@Test
 	public void postupNeklesaAJenKdyzSeNacita() {
 		prepis(a);
-		registr.postup(a, 30);
+		registr.postup(gen, a, 30);
 		Assert.assertEquals("nezačalo", 0, polozka(a).getPostup());
-		registr.zacina(a);
-		registr.postup(a, 30);
-		registr.postup(a, 10);
-		registr.postup(a, 100);
+		registr.zacina(gen, a);
+		registr.postup(gen, a, 30);
+		registr.postup(gen, a, 10);
+		registr.postup(gen, a, 100);
 		Assert.assertEquals(99, polozka(a).getPostup());
 	}
 
 	@Test
 	public void vypnutouPolozkuZpozdenyZapisNepreprise() {
 		prepis(a);
-		registr.zacina(a);
+		registr.zacina(gen, a);
 		vypnute.add(a);
 		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
 		Assert.assertEquals(StavZdroje.VYPNUTO, polozka(a).getStav());
-		registr.postup(a, 50);
-		registr.hotovo(a, 1, 1);
-		registr.cekaNaZapis(a);
-		registr.chyba(a, "x");
+		registr.postup(gen, a, 50);
+		registr.hotovo(gen, a, 1, 1);
+		registr.cekaNaZapis(gen, a);
+		registr.chyba(gen, a, "x");
 		Assert.assertEquals(StavZdroje.VYPNUTO, polozka(a).getStav());
+	}
+
+	@Test
+	public void zpozdenyZapisZrusenehoBehuPoVypnutiAZapnutiNeprojde() {
+		prepis(a);
+		final int stary = gen;
+		registr.zacina(stary, a);
+		vypnute.add(a);
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
+		vypnute.clear();
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
+		registr.hotovo(stary, a, 5, 5);
+		registr.chyba(stary, a, "x");
+		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka(a).getStav());
+		Assert.assertEquals(StavPolozky.NEZNAMO, polozka(a).getWpCelkem());
+		prepis(a);
+		registr.hotovo(stary, a, 5, 5);
+		Assert.assertEquals("ani po novém skenu", StavZdroje.CEKA_NA_RADU, polozka(a).getStav());
+		registr.hotovo(gen, a, 5, 5);
+		Assert.assertEquals(StavZdroje.NACTENO, polozka(a).getStav());
 	}
 
 	@Test
@@ -105,14 +127,14 @@ public class RegistrStavuZdrojuTest {
 		Assert.assertFalse(s.isCelyTypZapnut(TypZdroje.GEOGET));
 		Assert.assertTrue(s.isTypZapnut(TypZdroje.GEOGET));
 		Assert.assertEquals(StavZdroje.VYPNUTO, s.getStavTypu(TypZdroje.GSAK));
-		registr.hotovo(a, 1, 1);
-		registr.hotovo(g, 1, 1);
+		registr.hotovo(gen, a, 1, 1);
+		registr.hotovo(gen, g, 1, 1);
 		s = registr.getSnimek();
 		Assert.assertEquals(StavZdroje.NACTENO, s.getStavTypu(TypZdroje.GEOGET));
 		Assert.assertFalse(s.isNacitaSe());
-		registr.cekaNaZapis(a);
+		registr.cekaNaZapis(gen, a);
 		Assert.assertEquals(StavZdroje.CEKA_NA_ZAPIS, registr.getSnimek().getStavTypu(TypZdroje.GEOGET));
-		registr.chyba(a, "vadné");
+		registr.chyba(gen, a, "vadné");
 		Assert.assertEquals(StavZdroje.CHYBA, registr.getSnimek().getStavTypu(TypZdroje.GEOGET));
 		Assert.assertEquals("vadné", polozka(a).getChyba());
 	}

@@ -59,6 +59,16 @@ public class MultiNacitacLoaderManager {
 		return vysledek;
 	}
 
+	/** Zastaví načítání i pravidelné kontroly změn. */
+	void zastav() {
+		if (iTimer != null) {
+			iTimer.stop();
+		}
+		if (klsw != null) {
+			klsw.cancel(false);
+		}
+	}
+
 	public RegistrStavuZdroju getRegistr() {
 		return multiNacitac.getRegistr();
 	}
