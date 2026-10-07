@@ -17,8 +17,6 @@ public class LafSupportTest {
 	public void setUp() {
 		Assume.assumeFalse("potřebuje displej", GraphicsEnvironment.isHeadless());
 		puvodni = UIManager.getLookAndFeel();
-		// Okno s kořenem z Aqua po přepnutí vzhledu při deaktivaci hledá barvu, kterou Metal ani Nimbus nemají (NPE v JDK na EDT).
-		Assume.assumeFalse("vzhled Aqua (macOS)", "Aqua".equals(puvodni.getID()));
 	}
 
 	@After
@@ -53,6 +51,10 @@ public class LafSupportTest {
 		SwingUtilities.invokeAndWait(() -> {
 			try {
 				UIManager.setLookAndFeel(new MetalLookAndFeel());
+				// Zavřená okna z jiných testů se nepřepínají; s kořenem z Aqua by při deaktivaci hledala barvu, kterou Metal nemá (NPE v JDK).
+				for (final java.awt.Window okno : java.awt.Window.getWindows()) {
+					SwingUtilities.updateComponentTreeUI(okno);
+				}
 				final JFrame hlavni = new JFrame();
 				final JButton vHlavnim = new JButton("a");
 				hlavni.add(vHlavnim);
