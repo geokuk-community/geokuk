@@ -12,6 +12,7 @@ import javax.swing.*;
 
 import cz.geokuk.plugins.kesoid.importek.*;
 import cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu;
+import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.lang.FString;
 
 /**
@@ -41,6 +42,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private final Map<TypZdroje, JCheckBox> zaskrtavatka = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JLabel> ikony = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JLabel> nazvy = new EnumMap<>(TypZdroje.class);
+	private final Map<TypZdroje, JPanel> bunky = new EnumMap<>(TypZdroje.class);
 	private final javax.swing.Timer hlidaniZavreni;
 	/** Od kdy je myš mimo blok i popup, -1 když není. */
 	private long mimoOd = -1;
@@ -115,11 +117,16 @@ public class JPrepinaceZdroju extends JPanel {
 			natahni(zaskrtavatko);
 			natahni(ikona);
 			natahni(nazev);
-			add(Box.createHorizontalStrut(8));
-			add(zaskrtavatko);
-			add(Box.createHorizontalStrut(2));
-			add(ikona);
-			add(nazev);
+			final JPanel bunka = new JPanel();
+			bunka.setLayout(new BoxLayout(bunka, BoxLayout.X_AXIS));
+			bunka.setOpaque(false);
+			bunka.add(Box.createHorizontalStrut(8));
+			bunka.add(zaskrtavatko);
+			bunka.add(Box.createHorizontalStrut(2));
+			bunka.add(ikona);
+			bunka.add(nazev);
+			add(bunka);
+			bunky.put(typ, bunka);
 			zaskrtavatka.put(typ, zaskrtavatko);
 			ikony.put(typ, ikona);
 			nazvy.put(typ, nazev);
@@ -141,6 +148,43 @@ public class JPrepinaceZdroju extends JPanel {
 		uplna.setOvladani(ovladani);
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.setOvladani(ovladani);
+		}
+	}
+
+	/**
+	 * Typy zdrojů, které má uživatel v Nastavení (Umístění souborů); ostatní buňky ani řádky tabulek nejsou. Blok tak mění šířku jen se změnou Nastavení.
+	 */
+	public void setPovoleneTypy(final Set<TypZdroje> povolene) {
+		boolean zmena = false;
+		for (final Map.Entry<TypZdroje, JPanel> e : bunky.entrySet()) {
+			final boolean videt = povolene.contains(e.getKey());
+			zmena |= e.getValue().isVisible() != videt;
+			e.getValue().setVisible(videt);
+		}
+		uplna.setPovoleneTypy(povolene);
+		if (zmena) {
+			zavriSeznam();
+			revalidate();
+			repaint();
+		}
+	}
+
+	/** Typy, jejichž datová složka je v Nastavení zapnutá. */
+	public static Set<TypZdroje> povoleneTypy(final KesoidUmisteniSouboru u) {
+		final Set<TypZdroje> povolene = EnumSet.noneOf(TypZdroje.class);
+		if (u == null) {
+			return EnumSet.allOf(TypZdroje.class);
+		}
+		pridejKdyzAktivni(povolene, TypZdroje.GPX, u.getKesDir());
+		pridejKdyzAktivni(povolene, TypZdroje.GEOGET, u.getGeogetDataDir());
+		pridejKdyzAktivni(povolene, TypZdroje.GSAK, u.getGsakDataDir());
+		pridejKdyzAktivni(povolene, TypZdroje.OPENSAK, u.getOpensakDataDir());
+		return povolene;
+	}
+
+	private static void pridejKdyzAktivni(final Set<TypZdroje> povolene, final TypZdroje typ, final Filex slozka) {
+		if (slozka != null && slozka.isActive()) {
+			povolene.add(typ);
 		}
 	}
 
@@ -408,16 +452,27 @@ public class JPrepinaceZdroju extends JPanel {
 	/** Plochy, ve kterých blok reaguje; mezery mezi nimi nereagují. */
 	List<Oblast> oblasti() {
 		final List<Oblast> oblasti = new ArrayList<>();
-		oblasti.add(new Oblast(popisek.getBounds(), Druh.UPLNA_TABULKA, null));
+		oblasti.add(new Oblast(plocha(popisek), Druh.UPLNA_TABULKA, null));
 		for (final TypZdroje typ : TypZdroje.values()) {
-			oblasti.add(new Oblast(zaskrtavatka.get(typ).getBounds(), Druh.PREPINA, typ));
+			if (!bunky.get(typ).isVisible()) {
+				continue;
+			}
+			oblasti.add(new Oblast(plocha(zaskrtavatka.get(typ)), Druh.PREPINA, typ));
 			final boolean bezNazvu = !nazvy.get(typ).isVisible();
-			oblasti.add(new Oblast(ikony.get(typ).getBounds(), bezNazvu ? Druh.DETAIL : Druh.TOOLTIP, typ));
+			oblasti.add(new Oblast(plocha(ikony.get(typ)), bezNazvu ? Druh.DETAIL : Druh.TOOLTIP, typ));
 			if (!bezNazvu) {
-				oblasti.add(new Oblast(nazvy.get(typ).getBounds(), Druh.DETAIL, typ));
+				oblasti.add(new Oblast(plocha(nazvy.get(typ)), Druh.DETAIL, typ));
 			}
 		}
 		return oblasti;
+	}
+
+	private Rectangle plocha(final Component c) {
+		return SwingUtilities.convertRectangle(c.getParent(), c.getBounds(), this);
+	}
+
+	JPanel getBunka(final TypZdroje typ) {
+		return bunky.get(typ);
 	}
 
 	JCheckBox getZaskrtavatko(final TypZdroje typ) {

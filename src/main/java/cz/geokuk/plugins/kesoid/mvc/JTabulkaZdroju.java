@@ -3,9 +3,8 @@ package cz.geokuk.plugins.kesoid.mvc;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -61,6 +60,7 @@ public class JTabulkaZdroju extends JPanel {
 	private final TableColumn sloupecVelikost;
 	private final JLabel casDat = new JLabel();
 	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private Set<TypZdroje> povolene = EnumSet.allOf(TypZdroje.class);
 	private OvladaniZdroju ovladani;
 	private boolean uzka;
 	private int sirka = PLNA_SIRKA;
@@ -149,7 +149,7 @@ public class JTabulkaZdroju extends JPanel {
 		stav = novy;
 		radky.clear();
 		for (final TypZdroje typ : TypZdroje.values()) {
-			if (zobrazenyTyp != null && zobrazenyTyp != typ) {
+			if (zobrazenyTyp != null ? zobrazenyTyp != typ : !povolene.contains(typ)) {
 				continue;
 			}
 			radky.add(new Radek(typ, null));
@@ -159,6 +159,13 @@ public class JTabulkaZdroju extends JPanel {
 		}
 		tm.fireTableDataChanged();
 		prepocitejVelikost();
+	}
+
+	/** Typy zdrojů zapnuté v Nastavení; jen ty má tabulka všech typů. */
+	public void setPovoleneTypy(final Set<TypZdroje> nove) {
+		povolene = EnumSet.noneOf(TypZdroje.class);
+		povolene.addAll(nove);
+		obnov(stav);
 	}
 
 	/** Čas nejmladšího načteného souboru; jen v tabulce všech typů. */

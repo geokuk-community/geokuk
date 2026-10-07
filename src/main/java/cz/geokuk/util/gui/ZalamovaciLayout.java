@@ -58,7 +58,7 @@ public class ZalamovaciLayout implements LayoutManager {
 			for (final List<Component> radek : radky(parent, dostupna > 0 ? dostupna - ins.left - ins.right - sirkaPraveho : Integer.MAX_VALUE)) {
 				vyska += vyskaRadku(radek);
 			}
-			if (pravy != null && pravy.getParent() == parent) {
+			if (sirkaPraveho > 0) {
 				vyska = Math.max(vyska, pravy.getPreferredSize().height);
 			}
 			return new Dimension((dostupna > 0 ? Math.min(sirka, dostupna) : sirka) + ins.left + ins.right, vyska + ins.top + ins.bottom);
@@ -75,7 +75,8 @@ public class ZalamovaciLayout implements LayoutManager {
 		synchronized (parent.getTreeLock()) {
 			final Insets ins = parent.getInsets();
 			final int sirkaPraveho = sirkaPraveho(parent);
-			final int prava = parent.getWidth() - ins.right - sirkaPraveho;
+			// V kontejneru užším než pravá komponenta zůstane vidět její levá část.
+			final int prava = Math.max(ins.left, parent.getWidth() - ins.right - sirkaPraveho);
 			if (sirkaPraveho > 0) {
 				final int vyskaPraveho = Math.min(pravy.getPreferredSize().height, parent.getHeight() - ins.top - ins.bottom);
 				pravy.setBounds(prava, parent.getHeight() - ins.bottom - vyskaPraveho, sirkaPraveho, vyskaPraveho);
@@ -106,7 +107,7 @@ public class ZalamovaciLayout implements LayoutManager {
 	}
 
 	private int sirkaPraveho(final Container parent) {
-		return pravy != null && pravy.getParent() == parent ? pravy.getPreferredSize().width : 0;
+		return pravy != null && pravy.getParent() == parent && pravy.isVisible() ? pravy.getPreferredSize().width : 0;
 	}
 
 	private boolean zabiraMisto(final Component c) {

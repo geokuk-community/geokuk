@@ -151,6 +151,7 @@ public class StavZdrojuNacitaniTest {
 		model.setNacitatTyp(TypZdroje.GEOGET, true);
 		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka("a.db3").getStav());
 		Assert.assertEquals("b zůstala odškrtnutá", StavZdroje.VYPNUTO, polozka("b.db3").getStav());
+		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals(StavZdroju.StavVyberu.CASTECNE, model.getStavZdroju().getStavVyberuTypu(TypZdroje.GEOGET));
 	}
 
