@@ -54,6 +54,9 @@ public class MultiNacitac {
 	/** Databáze, které při posledním načítání zamykal jiný program; znovu se načítá, až je pustí. */
 	private volatile Set<File> zamcene = Collections.emptySet();
 	private List<KeFile> posledniSeznam;
+	/** Zapnuté zdroje a kontext běhu, který naposledy zjistil zamčené databáze; jejich změna se načte, i když zámek trvá. */
+	private Set<File> posledniZapnute = Collections.emptySet();
+	private Object posledniKontext;
 	/** Zdroje, jejichž keše jsou v naposledy vráceném (zobrazeném) výsledku. */
 	private Set<File> zobrazene = Collections.emptySet();
 	/**
@@ -168,7 +171,7 @@ public class MultiNacitac {
 			if (!zamcene.stream().allMatch(DatabazeJinehoProgramu::jeZamcena)) {
 				ds.nulujLastScaned();
 				list = ds.coMamNacist();
-			} else if (list != null && bezZamcenych(list).equals(bezZamcenych(posledniSeznam))) {
+			} else if (list != null && bezZamcenych(list).equals(bezZamcenych(posledniSeznam)) && zapnute(list).equals(posledniZapnute) && kontext(genom).equals(posledniKontext)) {
 				return null; // změnila se jen zamčená databáze, jiný program do ní pořád zapisuje
 			}
 		}
@@ -271,6 +274,8 @@ public class MultiNacitac {
 				+ " (čteno " + pocetCteni + (pokus > 1 ? " v " + pokus + " pokusech" : "") + ", párování a index " + (System.currentTimeMillis() - startDone) / 100 / 10.0 + " s)"
 				+ (cteni.vadne.isEmpty() ? "" : ", chyba v souborech " + cteni.vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
+		posledniZapnute = otiskyTed.keySet();
+		posledniKontext = kontext;
 		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
 		for (final Map.Entry<File, String> e : otiskyPredCtenim.entrySet()) {
 			sledovane.put(e.getKey(), e.getValue());
@@ -643,6 +648,16 @@ public class MultiNacitac {
 		}
 		final int konec = zprava.indexOf('\n');
 		return konec < 0 ? zprava : zprava.substring(0, konec);
+	}
+
+	private Set<File> zapnute(final List<KeFile> seznam) {
+		final Set<File> vysledek = new HashSet<>();
+		for (final KeFile f : seznam) {
+			if (kesoidModel.maSeNacist(f.getFile())) {
+				vysledek.add(f.getFile());
+			}
+		}
+		return vysledek;
 	}
 
 	private List<KeFile> bezZamcenych(final List<KeFile> seznam) {
