@@ -77,23 +77,32 @@ public class PrototypStavovehoRadku {
 		snimek(robot, okno[0], new File(slozka, "1-stavovy-radek.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			nastaveniTlacitko[0].doClick();
-			prepinace[0].ukazSeznam();
+			prepinace[0].ukazSouhrn();
 		});
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "2-seznam-zdroju.png"));
+		snimek(robot, okno[0], new File(slozka, "2-souhrn-zdroju.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			dialogy[0].dispose();
+			prepinace[0].zavriSeznam();
+			prepinace[0].ukazTyp(ZdrojeModel.Typ.GPX);
+		});
+		Thread.sleep(500);
+		snimek(robot, okno[0], new File(slozka, "3-popup-gpx.png"));
+		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazTyp(ZdrojeModel.Typ.GEOGET));
+		Thread.sleep(500);
+		snimek(robot, okno[0], new File(slozka, "4-popup-geoget.png"));
+		SwingUtilities.invokeAndWait(() -> {
 			prepinace[0].zavriSeznam();
 			zdroje.setRezim(ZdrojeModel.Rezim.JEN_GPX);
 		});
 		Thread.sleep(300);
-		snimek(robot, okno[0], new File(slozka, "3-jen-gpx.png"));
+		snimek(robot, okno[0], new File(slozka, "5-jen-gpx.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			zdroje.setRezim(ZdrojeModel.Rezim.VSE);
 			combo[0].ukazMenu(combo[0].getComponent(1));
 		});
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "4-vylety.png"));
+		snimek(robot, okno[0], new File(slozka, "6-vylety.png"));
 		System.exit(0);
 	}
 
