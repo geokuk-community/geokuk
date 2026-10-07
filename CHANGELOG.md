@@ -35,6 +35,7 @@
   programem, chyba). Zdroj jde zapnout či vypnout i během načítání.
   Najetí na „Zdroje:“ ukáže tabulku všech souborů a databází s velikostí,
   počtem waypointů a stavem, najetí na název zdroje jen jeho položky.
+  Stejnou tabulku ukazuje okno Přehled zdrojů.
 - Uživatelské mapy: soubor uložený jinak než v UTF-8 se ohlásí s radou,
   soubory `._*` z macOS se přeskočí a hláška při startu vyjmenuje jen
   mapy, které se nezobrazí.

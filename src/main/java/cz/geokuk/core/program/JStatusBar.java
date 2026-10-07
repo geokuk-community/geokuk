@@ -205,7 +205,7 @@ public class JStatusBar extends JPanel {
 
 	/** Bez načtených zdrojů se čas nezobrazuje. */
 	static String casZdroju(final long nejmladsi) {
-		return nejmladsi <= 0 ? "" : String.format("%tF %<tR", nejmladsi);
+		return JTabulkaZdroju.casDat(nejmladsi);
 	}
 
 	public void onEvent(final KeskyVyfiltrovanyEvent aEvent) {

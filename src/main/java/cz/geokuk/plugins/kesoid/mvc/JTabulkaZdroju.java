@@ -138,7 +138,7 @@ public class JTabulkaZdroju extends JPanel {
 		casDat.setForeground(Color.GRAY);
 		casDat.setVisible(false);
 		add(casDat, BorderLayout.SOUTH);
-		prepocitejVelikost();
+		obnov(StavZdroju.PRAZDNY);
 	}
 
 	public void setOvladani(final OvladaniZdroju ovladani) {
@@ -159,6 +159,11 @@ public class JTabulkaZdroju extends JPanel {
 		}
 		tm.fireTableDataChanged();
 		prepocitejVelikost();
+	}
+
+	/** Čas nejmladšího načteného souboru k zobrazení; bez načtených zdrojů prázdný. */
+	public static String casDat(final long nejmladsi) {
+		return nejmladsi <= 0 ? "" : String.format("%tF %<tR", nejmladsi);
 	}
 
 	/** Čas nejmladšího načteného souboru; jen v tabulce všech typů. */
