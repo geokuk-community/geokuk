@@ -124,7 +124,7 @@ public class MultiNacitac {
 		for (final KeFile f : list) {
 			poSouboru.put(f.getFile(), f);
 		}
-		registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), kesoidModel::maSeNacist, MultiNacitac::velikostNaDisku);
+		registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), f -> poSouboru.get(f).getRelativePath().toString(), kesoidModel::maSeNacist, MultiNacitac::velikostNaDisku);
 	}
 
 	public boolean jeZamcena(final File databaze) {

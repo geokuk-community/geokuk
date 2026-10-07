@@ -22,7 +22,7 @@ public class RegistrStavuZdrojuTest {
 	private final AtomicInteger zmen = new AtomicInteger();
 
 	private void prepis(final File... soubory) {
-		registr.prepis(Arrays.asList(soubory), f -> f == g ? TypZdroje.GPX : TypZdroje.GEOGET, f -> !vypnute.contains(f), f -> 7);
+		registr.prepis(Arrays.asList(soubory), f -> f == g ? TypZdroje.GPX : TypZdroje.GEOGET, File::getName, f -> !vypnute.contains(f), f -> 7);
 	}
 
 	private StavPolozky polozka(final File f) {
@@ -114,6 +114,15 @@ public class RegistrStavuZdrojuTest {
 		registr.chyba(a, "vadné");
 		Assert.assertEquals(StavZdroje.CHYBA, registr.getSnimek().getStavTypu(TypZdroje.GEOGET));
 		Assert.assertEquals("vadné", polozka(a).getChyba());
+	}
+
+	@Test
+	public void poradiPodleTypuPakPodleNazvu() {
+		prepis(b, g, a);
+		final List<String> jmena = new java.util.ArrayList<>();
+		registr.getSnimek().getPolozky().forEach(p -> jmena.add(p.getNazev()));
+		Assert.assertEquals(Arrays.asList("c.gpx", "a.db3", "b.db3"), jmena);
+		Assert.assertEquals("a.db3", polozka(a).getCesta());
 	}
 
 	@Test

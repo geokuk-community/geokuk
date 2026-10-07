@@ -68,6 +68,8 @@ public class StavZdrojuNacitaniTest {
 		Assert.assertNotNull(nacitac.nacti(null, genom));
 
 		final StavPolozky g = polozka("a.gpx");
+		Assert.assertEquals("a.gpx", g.getNazev());
+		Assert.assertEquals(new File(gpx, "a.gpx").getPath(), g.getCesta());
 		Assert.assertEquals(TypZdroje.GPX, g.getTyp());
 		Assert.assertEquals(StavZdroje.NACTENO, g.getStav());
 		Assert.assertEquals(1, g.getWpCelkem());
@@ -79,6 +81,15 @@ public class StavZdrojuNacitaniTest {
 		Assert.assertEquals(1, db.getWpCelkem());
 		Assert.assertTrue(db.getVelikostNaDisku() > 0);
 		Assert.assertTrue(db.isZapnuto());
+	}
+
+	@Test
+	public void nazevGpxVPodslozceJeCestaKeKoreni() throws Exception {
+		Assert.assertTrue(new File(gpx, "sub").mkdir());
+		Files.copy(new File(gpx, "a.gpx").toPath(), new File(gpx, "sub/x.gpx").toPath());
+		start();
+		nacitac.nacti(null, genom);
+		Assert.assertEquals("sub" + File.separator + "x.gpx", polozka("x.gpx").getNazev());
 	}
 
 	@Test

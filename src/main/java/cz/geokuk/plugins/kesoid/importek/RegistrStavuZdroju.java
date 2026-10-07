@@ -38,7 +38,7 @@ public class RegistrStavuZdroju {
 	 * Nový seznam položek po skenu. Zapnutá položka zůstane načtená (nebo chybná, nebo čekající na zápis), dokud na ni nepřijde řada, ostatní zapnuté čekají na řadu; vypnutá
 	 * je vypnutá. Počty waypointů se pamatují.
 	 */
-	public void prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Predicate<File> zapnuto, final ToLongFunction<File> velikost) {
+	public void prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Function<File, String> nazev, final Predicate<File> zapnuto, final ToLongFunction<File> velikost) {
 		synchronized (this) {
 			final Map<File, StavPolozky> stare = new HashMap<>(polozky);
 			polozky.clear();
@@ -53,7 +53,7 @@ public class RegistrStavuZdroju {
 				} else {
 					stav = StavZdroje.CEKA_NA_RADU;
 				}
-				final StavPolozky nova = predtim != null ? predtim.sTypem(typ.apply(f)) : new StavPolozky(f, typ.apply(f), stav, 0, 0, StavPolozky.NEZNAMO, 0, zap, null);
+				final StavPolozky nova = predtim != null ? predtim.sTypem(typ.apply(f)) : new StavPolozky(f, nazev.apply(f), typ.apply(f), stav, 0, 0, StavPolozky.NEZNAMO, 0, zap, null);
 				polozky.put(f, nova.sZapnutim(zap).s(stav, 0, stav == StavZdroje.CHYBA && predtim != null ? predtim.getChyba() : null).sVelikosti(velikost.applyAsLong(f)));
 			}
 			obnovSnimek();
@@ -120,7 +120,10 @@ public class RegistrStavuZdroju {
 		posluchac.run();
 	}
 
+	/** Pořadí ve snímku je stálé: podle typu (GPX, GeoGet, GSAK, OpenSAK), pak podle názvu. */
 	private void obnovSnimek() {
-		snimek = new StavZdroju(new ArrayList<>(polozky.values()));
+		final List<StavPolozky> seznam = new ArrayList<>(polozky.values());
+		seznam.sort(Comparator.comparing(StavPolozky::getTyp).thenComparing(p -> p.getNazev().toLowerCase(Locale.ROOT)).thenComparing(StavPolozky::getCesta));
+		snimek = new StavZdroju(seznam);
 	}
 }

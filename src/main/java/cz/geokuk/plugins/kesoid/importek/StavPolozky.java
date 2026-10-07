@@ -8,6 +8,7 @@ public final class StavPolozky {
 	public static final int NEZNAMO = -1;
 
 	private final File soubor;
+	private final String nazev;
 	private final TypZdroje typ;
 	private final StavZdroje stav;
 	private final int postup;
@@ -17,9 +18,10 @@ public final class StavPolozky {
 	private final boolean zapnuto;
 	private final String chyba;
 
-	StavPolozky(final File soubor, final TypZdroje typ, final StavZdroje stav, final int postup, final long velikostNaDisku, final int wpCelkem, final int wpBrano, final boolean zapnuto,
+	StavPolozky(final File soubor, final String nazev, final TypZdroje typ, final StavZdroje stav, final int postup, final long velikostNaDisku, final int wpCelkem, final int wpBrano, final boolean zapnuto,
 			final String chyba) {
 		this.soubor = soubor;
+		this.nazev = nazev;
 		this.typ = typ;
 		this.stav = stav;
 		this.postup = postup;
@@ -32,6 +34,16 @@ public final class StavPolozky {
 
 	public File getSoubor() {
 		return soubor;
+	}
+
+	/** Jméno k zobrazení: cesta vůči složce zdroje (u souboru přímo ve složce jen jeho jméno). */
+	public String getNazev() {
+		return nazev;
+	}
+
+	/** Úplná cesta, třeba pro tooltip. */
+	public String getCesta() {
+		return soubor.getPath();
 	}
 
 	public TypZdroje getTyp() {
@@ -76,27 +88,27 @@ public final class StavPolozky {
 	}
 
 	StavPolozky s(final StavZdroje novyStav, final int novyPostup, final String novaChyba) {
-		return new StavPolozky(soubor, typ, novyStav, novyPostup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, novaChyba);
+		return new StavPolozky(soubor, nazev, typ, novyStav, novyPostup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, novaChyba);
 	}
 
 	StavPolozky sPocty(final int celkem, final int brano) {
-		return new StavPolozky(soubor, typ, stav, postup, velikostNaDisku, celkem, brano, zapnuto, chyba);
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, celkem, brano, zapnuto, chyba);
 	}
 
 	StavPolozky sVelikosti(final long velikost) {
-		return new StavPolozky(soubor, typ, stav, postup, velikost, wpCelkem, wpBrano, zapnuto, chyba);
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikost, wpCelkem, wpBrano, zapnuto, chyba);
 	}
 
 	StavPolozky sTypem(final TypZdroje novyTyp) {
-		return new StavPolozky(soubor, novyTyp, stav, postup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, chyba);
+		return new StavPolozky(soubor, nazev, novyTyp, stav, postup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, chyba);
 	}
 
 	StavPolozky sZapnutim(final boolean nove) {
-		return new StavPolozky(soubor, typ, stav, postup, velikostNaDisku, wpCelkem, wpBrano, nove, chyba);
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, wpCelkem, wpBrano, nove, chyba);
 	}
 
 	@Override
 	public String toString() {
-		return soubor.getName() + " " + typ + " " + stav + (stav == StavZdroje.NACITA_SE ? " " + postup + "%" : "");
+		return nazev + " " + typ + " " + stav + (stav == StavZdroje.NACITA_SE ? " " + postup + "%" : "");
 	}
 }
