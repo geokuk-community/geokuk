@@ -16,10 +16,11 @@ public final class StavPolozky {
 	private final int wpCelkem;
 	private final int wpBrano;
 	private final boolean zapnuto;
+	private final boolean typVypnut;
 	private final String chyba;
 
 	StavPolozky(final File soubor, final String nazev, final TypZdroje typ, final StavZdroje stav, final int postup, final long velikostNaDisku, final int wpCelkem, final int wpBrano, final boolean zapnuto,
-			final String chyba) {
+			final boolean typVypnut, final String chyba) {
 		this.soubor = soubor;
 		this.nazev = nazev;
 		this.typ = typ;
@@ -29,6 +30,7 @@ public final class StavPolozky {
 		this.wpCelkem = wpCelkem;
 		this.wpBrano = wpBrano;
 		this.zapnuto = zapnuto;
+		this.typVypnut = typVypnut;
 		this.chyba = chyba;
 	}
 
@@ -78,8 +80,19 @@ public final class StavPolozky {
 		return wpCelkem == NEZNAMO ? 0 : wpCelkem - wpBrano;
 	}
 
+	/** Vlastní volba položky; zůstává, i když je celý typ vypnutý. */
 	public boolean isZapnuto() {
 		return zapnuto;
+	}
+
+	/** Celý typ zdroje je vypnutý, položky zachovávají svou volbu, ale nenačítají se. */
+	public boolean isTypVypnut() {
+		return typVypnut;
+	}
+
+	/** Položka se opravdu načítá: zapnutá a její typ není vypnutý. */
+	public boolean isNacitat() {
+		return zapnuto && !typVypnut;
 	}
 
 	/** Krátká věta pro stav {@link StavZdroje#CHYBA}, jinak null. */
@@ -88,23 +101,27 @@ public final class StavPolozky {
 	}
 
 	StavPolozky s(final StavZdroje novyStav, final int novyPostup, final String novaChyba) {
-		return new StavPolozky(soubor, nazev, typ, novyStav, novyPostup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, novaChyba);
+		return new StavPolozky(soubor, nazev, typ, novyStav, novyPostup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, typVypnut, novaChyba);
 	}
 
 	StavPolozky sPocty(final int celkem, final int brano) {
-		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, celkem, brano, zapnuto, chyba);
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, celkem, brano, zapnuto, typVypnut, chyba);
 	}
 
 	StavPolozky sVelikosti(final long velikost) {
-		return new StavPolozky(soubor, nazev, typ, stav, postup, velikost, wpCelkem, wpBrano, zapnuto, chyba);
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikost, wpCelkem, wpBrano, zapnuto, typVypnut, chyba);
 	}
 
 	StavPolozky sTypem(final TypZdroje novyTyp) {
-		return new StavPolozky(soubor, nazev, novyTyp, stav, postup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, chyba);
+		return new StavPolozky(soubor, nazev, novyTyp, stav, postup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, typVypnut, chyba);
+	}
+
+	StavPolozky sTypVypnut(final boolean nove) {
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, wpCelkem, wpBrano, zapnuto, nove, chyba);
 	}
 
 	StavPolozky sZapnutim(final boolean nove) {
-		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, wpCelkem, wpBrano, nove, chyba);
+		return new StavPolozky(soubor, nazev, typ, stav, postup, velikostNaDisku, wpCelkem, wpBrano, nove, typVypnut, chyba);
 	}
 
 	@Override

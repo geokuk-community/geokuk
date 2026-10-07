@@ -18,11 +18,12 @@ public class RegistrStavuZdrojuTest {
 	private final File b = new File("b.db3");
 	private final File g = new File("c.gpx");
 	private final Set<File> vypnute = new HashSet<>();
+	private final Set<TypZdroje> vypnuteTypy = new HashSet<>();
 	private final RegistrStavuZdroju registr = new RegistrStavuZdroju();
 	private final AtomicInteger zmen = new AtomicInteger();
 
 	private void prepis(final File... soubory) {
-		registr.prepis(Arrays.asList(soubory), f -> f == g ? TypZdroje.GPX : TypZdroje.GEOGET, File::getName, f -> !vypnute.contains(f), f -> 7);
+		registr.prepis(Arrays.asList(soubory), f -> f == g ? TypZdroje.GPX : TypZdroje.GEOGET, File::getName, f -> !vypnute.contains(f), vypnuteTypy::contains, f -> 7);
 	}
 
 	private StavPolozky polozka(final File f) {
@@ -72,7 +73,7 @@ public class RegistrStavuZdrojuTest {
 		prepis(a);
 		registr.zacina(a);
 		vypnute.add(a);
-		registr.prepisZapnuti(f -> !vypnute.contains(f));
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
 		Assert.assertEquals(StavZdroje.VYPNUTO, polozka(a).getStav());
 		registr.postup(a, 50);
 		registr.hotovo(a, 1, 1);
@@ -87,10 +88,10 @@ public class RegistrStavuZdrojuTest {
 		prepis(a, b);
 		registr.setPosluchac(zmen::incrementAndGet);
 		vypnute.clear();
-		registr.prepisZapnuti(f -> !vypnute.contains(f));
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
 		Assert.assertEquals(1, zmen.get());
 		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka(a).getStav());
-		registr.prepisZapnuti(f -> !vypnute.contains(f));
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
 		Assert.assertEquals("beze změny se neohlašuje", 1, zmen.get());
 	}
 
@@ -123,6 +124,31 @@ public class RegistrStavuZdrojuTest {
 		registr.getSnimek().getPolozky().forEach(p -> jmena.add(p.getNazev()));
 		Assert.assertEquals(Arrays.asList("c.gpx", "a.db3", "b.db3"), jmena);
 		Assert.assertEquals("a.db3", polozka(a).getCesta());
+	}
+
+	@Test
+	public void vypnutiTypuNemeniVolbuPolozek() {
+		vypnute.add(b);
+		prepis(a, b, g);
+		vypnuteTypy.add(TypZdroje.GEOGET);
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
+		Assert.assertEquals(StavZdroje.VYPNUTO, polozka(a).getStav());
+		Assert.assertTrue(polozka(a).isZapnuto());
+		Assert.assertTrue(polozka(a).isTypVypnut());
+		Assert.assertFalse(polozka(a).isNacitat());
+		Assert.assertFalse(polozka(b).isZapnuto());
+		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka(g).getStav());
+		Assert.assertEquals(StavZdroju.StavVyberu.VYPNUTO, registr.getSnimek().getStavVyberuTypu(TypZdroje.GEOGET));
+
+		vypnuteTypy.clear();
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
+		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka(a).getStav());
+		Assert.assertEquals("výběr z doby před vypnutím typu zůstal", StavZdroje.VYPNUTO, polozka(b).getStav());
+		Assert.assertFalse(polozka(b).isZapnuto());
+		Assert.assertEquals(StavZdroju.StavVyberu.CASTECNE, registr.getSnimek().getStavVyberuTypu(TypZdroje.GEOGET));
+		vypnute.clear();
+		registr.prepisZapnuti(f -> !vypnute.contains(f), vypnuteTypy::contains);
+		Assert.assertEquals(StavZdroju.StavVyberu.ZAPNUTO, registr.getSnimek().getStavVyberuTypu(TypZdroje.GEOGET));
 	}
 
 	@Test
