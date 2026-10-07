@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Neměnný snímek stavu všech položek zdrojů, pořadí jako při načítání. */
+/** Neměnný snímek stavu všech položek zdrojů, seřazený podle typu, názvu a cesty. */
 public final class StavZdroju {
 	public static final StavZdroju PRAZDNY = new StavZdroju(Collections.emptyList());
 
@@ -30,13 +30,13 @@ public final class StavZdroju {
 
 	/** Je zapnutá aspoň jedna položka typu. */
 	public boolean isTypZapnut(final TypZdroje typ) {
-		return polozky.stream().anyMatch(p -> p.getTyp() == typ && p.isZapnuto());
+		return polozky.stream().anyMatch(p -> p.getTyp() == typ && p.isNacitat());
 	}
 
 	/** Je zapnutá každá položka typu (typ aspoň jednu má). */
 	public boolean isCelyTypZapnut(final TypZdroje typ) {
 		final List<StavPolozky> typove = getPolozky(typ);
-		return !typove.isEmpty() && typove.stream().allMatch(StavPolozky::isZapnuto);
+		return !typove.isEmpty() && typove.stream().allMatch(StavPolozky::isNacitat);
 	}
 
 	/**
@@ -47,7 +47,7 @@ public final class StavZdroju {
 		boolean cekaNaZapis = false;
 		boolean nacita = false;
 		for (final StavPolozky p : polozky) {
-			if (p.getTyp() != typ || !p.isZapnuto()) {
+			if (p.getTyp() != typ || !p.isNacitat()) {
 				continue;
 			}
 			zapnuto = true;
@@ -71,8 +71,22 @@ public final class StavZdroju {
 		return cekaNaZapis ? StavZdroje.CEKA_NA_ZAPIS : nacita ? StavZdroje.NACITA_SE : StavZdroje.NACTENO;
 	}
 
+	/** Stav zaškrtávátka typu: zapnuto, vypnuto (typ vypnutý nebo žádná zapnutá položka), částečně (některé položky mají vlastní volbu vypnuto). */
+	public enum StavVyberu {
+		ZAPNUTO, CASTECNE, VYPNUTO
+	}
+
+	public StavVyberu getStavVyberuTypu(final TypZdroje typ) {
+		final List<StavPolozky> typove = getPolozky(typ);
+		if (typove.isEmpty() || typove.get(0).isTypVypnut()) {
+			return StavVyberu.VYPNUTO;
+		}
+		final long zapnutych = typove.stream().filter(StavPolozky::isZapnuto).count();
+		return zapnutych == 0 ? StavVyberu.VYPNUTO : zapnutych == typove.size() ? StavVyberu.ZAPNUTO : StavVyberu.CASTECNE;
+	}
+
 	/** Některá zapnutá položka se načítá nebo čeká na řadu. */
 	public boolean isNacitaSe() {
-		return polozky.stream().anyMatch(p -> p.isZapnuto() && (p.getStav() == StavZdroje.NACITA_SE || p.getStav() == StavZdroje.CEKA_NA_RADU));
+		return polozky.stream().anyMatch(p -> p.isNacitat() && (p.getStav() == StavZdroje.NACITA_SE || p.getStav() == StavZdroje.CEKA_NA_RADU));
 	}
 }

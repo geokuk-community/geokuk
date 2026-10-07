@@ -134,16 +134,129 @@ public class StavZdrojuNacitaniTest {
 	}
 
 	@Test
-	public void vypnutyZdrojSeNenacita() throws Exception {
-		final File db = zalozGeoget("a.db3", "GC000A");
+	public void vypnutyTypSeNenacitaAVyberZustane() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final File b = zalozGeoget("b.db3", "GC000B");
 		start();
-		nacitac.nacti(null, genom);
+		zdroje = nacitac.nacti(null, genom).getInformaceOZdrojich();
+		model.setNacitatSoubor(keFile(b), false);
 		model.setNacitatTyp(TypZdroje.GEOGET, false);
 		Assert.assertEquals(StavZdroje.VYPNUTO, polozka("a.db3").getStav());
 		Assert.assertEquals("počet z minula zůstane", 1, polozka("a.db3").getWpCelkem());
 		Assert.assertEquals(StavZdroje.NACTENO, polozka("a.gpx").getStav());
-		Assert.assertFalse(model.maSeNacist(db));
-		Assert.assertEquals("stejný formát nastavení jako dosud", Collections.singleton(db), new HashSet<>(pref.node("kesoid").getFileCollection("blokovaneZdroje", null)));
+		Assert.assertFalse(model.maSeNacist(a));
+		Assert.assertTrue("vlastní volba položky zůstala", model.jeZdrojZapnut(a));
+		Assert.assertEquals("typ se do blokovaných zdrojů nezapisuje", Collections.singleton(b), new HashSet<>(pref.node("kesoid").getFileCollection("blokovaneZdroje", null)));
+
+		model.setNacitatTyp(TypZdroje.GEOGET, true);
+		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka("a.db3").getStav());
+		Assert.assertEquals("b zůstala odškrtnutá", StavZdroje.VYPNUTO, polozka("b.db3").getStav());
+		Assert.assertEquals(StavZdroju.StavVyberu.CASTECNE, model.getStavZdroju().getStavVyberuTypu(TypZdroje.GEOGET));
+	}
+
+	@Test
+	public void vyberTypuAPolozekPrezijeRestart() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final File b = zalozGeoget("b.db3", "GC000B");
+		start();
+		zdroje = nacitac.nacti(null, genom).getInformaceOZdrojich();
+		model.setNacitatSoubor(keFile(b), false);
+		model.setNacitatTyp(TypZdroje.GPX, false);
+
+		final KesoidModel novy = model();
+		novy.nactiVyberZdroju();
+		Assert.assertFalse(novy.jeZdrojZapnut(b));
+		Assert.assertTrue(novy.jeZdrojZapnut(a));
+		Assert.assertTrue(novy.isTypVypnut(TypZdroje.GPX));
+		Assert.assertFalse(novy.isTypVypnut(TypZdroje.GEOGET));
+	}
+
+	/** Nová databáze vypnutá až při zařazení („Načítat až po vybrání“) se v registru nesmí ukazovat jako zapnutá. */
+	@Test
+	public void novaDatabazeVypnutaPriZarazeniJeVRegistruVypnuta() throws Exception {
+		final File gsak = tmp.newFolder("gsak");
+		final File nova = new File(new File(gsak, "nova"), "sqlite.db3");
+		Assert.assertTrue(nova.getParentFile().mkdir());
+		Files.write(nova.toPath(), new byte[] { 1, 2, 3 });
+		final Set<File> blokovane = new HashSet<>();
+		final KesoidModel m = new KesoidModel() {
+			@Override
+			public GccomNick getGccomNick() {
+				return new GccomNick("Ja", 42);
+			}
+
+			@Override
+			public KesBag getVsechnyKesoidy() {
+				return null;
+			}
+
+			@Override
+			public void fire(final Event0<?> udalost) {}
+
+			@Override
+			public void setNacitaneZdroje(final InformaceOZdrojich zdroje) {}
+
+			@Override
+			public void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
+				blokovane.addAll(databaze);
+			}
+
+			@Override
+			public boolean jeZdrojZapnut(final File zdroj) {
+				return !blokovane.contains(zdroj);
+			}
+
+			@Override
+			public boolean maSeNacist(final File zdroj) {
+				return jeZdrojZapnut(zdroj);
+			}
+
+			@Override
+			public void zaradOpensakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {}
+		};
+		final ProgressModel progress = new ProgressModel();
+		progress.inject(udalost -> {});
+		m.inject(progress);
+		m.inject(new KesoidPluginManager());
+		final MultiNacitac n = new MultiNacitac(m);
+		n.setRootDirs(true, gpx, slozkaGeogetu, gsak, Collections.emptySet());
+		n.nacti(null, genom);
+		final StavPolozky p = n.getRegistr().getSnimek().getPolozky().stream().filter(x -> x.getTyp() == TypZdroje.GSAK).findFirst().get();
+		Assert.assertEquals(StavZdroje.VYPNUTO, p.getStav());
+		Assert.assertFalse(p.isZapnuto());
+		Assert.assertEquals(StavZdroje.VYPNUTO, n.getRegistr().getSnimek().getStavTypu(TypZdroje.GSAK));
+		Assert.assertFalse(n.getRegistr().getSnimek().isNacitaSe());
+	}
+
+	/** Změny stavu z vlákna načítání se slučují: dokud EDT nestihne událost doručit, další změny žádnou novou nevyrobí. */
+	@Test
+	public void zmenyStavuSeSlucujiDoJedneUdalosti() throws Exception {
+		zalozGeoget("a.db3", "GC000A");
+		start();
+		nacitac.nacti(null, genom);
+		SwingUtilities.invokeAndWait(() -> {});
+		final int pred = pocetUdalosti.get();
+		final java.util.concurrent.CountDownLatch edtBlokovan = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch pustit = new java.util.concurrent.CountDownLatch(1);
+		SwingUtilities.invokeLater(() -> {
+			edtBlokovan.countDown();
+			try {
+				pustit.await();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		edtBlokovan.await();
+		final File a = new File(slozkaGeogetu, "a.db3");
+		for (int i = 0; i < 50; i++) {
+			nacitac.getRegistr().zacina(a);
+			nacitac.getRegistr().postup(a, i);
+			nacitac.getRegistr().hotovo(a, 1, 1);
+		}
+		pustit.countDown();
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("150 změn, jedna událost", pred + 1, pocetUdalosti.get());
+		Assert.assertEquals(StavZdroje.NACTENO, model.getStavZdroju().getPolozky().stream().filter(x -> x.getSoubor().equals(a)).findFirst().get().getStav());
 	}
 
 	@Test
@@ -163,7 +276,7 @@ public class StavZdrojuNacitaniTest {
 		}
 		Assert.assertFalse(model.getStavZdroju().isTypZapnut(TypZdroje.GPX));
 
-		model.setNacitatTyp(TypZdroje.GEOGET, true);
+		model.setNacitatVseVTypu(TypZdroje.GEOGET, true);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals(pred + 2, pocetUdalosti.get());
 		Assert.assertEquals(StavZdroje.CEKA_NA_RADU, polozka("a.db3").getStav());
@@ -205,6 +318,12 @@ public class StavZdrojuNacitaniTest {
 	private void zapisGpx(final String jmeno, final String kod) throws Exception {
 		Files.write(new File(gpx, jmeno).toPath(), ImportKesiTest.gpx(ImportKesiTest.kes(kod, "Geocache", "Traditional Cache", "Cizí", 1, true, false, "2", "")).getBytes(StandardCharsets.UTF_8));
 	}
+
+	private cz.geokuk.util.file.KeFile keFile(final File soubor) {
+		return nacitac.getRegistr() == null ? null : zdroje.getKeJmenaZdroju().stream().filter(k -> k.getFile().equals(soubor)).findFirst().get();
+	}
+
+	private InformaceOZdrojich zdroje;
 
 	private File zalozGeoget(final String jmeno, final String kod) throws SQLException {
 		final File db = new File(slozkaGeogetu, jmeno);
@@ -255,9 +374,6 @@ public class StavZdrojuNacitaniTest {
 					udalosti.add(((StavZdrojuEvent) udalost).getStav());
 				}
 			}
-
-			@Override
-			public void setNacitaneZdroje(final InformaceOZdrojich zdroje) {}
 
 			@Override
 			public void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {}

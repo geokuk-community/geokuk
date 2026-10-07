@@ -14,6 +14,7 @@ public class RegistrStavuZdroju {
 
 	private final Map<File, StavPolozky> polozky = new LinkedHashMap<>();
 	private volatile StavZdroju snimek = StavZdroju.PRAZDNY;
+	private volatile Map<File, TypZdroje> typy = Collections.emptyMap();
 	private volatile Runnable posluchac = () -> {};
 
 	/** Volá se po každé změně z vlákna, které ji provedlo. */
@@ -34,27 +35,39 @@ public class RegistrStavuZdroju {
 		return vysledek;
 	}
 
+	/** Typ souboru podle posledního skenu, null u neznámého. */
+	public TypZdroje getTyp(final File soubor) {
+		return typy.get(soubor);
+	}
+
 	/**
-	 * Nový seznam položek po skenu. Zapnutá položka zůstane načtená (nebo chybná, nebo čekající na zápis), dokud na ni nepřijde řada, ostatní zapnuté čekají na řadu; vypnutá
-	 * je vypnutá. Počty waypointů se pamatují.
+	 * Nový seznam položek po skenu. Načítaná položka (zapnutá a s nevypnutým typem) zůstane načtená (nebo chybná, nebo čekající na zápis), dokud na ni nepřijde řada, ostatní
+	 * zapnuté čekají na řadu; ostatní jsou vypnuté. Počty waypointů se pamatují.
 	 */
-	public void prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Function<File, String> nazev, final Predicate<File> zapnuto, final ToLongFunction<File> velikost) {
+	public void prepis(final List<File> soubory, final Function<File, TypZdroje> typ, final Function<File, String> nazev, final Predicate<File> zapnuto,
+			final Predicate<TypZdroje> typVypnut, final ToLongFunction<File> velikost) {
 		synchronized (this) {
+			final Map<File, TypZdroje> noveTypy = new HashMap<>();
+			for (final File f : soubory) {
+				noveTypy.put(f, typ.apply(f));
+			}
+			typy = noveTypy;
 			final Map<File, StavPolozky> stare = new HashMap<>(polozky);
 			polozky.clear();
 			for (final File f : soubory) {
 				final StavPolozky predtim = stare.get(f);
 				final boolean zap = zapnuto.test(f);
+				final boolean vypnutyTyp = typVypnut.test(noveTypy.get(f));
 				final StavZdroje stav;
-				if (!zap) {
+				if (!zap || vypnutyTyp) {
 					stav = StavZdroje.VYPNUTO;
-				} else if (predtim != null && predtim.isZapnuto() && (predtim.getStav() == StavZdroje.NACTENO || predtim.getStav() == StavZdroje.CHYBA || predtim.getStav() == StavZdroje.CEKA_NA_ZAPIS)) {
+				} else if (predtim != null && predtim.isNacitat() && (predtim.getStav() == StavZdroje.NACTENO || predtim.getStav() == StavZdroje.CHYBA || predtim.getStav() == StavZdroje.CEKA_NA_ZAPIS)) {
 					stav = predtim.getStav();
 				} else {
 					stav = StavZdroje.CEKA_NA_RADU;
 				}
-				final StavPolozky nova = predtim != null ? predtim.sTypem(typ.apply(f)) : new StavPolozky(f, nazev.apply(f), typ.apply(f), stav, 0, 0, StavPolozky.NEZNAMO, 0, zap, null);
-				polozky.put(f, nova.sZapnutim(zap).s(stav, 0, stav == StavZdroje.CHYBA && predtim != null ? predtim.getChyba() : null).sVelikosti(velikost.applyAsLong(f)));
+				final StavPolozky nova = predtim != null ? predtim.sTypem(noveTypy.get(f)) : new StavPolozky(f, nazev.apply(f), noveTypy.get(f), stav, 0, 0, StavPolozky.NEZNAMO, 0, zap, vypnutyTyp, null);
+				polozky.put(f, nova.sZapnutim(zap).sTypVypnut(vypnutyTyp).s(stav, 0, stav == StavZdroje.CHYBA && predtim != null ? predtim.getChyba() : null).sVelikosti(velikost.applyAsLong(f)));
 			}
 			obnovSnimek();
 		}
@@ -62,16 +75,22 @@ public class RegistrStavuZdroju {
 	}
 
 	/** Přepnutí zapnutí z jiného vlákna než načítání: stav se změní hned, bez čekání na načítání. */
-	public void prepisZapnuti(final Predicate<File> zapnuto) {
+	public void prepisZapnuti(final Predicate<File> zapnuto, final Predicate<TypZdroje> typVypnut) {
 		boolean zmena = false;
 		synchronized (this) {
 			for (final Map.Entry<File, StavPolozky> e : polozky.entrySet()) {
 				final StavPolozky p = e.getValue();
 				final boolean zap = zapnuto.test(e.getKey());
-				if (zap == p.isZapnuto()) {
+				final boolean vypnutyTyp = typVypnut.test(p.getTyp());
+				if (zap == p.isZapnuto() && vypnutyTyp == p.isTypVypnut()) {
 					continue;
 				}
-				e.setValue(p.sZapnutim(zap).s(zap ? StavZdroje.CEKA_NA_RADU : StavZdroje.VYPNUTO, 0, null));
+				final boolean nacitat = zap && !vypnutyTyp;
+				StavPolozky nova = p.sZapnutim(zap).sTypVypnut(vypnutyTyp);
+				if (nacitat != p.isNacitat()) {
+					nova = nova.s(nacitat ? StavZdroje.CEKA_NA_RADU : StavZdroje.VYPNUTO, 0, null);
+				}
+				e.setValue(nova);
 				zmena = true;
 			}
 			if (zmena) {
@@ -107,7 +126,7 @@ public class RegistrStavuZdroju {
 	private void zmen(final File soubor, final Function<StavPolozky, StavPolozky> uprava) {
 		synchronized (this) {
 			final StavPolozky p = polozky.get(soubor);
-			if (p == null || !p.isZapnuto()) {
+			if (p == null || !p.isNacitat()) {
 				return;
 			}
 			final StavPolozky nova = uprava.apply(p);

@@ -124,7 +124,7 @@ public class MultiNacitac {
 		for (final KeFile f : list) {
 			poSouboru.put(f.getFile(), f);
 		}
-		registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), f -> poSouboru.get(f).getRelativePath().toString(), kesoidModel::maSeNacist, MultiNacitac::velikostNaDisku);
+		registr.prepis(new ArrayList<>(poSouboru.keySet()), f -> typ(poSouboru.get(f)), f -> poSouboru.get(f).getRelativePath().toString(), kesoidModel::jeZdrojZapnut, kesoidModel::isTypVypnut, MultiNacitac::velikostNaDisku);
 	}
 
 	public boolean jeZamcena(final File databaze) {
@@ -159,7 +159,6 @@ public class MultiNacitac {
 			return null;
 		}
 		posledniSeznam = list;
-		prepisRegistr(list);
 		ohlasPrazdneSlozky(list);
 		final File gsak = gsakDir;
 		// Platí čitelnost z doby skenu, pozdější kontrola by mohla vidět složku, která se mezitím vrátila.
@@ -173,6 +172,8 @@ public class MultiNacitac {
 		if (opensak == null || !nedostupne.contains(opensak)) {
 			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
 		}
+		// Až po zařazení nových databází, ty mohou být vypnuté („Načítat až po vybrání“).
+		prepisRegistr(list);
 		if (kesoidModel.getVsechnyKesoidy() == null) {
 			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
