@@ -92,6 +92,30 @@ public class JStatusBarSirkaTest {
 		}
 	}
 
+	@Test
+	public void pravyBlokStojiVzdyVpravoDole() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JStatusBar radek = new JStatusBar();
+		final JPanel okno = new JPanel(new BorderLayout());
+		okno.add(radek, BorderLayout.SOUTH);
+		final JPanel pravy = (JPanel) pole(radek, "pravyBlok");
+		final int plna = radek.getPreferredSize().width;
+		final int sirkaPraveho = pravy.getPreferredSize().width;
+		for (int sirka = plna / 2; sirka <= plna + 50; sirka += 7) {
+			okno.setSize(sirka, 400);
+			okno.doLayout();
+			radek.doLayout();
+			Assert.assertEquals("šířka " + sirka, sirkaPraveho, pravy.getWidth());
+			Assert.assertEquals("šířka " + sirka, radek.getWidth(), pravy.getX() + pravy.getWidth());
+			Assert.assertEquals("šířka " + sirka, radek.getHeight(), pravy.getY() + pravy.getHeight());
+			for (final Component panel : radek.getComponents()) {
+				if (panel != pravy && panel.isVisible() && panel.getWidth() > 0) {
+					Assert.assertFalse("šířka " + sirka + " " + panel, panel.getBounds().intersects(pravy.getBounds()));
+				}
+			}
+		}
+	}
+
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
 		f.setAccessible(true);
