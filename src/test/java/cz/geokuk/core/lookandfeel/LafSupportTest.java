@@ -11,12 +11,16 @@ import org.junit.*;
 /** Změna vzhledu se projeví ve všech otevřených oknech. */
 public class LafSupportTest {
 
+	private static final String KRUH_FOKUSU = "Table.cellFocusRing";
+
 	private LookAndFeel puvodni;
 
 	@Before
 	public void setUp() {
 		Assume.assumeFalse("potřebuje displej", GraphicsEnvironment.isHeadless());
 		puvodni = UIManager.getLookAndFeel();
+		// Posluchače Aqua (macOS) zůstávají na oknech i po změně vzhledu a při deaktivaci okna čtou barvu, kterou Metal ani Nimbus nemají.
+		UIManager.put(KRUH_FOKUSU, java.awt.Color.BLUE);
 	}
 
 	@After
@@ -28,6 +32,7 @@ public class LafSupportTest {
 				} catch (final UnsupportedLookAndFeelException e) {
 					throw new IllegalStateException(e);
 				}
+				UIManager.put(KRUH_FOKUSU, null);
 			});
 		}
 	}
@@ -51,10 +56,6 @@ public class LafSupportTest {
 		SwingUtilities.invokeAndWait(() -> {
 			try {
 				UIManager.setLookAndFeel(new MetalLookAndFeel());
-				// Zavřená okna z jiných testů se nepřepínají; s kořenem z Aqua by při deaktivaci hledala barvu, kterou Metal nemá (NPE v JDK).
-				for (final java.awt.Window okno : java.awt.Window.getWindows()) {
-					SwingUtilities.updateComponentTreeUI(okno);
-				}
 				final JFrame hlavni = new JFrame();
 				final JButton vHlavnim = new JButton("a");
 				hlavni.add(vHlavnim);
