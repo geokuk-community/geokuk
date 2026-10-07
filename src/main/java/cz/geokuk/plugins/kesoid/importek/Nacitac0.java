@@ -1,9 +1,8 @@
 package cz.geokuk.plugins.kesoid.importek;
 
+import java.io.*;
 import java.sql.SQLException;
 import java.util.Collection;
-
-import java.io.*;
 import java.util.concurrent.Future;
 import java.util.function.LongSupplier;
 import java.util.regex.Pattern;

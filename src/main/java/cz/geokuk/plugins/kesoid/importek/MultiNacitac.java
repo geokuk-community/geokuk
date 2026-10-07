@@ -499,6 +499,9 @@ public class MultiNacitac {
 	private KliceZdroje klicePredem(final KeFile f) {
 		final TypZdroje t = typ(f);
 		final Class<? extends Nacitac0> trida = t == TypZdroje.GEOGET ? GeogetLoader.class : t == TypZdroje.GSAK ? GsakDbLoader.class : t == TypZdroje.OPENSAK ? OpensakDbLoader.class : null;
+		if (trida == null || DatabazeJinehoProgramu.jeZamcena(f.getFile())) {
+			return null;
+		}
 		for (final Nacitac0 n : nacitace) {
 			if (n.getClass() == trida) {
 				try {

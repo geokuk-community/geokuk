@@ -132,7 +132,6 @@ final class DatabazeJinehoProgramu {
 		return sb.toString();
 	}
 
-	/** Zda databázi pořád drží zamčenou jiný program, bez čekání. */
 	/** Jeden sloupec textů z dotazu; s krátkým čekáním na zámek, zamčená databáze se jen nezjistí předem. */
 	static java.util.List<String> jmena(final File soubor, final String dotaz) throws SQLException {
 		final java.util.List<String> vysledek = new java.util.ArrayList<>();
@@ -147,6 +146,7 @@ final class DatabazeJinehoProgramu {
 		return vysledek;
 	}
 
+	/** Zda databázi pořád drží zamčenou jiný program, bez čekání. */
 	static boolean jeZamcena(final File soubor) {
 		try (Connection c = otevri(soubor, 0); Statement s = c.createStatement(); ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM sqlite_master")) {
 			return false;
