@@ -19,6 +19,9 @@ public class JPrepinaceZdroju extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
+	/** Pod touto šířkou okna se skryjí názvy zdrojů, zůstane zaškrtávátko a ikona. */
+	static final int PRAH_KOMPAKTNI = 900;
+
 	private static final int PRODLEVA_ZAVRENI_MS = 350;
 
 	private final ZdrojeModel model;
@@ -27,6 +30,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private final javax.swing.Timer casovacZavreni;
 	private final Map<Typ, JCheckBox> zaskrtavatka = new EnumMap<>(Typ.class);
 	private final Map<Typ, JLabel> ikony = new EnumMap<>(Typ.class);
+	private final java.util.List<JZdrojePopup> tabulky = new java.util.ArrayList<>();
 	private final Map<Typ, JLabel> nazvy = new EnumMap<>(Typ.class);
 
 	public JPrepinaceZdroju(final ZdrojeModel model) {
@@ -34,7 +38,11 @@ public class JPrepinaceZdroju extends JPanel {
 		this.model = model;
 		setBorder(BorderFactory.createEtchedBorder());
 
-		souhrn.add(new JZdrojePopup(model, null));
+		final JLabel popisek = new JLabel("Zdroje:");
+		add(popisek);
+		final JZdrojePopup uplna = new JZdrojePopup(model, null);
+		tabulky.add(uplna);
+		souhrn.add(uplna);
 		// Pohyb nad blokem mimo názvy a ikony (mezery, okraje) ukáže všechny zdroje.
 		addMouseMotionListener(new MouseMotionAdapter() {
 			@Override
@@ -47,7 +55,9 @@ public class JPrepinaceZdroju extends JPanel {
 
 		for (final Typ typ : Typ.values()) {
 			final JPopupMenu popup = vytvorPopup();
-			popup.add(new JZdrojePopup(model, typ));
+			final JZdrojePopup detail = new JZdrojePopup(model, typ);
+			tabulky.add(detail);
+			popup.add(detail);
 			popupyTypu.put(typ, popup);
 
 			final JCheckBox zaskrtavatko = new JCheckBox();
@@ -79,8 +89,37 @@ public class JPrepinaceZdroju extends JPanel {
 			nazvy.put(typ, nazev);
 			add(bunka);
 		}
+		addHierarchyBoundsListener(new java.awt.event.HierarchyBoundsAdapter() {
+			@Override
+			public void ancestorResized(final java.awt.event.HierarchyEvent e) {
+				prizpusob();
+			}
+		});
 		model.addPosluchac(this::obnov);
 		obnov();
+	}
+
+	@Override
+	public void addNotify() {
+		super.addNotify();
+		SwingUtilities.invokeLater(this::prizpusob);
+	}
+
+	private int sirkaOkna() {
+		final Window okno = SwingUtilities.getWindowAncestor(this);
+		return okno != null ? okno.getWidth() : Integer.MAX_VALUE;
+	}
+
+	/** V úzkém okně jen zaškrtávátko a ikona; názvy jsou v tooltipu. */
+	private void prizpusob() {
+		final boolean kompaktni = sirkaOkna() < PRAH_KOMPAKTNI;
+		for (final JLabel n : nazvy.values()) {
+			n.setVisible(!kompaktni);
+		}
+		for (final JZdrojePopup t : tabulky) {
+			t.nastavDostupnouSirku(sirkaOkna());
+		}
+		revalidate();
 	}
 
 	private JPopupMenu vytvorPopup() {
@@ -107,6 +146,7 @@ public class JPrepinaceZdroju extends JPanel {
 			zaskrtavatka.get(typ).setToolTipText(zapnuto ? typ.getNazev() + " vypnout (zruší i probíhající načítání)" : typ.getNazev() + " zapnout");
 			ikony.get(typ).setIcon(zapnuto ? IkonyZdroju.pro(stav) : IkonyZdroju.prazdna());
 			ikony.get(typ).setToolTipText(typ.getNazev() + ": " + stav.getText());
+			nazvy.get(typ).setToolTipText(typ.getNazev());
 			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : Color.GRAY);
 		}
 	}
@@ -116,6 +156,7 @@ public class JPrepinaceZdroju extends JPanel {
 			return;
 		}
 		zavriSeznam();
+		prizpusob();
 		final Dimension d = popup.getPreferredSize();
 		// Těsně nad blokem a uvnitř obrazovky; tabulka všech zdrojů je zarovnaná k pravému okraji bloku, detail k buňce zdroje.
 		final int sirkaObrazovky = Toolkit.getDefaultToolkit().getScreenSize().width;

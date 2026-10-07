@@ -37,9 +37,21 @@ public class PrototypStavovehoRadku {
 
 	/** Řádek: vlevo zbytek jako dnes, vpravo pevné bloky Výlet a Zdroje; ve verzi 6.4.0 je u výletu rozbalovač pojmenovaného výletu. */
 	private static JPanel sestavListu(final ZdrojeModel zdroje, final VyletyModel vylety, final boolean verze64, final JPrepinaceZdroju[] prepinace, final JVyletCombo[] combo) {
+		return sestavListu(zdroje, vylety, verze64, false, prepinace, combo);
+	}
+
+	/** V úzkém okně se levá část zalomí do dvou řádků (zde jen napodobeno), pravé bloky zůstávají na místě. */
+	private static JPanel sestavListu(final ZdrojeModel zdroje, final VyletyModel vylety, final boolean verze64, final boolean zalomit, final JPrepinaceZdroju[] prepinace, final JVyletCombo[] combo) {
 		final JPanel vlevo = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
-		vlevo.add(panel("Myš:", "50°05'12.3\"N, 14°25'01.7\"E", "Z=14"));
-		vlevo.add(panel("Vše:", "58211/54008", "Filtr:", "12880/12104"));
+		final JPanel mys = panel("Myš:", "50°05'12.3\"N, 14°25'01.7\"E", "Z=14");
+		final JPanel pocty = panel("Vše:", "58211/54008", "Filtr:", "12880/12104");
+		if (zalomit) {
+			vlevo.setLayout(new BoxLayout(vlevo, BoxLayout.Y_AXIS));
+			mys.setAlignmentX(Component.LEFT_ALIGNMENT);
+			pocty.setAlignmentX(Component.LEFT_ALIGNMENT);
+		}
+		vlevo.add(mys);
+		vlevo.add(pocty);
 		final JPanel vpravo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
 		final JPanel vylet;
 		if (verze64) {
@@ -134,6 +146,31 @@ public class PrototypStavovehoRadku {
 		SwingUtilities.invokeAndWait(() -> combo[0].ukazMenu(combo[0].getComponent(1)));
 		Thread.sleep(500);
 		snimek(robot, okno[0], new File(slozka, "7-okno-6.4.0-vylety.png"));
+		SwingUtilities.invokeAndWait(() -> {
+			okno[0].setVisible(false);
+			final JFrame uzke = new JFrame("Úzké okno");
+			final JPanel mapa = new JPanel();
+			mapa.setBackground(new Color(0xDDE8D0));
+			mapa.setPreferredSize(new Dimension(800, 470));
+			uzke.add(mapa, BorderLayout.CENTER);
+			lista[0] = sestavListu(zdroje, vylety, false, true, prepinace, new JVyletCombo[1]);
+			uzke.add(lista[0], BorderLayout.SOUTH);
+			uzke.pack();
+			uzke.setLocation(20, 20);
+			uzke.setVisible(true);
+			okno[0] = uzke;
+		});
+		Thread.sleep(800);
+		snimek(robot, okno[0], new File(slozka, "8-uzke-okno-800.png"));
+		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSouhrn());
+		Thread.sleep(500);
+		snimek(robot, okno[0], new File(slozka, "9-uzke-uplna-tabulka.png"));
+		SwingUtilities.invokeAndWait(() -> {
+			prepinace[0].zavriSeznam();
+			prepinace[0].ukazTyp(Typ.GEOGET);
+		});
+		Thread.sleep(500);
+		snimek(robot, okno[0], new File(slozka, "10-uzke-detail-geoget.png"));
 		System.exit(0);
 	}
 

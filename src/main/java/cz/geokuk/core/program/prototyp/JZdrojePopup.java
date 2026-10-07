@@ -33,11 +33,16 @@ public class JZdrojePopup extends JPanel {
 		}
 	}
 
+	static final int PLNA_SIRKA = 776;
+
 	private final ZdrojeModel model;
 	/** Typ, jehož položky se ukazují; null je souhrn po typech. */
 	private final Typ zobrazenyTyp;
 	private final List<Radek> radky = new ArrayList<>();
 	private final JTable tabulka;
+	private final JScrollPane scroll;
+	private final javax.swing.table.TableColumn sloupecVelikost;
+	private boolean uzky;
 
 	private final AbstractTableModel tm = new AbstractTableModel() {
 		private static final long serialVersionUID = 1L;
@@ -114,7 +119,7 @@ public class JZdrojePopup extends JPanel {
 			@Override
 			public String getToolTipText(final java.awt.event.MouseEvent e) {
 				final int r = rowAtPoint(e.getPoint());
-				if (r < 0 || columnAtPoint(e.getPoint()) != 3) {
+				if (r < 0 || convertColumnIndexToModel(columnAtPoint(e.getPoint())) != 3) {
 					return null;
 				}
 				final Polozka p = radky.get(r).polozka;
@@ -132,9 +137,10 @@ public class JZdrojePopup extends JPanel {
 		for (int i = 0; i < sirky.length; i++) {
 			tabulka.getColumnModel().getColumn(i).setPreferredWidth(sirky[i]);
 		}
-		final JScrollPane scroll = new JScrollPane(tabulka);
-		scroll.setPreferredSize(new Dimension(760, 22 * (zobrazenyTyp == null ? Typ.values().length + model.getPolozky().size() : model.getPolozky(zobrazenyTyp).size() + 1) + 30));
+		scroll = new JScrollPane(tabulka);
+		scroll.setPreferredSize(new Dimension(PLNA_SIRKA - 16, 22 * (zobrazenyTyp == null ? Typ.values().length + model.getPolozky().size() : model.getPolozky(zobrazenyTyp).size() + 1) + 30));
 		add(scroll, BorderLayout.CENTER);
+		sloupecVelikost = tabulka.getColumnModel().getColumn(2);
 
 		model.addPosluchac(this::obnov);
 		obnov();
@@ -152,6 +158,23 @@ public class JZdrojePopup extends JPanel {
 			}
 		}
 		tm.fireTableDataChanged();
+	}
+
+	/** V úzkém okně se tabulka zúží na šířku okna a odpadne sloupec Velikost. */
+	public void nastavDostupnouSirku(final int sirka) {
+		final boolean nove = sirka < JPrepinaceZdroju.PRAH_KOMPAKTNI;
+		if (nove != uzky) {
+			uzky = nove;
+			if (nove) {
+				tabulka.removeColumn(sloupecVelikost);
+			} else {
+				tabulka.addColumn(sloupecVelikost);
+				tabulka.moveColumn(tabulka.getColumnCount() - 1, 2);
+			}
+		}
+		final int vyska = scroll.getPreferredSize().height;
+		scroll.setPreferredSize(new Dimension(Math.min(PLNA_SIRKA, sirka) - 16, vyska));
+		revalidate();
 	}
 
 	private JButton odkaz(final String text, final boolean zapnout) {
@@ -230,8 +253,9 @@ public class JZdrojePopup extends JPanel {
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public Component getTableCellRendererComponent(final JTable t, final Object v, final boolean sel, final boolean fokus, final int r, final int c) {
-			super.getTableCellRendererComponent(t, v, false, false, r, c);
+		public Component getTableCellRendererComponent(final JTable t, final Object v, final boolean sel, final boolean fokus, final int r, final int sloupec) {
+			super.getTableCellRendererComponent(t, v, false, false, r, sloupec);
+			final int c = t.convertColumnIndexToModel(sloupec);
 			final Radek radek = radky.get(r);
 			final Polozka p = radek.polozka;
 			setIcon(null);
