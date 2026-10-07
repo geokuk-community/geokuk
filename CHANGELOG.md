@@ -3,6 +3,8 @@
 ## 6.3.0
 
 ### Změny
+- Zapnutí nebo vypnutí zdroje v Přehledu zdrojů načte znovu jen změněné zdroje a ty, které
+  se s nimi překrývají (stejné keše ve více zdrojích); ostatní zůstanou načtené.
 - Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
 - Přehled zdrojů se otevírá rychleji a po novém načtení keší ukazuje
   aktuální stav.
