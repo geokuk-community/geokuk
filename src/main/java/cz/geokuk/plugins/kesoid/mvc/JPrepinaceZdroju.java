@@ -29,7 +29,12 @@ public class JPrepinaceZdroju extends JPanel {
 	/** Okraj aktivní plochy popisku a názvu; vedle zaškrtávátka a ikony zůstává místo, které popup nevyvolá. */
 	private static final int PADDING = 3;
 
-	static final int PRODLEVA_ZAVRENI_MS = 350;
+	/** Jak dlouho musí myš zůstat na popisku či názvu, než se popup otevře. */
+	static final int PRODLEVA_OTEVRENI_MS = 150;
+	/** Když už je otevřený jiný popup: přejetí přes jiný název cestou k popupu ho nepřepne. */
+	static final int PRODLEVA_PREPNUTI_MS = 500;
+	/** Jak dlouho smí být myš mimo blok i popup, než se popup zavře. */
+	static final int PRODLEVA_ZAVRENI_MS = 500;
 	private static final int KROK_HLIDANI_MS = 50;
 
 	static final int VYSKA = 20;
@@ -46,6 +51,10 @@ public class JPrepinaceZdroju extends JPanel {
 	private final javax.swing.Timer hlidaniZavreni;
 	/** Od kdy je myš mimo blok i popup, -1 když není. */
 	private long mimoOd = -1;
+	/** Popup, který se otevře, když na jeho cíli myš vydrží; null, když se nic nečeká. */
+	private JComponent cekajici;
+	private Runnable cekajiciUkazani;
+	private long cekaOd;
 	/** Popup bez zachytávání myši a fokusu, aby první klik mimo něj (třeba na zaškrtávátko) nepropadl. */
 	private Popup popup;
 	private JComponent obsahPopupu;
@@ -61,7 +70,12 @@ public class JPrepinaceZdroju extends JPanel {
 		popisek.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(final MouseEvent e) {
-				ukazSouhrn();
+				naCil(souhrn, JPrepinaceZdroju.this::ukazSouhrn, System.currentTimeMillis());
+			}
+
+			@Override
+			public void mouseExited(final MouseEvent e) {
+				opustenCil(souhrn);
 			}
 		});
 		natahni(popisek);
@@ -103,15 +117,25 @@ public class JPrepinaceZdroju extends JPanel {
 			nazev.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseEntered(final MouseEvent e) {
-					ukazTyp(typ);
+					naCil(popupyTypu.get(typ), () -> ukazTyp(typ), System.currentTimeMillis());
+				}
+
+				@Override
+				public void mouseExited(final MouseEvent e) {
+					opustenCil(popupyTypu.get(typ));
 				}
 			});
 			ikona.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseEntered(final MouseEvent e) {
 					if (!nazev.isVisible()) {
-						ukazTyp(typ);
+						naCil(popupyTypu.get(typ), () -> ukazTyp(typ), System.currentTimeMillis());
 					}
+				}
+
+				@Override
+				public void mouseExited(final MouseEvent e) {
+					opustenCil(popupyTypu.get(typ));
 				}
 			});
 			natahni(zaskrtavatko);
@@ -133,7 +157,7 @@ public class JPrepinaceZdroju extends JPanel {
 		}
 		add(Box.createHorizontalStrut(2));
 
-		hlidaniZavreni = new javax.swing.Timer(KROK_HLIDANI_MS, e -> zavriKdyzMimo());
+		hlidaniZavreni = new javax.swing.Timer(KROK_HLIDANI_MS, e -> tik());
 		addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
 			@Override
 			public void ancestorResized(final HierarchyEvent e) {
@@ -402,19 +426,41 @@ public class JPrepinaceZdroju extends JPanel {
 		return popupyTypu.get(typ);
 	}
 
-	private void zavriKdyzMimo() {
-		final PointerInfo info = popup != null ? MouseInfo.getPointerInfo() : null;
-		if (info == null) {
-			if (popup == null) {
-				hlidaniZavreni.stop();
-			}
+	/** Myš vjela na popisek či název: popup se otevře nebo přepne, až na něm vydrží. */
+	void naCil(final JComponent obsah, final Runnable ukazani, final long ted) {
+		if (obsahPopupu == obsah) {
+			cekajici = null;
 			return;
 		}
-		zavriKdyzMimo(info.getLocation(), System.currentTimeMillis());
+		cekajici = obsah;
+		cekajiciUkazani = ukazani;
+		cekaOd = ted;
+		hlidaniZavreni.start();
 	}
 
-	/** Zavře popup, když je myš mimo blok i popup aspoň {@link #PRODLEVA_ZAVRENI_MS}. */
-	void zavriKdyzMimo(final Point mys, final long ted) {
+	void opustenCil(final JComponent obsah) {
+		if (cekajici == obsah) {
+			cekajici = null;
+		}
+	}
+
+	private void tik() {
+		final PointerInfo info = MouseInfo.getPointerInfo();
+		if (info != null) {
+			tik(info.getLocation(), System.currentTimeMillis());
+		}
+		if (popup == null && cekajici == null) {
+			hlidaniZavreni.stop();
+		}
+	}
+
+	/** Otevře čekající popup, když na cíli myš vydržela, a zavře otevřený, když je myš mimo blok i popup aspoň {@link #PRODLEVA_ZAVRENI_MS}. */
+	void tik(final Point mys, final long ted) {
+		if (cekajici != null && ted - cekaOd >= (popup == null ? PRODLEVA_OTEVRENI_MS : PRODLEVA_PREPNUTI_MS)) {
+			final Runnable ukazani = cekajiciUkazani;
+			cekajici = null;
+			ukazani.run();
+		}
 		if (obsahPopupu == null || obsahuje(this, mys) || obsahuje(obsahPopupu, mys)) {
 			mimoOd = -1;
 			return;
@@ -423,7 +469,7 @@ public class JPrepinaceZdroju extends JPanel {
 			mimoOd = ted;
 		} else if (ted - mimoOd >= PRODLEVA_ZAVRENI_MS) {
 			zavriSeznam();
-			hlidaniZavreni.stop();
+			cekajici = null;
 		}
 	}
 

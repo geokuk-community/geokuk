@@ -127,13 +127,31 @@ public class JPrepinaceZdrojuTest {
 	@Test
 	public void popisekOteviraUplnouANazevDetail() throws Exception {
 		naEdt(() -> {
-			najed(blok.getPopisek());
+			otevri(blok.getPopisek());
 			Assert.assertSame(blok.getObsahSouhrnu(), blok.viditelny());
-			najed(blok.getNazev(TypZdroje.GSAK));
+			otevri(blok.getNazev(TypZdroje.GSAK));
 			Assert.assertSame(blok.getObsahDetailu(TypZdroje.GSAK), blok.viditelny());
-			najed(blok.getIkona(TypZdroje.GEOGET));
+			otevri(blok.getIkona(TypZdroje.GEOGET));
 			Assert.assertSame("ikona s názvem detail neotvírá", blok.getObsahDetailu(TypZdroje.GSAK), blok.viditelny());
 		});
+	}
+
+	/** Najetí a vydržení na prvku, dokud se popup neotevře či nepřepne. */
+	private void otevri(final JComponent c) {
+		najed(c);
+		blok.tik(stred(c), System.currentTimeMillis() + JPrepinaceZdroju.PRODLEVA_PREPNUTI_MS);
+	}
+
+	private static Point stred(final JComponent c) {
+		final Point p = c.getLocationOnScreen();
+		return new Point(p.x + c.getWidth() / 2, p.y + c.getHeight() / 2);
+	}
+
+	private static void odjed(final JComponent c) {
+		final java.awt.event.MouseEvent e = new java.awt.event.MouseEvent(c, java.awt.event.MouseEvent.MOUSE_EXITED, 0, 0, 2, 2, 0, false);
+		for (final java.awt.event.MouseListener l : c.getMouseListeners()) {
+			l.mouseExited(e);
+		}
 	}
 
 	private static void najed(final JComponent c) {
@@ -146,13 +164,13 @@ public class JPrepinaceZdrojuTest {
 	@Test
 	public void popupTesneNadBlokemAUvnitrObrazovky() throws Exception {
 		naEdt(() -> {
-			najed(blok.getPopisek());
+			otevri(blok.getPopisek());
 			final JComponent p = blok.viditelny();
 			final Point bp = blok.getLocationOnScreen();
 			final Point pp = p.getLocationOnScreen();
 			Assert.assertEquals(bp.y, pp.y + p.getHeight());
 			Assert.assertEquals("úplná zarovnaná vpravo", bp.x + blok.getWidth(), pp.x + p.getWidth());
-			najed(blok.getNazev(TypZdroje.GPX));
+			otevri(blok.getNazev(TypZdroje.GPX));
 			final JComponent d = blok.viditelny();
 			Assert.assertEquals(bp.y, d.getLocationOnScreen().y + d.getHeight());
 			final Rectangle obrazovka = blok.getGraphicsConfiguration().getBounds();
@@ -161,19 +179,19 @@ public class JPrepinaceZdrojuTest {
 	}
 
 	@Test
-	public void zaviraSePo350msMimo() throws Exception {
+	public void zaviraSePo500msMimo() throws Exception {
 		naEdt(() -> {
-			najed(blok.getPopisek());
+			otevri(blok.getPopisek());
 			final Point mimo = new Point(blok.getLocationOnScreen().x - 300, blok.getLocationOnScreen().y + 5);
 			final Point uvnitr = new Point(blok.getLocationOnScreen().x + 5, blok.getLocationOnScreen().y + 5);
-			blok.zavriKdyzMimo(mimo, 1000);
-			blok.zavriKdyzMimo(mimo, 1349);
+			blok.tik(mimo, 1000);
+			blok.tik(mimo, 1499);
 			Assert.assertNotNull(blok.viditelny());
-			blok.zavriKdyzMimo(uvnitr, 1360);
-			blok.zavriKdyzMimo(mimo, 1400);
-			blok.zavriKdyzMimo(mimo, 1749);
+			blok.tik(uvnitr, 1510);
+			blok.tik(mimo, 1600);
+			blok.tik(mimo, 2099);
 			Assert.assertNotNull("návrat do bloku odpočet zrušil", blok.viditelny());
-			blok.zavriKdyzMimo(mimo, 1750);
+			blok.tik(mimo, 2100);
 			Assert.assertNull(blok.viditelny());
 		});
 	}
@@ -196,7 +214,7 @@ public class JPrepinaceZdrojuTest {
 			Assert.assertTrue(blok.isKompaktni());
 			Assert.assertTrue(blok.getPreferredSize().width < siroky.width);
 			Assert.assertTrue(blok.getUplna().isUzka());
-			najed(blok.getIkona(TypZdroje.OPENSAK));
+			otevri(blok.getIkona(TypZdroje.OPENSAK));
 			Assert.assertSame(blok.getObsahDetailu(TypZdroje.OPENSAK), blok.viditelny());
 			Assert.assertTrue(blok.viditelny().getWidth() <= 800);
 		});
@@ -209,8 +227,8 @@ public class JPrepinaceZdrojuTest {
 			okno.validate();
 			pred[0] = blok.getBounds();
 			pred[1] = blok.getParent().getBounds();
-			najed(blok.getPopisek());
-			najed(blok.getNazev(TypZdroje.GEOGET));
+			otevri(blok.getPopisek());
+			otevri(blok.getNazev(TypZdroje.GEOGET));
 			data.registr.zacina(data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor());
 			blok.obnov(data.snimek());
 			okno.validate();
@@ -246,6 +264,34 @@ public class JPrepinaceZdrojuTest {
 			for (final JPrepinaceZdroju.Oblast o : blok.oblasti()) {
 				Assert.assertNotEquals(TypZdroje.GSAK, o.typ);
 			}
+		});
+	}
+
+	@Test
+	public void otevreSeAzPoZdrzeniAPrebehnutiNazvuHoNeprepne() throws Exception {
+		naEdt(() -> {
+			final Point naPopisku = stred(blok.getPopisek());
+			final long t0 = System.currentTimeMillis();
+			najed(blok.getPopisek());
+			blok.tik(naPopisku, t0 + JPrepinaceZdroju.PRODLEVA_OTEVRENI_MS - 1);
+			Assert.assertNull("hned se neotevře", blok.viditelny());
+			final long t1 = System.currentTimeMillis();
+			blok.tik(naPopisku, t1 + JPrepinaceZdroju.PRODLEVA_OTEVRENI_MS);
+			Assert.assertSame(blok.getObsahSouhrnu(), blok.viditelny());
+
+			// Cestou k popupu přes název GSAK: krátké přeběhnutí popup nepřepne.
+			final long t2 = System.currentTimeMillis();
+			najed(blok.getNazev(TypZdroje.GSAK));
+			blok.tik(stred(blok.getNazev(TypZdroje.GSAK)), t2 + JPrepinaceZdroju.PRODLEVA_PREPNUTI_MS - 1);
+			odjed(blok.getNazev(TypZdroje.GSAK));
+			blok.tik(naPopisku, t2 + 2 * JPrepinaceZdroju.PRODLEVA_PREPNUTI_MS);
+			Assert.assertSame(blok.getObsahSouhrnu(), blok.viditelny());
+
+			// Vydržení na názvu přepne.
+			final long t3 = System.currentTimeMillis();
+			najed(blok.getNazev(TypZdroje.GSAK));
+			blok.tik(stred(blok.getNazev(TypZdroje.GSAK)), t3 + JPrepinaceZdroju.PRODLEVA_PREPNUTI_MS);
+			Assert.assertSame(blok.getObsahDetailu(TypZdroje.GSAK), blok.viditelny());
 		});
 	}
 }
