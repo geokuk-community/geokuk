@@ -119,6 +119,8 @@ public class JStatusBarSirkaTest {
 	@Test
 	public void naFullHdJedenRadek() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		// Šířky písma se liší podle systému; cílem je běžné písmo Windows.
+		Assume.assumeTrue("jen Windows", System.getProperty("os.name", "").startsWith("Windows"));
 		final JStatusBar radek = new JStatusBar();
 		((JPanel) pole(radek, "odPozice")).setVisible(true);
 		final JPanel okno = new JPanel(new BorderLayout());
