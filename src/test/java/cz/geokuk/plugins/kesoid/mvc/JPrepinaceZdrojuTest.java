@@ -94,6 +94,13 @@ public class JPrepinaceZdrojuTest {
 		Assert.assertSame(IkonyZdroju.pro(StavZdroje.CEKA_NA_ZAPIS), blok.getIkona(TypZdroje.GSAK).getIcon());
 		final String tip = blok.getIkona(TypZdroje.GSAK).getToolTipText();
 		Assert.assertTrue(tip, tip.contains("Zamčeno jiným programem") && tip.contains("Domov.db3") && tip.contains("Zavřete program"));
+
+		for (final cz.geokuk.plugins.kesoid.importek.StavPolozky p : data.snimek().getPolozky(TypZdroje.GEOGET)) {
+			data.registr.cekaNaZapis(p.getSoubor());
+		}
+		naEdt(() -> blok.obnov(data.snimek()));
+		final String dve = blok.getIkona(TypZdroje.GEOGET).getToolTipText();
+		Assert.assertTrue("každá databáze na vlastním řádku: " + dve, dve.contains("<br>Cesko.db3<br>Slovensko.db3<br>Zavřete program"));
 	}
 
 	@Test
