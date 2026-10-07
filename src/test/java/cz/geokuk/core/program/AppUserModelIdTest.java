@@ -21,6 +21,15 @@ public class AppUserModelIdTest {
 		Assert.assertEquals("GeoKuk", AppUserModelId.ID);
 	}
 
+	/** HRESULT S_FALSE (1) je úspěch: za chybu se bere jen záporný. */
+	@Test
+	public void kladnyHresultNeniChyba() {
+		Assert.assertFalse(VytvoritZastupceAction.CSHARP, VytvoritZastupceAction.CSHARP.contains("h!=0"));
+		for (final String volani : new String[] { "PSGetPropertyKeyFromName", "SetValue", "Commit" }) {
+			Assert.assertTrue(volani, VytvoritZastupceAction.CSHARP.contains("if(h<0)throw new Exception(\"" + volani));
+		}
+	}
+
 	/** Nabídka zástupce do Startu se ukáže jen jednou, když to jde a zástupce ještě není. */
 	@Test
 	public void nabidkaStartuSeUkazeJenNaZacatku() {
