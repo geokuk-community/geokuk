@@ -43,11 +43,11 @@ final class StavyZdrojuProTesty {
 		final File gsak = s.pridej(TypZdroje.GSAK, "Domov.db3");
 		final File os = s.pridej(TypZdroje.OPENSAK, "opensak.db");
 		s.prepis();
-		s.registr.hotovo(gpx, 1240, 1240);
-		s.registr.hotovo(gg1, 40100, 38204);
-		s.registr.hotovo(gg2, 4511, 4511);
-		s.registr.hotovo(gsak, 22340, 21050);
-		s.registr.hotovo(os, 6020, 6020);
+		s.registr.hotovo(s.registr.getGenerace(), gpx, 1240, 1240);
+		s.registr.hotovo(s.registr.getGenerace(), gg1, 40100, 38204);
+		s.registr.hotovo(s.registr.getGenerace(), gg2, 4511, 4511);
+		s.registr.hotovo(s.registr.getGenerace(), gsak, 22340, 21050);
+		s.registr.hotovo(s.registr.getGenerace(), os, 6020, 6020);
 		return s;
 	}
 

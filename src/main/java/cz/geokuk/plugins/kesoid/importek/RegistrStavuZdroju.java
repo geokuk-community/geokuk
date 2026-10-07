@@ -24,7 +24,8 @@ public class RegistrStavuZdroju {
 		this.posluchac = posluchac;
 	}
 
-	synchronized int getGenerace() {
+	/** Generace pro zápisy běhu, který začal po posledním přepnutí (testy a ukázky stavu bez načítání). */
+	public synchronized int getGenerace() {
 		return generace;
 	}
 
