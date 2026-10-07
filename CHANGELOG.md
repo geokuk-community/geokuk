@@ -52,6 +52,8 @@
   uživatelské wiki na GitHubu.
 
 ### Opravy
+- Windows: znovu vytvořený zástupce GeoKuku se uloží s ID pro spojení s ikonou
+  na hlavním panelu i tehdy, když Windows zápis ID ohlásí jako beze změny.
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
   se načtou.
