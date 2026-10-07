@@ -3,7 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.util.concurrent.*;
 
 /**
- * Po načtení, které ubralo hodně waypointů (vypnutý velký zdroj), se jednou spustí plný sběr odpadu, aby Java uvolněnou paměť vrátila systému. Mimo EDT a s odkladem, aby
+ * Po načtení, které ubralo aspoň 20 % nebo milion waypointů (vypnutý velký zdroj), se jednou spustí plný sběr odpadu, aby Java uvolněnou paměť vrátila systému. Mimo EDT a s odkladem, aby
  * starý bag už nikdo nedržel; pauza je úměrná zbylým datům.
  */
 final class UvolneniPameti {
@@ -20,7 +20,8 @@ final class UvolneniPameti {
 
 	/** {@code predtim} je počet waypointů minulého bagu, nebo -1 před prvním načtením. */
 	static boolean vyplatiSe(final int predtim, final int ted) {
-		return predtim - ted >= 1000 && ted <= predtim * 4L / 5;
+		final long ubylo = (long) predtim - ted;
+		return ubylo >= 1_000_000 || ubylo >= 1000 && ubylo * 5 >= predtim;
 	}
 
 	static synchronized void naplanuj() {
