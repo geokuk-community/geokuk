@@ -6,6 +6,8 @@
 - Zapnutí nebo vypnutí zdroje v Přehledu zdrojů načte znovu jen změněné zdroje a ty, které
   se s nimi překrývají (stejné keše ve více zdrojích); ostatní zůstanou načtené.
 - Keš, která je ve více zdrojích, se zobrazí ze zdroje s nejnovějšími daty.
+- Paměť uvolněná třeba po vypnutí velkého zdroje keší se po pár minutách
+  nečinnosti vrátí systému.
 - Log a soubor dálkového ovládání už nejdou do sdílené dočasné složky, která
   nepatří uživateli; místo ní se použije složka `.geokuk` v domovské složce.
   Hláška o nezapisovatelné cizí složce říká, že patří jinému uživateli.
