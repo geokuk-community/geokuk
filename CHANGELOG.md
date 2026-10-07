@@ -3,6 +3,9 @@
 ## 6.3.0
 
 ### Změny
+- Log a soubor dálkového ovládání už nejdou do sdílené dočasné složky, která
+  nepatří uživateli; místo ní se použije složka `.geokuk` v domovské složce.
+  Hláška o nezapisovatelné cizí složce říká, že patří jinému uživateli.
 - Ukázka `osm.mapa` je bez vlastní hlavičky User-Agent.
 - Přehled zdrojů se otevírá rychleji a po novém načtení keší ukazuje
   aktuální stav.
