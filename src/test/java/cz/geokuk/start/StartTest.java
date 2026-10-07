@@ -287,4 +287,18 @@ public class StartTest {
 			out.write(1);
 		}
 	}
+
+	@Test
+	public void vraceniPametiJenOdJavy12() {
+		for (final String verze : new String[] { "1.8", "11", "nesmysl", "" }) {
+			final List<String> prikaz = new ArrayList<>();
+			Start.pridejVraceniPameti(prikaz, verze);
+			Assert.assertEquals(verze, Collections.emptyList(), prikaz);
+		}
+		for (final String verze : new String[] { "12", "17", "21", "25" }) {
+			final List<String> prikaz = new ArrayList<>();
+			Start.pridejVraceniPameti(prikaz, verze);
+			Assert.assertEquals(verze, Collections.singletonList("-XX:G1PeriodicGCInterval=60000"), prikaz);
+		}
+	}
 }
