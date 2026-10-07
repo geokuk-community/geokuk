@@ -167,6 +167,9 @@ public class JStatusBar extends JPanel {
 
 	private final JValue jPocetKesiVCestach = new JValue("9999/99");
 
+	/** Výlet vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
+	private final JPanel pravyBlok = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+
 	public JStatusBar() {
 		initComponents();
 	}
@@ -405,11 +408,16 @@ public class JStatusBar extends JPanel {
 		vylety.add(vyletNe);
 		vyletNe.setToolTipText("Počet keší, u kterých je vyznačeno, že je budu ignorovat.");
 
-		vylety.add(jSouborSVyletemPotrebujeUlozit);
-		vylety.add(jSouborSVyletem);
-		vylety.add(jPocetKesiVCestach);
+		final JPanel cesty = createPanel();
+		cesty.add(jSouborSVyletemPotrebujeUlozit);
+		cesty.add(jSouborSVyletem);
+		cesty.add(jPocetKesiVCestach);
 		jPocetKesiVCestach.setToolTipText("Počet waypointů dohromady / počet cest.");
-		add(vylety);
+		add(cesty);
+
+		pravyBlok.add(vylety);
+		add(pravyBlok);
+		layout.vpravo(pravyBlok);
 
 		varovaniPoctuPrekrocenych.setText(textPrekroceni(false, LimityKresleni.VYCHOZI_IKON));
 		varovaniPoctuPrekrocenych.setToolTipText("Přibližte mapu nebo vyfiltrujte zbytečné waypointy.");
