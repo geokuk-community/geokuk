@@ -206,6 +206,29 @@ public class ShodaPostupnehoNacteniTest {
 		Assert.assertTrue("čteno " + nacitac.getPosledniPocetCteni(), nacitac.getPosledniPocetCteni() <= 4 * 2);
 	}
 
+	@Test(timeout = 60_000)
+	public void poVycerpaniOpakovaniSeNaposledyCteVseBezPrevzeti() throws Exception {
+		final File a = gpxKesi("a.gpx", "a", "GC0001");
+		final File b = gpxKesi("b.gpx", "b", "GC0001");
+		final File c = gpxKesi("c.gpx", "c", "GC0100");
+		final boolean[] prepisuje = { false };
+		final int[] volani = { 0 };
+		nacitac = new MultiNacitac(model(() -> zobrazene), new CasyDatZdroju() {
+			@Override
+			synchronized long casPoPrecteni(final File zdroj, final long otiskObsahu, final long casZmeny) {
+				return prepisuje[0] ? ++volani[0] * 1000L : super.casPoPrecteni(zdroj, otiskObsahu, casZmeny);
+			}
+		});
+		nacti();
+		prepisuje[0] = true;
+		dotkniSe(a);
+		dotkniSe(b);
+		nacti();
+		Assert.assertTrue("poslední pokus čte i jinak převzatou skupinu", nacitac.getPosledniPrectene().contains(c));
+		Assert.assertEquals(new HashSet<>(Arrays.asList(a, b, c)), nacitac.getPosledniPrectene());
+		Assert.assertEquals(2, zobrazene.getKesoidy().size());
+	}
+
 	// ---------- náhodné posloupnosti ----------
 
 	@Test

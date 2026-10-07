@@ -246,6 +246,7 @@ public class MultiNacitac {
 		final Map<File, Long> casyPoCteni = new HashMap<>();
 		int pocetCteni = 0;
 		int pokus = 0;
+		boolean posledniPokus = false;
 		while (true) {
 			cteni = new Cteni(new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager()));
 			precti(serazene(list, poradi), kCteni, prevzate, cteni, future, genom, generace);
@@ -259,11 +260,16 @@ public class MultiNacitac {
 			for (final File f : cteni.precteno) {
 				casyPoCteni.put(f, casyDat.casPoPrecteni(f, klice.getOrDefault(f, KliceZdroje.PRAZDNE).otiskObsahu, cteni.casyZmeny.get(f)));
 			}
-			// Bez omezení by se zdroj, který jiný program pořád přepisuje, mohl číst dokola.
-			if (++pokus > 3 || !opakovat(cteni, klice, casyPoCteni, poradi, prevzate, kCteni)) {
+			if (posledniPokus || !opakovat(cteni, klice, casyPoCteni, poradi, prevzate, kCteni)) {
 				break;
 			}
 			poradi.putAll(casyPoCteni);
+			// Zdroj, který jiný program pořád přepisuje, by se četl dokola; naposledy se čte vše bez převzatých skupin, aby keš nebyla v bagu dvakrát.
+			if (++pokus >= 3) {
+				posledniPokus = true;
+				prevzate.clear();
+				kCteni.addAll(otiskyTed.keySet());
+			}
 		}
 		final KesoidImportBuilder builder = cteni.builder;
 		final long startDone = System.currentTimeMillis();
@@ -271,7 +277,7 @@ public class MultiNacitac {
 		final KesBag bag = builder.getKesBag();
 		final Set<File> zamceneTed = cteni.zamceneTed;
 		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
-				+ " (čteno " + pocetCteni + (pokus > 1 ? " v " + pokus + " pokusech" : "") + ", párování a index " + (System.currentTimeMillis() - startDone) / 100 / 10.0 + " s)"
+				+ " (čteno " + pocetCteni + (pokus > 0 ? " v " + (pokus + 1) + " pokusech" : "") + ", párování a index " + (System.currentTimeMillis() - startDone) / 100 / 10.0 + " s)"
 				+ (cteni.vadne.isEmpty() ? "" : ", chyba v souborech " + cteni.vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
 		posledniZapnute = otiskyTed.keySet();
