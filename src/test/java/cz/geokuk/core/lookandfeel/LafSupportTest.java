@@ -17,6 +17,8 @@ public class LafSupportTest {
 	public void setUp() {
 		Assume.assumeFalse("potřebuje displej", GraphicsEnvironment.isHeadless());
 		puvodni = UIManager.getLookAndFeel();
+		// Okno s kořenem z Aqua po přepnutí vzhledu při deaktivaci hledá barvu, kterou Metal ani Nimbus nemají (NPE v JDK na EDT).
+		Assume.assumeFalse("vzhled Aqua (macOS)", "Aqua".equals(puvodni.getID()));
 	}
 
 	@After
