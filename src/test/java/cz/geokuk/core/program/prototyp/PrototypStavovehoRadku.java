@@ -29,6 +29,39 @@ public class PrototypStavovehoRadku {
 		return p;
 	}
 
+	private static JLabel pole(final String text, final String prototyp) {
+		final JLabel l = new JLabel(text);
+		l.setPreferredSize(new Dimension(l.getFontMetrics(l.getFont()).stringWidth(prototyp) + 2, l.getPreferredSize().height));
+		return l;
+	}
+
+	/** Řádek: vlevo zbytek jako dnes, vpravo pevné bloky Výlet a Zdroje; ve verzi 6.4.0 je u výletu rozbalovač pojmenovaného výletu. */
+	private static JPanel sestavListu(final ZdrojeModel zdroje, final VyletyModel vylety, final boolean verze64, final JPrepinaceZdroju[] prepinace, final JVyletCombo[] combo) {
+		final JPanel vlevo = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+		vlevo.add(panel("Myš:", "50°05'12.3\"N, 14°25'01.7\"E", "Z=14"));
+		vlevo.add(panel("Vše:", "58211/54008", "Filtr:", "12880/12104"));
+		final JPanel vpravo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
+		final JPanel vylet;
+		if (verze64) {
+			combo[0] = new JVyletCombo(vylety);
+			vylet = combo[0];
+		} else {
+			vylet = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+			vylet.setBorder(BorderFactory.createEtchedBorder());
+			vylet.add(new JLabel("Výlet:"));
+			vylet.add(pole(String.valueOf(vylety.getLovim()), "9999"));
+			vylet.add(new JLabel("/"));
+			vylet.add(pole(String.valueOf(vylety.getIgnoruji()), "9999"));
+		}
+		vpravo.add(vylet);
+		prepinace[0] = new JPrepinaceZdroju(zdroje);
+		vpravo.add(prepinace[0]);
+		final JPanel lista = new JPanel(new BorderLayout());
+		lista.add(vlevo, BorderLayout.WEST);
+		lista.add(vpravo, BorderLayout.EAST);
+		return lista;
+	}
+
 	public static void main(final String[] args) throws Exception {
 		final ZdrojeModel zdroje = ZdrojeModel.ukazka();
 		final VyletyModel vylety = new VyletyModel();
@@ -40,32 +73,22 @@ public class PrototypStavovehoRadku {
 		vylety.aktivuj("Šumava 2026");
 
 		final JFrame[] okno = new JFrame[1];
-		final JPanel[] lista = new JPanel[1];
+		final JPanel[] lista = new JPanel[2];
 		final JPrepinaceZdroju[] prepinace = new JPrepinaceZdroju[1];
 		final JVyletCombo[] combo = new JVyletCombo[1];
 		final JDialog[] dialogy = new JDialog[1];
+		final JPrepinaceZdroju[] zahozene = new JPrepinaceZdroju[1];
 		SwingUtilities.invokeAndWait(() -> {
 			okno[0] = new JFrame("Prototyp stavového řádku");
 			okno[0].setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			final JPanel mapa = new JPanel();
 			mapa.setBackground(new Color(0xDDE8D0));
-			mapa.setPreferredSize(new Dimension(1180, 470));
-
-			final JPanel vlevo = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
-			vlevo.add(panel("Myš:", "50°05'12.3\"N, 14°25'01.7\"E", "Z=14"));
-			vlevo.add(panel("Vše:", "58211/54008", "Filtr:", "12880/12104"));
-			final JPanel vpravo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
-			prepinace[0] = new JPrepinaceZdroju(zdroje);
-			vpravo.add(prepinace[0]);
-			combo[0] = new JVyletCombo(vylety);
-			vpravo.add(combo[0]);
+			mapa.setPreferredSize(new Dimension(1280, 470));
+			lista[1] = sestavListu(zdroje, vylety, true, zahozene, combo);
+			lista[0] = sestavListu(zdroje, vylety, false, prepinace, new JVyletCombo[1]);
 			if (args.length == 0) {
 				new javax.swing.Timer(400, e -> zdroje.posunNacitani(5)).start();
 			}
-
-			lista[0] = new JPanel(new BorderLayout());
-			lista[0].add(vlevo, BorderLayout.WEST);
-			lista[0].add(vpravo, BorderLayout.EAST);
 			okno[0].add(mapa, BorderLayout.CENTER);
 			okno[0].add(lista[0], BorderLayout.SOUTH);
 			okno[0].pack();
@@ -79,16 +102,17 @@ public class PrototypStavovehoRadku {
 		slozka.mkdirs();
 		final Robot robot = new Robot();
 		Thread.sleep(800);
-		stavyListy(zdroje, lista[0], new File(slozka, "1-lista-stavy.png"));
+		snimek(robot, okno[0], new File(slozka, "1-okno-6.3.0.png"));
+		stavyListy(zdroje, lista[0], new File(slozka, "2-lista-stavy-6.3.0.png"));
 		SwingUtilities.invokeAndWait(() -> prepinace[0].ukazSouhrn());
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "2-uplna-tabulka.png"));
+		snimek(robot, okno[0], new File(slozka, "3-uplna-tabulka.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			prepinace[0].zavriSeznam();
 			prepinace[0].ukazTyp(Typ.GPX);
 		});
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "3-detail-gpx.png"));
+		snimek(robot, okno[0], new File(slozka, "4-detail-gpx.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			prepinace[0].zavriSeznam();
 			final JDialog prehled = new JDialog(okno[0], "Přehled zdrojů", false);
@@ -99,13 +123,17 @@ public class PrototypStavovehoRadku {
 			dialogy[0] = prehled;
 		});
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "4-prehled-zdroju-okno.png"));
+		snimek(robot, okno[0], new File(slozka, "5-prehled-zdroju-okno.png"));
 		SwingUtilities.invokeAndWait(() -> {
 			dialogy[0].dispose();
-			combo[0].ukazMenu(combo[0].getComponent(1));
+			okno[0].remove(lista[0]);
+			okno[0].add(lista[1], BorderLayout.SOUTH);
+			okno[0].validate();
 		});
+		stavyListy(zdroje, lista[1], new File(slozka, "6-lista-stavy-6.4.0.png"));
+		SwingUtilities.invokeAndWait(() -> combo[0].ukazMenu(combo[0].getComponent(1)));
 		Thread.sleep(500);
-		snimek(robot, okno[0], new File(slozka, "5-vylety.png"));
+		snimek(robot, okno[0], new File(slozka, "7-okno-6.4.0-vylety.png"));
 		System.exit(0);
 	}
 

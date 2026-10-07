@@ -3,6 +3,7 @@ package cz.geokuk.core.program.prototyp;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -11,7 +12,7 @@ import javax.swing.*;
 import cz.geokuk.core.program.prototyp.ZdrojeModel.*;
 
 /**
- * Blok stavového řádku: u každého typu zdroje (GPX | GeoGet | GSAK | OpenSAK) zaškrtávátko záměru, ikona stavu a název. Zaškrtávátko zapne či vypne celý typ i během načítání. Najetí na „Zdroje:“ vysune tabulku
+ * Blok stavového řádku: u každého typu zdroje (GPX | GeoGet | GSAK | OpenSAK) zaškrtávátko záměru, ikona stavu a název. Zaškrtávátko zapne či vypne celý typ i během načítání. Najetí na blok vysune tabulku
  * všech typů, najetí na název typu vysune jen jeho soubory nebo databáze.
  */
 public class JPrepinaceZdroju extends JPanel {
@@ -27,7 +28,6 @@ public class JPrepinaceZdroju extends JPanel {
 	private final Map<Typ, JCheckBox> zaskrtavatka = new EnumMap<>(Typ.class);
 	private final Map<Typ, JLabel> ikony = new EnumMap<>(Typ.class);
 	private final Map<Typ, JLabel> nazvy = new EnumMap<>(Typ.class);
-	private final JLabel nadpis = new JLabel("Zdroje:");
 
 	public JPrepinaceZdroju(final ZdrojeModel model) {
 		super(new FlowLayout(FlowLayout.CENTER, 8, 0));
@@ -35,9 +35,13 @@ public class JPrepinaceZdroju extends JPanel {
 		setBorder(BorderFactory.createEtchedBorder());
 
 		souhrn.add(new JZdrojePopup(model, null));
-		nadpis.setToolTipText("Najetím zobrazíte všechny zdroje");
-		nadpis.addMouseListener(najeti(() -> ukaz(souhrn, nadpis)));
-		add(nadpis);
+		// Pohyb nad blokem mimo názvy a ikony (mezery, okraje) ukáže všechny zdroje.
+		addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
+			public void mouseMoved(final MouseEvent e) {
+				ukazSouhrn();
+			}
+		});
 
 		casovacZavreni = new javax.swing.Timer(PRODLEVA_ZAVRENI_MS, e -> zavriKdyzMimo());
 
@@ -60,6 +64,10 @@ public class JPrepinaceZdroju extends JPanel {
 			};
 			ikona.addMouseListener(najeti);
 			nazev.addMouseListener(najeti);
+			ikona.addMouseMotionListener(new MouseMotionAdapter() {
+			});
+			nazev.addMouseMotionListener(new MouseMotionAdapter() {
+			});
 
 			final JPanel bunka = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 			bunka.setOpaque(false);
@@ -90,15 +98,6 @@ public class JPrepinaceZdroju extends JPanel {
 		return popup;
 	}
 
-	private static MouseAdapter najeti(final Runnable akce) {
-		return new MouseAdapter() {
-			@Override
-			public void mouseEntered(final MouseEvent e) {
-				akce.run();
-			}
-		};
-	}
-
 	/** Mění se jen ikona a barva, velikost buněk zůstává, aby se nic v řádku neposouvalo. */
 	private void obnov() {
 		for (final Typ typ : Typ.values()) {
@@ -118,18 +117,18 @@ public class JPrepinaceZdroju extends JPanel {
 		}
 		zavriSeznam();
 		final Dimension d = popup.getPreferredSize();
-		// Těsně nad blokem, zarovnané k přepínači a uvnitř obrazovky, aby mezi nimi nebyla mezera.
+		// Těsně nad blokem a uvnitř obrazovky; tabulka všech zdrojů je zarovnaná k pravému okraji bloku, detail k buňce zdroje.
 		final int sirkaObrazovky = Toolkit.getDefaultToolkit().getScreenSize().width;
-		final int zacatek = SwingUtilities.convertPoint(kotva, 0, 0, this).x;
-		final int zleva = getLocationOnScreen().x + zacatek;
-		final int x = Math.max(-getLocationOnScreen().x, zacatek - Math.max(0, zleva + d.width - sirkaObrazovky));
+		final int vlevo = getLocationOnScreen().x;
+		int x = kotva == this ? getWidth() - d.width : SwingUtilities.convertPoint(kotva, 0, 0, this).x;
+		x = Math.max(-vlevo, Math.min(x, sirkaObrazovky - vlevo - d.width));
 		popup.show(this, x, -d.height);
 		casovacZavreni.start();
 	}
 
 	/** Zobrazí tabulku všech typů zdrojů. */
 	public void ukazSouhrn() {
-		ukaz(souhrn, nadpis);
+		ukaz(souhrn, this);
 	}
 
 	/** Zobrazí jen soubory a databáze jednoho typu. */
