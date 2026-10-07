@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public class KesoidModel extends Model0 {
+public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 	// FIXME tady nemohou být takovéto konstant, mohou se změnit
 	private static final QualAlelaNames VYCHOZI_NECHTENE_ALELY = new QualAlelaNames("fnd:vztah", "dsbl:stav", "arch:stav");
@@ -455,6 +455,12 @@ public class KesoidModel extends Model0 {
 		final Collection<File> changedFiles = Collections2.transform(zdroje.getSubtree(jmenoZdroje), informaceOZdroji -> informaceOZdroji.jmenoZdroje.getFile());
 		log.debug("Změna nastavení načítání ({}): {}", nacitat, changedFiles);
 		zmenZapnute(nacitat ? changedFiles : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : changedFiles, Collections.<TypZdroje, Boolean>emptyMap());
+	}
+
+	/** Zapne nebo vypne jednu položku zdroje (soubor či databázi), jak ji ukazuje {@link StavZdroju}. */
+	public void setNacitatPolozku(final File soubor, final boolean nacitat) {
+		final Collection<File> jedna = Collections.singletonList(soubor);
+		zmenZapnute(nacitat ? jedna : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : jedna, Collections.<TypZdroje, Boolean>emptyMap());
 	}
 
 	public void setOnoff(final boolean onoff) {

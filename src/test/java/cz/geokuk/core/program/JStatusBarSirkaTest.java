@@ -54,12 +54,11 @@ public class JStatusBarSirkaTest {
 		okno.setSize(sirka, 400);
 		final Dimension predDaty = radek.getPreferredSize();
 
-		for (final String pole : new String[] { "souradnice", "souradnicePozice", "celkovePoctyVsude", "filtrovanePocetyVsude", "celkovePoctyVyrez", "filtrovanePocetyVyrez", "jZdrojeKesoiduCas" }) {
+		for (final String pole : new String[] { "souradnice", "souradnicePozice", "celkovePoctyVsude", "filtrovanePocetyVsude", "celkovePoctyVyrez", "filtrovanePocetyVyrez" }) {
 			((JTextComponent) pole(radek, pole)).setText("12345");
 		}
 		((JTextComponent) pole(radek, "souradnice")).setText("N50°04.800 E014°25.200");
 		((JTextComponent) pole(radek, "celkovePoctyVsude")).setText("123456/104337");
-		((JComponent) pole(radek, "jZdrojeKesoiduPocetNenactenych")).setVisible(false);
 		((JPanel) pole(radek, "jFilterProgressPanel")).add(new JProgressBar());
 		final JLabel varovani = (JLabel) pole(radek, "varovaniPoctuPrekrocenych");
 		varovani.setText("Překročen limit 30000 waypointů");
