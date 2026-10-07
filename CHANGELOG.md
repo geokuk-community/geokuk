@@ -47,6 +47,8 @@
   uživatelské wiki na GitHubu.
 
 ### Opravy
+- Zapnutí nebo vypnutí zdroje se projeví i tehdy, když jiný program (třeba
+  otevřený GeoGet) drží zamčenou jinou databázi.
 - Databáze GeoGetu nebo GSAKu, které chybí sloupec nutný pro načtení
   keší, se nenačte a program řekne, který sloupec chybí; ostatní zdroje
   se načtou.
