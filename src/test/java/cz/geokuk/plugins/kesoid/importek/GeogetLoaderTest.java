@@ -90,6 +90,16 @@ public class GeogetLoaderTest {
 
 		final Map<String, GpxWpt> nactene = nacti(db);
 		Assert.assertEquals(new HashSet<>(Arrays.asList("GC00001", "GC00002", "WM00003", "PK00001")), nactene.keySet());
+		// kódy zjištěné předem pokrývají klíče všech waypointů (předpověď překryvu zdrojů)
+		final KliceZdroje.Sberac predem = new KliceZdroje.Sberac();
+		for (final String jmeno : new GeogetLoader().jmenaPredem(db)) {
+			predem.pridej(KliceZdroje.klicJmena(jmeno));
+		}
+		final KliceZdroje.Sberac nacteno = new KliceZdroje.Sberac();
+		for (final String jmeno : nactene.keySet()) {
+			nacteno.pridej(KliceZdroje.klicJmena(jmeno));
+		}
+		Assert.assertEquals(nacteno.hotovo().klice.length, predem.hotovo().spolecnych(nacteno.hotovo()));
 
 		final GpxWpt nalezena = nactene.get("GC00001");
 		Assert.assertEquals(50.125, nalezena.wgs.lat, 1e-9);

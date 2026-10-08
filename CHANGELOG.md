@@ -16,6 +16,8 @@
   načtené. Přehled zdrojů se otevírá rychleji a po novém načtení ukazuje
   aktuální stav.
 - Keš, která je ve více zdrojích, se zobrazí ze zdroje s nejnovějšími daty.
+- Zapnutí databáze, která byla od spuštění vypnutá a překrývá se s jinými zdroji,
+  ji přečte jen jednou.
 - Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
   zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
 - Kešoidy > Limity kreslení…: nastavitelný nejvyšší počet ikon

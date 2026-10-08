@@ -45,6 +45,7 @@ public class MultiNacitac {
 	private Set<String> ulozeneCasy;
 	private volatile Set<File> posledniPrectene = Collections.emptySet();
 	private volatile int posledniPocetCteni;
+	private volatile List<String> posledniRozpusteni = Collections.emptyList();
 
 	private volatile File geogetDir;
 	private volatile File gsakDir;
@@ -232,7 +233,19 @@ public class MultiNacitac {
 				znameKlice.put(f, z.klice);
 			}
 		}
-		rozpustPrekryte(znameKlice, prevzate, kCteni);
+		// Databáze s neznámými klíči (od startu vypnutá): stačí kódy, jinak by se překryv ukázal až po čtení a běh by se opakoval.
+		if (!prevzate.isEmpty()) {
+			for (final File f : kCteni) {
+				if (!znameKlice.containsKey(f)) {
+					final KliceZdroje predem = klicePredem(poSouboru.get(f));
+					if (predem != null) {
+						znameKlice.put(f, predem);
+					}
+				}
+			}
+		}
+		posledniRozpusteni = new ArrayList<>();
+		rozpustPrekryte(znameKlice, prevzate, kCteni, poSouboru);
 		final long start = System.currentTimeMillis();
 		Diagnostika.zaznamenej("Načítání keší: " + popisSouboru(list) + (kCteni.size() < otiskyTed.size() ? ", beze čtení " + (otiskyTed.size() - kCteni.size()) : ""));
 		final Map<File, String> otiskyPredCtenim = new HashMap<>();
@@ -260,7 +273,7 @@ public class MultiNacitac {
 			for (final File f : cteni.precteno) {
 				casyPoCteni.put(f, casyDat.casPoPrecteni(f, klice.getOrDefault(f, KliceZdroje.PRAZDNE).otiskObsahu, cteni.casyZmeny.get(f)));
 			}
-			if (posledniPokus || !opakovat(cteni, klice, casyPoCteni, poradi, prevzate, kCteni)) {
+			if (posledniPokus || !opakovat(cteni, klice, casyPoCteni, poradi, prevzate, kCteni, poSouboru)) {
 				break;
 			}
 			poradi.putAll(casyPoCteni);
@@ -417,7 +430,7 @@ public class MultiNacitac {
 	 * ve špatném pořadí vůči zdrojům, se kterými se překrývá. Pak se běh opakuje se skupinou mezi čtenými a se správným pořadím.
 	 */
 	private boolean opakovat(final Cteni cteni, final Map<File, KliceZdroje> klice, final Map<File, Long> casyPoCteni, final Map<File, Long> poradi, final Set<SkupinyZdroju.Skupina> prevzate,
-			final Set<File> kCteni) {
+			final Set<File> kCteni, final Map<File, KeFile> poSouboru) {
 		final Map<File, KliceZdroje> ctene = new HashMap<>();
 		for (final File f : cteni.zkouseno) {
 			ctene.put(f, cteni.precteno.contains(f) ? klice.getOrDefault(f, KliceZdroje.PRAZDNE) : kliceNeprecteneho(f, klice));
@@ -443,6 +456,7 @@ public class MultiNacitac {
 		boolean opakovat = false;
 		for (int i = 0; i < skupiny.size(); i++) {
 			if (sCtenym.contains(komponenta[soubory.size() + i])) {
+				zaznamenejRozpusteni(skupiny.get(i), ctene, poSouboru, "zjištěno po čtení");
 				prevzate.remove(skupiny.get(i));
 				kCteni.addAll(skupiny.get(i).otisky.keySet());
 				opakovat = true;
@@ -458,7 +472,7 @@ public class MultiNacitac {
 	}
 
 	/** Převzaté skupiny, které sdílejí klíč se zdrojem ke čtení, se přečtou s ním. */
-	private static void rozpustPrekryte(final Map<File, KliceZdroje> ctene, final Set<SkupinyZdroju.Skupina> prevzate, final Set<File> kCteni) {
+	private void rozpustPrekryte(final Map<File, KliceZdroje> ctene, final Set<SkupinyZdroju.Skupina> prevzate, final Set<File> kCteni, final Map<File, KeFile> poSouboru) {
 		if (ctene.isEmpty() || prevzate.isEmpty()) {
 			return;
 		}
@@ -474,10 +488,63 @@ public class MultiNacitac {
 		}
 		for (int i = 0; i < skupiny.size(); i++) {
 			if (sCtenym.contains(komponenta[ctene.size() + i])) {
+				zaznamenejRozpusteni(skupiny.get(i), ctene, poSouboru, "zjištěno předem");
 				prevzate.remove(skupiny.get(i));
 				kCteni.addAll(skupiny.get(i).otisky.keySet());
 			}
 		}
+	}
+
+	/** Klíče databáze z jejích kódů, bez čtení ostatních údajů; null u GPX, zamčené nebo nečitelné. */
+	private KliceZdroje klicePredem(final KeFile f) {
+		final TypZdroje t = typ(f);
+		final Class<? extends Nacitac0> trida = t == TypZdroje.GEOGET ? GeogetLoader.class : t == TypZdroje.GSAK ? GsakDbLoader.class : t == TypZdroje.OPENSAK ? OpensakDbLoader.class : null;
+		if (trida == null || DatabazeJinehoProgramu.jeZamcena(f.getFile())) {
+			return null;
+		}
+		for (final Nacitac0 n : nacitace) {
+			if (n.getClass() == trida) {
+				try {
+					final Collection<String> jmena = n.jmenaPredem(f.getFile());
+					if (jmena == null) {
+						return null;
+					}
+					final KliceZdroje.Sberac s = new KliceZdroje.Sberac();
+					for (final String jmeno : jmena) {
+						s.pridej(KliceZdroje.klicJmena(jmeno));
+					}
+					return s.hotovo();
+				} catch (final Exception e) {
+					log.debug("Kódy zdroje {} předem nejdou zjistit: {}", f, e.toString());
+					return null;
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Do Diagnostiky (bez jmen souborů): kterou skupinu je třeba číst znovu a kvůli kterým zdrojům. */
+	private void zaznamenejRozpusteni(final SkupinyZdroju.Skupina g, final Map<File, KliceZdroje> ctene, final Map<File, KeFile> poSouboru, final String kdy) {
+		int wpt = 0;
+		for (final int[] p : g.pocty.values()) {
+			wpt += p[0];
+		}
+		final List<String> kvuli = new ArrayList<>();
+		for (final Map.Entry<File, KliceZdroje> e : ctene.entrySet()) {
+			final int spolecnych = e.getValue().spolecnych(g.klice);
+			if (spolecnych > 0) {
+				final KeFile kf = poSouboru.get(e.getKey());
+				kvuli.add((kf == null ? "?" : typ(kf).getNazev()) + " " + spolecnych + " klíčů");
+			}
+		}
+		final String zaznam = "Znovu se čte skupina " + g.otisky.size() + " zdrojů (" + wpt + " wpt), překryv: " + (kvuli.isEmpty() ? "přes jiný čtený zdroj" : String.join(", ", kvuli)) + ", " + kdy;
+		posledniRozpusteni.add(zaznam);
+		Diagnostika.zaznamenej(zaznam);
+	}
+
+	/** Záznamy o znovu čtených skupinách z posledního načtení (testy). */
+	List<String> getPosledniRozpusteni() {
+		return posledniRozpusteni;
 	}
 
 	/** Co ovlivňuje obsah načtených keší kromě souborů samotných. */

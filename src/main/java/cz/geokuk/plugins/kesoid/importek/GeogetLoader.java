@@ -323,4 +323,10 @@ public class GeogetLoader extends Nacitac0 {
 		final double trvani = ATimestamp.now().diff(startTime);
 		log.info("{} {} loaded in {} s, it is {} items/s. ", pocet, nazev, trvani / 1000.0, pocet * 1000 / trvani);
 	}
+
+	/** Kódy keší a waypointů; jméno waypointu je prefix a stejná přípona jako kód keše. */
+	@Override
+	Collection<String> jmenaPredem(final File file) throws SQLException {
+		return DatabazeJinehoProgramu.jmena(file, "SELECT id FROM geocache UNION SELECT id FROM waypoint");
+	}
 }

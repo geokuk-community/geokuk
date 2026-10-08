@@ -369,4 +369,21 @@ public class OpensakDbLoaderTest {
 		@Override
 		public void setTrackName(final String nazev) {}
 	}
+
+	/** Kódy zjištěné předem pokrývají klíče všech načtených waypointů, jinak by se překryv zdrojů nepoznal včas. */
+	@Test
+	public void jmenaPredemPokryvajiKliceVsechWaypointu() throws Exception {
+		final KliceZdroje.Sberac s = new KliceZdroje.Sberac();
+		for (final String jmeno : new OpensakDbLoader().jmenaPredem(db)) {
+			s.pridej(KliceZdroje.klicJmena(jmeno));
+		}
+		final KliceZdroje predem = s.hotovo();
+		final java.util.Map<String, GpxWpt> w = nacti(db);
+		Assert.assertTrue(w.size() > 1);
+		for (final String jmeno : w.keySet()) {
+			final KliceZdroje.Sberac jeden = new KliceZdroje.Sberac();
+			jeden.pridej(KliceZdroje.klicJmena(jmeno));
+			Assert.assertEquals(jmeno, 1, predem.spolecnych(jeden.hotovo()));
+		}
+	}
 }

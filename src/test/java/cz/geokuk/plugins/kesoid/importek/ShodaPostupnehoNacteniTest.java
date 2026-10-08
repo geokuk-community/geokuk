@@ -229,6 +229,23 @@ public class ShodaPostupnehoNacteniTest {
 		Assert.assertEquals(2, zobrazene.getKesoidy().size());
 	}
 
+	@Test
+	public void zapnutiDatabazeVypnuteOdStartuSeNeopakuje() throws Exception {
+		final File a = geoget("a.db3", new String[] { "GC0001", "GC0002" }, new String[] { "GC0001:PK" });
+		final File b = geoget("b.db3", new String[] { "GC0001", "GC0003" }, new String[0]);
+		gpxKesi("c.gpx", "c", "GC0100");
+		vypnute.add(b);
+		nacti();
+		vypnute.clear();
+		nacti();
+		Assert.assertEquals(new HashSet<>(Arrays.asList(a, b)), nacitac.getPosledniPrectene());
+		Assert.assertEquals("překryv poznán z kódů předem, bez opakování", 2, nacitac.getPosledniPocetCteni());
+		Assert.assertEquals(1, nacitac.getPosledniRozpusteni().size());
+		final String zaznam = nacitac.getPosledniRozpusteni().get(0);
+		Assert.assertTrue(zaznam, zaznam.contains("GeoGet 1 klíčů") && zaznam.contains("zjištěno předem") && !zaznam.contains("a.db3"));
+		over("zapnutí od startu vypnuté databáze");
+	}
+
 	// ---------- náhodné posloupnosti ----------
 
 	@Test
