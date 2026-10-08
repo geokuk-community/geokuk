@@ -95,8 +95,12 @@ public class JStatusBar extends JPanel {
 		public Dimension getPreferredSize() {
 			final Dimension preferredSize = super.getPreferredSize();
 			final Insets ins = getInsets();
-			final int sirkaPrototypu = getFontMetrics(getFont()).stringWidth(prototyp) + ins.left + ins.right;
-			final int sirka = pevnaSirka ? sirkaPrototypu : Math.max(preferredSize.width, sirkaPrototypu);
+			final FontMetrics fm = getFontMetrics(getFont());
+			final int sirkaTextuPrototypu = sirkaPrototypu(fm, prototyp);
+			final int sirkaPrototypu = sirkaTextuPrototypu + ins.left + ins.right;
+			// Text, který se vejde do prototypu, šířku nemění (JTextField přidává místo pro kurzor).
+			final boolean vejdeSe = getText() == null || fm.stringWidth(getText()) <= sirkaTextuPrototypu;
+			final int sirka = pevnaSirka || vejdeSe ? sirkaPrototypu : Math.max(preferredSize.width, sirkaPrototypu);
 			return new Dimension(sirka + 1, preferredSize.height);
 		}
 
@@ -104,9 +108,23 @@ public class JStatusBar extends JPanel {
 
 	private static final long serialVersionUID = -6267502844907253041L;
 
+	/** Šířka prototypu, ve kterém každá číslice zabírá tolik jako nejširší číslice písma (číslice nemusí být stejně široké). */
+	static int sirkaPrototypu(final FontMetrics fm, final String prototyp) {
+		int cislice = 0;
+		for (char c = '0'; c <= '9'; c++) {
+			cislice = Math.max(cislice, fm.charWidth(c));
+		}
+		int sirka = 0;
+		for (int i = 0; i < prototyp.length(); i++) {
+			final char c = prototyp.charAt(i);
+			sirka += Character.isDigit(c) ? cislice : fm.charWidth(c);
+		}
+		return sirka;
+	}
+
 	private static final String SOURADNICE = new Wgs(-88.888, -178.888).toString();
-	private static final String POCTY = "999999/999999";
-	private static final String POCET = "99999";
+	private static final String POCTY = "9999999/9999999";
+	private static final String POCET = "999999";
 
 	private Mou cur;
 
@@ -158,6 +176,9 @@ public class JStatusBar extends JPanel {
 
 	private final JValue jPocetKesiVCestach = new JValue("9999/99");
 
+	/** Soubor s cestami a počty; jen když nějaké cesty jsou. */
+	private final JPanel cesty = createPanel();
+
 	/** Výlet a zdroje vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
 	private final JPanel pravyBlok = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
@@ -178,6 +199,8 @@ public class JStatusBar extends JPanel {
 	public void onEvent(final CestyChangedEvent aEvent) {
 		final Doc doc = aEvent.getModel().getDoc();
 		// vyletAno.setText(doc.getPocetWaypointu() + "");
+		cesty.setVisible(!doc.isEmpty());
+		revalidate();
 		if (doc.isEmpty()) {
 			jSouborSVyletem.setText(".");
 			jSouborSVyletem.setToolTipText("Výlet není vůbec definován.");
@@ -386,11 +409,11 @@ public class JStatusBar extends JPanel {
 		vylety.add(vyletNe);
 		vyletNe.setToolTipText("Počet keší, u kterých je vyznačeno, že je budu ignorovat.");
 
-		final JPanel cesty = createPanel();
 		cesty.add(jSouborSVyletemPotrebujeUlozit);
 		cesty.add(jSouborSVyletem);
 		cesty.add(jPocetKesiVCestach);
 		jPocetKesiVCestach.setToolTipText("Počet waypointů dohromady / počet cest.");
+		cesty.setVisible(false);
 		add(cesty);
 
 		pravyBlok.add(vylety);
