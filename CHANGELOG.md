@@ -69,6 +69,9 @@
 - Mapy: nové podklady ČR ortofoto a ČR Základní topografická mapa
   z otevřených dat ČÚZK (© ČÚZK, CC BY 4.0). Mimo území České republiky
   zůstane mapa prázdná.
+- Licence GeoKuku, použitých knihoven a mapových podkladů jsou ve složce
+  `licence` (v zipu i v repu). Nápověda > O programu ukazuje i licence
+  mapových podkladů.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
