@@ -69,7 +69,6 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertEquals(set("GC1111"), kody(nacti()));
 
 		pustitA.countDown();
-		Thread.sleep(300);
 		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
 		Assert.assertTrue(nacitac.jeZamcena(b));
 	}
@@ -124,7 +123,6 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertEquals(set("GC1111", "GC000A", "GC000B", "GC2222"), kody(nacti()));
 
 		pustitA.countDown();
-		Thread.sleep(300);
 		Assert.assertEquals(set("GC1111", "GC000A", "GC000C", "GC000B", "GC2222"), kody(nacti()));
 		Assert.assertTrue(nacitac.jeZamcena(b));
 		Assert.assertFalse(nacitac.jeZamcena(a));
@@ -186,7 +184,6 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertEquals("beze změny se neohlašuje znovu", 1, ohlasenaZamceni().size());
 
 		pustitA.countDown();
-		Thread.sleep(300);
 		nacti();
 		Assert.assertEquals(Collections.emptyList(), ohlasenaZamceni().get(1));
 	}
@@ -205,7 +202,6 @@ public class ZamcenaDatabazeOpakovaniTest {
 		Assert.assertEquals(set("GC1111"), kody(nacti()));
 
 		pustitA.countDown();
-		Thread.sleep(300);
 		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
 
 		pridejKes(a, "GC000B");
@@ -231,7 +227,6 @@ public class ZamcenaDatabazeOpakovaniTest {
 		start();
 		nacti();
 		pustitA.countDown();
-		Thread.sleep(300);
 		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
 
 		final File jinde = new File(tmp.getRoot(), "a.db3");
@@ -252,7 +247,6 @@ public class ZamcenaDatabazeOpakovaniTest {
 		start();
 		nacti();
 		pustitA.countDown();
-		Thread.sleep(300);
 		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
 
 		nacitac.setRootDirs(true, gpx, null, null, Collections.emptySet());
@@ -333,9 +327,9 @@ public class ZamcenaDatabazeOpakovaniTest {
 	/** Zamkne databázi; když je zadaný kód, jiný program do ní během zámku přidá keš. */
 	private CountDownLatch zamkni(final File db, final String novaKes) throws Exception {
 		final CountDownLatch zamceno = new CountDownLatch(1);
-		final CountDownLatch pustit = new CountDownLatch(1);
+		final Zamek pustit = new Zamek();
 		zamky.add(pustit);
-		geoget.submit(() -> {
+		pustit.drzitel = geoget.submit(() -> {
 			try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
 				s.execute("BEGIN EXCLUSIVE");
 				if (novaKes != null) {
@@ -349,6 +343,25 @@ public class ZamcenaDatabazeOpakovaniTest {
 		});
 		zamceno.await();
 		return pustit;
+	}
+
+	/** Uvolnění zámku počká, až „jiný program“ zápis dokončí a databázi zavře; pevné čekání na pomalém stroji nestačilo. */
+	private static final class Zamek extends CountDownLatch {
+		volatile Future<?> drzitel;
+
+		Zamek() {
+			super(1);
+		}
+
+		@Override
+		public void countDown() {
+			super.countDown();
+			try {
+				drzitel.get(30, TimeUnit.SECONDS);
+			} catch (final Exception e) {
+				throw new AssertionError("zámek databáze se neuvolnil", e);
+			}
+		}
 	}
 
 	private void zapisGpx(final String jmeno, final String kod) throws Exception {
