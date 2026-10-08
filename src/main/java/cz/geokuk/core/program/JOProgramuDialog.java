@@ -95,9 +95,9 @@ public class JOProgramuDialog extends JMyDialog0 {
 		JOptionPane.showMessageDialog(this, posuv, "Licence a použité knihovny", JOptionPane.PLAIN_MESSAGE);
 	}
 
-	/** Seznam knihoven a jejich licencí a text licence GNU GPL v3, přibalené v programu. */
+	/** Seznam knihoven, mapových podkladů a jejich licencí a text licence GNU GPL v3, přibalené v programu. */
 	static String textLicence() {
-		return precti("/THIRD-PARTY.txt") + "\n\n" + precti("/LICENSE");
+		return precti("/THIRD-PARTY.txt") + "\n\n" + precti("/MAPOVE-PODKLADY.txt") + "\n\n" + precti("/LICENSE");
 	}
 
 	private static String precti(final String zdroj) {
