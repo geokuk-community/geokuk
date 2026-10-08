@@ -503,13 +503,18 @@ public class CestyModel extends Model0 {
 	 */
 	@Override
 	protected void initAndFire() {
-		final boolean mameOtevritVylet = currPrefe().node(FPref.VYLET_node).getBoolean(FPref.JE_OTEVRENY_VYLET_value, false);
-		final File file = currPrefe().node(FPref.VYLET_node).getFile(FPref.AKTUALNI_SOUBOR_value, null);
-		if (mameOtevritVylet && file != null && file.canRead()) {
-			otevri(file);
+		if (otevreVyletPriStartu()) {
+			otevri(currPrefe().node(FPref.VYLET_node).getFile(FPref.AKTUALNI_SOUBOR_value, null));
 		}
 		fireCesta();
 		fire(new PridavaniBoduEvent(false)); // přidávání neprobíhá, tak aŤ se provede příslušný event
+	}
+
+	/** Při startu se otevře výlet, který byl otevřený při minulém ukončení. */
+	public boolean otevreVyletPriStartu() {
+		final boolean mameOtevritVylet = currPrefe().node(FPref.VYLET_node).getBoolean(FPref.JE_OTEVRENY_VYLET_value, false);
+		final File file = currPrefe().node(FPref.VYLET_node).getFile(FPref.AKTUALNI_SOUBOR_value, null);
+		return mameOtevritVylet && file != null && file.canRead();
 	}
 
 	void prevezmiImportovaneCesty(final List<Cesta> cesty) {
