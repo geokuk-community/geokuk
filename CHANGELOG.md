@@ -71,6 +71,9 @@
   zůstane mapa prázdná.
 - Mapy: nový podklad SR ortofoto ze ZBGIS (© GKÚ Bratislava, NLC,
   CC BY 4.0). Mimo území Slovenska zůstane mapa prázdná.
+- Licence GeoKuku, použitých knihoven a mapových podkladů jsou ve složce
+  `licence` (v zipu i v repu). Nápověda > O programu ukazuje i licence
+  mapových podkladů.
 - Mapy.cz už nejde stahovat hromadně do cache (Mapy > Postahovat
   dlaždice); zobrazené dlaždice se do cache ukládají dál.
 

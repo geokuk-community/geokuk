@@ -58,8 +58,7 @@ GeoKuk
 ├── GeoKuk-prvni-spusteni.cmd    první spuštění ve Windows
 ├── GeoKuk.lnk                   zástupce, vytvoří ho GeoKuk
 ├── CTIMNE.txt
-├── LICENSE                      licence GNU GPL v3
-├── THIRD-PARTY.txt              použité knihovny a jejich licence
+├── licence                      licence GeoKuku, knihoven a mapových podkladů
 ├── program
 │   ├── geokuk.jar               program
 │   ├── start.jar                spouštěč
@@ -191,4 +190,5 @@ spustit pro Linux i Windows.
 ## Licence
 
 [GNU GPL v3](LICENSE). Použité knihovny a jejich licence jsou
-v [THIRD-PARTY.txt](THIRD-PARTY.txt).
+v [licence/THIRD-PARTY.txt](licence/THIRD-PARTY.txt), mapové podklady, jejich
+licence a atribuce v [licence/MAPOVE-PODKLADY.txt](licence/MAPOVE-PODKLADY.txt).
