@@ -105,20 +105,32 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 	}
 
 	public Filex vezmiSouborAProver() throws YNejdeTo {
+		final Filex f = vezmiSoubor();
+		prover(f);
+		return f;
+	}
+
+	/** Zadaná cesta, jak se uloží; čte jen pole dialogu, na disk nesahá (EDT). */
+	Filex vezmiSoubor() {
 		prepocitej();
-		File dir = filex.getEffectiveFile();
+		return filex;
+	}
+
+	/** Prověří, případně založí složku; sahá na disk, volá se mimo EDT. */
+	void prover(final Filex f) throws YNejdeTo {
+		File dir = f.getEffectiveFile();
 		log.debug("Prověřuji soubor: " + dir);
 		if (!jenAdresare) {
 			dir = dir.getParentFile();
 		}
 		// Neaktivní složku (třeba GSAK u toho, kdo ho nemá) zakládat nemá smysl.
-		if (!filex.isActive()) {
-			return filex;
+		if (!f.isActive()) {
+			return;
 		}
 		final File slozka = dir;
 		final StavSlozky stav = sLimitem(() -> kontrola.apply(slozka), slozka);
 		if (stav == StavSlozky.CITELNA) {
-			return filex;
+			return;
 		}
 		if (!zakladat) {
 			final String co = label.endsWith(".") ? label.substring(0, label.length() - 1) : label;
@@ -128,7 +140,6 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		if (!sLimitem(slozka::mkdirs, slozka)) {
 			throw new JPrehledSouboru.YNejdeTo("Složku \"" + dir + "\" se nepodařilo vytvořit pro \"" + label + "\"");
 		}
-		return filex;
 	}
 
 	enum StavSlozky {
@@ -155,7 +166,9 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 			Thread.currentThread().interrupt();
 			throw new JPrehledSouboru.YNejdeTo("Kontrola složky \"" + slozka + "\" byla přerušena.");
 		} catch (final ExecutionException e) {
-			throw new JPrehledSouboru.YNejdeTo("Složku \"" + slozka + "\" nejde prověřit: " + e.getCause());
+			log.warn("Prověření složky " + slozka, e.getCause());
+			final String duvod = e.getCause() == null ? null : e.getCause().getMessage();
+			throw new JPrehledSouboru.YNejdeTo("Složku \"" + slozka + "\" nejde prověřit" + (duvod == null || duvod.isEmpty() ? "." : ": " + duvod));
 		}
 	}
 
