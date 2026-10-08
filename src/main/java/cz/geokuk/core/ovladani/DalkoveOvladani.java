@@ -253,7 +253,7 @@ public class DalkoveOvladani {
 		}
 	}
 
-	/** Ve sdílené dočasné složce ji mohl předem založit jiný uživatel a soubor s tokenem pak podvrhnout. */
+	/** Složku mohl předem založit jiný uživatel (cizí nebo sdílená datová složka) a soubor s tokenem pak podvrhnout. */
 	static void overSlozku(final Path adresar) throws IOException {
 		if (Files.isSymbolicLink(adresar)) {
 			throw new IOException("Složka " + adresar + " je odkaz, soubor dálkového ovládání do ní nezapíšu.");

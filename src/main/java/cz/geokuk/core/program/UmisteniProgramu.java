@@ -1,14 +1,6 @@
 package cz.geokuk.core.program;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipal;
 
 import cz.geokuk.start.Start;
 
@@ -41,7 +33,7 @@ public final class UmisteniProgramu {
 		KOREN = Start.koren(JAR_DIR);
 		final String data = System.getProperty(DATA_PROPERTY);
 		DATA_DIR = data != null && !data.isEmpty() ? new File(data).getAbsoluteFile() : new File(KOREN, "data");
-		LOG = log(DATA_DIR, new File(System.getProperty("java.io.tmpdir")));
+		LOG = log(DATA_DIR, new File(System.getProperty("user.home")));
 	}
 
 	/** Složka logu a výpisů chyb. */
@@ -49,47 +41,13 @@ public final class UmisteniProgramu {
 		return LOG;
 	}
 
-	/**
-	 * Log patří do datové složky, když do ní nejde zapisovat, tak do složky GeoKuk v dočasné složce systému. Ta může být
-	 * sdílená (/tmp), proto se tam jde jen do složky, která patří nám a nezapisují do ní ostatní; jinak do domovské složky.
-	 */
-	static File log(final File data, final File docasna) {
+	/** Log patří do datové složky, když do ní nejde zapisovat, tak do složky .geokuk v domovské složce. */
+	static File log(final File data, final File domov) {
 		final File log = new File(data, "log");
 		if (Start.lzeZapsat(log)) {
 			return log;
 		}
-		final File vDocasne = new File(docasna, "GeoKuk");
-		if (patriNam(vDocasne)) {
-			return new File(vDocasne, "log");
-		}
-		return new File(new File(System.getProperty("user.home"), ".geokuk"), "log");
-	}
-
-	/** Složka je naše: není odkaz, vytvořil ji stejný uživatel, který ji teď používá, a nezapisují do ní ostatní (jen POSIX). */
-	static boolean patriNam(final File slozka) {
-		final Path adresar = slozka.toPath();
-		try {
-			if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
-				return Start.lzeZapsat(slozka);
-			}
-			if (!Files.isDirectory(adresar, LinkOption.NOFOLLOW_LINKS)) {
-				if (Files.exists(adresar, LinkOption.NOFOLLOW_LINKS)) {
-					return false;
-				}
-				Files.createDirectories(adresar, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
-			}
-			final Path zkouska = Files.createTempFile(adresar, "vlastnik", ".tmp");
-			final UserPrincipal ja;
-			try {
-				ja = Files.getOwner(zkouska, LinkOption.NOFOLLOW_LINKS);
-			} finally {
-				Files.deleteIfExists(zkouska);
-			}
-			return ja.equals(Files.getOwner(adresar, LinkOption.NOFOLLOW_LINKS))
-					&& !Files.getPosixFilePermissions(adresar, LinkOption.NOFOLLOW_LINKS).contains(PosixFilePermission.OTHERS_WRITE);
-		} catch (final IOException | RuntimeException e) {
-			return false;
-		}
+		return new File(new File(domov, ".geokuk"), "log");
 	}
 
 	private static File umisteniTrid() {
