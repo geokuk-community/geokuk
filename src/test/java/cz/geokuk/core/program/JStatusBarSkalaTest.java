@@ -1,9 +1,9 @@
 package cz.geokuk.core.program;
 
 import java.awt.*;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,14 +31,14 @@ public class JStatusBarSkalaTest {
 		prikaz.add("-cp");
 		prikaz.add(System.getProperty("java.class.path"));
 		prikaz.add(JStatusBarSkalaTest.class.getName());
-		final Process proces = new ProcessBuilder(prikaz).redirectErrorStream(true).start();
+		final File vystupSoubor = File.createTempFile("skala", ".txt");
+		vystupSoubor.deleteOnExit();
+		final Process proces = new ProcessBuilder(prikaz).redirectErrorStream(true).redirectOutput(vystupSoubor).start();
 		final boolean skoncil = proces.waitFor(60, TimeUnit.SECONDS);
-		final ByteArrayOutputStream bajty = new ByteArrayOutputStream();
-		final byte[] buf = new byte[4096];
-		for (int n; skoncil && (n = proces.getInputStream().read(buf)) > 0;) {
-			bajty.write(buf, 0, n);
+		if (!skoncil) {
+			proces.destroyForcibly();
 		}
-		final String vystup = new String(bajty.toByteArray(), StandardCharsets.UTF_8);
+		final String vystup = new String(Files.readAllBytes(vystupSoubor.toPath()), StandardCharsets.UTF_8);
 		Assert.assertTrue("proces nedoběhl: " + vystup, skoncil);
 		Assert.assertEquals(vystup, 0, proces.exitValue());
 	}
