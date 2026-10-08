@@ -18,13 +18,16 @@ import cz.geokuk.util.file.KeFile;
 import cz.geokuk.util.file.Root;
 
 /**
- * Rozpad času načtení databází: {@code MerRozpad geoget=CESTA gsak=CESTA opensak=CESTA ... [kola=3] [vlakna=1,2,4]}.
+ * Rozpad času načtení databází: {@code MerRozpad geoget=CESTA gsak=CESTA opensak=CESTA ... [kola=3] [vlakna=1,2,4] [skupiny=1]}.
  * <p>
  * Bez {@code vlakna}: na zdroj velikost (db + wal), SQL + tvorba GpxWpt (prázdný builder), počty waypointů, přídavných waypointů a tagů; pro všechny zdroje
  * dohromady a pro každý vynechaný čtení + builder, done() (procáci + bag) a z toho bag + index.
  * <p>
  * S {@code vlakna}: všechny zdroje se čtou do prázdného builderu současně, každý ve vlastním vlákně, nejvýš N vláken naráz; pro každé N celkový čas, součet
  * časů zdrojů, procesorový čas vláken a na konci kola zrychlení proti jednomu vláknu. Program sám dnes čte zdroje postupně v jednom vlákně.
+ * <p>
+ * S {@code skupiny=1}: jen kódy waypointů každé databáze (jako předpověď překryvu v programu), skupiny zdrojů sdílejících klíč jména a pro každou dvojici
+ * zdrojů počet společných klíčů s ukázkou kódů. Klíče {@code cgp:} se zjistí až čtením, skupiny tedy můžou být ve skutečnosti větší.
  */
 public class MerRozpad {
 	static ProgressModel progress() {
@@ -89,12 +92,15 @@ public class MerRozpad {
 		final Map<File, String> zdroje = new LinkedHashMap<>();
 		int kol = 3;
 		final List<Integer> vlakna = new ArrayList<>();
+		boolean skupiny = false;
 		for (final String arg : a) {
 			final int i = arg.indexOf('=');
 			final String k = arg.substring(0, i);
 			final String v = arg.substring(i + 1);
 			if (k.equals("kola")) {
 				kol = Integer.parseInt(v);
+			} else if (k.equals("skupiny")) {
+				skupiny = v.equals("1");
 			} else if (k.equals("vlakna")) {
 				for (final String n : v.split(",")) {
 					vlakna.add(Integer.parseInt(n.trim()));
@@ -107,6 +113,10 @@ public class MerRozpad {
 				+ Runtime.getRuntime().maxMemory() / 1_000_000 + " MB");
 		for (final Map.Entry<File, String> z : zdroje.entrySet()) {
 			System.out.println("zdroj " + z.getValue() + " " + z.getKey().getName() + " | " + mb(z.getKey()) + " MB");
+		}
+		if (skupiny) {
+			skupiny(zdroje);
+			return;
 		}
 		for (int kolo = 0; kolo < kol; kolo++) {
 			if (vlakna.isEmpty()) {
@@ -127,6 +137,71 @@ public class MerRozpad {
 					}
 					System.out.println(sb);
 				}
+			}
+		}
+	}
+
+	static Nacitac0 nacitac(final String typ) {
+		if (typ.equals("geoget")) {
+			return new GeogetLoader();
+		} else if (typ.equals("gsak")) {
+			return new GsakDbLoader(GsakParametryNacitani::new);
+		} else {
+			return new OpensakDbLoader();
+		}
+	}
+
+	/** Skupiny podle klíčů jmen z kódů databází, bez čtení ostatních údajů. */
+	static void skupiny(final Map<File, String> zdroje) throws Exception {
+		final List<File> soubory = new ArrayList<>(zdroje.keySet());
+		final List<KliceZdroje> klice = new ArrayList<>();
+		final List<Map<Long, String>> ukazky = new ArrayList<>();
+		for (final File f : soubory) {
+			final long t0 = System.nanoTime();
+			final Collection<String> jmena = nacitac(zdroje.get(f)).jmenaPredem(f);
+			final KliceZdroje.Sberac s = new KliceZdroje.Sberac();
+			final Map<Long, String> kody = new HashMap<>();
+			for (final String jmeno : jmena) {
+				final long klic = KliceZdroje.klicJmena(jmeno);
+				s.pridej(klic);
+				kody.putIfAbsent(klic, jmeno);
+			}
+			final KliceZdroje k = s.hotovo();
+			klice.add(k);
+			ukazky.add(kody);
+			System.out.println("zdroj " + zdroje.get(f) + " " + f.getName() + " | kódů " + jmena.size() + " | klíčů " + k.klice.length + " | " + (System.nanoTime() - t0) / 1_000_000 + " ms");
+		}
+		final int[] komponenty = SkupinyZdroju.komponenty(klice);
+		final Map<Integer, List<Integer>> podleKomponenty = new LinkedHashMap<>();
+		for (int i = 0; i < soubory.size(); i++) {
+			podleKomponenty.computeIfAbsent(komponenty[i], x -> new ArrayList<>()).add(i);
+		}
+		System.out.println("skupin " + podleKomponenty.size() + " z " + soubory.size() + " zdrojů");
+		int c = 0;
+		for (final List<Integer> clenove : podleKomponenty.values()) {
+			long pocet = 0;
+			final StringBuilder sb = new StringBuilder();
+			for (final int i : clenove) {
+				pocet += klice.get(i).klice.length;
+				sb.append(soubory.get(i).getName()).append(", ");
+			}
+			System.out.println("skupina " + ++c + " | zdrojů " + clenove.size() + " | klíčů celkem " + pocet + " | " + sb);
+		}
+		for (int i = 0; i < soubory.size(); i++) {
+			for (int j = i + 1; j < soubory.size(); j++) {
+				final int spolecnych = klice.get(i).spolecnych(klice.get(j));
+				if (spolecnych == 0) {
+					continue;
+				}
+				final StringBuilder sb = new StringBuilder();
+				int n = 0;
+				for (final long klic : klice.get(i).klice) {
+					if (n < 5 && Arrays.binarySearch(klice.get(j).klice, klic) >= 0) {
+						sb.append(ukazky.get(i).get(klic)).append('/').append(ukazky.get(j).get(klic)).append(' ');
+						n++;
+					}
+				}
+				System.out.println("společné " + soubory.get(i).getName() + " × " + soubory.get(j).getName() + " | klíčů " + spolecnych + " | např. " + sb);
 			}
 		}
 	}
