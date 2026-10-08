@@ -91,6 +91,9 @@
   programu po každém načtení keší.
 - Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
   hlášení.
+- Umístění souborů: neexistující nebo nečitelná datová složka GeoGetu,
+  GSAKu nebo OpenSAKu se při uložení ohlásí a nezaloží. Aktivní složka bez
+  databází už nevyvolá chybové hlášení.
 - Uživatelská mapa, která je odkazem na jiný soubor nebo je větší než
   64 kB, se nenačte; hláška o neznámé vlastnosti ukáže jen její začátek.
   Hodnota hlavičky s řídicím znakem (třeba `\r`) se odmítne s chybou při

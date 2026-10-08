@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -51,6 +52,8 @@ public class MultiNacitac {
 	private volatile File gsakDir;
 	private volatile File opensakDir;
 	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
+	/** Kam jde zpráva o špatně zadaných datových složkách; okno se neukazuje, stav složky patří do přehledu zdrojů. */
+	Consumer<String> ohlasovac = zprava -> log.info(zprava);
 
 	/** Databáze, které při posledním načítání zamykal jiný program; znovu se načítá, až je pustí. */
 	private volatile Set<File> zamcene = Collections.emptySet();
@@ -706,12 +709,26 @@ public class MultiNacitac {
 		for (final KeFile f : list) {
 			slozky.remove(f.root.dir);
 		}
+		final StringBuilder zprava = new StringBuilder();
 		for (final Map.Entry<File, String[]> e : slozky.entrySet()) {
 			if (ohlasenePrazdne.add(e.getKey())) {
-				FExceptionDumper.dump(new IOException("V datové složce " + e.getValue()[0] + " \"" + e.getKey() + "\" nejsou žádné databáze (" + e.getValue()[1]
-						+ "). Zkontrolujte složku v Soubor > Umístění souborů."), EExceptionSeverity.DISPLAY, "Prázdná datová složka");
+				zprava.append(popisPrazdneSlozky(e.getKey(), e.getValue()[0], e.getValue()[1])).append('\n');
 			}
 		}
+		if (zprava.length() > 0) {
+			zprava.append("Zkontrolujte složky v Soubor > Umístění souborů.");
+			ohlasovac.accept(zprava.toString());
+		}
+	}
+
+	static String popisPrazdneSlozky(final File slozka, final String program, final String pripona) {
+		if (!slozka.exists()) {
+			return "Datová složka " + program + " \"" + slozka + "\" neexistuje nebo není dostupná.";
+		}
+		if (!jeCitelnaSlozka(slozka)) {
+			return "Datová složka " + program + " \"" + slozka + "\" není čitelná složka.";
+		}
+		return "V datové složce " + program + " \"" + slozka + "\" nejsou žádné databáze (" + pripona + ").";
 	}
 
 	private static String popisChyby(final Exception e) {
