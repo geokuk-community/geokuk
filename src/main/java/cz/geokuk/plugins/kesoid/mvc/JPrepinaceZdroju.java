@@ -16,7 +16,7 @@ import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.lang.FString;
 
 /**
- * Blok stavového řádku „Zdroje:“ a u každého typu zdroje zaškrtávátko, ikona stavu a název. Zaškrtávátko zapne či vypne typ i během načítání. Najetí na popisek vysune
+ * Blok stavového řádku „Zdroje:“ a u každého typu zdroje zaškrtávátko, název a ikona stavu. Zaškrtávátko zapne či vypne typ i během načítání. Najetí na popisek vysune
  * tabulku všech zdrojů, najetí na název (v úzkém okně na ikonu) jen zdroje typu.
  */
 public class JPrepinaceZdroju extends JPanel {
@@ -173,8 +173,8 @@ public class JPrepinaceZdroju extends JPanel {
 			bunka.add(Box.createHorizontalStrut(8));
 			bunka.add(zaskrtavatko);
 			bunka.add(Box.createHorizontalStrut(2));
-			bunka.add(ikona);
 			bunka.add(nazev);
+			bunka.add(ikona);
 			add(bunka);
 			bunky.put(typ, bunka);
 			zaskrtavatka.put(typ, zaskrtavatko);
@@ -356,7 +356,7 @@ public class JPrepinaceZdroju extends JPanel {
 			final JLabel ikona = ikony.get(typ);
 			ikona.setIcon(stav.getProblemSlozky(typ) != null ? IkonyZdroju.pro(StavZdroje.CHYBA) : zapnuto ? IkonyZdroju.pro(stavTypu) : IkonyZdroju.prazdna());
 			ikona.setToolTipText(tooltipIkony(stav, typ));
-			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : Color.GRAY);
+			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : sedaNazvu());
 		}
 		uplna.obnov(stav);
 		for (final JTabulkaZdroju t : detaily.values()) {
@@ -366,6 +366,11 @@ public class JPrepinaceZdroju extends JPanel {
 		if (viditelny != null && !viditelny.getSize().equals(viditelny.getPreferredSize())) {
 			ukaz(viditelny, viditelny == souhrn ? null : kotvaTypu(viditelny), true);
 		}
+	}
+
+	private static Color sedaNazvu() {
+		final Color seda = UIManager.getColor("Label.disabledForeground");
+		return seda != null ? seda : Color.GRAY;
 	}
 
 	static String tooltipZaskrtavatka(final TypZdroje typ, final StavVyberu volba) {
