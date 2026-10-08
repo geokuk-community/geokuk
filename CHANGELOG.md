@@ -60,8 +60,8 @@
   mapy, které se nezobrazí. Ukázka `osm.mapa` je bez vlastní hlavičky
   User-Agent.
 - Na oddálené mapě jsou další waypointy keše (parkoviště, stage) šedé.
-- Stavový řádek se na široké obrazovce vejde na jeden řádek, v úzkém okně
-  se zalomí do dvou; výlet zůstává vpravo.
+- Stavový řádek se na široké obrazovce vejde na jeden řádek, v užším okně
+  se zalomí do více řádků; výlet zůstává vpravo dole.
 - Nápověda (F1 a tlačítka Nápověda v dialozích) otevírá stránky
   uživatelské wiki na GitHubu.
 
