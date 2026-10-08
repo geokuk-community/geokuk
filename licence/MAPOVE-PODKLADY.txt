@@ -6,14 +6,6 @@ a vpravo dole v mapě uvádí jejich atribuci. Níže je u každého podkladu
 poskytovatel, licence nebo podmínky, text atribuce zobrazený v mapě
 a odkazy na podmínky.
 
-Mapy.cz
--------
-Poskytovatel:  Seznam.cz, a.s.
-Atribuce:      © Seznam.cz, a.s. a další
-Podmínky:      https://developer.mapy.com/terms-and-conditions/
-Podklady Mapy.cz se načítají z veřejné adresy mapserver.mapy.cz.
-Provozovatel je poskytuje bez záruky a může je kdykoli omezit nebo ukončit.
-
 OpenStreetMap
 -------------
 Poskytovatel:  OpenStreetMap Foundation (dlaždice tile.openstreetmap.org)
