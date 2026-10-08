@@ -110,7 +110,8 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		c.gridy = 2;
 		c.gridwidth = 2;
 		final JLabel poznamka = new JLabel("Teček je vždy aspoň tolik jako ikon; nejméně " + text(LimityKresleni.MIN_TECEK) + ".");
-		poznamka.setForeground(Color.GRAY);
+		final Color seda = UIManager.getColor("Label.disabledForeground");
+		poznamka.setForeground(seda != null ? seda : Color.GRAY);
 		panel.add(poznamka, c);
 		c.gridy = 3;
 		c.anchor = GridBagConstraints.EAST;
