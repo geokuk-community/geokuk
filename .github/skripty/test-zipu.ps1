@@ -105,10 +105,10 @@ function Ocekavej([bool]$plati, [string]$popis) {
 
 function Registr { @(Get-ChildItem "HKCU:\Software\JavaSoft" -Recurse -ErrorAction SilentlyContinue | ForEach-Object Name) }
 
-# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu (bez složek Windows a PowerShellu, Firefoxu runneru a ikon oznamovací oblasti jiných programů).
+# Soubory a klíče registru, které od času $od vznikly nebo se změnily mimo složku programu (bez složek Windows a PowerShellu, dat aplikací Windows, Firefoxu runneru a ikon oznamovací oblasti jiných programů).
 function ZapsanoMimo([datetime]$od, [string]$slozka) {
     $mista = @($env:APPDATA, $env:LOCALAPPDATA, $env:TEMP, (Join-Path $env:USERPROFILE ".java")) | Where-Object { $_ -and (Test-Path $_) }
-    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and $_.FullName -notlike "$env:APPDATA\Mozilla*" -and $_.FullName -notlike "$env:LOCALAPPDATA\Mozilla*" -and
+    $zmeny = @(Get-ChildItem $mista -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $od -and -not $_.FullName.StartsWith($slozka) -and $_.FullName -notlike "*\Microsoft\*" -and $_.FullName -notlike "$env:APPDATA\Mozilla*" -and $_.FullName -notlike "$env:LOCALAPPDATA\Mozilla*" -and $_.FullName -notlike "$env:LOCALAPPDATA\Packages\*" -and
             $_.Name -notlike "NotifyIconGeneratedAumid_*" -and
             -not ($_.PSIsContainer -and $_.CreationTime -le $od) } |
         ForEach-Object FullName)
