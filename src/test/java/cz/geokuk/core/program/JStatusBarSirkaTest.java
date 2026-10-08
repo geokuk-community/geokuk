@@ -109,7 +109,7 @@ public class JStatusBarSirkaTest {
 			Assert.assertEquals("šířka " + sirka, radek.getHeight(), pravy.getY() + pravy.getHeight());
 			for (final Component panel : radek.getComponents()) {
 				if (panel != pravy && panel.isVisible() && panel.getWidth() > 0) {
-					Assert.assertFalse("šířka " + sirka + " " + panel, panel.getBounds().intersects(pravy.getBounds()));
+					Assert.assertFalse("šířka " + sirka + " " + panel + " pravy " + pravy.getBounds() + " radek " + radek.getSize(), panel.getBounds().intersects(pravy.getBounds()));
 				}
 			}
 		}

@@ -44,7 +44,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private final JComponent souhrn = obal(uplna);
 	private final Map<TypZdroje, JComponent> popupyTypu = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JTabulkaZdroju> detaily = new EnumMap<>(TypZdroje.class);
-	private final Map<TypZdroje, JCheckBox> zaskrtavatka = new EnumMap<>(TypZdroje.class);
+	private final Map<TypZdroje, JButton> zaskrtavatka = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JLabel> ikony = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JLabel> nazvy = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JPanel> bunky = new EnumMap<>(TypZdroje.class);
@@ -101,7 +101,8 @@ public class JPrepinaceZdroju extends JPanel {
 			detaily.put(typ, detail);
 			popupyTypu.put(typ, obal(detail));
 
-			final JCheckBox zaskrtavatko = new JCheckBox(IkonyZdroju.zaskrtavatko(StavVyberu.VYPNUTO)) {
+			// Tlačítko, ne JCheckBox: jeho vlastní stav „vybráno“ by neodpovídal stavu typu (záznam kliknutí v Diagnostice).
+			final JButton zaskrtavatko = new JButton(IkonyZdroju.zaskrtavatko(StavVyberu.VYPNUTO)) {
 				private static final long serialVersionUID = 1L;
 
 				@Override
@@ -111,6 +112,7 @@ public class JPrepinaceZdroju extends JPanel {
 			};
 			zaskrtavatko.setFocusable(false);
 			zaskrtavatko.setOpaque(false);
+			zaskrtavatko.setContentAreaFilled(false);
 			zaskrtavatko.setMargin(new Insets(0, 0, 0, 0));
 			zaskrtavatko.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
 			zaskrtavatko.addActionListener(e -> {
@@ -316,9 +318,8 @@ public class JPrepinaceZdroju extends JPanel {
 			final StavZdroje stavTypu = stav.getStavTypu(typ);
 			final StavVyberu volba = stav.getStavVyberuTypu(typ);
 			final boolean zapnuto = stavTypu != StavZdroje.VYPNUTO;
-			final JCheckBox z = zaskrtavatka.get(typ);
+			final JButton z = zaskrtavatka.get(typ);
 			z.setIcon(IkonyZdroju.zaskrtavatko(volba));
-			z.setSelectedIcon(IkonyZdroju.zaskrtavatko(volba));
 			z.setToolTipText(tooltipZaskrtavatka(typ, volba));
 			final JLabel ikona = ikony.get(typ);
 			ikona.setIcon(zapnuto ? IkonyZdroju.pro(stavTypu) : IkonyZdroju.prazdna());
@@ -340,7 +341,7 @@ public class JPrepinaceZdroju extends JPanel {
 		case VYPNUTO:
 			return typ.getNazev() + " zapnout";
 		case CASTECNE:
-			return typ.getNazev() + ": načítá se jen část položek, kliknutím vypnete";
+			return typ.getNazev() + " vypnout (načítá se jen část položek)";
 		default:
 			return typ.getNazev() + " vypnout";
 		}
@@ -547,7 +548,7 @@ public class JPrepinaceZdroju extends JPanel {
 		return bunky.get(typ);
 	}
 
-	JCheckBox getZaskrtavatko(final TypZdroje typ) {
+	JButton getZaskrtavatko(final TypZdroje typ) {
 		return zaskrtavatka.get(typ);
 	}
 

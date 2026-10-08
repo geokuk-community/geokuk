@@ -78,4 +78,18 @@ public class GeokukMainTest {
 			soubor.delete();
 		}
 	}
+
+	@Test
+	public void hlaskaDruheInstanceJeVzdyNahore() throws Exception {
+		org.junit.Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+			final javax.swing.JDialog dialog = GeokukMain.dialogUzBezi();
+			try {
+				Assert.assertTrue(dialog.isAlwaysOnTop());
+				Assert.assertTrue(dialog.isModal());
+			} finally {
+				dialog.dispose();
+			}
+		});
+	}
 }

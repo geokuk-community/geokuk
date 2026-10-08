@@ -60,6 +60,7 @@
   uživatelské wiki na GitHubu.
 
 ### Opravy
+- Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
 - macOS: změna vzhledu (Skin) z výchozího vzhledu systému už nezpůsobí chybové
   hlášení při přepnutí do jiného okna.
 - Databáze zamčená jiným programem (třeba otevřeným GeoGetem) nezdrží

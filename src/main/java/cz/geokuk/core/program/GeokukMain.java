@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.prefs.BackingStoreException;
 
 import javax.imageio.ImageIO;
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -38,6 +39,13 @@ public class GeokukMain {
 		new GeokukMain().execute(args);
 	}
 
+	/** Hláška druhé instance vždy nahoře: jinak se na Windows otevře za oknem běžícího GeoKuku a proces čeká na OK, které nikdo nevidí. */
+	static JDialog dialogUzBezi() {
+		final JDialog dialog = new JOptionPane("GeoKuk už běží. Přepněte se do jeho okna.", JOptionPane.INFORMATION_MESSAGE).createDialog(null, "GeoKuk");
+		dialog.setAlwaysOnTop(true);
+		return dialog;
+	}
+
 	public void execute(final String[] args) {
 		FConst.logInit();
 		AppUserModelId.nastav();
@@ -48,7 +56,9 @@ public class GeokukMain {
 			log.info("GeoKuk nad složkou {} už běží, druhá instance končí.", FConst.DATA_DIR);
 			try {
 				if (!GraphicsEnvironment.isHeadless()) {
-					JOptionPane.showMessageDialog(null, "GeoKuk už běží. Přepněte se do jeho okna.", "GeoKuk", JOptionPane.INFORMATION_MESSAGE);
+					final JDialog dialog = dialogUzBezi();
+					dialog.setVisible(true);
+					dialog.dispose();
 				}
 			} finally {
 				System.exit(0);
