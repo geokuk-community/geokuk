@@ -31,8 +31,8 @@
 - Počítače s 16 GB paměti a více dostanou automaticky pro program 4 GB.
   Když paměť na načtení keší nestačí, GeoKuk to oznámí a už zobrazená
   data zůstanou.
-- Paměť uvolněná třeba po vypnutí velkého zdroje keší se po pár minutách
-  nečinnosti vrátí systému.
+- Paměť uvolněná po vypnutí velkého zdroje keší vrátí program systému během
+  několika sekund.
 - Aktualizace: už stažená nová verze se nestahuje znovu a při chybě
   výměny se vrátí původní verze. Nová verze s neplatným číslem verze nebo
   bez údaje o nejnižší Javě se nenabídne ani neinstaluje.
@@ -60,6 +60,8 @@
   uživatelské wiki na GitHubu.
 
 ### Opravy
+- macOS: změna vzhledu (Skin) z výchozího vzhledu systému už nezpůsobí chybové
+  hlášení při přepnutí do jiného okna.
 - Databáze zamčená jiným programem (třeba otevřeným GeoGetem) nezdrží
   ostatní zdroje: ty se načtou hned a zamčená, jakmile ji program pustí.
   Zapnutí či vypnutí zdroje se projeví i tehdy, když je jiná databáze
