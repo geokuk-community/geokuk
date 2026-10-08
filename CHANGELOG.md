@@ -77,6 +77,8 @@
 - Mapy.cz, OpenStreetMap a Waymarked Trails už nejde stahovat hromadně
   do cache (Mapy > Postahovat dlaždice), ani jako uživatelskou mapu
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
+- Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
+  podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.

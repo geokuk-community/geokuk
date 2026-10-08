@@ -66,13 +66,17 @@ public class Menu extends MenuStrujce {
 
 		item(akce.informaceoZdrojichAction);
 		item(akce.umisteniSouboruAction);
+		separator();
 		item(akce.nickEditAction);
 		item(akce.tadyJsemDomaAction);
-		item(akce.zobrazServisniOknoAction);
-		item(akce.dalkoveOvladaniAction);
-		item(akce.vytvoritZastupceAction);
+		separator();
 		item(akce.pametProgramuAction);
+		item(akce.vytvoritZastupceAction);
+		item(akce.dalkoveOvladaniAction);
+		separator();
+		item(akce.zobrazServisniOknoAction);
 		if (!FConst.ZAKAZAT_PRIPRAVOVANOU_FUNKCIONALITU) {
+			separator();
 			item(akce.renderAction);
 		}
 
@@ -85,15 +89,18 @@ public class Menu extends MenuStrujce {
 		menu("Jít", "Přesun aktuálního bodu a mapy na zadané místo.");
 		menu.setMnemonic(KeyEvent.VK_J);
 		item(akce.bezNaSouradnice);
-		item(akce.bezDomuAction);
 		item(akce.hledejKesAction);
 		item(akce.geocodingAdrAction);
+		item(akce.bezDomuAction);
+		separator();
 		item(akce.bezNaPoziciAction);
 		item(akce.bezNaStredAction);
+		separator();
 		item(akce.bezNaZacatekCestyAction);
 		item(akce.bezNaKonecCestyAction);
 		item(akce.bezNaBodVpredAction);
 		item(akce.bezNaBodVzadAction);
+		separator();
 		item(akce.souradniceDoClipboarduAction);
 
 		// Body z GeoGetu se doplní, až se přečtou; menu se kvůli nim nestaví déle.
@@ -139,16 +146,18 @@ public class Menu extends MenuStrujce {
 		menu("Kešoidy", "Řízení zobrazení keší a waypointů.");
 		menu.setMnemonic(KeyEvent.VK_K);
 		// ////////////////////////////// keškový filtr
+		item(akce.kesoidyOnoffAction);
 		item(akce.filtrIkonyAction);
 		tb.add(akce.filtrIkonyAction).setFocusable(false);
 		tb.add(akce.renderAction).setFocusable(false);
 
-		item(akce.kesoidyOnoffAction);
+		separator();
 		final ButtonGroup zobrazeniKesi = new ButtonGroup();
 		item(akce.zobrazeniKesiAutomatickyAction, zobrazeniKesi);
 		item(akce.zobrazeniKesiIkonyAction, zobrazeniKesi);
 		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
 		item(akce.limityKresleniAction);
+		separator();
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
 		item(akce.popiskyOnAction);
@@ -203,29 +212,28 @@ public class Menu extends MenuStrujce {
 
 		menu("Cesty", "Plánování cest");
 		menu.setMnemonic(KeyEvent.VK_C);
+		item(akce.nactiAction);
+		item(akce.importujAction);
+		separator();
+		item(akce.ulozAction);
+		item(akce.ulozJakoAction);
+		item(akce.ulozKopiiAction);
+		item(akce.exportujDoGgtAction);
+		item(akce.zavriAction);
+		separator();
 		item(akce.pridatDoCestyAction);
 		item(akce.odebratZCestyAction);
+		item(akce.obratitCestuAction);
+		item(akce.uzavritCestuAction);
+		item(akce.rozdelitCestuAction);
+		item(akce.znovuSpojitCestyAction);
+		item(akce.pospojovatVzdusneUsekyAction);
+		item(akce.smazatCestuAction);
 		separator(); // nad celým výletem
 		item(akce.cestyZoomAction);
 		item(akce.zoomovatCestuAction);
 		item(akce.cestyPresClipboardDoGeogetuAction);
 		item(akce.promazatJednobodoveAPrazdneCesty);
-		separator();
-		item(akce.nactiAction);
-		item(akce.importujAction);
-		item(akce.ulozAction);
-		item(akce.ulozJakoAction);
-		item(akce.ulozKopiiAction);
-		item(akce.zavriAction);
-		item(akce.exportujDoGgtAction);
-		separator();
-		item(akce.obratitCestuAction);
-		item(akce.smazatCestuAction);
-		item(akce.uzavritCestuAction);
-		item(akce.pospojovatVzdusneUsekyAction);
-		separator();
-		item(akce.rozdelitCestuAction);
-		item(akce.znovuSpojitCestyAction);
 
 		menu("Mřížky", "Různé dekorace na mapě");
 		menu.setMnemonic('Y');
@@ -263,11 +271,13 @@ public class Menu extends MenuStrujce {
 		menu.setMnemonic(KeyEvent.VK_N);
 		item(akce.napovedaAction);
 		item(akce.webovaStrankaAction);
+		separator();
+		item(akce.zkontrolovatAktualizaceAction);
+		item(akce.betaKanalAction);
+		separator();
 		item(akce.zadatProblemAction);
 		item(akce.prehledProblemuAction);
 		item(akce.diagnostikaAction);
-		item(akce.zkontrolovatAktualizaceAction);
-		item(akce.betaKanalAction);
 		separator();
 		item(akce.oProgramuAction);
 
