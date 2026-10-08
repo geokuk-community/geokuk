@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URL;
@@ -391,6 +392,9 @@ public class KachleZiskavac {
 
 	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
 	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
+	/** Dlaždice mimo území podkladu (server vrátil 404); kreslí se prázdné a znovu se nestahují. */
+	private final Cache<String, Boolean> mimoUzemi = CacheBuilder.newBuilder().maximumSize(10_000).build();
+	static final Image PRAZDNA_MIMO_UZEMI = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
 	/** Dlaždice, které se nedávno nepodařilo stáhnout; jinak by se při každém překreslení stahovaly znovu. */
 	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).maximumSize(10_000).build();
 
@@ -493,6 +497,9 @@ public class KachleZiskavac {
 				Thread.sleep(100);
 			}
 			final String klic = url.toExternalForm();
+			if (mimoUzemi.getIfPresent(klic) != null) {
+				return new ImageWithData(PRAZDNA_MIMO_UZEMI, new byte[0]);
+			}
 			if (nedavnoNestazene.getIfPresent(klic) != null) {
 				throw new IOException("Dlaždici se nedávno nepodařilo stáhnout: " + url);
 			}
@@ -509,17 +516,28 @@ public class KachleZiskavac {
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
 				diagnosticsData.send("Web download - end success");
 				return imageWithData;
-			} catch (final Exception e) {
-				log.debug("DOWNLOAD ERROR  : \"{}\" | {}", url, e);
-				if (!(e instanceof InterruptedException || e instanceof InterruptedIOException || Thread.currentThread().isInterrupted())) {
-					nedavnoNestazene.put(klic, Boolean.TRUE);
+			} catch (final KachloDownloader.ChybaServeru e) {
+				if (e.getKod() != 404 || !ka.getType().isOmezeneUzemi()) {
+					throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
 				}
-				chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
-				diagnosticsData.send(e.toString());
-				throw e;
+				mimoUzemi.put(klic, Boolean.TRUE);
+				diagnosticsData.send("Web download - mimo území podkladu");
+				return new ImageWithData(PRAZDNA_MIMO_UZEMI, new byte[0]);
+			} catch (final Exception e) {
+				throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
 			}
 		});
 		return future;
+	}
+
+	private Exception zaznamenejChybu(final Exception e, final URL url, final String klic, final DiagnosticsData diagnosticsData, final Logger log) {
+		log.debug("DOWNLOAD ERROR  : \"{}\" | {}", url, e);
+		if (!(e instanceof InterruptedException || e instanceof InterruptedIOException || Thread.currentThread().isInterrupted())) {
+			nedavnoNestazene.put(klic, Boolean.TRUE);
+		}
+		chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
+		diagnosticsData.send(e.toString());
+		return e;
 	}
 
 	/**

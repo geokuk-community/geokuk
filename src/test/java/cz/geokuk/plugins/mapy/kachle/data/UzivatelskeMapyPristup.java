@@ -12,6 +12,11 @@ public final class UzivatelskeMapyPristup {
 		return UzivatelskeMapy.nactiSlozku(slozka);
 	}
 
+	/** Mapa ze vzoru URL, která pokrývá jen část světa. */
+	public static EKaType sOmezenymUzemim(final String id, final String vzorUrl) {
+		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)));
+	}
+
 	public static void vycisti() {
 		EKaType.setUzivatelske(Collections.emptyList());
 	}
