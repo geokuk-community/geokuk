@@ -207,6 +207,22 @@ public class SmokeIT {
 		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
 	}
 
+	/** Stavový řádek se nepohne po načtení dat ani po přepínání zdroje, po prvním otevření cest ani po jejich zavření; klikání v bloku Zdroje během načítání nezdrží EDT. */
+	@Test
+	public void stavovyRadekStoji() throws Exception {
+		final File adresar = pripravAdresar("lista");
+		final Properties zprava = spust(adresar, "lista", "meritka,lista");
+		zkontrolujBezChyb(adresar, zprava);
+	}
+
+	/** Výlet obnovený při startu stavový řádek neposune, ani když se pak zavře. */
+	@Test
+	public void obnovaVyletuNeposuneListu() throws Exception {
+		final File adresar = pripravAdresar("obnova");
+		final Properties zprava = spust(adresar, "obnova", "meritka,obnova");
+		zkontrolujBezChyb(adresar, zprava);
+	}
+
 	/** Počítač bez dat: aktivní datové složky GeoGetu, GSAKu a OpenSAKu, které neexistují, a pak prázdné (jak je založí Uložit v Umístění souborů). */
 	@Test
 	public void datoveSlozkyBezDat() throws Exception {
@@ -216,7 +232,7 @@ public class SmokeIT {
 		vlastnosti.add("-Dsmoke.gsak=" + new File(neni, "gsak"));
 		vlastnosti.add("-Dsmoke.opensak=" + new File(neni, "opensak"));
 		vlastnosti.add("-Dsmoke.prazdneSlozky=" + new File(adresar, "prazdne"));
-		final Properties zprava = spust(adresar, "bez-dat", "meritka,prazdneSlozky");
+		final Properties zprava = spust(adresar, "bez-dat", "meritka,prazdneSlozky,lista");
 		zkontrolujBezChyb(adresar, zprava);
 		assertEquals("Keše z GPX se načtou i se špatnými datovými složkami", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
 	}
