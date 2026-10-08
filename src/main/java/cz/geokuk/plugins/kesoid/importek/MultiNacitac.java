@@ -187,7 +187,7 @@ public class MultiNacitac {
 			return null;
 		}
 		posledniSeznam = list;
-		ohlasPrazdneSlozky(list);
+		final Map<TypZdroje, String> problemySlozek = ohlasPrazdneSlozky(list);
 		final File gsak = gsakDir;
 		// Platí čitelnost z doby skenu, pozdější kontrola by mohla vidět složku, která se mezitím vrátila.
 		final Set<File> nedostupne = ds.getNedostupne();
@@ -202,6 +202,7 @@ public class MultiNacitac {
 		}
 		// Až po zařazení nových databází, ty mohou být vypnuté („Načítat až po vybrání“).
 		final int generace = prepisRegistr(list);
+		registr.setProblemySlozek(generace, problemySlozek);
 		if (kesoidModel.getVsechnyKesoidy() == null) {
 			kesoidModel.setNacitaneZdroje(predbezneZdroje(list));
 		}
@@ -694,31 +695,49 @@ public class MultiNacitac {
 		return list.stream().filter(f -> def.equals(f.root.def)).map(KeFile::getFile).collect(Collectors.toSet());
 	}
 
-	/** Aktivní složka GeoGetu, GSAKu nebo OpenSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. */
-	private void ohlasPrazdneSlozky(final List<KeFile> list) {
-		final Map<File, String[]> slozky = new LinkedHashMap<>();
+	/**
+	 * Aktivní složka GeoGetu, GSAKu nebo OpenSAKu bez databáze je skoro jistě špatně zadaná, uživatel by jinak jen koukal na prázdnou mapu. Do logu jednou za běh, důvod
+	 * pro stav zdrojů při každém skenu.
+	 */
+	private Map<TypZdroje, String> ohlasPrazdneSlozky(final List<KeFile> list) {
+		final Map<File, Object[]> slozky = new LinkedHashMap<>();
 		if (geogetDir != null) {
-			slozky.put(geogetDir, new String[] { "GeoGetu", ".db3" });
+			slozky.put(geogetDir, new Object[] { "GeoGetu", ".db3", TypZdroje.GEOGET });
 		}
 		if (gsakDir != null) {
-			slozky.put(gsakDir, new String[] { "GSAKu", ".db3" });
+			slozky.put(gsakDir, new Object[] { "GSAKu", ".db3", TypZdroje.GSAK });
 		}
 		if (opensakDir != null) {
-			slozky.put(opensakDir, new String[] { "OpenSAKu", ".db" });
+			slozky.put(opensakDir, new Object[] { "OpenSAKu", ".db", TypZdroje.OPENSAK });
 		}
 		for (final KeFile f : list) {
 			slozky.remove(f.root.dir);
 		}
+		final Map<TypZdroje, String> problemy = new EnumMap<>(TypZdroje.class);
 		final StringBuilder zprava = new StringBuilder();
-		for (final Map.Entry<File, String[]> e : slozky.entrySet()) {
+		for (final Map.Entry<File, Object[]> e : slozky.entrySet()) {
+			final String pripona = (String) e.getValue()[1];
+			problemy.put((TypZdroje) e.getValue()[2], duvodPrazdneSlozky(e.getKey(), pripona));
 			if (ohlasenePrazdne.add(e.getKey())) {
-				zprava.append(popisPrazdneSlozky(e.getKey(), e.getValue()[0], e.getValue()[1])).append('\n');
+				zprava.append(popisPrazdneSlozky(e.getKey(), (String) e.getValue()[0], pripona)).append('\n');
 			}
 		}
 		if (zprava.length() > 0) {
 			zprava.append("Zkontrolujte složky v Soubor > Umístění souborů.");
 			ohlasovac.accept(zprava.toString());
 		}
+		return problemy;
+	}
+
+	/** Krátký důvod pro stav zdroje, bez cesty. */
+	static String duvodPrazdneSlozky(final File slozka, final String pripona) {
+		if (!slozka.exists()) {
+			return "Složka není dostupná.";
+		}
+		if (!jeCitelnaSlozka(slozka)) {
+			return "Složka není čitelná.";
+		}
+		return "Ve složce nejsou databáze " + pripona + ".";
 	}
 
 	static String popisPrazdneSlozky(final File slozka, final String program, final String pripona) {

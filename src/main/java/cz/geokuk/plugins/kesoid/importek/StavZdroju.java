@@ -3,15 +3,27 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /** Neměnný snímek stavu všech položek zdrojů, seřazený podle typu, názvu a cesty. */
 public final class StavZdroju {
 	public static final StavZdroju PRAZDNY = new StavZdroju(Collections.emptyList());
 
 	private final List<StavPolozky> polozky;
+	private final Map<TypZdroje, String> problemySlozek;
 
 	StavZdroju(final List<StavPolozky> polozky) {
+		this(polozky, Collections.<TypZdroje, String>emptyMap());
+	}
+
+	StavZdroju(final List<StavPolozky> polozky, final Map<TypZdroje, String> problemySlozek) {
 		this.polozky = Collections.unmodifiableList(new ArrayList<>(polozky));
+		this.problemySlozek = problemySlozek;
+	}
+
+	/** Proč aktivní datová složka typu nedává žádné položky (neexistuje, není čitelná, je prázdná); null, když je v pořádku. */
+	public String getProblemSlozky(final TypZdroje typ) {
+		return problemySlozek.get(typ);
 	}
 
 	public List<StavPolozky> getPolozky() {

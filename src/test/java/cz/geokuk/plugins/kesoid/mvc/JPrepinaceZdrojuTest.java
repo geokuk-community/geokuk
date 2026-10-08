@@ -319,4 +319,17 @@ public class JPrepinaceZdrojuTest {
 		Assert.assertEquals("GSAK vypnout", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.ZAPNUTO));
 		Assert.assertTrue(JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.CASTECNE).startsWith("GSAK vypnout"));
 	}
+
+	@Test
+	public void prazdnaNeboNedostupnaSlozkaVBloku() throws Exception {
+		data.registr.setProblemySlozek(data.registr.getGenerace(), java.util.Collections.singletonMap(TypZdroje.OPENSAK, "Složka není dostupná."));
+		final Dimension pred = rozmer(data.snimek());
+		naEdt(() -> {
+			Assert.assertSame(IkonyZdroju.pro(StavZdroje.CHYBA), blok.getIkona(TypZdroje.OPENSAK).getIcon());
+			final String tip = blok.getIkona(TypZdroje.OPENSAK).getToolTipText();
+			Assert.assertTrue(tip, tip.contains("OpenSAK: Složka není dostupná") && tip.contains("Umístění souborů"));
+			Assert.assertTrue(JTabulkaZdroju.RADA_SLOZKA.length() > 0);
+		});
+		Assert.assertEquals("rozměr bloku se nemění", pred, rozmer(StavZdroju.PRAZDNY));
+	}
 }

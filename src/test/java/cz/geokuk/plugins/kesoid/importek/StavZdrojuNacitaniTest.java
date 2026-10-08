@@ -84,6 +84,36 @@ public class StavZdrojuNacitaniTest {
 	}
 
 	@Test
+	public void prazdnaSlozkaGeogetuJeVeStavuAPoPridaniDatabazeZmizi() throws Exception {
+		start();
+		nacitac.nacti(null, genom);
+		Assert.assertEquals("Ve složce nejsou databáze .db3.", nacitac.getRegistr().getSnimek().getProblemSlozky(TypZdroje.GEOGET));
+		Assert.assertNull(nacitac.getRegistr().getSnimek().getProblemSlozky(TypZdroje.GPX));
+		zalozGeoget("a.db3", "GC000A");
+		start();
+		nacitac.nacti(null, genom);
+		Assert.assertNull(nacitac.getRegistr().getSnimek().getProblemSlozky(TypZdroje.GEOGET));
+	}
+
+	@Test
+	public void duvodPrazdneSlozky() throws Exception {
+		Assert.assertEquals("Složka není dostupná.", MultiNacitac.duvodPrazdneSlozky(new File(slozkaGeogetu, "neni"), ".db3"));
+		Assert.assertEquals("Ve složce nejsou databáze .db.", MultiNacitac.duvodPrazdneSlozky(slozkaGeogetu, ".db"));
+	}
+
+	@Test
+	public void problemySlozekZapisujeJenAktualniBeh() {
+		final RegistrStavuZdroju r = new RegistrStavuZdroju();
+		final int gen = r.prepis(Collections.<File>emptyList(), f -> TypZdroje.GPX, File::getName, f -> true, t -> false, f -> 0L);
+		r.setProblemySlozek(gen - 1, Collections.singletonMap(TypZdroje.GSAK, "stará"));
+		Assert.assertNull(r.getSnimek().getProblemSlozky(TypZdroje.GSAK));
+		r.setProblemySlozek(gen, Collections.singletonMap(TypZdroje.GSAK, "nová"));
+		Assert.assertEquals("nová", r.getSnimek().getProblemSlozky(TypZdroje.GSAK));
+		r.setProblemySlozek(gen, Collections.<TypZdroje, String>emptyMap());
+		Assert.assertNull(r.getSnimek().getProblemSlozky(TypZdroje.GSAK));
+	}
+
+	@Test
 	public void nazevGpxVPodslozceJeCestaKeKoreni() throws Exception {
 		Assert.assertTrue(new File(gpx, "sub").mkdir());
 		Files.copy(new File(gpx, "a.gpx").toPath(), new File(gpx, "sub/x.gpx").toPath());

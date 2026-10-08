@@ -170,4 +170,12 @@ public class JTabulkaZdrojuTest {
 		Assert.assertEquals("1,5 MB", JTabulkaZdroju.velikost(1_500_000));
 		Assert.assertEquals("0 kB", JTabulkaZdroju.velikost(0));
 	}
+
+	@Test
+	public void problemSlozkyVRadkuTypu() {
+		data.registr.setProblemySlozek(data.registr.getGenerace(), java.util.Collections.singletonMap(TypZdroje.GSAK, "Ve složce nejsou databáze .db3."));
+		final JTabulkaZdroju t = tabulka(null);
+		Assert.assertEquals("Ve složce nejsou databáze .db3.", text(t, TypZdroje.GSAK, null, JTabulkaZdroju.SL_STAV));
+		Assert.assertEquals("Načteno", text(t, TypZdroje.GEOGET, null, JTabulkaZdroju.SL_STAV));
+	}
 }
