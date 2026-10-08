@@ -122,6 +122,34 @@ public class JPrepinaceZdrojuTest {
 		});
 	}
 
+	/** Název hned za zaškrtávátkem, ikona stavu za názvem. */
+	@Test
+	public void poradiZaskrtavatkoNazevIkona() throws Exception {
+		naEdt(() -> {
+			for (final TypZdroje typ : TypZdroje.values()) {
+				final int z = blok.getZaskrtavatko(typ).getX();
+				final int n = blok.getNazev(typ).getX();
+				final int i = blok.getIkona(typ).getX();
+				Assert.assertTrue(typ + ": " + z + " " + n + " " + i, z < n && n < i);
+			}
+		});
+	}
+
+	/** Prázdný slot ikony za názvem vypnutého typu drží šířku buňky. */
+	@Test
+	public void vypnutyTypStalaSirkaBunky() throws Exception {
+		final int[] sirka = new int[1];
+		naEdt(() -> sirka[0] = blok.getBunka(TypZdroje.GSAK).getPreferredSize().width);
+		data.vypnuteTypy.add(TypZdroje.GSAK);
+		data.prepisZapnuti();
+		naEdt(() -> {
+			blok.obnov(data.snimek());
+			okno.validate();
+			Assert.assertEquals(sirka[0], blok.getBunka(TypZdroje.GSAK).getPreferredSize().width);
+			Assert.assertTrue(blok.getIkona(TypZdroje.GSAK).getWidth() > 0);
+		});
+	}
+
 	@Test
 	public void rozmerNezavisiNaStavu() throws Exception {
 		final Dimension nacteno = rozmer(data.snimek());
@@ -142,7 +170,9 @@ public class JPrepinaceZdrojuTest {
 		data.prepisZapnuti();
 		naEdt(() -> blok.obnov(data.snimek()));
 		Assert.assertSame(IkonyZdroju.prazdna(), blok.getIkona(TypZdroje.GSAK).getIcon());
-		Assert.assertEquals(Color.GRAY, blok.getNazev(TypZdroje.GSAK).getForeground());
+		final Color seda = UIManager.getColor("Label.disabledForeground");
+		Assert.assertEquals(seda != null ? seda : Color.GRAY, blok.getNazev(TypZdroje.GSAK).getForeground());
+		Assert.assertNotEquals(blok.getNazev(TypZdroje.GSAK).getForeground(), blok.getNazev(TypZdroje.GEOGET).getForeground());
 		Assert.assertSame(IkonyZdroju.pro(StavZdroje.NACTENO), blok.getIkona(TypZdroje.GEOGET).getIcon());
 	}
 
