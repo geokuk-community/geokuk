@@ -53,7 +53,7 @@ public class MultiNacitac {
 	private volatile File opensakDir;
 	private final Set<File> ohlasenePrazdne = Collections.synchronizedSet(new HashSet<>());
 	/** Kam jde zpráva o špatně zadaných datových složkách; okno se neukazuje, stav složky patří do přehledu zdrojů. */
-	Consumer<String> ohlasovac = zprava -> log.info(zprava);
+	Consumer<String> ohlasovac = zprava -> log.warn(zprava);
 
 	/** Databáze, které při posledním načítání zamykal jiný program; znovu se načítá, až je pustí. */
 	private volatile Set<File> zamcene = Collections.emptySet();
