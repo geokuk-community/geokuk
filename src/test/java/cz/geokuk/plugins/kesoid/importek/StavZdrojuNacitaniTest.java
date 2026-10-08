@@ -202,6 +202,19 @@ public class StavZdrojuNacitaniTest {
 	}
 
 	@Test
+	public void jenTentoTypVypneOstatniTypy() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		zdroje = nacitac.nacti(null, genom).getInformaceOZdrojich();
+		model.setNacitatVseVTypu(TypZdroje.GEOGET, false);
+		model.setNacitatJenTyp(TypZdroje.GEOGET);
+		Assert.assertFalse(model.isTypVypnut(TypZdroje.GEOGET));
+		Assert.assertTrue("bez výběru se zapnou všechny položky", model.maSeNacist(a));
+		Assert.assertTrue(model.isTypVypnut(TypZdroje.GPX));
+		Assert.assertEquals(StavZdroje.VYPNUTO, polozka("a.gpx").getStav());
+	}
+
+	@Test
 	public void vyberTypuAPolozekPrezijeRestart() throws Exception {
 		final File a = zalozGeoget("a.db3", "GC000A");
 		final File b = zalozGeoget("b.db3", "GC000B");

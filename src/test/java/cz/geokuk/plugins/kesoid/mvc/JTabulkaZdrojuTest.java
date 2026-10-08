@@ -41,11 +41,15 @@ public class JTabulkaZdrojuTest {
 	}
 
 	private void klikNaNacist(final JTabulkaZdroju t, final int r) {
+		klikNaNacist(t, r, 0);
+	}
+
+	private void klikNaNacist(final JTabulkaZdroju t, final int r, final int modifikatory) {
 		final JTable tab = t.getTabulka();
 		tab.setSize(700, 400);
 		tab.doLayout();
 		final java.awt.Rectangle bunka = tab.getCellRect(r, 0, true);
-		final MouseEvent e = new MouseEvent(tab, MouseEvent.MOUSE_CLICKED, 0, 0, bunka.x + 5, bunka.y + 5, 1, false);
+		final MouseEvent e = new MouseEvent(tab, MouseEvent.MOUSE_CLICKED, 0, modifikatory, bunka.x + 5, bunka.y + 5, 1, false);
 		for (final java.awt.event.MouseListener l : tab.getMouseListeners()) {
 			l.mouseClicked(e);
 		}
@@ -155,6 +159,28 @@ public class JTabulkaZdrojuTest {
 		final JTabulkaZdroju t = tabulka(null);
 		klikNaNacist(t, radek(t, TypZdroje.GEOGET, "Cesko.db3"));
 		Assert.assertEquals(Arrays.asList("polozka Cesko.db3 false"), ovladani.volani);
+	}
+
+	@Test
+	public void ctrlKlikVybereJenPolozkuNeboTyp() {
+		final JTabulkaZdroju t = tabulka(null);
+		Assert.assertEquals("Ctrl+klik: načítat jen tento soubor", t.tooltip(t.getRadky().get(radek(t, TypZdroje.GEOGET, "Cesko.db3")), JTabulkaZdroju.SL_NACIST));
+		klikNaNacist(t, radek(t, TypZdroje.GEOGET, "Cesko.db3"), java.awt.event.InputEvent.CTRL_DOWN_MASK);
+		klikNaNacist(t, radek(t, TypZdroje.GEOGET, null), java.awt.event.InputEvent.CTRL_DOWN_MASK);
+		Assert.assertEquals(Arrays.asList("jenPolozka GEOGET Cesko.db3", "jenTyp GEOGET"), ovladani.volani);
+	}
+
+	@Test
+	public void kontextoveMenuRadku() {
+		final JTabulkaZdroju t = tabulka(null);
+		final javax.swing.JPopupMenu menu = t.menu(t.getRadky().get(radek(t, TypZdroje.GEOGET, "Cesko.db3")));
+		Assert.assertEquals(3, menu.getComponentCount());
+		for (final java.awt.Component c : menu.getComponents()) {
+			((javax.swing.JMenuItem) c).doClick();
+		}
+		final javax.swing.JPopupMenu menuTypu = t.menu(t.getRadky().get(radek(t, TypZdroje.GEOGET, null)));
+		((javax.swing.JMenuItem) menuTypu.getComponent(0)).doClick();
+		Assert.assertEquals(Arrays.asList("jenPolozka GEOGET Cesko.db3", "vseVTypu GEOGET true", "polozka Cesko.db3 false", "jenTyp GEOGET"), ovladani.volani);
 	}
 
 	@Test

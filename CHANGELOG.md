@@ -81,6 +81,9 @@
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
 - Klik na soubor nebo databázi vypnutého typu v tabulce zdrojů zapne
   typ jen s touto položkou.
+- Ctrl+klik (na macOS Cmd+klik) na položku v tabulce zdrojů načítá jen
+  tuto položku jejího typu, na zaškrtávátko typu jen tento typ. Řádky
+  tabulky mají kontextové menu s volbami načítání.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
