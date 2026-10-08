@@ -71,6 +71,8 @@
   zůstane mapa prázdná.
 - Mapy: nový podklad SR ortofoto ze ZBGIS (© GKÚ Bratislava, NLC,
   CC BY 4.0). Mimo území Slovenska zůstane mapa prázdná.
+- Mapy.cz už nejde stahovat hromadně do cache (Mapy > Postahovat
+  dlaždice); zobrazené dlaždice se do cache ukládají dál.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.

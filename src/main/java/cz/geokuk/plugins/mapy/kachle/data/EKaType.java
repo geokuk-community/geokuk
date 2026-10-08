@@ -230,9 +230,9 @@ public final class EKaType {
 		return "© OpenStreetMap contributors";
 	}
 
-	/** OpenStreetMap hromadné stahování dlaždic nepovoluje, ČÚZK zatím ne, uživatelské mapy jen když to uživatel zapne. */
+	/** Hromadně jde stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne. */
 	public boolean isHromadneStahovaniPovoleno() {
-		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != SK_ZBGIS_ORTO;
+		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
 	}
 
 	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */
