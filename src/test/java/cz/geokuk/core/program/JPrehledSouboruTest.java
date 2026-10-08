@@ -67,6 +67,16 @@ public class JPrehledSouboruTest {
 	/** Uložit prověřuje složky mimo EDT: tlačítko je mezitím zakázané a vidět „Kontroluji složky…“, pak se nastavení uloží. */
 	@Test(timeout = 20_000)
 	public void ulozitProverujeSlozkyMimoEdt() throws Exception {
+		ulozitSKontrolou(true);
+	}
+
+	/** Dialog zavřený křížkem během kontroly složek nic neuloží. */
+	@Test(timeout = 20_000)
+	public void zavrenyDialogBehemKontrolyNicNeulozi() throws Exception {
+		ulozitSKontrolou(false);
+	}
+
+	private void ulozitSKontrolou(final boolean otevrene) throws Exception {
 		final JPrehledSouboru panel = new JPrehledSouboru(null);
 		final List<String> volani = Collections.synchronizedList(new ArrayList<>());
 		panel.inject(new KesoidModel() {
@@ -96,6 +106,7 @@ public class JPrehledSouboruTest {
 		r.setPictureDir(slozka("obrazky2"));
 		panel.onEvent(new RenderUmisteniSouboruChangedEvent(r));
 
+		panel.oknoOtevrene = () -> otevrene;
 		final java.util.concurrent.CountDownLatch pustit = new java.util.concurrent.CountDownLatch(1);
 		final java.util.function.Function<File, JJedenSouborPanel.StavSlozky> puvodni = JJedenSouborPanel.kontrola;
 		JJedenSouborPanel.kontrola = d -> {
@@ -115,18 +126,22 @@ public class JPrehledSouboruTest {
 				Assert.assertTrue("model se mění až po kontrole", volani.isEmpty());
 			});
 			pustit.countDown();
-			while (volani.size() < 2) {
+			while (!ulozitPovolene(ulozit)) {
 				Thread.sleep(20);
 			}
-			javax.swing.SwingUtilities.invokeAndWait(() -> {
-				Assert.assertTrue(ulozit.isEnabled());
-				Assert.assertFalse(panel.kontroluji.isVisible());
-			});
-			Assert.assertEquals(Arrays.asList("složky", "render"), volani);
+			javax.swing.SwingUtilities.invokeAndWait(() -> Assert.assertFalse(panel.kontroluji.isVisible()));
+			Assert.assertEquals(otevrene ? Arrays.asList("složky", "render") : Collections.emptyList(), volani);
 		} finally {
 			pustit.countDown();
 			JJedenSouborPanel.kontrola = puvodni;
 		}
+	}
+
+	/** Uložit se povolí v done() na EDT, dotaz přes EDT tedy proběhne až po případném zápisu do modelů. */
+	private static boolean ulozitPovolene(final javax.swing.JButton ulozit) throws Exception {
+		final boolean[] povolene = new boolean[1];
+		javax.swing.SwingUtilities.invokeAndWait(() -> povolene[0] = ulozit.isEnabled());
+		return povolene[0];
 	}
 
 	private static javax.swing.JButton tlacitko(final java.awt.Container c, final String text) {

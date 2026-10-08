@@ -31,6 +31,11 @@ public class JPrehledSouboru extends JPanel {
 	}
 
 	private static final long serialVersionUID = -2491414463002815835L;
+	/** Okno dialogu je ještě otevřené; zavřené během kontroly složek se nic neuloží. */
+	java.util.function.BooleanSupplier oknoOtevrene = () -> {
+		final java.awt.Window w = SwingUtilities.getWindowAncestor(this);
+		return w == null || w.isShowing();
+	};
 	final JLabel kontroluji = new JLabel("Kontroluji složky…");
 	private JJedenSouborPanel jKesDir;
 	private JJedenSouborPanel jGeogetDataDir;
@@ -259,6 +264,9 @@ public class JPrehledSouboru extends JPanel {
 					}
 					kontroluji.setVisible(false);
 					ulozit.setEnabled(true);
+					if (!oknoOtevrene.getAsBoolean()) {
+						return; // dialog zavřený křížkem během kontroly = zrušené uložení, ani chyba se už neukazuje
+					}
 					try {
 						get();
 						ulozeni.zapis();
