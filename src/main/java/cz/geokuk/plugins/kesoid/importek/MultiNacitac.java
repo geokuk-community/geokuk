@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -30,10 +31,10 @@ public class MultiNacitac {
 
 
 	// TODO: Doporučuji přejmenovat na GEOKUK_ROOTDIR_DEF resp. GEOGET_ROOTDIR_DEF. Už dávno nejde jen o jméno souboru/složky. [2016-04-09, Bohusz]
-	private static final Root.Def FILE_NAME_REGEX_GEOKUK_DIR = new Root.Def(Integer.MAX_VALUE, Pattern.compile("(?i).*\\.(geokuk|gpx|zip|jpg|raw|tif)"), null);
-	private static final Root.Def FILE_NAME_REGEX_GEOGET_DIR = new Root.Def(1, Pattern.compile("(?i).*\\.db3"), Pattern.compile("(?i).*\\.[0-9]{8}\\.db3"));
-	private static final Root.Def GSAK_ROOTDIR_DEF = new Root.Def(2, Pattern.compile("sqlite.db3"), null);
-	private static final Root.Def OPENSAK_ROOTDIR_DEF = new Root.Def(1, Pattern.compile("(?i).*\\.db"), null);
+	static final Root.Def FILE_NAME_REGEX_GEOKUK_DIR = new Root.Def(Integer.MAX_VALUE, Pattern.compile("(?i).*\\.(geokuk|gpx|zip|jpg|raw|tif)"), null);
+	static final Root.Def FILE_NAME_REGEX_GEOGET_DIR = new Root.Def(1, Pattern.compile("(?i).*\\.db3"), Pattern.compile("(?i).*\\.[0-9]{8}\\.db3"));
+	static final Root.Def GSAK_ROOTDIR_DEF = new Root.Def(2, Pattern.compile("sqlite.db3"), null);
+	static final Root.Def OPENSAK_ROOTDIR_DEF = new Root.Def(1, Pattern.compile("(?i).*\\.db"), null);
 
 	private final DirScanner ds;
 	private final RegistrStavuZdroju registr;
@@ -140,6 +141,22 @@ public class MultiNacitac {
 			return TypZdroje.OPENSAK;
 		}
 		return FILE_NAME_REGEX_GEOGET_DIR.equals(def) ? TypZdroje.GEOGET : TypZdroje.GPX;
+	}
+
+	/** Krátký popis zdroje pro průběh ve stavovém řádku: typ zdroje a cesta v jeho datové složce, u ZIPu i cesta v archivu. */
+	static String popisPrubehu(final KeFile f, final ZipEntry entry) {
+		Path cesta;
+		try {
+			cesta = f.getRelativePath();
+		} catch (final KeFile.XRelativizeDubleDot e) {
+			cesta = null;
+		}
+		final StringBuilder sb = new StringBuilder(typ(f).getNazev()).append(File.separatorChar);
+		sb.append(cesta == null || cesta.toString().isEmpty() ? f.getFile().getName() : cesta.toString());
+		if (entry != null) {
+			sb.append(File.separatorChar).append(entry.getName().replace('/', File.separatorChar));
+		}
+		return sb.toString();
 	}
 
 	/** Velikost souboru i jeho WAL, kde se databáze zapisuje. */
@@ -864,7 +881,12 @@ public class MultiNacitac {
 					for (final Nacitac0 nacitac : nacitace) {
 						builder.setCurrentlyLoading(kefile, nacitat);
 						if (nacitat && nacitac.umiNacist(entry)) {
-							nacitac.nactiBezVyjimky(zipFile, entry, builder, future, kesoidModel.getProgressModel());
+							Nacitac0.setPopisPrubehu(popisPrubehu(kefile, entry));
+							try {
+								nacitac.nactiBezVyjimky(zipFile, entry, builder, future, kesoidModel.getProgressModel());
+							} finally {
+								Nacitac0.setPopisPrubehu(null);
+							}
 						}
 					}
 				}
@@ -874,7 +896,12 @@ public class MultiNacitac {
 				final boolean nacitat = kesoidModel.maSeNacist(kefile);
 				builder.setCurrentlyLoading(kefile, nacitat);
 				if (nacitat && umiNacist(nacitac, file)) {
-					nacitac.nactiBezVyjimky(file, builder, future, kesoidModel.getProgressModel());
+					Nacitac0.setPopisPrubehu(popisPrubehu(kefile, null));
+					try {
+						nacitac.nactiBezVyjimky(file, builder, future, kesoidModel.getProgressModel());
+					} finally {
+						Nacitac0.setPopisPrubehu(null);
+					}
 				}
 			}
 		}

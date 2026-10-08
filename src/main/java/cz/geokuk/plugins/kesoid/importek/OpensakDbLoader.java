@@ -55,7 +55,7 @@ public class OpensakDbLoader extends Nacitac0 {
 				log.info("Databáze OpenSAKu {} má schéma {}, GeoKuk je ověřený do verze {}.", file, verze, OVERENA_VERZE_SCHEMATU);
 			}
 			final int pocet = count(statement, "SELECT count(*) FROM caches") * PROGRESS_VAHA_CACHES + count(statement, "SELECT count(*) FROM waypoints") * PROGRESS_VAHA_WAYPOINTS;
-			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file);
+			final Progressor progressor = zahajPrubeh(aProgressModel, pocet, file.toString());
 			loadCaches(file, statement, builder, future, progressor);
 			loadWaypoints(statement, builder, future, progressor);
 			progressor.finish();

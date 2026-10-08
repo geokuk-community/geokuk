@@ -66,7 +66,7 @@ public class GsakDbLoader extends Nacitac0 {
 			}
 			dao.zkontrolujSloupce(aDbFile);
 			final int pocet = dao.cacheCount() * PROGRESS_VAHA_CACHES + dao.waypointCount() * PROGRESS_VAHA_WAYPOINTS + dao.tagCount() * PROGRESS_VAHA_TAGS;
-			final Progressor progressor = aProgressModel.start(pocet, "Loading " + aDbFile.toString());
+			final Progressor progressor = zahajPrubeh(aProgressModel, pocet, aDbFile.toString());
 			// Vlastní hodnoty před kešemi, keš si je přebírá už při přidání.
 			// Bez nich se keše dají zobrazit, jejich poškození nesmí připravit uživatele o celou databázi.
 			Map<String, Map<String, String>> vlastniHodnoty;

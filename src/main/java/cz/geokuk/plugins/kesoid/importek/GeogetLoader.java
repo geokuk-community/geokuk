@@ -66,7 +66,7 @@ public class GeogetLoader extends Nacitac0 {
 		try (Connection c = DatabazeJinehoProgramu.otevri(file); Statement statement = c.createStatement()) {
 			DatabazeJinehoProgramu.zkontrolujSloupce(statement, file, "GeoGetu", POVINNE_SLOUPCE, Collections.emptySet());
 			final int pocet = count(statement, GEOGET_CACHES_COUNT) * PROGRESS_VAHA_CACHES + count(statement, GEOGET_WAYPOINTS_COUNT) * PROGRESS_VAHA_WAYPOINTS;
-			final Progressor progressor = aProgressModel.start(pocet, "Loading " + file.toString());
+			final Progressor progressor = zahajPrubeh(aProgressModel, pocet, file.toString());
 			// Tagy před kešemi, keš si hodnoty přebírá už při přidání.
 			// Bez tagů a popisů se keše dají zobrazit, jejich poškození nesmí připravit uživatele o celou databázi.
 			Map<String, Gpxg> tagy;

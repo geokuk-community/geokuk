@@ -184,6 +184,12 @@ public class ProgressModel extends Model0 {
 		return progressor;
 	}
 
+	public Progressor start(final int max, final String text, final String tooltip) {
+		final Progressor progressor = start(max, text);
+		progressor.setTooltip(tooltip);
+		return progressor;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *

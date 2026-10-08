@@ -13,6 +13,10 @@ public class ProgressorInputStream extends FilterInputStream {
 	private long precteno;
 
 	public ProgressorInputStream(final ProgressModel progressModel, final String message, final InputStream in) {
+		this(progressModel, message, "", in);
+	}
+
+	public ProgressorInputStream(final ProgressModel progressModel, final String message, final String tooltip, final InputStream in) {
 		super(in);
 		long velikost;
 		try {
@@ -21,7 +25,7 @@ public class ProgressorInputStream extends FilterInputStream {
 			velikost = 0;
 		}
 		celkem = velikost;
-		progressor = progressModel.start((int) celkem, message);
+		progressor = progressModel.start((int) celkem, message, tooltip);
 	}
 
 	@Override
