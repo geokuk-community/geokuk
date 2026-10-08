@@ -295,9 +295,13 @@ public class JPrepinaceZdroju extends JPanel {
 			zmena |= n.isVisible() == kompaktni;
 			n.setVisible(!kompaktni);
 		}
+		final Insets ramecek = souhrn.getInsets();
+		final int vyska = isShowing() ? getLocationOnScreen().y - horniHranice() - ramecek.top - ramecek.bottom : Integer.MAX_VALUE;
 		uplna.nastavDostupnouSirku(sirka);
+		uplna.nastavDostupnouVysku(vyska);
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.nastavDostupnouSirku(sirka);
+			t.nastavDostupnouVysku(vyska);
 		}
 		if (zmena) {
 			revalidate();
@@ -437,8 +441,28 @@ public class JPrepinaceZdroju extends JPanel {
 		final Point blok = getLocationOnScreen();
 		int x = kotva == null ? getWidth() - d.width : SwingUtilities.convertPoint(kotva.getParent(), kotva.getLocation(), this).x;
 		x = Math.max(obrazovka.x - blok.x, Math.min(x, obrazovka.x + obrazovka.width - blok.x - d.width));
-		final int y = Math.max(obrazovka.y - blok.y, -d.height);
+		final int y = Math.max(horniHranice() - blok.y, -d.height);
 		return new Point(x, y);
+	}
+
+	/** Popup smí sahat až k horní liště okna (pod menu a panel nástrojů), nejvýš k hornímu okraji obrazovky. */
+	private int horniHranice() {
+		final Rectangle obrazovka = getGraphicsConfiguration() != null ? getGraphicsConfiguration().getBounds() : new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+		int hranice = obrazovka.y;
+		final Window okno = SwingUtilities.getWindowAncestor(this);
+		if (okno instanceof RootPaneContainer && okno.isShowing()) {
+			final Container obsah = ((RootPaneContainer) okno).getContentPane();
+			Component horni = obsah;
+			if (obsah.getLayout() instanceof BorderLayout) {
+				final Component lista = ((BorderLayout) obsah.getLayout()).getLayoutComponent(BorderLayout.NORTH);
+				if (lista != null && lista.isVisible()) {
+					horni = lista;
+				}
+			}
+			final int pod = horni.getLocationOnScreen().y + (horni == obsah ? 0 : horni.getHeight());
+			hranice = Math.max(hranice, pod);
+		}
+		return hranice;
 	}
 
 	public void zavriSeznam() {

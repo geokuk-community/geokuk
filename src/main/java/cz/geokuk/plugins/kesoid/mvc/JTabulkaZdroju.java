@@ -37,7 +37,6 @@ public class JTabulkaZdroju extends JPanel {
 	/** Pod touto šířkou okna odpadne sloupec Velikost. */
 	static final int PRAH_UZKE = 900;
 	static final int VYSKA_RADKU = 22;
-	private static final int MAX_RADKU_POPUPU = 20;
 
 	static final Color BARVA_DUPLICIT = new Color(0x9A5B00);
 
@@ -64,6 +63,8 @@ public class JTabulkaZdroju extends JPanel {
 	private OvladaniZdroju ovladani;
 	private boolean uzka;
 	private int sirka = PLNA_SIRKA;
+	/** Nejvyšší výška celé tabulky; nad ní se řádky posouvají. */
+	private int maxVyska = Integer.MAX_VALUE;
 
 	private final AbstractTableModel tm = new AbstractTableModel() {
 		private static final long serialVersionUID = 1L;
@@ -199,9 +200,18 @@ public class JTabulkaZdroju extends JPanel {
 		return uzka;
 	}
 
+	/** Výška, kterou má tabulka i s tlačítky k dispozici; víc řádků se posouvá. */
+	public void nastavDostupnouVysku(final int vyska) {
+		maxVyska = vyska;
+		prepocitejVelikost();
+	}
+
 	private void prepocitejVelikost() {
-		final int vyska = VYSKA_RADKU * Math.max(1, Math.min(radky.size(), MAX_RADKU_POPUPU)) + tabulka.getTableHeader().getPreferredSize().height + 4;
-		scroll.setPreferredSize(new Dimension(sirka - 16, vyska));
+		final int hlavicka = tabulka.getTableHeader().getPreferredSize().height + 4;
+		final int vsechnyRadky = VYSKA_RADKU * Math.max(1, radky.size()) + hlavicka;
+		scroll.setPreferredSize(new Dimension(sirka - 16, vsechnyRadky));
+		final int navic = getPreferredSize().height - vsechnyRadky;
+		scroll.setPreferredSize(new Dimension(sirka - 16, Math.max(VYSKA_RADKU + hlavicka, Math.min(vsechnyRadky, maxVyska - navic))));
 		revalidate();
 	}
 

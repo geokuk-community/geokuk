@@ -51,6 +51,26 @@ public class JTabulkaZdrojuTest {
 		}
 	}
 
+	private static StavyZdrojuProTesty mnohoPolozek(final int pocet) {
+		final StavyZdrojuProTesty s = new StavyZdrojuProTesty();
+		for (int i = 0; i < pocet; i++) {
+			s.pridej(TypZdroje.GPX, "trasa" + i + ".gpx");
+		}
+		return s.prepis();
+	}
+
+	@Test
+	public void vyskaPodlePoctuRadkuAzKDostupneVysce() {
+		final JTabulkaZdroju t = new JTabulkaZdroju(TypZdroje.GPX);
+		t.obnov(mnohoPolozek(40).snimek());
+		Assert.assertTrue(t.getPreferredSize().height > 41 * JTabulkaZdroju.VYSKA_RADKU);
+		t.nastavDostupnouVysku(500);
+		Assert.assertEquals(500, t.getPreferredSize().height);
+		t.nastavDostupnouVysku(5000);
+		Assert.assertTrue(t.getPreferredSize().height < 5000);
+		Assert.assertTrue(t.getPreferredSize().height > 41 * JTabulkaZdroju.VYSKA_RADKU);
+	}
+
 	@Test
 	public void uplnaMaVsechnyTypyAPolozky() {
 		final JTabulkaZdroju t = tabulka(null);
