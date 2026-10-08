@@ -5,6 +5,8 @@ import java.util.*;
 
 import javax.swing.KeyStroke;
 
+import cz.geokuk.core.coordinates.Mou;
+
 /**
  * Mapový podklad: vestavěný, nebo uživatelský ze souboru ve složce {@value UzivatelskeMapy#SLOZKA}.
  */
@@ -46,6 +48,12 @@ public final class EKaType {
 
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
+
+	/**
+	 * Servery, jejichž provozovatel hromadné (automatické) stahování dlaždic zakazuje nebo důrazně nedoporučuje: OpenStreetMap (Tile Usage Policy), Mapy.cz
+	 * (podmínky Seznam.cz), Waymarked Trails. Platí i pro jejich subdomény a pro uživatelské mapy.
+	 */
+	static final List<String> SERVERY_BEZ_HROMADNEHO_STAHOVANI = Collections.unmodifiableList(Arrays.asList("tile.openstreetmap.org", "mapy.cz", "mapy.com", "tile.waymarkedtrails.org"));
 
 	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
@@ -230,9 +238,32 @@ public final class EKaType {
 		return "© OpenStreetMap contributors";
 	}
 
-	/** Hromadně jde stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne. */
+	/** Z vestavěných jde hromadně stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne a server to nezakazuje. */
 	public boolean isHromadneStahovaniPovoleno() {
+		if (jeServerBezHromadnehoStahovani(hostitel())) {
+			return false;
+		}
 		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
+	}
+
+	static boolean jeServerBezHromadnehoStahovani(final String hostitel) {
+		// Koncová tečka plně kvalifikovaného jména adresu nemění.
+		final String h = hostitel.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");
+		for (final String server : SERVERY_BEZ_HROMADNEHO_STAHOVANI) {
+			if (h.equals(server) || h.endsWith("." + server)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Hostitel adresy dlaždic, prázdný když ji nejde sestavit. */
+	private String hostitel() {
+		try {
+			return urlBuilder.buildUrl(new Ka(KaLoc.ofJZ(new Mou(0, 0), 0), this)).getHost();
+		} catch (final java.net.MalformedURLException e) {
+			return "";
+		}
 	}
 
 	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */
