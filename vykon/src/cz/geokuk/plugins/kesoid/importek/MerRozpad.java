@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.*;
@@ -18,7 +19,7 @@ import cz.geokuk.util.file.KeFile;
 import cz.geokuk.util.file.Root;
 
 /**
- * Rozpad času načtení databází: {@code MerRozpad geoget=CESTA gsak=CESTA opensak=CESTA ... [kola=3] [vlakna=1,2,4] [skupiny=1]}.
+ * Rozpad času načtení databází: {@code MerRozpad geoget=CESTA gsak=CESTA opensak=CESTA ... [kola=3] [vlakna=1,2,4] [skupiny=1] [predehrat=0|1]}.
  * <p>
  * Bez {@code vlakna}: na zdroj velikost (db + wal), SQL + tvorba GpxWpt (prázdný builder), počty waypointů, přídavných waypointů a tagů; pro všechny zdroje
  * dohromady a pro každý vynechaný čtení + builder, done() (procáci + bag) a z toho bag + index.
@@ -28,6 +29,9 @@ import cz.geokuk.util.file.Root;
  * <p>
  * S {@code skupiny=1}: jen kódy waypointů každé databáze (jako předpověď překryvu v programu), skupiny zdrojů sdílejících klíč jména a pro každou dvojici
  * zdrojů počet společných klíčů s ukázkou kódů. Klíče {@code cgp:} se zjistí až čtením, skupiny tedy můžou být ve skutečnosti větší.
+ * <p>
+ * S {@code predehrat}: zdroje se čtou postupně jako v programu (prázdný builder); s {@code predehrat=1} mezitím druhé vlákno čte sekvenčně soubor DALŠÍHO
+ * zdroje (a jeho -wal) jen do cache systému, první zdroj se čte bez předehřátí. Porovnání s {@code predehrat=0} má smysl studeně (každý běh po restartu počítače).
  */
 public class MerRozpad {
 	static ProgressModel progress() {
@@ -93,12 +97,15 @@ public class MerRozpad {
 		int kol = 3;
 		final List<Integer> vlakna = new ArrayList<>();
 		boolean skupiny = false;
+		Boolean predehrat = null;
 		for (final String arg : a) {
 			final int i = arg.indexOf('=');
 			final String k = arg.substring(0, i);
 			final String v = arg.substring(i + 1);
 			if (k.equals("kola")) {
 				kol = Integer.parseInt(v);
+			} else if (k.equals("predehrat")) {
+				predehrat = v.equals("1");
 			} else if (k.equals("skupiny")) {
 				skupiny = v.equals("1");
 			} else if (k.equals("vlakna")) {
@@ -116,6 +123,12 @@ public class MerRozpad {
 		}
 		if (skupiny) {
 			skupiny(zdroje);
+			return;
+		}
+		if (predehrat != null) {
+			for (int kolo = 0; kolo < kol; kolo++) {
+				postupneSPredehratim(kolo, zdroje, predehrat);
+			}
 			return;
 		}
 		for (int kolo = 0; kolo < kol; kolo++) {
@@ -204,6 +217,61 @@ public class MerRozpad {
 				System.out.println("společné " + soubory.get(i).getName() + " × " + soubory.get(j).getName() + " | klíčů " + spolecnych + " | např. " + sb);
 			}
 		}
+	}
+
+	/** Zdroje postupně do prázdného builderu; s předehřátím čte druhé vlákno sekvenčně soubor dalšího zdroje do cache systému. */
+	static void postupneSPredehratim(final int kolo, final Map<File, String> zdroje, final boolean predehrat) throws Exception {
+		final List<File> soubory = new ArrayList<>(zdroje.keySet());
+		final ExecutorService vlakno = Executors.newSingleThreadExecutor(r -> {
+			final Thread t = new Thread(r, "Předehřátí");
+			t.setDaemon(true);
+			return t;
+		});
+		try {
+			final long t0 = System.nanoTime();
+			Future<long[]> dalsi = null;
+			final StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < soubory.size(); i++) {
+				final File f = soubory.get(i);
+				long[] ohrato = null;
+				if (dalsi != null) {
+					ohrato = dalsi.get(); // zdroj se čte až po předehřátí, jinak by se o disk přetahovala dvě vlákna
+				}
+				final File nasledujici = predehrat && i + 1 < soubory.size() ? soubory.get(i + 1) : null;
+				dalsi = nasledujici == null ? null : vlakno.submit(() -> predehrej(nasledujici));
+				final int[] n = new int[3];
+				final long s0 = System.nanoTime();
+				cti(zdroje.get(f), f, pocitadlo(n));
+				sb.append(f.getName()).append(' ').append((System.nanoTime() - s0) / 1_000_000).append(" ms");
+				if (ohrato != null) {
+					sb.append(" (předehřátí ").append(ohrato[0] / 1_000_000).append(" MB za ").append(ohrato[1]).append(" ms)");
+				}
+				sb.append(", ");
+			}
+			System.out.println("kolo " + kolo + " | předehřátí " + (predehrat ? "ano" : "ne") + " | celkem " + (System.nanoTime() - t0) / 1_000_000 + " ms | " + sb);
+		} finally {
+			vlakno.shutdownNow();
+		}
+	}
+
+	/** Přečte soubor a jeho -wal sekvenčně po 4 MB, jen aby byl v cache systému; vrátí bajty a ms. */
+	static long[] predehrej(final File f) throws IOException {
+		final long t0 = System.nanoTime();
+		long bajtu = 0;
+		final java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(4 << 20);
+		for (final File soubor : new File[] { f, new File(f.getPath() + "-wal") }) {
+			if (!soubor.isFile()) {
+				continue;
+			}
+			try (java.nio.channels.FileChannel ch = java.nio.channels.FileChannel.open(soubor.toPath(), java.nio.file.StandardOpenOption.READ)) {
+				int precteno;
+				while ((precteno = ch.read(buf)) >= 0) {
+					bajtu += precteno;
+					buf.clear();
+				}
+			}
+		}
+		return new long[] { bajtu, (System.nanoTime() - t0) / 1_000_000 };
 	}
 
 	/** Všechny zdroje do prázdného builderu, nejvýš {@code n} naráz; vrátí celkový čas v ms. */
