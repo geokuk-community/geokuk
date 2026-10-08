@@ -182,6 +182,11 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		if (jIkon.getValue() > jTecek.getValue()) {
 			jIkon.setValue(jTecek.getValue());
 		}
+		// Ikony uložené mimo stupnici můžou být na stejném stupni, a přesto víc než zvolené tečky.
+		if (ikon > tecek) {
+			ikon = tecek;
+			jHodnotaIkon.setText(text(ikon));
+		}
 		ulozPoPusteni();
 	}
 
