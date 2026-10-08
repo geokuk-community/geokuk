@@ -189,6 +189,18 @@ public class JStatusBarSirkaTest {
 		Assert.assertTrue(cesty.isVisible());
 	}
 
+	@Test
+	public void hvezdickaNeulozenehoVyletuNemeniSirkuBlokuCest() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JStatusBar radek = new JStatusBar();
+		final JPanel cesty = (JPanel) pole(radek, "cesty");
+		final JLabel hvezdicka = (JLabel) pole(radek, "jSouborSVyletemPotrebujeUlozit");
+		final Dimension bez = cesty.getPreferredSize();
+		hvezdicka.setText("*");
+		Assert.assertEquals(bez, cesty.getPreferredSize());
+		Assert.assertTrue(hvezdicka.getPreferredSize().width >= hvezdicka.getFontMetrics(hvezdicka.getFont()).stringWidth("*"));
+	}
+
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
 		f.setAccessible(true);
