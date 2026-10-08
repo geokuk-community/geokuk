@@ -15,7 +15,7 @@
   OpenSAKu se ve stavovém řádku u zdroje ukáže ikonou chyby s důvodem
   v bublině; stejný důvod je v tabulce zdrojů a v Přehledu zdrojů.
 - Soubor s cestami a počet waypointů a cest se ve stavovém řádku ukazují,
-  jen když jsou nějaké cesty.
+  jen když jsou nějaké cesty. Jejich objevení neposune ostatní bloky.
 - Zdroj jde zapnout či vypnout i během načítání keší a Přehled zdrojů jde
   otevřít také během něj. Přepnutí načte znovu jen změněné zdroje a ty, které
   se s nimi překrývají (stejné keše ve více zdrojích); ostatní zůstanou
