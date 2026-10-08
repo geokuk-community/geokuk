@@ -154,7 +154,6 @@ public class RegistrStavuZdroju {
 		posluchac.run();
 	}
 
-	/** Pořadí ve snímku je stálé: podle typu (GPX, GeoGet, GSAK, OpenSAK), pak podle názvu. */
 	/** Důvody, proč aktivní datová složka typu nedává žádné položky; zápis jen z aktuálního běhu načítání. */
 	public void setProblemySlozek(final int gen, final Map<TypZdroje, String> problemy) {
 		synchronized (this) {
@@ -167,6 +166,7 @@ public class RegistrStavuZdroju {
 		posluchac.run();
 	}
 
+	/** Pořadí ve snímku je stálé: podle typu (GPX, GeoGet, GSAK, OpenSAK), pak podle názvu. */
 	private void obnovSnimek() {
 		final List<StavPolozky> seznam = new ArrayList<>(polozky.values());
 		seznam.sort(Comparator.comparing(StavPolozky::getTyp).thenComparing(p -> p.getNazev().toLowerCase(Locale.ROOT)).thenComparing(StavPolozky::getCesta));
