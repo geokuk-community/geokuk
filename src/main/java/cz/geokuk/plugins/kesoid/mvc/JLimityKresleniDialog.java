@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 
+import javax.accessibility.AccessibleContext;
 import javax.swing.*;
 
 import cz.geokuk.framework.AfterInjectInit;
@@ -110,7 +111,8 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		c.gridy = 2;
 		c.gridwidth = 2;
 		final JLabel poznamka = new JLabel("Teček je vždy aspoň tolik jako ikon; nejméně " + text(LimityKresleni.MIN_TECEK) + ".");
-		poznamka.setForeground(Color.GRAY);
+		final Color seda = UIManager.getColor("Label.disabledForeground");
+		poznamka.setForeground(seda != null ? seda : Color.GRAY);
 		panel.add(poznamka, c);
 		c.gridy = 3;
 		c.anchor = GridBagConstraints.EAST;
@@ -118,8 +120,51 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		add(panel, BorderLayout.CENTER);
 	}
 
+	/** Posuvník po stupních, čtečce obrazovky ale hlásí skutečný limit, ne číslo stupně. */
+	static final class JPosuvnikLimitu extends JSlider {
+		private static final long serialVersionUID = 1L;
+
+		JPosuvnikLimitu() {
+			super(0, STUPNICE.length - 1, 0);
+		}
+
+		@Override
+		public AccessibleContext getAccessibleContext() {
+			if (accessibleContext == null) {
+				accessibleContext = new AccessibleJSlider() {
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public Number getCurrentAccessibleValue() {
+						return STUPNICE[getValue()];
+					}
+
+					@Override
+					public boolean setCurrentAccessibleValue(final Number n) {
+						if (n == null) {
+							return false;
+						}
+						setValue(stupen(n.intValue()));
+						return true;
+					}
+
+					@Override
+					public Number getMinimumAccessibleValue() {
+						return STUPNICE[getMinimum()];
+					}
+
+					@Override
+					public Number getMaximumAccessibleValue() {
+						return STUPNICE[getMaximum()];
+					}
+				};
+			}
+			return accessibleContext;
+		}
+	}
+
 	private static JSlider posuvnik() {
-		final JSlider s = new JSlider(0, STUPNICE.length - 1, 0);
+		final JSlider s = new JPosuvnikLimitu();
 		final Hashtable<Integer, JLabel> popisky = new Hashtable<>();
 		for (final int v : new int[] { 30_000, 100_000, 300_000, 1_000_000, 2_000_000 }) {
 			popisky.put(stupen(v), new JLabel(v >= 1_000_000 ? v / 1_000_000 + " mil." : v / 1000 + " tis."));
@@ -181,6 +226,11 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		jHodnotaTecek.setText(text(tecek));
 		if (jIkon.getValue() > jTecek.getValue()) {
 			jIkon.setValue(jTecek.getValue());
+		}
+		// Ikony uložené mimo stupnici můžou být na stejném stupni, a přesto víc než zvolené tečky.
+		if (ikon > tecek) {
+			ikon = tecek;
+			jHodnotaIkon.setText(text(ikon));
 		}
 		ulozPoPusteni();
 	}
