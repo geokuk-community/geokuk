@@ -198,9 +198,9 @@ public final class EKaType {
 		return "© OpenStreetMap contributors";
 	}
 
-	/** OpenStreetMap hromadné stahování dlaždic nepovoluje, uživatelské mapy jen když to uživatel zapne. */
+	/** Hromadně jde stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne. */
 	public boolean isHromadneStahovaniPovoleno() {
-		return isUzivatelska() ? hromadne : this != OPEN_STREET;
+		return isUzivatelska() ? hromadne : this != OPEN_STREET && !(urlBuilder instanceof MapyCzUrlBuilder);
 	}
 
 	public KachleUrlBuilder getUrlBuilder() {
