@@ -103,6 +103,11 @@ public class SmokeScenar {
 		if (System.getProperty("smoke.opensak") != null) {
 			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex(FPref.OPENSAK_DATA_DIR_value, new Filex(new File(System.getProperty("smoke.opensak")), false, true));
 		}
+		if (Arrays.asList(kroky).contains("obnova")) {
+			final MyPreferences vylet = MyPreferences.current().node(FPref.VYLET_node);
+			vylet.putFile(FPref.AKTUALNI_SOUBOR_value, gpxSCestou());
+			vylet.putBoolean(FPref.JE_OTEVRENY_VYLET_value, true);
+		}
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(System.getProperty("smoke.args", "").isEmpty() ? new String[0] : System.getProperty("smoke.args").split(" "));
@@ -115,8 +120,8 @@ public class SmokeScenar {
 		});
 
 		cekej("hlavní okno", 60_000, () -> najdiHlavniOkno() != null);
-		if (Arrays.asList(kroky).contains("lista")) {
-			naEdt(() -> polohyPoStartu = polohyListy());
+		if (Arrays.asList(kroky).contains("lista") || Arrays.asList(kroky).contains("obnova")) {
+			naEdt(() -> vychoziPolohy = polohyListy());
 		}
 		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
 		naEdt(() -> {
@@ -176,6 +181,9 @@ public class SmokeScenar {
 				break;
 			case "lista":
 				lista();
+				break;
+			case "obnova":
+				obnova();
 				break;
 			default:
 				throw new IllegalArgumentException(krok);
@@ -529,25 +537,38 @@ public class SmokeScenar {
 		zbesile();
 	}
 
-	/** Polohy bloků stavového řádku a položek bloku Zdroje po startu, než se načtou data. */
-	private Map<String, Rectangle> polohyPoStartu;
+	/** Polohy bloků stavového řádku a položek bloku Zdroje, se kterými se porovnává: po startu, než se načtou data, a po prvním otevření cest. */
+	private Map<String, Rectangle> vychoziPolohy;
 
-	/**
-	 * Stavový řádek se nesmí pohnout: po načtení dat, po načtení cest ani po přepnutí zdroje. K tomu klikání na zaškrtávátko GPX během načítání a najetí na
-	 * „Zdroje:“, odezvu EDT hlídá hlídač.
-	 */
-	private void lista() throws Exception {
-		porovnejListu("po načtení dat");
+	private static File gpxSCestou() throws IOException {
 		final File gpx = new File(System.getProperty("java.io.tmpdir"), "smoke-cesta.gpx");
 		Files.write(gpx.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"smoke\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n<trk><trkseg>\n"
 				+ "<trkpt lat=\"50.08\" lon=\"14.42\"/><trkpt lat=\"50.09\" lon=\"14.43\"/><trkpt lat=\"50.10\" lon=\"14.41\"/>\n</trkseg></trk>\n</gpx>\n").getBytes(StandardCharsets.UTF_8));
+		return gpx;
+	}
+
+	/**
+	 * Stavový řádek se nesmí pohnout po načtení dat. Smí se jednou posunout, když uživatel poprvé otevře cesty; pak už ne po zavření a znovuotevření cest
+	 * ani po přepnutí zdroje. K tomu klikání na zaškrtávátko GPX během načítání a najetí na „Zdroje:“, odezvu EDT hlídá hlídač.
+	 */
+	private void lista() throws Exception {
+		porovnejListu("po načtení dat");
+		final File gpx = gpxSCestou();
 		final CestyModel cesty = bean(CestyModel.class);
-		naEdt(() -> cesty.otevri(gpx));
 		final JStatusBar radek = statusBar();
 		final Component blokCest = (Component) pole(radek, "cesty");
+		naEdt(() -> cesty.otevri(gpx));
 		cekej("blok cest", 30_000, () -> blokCest.isVisible());
 		pockejNaKlid("načtení cest");
-		porovnejListu("po načtení cest");
+		naEdt(() -> vychoziPolohy = polohyListy());
+		naEdt(cesty::zavri);
+		cekej("zavření cest", 30_000, () -> !blokCest.isVisible());
+		pockejNaKlid("zavření cest");
+		porovnejListu("po zavření cest");
+		naEdt(() -> cesty.otevri(gpx));
+		cekej("blok cest", 30_000, () -> blokCest.isVisible());
+		pockejNaKlid("znovuotevření cest");
+		porovnejListu("po znovuotevření cest");
 
 		final KesoidModel model = bean(KesoidModel.class);
 		final Field vsechny = KesoidModel.class.getDeclaredField("vsechny");
@@ -587,10 +608,22 @@ public class SmokeScenar {
 		porovnejListu("po přepínání zdroje");
 	}
 
+	/** Výlet otevřený při minulém ukončení se obnoví při startu; stavový řádek se nepohne ani pak, ani po zavření výletu. */
+	private void obnova() throws Exception {
+		final Component blokCest = (Component) pole(statusBar(), "cesty");
+		cekej("obnovený výlet", 60_000, () -> blokCest.isVisible());
+		pockejNaKlid("obnova výletu");
+		porovnejListu("po načtení dat a obnově výletu");
+		naEdt(bean(CestyModel.class)::zavri);
+		cekej("zavření výletu", 30_000, () -> !blokCest.isVisible());
+		pockejNaKlid("zavření výletu");
+		porovnejListu("po zavření obnoveného výletu");
+	}
+
 	private void porovnejListu(final String kdy) throws Exception {
 		final List<Map<String, Rectangle>> ted = new ArrayList<>();
 		naEdt(() -> ted.add(polohyListy()));
-		for (final Map.Entry<String, Rectangle> e : polohyPoStartu.entrySet()) {
+		for (final Map.Entry<String, Rectangle> e : vychoziPolohy.entrySet()) {
 			if (!e.getValue().equals(ted.get(0).get(e.getKey()))) {
 				chyby.add("Stavový řádek se pohnul " + kdy + ": " + e.getKey() + " " + e.getValue() + " → " + ted.get(0).get(e.getKey()));
 			}

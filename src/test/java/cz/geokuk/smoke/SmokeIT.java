@@ -207,11 +207,19 @@ public class SmokeIT {
 		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
 	}
 
-	/** Stavový řádek se nepohne po načtení dat, cest ani po přepínání zdroje; klikání v bloku Zdroje během načítání nezdrží EDT. */
+	/** Stavový řádek se nepohne po načtení dat ani po přepínání zdroje, po prvním otevření cest ani po jejich zavření; klikání v bloku Zdroje během načítání nezdrží EDT. */
 	@Test
 	public void stavovyRadekStoji() throws Exception {
 		final File adresar = pripravAdresar("lista");
 		final Properties zprava = spust(adresar, "lista", "meritka,lista");
+		zkontrolujBezChyb(adresar, zprava);
+	}
+
+	/** Výlet obnovený při startu stavový řádek neposune, ani když se pak zavře. */
+	@Test
+	public void obnovaVyletuNeposuneListu() throws Exception {
+		final File adresar = pripravAdresar("obnova");
+		final Properties zprava = spust(adresar, "obnova", "meritka,obnova");
 		zkontrolujBezChyb(adresar, zprava);
 	}
 
