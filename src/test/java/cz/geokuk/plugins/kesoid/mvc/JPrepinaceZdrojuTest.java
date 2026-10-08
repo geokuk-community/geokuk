@@ -410,8 +410,8 @@ public class JPrepinaceZdrojuTest {
 	@Test
 	public void zaskrtavatkoNeniPrepinacABublinaRikaAkci() {
 		Assert.assertFalse((Object) blok.getZaskrtavatko(TypZdroje.GSAK) instanceof JToggleButton);
-		Assert.assertEquals("GSAK zapnout; Ctrl+klik: jen GSAK", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.VYPNUTO));
-		Assert.assertEquals("GSAK vypnout; Ctrl+klik: jen GSAK", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.ZAPNUTO));
+		Assert.assertEquals("GSAK zapnout; " + JTabulkaZdroju.KLAVESA_JEN + "+klik: jen GSAK", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.VYPNUTO));
+		Assert.assertEquals("GSAK vypnout; " + JTabulkaZdroju.KLAVESA_JEN + "+klik: jen GSAK", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.ZAPNUTO));
 		Assert.assertTrue(JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.CASTECNE).startsWith("GSAK vypnout"));
 	}
 

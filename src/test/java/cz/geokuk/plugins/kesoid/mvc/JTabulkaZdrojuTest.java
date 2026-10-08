@@ -164,9 +164,9 @@ public class JTabulkaZdrojuTest {
 	@Test
 	public void ctrlKlikVybereJenPolozkuNeboTyp() {
 		final JTabulkaZdroju t = tabulka(null);
-		Assert.assertEquals("Ctrl+klik: načítat jen tento soubor", t.tooltip(t.getRadky().get(radek(t, TypZdroje.GEOGET, "Cesko.db3")), JTabulkaZdroju.SL_NACIST));
-		klikNaNacist(t, radek(t, TypZdroje.GEOGET, "Cesko.db3"), java.awt.event.InputEvent.CTRL_DOWN_MASK);
-		klikNaNacist(t, radek(t, TypZdroje.GEOGET, null), java.awt.event.InputEvent.CTRL_DOWN_MASK);
+		Assert.assertEquals(JTabulkaZdroju.KLAVESA_JEN + "+klik: načítat jen tento soubor", t.tooltip(t.getRadky().get(radek(t, TypZdroje.GEOGET, "Cesko.db3")), JTabulkaZdroju.SL_NACIST));
+		klikNaNacist(t, radek(t, TypZdroje.GEOGET, "Cesko.db3"), JTabulkaZdroju.MASKA_JEN);
+		klikNaNacist(t, radek(t, TypZdroje.GEOGET, null), JTabulkaZdroju.MASKA_JEN);
 		Assert.assertEquals(Arrays.asList("jenPolozka GEOGET Cesko.db3", "jenTyp GEOGET"), ovladani.volani);
 	}
 
