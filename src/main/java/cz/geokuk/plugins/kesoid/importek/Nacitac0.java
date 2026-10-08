@@ -10,6 +10,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import cz.geokuk.framework.ProgressModel;
+import cz.geokuk.framework.Progressor;
 import cz.geokuk.framework.ProgressorInputStream;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
@@ -23,6 +24,27 @@ public abstract class Nacitac0 {
 
 	protected static final String PREFIX_USERDEFINOANYCH_GENU = "geokuk_";
 	static Pattern osetriCislo = Pattern.compile("[^0-9]");
+
+	private static final ThreadLocal<String> POPIS_PRUBEHU = new ThreadLocal<>();
+
+	/** Průběhy založené ve volajícím vláknu ukážou místo plné cesty krátký popis zdroje; null popis zruší. */
+	static void setPopisPrubehu(final String popis) {
+		if (popis == null) {
+			POPIS_PRUBEHU.remove();
+		} else {
+			POPIS_PRUBEHU.set(popis);
+		}
+	}
+
+	/** Průběh čtení zdroje: ve stavovém řádku krátký popis, plná cesta v bublině. */
+	protected static Progressor zahajPrubeh(final ProgressModel aProgressModel, final int max, final String cesta) {
+		return aProgressModel.start(max, popisPrubehu(cesta), cesta);
+	}
+
+	private static String popisPrubehu(final String cesta) {
+		final String popis = POPIS_PRUBEHU.get();
+		return popis != null ? popis : cesta;
+	}
 
 	/** Volná halda v bajtech, v testu jde podvrhnout. */
 	static LongSupplier volnaPamet = () -> {
@@ -101,7 +123,7 @@ public abstract class Nacitac0 {
 	}
 
 	protected InputStream wrapByProgressor(final InputStream istm, final String sourceName, final ProgressModel aProgressModel) {
-		return new BufferedInputStream(new ProgressorInputStream(aProgressModel, "Loading: " + sourceName, istm));
+		return new BufferedInputStream(new ProgressorInputStream(aProgressModel, popisPrubehu(sourceName), sourceName, istm));
 	}
 
 	abstract boolean umiNacist(File file);

@@ -14,6 +14,8 @@
 - Prázdná, neexistující nebo nečitelná datová složka GeoGetu, GSAKu nebo
   OpenSAKu se ve stavovém řádku u zdroje ukáže ikonou chyby s důvodem
   v bublině; stejný důvod je v tabulce zdrojů a v Přehledu zdrojů.
+- Průběh načítání ve stavovém řádku ukazuje typ zdroje a cestu v jeho datové
+  složce (např. „GSAK\Default\sqlite.db3“), plná cesta je v bublině.
 - Soubor s cestami a počet waypointů a cest se ve stavovém řádku ukazují,
   jen když jsou nějaké cesty. Výlet otevřený při startu stavový řádek
   neposune.
