@@ -264,8 +264,14 @@ public class JPrepinaceZdrojuTest {
 	@Test
 	public void uzkeOknoBezNazvuAIkonaOteviraDetail() throws Exception {
 		final Dimension siroky = rozmer(data.snimek());
+		naEdt(() -> okno.setSize(800, 300));
+		// Správce oken může šířku potvrdit až později; do té doby by blok počítal se starou.
+		final long konec = System.currentTimeMillis() + 5000;
+		final int[] sirka = new int[1];
+		do {
+			naEdt(() -> sirka[0] = okno.getWidth());
+		} while (sirka[0] != 800 && System.currentTimeMillis() < konec);
 		naEdt(() -> {
-			okno.setSize(800, 300);
 			blok.prizpusob();
 			okno.validate();
 		});
