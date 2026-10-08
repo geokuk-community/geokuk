@@ -229,7 +229,8 @@ public final class EKaType {
 	}
 
 	static boolean jeServerBezHromadnehoStahovani(final String hostitel) {
-		final String h = hostitel.toLowerCase(Locale.ROOT);
+		// Koncová tečka plně kvalifikovaného jména adresu nemění.
+		final String h = hostitel.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");
 		for (final String server : SERVERY_BEZ_HROMADNEHO_STAHOVANI) {
 			if (h.equals(server) || h.endsWith("." + server)) {
 				return true;

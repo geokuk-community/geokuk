@@ -303,6 +303,7 @@ public class UzivatelskeMapyTest {
 		Assert.assertFalse(jedna("m.nazev=M", "m.url=https://api.MAPY.com/v1/maptiles/outdoor/256/{z}/{x}/{y}", "m.hromadne=ano").isHromadneStahovaniPovoleno());
 		Assert.assertFalse(jedna("m.nazev=M", "m.url=https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", "m.hromadne=ano").isHromadneStahovaniPovoleno());
 		Assert.assertFalse(jedna("m.nazev=M", "m.url=https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png", "m.hromadne=ano").isHromadneStahovaniPovoleno());
+		Assert.assertFalse(jedna("m.nazev=M", "m.url=https://tile.openstreetmap.org./{z}/{x}/{y}.png", "m.hromadne=ano").isHromadneStahovaniPovoleno());
 		Assert.assertTrue(jedna("m.nazev=M", "m.url=https://outdoor.tiles.freemap.sk/{z}/{x}/{y}.png", "m.hromadne=ano").isHromadneStahovaniPovoleno());
 	}
 
@@ -311,6 +312,8 @@ public class UzivatelskeMapyTest {
 		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("mapy.cz"));
 		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("Mapserver.Mapy.CZ"));
 		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("{s}.tile.openstreetmap.org"));
+		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("tile.openstreetmap.org."));
+		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("mapserver.mapy.cz.."));
 		Assert.assertFalse(EKaType.jeServerBezHromadnehoStahovani("nemapy.cz"));
 		Assert.assertFalse(EKaType.jeServerBezHromadnehoStahovani("openstreetmap.org"));
 		Assert.assertFalse(EKaType.jeServerBezHromadnehoStahovani("ags.cuzk.gov.cz"));
