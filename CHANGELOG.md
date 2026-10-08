@@ -21,7 +21,7 @@
   ji přečte jen jednou.
 - Keše z databází OpenSAKu: v Umístění souborů na záložce OpenSAK
   zapněte datovou složku OpenSAKu, načte se každá databáze `.db` v ní.
-- Kešoidy > Limity kreslení…: nastavitelný nejvyšší počet ikon
+- Kešoidy > Limity kreslení…: posuvníky pro nejvyšší počet ikon
   (výchozí 90 000) a teček (výchozí 300 000) ve výřezu. Limit ikon platí
   i pro popisky a zvýrazňovací kruhy; nad limitem teček se nic nekreslí
   a stavový řádek to ohlásí. Nejnižší nastavitelný limit teček je 60 000.
