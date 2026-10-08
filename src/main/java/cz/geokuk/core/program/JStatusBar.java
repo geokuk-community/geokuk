@@ -15,6 +15,7 @@ import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.cesty.CestyChangedEvent;
+import cz.geokuk.plugins.cesty.CestyModel;
 import cz.geokuk.plugins.cesty.data.Doc;
 import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.KesBag;
@@ -28,7 +29,7 @@ import cz.geokuk.util.lang.FString;
  * @author Martin Veverka
  *
  */
-public class JStatusBar extends JPanel {
+public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	private class JSkrtnutaValue extends JValue {
 
@@ -189,6 +190,10 @@ public class JStatusBar extends JPanel {
 	/** Soubor s cestami a počty; jen když nějaké cesty jsou. */
 	private final JPanel cesty = createPanel();
 
+	private final ZalamovaciLayout layout = new ZalamovaciLayout();
+
+	private CestyModel cestyModel;
+
 	/** Výlet a zdroje vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
 	private final JPanel pravyBlok = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
@@ -202,6 +207,18 @@ public class JStatusBar extends JPanel {
 		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboruNeboZNastaveni()));
 	}
 
+	public void inject(final CestyModel cestyModel) {
+		this.cestyModel = cestyModel;
+	}
+
+	/** Výlet obnovený při startu se načte až po zobrazení okna; místo pro cesty je připravené předem, aby se lišta nepohnula. */
+	@Override
+	public void initAfterInject() {
+		if (cestyModel != null && cestyModel.otevreVyletPriStartu()) {
+			layout.rezervuj(cesty);
+		}
+	}
+
 	public void onEvent(final KesoidUmisteniSouboruChangedEvent event) {
 		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(event.getUmisteniSouboru()));
 	}
@@ -210,6 +227,10 @@ public class JStatusBar extends JPanel {
 		final Doc doc = aEvent.getModel().getDoc();
 		// vyletAno.setText(doc.getPocetWaypointu() + "");
 		cesty.setVisible(!doc.isEmpty());
+		if (!doc.isEmpty()) {
+			// Po zavření výletu zůstane místo, aby lišta během relace neposkakovala.
+			layout.rezervuj(cesty);
+		}
 		revalidate();
 		if (doc.isEmpty()) {
 			jSouborSVyletem.setText(".");
@@ -349,7 +370,6 @@ public class JStatusBar extends JPanel {
 	}
 
 	private void initComponents() {
-		final ZalamovaciLayout layout = new ZalamovaciLayout();
 		setLayout(layout);
 
 		final JPanel souradnicePanel = createPanel();

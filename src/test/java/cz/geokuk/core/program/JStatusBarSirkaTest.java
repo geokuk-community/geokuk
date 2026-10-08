@@ -190,6 +190,83 @@ public class JStatusBarSirkaTest {
 	}
 
 	@Test
+	public void mistoProCestyPriObnoveVyletuPriStartu() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final int sirka = sirkaKdeCestyPridajiRadek();
+		final JStatusBar radek = new JStatusBar();
+		radek.inject(cestyModel(true));
+		radek.initAfterInject();
+		final int bezCest = vyska(radek, sirka);
+		radek.onEvent(cestyEvent(false));
+		Assert.assertEquals(bezCest, vyska(radek, sirka));
+	}
+
+	@Test
+	public void mistoProCestyZustanePoZavreniVyletu() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final int sirka = sirkaKdeCestyPridajiRadek();
+		final JStatusBar radek = new JStatusBar();
+		radek.inject(cestyModel(false));
+		radek.initAfterInject();
+		final int bezCest = vyska(radek, sirka);
+		radek.onEvent(cestyEvent(false));
+		final int sCestami = vyska(radek, sirka);
+		Assert.assertTrue(sCestami > bezCest);
+		radek.onEvent(cestyEvent(true));
+		Assert.assertFalse(((JPanel) pole(radek, "cesty")).isVisible());
+		Assert.assertEquals(sCestami, vyska(radek, sirka));
+	}
+
+	/** Šířka, ve které by objevení bloku cest bez rezervace přidalo řádek. */
+	private static int sirkaKdeCestyPridajiRadek() throws Exception {
+		final JStatusBar radek = new JStatusBar();
+		for (int sirka = radek.getPreferredSize().width + 300; sirka > 300; sirka--) {
+			final JStatusBar bez = new JStatusBar();
+			final int vyskaBez = vyska(bez, sirka);
+			bez.onEvent(cestyEvent(false));
+			if (vyska(bez, sirka) > vyskaBez) {
+				return sirka;
+			}
+		}
+		throw new AssertionError("blok cest nikde nepřidá řádek");
+	}
+
+	private static int vyska(final JStatusBar radek, final int sirka) {
+		final JPanel okno = new JPanel(new BorderLayout());
+		okno.add(radek, BorderLayout.SOUTH);
+		okno.setSize(sirka, 600);
+		okno.doLayout();
+		return radek.getPreferredSize().height;
+	}
+
+	private static cz.geokuk.plugins.cesty.CestyModel cestyModel(final boolean otevreVyletPriStartu) {
+		return new cz.geokuk.plugins.cesty.CestyModel() {
+			@Override
+			public boolean otevreVyletPriStartu() {
+				return otevreVyletPriStartu;
+			}
+		};
+	}
+
+	private static cz.geokuk.plugins.cesty.CestyChangedEvent cestyEvent(final boolean prazdny) {
+		final cz.geokuk.plugins.cesty.data.Doc doc = new cz.geokuk.plugins.cesty.data.Doc() {
+			@Override
+			public boolean isEmpty() {
+				return prazdny;
+			}
+		};
+		final cz.geokuk.plugins.cesty.CestyModel model = new cz.geokuk.plugins.cesty.CestyModel() {
+			@Override
+			public cz.geokuk.plugins.cesty.data.Doc getDoc() {
+				return doc;
+			}
+		};
+		final cz.geokuk.plugins.cesty.CestyChangedEvent event = new cz.geokuk.plugins.cesty.CestyChangedEvent(doc, null);
+		event.setModel(model);
+		return event;
+	}
+
+	@Test
 	public void hvezdickaNeulozenehoVyletuNemeniSirkuBlokuCest() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
 		final JStatusBar radek = new JStatusBar();
