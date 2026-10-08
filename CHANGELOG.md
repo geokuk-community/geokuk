@@ -69,6 +69,8 @@
 - Mapy: nové podklady ČR ortofoto a ČR Základní topografická mapa
   z otevřených dat ČÚZK (© ČÚZK, CC BY 4.0). Mimo území České republiky
   zůstane mapa prázdná.
+- Mapy.cz už nejde stahovat hromadně do cache (Mapy > Postahovat
+  dlaždice); zobrazené dlaždice se do cache ukládají dál.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
