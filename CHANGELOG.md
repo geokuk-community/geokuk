@@ -39,10 +39,9 @@
 - Windows: okno GeoKuku se spojí s ikonou připnutou na hlavním panelu
   (ze zástupce GeoKuku), místo druhé ikony. Při prvním spuštění GeoKuk
   nabídne zástupce v nabídce Start, aby šel připnout na hlavní panel.
-- Log a soubor dálkového ovládání už nejdou do sdílené dočasné složky,
-  která nepatří uživateli; místo ní se použije složka `.geokuk` v domovské
-  složce. Hláška o nezapisovatelné cizí složce říká, že patří jinému
-  uživateli.
+- Když do datové složky nejde zapisovat, log a soubor dálkového ovládání
+  jsou ve složce `.geokuk` v domovské složce. Hláška o nezapisovatelné cizí
+  složce říká, že patří jinému uživateli.
 - Po pádu programu se mapa zobrazuje hned, kontrola cache dlaždic běží
   na pozadí. Prázdný soubor nastavení (po výpadku proudu) se při startu
   bere jako chybějící, bez hlášení; zbylé dočasné soubory
