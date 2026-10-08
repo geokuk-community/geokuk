@@ -1,7 +1,10 @@
 package cz.geokuk.core.program;
 
+import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
@@ -28,6 +31,12 @@ public class JPrehledSouboru extends JPanel {
 	}
 
 	private static final long serialVersionUID = -2491414463002815835L;
+	/** Okno dialogu je ještě otevřené; zavřené během kontroly složek se nic neuloží. */
+	java.util.function.BooleanSupplier oknoOtevrene = () -> {
+		final java.awt.Window w = SwingUtilities.getWindowAncestor(this);
+		return w == null || w.isShowing();
+	};
+	final JLabel kontroluji = new JLabel("Kontroluji složky…");
 	private JJedenSouborPanel jKesDir;
 	private JJedenSouborPanel jGeogetDataDir;
 
@@ -171,7 +180,8 @@ public class JPrehledSouboru extends JPanel {
 		final Box ulobox = Box.createHorizontalBox();
 		final JButton ulozit = new JButton("Uložit");
 
-		// ulobox.add(ulozlabel);
+		kontroluji.setVisible(false);
+		ulobox.add(kontroluji);
 		ulobox.add(Box.createHorizontalGlue());
 		ulobox.add(ulozit);
 		ulobox.setAlignmentX(LEFT_ALIGNMENT);
@@ -232,44 +242,101 @@ public class JPrehledSouboru extends JPanel {
 
 	private void registerEvents(final JButton ulozit) {
 		ulozit.addActionListener(aE -> {
-			try {
-				uloz();
-				// Board.multiNacitacLoaderManager.startLoad(true);
-
-				((JUmisteniSouboruDialog) SwingUtilities.getRoot(JPrehledSouboru.this)).dispose();
-			} catch (final YNejdeTo e) {
-				Dlg.error(e.getMessage());
+			final Ulozeni ulozeni = priprav();
+			// Prověření složek sahá na disk (síťový disk může dlouho neodpovídat), proto mimo EDT; dialog mezitím ukazuje, že pracuje.
+			final Component okno = SwingUtilities.getRoot(this);
+			ulozit.setEnabled(false);
+			kontroluji.setVisible(true);
+			if (okno != null) {
+				okno.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			}
+			new SwingWorker<Void, Void>() {
+				@Override
+				protected Void doInBackground() throws YNejdeTo {
+					ulozeni.prover();
+					return null;
+				}
+
+				@Override
+				protected void done() {
+					if (okno != null) {
+						okno.setCursor(Cursor.getDefaultCursor());
+					}
+					kontroluji.setVisible(false);
+					ulozit.setEnabled(true);
+					if (!oknoOtevrene.getAsBoolean()) {
+						return; // dialog zavřený křížkem během kontroly = zrušené uložení, ani chyba se už neukazuje
+					}
+					try {
+						get();
+						ulozeni.zapis();
+						if (okno instanceof JUmisteniSouboruDialog) {
+							((JUmisteniSouboruDialog) okno).dispose();
+						}
+					} catch (final ExecutionException e) {
+						Dlg.error(e.getCause() instanceof YNejdeTo ? e.getCause().getMessage() : "Složky nejde prověřit.");
+					} catch (final InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+				}
+			}.execute();
 		});
 	}
 
 	void uloz() throws YNejdeTo {
+		final Ulozeni ulozeni = priprav();
+		ulozeni.prover();
+		ulozeni.zapis();
+	}
+
+	/** Hodnoty z dialogu (EDT), jejich prověření na disku (mimo EDT) a zápis do modelů (EDT). */
+	private final class Ulozeni {
 		final GsakParametryNacitani g = new GsakParametryNacitani();
-		g.setCasNalezu(_split(jGsakCasNalezu.getText()));
-		g.setCasNenalezu(_split(jGsakCasNenalezu.getText()));
-		g.setNacistVsechnyDatabaze(!jGsakNacitatAzPoVybrani.isSelected());
-		g.setNacistVsechnyDatabazeOpensaku(!jOpensakNacitatAzPoVybrani.isSelected());
-
 		final KesoidUmisteniSouboru u1 = new KesoidUmisteniSouboru();
-		u1.setKesDir(jKesDir.vezmiSouborAProver());
-		u1.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
-		u1.setGeogetDataDir(jGeogetDataDir.vezmiSouborAProver());
-		u1.setGsakDataDir(jGsakDataDir.vezmiSouborAProver());
-		u1.setOpensakDataDir(jOpensakDataDir.vezmiSouborAProver());
-		u1.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
-		u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
-		u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
-		u1.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
-
 		final RenderUmisteniSouboru u3 = new RenderUmisteniSouboru();
-		u3.setOziDir(jOziDir.vezmiSouborAProver());
-		u3.setKmzDir(jKmzDir.vezmiSouborAProver());
-		u3.setPictureDir(jPictureDir.vezmiSouborAProver());
+		final Map<JJedenSouborPanel, Filex> kProvereni = new LinkedHashMap<>();
 
-		// Změna složky GSAK podle volby „Načítat až po vybrání“ zakazuje nové databáze, volba proto musí být uložená dřív.
-		kesoidModel.setGsakParametryNacitani(g);
-		kesoidModel.setUmisteniSouboru(u1);
-		renderModel.setUmisteniSouboru(u3);
+		Filex vezmi(final JJedenSouborPanel panel) {
+			final Filex f = panel.vezmiSoubor();
+			kProvereni.put(panel, f);
+			return f;
+		}
+
+		void prover() throws YNejdeTo {
+			for (final Map.Entry<JJedenSouborPanel, Filex> e : kProvereni.entrySet()) {
+				e.getKey().prover(e.getValue());
+			}
+		}
+
+		void zapis() {
+			// Změna složky GSAK podle volby „Načítat až po vybrání“ zakazuje nové databáze, volba proto musí být uložená dřív.
+			kesoidModel.setGsakParametryNacitani(g);
+			kesoidModel.setUmisteniSouboru(u1);
+			renderModel.setUmisteniSouboru(u3);
+		}
+	}
+
+	private Ulozeni priprav() {
+		final Ulozeni u = new Ulozeni();
+		u.g.setCasNalezu(_split(jGsakCasNalezu.getText()));
+		u.g.setCasNenalezu(_split(jGsakCasNenalezu.getText()));
+		u.g.setNacistVsechnyDatabaze(!jGsakNacitatAzPoVybrani.isSelected());
+		u.g.setNacistVsechnyDatabazeOpensaku(!jOpensakNacitatAzPoVybrani.isSelected());
+
+		u.u1.setKesDir(u.vezmi(jKesDir));
+		u.u1.setCestyDir(KesoidUmisteniSouboru.CESTY_DIR);
+		u.u1.setGeogetDataDir(u.vezmi(jGeogetDataDir));
+		u.u1.setGsakDataDir(u.vezmi(jGsakDataDir));
+		u.u1.setOpensakDataDir(u.vezmi(jOpensakDataDir));
+		u.u1.setImage3rdPartyDir(KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR);
+		u.u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
+		u.u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
+		u.u1.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
+
+		u.u3.setOziDir(u.vezmi(jOziDir));
+		u.u3.setKmzDir(u.vezmi(jKmzDir));
+		u.u3.setPictureDir(u.vezmi(jPictureDir));
+		return u;
 	}
 
 	private String _join(final Collection<String> aValues) {
