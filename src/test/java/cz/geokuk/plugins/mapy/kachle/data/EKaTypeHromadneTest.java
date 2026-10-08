@@ -10,4 +10,10 @@ public class EKaTypeHromadneTest {
 		Assert.assertFalse(EKaType.OPEN_STREET.isHromadneStahovaniPovoleno());
 		Assert.assertTrue(EKaType.TURIST_M.isHromadneStahovaniPovoleno());
 	}
+
+	@Test
+	public void cuzkZatimNelzeStahovatHromadne() {
+		Assert.assertFalse(EKaType.CUZK_ORTO.isHromadneStahovaniPovoleno());
+		Assert.assertFalse(EKaType.CUZK_ZTM.isHromadneStahovaniPovoleno());
+	}
 }

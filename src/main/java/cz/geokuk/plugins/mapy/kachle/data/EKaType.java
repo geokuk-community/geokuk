@@ -36,16 +36,22 @@ public final class EKaType {
 //	TUR_FREEMAP_SK_K(false, 0, 18, 18, "Slovensko lyžařská  ", "turistika.freemap.sk - lyžařská mapa", 0, null, new OpenStreatMapUrlBuilder("http://c.freemap.sk/K/")),
 //
 
+	public static final EKaType CUZK_ORTO = omezeneUzemi(new EKaType("CUZK_ORTO", true, 6, 20, 20, "ČR ortofoto (ČÚZK)", "Ortofoto České republiky, otevřená data ČÚZK", 0, null,
+			new UzivatelskyUrlBuilder("https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer/tile/{z}/{y}/{x}")));
+	public static final EKaType CUZK_ZTM = omezeneUzemi(new EKaType("CUZK_ZTM", false, 6, 19, 19, "ČR Základní topografická mapa (ČÚZK)", "Základní topografická mapa České republiky, otevřená data ČÚZK",
+			0, null, new UzivatelskyUrlBuilder("https://ags.cuzk.gov.cz/arcgis1/rest/services/ZTM_WM/MapServer/tile/{z}/{y}/{x}")));
+
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
-	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F));
+	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
 
 	private final String jmeno;
 	private Map<String, String> hlavicky = Collections.emptyMap();
 	private String atribuce = "";
 	private boolean hromadne;
+	private boolean omezeneUzemi;
 	private final int minMoumer;
 	private final int maxMoumer;
 	private final int maxAutoMoumer;
@@ -89,6 +95,11 @@ public final class EKaType {
 		this.keyStroke = keyStroke;
 		this.urlBuilder = urlBuilder;
 
+	}
+
+	static EKaType omezeneUzemi(final EKaType mapa) {
+		mapa.omezeneUzemi = true;
+		return mapa;
 	}
 
 	static EKaType uzivatelska(final String id, final String nazev, final String popis, final int minMoumer, final int maxMoumer, final int maxAutoMoumer, final int klavesa,
@@ -195,12 +206,20 @@ public final class EKaType {
 		if (this == TUR_FREEMAP_SK_F) {
 			return "© GKÚ, NLC, © ČÚZK";
 		}
+		if (this == CUZK_ORTO || this == CUZK_ZTM) {
+			return "© ČÚZK, CC BY 4.0";
+		}
 		return "© OpenStreetMap contributors";
 	}
 
-	/** OpenStreetMap hromadné stahování dlaždic nepovoluje, uživatelské mapy jen když to uživatel zapne. */
+	/** OpenStreetMap hromadné stahování dlaždic nepovoluje, ČÚZK zatím ne, uživatelské mapy jen když to uživatel zapne. */
 	public boolean isHromadneStahovaniPovoleno() {
-		return isUzivatelska() ? hromadne : this != OPEN_STREET;
+		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM;
+	}
+
+	/** Podklad pokrývá jen část světa; mimo ni server vrací 404 a dlaždice je prázdná, ne chybná. */
+	public boolean isOmezeneUzemi() {
+		return omezeneUzemi;
 	}
 
 	public KachleUrlBuilder getUrlBuilder() {

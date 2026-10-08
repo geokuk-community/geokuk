@@ -66,6 +66,9 @@
   se zalomí do více řádků; výlet zůstává vpravo dole.
 - Nápověda (F1 a tlačítka Nápověda v dialozích) otevírá stránky
   uživatelské wiki na GitHubu.
+- Mapy: nové podklady ČR ortofoto a ČR Základní topografická mapa
+  z otevřených dat ČÚZK (© ČÚZK, CC BY 4.0). Mimo území České republiky
+  zůstane mapa prázdná.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
