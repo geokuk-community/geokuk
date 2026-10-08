@@ -93,6 +93,35 @@ public class JPrepinaceZdrojuTest {
 		}
 	}
 
+	/** Dlouhý seznam sahá až k panelu nástrojů okna, výš ne; zbytek se posouvá. */
+	@Test
+	public void popupAzKPaneluNastroju() throws Exception {
+		final StavyZdrojuProTesty mnoho = new StavyZdrojuProTesty();
+		for (int i = 0; i < 60; i++) {
+			mnoho.pridej(TypZdroje.GPX, "trasa" + i + ".gpx");
+		}
+		mnoho.prepis();
+		final JToolBar lista = new JToolBar();
+		lista.add(new JButton("Nástroj"));
+		naEdt(() -> {
+			okno.add(lista, BorderLayout.NORTH);
+			final Rectangle obrazovka = okno.getGraphicsConfiguration().getBounds();
+			okno.setBounds(obrazovka.x, obrazovka.y + 20, okno.getWidth(), Math.min(700, obrazovka.height - 20));
+			okno.validate();
+			blok.obnov(mnoho.snimek());
+			blok.ukazSouhrn();
+		});
+		naEdt(() -> {
+			final JComponent obsah = blok.viditelny();
+			Assert.assertNotNull(obsah);
+			final int hranice = Math.max(okno.getGraphicsConfiguration().getBounds().y, lista.getLocationOnScreen().y + lista.getHeight());
+			Assert.assertEquals(hranice, obsah.getLocationOnScreen().y);
+			Assert.assertEquals(blok.getLocationOnScreen().y, obsah.getLocationOnScreen().y + obsah.getHeight());
+			Assume.assumeTrue("málo místa na obrazovce", blok.getLocationOnScreen().y - hranice > 24 * JTabulkaZdroju.VYSKA_RADKU);
+			Assert.assertTrue("víc než 20 řádků: " + obsah.getHeight(), obsah.getHeight() > 22 * JTabulkaZdroju.VYSKA_RADKU);
+		});
+	}
+
 	@Test
 	public void rozmerNezavisiNaStavu() throws Exception {
 		final Dimension nacteno = rozmer(data.snimek());

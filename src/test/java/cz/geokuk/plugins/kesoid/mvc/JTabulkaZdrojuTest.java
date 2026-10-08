@@ -51,6 +51,43 @@ public class JTabulkaZdrojuTest {
 		}
 	}
 
+	private static StavyZdrojuProTesty mnohoPolozek(final int pocet) {
+		final StavyZdrojuProTesty s = new StavyZdrojuProTesty();
+		for (int i = 0; i < pocet; i++) {
+			s.pridej(TypZdroje.GPX, "trasa" + i + ".gpx");
+		}
+		return s.prepis();
+	}
+
+	@Test
+	public void vyskaPodlePoctuRadkuAzKDostupneVysce() {
+		final JTabulkaZdroju t = new JTabulkaZdroju(TypZdroje.GPX);
+		t.obnov(mnohoPolozek(40).snimek());
+		Assert.assertTrue(t.getPreferredSize().height > 41 * JTabulkaZdroju.VYSKA_RADKU);
+		t.nastavDostupnouVysku(500);
+		Assert.assertEquals(500, t.getPreferredSize().height);
+		t.nastavDostupnouVysku(5000);
+		Assert.assertTrue(t.getPreferredSize().height < 5000);
+		Assert.assertTrue(t.getPreferredSize().height > 41 * JTabulkaZdroju.VYSKA_RADKU);
+	}
+
+	private java.awt.Color pozadi(final JTabulkaZdroju t, final int r) {
+		final JTable tab = t.getTabulka();
+		return tab.prepareRenderer(tab.getCellRenderer(r, JTabulkaZdroju.SL_ZDROJ), r, JTabulkaZdroju.SL_ZDROJ).getBackground();
+	}
+
+	@Test
+	public void radkyStridavePodbarvene() {
+		final JTabulkaZdroju t = tabulka(null);
+		final int typ = radek(t, TypZdroje.GEOGET, null);
+		final java.awt.Color prvni = pozadi(t, typ + 1);
+		final java.awt.Color druha = pozadi(t, typ + 2);
+		Assert.assertNotEquals(prvni, druha);
+		Assert.assertNotEquals(pozadi(t, typ), prvni);
+		Assert.assertNotEquals(pozadi(t, typ), druha);
+		Assert.assertEquals("každá skupina začíná stejně", prvni, pozadi(t, radek(t, TypZdroje.GSAK, null) + 1));
+	}
+
 	@Test
 	public void uplnaMaVsechnyTypyAPolozky() {
 		final JTabulkaZdroju t = tabulka(null);

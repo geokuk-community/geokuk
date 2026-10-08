@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -37,7 +38,6 @@ public class JTabulkaZdroju extends JPanel {
 	/** Pod touto šířkou okna odpadne sloupec Velikost. */
 	static final int PRAH_UZKE = 900;
 	static final int VYSKA_RADKU = 22;
-	private static final int MAX_RADKU_POPUPU = 20;
 
 	static final Color BARVA_DUPLICIT = new Color(0x9A5B00);
 
@@ -45,10 +45,13 @@ public class JTabulkaZdroju extends JPanel {
 	static final class Radek {
 		final TypZdroje typ;
 		final StavPolozky polozka;
+		/** Pořadí položky ve skupině typu, pro střídavé podbarvení. */
+		final int poradi;
 
-		Radek(final TypZdroje typ, final StavPolozky polozka) {
+		Radek(final TypZdroje typ, final StavPolozky polozka, final int poradi) {
 			this.typ = typ;
 			this.polozka = polozka;
+			this.poradi = poradi;
 		}
 	}
 
@@ -64,6 +67,8 @@ public class JTabulkaZdroju extends JPanel {
 	private OvladaniZdroju ovladani;
 	private boolean uzka;
 	private int sirka = PLNA_SIRKA;
+	/** Nejvyšší výška celé tabulky; nad ní se řádky posouvají. */
+	private int maxVyska = Integer.MAX_VALUE;
 
 	private final AbstractTableModel tm = new AbstractTableModel() {
 		private static final long serialVersionUID = 1L;
@@ -152,9 +157,10 @@ public class JTabulkaZdroju extends JPanel {
 			if (zobrazenyTyp != null ? zobrazenyTyp != typ : !povolene.contains(typ)) {
 				continue;
 			}
-			radky.add(new Radek(typ, null));
+			radky.add(new Radek(typ, null, 0));
+			int poradi = 0;
 			for (final StavPolozky p : stav.getPolozky(typ)) {
-				radky.add(new Radek(typ, p));
+				radky.add(new Radek(typ, p, poradi++));
 			}
 		}
 		tm.fireTableDataChanged();
@@ -199,9 +205,18 @@ public class JTabulkaZdroju extends JPanel {
 		return uzka;
 	}
 
+	/** Výška, kterou má tabulka i s tlačítky k dispozici; víc řádků se posouvá. */
+	public void nastavDostupnouVysku(final int vyska) {
+		maxVyska = vyska;
+		prepocitejVelikost();
+	}
+
 	private void prepocitejVelikost() {
-		final int vyska = VYSKA_RADKU * Math.max(1, Math.min(radky.size(), MAX_RADKU_POPUPU)) + tabulka.getTableHeader().getPreferredSize().height + 4;
-		scroll.setPreferredSize(new Dimension(sirka - 16, vyska));
+		final int hlavicka = tabulka.getTableHeader().getPreferredSize().height + 4;
+		final int vsechnyRadky = VYSKA_RADKU * Math.max(1, radky.size()) + hlavicka;
+		scroll.setPreferredSize(new Dimension(sirka - 16, vsechnyRadky));
+		final int navic = getPreferredSize().height - vsechnyRadky;
+		scroll.setPreferredSize(new Dimension(sirka - 16, Math.max(VYSKA_RADKU + hlavicka, Math.min(vsechnyRadky, maxVyska - navic))));
 		revalidate();
 	}
 
@@ -378,6 +393,19 @@ public class JTabulkaZdroju extends JPanel {
 		return radky;
 	}
 
+	/** Šedé podbarvení odvozené z barev vzhledu: skupina typu výrazněji, položky střídavě, aby oko udrželo řádek. */
+	static Color pozadi(final JTable t, final Radek radek) {
+		if (radek.polozka == null) {
+			return smichej(t.getBackground(), t.getForeground(), 0.15);
+		}
+		return radek.poradi % 2 == 0 ? t.getBackground() : smichej(t.getBackground(), t.getForeground(), 0.08);
+	}
+
+	private static Color smichej(final Color a, final Color b, final double podilB) {
+		return new Color((int) Math.round(a.getRed() * (1 - podilB) + b.getRed() * podilB), (int) Math.round(a.getGreen() * (1 - podilB) + b.getGreen() * podilB),
+				(int) Math.round(a.getBlue() * (1 - podilB) + b.getBlue() * podilB));
+	}
+
 	private class Vykreslovac extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;
 
@@ -395,8 +423,9 @@ public class JTabulkaZdroju extends JPanel {
 			setIcon(null);
 			setHorizontalAlignment(c == SL_NACIST ? CENTER : c == SL_VELIKOST || c == SL_WP ? RIGHT : LEFT);
 			setFont(t.getFont().deriveFont(p == null ? Font.BOLD : Font.PLAIN));
-			setBorder(BorderFactory.createEmptyBorder(0, c == SL_ZDROJ && p != null ? 22 : 6, 0, 6));
-			setBackground(p == null ? new Color(0, 0, 0, 20) : t.getBackground());
+			final Border odsazeni = BorderFactory.createEmptyBorder(0, c == SL_ZDROJ && p != null ? 22 : 6, 0, 6);
+			setBorder(p == null ? BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, smichej(t.getBackground(), t.getForeground(), 0.25)), odsazeni) : odsazeni);
+			setBackground(pozadi(t, radek));
 			setForeground(aktivni ? t.getForeground() : Color.GRAY);
 			if (c == SL_NACIST) {
 				final StavVyberu volba = p == null ? stav.getStavVyberuTypu(radek.typ) : p.isZapnuto() ? StavVyberu.ZAPNUTO : StavVyberu.VYPNUTO;
