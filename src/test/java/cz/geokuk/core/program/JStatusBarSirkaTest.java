@@ -137,6 +137,58 @@ public class JStatusBarSirkaTest {
 		Assert.assertTrue("rezerva na širší písmo: " + sirka, sirka <= 1920 - 16 - 40);
 	}
 
+	/** Po načtení dat (nejdelší reálné počty) se žádný blok stavového řádku nepohne ani nezmění šířku. */
+	@Test
+	public void poNacteniDatSeNicNepohne() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		for (final int sirka : new int[] { 1000, 1100, 1200, 1366, 1920 }) {
+			final JStatusBar radek = new JStatusBar();
+			final JPanel okno = new JPanel(new BorderLayout());
+			okno.add(radek, BorderLayout.SOUTH);
+			okno.setSize(sirka - 16, 400);
+			okno.doLayout();
+			radek.doLayout();
+			final java.util.List<Rectangle> pred = new java.util.ArrayList<>();
+			for (final Component c : radek.getComponents()) {
+				pred.add(c.getBounds());
+			}
+			((JTextComponent) pole(radek, "celkovePoctyVsude")).setText("2647424/1873209");
+			((JTextComponent) pole(radek, "filtrovanePocetyVsude")).setText("2647424/1873209");
+			((JTextComponent) pole(radek, "celkovePoctyVyrez")).setText("264742");
+			((JTextComponent) pole(radek, "filtrovanePocetyVyrez")).setText("264742");
+			okno.setSize(sirka - 16, 400);
+			okno.doLayout();
+			radek.doLayout();
+			for (int i = 0; i < radek.getComponentCount(); i++) {
+				Assert.assertEquals("šířka " + sirka + " " + radek.getComponent(i), pred.get(i), radek.getComponent(i).getBounds());
+			}
+		}
+	}
+
+	@Test
+	public void blokCestJenSCestami() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JStatusBar radek = new JStatusBar();
+		final JPanel cesty = (JPanel) pole(radek, "cesty");
+		Assert.assertFalse(cesty.isVisible());
+		final cz.geokuk.plugins.cesty.data.Doc doc = new cz.geokuk.plugins.cesty.data.Doc() {
+			@Override
+			public boolean isEmpty() {
+				return false;
+			}
+		};
+		final cz.geokuk.plugins.cesty.CestyModel model = new cz.geokuk.plugins.cesty.CestyModel() {
+			@Override
+			public cz.geokuk.plugins.cesty.data.Doc getDoc() {
+				return doc;
+			}
+		};
+		final cz.geokuk.plugins.cesty.CestyChangedEvent event = new cz.geokuk.plugins.cesty.CestyChangedEvent(doc, null);
+		event.setModel(model);
+		radek.onEvent(event);
+		Assert.assertTrue(cesty.isVisible());
+	}
+
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
 		f.setAccessible(true);
