@@ -278,6 +278,42 @@ public class JStatusBarSirkaTest {
 		Assert.assertTrue(hvezdicka.getPreferredSize().width >= hvezdicka.getFontMetrics(hvezdicka.getFont()).stringWidth("*"));
 	}
 
+	/** Písmo vzhledu nastavené až po vytvoření řádku (větší při zvětšení obrazovky) nezkrátí v pravém bloku žádný text. */
+	@Test
+	public void pravyBlokCelyPoZmenePisma() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		for (final int sirka : new int[] { 1280, 900 }) {
+			final JStatusBar radek = new JStatusBar();
+			zvetsiPismo(radek);
+			vyska(radek, sirka);
+			radek.doLayout();
+			final JPanel pravy = (JPanel) pole(radek, "pravyBlok");
+			Assert.assertTrue("šířka " + sirka, pravy.getWidth() >= pravy.getPreferredSize().width);
+			vejdeSe(pravy, sirka);
+		}
+	}
+
+	private static void zvetsiPismo(final Component c) {
+		c.setFont(c.getFont().deriveFont(c.getFont().getSize2D() * 1.5f));
+		if (c instanceof Container) {
+			for (final Component d : ((Container) c).getComponents()) {
+				zvetsiPismo(d);
+			}
+		}
+	}
+
+	private static void vejdeSe(final Container c, final int sirka) {
+		c.doLayout();
+		for (final Component d : c.getComponents()) {
+			if (d.isVisible()) {
+				Assert.assertTrue("šířka " + sirka + ": " + d, d.getWidth() >= d.getPreferredSize().width);
+				if (d instanceof Container) {
+					vejdeSe((Container) d, sirka);
+				}
+			}
+		}
+	}
+
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
 		f.setAccessible(true);
