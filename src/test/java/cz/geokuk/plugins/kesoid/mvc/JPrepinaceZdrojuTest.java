@@ -63,6 +63,36 @@ public class JPrepinaceZdrojuTest {
 		return d[0];
 	}
 
+	/** Vzhled nastavený až po vytvoření bloku (jiné písmo, větší při zvětšení obrazovky) nezkrátí popisek ani názvy. */
+	@Test
+	public void popisekCelyPoZmeneVzhledu() throws Exception {
+		naEdt(() -> {
+			zvetsiPismo(blok);
+			okno.validate();
+			for (final Component c : blok.getComponents()) {
+				vejdeSe(c);
+			}
+		});
+	}
+
+	private static void zvetsiPismo(final Component c) {
+		c.setFont(c.getFont().deriveFont(c.getFont().getSize2D() * 1.5f));
+		if (c instanceof Container) {
+			for (final Component d : ((Container) c).getComponents()) {
+				zvetsiPismo(d);
+			}
+		}
+	}
+
+	private static void vejdeSe(final Component c) {
+		if (c.isVisible() && c instanceof JComponent) {
+			Assert.assertTrue(c + " " + c.getWidth(), c.getWidth() >= c.getPreferredSize().width);
+			for (final Component d : ((Container) c).getComponents()) {
+				vejdeSe(d);
+			}
+		}
+	}
+
 	@Test
 	public void rozmerNezavisiNaStavu() throws Exception {
 		final Dimension nacteno = rozmer(data.snimek());

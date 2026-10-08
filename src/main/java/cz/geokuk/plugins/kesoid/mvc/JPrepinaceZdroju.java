@@ -259,8 +259,13 @@ public class JPrepinaceZdroju extends JPanel {
 
 	/** Komponenta zabere celou výšku bloku, aby plocha pro najetí a klik byla dost velká. */
 	private static void natahni(final JComponent c) {
-		final Dimension d = c.getPreferredSize();
-		c.setMaximumSize(new Dimension(d.width, Integer.MAX_VALUE));
+		c.setMaximumSize(new Dimension(c.getPreferredSize().width, Integer.MAX_VALUE));
+		// Vzhled nastavený až po vytvoření bloku mění písmo a s ním šířku.
+		c.addPropertyChangeListener(e -> {
+			if ("font".equals(e.getPropertyName()) || "text".equals(e.getPropertyName()) || "icon".equals(e.getPropertyName()) || "border".equals(e.getPropertyName())) {
+				c.setMaximumSize(new Dimension(c.getPreferredSize().width, Integer.MAX_VALUE));
+			}
+		});
 		c.setAlignmentY(CENTER_ALIGNMENT);
 	}
 
