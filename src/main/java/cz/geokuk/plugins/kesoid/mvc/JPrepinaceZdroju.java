@@ -101,7 +101,14 @@ public class JPrepinaceZdroju extends JPanel {
 			detaily.put(typ, detail);
 			popupyTypu.put(typ, obal(detail));
 
-			final JCheckBox zaskrtavatko = new JCheckBox(IkonyZdroju.zaskrtavatko(StavVyberu.VYPNUTO));
+			final JCheckBox zaskrtavatko = new JCheckBox(IkonyZdroju.zaskrtavatko(StavVyberu.VYPNUTO)) {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public Point getToolTipLocation(final MouseEvent e) {
+					return bublinaNadBlokem(this, e);
+				}
+			};
 			zaskrtavatko.setFocusable(false);
 			zaskrtavatko.setOpaque(false);
 			zaskrtavatko.setMargin(new Insets(0, 0, 0, 0));
@@ -111,7 +118,14 @@ public class JPrepinaceZdroju extends JPanel {
 					JTabulkaZdroju.klikTyp(stav, typ, ovladani);
 				}
 			});
-			final JLabel ikona = new JLabel(IkonyZdroju.prazdna());
+			final JLabel ikona = new JLabel(IkonyZdroju.prazdna()) {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public Point getToolTipLocation(final MouseEvent e) {
+					return bublinaNadBlokem(this, e);
+				}
+			};
 			final JLabel nazev = new JLabel(typ.getNazev());
 			nazev.setBorder(BorderFactory.createEmptyBorder(0, PADDING, 0, PADDING));
 			nazev.addMouseListener(new MouseAdapter() {
@@ -227,6 +241,18 @@ public class JPrepinaceZdroju extends JPanel {
 		hlidaniZavreni.stop();
 		zavriSeznam();
 		super.removeNotify();
+	}
+
+	/** Bublina celá nad blokem: u spodního okraje obrazovky by jinak skončila pod kurzorem a zachytila klik. */
+	Point bublinaNadBlokem(final JComponent c, final MouseEvent e) {
+		final String text = c.getToolTipText(e);
+		if (text == null) {
+			return null;
+		}
+		final JToolTip tip = c.createToolTip();
+		tip.setTipText(text);
+		final int vBloku = SwingUtilities.convertPoint(c, 0, 0, this).y;
+		return new Point(e.getX(), -vBloku - tip.getPreferredSize().height - 2);
 	}
 
 	/** Komponenta zabere celou výšku bloku, aby plocha pro najetí a klik byla dost velká. */
