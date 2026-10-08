@@ -16,6 +16,7 @@ public class RegistrStavuZdroju {
 	private volatile StavZdroju snimek = StavZdroju.PRAZDNY;
 	private volatile Map<File, TypZdroje> typy = Collections.emptyMap();
 	private volatile Runnable posluchac = () -> {};
+	private Map<TypZdroje, String> problemySlozek = Collections.emptyMap();
 	/** Zvyšuje se s každým během načítání i přepnutím zdroje; zápis s jinou generací pochází ze zrušeného běhu. */
 	private int generace;
 
@@ -153,10 +154,22 @@ public class RegistrStavuZdroju {
 		posluchac.run();
 	}
 
+	/** Důvody, proč aktivní datová složka typu nedává žádné položky; zápis jen z aktuálního běhu načítání. */
+	public void setProblemySlozek(final int gen, final Map<TypZdroje, String> problemy) {
+		synchronized (this) {
+			if (gen != generace || problemy.equals(problemySlozek)) {
+				return;
+			}
+			problemySlozek = problemy.isEmpty() ? Collections.<TypZdroje, String>emptyMap() : new EnumMap<>(problemy);
+			obnovSnimek();
+		}
+		posluchac.run();
+	}
+
 	/** Pořadí ve snímku je stálé: podle typu (GPX, GeoGet, GSAK, OpenSAK), pak podle názvu. */
 	private void obnovSnimek() {
 		final List<StavPolozky> seznam = new ArrayList<>(polozky.values());
 		seznam.sort(Comparator.comparing(StavPolozky::getTyp).thenComparing(p -> p.getNazev().toLowerCase(Locale.ROOT)).thenComparing(StavPolozky::getCesta));
-		snimek = new StavZdroju(seznam);
+		snimek = new StavZdroju(seznam, problemySlozek);
 	}
 }

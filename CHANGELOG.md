@@ -11,6 +11,9 @@
   na název zdroje jen jeho položky. Stejnou tabulku ukazuje okno Přehled
   zdrojů. Klik na blok Zdroje už okno Přehled zdrojů neotevře. Po návratu na
   verzi 6.2.x se znovu zapnou typy zdrojů vypnuté ve verzi 6.3.0.
+- Prázdná, neexistující nebo nečitelná datová složka GeoGetu, GSAKu nebo
+  OpenSAKu se ve stavovém řádku u zdroje ukáže ikonou chyby s důvodem
+  v bublině; stejný důvod je v tabulce zdrojů a v Přehledu zdrojů.
 - Soubor s cestami a počet waypointů a cest se ve stavovém řádku ukazují,
   jen když jsou nějaké cesty.
 - Zdroj jde zapnout či vypnout i během načítání keší a Přehled zdrojů jde
@@ -87,6 +90,8 @@
   znovu nezablokuje.
 - GSAK, „Načítat až po vybrání“: složka, která byla chvíli nedostupná
   a vrátila se během načítání, už nezablokuje vybrané databáze.
+- Neodpovídající síťový disk s datovou složkou už nezdržuje ovládání
+  programu po každém načtení keší.
 - Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
   hlášení.
 - Umístění souborů: neexistující nebo nečitelná datová složka GeoGetu,
