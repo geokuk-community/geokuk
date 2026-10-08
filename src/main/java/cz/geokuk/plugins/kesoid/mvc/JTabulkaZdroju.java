@@ -313,7 +313,7 @@ public class JTabulkaZdroju extends JPanel {
 	static String textStavu(final StavZdroje s, final int postup) {
 		switch (s) {
 		case NACITA_SE:
-			return "Načítá se… " + postup + " %";
+			return "Načítá se " + postup + " %";
 		case CEKA_NA_ZAPIS:
 			return ZAMCENO;
 		default:
