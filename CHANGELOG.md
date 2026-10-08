@@ -9,7 +9,8 @@
   u kterého jsou některé položky vypnuté. Najetí na „Zdroje:“ ukáže tabulku
   všech souborů a databází s velikostí, počtem waypointů a stavem, najetí
   na název zdroje jen jeho položky. Stejnou tabulku ukazuje okno Přehled
-  zdrojů.
+  zdrojů. Klik na blok Zdroje už okno Přehled zdrojů neotevře. Po návratu na
+  verzi 6.2.x se znovu zapnou typy zdrojů vypnuté ve verzi 6.3.0.
 - Zdroj jde zapnout či vypnout i během načítání keší a Přehled zdrojů jde
   otevřít také během něj. Přepnutí načte znovu jen změněné zdroje a ty, které
   se s nimi překrývají (stejné keše ve více zdrojích); ostatní zůstanou
