@@ -139,14 +139,15 @@ public class JTabulkaZdrojuTest {
 	}
 
 	@Test
-	public void vypnutyTypMaPolozkySeZachovanouVolbouAleNeprepina() {
+	public void vypnutyTypMaPolozkySeZachovanouVolbouKlikZapneJenTuto() {
 		data.vypnuteTypy.add(TypZdroje.GEOGET);
 		data.prepisZapnuti();
 		final JTabulkaZdroju t = tabulka(null);
 		Assert.assertEquals("Vypnuto", text(t, TypZdroje.GEOGET, "Cesko.db3", JTabulkaZdroju.SL_STAV));
 		Assert.assertTrue(t.getRadky().get(radek(t, TypZdroje.GEOGET, "Cesko.db3")).polozka.isZapnuto());
-		klikNaNacist(t, radek(t, TypZdroje.GEOGET, "Cesko.db3"));
-		Assert.assertEquals(Collections.emptyList(), ovladani.volani);
+		Assert.assertEquals("Zapnout GeoGet jen s tímto souborem", t.tooltip(t.getRadky().get(radek(t, TypZdroje.GEOGET, "Slovensko.db3")), JTabulkaZdroju.SL_NACIST));
+		klikNaNacist(t, radek(t, TypZdroje.GEOGET, "Slovensko.db3"));
+		Assert.assertEquals(Arrays.asList("jenPolozka GEOGET Slovensko.db3"), ovladani.volani);
 	}
 
 	@Test

@@ -245,7 +245,9 @@ public class JTabulkaZdroju extends JPanel {
 		}
 		if (radek.polozka == null) {
 			klikTyp(stav, radek.typ, ovladani);
-		} else if (!radek.polozka.isTypVypnut()) {
+		} else if (radek.polozka.isTypVypnut()) {
+			ovladani.setNacitatJenPolozku(radek.typ, radek.polozka.getSoubor());
+		} else {
 			ovladani.setNacitatPolozku(radek.polozka.getSoubor(), !radek.polozka.isZapnuto());
 		}
 	}
@@ -283,10 +285,13 @@ public class JTabulkaZdroju extends JPanel {
 		}
 	}
 
-	private String tooltip(final Radek radek, final int sloupec) {
+	String tooltip(final Radek radek, final int sloupec) {
 		final StavPolozky p = radek.polozka;
 		if (sloupec == SL_ZDROJ && p != null) {
 			return FString.text(p.getCesta());
+		}
+		if (sloupec == SL_NACIST && p != null && p.isTypVypnut()) {
+			return "Zapnout " + radek.typ.getNazev() + " jen s tímto souborem";
 		}
 		if (sloupec == SL_STAV && p == null && stav.getProblemSlozky(radek.typ) != null) {
 			return RADA_SLOZKA;

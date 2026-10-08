@@ -14,4 +14,7 @@ public interface OvladaniZdroju {
 	void setNacitatVse(boolean nacitat);
 
 	void setNacitatPolozku(File soubor, boolean nacitat);
+
+	/** Zapne typ a z jeho položek nechá vybranou jen tuto. */
+	void setNacitatJenPolozku(TypZdroje typ, File soubor);
 }

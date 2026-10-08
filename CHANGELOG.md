@@ -79,6 +79,8 @@
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
+- Klik na soubor nebo databázi vypnutého typu v tabulce zdrojů zapne
+  typ jen s touto položkou.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.

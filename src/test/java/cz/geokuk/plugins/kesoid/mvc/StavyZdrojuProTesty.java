@@ -74,5 +74,10 @@ final class StavyZdrojuProTesty {
 		public void setNacitatPolozku(final File soubor, final boolean nacitat) {
 			volani.add("polozka " + soubor.getName() + " " + nacitat);
 		}
+
+		@Override
+		public void setNacitatJenPolozku(final TypZdroje typ, final File soubor) {
+			volani.add("jenPolozka " + typ + " " + soubor.getName());
+		}
 	}
 }

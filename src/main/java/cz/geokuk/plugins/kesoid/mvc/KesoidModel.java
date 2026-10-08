@@ -477,6 +477,13 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		zmenZapnute(nacitat ? jedna : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : jedna, Collections.<TypZdroje, Boolean>emptyMap());
 	}
 
+	/** Zapne typ a z jeho položek nechá vybranou jen tuto. */
+	public void setNacitatJenPolozku(final TypZdroje typ, final File soubor) {
+		final List<File> ostatni = new ArrayList<>(getRegistrStavuZdroju().getSoubory(typ));
+		ostatni.remove(soubor);
+		zmenZapnute(Collections.singletonList(soubor), ostatni, Collections.singletonMap(typ, false));
+	}
+
 	public void setOnoff(final boolean onoff) {
 		if (this.onoff != null && this.onoff == onoff) {
 			return;

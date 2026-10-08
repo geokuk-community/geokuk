@@ -186,6 +186,22 @@ public class StavZdrojuNacitaniTest {
 	}
 
 	@Test
+	public void jenTatoPolozkaZapneTypAOstatniOdznaci() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		final File b = zalozGeoget("b.db3", "GC000B");
+		start();
+		zdroje = nacitac.nacti(null, genom).getInformaceOZdrojich();
+		model.setNacitatTyp(TypZdroje.GEOGET, false);
+		model.setNacitatJenPolozku(TypZdroje.GEOGET, b);
+		Assert.assertFalse(model.isTypVypnut(TypZdroje.GEOGET));
+		Assert.assertTrue(model.maSeNacist(b));
+		Assert.assertFalse(model.maSeNacist(a));
+		Assert.assertFalse(model.jeZdrojZapnut(a));
+		Assert.assertEquals(StavZdroje.VYPNUTO, polozka("a.db3").getStav());
+		Assert.assertEquals(StavZdroje.NACTENO, polozka("a.gpx").getStav());
+	}
+
+	@Test
 	public void vyberTypuAPolozekPrezijeRestart() throws Exception {
 		final File a = zalozGeoget("a.db3", "GC000A");
 		final File b = zalozGeoget("b.db3", "GC000B");
