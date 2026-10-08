@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Wgs;
 
-/** Podklady ČÚZK: dlaždice v pořadí z/y/x, území jen ČR, atribuce a stálá jména. */
+/** Podklady ČÚZK a ZBGIS: dlaždice v pořadí z/y/x, omezené území, atribuce a stálá jména. */
 public class EKaTypeCuzkTest {
 
 	/** Staroměstské náměstí v Praze, dlaždice z16 x 35393, y 22201. */
@@ -30,6 +30,30 @@ public class EKaTypeCuzkTest {
 		Assert.assertFalse(EKaType.OPEN_STREET.isOmezeneUzemi());
 		Assert.assertEquals("© ČÚZK, CC BY 4.0", EKaType.CUZK_ORTO.getAtribuce());
 		Assert.assertEquals("© ČÚZK, CC BY 4.0", EKaType.CUZK_ZTM.getAtribuce());
+	}
+
+	/** Bratislava z14: dlaždice x 8970, y 5685. */
+	@Test
+	public void zbgisOrtofotoSR() throws Exception {
+		Assert.assertEquals("https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer/tile/14/5685/8970",
+				new Ka(KaLoc.ofJZ(new Wgs(48.1486, 17.1077).toMou(), 14), EKaType.SK_ZBGIS_ORTO).getUrl().toExternalForm());
+		Assert.assertEquals(19, EKaType.SK_ZBGIS_ORTO.getMaxMoumer());
+		Assert.assertEquals("© GKÚ Bratislava, NLC, CC BY 4.0", EKaType.SK_ZBGIS_ORTO.getAtribuce());
+		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.isHromadneStahovaniPovoleno());
+		Assert.assertSame(EKaType.SK_ZBGIS_ORTO, EKaType.podleJmena("SK_ZBGIS_ORTO"));
+		Assert.assertNull(EKaType.SK_ZBGIS_ORTO.getKeyStroke());
+	}
+
+	/** ČÚZK mimo území vrací 404, ZBGIS 503; jinde jsou oba kódy chyba. */
+	@Test
+	public void kodyMimoUzemi() {
+		Assert.assertTrue(EKaType.CUZK_ORTO.jeMimoUzemi(404));
+		Assert.assertFalse(EKaType.CUZK_ORTO.jeMimoUzemi(503));
+		Assert.assertTrue(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(404));
+		Assert.assertTrue(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(503));
+		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(500));
+		Assert.assertFalse(EKaType.OPEN_STREET.jeMimoUzemi(404));
+		Assert.assertFalse(EKaType.OPEN_STREET.jeMimoUzemi(503));
 	}
 
 	@Test

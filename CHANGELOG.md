@@ -69,6 +69,8 @@
 - Mapy: nové podklady ČR ortofoto a ČR Základní topografická mapa
   z otevřených dat ČÚZK (© ČÚZK, CC BY 4.0). Mimo území České republiky
   zůstane mapa prázdná.
+- Mapy: nový podklad SR ortofoto ze ZBGIS (© GKÚ Bratislava, NLC,
+  CC BY 4.0). Mimo území Slovenska zůstane mapa prázdná.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.

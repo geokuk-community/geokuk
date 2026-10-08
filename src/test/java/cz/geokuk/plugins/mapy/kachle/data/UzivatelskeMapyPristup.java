@@ -12,9 +12,9 @@ public final class UzivatelskeMapyPristup {
 		return UzivatelskeMapy.nactiSlozku(slozka);
 	}
 
-	/** Mapa ze vzoru URL, která pokrývá jen část světa. */
-	public static EKaType sOmezenymUzemim(final String id, final String vzorUrl) {
-		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)));
+	/** Mapa ze vzoru URL, která pokrývá jen část světa; mimo ni server odpovídá danými kódy HTTP. */
+	public static EKaType sOmezenymUzemim(final String id, final String vzorUrl, final Integer... kodyMimoUzemi) {
+		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)), kodyMimoUzemi);
 	}
 
 	public static void vycisti() {

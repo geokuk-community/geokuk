@@ -517,7 +517,7 @@ public class KachleZiskavac {
 				diagnosticsData.send("Web download - end success");
 				return imageWithData;
 			} catch (final KachloDownloader.ChybaServeru e) {
-				if (e.getKod() != 404 || !ka.getType().isOmezeneUzemi()) {
+				if (!ka.getType().jeMimoUzemi(e.getKod())) {
 					throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
 				}
 				mimoUzemi.put(klic, Boolean.TRUE);

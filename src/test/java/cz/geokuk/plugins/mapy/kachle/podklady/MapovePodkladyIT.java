@@ -24,6 +24,8 @@ public class MapovePodkladyIT {
 	private static final Wgs BRATISLAVA = new Wgs(48.1486, 17.1077);
 	private static final int[] ZOOMY = { 8, 13, 16 };
 	private static final int TIMEOUT_S = 30;
+	/** Server ZBGIS spojení z datových center mimo Slovensko odmítá, kontrola by trvale hlásila chybu. */
+	private static final Set<EKaType> BEZ_KONTROLY = Collections.singleton(EKaType.SK_ZBGIS_ORTO);
 
 	@Test
 	public void vsechnyPodkladyVraceji() throws Exception {
@@ -33,6 +35,10 @@ public class MapovePodkladyIT {
 		final List<String> nefunkcni = new ArrayList<>();
 		try {
 			for (final EKaType typ : EKaType.values()) {
+				if (BEZ_KONTROLY.contains(typ)) {
+					report.append("| ").append(typ.name()).append(" (").append(typ.getNazev()).append(") | nekontroluje se |\n");
+					continue;
+				}
 				final Wgs misto = typ.name().startsWith("TUR_FREEMAP_SK") ? BRATISLAVA : PRAHA;
 				String chyba = null;
 				for (final int zoom : ZOOMY) {
