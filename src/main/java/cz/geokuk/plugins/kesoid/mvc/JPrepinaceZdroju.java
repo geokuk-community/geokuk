@@ -39,7 +39,7 @@ public class JPrepinaceZdroju extends JPanel {
 
 	static final int VYSKA = 20;
 
-	private final JLabel popisek = new JLabel("Zdroje:");
+	private final JLabel popisek = new JNatazenyPopisek("Zdroje:");
 	private final JTabulkaZdroju uplna = new JTabulkaZdroju(null);
 	private final JComponent souhrn = obal(uplna);
 	private final Map<TypZdroje, JComponent> popupyTypu = new EnumMap<>(TypZdroje.class);
@@ -106,6 +106,11 @@ public class JPrepinaceZdroju extends JPanel {
 				private static final long serialVersionUID = 1L;
 
 				@Override
+				public Dimension getMaximumSize() {
+					return natazena(this);
+				}
+
+				@Override
 				public Point getToolTipLocation(final MouseEvent e) {
 					return bublinaNadBlokem(this, e);
 				}
@@ -124,11 +129,16 @@ public class JPrepinaceZdroju extends JPanel {
 				private static final long serialVersionUID = 1L;
 
 				@Override
+				public Dimension getMaximumSize() {
+					return natazena(this);
+				}
+
+				@Override
 				public Point getToolTipLocation(final MouseEvent e) {
 					return bublinaNadBlokem(this, e);
 				}
 			};
-			final JLabel nazev = new JLabel(typ.getNazev());
+			final JLabel nazev = new JNatazenyPopisek(typ.getNazev());
 			nazev.setBorder(BorderFactory.createEmptyBorder(0, PADDING, 0, PADDING));
 			nazev.addMouseListener(new MouseAdapter() {
 				@Override
@@ -257,16 +267,29 @@ public class JPrepinaceZdroju extends JPanel {
 		return new Point(e.getX(), -vBloku - tip.getPreferredSize().height - 2);
 	}
 
-	/** Komponenta zabere celou výšku bloku, aby plocha pro najetí a klik byla dost velká. */
 	private static void natahni(final JComponent c) {
-		c.setMaximumSize(new Dimension(c.getPreferredSize().width, Integer.MAX_VALUE));
-		// Vzhled nastavený až po vytvoření bloku mění písmo a s ním šířku.
-		c.addPropertyChangeListener(e -> {
-			if ("font".equals(e.getPropertyName()) || "text".equals(e.getPropertyName()) || "icon".equals(e.getPropertyName()) || "border".equals(e.getPropertyName())) {
-				c.setMaximumSize(new Dimension(c.getPreferredSize().width, Integer.MAX_VALUE));
-			}
-		});
 		c.setAlignmentY(CENTER_ALIGNMENT);
+	}
+
+	/**
+	 * Komponenta zabere celou výšku bloku, aby plocha pro najetí a klik byla dost velká. Šířka se počítá pokaždé znovu: písmo vzhledu i měřítko obrazovky ji
+	 * mění až po vytvoření bloku.
+	 */
+	private static Dimension natazena(final JComponent c) {
+		return new Dimension(c.getPreferredSize().width, Integer.MAX_VALUE);
+	}
+
+	private static final class JNatazenyPopisek extends JLabel {
+		private static final long serialVersionUID = 1L;
+
+		JNatazenyPopisek(final String text) {
+			super(text);
+		}
+
+		@Override
+		public Dimension getMaximumSize() {
+			return natazena(this);
+		}
 	}
 
 	@Override
