@@ -39,7 +39,9 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   databáze do prázdného builderu naráz, každou ve vlastním vlákně, pro
   1 a 2 vlákna. Celkový čas, procesorový čas vláken a zrychlení proti
   jednomu vláknu. Na vlastních databázích: `MerRozpad geoget=… gsak=…
-  opensak=… kola=3 vlakna=1,2,4` (typ=cesta lze opakovat).
+  opensak=… kola=3 vlakna=1,2,4` (typ=cesta lze opakovat). S `skupiny=1`
+  místo měření času jen z kódů databází vypíše skupiny zdrojů sdílejících
+  klíč jména a pro každou dvojici počet společných klíčů s ukázkou kódů.
 - `program`: smoke testy `velkaData` (GPX s 50 000 keší) a
   `velkaDatabazeGeogetu` (200 000 keší) spustí celý program s oknem;
   vypíše čas do zobrazení okna, načtení keší, obsazenou paměť a nejdelší
