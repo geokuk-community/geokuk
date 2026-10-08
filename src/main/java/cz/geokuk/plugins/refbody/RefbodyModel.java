@@ -66,7 +66,8 @@ public class RefbodyModel extends Model0 {
 					}
 				}
 			} else {
-				log.error("Soubor \"" + file + "\" nelze číst!");
+				// Složka GeoGetu bez geohome.ini (prázdná, jen databáze) je v pořádku, referenční body z GeoGetu prostě nejsou.
+				log.info("Soubor \"" + file + "\" nelze číst, referenční body z GeoGetu nejsou.");
 			}
 			return list;
 		} catch (final IOException e) {

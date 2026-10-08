@@ -122,9 +122,9 @@ public class JPrehledSouboru extends JPanel {
 		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
 		jKesDir = pridejJednuPolozkuproEdit(null, tab1, "Složka s keškami (GPX) získanými z Geogetu nebo jiného programu.", true, false);
-		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka GeoGetu.", true, true);
+		jGeogetDataDir = pridejJednuPolozkuproEdit(null, tab1, "Datová složka GeoGetu.", true, true).nezakladat();
 
-		jGsakDataDir = pridejJednuPolozkuproEdit(null, tab1a, "Datová složka GSAK.", true, true);
+		jGsakDataDir = pridejJednuPolozkuproEdit(null, tab1a, "Datová složka GSAK.", true, true).nezakladat();
 		jGsakNacitatAzPoVybrani = pridejLogickePole(jGsakDataDir, "Načítat až po vybrání",
 		        "<html>" //
 		                + "Po změně datové složky GSAK budou všechny databáze označeny jako blokované." //
@@ -144,7 +144,7 @@ public class JPrehledSouboru extends JPanel {
 		                + "<br/>Můžete uvést více políček, použije se první časový údaj, který bude nalezen." //
 		                + "</html>");
 
-		jOpensakDataDir = pridejJednuPolozkuproEdit(null, tab1b, "Datová složka OpenSAKu.", true, true);
+		jOpensakDataDir = pridejJednuPolozkuproEdit(null, tab1b, "Datová složka OpenSAKu.", true, true).nezakladat();
 		jOpensakNacitatAzPoVybrani = pridejLogickePole(jOpensakDataDir, "Načítat až po vybrání",
 		        "<html>Nové databáze OpenSAKu se načtou, až je vyberete" //
 		                + "<br/>vpravo dole kliknutím na \"zdroje\".</html>");

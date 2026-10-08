@@ -38,6 +38,9 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 
 	private final ESouborPanelName souborPanelName;
 
+	/** Datovou složku jiného programu nezakládat, prázdná by jen skryla překlep v cestě. */
+	private boolean zakladat = true;
+
 	/**
 	 * @param souborPanelName
 	 *            identifikátor panelu. Je jen proto, aby se podle něj mohl panel najít.
@@ -50,6 +53,12 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		this.lzeDeaktivovat = lzeDeaktivovat;
 		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		initComponents();
+	}
+
+	/** Neexistující složku při uložení nehlásit založením, ale chybou. */
+	public JJedenSouborPanel nezakladat() {
+		zakladat = false;
+		return this;
 	}
 
 	public void fokusniSe() {
@@ -103,6 +112,11 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 		// Neaktivní složku (třeba GSAK u toho, kdo ho nemá) zakládat nemá smysl.
 		if (!filex.isActive() || dir.isDirectory() && dir.canRead()) {
 			return filex;
+		}
+		if (!zakladat) {
+			final String co = label.endsWith(".") ? label.substring(0, label.length() - 1) : label;
+			throw new JPrehledSouboru.YNejdeTo(co + ": \"" + dir + "\" " + (dir.exists() ? "není čitelná složka." : "neexistuje nebo není dostupná.")
+					+ " Opravte cestu, nebo zrušte \"Aktivní\".");
 		}
 		final boolean vysl = dir.mkdirs();
 		if (!vysl) {
