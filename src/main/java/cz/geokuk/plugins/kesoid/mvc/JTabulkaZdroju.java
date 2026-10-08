@@ -63,6 +63,7 @@ public class JTabulkaZdroju extends JPanel {
 	private final TableColumn sloupecVelikost;
 	private final JLabel casDat = new JLabel();
 	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private final Tocitko tocitko = new Tocitko(this, () -> getTabulka().repaint());
 	private Set<TypZdroje> povolene = EnumSet.allOf(TypZdroje.class);
 	private OvladaniZdroju ovladani;
 	private boolean uzka;
@@ -165,6 +166,12 @@ public class JTabulkaZdroju extends JPanel {
 		}
 		tm.fireTableDataChanged();
 		prepocitejVelikost();
+		tocitko.nastav(radky.stream().anyMatch(r -> r.polozka != null ? r.polozka.isNacitat() && r.polozka.getStav() == StavZdroje.NACITA_SE
+				: stav.getStavTypu(r.typ) == StavZdroje.NACITA_SE));
+	}
+
+	boolean animuje() {
+		return tocitko.bezi();
 	}
 
 	/** Čas nejmladšího načteného souboru k zobrazení; bez načtených zdrojů prázdný. */

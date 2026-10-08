@@ -150,6 +150,38 @@ public class JPrepinaceZdrojuTest {
 		});
 	}
 
+	/** Ikona „načítá se“ se točí jen během načítání a jen když je blok vidět. */
+	@Test
+	public void tocitkoJenBehemNacitani() throws Exception {
+		final Dimension nacteno = rozmer(data.snimek());
+		naEdt(() -> Assert.assertFalse(blok.animuje()));
+		final java.io.File gg = data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor();
+		data.registr.zacina(data.registr.getGenerace(), gg);
+		Assert.assertEquals("slot ikony drží šířku", nacteno, rozmer(data.snimek()));
+		naEdt(() -> {
+			Assert.assertTrue(blok.animuje());
+			Assert.assertFalse("schovaná tabulka se nepřekresluje", blok.getUplna().animuje());
+			blok.ukazSouhrn();
+		});
+		naEdt(() -> {
+			Assert.assertTrue(blok.getUplna().animuje());
+			blok.zavriSeznam();
+			okno.setVisible(false);
+		});
+		naEdt(() -> {
+			Assert.assertFalse("schovaný blok se nepřekresluje", blok.animuje());
+			Assert.assertFalse(blok.getUplna().animuje());
+			okno.setVisible(true);
+		});
+		naEdt(() -> Assert.assertTrue("po zobrazení se točí dál", blok.animuje()));
+		data.registr.hotovo(data.registr.getGenerace(), gg, 10, 10);
+		naEdt(() -> {
+			blok.obnov(data.snimek());
+			Assert.assertFalse(blok.animuje());
+			Assert.assertFalse(blok.getUplna().animuje());
+		});
+	}
+
 	@Test
 	public void rozmerNezavisiNaStavu() throws Exception {
 		final Dimension nacteno = rozmer(data.snimek());
