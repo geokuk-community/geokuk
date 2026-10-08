@@ -218,7 +218,7 @@ public class SmokeIT {
 		vlastnosti.add("-Dsmoke.prazdneSlozky=" + new File(adresar, "prazdne"));
 		final Properties zprava = spust(adresar, "bez-dat", "meritka,prazdneSlozky");
 		zkontrolujBezChyb(adresar, zprava);
-		assertEquals("Bez dat nejsou keše", "0", zprava.getProperty("kese.wpt"));
+		assertEquals("Keše z GPX se načtou i se špatnými datovými složkami", String.valueOf(pocetWpt), zprava.getProperty("kese.wpt"));
 	}
 
 	/** První start bez nastavení převezme nastavení starší verze z Java Preferences. Jen na Linuxu, jinde jsou v registru nebo v plistu uživatele. */

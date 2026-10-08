@@ -15,7 +15,7 @@ import cz.geokuk.plugins.kesoid.mvc.GccomNick;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.util.file.KeFile;
 
-/** Špatně zadané datové složky GeoGetu, GSAKu a OpenSAKu se ohlásí jednou obyčejnou hláškou s důvodem u každé složky. */
+/** Špatně zadané datové složky GeoGetu, GSAKu a OpenSAKu se ohlásí jednou zprávou s důvodem u každé složky, ne výpisem chyby. */
 public class SpatneDatoveSlozkyTest {
 
 	@Rule
