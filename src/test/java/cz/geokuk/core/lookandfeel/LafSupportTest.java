@@ -82,4 +82,19 @@ public class LafSupportTest {
 		});
 		SwingUtilities.invokeAndWait(() -> {});
 	}
+
+	@Test
+	public void poZmeneVzhleduMaKruhFokusuProPosluchaceAqua() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			try {
+				Class.forName(LafSupport.class.getName());
+				UIManager.setLookAndFeel(new MetalLookAndFeel());
+				Assert.assertNotNull("Metal", UIManager.getColor(LafSupport.KRUH_FOKUSU_AQUA));
+				UIManager.setLookAndFeel(new NimbusLookAndFeel());
+				Assert.assertNotNull("Nimbus", UIManager.getColor(LafSupport.KRUH_FOKUSU_AQUA));
+			} catch (final ClassNotFoundException | UnsupportedLookAndFeelException e) {
+				throw new IllegalStateException(e);
+			}
+		});
+	}
 }
