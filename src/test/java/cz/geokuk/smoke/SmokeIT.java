@@ -207,6 +207,20 @@ public class SmokeIT {
 		assertTrue("Cache je ve složce programu i po změně prostředí", pocitadlo(zprava, "ka42 disk write #dlaždic") > 0);
 	}
 
+	/** Počítač bez dat: aktivní datové složky GeoGetu, GSAKu a OpenSAKu, které neexistují, a pak prázdné (jak je založí Uložit v Umístění souborů). */
+	@Test
+	public void datoveSlozkyBezDat() throws Exception {
+		final File adresar = pripravAdresar("bez-dat");
+		final File neni = new File(adresar, "neni");
+		vlastnosti.add("-Dsmoke.geoget=" + new File(neni, "geoget"));
+		vlastnosti.add("-Dsmoke.gsak=" + new File(neni, "gsak"));
+		vlastnosti.add("-Dsmoke.opensak=" + new File(neni, "opensak"));
+		vlastnosti.add("-Dsmoke.prazdneSlozky=" + new File(adresar, "prazdne"));
+		final Properties zprava = spust(adresar, "bez-dat", "meritka,prazdneSlozky");
+		zkontrolujBezChyb(adresar, zprava);
+		assertEquals("Bez dat nejsou keše", "0", zprava.getProperty("kese.wpt"));
+	}
+
 	/** První start bez nastavení převezme nastavení starší verze z Java Preferences. Jen na Linuxu, jinde jsou v registru nebo v plistu uživatele. */
 	@Test
 	public void prevzetiNastaveniZJavaPreferences() throws Exception {
