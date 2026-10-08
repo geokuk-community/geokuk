@@ -40,6 +40,17 @@ Otevřená data ČÚZK:  https://ags.cuzk.gov.cz/opendata/
 Podmínky:      https://geoportal.cuzk.gov.cz/Dokumenty/Podminky.pdf
                https://geoportal.cuzk.gov.cz/Dokumenty/Podminky_sluzby_CUZK.pdf
 
+ZBGIS – ortofoto Slovenska
+--------------------------
+Poskytovatel:  Geodetický a kartografický ústav Bratislava (GKÚ)
+               (zbgis.skgeodesy.sk)
+Licence:       Creative Commons Uvedení autorství 4.0 (CC BY 4.0),
+               https://creativecommons.org/licenses/by/4.0/
+Atribuce:      © GKÚ Bratislava, NLC, CC BY 4.0
+Metainformace poskytovatele o službě:
+               https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer?f=json
+Služby ZBGIS:  https://www.skgeodesy.sk/geoportal-en/services/web-map-services/wmts/wmts-zbgis
+
 Vyhledávání adres
 -----------------
 Poskytovatel:  Nominatim (OpenStreetMap Foundation)
