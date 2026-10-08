@@ -2,7 +2,6 @@ package cz.geokuk.core.program;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
-import java.util.List;
 
 import javax.swing.*;
 
@@ -13,7 +12,6 @@ import cz.geokuk.plugins.kesoid.mapicon.JMenuIkony;
 import cz.geokuk.plugins.kesoid.mvc.JVybiracVyletu;
 import cz.geokuk.plugins.mapy.MapyAction0;
 import cz.geokuk.plugins.mapy.PodkladAction;
-import cz.geokuk.plugins.refbody.NaKonkretniBodAction;
 import cz.geokuk.plugins.refbody.RefbodyModel;
 import cz.geokuk.util.gui.MenuStrujce;
 
@@ -98,13 +96,18 @@ public class Menu extends MenuStrujce {
 		item(akce.bezNaBodVzadAction);
 		item(akce.souradniceDoClipboarduAction);
 
-		final List<NaKonkretniBodAction> geoHomeBodyAction = refbodyModel.nacti();
-		if (geoHomeBodyAction.size() > 0) {
-			separator();
-			for (final Action a : geoHomeBodyAction) {
-				item(a);
+		// Body z GeoGetu se doplní, až se přečtou; menu se kvůli nim nestaví déle.
+		final JMenu jit = menu;
+		final int pozice = jit.getItemCount();
+		refbodyModel.nactiNaPozadi(body -> {
+			if (body.isEmpty()) {
+				return;
 			}
-		}
+			jit.insertSeparator(pozice);
+			for (int i = 0; i < body.size(); i++) {
+				jit.insert(new JMenuItem(body.get(i)), pozice + 1 + i);
+			}
+		});
 
 		separator();
 		item(akce.posouvejSipkamiActionSEVER);

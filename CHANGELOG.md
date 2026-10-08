@@ -93,11 +93,15 @@
   a vrátila se během načítání, už nezablokuje vybrané databáze.
 - Neodpovídající síťový disk s datovou složkou už nezdržuje ovládání
   programu po každém načtení keší.
+- Neodpovídající datová složka GeoGetu nezdrží start programu; referenční
+  body z GeoGetu se v menu Jít objeví, až se přečtou.
 - Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
   hlášení.
 - Umístění souborů: neexistující nebo nečitelná datová složka GeoGetu,
   GSAKu nebo OpenSAKu se při uložení ohlásí a nezaloží. Aktivní složka bez
   databází už nevyvolá chybové hlášení.
+- Umístění souborů: složka na neodpovídajícím síťovém disku nezablokuje
+  uložení; po třech sekundách se ohlásí, že neodpovídá.
 - Uživatelská mapa, která je odkazem na jiný soubor nebo je větší než
   64 kB, se nenačte; hláška o neznámé vlastnosti ukáže jen její začátek.
   Hodnota hlavičky s řídicím znakem (třeba `\r`) se odmítne s chybou při
