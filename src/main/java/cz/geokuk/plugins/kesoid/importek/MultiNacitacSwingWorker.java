@@ -79,7 +79,11 @@ public class MultiNacitacSwingWorker extends MySwingWorker0<KesBag, Void> {
 		}
 		log.info("Loaded {} caches, {}={} waypoints.", result.getKesoidy().size(), result.getWpts().size(), result.getIndexator().count(BoundingRect.ALL));
 		final long cas = System.currentTimeMillis();
+		final KesBag predtim = kesoidModel.getVsechnyKesoidy();
 		kesoidModel.setVsechnyKesoidy(result);
+		if (UvolneniPameti.vyplatiSe(predtim == null ? -1 : predtim.getWpts().size(), result.getWpts().size())) {
+			UvolneniPameti.naplanuj();
+		}
 		log.debug("Cas zpracování načtených kešíků CAS " + (System.currentTimeMillis() - cas));
 	}
 
