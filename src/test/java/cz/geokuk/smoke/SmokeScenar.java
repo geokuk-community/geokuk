@@ -1,6 +1,7 @@
 package cz.geokuk.smoke;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.lang.reflect.Field;
@@ -23,7 +24,9 @@ import cz.geokuk.core.program.CloseAction;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.OknoUmisteniDto;
 import cz.geokuk.core.program.GeokukMain;
+import cz.geokuk.core.program.JStatusBar;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.plugins.cesty.CestyModel;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
@@ -112,6 +115,9 @@ public class SmokeScenar {
 		});
 
 		cekej("hlavní okno", 60_000, () -> najdiHlavniOkno() != null);
+		if (Arrays.asList(kroky).contains("lista")) {
+			naEdt(() -> polohyPoStartu = polohyListy());
+		}
 		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
 		naEdt(() -> {
 			final Rectangle obrazovka = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
@@ -167,6 +173,9 @@ public class SmokeScenar {
 				break;
 			case "prazdneSlozky":
 				prazdneSlozky();
+				break;
+			case "lista":
+				lista();
 				break;
 			default:
 				throw new IllegalArgumentException(krok);
@@ -518,6 +527,121 @@ public class SmokeScenar {
 		});
 		pockejNaKlid("prázdné datové složky");
 		zbesile();
+	}
+
+	/** Polohy bloků stavového řádku a položek bloku Zdroje po startu, než se načtou data. */
+	private Map<String, Rectangle> polohyPoStartu;
+
+	/**
+	 * Stavový řádek se nesmí pohnout: po načtení dat, po načtení cest ani po přepnutí zdroje. K tomu klikání na zaškrtávátko GPX během načítání a najetí na
+	 * „Zdroje:“, odezvu EDT hlídá hlídač.
+	 */
+	private void lista() throws Exception {
+		porovnejListu("po načtení dat");
+		final File gpx = new File(System.getProperty("java.io.tmpdir"), "smoke-cesta.gpx");
+		Files.write(gpx.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"smoke\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n<trk><trkseg>\n"
+				+ "<trkpt lat=\"50.08\" lon=\"14.42\"/><trkpt lat=\"50.09\" lon=\"14.43\"/><trkpt lat=\"50.10\" lon=\"14.41\"/>\n</trkseg></trk>\n</gpx>\n").getBytes(StandardCharsets.UTF_8));
+		final CestyModel cesty = bean(CestyModel.class);
+		naEdt(() -> cesty.otevri(gpx));
+		final JStatusBar radek = statusBar();
+		final Component blokCest = (Component) pole(radek, "cesty");
+		cekej("blok cest", 30_000, () -> blokCest.isVisible());
+		pockejNaKlid("načtení cest");
+		porovnejListu("po načtení cest");
+
+		final KesoidModel model = bean(KesoidModel.class);
+		final Field vsechny = KesoidModel.class.getDeclaredField("vsechny");
+		vsechny.setAccessible(true);
+		final int wpt = ((KesBag) vsechny.get(model)).getWpts().size();
+		@SuppressWarnings("unchecked")
+		final Map<?, JButton> zaskrtavatka = (Map<?, JButton>) pole(pole(radek, "prepinaceZdroju"), "zaskrtavatka");
+		final JButton gpxTyp = zaskrtavatka.entrySet().stream().filter(e -> e.getKey().toString().equals("GPX")).findFirst().get().getValue();
+		final Random r = new Random(2);
+		for (int i = 0; i < 20; i++) {
+			SwingUtilities.invokeLater(gpxTyp::doClick);
+			Thread.sleep(20 + r.nextInt(80));
+		}
+		final JLabel popisek = (JLabel) pole(pole(radek, "prepinaceZdroju"), "popisek");
+		for (int i = 0; i < 5; i++) {
+			naEdt(() -> popisek.dispatchEvent(new MouseEvent(popisek, MouseEvent.MOUSE_ENTERED, System.currentTimeMillis(), 0, 5, 5, 0, false)));
+			Thread.sleep(300);
+			naEdt(() -> popisek.dispatchEvent(new MouseEvent(popisek, MouseEvent.MOUSE_EXITED, System.currentTimeMillis(), 0, -5, -5, 0, false)));
+			Thread.sleep(200);
+		}
+		// Rychlé kliky během načítání nemusí skončit zapnutím; bublina říká, co udělá další klik.
+		Thread.sleep(1000);
+		naEdt(() -> {
+			if (gpxTyp.getToolTipText() != null && gpxTyp.getToolTipText().endsWith("zapnout")) {
+				gpxTyp.doClick();
+			}
+		});
+		cekej("GPX znovu načtené", 120_000, () -> {
+			try {
+				final KesBag bag = (KesBag) vsechny.get(model);
+				return bag != null && bag.getWpts().size() == wpt;
+			} catch (final IllegalAccessException e) {
+				throw new IllegalStateException(e);
+			}
+		});
+		pockejNaKlid("přepínání zdroje");
+		porovnejListu("po přepínání zdroje");
+	}
+
+	private void porovnejListu(final String kdy) throws Exception {
+		final List<Map<String, Rectangle>> ted = new ArrayList<>();
+		naEdt(() -> ted.add(polohyListy()));
+		for (final Map.Entry<String, Rectangle> e : polohyPoStartu.entrySet()) {
+			if (!e.getValue().equals(ted.get(0).get(e.getKey()))) {
+				chyby.add("Stavový řádek se pohnul " + kdy + ": " + e.getKey() + " " + e.getValue() + " → " + ted.get(0).get(e.getKey()));
+			}
+		}
+	}
+
+	/** Polohy bloků stavového řádku (bez bloku cest a průběhu filtru, ty se ukazují podle stavu) a položek bloku Zdroje. */
+	private static Map<String, Rectangle> polohyListy() {
+		try {
+			final JStatusBar radek = statusBar();
+			final Set<Object> promenne = new HashSet<>(Arrays.asList(pole(radek, "cesty"), pole(radek, "jFilterProgressPanel")));
+			final Map<String, Rectangle> polohy = new LinkedHashMap<>();
+			polohy.put("řádek", new Rectangle(radek.getSize()));
+			for (int i = 0; i < radek.getComponentCount(); i++) {
+				if (!promenne.contains(radek.getComponent(i))) {
+					polohy.put("blok " + i, radek.getComponent(i).getBounds());
+				}
+			}
+			final Container zdroje = (Container) pole(radek, "prepinaceZdroju");
+			for (int i = 0; i < zdroje.getComponentCount(); i++) {
+				polohy.put("Zdroje " + i, SwingUtilities.convertRectangle(zdroje, zdroje.getComponent(i).getBounds(), radek));
+			}
+			return polohy;
+		} catch (final ReflectiveOperationException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	private static JStatusBar statusBar() {
+		final JStatusBar[] nalezeny = new JStatusBar[1];
+		najdi(najdiHlavniOkno(), JStatusBar.class, nalezeny);
+		return nalezeny[0];
+	}
+
+	private static <T> void najdi(final Container kde, final Class<T> co, final T[] vysledek) {
+		for (final Component c : kde.getComponents()) {
+			if (vysledek[0] != null) {
+				return;
+			}
+			if (co.isInstance(c)) {
+				vysledek[0] = co.cast(c);
+			} else if (c instanceof Container) {
+				najdi((Container) c, co, vysledek);
+			}
+		}
+	}
+
+	private static Object pole(final Object objekt, final String jmeno) throws ReflectiveOperationException {
+		final Field f = objekt.getClass().getDeclaredField(jmeno);
+		f.setAccessible(true);
+		return f.get(objekt);
 	}
 
 	/** Změny velikosti okna za běhu, i na nesmyslně malé a zpět. */
