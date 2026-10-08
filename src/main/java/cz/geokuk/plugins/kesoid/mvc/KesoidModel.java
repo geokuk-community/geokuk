@@ -209,7 +209,13 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 	private static boolean jePod(final File f, final Collection<File> slozky) {
 		final Path cesta = f.toPath();
-		return slozky.stream().anyMatch(s -> cesta.startsWith(s.toPath()));
+		return slozky.stream().anyMatch(s -> {
+			try {
+				return cesta.startsWith(s.toPath());
+			} catch (final InvalidPathException e) {
+				return false; // neplatná cesta (ručně upravené nastavení) žádnou složku neoznačuje
+			}
+		});
 	}
 
 	/** Databáze, do které jiný program právě zapisuje; načte se, až zápis skončí. */
@@ -696,26 +702,12 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 	/** Zapomene blokované zdroje, které už nejsou; zdroje v dočasně nedostupné složce (síť, USB) zůstanou blokované. */
 	void vycistiBlokovaneZdroje(final Set<File> zdroje) {
-		// Volá se na EDT po každém načtení; zjišťovat dostupnost složek (síťový disk) má smysl, jen když je co čistit.
+		// Volá se na EDT po každém načtení; dostupnost složek zjistil sken ve vlákně načítání, neodpovídající síťový disk by EDT zablokoval.
 		if (blokovaneZdroje.isEmpty()) {
 			return;
 		}
-		final List<Path> nedostupne = new ArrayList<>();
-		final KesoidUmisteniSouboru u = getUmisteniSouboru();
-		if (u != null) {
-			for (final Filex f : Arrays.asList(u.getKesDir(), u.getGeogetDataDir(), u.getGsakDataDir(), u.getOpensakDataDir())) {
-				final File slozka = f == null ? null : f.getEffectiveFileIfActive();
-				if (slozka != null && !MultiNacitac.jeCitelnaSlozka(slozka)) {
-					try {
-						nedostupne.add(slozka.toPath());
-					} catch (final InvalidPathException e) {
-						// neplatná cesta žádnou složku neoznačuje, nic pod ní neleží
-					}
-				}
-			}
-		}
 		final Set<File> priNacitani = nedostupnePriNacitani;
-		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && nedostupne.stream().noneMatch(f.toPath()::startsWith) && !jePod(f, priNacitani)));
+		upravBlokovaneZdroje(b -> b.removeIf(f -> !zdroje.contains(f) && !jePod(f, priNacitani)));
 	}
 
 	/** Upraví kopii blokovaných zdrojů; když se změnila, uloží ji. */
