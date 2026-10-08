@@ -152,21 +152,12 @@ public class ZalamovaciLayout implements LayoutManager {
 		if (!radek.isEmpty()) {
 			radky.add(radek);
 		}
-		if (!radky.isEmpty() && sirkaRadku(radky.get(radky.size() - 1)) > sirkaPosledniho) {
+		// Do spodního řádku jen poslední komponenta, horní řádky zůstanou plné v pořadí čtení.
+		if (!radky.isEmpty() && sirkaRadku(radky.get(radky.size() - 1)) > sirkaPosledniho && radky.get(radky.size() - 1).size() > 1) {
 			final List<Component> posledni = radky.get(radky.size() - 1);
 			final List<Component> spodni = new ArrayList<>();
-			int obsazenoSpodni = 0;
-			while (posledni.size() > 1 && obsazenoSpodni + posledni.get(posledni.size() - 1).getPreferredSize().width <= sirkaPosledniho) {
-				final Component c = posledni.remove(posledni.size() - 1);
-				spodni.add(0, c);
-				obsazenoSpodni += c.getPreferredSize().width;
-			}
-			if (spodni.isEmpty() && posledni.size() > 1) {
-				spodni.add(posledni.remove(posledni.size() - 1));
-			}
-			if (!spodni.isEmpty()) {
-				radky.add(spodni);
-			}
+			spodni.add(posledni.remove(posledni.size() - 1));
+			radky.add(spodni);
 		}
 		return radky;
 	}

@@ -153,4 +153,18 @@ public class ZalamovaciLayoutTest {
 		Assert.assertEquals(new Rectangle(270, 20, 150, 20), pravy.getBounds());
 		Assert.assertEquals(new Rectangle(0, 0, 200, 20), a.getBounds());
 	}
+
+	@Test
+	public void doSpodnihoRadkuJenPosledniKomponenta() {
+		final JComponent a = pridej(200);
+		final JComponent b = pridej(200);
+		final JComponent c = pridej(100);
+		final JComponent pravy = pridej(150);
+		layout.vpravo(pravy);
+		rozvrhni(520);
+		Assert.assertEquals(new Rectangle(0, 0, 200, 20), a.getBounds());
+		Assert.assertEquals(new Rectangle(200, 0, 200, 20), b.getBounds());
+		Assert.assertEquals(new Rectangle(0, 20, 100, 20), c.getBounds());
+		Assert.assertEquals(new Rectangle(370, 20, 150, 20), pravy.getBounds());
+	}
 }
