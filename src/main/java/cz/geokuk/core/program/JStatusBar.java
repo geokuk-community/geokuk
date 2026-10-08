@@ -167,7 +167,17 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private final JPrepinaceZdroju prepinaceZdroju = new JPrepinaceZdroju();
 
 	private final JValue jSouborSVyletem = new JValue("vylet-26.ggt", true);
-	private final JLabel jSouborSVyletemPotrebujeUlozit = new JLabel();
+	/** Hvězdička neuloženého výletu má místo i bez hvězdičky, aby blok cest neměnil šířku. */
+	private final JLabel jSouborSVyletemPotrebujeUlozit = new JLabel() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public Dimension getPreferredSize() {
+			final FontMetrics fm = getFontMetrics(getFont());
+			final Insets ins = getInsets();
+			return new Dimension(fm.stringWidth("*") + ins.left + ins.right, fm.getHeight() + ins.top + ins.bottom);
+		}
+	};
 
 	private KesBag filtrovane;
 
