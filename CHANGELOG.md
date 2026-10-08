@@ -72,6 +72,8 @@
 - Licence GeoKuku, použitých knihoven a mapových podkladů jsou ve složce
   `licence` (v zipu i v repu). Nápověda > O programu ukazuje i licence
   mapových podkladů.
+- Mapy.cz už nejde stahovat hromadně do cache (Mapy > Postahovat
+  dlaždice); zobrazené dlaždice se do cache ukládají dál.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
