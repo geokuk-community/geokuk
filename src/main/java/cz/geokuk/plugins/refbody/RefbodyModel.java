@@ -3,6 +3,9 @@ package cz.geokuk.plugins.refbody;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+
+import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.FPref;
@@ -39,13 +42,38 @@ public class RefbodyModel extends Model0 {
 		this.kesoidModel = kesoidModel;
 	}
 
-	public List<NaKonkretniBodAction> nacti() {
-		// TODO Předělat načítání z Geogetu, nevhodně se zde kombinuje model a controlery
-		final List<NaKonkretniBodAction> list = new ArrayList<>();
+	/** Referenční body z geohome.ini GeoGetu; soubor se čte mimo EDT (složka může být na neodpovídajícím disku), akce pak dostane {@code hotovo} na EDT. */
+	public void nactiNaPozadi(final Consumer<List<NaKonkretniBodAction>> hotovo) {
 		if (!kesoidModel.getUmisteniSouboru().getGeogetDataDir().isActive()) {
-			return list;
+			return;
 		}
 		final File file = new File(kesoidModel.getUmisteniSouboru().getGeogetDataDir().getEffectiveFile(), "geohome.ini");
+		final Thread vlakno = new Thread(() -> {
+			final List<RefBod> body = precti(file);
+			SwingUtilities.invokeLater(() -> {
+				final List<NaKonkretniBodAction> akce = new ArrayList<>();
+				for (final RefBod bod : body) {
+					akce.add(factory.init(new NaKonkretniBodAction(bod.nazev, bod.wgs)));
+				}
+				hotovo.accept(akce);
+			});
+		}, "Referenční body z GeoGetu");
+		vlakno.setDaemon(true);
+		vlakno.start();
+	}
+
+	static final class RefBod {
+		final String nazev;
+		final Wgs wgs;
+
+		RefBod(final String nazev, final Wgs wgs) {
+			this.nazev = nazev;
+			this.wgs = wgs;
+		}
+	}
+
+	static List<RefBod> precti(final File file) {
+		final List<RefBod> list = new ArrayList<>();
 		try {
 			if (file.canRead()) {
 				// TODO prozkoumat, zda opravdu geogetí data jsou v tomto kódování
@@ -57,9 +85,7 @@ public class RefbodyModel extends Model0 {
 							continue;
 						}
 						try {
-							final Wgs wgs = new Wgs(Double.parseDouble(aa[0]), Double.parseDouble(aa[1]));
-							final NaKonkretniBodAction action = factory.init(new NaKonkretniBodAction(aa[2], wgs));
-							list.add(action);
+							list.add(new RefBod(aa[2], new Wgs(Double.parseDouble(aa[0]), Double.parseDouble(aa[1]))));
 						} catch (final Throwable e) {
 							FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Čtení souboru " + file + ", řádek " + (list.size() + 1));
 						}
@@ -69,11 +95,10 @@ public class RefbodyModel extends Model0 {
 				// Složka GeoGetu bez geohome.ini (prázdná, jen databáze) je v pořádku, referenční body z GeoGetu prostě nejsou.
 				log.info("Soubor \"" + file + "\" nelze číst, referenční body z GeoGetu nejsou.");
 			}
-			return list;
 		} catch (final IOException e) {
 			FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Čtení souboru " + file + ", řádek " + (list.size() + 1));
-			return list;
 		}
+		return list;
 	}
 
 	public void setHc(final Wgs hc) {

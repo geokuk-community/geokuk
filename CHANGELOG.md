@@ -92,6 +92,8 @@
   a vrátila se během načítání, už nezablokuje vybrané databáze.
 - Neodpovídající síťový disk s datovou složkou už nezdržuje ovládání
   programu po každém načtení keší.
+- Neodpovídající datová složka GeoGetu nezdrží start programu; referenční
+  body z GeoGetu se v menu Jít objeví, až se přečtou.
 - Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové
   hlášení.
 - Umístění souborů: neexistující nebo nečitelná datová složka GeoGetu,

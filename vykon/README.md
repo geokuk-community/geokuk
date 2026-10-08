@@ -42,6 +42,9 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   opensak=… kola=3 vlakna=1,2,4` (typ=cesta lze opakovat). S `skupiny=1`
   místo měření času jen z kódů databází vypíše skupiny zdrojů sdílejících
   klíč jména a pro každou dvojici počet společných klíčů s ukázkou kódů.
+  S `predehrat=1` čte zdroje postupně a druhé vlákno mezitím sekvenčně
+  načte soubor dalšího zdroje do cache systému; s `predehrat=0` bez toho.
+  Smysl má studeně, každý běh po restartu počítače.
 - `program`: smoke testy `velkaData` (GPX s 50 000 keší) a
   `velkaDatabazeGeogetu` (200 000 keší) spustí celý program s oknem;
   vypíše čas do zobrazení okna, načtení keší, obsazenou paměť a nejdelší
