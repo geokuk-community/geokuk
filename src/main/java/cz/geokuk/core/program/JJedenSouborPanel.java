@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.concurrent.*;
+import java.util.function.Function;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -110,19 +112,51 @@ public class JJedenSouborPanel extends JPanel implements DocumentListener {
 			dir = dir.getParentFile();
 		}
 		// Neaktivní složku (třeba GSAK u toho, kdo ho nemá) zakládat nemá smysl.
-		if (!filex.isActive() || dir.isDirectory() && dir.canRead()) {
+		if (!filex.isActive()) {
+			return filex;
+		}
+		final File slozka = dir;
+		final StavSlozky stav = sLimitem(() -> kontrola.apply(slozka), slozka);
+		if (stav == StavSlozky.CITELNA) {
 			return filex;
 		}
 		if (!zakladat) {
 			final String co = label.endsWith(".") ? label.substring(0, label.length() - 1) : label;
-			throw new JPrehledSouboru.YNejdeTo(co + ": \"" + dir + "\" " + (dir.exists() ? "není čitelná složka." : "neexistuje nebo není dostupná.")
+			throw new JPrehledSouboru.YNejdeTo(co + ": \"" + dir + "\" " + (stav == StavSlozky.JINA ? "není čitelná složka." : "neexistuje nebo není dostupná.")
 					+ " Opravte cestu, nebo zrušte \"Aktivní\".");
 		}
-		final boolean vysl = dir.mkdirs();
-		if (!vysl) {
+		if (!sLimitem(slozka::mkdirs, slozka)) {
 			throw new JPrehledSouboru.YNejdeTo("Složku \"" + dir + "\" se nepodařilo vytvořit pro \"" + label + "\"");
 		}
 		return filex;
+	}
+
+	enum StavSlozky {
+		CITELNA, NEEXISTUJE, JINA
+	}
+
+	/** Na neodpovídajícím síťovém disku blokuje každý dotaz na soubor desítky sekund, proto mimo EDT a s limitem. */
+	static Function<File, StavSlozky> kontrola = d -> d.isDirectory() && d.canRead() ? StavSlozky.CITELNA : d.exists() ? StavSlozky.JINA : StavSlozky.NEEXISTUJE;
+	static long limitMs = 3000;
+	private static final ExecutorService KONTROLY = Executors.newCachedThreadPool(r -> {
+		final Thread t = new Thread(r, "Kontrola složky");
+		t.setDaemon(true);
+		return t;
+	});
+
+	private static <T> T sLimitem(final Callable<T> dotaz, final File slozka) throws YNejdeTo {
+		final Future<T> vysledek = KONTROLY.submit(dotaz);
+		try {
+			return vysledek.get(limitMs, TimeUnit.MILLISECONDS);
+		} catch (final TimeoutException e) {
+			vysledek.cancel(true);
+			throw new JPrehledSouboru.YNejdeTo("Složka \"" + slozka + "\" neodpovídá (odpojený síťový disk?). Zkuste to znovu, nebo zrušte \"Aktivní\".");
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new JPrehledSouboru.YNejdeTo("Kontrola složky \"" + slozka + "\" byla přerušena.");
+		} catch (final ExecutionException e) {
+			throw new JPrehledSouboru.YNejdeTo("Složku \"" + slozka + "\" nejde prověřit: " + e.getCause());
+		}
 	}
 
 	private void initComponents() {

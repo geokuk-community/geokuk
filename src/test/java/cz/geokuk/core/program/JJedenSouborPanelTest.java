@@ -97,4 +97,35 @@ public class JJedenSouborPanelTest {
 		panel.vezmiSouborAProver();
 		Assert.assertTrue(chybi.isDirectory());
 	}
+
+	/** Neodpovídající síťový disk nezablokuje uložení (EDT) déle než limit kontroly. */
+	@Test(timeout = 10_000)
+	public void neodpovidajiciSlozkaNezablokujeUlozeni() throws Exception {
+		final java.util.function.Function<File, JJedenSouborPanel.StavSlozky> puvodni = JJedenSouborPanel.kontrola;
+		final long puvodniLimit = JJedenSouborPanel.limitMs;
+		JJedenSouborPanel.kontrola = d -> {
+			try {
+				Thread.sleep(30_000);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			return JJedenSouborPanel.StavSlozky.CITELNA;
+		};
+		JJedenSouborPanel.limitMs = 200;
+		try {
+			final JJedenSouborPanel panel = new JJedenSouborPanel(null, "Datová složka GeoGetu.", true, true, true).nezakladat();
+			panel.setFilex(new Filex(new File(tmp.getRoot(), "nas/geoget"), false, true));
+			final long zacatek = System.nanoTime();
+			try {
+				panel.vezmiSouborAProver();
+				Assert.fail();
+			} catch (final JPrehledSouboru.YNejdeTo e) {
+				Assert.assertTrue(e.getMessage(), e.getMessage().contains("neodpovídá"));
+			}
+			Assert.assertTrue("uložení čekalo příliš dlouho", System.nanoTime() - zacatek < 2_000_000_000L);
+		} finally {
+			JJedenSouborPanel.kontrola = puvodni;
+			JJedenSouborPanel.limitMs = puvodniLimit;
+		}
+	}
 }
