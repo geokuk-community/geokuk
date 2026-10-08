@@ -8,8 +8,8 @@ import java.util.List;
  * Komponenty vedle sebe zleva v přirozené šířce; co se do řádku nevejde, přejde celé na další řádek.
  * Rezervovaná komponenta se při zalamování počítá i neviditelná, aby se počet řádků neměnil s její viditelností.
  * Plovoucí komponenta (třeba průběh) o řádcích nerozhoduje, dostane zbylé místo v posledním řádku.
- * Pravá komponenta stojí vždy u pravého okraje dole a ostatní se zalamují do šířky vedle ní, takže se při zalomení ani při změně
- * obsahu řádku nepohne.
+ * Pravá komponenta stojí vždy u pravého okraje dole; spodní řádek se vejde vedle ní, horní řádky mají plnou šířku. Při zalomení ani
+ * při změně obsahu řádku se pravá komponenta nepohne.
  */
 public class ZalamovaciLayout implements LayoutManager {
 
@@ -55,8 +55,10 @@ public class ZalamovaciLayout implements LayoutManager {
 			final Insets ins = parent.getInsets();
 			final int dostupna = dostupnaSirka(parent);
 			int vyska = 0;
-			for (final List<Component> radek : radky(parent, dostupna > 0 ? dostupna - ins.left - ins.right - sirkaPraveho : Integer.MAX_VALUE)) {
-				vyska += vyskaRadku(radek);
+			final int sirkaRadku = dostupna > 0 ? dostupna - ins.left - ins.right : Integer.MAX_VALUE;
+			final List<List<Component>> radky = radky(parent, sirkaRadku, sirkaRadku - sirkaPraveho);
+			for (int i = 0; i < radky.size(); i++) {
+				vyska += vyskaRadku(radky.get(i), i == radky.size() - 1 ? sirkaPraveho : 0);
 			}
 			if (sirkaPraveho > 0) {
 				vyska = Math.max(vyska, pravy.getPreferredSize().height);
@@ -84,9 +86,11 @@ public class ZalamovaciLayout implements LayoutManager {
 			int y = ins.top;
 			int x = ins.left;
 			int vyska = 0;
-			for (final List<Component> radek : radky(parent, prava - ins.left)) {
+			final List<List<Component>> radky = radky(parent, parent.getWidth() - ins.right - ins.left, prava - ins.left);
+			for (int i = 0; i < radky.size(); i++) {
+				final List<Component> radek = radky.get(i);
 				y += vyska;
-				vyska = vyskaRadku(radek);
+				vyska = vyskaRadku(radek, i == radky.size() - 1 ? sirkaPraveho : 0);
 				x = ins.left;
 				for (final Component c : radek) {
 					if (c.isVisible()) {
@@ -127,7 +131,8 @@ public class ZalamovaciLayout implements LayoutManager {
 		return 0;
 	}
 
-	private List<List<Component>> radky(final Container parent, final int sirka) {
+	/** Řádky do plné šířky; poslední (spodní) řádek se musí vejít vedle pravé komponenty. */
+	private List<List<Component>> radky(final Container parent, final int sirka, final int sirkaPosledniho) {
 		final List<List<Component>> radky = new ArrayList<>();
 		List<Component> radek = new ArrayList<>();
 		int obsazeno = 0;
@@ -147,11 +152,36 @@ public class ZalamovaciLayout implements LayoutManager {
 		if (!radek.isEmpty()) {
 			radky.add(radek);
 		}
+		if (!radky.isEmpty() && sirkaRadku(radky.get(radky.size() - 1)) > sirkaPosledniho) {
+			final List<Component> posledni = radky.get(radky.size() - 1);
+			final List<Component> spodni = new ArrayList<>();
+			int obsazenoSpodni = 0;
+			while (posledni.size() > 1 && obsazenoSpodni + posledni.get(posledni.size() - 1).getPreferredSize().width <= sirkaPosledniho) {
+				final Component c = posledni.remove(posledni.size() - 1);
+				spodni.add(0, c);
+				obsazenoSpodni += c.getPreferredSize().width;
+			}
+			if (spodni.isEmpty() && posledni.size() > 1) {
+				spodni.add(posledni.remove(posledni.size() - 1));
+			}
+			if (!spodni.isEmpty()) {
+				radky.add(spodni);
+			}
+		}
 		return radky;
 	}
 
-	private static int vyskaRadku(final List<Component> radek) {
-		int vyska = 0;
+	private static int sirkaRadku(final List<Component> radek) {
+		int sirka = 0;
+		for (final Component c : radek) {
+			sirka += c.getPreferredSize().width;
+		}
+		return sirka;
+	}
+
+	/** Spodní řádek je aspoň tak vysoký jako pravá komponenta, aby do horních řádků nezasahovala. */
+	private int vyskaRadku(final List<Component> radek, final int sirkaPraveho) {
+		int vyska = sirkaPraveho > 0 ? pravy.getPreferredSize().height : 0;
 		for (final Component c : radek) {
 			vyska = Math.max(vyska, c.getPreferredSize().height);
 		}

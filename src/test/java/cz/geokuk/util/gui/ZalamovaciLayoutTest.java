@@ -138,4 +138,19 @@ public class ZalamovaciLayoutTest {
 		rozvrhni(200);
 		Assert.assertEquals(0, pravy.getX());
 	}
+
+	@Test
+	public void horniRadkyMajiPlnouSirkuJenSpodniUhybaPraveKomponente() {
+		final JComponent a = pridej(200);
+		final JComponent b = pridej(200);
+		final JComponent c = pridej(100);
+		final JComponent pravy = pridej(150);
+		layout.vpravo(pravy);
+		rozvrhni(420);
+		Assert.assertEquals(40, panel.getHeight());
+		Assert.assertEquals(new Rectangle(200, 0, 200, 20), b.getBounds());
+		Assert.assertEquals(new Rectangle(0, 20, 100, 20), c.getBounds());
+		Assert.assertEquals(new Rectangle(270, 20, 150, 20), pravy.getBounds());
+		Assert.assertEquals(new Rectangle(0, 0, 200, 20), a.getBounds());
+	}
 }
