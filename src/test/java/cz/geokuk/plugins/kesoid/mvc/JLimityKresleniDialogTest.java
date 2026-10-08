@@ -115,4 +115,16 @@ public class JLimityKresleniDialogTest {
 			Assert.assertEquals(LimityKresleni.of(125_000, 125_000), model.getLimityKresleni());
 		});
 	}
+
+	@Test
+	public void ctecceHlasiSkutecnyLimit() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final javax.accessibility.AccessibleValue v = dialog.jIkon.getAccessibleContext().getAccessibleValue();
+			Assert.assertEquals(LimityKresleni.VYCHOZI_IKON, v.getCurrentAccessibleValue().intValue());
+			Assert.assertEquals(LimityKresleni.MIN_IKON, v.getMinimumAccessibleValue().intValue());
+			Assert.assertEquals(LimityKresleni.MAX, v.getMaximumAccessibleValue().intValue());
+			v.setCurrentAccessibleValue(150_000);
+			Assert.assertEquals(150_000, JLimityKresleniDialog.STUPNICE[dialog.jIkon.getValue()]);
+		});
+	}
 }
