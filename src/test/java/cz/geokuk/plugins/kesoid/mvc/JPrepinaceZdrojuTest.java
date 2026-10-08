@@ -54,6 +54,20 @@ public class JPrepinaceZdrojuTest {
 		SwingUtilities.invokeAndWait(r);
 	}
 
+	/** Systém okna (macOS) může polohu a velikost okna po setBounds ještě upravit; čeká, až se nemění. */
+	private void pockejNaUstaleniOkna() throws Exception {
+		Rectangle predtim = null;
+		for (int i = 0; i < 40; i++) {
+			final Rectangle[] r = new Rectangle[1];
+			naEdt(() -> r[0] = new Rectangle(blok.getLocationOnScreen(), okno.getSize()));
+			if (r[0].equals(predtim)) {
+				return;
+			}
+			predtim = r[0];
+			Thread.sleep(100);
+		}
+	}
+
 	private Dimension rozmer(final StavZdroju stav) throws Exception {
 		final Dimension[] d = new Dimension[1];
 		naEdt(() -> {
@@ -108,6 +122,9 @@ public class JPrepinaceZdrojuTest {
 			final Rectangle obrazovka = okno.getGraphicsConfiguration().getBounds();
 			okno.setBounds(obrazovka.x, obrazovka.y + 20, okno.getWidth(), Math.min(700, obrazovka.height - 20));
 			okno.validate();
+		});
+		pockejNaUstaleniOkna();
+		naEdt(() -> {
 			blok.obnov(mnoho.snimek());
 			blok.ukazSouhrn();
 		});
