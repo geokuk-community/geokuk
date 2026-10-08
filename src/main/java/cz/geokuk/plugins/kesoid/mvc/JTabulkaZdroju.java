@@ -261,6 +261,9 @@ public class JTabulkaZdroju extends JPanel {
 		case SL_WP:
 			return p != null ? (p.isNacitat() ? wp(p.getWpBrano(), p.getWpCelkem()) : "–") : wpTypu(radek.typ);
 		default:
+			if (p == null && stav.getProblemSlozky(radek.typ) != null) {
+				return stav.getProblemSlozky(radek.typ);
+			}
 			return p != null ? (p.isNacitat() ? textStavu(p.getStav(), p.getPostup()) : StavZdroje.VYPNUTO.getText()) : textStavu(stav.getStavTypu(radek.typ), postupTypu(radek.typ));
 		}
 	}
@@ -269,6 +272,9 @@ public class JTabulkaZdroju extends JPanel {
 		final StavPolozky p = radek.polozka;
 		if (sloupec == SL_ZDROJ && p != null) {
 			return FString.text(p.getCesta());
+		}
+		if (sloupec == SL_STAV && p == null && stav.getProblemSlozky(radek.typ) != null) {
+			return RADA_SLOZKA;
 		}
 		if (sloupec == SL_WP) {
 			final int dup = p != null ? (p.isNacitat() ? p.getPocetDuplicit() : 0) : duplicityTypu(radek.typ);
@@ -286,6 +292,7 @@ public class JTabulkaZdroju extends JPanel {
 	}
 
 	static final String ZAMCENO = "Zamčeno jiným programem";
+	static final String RADA_SLOZKA = "Zkontrolujte složku v Soubor > Umístění souborů.";
 	static final String RADA_ZAMCENO = "Zavřete program, který databázi používá; načte se sama.";
 
 	static String textStavu(final StavZdroje s, final int postup) {
@@ -394,6 +401,9 @@ public class JTabulkaZdroju extends JPanel {
 			if (c == SL_NACIST) {
 				final StavVyberu volba = p == null ? stav.getStavVyberuTypu(radek.typ) : p.isZapnuto() ? StavVyberu.ZAPNUTO : StavVyberu.VYPNUTO;
 				setIcon(p != null && p.isTypVypnut() ? IkonyZdroju.zaskrtavatkoSede(volba) : IkonyZdroju.zaskrtavatko(volba));
+			} else if (c == SL_STAV && p == null && stav.getProblemSlozky(radek.typ) != null) {
+				setIcon(IkonyZdroju.pro(StavZdroje.CHYBA));
+				setForeground(t.getForeground());
 			} else if (c == SL_STAV && aktivni) {
 				setIcon(IkonyZdroju.pro(p != null ? p.getStav() : stav.getStavTypu(radek.typ)));
 			} else if (c == SL_WP && maDuplicity(radek)) {

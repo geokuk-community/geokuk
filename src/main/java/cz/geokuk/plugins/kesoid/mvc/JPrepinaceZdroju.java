@@ -322,7 +322,7 @@ public class JPrepinaceZdroju extends JPanel {
 			z.setIcon(IkonyZdroju.zaskrtavatko(volba));
 			z.setToolTipText(tooltipZaskrtavatka(typ, volba));
 			final JLabel ikona = ikony.get(typ);
-			ikona.setIcon(zapnuto ? IkonyZdroju.pro(stavTypu) : IkonyZdroju.prazdna());
+			ikona.setIcon(stav.getProblemSlozky(typ) != null ? IkonyZdroju.pro(StavZdroje.CHYBA) : zapnuto ? IkonyZdroju.pro(stavTypu) : IkonyZdroju.prazdna());
 			ikona.setToolTipText(tooltipIkony(stav, typ));
 			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : Color.GRAY);
 		}
@@ -349,6 +349,10 @@ public class JPrepinaceZdroju extends JPanel {
 
 	/** Stav typu; u zámku a chyby i dotčené položky. */
 	static String tooltipIkony(final StavZdroju stav, final TypZdroje typ) {
+		final String problem = stav.getProblemSlozky(typ);
+		if (problem != null) {
+			return "<html>" + FString.html(typ.getNazev() + ": " + problem) + "<br>" + FString.html(JTabulkaZdroju.RADA_SLOZKA);
+		}
 		final StavZdroje s = stav.getStavTypu(typ);
 		if (s == StavZdroje.VYPNUTO) {
 			return null;

@@ -11,6 +11,9 @@
   na název zdroje jen jeho položky. Stejnou tabulku ukazuje okno Přehled
   zdrojů. Klik na blok Zdroje už okno Přehled zdrojů neotevře. Po návratu na
   verzi 6.2.x se znovu zapnou typy zdrojů vypnuté ve verzi 6.3.0.
+- Prázdná, neexistující nebo nečitelná datová složka GeoGetu, GSAKu nebo
+  OpenSAKu se ve stavovém řádku u zdroje ukáže ikonou chyby s důvodem
+  v bublině; stejný důvod je v tabulce zdrojů a v Přehledu zdrojů.
 - Soubor s cestami a počet waypointů a cest se ve stavovém řádku ukazují,
   jen když jsou nějaké cesty.
 - Zdroj jde zapnout či vypnout i během načítání keší a Přehled zdrojů jde
