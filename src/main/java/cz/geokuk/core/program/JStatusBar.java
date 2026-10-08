@@ -415,7 +415,6 @@ public class JStatusBar extends JPanel {
 		jPocetKesiVCestach.setToolTipText("Počet waypointů dohromady / počet cest.");
 		cesty.setVisible(false);
 		add(cesty);
-		layout.rezervuj(cesty);
 
 		pravyBlok.add(vylety);
 		pravyBlok.add(prepinaceZdroju);
