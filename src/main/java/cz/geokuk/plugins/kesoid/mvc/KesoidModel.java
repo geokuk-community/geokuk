@@ -137,6 +137,12 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		return umisteniSouboru;
 	}
 
+	/** Umístění souborů; dokud je model nenačetl, přímo z nastavení. */
+	public KesoidUmisteniSouboru getUmisteniSouboruNeboZNastaveni() {
+		final KesoidUmisteniSouboru u = umisteniSouboru;
+		return u != null ? u : loadUmisteniSouboru();
+	}
+
 	public GsakParametryNacitani getGsakParametryNacitani() {
 		return gsakParametryNacitani;
 	}

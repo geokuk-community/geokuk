@@ -168,7 +168,7 @@ public class JStatusBar extends JPanel {
 	public void inject(final KesoidModel kesoidModel) {
 		prepinaceZdroju.setOvladani(kesoidModel);
 		prepinaceZdroju.obnov(kesoidModel.getStavZdroju());
-		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboru()));
+		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboruNeboZNastaveni()));
 	}
 
 	public void onEvent(final KesoidUmisteniSouboruChangedEvent event) {

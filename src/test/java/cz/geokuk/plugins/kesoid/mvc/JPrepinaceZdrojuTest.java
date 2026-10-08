@@ -294,4 +294,20 @@ public class JPrepinaceZdrojuTest {
 			Assert.assertSame(blok.getObsahDetailu(TypZdroje.GSAK), blok.viditelny());
 		});
 	}
+
+	@Test
+	public void bublinyJsouCeleNadBlokem() throws Exception {
+		data.registr.cekaNaZapis(data.registr.getGenerace(), data.snimek().getPolozky(TypZdroje.GSAK).get(0).getSoubor());
+		naEdt(() -> {
+			blok.obnov(data.snimek());
+			for (final JComponent c : new JComponent[] { blok.getZaskrtavatko(TypZdroje.GSAK), blok.getIkona(TypZdroje.GSAK) }) {
+				final java.awt.event.MouseEvent e = new java.awt.event.MouseEvent(c, java.awt.event.MouseEvent.MOUSE_MOVED, 0, 0, 3, c.getHeight() - 1, 0, false);
+				final Point p = c.getToolTipLocation(e);
+				final JToolTip tip = c.createToolTip();
+				tip.setTipText(c.getToolTipText(e));
+				final Point vBloku = SwingUtilities.convertPoint(c, p, blok);
+				Assert.assertTrue(c.getClass() + " " + vBloku, vBloku.y + tip.getPreferredSize().height < 0);
+			}
+		});
+	}
 }

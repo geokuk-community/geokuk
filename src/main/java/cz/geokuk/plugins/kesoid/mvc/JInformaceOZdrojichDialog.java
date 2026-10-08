@@ -22,7 +22,7 @@ public class JInformaceOZdrojichDialog extends JMyDialog0 implements AfterEventR
 	public void inject(final KesoidModel kesoidModel) {
 		tabulka.setOvladani(kesoidModel);
 		tabulka.obnov(kesoidModel.getStavZdroju());
-		tabulka.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboru()));
+		tabulka.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboruNeboZNastaveni()));
 	}
 
 	public void onEvent(final KesoidUmisteniSouboruChangedEvent event) {
