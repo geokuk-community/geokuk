@@ -74,8 +74,9 @@
 - Licence GeoKuku, použitých knihoven a mapových podkladů jsou ve složce
   `licence` (v zipu i v repu). Nápověda > O programu ukazuje i licence
   mapových podkladů.
-- Mapy.cz už nejde stahovat hromadně do cache (Mapy > Postahovat
-  dlaždice); zobrazené dlaždice se do cache ukládají dál.
+- Mapy.cz, OpenStreetMap a Waymarked Trails už nejde stahovat hromadně
+  do cache (Mapy > Postahovat dlaždice), ani jako uživatelskou mapu
+  s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
 
