@@ -40,18 +40,24 @@ public final class EKaType {
 			new UzivatelskyUrlBuilder("https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer/tile/{z}/{y}/{x}")));
 	public static final EKaType CUZK_ZTM = omezeneUzemi(new EKaType("CUZK_ZTM", false, 6, 19, 19, "ČR Základní topografická mapa (ČÚZK)", "Základní topografická mapa České republiky, otevřená data ČÚZK",
 			0, null, new UzivatelskyUrlBuilder("https://ags.cuzk.gov.cz/arcgis1/rest/services/ZTM_WM/MapServer/tile/{z}/{y}/{x}")));
+	// Mimo rozsah služby (fullExtent v EPSG:3857) vrací server 503; uvnitř je 503 výpadek nebo přetížení, tedy chyba.
+	public static final EKaType SK_ZBGIS_ORTO = omezeneUzemi(new EKaType("SK_ZBGIS_ORTO", true, 7, 19, 19, "SR ortofoto (ZBGIS)", "Ortofoto Slovenska, ZBGIS, GKÚ Bratislava", 0, null,
+			new UzivatelskyUrlBuilder("https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer/tile/{z}/{y}/{x}")), new double[] { 1_860_379, 5_965_455, 2_523_588, 6_483_011 }, 404, 503);
 
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
-	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM));
+	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
 
 	private final String jmeno;
 	private Map<String, String> hlavicky = Collections.emptyMap();
 	private String atribuce = "";
 	private boolean hromadne;
-	private boolean omezeneUzemi;
+	/** Kódy HTTP, kterými server odpovídá mimo území podkladu; prázdné u podkladů pro celý svět. */
+	private Set<Integer> kodyMimoUzemi = Collections.emptySet();
+	/** Rozsah dat v EPSG:3857 (minX, minY, maxX, maxY); kódy mimo území platí jen pro dlaždice mimo něj. Null = kódy platí všude. */
+	private double[] rozsah;
 	private final int minMoumer;
 	private final int maxMoumer;
 	private final int maxAutoMoumer;
@@ -98,7 +104,16 @@ public final class EKaType {
 	}
 
 	static EKaType omezeneUzemi(final EKaType mapa) {
-		mapa.omezeneUzemi = true;
+		return omezeneUzemi(mapa, 404);
+	}
+
+	static EKaType omezeneUzemi(final EKaType mapa, final Integer... kody) {
+		return omezeneUzemi(mapa, null, kody);
+	}
+
+	static EKaType omezeneUzemi(final EKaType mapa, final double[] rozsah, final Integer... kody) {
+		mapa.kodyMimoUzemi = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(kody)));
+		mapa.rozsah = rozsah;
 		return mapa;
 	}
 
@@ -209,17 +224,35 @@ public final class EKaType {
 		if (this == CUZK_ORTO || this == CUZK_ZTM) {
 			return "© ČÚZK, CC BY 4.0";
 		}
+		if (this == SK_ZBGIS_ORTO) {
+			return "© GKÚ Bratislava, NLC, CC BY 4.0";
+		}
 		return "© OpenStreetMap contributors";
 	}
 
 	/** Hromadně jde stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne. */
 	public boolean isHromadneStahovaniPovoleno() {
-		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && !(urlBuilder instanceof MapyCzUrlBuilder);
+		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
 	}
 
-	/** Podklad pokrývá jen část světa; mimo ni server vrací 404 a dlaždice je prázdná, ne chybná. */
+	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */
 	public boolean isOmezeneUzemi() {
-		return omezeneUzemi;
+		return !kodyMimoUzemi.isEmpty();
+	}
+
+	/** Odpověď serveru na dlaždici znamená, že je mimo území podkladu. */
+	public boolean jeMimoUzemi(final int kodHttp, final KaLoc loc) {
+		if (!kodyMimoUzemi.contains(kodHttp)) {
+			return false;
+		}
+		if (rozsah == null) {
+			return true;
+		}
+		final double svet = 20_037_508.342789244;
+		final double velikost = 2 * svet / (1L << loc.getMoumer());
+		final double minX = -svet + loc.getFromSzUnsignedX() * velikost;
+		final double maxY = svet - loc.getFromSzUnsignedY() * velikost;
+		return minX + velikost <= rozsah[0] || minX >= rozsah[2] || maxY <= rozsah[1] || maxY - velikost >= rozsah[3];
 	}
 
 	public KachleUrlBuilder getUrlBuilder() {

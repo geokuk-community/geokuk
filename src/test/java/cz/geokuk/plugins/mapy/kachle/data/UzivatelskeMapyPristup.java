@@ -12,9 +12,14 @@ public final class UzivatelskeMapyPristup {
 		return UzivatelskeMapy.nactiSlozku(slozka);
 	}
 
-	/** Mapa ze vzoru URL, která pokrývá jen část světa. */
-	public static EKaType sOmezenymUzemim(final String id, final String vzorUrl) {
-		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)));
+	/** Mapa ze vzoru URL, která pokrývá jen část světa; mimo ni server odpovídá danými kódy HTTP. */
+	public static EKaType sOmezenymUzemim(final String id, final String vzorUrl, final Integer... kodyMimoUzemi) {
+		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)), kodyMimoUzemi);
+	}
+
+	/** Jako {@link #sOmezenymUzemim}, kódy ale platí jen pro dlaždice mimo rozsah v EPSG:3857 (minX, minY, maxX, maxY). */
+	public static EKaType sRozsahem(final String id, final String vzorUrl, final double[] rozsah, final Integer... kodyMimoUzemi) {
+		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)), rozsah, kodyMimoUzemi);
 	}
 
 	public static void vycisti() {

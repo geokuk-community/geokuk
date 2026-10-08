@@ -19,6 +19,7 @@ public class KachleMimoUzemiTest {
 
 	private HttpServer server;
 	private final AtomicInteger pozadavku = new AtomicInteger();
+	private final AtomicInteger kod = new AtomicInteger(404);
 	private final CountDownLatch nacteni = new CountDownLatch(1);
 	private KachleZiskavac ziskavac;
 	private Ka kachle;
@@ -28,11 +29,11 @@ public class KachleMimoUzemiTest {
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", ex -> {
 			pozadavku.incrementAndGet();
-			ex.sendResponseHeaders(404, -1);
+			ex.sendResponseHeaders(kod.get(), -1);
 			ex.close();
 		});
 		server.start();
-		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 12), UzivatelskeMapyPristup.sOmezenymUzemim("omezena", "http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{y}/{x}"));
+		kachle = mapa(404);
 
 		ziskavac = new KachleZiskavac();
 		ziskavac.inject(new OnofflineModel() {
@@ -62,6 +63,34 @@ public class KachleMimoUzemiTest {
 				return true;
 			}
 		});
+	}
+
+	private Ka mapa(final Integer... kodyMimoUzemi) {
+		return new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 12), UzivatelskeMapyPristup.sOmezenymUzemim("omezena", "http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{y}/{x}", kodyMimoUzemi));
+	}
+
+	@Test(timeout = 30000)
+	public void kod503MimoUzemiJenUPodkladuKteryHoTakHlasi() throws Exception {
+		nacteni.countDown();
+		kod.set(503);
+		kachle = mapa(404, 503);
+		Assert.assertSame(KachleZiskavac.PRAZDNA_MIMO_UZEMI, ziskej().getImg());
+		ziskavac.clearMemoryCache();
+		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 13), kachle.getType());
+		Assert.assertSame(KachleZiskavac.PRAZDNA_MIMO_UZEMI, ziskej().getImg());
+		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 14), UzivatelskeMapyPristup.sOmezenymUzemim("jen404", "http://127.0.0.1:" + server.getAddress().getPort() + "/a/{z}/{y}/{x}", 404));
+		Assert.assertNotNull("503 u podkladu, který mimo území vrací 404, je chyba", ziskej().getThr());
+	}
+
+	@Test(timeout = 30000)
+	public void kod503UvnitrRozsahuJeChybaMimoNejPrazdna() throws Exception {
+		nacteni.countDown();
+		kod.set(503);
+		final String vzor = "http://127.0.0.1:" + server.getAddress().getPort() + "/r/{z}/{y}/{x}";
+		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 15), UzivatelskeMapyPristup.sRozsahem("cely", vzor, new double[] { -2.1e7, -2.1e7, 2.1e7, 2.1e7 }, 503));
+		Assert.assertNotNull("503 uvnitř rozsahu je výpadek serveru", ziskej().getThr());
+		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 16), UzivatelskeMapyPristup.sRozsahem("jinde", vzor, new double[] { 0, 0, 1, 1 }, 503));
+		Assert.assertSame(KachleZiskavac.PRAZDNA_MIMO_UZEMI, ziskej().getImg());
 	}
 
 	@After
