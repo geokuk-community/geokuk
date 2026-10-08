@@ -87,6 +87,8 @@
   znovu nezablokuje.
 - GSAK, „Načítat až po vybrání“: složka, která byla chvíli nedostupná
   a vrátila se během načítání, už nezablokuje vybrané databáze.
+- Neodpovídající síťový disk s datovou složkou už nezdržuje ovládání
+  programu po každém načtení keší.
 - Neodpovídající datová složka GeoGetu nezdrží start programu; referenční
   body z GeoGetu se v menu Jít objeví, až se přečtou.
 - Prázdný soubor `.geokuk` ve složce s kešemi nezpůsobí chybové

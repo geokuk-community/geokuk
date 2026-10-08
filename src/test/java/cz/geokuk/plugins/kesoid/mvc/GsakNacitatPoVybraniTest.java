@@ -104,10 +104,12 @@ public class GsakNacitatPoVybraniTest {
 		model.zaradGsakDatabaze(set(stara, treti));
 		Assert.assertFalse(nacte(treti));
 
+		model.setNedostupnePriNacitani(set(slozka)); // sken složku nepřečetl
 		model.vycistiBlokovaneZdroje(set()); // složka nedostupná, nic se nenačetlo
 		Assert.assertFalse(nacte(treti));
 
 		Assert.assertTrue(new File(slozka, "Treti").mkdirs());
+		model.setNedostupnePriNacitani(set());
 		model.vycistiBlokovaneZdroje(set(stara, treti));
 		Assert.assertFalse(nacte(treti));
 
@@ -142,7 +144,24 @@ public class GsakNacitatPoVybraniTest {
 		parametry.setNacistVsechnyDatabaze(false);
 		model.zaradGsakDatabaze(set(a));
 		model.zaradGsakDatabaze(set(a, b)); // b je zablokovaná, úklid má co dělat
+		model.setNedostupnePriNacitani(set(new File(tmp.getRoot(), "a\0b")));
 		model.vycistiBlokovaneZdroje(set());
+	}
+
+	/** Úklid zablokovaných zdrojů po načtení běží na EDT, dostupnost složek bere ze skenu; neodpovídající síťový disk by EDT zablokoval. */
+	@Test
+	public void sBlokovanymiSeSlozkyNaEdtNekontroluji() throws Exception {
+		umisteni = new KesoidUmisteniSouboru();
+		umisteni.setKesDir(new Filex(tmp.newFolder("gpx"), false, true));
+		umisteni.setGeogetDataDir(new Filex(new File(tmp.getRoot(), "geoget"), false, true));
+		umisteni.setGsakDataDir(new Filex(new File(tmp.getRoot(), "gsak"), false, true));
+		parametry.setNacistVsechnyDatabaze(false);
+		model.zaradGsakDatabaze(set(a));
+		model.zaradGsakDatabaze(set(a, b));
+		final int predUklidem = dotazuNaUmisteni;
+		model.vycistiBlokovaneZdroje(set(a));
+		Assert.assertEquals(predUklidem, dotazuNaUmisteni);
+		Assert.assertTrue("b zmizela z dostupné složky", nacte(b));
 	}
 
 	/** Bez zablokovaných zdrojů se po načtení nezjišťuje dostupnost složek (souborové operace na EDT). */
