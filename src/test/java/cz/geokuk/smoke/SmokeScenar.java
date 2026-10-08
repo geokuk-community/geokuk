@@ -26,6 +26,7 @@ import cz.geokuk.core.program.GeokukMain;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.plugins.mapy.PodkladAction;
 import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.pocitadla.Pocitadlo;
@@ -96,6 +97,9 @@ public class SmokeScenar {
 		if (System.getProperty("smoke.gsak") != null) {
 			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex(FPref.GSAK_DATA_DIR_value, new Filex(new File(System.getProperty("smoke.gsak")), false, true));
 		}
+		if (System.getProperty("smoke.opensak") != null) {
+			MyPreferences.current().node(FPref.UMISTENI_SOUBORU_node).putFilex(FPref.OPENSAK_DATA_DIR_value, new Filex(new File(System.getProperty("smoke.opensak")), false, true));
+		}
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(System.getProperty("smoke.args", "").isEmpty() ? new String[0] : System.getProperty("smoke.args").split(" "));
@@ -160,6 +164,9 @@ public class SmokeScenar {
 				break;
 			case "ovladani":
 				ovladejPresHttp();
+				break;
+			case "prazdneSlozky":
+				prazdneSlozky();
 				break;
 			default:
 				throw new IllegalArgumentException(krok);
@@ -486,6 +493,31 @@ public class SmokeScenar {
 			Thread.sleep(r.nextInt(30));
 		}
 		pockejNaKlid("zběsilé klikání");
+	}
+
+	/** Jako Uložit v Umístění souborů bez dat: aktivní datové složky GeoGetu, GSAKu a OpenSAKu, které dialog založí prázdné. */
+	private void prazdneSlozky() throws Exception {
+		final File koren = new File(System.getProperty("smoke.prazdneSlozky"));
+		final KesoidModel model = bean(KesoidModel.class);
+		naEdt(() -> {
+			final KesoidUmisteniSouboru u = new KesoidUmisteniSouboru();
+			final KesoidUmisteniSouboru puvodni = model.getUmisteniSouboru();
+			u.setKesDir(puvodni.getKesDir());
+			u.setCestyDir(puvodni.getCestyDir());
+			u.setImage3rdPartyDir(puvodni.getImage3rdPartyDir());
+			u.setImageMyDir(puvodni.getImageMyDir());
+			u.setAnoGgtFile(puvodni.getAnoGgtFile());
+			u.setNeGgtFile(puvodni.getNeGgtFile());
+			for (final String jmeno : new String[] { "geoget", "gsak", "opensak" }) {
+				new File(koren, jmeno).mkdirs();
+			}
+			u.setGeogetDataDir(new Filex(new File(koren, "geoget"), false, true));
+			u.setGsakDataDir(new Filex(new File(koren, "gsak"), false, true));
+			u.setOpensakDataDir(new Filex(new File(koren, "opensak"), false, true));
+			model.setUmisteniSouboru(u);
+		});
+		pockejNaKlid("prázdné datové složky");
+		zbesile();
 	}
 
 	/** Změny velikosti okna za běhu, i na nesmyslně malé a zpět. */
