@@ -215,12 +215,15 @@ public class SmokeIT {
 		zkontrolujBezChyb(adresar, zprava);
 	}
 
-	/** Výlet obnovený při startu stavový řádek neposune, ani když se pak zavře. */
+	/** Výlet obnovený při startu stavový řádek neposune, ani když se načte až po zobrazení okna, ani když se pak zavře. */
 	@Test
 	public void obnovaVyletuNeposuneListu() throws Exception {
 		final File adresar = pripravAdresar("obnova");
 		final Properties zprava = spust(adresar, "obnova", "meritka,obnova");
 		zkontrolujBezChyb(adresar, zprava);
+		if (!System.getProperty("os.name").startsWith("Windows")) {
+			assertEquals("Výlet se obnovuje z roury, tedy až po zobrazení okna", "true", zprava.getProperty("obnova.roura"));
+		}
 	}
 
 	/** Počítač bez dat: aktivní datové složky GeoGetu, GSAKu a OpenSAKu, které neexistují, a pak prázdné (jak je založí Uložit v Umístění souborů). */
