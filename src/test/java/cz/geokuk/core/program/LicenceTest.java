@@ -19,5 +19,7 @@ public class LicenceTest {
 		Assert.assertTrue(text.contains("GNU LESSER GENERAL PUBLIC LICENSE"));
 		Assert.assertTrue(text.contains("Apache License"));
 		Assert.assertTrue(text.contains("sqljet-1.1.15-sources.jar"));
+		Assert.assertTrue(text.contains("ČÚZK"));
+		Assert.assertTrue(text.contains("Freemap Slovakia"));
 	}
 }

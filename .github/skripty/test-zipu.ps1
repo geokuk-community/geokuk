@@ -119,7 +119,7 @@ function ZapsanoMimo([datetime]$od, [string]$slozka) {
 
 # 1. Obvyklé spuštění z rozbaleného zipu, včetně výměny jaru staženého aktualizací.
 $slozka = Rozbal (Join-Path $koren "obvykle")
-foreach ($f in "LICENSE", "THIRD-PARTY.txt", "CTIMNE.txt", "GeoKuk-prvni-spusteni.cmd") {
+foreach ($f in "CTIMNE.txt", "GeoKuk-prvni-spusteni.cmd", "licence\README.txt", "licence\LICENSE", "licence\THIRD-PARTY.txt", "licence\MAPOVE-PODKLADY.txt", "program\runtime\legal") {
     Ocekavej (Test-Path (Join-Path $slozka $f)) "zip obsahuje $f"
 }
 Ocekavej (-not (Test-Path (Join-Path $slozka "data\mapy"))) "zip neobsahuje data\mapy (ukázky by se načetly jako mapy)"

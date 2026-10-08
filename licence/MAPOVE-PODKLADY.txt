@@ -1,0 +1,62 @@
+GeoKuk – mapové podklady a jejich licence
+=========================================
+
+Mapy a jejich data patří jejich poskytovatelům. GeoKuk je jen zobrazuje
+a vpravo dole v mapě uvádí jejich atribuci. Níže je u každého podkladu
+poskytovatel, licence nebo podmínky, text atribuce zobrazený v mapě
+a odkazy na podmínky.
+
+Mapy.cz
+-------
+Poskytovatel:  Seznam.cz, a.s.
+Atribuce:      © Seznam.cz, a.s. a další
+Podmínky:      https://developer.mapy.com/terms-and-conditions/
+Podklady Mapy.cz se načítají z veřejné adresy mapserver.mapy.cz.
+Provozovatel je poskytuje bez záruky a může je kdykoli omezit nebo ukončit.
+
+OpenStreetMap
+-------------
+Poskytovatel:  OpenStreetMap Foundation (dlaždice tile.openstreetmap.org)
+Licence dat:   Open Database License (ODbL) 1.0
+Atribuce:      © OpenStreetMap contributors
+Licence:       https://www.openstreetmap.org/copyright
+Podmínky dlaždic: https://operations.osmfoundation.org/policies/tiles/
+
+Freemap Slovakia
+----------------
+Poskytovatel:  Freemap Slovakia (outdoor.tiles.freemap.sk,
+               ortofoto.tiles.freemap.sk)
+Atribuce:      turistická mapa: © Freemap Slovakia, © OpenStreetMap
+               contributors
+               ortofoto: © GKÚ, NLC, © ČÚZK
+Data a obsah pocházejí z OpenStreetMap a dalších poskytovatelů a podléhají
+jejich licencím a atribuci.
+Podmínky:      https://github.com/FreemapSlovakia/freemap-v3-react/blob/HEAD/src/documents/termsOfService.en.md
+
+ČÚZK – ortofoto a Základní topografická mapa České republiky
+------------------------------------------------------------
+Poskytovatel:  Zeměměřický úřad (ČÚZK)
+               (ags.cuzk.gov.cz)
+Licence:       otevřená data, Creative Commons Uvedení autorství 4.0
+               (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/
+Atribuce:      © ČÚZK, CC BY 4.0
+Metainformace poskytovatele o službách:
+  ortofoto:    https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer?f=json
+  Základní topografická mapa:
+               https://ags.cuzk.gov.cz/arcgis1/rest/services/ZTM_WM/MapServer?f=json
+Otevřená data ČÚZK:  https://ags.cuzk.gov.cz/opendata/
+Podmínky:      https://geoportal.cuzk.gov.cz/Dokumenty/Podminky.pdf
+               https://geoportal.cuzk.gov.cz/Dokumenty/Podminky_sluzby_CUZK.pdf
+
+Vyhledávání adres
+-----------------
+Poskytovatel:  Nominatim (OpenStreetMap Foundation)
+Licence dat:   Open Database License (ODbL) 1.0
+Atribuce:      Hledá Nominatim, data © přispěvatelé OpenStreetMap
+Podmínky:      https://operations.osmfoundation.org/policies/nominatim/
+
+Mapy zadané uživatelem
+----------------------
+Mapy, které si do GeoKuku přidáte souborem ve složce data/mapy, podléhají
+podmínkám jejich poskytovatelů. Atribuci zobrazenou v mapě určuje soubor
+mapy.
