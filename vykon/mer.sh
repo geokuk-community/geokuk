@@ -6,6 +6,7 @@
 # Proměnné:
 #   CO        části: db (načtení databází GeoGetu a GSAKu), hint, kresleni, program (spuštěný program),
 #             kesoidy (kreslení ikon a teček pro počty v IKONY a TECKY, jen nová verze; ve výchozích není),
+#             paralelne (obě databáze naráz v 1 a 2 vláknech, jen nová verze; ve výchozích není),
 #             výchozí db hint kresleni program
 #   N, POPIS  keší v databázích a délka popisu (100000, 20000)
 #   PRACOVNI  složka pro worktree a databáze (výchozí target/vykon)
@@ -87,7 +88,7 @@ CP_STARA="$(priprav stara "$STARA")"
 CP_NOVA="$(priprav nova "$NOVA")"
 DB="$PRACOVNI/db"
 
-if [[ "$CO" == *db* || "$CO" == *hint* ]] && [ ! -f "$DB/geoget.db3" ]; then
+if [[ "$CO" == *db* || "$CO" == *hint* || "$CO" == *paralelne* ]] && [ ! -f "$DB/geoget.db3" ]; then
 	echo "Generuji databáze do $DB ..." >&2
 	"$PY" "$(nativni "$SADA/gen.py")" "$(nativni "$DB")" "$N" "$POPIS"
 fi
@@ -131,6 +132,10 @@ fi
 	if [[ "$CO" == *kesoidy* ]]; then
 		echo "## Kreslení kešoidů (nová verze, medián 7 překreslení, okno 1400x900, ikony bez limitu)"
 		java_ -cp "$CP_NOVA" cz.geokuk.plugins.kesoid.importek.MerKesoidy ikony "${IKONY:-30000,60000,90000,120000}" tecky "${TECKY:-100000,300000,600000,1000000}" | grep "N="
+	fi
+	if [[ "$CO" == *paralelne* ]]; then
+		echo "## Databáze naráz, každá ve vlastním vlákně (nová verze, prázdný builder)"
+		java_ -cp "$CP_NOVA" cz.geokuk.plugins.kesoid.importek.MerRozpad geoget="$(nativni "$DB/geoget.db3")" gsak="$(nativni "$DB/gsak.db3")" kola=3 vlakna=1,2 | grep -E "^(zdroj|kolo)"
 	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"

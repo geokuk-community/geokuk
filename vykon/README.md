@@ -35,6 +35,11 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   okno 1400×900 s N kešemi ve výřezu, ikony na zoomu 14 (bez limitu
   waypointů) pro počty v `IKONY` a tečky na zoomu 10 pro počty v `TECKY`.
   Medián ze 7 překreslení, alokace na jedno překreslení a halda s daty.
+- `paralelne` (jen na vyžádání, jen nová verze): `MerRozpad` přečte obě
+  databáze do prázdného builderu naráz, každou ve vlastním vlákně, pro
+  1 a 2 vlákna. Celkový čas, procesorový čas vláken a zrychlení proti
+  jednomu vláknu. Na vlastních databázích: `MerRozpad geoget=… gsak=…
+  opensak=… kola=3 vlakna=1,2,4` (typ=cesta lze opakovat).
 - `program`: smoke testy `velkaData` (GPX s 50 000 keší) a
   `velkaDatabazeGeogetu` (200 000 keší) spustí celý program s oknem;
   vypíše čas do zobrazení okna, načtení keší, obsazenou paměť a nejdelší
