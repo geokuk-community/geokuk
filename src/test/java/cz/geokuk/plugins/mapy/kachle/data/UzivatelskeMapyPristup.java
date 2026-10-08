@@ -17,6 +17,11 @@ public final class UzivatelskeMapyPristup {
 		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)), kodyMimoUzemi);
 	}
 
+	/** Jako {@link #sOmezenymUzemim}, kódy ale platí jen pro dlaždice mimo rozsah v EPSG:3857 (minX, minY, maxX, maxY). */
+	public static EKaType sRozsahem(final String id, final String vzorUrl, final double[] rozsah, final Integer... kodyMimoUzemi) {
+		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)), rozsah, kodyMimoUzemi);
+	}
+
 	public static void vycisti() {
 		EKaType.setUzivatelske(Collections.emptyList());
 	}

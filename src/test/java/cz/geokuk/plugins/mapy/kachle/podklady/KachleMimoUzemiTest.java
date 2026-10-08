@@ -82,6 +82,17 @@ public class KachleMimoUzemiTest {
 		Assert.assertNotNull("503 u podkladu, který mimo území vrací 404, je chyba", ziskej().getThr());
 	}
 
+	@Test(timeout = 30000)
+	public void kod503UvnitrRozsahuJeChybaMimoNejPrazdna() throws Exception {
+		nacteni.countDown();
+		kod.set(503);
+		final String vzor = "http://127.0.0.1:" + server.getAddress().getPort() + "/r/{z}/{y}/{x}";
+		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 15), UzivatelskeMapyPristup.sRozsahem("cely", vzor, new double[] { -2.1e7, -2.1e7, 2.1e7, 2.1e7 }, 503));
+		Assert.assertNotNull("503 uvnitř rozsahu je výpadek serveru", ziskej().getThr());
+		kachle = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 16), UzivatelskeMapyPristup.sRozsahem("jinde", vzor, new double[] { 0, 0, 1, 1 }, 503));
+		Assert.assertSame(KachleZiskavac.PRAZDNA_MIMO_UZEMI, ziskej().getImg());
+	}
+
 	@After
 	public void tearDown() {
 		server.stop(0);

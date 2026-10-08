@@ -37,6 +37,7 @@ public class EKaTypeCuzkTest {
 	public void zbgisOrtofotoSR() throws Exception {
 		Assert.assertEquals("https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer/tile/14/5685/8970",
 				new Ka(KaLoc.ofJZ(new Wgs(48.1486, 17.1077).toMou(), 14), EKaType.SK_ZBGIS_ORTO).getUrl().toExternalForm());
+		Assert.assertEquals(7, EKaType.SK_ZBGIS_ORTO.getMinMoumer());
 		Assert.assertEquals(19, EKaType.SK_ZBGIS_ORTO.getMaxMoumer());
 		Assert.assertEquals("© GKÚ Bratislava, NLC, CC BY 4.0", EKaType.SK_ZBGIS_ORTO.getAtribuce());
 		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.isHromadneStahovaniPovoleno());
@@ -44,16 +45,27 @@ public class EKaTypeCuzkTest {
 		Assert.assertNull(EKaType.SK_ZBGIS_ORTO.getKeyStroke());
 	}
 
-	/** ČÚZK mimo území vrací 404, ZBGIS 503; jinde jsou oba kódy chyba. */
+	private static KaLoc dlazdice(final double lat, final double lon, final int z) {
+		return KaLoc.ofJZ(new Wgs(lat, lon).toMou(), z);
+	}
+
+	/** ČÚZK mimo území vrací 404; ZBGIS 503, ale jen mimo rozsah služby, nad Slovenskem je 503 výpadek. */
 	@Test
 	public void kodyMimoUzemi() {
-		Assert.assertTrue(EKaType.CUZK_ORTO.jeMimoUzemi(404));
-		Assert.assertFalse(EKaType.CUZK_ORTO.jeMimoUzemi(503));
-		Assert.assertTrue(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(404));
-		Assert.assertTrue(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(503));
-		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(500));
-		Assert.assertFalse(EKaType.OPEN_STREET.jeMimoUzemi(404));
-		Assert.assertFalse(EKaType.OPEN_STREET.jeMimoUzemi(503));
+		final KaLoc bratislava = dlazdice(48.1486, 17.1077, 14);
+		final KaLoc kosice = dlazdice(48.7164, 21.2611, 14);
+		final KaLoc praha = dlazdice(50.0875, 14.4208, 14);
+		final KaLoc viden = dlazdice(48.2082, 16.3738, 14);
+		Assert.assertTrue(EKaType.CUZK_ORTO.jeMimoUzemi(404, viden));
+		Assert.assertFalse(EKaType.CUZK_ORTO.jeMimoUzemi(503, viden));
+		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(503, bratislava));
+		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(503, kosice));
+		Assert.assertTrue(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(503, praha));
+		Assert.assertTrue(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(404, praha));
+		Assert.assertFalse(EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(500, praha));
+		Assert.assertFalse("dlaždice z7 zasahuje do rozsahu", EKaType.SK_ZBGIS_ORTO.jeMimoUzemi(503, dlazdice(48.1486, 17.1077, 7)));
+		Assert.assertFalse(EKaType.OPEN_STREET.jeMimoUzemi(404, praha));
+		Assert.assertFalse(EKaType.OPEN_STREET.jeMimoUzemi(503, praha));
 	}
 
 	@Test
