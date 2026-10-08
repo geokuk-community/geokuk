@@ -105,7 +105,8 @@ public class SmokeScenar {
 		}
 		if (Arrays.asList(kroky).contains("obnova")) {
 			final MyPreferences vylet = MyPreferences.current().node(FPref.VYLET_node);
-			vylet.putFile(FPref.AKTUALNI_SOUBOR_value, gpxSCestou());
+			roura = roura();
+			vylet.putFile(FPref.AKTUALNI_SOUBOR_value, roura != null ? roura : gpxSCestou());
 			vylet.putBoolean(FPref.JE_OTEVRENY_VYLET_value, true);
 		}
 		hlidac = HlidacEdt.zapni(500);
@@ -121,7 +122,14 @@ public class SmokeScenar {
 
 		cekej("hlavní okno", 60_000, () -> najdiHlavniOkno() != null);
 		if (Arrays.asList(kroky).contains("lista") || Arrays.asList(kroky).contains("obnova")) {
-			naEdt(() -> vychoziPolohy = polohyListy());
+			naEdt(() -> {
+				vychoziPolohy = polohyListy();
+				try {
+					cestyPriStartu = ((Component) pole(statusBar(), "cesty")).isVisible();
+				} catch (final ReflectiveOperationException e) {
+					throw new IllegalStateException(e);
+				}
+			});
 		}
 		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
 		naEdt(() -> {
@@ -540,11 +548,29 @@ public class SmokeScenar {
 	/** Polohy bloků stavového řádku a položek bloku Zdroje, se kterými se porovnává: po startu, než se načtou data, a po prvním otevření cest. */
 	private Map<String, Rectangle> vychoziPolohy;
 
+	private static final byte[] GPX_S_CESTOU = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"smoke\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n<trk><trkseg>\n"
+			+ "<trkpt lat=\"50.08\" lon=\"14.42\"/><trkpt lat=\"50.09\" lon=\"14.43\"/><trkpt lat=\"50.10\" lon=\"14.41\"/>\n</trkseg></trk>\n</gpx>\n").getBytes(StandardCharsets.UTF_8);
+
+	/** Pojmenovaná roura s výletem obnovovaným při startu; {@code null}, kde ji systém neumí (Windows). */
+	private File roura;
+	/** Blok cest byl vidět už při zobrazení okna. */
+	private boolean cestyPriStartu;
+
 	private static File gpxSCestou() throws IOException {
 		final File gpx = new File(System.getProperty("java.io.tmpdir"), "smoke-cesta.gpx");
-		Files.write(gpx.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"smoke\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n<trk><trkseg>\n"
-				+ "<trkpt lat=\"50.08\" lon=\"14.42\"/><trkpt lat=\"50.09\" lon=\"14.43\"/><trkpt lat=\"50.10\" lon=\"14.41\"/>\n</trkseg></trk>\n</gpx>\n").getBytes(StandardCharsets.UTF_8));
+		Files.write(gpx.toPath(), GPX_S_CESTOU);
 		return gpx;
+	}
+
+	/** Načítání výletu z roury počká, až do ní scénář zapíše; výlet se tak načte až po zobrazení okna. */
+	private static File roura() throws Exception {
+		if (System.getProperty("os.name").startsWith("Windows")) {
+			return null;
+		}
+		final File f = new File(System.getProperty("java.io.tmpdir"), "smoke-vylet.gpx");
+		f.delete();
+		final Process p = new ProcessBuilder("mkfifo", f.getAbsolutePath()).inheritIO().start();
+		return p.waitFor() == 0 ? f : null;
 	}
 
 	/**
@@ -611,6 +637,30 @@ public class SmokeScenar {
 	/** Výlet otevřený při minulém ukončení se obnoví při startu; stavový řádek se nepohne ani pak, ani po zavření výletu. */
 	private void obnova() throws Exception {
 		final Component blokCest = (Component) pole(statusBar(), "cesty");
+		if (roura != null) {
+			zprava.setProperty("obnova.roura", "true");
+			if (cestyPriStartu) {
+				chyby.add("Výlet z roury se načetl dřív, než se okno ukázalo");
+			}
+			// Program soubor otevře dvakrát (nejdřív přečte začátek, pak celý); zápis se opakuje, dokud se výlet neukáže. Pauza odděluje zápisy, aby čtenář
+			// dostal jeden celý soubor.
+			final Thread zapis = new Thread(() -> {
+				while (!blokCest.isVisible()) {
+					try (OutputStream o = new FileOutputStream(roura)) {
+						o.write(GPX_S_CESTOU);
+					} catch (final IOException e) {
+						// Čtenář začátku rouru zavře dřív, než dočte.
+					}
+					try {
+						Thread.sleep(300);
+					} catch (final InterruptedException e) {
+						return;
+					}
+				}
+			}, "Zápis výletu do roury");
+			zapis.setDaemon(true);
+			zapis.start();
+		}
 		cekej("obnovený výlet", 60_000, () -> blokCest.isVisible());
 		pockejNaKlid("obnova výletu");
 		porovnejListu("po načtení dat a obnově výletu");
