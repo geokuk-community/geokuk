@@ -19,6 +19,8 @@
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
   v Soubor > Umístění souborů na kartě Mapy.
+- Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
+  asi o čtvrtinu rychleji.
 - Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
   i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
@@ -29,8 +31,10 @@
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
-- Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
-  asi o čtvrtinu rychleji.
+- Informace pro hlášení chyby obsahují výkon kreslení: dobu překreslení
+  mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
+  vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
+  ukazatel výkonu v rohu mapy.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
