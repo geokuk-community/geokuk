@@ -4,6 +4,7 @@
 
 ### Změny
 - Rychlejší načítání databází GeoGetu.
+- Rychlejší zobrazení keší po načtení a po změně filtru.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence

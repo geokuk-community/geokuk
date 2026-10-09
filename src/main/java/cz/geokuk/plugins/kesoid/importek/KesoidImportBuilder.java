@@ -145,7 +145,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		//////////////////////////////////////
 		log.debug("Indexuji waypointy: " + wpts.size());
 
-		kesBag = new KesBag(genom);
+		kesBag = new KesBag(genom, wpts.size());
 		final Progressor progressor = progressModel.start(wpts.size(), "Indexování");
 		int citac = 0;
 		try {
