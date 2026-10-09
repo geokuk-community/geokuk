@@ -21,6 +21,7 @@ import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.*;
+import cz.geokuk.util.index2d.Indexator;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -396,7 +397,7 @@ public class MultiNacitac {
 			final SkupinyZdroju.Skupina skupina = skupinaClena.get(soubor);
 			if (skupina != null) {
 				final int[] pocty = skupina.pocty.get(soubor);
-				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1]);
+				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1], skupina.indexy.get(soubor));
 				registr.hotovo(generace, soubor, pocty[0], pocty[1]);
 				continue;
 			}
@@ -636,10 +637,14 @@ public class MultiNacitac {
 				nepouzitelne.add(komponenta[i]);
 			}
 		}
+		final Map<File, Indexator<Wpt>> indexy = cteni.builder.getIndexyZdroju();
 		final Map<File, SkupinyZdroju.Skupina> nova = new HashMap<>();
 		for (final SkupinyZdroju.Skupina g : prevzate) {
 			for (final File clen : g.otisky.keySet()) {
 				nova.put(clen, g);
+				if (!g.indexy.containsKey(clen) && indexy.containsKey(clen)) {
+					g.indexy.put(clen, indexy.get(clen));
+				}
 			}
 		}
 		final Map<Integer, List<Integer>> clenove = new HashMap<>();
@@ -656,6 +661,9 @@ public class MultiNacitac {
 				skupina.otisky.put(f, otisky.get(f));
 				skupina.wpty.put(f, cteni.builder.getWptyPodleZdroje().getOrDefault(f, Collections.<Wpt> emptyList()));
 				skupina.pocty.put(f, cteni.pocty.get(f));
+				if (indexy.containsKey(f)) {
+					skupina.indexy.put(f, indexy.get(f));
+				}
 				kliceSkupiny.add(jednotky.get(i));
 				nova.put(f, skupina);
 			}

@@ -57,6 +57,10 @@ public class KesBag {
 
 	private boolean indexatorOdevzdan = false;
 
+	/** Začátky úseků v seznamu waypointů a hotové indexy převzatých úseků; bez úseků se index staví najednou. */
+	private final List<Integer> zacatkyUseku = new ArrayList<>();
+	private final List<Indexator<Wpt>> indexyUseku = new ArrayList<>();
+
 	public KesBag(final Genom genom) {
 		this(genom, 10);
 	}
@@ -99,6 +103,22 @@ public class KesBag {
 		genotyp.countTo(citacAlel);
 	}
 
+	/**
+	 * Následující waypointy tvoří úsek s vlastním indexem; celkový index je jejich sloučení v pořadí úseků, tedy stejný strom jako postavený najednou.
+	 *
+	 * @param hotovyIndex
+	 *            index přesně těch waypointů úseku, které se do bagu přidají (se souřadnicemi), nebo null, když se má postavit
+	 */
+	public void zacniUsek(final Indexator<Wpt> hotovyIndex) {
+		zacatkyUseku.add(wpts.size());
+		indexyUseku.add(hotovyIndex);
+	}
+
+	/** Index úseku v pořadí volání {@link #zacniUsek(Indexator)}, po {@link #done()}; null u prázdného úseku. */
+	public Indexator<Wpt> getIndexUseku(final int usek) {
+		return indexyUseku.get(usek);
+	}
+
 	public void done() {
 		// Filtr přidá jen část z místa pro všechny waypointy.
 		wpts.trimToSize();
@@ -125,9 +145,30 @@ public class KesBag {
 
 	/** Index se staví najednou ze všech přidaných waypointů. */
 	private void postavIndex() {
-		if (indexator == null) {
-			indexator = Indexator.postav(BoundingRect.ALL, wpts, wpt -> wpt.getMou().xx, wpt -> wpt.getMou().yy);
+		if (indexator != null) {
+			return;
 		}
+		if (zacatkyUseku.isEmpty()) {
+			indexator = postav(wpts);
+			return;
+		}
+		Indexator<Wpt> celek = null;
+		for (int i = 0; i < zacatkyUseku.size(); i++) {
+			final List<Wpt> usek = wpts.subList(zacatkyUseku.get(i), i + 1 < zacatkyUseku.size() ? zacatkyUseku.get(i + 1) : wpts.size());
+			Indexator<Wpt> index = indexyUseku.get(i);
+			if (index == null || index.getCount() != usek.size()) {
+				index = usek.isEmpty() ? null : postav(usek);
+				indexyUseku.set(i, index);
+			}
+			if (index != null) {
+				celek = celek == null ? index : celek.merge(index);
+			}
+		}
+		indexator = celek != null ? celek : postav(wpts);
+	}
+
+	private static Indexator<Wpt> postav(final List<Wpt> wpty) {
+		return Indexator.postav(BoundingRect.ALL, wpty, wpt -> wpt.getMou().xx, wpt -> wpt.getMou().yy);
 	}
 
 	/**

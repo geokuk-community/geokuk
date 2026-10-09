@@ -13,6 +13,7 @@ import cz.geokuk.plugins.kesoid.kind.GpxToWptContext;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
 import cz.geokuk.util.file.KeFile;
+import cz.geokuk.util.index2d.Indexator;
 import cz.geokuk.util.procak.ProcakDispatcher;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +41,22 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	private ProcakDispatcher<GpxWpt> gpxWptDispatcher;
 
-	private List<Wpt> wpts;
+	/** Waypointy v pořadí, v jakém půjdou do bagu, po úsecích: zdroj, který se četl, převzatý zdroj s hotovým indexem, waypointy vystavené až v {@link #done()}. */
+	private final List<Usek> useky = new ArrayList<>();
+	private Usek usek;
+	/** Indexy zdrojů z dokončeného bagu, u kterých úsek obsahuje právě waypointy zdroje. */
+	private final Map<File, Indexator<Wpt>> indexyZdroju = new HashMap<>();
+
+	private static final class Usek {
+		final File zdroj;
+		final List<Wpt> wpty = new ArrayList<>();
+		final Indexator<Wpt> hotovyIndex;
+
+		Usek(final File zdroj, final Indexator<Wpt> hotovyIndex) {
+			this.zdroj = zdroj;
+			this.hotovyIndex = hotovyIndex;
+		}
+	}
 
 	/** Jen jména, celé waypointy by při načítání zdvojnásobily potřebnou paměť. */
 	private final Set<String> jmenaWaypointu = new HashSet<>(1023);
@@ -112,7 +128,6 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	 */
 	@Override
 	public void init() {
-		wpts = new LinkedList<Wpt>();
 		gpxWptDispatcher = kesoidPluginManager.createGpxWptProcakDispatcher(this,
 				(gpxwpt, kepodr) -> {
 					final Wpt wpt = new Wpt();
@@ -136,6 +151,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	 */
 	@Override
 	public void done() {
+		zacniUsek(null, null);
 		gpxWptDispatcher.done();
 		final InformaceOZdrojich informaceOZdrojich = informaceOZdrojichBuilder.done();
 //		Progressor progressor = progressModel.start(delkaTasku, "Vytvářím waypointy");
@@ -143,16 +159,23 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		// přesypeme do seznamu
 
 		//////////////////////////////////////
-		log.debug("Indexuji waypointy: " + wpts.size());
+		int pocet = 0;
+		for (final Usek u : useky) {
+			pocet += u.wpty.size();
+		}
+		log.debug("Indexuji waypointy: " + pocet);
 
-		kesBag = new KesBag(genom, wpts.size());
-		final Progressor progressor = progressModel.start(wpts.size(), "Indexování");
+		kesBag = new KesBag(genom, pocet);
+		final Progressor progressor = progressModel.start(pocet, "Indexování");
 		int citac = 0;
 		try {
-			for (final Wpt wpt : wpts) {
-				kesBag.add(wpt);
-				if (++citac % 1000 == 0) {
-					progressor.setProgress(citac);
+			for (final Usek u : useky) {
+				kesBag.zacniUsek(u.hotovyIndex);
+				for (final Wpt wpt : u.wpty) {
+					kesBag.add(wpt);
+					if (++citac % 1000 == 0) {
+						progressor.setProgress(citac);
+					}
 				}
 			}
 			kesBag.setInformaceOZdrojich(informaceOZdrojich);
@@ -160,7 +183,71 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		} finally {
 			progressor.finish();
 		}
-		log.debug("Konec zpracování: " + wpts.size());
+		zapamatujIndexyZdroju();
+		log.debug("Konec zpracování: " + pocet);
+	}
+
+	/** Index úseku se dá příště převzít se zdrojem, když úsek je jediný úsek zdroje a obsahuje přesně jeho waypointy se souřadnicemi ve stejném pořadí. */
+	private void zapamatujIndexyZdroju() {
+		final Map<File, Integer> pocetUseku = new HashMap<>();
+		for (final Usek u : useky) {
+			if (u.zdroj != null && !u.wpty.isEmpty()) {
+				pocetUseku.merge(u.zdroj, 1, Integer::sum);
+			}
+		}
+		for (int i = 0; i < useky.size(); i++) {
+			final Usek u = useky.get(i);
+			final Indexator<Wpt> index = kesBag.getIndexUseku(i);
+			if (u.zdroj == null || index == null || pocetUseku.getOrDefault(u.zdroj, 0) != 1) {
+				continue;
+			}
+			final List<Wpt> zdroje = wptyPodleZdroje.get(u.zdroj);
+			if (zdroje != null && stejneSeSouradnicemi(u.wpty, zdroje)) {
+				indexyZdroju.put(u.zdroj, index);
+			}
+		}
+	}
+
+	private static boolean stejneSeSouradnicemi(final List<Wpt> a, final List<Wpt> b) {
+		final Iterator<Wpt> ia = a.iterator();
+		final Iterator<Wpt> ib = b.iterator();
+		while (true) {
+			final Wpt wa = dalsiSeSouradnicemi(ia);
+			final Wpt wb = dalsiSeSouradnicemi(ib);
+			if (wa != wb) {
+				return false;
+			}
+			if (wa == null) {
+				return true;
+			}
+		}
+	}
+
+	private static Wpt dalsiSeSouradnicemi(final Iterator<Wpt> it) {
+		while (it.hasNext()) {
+			final Wpt w = it.next();
+			if (!w.hasEmptyCoords()) {
+				return w;
+			}
+		}
+		return null;
+	}
+
+	/** Indexy zdrojů z posledního {@link #done()}, které jde příště převzít se zdrojem. */
+	Map<File, Indexator<Wpt>> getIndexyZdroju() {
+		return indexyZdroju;
+	}
+
+	private void zacniUsek(final File zdroj, final Indexator<Wpt> hotovyIndex) {
+		usek = new Usek(zdroj, hotovyIndex);
+		useky.add(usek);
+	}
+
+	private void pridej(final Wpt wpt) {
+		if (usek == null) {
+			zacniUsek(null, null);
+		}
+		usek.wpty.add(wpt);
 	}
 
 	@Override
@@ -230,11 +317,12 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	 * Převezme waypointy zdroje ze skupiny minulého načtení, se kterou se nic jiného nepřekrývá: kešoidy už jsou spárované, neposílají se znovu procákům. Waypoint bez
 	 * souřadnic v minulém bagu nebyl a z kruhu kešoidu už je vyřazený, podruhé se přidat nesmí.
 	 */
-	void prevezmiZeSkupiny(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano) {
+	void prevezmiZeSkupiny(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano, final Indexator<Wpt> index) {
 		setCurrentlyLoading(zdroj, true);
+		zacniUsek(zdroj.getFile(), index);
 		for (final Wpt wpt : stareWpty) {
 			if (!wpt.hasEmptyCoords()) {
-				wpts.add(wpt);
+				pridej(wpt);
 			}
 		}
 		wptyPodleZdroje.put(zdroj.getFile(), stareWpty);
@@ -250,7 +338,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 			}
 			for (final Wpt wpt : hlavni.getKesoid().getWpts()) {
 				if (jmenaWaypointu.add(wpt.getName())) {
-					wpts.add(wpt);
+					pridej(wpt);
 					zaznamenejZdroj(infoOCurrentnimZdroji, wpt);
 				}
 			}
@@ -263,6 +351,9 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	}
 
 	public synchronized void setCurrentlyLoading(final KeFile aJmenoZdroje, final boolean nacteno) {
+		if (usek == null || usek.hotovyIndex != null || !aJmenoZdroje.getFile().equals(usek.zdroj)) {
+			zacniUsek(aJmenoZdroje.getFile(), null);
+		}
 		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(aJmenoZdroje, nacteno);
 		sberacKlicu = kliceZdroju.computeIfAbsent(aJmenoZdroje.getFile(), f -> new KliceZdroje.Sberac());
 	}
@@ -354,7 +445,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	/** Procák waypoint obvykle hned po vytvoření vystaví; vytvořený a zahozený do bagu nepatří, a tak ani do waypointů zdroje. */
 	@Override
 	public void expose(final Wpt wpt) {
-		wpts.add(wpt);
+		pridej(wpt);
 		final InformaceOZdroji zdroj;
 		if (wpt == posledniVytvoreny) {
 			zdroj = zdrojPoslednihoVytvoreneho;
