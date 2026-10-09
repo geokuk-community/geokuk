@@ -452,7 +452,12 @@ public class KachleZiskavac {
 
 	private OnofflineModel onofflineModel;
 
-	private final OfflineMapy offlineMapy = new OfflineMapy(this::clearMemoryCache);
+	private volatile Runnable priZmeneOfflineMapy = () -> {};
+
+	private final OfflineMapy offlineMapy = new OfflineMapy(() -> {
+		clearMemoryCache();
+		priZmeneOfflineMapy.run();
+	});
 
 	private KachleModel kachleModel;
 
@@ -510,6 +515,11 @@ public class KachleZiskavac {
 
 	public OfflineMapy getOfflineMapy() {
 		return offlineMapy;
+	}
+
+	/** Zavolá se (z vlákna vykreslování), když se změní soubory offline mapy nebo téma. */
+	public void setPriZmeneOfflineMapy(final Runnable priZmene) {
+		priZmeneOfflineMapy = priZmene;
 	}
 
 	public void inject(final KachleModel kachleModel) {

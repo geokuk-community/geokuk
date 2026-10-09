@@ -12,6 +12,7 @@ import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.util.pocitadla.*;
@@ -80,6 +81,12 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		}
 	}
 
+	public void onEvent(final OfflineMapaChangedEvent event) {
+		if (katype != null && katype.isOffline()) {
+			init(false);
+		}
+	}
+
 	public void onEvent(final ZmenaMapNastalaEvent event) {
 		setKachloType(event.getKatype());
 	}
@@ -99,6 +106,10 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		}
 		this.katype = katype;
 		init(false);
+	}
+
+	protected KachleModel getKachleModel() {
+		return kachleModel;
 	}
 
 	protected EKaType getKachloType() {

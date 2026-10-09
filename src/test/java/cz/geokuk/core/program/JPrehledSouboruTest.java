@@ -10,6 +10,8 @@ import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.core.render.*;
 import cz.geokuk.plugins.kesoid.mvc.*;
+import cz.geokuk.plugins.mapy.*;
+import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.file.Filex;
 
 public class JPrehledSouboruTest {
@@ -53,6 +55,16 @@ public class JPrehledSouboruTest {
 		r.setKmzDir(slozka("kmz"));
 		r.setPictureDir(slozka("obrazky"));
 		panel.onEvent(new RenderUmisteniSouboruChangedEvent(r));
+		panel.inject(new KachleModel() {
+			@Override
+			public void setUmisteniSouboru(final KachleUmisteniSouboru k) {
+				volani.add("mapy");
+			}
+		});
+		final KachleUmisteniSouboru k = new KachleUmisteniSouboru();
+		k.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
+		k.setOfflineMapyDir(slozka("mapy"));
+		panel.onEvent(new KachleUmisteniSouboruChangedEvent(k));
 		final GsakParametryNacitani g = new GsakParametryNacitani();
 		g.setCasNalezu(Collections.emptySet());
 		g.setCasNenalezu(Collections.emptySet());
@@ -61,7 +73,7 @@ public class JPrehledSouboruTest {
 
 		panel.uloz();
 
-		Assert.assertEquals(Arrays.asList("gsak false", "složky", "render"), volani);
+		Assert.assertEquals(Arrays.asList("gsak false", "složky", "render", "mapy"), volani);
 	}
 
 	/** Uložit prověřuje složky mimo EDT: tlačítko je mezitím zakázané a vidět „Kontroluji složky…“, pak se nastavení uloží. */
@@ -105,6 +117,16 @@ public class JPrehledSouboruTest {
 		r.setKmzDir(slozka("kmz2"));
 		r.setPictureDir(slozka("obrazky2"));
 		panel.onEvent(new RenderUmisteniSouboruChangedEvent(r));
+		panel.inject(new KachleModel() {
+			@Override
+			public void setUmisteniSouboru(final KachleUmisteniSouboru k) {
+				volani.add("mapy");
+			}
+		});
+		final KachleUmisteniSouboru k = new KachleUmisteniSouboru();
+		k.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
+		k.setOfflineMapyDir(slozka("mapy2"));
+		panel.onEvent(new KachleUmisteniSouboruChangedEvent(k));
 
 		panel.oknoOtevrene = () -> otevrene;
 		final java.util.concurrent.CountDownLatch pustit = new java.util.concurrent.CountDownLatch(1);
@@ -130,7 +152,7 @@ public class JPrehledSouboruTest {
 				Thread.sleep(20);
 			}
 			javax.swing.SwingUtilities.invokeAndWait(() -> Assert.assertFalse(panel.kontroluji.isVisible()));
-			Assert.assertEquals(otevrene ? Arrays.asList("složky", "render") : Collections.emptyList(), volani);
+			Assert.assertEquals(otevrene ? Arrays.asList("složky", "render", "mapy") : Collections.emptyList(), volani);
 		} finally {
 			pustit.countDown();
 			JJedenSouborPanel.kontrola = puvodni;

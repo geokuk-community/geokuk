@@ -72,7 +72,7 @@ final class OfflineRenderer {
 				try {
 					mapFile = new MapFile(f);
 				} catch (final RuntimeException e) {
-					throw new IOException("Soubor mapy " + f + " nejde otevřít: " + e.getMessage(), e);
+					throw new OfflineMapaChyba("Soubor mapy " + f + " nejde otevřít: " + e.getMessage(), f.getName() + " nejde otevřít", e);
 				}
 				data.addMapDataStore(mapFile, false, false);
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');

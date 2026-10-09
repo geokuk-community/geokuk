@@ -10,12 +10,14 @@ import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.core.render.*;
 import cz.geokuk.plugins.kesoid.mvc.*;
+import cz.geokuk.plugins.mapy.*;
+import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.file.Filex;
 
 /** Uložit v Umístění souborů se všemi sedmi složkami: jedna vadná složka zastaví celé uložení, jinak se uloží přesně zadané cesty. */
 public class JPrehledSouboruKombinaceTest {
 
-	private static final String[] SLOZKY = { "kese", "geoget", "gsak", "opensak", "ozi", "kmz", "obrazky" };
+	private static final String[] SLOZKY = { "kese", "geoget", "gsak", "opensak", "mapy", "ozi", "kmz", "obrazky" };
 	private static final Set<String> JINE_PROGRAMY = new HashSet<>(Arrays.asList("geoget", "gsak", "opensak"));
 
 	@Rule
@@ -24,6 +26,7 @@ public class JPrehledSouboruKombinaceTest {
 	private final List<String> volani = new ArrayList<>();
 	private KesoidUmisteniSouboru ulozeneKesoid;
 	private RenderUmisteniSouboru ulozeneRender;
+	private KachleUmisteniSouboru ulozeneKachle;
 
 	@Test
 	public void jednaVadnaSlozkaNicNeulozi() throws Exception {
@@ -59,7 +62,7 @@ public class JPrehledSouboruKombinaceTest {
 		}
 		final JPrehledSouboru panel = panel(cesty, Collections.emptySet());
 		panel.uloz();
-		Assert.assertEquals(Arrays.asList("gsak", "složky", "render"), volani);
+		Assert.assertEquals(Arrays.asList("gsak", "složky", "render", "mapy"), volani);
 		for (final File f : cesty.values()) {
 			Assert.assertTrue(f.toString(), f.isDirectory());
 		}
@@ -70,6 +73,7 @@ public class JPrehledSouboruKombinaceTest {
 		Assert.assertEquals(cesty.get("ozi"), ulozeneRender.getOziDir().getEffectiveFile());
 		Assert.assertEquals(cesty.get("kmz"), ulozeneRender.getKmzDir().getEffectiveFile());
 		Assert.assertEquals(cesty.get("obrazky"), ulozeneRender.getPictureDir().getEffectiveFile());
+		Assert.assertEquals(cesty.get("mapy"), ulozeneKachle.getOfflineMapyDir().getEffectiveFile());
 	}
 
 	@Test
@@ -81,7 +85,7 @@ public class JPrehledSouboruKombinaceTest {
 		}
 		final JPrehledSouboru panel = panel(cesty, JINE_PROGRAMY);
 		panel.uloz();
-		Assert.assertEquals(Arrays.asList("gsak", "složky", "render"), volani);
+		Assert.assertEquals(Arrays.asList("gsak", "složky", "render", "mapy"), volani);
 		Assert.assertFalse("vypnuté složky se nezakládají", new File(koren, "neni").exists());
 		Assert.assertFalse(ulozeneKesoid.getGeogetDataDir().isActive());
 		Assert.assertFalse(ulozeneKesoid.getGsakDataDir().isActive());
@@ -126,6 +130,17 @@ public class JPrehledSouboruKombinaceTest {
 		r.setKmzDir(new Filex(cesty.get("kmz"), false, true));
 		r.setPictureDir(new Filex(cesty.get("obrazky"), false, true));
 		panel.onEvent(new RenderUmisteniSouboruChangedEvent(r));
+		panel.inject(new KachleModel() {
+			@Override
+			public void setUmisteniSouboru(final KachleUmisteniSouboru u) {
+				ulozeneKachle = u;
+				volani.add("mapy");
+			}
+		});
+		final KachleUmisteniSouboru k = new KachleUmisteniSouboru();
+		k.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
+		k.setOfflineMapyDir(new Filex(cesty.get("mapy"), false, true));
+		panel.onEvent(new KachleUmisteniSouboruChangedEvent(k));
 		final GsakParametryNacitani g = new GsakParametryNacitani();
 		g.setCasNalezu(Collections.emptySet());
 		g.setCasNenalezu(Collections.emptySet());

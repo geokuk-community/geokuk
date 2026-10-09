@@ -109,7 +109,7 @@ public class OfflineMapy {
 	private void otevri(final List<File> mapy) {
 		zavriRenderer();
 		if (mapy.isEmpty()) {
-			chyba = new IOException("Ve složce " + slozka + " nejsou offline mapy (soubory .map).");
+			chyba = new OfflineMapaChyba("Ve složce " + slozka + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
 		} else {
 			try {
 				final long start = System.nanoTime();

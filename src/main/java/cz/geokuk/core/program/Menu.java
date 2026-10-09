@@ -12,6 +12,8 @@ import cz.geokuk.plugins.kesoid.mapicon.JMenuIkony;
 import cz.geokuk.plugins.kesoid.mvc.JVybiracVyletu;
 import cz.geokuk.plugins.mapy.MapyAction0;
 import cz.geokuk.plugins.mapy.PodkladAction;
+import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.plugins.mapy.kachle.gui.JTemaOfflineMapyMenu;
 import cz.geokuk.plugins.refbody.RefbodyModel;
 import cz.geokuk.util.gui.MenuStrujce;
 
@@ -19,6 +21,7 @@ public class Menu extends MenuStrujce {
 
 	private Akce akce;
 	private RefbodyModel refbodyModel;
+	private KachleModel kachleModel;
 	private final JMainFrame jMainFrame;
 
 	public Menu(final JMainFrame jMainFrame, final JGeokukToolbar geokukToolbar) {
@@ -32,6 +35,10 @@ public class Menu extends MenuStrujce {
 
 	public void inject(final Akce akce) {
 		this.akce = akce;
+	}
+
+	public void inject(final KachleModel kachleModel) {
+		this.kachleModel = kachleModel;
 	}
 
 	public void inject(final RefbodyModel refbodyModel) {
@@ -53,6 +60,7 @@ public class Menu extends MenuStrujce {
 				item(mapoakce1, mapPodkladButtonGroup);
 			}
 		}
+		menu.add(new JTemaOfflineMapyMenu(kachleModel));
 
 		separator();
 
