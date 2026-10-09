@@ -14,7 +14,6 @@ import org.mapsforge.core.graphics.TileBitmap;
 import org.mapsforge.core.model.Tile;
 import org.mapsforge.map.awt.graphics.AwtGraphicFactory;
 import org.mapsforge.map.datastore.MultiMapDataStore;
-import org.mapsforge.map.layer.labels.MapDataStoreLabelStore;
 import org.mapsforge.map.layer.renderer.*;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
@@ -77,7 +76,7 @@ final class OfflineRenderer {
 		this.tema = tema;
 		this.klic = klic;
 		tema.future.incrementRefCount();
-		renderer = new DatabaseRenderer(data, GRAFIKA, null, new MapDataStoreLabelStore(data, tema.future, 1f, tema.displayModel, GRAFIKA), true, false, null);
+		renderer = new DatabaseRenderer(data, GRAFIKA, null, new PopiskyOfflineMapy(data, tema.future, tema.displayModel, GRAFIKA), true, false, null);
 	}
 
 	/** Otevře mapy a načte téma; když téma načíst nejde, použije výchozí. Volající drží jeden odkaz na výsledek. */
