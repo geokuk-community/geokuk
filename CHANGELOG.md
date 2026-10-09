@@ -7,6 +7,7 @@
 - Rychlejší zobrazení keší po načtení a po změně filtru.
 - Rychlejší zapnutí a vypnutí zdroje, který se s ostatními nepřekrývá.
 - Keše z databází GeoGetu, GSAKu a OpenSAKu zabírají méně paměti.
+- Prostorový index načtených keší zabírá méně paměti.
 - Nový podklad Mapy > Offline mapa (klávesa V): vektorové mapy `.map`
   (mapsforge, například z osm.paws.cz) ze složky `data/offline-mapy` se
   vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR

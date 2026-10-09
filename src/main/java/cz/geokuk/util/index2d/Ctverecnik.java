@@ -4,8 +4,9 @@ import java.util.function.Consumer;
 
 import lombok.extern.slf4j.Slf4j;
 
+/** Vnitřní uzel stromu: čtyři čtvrti. Hranice nedrží, odvozují se půlením od kořene. */
 @Slf4j
-class Ctverecnik<T> extends NodeB<T> {
+class Ctverecnik<T> extends Node<T> {
 
 
 	final Node<T> jz;
@@ -13,10 +14,8 @@ class Ctverecnik<T> extends NodeB<T> {
 	final Node<T> sz;
 	final Node<T> sv;
 
-	public Ctverecnik(final int xx1, final int yy1, final int xx2, final int yy2,
-			final Node<T> jz, final Node<T> jv, final Node<T> sz, final Node<T> sv) {
-		super(xx1, yy1, xx2, yy2, jz.count + jv.count + sz.count + sv.count);
-		assert xx1 < xx2 && yy1 < yy2;
+	public Ctverecnik(final Node<T> jz, final Node<T> jv, final Node<T> sz, final Node<T> sv) {
+		super(jz.count + jv.count + sz.count + sv.count);
 		this.jz = jz;
 		this.jv = jv;
 		this.sz = sz;
@@ -24,18 +23,18 @@ class Ctverecnik<T> extends NodeB<T> {
 	}
 
 	/**
-	 * Stejé boundery, ale jiné vnitřky. Vrací empty, místo čtverečníku prázdného.
+	 * Jiné vnitřky na stejném místě. Vrací empty, místo čtverečníku prázdného.
 	 */
 	public Node<T> with(final Node<T> jz, final Node<T> jv, final Node<T> sz, final Node<T> sv) {
 		return jz.isEmpty() && jv.isEmpty() && sz.isEmpty() && sv.isEmpty()
 				? Empty.get()
-						: new Ctverecnik<T>(xx1, yy1, xx2, yy2, jz, jv, sz, sv);
+						: new Ctverecnik<T>(jz, jv, sz, sv);
 	}
 
 
 	@Override
 	public String toString() {
-		return "Ctverecnik [xx1=" + xx1 + ", yy1=" + yy1 + ", xx2=" + xx2 + ", yy2=" + yy2 + "]";
+		return "Ctverecnik [count=" + count + "]";
 	}
 
 
@@ -47,7 +46,7 @@ class Ctverecnik<T> extends NodeB<T> {
 	@Override
 	void vypis(final String prefix, final int aLevel) {
 		final String mezery = String.format("%" + aLevel * 2 + "s", " ");
-		log.debug("{}{}: ({}) [{},{}] - [{},{}]", mezery, prefix, count, xx1, yy1, xx2, yy2);
+		log.debug("{}{}: ({})", mezery, prefix, count);
 		podvypis(jz, "jz", aLevel + 1);
 		podvypis(jv, "jv", aLevel + 1);
 		podvypis(sz, "sz", aLevel + 1);
@@ -82,7 +81,7 @@ class Ctverecnik<T> extends NodeB<T> {
 	}
 
 	@Override
-	Node<T> bound(final BoundingRect rect) {
+	Node<T> bound(final BoundingRect rect, final int xx1, final int yy1, final int xx2, final int yy2) {
 		final boolean jeToMimo = xx1 >= rect.xx2 || xx2 <= rect.xx1 || yy1 >= rect.yy2 || yy2 <= rect.yy1;
 		if (jeToMimo) {
 			return Empty.get();
@@ -92,13 +91,13 @@ class Ctverecnik<T> extends NodeB<T> {
 		if (jeToKompletUvnitr) {
 			return this;
 		}
+		final int xMid = Indexator.mid(xx1, xx2);
+		final int yMid = Indexator.mid(yy1, yy2);
 		return with(
-				jz.bound(rect),
-				jv.bound(rect),
-				sz.bound(rect),
-				sv.bound(rect)
-				)
-				;
+				jz.bound(rect, xx1, yy1, xMid, yMid),
+				jv.bound(rect, xMid, yy1, xx2, yMid),
+				sz.bound(rect, xx1, yMid, xMid, yy2),
+				sv.bound(rect, xMid, yMid, xx2, yy2));
 	}
 
 	@Override

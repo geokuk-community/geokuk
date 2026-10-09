@@ -49,7 +49,7 @@ class Empty<T> extends Node<T> {
 	}
 
 	@Override
-	Node<T> bound(final BoundingRect br) {
+	Node<T> bound(final BoundingRect br, final int xx1, final int yy1, final int xx2, final int yy2) {
 		// Co je prázdné, nemůže být nikdy vyprázdneno.
 		return this;
 	}

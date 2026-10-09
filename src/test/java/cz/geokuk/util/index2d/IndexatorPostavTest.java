@@ -1,5 +1,7 @@
 package cz.geokuk.util.index2d;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 import org.junit.Assert;
@@ -18,19 +20,15 @@ public class IndexatorPostavTest {
 		return ind;
 	}
 
-	private static void stejne(final String cesta, final Node<TestBod> a, final Node<TestBod> b) {
+	private static void stejne(final String cesta, final Node<TestBod> a, final Node<TestBod> b, final int xx1, final int yy1, final int xx2, final int yy2) {
 		Assert.assertEquals(cesta, a.getClass(), b.getClass());
 		Assert.assertEquals(cesta, a.count, b.count);
-		if (a instanceof NodeB) {
-			final NodeB<TestBod> na = (NodeB<TestBod>) a;
-			final NodeB<TestBod> nb = (NodeB<TestBod>) b;
-			Assert.assertEquals(cesta, Arrays.asList(na.xx1, na.yy1, na.xx2, na.yy2), Arrays.asList(nb.xx1, nb.yy1, nb.xx2, nb.yy2));
-		}
 		if (a instanceof Sheet) {
 			final Sheet<TestBod> sa = (Sheet<TestBod>) a;
 			final Sheet<TestBod> sb = (Sheet<TestBod>) b;
 			Assert.assertEquals(cesta, sa.xx, sb.xx);
 			Assert.assertEquals(cesta, sa.yy, sb.yy);
+			Assert.assertTrue(cesta, sa.xx >= xx1 && sa.xx < xx2 && sa.yy >= yy1 && sa.yy < yy2);
 			Lst<TestBod> la = sa.lst();
 			Lst<TestBod> lb = sb.lst();
 			while (la != null || lb != null) {
@@ -43,10 +41,12 @@ public class IndexatorPostavTest {
 		} else if (a instanceof Ctverecnik) {
 			final Ctverecnik<TestBod> ca = (Ctverecnik<TestBod>) a;
 			final Ctverecnik<TestBod> cb = (Ctverecnik<TestBod>) b;
-			stejne(cesta + "/jz", ca.jz, cb.jz);
-			stejne(cesta + "/jv", ca.jv, cb.jv);
-			stejne(cesta + "/sz", ca.sz, cb.sz);
-			stejne(cesta + "/sv", ca.sv, cb.sv);
+			final int xMid = Indexator.mid(xx1, xx2);
+			final int yMid = Indexator.mid(yy1, yy2);
+			stejne(cesta + "/jz", ca.jz, cb.jz, xx1, yy1, xMid, yMid);
+			stejne(cesta + "/jv", ca.jv, cb.jv, xMid, yy1, xx2, yMid);
+			stejne(cesta + "/sz", ca.sz, cb.sz, xx1, yMid, xMid, yy2);
+			stejne(cesta + "/sv", ca.sv, cb.sv, xMid, yMid, xx2, yy2);
 		}
 	}
 
@@ -54,7 +54,21 @@ public class IndexatorPostavTest {
 		final Indexator<TestBod> ocekavany = postupne(br, body);
 		final Indexator<TestBod> postaveny = Indexator.postav(br, body, TestBod::getX, TestBod::getY);
 		Assert.assertEquals(body.size(), postaveny.getCount());
-		stejne("root", ocekavany.root(), postaveny.root());
+		stejne("root", ocekavany.root(), postaveny.root(), br.xx1, br.yy1, br.xx2, br.yy2);
+	}
+
+	/** Vnitřních uzlů je v indexu řádově tolik jako bodů, proto drží jen počet a čtvrti. */
+	@Test
+	public void ctverecnikDrziJenPocetACtvrti() {
+		final Set<String> pole = new TreeSet<>();
+		for (Class<?> c = Ctverecnik.class; c != Object.class; c = c.getSuperclass()) {
+			for (final Field f : c.getDeclaredFields()) {
+				if (!Modifier.isStatic(f.getModifiers())) {
+					pole.add(f.getName());
+				}
+			}
+		}
+		Assert.assertEquals(new TreeSet<>(Arrays.asList("count", "jz", "jv", "sz", "sv")), pole);
 	}
 
 	@Test

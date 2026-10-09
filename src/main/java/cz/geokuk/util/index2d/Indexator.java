@@ -109,7 +109,7 @@ public class Indexator<T> {
 		System.arraycopy(p.pomX, od, xs, od, delka);
 		System.arraycopy(p.pomY, od, ys, od, delka);
 		System.arraycopy(p.pomPoradi, od, p.poradi, od, delka);
-		return new Ctverecnik<>(xx1, yy1, xx2, yy2,
+		return new Ctverecnik<>(
 				postav(objekty, p, zacatky[0], zacatky[1], xx1, yy1, xMid, yMid),
 				postav(objekty, p, zacatky[1], zacatky[2], xMid, yy1, xx2, yMid),
 				postav(objekty, p, zacatky[2], zacatky[3], xx1, yMid, xMid, yy2),
@@ -173,7 +173,7 @@ public class Indexator<T> {
 	 * @return
 	 */
 	public Indexator<T> bound(final BoundingRect rect) {
-		return with(root.bound(rect));
+		return with(root.bound(rect, br.xx1, br.yy1, br.xx2, br.yy2));
 	}
 
 
@@ -204,7 +204,7 @@ public class Indexator<T> {
 			final Ctverecnik<T> ctv2 = node2.rozčtvrť(xx1, yy1, xx2, yy2);
 			final int xMid = mid(xx1, xx2);
 			final int yMid = mid(yy1, yy2);
-			return new Ctverecnik<>(xx1, yy1, xx2, yy2,
+			return new Ctverecnik<>(
 					merge(ctv1.jz, ctv2.jz, xx1, yy1, xMid, yMid),
 					merge(ctv1.jv, ctv2.jv, xMid, yy1, xx2, yMid),
 					merge(ctv1.sz, ctv2.sz, xx1, yMid, xMid, yy2),
