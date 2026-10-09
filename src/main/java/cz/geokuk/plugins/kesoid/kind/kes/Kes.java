@@ -5,7 +5,7 @@ package cz.geokuk.plugins.kesoid.kind.kes;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import javax.swing.Icon;
 
@@ -31,7 +31,7 @@ public class Kes extends Kesoid {
 	private int znamka = Kes.NENI_HODNOCENI;
 	private int favorit = Kes.NENI_HODNOCENI;
 	private String hint;
-	private Supplier<String> hintZDatabaze;
+	private Function<String, String> hintZDatabaze;
 	private EKesSize size;
 	private EKesDiffTerRating difficulty;
 	private EKesDiffTerRating terrain;
@@ -93,7 +93,7 @@ public class Kes extends Kesoid {
 	 */
 	public String getHint() {
 		if (hint == null && hintZDatabaze != null) {
-			final String nacteny = hintZDatabaze.get();
+			final String nacteny = hintZDatabaze.apply(getIdentifier());
 			hint = nacteny == null ? "" : nacteny;
 			hintZDatabaze = null;
 		}
@@ -295,7 +295,7 @@ public class Kes extends Kesoid {
 		hint = aHint;
 	}
 
-	public void setHintZDatabaze(final Supplier<String> hintZDatabaze) {
+	public void setHintZDatabaze(final Function<String, String> hintZDatabaze) {
 		this.hintZDatabaze = hintZDatabaze;
 	}
 

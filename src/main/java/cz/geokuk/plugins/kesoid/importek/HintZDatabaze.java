@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.*;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * Hint keše z databáze jiného programu, načtený až při zobrazení. Popisy jsou v databázích GeoGetu, GSAKu i OpenSAKu ve stejném řádku jako dlouhý listing,
@@ -18,8 +18,9 @@ final class HintZDatabaze {
 
 	private HintZDatabaze() {}
 
-	static Supplier<String> dotahovac(final File databaze, final String dotaz, final String kod) {
-		return () -> nacti(databaze, dotaz, kod);
+	/** Jeden dotahovač pro všechny keše databáze, dostane kód keše; samostatný na keš by zabral desítky MB. */
+	static Function<String, String> dotahovac(final File databaze, final String dotaz) {
+		return kod -> nacti(databaze, dotaz, kod);
 	}
 
 	static String nacti(final File databaze, final String dotaz, final String kod) {

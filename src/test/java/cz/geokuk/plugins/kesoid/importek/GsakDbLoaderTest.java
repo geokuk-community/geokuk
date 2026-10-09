@@ -95,7 +95,7 @@ public class GsakDbLoaderTest {
 		Assert.assertEquals("2", kes.groundspeak.terrain);
 		Assert.assertEquals("Small", kes.groundspeak.container);
 		Assert.assertNull("popisy se při načítání nečtou", kes.groundspeak.encodedHints);
-		Assert.assertEquals("Pod kamenem", kes.groundspeak.hintZDatabaze.get());
+		Assert.assertEquals("Pod kamenem", kes.groundspeak.hintZDatabaze.apply(kes.name));
 		Assert.assertEquals(7, kes.groundspeak.ownerid);
 		Assert.assertEquals(12, kes.gpxg.favorites);
 		Assert.assertEquals(250, kes.gpxg.elevation);

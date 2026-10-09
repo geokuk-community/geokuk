@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.function.Function;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
@@ -104,6 +105,7 @@ public class OpensakDbLoader extends Nacitac0 {
 	}
 
 	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
+		final Function<String, String> hint = HintZDatabaze.dotahovac(file, HintZDatabaze.OPENSAK);
 		final Preskocene preskocene = new Preskocene("keš");
 		final boolean hinty = DatabazeJinehoProgramu.sloupce(statement, "caches").contains("encoded_hints");
 		final Set<String> poznamky = DatabazeJinehoProgramu.sloupce(statement, "user_notes");
@@ -140,7 +142,7 @@ public class OpensakDbLoader extends Nacitac0 {
 					groundspeak.archived = rs.getBoolean("archived");
 					groundspeak.availaible = rs.getObject("available") == null || rs.getBoolean("available");
 					if (hinty) {
-						groundspeak.hintZDatabaze = HintZDatabaze.dotahovac(file, HintZDatabaze.OPENSAK, kod);
+						groundspeak.hintZDatabaze = hint;
 					}
 					cache.groundspeak = groundspeak;
 					cache.desc = String.format("%s by %s (%s / %s)", groundspeak.name, groundspeak.placedBy, groundspeak.difficulty, groundspeak.terrain);

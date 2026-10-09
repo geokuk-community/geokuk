@@ -94,7 +94,7 @@ public class OpensakDbLoaderTest {
 		Assert.assertEquals("Praha", kes.groundspeak.state);
 		Assert.assertEquals("2015-06-01T00:00:00", kes.time);
 		Assert.assertNull("hint se při načítání nečte", kes.groundspeak.encodedHints);
-		Assert.assertEquals("Pod kamenem", kes.groundspeak.hintZDatabaze.get());
+		Assert.assertEquals("Pod kamenem", kes.groundspeak.hintZDatabaze.apply(kes.name));
 		Assert.assertEquals(12, kes.gpxg.favorites);
 		Assert.assertEquals(250, kes.gpxg.elevation);
 		Assert.assertEquals("http://coord.info/GC1111", kes.link.href);

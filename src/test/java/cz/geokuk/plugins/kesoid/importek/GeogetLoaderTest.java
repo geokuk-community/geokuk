@@ -157,8 +157,23 @@ public class GeogetLoaderTest {
 		final Map<String, GpxWpt> nactene = nacti(db);
 		Assert.assertEquals("vadný popis nevadí, popisy se nečtou", new HashSet<>(Arrays.asList("GC00001", "GC00002", "GC00003")), nactene.keySet());
 		Assert.assertNull(nactene.get("GC00001").groundspeak.encodedHints);
-		Assert.assertEquals("Pod kamenem", nactene.get("GC00001").groundspeak.hintZDatabaze.get());
-		Assert.assertNull("keš bez řádku v geolist nemá hint", nactene.get("GC00003").groundspeak.hintZDatabaze.get());
+		Assert.assertEquals("Pod kamenem", nactene.get("GC00001").groundspeak.hintZDatabaze.apply("GC00001"));
+		Assert.assertNull("keš bez řádku v geolist nemá hint", nactene.get("GC00003").groundspeak.hintZDatabaze.apply("GC00003"));
+		Assert.assertSame("jeden dotahovač pro celou databázi", nactene.get("GC00001").groundspeak.hintZDatabaze, nactene.get("GC00003").groundspeak.hintZDatabaze);
+
+		final ProgressModel progress = progress();
+		final KesoidImportBuilder builder = new KesoidImportBuilder(new cz.geokuk.plugins.kesoid.genetika.Genom(), new cz.geokuk.plugins.kesoid.mvc.GccomNick("Ja", 42), progress,
+				new cz.geokuk.plugins.kesoid.kind.KesoidPluginManager());
+		builder.init();
+		builder.setCurrentlyLoading(new cz.geokuk.util.file.KeFile(new cz.geokuk.util.file.FileAndTime(db, 0), new cz.geokuk.util.file.Root(tmp.getRoot(), new cz.geokuk.util.file.Root.Def(1, null, null))), true);
+		new GeogetLoader().nacti(db, builder, null, progress);
+		builder.done();
+		final Map<String, cz.geokuk.plugins.kesoid.kind.kes.Kes> kese = new HashMap<>();
+		for (final cz.geokuk.plugins.kesoid.Kesoid k : builder.getKesBag().getKesoidy()) {
+			kese.put(k.getIdentifier(), (cz.geokuk.plugins.kesoid.kind.kes.Kes) k);
+		}
+		Assert.assertEquals("hint keše se dotáhne podle jejího kódu", "Pod kamenem", kese.get("GC00001").getHint());
+		Assert.assertEquals("", kese.get("GC00003").getHint());
 	}
 
 	/** Nesmyslná hodnota tagu nesmí zabránit načtení keše. */
@@ -199,7 +214,7 @@ public class GeogetLoaderTest {
 		Assert.assertTrue(nactene.containsKey("GC00001"));
 		Assert.assertNull(nactene.get("GC00001").groundspeak.encodedHints);
 		try {
-			nactene.get("GC00001").groundspeak.hintZDatabaze.get();
+			nactene.get("GC00001").groundspeak.hintZDatabaze.apply("GC00001");
 			Assert.fail("bez sloupce hint se má ohlásit chyba");
 		} catch (final java.io.UncheckedIOException e) {
 			Assert.assertTrue(e.getCause().getMessage().contains("GC00001"));
