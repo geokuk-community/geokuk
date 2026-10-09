@@ -86,6 +86,12 @@ public class VykonTest {
 		}
 	}
 
+	/** invokeAndWait se vrátí už z dispatch(), měření se zapíše až po něm; další událost počká na zápis. */
+	private static void pockejNaZapis() throws Exception {
+		EventQueue.invokeAndWait(() -> {
+		});
+	}
+
 	@Test
 	public void mericiFrontaMeriAPropoustiVyjimky() throws Exception {
 		final Vykon.MericiFronta fronta = new Vykon.MericiFronta();
@@ -97,6 +103,7 @@ public class VykonTest {
 				Thread.currentThread().interrupt();
 			}
 		});
+		pockejNaZapis();
 		Assert.assertTrue(Vykon.souhrn(Velicina.EDT).max >= 20.0);
 		final RuntimeException[] zachycena = new RuntimeException[1];
 		final long pred = Vykon.souhrn(Velicina.EDT).pocet;
@@ -133,6 +140,7 @@ public class VykonTest {
 			});
 			vnejsi.enter();
 		});
+		pockejNaZapis();
 		final Souhrn edt = Vykon.souhrn(Velicina.EDT);
 		Assert.assertTrue("EDT max " + edt.max, edt.max < 100);
 	}
