@@ -53,7 +53,7 @@ public class KesFilteringSwingWorker extends MySwingWorker0<KesBag, Void> {
 		final int pocetvsech = vsechny2.getWpts().size();
 		final Progressor progressor = progresModel.start(pocetvsech, "Filtruji");
 		try {
-			final KesBag kesbag = new KesBag(vsechny2.getGenom());
+			final KesBag kesbag = new KesBag(vsechny2.getGenom(), pocetvsech);
 			log.debug("FILTERING {} - start, source: {} caches, {}={} waypoints.", cisloFiltrovani, vsechny2.getKesoidy().size(), pocetvsech, vsechny2.getIndexator().count(BoundingRect.ALL));
 			startTime = System.currentTimeMillis();
 			final KesoidFilter filter = kesoidFilterModel.createKesoidFilter();
