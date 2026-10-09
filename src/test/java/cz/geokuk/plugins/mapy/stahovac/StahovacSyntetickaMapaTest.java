@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 import org.junit.*;
 
@@ -117,7 +118,21 @@ public class StahovacSyntetickaMapaTest {
 	@After
 	public void tearDown() throws Exception {
 		if (dialog != null) {
-			SwingUtilities.invokeAndWait(dialog::dispose);
+			// Počítání dlaždic na pozadí by po doběhnutí sáhlo do už smazaných Preferences.
+			final Field f = JKachleOflinerDialog.class.getDeclaredField("kosw");
+			f.setAccessible(true);
+			SwingUtilities.invokeAndWait(() -> {
+				try {
+					final SwingWorker<?, ?> pocitani = (SwingWorker<?, ?>) f.get(dialog);
+					if (pocitani != null) {
+						pocitani.cancel(true);
+					}
+				} catch (final IllegalAccessException e) {
+					throw new IllegalStateException(e);
+				}
+				dialog.dispose();
+			});
+			SwingUtilities.invokeAndWait(() -> {});
 		}
 		if (server != null) {
 			server.stop(0);
