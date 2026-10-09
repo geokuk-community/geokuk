@@ -190,7 +190,12 @@ public class KachleZiskavac {
 			if (!ka.getType().isOffline()) {
 				return kachleManager.load(ka);
 			}
-			final OfflineRenderer renderer = offlineMapy.pouzij();
+			final OfflineRenderer renderer;
+			try {
+				renderer = offlineMapy.pouzij();
+			} catch (final IOException e) {
+				return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
+			}
 			try {
 				if (!renderer.pokryva(ka.getLoc())) {
 					return null; // dlaždice mimo mapy se jen vybarví a neukládá
@@ -417,7 +422,7 @@ public class KachleZiskavac {
 	private final PocitadloRoste pocitDiskLoadMinuti = new PocitadloRoste("ka23 DISK cache #minutí",
 			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši minout, co se dělo dál není tímto atributem určeno..");
 
-	private final PocitadloRoste pocitDiskLoadError = new PocitadloRoste("ka24 DISK cache #chyb čtení", "Kolikrát selhalo čtení dlaždich z disku.");
+	final PocitadloRoste pocitDiskLoadError = new PocitadloRoste("ka24 DISK cache #chyb čtení", "Kolikrát selhalo čtení dlaždich z disku.");
 
 	private final PocitadloRoste pocitDownloadWebSubmit = new PocitadloRoste("ka31 WEB #požadovaných",
 			"Kolikrát bylo požadováno číst dlaždici z webu. Vždy poté, co se nenašly na disku.disku. Obsahuje všechny úspěšně i neúspěšně načtené a také zkanclované");
@@ -428,7 +433,7 @@ public class KachleZiskavac {
 
 	private final PocitadloRoste pocitRenderOk = new PocitadloRoste("ka36 RENDER #vykreslených", "Kolik dlaždic offline mapy se vykreslilo.");
 
-	private final PocitadloRoste pocitRenderError = new PocitadloRoste("ka37 RENDER #chyb", "Kolikrát vykreslení dlaždice offline mapy selhalo.");
+	final PocitadloRoste pocitRenderError = new PocitadloRoste("ka37 RENDER #chyb", "Kolikrát vykreslení dlaždice offline mapy selhalo.");
 
 	private final PocitadloRoste pocitZapsanoChunkuNaDisk = new PocitadloRoste("ka41 disk write #bloků",
 			"V kolika diskovžch operacích byl prováděn zápis na disk. Z důvodu optimalizace se zápisy na disk združují do větších bloků.");
