@@ -143,9 +143,14 @@ fi
 	if [[ "$CO" == *offline* ]]; then
 		echo "## Offline mapa (nová verze, dlaždice 256 px s popisky)"
 		misto="${MISTO:-50.003,14.405}"
+		# Dvakrát: poprvé se symboly tématu vykreslují, podruhé se načtou ze souboru jako při dalším spuštění programu.
+		rm -rf "$PRACOVNI/offline-symboly"
+		java -Xmx3g -Djava.awt.headless=true -Dstdout.encoding=UTF-8 -cp "$CP_NOVA" cz.geokuk.plugins.mapy.kachle.podklady.MerOffline slozka="$(nativni "${MAPY:-$REPO/src/test/resources/offline-mapy}")" tema="${TEMA:-}" \
+			symboly="$(nativni "$PRACOVNI/offline-symboly")" zoomy=15 n=1 vlakna=1 2>&1 | grep -v -E " (INFO|DEBUG) |^Picked up JAVA_TOOL_OPTIONS|^z15|^halda" | sed 's/^/1. spuštění: /' || true
+		echo -n "2. spuštění: "
 		# Chybový výstup zůstává vidět: bez něj by špatná cesta k mapám skončila prázdným výsledkem.
 		java -Xmx3g -Djava.awt.headless=true -Dstdout.encoding=UTF-8 -cp "$CP_NOVA" cz.geokuk.plugins.mapy.kachle.podklady.MerOffline slozka="$(nativni "${MAPY:-$REPO/src/test/resources/offline-mapy}")" tema="${TEMA:-}" \
-			lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}" vlakna="${VLAKNA:-1,2}" 2>&1 | grep -v -E " (INFO|DEBUG) |^Picked up JAVA_TOOL_OPTIONS"
+			symboly="$(nativni "$PRACOVNI/offline-symboly")" lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}" vlakna="${VLAKNA:-1,2}" 2>&1 | grep -v -E " (INFO|DEBUG) |^Picked up JAVA_TOOL_OPTIONS"
 	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"

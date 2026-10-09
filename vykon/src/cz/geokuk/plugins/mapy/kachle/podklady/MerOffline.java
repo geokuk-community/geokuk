@@ -11,7 +11,8 @@ import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.util.file.Filex;
 
 /**
- * Měření vykreslování offline mapy: {@code MerOffline slozka=… [tema=…] [lat=50.08 lon=14.42] [zoomy=10,13,15,17] [n=6] [vlakna=1,2]}. Pro každý zoom vykreslí
+ * Měření vykreslování offline mapy: {@code MerOffline slozka=… [tema=…] [lat=50.08 lon=14.42] [zoomy=10,13,15,17] [n=6] [vlakna=1,2] [symboly=složka]}; se složkou
+ * symbolů se vykreslené symboly tématu uloží a druhé spuštění je načte jako program. Pro každý zoom vykreslí
  * n×n dlaždic kolem místa: první průchod v jednom vlákně (data mapy ještě nejsou v paměti), pak stejné dlaždice v zadaných počtech vláken. Vypíše čas na
  * dlaždici, stěnu na dlaždici, odhad první obrazovky 1920×1080 (40 dlaždic) a haldu. Vykreslené dlaždice z prvního průchodu uloží do cache dlaždic (SQLite v
  * dočasné složce) a změří jejich načtení z ní, tedy druhé zobrazení.
@@ -28,6 +29,9 @@ public class MerOffline {
 		final Wgs misto = new Wgs(Double.parseDouble(p.getOrDefault("lat", "50.08")), Double.parseDouble(p.getOrDefault("lon", "14.42")));
 		final int n = Integer.parseInt(p.getOrDefault("n", "6"));
 		final OfflineMapy mapy = new OfflineMapy(() -> {});
+		if (p.containsKey("symboly")) {
+			mapy.setSlozkaSymbolu(new File(p.get("symboly")));
+		}
 		mapy.nastav(slozka, TemaOfflineMapy.zTextu(p.get("tema")));
 
 		long t = System.nanoTime();
