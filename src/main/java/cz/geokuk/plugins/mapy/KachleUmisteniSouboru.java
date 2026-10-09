@@ -18,6 +18,9 @@ public class KachleUmisteniSouboru extends UmisteniSouboru0 {
 	/** Dlaždice map uložené na disk, celou složku lze smazat. */
 	public static final Filex KACHLE_CACHE_DIR = new Filex(new File(FConst.DATA_DIR, "cache"), false, true);
 
+	/** Soubory .map offline mapy, uživatel je sem kopíruje sám. */
+	public static final File OFFLINE_MAPY_DIR = new File(FConst.DATA_DIR, "offline-mapy");
+
 	private Filex kachleCacheDir;
 
 	/*

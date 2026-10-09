@@ -35,6 +35,9 @@ public class MapovePodkladyIT {
 		final List<String> nefunkcni = new ArrayList<>();
 		try {
 			for (final EKaType typ : EKaType.values()) {
+				if (typ.isOffline()) {
+					continue;
+				}
 				if (BEZ_KONTROLY.contains(typ)) {
 					report.append("| ").append(typ.name()).append(" (").append(typ.getNazev()).append(") | nekontroluje se |\n");
 					continue;

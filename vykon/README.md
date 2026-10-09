@@ -45,6 +45,12 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   S `predehrat=1` čte zdroje postupně a druhé vlákno mezitím sekvenčně
   načte soubor dalšího zdroje do cache systému; s `predehrat=0` bez toho.
   Smysl má studeně, každý běh po restartu počítače.
+- `offline` (jen na vyžádání, jen nová verze): `MerOffline` otevře mapy
+  `.map` ze složky `MAPY` s tématem `TEMA` a pro každý zoom ze `ZOOMY`
+  vykreslí 6×6 dlaždic kolem `MISTO`: první průchod v jednom vlákně, pak
+  v 1 a 2 vláknech. Čas na dlaždici, stěna na dlaždici, odhad první
+  obrazovky (40 dlaždic), velikost PNG a halda. Bez `MAPY` měří malou
+  syntetickou mapu z testů.
 - `program`: smoke testy `velkaData` (GPX s 50 000 keší) a
   `velkaDatabazeGeogetu` (200 000 keší) spustí celý program s oknem;
   vypíše čas do zobrazení okna, načtení keší, obsazenou paměť a nejdelší

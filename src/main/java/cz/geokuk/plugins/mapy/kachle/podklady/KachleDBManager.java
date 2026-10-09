@@ -131,6 +131,11 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public Image load(final Ka ki) {
+		return load(ki, ki.typToString());
+	}
+
+	@Override
+	public Image load(final Ka ki, final String typ) {
 		final int odlozeniPred = odlozeni;
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
@@ -143,7 +148,7 @@ class KachleDBManager implements KachleManager {
 			if (odlozeniPred != odlozeni) {
 				return null; // spojení k odložené cache je zavřené
 			}
-			data = nactiData(database, ki);
+			data = nactiData(database, ki, typ);
 		} catch (final RuntimeException e) {
 			if (!(e.getCause() instanceof SqlJetException) || !jePoskozena((SqlJetException) e.getCause())) {
 				throw e;
@@ -177,14 +182,14 @@ class KachleDBManager implements KachleManager {
 	}
 
 	/** Čtecí transakce blokuje zápis, proto se v ní jen přečtou bajty a obrázek se dekóduje až po ní. */
-	private byte[] nactiData(final SqlJetDb database, final Ka ki) {
+	private byte[] nactiData(final SqlJetDb database, final Ka ki, final String typ) {
 		ISqlJetCursor cursor = null;
 		boolean vadne = false;
 
 		try {
 			final ISqlJetTable table = database.getTable(TABLE_NAME);
 			database.beginTransaction(SqlJetTransactionMode.READ_ONLY);
-			cursor = table.lookup(table.getPrimaryKeyIndexName(), ki.getLoc().getFromSzUnsignedX(), ki.getLoc().getFromSzUnsignedY(), ki.getLoc().getMoumer(), ki.typToString());
+			cursor = table.lookup(table.getPrimaryKeyIndexName(), ki.getLoc().getFromSzUnsignedX(), ki.getLoc().getFromSzUnsignedY(), ki.getLoc().getMoumer(), typ);
 			if (cursor.eof()) {
 				return null;
 			}
@@ -304,8 +309,8 @@ class KachleDBManager implements KachleManager {
 				final KaLoc kaloc = ki.getLoc();
 				final int kx = kaloc.getFromSzUnsignedX();
 				final int ky = kaloc.getFromSzUnsignedY();
-				log.debug("Adding {} {} {} {}", kx, ky, kaloc.getMoumer(), ki.typToString());
-				database.getTable(TABLE_NAME).insertOr(SqlJetConflictAction.REPLACE, kx, ky, kaloc.getMoumer(), ki.typToString(), dataToSave);
+				log.debug("Adding {} {} {} {}", kx, ky, kaloc.getMoumer(), imageToSave.typ);
+				database.getTable(TABLE_NAME).insertOr(SqlJetConflictAction.REPLACE, kx, ky, kaloc.getMoumer(), imageToSave.typ, dataToSave);
 			}
 			database.commit();
 		} catch (final SqlJetException e) {

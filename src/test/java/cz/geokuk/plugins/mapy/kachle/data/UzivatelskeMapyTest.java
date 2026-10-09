@@ -445,6 +445,9 @@ public class UzivatelskeMapyTest {
 	@Test
 	public void vestaveneMapyNemajiVAdreseKlic() throws Exception {
 		for (final EKaType ka : EKaType.vestavene()) {
+			if (ka.isOffline()) {
+				continue;
+			}
 			final String url = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 10), ka).getUrl().toString();
 			Assert.assertFalse(url, url.toLowerCase().contains("key"));
 		}

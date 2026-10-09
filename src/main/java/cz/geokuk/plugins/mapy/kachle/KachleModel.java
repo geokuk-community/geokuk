@@ -102,6 +102,7 @@ public class KachleModel extends Model0 {
 	@Override
 	protected void initAndFire() {
 		setUmisteniSouboru(loadUmisteniSouboru());
+		ziskavac.getOfflineMapy().nastav(KachleUmisteniSouboru.OFFLINE_MAPY_DIR, TemaOfflineMapy.zTextu(currPrefe().get("offlineMapaTema", "")));
 		fire(new KachleModelChangeEvent());
 	}
 

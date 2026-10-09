@@ -46,6 +46,10 @@ public final class EKaType {
 	public static final EKaType SK_ZBGIS_ORTO = omezeneUzemi(new EKaType("SK_ZBGIS_ORTO", true, 7, 19, 19, "SR ortofoto (ZBGIS)", "Ortofoto Slovenska, ZBGIS, GKÚ Bratislava", 0, null,
 			new UzivatelskyUrlBuilder("https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer/tile/{z}/{y}/{x}")), new double[] { 1_860_379, 5_965_455, 2_523_588, 6_483_011 }, 404, 503);
 
+	/** Vykresluje se v počítači ze souborů .map, nic se nestahuje. */
+	public static final EKaType OFFLINE_MF = new EKaType("OFFLINE_MF", false, 0, 20, 20, "Offline mapa", "Vektorová mapa ze souborů .map v počítači (mapsforge)", KeyEvent.VK_F,
+			KeyStroke.getKeyStroke(KeyEvent.VK_V, 0), null);
+
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
@@ -55,7 +59,7 @@ public final class EKaType {
 	 */
 	static final List<String> SERVERY_BEZ_HROMADNEHO_STAHOVANI = Collections.unmodifiableList(Arrays.asList("tile.openstreetmap.org", "mapy.cz", "mapy.com", "tile.waymarkedtrails.org"));
 
-	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO));
+	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO, OFFLINE_MF));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
 
 	private final String jmeno;
@@ -235,12 +239,15 @@ public final class EKaType {
 		if (this == SK_ZBGIS_ORTO) {
 			return "© GKÚ Bratislava, NLC, CC BY 4.0";
 		}
+		if (this == OFFLINE_MF) {
+			return "© přispěvatelé OpenStreetMap";
+		}
 		return "© OpenStreetMap contributors";
 	}
 
 	/** Z vestavěných jde hromadně stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne a server to nezakazuje. */
 	public boolean isHromadneStahovaniPovoleno() {
-		if (jeServerBezHromadnehoStahovani(hostitel())) {
+		if (isOffline() || jeServerBezHromadnehoStahovani(hostitel())) {
 			return false;
 		}
 		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
@@ -264,6 +271,11 @@ public final class EKaType {
 		} catch (final java.net.MalformedURLException e) {
 			return "";
 		}
+	}
+
+	/** Dlaždice se vykreslují z map v počítači, nestahují se. */
+	public boolean isOffline() {
+		return urlBuilder == null;
 	}
 
 	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */

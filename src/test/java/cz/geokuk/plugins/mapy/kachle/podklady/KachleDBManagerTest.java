@@ -59,6 +59,15 @@ public class KachleDBManagerTest {
 	}
 
 	@Test
+	public void ulozeniANacteniPodTypem() throws Exception {
+		final Ka offline = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(offline, "o0000002a", png()))));
+		Assert.assertNotNull(manager.load(offline, "o0000002a"));
+		Assert.assertNull(manager.load(offline, "o0000002b"));
+		Assert.assertNull(manager.load(offline));
+	}
+
+	@Test
 	public void poskozenaCacheSeZaloziZnovu() throws Exception {
 		Files.write(soubor.toPath(), "tohle není databáze".getBytes(StandardCharsets.UTF_8));
 		Assert.assertNull("z poškozené cache se nic nenačte", manager.load(KACHLE));
