@@ -19,9 +19,11 @@ import java.util.jar.Manifest;
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Spouštěč přenosného GeoKuku ({@code start.jar}). Vymění staženou novou verzi {@code geokuk.jar}, zvolí paměť a spustí GeoKuk stejnou Javou,
@@ -47,6 +49,10 @@ public final class Start {
 	static final long CEKANI_NA_UKONCENI_MS = 60_000;
 	/** Klíč nastavení v uzlu {@code geokuk/current/vseobecne}, 0 = zvolí spouštěč. */
 	public static final String PAMET_KLIC = "pametMb";
+	/** Klíč nastavení, false = bez zvětšení podle systému (Java zobrazí v 100 %). */
+	public static final String ZVETSENI_KLIC = "zvetseniPodleSystemu";
+	/** Klíč nastavení, false = vykreslování bez Direct3D. */
+	public static final String DIRECT3D_KLIC = "direct3d";
 	/** Systémová vlastnost, kterou spouštěč řekne GeoKuku, proč běží záloha {@code geokuk.jar.bak}. */
 	public static final String ZALOHA = "geokuk.zaloha";
 	public static final String ZALOHA_POSKOZENY = "poskozeny";
@@ -72,6 +78,7 @@ public final class Start {
 			final File data = new File(koren(adresar), "data");
 			prikaz.add("-Xmx" + pametMb(new File(data, "nastaveni.xml"), fyzickaPametMb()) + "m");
 			prikaz.add("-Djava.net.useSystemProxies=true");
+			pridejGrafiku(prikaz, new File(data, "nastaveni.xml"));
 			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
 			pridejVraceniPameti(prikaz, System.getProperty("java.specification.version"));
@@ -277,9 +284,30 @@ public final class Start {
 		return (int) Math.max(MIN_PAMET_MB, Math.min(MAX_PAMET_MB, fyzickaMb / 2));
 	}
 
+	/** Volby zobrazení z nastavení; výchozí je zvětšení podle systému i Direct3D. */
+	static void pridejGrafiku(final List<String> prikaz, final File nastaveni) {
+		if ("false".equals(hodnotaZNastaveni(nastaveni, ZVETSENI_KLIC))) {
+			prikaz.add("-Dsun.java2d.uiScale=1");
+		}
+		if ("false".equals(hodnotaZNastaveni(nastaveni, DIRECT3D_KLIC))) {
+			prikaz.add("-Dsun.java2d.d3d=false");
+			prikaz.add("-Dsun.java2d.noddraw=true");
+		}
+	}
+
 	static int pametZNastaveni(final File nastaveni) {
-		if (!nastaveni.isFile()) {
+		try {
+			final String hodnota = hodnotaZNastaveni(nastaveni, PAMET_KLIC);
+			return hodnota == null ? 0 : Integer.parseInt(hodnota.trim());
+		} catch (final NumberFormatException e) {
 			return 0;
+		}
+	}
+
+	/** Hodnota z uzlu {@code geokuk/current/vseobecne}, nebo null. */
+	static String hodnotaZNastaveni(final File nastaveni, final String klic) {
+		if (!nastaveni.isFile()) {
+			return null;
 		}
 		try (InputStream in = new FileInputStream(nastaveni)) {
 			final DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -289,22 +317,22 @@ public final class Start {
 			for (final String jmeno : new String[] { "geokuk", "current", "vseobecne" }) {
 				uzel = dite(uzel, "node", jmeno);
 				if (uzel == null) {
-					return 0;
+					return null;
 				}
 			}
 			for (Node map = uzel.getFirstChild(); map != null; map = map.getNextSibling()) {
 				if (map instanceof Element && "map".equals(((Element) map).getTagName())) {
 					for (Node e = map.getFirstChild(); e != null; e = e.getNextSibling()) {
-						if (e instanceof Element && PAMET_KLIC.equals(((Element) e).getAttribute("key"))) {
-							return Integer.parseInt(((Element) e).getAttribute("value").trim());
+						if (e instanceof Element && klic.equals(((Element) e).getAttribute("key"))) {
+							return ((Element) e).getAttribute("value");
 						}
 					}
 				}
 			}
-		} catch (final Exception e) {
-			// poškozené nastavení ohlásí GeoKuk, paměť zvolí spouštěč
+		} catch (final IOException | ParserConfigurationException | SAXException | RuntimeException e) {
+			// poškozené nastavení ohlásí GeoKuk, spouštěč použije výchozí hodnoty
 		}
-		return 0;
+		return null;
 	}
 
 	private static Element dite(final Element rodic, final String tag, final String jmeno) {

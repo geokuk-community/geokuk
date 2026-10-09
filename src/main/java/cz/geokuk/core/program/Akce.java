@@ -96,6 +96,7 @@ public class Akce {
 	public final DalkoveOvladaniAction dalkoveOvladaniAction = new DalkoveOvladaniAction();
 	public final VytvoritZastupceAction vytvoritZastupceAction = new VytvoritZastupceAction();
 	public final PametProgramuAction pametProgramuAction = new PametProgramuAction();
+	public final ZobrazeniProgramuAction zobrazeniProgramuAction = new ZobrazeniProgramuAction();
 	public final BetaKanalAction betaKanalAction = new BetaKanalAction();
 
 	public final RefreshIkonAction refreshIkonAction = new RefreshIkonAction();
