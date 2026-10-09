@@ -25,6 +25,8 @@ public class OfflineMapy {
 	private TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
 
 	private OfflineRenderer renderer;
+	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
+	private OfflineRenderer.NacteneTema nacteneTema;
 	private IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
 	private String otiskSlozky;
@@ -99,7 +101,7 @@ public class OfflineMapy {
 	}
 
 	private String otisk(final List<File> mapy) {
-		final StringBuilder sb = new StringBuilder(tema.naText()).append('\n');
+		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
@@ -113,7 +115,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, tema);
+				renderer = OfflineRenderer.otevri(mapy, nacteneTema());
 				chyba = null;
 				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, tema, renderer.getKlic());
 			} catch (final IOException e) {
@@ -122,6 +124,31 @@ public class OfflineMapy {
 			}
 		}
 		priZmene.run();
+	}
+
+	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
+		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk())) {
+			return nacteneTema;
+		}
+		uvolniTema();
+		nacteneTema = OfflineRenderer.nactiTema(tema);
+		return nacteneTema;
+	}
+
+	private void uvolniTema() {
+		if (nacteneTema != null) {
+			nacteneTema.uvolni();
+			nacteneTema = null;
+		}
+	}
+
+	/** Otevře mapy a načte téma předem, aby první dlaždice nečekaly; chyby se ukážou až na dlaždicích. Nevolat z EDT. */
+	public void predpriprav() {
+		try {
+			pouzij().skonci();
+		} catch (final IOException | RuntimeException e) {
+			log.debug("Offline mapu nejde připravit předem: {}", e.getMessage());
+		}
 	}
 
 	private void zavriRenderer() {
@@ -134,6 +161,7 @@ public class OfflineMapy {
 	/** Zavře mapy; při dalším použití se otevřou znovu. */
 	public synchronized void zavri() {
 		zavriRenderer();
+		uvolniTema();
 		otiskSlozky = null;
 	}
 }

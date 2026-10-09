@@ -162,6 +162,23 @@ public class OfflineMapyTest {
 		Assert.assertNotEquals(dveMapy, klic());
 	}
 
+	/** Načtení velkého tématu trvá sekundy, nová mapa ve složce ho nesmí načítat znovu. */
+	@Test
+	public void temaSeNacitaJenJednou() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		OfflineRenderer r = mapy.pouzij();
+		r.skonci();
+		final OfflineRenderer.NacteneTema tema = r.getTema();
+		zkopirujMapu(slozka, "druha.map");
+		r = mapy.pouzij();
+		r.skonci();
+		Assert.assertSame(tema, r.getTema());
+		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
+		r = mapy.pouzij();
+		r.skonci();
+		Assert.assertNotSame(tema, r.getTema());
+	}
+
 	@Test
 	public void dveStejneMapyNaraz() throws Exception {
 		zkopirujMapu(slozka, "a.map");

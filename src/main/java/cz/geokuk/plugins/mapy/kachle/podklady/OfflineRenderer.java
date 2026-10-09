@@ -33,34 +33,70 @@ final class OfflineRenderer {
 
 	private static final GraphicFactory GRAFIKA = AwtGraphicFactory.INSTANCE;
 
+	/**
+	 * Načtené (rozparsované) téma. Načtení velkého tématu trvá sekundy, proto se sdílí mezi renderery: každý drží jeden odkaz a při zavření ho vrátí.
+	 */
+	static final class NacteneTema {
+		final RenderThemeFuture future;
+		final DisplayModel displayModel;
+		/** Otisk tématu, ze kterého je načteno (soubor a jeho velikost a čas). */
+		final String otiskPozadovaneho;
+		/** Otisk skutečně použitého tématu pro klíč cache. */
+		final String otiskPouziteho;
+		/** Proč se nepoužilo zvolené téma, null když se použilo. */
+		final String chyba;
+		final long nacitaniMs;
+
+		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
+				final long start) {
+			this.future = future;
+			this.displayModel = displayModel;
+			this.otiskPozadovaneho = otiskPozadovaneho;
+			this.otiskPouziteho = otiskPouziteho;
+			this.chyba = chyba;
+			nacitaniMs = (System.nanoTime() - start) / 1_000_000;
+		}
+
+		/** Vrátí odkaz; s posledním odkazem se téma uvolní. */
+		void uvolni() {
+			future.decrementRefCount();
+		}
+	}
+
 	private final MultiMapDataStore data;
-	private final RenderThemeFuture tema;
-	private final DisplayModel displayModel;
+	private final NacteneTema tema;
 	private final DatabaseRenderer renderer;
 	private final String klic;
-	/** Proč se nepoužilo zvolené téma, null když se použilo. */
-	private final String chybaTematu;
 
 	private int rozdelanych;
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final RenderThemeFuture tema, final DisplayModel displayModel, final String klic, final String chybaTematu) {
+	private OfflineRenderer(final MultiMapDataStore data, final NacteneTema tema, final String klic) {
 		this.data = data;
 		this.tema = tema;
-		this.displayModel = displayModel;
 		this.klic = klic;
-		this.chybaTematu = chybaTematu;
-		renderer = new DatabaseRenderer(data, GRAFIKA, null, new MapDataStoreLabelStore(data, tema, 1f, displayModel, GRAFIKA), true, false, null);
+		tema.future.incrementRefCount();
+		renderer = new DatabaseRenderer(data, GRAFIKA, null, new MapDataStoreLabelStore(data, tema.future, 1f, tema.displayModel, GRAFIKA), true, false, null);
+	}
+
+	/** Otevře mapy a načte téma; když téma načíst nejde, použije výchozí. Volající drží jeden odkaz na výsledek. */
+	static OfflineRenderer otevri(final List<File> mapy, final TemaOfflineMapy tema) throws IOException {
+		final NacteneTema nactene = nactiTema(tema);
+		try {
+			return otevri(mapy, nactene);
+		} finally {
+			nactene.uvolni();
+		}
 	}
 
 	/**
-	 * Otevře mapy a načte téma; když téma načíst nejde, použije výchozí.
+	 * Otevře mapy s už načteným tématem.
 	 *
 	 * @throws IOException
 	 *             když nejde otevřít některý soubor mapy
 	 */
-	static OfflineRenderer otevri(final List<File> mapy, final TemaOfflineMapy tema) throws IOException {
+	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema) throws IOException {
 		if (mapy.isEmpty()) {
 			throw new IOException("Žádný soubor mapy.");
 		}
@@ -81,21 +117,23 @@ final class OfflineRenderer {
 			data.close();
 			throw e;
 		}
+		otisk.append(tema.otiskPouziteho).append('\n').append(VELIKOST_DLAZDICE);
+		return new OfflineRenderer(data, tema, klic(otisk.toString()));
+	}
+
+	/** Načte téma; když ho načíst nejde, načte výchozí. Volající drží jeden odkaz, viz {@link NacteneTema#uvolni()}. */
+	static NacteneTema nactiTema(final TemaOfflineMapy tema) throws IOException {
 		final DisplayModel displayModel = new DisplayModel();
 		displayModel.setFixedTileSize(VELIKOST_DLAZDICE);
-		String chybaTematu = null;
-		TemaOfflineMapy pouzite = tema;
-		RenderThemeFuture rtf;
+		final long start = System.nanoTime();
 		try {
-			rtf = nactiTema(tema, displayModel);
+			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel), displayModel, tema.otisk(), tema.otisk(), null, start);
+			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
+			return nactene;
 		} catch (final IOException e) {
-			chybaTematu = e.getMessage();
-			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, chybaTematu);
-			pouzite = TemaOfflineMapy.VYCHOZI;
-			rtf = nactiTema(pouzite, displayModel);
+			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
+			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel), displayModel, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
 		}
-		otisk.append(pouzite.otisk()).append('\n').append(VELIKOST_DLAZDICE);
-		return new OfflineRenderer(data, rtf, displayModel, klic(otisk.toString()), chybaTematu);
 	}
 
 	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel) throws IOException {
@@ -124,8 +162,12 @@ final class OfflineRenderer {
 		return klic;
 	}
 
+	NacteneTema getTema() {
+		return tema;
+	}
+
 	String getChybaTematu() {
-		return chybaTematu;
+		return tema.chyba;
 	}
 
 	static Tile dlazdice(final KaLoc loc) {
@@ -170,13 +212,13 @@ final class OfflineRenderer {
 			return;
 		}
 		zavreny = true;
-		tema.decrementRefCount();
+		tema.uvolni();
 		data.close();
 	}
 
 	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. */
 	ImageWithData vyrendruj(final KaLoc loc) throws IOException {
-		final RendererJob job = new RendererJob(dlazdice(loc), data, tema, displayModel, 1f, false, false);
+		final RendererJob job = new RendererJob(dlazdice(loc), data, tema.future, tema.displayModel, 1f, false, false);
 		final TileBitmap bitmapa = renderer.executeJob(job);
 		if (bitmapa == null) {
 			throw new IOException("Dlaždici " + loc + " offline mapy nejde vykreslit.");

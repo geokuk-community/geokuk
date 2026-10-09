@@ -364,8 +364,23 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
-	/** Vykreslování škáluje na víc vláken špatně a jedno jádro má zůstat pro okno. */
-	static final int NTHREADS_RENDER = Math.max(1, Math.min(2, Runtime.getRuntime().availableProcessors() - 1));
+	/** Jedno jádro zůstane oknu, nad 4 vlákna vykreslování skoro nezrychlí; vlákna mají nižší prioritu, aby okno reagovalo. */
+	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
+
+	static int pocetVlakenRenderu(final int jader) {
+		return Math.min(jader, Math.min(4, Math.max(2, jader - 1)));
+	}
+
+	private static ThreadFactory vlaknaRenderu(final String jmeno) {
+		final ThreadFactory vychozi = Executors.defaultThreadFactory();
+		return r -> {
+			final Thread t = vychozi.newThread(r);
+			t.setName(jmeno + " " + t.getName());
+			t.setPriority(Thread.NORM_PRIORITY - 1);
+			t.setDaemon(true);
+			return t;
+		};
+	}
 
 	/** Čtení z cache je hlavně dekódování obrázků, víc vláken pomůže na víc jádrech. */
 	static final int NTHREADS_DISK = Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors()));
@@ -465,7 +480,7 @@ public class KachleZiskavac {
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
-				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE), Executors.newFixedThreadPool(NTHREADS_RENDER),
+				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE), Executors.newFixedThreadPool(NTHREADS_RENDER, vlaknaRenderu("Offline mapa")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_online"));
 
 		final DvojiceExekucnichSluzeb dvojiceBatch = new DvojiceExekucnichSluzeb(Priority.STAHOVANI,
@@ -474,7 +489,7 @@ public class KachleZiskavac {
 				// Pokud bude fornta na web přetížená, vykonává stahování vlákno pro dotahování z disku, čímž se to zpomalí
 				new ThreadPoolExecutor(NTHREADS_WEB_CORE_BATCH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
 				// Export vykresluje jedním vláknem, obrazovka má přednost.
-				Executors.newFixedThreadPool(1),
+				Executors.newFixedThreadPool(1, vlaknaRenderu("Offline mapa export")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_batch"));
 
 		exekucniSluzby.put(Priority.KACHLE, dvojiceOnline);

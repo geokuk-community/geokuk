@@ -101,6 +101,38 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertSame(zDisku, ziskej().getImg());
 	}
 
+	@Test
+	public void vlaknaPodleJader() {
+		Assert.assertEquals(1, KachleZiskavac.pocetVlakenRenderu(1));
+		Assert.assertEquals(2, KachleZiskavac.pocetVlakenRenderu(2));
+		Assert.assertEquals(3, KachleZiskavac.pocetVlakenRenderu(4));
+		Assert.assertEquals(4, KachleZiskavac.pocetVlakenRenderu(8));
+		Assert.assertEquals(4, KachleZiskavac.pocetVlakenRenderu(32));
+	}
+
+	/** Dlaždice, které po posunu nebo zoomu nikdo nechce, se zruší dřív, než se vykreslí. */
+	@Test(timeout = 30000)
+	public void zruseneDlazdiceSeNevykresli() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		ziskavac.getOfflineMapy().predpriprav();
+		final List<Kanceler> zrusit = new ArrayList<>();
+		final KaLoc stred = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(50.0, 14.405).toMou(), 18);
+		final OfflineRenderer r = ziskavac.getOfflineMapy().pouzij();
+		for (int i = 0; i < 100; i++) {
+			final KaLoc loc = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Mou(stred.getMouJZ().xx + (i % 10 - 5) * (1 << 14), stred.getMouJZ().yy + (i / 10 - 5) * (1 << 14)), 18);
+			Assert.assertTrue("dlaždice v mapě se ukládají", r.pokryva(loc));
+			zrusit.add(ziskavac.ziskejObsah(new KaOneReq(new Ka(loc, EKaType.OFFLINE_MF), stav -> {}, Priority.KACHLE), DiagnosticsData.create(null, null, null)));
+		}
+		r.skonci();
+		for (final Kanceler k : zrusit) {
+			k.cancel();
+		}
+		Assert.assertNull(ziskej().getThr());
+		Thread.sleep(6000); // ukládání na disk se spouští po 5 s
+		final int ulozeno = ulozene.size();
+		Assert.assertTrue("vykresleno a uloženo " + ulozeno + " ze 100 zrušených", ulozeno < 30);
+	}
+
 	@Test(timeout = 30000)
 	public void bezMapyChybaSeSlozkou() throws Exception {
 		final Throwable chyba = ziskej().getThr();

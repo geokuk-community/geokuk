@@ -3,12 +3,16 @@
  */
 package cz.geokuk.plugins.mapy.kachle;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
+import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
 
 /**
@@ -20,6 +24,15 @@ public class KachleModel extends Model0 {
 	private static final String OFFLINE_MAPY_DIR = "offlineMapyDir";
 
 	private static final String OFFLINE_MAPA_TEMA = "offlineMapaTema";
+
+	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
+	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
+		final Thread t = new Thread(r, "Příprava offline mapy");
+		t.setDaemon(true);
+		return t;
+	});
+
+	private volatile boolean offlinePodklad;
 
 	private final KachleCacheFolderHolder kachleCacheFolderHolder = new KachleCacheFolderHolder();
 
@@ -67,6 +80,17 @@ public class KachleModel extends Model0 {
 		// return Settings.vseobecne.ukladatMapyNaDisk.isSelected();
 		final boolean b = currPrefe().getBoolean("ukladatMapyNaDisk", true);
 		return b;
+	}
+
+	public void onEvent(final ZmenaMapNastalaEvent event) {
+		offlinePodklad = event.getKatype() != null && event.getKatype().isOffline();
+		predpripravOfflineMapu();
+	}
+
+	private void predpripravOfflineMapu() {
+		if (offlinePodklad && ziskavac != null) {
+			priprava.execute(ziskavac.getOfflineMapy()::predpriprav);
+		}
 	}
 
 	public void onEvent(final OnofflineModelChangeEvent eve) {
@@ -141,6 +165,7 @@ public class KachleModel extends Model0 {
 
 	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
+		predpripravOfflineMapu();
 	}
 
 	/** Atribuce offline mapy: data OSM a téma ze souboru uživatele. */
