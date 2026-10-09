@@ -52,6 +52,8 @@
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
   (GNU LGPL 3) je ve složce `licence` a v okně O programu.
 - Měření vykreslování offline mapy (`vykon/mer.sh`, část `offline`).
+- Diagnostika: nečitelná offline mapa se počítá jen jako chyba vykreslení,
+  ne jako chyba čtení cache dlaždic.
 
 ## 6.3.0
 
