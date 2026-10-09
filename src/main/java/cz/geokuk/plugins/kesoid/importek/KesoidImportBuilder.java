@@ -13,7 +13,6 @@ import cz.geokuk.plugins.kesoid.kind.GpxToWptContext;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
 import cz.geokuk.util.file.KeFile;
-import cz.geokuk.util.index2d.Indexator;
 import cz.geokuk.util.procak.ProcakDispatcher;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,20 +40,20 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	private ProcakDispatcher<GpxWpt> gpxWptDispatcher;
 
-	/** Waypointy v pořadí, v jakém půjdou do bagu, po úsecích: zdroj, který se četl, převzatý zdroj s hotovým indexem, waypointy vystavené až v {@link #done()}. */
+	/** Waypointy v pořadí, v jakém půjdou do bagu, po úsecích: čtené waypointy, nebo převzatá skupina zdrojů i s hotovou částí bagu z minula. */
 	private final List<Usek> useky = new ArrayList<>();
 	private Usek usek;
-	/** Indexy zdrojů z dokončeného bagu, u kterých úsek obsahuje právě waypointy zdroje. */
-	private final Map<File, Indexator<Wpt>> indexyZdroju = new HashMap<>();
+	/** Části bagu převzatých skupin, které se postavily při posledním {@link #done()}, podle klíče skupiny. */
+	private final Map<Object, KesBag.Cast> castiSkupin = new HashMap<>();
 
 	private static final class Usek {
-		final File zdroj;
+		final Object skupina;
+		final KesBag.Cast hotova;
 		final List<Wpt> wpty = new ArrayList<>();
-		final Indexator<Wpt> hotovyIndex;
 
-		Usek(final File zdroj, final Indexator<Wpt> hotovyIndex) {
-			this.zdroj = zdroj;
-			this.hotovyIndex = hotovyIndex;
+		Usek(final Object skupina, final KesBag.Cast hotova) {
+			this.skupina = skupina;
+			this.hotova = hotova;
 		}
 	}
 
@@ -151,7 +150,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	 */
 	@Override
 	public void done() {
-		zacniUsek(null, null);
+		usek = null;
 		gpxWptDispatcher.done();
 		final InformaceOZdrojich informaceOZdrojich = informaceOZdrojichBuilder.done();
 //		Progressor progressor = progressModel.start(delkaTasku, "Vytvářím waypointy");
@@ -170,7 +169,12 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		int citac = 0;
 		try {
 			for (final Usek u : useky) {
-				kesBag.zacniUsek(u.hotovyIndex);
+				if (u.hotova != null && kesBag.pridejCast(u.hotova, u.wpty)) {
+					citac += u.wpty.size();
+					progressor.setProgress(citac);
+					continue;
+				}
+				kesBag.zacniUsek(u.skupina != null);
 				for (final Wpt wpt : u.wpty) {
 					kesBag.add(wpt);
 					if (++citac % 1000 == 0) {
@@ -183,69 +187,30 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		} finally {
 			progressor.finish();
 		}
-		zapamatujIndexyZdroju();
+		zapamatujCastiSkupin();
 		log.debug("Konec zpracování: " + pocet);
 	}
 
-	/** Index úseku se dá příště převzít se zdrojem, když úsek je jediný úsek zdroje a obsahuje přesně jeho waypointy se souřadnicemi ve stejném pořadí. */
-	private void zapamatujIndexyZdroju() {
-		final Map<File, Integer> pocetUseku = new HashMap<>();
+	private void zapamatujCastiSkupin() {
+		int poradi = 0;
 		for (final Usek u : useky) {
-			if (u.zdroj != null && !u.wpty.isEmpty()) {
-				pocetUseku.merge(u.zdroj, 1, Integer::sum);
+			final KesBag.Cast cast = u.skupina != null ? kesBag.getCast(poradi) : null;
+			if (cast != null && cast != u.hotova) {
+				castiSkupin.put(u.skupina, cast);
 			}
-		}
-		for (int i = 0; i < useky.size(); i++) {
-			final Usek u = useky.get(i);
-			final Indexator<Wpt> index = kesBag.getIndexUseku(i);
-			if (u.zdroj == null || index == null || pocetUseku.getOrDefault(u.zdroj, 0) != 1) {
-				continue;
-			}
-			final List<Wpt> zdroje = wptyPodleZdroje.get(u.zdroj);
-			if (zdroje != null && stejneSeSouradnicemi(u.wpty, zdroje)) {
-				indexyZdroju.put(u.zdroj, index);
-			}
+			poradi++;
 		}
 	}
 
-	private static boolean stejneSeSouradnicemi(final List<Wpt> a, final List<Wpt> b) {
-		final Iterator<Wpt> ia = a.iterator();
-		final Iterator<Wpt> ib = b.iterator();
-		while (true) {
-			final Wpt wa = dalsiSeSouradnicemi(ia);
-			final Wpt wb = dalsiSeSouradnicemi(ib);
-			if (wa != wb) {
-				return false;
-			}
-			if (wa == null) {
-				return true;
-			}
-		}
-	}
-
-	private static Wpt dalsiSeSouradnicemi(final Iterator<Wpt> it) {
-		while (it.hasNext()) {
-			final Wpt w = it.next();
-			if (!w.hasEmptyCoords()) {
-				return w;
-			}
-		}
-		return null;
-	}
-
-	/** Indexy zdrojů z posledního {@link #done()}, které jde příště převzít se zdrojem. */
-	Map<File, Indexator<Wpt>> getIndexyZdroju() {
-		return indexyZdroju;
-	}
-
-	private void zacniUsek(final File zdroj, final Indexator<Wpt> hotovyIndex) {
-		usek = new Usek(zdroj, hotovyIndex);
-		useky.add(usek);
+	/** Části bagu skupin z posledního {@link #done()}, které se postavily znovu a jde je příště převzít. */
+	Map<Object, KesBag.Cast> getCastiSkupin() {
+		return castiSkupin;
 	}
 
 	private void pridej(final Wpt wpt) {
-		if (usek == null) {
-			zacniUsek(null, null);
+		if (usek == null || usek.skupina != null) {
+			usek = new Usek(null, null);
+			useky.add(usek);
 		}
 		usek.wpty.add(wpt);
 	}
@@ -314,20 +279,34 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	}
 
 	/**
-	 * Převezme waypointy zdroje ze skupiny minulého načtení, se kterou se nic jiného nepřekrývá: kešoidy už jsou spárované, neposílají se znovu procákům. Waypoint bez
-	 * souřadnic v minulém bagu nebyl a z kruhu kešoidu už je vyřazený, podruhé se přidat nesmí.
+	 * Převezme zdroj ze skupiny minulého načtení, se kterou se nic jiného nepřekrývá: zapíše ho mezi zdroje s jeho počty; jeho waypointy přidá
+	 * {@link #prevezmiSkupinu(Object, List, KesBag.Cast)}.
 	 */
-	void prevezmiZeSkupiny(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano, final Indexator<Wpt> index) {
-		setCurrentlyLoading(zdroj, true);
-		zacniUsek(zdroj.getFile(), index);
-		for (final Wpt wpt : stareWpty) {
-			if (!wpt.hasEmptyCoords()) {
-				pridej(wpt);
-			}
-		}
+	void prevezmiClena(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano) {
+		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(zdroj, true);
+		sberacKlicu = kliceZdroju.computeIfAbsent(zdroj.getFile(), f -> new KliceZdroje.Sberac());
 		wptyPodleZdroje.put(zdroj.getFile(), stareWpty);
 		infoOCurrentnimZdroji.pocetWaypointuCelkem = celkem;
 		infoOCurrentnimZdroji.pocetWaypointuBranych = brano;
+	}
+
+	/**
+	 * Přidá waypointy převzaté skupiny v pořadí členů jako jeden úsek: kešoidy už jsou spárované, neposílají se znovu procákům. Waypoint bez souřadnic v minulém bagu
+	 * nebyl a z kruhu kešoidu už je vyřazený, podruhé se přidat nesmí.
+	 *
+	 * @param hotova
+	 *            část bagu skupiny z minula, nebo null; po {@link #done()} je nová v {@link #getCastiSkupin()}
+	 */
+	void prevezmiSkupinu(final Object skupina, final List<List<Wpt>> wptyClenu, final KesBag.Cast hotova) {
+		usek = new Usek(skupina, hotova);
+		useky.add(usek);
+		for (final List<Wpt> wpty : wptyClenu) {
+			for (final Wpt wpt : wpty) {
+				if (!wpt.hasEmptyCoords()) {
+					usek.wpty.add(wpt);
+				}
+			}
+		}
 	}
 
 	private void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty) {
@@ -351,9 +330,6 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	}
 
 	public synchronized void setCurrentlyLoading(final KeFile aJmenoZdroje, final boolean nacteno) {
-		if (usek == null || usek.hotovyIndex != null || !aJmenoZdroje.getFile().equals(usek.zdroj)) {
-			zacniUsek(aJmenoZdroje.getFile(), null);
-		}
 		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(aJmenoZdroje, nacteno);
 		sberacKlicu = kliceZdroju.computeIfAbsent(aJmenoZdroje.getFile(), f -> new KliceZdroje.Sberac());
 	}

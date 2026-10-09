@@ -3,8 +3,8 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.File;
 import java.util.*;
 
+import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Wpt;
-import cz.geokuk.util.index2d.Indexator;
 
 /** Skupiny zdrojů, které se při načítání ovlivňují, a cache jejich načteného výsledku. */
 final class SkupinyZdroju {
@@ -15,8 +15,9 @@ final class SkupinyZdroju {
 		final Map<File, String> otisky = new LinkedHashMap<>();
 		final Map<File, List<Wpt>> wpty = new HashMap<>();
 		final Map<File, int[]> pocty = new HashMap<>();
-		/** Hotové indexy waypointů členů se souřadnicemi; člen bez indexu si ho postaví při převzetí. */
-		final Map<File, Indexator<Wpt>> indexy = new HashMap<>();
+		/** Část bagu skupiny (index, kešoidy, nejvyšší hodnoty) z jejího posledního převzetí a pořadí členů, ve kterém se postavila; bez ní se postaví při převzetí. */
+		KesBag.Cast cast;
+		List<File> poradiCasti;
 		KliceZdroje klice = KliceZdroje.PRAZDNE;
 
 		Skupina(final Object kontext) {
