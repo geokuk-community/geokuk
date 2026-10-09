@@ -20,7 +20,7 @@ public final class LicenceVeSlozce {
 
 	/** Jméno souboru ve složce licence a cesta k jeho textu v jaru. */
 	private static final List<String[]> SOUBORY = Arrays.asList(new String[] { "README.txt", "/licence/README.txt" }, new String[] { "LICENSE", "/LICENSE" },
-			new String[] { "THIRD-PARTY.txt", "/THIRD-PARTY.txt" }, new String[] { "MAPOVE-PODKLADY.txt", "/MAPOVE-PODKLADY.txt" });
+			new String[] { "THIRD-PARTY.txt", "/THIRD-PARTY.txt" }, new String[] { "MAPOVE-PODKLADY.txt", "/MAPOVE-PODKLADY.txt" }, new String[] { "LGPL-3.0.txt", "/LGPL-3.0.txt" });
 
 	/** Doplní složku licence v přenosném GeoKuku; jinde nedělá nic. Chybu jen zaloguje. */
 	public static void doplnPriStartu() {
