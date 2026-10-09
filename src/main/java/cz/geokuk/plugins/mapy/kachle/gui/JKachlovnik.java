@@ -1,7 +1,7 @@
 package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.*;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 
 import com.google.common.collect.LinkedListMultimap;
@@ -150,6 +150,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		;
 		log.trace("Mapa {} kachlí {}", getComponents().length, mapaKachli);
 		final Kaputer kaputer = new Kaputer(soord);
+		final List<JKachle> nove = new ArrayList<>();
 		if (log.isTraceEnabled()) {
 			log.trace("Vykreslovani kachli od {} pro {} -- {}", kaputer.getKachlePoint(0, 0), kaputer.getKachleMou(0, 0), kaputer);
 		}
@@ -164,8 +165,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 					log.trace("............... Vytváření JKachle" + kaloc);
 					jkachle = createJKachle(new Ka(kaloc, katype));
 					add(jkachle); // a přidat jako komponentu
-					// kachle.ziskejObsah(priorita);
-					jkachle.ziskejObsah(kachleModel, priorita);
+					nove.add(jkachle);
 
 				} else { // použije se původní kachle
 					jkachle = seznamStejnychKachli.remove(0); // jednu z nich vezmeme, je jedno kterou, všechny mají stejný obsah
@@ -179,6 +179,10 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 				jkachle.setLocation(p.x, p.y);
 			}
 		}
+		seradOdStredu(nove, getWidth(), getHeight());
+		for (final JKachle jkachle : nove) {
+			jkachle.ziskejObsah(kachleModel, priorita);
+		}
 		// System.out.println("mame komponent: " + super.getComponentCount());
 		// System.out.println("Nahrazenych kachli: " + kachles.size());
 
@@ -189,6 +193,15 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		});
 		pocitKachliVKachlovniku2.set(getComponentCount());
 		log.trace("Počet komponent (nejspíš kachlí) v kachlovníku: {}", getComponentCount());
+	}
+
+	/** Seřadí dlaždice podle vzdálenosti od středu okna, ty uprostřed jsou vidět nejdřív a mají se získat první. */
+	static void seradOdStredu(final List<? extends Component> kachle, final int sirka, final int vyska) {
+		kachle.sort(Comparator.comparingLong(k -> {
+			final long dx = 2L * k.getX() + k.getWidth() - sirka;
+			final long dy = 2L * k.getY() + k.getHeight() - vyska;
+			return dx * dx + dy * dy;
+		}));
 	}
 
 	void kachleZpracovana(final JKachle jKachle) {

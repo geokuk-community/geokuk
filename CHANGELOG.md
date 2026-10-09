@@ -14,6 +14,10 @@
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
   v Soubor > Umístění souborů na kartě Mapy.
+- Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
+  i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
+  takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
+- Dlaždice všech map se načítají od středu okna.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence

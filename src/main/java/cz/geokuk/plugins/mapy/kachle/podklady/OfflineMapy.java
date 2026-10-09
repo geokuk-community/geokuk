@@ -22,9 +22,13 @@ public class OfflineMapy {
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
 
 	private File slozka;
+	/** Kam se ukládají vykreslené symboly témat, null = nikam. */
+	private File slozkaSymbolu;
 	private TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
 
 	private OfflineRenderer renderer;
+	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
+	private OfflineRenderer.NacteneTema nacteneTema;
 	private IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
 	private String otiskSlozky;
@@ -32,7 +36,7 @@ public class OfflineMapy {
 
 	/**
 	 * @param priZmene
-	 *            zavolá se, když se změní vykreslování (mapy nebo téma), aby se zahodily dlaždice v paměti
+	 *            zavolá se, když se změní vykreslování (mapy nebo téma, ne při prvním otevření), aby se zahodily dlaždice v paměti
 	 */
 	public OfflineMapy(final Runnable priZmene) {
 		this.priZmene = priZmene;
@@ -45,6 +49,10 @@ public class OfflineMapy {
 		this.slozka = slozka;
 		this.tema = tema;
 		otiskSlozky = null;
+	}
+
+	public synchronized void setSlozkaSymbolu(final File slozkaSymbolu) {
+		this.slozkaSymbolu = slozkaSymbolu;
 	}
 
 	public synchronized File getSlozka() {
@@ -99,7 +107,7 @@ public class OfflineMapy {
 	}
 
 	private String otisk(final List<File> mapy) {
-		final StringBuilder sb = new StringBuilder(tema.naText()).append('\n');
+		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
@@ -107,13 +115,15 @@ public class OfflineMapy {
 	}
 
 	private void otevri(final List<File> mapy) {
+		// Při prvním otevření nejsou na obrazovce dlaždice, které by změna zneplatnila; ohlášení by zahodilo i rozdělaná vykreslení.
+		final boolean zneplatnit = renderer != null || chyba != null;
 		zavriRenderer();
 		if (mapy.isEmpty()) {
 			chyba = new OfflineMapaChyba("Ve složce " + slozka + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, tema);
+				renderer = OfflineRenderer.otevri(mapy, nacteneTema());
 				chyba = null;
 				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, tema, renderer.getKlic());
 			} catch (final IOException e) {
@@ -121,7 +131,37 @@ public class OfflineMapy {
 				log.warn("Offline mapu nejde otevřít: {}", e.getMessage());
 			}
 		}
-		priZmene.run();
+		if (zneplatnit) {
+			priZmene.run();
+		}
+	}
+
+	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
+		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk())) {
+			return nacteneTema;
+		}
+		uvolniTema();
+		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu);
+		return nacteneTema;
+	}
+
+	private void uvolniTema() {
+		if (nacteneTema != null) {
+			nacteneTema.uvolni();
+			nacteneTema = null;
+		}
+	}
+
+	/** Otevře mapy a načte téma předem, aby první dlaždice nečekaly; chyby se ukážou až na dlaždicích. Nevolat z EDT. */
+	public void predpriprav() {
+		if (getSlozka() == null) {
+			return; // složka ještě není nastavená, chyba „bez map“ by se zbytečně ohlásila
+		}
+		try {
+			pouzij().skonci();
+		} catch (final IOException | RuntimeException e) {
+			log.debug("Offline mapu nejde připravit předem: {}", e.getMessage());
+		}
 	}
 
 	private void zavriRenderer() {
@@ -134,6 +174,7 @@ public class OfflineMapy {
 	/** Zavře mapy; při dalším použití se otevřou znovu. */
 	public synchronized void zavri() {
 		zavriRenderer();
+		uvolniTema();
 		otiskSlozky = null;
 	}
 }

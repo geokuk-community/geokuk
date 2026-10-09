@@ -1,17 +1,21 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
-import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.plugins.mapy.kachle.data.*;
+import cz.geokuk.util.file.Filex;
 
 /**
- * Měření vykreslování offline mapy: {@code MerOffline slozka=… [tema=…] [lat=50.08 lon=14.42] [zoomy=10,13,15,17] [n=6] [vlakna=1,2]}. Pro každý zoom vykreslí
+ * Měření vykreslování offline mapy: {@code MerOffline slozka=… [tema=…] [lat=50.08 lon=14.42] [zoomy=10,13,15,17] [n=6] [vlakna=1,2] [symboly=složka]}; se složkou
+ * symbolů se vykreslené symboly tématu uloží a druhé spuštění je načte jako program. Pro každý zoom vykreslí
  * n×n dlaždic kolem místa: první průchod v jednom vlákně (data mapy ještě nejsou v paměti), pak stejné dlaždice v zadaných počtech vláken. Vypíše čas na
- * dlaždici, stěnu na dlaždici, odhad první obrazovky 1920×1080 (40 dlaždic) a haldu.
+ * dlaždici, stěnu na dlaždici, odhad první obrazovky 1920×1080 (40 dlaždic) a haldu. Vykreslené dlaždice z prvního průchodu uloží do cache dlaždic (SQLite v
+ * dočasné složce) a změří jejich načtení z ní, tedy druhé zobrazení.
  */
 public class MerOffline {
 
@@ -25,13 +29,21 @@ public class MerOffline {
 		final Wgs misto = new Wgs(Double.parseDouble(p.getOrDefault("lat", "50.08")), Double.parseDouble(p.getOrDefault("lon", "14.42")));
 		final int n = Integer.parseInt(p.getOrDefault("n", "6"));
 		final OfflineMapy mapy = new OfflineMapy(() -> {});
+		if (p.containsKey("symboly")) {
+			mapy.setSlozkaSymbolu(new File(p.get("symboly")));
+		}
 		mapy.nastav(slozka, TemaOfflineMapy.zTextu(p.get("tema")));
 
 		long t = System.nanoTime();
 		OfflineRenderer r = mapy.pouzij();
-		System.out.printf("otevření map a tématu: %d ms, mapy %s, téma %s%s%n", ms(t), OfflineMapy.mapyVeSlozce(slozka), mapy.getTema(),
+		System.out.printf("otevření map a tématu: %d ms (z toho téma %d ms), mapy %s, téma %s%s%n", ms(t), r.getTema().nacitaniMs, OfflineMapy.mapyVeSlozce(slozka), mapy.getTema(),
 				mapy.getChybaTematu() == null ? "" : " (nepoužito: " + mapy.getChybaTematu() + ")");
+		final String klic = r.getKlic();
 		r.skonci();
+		final File slozkaCache = Files.createTempDirectory("mer-offline-cache").toFile();
+		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
+		holder.setKachleCacheDir(new Filex(slozkaCache, false, true));
+		final KachleDBManager cache = new KachleDBManager(holder);
 
 		for (final String zs : p.getOrDefault("zoomy", "10,13,15,17").split(",")) {
 			final int z = Integer.parseInt(zs);
@@ -40,6 +52,7 @@ public class MerOffline {
 				final int vlaken = vs.equals("prvni") ? 1 : Integer.parseInt(vs);
 				final ExecutorService ex = Executors.newFixedThreadPool(vlaken);
 				final List<Long> casy = Collections.synchronizedList(new ArrayList<>());
+				final Map<KaLoc, byte[]> png = new ConcurrentHashMap<>();
 				final long[] bajtu = new long[1];
 				r = mapy.pouzij();
 				final OfflineRenderer renderer = r;
@@ -50,6 +63,7 @@ public class MerOffline {
 						final long t0 = System.nanoTime();
 						final ImageWithData img = renderer.vyrendruj(loc);
 						casy.add(System.nanoTime() - t0);
+						png.put(loc, img.getData());
 						synchronized (bajtu) {
 							bajtu[0] += img.getData().length;
 						}
@@ -68,6 +82,9 @@ public class MerOffline {
 				System.out.printf("z%d %s: %d dlaždic, na dlaždici průměr %.1f ms, medián %.1f ms, max %.1f ms, stěna %.1f ms/dlaždici, obrazovka 40 dlaždic ~%.1f s, PNG ⌀ %d kB%n", z,
 						vs.equals("prvni") ? "první průchod" : "vláken " + vlaken, s.size(), s.stream().mapToLong(Long::longValue).average().orElse(0) / 1e6, s.get(s.size() / 2) / 1e6, s.get(s.size() - 1) / 1e6, stenaNaDlazdici,
 						stenaNaDlazdici * 40 / 1000, bajtu[0] / s.size() / 1024);
+				if (vs.equals("prvni")) {
+					zCache(cache, klic, png, z);
+				}
 			}
 		}
 		System.gc();
@@ -75,6 +92,28 @@ public class MerOffline {
 		System.out.printf("halda po GC: %d MB%n", (rt.totalMemory() - rt.freeMemory()) >> 20);
 		mapy.zavri();
 		System.exit(0);
+	}
+
+	/** Uloží dlaždice do cache a změří jejich načtení, jako při druhém zobrazení stejného místa. */
+	private static void zCache(final KachleDBManager cache, final String klic, final Map<KaLoc, byte[]> png, final int z) {
+		final List<KachleManager.ItemToSave> ulozit = new ArrayList<>();
+		for (final Map.Entry<KaLoc, byte[]> e : png.entrySet()) {
+			ulozit.add(new KachleManager.ItemToSave(new Ka(e.getKey(), EKaType.OFFLINE_MF), klic, e.getValue()));
+		}
+		cache.save(ulozit);
+		final List<Long> casy = new ArrayList<>();
+		final long t = System.nanoTime();
+		for (final KaLoc loc : png.keySet()) {
+			final long t0 = System.nanoTime();
+			if (cache.load(new Ka(loc, EKaType.OFFLINE_MF), klic) == null) {
+				throw new IllegalStateException("Dlaždice " + loc + " není v cache");
+			}
+			casy.add(System.nanoTime() - t0);
+		}
+		final double naDlazdici = (System.nanoTime() - t) / 1e6 / png.size();
+		Collections.sort(casy);
+		System.out.printf("z%d z cache: %d dlaždic, na dlaždici průměr %.1f ms, medián %.1f ms, obrazovka 40 dlaždic ~%.2f s%n", z, casy.size(), naDlazdici, casy.get(casy.size() / 2) / 1e6,
+				naDlazdici * 40 / 1000);
 	}
 
 	/** n×n dlaždic kolem místa. */
