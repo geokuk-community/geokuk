@@ -60,6 +60,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private JComponent obsahPopupu;
 
 	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private final Tocitko tocitko = new Tocitko(this, this::prekresliTocitka);
 	private OvladaniZdroju ovladani;
 
 	public JPrepinaceZdroju() {
@@ -358,6 +359,7 @@ public class JPrepinaceZdroju extends JPanel {
 			ikona.setToolTipText(tooltipIkony(stav, typ));
 			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : sedaNazvu());
 		}
+		tocitko.nastav(ikony.values().stream().anyMatch(i -> i.getIcon() == IkonyZdroju.pro(StavZdroje.NACITA_SE)));
 		uplna.obnov(stav);
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.obnov(stav);
@@ -371,6 +373,18 @@ public class JPrepinaceZdroju extends JPanel {
 	private static Color sedaNazvu() {
 		final Color seda = UIManager.getColor("Label.disabledForeground");
 		return seda != null ? seda : Color.GRAY;
+	}
+
+	private void prekresliTocitka() {
+		for (final JLabel ikona : ikony.values()) {
+			if (ikona.getIcon() == IkonyZdroju.pro(StavZdroje.NACITA_SE)) {
+				ikona.repaint();
+			}
+		}
+	}
+
+	boolean animuje() {
+		return tocitko.bezi();
 	}
 
 	static String tooltipZaskrtavatka(final TypZdroje typ, final StavVyberu volba) {

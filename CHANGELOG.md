@@ -79,6 +79,8 @@
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
+- Ikona zdroje, který se právě načítá, se ve stavovém řádku i v tabulce
+  zdrojů točí.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
