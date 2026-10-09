@@ -84,6 +84,9 @@
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
+- Soubor > Zobrazení programu: zvětšení podle Windows a hardwarové
+  vykreslování (Direct3D) jdou vypnout, když je program pomalý nebo seká.
+  Platí od příštího spuštění, GeoKuk nabídne restart.
 - Ikona zdroje, který se právě načítá, se ve stavovém řádku i v tabulce
   zdrojů točí.
 

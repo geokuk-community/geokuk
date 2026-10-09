@@ -71,6 +71,7 @@ public class Menu extends MenuStrujce {
 		item(akce.tadyJsemDomaAction);
 		separator();
 		item(akce.pametProgramuAction);
+		item(akce.zobrazeniProgramuAction);
 		item(akce.vytvoritZastupceAction);
 		item(akce.dalkoveOvladaniAction);
 		separator();

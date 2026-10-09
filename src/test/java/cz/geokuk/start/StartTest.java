@@ -66,6 +66,36 @@ public class StartTest {
 		Assert.assertEquals(6000, Start.pametMb(n, 4096));
 	}
 
+	private File nastaveni(final String polozky) throws Exception {
+		final File n = tmp.newFile("nastaveni.xml");
+		zapis(n, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">"
+				+ "<preferences><root type=\"user\"><map/><node name=\"geokuk\"><map/><node name=\"current\"><map/><node name=\"vseobecne\"><map>" + polozky
+				+ "</map></node></node></node></root></preferences>");
+		return n;
+	}
+
+	@Test
+	public void grafikaVychoziBezPrepinacu() throws Exception {
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejGrafiku(prikaz, nastaveni("<entry key=\"pametMb\" value=\"2048\"/>"));
+		Start.pridejGrafiku(prikaz, new File(tmp.getRoot(), "neni.xml"));
+		Assert.assertEquals(Collections.emptyList(), prikaz);
+	}
+
+	@Test
+	public void grafikaZNastaveni() throws Exception {
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejGrafiku(prikaz, nastaveni("<entry key=\"zvetseniPodleSystemu\" value=\"false\"/><entry key=\"direct3d\" value=\"false\"/>"));
+		Assert.assertEquals(Arrays.asList("-Dsun.java2d.uiScale=1", "-Dsun.java2d.d3d=false", "-Dsun.java2d.noddraw=true"), prikaz);
+	}
+
+	@Test
+	public void grafikaZapnutaBezPrepinacu() throws Exception {
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejGrafiku(prikaz, nastaveni("<entry key=\"zvetseniPodleSystemu\" value=\"true\"/><entry key=\"direct3d\" value=\"false\"/>"));
+		Assert.assertEquals(Arrays.asList("-Dsun.java2d.d3d=false", "-Dsun.java2d.noddraw=true"), prikaz);
+	}
+
 	@Test
 	public void poskozeneNastaveniNevadi() throws Exception {
 		final File n = tmp.newFile("nastaveni.xml");
