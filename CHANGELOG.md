@@ -147,6 +147,8 @@
   barev s černými čtverci zmizel.
 - Hromadné stahování dlaždic při vypnutém „Mapy > Ukládat mapy“ vyzve
   k jeho zapnutí.
+- Postahovat dlaždice po přiblížení mapy nestahuje měřítka nad
+  nabízeným rozmezím.
 - Odkaz, který nevede na webovou stránku, ukáže okno s adresou.
 - Když programu dojde paměť při načítání nebo jiné práci na pozadí,
   GeoKuk poradí, jak paměť zvýšit, a ukončí se.
