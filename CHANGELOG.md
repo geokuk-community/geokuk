@@ -149,6 +149,8 @@
 - Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
 - Hlášení chyby správně zobrazí text se znaky `<`, `>` a `&` (například
   ze jména souboru).
+- Export cest do GGT u cest bez keší ohlásí, že cesty žádnou keš
+  neobsahují, a prázdný soubor nevytvoří.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.
