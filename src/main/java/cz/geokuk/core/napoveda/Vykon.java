@@ -178,25 +178,26 @@ public final class Vykon {
 	/** Fronta událostí, která měří dobu obsluhy každé události; výjimky propouští beze změny. */
 	static final class MericiFronta extends EventQueue {
 		private int hloubka;
-		private boolean vnorenaSmycka;
+		private boolean[] maVnoreni = new boolean[8];
 
 		@Override
 		protected void dispatchEvent(final AWTEvent event) {
 			if (hloubka > 0) {
-				vnorenaSmycka = true;
+				maVnoreni[hloubka - 1] = true;
 			}
+			if (hloubka == maVnoreni.length) {
+				maVnoreni = Arrays.copyOf(maVnoreni, hloubka * 2);
+			}
+			maVnoreni[hloubka] = false;
 			hloubka++;
 			final long start = System.nanoTime();
 			try {
 				super.dispatchEvent(event);
 			} finally {
 				hloubka--;
-				// Vnější událost s vnořenou smyčkou (modální dialog) EDT neblokovala.
-				if (hloubka > 0 || !vnorenaSmycka) {
+				// Událost s vnořenou smyčkou (modální dialog) EDT neblokovala.
+				if (!maVnoreni[hloubka]) {
 					zaznamenej(Velicina.EDT, System.nanoTime() - start);
-				}
-				if (hloubka == 0) {
-					vnorenaSmycka = false;
 				}
 			}
 		}

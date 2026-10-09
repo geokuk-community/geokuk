@@ -1,6 +1,7 @@
 package cz.geokuk.core.napoveda;
 
 import java.awt.EventQueue;
+import java.awt.SecondaryLoop;
 import java.awt.Toolkit;
 
 import org.junit.After;
@@ -109,5 +110,30 @@ public class VykonTest {
 		Assert.assertTrue("výjimka projde beze změny", zachycena[0] instanceof IllegalStateException);
 		Assert.assertEquals("zkouška", zachycena[0].getMessage());
 		Assert.assertTrue("vnořená událost se změří i s výjimkou", Vykon.souhrn(Velicina.EDT).pocet > pred);
+	}
+
+	@Test
+	public void modalniSmyckaVeVnoreneUdalostiSeNemeri() throws Exception {
+		Toolkit.getDefaultToolkit().getSystemEventQueue().push(new Vykon.MericiFronta());
+		EventQueue.invokeAndWait(() -> {
+			final SecondaryLoop vnejsi = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
+			EventQueue.invokeLater(() -> {
+				final SecondaryLoop vnitrni = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
+				final Thread zavri = new Thread(() -> {
+					try {
+						Thread.sleep(300);
+					} catch (final InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+					vnitrni.exit();
+				});
+				zavri.start();
+				vnitrni.enter();
+				vnejsi.exit();
+			});
+			vnejsi.enter();
+		});
+		final Souhrn edt = Vykon.souhrn(Velicina.EDT);
+		Assert.assertTrue("EDT max " + edt.max, edt.max < 100);
 	}
 }
