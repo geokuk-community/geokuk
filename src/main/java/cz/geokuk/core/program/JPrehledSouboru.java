@@ -154,7 +154,8 @@ public class JPrehledSouboru extends JPanel {
 		        "<html>" //
 		                + "Po změně datové složky GSAK budou všechny databáze označeny jako blokované." //
 		                + "<br/>Mohou být dost velké a stejně asi budete chtít zobrazit jen několik málo z nich" //
-		                + "<br/>vyberte si je vpravo dole, kliknutím na \"zdroje\"." //
+		                + "<br/>vyberte si je v tabulce zdrojů: najeďte myší na „Zdroje:“ ve stavovém řádku" //
+		                + "<br/>nebo otevřete Soubor &gt; Přehled zdrojů." //
 		                + "</html>");
 		jGsakCasNalezu = pridejTextovePole(jGsakDataDir, "Čas nálezu",
 		        "<html>" //
@@ -171,8 +172,8 @@ public class JPrehledSouboru extends JPanel {
 
 		jOpensakDataDir = pridejJednuPolozkuproEdit(null, tab1b, "Datová složka OpenSAKu.", true, true).nezakladat();
 		jOpensakNacitatAzPoVybrani = pridejLogickePole(jOpensakDataDir, "Načítat až po vybrání",
-		        "<html>Nové databáze OpenSAKu se načtou, až je vyberete" //
-		                + "<br/>vpravo dole kliknutím na \"zdroje\".</html>");
+		        "<html>Nové databáze OpenSAKu se načtou, až je vyberete v tabulce zdrojů:" //
+		                + "<br/>najeďte myší na „Zdroje:“ ve stavovém řádku nebo otevřete Soubor &gt; Přehled zdrojů.</html>");
 
 		jOfflineMapyDir = pridejJednuPolozkuproEdit(null, tab2, "Offline mapy: soubory .map (třeba z osm.paws.cz) a k nim stažená témata (.zip, .xml).", true, false);
 

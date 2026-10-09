@@ -618,7 +618,7 @@ public class SmokeScenar {
 		// Rychlé kliky během načítání nemusí skončit zapnutím; bublina říká, co udělá další klik.
 		Thread.sleep(1000);
 		naEdt(() -> {
-			if (gpxTyp.getToolTipText() != null && gpxTyp.getToolTipText().endsWith("zapnout")) {
+			if (gpxTyp.getToolTipText() != null && gpxTyp.getToolTipText().startsWith("GPX zapnout")) {
 				gpxTyp.doClick();
 			}
 		});

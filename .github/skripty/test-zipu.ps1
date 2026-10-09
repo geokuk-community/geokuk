@@ -123,6 +123,8 @@ foreach ($f in "CTIMNE.txt", "GeoKuk-prvni-spusteni.cmd", "licence\README.txt", 
     Ocekavej (Test-Path (Join-Path $slozka $f)) "zip obsahuje $f"
 }
 Ocekavej (-not (Test-Path (Join-Path $slozka "data\mapy"))) "zip neobsahuje data\mapy (ukázky by se načetly jako mapy)"
+# Aktualizace vymění jen jar, složku licence má doplnit nová verze při startu.
+Remove-Item -Recurse -Force (Join-Path $slozka "licence")
 $predSpustenim = Get-Date
 $registrPred = Registr
 Copy-Item (Join-Path $slozka "program\geokuk.jar") (Join-Path $slozka "program\geokuk.jar.new")
@@ -141,6 +143,7 @@ try {
     Ocekavej (($okna.Count -eq 1) -and ($okna[0].titulek -eq "GeoKuk")) "otevřené je jen hlavní okno: $(($okna | ForEach-Object { $_.titulek + ': ' + $_.text }) -join ' | ')"
 
     Ocekavej (Test-Path (Join-Path $slozka "program\geokuk.jar.bak")) "stažený jar vyměněn, starý zůstal jako .bak"
+    Ocekavej ([bool](Cekej 30 { (Test-Path (Join-Path $slozka "licence\README.txt")) -and (Test-Path (Join-Path $slozka "licence\LICENSE")) -and (Test-Path (Join-Path $slozka "licence\THIRD-PARTY.txt")) -and (Test-Path (Join-Path $slozka "licence\MAPOVE-PODKLADY.txt")) })) "po startu se složka licence doplnila"
     Ocekavej (-not (Test-Path (Join-Path $slozka "program\geokuk.jar.new"))) "geokuk.jar.new po výměně nezůstal"
 
     $xmx = [regex]::Match($beh.Proces.CommandLine, "-Xmx(\d+)m")
