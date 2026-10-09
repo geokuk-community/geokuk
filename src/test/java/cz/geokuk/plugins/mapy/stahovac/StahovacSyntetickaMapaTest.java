@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 import org.junit.*;
 
@@ -117,7 +118,28 @@ public class StahovacSyntetickaMapaTest {
 	@After
 	public void tearDown() throws Exception {
 		if (dialog != null) {
-			SwingUtilities.invokeAndWait(dialog::dispose);
+			// Počítání dlaždic na pozadí by po doběhnutí sáhlo do už smazaných Preferences.
+			final Field f = JKachleOflinerDialog.class.getDeclaredField("kosw");
+			f.setAccessible(true);
+			final SwingWorker<?, ?>[] pocitani = new SwingWorker<?, ?>[1];
+			SwingUtilities.invokeAndWait(() -> {
+				try {
+					pocitani[0] = (SwingWorker<?, ?>) f.get(dialog);
+				} catch (final IllegalAccessException e) {
+					throw new IllegalStateException(e);
+				}
+				if (pocitani[0] != null) {
+					pocitani[0].cancel(true);
+				}
+				dialog.dispose();
+			});
+			final long konec = System.currentTimeMillis() + 10000;
+			while (pocitani[0] != null && !pocitani[0].isDone() && System.currentTimeMillis() < konec) {
+				Thread.sleep(10);
+			}
+			// SwingWorker posílá done() na EDT se zpožděním přes vlastní časovač (asi 33 ms).
+			Thread.sleep(200);
+			SwingUtilities.invokeAndWait(() -> {});
 		}
 		if (server != null) {
 			server.stop(0);
