@@ -205,7 +205,6 @@ public class StahovacSyntetickaMapaTest {
 		Assert.assertEquals(ocekavane, new TreeSet<>(pozadavky));
 	}
 
-	@Ignore("Nález: přiblížení o 2 a více úrovní po otevření dialogu stahuje i měřítka nad nabízeným maximem (JKachleOflinerDialog.postahovatNeboSpocitat)")
 	@Test(timeout = 60000)
 	public void priblizeniPoOtevreniDialoguNestahujeNadNabizeneMaximum() throws Exception {
 		udalost(() -> dialog.onEvent(new VyrezChangedEvent(coord(STRED, MAX + 2))));

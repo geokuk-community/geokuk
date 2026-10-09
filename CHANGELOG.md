@@ -142,6 +142,8 @@
 - Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
 - Hlášení chyby správně zobrazí text se znaky `<`, `>` a `&` (například
   ze jména souboru).
+- Postahovat dlaždice po přiblížení mapy nestahuje měřítka nad
+  nabízeným rozmezím.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.
