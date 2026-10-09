@@ -151,13 +151,11 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 	}
 
 	private void prepocitatBlizkostKrize() {
-		if (!poziceq.isNoPosition() && pointcur != null) {
-			final double dalka = getSoord().pixleDalka(getSoord().transform(pointcur), poziceq.getWgs().toMou());
-			final boolean pobliz = dalka < 20;
-			if (pobliz != mysJePoblizKrize) {
-				mysJePoblizKrize = pobliz;
-				repaintKriz();
-			}
+		final boolean pobliz = !poziceq.isNoPosition() && pointcur != null
+				&& getSoord().pixleDalka(getSoord().transform(pointcur), poziceq.getWgs().toMou()) < 20;
+		if (pobliz != mysJePoblizKrize) {
+			mysJePoblizKrize = pobliz;
+			repaintKriz();
 		}
 	}
 
