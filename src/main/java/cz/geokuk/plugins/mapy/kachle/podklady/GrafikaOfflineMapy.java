@@ -17,11 +17,12 @@ import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.Point;
 import org.mapsforge.map.awt.graphics.AwtBitmap;
 import org.mapsforge.map.awt.graphics.AwtGraphicFactory;
+import org.mapsforge.map.awt.graphics.AwtPaintSPameti;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Grafika mapsforge pro AWT, která si vykreslené symboly SVG tématu pamatuje, i na disku. Téma vykresluje všechny symboly už při načtení (paws_5 asi 1 400),
+ * Grafika mapsforge pro AWT, která si vykreslené symboly SVG tématu pamatuje, i na disku, a u písma šířky textů. Téma vykresluje všechny symboly už při načtení (paws_5 asi 1 400),
  * což je většina doby načtení; podruhé se vezmou ze souboru. Jedna instance na jedno téma, různá témata můžou mít pod stejnou cestou jiný obrázek.
  */
 @Slf4j
@@ -165,12 +166,12 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 
 	@Override
 	public Paint createPaint() {
-		return AWT.createPaint();
+		return new AwtPaintSPameti();
 	}
 
 	@Override
 	public Paint createPaint(final Paint paint) {
-		return AWT.createPaint(paint);
+		return new AwtPaintSPameti(paint);
 	}
 
 	@Override

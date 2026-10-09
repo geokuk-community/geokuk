@@ -19,6 +19,8 @@
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
   v Soubor > Umístění souborů na kartě Mapy.
+- Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
+  asi o čtvrtinu rychleji.
 - Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
   i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
