@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 final class OfflineRenderer {
 
+	/** Velikost dlaždice v logických bodech obrazovky; na displeji s měřítkem se kreslí víc pixelů. */
 	static final int VELIKOST_DLAZDICE = 256;
 
 
@@ -38,6 +39,8 @@ final class OfflineRenderer {
 		final RenderThemeFuture future;
 		final DisplayModel displayModel;
 		final GraphicFactory grafika;
+		/** Měřítko displeje, pro které je téma načtené (velikost dlaždice, symboly a písmo). */
+		final double meritko;
 		/** Otisk tématu, ze kterého je načteno (soubor a jeho velikost a čas). */
 		final String otiskPozadovaneho;
 		/** Otisk skutečně použitého tématu pro klíč cache. */
@@ -46,11 +49,12 @@ final class OfflineRenderer {
 		final String chyba;
 		final long nacitaniMs;
 
-		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
+		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
 				final long start) {
 			this.future = future;
 			this.displayModel = displayModel;
 			this.grafika = grafika;
+			this.meritko = meritko;
 			this.otiskPozadovaneho = otiskPozadovaneho;
 			this.otiskPouziteho = otiskPouziteho;
 			this.chyba = chyba;
@@ -120,12 +124,12 @@ final class OfflineRenderer {
 			data.close();
 			throw e;
 		}
-		otisk.append(tema.otiskPouziteho).append('\n').append(VELIKOST_DLAZDICE);
+		otisk.append(tema.otiskPouziteho).append('\n').append(tema.displayModel.getTileSize());
 		return new OfflineRenderer(data, tema, klic(otisk.toString()));
 	}
 
 	static NacteneTema nactiTema(final TemaOfflineMapy tema) throws IOException {
-		return nactiTema(tema, null);
+		return nactiTema(tema, null, 1);
 	}
 
 	/**
@@ -133,21 +137,24 @@ final class OfflineRenderer {
 	 *
 	 * @param slozkaSymbolu
 	 *            kam se ukládají vykreslené symboly tématu, null = nikam
+	 * @param meritko
+	 *            měřítko displeje: dlaždice má 256 × měřítko pixelů a symboly i písmo jsou úměrně větší
 	 */
-	static NacteneTema nactiTema(final TemaOfflineMapy tema, final File slozkaSymbolu) throws IOException {
+	static NacteneTema nactiTema(final TemaOfflineMapy tema, final File slozkaSymbolu, final double meritko) throws IOException {
 		final DisplayModel displayModel = new DisplayModel();
-		displayModel.setFixedTileSize(VELIKOST_DLAZDICE);
+		displayModel.setUserScaleFactor((float) meritko);
+		displayModel.setFixedTileSize(velikostDlazdice(meritko));
 		final long start = System.nanoTime();
 		try {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
-			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, tema.otisk(), tema.otisk(), null, start);
+			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, tema.otisk(), tema.otisk(), null, start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
 		} catch (final IOException e) {
 			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
-			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
+			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
 		}
 	}
 
@@ -190,8 +197,17 @@ final class OfflineRenderer {
 		return tema.chyba;
 	}
 
+	static int velikostDlazdice(final double meritko) {
+		return (int) Math.round(VELIKOST_DLAZDICE * meritko);
+	}
+
 	static Tile dlazdice(final KaLoc loc) {
-		return new Tile(loc.getFromSzUnsignedX(), loc.getFromSzUnsignedY(), (byte) loc.getMoumer(), VELIKOST_DLAZDICE);
+		return dlazdice(loc, VELIKOST_DLAZDICE);
+	}
+
+	/** Dlaždice mapsforge; stejné x, y, z pokrývají stejné území při každé velikosti v pixelech. */
+	static Tile dlazdice(final KaLoc loc, final int velikost) {
+		return new Tile(loc.getFromSzUnsignedX(), loc.getFromSzUnsignedY(), (byte) loc.getMoumer(), velikost);
 	}
 
 	/** Dlaždice zasahuje do některé z map. */
@@ -238,7 +254,7 @@ final class OfflineRenderer {
 
 	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. */
 	ImageWithData vyrendruj(final KaLoc loc) throws IOException {
-		final RendererJob job = new RendererJob(dlazdice(loc), data, tema.future, tema.displayModel, 1f, false, false);
+		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, false, false);
 		final TileBitmap bitmapa = renderer.executeJob(job);
 		if (bitmapa == null) {
 			throw new IOException("Dlaždici " + loc + " offline mapy nejde vykreslit.");

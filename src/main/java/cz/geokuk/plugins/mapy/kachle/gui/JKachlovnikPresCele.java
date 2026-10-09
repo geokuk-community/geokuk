@@ -24,6 +24,16 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	 * @see cz.geokuk.core.coord.JSingleSlide0#createRenderableSlide()
 	 */
 	@Override
+	protected void init(final boolean smimZnovuPouzitKachle) {
+		// Okno mohlo přejít na displej s jiným měřítkem.
+		final GraphicsConfiguration gc = getGraphicsConfiguration();
+		if (gc != null && getKachleModel() != null) {
+			getKachleModel().setMeritkoDispleje(gc.getDefaultTransform().getScaleX());
+		}
+		super.init(smimZnovuPouzitKachle);
+	}
+
+	@Override
 	public JSingleSlide0 createRenderableSlide() {
 		return new JKachlovnikRendrovaci();
 	}
