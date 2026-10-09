@@ -30,6 +30,8 @@ public class OfflineMapy {
 	private TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
 	/** Měřítko displeje (1 = 100 %), podle něj se kreslí větší dlaždice. */
 	private double meritko = 1;
+	/** Násobek velikosti písma a značek na mapě (1 = 100 %). */
+	private double pismo = 1;
 
 	private OfflineRenderer renderer;
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
@@ -70,6 +72,22 @@ public class OfflineMapy {
 			return 1;
 		}
 		return Math.max(1, Math.min(3, Math.round(meritkoDispleje * 4) / 4.0));
+	}
+
+	/** Nastaví velikost písma a značek (1 = 100 %), zaokrouhlenou na 5 % v rozsahu 80–150 %; při změně se mapy vykreslí znovu. */
+	public synchronized void nastavPismo(final double velikost) {
+		final double p = zaokrouhliPismo(velikost);
+		if (p != pismo) {
+			pismo = p;
+			otiskSlozky = null;
+		}
+	}
+
+	public static double zaokrouhliPismo(final double velikost) {
+		if (Double.isNaN(velikost)) {
+			return 1;
+		}
+		return Math.max(0.8, Math.min(1.5, Math.round(velikost * 20) / 20.0));
 	}
 
 	public synchronized double getMeritko() {
@@ -136,7 +154,7 @@ public class OfflineMapy {
 	}
 
 	private String otisk(final List<File> mapy) {
-		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n').append(meritko).append('\n');
+		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n').append(meritko).append(' ').append(pismo).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
@@ -167,11 +185,11 @@ public class OfflineMapy {
 	}
 
 	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
-		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk()) && nacteneTema.meritko == meritko) {
+		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk()) && nacteneTema.meritko == meritko && nacteneTema.pismo == pismo) {
 			return nacteneTema;
 		}
 		uvolniTema();
-		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu, meritko);
+		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu, meritko, pismo);
 		return nacteneTema;
 	}
 
