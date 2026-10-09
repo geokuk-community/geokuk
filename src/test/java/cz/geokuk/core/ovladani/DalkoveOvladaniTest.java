@@ -117,6 +117,27 @@ public class DalkoveOvladaniTest {
 		}
 	}
 
+	@Test
+	public void vykonBezTokenuVynulovaniJenSTokenem() throws Exception {
+		final DalkoveOvladani ovladani = new DalkoveOvladani();
+		ovladani.spust(0, true);
+		try {
+			final Properties p = nactiSoubor();
+			final int port = Integer.parseInt(p.getProperty("port"));
+			final String host = "127.0.0.1:" + port;
+			assertEquals(200, zavolej(port, "/vykon", null, host, null));
+			assertEquals("vynulování jen s tokenem", 401, zavolej(port, "/vykon/vynuluj", null, host, null));
+			cz.geokuk.core.napoveda.Vykon.zaznamenej(cz.geokuk.core.napoveda.Vykon.Velicina.PREKRESLENI, 5_000_000);
+			final HttpURLConnection c = (HttpURLConnection) new URL("http://" + host + "/vykon/vynuluj").openConnection();
+			c.setRequestMethod("POST");
+			c.setRequestProperty("Authorization", "Bearer " + p.getProperty("token"));
+			assertEquals(200, c.getResponseCode());
+			assertEquals(0, cz.geokuk.core.napoveda.Vykon.souhrn(cz.geokuk.core.napoveda.Vykon.Velicina.PREKRESLENI).pocet);
+		} finally {
+			ovladani.zastav();
+		}
+	}
+
 	private static Properties nactiSoubor() throws IOException {
 		final Properties p = new Properties();
 		try (Reader r = new InputStreamReader(new FileInputStream(DalkoveOvladani.SOUBOR), StandardCharsets.UTF_8)) {

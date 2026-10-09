@@ -9,6 +9,7 @@ import javax.swing.JComponent;
 
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -135,7 +136,11 @@ public class JKachle extends JComponent {
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
+		final long zadano = System.nanoTime();
 		final KaOneReq req = new KaOneReq(ka, kastat -> {
+			if (priorita == Priority.KACHLE && kastat.getImg() != null) {
+				Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
+			}
 
 			if (priorita == Priority.STAHOVANI) {
 				log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());

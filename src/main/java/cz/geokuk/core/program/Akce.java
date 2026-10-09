@@ -98,6 +98,7 @@ public class Akce {
 	public final PametProgramuAction pametProgramuAction = new PametProgramuAction();
 	public final ZobrazeniProgramuAction zobrazeniProgramuAction = new ZobrazeniProgramuAction();
 	public final BetaKanalAction betaKanalAction = new BetaKanalAction();
+	public final UkazatelVykonuAction ukazatelVykonuAction = new UkazatelVykonuAction();
 
 	public final RefreshIkonAction refreshIkonAction = new RefreshIkonAction();
 	public final DebugIkonyAction debugIkonyAction = new DebugIkonyAction();
