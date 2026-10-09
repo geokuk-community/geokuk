@@ -7,7 +7,7 @@ public class LicenceTest {
 
 	@Test
 	public void programObsahujeLicenciASeznamKnihoven() {
-		final String text = JOProgramuDialog.textLicence();
+		final String text = JOProgramuDialog.textLicence().replace("\r\n", "\n");
 		Assert.assertTrue(text.contains("SQLJet"));
 		Assert.assertTrue(text.contains("Sun Microsystems"));
 		Assert.assertTrue(text.contains("Copyright (c) 1995 - 2008 Sun Microsystems"));
