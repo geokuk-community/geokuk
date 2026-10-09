@@ -36,7 +36,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		if (getKachloType() == null || getKachloType().getAtribuce().isEmpty()) {
 			return;
 		}
-		final String text = getKachloType().getAtribuce();
+		final String text = getKachloType().isOffline() && getKachleModel() != null ? getKachleModel().getAtribuceOfflineMapy() : getKachloType().getAtribuce();
 		final Graphics2D g2 = (Graphics2D) g.create();
 		try {
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);

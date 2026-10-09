@@ -71,6 +71,66 @@ public final class TemaOfflineMapy {
 		return soubor;
 	}
 
+	/** Název do menu. */
+	public String getNazev() {
+		if (vestavene != null) {
+			switch (vestavene) {
+			case DEFAULT:
+				return "Výchozí";
+			case OSMARENDER:
+				return "Osmarender";
+			case BIKER:
+				return "Cyklo (Biker)";
+			case MOTORIDER:
+				return "Motorkářské (Motorider)";
+			default:
+				return vestavene.name();
+			}
+		}
+		return xmlVZipu == null ? soubor.getName() : soubor.getName() + " – " + xmlVZipu;
+	}
+
+	/**
+	 * Témata ve složce: soubory .xml a z každého .zip všechna témata uvnitř (jen jejich jména, obsah se nečte). Zip s jedním tématem je jedna položka bez jména
+	 * tématu.
+	 */
+	public static List<TemaOfflineMapy> temataVeSlozce(final File slozka) {
+		final File[] soubory = slozka == null ? null : slozka.listFiles(File::isFile);
+		if (soubory == null) {
+			return Collections.emptyList();
+		}
+		Arrays.sort(soubory, Comparator.comparing(File::getName));
+		final List<TemaOfflineMapy> temata = new ArrayList<>();
+		for (final File f : soubory) {
+			final String jmeno = f.getName().toLowerCase(Locale.ROOT);
+			if (jmeno.endsWith(".xml")) {
+				temata.add(zeSouboru(f, null));
+			} else if (jmeno.endsWith(".zip")) {
+				final List<String> xml = new ArrayList<>();
+				try (ZipFile zf = new ZipFile(f)) {
+					final Enumeration<? extends ZipEntry> polozky = zf.entries();
+					while (polozky.hasMoreElements()) {
+						final ZipEntry e = polozky.nextElement();
+						if (!e.isDirectory() && e.getName().toLowerCase(Locale.ROOT).endsWith(".xml")) {
+							xml.add(ZdrojeZeZipu.bezLomitka(e.getName()));
+						}
+					}
+				} catch (final IOException e) {
+					continue; // poškozený nebo jiný zip téma nenabízí
+				}
+				Collections.sort(xml);
+				if (xml.size() == 1) {
+					temata.add(zeSouboru(f, null));
+				} else {
+					for (final String x : xml) {
+						temata.add(zeSouboru(f, x));
+					}
+				}
+			}
+		}
+		return temata;
+	}
+
 	/** Co určuje vzhled dlaždic: při změně souboru tématu se dlaždice vykreslí znovu. */
 	String otisk() {
 		if (vestavene != null) {

@@ -3,6 +3,8 @@
  */
 package cz.geokuk.plugins.mapy.kachle;
 
+import javax.swing.SwingUtilities;
+
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
@@ -14,6 +16,10 @@ import cz.geokuk.plugins.mapy.kachle.podklady.*;
  *
  */
 public class KachleModel extends Model0 {
+
+	private static final String OFFLINE_MAPY_DIR = "offlineMapyDir";
+
+	private static final String OFFLINE_MAPA_TEMA = "offlineMapaTema";
 
 	private final KachleCacheFolderHolder kachleCacheFolderHolder = new KachleCacheFolderHolder();
 
@@ -91,6 +97,8 @@ public class KachleModel extends Model0 {
 		}
 		this.umisteniSouboru = umisteniSouboru;
 		kachleCacheFolderHolder.setKachleCacheDir(umisteniSouboru.getKachleCacheDir());
+		currPrefe().putFilex(OFFLINE_MAPY_DIR, umisteniSouboru.getOfflineMapyDir());
+		nastavOfflineMapy(umisteniSouboru);
 		fire(new KachleUmisteniSouboruChangedEvent(umisteniSouboru));
 	}
 
@@ -101,14 +109,48 @@ public class KachleModel extends Model0 {
 	 */
 	@Override
 	protected void initAndFire() {
+		// Mapy zkopírované nebo vyměněné za běhu se projeví hned.
+		ziskavac.setPriZmeneOfflineMapy(() -> SwingUtilities.invokeLater(() -> fire(new OfflineMapaChangedEvent())));
 		setUmisteniSouboru(loadUmisteniSouboru());
-		ziskavac.getOfflineMapy().nastav(KachleUmisteniSouboru.OFFLINE_MAPY_DIR, TemaOfflineMapy.zTextu(currPrefe().get("offlineMapaTema", "")));
 		fire(new KachleModelChangeEvent());
 	}
 
 	private KachleUmisteniSouboru loadUmisteniSouboru() {
 		final KachleUmisteniSouboru u = new KachleUmisteniSouboru();
 		u.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
+		u.setOfflineMapyDir(currPrefe().getFilex(OFFLINE_MAPY_DIR, KachleUmisteniSouboru.OFFLINE_MAPY_DIR));
 		return u;
+	}
+
+	public KachleUmisteniSouboru getUmisteniSouboru() {
+		return (KachleUmisteniSouboru) umisteniSouboru;
+	}
+
+	public TemaOfflineMapy getTemaOfflineMapy() {
+		return TemaOfflineMapy.zTextu(currPrefe().get(OFFLINE_MAPA_TEMA, ""));
+	}
+
+	public void setTemaOfflineMapy(final TemaOfflineMapy tema) {
+		if (tema.equals(getTemaOfflineMapy())) {
+			return;
+		}
+		currPrefe().put(OFFLINE_MAPA_TEMA, tema.naText());
+		nastavOfflineMapy(getUmisteniSouboru());
+		fire(new OfflineMapaChangedEvent());
+	}
+
+	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
+		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
+	}
+
+	/** Atribuce offline mapy: data OSM a téma ze souboru uživatele. */
+	public String getAtribuceOfflineMapy() {
+		final TemaOfflineMapy tema = getTemaOfflineMapy();
+		if (tema.isVestavene()) {
+			return "© přispěvatelé OpenStreetMap";
+		}
+		final String jmeno = tema.getSoubor().getName();
+		final int tecka = jmeno.lastIndexOf('.');
+		return "© přispěvatelé OpenStreetMap, téma " + (tecka > 0 ? jmeno.substring(0, tecka) : jmeno);
 	}
 }

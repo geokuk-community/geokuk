@@ -13,6 +13,8 @@ import cz.geokuk.core.render.*;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.kesoid.mvc.*;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
+import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
+import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.file.Filex;
 import cz.geokuk.util.lang.StringUtils;
 
@@ -53,6 +55,10 @@ public class JPrehledSouboru extends JPanel {
 
 	private JJedenSouborPanel jPictureDir;
 
+	private JJedenSouborPanel jOfflineMapyDir;
+
+	private KachleModel kachleModel;
+
 	private KesoidModel kesoidModel;
 
 	private RenderModel renderModel;
@@ -77,6 +83,10 @@ public class JPrehledSouboru extends JPanel {
 		this.kesoidModel = kesoidModel;
 	}
 
+	public void inject(final KachleModel kachleModel) {
+		this.kachleModel = kachleModel;
+	}
+
 	public void inject(final RenderModel renderModel) {
 		this.renderModel = renderModel;
 	}
@@ -95,6 +105,10 @@ public class JPrehledSouboru extends JPanel {
 		jGsakCasNenalezu.setText(_join(g.getCasNenalezu()));
 		jGsakNacitatAzPoVybrani.setSelected(!g.isNacistVsechnyDatabaze());
 		jOpensakNacitatAzPoVybrani.setSelected(!g.isNacistVsechnyDatabazeOpensaku());
+	}
+
+	public void onEvent(final KachleUmisteniSouboruChangedEvent event) {
+		jOfflineMapyDir.setFilex(event.getUmisteniSouboru().getOfflineMapyDir());
 	}
 
 	public void onEvent(final RenderUmisteniSouboruChangedEvent event) {
@@ -124,6 +138,8 @@ public class JPrehledSouboru extends JPanel {
 		jTabbedPane.addTab("GSAK", null, tab1a, "Načítání keší z GSAK.");
 		final JComponent tab1b = createTab();
 		jTabbedPane.addTab("OpenSAK", null, tab1b, "Načítání keší z OpenSAKu.");
+		final JComponent tab2 = createTab();
+		jTabbedPane.addTab("Mapy", null, tab2, "Offline mapy v počítači.");
 		final JComponent tab3 = createTab();
 		jTabbedPane.addTab("Rendr", null, tab3, "Výstupní složky pro rendrování.");
 		final JComponent tab4 = createTab();
@@ -159,6 +175,8 @@ public class JPrehledSouboru extends JPanel {
 		        "<html>Nové databáze OpenSAKu se načtou, až je vyberete v tabulce zdrojů:" //
 		                + "<br/>najeďte myší na „Zdroje:“ ve stavovém řádku nebo otevřete Soubor &gt; Přehled zdrojů.</html>");
 
+		jOfflineMapyDir = pridejJednuPolozkuproEdit(null, tab2, "Offline mapy: soubory .map (třeba z osm.paws.cz) a k nim stažená témata (.zip, .xml).", true, false);
+
 		jOziDir = pridejJednuPolozkuproEdit(ESouborPanelName.OZI, tab3, "Složka pro rendrování kalibrovaných map pro OziExplorer", true, false);
 		jKmzDir = pridejJednuPolozkuproEdit(ESouborPanelName.KMZ, tab3, "Složka pro rendrování KMZ souborů (Google Earth)", true, false);
 		jPictureDir = pridejJednuPolozkuproEdit(ESouborPanelName.PICTURE, tab3, "Složka pro rendrování obrázků map", true, false);
@@ -173,6 +191,7 @@ public class JPrehledSouboru extends JPanel {
 		ukonciPanel(tab1);
 		ukonciPanel(tab1a);
 		ukonciPanel(tab1b);
+		ukonciPanel(tab2);
 		ukonciPanel(tab3);
 		ukonciPanel(tab4);
 		add(jTabbedPane);
@@ -295,6 +314,7 @@ public class JPrehledSouboru extends JPanel {
 		final GsakParametryNacitani g = new GsakParametryNacitani();
 		final KesoidUmisteniSouboru u1 = new KesoidUmisteniSouboru();
 		final RenderUmisteniSouboru u3 = new RenderUmisteniSouboru();
+		final KachleUmisteniSouboru u2 = new KachleUmisteniSouboru();
 		final Map<JJedenSouborPanel, Filex> kProvereni = new LinkedHashMap<>();
 
 		Filex vezmi(final JJedenSouborPanel panel) {
@@ -314,6 +334,7 @@ public class JPrehledSouboru extends JPanel {
 			kesoidModel.setGsakParametryNacitani(g);
 			kesoidModel.setUmisteniSouboru(u1);
 			renderModel.setUmisteniSouboru(u3);
+			kachleModel.setUmisteniSouboru(u2);
 		}
 	}
 
@@ -333,6 +354,9 @@ public class JPrehledSouboru extends JPanel {
 		u.u1.setImageMyDir(KesoidUmisteniSouboru.IMAGE_MY_DIR);
 		u.u1.setNeGgtFile(KesoidUmisteniSouboru.NE_GGT);
 		u.u1.setAnoGgtFile(KesoidUmisteniSouboru.ANO_GGT);
+
+		u.u2.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
+		u.u2.setOfflineMapyDir(u.vezmi(jOfflineMapyDir));
 
 		u.u3.setOziDir(u.vezmi(jOziDir));
 		u.u3.setKmzDir(u.vezmi(jKmzDir));

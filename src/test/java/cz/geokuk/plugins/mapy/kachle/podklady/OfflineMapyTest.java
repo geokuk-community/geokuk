@@ -218,6 +218,31 @@ public class OfflineMapyTest {
 		Assert.assertEquals(cas, zip.lastModified());
 	}
 
+	private static void zip(final File zip, final String... polozky) throws IOException {
+		try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+			for (final String p : polozky) {
+				out.putNextEntry(new ZipEntry(p));
+				out.closeEntry();
+			}
+		}
+	}
+
+	@Test
+	public void temataVeSlozce() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		zip(new File(slozka, "paws_5.zip"), "paws_5.xml", "symbols/a.svg");
+		zip(new File(slozka, "dve.zip"), "b.xml", "a.xml");
+		zip(new File(slozka, "bez.zip"), "readme.txt");
+		Files.write(new File(slozka, "moje.xml").toPath(), new byte[0]);
+		Files.write(new File(slozka, "vadny.zip").toPath(), "není zip".getBytes(StandardCharsets.UTF_8));
+		final List<String> nazvy = new ArrayList<>();
+		for (final TemaOfflineMapy t : TemaOfflineMapy.temataVeSlozce(slozka)) {
+			nazvy.add(t.getNazev());
+		}
+		Assert.assertEquals(Arrays.asList("dve.zip – a.xml", "dve.zip – b.xml", "moje.xml", "paws_5.zip"), nazvy);
+		Assert.assertEquals(Collections.emptyList(), TemaOfflineMapy.temataVeSlozce(new File(slozka, "neni")));
+	}
+
 	@Test
 	public void temaZTextuAZpet() {
 		Assert.assertSame(TemaOfflineMapy.VYCHOZI, TemaOfflineMapy.zTextu(""));

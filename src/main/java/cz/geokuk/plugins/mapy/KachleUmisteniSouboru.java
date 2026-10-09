@@ -19,9 +19,11 @@ public class KachleUmisteniSouboru extends UmisteniSouboru0 {
 	public static final Filex KACHLE_CACHE_DIR = new Filex(new File(FConst.DATA_DIR, "cache"), false, true);
 
 	/** Soubory .map offline mapy, uživatel je sem kopíruje sám. */
-	public static final File OFFLINE_MAPY_DIR = new File(FConst.DATA_DIR, "offline-mapy");
+	public static final Filex OFFLINE_MAPY_DIR = new Filex(new File(FConst.DATA_DIR, "offline-mapy"), false, true);
 
 	private Filex kachleCacheDir;
+
+	private Filex offlineMapyDir;
 
 	/*
 	 * (non-Javadoc)
@@ -47,7 +49,7 @@ public class KachleUmisteniSouboru extends UmisteniSouboru0 {
 		} else if (!kachleCacheDir.equals(other.kachleCacheDir)) {
 			return false;
 		}
-		return true;
+		return java.util.Objects.equals(offlineMapyDir, other.offlineMapyDir);
 	}
 
 	/**
@@ -67,7 +69,17 @@ public class KachleUmisteniSouboru extends UmisteniSouboru0 {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (kachleCacheDir == null ? 0 : kachleCacheDir.hashCode());
+		result = prime * result + (offlineMapyDir == null ? 0 : offlineMapyDir.hashCode());
 		return result;
+	}
+
+	public Filex getOfflineMapyDir() {
+		return offlineMapyDir;
+	}
+
+	public void setOfflineMapyDir(final Filex offlineMapyDir) {
+		check(offlineMapyDir);
+		this.offlineMapyDir = offlineMapyDir;
 	}
 
 	/**

@@ -240,7 +240,8 @@ public class JKachle extends JComponent {
 	}
 
 	private void vypisChybu(final Graphics2D g) {
-		final String[] radky = { "Dlaždici se nepodařilo načíst:", popisChyby(chyba), "Zkusí se znovu." };
+		final String[] radky = chyba instanceof OfflineMapaChyba ? new String[] { "Offline mapa:", ((OfflineMapaChyba) chyba).getKratce(), "Složka: Soubor > Umístění souborů" }
+				: new String[] { "Dlaždici se nepodařilo načíst:", popisChyby(chyba), "Zkusí se znovu." };
 		final FontMetrics fm = g.getFontMetrics();
 		int y = getHeight() / 2 - fm.getHeight();
 		for (final String radek : radky) {
