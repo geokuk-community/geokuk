@@ -142,6 +142,8 @@
 - Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
 - Hlášení chyby správně zobrazí text se znaky `<`, `>` a `&` (například
   ze jména souboru).
+- Kalibrační body v souboru .map pro OziExplorer leží přesně v rozměrech
+  obrázku a dlaždice KMZ pokryjí celý obrázek až k okraji.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.

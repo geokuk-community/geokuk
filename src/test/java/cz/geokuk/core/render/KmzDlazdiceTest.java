@@ -52,7 +52,6 @@ public class KmzDlazdiceTest {
 		}
 	}
 
-	@Ignore("Nález: dlaždice KMZ nepokryjí poslední 1–2 sloupce/řádky obrázku (celočíselné dělení v DlazdicovaMetrika.dlaRoztec), asi 2/3 velikostí")
 	@Test
 	public void dlazdicePokryvajiCelyObrazek() {
 		for (final int w : SIRKY) {
