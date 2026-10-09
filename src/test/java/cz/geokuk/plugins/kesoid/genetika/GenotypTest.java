@@ -55,6 +55,23 @@ public class GenotypTest {
 	}
 
 	@Test
+	public void countToPocitaAlelyIPoPridaniGenu() {
+		final Genotyp g = apx0.with(c, r);
+		final Genom.CitacAlel citac = genom.createCitacAlel();
+		g.countTo(citac);
+		g.countTo(citac);
+		final Gen N = genom.gen("NN");
+		druh.addGen(N);
+		g.countTo(citac);
+		final cz.geokuk.util.lang.CounterMap<Alela> pocty = citac.getCounterMap();
+		Assert.assertEquals(3, pocty.count(c));
+		Assert.assertEquals(3, pocty.count(r));
+		Assert.assertEquals(3, pocty.count(x));
+		Assert.assertEquals("gen přidaný do druhu se počítá výchozí alelou", 1, pocty.count(N.getVychoziAlela()));
+		Assert.assertEquals(0, pocty.count(a));
+	}
+
+	@Test
 	public void test1() {
 		final Genotyp g1 = druh.genotypVychozi();
 		final Genotyp g2 = druh.genotypVychozi();

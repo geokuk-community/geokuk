@@ -61,6 +61,10 @@ public class FGeoKonvertor {
 	}
 
 	public static double normalizujUhel(final double uhel) {
+		// Úhel už v rozsahu vrací IEEEremainder beze změny, i -0.0.
+		if (uhel >= -180 && uhel < 180) {
+			return uhel;
+		}
 		if (Double.isNaN(uhel) || Double.isInfinite(uhel)) {
 			throw new RuntimeException("Nelze normalizovat NaN/Inf uhel: " + uhel);
 		}

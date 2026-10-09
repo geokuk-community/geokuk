@@ -19,7 +19,7 @@ public class LicenceVeSlozceTest {
 	public void doplniChybejiciSoubory() throws IOException {
 		final File slozka = new File(tmp.getRoot(), "licence");
 		LicenceVeSlozce.doplni(slozka);
-		for (final String jmeno : new String[] { "README.txt", "LICENSE", "THIRD-PARTY.txt", "MAPOVE-PODKLADY.txt" }) {
+		for (final String jmeno : new String[] { "README.txt", "LICENSE", "THIRD-PARTY.txt", "MAPOVE-PODKLADY.txt", "LGPL-3.0.txt" }) {
 			Assert.assertTrue(jmeno, new File(slozka, jmeno).length() > 0);
 		}
 		Assert.assertTrue(text(new File(slozka, "LICENSE")).contains("GNU GENERAL PUBLIC LICENSE"));
