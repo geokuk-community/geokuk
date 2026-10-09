@@ -81,12 +81,12 @@ public class KesBag {
 
 	/** Hotová část bagu pro skupinu zdrojů: index jejích waypointů se souřadnicemi, její kešoidy a nejvyšší hodnoty. */
 	public static final class Cast {
-		final Indexator<Wpt> index;
+		final int pocetWpt;
 		final List<Kesoid> kesoidy;
 		final int maxBestOf, maxHodnoceni, maxFavorit;
 
-		Cast(final Usek u, final List<Kesoid> kesoidy) {
-			index = u.index;
+		Cast(final int pocetWpt, final Usek u, final List<Kesoid> kesoidy) {
+			this.pocetWpt = pocetWpt;
 			this.kesoidy = kesoidy;
 			maxBestOf = u.maxBestOf;
 			maxHodnoceni = u.maxHodnoceni;
@@ -164,7 +164,7 @@ public class KesBag {
 		if (indexatorOdevzdan || indexator != null) {
 			throw new IllegalStateException("Indexator uz byl odevztdan");
 		}
-		if (cast.index.getCount() != wpty.size()) {
+		if (cast.pocetWpt != wpty.size()) {
 			return false;
 		}
 		usek = new Usek(wpts.size(), true, cast);
@@ -179,10 +179,11 @@ public class KesBag {
 	/** Hotová část pro úsek v pořadí vzniku, po {@link #done()}; null u úseku, který není částí skupiny, nebo u prázdné části. */
 	public Cast getCast(final int poradiUseku) {
 		final Usek u = useky.get(poradiUseku);
-		if (!u.castSkupiny || u.index == null) {
+		final int doo = poradiUseku + 1 < useky.size() ? useky.get(poradiUseku + 1).od : wpts.size();
+		if (!u.castSkupiny || doo == u.od) {
 			return null;
 		}
-		return u.hotova != null ? u.hotova : new Cast(u, new ArrayList<>(u.kesoidy));
+		return u.hotova != null ? u.hotova : new Cast(doo - u.od, u, new ArrayList<>(u.kesoidy));
 	}
 
 	public void done() {
@@ -228,36 +229,10 @@ public class KesBag {
 
 	/** Index se staví najednou ze všech přidaných waypointů. */
 	private void postavIndex() {
-		if (indexator != null) {
-			return;
-		}
-		if (useky.isEmpty()) {
+		if (indexator == null) {
 			indexator = postav(wpts);
-			return;
+
 		}
-		// Pozdější úsek jde ve sloučení dopředu, u stejných souřadnic tak pořadí sedí s indexem postaveným najednou.
-		Indexator<Wpt> celek = null;
-		int cteneOd = -1;
-		for (int i = 0; i < useky.size(); i++) {
-			final Usek u = useky.get(i);
-			final int doo = i + 1 < useky.size() ? useky.get(i + 1).od : wpts.size();
-			if (!u.castSkupiny) {
-				if (cteneOd < 0) {
-					cteneOd = u.od;
-				}
-				continue;
-			}
-			celek = pripoj(celek, cteneOd >= 0 ? postavUsek(cteneOd, u.od) : null);
-			cteneOd = -1;
-			if (u.hotova != null) {
-				u.index = u.hotova.index;
-			} else if (doo > u.od) {
-				u.index = postavUsek(u.od, doo);
-			}
-			celek = pripoj(celek, u.index);
-		}
-		celek = pripoj(celek, cteneOd >= 0 ? postavUsek(cteneOd, wpts.size()) : null);
-		indexator = celek != null ? celek : postav(wpts);
 	}
 
 	private Indexator<Wpt> postavUsek(final int od, final int doo) {
