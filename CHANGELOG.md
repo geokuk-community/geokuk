@@ -11,6 +11,11 @@
   na název zdroje jen jeho položky. Stejnou tabulku ukazuje okno Přehled
   zdrojů. Klik na blok Zdroje už okno Přehled zdrojů neotevře. Po návratu na
   verzi 6.2.x se znovu zapnou typy zdrojů vypnuté ve verzi 6.3.0.
+- Klik na soubor nebo databázi vypnutého typu v tabulce zdrojů zapne
+  typ jen s touto položkou.
+- Ctrl+klik (na macOS Cmd+klik) na položku v tabulce zdrojů načítá jen
+  tuto položku jejího typu, na zaškrtávátko typu jen tento typ. Řádky
+  tabulky mají kontextové menu s volbami načítání.
 - Prázdná, neexistující nebo nečitelná datová složka GeoGetu, GSAKu nebo
   OpenSAKu se ve stavovém řádku u zdroje ukáže ikonou chyby s důvodem
   v bublině; stejný důvod je v tabulce zdrojů a v Přehledu zdrojů.
@@ -79,11 +84,6 @@
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
-- Klik na soubor nebo databázi vypnutého typu v tabulce zdrojů zapne
-  typ jen s touto položkou.
-- Ctrl+klik (na macOS Cmd+klik) na položku v tabulce zdrojů načítá jen
-  tuto položku jejího typu, na zaškrtávátko typu jen tento typ. Řádky
-  tabulky mají kontextové menu s volbami načítání.
 
 ### Opravy
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
