@@ -102,7 +102,7 @@ final class OfflineRenderer {
 	 * Otevře mapy s už načteným tématem.
 	 *
 	 * @throws IOException
-	 *             když nejde otevřít některý soubor mapy
+	 *             když nejde otevřít žádný soubor mapy
 	 */
 	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema) throws IOException {
 		if (mapy.isEmpty()) {
@@ -110,16 +110,25 @@ final class OfflineRenderer {
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
+		OfflineMapaChyba prvniChyba = null;
 		try {
 			for (final File f : mapy) {
 				final MapFile mapFile;
 				try {
 					mapFile = new MapFile(f);
 				} catch (final RuntimeException e) {
-					throw new OfflineMapaChyba("Soubor mapy " + f + " nejde otevřít: " + e.getMessage(), f.getName() + " nejde otevřít", e);
+					// Mapa, která se třeba právě kopíruje, nezastaví kreslení ostatních.
+					log.warn("Soubor mapy {} nejde otevřít, kreslí se bez něj: {}", f, e.getMessage());
+					if (prvniChyba == null) {
+						prvniChyba = new OfflineMapaChyba("Soubor mapy " + f + " nejde otevřít: " + e.getMessage(), f.getName() + " nejde otevřít", e);
+					}
+					continue;
 				}
 				data.addMapDataStore(mapFile, false, false);
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
+			}
+			if (otisk.length() == 0) {
+				throw prvniChyba;
 			}
 		} catch (final IOException | RuntimeException e) {
 			data.close();

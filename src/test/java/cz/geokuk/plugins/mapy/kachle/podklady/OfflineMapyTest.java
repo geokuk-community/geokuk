@@ -210,6 +210,19 @@ public class OfflineMapyTest {
 		}
 	}
 
+	/** Nečitelná mapa vedle čitelné (třeba právě kopírovaná) nezastaví kreslení; po opravě se načte. */
+	@Test
+	public void poskozenaMapaVedleDobreSePreskoci() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final File vadna = new File(slozka, "vadna.map");
+		Files.write(vadna.toPath(), "toto není mapa".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(barev(pixely(vyrendruj(STRED_Z15))) > 10);
+		final String sVadnou = klic();
+		Files.delete(vadna.toPath());
+		mapy.kontrolaSlozkyNs = 0;
+		Assert.assertEquals("klíč dlaždic nezávisí na nečitelné mapě", sVadnou, klic());
+	}
+
 	@Test
 	public void chybejiciTemaKresliVychozim() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
