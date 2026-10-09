@@ -49,25 +49,41 @@ public class Indexator<T> {
 			ys[i] = yy.applyAsInt(o);
 			poradi[i] = i;
 		}
-		return new Indexator<>(br, postav(objekty, xs, ys, poradi, new int[n], 0, n, br.xx1, br.yy1, br.xx2, br.yy2));
+		return new Indexator<>(br, postav(objekty, new Pole(xs, ys, poradi), 0, n, br.xx1, br.yy1, br.xx2, br.yy2));
 	}
 
-	private static <T> Node<T> postav(final List<T> objekty, final int[] xs, final int[] ys, final int[] poradi, final int[] pomocne, final int od, final int doo,
-			final int xx1, final int yy1, final int xx2, final int yy2) {
+	/** Souřadnice se přeskládávají spolu s pořadím, aby dělení četlo paměť popořadě, ne na přeskáčku podle pořadí. */
+	private static final class Pole {
+		final int[] xs, ys, poradi;
+		final int[] pomX, pomY, pomPoradi;
+
+		Pole(final int[] xs, final int[] ys, final int[] poradi) {
+			this.xs = xs;
+			this.ys = ys;
+			this.poradi = poradi;
+			pomX = new int[xs.length];
+			pomY = new int[xs.length];
+			pomPoradi = new int[xs.length];
+		}
+	}
+
+	private static <T> Node<T> postav(final List<T> objekty, final Pole p, final int od, final int doo, final int xx1, final int yy1, final int xx2, final int yy2) {
 		if (od == doo) {
 			return Empty.get();
 		}
-		final int x0 = xs[poradi[od]];
-		final int y0 = ys[poradi[od]];
+		final int[] xs = p.xs;
+		final int[] ys = p.ys;
+		final int x0 = xs[od];
+		final int y0 = ys[od];
 		boolean stejne = true;
 		for (int i = od + 1; i < doo && stejne; i++) {
-			stejne = xs[poradi[i]] == x0 && ys[poradi[i]] == y0;
+			stejne = xs[i] == x0 && ys[i] == y0;
 		}
 		if (stejne) {
 			// Postupné přidávání dává naposledy přidaný objekt na začátek.
 			Lst<T> lst = null;
 			for (int i = od; i < doo; i++) {
-				lst = new Lst<>(objekty.get(poradi[i]), lst);
+				lst = new Lst<>(objekty.get(p.poradi[i]), lst);
 			}
 			return new Sheet<>(x0, y0, lst);
 		}
@@ -76,7 +92,7 @@ public class Indexator<T> {
 		// Stabilní rozdělení do čtvrtí jz, jv, sz, sv, pořadí uvnitř čtvrti zůstává.
 		final int[] zacatky = new int[5];
 		for (int i = od; i < doo; i++) {
-			zacatky[ctvrt(xs[poradi[i]], ys[poradi[i]], xMid, yMid) + 1]++;
+			zacatky[ctvrt(xs[i], ys[i], xMid, yMid) + 1]++;
 		}
 		zacatky[0] = od;
 		for (int q = 1; q < 5; q++) {
@@ -84,14 +100,20 @@ public class Indexator<T> {
 		}
 		final int[] dalsi = Arrays.copyOf(zacatky, 4);
 		for (int i = od; i < doo; i++) {
-			pomocne[dalsi[ctvrt(xs[poradi[i]], ys[poradi[i]], xMid, yMid)]++] = poradi[i];
+			final int k = dalsi[ctvrt(xs[i], ys[i], xMid, yMid)]++;
+			p.pomX[k] = xs[i];
+			p.pomY[k] = ys[i];
+			p.pomPoradi[k] = p.poradi[i];
 		}
-		System.arraycopy(pomocne, od, poradi, od, doo - od);
+		final int delka = doo - od;
+		System.arraycopy(p.pomX, od, xs, od, delka);
+		System.arraycopy(p.pomY, od, ys, od, delka);
+		System.arraycopy(p.pomPoradi, od, p.poradi, od, delka);
 		return new Ctverecnik<>(xx1, yy1, xx2, yy2,
-				postav(objekty, xs, ys, poradi, pomocne, zacatky[0], zacatky[1], xx1, yy1, xMid, yMid),
-				postav(objekty, xs, ys, poradi, pomocne, zacatky[1], zacatky[2], xMid, yy1, xx2, yMid),
-				postav(objekty, xs, ys, poradi, pomocne, zacatky[2], zacatky[3], xx1, yMid, xMid, yy2),
-				postav(objekty, xs, ys, poradi, pomocne, zacatky[3], zacatky[4], xMid, yMid, xx2, yy2));
+				postav(objekty, p, zacatky[0], zacatky[1], xx1, yy1, xMid, yMid),
+				postav(objekty, p, zacatky[1], zacatky[2], xMid, yy1, xx2, yMid),
+				postav(objekty, p, zacatky[2], zacatky[3], xx1, yMid, xMid, yy2),
+				postav(objekty, p, zacatky[3], zacatky[4], xMid, yMid, xx2, yy2));
 	}
 
 	/** Čtvrť jako v {@link Sheet#rozčtvrť()}: 0 jz, 1 jv, 2 sz, 3 sv. */

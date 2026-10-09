@@ -44,6 +44,16 @@ public class GeogetLoader extends Nacitac0 {
 
 	private static final String[] SLOUPCE_WAYPOINT = { "x as lat", "y as lon", "prefixid", "wpttype", "name" };
 
+	// Pořadí sloupců v dotazech: id, pak sloupce z pole; čtení podle indexu nehledá jméno sloupce na každém řádku.
+	private static final int K_ID = 1, K_LAT = sloupec(SLOUPCE_GEOCACHE, "lat"), K_LON = sloupec(SLOUPCE_GEOCACHE, "lon"), K_NAME = sloupec(SLOUPCE_GEOCACHE, "name"),
+			K_AUTHOR = sloupec(SLOUPCE_GEOCACHE, "author"), K_CACHETYPE = sloupec(SLOUPCE_GEOCACHE, "cachetype"), K_CACHESIZE = sloupec(SLOUPCE_GEOCACHE, "cachesize"),
+			K_DIFFICULTY = sloupec(SLOUPCE_GEOCACHE, "difficulty"), K_TERRAIN = sloupec(SLOUPCE_GEOCACHE, "terrain"), K_CACHESTATUS = sloupec(SLOUPCE_GEOCACHE, "cachestatus"),
+			K_OWNERID = sloupec(SLOUPCE_GEOCACHE, "gs_ownerid"), K_DTHIDDEN = sloupec(SLOUPCE_GEOCACHE, "dthidden"), K_COUNTRY = sloupec(SLOUPCE_GEOCACHE, "country"),
+			K_STATE = sloupec(SLOUPCE_GEOCACHE, "state"), K_DTFOUND = sloupec(SLOUPCE_GEOCACHE, "dtfound");
+	private static final int W_ID = 1, W_LAT = sloupec(SLOUPCE_WAYPOINT, "lat"), W_LON = sloupec(SLOUPCE_WAYPOINT, "lon"), W_PREFIXID = sloupec(SLOUPCE_WAYPOINT, "prefixid"),
+			W_WPTTYPE = sloupec(SLOUPCE_WAYPOINT, "wpttype"), W_NAME = sloupec(SLOUPCE_WAYPOINT, "name");
+	private static final int T_ID = 1, T_CATEGORY = 2, T_VALUE = 3;
+
 	private static final String GEOGET_WAYPOINTS_COUNT = "SELECT count(*) FROM waypoint";
 
 
@@ -57,6 +67,15 @@ public class GeogetLoader extends Nacitac0 {
 
 	private static final String GEOGET_TAGS_COUNT = "SELECT count(*) " + GEOGET_TAGS_QUERY_FRAGMENT;
 	private static final String GEOGET_TAGS_QUERY = Joiner.on('\n').join("SELECT", "  t.id as id,", "  c.value as category,", "  v.value as value ") + GEOGET_TAGS_QUERY_FRAGMENT;
+
+	private static int sloupec(final String[] sloupce, final String alias) {
+		for (int i = 0; i < sloupce.length; i++) {
+			if (sloupce[i].equals(alias) || sloupce[i].endsWith(" as " + alias)) {
+				return i + 2;
+			}
+		}
+		throw new IllegalArgumentException(alias);
+	}
 
 	@Override
 	protected void nacti(final File file, final IImportBuilder builder, final Future<?> future, final ProgressModel aProgressModel) throws IOException {
@@ -137,10 +156,10 @@ public class GeogetLoader extends Nacitac0 {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_CACHES);
-				final String kod = rs.getString("id");
+				final String kod = rs.getString(K_ID);
 				try {
 					final GpxWpt gpxWpt = new GpxWpt();
-					gpxWpt.wgs = new Wgs(rs.getDouble("lat"), rs.getDouble("lon"));
+					gpxWpt.wgs = new Wgs(rs.getDouble(K_LAT), rs.getDouble(K_LON));
 					gpxWpt.name = kod;
 					if (gpxWpt.name != null && gpxWpt.name.length() > 1) {
 						final String prefix = gpxWpt.name.substring(0, 2);
@@ -150,22 +169,22 @@ public class GeogetLoader extends Nacitac0 {
 						}
 					}
 
-					gpxWpt.time = formatDateTime(rs.getInt("dthidden"));
+					gpxWpt.time = formatDateTime(rs.getInt(K_DTHIDDEN));
 
 					final Groundspeak groundspeak = new Groundspeak();
-					groundspeak.ownerid = rs.getInt("gs_ownerid");
-					groundspeak.name = rs.getString("name");
-					groundspeak.placedBy = intern(rs.getString("author"));
+					groundspeak.ownerid = rs.getInt(K_OWNERID);
+					groundspeak.name = rs.getString(K_NAME);
+					groundspeak.placedBy = intern(rs.getString(K_AUTHOR));
 					groundspeak.owner = intern(groundspeak.placedBy);
-					groundspeak.type = intern(rs.getString("cachetype"));
-					groundspeak.container = intern(rs.getString("cachesize"));
-					groundspeak.difficulty = intern(rs.getString("difficulty"));
-					groundspeak.terrain = intern(rs.getString("terrain"));
-					groundspeak.country = intern(rs.getString("country"));
-					groundspeak.state = intern(rs.getString("state"));
+					groundspeak.type = intern(rs.getString(K_CACHETYPE));
+					groundspeak.container = intern(rs.getString(K_CACHESIZE));
+					groundspeak.difficulty = intern(rs.getString(K_DIFFICULTY));
+					groundspeak.terrain = intern(rs.getString(K_TERRAIN));
+					groundspeak.country = intern(rs.getString(K_COUNTRY));
+					groundspeak.state = intern(rs.getString(K_STATE));
 					groundspeak.hintZDatabaze = HintZDatabaze.dotahovac(file, HintZDatabaze.GEOGET, kod);
 
-					final int cacheStatus = rs.getInt("cachestatus");
+					final int cacheStatus = rs.getInt(K_CACHESTATUS);
 					switch (cacheStatus) {
 					case 0:
 						groundspeak.archived = false;
@@ -187,7 +206,7 @@ public class GeogetLoader extends Nacitac0 {
 					gpxWpt.link.href = "http://coord.info/" + gpxWpt.name;
 					gpxWpt.link.text = gpxWpt.groundspeak.name + " by " + gpxWpt.groundspeak.placedBy;
 
-					final long dtfound = rs.getLong("dtfound");
+					final long dtfound = rs.getLong(K_DTFOUND);
 					if (dtfound != 0) {
 						gpxWpt.sym = "Geocache Found";
 						gpxWpt.gpxg.found = Long.toString(dtfound);
@@ -234,9 +253,9 @@ public class GeogetLoader extends Nacitac0 {
 				}
 				progressor.addProgress(PROGRESS_VAHA_TAGS);
 
-				final String name = rs.getString("id");
-				final String category = rs.getString("category");
-				final String value = rs.getString("value");
+				final String name = rs.getString(T_ID);
+				final String category = rs.getString(T_CATEGORY);
+				final String value = rs.getString(T_VALUE);
 				if (name == null || category == null || value == null) {
 					continue;
 				}
@@ -296,16 +315,16 @@ public class GeogetLoader extends Nacitac0 {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
-				final String parentId = rs.getString("id");
+				final String parentId = rs.getString(W_ID);
 				try {
 					final GpxWpt gpxWpt = new GpxWpt();
-					gpxWpt.wgs = new Wgs(rs.getDouble("lat"), rs.getDouble("lon"));
+					gpxWpt.wgs = new Wgs(rs.getDouble(W_LAT), rs.getDouble(W_LON));
 					if (parentId != null && parentId.length() > 1) {
 						final String suffix = parentId.substring(2);
-						gpxWpt.name = rs.getString("prefixid") + suffix;
+						gpxWpt.name = rs.getString(W_PREFIXID) + suffix;
 					}
-					gpxWpt.sym = rs.getString("wpttype");
-					gpxWpt.desc = rs.getString("name");
+					gpxWpt.sym = rs.getString(W_WPTTYPE);
+					gpxWpt.desc = rs.getString(W_NAME);
 					builder.addGpxWpt(gpxWpt);
 					citac++;
 				} catch (final RuntimeException e) {

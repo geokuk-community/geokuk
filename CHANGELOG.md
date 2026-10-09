@@ -1,5 +1,21 @@
 # Změny
 
+## 6.4.0
+
+### Změny
+- Rychlejší načítání databází GeoGetu.
+- Rychlejší zobrazení keší po načtení a po změně filtru.
+- Nový podklad Mapy > Offline mapa (klávesa V): vektorové mapy `.map`
+  (mapsforge, například z osm.paws.cz) ze složky `data/offline-mapy` se
+  vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR
+  a SK) se kreslí naráz, mapu zkopírovanou do složky za běhu program sám
+  načte. Vykreslené dlaždice se ukládají do cache dlaždic.
+
+### Vývoj
+- Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
+  (GNU LGPL 3) je ve složce `licence` a v okně O programu.
+- Měření vykreslování offline mapy (`vykon/mer.sh`, část `offline`).
+
 ## 6.3.0
 
 ### Změny
