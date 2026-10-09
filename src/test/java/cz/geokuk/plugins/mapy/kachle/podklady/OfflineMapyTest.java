@@ -111,6 +111,20 @@ public class OfflineMapyTest {
 		}
 		zkopirujMapu(slozka, "kukov.MAP");
 		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		Assert.assertEquals("dlaždice s chybou se musí vykreslit znovu", 1, zmen.get());
+	}
+
+	/** První otevření nic nezneplatňuje: ohlášení změny by zahodilo dlaždice, které se právě vykreslují. */
+	@Test
+	public void prvniOtevreniNehlasiZmenu() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		Assert.assertEquals(0, zmen.get());
+		zkopirujMapu(slozka, "druha.map");
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		Assert.assertEquals(1, zmen.get());
+		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
 		Assert.assertEquals(2, zmen.get());
 	}
 

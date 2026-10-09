@@ -364,7 +364,7 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
-	/** Jedno jádro zůstane oknu, nad 4 vlákna vykreslování skoro nezrychlí; vlákna mají nižší prioritu, aby okno reagovalo. */
+	/** Jedno jádro zůstane oknu, nad 4 vlákna vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
 
 	static int pocetVlakenRenderu(final int jader) {
@@ -376,7 +376,6 @@ public class KachleZiskavac {
 		return r -> {
 			final Thread t = vychozi.newThread(r);
 			t.setName(jmeno + " " + t.getName());
-			t.setPriority(Thread.NORM_PRIORITY - 1);
 			t.setDaemon(true);
 			return t;
 		};

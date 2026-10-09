@@ -36,7 +36,7 @@ public class OfflineMapy {
 
 	/**
 	 * @param priZmene
-	 *            zavolá se, když se změní vykreslování (mapy nebo téma), aby se zahodily dlaždice v paměti
+	 *            zavolá se, když se změní vykreslování (mapy nebo téma, ne při prvním otevření), aby se zahodily dlaždice v paměti
 	 */
 	public OfflineMapy(final Runnable priZmene) {
 		this.priZmene = priZmene;
@@ -115,6 +115,8 @@ public class OfflineMapy {
 	}
 
 	private void otevri(final List<File> mapy) {
+		// Při prvním otevření nejsou na obrazovce dlaždice, které by změna zneplatnila; ohlášení by zahodilo i rozdělaná vykreslení.
+		final boolean zneplatnit = renderer != null || chyba != null;
 		zavriRenderer();
 		if (mapy.isEmpty()) {
 			chyba = new OfflineMapaChyba("Ve složce " + slozka + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
@@ -129,7 +131,9 @@ public class OfflineMapy {
 				log.warn("Offline mapu nejde otevřít: {}", e.getMessage());
 			}
 		}
-		priZmene.run();
+		if (zneplatnit) {
+			priZmene.run();
+		}
 	}
 
 	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
@@ -150,6 +154,9 @@ public class OfflineMapy {
 
 	/** Otevře mapy a načte téma předem, aby první dlaždice nečekaly; chyby se ukážou až na dlaždicích. Nevolat z EDT. */
 	public void predpriprav() {
+		if (getSlozka() == null) {
+			return; // složka ještě není nastavená, chyba „bez map“ by se zbytečně ohlásila
+		}
 		try {
 			pouzij().skonci();
 		} catch (final IOException | RuntimeException e) {
