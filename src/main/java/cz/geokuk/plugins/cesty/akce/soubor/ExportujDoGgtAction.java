@@ -9,7 +9,9 @@ import javax.swing.JFileChooser;
 
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.cesty.CestyChangedEvent;
+import cz.geokuk.plugins.cesty.data.Bod;
 import cz.geokuk.plugins.cesty.data.Doc;
+import cz.geokuk.plugins.kesoid.Wpt;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,7 +31,10 @@ public class ExportujDoGgtAction extends SouboeCestaAction0 {
 
 	@Override
 	public void actionPerformed(final ActionEvent e) {
-
+		if (!obsahujeKes(doc)) {
+			Dlg.info("Cesty neobsahují žádnou keš.", "Exportovat GGT");
+			return;
+		}
 		final JFileChooser fc = new JFileChooser();
 		fc.addChoosableFileFilter(new GgtFilter());
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -49,6 +54,18 @@ public class ExportujDoGgtAction extends SouboeCestaAction0 {
 			}
 		}
 		// TODO ukládat na pozadí
+	}
+
+	/** GGT obsahuje jen keše a waypointy; samotné body cesty se do něj nezapíšou. */
+	static boolean obsahujeKes(final Doc doc) {
+		if (doc != null) {
+			for (final Bod bod : doc.getBody()) {
+				if (bod.getMouable() instanceof Wpt) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public void onEvent(final CestyChangedEvent event) {

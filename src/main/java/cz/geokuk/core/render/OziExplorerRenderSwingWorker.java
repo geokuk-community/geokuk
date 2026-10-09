@@ -134,11 +134,11 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 		p.println("Reserved 2");
 		p.println("Magnetic Variation,,,E");
 		p.println("Map Projection,Latitude/Longitude,PolyCal,No,AutoCalOnly,No,BSBUseWPX,No");
-		int i = 0;
-		for (final Wgs kalibod : kalibody) {
-			i++;
-			final Point point = cocox.transform(kalibod.toMou());
-			printOziKalibracniBod(p, i, point.x, point.y, kalibod);
+		// Pixely z výpočtu bodů, zpětná transformace z Wgs by je posunula o pixel ven z obrázku.
+		final List<Point> pixely = RenderModel.kalibracniPixely(width, height, kalibrBodu);
+		for (int i = 0; i < kalibody.size(); i++) {
+			final Point point = pixely.get(i);
+			printOziKalibracniBod(p, i + 1, point.x, point.y, kalibody.get(i));
 		}
 		// printOziKalibracniBod(p, 1, 0, height, jz);
 		// printOziKalibracniBod(p, 2, width, 0, sv);
