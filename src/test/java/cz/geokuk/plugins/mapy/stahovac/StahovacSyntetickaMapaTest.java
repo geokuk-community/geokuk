@@ -121,17 +121,24 @@ public class StahovacSyntetickaMapaTest {
 			// Počítání dlaždic na pozadí by po doběhnutí sáhlo do už smazaných Preferences.
 			final Field f = JKachleOflinerDialog.class.getDeclaredField("kosw");
 			f.setAccessible(true);
+			final SwingWorker<?, ?>[] pocitani = new SwingWorker<?, ?>[1];
 			SwingUtilities.invokeAndWait(() -> {
 				try {
-					final SwingWorker<?, ?> pocitani = (SwingWorker<?, ?>) f.get(dialog);
-					if (pocitani != null) {
-						pocitani.cancel(true);
-					}
+					pocitani[0] = (SwingWorker<?, ?>) f.get(dialog);
 				} catch (final IllegalAccessException e) {
 					throw new IllegalStateException(e);
 				}
+				if (pocitani[0] != null) {
+					pocitani[0].cancel(true);
+				}
 				dialog.dispose();
 			});
+			final long konec = System.currentTimeMillis() + 10000;
+			while (pocitani[0] != null && !pocitani[0].isDone() && System.currentTimeMillis() < konec) {
+				Thread.sleep(10);
+			}
+			// SwingWorker posílá done() na EDT se zpožděním přes vlastní časovač (asi 33 ms).
+			Thread.sleep(200);
 			SwingUtilities.invokeAndWait(() -> {});
 		}
 		if (server != null) {
