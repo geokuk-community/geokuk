@@ -1,5 +1,10 @@
 # Změny
 
+## 6.4.0
+
+### Změny
+- Rychlejší načítání databází GeoGetu.
+
 ## 6.3.0
 
 ### Změny
