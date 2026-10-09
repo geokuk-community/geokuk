@@ -19,7 +19,7 @@ import cz.geokuk.util.file.KeFile;
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
 
-/** Bag s převzatými skupinami zdrojů je po každém přepnutí stejný jako bag načtený znovu od začátku. */
+/** Bag s převzatými skupinami zdrojů je po každém přepnutí stejný jako bag načtený znovu od začátku, i v pořadí waypointů a v indexu. */
 public class PrevzetiSkupinTest {
 
 	@Rule
@@ -123,7 +123,9 @@ public class PrevzetiSkupinTest {
 		cisty.vypnute.addAll(model.vypnute);
 		final KesBag znovu = nacti(new MultiNacitac(cisty), slozka, new Genom());
 
-		Assert.assertEquals(jmena(znovu.getWpts()), jmena(bag.getWpts()));
+		Assert.assertEquals("pořadí waypointů jako čisté načtení", jmena(znovu.getWpts()), jmena(bag.getWpts()));
+		Assert.assertEquals("pořadí v indexu jako čisté načtení", jmena(znovu.getIndexator().stream().collect(Collectors.toList())),
+				jmena(bag.getIndexator().stream().collect(Collectors.toList())));
 		final List<String> kesoidy = bag.getKesoidy().stream().map(k -> k.getIdentifier()).sorted().collect(Collectors.toList());
 		Assert.assertEquals("kešoidy bez duplicit", kesoidy.size(), new HashSet<>(kesoidy).size());
 		Assert.assertEquals(znovu.getKesoidy().stream().map(k -> k.getIdentifier()).sorted().collect(Collectors.toList()), kesoidy);
@@ -156,7 +158,7 @@ public class PrevzetiSkupinTest {
 	}
 
 	private static List<String> jmena(final List<Wpt> wpty) {
-		return wpty.stream().map(Wpt::getName).sorted().collect(Collectors.toList());
+		return wpty.stream().map(Wpt::getName).collect(Collectors.toList());
 	}
 
 	private static Map<String, Integer> pocty(final KesBag bag) {

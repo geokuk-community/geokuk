@@ -40,7 +40,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 
 	private ProcakDispatcher<GpxWpt> gpxWptDispatcher;
 
-	/** Waypointy v pořadí, v jakém půjdou do bagu, po úsecích: čtené waypointy, nebo převzatá skupina zdrojů i s hotovou částí bagu z minula. */
+	/** Waypointy v pořadí, v jakém půjdou do bagu, po úsecích: čtené waypointy, nebo převzatý zdroj se skupinou, do které patří, a její hotovou částí bagu z minula. */
 	private final List<Usek> useky = new ArrayList<>();
 	private Usek usek;
 	/** Části bagu převzatých skupin, které se postavily při posledním {@link #done()}, podle klíče skupiny. */
@@ -168,13 +168,21 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		final Progressor progressor = progressModel.start(pocet, "Indexování");
 		int citac = 0;
 		try {
+			// Hotová část platí, jen když skupina má stejný počet waypointů jako minule; jinak se skupina spočítá znovu.
+			final Map<Object, Integer> pocty = new HashMap<>();
 			for (final Usek u : useky) {
-				if (u.hotova != null && kesBag.pridejCast(u.hotova, u.wpty)) {
+				if (u.skupina != null) {
+					pocty.merge(u.skupina, u.wpty.size(), Integer::sum);
+				}
+			}
+			for (final Usek u : useky) {
+				final KesBag.Cast hotova = u.hotova != null && u.hotova.getPocetWpt() == pocty.get(u.skupina) ? u.hotova : null;
+				kesBag.zacniSkupinu(u.skupina, hotova);
+				if (hotova != null) {
+					kesBag.pridejHotove(u.wpty);
 					citac += u.wpty.size();
-					progressor.setProgress(citac);
 					continue;
 				}
-				kesBag.zacniUsek(u.skupina != null);
 				for (final Wpt wpt : u.wpty) {
 					kesBag.add(wpt);
 					if (++citac % 1000 == 0) {
@@ -192,13 +200,13 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	}
 
 	private void zapamatujCastiSkupin() {
-		int poradi = 0;
 		for (final Usek u : useky) {
-			final KesBag.Cast cast = u.skupina != null ? kesBag.getCast(poradi) : null;
-			if (cast != null && cast != u.hotova) {
-				castiSkupin.put(u.skupina, cast);
+			if (u.skupina != null && !castiSkupin.containsKey(u.skupina)) {
+				final KesBag.Cast cast = kesBag.getCast(u.skupina);
+				if (cast != null && cast != u.hotova) {
+					castiSkupin.put(u.skupina, cast);
+				}
 			}
-			poradi++;
 		}
 	}
 
@@ -279,34 +287,26 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	}
 
 	/**
-	 * Převezme zdroj ze skupiny minulého načtení, se kterou se nic jiného nepřekrývá: zapíše ho mezi zdroje s jeho počty; jeho waypointy přidá
-	 * {@link #prevezmiSkupinu(Object, List, KesBag.Cast)}.
+	 * Převezme waypointy zdroje ze skupiny minulého načtení, se kterou se nic jiného nepřekrývá: kešoidy už jsou spárované, neposílají se znovu procákům. Waypoint bez
+	 * souřadnic v minulém bagu nebyl a z kruhu kešoidu už je vyřazený, podruhé se přidat nesmí.
+	 *
+	 * @param skupina
+	 *            klíč skupiny; její kešoidy a nejvyšší hodnoty se počítají dohromady, po {@link #done()} jsou v {@link #getCastiSkupin()}
+	 * @param hotova
+	 *            část bagu skupiny z minula (stejná u všech členů), nebo null
 	 */
-	void prevezmiClena(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano) {
-		infoOCurrentnimZdroji = informaceOZdrojichBuilder.add(zdroj, true);
-		sberacKlicu = kliceZdroju.computeIfAbsent(zdroj.getFile(), f -> new KliceZdroje.Sberac());
+	void prevezmiZeSkupiny(final KeFile zdroj, final List<Wpt> stareWpty, final int celkem, final int brano, final Object skupina, final KesBag.Cast hotova) {
+		setCurrentlyLoading(zdroj, true);
+		usek = new Usek(skupina, hotova);
+		useky.add(usek);
+		for (final Wpt wpt : stareWpty) {
+			if (!wpt.hasEmptyCoords()) {
+				usek.wpty.add(wpt);
+			}
+		}
 		wptyPodleZdroje.put(zdroj.getFile(), stareWpty);
 		infoOCurrentnimZdroji.pocetWaypointuCelkem = celkem;
 		infoOCurrentnimZdroji.pocetWaypointuBranych = brano;
-	}
-
-	/**
-	 * Přidá waypointy převzaté skupiny v pořadí členů jako jeden úsek: kešoidy už jsou spárované, neposílají se znovu procákům. Waypoint bez souřadnic v minulém bagu
-	 * nebyl a z kruhu kešoidu už je vyřazený, podruhé se přidat nesmí.
-	 *
-	 * @param hotova
-	 *            část bagu skupiny z minula, nebo null; po {@link #done()} je nová v {@link #getCastiSkupin()}
-	 */
-	void prevezmiSkupinu(final Object skupina, final List<List<Wpt>> wptyClenu, final KesBag.Cast hotova) {
-		usek = new Usek(skupina, hotova);
-		useky.add(usek);
-		for (final List<Wpt> wpty : wptyClenu) {
-			for (final Wpt wpt : wpty) {
-				if (!wpt.hasEmptyCoords()) {
-					usek.wpty.add(wpt);
-				}
-			}
-		}
 	}
 
 	private void prevezmi(final KeFile zdroj, final List<Wpt> stareWpty) {

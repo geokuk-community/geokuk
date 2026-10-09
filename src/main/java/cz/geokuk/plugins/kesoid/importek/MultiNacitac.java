@@ -390,7 +390,6 @@ public class MultiNacitac {
 			}
 		}
 		final KesoidImportBuilder builder = cteni.builder;
-		final Set<SkupinyZdroju.Skupina> pridane = new HashSet<>();
 		for (final KeFile file : serazene) {
 			if (future != null && future.isCancelled()) {
 				break;
@@ -398,21 +397,18 @@ public class MultiNacitac {
 			final File soubor = file.getFile();
 			final SkupinyZdroju.Skupina skupina = skupinaClena.get(soubor);
 			if (skupina != null) {
-				// Waypointy celé skupiny jdou do bagu spolu na místě prvního člena; skupina nesdílí jména s ničím jiným, na pořadí výhry duplicit to nemá vliv.
-				if (pridane.add(skupina)) {
+				if (!cteni.poradiCasti.containsKey(skupina)) {
 					final List<File> poradiClenu = new ArrayList<>();
-					final List<List<Wpt>> wptyClenu = new ArrayList<>();
 					for (final KeFile f : serazene) {
 						if (skupinaClena.get(f.getFile()) == skupina) {
 							poradiClenu.add(f.getFile());
-							wptyClenu.add(skupina.wpty.getOrDefault(f.getFile(), Collections.<Wpt> emptyList()));
 						}
 					}
-					builder.prevezmiSkupinu(skupina, wptyClenu, poradiClenu.equals(skupina.poradiCasti) ? skupina.cast : null);
 					cteni.poradiCasti.put(skupina, poradiClenu);
 				}
+				final KesBag.Cast hotova = cteni.poradiCasti.get(skupina).equals(skupina.poradiCasti) ? skupina.cast : null;
 				final int[] pocty = skupina.pocty.get(soubor);
-				builder.prevezmiClena(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1]);
+				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1], skupina, hotova);
 				registr.hotovo(generace, soubor, pocty[0], pocty[1]);
 				continue;
 			}

@@ -57,23 +57,21 @@ public class KesBag {
 
 	private boolean indexatorOdevzdan = false;
 
-	/** Úseky seznamu waypointů; části skupin zdrojů mají vlastní kešoidy a nejvyšší hodnoty, které se příště převezmou celé. */
-	private final List<Usek> useky = new ArrayList<>();
-	private Usek usek;
+	/** Skupiny zdrojů v bagu: kešoidy a nejvyšší hodnoty se počítají za skupinu zvlášť a příště se převezmou celé. */
+	private final Map<Object, Skupina> skupiny = new LinkedHashMap<>();
+	/** Skupina, do které jdou právě přidávané waypointy, nebo null. */
+	private Skupina skupina;
 
-	private static final class Usek {
-		final int od;
-		final boolean castSkupiny;
+	private static final class Skupina {
 		final Cast hotova;
 		Set<Kesoid> kesoidy;
-		List<Kesoid> kesoidySkupiny;
+		List<Kesoid> seznamKesoidu;
+		int pocetWpt;
 		int maxBestOf, maxHodnoceni, maxFavorit;
 
-		Usek(final int od, final boolean castSkupiny, final Cast hotova) {
-			this.od = od;
-			this.castSkupiny = castSkupiny;
+		Skupina(final Cast hotova) {
 			this.hotova = hotova;
-			if (castSkupiny && hotova == null) {
+			if (hotova == null) {
 				kesoidy = new HashSet<>();
 			}
 		}
@@ -85,12 +83,16 @@ public class KesBag {
 		final List<Kesoid> kesoidy;
 		final int maxBestOf, maxHodnoceni, maxFavorit;
 
-		Cast(final int pocetWpt, final Usek u, final List<Kesoid> kesoidy) {
-			this.pocetWpt = pocetWpt;
-			this.kesoidy = kesoidy;
-			maxBestOf = u.maxBestOf;
-			maxHodnoceni = u.maxHodnoceni;
-			maxFavorit = u.maxFavorit;
+		Cast(final Skupina s) {
+			pocetWpt = s.pocetWpt;
+			kesoidy = s.seznamKesoidu;
+			maxBestOf = s.maxBestOf;
+			maxHodnoceni = s.maxHodnoceni;
+			maxFavorit = s.maxFavorit;
+		}
+
+		public int getPocetWpt() {
+			return pocetWpt;
 		}
 	}
 
@@ -126,13 +128,14 @@ public class KesBag {
 
 		final Kesoid kesoid = wpt.getKesoid();
 		wpts.add(wpt);
-		if (usek != null && usek.castSkupiny) {
-			usek.kesoidy.add(kesoid);
+		if (skupina != null) {
+			skupina.kesoidy.add(kesoid);
+			skupina.pocetWpt++;
 			if (kesoid instanceof Kes) {
 				final Kes kes = (Kes) kesoid;
-				usek.maxBestOf = Math.max(usek.maxBestOf, kes.getBestOf());
-				usek.maxHodnoceni = Math.max(usek.maxHodnoceni, kes.getHodnoceni());
-				usek.maxFavorit = Math.max(usek.maxFavorit, kes.getFavorit());
+				skupina.maxBestOf = Math.max(skupina.maxBestOf, kes.getBestOf());
+				skupina.maxHodnoceni = Math.max(skupina.maxHodnoceni, kes.getHodnoceni());
+				skupina.maxFavorit = Math.max(skupina.maxFavorit, kes.getFavorit());
 			}
 		} else {
 			kesoidyset.add(kesoid);
@@ -147,43 +150,37 @@ public class KesBag {
 	}
 
 	/**
-	 * Následující waypointy tvoří úsek. Část skupiny zdrojů si počítá kešoidy a nejvyšší hodnoty zvlášť, po {@link #done()} je vrátí {@link #getCast(int)}. Části
-	 * skupin nesdílejí kešoidy s ničím jiným v bagu.
+	 * Následující waypointy patří skupině zdrojů (null: čtené waypointy). Skupina si počítá kešoidy a nejvyšší hodnoty zvlášť, po {@link #done()} je vrátí
+	 * {@link #getCast(Object)}; s ničím jiným v bagu kešoidy nesdílí. Waypointy skupiny mohou přijít ve víc úsecích, na místech jejích zdrojů.
+	 *
+	 * @param hotova
+	 *            část skupiny z minula; její waypointy se pak přidají {@link #pridejHotove(List)}, bez počítání po waypointech
 	 */
-	public void zacniUsek(final boolean castSkupiny) {
-		usek = new Usek(wpts.size(), castSkupiny, null);
-		useky.add(usek);
+	public void zacniSkupinu(final Object klic, final Cast hotova) {
+		skupina = klic == null ? null : skupiny.computeIfAbsent(klic, k -> new Skupina(hotova));
 	}
 
-	/**
-	 * Převezme hotovou část skupiny i s jejími waypointy bez počítání po waypointech, jen alely se počítají znovu (genom mohl od minula přibrat geny).
-	 *
-	 * @return false, když část k waypointům nepatří (jiný počet); pak se mají přidat po jednom do {@link #zacniUsek(boolean) nové části}
-	 */
-	public boolean pridejCast(final Cast cast, final List<Wpt> wpty) {
+	/** Přidá waypointy hotové části skupiny; jen alely se počítají znovu (genom mohl od minula přibrat geny). */
+	public void pridejHotove(final List<Wpt> wpty) {
 		if (indexatorOdevzdan || indexator != null) {
 			throw new IllegalStateException("Indexator uz byl odevztdan");
 		}
-		if (cast.pocetWpt != wpty.size()) {
-			return false;
-		}
-		usek = new Usek(wpts.size(), true, cast);
-		useky.add(usek);
 		wpts.addAll(wpty);
 		for (final Wpt wpt : wpty) {
 			wpt.getGenotyp().countTo(citacAlel);
 		}
-		return true;
 	}
 
-	/** Hotová část pro úsek v pořadí vzniku, po {@link #done()}; null u úseku, který není částí skupiny, nebo u prázdné části. */
-	public Cast getCast(final int poradiUseku) {
-		final Usek u = useky.get(poradiUseku);
-		final int doo = poradiUseku + 1 < useky.size() ? useky.get(poradiUseku + 1).od : wpts.size();
-		if (!u.castSkupiny || doo == u.od) {
+	/** Část skupiny po {@link #done()}: hotová převzatá, nebo nově spočítaná; null u skupiny bez waypointů. */
+	public Cast getCast(final Object klic) {
+		final Skupina s = skupiny.get(klic);
+		if (s == null) {
 			return null;
 		}
-		return u.hotova != null ? u.hotova : new Cast(doo - u.od, u, u.kesoidySkupiny);
+		if (s.hotova != null) {
+			return s.hotova;
+		}
+		return s.pocetWpt == 0 ? null : new Cast(s);
 	}
 
 	public void done() {
@@ -191,25 +188,25 @@ public class KesBag {
 		wpts.trimToSize();
 		postavIndex();
 		int pocet = kesoidyset.size();
-		for (final Usek u : useky) {
-			pocet += u.hotova != null ? u.hotova.kesoidy.size() : u.kesoidy != null ? u.kesoidy.size() : 0;
+		for (final Skupina s : skupiny.values()) {
+			pocet += s.hotova != null ? s.hotova.kesoidy.size() : s.kesoidy.size();
 		}
 		kesoidy = new ArrayList<>(pocet);
 		kesoidy.addAll(kesoidyset);
-		for (final Usek u : useky) {
-			if (u.hotova != null) {
-				kesoidy.addAll(u.hotova.kesoidy);
-				maximalniBestOf = Math.max(maximalniBestOf, u.hotova.maxBestOf);
-				maximalniHodnoceni = Math.max(maximalniHodnoceni, u.hotova.maxHodnoceni);
-				maximalniFavorit = Math.max(maximalniFavorit, u.hotova.maxFavorit);
-			} else if (u.kesoidy != null) {
+		for (final Skupina s : skupiny.values()) {
+			if (s.hotova != null) {
+				kesoidy.addAll(s.hotova.kesoidy);
+				maximalniBestOf = Math.max(maximalniBestOf, s.hotova.maxBestOf);
+				maximalniHodnoceni = Math.max(maximalniHodnoceni, s.hotova.maxHodnoceni);
+				maximalniFavorit = Math.max(maximalniFavorit, s.hotova.maxFavorit);
+			} else {
 				// Množina se po dokončení nedrží, část si nese jen seznam.
-				u.kesoidySkupiny = new ArrayList<>(u.kesoidy);
-				u.kesoidy = null;
-				kesoidy.addAll(u.kesoidySkupiny);
-				maximalniBestOf = Math.max(maximalniBestOf, u.maxBestOf);
-				maximalniHodnoceni = Math.max(maximalniHodnoceni, u.maxHodnoceni);
-				maximalniFavorit = Math.max(maximalniFavorit, u.maxFavorit);
+				s.seznamKesoidu = new ArrayList<>(s.kesoidy);
+				s.kesoidy = null;
+				kesoidy.addAll(s.seznamKesoidu);
+				maximalniBestOf = Math.max(maximalniBestOf, s.maxBestOf);
+				maximalniHodnoceni = Math.max(maximalniHodnoceni, s.maxHodnoceni);
+				maximalniFavorit = Math.max(maximalniFavorit, s.maxFavorit);
 			}
 		}
 		kesoidyset = null;
