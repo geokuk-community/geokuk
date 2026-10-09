@@ -17,6 +17,32 @@ public class JPrehledSouboruTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
+	@Test
+	public void bublinyNacitatAzPoVybraniRadiTabulkuZdroju() {
+		final JPrehledSouboru panel = new JPrehledSouboru(null);
+		int pocet = 0;
+		for (final javax.swing.JCheckBox c : checkboxy(panel)) {
+			if ("Načítat až po vybrání".equals(c.getText())) {
+				pocet++;
+				Assert.assertTrue(c.getToolTipText(), c.getToolTipText().contains("„Zdroje:“ ve stavovém řádku") && c.getToolTipText().contains("Soubor &gt; Přehled zdrojů"));
+			}
+		}
+		Assert.assertEquals(2, pocet);
+	}
+
+	private static List<javax.swing.JCheckBox> checkboxy(final java.awt.Container kde) {
+		final List<javax.swing.JCheckBox> vysledek = new ArrayList<>();
+		for (final java.awt.Component c : kde.getComponents()) {
+			if (c instanceof javax.swing.JCheckBox) {
+				vysledek.add((javax.swing.JCheckBox) c);
+			}
+			if (c instanceof java.awt.Container) {
+				vysledek.addAll(checkboxy((java.awt.Container) c));
+			}
+		}
+		return vysledek;
+	}
+
 	/** „Načítat až po vybrání“ a nová složka GSAK v jednom uložení: model musí dostat volbu dřív než složku. */
 	@Test
 	public void volbaGsakSeUloziPredSlozkami() throws Exception {
