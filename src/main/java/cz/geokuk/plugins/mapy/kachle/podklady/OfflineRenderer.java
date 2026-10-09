@@ -193,6 +193,11 @@ final class OfflineRenderer {
 		return tema;
 	}
 
+	/** Soubor se symboly použitého tématu, null = symboly se neukládají. */
+	File getSouborSymbolu() {
+		return tema.grafika instanceof GrafikaOfflineMapy ? ((GrafikaOfflineMapy) tema.grafika).getSoubor() : null;
+	}
+
 	String getChybaTematu() {
 		return tema.chyba;
 	}

@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.*;
 
 import javax.imageio.ImageIO;
@@ -65,6 +65,26 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(offline, "o0000002a"));
 		Assert.assertNull(manager.load(offline, "o0000002b"));
 		Assert.assertNull(manager.load(offline));
+	}
+
+	@Test
+	public void smazaniStarychDlazdicOfflineMapy() throws Exception {
+		final List<ItemToSave> dlazdice = new ArrayList<>();
+		for (int i = 0; i < 2500; i++) {
+			final Ka offline = new Ka(KaLoc.ofJZ(new Mou(0x40000000 + (i << 19), 0x20000000), 13), EKaType.OFFLINE_MF);
+			dlazdice.add(new ItemToSave(offline, i % 2 == 0 ? "o00000001" : "o00000002", png()));
+		}
+		final Ka nova = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
+		dlazdice.add(new ItemToSave(nova, "o00000003", png()));
+		dlazdice.add(new ItemToSave(KACHLE, png()));
+		Assert.assertTrue(manager.save(dlazdice));
+
+		Assert.assertEquals(1250, manager.smazOfflineKrome(new HashSet<>(Arrays.asList("o00000002", "o00000003"))));
+		Assert.assertNull(manager.load(dlazdice.get(0).key, "o00000001"));
+		Assert.assertNotNull(manager.load(dlazdice.get(1).key, "o00000002"));
+		Assert.assertNotNull(manager.load(nova, "o00000003"));
+		Assert.assertNotNull("jiné podklady zůstávají", manager.load(KACHLE));
+		Assert.assertEquals(0, manager.smazOfflineKrome(new HashSet<>(Arrays.asList("o00000002", "o00000003"))));
 	}
 
 	@Test
