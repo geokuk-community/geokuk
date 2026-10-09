@@ -37,6 +37,9 @@
   mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
   vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
   ukazatel výkonu v rohu mapy.
+- Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
+  ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
+  dokreslení se nahradí ostrou.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
