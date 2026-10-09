@@ -75,6 +75,10 @@ public class KachleZiskavac {
 			//System.out.println("Vytvořena kachlice pro: " + ka);
 		}
 
+		synchronized Image getImage() {
+			return image;
+		}
+
 		synchronized void ziskej(final ImageReceiver ir) {
 			if (image != null) {
 				// Když už ho máme, tak nás nic nezajímá, ani ho nemusíme zaregistrovávat do seznamu
@@ -676,6 +680,12 @@ public class KachleZiskavac {
 		chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
 		diagnosticsData.send(e.toString());
 		return e;
+	}
+
+	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
+	public Image nahledZPameti(final Ka ka) {
+		final Kachlice kachlice = kachlmap.getIfPresent(ka);
+		return kachlice == null ? null : kachlice.getImage();
 	}
 
 	/**

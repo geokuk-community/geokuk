@@ -3,6 +3,7 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 import java.awt.*;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import javax.swing.JComponent;
@@ -48,6 +49,8 @@ public class JKachle extends JComponent {
 
 	private Kanceler kanceler;
 	private Image image;
+	/** Dočasný výřez dlaždice z jiného měřítka, dokud není vlastní obrázek. */
+	private List<NahledDlazdice> nahled = Collections.emptyList();
 
 	private boolean jeTamUzCelyObrazek;
 
@@ -135,6 +138,11 @@ public class JKachle extends JComponent {
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
+		synchronized (this) {
+			if (image == null && nahled.isEmpty() && ka.getType().isOffline() && priorita != Priority.STAHOVANI) {
+				nahled = NahledDlazdice.najdi(ka, kachleModel.getZiskavac()::nahledZPameti, KACHLE_WIDTH);
+			}
+		}
 		final KaOneReq req = new KaOneReq(ka, kastat -> {
 
 			if (priorita == Priority.STAHOVANI) {
@@ -143,6 +151,7 @@ public class JKachle extends JComponent {
 			synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
 				if (kastat.getImg() != null) {
 					image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
+					nahled = Collections.emptyList();
 					chyba = null;
 					chybVRade = 0;
 				} else {
@@ -199,11 +208,18 @@ public class JKachle extends JComponent {
 				g.drawImage(image, 0, 0, KACHLE_WIDTH, KACHLE_HEIGHT, null);
 			}
 		}
+		if (image == null) {
+			for (final NahledDlazdice n : nahled) {
+				n.kresli(g);
+			}
+		}
 		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
-			g.setColor(Color.GRAY);
-			drawPsanicko(g);
+			if (nahled.isEmpty()) {
+				g.setColor(Color.GRAY);
+				drawPsanicko(g);
+			}
 			vypisChybu(g);
-		} else if (image == null || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+		} else if (image == null && nahled.isEmpty() || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
 			g.setColor(Color.blue);
 			drawPsanicko(g);
 			g.setColor(Color.RED);

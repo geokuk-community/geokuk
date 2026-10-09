@@ -26,6 +26,9 @@
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
+- Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
+  ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
+  dokreslení se nahradí ostrou.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
