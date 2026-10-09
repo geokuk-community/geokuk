@@ -26,6 +26,8 @@
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
+- Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
+  asi o čtvrtinu rychleji.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
