@@ -212,7 +212,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		if (jKachle.jeChybna()) {
 			EventQueue.invokeLater(opakovaniChybnych::start);
 		}
-		if (katype != null && katype.isOffline() && priorita == Priority.KACHLE) {
+		if (katype != null && katype.isOffline() && priorita == Priority.KACHLE && PredvykresleniOkoli.jeVhodne(Runtime.getRuntime().availableProcessors())) {
 			EventQueue.invokeLater(this::moznaPredvykreslit);
 		}
 	}

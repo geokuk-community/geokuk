@@ -19,6 +19,13 @@ import cz.geokuk.plugins.mapy.kachle.podklady.Kanceler;
  */
 final class PredvykresleniOkoli {
 
+	/** Rozdělanou dlaždici nejde zrušit, na malém počítači by zabrala velkou část vláken vykreslování. */
+	static final int MIN_JADER = 5;
+
+	static boolean jeVhodne(final int jader) {
+		return jader >= MIN_JADER;
+	}
+
 	private final BiFunction<Ka, ImageReceiver, Kanceler> zdroj;
 
 	private final Deque<Ka> fronta = new ArrayDeque<>();
