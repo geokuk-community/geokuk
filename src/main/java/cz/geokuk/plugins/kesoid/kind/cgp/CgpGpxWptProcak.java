@@ -301,9 +301,23 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 
 	private boolean isCzechGeodeticPoint(final GpxWpt gpxWpt) {
 		// TODO: Je špatné rozpoznávat geokeše podle prefixu GC - jsou systémy (Geocaching.su, OpenCaching, ...) které tento prefix nemají a přitom to jsou keše! [2016-04-09, Bohusz]
-		return gpxWpt.groundspeak != null && (gpxWpt.name.startsWith(GC) && gpxWpt.name.length() == 8 || gpxWpt.name.matches("^(TrB_|ZhB_|BTP_|ZGS_).*$") || "DATAZ".equals(gpxWpt.groundspeak.owner));
+		return gpxWpt.groundspeak != null && (gpxWpt.name.startsWith(GC) && gpxWpt.name.length() == 8 || maPrefixBodu(gpxWpt.name) || "DATAZ".equals(gpxWpt.groundspeak.owner));
 	}
 
+
+	/** Totéž co name.matches("^(TrB_|ZhB_|BTP_|ZGS_).*$") bez regulárního výrazu na každý waypoint; tečka v regexu nepřijme konec řádku. */
+	static boolean maPrefixBodu(final String name) {
+		if (!(name.startsWith("TrB_") || name.startsWith("ZhB_") || name.startsWith("BTP_") || name.startsWith("ZGS_"))) {
+			return false;
+		}
+		for (int i = 4; i < name.length(); i++) {
+			final char c = name.charAt(i);
+			if (c == '\n' || c == '\r' || c == '\u0085' || c == '\u2028' || c == '\u2029') {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	private boolean isWaymarkNormal(final GpxWpt gpxWpt) {
 		//wpt.setNazev(gpxwpt.link.text);
