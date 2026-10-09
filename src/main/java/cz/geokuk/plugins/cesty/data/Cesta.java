@@ -252,7 +252,7 @@ public class Cesta implements Iterable<Bousek0> {
 	}
 
 	public boolean isJednobodova() {
-		return start.equals(cil);
+		return start != null && start.equals(cil);
 	}
 
 	public boolean isKruh() {
