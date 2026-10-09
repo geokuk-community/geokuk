@@ -191,7 +191,13 @@ public class JKachle extends JComponent {
 
 	private void kresli(final Graphics2D g) {
 		if (image != null) {
-			g.drawImage(image, 0, 0, null);
+			if (image.getWidth(null) == KACHLE_WIDTH) {
+				g.drawImage(image, 0, 0, null);
+			} else {
+				// Dlaždice pro displej s měřítkem má víc pixelů, na obrazovce pokrývá stejnou plochu.
+				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				g.drawImage(image, 0, 0, KACHLE_WIDTH, KACHLE_HEIGHT, null);
+			}
 		}
 		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
 			g.setColor(Color.GRAY);

@@ -25,6 +25,8 @@ public class OfflineMapy {
 	/** Kam se ukládají vykreslené symboly témat, null = nikam. */
 	private File slozkaSymbolu;
 	private TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
+	/** Měřítko displeje (1 = 100 %), podle něj se kreslí větší dlaždice. */
+	private double meritko = 1;
 
 	private OfflineRenderer renderer;
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
@@ -49,6 +51,26 @@ public class OfflineMapy {
 		this.slozka = slozka;
 		this.tema = tema;
 		otiskSlozky = null;
+	}
+
+	/** Nastaví měřítko displeje, zaokrouhlené na čtvrtiny v rozsahu 1–3; při změně se mapy vykreslí znovu. */
+	public synchronized void nastavMeritko(final double meritkoDispleje) {
+		final double m = zaokrouhliMeritko(meritkoDispleje);
+		if (m != meritko) {
+			meritko = m;
+			otiskSlozky = null;
+		}
+	}
+
+	static double zaokrouhliMeritko(final double meritkoDispleje) {
+		if (Double.isNaN(meritkoDispleje)) {
+			return 1;
+		}
+		return Math.max(1, Math.min(3, Math.round(meritkoDispleje * 4) / 4.0));
+	}
+
+	public synchronized double getMeritko() {
+		return meritko;
 	}
 
 	public synchronized void setSlozkaSymbolu(final File slozkaSymbolu) {
@@ -107,7 +129,7 @@ public class OfflineMapy {
 	}
 
 	private String otisk(final List<File> mapy) {
-		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n');
+		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n').append(meritko).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
@@ -137,11 +159,11 @@ public class OfflineMapy {
 	}
 
 	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
-		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk())) {
+		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk()) && nacteneTema.meritko == meritko) {
 			return nacteneTema;
 		}
 		uvolniTema();
-		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu);
+		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu, meritko);
 		return nacteneTema;
 	}
 

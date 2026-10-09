@@ -311,6 +311,35 @@ public class OfflineMapyTest {
 		}
 	}
 
+	/** Na displeji s měřítkem má dlaždice víc pixelů a vlastní místo v cache. */
+	@Test
+	public void dlazdiceProMeritkoDispleje() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final String klic100 = klic();
+		Assert.assertEquals(256, ((BufferedImage) vyrendruj(STRED_Z15).getImg()).getWidth());
+		mapy.nastavMeritko(1.5);
+		final BufferedImage img150 = (BufferedImage) vyrendruj(STRED_Z15).getImg();
+		Assert.assertEquals(384, img150.getWidth());
+		Assert.assertEquals(384, img150.getHeight());
+		final String klic150 = klic();
+		Assert.assertNotEquals(klic100, klic150);
+		Assert.assertEquals("změna měřítka zneplatní dlaždice v paměti", 1, zmen.get());
+		mapy.nastavMeritko(2);
+		Assert.assertEquals(512, ((BufferedImage) vyrendruj(STRED_Z15).getImg()).getWidth());
+		mapy.nastavMeritko(1.5);
+		Assert.assertEquals(klic150, klic());
+	}
+
+	@Test
+	public void meritkoNaCtvrtiny() {
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliMeritko(1.0), 0);
+		Assert.assertEquals(1.25, OfflineMapy.zaokrouhliMeritko(1.24), 0);
+		Assert.assertEquals(1.5, OfflineMapy.zaokrouhliMeritko(1.5), 0);
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliMeritko(0.5), 0);
+		Assert.assertEquals(3, OfflineMapy.zaokrouhliMeritko(4), 0);
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliMeritko(Double.NaN), 0);
+	}
+
 	@Test
 	public void temaZTextuAZpet() {
 		Assert.assertSame(TemaOfflineMapy.VYCHOZI, TemaOfflineMapy.zTextu(""));
