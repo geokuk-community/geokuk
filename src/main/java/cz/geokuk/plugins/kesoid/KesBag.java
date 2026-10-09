@@ -37,7 +37,7 @@ import cz.geokuk.util.lang.CounterMap;
 public class KesBag {
 	//
 
-	private final List<Wpt> wpts = new ArrayList<>();
+	private final ArrayList<Wpt> wpts;
 	private Set<Kesoid> kesoidyset;
 	private List<Kesoid> kesoidy;
 
@@ -58,7 +58,13 @@ public class KesBag {
 	private boolean indexatorOdevzdan = false;
 
 	public KesBag(final Genom genom) {
+		this(genom, 10);
+	}
+
+	/** S místem pro očekávaný počet waypointů, aby seznam při přidávání nerostl. */
+	public KesBag(final Genom genom, final int ocekavanyPocetWpt) {
 		this.genom = genom;
+		wpts = new ArrayList<>(ocekavanyPocetWpt);
 		kesoidyset = new HashSet<>();
 		citacAlel = genom.createCitacAlel();
 	}
@@ -94,6 +100,8 @@ public class KesBag {
 	}
 
 	public void done() {
+		// Filtr přidá jen část z místa pro všechny waypointy.
+		wpts.trimToSize();
 		postavIndex();
 		kesoidy = new ArrayList<>(kesoidyset.size());
 		kesoidy.addAll(kesoidyset);

@@ -5,7 +5,7 @@
 
 	<groupId>cz.geokuk</groupId>
 	<artifactId>geokuk</artifactId>
-	<version>6.3.0</version>
+	<version>6.4.0</version>
 
 	<build>
 		<resources>
@@ -23,6 +23,7 @@
 				<includes>
 					<include>THIRD-PARTY.txt</include>
 					<include>MAPOVE-PODKLADY.txt</include>
+					<include>LGPL-3.0.txt</include>
 				</includes>
 			</resource>
 			<resource>
@@ -191,6 +192,33 @@
 			<version>3.53.4.0</version>
 		</dependency>
 
+		<!-- Offline vektorové mapy (.map) -->
+		<dependency>
+			<groupId>org.mapsforge</groupId>
+			<artifactId>mapsforge-core</artifactId>
+			<version>${mapsforge.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapsforge</groupId>
+			<artifactId>mapsforge-map</artifactId>
+			<version>${mapsforge.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapsforge</groupId>
+			<artifactId>mapsforge-map-reader</artifactId>
+			<version>${mapsforge.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapsforge</groupId>
+			<artifactId>mapsforge-map-awt</artifactId>
+			<version>${mapsforge.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapsforge</groupId>
+			<artifactId>mapsforge-themes</artifactId>
+			<version>${mapsforge.version}</version>
+		</dependency>
+
 
 		<!-- testing: JUnit -->
 		<dependency>
@@ -264,5 +292,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<geokuk.version>${project.version}</geokuk.version>
 		<geokuk.commit></geokuk.commit>
+		<mapsforge.version>0.25.0</mapsforge.version>
 	</properties>
 </project>

@@ -1,5 +1,15 @@
 # Změny
 
+## 6.4.0
+
+### Změny
+- Rychlejší načítání databází GeoGetu.
+- Rychlejší zobrazení keší po načtení a po změně filtru.
+
+### Vývoj
+- Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
+  (GNU LGPL 3) je ve složce `licence` a v okně O programu.
+
 ## 6.3.0
 
 ### Změny

@@ -50,6 +50,25 @@ public class VzdalenostAUtmTest {
 		Assert.assertEquals(-10, FGeoKonvertor.normalizujUhel(350), 1e-9);
 	}
 
+	@Test
+	public void normalizaceBitoveStejnaJakoIEEEremainder() {
+		final double[] hrany = { 0.0, -0.0, 180, -180, 179.99999999999997, -179.99999999999997, Math.nextDown(180.0), Math.nextUp(-180.0), Math.nextDown(-180.0), 360, -360, 540,
+				Double.MIN_VALUE, -Double.MIN_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, 50.0755, 14.4378, -0.5, 1e-300 };
+		for (final double u : hrany) {
+			assertBitoveStejne(u);
+		}
+		final java.util.Random r = new java.util.Random(42);
+		for (int i = 0; i < 1_000_000; i++) {
+			assertBitoveStejne((r.nextDouble() - 0.5) * (i % 2 == 0 ? 400 : 1e6));
+		}
+	}
+
+	private static void assertBitoveStejne(final double u) {
+		final double r = Math.IEEEremainder(u, 360.0);
+		final double puvodni = r >= 180 ? r - 360 : r;
+		Assert.assertEquals("úhel " + u, Double.doubleToRawLongBits(puvodni), Double.doubleToRawLongBits(FGeoKonvertor.normalizujUhel(u)));
+	}
+
 	@Test(expected = RuntimeException.class)
 	public void normalizaceNaN() {
 		FGeoKonvertor.normalizujUhel(Double.NaN);

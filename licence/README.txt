@@ -4,6 +4,7 @@ GeoKuk – licence
 Tato složka obsahuje licence GeoKuku a toho, co GeoKuk používá.
 
   LICENSE              GNU GPL verze 3, licence GeoKuku
+  LGPL-3.0.txt         GNU LGPL verze 3, licence knihovny mapsforge
   THIRD-PARTY.txt      použité knihovny a jejich licence
   MAPOVE-PODKLADY.txt  mapové podklady: poskytovatelé, licence, atribuce
                        a odkazy na jejich podmínky

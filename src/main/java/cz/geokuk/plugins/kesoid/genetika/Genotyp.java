@@ -194,6 +194,7 @@ public class Genotyp implements Indexable {
 
 	private Set<Alela> alely;
 	private int minulyPocetGenu;
+	private PoleAlel poleAlel;
 
 	/**
 	 * @return Sezanm všech alel aktuálně přiřazených ke genu všetně defaultních alel.
@@ -264,11 +265,27 @@ public class Genotyp implements Indexable {
 	}
 
 	public void countTo(final CitacAlel citacAlel) {
-		for (final Alela alela : getAlely()) {
+		final Set<Alela> alely = getAlely();
+		PoleAlel pole = poleAlel;
+		if (pole == null || pole.zdroj != alely) {
+			pole = new PoleAlel(alely);
+			poleAlel = pole;
+		}
+		for (final Alela alela : pole.alely) {
 			assert alela != null;
 			citacAlel.add(alela);
 		}
+	}
 
+	/** Alely z getAlely() jako pole; počítá se pro každý waypoint a průchod HashSetem je pomalý. */
+	private static final class PoleAlel {
+		final Set<Alela> zdroj;
+		final Alela[] alely;
+
+		PoleAlel(final Set<Alela> zdroj) {
+			this.zdroj = zdroj;
+			alely = zdroj.toArray(new Alela[0]);
+		}
 	}
 
 	/**
