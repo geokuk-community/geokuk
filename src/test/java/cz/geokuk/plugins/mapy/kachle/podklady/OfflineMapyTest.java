@@ -360,4 +360,45 @@ public class OfflineMapyTest {
 		Assert.assertTrue(r.isZavreny());
 		Assert.assertFalse(r.zacni());
 	}
+
+	/** Nastavení a dotazy z EDT nečekají, až jiné vlákno pod zámkem otevře mapy nebo načte téma. */
+	@Test
+	public void nastaveniNecekaNaOtevreniMap() throws Exception {
+		final java.util.concurrent.CountDownLatch drzi = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch pust = new java.util.concurrent.CountDownLatch(1);
+		final Thread otevira = new Thread(() -> {
+			synchronized (mapy) {
+				drzi.countDown();
+				try {
+					pust.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		});
+		otevira.start();
+		drzi.await();
+		final java.util.concurrent.ExecutorService edt = java.util.concurrent.Executors.newSingleThreadExecutor();
+		try {
+			final java.util.concurrent.Future<?> nastaveni = edt.submit(() -> {
+				mapy.nastavMeritko(1.5);
+				mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
+				mapy.setSlozkaSymbolu(null);
+				Assert.assertEquals(1.5, mapy.getMeritko(), 0);
+				Assert.assertEquals(TemaOfflineMapy.zTextu("OSMARENDER"), mapy.getTema());
+				Assert.assertEquals(slozka, mapy.getSlozka());
+				Assert.assertNull(mapy.getChybaTematu());
+				return null;
+			});
+			try {
+				nastaveni.get(2, java.util.concurrent.TimeUnit.SECONDS);
+			} catch (final java.util.concurrent.TimeoutException e) {
+				Assert.fail("nastavení čeká na zámek otevírání map");
+			}
+		} finally {
+			pust.countDown();
+			otevira.join();
+			edt.shutdown();
+		}
+	}
 }

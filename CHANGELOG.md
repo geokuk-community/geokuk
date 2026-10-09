@@ -21,6 +21,8 @@
   v Soubor > Umístění souborů na kartě Mapy.
 - Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
   asi o čtvrtinu rychleji.
+- Posun a změna měřítka offline mapy nečekají, až se na pozadí otevře mapa
+  nebo načte téma.
 - Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
   i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
