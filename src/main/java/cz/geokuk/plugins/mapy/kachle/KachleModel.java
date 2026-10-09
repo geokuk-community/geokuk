@@ -164,6 +164,7 @@ public class KachleModel extends Model0 {
 	}
 
 	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
+		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
 		predpripravOfflineMapu();
 	}

@@ -22,6 +22,8 @@ public class OfflineMapy {
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
 
 	private File slozka;
+	/** Kam se ukládají vykreslené symboly témat, null = nikam. */
+	private File slozkaSymbolu;
 	private TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
 
 	private OfflineRenderer renderer;
@@ -47,6 +49,10 @@ public class OfflineMapy {
 		this.slozka = slozka;
 		this.tema = tema;
 		otiskSlozky = null;
+	}
+
+	public synchronized void setSlozkaSymbolu(final File slozkaSymbolu) {
+		this.slozkaSymbolu = slozkaSymbolu;
 	}
 
 	public synchronized File getSlozka() {
@@ -131,7 +137,7 @@ public class OfflineMapy {
 			return nacteneTema;
 		}
 		uvolniTema();
-		nacteneTema = OfflineRenderer.nactiTema(tema);
+		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu);
 		return nacteneTema;
 	}
 
