@@ -20,7 +20,8 @@ public class Groundspeak {
 	public String container;
 	public String shortDescription;
 	/** Hint, který se načte až při zobrazení, když není v {@link #encodedHints}. */
-	public java.util.function.Supplier<String> hintZDatabaze;
+	/** Dotahovač hintu z databáze podle kódu keše. */
+	public java.util.function.Function<String, String> hintZDatabaze;
 
 	@Override
 	public String toString() {

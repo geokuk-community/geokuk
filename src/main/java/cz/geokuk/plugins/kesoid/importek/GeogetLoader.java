@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
 import java.sql.*;
+import java.util.function.Function;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.*;
@@ -145,6 +146,7 @@ public class GeogetLoader extends Nacitac0 {
 	}
 
 	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
+		final Function<String, String> hint = HintZDatabaze.dotahovac(file, HintZDatabaze.GEOGET);
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
@@ -181,7 +183,7 @@ public class GeogetLoader extends Nacitac0 {
 					groundspeak.terrain = intern(rs.getString(K_TERRAIN));
 					groundspeak.country = intern(rs.getString(K_COUNTRY));
 					groundspeak.state = intern(rs.getString(K_STATE));
-					groundspeak.hintZDatabaze = HintZDatabaze.dotahovac(file, HintZDatabaze.GEOGET, kod);
+					groundspeak.hintZDatabaze = hint;
 
 					final int cacheStatus = rs.getInt(K_CACHESTATUS);
 					switch (cacheStatus) {
