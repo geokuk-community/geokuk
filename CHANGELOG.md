@@ -22,6 +22,8 @@
 - Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
   i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
+- Vykreslená dlaždice offline mapy se zobrazí hned; do cache se převádí
+  a ukládá až na pozadí.
 - Offline mapa po zobrazení celé obrazovky na pozadí předvykreslí dlaždice
   kolem okna, takže posun mapy o kousek je okamžitý. Posun nebo změna
   měřítka předvykreslování přeruší, aby nezdrželo viditelné dlaždice.
