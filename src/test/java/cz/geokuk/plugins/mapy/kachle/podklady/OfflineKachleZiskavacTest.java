@@ -135,8 +135,10 @@ public class OfflineKachleZiskavacTest {
 
 	@Test(timeout = 30000)
 	public void bezMapyChybaSeSlozkou() throws Exception {
+		final int chybPred = cz.geokuk.framework.ChybyVDiagnostice.pocet("offline mapy");
 		final Throwable chyba = ziskej().getThr();
 		Assert.assertTrue(String.valueOf(chyba), chyba instanceof IOException);
 		Assert.assertTrue(chyba.getMessage(), chyba.getMessage().contains(slozka.toString()));
+		Assert.assertFalse("chybějící mapy jsou běžný stav, ne chyba v Diagnostice", cz.geokuk.framework.ChybyVDiagnostice.pribude("offline mapy", chybPred));
 	}
 }

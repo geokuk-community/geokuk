@@ -638,7 +638,10 @@ public class KachleZiskavac {
 				}
 			} catch (final Exception e) {
 				pocitRenderError.inc();
-				chybyStahovani.computeIfAbsent("offline " + e.getClass().getName(), k -> new OpakovaneChyby("Chyba při vykreslení dlaždice offline mapy (" + e.getClass().getName() + ")")).ohlas(e);
+				// Chybějící nebo nečitelné mapy ukazuje dlaždice i s radou, kde nastavit složku; chybou programu nejsou.
+				if (!(e instanceof OfflineMapaChyba)) {
+					chybyStahovani.computeIfAbsent("offline " + e.getClass().getName(), k -> new OpakovaneChyby("Chyba při vykreslení dlaždice offline mapy (" + e.getClass().getName() + ")")).ohlas(e);
+				}
 				diagnosticsData.send(e.toString());
 				throw e;
 			}

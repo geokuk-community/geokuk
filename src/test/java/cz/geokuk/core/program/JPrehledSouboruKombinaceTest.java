@@ -14,7 +14,7 @@ import cz.geokuk.plugins.mapy.*;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.file.Filex;
 
-/** Uložit v Umístění souborů se všemi sedmi složkami: jedna vadná složka zastaví celé uložení, jinak se uloží přesně zadané cesty. */
+/** Uložit v Umístění souborů se všemi osmi složkami: jedna vadná složka zastaví celé uložení, jinak se uloží přesně zadané cesty. */
 public class JPrehledSouboruKombinaceTest {
 
 	private static final String[] SLOZKY = { "kese", "geoget", "gsak", "opensak", "mapy", "ozi", "kmz", "obrazky" };
