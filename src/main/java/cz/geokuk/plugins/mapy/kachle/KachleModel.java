@@ -112,7 +112,6 @@ public class KachleModel extends Model0 {
 		// Mapy zkopírované nebo vyměněné za běhu se projeví hned.
 		ziskavac.setPriZmeneOfflineMapy(() -> SwingUtilities.invokeLater(() -> fire(new OfflineMapaChangedEvent())));
 		setUmisteniSouboru(loadUmisteniSouboru());
-		ziskavac.getOfflineMapy().nastav(KachleUmisteniSouboru.OFFLINE_MAPY_DIR, TemaOfflineMapy.zTextu(currPrefe().get("offlineMapaTema", "")));
 		fire(new KachleModelChangeEvent());
 	}
 
