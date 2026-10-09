@@ -135,6 +135,7 @@ public class KachleModel extends Model0 {
 	protected void initAndFire() {
 		// Mapy zkopírované nebo vyměněné za běhu se projeví hned.
 		ziskavac.setPriZmeneOfflineMapy(() -> SwingUtilities.invokeLater(() -> fire(new OfflineMapaChangedEvent())));
+		setMeritkoDispleje(meritkoVychoziObrazovky());
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
 	}
@@ -144,6 +145,18 @@ public class KachleModel extends Model0 {
 		u.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
 		u.setOfflineMapyDir(currPrefe().getFilex(OFFLINE_MAPY_DIR, KachleUmisteniSouboru.OFFLINE_MAPY_DIR));
 		return u;
+	}
+
+	/** Měřítko displeje, na kterém je mapa; offline mapa podle něj kreslí dlaždice s víc pixely. */
+	public void setMeritkoDispleje(final double meritko) {
+		ziskavac.getOfflineMapy().nastavMeritko(meritko);
+	}
+
+	private static double meritkoVychoziObrazovky() {
+		if (java.awt.GraphicsEnvironment.isHeadless()) {
+			return 1;
+		}
+		return java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform().getScaleX();
 	}
 
 	public KachleUmisteniSouboru getUmisteniSouboru() {
