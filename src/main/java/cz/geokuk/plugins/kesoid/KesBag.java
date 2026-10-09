@@ -161,7 +161,7 @@ public class KesBag {
 				indexyUseku.set(i, index);
 			}
 			if (index != null) {
-				celek = celek == null ? index : celek.merge(index);
+				celek = celek == null ? index : index.merge(celek);
 			}
 		}
 		indexator = celek != null ? celek : postav(wpts);

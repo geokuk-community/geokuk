@@ -90,6 +90,35 @@ public class IndexatorPostavTest {
 	}
 
 	@Test
+	public void sloucenePoCastechJakoNajednou() {
+		final Random r = new Random(11);
+		final List<TestBod> body = new ArrayList<>();
+		final List<Integer> hranice = new ArrayList<>();
+		for (int cast = 0; cast < 6; cast++) {
+			hranice.add(body.size());
+			// části se překrývají a mají body na stejných místech jako dřívější části
+			final int pocet = cast == 2 ? 0 : 1000 + r.nextInt(3000);
+			for (int i = 0; i < pocet; i++) {
+				if (!body.isEmpty() && r.nextInt(8) == 0) {
+					final TestBod b = body.get(r.nextInt(body.size()));
+					body.add(new TestBod(b.getX(), b.getY()));
+				} else {
+					body.add(new TestBod(r.nextInt(4000) - 2000 + cast * 500, r.nextInt(4000) - 2000));
+				}
+			}
+		}
+		hranice.add(body.size());
+		Indexator<TestBod> slouceny = null;
+		for (int i = 0; i + 1 < hranice.size(); i++) {
+			final Indexator<TestBod> cast = Indexator.postav(BoundingRect.ALL, body.subList(hranice.get(i), hranice.get(i + 1)), TestBod::getX, TestBod::getY);
+			slouceny = slouceny == null ? cast : cast.merge(slouceny);
+		}
+		final Indexator<TestBod> najednou = Indexator.postav(BoundingRect.ALL, body, TestBod::getX, TestBod::getY);
+		Assert.assertEquals(body.size(), slouceny.getCount());
+		stejne("root", najednou.root(), slouceny.root());
+	}
+
+	@Test
 	public void omezenyRozsah() {
 		final Random r = new Random(7);
 		final List<TestBod> body = new ArrayList<>();

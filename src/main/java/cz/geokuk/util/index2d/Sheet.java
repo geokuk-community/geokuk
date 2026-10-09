@@ -92,15 +92,13 @@ class Sheet<T> extends Node<T> {
 		}
 
 
+		/** Hodnoty levého seznamu před hodnotami pravého, pořadí v obou zůstává. */
 		static <T> Lst<T> join(final Lst<T> left, final Lst<T> right) {
 			if (left == null) {
 				return right;
 			}
 			if (right == null) {
 				return left;
-			}
-			if (left.count > right.count) {
-				return join(right, left); // vždy kvůli rychlosti menší velvo
 			}
 			// Cyklem, ne rekurzí: tisíce bodů na stejném místě by přetekly zásobník.
 			final List<T> hodnoty = new ArrayList<>(left.count);
