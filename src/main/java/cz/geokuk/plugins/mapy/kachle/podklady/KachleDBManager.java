@@ -261,6 +261,82 @@ class KachleDBManager implements KachleManager {
 		}
 	}
 
+	/** Dlaždice se mažou po dávkách, aby mezitím šlo zapisovat nové. */
+	private static final int DAVKA_MAZANI = 1000;
+
+	@Override
+	public int smazOfflineKrome(final Set<String> ponechat) {
+		final int odlozeniPred = odlozeni;
+		final SqlJetDb database = getDatabaseConnection();
+		if (database == null) {
+			return 0;
+		}
+		final List<Long> smazat = new ArrayList<>();
+		zamek.readLock().lock();
+		try {
+			if (odlozeniPred != odlozeni) {
+				return 0;
+			}
+			database.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+			try {
+				final ISqlJetCursor cursor = database.getTable(TABLE_NAME).open();
+				try {
+					while (!cursor.eof()) {
+						final String typ = cursor.getString("s");
+						if (typ != null && UklidOfflineCache.KLIC.matcher(typ).matches() && !ponechat.contains(typ)) {
+							smazat.add(cursor.getRowId());
+						}
+						cursor.next();
+					}
+				} finally {
+					cursor.close();
+				}
+			} finally {
+				database.commit();
+			}
+		} catch (final SqlJetException e) {
+			log.warn("Staré dlaždice offline mapy nejde najít: {}", e.toString());
+			return 0;
+		} finally {
+			zamek.readLock().unlock();
+		}
+		int smazano = 0;
+		for (int od = 0; od < smazat.size(); od += DAVKA_MAZANI) {
+			synchronized (this) {
+				zamek.writeLock().lock();
+				try {
+					if (odlozeniPred != odlozeni || kontroly.containsKey(database.getFile())) {
+						return smazano;
+					}
+					database.beginTransaction(SqlJetTransactionMode.WRITE);
+					try {
+						final ISqlJetCursor cursor = database.getTable(TABLE_NAME).open();
+						try {
+							for (final long rowId : smazat.subList(od, Math.min(od + DAVKA_MAZANI, smazat.size()))) {
+								if (cursor.goTo(rowId)) {
+									cursor.delete();
+								}
+							}
+						} finally {
+							cursor.close();
+						}
+						database.commit();
+					} catch (final SqlJetException e) {
+						database.rollback();
+						throw e;
+					}
+					smazano += Math.min(DAVKA_MAZANI, smazat.size() - od);
+				} catch (final SqlJetException e) {
+					log.warn("Staré dlaždice offline mapy nejde smazat: {}", e.toString());
+					return smazano;
+				} finally {
+					zamek.writeLock().unlock();
+				}
+			}
+		}
+		return smazano;
+	}
+
 	/** Jeden pokus o zápis; vrátí chybu, {@link #BEZ_CACHE}, nebo null, když se zapsalo. */
 	private SqlJetException zapisJednou(final Collection<ItemToSave> imagesToSave) {
 		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.

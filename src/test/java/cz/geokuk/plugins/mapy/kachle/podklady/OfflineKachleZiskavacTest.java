@@ -25,6 +25,7 @@ public class OfflineKachleZiskavacTest {
 	private final Map<String, Image> disk = new ConcurrentHashMap<>();
 	private final BlockingQueue<KachleManager.ItemToSave> ulozene = new LinkedBlockingQueue<>();
 	private final List<String> hledaneTypy = Collections.synchronizedList(new ArrayList<>());
+	private final BlockingQueue<Set<String>> uklizeno = new LinkedBlockingQueue<>();
 	private File slozka;
 	private KachleZiskavac ziskavac;
 
@@ -59,6 +60,12 @@ public class OfflineKachleZiskavacTest {
 			public Image load(final Ka ki, final String typ) {
 				hledaneTypy.add(typ);
 				return disk.get(ki.getLoc() + typ);
+			}
+
+			@Override
+			public int smazOfflineKrome(final Set<String> ponechat) {
+				uklizeno.add(ponechat);
+				return 0;
 			}
 
 			@Override
@@ -99,6 +106,19 @@ public class OfflineKachleZiskavacTest {
 		disk.put(KACHLE.getLoc() + ulozena.typ, zDisku);
 		ziskavac.clearMemoryCache();
 		Assert.assertSame(zDisku, ziskej().getImg());
+	}
+
+	/** Po otevření mapy s novým klíčem se z cache uklidí dlaždice a symboly starých klíčů. */
+	@Test(timeout = 30000)
+	public void poOtevreniSeUkliziCache() throws Exception {
+		final File symboly = tmp.newFolder("offline-temata");
+		ziskavac.getOfflineMapy().setSlozkaSymbolu(symboly);
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final OfflineRenderer r = ziskavac.getOfflineMapy().pouzij();
+		final String klic = r.getKlic();
+		r.skonci();
+		Assert.assertEquals(Collections.singleton(klic), uklizeno.poll(15, TimeUnit.SECONDS));
+		Assert.assertTrue(new File(symboly, UklidOfflineCache.SOUBOR).isFile());
 	}
 
 	@Test
