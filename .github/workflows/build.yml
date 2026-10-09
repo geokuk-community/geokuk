@@ -2,14 +2,14 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, "release/**"]
     tags: ["v*"]
   pull_request:
-    branches: [main]
+    branches: [main, "release/**"]
   workflow_dispatch:
     inputs:
       verze:
-        description: "Vydat verzi (např. 6.0.1-beta.3), jen z main; prázdné = jen build"
+        description: "Vydat verzi (např. 6.0.1-beta.3), jen z main nebo release/X.Y.x; prázdné = jen build"
         required: false
         default: ""
 
@@ -37,6 +37,11 @@ jobs:
             VERZE="${GITHUB_REF_NAME#v}"
           elif [ -n "$VSTUP" ]; then
             echo "$VSTUP" | grep -qxE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || { echo "Neplatná verze: $VSTUP"; exit 1; }
+            case "$GITHUB_REF" in
+              refs/heads/release/*)
+                PREDPONA="${GITHUB_REF_NAME#release/}"; PREDPONA="${PREDPONA%x}"
+                case "$VSTUP" in "$PREDPONA"*) ;; *) echo "Verze $VSTUP nepatří na větev $GITHUB_REF_NAME"; exit 1 ;; esac ;;
+            esac
             VERZE="$VSTUP"
           else
             VERZE="$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)-dev.$GITHUB_RUN_NUMBER"
@@ -153,7 +158,7 @@ jobs:
           path: GeoKuk-windows.zip
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v') || (inputs.verze != '' && github.ref == 'refs/heads/main')
+    if: startsWith(github.ref, 'refs/tags/v') || (inputs.verze != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')))
     needs: [build, testy-windows, windows]
     runs-on: ubuntu-latest
     permissions:
