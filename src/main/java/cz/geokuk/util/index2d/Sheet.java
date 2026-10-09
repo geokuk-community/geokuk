@@ -63,13 +63,13 @@ class Sheet<T> extends Node<T> {
 		final int xMid = Indexator.mid(xx1, xx2);
 		final int yMid = Indexator.mid(yy1, yy2);
 		if (xx < xMid && yy < yMid) {
-			return new Ctverecnik<>(xx1, yy1, xx2, yy2, this, e, e, e);
+			return new Ctverecnik<>(this, e, e, e);
 		} else if (xx >= xMid && yy < yMid) {
-			return new Ctverecnik<>(xx1, yy1, xx2, yy2, e, this, e, e);
+			return new Ctverecnik<>(e, this, e, e);
 		} else if (xx < xMid && yy >= yMid) {
-			return new Ctverecnik<>(xx1, yy1, xx2, yy2, e, e, this, e);
+			return new Ctverecnik<>(e, e, this, e);
 		} else {
-			return new Ctverecnik<>(xx1, yy1, xx2, yy2, e, e, e, this);
+			return new Ctverecnik<>(e, e, e, this);
 		}
 	}
 
@@ -147,7 +147,7 @@ class Sheet<T> extends Node<T> {
 	 * Když je tam, redukuje se na to, když je venku tak prázdný.
 	 */
 	@Override
-	Node<T> bound(final BoundingRect rect) {
+	Node<T> bound(final BoundingRect rect, final int xx1, final int yy1, final int xx2, final int yy2) {
 		final boolean tenObjektJeUvnitr = xx >= rect.xx1 && xx < rect.xx2 && yy >= rect.yy1 && yy < rect.yy2;
 		return tenObjektJeUvnitr ? this : Empty.get();
 	}

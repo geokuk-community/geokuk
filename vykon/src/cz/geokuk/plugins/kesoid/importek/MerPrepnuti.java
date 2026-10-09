@@ -20,9 +20,11 @@ import cz.geokuk.util.file.Root;
 /**
  * Měření přepínání zdrojů: {@code MerPrepnuti složka [N [opakování done()]]}, s třetím parametrem jen čas done(). Vyrobí GeoGet databáze a GPX (N keší ve velké databázi), načte vše a pak vypíná a zapíná zdroje bez překryvu,
  * s překryvem a všechny najednou. U každého kroku čas načtení, halda se starým i novým bagem (okamžik před uvolněním starého), trvalá halda a špička.
+ * S {@code -Dmer.shluky=true} leží keše náhodně (ne na mřížce) a waypointy metry až stovky metrů od keše jako ve skutečných datech; data pak patří do jiné složky.
  */
 public class MerPrepnuti {
 
+	private static final boolean SHLUKY = Boolean.getBoolean("mer.shluky");
 	private static final Set<File> vypnute = new HashSet<>();
 	private static volatile KesBag zobrazene;
 
@@ -121,10 +123,30 @@ public class MerPrepnuti {
 	}
 
 	private static double lat(final int i) {
+		if (SHLUKY) {
+			return 48.6 + nahodne(i, 1) * 2.4;
+		}
 		return 48.6 + (i * 7919L % 100000) / 100000.0 * 2.4;
 	}
 
+	/** Posun waypointu od keše ve stupních šířky. */
+	private static double posun(final int i, final double mrizka) {
+		return SHLUKY ? 0.00005 + nahodne(i, 3) * 0.004 : mrizka;
+	}
+
+	/** Deterministické číslo z [0, 1) podle indexu keše (splitmix64). */
+	private static double nahodne(final int i, final int osa) {
+		long z = i * 0x9E3779B97F4A7C15L + osa;
+		z = (z ^ z >>> 30) * 0xBF58476D1CE4E5B9L;
+		z = (z ^ z >>> 27) * 0x94D049BB133111EBL;
+		z ^= z >>> 31;
+		return (z >>> 11) / (double) (1L << 53);
+	}
+
 	private static double lon(final int i) {
+		if (SHLUKY) {
+			return 12.1 + nahodne(i, 2) * 6.7;
+		}
 		return 12.1 + (i * 104729L % 100000) / 100000.0 * 6.7;
 	}
 
@@ -148,7 +170,7 @@ public class MerPrepnuti {
 					k.addBatch();
 					if (i - od < waypointu) {
 						w.setString(1, kod(i));
-						w.setDouble(2, lat(i) + 0.001);
+						w.setDouble(2, lat(i) + posun(i, 0.001));
 						w.setDouble(3, lon(i));
 						w.addBatch();
 					}
@@ -178,7 +200,7 @@ public class MerPrepnuti {
 		try (Writer w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(soubor), StandardCharsets.UTF_8))) {
 			w.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<gpx version=\"1.0\" xmlns=\"http://www.topografix.com/GPX/1/0\">\n");
 			for (int i = od; i < od + pocet; i++) {
-				w.write("<wpt lat=\"" + (lat(i) + 0.002) + "\" lon=\"" + lon(i) + "\"><name>FN" + kod(i).substring(2) + "</name><desc>Final</desc><sym>Final Location</sym>"
+				w.write("<wpt lat=\"" + (lat(i) + posun(i, 0.002)) + "\" lon=\"" + lon(i) + "\"><name>FN" + kod(i).substring(2) + "</name><desc>Final</desc><sym>Final Location</sym>"
 						+ "<type>Waypoint|Final Location</type></wpt>\n");
 			}
 			w.write("</gpx>");

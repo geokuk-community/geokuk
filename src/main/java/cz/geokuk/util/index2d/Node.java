@@ -37,9 +37,10 @@ abstract class Node<T> {
 	/**
 	 * Zredukuje nód tak, aby obsahoval jen objekty v daném rectaglu.
 	 * @param br
+	 *            obdélník, na který se omezuje; další parametry jsou hranice uzlu, ty uzel sám nedrží
 	 * @return
 	 */
-	abstract Node<T> bound(BoundingRect br);
+	abstract Node<T> bound(BoundingRect br, int xx1, int yy1, int xx2, int yy2);
 
 
 	abstract boolean tryAdvance(MySplitIterator<T> splititerator, final Consumer<? super Sheet<T>> action);
