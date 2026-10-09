@@ -138,8 +138,8 @@ public class JTabulkaZdrojuTest {
 		final JTabulkaZdroju t = tabulka(null);
 		Assert.assertEquals("Zamčeno jiným programem", text(t, TypZdroje.GSAK, "Domov.db3", JTabulkaZdroju.SL_STAV));
 		Assert.assertEquals("Zamčeno jiným programem", text(t, TypZdroje.GSAK, null, JTabulkaZdroju.SL_STAV));
-		Assert.assertEquals("Načítá se… 40 %", text(t, TypZdroje.GEOGET, "Cesko.db3", JTabulkaZdroju.SL_STAV));
-		Assert.assertEquals("Načítá se… 70 %", text(t, TypZdroje.GEOGET, null, JTabulkaZdroju.SL_STAV));
+		Assert.assertEquals("Načítá se 40 %", text(t, TypZdroje.GEOGET, "Cesko.db3", JTabulkaZdroju.SL_STAV));
+		Assert.assertEquals("Načítá se 70 %", text(t, TypZdroje.GEOGET, null, JTabulkaZdroju.SL_STAV));
 	}
 
 	@Test

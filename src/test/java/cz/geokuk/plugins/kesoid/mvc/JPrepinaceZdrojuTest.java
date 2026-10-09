@@ -455,6 +455,17 @@ public class JPrepinaceZdrojuTest {
 		});
 	}
 
+	@Test
+	public void bublinaZamkuMaKazdouDatabaziNaRadku() {
+		final StavyZdrojuProTesty s = new StavyZdrojuProTesty();
+		final File a = s.pridej(TypZdroje.GSAK, "A.db3");
+		final File b = s.pridej(TypZdroje.GSAK, "B.db3");
+		s.prepis();
+		s.registr.cekaNaZapis(s.registr.getGenerace(), a);
+		s.registr.cekaNaZapis(s.registr.getGenerace(), b);
+		Assert.assertEquals("<html>GSAK: " + JTabulkaZdroju.ZAMCENO + "<br>A.db3<br>B.db3<br>" + JTabulkaZdroju.RADA_ZAMCENO, JPrepinaceZdroju.tooltipIkony(s.snimek(), TypZdroje.GSAK));
+	}
+
 	/** Záznam kliknutí v Diagnostice bere text bubliny a u přepínačů jejich vlastní stav; zaškrtávátko typu proto přepínačem není a bublina říká, co klik udělá. */
 	@Test
 	public void zaskrtavatkoNeniPrepinacABublinaRikaAkci() {
