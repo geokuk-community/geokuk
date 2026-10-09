@@ -57,6 +57,43 @@ public class KesBag {
 
 	private boolean indexatorOdevzdan = false;
 
+	/** Úseky seznamu waypointů; části skupin zdrojů mají vlastní kešoidy a nejvyšší hodnoty, které se příště převezmou celé. */
+	private final List<Usek> useky = new ArrayList<>();
+	private Usek usek;
+
+	private static final class Usek {
+		final int od;
+		final boolean castSkupiny;
+		final Cast hotova;
+		Set<Kesoid> kesoidy;
+		List<Kesoid> kesoidySkupiny;
+		int maxBestOf, maxHodnoceni, maxFavorit;
+
+		Usek(final int od, final boolean castSkupiny, final Cast hotova) {
+			this.od = od;
+			this.castSkupiny = castSkupiny;
+			this.hotova = hotova;
+			if (castSkupiny && hotova == null) {
+				kesoidy = new HashSet<>();
+			}
+		}
+	}
+
+	/** Hotová část bagu pro skupinu zdrojů: počet jejích waypointů se souřadnicemi, její kešoidy a nejvyšší hodnoty. */
+	public static final class Cast {
+		final int pocetWpt;
+		final List<Kesoid> kesoidy;
+		final int maxBestOf, maxHodnoceni, maxFavorit;
+
+		Cast(final int pocetWpt, final Usek u, final List<Kesoid> kesoidy) {
+			this.pocetWpt = pocetWpt;
+			this.kesoidy = kesoidy;
+			maxBestOf = u.maxBestOf;
+			maxHodnoceni = u.maxHodnoceni;
+			maxFavorit = u.maxFavorit;
+		}
+	}
+
 	public KesBag(final Genom genom) {
 		this(genom, 10);
 	}
@@ -88,23 +125,93 @@ public class KesBag {
 		final Genotyp genotyp = wpt.getGenotyp();
 
 		final Kesoid kesoid = wpt.getKesoid();
-		kesoidyset.add(kesoid);
 		wpts.add(wpt);
-		if (kesoid instanceof Kes) {
-			final Kes kes = (Kes) kesoid;
-			maximalniBestOf = Math.max(maximalniBestOf, kes.getBestOf());
-			maximalniHodnoceni = Math.max(maximalniHodnoceni, kes.getHodnoceni());
-			maximalniFavorit = Math.max(maximalniFavorit, kes.getFavorit());
+		if (usek != null && usek.castSkupiny) {
+			usek.kesoidy.add(kesoid);
+			if (kesoid instanceof Kes) {
+				final Kes kes = (Kes) kesoid;
+				usek.maxBestOf = Math.max(usek.maxBestOf, kes.getBestOf());
+				usek.maxHodnoceni = Math.max(usek.maxHodnoceni, kes.getHodnoceni());
+				usek.maxFavorit = Math.max(usek.maxFavorit, kes.getFavorit());
+			}
+		} else {
+			kesoidyset.add(kesoid);
+			if (kesoid instanceof Kes) {
+				final Kes kes = (Kes) kesoid;
+				maximalniBestOf = Math.max(maximalniBestOf, kes.getBestOf());
+				maximalniHodnoceni = Math.max(maximalniHodnoceni, kes.getHodnoceni());
+				maximalniFavorit = Math.max(maximalniFavorit, kes.getFavorit());
+			}
 		}
 		genotyp.countTo(citacAlel);
+	}
+
+	/**
+	 * Následující waypointy tvoří úsek. Část skupiny zdrojů si počítá kešoidy a nejvyšší hodnoty zvlášť, po {@link #done()} je vrátí {@link #getCast(int)}. Části
+	 * skupin nesdílejí kešoidy s ničím jiným v bagu.
+	 */
+	public void zacniUsek(final boolean castSkupiny) {
+		usek = new Usek(wpts.size(), castSkupiny, null);
+		useky.add(usek);
+	}
+
+	/**
+	 * Převezme hotovou část skupiny i s jejími waypointy bez počítání po waypointech, jen alely se počítají znovu (genom mohl od minula přibrat geny).
+	 *
+	 * @return false, když část k waypointům nepatří (jiný počet); pak se mají přidat po jednom do {@link #zacniUsek(boolean) nové části}
+	 */
+	public boolean pridejCast(final Cast cast, final List<Wpt> wpty) {
+		if (indexatorOdevzdan || indexator != null) {
+			throw new IllegalStateException("Indexator uz byl odevztdan");
+		}
+		if (cast.pocetWpt != wpty.size()) {
+			return false;
+		}
+		usek = new Usek(wpts.size(), true, cast);
+		useky.add(usek);
+		wpts.addAll(wpty);
+		for (final Wpt wpt : wpty) {
+			wpt.getGenotyp().countTo(citacAlel);
+		}
+		return true;
+	}
+
+	/** Hotová část pro úsek v pořadí vzniku, po {@link #done()}; null u úseku, který není částí skupiny, nebo u prázdné části. */
+	public Cast getCast(final int poradiUseku) {
+		final Usek u = useky.get(poradiUseku);
+		final int doo = poradiUseku + 1 < useky.size() ? useky.get(poradiUseku + 1).od : wpts.size();
+		if (!u.castSkupiny || doo == u.od) {
+			return null;
+		}
+		return u.hotova != null ? u.hotova : new Cast(doo - u.od, u, u.kesoidySkupiny);
 	}
 
 	public void done() {
 		// Filtr přidá jen část z místa pro všechny waypointy.
 		wpts.trimToSize();
 		postavIndex();
-		kesoidy = new ArrayList<>(kesoidyset.size());
+		int pocet = kesoidyset.size();
+		for (final Usek u : useky) {
+			pocet += u.hotova != null ? u.hotova.kesoidy.size() : u.kesoidy != null ? u.kesoidy.size() : 0;
+		}
+		kesoidy = new ArrayList<>(pocet);
 		kesoidy.addAll(kesoidyset);
+		for (final Usek u : useky) {
+			if (u.hotova != null) {
+				kesoidy.addAll(u.hotova.kesoidy);
+				maximalniBestOf = Math.max(maximalniBestOf, u.hotova.maxBestOf);
+				maximalniHodnoceni = Math.max(maximalniHodnoceni, u.hotova.maxHodnoceni);
+				maximalniFavorit = Math.max(maximalniFavorit, u.hotova.maxFavorit);
+			} else if (u.kesoidy != null) {
+				// Množina se po dokončení nedrží, část si nese jen seznam.
+				u.kesoidySkupiny = new ArrayList<>(u.kesoidy);
+				u.kesoidy = null;
+				kesoidy.addAll(u.kesoidySkupiny);
+				maximalniBestOf = Math.max(maximalniBestOf, u.maxBestOf);
+				maximalniHodnoceni = Math.max(maximalniHodnoceni, u.maxHodnoceni);
+				maximalniFavorit = Math.max(maximalniFavorit, u.maxFavorit);
+			}
+		}
 		kesoidyset = null;
 		poctyAlel = citacAlel.getCounterMap();
 		// System.out.println(poctyAlel);

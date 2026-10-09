@@ -362,6 +362,8 @@ public class MultiNacitac {
 		final List<String> vadne = new ArrayList<>();
 		final Set<File> zamceneTed = new HashSet<>();
 		final Set<File> prevzateZamcene = new HashSet<>();
+		/** Pořadí členů převzatých skupin, ve kterém šly do bagu. */
+		final Map<SkupinyZdroju.Skupina, List<File>> poradiCasti = new HashMap<>();
 		boolean nelzePrevzit;
 
 		Cteni(final KesoidImportBuilder builder) {
@@ -388,6 +390,7 @@ public class MultiNacitac {
 			}
 		}
 		final KesoidImportBuilder builder = cteni.builder;
+		final Set<SkupinyZdroju.Skupina> pridane = new HashSet<>();
 		for (final KeFile file : serazene) {
 			if (future != null && future.isCancelled()) {
 				break;
@@ -395,8 +398,21 @@ public class MultiNacitac {
 			final File soubor = file.getFile();
 			final SkupinyZdroju.Skupina skupina = skupinaClena.get(soubor);
 			if (skupina != null) {
+				// Waypointy celé skupiny jdou do bagu spolu na místě prvního člena; skupina nesdílí jména s ničím jiným, na pořadí výhry duplicit to nemá vliv.
+				if (pridane.add(skupina)) {
+					final List<File> poradiClenu = new ArrayList<>();
+					final List<List<Wpt>> wptyClenu = new ArrayList<>();
+					for (final KeFile f : serazene) {
+						if (skupinaClena.get(f.getFile()) == skupina) {
+							poradiClenu.add(f.getFile());
+							wptyClenu.add(skupina.wpty.getOrDefault(f.getFile(), Collections.<Wpt> emptyList()));
+						}
+					}
+					builder.prevezmiSkupinu(skupina, wptyClenu, poradiClenu.equals(skupina.poradiCasti) ? skupina.cast : null);
+					cteni.poradiCasti.put(skupina, poradiClenu);
+				}
 				final int[] pocty = skupina.pocty.get(soubor);
-				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1]);
+				builder.prevezmiClena(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1]);
 				registr.hotovo(generace, soubor, pocty[0], pocty[1]);
 				continue;
 			}
@@ -636,10 +652,15 @@ public class MultiNacitac {
 				nepouzitelne.add(komponenta[i]);
 			}
 		}
+		final Map<Object, KesBag.Cast> casti = cteni.builder.getCastiSkupin();
 		final Map<File, SkupinyZdroju.Skupina> nova = new HashMap<>();
 		for (final SkupinyZdroju.Skupina g : prevzate) {
 			for (final File clen : g.otisky.keySet()) {
 				nova.put(clen, g);
+			}
+			if (casti.containsKey(g)) {
+				g.cast = casti.get(g);
+				g.poradiCasti = cteni.poradiCasti.get(g);
 			}
 		}
 		final Map<Integer, List<Integer>> clenove = new HashMap<>();
