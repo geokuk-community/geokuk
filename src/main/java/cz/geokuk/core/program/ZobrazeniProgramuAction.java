@@ -31,9 +31,8 @@ public class ZobrazeniProgramuAction extends Action0 {
 
 	public ZobrazeniProgramuAction() {
 		super("Zobrazení programu...");
-		putValue(SHORT_DESCRIPTION, "Zvětšení a hardwarové vykreslování při příštím spuštění.");
+		putValue(SHORT_DESCRIPTION, "Ostrost a velikost písma offline mapy; zvětšení a hardwarové vykreslování při příštím spuštění.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_Z);
-		setEnabled(PametProgramuAction.lzeNastavit());
 	}
 
 	static boolean jeWindows() {
@@ -66,13 +65,16 @@ public class ZobrazeniProgramuAction extends Action0 {
 		zvetseni.setToolTipText("Vypnuté: menší, ale ostré písmo a mapa.");
 		final JCheckBox direct3d = new JCheckBox(DIRECT3D, pref.getBoolean(Start.DIRECT3D_KLIC, true));
 		direct3d.setToolTipText("Vypněte, když mapa nebo menu sekají.");
+		final boolean startOvlada = PametProgramuAction.lzeNastavit();
 		final JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		panel.add(new JLabel("<html>Platí od příštího spuštění.<br>Když je program pomalý nebo seká, zkuste vypnout jedno z nich.</html>"));
-		panel.add(Box.createVerticalStrut(8));
-		panel.add(zvetseni);
-		if (jeWindows()) {
-			panel.add(direct3d);
+		if (startOvlada) {
+			panel.add(new JLabel("<html>Platí od příštího spuštění.<br>Když je program pomalý nebo seká, zkuste vypnout jedno z nich.</html>"));
+			panel.add(Box.createVerticalStrut(8));
+			panel.add(zvetseni);
+			if (jeWindows()) {
+				panel.add(direct3d);
+			}
 		}
 		final JComboBox<String> ostrost = new JComboBox<>(new String[] { OSTROST_SYSTEM, OSTROST_100 });
 		final JSpinner pismo = new JSpinner(new SpinnerNumberModel(100, 80, 150, 5));
@@ -93,7 +95,7 @@ public class ZobrazeniProgramuAction extends Action0 {
 		if (kachleModel != null) {
 			kachleModel.setVzhledOfflineMapy(ostrost.getSelectedIndex() == 0, ((Number) pismo.getValue()).intValue());
 		}
-		if (uloz(pref, zvetseni.isSelected(), direct3d.isSelected()) && Restart.lze()
+		if (startOvlada && uloz(pref, zvetseni.isSelected(), direct3d.isSelected()) && Restart.lze()
 				&& JOptionPane.showConfirmDialog(Dlg.parentFrame(), "Změna se projeví po restartu GeoKuku. Restartovat teď?", "Zobrazení programu",
 						JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 			Restart.restartuj();

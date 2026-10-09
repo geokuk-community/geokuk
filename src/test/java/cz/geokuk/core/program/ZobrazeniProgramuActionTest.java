@@ -38,4 +38,9 @@ public class ZobrazeniProgramuActionTest {
 		Assert.assertEquals("Zvětšovat podle Windows (teď 125 %)", ZobrazeniProgramuAction.popisZvetseni(1.25));
 		Assert.assertEquals("Zvětšovat podle Windows", ZobrazeniProgramuAction.popisZvetseni(1.0));
 	}
+
+	@Test
+	public void akceJeVzdyDostupna() {
+		Assert.assertTrue(new ZobrazeniProgramuAction().isEnabled());
+	}
 }
