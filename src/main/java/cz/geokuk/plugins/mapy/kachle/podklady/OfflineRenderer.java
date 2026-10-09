@@ -7,8 +7,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.CRC32;
 
-import javax.imageio.ImageIO;
-
 import org.mapsforge.core.graphics.GraphicFactory;
 import org.mapsforge.core.graphics.TileBitmap;
 import org.mapsforge.core.model.Tile;
@@ -257,16 +255,13 @@ final class OfflineRenderer {
 		data.close();
 	}
 
-	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. */
-	ImageWithData vyrendruj(final KaLoc loc) throws IOException {
+	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. Do PNG pro cache se převádí až při ukládání. */
+	BufferedImage vyrendruj(final KaLoc loc) throws IOException {
 		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, false, false);
 		final TileBitmap bitmapa = renderer.executeJob(job);
 		if (bitmapa == null) {
 			throw new IOException("Dlaždici " + loc + " offline mapy nejde vykreslit.");
 		}
-		final BufferedImage obrazek = AwtGraphicFactory.getBitmap(bitmapa);
-		final ByteArrayOutputStream png = new ByteArrayOutputStream(64 * 1024);
-		ImageIO.write(obrazek, "png", png);
-		return new ImageWithData(obrazek, png.toByteArray());
+		return AwtGraphicFactory.getBitmap(bitmapa);
 	}
 }

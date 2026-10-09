@@ -155,14 +155,14 @@ public class KachleZiskavac {
 
 						private void spustRender() {
 							final AtomicReference<Future<?>> moje = new AtomicReference<>();
-							final ListenableFuture<ImageWithData> future = submitRender(ka, des, diagnosticsData, Kachlice.this, moje);
+							final ListenableFuture<BufferedImage> future = submitRender(ka, des, diagnosticsData, Kachlice.this, moje);
 							moje.set(future);
 							futura = future;
-							Futures.addCallback(future, new FutureCallback<ImageWithData>() {
+							Futures.addCallback(future, new FutureCallback<BufferedImage>() {
 
 								@Override
-								public void onSuccess(final ImageWithData imageWithData) {
-									onImageLoaded(imageWithData.getImg());
+								public void onSuccess(final BufferedImage obrazek) {
+									onImageLoaded(obrazek);
 								}
 
 								@Override
@@ -299,7 +299,14 @@ public class KachleZiskavac {
 			execDiskWrite.execute(() -> {
 				try {
 					log.info("Ukladani kachle na disk #{}:", ukladanci.size());
-					final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getTyp(), ukladanec.getRawData())).collect(Collectors.toList());
+					final List<ItemToSave> list = new ArrayList<>(ukladanci.size());
+					for (final Ukladanec ukladanec : ukladanci) {
+						try {
+							list.add(new ItemToSave(ukladanec.getKa(), ukladanec.getTyp(), ukladanec.dataKUlozeni()));
+						} catch (final IOException e) {
+							log.warn("Dlaždici {} nejde převést pro uložení: {}", ukladanec.getKa(), e.toString());
+						}
+					}
 					if (kachleManager.save(list)) {
 						pocitZapsanoChunkuNaDisk.inc();
 						pocitZapsanoNaDisk.add(list.size());
@@ -634,7 +641,7 @@ public class KachleZiskavac {
 		return future;
 	}
 
-	private ListenableFuture<ImageWithData> submitRender(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice,
+	private ListenableFuture<BufferedImage> submitRender(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice,
 			final AtomicReference<Future<?>> moje) {
 		return dvojiceExekucnichSluzeb.render.submit(() -> {
 			while (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI && exekucniSluzby.get(Priority.KACHLE).renderQueue.size() > 0) {
@@ -647,12 +654,12 @@ public class KachleZiskavac {
 			try {
 				final OfflineRenderer renderer = offlineMapy.pouzij();
 				try {
-					final ImageWithData imageWithData = renderer.vyrendruj(ka.getLoc());
+					final BufferedImage obrazek = renderer.vyrendruj(ka.getLoc());
 					pocitRenderOk.inc();
 					if (renderer.pokryva(ka.getLoc())) {
-						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), imageWithData.getData(), kachlice));
+						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), obrazek, kachlice));
 					}
-					return imageWithData;
+					return obrazek;
 				} finally {
 					renderer.skonci();
 				}

@@ -15,7 +15,7 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.core.coordinates.Wgs;
-import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.plugins.mapy.kachle.data.*;
 
 /** Vykreslení dlaždic ze souboru .map: syntetická mapa {@code kukov.map} (vymyšlené město u 50° s. š., 14,4° v. d.). */
 public class OfflineMapyTest {
@@ -49,7 +49,7 @@ public class OfflineMapyTest {
 		}
 	}
 
-	private ImageWithData vyrendruj(final KaLoc loc) throws IOException {
+	private BufferedImage vyrendruj(final KaLoc loc) throws IOException {
 		final OfflineRenderer r = mapy.pouzij();
 		try {
 			Assert.assertTrue(r.pokryva(loc));
@@ -65,8 +65,7 @@ public class OfflineMapyTest {
 		return r.getKlic();
 	}
 
-	private static int[] pixely(final ImageWithData obrazek) {
-		final BufferedImage img = (BufferedImage) obrazek.getImg();
+	private static int[] pixely(final BufferedImage img) {
 		return img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
 	}
 
@@ -92,13 +91,13 @@ public class OfflineMapyTest {
 	@Test
 	public void vykresliDlazdiciZMapy() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
-		final ImageWithData obrazek = vyrendruj(STRED_Z15);
-		final BufferedImage img = (BufferedImage) obrazek.getImg();
+		final BufferedImage img = vyrendruj(STRED_Z15);
 		Assert.assertEquals(256, img.getWidth());
 		Assert.assertEquals(256, img.getHeight());
-		Assert.assertTrue("silnice, domy, voda a popisky", barev(pixely(obrazek)) > 10);
-		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(obrazek.getData()));
-		Assert.assertArrayEquals(pixely(obrazek), png.getRGB(0, 0, 256, 256, null, 0, 256));
+		Assert.assertTrue("silnice, domy, voda a popisky", barev(pixely(img)) > 10);
+		final byte[] data = new Ukladanec(new Ka(STRED_Z15, EKaType.OFFLINE_MF), "o00000000", img, null).dataKUlozeni();
+		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(data));
+		Assert.assertArrayEquals(pixely(img), png.getRGB(0, 0, 256, 256, null, 0, 256));
 	}
 
 	@Test
@@ -316,16 +315,16 @@ public class OfflineMapyTest {
 	public void dlazdiceProMeritkoDispleje() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
 		final String klic100 = klic();
-		Assert.assertEquals(256, ((BufferedImage) vyrendruj(STRED_Z15).getImg()).getWidth());
+		Assert.assertEquals(256, vyrendruj(STRED_Z15).getWidth());
 		mapy.nastavMeritko(1.5);
-		final BufferedImage img150 = (BufferedImage) vyrendruj(STRED_Z15).getImg();
+		final BufferedImage img150 = vyrendruj(STRED_Z15);
 		Assert.assertEquals(384, img150.getWidth());
 		Assert.assertEquals(384, img150.getHeight());
 		final String klic150 = klic();
 		Assert.assertNotEquals(klic100, klic150);
 		Assert.assertEquals("změna měřítka zneplatní dlaždice v paměti", 1, zmen.get());
 		mapy.nastavMeritko(2);
-		Assert.assertEquals(512, ((BufferedImage) vyrendruj(STRED_Z15).getImg()).getWidth());
+		Assert.assertEquals(512, vyrendruj(STRED_Z15).getWidth());
 		mapy.nastavMeritko(1.5);
 		Assert.assertEquals(klic150, klic());
 	}

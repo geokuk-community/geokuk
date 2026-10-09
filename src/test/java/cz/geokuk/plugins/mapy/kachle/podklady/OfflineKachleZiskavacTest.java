@@ -2,10 +2,11 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+
+import javax.imageio.ImageIO;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -99,7 +100,9 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertNotNull("vykreslená dlaždice se uloží", ulozena);
 		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("o[0-9a-f]{8}"));
 		Assert.assertEquals(KACHLE, ulozena.key);
-		Assert.assertTrue(ulozena.imageData.length > 0);
+		final BufferedImage zobrazena = (BufferedImage) stav.getImg();
+		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(ulozena.imageData));
+		Assert.assertArrayEquals("uloží se PNG zobrazené dlaždice", zobrazena.getRGB(0, 0, 256, 256, null, 0, 256), png.getRGB(0, 0, 256, 256, null, 0, 256));
 		Assert.assertEquals(Collections.singletonList(ulozena.typ), hledaneTypy);
 
 		final Image zDisku = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
