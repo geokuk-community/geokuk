@@ -111,6 +111,20 @@ public class OfflineMapyTest {
 		}
 		zkopirujMapu(slozka, "kukov.MAP");
 		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		Assert.assertEquals("dlaždice s chybou se musí vykreslit znovu", 1, zmen.get());
+	}
+
+	/** První otevření nic nezneplatňuje: ohlášení změny by zahodilo dlaždice, které se právě vykreslují. */
+	@Test
+	public void prvniOtevreniNehlasiZmenu() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		Assert.assertEquals(0, zmen.get());
+		zkopirujMapu(slozka, "druha.map");
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		Assert.assertEquals(1, zmen.get());
+		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
 		Assert.assertEquals(2, zmen.get());
 	}
 
@@ -160,6 +174,23 @@ public class OfflineMapyTest {
 		Assert.assertNotEquals(puvodni, dveMapy);
 		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
 		Assert.assertNotEquals(dveMapy, klic());
+	}
+
+	/** Načtení velkého tématu trvá sekundy, nová mapa ve složce ho nesmí načítat znovu. */
+	@Test
+	public void temaSeNacitaJenJednou() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		OfflineRenderer r = mapy.pouzij();
+		r.skonci();
+		final OfflineRenderer.NacteneTema tema = r.getTema();
+		zkopirujMapu(slozka, "druha.map");
+		r = mapy.pouzij();
+		r.skonci();
+		Assert.assertSame(tema, r.getTema());
+		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
+		r = mapy.pouzij();
+		r.skonci();
+		Assert.assertNotSame(tema, r.getTema());
 	}
 
 	@Test
@@ -241,6 +272,43 @@ public class OfflineMapyTest {
 		}
 		Assert.assertEquals(Arrays.asList("dve.zip – a.xml", "dve.zip – b.xml", "moje.xml", "paws_5.zip"), nazvy);
 		Assert.assertEquals(Collections.emptyList(), TemaOfflineMapy.temataVeSlozce(new File(slozka, "neni")));
+	}
+
+	/** Vykreslené symboly tématu se ukládají na disk a při dalším načtení tématu se použijí; dlaždice vypadá stejně. */
+	@Test
+	public void symbolyTematuZDisku() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final File zip = new File(tmp.getRoot(), "pivo.zip");
+		try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+			out.putNextEntry(new ZipEntry("pivo.xml"));
+			out.write(("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rendertheme xmlns=\"http://mapsforge.org/renderTheme\" version=\"5\" map-background=\"#FFFFFF\">"
+					+ "<rule e=\"node\" k=\"amenity\" v=\"pub\"><symbol src=\"file:pivo.svg\" symbol-width=\"40\"/></rule></rendertheme>").getBytes(StandardCharsets.UTF_8));
+			out.putNextEntry(new ZipEntry("pivo.svg"));
+			out.write(("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\"><circle cx=\"10\" cy=\"10\" r=\"8\" fill=\"#C08000\"/></svg>").getBytes(StandardCharsets.UTF_8));
+		}
+		final File symboly = tmp.newFolder("symboly");
+		final TemaOfflineMapy tema = TemaOfflineMapy.zeSouboru(zip, null);
+		mapy.setSlozkaSymbolu(symboly);
+		mapy.nastav(slozka, tema);
+		final KaLoc hospoda = KaLoc.ofJZ(new Wgs(50.003, 14.403).toMou(), 15);
+		final int[] poprve = pixely(vyrendruj(hospoda));
+		Assert.assertTrue("symbol je na dlaždici", barev(poprve) > 2);
+		final File soubor = OfflineRenderer.souborSymbolu(symboly, tema);
+		Assert.assertTrue(soubor.isFile());
+		Assert.assertEquals(1, new GrafikaOfflineMapy(soubor).pocetSymbolu());
+
+		mapy.zavri();
+		final OfflineMapy znovu = new OfflineMapy(() -> {});
+		znovu.kontrolaSlozkyNs = 0;
+		znovu.setSlozkaSymbolu(symboly);
+		znovu.nastav(slozka, tema);
+		final OfflineRenderer r = znovu.pouzij();
+		try {
+			Assert.assertArrayEquals(poprve, pixely(r.vyrendruj(hospoda)));
+		} finally {
+			r.skonci();
+			znovu.zavri();
+		}
 	}
 
 	@Test

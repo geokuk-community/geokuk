@@ -48,7 +48,8 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
 - `offline` (jen na vyžádání, jen nová verze): `MerOffline` otevře mapy
   `.map` ze složky `MAPY` s tématem `TEMA` a pro každý zoom ze `ZOOMY`
   vykreslí 6×6 dlaždic kolem `MISTO`: první průchod v jednom vlákně, pak
-  v 1 a 2 vláknech. Čas na dlaždici, stěna na dlaždici, odhad první
+  v počtech vláken z `VLAKNA` (výchozí 1,2) a načtení z cache dlaždic.
+  Čas na dlaždici, stěna na dlaždici, odhad první
   obrazovky (40 dlaždic), velikost PNG a halda. Bez `MAPY` měří malou
   syntetickou mapu z testů.
 - `program`: smoke testy `velkaData` (GPX s 50 000 keší) a
