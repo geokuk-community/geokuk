@@ -131,6 +131,39 @@ public class JKachle extends JComponent {
 		}
 	}
 
+	synchronized boolean maNahled() {
+		return !nahled.isEmpty();
+	}
+
+	synchronized void nastavNahled(final List<NahledDlazdice> novy) {
+		nahled = novy;
+	}
+
+	void prijmi(final KachloStav kastat, final Priority priorita) {
+		if (priorita == Priority.STAHOVANI) {
+			log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
+		}
+		synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
+			nahled = Collections.emptyList();
+			if (kastat.getImg() != null) {
+				image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
+				chyba = null;
+				chybVRade = 0;
+			} else {
+				chyba = kastat.getThr();
+				dalsiPokus = System.currentTimeMillis() + Math.min(PRVNI_POKUS_PO_CHYBE_MS << Math.min(chybVRade, 5), POSLEDNI_POKUS_PO_CHYBE_MS);
+				chybVRade++;
+			}
+			jeTamUzCelyObrazek = true;
+			ziskanPlnyObrazek(image);
+			if (jKachlovnik != null) {
+				jKachlovnik.kachleZpracovana(this);
+			}
+			JKachle.this.notifyAll();
+		}
+		repaint(); // prý můžeme volat z libovolného vlákna
+	}
+
 	/**
 	 * Získá obsah
 	 *
@@ -138,36 +171,15 @@ public class JKachle extends JComponent {
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
-		synchronized (this) {
-			if (image == null && nahled.isEmpty() && ka.getType().isOffline() && priorita != Priority.STAHOVANI) {
-				nahled = NahledDlazdice.najdi(ka, kachleModel.getZiskavac()::nahledZPameti, KACHLE_WIDTH);
+		if (ka.getType().isOffline() && priorita != Priority.STAHOVANI) {
+			final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, kachleModel.getZiskavac()::nahledZPameti, KACHLE_WIDTH);
+			synchronized (this) {
+				if (image == null && nahled.isEmpty()) {
+					nahled = novyNahled;
+				}
 			}
 		}
-		final KaOneReq req = new KaOneReq(ka, kastat -> {
-
-			if (priorita == Priority.STAHOVANI) {
-				log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
-			}
-			synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
-				if (kastat.getImg() != null) {
-					image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
-					nahled = Collections.emptyList();
-					chyba = null;
-					chybVRade = 0;
-				} else {
-					chyba = kastat.getThr();
-					dalsiPokus = System.currentTimeMillis() + Math.min(PRVNI_POKUS_PO_CHYBE_MS << Math.min(chybVRade, 5), POSLEDNI_POKUS_PO_CHYBE_MS);
-					chybVRade++;
-				}
-				jeTamUzCelyObrazek = true;
-				ziskanPlnyObrazek(image);
-				if (jKachlovnik != null) {
-					jKachlovnik.kachleZpracovana(this);
-				}
-				JKachle.this.notifyAll();
-			}
-			repaint(); // prý můžeme volat z libovolného vlákna
-		}, priorita);
+		final KaOneReq req = new KaOneReq(ka, kastat -> prijmi(kastat, priorita), priorita);
 
 		final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
 			JKachle.this.diagnosticesFazeStr = diagnosticesFazeStr;
