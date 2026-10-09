@@ -10,8 +10,8 @@
 #             offline (vykreslování offline mapy .map, jen nová verze; ve výchozích není),
 #             výchozí db hint kresleni program
 #   N, POPIS  keší v databázích a délka popisu (100000, 20000)
-#   MAPY, TEMA, MISTO, ZOOMY  offline mapa: složka s .map (výchozí syntetická testovací mapa), téma,
-#             místo lat,lon a zoomy (výchozí 50.003,14.405 a 13,15,17)
+#   MAPY, TEMA, MISTO, ZOOMY, VLAKNA  offline mapa: složka s .map (výchozí syntetická testovací mapa), téma,
+#             místo lat,lon, zoomy a počty vláken (výchozí 50.003,14.405, 13,15,17 a 1,2)
 #   PRACOVNI  složka pro worktree a databáze (výchozí target/vykon)
 #   VYSTUP    soubor s výsledkem (výchozí PRACOVNI/<stroj>-<datum>.txt)
 set -euo pipefail
@@ -144,7 +144,7 @@ fi
 		echo "## Offline mapa (nová verze, dlaždice 256 px s popisky)"
 		misto="${MISTO:-50.003,14.405}"
 		java_ -cp "$CP_NOVA" cz.geokuk.plugins.mapy.kachle.podklady.MerOffline slozka="$(nativni "${MAPY:-$REPO/src/test/resources/offline-mapy}")" tema="${TEMA:-}" \
-			lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}"
+			lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}" vlakna="${VLAKNA:-1,2}"
 	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"
