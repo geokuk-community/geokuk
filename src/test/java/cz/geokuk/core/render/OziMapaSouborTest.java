@@ -110,17 +110,17 @@ public class OziMapaSouborTest {
 
 	private static final String MMPXY_RADEK = "MMPXY,3,1824,892";
 
-	@Ignore("Nález RC4: kalibrační bod dole/vlevo vychází o pixel mimo obrázek (výška 893 místo 892); oprava: zapisovat pixely z spocitejKalibracniBody přímo, ne zpětnou transformací")
 	@Test
-	public void kalibracniBodyLeziVRozmeruObrazkuPresne() {
-		final RenderModel model = new RenderModel();
+	public void kalibracniBodyLeziVRozmeruObrazkuPresne() throws Exception {
 		for (final int moumer : new int[] { 10, 12, 14, 16 }) {
 			for (final Wgs stred : new Wgs[] { new Wgs(50.0875, 14.4214), new Wgs(49.2, 16.6), new Wgs(48.9, 12.3) }) {
 				final Coord coord = new Coord(moumer, stred.toMou(), new Dimension(1824, 892), 0.0);
-				for (final Wgs w : model.spocitejKalibracniBody(coord, 4)) {
-					final Point p = coord.transform(w.toMou());
-					Assert.assertTrue("moumer " + moumer + " " + stred + ": bod " + p + " mimo obrázek 1824×892", p.x >= 0 && p.x <= 1824 && p.y >= 0 && p.y <= 892);
+				final List<int[]> body = kalibracniBodyXy(mapa(coord, 4));
+				Assert.assertEquals(4, body.size());
+				for (final int[] p : body) {
+					Assert.assertTrue("moumer " + moumer + " " + stred + ": bod " + p[0] + "," + p[1] + " mimo obrázek 1824×892", p[0] >= 0 && p[0] <= 1824 && p[1] >= 0 && p[1] <= 892);
 				}
+				Assert.assertArrayEquals(new int[] { 1824, 892 }, body.get(3));
 			}
 		}
 	}
