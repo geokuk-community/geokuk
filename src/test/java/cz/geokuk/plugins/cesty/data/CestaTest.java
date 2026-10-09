@@ -60,6 +60,7 @@ public class CestaTest {
 	public void prazdnaAJednobodova() {
 		final Cesta prazdna = cesta();
 		Assert.assertTrue(prazdna.isEmpty());
+		Assert.assertFalse(prazdna.isJednobodova());
 		Assert.assertFalse(prazdna.isKruh());
 		Assert.assertEquals(0, prazdna.dalka(), 0);
 
@@ -69,6 +70,15 @@ public class CestaTest {
 		Assert.assertEquals(0, jednobodova.dalka(), 0);
 		Assert.assertEquals(A, jednobodova.getStart().getMou());
 		Assert.assertEquals(A, jednobodova.getCil().getMou());
+	}
+
+	@Test
+	public void dokumentSPrazdnouCestouSpocitaJednobodoveAPrazdne() {
+		cesta();
+		cesta(A);
+		cesta(A, B);
+		Assert.assertEquals(1, doc.getPocetJednobodovychCest());
+		Assert.assertEquals(1, doc.getPocetPrazdnychCest());
 	}
 
 	@Test
