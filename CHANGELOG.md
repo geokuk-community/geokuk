@@ -34,7 +34,7 @@
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
 - Po odstranění kříže z kontextového menu jde mapu dál přibližovat
-  a oddalovat kolečkem myši.
+  a oddalovat kolečkem myši a kliknutím do mapy postavit nový kříž.
 - Informace pro hlášení chyby obsahují výkon kreslení: dobu překreslení
   mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
   vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
