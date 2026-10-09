@@ -29,6 +29,7 @@
 - Offline mapa po zobrazení celé obrazovky na pozadí předvykreslí dlaždice
   kolem okna, takže posun mapy o kousek je okamžitý. Posun nebo změna
   měřítka předvykreslování přeruší, aby nezdrželo viditelné dlaždice.
+  Na počítači s méně než pěti jádry se nepoužívá.
 - Na displeji se zvětšením (třeba 150 %) kreslí offline mapa dlaždice
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
