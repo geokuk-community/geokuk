@@ -22,7 +22,7 @@ public class ObratitCestuAction extends CestaAction0 {
 
 	@Override
 	protected boolean mamPovolitProCestu(final Cesta cesta) {
-		return !cesta.isJednobodova();
+		return !cesta.isEmpty() && !cesta.isJednobodova();
 	}
 
 	@Override

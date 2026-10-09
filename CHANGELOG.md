@@ -11,6 +11,11 @@
   na název zdroje jen jeho položky. Stejnou tabulku ukazuje okno Přehled
   zdrojů. Klik na blok Zdroje už okno Přehled zdrojů neotevře. Po návratu na
   verzi 6.2.x se znovu zapnou typy zdrojů vypnuté ve verzi 6.3.0.
+- Klik na soubor nebo databázi vypnutého typu v tabulce zdrojů zapne
+  typ jen s touto položkou.
+- Ctrl+klik (na macOS Cmd+klik) na položku v tabulce zdrojů načítá jen
+  tuto položku jejího typu, na zaškrtávátko typu jen tento typ. Řádky
+  tabulky mají kontextové menu s volbami načítání.
 - Prázdná, neexistující nebo nečitelná datová složka GeoGetu, GSAKu nebo
   OpenSAKu se ve stavovém řádku u zdroje ukáže ikonou chyby s důvodem
   v bublině; stejný důvod je v tabulce zdrojů a v Přehledu zdrojů.
@@ -79,8 +84,12 @@
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
+- Ikona zdroje, který se právě načítá, se ve stavovém řádku i v tabulce
+  zdrojů točí.
 
 ### Opravy
+- Cesta bez bodů (třeba z GPX s prázdným `trkseg`) už nezpůsobí chybové hlášení
+  při každé změně cest; „Promazat jednobodové cesty“ ji smaže.
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
 - macOS: změna vzhledu (Skin) z výchozího vzhledu systému už nezpůsobí chybové
   hlášení při přepnutí do jiného okna.
@@ -130,6 +139,8 @@
 - Panel nástrojů má stálou výšku, mapa se po načtení keší neposune.
   Vyšší ikony (například symboly Waymarků) jsou na panelu zmenšené.
 - Dlaždice mapy se při rychlém posouvání nestahují dvakrát.
+- Kalibrační body v souboru .map pro OziExplorer leží přesně v rozměrech
+  obrázku a dlaždice KMZ pokryjí celý obrázek až k okraji.
 - Když do stejné cache map zapisuje jiný spuštěný GeoKuk, dlaždice se
   stáhnou bez hlášení chyby čtení.
 - Nastavení popisků: ukázka písma je v barvě písma a podkladu, náhled
@@ -144,6 +155,8 @@
 - Hláška o chybě při práci na pozadí neukazuje jméno třídy Javy.
 - Hlášení chyby správně zobrazí text se znaky `<`, `>` a `&` (například
   ze jména souboru).
+- Export cest do GGT u cest bez keší ohlásí, že cesty žádnou keš
+  neobsahují, a prázdný soubor nevytvoří.
 
 ### Vývoj
 - Odstraněna knihovna SwingX.

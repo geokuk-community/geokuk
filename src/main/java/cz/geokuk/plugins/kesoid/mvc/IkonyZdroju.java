@@ -31,9 +31,13 @@ final class IkonyZdroju {
 		g.drawPolyline(new int[] { 4, 6, 10 }, new int[] { 7, 9, 5 }, 3);
 	});
 
+	/** Doba jedné otáčky ikony „načítá se“. */
+	static final int OTACKA_MS = 1200;
+
 	private static final Icon NACITA_SE = ikona(g -> {
 		g.setColor(ZELENA);
-		g.draw(new Arc2D.Double(2, 2, 10, 10, 60, 270, Arc2D.OPEN));
+		final double natoceni = System.currentTimeMillis() % OTACKA_MS * 360.0 / OTACKA_MS;
+		g.draw(new Arc2D.Double(2, 2, 10, 10, 60 - natoceni, 270, Arc2D.OPEN));
 	});
 
 	private static final Icon ZAMEK = ikona(g -> {

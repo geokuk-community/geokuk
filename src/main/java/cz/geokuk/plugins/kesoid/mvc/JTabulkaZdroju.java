@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.kesoid.mvc;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
@@ -63,6 +65,7 @@ public class JTabulkaZdroju extends JPanel {
 	private final TableColumn sloupecVelikost;
 	private final JLabel casDat = new JLabel();
 	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private final Tocitko tocitko = new Tocitko(this, () -> getTabulka().repaint());
 	private Set<TypZdroje> povolene = EnumSet.allOf(TypZdroje.class);
 	private OvladaniZdroju ovladani;
 	private boolean uzka;
@@ -127,12 +130,29 @@ public class JTabulkaZdroju extends JPanel {
 		}
 		tabulka.getColumnModel().getColumn(SL_NACIST).setMaxWidth(SIRKY[SL_NACIST]);
 		tabulka.addMouseListener(new MouseAdapter() {
+			private boolean menuPriStisku;
+
+			@Override
+			public void mousePressed(final MouseEvent e) {
+				menuPriStisku = e.isPopupTrigger();
+				ukazMenu(e);
+			}
+
+			@Override
+			public void mouseReleased(final MouseEvent e) {
+				menuPriStisku |= e.isPopupTrigger();
+				ukazMenu(e);
+			}
+
 			@Override
 			public void mouseClicked(final MouseEvent e) {
+				if (menuPriStisku || SwingUtilities.isRightMouseButton(e)) {
+					return;
+				}
 				final int r = tabulka.rowAtPoint(e.getPoint());
 				final int c = tabulka.columnAtPoint(e.getPoint());
 				if (r >= 0 && c >= 0 && tabulka.convertColumnIndexToModel(c) == SL_NACIST) {
-					klik(radky.get(r));
+					klik(radky.get(r), jenTato(e));
 				}
 			}
 		});
@@ -165,6 +185,12 @@ public class JTabulkaZdroju extends JPanel {
 		}
 		tm.fireTableDataChanged();
 		prepocitejVelikost();
+		tocitko.nastav(radky.stream().anyMatch(r -> r.polozka != null ? r.polozka.isNacitat() && r.polozka.getStav() == StavZdroje.NACITA_SE
+				: stav.getStavTypu(r.typ) == StavZdroje.NACITA_SE));
+	}
+
+	boolean animuje() {
+		return tocitko.bezi();
 	}
 
 	/** Čas nejmladšího načteného souboru k zobrazení; bez načtených zdrojů prázdný. */
@@ -239,13 +265,64 @@ public class JTabulkaZdroju extends JPanel {
 		return b;
 	}
 
-	private void klik(final Radek radek) {
+	/** Ctrl (na macOS Cmd) s klikem vybere jen tuto položku nebo jen tento typ. */
+	static final int MASKA_JEN = System.getProperty("os.name", "").startsWith("Mac") ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
+	static final String KLAVESA_JEN = MASKA_JEN == InputEvent.META_DOWN_MASK ? "⌘" : "Ctrl";
+
+	static boolean jenTato(final InputEvent e) {
+		return (e.getModifiersEx() & MASKA_JEN) != 0;
+	}
+
+	static boolean jenTato(final ActionEvent e) {
+		return (e.getModifiers() & (MASKA_JEN == InputEvent.META_DOWN_MASK ? ActionEvent.META_MASK : ActionEvent.CTRL_MASK)) != 0;
+	}
+
+	private void ukazMenu(final MouseEvent e) {
+		if (!e.isPopupTrigger() || ovladani == null) {
+			return;
+		}
+		final int r = tabulka.rowAtPoint(e.getPoint());
+		if (r >= 0) {
+			menu(radky.get(r)).show(tabulka, e.getX(), e.getY());
+		}
+	}
+
+	JPopupMenu menu(final Radek radek) {
+		final JPopupMenu menu = new JPopupMenu();
+		final TypZdroje typ = radek.typ;
+		final StavPolozky p = radek.polozka;
+		if (p == null) {
+			pridej(menu, "Načítat jen " + typ.getNazev(), () -> ovladani.setNacitatJenTyp(typ));
+			pridej(menu, "Načítat všechny položky " + typ.getNazev(), () -> ovladani.setNacitatVseVTypu(typ, true));
+			pridej(menu, "Nenačítat " + typ.getNazev(), () -> ovladani.setNacitatTyp(typ, false)).setEnabled(stav.getStavVyberuTypu(typ) != StavVyberu.VYPNUTO);
+		} else {
+			pridej(menu, "Načítat jen tuto", () -> ovladani.setNacitatJenPolozku(typ, p.getSoubor()));
+			pridej(menu, "Načítat všechny v typu " + typ.getNazev(), () -> ovladani.setNacitatVseVTypu(typ, true));
+			pridej(menu, "Nenačítat tuto", () -> ovladani.setNacitatPolozku(p.getSoubor(), false)).setEnabled(p.isZapnuto());
+		}
+		return menu;
+	}
+
+	private static JMenuItem pridej(final JPopupMenu menu, final String text, final Runnable akce) {
+		final JMenuItem polozka = new JMenuItem(text);
+		polozka.addActionListener(e -> akce.run());
+		menu.add(polozka);
+		return polozka;
+	}
+
+	private void klik(final Radek radek, final boolean jen) {
 		if (ovladani == null) {
 			return;
 		}
 		if (radek.polozka == null) {
-			klikTyp(stav, radek.typ, ovladani);
-		} else if (!radek.polozka.isTypVypnut()) {
+			if (jen) {
+				ovladani.setNacitatJenTyp(radek.typ);
+			} else {
+				klikTyp(stav, radek.typ, ovladani);
+			}
+		} else if (jen || radek.polozka.isTypVypnut()) {
+			ovladani.setNacitatJenPolozku(radek.typ, radek.polozka.getSoubor());
+		} else {
 			ovladani.setNacitatPolozku(radek.polozka.getSoubor(), !radek.polozka.isZapnuto());
 		}
 	}
@@ -283,10 +360,16 @@ public class JTabulkaZdroju extends JPanel {
 		}
 	}
 
-	private String tooltip(final Radek radek, final int sloupec) {
+	String tooltip(final Radek radek, final int sloupec) {
 		final StavPolozky p = radek.polozka;
 		if (sloupec == SL_ZDROJ && p != null) {
 			return FString.text(p.getCesta());
+		}
+		if (sloupec == SL_NACIST && p != null && p.isTypVypnut()) {
+			return "Zapnout " + radek.typ.getNazev() + " jen s tímto souborem";
+		}
+		if (sloupec == SL_NACIST) {
+			return KLAVESA_JEN + "+klik: načítat jen " + (p != null ? "tento soubor" : radek.typ.getNazev());
 		}
 		if (sloupec == SL_STAV && p == null && stav.getProblemSlozky(radek.typ) != null) {
 			return RADA_SLOZKA;
@@ -313,7 +396,7 @@ public class JTabulkaZdroju extends JPanel {
 	static String textStavu(final StavZdroje s, final int postup) {
 		switch (s) {
 		case NACITA_SE:
-			return "Načítá se… " + postup + " %";
+			return "Načítá se " + postup + " %";
 		case CEKA_NA_ZAPIS:
 			return ZAMCENO;
 		default:

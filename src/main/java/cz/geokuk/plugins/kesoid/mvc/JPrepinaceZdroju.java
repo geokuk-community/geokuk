@@ -60,6 +60,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private JComponent obsahPopupu;
 
 	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private final Tocitko tocitko = new Tocitko(this, this::prekresliTocitka);
 	private OvladaniZdroju ovladani;
 
 	public JPrepinaceZdroju() {
@@ -121,7 +122,12 @@ public class JPrepinaceZdroju extends JPanel {
 			zaskrtavatko.setMargin(new Insets(0, 0, 0, 0));
 			zaskrtavatko.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
 			zaskrtavatko.addActionListener(e -> {
-				if (ovladani != null) {
+				if (ovladani == null) {
+					return;
+				}
+				if (JTabulkaZdroju.jenTato(e)) {
+					ovladani.setNacitatJenTyp(typ);
+				} else {
 					JTabulkaZdroju.klikTyp(stav, typ, ovladani);
 				}
 			});
@@ -358,6 +364,7 @@ public class JPrepinaceZdroju extends JPanel {
 			ikona.setToolTipText(tooltipIkony(stav, typ));
 			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : sedaNazvu());
 		}
+		tocitko.nastav(ikony.values().stream().anyMatch(i -> i.getIcon() == IkonyZdroju.pro(StavZdroje.NACITA_SE)));
 		uplna.obnov(stav);
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.obnov(stav);
@@ -373,15 +380,31 @@ public class JPrepinaceZdroju extends JPanel {
 		return seda != null ? seda : Color.GRAY;
 	}
 
+	private void prekresliTocitka() {
+		for (final JLabel ikona : ikony.values()) {
+			if (ikona.getIcon() == IkonyZdroju.pro(StavZdroje.NACITA_SE)) {
+				ikona.repaint();
+			}
+		}
+	}
+
+	boolean animuje() {
+		return tocitko.bezi();
+	}
+
 	static String tooltipZaskrtavatka(final TypZdroje typ, final StavVyberu volba) {
 		switch (volba) {
 		case VYPNUTO:
-			return typ.getNazev() + " zapnout";
+			return typ.getNazev() + " zapnout" + jenTypem(typ);
 		case CASTECNE:
-			return typ.getNazev() + " vypnout (načítá se jen část položek)";
+			return typ.getNazev() + " vypnout (načítá se jen část položek)" + jenTypem(typ);
 		default:
-			return typ.getNazev() + " vypnout";
+			return typ.getNazev() + " vypnout" + jenTypem(typ);
 		}
+	}
+
+	private static String jenTypem(final TypZdroje typ) {
+		return "; " + JTabulkaZdroju.KLAVESA_JEN + "+klik: jen " + typ.getNazev();
 	}
 
 	/** Stav typu; u zámku a chyby i dotčené položky. */
@@ -549,7 +572,8 @@ public class JPrepinaceZdroju extends JPanel {
 			cekajici = null;
 			ukazani.run();
 		}
-		if (obsahPopupu == null || obsahuje(this, mys) || obsahuje(obsahPopupu, mys)) {
+		// Otevřené kontextové menu řádku tabulky může přesahovat popup.
+		if (obsahPopupu == null || obsahuje(this, mys) || obsahuje(obsahPopupu, mys) || MenuSelectionManager.defaultManager().getSelectedPath().length > 0) {
 			mimoOd = -1;
 			return;
 		}
