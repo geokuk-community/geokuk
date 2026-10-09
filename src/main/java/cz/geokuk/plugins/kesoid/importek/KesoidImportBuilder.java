@@ -66,6 +66,8 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	private InformaceOZdroji zdrojPoslednihoVytvoreneho;
 	/** Vytvořené waypointy, které se zatím nevystavily (výjimečně, nebo procák waypoint zahodil). */
 	private final Map<Wpt, InformaceOZdroji> nevystavene = new IdentityHashMap<>();
+	/** Názvy přídavných waypointů (parkoviště, finálka …) se opakují, stejný text se drží jednou. */
+	private final Map<String, String> nazvyPridavnych = new HashMap<>();
 	private final Map<File, KliceZdroje.Sberac> kliceZdroju = new HashMap<>();
 	private volatile KliceZdroje.Sberac sberacKlicu = new KliceZdroje.Sberac();
 
@@ -152,6 +154,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	public void done() {
 		usek = null;
 		gpxWptDispatcher.done();
+		nazvyPridavnych.clear();
 		final InformaceOZdrojich informaceOZdrojich = informaceOZdrojichBuilder.done();
 //		Progressor progressor = progressModel.start(delkaTasku, "Vytvářím waypointy");
 
@@ -421,6 +424,10 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	/** Procák waypoint obvykle hned po vytvoření vystaví; vytvořený a zahozený do bagu nepatří, a tak ani do waypointů zdroje. */
 	@Override
 	public void expose(final Wpt wpt) {
+		final Kesoid kesoid = wpt.getKesoid();
+		if (kesoid != null && wpt != kesoid.getFirstWpt() && wpt.getNazev() != null) {
+			wpt.setNazev(nazvyPridavnych.computeIfAbsent(wpt.getNazev(), n -> n));
+		}
 		pridej(wpt);
 		final InformaceOZdroji zdroj;
 		if (wpt == posledniVytvoreny) {

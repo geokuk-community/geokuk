@@ -17,6 +17,9 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 
 	private static String[] urlPrefixes = new String[] { "http://www.geocaching.com/seek/cache_details.aspx?guid=", "http://www.waymarking.com/waymarks/", "http://dataz.cuzk.cz/gu/ztl", };
 	// protected static String URL_PREFIX_SHOW = "http://www.geocaching.com/seek/cache_details.aspx?guid=";
+	/** URL tvaru prefix + identifikátor (tak ji skládají loadery databází) se nedrží, uloží se jen sdílená značka {@code #index}. */
+	private static final String[] URL_Z_IDENTIFIKATORU = { "http://coord.info/", "https://coord.info/" };
+	private static final String[] ZNACKY_URL_Z_IDENTIFIKATORU = { "#0", "#1" };
 
 	/** Jednoznacna identifikace jako GC124X4 nebo WM4587 */
 	private String identifier;
@@ -111,6 +114,9 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 			return zbytekUrl;
 		}
 		final char c = zbytekUrl.charAt(0);
+		if (c == '#') {
+			return URL_Z_IDENTIFIKATORU[zbytekUrl.charAt(1) - '0'] + identifier;
+		}
 		if (c == '-') {
 			return zbytekUrl.substring(1);
 		}
@@ -192,6 +198,9 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 	}
 
 	public void setIdentifier(final String identifier) {
+		if (zbytekUrl != null && zbytekUrl.startsWith("#")) {
+			zbytekUrl = '-' + getUrl();
+		}
 		this.identifier = identifier;
 	}
 
@@ -207,6 +216,15 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 		if (aUrl == null) {
 			zbytekUrl = null;
 			return;
+		}
+		if (identifier != null) {
+			for (int i = 0; i < URL_Z_IDENTIFIKATORU.length; i++) {
+				final String prefix = URL_Z_IDENTIFIKATORU[i];
+				if (aUrl.length() == prefix.length() + identifier.length() && aUrl.startsWith(prefix) && aUrl.endsWith(identifier)) {
+					zbytekUrl = ZNACKY_URL_Z_IDENTIFIKATORU[i];
+					return;
+				}
+			}
 		}
 		// Řetězcová konkatenace zde provedená vytvoří nový řetězec, takže se nemusíme bát,
 		// že podstringy všechno nesou
