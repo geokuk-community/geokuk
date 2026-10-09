@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.*;
 
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.DiagnosticsData;
@@ -651,7 +652,9 @@ public class KachleZiskavac {
 			try {
 				final OfflineRenderer renderer = offlineMapy.pouzij();
 				try {
+					final long zacatek = System.nanoTime();
 					final ImageWithData imageWithData = renderer.vyrendruj(ka.getLoc());
+					Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
 					pocitRenderOk.inc();
 					if (renderer.pokryva(ka.getLoc())) {
 						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), imageWithData.getData(), kachlice));

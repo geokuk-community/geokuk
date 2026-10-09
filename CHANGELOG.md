@@ -29,6 +29,10 @@
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
+- Informace pro hlášení chyby obsahují výkon kreslení: dobu překreslení
+  mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
+  vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
+  ukazatel výkonu v rohu mapy.
 - Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
   ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
   dokreslení se nahradí ostrou.

@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -179,7 +180,13 @@ public class JKachle extends JComponent {
 				}
 			}
 		}
-		final KaOneReq req = new KaOneReq(ka, kastat -> prijmi(kastat, priorita), priorita);
+		final long zadano = System.nanoTime();
+		final KaOneReq req = new KaOneReq(ka, kastat -> {
+			if (priorita == Priority.KACHLE && kastat.getImg() != null) {
+				Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
+			}
+			prijmi(kastat, priorita);
+		}, priorita);
 
 		final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
 			JKachle.this.diagnosticesFazeStr = diagnosticesFazeStr;
