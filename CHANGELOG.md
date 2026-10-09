@@ -88,6 +88,8 @@
   zdrojů točí.
 
 ### Opravy
+- Cesta bez bodů (třeba z GPX s prázdným `trkseg`) už nezpůsobí chybové hlášení
+  při každé změně cest; „Promazat jednobodové cesty“ ji smaže.
 - Hláška „GeoKuk už běží“ při druhém spuštění je vždy vidět nad ostatními okny.
 - macOS: změna vzhledu (Skin) z výchozího vzhledu systému už nezpůsobí chybové
   hlášení při přepnutí do jiného okna.
