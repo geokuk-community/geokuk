@@ -33,6 +33,8 @@
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
+- Po odstranění kříže z kontextového menu jde mapu dál přibližovat
+  a oddalovat kolečkem myši.
 - Informace pro hlášení chyby obsahují výkon kreslení: dobu překreslení
   mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
   vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
