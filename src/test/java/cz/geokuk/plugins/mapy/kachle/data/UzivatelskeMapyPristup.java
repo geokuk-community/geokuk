@@ -22,6 +22,11 @@ public final class UzivatelskeMapyPristup {
 		return EKaType.omezeneUzemi(EKaType.uzivatelska(id, id, id, 0, 18, 18, 0, null, Collections.emptyMap(), "", false, new UzivatelskyUrlBuilder(vzorUrl)), rozsah, kodyMimoUzemi);
 	}
 
+	/** Mapa z lokálního serveru dlaždic ({z}, {x}, {y}) povolená pro hromadné stahování. */
+	public static EKaType sHromadnymStahovanim(final String id, final String vzorUrl, final int minMoumer, final int maxMoumer) {
+		return EKaType.uzivatelska(id, id, id, minMoumer, maxMoumer, maxMoumer, 0, null, Collections.emptyMap(), "", true, new UzivatelskyUrlBuilder(vzorUrl));
+	}
+
 	public static void vycisti() {
 		EKaType.setUzivatelske(Collections.emptyList());
 	}

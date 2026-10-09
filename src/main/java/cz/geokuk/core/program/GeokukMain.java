@@ -94,6 +94,7 @@ public class GeokukMain {
 			}
 			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
 			VytvoritZastupceAction.aktualizujZastupceVeSlozce();
+			new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
 			VytvoritZastupceAction.nabidniStart(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless());
 			if (portOvladani != null) {
 				inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);

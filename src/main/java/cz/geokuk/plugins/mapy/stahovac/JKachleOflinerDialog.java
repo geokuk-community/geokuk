@@ -70,6 +70,10 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 				w /= 2;
 				h /= 2;
 				moumer--;
+				// Výřez přiblížený za nabízené maximum se stahuje až od maxima.
+				if (moumer > totoSeTaha.maxmoumer) {
+					continue;
+				}
 				final Coord coco = new Coord(moumer, moord.getMoustred(), new Dimension(w, h), 0.0);
 
 				final Kaputer kaputer = new Kaputer(coco);
