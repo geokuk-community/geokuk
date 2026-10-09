@@ -1,9 +1,15 @@
 package cz.geokuk.core.napoveda;
 
+import java.awt.Dialog;
+import java.awt.GraphicsEnvironment;
+import java.awt.Window;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+
+import javax.swing.*;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -135,5 +141,66 @@ public class DiagnostikaTest {
 		final String odkaz = ZadatProblemAction.odkaz();
 		Assert.assertTrue(odkaz.length() <= 6000);
 		Assert.assertTrue(java.net.URLDecoder.decode(odkaz, "UTF-8").contains("důležitá chyba"));
+	}
+
+	@Test
+	public void kontextoveMenuSeNezaznamenaJakoOkno() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame("Mapa");
+		final String[] udalost = new String[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				okno.setSize(200, 200);
+				okno.setVisible(true);
+				final JPopupMenu menu = new JPopupMenu();
+				for (int i = 0; i < 40; i++) {
+					menu.add("položka " + i);
+				}
+				menu.show(okno.getContentPane(), 10, 10);
+				final Window popup = SwingUtilities.getWindowAncestor(menu);
+				Assert.assertNotSame("menu přesahuje okno, je v samostatném okně", okno, popup);
+				udalost[0] = Diagnostika.udalostOkna(new WindowEvent(popup, WindowEvent.WINDOW_OPENED));
+				menu.setVisible(false);
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(okno::dispose);
+		}
+		Assert.assertNull(udalost[0]);
+	}
+
+	@Test
+	public void oknoInformaciProHlaseniJenTitulek() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		Diagnostika.zaznamenej("událost s dlouhým textem");
+		SwingUtilities.invokeLater(() -> DiagnostikaAction.ukaz(null));
+		Dialog dialog = null;
+		for (int i = 0; i < 200 && dialog == null; i++) {
+			Thread.sleep(25);
+			for (final Window w : Window.getWindows()) {
+				if (w instanceof Dialog && w.isShowing() && "Informace pro hlášení chyby".equals(((Dialog) w).getTitle())) {
+					dialog = (Dialog) w;
+				}
+			}
+		}
+		Assert.assertNotNull(dialog);
+		final Dialog d = dialog;
+		final String[] udalost = new String[1];
+		SwingUtilities.invokeAndWait(() -> {
+			udalost[0] = Diagnostika.udalostOkna(new WindowEvent(d, WindowEvent.WINDOW_OPENED));
+			d.dispose();
+		});
+		Assert.assertEquals("Otevřeno okno: Informace pro hlášení chyby", udalost[0]);
+	}
+
+	@Test
+	public void hlaskaSeZaznamenaSTextem() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final String[] udalost = new String[1];
+		SwingUtilities.invokeAndWait(() -> {
+			final JDialog dialog = new JOptionPane("Soubor nelze načíst.", JOptionPane.ERROR_MESSAGE).createDialog("Chyba");
+			udalost[0] = Diagnostika.udalostOkna(new WindowEvent(dialog, WindowEvent.WINDOW_OPENED));
+			dialog.dispose();
+		});
+		Assert.assertEquals("Otevřeno okno: Chyba – Soubor nelze načíst.", udalost[0]);
 	}
 }
