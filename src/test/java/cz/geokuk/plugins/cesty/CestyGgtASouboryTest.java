@@ -98,8 +98,8 @@ public class CestyGgtASouboryTest {
 	}
 
 	@Test
-	public void exportGgtCestyBezKesiVyrobiPrazdnySouborBezHlaseni() throws Exception {
-		// Současný stav (záměr): bez keší vznikne prázdný soubor a uživatel o tom neví.
+	public void zapisGgtCestyBezKesiVyrobiPrazdnySoubor() throws Exception {
+		// Jádro zapíše prázdný soubor; případ bez keší hlídá až akce exportu před výběrem souboru.
 		final Cesta cesta = Cesta.create();
 		updator.pridejNaKonec(cesta, new Wgs(50.0, 14.0).toMou());
 		updator.pridejNaKonec(cesta, new Wgs(50.1, 14.1).toMou());
