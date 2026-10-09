@@ -52,7 +52,6 @@ public class GeogetLoader extends Nacitac0 {
 			K_STATE = sloupec(SLOUPCE_GEOCACHE, "state"), K_DTFOUND = sloupec(SLOUPCE_GEOCACHE, "dtfound");
 	private static final int W_ID = 1, W_LAT = sloupec(SLOUPCE_WAYPOINT, "lat"), W_LON = sloupec(SLOUPCE_WAYPOINT, "lon"), W_PREFIXID = sloupec(SLOUPCE_WAYPOINT, "prefixid"),
 			W_WPTTYPE = sloupec(SLOUPCE_WAYPOINT, "wpttype"), W_NAME = sloupec(SLOUPCE_WAYPOINT, "name");
-	private static final int T_ID = 1, T_CATEGORY = 2, T_VALUE = 3;
 
 	private static final String GEOGET_WAYPOINTS_COUNT = "SELECT count(*) FROM waypoint";
 
@@ -62,11 +61,9 @@ public class GeogetLoader extends Nacitac0 {
 
 	private static final ImmutableMap<String, String> ID_PREFIX_TO_SYM = ImmutableMap.of("GC", "Geocache", "WM", "Waymark", "MU", "Geocache");
 
-	private static final String GEOGET_TAGS_QUERY_FRAGMENT = Joiner.on('\n').join("FROM geotag t ", "LEFT JOIN geotagcategory c ", "  ON t.ptrkat = c.key ", "LEFT JOIN geotagvalue v ",
-			"  ON t.ptrvalue = v.key ", "WHERE (c.value IN ('favorites', 'Elevation', 'Hodnoceni-Pocet', 'Hodnoceni', 'BestOf', 'Znamka') or c.value like '" + PREFIX_USERDEFINOANYCH_GENU + "%')");
-
-	private static final String GEOGET_TAGS_COUNT = "SELECT count(*) " + GEOGET_TAGS_QUERY_FRAGMENT;
-	private static final String GEOGET_TAGS_QUERY = Joiner.on('\n').join("SELECT", "  t.id as id,", "  c.value as category,", "  v.value as value ") + GEOGET_TAGS_QUERY_FRAGMENT;
+	/** Kategorie čtených tagů. Tagy se pak čtou podle klíče kategorie, bez spojení s tabulkou kategorií na každém řádku. */
+	private static final String GEOGET_TAG_CATEGORIES_QUERY = "SELECT c.key, c.value FROM geotagcategory c WHERE (c.value IN ('favorites', 'Elevation', 'Hodnoceni-Pocet', 'Hodnoceni', 'BestOf', 'Znamka') or c.value like '"
+			+ PREFIX_USERDEFINOANYCH_GENU + "%')";
 
 	private static int sloupec(final String[] sloupce, final String alias) {
 		for (int i = 0; i < sloupce.length; i++) {
@@ -90,8 +87,10 @@ public class GeogetLoader extends Nacitac0 {
 			// Bez tagů a popisů se keše dají zobrazit, jejich poškození nesmí připravit uživatele o celou databázi.
 			Map<String, Gpxg> tagy;
 			try {
-				progressor.setMax(pocet + count(statement, GEOGET_TAGS_COUNT) * PROGRESS_VAHA_TAGS);
-				tagy = loadTags(statement, future, progressor);
+				final Map<Integer, String> kategorie = kategorieTagu(statement);
+				final String klice = Joiner.on(',').join(kategorie.keySet());
+				progressor.setMax(pocet + (kategorie.isEmpty() ? 0 : count(statement, "SELECT count(*) FROM geotag WHERE ptrkat IN (" + klice + ")")) * PROGRESS_VAHA_TAGS);
+				tagy = kategorie.isEmpty() ? new HashMap<>() : loadTags(statement, kategorie, klice, future, progressor);
 			} catch (final SQLException e) {
 				ohlasPoskozeni(file, "Tagy (hodnocení, favority)", e);
 				tagy = new HashMap<>();
@@ -241,21 +240,33 @@ public class GeogetLoader extends Nacitac0 {
 		kam.userTags.putAll(z.userTags);
 	}
 
-	private Map<String, Gpxg> loadTags(final Statement statement, final Future<?> future, final Progressor progressor) throws SQLException {
+	private static Map<Integer, String> kategorieTagu(final Statement statement) throws SQLException {
+		final Map<Integer, String> kategorie = new LinkedHashMap<>();
+		try (ResultSet rs = statement.executeQuery(GEOGET_TAG_CATEGORIES_QUERY)) {
+			while (rs.next()) {
+				kategorie.put(rs.getInt(1), rs.getString(2));
+			}
+		}
+		return kategorie;
+	}
+
+	private Map<String, Gpxg> loadTags(final Statement statement, final Map<Integer, String> kategorie, final String klice, final Future<?> future, final Progressor progressor)
+			throws SQLException {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("tag");
 		final Map<String, Gpxg> tagy = new HashMap<>();
 		int citac = 0;
-		try (ResultSet rs = statement.executeQuery(GEOGET_TAGS_QUERY)) {
+		// Unární + nechá SQLite projít geotag popořadě místo hledání po kategoriích v indexu.
+		try (ResultSet rs = statement.executeQuery("SELECT t.id, t.ptrkat, v.value FROM geotag t LEFT JOIN geotagvalue v ON t.ptrvalue = v.key WHERE +t.ptrkat IN (" + klice + ")")) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return tagy;
 				}
 				progressor.addProgress(PROGRESS_VAHA_TAGS);
 
-				final String name = rs.getString(T_ID);
-				final String category = rs.getString(T_CATEGORY);
-				final String value = rs.getString(T_VALUE);
+				final String name = rs.getString(1);
+				final String category = kategorie.get(rs.getInt(2));
+				final String value = rs.getString(3);
 				if (name == null || category == null || value == null) {
 					continue;
 				}
