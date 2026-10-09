@@ -83,7 +83,7 @@ public class KachleZiskavac {
 				irs.add(ir);
 				if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
 					pocitDiskLoadSubmit.inc();
-					final ListenableFuture<Image> future = des.disk.submit(() -> kachleManager.load(ka));
+					final ListenableFuture<Image> future = des.disk.submit(this::nactiZDisku);
 					futura = future;
 
 					Futures.addCallback(future, new FutureCallback<Image>() {
@@ -123,7 +123,9 @@ public class KachleZiskavac {
 						}
 
 						private void spustDownload() {
-							if (onofflineModel.isOnlineMode()) {
+							if (ka.getType().isOffline()) {
+								spustRender();
+							} else if (onofflineModel.isOnlineMode()) {
 								final AtomicReference<Future<?>> moje = new AtomicReference<>();
 								final ListenableFuture<ImageWithData> future = submitDownloadx(ka, des, diagnosticsData, Kachlice.this, moje);
 								moje.set(future);
@@ -150,8 +152,46 @@ public class KachleZiskavac {
 							}
 						}
 
+						private void spustRender() {
+							final AtomicReference<Future<?>> moje = new AtomicReference<>();
+							final ListenableFuture<ImageWithData> future = submitRender(ka, des, diagnosticsData, Kachlice.this, moje);
+							moje.set(future);
+							futura = future;
+							Futures.addCallback(future, new FutureCallback<ImageWithData>() {
+
+								@Override
+								public void onSuccess(final ImageWithData imageWithData) {
+									onImageLoaded(imageWithData.getImg());
+								}
+
+								@Override
+								public void onFailure(final Throwable t) {
+									if (t instanceof CancellationException) {
+										return;
+									}
+									onImageFailure(t);
+								}
+							}, MoreExecutors.directExecutor());
+						}
+
 					}, MoreExecutors.directExecutor());
 				}
+			}
+		}
+
+		/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
+		private Image nactiZDisku() throws IOException {
+			if (!ka.getType().isOffline()) {
+				return kachleManager.load(ka);
+			}
+			final OfflineRenderer renderer = offlineMapy.pouzij();
+			try {
+				if (!renderer.pokryva(ka.getLoc())) {
+					return null; // dlaždice mimo mapy se jen vybarví a neukládá
+				}
+				return kachleManager.load(ka, renderer.getKlic());
+			} finally {
+				renderer.skonci();
 			}
 		}
 
@@ -258,7 +298,7 @@ public class KachleZiskavac {
 			execDiskWrite.execute(() -> {
 				try {
 					log.info("Ukladani kachle na disk #{}:", ukladanci.size());
-					final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getRawData())).collect(Collectors.toList());
+					final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getTyp(), ukladanec.getRawData())).collect(Collectors.toList());
 					if (kachleManager.save(list)) {
 						pocitZapsanoChunkuNaDisk.inc();
 						pocitZapsanoNaDisk.add(list.size());
@@ -286,19 +326,24 @@ public class KachleZiskavac {
 		private final Priority priority;
 		private final ListeningExecutorService disk;
 		private final ListeningExecutorService web;
+		/** Vykreslování offline mapy. */
+		private final ListeningExecutorService render;
 		private final org.slf4j.Logger log;
 
 		private BlockingQueue<Runnable> diskQueue;
 		private BlockingQueue<Runnable> webQueue;
+		private BlockingQueue<Runnable> renderQueue;
 
-		public DvojiceExekucnichSluzeb(final Priority priority, final ExecutorService disk, final ExecutorService web, final Logger log) {
+		public DvojiceExekucnichSluzeb(final Priority priority, final ExecutorService disk, final ExecutorService web, final ExecutorService render, final Logger log) {
 			this.priority = priority;
 			this.disk = MoreExecutors.listeningDecorator(disk);
 			this.web = MoreExecutors.listeningDecorator(web);
+			this.render = MoreExecutors.listeningDecorator(render);
 			this.log = log;
 
 			diskQueue = ((ThreadPoolExecutor) disk).getQueue();
 			webQueue = ((ThreadPoolExecutor) web).getQueue();
+			renderQueue = ((ThreadPoolExecutor) render).getQueue();
 		}
 
 		// ExecutorService nedekorovanyServisProZjisteni
@@ -318,6 +363,9 @@ public class KachleZiskavac {
 	private static final int WEB_QUEUE_SIZE = 100;
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
+
+	/** Vykreslování škáluje na víc vláken špatně a jedno jádro má zůstat pro okno. */
+	static final int NTHREADS_RENDER = Math.max(1, Math.min(2, Runtime.getRuntime().availableProcessors() - 1));
 
 	/** Čtení z cache je hlavně dekódování obrázků, víc vláken pomůže na víc jádrech. */
 	static final int NTHREADS_DISK = Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors()));
@@ -350,6 +398,10 @@ public class KachleZiskavac {
 	private final PocitadloRoste pocitDownloadWebOk = new PocitadloRoste("ka32 WEB #načtených", "Kolikrát se muselo hledanou kachli stáhnout z webu a to úspěšně.");
 
 	private final PocitadloRoste pocitDownloadWebError = new PocitadloRoste("ka33 WEB #chyb", "Kolikrát downloadování dlaždice zahlásilo chybu.");
+
+	private final PocitadloRoste pocitRenderOk = new PocitadloRoste("ka36 RENDER #vykreslených", "Kolik dlaždic offline mapy se vykreslilo.");
+
+	private final PocitadloRoste pocitRenderError = new PocitadloRoste("ka37 RENDER #chyb", "Kolikrát vykreslení dlaždice offline mapy selhalo.");
 
 	private final PocitadloRoste pocitZapsanoChunkuNaDisk = new PocitadloRoste("ka41 disk write #bloků",
 			"V kolika diskovžch operacích byl prováděn zápis na disk. Z důvodu optimalizace se zápisy na disk združují do větších bloků.");
@@ -400,13 +452,15 @@ public class KachleZiskavac {
 
 	private OnofflineModel onofflineModel;
 
+	private final OfflineMapy offlineMapy = new OfflineMapy(this::clearMemoryCache);
+
 	private KachleModel kachleModel;
 
 	public KachleZiskavac() {
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
-				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE),
+				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE), Executors.newFixedThreadPool(NTHREADS_RENDER),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_online"));
 
 		final DvojiceExekucnichSluzeb dvojiceBatch = new DvojiceExekucnichSluzeb(Priority.STAHOVANI,
@@ -414,6 +468,8 @@ public class KachleZiskavac {
 				new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(BATCH_DISK_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
 				// Pokud bude fornta na web přetížená, vykonává stahování vlákno pro dotahování z disku, čímž se to zpomalí
 				new ThreadPoolExecutor(NTHREADS_WEB_CORE_BATCH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
+				// Export vykresluje jedním vláknem, obrazovka má přednost.
+				Executors.newFixedThreadPool(1),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_batch"));
 
 		exekucniSluzby.put(Priority.KACHLE, dvojiceOnline);
@@ -450,6 +506,10 @@ public class KachleZiskavac {
 	public void clearMemoryCache() {
 		log.debug("Cache cleared");
 		kachlmap.asMap().clear();
+	}
+
+	public OfflineMapy getOfflineMapy() {
+		return offlineMapy;
 	}
 
 	public void inject(final KachleModel kachleModel) {
@@ -528,6 +588,37 @@ public class KachleZiskavac {
 			}
 		});
 		return future;
+	}
+
+	private ListenableFuture<ImageWithData> submitRender(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice,
+			final AtomicReference<Future<?>> moje) {
+		return dvojiceExekucnichSluzeb.render.submit(() -> {
+			while (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI && exekucniSluzby.get(Priority.KACHLE).renderQueue.size() > 0) {
+				pocitBrzdeniOfflineKdyzJeOnline.inc();
+				Thread.sleep(100);
+			}
+			if (!kachlice.zahajStahovani(moje)) {
+				throw new CancellationException("Dlaždici už nikdo nechce: " + ka);
+			}
+			try {
+				final OfflineRenderer renderer = offlineMapy.pouzij();
+				try {
+					final ImageWithData imageWithData = renderer.vyrendruj(ka.getLoc());
+					pocitRenderOk.inc();
+					if (renderer.pokryva(ka.getLoc())) {
+						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), imageWithData.getData(), kachlice));
+					}
+					return imageWithData;
+				} finally {
+					renderer.skonci();
+				}
+			} catch (final Exception e) {
+				pocitRenderError.inc();
+				chybyStahovani.computeIfAbsent("offline " + e.getClass().getName(), k -> new OpakovaneChyby("Chyba při vykreslení dlaždice offline mapy (" + e.getClass().getName() + ")")).ohlas(e);
+				diagnosticsData.send(e.toString());
+				throw e;
+			}
+		});
 	}
 
 	private Exception zaznamenejChybu(final Exception e, final URL url, final String klic, final DiagnosticsData diagnosticsData, final Logger log) {

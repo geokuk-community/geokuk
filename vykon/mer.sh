@@ -7,8 +7,11 @@
 #   CO        části: db (načtení databází GeoGetu a GSAKu), hint, kresleni, program (spuštěný program),
 #             kesoidy (kreslení ikon a teček pro počty v IKONY a TECKY, jen nová verze; ve výchozích není),
 #             paralelne (obě databáze naráz v 1 a 2 vláknech, jen nová verze; ve výchozích není),
+#             offline (vykreslování offline mapy .map, jen nová verze; ve výchozích není),
 #             výchozí db hint kresleni program
 #   N, POPIS  keší v databázích a délka popisu (100000, 20000)
+#   MAPY, TEMA, MISTO, ZOOMY  offline mapa: složka s .map (výchozí syntetická testovací mapa), téma,
+#             místo lat,lon a zoomy (výchozí 50.003,14.405 a 13,15,17)
 #   PRACOVNI  složka pro worktree a databáze (výchozí target/vykon)
 #   VYSTUP    soubor s výsledkem (výchozí PRACOVNI/<stroj>-<datum>.txt)
 set -euo pipefail
@@ -136,6 +139,12 @@ fi
 	if [[ "$CO" == *paralelne* ]]; then
 		echo "## Databáze naráz, každá ve vlastním vlákně (nová verze, prázdný builder)"
 		java_ -cp "$CP_NOVA" cz.geokuk.plugins.kesoid.importek.MerRozpad geoget="$(nativni "$DB/geoget.db3")" gsak="$(nativni "$DB/gsak.db3")" kola=3 vlakna=1,2 | grep -E "^(zdroj|kolo)"
+	fi
+	if [[ "$CO" == *offline* ]]; then
+		echo "## Offline mapa (nová verze, dlaždice 256 px s popisky)"
+		misto="${MISTO:-50.003,14.405}"
+		java_ -cp "$CP_NOVA" cz.geokuk.plugins.mapy.kachle.podklady.MerOffline slozka="$(nativni "${MAPY:-$REPO/src/test/resources/offline-mapy}")" tema="${TEMA:-}" \
+			lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}"
 	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"

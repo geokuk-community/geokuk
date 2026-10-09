@@ -14,11 +14,17 @@ public interface KachleManager {
 
 	public static class ItemToSave {
 		public final Ka key;
+		/** Typ dlaždice v úložišti, u offline mapy podle souborů map a tématu. */
+		public final String typ;
 		public final byte[] imageData;
 
 		public ItemToSave(final Ka key, final byte[] imageData) {
-			super();
+			this(key, key.typToString(), imageData);
+		}
+
+		public ItemToSave(final Ka key, final String typ, final byte[] imageData) {
 			this.key = key;
+			this.typ = typ;
 			this.imageData = imageData;
 		}
 	}
@@ -40,6 +46,11 @@ public interface KachleManager {
 	 * @return The requested tile as Image or null if the tile couldn't be loaded or isn't present in the storage.
 	 */
 	public Image load(Ka ki);
+
+	/** Načte dlaždici uloženou pod zadaným typem, viz {@link ItemToSave#typ}. */
+	public default Image load(final Ka ki, final String typ) {
+		return load(ki);
+	}
 
 	/**
 	 * Save many tiles to the storage. Should be atomic ("all or nothing")
