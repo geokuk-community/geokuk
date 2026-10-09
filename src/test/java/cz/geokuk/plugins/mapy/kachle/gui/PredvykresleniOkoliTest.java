@@ -108,4 +108,10 @@ public class PredvykresleniOkoliTest {
 		}
 		Assert.assertEquals(okoli.size(), jedinecne.size());
 	}
+
+	@Test
+	public void napredvykresleniJeDostJader() {
+		Assert.assertFalse(PredvykresleniOkoli.jeVhodne(4));
+		Assert.assertTrue(PredvykresleniOkoli.jeVhodne(8));
+	}
 }

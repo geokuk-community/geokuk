@@ -24,16 +24,23 @@ public class OfflineMapy {
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
 
-	private File slozka;
+	// Nastavení se mění z EDT bez zámku; vlákno, které právě otevírá mapy pod zámkem, by EDT zdrželo.
+	private volatile File slozka;
 	/** Kam se ukládají vykreslené symboly témat, null = nikam. */
-	private File slozkaSymbolu;
-	private TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
+	private volatile File slozkaSymbolu;
+	private volatile TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
 	/** Měřítko displeje (1 = 100 %), podle něj se kreslí větší dlaždice. */
-	private double meritko = 1;
+	private volatile double meritko = 1;
 	/** Násobek velikosti písma a značek na mapě (1 = 100 %). */
-	private double pismo = 1;
+	private volatile double pismo = 1;
 
-	private OfflineRenderer renderer;
+	/** Nastavení, podle kterého jsou otevřené mapy; mění se jen v {@link #pouzij()}. */
+	private File slozkaOtevrena;
+	private TemaOfflineMapy temaOtevrene;
+	private double meritkoOtevrene;
+	private double pismoOtevrene;
+
+	private volatile OfflineRenderer renderer;
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
 	private OfflineRenderer.NacteneTema nacteneTema;
 	private IOException chyba;
@@ -49,22 +56,14 @@ public class OfflineMapy {
 		this.priZmene = priZmene;
 	}
 
-	public synchronized void nastav(final File slozka, final TemaOfflineMapy tema) {
-		if (Objects.equals(this.slozka, slozka) && this.tema.equals(tema)) {
-			return;
-		}
+	public void nastav(final File slozka, final TemaOfflineMapy tema) {
 		this.slozka = slozka;
 		this.tema = tema;
-		otiskSlozky = null;
 	}
 
 	/** Nastaví měřítko displeje, zaokrouhlené na čtvrtiny v rozsahu 1–3; při změně se mapy vykreslí znovu. */
-	public synchronized void nastavMeritko(final double meritkoDispleje) {
-		final double m = zaokrouhliMeritko(meritkoDispleje);
-		if (m != meritko) {
-			meritko = m;
-			otiskSlozky = null;
-		}
+	public void nastavMeritko(final double meritkoDispleje) {
+		meritko = zaokrouhliMeritko(meritkoDispleje);
 	}
 
 	static double zaokrouhliMeritko(final double meritkoDispleje) {
@@ -74,13 +73,9 @@ public class OfflineMapy {
 		return Math.max(1, Math.min(3, Math.round(meritkoDispleje * 4) / 4.0));
 	}
 
-	/** Nastaví velikost písma a značek (1 = 100 %), zaokrouhlenou na 5 % v rozsahu 80–150 %; při změně se mapy vykreslí znovu. */
-	public synchronized void nastavPismo(final double velikost) {
-		final double p = zaokrouhliPismo(velikost);
-		if (p != pismo) {
-			pismo = p;
-			otiskSlozky = null;
-		}
+	/** Nastaví velikost písma a značek (1 = 100 %), zaokrouhlenou na 5 % v rozsahu 80–150 %; mapy se vykreslí znovu. */
+	public void nastavPismo(final double velikost) {
+		pismo = zaokrouhliPismo(velikost);
 	}
 
 	public static double zaokrouhliPismo(final double velikost) {
@@ -90,7 +85,7 @@ public class OfflineMapy {
 		return Math.max(0.8, Math.min(1.5, Math.round(velikost * 20) / 20.0));
 	}
 
-	public synchronized double getMeritko() {
+	public double getMeritko() {
 		return meritko;
 	}
 
@@ -98,21 +93,22 @@ public class OfflineMapy {
 		this.priOtevreni = priOtevreni;
 	}
 
-	public synchronized void setSlozkaSymbolu(final File slozkaSymbolu) {
+	public void setSlozkaSymbolu(final File slozkaSymbolu) {
 		this.slozkaSymbolu = slozkaSymbolu;
 	}
 
-	public synchronized File getSlozka() {
+	public File getSlozka() {
 		return slozka;
 	}
 
-	public synchronized TemaOfflineMapy getTema() {
+	public TemaOfflineMapy getTema() {
 		return tema;
 	}
 
 	/** Proč se nepoužilo zvolené téma, null když se použilo nebo mapa zatím není otevřená. */
-	public synchronized String getChybaTematu() {
-		return renderer == null ? null : renderer.getChybaTematu();
+	public String getChybaTematu() {
+		final OfflineRenderer r = renderer;
+		return r == null ? null : r.getChybaTematu();
 	}
 
 	/** Soubory .map ve složce podle abecedy, velikost písmen v příponě nehraje roli. */
@@ -134,10 +130,21 @@ public class OfflineMapy {
 	 *             když ve složce není mapa nebo ji nejde otevřít
 	 */
 	synchronized OfflineRenderer pouzij() throws IOException {
+		final File s = slozka;
+		final TemaOfflineMapy t = tema;
+		final double m = meritko;
+		final double pi = pismo;
+		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene) {
+			slozkaOtevrena = s;
+			temaOtevrene = t;
+			meritkoOtevrene = m;
+			pismoOtevrene = pi;
+			otiskSlozky = null;
+		}
 		final long ted = System.nanoTime();
 		if (otiskSlozky == null || ted - posledniKontrola >= kontrolaSlozkyNs) {
 			posledniKontrola = ted;
-			final List<File> mapy = mapyVeSlozce(slozka);
+			final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
 			final String otisk = otisk(mapy);
 			if (!otisk.equals(otiskSlozky)) {
 				otiskSlozky = otisk;
@@ -154,7 +161,7 @@ public class OfflineMapy {
 	}
 
 	private String otisk(final List<File> mapy) {
-		final StringBuilder sb = new StringBuilder(tema.otisk()).append('\n').append(meritko).append(' ').append(pismo).append('\n');
+		final StringBuilder sb = new StringBuilder(temaOtevrene.otisk()).append('\n').append(meritkoOtevrene).append(' ').append(pismoOtevrene).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
@@ -166,13 +173,13 @@ public class OfflineMapy {
 		final boolean zneplatnit = renderer != null || chyba != null;
 		zavriRenderer();
 		if (mapy.isEmpty()) {
-			chyba = new OfflineMapaChyba("Ve složce " + slozka + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
+			chyba = new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
 		} else {
 			try {
 				final long start = System.nanoTime();
 				renderer = OfflineRenderer.otevri(mapy, nacteneTema());
 				chyba = null;
-				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, tema, renderer.getKlic());
+				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, temaOtevrene, renderer.getKlic());
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
 			} catch (final IOException e) {
 				chyba = e;
@@ -185,11 +192,11 @@ public class OfflineMapy {
 	}
 
 	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
-		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(tema.otisk()) && nacteneTema.meritko == meritko && nacteneTema.pismo == pismo) {
+		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(temaOtevrene.otisk()) && nacteneTema.meritko == meritkoOtevrene && nacteneTema.pismo == pismoOtevrene) {
 			return nacteneTema;
 		}
 		uvolniTema();
-		nacteneTema = OfflineRenderer.nactiTema(tema, slozkaSymbolu, meritko, pismo);
+		nacteneTema = OfflineRenderer.nactiTema(temaOtevrene, slozkaSymbolu, meritkoOtevrene, pismoOtevrene);
 		return nacteneTema;
 	}
 

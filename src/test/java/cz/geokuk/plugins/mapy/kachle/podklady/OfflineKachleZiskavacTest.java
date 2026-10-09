@@ -164,4 +164,20 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertTrue(chyba.getMessage(), chyba.getMessage().contains(slozka.toString()));
 		Assert.assertFalse("chybějící mapy jsou běžný stav, ne chyba v Diagnostice", cz.geokuk.framework.ChybyVDiagnostice.pribude("offline mapy", chybPred));
 	}
+
+	/** Nečitelná mapa je chyba vykreslení, ne čtení cache; po zkopírování mapy se dlaždice vykreslí. */
+	@Test(timeout = 30000)
+	public void bezMapyJenChybaVykresleniPakSeVykresli() throws Exception {
+		ziskavac.getOfflineMapy().kontrolaSlozkyNs = 0;
+		final int disk = ziskavac.pocitDiskLoadError.get();
+		final int render = ziskavac.pocitRenderError.get();
+		Assert.assertNotNull(ziskej().getThr());
+		Assert.assertEquals("chyba čtení cache", disk, ziskavac.pocitDiskLoadError.get());
+		Assert.assertEquals("chyba vykreslení", render + 1, ziskavac.pocitRenderError.get());
+
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final KachloStav stav = ziskej();
+		Assert.assertNull(stav.getThr());
+		Assert.assertNotNull(stav.getImg());
+	}
 }

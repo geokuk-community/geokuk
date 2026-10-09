@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -150,5 +151,25 @@ public class PredvykresleniOkoliZiskavacTest {
 		Thread.sleep(300);
 		Assert.assertTrue("po zrušení se nežádá další", zadanoPredvykreslenim.get() <= po + 1);
 		Assert.assertTrue(zadanoPredvykreslenim.get() < okoli(3).size());
+	}
+
+	@Test(timeout = 60000)
+	public void zruseneDlazdiceSeNevykresluji() throws Exception {
+		Vykon.vynuluj();
+		final List<Kanceler> kanceleri = new ArrayList<>();
+		final List<Ka> dlazdice = okoli(12);
+		for (final Ka ka : dlazdice) {
+			kanceleri.add(ziskavac.ziskejObsah(new KaOneReq(ka, stav -> {
+			}, Priority.KACHLE), DiagnosticsData.create(null, null, null)));
+		}
+		while (Vykon.souhrn(Vykon.Velicina.VYKRESLENI_OFFLINE).pocet < 1) {
+			Thread.sleep(1);
+		}
+		kanceleri.forEach(Kanceler::cancel);
+		final long poZruseni = Vykon.souhrn(Vykon.Velicina.VYKRESLENI_OFFLINE).pocet;
+		Thread.sleep(3000);
+		final long vykresleno = Vykon.souhrn(Vykon.Velicina.VYKRESLENI_OFFLINE).pocet;
+		System.out.println("ZRUSENO: do zrušení " + poZruseni + ", vykresleno " + vykresleno + " z " + dlazdice.size());
+		Assert.assertTrue("po zrušení se vykreslilo " + (vykresleno - poZruseni) + " z " + dlazdice.size(), vykresleno - poZruseni <= 8);
 	}
 }

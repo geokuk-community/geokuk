@@ -31,7 +31,9 @@ public class DiagnostikaAction extends Action0 {
 		area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, area.getFont().getSize()));
 		area.setCaretPosition(0);
 		final Object[] options = { "Kopírovat do schránky", "Nahlásit na GitHubu", "Zavřít" };
-		final int n = JOptionPane.showOptionDialog(rodic, new JScrollPane(area), "Informace pro hlášení chyby", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+		final JScrollPane posuvnik = new JScrollPane(area);
+		posuvnik.putClientProperty(Diagnostika.BEZ_TEXTU, Boolean.TRUE);
+		final int n = JOptionPane.showOptionDialog(rodic, posuvnik, "Informace pro hlášení chyby", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 		if (n == 0) {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
 		} else if (n == 1) {

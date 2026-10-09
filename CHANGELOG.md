@@ -18,12 +18,15 @@
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
-  v Soubor > Umístění souborů na kartě Mapy.
+  v Soubor > Umístění souborů na kartě Mapy. Složku `data/offline-mapy`
+  program při startu založí.
 - Soubor > Zobrazení programu: ostrost offline mapy (podle zvětšení
   systému, nebo 100 % – rychlejší, mapu pak zvětší systém) a velikost písma
   a ikon na mapě 80–150 %. Změna se projeví hned.
 - Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
   asi o čtvrtinu rychleji.
+- Posun a změna měřítka offline mapy nečekají, až se na pozadí otevře mapa
+  nebo načte téma.
 - Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
   i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
@@ -32,14 +35,19 @@
 - Offline mapa po zobrazení celé obrazovky na pozadí předvykreslí dlaždice
   kolem okna, takže posun mapy o kousek je okamžitý. Posun nebo změna
   měřítka předvykreslování přeruší, aby nezdrželo viditelné dlaždice.
+  Na počítači s méně než pěti jádry se nepoužívá.
 - Na displeji se zvětšením (třeba 150 %) kreslí offline mapa dlaždice
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
+- Po odstranění kříže z kontextového menu jde mapu dál přibližovat
+  a oddalovat kolečkem myši a kliknutím do mapy postavit nový kříž.
 - Informace pro hlášení chyby obsahují výkon kreslení: dobu překreslení
   mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
   vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
   ukazatel výkonu v rohu mapy.
+- Poslední události v informacích pro hlášení chyby neuvádějí kontextová
+  menu jako otevřená okna a u okna Informace pro hlášení chyby jen jeho název.
 - Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
   ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
   dokreslení se nahradí ostrou.
@@ -48,6 +56,8 @@
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
   (GNU LGPL 3) je ve složce `licence` a v okně O programu.
 - Měření vykreslování offline mapy (`vykon/mer.sh`, část `offline`).
+- Diagnostika: nečitelná offline mapa se počítá jen jako chyba vykreslení,
+  ne jako chyba čtení cache dlaždic.
 
 ## 6.3.0
 
