@@ -71,6 +71,10 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 		}
 	}
 
+	File getSoubor() {
+		return soubor;
+	}
+
 	/** Uloží symboly, jestli nějaké přibyly; soubor se nahradí celý najednou. */
 	void uloz() {
 		if (soubor == null || !pribylo.getAndSet(false)) {

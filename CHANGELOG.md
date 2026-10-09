@@ -9,7 +9,8 @@
   (mapsforge, například z osm.paws.cz) ze složky `data/offline-mapy` se
   vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR
   a SK) se kreslí naráz, mapu zkopírovanou do složky za běhu program sám
-  načte. Vykreslené dlaždice se ukládají do cache dlaždic.
+  načte. Vykreslené dlaždice se ukládají do cache dlaždic; po výměně
+  mapy nebo tématu v ní zůstávají jen tři poslední kombinace.
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit

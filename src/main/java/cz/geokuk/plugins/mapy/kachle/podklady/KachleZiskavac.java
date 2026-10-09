@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URL;
@@ -475,7 +476,15 @@ public class KachleZiskavac {
 
 	private KachleModel kachleModel;
 
+	/** Úklid cache offline mapy běží v jednom vlákně na pozadí, dlaždice na obrazovce nezdržuje. */
+	private final ExecutorService uklidOfflineCache = Executors.newSingleThreadExecutor(vlaknaRenderu("Úklid cache offline mapy"));
+
 	public KachleZiskavac() {
+		offlineMapy.setPriOtevreni((klic, symboly) -> {
+			if (symboly != null) {
+				uklidOfflineCache.execute(() -> uklidOfflineCache(klic, symboly));
+			}
+		});
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
@@ -518,6 +527,17 @@ public class KachleZiskavac {
 			execDiskWrite.awaitTermination(5, TimeUnit.SECONDS);
 		} catch (final InterruptedException e) {
 			Thread.currentThread().interrupt();
+		}
+	}
+
+	private void uklidOfflineCache(final String klic, final File symboly) {
+		try {
+			final Set<String> ponechat = UklidOfflineCache.zaznamenej(symboly.getParentFile(), klic, symboly);
+			final KachleManager km = kachleManager;
+			final int smazano = km == null ? 0 : km.smazOfflineKrome(ponechat);
+			log.info("Úklid cache offline mapy: zůstávají klíče {}, smazáno {} dlaždic", ponechat, smazano);
+		} catch (final IOException | RuntimeException e) {
+			log.warn("Cache offline mapy nejde uklidit: {}", e.toString());
 		}
 	}
 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,6 +18,8 @@ public class OfflineMapy {
 	private static final long KONTROLA_SLOZKY_NS = TimeUnit.SECONDS.toNanos(2);
 
 	private final Runnable priZmene;
+	/** Zavolá se po každém otevření map s klíčem dlaždic a souborem symbolů (null = neukládají se). */
+	private volatile BiConsumer<String, File> priOtevreni = (klic, symboly) -> {};
 
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
@@ -71,6 +74,10 @@ public class OfflineMapy {
 
 	public synchronized double getMeritko() {
 		return meritko;
+	}
+
+	public void setPriOtevreni(final BiConsumer<String, File> priOtevreni) {
+		this.priOtevreni = priOtevreni;
 	}
 
 	public synchronized void setSlozkaSymbolu(final File slozkaSymbolu) {
@@ -148,6 +155,7 @@ public class OfflineMapy {
 				renderer = OfflineRenderer.otevri(mapy, nacteneTema());
 				chyba = null;
 				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, tema, renderer.getKlic());
+				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
 			} catch (final IOException e) {
 				chyba = e;
 				log.warn("Offline mapu nejde otevřít: {}", e.getMessage());

@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.Image;
 import java.util.Collection;
+import java.util.Set;
 
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 
@@ -60,4 +61,9 @@ public interface KachleManager {
 	 * @return true if the saving of ALL items was successful, false otherwise
 	 */
 	public boolean save(Collection<ItemToSave> itemsToSave);
+
+	/** Smaže dlaždice offline mapy (typ {@code o} a 8 šestnáctkových číslic) kromě zadaných typů; vrátí jejich počet. */
+	public default int smazOfflineKrome(final Set<String> ponechat) {
+		return 0;
+	}
 }
