@@ -137,6 +137,30 @@ public class KachloDownloader {
 		return conn;
 	}
 
+	/**
+	 * Dlaždice ve formátu obrazovky. Obrázek přímo z dekodéru (paleta, BGR) Direct3D při zvětšení obrazovky škáluje při každém překreslení znovu; kompatibilní obrázek si
+	 * podrží v grafické kartě.
+	 */
+	static BufferedImage kompatibilni(final BufferedImage img) {
+		if (img == null || GraphicsEnvironment.isHeadless()) {
+			return img;
+		}
+		final GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+		final int pruhlednost = img.getTransparency();
+		if (img.getColorModel().equals(gc.getColorModel(pruhlednost))) {
+			return img;
+		}
+		final BufferedImage vysledek = gc.createCompatibleImage(img.getWidth(), img.getHeight(), pruhlednost);
+		final Graphics2D g = vysledek.createGraphics();
+		try {
+			g.setComposite(AlphaComposite.Src);
+			g.drawImage(img, 0, 0, null);
+		} finally {
+			g.dispose();
+		}
+		return vysledek;
+	}
+
 	/** Dekodér JPEG useknutá data nepovažuje za chybu a zbytek dlaždice doplní šedou, ohlásí to jen varováním. */
 	static Image precti(final InputStream stm) throws IOException {
 		try (ImageInputStream iis = ImageIO.createImageInputStream(stm)) {
@@ -158,7 +182,7 @@ public class KachloDownloader {
 				if (!useknuto.isEmpty()) {
 					throw new UseknutaDlazdice(useknuto.get(0));
 				}
-				return img;
+				return kompatibilni(img);
 			} finally {
 				reader.dispose();
 			}
