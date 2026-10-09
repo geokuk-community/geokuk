@@ -13,6 +13,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 
 public class KontrolaUmisteniTest {
@@ -39,6 +40,16 @@ public class KontrolaUmisteniTest {
 		KontrolaUmisteni.pripravSlozky();
 		Assert.assertTrue(mapy.isDirectory());
 		Assert.assertEquals(new File(FConst.DATA_DIR, "mapy"), mapy);
+	}
+
+	@Test
+	public void pripraviSlozkuOfflineMap() {
+		final File offline = KachleUmisteniSouboru.OFFLINE_MAPY_DIR.getFile();
+		offline.delete();
+		Assume.assumeFalse("složka už obsahuje soubory", offline.exists());
+		KontrolaUmisteni.pripravSlozky();
+		Assert.assertTrue(offline.isDirectory());
+		Assert.assertEquals(new File(FConst.DATA_DIR, "offline-mapy"), offline);
 	}
 
 	@Test

@@ -18,7 +18,8 @@
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
-  v Soubor > Umístění souborů na kartě Mapy.
+  v Soubor > Umístění souborů na kartě Mapy. Složku `data/offline-mapy`
+  program při startu založí.
 - Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
   asi o čtvrtinu rychleji.
 - Posun a změna měřítka offline mapy nečekají, až se na pozadí otevře mapa
