@@ -45,6 +45,9 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   S `predehrat=1` čte zdroje postupně a druhé vlákno mezitím sekvenčně
   načte soubor dalšího zdroje do cache systému; s `predehrat=0` bez toho.
   Smysl má studeně, každý běh po restartu počítače.
+  S `retezce=1` načte zdroje jako program a pro každé textové pole
+  waypointů a kešoidů vypíše počet řetězců, různých hodnot, paměť teď
+  a paměť při sdílení stejných textů.
 - `offline` (jen na vyžádání, jen nová verze): `MerOffline` otevře mapy
   `.map` ze složky `MAPY` s tématem `TEMA` a pro každý zoom ze `ZOOMY`
   vykreslí 6×6 dlaždic kolem `MISTO`: první průchod v jednom vlákně, pak

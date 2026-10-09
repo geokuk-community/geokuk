@@ -2,6 +2,8 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.*;
@@ -32,6 +34,9 @@ import cz.geokuk.util.file.Root;
  * <p>
  * S {@code predehrat}: zdroje se čtou postupně jako v programu (prázdný builder); s {@code predehrat=1} mezitím druhé vlákno čte sekvenčně soubor DALŠÍHO
  * zdroje (a jeho -wal) jen do cache systému, první zdroj se čte bez předehřátí. Porovnání s {@code predehrat=0} má smysl studeně (každý běh po restartu počítače).
+ * <p>
+ * S {@code retezce=1}: všechny zdroje se načtou jako v programu a pro každé textové pole waypointů a kešoidů se vypíše počet řetězců, počet různých hodnot,
+ * kolik paměti zabírají a kolik by zabíraly, kdyby stejné texty byly jeden objekt; na konci totéž přes všechna pole dohromady.
  */
 public class MerRozpad {
 	static ProgressModel progress() {
@@ -98,6 +103,7 @@ public class MerRozpad {
 		final List<Integer> vlakna = new ArrayList<>();
 		boolean skupiny = false;
 		Boolean predehrat = null;
+		boolean retezce = false;
 		for (final String arg : a) {
 			final int i = arg.indexOf('=');
 			final String k = arg.substring(0, i);
@@ -106,6 +112,8 @@ public class MerRozpad {
 				kol = Integer.parseInt(v);
 			} else if (k.equals("predehrat")) {
 				predehrat = v.equals("1");
+			} else if (k.equals("retezce")) {
+				retezce = v.equals("1");
 			} else if (k.equals("skupiny")) {
 				skupiny = v.equals("1");
 			} else if (k.equals("vlakna")) {
@@ -123,6 +131,10 @@ public class MerRozpad {
 		}
 		if (skupiny) {
 			skupiny(zdroje);
+			return;
+		}
+		if (retezce) {
+			retezce(zdroje);
 			return;
 		}
 		if (predehrat != null) {
@@ -355,5 +367,91 @@ public class MerRozpad {
 			System.out.println("kolo " + kolo + " | načteno " + jmena + "| čtení+builder " + (t1 - t0) / 1_000_000 + " ms | done " + (t2 - t1) / 1_000_000 + " ms | z toho bag+index "
 					+ (t3 - t2) / 1_000_000 + " ms | kešoidů " + b.getKesBag().getKesoidy().size() + ", wpt " + b.getKesBag().getWpts().size());
 		}
+	}
+
+	/** Řetězce v načtených waypointech a kešoidech: po polích a celkem, kolik by ušetřilo sdílení stejných textů. */
+	static void retezce(final Map<File, String> zdroje) throws Exception {
+		final Genom genom = new Genom();
+		final KesoidImportBuilder b = new KesoidImportBuilder(genom, new GccomNick("Ja", 42), progress(), new KesoidPluginManager());
+		b.init();
+		final long t0 = System.nanoTime();
+		for (final File f : zdroje.keySet()) {
+			b.setCurrentlyLoading(new KeFile(new FileAndTime(f, f.lastModified()), new Root(f.getParentFile(), new Root.Def(0, null, null))), true);
+			cti(zdroje.get(f), f, b);
+		}
+		b.done();
+		final List<Wpt> wpty = new ArrayList<>(b.getKesBag().getWpts());
+		final Set<Object> kesoidy = Collections.newSetFromMap(new IdentityHashMap<>());
+		for (final Wpt w : wpty) {
+			kesoidy.add(w.getKesoid());
+		}
+		System.out.println("načteno za " + (System.nanoTime() - t0) / 1_000_000 + " ms | wpt " + wpty.size() + " | kešoidů " + kesoidy.size());
+		final Map<String, List<Field>> pole = new TreeMap<>();
+		final List<Object> objekty = new ArrayList<>(wpty);
+		objekty.addAll(kesoidy);
+		for (final Object o : objekty) {
+			for (Class<?> c = o.getClass(); c != Object.class; c = c.getSuperclass()) {
+				final String jmeno = c.getSimpleName();
+				if (pole.containsKey(jmeno)) {
+					continue;
+				}
+				final List<Field> f = new ArrayList<>();
+				for (final Field x : c.getDeclaredFields()) {
+					if (x.getType() == String.class && !Modifier.isStatic(x.getModifiers())) {
+						x.setAccessible(true);
+						f.add(x);
+					}
+				}
+				pole.put(jmeno, f);
+			}
+		}
+		System.out.println("pole;řetězců;různých objektů;různých hodnot;MB teď;MB po sdílení;úspora MB");
+		final Set<String> vseObjekty = Collections.newSetFromMap(new IdentityHashMap<>());
+		final Set<String> vseHodnoty = new HashSet<>();
+		long vseTed = 0;
+		long vsePo = 0;
+		for (final Map.Entry<String, List<Field>> e : pole.entrySet()) {
+			for (final Field f : e.getValue()) {
+				long pocet = 0;
+				long ted = 0;
+				long po = 0;
+				final Set<String> obj = Collections.newSetFromMap(new IdentityHashMap<>());
+				final Set<String> hodnoty = new HashSet<>();
+				for (final Object o : objekty) {
+					if (!f.getDeclaringClass().isInstance(o)) {
+						continue;
+					}
+					final String t = (String) f.get(o);
+					if (t == null) {
+						continue;
+					}
+					pocet++;
+					if (obj.add(t)) {
+						ted += bajty(t);
+					}
+					if (hodnoty.add(t)) {
+						po += bajty(t);
+					}
+					if (vseObjekty.add(t)) {
+						vseTed += bajty(t);
+					}
+					if (vseHodnoty.add(t)) {
+						vsePo += bajty(t);
+					}
+				}
+				System.out.println(e.getKey() + "." + f.getName() + ";" + pocet + ";" + obj.size() + ";" + hodnoty.size() + ";" + ted / 1_000_000 + ";" + po / 1_000_000 + ";" + (ted - po) / 1_000_000);
+			}
+		}
+		System.out.println("celkem;;" + vseObjekty.size() + ";" + vseHodnoty.size() + ";" + vseTed / 1_000_000 + ";" + vsePo / 1_000_000 + ";" + (vseTed - vsePo) / 1_000_000);
+	}
+
+	/** Velikost řetězce na haldě (komprimované ukazatele, kompaktní řetězce): objekt String 24 B + pole bajtů zarovnané na 8 B. */
+	static long bajty(final String t) {
+		boolean latin1 = true;
+		for (int i = 0; i < t.length() && latin1; i++) {
+			latin1 = t.charAt(i) <= 0xFF;
+		}
+		final long pole = 16 + (latin1 ? t.length() : 2L * t.length());
+		return 24 + (pole + 7) / 8 * 8;
 	}
 }
