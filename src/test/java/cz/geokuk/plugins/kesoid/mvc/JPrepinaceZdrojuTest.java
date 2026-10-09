@@ -54,6 +54,20 @@ public class JPrepinaceZdrojuTest {
 		SwingUtilities.invokeAndWait(r);
 	}
 
+	/** Systém okna (macOS) může polohu a velikost okna po setBounds ještě upravit; čeká, až se nemění. */
+	private void pockejNaUstaleniOkna() throws Exception {
+		Rectangle predtim = null;
+		for (int i = 0; i < 40; i++) {
+			final Rectangle[] r = new Rectangle[1];
+			naEdt(() -> r[0] = new Rectangle(blok.getLocationOnScreen(), okno.getSize()));
+			if (r[0].equals(predtim)) {
+				return;
+			}
+			predtim = r[0];
+			Thread.sleep(100);
+		}
+	}
+
 	private Dimension rozmer(final StavZdroju stav) throws Exception {
 		final Dimension[] d = new Dimension[1];
 		naEdt(() -> {
@@ -108,6 +122,9 @@ public class JPrepinaceZdrojuTest {
 			final Rectangle obrazovka = okno.getGraphicsConfiguration().getBounds();
 			okno.setBounds(obrazovka.x, obrazovka.y + 20, okno.getWidth(), Math.min(700, obrazovka.height - 20));
 			okno.validate();
+		});
+		pockejNaUstaleniOkna();
+		naEdt(() -> {
 			blok.obnov(mnoho.snimek());
 			blok.ukazSouhrn();
 		});
@@ -147,6 +164,38 @@ public class JPrepinaceZdrojuTest {
 			okno.validate();
 			Assert.assertEquals(sirka[0], blok.getBunka(TypZdroje.GSAK).getPreferredSize().width);
 			Assert.assertTrue(blok.getIkona(TypZdroje.GSAK).getWidth() > 0);
+		});
+	}
+
+	/** Ikona „načítá se“ se točí jen během načítání a jen když je blok vidět. */
+	@Test
+	public void tocitkoJenBehemNacitani() throws Exception {
+		final Dimension nacteno = rozmer(data.snimek());
+		naEdt(() -> Assert.assertFalse(blok.animuje()));
+		final java.io.File gg = data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor();
+		data.registr.zacina(data.registr.getGenerace(), gg);
+		Assert.assertEquals("slot ikony drží šířku", nacteno, rozmer(data.snimek()));
+		naEdt(() -> {
+			Assert.assertTrue(blok.animuje());
+			Assert.assertFalse("schovaná tabulka se nepřekresluje", blok.getUplna().animuje());
+			blok.ukazSouhrn();
+		});
+		naEdt(() -> {
+			Assert.assertTrue(blok.getUplna().animuje());
+			blok.zavriSeznam();
+			okno.setVisible(false);
+		});
+		naEdt(() -> {
+			Assert.assertFalse("schovaný blok se nepřekresluje", blok.animuje());
+			Assert.assertFalse(blok.getUplna().animuje());
+			okno.setVisible(true);
+		});
+		naEdt(() -> Assert.assertTrue("po zobrazení se točí dál", blok.animuje()));
+		data.registr.hotovo(data.registr.getGenerace(), gg, 10, 10);
+		naEdt(() -> {
+			blok.obnov(data.snimek());
+			Assert.assertFalse(blok.animuje());
+			Assert.assertFalse(blok.getUplna().animuje());
 		});
 	}
 
@@ -406,12 +455,23 @@ public class JPrepinaceZdrojuTest {
 		});
 	}
 
+	@Test
+	public void bublinaZamkuMaKazdouDatabaziNaRadku() {
+		final StavyZdrojuProTesty s = new StavyZdrojuProTesty();
+		final File a = s.pridej(TypZdroje.GSAK, "A.db3");
+		final File b = s.pridej(TypZdroje.GSAK, "B.db3");
+		s.prepis();
+		s.registr.cekaNaZapis(s.registr.getGenerace(), a);
+		s.registr.cekaNaZapis(s.registr.getGenerace(), b);
+		Assert.assertEquals("<html>GSAK: " + JTabulkaZdroju.ZAMCENO + "<br>A.db3<br>B.db3<br>" + JTabulkaZdroju.RADA_ZAMCENO, JPrepinaceZdroju.tooltipIkony(s.snimek(), TypZdroje.GSAK));
+	}
+
 	/** Záznam kliknutí v Diagnostice bere text bubliny a u přepínačů jejich vlastní stav; zaškrtávátko typu proto přepínačem není a bublina říká, co klik udělá. */
 	@Test
 	public void zaskrtavatkoNeniPrepinacABublinaRikaAkci() {
 		Assert.assertFalse((Object) blok.getZaskrtavatko(TypZdroje.GSAK) instanceof JToggleButton);
-		Assert.assertEquals("GSAK zapnout", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.VYPNUTO));
-		Assert.assertEquals("GSAK vypnout", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.ZAPNUTO));
+		Assert.assertEquals("GSAK zapnout; " + JTabulkaZdroju.KLAVESA_JEN + "+klik: jen GSAK", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.VYPNUTO));
+		Assert.assertEquals("GSAK vypnout; " + JTabulkaZdroju.KLAVESA_JEN + "+klik: jen GSAK", JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.ZAPNUTO));
 		Assert.assertTrue(JPrepinaceZdroju.tooltipZaskrtavatka(TypZdroje.GSAK, cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu.CASTECNE).startsWith("GSAK vypnout"));
 	}
 

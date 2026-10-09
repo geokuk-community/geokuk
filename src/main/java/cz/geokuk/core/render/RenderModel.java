@@ -294,8 +294,15 @@ public class RenderModel extends Model0 {
 
 	public List<Wgs> spocitejKalibracniBody(final Coord cocox, final int kalibrBodu) {
 		final List<Wgs> wgss = new ArrayList<>();
-		final int width = cocox.getDim().width;
-		final int height = cocox.getDim().height;
+		for (final Point p : kalibracniPixely(cocox.getDim().width, cocox.getDim().height, kalibrBodu)) {
+			wgss.add(cocox.transform(p).toWgs());
+		}
+		return wgss;
+	}
+
+	/** Pixely kalibračních bodů v obrázku, ve stejném pořadí jako {@link #spocitejKalibracniBody(Coord, int)}. */
+	static List<Point> kalibracniPixely(final int width, final int height, final int kalibrBodu) {
+		final List<Point> body = new ArrayList<>();
 		final int kalistrana = (int) Math.ceil(Math.sqrt(kalibrBodu)); // počet kalibračních bodů rastru ve sloupci a řádku
 		final double kalifaktor = (kalistrana * kalistrana - 1) / ((double) kalibrBodu - 1); // po jaké vzdálenosti kalibrační bod
 		log.debug("kalistrana: {}", kalistrana);
@@ -304,16 +311,13 @@ public class RenderModel extends Model0 {
 		for (int x = 0; x < kalistrana; x++) {
 			for (int y = 0; y < kalistrana; y++) {
 				if (Math.round(kalicitac) == bodocitac) {
-					final int xp = x * width / (kalistrana - 1);
-					final int yp = y * height / (kalistrana - 1);
-					final Wgs wgs = cocox.transform(new Point(xp, yp)).toWgs();
-					wgss.add(wgs);
+					body.add(new Point(x * width / (kalistrana - 1), y * height / (kalistrana - 1)));
 					kalicitac += kalifaktor;
 				}
 				bodocitac++;
 			}
 		}
-		return wgss;
+		return body;
 	}
 
 	public DlazdicovaMetrikaXY spoctiDlazdicovouMetriku() {

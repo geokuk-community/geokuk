@@ -12,7 +12,8 @@ public class DlazdicovaMetrika {
 		this.maxDlazdice = maxDlazdice;
 		this.sizeCele = sizeCele;
 		dlaPocet = sizeCele / (maxDlazdice + dlaMezera) + 1;
-		dlaRoztec = (sizeCele + dlaMezera) / dlaPocet;
+		// Zaokrouhlení nahoru, ať poslední dlaždice sahá až k okraji obrázku.
+		dlaRoztec = (sizeCele + dlaMezera + dlaPocet - 1) / dlaPocet;
 		dlaSize = dlaRoztec - dlaMezera;
 
 	}
