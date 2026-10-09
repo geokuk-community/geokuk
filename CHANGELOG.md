@@ -139,6 +139,8 @@
 - Panel nástrojů má stálou výšku, mapa se po načtení keší neposune.
   Vyšší ikony (například symboly Waymarků) jsou na panelu zmenšené.
 - Dlaždice mapy se při rychlém posouvání nestahují dvakrát.
+- Kalibrační body v souboru .map pro OziExplorer leží přesně v rozměrech
+  obrázku a dlaždice KMZ pokryjí celý obrázek až k okraji.
 - Když do stejné cache map zapisuje jiný spuštěný GeoKuk, dlaždice se
   stáhnou bez hlášení chyby čtení.
 - Nastavení popisků: ukázka písma je v barvě písma a podkladu, náhled
