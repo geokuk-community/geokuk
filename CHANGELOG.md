@@ -4,6 +4,7 @@
 
 ### Změny
 - Rychlejší načítání databází GeoGetu.
+- Rychlejší zobrazení keší po načtení a po změně filtru.
 
 ## 6.3.0
 
