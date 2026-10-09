@@ -282,8 +282,7 @@ class KachleDBManager implements KachleManager {
 				final ISqlJetCursor cursor = database.getTable(TABLE_NAME).open();
 				try {
 					while (!cursor.eof()) {
-						final String typ = cursor.getString("s");
-						if (typ != null && UklidOfflineCache.KLIC.matcher(typ).matches() && !ponechat.contains(typ)) {
+						if (smazatTyp(cursor.getString("s"), ponechat)) {
 							smazat.add(cursor.getRowId());
 						}
 						cursor.next();
@@ -308,13 +307,16 @@ class KachleDBManager implements KachleManager {
 					if (odlozeniPred != odlozeni || kontroly.containsKey(database.getFile())) {
 						return smazano;
 					}
+					int vDavce = 0;
 					database.beginTransaction(SqlJetTransactionMode.WRITE);
 					try {
 						final ISqlJetCursor cursor = database.getTable(TABLE_NAME).open();
 						try {
 							for (final long rowId : smazat.subList(od, Math.min(od + DAVKA_MAZANI, smazat.size()))) {
-								if (cursor.goTo(rowId)) {
+								// Mezi průchodem a mazáním mohl řádek zmizet a jeho rowid dostat jiná dlaždice.
+								if (cursor.goTo(rowId) && smazatTyp(cursor.getString("s"), ponechat)) {
 									cursor.delete();
+									vDavce++;
 								}
 							}
 						} finally {
@@ -325,7 +327,7 @@ class KachleDBManager implements KachleManager {
 						database.rollback();
 						throw e;
 					}
-					smazano += Math.min(DAVKA_MAZANI, smazat.size() - od);
+					smazano += vDavce;
 				} catch (final SqlJetException e) {
 					log.warn("Staré dlaždice offline mapy nejde smazat: {}", e.toString());
 					return smazano;
@@ -335,6 +337,10 @@ class KachleDBManager implements KachleManager {
 			}
 		}
 		return smazano;
+	}
+
+	private static boolean smazatTyp(final String typ, final Set<String> ponechat) {
+		return typ != null && UklidOfflineCache.KLIC.matcher(typ).matches() && !ponechat.contains(typ);
 	}
 
 	/** Jeden pokus o zápis; vrátí chybu, {@link #BEZ_CACHE}, nebo null, když se zapsalo. */
