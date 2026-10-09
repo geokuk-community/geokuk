@@ -16,6 +16,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.profile.Nastaveni;
 import cz.geokuk.framework.Dlg;
@@ -67,6 +68,7 @@ public class GeokukMain {
 		// Obrázky číst v paměti: s cache v TEMP by při plném disku nešly načíst ikony ani dlaždice.
 		ImageIO.setUseCache(false);
 		Diagnostika.sledujKliknuti();
+		Vykon.merEdt();
 		log.info("Default character encoding: {}", Charset.defaultCharset());
 		final String zaloha = System.getProperty(Start.ZALOHA);
 		if (zaloha != null) {

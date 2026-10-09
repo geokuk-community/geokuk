@@ -287,6 +287,9 @@ public class Menu extends MenuStrujce {
 		item(akce.zadatProblemAction);
 		item(akce.prehledProblemuAction);
 		item(akce.diagnostikaAction);
+		if (Diagnostika.betaKanal()) {
+			item(akce.ukazatelVykonuAction);
+		}
 		separator();
 		item(akce.oProgramuAction);
 

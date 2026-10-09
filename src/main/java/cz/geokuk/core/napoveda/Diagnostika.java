@@ -331,6 +331,7 @@ public final class Diagnostika {
 			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby, zaznamu);
 		}
 		vypis(sb, "Poslední události", udalosti, zaznamu);
+		sb.append(Vykon.text());
 		vypisPocitadla(sb);
 		vypis(sb, "Konec logu", konecLogu(LOG, radkuLogu), radkuLogu);
 		return sb.toString();
