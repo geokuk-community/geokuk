@@ -14,6 +14,7 @@ import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.data.*;
+import cz.geokuk.plugins.mapy.kachle.podklady.KaOneReq;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.util.pocitadla.*;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,8 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	/** Po výpadku sítě se chybné dlaždice zkoušejí znovu, i když uživatel s mapou nehne. */
 	private final javax.swing.Timer opakovaniChybnych = new javax.swing.Timer((int) JKachle.PRVNI_POKUS_PO_CHYBE_MS, e -> zkusZnovuChybne());
+
+	private PredvykresleniOkoli predvykresleni;
 
 	// je to jen kvuli garbage collectoru, aby nezrusil, NERUSIT PROMENNU i kdyz zdanlive je to na nic
 	public JKachlovnik(final String nazevKachlovniku, final Priority priority) {
@@ -121,6 +124,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	}
 
 	protected void init(final boolean smimZnovuPouzitKachle) {
+		zrusPredvykresleni();
 		if (!isSoordInitialized()) {
 			return;
 		}
@@ -208,6 +212,39 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		if (jKachle.jeChybna()) {
 			EventQueue.invokeLater(opakovaniChybnych::start);
 		}
+		if (katype != null && katype.isOffline() && priorita == Priority.KACHLE) {
+			EventQueue.invokeLater(this::moznaPredvykreslit);
+		}
+	}
+
+	private void zrusPredvykresleni() {
+		if (predvykresleni != null) {
+			predvykresleni.zrus();
+		}
+	}
+
+	/** Když jsou všechny viditelné dlaždice hotové, vykreslí se na pozadí prstenec dlaždic kolem výřezu. */
+	private void moznaPredvykreslit() {
+		if (katype == null || !katype.isOffline() || kachleModel == null || !isSoordInitialized() || getSoord() == null) {
+			return;
+		}
+		final Component[] kachle = getComponents();
+		if (kachle.length == 0) {
+			return;
+		}
+		for (final Component c : kachle) {
+			if (!((JKachle) c).jeTamUzCelyObrazek()) {
+				return;
+			}
+		}
+		if (predvykresleni == null) {
+			final KachleModel km = kachleModel;
+			predvykresleni = new PredvykresleniOkoli((ka, prijemce) -> km.getZiskavac().ziskejObsah(new KaOneReq(ka, prijemce, priorita), DiagnosticsData.create(null, nazevKachlovniku, null)));
+		}
+		if (predvykresleni.jeSpusteno()) {
+			return;
+		}
+		predvykresleni.spust(PredvykresleniOkoli.okoli(new Kaputer(getSoord()), katype, getWidth(), getHeight()));
 	}
 
 	private void zkusZnovuChybne() {
