@@ -39,6 +39,8 @@ final class OfflineRenderer {
 		final GraphicFactory grafika;
 		/** Měřítko displeje, pro které je téma načtené (velikost dlaždice, symboly a písmo). */
 		final double meritko;
+		/** Násobek velikosti písma a značek. */
+		final double pismo;
 		/** Otisk tématu, ze kterého je načteno (soubor a jeho velikost a čas). */
 		final String otiskPozadovaneho;
 		/** Otisk skutečně použitého tématu pro klíč cache. */
@@ -47,12 +49,13 @@ final class OfflineRenderer {
 		final String chyba;
 		final long nacitaniMs;
 
-		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
+		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final double pismo, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
 				final long start) {
 			this.future = future;
 			this.displayModel = displayModel;
 			this.grafika = grafika;
 			this.meritko = meritko;
+			this.pismo = pismo;
 			this.otiskPozadovaneho = otiskPozadovaneho;
 			this.otiskPouziteho = otiskPouziteho;
 			this.chyba = chyba;
@@ -123,6 +126,9 @@ final class OfflineRenderer {
 			throw e;
 		}
 		otisk.append(tema.otiskPouziteho).append('\n').append(tema.displayModel.getTileSize());
+		if (tema.pismo != 1) {
+			otisk.append('\n').append(tema.pismo);
+		}
 		return new OfflineRenderer(data, tema, klic(otisk.toString()));
 	}
 
@@ -139,20 +145,28 @@ final class OfflineRenderer {
 	 *            měřítko displeje: dlaždice má 256 × měřítko pixelů a symboly i písmo jsou úměrně větší
 	 */
 	static NacteneTema nactiTema(final TemaOfflineMapy tema, final File slozkaSymbolu, final double meritko) throws IOException {
+		return nactiTema(tema, slozkaSymbolu, meritko, 1);
+	}
+
+	/**
+	 * @param pismo
+	 *            násobek velikosti písma a značek vůči měřítku displeje
+	 */
+	static NacteneTema nactiTema(final TemaOfflineMapy tema, final File slozkaSymbolu, final double meritko, final double pismo) throws IOException {
 		final DisplayModel displayModel = new DisplayModel();
-		displayModel.setUserScaleFactor((float) meritko);
+		displayModel.setUserScaleFactor((float) (meritko * pismo));
 		displayModel.setFixedTileSize(velikostDlazdice(meritko));
 		final long start = System.nanoTime();
 		try {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
-			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, tema.otisk(), tema.otisk(), null, start);
+			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), tema.otisk(), null, start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
 		} catch (final IOException e) {
 			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
-			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
+			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
 		}
 	}
 

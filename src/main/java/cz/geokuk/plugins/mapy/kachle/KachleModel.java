@@ -25,6 +25,10 @@ public class KachleModel extends Model0 {
 
 	private static final String OFFLINE_MAPA_TEMA = "offlineMapaTema";
 
+	private static final String OFFLINE_OSTRA = "offlineMapaOstra";
+
+	private static final String OFFLINE_PISMO = "offlineMapaPismo";
+
 	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
 	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
 		final Thread t = new Thread(r, "Příprava offline mapy");
@@ -135,7 +139,7 @@ public class KachleModel extends Model0 {
 	protected void initAndFire() {
 		// Mapy zkopírované nebo vyměněné za běhu se projeví hned.
 		ziskavac.setPriZmeneOfflineMapy(() -> SwingUtilities.invokeLater(() -> fire(new OfflineMapaChangedEvent())));
-		setMeritkoDispleje(meritkoVychoziObrazovky());
+		nastavVzhledOfflineMapy();
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
 	}
@@ -150,6 +154,33 @@ public class KachleModel extends Model0 {
 	/** Měřítko displeje, na kterém je mapa; offline mapa podle něj kreslí dlaždice s víc pixely. */
 	public void setMeritkoDispleje(final double meritko) {
 		ziskavac.getOfflineMapy().nastavMeritko(meritko);
+	}
+
+	/** Ostrost: dlaždice offline mapy podle zvětšení systému, nebo bez něj (rychlejší, mapu zvětší systém). */
+	public boolean isOfflineMapaOstra() {
+		return currPrefe().getBoolean(OFFLINE_OSTRA, true);
+	}
+
+	/** Velikost písma a značek offline mapy v procentech, 80–150. */
+	public int getOfflineMapaPismoProcent() {
+		return (int) Math.round(OfflineMapy.zaokrouhliPismo(currPrefe().getInt(OFFLINE_PISMO, 100) / 100.0) * 100);
+	}
+
+	public void setVzhledOfflineMapy(final boolean ostra, final int pismoProcent) {
+		if (ostra == isOfflineMapaOstra() && pismoProcent == getOfflineMapaPismoProcent()) {
+			return;
+		}
+		currPrefe().putBoolean(OFFLINE_OSTRA, ostra);
+		currPrefe().putInt(OFFLINE_PISMO, (int) Math.round(OfflineMapy.zaokrouhliPismo(pismoProcent / 100.0) * 100));
+		nastavVzhledOfflineMapy();
+		ziskavac.clearMemoryCache();
+		predpripravOfflineMapu();
+		fire(new OfflineMapaChangedEvent());
+	}
+
+	private void nastavVzhledOfflineMapy() {
+		setMeritkoDispleje(isOfflineMapaOstra() ? meritkoVychoziObrazovky() : 1);
+		ziskavac.getOfflineMapy().nastavPismo(getOfflineMapaPismoProcent() / 100.0);
 	}
 
 	private static double meritkoVychoziObrazovky() {

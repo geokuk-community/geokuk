@@ -31,11 +31,14 @@ public class OfflineMapy {
 	private volatile TemaOfflineMapy tema = TemaOfflineMapy.VYCHOZI;
 	/** Měřítko displeje (1 = 100 %), podle něj se kreslí větší dlaždice. */
 	private volatile double meritko = 1;
+	/** Násobek velikosti písma a značek na mapě (1 = 100 %). */
+	private volatile double pismo = 1;
 
 	/** Nastavení, podle kterého jsou otevřené mapy; mění se jen v {@link #pouzij()}. */
 	private File slozkaOtevrena;
 	private TemaOfflineMapy temaOtevrene;
 	private double meritkoOtevrene;
+	private double pismoOtevrene;
 
 	private volatile OfflineRenderer renderer;
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
@@ -68,6 +71,18 @@ public class OfflineMapy {
 			return 1;
 		}
 		return Math.max(1, Math.min(3, Math.round(meritkoDispleje * 4) / 4.0));
+	}
+
+	/** Nastaví velikost písma a značek (1 = 100 %), zaokrouhlenou na 5 % v rozsahu 80–150 %; mapy se vykreslí znovu. */
+	public void nastavPismo(final double velikost) {
+		pismo = zaokrouhliPismo(velikost);
+	}
+
+	public static double zaokrouhliPismo(final double velikost) {
+		if (Double.isNaN(velikost)) {
+			return 1;
+		}
+		return Math.max(0.8, Math.min(1.5, Math.round(velikost * 20) / 20.0));
 	}
 
 	public double getMeritko() {
@@ -118,10 +133,12 @@ public class OfflineMapy {
 		final File s = slozka;
 		final TemaOfflineMapy t = tema;
 		final double m = meritko;
-		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene) {
+		final double pi = pismo;
+		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene) {
 			slozkaOtevrena = s;
 			temaOtevrene = t;
 			meritkoOtevrene = m;
+			pismoOtevrene = pi;
 			otiskSlozky = null;
 		}
 		final long ted = System.nanoTime();
@@ -144,7 +161,7 @@ public class OfflineMapy {
 	}
 
 	private String otisk(final List<File> mapy) {
-		final StringBuilder sb = new StringBuilder(temaOtevrene.otisk()).append('\n').append(meritkoOtevrene).append('\n');
+		final StringBuilder sb = new StringBuilder(temaOtevrene.otisk()).append('\n').append(meritkoOtevrene).append(' ').append(pismoOtevrene).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
@@ -175,11 +192,11 @@ public class OfflineMapy {
 	}
 
 	private OfflineRenderer.NacteneTema nacteneTema() throws IOException {
-		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(temaOtevrene.otisk()) && nacteneTema.meritko == meritkoOtevrene) {
+		if (nacteneTema != null && nacteneTema.otiskPozadovaneho.equals(temaOtevrene.otisk()) && nacteneTema.meritko == meritkoOtevrene && nacteneTema.pismo == pismoOtevrene) {
 			return nacteneTema;
 		}
 		uvolniTema();
-		nacteneTema = OfflineRenderer.nactiTema(temaOtevrene, slozkaSymbolu, meritkoOtevrene);
+		nacteneTema = OfflineRenderer.nactiTema(temaOtevrene, slozkaSymbolu, meritkoOtevrene, pismoOtevrene);
 		return nacteneTema;
 	}
 

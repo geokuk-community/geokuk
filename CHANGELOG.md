@@ -20,6 +20,9 @@
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
   v Soubor > Umístění souborů na kartě Mapy. Složku `data/offline-mapy`
   program při startu založí.
+- Soubor > Zobrazení programu: ostrost offline mapy (podle zvětšení
+  systému, nebo 100 % – rychlejší, mapu pak zvětší systém) a velikost písma
+  a ikon na mapě 80–150 %. Změna se projeví hned.
 - Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
   asi o čtvrtinu rychleji.
 - Posun a změna měřítka offline mapy nečekají, až se na pozadí otevře mapa

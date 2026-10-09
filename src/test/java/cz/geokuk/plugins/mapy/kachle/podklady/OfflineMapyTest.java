@@ -329,6 +329,31 @@ public class OfflineMapyTest {
 		Assert.assertEquals(klic150, klic());
 	}
 
+	/** Velikost písma a značek nemění velikost dlaždice, ale má vlastní místo v cache. */
+	@Test
+	public void velikostPismaMaVlastniKlic() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final String klic100 = klic();
+		final BufferedImage img100 = vyrendruj(STRED_Z15);
+		mapy.nastavPismo(1.5);
+		final BufferedImage img150 = vyrendruj(STRED_Z15);
+		Assert.assertEquals(256, img150.getWidth());
+		Assert.assertNotEquals(klic100, klic());
+		Assert.assertEquals("změna písma zneplatní dlaždice v paměti", 1, zmen.get());
+		Assert.assertFalse("větší písmo a značky vykreslí jiný obraz", Arrays.equals(img100.getRGB(0, 0, 256, 256, null, 0, 256), img150.getRGB(0, 0, 256, 256, null, 0, 256)));
+		mapy.nastavPismo(1);
+		Assert.assertEquals(klic100, klic());
+	}
+
+	@Test
+	public void pismoNaPetProcent() {
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliPismo(1.0), 0);
+		Assert.assertEquals(0.8, OfflineMapy.zaokrouhliPismo(0.5), 0);
+		Assert.assertEquals(1.5, OfflineMapy.zaokrouhliPismo(3), 0);
+		Assert.assertEquals(1.05, OfflineMapy.zaokrouhliPismo(1.06), 0);
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliPismo(Double.NaN), 0);
+	}
+
 	@Test
 	public void meritkoNaCtvrtiny() {
 		Assert.assertEquals(1, OfflineMapy.zaokrouhliMeritko(1.0), 0);
