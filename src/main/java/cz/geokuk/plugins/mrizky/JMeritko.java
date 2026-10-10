@@ -16,9 +16,13 @@ import javax.swing.JPanel;
  */
 public class JMeritko extends JPanel {
 
-	private static final int MINIMALNI_SIRKA_DILKU = 20;
+	/** Dílek 1, 2 nebo 5 × 10^n metrů, nejmenší s aspoň touto šířkou; vychází tak 40 až 100 px. */
+	static final int MINIMALNI_SIRKA_DILKU = 40;
+	/** Dosavadní dílek zůstává, dokud nevyjede o víc než 10 % z rozsahu, ať na hranici neskáče tam a zpět. */
+	private static final double HYSTEREZE = 0.1;
+	/** Lišta má mít zhruba tuto délku, počet dílků se k ní přizpůsobí. */
+	static final int CILOVA_SIRKA = 200;
 	private static final int ODSTUP_POPISKU_OD_CARKY = 3;
-	// private static final int MINIMALNI_SIRKA_DILKU = 50;
 
 	private final static int tloustka = 6;
 	private final static int vyskaCarky = 6;
@@ -26,6 +30,7 @@ public class JMeritko extends JPanel {
 	private static final long serialVersionUID = -4801191981059574701L;
 	private double pixluNaMetr = 1;
 	private double metruNaDilek;
+	private String popisSirky;
 	private int pixluNaDilek;
 	private int pocetDilku;
 	private int sirka;
@@ -59,6 +64,17 @@ public class JMeritko extends JPanel {
 			return;
 		}
 		this.maximalniSirkaMeritka = maximalniSirkaMeritka;
+		spocitejMetriky();
+		revalidate();
+		repaint();
+	}
+
+	/** Text za jednotkou, například šířka, pro kterou měřítko platí; null = nic. */
+	public void setPopisSirky(final String popisSirky) {
+		if (java.util.Objects.equals(popisSirky, this.popisSirky)) {
+			return;
+		}
+		this.popisSirky = popisSirky;
 		spocitejMetriky();
 		revalidate();
 		repaint();
@@ -108,32 +124,57 @@ public class JMeritko extends JPanel {
 		}
 		final double metruOdZacatku = pocetDilku * metruNaDilek;
 		final int pixluOdZacatku = offset + (int) (metruOdZacatku * getPixluNaMetr());
-		g.drawString(jednotka(metruNaDilek), pixluOdZacatku, pocatekY - vyskaCarky - ODSTUP_POPISKU_OD_CARKY);
+		g.drawString(textNaKonci(), pixluOdZacatku, pocatekY - vyskaCarky - ODSTUP_POPISKU_OD_CARKY);
 	}
 
-	private String jednotka(final double d) {
-		if (d >= 1000) {
-			return "km";
-		} else {
-			return "m";
-		}
+	private String textNaKonci() {
+		return popisSirky == null ? jednotka() : jednotka() + "  " + popisSirky;
 	}
 
-	private String popisek(double d) {
-		if (d >= 1000) {
-			d = d / 1000;
+	private String jednotka() {
+		return metruNaDilek >= 1000 ? "km" : "m";
+	}
+
+	/** Jednotku určuje dílek, aby všechny popisky lišty byly ve stejné. */
+	String popisek(final double metru) {
+		return String.valueOf(Math.round(metruNaDilek >= 1000 ? metru / 1000 : metru));
+	}
+
+	double getMetruNaDilek() {
+		return metruNaDilek;
+	}
+
+	int getPocetDilku() {
+		return pocetDilku;
+	}
+
+	int getPixluNaDilek() {
+		return pixluNaDilek;
+	}
+
+	/** Nejmenší dílek 1, 2 nebo 5 × 10^n metrů, který má na mapě aspoň danou šířku. */
+	static double dilek(final double pixluNaMetr, final double minimalniSirka) {
+		double rad = 1;
+		while (true) {
+			for (final int nasobek : new int[] { 1, 2, 5 }) {
+				if (nasobek * rad * pixluNaMetr >= minimalniSirka) {
+					return nasobek * rad;
+				}
+			}
+			rad *= 10;
 		}
-		return Math.round(d) + "";
 	}
 
 	private void spocitejMetriky() {
-		metruNaDilek = 1;
-		pixluNaDilek = 0;
-		while (pixluNaDilek < MINIMALNI_SIRKA_DILKU) {
-			metruNaDilek *= 10;
-			pixluNaDilek = (int) (pixluNaMetr * metruNaDilek);
+		if (!(pixluNaMetr > 0) || Double.isInfinite(pixluNaMetr)) {
+			return;
 		}
-		pocetDilku = (int) Math.min(8.0, getMaximalniSirkaMeritka() / pixluNaDilek);
+		final double sirkaDosavadniho = metruNaDilek * pixluNaMetr;
+		if (metruNaDilek <= 0 || sirkaDosavadniho < MINIMALNI_SIRKA_DILKU * (1 - HYSTEREZE) || sirkaDosavadniho >= MINIMALNI_SIRKA_DILKU * 2.5 * (1 + HYSTEREZE)) {
+			metruNaDilek = dilek(pixluNaMetr, MINIMALNI_SIRKA_DILKU);
+		}
+		pixluNaDilek = Math.max(1, (int) (pixluNaMetr * metruNaDilek));
+		pocetDilku = (int) Math.max(1, Math.min(Math.round((double) CILOVA_SIRKA / pixluNaDilek), getMaximalniSirkaMeritka() / pixluNaDilek));
 
 		final Map<TextAttribute, Object> map = new Hashtable<>();
 		// map.put(TextAttribute.KERNING, TextAttribute.KERNING_ON);
@@ -142,7 +183,7 @@ public class JMeritko extends JPanel {
 		map.put(TextAttribute.LIGATURES, TextAttribute.LIGATURES_ON);
 		font = Font.decode("ARIAL-BOLD-12").deriveFont(map);
 		fontMetrics = getFontMetrics(font);
-		final int naJednotkuNaKonci = fontMetrics.stringWidth(jednotka(metruNaDilek));
+		final int naJednotkuNaKonci = fontMetrics.stringWidth(textNaKonci());
 
 		sirka = pixluNaDilek * pocetDilku + naJednotkuNaKonci;
 		vyska = vyskaCarky + tloustka + ODSTUP_POPISKU_OD_CARKY + fontMetrics.getHeight();
