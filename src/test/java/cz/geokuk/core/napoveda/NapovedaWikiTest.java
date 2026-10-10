@@ -13,7 +13,7 @@ public class NapovedaWikiTest {
 
 	/** Témata, která vracejí dialogy z getTemaNapovedyDialogu. */
 	private static final List<String> TEMATA_DIALOGU = Arrays.asList("ErrorList", "Service", "UmisteniSouboru", "Render", "ZdrojeKesoidu", "InformaceOSobe", "FiltrKesoidu", "VyberFenotypu",
-			"DebugIkon", "HledatVKesoidech", "JintNaSouradnice", "HledatAdresu", "StahovaniMapovychDlazdic", "PopiskyKesoidu", "ZvyraznovaciKruhy");
+			"DebugIkon", "HledatVKesoidech", "JintNaSouradnice", "HledatAdresu", "StahovaniMapovychDlazdic", "PopiskyKesoidu", "ZvyraznovaciKruhy", "LimityKresleni", "PametProgramu", "ZobrazeniProgramu");
 
 	@Test
 	public void bezTematuJeUvodniStranka() {

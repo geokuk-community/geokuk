@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.*;
@@ -14,7 +15,7 @@ import cz.geokuk.util.file.Filex;
  * Měření vykreslování offline mapy: {@code MerOffline slozka=… [tema=…] [lat=50.08 lon=14.42] [zoomy=10,13,15,17] [n=6] [vlakna=1,2] [symboly=složka]}; se složkou
  * symbolů se vykreslené symboly tématu uloží a druhé spuštění je načte jako program. Pro každý zoom vykreslí
  * n×n dlaždic kolem místa: první průchod v jednom vlákně (data mapy ještě nejsou v paměti), pak stejné dlaždice v zadaných počtech vláken. Vypíše čas na
- * dlaždici, stěnu na dlaždici, odhad první obrazovky 1920×1080 (40 dlaždic) a haldu. Vykreslené dlaždice z prvního průchodu uloží do cache dlaždic (SQLite v
+ * dlaždici (bez převodu do PNG, ten běží až při ukládání), stěnu na dlaždici, odhad první obrazovky 1920×1080 (40 dlaždic) a haldu. Vykreslené dlaždice z prvního průchodu uloží do cache dlaždic (SQLite v
  * dočasné složce) a změří jejich načtení z ní, tedy druhé zobrazení.
  */
 public class MerOffline {
@@ -25,6 +26,8 @@ public class MerOffline {
 			final int i = s.indexOf('=');
 			p.put(s.substring(0, i), s.substring(i + 1));
 		}
+		// Jako program: PNG se čte a zapisuje v paměti, bez dočasných souborů.
+		javax.imageio.ImageIO.setUseCache(false);
 		final File slozka = new File(p.get("slozka"));
 		final Wgs misto = new Wgs(Double.parseDouble(p.getOrDefault("lat", "50.08")), Double.parseDouble(p.getOrDefault("lon", "14.42")));
 		final int n = Integer.parseInt(p.getOrDefault("n", "6"));
@@ -52,8 +55,7 @@ public class MerOffline {
 				final int vlaken = vs.equals("prvni") ? 1 : Integer.parseInt(vs);
 				final ExecutorService ex = Executors.newFixedThreadPool(vlaken);
 				final List<Long> casy = Collections.synchronizedList(new ArrayList<>());
-				final Map<KaLoc, byte[]> png = new ConcurrentHashMap<>();
-				final long[] bajtu = new long[1];
+				final Map<KaLoc, BufferedImage> obrazky = new ConcurrentHashMap<>();
 				r = mapy.pouzij();
 				final OfflineRenderer renderer = r;
 				t = System.nanoTime();
@@ -61,12 +63,8 @@ public class MerOffline {
 				for (final KaLoc loc : dlazdice) {
 					f.add(ex.submit(() -> {
 						final long t0 = System.nanoTime();
-						final ImageWithData img = renderer.vyrendruj(loc);
+						obrazky.put(loc, renderer.vyrendruj(loc));
 						casy.add(System.nanoTime() - t0);
-						png.put(loc, img.getData());
-						synchronized (bajtu) {
-							bajtu[0] += img.getData().length;
-						}
 						return null;
 					}));
 				}
@@ -76,12 +74,21 @@ public class MerOffline {
 				final long stena = System.nanoTime() - t;
 				ex.shutdown();
 				r.skonci();
+				final Map<KaLoc, byte[]> png = new HashMap<>();
+				long bajtu = 0;
+				t = System.nanoTime();
+				for (final Map.Entry<KaLoc, BufferedImage> e : obrazky.entrySet()) {
+					final byte[] data = new Ukladanec(new Ka(e.getKey(), EKaType.OFFLINE_MF), klic, e.getValue(), null).dataKUlozeni();
+					png.put(e.getKey(), data);
+					bajtu += data.length;
+				}
+				final long prevod = System.nanoTime() - t;
 				final List<Long> s = new ArrayList<>(casy);
 				Collections.sort(s);
 				final double stenaNaDlazdici = stena / 1e6 / dlazdice.size();
-				System.out.printf("z%d %s: %d dlaždic, na dlaždici průměr %.1f ms, medián %.1f ms, max %.1f ms, stěna %.1f ms/dlaždici, obrazovka 40 dlaždic ~%.1f s, PNG ⌀ %d kB%n", z,
+				System.out.printf("z%d %s: %d dlaždic, na dlaždici průměr %.1f ms, medián %.1f ms, max %.1f ms, stěna %.1f ms/dlaždici, obrazovka 40 dlaždic ~%.1f s, PNG ⌀ %d kB (převod %.1f ms, při ukládání)%n", z,
 						vs.equals("prvni") ? "první průchod" : "vláken " + vlaken, s.size(), s.stream().mapToLong(Long::longValue).average().orElse(0) / 1e6, s.get(s.size() / 2) / 1e6, s.get(s.size() - 1) / 1e6, stenaNaDlazdici,
-						stenaNaDlazdici * 40 / 1000, bajtu[0] / s.size() / 1024);
+						stenaNaDlazdici * 40 / 1000, bajtu / s.size() / 1024, prevod / 1e6 / s.size());
 				if (vs.equals("prvni")) {
 					zCache(cache, klic, png, z);
 				}

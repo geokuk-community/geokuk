@@ -1,5 +1,11 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
+import java.awt.image.RenderedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac.Kachlice;
 import lombok.*;
@@ -23,6 +29,10 @@ public class Ukladanec {
 	 */
 	private final byte[] rawData;
 
+	/** Vykreslená dlaždice, která se do PNG převede až při ukládání; null, když jsou data hotová. */
+	@Getter(AccessLevel.NONE)
+	private final RenderedImage obrazek;
+
 	@Getter(AccessLevel.NONE)
 	private final Kachlice __dummy__;
 
@@ -34,6 +44,25 @@ public class Ukladanec {
 		this.ka = ka;
 		this.typ = typ;
 		rawData = data;
+		obrazek = null;
 		__dummy__ = kachlice;
+	}
+
+	public Ukladanec(final Ka ka, final String typ, final RenderedImage obrazek, final Kachlice kachlice) {
+		this.ka = ka;
+		this.typ = typ;
+		rawData = null;
+		this.obrazek = obrazek;
+		__dummy__ = kachlice;
+	}
+
+	/** Data pro úložiště; vykreslenou dlaždici převede do PNG. */
+	byte[] dataKUlozeni() throws IOException {
+		if (obrazek == null) {
+			return rawData;
+		}
+		final ByteArrayOutputStream png = new ByteArrayOutputStream(64 * 1024);
+		ImageIO.write(obrazek, "png", png);
+		return png.toByteArray();
 	}
 }

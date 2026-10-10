@@ -3,12 +3,14 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 import java.awt.*;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import javax.swing.JComponent;
 
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -48,6 +50,8 @@ public class JKachle extends JComponent {
 
 	private Kanceler kanceler;
 	private Image image;
+	/** Dočasný výřez dlaždice z jiného měřítka, dokud není vlastní obrázek. */
+	private List<NahledDlazdice> nahled = Collections.emptyList();
 
 	private boolean jeTamUzCelyObrazek;
 
@@ -128,6 +132,39 @@ public class JKachle extends JComponent {
 		}
 	}
 
+	synchronized boolean maNahled() {
+		return !nahled.isEmpty();
+	}
+
+	synchronized void nastavNahled(final List<NahledDlazdice> novy) {
+		nahled = novy;
+	}
+
+	void prijmi(final KachloStav kastat, final Priority priorita) {
+		if (priorita == Priority.STAHOVANI) {
+			log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
+		}
+		synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
+			nahled = Collections.emptyList();
+			if (kastat.getImg() != null) {
+				image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
+				chyba = null;
+				chybVRade = 0;
+			} else {
+				chyba = kastat.getThr();
+				dalsiPokus = System.currentTimeMillis() + Math.min(PRVNI_POKUS_PO_CHYBE_MS << Math.min(chybVRade, 5), POSLEDNI_POKUS_PO_CHYBE_MS);
+				chybVRade++;
+			}
+			jeTamUzCelyObrazek = true;
+			ziskanPlnyObrazek(image);
+			if (jKachlovnik != null) {
+				jKachlovnik.kachleZpracovana(this);
+			}
+			JKachle.this.notifyAll();
+		}
+		repaint(); // prý můžeme volat z libovolného vlákna
+	}
+
 	/**
 	 * Získá obsah
 	 *
@@ -135,29 +172,20 @@ public class JKachle extends JComponent {
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
+		if (ka.getType().isOffline() && priorita != Priority.STAHOVANI) {
+			final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, kachleModel.getZiskavac()::nahledZPameti, KACHLE_WIDTH);
+			synchronized (this) {
+				if (image == null && nahled.isEmpty()) {
+					nahled = novyNahled;
+				}
+			}
+		}
+		final long zadano = System.nanoTime();
 		final KaOneReq req = new KaOneReq(ka, kastat -> {
-
-			if (priorita == Priority.STAHOVANI) {
-				log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
+			if (priorita == Priority.KACHLE && kastat.getImg() != null) {
+				Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
 			}
-			synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
-				if (kastat.getImg() != null) {
-					image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
-					chyba = null;
-					chybVRade = 0;
-				} else {
-					chyba = kastat.getThr();
-					dalsiPokus = System.currentTimeMillis() + Math.min(PRVNI_POKUS_PO_CHYBE_MS << Math.min(chybVRade, 5), POSLEDNI_POKUS_PO_CHYBE_MS);
-					chybVRade++;
-				}
-				jeTamUzCelyObrazek = true;
-				ziskanPlnyObrazek(image);
-				if (jKachlovnik != null) {
-					jKachlovnik.kachleZpracovana(this);
-				}
-				JKachle.this.notifyAll();
-			}
-			repaint(); // prý můžeme volat z libovolného vlákna
+			prijmi(kastat, priorita);
 		}, priorita);
 
 		final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
@@ -199,11 +227,18 @@ public class JKachle extends JComponent {
 				g.drawImage(image, 0, 0, KACHLE_WIDTH, KACHLE_HEIGHT, null);
 			}
 		}
+		if (image == null) {
+			for (final NahledDlazdice n : nahled) {
+				n.kresli(g);
+			}
+		}
 		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
-			g.setColor(Color.GRAY);
-			drawPsanicko(g);
+			if (nahled.isEmpty()) {
+				g.setColor(Color.GRAY);
+				drawPsanicko(g);
+			}
 			vypisChybu(g);
-		} else if (image == null || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+		} else if (image == null && nahled.isEmpty() || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
 			g.setColor(Color.blue);
 			drawPsanicko(g);
 			g.setColor(Color.RED);

@@ -32,7 +32,7 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 	private boolean nastavuji;
 
 	public JLimityKresleniDialog() {
-		setTitle("Limity kreslení keší");
+		setTitle("Limity kreslení");
 		init();
 	}
 
@@ -81,15 +81,15 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 
 	@Override
 	protected String getTemaNapovedyDialogu() {
-		return null;
+		return "LimityKresleni";
 	}
 
 	@Override
 	protected void initComponents() {
 		jIkon = posuvnik();
 		jTecek = posuvnik();
-		jIkon.setToolTipText("Při více waypointech ve výřezu se v automatickém zobrazení kreslí tečky a nekreslí se popisky.");
-		jTecek.setToolTipText("Při více waypointech ve výřezu se nekreslí ani tečky, je potřeba mapu přiblížit.");
+		jIkon.setToolTipText("Do tohoto počtu waypointů ve výřezu se kreslí ikony s popisky, nad ním jen barevné tečky. Nižší hodnota = plynulejší posun.");
+		jTecek.setToolTipText("Nad tímto počtem se keše nekreslí vůbec, stavový řádek vyzve k přiblížení. Vyšší hodnota potřebuje víc paměti. Nejméně " + text(LimityKresleni.MIN_TECEK) + ".");
 		jIkon.addChangeListener(e -> posunutIkon());
 		jTecek.addChangeListener(e -> posunutTecek());
 		final JButton jVychozi = new JButton("Výchozí");
@@ -105,16 +105,11 @@ public class JLimityKresleniDialog extends JMyDialog0 implements AfterInjectInit
 		final GridBagConstraints c = new GridBagConstraints();
 		c.insets = new Insets(4, 4, 4, 4);
 		c.anchor = GridBagConstraints.WEST;
-		radek(panel, c, 0, "Nejvíc ikon ve výřezu:", jIkon, jHodnotaIkon);
-		radek(panel, c, 1, "Nejvíc teček ve výřezu:", jTecek, jHodnotaTecek);
+		radek(panel, c, 0, "Ikony do:", jIkon, jHodnotaIkon);
+		radek(panel, c, 1, "Tečky do:", jTecek, jHodnotaTecek);
 		c.gridx = 1;
 		c.gridy = 2;
 		c.gridwidth = 2;
-		final JLabel poznamka = new JLabel("Teček je vždy aspoň tolik jako ikon; nejméně " + text(LimityKresleni.MIN_TECEK) + ".");
-		final Color seda = UIManager.getColor("Label.disabledForeground");
-		poznamka.setForeground(seda != null ? seda : Color.GRAY);
-		panel.add(poznamka, c);
-		c.gridy = 3;
 		c.anchor = GridBagConstraints.EAST;
 		panel.add(jVychozi, c);
 		add(panel, BorderLayout.CENTER);

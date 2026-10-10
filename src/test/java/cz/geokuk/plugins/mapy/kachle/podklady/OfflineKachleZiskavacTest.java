@@ -2,10 +2,11 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+
+import javax.imageio.ImageIO;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -99,7 +100,9 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertNotNull("vykreslená dlaždice se uloží", ulozena);
 		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("o[0-9a-f]{8}"));
 		Assert.assertEquals(KACHLE, ulozena.key);
-		Assert.assertTrue(ulozena.imageData.length > 0);
+		final BufferedImage zobrazena = (BufferedImage) stav.getImg();
+		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(ulozena.imageData));
+		Assert.assertArrayEquals("uloží se PNG zobrazené dlaždice", zobrazena.getRGB(0, 0, 256, 256, null, 0, 256), png.getRGB(0, 0, 256, 256, null, 0, 256));
 		Assert.assertEquals(Collections.singletonList(ulozena.typ), hledaneTypy);
 
 		final Image zDisku = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
@@ -126,8 +129,10 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertEquals(1, KachleZiskavac.pocetVlakenRenderu(1));
 		Assert.assertEquals(2, KachleZiskavac.pocetVlakenRenderu(2));
 		Assert.assertEquals(3, KachleZiskavac.pocetVlakenRenderu(4));
-		Assert.assertEquals(4, KachleZiskavac.pocetVlakenRenderu(8));
-		Assert.assertEquals(4, KachleZiskavac.pocetVlakenRenderu(32));
+		Assert.assertEquals(5, KachleZiskavac.pocetVlakenRenderu(6));
+		Assert.assertEquals(6, KachleZiskavac.pocetVlakenRenderu(8));
+		Assert.assertEquals(6, KachleZiskavac.pocetVlakenRenderu(12));
+		Assert.assertEquals(6, KachleZiskavac.pocetVlakenRenderu(32));
 	}
 
 	/** Dlaždice, které po posunu nebo zoomu nikdo nechce, se zruší dřív, než se vykreslí. */
@@ -160,5 +165,21 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertTrue(String.valueOf(chyba), chyba instanceof IOException);
 		Assert.assertTrue(chyba.getMessage(), chyba.getMessage().contains(slozka.toString()));
 		Assert.assertFalse("chybějící mapy jsou běžný stav, ne chyba v Diagnostice", cz.geokuk.framework.ChybyVDiagnostice.pribude("offline mapy", chybPred));
+	}
+
+	/** Nečitelná mapa je chyba vykreslení, ne čtení cache; po zkopírování mapy se dlaždice vykreslí. */
+	@Test(timeout = 30000)
+	public void bezMapyJenChybaVykresleniPakSeVykresli() throws Exception {
+		ziskavac.getOfflineMapy().kontrolaSlozkyNs = 0;
+		final int disk = ziskavac.pocitDiskLoadError.get();
+		final int render = ziskavac.pocitRenderError.get();
+		Assert.assertNotNull(ziskej().getThr());
+		Assert.assertEquals("chyba čtení cache", disk, ziskavac.pocitDiskLoadError.get());
+		Assert.assertEquals("chyba vykreslení", render + 1, ziskavac.pocitRenderError.get());
+
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final KachloStav stav = ziskej();
+		Assert.assertNull(stav.getThr());
+		Assert.assertNotNull(stav.getImg());
 	}
 }

@@ -3,7 +3,7 @@
 ## 6.4.0
 
 ### Změny
-- Rychlejší načítání databází GeoGetu.
+- Rychlejší načítání databází GeoGetu, GSAKu a OpenSAKu.
 - Rychlejší zobrazení keší po načtení a po změně filtru.
 - Rychlejší zapnutí a vypnutí zdroje, který se s ostatními nepřekrývá.
 - Keše z databází GeoGetu, GSAKu a OpenSAKu zabírají méně paměti.
@@ -13,24 +13,60 @@
   (mapsforge, například z osm.paws.cz) ze složky `data/offline-mapy` se
   vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR
   a SK) se kreslí naráz, mapu zkopírovanou do složky za běhu program sám
-  načte. Vykreslené dlaždice se ukládají do cache dlaždic; po výměně
-  mapy nebo tématu v ní zůstávají jen tři poslední kombinace.
+  načte; dokud se kopíruje, kreslí se ostatní mapy. Vykreslené dlaždice se
+  ukládají do cache dlaždic; po výměně mapy nebo tématu v ní zůstávají jen
+  tři poslední kombinace.
+- Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
+  z dat Natural Earth (pevnina, moře, státní hranice, české názvy států),
+  takže offline mapa ukáže celý svět i bez stažených map.
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
-  v Soubor > Umístění souborů na kartě Mapy.
+  v Soubor > Umístění souborů na kartě Mapy. Složku `data/offline-mapy`
+  program při startu založí.
+- Soubor > Zobrazení programu, rámeček Mapa: offline mapa Ostrá, nebo
+  Rychlejší (dlaždice v menším rozlišení zvětší systém), a velikost písma
+  a ikon na mapě 80–150 %. Změna se projeví hned.
+- Dialogy Paměť programu, Zobrazení programu a Limity kreslení jsou
+  stručnější, vysvětlení je v bublinách a tlačítko Nápověda otevře stránku
+  wiki. Po změně paměti GeoKuk nabídne restart.
+- Offline mapa s popisky ulic a cest se na podrobných zoomech vykresluje
+  asi o čtvrtinu rychleji.
+- Posun a změna měřítka offline mapy nečekají, až se na pozadí otevře mapa
+  nebo načte téma.
 - Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
   i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
+- Offline mapu kreslí až 6 vláken naráz, na počítači s více jádry je
+  první zobrazení rychlejší.
+- Vykreslená dlaždice offline mapy se zobrazí hned; do cache se převádí
+  a ukládá až na pozadí.
+- Offline mapa po zobrazení celé obrazovky na pozadí předvykreslí dlaždice
+  kolem okna, takže posun mapy o kousek je okamžitý. Posun nebo změna
+  měřítka předvykreslování přeruší, aby nezdrželo viditelné dlaždice.
+  Na počítači s méně než pěti jádry se nepoužívá.
 - Na displeji se zvětšením (třeba 150 %) kreslí offline mapa dlaždice
   s odpovídajícím počtem pixelů, mapa je ostrá a písmo i značky mají
   stejnou velikost jako ostatní texty programu.
 - Dlaždice všech map se načítají od středu okna.
+- Po odstranění kříže z kontextového menu jde mapu dál přibližovat
+  a oddalovat kolečkem myši a kliknutím do mapy postavit nový kříž.
+- Informace pro hlášení chyby obsahují výkon kreslení: dobu překreslení
+  mapy, nejdelší události programu a dobu získání dlaždic. Dálkové ovládání
+  vrací stejná čísla příkazem `/vykon`. V beta kanálu lze v Nápovědě zapnout
+  ukazatel výkonu v rohu mapy.
+- Poslední události v informacích pro hlášení chyby neuvádějí kontextová
+  menu jako otevřená okna a u okna Informace pro hlášení chyby jen jeho název.
+- Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
+  ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
+  dokreslení se nahradí ostrou.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
   (GNU LGPL 3) je ve složce `licence` a v okně O programu.
 - Měření vykreslování offline mapy (`vykon/mer.sh`, část `offline`).
+- Diagnostika: nečitelná offline mapa se počítá jen jako chyba vykreslení,
+  ne jako chyba čtení cache dlaždic.
 
 ## 6.3.0
 
@@ -116,6 +152,9 @@
   s hromadne=ano; zobrazené dlaždice se do cache ukládají dál.
 - Položky v menu Soubor, Jít, Kešoidy, Cesty a Nápověda jsou seskupené
   podle účelu a oddělené čarami; zkratky i umístění v menu zůstávají.
+- Soubor > Zobrazení programu: zvětšení podle Windows a hardwarové
+  vykreslování (Direct3D) jdou vypnout, když je program pomalý nebo seká.
+  Platí od příštího spuštění, GeoKuk nabídne restart.
 - Ikona zdroje, který se právě načítá, se ve stavovém řádku i v tabulce
   zdrojů točí.
 

@@ -39,6 +39,18 @@ public class KaLoc {
 		return ofJZ(new Mou(mouSZ.xx, mouSZ.yy - (1 << Coord.MOU_BITS - moumer)), moumer);
 	}
 
+	/** Dlaždice o úroveň výš (menší měřítko), která tuto pokrývá; null, když taková není. */
+	public KaLoc rodic() {
+		return moumer <= 1 ? null : new KaLoc(ksx >> 1, ksy >> 1, moumer - 1);
+	}
+
+	/**
+	 * Dlaždice o úroveň níž. Vodorovně 0 = západní, 1 = východní, svisle 0 = jižní, 1 = severní.
+	 */
+	public KaLoc dite(final int vpravo, final int nahoru) {
+		return new KaLoc(ksx * 2 + vpravo, ksy * 2 + nahoru, moumer + 1);
+	}
+
 	private static int maskuj(final int a, final int bitu) {
 		final int m = (1 << bitu) - 1;
 		return (a & 1 << bitu - 1) != 0 ? a | ~m : a & m;

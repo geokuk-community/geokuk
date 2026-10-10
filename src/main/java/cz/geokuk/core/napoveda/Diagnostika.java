@@ -145,10 +145,9 @@ public final class Diagnostika {
 			}
 		}, AWTEvent.MOUSE_EVENT_MASK);
 		Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-			if (event.getID() == WindowEvent.WINDOW_OPENED) {
-				zaznamenej("Otevřeno okno: " + popisOkna(((WindowEvent) event).getWindow()));
-			} else if (event.getID() == WindowEvent.WINDOW_CLOSED) {
-				zaznamenej("Zavřeno okno: " + titulek(((WindowEvent) event).getWindow()));
+			final String udalost = udalostOkna((WindowEvent) event);
+			if (udalost != null) {
+				zaznamenej(udalost);
 			}
 		}, AWTEvent.WINDOW_EVENT_MASK);
 	}
@@ -163,6 +162,9 @@ public final class Diagnostika {
 	}
 
 	private static final String SLEDOVANO = "geokuk.diagnostika.sledovano";
+
+	/** Obsah komponenty s touto vlastností se do události o otevření okna nevypisuje. */
+	static final String BEZ_TEXTU = "geokuk.diagnostika.bezTextu";
 
 	/** Položka se může do menu přidat víckrát (menu Ikony), zaznamenat se má jen jednou. */
 	private static boolean uzSledovano(final JComponent c) {
@@ -245,6 +247,21 @@ public final class Diagnostika {
 		return b instanceof JCheckBoxMenuItem || b instanceof JToggleButton ? (b.isSelected() ? " → zapnuto" : " → vypnuto") : "";
 	}
 
+	/** Kontextová menu a bubliny jsou také okna; jejich položky se zaznamenávají zvlášť. */
+	static String udalostOkna(final WindowEvent event) {
+		final Window w = event.getWindow();
+		if (w.getType() == Window.Type.POPUP) {
+			return null;
+		}
+		if (event.getID() == WindowEvent.WINDOW_OPENED) {
+			return "Otevřeno okno: " + popisOkna(w);
+		}
+		if (event.getID() == WindowEvent.WINDOW_CLOSED) {
+			return "Zavřeno okno: " + titulek(w);
+		}
+		return null;
+	}
+
 	private static String titulek(final Window w) {
 		final String titulek = w instanceof Frame ? ((Frame) w).getTitle() : w instanceof Dialog ? ((Dialog) w).getTitle() : null;
 		return titulek == null || titulek.isEmpty() ? w.getClass().getSimpleName() : titulek;
@@ -273,6 +290,9 @@ public final class Diagnostika {
 	}
 
 	static String textZpravy(final Object cast) {
+		if (cast instanceof JComponent && ((JComponent) cast).getClientProperty(BEZ_TEXTU) != null) {
+			return "";
+		}
 		if (cast instanceof JTextComponent) {
 			return ((JTextComponent) cast).getText();
 		}
@@ -331,6 +351,7 @@ public final class Diagnostika {
 			vypis(sb, "Poslední chyby (celkem " + pocetChyb + ")", chyby, zaznamu);
 		}
 		vypis(sb, "Poslední události", udalosti, zaznamu);
+		sb.append(Vykon.text());
 		vypisPocitadla(sb);
 		vypis(sb, "Konec logu", konecLogu(LOG, radkuLogu), radkuLogu);
 		return sb.toString();

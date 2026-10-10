@@ -15,7 +15,7 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.core.coordinates.Wgs;
-import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.plugins.mapy.kachle.data.*;
 
 /** Vykreslení dlaždic ze souboru .map: syntetická mapa {@code kukov.map} (vymyšlené město u 50° s. š., 14,4° v. d.). */
 public class OfflineMapyTest {
@@ -49,7 +49,7 @@ public class OfflineMapyTest {
 		}
 	}
 
-	private ImageWithData vyrendruj(final KaLoc loc) throws IOException {
+	private BufferedImage vyrendruj(final KaLoc loc) throws IOException {
 		final OfflineRenderer r = mapy.pouzij();
 		try {
 			Assert.assertTrue(r.pokryva(loc));
@@ -65,8 +65,7 @@ public class OfflineMapyTest {
 		return r.getKlic();
 	}
 
-	private static int[] pixely(final ImageWithData obrazek) {
-		final BufferedImage img = (BufferedImage) obrazek.getImg();
+	private static int[] pixely(final BufferedImage img) {
 		return img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
 	}
 
@@ -92,13 +91,13 @@ public class OfflineMapyTest {
 	@Test
 	public void vykresliDlazdiciZMapy() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
-		final ImageWithData obrazek = vyrendruj(STRED_Z15);
-		final BufferedImage img = (BufferedImage) obrazek.getImg();
+		final BufferedImage img = vyrendruj(STRED_Z15);
 		Assert.assertEquals(256, img.getWidth());
 		Assert.assertEquals(256, img.getHeight());
-		Assert.assertTrue("silnice, domy, voda a popisky", barev(pixely(obrazek)) > 10);
-		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(obrazek.getData()));
-		Assert.assertArrayEquals(pixely(obrazek), png.getRGB(0, 0, 256, 256, null, 0, 256));
+		Assert.assertTrue("silnice, domy, voda a popisky", barev(pixely(img)) > 10);
+		final byte[] data = new Ukladanec(new Ka(STRED_Z15, EKaType.OFFLINE_MF), "o00000000", img, null).dataKUlozeni();
+		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(data));
+		Assert.assertArrayEquals(pixely(img), png.getRGB(0, 0, 256, 256, null, 0, 256));
 	}
 
 	@Test
@@ -211,6 +210,27 @@ public class OfflineMapyTest {
 		}
 	}
 
+	/** Nečitelná mapa vedle čitelné (třeba právě kopírovaná) nezastaví kreslení; po opravě se načte. */
+	@Test
+	public void poskozenaMapaVedleDobreSePreskoci() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final File vadna = new File(slozka, "vadna.map");
+		Files.write(vadna.toPath(), "toto není mapa".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(barev(pixely(vyrendruj(STRED_Z15))) > 10);
+		final String sVadnou = klic();
+		Files.delete(vadna.toPath());
+		mapy.kontrolaSlozkyNs = 0;
+		Assert.assertEquals("klíč dlaždic nezávisí na nečitelné mapě", sVadnou, klic());
+	}
+
+	/** Přehledová mapa světa, která jde do zipu s programem, se otevře a vykreslí se z ní pevnina, moře a hranice. */
+	@Test
+	public void prehledovaMapaSvetaSeVykresli() throws Exception {
+		Files.copy(new File("distribuce/offline-mapy/prehled-svet-ne.map").toPath(), new File(slozka, "prehled-svet-ne.map").toPath());
+		final KaLoc stredEvropy = KaLoc.ofJZ(new Wgs(50.0, 15.0).toMou(), 5);
+		Assert.assertTrue(barev(pixely(vyrendruj(stredEvropy))) > 3);
+	}
+
 	@Test
 	public void chybejiciTemaKresliVychozim() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
@@ -316,18 +336,43 @@ public class OfflineMapyTest {
 	public void dlazdiceProMeritkoDispleje() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
 		final String klic100 = klic();
-		Assert.assertEquals(256, ((BufferedImage) vyrendruj(STRED_Z15).getImg()).getWidth());
+		Assert.assertEquals(256, vyrendruj(STRED_Z15).getWidth());
 		mapy.nastavMeritko(1.5);
-		final BufferedImage img150 = (BufferedImage) vyrendruj(STRED_Z15).getImg();
+		final BufferedImage img150 = vyrendruj(STRED_Z15);
 		Assert.assertEquals(384, img150.getWidth());
 		Assert.assertEquals(384, img150.getHeight());
 		final String klic150 = klic();
 		Assert.assertNotEquals(klic100, klic150);
 		Assert.assertEquals("změna měřítka zneplatní dlaždice v paměti", 1, zmen.get());
 		mapy.nastavMeritko(2);
-		Assert.assertEquals(512, ((BufferedImage) vyrendruj(STRED_Z15).getImg()).getWidth());
+		Assert.assertEquals(512, vyrendruj(STRED_Z15).getWidth());
 		mapy.nastavMeritko(1.5);
 		Assert.assertEquals(klic150, klic());
+	}
+
+	/** Velikost písma a značek nemění velikost dlaždice, ale má vlastní místo v cache. */
+	@Test
+	public void velikostPismaMaVlastniKlic() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final String klic100 = klic();
+		final BufferedImage img100 = vyrendruj(STRED_Z15);
+		mapy.nastavPismo(1.5);
+		final BufferedImage img150 = vyrendruj(STRED_Z15);
+		Assert.assertEquals(256, img150.getWidth());
+		Assert.assertNotEquals(klic100, klic());
+		Assert.assertEquals("změna písma zneplatní dlaždice v paměti", 1, zmen.get());
+		Assert.assertFalse("větší písmo a značky vykreslí jiný obraz", Arrays.equals(img100.getRGB(0, 0, 256, 256, null, 0, 256), img150.getRGB(0, 0, 256, 256, null, 0, 256)));
+		mapy.nastavPismo(1);
+		Assert.assertEquals(klic100, klic());
+	}
+
+	@Test
+	public void pismoNaPetProcent() {
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliPismo(1.0), 0);
+		Assert.assertEquals(0.8, OfflineMapy.zaokrouhliPismo(0.5), 0);
+		Assert.assertEquals(1.5, OfflineMapy.zaokrouhliPismo(3), 0);
+		Assert.assertEquals(1.05, OfflineMapy.zaokrouhliPismo(1.06), 0);
+		Assert.assertEquals(1, OfflineMapy.zaokrouhliPismo(Double.NaN), 0);
 	}
 
 	@Test
@@ -360,5 +405,46 @@ public class OfflineMapyTest {
 		r.skonci();
 		Assert.assertTrue(r.isZavreny());
 		Assert.assertFalse(r.zacni());
+	}
+
+	/** Nastavení a dotazy z EDT nečekají, až jiné vlákno pod zámkem otevře mapy nebo načte téma. */
+	@Test
+	public void nastaveniNecekaNaOtevreniMap() throws Exception {
+		final java.util.concurrent.CountDownLatch drzi = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch pust = new java.util.concurrent.CountDownLatch(1);
+		final Thread otevira = new Thread(() -> {
+			synchronized (mapy) {
+				drzi.countDown();
+				try {
+					pust.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		});
+		otevira.start();
+		drzi.await();
+		final java.util.concurrent.ExecutorService edt = java.util.concurrent.Executors.newSingleThreadExecutor();
+		try {
+			final java.util.concurrent.Future<?> nastaveni = edt.submit(() -> {
+				mapy.nastavMeritko(1.5);
+				mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
+				mapy.setSlozkaSymbolu(null);
+				Assert.assertEquals(1.5, mapy.getMeritko(), 0);
+				Assert.assertEquals(TemaOfflineMapy.zTextu("OSMARENDER"), mapy.getTema());
+				Assert.assertEquals(slozka, mapy.getSlozka());
+				Assert.assertNull(mapy.getChybaTematu());
+				return null;
+			});
+			try {
+				nastaveni.get(2, java.util.concurrent.TimeUnit.SECONDS);
+			} catch (final java.util.concurrent.TimeoutException e) {
+				Assert.fail("nastavení čeká na zámek otevírání map");
+			}
+		} finally {
+			pust.countDown();
+			otevira.join();
+			edt.shutdown();
+		}
 	}
 }

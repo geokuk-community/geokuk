@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.*;
 
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.DiagnosticsData;
@@ -73,6 +74,10 @@ public class KachleZiskavac {
 			this.diagnosticsData = diagnosticsData;
 			pocitKachlice.inc();
 			//System.out.println("Vytvořena kachlice pro: " + ka);
+		}
+
+		synchronized Image getImage() {
+			return image;
 		}
 
 		synchronized void ziskej(final ImageReceiver ir) {
@@ -155,14 +160,14 @@ public class KachleZiskavac {
 
 						private void spustRender() {
 							final AtomicReference<Future<?>> moje = new AtomicReference<>();
-							final ListenableFuture<ImageWithData> future = submitRender(ka, des, diagnosticsData, Kachlice.this, moje);
+							final ListenableFuture<BufferedImage> future = submitRender(ka, des, diagnosticsData, Kachlice.this, moje);
 							moje.set(future);
 							futura = future;
-							Futures.addCallback(future, new FutureCallback<ImageWithData>() {
+							Futures.addCallback(future, new FutureCallback<BufferedImage>() {
 
 								@Override
-								public void onSuccess(final ImageWithData imageWithData) {
-									onImageLoaded(imageWithData.getImg());
+								public void onSuccess(final BufferedImage obrazek) {
+									onImageLoaded(obrazek);
 								}
 
 								@Override
@@ -185,7 +190,12 @@ public class KachleZiskavac {
 			if (!ka.getType().isOffline()) {
 				return kachleManager.load(ka);
 			}
-			final OfflineRenderer renderer = offlineMapy.pouzij();
+			final OfflineRenderer renderer;
+			try {
+				renderer = offlineMapy.pouzij();
+			} catch (final IOException e) {
+				return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
+			}
 			try {
 				if (!renderer.pokryva(ka.getLoc())) {
 					return null; // dlaždice mimo mapy se jen vybarví a neukládá
@@ -299,7 +309,14 @@ public class KachleZiskavac {
 			execDiskWrite.execute(() -> {
 				try {
 					log.info("Ukladani kachle na disk #{}:", ukladanci.size());
-					final List<ItemToSave> list = ukladanci.stream().map(ukladanec -> new ItemToSave(ukladanec.getKa(), ukladanec.getTyp(), ukladanec.getRawData())).collect(Collectors.toList());
+					final List<ItemToSave> list = new ArrayList<>(ukladanci.size());
+					for (final Ukladanec ukladanec : ukladanci) {
+						try {
+							list.add(new ItemToSave(ukladanec.getKa(), ukladanec.getTyp(), ukladanec.dataKUlozeni()));
+						} catch (final IOException e) {
+							log.warn("Dlaždici {} nejde převést pro uložení: {}", ukladanec.getKa(), e.toString());
+						}
+					}
 					if (kachleManager.save(list)) {
 						pocitZapsanoChunkuNaDisk.inc();
 						pocitZapsanoNaDisk.add(list.size());
@@ -365,11 +382,11 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
-	/** Jedno jádro zůstane oknu, nad 4 vlákna vykreslování skoro nezrychlí. */
+	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
 
 	static int pocetVlakenRenderu(final int jader) {
-		return Math.min(jader, Math.min(4, Math.max(2, jader - 1)));
+		return Math.min(jader, Math.min(6, Math.max(2, jader - 1)));
 	}
 
 	private static ThreadFactory vlaknaRenderu(final String jmeno) {
@@ -405,7 +422,7 @@ public class KachleZiskavac {
 	private final PocitadloRoste pocitDiskLoadMinuti = new PocitadloRoste("ka23 DISK cache #minutí",
 			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši minout, co se dělo dál není tímto atributem určeno..");
 
-	private final PocitadloRoste pocitDiskLoadError = new PocitadloRoste("ka24 DISK cache #chyb čtení", "Kolikrát selhalo čtení dlaždich z disku.");
+	final PocitadloRoste pocitDiskLoadError = new PocitadloRoste("ka24 DISK cache #chyb čtení", "Kolikrát selhalo čtení dlaždich z disku.");
 
 	private final PocitadloRoste pocitDownloadWebSubmit = new PocitadloRoste("ka31 WEB #požadovaných",
 			"Kolikrát bylo požadováno číst dlaždici z webu. Vždy poté, co se nenašly na disku.disku. Obsahuje všechny úspěšně i neúspěšně načtené a také zkanclované");
@@ -416,7 +433,7 @@ public class KachleZiskavac {
 
 	private final PocitadloRoste pocitRenderOk = new PocitadloRoste("ka36 RENDER #vykreslených", "Kolik dlaždic offline mapy se vykreslilo.");
 
-	private final PocitadloRoste pocitRenderError = new PocitadloRoste("ka37 RENDER #chyb", "Kolikrát vykreslení dlaždice offline mapy selhalo.");
+	final PocitadloRoste pocitRenderError = new PocitadloRoste("ka37 RENDER #chyb", "Kolikrát vykreslení dlaždice offline mapy selhalo.");
 
 	private final PocitadloRoste pocitZapsanoChunkuNaDisk = new PocitadloRoste("ka41 disk write #bloků",
 			"V kolika diskovžch operacích byl prováděn zápis na disk. Z důvodu optimalizace se zápisy na disk združují do větších bloků.");
@@ -634,7 +651,7 @@ public class KachleZiskavac {
 		return future;
 	}
 
-	private ListenableFuture<ImageWithData> submitRender(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice,
+	private ListenableFuture<BufferedImage> submitRender(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData, final Kachlice kachlice,
 			final AtomicReference<Future<?>> moje) {
 		return dvojiceExekucnichSluzeb.render.submit(() -> {
 			while (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI && exekucniSluzby.get(Priority.KACHLE).renderQueue.size() > 0) {
@@ -647,12 +664,14 @@ public class KachleZiskavac {
 			try {
 				final OfflineRenderer renderer = offlineMapy.pouzij();
 				try {
-					final ImageWithData imageWithData = renderer.vyrendruj(ka.getLoc());
+					final long zacatek = System.nanoTime();
+					final BufferedImage obrazek = renderer.vyrendruj(ka.getLoc());
+					Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
 					pocitRenderOk.inc();
 					if (renderer.pokryva(ka.getLoc())) {
-						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), imageWithData.getData(), kachlice));
+						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), obrazek, kachlice));
 					}
-					return imageWithData;
+					return obrazek;
 				} finally {
 					renderer.skonci();
 				}
@@ -676,6 +695,12 @@ public class KachleZiskavac {
 		chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
 		diagnosticsData.send(e.toString());
 		return e;
+	}
+
+	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
+	public Image nahledZPameti(final Ka ka) {
+		final Kachlice kachlice = kachlmap.getIfPresent(ka);
+		return kachlice == null ? null : kachlice.getImage();
 	}
 
 	/**

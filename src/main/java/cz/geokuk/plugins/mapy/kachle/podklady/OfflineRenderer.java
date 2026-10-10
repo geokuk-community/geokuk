@@ -7,8 +7,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.CRC32;
 
-import javax.imageio.ImageIO;
-
 import org.mapsforge.core.graphics.GraphicFactory;
 import org.mapsforge.core.graphics.TileBitmap;
 import org.mapsforge.core.model.Tile;
@@ -41,6 +39,8 @@ final class OfflineRenderer {
 		final GraphicFactory grafika;
 		/** Měřítko displeje, pro které je téma načtené (velikost dlaždice, symboly a písmo). */
 		final double meritko;
+		/** Násobek velikosti písma a značek. */
+		final double pismo;
 		/** Otisk tématu, ze kterého je načteno (soubor a jeho velikost a čas). */
 		final String otiskPozadovaneho;
 		/** Otisk skutečně použitého tématu pro klíč cache. */
@@ -49,12 +49,13 @@ final class OfflineRenderer {
 		final String chyba;
 		final long nacitaniMs;
 
-		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
+		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final double pismo, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
 				final long start) {
 			this.future = future;
 			this.displayModel = displayModel;
 			this.grafika = grafika;
 			this.meritko = meritko;
+			this.pismo = pismo;
 			this.otiskPozadovaneho = otiskPozadovaneho;
 			this.otiskPouziteho = otiskPouziteho;
 			this.chyba = chyba;
@@ -101,7 +102,7 @@ final class OfflineRenderer {
 	 * Otevře mapy s už načteným tématem.
 	 *
 	 * @throws IOException
-	 *             když nejde otevřít některý soubor mapy
+	 *             když nejde otevřít žádný soubor mapy
 	 */
 	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema) throws IOException {
 		if (mapy.isEmpty()) {
@@ -109,22 +110,34 @@ final class OfflineRenderer {
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
+		OfflineMapaChyba prvniChyba = null;
 		try {
 			for (final File f : mapy) {
 				final MapFile mapFile;
 				try {
 					mapFile = new MapFile(f);
 				} catch (final RuntimeException e) {
-					throw new OfflineMapaChyba("Soubor mapy " + f + " nejde otevřít: " + e.getMessage(), f.getName() + " nejde otevřít", e);
+					// Mapa, která se třeba právě kopíruje, nezastaví kreslení ostatních.
+					log.warn("Soubor mapy {} nejde otevřít, kreslí se bez něj: {}", f, e.getMessage());
+					if (prvniChyba == null) {
+						prvniChyba = new OfflineMapaChyba("Soubor mapy " + f + " nejde otevřít: " + e.getMessage(), f.getName() + " nejde otevřít", e);
+					}
+					continue;
 				}
 				data.addMapDataStore(mapFile, false, false);
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
+			}
+			if (otisk.length() == 0) {
+				throw prvniChyba;
 			}
 		} catch (final IOException | RuntimeException e) {
 			data.close();
 			throw e;
 		}
 		otisk.append(tema.otiskPouziteho).append('\n').append(tema.displayModel.getTileSize());
+		if (tema.pismo != 1) {
+			otisk.append('\n').append(tema.pismo);
+		}
 		return new OfflineRenderer(data, tema, klic(otisk.toString()));
 	}
 
@@ -141,20 +154,28 @@ final class OfflineRenderer {
 	 *            měřítko displeje: dlaždice má 256 × měřítko pixelů a symboly i písmo jsou úměrně větší
 	 */
 	static NacteneTema nactiTema(final TemaOfflineMapy tema, final File slozkaSymbolu, final double meritko) throws IOException {
+		return nactiTema(tema, slozkaSymbolu, meritko, 1);
+	}
+
+	/**
+	 * @param pismo
+	 *            násobek velikosti písma a značek vůči měřítku displeje
+	 */
+	static NacteneTema nactiTema(final TemaOfflineMapy tema, final File slozkaSymbolu, final double meritko, final double pismo) throws IOException {
 		final DisplayModel displayModel = new DisplayModel();
-		displayModel.setUserScaleFactor((float) meritko);
+		displayModel.setUserScaleFactor((float) (meritko * pismo));
 		displayModel.setFixedTileSize(velikostDlazdice(meritko));
 		final long start = System.nanoTime();
 		try {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
-			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, tema.otisk(), tema.otisk(), null, start);
+			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), tema.otisk(), null, start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
 		} catch (final IOException e) {
 			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
-			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
+			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
 		}
 	}
 
@@ -257,16 +278,13 @@ final class OfflineRenderer {
 		data.close();
 	}
 
-	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. */
-	ImageWithData vyrendruj(final KaLoc loc) throws IOException {
+	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. Do PNG pro cache se převádí až při ukládání. */
+	BufferedImage vyrendruj(final KaLoc loc) throws IOException {
 		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, false, false);
 		final TileBitmap bitmapa = renderer.executeJob(job);
 		if (bitmapa == null) {
 			throw new IOException("Dlaždici " + loc + " offline mapy nejde vykreslit.");
 		}
-		final BufferedImage obrazek = AwtGraphicFactory.getBitmap(bitmapa);
-		final ByteArrayOutputStream png = new ByteArrayOutputStream(64 * 1024);
-		ImageIO.write(obrazek, "png", png);
-		return new ImageWithData(obrazek, png.toByteArray());
+		return AwtGraphicFactory.getBitmap(bitmapa);
 	}
 }

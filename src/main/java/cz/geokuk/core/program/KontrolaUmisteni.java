@@ -11,6 +11,7 @@ import cz.geokuk.core.napoveda.VerzeJavy;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
+import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 import cz.geokuk.start.Start;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public final class KontrolaUmisteni {
 	/** Prázdné složky, kam uživatel dává vlastní soubory, ať je najde. */
 	static void pripravSlozky() {
 		for (final File slozka : Arrays.asList(KesoidUmisteniSouboru.KES_DIR.getFile(), KesoidUmisteniSouboru.CESTY_DIR.getFile(),
-				KesoidUmisteniSouboru.IMAGE_MY_DIR.getFile(), KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR.getFile(), UzivatelskeMapy.slozka())) {
+				KesoidUmisteniSouboru.IMAGE_MY_DIR.getFile(), KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR.getFile(), UzivatelskeMapy.slozka(), KachleUmisteniSouboru.OFFLINE_MAPY_DIR.getFile())) {
 			slozka.mkdirs();
 		}
 		doplnUkazkyMap(new File(FConst.DATA_DIR, SLOZKA_UKAZEK_MAP));

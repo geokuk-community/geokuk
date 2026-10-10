@@ -41,6 +41,10 @@ public class OpensakDbLoader extends Nacitac0 {
 
 	private static final String[] SLOUPCE_WAYPOINTS = { "prefix", "wp_type", "name", "wp_code", "description", "latitude", "longitude" };
 
+	/** Texty čtené jedním voláním JDBC ({@link SpojeneTexty}). */
+	private static final String[] TEXTY_CACHES = { "gc_code", "name", "cache_type", "container", "placed_by", "owner_name", "owner_id", "hidden_date", "found_date", "country", "state" };
+	private static final String[] TEXTY_WAYPOINTS = { "prefix", "wp_type", "name", "wp_code", "description" };
+
 	/** Typy, které OpenSAK pojmenovává jinak než groundspeak:type v GPX, a zkrácené názvy. */
 	private static final Map<String, String> TYPY_KESI = typyKesi();
 
@@ -112,33 +116,36 @@ public class OpensakDbLoader extends Nacitac0 {
 		final boolean opravy = poznamky.contains("cache_id");
 		final String dotaz = "SELECT " + DatabazeJinehoProgramu.vyber(statement, "caches", SLOUPCE_CACHES) + ", "
 				+ (opravy ? DatabazeJinehoProgramu.vyber(statement, "user_notes", SLOUPCE_USER_NOTES) : "NULL as corrected_lat, NULL as corrected_lon, NULL as is_corrected")
-				+ " FROM caches" + (opravy ? " LEFT JOIN user_notes ON user_notes.cache_id = caches.id" : "");
+				+ ", " + SpojeneTexty.vyraz(DatabazeJinehoProgramu.sloupceNeboNull(statement, "caches", TEXTY_CACHES)) + " FROM caches"
+				+ (opravy ? " LEFT JOIN user_notes ON user_notes.cache_id = caches.id" : "");
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(dotaz)) {
+			final SpojeneTexty texty = SpojeneTexty.posledniSloupec(rs, TEXTY_CACHES);
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_CACHES);
-				final String kod = rs.getString("gc_code");
+				texty.nacti(rs);
+				final String kod = texty.get("gc_code");
 				try {
 					final GpxWpt cache = new GpxWpt();
 					cache.name = kod;
 					cache.sym = rs.getBoolean("found") ? "Geocache Found" : "Geocache";
 					cache.wgs = new Wgs(rs.getDouble("latitude"), rs.getDouble("longitude"));
-					cache.time = datum(rs.getString("hidden_date"));
+					cache.time = datum(texty.get("hidden_date"));
 
 					final Groundspeak groundspeak = new Groundspeak();
-					groundspeak.name = rs.getString("name");
-					groundspeak.type = intern(typKese(rs.getString("cache_type")));
-					groundspeak.container = intern(StringUtils.isBlank(rs.getString("container")) ? "Unknown" : rs.getString("container"));
+					groundspeak.name = texty.get("name");
+					groundspeak.type = intern(typKese(texty.get("cache_type")));
+					groundspeak.container = intern(StringUtils.isBlank(texty.get("container")) ? "Unknown" : texty.get("container"));
 					groundspeak.difficulty = intern(hodnoceni(rs, "difficulty"));
 					groundspeak.terrain = intern(hodnoceni(rs, "terrain"));
-					groundspeak.placedBy = intern(rs.getString("placed_by"));
-					groundspeak.owner = intern(rs.getString("owner_name"));
-					groundspeak.ownerid = cislo(rs.getString("owner_id"));
-					groundspeak.country = intern(rs.getString("country"));
-					groundspeak.state = intern(rs.getString("state"));
+					groundspeak.placedBy = intern(texty.get("placed_by"));
+					groundspeak.owner = intern(texty.get("owner_name"));
+					groundspeak.ownerid = cislo(texty.get("owner_id"));
+					groundspeak.country = intern(texty.get("country"));
+					groundspeak.state = intern(texty.get("state"));
 					groundspeak.archived = rs.getBoolean("archived");
 					groundspeak.availaible = rs.getObject("available") == null || rs.getBoolean("available");
 					if (hinty) {
@@ -150,7 +157,7 @@ public class OpensakDbLoader extends Nacitac0 {
 					cache.link.text = String.format("%s by %s", groundspeak.name, groundspeak.placedBy);
 
 					if (rs.getBoolean("found")) {
-						cache.gpxg.found = datum(rs.getString("found_date"));
+						cache.gpxg.found = datum(texty.get("found_date"));
 					}
 					if (rs.getObject("favorite_points") != null) {
 						cache.gpxg.favorites = rs.getInt("favorite_points");
@@ -186,7 +193,11 @@ public class OpensakDbLoader extends Nacitac0 {
 	private void loadWaypoints(final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
 		final Preskocene preskocene = new Preskocene("waypoint");
 		final String sPolohou = "waypoints.latitude IS NOT NULL AND waypoints.longitude IS NOT NULL AND NOT (waypoints.latitude = 0 AND waypoints.longitude = 0)";
-		final String dotaz = "SELECT caches.gc_code as parent, " + DatabazeJinehoProgramu.vyber(statement, "waypoints", SLOUPCE_WAYPOINTS)
+		final List<String> vyrazy = new ArrayList<>();
+		vyrazy.add("caches.gc_code");
+		vyrazy.addAll(DatabazeJinehoProgramu.sloupceNeboNull(statement, "waypoints", TEXTY_WAYPOINTS));
+		final String[] jmenaTextu = { "parent", "prefix", "wp_type", "name", "wp_code", "description" };
+		final String dotaz = "SELECT caches.gc_code as parent, " + DatabazeJinehoProgramu.vyber(statement, "waypoints", SLOUPCE_WAYPOINTS) + ", " + SpojeneTexty.vyraz(vyrazy)
 				+ " FROM waypoints JOIN caches ON caches.id = waypoints.cache_id WHERE " + sPolohou + " ORDER BY waypoints.cache_id, waypoints.id";
 		final int bezPolohy = count(statement, "SELECT count(*) FROM waypoints WHERE NOT (" + sPolohou + ")");
 		final int bezKese = count(statement, "SELECT count(*) FROM waypoints WHERE " + sPolohou + " AND cache_id NOT IN (SELECT id FROM caches)");
@@ -197,12 +208,14 @@ public class OpensakDbLoader extends Nacitac0 {
 		String predchoziParent = null;
 		int citac = 0;
 		try (ResultSet rs = statement.executeQuery(dotaz)) {
+			final SpojeneTexty texty = SpojeneTexty.posledniSloupec(rs, jmenaTextu);
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
-				final String parent = rs.getString("parent");
+				texty.nacti(rs);
+				final String parent = texty.get("parent");
 				if (!parent.equals(predchoziParent)) {
 					kodyVKesi.clear();
 					kodyVKesi.add(parent);
@@ -211,9 +224,9 @@ public class OpensakDbLoader extends Nacitac0 {
 				try {
 					final GpxWpt wpt = new GpxWpt();
 					wpt.wgs = new Wgs(rs.getDouble("latitude"), rs.getDouble("longitude"));
-					wpt.name = kodWaypointu(parent, rs.getString("prefix"), rs.getString("wp_code"), kodyVKesi);
-					wpt.sym = rs.getString("wp_type");
-					wpt.desc = StringUtils.isBlank(rs.getString("name")) ? rs.getString("description") : rs.getString("name");
+					wpt.name = kodWaypointu(parent, texty.get("prefix"), texty.get("wp_code"), kodyVKesi);
+					wpt.sym = texty.get("wp_type");
+					wpt.desc = StringUtils.isBlank(texty.get("name")) ? texty.get("description") : texty.get("name");
 					builder.addGpxWpt(wpt);
 					citac++;
 				} catch (final RuntimeException e) {

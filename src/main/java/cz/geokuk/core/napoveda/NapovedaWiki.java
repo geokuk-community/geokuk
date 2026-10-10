@@ -7,7 +7,10 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.JButton;
+
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.util.process.BrowserOpener;
 
 /** Téma nápovědy dialogu → stránka (a kotva) uživatelské wiki na GitHubu. */
 public final class NapovedaWiki {
@@ -31,12 +34,22 @@ public final class NapovedaWiki {
 		stranka("HledatAdresu", "Hledání", "hledání-adresy");
 		stranka("JintNaSouradnice", "Hledání", "zadání-souřadnic");
 		stranka("StahovaniMapovychDlazdic", "Mapové-podklady-a-cache", "hromadné-stažení-map-na-výlet");
+		stranka("LimityKresleni", "Filtry-a-zobrazení-keší", "ikony-nebo-tečky");
+		stranka("PametProgramu", "Časté-potíže", "načtení-keší-je-pomalé-nebo-programu-dochází-paměť");
+		stranka("ZobrazeniProgramu", "Časté-potíže", "program-je-pomalý-nebo-mapa-a-menu-sekají-windows");
 	}
 
 	private NapovedaWiki() {}
 
 	private static void stranka(final String tema, final String stranka, final String kotva) {
 		STRANKY.put(tema, new String[] { stranka, kotva });
+	}
+
+	/** Tlačítko do dialogu, které otevře stránku wiki k tématu a dialog nezavře. */
+	public static JButton tlacitko(final String tema) {
+		final JButton b = new JButton("Nápověda");
+		b.addActionListener(e -> BrowserOpener.displayURL(url(tema)));
+		return b;
 	}
 
 	/** Adresa stránky wiki pro téma, bez tématu nebo pro neznámé téma úvodní stránka. */

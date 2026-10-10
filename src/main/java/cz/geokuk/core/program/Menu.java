@@ -79,6 +79,7 @@ public class Menu extends MenuStrujce {
 		item(akce.tadyJsemDomaAction);
 		separator();
 		item(akce.pametProgramuAction);
+		item(akce.zobrazeniProgramuAction);
 		item(akce.vytvoritZastupceAction);
 		item(akce.dalkoveOvladaniAction);
 		separator();
@@ -286,6 +287,9 @@ public class Menu extends MenuStrujce {
 		item(akce.zadatProblemAction);
 		item(akce.prehledProblemuAction);
 		item(akce.diagnostikaAction);
+		if (Diagnostika.betaKanal()) {
+			item(akce.ukazatelVykonuAction);
+		}
 		separator();
 		item(akce.oProgramuAction);
 

@@ -132,6 +132,16 @@ final class DatabazeJinehoProgramu {
 		return sb.toString();
 	}
 
+	/** Sloupce pro {@link SpojeneTexty#vyraz(List)}; ty, které starší verze programu v tabulce nemá, budou NULL. */
+	static List<String> sloupceNeboNull(final Statement statement, final String tabulka, final String... sloupce) throws SQLException {
+		final Set<String> existujici = sloupce(statement, tabulka);
+		final List<String> vysledek = new ArrayList<>();
+		for (final String sloupec : sloupce) {
+			vysledek.add(existujici.contains(sloupec) ? tabulka + "." + sloupec : "NULL");
+		}
+		return vysledek;
+	}
+
 	/** Jeden sloupec textů z dotazu; s krátkým čekáním na zámek, zamčená databáze se jen nezjistí předem. */
 	static java.util.List<String> jmena(final File soubor, final String dotaz) throws SQLException {
 		final java.util.List<String> vysledek = new java.util.ArrayList<>();

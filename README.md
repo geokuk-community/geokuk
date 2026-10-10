@@ -121,6 +121,35 @@ GeoKuk je při každém startu uloží do složky `data/mapy-priklady`
 a upravené ukázky tam přepíše. Mapu začnete používat zkopírováním jejího
 souboru do `data/mapy` a upravujte ji až tam.
 
+## Offline mapy
+
+Podklad Mapy > Offline mapa (klávesa V) kreslí mapu v počítači
+z vektorových map ve formátu mapsforge (soubory `.map`), bez internetu.
+Soubory `.map` dejte do složky `data/offline-mapy` (program ji při startu
+založí; jinou složku lze nastavit v Soubor > Umístění souborů na kartě
+Mapy). Více map ve složce, třeba Česko a Slovensko, se kreslí naráz;
+mapu zkopírovanou do složky za běhu program sám načte. Mapy si stáhnete
+například z [osm.paws.cz](https://osm.paws.cz/) (česká a slovenská mapa
+s turistickým značením) nebo z [OpenAndroMaps](https://www.openandromaps.org/).
+
+Data map jsou z OpenStreetMap, © přispěvatelé OpenStreetMap, licence
+[ODbL](https://www.openstreetmap.org/copyright); atribuci program kreslí
+v rohu mapy.
+
+Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
+`prehled-svet-ne.map` (pevnina, moře, státní hranice a české názvy států),
+takže offline mapa ukáže celý svět i bez stažených map. Je vytvořená
+z dat Natural Earth, která jsou volným dílem (public domain); Made with
+Natural Earth, [naturalearthdata.com](https://www.naturalearthdata.com/).
+Soubor můžete smazat, program funguje i bez něj.
+
+Vzhled mapy se volí v Mapy > Téma offline mapy. Vestavěná témata jsou
+součástí programu. Jiné téma (soubor `.zip` nebo `.xml`, například paws
+z osm.paws.cz) si stáhněte sami a dejte ho do složky offline map
+neupravené, se souborem licence od jeho autora. Některá témata mají
+nekomerční licenci (například CC BY-NC-SA); taková se smějí používat
+a šířit jen v souladu s ní; GeoKuk je s programem nedodává.
+
 ## Dálkové ovládání
 
 Soubor > Dálkové ovládání (nebo parametr `--ovladani[=port]`, výchozí port

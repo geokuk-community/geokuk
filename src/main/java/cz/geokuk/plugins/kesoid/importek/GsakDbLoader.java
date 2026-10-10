@@ -447,8 +447,6 @@ public class GsakDbLoader extends Nacitac0 {
 		private static final String CACHE_COUNT = "SELECT COUNT(*) FROM Caches";
 		private static final String WAYPOINT_COUNT = "SELECT COUNT(*) FROM Waypoints";
 		private static final String TAG_COUNT = "SELECT COUNT(*) FROM Caches";
-		private static final String SELECT_CACHES = "SELECT * FROM Caches";
-		private static final String SELECT_WAYPOINTS = "SELECT * FROM Waypoints";
 		private static final String SELECT_CUSTOMVALUES = "SELECT * FROM Custom";
 
 		private final Connection iConnection;
@@ -490,16 +488,16 @@ public class GsakDbLoader extends Nacitac0 {
 
 		/** Hodnoty sloupců z {@code aSloupceHodnot} dostane keš navíc v {@link AllValues#values}. */
 		public boolean forEachCache(final Set<String> aSloupceHodnot, final Function<GsakCache, Boolean> aAction) throws SQLException {
-			return forEach(SELECT_CACHES, GsakCache::new, aSloupceHodnot, aAction);
+			return forEach("Caches", GsakCache.class, GsakCache::new, aSloupceHodnot, aAction);
 		}
 
 		public boolean forEachWaypoint(final Function<GsakWaypoint, Boolean> aAction) throws SQLException {
 			// Waypointy a vlastní hodnoty starší GSAK mít nemusí.
-			return !containsTables(Collections.singleton("Waypoints")) || forEach(SELECT_WAYPOINTS, GsakWaypoint::new, Collections.emptySet(), aAction);
+			return !containsTables(Collections.singleton("Waypoints")) || forEach("Waypoints", GsakWaypoint.class, GsakWaypoint::new, Collections.emptySet(), aAction);
 		}
 
 		public boolean forEachCustomValue(final Function<Map<String, String>, Boolean> aAction) throws SQLException {
-			return !containsTables(Collections.singleton("Custom")) || forEach(SELECT_CUSTOMVALUES, LinkedHashMap::new, Collections.emptySet(), aAction);
+			return !containsTables(Collections.singleton("Custom")) || forEach(SELECT_CUSTOMVALUES, Collections.emptyList(), LinkedHashMap::new, Collections.emptySet(), aAction);
 		}
 
 		public boolean schemaMatches() throws SQLException {
@@ -533,13 +531,35 @@ public class GsakDbLoader extends Nacitac0 {
 			}
 		}
 
-		private <T> boolean forEach(final String aSelectStatement, final Supplier<T> aRecordFactory, final Set<String> aSloupceHodnot, final Function<T, Boolean> aAction) throws SQLException {
+		/** Textová pole záznamu, která tabulka má, přijdou navíc spojená v posledním sloupci ({@link SpojeneTexty}). */
+		private <T> boolean forEach(final String aTabulka, final Class<T> aRecordClass, final Supplier<T> aRecordFactory, final Set<String> aSloupceHodnot, final Function<T, Boolean> aAction)
+				throws SQLException {
+			final Set<String> existujici = DatabazeJinehoProgramu.sloupce(iStatement, aTabulka);
+			final List<String> textove = new ArrayList<>();
+			for (final Field f : aRecordClass.getDeclaredFields()) {
+				if (Modifier.isPublic(f.getModifiers()) && !Modifier.isStatic(f.getModifiers()) && f.getType() == String.class && existujici.contains(f.getName())) {
+					textove.add(f.getName());
+				}
+			}
+			return forEach(vsechnoSTexty(aTabulka, textove), textove, aRecordFactory, aSloupceHodnot, aAction);
+		}
+
+		private static String vsechnoSTexty(final String aTabulka, final List<String> aTextove) {
+			final List<String> vyrazy = new ArrayList<>();
+			for (final String sloupec : aTextove) {
+				vyrazy.add(aTabulka + ".\"" + sloupec + "\"");
+			}
+			return "SELECT *, " + SpojeneTexty.vyraz(vyrazy) + " FROM " + aTabulka;
+		}
+
+		private <T> boolean forEach(final String aSelectStatement, final List<String> aTextove, final Supplier<T> aRecordFactory, final Set<String> aSloupceHodnot, final Function<T, Boolean> aAction)
+				throws SQLException {
 			try (ResultSet rs = iStatement.executeQuery(aSelectStatement)) {
 				PrevodRadku prevod = null;
 				while (rs.next()) {
 					final T record = aRecordFactory.get();
 					if (prevod == null) {
-						prevod = new PrevodRadku(rs, record, aSloupceHodnot);
+						prevod = new PrevodRadku(rs, record, aSloupceHodnot, aTextove);
 					}
 					prevod.nacti(rs, record);
 					if (!aAction.apply(record)) {
@@ -556,13 +576,16 @@ public class GsakDbLoader extends Nacitac0 {
 			private final int[] sloupcePoli;
 			private final int[] sloupceHodnot;
 			private final String[] klice;
+			/** Texty z posledního sloupce, null bez textových polí. */
+			private final SpojeneTexty texty;
 
-			PrevodRadku(final ResultSet aResultSet, final Object aRecord, final Set<String> aSloupceHodnot) throws SQLException {
+			PrevodRadku(final ResultSet aResultSet, final Object aRecord, final Set<String> aSloupceHodnot, final List<String> aTextove) throws SQLException {
 				final List<String> sloupce = columnNames(aResultSet);
 				final Map<String, Integer> indexy = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 				for (int i = sloupce.size() - 1; i >= 0; i--) {
 					indexy.put(sloupce.get(i), i + 1);
 				}
+				texty = aTextove.isEmpty() ? null : new SpojeneTexty(sloupce.size(), aTextove.stream().mapToInt(indexy::get).toArray());
 				final List<Field> nalezenaPole = new ArrayList<>();
 				final List<Integer> nalezeneSloupce = new ArrayList<>();
 				if (!(aRecord instanceof Map)) {
@@ -593,13 +616,16 @@ public class GsakDbLoader extends Nacitac0 {
 			}
 
 			void nacti(final ResultSet aResultSet, final Object aRecord) throws SQLException {
+				if (texty != null) {
+					texty.nacti(aResultSet);
+				}
 				for (int i = 0; i < pole.length; i++) {
 					final Field f = pole[i];
 					final int sloupec = sloupcePoli[i];
 					final Class<?> type = f.getType();
 					try {
 						if (type == String.class) {
-							f.set(aRecord, aResultSet.getString(sloupec));
+							f.set(aRecord, texty != null ? texty.get(sloupec) : aResultSet.getString(sloupec));
 						} else if (type == boolean.class) {
 							f.setBoolean(aRecord, aResultSet.getInt(sloupec) == 1);
 						} else if (type == int.class) {
