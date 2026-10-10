@@ -68,7 +68,7 @@ public class BrowserOpener {
 		} catch (final Exception e) {
 			try {
 				final Runtime runtime = Runtime.getRuntime();
-				runtime.exec("xdg-open " + url);
+				runtime.exec(new String[] { "xdg-open", url.toString() });
 			} catch (final Exception e1) {
 				log.warn("Prohlížeč nejde otevřít pro {}", url, e);
 				naEdt(() -> ukazAdresu(url, "Prohlížeč se nepodařilo otevřít. Otevřete si adresu ručně:"));

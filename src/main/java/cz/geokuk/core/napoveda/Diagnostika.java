@@ -443,7 +443,7 @@ public final class Diagnostika {
 
 	/** Hlášení je veřejné: bez jména uživatele v cestách a bez parametrů v adresách (mohou obsahovat klíč k mapám). */
 	static String soukrome(final String text) {
-		return text == null ? null : text.replace(FConst.HOME_DIR.getAbsolutePath(), "~").replaceAll("(https?://[^\\s?\"']+)\\?[^\\s\"']*", "$1?…");
+		return text == null ? null : text.replace(FConst.HOME_DIR.getAbsolutePath(), "~").replaceAll("(https?://[^\\s?\"']++)\\?[^\\s\"']*+", "$1?…");
 	}
 
 	/** Domovskou složku zkrátí na ~, ať text neobsahuje jméno uživatele. */
