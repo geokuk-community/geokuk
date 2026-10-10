@@ -45,8 +45,9 @@ public class JCestaTooltip extends JComponent {
 		jVzad.setText("<html>" + Cesta.dalkaHtml(dalkaPuvodni, FBarvy.CURTA_NORMALNE) + "<font color=white> +</font>" + Cesta.dalkaHtml(dalkaDodana, Color.WHITE));
 		jVzad.setVisible(true);
 		jVpred.setVisible(false);
-		jNazevCesty.setText(FString.text(cesta.getNazev()));
-		jNazevCesty.setVisible(cesta.getNazev() != null);
+		final String nazev = cesta == null ? null : cesta.getNazev();
+		jNazevCesty.setText(FString.text(nazev));
+		jNazevCesty.setVisible(nazev != null);
 
 	}
 

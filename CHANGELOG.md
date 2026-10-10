@@ -68,6 +68,8 @@
 - Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
   ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
   dokreslení se nahradí ostrou.
+- Opětovná volba už vybrané sady ikon ikony znovu nenačítá. Sada ikon se
+  načte i tehdy, když některou její podsložku nejde přečíst.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence

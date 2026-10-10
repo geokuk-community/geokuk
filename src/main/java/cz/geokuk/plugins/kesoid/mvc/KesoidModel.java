@@ -451,7 +451,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	}
 
 	public void setJmenoAktualniSadyIkon(final ASada jmenoAktualniSadyIkon) {
-		if (jmenoAktualniSadyIkon.equals(jmenaAlelNaToolbaru)) {
+		if (jmenoAktualniSadyIkon.equals(this.jmenoAktualniSadyIkon)) {
 			return;
 		}
 		this.jmenoAktualniSadyIkon = jmenoAktualniSadyIkon;
