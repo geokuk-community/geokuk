@@ -278,6 +278,11 @@ public final class Start {
 		if (zNastaveni >= 256) {
 			return zNastaveni;
 		}
+		return automatickaPametMb(fyzickaMb);
+	}
+
+	/** Paměť, kterou spouštěč dá programu bez nastavení. */
+	public static int automatickaPametMb(final long fyzickaMb) {
 		if (fyzickaMb >= PRAH_VELKA_PAMET_MB) {
 			return VELKA_PAMET_MB;
 		}
