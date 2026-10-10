@@ -14,7 +14,6 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 
 	private static final long serialVersionUID = -5858146658366237217L;
 	private JMeritko meritko;
-	static final int MAX_MERITKO_S_POPISEM_SIRKY = 7;
 
 	public JMeritkoSlide() {
 		setOpaque(false);
@@ -44,7 +43,6 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		final Coord soord = getSoord();
 		meritko.setMaximalniSirkaMeritka(soord.getWidth() * 3 / 4);
 		meritko.setPixluNaMetr(soord.getPixluNaMetr());
-		meritko.setPopisSirky(popisSirky(soord));
 		meritko.setSize(meritko.getPreferredSize());
 		g.translate((soord.getWidth() - meritko.getSize().width) / 2, soord.getHeight() - meritko.getSize().getHeight() - 20);
 		meritko.paintComponent(g);
@@ -55,16 +53,6 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 	protected void onVyrezChanged() {
 		meritko.setMaximalniSirkaMeritka(getSoord().getWidth() * 3 / 4);
 		meritko.setPixluNaMetr(getSoord().getPixluNaMetr());
-		meritko.setPopisSirky(popisSirky(getSoord()));
-	}
-
-	/** Na malých měřítkách se délka v metrech mezi severem a jihem okna výrazně liší; lišta platí pro střed. */
-	static String popisSirky(final Coord soord) {
-		if (soord.getMoumer() > MAX_MERITKO_S_POPISEM_SIRKY) {
-			return null;
-		}
-		final double sirka = soord.getMoustred().toWgs().lat;
-		return "v šířce " + Math.round(Math.abs(sirka)) + "° " + (sirka >= 0 ? "s." : "j.") + " š.";
 	}
 
 	@SuppressWarnings("unused")
