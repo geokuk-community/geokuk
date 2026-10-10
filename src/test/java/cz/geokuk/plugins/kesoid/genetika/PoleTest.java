@@ -16,6 +16,18 @@ public class PoleTest {
 	}
 
 	@Test
+	public void nullNaIndexRovnemDelcePole() {
+		final IndexMap<Cislo, Long> pole = new IndexMap<>();
+		pole.put(c(2), 7l); // pole má délku 3
+		pole.put(c(3), null);
+		Assert.assertNull(pole.get(c(3)));
+		Assert.assertEquals(Long.valueOf(7l), pole.get(c(2)));
+		final IndexMap<Cislo, Long> prazdne = new IndexMap<>();
+		prazdne.put(c(0), null);
+		Assert.assertNull(prazdne.get(c(0)));
+	}
+
+	@Test
 	public void test2() {
 		final IndexMap<Cislo, Long> pole = new IndexMap<>();
 		pole.put(c(0), 42l);

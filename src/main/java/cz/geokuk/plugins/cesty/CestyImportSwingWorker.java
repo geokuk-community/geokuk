@@ -53,7 +53,7 @@ public class CestyImportSwingWorker extends MySwingWorker0<List<Cesta>, Void> {
 		if (cesty == null) {
 			return; // asi zkanclváno
 		}
-		log.info("Načteny cesty %d: \n", cesty.size());
+		log.info("Načteny cesty: {}", cesty.size());
 		cestyModel.prevezmiImportovaneCesty(cesty);
 	}
 

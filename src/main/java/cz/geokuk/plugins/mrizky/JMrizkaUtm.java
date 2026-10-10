@@ -43,7 +43,7 @@ public class JMrizkaUtm extends JMrizka0 {
 	public double convertToX(final Mou mou) {
 		final Utm utmStredu = getUtmStredu();
 		final double ux = mou.toWgs().toUtm().toSampePlaceInAnotherZone(utmStredu.polednikovaZona, utmStredu.rovnobezkovaZona).ux;
-		log.debug("convertToX {}", mou, ux);
+		log.debug("convertToX {} → {}", mou, ux);
 		return ux;
 	}
 
@@ -56,7 +56,7 @@ public class JMrizkaUtm extends JMrizka0 {
 	public double convertToY(final Mou mou) {
 		final Utm utmStredu = getUtmStredu();
 		final double uy = mou.toWgs().toUtm().toSampePlaceInAnotherZone(utmStredu.polednikovaZona, utmStredu.rovnobezkovaZona).uy;
-		log.debug("convertToY {}", mou, uy);
+		log.debug("convertToY {} → {}", mou, uy);
 		return uy;
 	}
 
