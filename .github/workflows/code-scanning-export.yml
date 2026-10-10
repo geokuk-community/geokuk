@@ -19,53 +19,42 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Otevřené alerty
+      # Repo je veřejné: do logu a souhrnu jen počty, žádná pravidla, soubory ani popisy.
+      - name: Počty otevřených alertů
         run: |
           gh api --paginate "repos/${{ github.repository }}/code-scanning/alerts?state=open&per_page=100" \
-            | jq -s '[.[][] | {
-                number,
-                rule: .rule.id,
-                severity: .rule.severity,
-                security_severity_level: .rule.security_severity_level,
-                description: .rule.description,
-                tool: .tool.name,
-                location: "\(.most_recent_instance.location.path):\(.most_recent_instance.location.start_line)",
-                created_at,
-                state
-              }]' > code-scanning-alerts.json
+            | jq -s '[.[][] | {zavaznost: (.rule.security_severity_level // .rule.severity), nastroj: .tool.name}]
+                | {celkem: length,
+                   podle_zavaznosti: (group_by(.zavaznost) | map({(.[0].zavaznost // "neuvedeno"): length}) | add // {}),
+                   podle_nastroje: (group_by(.nastroj) | map({(.[0].nastroj // "neuvedeno"): length}) | add // {})}' \
+            > pocty.json
+          cat pocty.json
 
       - name: Poslední analýzy
         run: |
           gh api "repos/${{ github.repository }}/code-scanning/analyses?per_page=5" \
-            | jq '[.[] | {created_at, ref, commit_sha, tool: .tool.name, results_count, rules_count, error}]' \
-            > code-scanning-analyses.json
+            | jq '[.[] | {datum: .created_at, commit: .commit_sha[0:7], nastroj: .tool.name, vysledku: .results_count}]' \
+            > analyzy.json
+          cat analyzy.json
 
       - name: Souhrn
         run: |
           {
             echo "## Code scanning: otevřené alerty"
             echo
-            echo "Celkem: $(jq length code-scanning-alerts.json)"
+            echo "Celkem: $(jq .celkem pocty.json)"
             echo
             echo "| Závažnost | Počet |"
             echo "|---|---|"
-            jq -r 'group_by(.security_severity_level // .severity) | .[] | "| \(.[0].security_severity_level // .[0].severity) | \(length) |"' code-scanning-alerts.json
+            jq -r '.podle_zavaznosti | to_entries[] | "| \(.key) | \(.value) |"' pocty.json
             echo
-            echo "| # | Pravidlo | Závažnost | Nástroj | Místo | Vytvořeno |"
-            echo "|---|---|---|---|---|---|"
-            jq -r '.[] | "| \(.number) | \(.rule) | \(.security_severity_level // .severity) | \(.tool) | \(.location) | \(.created_at) |"' code-scanning-alerts.json
+            echo "| Nástroj | Počet |"
+            echo "|---|---|"
+            jq -r '.podle_nastroje | to_entries[] | "| \(.key) | \(.value) |"' pocty.json
             echo
             echo "## Poslední analýzy"
             echo
-            echo "| Datum | Ref | Commit | Nástroj | Výsledků |"
-            echo "|---|---|---|---|---|"
-            jq -r '.[] | "| \(.created_at) | \(.ref) | \(.commit_sha[0:7]) | \(.tool) | \(.results_count) |"' code-scanning-analyses.json
+            echo "| Datum | Commit | Nástroj | Výsledků |"
+            echo "|---|---|---|---|"
+            jq -r '.[] | "| \(.datum) | \(.commit) | \(.nastroj) | \(.vysledku) |"' analyzy.json
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: code-scanning-alerts
-          path: |
-            code-scanning-alerts.json
-            code-scanning-analyses.json
-          retention-days: 30
