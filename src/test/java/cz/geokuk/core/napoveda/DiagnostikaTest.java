@@ -203,4 +203,68 @@ public class DiagnostikaTest {
 		});
 		Assert.assertEquals("Otevřeno okno: Chyba – Soubor nelze načíst.", udalost[0]);
 	}
+
+	@Test
+	public void zobrazeniSkutecneNastaveni() {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final String uiScale = System.getProperty("sun.java2d.uiScale");
+		Diagnostika.setPopisOfflineMapy(() -> "offline mapa ostrá, písmo 100 %");
+		try {
+			System.setProperty("sun.java2d.uiScale", "1");
+			final String popis = Diagnostika.popisZobrazeni();
+			Assert.assertTrue(popis, popis.matches("\\d+ %, zvětšení podle systému ne(, Direct3D (ano|ne))?, offline mapa ostrá, písmo 100 %"));
+			Assert.assertTrue(Diagnostika.text().contains("\nZobrazení: " + popis + "\n"));
+		} finally {
+			Diagnostika.setPopisOfflineMapy(null);
+			if (uiScale == null) {
+				System.clearProperty("sun.java2d.uiScale");
+			} else {
+				System.setProperty("sun.java2d.uiScale", uiScale);
+			}
+		}
+	}
+
+	@Test
+	public void tlacitkoVynulujeMereniAObnoviText() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		Vykon.vynuluj();
+		Vykon.zaznamenej(Vykon.Velicina.EDT, 2_000_000_000L);
+		SwingUtilities.invokeLater(() -> DiagnostikaAction.ukaz(null));
+		Dialog dialog = null;
+		for (int i = 0; i < 200 && dialog == null; i++) {
+			Thread.sleep(25);
+			for (final Window w : Window.getWindows()) {
+				if (w instanceof Dialog && w.isShowing() && "Informace pro hlášení chyby".equals(((Dialog) w).getTitle())) {
+					dialog = (Dialog) w;
+				}
+			}
+		}
+		Assert.assertNotNull(dialog);
+		final Dialog d = dialog;
+		final String[] text = new String[1];
+		SwingUtilities.invokeAndWait(() -> {
+			najdi(d, AbstractButton.class, b -> DiagnostikaAction.VYNULOVAT.equals(b.getText())).doClick();
+			text[0] = najdi(d, JTextArea.class, a -> true).getText();
+			Assert.assertTrue("okno zůstane otevřené", d.isShowing());
+			d.dispose();
+		});
+		Assert.assertTrue("záznam před vynulováním zmizel", Vykon.souhrn(Vykon.Velicina.EDT).max < 1000);
+		Assert.assertTrue(text[0], text[0].contains("Měření výkonu vynulováno"));
+		Assert.assertFalse(text[0], text[0].contains("max 2000.0 ms"));
+	}
+
+	private static <T extends java.awt.Component> T najdi(final java.awt.Container kde, final Class<T> typ, final java.util.function.Predicate<T> podminka) {
+		for (final java.awt.Component c : kde.getComponents()) {
+			if (typ.isInstance(c) && podminka.test(typ.cast(c))) {
+				return typ.cast(c);
+			}
+			if (c instanceof java.awt.Container) {
+				final T t = najdi((java.awt.Container) c, typ, podminka);
+				if (t != null) {
+					return t;
+				}
+			}
+		}
+		return null;
+	}
 }
