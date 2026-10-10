@@ -26,7 +26,9 @@ public class IconDefNacitac {
 	// TODO : The alelas should have a more generic name
 	//private static Pattern pat = Pattern.compile("([a-z0-9]+!)*([^_]*)((?:_[ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-z -]+)*)(_x-?[0-9]+)*(_y-?[0-9]+)*(_p[0-9])*\\.([a-z]+)");
 	// JB: Rozšíření možných názvů alel
-	private static Pattern pat = Pattern.compile("([a-z0-9]+!)*([^_]*)((?:(?:_[ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-z -]+)|(?:_[^xyp][a-z0-9-]+))*)(_x-?[0-9]+)*(_y-?[0-9]+)*(_p[0-9])*\\.([a-z]+)");
+	// Alely až za podtržítky; jestli je každá platná, ověří ALELA. Přípony _x, _y, _p s čísly alelou být nemohou, proto stačí nejkratší výběr.
+	static final Pattern pat = Pattern.compile("([a-z0-9]+!)*+([^_]*)((?:_[^_.]+)*?)(_x-?[0-9]+)*(_y-?[0-9]+)*(_p[0-9])*\\.([a-z]+)");
+	private static final Pattern ALELA = Pattern.compile("[ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-Z -]+|[^xyp][a-z0-9-]+");
 
 	private final String jmenoSPriponou;
 	// private IconDef iconDef;
@@ -53,6 +55,20 @@ public class IconDefNacitac {
 		}
 	}
 
+	/** Rozložené jméno souboru ikony, null když jméno neodpovídá. */
+	static Matcher rozloz(final String jmeno) {
+		final Matcher mat = pat.matcher(jmeno);
+		if (!mat.matches()) {
+			return null;
+		}
+		for (final String alela : mat.group(3).split("_")) {
+			if (!alela.isEmpty() && !ALELA.matcher(alela).matches()) {
+				return null;
+			}
+		}
+		return mat;
+	}
+
 	private boolean isProperties(final String sufix) {
 		return sufix.equals("properties");
 	}
@@ -62,8 +78,8 @@ public class IconDefNacitac {
 		idp = new IkonDrawingProperties();
 		idp.url = url;
 		final String machovanec = jmenoSPriponou.startsWith("_.") ? jmenoSPriponou.substring(1) : jmenoSPriponou;
-		final Matcher mat = pat.matcher(machovanec);
-		if (!mat.matches()) {
+		final Matcher mat = rozloz(machovanec);
+		if (mat == null) {
 			log.error("Jméno \"" + jmenoSPriponou + "\" nevyhovuje regulárnímu výrazu: " + pat);
 			return null;
 		}
