@@ -131,7 +131,8 @@ jobs:
           Copy-Item distribuce/windows/GeoKuk-prvni-spusteni.cmd, distribuce/windows/CTIMNE.txt GeoKuk/
           New-Item -ItemType Directory GeoKuk/licence | Out-Null
           Copy-Item LICENSE, licence/* GeoKuk/licence/
-          New-Item -ItemType Directory GeoKuk/data | Out-Null
+          New-Item -ItemType Directory GeoKuk/data/offline-mapy | Out-Null
+          Copy-Item distribuce/offline-mapy/* GeoKuk/data/offline-mapy/
           GeoKuk/program/runtime/bin/java -version
           $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
           $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()

@@ -58,6 +58,22 @@ Licence dat:   Open Database License (ODbL) 1.0
 Atribuce:      Hledá Nominatim, data © přispěvatelé OpenStreetMap
 Podmínky:      https://operations.osmfoundation.org/policies/nominatim/
 
+Offline mapy
+------------
+Soubory .map ve složce data/offline-mapy kreslí GeoKuk v počítači.
+Mapy z OpenStreetMap (například z osm.paws.cz nebo OpenAndroMaps):
+Licence dat:   Open Database License (ODbL) 1.0
+Atribuce:      © přispěvatelé OpenStreetMap
+Licence:       https://www.openstreetmap.org/copyright
+
+Přehledová mapa světa (prehled-svet-ne.map, přibalená v zipu s programem):
+Data:          Natural Earth, https://www.naturalearthdata.com/
+Licence:       volné dílo (public domain)
+               https://www.naturalearthdata.com/about/terms-of-use/
+Atribuce:      Made with Natural Earth. Free vector and raster map data
+               @ naturalearthdata.com.
+Soubor lze ze složky smazat, program funguje i bez něj.
+
 Mapy zadané uživatelem
 ----------------------
 Mapy, které si do GeoKuku přidáte souborem ve složce data/mapy, podléhají

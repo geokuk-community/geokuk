@@ -13,7 +13,10 @@
   (mapsforge, například z osm.paws.cz) ze složky `data/offline-mapy` se
   vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR
   a SK) se kreslí naráz, mapu zkopírovanou do složky za běhu program sám
-  načte; dokud se kopíruje, kreslí se ostatní mapy. Vykreslené dlaždice se ukládají do cache dlaždic; po výměně
+  načte; dokud se kopíruje, kreslí se ostatní mapy.
+- Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
+  z dat Natural Earth (pevnina, moře, státní hranice, české názvy států),
+  takže offline mapa ukáže celý svět i bez stažených map. Vykreslené dlaždice se ukládají do cache dlaždic; po výměně
   mapy nebo tématu v ní zůstávají jen tři poslední kombinace.
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
