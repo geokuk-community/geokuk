@@ -541,11 +541,15 @@ public class GsakDbLoader extends Nacitac0 {
 					textove.add(f.getName());
 				}
 			}
+			return forEach(vsechnoSTexty(aTabulka, textove), textove, aRecordFactory, aSloupceHodnot, aAction);
+		}
+
+		private static String vsechnoSTexty(final String aTabulka, final List<String> aTextove) {
 			final List<String> vyrazy = new ArrayList<>();
-			for (final String sloupec : textove) {
+			for (final String sloupec : aTextove) {
 				vyrazy.add(aTabulka + ".\"" + sloupec + "\"");
 			}
-			return forEach("SELECT *, " + SpojeneTexty.vyraz(vyrazy) + " FROM " + aTabulka, textove, aRecordFactory, aSloupceHodnot, aAction);
+			return "SELECT *, " + SpojeneTexty.vyraz(vyrazy) + " FROM " + aTabulka;
 		}
 
 		private <T> boolean forEach(final String aSelectStatement, final List<String> aTextove, final Supplier<T> aRecordFactory, final Set<String> aSloupceHodnot, final Function<T, Boolean> aAction)
