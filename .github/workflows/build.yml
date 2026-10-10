@@ -101,6 +101,7 @@ jobs:
         with:
           sparse-checkout: |
             distribuce/windows
+            distribuce/offline-mapy
             .github/skripty
             priklady
             licence
