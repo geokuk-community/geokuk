@@ -144,4 +144,25 @@ public class VykonTest {
 		final Souhrn edt = Vykon.souhrn(Velicina.EDT);
 		Assert.assertTrue("EDT max " + edt.max, edt.max < 100);
 	}
+
+	@Test
+	public void popisZaseku() {
+		Assert.assertEquals("Zásek EDT 1500 ms: ChybnaUdalost (Object)", Vykon.popisZaseku(new ChybnaUdalost(), 1_500_000_000L));
+	}
+
+	@Test
+	public void zasekNadSekunduJeVPoslednichUdalostech() throws Exception {
+		Toolkit.getDefaultToolkit().getSystemEventQueue().push(new Vykon.MericiFronta());
+		EventQueue.invokeAndWait(() -> {
+			try {
+				Thread.sleep(Vykon.PRAH_ZASEKU_MS + 50);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		pockejNaZapis();
+		final String text = Diagnostika.text();
+		final String udalosti = text.substring(text.indexOf("Poslední události"));
+		Assert.assertTrue(text, udalosti.contains("Zásek EDT ") && udalosti.contains(": InvocationEvent"));
+	}
 }

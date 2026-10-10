@@ -15,6 +15,8 @@ public final class Vykon {
 	public static final int VELIKOST_OKNA = 256;
 	/** Událost na EDT delší než práh se počítá jako blokování. */
 	public static final long PRAH_EDT_MS = 100;
+	/** Událost na EDT delší než práh se zapíše do posledních událostí v informacích pro hlášení chyby. */
+	static final long PRAH_ZASEKU_MS = 1000;
 	static final long OKNO_RYCHLOSTI_NS = 10_000_000_000L;
 
 	public enum Velicina {
@@ -197,10 +199,19 @@ public final class Vykon {
 				hloubka--;
 				// Událost s vnořenou smyčkou (modální dialog) EDT neblokovala.
 				if (!maVnoreni[hloubka]) {
-					zaznamenej(Velicina.EDT, System.nanoTime() - start);
+					final long trvani = System.nanoTime() - start;
+					zaznamenej(Velicina.EDT, trvani);
+					if (trvani >= PRAH_ZASEKU_MS * 1_000_000) {
+						Diagnostika.zaznamenej(popisZaseku(event, trvani));
+					}
 				}
 			}
 		}
+	}
+
+	static String popisZaseku(final AWTEvent event, final long trvaniNs) {
+		final Object zdroj = event.getSource();
+		return String.format(Locale.ROOT, "Zásek EDT %.0f ms: %s%s", trvaniNs / 1e6, event.getClass().getSimpleName(), zdroj == null ? "" : " (" + zdroj.getClass().getSimpleName() + ")");
 	}
 
 	/** Začne měřit události na EDT. */

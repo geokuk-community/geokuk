@@ -203,4 +203,24 @@ public class DiagnostikaTest {
 		});
 		Assert.assertEquals("Otevřeno okno: Chyba – Soubor nelze načíst.", udalost[0]);
 	}
+
+	@Test
+	public void zobrazeniSkutecneNastaveni() {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final String uiScale = System.getProperty("sun.java2d.uiScale");
+		Diagnostika.setPopisOfflineMapy(() -> "offline mapa ostrá, písmo 100 %");
+		try {
+			System.setProperty("sun.java2d.uiScale", "1");
+			final String popis = Diagnostika.popisZobrazeni();
+			Assert.assertTrue(popis, popis.matches("\\d+ %, zvětšení podle systému ne(, Direct3D (ano|ne))?, offline mapa ostrá, písmo 100 %"));
+			Assert.assertTrue(Diagnostika.text().contains("\nZobrazení: " + popis + "\n"));
+		} finally {
+			Diagnostika.setPopisOfflineMapy(null);
+			if (uiScale == null) {
+				System.clearProperty("sun.java2d.uiScale");
+			} else {
+				System.setProperty("sun.java2d.uiScale", uiScale);
+			}
+		}
+	}
 }

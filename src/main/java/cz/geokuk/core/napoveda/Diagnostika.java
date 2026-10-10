@@ -337,6 +337,7 @@ public final class Diagnostika {
 		if (!GraphicsEnvironment.isHeadless()) {
 			final Dimension obrazovka = Toolkit.getDefaultToolkit().getScreenSize();
 			sb.append("Obrazovka: ").append(obrazovka.width).append('x').append(obrazovka.height).append(", monitorů ").append(GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length).append('\n');
+			sb.append("Zobrazení: ").append(popisZobrazeni()).append('\n');
 		}
 		sb.append("Složka programu: ").append(bezDomova(FConst.JAR_DIR)).append(FConst.JAR_DIR_EXISTUJE ? "" : " (nerozpoznána)").append('\n');
 		sb.append("Data: ").append(bezDomova(FConst.DATA_DIR)).append('\n');
@@ -355,6 +356,28 @@ public final class Diagnostika {
 		vypisPocitadla(sb);
 		vypis(sb, "Konec logu", konecLogu(LOG, radkuLogu), radkuLogu);
 		return sb.toString();
+	}
+
+	/** Skutečně použité zvětšení a vykreslování, nejen uložené nastavení (spouštěč ho předá až po restartu). */
+	static String popisZobrazeni() {
+		final double meritko = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform().getScaleX();
+		final StringBuilder sb = new StringBuilder();
+		sb.append(Math.round(meritko * 100)).append(" %");
+		sb.append(", zvětšení podle systému ").append(ano(!"1".equals(System.getProperty("sun.java2d.uiScale"))));
+		if (System.getProperty("os.name", "").startsWith("Windows")) {
+			sb.append(", Direct3D ").append(ano(!"false".equals(System.getProperty("sun.java2d.d3d"))));
+		}
+		final java.util.function.Supplier<String> mapa = popisOfflineMapy;
+		if (mapa != null) {
+			sb.append(", ").append(mapa.get());
+		}
+		return sb.toString();
+	}
+
+	private static volatile java.util.function.Supplier<String> popisOfflineMapy;
+
+	static void setPopisOfflineMapy(final java.util.function.Supplier<String> popis) {
+		popisOfflineMapy = popis;
 	}
 
 	/** Totéž, co ukazuje servisní okno, ať to uživatel nemusí opisovat ze snímku obrazovky. */
