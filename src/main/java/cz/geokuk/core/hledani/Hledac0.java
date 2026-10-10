@@ -44,10 +44,10 @@ public abstract class Hledac0<T extends Nalezenec0> {
 	 * @param aStredHledani
 	 */
 	protected void dopicitejVzdalenostAAzimut(final Nalezenec0 aNal, final Wgs aStredHledani) {
-		final double dalka = FGeoKonvertor.dalka(aNal.getWgs(), aStredHledani);
 		if (aStredHledani == null) {
 			return;
 		}
+		final double dalka = FGeoKonvertor.dalka(aNal.getWgs(), aStredHledani);
 		double uhel = Wgs.azimut(aStredHledani, aNal.getWgs());
 		uhel = uhel * 180 / Math.PI;
 		if (uhel < 0) {

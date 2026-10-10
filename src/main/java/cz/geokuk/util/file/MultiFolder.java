@@ -9,11 +9,14 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Nese informace z několika složek, ať resourcových nebo normálních. Informace se překrývají.
  *
  * @author Martin Veverka
  */
+@Slf4j
 public class MultiFolder {
 	private static final String REMOVE_SUFFIX = ".remove";
 
@@ -128,7 +131,12 @@ public class MultiFolder {
 		lamUrl.name = ford.getName();
 		tree.add(lamUrl, names);
 		if (ford.isDirectory()) {
-			for (final String s : ford.list()) {
+			final String[] obsah = ford.list();
+			if (obsah == null) {
+				log.warn("Složku {} nejde přečíst, přeskakuje se.", ford);
+				return;
+			}
+			for (final String s : obsah) {
 				final List<String> list = new ArrayList<>(names.size() + 1);
 				list.addAll(names);
 				if (s.endsWith(REMOVE_SUFFIX)) {

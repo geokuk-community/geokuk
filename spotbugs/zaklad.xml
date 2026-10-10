@@ -68,17 +68,6 @@
 		</Class>
 		<SourceLine synthetic="true" classname="cz.geokuk.core.coordinates.WgsParser$Vzorek" start="139" end="162" sourcepath="cz/geokuk/core/coordinates/WgsParser.java" sourcefile="WgsParser.java" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="932f26f93f99685a376c3668b97685ef" cweid="476" rank="9" abbrev="RCN" category="CORRECTNESS" priority="1" type="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.hledani.Hledac0" primary="true">
-			<SourceLine classname="cz.geokuk.core.hledani.Hledac0" start="10" end="58" sourcepath="cz/geokuk/core/hledani/Hledac0.java" sourcefile="Hledac0.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.core.hledani.Hledac0" signature="(Lcz/geokuk/core/hledani/Nalezenec0;Lcz/geokuk/core/coordinates/Wgs;)V" name="dopicitejVzdalenostAAzimut" primary="true">
-			<SourceLine endBytecode="214" classname="cz.geokuk.core.hledani.Hledac0" start="47" end="58" sourcepath="cz/geokuk/core/hledani/Hledac0.java" sourcefile="Hledac0.java" startBytecode="0" />
-		</Method>
-		<LocalVariable role="LOCAL_VARIABLE_VALUE_OF" pc="9" name="aStredHledani" register="2" />
-		<SourceLine endBytecode="5" classname="cz.geokuk.core.hledani.Hledac0" start="47" end="47" sourcepath="cz/geokuk/core/hledani/Hledac0.java" sourcefile="Hledac0.java" startBytecode="5" primary="true" />
-		<SourceLine role="SOURCE_REDUNDANT_NULL_CHECK" endBytecode="10" classname="cz.geokuk.core.hledani.Hledac0" start="48" end="48" sourcepath="cz/geokuk/core/hledani/Hledac0.java" sourcefile="Hledac0.java" startBytecode="10" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="a6d51438eb9f225baf2f1fbe1a4b508" cweid="476" rank="18" abbrev="RCN" category="STYLE" priority="2" type="RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.core.lookandfeel.LafSupport" primary="true">
 			<SourceLine classname="cz.geokuk.core.lookandfeel.LafSupport" start="27" end="224" sourcepath="cz/geokuk/core/lookandfeel/LafSupport.java" sourcefile="LafSupport.java" />
@@ -287,18 +276,6 @@
 		<Property name="edu.umd.cs.findbugs.detect.DeadLocalStoreProperty.LOCAL_NAME" value="orezavaci" />
 		<Property name="edu.umd.cs.findbugs.detect.DeadLocalStoreProperty.METHOD_RESULT" value="true" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="f6e6e6365c125cb5cdcfbab74d24c489" rank="19" abbrev="Dm" category="I18N" priority="1" type="DM_DEFAULT_ENCODING" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" primary="true">
-			<SourceLine classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="21" end="160" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" signature="(Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/io/File;Ljava/io/File;Lcz/geokuk/core/render/OziExplorerRenderSwingWorker$ZapisMapy;)V" name="zapisVystupy" primary="true">
-			<SourceLine endBytecode="551" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="80" end="99" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.PrintWriter" signature="(Ljava/io/File;)V" name="&lt;init&gt;">
-			<SourceLine endBytecode="83" classname="java.io.PrintWriter" start="325" end="327" sourcepath="java/io/PrintWriter.java" sourcefile="PrintWriter.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="95" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="88" end="88" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="95" primary="true" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="f87cd95cf200c7d4b88917e363cb240c" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" primary="true">
 			<SourceLine classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="21" end="160" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" />
@@ -394,17 +371,6 @@
 			<SourceLine classname="cz.geokuk.img.MissingIcon" sourcepath="cz/geokuk/img/MissingIcon.java" sourcefile="MissingIcon.java" />
 		</Field>
 		<SourceLine endBytecode="7" classname="cz.geokuk.img.MissingIcon" start="14" end="14" sourcepath="cz/geokuk/img/MissingIcon.java" sourcefile="MissingIcon.java" startBytecode="7" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="fbad27a7db6464539e5c5c18633a3cfc" cweid="476" rank="6" abbrev="NP" category="CORRECTNESS" priority="1" type="NP_NULL_ON_SOME_PATH" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.plugins.cesty.JCestaTooltip" primary="true">
-			<SourceLine classname="cz.geokuk.plugins.cesty.JCestaTooltip" start="18" end="57" sourcepath="cz/geokuk/plugins/cesty/JCestaTooltip.java" sourcefile="JCestaTooltip.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.plugins.cesty.JCestaTooltip" signature="(Lcz/geokuk/plugins/cesty/data/Cesta;Lcz/geokuk/core/coordinates/Mou;)V" name="setPridavaciDalkoviny" primary="true">
-			<SourceLine endBytecode="298" classname="cz.geokuk.plugins.cesty.JCestaTooltip" start="43" end="51" sourcepath="cz/geokuk/plugins/cesty/JCestaTooltip.java" sourcefile="JCestaTooltip.java" startBytecode="0" />
-		</Method>
-		<LocalVariable role="LOCAL_VARIABLE_VALUE_OF" pc="99" name="cesta" register="1" />
-		<SourceLine role="SOURCE_LINE_DEREF" endBytecode="100" classname="cz.geokuk.plugins.cesty.JCestaTooltip" start="48" end="48" sourcepath="cz/geokuk/plugins/cesty/JCestaTooltip.java" sourcefile="JCestaTooltip.java" startBytecode="100" primary="true" />
-		<SourceLine role="SOURCE_LINE_KNOWN_NULL" endBytecode="17" classname="cz.geokuk.plugins.cesty.JCestaTooltip" start="44" end="44" sourcepath="cz/geokuk/plugins/cesty/JCestaTooltip.java" sourcefile="JCestaTooltip.java" startBytecode="17" />
 	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="1f0b3d065f71e5f364e8c2cf87d60f4e" rank="16" abbrev="Se" category="BAD_PRACTICE" priority="2" type="SE_BAD_FIELD_STORE" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.plugins.cesty.JCestySlide" primary="true">
@@ -719,18 +685,6 @@
 		</Class>
 		<SourceLine synthetic="true" classname="cz.geokuk.plugins.kesoid.kind.kes.JKesDetail$Popisek" start="29" end="34" sourcepath="cz/geokuk/plugins/kesoid/kind/kes/JKesDetail.java" sourcefile="JKesDetail.java" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="407e7d3a6aee6e2a6d57724386950601" rank="16" abbrev="OS" category="BAD_PRACTICE" priority="2" type="OS_OPEN_STREAM" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.plugins.kesoid.mapicon.IconDefNacitac" primary="true">
-			<SourceLine classname="cz.geokuk.plugins.kesoid.mapicon.IconDefNacitac" start="17" end="181" sourcepath="cz/geokuk/plugins/kesoid/mapicon/IconDefNacitac.java" sourcefile="IconDefNacitac.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.plugins.kesoid.mapicon.IconDefNacitac" signature="()V" name="nactiObrazekDefinovanyVPropertach" primary="true">
-			<SourceLine endBytecode="40" classname="cz.geokuk.plugins.kesoid.mapicon.IconDefNacitac" start="126" end="138" sourcepath="cz/geokuk/plugins/kesoid/mapicon/IconDefNacitac.java" sourcefile="IconDefNacitac.java" startBytecode="0" />
-		</Method>
-		<Type role="TYPE_CLOSEIT" descriptor="Ljava/io/InputStream;">
-			<SourceLine classname="java.io.InputStream" start="61" end="806" sourcepath="java/io/InputStream.java" sourcefile="InputStream.java" />
-		</Type>
-		<SourceLine endBytecode="9" classname="cz.geokuk.plugins.kesoid.mapicon.IconDefNacitac" start="127" end="127" sourcepath="cz/geokuk/plugins/kesoid/mapicon/IconDefNacitac.java" sourcefile="IconDefNacitac.java" startBytecode="9" primary="true" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="ac8d21594ecf5ba3f6b809e782c5042c" rank="19" abbrev="Dm" category="I18N" priority="1" type="DM_DEFAULT_ENCODING" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.plugins.kesoid.mapicon.IkonNacitacSada" primary="true">
 			<SourceLine classname="cz.geokuk.plugins.kesoid.mapicon.IkonNacitacSada" start="12" end="104" sourcepath="cz/geokuk/plugins/kesoid/mapicon/IkonNacitacSada.java" sourcefile="IkonNacitacSada.java" />
@@ -766,28 +720,6 @@
 			<SourceLine classname="cz.geokuk.plugins.kesoid.mapicon.Vrstva$Seznamec" start="15" end="15" sourcepath="cz/geokuk/plugins/kesoid/mapicon/Vrstva.java" sourcefile="Vrstva.java" />
 		</Class>
 		<SourceLine synthetic="true" classname="cz.geokuk.plugins.kesoid.mapicon.Vrstva$Seznamec" start="15" end="15" sourcepath="cz/geokuk/plugins/kesoid/mapicon/Vrstva.java" sourcefile="Vrstva.java" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="1da13cf47c457f8bb6be9ec7a932105c" rank="1" abbrev="EC" category="CORRECTNESS" priority="1" type="EC_UNRELATED_TYPES" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" primary="true">
-			<SourceLine classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" start="38" end="578" sourcepath="cz/geokuk/plugins/kesoid/mvc/KesoidModel.java" sourcefile="KesoidModel.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" signature="(Lcz/geokuk/plugins/kesoid/mapicon/ASada;)V" name="setJmenoAktualniSadyIkon" primary="true">
-			<SourceLine endBytecode="25" classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" start="331" end="338" sourcepath="cz/geokuk/plugins/kesoid/mvc/KesoidModel.java" sourcefile="KesoidModel.java" startBytecode="0" />
-		</Method>
-		<Type role="TYPE_FOUND" descriptor="Lcz/geokuk/plugins/kesoid/genetika/QualAlelaNames;">
-			<SourceLine classname="cz.geokuk.plugins.kesoid.genetika.QualAlelaNames" start="12" end="25" sourcepath="cz/geokuk/plugins/kesoid/genetika/QualAlelaNames.java" sourcefile="QualAlelaNames.java" />
-		</Type>
-		<Type role="TYPE_EXPECTED" descriptor="Lcz/geokuk/plugins/kesoid/mapicon/ASada;">
-			<SourceLine classname="cz.geokuk.plugins.kesoid.mapicon.ASada" start="5" end="7" sourcepath="cz/geokuk/plugins/kesoid/mapicon/ASada.java" sourcefile="ASada.java" />
-		</Type>
-		<Field isStatic="false" role="FIELD_VALUE_OF" classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" signature="Lcz/geokuk/plugins/kesoid/genetika/QualAlelaNames;" name="jmenaAlelNaToolbaru" primary="true">
-			<SourceLine classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" sourcepath="cz/geokuk/plugins/kesoid/mvc/KesoidModel.java" sourcefile="KesoidModel.java" />
-		</Field>
-		<LocalVariable role="LOCAL_VARIABLE_VALUE_OF" pc="2" name="jmenoAktualniSadyIkon" register="1" />
-		<Method isStatic="false" role="METHOD_EQUALS_USED" classname="java.lang.Object" signature="(Ljava/lang/Object;)Z" name="equals">
-			<SourceLine endBytecode="73" classname="java.lang.Object" start="164" end="164" sourcepath="java/lang/Object.java" sourcefile="Object.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="5" classname="cz.geokuk.plugins.kesoid.mvc.KesoidModel" start="331" end="331" sourcepath="cz/geokuk/plugins/kesoid/mvc/KesoidModel.java" sourcefile="KesoidModel.java" startBytecode="5" primary="true" />
 	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="5ffc11c98b851ae619871f3fc758df08" cweid="440" rank="17" abbrev="DMI" category="STYLE" priority="2" type="DMI_HARDCODED_ABSOLUTE_FILENAME" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru" primary="true">
@@ -1180,17 +1112,6 @@
 			<SourceLine endBytecode="83" classname="cz.geokuk.util.file.LineWrappingDecorationWriter" start="47" end="51" sourcepath="cz/geokuk/util/file/LineWrappingDecorationWriter.java" sourcefile="LineWrappingDecorationWriter.java" startBytecode="0" />
 		</Method>
 		<SourceLine endBytecode="17" classname="cz.geokuk.util.file.LineWrappingDecorationWriter" start="50" end="50" sourcepath="cz/geokuk/util/file/LineWrappingDecorationWriter.java" sourcefile="LineWrappingDecorationWriter.java" startBytecode="17" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="3c9c991f7c79d64193fb165f51bc3c90" cweid="476" rank="13" abbrev="NP" category="STYLE" priority="2" type="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.file.MultiFolder" primary="true">
-			<SourceLine classname="cz.geokuk.util.file.MultiFolder" start="17" end="154" sourcepath="cz/geokuk/util/file/MultiFolder.java" sourcefile="MultiFolder.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.util.file.MultiFolder" signature="(Ljava/io/File;Ljava/util/List;)V" name="addOneFord" primary="true">
-			<SourceLine endBytecode="409" classname="cz.geokuk.util.file.MultiFolder" start="125" end="143" sourcepath="cz/geokuk/util/file/MultiFolder.java" sourcefile="MultiFolder.java" startBytecode="0" />
-		</Method>
-		<LocalVariable role="LOCAL_VARIABLE_VALUE_OF" pc="57" name="?" register="4" />
-		<SourceLine role="SOURCE_LINE_DEREF" endBytecode="57" classname="cz.geokuk.util.file.MultiFolder" start="131" end="131" sourcepath="cz/geokuk/util/file/MultiFolder.java" sourcefile="MultiFolder.java" startBytecode="57" primary="true" />
-		<SourceLine role="SOURCE_LINE_KNOWN_NULL" endBytecode="50" classname="cz.geokuk.util.file.MultiFolder" start="131" end="131" sourcepath="cz/geokuk/util/file/MultiFolder.java" sourcefile="MultiFolder.java" startBytecode="50" />
 	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="9933ca30f1d65469f137d8c6e23b44c4" rank="19" abbrev="Dm" category="I18N" priority="1" type="DM_DEFAULT_ENCODING" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.util.file.RefinedWhiteWriter" primary="true">

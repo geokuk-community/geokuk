@@ -67,9 +67,13 @@
   mapy, se kterými program běží, a v posledních událostech každé zaseknutí
   programu delší než sekundu. Výkon kreslení se měří až chvíli po zobrazení
   mapy, ať ho nezkreslí start, a tlačítkem Vynulovat měření jde začít znovu.
+- Soubor `.map` pro OziExplorer se zapisuje v kódování Windows, takže
+  OziExplorer přečte i jméno obrázku s diakritikou.
 - Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
   ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
   dokreslení se nahradí ostrou.
+- Opětovná volba už vybrané sady ikon ikony znovu nenačítá. Sada ikon se
+  načte i tehdy, když některou její podsložku nejde přečíst.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
