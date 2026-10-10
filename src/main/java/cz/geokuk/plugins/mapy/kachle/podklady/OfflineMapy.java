@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +42,8 @@ public class OfflineMapy {
 	private double pismoOtevrene;
 
 	private volatile OfflineRenderer renderer;
+	/** Názvy souborů otevřených map, podle nich se volí atribuce. */
+	private volatile List<String> nazvyMap = Collections.emptyList();
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
 	private OfflineRenderer.NacteneTema nacteneTema;
 	private IOException chyba;
@@ -95,6 +98,10 @@ public class OfflineMapy {
 
 	public void setSlozkaSymbolu(final File slozkaSymbolu) {
 		this.slozkaSymbolu = slozkaSymbolu;
+	}
+
+	public List<String> getNazvyMap() {
+		return nazvyMap;
 	}
 
 	public File getSlozka() {
@@ -172,6 +179,7 @@ public class OfflineMapy {
 		// Při prvním otevření nejsou na obrazovce dlaždice, které by změna zneplatnila; ohlášení by zahodilo i rozdělaná vykreslení.
 		final boolean zneplatnit = renderer != null || chyba != null;
 		zavriRenderer();
+		nazvyMap = mapy.stream().map(File::getName).collect(Collectors.toList());
 		if (mapy.isEmpty()) {
 			chyba = new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
 		} else {

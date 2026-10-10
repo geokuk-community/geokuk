@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class PrehledovaMapa {
 
-	static final String SOUBOR = "prehled-svet-ne.map";
+	public static final String SOUBOR = "prehled-svet-ne.map";
 	private static final String ZDROJ = "/offline-mapy/" + SOUBOR;
 	private static final String OTISK_value = "prehledovaMapaOtisk";
 
