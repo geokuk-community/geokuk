@@ -54,6 +54,12 @@ public class GeogetLoader extends Nacitac0 {
 	private static final int W_ID = 1, W_LAT = sloupec(SLOUPCE_WAYPOINT, "lat"), W_LON = sloupec(SLOUPCE_WAYPOINT, "lon"), W_PREFIXID = sloupec(SLOUPCE_WAYPOINT, "prefixid"),
 			W_WPTTYPE = sloupec(SLOUPCE_WAYPOINT, "wpttype"), W_NAME = sloupec(SLOUPCE_WAYPOINT, "name");
 
+	/** Texty keše a waypointu čtené jedním voláním JDBC ({@link SpojeneTexty}), za sloupci z polí. */
+	private static final String[] TEXTY_GEOCACHE = { "name", "author", "cachetype", "cachesize", "difficulty", "terrain", "country", "state" };
+	private static final int K_TEXTY = SLOUPCE_GEOCACHE.length + 2;
+	private static final String[] TEXTY_WAYPOINT = { "prefixid", "wpttype", "name" };
+	private static final int W_TEXTY = SLOUPCE_WAYPOINT.length + 2;
+
 	private static final String GEOGET_WAYPOINTS_COUNT = "SELECT count(*) FROM waypoint";
 
 
@@ -150,14 +156,17 @@ public class GeogetLoader extends Nacitac0 {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
-		final String dotaz = "SELECT geocache.id as id, " + DatabazeJinehoProgramu.vyber(statement, "geocache", SLOUPCE_GEOCACHE) + " FROM geocache";
+		final String dotaz = "SELECT geocache.id as id, " + DatabazeJinehoProgramu.vyber(statement, "geocache", SLOUPCE_GEOCACHE) + ", "
+				+ SpojeneTexty.vyraz(sTextem("geocache.id", DatabazeJinehoProgramu.sloupceNeboNull(statement, "geocache", TEXTY_GEOCACHE))) + " FROM geocache";
+		final SpojeneTexty texty = new SpojeneTexty(K_TEXTY, K_ID, K_NAME, K_AUTHOR, K_CACHETYPE, K_CACHESIZE, K_DIFFICULTY, K_TERRAIN, K_COUNTRY, K_STATE);
 		try (ResultSet rs = statement.executeQuery(dotaz)) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_CACHES);
-				final String kod = rs.getString(K_ID);
+				texty.nacti(rs);
+				final String kod = texty.get(K_ID);
 				try {
 					final GpxWpt gpxWpt = new GpxWpt();
 					gpxWpt.wgs = new Wgs(rs.getDouble(K_LAT), rs.getDouble(K_LON));
@@ -174,15 +183,15 @@ public class GeogetLoader extends Nacitac0 {
 
 					final Groundspeak groundspeak = new Groundspeak();
 					groundspeak.ownerid = rs.getInt(K_OWNERID);
-					groundspeak.name = rs.getString(K_NAME);
-					groundspeak.placedBy = intern(rs.getString(K_AUTHOR));
+					groundspeak.name = texty.get(K_NAME);
+					groundspeak.placedBy = intern(texty.get(K_AUTHOR));
 					groundspeak.owner = intern(groundspeak.placedBy);
-					groundspeak.type = intern(rs.getString(K_CACHETYPE));
-					groundspeak.container = intern(rs.getString(K_CACHESIZE));
-					groundspeak.difficulty = intern(rs.getString(K_DIFFICULTY));
-					groundspeak.terrain = intern(rs.getString(K_TERRAIN));
-					groundspeak.country = intern(rs.getString(K_COUNTRY));
-					groundspeak.state = intern(rs.getString(K_STATE));
+					groundspeak.type = intern(texty.get(K_CACHETYPE));
+					groundspeak.container = intern(texty.get(K_CACHESIZE));
+					groundspeak.difficulty = intern(texty.get(K_DIFFICULTY));
+					groundspeak.terrain = intern(texty.get(K_TERRAIN));
+					groundspeak.country = intern(texty.get(K_COUNTRY));
+					groundspeak.state = intern(texty.get(K_STATE));
 					groundspeak.hintZDatabaze = hint;
 
 					final int cacheStatus = rs.getInt(K_CACHESTATUS);
@@ -322,22 +331,26 @@ public class GeogetLoader extends Nacitac0 {
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("waypoint");
 		int citac = 0;
-		try (ResultSet rs = statement.executeQuery("SELECT id, " + DatabazeJinehoProgramu.vyber(statement, "waypoint", SLOUPCE_WAYPOINT) + " FROM waypoint")) {
+		final String dotaz = "SELECT id, " + DatabazeJinehoProgramu.vyber(statement, "waypoint", SLOUPCE_WAYPOINT) + ", "
+				+ SpojeneTexty.vyraz(sTextem("waypoint.id", DatabazeJinehoProgramu.sloupceNeboNull(statement, "waypoint", TEXTY_WAYPOINT))) + " FROM waypoint";
+		final SpojeneTexty texty = new SpojeneTexty(W_TEXTY, W_ID, W_PREFIXID, W_WPTTYPE, W_NAME);
+		try (ResultSet rs = statement.executeQuery(dotaz)) {
 			while (rs.next()) {
 				if (future != null && future.isCancelled()) {
 					return;
 				}
 				progressor.addProgress(PROGRESS_VAHA_WAYPOINTS);
-				final String parentId = rs.getString(W_ID);
+				texty.nacti(rs);
+				final String parentId = texty.get(W_ID);
 				try {
 					final GpxWpt gpxWpt = new GpxWpt();
 					gpxWpt.wgs = new Wgs(rs.getDouble(W_LAT), rs.getDouble(W_LON));
 					if (parentId != null && parentId.length() > 1) {
 						final String suffix = parentId.substring(2);
-						gpxWpt.name = rs.getString(W_PREFIXID) + suffix;
+						gpxWpt.name = texty.get(W_PREFIXID) + suffix;
 					}
-					gpxWpt.sym = rs.getString(W_WPTTYPE);
-					gpxWpt.desc = rs.getString(W_NAME);
+					gpxWpt.sym = texty.get(W_WPTTYPE);
+					gpxWpt.desc = texty.get(W_NAME);
 					builder.addGpxWpt(gpxWpt);
 					citac++;
 				} catch (final RuntimeException e) {
@@ -349,6 +362,13 @@ public class GeogetLoader extends Nacitac0 {
 			preskocene.ohlas();
 			logResult("Waypoints", startTime, citac);
 		}
+	}
+
+	private static List<String> sTextem(final String prvni, final List<String> dalsi) {
+		final List<String> vysledek = new ArrayList<>();
+		vysledek.add(prvni);
+		vysledek.addAll(dalsi);
+		return vysledek;
 	}
 
 	private void logResult(final String nazev, final ATimestamp startTime, final int pocet) {
