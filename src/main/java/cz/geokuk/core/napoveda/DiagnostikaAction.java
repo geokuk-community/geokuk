@@ -12,6 +12,7 @@ import cz.geokuk.framework.Action0;
 public class DiagnostikaAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
+	static final String VYNULOVAT = "Vynulovat měření";
 
 	public DiagnostikaAction() {
 		super("Informace pro hlášení chyby...");
@@ -25,17 +26,24 @@ public class DiagnostikaAction extends Action0 {
 
 	/** Ukáže informace pro hlášení chyby; na GitHub se odešlou až tlačítkem Nahlásit na GitHubu. */
 	static void ukaz(final java.awt.Component rodic) {
-		final String text = Diagnostika.text();
-		final JTextArea area = new JTextArea(text, 20, 70);
+		final JTextArea area = new JTextArea(Diagnostika.text(), 20, 70);
 		area.setEditable(false);
 		area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, area.getFont().getSize()));
 		area.setCaretPosition(0);
-		final Object[] options = { "Kopírovat do schránky", "Nahlásit na GitHubu", "Zavřít" };
+		final JButton vynulovat = new JButton(VYNULOVAT);
+		vynulovat.setToolTipText("Začne měřit výkon kreslení znovu od teď, například před zopakováním pomalého postupu.");
+		vynulovat.addActionListener(ev -> {
+			Vykon.vynuluj();
+			Diagnostika.zaznamenej("Měření výkonu vynulováno");
+			area.setText(Diagnostika.text());
+			area.setCaretPosition(0);
+		});
+		final Object[] options = { "Kopírovat do schránky", "Nahlásit na GitHubu", vynulovat, "Zavřít" };
 		final JScrollPane posuvnik = new JScrollPane(area);
 		posuvnik.putClientProperty(Diagnostika.BEZ_TEXTU, Boolean.TRUE);
 		final int n = JOptionPane.showOptionDialog(rodic, posuvnik, "Informace pro hlášení chyby", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 		if (n == 0) {
-			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(area.getText()), null);
 		} else if (n == 1) {
 			ZadatProblemAction.otevri();
 		}

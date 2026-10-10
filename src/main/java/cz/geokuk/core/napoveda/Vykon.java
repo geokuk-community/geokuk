@@ -15,7 +15,11 @@ public final class Vykon {
 	public static final int VELIKOST_OKNA = 256;
 	/** Událost na EDT delší než práh se počítá jako blokování. */
 	public static final long PRAH_EDT_MS = 100;
+	/** Událost na EDT delší než práh se zapíše do posledních událostí v informacích pro hlášení chyby. */
+	static final long PRAH_ZASEKU_MS = 1000;
 	static final long OKNO_RYCHLOSTI_NS = 10_000_000_000L;
+	/** Po prvním vykreslení mapy ještě doběhne start (keše, výlet, offline mapa, kontrola aktualizací) a zkreslil by maxima. */
+	static final long ODKLAD_PO_PRVNI_MAPE_MS = 10_000;
 
 	public enum Velicina {
 		PREKRESLENI("Překreslení mapy"), EDT("Událost na EDT"), DLAZDICE_ONLINE("Získání dlaždice online"), DLAZDICE_OFFLINE("Získání dlaždice offline"),
@@ -92,6 +96,9 @@ public final class Vykon {
 
 	private static final Okno[] OKNA = new Okno[Velicina.values().length];
 	private static volatile long edtNadPrahem;
+	private static volatile boolean cekaNaMapu = true;
+	private static volatile long sbiratOdNs;
+	private static volatile long sbiratOdMs;
 
 	static {
 		for (int i = 0; i < OKNA.length; i++) {
@@ -102,7 +109,17 @@ public final class Vykon {
 	private Vykon() {}
 
 	public static void zaznamenej(final Velicina velicina, final long trvaniNs) {
-		OKNA[velicina.ordinal()].zapis(trvaniNs, System.nanoTime());
+		final long ted = System.nanoTime();
+		if (cekaNaMapu) {
+			if (velicina == Velicina.PREKRESLENI) {
+				zacniSbirat(ODKLAD_PO_PRVNI_MAPE_MS);
+			}
+			return;
+		}
+		if (ted - sbiratOdNs < 0) {
+			return;
+		}
+		OKNA[velicina.ordinal()].zapis(trvaniNs, ted);
 		if (velicina == Velicina.EDT && trvaniNs >= PRAH_EDT_MS * 1_000_000) {
 			edtNadPrahem++;
 		}
@@ -128,6 +145,25 @@ public final class Vykon {
 			okno.vynuluj();
 		}
 		edtNadPrahem = 0;
+		zacniSbirat(0);
+	}
+
+	private static void zacniSbirat(final long zaMs) {
+		sbiratOdNs = System.nanoTime() + zaMs * 1_000_000;
+		sbiratOdMs = System.currentTimeMillis() + zaMs;
+		cekaNaMapu = false;
+	}
+
+	/** Stav po startu programu: měří se až chvíli po prvním vykreslení mapy. */
+	static void cekejNaMapu() {
+		cekaNaMapu = true;
+	}
+
+	static String odKdy() {
+		if (cekaNaMapu) {
+			return "měření začne " + ODKLAD_PO_PRVNI_MAPE_MS / 1000 + " s po zobrazení mapy";
+		}
+		return "měřeno od " + new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date(sbiratOdMs));
 	}
 
 	static long percentil(final long[] serazene, final int procent) {
@@ -144,7 +180,7 @@ public final class Vykon {
 
 	/** Oddíl pro Informace pro hlášení chyby. */
 	public static String text() {
-		final StringBuilder sb = new StringBuilder("\nVýkon kreslení (posledních " + VELIKOST_OKNA + " záznamů):\n");
+		final StringBuilder sb = new StringBuilder("\nVýkon kreslení (" + odKdy() + "; medián a p95 z posledních " + VELIKOST_OKNA + " záznamů):\n");
 		for (final Velicina v : Velicina.values()) {
 			final Souhrn s = souhrn(v);
 			sb.append("  ").append(v.popis).append(": ");
@@ -197,10 +233,19 @@ public final class Vykon {
 				hloubka--;
 				// Událost s vnořenou smyčkou (modální dialog) EDT neblokovala.
 				if (!maVnoreni[hloubka]) {
-					zaznamenej(Velicina.EDT, System.nanoTime() - start);
+					final long trvani = System.nanoTime() - start;
+					zaznamenej(Velicina.EDT, trvani);
+					if (trvani >= PRAH_ZASEKU_MS * 1_000_000) {
+						Diagnostika.zaznamenej(popisZaseku(event, trvani));
+					}
 				}
 			}
 		}
+	}
+
+	static String popisZaseku(final AWTEvent event, final long trvaniNs) {
+		final Object zdroj = event.getSource();
+		return String.format(Locale.ROOT, "Zásek EDT %.0f ms: %s%s", trvaniNs / 1e6, event.getClass().getSimpleName(), zdroj == null ? "" : " (" + zdroj.getClass().getSimpleName() + ")");
 	}
 
 	/** Začne měřit události na EDT. */

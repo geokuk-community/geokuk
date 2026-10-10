@@ -144,4 +144,42 @@ public class VykonTest {
 		final Souhrn edt = Vykon.souhrn(Velicina.EDT);
 		Assert.assertTrue("EDT max " + edt.max, edt.max < 100);
 	}
+
+	@Test
+	public void popisZaseku() {
+		Assert.assertEquals("Zásek EDT 1500 ms: ChybnaUdalost (Object)", Vykon.popisZaseku(new ChybnaUdalost(), 1_500_000_000L));
+	}
+
+	@Test
+	public void zasekNadSekunduJeVPoslednichUdalostechIPoStartu() throws Exception {
+		Vykon.cekejNaMapu();
+		Toolkit.getDefaultToolkit().getSystemEventQueue().push(new Vykon.MericiFronta());
+		EventQueue.invokeAndWait(() -> {
+			try {
+				Thread.sleep(Vykon.PRAH_ZASEKU_MS + 50);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		pockejNaZapis();
+		final String text = Diagnostika.text();
+		final String udalosti = text.substring(text.indexOf("Poslední události"));
+		Assert.assertTrue(text, udalosti.contains("Zásek EDT ") && udalosti.contains(": InvocationEvent"));
+		Assert.assertEquals("start se do statistik nepočítá", 0, Vykon.souhrn(Velicina.EDT).pocet);
+	}
+
+	@Test
+	public void sbiraSeAzPoOdkladuPoPrvniMape() {
+		Vykon.cekejNaMapu();
+		Assert.assertTrue(Vykon.text(), Vykon.text().contains("(měření začne 10 s po zobrazení mapy; medián a p95 z posledních 256 záznamů)"));
+		Vykon.zaznamenej(Velicina.EDT, 5_000_000_000L);
+		Vykon.zaznamenej(Velicina.PREKRESLENI, 3_000_000_000L);
+		Vykon.zaznamenej(Velicina.EDT, 4_000_000_000L);
+		Assert.assertEquals(0, Vykon.souhrn(Velicina.EDT).pocet);
+		Assert.assertEquals(0, Vykon.souhrn(Velicina.PREKRESLENI).pocet);
+		Assert.assertTrue(Vykon.text(), Vykon.text().matches("(?s).*\\(měřeno od \\d\\d:\\d\\d:\\d\\d; .*"));
+		Vykon.vynuluj();
+		Vykon.zaznamenej(Velicina.EDT, 1_000_000L);
+		Assert.assertEquals("po vynulování se měří hned", 1, Vykon.souhrn(Velicina.EDT).pocet);
+	}
 }

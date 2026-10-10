@@ -18,7 +18,9 @@
   tři poslední kombinace.
 - Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
   z dat Natural Earth (pevnina, moře, státní hranice, české názvy států),
-  takže offline mapa ukáže celý svět i bez stažených map.
+  takže offline mapa ukáže celý svět i bez stažených map. Přenosný GeoKuk
+  ji po aktualizaci doplní nebo obnoví na novou verzi; smazanou znovu
+  nepřidá.
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
@@ -57,6 +59,10 @@
   ukazatel výkonu v rohu mapy.
 - Poslední události v informacích pro hlášení chyby neuvádějí kontextová
   menu jako otevřená okna a u okna Informace pro hlášení chyby jen jeho název.
+- Informace pro hlášení chyby uvádějí zvětšení, Direct3D a vzhled offline
+  mapy, se kterými program běží, a v posledních událostech každé zaseknutí
+  programu delší než sekundu. Výkon kreslení se měří až chvíli po zobrazení
+  mapy, ať ho nezkreslí start, a tlačítkem Vynulovat měření jde začít znovu.
 - Při přiblížení a oddálení offline mapy se místo prázdných dlaždic hned
   ukáže zvětšený nebo zmenšený výřez už nakreslených dlaždic a po
   dokreslení se nahradí ostrou.
