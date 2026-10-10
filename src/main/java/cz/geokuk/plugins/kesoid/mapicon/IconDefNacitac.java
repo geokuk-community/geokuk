@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid.mapicon;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -138,9 +139,16 @@ public class IconDefNacitac {
 		return alely;
 	}
 
-	private void nactiObrazekDefinovanyVPropertach() throws IOException {
+	static Properties nactiProperties(final URL url) throws IOException {
 		final Properties prop = new Properties();
-		prop.load(new BufferedInputStream(idp.url.openStream()));
+		try (InputStream in = new BufferedInputStream(url.openStream())) {
+			prop.load(in);
+		}
+		return prop;
+	}
+
+	private void nactiObrazekDefinovanyVPropertach() throws IOException {
+		final Properties prop = nactiProperties(idp.url);
 		// idp.width = Integer.parseInt(prop.getProperty("width"));
 		// idp.height= Integer.parseInt(prop.getProperty("height"));
 		idp.properties = prop;
