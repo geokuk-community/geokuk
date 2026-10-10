@@ -3,7 +3,7 @@
 ## 6.4.0
 
 ### Změny
-- Rychlejší načítání databází GeoGetu.
+- Rychlejší načítání databází GeoGetu, GSAKu a OpenSAKu.
 - Rychlejší zobrazení keší po načtení a po změně filtru.
 - Rychlejší zapnutí a vypnutí zdroje, který se s ostatními nepřekrývá.
 - Keše z databází GeoGetu, GSAKu a OpenSAKu zabírají méně paměti.
