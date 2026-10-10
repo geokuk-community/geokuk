@@ -223,6 +223,14 @@ public class OfflineMapyTest {
 		Assert.assertEquals("klíč dlaždic nezávisí na nečitelné mapě", sVadnou, klic());
 	}
 
+	/** Přehledová mapa světa, která jde do zipu s programem, se otevře a vykreslí se z ní pevnina, moře a hranice. */
+	@Test
+	public void prehledovaMapaSvetaSeVykresli() throws Exception {
+		Files.copy(new File("distribuce/offline-mapy/prehled-svet-ne.map").toPath(), new File(slozka, "prehled-svet-ne.map").toPath());
+		final KaLoc stredEvropy = KaLoc.ofJZ(new Wgs(50.0, 15.0).toMou(), 5);
+		Assert.assertTrue(barev(pixely(vyrendruj(stredEvropy))) > 3);
+	}
+
 	@Test
 	public void chybejiciTemaKresliVychozim() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");

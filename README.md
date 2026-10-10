@@ -136,6 +136,13 @@ Data map jsou z OpenStreetMap, © přispěvatelé OpenStreetMap, licence
 [ODbL](https://www.openstreetmap.org/copyright); atribuci program kreslí
 v rohu mapy.
 
+Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
+`prehled-svet-ne.map` (pevnina, moře, státní hranice a české názvy států),
+takže offline mapa ukáže celý svět i bez stažených map. Je vytvořená
+z dat Natural Earth, která jsou volným dílem (public domain); Made with
+Natural Earth, [naturalearthdata.com](https://www.naturalearthdata.com/).
+Soubor můžete smazat, program funguje i bez něj.
+
 Vzhled mapy se volí v Mapy > Téma offline mapy. Vestavěná témata jsou
 součástí programu. Jiné téma (soubor `.zip` nebo `.xml`, například paws
 z osm.paws.cz) si stáhněte sami a dejte ho do složky offline map
