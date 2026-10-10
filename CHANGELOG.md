@@ -20,7 +20,7 @@
   z dat Natural Earth (pevnina, moře, státní hranice, české názvy států),
   takže offline mapa ukáže celý svět i bez stažených map. Přenosný GeoKuk
   ji po aktualizaci doplní nebo obnoví na novou verzi; smazanou znovu
-  nepřidá.
+  nepřidá. V rohu mapy je u ní atribuce „Made with Natural Earth“.
 - Vzhled offline mapy se volí v Mapy > Téma offline mapy: vestavěná témata,
   nebo téma stažené spolu s mapou (soubor .zip nebo .xml ve složce offline
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit

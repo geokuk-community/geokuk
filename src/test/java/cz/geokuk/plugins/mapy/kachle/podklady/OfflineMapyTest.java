@@ -128,6 +128,15 @@ public class OfflineMapyTest {
 	}
 
 	@Test
+	public void nazvyOtevrenychMap() throws Exception {
+		Assert.assertEquals(Collections.emptyList(), mapy.getNazvyMap());
+		zkopirujMapu(slozka, "kukov.map");
+		zkopirujMapu(slozka, "prehled-svet-ne.map");
+		klic();
+		Assert.assertEquals(Arrays.asList("kukov.map", "prehled-svet-ne.map"), mapy.getNazvyMap());
+	}
+
+	@Test
 	public void mimoMapuNepokryva() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
 		final OfflineRenderer r = mapy.pouzij();
