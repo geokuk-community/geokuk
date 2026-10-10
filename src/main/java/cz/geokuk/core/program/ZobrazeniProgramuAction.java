@@ -1,11 +1,12 @@
 package cz.geokuk.core.program;
 
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.*;
 
+import cz.geokuk.core.napoveda.NapovedaWiki;
 import cz.geokuk.core.napoveda.Restart;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
@@ -19,8 +20,8 @@ public class ZobrazeniProgramuAction extends Action0 {
 	private static final long serialVersionUID = 1L;
 
 	static final String ZVETSENI = "Zvětšovat podle Windows";
-	static final String OSTROST_SYSTEM = "podle zvětšení systému";
-	static final String OSTROST_100 = "100 % – rychlejší";
+	static final String OSTRA = "Ostrá";
+	static final String RYCHLEJSI = "Rychlejší";
 	static final String DIRECT3D = "Hardwarové vykreslování (Direct3D)";
 
 	private KachleModel kachleModel;
@@ -48,7 +49,7 @@ public class ZobrazeniProgramuAction extends Action0 {
 	}
 
 	static String popisZvetseni(final double meritko) {
-		return meritko > 1.001 ? ZVETSENI + " (teď " + Math.round(meritko * 100) + " %)" : ZVETSENI;
+		return meritko > 1.001 ? ZVETSENI + " (" + Math.round(meritko * 100) + " %)" : ZVETSENI;
 	}
 
 	private static double meritkoObrazovky() {
@@ -58,44 +59,85 @@ public class ZobrazeniProgramuAction extends Action0 {
 		return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform().getScaleX();
 	}
 
+	/** Rámeček s nadpisem a řádky popisek – ovládací prvek. */
+	private static JPanel ramecek(final String nadpis) {
+		final JPanel p = new JPanel(new GridBagLayout());
+		p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder(nadpis), BorderFactory.createEmptyBorder(2, 6, 4, 6)));
+		return p;
+	}
+
+	private static void radek(final JPanel ramecek, final int y, final JComponent popisek, final JComponent prvek) {
+		final GridBagConstraints c = new GridBagConstraints();
+		c.gridy = y;
+		c.anchor = GridBagConstraints.WEST;
+		c.insets = new Insets(2, 0, 2, 6);
+		if (prvek == null) {
+			c.gridwidth = 2;
+			ramecek.add(popisek, c);
+			return;
+		}
+		ramecek.add(popisek, c);
+		c.gridx = 1;
+		ramecek.add(prvek, c);
+	}
+
 	@Override
 	public void actionPerformed(final ActionEvent e) {
 		final MyPreferences pref = MyPreferences.current().node(FPref.VSEOBECNE_node);
 		final JCheckBox zvetseni = new JCheckBox(popisZvetseni(meritkoObrazovky()), pref.getBoolean(Start.ZVETSENI_KLIC, true));
-		zvetseni.setToolTipText("Vypnuté: menší, ale ostré písmo a mapa.");
+		zvetseni.setToolTipText("Vypnuté: menší, ale ostřejší písmo; pomáhá, když program seká.");
 		final JCheckBox direct3d = new JCheckBox(DIRECT3D, pref.getBoolean(Start.DIRECT3D_KLIC, true));
 		direct3d.setToolTipText("Vypněte, když mapa nebo menu sekají.");
-		final boolean startOvlada = PametProgramuAction.lzeNastavit();
+		final boolean oknoProgramu = PametProgramuAction.lzeNastavit() && jeWindows();
 		final JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		if (startOvlada) {
-			panel.add(new JLabel("<html>Platí od příštího spuštění.<br>Když je program pomalý nebo seká, zkuste vypnout jedno z nich.</html>"));
-			panel.add(Box.createVerticalStrut(8));
-			panel.add(zvetseni);
-			if (jeWindows()) {
-				panel.add(direct3d);
-			}
-		}
-		final JComboBox<String> ostrost = new JComboBox<>(new String[] { OSTROST_SYSTEM, OSTROST_100 });
+		final JRadioButton ostra = new JRadioButton(OSTRA);
+		final JRadioButton rychlejsi = new JRadioButton(RYCHLEJSI);
 		final JSpinner pismo = new JSpinner(new SpinnerNumberModel(100, 80, 150, 5));
 		if (kachleModel != null) {
-			ostrost.setSelectedIndex(kachleModel.isOfflineMapaOstra() ? 0 : 1);
-			ostrost.setToolTipText("Offline mapa se kreslí rychleji, když se dlaždice nekreslí ve zvětšení systému.");
+			final ButtonGroup skupina = new ButtonGroup();
+			skupina.add(ostra);
+			skupina.add(rychlejsi);
+			ostra.setSelected(kachleModel.isOfflineMapaOstra());
+			rychlejsi.setSelected(!kachleModel.isOfflineMapaOstra());
+			final String rada = "Rychlejší kreslí dlaždice v menším rozlišení a systém je zvětší; hodí se pro pomalejší počítače při zvětšení Windows nad 100 %.";
+			ostra.setToolTipText(rada);
+			rychlejsi.setToolTipText(rada);
 			pismo.setValue(kachleModel.getOfflineMapaPismoProcent());
-			panel.add(Box.createVerticalStrut(8));
-			panel.add(new JLabel("Ostrost offline mapy (platí hned):"));
-			panel.add(ostrost);
-			panel.add(Box.createVerticalStrut(4));
-			panel.add(new JLabel("Velikost písma a ikon na mapě v % (platí hned):"));
-			panel.add(pismo);
+			pismo.setToolTipText("Velikost popisků a symbolů offline mapy.");
+			final JPanel volbyOstrosti = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+			volbyOstrosti.add(ostra);
+			volbyOstrosti.add(Box.createHorizontalStrut(8));
+			volbyOstrosti.add(rychlejsi);
+			final JPanel velikost = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+			velikost.add(pismo);
+			velikost.add(new JLabel("%"));
+			final JLabel popisOstrosti = new JLabel("Offline mapa:");
+			popisOstrosti.setToolTipText(rada);
+			final JLabel popisPisma = new JLabel("Písmo a ikony na mapě:");
+			popisPisma.setLabelFor(pismo);
+			final JPanel mapa = ramecek("Mapa (platí hned)");
+			radek(mapa, 0, popisOstrosti, volbyOstrosti);
+			radek(mapa, 1, popisPisma, velikost);
+			mapa.setAlignmentX(0);
+			panel.add(mapa);
 		}
-		if (JOptionPane.showConfirmDialog(Dlg.parentFrame(), panel, "Zobrazení programu", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) {
+		if (oknoProgramu) {
+			final JPanel okno = ramecek("Okno programu (platí po restartu)");
+			radek(okno, 0, zvetseni, null);
+			radek(okno, 1, direct3d, null);
+			okno.setAlignmentX(0);
+			panel.add(Box.createVerticalStrut(6));
+			panel.add(okno);
+		}
+		final Object[] tlacitka = { "OK", "Zrušit", NapovedaWiki.tlacitko("ZobrazeniProgramu") };
+		if (JOptionPane.showOptionDialog(Dlg.parentFrame(), panel, "Zobrazení programu", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, tlacitka, tlacitka[0]) != 0) {
 			return;
 		}
 		if (kachleModel != null) {
-			kachleModel.setVzhledOfflineMapy(ostrost.getSelectedIndex() == 0, ((Number) pismo.getValue()).intValue());
+			kachleModel.setVzhledOfflineMapy(ostra.isSelected(), ((Number) pismo.getValue()).intValue());
 		}
-		if (startOvlada && uloz(pref, zvetseni.isSelected(), direct3d.isSelected()) && Restart.lze()
+		if (oknoProgramu && uloz(pref, zvetseni.isSelected(), direct3d.isSelected()) && Restart.lze()
 				&& JOptionPane.showConfirmDialog(Dlg.parentFrame(), "Změna se projeví po restartu GeoKuku. Restartovat teď?", "Zobrazení programu",
 						JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 			Restart.restartuj();

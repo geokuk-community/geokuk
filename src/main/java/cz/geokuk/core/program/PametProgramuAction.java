@@ -1,12 +1,16 @@
 package cz.geokuk.core.program;
 
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Locale;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
+import cz.geokuk.core.napoveda.NapovedaWiki;
+import cz.geokuk.core.napoveda.Restart;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
@@ -20,7 +24,7 @@ public class PametProgramuAction extends Action0 {
 
 	public PametProgramuAction() {
 		super("Paměť programu...");
-		putValue(SHORT_DESCRIPTION, "Kolik paměti si GeoKuk vezme při příštím spuštění.");
+		putValue(SHORT_DESCRIPTION, "Kolik paměti může GeoKuk použít.");
 		putValue(MNEMONIC_KEY, KeyEvent.VK_M);
 		setEnabled(lzeNastavit());
 	}
@@ -32,6 +36,18 @@ public class PametProgramuAction extends Action0 {
 	/** Rada pro hlášky o nedostatku paměti. */
 	public static String jakZvysitPamet() {
 		return lzeNastavit() ? "Paměť zvýšíte v Soubor > Paměť programu." : "Spusťte GeoKuk s větší pamětí, třeba java -Xmx2g -jar geokuk.jar.";
+	}
+
+	static String gb(final long mb) {
+		return mb % 1024 == 0 ? mb / 1024 + " GB" : String.format(new Locale("cs"), "%.1f GB", mb / 1024.0);
+	}
+
+	static String popisAutomaticky(final long fyzickaMb) {
+		return "Automaticky (teď " + gb(Start.automatickaPametMb(fyzickaMb)) + ")";
+	}
+
+	static String stav(final long programMb, final long fyzickaMb) {
+		return String.format(new Locale("cs"), "Teď %,d MB z %d GB. Platí po restartu.", programMb, Math.round(fyzickaMb / 1024.0));
 	}
 
 	@Override
@@ -46,24 +62,51 @@ public class PametProgramuAction extends Action0 {
 			if (mb > 0 && mb > fyzicka * 3 / 4) {
 				break;
 			}
-			popisy[pocet] = mb == 0 ? "Automaticky (polovina paměti počítače, 1 až 3 GB, od 16 GB paměti 4 GB)" : mb / 1024 + " GB";
+			popisy[pocet] = mb == 0 ? popisAutomaticky(fyzicka) : gb(mb);
 			if (mb == ted) {
 				vybrana = pocet;
 			}
 			pocet++;
 		}
-		final String[] nabidka = Arrays.copyOf(popisy, pocet);
-		final Object volba = JOptionPane.showInputDialog(Dlg.parentFrame(),
-				"Paměť pro GeoKuk, platí od příštího spuštění.\nVíc paměti pomůže při velkém počtu keší.\nTeď má program "
-						+ Runtime.getRuntime().maxMemory() / (1024 * 1024) + " MB, počítač " + fyzicka + " MB.",
-				"Paměť programu", JOptionPane.QUESTION_MESSAGE, null, nabidka, nabidka[vybrana]);
-		if (volba == null) {
+		final JComboBox<String> vyber = new JComboBox<>(Arrays.copyOf(popisy, pocet));
+		vyber.setSelectedIndex(vybrana);
+		vyber.setToolTipText("Víc paměti potřebujete jen při statisících keší. Když paměť dojde, GeoKuk to ohlásí.");
+		final ListCellRenderer<? super String> renderer = vyber.getRenderer();
+		vyber.setRenderer((list, value, index, isSelected, cellHasFocus) -> {
+			final Component bunka = renderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			if (bunka instanceof JComponent) {
+				((JComponent) bunka).setToolTipText(index == 0 ? "Polovina paměti počítače, nejvýš 3 GB; od 16 GB 4 GB." : null);
+			}
+			return bunka;
+		});
+		final JLabel popisek = new JLabel("Paměť programu:");
+		popisek.setLabelFor(vyber);
+		final JLabel jStav = new JLabel(stav(Runtime.getRuntime().maxMemory() / (1024 * 1024), fyzicka));
+		final Color seda = UIManager.getColor("Label.disabledForeground");
+		jStav.setForeground(seda != null ? seda : Color.GRAY);
+		final JPanel panel = new JPanel(new GridBagLayout());
+		final GridBagConstraints c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.WEST;
+		c.insets = new Insets(2, 0, 2, 6);
+		panel.add(popisek, c);
+		c.gridx = 1;
+		panel.add(vyber, c);
+		c.gridx = 0;
+		c.gridy = 1;
+		c.gridwidth = 2;
+		panel.add(jStav, c);
+		final Object[] tlacitka = { "OK", "Zrušit", NapovedaWiki.tlacitko("PametProgramu") };
+		if (JOptionPane.showOptionDialog(Dlg.parentFrame(), panel, "Paměť programu", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, tlacitka, tlacitka[0]) != 0) {
 			return;
 		}
-		for (int i = 0; i < nabidka.length; i++) {
-			if (nabidka[i].equals(volba)) {
-				pref.putInt(Start.PAMET_KLIC, VOLBY_MB[i]);
-			}
+		final int nova = VOLBY_MB[vyber.getSelectedIndex()];
+		if (nova == ted) {
+			return;
+		}
+		pref.putInt(Start.PAMET_KLIC, nova);
+		if (Restart.lze() && JOptionPane.showConfirmDialog(Dlg.parentFrame(), "Změna se projeví po restartu GeoKuku. Restartovat teď?", "Paměť programu",
+				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+			Restart.restartuj();
 		}
 	}
 }

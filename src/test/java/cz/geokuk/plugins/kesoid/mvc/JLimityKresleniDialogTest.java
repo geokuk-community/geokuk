@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoid.mvc;
 
 import java.awt.GraphicsEnvironment;
 
+import javax.swing.AbstractButton;
 import javax.swing.SwingUtilities;
 
 import org.junit.*;
@@ -126,5 +127,23 @@ public class JLimityKresleniDialogTest {
 			v.setCurrentAccessibleValue(150_000);
 			Assert.assertEquals(150_000, JLimityKresleniDialog.STUPNICE[dialog.jIkon.getValue()]);
 		});
+	}
+
+	@Test
+	public void maNapovedu() throws Exception {
+		final boolean[] napoveda = new boolean[1];
+		SwingUtilities.invokeAndWait(() -> napoveda[0] = maTlacitko(dialog.getContentPane(), "Nápověda"));
+		Assert.assertTrue(napoveda[0]);
+		Assert.assertEquals("Limity kreslení", dialog.getTitle());
+	}
+
+	private static boolean maTlacitko(final java.awt.Container kde, final String text) {
+		for (final java.awt.Component c : kde.getComponents()) {
+			if (c instanceof AbstractButton && text.equals(((AbstractButton) c).getText())
+					|| c instanceof java.awt.Container && maTlacitko((java.awt.Container) c, text)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
