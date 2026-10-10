@@ -3,6 +3,7 @@ package cz.geokuk.core.napoveda;
 import java.awt.EventQueue;
 import java.awt.SecondaryLoop;
 import java.awt.Toolkit;
+import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -181,5 +182,34 @@ public class VykonTest {
 		Vykon.vynuluj();
 		Vykon.zaznamenej(Velicina.EDT, 1_000_000L);
 		Assert.assertEquals("po vynulování se měří hned", 1, Vykon.souhrn(Velicina.EDT).pocet);
+	}
+
+	@Test
+	public void kratkyZasobnikHorniRamceAPrvniGeokuk() {
+		final StackTraceElement[] st = { new StackTraceElement("sun.font.SunFontManager", "loadFonts", "S.java", 10), new StackTraceElement("sun.font.X", "y", "X.java", 2),
+				new StackTraceElement("java.awt.Z", "w", "Z.java", 3), new StackTraceElement("javax.swing.A", "b", "A.java", 4),
+				new StackTraceElement("cz.geokuk.plugins.mapy.kachle.gui.JKachle", "kresli", "JKachle.java", 223), new StackTraceElement("cz.geokuk.Jiny", "x", "Jiny.java", 1) };
+		Assert.assertEquals("SunFontManager.loadFonts:10 ← X.y:2 ← Z.w:3 ← … ← JKachle.kresli:223", Vykon.kratce(st));
+		Assert.assertEquals("JKachle.kresli:223 ← Jiny.x:1", Vykon.kratce(Arrays.copyOfRange(st, 4, 6)));
+	}
+
+	private static void spiNaEdt() {
+		try {
+			Thread.sleep(Vykon.PRAH_ZASEKU_MS + 600);
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	@Test
+	public void hlidacPridaZasobnikKZaseku() throws Exception {
+		final Vykon.MericiFronta fronta = new Vykon.MericiFronta();
+		Toolkit.getDefaultToolkit().getSystemEventQueue().push(fronta);
+		fronta.spustHlidace();
+		EventQueue.invokeAndWait(VykonTest::spiNaEdt);
+		pockejNaZapis();
+		final String text = Diagnostika.text();
+		final String udalosti = text.substring(text.indexOf("Poslední události"));
+		Assert.assertTrue(udalosti, udalosti.matches("(?s).*Zásek EDT \\d+ ms: InvocationEvent \\([^)]*\\) – [^\\n]*VykonTest\\.spiNaEdt:\\d+.*"));
 	}
 }
