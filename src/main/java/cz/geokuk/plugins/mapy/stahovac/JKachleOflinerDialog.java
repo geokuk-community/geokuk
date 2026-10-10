@@ -81,7 +81,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 					log.trace("Vykreslovani kachli od {} pro {} -- {}", kaputer.getKachlePoint(0, 0), kaputer.getKachleMou(0, 0), kaputer);
 				}
 				for (int yi = 0; yi < kaputer.getPocetKachliY(); yi++) {
-					log.trace(" .... řádek", coco);
+					log.trace(" .... řádek {} {}", yi, coco);
 					for (int xi = 0; xi < kaputer.getPocetKachliX(); xi++) {
 						final KaLoc kaloc = kaputer.getKaloc(xi, yi);
 						pocetKachli += 1;

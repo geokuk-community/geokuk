@@ -35,7 +35,7 @@ public class IndexMap<K extends Indexable, T> {
 	 */
 	public T put(final K key, final T udaj) {
 		final int i = key.getIndex();
-		if (udaj == null && i <= data.length) {
+		if (udaj == null && i < data.length) {
 			data[i] = null;
 		}
 		if (i >= data.length) {

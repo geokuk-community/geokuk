@@ -76,7 +76,7 @@ final class OpensakTestDb {
 	static void vlozKes(final File db, final int id, final String kod, final String typ, final double lat, final double lon, final Object... dalsi) throws SQLException {
 		final List<Object> h = new ArrayList<>(Arrays.asList("id", id, "gc_code", kod, "name", "Keš " + kod, "cache_type", typ, "latitude", lat, "longitude", lon, "available", 1,
 				"archived", 0, "found", 0));
-		for (int i = 0; i < dalsi.length; i += 2) {
+		for (int i = 0; i + 1 < dalsi.length; i += 2) {
 			final int index = h.indexOf(dalsi[i]);
 			if (index >= 0 && index % 2 == 0) {
 				h.set(index + 1, dalsi[i + 1]);

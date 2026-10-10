@@ -47,8 +47,8 @@ public class VyrezModel extends Model0 {
 		final Mou mouStred = moord.getMoustred();
 		final boolean b = mouPozice.equals(mouStred);
 
-		log.debug("Mou pozice: ", mouPozice);
-		log.debug("Mou stred: ", mouStred);
+		log.debug("Mou pozice: {}", mouPozice);
+		log.debug("Mou stred: {}", mouStred);
 		return b;
 	}
 
