@@ -223,4 +223,48 @@ public class DiagnostikaTest {
 			}
 		}
 	}
+
+	@Test
+	public void tlacitkoVynulujeMereniAObnoviText() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		Vykon.vynuluj();
+		Vykon.zaznamenej(Vykon.Velicina.EDT, 2_000_000_000L);
+		SwingUtilities.invokeLater(() -> DiagnostikaAction.ukaz(null));
+		Dialog dialog = null;
+		for (int i = 0; i < 200 && dialog == null; i++) {
+			Thread.sleep(25);
+			for (final Window w : Window.getWindows()) {
+				if (w instanceof Dialog && w.isShowing() && "Informace pro hlášení chyby".equals(((Dialog) w).getTitle())) {
+					dialog = (Dialog) w;
+				}
+			}
+		}
+		Assert.assertNotNull(dialog);
+		final Dialog d = dialog;
+		final String[] text = new String[1];
+		SwingUtilities.invokeAndWait(() -> {
+			najdi(d, AbstractButton.class, b -> DiagnostikaAction.VYNULOVAT.equals(b.getText())).doClick();
+			text[0] = najdi(d, JTextArea.class, a -> true).getText();
+			Assert.assertTrue("okno zůstane otevřené", d.isShowing());
+			d.dispose();
+		});
+		Assert.assertTrue("záznam před vynulováním zmizel", Vykon.souhrn(Vykon.Velicina.EDT).max < 1000);
+		Assert.assertTrue(text[0], text[0].contains("Měření výkonu vynulováno"));
+		Assert.assertFalse(text[0], text[0].contains("max 2000.0 ms"));
+	}
+
+	private static <T extends java.awt.Component> T najdi(final java.awt.Container kde, final Class<T> typ, final java.util.function.Predicate<T> podminka) {
+		for (final java.awt.Component c : kde.getComponents()) {
+			if (typ.isInstance(c) && podminka.test(typ.cast(c))) {
+				return typ.cast(c);
+			}
+			if (c instanceof java.awt.Container) {
+				final T t = najdi((java.awt.Container) c, typ, podminka);
+				if (t != null) {
+					return t;
+				}
+			}
+		}
+		return null;
+	}
 }
