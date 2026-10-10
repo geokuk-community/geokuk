@@ -382,11 +382,11 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
-	/** Jedno jádro zůstane oknu, nad 4 vlákna vykreslování skoro nezrychlí. */
+	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
 
 	static int pocetVlakenRenderu(final int jader) {
-		return Math.min(jader, Math.min(4, Math.max(2, jader - 1)));
+		return Math.min(jader, Math.min(6, Math.max(2, jader - 1)));
 	}
 
 	private static ThreadFactory vlaknaRenderu(final String jmeno) {
