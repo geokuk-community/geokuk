@@ -3,12 +3,14 @@
  */
 package cz.geokuk.plugins.mapy.kachle;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
+import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
@@ -26,6 +28,8 @@ public class KachleModel extends Model0 {
 	private static final String OFFLINE_MAPA_TEMA = "offlineMapaTema";
 
 	private static final String OFFLINE_OSTRA = "offlineMapaOstra";
+	private static final String OSM = "© přispěvatelé OpenStreetMap";
+	private static final String NATURAL_EARTH = "Made with Natural Earth";
 
 	private static final String OFFLINE_PISMO = "offlineMapaPismo";
 
@@ -213,14 +217,23 @@ public class KachleModel extends Model0 {
 		predpripravOfflineMapu();
 	}
 
-	/** Atribuce offline mapy: data OSM a téma ze souboru uživatele. */
+	/** Atribuce offline mapy: data podle otevřených map (OSM, přehledová mapa z Natural Earth) a téma ze souboru uživatele. */
 	public String getAtribuceOfflineMapy() {
+		final String data = atribuceDat(ziskavac.getOfflineMapy().getNazvyMap());
 		final TemaOfflineMapy tema = getTemaOfflineMapy();
 		if (tema.isVestavene()) {
-			return "© přispěvatelé OpenStreetMap";
+			return data;
 		}
 		final String jmeno = tema.getSoubor().getName();
 		final int tecka = jmeno.lastIndexOf('.');
-		return "© přispěvatelé OpenStreetMap, téma " + (tecka > 0 ? jmeno.substring(0, tecka) : jmeno);
+		return data + ", téma " + (tecka > 0 ? jmeno.substring(0, tecka) : jmeno);
+	}
+
+	static String atribuceDat(final List<String> mapy) {
+		final boolean prehled = mapy.contains(PrehledovaMapa.SOUBOR);
+		if (prehled && mapy.size() == 1) {
+			return NATURAL_EARTH;
+		}
+		return prehled ? OSM + ", " + NATURAL_EARTH : OSM;
 	}
 }
