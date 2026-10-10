@@ -2,9 +2,8 @@ package cz.geokuk.core.render;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -85,7 +84,7 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 			ImageIO.write(image, typ, obrazek);
 			if (mapa != null) {
 				zapisovane.add(mapa);
-				try (PrintWriter pwrt = new PrintWriter(mapa)) {
+				try (PrintWriter pwrt = new PrintWriter(new OutputStreamWriter(new FileOutputStream(mapa), kodovaniMapy()))) {
 					zapisMapy.zapis(pwrt);
 					zkontrolujZapis(pwrt, mapa);
 				}
@@ -96,6 +95,19 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 			}
 			throw e;
 		}
+	}
+
+	/** OziExplorer čte .map v kódování Windows (ANSI, česky windows-1250); Java od verze 18 má výchozí UTF-8, proto native.encoding. */
+	static Charset kodovaniMapy() {
+		final String nativni = System.getProperty("native.encoding");
+		if (nativni != null) {
+			try {
+				return Charset.forName(nativni);
+			} catch (final IllegalArgumentException e) {
+				log.warn("Neznámé kódování systému {}, soubor .map se zapíše ve výchozím.", nativni);
+			}
+		}
+		return Charset.defaultCharset();
 	}
 
 	/** PrintWriter chyby zápisu (plný disk) nehlásí výjimkou. */

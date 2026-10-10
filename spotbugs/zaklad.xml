@@ -287,18 +287,6 @@
 		<Property name="edu.umd.cs.findbugs.detect.DeadLocalStoreProperty.LOCAL_NAME" value="orezavaci" />
 		<Property name="edu.umd.cs.findbugs.detect.DeadLocalStoreProperty.METHOD_RESULT" value="true" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="f6e6e6365c125cb5cdcfbab74d24c489" rank="19" abbrev="Dm" category="I18N" priority="1" type="DM_DEFAULT_ENCODING" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" primary="true">
-			<SourceLine classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="21" end="160" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" signature="(Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/io/File;Ljava/io/File;Lcz/geokuk/core/render/OziExplorerRenderSwingWorker$ZapisMapy;)V" name="zapisVystupy" primary="true">
-			<SourceLine endBytecode="551" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="80" end="99" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.PrintWriter" signature="(Ljava/io/File;)V" name="&lt;init&gt;">
-			<SourceLine endBytecode="83" classname="java.io.PrintWriter" start="325" end="327" sourcepath="java/io/PrintWriter.java" sourcefile="PrintWriter.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="95" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="88" end="88" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="95" primary="true" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="f87cd95cf200c7d4b88917e363cb240c" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" primary="true">
 			<SourceLine classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="21" end="160" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" />
