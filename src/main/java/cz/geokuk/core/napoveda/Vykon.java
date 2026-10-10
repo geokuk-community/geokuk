@@ -3,13 +3,18 @@ package cz.geokuk.core.napoveda;
 import java.awt.AWTEvent;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Měření výkonu kreslení: doba překreslení mapy, obsluhy událostí na EDT a získání dlaždic. Pro každou veličinu se drží posledních {@link #VELIKOST_OKNA}
  * hodnot; zápis nic nealokuje, medián a p95 se počítají až při čtení.
  */
+@Slf4j
 public final class Vykon {
 
 	public static final int VELIKOST_OKNA = 256;
@@ -216,10 +221,25 @@ public final class Vykon {
 		private int hloubka;
 		private boolean[] maVnoreni = new boolean[8];
 
+		// Pro hlídač: vnější událost, která právě běží (0 = žádná), a zásobník EDT, pokud ji hlídač zachytil.
+		private int pocetVnejsich;
+		private volatile Thread edt;
+		private volatile long zacatekVnejsi;
+		private volatile int poradiVnejsi;
+		private volatile boolean vnejsiMaVnoreni;
+		private volatile int zasobnikPro = -1;
+		private volatile String zasobnik;
+
 		@Override
 		protected void dispatchEvent(final AWTEvent event) {
 			if (hloubka > 0) {
 				maVnoreni[hloubka - 1] = true;
+				vnejsiMaVnoreni = true;
+			} else {
+				edt = Thread.currentThread();
+				vnejsiMaVnoreni = false;
+				poradiVnejsi = ++pocetVnejsich;
+				zacatekVnejsi = System.nanoTime();
 			}
 			if (hloubka == maVnoreni.length) {
 				maVnoreni = Arrays.copyOf(maVnoreni, hloubka * 2);
@@ -231,16 +251,76 @@ public final class Vykon {
 				super.dispatchEvent(event);
 			} finally {
 				hloubka--;
+				if (hloubka == 0) {
+					zacatekVnejsi = 0;
+				}
 				// Událost s vnořenou smyčkou (modální dialog) EDT neblokovala.
 				if (!maVnoreni[hloubka]) {
 					final long trvani = System.nanoTime() - start;
 					zaznamenej(Velicina.EDT, trvani);
 					if (trvani >= PRAH_ZASEKU_MS * 1_000_000) {
-						Diagnostika.zaznamenej(popisZaseku(event, trvani));
+						final String kde = hloubka == 0 && zasobnikPro == poradiVnejsi ? " – " + zasobnik : "";
+						Diagnostika.zaznamenej(popisZaseku(event, trvani) + kde);
 					}
 				}
 			}
 		}
+
+		/** Když vnější událost běží déle než práh zaseknutí, jednou zapíše do logu zásobník EDT, ať je vidět, na čem stojí. */
+		void zkontroluj(final long tedNs) {
+			final long zacatek = zacatekVnejsi;
+			final int poradi = poradiVnejsi;
+			final Thread vlakno = edt;
+			if (zacatek == 0 || vlakno == null || vnejsiMaVnoreni || zasobnikPro == poradi || tedNs - zacatek < PRAH_ZASEKU_MS * 1_000_000) {
+				return;
+			}
+			final StackTraceElement[] st = vlakno.getStackTrace();
+			if (zacatekVnejsi != zacatek || poradiVnejsi != poradi || vnejsiMaVnoreni) {
+				return; // mezitím doběhla
+			}
+			zasobnik = kratce(st);
+			zasobnikPro = poradi;
+			final StringBuilder sb = new StringBuilder();
+			for (final StackTraceElement e : st) {
+				sb.append("\n\tat ").append(e);
+			}
+			log.warn("EDT stojí {} ms, zásobník:{}", (tedNs - zacatek) / 1_000_000, sb);
+		}
+
+		void spustHlidace() {
+			final Thread hlidac = new Thread(() -> {
+				while (true) {
+					try {
+						Thread.sleep(PERIODA_HLIDACE_MS);
+					} catch (final InterruptedException e) {
+						return;
+					}
+					zkontroluj(System.nanoTime());
+				}
+			}, "Hlídač EDT");
+			hlidac.setDaemon(true);
+			hlidac.start();
+		}
+	}
+
+	private static final long PERIODA_HLIDACE_MS = 250;
+
+	/** Horní rámce zásobníku a první rámec GeoKuku, třeba „SunFontManager.loadFonts:1230 ← … ← JKachle.kresli:223“. */
+	static String kratce(final StackTraceElement[] st) {
+		final List<String> ramce = new ArrayList<>();
+		boolean geokuk = false;
+		for (int i = 0; i < st.length && (ramce.size() < 3 || !geokuk); i++) {
+			final boolean jeGeokuk = st[i].getClassName().startsWith("cz.geokuk.");
+			if (ramce.size() < 3 || jeGeokuk) {
+				if (ramce.size() >= 3) {
+					ramce.add("…");
+				}
+				final String trida = st[i].getClassName();
+				ramce.add(trida.substring(trida.lastIndexOf('.') + 1) + "." + st[i].getMethodName() + ":" + st[i].getLineNumber());
+			}
+			geokuk |= jeGeokuk;
+		}
+		return String.join(" ← ", ramce);
 	}
 
 	static String popisZaseku(final AWTEvent event, final long trvaniNs) {
@@ -250,6 +330,8 @@ public final class Vykon {
 
 	/** Začne měřit události na EDT. */
 	public static void merEdt() {
-		Toolkit.getDefaultToolkit().getSystemEventQueue().push(new MericiFronta());
+		final MericiFronta fronta = new MericiFronta();
+		Toolkit.getDefaultToolkit().getSystemEventQueue().push(fronta);
+		fronta.spustHlidace();
 	}
 }

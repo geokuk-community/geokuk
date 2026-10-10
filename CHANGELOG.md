@@ -61,6 +61,8 @@
   ukazatel výkonu v rohu mapy.
 - Poslední události v informacích pro hlášení chyby neuvádějí kontextová
   menu jako otevřená okna a u okna Informace pro hlášení chyby jen jeho název.
+- U zaseknutí programu delšího než sekundu uvádějí informace pro hlášení
+  chyby i místo, kde program stál; celý výpis je v logu.
 - Informace pro hlášení chyby uvádějí zvětšení, Direct3D a vzhled offline
   mapy, se kterými program běží, a v posledních událostech každé zaseknutí
   programu delší než sekundu. Výkon kreslení se měří až chvíli po zobrazení
