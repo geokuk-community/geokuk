@@ -1,0 +1,71 @@
+name: Export Code scanning
+
+on:
+  workflow_run:
+    workflows: ["CodeQL"]
+    types: [completed]
+  workflow_dispatch:
+  schedule:
+    - cron: "43 3 * * *"
+
+permissions:
+  contents: read
+  security-events: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Otevřené alerty
+        run: |
+          gh api --paginate "repos/${{ github.repository }}/code-scanning/alerts?state=open&per_page=100" \
+            | jq -s '[.[][] | {
+                number,
+                rule: .rule.id,
+                severity: .rule.severity,
+                security_severity_level: .rule.security_severity_level,
+                description: .rule.description,
+                tool: .tool.name,
+                location: "\(.most_recent_instance.location.path):\(.most_recent_instance.location.start_line)",
+                created_at,
+                state
+              }]' > code-scanning-alerts.json
+
+      - name: Poslední analýzy
+        run: |
+          gh api "repos/${{ github.repository }}/code-scanning/analyses?per_page=5" \
+            | jq '[.[] | {created_at, ref, commit_sha, tool: .tool.name, results_count, rules_count, error}]' \
+            > code-scanning-analyses.json
+
+      - name: Souhrn
+        run: |
+          {
+            echo "## Code scanning: otevřené alerty"
+            echo
+            echo "Celkem: $(jq length code-scanning-alerts.json)"
+            echo
+            echo "| Závažnost | Počet |"
+            echo "|---|---|"
+            jq -r 'group_by(.security_severity_level // .severity) | .[] | "| \(.[0].security_severity_level // .[0].severity) | \(length) |"' code-scanning-alerts.json
+            echo
+            echo "| # | Pravidlo | Závažnost | Nástroj | Místo | Vytvořeno |"
+            echo "|---|---|---|---|---|---|"
+            jq -r '.[] | "| \(.number) | \(.rule) | \(.security_severity_level // .severity) | \(.tool) | \(.location) | \(.created_at) |"' code-scanning-alerts.json
+            echo
+            echo "## Poslední analýzy"
+            echo
+            echo "| Datum | Ref | Commit | Nástroj | Výsledků |"
+            echo "|---|---|---|---|---|"
+            jq -r '.[] | "| \(.created_at) | \(.ref) | \(.commit_sha[0:7]) | \(.tool) | \(.results_count) |"' code-scanning-analyses.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: code-scanning-alerts
+          path: |
+            code-scanning-alerts.json
+            code-scanning-analyses.json
+          retention-days: 30
