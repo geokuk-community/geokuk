@@ -141,7 +141,8 @@ Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
 takže offline mapa ukáže celý svět i bez stažených map. Je vytvořená
 z dat Natural Earth, která jsou volným dílem (public domain); Made with
 Natural Earth, [naturalearthdata.com](https://www.naturalearthdata.com/).
-Soubor můžete smazat, program funguje i bez něj.
+Soubor můžete smazat, program funguje i bez něj a znovu ho nepřidá;
+jinak ho aktualizace programu udržuje v aktuální verzi.
 
 Vzhled mapy se volí v Mapy > Téma offline mapy. Vestavěná témata jsou
 součástí programu. Jiné téma (soubor `.zip` nebo `.xml`, například paws
