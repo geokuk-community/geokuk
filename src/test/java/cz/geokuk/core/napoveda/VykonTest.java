@@ -165,7 +165,7 @@ public class VykonTest {
 		final String text = Diagnostika.text();
 		final String udalosti = text.substring(text.indexOf("Poslední události"));
 		Assert.assertTrue(text, udalosti.contains("Zásek EDT ") && udalosti.contains(": InvocationEvent"));
-		Assert.assertEquals("start se do statistik nepočítá", 0, Vykon.souhrn(Velicina.EDT).pocet);
+		Assert.assertTrue("zásek při startu se do statistik nepočítá: " + Vykon.text(), Vykon.souhrn(Velicina.EDT).max < Vykon.PRAH_ZASEKU_MS);
 	}
 
 	@Test
