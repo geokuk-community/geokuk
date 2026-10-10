@@ -60,7 +60,9 @@ jobs:
             echo "| Datum | Ref | Commit | Nástroj | Výsledků |"
             echo "|---|---|---|---|---|"
             jq -r '.[] | "| \(.created_at) | \(.ref) | \(.commit_sha[0:7]) | \(.tool) | \(.results_count) |"' code-scanning-analyses.json
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Alerty (JSON, jeden na řádek):"
+          jq -c '.[]' code-scanning-alerts.json
 
       - uses: actions/upload-artifact@v7
         with:
