@@ -26,6 +26,8 @@ public class MerOffline {
 			final int i = s.indexOf('=');
 			p.put(s.substring(0, i), s.substring(i + 1));
 		}
+		// Jako program: PNG se čte a zapisuje v paměti, bez dočasných souborů.
+		javax.imageio.ImageIO.setUseCache(false);
 		final File slozka = new File(p.get("slozka"));
 		final Wgs misto = new Wgs(Double.parseDouble(p.getOrDefault("lat", "50.08")), Double.parseDouble(p.getOrDefault("lon", "14.42")));
 		final int n = Integer.parseInt(p.getOrDefault("n", "6"));

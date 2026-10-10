@@ -129,8 +129,10 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertEquals(1, KachleZiskavac.pocetVlakenRenderu(1));
 		Assert.assertEquals(2, KachleZiskavac.pocetVlakenRenderu(2));
 		Assert.assertEquals(3, KachleZiskavac.pocetVlakenRenderu(4));
-		Assert.assertEquals(4, KachleZiskavac.pocetVlakenRenderu(8));
-		Assert.assertEquals(4, KachleZiskavac.pocetVlakenRenderu(32));
+		Assert.assertEquals(5, KachleZiskavac.pocetVlakenRenderu(6));
+		Assert.assertEquals(6, KachleZiskavac.pocetVlakenRenderu(8));
+		Assert.assertEquals(6, KachleZiskavac.pocetVlakenRenderu(12));
+		Assert.assertEquals(6, KachleZiskavac.pocetVlakenRenderu(32));
 	}
 
 	/** Dlaždice, které po posunu nebo zoomu nikdo nechce, se zruší dřív, než se vykreslí. */
