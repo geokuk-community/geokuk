@@ -24,19 +24,23 @@ export GIT_TERMINAL_PROMPT
 HELPER='!f() { test "$1" = get || exit 0; echo "username=${POZNAMKY_USER:-git}"; echo "password=${POZNAMKY_TOKEN:-}"; }; f'
 
 # Klientský certifikát jen v dočasném souboru, který po doběhnutí zmizí.
+# Vadný certifikát hook nezastaví, aby se na konci session neztratila práce.
 if [ -n "${POZNAMKY_PEM_B64:-}" ]; then
-  PEMDIR=$(mktemp -d) || { echo "soukrome: nejde vytvořit dočasný adresář"; exit 0; }
-  trap 'rm -rf "$PEMDIR"' EXIT
-  PEM="$PEMDIR/klient.pem"
-  if ! printf '%s' "$POZNAMKY_PEM_B64" | (umask 077 && base64 -d > "$PEM") \
-      || ! grep -q 'BEGIN CERTIFICATE' "$PEM" || ! grep -q 'PRIVATE KEY' "$PEM"; then
-    echo "soukrome: POZNAMKY_PEM_B64 není base64 PEM s certifikátem a klíčem"
-    exit 0
+  if PEMDIR=$(mktemp -d); then
+    trap 'rm -rf "$PEMDIR"' EXIT
+    PEM="$PEMDIR/klient.pem"
+    if printf '%s' "$POZNAMKY_PEM_B64" | (umask 077 && base64 -d > "$PEM") \
+        && grep -q 'BEGIN CERTIFICATE' "$PEM" && grep -q 'PRIVATE KEY' "$PEM"; then
+      chmod 600 "$PEM"
+      GIT_SSL_CERT="$PEM"
+      GIT_SSL_KEY="$PEM"
+      export GIT_SSL_CERT GIT_SSL_KEY
+    else
+      echo "soukrome: POZNAMKY_PEM_B64 není base64 PEM s certifikátem a klíčem, pokračuji bez něj"
+    fi
+  else
+    echo "soukrome: nejde vytvořit dočasný adresář pro certifikát, pokračuji bez něj"
   fi
-  chmod 600 "$PEM"
-  GIT_SSL_CERT="$PEM"
-  GIT_SSL_KEY="$PEM"
-  export GIT_SSL_CERT GIT_SSL_KEY
 fi
 
 # Git po síti; přenos pod 1 kB/s trvající CAS sekund se ukončí, aby hook nevisel.
