@@ -97,8 +97,6 @@ case "${1:-}" in
     else
       if [ -n "${POZNAMKY_TOKEN:-}" ]; then
         gs -c credential.helper= -c "credential.helper=$HELPER" clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
-        git -C "$DIR" config credential.helper ""
-        git -C "$DIR" config --add credential.helper "$HELPER"
       else
         gs clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
       fi
@@ -106,6 +104,11 @@ case "${1:-}" in
       MAIL=$(git -C "$ROOT" config user.email || true)
       [ -n "$NAME" ] && git -C "$DIR" config user.name "$NAME"
       [ -n "$MAIL" ] && git -C "$DIR" config user.email "$MAIL"
+    fi
+    # Helper i do kopie, která ho nemá, aby prošel i ruční push mimo hook.
+    if [ -n "${POZNAMKY_TOKEN:-}" ]; then
+      git -C "$DIR" config --replace-all credential.helper ""
+      git -C "$DIR" config --add credential.helper "$HELPER"
     fi
     if [ -f "$DIR/agent/session-start.sh" ]; then
       # Kód ze soukromého repa jen na výslovné povolení: kdo má token, může ho podstrčit.
