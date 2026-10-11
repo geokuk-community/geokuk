@@ -19,6 +19,7 @@ import javax.swing.*;
 import cz.geokuk.core.coord.*;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Diagnostika;
+import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.ovladani.DalkoveOvladani;
 import cz.geokuk.core.program.CloseAction;
 import cz.geokuk.core.program.FPref;
@@ -109,6 +110,8 @@ public class SmokeScenar {
 			vylet.putFile(FPref.AKTUALNI_SOUBOR_value, roura != null ? roura : gpxSCestou());
 			vylet.putBoolean(FPref.JE_OTEVRENY_VYLET_value, true);
 		}
+		// Hlídač musí být nad měřicí frontou programu, jinak k němu události nedojdou.
+		Vykon.merEdt();
 		hlidac = HlidacEdt.zapni(500);
 		final long start = System.currentTimeMillis();
 		new GeokukMain().execute(System.getProperty("smoke.args", "").isEmpty() ? new String[0] : System.getProperty("smoke.args").split(" "));
@@ -871,6 +874,7 @@ public class SmokeScenar {
 			zprava.setProperty("edt.nejdelsiMs", String.valueOf(hlidac.getNejdelsiMs()));
 			zprava.setProperty("edt.startMs", String.valueOf(hlidac.getNejdelsiStartMs()));
 			zprava.setProperty("edt.vzhledMs", String.valueOf(hlidac.getNejdelsiVzhledMs()));
+			zprava.setProperty("edt.udalostiPoStartu", String.valueOf(hlidac.getUdalostiPoStartu()));
 			final List<String> pomale = hlidac.getPomale();
 			for (int j = 0; j < pomale.size(); j++) {
 				zprava.setProperty("edt.pomala." + j, pomale.get(j));

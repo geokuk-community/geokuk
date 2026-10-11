@@ -4,6 +4,7 @@ import java.awt.AWTEvent;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Měří, jak dlouho trvá obsluha jednotlivých událostí na EDT, a pamatuje si ty pomalé. Události začaté před {@link #konecStartu()} se počítají
@@ -26,6 +27,7 @@ public class HlidacEdt extends EventQueue {
 	private volatile Thread edt;
 	private volatile long probihaOdNs;
 	private volatile long cisloUdalosti;
+	private final AtomicLong udalostiPoStartu = new AtomicLong();
 	private volatile long cisloVnejsi;
 	private volatile long cisloZasobniku;
 	private volatile String zasobnik;
@@ -71,10 +73,13 @@ public class HlidacEdt extends EventQueue {
 			final boolean priStartu = !startSkoncil || start - konecStartuNs < 0;
 			if (priStartu) {
 				nejdelsiStartMs = Math.max(nejdelsiStartMs, ms);
-			} else if (priVzhledu) {
-				nejdelsiVzhledMs = Math.max(nejdelsiVzhledMs, ms);
 			} else {
-				nejdelsiMs = Math.max(nejdelsiMs, ms);
+				udalostiPoStartu.incrementAndGet();
+				if (priVzhledu) {
+					nejdelsiVzhledMs = Math.max(nejdelsiVzhledMs, ms);
+				} else {
+					nejdelsiMs = Math.max(nejdelsiMs, ms);
+				}
 			}
 			if (ms >= prahMs) {
 				final String zasobnikUdalosti = !vnorena && cisloZasobniku == cislo ? zasobnik : null;
@@ -130,6 +135,10 @@ public class HlidacEdt extends EventQueue {
 
 	public long getNejdelsiMs() {
 		return nejdelsiMs;
+	}
+
+	public long getUdalostiPoStartu() {
+		return udalostiPoStartu.get();
 	}
 
 	public long getNejdelsiStartMs() {

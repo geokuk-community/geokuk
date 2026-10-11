@@ -631,6 +631,8 @@ public class SmokeIT {
 		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("chyba.") || k.startsWith("nezachycena.")).sorted().forEach(k -> problemy.add(k + ": " + zprava.getProperty(k)));
 		if (zprava.getProperty("edt.nejdelsiMs") == null) {
 			problemy.add("Zpráva nemá edt.nejdelsiMs, hlídač EDT neběžel");
+		} else if ("0".equals(zprava.getProperty("edt.udalostiPoStartu"))) {
+			problemy.add("Hlídač EDT po startu neviděl žádnou událost, odezvu EDT neměří");
 		}
 		zkontrolujEdt(zprava, "edt.nejdelsiMs", EDT_LIMIT_MS, "", problemy);
 		// Start programu (okno, načtení keší, první vykreslení) běží na EDT naráz a na pomalém stroji trvá déle.
