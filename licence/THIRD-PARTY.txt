@@ -27,11 +27,15 @@ oba texty); GeoKuk ho užívá pod GPL 3 a novější.
 
 Logback je nabízen pod EPL 1.0 nebo pod LGPL 2.1; GeoKuk ho užívá
 pod LGPL 2.1.
+Copyright (C) 1999-2025, QOS.ch.
 
 mapsforge je pod GNU LGPL verze 3 nebo novější s výjimkou autorů: omezení
 podle §4(d) a §4(e) LGPL 3 se neuplatní (README projektu,
 https://github.com/mapsforge/mapsforge/blob/0.25.0/README.md). Vestavěná
 mapová témata z mapsforge-themes jsou pod stejnou licencí.
+Copyright 2010-2013 mapsforge.org, 2014 Ludwig M Brinckmann, 2014-2024
+devemux86, 2024-2025 Sublimis a další přispěvatelé (podle hlaviček
+zdrojových souborů v přibalené verzi 0.25.0).
 
 Zdrojový kód knihoven pod GPL a LGPL v přibalených verzích:
   SQLJet:  https://repo1.maven.org/maven2/org/tmatesoft/sqljet/sqljet/1.1.15/sqljet-1.1.15-sources.jar

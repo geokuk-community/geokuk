@@ -16,8 +16,9 @@
   vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR
   a SK) se kreslí naráz, mapu zkopírovanou do složky za běhu program sám
   načte; dokud se kopíruje, kreslí se ostatní mapy. Vykreslené dlaždice se
-  ukládají do cache dlaždic; po výměně mapy nebo tématu v ní zůstávají jen
-  tři poslední kombinace.
+  ukládají do cache dlaždic; po změně mapy, tématu, ostrosti nebo písma v ní
+  zůstávají jen tři poslední kombinace. Klávesu V teď používá Offline mapa;
+  uživatelskou mapu se zkratkou V přenastavte.
 - Zip s programem obsahuje v `data/offline-mapy` přehledovou mapu světa
   z dat Natural Earth (pevnina, moře, státní hranice, české názvy států),
   takže offline mapa ukáže celý svět i bez stažených map. Přenosný GeoKuk
@@ -38,11 +39,9 @@
   asi o čtvrtinu rychleji.
 - Posun a změna měřítka offline mapy nečekají, až se na pozadí otevře mapa
   nebo načte téma.
-- Offline mapa se vykresluje ve více vláknech podle počtu jader, mapu
-  i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
+- Offline mapa se vykresluje ve více vláknech (až 6 naráz podle počtu jader),
+  mapu i téma otevírá předem na pozadí a vykreslené symboly tématu si ukládá,
   takže další spuštění otevře mapu i s velkým tématem během zlomku sekundy.
-- Offline mapu kreslí až 6 vláken naráz, na počítači s více jádry je
-  první zobrazení rychlejší.
 - Vykreslená dlaždice offline mapy se zobrazí hned; do cache se převádí
   a ukládá až na pozadí.
 - Offline mapa po zobrazení celé obrazovky na pozadí předvykreslí dlaždice
