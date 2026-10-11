@@ -69,6 +69,7 @@ GeoKuk
     ├── mapy                     uživatelské mapy, co mapa to soubor *.mapa
     ├── mapy-priklady            ukázky uživatelských map
     ├── cache                    dlaždice map, lze smazat
+    ├── offline-mapy             mapy .map pro podklad Offline mapa
     ├── gpx                      výchozí složka pro keše z GPX
     ├── cesty
     ├── ikony                    vlastní ikony (moje) a od jiných (ostatni)
@@ -142,7 +143,10 @@ takže offline mapa ukáže celý svět i bez stažených map. Je vytvořená
 z dat Natural Earth, která jsou volným dílem (public domain); Made with
 Natural Earth, [naturalearthdata.com](https://www.naturalearthdata.com/).
 Soubor můžete smazat, program funguje i bez něj a znovu ho nepřidá;
-jinak ho aktualizace programu udržuje v aktuální verzi.
+jinak ho aktualizace programu udržuje v aktuální verzi. Přehledová mapa je
+jen ve výchozí složce `data/offline-mapy` a jen v zipu s programem; ve
+vlastní složce offline map nebo u samotného `geokuk.jar` ji nemáte,
+soubor `prehled-svet-ne.map` lze zkopírovat ze zipu.
 
 Vzhled mapy se volí v Mapy > Téma offline mapy. Vestavěná témata jsou
 součástí programu. Jiné téma (soubor `.zip` nebo `.xml`, například paws
