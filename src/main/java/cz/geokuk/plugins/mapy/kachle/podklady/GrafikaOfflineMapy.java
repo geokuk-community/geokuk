@@ -7,6 +7,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -165,15 +167,35 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 		}
 		final NodeList prvky = dokument.getElementsByTagName("*");
 		for (int i = 0; i < prvky.getLength(); i++) {
-			final NamedNodeMap atributy = prvky.item(i).getAttributes();
+			final Node prvek = prvky.item(i);
+			if ("style".equals(prvek.getLocalName() != null ? prvek.getLocalName() : prvek.getNodeName())) {
+				zkontrolujUrl(prvek.getTextContent());
+			}
+			final NamedNodeMap atributy = prvek.getAttributes();
 			for (int j = 0; j < atributy.getLength(); j++) {
 				final Node a = atributy.item(j);
 				final String jmeno = a.getLocalName() != null ? a.getLocalName() : a.getNodeName();
-				final String hodnota = a.getNodeValue().trim();
-				if (jmeno.endsWith("href") && !hodnota.startsWith("#") && !hodnota.regionMatches(true, 0, "data:", 0, 5)) {
-					throw new IOException("Symbol tématu odkazuje mimo sebe: " + hodnota);
+				if (jmeno.endsWith("href")) {
+					zkontrolujCil(a.getNodeValue());
 				}
+				zkontrolujUrl(a.getNodeValue());
 			}
+		}
+	}
+
+	private static final Pattern URL = Pattern.compile("url\\(([^)]*)", Pattern.CASE_INSENSITIVE);
+
+	private static void zkontrolujUrl(final String text) throws IOException {
+		final Matcher m = URL.matcher(text);
+		while (m.find()) {
+			zkontrolujCil(m.group(1).replaceAll("[\\s'\"]", ""));
+		}
+	}
+
+	private static void zkontrolujCil(final String cil) throws IOException {
+		final String c = cil.trim();
+		if (!c.startsWith("#") && !c.regionMatches(true, 0, "data:", 0, 5)) {
+			throw new IOException("Symbol tématu odkazuje mimo sebe: " + c);
 		}
 	}
 

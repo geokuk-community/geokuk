@@ -66,6 +66,11 @@ public class SymbolTematuOdkazyTest {
 		odmitne(SVG + "<image href=\"" + adresa + "/svg2.png\" width=\"20\" height=\"20\"/></svg>");
 		odmitne(SVG + "<image xlink:href=\"&#104;ttp" + adresa.substring(4) + "/entita.png\" width=\"20\" height=\"20\"/></svg>");
 		odmitne(SVG + "<image xlink:href=\"obrazek.png\" width=\"20\" height=\"20\"/></svg>");
+		odmitne(SVG + "<rect width=\"20\" height=\"20\" fill=\"url(" + adresa + "/fill.svg#g)\"/></svg>");
+		odmitne(SVG + "<rect width=\"20\" height=\"20\" style=\"fill:url( '" + adresa + "/style.svg#g' )\"/></svg>");
+		odmitne(SVG + "<rect width=\"20\" height=\"20\" clip-path=\"URL(" + adresa + "/clip.svg#c)\"/></svg>");
+		odmitne(SVG + "<rect width=\"20\" height=\"20\" filter=\"url(" + adresa + "/filter.svg#f)\"/></svg>");
+		odmitne(SVG + "<style>rect{fill:url(\"" + adresa + "/css.svg#g\")}</style><rect width=\"20\" height=\"20\"/></svg>");
 		Assert.assertEquals("požadavky na server", 0, pozadavku.get());
 	}
 
@@ -97,8 +102,8 @@ public class SymbolTematuOdkazyTest {
 
 	@Test
 	public void odkazDovnitrADataFunguji() throws Exception {
-		vykresli(SVG + "<defs><circle id=\"k\" cx=\"10\" cy=\"10\" r=\"8\" fill=\"#C08000\"/></defs><use xlink:href=\"#k\"/>" + "<image xlink:href=\"" + PNG
-				+ "\" width=\"20\" height=\"20\"/></svg>");
+		vykresli(SVG + "<defs><circle id=\"k\" cx=\"10\" cy=\"10\" r=\"8\" fill=\"#C08000\"/><linearGradient id=\"g\"><stop offset=\"0\" stop-color=\"red\"/><stop offset=\"1\" stop-color=\"blue\"/></linearGradient></defs>"
+				+ "<use xlink:href=\"#k\"/><rect width=\"5\" height=\"5\" fill=\"url(#g)\" style=\"stroke:url( '#g' )\"/><image xlink:href=\"" + PNG + "\" width=\"20\" height=\"20\"/></svg>");
 		Assert.assertEquals(0, pozadavku.get());
 	}
 }
