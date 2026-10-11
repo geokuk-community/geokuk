@@ -192,6 +192,9 @@ public class OfflineMapy {
 			} catch (final IOException e) {
 				chyba = e;
 				log.warn("Offline mapu nejde otevřít: {}", e.getMessage());
+			} catch (final RuntimeException | OutOfMemoryError e) {
+				chyba = new OfflineMapaChyba("Offline mapu nejde otevřít: " + e, "mapu nejde otevřít", e);
+				log.warn("Offline mapu nejde otevřít", e);
 			}
 		}
 		if (zneplatnit) {

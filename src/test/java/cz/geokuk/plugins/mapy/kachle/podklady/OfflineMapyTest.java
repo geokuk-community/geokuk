@@ -176,12 +176,35 @@ public class OfflineMapyTest {
 		final String puvodni = klic();
 		final File mapa = new File(slozka, "kukov.map");
 		Assert.assertTrue(mapa.setLastModified(mapa.lastModified() - 60_000));
-		Assert.assertEquals("stejná mapa zkopírovaná znovu", puvodni, klic());
+		Assert.assertNotEquals("mapa přepsaná na místě se stejnou délkou a hlavičkou", puvodni, klic());
 		zkopirujMapu(slozka, "druha.map");
 		final String dveMapy = klic();
 		Assert.assertNotEquals(puvodni, dveMapy);
 		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
 		Assert.assertNotEquals(dveMapy, klic());
+	}
+
+	/** Chyba při otevírání (i nedostatek paměti na symboly tématu) se ukáže na dlaždicích, kreslení nespadne na null. */
+	@Test
+	public void chybaPriOtevreniJeChybaMapy() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final File symboly = tmp.newFolder("symboly");
+		try (DataOutputStream out = new DataOutputStream(new java.util.zip.GZIPOutputStream(new FileOutputStream(OfflineRenderer.souborSymbolu(symboly, TemaOfflineMapy.VYCHOZI))))) {
+			out.writeInt(1);
+			out.writeInt(1);
+			out.writeUTF("obri");
+			out.writeInt(46_000);
+			out.writeInt(46_000);
+		}
+		mapy.setSlozkaSymbolu(symboly);
+		for (int i = 0; i < 2; i++) {
+			try {
+				mapy.pouzij().skonci();
+				Assert.fail("mapa se otevřela");
+			} catch (final OfflineMapaChyba e) {
+				Assert.assertEquals("mapu nejde otevřít", e.getKratce());
+			}
+		}
 	}
 
 	/** Načtení velkého tématu trvá sekundy, nová mapa ve složce ho nesmí načítat znovu. */

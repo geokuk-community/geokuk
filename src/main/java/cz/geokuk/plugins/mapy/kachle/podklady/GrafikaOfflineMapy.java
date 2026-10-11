@@ -10,6 +10,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.mapsforge.core.graphics.*;
 import org.mapsforge.core.mapelements.PointTextContainer;
 import org.mapsforge.core.mapelements.SymbolContainer;
@@ -18,6 +22,8 @@ import org.mapsforge.core.model.Point;
 import org.mapsforge.map.awt.graphics.AwtBitmap;
 import org.mapsforge.map.awt.graphics.AwtGraphicFactory;
 import org.mapsforge.map.awt.graphics.AwtPaintSPameti;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -122,11 +128,53 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 		final String klic = hash + "/" + scaleFactor + "/" + width + "/" + height + "/" + percent;
 		BufferedImage obrazek = svg.get(klic);
 		if (obrazek == null) {
-			obrazek = AwtGraphicFactory.getBitmap(AWT.renderSvg(inputStream, scaleFactor, width, height, percent, hash));
+			final byte[] data = precti(inputStream);
+			zkontrolujOdkazy(data);
+			obrazek = AwtGraphicFactory.getBitmap(AWT.renderSvg(new ByteArrayInputStream(data), scaleFactor, width, height, percent, hash));
 			svg.put(klic, obrazek);
 			pribylo.set(true);
 		}
 		return new SdilenySymbol(obrazek);
+	}
+
+	private static byte[] precti(final InputStream in) throws IOException {
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		final byte[] buf = new byte[8192];
+		for (int n = in.read(buf); n >= 0; n = in.read(buf)) {
+			out.write(buf, 0, n);
+		}
+		return out.toByteArray();
+	}
+
+	/** Symbol z tématu od kohokoli nesmí nic načítat zvenku (adresa uživatele, sítě v LAN); povolené jsou jen odkazy dovnitř souboru a data:. */
+	static void zkontrolujOdkazy(final byte[] data) throws IOException {
+		final boolean gzip = data.length > 1 && (data[0] & 0xff) == 0x1f && (data[1] & 0xff) == 0x8b;
+		final Document dokument;
+		try (InputStream in = gzip ? new GZIPInputStream(new ByteArrayInputStream(data)) : new ByteArrayInputStream(data)) {
+			final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			dbf.setNamespaceAware(true);
+			dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			dbf.setXIncludeAware(false);
+			dbf.setExpandEntityReferences(false);
+			dokument = dbf.newDocumentBuilder().parse(in);
+		} catch (final ParserConfigurationException | SAXException e) {
+			throw new IOException("Symbol tématu nejde přečíst: " + e.getMessage(), e);
+		}
+		final NodeList prvky = dokument.getElementsByTagName("*");
+		for (int i = 0; i < prvky.getLength(); i++) {
+			final NamedNodeMap atributy = prvky.item(i).getAttributes();
+			for (int j = 0; j < atributy.getLength(); j++) {
+				final Node a = atributy.item(j);
+				final String jmeno = a.getLocalName() != null ? a.getLocalName() : a.getNodeName();
+				final String hodnota = a.getNodeValue().trim();
+				if (jmeno.endsWith("href") && !hodnota.startsWith("#") && !hodnota.regionMatches(true, 0, "data:", 0, 5)) {
+					throw new IOException("Symbol tématu odkazuje mimo sebe: " + hodnota);
+				}
+			}
+		}
 	}
 
 	@Override

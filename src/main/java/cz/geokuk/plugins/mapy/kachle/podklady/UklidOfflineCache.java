@@ -32,14 +32,7 @@ final class UklidOfflineCache {
 		final Path soubor = slozka.toPath().resolve(SOUBOR);
 		final LinkedHashMap<String, String> klice = new LinkedHashMap<>();
 		klice.put(klic, symboly.getName());
-		if (Files.isRegularFile(soubor)) {
-			for (final String radek : Files.readAllLines(soubor, StandardCharsets.UTF_8)) {
-				final String[] casti = radek.split(" ");
-				if (klice.size() < PONECHAT && casti.length == 2 && KLIC.matcher(casti[0]).matches()) {
-					klice.putIfAbsent(casti[0], casti[1]);
-				}
-			}
-		}
+		nacti(soubor, klice);
 		final List<String> radky = new ArrayList<>();
 		for (final Map.Entry<String, String> e : klice.entrySet()) {
 			radky.add(e.getKey() + ' ' + e.getValue());
@@ -56,5 +49,23 @@ final class UklidOfflineCache {
 			}
 		}
 		return klice.keySet();
+	}
+
+	/** Klíče, jejichž dlaždice v cache zůstávají podle posledního zápisu. */
+	static Set<String> ponechane(final File slozka) throws IOException {
+		final LinkedHashMap<String, String> klice = new LinkedHashMap<>();
+		nacti(slozka.toPath().resolve(SOUBOR), klice);
+		return klice.keySet();
+	}
+
+	private static void nacti(final Path soubor, final LinkedHashMap<String, String> klice) throws IOException {
+		if (Files.isRegularFile(soubor)) {
+			for (final String radek : Files.readAllLines(soubor, StandardCharsets.UTF_8)) {
+				final String[] casti = radek.split(" ");
+				if (klice.size() < PONECHAT && casti.length == 2 && KLIC.matcher(casti[0]).matches()) {
+					klice.putIfAbsent(casti[0], casti[1]);
+				}
+			}
+		}
 	}
 }

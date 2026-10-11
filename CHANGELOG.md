@@ -28,6 +28,8 @@
   map). Atribuce v mapě uvádí i použité téma. Složku offline map lze změnit
   v Soubor > Umístění souborů na kartě Mapy. Složku `data/offline-mapy`
   program při startu založí.
+- Symboly v tématech offline mapy nenačítají nic z internetu ani z místní
+  sítě; symbol, který odkazuje mimo téma, se nevykreslí.
 - Soubor > Zobrazení programu, rámeček Mapa: offline mapa Ostrá, nebo
   Rychlejší (dlaždice v menším rozlišení zvětší systém), a velikost písma
   a ikon na mapě 80–150 %. Změna se projeví hned.
