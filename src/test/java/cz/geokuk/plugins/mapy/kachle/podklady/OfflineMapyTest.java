@@ -189,7 +189,7 @@ public class OfflineMapyTest {
 	public void chybaPriOtevreniJeChybaMapy() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
 		final File symboly = tmp.newFolder("symboly");
-		try (DataOutputStream out = new DataOutputStream(new java.util.zip.GZIPOutputStream(new FileOutputStream(OfflineRenderer.souborSymbolu(symboly, TemaOfflineMapy.VYCHOZI))))) {
+		try (FileOutputStream fos = new FileOutputStream(OfflineRenderer.souborSymbolu(symboly, TemaOfflineMapy.VYCHOZI)); DataOutputStream out = new DataOutputStream(new java.util.zip.GZIPOutputStream(fos))) {
 			out.writeInt(1);
 			out.writeInt(1);
 			out.writeUTF("obri");

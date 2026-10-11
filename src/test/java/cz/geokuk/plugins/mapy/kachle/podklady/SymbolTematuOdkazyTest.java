@@ -75,7 +75,7 @@ public class SymbolTematuOdkazyTest {
 		final File slozka = tmp.newFolder("mapy");
 		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
 		final File zip = new File(tmp.getRoot(), "pivo.zip");
-		try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+		try (FileOutputStream fos = new FileOutputStream(zip); ZipOutputStream out = new ZipOutputStream(fos)) {
 			out.putNextEntry(new ZipEntry("pivo.xml"));
 			out.write(("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rendertheme xmlns=\"http://mapsforge.org/renderTheme\" version=\"5\" map-background=\"#FFFFFF\">"
 					+ "<rule e=\"node\" k=\"amenity\" v=\"pub\"><symbol src=\"file:pivo.svg\" symbol-width=\"40\"/></rule></rendertheme>").getBytes(StandardCharsets.UTF_8));
