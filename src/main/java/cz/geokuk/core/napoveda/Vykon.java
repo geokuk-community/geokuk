@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -328,8 +329,13 @@ public final class Vykon {
 		return String.format(Locale.ROOT, "Zásek EDT %.0f ms: %s%s", trvaniNs / 1e6, event.getClass().getSimpleName(), zdroj == null ? "" : " (" + zdroj.getClass().getSimpleName() + ")");
 	}
 
-	/** Začne měřit události na EDT. */
+	private static final AtomicBoolean MERI_EDT = new AtomicBoolean();
+
+	/** Začne měřit události na EDT; další volání už nic nedělá. */
 	public static void merEdt() {
+		if (!MERI_EDT.compareAndSet(false, true)) {
+			return;
+		}
 		final MericiFronta fronta = new MericiFronta();
 		Toolkit.getDefaultToolkit().getSystemEventQueue().push(fronta);
 		fronta.spustHlidace();
