@@ -67,7 +67,7 @@ public class OziMapaSouborTest {
 			final List<int[]> body = kalibracniBodyXy(mapa(COORD, pocet));
 			Assert.assertEquals(pocet, body.size());
 			final int strana = (int) Math.sqrt(pocet);
-			final Set<Integer> xs = new TreeSet<>();
+			final TreeSet<Integer> xs = new TreeSet<>();
 			final Set<Integer> ys = new TreeSet<>();
 			for (final int[] b : body) {
 				xs.add(b[0]);
@@ -76,8 +76,8 @@ public class OziMapaSouborTest {
 			}
 			Assert.assertEquals(strana, xs.size());
 			Assert.assertEquals(strana, ys.size());
-			Assert.assertEquals(0, (int) ((TreeSet<Integer>) xs).first());
-			Assert.assertEquals(COORD.getWidth(), (int) ((TreeSet<Integer>) xs).last());
+			Assert.assertEquals(0, (int) xs.first());
+			Assert.assertEquals(COORD.getWidth(), (int) xs.last());
 		}
 	}
 

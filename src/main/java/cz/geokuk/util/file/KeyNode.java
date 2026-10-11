@@ -40,14 +40,7 @@ public class KeyNode<K, D> {
 		} else if (!data.equals(other.data)) {
 			return false;
 		}
-		if (items == null) {
-			if (other.items != null) {
-				return false;
-			}
-		} else if (!items.equals(other.items)) {
-			return false;
-		}
-		return true;
+		return items.equals(other.items);
 	}
 
 	public D getData() {
@@ -77,7 +70,7 @@ public class KeyNode<K, D> {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (data == null ? 0 : data.hashCode());
-		result = prime * result + (items == null ? 0 : items.hashCode());
+		result = prime * result + items.hashCode();
 		return result;
 	}
 

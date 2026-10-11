@@ -91,7 +91,7 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 		final List<Pocitadlo> pocitadla = new ArrayList<>(SpravcePocitadel.getPocitadla());
 		// initComponents();
 		// pack();
-		if (hodmap == null || pocitadla.size() != hodmap.size()) {
+		if (pocitadla.size() != hodmap.size()) {
 			// System.out.println("NEsouhlasi pocet pocitadel a hodnot: " + pocitadla.size() + " == " + hodmap.size());
 			initComponents(pocitadla);
 			pack();

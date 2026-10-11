@@ -121,11 +121,12 @@ public final class FExceptionDumper {
 			if (url == null) {
 				return null;
 			}
-			final InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream());
-			final StringWriter writer = new StringWriter();
-			final TPumpReaderToWriter pumpa = new TPumpReaderToWriter(reader, writer);
-			pumpa.run(); // spustit synchronně
-			return writer.toString();
+			try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream())) {
+				final StringWriter writer = new StringWriter();
+				final TPumpReaderToWriter pumpa = new TPumpReaderToWriter(reader, writer);
+				pumpa.run(); // spustit synchronně
+				return writer.toString();
+			}
 		} catch (final IOException e) {
 			FThrowable.printStackTrace(e, System.err, "errorEceptionDumping");
 			throw new RuntimeException(e);

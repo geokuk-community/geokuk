@@ -57,14 +57,12 @@ public class KachleModel extends Model0 {
 	 */
 	public KachleModel() {
 		kachleManager = KachleManagerFactory.getInstance(getKachleCacheFolderHolder());
-		assert kachleCacheFolderHolder != null;
 	}
 
 	/**
 	 * @return the kachleCacheFolderHolder
 	 */
 	public KachleCacheFolderHolder getKachleCacheFolderHolder() {
-		assert kachleCacheFolderHolder != null;
 		return kachleCacheFolderHolder;
 	}
 

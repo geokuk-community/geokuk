@@ -583,8 +583,7 @@ public class KachleDBManagerTest {
 		Assert.assertNotNull(manager.load(kachle(1)));
 		final Process jiny = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
 				ZamekJinehoProgramu.class.getName(), soubor.getPath()).redirectErrorStream(true).start();
-		try {
-			final java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(jiny.getInputStream(), StandardCharsets.UTF_8));
+		try (java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(jiny.getInputStream(), StandardCharsets.UTF_8))) {
 			for (String radek = vystup.readLine(); !"zamceno".equals(radek); radek = vystup.readLine()) {
 				Assert.assertNotNull("druhý program skončil bez zámku", radek);
 			}

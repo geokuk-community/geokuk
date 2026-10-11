@@ -104,17 +104,18 @@ public class KachloDownloader {
 			conn.disconnect();
 			throw new ChybaServeru(kod, conn.getResponseMessage());
 		}
-		final DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream(), TIMEOUT_CELKEM);
 		final Image img;
-		try (InputStream stm = new BufferedInputStream(dhis)) {
+		final byte[] data;
+		try (DataHoldingInputStream dhis = new DataHoldingInputStream(conn.getInputStream(), TIMEOUT_CELKEM); InputStream stm = new BufferedInputStream(dhis)) {
 			img = precti(stm);
 			if (img == null) {
 				throw new IOException("Server místo obrázku poslal něco jiného, třeba přihlašovací stránku Wi-Fi.");
 			}
 			docti(stm);
+			data = dhis.getData();
 		}
-		zkontrolujUplnost(conn, dhis.getData());
-		final ImageWithData imda = new ImageWithData(img, dhis.getData());
+		zkontrolujUplnost(conn, data);
+		final ImageWithData imda = new ImageWithData(img, data);
 		pocitDownloadleDlazdice.inc();
 		log.debug("Loaded {} bytes", imda.getData().length);
 

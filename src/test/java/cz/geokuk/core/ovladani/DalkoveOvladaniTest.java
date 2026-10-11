@@ -153,8 +153,9 @@ public class DalkoveOvladaniTest {
 			os.write(("GET " + cesta + " HTTP/1.1\r\nHost: " + host + "\r\n" + (autorizace == null ? "" : "Authorization: " + autorizace + "\r\n")
 					+ (origin == null ? "" : "Origin: " + origin + "\r\n") + "Connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
 			os.flush();
-			final String radek = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.US_ASCII)).readLine();
-			return Integer.parseInt(radek.split(" ")[1]);
+			try (BufferedReader rdr = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.US_ASCII))) {
+				return Integer.parseInt(rdr.readLine().split(" ")[1]);
+			}
 		}
 	}
 

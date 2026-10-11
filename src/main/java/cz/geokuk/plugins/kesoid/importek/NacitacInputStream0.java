@@ -14,7 +14,7 @@ public abstract class NacitacInputStream0 extends Nacitac0 {
 		if (!umiNacist(file)) {
 			throw new IllegalArgumentException("Cannot load file " + file);
 		}
-		try (InputStream istm = wrapByProgressor(new FileInputStream(file), file.toString(), progressModel)) {
+		try (FileInputStream fis = new FileInputStream(file); InputStream istm = wrapByProgressor(fis, file.toString(), progressModel)) {
 			nacti(istm, file.toString(), builder, future);
 		}
 	}

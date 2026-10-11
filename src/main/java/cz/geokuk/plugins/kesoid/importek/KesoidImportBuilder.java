@@ -378,11 +378,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		if (gpxwpt.ele != 0) {
 			return (int) gpxwpt.ele;
 		} else {
-			if (gpxwpt.gpxg != null) {
-				return gpxwpt.gpxg.elevation;
-			} else {
-				return 0;
-			}
+			return gpxwpt.gpxg.elevation;
 		}
 	}
 
