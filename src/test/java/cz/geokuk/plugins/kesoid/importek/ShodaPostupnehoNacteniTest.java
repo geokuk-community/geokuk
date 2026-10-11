@@ -513,12 +513,12 @@ public class ShodaPostupnehoNacteniTest {
 			}
 
 			@Override
-			public Set<String> getCasyDatZdroju() {
+			public synchronized Set<String> getCasyDatZdroju() {
 				return nastaveniCasu;
 			}
 
 			@Override
-			public void setCasyDatZdroju(final Set<String> zaznamy) {
+			public synchronized void setCasyDatZdroju(final Set<String> zaznamy) {
 				nastaveniCasu = new LinkedHashSet<>(zaznamy);
 				zapisuCasu++;
 			}

@@ -41,7 +41,7 @@ public class MerKesoidy {
 				continue;
 			}
 			for (final String s : arg.split(",")) {
-				mer(ikony, druh.equals("ikony"), Integer.parseInt(s.trim()));
+				mer(ikony, "ikony".equals(druh), Integer.parseInt(s.trim()));
 			}
 		}
 	}

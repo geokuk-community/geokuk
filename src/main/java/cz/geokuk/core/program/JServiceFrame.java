@@ -51,10 +51,10 @@ public class JServiceFrame extends JMyDialog0 implements Pocitadlo.Callback {
 				@Override
 				public void run() {
 					try {
-						Thread.sleep(ii * 1000);
+						Thread.sleep(ii * 1000L);
 						for (;;) {
 							po.add(ii);
-							Thread.sleep((ii + 5) * 100);
+							Thread.sleep((ii + 5) * 100L);
 						}
 					} catch (final InterruptedException e) {
 						throw new RuntimeException(e);

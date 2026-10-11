@@ -100,7 +100,8 @@ public class PredvykresleniOkoliTest {
 		final List<Ka> okoli = PredvykresleniOkoli.okoli(k, EKaType.OFFLINE_MF, d.width, d.height);
 		final int px = k.getPocetKachliX();
 		final int py = k.getPocetKachliY();
-		Assert.assertEquals((px + 2) * (py + 2) - px * py, okoli.size());
+		final int okraj = (px + 2) * (py + 2) - px * py;
+		Assert.assertEquals(okraj, okoli.size());
 		final Set<KaLoc> jedinecne = new HashSet<>();
 		for (final Ka ka : okoli) {
 			Assert.assertFalse(vyrez.contains(ka.getLoc()));
