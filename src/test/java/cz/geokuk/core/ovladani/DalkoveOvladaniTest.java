@@ -154,7 +154,12 @@ public class DalkoveOvladaniTest {
 					+ (origin == null ? "" : "Origin: " + origin + "\r\n") + "Connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
 			os.flush();
 			try (BufferedReader rdr = new BufferedReader(new InputStreamReader(s.getInputStream(), StandardCharsets.US_ASCII))) {
-				return Integer.parseInt(rdr.readLine().split(" ")[1]);
+				final String radek = rdr.readLine();
+				try {
+					return Integer.parseInt(radek.split(" ")[1]);
+				} catch (final NumberFormatException e) {
+					throw new AssertionError("Odpověď bez stavového kódu: " + radek, e);
+				}
 			}
 		}
 	}

@@ -6,7 +6,6 @@ import java.util.*;
 
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.program.UmisteniProgramu;
-import cz.geokuk.util.file.TPumpReaderToWriter;
 import cz.geokuk.util.lang.FThrowable;
 import cz.geokuk.util.lang.StringUtils;
 
@@ -123,8 +122,10 @@ public final class FExceptionDumper {
 			}
 			try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream())) {
 				final StringWriter writer = new StringWriter();
-				final TPumpReaderToWriter pumpa = new TPumpReaderToWriter(reader, writer);
-				pumpa.run(); // spustit synchronně
+				final char[] buf = new char[4096];
+				for (int len = reader.read(buf); len > 0; len = reader.read(buf)) {
+					writer.write(buf, 0, len);
+				}
 				return writer.toString();
 			}
 		} catch (final IOException e) {
