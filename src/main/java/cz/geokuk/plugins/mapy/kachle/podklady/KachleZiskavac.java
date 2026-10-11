@@ -547,9 +547,13 @@ public class KachleZiskavac {
 		}
 	}
 
-	private void uklidOfflineCache(final String klic, final File symboly) {
+	void uklidOfflineCache(final String klic, final File symboly) {
 		try {
+			final Set<String> pred = UklidOfflineCache.ponechane(symboly.getParentFile());
 			final Set<String> ponechat = UklidOfflineCache.zaznamenej(symboly.getParentFile(), klic, symboly);
+			if (ponechat.equals(pred)) {
+				return; // dlaždice jiných klíčů smazal už dřívější úklid
+			}
 			final KachleManager km = kachleManager;
 			final int smazano = km == null ? 0 : km.smazOfflineKrome(ponechat);
 			log.info("Úklid cache offline mapy: zůstávají klíče {}, smazáno {} dlaždic", ponechat, smazano);

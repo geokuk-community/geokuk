@@ -125,7 +125,7 @@ final class OfflineRenderer {
 					continue;
 				}
 				data.addMapDataStore(mapFile, false, false);
-				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
+				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(f.lastModified()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
 			}
 			if (otisk.length() == 0) {
 				throw prvniChyba;

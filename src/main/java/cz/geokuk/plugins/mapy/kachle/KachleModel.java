@@ -147,9 +147,9 @@ public class KachleModel extends Model0 {
 		return u;
 	}
 
-	/** Měřítko displeje, na kterém je mapa; offline mapa podle něj kreslí dlaždice s víc pixely. */
+	/** Měřítko displeje, na kterém je mapa; ostrá offline mapa podle něj kreslí dlaždice s víc pixely, rychlejší vždy po 256 px. */
 	public void setMeritkoDispleje(final double meritko) {
-		ziskavac.getOfflineMapy().nastavMeritko(meritko);
+		ziskavac.getOfflineMapy().nastavMeritko(isOfflineMapaOstra() ? meritko : 1);
 	}
 
 	/** Ostrost: dlaždice offline mapy podle zvětšení systému, nebo bez něj (rychlejší, mapu zvětší systém). */
@@ -175,7 +175,7 @@ public class KachleModel extends Model0 {
 	}
 
 	private void nastavVzhledOfflineMapy() {
-		setMeritkoDispleje(isOfflineMapaOstra() ? meritkoVychoziObrazovky() : 1);
+		setMeritkoDispleje(meritkoVychoziObrazovky());
 		ziskavac.getOfflineMapy().nastavPismo(getOfflineMapaPismoProcent() / 100.0);
 	}
 
