@@ -52,7 +52,7 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 	}
 
 	private void nacti() throws IOException {
-		try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new FileInputStream(soubor))))) {
+		try (FileInputStream proud = new FileInputStream(soubor); DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(proud)))) {
 			if (in.readInt() != VERZE_SOUBORU) {
 				return;
 			}
@@ -84,7 +84,7 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 		try {
 			Files.createDirectories(soubor.getParentFile().toPath());
 			final File docasny = new File(soubor.getPath() + ".tmp");
-			try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(docasny))))) {
+			try (FileOutputStream proud = new FileOutputStream(docasny); DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(proud)))) {
 				final Map<String, BufferedImage> kopie = new java.util.HashMap<>(svg);
 				out.writeInt(VERZE_SOUBORU);
 				out.writeInt(kopie.size());
