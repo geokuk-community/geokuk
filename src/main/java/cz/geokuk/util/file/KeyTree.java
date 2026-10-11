@@ -33,14 +33,7 @@ public class KeyTree<K, D> {
 		}
 		@SuppressWarnings({ "rawtypes" })
 		final KeyTree other = (KeyTree) obj;
-		if (root == null) {
-			if (other.root != null) {
-				return false;
-			}
-		} else if (!root.equals(other.root)) {
-			return false;
-		}
-		return true;
+		return root.equals(other.root);
 	}
 
 	public KeyNode<K, D> getRoot() {
@@ -56,7 +49,7 @@ public class KeyTree<K, D> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (root == null ? 0 : root.hashCode());
+		result = prime * result + root.hashCode();
 		return result;
 	}
 

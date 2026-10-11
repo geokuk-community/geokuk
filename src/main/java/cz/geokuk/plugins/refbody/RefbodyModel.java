@@ -77,7 +77,7 @@ public class RefbodyModel extends Model0 {
 		try {
 			if (file.canRead()) {
 				// TODO prozkoumat, zda opravdu geogetí data jsou v tomto kódování
-				try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "CP1250"))) {
+				try (FileInputStream fis = new FileInputStream(file); BufferedReader br = new BufferedReader(new InputStreamReader(fis, "CP1250"))) {
 					String line;
 					while ((line = br.readLine()) != null) {
 						final String[] aa = line.split(" +", 3);

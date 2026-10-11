@@ -61,11 +61,7 @@ public class GpxWpt {
 		if (ele != 0) {
 			return (int) ele;
 		} else {
-			if (gpxg != null) {
-				return gpxg.elevation;
-			} else {
-				return 0;
-			}
+			return gpxg.elevation;
 		}
 	}
 }

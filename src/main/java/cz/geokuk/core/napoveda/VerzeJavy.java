@@ -32,7 +32,9 @@ public final class VerzeJavy {
 		final Properties p = new Properties();
 		try (InputStream in = VerzeJavy.class.getResourceAsStream("/" + SOUBOR)) {
 			if (in != null) {
-				p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+				try (Reader rdr = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+					p.load(rdr);
+				}
 			}
 		} catch (final IOException e) {
 			// bez souboru se nic neporovnává

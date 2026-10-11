@@ -97,7 +97,7 @@ public class WgsParser {
 		}
 
 		private Character extrahujJedinePovolenePismeno(final String s) {
-			Character pismeno = ' '; // to znamená žádné písmeno tam nebylo
+			char pismeno = ' '; // to znamená žádné písmeno tam nebylo
 			for (int i = 0; i < s.length(); i++) {
 				if (Character.isLetter(s.charAt(i)) || s.charAt(i) == '-') {
 					if (pismeno != ' ' && pismeno != s.charAt(i)) {

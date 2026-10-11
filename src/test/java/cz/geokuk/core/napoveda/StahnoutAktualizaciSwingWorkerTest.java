@@ -241,7 +241,7 @@ public class StahnoutAktualizaciSwingWorkerTest {
 		final java.util.jar.Manifest manifest = new java.util.jar.Manifest();
 		manifest.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
 		manifest.getMainAttributes().putValue("Geokuk-Version", "9.9.9");
-		try (java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(new FileOutputStream(new File(instalace, "geokuk.jar.new")), manifest)) {
+		try (FileOutputStream fos = new FileOutputStream(new File(instalace, "geokuk.jar.new")); java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(fos, manifest)) {
 			out.flush();
 		}
 		Assert.assertTrue(StahnoutAktualizaciSwingWorker.uzStazena(instalace, "9.9.9"));

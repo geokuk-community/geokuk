@@ -266,7 +266,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	public void writeStringToFile(final File aFile, final String aString, final String aEncoding) throws IOException {
-		try (Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile), aEncoding))) {
+		try (FileOutputStream fos = new FileOutputStream(aFile); Writer wrt = new BufferedWriter(new OutputStreamWriter(fos, aEncoding))) {
 			// System.out.p rintln(">>>>>>>>"+aString+"<<<<<<<<");
 			wrt.write(aString);
 		}

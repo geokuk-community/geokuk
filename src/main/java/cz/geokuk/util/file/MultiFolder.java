@@ -92,14 +92,7 @@ public class MultiFolder {
 			return false;
 		}
 		final MultiFolder other = (MultiFolder) obj;
-		if (tree == null) {
-			if (other.tree != null) {
-				return false;
-			}
-		} else if (!tree.equals(other.tree)) {
-			return false;
-		}
-		return true;
+		return tree.equals(other.tree);
 	}
 
 	public KeyNode<String, LamUrl> getNode(final String key) {
@@ -116,7 +109,7 @@ public class MultiFolder {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (tree == null ? 0 : tree.hashCode());
+		result = prime * result + tree.hashCode();
 		return result;
 	}
 

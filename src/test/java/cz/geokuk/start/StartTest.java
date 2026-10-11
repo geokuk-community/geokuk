@@ -188,8 +188,7 @@ public class StartTest {
 		final File soubor = new File(tmp.newFolder("data-p"), Start.ZAMEK);
 		final Process p = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
 				DruhaInstance.class.getName(), soubor.getPath()).redirectError(ProcessBuilder.Redirect.INHERIT).start();
-		try {
-			final BufferedReader vystup = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
+		try (BufferedReader vystup = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
 			Assert.assertEquals("zamceno", vystup.readLine());
 			Assert.assertTrue(Start.jeZamceno(soubor));
 			Assert.assertNull("Druhá instance zámek nedostane", Start.zamkni(soubor));
@@ -312,7 +311,7 @@ public class StartTest {
 		final java.util.jar.Manifest m = new java.util.jar.Manifest();
 		m.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
 		m.getMainAttributes().put(java.util.jar.Attributes.Name.MAIN_CLASS, "cz.geokuk.Hlavni");
-		try (java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(new java.io.FileOutputStream(f), m)) {
+		try (java.io.FileOutputStream fos = new java.io.FileOutputStream(f); java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(fos, m)) {
 			out.putNextEntry(new java.util.zip.ZipEntry("a.txt"));
 			out.write(1);
 		}

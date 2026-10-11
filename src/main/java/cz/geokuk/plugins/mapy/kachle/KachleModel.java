@@ -44,8 +44,6 @@ public class KachleModel extends Model0 {
 
 	private final KachleCacheFolderHolder kachleCacheFolderHolder = new KachleCacheFolderHolder();
 
-	public KachloDownloader kachloDownloader;
-
 	private Object umisteniSouboru;
 
 	private KachleZiskavac ziskavac;
@@ -57,14 +55,12 @@ public class KachleModel extends Model0 {
 	 */
 	public KachleModel() {
 		kachleManager = KachleManagerFactory.getInstance(getKachleCacheFolderHolder());
-		assert kachleCacheFolderHolder != null;
 	}
 
 	/**
 	 * @return the kachleCacheFolderHolder
 	 */
 	public KachleCacheFolderHolder getKachleCacheFolderHolder() {
-		assert kachleCacheFolderHolder != null;
 		return kachleCacheFolderHolder;
 	}
 
@@ -75,10 +71,6 @@ public class KachleModel extends Model0 {
 	public void inject(final KachleZiskavac kachleZiskavac) {
 		ziskavac = kachleZiskavac;
 		ziskavac.setKachleManager(kachleManager);
-	}
-
-	public void inject(final KachloDownloader kachloDownloader) {
-		this.kachloDownloader = kachloDownloader;
 	}
 
 	/**

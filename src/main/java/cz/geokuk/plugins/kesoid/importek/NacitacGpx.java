@@ -396,8 +396,8 @@ public class NacitacGpx extends NacitacInputStream0 {
 			log.warn("The waypoint doesn't have latitude or longitude defined!");
 		} else {
 			try {
-				final Double dlat = Double.parseDouble(lat);
-				final Double dlon = Double.parseDouble(lon);
+				final double dlat = Double.parseDouble(lat);
+				final double dlon = Double.parseDouble(lon);
 				wpt.wgs = new Wgs(dlat, dlon);
 			} catch (final RuntimeException e) {
 				// i NaN a nekonečno; waypoint bez souřadnic se přeskočí, zbytek souboru se načte
