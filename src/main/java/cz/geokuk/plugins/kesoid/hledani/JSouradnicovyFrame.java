@@ -259,7 +259,7 @@ public class JSouradnicovyFrame extends JMyDialog0 implements AfterEventReceiver
 		final double lon = wgs == null ? SPATNY_FORMAT : wgs.lon;
 		final boolean okSirka = aplikuj(jHotovaSirka, jSouEdit, lat, SIRKA_MIN, SIRKA_MAX, NS);
 		final boolean okDelka = aplikuj(jHotovaDelka, jSouEdit, lon, DELKA_MIN, DELKA_MAX, EW);
-		ok = okSirka && okDelka;
+		ok = wgs != null && okSirka && okDelka;
 		if (ok) {
 			souradniceEditovane = wgs;
 			jUtm.setText(wgs.toUtm().toString());

@@ -689,11 +689,11 @@ public class SmokeIT {
 	private static long dlazdicVCache(final File adresar) throws Exception {
 		try (java.sql.Connection c = java.sql.DriverManager.getConnection("jdbc:sqlite:" + new File(adresar, "data/cache/tiles.sqlite"))) {
 			final String tabulka;
-			try (java.sql.ResultSet t = c.createStatement().executeQuery("select name from sqlite_master where type = 'table'")) {
+			try (java.sql.Statement s = c.createStatement(); java.sql.ResultSet t = s.executeQuery("select name from sqlite_master where type = 'table'")) {
 				t.next();
 				tabulka = t.getString(1);
 			}
-			try (java.sql.ResultSet pocet = c.createStatement().executeQuery("select count(*) from " + tabulka)) {
+			try (java.sql.Statement s = c.createStatement(); java.sql.ResultSet pocet = s.executeQuery("select count(*) from " + tabulka)) {
 				pocet.next();
 				return pocet.getLong(1);
 			}

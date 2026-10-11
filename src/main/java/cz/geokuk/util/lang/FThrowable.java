@@ -167,13 +167,16 @@ public final class FThrowable {
 		 *            Pořadové číslo řetězené výjimky, které se také vypíše.
 		 */
 		private void printOnlyStackTrace(final PrintWriter pwrt, final StackTraceElement[] trace, int aKolikNezobrazit, final int aPoradoveCislo, final Set<String> aVypsanci) {
+			if (trace == null) {
+				return;
+			}
 			if (aKolikNezobrazit < 0) {
 				aKolikNezobrazit = 0;
 			}
 			if (aKolikNezobrazit >= trace.length && trace.length > 0) {
 				aKolikNezobrazit = trace.length - 1;
 			}
-			if (trace == null || trace.length - aKolikNezobrazit <= 0) {
+			if (trace.length - aKolikNezobrazit <= 0) {
 				return;
 			}
 			for (int i = 0; i < trace.length - aKolikNezobrazit; i++) {
