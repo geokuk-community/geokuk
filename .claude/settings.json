@@ -8,6 +8,12 @@
             "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/soukrome.sh start",
             "statusMessage": "Načtení soukromé konfigurace vývoje",
             "timeout": 600
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/maven-proxy.sh",
+            "statusMessage": "Proxy pro Maven a předstažení závislostí",
+            "timeout": 600
           }
         ]
       }

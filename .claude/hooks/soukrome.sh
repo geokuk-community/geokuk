@@ -6,7 +6,6 @@
 #   POZNAMKY_URL          HTTPS adresa soukromého repa (povinná, končí .git)
 #   POZNAMKY_USER         uživatel pro přihlášení
 #   POZNAMKY_TOKEN        token; bez něj se spoléhá na přihlášení doplněné proxy
-#   POZNAMKY_ALLOW_HOOKS  1 = spustit agent/session-start.sh ze soukromého repa
 #   POZNAMKY_PEM_B64      base64 PEM s klientským certifikátem i klíčem (mTLS)
 
 set -u
@@ -109,14 +108,6 @@ case "${1:-}" in
     if [ -n "${POZNAMKY_TOKEN:-}" ]; then
       git -C "$DIR" config --replace-all credential.helper ""
       git -C "$DIR" config --add credential.helper "$HELPER"
-    fi
-    if [ -f "$DIR/agent/session-start.sh" ]; then
-      # Kód ze soukromého repa jen na výslovné povolení: kdo má token, může ho podstrčit.
-      if [ "${POZNAMKY_ALLOW_HOOKS:-}" = 1 ]; then
-        sh "$DIR/agent/session-start.sh"
-      else
-        echo "soukrome: agent/session-start.sh se nespouští, povolí ho POZNAMKY_ALLOW_HOOKS=1"
-      fi
     fi
     [ -f "$DIR/agent/AGENTS.md" ] && cat "$DIR/agent/AGENTS.md"
     ;;
