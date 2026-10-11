@@ -5,8 +5,9 @@ import cz.geokuk.plugins.vylety.VyletModel;
 
 public class KesoidFilterModel {
 
-	private FilterDefinition filterDefinition;
-	private QualAlelaNames jmenaNechtenychAlel;
+	// Mění se z EDT, čte i vlákno filtrování; stačí viditelnost nových referencí.
+	private volatile FilterDefinition filterDefinition;
+	private volatile QualAlelaNames jmenaNechtenychAlel;
 
 	private VyletModel vyletModel;
 
@@ -48,7 +49,7 @@ public class KesoidFilterModel {
 	 * @param jmenaNechtenychAlel
 	 *            the jmenaNechtenychAlel to set
 	 */
-	public synchronized void setJmenaNechtenychAlel(final QualAlelaNames jmenaNechtenychAlel) {
+	public void setJmenaNechtenychAlel(final QualAlelaNames jmenaNechtenychAlel) {
 		this.jmenaNechtenychAlel = jmenaNechtenychAlel;
 	}
 

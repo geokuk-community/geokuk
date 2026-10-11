@@ -118,4 +118,21 @@ public class NacitacGeokukTest {
 		Assert.assertTrue(n.umiNacist(new ZipEntry("a/b.geokuk")));
 		Assert.assertFalse(n.umiNacist(new File("a.gpx")));
 	}
+
+	private static int pocetChyb() {
+		final java.util.regex.Matcher m = java.util.regex.Pattern.compile("Poslední chyby \\(celkem (\\d+)\\)").matcher(cz.geokuk.core.napoveda.Diagnostika.text());
+		Assert.assertTrue(m.find());
+		return Integer.parseInt(m.group(1));
+	}
+
+	/** Waypoint před první keší nemá z čeho složit jméno: přeskočí se bez výpisu výjimky. */
+	@Test
+	public void waypointPredPrvniKesiSePreskoci() throws Exception {
+		final int chybPred = pocetChyb();
+		final List<GpxWpt> w = nacti(HLAVICKA + "-PK|Parking Area|50.2|14.5|Parkoviště\n-PK|Parking Area|50.3|14.6|Druhé\n" + KES);
+		Assert.assertEquals(2, w.size());
+		Assert.assertEquals("GC12345", w.get(0).name);
+		Assert.assertEquals("PK12345", w.get(1).name);
+		Assert.assertEquals("žádná výjimka", chybPred, pocetChyb());
+	}
 }

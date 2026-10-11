@@ -33,7 +33,6 @@ public class StavZdrojuNacitaniTest {
 	private final MyPreferences pref = MyPreferences.current().node("test-stav-zdroju");
 	private final ExecutorService geoget = Executors.newCachedThreadPool();
 	private final List<CountDownLatch> zamky = new ArrayList<>();
-	private final List<StavZdroju> udalosti = new CopyOnWriteArrayList<>();
 	private final AtomicInteger pocetUdalosti = new AtomicInteger();
 	private final Genom genom = new Genom();
 	private File gpx;
@@ -447,7 +446,6 @@ public class StavZdrojuNacitaniTest {
 			public void fire(final Event0<?> udalost) {
 				if (udalost instanceof StavZdrojuEvent) {
 					pocetUdalosti.incrementAndGet();
-					udalosti.add(((StavZdrojuEvent) udalost).getStav());
 				}
 			}
 

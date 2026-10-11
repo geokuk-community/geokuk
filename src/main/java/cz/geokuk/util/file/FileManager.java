@@ -249,9 +249,9 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	public void writeStringToFile(final File aFile, final String aString) throws IOException {
-		final Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile)));
-		wrt.write(aString);
-		wrt.close();
+		try (Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile)))) {
+			wrt.write(aString);
+		}
 	}
 
 	/**
@@ -266,10 +266,10 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	public void writeStringToFile(final File aFile, final String aString, final String aEncoding) throws IOException {
-		final Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile), aEncoding));
-		// System.out.p rintln(">>>>>>>>"+aString+"<<<<<<<<");
-		wrt.write(aString);
-		wrt.close();
+		try (Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile), aEncoding))) {
+			// System.out.p rintln(">>>>>>>>"+aString+"<<<<<<<<");
+			wrt.write(aString);
+		}
 	}
 
 	///////////////////////////////////// privátní metody /////////////

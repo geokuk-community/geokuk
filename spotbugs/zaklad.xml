@@ -468,18 +468,6 @@
 		</Method>
 		<SourceLine synthetic="true" endBytecode="80" classname="cz.geokuk.plugins.kesoid.Kesoid$1" start="153" end="155" sourcepath="cz/geokuk/plugins/kesoid/Kesoid.java" sourcefile="Kesoid.java" startBytecode="0" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="f6e20d9a93cbba8ee2ca5c83ffe2e914" rank="14" abbrev="UG" category="MT_CORRECTNESS" priority="2" type="UG_SYNC_SET_UNSYNC_GET" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" primary="true">
-			<SourceLine classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" start="13" end="53" sourcepath="cz/geokuk/plugins/kesoid/KesoidFilterModel.java" sourcefile="KesoidFilterModel.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" signature="()Lcz/geokuk/plugins/kesoid/genetika/QualAlelaNames;" name="getJmenaNechtenychAlel" primary="true">
-			<SourceLine endBytecode="46" classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" start="30" end="30" sourcepath="cz/geokuk/plugins/kesoid/KesoidFilterModel.java" sourcefile="KesoidFilterModel.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" signature="(Lcz/geokuk/plugins/kesoid/genetika/QualAlelaNames;)V" name="setJmenaNechtenychAlel">
-			<SourceLine endBytecode="61" classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" start="52" end="53" sourcepath="cz/geokuk/plugins/kesoid/KesoidFilterModel.java" sourcefile="KesoidFilterModel.java" startBytecode="0" />
-		</Method>
-		<SourceLine synthetic="true" endBytecode="46" classname="cz.geokuk.plugins.kesoid.KesoidFilterModel" start="30" end="30" sourcepath="cz/geokuk/plugins/kesoid/KesoidFilterModel.java" sourcefile="KesoidFilterModel.java" startBytecode="0" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="44b7d42f17340ee8fa5ddd32bd437d94" cweid="476" rank="18" abbrev="RCN" category="STYLE" priority="2" type="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.plugins.kesoid.Wpt" primary="true">
 			<SourceLine classname="cz.geokuk.plugins.kesoid.Wpt" start="15" end="316" sourcepath="cz/geokuk/plugins/kesoid/Wpt.java" sourcefile="Wpt.java" />

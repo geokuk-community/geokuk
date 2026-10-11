@@ -41,6 +41,7 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 		int linenumber = 1; // máme přeci přečtnou hlavičku
 		int ncaches = 0;
 		int nwpts = 0;
+		int bezKese = 0;
 		String jmenoAktualniKese = null;
 		// AWptType xxxxxxxx = AWptType.TRAILHEAD;
 
@@ -85,6 +86,11 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 					break;
 				}
 				case '-': {
+					if (jmenoAktualniKese == null) {
+						bezKese++; // jméno waypointu se skládá ze jména keše
+						gpxwpt = null;
+						break;
+					}
 					if (gpxwpt == null) {
 						gpxwpt = new GpxWpt();
 					}
@@ -113,6 +119,9 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 				final String positionInfo = "ERORR on line=" + linenumber + " while reading cache " + jmenoAktualniKese;
 				FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, positionInfo);
 			}
+		}
+		if (bezKese > 0) {
+			log.warn("Soubor {}: {} waypointů před první keší se přeskočilo.", name, bezKese);
 		}
 		log.debug("Přečteno: {} keší a {} waypointů.", ncaches, nwpts);
 	}

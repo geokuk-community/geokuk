@@ -74,6 +74,8 @@
   dokreslení se nahradí ostrou.
 - Opětovná volba už vybrané sady ikon ikony znovu nenačítá. Sada ikon se
   načte i tehdy, když některou její podsložku nejde přečíst.
+- Soubor `.geokuk` s waypointem před první keší se načte bez hlášení chyb,
+  takový waypoint se přeskočí.
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
