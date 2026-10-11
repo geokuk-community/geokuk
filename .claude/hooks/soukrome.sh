@@ -3,9 +3,11 @@
 # Použití: soukrome.sh start|end
 #
 # Proměnné prostředí (nastavují se v cloud environmentu, ne v repu):
-#   POZNAMKY_URL    HTTPS adresa soukromého repa (povinná)
-#   POZNAMKY_USER   uživatel pro přihlášení
-#   POZNAMKY_TOKEN  token; bez něj se spoléhá na přihlášení doplněné proxy
+#   POZNAMKY_URL          HTTPS adresa soukromého repa (povinná, končí .git)
+#   POZNAMKY_USER         uživatel pro přihlášení
+#   POZNAMKY_TOKEN        token; bez něj se spoléhá na přihlášení doplněné proxy
+#   POZNAMKY_ALLOW_HOOKS  1 = spustit agent/session-start.sh ze soukromého repa
+#   POZNAMKY_PEM_B64      base64 PEM s klientským certifikátem i klíčem (mTLS)
 
 set -u
 
@@ -15,16 +17,67 @@ set -u
 ROOT="${CLAUDE_PROJECT_DIR:-.}"
 DIR="$ROOT/poznamky"
 
+# Bez terminálu by git při odmítnutém přihlášení čekal na vstup.
+GIT_TERMINAL_PROMPT=0
+export GIT_TERMINAL_PROMPT
+
 # Token se čte z prostředí při každém volání, na disk se nezapisuje.
 HELPER='!f() { test "$1" = get || exit 0; echo "username=${POZNAMKY_USER:-git}"; echo "password=${POZNAMKY_TOKEN:-}"; }; f'
+
+# Klientský certifikát jen v dočasném souboru, který po doběhnutí zmizí.
+if [ -n "${POZNAMKY_PEM_B64:-}" ]; then
+  PEMDIR=$(mktemp -d) || { echo "soukrome: nejde vytvořit dočasný adresář"; exit 0; }
+  trap 'rm -rf "$PEMDIR"' EXIT
+  PEM="$PEMDIR/klient.pem"
+  if ! printf '%s' "$POZNAMKY_PEM_B64" | (umask 077 && base64 -d > "$PEM") \
+      || ! grep -q 'BEGIN CERTIFICATE' "$PEM" || ! grep -q 'PRIVATE KEY' "$PEM"; then
+    echo "soukrome: POZNAMKY_PEM_B64 není base64 PEM s certifikátem a klíčem"
+    exit 0
+  fi
+  chmod 600 "$PEM"
+  GIT_SSL_CERT="$PEM"
+  GIT_SSL_KEY="$PEM"
+  export GIT_SSL_CERT GIT_SSL_KEY
+fi
+
+# Git po síti; přenos pod 1 kB/s trvající CAS sekund se ukončí, aby hook nevisel.
+CAS=20
+gs() {
+  git -c http.lowSpeedLimit=1000 -c "http.lowSpeedTime=$CAS" "$@"
+}
 
 # Git nad poznámkami; s tokenem i u kopie, která helper v konfiguraci nemá.
 gp() {
   if [ -n "${POZNAMKY_TOKEN:-}" ]; then
-    git -C "$DIR" -c credential.helper= -c "credential.helper=$HELPER" "$@"
+    gs -C "$DIR" -c credential.helper= -c "credential.helper=$HELPER" "$@"
   else
-    git -C "$DIR" "$@"
+    gs -C "$DIR" "$@"
   fi
+}
+
+# Rebase zastavený na konfliktech vrátí zpět; úspěch znamená, že konflikt byl.
+zrus_rebase() {
+  [ -d "$DIR/.git/rebase-merge" ] || [ -d "$DIR/.git/rebase-apply" ] || return 1
+  gp rebase --abort >/dev/null 2>&1
+  return 0
+}
+
+# Pull a push; při konfliktu nastaví KONFLIKT a kopii vrátí do použitelného stavu.
+synchronizuj() {
+  if ! gp pull -q --rebase --autostash; then
+    zrus_rebase && KONFLIKT=1
+    return 1
+  fi
+  gp push -q
+}
+
+# Patch ze stdin uloží do poznámek a vypíše, aby neodeslaná práce nezmizela se session.
+zachrana() {
+  SOUBOR="$DIR/ZACHRANA-$(date -u +%Y%m%d-%H%M%S)-$1.patch"
+  echo "soukrome: push selhal, patch s neodeslanou prací: $SOUBOR"
+  echo "----- ZACHRANA $1 -----"
+  tee "$SOUBOR"
+  echo "----- KONEC ZACHRANY $1 -----"
 }
 
 case "${1:-}" in
@@ -34,30 +87,68 @@ case "${1:-}" in
       grep -qxF "$p" "$EXCLUDE" 2>/dev/null || echo "$p" >> "$EXCLUDE"
     done
     if [ -d "$DIR/.git" ]; then
-      gp pull -q --rebase --autostash || echo "soukrome: pull selhal, pracuj s lokální kopií"
+      if ! gp pull -q --rebase --autostash; then
+        if zrus_rebase; then
+          echo "soukrome: pull má konflikty, lokální změny zůstaly nad starší verzí"
+        else
+          echo "soukrome: pull selhal, pracuj s lokální kopií"
+        fi
+      fi
     else
       if [ -n "${POZNAMKY_TOKEN:-}" ]; then
-        git -c credential.helper= -c "credential.helper=$HELPER" clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
+        gs -c credential.helper= -c "credential.helper=$HELPER" clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
         git -C "$DIR" config credential.helper ""
         git -C "$DIR" config --add credential.helper "$HELPER"
       else
-        git clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
+        gs clone -q "$POZNAMKY_URL" "$DIR" || { echo "soukrome: klonování selhalo"; exit 0; }
       fi
       NAME=$(git -C "$ROOT" config user.name || true)
       MAIL=$(git -C "$ROOT" config user.email || true)
       [ -n "$NAME" ] && git -C "$DIR" config user.name "$NAME"
       [ -n "$MAIL" ] && git -C "$DIR" config user.email "$MAIL"
     fi
-    [ -f "$DIR/agent/session-start.sh" ] && sh "$DIR/agent/session-start.sh"
+    if [ -f "$DIR/agent/session-start.sh" ]; then
+      # Kód ze soukromého repa jen na výslovné povolení: kdo má token, může ho podstrčit.
+      if [ "${POZNAMKY_ALLOW_HOOKS:-}" = 1 ]; then
+        sh "$DIR/agent/session-start.sh"
+      else
+        echo "soukrome: agent/session-start.sh se nespouští, povolí ho POZNAMKY_ALLOW_HOOKS=1"
+      fi
+    fi
     [ -f "$DIR/agent/AGENTS.md" ] && cat "$DIR/agent/AGENTS.md"
     ;;
   end)
     [ -d "$DIR/.git" ] || exit 0
+    # SessionEnd má na vše nejvýš 60 s, i s opakovaným pokusem a záchranou.
+    CAS=10
     if [ -n "$(git -C "$DIR" status --porcelain)" ]; then
-      git -C "$DIR" add -A && git -C "$DIR" commit -q -m "Uložení na konci session"
+      NAME=$(git -C "$DIR" config user.name || git -C "$ROOT" config user.name || echo cloud-session)
+      MAIL=$(git -C "$DIR" config user.email || git -C "$ROOT" config user.email || echo cloud-session@localhost)
+      git -C "$DIR" add -A && git -C "$DIR" -c "user.name=$NAME" -c "user.email=$MAIL" commit -q -m "Uložení na konci session" \
+        || echo "soukrome: commit selhal, změny zůstávají nezapsané"
     fi
-    gp pull -q --rebase || true
-    gp push -q || echo "soukrome: push selhal"
+    NEZAPSANO=$(git -C "$DIR" status --porcelain)
+    UP=$(git -C "$DIR" rev-parse -q --verify '@{u}' 2>/dev/null || git -C "$DIR" rev-parse -q --verify origin/HEAD 2>/dev/null || true)
+    if [ -z "$UP" ] || [ -n "$(git -C "$DIR" rev-list -n 1 "$UP..HEAD")" ]; then
+      KONFLIKT=
+      ODESLANO=
+      synchronizuj && ODESLANO=1
+      if [ -z "$ODESLANO" ] && [ -z "$KONFLIKT" ]; then
+        synchronizuj && ODESLANO=1
+      fi
+      if [ -z "$ODESLANO" ]; then
+        VETEV="zachrana-$(date -u +%Y%m%d-%H%M%S)"
+        if gp push -q origin "HEAD:refs/heads/$VETEV"; then
+          echo "soukrome: push do hlavní větve selhal, commity jsou ve větvi $VETEV"
+        else
+          if [ -n "$UP" ]; then ROZSAH="$UP..HEAD"; else ROZSAH=--root; fi
+          git -C "$DIR" format-patch --stdout --binary "$ROZSAH" | zachrana commity
+        fi
+      fi
+    fi
+    if [ -n "$NEZAPSANO" ]; then
+      git -C "$DIR" diff --cached --binary HEAD | zachrana zmeny
+    fi
     ;;
 esac
 exit 0
