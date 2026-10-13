@@ -46,6 +46,7 @@ public class OfflineMapy {
 	private volatile List<String> nazvyMap = Collections.emptyList();
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
 	private OfflineRenderer.NacteneTema nacteneTema;
+	private volatile VrstvyTematu vrstvyTematu;
 	private IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
 	private String otiskSlozky;
@@ -208,7 +209,13 @@ public class OfflineMapy {
 		}
 		uvolniTema();
 		nacteneTema = OfflineRenderer.nactiTema(temaOtevrene, slozkaSymbolu, meritkoOtevrene, pismoOtevrene);
+		vrstvyTematu = nacteneTema.menu == null ? null : new VrstvyTematu(temaOtevrene, nacteneTema.menu);
 		return nacteneTema;
+	}
+
+	/** Vrstvy naposledy načteného tématu, null když téma vrstvy nemá nebo ještě není načtené. Neblokuje, lze volat z EDT. */
+	public VrstvyTematu getVrstvyTematu() {
+		return vrstvyTematu;
 	}
 
 	private void uvolniTema() {
