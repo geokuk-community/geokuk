@@ -15,6 +15,7 @@ import org.mapsforge.map.datastore.MultiMapDataStore;
 import org.mapsforge.map.layer.renderer.*;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
+import org.mapsforge.map.reader.header.MapFileInfo;
 import org.mapsforge.map.rendertheme.XmlRenderThemeStyleMenu;
 import org.mapsforge.map.rendertheme.rule.RenderThemeFuture;
 
@@ -75,7 +76,12 @@ final class OfflineRenderer {
 		}
 	}
 
+	/** Zoom, od kterého je mapa podrobná; menší maximum má jen přehledová mapa. */
+	static final int PODROBNY_ZOOM = 14;
+
 	private final MultiMapDataStore data;
+	/** Rozsah a nejvyšší zoom dat každé otevřené mapy. */
+	private final List<MapFileInfo> pokryti;
 	private final NacteneTema tema;
 	private final DatabaseRenderer renderer;
 	private final String klic;
@@ -84,8 +90,9 @@ final class OfflineRenderer {
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final NacteneTema tema, final String klic) {
+	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic) {
 		this.data = data;
+		this.pokryti = pokryti;
 		this.tema = tema;
 		this.klic = klic;
 		tema.future.incrementRefCount();
@@ -114,6 +121,7 @@ final class OfflineRenderer {
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
+		final List<MapFileInfo> pokryti = new ArrayList<>();
 		OfflineMapaChyba prvniChyba = null;
 		try {
 			for (final File f : mapy) {
@@ -129,6 +137,7 @@ final class OfflineRenderer {
 					continue;
 				}
 				data.addMapDataStore(mapFile, false, false);
+				pokryti.add(mapFile.getMapFileInfo());
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(f.lastModified()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
 			}
 			if (otisk.length() == 0) {
@@ -142,7 +151,7 @@ final class OfflineRenderer {
 		if (tema.pismo != 1) {
 			otisk.append('\n').append(tema.pismo);
 		}
-		return new OfflineRenderer(data, tema, klic(otisk.toString()));
+		return new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, klic(otisk.toString()));
 	}
 
 	static NacteneTema nactiTema(final TemaOfflineMapy tema) throws IOException {
@@ -246,6 +255,16 @@ final class OfflineRenderer {
 	/** Dlaždice mapsforge; stejné x, y, z pokrývají stejné území při každé velikosti v pixelech. */
 	static Tile dlazdice(final KaLoc loc, final int velikost) {
 		return new Tile(loc.getFromSzUnsignedX(), loc.getFromSzUnsignedY(), (byte) loc.getMoumer(), velikost);
+	}
+
+	/** Bod pokrývá mapa s daty pro tento zoom; mapsforge nad svým maximem jen zvětšuje, proto stačí maximum od podrobného zoomu. */
+	boolean jePodrobnaMapa(final double lat, final double lon, final int zoom) {
+		for (final MapFileInfo info : pokryti) {
+			if (info.zoomLevelMax >= Math.min(zoom, PODROBNY_ZOOM) && info.boundingBox.contains(lat, lon)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Dlaždice zasahuje do některé z map. */

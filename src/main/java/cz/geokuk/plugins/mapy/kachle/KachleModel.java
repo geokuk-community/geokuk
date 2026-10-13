@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 
 import javax.swing.SwingUtilities;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.framework.Model0;
@@ -232,6 +233,11 @@ public class KachleModel extends Model0 {
 		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
 		predpripravOfflineMapu();
+	}
+
+	/** Střed výřezu pokrývá podrobná offline mapa (nebo mapy ještě nejsou otevřené). */
+	public boolean jePodrobnaOfflineMapa(final Wgs bod, final int zoom) {
+		return ziskavac == null || ziskavac.getOfflineMapy().jePodrobnaMapa(bod, zoom);
 	}
 
 	/** Atribuce offline mapy: data podle otevřených map (OSM, přehledová mapa z Natural Earth) a téma ze souboru uživatele. */
