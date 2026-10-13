@@ -8,7 +8,8 @@ public class EKaTypeAtribuceTest {
 	@Test
 	public void kazdaVrstvaMaAtribuci() {
 		for (final EKaType ka : EKaType.values()) {
-			Assert.assertTrue(ka.name(), ka.getAtribuce().contains("©"));
+			// basemap.at předepisuje znění „Data source: basemap.at“.
+			Assert.assertTrue(ka.name(), ka.getAtribuce().contains("©") || ka == EKaType.AT_BASEMAP && ka.getAtribuce().equals("Data source: basemap.at"));
 		}
 	}
 

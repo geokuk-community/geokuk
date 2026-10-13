@@ -39,6 +39,9 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 	 */
 	private String sym;
 
+	/** Nadmořská výška, která se čte z databáze až při prvním dotazu. */
+	public static final int VYSKA_NENACTENA = Integer.MIN_VALUE;
+
 	/**
 	 * Sožadnice
 	 */
@@ -89,6 +92,13 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 	 * @return the elevation
 	 */
 	public int getElevation() {
+		if (elevation == VYSKA_NENACTENA) {
+			final int nactena = getKesoid().nactiNadmorskouVysku();
+			if (nactena == VYSKA_NENACTENA) {
+				return 0;
+			}
+			elevation = nactena;
+		}
 		return elevation;
 	}
 

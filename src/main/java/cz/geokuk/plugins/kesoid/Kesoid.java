@@ -61,6 +61,11 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 		return g;
 	}
 
+	/** Nadmořská výška načtená až při zobrazení; {@link Wpt#VYSKA_NENACTENA}, když se ji nepodařilo přečíst. */
+	public int nactiNadmorskouVysku() {
+		return 0;
+	}
+
 	public String getAuthor() {
 		return author;
 	}
