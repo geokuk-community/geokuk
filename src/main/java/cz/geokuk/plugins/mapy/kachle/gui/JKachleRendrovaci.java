@@ -32,7 +32,7 @@ public class JKachleRendrovaci extends JKachle {
 	}
 
 	@Override
-	protected void ziskanPlnyObrazek(final Image img) {
+	protected synchronized void ziskanPlnyObrazek(final Image img) {
 		if (grf != null) {
 			super.paintComponent(grf);
 			uzTeNepotrebuju();

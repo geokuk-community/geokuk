@@ -18,9 +18,6 @@ public class BezNaBodVzadAction extends CestyAction0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public BezNaBodVzadAction() {
 		putValue(NAME, "Na další bod vzad");
 		putValue(SHORT_DESCRIPTION,

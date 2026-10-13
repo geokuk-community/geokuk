@@ -26,7 +26,7 @@ public class ZhasniKeseUrciteAlelyAction extends Action0 implements AfterEventRe
 		private final Icon icon;
 
 		/**
-		 * @param image
+		 * @param icon
 		 */
 		public PreskrtnutaIkona(final Icon icon) {
 			this.icon = icon;

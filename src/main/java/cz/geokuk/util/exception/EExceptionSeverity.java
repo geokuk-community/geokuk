@@ -31,7 +31,7 @@ public enum EExceptionSeverity {
 	private final String iCode;
 
 	/**
-	 * @param aC
+	 * @param aCode
 	 */
 	EExceptionSeverity(final String aCode) {
 		iCode = aCode;

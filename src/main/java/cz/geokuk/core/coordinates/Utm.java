@@ -62,8 +62,6 @@ public class Utm extends Misto0 {
 	/**
 	 * Vrací stejné místo na zemi, ael v souřadnicích vyjádřených v jiné zóně.
 	 *
-	 * @param ux
-	 * @param uy
 	 * @return
 	 */
 	public Utm toSampePlaceInAnotherZone(final int polednikovaZona, final char rovnobezkovaZona) {

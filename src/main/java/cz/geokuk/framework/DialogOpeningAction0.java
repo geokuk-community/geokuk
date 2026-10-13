@@ -16,7 +16,7 @@ public abstract class DialogOpeningAction0 extends Action0 {
 	private JMyDialog0 mydialog;
 
 	/**
-	 * @param string
+	 * @param name
 	 */
 	public DialogOpeningAction0(final String name) {
 		super(name);

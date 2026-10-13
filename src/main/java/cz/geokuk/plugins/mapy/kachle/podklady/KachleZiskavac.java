@@ -711,7 +711,6 @@ public class KachleZiskavac {
 	 * Zadá požadavekl na získání jedné kachle.
 	 *
 	 * @param kaoneReq
-	 * @param imageReceiver
 	 * @param aDiagnosticsData
 	 * @return
 	 */

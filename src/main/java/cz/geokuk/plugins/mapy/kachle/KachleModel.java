@@ -50,9 +50,6 @@ public class KachleModel extends Model0 {
 
 	public final KachleManager kachleManager;
 
-	/**
-	 * @param bb
-	 */
 	public KachleModel() {
 		kachleManager = KachleManagerFactory.getInstance(getKachleCacheFolderHolder());
 	}
