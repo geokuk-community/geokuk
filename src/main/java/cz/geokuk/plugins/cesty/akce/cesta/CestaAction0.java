@@ -29,7 +29,7 @@ public abstract class CestaAction0 extends PositionedAction0 {
 	/**
 	 * Zda se pro dany Cesta ma akce povolit.
 	 *
-	 * @param Cesta
+	 * @param cesta
 	 *            Nikdy nebude predano null
 	 * @return
 	 */
@@ -38,7 +38,7 @@ public abstract class CestaAction0 extends PositionedAction0 {
 	/**
 	 * Pokud je daný Cesta, tak se nechá natavit jméno. Natavovací metoda také ví, zda je akce z kontexotvého menu nebo z hlavního
 	 *
-	 * @param Cesta
+	 * @param cesta
 	 * @param aZKontextovehoMenu
 	 */
 	protected abstract void nastavJmenoAkce(Cesta cesta, boolean aZKontextovehoMenu);
@@ -46,7 +46,7 @@ public abstract class CestaAction0 extends PositionedAction0 {
 	/**
 	 * Provedení akce pro daný Cesta.
 	 *
-	 * @param Cesta
+	 * @param cesta
 	 */
 	protected abstract void provedProCestu(Cesta cesta);
 

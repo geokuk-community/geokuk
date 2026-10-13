@@ -66,7 +66,7 @@ public class MunzeeGpxWptProcak implements GpxWptProcak {
 
 
 	/**
-	 * @param aType
+	 * @param s
 	 * @return
 	 */
 	private String odstranNadbytecneMezery(final String s) {

@@ -482,8 +482,6 @@ public final class FThrowable {
 	/**
 	 * Vrátí výjimku přehozenou přes zadanou výjimku, typ výjimky vrátí co možná nejbližší nahoru k přehazované výjimce. Pokud žádný rozumný typ nenalezne, přehazuje XRuntime.
 	 *
-	 * @param s
-	 *            Technicky orientovaná zpráva. Řetězec se stane technickou zprávou nově vytvořené výjimky.
 	 * @parem exc Přehazovaná výjimka
 	 * @return Přehozená výjimka, přinejhorším XRuntime.
 	 */

@@ -162,14 +162,14 @@ public class IconDefNacitac {
 	}
 
 	/**
-	 * @param aVykreslovac
+	 * @param vykreslovac
 	 */
 	private void naplnVykreslovac(final Drawer0 vykreslovac) {
 		vykreslovac.setIdp(idp);
 	}
 
 	/**
-	 * @param aGroup
+	 * @param s
 	 * @return
 	 */
 	private String odstranZazavorkovaneNesouboroviteZnaky(String s) {

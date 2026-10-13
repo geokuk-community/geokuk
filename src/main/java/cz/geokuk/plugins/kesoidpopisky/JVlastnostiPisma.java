@@ -35,8 +35,6 @@ public class JVlastnostiPisma extends JPanel {
 	/**
 	 * Sets the model containing the selected color.
 	 *
-	 * @param newModel
-	 *            the new <code>ColorSelectionModel</code> object
 	 *
 	 * @beaninfo bound: true hidden: true description: The model which contains the currently selected color.
 	 */

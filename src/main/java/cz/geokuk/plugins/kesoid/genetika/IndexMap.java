@@ -16,7 +16,7 @@ public class IndexMap<K extends Indexable, T> {
 	/**
 	 * Získá hodnotu z pole.
 	 *
-	 * @param i
+	 * @param key
 	 * @return
 	 */
 	public T get(final K key) {
@@ -27,7 +27,7 @@ public class IndexMap<K extends Indexable, T> {
 	/**
 	 * Uložit hodnotu do pole
 	 *
-	 * @param i
+	 * @param key
 	 *            Index >= 0
 	 * @param udaj
 	 *            Ukládaný údaj.
@@ -52,7 +52,7 @@ public class IndexMap<K extends Indexable, T> {
 	/**
 	 * Pokud na daném místě nic není, zavolá funkci, spočítá to a vloží to tam
 	 *
-	 * @param i
+	 * @param key
 	 *            Index v poli
 	 * @param fce
 	 *            Funkce pro výpočet, když nic nemáme.

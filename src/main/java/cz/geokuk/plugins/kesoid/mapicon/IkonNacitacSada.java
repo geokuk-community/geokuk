@@ -2,6 +2,9 @@ package cz.geokuk.plugins.kesoid.mapicon;
 
 import java.awt.Color;
 import java.io.*;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.*;
 import java.util.*;
 
 import cz.geokuk.api.mapicon.RoundRectDrawer;
@@ -38,7 +41,7 @@ public class IkonNacitacSada {
 			return null;
 		}
 
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(sadyTxt.getData().url.openStream()))) {
+		try (BufferedReader br = new BufferedReader(new StringReader(precti(sadyTxt.getData().url)))) {
 			String line;
 			final Map<String, Sklo> nactenaSkla = new HashMap<>();
 			while ((line = br.readLine()) != null) {
@@ -132,6 +135,27 @@ public class IkonNacitacSada {
 		iconDef.idp = idp;
 		iconDef.priorita = IconDef.VYCHOZI_PRIORITA;
 		return iconDef;
+	}
+
+	/** Text v UTF-8 (případně s BOM); vlastní sady uložené v kódování Windows se čtou jako windows-1250. */
+	static String precti(final URL url) throws IOException {
+		final byte[] bajty;
+		try (InputStream in = url.openStream()) {
+			final ByteArrayOutputStream out = new ByteArrayOutputStream();
+			final byte[] buf = new byte[4096];
+			for (int n = in.read(buf); n >= 0; n = in.read(buf)) {
+				out.write(buf, 0, n);
+			}
+			bajty = out.toByteArray();
+		}
+		String text;
+		try {
+			text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bajty))
+			        .toString();
+		} catch (final CharacterCodingException e) {
+			text = new String(bajty, Charset.forName("windows-1250"));
+		}
+		return text.startsWith("\uFEFF") ? text.substring(1) : text;
 	}
 
 	String getGroupDisplayName(final String groupName) {

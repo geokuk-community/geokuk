@@ -92,7 +92,7 @@ public class KachleUmisteniSouboru extends UmisteniSouboru0 {
 	}
 
 	/**
-	 * @param aKesDir
+	 * @param file
 	 */
 	private void check(final Filex file) {
 		if (file == null) {
