@@ -198,19 +198,26 @@ public class JVyletyPopupTest {
 	/** Akce, které výlet upravují, jsou během přepínání zašedlé; ostatní ne. */
 	@Test
 	public void akceBehemPrepinani() {
-		final VyletSmazAnoAction smazAno = new VyletSmazAnoAction();
-		smazAno.inject(model);
+		final List<VyletAction0> upravuji = Arrays.asList(new VyletAnoAction(null), new VyletNeAction(null), new VyletNevimAction(null), new VyletSmazAnoAction(), new VyletSmazNeAction());
 		final VyletZoomAction zoom = new VyletZoomAction();
-		zoom.inject(model);
-		smazAno.setEnabled(true);
-		zoom.setEnabled(true);
+		final List<VyletAction0> vse = new ArrayList<>(upravuji);
+		vse.add(zoom);
+		for (final VyletAction0 a : vse) {
+			a.inject(model);
+			a.setEnabled(true);
+		}
 		prepina = true;
-		smazAno.onEvent(new VyletyZmenenyEvent(model));
-		zoom.onEvent(new VyletyZmenenyEvent(model));
-		Assert.assertFalse(smazAno.isEnabled());
+		for (final VyletAction0 a : vse) {
+			a.onEvent(new VyletyZmenenyEvent(model));
+		}
+		for (final VyletAction0 a : upravuji) {
+			Assert.assertFalse(a.getClass().getSimpleName(), a.isEnabled());
+		}
 		Assert.assertTrue(zoom.isEnabled());
 		prepina = false;
-		smazAno.onEvent(new VyletyZmenenyEvent(model));
-		Assert.assertTrue("po přepnutí se vrátí", smazAno.isEnabled());
+		for (final VyletAction0 a : upravuji) {
+			a.onEvent(new VyletyZmenenyEvent(model));
+			Assert.assertTrue("po přepnutí se vrátí: " + a.getClass().getSimpleName(), a.isEnabled());
+		}
 	}
 }

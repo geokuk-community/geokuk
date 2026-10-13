@@ -10,7 +10,7 @@ public abstract class VyletAction0 extends Action0 {
 
 	protected VyletModel vyletModel;
 	/** Povolení podle stavu výletu a keše; během přepínání výletu jsou akce, které výlet upravují, přesto zašedlé. */
-	private boolean povoleno;
+	private boolean povoleno = true;
 
 	public VyletAction0(final String string) {
 		super(string);
