@@ -3,6 +3,7 @@ package cz.geokuk.plugins.cesty.routovani;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -68,7 +69,7 @@ public class Routovac implements AutoCloseable {
 	}
 
 	/**
-	 * Najde trasu na pozadí v jednom vlákně routovače. Zrušení budoucnosti s přerušením ukončí hledání se stavem {@link Trasa.Stav#ZRUSENO}.
+	 * Najde trasu na pozadí v jednom vlákně routovače. Zrušení budoucnosti ukončí hledání se stavem {@link Trasa.Stav#ZRUSENO}; vlákno se nepřerušuje.
 	 */
 	public Future<Trasa> najdiNaPozadi(final Wgs start, final Wgs cil) {
 		synchronized (zamekVlakna) {
@@ -80,7 +81,29 @@ public class Routovac implements AutoCloseable {
 					return t;
 				});
 			}
-			return vlakno.submit(() -> najdi(start, cil, () -> Thread.currentThread().isInterrupted()));
+			final Hledani hledani = new Hledani(start, cil);
+			vlakno.execute(hledani);
+			return hledani;
+		}
+	}
+
+	/** Hledání na pozadí; zrušení jen nastaví příznak, přerušení vlákna by zavřelo soubory map uprostřed čtení. */
+	private final class Hledani extends FutureTask<Trasa> {
+		private final AtomicBoolean zruseno;
+
+		Hledani(final Wgs start, final Wgs cil) {
+			this(start, cil, new AtomicBoolean());
+		}
+
+		private Hledani(final Wgs start, final Wgs cil, final AtomicBoolean zruseno) {
+			super(() -> najdi(start, cil, zruseno::get));
+			this.zruseno = zruseno;
+		}
+
+		@Override
+		public boolean cancel(final boolean preruseni) {
+			zruseno.set(true);
+			return super.cancel(false);
 		}
 	}
 
@@ -92,12 +115,26 @@ public class Routovac implements AutoCloseable {
 	 */
 	public synchronized Trasa najdi(final Wgs start, final Wgs cil, final BooleanSupplier zruseno) {
 		final long t0 = System.nanoTime();
+		// Přerušené vlákno by kanál souboru mapy zavřelo uprostřed čtení; bere se jako zrušení a přerušení se vrátí.
+		final boolean preruseno = Thread.interrupted();
 		try {
+			if (preruseno) {
+				return Trasa.bez(Trasa.Stav.ZRUSENO);
+			}
 			final Trasa t = hledej(start, cil, zruseno);
 			log.debug("Trasa {} → {}: {} za {} ms", start, cil, t, (System.nanoTime() - t0) / 1_000_000);
 			return t;
 		} catch (final CancellationException e) {
 			return Trasa.bez(Trasa.Stav.ZRUSENO);
+		} catch (final RuntimeException e) {
+			// Mapa se při dalším hledání otevře znovu.
+			zavriMapy();
+			otiskMap = null;
+			throw e;
+		} finally {
+			if (preruseno) {
+				Thread.currentThread().interrupt();
+			}
 		}
 	}
 
@@ -242,8 +279,9 @@ public class Routovac implements AutoCloseable {
 						nove.add(mc);
 					}
 				} catch (final RuntimeException e) {
-					// Rozbitá nebo právě kopírovaná mapa nezastaví hledání v ostatních.
+					// Rozbitá nebo právě kopírovaná mapa nezastaví hledání v ostatních; příště se zkusí otevřít znovu.
 					log.warn("Offline mapu {} nejde otevřít pro hledání cest: {}", f, e.toString());
+					otiskMap = null;
 				}
 			}
 			mapy = nove;

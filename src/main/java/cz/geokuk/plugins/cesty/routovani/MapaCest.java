@@ -112,24 +112,26 @@ final class MapaCest implements AutoCloseable {
 		final List<Float> koef = new ArrayList<>();
 		if (mapFile.supportsTile(tile)) {
 			final MapReadResult r = mapFile.readMapData(tile);
-			if (r != null) {
-				for (final Way w : r.ways) {
-					final float k = PeskyProfil.koeficient(w.tags);
-					if (k <= 0) {
+			if (r == null) {
+				// Chyba čtení (mapsforge ji jen zaloguje); prázdná dlaždice by se uložila do cache.
+				throw new IllegalStateException("Dlaždici " + tile + " offline mapy " + soubor.getName() + " nejde přečíst.");
+			}
+			for (final Way w : r.ways) {
+				final float k = PeskyProfil.koeficient(w.tags);
+				if (k <= 0) {
+					continue;
+				}
+				for (final LatLong[] cast : w.latLongs) {
+					if (cast.length < 2) {
 						continue;
 					}
-					for (final LatLong[] cast : w.latLongs) {
-						if (cast.length < 2) {
-							continue;
-						}
-						final int[] c = new int[cast.length * 2];
-						for (int i = 0; i < cast.length; i++) {
-							c[2 * i] = (int) Math.round(cast[i].latitude * 1e6);
-							c[2 * i + 1] = (int) Math.round(cast[i].longitude * 1e6);
-						}
-						cary.add(c);
-						koef.add(k);
+					final int[] c = new int[cast.length * 2];
+					for (int i = 0; i < cast.length; i++) {
+						c[2 * i] = (int) Math.round(cast[i].latitude * 1e6);
+						c[2 * i + 1] = (int) Math.round(cast[i].longitude * 1e6);
 					}
+					cary.add(c);
+					koef.add(k);
 				}
 			}
 		}
