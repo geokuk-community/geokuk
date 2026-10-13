@@ -6,6 +6,8 @@ package cz.geokuk.plugins.mapy.kachle;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.SwingUtilities;
 
@@ -18,11 +20,13 @@ import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class KachleModel extends Model0 {
 
 	private static final String OFFLINE_MAPY_DIR = "offlineMapyDir";
@@ -42,6 +46,13 @@ public class KachleModel extends Model0 {
 	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
 	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
 		final Thread t = new Thread(r, "Příprava offline mapy");
+		t.setDaemon(true);
+		return t;
+	});
+
+	/** Složka offline map se hlídá i bez kreslení, aby se dokopírovaná mapa ukázala bez pohybu mapou. */
+	private final ScheduledExecutorService hlidaniSlozky = Executors.newSingleThreadScheduledExecutor(r -> {
+		final Thread t = new Thread(r, "Hlídání složky offline map");
 		t.setDaemon(true);
 		return t;
 	});
@@ -174,6 +185,20 @@ public class KachleModel extends Model0 {
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
 		fajrujPrekryvTras();
+		hlidaniSlozky.scheduleWithFixedDelay(this::zkontrolujSlozkuOfflineMap, 2, 2, TimeUnit.SECONDS);
+	}
+
+	void zkontrolujSlozkuOfflineMap() {
+		try {
+			if (offlinePodklad) {
+				ziskavac.getOfflineMapy().zkontrolujSlozku();
+			}
+			if (isPrekryvTrasViditelny()) {
+				ziskavac.getOfflineTrasy().zkontrolujSlozku();
+			}
+		} catch (final RuntimeException e) {
+			log.warn("Složku offline map nejde zkontrolovat: {}", e.toString());
+		}
 	}
 
 	private KachleUmisteniSouboru loadUmisteniSouboru() {

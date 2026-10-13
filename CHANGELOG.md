@@ -56,6 +56,10 @@
 - Nová instalace začíná offline mapou, když je ve složce offline map podrobná
   mapa, jinak ortofotem ČÚZK. Mapy.cz zůstávají v menu Mapy. Stávajícím
   uživatelům se zvolený podklad nemění.
+- Offline mapa zkopírovaná do složky za běhu se otevře až po dokopírování
+  a mapa v okně se sama obnoví, bez posunu. Mapu, kterou chvíli nešlo číst
+  (například ji držel antivirus nebo synchronizace), program za půl minuty
+  zkusí znovu.
 
 ## 6.4.0
 
