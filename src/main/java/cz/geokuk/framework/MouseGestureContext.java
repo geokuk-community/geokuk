@@ -1,9 +1,5 @@
 package cz.geokuk.framework;
 
-import cz.geokuk.core.coordinates.Mouable;
-import cz.geokuk.plugins.cesty.data.Bousek0;
-import cz.geokuk.plugins.kesoid.Wpt;
-
 public class MouseGestureContext {
 	//
 	// /**
@@ -20,9 +16,4 @@ public class MouseGestureContext {
 	// void setMouseCursorTogle(Cursor cursor);
 	//
 	// void finish();
-	public Wpt blizkyWpt;
-
-	public Bousek0 blizkyBousek;
-
-	public Mouable blizkaPozice;
 }

@@ -105,7 +105,7 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 
 	}
 
-	private class TotoSeTaha {
+	private static class TotoSeTaha {
 		private int minmoumer;
 		private int maxmoumer;
 		private EKaType katype;
