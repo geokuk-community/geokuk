@@ -39,7 +39,7 @@ public final class BezpecnyZapis {
 			prejmenuj(docasny, soubor);
 		} finally {
 			// po úspěšném přejmenování už dočasný soubor neexistuje
-			docasny.delete();
+			Soubory.smaz(docasny);
 		}
 	}
 

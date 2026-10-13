@@ -186,6 +186,12 @@ public class MultiNacitac {
 		}
 	}
 
+	/** Sekundy od {@code start} zaokrouhlené dolů na desetiny. */
+	private static double desetinySekund(final long start) {
+		final long desetiny = (System.currentTimeMillis() - start) / 100;
+		return desetiny / 10.0;
+	}
+
 	private KesBag nactiZmeny(final Future<?> future, final Genom genom) throws IOException {
 		List<KeFile> list = ds.coMamNacist();
 		if (!zamcene.isEmpty()) {
@@ -310,8 +316,8 @@ public class MultiNacitac {
 		builder.done();
 		final KesBag bag = builder.getKesBag();
 		final Set<File> zamceneTed = cteni.zamceneTed;
-		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + (System.currentTimeMillis() - start) / 100 / 10.0 + " s"
-				+ " (čteno " + pocetCteni + (pokus > 0 ? " v " + (pokus + 1) + " pokusech" : "") + ", párování a index " + (System.currentTimeMillis() - startDone) / 100 / 10.0 + " s)"
+		Diagnostika.zaznamenej("Načteno " + bag.getKesoidy().size() + " kešoidů, " + bag.getWpts().size() + " waypointů za " + desetinySekund(start) + " s"
+				+ " (čteno " + pocetCteni + (pokus > 0 ? " v " + (pokus + 1) + " pokusech" : "") + ", párování a index " + desetinySekund(startDone) + " s)"
 				+ (cteni.vadne.isEmpty() ? "" : ", chyba v souborech " + cteni.vadne) + (zamceneTed.isEmpty() ? "" : ", zamčené " + jmena(zamceneTed)));
 		zamcene = zamceneTed;
 		posledniZapnute = otiskyTed.keySet();

@@ -36,6 +36,7 @@ import cz.geokuk.plugins.mapy.MapyModel;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
+import cz.geokuk.util.file.Soubory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -291,7 +292,7 @@ public class DalkoveOvladani {
 			return;
 		}
 		if (token != null && token.equals(p.getProperty("token"))) {
-			SOUBOR.delete();
+			Soubory.smaz(SOUBOR);
 		}
 	}
 
@@ -652,13 +653,17 @@ public class DalkoveOvladani {
 	}
 
 	private static double cislo(final Map<String, String> param, final String jmeno) {
+		final String hodnota = param.get(jmeno);
 		try {
-			final double d = Double.parseDouble(param.get(jmeno));
+			if (hodnota == null) {
+				throw new NumberFormatException();
+			}
+			final double d = Double.parseDouble(hodnota);
 			if (Double.isNaN(d) || Double.isInfinite(d)) {
 				throw new NumberFormatException();
 			}
 			return d;
-		} catch (final NullPointerException | NumberFormatException e) {
+		} catch (final NumberFormatException e) {
 			throw new IllegalArgumentException("parametr " + jmeno + " musí být číslo");
 		}
 	}
