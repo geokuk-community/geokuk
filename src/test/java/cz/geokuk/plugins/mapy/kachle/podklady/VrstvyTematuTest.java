@@ -22,6 +22,7 @@ public class VrstvyTematuTest {
 			+ "<layer id=\"zaklad\" visible=\"true\"><cat id=\"zakladni\"/><overlay id=\"zapnuta\"/><overlay id=\"vypnuta\"/></layer>"
 			+ "<layer id=\"jiny\" visible=\"true\"><cat id=\"jine\"/></layer>"
 			+ "</stylemenu>"
+			+ "<rule cat=\"zakladni\" e=\"way\" k=\"highway\" v=\"*\"><line stroke=\"#000000\" stroke-width=\"4\"/></rule>"
 			+ "<rule cat=\"modre\" e=\"way\" k=\"building\" v=\"*\"><area fill=\"#0000FF\"/></rule>"
 			+ "<rule cat=\"cervene\" e=\"way\" k=\"building\" v=\"*\"><area fill=\"#FF0000\"/></rule>"
 			+ "<rule cat=\"jine\" e=\"way\" k=\"building\" v=\"*\"><area fill=\"#00FF00\"/></rule>"
@@ -46,13 +47,16 @@ public class VrstvyTematuTest {
 			r.skonci();
 		}
 		boolean modra = false;
+		boolean cerna = false;
 		for (final int p : img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth())) {
 			modra |= (p & 0xFFFFFF) == 0x0000FF;
+			cerna |= (p & 0xFFFFFF) == 0;
 			final int cervena = p >> 16 & 0xFF;
 			final int zelena = p >> 8 & 0xFF;
-			Assert.assertTrue("jen bílá, modrá a jejich přechody; vypnutá vrstva ani jiný styl se nekreslí: " + Integer.toHexString(p), cervena == zelena && (p & 0xFF) == 0xFF);
+			Assert.assertTrue("jen bílá, modrá, černá a jejich přechody; vypnutá vrstva ani jiný styl se nekreslí: " + Integer.toHexString(p), cervena == zelena && (p & 0xFF) >= cervena);
 		}
 		Assert.assertTrue("zapnutá vrstva se kreslí", modra);
+		Assert.assertTrue("kategorie stylu se kreslí", cerna);
 	}
 
 	@Test
