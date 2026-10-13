@@ -19,7 +19,7 @@ public class ZvyrazneniTest {
 	private Genom g;
 
 	private void nacti(final Zvyrazneni zvyrazneni) throws Exception {
-		bag = new IkonNacitacLoader().nacti(null, true, ASada.STANDARD, zvyrazneni);
+		bag = new IkonNacitacLoader().nacti(true, ASada.STANDARD, zvyrazneni);
 		g = bag.getGenom();
 	}
 

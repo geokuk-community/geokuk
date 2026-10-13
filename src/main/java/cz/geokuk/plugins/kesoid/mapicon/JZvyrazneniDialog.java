@@ -29,6 +29,8 @@ public class JZvyrazneniDialog extends JMyDialog0 implements AfterInjectInit {
 	private JButton jNahoru;
 	private JButton jDolu;
 	private JButton jSmazatPredvolbu;
+	/** Zvolené zvýraznění je uložená vlastní předvolba. */
+	private boolean vlastniPredvolba;
 
 	public JZvyrazneniDialog() {
 		setTitle("Zvýraznění keší");
@@ -41,6 +43,7 @@ public class JZvyrazneniDialog extends JMyDialog0 implements AfterInjectInit {
 
 	@Override
 	public void initAfterInject() {
+		vlastniPredvolba = kesoidModel.getPredvolbyZvyrazneni().contains(kesoidModel.getZvyrazneni());
 		zobraz(kesoidModel.getZvyrazneni());
 	}
 
@@ -52,6 +55,7 @@ public class JZvyrazneniDialog extends JMyDialog0 implements AfterInjectInit {
 	}
 
 	public void onEvent(final ZvyrazneniEvent event) {
+		vlastniPredvolba = event.getPredvolby().contains(event.getZvyrazneni());
 		aktualizujTlacitka();
 	}
 
@@ -156,7 +160,7 @@ public class JZvyrazneniDialog extends JMyDialog0 implements AfterInjectInit {
 		jOdebrat.setEnabled(i >= 0);
 		jNahoru.setEnabled(i > 0);
 		jDolu.setEnabled(i >= 0 && i < pravidla.size() - 1);
-		jSmazatPredvolbu.setEnabled(kesoidModel != null && kesoidModel.getPredvolbyZvyrazneni().contains(kesoidModel.getZvyrazneni()));
+		jSmazatPredvolbu.setEnabled(vlastniPredvolba);
 	}
 
 	private void pridej() {

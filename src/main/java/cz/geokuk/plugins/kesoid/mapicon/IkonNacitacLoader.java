@@ -3,7 +3,6 @@ package cz.geokuk.plugins.kesoid.mapicon;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Future;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
@@ -34,7 +33,7 @@ public class IkonNacitacLoader {
 
 	private MultiFolder lastScan;
 
-	public IkonBag nacti(final Future<?> future, final boolean aPrenacti, final ASada jmenoSady, final Zvyrazneni zvyrazneni) throws IOException {
+	public IkonBag nacti(final boolean aPrenacti, final ASada jmenoSady, final Zvyrazneni zvyrazneni) throws IOException {
 		if (aPrenacti) {
 			lastScan = null;
 		}
