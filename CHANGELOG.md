@@ -1,5 +1,11 @@
 # Změny
 
+## 6.5.0
+
+### Změny
+- Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
+  žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
+
 ## 6.4.0
 
 ### Změny
