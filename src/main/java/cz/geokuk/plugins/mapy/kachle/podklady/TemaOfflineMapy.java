@@ -28,11 +28,36 @@ public final class TemaOfflineMapy {
 	private final File soubor;
 	/** Téma uvnitř zipu, null = první podle abecedy. */
 	private final String xmlVZipu;
+	private final VolbaVrstev vrstvy;
 
 	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu) {
+		this(vestavene, soubor, xmlVZipu, VolbaVrstev.AUTOR);
+	}
+
+	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu, final VolbaVrstev vrstvy) {
 		this.vestavene = vestavene;
 		this.soubor = soubor;
 		this.xmlVZipu = xmlVZipu;
+		this.vrstvy = vrstvy;
+	}
+
+	/** Totéž téma s výběrem vrstev uživatele. */
+	public TemaOfflineMapy sVrstvami(final VolbaVrstev volba) {
+		return new TemaOfflineMapy(vestavene, soubor, xmlVZipu, volba);
+	}
+
+	public VolbaVrstev getVrstvy() {
+		return vrstvy;
+	}
+
+	/** Klíč pro uložení nastavení tématu (výběr vrstev). */
+	public String klicNastaveni() {
+		return OfflineRenderer.klic(naText());
+	}
+
+	/** Stejný soubor tématu, na výběru vrstev nezáleží. */
+	public boolean stejnyZdroj(final TemaOfflineMapy t) {
+		return t != null && naText().equals(t.naText());
 	}
 
 	public static TemaOfflineMapy zeSouboru(final File soubor, final String xmlVZipu) {
@@ -131,15 +156,25 @@ public final class TemaOfflineMapy {
 		return temata;
 	}
 
-	/** Co určuje vzhled dlaždic: při změně souboru tématu se dlaždice vykreslí znovu. */
+	/** Co určuje vzhled dlaždic: soubor tématu a výběr vrstev. */
 	String otisk() {
+		return vrstvy.isAutor() ? otiskSouboru() : otiskSouboru() + "\nvolba:" + vrstvy.naText();
+	}
+
+	/** Soubor tématu bez výběru vrstev: při jeho změně se dlaždice i symboly vykreslí znovu. */
+	String otiskSouboru() {
 		if (vestavene != null) {
 			return "vestavene:" + vestavene.name();
 		}
 		return naText() + ':' + soubor.length() + ':' + soubor.lastModified();
 	}
 
-	XmlRenderTheme vytvor() throws IOException {
+	/** Téma s výběrem vrstev: od uživatele, jinak od autora tématu. Zvolené vrstvy a nabídku vrstev zapíše do {@code vyber}. */
+	XmlRenderTheme vytvor(final VyberVrstev vyber) throws IOException {
+		return new SVrstvami(vytvor(), vyber);
+	}
+
+	private XmlRenderTheme vytvor() throws IOException {
 		if (vestavene != null) {
 			return vestavene;
 		}
@@ -156,6 +191,93 @@ public final class TemaOfflineMapy {
 			throw new IOException("V souboru " + soubor + " není téma " + xml + ".");
 		}
 		return new ZipRenderTheme(xml, zdroje);
+	}
+
+	/**
+	 * Výběr vrstev (stylemenu) tématu: styl a vrstvy podle volby uživatele, co nezvolil, podle autora. Bez výběru by mapsforge kreslil všechny
+	 * vrstvy najednou.
+	 */
+	static final class VyberVrstev implements XmlRenderThemeMenuCallback {
+		private final VolbaVrstev volba;
+		private String popis;
+		private XmlRenderThemeStyleMenu menu;
+
+		VyberVrstev(final VolbaVrstev volba) {
+			this.volba = volba;
+		}
+
+		@Override
+		public Set<String> getCategories(final XmlRenderThemeStyleMenu menu) {
+			this.menu = menu;
+			XmlRenderThemeStyleLayer styl = volba.getStyl() == null ? null : menu.getLayer(volba.getStyl());
+			if (styl == null || !styl.isVisible()) {
+				styl = menu.getLayer(menu.getDefaultValue());
+			}
+			if (styl == null) {
+				return null;
+			}
+			final Set<String> kategorie = new HashSet<>(styl.getCategories());
+			final StringBuilder sb = new StringBuilder(menu.getId()).append(':').append(styl.getId());
+			for (final XmlRenderThemeStyleLayer vrstva : styl.getOverlays()) {
+				if (volba.jeZapnuta(vrstva.getId(), vrstva.isEnabled())) {
+					kategorie.addAll(vrstva.getCategories());
+					sb.append(',').append(vrstva.getId());
+				}
+			}
+			popis = sb.toString();
+			return kategorie;
+		}
+
+		/** Zvolený styl a vrstvy, null když téma vrstvy nemá. */
+		String getPopis() {
+			return popis;
+		}
+
+		/** Nabídka vrstev tématu, null když ji téma nemá. */
+		XmlRenderThemeStyleMenu getMenu() {
+			return menu;
+		}
+	}
+
+	/** Téma s vlastním výběrem vrstev; vestavěná témata jsou sdílené konstanty, proto se jim výběr nenastavuje přímo. */
+	private static final class SVrstvami implements XmlRenderTheme {
+		private final XmlRenderTheme tema;
+		private XmlRenderThemeMenuCallback vrstvy;
+
+		SVrstvami(final XmlRenderTheme tema, final XmlRenderThemeMenuCallback vrstvy) {
+			this.tema = tema;
+			this.vrstvy = vrstvy;
+		}
+
+		@Override
+		public XmlRenderThemeMenuCallback getMenuCallback() {
+			return vrstvy;
+		}
+
+		@Override
+		public String getRelativePathPrefix() {
+			return tema.getRelativePathPrefix();
+		}
+
+		@Override
+		public InputStream getRenderThemeAsStream() throws IOException {
+			return tema.getRenderThemeAsStream();
+		}
+
+		@Override
+		public XmlThemeResourceProvider getResourceProvider() {
+			return tema.getResourceProvider();
+		}
+
+		@Override
+		public void setMenuCallback(final XmlRenderThemeMenuCallback vrstvy) {
+			this.vrstvy = vrstvy;
+		}
+
+		@Override
+		public void setResourceProvider(final XmlThemeResourceProvider zdroje) {
+			tema.setResourceProvider(zdroje);
+		}
 	}
 
 	/** Soubory tématu ze zipu v paměti; čte adresář zipu, takže zvládne i položky bez velikosti v hlavičce. */
@@ -211,12 +333,12 @@ public final class TemaOfflineMapy {
 
 	@Override
 	public boolean equals(final Object obj) {
-		return obj instanceof TemaOfflineMapy && naText().equals(((TemaOfflineMapy) obj).naText());
+		return obj instanceof TemaOfflineMapy && naText().equals(((TemaOfflineMapy) obj).naText()) && vrstvy.equals(((TemaOfflineMapy) obj).vrstvy);
 	}
 
 	@Override
 	public int hashCode() {
-		return naText().hashCode();
+		return naText().hashCode() * 31 + vrstvy.hashCode();
 	}
 
 	@Override

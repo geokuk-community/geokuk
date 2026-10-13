@@ -3,6 +3,28 @@
 ## 6.5.0
 
 ### Změny
+- Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
+  jejího detailu.
+- OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
+- Offline mapa s tématem, které má vrstvy (například paws, Biker,
+  Motorider), kreslí jen vrstvy, které má zapnuté autor tématu, takže
+  turistické značení je přehlednější. Vzhled offline mapy se tím změní
+  a její dlaždice v cache se jednou vykreslí znovu.
+- Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
+  žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
+- Nové mapové podklady pro sousední země: DE topografická mapa (BKG
+  TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
+  Německou a švýcarskou mapu nejde hromadně stahovat do cache.
+- Mapy > Téma offline mapy > Vrstvy tématu: u tématu s vrstvami lze zvolit
+  styl (například cyklo) a zapnout nebo vypnout jednotlivé vrstvy (vrstevnice,
+  cyklotrasy, turistické značky…). Volba se pamatuje pro každé téma zvlášť,
+  Obnovit výchozí vrstvy vrátí výběr autora tématu. U tématu paws je v menu
+  odkaz na legendu.
+- Nové podmenu Kešoidy > Zvýraznění: barevný čtverec pod ikonou keší podle
+  předvolby Bez zvýraznění, Terén 4,5 a 5 (výchozí) nebo Obtížnost 4,5 a 5.
+  V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
+  platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
+  pro všechny sady ikon.
 
 ## 6.4.0
 

@@ -26,6 +26,7 @@ import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.lang.ATimestamp;
 import cz.geokuk.util.lang.StringUtils;
+import cz.geokuk.plugins.kesoid.kind.kes.DotahovacZDatabaze;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -116,7 +117,7 @@ public class GsakDbLoader extends Nacitac0 {
 
 	private void loadCaches(final File aDbFile, final GsakDao aDao, final IImportBuilder aBuilder, final Map<String, Map<String, String>> aVlastniHodnoty, final Future<?> aFuture, final Progressor aProgressor)
 			throws SQLException, IOException {
-		final Function<String, String> hint = HintZDatabaze.dotahovac(aDbFile, HintZDatabaze.GSAK);
+		final DotahovacZDatabaze hint = HintZDatabaze.dotahovac(aDbFile, HintZDatabaze.GSAK);
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		final Counter čítač = new Counter();

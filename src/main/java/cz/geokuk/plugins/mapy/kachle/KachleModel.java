@@ -9,9 +9,11 @@ import java.util.concurrent.Executors;
 
 import javax.swing.SwingUtilities;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.framework.Model0;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
@@ -26,6 +28,8 @@ public class KachleModel extends Model0 {
 	private static final String OFFLINE_MAPY_DIR = "offlineMapyDir";
 
 	private static final String OFFLINE_MAPA_TEMA = "offlineMapaTema";
+	/** Výběr vrstev každého tématu zvlášť; klíč je otisk jména tématu, jméno samo může být delší, než dovolí klíč nastavení. */
+	private static final String OFFLINE_MAPA_VRSTVY_node = "offlineMapaVrstvy";
 
 	private static final String OFFLINE_OSTRA = "offlineMapaOstra";
 	private static final String OSM = "© přispěvatelé OpenStreetMap";
@@ -187,12 +191,15 @@ public class KachleModel extends Model0 {
 		return (KachleUmisteniSouboru) umisteniSouboru;
 	}
 
+	/** Zvolené téma s výběrem vrstev, který si pro něj uživatel uložil. */
 	public TemaOfflineMapy getTemaOfflineMapy() {
-		return TemaOfflineMapy.zTextu(currPrefe().get(OFFLINE_MAPA_TEMA, ""));
+		final TemaOfflineMapy tema = TemaOfflineMapy.zTextu(currPrefe().get(OFFLINE_MAPA_TEMA, ""));
+		return tema.sVrstvami(VolbaVrstev.zTextu(currPrefe().node(OFFLINE_MAPA_VRSTVY_node).get(tema.klicNastaveni(), null)));
 	}
 
+	/** Zvolí téma; výběr vrstev se vezme ten, který má téma uložený. */
 	public void setTemaOfflineMapy(final TemaOfflineMapy tema) {
-		if (tema.equals(getTemaOfflineMapy())) {
+		if (tema.stejnyZdroj(getTemaOfflineMapy())) {
 			return;
 		}
 		currPrefe().put(OFFLINE_MAPA_TEMA, tema.naText());
@@ -200,10 +207,37 @@ public class KachleModel extends Model0 {
 		fire(new OfflineMapaChangedEvent());
 	}
 
+	/** Výběr vrstev zvoleného tématu; uloží se k tématu. */
+	public void setVrstvyTematu(final VolbaVrstev volba) {
+		final TemaOfflineMapy tema = getTemaOfflineMapy();
+		if (volba.equals(tema.getVrstvy())) {
+			return;
+		}
+		final MyPreferences pref = currPrefe().node(OFFLINE_MAPA_VRSTVY_node);
+		if (volba.isAutor()) {
+			pref.remove(tema.klicNastaveni());
+		} else {
+			pref.put(tema.klicNastaveni(), volba.naText());
+		}
+		nastavOfflineMapy(getUmisteniSouboru());
+		fire(new OfflineMapaChangedEvent());
+	}
+
+	/** Vrstvy zvoleného tématu, null když je téma nemá nebo ještě není načtené (načte se s první dlaždicí offline mapy). */
+	public VrstvyTematu getVrstvyTematu() {
+		final VrstvyTematu v = ziskavac.getOfflineMapy().getVrstvyTematu();
+		return v != null && v.getTema().stejnyZdroj(getTemaOfflineMapy()) ? v : null;
+	}
+
 	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
 		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
 		predpripravOfflineMapu();
+	}
+
+	/** Střed výřezu pokrývá podrobná offline mapa (nebo mapy ještě nejsou otevřené). */
+	public boolean jePodrobnaOfflineMapa(final Wgs bod, final int zoom) {
+		return ziskavac == null || ziskavac.getOfflineMapy().jePodrobnaMapa(bod, zoom);
 	}
 
 	/** Atribuce offline mapy: data podle otevřených map (OSM, přehledová mapa z Natural Earth) a téma ze souboru uživatele. */
