@@ -65,7 +65,8 @@ public class JFavorit extends JComponent {
 		final int zaobleni = 20;
 
 		// fill Ellipse2D.Double
-		final GradientPaint redtowhite = new GradientPaint(w / 2, 0, new Color(242, 222, 158), w / 2, h, new Color(251, 251, 243));
+		final int stred = w / 2;
+		final GradientPaint redtowhite = new GradientPaint(stred, 0, new Color(242, 222, 158), stred, h, new Color(251, 251, 243));
 		g2.setPaint(redtowhite);
 		g2.fillRoundRect(0, 0, w, h, zaobleni, zaobleni);
 

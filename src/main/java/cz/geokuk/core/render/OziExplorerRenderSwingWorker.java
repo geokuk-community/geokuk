@@ -14,6 +14,7 @@ import javax.imageio.ImageIO;
 import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.Dlg;
+import cz.geokuk.util.file.Soubory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +43,7 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 		// TODO typ obrázku musí být určen podle toho, zda se rendruje JPG nebo PNG.
 		final String imageFileName = renderModel.getRenderSettings().getPureFileName().getText();
 		progressor.setText("Rendrování " + imageFileName);
-		dir.mkdirs();
+		Soubory.zalozSlozky(dir);
 		final String imageShortName = imageFileName + "." + imageType;
 		final File imagePathName = new File(dir, imageShortName);
 		final File mapPathName = new File(dir, imageFileName + ".map");
@@ -91,7 +92,7 @@ public class OziExplorerRenderSwingWorker extends RendererSwingWorker0 {
 			}
 		} catch (final Exception e) {
 			for (final File f : zapisovane) {
-				f.delete();
+				Soubory.smaz(f);
 			}
 			throw e;
 		}

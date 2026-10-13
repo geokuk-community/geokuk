@@ -1,5 +1,6 @@
 package cz.geokuk.util.lang;
 
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.*;
@@ -567,7 +568,7 @@ public final class FThrowable {
 	 * @param aStream
 	 */
 	public static String printStackTrace(final Throwable th, final PrintStream aStream, final String aPrefix) {
-		final PrintWriter pwrt = new PrintWriter(aStream, false);
+		final PrintWriter pwrt = new PrintWriter(new OutputStreamWriter(aStream, java.nio.charset.Charset.defaultCharset()), false);
 		final String s = printStackTrace(th, pwrt, aPrefix);
 		pwrt.flush();
 		return s;

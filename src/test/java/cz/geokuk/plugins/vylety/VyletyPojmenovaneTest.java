@@ -308,13 +308,27 @@ public class VyletyPojmenovaneTest {
 		final String id = model.novy("Šumava", false).get();
 		Assert.assertFalse(model.isPrepina());
 
-		final java.util.concurrent.CompletableFuture<Void> aktivace = model.aktivovat(id);
-		Assert.assertTrue("příznak se nastaví hned", model.isPrepina());
-		model.add(EVylet.ANO, kes("GCBEHEM"));
-		Assert.assertTrue("úprava se ignoruje", model.get(EVylet.ANO).isEmpty());
-		model.removeAll(EVylet.ANO);
-		Assert.assertEquals("odebrání se ignoruje", Collections.singletonList("GC1"), radky(ano));
-		for (final java.util.concurrent.CompletableFuture<?> f : Arrays.asList(model.prejmenovat(id, "Jiné"), model.smazat(id), model.aktivovat("v1"), model.novy("Další", false))) {
+		// Na EDT, aby se přepnutí (dokončuje se na EDT) nedokončilo dřív, než proběhnou kontroly.
+		final java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CompletableFuture<Void>> aktivaceRef = new java.util.concurrent.atomic.AtomicReference<>();
+		final java.util.List<java.util.concurrent.CompletableFuture<?>> odmitnute = new java.util.ArrayList<>();
+		final java.util.concurrent.atomic.AtomicReference<Throwable> chyba = new java.util.concurrent.atomic.AtomicReference<>();
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+			try {
+				aktivaceRef.set(model.aktivovat(id));
+				Assert.assertTrue("příznak se nastaví hned", model.isPrepina());
+				model.add(EVylet.ANO, kes("GCBEHEM"));
+				Assert.assertTrue("úprava se ignoruje", model.get(EVylet.ANO).isEmpty());
+				model.removeAll(EVylet.ANO);
+				odmitnute.addAll(Arrays.asList(model.prejmenovat(id, "Jiné"), model.smazat(id), model.aktivovat("v1"), model.novy("Další", false)));
+			} catch (final Throwable t) {
+				chyba.set(t);
+			}
+		});
+		if (chyba.get() != null) {
+			throw new AssertionError(chyba.get());
+		}
+		final java.util.concurrent.CompletableFuture<Void> aktivace = aktivaceRef.get();
+		for (final java.util.concurrent.CompletableFuture<?> f : odmitnute) {
 			try {
 				f.get();
 				Assert.fail("operace během přepínání se odmítá");

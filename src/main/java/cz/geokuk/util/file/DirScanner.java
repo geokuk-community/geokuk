@@ -98,7 +98,8 @@ public class DirScanner {
 				@Override
 				public FileVisitResult visitFile(final Path path, final BasicFileAttributes aAttrs) throws IOException {
 
-					if (matches(path.getFileName().toString(), root.def)) {
+					final Path jmeno = path.getFileName();
+					if (jmeno != null && matches(jmeno.toString(), root.def)) {
 						list.add(new KeFile(new FileAndTime(path.toFile()), root));
 					}
 					return FileVisitResult.CONTINUE;

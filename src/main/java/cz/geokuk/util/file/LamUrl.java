@@ -40,7 +40,7 @@ public class LamUrl {
 			if (other.url != null) {
 				return false;
 			}
-		} else if (!url.equals(other.url)) {
+		} else if (other.url == null || !url.toExternalForm().equals(other.url.toExternalForm())) {
 			return false;
 		}
 		return true;
@@ -56,7 +56,7 @@ public class LamUrl {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (int) (lastModified ^ lastModified >>> 32);
-		result = prime * result + (url == null ? 0 : url.hashCode());
+		result = prime * result + (url == null ? 0 : url.toExternalForm().hashCode());
 		return result;
 	}
 

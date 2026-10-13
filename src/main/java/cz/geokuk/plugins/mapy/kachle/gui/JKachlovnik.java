@@ -132,9 +132,6 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 			return; // nemá smysl rendrovat prázdný kachlovník
 		}
 		final Coord soord = getSoord();
-		if (soord == null) {
-			return;
-		}
 		assert kachleModel != null;
 		if (katype == null) {
 			return;

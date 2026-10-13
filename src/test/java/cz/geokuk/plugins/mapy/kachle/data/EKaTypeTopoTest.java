@@ -39,6 +39,11 @@ public class EKaTypeTopoTest {
 			Assert.assertNull(t.getKeyStroke());
 			Assert.assertTrue(EKaType.vestavene().contains(t));
 		}
+		Assert.assertTrue("swisstopo mimo území vrací 400 Tile out of bounds", EKaType.CH_SWISSTOPO.jeMimoUzemi(400, praha));
+		final KaLoc bern = KaLoc.ofJZ(new Wgs(46.948, 7.447).toMou(), 14);
+		Assert.assertFalse("uvnitř Švýcarska je 400 chyba", EKaType.CH_SWISSTOPO.jeMimoUzemi(400, bern));
+		Assert.assertFalse(EKaType.DE_TOPPLUS.jeMimoUzemi(400, praha));
+		Assert.assertFalse(EKaType.AT_BASEMAP.jeMimoUzemi(400, praha));
 	}
 
 	@Test

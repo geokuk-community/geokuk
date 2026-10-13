@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.swing.Icon;
@@ -161,6 +162,9 @@ public abstract class Kesoid extends Weikoid0 implements Cloneable {
 
 			@Override
 			public Wpt next() {
+				if (!hasNext()) {
+					throw new NoSuchElementException();
+				}
 				final Wpt result = (Wpt) curwk;
 				curwk = curwk.next;
 				return result;

@@ -14,6 +14,7 @@ import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 import cz.geokuk.start.Start;
+import cz.geokuk.util.file.Soubory;
 import lombok.extern.slf4j.Slf4j;
 
 /** Upozornění na nevhodné umístění přenosného programu a na starou přibalenou Javu, ukazují se po zobrazení hlavního okna. */
@@ -62,14 +63,14 @@ public final class KontrolaUmisteni {
 	static void pripravSlozky() {
 		for (final File slozka : Arrays.asList(KesoidUmisteniSouboru.KES_DIR.getFile(), KesoidUmisteniSouboru.CESTY_DIR.getFile(),
 				KesoidUmisteniSouboru.IMAGE_MY_DIR.getFile(), KesoidUmisteniSouboru.IMAGE_3RDPARTY_DIR.getFile(), UzivatelskeMapy.slozka(), KachleUmisteniSouboru.OFFLINE_MAPY_DIR.getFile())) {
-			slozka.mkdirs();
+			Soubory.zalozSlozky(slozka);
 		}
 		doplnUkazkyMap(new File(FConst.DATA_DIR, SLOZKA_UKAZEK_MAP));
 	}
 
 	/** Ukázky uživatelských map odpovídají verzi programu i po aktualizaci, která dodá jen nový jar. Do složky map se nic nekopíruje. */
 	static void doplnUkazkyMap(final File slozka) {
-		slozka.mkdirs();
+		Soubory.zalozSlozky(slozka);
 		for (final String jmeno : UKAZKY_MAP) {
 			try (InputStream in = KontrolaUmisteni.class.getResourceAsStream("/priklady/mapy/" + jmeno)) {
 				if (in == null) {

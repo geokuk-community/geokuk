@@ -139,7 +139,6 @@ public class LafSupport {
 	}
 
 	private static void createLafMenu() {
-		final JMenuItem miMetal = null;
 		// Create these menu items for the first SwingSet only.
 		// ***** create laf switcher menu
 		lafMenu = new JMenu("Skin");
@@ -159,8 +158,7 @@ public class LafSupport {
 		themesMenu.setMnemonic('T');
 
 		// *** now back to adding color/font themes to the theme menu
-		final JMenuItem mi = createThemesMenuItem(themesMenu, "Ocean", 'O', new OceanTheme());
-		mi.setSelected(miMetal != null && miMetal.isSelected()); // This is the default theme
+		createThemesMenuItem(themesMenu, "Ocean", 'O', new OceanTheme());
 
 		createThemesMenuItem(themesMenu, "Steel", 'S', new DefaultMetalTheme());
 		createThemesMenuItem(themesMenu, "Aqua", 'A', new AquaTheme());

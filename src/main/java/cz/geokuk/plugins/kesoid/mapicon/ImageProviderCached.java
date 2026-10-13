@@ -14,7 +14,8 @@ public class ImageProviderCached implements ImageProvider {
 	private static Pocitadlo pocitSourceImaguZasah = new PocitadloRoste("Zdrojové obrázky - zásah cache", "");
 	private final Pocitadlo pocitSourceImagu;
 
-	private final Map<URL, BufferedImage> sourceImageCache = Collections.synchronizedMap(new HashMap<URL, BufferedImage>());
+	/** Klíčem je adresa jako text, URL.equals by u adres s hostitelem dělalo DNS dotaz. */
+	private final Map<String, BufferedImage> sourceImageCache = Collections.synchronizedMap(new HashMap<String, BufferedImage>());
 
 	/** Jméno skla odliší počitadla jednotlivých skel. */
 	public ImageProviderCached(final String jmenoSkla) {
@@ -24,10 +25,10 @@ public class ImageProviderCached implements ImageProvider {
 	@Override
 	public BufferedImage getImage(final URL url) {
 		try {
-			BufferedImage bi = sourceImageCache.get(url);
+			BufferedImage bi = sourceImageCache.get(url.toExternalForm());
 			if (bi == null) {
 				bi = ImageIO.read(url);
-				sourceImageCache.put(url, bi);
+				sourceImageCache.put(url.toExternalForm(), bi);
 				pocitSourceImagu.set(sourceImageCache.size());
 			} else {
 				pocitSourceImaguZasah.inc();

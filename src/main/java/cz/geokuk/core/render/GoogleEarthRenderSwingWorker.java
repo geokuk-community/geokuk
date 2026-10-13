@@ -13,6 +13,7 @@ import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.Progressor;
+import cz.geokuk.util.file.Soubory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,7 +72,7 @@ public class GoogleEarthRenderSwingWorker extends RendererSwingWorker0 {
 		{
 			final File kmzDir = renderModel.getOutputFolder();
 			final String pureName = renderModel.getRenderSettings().getPureFileName().getText();
-			kmzDir.mkdirs();
+			Soubory.zalozSlozky(kmzDir);
 			file = new File(kmzDir, pureName + ".kmz").getCanonicalFile();
 		}
 		return file;

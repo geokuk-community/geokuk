@@ -41,17 +41,20 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		// paint(g);
 		final Graphics2D g = (Graphics2D) gg.create();
 		final Coord soord = getSoord();
-		meritko.setMaximalniSirkaMeritka(soord.getWidth() * 3 / 4);
+		final int maximalniSirka = soord.getWidth() * 3 / 4;
+		meritko.setMaximalniSirkaMeritka(maximalniSirka);
 		meritko.setPixluNaMetr(soord.getPixluNaMetr());
 		meritko.setSize(meritko.getPreferredSize());
-		g.translate((soord.getWidth() - meritko.getSize().width) / 2, soord.getHeight() - meritko.getSize().getHeight() - 20);
+		final int x = (soord.getWidth() - meritko.getSize().width) / 2;
+		g.translate(x, soord.getHeight() - meritko.getSize().getHeight() - 20);
 		meritko.paintComponent(g);
 
 	}
 
 	@Override
 	protected void onVyrezChanged() {
-		meritko.setMaximalniSirkaMeritka(getSoord().getWidth() * 3 / 4);
+		final int maximalniSirka = getSoord().getWidth() * 3 / 4;
+		meritko.setMaximalniSirkaMeritka(maximalniSirka);
 		meritko.setPixluNaMetr(getSoord().getPixluNaMetr());
 	}
 
