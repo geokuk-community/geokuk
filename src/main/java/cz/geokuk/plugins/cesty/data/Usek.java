@@ -76,6 +76,10 @@ public class Usek extends Bousek0 {
 	 */
 	@Override
 	public long computeKvadratVzdalenosti(final Mou mou) {
+		final List<Mou> t = mou == null ? null : getTrasa();
+		if (t != null) {
+			return kvadratVzdalenostiKTrase(t, mou);
+		}
 		final Mou m = getNejblizsiBodKolmoKUsecce(mou);
 		long kvadrat;
 		if (mou == null) { // je to jeden z krajnich bodul
@@ -85,6 +89,49 @@ public class Usek extends Bousek0 {
 			kvadrat = mou.getKvadratVzdalenosti(m);
 		}
 		return kvadrat;
+	}
+
+	/** Délka trasy v metrech od jejího začátku k místu na trase nejblíž bodu. */
+	private static double delkaTrasyKBodu(final List<Mou> trasa, final Mou mou) {
+		double nejmene = Double.MAX_VALUE;
+		double vysledek = 0;
+		double predtim = 0;
+		for (int i = 1; i < trasa.size(); i++) {
+			final Mou a = trasa.get(i - 1);
+			final Mou b = trasa.get(i);
+			final double dx = (double) b.xx - a.xx;
+			final double dy = (double) b.yy - a.yy;
+			final double d2 = dx * dx + dy * dy;
+			double t = d2 == 0 ? 0 : (((double) mou.xx - a.xx) * dx + ((double) mou.yy - a.yy) * dy) / d2;
+			t = Math.max(0, Math.min(1, t));
+			final double ex = a.xx + t * dx - mou.xx;
+			final double ey = a.yy + t * dy - mou.yy;
+			final double useku = FGeoKonvertor.dalka(a, b);
+			if (ex * ex + ey * ey < nejmene) {
+				nejmene = ex * ex + ey * ey;
+				vysledek = predtim + t * useku;
+			}
+			predtim += useku;
+		}
+		return vysledek;
+	}
+
+	/** Kvadrát vzdálenosti bodu k lomené čáře trasy po cestách. */
+	private static long kvadratVzdalenostiKTrase(final List<Mou> trasa, final Mou mou) {
+		double nejmene = Double.MAX_VALUE;
+		for (int i = 1; i < trasa.size(); i++) {
+			final Mou a = trasa.get(i - 1);
+			final Mou b = trasa.get(i);
+			final double dx = (double) b.xx - a.xx;
+			final double dy = (double) b.yy - a.yy;
+			final double d2 = dx * dx + dy * dy;
+			double t = d2 == 0 ? 0 : (((double) mou.xx - a.xx) * dx + ((double) mou.yy - a.yy) * dy) / d2;
+			t = Math.max(0, Math.min(1, t));
+			final double ex = a.xx + t * dx - mou.xx;
+			final double ey = a.yy + t * dy - mou.yy;
+			nejmene = Math.min(nejmene, ex * ex + ey * ey);
+		}
+		return nejmene >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) nejmene;
 	}
 
 	public long computeKvadratVzdalenostiBoduKUsecce(final Mou mou) {
@@ -167,6 +214,10 @@ public class Usek extends Bousek0 {
 		if (isVzdusny()) {
 			return 0;
 		}
+		final List<Mou> t = getTrasa();
+		if (t != null) {
+			return Math.max(0, dalka() - delkaTrasyKBodu(t, aMou));
+		}
 		final Mou mou = getNejblizsiBodKPrimce(aMou);
 		return FGeoKonvertor.dalka(mou, bvpred);
 	}
@@ -174,6 +225,10 @@ public class Usek extends Bousek0 {
 	public double getMouDelkaVzad(final Mou aMou) {
 		if (isVzdusny()) {
 			return 0;
+		}
+		final List<Mou> t = getTrasa();
+		if (t != null) {
+			return delkaTrasyKBodu(t, aMou);
 		}
 		final Mou mou = getNejblizsiBodKPrimce(aMou);
 		return FGeoKonvertor.dalka(mou, bvzad);

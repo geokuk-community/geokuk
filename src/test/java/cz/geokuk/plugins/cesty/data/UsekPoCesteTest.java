@@ -64,6 +64,16 @@ public class UsekPoCesteTest {
 	}
 
 	@Test
+	public void vzdalenostADelkyPodelTrasy() {
+		updator.setTyp(prvni(), TypUseku.PO_CESTE);
+		final long rovne = prvni().computeKvadratVzdalenosti(X.toMou());
+		spocitej(prvni(), A, X, B);
+		assertTrue("bod trasy je na úseku", prvni().computeKvadratVzdalenosti(X.toMou()) < rovne / 1000);
+		assertEquals(A.vzdalenost(X), prvni().getMouDelkaVzad(X.toMou()), 1);
+		assertEquals(X.vzdalenost(B), prvni().getMouDelkaVpred(X.toMou()), 1);
+	}
+
+	@Test
 	public void rovnyUsekTrasuNeprijme() {
 		assertFalse(spocitej(prvni(), A, X, B));
 		assertNull(prvni().getTrasa());

@@ -106,6 +106,15 @@ public class Doc implements Iterable<Cesta> {
 		return cesty;
 	}
 
+	/** Úseky po cestě bez nalezené trasy ve všech cestách. */
+	public int getPocetUsekuPoCesteBezTrasy() {
+		int pocet = 0;
+		for (final Cesta cesta : cesty) {
+			pocet += cesta.getPocetUsekuPoCesteBezTrasy();
+		}
+		return pocet;
+	}
+
 	/** Úseky všech cest. */
 	public Iterable<Usek> getUseky() {
 		return new MultiIterable<Usek, Cesta>(cesty) {

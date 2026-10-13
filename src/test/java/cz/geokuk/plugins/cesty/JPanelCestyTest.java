@@ -33,6 +33,11 @@ public class JPanelCestyTest {
 			public Cesta getCurta() {
 				return curta;
 			}
+
+			@Override
+			protected cz.geokuk.framework.MyPreferences currPrefe() {
+				return cz.geokuk.framework.MyPreferences.current().node("test-panel-cesty");
+			}
 		});
 		panel.obnov();
 		return panel;

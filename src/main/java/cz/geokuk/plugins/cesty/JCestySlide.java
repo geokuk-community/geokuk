@@ -379,6 +379,12 @@ public class JCestySlide extends JSingleSlide0 {
 	}
 
 	private void addPopupItems(final JPopupMenu popupMenu, final Usek usek) {
+		if (!usek.isPoCeste()) {
+			popupMenu.add(factory.initNow(new NastavTypUsekuAction(usek, moucur, TypUseku.PO_CESTE)));
+		}
+		if (usek.getTyp() != TypUseku.ROVNE) {
+			popupMenu.add(factory.initNow(new NastavTypUsekuAction(usek, moucur, TypUseku.ROVNE)));
+		}
 		popupMenu.add(factory.initNow(new PrepniVzdusnostUseku(usek, moucur)));
 		popupMenu.add(factory.initNow(new RozdelitCestuVUsekuAction(usek, moucur)));
 		popupMenu.add(factory.initNow(new UriznoutCestuVUsekuAction(usek, moucur)));
@@ -465,6 +471,17 @@ public class JCestySlide extends JSingleSlide0 {
 		cestyModel.setPridavaniBodu(true);
 	}
 
+	/** Proč úsek po cestě nevede po cestě; null, když vede nebo jde o jiný úsek. */
+	private String stavUseku(final Usek usek) {
+		if (!usek.isPoCeste() || usek.getTrasa() != null) {
+			return null;
+		}
+		if (cestyModel.isHledaSeTrasa(usek)) {
+			return "hledám trasu po cestách…";
+		}
+		return JPanelCesty.popisStavu(usek.getStavTrasy());
+	}
+
 	private void zobrazeniDalky() {
 		// Mouable mouable = getUpravenaMys();
 		// Mou mou = mouable == null ? moucur : mouable.getMou();
@@ -479,6 +496,7 @@ public class JCestySlide extends JSingleSlide0 {
 			napozicujCestaTolltip();
 		} else if (blizkyBousek != null) {
 			cestaToolTip.setDalkoviny(blizkyBousek, moucur);
+			cestaToolTip.setStavUseku(blizkyBousek instanceof Usek ? stavUseku((Usek) blizkyBousek) : null);
 			napozicujCestaTolltip();
 		} else {
 			cestaToolTip.setVisible(false);

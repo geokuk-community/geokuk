@@ -18,6 +18,7 @@ public class JCestaTooltip extends JComponent {
 	private final JLabel jVpred = new JLabel("xxxxxxxx");
 	private final JLabel jVzad = new JLabel("yyyyyyyy");
 	private final JLabel jNazevCesty = new JLabel("yyyyyyyy");
+	private final JLabel jStavUseku = new JLabel();
 
 	public JCestaTooltip() {
 		setLayout(new FlowLayout());
@@ -25,7 +26,10 @@ public class JCestaTooltip extends JComponent {
 		add(jNazevCesty);
 		add(jVzad);
 		add(jVpred);
+		add(jStavUseku);
 		jNazevCesty.setForeground(Color.WHITE);
+		jStavUseku.setForeground(Color.WHITE);
+		jStavUseku.setVisible(false);
 	}
 
 	public void setDalkoviny(final Bousek0 blizkyBousek, final Mou aMou) {
@@ -38,6 +42,12 @@ public class JCestaTooltip extends JComponent {
 
 	}
 
+	/** Stav úseku po cestě, který po cestě nevede; null = nic nepsat. */
+	public void setStavUseku(final String stav) {
+		jStavUseku.setText(stav == null ? "" : "(" + stav + ")");
+		jStavUseku.setVisible(stav != null);
+	}
+
 	public void setPridavaciDalkoviny(final Cesta cesta, final Mou mou) {
 
 		final double dalkaPuvodni = cesta == null ? 0 : cesta.dalka();
@@ -45,6 +55,7 @@ public class JCestaTooltip extends JComponent {
 		jVzad.setText("<html>" + Cesta.dalkaHtml(dalkaPuvodni, FBarvy.CURTA_NORMALNE) + "<font color=white> +</font>" + Cesta.dalkaHtml(dalkaDodana, Color.WHITE));
 		jVzad.setVisible(true);
 		jVpred.setVisible(false);
+		jStavUseku.setVisible(false);
 		final String nazev = cesta == null ? null : cesta.getNazev();
 		jNazevCesty.setText(FString.text(nazev));
 		jNazevCesty.setVisible(nazev != null);

@@ -179,6 +179,17 @@ public class Cesta implements Iterable<Bousek0> {
 		return pocet;
 	}
 
+	/** Úseky po cestě, pro které trasa nalezena nebyla (bez mapy, nenalezeno, příliš daleko). */
+	public int getPocetUsekuPoCesteBezTrasy() {
+		int pocet = 0;
+		for (final Usek usek : getUseky()) {
+			if (usek.getStavTrasy() != null && usek.getTrasa() == null) {
+				pocet++;
+			}
+		}
+		return pocet;
+	}
+
 	public int getPocetVzdusnychUseku() {
 		int pocet = 0;
 		for (final Usek usek : getUseky()) {
