@@ -128,6 +128,84 @@ public class VyletModel extends Model0 {
 		worker.execute();
 	}
 
+	/** Seznam výletů se čte z disku (malé soubory), volá se při otevření popupu. */
+	public List<VyletInfo> getVylety() {
+		return vyletovyZperzistentnovac.seznamVyletu();
+	}
+
+	/** Text chyby jména výletu, nebo null; {@code id} je přejmenovávaný výlet, u nového null. */
+	public String validujJmeno(final String jmeno, final String id) {
+		return vyletovyZperzistentnovac.validujJmenoVyletu(jmeno, id);
+	}
+
+	/**
+	 * Aktivuje výlet: jeho obsah se zkopíruje do lovim.ggt a tedne.ggt a načte se. Všechny operace s výlety běží mimo EDT; budoucnost se
+	 * dokončí v EDT, až je hotovo a seznam i výlet jsou aktuální (případná chyba je její výjimka, např. IllegalArgumentException u neplatného jména).
+	 */
+	public CompletableFuture<Void> aktivovat(final String id) {
+		return proved(true, () -> {
+			vyletovyZperzistentnovac.aktivujVylet(id);
+			return null;
+		});
+	}
+
+	/** Založí prázdný výlet a vrátí jeho id; s {@code aktivovat} ho hned aktivuje. */
+	public CompletableFuture<String> novy(final String jmeno, final boolean aktivovat) {
+		return proved(aktivovat, () -> {
+			final String id = vyletovyZperzistentnovac.novyVylet(jmeno);
+			if (aktivovat) {
+				vyletovyZperzistentnovac.aktivujVylet(id);
+			}
+			return id;
+		});
+	}
+
+	public CompletableFuture<Void> prejmenovat(final String id, final String jmeno) {
+		return proved(false, () -> {
+			vyletovyZperzistentnovac.prejmenujVylet(id, jmeno);
+			return null;
+		});
+	}
+
+	/** Smaže výlet; smazání aktivního aktivuje Výchozí, Výchozí smazat nejde. */
+	public CompletableFuture<Void> smazat(final String id) {
+		return proved(id != null && id.equals(vyletovyZperzistentnovac.aktivniVylet()), () -> {
+			vyletovyZperzistentnovac.smazVylet(id);
+			return null;
+		});
+	}
+
+	/** Operace s výlety jdou za rozepsanými zápisy; změny výletu během přepínání se přehrají na nově načtený výlet. */
+	private <T> CompletableFuture<T> proved(final boolean prenacist, final Callable<T> uloha) {
+		final CompletableFuture<T> budoucnost = new CompletableFuture<>();
+		if (prenacist && zmenyPredNactenim == null) {
+			zmenyPredNactenim = new ArrayList<>();
+		}
+		zapisovac.execute(() -> {
+			T vysledek = null;
+			Throwable chyba = null;
+			try {
+				vysledek = uloha.call();
+			} catch (final Exception e) {
+				chyba = e;
+			}
+			final T v = vysledek;
+			final Throwable ch = chyba;
+			SwingUtilities.invokeLater(() -> {
+				if (prenacist) {
+					startLoadingVylet(posledniVsechny);
+				}
+				fire(new VyletyZmenenyEvent(this));
+				if (ch == null) {
+					budoucnost.complete(v);
+				} else {
+					budoucnost.completeExceptionally(ch);
+				}
+			});
+		});
+		return budoucnost;
+	}
+
 	public void removeAll(final EVylet evyl) {
 		vylet.removeAll(evyl);
 		ulozit(v -> v.removeAll(evyl));
