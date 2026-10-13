@@ -232,6 +232,9 @@ public class JKachle extends JComponent {
 				n.kresli(g);
 			}
 		}
+		if (ka.getType().isPrekryv()) {
+			return; // překryv nezakrývá podklad rozpracovanou ani chybnou dlaždicí
+		}
 		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
 			if (nahled.isEmpty()) {
 				g.setColor(Color.GRAY);

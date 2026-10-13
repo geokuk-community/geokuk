@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.DiagnosticsData;
+import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleManager.ItemToSave;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachloDownloader.EPraznyObrazek;
@@ -192,7 +194,7 @@ public class KachleZiskavac {
 			}
 			final OfflineRenderer renderer;
 			try {
-				renderer = offlineMapy.pouzij();
+				renderer = offlineMapy(ka.getType()).pouzij();
 			} catch (final IOException e) {
 				return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
 			}
@@ -479,6 +481,7 @@ public class KachleZiskavac {
 	/** Dlaždice mimo území podkladu (server vrátil 404); kreslí se prázdné a znovu se nestahují. */
 	private final Cache<String, Boolean> mimoUzemi = CacheBuilder.newBuilder().maximumSize(10_000).build();
 	static final Image PRAZDNA_MIMO_UZEMI = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+	static final BufferedImage PRAZDNY_PREKRYV = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
 	/** Dlaždice, které se nedávno nepodařilo stáhnout; jinak by se při každém překreslení stahovaly znovu. */
 	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).maximumSize(10_000).build();
 
@@ -486,10 +489,10 @@ public class KachleZiskavac {
 
 	private volatile Runnable priZmeneOfflineMapy = () -> {};
 
-	private final OfflineMapy offlineMapy = new OfflineMapy(() -> {
-		clearMemoryCache();
-		priZmeneOfflineMapy.run();
-	});
+	private final OfflineMapy offlineMapy = new OfflineMapy(this::zmenaOfflineMapy);
+
+	/** Turistické a cyklotrasy přes podklad: stejné mapy, vlastní téma a klíče v cache. */
+	private final OfflineMapy offlineTrasy = new OfflineMapy(this::zmenaOfflineMapy, true);
 
 	private KachleModel kachleModel;
 
@@ -497,11 +500,13 @@ public class KachleZiskavac {
 	private final ExecutorService uklidOfflineCache = Executors.newSingleThreadExecutor(vlaknaRenderu("Úklid cache offline mapy"));
 
 	public KachleZiskavac() {
-		offlineMapy.setPriOtevreni((klic, symboly) -> {
+		final BiConsumer<String, File> uklid = (klic, symboly) -> {
 			if (symboly != null) {
 				uklidOfflineCache.execute(() -> uklidOfflineCache(klic, symboly));
 			}
-		});
+		};
+		offlineMapy.setPriOtevreni(uklid);
+		offlineTrasy.setPriOtevreni(uklid);
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
@@ -568,8 +573,22 @@ public class KachleZiskavac {
 		kachlmap.asMap().clear();
 	}
 
+	private void zmenaOfflineMapy() {
+		clearMemoryCache();
+		priZmeneOfflineMapy.run();
+	}
+
 	public OfflineMapy getOfflineMapy() {
 		return offlineMapy;
+	}
+
+	public OfflineMapy getOfflineTrasy() {
+		return offlineTrasy;
+	}
+
+	/** Offline mapy, ze kterých se kreslí dlaždice daného typu. */
+	OfflineMapy offlineMapy(final EKaType typ) {
+		return typ.isPrekryv() ? offlineTrasy : offlineMapy;
 	}
 
 	/** Zavolá se (z vlákna vykreslování), když se změní soubory offline mapy nebo téma. */
@@ -666,7 +685,15 @@ public class KachleZiskavac {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + ka);
 			}
 			try {
-				final OfflineRenderer renderer = offlineMapy.pouzij();
+				final OfflineRenderer renderer;
+				try {
+					renderer = offlineMapy(ka.getType()).pouzij();
+				} catch (final OfflineMapaChyba e) {
+					if (ka.getType().isPrekryv()) {
+						return PRAZDNY_PREKRYV; // bez map překryv nic nekreslí, chybu ukazuje jen podklad
+					}
+					throw e;
+				}
 				try {
 					final long zacatek = System.nanoTime();
 					final BufferedImage obrazek = renderer.vyrendruj(ka.getLoc());

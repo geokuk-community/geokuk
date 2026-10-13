@@ -25,6 +25,10 @@
   V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
   platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
   pro všechny sady ikon.
+- Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
+  přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
+  z osm.paws.cz ve složce offline map. Nad offline mapou s tématem paws, které
+  trasy kreslí samo, se překryv nekreslí.
 
 ## 6.4.0
 
