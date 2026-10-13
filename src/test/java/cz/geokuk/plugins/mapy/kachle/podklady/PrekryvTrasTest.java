@@ -93,7 +93,7 @@ public class PrekryvTrasTest {
 	public void trasyBarvouZnackyNaPruhlednemPozadi() throws IOException {
 		final BufferedImage img = vyrendruj(trasy, PESINA_Z16);
 		Assert.assertTrue("průhledné pozadí", img.getColorModel().hasAlpha());
-		Assert.assertTrue("většina dlaždice průhledná: " + pruhlednych(img), pruhlednych(img) > img.getWidth() * img.getHeight() * 7 / 10);
+		Assert.assertTrue("většina dlaždice průhledná: " + pruhlednych(img), pruhlednych(img) > 7L * img.getWidth() * img.getHeight() / 10);
 		Assert.assertTrue("červená trasa", pocet(img, 0xE0, 0x00, 0x00) > 50);
 		Assert.assertTrue("modrá trasa vedle červené", pocet(img, 0x10, 0x60, 0xE0) > 50);
 	}
@@ -102,7 +102,7 @@ public class PrekryvTrasTest {
 	public void silniceBezTrasySeNekresli() throws IOException {
 		Assert.assertTrue("podklad silnici kreslí", pruhlednych(vyrendruj(podklad, SILNICE_Z17)) == 0);
 		final BufferedImage img = vyrendruj(trasy, SILNICE_Z17);
-		Assert.assertEquals("překryv bez tras je celý průhledný", img.getWidth() * img.getHeight(), pruhlednych(img));
+		Assert.assertEquals("překryv bez tras je celý průhledný", (long) img.getWidth() * img.getHeight(), pruhlednych(img));
 	}
 
 	/** Úklid cache podkladu maže jen klíče s písmenem o, dlaždice překryvu mají vlastní písmeno. */
