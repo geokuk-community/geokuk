@@ -58,7 +58,7 @@ public class EventManager implements EventFirer {
 
 	}
 
-	private class Observry {
+	private static class Observry {
 		List<ObserverInvocation> listo = new LinkedList<>();
 		private Object lastEvent;
 	}

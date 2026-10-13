@@ -206,7 +206,7 @@ public class Menu extends MenuStrujce {
 		tb.add(jVybiraceFavorit);
 
 		final JVybiracVyletu iVybiracVyletu = factory.init(new JVybiracVyletu());
-		lbl = new JLabel("Výlet: ");
+		lbl = new JLabel("Zobrazit: ");
 		lbl.setLabelFor(iVybiracVyletu);
 		tb.add(lbl);
 		tb.add(iVybiracVyletu);
@@ -246,6 +246,8 @@ public class Menu extends MenuStrujce {
 		item(akce.zoomovatCestuAction);
 		item(akce.cestyPresClipboardDoGeogetuAction);
 		item(akce.promazatJednobodoveAPrazdneCesty);
+		separator();
+		item(akce.panelCestyAction);
 
 		menu("Mřížky", "Různé dekorace na mapě");
 		menu.setMnemonic('Y');

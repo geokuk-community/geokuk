@@ -28,4 +28,8 @@ public class VyletSmazAnoAction extends VyletAction0 {
 		setEnabled(vyletModel.get(EVylet.ANO).size() > 0);
 	}
 
+	@Override
+	protected boolean upravujeVylet() {
+		return true;
+	}
 }

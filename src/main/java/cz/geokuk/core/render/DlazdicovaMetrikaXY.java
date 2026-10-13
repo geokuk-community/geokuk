@@ -13,7 +13,7 @@ import cz.geokuk.core.render.DlazdicovaMetrikaXY.Dlazdice;
  *
  */
 public class DlazdicovaMetrikaXY implements Iterable<Dlazdice> {
-	class Dlazdice {
+	static class Dlazdice {
 		int xn; // pořadové číslo na ose x počítáme od nuly
 		int yn; // ořadové číslo na ose y počítáme od nly
 		int xs; // stred x

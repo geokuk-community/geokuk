@@ -136,7 +136,7 @@ public class WgsParser {
 		}
 	}
 
-	private class Vzorek {
+	private static class Vzorek {
 		Souradky sou1;
 		Souradky sou2;
 
