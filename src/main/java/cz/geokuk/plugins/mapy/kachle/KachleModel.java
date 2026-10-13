@@ -3,6 +3,7 @@
  */
 package cz.geokuk.plugins.mapy.kachle;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,6 +14,7 @@ import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
+import cz.geokuk.core.program.FConst;
 import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.framework.MyPreferences;
@@ -260,8 +262,48 @@ public class KachleModel extends Model0 {
 
 	/** Zvolené téma s výběrem vrstev, který si pro něj uživatel uložil. */
 	public TemaOfflineMapy getTemaOfflineMapy() {
-		final TemaOfflineMapy tema = TemaOfflineMapy.zTextu(currPrefe().get(OFFLINE_MAPA_TEMA, ""));
-		return tema.sVrstvami(VolbaVrstev.zTextu(currPrefe().node(OFFLINE_MAPA_VRSTVY_node).get(tema.klicNastaveni(), null)));
+		final TemaOfflineMapy tema = temaZNastaveni(currPrefe().get(OFFLINE_MAPA_TEMA, ""), offlineMapyDir(currPrefe()).getEffectiveFile());
+		final MyPreferences vrstvy = currPrefe().node(OFFLINE_MAPA_VRSTVY_node);
+		final String volba = vrstvy.get(klicVrstev(tema), vrstvy.get(tema.klicNastaveni(), null));
+		return tema.sVrstvami(VolbaVrstev.zTextu(volba));
+	}
+
+	/** Klíč výběru vrstev z textu tématu v nastavení, takže výběr přežije přesun přenosného GeoKuku. */
+	static String klicVrstev(final TemaOfflineMapy tema) {
+		return TemaOfflineMapy.klicNastaveni(temaDoNastaveni(tema));
+	}
+
+	/** Složka offline map podle nastavení; čte se i dřív, než se model inicializuje. */
+	public static cz.geokuk.util.file.Filex offlineMapyDir(final MyPreferences pref) {
+		return pref.getFilex(OFFLINE_MAPY_DIR, KachleUmisteniSouboru.OFFLINE_MAPY_DIR);
+	}
+
+	/** Text tématu do nastavení; soubor ve složce programu se uloží relativně, aby téma přežilo přesun přenosného GeoKuku. */
+	static String temaDoNastaveni(final TemaOfflineMapy tema) {
+		final String text = tema.naText();
+		if (tema.isVestavene()) {
+			return text;
+		}
+		return MyPreferences.cestaDoNastaveni(tema.getSoubor(), FConst.KOREN) + text.substring(tema.getSoubor().getPath().length());
+	}
+
+	/**
+	 * Téma z nastavení. Soubor, který na uložené cestě není (starší nastavení s absolutní cestou po přesunu GeoKuku), se hledá pod stejným jménem ve složce
+	 * offline map.
+	 */
+	static TemaOfflineMapy temaZNastaveni(final String text, final File slozkaOfflineMap) {
+		String t = text;
+		if (t != null && t.startsWith(MyPreferences.ZNACKA_KORENE)) {
+			final int i = t.indexOf('|');
+			final String cesta = i < 0 ? t : t.substring(0, i);
+			t = MyPreferences.cestaZNastaveni(cesta, FConst.KOREN).getPath() + (i < 0 ? "" : t.substring(i));
+		}
+		final TemaOfflineMapy tema = TemaOfflineMapy.zTextu(t);
+		if (tema.isVestavene() || tema.getSoubor().exists() || slozkaOfflineMap == null) {
+			return tema;
+		}
+		final File vSlozce = new File(slozkaOfflineMap, tema.getSoubor().getName());
+		return vSlozce.isFile() ? tema.sSouborem(vSlozce) : tema;
 	}
 
 	/** Zvolí téma; výběr vrstev se vezme ten, který má téma uložený. */
@@ -269,7 +311,7 @@ public class KachleModel extends Model0 {
 		if (tema.stejnyZdroj(getTemaOfflineMapy())) {
 			return;
 		}
-		currPrefe().put(OFFLINE_MAPA_TEMA, tema.naText());
+		currPrefe().put(OFFLINE_MAPA_TEMA, temaDoNastaveni(tema));
 		nastavOfflineMapy(getUmisteniSouboru());
 		fire(new OfflineMapaChangedEvent());
 		fajrujPrekryvTras();
@@ -282,10 +324,11 @@ public class KachleModel extends Model0 {
 			return;
 		}
 		final MyPreferences pref = currPrefe().node(OFFLINE_MAPA_VRSTVY_node);
+		pref.remove(tema.klicNastaveni());
 		if (volba.isAutor()) {
-			pref.remove(tema.klicNastaveni());
+			pref.remove(klicVrstev(tema));
 		} else {
-			pref.put(tema.klicNastaveni(), volba.naText());
+			pref.put(klicVrstev(tema), volba.naText());
 		}
 		nastavOfflineMapy(getUmisteniSouboru());
 		fire(new OfflineMapaChangedEvent());

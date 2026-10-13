@@ -60,6 +60,9 @@
   a mapa v okně se sama obnoví, bez posunu. Mapu, kterou chvíli nešlo číst
   (například ji držel antivirus nebo synchronizace), program za půl minuty
   zkusí znovu.
+- Téma offline mapy ze složky programu zůstane zvolené i po přesunu přenosného
+  GeoKuku jinam. Menu Téma offline mapy se otevře hned, i když jsou témata na
+  pomalém disku.
 
 ## 6.4.0
 
