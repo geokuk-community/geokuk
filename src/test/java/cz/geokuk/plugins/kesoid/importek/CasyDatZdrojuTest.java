@@ -17,7 +17,8 @@ public class CasyDatZdrojuTest {
 	/** Pole, která do výsledku načtení nejdou, takže je otisk obsahu nesleduje. */
 	private static final Set<String> MIMO_OTISK = new HashSet<>(Arrays.asList(
 			"iInformaceOZdroji", // zdroj, ze kterého waypoint je, ne obsah
-			"hintZDatabaze")); // hint načítaný až při zobrazení
+			"hintZDatabaze", // hint načítaný až při zobrazení
+			"gkBod")); // jen u bodů tras cest, keše ho nečtou
 
 	private static long otisk(final GpxWpt w) {
 		final KliceZdroje.Sberac s = new KliceZdroje.Sberac();
