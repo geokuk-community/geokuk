@@ -3,6 +3,11 @@
 ## 6.5.0
 
 ### Změny
+- OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
+- Offline mapa s tématem, které má vrstvy (například paws, Biker,
+  Motorider), kreslí jen vrstvy, které má zapnuté autor tématu, takže
+  turistické značení je přehlednější. Vzhled offline mapy se tím změní
+  a její dlaždice v cache se jednou vykreslí znovu.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
   žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
 
