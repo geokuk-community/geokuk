@@ -345,6 +345,10 @@ public final class Diagnostika {
 		sb.append("Výpisy chyb: ").append(bezDomova(FExceptionDumper.getExcrepFolder())).append('\n');
 		sb.append("Log: ").append(bezDomova(LOG)).append('\n');
 		sb.append("Běží: ").append((System.currentTimeMillis() - START) / 60000).append(" min\n");
+		final java.util.function.Supplier<String> offline = offlineMapy;
+		if (offline != null) {
+			sb.append('\n').append(offline.get());
+		}
 		synchronized (udalosti) {
 			dokonciMapu();
 		}
@@ -378,6 +382,13 @@ public final class Diagnostika {
 
 	static void setPopisOfflineMapy(final java.util.function.Supplier<String> popis) {
 		popisOfflineMapy = popis;
+	}
+
+	/** Oddíl o offline mapách (soubory, téma, chyby); celý text včetně nadpisu a konce řádku. */
+	private static volatile java.util.function.Supplier<String> offlineMapy;
+
+	static void setOfflineMapy(final java.util.function.Supplier<String> popis) {
+		offlineMapy = popis;
 	}
 
 	/** Totéž, co ukazuje servisní okno, ať to uživatel nemusí opisovat ze snímku obrazovky. */
@@ -447,6 +458,20 @@ public final class Diagnostika {
 	}
 
 	/** Domovskou složku zkrátí na ~, ať text neobsahuje jméno uživatele. */
+	/** Text (třeba zpráva výjimky) s domovskou složkou nahrazenou „~“. */
+	static String textBezDomova(final String text) {
+		if (text == null) {
+			return null;
+		}
+		String vysledek = text;
+		for (final String domov : new String[] { FConst.HOME_DIR.getAbsolutePath(), FConst.HOME_DIR.getPath() }) {
+			if (!domov.isEmpty()) {
+				vysledek = vysledek.replace(domov, "~");
+			}
+		}
+		return vysledek;
+	}
+
 	static String bezDomova(final File soubor) {
 		final String cesta = soubor.getAbsolutePath();
 		final String domov = FConst.HOME_DIR.getAbsolutePath();

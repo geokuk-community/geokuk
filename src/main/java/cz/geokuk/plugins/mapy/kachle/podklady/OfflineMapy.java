@@ -54,7 +54,8 @@ public class OfflineMapy {
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
 	private OfflineRenderer.NacteneTema nacteneTema;
 	private volatile VrstvyTematu vrstvyTematu;
-	private IOException chyba;
+	/** Čte se i bez zámku pro informace pro hlášení chyby. */
+	private volatile IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
 	private String otiskSlozky;
 	/** Změněný otisk, který se teprve ověřuje: soubor, který se právě kopíruje, se mezi kontrolami mění. */
@@ -148,8 +149,14 @@ public class OfflineMapy {
 		return r == null ? null : r.getChybaTematu();
 	}
 
+	/** Proč se mapy naposledy nepodařilo otevřít, null když se otevřely nebo se ještě neotevíraly. */
+	public String getChyba() {
+		final IOException e = chyba;
+		return e == null ? null : e.getMessage();
+	}
+
 	/** Soubory .map ve složce podle abecedy, velikost písmen v příponě nehraje roli. */
-	static List<File> mapyVeSlozce(final File slozka) {
+	public static List<File> mapyVeSlozce(final File slozka) {
 		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> f.isFile() && f.getName().toLowerCase(Locale.ROOT).endsWith(".map"));
 		if (soubory == null) {
 			return Collections.emptyList();

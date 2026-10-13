@@ -66,6 +66,9 @@
 - Po uspání nebo hibernaci počítače se v Informacích pro hlášení chyby
   objeví „Probuzení po N min“ místo nesmyslně dlouhého záseku programu a doba
   uspání se nezapočítá do měření odezvy.
+- Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
+  mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
+  formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
 
 ## 6.4.0
 
