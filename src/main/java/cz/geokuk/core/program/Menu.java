@@ -9,6 +9,7 @@ import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.plugins.kesoid.kind.kes.*;
 import cz.geokuk.plugins.kesoid.mapicon.JMenuIkony;
+import cz.geokuk.plugins.kesoid.mapicon.JMenuZvyrazneni;
 import cz.geokuk.plugins.kesoid.mvc.JVybiracVyletu;
 import cz.geokuk.plugins.mapy.MapyAction0;
 import cz.geokuk.plugins.mapy.PodkladAction;
@@ -166,6 +167,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zobrazeniKesiIkonyAction, zobrazeniKesi);
 		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
 		item(akce.limityKresleniAction);
+		menu.add(factory.init(new JMenuZvyrazneni()));
 		separator();
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
