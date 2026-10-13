@@ -1,7 +1,12 @@
 package cz.geokuk.plugins.mapy;
 
+import java.io.File;
+import java.util.Locale;
+
 import cz.geokuk.core.program.FPref;
+import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.framework.Model0;
+import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 
 public class MapyModel extends Model0 {
@@ -27,8 +32,16 @@ public class MapyModel extends Model0 {
 
 	@Override
 	protected void initAndFire() {
-		final EKaType podklad = EKaType.podleJmena(currPrefe().node(FPref.NODE_KTERE_MAPY_node).get(FPref.VALUE_MAPOVE_PODKLADY_value, EKaType.TURIST_M.name()));
+		final String ulozeny = currPrefe().node(FPref.NODE_KTERE_MAPY_node).get(FPref.VALUE_MAPOVE_PODKLADY_value, null);
+		final EKaType podklad = ulozeny == null ? vychoziPodklad(KachleModel.offlineMapyDir(currPrefe()).getEffectiveFile()) : EKaType.podleJmena(ulozeny);
 		setPodklad(podklad == null ? EKaType.TURIST_M : podklad);
+	}
+
+	/** Podklad nové instalace: offline mapa, když je ve složce podrobná mapa (ne jen přehledová mapa světa), jinak ortofoto ČÚZK. */
+	static EKaType vychoziPodklad(final File slozkaOfflineMap) {
+		final File[] mapy = slozkaOfflineMap == null ? null
+				: slozkaOfflineMap.listFiles(f -> f.isFile() && f.getName().toLowerCase(Locale.ROOT).endsWith(".map") && !f.getName().equalsIgnoreCase(PrehledovaMapa.SOUBOR));
+		return mapy != null && mapy.length > 0 ? EKaType.OFFLINE_MF : EKaType.CUZK_ORTO;
 	}
 
 	private void fajruj() {
