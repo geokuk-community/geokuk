@@ -179,8 +179,13 @@ public class KachleModel extends Model0 {
 	private KachleUmisteniSouboru loadUmisteniSouboru() {
 		final KachleUmisteniSouboru u = new KachleUmisteniSouboru();
 		u.setKachleCacheDir(KachleUmisteniSouboru.KACHLE_CACHE_DIR);
-		u.setOfflineMapyDir(currPrefe().getFilex(OFFLINE_MAPY_DIR, KachleUmisteniSouboru.OFFLINE_MAPY_DIR));
+		u.setOfflineMapyDir(offlineMapyDir(currPrefe()));
 		return u;
+	}
+
+	/** Složka offline map podle nastavení; čte se i dřív, než se model inicializuje. */
+	public static cz.geokuk.util.file.Filex offlineMapyDir(final MyPreferences pref) {
+		return pref.getFilex(OFFLINE_MAPY_DIR, KachleUmisteniSouboru.OFFLINE_MAPY_DIR);
 	}
 
 	/** Měřítko displeje, na kterém je mapa; ostrá offline mapa podle něj kreslí dlaždice s víc pixely, rychlejší vždy po 256 px. */
