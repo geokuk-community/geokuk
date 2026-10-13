@@ -63,6 +63,9 @@
 - Téma offline mapy ze složky programu zůstane zvolené i po přesunu přenosného
   GeoKuku jinam. Menu Téma offline mapy se otevře hned, i když jsou témata na
   pomalém disku.
+- Po uspání nebo hibernaci počítače se v Informacích pro hlášení chyby
+  objeví „Probuzení po N min“ místo nesmyslně dlouhého záseku programu a doba
+  uspání se nezapočítá do měření odezvy.
 
 ## 6.4.0
 
