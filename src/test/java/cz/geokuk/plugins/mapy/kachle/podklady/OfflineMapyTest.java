@@ -109,6 +109,7 @@ public class OfflineMapyTest {
 			// zatím bez mapy
 		}
 		zkopirujMapu(slozka, "kukov.MAP");
+		mapy.zkontrolujSlozku();
 		Assert.assertNotNull(vyrendruj(STRED_Z15));
 		Assert.assertEquals("dlaždice s chybou se musí vykreslit znovu", 1, zmen.get());
 	}
@@ -120,6 +121,7 @@ public class OfflineMapyTest {
 		Assert.assertNotNull(vyrendruj(STRED_Z15));
 		Assert.assertEquals(0, zmen.get());
 		zkopirujMapu(slozka, "druha.map");
+		mapy.zkontrolujSlozku();
 		Assert.assertNotNull(vyrendruj(STRED_Z15));
 		Assert.assertEquals(1, zmen.get());
 		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
@@ -176,12 +178,69 @@ public class OfflineMapyTest {
 		final String puvodni = klic();
 		final File mapa = new File(slozka, "kukov.map");
 		Assert.assertTrue(mapa.setLastModified(mapa.lastModified() - 60_000));
+		mapy.zkontrolujSlozku();
 		Assert.assertNotEquals("mapa přepsaná na místě se stejnou délkou a hlavičkou", puvodni, klic());
 		zkopirujMapu(slozka, "druha.map");
+		mapy.zkontrolujSlozku();
 		final String dveMapy = klic();
 		Assert.assertNotEquals(puvodni, dveMapy);
 		mapy.nastav(slozka, TemaOfflineMapy.zTextu("OSMARENDER"));
 		Assert.assertNotEquals(dveMapy, klic());
+	}
+
+	/** Mapa, která se ještě kopíruje (mění se mezi kontrolami), se otevře, až se dvě kontroly po sobě shodnou. */
+	@Test
+	public void menicSeMapaSeOtevreAzUstalena() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final String puvodni = klic();
+		final File druha = new File(slozka, "druha.map");
+		Files.write(druha.toPath(), new byte[1000]);
+		Assert.assertEquals("při první změně zůstávají otevřené dosavadní mapy", puvodni, klic());
+		Files.write(druha.toPath(), new byte[2000]);
+		Assert.assertEquals("soubor se dál mění", puvodni, klic());
+		zkopirujMapu(slozka, "druha.map");
+		Assert.assertEquals(puvodni, klic());
+		Assert.assertNotEquals("dokopírováno: dvě kontroly se shodnou", puvodni, klic());
+		Assert.assertEquals(Arrays.asList("druha.map", "kukov.map"), mapy.getNazvyMap());
+		Assert.assertEquals(1, zmen.get());
+	}
+
+	/** Dokopírovaná mapa se projeví i bez kreslení (hlídání složky na pozadí), takže se výřez obnoví bez pohybu mapou. */
+	@Test
+	public void kontrolaBezKresleniOhlasiZmenu() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final String puvodni = klic();
+		zkopirujMapu(slozka, "druha.map");
+		mapy.zkontrolujSlozku();
+		Assert.assertEquals(0, zmen.get());
+		mapy.zkontrolujSlozku();
+		Assert.assertEquals("změna se ohlásí, obrazovka se překreslí", 1, zmen.get());
+		Assert.assertNotEquals(puvodni, klic());
+	}
+
+	/** Mapu, kterou chvíli nešlo číst (antivirus, synchronizace), zkusí znovu, i když se soubor nezměnil. */
+	@Test
+	public void necitelnaMapaSeZkusiZnovu() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final File druha = new File(slozka, "druha.map");
+		final byte[] obsah = Files.readAllBytes(new File(slozka, "kukov.map").toPath());
+		Files.write(druha.toPath(), new byte[obsah.length]);
+		final long cas = druha.lastModified();
+		mapy.opakovaniNs = 0;
+		klic();
+		Assert.assertEquals(Arrays.asList("druha.map", "kukov.map"), mapy.getNazvyMap());
+		final int zmenPred = zmen.get();
+		klic();
+		Assert.assertEquals("opakovaný pokus se stejným výsledkem obrazovku nezneplatní", zmenPred, zmen.get());
+		Files.write(druha.toPath(), obsah);
+		Assert.assertTrue(druha.setLastModified(cas));
+		final OfflineRenderer r = mapy.pouzij();
+		try {
+			Assert.assertEquals("stejná délka i čas, mapa se přesto otevře", 2, r.getPocetMap());
+		} finally {
+			r.skonci();
+		}
+		Assert.assertEquals(zmenPred + 1, zmen.get());
 	}
 
 	/** Chyba při otevírání (i nedostatek paměti na symboly tématu) se ukáže na dlaždicích, kreslení nespadne na null. */
