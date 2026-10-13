@@ -16,7 +16,6 @@ public class MouRectTest {
 		final MouRect obdelnik = new MouRect(roh1, roh2);
 
 		Assert.assertEquals(new Mou(2_050_000_000, 2_050_000_000), obdelnik.getStred());
-		Assert.assertEquals(new Mou(2_050_000_000, 2_050_000_000), obdelnik.sstre);
 	}
 
 	@Test

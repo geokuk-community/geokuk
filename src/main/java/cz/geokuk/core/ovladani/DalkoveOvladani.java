@@ -653,13 +653,17 @@ public class DalkoveOvladani {
 	}
 
 	private static double cislo(final Map<String, String> param, final String jmeno) {
+		final String hodnota = param.get(jmeno);
 		try {
-			final double d = Double.parseDouble(param.get(jmeno));
+			if (hodnota == null) {
+				throw new NumberFormatException();
+			}
+			final double d = Double.parseDouble(hodnota);
 			if (Double.isNaN(d) || Double.isInfinite(d)) {
 				throw new NumberFormatException();
 			}
 			return d;
-		} catch (final NullPointerException | NumberFormatException e) {
+		} catch (final NumberFormatException e) {
 			throw new IllegalArgumentException("parametr " + jmeno + " musí být číslo");
 		}
 	}

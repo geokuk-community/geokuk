@@ -13,17 +13,19 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CCounterMap<T> implements CounterMap<T>, java.io.Serializable {
-	private class Citac implements java.io.Serializable {
+	private static class Citac implements java.io.Serializable {
 		static final long serialVersionUID = 9077120911716375382L;
 		private int iPocet;
 
-		void add(final int aPocet) {
+		/** Vrátí, o kolik se změnil celkový počet. */
+		int add(final int aPocet) {
 			iPocet += aPocet; // posunout
-			iAllCount += aPocet; // celkový posunout
+			int zmena = aPocet;
 			if (iPocet < 0) {
-				iAllCount += -iPocet; // tak moc toho nemůžeme odečíst
+				zmena += -iPocet; // tak moc toho nemůžeme odečíst
 				iPocet = 0;
 			}
+			return zmena;
 		}
 
 		int get() {
@@ -133,7 +135,7 @@ public class CCounterMap<T> implements CounterMap<T>, java.io.Serializable {
 			if (minule + aOKolik < 0) {
 				aOKolik = -minule; // aby nepodlezlo pod nulu
 			}
-			c.add(aOKolik); // důležité, i když se nastavuje na nula, aby se nastavil před zrušním
+			iAllCount += c.add(aOKolik); // důležité, i když se nastavuje na nula, aby se nastavil před zrušním
 			if (c.get() == 0) {
 				iCitace.remove(aKey); // zrušit, pokud docházíme k nule
 			}
@@ -142,7 +144,7 @@ public class CCounterMap<T> implements CounterMap<T>, java.io.Serializable {
 			minule = 0;
 			if (aOKolik > 0) {
 				c = new Citac(); // stvořit čítač
-				c.add(aOKolik); // nastavit na hodnotu
+				iAllCount += c.add(aOKolik); // nastavit na hodnotu
 				iCitace.put(aKey, c); // vložit do mapu
 			}
 		}
@@ -251,7 +253,7 @@ public class CCounterMap<T> implements CounterMap<T>, java.io.Serializable {
 		if (c != null) // je něco evidováno
 		{
 			minule = c.get();
-			c.add(aNaKolik - minule); // důležité, i když se nastavuje na nula, aby se nastavil před zrušním
+			iAllCount += c.add(aNaKolik - minule); // důležité, i když se nastavuje na nula, aby se nastavil před zrušním
 			if (c.get() == 0) {
 				iCitace.remove(aKey); // zrušit, pokud docházíme k nule
 			}
@@ -260,7 +262,7 @@ public class CCounterMap<T> implements CounterMap<T>, java.io.Serializable {
 			minule = 0;
 			if (aNaKolik != 0) {
 				c = new Citac(); // stvořit čítač
-				c.add(aNaKolik); // nastavit na hodnotu
+				iAllCount += c.add(aNaKolik); // nastavit na hodnotu
 				iCitace.put(aKey, c); // vložit do mapu
 			}
 		}
