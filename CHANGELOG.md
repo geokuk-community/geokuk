@@ -15,6 +15,11 @@
 - Nové mapové podklady pro sousední země: DE topografická mapa (BKG
   TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
   Německou a švýcarskou mapu nejde hromadně stahovat do cache.
+- Mapy > Téma offline mapy > Vrstvy tématu: u tématu s vrstvami lze zvolit
+  styl (například cyklo) a zapnout nebo vypnout jednotlivé vrstvy (vrstevnice,
+  cyklotrasy, turistické značky…). Volba se pamatuje pro každé téma zvlášť,
+  Obnovit výchozí vrstvy vrátí výběr autora tématu. U tématu paws je v menu
+  odkaz na legendu.
 
 ## 6.4.0
 
