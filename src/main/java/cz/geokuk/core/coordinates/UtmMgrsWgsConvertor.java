@@ -10,7 +10,7 @@ import java.util.Map;
 
 class UtmMgrsWgsConvertor {
 
-	private class Digraphs {
+	private static class Digraphs {
 		private final Map<Integer, String> digraph1 = new Hashtable<>();
 
 		private final Map<Integer, String> digraph2 = new Hashtable<>();
@@ -74,7 +74,7 @@ class UtmMgrsWgsConvertor {
 
 	}
 
-	private class LatBands {
+	private static class LatBands {
 		private final char[] letters = { 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Z' };
 
 		private final int[] degrees = { -90, -84, -72, -64, -56, -48, -40, -32, -24, -16, -8, 0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 84 };
@@ -87,7 +87,7 @@ class UtmMgrsWgsConvertor {
 
 		private final int[] posDegrees = { 0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 84 };
 
-		private final int arrayLength = 22;
+		private static final int arrayLength = 22;
 
 		public LatBands() {}
 
@@ -160,7 +160,6 @@ class UtmMgrsWgsConvertor {
 
 	private class LatLon2MGRUTM extends LatLon2UTM {
 		public String convertLatLonToMGRUTM(final double latitude, final double longitude) {
-			validate(latitude, longitude);
 			String mgrUTM = "";
 
 			setVariables(latitude, longitude);
@@ -261,7 +260,6 @@ class UtmMgrsWgsConvertor {
 		double K5 = -2.995382942;
 
 		public String convertLatLonToUTM(final double latitude, final double longitude) {
-			validate(latitude, longitude);
 			String UTM = "";
 
 			setVariables(latitude, longitude);
@@ -602,14 +600,6 @@ class UtmMgrsWgsConvertor {
 
 	private double TAN(final double value) {
 		return Math.tan(value);
-	}
-
-	private void validate(final double latitude, final double longitude) {
-		if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude >= 180.0) {
-			// throw new IllegalArgumentException(
-			// "Legal ranges: latitude [-90,90], longitude [-180,180).");
-		}
-
 	}
 
 }

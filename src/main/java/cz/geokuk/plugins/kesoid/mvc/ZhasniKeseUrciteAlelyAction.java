@@ -21,7 +21,7 @@ import cz.geokuk.plugins.kesoid.mapicon.IkonBag;
  */
 public class ZhasniKeseUrciteAlelyAction extends Action0 implements AfterEventReceiverRegistrationInit {
 
-	private class PreskrtnutaIkona implements Icon {
+	private static class PreskrtnutaIkona implements Icon {
 
 		private final Icon icon;
 

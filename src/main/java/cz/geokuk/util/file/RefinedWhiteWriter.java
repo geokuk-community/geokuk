@@ -36,22 +36,6 @@ public class RefinedWhiteWriter extends Writer {
 	private boolean iLfNeukoncuje = false;
 	private boolean iPotrebaUkoncitRadek = false;
 
-	public static void main(final String[] args) throws IOException {
-		final PrintWriter pwr = new PrintWriter(new RefinedWhiteWriter(new FileWriter("test_RefineWhiteWriter.txt")));
-		// PrintWriter pwr = new PrintWriter(new FileWriter("test_RefineWhiteWriter.txt"));
-		pwr.print("Nenimezera\r");
-		pwr.print("                         jedna dva  tri   ctyri  a nic\n");
-		pwr.println();
-		pwr.println("                                             ");
-		pwr.print("jedna dva  tri   ctyri  pet     \r\n");
-		pwr.println("                                             ");
-		pwr.println("                                             ");
-		pwr.println("                                             ");
-		pwr.print("a poslenacek\n");
-		pwr.print("                                             ");
-		pwr.close();
-	}
-
 	public RefinedWhiteWriter(final Writer aWriter) {
 		iWriter = aWriter;
 	}

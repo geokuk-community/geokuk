@@ -34,7 +34,6 @@ public class JGeocodingComboBox extends JComboBox<String> {
 
 	private boolean blokujEventy;
 
-	private String implicitnGeotaggingKey;
 
 	/**
 	 *
@@ -148,9 +147,6 @@ public class JGeocodingComboBox extends JComboBox<String> {
 		}
 		if (patterned.getPatternNumberCilovy() != null && allPatterns.containsKey(patterned.getPatternNumberCilovy())) {
 			return patterned.getPatternNumberCilovy();
-		}
-		if (patterned.getPatternNumberCilovy() == null && implicitnGeotaggingKey != null) {
-			return implicitnGeotaggingKey;
 		}
 		if (patterned.getPatternNumberPredbezny() != null && allPatterns.containsKey(patterned.getPatternNumberPredbezny())) {
 			return patterned.getPatternNumberPredbezny();

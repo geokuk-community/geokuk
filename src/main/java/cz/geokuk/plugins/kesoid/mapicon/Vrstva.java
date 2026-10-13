@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Vrstva {
 
 	@RequiredArgsConstructor
-	private class Seznamec {
+	private static class Seznamec {
 		final IconDef iconDef;
 		final Seznamec next; // další položka. "Seznam má mnoho vrcholů v mapě dle symbolové alely a nakonec vždy jede dolů do seznamu spolčných icondefů.
 
