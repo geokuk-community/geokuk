@@ -33,13 +33,14 @@ public class VyletovyZperzistentnovac {
 
 	/** Synchronizovaně, aby se dva zápisy nepřekryly a soubor nezůstal zpřeházený. */
 	public synchronized void immediatlyZapisVylet(final List<String> ano, final List<String> ne) {
+		zapis(ano, kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile(), EVylet.ANO);
+		zapis(ne, kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile(), EVylet.NE);
+		// lovim.ggt a tedne.ggt jsou pravda pro aktivní výlet, chyba zrcadlení je nesmí zdržet.
 		try {
 			ulozisko().zrcadli(ano, ne);
 		} catch (final IOException e) {
 			throw new RuntimeException("Výlet nelze uložit do složky uložených výletů", e);
 		}
-		zapis(ano, kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile(), EVylet.ANO);
-		zapis(ne, kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile(), EVylet.NE);
 	}
 
 	/** Seznam výletů; před čtením dokončí aktivaci přerušenou pádem programu. */

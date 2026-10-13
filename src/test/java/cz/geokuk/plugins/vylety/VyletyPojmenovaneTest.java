@@ -169,6 +169,46 @@ public class VyletyPojmenovaneTest {
 	}
 
 	@Test
+	public void pretrzenaAktivacePoZapisuDenikuSeDokonciZUlozenehoVyletu() throws Exception {
+		zapis(ano, "GC1");
+		zapis(ne, "GCT1");
+		final String id = soubory.novyVylet("Šumava");
+		zapis(ulozeny(id, "lovim.ggt"), "GCS1", "GCS2");
+		zapis(ulozeny(id, "tedne.ggt"), "GCS3");
+		zapis(new File(slozka, "aktivace.txt"), id); // pád hned po zápisu deníku, lovim i tedne mají ještě starý obsah
+
+		soubory.immediatlyNactiVylet(null);
+
+		Assert.assertEquals(Arrays.asList("GCS1", "GCS2"), radky(ano));
+		Assert.assertEquals(Arrays.asList("GCS3"), radky(ne));
+		Assert.assertEquals(id, soubory.aktivniVylet());
+	}
+
+	@Test
+	public void chybaZrcadleniNezablokujeZapisLovimATedne() throws Exception {
+		zapis(ano, "GC1");
+		final String id = soubory.novyVylet("Šumava");
+		soubory.aktivujVylet(id);
+		final File zrcadlo = ulozeny(id, "lovim.ggt");
+		Assert.assertTrue(zrcadlo.delete());
+		Assert.assertTrue("zápis zrcadla musí selhat", zrcadlo.mkdirs());
+		try {
+			soubory.immediatlyZapisVylet(Arrays.asList("GCA"), Arrays.asList("GCB"));
+			Assert.fail("chyba zrcadlení se má ohlásit");
+		} catch (final RuntimeException e) {
+			// ohlášeno až po zápisu lovim.ggt a tedne.ggt
+		}
+		Assert.assertEquals(Arrays.asList("GCA"), radky(ano));
+		Assert.assertEquals(Arrays.asList("GCB"), radky(ne));
+	}
+
+	@Test
+	public void souborMimoUtf8NezrusiSeznam() throws Exception {
+		Files.write(ano.toPath(), new byte[] { 'G', 'C', '1', '\n', (byte) 0xE8, '\n' });
+		Assert.assertEquals(2, soubory.seznamVyletu().get(0).getPocetLovim());
+	}
+
+	@Test
 	public void pokozenyIndexJeJedenVychoziVylet() throws Exception {
 		zapis(ano, "GC1");
 		zapis(new File(slozka, "vylety.txt"), "aktivni=v9", "poradi=v1,v9", "jmeno.v1=Výchozí");

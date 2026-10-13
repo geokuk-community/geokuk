@@ -98,7 +98,7 @@ final class VyletyUlozisko {
 		overJmeno(index, jmeno, null);
 		int nejvetsi = 0;
 		for (final String id : index.jmena.keySet()) {
-			nejvetsi = Math.max(nejvetsi, Integer.parseInt(id.substring(1)));
+			nejvetsi = Math.max(nejvetsi, cisloId(id));
 		}
 		final String id = "v" + (nejvetsi + 1);
 		zapisKody(Collections.<String>emptyList(), new File(slozkaVyletu(id), ano.getName()));
@@ -106,6 +106,14 @@ final class VyletyUlozisko {
 		index.jmena.put(id, jmeno.trim());
 		zapisIndex(index);
 		return id;
+	}
+
+	private static int cisloId(final String id) {
+		try {
+			return Integer.parseInt(id.substring(1));
+		} catch (final NumberFormatException e) {
+			return 0;
+		}
 	}
 
 	void aktivuj(final String id) throws IOException {
@@ -259,7 +267,8 @@ final class VyletyUlozisko {
 			return 0;
 		}
 		final Set<String> kody = new HashSet<>();
-		for (final String radek : Files.readAllLines(soubor.toPath(), StandardCharsets.UTF_8)) {
+		// Počítají se jen neprázdné řádky, kódování nevadí.
+		for (final String radek : Files.readAllLines(soubor.toPath(), StandardCharsets.ISO_8859_1)) {
 			if (!radek.trim().isEmpty()) {
 				kody.add(radek.trim());
 			}
