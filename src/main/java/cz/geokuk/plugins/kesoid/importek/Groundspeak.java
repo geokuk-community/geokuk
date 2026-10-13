@@ -19,9 +19,8 @@ public class Groundspeak {
 	public String difficulty;
 	public String container;
 	public String shortDescription;
-	/** Hint, který se načte až při zobrazení, když není v {@link #encodedHints}. */
-	/** Dotahovač hintu z databáze podle kódu keše. */
-	public java.util.function.Function<String, String> hintZDatabaze;
+	/** Dotahovač hintu (a nadmořské výšky) z databáze podle kódu keše; hint se načte až při zobrazení, když není v {@link #encodedHints}. */
+	public cz.geokuk.plugins.kesoid.kind.kes.DotahovacZDatabaze hintZDatabaze;
 
 	@Override
 	public String toString() {

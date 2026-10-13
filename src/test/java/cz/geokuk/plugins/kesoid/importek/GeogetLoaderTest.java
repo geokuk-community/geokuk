@@ -71,7 +71,7 @@ public class GeogetLoaderTest {
 
 		new GeogetLoader().nacti(db, builder, null, progress());
 
-		Assert.assertEquals("80/75/12/450/3/{barva=modra}", priPridani.get("GC12345"));
+		Assert.assertEquals("80/75/12/0/3/{barva=modra}", priPridani.get("GC12345"));
 		Assert.assertEquals("keš bez tagů má hodnocení neuvedené", "-1/-1/-1/0/-1/{}", priPridani.get("GC99999"));
 		Assert.assertEquals("2020-01-01T00:00:00.000|Keš by autor (2 / 3)|Keš by autor", texty.get("GC12345"));
 		Assert.assertEquals("2019-11-23T00:00:00.000|Bez tagů by autor (1 / 1)|Bez tagů by autor", texty.get("GC99999"));
@@ -174,6 +174,99 @@ public class GeogetLoaderTest {
 		}
 		Assert.assertEquals("hint keše se dotáhne podle jejího kódu", "Pod kamenem", kese.get("GC00001").getHint());
 		Assert.assertEquals("", kese.get("GC00003").getHint());
+	}
+
+	/** Nadmořská výška (tag Elevation) se při načítání nečte, dotáhne se až při dotazu na výšku waypointu keše. */
+	@Test
+	public void nadmorskaVyskaAzNaPozadani() throws Exception {
+		final File db = new File(tmp.getRoot(), "vyska.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			vytvorTabulky(s);
+			s.execute("INSERT INTO geocache VALUES ('GC00001', 50.1, 14.4, 'První', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+			s.execute("INSERT INTO geocache VALUES ('GC00002', 50.2, 14.5, 'Druhá', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+			s.execute("INSERT INTO geotagcategory VALUES (3, 'favorites'), (4, 'Elevation')");
+			s.execute("INSERT INTO geotagvalue VALUES (2, '7'), (4, '450')");
+			s.execute("INSERT INTO geotag VALUES ('GC00001', 3, 2), ('GC00001', 4, 4)");
+		}
+
+		final Map<String, GpxWpt> nactene = nacti(db);
+		Assert.assertEquals("výška se při načítání nečte", 0, nactene.get("GC00001").gpxg.elevation);
+		Assert.assertEquals("ostatní tagy se načtou", 7, nactene.get("GC00001").gpxg.favorites);
+
+		final ProgressModel progress = progress();
+		final KesoidImportBuilder builder = new KesoidImportBuilder(new cz.geokuk.plugins.kesoid.genetika.Genom(), new cz.geokuk.plugins.kesoid.mvc.GccomNick("Ja", 42), progress,
+				new cz.geokuk.plugins.kesoid.kind.KesoidPluginManager());
+		builder.init();
+		builder.setCurrentlyLoading(new cz.geokuk.util.file.KeFile(new cz.geokuk.util.file.FileAndTime(db, 0), new cz.geokuk.util.file.Root(tmp.getRoot(), new cz.geokuk.util.file.Root.Def(1, null, null))), true);
+		new GeogetLoader().nacti(db, builder, null, progress);
+		builder.done();
+		final Map<String, cz.geokuk.plugins.kesoid.Kesoid> kese = new HashMap<>();
+		for (final cz.geokuk.plugins.kesoid.Kesoid k : builder.getKesBag().getKesoidy()) {
+			kese.put(k.getIdentifier(), k);
+		}
+
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			s.execute("UPDATE geotagvalue SET value = '460' WHERE key = 4");
+		}
+		Assert.assertEquals("výška se čte z databáze až při dotazu", 460, kese.get("GC00001").getFirstWpt().getElevation());
+		Assert.assertEquals("keš bez tagu Elevation má výšku 0", 0, kese.get("GC00002").getFirstWpt().getElevation());
+	}
+
+	/** Zamčená databáze nesmí shodit detail: výška chybí, a při dalším dotazu se dotáhne. */
+	@Test
+	public void nadmorskaVyskaPriZamceneDatabazi() throws Exception {
+		final File db = new File(tmp.getRoot(), "vyska-zamek.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			vytvorTabulky(s);
+			s.execute("INSERT INTO geocache VALUES ('GC00001', 50.1, 14.4, 'První', 'autor', 'Traditional Cache', 'Regular', '2', '3', 0, 1, 20200101, 'CZ', 'Praha', 0)");
+			s.execute("INSERT INTO geotagcategory VALUES (4, 'Elevation')");
+			s.execute("INSERT INTO geotagvalue VALUES (4, '450')");
+			s.execute("INSERT INTO geotag VALUES ('GC00001', 4, 4)");
+		}
+
+		final ProgressModel progress = progress();
+		final KesoidImportBuilder builder = new KesoidImportBuilder(new cz.geokuk.plugins.kesoid.genetika.Genom(), new cz.geokuk.plugins.kesoid.mvc.GccomNick("Ja", 42), progress,
+				new cz.geokuk.plugins.kesoid.kind.KesoidPluginManager());
+		builder.init();
+		builder.setCurrentlyLoading(new cz.geokuk.util.file.KeFile(new cz.geokuk.util.file.FileAndTime(db, 0), new cz.geokuk.util.file.Root(tmp.getRoot(), new cz.geokuk.util.file.Root.Def(1, null, null))), true);
+		new GeogetLoader().nacti(db, builder, null, progress);
+		builder.done();
+		final cz.geokuk.plugins.kesoid.Wpt wpt = builder.getKesBag().getKesoidy().iterator().next().getFirstWpt();
+
+		try (Connection zamek = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = zamek.createStatement()) {
+			s.execute("BEGIN EXCLUSIVE");
+			final long start = System.nanoTime();
+			Assert.assertEquals("při zamčené databázi výška chybí", 0, wpt.getElevation());
+			Assert.assertTrue("čeká se na zámek jen krátce, ne celou minutu", System.nanoTime() - start < 10_000_000_000L);
+			final long druhy = System.nanoTime();
+			Assert.assertEquals("po chybě se databáze chvíli nezkouší", 0, wpt.getElevation());
+			Assert.assertTrue("druhý dotaz nečeká na zámek", System.nanoTime() - druhy < 500_000_000L);
+			s.execute("ROLLBACK");
+		}
+	}
+
+	/** Po chybě (zamčená databáze) dotahovač výšku znovu zkusí, až uplyne odstup. */
+	@Test
+	public void dotahovacVyskyPoOdstupuZnovuZkusi() throws Exception {
+		final File db = new File(tmp.getRoot(), "vyska-odstup.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			vytvorTabulky(s);
+			s.execute("INSERT INTO geotagcategory VALUES (4, 'Elevation')");
+			s.execute("INSERT INTO geotagvalue VALUES (4, '450')");
+			s.execute("INSERT INTO geotag VALUES ('GC00001', 4, 4)");
+		}
+		final cz.geokuk.plugins.kesoid.kind.kes.DotahovacZDatabaze dotahovac = HintZDatabaze.dotahovac(db, HintZDatabaze.GEOGET, HintZDatabaze.GEOGET_VYSKA, 0);
+		try (Connection zamek = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = zamek.createStatement()) {
+			s.execute("BEGIN EXCLUSIVE");
+			try {
+				dotahovac.nadmorskaVyska("GC00001");
+				Assert.fail("zamčená databáze");
+			} catch (final java.io.UncheckedIOException e) {
+				// očekávané
+			}
+			s.execute("ROLLBACK");
+		}
+		Assert.assertEquals(450, dotahovac.nadmorskaVyska("GC00001"));
 	}
 
 	/** Nesmyslná hodnota tagu nesmí zabránit načtení keše. */
