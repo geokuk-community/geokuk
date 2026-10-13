@@ -60,8 +60,10 @@ public class OfflineMapy {
 	/** Změněný otisk, který se teprve ověřuje: soubor, který se právě kopíruje, se mezi kontrolami mění. */
 	private String otiskZmeny;
 	private long posledniKontrola;
-	/** Kdy se znovu zkusí otevřít mapy, které otevřít nešly; {@link Long#MAX_VALUE}, když není co zkoušet. */
-	private long opakovatOd = Long.MAX_VALUE;
+	/** Některé mapy nešly otevřít a zkusí se znovu od {@link #opakovatOd}. */
+	private boolean opakovat;
+	private long opakovatOd;
+	private long otevrenoMs;
 	/** Výsledek posledního otevření (chyba, nebo počet otevřených map); opakovaný pokus se stejným výsledkem obrazovku nezneplatní. */
 	private String vysledekOtevreni;
 
@@ -218,7 +220,7 @@ public class OfflineMapy {
 			}
 		} else {
 			otiskZmeny = null;
-			if (ted - opakovatOd >= 0) {
+			if (opakovat && ted - opakovatOd >= 0) {
 				otevri(mapy, ted, false);
 			}
 		}
@@ -249,20 +251,32 @@ public class OfflineMapy {
 				final long start = System.nanoTime();
 				renderer = OfflineRenderer.otevri(mapy, nacteneTema(), prekryv);
 				chyba = null;
-				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, temaOtevrene, renderer.getKlic());
+				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
 			} catch (final IOException e) {
 				chyba = e;
-				log.warn("Offline mapu nejde otevřít: {}", e.getMessage());
 			} catch (final RuntimeException | OutOfMemoryError e) {
 				chyba = new OfflineMapaChyba("Offline mapu nejde otevřít: " + e, "mapu nejde otevřít", e);
 				log.warn("Offline mapu nejde otevřít", e);
 			}
 		}
 		final boolean neuplne = !mapy.isEmpty() && (chyba != null || renderer.getPocetMap() < mapy.size());
-		opakovatOd = neuplne ? ted + opakovaniNs : Long.MAX_VALUE;
-		vysledekOtevreni = chyba != null ? "chyba " + chyba.getMessage() : "map " + renderer.getPocetMap();
-		if (predtim && (zmena || !vysledekOtevreni.equals(vysledekPredtim))) {
+		opakovat = neuplne;
+		opakovatOd = ted + opakovaniNs;
+		vysledekOtevreni = chyba != null ? "chyba " + chyba.getMessage() : "map " + renderer.getPocetMap() + ", " + renderer.getPreskoceno();
+		final boolean jinak = !vysledekOtevreni.equals(vysledekPredtim);
+		// Opakovaný pokus se stejným výsledkem (mapa pořád zamčená) log nezahlcuje.
+		if (zmena || jinak) {
+			if (chyba != null) {
+				log.warn("Offline mapu nejde otevřít: {}", chyba.getMessage());
+			} else {
+				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", otevrenoMs, mapy, temaOtevrene, renderer.getKlic());
+				if (renderer.getPreskoceno() != null) {
+					log.warn("{}; kreslí se bez ní, za {} s se zkusí znovu", renderer.getPreskoceno(), TimeUnit.NANOSECONDS.toSeconds(opakovaniNs));
+				}
+			}
+		}
+		if (predtim && (zmena || jinak)) {
 			priZmene.run();
 		}
 	}
@@ -314,6 +328,6 @@ public class OfflineMapy {
 		uvolniTema();
 		otiskSlozky = null;
 		otiskZmeny = null;
-		opakovatOd = Long.MAX_VALUE;
+		opakovat = false;
 	}
 }
