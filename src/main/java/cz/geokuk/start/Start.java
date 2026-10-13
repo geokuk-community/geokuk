@@ -146,7 +146,10 @@ public final class Start {
 	/** Zamkne zámek běžícího programu na celou dobu běhu, nebo vrátí null, když ho drží jiná instance. */
 	public static FileLock zamkni(final File zamek) {
 		try {
-			Files.createDirectories(zamek.getParentFile().toPath());
+			// Na Javě 8–12 createDirectories hlásí chybu u existující složky, která je symbolickým odkazem.
+			if (!zamek.getParentFile().isDirectory()) {
+				Files.createDirectories(zamek.getParentFile().toPath());
+			}
 			@SuppressWarnings("resource") // kanál musí zůstat otevřený, dokud program běží
 			final FileChannel kanal = new RandomAccessFile(zamek, "rw").getChannel();
 			final FileLock lock = kanal.tryLock();

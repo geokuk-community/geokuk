@@ -130,6 +130,21 @@ public class StartTest {
 		Assert.assertTrue(Start.pockejNaUkonceni(zamek, 500));
 	}
 
+	/** Složka dat jako symbolický odkaz (Linux, macOS) zámku nevadí. */
+	@Test
+	public void zamekVeSlozceZaSymbolickymOdkazem() throws Exception {
+		final File skutecna = tmp.newFolder("skutecna");
+		final java.nio.file.Path odkaz = new File(tmp.getRoot(), "odkaz").toPath();
+		try {
+			java.nio.file.Files.createSymbolicLink(odkaz, skutecna.toPath());
+		} catch (final UnsupportedOperationException | java.io.IOException e) {
+			Assume.assumeNoException("symbolický odkaz nejde vytvořit (Windows bez oprávnění)", e);
+		}
+		final java.nio.channels.FileLock lock = Start.zamkni(new File(odkaz.toFile(), Start.ZAMEK));
+		Assert.assertNotNull(lock);
+		lock.channel().close();
+	}
+
 	@Test
 	public void docasneSouboryDoData() throws Exception {
 		final File data = tmp.newFolder("data");
