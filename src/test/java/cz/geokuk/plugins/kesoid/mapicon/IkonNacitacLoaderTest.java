@@ -9,7 +9,7 @@ public class IkonNacitacLoaderTest {
 
 	@Test
 	public void chybejiciSadaSeNahradiStandardni() throws Exception {
-		final IkonBag bag = new IkonNacitacLoader().nacti(null, true, Atom.valueOf(ASada.class, "Neexistující sada"));
+		final IkonBag bag = new IkonNacitacLoader().nacti(true, Atom.valueOf(ASada.class, "Neexistující sada"), Zvyrazneni.VYCHOZI);
 		Assert.assertNotNull(bag);
 		Assert.assertEquals(ASada.STANDARD.name(), bag.getSada().getName());
 	}

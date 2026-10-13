@@ -15,6 +15,16 @@
 - Nové mapové podklady pro sousední země: DE topografická mapa (BKG
   TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
   Německou a švýcarskou mapu nejde hromadně stahovat do cache.
+- Mapy > Téma offline mapy > Vrstvy tématu: u tématu s vrstvami lze zvolit
+  styl (například cyklo) a zapnout nebo vypnout jednotlivé vrstvy (vrstevnice,
+  cyklotrasy, turistické značky…). Volba se pamatuje pro každé téma zvlášť,
+  Obnovit výchozí vrstvy vrátí výběr autora tématu. U tématu paws je v menu
+  odkaz na legendu.
+- Nové podmenu Kešoidy > Zvýraznění: barevný čtverec pod ikonou keší podle
+  předvolby Bez zvýraznění, Terén 4,5 a 5 (výchozí) nebo Obtížnost 4,5 a 5.
+  V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
+  platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
+  pro všechny sady ikon.
 - Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
   použijí ho úseky cesty vedené po cestě.
 

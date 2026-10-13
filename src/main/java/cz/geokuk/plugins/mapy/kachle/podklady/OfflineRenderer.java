@@ -16,6 +16,7 @@ import org.mapsforge.map.layer.renderer.*;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
 import org.mapsforge.map.reader.header.MapFileInfo;
+import org.mapsforge.map.rendertheme.XmlRenderThemeStyleMenu;
 import org.mapsforge.map.rendertheme.rule.RenderThemeFuture;
 
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
@@ -48,10 +49,12 @@ final class OfflineRenderer {
 		final String otiskPouziteho;
 		/** Proč se nepoužilo zvolené téma, null když se použilo. */
 		final String chyba;
+		/** Nabídka vrstev použitého tématu, null když ji nemá. */
+		final XmlRenderThemeStyleMenu menu;
 		final long nacitaniMs;
 
 		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final double pismo, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
-				final long start) {
+				final XmlRenderThemeStyleMenu menu, final long start) {
 			this.future = future;
 			this.displayModel = displayModel;
 			this.grafika = grafika;
@@ -60,6 +63,7 @@ final class OfflineRenderer {
 			this.otiskPozadovaneho = otiskPozadovaneho;
 			this.otiskPouziteho = otiskPouziteho;
 			this.chyba = chyba;
+			this.menu = menu;
 			nacitaniMs = (System.nanoTime() - start) / 1_000_000;
 		}
 
@@ -177,31 +181,31 @@ final class OfflineRenderer {
 		final long start = System.nanoTime();
 		try {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
-			final TemaOfflineMapy.VychoziVrstvy vrstvy = new TemaOfflineMapy.VychoziVrstvy();
+			final TemaOfflineMapy.VyberVrstev vrstvy = new TemaOfflineMapy.VyberVrstev(tema.getVrstvy());
 			final RenderThemeFuture future = nactiTema(tema, displayModel, grafika, vrstvy);
-			final NacteneTema nactene = new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(tema, vrstvy), null, start);
+			final NacteneTema nactene = new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(tema, vrstvy), null, vrstvy.getMenu(), start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
 		} catch (final IOException e) {
 			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
-			final TemaOfflineMapy.VychoziVrstvy vrstvy = new TemaOfflineMapy.VychoziVrstvy();
+			final TemaOfflineMapy.VyberVrstev vrstvy = new TemaOfflineMapy.VyberVrstev(VolbaVrstev.AUTOR);
 			final RenderThemeFuture future = nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika, vrstvy);
-			return new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(TemaOfflineMapy.VYCHOZI, vrstvy), e.getMessage(), start);
+			return new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(TemaOfflineMapy.VYCHOZI, vrstvy), e.getMessage(), null, start);
 		}
 	}
 
-	private static String otiskSVrstvami(final TemaOfflineMapy tema, final TemaOfflineMapy.VychoziVrstvy vrstvy) {
-		return vrstvy.getPopis() == null ? tema.otisk() : tema.otisk() + "\nvrstvy:" + vrstvy.getPopis();
+	private static String otiskSVrstvami(final TemaOfflineMapy tema, final TemaOfflineMapy.VyberVrstev vrstvy) {
+		return vrstvy.getPopis() == null ? tema.otiskSouboru() : tema.otiskSouboru() + "\nvrstvy:" + vrstvy.getPopis();
 	}
 
 	/** Soubor se symboly tématu; jiný soubor tématu (i jiná verze téhož) má jiný soubor symbolů. */
 	static File souborSymbolu(final File slozka, final TemaOfflineMapy tema) {
-		return slozka == null ? null : new File(slozka, "symboly-" + klic(tema.otisk()).substring(1) + ".bin");
+		return slozka == null ? null : new File(slozka, "symboly-" + klic(tema.otiskSouboru()).substring(1) + ".bin");
 	}
 
-	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel, final GraphicFactory grafika, final TemaOfflineMapy.VychoziVrstvy vrstvy) throws IOException {
+	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel, final GraphicFactory grafika, final TemaOfflineMapy.VyberVrstev vrstvy) throws IOException {
 		final RenderThemeFuture rtf = new RenderThemeFuture(grafika, tema.vytvor(vrstvy), displayModel);
 		rtf.run();
 		try {
