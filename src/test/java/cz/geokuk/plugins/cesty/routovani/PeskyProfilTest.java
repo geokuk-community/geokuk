@@ -11,7 +11,7 @@ public class PeskyProfilTest {
 
 	private static float k(final String... klicHodnota) {
 		final List<Tag> tagy = new ArrayList<>();
-		for (int i = 0; i < klicHodnota.length; i += 2) {
+		for (int i = 0; i + 1 < klicHodnota.length; i += 2) {
 			tagy.add(new Tag(klicHodnota[i], klicHodnota[i + 1]));
 		}
 		return PeskyProfil.koeficient(tagy);

@@ -68,7 +68,7 @@ final class GrafCest {
 
 	void pridejCaru(final int[] cara, final float koef) {
 		int pred = uzel(cara[0], cara[1]);
-		for (int i = 2; i < cara.length; i += 2) {
+		for (int i = 2; i + 1 < cara.length; i += 2) {
 			final int u = uzel(cara[i], cara[i + 1]);
 			if (u != pred) {
 				pridejHranu(pred, u, koef);
