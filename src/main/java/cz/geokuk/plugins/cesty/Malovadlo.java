@@ -206,6 +206,7 @@ public class Malovadlo {
 						gg.setColor(FBarvy.USEK_ZVYRAZNENY);
 						gg.setStroke(new BasicStroke(1));
 						kresliTrasu(gg, trasa);
+						gg.dispose();
 					} else {
 						kresliTrasu(g, trasa);
 					}
