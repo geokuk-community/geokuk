@@ -98,9 +98,9 @@ public class ExceptionDumper {
 	/**
 	 * Do jednoho souboru vypustí více výpisů výjimek. Celé to však očísluje podle první výjimky, jenž je vypisována.
 	 *
-	 * @param aThrowablea
+	 * @param aThrowables
 	 * @param aExceptionSeverity
-	 * @param aCircumstancea
+	 * @param aCircumstances
 	 *            Pro každou jednotlivou výjimku nějaké kecy.
 	 * @return
 	 * @since 4.8.2006 10:43:04
@@ -149,6 +149,8 @@ public class ExceptionDumper {
 
 			final StringWriter swrt = new StringWriter();
 			final PrintWriter pwrt = new PrintWriter(new RefinedWhiteWriter(swrt));
+			// Výpis se otevírá v prohlížeči a ukládá v UTF-8.
+			pwrt.println("<meta charset='UTF-8'>");
 			pwrt.print("<span id='tcTechException'>");
 			pwrt.println("<h1>EXCEPTION " + id + "</h1>");
 			if (throwables.length > 1) {

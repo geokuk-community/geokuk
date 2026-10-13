@@ -17,9 +17,6 @@ public class NastaveniAction extends Action0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
 
-	/**
-	 * @param aBoard
-	 */
 	public NastaveniAction() {
 		super("Nastavení...");
 		putValue(SHORT_DESCRIPTION, "Umožní nastavit nejhrůznější parametry.");

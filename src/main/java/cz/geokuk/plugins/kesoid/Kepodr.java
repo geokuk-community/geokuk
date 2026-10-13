@@ -25,7 +25,7 @@ public final class Kepodr implements Indexable {
 
 	/**
 	 * Zřídí konstantu.
-	 * @param Hodnota má význam jen pro toString(), jinak ne, ale aby se konstanty odlišily, musí být jedinečná.
+	 * @param s Hodnota má význam jen pro toString(), jinak ne, ale aby se konstanty odlišily, musí být jedinečná.
 	 * @return Zřízená kosntanta.
 	 */
 	public synchronized static Kepodr of(final String s) {

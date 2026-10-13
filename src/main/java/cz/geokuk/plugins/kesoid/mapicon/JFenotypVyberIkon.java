@@ -16,9 +16,6 @@ public class JFenotypVyberIkon extends JVyberIkon0 {
 
 	private KesoidModel kesoidModel;
 
-	/**
-	 * @param aJskelneikony
-	 */
 	public JFenotypVyberIkon() {
 		super(false, true);
 	}

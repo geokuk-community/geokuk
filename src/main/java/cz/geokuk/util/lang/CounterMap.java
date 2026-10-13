@@ -91,7 +91,7 @@ public interface CounterMap<T> {
 	 *
 	 * @param aKey
 	 *            Objekt, který má být čítán.
-	 * @param aOKolik
+	 * @param aNaKolik
 	 *            O jkolik má být čítač změněn. Může být kladné, záporné nebo 0. Pokud je hodnota záporná a snížení čítače by vedlo k záporným hodnotám, je čítač nastaven na nulu.
 	 * @return Hodnota čítače před provedením operace.
 	 */

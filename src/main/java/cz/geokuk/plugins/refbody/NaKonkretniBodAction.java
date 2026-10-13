@@ -21,9 +21,6 @@ public class NaKonkretniBodAction extends Action0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 	private final Wgs wgs;
 
-	/**
-	 * @param aBoard
-	 */
 	public NaKonkretniBodAction(final String kam, final Wgs wgs) {
 		super(kam);
 		this.wgs = wgs;

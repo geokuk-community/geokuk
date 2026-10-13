@@ -2,6 +2,7 @@ package cz.geokuk.util.exception;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import cz.geokuk.core.napoveda.Diagnostika;
@@ -115,12 +116,11 @@ public final class FExceptionDumper {
 			return "Exception " + aCode + " is in the unreadeable repository: " + repository.getClass().getName();
 		}
 		try {
-			// očekáváme defaultní kódování
 			final URL url = repository.getUrl(aCode);
 			if (url == null) {
 				return null;
 			}
-			try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream())) {
+			try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream(), StandardCharsets.UTF_8)) {
 				final StringWriter writer = new StringWriter();
 				final char[] buf = new char[4096];
 				for (int len = reader.read(buf); len > 0; len = reader.read(buf)) {
@@ -145,7 +145,6 @@ public final class FExceptionDumper {
 
 	public static URL getExceptionUrl(final AExcId aCode) {
 		final ExceptionDumperRepositorySpi repository = getDefaultRepository();
-		// očekáváme defaultní kódování
 		final URL url = repository.getUrl(aCode);
 		return url;
 	}

@@ -18,9 +18,6 @@ public final class JDetailMysovani extends JSingleSlide0 implements MouseInputLi
 
 	private PoziceModel poziceModel;
 
-	/**
-	 * @param jKachlovnik
-	 */
 	JDetailMysovani() {
 		addMouseListener(this);
 		addMouseMotionListener(this);

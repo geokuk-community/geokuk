@@ -18,9 +18,6 @@ public class BezNaZacatekCestyAction extends CestyAction0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public BezNaZacatekCestyAction() {
 		putValue(NAME, "Na začátek cesty");
 		putValue(SHORT_DESCRIPTION, "Přesune mapu na začátek vybrané cesty. Pokud žádná cesta není vybraná, vybere nejbližší cestu.");

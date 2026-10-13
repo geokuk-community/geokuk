@@ -27,7 +27,7 @@ public abstract class CestyAction0 extends Action0 implements AfterInjectInit {
 
 	/**
 	 * @param aString
-	 * @param aSeekResIcon
+	 * @param aIcon
 	 */
 	public CestyAction0(final String aString, final Icon aIcon) {
 		super(aString, aIcon);

@@ -61,7 +61,7 @@ public class Genotyp implements Indexable {
 	/**
 	 * Vrátí genotyp s vyměněnými alelami.
 	 *
-	 * @param alelas
+	 * @param alely
 	 *            Různých genů alely, nedefinováno, pokud je zde více alel stejného genu.
 	 * @return
 	 */
@@ -102,7 +102,7 @@ public class Genotyp implements Indexable {
 	/**
 	 * Odstraní alelu, což znamená, že ji nahradí default alelou u daného genu. ale jen v případě, kdy jedinec měl tuto alelu, jinak ne.
 	 *
-	 * @param alela
+	 * @param alely
 	 *            Alela bez které to má být. Myslí se tím, že je nahrazena výchozí alelou genu. Když je sama výchozí, vrátí se objekt nezměněný.
 	 */
 	public Genotyp without(final Alela... alely) {
@@ -248,7 +248,7 @@ public class Genotyp implements Indexable {
 
 	/**
 	 * Zjistí, zda má aspoň jednu alelu.
-	 * @param nechteneAlely
+	 * @param alely
 	 * @return
 	 */
 	public boolean hasAny(final Set<Alela> alely) {
@@ -257,7 +257,7 @@ public class Genotyp implements Indexable {
 
 	/**
 	 * Zjistí, zda má všechny požadované alely.
-	 * @param nechteneAlely
+	 * @param alely
 	 * @return
 	 */
 	public boolean hasAll(final Set<Alela> alely) {

@@ -171,7 +171,7 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 	}
 
 	/**
-	 * @param neGgtFile
+	 * @param anoGgtFile
 	 *            the neGgtFile to set
 	 */
 	public void setAnoGgtFile(final Filex anoGgtFile) {
@@ -234,7 +234,7 @@ public class KesoidUmisteniSouboru extends UmisteniSouboru0 {
 	}
 
 	/**
-	 * @param aKesDir
+	 * @param file
 	 */
 	private void check(final Filex file) {
 		if (file == null) {

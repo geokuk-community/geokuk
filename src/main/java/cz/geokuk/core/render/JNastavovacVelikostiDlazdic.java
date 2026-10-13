@@ -60,7 +60,7 @@ public class JNastavovacVelikostiDlazdic extends JPanel implements AfterEventRec
 	}
 
 	/**
-	 * @param kmzMaxDlazdiceX
+	 * @param kmzMaxDlazdice
 	 */
 	public void setMaximalniVelikost(final int kmzMaxDlazdice) {
 		iModel.setValue(kmzMaxDlazdice);

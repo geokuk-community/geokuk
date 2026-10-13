@@ -3,6 +3,7 @@ package cz.geokuk.util.file;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 
 /**
  * <pTřída souborového managera. Doplňuje vlastnosti třídy {@see java.io.File}. Tedy, to co na této třídě najdete, nehledejte v tomto file manageru. Nebude to tam. Třída bude postupně doplnována o metody dle požadavků. *
@@ -127,49 +128,10 @@ public class FileManager {
 	}
 
 	/**
-	 * Binárně přesune soubor na do zadaného adresáře. Vlastní jméno souboru bude stejné. Čas vytvoření se přesune také. Tato implementace využívá kopie a následného smazání, nespoléhejte však na to, třeba pozdější implementace budou využívat služeb filesystému a přesouvat přímo.
-	 *
-	 * @param aFrom
-	 *            Zdrojový soubor
-	 * @param aTo
-	 *            Cílový adresář, pokud to není adresář, je hlášena chyba.
-	 * @throws IOException
-	 *             Při chybě
-	 */
-	public void moveFileToDir(final File aFrom, File aTo) throws IOException {
-		if (!aTo.isDirectory()) {
-			throw new IOException("Path " + aTo + " is not directory");
-		}
-		aTo = new File(aTo, aFrom.getName());
-		_copy(aFrom, aTo);
-		aFrom.delete();
-	}
-
-	/**
-	 * Binárně přesune soubor na jiné místo. Čas vytvoření se přesune také. Tato implementace využívá kopie a následného smazání, nespoléhejte však na to, třeba pozdější implementace budou využívat služeb filesystému a přesouvat přímo.
-	 *
-	 * @param aFrom
-	 *            Zdrojový soubor
-	 * @param aTo
-	 *            Cílový soubor, pokud je to adresář, je hlášena chyba.
-	 * @throws IOException
-	 *             Při chybě
-	 */
-	public void moveFileToFile(final File aFrom, final File aTo) throws IOException {
-		if (aTo.isDirectory()) {
-			throw new IOException("Path " + aTo + " is directory");
-		}
-		_copy(aFrom, aTo);
-		aFrom.delete();
-	}
-
-	/**
 	 * Obsah souboru vrácený jako pole bytů.
 	 *
 	 * @param aFile
 	 *            Soubor, který má být čten.
-	 * @param aEncoding
-	 *            Kódování, pokud je null, nečte nic.
 	 * @return
 	 */
 	public byte[] readWholeFileAsBytes(final File aFile) throws IOException {
@@ -197,13 +159,11 @@ public class FileManager {
 	 *
 	 * @param aFile
 	 *            Soubor, který má být čten.
-	 * @param aEncoding
-	 *            Kódování, pokud je null, nečte nic.
 	 * @return Obsah souborui vrácený jako řetězec.
 	 */
 	public String readWholeFileAsString(final File aFile) throws IOException {
 		final byte[] bb = readWholeFileAsBytes(aFile);
-		return new String(bb);
+		return new String(bb, StandardCharsets.UTF_8);
 	}
 
 	/**
@@ -211,7 +171,7 @@ public class FileManager {
 	 *
 	 * @param aFile
 	 *            Soubor, který má být čten.
-	 * @param aEncoding
+	 * @param aCharSetName
 	 *            Kódování, pokud je null, nečte nic.
 	 * @return Obsah souborui vrácený jako řetězec.
 	 */
@@ -244,12 +204,10 @@ public class FileManager {
 	 *            Soubor, do kterého se zapisuje.
 	 * @param aString
 	 *            Zapisovaný řetězec.
-	 * @param aEncoding
-	 *            Požadované kódování, null pokud defaultní.
 	 * @throws IOException
 	 */
 	public void writeStringToFile(final File aFile, final String aString) throws IOException {
-		try (Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile)))) {
+		try (Writer wrt = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(aFile), StandardCharsets.UTF_8))) {
 			wrt.write(aString);
 		}
 	}

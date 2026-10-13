@@ -250,8 +250,6 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	/**
 	 * Převádí long na double z báze 1.1.1970 na 1.1.1900
 	 *
-	 * @param int
-	 *            dateTime
 	 * @return double private static double getDouble (long dateTime) {
 	 *
 	 *         return (dateTime + _getBulgarian1970Constant()) / getMillisecondsPerDay();
@@ -269,8 +267,6 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	 *
 	 * @param s
 	 *            Řetězec obsahující datum a čas. Nebo zde může být v řetězci číslo vyhozené metodou asString. Řetězec musí vyhovovat regulárnímu výrazu: \s*\d\d\d\d[-./]\d\d?([-./]\d\d?( +\d\d?(:\d\d(:\d\d(\.\d+)?)?)?)?)? *(UTC|GMT[+-]\d\d?:\d\d|GMT[+-]\d{1,3})\s|\d+*
-	 * @param aTimeZone
-	 *            Zóna, která se použije v případě, že v etězci není zóna explicitně uvedena. Pokud uvedena je, tak se tento údaj ignoruje.
 	 * @return Vytvořený ATimestamp.
 	 */
 	public static ATimestamp from(final String s) {
@@ -307,8 +303,6 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	 *            0..59
 	 * @param aMilisekund
 	 *            0..999
-	 * @param aTimeZone
-	 *            Časová zóna.
 	 * @return
 	 */
 	public static ATimestamp fromUtc(final int aRok, final int aMesic, final int aDen, final int aHodina, final int aMinuta, final int aSekunda, final int aMilisekund) {
@@ -463,8 +457,7 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	/**
 	 * Nejdříve zkusí získat číslo (inverzní fce k asString()), pak ze standardního stringu získat datum a čas, pokud se to nepovede, zkouší náš fromFormatedString {@link #fromFormatedString(String)}.
 	 *
-	 * @param String
-	 *            datum
+	 * @param datum
 	 * @return Date
 	 */
 	private static long fromString(final String datum) {
@@ -561,8 +554,7 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	/**
 	 * Zjistí, zda je rovno datumu.
 	 *
-	 * @param Object
-	 *            aDatum
+	 * @param aObject
 	 * @return boolean Výsledek
 	 */
 	@Override
@@ -672,8 +664,7 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	/**
 	 * Zjistí, zda je ostře menší než b.
 	 *
-	 * @param Object
-	 *            b
+	 * @param b
 	 * @return boolean Výsledek
 	 */
 	public boolean isLess(final Object b) {

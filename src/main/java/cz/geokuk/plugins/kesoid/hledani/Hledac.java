@@ -73,7 +73,7 @@ public class Hledac extends Hledac0<Nalezenec> {
 	private final KesBag kesBag;
 
 	/**
-	 * @param aKl
+	 * @param kesBag
 	 */
 	public Hledac(final KesBag kesBag) {
 		super();

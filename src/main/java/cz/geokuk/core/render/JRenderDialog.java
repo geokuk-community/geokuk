@@ -544,7 +544,6 @@ public class JRenderDialog extends JMyDialog0 implements AfterInjectInit, AfterE
 	}
 
 	/**
-	 * @param event
 	 * @return
 	 */
 	private void nastavZakladyDoComboboxu(final boolean smazatGeocodingPatterns) {

@@ -19,9 +19,6 @@ public class BezNaStredAction extends Action0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 	private Mou moustred;
 
-	/**
-	 * @param aBoard
-	 */
 	public BezNaStredAction() {
 		super("Na střed");
 		putValue(SHORT_DESCRIPTION, "Přesune záměrný kříž na střed mapy.");

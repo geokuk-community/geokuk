@@ -106,7 +106,7 @@ public abstract class Nacitac0 {
 	}
 
 	/**
-	 * @param aString
+	 * @param s
 	 * @return
 	 */
 	protected int parseCislo(String s) {
