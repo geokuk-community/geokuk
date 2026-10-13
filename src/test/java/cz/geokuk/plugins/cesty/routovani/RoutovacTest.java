@@ -141,6 +141,50 @@ public class RoutovacTest {
 	}
 
 	@Test
+	public void preruseneVlaknoMapuNerozbije() {
+		Thread.currentThread().interrupt();
+		final Trasa t = najdi(49.99, 14.38, 50.01, 14.40);
+		assertTrue("přerušení se vrátí", Thread.interrupted());
+		assertEquals(Trasa.Stav.ZRUSENO, t.getStav());
+		final Trasa znovu = najdi(49.99, 14.38, 50.01, 14.40);
+		assertEquals(Trasa.Stav.NALEZENO, znovu.getStav());
+		assertEquals(20 * LAT_M + 20 * LON_M, znovu.getDelka(), 15);
+	}
+
+	@Test
+	public void chybaCteniDlazdiceSeNeulozi() {
+		final AtomicInteger dotazu = new AtomicInteger();
+		// Přerušení uprostřed čtení dlaždic zavře soubor mapy, čtení dalších dlaždic selže.
+		try {
+			routovac.najdi(new Wgs(49.99, 14.38), new Wgs(50.01, 14.40), () -> {
+				if (dotazu.incrementAndGet() == 2) {
+					Thread.currentThread().interrupt();
+				}
+				return false;
+			});
+			fail("čtení přerušené mapy selže");
+		} catch (final IllegalStateException e) {
+			// očekávané
+		} finally {
+			Thread.interrupted();
+		}
+		final Trasa znovu = najdi(49.99, 14.38, 50.01, 14.40);
+		assertEquals(Trasa.Stav.NALEZENO, znovu.getStav());
+		assertEquals(20 * LAT_M + 20 * LON_M, znovu.getDelka(), 15);
+	}
+
+	@Test
+	public void zruseniNaPozadiMapuNerozbije() throws Exception {
+		for (int i = 0; i < 20; i++) {
+			routovac.najdiNaPozadi(new Wgs(49.99, 14.38), new Wgs(50.01, 14.40)).cancel(true);
+		}
+		final Future<Trasa> f = routovac.najdiNaPozadi(new Wgs(49.99, 14.38), new Wgs(50.01, 14.40));
+		final Trasa t = f.get(30, TimeUnit.SECONDS);
+		assertEquals(Trasa.Stav.NALEZENO, t.getStav());
+		assertEquals(20 * LAT_M + 20 * LON_M, t.getDelka(), 15);
+	}
+
+	@Test
 	public void naPozadi() throws Exception {
 		final Future<Trasa> f = routovac.najdiNaPozadi(new Wgs(49.99, 14.38), new Wgs(50.01, 14.40));
 		assertEquals(Trasa.Stav.NALEZENO, f.get(30, TimeUnit.SECONDS).getStav());

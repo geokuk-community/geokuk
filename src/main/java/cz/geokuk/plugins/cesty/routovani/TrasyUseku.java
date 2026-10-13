@@ -3,6 +3,7 @@ package cz.geokuk.plugins.cesty.routovani;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -38,16 +39,29 @@ public class TrasyUseku implements AutoCloseable {
 	private final Map<Usek, Uloha> bezici = new IdentityHashMap<>();
 	private Doc cekajici;
 
+	/** Hledání trasy úseku; zrušení jen nastaví příznak, přerušení vlákna by zavřelo soubory map uprostřed čtení. */
 	private final class Uloha extends FutureTask<Trasa> {
 		final Usek usek;
 		final Mou od;
 		final Mou kam;
+		private final AtomicBoolean zruseno;
 
 		Uloha(final Usek usek, final Mou od, final Mou kam) {
-			super(() -> routovac.najdi(od.toWgs(), kam.toWgs(), () -> Thread.currentThread().isInterrupted()));
+			this(usek, od, kam, new AtomicBoolean());
+		}
+
+		private Uloha(final Usek usek, final Mou od, final Mou kam, final AtomicBoolean zruseno) {
+			super(() -> routovac.najdi(od.toWgs(), kam.toWgs(), zruseno::get));
 			this.usek = usek;
 			this.od = od;
 			this.kam = kam;
+			this.zruseno = zruseno;
+		}
+
+		@Override
+		public boolean cancel(final boolean preruseni) {
+			zruseno.set(true);
+			return super.cancel(false);
 		}
 
 		@Override
@@ -117,7 +131,7 @@ public class TrasyUseku implements AutoCloseable {
 				continue;
 			}
 			if (stara != null) {
-				stara.cancel(true);
+				stara.cancel(false);
 			}
 			final Uloha uloha = new Uloha(usek, od, kam);
 			bezici.put(usek, uloha);
@@ -126,7 +140,7 @@ public class TrasyUseku implements AutoCloseable {
 		for (final Iterator<Map.Entry<Usek, Uloha>> it = bezici.entrySet().iterator(); it.hasNext();) {
 			final Map.Entry<Usek, Uloha> e = it.next();
 			if (!potrebne.contains(e.getKey())) {
-				e.getValue().cancel(true);
+				e.getValue().cancel(false);
 				it.remove();
 			}
 		}
@@ -160,7 +174,7 @@ public class TrasyUseku implements AutoCloseable {
 		odklad.stop();
 		cekajici = null;
 		for (final Uloha u : bezici.values()) {
-			u.cancel(true);
+			u.cancel(false);
 		}
 		bezici.clear();
 	}
