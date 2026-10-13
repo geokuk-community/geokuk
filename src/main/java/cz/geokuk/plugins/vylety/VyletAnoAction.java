@@ -30,4 +30,9 @@ public class VyletAnoAction extends VyletActionIndividual0 {
 	protected void enablujPokudMaSmysl() {
 		setEnabled(vyletModel.get(kesoid()) != EVylet.ANO);
 	}
+
+	@Override
+	protected boolean upravujeVylet() {
+		return true;
+	}
 }

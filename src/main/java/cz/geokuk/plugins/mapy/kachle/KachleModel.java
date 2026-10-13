@@ -37,6 +37,8 @@ public class KachleModel extends Model0 {
 
 	private static final String OFFLINE_PISMO = "offlineMapaPismo";
 
+	private static final String PREKRYV_TRAS = "prekryvTras";
+
 	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
 	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
 		final Thread t = new Thread(r, "Příprava offline mapy");
@@ -86,12 +88,44 @@ public class KachleModel extends Model0 {
 	public void onEvent(final ZmenaMapNastalaEvent event) {
 		offlinePodklad = event.getKatype() != null && event.getKatype().isOffline();
 		predpripravOfflineMapu();
+		fajrujPrekryvTras();
 	}
 
 	private void predpripravOfflineMapu() {
 		if (offlinePodklad && ziskavac != null) {
 			priprava.execute(ziskavac.getOfflineMapy()::predpriprav);
 		}
+		if (isPrekryvTrasViditelny() && ziskavac != null) {
+			priprava.execute(ziskavac.getOfflineTrasy()::predpriprav);
+		}
+	}
+
+	/** Uživatel zapnul překryv Turistické a cyklotrasy. */
+	public boolean isPrekryvTras() {
+		return currPrefe().getBoolean(PREKRYV_TRAS, false);
+	}
+
+	public void setPrekryvTras(final boolean zapnuto) {
+		if (zapnuto == isPrekryvTras()) {
+			return;
+		}
+		currPrefe().putBoolean(PREKRYV_TRAS, zapnuto);
+		predpripravOfflineMapu();
+		fajrujPrekryvTras();
+	}
+
+	/** Podklad je offline mapa s tématem, které turistické a cyklotrasy kreslí samo. */
+	public boolean isPrekryvTrasNadbytecny() {
+		return offlinePodklad && getTemaOfflineMapy().isPaws();
+	}
+
+	/** Překryv tras se kreslí: je zapnutý a nad podkladem není nadbytečný. */
+	public boolean isPrekryvTrasViditelny() {
+		return isPrekryvTras() && !isPrekryvTrasNadbytecny();
+	}
+
+	private void fajrujPrekryvTras() {
+		fire(new PrekryvTrasEvent(isPrekryvTras(), isPrekryvTrasNadbytecny()));
 	}
 
 	public void onEvent(final OnofflineModelChangeEvent eve) {
@@ -139,6 +173,7 @@ public class KachleModel extends Model0 {
 		nastavVzhledOfflineMapy();
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
+		fajrujPrekryvTras();
 	}
 
 	private KachleUmisteniSouboru loadUmisteniSouboru() {
@@ -151,6 +186,7 @@ public class KachleModel extends Model0 {
 	/** Měřítko displeje, na kterém je mapa; ostrá offline mapa podle něj kreslí dlaždice s víc pixely, rychlejší vždy po 256 px. */
 	public void setMeritkoDispleje(final double meritko) {
 		ziskavac.getOfflineMapy().nastavMeritko(isOfflineMapaOstra() ? meritko : 1);
+		ziskavac.getOfflineTrasy().nastavMeritko(isOfflineMapaOstra() ? meritko : 1);
 	}
 
 	/** Ostrost: dlaždice offline mapy podle zvětšení systému, nebo bez něj (rychlejší, mapu zvětší systém). */
@@ -178,6 +214,7 @@ public class KachleModel extends Model0 {
 	private void nastavVzhledOfflineMapy() {
 		setMeritkoDispleje(meritkoVychoziObrazovky());
 		ziskavac.getOfflineMapy().nastavPismo(getOfflineMapaPismoProcent() / 100.0);
+		ziskavac.getOfflineTrasy().nastavPismo(getOfflineMapaPismoProcent() / 100.0);
 	}
 
 	private static double meritkoVychoziObrazovky() {
@@ -205,6 +242,7 @@ public class KachleModel extends Model0 {
 		currPrefe().put(OFFLINE_MAPA_TEMA, tema.naText());
 		nastavOfflineMapy(getUmisteniSouboru());
 		fire(new OfflineMapaChangedEvent());
+		fajrujPrekryvTras();
 	}
 
 	/** Výběr vrstev zvoleného tématu; uloží se k tématu. */
@@ -232,6 +270,8 @@ public class KachleModel extends Model0 {
 	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
 		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
+		ziskavac.getOfflineTrasy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-trasy"));
+		ziskavac.getOfflineTrasy().nastav(u.getOfflineMapyDir().getEffectiveFile(), TemaOfflineMapy.TRASY);
 		predpripravOfflineMapu();
 	}
 

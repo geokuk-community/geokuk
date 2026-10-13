@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ImportujAction extends Action0 {
 
-	private class AllAkceptableFilter extends FileFilter {
+	private static class AllAkceptableFilter extends FileFilter {
 
 		@Override
 		public boolean accept(final File pathname) {

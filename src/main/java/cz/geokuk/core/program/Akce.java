@@ -33,6 +33,7 @@ import cz.geokuk.plugins.kesoidobsazenost.ObsazenostOnoffAction;
 import cz.geokuk.plugins.kesoidpopisky.*;
 import cz.geokuk.plugins.mapy.MapyAction0;
 import cz.geokuk.plugins.mapy.kachle.OnlineModeAction;
+import cz.geokuk.plugins.mapy.kachle.PrekryvTrasAction;
 import cz.geokuk.plugins.mapy.kachle.podklady.UkladatMapyNaDiskAction;
 import cz.geokuk.plugins.mapy.stahovac.KachleOflinerAction;
 import cz.geokuk.plugins.mrizky.*;
@@ -83,6 +84,7 @@ public class Akce {
 
 	public final UkladatMapyNaDiskAction ukladatMapyNaDiskAction = new UkladatMapyNaDiskAction();
 	public final OnlineModeAction onlineModeAction = new OnlineModeAction();
+	public final PrekryvTrasAction prekryvTrasAction = new PrekryvTrasAction();
 	public final TadyJsemDomaAction tadyJsemDomaAction = new TadyJsemDomaAction();
 
 	public final ImplicitniVyberZobrazenychKesiAction implicitniVyberZobrazenychKesi = new ImplicitniVyberZobrazenychKesiAction();
@@ -150,6 +152,7 @@ public class Akce {
 	public final UzavritCestuAction uzavritCestuAction = new UzavritCestuAction(null);
 	public final ZoomovatCestuAction zoomovatCestuAction = new ZoomovatCestuAction(null);
 	public final PromazatJednobodoveAPrazdneCesty promazatJednobodoveAPrazdneCesty = new PromazatJednobodoveAPrazdneCesty(null);
+	public final PanelCestyAction panelCestyAction = new PanelCestyAction();
 
 	public final PosouvejSipkamiAction posouvejSipkamiActionSEVER = new PosouvejSipkamiAction(ESmer.SEVER, false);
 	public final PosouvejSipkamiAction posouvejSipkamiActionVYCHOD = new PosouvejSipkamiAction(ESmer.VYCHOD, false);

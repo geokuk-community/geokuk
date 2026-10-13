@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OtevriAction extends SouboeCestaAction0 {
 
-	private class GpxFilter extends FileFilter {
+	private static class GpxFilter extends FileFilter {
 
 		@Override
 		public boolean accept(final File pathname) {

@@ -58,6 +58,9 @@ public final class EKaType {
 	public static final EKaType OFFLINE_MF = new EKaType("OFFLINE_MF", false, 0, 20, 20, "Offline mapa", "Vektorová mapa ze souborů .map v počítači (mapsforge)", KeyEvent.VK_F,
 			KeyStroke.getKeyStroke(KeyEvent.VK_V, 0), null);
 
+	/** Průhledný překryv s turistickými a cyklotrasami přes podklad, kreslí se z offline map; není podkladem. */
+	public static final EKaType TRASY = new EKaType("TRASY", false, 0, 20, 20, "Turistické a cyklotrasy", "Turistické a cyklotrasy z offline map osm.paws.cz přes mapu", 0, null, null);
+
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
@@ -255,7 +258,7 @@ public final class EKaType {
 		if (this == CH_SWISSTOPO) {
 			return "© swisstopo";
 		}
-		if (this == OFFLINE_MF) {
+		if (this == OFFLINE_MF || this == TRASY) {
 			return "© přispěvatelé OpenStreetMap";
 		}
 		return "© OpenStreetMap contributors";
@@ -292,6 +295,11 @@ public final class EKaType {
 	/** Dlaždice se vykreslují z map v počítači, nestahují se. */
 	public boolean isOffline() {
 		return urlBuilder == null;
+	}
+
+	/** Průhledný překryv přes podklad. */
+	public boolean isPrekryv() {
+		return this == TRASY;
 	}
 
 	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */

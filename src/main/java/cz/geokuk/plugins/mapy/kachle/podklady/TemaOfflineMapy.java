@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -18,6 +19,9 @@ public final class TemaOfflineMapy {
 
 	public static final TemaOfflineMapy VYCHOZI = new TemaOfflineMapy(MapsforgeThemes.DEFAULT, null, null);
 
+	/** Průhledné téma s turistickými a cyklotrasami pro překryv přes jiný podklad; kreslí jen trasy z map osm.paws.cz. */
+	public static final TemaOfflineMapy TRASY = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "trasy.xml");
+
 	/** Vestavěná témata, která má smysl nabízet; výškové stínování potřebuje data, která nemáme. */
 	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(Arrays.asList(VYCHOZI, new TemaOfflineMapy(MapsforgeThemes.OSMARENDER, null, null),
 			new TemaOfflineMapy(MapsforgeThemes.BIKER, null, null), new TemaOfflineMapy(MapsforgeThemes.MOTORIDER, null, null)));
@@ -29,21 +33,25 @@ public final class TemaOfflineMapy {
 	/** Téma uvnitř zipu, null = první podle abecedy. */
 	private final String xmlVZipu;
 	private final VolbaVrstev vrstvy;
+	/** Téma přibalené v programu (soubor vedle této třídy), null u ostatních. */
+	private final String zdroj;
+	private String otiskZdroje;
 
 	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu) {
-		this(vestavene, soubor, xmlVZipu, VolbaVrstev.AUTOR);
+		this(vestavene, soubor, xmlVZipu, VolbaVrstev.AUTOR, null);
 	}
 
-	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu, final VolbaVrstev vrstvy) {
+	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu, final VolbaVrstev vrstvy, final String zdroj) {
 		this.vestavene = vestavene;
 		this.soubor = soubor;
 		this.xmlVZipu = xmlVZipu;
 		this.vrstvy = vrstvy;
+		this.zdroj = zdroj;
 	}
 
 	/** Totéž téma s výběrem vrstev uživatele. */
 	public TemaOfflineMapy sVrstvami(final VolbaVrstev volba) {
-		return new TemaOfflineMapy(vestavene, soubor, xmlVZipu, volba);
+		return new TemaOfflineMapy(vestavene, soubor, xmlVZipu, volba, zdroj);
 	}
 
 	public VolbaVrstev getVrstvy() {
@@ -85,11 +93,19 @@ public final class TemaOfflineMapy {
 		if (vestavene != null) {
 			return vestavene.name();
 		}
+		if (zdroj != null) {
+			return "zdroj:" + zdroj;
+		}
 		return xmlVZipu == null ? soubor.getPath() : soubor.getPath() + ODDELOVAC + xmlVZipu;
 	}
 
 	public boolean isVestavene() {
-		return vestavene != null;
+		return vestavene != null || zdroj != null;
+	}
+
+	/** Téma z osm.paws.cz (soubor paws…); turistické a cyklotrasy kreslí samo. */
+	public boolean isPaws() {
+		return soubor != null && soubor.getName().toLowerCase(Locale.ROOT).startsWith("paws");
 	}
 
 	public File getSoubor() {
@@ -98,6 +114,9 @@ public final class TemaOfflineMapy {
 
 	/** Název do menu. */
 	public String getNazev() {
+		if (zdroj != null) {
+			return "Turistické a cyklotrasy";
+		}
 		if (vestavene != null) {
 			switch (vestavene) {
 			case DEFAULT:
@@ -166,6 +185,14 @@ public final class TemaOfflineMapy {
 		if (vestavene != null) {
 			return "vestavene:" + vestavene.name();
 		}
+		if (zdroj != null) {
+			synchronized (this) {
+				if (otiskZdroje == null) {
+					otiskZdroje = otiskZdroje(zdroj);
+				}
+				return naText() + ':' + otiskZdroje;
+			}
+		}
 		return naText() + ':' + soubor.length() + ':' + soubor.lastModified();
 	}
 
@@ -177,6 +204,9 @@ public final class TemaOfflineMapy {
 	private XmlRenderTheme vytvor() throws IOException {
 		if (vestavene != null) {
 			return vestavene;
+		}
+		if (zdroj != null) {
+			return new StreamRenderTheme("", otevriZdroj(zdroj));
 		}
 		if (!soubor.getName().toLowerCase(Locale.ROOT).endsWith(".zip")) {
 			return new ExternalRenderTheme(soubor);
@@ -191,6 +221,25 @@ public final class TemaOfflineMapy {
 			throw new IOException("V souboru " + soubor + " není téma " + xml + ".");
 		}
 		return new ZipRenderTheme(xml, zdroje);
+	}
+
+	private static InputStream otevriZdroj(final String zdroj) throws IOException {
+		final InputStream in = TemaOfflineMapy.class.getResourceAsStream(zdroj);
+		if (in == null) {
+			throw new FileNotFoundException("V programu chybí téma " + zdroj);
+		}
+		return in;
+	}
+
+	/** Obsah přibaleného tématu se s verzí programu může změnit, dlaždice se pak vykreslí znovu. */
+	private static String otiskZdroje(final String zdroj) {
+		final CRC32 crc = new CRC32();
+		try (InputStream in = otevriZdroj(zdroj)) {
+			crc.update(ByteStreams.toByteArray(in));
+		} catch (final IOException e) {
+			return "chybi";
+		}
+		return Long.toHexString(crc.getValue());
 	}
 
 	/**

@@ -52,7 +52,7 @@ import cz.geokuk.util.lang.FString;
  * TableDemo is just like SimpleTableDemo, except that it uses a custom TableModel.
  */
 public class JAdrTable extends JPanel {
-	class MyTableModel extends AbstractTableModel {
+	static class MyTableModel extends AbstractTableModel {
 		private static final long serialVersionUID = -1777521413836209700L;
 
 		private List<Nalezenec> adressList = new ArrayList<>();
