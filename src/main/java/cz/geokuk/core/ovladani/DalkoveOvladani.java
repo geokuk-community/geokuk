@@ -36,6 +36,7 @@ import cz.geokuk.plugins.mapy.MapyModel;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
+import cz.geokuk.util.file.Soubory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -291,7 +292,7 @@ public class DalkoveOvladani {
 			return;
 		}
 		if (token != null && token.equals(p.getProperty("token"))) {
-			SOUBOR.delete();
+			Soubory.smaz(SOUBOR);
 		}
 	}
 

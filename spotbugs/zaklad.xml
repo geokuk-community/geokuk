@@ -48,43 +48,6 @@
 		</Method>
 		<SourceLine endBytecode="483" classname="cz.geokuk.core.ovladani.DalkoveOvladani" start="319" end="319" sourcepath="cz/geokuk/core/ovladani/DalkoveOvladani.java" sourcefile="DalkoveOvladani.java" startBytecode="483" primary="true" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="d32300a89e3334f57b37d6fbb9317cf2" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.ovladani.DalkoveOvladani" primary="true">
-			<SourceLine classname="cz.geokuk.core.ovladani.DalkoveOvladani" start="67" end="722" sourcepath="cz/geokuk/core/ovladani/DalkoveOvladani.java" sourcefile="DalkoveOvladani.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.core.ovladani.DalkoveOvladani" signature="()V" name="smazSouborJestliJeNas" primary="true">
-			<SourceLine endBytecode="290" classname="cz.geokuk.core.ovladani.DalkoveOvladani" start="286" end="295" sourcepath="cz/geokuk/core/ovladani/DalkoveOvladani.java" sourcefile="DalkoveOvladani.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="91" classname="cz.geokuk.core.ovladani.DalkoveOvladani" start="293" end="293" sourcepath="cz/geokuk/core/ovladani/DalkoveOvladani.java" sourcefile="DalkoveOvladani.java" startBytecode="91" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="7cefd1fdafb41f7a995fbcfd24bb4162" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.profile.Nastaveni" primary="true">
-			<SourceLine classname="cz.geokuk.core.profile.Nastaveni" start="19" end="134" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.profile.Nastaveni" signature="(Ljava/io/File;Ljava/io/File;)Z" name="odloz" primary="true">
-			<SourceLine endBytecode="176" classname="cz.geokuk.core.profile.Nastaveni" start="75" end="85" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="31" classname="cz.geokuk.core.profile.Nastaveni" start="76" end="76" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" startBytecode="31" primary="true" />
-		<SourceLine role="SOURCE_LINE_ANOTHER_INSTANCE" endBytecode="46" classname="cz.geokuk.core.profile.Nastaveni" start="80" end="80" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" startBytecode="46" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="a266c1460f5900b5f0c90ab1149ad7ab" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.profile.Nastaveni" primary="true">
-			<SourceLine classname="cz.geokuk.core.profile.Nastaveni" start="19" end="134" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.profile.Nastaveni" signature="(Ljava/io/File;Ljava/io/File;)Z" name="odloz" primary="true">
-			<SourceLine endBytecode="176" classname="cz.geokuk.core.profile.Nastaveni" start="75" end="85" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="(Ljava/io/File;)Z" name="renameTo">
-			<SourceLine endBytecode="171" classname="java.io.File" start="1453" end="1465" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="62" classname="cz.geokuk.core.profile.Nastaveni" start="84" end="84" sourcepath="cz/geokuk/core/profile/Nastaveni.java" sourcefile="Nastaveni.java" startBytecode="62" primary="true" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="f6da427782c5e501ddd6b4a3692d992d" rank="17" abbrev="ST" category="STYLE" priority="2" type="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.core.program.GeokukMain" primary="true">
 			<SourceLine classname="cz.geokuk.core.program.GeokukMain" start="30" end="143" sourcepath="cz/geokuk/core/program/GeokukMain.java" sourcefile="GeokukMain.java" />
@@ -118,30 +81,6 @@
 		</Method>
 		<SourceLine endBytecode="10" classname="cz.geokuk.core.program.JServiceFrame$3" start="144" end="144" sourcepath="cz/geokuk/core/program/JServiceFrame.java" sourcefile="JServiceFrame.java" startBytecode="10" primary="true" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="265ec8e9223f7891313de78bfe9f6a49" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.program.KontrolaUmisteni" primary="true">
-			<SourceLine classname="cz.geokuk.core.program.KontrolaUmisteni" start="19" end="124" sourcepath="cz/geokuk/core/program/KontrolaUmisteni.java" sourcefile="KontrolaUmisteni.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.program.KontrolaUmisteni" signature="(Ljava/io/File;)V" name="doplnUkazkyMap" primary="true">
-			<SourceLine endBytecode="492" classname="cz.geokuk.core.program.KontrolaUmisteni" start="71" end="87" sourcepath="cz/geokuk/core/program/KontrolaUmisteni.java" sourcefile="KontrolaUmisteni.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="1" classname="cz.geokuk.core.program.KontrolaUmisteni" start="71" end="71" sourcepath="cz/geokuk/core/program/KontrolaUmisteni.java" sourcefile="KontrolaUmisteni.java" startBytecode="1" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="808d46002a7976fed0016f6c9a7e3a7" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.program.KontrolaUmisteni" primary="true">
-			<SourceLine classname="cz.geokuk.core.program.KontrolaUmisteni" start="19" end="124" sourcepath="cz/geokuk/core/program/KontrolaUmisteni.java" sourcefile="KontrolaUmisteni.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.program.KontrolaUmisteni" signature="()V" name="pripravSlozky" primary="true">
-			<SourceLine endBytecode="180" classname="cz.geokuk.core.program.KontrolaUmisteni" start="62" end="67" sourcepath="cz/geokuk/core/program/KontrolaUmisteni.java" sourcefile="KontrolaUmisteni.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="75" classname="cz.geokuk.core.program.KontrolaUmisteni" start="64" end="64" sourcepath="cz/geokuk/core/program/KontrolaUmisteni.java" sourcefile="KontrolaUmisteni.java" startBytecode="75" primary="true" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="7d972846a936ab5491ef36ad2e339928" cweid="396" rank="17" abbrev="REC" category="STYLE" priority="2" type="REC_CATCH_EXCEPTION" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" primary="true">
 			<SourceLine classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" start="19" end="106" sourcepath="cz/geokuk/core/render/GoogleEarthRenderSwingWorker.java" sourcefile="GoogleEarthRenderSwingWorker.java" />
@@ -150,42 +89,6 @@
 			<SourceLine endBytecode="770" classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" start="26" end="65" sourcepath="cz/geokuk/core/render/GoogleEarthRenderSwingWorker.java" sourcefile="GoogleEarthRenderSwingWorker.java" startBytecode="0" />
 		</Method>
 		<SourceLine endBytecode="363" classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" start="59" end="59" sourcepath="cz/geokuk/core/render/GoogleEarthRenderSwingWorker.java" sourcefile="GoogleEarthRenderSwingWorker.java" startBytecode="363" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="d2173eb80b51b5475b6fbc0304f46e70" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" primary="true">
-			<SourceLine classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" start="19" end="106" sourcepath="cz/geokuk/core/render/GoogleEarthRenderSwingWorker.java" sourcefile="GoogleEarthRenderSwingWorker.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" signature="()Ljava/io/File;" name="computeFileName" primary="true">
-			<SourceLine endBytecode="147" classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" start="72" end="77" sourcepath="cz/geokuk/core/render/GoogleEarthRenderSwingWorker.java" sourcefile="GoogleEarthRenderSwingWorker.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="23" classname="cz.geokuk.core.render.GoogleEarthRenderSwingWorker" start="74" end="74" sourcepath="cz/geokuk/core/render/GoogleEarthRenderSwingWorker.java" sourcefile="GoogleEarthRenderSwingWorker.java" startBytecode="23" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="f87cd95cf200c7d4b88917e363cb240c" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" primary="true">
-			<SourceLine classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="21" end="160" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" signature="()Lcz/geokuk/core/render/RenderResult;" name="doInBackground" primary="true">
-			<SourceLine endBytecode="757" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="32" end="71" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="133" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="46" end="46" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="133" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="dae01ea90edf5eda3ebdef40fb73ffb5" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" primary="true">
-			<SourceLine classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="21" end="160" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" signature="(Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/io/File;Ljava/io/File;Lcz/geokuk/core/render/OziExplorerRenderSwingWorker$ZapisMapy;)V" name="zapisVystupy" primary="true">
-			<SourceLine endBytecode="551" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="80" end="99" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="183" classname="cz.geokuk.core.render.OziExplorerRenderSwingWorker" start="95" end="95" sourcepath="cz/geokuk/core/render/OziExplorerRenderSwingWorker.java" sourcefile="OziExplorerRenderSwingWorker.java" startBytecode="183" primary="true" />
 	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="61fe03196a1bfa066e9b032173e5650a" rank="17" abbrev="ST" category="STYLE" priority="2" type="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.core.render.Rendrovadlo" primary="true">
@@ -402,20 +305,6 @@
 		<String role="FILE_NAME" value="C:\\geoget\\data" />
 		<SourceLine endBytecode="58" classname="cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru" start="22" end="22" sourcepath="cz/geokuk/plugins/kesoid/mvc/KesoidUmisteniSouboru.java" sourcefile="KesoidUmisteniSouboru.java" startBytecode="58" primary="true" />
 	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="18e5123e4d8121553f0256a1438de0a0" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" primary="true">
-			<SourceLine classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" start="33" end="734" sourcepath="cz/geokuk/plugins/mapy/kachle/podklady/KachleDBManager.java" sourcefile="KachleDBManager.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" signature="(Ljava/io/File;)Z" name="odlozVadnouCache" primary="true">
-			<SourceLine endBytecode="324" classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" start="672" end="692" sourcepath="cz/geokuk/plugins/mapy/kachle/podklady/KachleDBManager.java" sourcefile="KachleDBManager.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="41" classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" start="676" end="676" sourcepath="cz/geokuk/plugins/mapy/kachle/podklady/KachleDBManager.java" sourcefile="KachleDBManager.java" startBytecode="41" primary="true" />
-		<SourceLine role="SOURCE_LINE_ANOTHER_INSTANCE" endBytecode="130" classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" start="686" end="686" sourcepath="cz/geokuk/plugins/mapy/kachle/podklady/KachleDBManager.java" sourcefile="KachleDBManager.java" startBytecode="130" />
-		<SourceLine role="SOURCE_LINE_ANOTHER_INSTANCE" endBytecode="144" classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" start="688" end="688" sourcepath="cz/geokuk/plugins/mapy/kachle/podklady/KachleDBManager.java" sourcefile="KachleDBManager.java" startBytecode="144" />
-	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="ef67e98948b22ad5ecb86899562032e9" rank="14" abbrev="VO" category="MT_CORRECTNESS" priority="2" type="VO_VOLATILE_INCREMENT" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" primary="true">
 			<SourceLine classname="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager" start="33" end="734" sourcepath="cz/geokuk/plugins/mapy/kachle/podklady/KachleDBManager.java" sourcefile="KachleDBManager.java" />
@@ -472,115 +361,6 @@
 			<SourceLine classname="cz.geokuk.plugins.refbody.NaKonkretniBodAction" sourcepath="cz/geokuk/plugins/refbody/NaKonkretniBodAction.java" sourcefile="NaKonkretniBodAction.java" />
 		</Field>
 		<SourceLine endBytecode="61" classname="cz.geokuk.plugins.refbody.NaKonkretniBodAction" start="31" end="31" sourcepath="cz/geokuk/plugins/refbody/NaKonkretniBodAction.java" sourcefile="NaKonkretniBodAction.java" startBytecode="61" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="72a806c44e616a150bf37fca13c8d1cd" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.start.Start" primary="true">
-			<SourceLine classname="cz.geokuk.start.Start" start="54" end="317" sourcepath="cz/geokuk/start/Start.java" sourcefile="Start.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.start.Start" signature="(Ljava/io/File;)Ljava/nio/channels/FileLock;" name="zamkni" primary="true">
-			<SourceLine endBytecode="186" classname="cz.geokuk.start.Start" start="119" end="128" sourcepath="cz/geokuk/start/Start.java" sourcefile="Start.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="4" classname="cz.geokuk.start.Start" start="119" end="119" sourcepath="cz/geokuk/start/Start.java" sourcefile="Start.java" startBytecode="4" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="a3aa9661ec05b9ce8a9d5f422a2782f1" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" primary="true">
-			<SourceLine classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="20" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" signature="(Ljava/io/File;)V" name="initDir" primary="true">
-			<SourceLine endBytecode="280" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="151" end="177" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="47" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="156" end="156" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="47" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="5b12c891f7c346c45113531829ec80df" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" primary="true">
-			<SourceLine classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="20" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" signature="(Ljava/io/File;)I" name="loadAndIncrementNumberInFile" primary="true">
-			<SourceLine endBytecode="517" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="42" end="67" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="7" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="42" end="42" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="7" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="31bdcac52a961ba68e8954eae0c5e0d4" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" primary="true">
-			<SourceLine classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="20" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" signature="(Ljava/io/File;)V" name="smazatRekurzivne" primary="true">
-			<SourceLine endBytecode="160" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="200" end="207" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="41" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="206" end="206" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="41" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="2c9c95547ddd8df07a2c997e09177559" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" primary="true">
-			<SourceLine classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="20" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" signature="(Lcz/geokuk/util/exception/AExcId;Ljava/lang/String;)V" name="write" primary="true">
-			<SourceLine endBytecode="107" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="145" end="148" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdirs">
-			<SourceLine endBytecode="230" classname="java.io.File" start="1405" end="1419" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="10" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="146" end="146" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="10" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="b214212451872e186a139c5b90736990" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" primary="true">
-			<SourceLine classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="20" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" signature="(Ljava/io/File;)V" name="zkusitPraciVAdresari" primary="true">
-			<SourceLine endBytecode="192" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="257" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="87" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="261" end="261" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="87" primary="true" />
-		<SourceLine role="SOURCE_LINE_ANOTHER_INSTANCE" endBytecode="92" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="262" end="262" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="92" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="c0da1cf3250ac591897152eb3f57ef18" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" primary="true">
-			<SourceLine classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="20" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" signature="(Ljava/io/File;)V" name="zkusitPraciVAdresari" primary="true">
-			<SourceLine endBytecode="192" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="257" end="263" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="mkdir">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1374" end="1381" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="36" classname="cz.geokuk.util.exception.FileBasedExceptionDumperRepository" start="258" end="258" sourcepath="cz/geokuk/util/exception/FileBasedExceptionDumperRepository.java" sourcefile="FileBasedExceptionDumperRepository.java" startBytecode="36" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="a0402466049695eb38ff38f400d36598" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.file.BezpecnyZapis" primary="true">
-			<SourceLine classname="cz.geokuk.util.file.BezpecnyZapis" start="26" end="66" sourcepath="cz/geokuk/util/file/BezpecnyZapis.java" sourcefile="BezpecnyZapis.java" />
-		</Class>
-		<Method isStatic="true" classname="cz.geokuk.util.file.BezpecnyZapis" signature="(Ljava/io/File;Lcz/geokuk/util/file/BezpecnyZapis$Obsah;)V" name="zapis" primary="true">
-			<SourceLine endBytecode="446" classname="cz.geokuk.util.file.BezpecnyZapis" start="26" end="44" sourcepath="cz/geokuk/util/file/BezpecnyZapis.java" sourcefile="BezpecnyZapis.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="()Z" name="delete">
-			<SourceLine endBytecode="119" classname="java.io.File" start="1068" end="1075" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="165" classname="cz.geokuk.util.file.BezpecnyZapis" start="42" end="42" sourcepath="cz/geokuk/util/file/BezpecnyZapis.java" sourcefile="BezpecnyZapis.java" startBytecode="165" primary="true" />
-	</BugInstance>
-	<BugInstance instanceOccurrenceNum="0" instanceHash="661bcd2764ec77472361505a200fae5c" cweid="253" rank="16" abbrev="RV" category="BAD_PRACTICE" priority="2" type="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" instanceOccurrenceMax="0">
-		<Class classname="cz.geokuk.util.file.FileManager" primary="true">
-			<SourceLine classname="cz.geokuk.util.file.FileManager" start="51" end="297" sourcepath="cz/geokuk/util/file/FileManager.java" sourcefile="FileManager.java" />
-		</Class>
-		<Method isStatic="false" classname="cz.geokuk.util.file.FileManager" signature="(Ljava/io/File;Ljava/io/File;)V" name="_copy" primary="true">
-			<SourceLine endBytecode="339" classname="cz.geokuk.util.file.FileManager" start="278" end="282" sourcepath="cz/geokuk/util/file/FileManager.java" sourcefile="FileManager.java" startBytecode="0" />
-		</Method>
-		<Method isStatic="false" role="METHOD_CALLED" classname="java.io.File" signature="(J)Z" name="setLastModified">
-			<SourceLine endBytecode="152" classname="java.io.File" start="1495" end="1504" sourcepath="java/io/File.java" sourcefile="File.java" startBytecode="0" />
-		</Method>
-		<SourceLine endBytecode="95" classname="cz.geokuk.util.file.FileManager" start="281" end="281" sourcepath="cz/geokuk/util/file/FileManager.java" sourcefile="FileManager.java" startBytecode="95" primary="true" />
 	</BugInstance>
 	<BugInstance instanceOccurrenceNum="0" instanceHash="c38649bf64f46bde36cc8e2dc1fdb145" rank="16" abbrev="Dm" category="PERFORMANCE" priority="1" type="DMI_BLOCKING_METHODS_ON_URL" instanceOccurrenceMax="0">
 		<Class classname="cz.geokuk.util.file.LamUrl" primary="true">

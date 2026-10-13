@@ -146,7 +146,7 @@ public final class Start {
 	/** Zamkne zámek běžícího programu na celou dobu běhu, nebo vrátí null, když ho drží jiná instance. */
 	public static FileLock zamkni(final File zamek) {
 		try {
-			zamek.getParentFile().mkdirs();
+			Files.createDirectories(zamek.getParentFile().toPath());
 			@SuppressWarnings("resource") // kanál musí zůstat otevřený, dokud program běží
 			final FileChannel kanal = new RandomAccessFile(zamek, "rw").getChannel();
 			final FileLock lock = kanal.tryLock();

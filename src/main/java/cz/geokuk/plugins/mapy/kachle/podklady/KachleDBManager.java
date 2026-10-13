@@ -24,6 +24,7 @@ import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.util.file.Soubory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -774,9 +775,9 @@ class KachleDBManager implements KachleManager {
 		if (zurnal.isFile()) {
 			// Žurnál k odložené cache by se jinak použil na novou.
 			final File vadnyZurnal = new File(vadna.getPath() + "-journal");
-			vadnyZurnal.delete();
+			Soubory.smaz(vadnyZurnal);
 			if (!zurnal.renameTo(vadnyZurnal)) {
-				zurnal.delete();
+				Soubory.smaz(zurnal);
 			}
 		}
 		log.warn("Poškozená cache dlaždic {} odložena, zakládám novou.", f);
