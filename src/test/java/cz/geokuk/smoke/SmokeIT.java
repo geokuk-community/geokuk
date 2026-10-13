@@ -311,6 +311,9 @@ public class SmokeIT {
 		if (!mimo.isEmpty()) {
 			problemy.add("Zapsáno mimo složku programu: " + mimo);
 		}
+		if (problemy.stream().anyMatch(pr -> pr.contains("EDT neodpovídal"))) {
+			problemy.add(zasobnikyEdt(new File(adresar, adresar.getName() + ".log")));
+		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
 		assertTrue("Proxy obsloužila i vestavěné mapy nebo uživatelskou mapu", server.getPocetPozadavku() > 0);
 	}
@@ -349,6 +352,29 @@ public class SmokeIT {
 			Thread.sleep(500);
 		}
 		return nejmene;
+	}
+
+	/** Zásobníky, které hlídač EDT zapsal do logu programu; artefakt s logem nemusí být po ruce, tak ať jsou ve výstupu testu. */
+	static String zasobnikyEdt(final File log) throws IOException {
+		if (!log.isFile()) {
+			return "Log programu " + log + " chybí.";
+		}
+		final StringBuilder sb = new StringBuilder("Zásobníky EDT z logu programu:");
+		boolean vZasobniku = false;
+		int radku = 0;
+		// Kódování logu závisí na systému, nečitelné znaky se jen nahradí.
+		for (final String radek : new String(Files.readAllBytes(log.toPath()), StandardCharsets.UTF_8).split("\r?\n")) {
+			if (radek.contains("EDT stoj") || radek.contains("sek EDT")) {
+				vZasobniku = radek.contains("EDT stoj");
+				radku = 0;
+				sb.append('\n').append(radek);
+			} else if (vZasobniku && radek.startsWith("\tat ") && radku++ < 40) {
+				sb.append('\n').append(radek);
+			} else {
+				vZasobniku = false;
+			}
+		}
+		return sb.toString();
 	}
 
 	private Process spustZvenku(final File adresar) throws IOException {
