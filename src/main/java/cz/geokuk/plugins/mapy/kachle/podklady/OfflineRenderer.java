@@ -43,7 +43,7 @@ final class OfflineRenderer {
 		final double pismo;
 		/** Otisk tématu, ze kterého je načteno (soubor a jeho velikost a čas). */
 		final String otiskPozadovaneho;
-		/** Otisk skutečně použitého tématu pro klíč cache. */
+		/** Otisk skutečně použitého tématu a jeho vrstev pro klíč cache. */
 		final String otiskPouziteho;
 		/** Proč se nepoužilo zvolené téma, null když se použilo. */
 		final String chyba;
@@ -168,15 +168,23 @@ final class OfflineRenderer {
 		final long start = System.nanoTime();
 		try {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
-			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), tema.otisk(), null, start);
+			final TemaOfflineMapy.VychoziVrstvy vrstvy = new TemaOfflineMapy.VychoziVrstvy();
+			final RenderThemeFuture future = nactiTema(tema, displayModel, grafika, vrstvy);
+			final NacteneTema nactene = new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(tema, vrstvy), null, start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
 		} catch (final IOException e) {
 			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
-			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
+			final TemaOfflineMapy.VychoziVrstvy vrstvy = new TemaOfflineMapy.VychoziVrstvy();
+			final RenderThemeFuture future = nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika, vrstvy);
+			return new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(TemaOfflineMapy.VYCHOZI, vrstvy), e.getMessage(), start);
 		}
+	}
+
+	private static String otiskSVrstvami(final TemaOfflineMapy tema, final TemaOfflineMapy.VychoziVrstvy vrstvy) {
+		return vrstvy.getPopis() == null ? tema.otisk() : tema.otisk() + "\nvrstvy:" + vrstvy.getPopis();
 	}
 
 	/** Soubor se symboly tématu; jiný soubor tématu (i jiná verze téhož) má jiný soubor symbolů. */
@@ -184,8 +192,8 @@ final class OfflineRenderer {
 		return slozka == null ? null : new File(slozka, "symboly-" + klic(tema.otisk()).substring(1) + ".bin");
 	}
 
-	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel, final GraphicFactory grafika) throws IOException {
-		final RenderThemeFuture rtf = new RenderThemeFuture(grafika, tema.vytvor(), displayModel);
+	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel, final GraphicFactory grafika, final TemaOfflineMapy.VychoziVrstvy vrstvy) throws IOException {
+		final RenderThemeFuture rtf = new RenderThemeFuture(grafika, tema.vytvor(vrstvy), displayModel);
 		rtf.run();
 		try {
 			rtf.get();

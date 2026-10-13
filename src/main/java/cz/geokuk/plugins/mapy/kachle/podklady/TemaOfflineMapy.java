@@ -139,7 +139,12 @@ public final class TemaOfflineMapy {
 		return naText() + ':' + soubor.length() + ':' + soubor.lastModified();
 	}
 
-	XmlRenderTheme vytvor() throws IOException {
+	/** Téma s výchozím výběrem vrstev od autora tématu; zvolené vrstvy zapíše do {@code vrstvy}. */
+	XmlRenderTheme vytvor(final VychoziVrstvy vrstvy) throws IOException {
+		return new SVrstvami(vytvor(), vrstvy);
+	}
+
+	private XmlRenderTheme vytvor() throws IOException {
 		if (vestavene != null) {
 			return vestavene;
 		}
@@ -156,6 +161,77 @@ public final class TemaOfflineMapy {
 			throw new IOException("V souboru " + soubor + " není téma " + xml + ".");
 		}
 		return new ZipRenderTheme(xml, zdroje);
+	}
+
+	/**
+	 * Výběr vrstev (stylemenu) tématu podle autora: jeho výchozí styl a v něm zapnuté vrstvy. Bez výběru by mapsforge kreslil všechny vrstvy najednou.
+	 */
+	static final class VychoziVrstvy implements XmlRenderThemeMenuCallback {
+		private String popis;
+
+		@Override
+		public Set<String> getCategories(final XmlRenderThemeStyleMenu menu) {
+			final XmlRenderThemeStyleLayer styl = menu.getLayer(menu.getDefaultValue());
+			if (styl == null) {
+				return null;
+			}
+			final Set<String> kategorie = new HashSet<>(styl.getCategories());
+			final StringBuilder sb = new StringBuilder(menu.getId()).append(':').append(styl.getId());
+			for (final XmlRenderThemeStyleLayer vrstva : styl.getOverlays()) {
+				if (vrstva.isEnabled()) {
+					kategorie.addAll(vrstva.getCategories());
+					sb.append(',').append(vrstva.getId());
+				}
+			}
+			popis = sb.toString();
+			return kategorie;
+		}
+
+		/** Zvolený styl a vrstvy, null když téma vrstvy nemá. */
+		String getPopis() {
+			return popis;
+		}
+	}
+
+	/** Téma s vlastním výběrem vrstev; vestavěná témata jsou sdílené konstanty, proto se jim výběr nenastavuje přímo. */
+	private static final class SVrstvami implements XmlRenderTheme {
+		private final XmlRenderTheme tema;
+		private XmlRenderThemeMenuCallback vrstvy;
+
+		SVrstvami(final XmlRenderTheme tema, final XmlRenderThemeMenuCallback vrstvy) {
+			this.tema = tema;
+			this.vrstvy = vrstvy;
+		}
+
+		@Override
+		public XmlRenderThemeMenuCallback getMenuCallback() {
+			return vrstvy;
+		}
+
+		@Override
+		public String getRelativePathPrefix() {
+			return tema.getRelativePathPrefix();
+		}
+
+		@Override
+		public InputStream getRenderThemeAsStream() throws IOException {
+			return tema.getRenderThemeAsStream();
+		}
+
+		@Override
+		public XmlThemeResourceProvider getResourceProvider() {
+			return tema.getResourceProvider();
+		}
+
+		@Override
+		public void setMenuCallback(final XmlRenderThemeMenuCallback vrstvy) {
+			this.vrstvy = vrstvy;
+		}
+
+		@Override
+		public void setResourceProvider(final XmlThemeResourceProvider zdroje) {
+			tema.setResourceProvider(zdroje);
+		}
 	}
 
 	/** Soubory tématu ze zipu v paměti; čte adresář zipu, takže zvládne i položky bez velikosti v hlavičce. */

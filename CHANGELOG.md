@@ -1,5 +1,13 @@
 # Změny
 
+## 6.5.0
+
+### Změny
+- Offline mapa s tématem, které má vrstvy (například paws, Biker,
+  Motorider), kreslí jen vrstvy, které má zapnuté autor tématu, takže
+  turistické značení je přehlednější. Vzhled offline mapy se tím změní
+  a její dlaždice v cache se jednou vykreslí znovu.
+
 ## 6.4.0
 
 ### Změny
