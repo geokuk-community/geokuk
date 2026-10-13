@@ -8,7 +8,7 @@ import cz.geokuk.util.lang.CounterMap;
 
 public class Genom {
 
-	final String ODDELOVAC_KVALIFOVANY = ":";
+	static final String ODDELOVAC_KVALIFOVANY = ":";
 
 	private final Map<String, Alela> alely = new LinkedHashMap<>();
 

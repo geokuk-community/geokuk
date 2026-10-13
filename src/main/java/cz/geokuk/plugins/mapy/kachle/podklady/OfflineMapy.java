@@ -21,6 +21,8 @@ public class OfflineMapy {
 	private static final long KONTROLA_SLOZKY_NS = TimeUnit.SECONDS.toNanos(2);
 
 	private final Runnable priZmene;
+	/** Průhledný překryv přes jiný podklad, viz {@link OfflineRenderer#otevri(List, OfflineRenderer.NacteneTema, boolean)}. */
+	private final boolean prekryv;
 	/** Zavolá se po každém otevření map s klíčem dlaždic a souborem symbolů (null = neukládají se). */
 	private volatile BiConsumer<String, File> priOtevreni = (klic, symboly) -> {};
 
@@ -59,7 +61,12 @@ public class OfflineMapy {
 	 *            zavolá se, když se změní vykreslování (mapy nebo téma, ne při prvním otevření), aby se zahodily dlaždice v paměti
 	 */
 	public OfflineMapy(final Runnable priZmene) {
+		this(priZmene, false);
+	}
+
+	public OfflineMapy(final Runnable priZmene, final boolean prekryv) {
 		this.priZmene = priZmene;
+		this.prekryv = prekryv;
 	}
 
 	public void nastav(final File slozka, final TemaOfflineMapy tema) {
@@ -197,7 +204,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, nacteneTema());
+				renderer = OfflineRenderer.otevri(mapy, nacteneTema(), prekryv);
 				chyba = null;
 				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, temaOtevrene, renderer.getKlic());
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());

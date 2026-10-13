@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Turistické a cyklotrasy z map osm.paws.cz přes libovolný podklad. Součást GeoKuku, licence GNU GPL 3 nebo novější. -->
+<rendertheme xmlns="http://mapsforge.org/renderTheme" version="5" map-background="#00000000" map-background-outside="#00000000">
+<rule e="way" k="route" v="bicycle|mtb" zoom-min="10" zoom-max="12">
+ <rule e="way" k="network" v="ncn|icn"><line stroke="#C000B0" stroke-width="1.6" stroke-dasharray="6.4,3.2" stroke-linecap="butt" scale="none" dy="-5.5"/></rule>
+ <rule e="way" k="network" v="~|lcn|rcn"><line stroke="#E040D0" stroke-width="1.3" stroke-dasharray="5.1,2.6" stroke-linecap="butt" scale="none" dy="-5.5"/></rule>
+</rule>
+<rule e="way" k="route" v="hiking|foot" zoom-min="10" zoom-max="12">
+ <rule e="way" k="osmc_order" v="ord_1">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_2">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="2.2"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.2"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_3">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-2.2"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.2"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_4">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="4.4"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.4"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_5">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-4.4"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-4.4"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_6">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="6.6"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="6.6"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_7">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-6.6"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-6.6"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_8">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="8.8"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="8.8"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_9">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="-8.8"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-8.8"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="~">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#1060E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F0C000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F07000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#9030C0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#8B4513" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#202020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="3" stroke-linecap="round" scale="none" dy="0"/><line stroke="#707070" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
+ </rule>
+</rule>
+<rule e="way" k="route" v="bicycle|mtb" zoom-min="13" zoom-max="14">
+ <rule e="way" k="network" v="ncn|icn"><line stroke="#C000B0" stroke-width="2.4" stroke-dasharray="9.6,4.8" stroke-linecap="butt" scale="none" dy="-7.5"/></rule>
+ <rule e="way" k="network" v="~|lcn|rcn"><line stroke="#E040D0" stroke-width="1.9" stroke-dasharray="7.7,3.8" stroke-linecap="butt" scale="none" dy="-7.5"/></rule>
+</rule>
+<rule e="way" k="route" v="hiking|foot" zoom-min="13" zoom-max="14">
+ <rule e="way" k="osmc_order" v="ord_1">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_2">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="3"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="3"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_3">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-3"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-3"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_4">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="6"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="6"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_5">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-6"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-6"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_6">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="9"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="9"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_7">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-9"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-9"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_8">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="12"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="12"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_9">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="-12"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="~">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#1060E0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#00A020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F0C000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F07000" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#9030C0" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#8B4513" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#202020" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="4.2" stroke-linecap="round" scale="none" dy="0"/><line stroke="#707070" stroke-width="2.4" stroke-linecap="round" scale="none" dy="0"/></rule>
+ </rule>
+</rule>
+<rule e="way" k="route" v="bicycle|mtb" zoom-min="15" zoom-max="22">
+ <rule e="way" k="network" v="ncn|icn"><line stroke="#C000B0" stroke-width="3.2" stroke-dasharray="12.8,6.4" stroke-linecap="butt" scale="none" dy="-10"/></rule>
+ <rule e="way" k="network" v="~|lcn|rcn"><line stroke="#E040D0" stroke-width="2.6" stroke-dasharray="10.2,5.1" stroke-linecap="butt" scale="none" dy="-10"/></rule>
+</rule>
+<rule e="way" k="route" v="hiking|foot" zoom-min="15" zoom-max="22">
+ <rule e="way" k="osmc_order" v="ord_1">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_2">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="4"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="4"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_3">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-4"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-4"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_4">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="8"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="8"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_5">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-8"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-8"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_6">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="12"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="12"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_7">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-12"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-12"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_8">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="16"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="16"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="ord_9">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="-16"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="-16"/></rule>
+ </rule>
+ <rule e="way" k="osmc_order" v="~">
+  <rule e="way" k="osmc_color" v="red"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="blue"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#1060E0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="green"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#00A020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="yellow"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F0C000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="orange"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#F07000" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="purple"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#9030C0" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="brown"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#8B4513" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="black"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#202020" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+  <rule e="way" k="osmc_color" v="~|none"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#707070" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
+ </rule>
+</rule>
+</rendertheme>

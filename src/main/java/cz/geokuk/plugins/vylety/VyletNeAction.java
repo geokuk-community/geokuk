@@ -30,4 +30,9 @@ public class VyletNeAction extends VyletActionIndividual0 {
 	protected void enablujPokudMaSmysl() {
 		setEnabled(vyletModel.get(kesoid()) != EVylet.NE);
 	}
+
+	@Override
+	protected boolean upravujeVylet() {
+		return true;
+	}
 }

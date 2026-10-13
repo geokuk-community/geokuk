@@ -5,7 +5,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
@@ -127,7 +126,7 @@ public class JTemaOfflineMapyMenu extends JMenu {
 
 	/** Stránka s legendou tématu u autora, null když ji neznáme. */
 	static URL legenda(final TemaOfflineMapy tema) {
-		if (tema.isVestavene() || !tema.getSoubor().getName().toLowerCase(Locale.ROOT).startsWith("paws")) {
+		if (!tema.isPaws()) {
 			return null;
 		}
 		try {

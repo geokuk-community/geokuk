@@ -76,6 +76,9 @@ final class OfflineRenderer {
 		}
 	}
 
+	static final char PREDPONA_KLICE = 'o';
+	static final char PREDPONA_KLICE_PREKRYVU = 't';
+
 	/** Zoom, od kterého je mapa podrobná; menší maximum má jen přehledová mapa. */
 	static final int PODROBNY_ZOOM = 14;
 
@@ -85,16 +88,19 @@ final class OfflineRenderer {
 	private final NacteneTema tema;
 	private final DatabaseRenderer renderer;
 	private final String klic;
+	/** Překryv přes jiný podklad: dlaždice s průhledným pozadím. */
+	private final boolean prekryv;
 
 	private int rozdelanych;
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic) {
+	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv) {
 		this.data = data;
 		this.pokryti = pokryti;
 		this.tema = tema;
 		this.klic = klic;
+		this.prekryv = prekryv;
 		tema.future.incrementRefCount();
 		renderer = new DatabaseRenderer(data, tema.grafika, null, new PopiskyOfflineMapy(data, tema.future, tema.displayModel, tema.grafika), true, false, null);
 	}
@@ -116,6 +122,14 @@ final class OfflineRenderer {
 	 *             když nejde otevřít žádný soubor mapy
 	 */
 	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema) throws IOException {
+		return otevri(mapy, tema, false);
+	}
+
+	/**
+	 * @param prekryv
+	 *            průhledné dlaždice pro překryv přes jiný podklad; mají v cache vlastní klíče
+	 */
+	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema, final boolean prekryv) throws IOException {
 		if (mapy.isEmpty()) {
 			throw new IOException("Žádný soubor mapy.");
 		}
@@ -151,7 +165,7 @@ final class OfflineRenderer {
 		if (tema.pismo != 1) {
 			otisk.append('\n').append(tema.pismo);
 		}
-		return new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, klic(otisk.toString()));
+		return new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv);
 	}
 
 	static NacteneTema nactiTema(final TemaOfflineMapy tema) throws IOException {
@@ -222,9 +236,18 @@ final class OfflineRenderer {
 
 	/** Klíč dlaždic v cache: písmeno o a 8 šestnáctkových číslic, vejde se do sloupce typu. */
 	static String klic(final String otisk) {
+		return klic(PREDPONA_KLICE, otisk);
+	}
+
+	/** Klíč dlaždic překryvu: jiné písmeno, úklid cache podkladu ho nemaže. */
+	static String klicPrekryvu(final String otisk) {
+		return klic(PREDPONA_KLICE_PREKRYVU, otisk);
+	}
+
+	private static String klic(final char predpona, final String otisk) {
 		final CRC32 crc = new CRC32();
 		crc.update(otisk.getBytes(StandardCharsets.UTF_8));
-		return String.format("o%08x", crc.getValue());
+		return String.format("%c%08x", predpona, crc.getValue());
 	}
 
 	String getKlic() {
@@ -311,7 +334,7 @@ final class OfflineRenderer {
 
 	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. Do PNG pro cache se převádí až při ukládání. */
 	BufferedImage vyrendruj(final KaLoc loc) throws IOException {
-		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, false, false);
+		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, prekryv, false);
 		final TileBitmap bitmapa = renderer.executeJob(job);
 		if (bitmapa == null) {
 			throw new IOException("Dlaždici " + loc + " offline mapy nejde vykreslit.");

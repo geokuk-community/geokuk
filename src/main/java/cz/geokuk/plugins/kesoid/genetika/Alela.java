@@ -77,7 +77,7 @@ public class Alela implements Indexable {
 	 * @return Kvalifikované jméno. Jen ta mezi námi: je to "alela:gen".
 	 */
 	public String qualName() {
-		return simpleName() + getGenom().ODDELOVAC_KVALIFOVANY + gen.getNazev();
+		return simpleName() + Genom.ODDELOVAC_KVALIFOVANY + gen.getNazev();
 	}
 
 	@Override
