@@ -65,6 +65,8 @@ Mapy z OpenStreetMap (například z osm.paws.cz nebo OpenAndroMaps):
 Licence dat:   Open Database License (ODbL) 1.0
 Atribuce:      © přispěvatelé OpenStreetMap
 Licence:       https://www.openstreetmap.org/copyright
+Překryv Turistické a cyklotrasy kreslí trasy z týchž map (data OpenStreetMap
+upravená osm.paws.cz) vlastním tématem GeoKuku, atribuce stejná.
 
 Přehledová mapa světa (prehled-svet-ne.map, přibalená v zipu s programem):
 Data:          Natural Earth, https://www.naturalearthdata.com/

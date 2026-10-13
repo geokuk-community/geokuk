@@ -36,6 +36,10 @@
 - Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
   počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
   Panel cesty.
+- Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
+  přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
+  z osm.paws.cz ve složce offline map. Nad offline mapou s tématem paws, které
+  trasy kreslí samo, se překryv nekreslí.
 
 ## 6.4.0
 

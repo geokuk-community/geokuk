@@ -81,12 +81,46 @@ public class OfflineKachleZiskavacTest {
 	@After
 	public void tearDown() {
 		ziskavac.getOfflineMapy().zavri();
+		ziskavac.getOfflineTrasy().zavri();
 	}
 
 	private KachloStav ziskej() throws Exception {
+		return ziskej(KACHLE);
+	}
+
+	private KachloStav ziskej(final Ka ka) throws Exception {
 		final CompletableFuture<KachloStav> stav = new CompletableFuture<>();
-		ziskavac.ziskejObsah(new KaOneReq(KACHLE, stav::complete, Priority.KACHLE), DiagnosticsData.create(null, null, null));
+		ziskavac.ziskejObsah(new KaOneReq(ka, stav::complete, Priority.KACHLE), DiagnosticsData.create(null, null, null));
 		return stav.get(20, TimeUnit.SECONDS);
+	}
+
+	/** Překryv tras se kreslí ze stejné složky map vlastním tématem a ukládá pod vlastním klíčem. */
+	@Test(timeout = 30000)
+	public void prekryvTrasSeVykresliAUlozi() throws Exception {
+		ziskavac.getOfflineTrasy().nastav(slozka, TemaOfflineMapy.TRASY);
+		PrekryvTrasTest.zkopirujMapu(slozka);
+		final Ka trasy = new Ka(PrekryvTrasTest.PESINA_Z16, EKaType.TRASY);
+		final KachloStav stav = ziskej(trasy);
+		Assert.assertNull(stav.getThr());
+		Assert.assertTrue(((BufferedImage) stav.getImg()).getColorModel().hasAlpha());
+		final KachleManager.ItemToSave ulozena = ulozene.poll(15, TimeUnit.SECONDS);
+		Assert.assertNotNull("vykreslená dlaždice se uloží", ulozena);
+		Assert.assertEquals(trasy, ulozena.key);
+		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("t[0-9a-f]{8}"));
+	}
+
+	/** Bez map překryv nic nekreslí a chybu neukazuje, tu má jen offline mapa jako podklad. */
+	@Test(timeout = 30000)
+	public void prekryvTrasBezMapJePruhlednyBezChyby() throws Exception {
+		ziskavac.getOfflineTrasy().nastav(slozka, TemaOfflineMapy.TRASY);
+		final int render = ziskavac.pocitRenderError.get();
+		final KachloStav stav = ziskej(new Ka(PrekryvTrasTest.PESINA_Z16, EKaType.TRASY));
+		Assert.assertNull(String.valueOf(stav.getThr()), stav.getThr());
+		final BufferedImage img = (BufferedImage) stav.getImg();
+		for (final int p : img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth())) {
+			Assert.assertEquals(0, p >>> 24);
+		}
+		Assert.assertEquals(render, ziskavac.pocitRenderError.get());
 	}
 
 	@Test(timeout = 30000)

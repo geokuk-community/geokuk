@@ -15,8 +15,8 @@ final class UklidOfflineCache {
 
 	static final int PONECHAT = 3;
 	static final String SOUBOR = "klice.txt";
-	/** Typ dlaždice offline mapy v cache, viz {@link OfflineRenderer#klic(String)}. */
-	static final Pattern KLIC = Pattern.compile("o[0-9a-f]{8}");
+	/** Typ dlaždice offline mapy (o) a překryvu (t) v cache, viz {@link OfflineRenderer#klic(String)}. */
+	static final Pattern KLIC = Pattern.compile("[ot][0-9a-f]{8}");
 	private static final Pattern SYMBOLY = Pattern.compile("symboly-[0-9a-f]{8}\\.bin");
 
 	private UklidOfflineCache() {}
