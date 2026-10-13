@@ -3,13 +3,17 @@ package cz.geokuk.smoke;
 import java.awt.AWTEvent;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Měří, jak dlouho trvá obsluha jednotlivých událostí na EDT, a pamatuje si ty pomalé. Události začaté před {@link #konecStartu()} se počítají
  * zvlášť, start programu běží na EDT v jedné události. Zvlášť se počítá i přepínání vzhledu, které přestaví celé okno. U události delší než
- * {@link #PRAH_ZASOBNIKU_MS} si zapamatuje zásobník EDT, aby bylo vidět, kde obsluha visí.
+ * {@link #PRAH_ZASOBNIKU_MS} si zapamatuje zásobník EDT, aby bylo vidět, kde obsluha visí, i u události vnořené v modálním dialogu. K pomalé
+ * události připíše krok scénáře, čas GC během ní a kdy naposledy tikl vzorkovač; když stál i on, stál celý proces.
  */
 public class HlidacEdt extends EventQueue {
 
@@ -25,12 +29,16 @@ public class HlidacEdt extends EventQueue {
 	private volatile boolean startSkoncil;
 	private volatile long konecStartuNs;
 	private volatile Thread edt;
-	private volatile long probihaOdNs;
-	private volatile long cisloUdalosti;
+	private long cisloUdalosti;
 	private final AtomicLong udalostiPoStartu = new AtomicLong();
-	private volatile long cisloVnejsi;
-	private volatile long cisloZasobniku;
-	private volatile String zasobnik;
+	/** Právě obsluhované události od vnější po nejvnitřnější, dvojice číslo a začátek; mění se jen na EDT. */
+	private final Deque<long[]> bezi = new ArrayDeque<>();
+	/** Kopie {@link #bezi} pro vzorkovač. */
+	private volatile long[][] beziProVzorkovac = new long[0][];
+	private final Map<Long, String> zasobniky = new ConcurrentHashMap<>();
+	private volatile long posledniTikNs = System.nanoTime();
+	private volatile String krok;
+	private final List<GarbageCollectorMXBean> gc = ManagementFactory.getGarbageCollectorMXBeans();
 	private Thread vzorkovac;
 
 	private HlidacEdt(final long prahMs) {
@@ -55,21 +63,21 @@ public class HlidacEdt extends EventQueue {
 	@Override
 	protected void dispatchEvent(final AWTEvent event) {
 		final long start = System.nanoTime();
+		final long gcPred = casGcMs();
 		final boolean priVzhledu = vzhled;
-		final boolean vnorena = probihaOdNs != 0;
+		final String krokUdalosti = krok;
 		final long cislo = ++cisloUdalosti;
-		if (!vnorena) {
-			edt = Thread.currentThread();
-			cisloVnejsi = cislo;
-			probihaOdNs = start;
-		}
+		edt = Thread.currentThread();
+		bezi.push(new long[] { cislo, start });
+		beziProVzorkovac = bezi.toArray(new long[0][]);
 		try {
 			super.dispatchEvent(event);
 		} finally {
-			if (!vnorena) {
-				probihaOdNs = 0;
-			}
-			final long ms = (System.nanoTime() - start) / 1_000_000;
+			bezi.pop();
+			beziProVzorkovac = bezi.toArray(new long[0][]);
+			final long konec = System.nanoTime();
+			final long ms = (konec - start) / 1_000_000;
+			final String zasobnikUdalosti = zasobniky.remove(cislo);
 			final boolean priStartu = !startSkoncil || start - konecStartuNs < 0;
 			if (priStartu) {
 				nejdelsiStartMs = Math.max(nejdelsiStartMs, ms);
@@ -82,40 +90,71 @@ public class HlidacEdt extends EventQueue {
 				}
 			}
 			if (ms >= prahMs) {
-				final String zasobnikUdalosti = !vnorena && cisloZasobniku == cislo ? zasobnik : null;
 				pomale.add(ms + " ms: " + (priStartu ? "při startu: " : priVzhledu ? "při přepnutí vzhledu: " : "") + popis(event)
+						+ (krokUdalosti == null ? "" : "\nKrok: " + krokUdalosti) + (bezi.isEmpty() ? "" : "\nVnořená událost (modální dialog)")
+						+ "\nGC během události " + (casGcMs() - gcPred) + " ms, vzorkovač naposledy tikl před " + (konec - posledniTikNs) / 1_000_000 + " ms"
 						+ (zasobnikUdalosti == null ? "" : "\nZásobník EDT po " + PRAH_ZASOBNIKU_MS + " ms:" + zasobnikUdalosti));
 			}
 		}
 	}
 
-	/** Jednou za 100 ms se podívá, jestli obsluha události na EDT neběží déle než práh, a zapamatuje si její zásobník. */
+	private long casGcMs() {
+		long ms = 0;
+		for (final GarbageCollectorMXBean g : gc) {
+			ms += Math.max(0, g.getCollectionTime());
+		}
+		return ms;
+	}
+
+	/** Jednou za 100 ms se podívá, jestli obsluha některé probíhající události na EDT neběží déle než práh, a zapamatuje si zásobník. */
 	private void vzorkuj() {
-		long hotovo = 0;
+		final Set<Long> hotovo = new HashSet<>();
 		while (true) {
 			try {
 				Thread.sleep(100);
 			} catch (final InterruptedException e) {
 				return;
 			}
-			final long od = probihaOdNs;
-			final long cislo = cisloVnejsi;
+			posledniTikNs = System.nanoTime();
+			final long[][] udalosti = beziProVzorkovac;
 			final Thread vlakno = edt;
-			if (od == 0 || vlakno == null || cislo == hotovo || System.nanoTime() - od < PRAH_ZASOBNIKU_MS * 1_000_000) {
+			final List<Long> nove = new ArrayList<>();
+			for (final long[] u : udalosti) {
+				if (!hotovo.contains(u[0]) && posledniTikNs - u[1] >= PRAH_ZASOBNIKU_MS * 1_000_000) {
+					nove.add(u[0]);
+				}
+			}
+			if (nove.isEmpty() || vlakno == null) {
 				continue;
 			}
 			final StackTraceElement[] prvky = vlakno.getStackTrace();
-			if (probihaOdNs != od || cisloVnejsi != cislo) {
-				continue;
-			}
 			final StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < Math.min(prvky.length, HLOUBKA_ZASOBNIKU); i++) {
 				sb.append("\n  at ").append(prvky[i]);
 			}
-			zasobnik = sb.toString();
-			cisloZasobniku = cislo;
-			hotovo = cislo;
+			final Set<Long> stale = new HashSet<>();
+			for (final long[] u : beziProVzorkovac) {
+				stale.add(u[0]);
+			}
+			for (final Long c : nove) {
+				// Zásobník platí jen pro událost, která po jeho přečtení pořád běží.
+				if (stale.contains(c)) {
+					zasobniky.put(c, sb.toString());
+					hotovo.add(c);
+				}
+			}
+			hotovo.retainAll(stale);
 		}
+	}
+
+	/** Krok scénáře (třeba položka menu), ke kterému patří následující události; null = žádný. */
+	public void krok(final String popis) {
+		krok = popis;
+	}
+
+	/** Celkový čas GC v programu. */
+	public long getGcMs() {
+		return casGcMs();
 	}
 
 	/** Další události už nepatří ke startu programu. */

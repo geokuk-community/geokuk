@@ -1,6 +1,8 @@
 package cz.geokuk.smoke;
 
 import java.awt.EventQueue;
+import java.awt.SecondaryLoop;
+import java.awt.Toolkit;
 import java.util.List;
 
 import org.junit.Assert;
@@ -26,6 +28,39 @@ public class HlidacEdtTest {
 		} finally {
 			hlidac.vypni();
 		}
+	}
+
+	/** Pomalá událost uvnitř vnořené smyčky (modální dialog) má vlastní zásobník a ke každé pomalé události se připíše krok scénáře a GC. */
+	@Test(timeout = 30_000)
+	public void vnorenaPomalaUdalostMaZasobnikAKrok() throws Exception {
+		final HlidacEdt hlidac = HlidacEdt.zapni(200);
+		try {
+			hlidac.konecStartu();
+			hlidac.krok("Menu > Položka");
+			EventQueue.invokeAndWait(() -> {
+				final SecondaryLoop smycka = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
+				EventQueue.invokeLater(() -> {
+					vnorenaDlouhaObsluha();
+					smycka.exit();
+				});
+				smycka.enter();
+			});
+			hlidac.krok(null);
+			EventQueue.invokeAndWait(() -> {});
+			final List<String> pomale = hlidac.getPomale();
+			final String vnorena = pomale.stream().filter(p -> p.contains("Vnořená událost")).findFirst().orElse(pomale.toString());
+			Assert.assertTrue(vnorena, vnorena.contains("Zásobník EDT po 1500 ms:"));
+			Assert.assertTrue(vnorena, vnorena.contains("HlidacEdtTest.vnorenaDlouhaObsluha"));
+			Assert.assertTrue(vnorena, vnorena.contains("\nKrok: Menu > Položka"));
+			Assert.assertTrue(vnorena, vnorena.contains("\nGC během události "));
+			Assert.assertTrue(vnorena, vnorena.contains(", vzorkovač naposledy tikl před "));
+		} finally {
+			hlidac.vypni();
+		}
+	}
+
+	private static void vnorenaDlouhaObsluha() {
+		spi(HlidacEdt.PRAH_ZASOBNIKU_MS + 700);
 	}
 
 	private static void dlouhaObsluha() {
