@@ -76,6 +76,12 @@ final class OfflineRenderer {
 		}
 	}
 
+	/**
+	 * Verze knihovny mapsforge a vykreslování GeoKuku v klíči cache: jiná verze kreslí jinak, dlaždice se pak vykreslí znovu. Při změně mapsforge v pom.xml
+	 * změnit i tady (hlídá test), při změně vykreslování v GeoKuku zvýšit číslo za lomítkem.
+	 */
+	static final String VERZE_VYKRESLOVANI = "mapsforge 0.25.0/1";
+
 	static final char PREDPONA_KLICE = 'o';
 	static final char PREDPONA_KLICE_PREKRYVU = 't';
 
@@ -161,7 +167,7 @@ final class OfflineRenderer {
 			data.close();
 			throw e;
 		}
-		otisk.append(tema.otiskPouziteho).append('\n').append(tema.displayModel.getTileSize());
+		otisk.append(tema.otiskPouziteho).append('\n').append(tema.displayModel.getTileSize()).append('\n').append(VERZE_VYKRESLOVANI);
 		if (tema.pismo != 1) {
 			otisk.append('\n').append(tema.pismo);
 		}
@@ -248,6 +254,11 @@ final class OfflineRenderer {
 		final CRC32 crc = new CRC32();
 		crc.update(otisk.getBytes(StandardCharsets.UTF_8));
 		return String.format("%c%08x", predpona, crc.getValue());
+	}
+
+	/** Počet map, které se podařilo otevřít. */
+	int getPocetMap() {
+		return pokryti.size();
 	}
 
 	String getKlic() {

@@ -51,6 +51,10 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Offline mapa zkopírovaná do složky za běhu se otevře až po dokopírování
+  a mapa v okně se sama obnoví, bez posunu. Mapu, kterou chvíli nešlo číst
+  (například ji držel antivirus nebo synchronizace), program za půl minuty
+  zkusí znovu.
 
 ## 6.4.0
 
