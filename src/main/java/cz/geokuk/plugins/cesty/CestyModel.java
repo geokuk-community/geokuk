@@ -25,6 +25,8 @@ import cz.geokuk.plugins.cesty.routovani.TrasyUseku;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
+import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
@@ -379,8 +381,14 @@ public class CestyModel extends Model0 {
 		return trasyUseku;
 	}
 
+	/** Složka offline map; null, dokud mapy nemají načtené umístění souborů (při startu). */
 	File slozkaOfflineMap() {
-		return kachleModel == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+		final KachleUmisteniSouboru umisteni = kachleModel == null ? null : kachleModel.getUmisteniSouboru();
+		return umisteni == null ? null : umisteni.getOfflineMapyDir().getEffectiveFile();
+	}
+
+	public void onEvent(final KachleUmisteniSouboruChangedEvent event) {
+		dopocitejTrasy();
 	}
 
 	private void poVypoctuTrasy(final Usek usek) {

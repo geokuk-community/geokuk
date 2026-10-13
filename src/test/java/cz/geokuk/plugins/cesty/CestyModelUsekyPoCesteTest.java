@@ -81,6 +81,28 @@ public class CestyModelUsekyPoCesteTest {
 	}
 
 	@Test
+	public void predNactenimUmisteniMapSeTrasyNehledaji() {
+		final CestyModel m = new CestyModel() {
+			@Override
+			protected MyPreferences currPrefe() {
+				return pref;
+			}
+		};
+		m.inject((EventFirer) event -> {});
+		m.inject(new PoziceModel() {
+			@Override
+			public void refreshPozice() {}
+		});
+		// Při startu ještě mapy nemají umístění souborů.
+		m.inject(new cz.geokuk.plugins.mapy.kachle.KachleModel());
+		assertNull(m.slozkaOfflineMap());
+		m.pridejBodNaKonec(A.toMou());
+		m.pridejBodNaKonec(B.toMou());
+		assertEquals(TypUseku.PO_CESTE, prvni(m.getCurta()).getTyp());
+		assertFalse(m.isHledaSeTrasa(prvni(m.getCurta())));
+	}
+
+	@Test
 	public void noveUsekyPoCesteNeboRovne() {
 		assertEquals(TypUseku.PO_CESTE, model.getTypNovychUseku());
 		model.pridejBodNaKonec(A.toMou());
