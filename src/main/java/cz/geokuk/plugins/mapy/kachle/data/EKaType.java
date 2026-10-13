@@ -52,7 +52,7 @@ public final class EKaType {
 	public static final EKaType AT_BASEMAP = omezeneUzemi(new EKaType("AT_BASEMAP", false, 6, 19, 19, "AT mapa (basemap.at)", "Základní mapa Rakouska basemap.at", 0, null,
 			new UzivatelskyUrlBuilder("https://maps.wien.gv.at/basemap/geolandbasemap/normal/google3857/{z}/{y}/{x}.png")), 404);
 	public static final EKaType CH_SWISSTOPO = omezeneUzemi(new EKaType("CH_SWISSTOPO", false, 6, 18, 18, "CH topografická mapa (swisstopo)", "Národní mapa Švýcarska, swisstopo", 0, null,
-			new UzivatelskyUrlBuilder("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg")), 404, 400);
+			new UzivatelskyUrlBuilder("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg")), new double[] { 662_351, 5_749_954, 1_168_855, 6_075_304 }, 404, 400);
 
 	/** Vykresluje se v počítači ze souborů .map, nic se nestahuje. */
 	public static final EKaType OFFLINE_MF = new EKaType("OFFLINE_MF", false, 0, 20, 20, "Offline mapa", "Vektorová mapa ze souborů .map v počítači (mapsforge)", KeyEvent.VK_F,
