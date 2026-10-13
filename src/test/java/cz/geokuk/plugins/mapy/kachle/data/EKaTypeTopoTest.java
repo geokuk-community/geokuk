@@ -27,7 +27,7 @@ public class EKaTypeTopoTest {
 		Assert.assertEquals(18, EKaType.DE_TOPPLUS.getMaxMoumer());
 		Assert.assertEquals(19, EKaType.AT_BASEMAP.getMaxMoumer());
 		Assert.assertEquals(18, EKaType.CH_SWISSTOPO.getMaxMoumer());
-		Assert.assertEquals("© BKG (" + Year.now() + ") dl-de/by-2-0, Datenquellen: sgx.geodatenzentrum.de", EKaType.DE_TOPPLUS.getAtribuce());
+		Assert.assertEquals("© BKG (" + Year.now() + ") dl-de/by-2-0, Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html", EKaType.DE_TOPPLUS.getAtribuce());
 		Assert.assertEquals("Data source: basemap.at", EKaType.AT_BASEMAP.getAtribuce());
 		Assert.assertEquals("© swisstopo", EKaType.CH_SWISSTOPO.getAtribuce());
 		final KaLoc praha = KaLoc.ofJZ(new Wgs(50.0875, 14.4208).toMou(), 14);

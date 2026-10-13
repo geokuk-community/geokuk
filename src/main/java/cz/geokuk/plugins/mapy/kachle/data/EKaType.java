@@ -249,7 +249,7 @@ public final class EKaType {
 			return "© GKÚ Bratislava, NLC, CC BY 4.0";
 		}
 		if (this == DE_TOPPLUS) {
-			return "© BKG (" + Year.now() + ") dl-de/by-2-0, Datenquellen: sgx.geodatenzentrum.de";
+			return "© BKG (" + Year.now() + ") dl-de/by-2-0, Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html";
 		}
 		if (this == AT_BASEMAP) {
 			return "Data source: basemap.at";
