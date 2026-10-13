@@ -51,6 +51,9 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Po uspání nebo hibernaci počítače se v Informacích pro hlášení chyby
+  objeví „Probuzení po N min“ místo nesmyslně dlouhého záseku programu a doba
+  uspání se nezapočítá do měření odezvy.
 
 ## 6.4.0
 

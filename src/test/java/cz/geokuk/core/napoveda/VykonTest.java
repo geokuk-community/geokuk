@@ -212,4 +212,54 @@ public class VykonTest {
 		final String udalosti = text.substring(text.indexOf("Poslední události"));
 		Assert.assertTrue(udalosti, udalosti.matches("(?s).*Zásek EDT \\d+ ms: InvocationEvent \\([^)]*\\) – [^\\n]*VykonTest\\.spiNaEdt:\\d+.*"));
 	}
+
+	private static final long S = 1_000_000_000L;
+
+	@Test
+	public void probuzeniPoUspani() {
+		Assert.assertEquals("Probuzení po 45 s", Vykon.popisProbuzeni(45 * S));
+		Assert.assertEquals("Probuzení po 635 min", Vykon.popisProbuzeni(38_074 * S));
+		final Vykon.MericiFronta fronta = new Vykon.MericiFronta();
+		final long t0 = 1_000 * S;
+		fronta.tik(t0);
+		fronta.tik(t0 + 30 * 60 * S);
+		final String text = Diagnostika.text();
+		Assert.assertTrue(text, text.substring(text.indexOf("Poslední události")).contains("Probuzení po 30 min"));
+	}
+
+	/** Událost přes uspání počítače se nepočítá; skutečně dlouhá událost, během které hlídač tikal, ano. */
+	@Test
+	public void udalostPresUspani() {
+		final Vykon.MericiFronta fronta = new Vykon.MericiFronta();
+		final long t0 = 1_000 * S;
+		Assert.assertFalse("bez hlídače se nic nepozná", fronta.presUspani(t0, t0 + 60 * S));
+		fronta.tik(t0);
+		for (long t = t0; t <= t0 + 20 * S; t += S / 4) {
+			fronta.tik(t);
+		}
+		Assert.assertFalse("hlídač tikal, EDT opravdu stál", fronta.presUspani(t0, t0 + 20 * S));
+		Assert.assertTrue("hlídač po probuzení ještě netikl", fronta.presUspani(t0 + 20 * S, t0 + 20 * S + 3_600 * S));
+		fronta.tik(t0 + 20 * S + 3_600 * S);
+		Assert.assertTrue("hlídač mezeru zjistil dřív, než událost skončila", fronta.presUspani(t0 + 20 * S, t0 + 20 * S + 3_600 * S + S / 10));
+		Assert.assertFalse("krátká událost", fronta.presUspani(t0 + 3_621 * S, t0 + 3_621 * S + S / 2));
+		for (long t = t0 + 3_620 * S; t <= t0 + 3_633 * S; t += S / 4) {
+			fronta.tik(t);
+		}
+		Assert.assertFalse("dlouhá událost až po probuzení se počítá", fronta.presUspani(t0 + 3_621 * S, t0 + 3_633 * S));
+	}
+
+	/** Zásek EDT přes uspání (hlídač mezitím netikal) se do Diagnostiky ani do statistik nezapíše. */
+	@Test
+	public void zasekPresUspaniSeNezapise() throws Exception {
+		final Vykon.MericiFronta fronta = new Vykon.MericiFronta();
+		fronta.mezeraUspaniNs = Vykon.PRAH_ZASEKU_MS * 1_000_000;
+		fronta.tik(System.nanoTime());
+		Toolkit.getDefaultToolkit().getSystemEventQueue().push(fronta);
+		final String pred = Diagnostika.text();
+		final int zaseku = pred.split("Zásek EDT", -1).length;
+		EventQueue.invokeAndWait(VykonTest::spiNaEdt);
+		pockejNaZapis();
+		Assert.assertEquals(zaseku, Diagnostika.text().split("Zásek EDT", -1).length);
+		Assert.assertTrue("do statistiky EDT se nezapočítá", Vykon.souhrn(Velicina.EDT).max < Vykon.PRAH_ZASEKU_MS);
+	}
 }
