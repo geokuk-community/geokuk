@@ -140,7 +140,7 @@ public class VyrezModel extends Model0 {
 		// pod nulu se nesmí, tam už je vidět celý svět
 		for (; mer > 0; mer--) {
 			final int pom = 1 << Coord.MAX_MOUMER - mer; // mou na pixel v tomto měřítku
-			if (mourect.getMouWidth() / pom <= dim.getWidth() && mourect.getMouHeight() / pom <= dim.getHeight()) {
+			if (mourect.getMouWidth() / pom <= dim.width && mourect.getMouHeight() / pom <= dim.height) {
 				break; // hledáme nejbližší nejlepší
 			}
 		}

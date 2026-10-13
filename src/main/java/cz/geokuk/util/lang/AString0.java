@@ -18,10 +18,10 @@ public abstract class AString0 extends AObject0 implements Serializable, Compara
 	protected final String iValue;
 
 	protected AString0(final String aValue) {
-		iValue = aValue.trim();
-		if (iValue == null) {
+		if (aValue == null) {
 			throw new NullPointerException("Cannot use null value as constructor parameter of tw elementary types " + getClass());
 		}
+		iValue = aValue.trim();
 		checkRange();
 		validate();
 	}

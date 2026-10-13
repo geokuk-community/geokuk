@@ -9,8 +9,6 @@ public class MouRect {
 	private int xx2;
 	private int yy2;
 
-	public Mou sstre;
-
 	public MouRect() {}
 
 	public MouRect(final Mou mou) {
@@ -20,7 +18,6 @@ public class MouRect {
 	public MouRect(final Mou roh1, final Mou roh2) {
 		add(roh1);
 		add(roh2);
-		sstre = new Mou(stred(roh1.xx, roh2.xx), stred(roh1.yy, roh2.yy));
 	}
 
 	public void add(final Mou mou) {

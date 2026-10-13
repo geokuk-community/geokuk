@@ -10,6 +10,7 @@ import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.SouborovePreferences;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.Soubory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -105,15 +106,17 @@ public final class Nastaveni {
 	/** Starší odložený soubor se smaže, až když jde soubor odsunout (antivirus ho může držet). */
 	private static boolean odloz(final File soubor, final File vadne) {
 		final File docasne = new File(soubor.getPath() + ".odkladani");
-		docasne.delete();
+		Soubory.smaz(docasne);
 		if (!soubor.renameTo(docasne)) {
 			return false;
 		}
-		vadne.delete();
+		Soubory.smaz(vadne);
 		if (docasne.renameTo(vadne)) {
 			return true;
 		}
-		docasne.renameTo(soubor);
+		if (!docasne.renameTo(soubor)) {
+			log.warn("Soubor {} nejde vrátit z {}", soubor, docasne);
+		}
 		return false;
 	}
 

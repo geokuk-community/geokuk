@@ -5,10 +5,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cz.geokuk.util.file.FileManager;
+import cz.geokuk.util.file.Soubory;
 
 /**
  * Repositoř výjime realizovaná na filesystému.
@@ -39,7 +41,7 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 	 * @throws IOException
 	 */
 	public static int loadAndIncrementNumberInFile(final File aFile) throws IOException {
-		aFile.getCanonicalFile().getParentFile().mkdirs();
+		Soubory.zalozSlozky(aFile.getCanonicalFile().getParentFile());
 		int runNumber = 0;
 		try (RandomAccessFile raf = new RandomAccessFile(aFile, "rw")) {
 			try (FileChannel channel = raf.getChannel()) {
@@ -56,7 +58,7 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 					}
 					runNumber++; // inkrementujeme načtené číslo, pokud jsme nenačetli minule nic, inkrementujeme jedničku
 					raf.seek(0);
-					raf.write(Integer.toString(runNumber).getBytes());
+					raf.write(Integer.toString(runNumber).getBytes(StandardCharsets.US_ASCII));
 					raf.setLength(raf.getFilePointer());
 				} finally {
 					// Release the lock
@@ -143,7 +145,7 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 	@Override
 	public void write(final AExcId aCode, final String aExceptionData) throws IOException {
 		final File file = toFile(aCode);
-		file.getParentFile().mkdirs();
+		Soubory.zalozSlozky(file.getParentFile());
 		fm.writeStringToFile(file, aExceptionData);
 	}
 
@@ -153,7 +155,7 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 				throw new RuntimeException("The file \"" + aDir + "\" exists, it is file, not folder!");
 			}
 		} else { // adresář neexistuje, jdeme ho vytvořit
-			aDir.mkdirs(); // vytvoříme všechny adresáře na cestě
+			Soubory.zalozSlozky(aDir); // vytvoříme všechny adresáře na cestě
 		}
 		// takže víme, že máme existující adresář
 		// musíme zkontrolovat, zda do něj lze zapisovat.
@@ -203,7 +205,7 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 				smazatRekurzivne(f);
 			}
 		}
-		soubor.delete();
+		Soubory.smaz(soubor);
 	}
 
 	/**
@@ -255,11 +257,11 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 	private void zkusitPraciVAdresari(final File aDir) throws IOException {
 		// A zkusíme, že umíme vytvořid adresář i soubor (k randomům přičítáme číslo, aby nevylezlo moc malé číslo, jenž bude mít exponenciální vyjádření
 		final File pokusdir = new File(aDir, "dir" + (Math.random() + 20));
-		pokusdir.mkdir();
+		Soubory.zalozSlozky(pokusdir);
 		final File pokusfile = new File(pokusdir, "filex" + (Math.random() + 30));
 		fm.writeStringToFile(pokusfile, "Pokusný řetězec zapisovaný do souboru");
-		pokusfile.delete();
-		pokusdir.delete();
+		Soubory.smaz(pokusfile);
+		Soubory.smaz(pokusdir);
 	}
 
 }

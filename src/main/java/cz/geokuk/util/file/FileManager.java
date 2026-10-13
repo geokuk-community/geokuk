@@ -236,7 +236,7 @@ public class FileManager {
 		try (FileInputStream in = new FileInputStream(aIn); FileOutputStream out = new FileOutputStream(aOut)) {
 			pumpFileChannels(in.getChannel(), out.getChannel());
 		}
-		aOut.setLastModified(aIn.lastModified());
+		Soubory.nastavCas(aOut, aIn.lastModified());
 	}
 
 	private void pumpFileChannels(final FileChannel inc, final FileChannel outc) throws IOException {
