@@ -35,6 +35,7 @@ public final class NapovedaWiki {
 		stranka("JintNaSouradnice", "Hledání", "zadání-souřadnic");
 		stranka("StahovaniMapovychDlazdic", "Mapové-podklady-a-cache", "hromadné-stažení-map-na-výlet");
 		stranka("LimityKresleni", "Filtry-a-zobrazení-keší", "ikony-nebo-tečky");
+		stranka("ZvyrazneniKesi", "Filtry-a-zobrazení-keší", null);
 		stranka("PametProgramu", "Časté-potíže", "načtení-keší-je-pomalé-nebo-programu-dochází-paměť");
 		stranka("ZobrazeniProgramu", "Časté-potíže", "program-je-pomalý-nebo-mapa-a-menu-sekají-windows");
 	}

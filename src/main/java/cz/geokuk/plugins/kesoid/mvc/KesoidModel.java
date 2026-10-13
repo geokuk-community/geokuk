@@ -77,6 +77,9 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	/** Zdroje rozběhnutého prvního načítání, dokud žádné keše načtené nejsou. */
 	private volatile InformaceOZdrojich nacitaneZdroje;
 	private LimityKresleni limityKresleni = LimityKresleni.VYCHOZI;
+	/** Čte ho načítání ikon na pozadí. */
+	private volatile Zvyrazneni zvyrazneni = Zvyrazneni.VYCHOZI;
+	private List<Zvyrazneni> predvolbyZvyrazneni = Collections.emptyList();
 	private final AtomicBoolean udalostStavuZdrojuCeka = new AtomicBoolean();
 	private volatile StavZdroju stavZdroju = StavZdroju.PRAZDNY;
 
@@ -531,6 +534,53 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		fire(new LimityKresleniEvent(limity));
 	}
 
+	public Zvyrazneni getZvyrazneni() {
+		return zvyrazneni;
+	}
+
+	/** Vlastní předvolby zvýraznění, vestavěné nejsou mezi nimi. */
+	public List<Zvyrazneni> getPredvolbyZvyrazneni() {
+		return predvolbyZvyrazneni;
+	}
+
+	public void setZvyrazneni(final Zvyrazneni zvyrazneni) {
+		if (zvyrazneni.equals(this.zvyrazneni)) {
+			return;
+		}
+		this.zvyrazneni = zvyrazneni;
+		currPrefe().node(FPref.ZVYRAZNENI_node).put(FPref.ZVYRAZNENI_value, zvyrazneni.naText());
+		fire(new ZvyrazneniEvent(zvyrazneni, predvolbyZvyrazneni));
+		startIkonLoad(true);
+	}
+
+	public void setPredvolbyZvyrazneni(final List<Zvyrazneni> predvolby) {
+		if (predvolby.equals(predvolbyZvyrazneni)) {
+			return;
+		}
+		predvolbyZvyrazneni = Collections.unmodifiableList(new ArrayList<>(predvolby));
+		final List<String> texty = new ArrayList<>();
+		for (final Zvyrazneni z : predvolbyZvyrazneni) {
+			texty.add(z.naText());
+		}
+		currPrefe().node(FPref.ZVYRAZNENI_node).putStringList(FPref.ZVYRAZNENI_PREDVOLBY_value, texty);
+		fire(new ZvyrazneniEvent(zvyrazneni, predvolbyZvyrazneni));
+	}
+
+	private void nactiZvyrazneni() {
+		final MyPreferences pref = currPrefe().node(FPref.ZVYRAZNENI_node);
+		final Zvyrazneni ulozene = Zvyrazneni.zTextu(pref.get(FPref.ZVYRAZNENI_value, null));
+		zvyrazneni = ulozene == null ? Zvyrazneni.VYCHOZI : ulozene;
+		final List<Zvyrazneni> predvolby = new ArrayList<>();
+		for (final String text : pref.getStringList(FPref.ZVYRAZNENI_PREDVOLBY_value, Collections.emptyList())) {
+			final Zvyrazneni z = Zvyrazneni.zTextu(text);
+			if (z != null) {
+				predvolby.add(z);
+			}
+		}
+		predvolbyZvyrazneni = Collections.unmodifiableList(predvolby);
+		fire(new ZvyrazneniEvent(zvyrazneni, predvolbyZvyrazneni));
+	}
+
 	void nactiLimityKresleni(final MyPreferences kesoid) {
 		limityKresleni = LimityKresleni.of(kesoid.getInt(FPref.LIMIT_IKON_value, LimityKresleni.VYCHOZI_IKON), kesoid.getInt(FPref.LIMIT_TECEK_value, LimityKresleni.VYCHOZI_TECEK))
 				.sVlastnostmi();
@@ -638,6 +688,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		final ASada jmenoAktualniSadyIkon = currPrefe().node(FPref.JMENO_VYBRANE_SADY_IKON_node).getAtom(FPref.JMENO_VYBRANE_SADY_IKON_value, ASada.STANDARD, ASada.class);
 		this.jmenoAktualniSadyIkon = jmenoAktualniSadyIkon;
 		fire(new JmenoAktualniSadyIkonChangeEvent(jmenoAktualniSadyIkon));
+		nactiZvyrazneni();
 		// fire(new GccomNickChangedEvent(gccomNick));
 		// loadUmisteniSouboru();
 		setGsakParametryNacitani(loadGsakParametryNacitani());

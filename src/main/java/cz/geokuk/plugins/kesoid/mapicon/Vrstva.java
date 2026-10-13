@@ -25,6 +25,12 @@ public class Vrstva {
 
 	private final Set<Alela> pouziteAlely = new HashSet<>();
 
+	/** Jméno složky vrstvy v sadě. */
+	String nazev;
+
+	/** Zvýraznění keší v pořadí pravidel; přebijí obecné ikony vrstvy, ne ty s vyšší prioritou. */
+	private final List<IconDef> zvyrazneni = new ArrayList<>();
+
 	private int pocet;
 
 	/** Selektivní geny jso geny, které mají hodně alel a alela může rychle rozhodnout, které ikondefy
@@ -43,6 +49,20 @@ public class Vrstva {
 	 * @return
 	 */
 	public IconDef locate(final Genotyp genotyp) {
+		final IconDef iconDef = locateVSade(genotyp);
+		if (iconDef == null || iconDef.priorita <= IconDef.VYCHOZI_PRIORITA) {
+			for (final IconDef z : zvyrazneni) {
+				for (final IconSubDef subDef : z.getSubdefs()) {
+					if (genotyp.hasAll(subDef.alely)) {
+						return z;
+					}
+				}
+			}
+		}
+		return iconDef;
+	}
+
+	private IconDef locateVSade(final Genotyp genotyp) {
 
 		final List<IconDef> vybrane = new ArrayList<>(pocet);
 		int maxPriorita = -1;
@@ -111,6 +131,13 @@ public class Vrstva {
 			}
 		}
 
+	}
+
+	void pridejZvyrazneni(final IconDef iconDef) {
+		zvyrazneni.add(iconDef);
+		for (final IconSubDef subDef : iconDef.getSubdefs()) {
+			pouziteAlely.addAll(subDef.alely);
+		}
 	}
 
 	/**

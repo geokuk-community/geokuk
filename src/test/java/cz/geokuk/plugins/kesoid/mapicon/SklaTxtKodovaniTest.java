@@ -56,7 +56,7 @@ public class SklaTxtKodovaniTest {
 
 		final IkonNacitacLoader loader = new IkonNacitacLoader();
 		loader.setImageMyDir(tmp.getRoot());
-		final IkonBag bag = loader.nacti(null, true, Atom.valueOf(ASada.class, "Vlastní"));
+		final IkonBag bag = loader.nacti(true, Atom.valueOf(ASada.class, "Vlastní"), Zvyrazneni.VYCHOZI);
 		Assert.assertEquals("Vlastní", bag.getSada().getName());
 		Assert.assertEquals(1, bag.getSada().getSkloAplikanti().size());
 		Assert.assertEquals(SKLO, bag.getSada().getSkloAplikanti().get(0).sklo.getName());

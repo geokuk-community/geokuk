@@ -35,6 +35,9 @@ public class FPref {
 	public static final String KESOID_FILTER_NATOOLBARU_value = "alelyNaToolbaru";
 	public static final String KESOID_FILTR_node = "kesoid/filtr";
 	public static final String KESOID_node = "kesoid";
+	public static final String ZVYRAZNENI_node = "kesoid/zvyrazneni";
+	public static final String ZVYRAZNENI_value = "zvyrazneni";
+	public static final String ZVYRAZNENI_PREDVOLBY_value = "predvolby";
 	public static final String KESOID_OBSAZENOST_node = "obsazenost"; // z duvodu komaptibility zachovat
 
 	public static final String KESOID_POPISKY_node = "kesoid/popisky";
