@@ -1,10 +1,14 @@
 package cz.geokuk.plugins.kesoid.mapicon;
 
+import java.awt.Color;
 import java.io.*;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.*;
 import java.util.*;
+
+import cz.geokuk.api.mapicon.RoundRectDrawer;
+import cz.geokuk.plugins.kesoid.genetika.Alela;
 
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.util.file.KeyNode;
@@ -17,6 +21,8 @@ public class IkonNacitacSada {
 
 	private static final String SKLA_TXT = "skla.txt";
 	private static final String GROUPS_PROPERTIES = "groups.properties";
+	/** Vrstva čtverců pod ikonou v sadě Standard a sadách z ní odvozených. */
+	private static final String VRSTVA_CTVERCU = "ctverce";
 
 	private final Genom genom;
 	private final Properties groupDisplayNames = new Properties();
@@ -65,6 +71,70 @@ public class IkonNacitacSada {
 			}
 		}
 		return sada;
+	}
+
+	/**
+	 * Přidá zvýraznění keší do skel, která se kreslí u všech waypointů: do vrstvy čtverců pod ikonou, a když ji sada nemá, do nové vrstvy úplně
+	 * dole. Pravidla s alelou, kterou genom nezná, se vynechají.
+	 */
+	void zvyrazni(final Sada sada, final Zvyrazneni zvyrazneni) {
+		final List<IconDef> defs = new ArrayList<>();
+		for (final Zvyrazneni.Pravidlo pravidlo : zvyrazneni.getPravidla()) {
+			final IconDef iconDef = iconDef(pravidlo);
+			if (iconDef != null) {
+				defs.add(iconDef);
+			}
+		}
+		if (defs.isEmpty()) {
+			return;
+		}
+		final Set<Sklo> skla = new LinkedHashSet<>();
+		for (final SkloAplikant aplikant : sada.skloAplikanti) {
+			if (aplikant.aplikaceSkla == EAplikaceSkla.VSE) {
+				skla.add(aplikant.sklo);
+			}
+		}
+		for (final Sklo sklo : skla) {
+			Vrstva vrstva = null;
+			for (final Vrstva v : sklo.vrstvy) {
+				if (v.nazev != null && v.nazev.endsWith(VRSTVA_CTVERCU)) {
+					vrstva = v;
+				}
+			}
+			if (vrstva == null) {
+				vrstva = new Vrstva();
+				sklo.vrstvy.add(0, vrstva);
+			}
+			for (final IconDef iconDef : defs) {
+				vrstva.pridejZvyrazneni(iconDef);
+			}
+		}
+	}
+
+	private IconDef iconDef(final Zvyrazneni.Pravidlo pravidlo) {
+		final Set<Alela> alely = new HashSet<>();
+		alely.add(genom.ALELA_nomouse);
+		for (final String qualName : pravidlo.getAlely()) {
+			final Optional<Alela> alela = genom.locateQualAlela(qualName);
+			if (!alela.isPresent()) {
+				log.warn("Zvýraznění keší: alela {} neexistuje, pravidlo {} se vynechá", qualName, pravidlo);
+				return null;
+			}
+			alely.add(alela.get());
+		}
+		final IkonDrawingProperties idp = new IkonDrawingProperties();
+		idp.properties = new Properties();
+		idp.properties.setProperty("width", "24");
+		idp.properties.setProperty("height", "24");
+		final Color barva = pravidlo.getBarva();
+		idp.properties.setProperty("fill", barva.getRed() + "," + barva.getGreen() + "," + barva.getBlue());
+		idp.vykreslovac = new RoundRectDrawer();
+		idp.vykreslovac.setIdp(idp);
+		final IconDef iconDef = new IconDef();
+		iconDef.setAlelyx(alely);
+		iconDef.idp = idp;
+		iconDef.priorita = IconDef.VYCHOZI_PRIORITA;
+		return iconDef;
 	}
 
 	/** Text v UTF-8 (případně s BOM); vlastní sady uložené v kódování Windows se čtou jako windows-1250. */
@@ -120,6 +190,7 @@ public class IkonNacitacSada {
 
 	private Vrstva loadVrstva(final KeyNode<String, LamUrl> vrstvaNode, final ImageProvider imageProvider) {
 		final Vrstva vrstva = new Vrstva();
+		vrstva.nazev = vrstvaNode.getData().name;
 		for (final Map.Entry<String, KeyNode<String, LamUrl>> entry : vrstvaNode.getItems().entrySet()) {
 			final IconDefNacitac idn = new IconDefNacitac(genom, entry.getKey(), entry.getValue().getData().url, this);
 			final IconDef iconDef = idn.loadIconDef(imageProvider);

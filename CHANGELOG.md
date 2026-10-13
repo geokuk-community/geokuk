@@ -20,6 +20,11 @@
   cyklotrasy, turistické značky…). Volba se pamatuje pro každé téma zvlášť,
   Obnovit výchozí vrstvy vrátí výběr autora tématu. U tématu paws je v menu
   odkaz na legendu.
+- Nové podmenu Kešoidy > Zvýraznění: barevný čtverec pod ikonou keší podle
+  předvolby Bez zvýraznění, Terén 4,5 a 5 (výchozí) nebo Obtížnost 4,5 a 5.
+  V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
+  platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
+  pro všechny sady ikon.
 
 ## 6.4.0
 
