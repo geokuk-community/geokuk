@@ -51,6 +51,9 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Nová instalace začíná offline mapou, když je ve složce offline map podrobná
+  mapa, jinak ortofotem ČÚZK. Mapy.cz zůstávají v menu Mapy. Stávajícím
+  uživatelům se zvolený podklad nemění.
 
 ## 6.4.0
 
