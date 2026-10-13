@@ -1,13 +1,26 @@
 package cz.geokuk.plugins.cesty.data;
 
+import java.util.*;
+
 import cz.geokuk.core.coordinates.*;
+import cz.geokuk.plugins.cesty.routovani.Trasa;
 
 public class Usek extends Bousek0 {
 
 	private Bod bvpred;
 	private Bod bvzad;
-	private boolean vzdusny = false;
+	/** O kolik metrů se smí krajní bod posunout, aby spočtená trasa platila (přichycení bodu na keš po načtení). */
+	private static final double TOLERANCE_KONCU_TRASY = 2;
+
+	private TypUseku typ = TypUseku.ROVNE;
 	private double dalka = -1;
+
+	/** Výsledek hledání trasy po cestách a krajní body, pro které platí; null = nespočteno. */
+	private Trasa.Stav stavTrasy;
+	private Mou trasaOd;
+	private Mou trasaDo;
+	/** Body trasy od {@link #trasaOd} do {@link #trasaDo}, null když trasa nalezena není. */
+	private List<Mou> trasa;
 
 	/**
 	 * Spočítá bod, který leží na přímce m1m2 a je nejblíže m3. To je průsečík kolmice.
@@ -101,7 +114,16 @@ public class Usek extends Bousek0 {
 			return 0;
 		}
 		if (dalka < 0) {
-			dalka = FGeoKonvertor.dalka(bvpred, bvzad);
+			final List<Mou> t = getTrasa();
+			if (t == null) {
+				dalka = FGeoKonvertor.dalka(bvpred, bvzad);
+			} else {
+				double d = 0;
+				for (int i = 1; i < t.size(); i++) {
+					d += FGeoKonvertor.dalka(t.get(i - 1), t.get(i));
+				}
+				dalka = d;
+			}
 		}
 		return dalka;
 	}
@@ -195,7 +217,68 @@ public class Usek extends Bousek0 {
 	}
 
 	public boolean isVzdusny() {
-		return vzdusny;
+		return typ == TypUseku.VZDUSNY;
+	}
+
+	public boolean isPoCeste() {
+		return typ == TypUseku.PO_CESTE;
+	}
+
+	public TypUseku getTyp() {
+		return typ;
+	}
+
+	/**
+	 * Trasa po cestách od {@link #getBvzad()} k {@link #getBvpred()} včetně krajních bodů trasy.
+	 *
+	 * @return null, když úsek nevede po cestě, trasa není spočtená nebo nalezená, nebo se od výpočtu posunul krajní bod
+	 */
+	public List<Mou> getTrasa() {
+		if (!isPoCeste() || trasa == null) {
+			return null;
+		}
+		final int smer = smerTrasy();
+		if (smer == 0) {
+			return null;
+		}
+		if (smer > 0) {
+			return trasa;
+		}
+		final List<Mou> obracene = new ArrayList<>(trasa);
+		Collections.reverse(obracene);
+		return Collections.unmodifiableList(obracene);
+	}
+
+	/**
+	 * Výsledek posledního hledání trasy po cestách pro současné krajní body.
+	 *
+	 * @return null, když úsek nevede po cestě, ještě se nehledalo, nebo se od hledání posunul krajní bod
+	 */
+	public Trasa.Stav getStavTrasy() {
+		if (!isPoCeste() || stavTrasy == null || smerTrasy() == 0) {
+			return null;
+		}
+		return stavTrasy;
+	}
+
+	/** 1 = trasa platí ve směru úseku, -1 = obráceně (cesta se otočila), 0 = neplatí. */
+	private int smerTrasy() {
+		if (trasaOd == null || bvzad == null || bvpred == null) {
+			return 0;
+		}
+		final Mou zacatek = bvzad.getMou();
+		final Mou konec = bvpred.getMou();
+		if (blizko(trasaOd, zacatek) && blizko(trasaDo, konec)) {
+			return 1;
+		}
+		if (blizko(trasaOd, konec) && blizko(trasaDo, zacatek)) {
+			return -1;
+		}
+		return 0;
+	}
+
+	private static boolean blizko(final Mou a, final Mou b) {
+		return a.equals(b) || FGeoKonvertor.dalka(a, b) <= TOLERANCE_KONCU_TRASY;
 	}
 
 	@Override
@@ -228,6 +311,10 @@ public class Usek extends Bousek0 {
 		final Usek u2 = getCesta().createUsek();
 		u1.spoj(bvzad, bod);
 		u2.spoj(bod, bvpred);
+		if (isPoCeste()) {
+			u1.setTyp(TypUseku.PO_CESTE);
+			u2.setTyp(TypUseku.PO_CESTE);
+		}
 		if (isVzdusny()) {
 			final long kvadratDalkyVzad = getBvzad().computeKvadratVzdalenosti(bod.getMou());
 			final long kvadratDalkyVpred = getBvpred().computeKvadratVzdalenosti(bod.getMou());
@@ -252,7 +339,21 @@ public class Usek extends Bousek0 {
 	}
 
 	void setVzdusny(final boolean vzdusny) {
-		this.vzdusny = vzdusny;
+		setTyp(vzdusny ? TypUseku.VZDUSNY : TypUseku.ROVNE);
+	}
+
+	void setTyp(final TypUseku typ) {
+		this.typ = typ;
+		zneschopniDalku();
+	}
+
+	/** Uloží výsledek hledání trasy mezi body {@code od} a {@code kam}; trasa platí, dokud krajní body úseku zůstanou na místě. */
+	void setTrasa(final Mou od, final Mou kam, final Trasa.Stav stav, final List<Mou> body) {
+		trasaOd = od;
+		trasaDo = kam;
+		stavTrasy = stav;
+		trasa = body == null ? null : Collections.unmodifiableList(new ArrayList<>(body));
+		zneschopniDalku();
 	}
 
 	void spoj(final Bod b1, final Bod b2) {

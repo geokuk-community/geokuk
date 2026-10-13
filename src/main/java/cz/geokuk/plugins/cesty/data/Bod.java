@@ -283,7 +283,11 @@ public class Bod extends Bousek0 implements Uchopenec {
 			return null;
 		} else {
 			final Usek usek = getCesta().createUsek();
-			usek.setVzdusny(uvzad.isVzdusny() && uvpred.isVzdusny());
+			if (uvzad.isVzdusny() && uvpred.isVzdusny()) {
+				usek.setTyp(TypUseku.VZDUSNY);
+			} else if (uvzad.isPoCeste() || uvpred.isPoCeste()) {
+				usek.setTyp(TypUseku.PO_CESTE);
+			}
 			usek.spoj(uvzad.getBvzad(), uvpred.getBvpred());
 			return usek;
 		}

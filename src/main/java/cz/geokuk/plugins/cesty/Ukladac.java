@@ -2,6 +2,7 @@ package cz.geokuk.plugins.cesty;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 
 import com.google.common.xml.XmlEscapers;
@@ -14,6 +15,8 @@ import cz.geokuk.util.file.BezpecnyZapis;
 public class Ukladac {
 
 	private static final String CREATOR = "creator=\"http://geokuk.cz\"";
+	/** Jmenný prostor rozšíření GeoKuku v GPX; {@code <gk:bod/>} označuje řídicí bod cesty mezi body trasy po cestách. */
+	public static final String GK_NAMESPACE = "http://geokuk.cz/gpx/1";
 
 	private PrintWriter pwrt;
 
@@ -32,7 +35,7 @@ public class Ukladac {
 		BezpecnyZapis.zapisText(f, StandardCharsets.UTF_8, wrt -> {
 			pwrt = wrt;
 			p("<?xml version=\"1.0\" encoding=\"UTF-8\"  ?>");
-			p("<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\" " + CREATOR + " >");
+			p("<gpx xmlns=\"http://www.topografix.com/GPX/1/1\"" + (maTrasy(doc) ? " xmlns:gk=\"" + GK_NAMESPACE + "\"" : "") + " version=\"1.1\" " + CREATOR + " >");
 			uloz(doc);
 			p("</gpx>");
 		});
@@ -48,12 +51,28 @@ public class Ukladac {
 		if (cesta.getNazev() != null) {
 			p("  <name>%s</name>", XmlEscapers.xmlContentEscaper().escape(cesta.getNazev()));
 		}
+		// Body tras po cestách se zapisují jako obyčejné body; řídicí body cesty se pak odliší rozšířením.
+		final boolean oznacitBody = maTrasy(cesta);
 		p("  <trkseg>");
 		for (final Bod b : cesta.getBody()) {
-			uloz(b.getMouable().getMou());
-			if (b.getUvpred() != null && b.getUvpred().isVzdusny()) {
+			if (oznacitBody) {
+				ulozRidici(b.getMouable().getMou());
+			} else {
+				uloz(b.getMouable().getMou());
+			}
+			final Usek usek = b.getUvpred();
+			if (usek == null) {
+				continue;
+			}
+			if (usek.isVzdusny()) {
 				p("  </trkseg>");
 				p("  <trkseg>");
+			}
+			final List<Mou> trasa = usek.getTrasa();
+			if (trasa != null) {
+				for (int i = 1; i < trasa.size() - 1; i++) {
+					uloz(trasa.get(i));
+				}
 			}
 		}
 		p("  </trkseg>");
@@ -70,5 +89,28 @@ public class Ukladac {
 	private void uloz(final Mou mou) {
 		final Wgs wgs = mou.toWgs();
 		p("    <trkpt lat=\"%f\" lon=\"%f\" />", wgs.lat, wgs.lon);
+	}
+
+	private void ulozRidici(final Mou mou) {
+		final Wgs wgs = mou.toWgs();
+		p("    <trkpt lat=\"%f\" lon=\"%f\"><extensions><gk:bod/></extensions></trkpt>", wgs.lat, wgs.lon);
+	}
+
+	private static boolean maTrasy(final Doc doc) {
+		for (final Cesta cesta : doc.getCesty()) {
+			if (maTrasy(cesta)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean maTrasy(final Cesta cesta) {
+		for (final Usek usek : cesta.getUseky()) {
+			if (usek.getTrasa() != null) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

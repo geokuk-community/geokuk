@@ -106,6 +106,16 @@ public class Doc implements Iterable<Cesta> {
 		return cesty;
 	}
 
+	/** Úseky všech cest. */
+	public Iterable<Usek> getUseky() {
+		return new MultiIterable<Usek, Cesta>(cesty) {
+			@Override
+			protected Iterable<Usek> prepareIterable(final Cesta m) {
+				return m.getUseky();
+			}
+		};
+	}
+
 	public File getFile() {
 		return file;
 	}

@@ -158,6 +158,27 @@ public class Cesta implements Iterable<Bousek0> {
 		return pocet;
 	}
 
+	/** Délka úseků vedených po cestách, které mají spočtenou trasu, v metrech. */
+	public double dalkaPoCestach() {
+		double d = 0;
+		for (final Usek usek : getUseky()) {
+			if (usek.getTrasa() != null) {
+				d += usek.dalka();
+			}
+		}
+		return d;
+	}
+
+	public int getPocetUsekuPoCeste() {
+		int pocet = 0;
+		for (final Usek usek : getUseky()) {
+			if (usek.isPoCeste()) {
+				pocet++;
+			}
+		}
+		return pocet;
+	}
+
 	public int getPocetVzdusnychUseku() {
 		int pocet = 0;
 		for (final Usek usek : getUseky()) {
