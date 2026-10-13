@@ -23,9 +23,6 @@ public class TadyJsemDomaAction extends Action0 {
 
 	private RefbodyModel refbodyModel;
 
-	/**
-	 * @param aBoard
-	 */
 	public TadyJsemDomaAction() {
 		super("Jsem doma...");
 		putValue(SHORT_DESCRIPTION,

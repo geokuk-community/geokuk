@@ -58,8 +58,6 @@ public class KaLoc {
 	}
 
 	/**
-	 * @param mou
-	 *            Souřadnice levého horního (SZ) rohu kachle.
 	 * @param moumer
 	 *            měřítko
 	 */
@@ -96,7 +94,6 @@ public class KaLoc {
 	/**
 	 * Konvertuje merkátorovu souřadnici na mapovou souřadnici
 	 *
-	 * @param mersou
 	 * @return
 	 */
 	public int getFromSzUnsignedX() {
@@ -106,7 +103,6 @@ public class KaLoc {
 	/**
 	 * Konvertuje merkátorovu souřadnici na mapovou souřadnici
 	 *
-	 * @param mersou
 	 * @return
 	 */
 	public int getFromSzUnsignedY() {

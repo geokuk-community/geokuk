@@ -17,9 +17,6 @@ public class UriznoutCestuVUsekuAction extends UsekAction0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public UriznoutCestuVUsekuAction(final Usek usek, final Mou mouMysi) {
 		super(usek, mouMysi);
 		putValue(NAME, "Uříznout cestu");

@@ -100,7 +100,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	}
 
 	/**
-	 * @param aKachloTypes
+	 * @param katype
 	 *            the kachloTypes to set
 	 */
 	public void setKachloType(final EKaType katype) {

@@ -29,10 +29,6 @@ public class KesFilteringSwingWorker extends MySwingWorker0<KesBag, Void> {
 
 	private final KesoidModel kesoidModel;
 
-	/**
-	 * @param aBoard
-	 * @param aKesList
-	 */
 	public KesFilteringSwingWorker(final KesBag vsechny, final KesoidFilterModel kesoidFilterModel, final KesoidModel kesoidModel, final ProgressModel progresModel) {
 		this.vsechny = vsechny;
 		this.kesoidFilterModel = kesoidFilterModel;
