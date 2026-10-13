@@ -18,6 +18,7 @@ import cz.geokuk.plugins.cesty.akce.bod.ZnovuSpojitCestyAction;
 import cz.geokuk.plugins.cesty.akce.cesta.*;
 import cz.geokuk.plugins.cesty.akce.doc.CestyZoomAction;
 import cz.geokuk.plugins.cesty.akce.doc.PromazatJednobodoveAPrazdneCesty;
+import cz.geokuk.plugins.cesty.akce.doc.PrepocitatUsekyPoCesteAction;
 import cz.geokuk.plugins.cesty.akce.soubor.*;
 import cz.geokuk.plugins.geocoding.GeocodingAdrAction;
 import cz.geokuk.plugins.kesoid.EZobrazeniKesi;
@@ -152,6 +153,7 @@ public class Akce {
 	public final UzavritCestuAction uzavritCestuAction = new UzavritCestuAction(null);
 	public final ZoomovatCestuAction zoomovatCestuAction = new ZoomovatCestuAction(null);
 	public final PromazatJednobodoveAPrazdneCesty promazatJednobodoveAPrazdneCesty = new PromazatJednobodoveAPrazdneCesty(null);
+	public final PrepocitatUsekyPoCesteAction prepocitatUsekyPoCesteAction = new PrepocitatUsekyPoCesteAction(null);
 	public final PanelCestyAction panelCestyAction = new PanelCestyAction();
 
 	public final PosouvejSipkamiAction posouvejSipkamiActionSEVER = new PosouvejSipkamiAction(ESmer.SEVER, false);

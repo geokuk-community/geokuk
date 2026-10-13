@@ -64,6 +64,30 @@ public class UsekPoCesteTest {
 	}
 
 	@Test
+	public void vzdalenostADelkyPodelTrasy() {
+		updator.setTyp(prvni(), TypUseku.PO_CESTE);
+		final long rovne = prvni().computeKvadratVzdalenosti(X.toMou());
+		spocitej(prvni(), A, X, B);
+		assertTrue("bod trasy je na úseku", prvni().computeKvadratVzdalenosti(X.toMou()) < rovne / 1000);
+		assertEquals(A.vzdalenost(X), prvni().getMouDelkaVzad(X.toMou()), 1);
+		assertEquals(X.vzdalenost(B), prvni().getMouDelkaVpred(X.toMou()), 1);
+	}
+
+	@Test
+	public void usekSeNajdeUTrasyNeUSpojnice() {
+		updator.setTyp(prvni(), TypUseku.PO_CESTE);
+		spocitej(prvni(), A, X, B);
+		// X je od spojnice A–B asi 200 m, k hledání stačí 20 m.
+		final long dvacetMetru = (long) Math.pow(20 / A.metryNaMou(), 2);
+		final Cesta.SearchResult uTrasy = cesta.locateNejblizsiDoKvadratuVzdalenosi(X.toMou(), dvacetMetru, false);
+		assertSame(prvni(), uTrasy.bousek);
+		final Cesta.SearchResult uSpojnice = cesta.locateNejblizsiDoKvadratuVzdalenosi(new Wgs(50.005, 14.0).toMou(), dvacetMetru, false);
+		assertNull(uSpojnice.bousek);
+		final Mou delici = prvni().getNejblizsiBodKPrimce(new Wgs(50.0051, 14.0031).toMou());
+		assertEquals(0, FGeoKonvertor.dalka(delici, X.toMou()), 15);
+	}
+
+	@Test
 	public void rovnyUsekTrasuNeprijme() {
 		assertFalse(spocitej(prvni(), A, X, B));
 		assertNull(prvni().getTrasa());

@@ -246,6 +246,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zoomovatCestuAction);
 		item(akce.cestyPresClipboardDoGeogetuAction);
 		item(akce.promazatJednobodoveAPrazdneCesty);
+		item(akce.prepocitatUsekyPoCesteAction);
 		separator();
 		item(akce.panelCestyAction);
 

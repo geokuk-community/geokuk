@@ -42,6 +42,12 @@
   trasy kreslí samo, se překryv nekreslí.
 - Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
   použijí ho úseky cesty vedené po cestě.
+- Úseky cesty mohou vést po cestách a pěšinách z offline mapy (pěší trasa,
+  plná čára). Nové úseky vedou po cestě, kde je offline mapa, jinde rovně;
+  přepínač Nové úseky je v panelu cesty. Úsek jde přepnout v jeho
+  kontextovém menu (Vést úsek po cestě / rovně). Panel cesty ukazuje i délku
+  po cestách a úseky, pro které se trasa nenašla; Cesty > Přepočítat úseky
+  po cestě je zkusí znovu, třeba po přidání offline mapy.
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.

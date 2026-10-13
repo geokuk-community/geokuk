@@ -2,6 +2,7 @@ package cz.geokuk.plugins.cesty;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
+import java.util.List;
 
 import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coordinates.Mou;
@@ -154,6 +155,12 @@ public class Malovadlo {
 				final Point p1 = konec != null ? konec : soord.transform(usek.getBvzad().getMou());
 				final Point p2 = soord.transform(usek.getBvpred().getMou());
 				konec = p2;
+				final List<Mou> trasa = usek.getTrasa();
+				if (trasa != null) {
+					gg.setStroke(strokeUsekuLem);
+					kresliTrasu(gg, trasa);
+					continue;
+				}
 				if (p1.equals(p2) || !vKresleneOblasti(p1, p2)) {
 					continue;
 				}
@@ -178,6 +185,32 @@ public class Malovadlo {
 				final Point p2 = soord.transform(usek.getBvpred().getMou());
 				if (blizkyBousek == usek.getBousekVzad()) {
 					g.setColor(barvaCestyZaKurzorem);
+				}
+				final List<Mou> trasa = usek.getTrasa();
+				if (trasa != null) {
+					konec = p2;
+					g.setStroke(strokePoCeste);
+					if (blizkyBousek == usek && mouDeliciNaBlizkemBousku != null) {
+						// Před kurzorem jednou barvou, za ním druhou, jako u rovného úseku.
+						final Mou delici = usek.getNejblizsiBodKPrimce(mouDeliciNaBlizkemBousku);
+						final int i = indexUsecky(trasa, delici);
+						final List<Mou> pred = new java.util.ArrayList<>(trasa.subList(0, i));
+						pred.add(delici);
+						final List<Mou> za = new java.util.ArrayList<>();
+						za.add(delici);
+						za.addAll(trasa.subList(i, trasa.size()));
+						kresliTrasu(g, pred);
+						g.setColor(barvaCestyZaKurzorem);
+						kresliTrasu(g, za);
+						final Graphics2D gg = createGraphics();
+						gg.setColor(FBarvy.USEK_ZVYRAZNENY);
+						gg.setStroke(new BasicStroke(1));
+						kresliTrasu(gg, trasa);
+						gg.dispose();
+					} else {
+						kresliTrasu(g, trasa);
+					}
+					continue;
 				}
 				if (blizkyBousek != usek) {
 					if (p1.equals(p2)) {
@@ -215,6 +248,47 @@ public class Malovadlo {
 			}
 		}
 
+		/** Index konce úsečky trasy, na které leží bod (1 až počet bodů − 1). */
+		private int indexUsecky(final List<Mou> trasa, final Mou bod) {
+			int nejlepsi = 1;
+			double nejmene = Double.MAX_VALUE;
+			for (int i = 1; i < trasa.size(); i++) {
+				final Mou a = trasa.get(i - 1);
+				final Mou b = trasa.get(i);
+				final double d = java.awt.geom.Line2D.ptSegDistSq(a.xx, a.yy, b.xx, b.yy, bod.xx, bod.yy);
+				if (d < nejmene) {
+					nejmene = d;
+					nejlepsi = i;
+				}
+			}
+			return nejlepsi;
+		}
+
+		/** Lomená čára trasy po cestách; mimo kreslenou oblast se nekreslí, body v jednom pixelu se slijí. */
+		private void kresliTrasu(final Graphics2D gg, final List<Mou> trasa) {
+			final int[] xs = new int[trasa.size()];
+			final int[] ys = new int[trasa.size()];
+			int n = 0;
+			int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+			for (final Mou mou : trasa) {
+				final Point p = soord.transform(mou);
+				if (n > 0 && p.x == xs[n - 1] && p.y == ys[n - 1]) {
+					continue;
+				}
+				xs[n] = p.x;
+				ys[n] = p.y;
+				n++;
+				minX = Math.min(minX, p.x);
+				minY = Math.min(minY, p.y);
+				maxX = Math.max(maxX, p.x);
+				maxY = Math.max(maxY, p.y);
+			}
+			if (n < 2 || !vKresleneOblasti(new Point(minX, minY), new Point(maxX, maxY))) {
+				return;
+			}
+			gg.drawPolyline(xs, ys, n);
+		}
+
 	} // MalovadloCesty
 
 	private static final int SIRKA_CARY_VYBRANE = 6;
@@ -229,7 +303,8 @@ public class Malovadlo {
 
 	private final Graphics2D g;
 
-	/** Vzdušný úsek tečkovaně, rovný úsek čárkovaně, oba přes tmavý lem. */
+	/** Úsek po cestě plnou čárou, vzdušný úsek tečkovaně, rovný úsek čárkovaně, všechny přes tmavý lem. */
+	private final Stroke strokePoCeste = new BasicStroke(SIRKA_CARY_VYBRANE - 1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 	private final Stroke strokeVzdusny = new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[] { 0.1f, 8 }, 0);
 	private final Stroke strokeVzdusnyLem = new BasicStroke(7, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[] { 0.1f, 8 }, 0);
 	private final Stroke strokeUseku = new BasicStroke(SIRKA_CARY_VYBRANE - 1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 12, 6 }, 0);
