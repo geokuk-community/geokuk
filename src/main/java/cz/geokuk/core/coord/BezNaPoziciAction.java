@@ -19,9 +19,6 @@ public class BezNaPoziciAction extends Action0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public BezNaPoziciAction() {
 		super("Na pozici");
 		putValue(SHORT_DESCRIPTION, "Přesune mapu na aktuální pozici, pokud je nějaká vybrána.");

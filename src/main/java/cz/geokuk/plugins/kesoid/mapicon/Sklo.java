@@ -81,7 +81,7 @@ public class Sklo {
 	}
 
 	/**
-	 * @param aIdp
+	 * @param idp
 	 * @param aImaganti
 	 */
 	private void render(final IkonDrawingProperties idp, final Deque<Imagant> aImaganti) {

@@ -77,7 +77,7 @@ public class Sada {
 	/**
 	 * Vrací sklivec pro daný genotyp s tím, že se hrabe v keši, aby se jednak zvýšila rychnlost, druhak, aby se šetřila paměť
 	 *
-	 * @param genotyp
+	 * @param genotypx
 	 * @return
 	 */
 	public synchronized Sklivec getSklivec(final Genotyp genotypx) {
@@ -106,7 +106,7 @@ public class Sada {
 	}
 
 	/**
-	 * @param aImageIcon
+	 * @param icon
 	 */
 	public void setIcon(final Icon icon) {
 		this.icon = icon;

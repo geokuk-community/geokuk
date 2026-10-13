@@ -28,9 +28,6 @@ public class MultiNacitacSwingWorker extends MySwingWorker0<KesBag, Void> {
 	private final Genom iGenom;
 	private final KesoidModel kesoidModel;
 
-	/**
-	 * @param aBoard
-	 */
 	public MultiNacitacSwingWorker(final MultiNacitac multiNacitac, final Genom genom, final KesoidModel kesoidModel) {
 		this.multiNacitac = multiNacitac;
 		iGenom = genom;

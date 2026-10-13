@@ -52,7 +52,8 @@ public class JKesoidySlideTest {
 			return 0;
 		}
 		try (Stream<Path> soubory = Files.walk(slozka)) {
-			return soubory.filter(Files::isRegularFile).count();
+			// Jen výpisy chyb; první výpis po smazání složky vytvoří i runNumber.txt.
+			return soubory.filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".html")).count();
 		}
 	}
 

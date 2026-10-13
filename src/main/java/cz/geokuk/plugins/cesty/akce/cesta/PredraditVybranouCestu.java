@@ -19,9 +19,6 @@ public class PredraditVybranouCestu extends CestaAction0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public PredraditVybranouCestu(final Cesta cesta) {
 		super(cesta);
 		putValue(NAME, "Předřadit vybranou cestu");

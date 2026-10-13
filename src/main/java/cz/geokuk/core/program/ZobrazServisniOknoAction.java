@@ -14,9 +14,6 @@ public class ZobrazServisniOknoAction extends DialogOpeningAction0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
 
-	/**
-	 * @param aBoard
-	 */
 	public ZobrazServisniOknoAction() {
 		super("Servis...");
 		putValue(SHORT_DESCRIPTION, "Zobrazí okno se servisními informacemi.");
