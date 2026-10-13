@@ -4,6 +4,8 @@
 
 ### Změny
 - Rychlejší načítání databází GeoGetu, GSAKu a OpenSAKu.
+- Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
+  jejího detailu.
 - Rychlejší zobrazení keší po načtení a po změně filtru.
 - Rychlejší zapnutí a vypnutí zdroje, který se s ostatními nepřekrývá.
 - Keše z databází GeoGetu, GSAKu a OpenSAKu zabírají méně paměti.
