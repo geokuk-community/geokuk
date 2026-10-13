@@ -63,10 +63,10 @@ public final class EKaType {
 
 	/**
 	 * Servery, jejichž provozovatel hromadné (automatické) stahování dlaždic zakazuje nebo důrazně nedoporučuje: OpenStreetMap (Tile Usage Policy), Mapy.cz
-	 * (podmínky Seznam.cz), Waymarked Trails, swisstopo (fair use, pro offline vlastní služba). Platí i pro jejich subdomény a pro uživatelské mapy.
+	 * (podmínky Seznam.cz), Waymarked Trails, swisstopo (fair use, pro offline vlastní služba), BKG (offline uložení jen s datovanou atribucí). Platí i pro jejich subdomény a pro uživatelské mapy.
 	 */
 	static final List<String> SERVERY_BEZ_HROMADNEHO_STAHOVANI = Collections
-			.unmodifiableList(Arrays.asList("tile.openstreetmap.org", "mapy.cz", "mapy.com", "tile.waymarkedtrails.org", "geo.admin.ch"));
+			.unmodifiableList(Arrays.asList("tile.openstreetmap.org", "mapy.cz", "mapy.com", "tile.waymarkedtrails.org", "geo.admin.ch", "geodatenzentrum.de"));
 
 	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO, DE_TOPPLUS, AT_BASEMAP, CH_SWISSTOPO, OFFLINE_MF));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();

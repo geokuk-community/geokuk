@@ -43,9 +43,10 @@ public class EKaTypeTopoTest {
 
 	@Test
 	public void hromadneStahovani() {
-		Assert.assertTrue(EKaType.DE_TOPPLUS.isHromadneStahovaniPovoleno());
+		Assert.assertFalse("BKG chce u offline uložení datovanou atribuci", EKaType.DE_TOPPLUS.isHromadneStahovaniPovoleno());
 		Assert.assertTrue(EKaType.AT_BASEMAP.isHromadneStahovaniPovoleno());
 		Assert.assertFalse("swisstopo hromadné stahování nechce", EKaType.CH_SWISSTOPO.isHromadneStahovaniPovoleno());
 		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("wmts.geo.admin.ch"));
+		Assert.assertTrue(EKaType.jeServerBezHromadnehoStahovani("sgx.geodatenzentrum.de"));
 	}
 }

@@ -5,7 +5,7 @@
 ### Změny
 - Nové mapové podklady pro sousední země: DE topografická mapa (BKG
   TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
-  Švýcarskou mapu nejde hromadně stahovat do cache.
+  Německou a švýcarskou mapu nejde hromadně stahovat do cache.
 
 ## 6.4.0
 
