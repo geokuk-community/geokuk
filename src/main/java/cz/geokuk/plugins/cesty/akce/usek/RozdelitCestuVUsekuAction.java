@@ -17,9 +17,6 @@ public class RozdelitCestuVUsekuAction extends UsekAction0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public RozdelitCestuVUsekuAction(final Usek usek, final Mou mouMysi) {
 		super(usek, mouMysi);
 		putValue(NAME, "Rozdělit cestu");

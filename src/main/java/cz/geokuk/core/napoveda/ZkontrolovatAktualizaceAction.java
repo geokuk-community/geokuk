@@ -18,9 +18,6 @@ public class ZkontrolovatAktualizaceAction extends Action0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 	private NapovedaModel napovedaModel;
 
-	/**
-	 * @param aBoard
-	 */
 	public ZkontrolovatAktualizaceAction() {
 		super("Zkontrolovat aktualizace...");
 		putValue(SHORT_DESCRIPTION, "Připojením na WEB zkontroluje, zda nejsou k dispozici nové verze programu.");

@@ -19,8 +19,7 @@ public class PoziceSeMaMenitEvent extends Event0<PoziceModel> {
 	private int priorita;
 
 	/**
-	 * @param aPozice
-	 * @param aMeloBySeCentrovat
+	 * @param mou
 	 */
 	PoziceSeMaMenitEvent(final Mou mou) {
 		assert mou != null;

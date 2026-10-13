@@ -17,7 +17,7 @@ public abstract class VyletAction0 extends Action0 {
 
 	/**
 	 * @param aString
-	 * @param aSeekResIcon
+	 * @param aIcon
 	 */
 	public VyletAction0(final String aString, final Icon aIcon) {
 		super(aString, aIcon);

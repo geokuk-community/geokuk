@@ -20,9 +20,6 @@ public class BezDomuAction extends Action0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 	private RefbodyModel refbodyModel;
 
-	/**
-	 * @param aBoard
-	 */
 	public BezDomuAction() {
 		super("Přesunout domů");
 		putValue(SHORT_DESCRIPTION, "Přesune mapu na domácí souřadnice.");
