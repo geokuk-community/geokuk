@@ -3,9 +3,9 @@
  */
 package cz.geokuk.plugins.kesoid.kind.kes;
 
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.function.Function;
 
 import javax.swing.Icon;
 
@@ -14,11 +14,13 @@ import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.data.EKesoidKind;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
 import cz.geokuk.util.lang.FString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Martin Veverka
  *
  */
+@Slf4j
 public class Kes extends Kesoid {
 
 	private static String URL_PREFIX_PRINT = "http://www.geocaching.com/seek/cdpf.aspx?guid=";
@@ -31,7 +33,7 @@ public class Kes extends Kesoid {
 	private int znamka = Kes.NENI_HODNOCENI;
 	private int favorit = Kes.NENI_HODNOCENI;
 	private String hint;
-	private Function<String, String> hintZDatabaze;
+	private DotahovacZDatabaze hintZDatabaze;
 	private EKesSize size;
 	private EKesDiffTerRating difficulty;
 	private EKesDiffTerRating terrain;
@@ -95,9 +97,21 @@ public class Kes extends Kesoid {
 		if (hint == null && hintZDatabaze != null) {
 			final String nacteny = hintZDatabaze.apply(getIdentifier());
 			hint = nacteny == null ? "" : nacteny;
-			hintZDatabaze = null;
 		}
 		return hint;
+	}
+
+	@Override
+	public int nactiNadmorskouVysku() {
+		if (hintZDatabaze == null) {
+			return 0;
+		}
+		try {
+			return hintZDatabaze.nadmorskaVyska(getIdentifier());
+		} catch (final UncheckedIOException e) {
+			log.warn("Nadmořská výška keše {} nejde přečíst z databáze: {}", getIdentifier(), e.getMessage());
+			return Wpt.VYSKA_NENACTENA;
+		}
 	}
 
 	/** Keš hint má, nebo se teprve načte z databáze. */
@@ -295,7 +309,7 @@ public class Kes extends Kesoid {
 		hint = aHint;
 	}
 
-	public void setHintZDatabaze(final Function<String, String> hintZDatabaze) {
+	public void setHintZDatabaze(final DotahovacZDatabaze hintZDatabaze) {
 		this.hintZDatabaze = hintZDatabaze;
 	}
 

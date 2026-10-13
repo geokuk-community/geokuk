@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
-import java.util.function.Function;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
@@ -17,6 +16,7 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.ProgressModel;
 import cz.geokuk.framework.Progressor;
 import cz.geokuk.util.lang.StringUtils;
+import cz.geokuk.plugins.kesoid.kind.kes.DotahovacZDatabaze;
 import lombok.extern.slf4j.Slf4j;
 
 /** Načítá keše z databáze OpenSAKu (soubor .db v jeho datové složce). */
@@ -109,7 +109,7 @@ public class OpensakDbLoader extends Nacitac0 {
 	}
 
 	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Future<?> future, final Progressor progressor) throws SQLException {
-		final Function<String, String> hint = HintZDatabaze.dotahovac(file, HintZDatabaze.OPENSAK);
+		final DotahovacZDatabaze hint = HintZDatabaze.dotahovac(file, HintZDatabaze.OPENSAK);
 		final Preskocene preskocene = new Preskocene("keš");
 		final boolean hinty = DatabazeJinehoProgramu.sloupce(statement, "caches").contains("encoded_hints");
 		final Set<String> poznamky = DatabazeJinehoProgramu.sloupce(statement, "user_notes");
