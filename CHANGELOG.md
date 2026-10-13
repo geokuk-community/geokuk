@@ -51,6 +51,9 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
+  mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
+  formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
 
 ## 6.4.0
 

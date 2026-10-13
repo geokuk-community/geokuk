@@ -345,6 +345,10 @@ public final class Diagnostika {
 		sb.append("Výpisy chyb: ").append(bezDomova(FExceptionDumper.getExcrepFolder())).append('\n');
 		sb.append("Log: ").append(bezDomova(LOG)).append('\n');
 		sb.append("Běží: ").append((System.currentTimeMillis() - START) / 60000).append(" min\n");
+		final java.util.function.Supplier<String> offline = offlineMapy;
+		if (offline != null) {
+			sb.append('\n').append(offline.get());
+		}
 		synchronized (udalosti) {
 			dokonciMapu();
 		}
@@ -378,6 +382,13 @@ public final class Diagnostika {
 
 	static void setPopisOfflineMapy(final java.util.function.Supplier<String> popis) {
 		popisOfflineMapy = popis;
+	}
+
+	/** Oddíl o offline mapách (soubory, téma, chyby); celý text včetně nadpisu a konce řádku. */
+	private static volatile java.util.function.Supplier<String> offlineMapy;
+
+	static void setOfflineMapy(final java.util.function.Supplier<String> popis) {
+		offlineMapy = popis;
 	}
 
 	/** Totéž, co ukazuje servisní okno, ať to uživatel nemusí opisovat ze snímku obrazovky. */
