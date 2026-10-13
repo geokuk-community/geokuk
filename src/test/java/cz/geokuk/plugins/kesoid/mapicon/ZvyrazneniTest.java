@@ -51,6 +51,32 @@ public class ZvyrazneniTest {
 		Assert.assertNull("myš nad keší", ctverec(g.ALELA_ter50, g.ALELA_mouseon));
 	}
 
+	/** Sklivec se kešuje podle genotypu zúženého na alely, které sada používá; alely pravidel mezi nimi musí být. */
+	@Test
+	public void sklivecPodleZuzenehoGenotypu() throws Exception {
+		nacti(Zvyrazneni.OBTIZNOST);
+		final Genotyp genotyp = g.UNIVERZALNI_DRUH.genotypVychozi().with(g.ALELA_gc).with(g.ALELA_dif50);
+		Assert.assertTrue("oranžový čtverec obtížnosti 5", maBarvu(bag.getSada().getSklivec(genotyp), 0xFF9933));
+		Assert.assertFalse(maBarvu(bag.getSada().getSklivec(genotyp.with(g.ALELA_dif40)), 0xFF9933));
+	}
+
+	private static boolean maBarvu(final Sklivec sklivec, final int barva) {
+		for (final cz.geokuk.api.mapicon.Imagant imagant : sklivec.imaganti) {
+			if (imagant == null || imagant.getImage() == null) {
+				continue;
+			}
+			final java.awt.image.BufferedImage img = imagant.getImage();
+			for (int y = 0; y < img.getHeight(); y++) {
+				for (int x = 0; x < img.getWidth(); x++) {
+					if ((img.getRGB(x, y) & 0xFFFFFF) == barva && (img.getRGB(x, y) >>> 24) == 0xFF) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	@Test
 	public void bezZvyrazneni() throws Exception {
 		nacti(Zvyrazneni.BEZ);
