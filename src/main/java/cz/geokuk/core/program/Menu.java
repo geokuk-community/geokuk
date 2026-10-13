@@ -243,6 +243,8 @@ public class Menu extends MenuStrujce {
 		item(akce.zoomovatCestuAction);
 		item(akce.cestyPresClipboardDoGeogetuAction);
 		item(akce.promazatJednobodoveAPrazdneCesty);
+		separator();
+		item(akce.panelCestyAction);
 
 		menu("Mřížky", "Různé dekorace na mapě");
 		menu.setMnemonic('Y');

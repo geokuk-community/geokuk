@@ -13,6 +13,12 @@
 - Nové mapové podklady pro sousední země: DE topografická mapa (BKG
   TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
   Německou a švýcarskou mapu nejde hromadně stahovat do cache.
+- Cesty mají novou barvu: azurovou s tmavým lemem, aby byly vidět i přes
+  cyklotrasy a na tmavém podkladu. Rovné úseky jsou čárkované, vzdušné
+  tečkované.
+- Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
+  počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
+  Panel cesty.
 
 ## 6.4.0
 
