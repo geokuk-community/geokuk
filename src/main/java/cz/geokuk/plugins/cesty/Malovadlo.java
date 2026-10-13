@@ -190,13 +190,24 @@ public class Malovadlo {
 				if (trasa != null) {
 					konec = p2;
 					g.setStroke(strokePoCeste);
-					kresliTrasu(g, trasa);
-					if (blizkyBousek == usek) {
+					if (blizkyBousek == usek && mouDeliciNaBlizkemBousku != null) {
+						// Před kurzorem jednou barvou, za ním druhou, jako u rovného úseku.
+						final Mou delici = usek.getNejblizsiBodKPrimce(mouDeliciNaBlizkemBousku);
+						final int i = indexUsecky(trasa, delici);
+						final List<Mou> pred = new java.util.ArrayList<>(trasa.subList(0, i));
+						pred.add(delici);
+						final List<Mou> za = new java.util.ArrayList<>();
+						za.add(delici);
+						za.addAll(trasa.subList(i, trasa.size()));
+						kresliTrasu(g, pred);
 						g.setColor(barvaCestyZaKurzorem);
+						kresliTrasu(g, za);
 						final Graphics2D gg = createGraphics();
 						gg.setColor(FBarvy.USEK_ZVYRAZNENY);
 						gg.setStroke(new BasicStroke(1));
 						kresliTrasu(gg, trasa);
+					} else {
+						kresliTrasu(g, trasa);
 					}
 					continue;
 				}
@@ -234,6 +245,22 @@ public class Malovadlo {
 					g.drawLine(p1.x, p1.y, p2.x, p2.y);
 				}
 			}
+		}
+
+		/** Index konce úsečky trasy, na které leží bod (1 až počet bodů − 1). */
+		private int indexUsecky(final List<Mou> trasa, final Mou bod) {
+			int nejlepsi = 1;
+			double nejmene = Double.MAX_VALUE;
+			for (int i = 1; i < trasa.size(); i++) {
+				final Mou a = trasa.get(i - 1);
+				final Mou b = trasa.get(i);
+				final double d = java.awt.geom.Line2D.ptSegDistSq(a.xx, a.yy, b.xx, b.yy, bod.xx, bod.yy);
+				if (d < nejmene) {
+					nejmene = d;
+					nejlepsi = i;
+				}
+			}
+			return nejlepsi;
 		}
 
 		/** Lomená čára trasy po cestách; mimo kreslenou oblast se nekreslí, body v jednom pixelu se slijí. */

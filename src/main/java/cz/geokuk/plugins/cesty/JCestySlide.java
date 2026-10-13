@@ -321,6 +321,11 @@ public class JCestySlide extends JSingleSlide0 {
 
 	public void onEvent(final CestyChangedEvent event) {
 		doc = event.getDoc();
+		// Trasa po cestách se dopočítá až po kliku, délky v bublině u kurzoru se musí obnovit.
+		if (moucur != null) {
+			prepocitatBlizkehoBouska();
+			zobrazeniDalky();
+		}
 		// TODO repaintovat jen to, co je potřeba
 		repaint();
 	}

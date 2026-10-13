@@ -135,6 +135,10 @@ public class Usek extends Bousek0 {
 	}
 
 	public long computeKvadratVzdalenostiBoduKUsecce(final Mou mou) {
+		final List<Mou> t = mou == null ? null : getTrasa();
+		if (t != null) {
+			return kvadratVzdalenostiKTrase(t, mou);
+		}
 		final Mou m = getNejblizsiBodKolmoKUsecce(mou);
 		if (m == null) {
 			return Long.MAX_VALUE;
@@ -262,7 +266,34 @@ public class Usek extends Bousek0 {
 		if (mou == null) {
 			return null;
 		}
+		final List<Mou> t = getTrasa();
+		if (t != null) {
+			return nejblizsiBodNaTrase(t, mou);
+		}
 		return prusecikKolmice(bvzad.getMou(), bvpred.getMou(), mou);
+	}
+
+	/** Místo na lomené čáře trasy nejblíž bodu. */
+	private static Mou nejblizsiBodNaTrase(final List<Mou> trasa, final Mou mou) {
+		double nejmene = Double.MAX_VALUE;
+		Mou vysledek = trasa.get(0);
+		for (int i = 1; i < trasa.size(); i++) {
+			final Mou a = trasa.get(i - 1);
+			final Mou b = trasa.get(i);
+			final double dx = (double) b.xx - a.xx;
+			final double dy = (double) b.yy - a.yy;
+			final double d2 = dx * dx + dy * dy;
+			double t = d2 == 0 ? 0 : (((double) mou.xx - a.xx) * dx + ((double) mou.yy - a.yy) * dy) / d2;
+			t = Math.max(0, Math.min(1, t));
+			final double qx = a.xx + t * dx;
+			final double qy = a.yy + t * dy;
+			final double d = (qx - mou.xx) * (qx - mou.xx) + (qy - mou.yy) * (qy - mou.yy);
+			if (d < nejmene) {
+				nejmene = d;
+				vysledek = new Mou((int) Math.round(qx), (int) Math.round(qy));
+			}
+		}
+		return vysledek;
 	}
 
 	public double getUhel() {
