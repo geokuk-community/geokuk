@@ -25,6 +25,11 @@
   V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
   platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
   pro všechny sady ikon.
+- Pojmenované výlety: ve stavovém řádku je jméno aktivního výletu a najetím
+  myší na něj se otevře seznam výletů. Výlet lze založit, aktivovat,
+  přejmenovat a smazat; aktivní výlet je v souborech lovim.ggt a tedne.ggt.
+  Během přepínání výletu nejde výlet upravovat. Rozbalovač v liště nástrojů
+  se jmenuje Zobrazit.
 - Cesty mají novou barvu: azurovou s tmavým lemem, aby byly vidět i přes
   cyklotrasy a na tmavém podkladu. Rovné úseky jsou čárkované, vzdušné
   tečkované.

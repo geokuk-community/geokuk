@@ -205,7 +205,7 @@ public class Menu extends MenuStrujce {
 		tb.add(jVybiraceFavorit);
 
 		final JVybiracVyletu iVybiracVyletu = factory.init(new JVybiracVyletu());
-		lbl = new JLabel("Výlet: ");
+		lbl = new JLabel("Zobrazit: ");
 		lbl.setLabelFor(iVybiracVyletu);
 		tb.add(lbl);
 		tb.add(iVybiracVyletu);

@@ -51,7 +51,7 @@ import cz.geokuk.util.lang.FString;
  * TableDemo is just like SimpleTableDemo, except that it uses a custom TableModel.
  */
 public class JErrorTable extends JPanel {
-	class MyTableModel extends AbstractTableModel {
+	static class MyTableModel extends AbstractTableModel {
 		private static final long serialVersionUID = -1777521413836209700L;
 
 		private final List<Problem> problemlist = new ArrayList<>();
@@ -224,9 +224,5 @@ public class JErrorTable extends JPanel {
 		column = table.getColumnModel().getColumn(1);
 		column.setMaxWidth(130);
 		// column.setResizable(false);
-
-		column = table.getColumnModel().getColumn(2);
-		// column.setMaxWidth(25);
-
 	}
 }
