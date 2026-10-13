@@ -261,9 +261,9 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 		}
 	}
 
-	private JtskSouradnice extrahujJtsk(final String celyretez) {
+	static JtskSouradnice extrahujJtsk(final String celyretez) {
 		if (patExtrakceSouradnicJtsk == null) {
-			patExtrakceSouradnicJtsk = Pattern.compile("(.*?)(\\d+)'(\\d+.\\d+) +(\\d+)'(\\d+\\.\\d+) (\\d+\\.\\d+)(.*)");
+			patExtrakceSouradnicJtsk = Pattern.compile("(.*?)(\\d+)'(\\d+\\.\\d+) +(\\d+)'(\\d+\\.\\d+) (\\d+\\.\\d+)(.*)");
 		}
 		final Matcher mat = patExtrakceSouradnicJtsk.matcher(celyretez);
 		if (mat.matches()) {
