@@ -200,7 +200,7 @@ public class IconDefNacitac {
 
 	private int zpracujNaPrioritu(final String zadano) {
 		if (zadano == null) {
-			return 5;
+			return IconDef.VYCHOZI_PRIORITA;
 		}
 		return Integer.parseInt(zadano.substring(2));
 	}

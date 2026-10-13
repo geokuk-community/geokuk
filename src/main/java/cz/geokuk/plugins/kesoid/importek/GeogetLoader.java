@@ -2,7 +2,6 @@ package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
 import java.sql.*;
-import java.util.function.Function;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.*;
@@ -18,6 +17,7 @@ import cz.geokuk.framework.Progressor;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.lang.ATimestamp;
+import cz.geokuk.plugins.kesoid.kind.kes.DotahovacZDatabaze;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -69,7 +69,7 @@ public class GeogetLoader extends Nacitac0 {
 	private static final ImmutableMap<String, String> ID_PREFIX_TO_SYM = ImmutableMap.of("GC", "Geocache", "WM", "Waymark", "MU", "Geocache");
 
 	/** Kategorie čtených tagů. Tagy se pak čtou podle klíče kategorie, bez spojení s tabulkou kategorií na každém řádku. */
-	private static final String GEOGET_TAG_CATEGORIES_QUERY = "SELECT c.key, c.value FROM geotagcategory c WHERE (c.value IN ('favorites', 'Elevation', 'Hodnoceni-Pocet', 'Hodnoceni', 'BestOf', 'Znamka') or c.value like '"
+	private static final String GEOGET_TAG_CATEGORIES_QUERY = "SELECT c.key, c.value FROM geotagcategory c WHERE (c.value IN ('favorites', 'Hodnoceni-Pocet', 'Hodnoceni', 'BestOf', 'Znamka') or c.value like '"
 			+ PREFIX_USERDEFINOANYCH_GENU + "%')";
 
 	private static int sloupec(final String[] sloupce, final String alias) {
@@ -152,7 +152,7 @@ public class GeogetLoader extends Nacitac0 {
 	}
 
 	private void loadCaches(final File file, final Statement statement, final IImportBuilder builder, final Map<String, Gpxg> tagy, final Future<?> future, final Progressor progressor) throws SQLException, IOException {
-		final Function<String, String> hint = HintZDatabaze.dotahovac(file, HintZDatabaze.GEOGET);
+		final DotahovacZDatabaze hint = HintZDatabaze.dotahovac(file, HintZDatabaze.GEOGET, HintZDatabaze.GEOGET_VYSKA);
 		final ATimestamp startTime = ATimestamp.now();
 		final Preskocene preskocene = new Preskocene("keš");
 		int citac = 0;
@@ -243,7 +243,6 @@ public class GeogetLoader extends Nacitac0 {
 
 	private static void prevezmiTagy(final Gpxg z, final Gpxg kam) {
 		kam.favorites = z.favorites;
-		kam.elevation = z.elevation;
 		kam.bestOf = z.bestOf;
 		kam.hodnoceni = z.hodnoceni;
 		kam.hodnoceniPocet = z.hodnoceniPocet;
@@ -290,9 +289,6 @@ public class GeogetLoader extends Nacitac0 {
 						switch (category) {
 						case "favorites":
 							gpxg.favorites = Integer.parseInt(value);
-							break;
-						case "Elevation":
-							gpxg.elevation = Integer.parseInt(value);
 							break;
 						case "BestOf":
 							gpxg.bestOf = Integer.parseInt(value);

@@ -9,6 +9,7 @@ import cz.geokuk.core.lookandfeel.LafSupport;
 import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.plugins.kesoid.kind.kes.*;
 import cz.geokuk.plugins.kesoid.mapicon.JMenuIkony;
+import cz.geokuk.plugins.kesoid.mapicon.JMenuZvyrazneni;
 import cz.geokuk.plugins.kesoid.mvc.JVybiracVyletu;
 import cz.geokuk.plugins.mapy.MapyAction0;
 import cz.geokuk.plugins.mapy.PodkladAction;
@@ -61,6 +62,7 @@ public class Menu extends MenuStrujce {
 			}
 		}
 		menu.add(new JTemaOfflineMapyMenu(kachleModel));
+		item(akce.prekryvTrasAction);
 
 		separator();
 
@@ -166,6 +168,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zobrazeniKesiIkonyAction, zobrazeniKesi);
 		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
 		item(akce.limityKresleniAction);
+		menu.add(factory.init(new JMenuZvyrazneni()));
 		separator();
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
@@ -203,7 +206,7 @@ public class Menu extends MenuStrujce {
 		tb.add(jVybiraceFavorit);
 
 		final JVybiracVyletu iVybiracVyletu = factory.init(new JVybiracVyletu());
-		lbl = new JLabel("Výlet: ");
+		lbl = new JLabel("Zobrazit: ");
 		lbl.setLabelFor(iVybiracVyletu);
 		tb.add(lbl);
 		tb.add(iVybiracVyletu);
@@ -243,6 +246,8 @@ public class Menu extends MenuStrujce {
 		item(akce.zoomovatCestuAction);
 		item(akce.cestyPresClipboardDoGeogetuAction);
 		item(akce.promazatJednobodoveAPrazdneCesty);
+		separator();
+		item(akce.panelCestyAction);
 
 		menu("Mřížky", "Různé dekorace na mapě");
 		menu.setMnemonic('Y');

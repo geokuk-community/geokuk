@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import cz.geokuk.core.coordinates.Wgs;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -19,6 +21,8 @@ public class OfflineMapy {
 	private static final long KONTROLA_SLOZKY_NS = TimeUnit.SECONDS.toNanos(2);
 
 	private final Runnable priZmene;
+	/** Průhledný překryv přes jiný podklad, viz {@link OfflineRenderer#otevri(List, OfflineRenderer.NacteneTema, boolean)}. */
+	private final boolean prekryv;
 	/** Zavolá se po každém otevření map s klíčem dlaždic a souborem symbolů (null = neukládají se). */
 	private volatile BiConsumer<String, File> priOtevreni = (klic, symboly) -> {};
 
@@ -46,6 +50,7 @@ public class OfflineMapy {
 	private volatile List<String> nazvyMap = Collections.emptyList();
 	/** Téma se drží i přes změnu map, jeho načtení trvá u velkých témat sekundy. */
 	private OfflineRenderer.NacteneTema nacteneTema;
+	private volatile VrstvyTematu vrstvyTematu;
 	private IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
 	private String otiskSlozky;
@@ -56,7 +61,12 @@ public class OfflineMapy {
 	 *            zavolá se, když se změní vykreslování (mapy nebo téma, ne při prvním otevření), aby se zahodily dlaždice v paměti
 	 */
 	public OfflineMapy(final Runnable priZmene) {
+		this(priZmene, false);
+	}
+
+	public OfflineMapy(final Runnable priZmene, final boolean prekryv) {
 		this.priZmene = priZmene;
+		this.prekryv = prekryv;
 	}
 
 	public void nastav(final File slozka, final TemaOfflineMapy tema) {
@@ -98,6 +108,15 @@ public class OfflineMapy {
 
 	public void setSlozkaSymbolu(final File slozkaSymbolu) {
 		this.slozkaSymbolu = slozkaSymbolu;
+	}
+
+	/**
+	 * Bod pokrývá podrobná mapa; true i tehdy, když mapy ještě nejsou otevřené nebo nejdou otevřít (o tom mluví hláška na dlaždicích). Neblokuje, lze
+	 * volat z EDT.
+	 */
+	public boolean jePodrobnaMapa(final Wgs bod, final int zoom) {
+		final OfflineRenderer r = renderer;
+		return r == null || r.jePodrobnaMapa(bod.lat, bod.lon, zoom);
 	}
 
 	public List<String> getNazvyMap() {
@@ -185,7 +204,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, nacteneTema());
+				renderer = OfflineRenderer.otevri(mapy, nacteneTema(), prekryv);
 				chyba = null;
 				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, temaOtevrene, renderer.getKlic());
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
@@ -208,7 +227,13 @@ public class OfflineMapy {
 		}
 		uvolniTema();
 		nacteneTema = OfflineRenderer.nactiTema(temaOtevrene, slozkaSymbolu, meritkoOtevrene, pismoOtevrene);
+		vrstvyTematu = nacteneTema.menu == null ? null : new VrstvyTematu(temaOtevrene, nacteneTema.menu);
 		return nacteneTema;
+	}
+
+	/** Vrstvy naposledy načteného tématu, null když téma vrstvy nemá nebo ještě není načtené. Neblokuje, lze volat z EDT. */
+	public VrstvyTematu getVrstvyTematu() {
+		return vrstvyTematu;
 	}
 
 	private void uvolniTema() {

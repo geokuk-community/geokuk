@@ -301,6 +301,98 @@ public class VyletyPojmenovaneTest {
 	}
 
 	@Test
+	public void behemPrepinaniSeUpravyVyletuOdmitaji() throws Exception {
+		zapis(ano, "GC1");
+		final VyletModel model = model(soubory);
+		model.prevezmiNactenyVylet(model.nactiPoZapisech(null), 0, 0);
+		final String id = model.novy("Šumava", false).get();
+		Assert.assertFalse(model.isPrepina());
+
+		final java.util.concurrent.CompletableFuture<Void> aktivace = model.aktivovat(id);
+		Assert.assertTrue("příznak se nastaví hned", model.isPrepina());
+		model.add(EVylet.ANO, kes("GCBEHEM"));
+		Assert.assertTrue("úprava se ignoruje", model.get(EVylet.ANO).isEmpty());
+		model.removeAll(EVylet.ANO);
+		Assert.assertEquals("odebrání se ignoruje", Collections.singletonList("GC1"), radky(ano));
+		for (final java.util.concurrent.CompletableFuture<?> f : Arrays.asList(model.prejmenovat(id, "Jiné"), model.smazat(id), model.aktivovat("v1"), model.novy("Další", false))) {
+			try {
+				f.get();
+				Assert.fail("operace během přepínání se odmítá");
+			} catch (final ExecutionException e) {
+				Assert.assertTrue(e.getCause() instanceof IllegalStateException);
+			}
+		}
+
+		aktivace.get();
+		for (int i = 0; i < 100 && model.isPrepina(); i++) {
+			Thread.sleep(50);
+		}
+		Assert.assertFalse("po načtení nového výletu se úpravy povolí", model.isPrepina());
+		Assert.assertEquals("odmítnuté operace nic nezměnily", "Šumava", model.getVylety().get(1).getJmeno());
+		model.add(EVylet.ANO, kes("GCPO"));
+		Assert.assertEquals(1, model.get(EVylet.ANO).size());
+		Assert.assertFalse("ignorovaná úprava nedošla do souborů", radky(ulozeny("v1", "lovim.ggt")).contains("GCBEHEM"));
+	}
+
+	@Test
+	public void priznakPrepinaniNeuvizneKdyzNacteniSelze() throws Exception {
+		final java.util.concurrent.atomic.AtomicBoolean selhat = new java.util.concurrent.atomic.AtomicBoolean();
+		final VyletovyZperzistentnovac padajici = new VyletovyZperzistentnovac() {
+			@Override
+			public Vylet immediatlyNactiVylet(final cz.geokuk.plugins.kesoid.KesBag vsechny) {
+				if (selhat.get()) {
+					throw new IllegalStateException("soubor výletu nejde přečíst");
+				}
+				return super.immediatlyNactiVylet(vsechny);
+			}
+		};
+		padajici.inject(new KesoidModel() {
+			@Override
+			public KesoidUmisteniSouboru getUmisteniSouboru() {
+				final KesoidUmisteniSouboru umisteni = new KesoidUmisteniSouboru();
+				umisteni.setAnoGgtFile(new Filex(ano, false, true));
+				umisteni.setNeGgtFile(new Filex(ne, false, true));
+				return umisteni;
+			}
+		});
+		zapis(ano, "GC1");
+		final List<Object> udalosti = Collections.synchronizedList(new ArrayList<>());
+		final VyletModel model = new VyletModel();
+		model.inject(padajici);
+		model.inject(udalosti::add);
+		model.initAfterInject();
+		model.prevezmiNactenyVylet(model.nactiPoZapisech(null), 0, 0);
+		final String id = model.novy("Šumava", false).get();
+
+		// Selhání načtení se hlásí jako nezachycená výjimka na EDT; tady je očekávané.
+		final List<Throwable> nezachycene = Collections.synchronizedList(new ArrayList<>());
+		final Thread.UncaughtExceptionHandler puvodni = Thread.getDefaultUncaughtExceptionHandler();
+		Thread.setDefaultUncaughtExceptionHandler((vlakno, t) -> nezachycene.add(t));
+		try {
+			selhat.set(true);
+			model.aktivovat(id).get();
+			for (int i = 0; i < 100 && model.isPrepina(); i++) {
+				Thread.sleep(50);
+			}
+			javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		} finally {
+			Thread.setDefaultUncaughtExceptionHandler(puvodni);
+		}
+		Assert.assertFalse("po selhání načtení příznak neuvízne", model.isPrepina());
+		Assert.assertEquals(1, nezachycene.size());
+		Assert.assertTrue(nezachycene.get(0).getMessage(), nezachycene.get(0).getMessage().contains("soubor výletu nejde přečíst"));
+		Assert.assertTrue("po selhání přijde událost změny výletů", udalosti.stream().filter(VyletyZmenenyEvent.class::isInstance).count() >= 2);
+
+		selhat.set(false);
+		model.aktivovat("v1").get();
+		for (int i = 0; i < 100 && model.isPrepina(); i++) {
+			Thread.sleep(50);
+		}
+		Assert.assertFalse("další aktivace projde", model.isPrepina());
+		Assert.assertEquals("v1", padajici.aktivniVylet());
+	}
+
+	@Test
 	public void modelOdmitneNeplatneJmenoVBudoucnosti() throws Exception {
 		final VyletModel model = model(soubory);
 		try {

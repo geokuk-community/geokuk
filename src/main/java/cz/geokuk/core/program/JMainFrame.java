@@ -14,6 +14,7 @@ import cz.geokuk.core.render.JRenderSlide;
 import cz.geokuk.framework.*;
 import cz.geokuk.img.ImageLoader;
 import cz.geokuk.plugins.cesty.JCestySlide;
+import cz.geokuk.plugins.cesty.JPanelCesty;
 import cz.geokuk.plugins.kesoid.JKesoidySlide;
 import cz.geokuk.plugins.kesoid.detail.JKesoidDetailContainer;
 import cz.geokuk.plugins.kesoid.detailroh.JDetailPrekryvnik;
@@ -79,6 +80,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		// srohama.setBorder(BorderFactory.createLineBorder(Color.ORANGE, 5));
 		srohama.add(createDetailRoh(), ERoh.JZ);
 		srohama.add(createKesInfoRoh(), ERoh.JV);
+		srohama.add(factory.init(new JPanelCesty()), ERoh.SV);
 
 		final JPresCeleMysovani mysovani = new JPresCeleMysovani();
 		{
@@ -102,6 +104,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			final JComponent zvyraznovaciKruhy = new JZvyraznovaciKruhySlide();
 			final JComponent obsazenik = new JObsazenost();
 			final JComponent kachlovnik = new JKachlovnikPresCele();
+			final JComponent kachlovnikTras = new JKachlovnikTras();
 			final JComponent pozadi = new JSlidePozadi();
 
 			smrizema.add(mysovani);
@@ -120,6 +123,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			smrizema.add(pozicovnik);
 			smrizema.add(zvyraznovaciKruhy);
 			smrizema.add(obsazenik);
+			smrizema.add(kachlovnikTras);
 			smrizema.add(kachlovnik);
 			smrizema.add(pozadi);
 
@@ -141,6 +145,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(pozicovnik);
 			factory.init(zvyraznovaciKruhy);
 			factory.init(obsazenik);
+			factory.init(kachlovnikTras);
 			factory.init(kachlovnik);
 			factory.init(pozadi);
 

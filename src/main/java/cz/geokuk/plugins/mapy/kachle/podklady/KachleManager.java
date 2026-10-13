@@ -62,7 +62,10 @@ public interface KachleManager {
 	 */
 	public boolean save(Collection<ItemToSave> itemsToSave);
 
-	/** Smaže dlaždice offline mapy (typ {@code o} a 8 šestnáctkových číslic) kromě zadaných typů; vrátí jejich počet. */
+	/**
+	 * Smaže dlaždice offline mapy (typ: písmeno a 8 šestnáctkových číslic) se stejným písmenem jako zadané typy, kromě nich; vrátí jejich počet. Podklad
+	 * ({@code o}) a překryv ({@code t}) se tak uklízejí každý zvlášť.
+	 */
 	public default int smazOfflineKrome(final Set<String> ponechat) {
 		return 0;
 	}

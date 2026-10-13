@@ -165,6 +165,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
 	private JPanel jFilterProgressPanel;
 	private final JPrepinaceZdroju prepinaceZdroju = new JPrepinaceZdroju();
+	private final JPopisekVyletu popisekVyletu = new JPopisekVyletu();
 
 	private final JValue jSouborSVyletem = new JValue("vylet-26.ggt", true);
 	/** Hvězdička neuloženého výletu má místo i bez hvězdičky, aby blok cest neměnil šířku. */
@@ -209,6 +210,10 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	public void inject(final CestyModel cestyModel) {
 		this.cestyModel = cestyModel;
+	}
+
+	public void inject(final Factory factory) {
+		factory.init(popisekVyletu);
 	}
 
 	/** Výlet obnovený při startu se načte až po zobrazení okna; místo pro cesty je připravené předem, aby se lišta nepohnula. */
@@ -432,7 +437,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 		final JPanel vylety = createPanel();
 		// vylety.setBorder(BorderFactory.createEtchedBorder());
-		vylety.add(new JLabel("Výlet:"));
+		vylety.add(popisekVyletu);
 		vylety.add(vyletAno);
 		vyletAno.setToolTipText("Počet keší, u kterých je vyznačeno, že je chci lovit.");
 		vylety.add(new JLabel("/"));

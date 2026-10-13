@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.mapy.kachle.data;
 
 import java.awt.event.KeyEvent;
+import java.time.Year;
 import java.util.*;
 
 import javax.swing.KeyStroke;
@@ -46,20 +47,31 @@ public final class EKaType {
 	public static final EKaType SK_ZBGIS_ORTO = omezeneUzemi(new EKaType("SK_ZBGIS_ORTO", true, 7, 19, 19, "SR ortofoto (ZBGIS)", "Ortofoto Slovenska, ZBGIS, GKÚ Bratislava", 0, null,
 			new UzivatelskyUrlBuilder("https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer/tile/{z}/{y}/{x}")), new double[] { 1_860_379, 5_965_455, 2_523_588, 6_483_011 }, 404, 503);
 
+	public static final EKaType DE_TOPPLUS = omezeneUzemi(new EKaType("DE_TOPPLUS", false, 0, 18, 18, "DE topografická mapa (BKG)", "Topografická mapa Německa TopPlusOpen, Bundesamt für Kartographie und Geodäsie",
+			0, null, new UzivatelskyUrlBuilder("https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR/{z}/{y}/{x}.png")), 404);
+	public static final EKaType AT_BASEMAP = omezeneUzemi(new EKaType("AT_BASEMAP", false, 6, 19, 19, "AT mapa (basemap.at)", "Základní mapa Rakouska basemap.at", 0, null,
+			new UzivatelskyUrlBuilder("https://maps.wien.gv.at/basemap/geolandbasemap/normal/google3857/{z}/{y}/{x}.png")), 404);
+	public static final EKaType CH_SWISSTOPO = omezeneUzemi(new EKaType("CH_SWISSTOPO", false, 6, 18, 18, "CH topografická mapa (swisstopo)", "Národní mapa Švýcarska, swisstopo", 0, null,
+			new UzivatelskyUrlBuilder("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg")), 404);
+
 	/** Vykresluje se v počítači ze souborů .map, nic se nestahuje. */
 	public static final EKaType OFFLINE_MF = new EKaType("OFFLINE_MF", false, 0, 20, 20, "Offline mapa", "Vektorová mapa ze souborů .map v počítači (mapsforge)", KeyEvent.VK_F,
 			KeyStroke.getKeyStroke(KeyEvent.VK_V, 0), null);
+
+	/** Průhledný překryv s turistickými a cyklotrasami přes podklad, kreslí se z offline map; není podkladem. */
+	public static final EKaType TRASY = new EKaType("TRASY", false, 0, 20, 20, "Turistické a cyklotrasy", "Turistické a cyklotrasy z offline map osm.paws.cz přes mapu", 0, null, null);
 
 	// Nefunguje, jakási ochrana přes kukačku
 	// HIKING_SK_TOPO (true, false, 0, 18, 18, "Slovensko turistická ", "mapy.hiking.sk - topo", 0, null, new OpenStreatMapUrlBuilder("http://mapy.hiking.sk/layers/topo/")),
 
 	/**
 	 * Servery, jejichž provozovatel hromadné (automatické) stahování dlaždic zakazuje nebo důrazně nedoporučuje: OpenStreetMap (Tile Usage Policy), Mapy.cz
-	 * (podmínky Seznam.cz), Waymarked Trails. Platí i pro jejich subdomény a pro uživatelské mapy.
+	 * (podmínky Seznam.cz), Waymarked Trails, swisstopo (fair use, pro offline vlastní služba), BKG (offline uložení jen s datovanou atribucí). Platí i pro jejich subdomény a pro uživatelské mapy.
 	 */
-	static final List<String> SERVERY_BEZ_HROMADNEHO_STAHOVANI = Collections.unmodifiableList(Arrays.asList("tile.openstreetmap.org", "mapy.cz", "mapy.com", "tile.waymarkedtrails.org"));
+	static final List<String> SERVERY_BEZ_HROMADNEHO_STAHOVANI = Collections
+			.unmodifiableList(Arrays.asList("tile.openstreetmap.org", "mapy.cz", "mapy.com", "tile.waymarkedtrails.org", "geo.admin.ch", "geodatenzentrum.de"));
 
-	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO, OFFLINE_MF));
+	private static final List<EKaType> VESTAVENE = Collections.unmodifiableList(Arrays.asList(BASE_M, TURIST_M, OPHOTO_M, WTURIST_WINTER_M, OPHOTO1415_M, OPHOTO1012_M, OPHOTO0406_M, OPHOTO0203_M, ZEMEPIS_M, BASE_M_TRAF_DOWN, ARMY2_M, OPEN_STREET, TUR_FREEMAP_SK_T, TUR_FREEMAP_SK_F, CUZK_ORTO, CUZK_ZTM, SK_ZBGIS_ORTO, DE_TOPPLUS, AT_BASEMAP, CH_SWISSTOPO, OFFLINE_MF));
 	private static volatile List<EKaType> uzivatelske = Collections.emptyList();
 
 	private final String jmeno;
@@ -237,7 +249,16 @@ public final class EKaType {
 		if (this == SK_ZBGIS_ORTO) {
 			return "© GKÚ Bratislava, NLC, CC BY 4.0";
 		}
-		if (this == OFFLINE_MF) {
+		if (this == DE_TOPPLUS) {
+			return "© BKG (" + Year.now() + ") dl-de/by-2-0, Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html";
+		}
+		if (this == AT_BASEMAP) {
+			return "Data source: basemap.at";
+		}
+		if (this == CH_SWISSTOPO) {
+			return "© swisstopo";
+		}
+		if (this == OFFLINE_MF || this == TRASY) {
 			return "© přispěvatelé OpenStreetMap";
 		}
 		return "© OpenStreetMap contributors";
@@ -274,6 +295,11 @@ public final class EKaType {
 	/** Dlaždice se vykreslují z map v počítači, nestahují se. */
 	public boolean isOffline() {
 		return urlBuilder == null;
+	}
+
+	/** Průhledný překryv přes podklad. */
+	public boolean isPrekryv() {
+		return this == TRASY;
 	}
 
 	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */

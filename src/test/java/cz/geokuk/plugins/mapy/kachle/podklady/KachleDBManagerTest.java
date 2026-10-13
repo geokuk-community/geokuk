@@ -87,6 +87,22 @@ public class KachleDBManagerTest {
 		Assert.assertEquals(0, manager.smazOfflineKrome(new HashSet<>(Arrays.asList("o00000002", "o00000003"))));
 	}
 
+	/** Podklad (o) a překryv tras (t) se uklízejí každý zvlášť. */
+	@Test
+	public void smazaniStarychDlazdicJenSeStejnymPismenem() throws Exception {
+		final Ka podklad = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
+		final Ka trasy = new Ka(KACHLE.getLoc(), EKaType.TRASY);
+		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(podklad, "o00000001", png()), new ItemToSave(trasy, "t00000001", png()), new ItemToSave(trasy, "t00000002", png()))));
+
+		Assert.assertEquals(1, manager.smazOfflineKrome(Collections.singleton("t00000002")));
+		Assert.assertNull(manager.load(trasy, "t00000001"));
+		Assert.assertNotNull(manager.load(trasy, "t00000002"));
+		Assert.assertNotNull("úklid překryvu nemaže podklad", manager.load(podklad, "o00000001"));
+
+		Assert.assertEquals(0, manager.smazOfflineKrome(Collections.singleton("o00000001")));
+		Assert.assertNotNull("úklid podkladu nemaže překryv", manager.load(trasy, "t00000002"));
+	}
+
 	@Test
 	public void poskozenaCacheSeZaloziZnovu() throws Exception {
 		Files.write(soubor.toPath(), "tohle není databáze".getBytes(StandardCharsets.UTF_8));

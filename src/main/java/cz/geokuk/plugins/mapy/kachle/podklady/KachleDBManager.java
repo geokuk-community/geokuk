@@ -267,6 +267,10 @@ class KachleDBManager implements KachleManager {
 
 	@Override
 	public int smazOfflineKrome(final Set<String> ponechat) {
+		if (ponechat.isEmpty()) {
+			return 0;
+		}
+		final char predpona = ponechat.iterator().next().charAt(0);
 		final int odlozeniPred = odlozeni;
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
@@ -283,7 +287,7 @@ class KachleDBManager implements KachleManager {
 				final ISqlJetCursor cursor = database.getTable(TABLE_NAME).open();
 				try {
 					while (!cursor.eof()) {
-						if (smazatTyp(cursor.getString("s"), ponechat)) {
+						if (smazatTyp(cursor.getString("s"), predpona, ponechat)) {
 							smazat.add(cursor.getRowId());
 						}
 						cursor.next();
@@ -315,7 +319,7 @@ class KachleDBManager implements KachleManager {
 						try {
 							for (final long rowId : smazat.subList(od, Math.min(od + DAVKA_MAZANI, smazat.size()))) {
 								// Mezi průchodem a mazáním mohl řádek zmizet a jeho rowid dostat jiná dlaždice.
-								if (cursor.goTo(rowId) && smazatTyp(cursor.getString("s"), ponechat)) {
+								if (cursor.goTo(rowId) && smazatTyp(cursor.getString("s"), predpona, ponechat)) {
 									cursor.delete();
 									vDavce++;
 								}
@@ -340,8 +344,8 @@ class KachleDBManager implements KachleManager {
 		return smazano;
 	}
 
-	private static boolean smazatTyp(final String typ, final Set<String> ponechat) {
-		return typ != null && UklidOfflineCache.KLIC.matcher(typ).matches() && !ponechat.contains(typ);
+	private static boolean smazatTyp(final String typ, final char predpona, final Set<String> ponechat) {
+		return typ != null && UklidOfflineCache.KLIC.matcher(typ).matches() && typ.charAt(0) == predpona && !ponechat.contains(typ);
 	}
 
 	/** Jeden pokus o zápis; vrátí chybu, {@link #BEZ_CACHE}, nebo null, když se zapsalo. */

@@ -15,6 +15,8 @@ import org.mapsforge.map.datastore.MultiMapDataStore;
 import org.mapsforge.map.layer.renderer.*;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
+import org.mapsforge.map.reader.header.MapFileInfo;
+import org.mapsforge.map.rendertheme.XmlRenderThemeStyleMenu;
 import org.mapsforge.map.rendertheme.rule.RenderThemeFuture;
 
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
@@ -43,14 +45,16 @@ final class OfflineRenderer {
 		final double pismo;
 		/** Otisk tématu, ze kterého je načteno (soubor a jeho velikost a čas). */
 		final String otiskPozadovaneho;
-		/** Otisk skutečně použitého tématu pro klíč cache. */
+		/** Otisk skutečně použitého tématu a jeho vrstev pro klíč cache. */
 		final String otiskPouziteho;
 		/** Proč se nepoužilo zvolené téma, null když se použilo. */
 		final String chyba;
+		/** Nabídka vrstev použitého tématu, null když ji nemá. */
+		final XmlRenderThemeStyleMenu menu;
 		final long nacitaniMs;
 
 		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final double pismo, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
-				final long start) {
+				final XmlRenderThemeStyleMenu menu, final long start) {
 			this.future = future;
 			this.displayModel = displayModel;
 			this.grafika = grafika;
@@ -59,6 +63,7 @@ final class OfflineRenderer {
 			this.otiskPozadovaneho = otiskPozadovaneho;
 			this.otiskPouziteho = otiskPouziteho;
 			this.chyba = chyba;
+			this.menu = menu;
 			nacitaniMs = (System.nanoTime() - start) / 1_000_000;
 		}
 
@@ -71,19 +76,31 @@ final class OfflineRenderer {
 		}
 	}
 
+	static final char PREDPONA_KLICE = 'o';
+	static final char PREDPONA_KLICE_PREKRYVU = 't';
+
+	/** Zoom, od kterého je mapa podrobná; menší maximum má jen přehledová mapa. */
+	static final int PODROBNY_ZOOM = 14;
+
 	private final MultiMapDataStore data;
+	/** Rozsah a nejvyšší zoom dat každé otevřené mapy. */
+	private final List<MapFileInfo> pokryti;
 	private final NacteneTema tema;
 	private final DatabaseRenderer renderer;
 	private final String klic;
+	/** Překryv přes jiný podklad: dlaždice s průhledným pozadím. */
+	private final boolean prekryv;
 
 	private int rozdelanych;
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final NacteneTema tema, final String klic) {
+	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv) {
 		this.data = data;
+		this.pokryti = pokryti;
 		this.tema = tema;
 		this.klic = klic;
+		this.prekryv = prekryv;
 		tema.future.incrementRefCount();
 		renderer = new DatabaseRenderer(data, tema.grafika, null, new PopiskyOfflineMapy(data, tema.future, tema.displayModel, tema.grafika), true, false, null);
 	}
@@ -105,11 +122,20 @@ final class OfflineRenderer {
 	 *             když nejde otevřít žádný soubor mapy
 	 */
 	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema) throws IOException {
+		return otevri(mapy, tema, false);
+	}
+
+	/**
+	 * @param prekryv
+	 *            průhledné dlaždice pro překryv přes jiný podklad; mají v cache vlastní klíče
+	 */
+	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema, final boolean prekryv) throws IOException {
 		if (mapy.isEmpty()) {
 			throw new IOException("Žádný soubor mapy.");
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
+		final List<MapFileInfo> pokryti = new ArrayList<>();
 		OfflineMapaChyba prvniChyba = null;
 		try {
 			for (final File f : mapy) {
@@ -125,6 +151,7 @@ final class OfflineRenderer {
 					continue;
 				}
 				data.addMapDataStore(mapFile, false, false);
+				pokryti.add(mapFile.getMapFileInfo());
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(f.lastModified()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
 			}
 			if (otisk.length() == 0) {
@@ -138,7 +165,7 @@ final class OfflineRenderer {
 		if (tema.pismo != 1) {
 			otisk.append('\n').append(tema.pismo);
 		}
-		return new OfflineRenderer(data, tema, klic(otisk.toString()));
+		return new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv);
 	}
 
 	static NacteneTema nactiTema(final TemaOfflineMapy tema) throws IOException {
@@ -168,24 +195,32 @@ final class OfflineRenderer {
 		final long start = System.nanoTime();
 		try {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
-			final NacteneTema nactene = new NacteneTema(nactiTema(tema, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), tema.otisk(), null, start);
+			final TemaOfflineMapy.VyberVrstev vrstvy = new TemaOfflineMapy.VyberVrstev(tema.getVrstvy());
+			final RenderThemeFuture future = nactiTema(tema, displayModel, grafika, vrstvy);
+			final NacteneTema nactene = new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(tema, vrstvy), null, vrstvy.getMenu(), start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
 		} catch (final IOException e) {
 			log.warn("Téma offline mapy {} nejde použít, kreslí se výchozím: {}", tema, e.getMessage());
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
-			return new NacteneTema(nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika), displayModel, grafika, meritko, pismo, tema.otisk(), TemaOfflineMapy.VYCHOZI.otisk(), e.getMessage(), start);
+			final TemaOfflineMapy.VyberVrstev vrstvy = new TemaOfflineMapy.VyberVrstev(VolbaVrstev.AUTOR);
+			final RenderThemeFuture future = nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika, vrstvy);
+			return new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(TemaOfflineMapy.VYCHOZI, vrstvy), e.getMessage(), null, start);
 		}
+	}
+
+	private static String otiskSVrstvami(final TemaOfflineMapy tema, final TemaOfflineMapy.VyberVrstev vrstvy) {
+		return vrstvy.getPopis() == null ? tema.otiskSouboru() : tema.otiskSouboru() + "\nvrstvy:" + vrstvy.getPopis();
 	}
 
 	/** Soubor se symboly tématu; jiný soubor tématu (i jiná verze téhož) má jiný soubor symbolů. */
 	static File souborSymbolu(final File slozka, final TemaOfflineMapy tema) {
-		return slozka == null ? null : new File(slozka, "symboly-" + klic(tema.otisk()).substring(1) + ".bin");
+		return slozka == null ? null : new File(slozka, "symboly-" + klic(tema.otiskSouboru()).substring(1) + ".bin");
 	}
 
-	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel, final GraphicFactory grafika) throws IOException {
-		final RenderThemeFuture rtf = new RenderThemeFuture(grafika, tema.vytvor(), displayModel);
+	private static RenderThemeFuture nactiTema(final TemaOfflineMapy tema, final DisplayModel displayModel, final GraphicFactory grafika, final TemaOfflineMapy.VyberVrstev vrstvy) throws IOException {
+		final RenderThemeFuture rtf = new RenderThemeFuture(grafika, tema.vytvor(vrstvy), displayModel);
 		rtf.run();
 		try {
 			rtf.get();
@@ -201,9 +236,18 @@ final class OfflineRenderer {
 
 	/** Klíč dlaždic v cache: písmeno o a 8 šestnáctkových číslic, vejde se do sloupce typu. */
 	static String klic(final String otisk) {
+		return klic(PREDPONA_KLICE, otisk);
+	}
+
+	/** Klíč dlaždic překryvu: jiné písmeno, úklid cache podkladu ho nemaže. */
+	static String klicPrekryvu(final String otisk) {
+		return klic(PREDPONA_KLICE_PREKRYVU, otisk);
+	}
+
+	private static String klic(final char predpona, final String otisk) {
 		final CRC32 crc = new CRC32();
 		crc.update(otisk.getBytes(StandardCharsets.UTF_8));
-		return String.format("o%08x", crc.getValue());
+		return String.format("%c%08x", predpona, crc.getValue());
 	}
 
 	String getKlic() {
@@ -234,6 +278,16 @@ final class OfflineRenderer {
 	/** Dlaždice mapsforge; stejné x, y, z pokrývají stejné území při každé velikosti v pixelech. */
 	static Tile dlazdice(final KaLoc loc, final int velikost) {
 		return new Tile(loc.getFromSzUnsignedX(), loc.getFromSzUnsignedY(), (byte) loc.getMoumer(), velikost);
+	}
+
+	/** Bod pokrývá mapa s daty pro tento zoom; mapsforge nad svým maximem jen zvětšuje, proto stačí maximum od podrobného zoomu. */
+	boolean jePodrobnaMapa(final double lat, final double lon, final int zoom) {
+		for (final MapFileInfo info : pokryti) {
+			if (info.zoomLevelMax >= Math.min(zoom, PODROBNY_ZOOM) && info.boundingBox.contains(lat, lon)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Dlaždice zasahuje do některé z map. */
@@ -280,7 +334,7 @@ final class OfflineRenderer {
 
 	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. Do PNG pro cache se převádí až při ukládání. */
 	BufferedImage vyrendruj(final KaLoc loc) throws IOException {
-		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, false, false);
+		final RendererJob job = new RendererJob(dlazdice(loc, tema.displayModel.getTileSize()), data, tema.future, tema.displayModel, 1f, prekryv, false);
 		final TileBitmap bitmapa = renderer.executeJob(job);
 		if (bitmapa == null) {
 			throw new IOException("Dlaždici " + loc + " offline mapy nejde vykreslit.");

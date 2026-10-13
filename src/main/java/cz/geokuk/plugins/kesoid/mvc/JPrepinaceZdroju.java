@@ -13,6 +13,7 @@ import javax.swing.*;
 import cz.geokuk.plugins.kesoid.importek.*;
 import cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu;
 import cz.geokuk.util.file.Filex;
+import cz.geokuk.util.gui.PopupNadBlokem;
 import cz.geokuk.util.lang.FString;
 
 /**
@@ -29,13 +30,9 @@ public class JPrepinaceZdroju extends JPanel {
 	/** Okraj aktivní plochy popisku a názvu; vedle zaškrtávátka a ikony zůstává místo, které popup nevyvolá. */
 	private static final int PADDING = 3;
 
-	/** Jak dlouho musí myš zůstat na popisku či názvu, než se popup otevře. */
-	static final int PRODLEVA_OTEVRENI_MS = 150;
-	/** Když už je otevřený jiný popup: přejetí přes jiný název cestou k popupu ho nepřepne. */
-	static final int PRODLEVA_PREPNUTI_MS = 500;
-	/** Jak dlouho smí být myš mimo blok i popup, než se popup zavře. */
-	static final int PRODLEVA_ZAVRENI_MS = 500;
-	private static final int KROK_HLIDANI_MS = 50;
+	static final int PRODLEVA_OTEVRENI_MS = PopupNadBlokem.PRODLEVA_OTEVRENI_MS;
+	static final int PRODLEVA_PREPNUTI_MS = PopupNadBlokem.PRODLEVA_PREPNUTI_MS;
+	static final int PRODLEVA_ZAVRENI_MS = PopupNadBlokem.PRODLEVA_ZAVRENI_MS;
 
 	static final int VYSKA = 20;
 
@@ -48,16 +45,7 @@ public class JPrepinaceZdroju extends JPanel {
 	private final Map<TypZdroje, JLabel> ikony = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JLabel> nazvy = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JPanel> bunky = new EnumMap<>(TypZdroje.class);
-	private final javax.swing.Timer hlidaniZavreni;
-	/** Od kdy je myš mimo blok i popup, -1 když není. */
-	private long mimoOd = -1;
-	/** Popup, který se otevře, když na jeho cíli myš vydrží; null, když se nic nečeká. */
-	private JComponent cekajici;
-	private Runnable cekajiciUkazani;
-	private long cekaOd;
-	/** Popup bez zachytávání myši a fokusu, aby první klik mimo něj (třeba na zaškrtávátko) nepropadl. */
-	private Popup popup;
-	private JComponent obsahPopupu;
+	private final PopupNadBlokem popup = new PopupNadBlokem(this, this::prizpusob);
 
 	private StavZdroju stav = StavZdroju.PRAZDNY;
 	private final Tocitko tocitko = new Tocitko(this, this::prekresliTocitka);
@@ -82,20 +70,6 @@ public class JPrepinaceZdroju extends JPanel {
 		natahni(popisek);
 		add(Box.createHorizontalStrut(5 - PADDING));
 		add(popisek);
-		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "zavriZdroje");
-		getActionMap().put("zavriZdroje", new AbstractAction() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public boolean isEnabled() {
-				return popup != null;
-			}
-
-			@Override
-			public void actionPerformed(final java.awt.event.ActionEvent e) {
-				zavriSeznam();
-			}
-		});
 
 		for (final TypZdroje typ : TypZdroje.values()) {
 			final JTabulkaZdroju detail = new JTabulkaZdroju(typ);
@@ -189,7 +163,6 @@ public class JPrepinaceZdroju extends JPanel {
 		}
 		add(Box.createHorizontalStrut(2));
 
-		hlidaniZavreni = new javax.swing.Timer(KROK_HLIDANI_MS, e -> tik());
 		addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
 			@Override
 			public void ancestorResized(final HierarchyEvent e) {
@@ -256,8 +229,7 @@ public class JPrepinaceZdroju extends JPanel {
 
 	@Override
 	public void removeNotify() {
-		hlidaniZavreni.stop();
-		zavriSeznam();
+		popup.zastav();
 		super.removeNotify();
 	}
 
@@ -325,7 +297,7 @@ public class JPrepinaceZdroju extends JPanel {
 			n.setVisible(!kompaktni);
 		}
 		final Insets ramecek = souhrn.getInsets();
-		final int vyska = isShowing() ? getLocationOnScreen().y - horniHranice() - ramecek.top - ramecek.bottom : Integer.MAX_VALUE;
+		final int vyska = isShowing() ? getLocationOnScreen().y - popup.horniHranice() - ramecek.top - ramecek.bottom : Integer.MAX_VALUE;
 		uplna.nastavDostupnouSirku(sirka);
 		uplna.nastavDostupnouVysku(vyska);
 		for (final JTabulkaZdroju t : detaily.values()) {
@@ -464,69 +436,20 @@ public class JPrepinaceZdroju extends JPanel {
 
 	/** Úplná tabulka je zarovnaná k pravému okraji bloku, detail k buňce typu; vždy těsně nad blokem a uvnitř obrazovky. */
 	private void ukaz(final JComponent obsah, final Component kotva, final boolean znovu) {
-		if (!isShowing() || obsahPopupu == obsah && !znovu) {
-			return;
-		}
-		zavriSeznam();
-		prizpusob();
-		obsah.setSize(obsah.getPreferredSize());
-		final Point p = polohaPopupu(obsah.getPreferredSize(), kotva);
-		SwingUtilities.convertPointToScreen(p, this);
-		popup = PopupFactory.getSharedInstance().getPopup(this, obsah, p.x, p.y);
-		obsahPopupu = obsah;
-		popup.show();
-		mimoOd = -1;
-		hlidaniZavreni.start();
+		popup.ukaz(obsah, kotva, znovu);
 	}
 
 	Point polohaPopupu(final Dimension d, final Component kotva) {
-		Rectangle obrazovka = getGraphicsConfiguration() != null ? getGraphicsConfiguration().getBounds() : new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-		final Window okno = SwingUtilities.getWindowAncestor(this);
-		if (okno != null && okno.isShowing()) {
-			// Do okna, pokud se tam vejde; jinak aspoň na obrazovku.
-			final Rectangle vOkne = obrazovka.intersection(new Rectangle(okno.getLocationOnScreen(), okno.getSize()));
-			if (vOkne.width >= d.width) {
-				obrazovka = new Rectangle(vOkne.x, obrazovka.y, vOkne.width, obrazovka.height);
-			}
-		}
-		final Point blok = getLocationOnScreen();
-		int x = kotva == null ? getWidth() - d.width : SwingUtilities.convertPoint(kotva.getParent(), kotva.getLocation(), this).x;
-		x = Math.max(obrazovka.x - blok.x, Math.min(x, obrazovka.x + obrazovka.width - blok.x - d.width));
-		final int y = Math.max(horniHranice() - blok.y, -d.height);
-		return new Point(x, y);
-	}
-
-	/** Popup smí sahat až k horní liště okna (pod menu a panel nástrojů), nejvýš k hornímu okraji obrazovky. */
-	private int horniHranice() {
-		final Rectangle obrazovka = getGraphicsConfiguration() != null ? getGraphicsConfiguration().getBounds() : new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-		int hranice = obrazovka.y;
-		final Window okno = SwingUtilities.getWindowAncestor(this);
-		if (okno instanceof RootPaneContainer && okno.isShowing()) {
-			final Container obsah = ((RootPaneContainer) okno).getContentPane();
-			Component horni = obsah;
-			if (obsah.getLayout() instanceof BorderLayout) {
-				final Component lista = ((BorderLayout) obsah.getLayout()).getLayoutComponent(BorderLayout.NORTH);
-				if (lista != null && lista.isVisible()) {
-					horni = lista;
-				}
-			}
-			final int pod = horni.getLocationOnScreen().y + (horni == obsah ? 0 : horni.getHeight());
-			hranice = Math.max(hranice, pod);
-		}
-		return hranice;
+		return popup.poloha(d, kotva);
 	}
 
 	public void zavriSeznam() {
-		if (popup != null) {
-			popup.hide();
-			popup = null;
-			obsahPopupu = null;
-		}
+		popup.zavri();
 	}
 
 	/** Obsah zobrazeného popupu, nebo null. */
 	JComponent viditelny() {
-		return obsahPopupu;
+		return popup.viditelny();
 	}
 
 	JComponent getObsahSouhrnu() {
@@ -539,54 +462,15 @@ public class JPrepinaceZdroju extends JPanel {
 
 	/** Myš vjela na popisek či název: popup se otevře nebo přepne, až na něm vydrží. */
 	void naCil(final JComponent obsah, final Runnable ukazani, final long ted) {
-		if (obsahPopupu == obsah) {
-			cekajici = null;
-			return;
-		}
-		cekajici = obsah;
-		cekajiciUkazani = ukazani;
-		cekaOd = ted;
-		hlidaniZavreni.start();
+		popup.naCil(obsah, ukazani, ted);
 	}
 
 	void opustenCil(final JComponent obsah) {
-		if (cekajici == obsah) {
-			cekajici = null;
-		}
+		popup.opustenCil(obsah);
 	}
 
-	private void tik() {
-		final PointerInfo info = MouseInfo.getPointerInfo();
-		if (info != null) {
-			tik(info.getLocation(), System.currentTimeMillis());
-		}
-		if (popup == null && cekajici == null) {
-			hlidaniZavreni.stop();
-		}
-	}
-
-	/** Otevře čekající popup, když na cíli myš vydržela, a zavře otevřený, když je myš mimo blok i popup aspoň {@link #PRODLEVA_ZAVRENI_MS}. */
 	void tik(final Point mys, final long ted) {
-		if (cekajici != null && ted - cekaOd >= (popup == null ? PRODLEVA_OTEVRENI_MS : PRODLEVA_PREPNUTI_MS)) {
-			final Runnable ukazani = cekajiciUkazani;
-			cekajici = null;
-			ukazani.run();
-		}
-		// Otevřené kontextové menu řádku tabulky může přesahovat popup.
-		if (obsahPopupu == null || obsahuje(this, mys) || obsahuje(obsahPopupu, mys) || MenuSelectionManager.defaultManager().getSelectedPath().length > 0) {
-			mimoOd = -1;
-			return;
-		}
-		if (mimoOd < 0) {
-			mimoOd = ted;
-		} else if (ted - mimoOd >= PRODLEVA_ZAVRENI_MS) {
-			zavriSeznam();
-			cekajici = null;
-		}
-	}
-
-	private static boolean obsahuje(final Component c, final Point obrazovka) {
-		return c.isShowing() && new Rectangle(c.getLocationOnScreen(), c.getSize()).contains(obrazovka);
+		popup.tik(mys, ted);
 	}
 
 	/** Co plocha bloku dělá. */

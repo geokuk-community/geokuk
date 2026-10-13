@@ -9,9 +9,11 @@ import java.util.concurrent.Executors;
 
 import javax.swing.SwingUtilities;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.framework.Model0;
+import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
@@ -26,12 +28,16 @@ public class KachleModel extends Model0 {
 	private static final String OFFLINE_MAPY_DIR = "offlineMapyDir";
 
 	private static final String OFFLINE_MAPA_TEMA = "offlineMapaTema";
+	/** Výběr vrstev každého tématu zvlášť; klíč je otisk jména tématu, jméno samo může být delší, než dovolí klíč nastavení. */
+	private static final String OFFLINE_MAPA_VRSTVY_node = "offlineMapaVrstvy";
 
 	private static final String OFFLINE_OSTRA = "offlineMapaOstra";
 	private static final String OSM = "© přispěvatelé OpenStreetMap";
 	private static final String NATURAL_EARTH = "Made with Natural Earth";
 
 	private static final String OFFLINE_PISMO = "offlineMapaPismo";
+
+	private static final String PREKRYV_TRAS = "prekryvTras";
 
 	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
 	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
@@ -82,12 +88,44 @@ public class KachleModel extends Model0 {
 	public void onEvent(final ZmenaMapNastalaEvent event) {
 		offlinePodklad = event.getKatype() != null && event.getKatype().isOffline();
 		predpripravOfflineMapu();
+		fajrujPrekryvTras();
 	}
 
 	private void predpripravOfflineMapu() {
 		if (offlinePodklad && ziskavac != null) {
 			priprava.execute(ziskavac.getOfflineMapy()::predpriprav);
 		}
+		if (isPrekryvTrasViditelny() && ziskavac != null) {
+			priprava.execute(ziskavac.getOfflineTrasy()::predpriprav);
+		}
+	}
+
+	/** Uživatel zapnul překryv Turistické a cyklotrasy. */
+	public boolean isPrekryvTras() {
+		return currPrefe().getBoolean(PREKRYV_TRAS, false);
+	}
+
+	public void setPrekryvTras(final boolean zapnuto) {
+		if (zapnuto == isPrekryvTras()) {
+			return;
+		}
+		currPrefe().putBoolean(PREKRYV_TRAS, zapnuto);
+		predpripravOfflineMapu();
+		fajrujPrekryvTras();
+	}
+
+	/** Podklad je offline mapa s tématem, které turistické a cyklotrasy kreslí samo. */
+	public boolean isPrekryvTrasNadbytecny() {
+		return offlinePodklad && getTemaOfflineMapy().isPaws();
+	}
+
+	/** Překryv tras se kreslí: je zapnutý a nad podkladem není nadbytečný. */
+	public boolean isPrekryvTrasViditelny() {
+		return isPrekryvTras() && !isPrekryvTrasNadbytecny();
+	}
+
+	private void fajrujPrekryvTras() {
+		fire(new PrekryvTrasEvent(isPrekryvTras(), isPrekryvTrasNadbytecny()));
 	}
 
 	public void onEvent(final OnofflineModelChangeEvent eve) {
@@ -135,6 +173,7 @@ public class KachleModel extends Model0 {
 		nastavVzhledOfflineMapy();
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
+		fajrujPrekryvTras();
 	}
 
 	private KachleUmisteniSouboru loadUmisteniSouboru() {
@@ -147,6 +186,7 @@ public class KachleModel extends Model0 {
 	/** Měřítko displeje, na kterém je mapa; ostrá offline mapa podle něj kreslí dlaždice s víc pixely, rychlejší vždy po 256 px. */
 	public void setMeritkoDispleje(final double meritko) {
 		ziskavac.getOfflineMapy().nastavMeritko(isOfflineMapaOstra() ? meritko : 1);
+		ziskavac.getOfflineTrasy().nastavMeritko(isOfflineMapaOstra() ? meritko : 1);
 	}
 
 	/** Ostrost: dlaždice offline mapy podle zvětšení systému, nebo bez něj (rychlejší, mapu zvětší systém). */
@@ -174,6 +214,7 @@ public class KachleModel extends Model0 {
 	private void nastavVzhledOfflineMapy() {
 		setMeritkoDispleje(meritkoVychoziObrazovky());
 		ziskavac.getOfflineMapy().nastavPismo(getOfflineMapaPismoProcent() / 100.0);
+		ziskavac.getOfflineTrasy().nastavPismo(getOfflineMapaPismoProcent() / 100.0);
 	}
 
 	private static double meritkoVychoziObrazovky() {
@@ -187,23 +228,56 @@ public class KachleModel extends Model0 {
 		return (KachleUmisteniSouboru) umisteniSouboru;
 	}
 
+	/** Zvolené téma s výběrem vrstev, který si pro něj uživatel uložil. */
 	public TemaOfflineMapy getTemaOfflineMapy() {
-		return TemaOfflineMapy.zTextu(currPrefe().get(OFFLINE_MAPA_TEMA, ""));
+		final TemaOfflineMapy tema = TemaOfflineMapy.zTextu(currPrefe().get(OFFLINE_MAPA_TEMA, ""));
+		return tema.sVrstvami(VolbaVrstev.zTextu(currPrefe().node(OFFLINE_MAPA_VRSTVY_node).get(tema.klicNastaveni(), null)));
 	}
 
+	/** Zvolí téma; výběr vrstev se vezme ten, který má téma uložený. */
 	public void setTemaOfflineMapy(final TemaOfflineMapy tema) {
-		if (tema.equals(getTemaOfflineMapy())) {
+		if (tema.stejnyZdroj(getTemaOfflineMapy())) {
 			return;
 		}
 		currPrefe().put(OFFLINE_MAPA_TEMA, tema.naText());
 		nastavOfflineMapy(getUmisteniSouboru());
 		fire(new OfflineMapaChangedEvent());
+		fajrujPrekryvTras();
+	}
+
+	/** Výběr vrstev zvoleného tématu; uloží se k tématu. */
+	public void setVrstvyTematu(final VolbaVrstev volba) {
+		final TemaOfflineMapy tema = getTemaOfflineMapy();
+		if (volba.equals(tema.getVrstvy())) {
+			return;
+		}
+		final MyPreferences pref = currPrefe().node(OFFLINE_MAPA_VRSTVY_node);
+		if (volba.isAutor()) {
+			pref.remove(tema.klicNastaveni());
+		} else {
+			pref.put(tema.klicNastaveni(), volba.naText());
+		}
+		nastavOfflineMapy(getUmisteniSouboru());
+		fire(new OfflineMapaChangedEvent());
+	}
+
+	/** Vrstvy zvoleného tématu, null když je téma nemá nebo ještě není načtené (načte se s první dlaždicí offline mapy). */
+	public VrstvyTematu getVrstvyTematu() {
+		final VrstvyTematu v = ziskavac.getOfflineMapy().getVrstvyTematu();
+		return v != null && v.getTema().stejnyZdroj(getTemaOfflineMapy()) ? v : null;
 	}
 
 	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
 		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
+		ziskavac.getOfflineTrasy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-trasy"));
+		ziskavac.getOfflineTrasy().nastav(u.getOfflineMapyDir().getEffectiveFile(), TemaOfflineMapy.TRASY);
 		predpripravOfflineMapu();
+	}
+
+	/** Střed výřezu pokrývá podrobná offline mapa (nebo mapy ještě nejsou otevřené). */
+	public boolean jePodrobnaOfflineMapa(final Wgs bod, final int zoom) {
+		return ziskavac == null || ziskavac.getOfflineMapy().jePodrobnaMapa(bod, zoom);
 	}
 
 	/** Atribuce offline mapy: data podle otevřených map (OSM, přehledová mapa z Natural Earth) a téma ze souboru uživatele. */
