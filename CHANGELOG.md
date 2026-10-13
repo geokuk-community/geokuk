@@ -3,6 +3,8 @@
 ## 6.5.0
 
 ### Změny
+- Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
+  použijí ho úseky cesty vedené po cestě.
 
 ## 6.4.0
 
