@@ -183,7 +183,7 @@ public class Routovac implements AutoCloseable {
 		}
 		final List<Wgs> body = new ArrayList<>(cesta.length / 2 + 2);
 		body.add(start);
-		for (int i = 0; i < cesta.length; i += 2) {
+		for (int i = 0; i + 1 < cesta.length; i += 2) {
 			final Wgs w = new Wgs(cesta[i] / 1e6, cesta[i + 1] / 1e6);
 			if (!w.equals(body.get(body.size() - 1))) {
 				body.add(w);
