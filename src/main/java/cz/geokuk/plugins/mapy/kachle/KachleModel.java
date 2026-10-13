@@ -238,7 +238,7 @@ public class KachleModel extends Model0 {
 		return tema.sVrstvami(VolbaVrstev.zTextu(volba));
 	}
 
-	/** Klíč výběru vrstev z textu tématu v nastavení, takže výběr přežije přesun přenosného GeoKuku; dřív se klíčovalo absolutní cestou. */
+	/** Klíč výběru vrstev z textu tématu v nastavení, takže výběr přežije přesun přenosného GeoKuku. */
 	static String klicVrstev(final TemaOfflineMapy tema) {
 		return TemaOfflineMapy.klicNastaveni(temaDoNastaveni(tema));
 	}
