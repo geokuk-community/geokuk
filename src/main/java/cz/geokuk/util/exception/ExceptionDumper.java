@@ -149,6 +149,8 @@ public class ExceptionDumper {
 
 			final StringWriter swrt = new StringWriter();
 			final PrintWriter pwrt = new PrintWriter(new RefinedWhiteWriter(swrt));
+			// Výpis se otevírá v prohlížeči a ukládá v UTF-8.
+			pwrt.println("<meta charset='UTF-8'>");
 			pwrt.print("<span id='tcTechException'>");
 			pwrt.println("<h1>EXCEPTION " + id + "</h1>");
 			if (throwables.length > 1) {
