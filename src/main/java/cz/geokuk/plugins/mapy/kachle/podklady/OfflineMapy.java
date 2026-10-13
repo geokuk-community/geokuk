@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OfflineMapy {
 
 	private static final long KONTROLA_SLOZKY_NS = TimeUnit.SECONDS.toNanos(2);
+	private static final long OPAKOVANI_NS = TimeUnit.SECONDS.toNanos(30);
 
 	private final Runnable priZmene;
 	/** Průhledný překryv přes jiný podklad, viz {@link OfflineRenderer#otevri(List, OfflineRenderer.NacteneTema, boolean)}. */
@@ -28,6 +29,8 @@ public class OfflineMapy {
 
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
+	/** Za jak dlouho se znovu zkusí mapa, kterou nešlo otevřít (třeba ji drží antivirus nebo synchronizace). */
+	long opakovaniNs = OPAKOVANI_NS;
 
 	// Nastavení se mění z EDT bez zámku; vlákno, které právě otevírá mapy pod zámkem, by EDT zdrželo.
 	private volatile File slozka;
@@ -54,7 +57,15 @@ public class OfflineMapy {
 	private IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
 	private String otiskSlozky;
+	/** Změněný otisk, který se teprve ověřuje: soubor, který se právě kopíruje, se mezi kontrolami mění. */
+	private String otiskZmeny;
 	private long posledniKontrola;
+	/** Některé mapy nešly otevřít a zkusí se znovu od {@link #opakovatOd}. */
+	private boolean opakovat;
+	private long opakovatOd;
+	private long otevrenoMs;
+	/** Výsledek posledního otevření (chyba, nebo počet otevřených map); opakovaný pokus se stejným výsledkem obrazovku nezneplatní. */
+	private String vysledekOtevreni;
 
 	/**
 	 * @param priZmene
@@ -167,16 +178,7 @@ public class OfflineMapy {
 			pismoOtevrene = pi;
 			otiskSlozky = null;
 		}
-		final long ted = System.nanoTime();
-		if (otiskSlozky == null || ted - posledniKontrola >= kontrolaSlozkyNs) {
-			posledniKontrola = ted;
-			final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
-			final String otisk = otisk(mapy);
-			if (!otisk.equals(otiskSlozky)) {
-				otiskSlozky = otisk;
-				otevri(mapy);
-			}
-		}
+		zkontrolujSlozku(System.nanoTime());
 		if (chyba != null) {
 			throw chyba;
 		}
@@ -184,6 +186,44 @@ public class OfflineMapy {
 			throw new IllegalStateException("Renderer offline mapy je zavřený");
 		}
 		return renderer;
+	}
+
+	/**
+	 * Podívá se do složky, i když se zrovna nic nekreslí, aby se dokopírovaná mapa projevila bez pohybu mapou. Nic nedělá, dokud se mapy poprvé neotevřou.
+	 * Nevolat z EDT.
+	 */
+	public synchronized void zkontrolujSlozku() {
+		if (otiskSlozky != null && Objects.equals(slozka, slozkaOtevrena) && tema.equals(temaOtevrene) && meritko == meritkoOtevrene && pismo == pismoOtevrene) {
+			zkontrolujSlozku(System.nanoTime());
+		}
+	}
+
+	/** Změněnou složku otevře, až se dvě kontroly po sobě shodnou; mapu, kterou nešlo otevřít, zkusí znovu po {@link #opakovaniNs}. */
+	private void zkontrolujSlozku(final long ted) {
+		if (otiskSlozky != null && ted - posledniKontrola < kontrolaSlozkyNs) {
+			return;
+		}
+		posledniKontrola = ted;
+		final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
+		final String otisk = otisk(mapy);
+		if (otiskSlozky == null) {
+			otiskSlozky = otisk;
+			otiskZmeny = null;
+			otevri(mapy, ted, true);
+		} else if (!otisk.equals(otiskSlozky)) {
+			if (otisk.equals(otiskZmeny)) {
+				otiskSlozky = otisk;
+				otiskZmeny = null;
+				otevri(mapy, ted, true);
+			} else {
+				otiskZmeny = otisk; // soubor se možná ještě kopíruje
+			}
+		} else {
+			otiskZmeny = null;
+			if (opakovat && ted - opakovatOd >= 0) {
+				otevri(mapy, ted, false);
+			}
+		}
 	}
 
 	private String otisk(final List<File> mapy) {
@@ -194,9 +234,14 @@ public class OfflineMapy {
 		return sb.toString();
 	}
 
-	private void otevri(final List<File> mapy) {
+	/**
+	 * @param zmena
+	 *            mapy nebo nastavení se změnily; jinak jde o opakovaný pokus a obrazovka se zneplatní, jen když dopadl jinak
+	 */
+	private void otevri(final List<File> mapy, final long ted, final boolean zmena) {
 		// Při prvním otevření nejsou na obrazovce dlaždice, které by změna zneplatnila; ohlášení by zahodilo i rozdělaná vykreslení.
-		final boolean zneplatnit = renderer != null || chyba != null;
+		final boolean predtim = renderer != null || chyba != null;
+		final String vysledekPredtim = vysledekOtevreni;
 		zavriRenderer();
 		nazvyMap = mapy.stream().map(File::getName).collect(Collectors.toList());
 		if (mapy.isEmpty()) {
@@ -206,17 +251,32 @@ public class OfflineMapy {
 				final long start = System.nanoTime();
 				renderer = OfflineRenderer.otevri(mapy, nacteneTema(), prekryv);
 				chyba = null;
-				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), mapy, temaOtevrene, renderer.getKlic());
+				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
 			} catch (final IOException e) {
 				chyba = e;
-				log.warn("Offline mapu nejde otevřít: {}", e.getMessage());
 			} catch (final RuntimeException | OutOfMemoryError e) {
 				chyba = new OfflineMapaChyba("Offline mapu nejde otevřít: " + e, "mapu nejde otevřít", e);
 				log.warn("Offline mapu nejde otevřít", e);
 			}
 		}
-		if (zneplatnit) {
+		final boolean neuplne = !mapy.isEmpty() && (chyba != null || renderer.getPocetMap() < mapy.size());
+		opakovat = neuplne;
+		opakovatOd = ted + opakovaniNs;
+		vysledekOtevreni = chyba != null ? "chyba " + chyba.getMessage() : "map " + renderer.getPocetMap() + ", " + renderer.getPreskoceno();
+		final boolean jinak = !vysledekOtevreni.equals(vysledekPredtim);
+		// Opakovaný pokus se stejným výsledkem (mapa pořád zamčená) log nezahlcuje.
+		if (zmena || jinak) {
+			if (chyba != null) {
+				log.warn("Offline mapu nejde otevřít: {}", chyba.getMessage());
+			} else {
+				log.info("Offline mapa otevřena za {} ms: {}, téma {}, klíč {}", otevrenoMs, mapy, temaOtevrene, renderer.getKlic());
+				if (renderer.getPreskoceno() != null) {
+					log.warn("{}; kreslí se bez ní, za {} s se zkusí znovu", renderer.getPreskoceno(), TimeUnit.NANOSECONDS.toSeconds(opakovaniNs));
+				}
+			}
+		}
+		if (predtim && (zmena || jinak)) {
 			priZmene.run();
 		}
 	}
@@ -267,5 +327,7 @@ public class OfflineMapy {
 		zavriRenderer();
 		uvolniTema();
 		otiskSlozky = null;
+		otiskZmeny = null;
+		opakovat = false;
 	}
 }

@@ -597,7 +597,9 @@ public class SmokeIT {
 		Files.write(new File(adresar, "data/nastaveni.xml").toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
 				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
 				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map/><node name=\"current\"><map/><node name=\"vseobecne\"><map>"
-				+ "<entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/></map></node></node></node></root></preferences>\n").getBytes(StandardCharsets.UTF_8));
+				+ "<entry key=\"nextUpdateCheckTimestamp\" value=\"9223372036854775807\"/></map></node>"
+				// Podklad Mapy.cz jde přes falešný server (http proxy); výchozí podklad nové instalace by šel ven.
+				+ "<node name=\"kteremapy\"><map><entry key=\"mapovePodklady\" value=\"TURIST_M\"/></map></node></node></node></root></preferences>\n").getBytes(StandardCharsets.UTF_8));
 		Files.copy(new File(System.getProperty("smoke.jar")).toPath(), new File(pracovni, "geokuk.jar").toPath());
 		return adresar;
 	}

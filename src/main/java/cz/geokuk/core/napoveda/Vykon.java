@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.extern.slf4j.Slf4j;
@@ -231,6 +232,16 @@ public final class Vykon {
 		private volatile int zasobnikPro = -1;
 		private volatile String zasobnik;
 
+		// Uspání a hibernace počítače: hlídač tiká po 250 ms, delší mezera mezi jeho tiky znamená, že stál celý počítač.
+		/** Mezera mezi tiky hlídače, od které jde o uspání počítače. */
+		long mezeraUspaniNs = TimeUnit.SECONDS.toNanos(10);
+		/** Hlídač běží a {@link #posledniTik} platí. */
+		volatile boolean hlidacBezi;
+		volatile long posledniTik;
+		/** Konec posledního zjištěného uspání, platí s {@link #byloUspani}. */
+		private volatile long uspaniDo;
+		private volatile boolean byloUspani;
+
 		@Override
 		protected void dispatchEvent(final AWTEvent event) {
 			if (hloubka > 0) {
@@ -255,9 +266,10 @@ public final class Vykon {
 				if (hloubka == 0) {
 					zacatekVnejsi = 0;
 				}
-				// Událost s vnořenou smyčkou (modální dialog) EDT neblokovala.
-				if (!maVnoreni[hloubka]) {
-					final long trvani = System.nanoTime() - start;
+				// Událost s vnořenou smyčkou (modální dialog) EDT neblokovala; událost přes uspání počítače se nepočítá.
+				final long konec = System.nanoTime();
+				if (!maVnoreni[hloubka] && !presUspani(start, konec)) {
+					final long trvani = konec - start;
 					zaznamenej(Velicina.EDT, trvani);
 					if (trvani >= PRAH_ZASEKU_MS * 1_000_000) {
 						final String kde = hloubka == 0 && zasobnikPro == poradiVnejsi ? " – " + zasobnik : "";
@@ -267,12 +279,39 @@ public final class Vykon {
 			}
 		}
 
+		/**
+		 * Událost trvala přes uspání počítače: hlídač během ní netikal (po probuzení ještě nestihl), nebo po probuzení zjistil mezeru, která do ní spadá.
+		 */
+		boolean presUspani(final long start, final long konec) {
+			if (konec - start < mezeraUspaniNs) {
+				return false;
+			}
+			return hlidacBezi && (konec - posledniTik >= mezeraUspaniNs || byloUspani && start - uspaniDo < 0);
+		}
+
+		/** Tik hlídače: po dlouhé mezeře zapíše probuzení počítače, jinak hlídá zaseknutý EDT. */
+		void tik(final long tedNs) {
+			final long mezera = hlidacBezi ? tedNs - posledniTik : 0;
+			posledniTik = tedNs;
+			hlidacBezi = true;
+			if (mezera >= mezeraUspaniNs) {
+				uspaniDo = tedNs;
+				byloUspani = true;
+				Diagnostika.zaznamenej(popisProbuzeni(mezera));
+				log.info("{} (hlídač EDT stál, počítač byl asi uspaný)", popisProbuzeni(mezera));
+				return;
+			}
+			zkontroluj(tedNs);
+		}
+
 		/** Když vnější událost běží déle než práh zaseknutí, jednou zapíše do logu zásobník EDT, ať je vidět, na čem stojí. */
 		void zkontroluj(final long tedNs) {
 			final long zacatek = zacatekVnejsi;
 			final int poradi = poradiVnejsi;
 			final Thread vlakno = edt;
-			if (zacatek == 0 || vlakno == null || vnejsiMaVnoreni || zasobnikPro == poradi || tedNs - zacatek < PRAH_ZASEKU_MS * 1_000_000) {
+			// Doba uspání počítače se do stání EDT nepočítá.
+			final long od = byloUspani && zacatek - uspaniDo < 0 ? uspaniDo : zacatek;
+			if (zacatek == 0 || vlakno == null || vnejsiMaVnoreni || zasobnikPro == poradi || tedNs - od < PRAH_ZASEKU_MS * 1_000_000) {
 				return;
 			}
 			final StackTraceElement[] st = vlakno.getStackTrace();
@@ -285,10 +324,12 @@ public final class Vykon {
 			for (final StackTraceElement e : st) {
 				sb.append("\n\tat ").append(e);
 			}
-			log.warn("EDT stojí {} ms, zásobník:{}", (tedNs - zacatek) / 1_000_000, sb);
+			log.warn("EDT stojí {} ms, zásobník:{}", (tedNs - od) / 1_000_000, sb);
 		}
 
 		void spustHlidace() {
+			posledniTik = System.nanoTime();
+			hlidacBezi = true;
 			final Thread hlidac = new Thread(() -> {
 				while (true) {
 					try {
@@ -296,7 +337,7 @@ public final class Vykon {
 					} catch (final InterruptedException e) {
 						return;
 					}
-					zkontroluj(System.nanoTime());
+					tik(System.nanoTime());
 				}
 			}, "Hlídač EDT");
 			hlidac.setDaemon(true);
@@ -322,6 +363,11 @@ public final class Vykon {
 			geokuk |= jeGeokuk;
 		}
 		return String.join(" ← ", ramce);
+	}
+
+	static String popisProbuzeni(final long mezeraNs) {
+		final long s = TimeUnit.NANOSECONDS.toSeconds(mezeraNs);
+		return s < 120 ? "Probuzení po " + s + " s" : "Probuzení po " + (s + 30) / 60 + " min";
 	}
 
 	static String popisZaseku(final AWTEvent event, final long trvaniNs) {
