@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import cz.geokuk.core.coordinates.Wgs;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -98,6 +100,15 @@ public class OfflineMapy {
 
 	public void setSlozkaSymbolu(final File slozkaSymbolu) {
 		this.slozkaSymbolu = slozkaSymbolu;
+	}
+
+	/**
+	 * Bod pokrývá podrobná mapa; true i tehdy, když mapy ještě nejsou otevřené nebo nejdou otevřít (o tom mluví hláška na dlaždicích). Neblokuje, lze
+	 * volat z EDT.
+	 */
+	public boolean jePodrobnaMapa(final Wgs bod, final int zoom) {
+		final OfflineRenderer r = renderer;
+		return r == null || r.jePodrobnaMapa(bod.lat, bod.lon, zoom);
 	}
 
 	public List<String> getNazvyMap() {

@@ -8,6 +8,8 @@
   Motorider), kreslí jen vrstvy, které má zapnuté autor tématu, takže
   turistické značení je přehlednější. Vzhled offline mapy se tím změní
   a její dlaždice v cache se jednou vykreslí znovu.
+- Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
+  žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
 
 ## 6.4.0
 
