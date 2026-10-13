@@ -34,7 +34,7 @@ public class IkonNacitacLoader {
 
 	private MultiFolder lastScan;
 
-	public IkonBag nacti(final Future<?> future, final boolean aPrenacti, final ASada jmenoSady) throws IOException {
+	public IkonBag nacti(final Future<?> future, final boolean aPrenacti, final ASada jmenoSady, final Zvyrazneni zvyrazneni) throws IOException {
 		if (aPrenacti) {
 			lastScan = null;
 		}
@@ -53,17 +53,17 @@ public class IkonNacitacLoader {
 		}
 		lastScan = mf;
 
-		final IkonBag ikonBag = sestav(mf, jmenoSady);
+		final IkonBag ikonBag = sestav(mf, jmenoSady, zvyrazneni);
 		if (ikonBag != null || ASada.STANDARD.equals(jmenoSady)) {
 			return ikonBag;
 		}
 		// Bez sady ikon se nenačtou ani keše, proto raději standardní sada než nic.
 		FExceptionDumper.dump(new IOException("Sada ikon \"" + jmenoSady.name() + "\" nebyla nalezena nebo je neúplná (chybí v ní soubor skla.txt). Použije se sada Standard."),
 				EExceptionSeverity.DISPLAY, "Sada ikon " + jmenoSady);
-		return sestav(mf, ASada.STANDARD);
+		return sestav(mf, ASada.STANDARD, zvyrazneni);
 	}
 
-	private IkonBag sestav(final MultiFolder mf, final ASada jmenoSady) throws IOException {
+	IkonBag sestav(final MultiFolder mf, final ASada jmenoSady, final Zvyrazneni zvyrazneni) throws IOException {
 		final IkonBag ikonBag = new IkonBag();
 		final KeyNode<String, LamUrl> mapNode = mf.getNode(MAPUZEL);
 
@@ -80,6 +80,7 @@ public class IkonNacitacLoader {
 		if (sada == null) {
 			return null;
 		}
+		ikonNacitacSada.zvyrazni(sada, zvyrazneni);
 		ikonBag.setSada(sada);
 		return ikonBag;
 	}

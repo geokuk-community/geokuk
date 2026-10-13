@@ -13,6 +13,8 @@ import lombok.Getter;
  *
  */
 public class IconDef {
+	static final int VYCHOZI_PRIORITA = 5;
+
 	/** URL s definičním souborem, může to být obrázek, ale i properties s definicí */
 	IkonDrawingProperties idp;
 	public int priorita;
@@ -30,7 +32,7 @@ public class IconDef {
 
 	@Override
 	public String toString() {
-		return idp.url.toString();
+		return String.valueOf(idp.url);
 	}
 
 	Set<Alela> getAlelyx() {

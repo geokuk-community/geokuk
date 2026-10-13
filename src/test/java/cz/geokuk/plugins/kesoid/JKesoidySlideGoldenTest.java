@@ -32,7 +32,7 @@ public class JKesoidySlideGoldenTest {
 
 	@BeforeClass
 	public static void data() throws Exception {
-		ikony = new IkonNacitacLoader().nacti(null, true, ASada.STANDARD);
+		ikony = new IkonNacitacLoader().nacti(null, true, ASada.STANDARD, Zvyrazneni.VYCHOZI);
 		kese = mrizka(0.02, 0.02);
 		keseZblizka = mrizka(0.003, 0.0015);
 	}
