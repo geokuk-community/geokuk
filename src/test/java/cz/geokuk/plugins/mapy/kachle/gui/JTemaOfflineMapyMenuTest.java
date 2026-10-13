@@ -65,8 +65,10 @@ public class JTemaOfflineMapyMenuTest {
 			Assert.assertTrue("zipy se na EDT neotvírají", polozky(menu[0]).contains("Načítám témata ze složky…"));
 			menu[0].nactiTemataNaPozadi();
 		});
-		while (menu[0].getTemataZeSlozky() == null) {
+		final boolean[] nacteno = new boolean[1];
+		while (!nacteno[0]) {
 			Thread.sleep(20);
+			SwingUtilities.invokeAndWait(() -> nacteno[0] = menu[0].getTemataZeSlozky() != null);
 		}
 		SwingUtilities.invokeAndWait(() -> {
 			menu[0].sestav();

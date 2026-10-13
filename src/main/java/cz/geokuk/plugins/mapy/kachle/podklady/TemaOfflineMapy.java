@@ -63,12 +63,17 @@ public final class TemaOfflineMapy {
 		return OfflineRenderer.klic(naText());
 	}
 
+	/** Klíč nastavení z textu tématu (dlouhý text se do klíče nastavení nevejde). */
+	public static String klicNastaveni(final String text) {
+		return OfflineRenderer.klic(text);
+	}
+
 	/** Stejný soubor tématu, na výběru vrstev nezáleží. */
 	public boolean stejnyZdroj(final TemaOfflineMapy t) {
 		return t != null && naText().equals(t.naText());
 	}
 
-	/** Totéž téma (i s výběrem vrstev) z jiného souboru, třeba po přesunu složky. */
+	/** Totéž téma z jiného souboru, třeba po přesunu složky. */
 	public TemaOfflineMapy sSouborem(final File jiny) {
 		return new TemaOfflineMapy(null, jiny, xmlVZipu, vrstvy, null);
 	}

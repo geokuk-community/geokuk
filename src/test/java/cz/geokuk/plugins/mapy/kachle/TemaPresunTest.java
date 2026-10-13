@@ -45,4 +45,46 @@ public class TemaPresunTest {
 		Assert.assertEquals("když ani tam není, zůstane jak je (chybu ukáže kreslení)", new File(tmp.getRoot(), "puvodni/x.zip"),
 				KachleModel.temaZNastaveni(new File(tmp.getRoot(), "puvodni/x.zip").getPath(), slozka).getSoubor());
 	}
+
+	/** Výběr vrstev je uložený pod klíčem z textu v nastavení (relativně ke složce programu), takže přesun složky programu ho nezmění. */
+	@Test
+	public void vrstvyPrezijiPresun() {
+		final File zip = new File(FConst.KOREN.getAbsoluteFile(), "data/offline-mapy/paws_5.zip");
+		final TemaOfflineMapy tema = TemaOfflineMapy.zeSouboru(zip, "paws.xml");
+		Assert.assertEquals(TemaOfflineMapy.klicNastaveni(MyPreferences.ZNACKA_KORENE + "/data/offline-mapy/paws_5.zip|paws.xml"), KachleModel.klicVrstev(tema));
+		Assert.assertEquals("vestavěné téma má klíč jako dřív", TemaOfflineMapy.zTextu("OSMARENDER").klicNastaveni(), KachleModel.klicVrstev(TemaOfflineMapy.zTextu("OSMARENDER")));
+	}
+
+	/** V modelu: výběr vrstev uložený k tématu ve složce programu se po načtení z nastavení vrátí. */
+	@Test
+	public void vrstvyVModelu() throws Exception {
+		final File slozka = new File(FConst.KOREN.getAbsoluteFile(), "target/tema-presun-test");
+		Assert.assertTrue(slozka.isDirectory() || slozka.mkdirs());
+		final File zip = new File(slozka, "paws_5.zip");
+		Assert.assertTrue(zip.isFile() || zip.createNewFile());
+		final KachleModel model = new KachleModel() {
+			@Override
+			public void fire(final cz.geokuk.framework.Event0<?> event) {
+				// bez správce událostí
+			}
+		};
+		model.inject(new cz.geokuk.framework.Prefe());
+		model.inject(new cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac());
+		final cz.geokuk.plugins.mapy.KachleUmisteniSouboru u = new cz.geokuk.plugins.mapy.KachleUmisteniSouboru();
+		u.setKachleCacheDir(new cz.geokuk.util.file.Filex(tmp.newFolder("cache"), false, true));
+		u.setOfflineMapyDir(new cz.geokuk.util.file.Filex(tmp.newFolder("offline-mapy"), false, true));
+		model.setUmisteniSouboru(u);
+		final TemaOfflineMapy puvodni = model.getTemaOfflineMapy();
+		try {
+			model.setTemaOfflineMapy(TemaOfflineMapy.zeSouboru(zip, null));
+			final cz.geokuk.plugins.mapy.kachle.podklady.VolbaVrstev volba = cz.geokuk.plugins.mapy.kachle.podklady.VolbaVrstev.AUTOR.sVrstvou("vrstevnice", false, true);
+			model.setVrstvyTematu(volba);
+			Assert.assertEquals(volba, model.getTemaOfflineMapy().getVrstvy());
+			Assert.assertEquals("uloženo pod klíčem relativního textu", volba.naText(),
+					cz.geokuk.framework.MyPreferences.current().node("offlineMapaVrstvy").get(TemaOfflineMapy.klicNastaveni(MyPreferences.ZNACKA_KORENE + "/target/tema-presun-test/paws_5.zip"), null));
+			model.setVrstvyTematu(cz.geokuk.plugins.mapy.kachle.podklady.VolbaVrstev.AUTOR);
+		} finally {
+			model.setTemaOfflineMapy(puvodni);
+		}
+	}
 }
