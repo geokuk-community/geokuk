@@ -5,6 +5,7 @@
 ### Změny
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
+- OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
 
 ## 6.4.0
 
