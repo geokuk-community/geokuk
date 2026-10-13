@@ -46,8 +46,15 @@ public class VyletLoadSwingWorker extends MySwingWorker0<Vylet, Void> {
 	 */
 	@Override
 	protected void donex() throws InterruptedException, ExecutionException {
-		final Vylet result = get();
+		final Vylet result;
+		try {
+			result = get();
+		} catch (final ExecutionException | InterruptedException | RuntimeException e) {
+			vyletModel.nacitaniSelhalo(generace);
+			throw e;
+		}
 		if (result == null) {
+			vyletModel.nacitaniSelhalo(generace);
 			return; // asi zkanclváno
 		}
 		log.info("Nahran vylet, {} lovenych a {} ignorovanych.", result.get(EVylet.ANO).size(), result.get(EVylet.NE).size());

@@ -301,6 +301,39 @@ public class VyletyPojmenovaneTest {
 	}
 
 	@Test
+	public void behemPrepinaniSeUpravyVyletuOdmitaji() throws Exception {
+		zapis(ano, "GC1");
+		final VyletModel model = model(soubory);
+		model.prevezmiNactenyVylet(model.nactiPoZapisech(null), 0, 0);
+		final String id = model.novy("Šumava", false).get();
+		Assert.assertFalse(model.isPrepina());
+
+		final java.util.concurrent.CompletableFuture<Void> aktivace = model.aktivovat(id);
+		Assert.assertTrue("příznak se nastaví hned", model.isPrepina());
+		model.add(EVylet.ANO, kes("GCBEHEM"));
+		Assert.assertTrue("úprava se ignoruje", model.get(EVylet.ANO).isEmpty());
+		model.removeAll(EVylet.ANO);
+		for (final java.util.concurrent.CompletableFuture<?> f : Arrays.asList(model.prejmenovat(id, "Jiné"), model.smazat(id), model.aktivovat("v1"), model.novy("Další", false))) {
+			try {
+				f.get();
+				Assert.fail("operace během přepínání se odmítá");
+			} catch (final ExecutionException e) {
+				Assert.assertTrue(e.getCause() instanceof IllegalStateException);
+			}
+		}
+
+		aktivace.get();
+		for (int i = 0; i < 100 && model.isPrepina(); i++) {
+			Thread.sleep(50);
+		}
+		Assert.assertFalse("po načtení nového výletu se úpravy povolí", model.isPrepina());
+		Assert.assertEquals("odmítnuté operace nic nezměnily", "Šumava", model.getVylety().get(1).getJmeno());
+		model.add(EVylet.ANO, kes("GCPO"));
+		Assert.assertEquals(1, model.get(EVylet.ANO).size());
+		Assert.assertFalse("ignorovaná úprava nedošla do souborů", radky(ulozeny("v1", "lovim.ggt")).contains("GCBEHEM"));
+	}
+
+	@Test
 	public void modelOdmitneNeplatneJmenoVBudoucnosti() throws Exception {
 		final VyletModel model = model(soubory);
 		try {
