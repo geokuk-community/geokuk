@@ -377,6 +377,8 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	private int urciElevation(final GpxWpt gpxwpt) {
 		if (gpxwpt.ele != 0) {
 			return (int) gpxwpt.ele;
+		} else if (gpxwpt.groundspeak != null && gpxwpt.groundspeak.hintZDatabaze != null && gpxwpt.groundspeak.hintZDatabaze.ctouVyskuAzPriZobrazeni()) {
+			return Wpt.VYSKA_NENACTENA;
 		} else {
 			return gpxwpt.gpxg.elevation;
 		}

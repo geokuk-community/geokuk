@@ -81,8 +81,6 @@ public class GeogetTagyShodaTest {
 						g.putUserTag(kategorie.substring("geokuk_".length()), hodnota);
 					} else if (kategorie.equals("favorites")) {
 						g.favorites = cislo(hodnota);
-					} else if (kategorie.equals("Elevation")) {
-						g.elevation = cislo(hodnota);
 					} else if (kategorie.equals("BestOf")) {
 						g.bestOf = cislo(hodnota);
 					} else if (kategorie.equals("Znamka")) {
@@ -101,7 +99,6 @@ public class GeogetTagyShodaTest {
 				final Gpxg z = tagy.get(kod);
 				if (z != null) {
 					g.favorites = z.favorites;
-					g.elevation = z.elevation;
 					g.bestOf = z.bestOf;
 					g.hodnoceni = z.hodnoceni;
 					g.hodnoceniPocet = z.hodnoceniPocet;

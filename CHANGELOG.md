@@ -3,6 +3,8 @@
 ## 6.5.0
 
 ### Změny
+- Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
+  jejího detailu.
 - OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má zapnuté autor tématu, takže
