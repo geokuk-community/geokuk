@@ -104,6 +104,31 @@ public class TrasyUsekuTest {
 	}
 
 	@Test
+	public void opakovanePosunutyBodNerozbijeMapu() throws Exception {
+		final Usek usek = usekPoCeste(new Wgs(49.99, 14.38), new Wgs(50.01, 14.40));
+		// Každý další požadavek zruší rozdělané hledání, přesto se pak trasa najde.
+		for (int i = 0; i < 10; i++) {
+			final Wgs cil = new Wgs(50.01 - i * 0.0005, 14.40);
+			naEdt(() -> {
+				updator.setMouable(cesta.getCil(), cil.toMou());
+				trasy.dopocitej(doc);
+			});
+			Thread.sleep(15);
+		}
+		naEdt(() -> {
+			updator.setMouable(cesta.getCil(), new Wgs(50.01, 14.40).toMou());
+			trasy.dopocitej(doc);
+		});
+		Usek spocteny;
+		do {
+			spocteny = spoctene.poll(30, TimeUnit.SECONDS);
+			assertNotNull(spocteny);
+		} while (usek.getStavTrasy() == null);
+		assertEquals(Trasa.Stav.NALEZENO, usek.getStavTrasy());
+		assertEquals(20 * LAT_M + 20 * LON_M, usek.dalka(), 15);
+	}
+
+	@Test
 	public void prepocitejZkusiZnovuBezMapy() throws Exception {
 		final File jina = tmp.newFolder("prazdna");
 		naEdt(() -> trasy.close());
