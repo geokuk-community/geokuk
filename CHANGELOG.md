@@ -25,6 +25,12 @@
   V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
   platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
   pro všechny sady ikon.
+- Cesty mají novou barvu: azurovou s tmavým lemem, aby byly vidět i přes
+  cyklotrasy a na tmavém podkladu. Rovné úseky jsou čárkované, vzdušné
+  tečkované.
+- Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
+  počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
+  Panel cesty.
 - Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
   použijí ho úseky cesty vedené po cestě.
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
