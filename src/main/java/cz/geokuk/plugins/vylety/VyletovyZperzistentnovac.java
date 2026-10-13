@@ -21,6 +21,7 @@ public class VyletovyZperzistentnovac {
 
 	public Vylet immediatlyNactiVylet(final KesBag vsechny) {
 		try {
+			ulozisko().zotav();
 			final Vylet novyvylet = new Vylet();
 			aktualizujVylet(novyvylet, loadGgt(kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile()), EVylet.ANO, vsechny);
 			aktualizujVylet(novyvylet, loadGgt(kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile()), EVylet.NE, vsechny);
@@ -32,8 +33,70 @@ public class VyletovyZperzistentnovac {
 
 	/** Synchronizovaně, aby se dva zápisy nepřekryly a soubor nezůstal zpřeházený. */
 	public synchronized void immediatlyZapisVylet(final List<String> ano, final List<String> ne) {
+		try {
+			ulozisko().zrcadli(ano, ne);
+		} catch (final IOException e) {
+			throw new RuntimeException("Výlet nelze uložit do složky uložených výletů", e);
+		}
 		zapis(ano, kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile(), EVylet.ANO);
 		zapis(ne, kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile(), EVylet.NE);
+	}
+
+	/** Seznam výletů; před čtením dokončí aktivaci přerušenou pádem programu. */
+	public synchronized List<VyletInfo> seznamVyletu() {
+		return provedUlozisko(u -> {
+			u.zotav();
+			return u.seznam();
+		});
+	}
+
+	public synchronized String aktivniVylet() {
+		return provedUlozisko(VyletyUlozisko::aktivniId);
+	}
+
+	public synchronized String validujJmenoVyletu(final String jmeno, final String id) {
+		return provedUlozisko(u -> u.validujJmeno(jmeno, id));
+	}
+
+	public synchronized String novyVylet(final String jmeno) {
+		return provedUlozisko(u -> u.novy(jmeno));
+	}
+
+	public synchronized void aktivujVylet(final String id) {
+		provedUlozisko(u -> {
+			u.aktivuj(id);
+			return null;
+		});
+	}
+
+	public synchronized void prejmenujVylet(final String id, final String jmeno) {
+		provedUlozisko(u -> {
+			u.prejmenuj(id, jmeno);
+			return null;
+		});
+	}
+
+	public synchronized void smazVylet(final String id) {
+		provedUlozisko(u -> {
+			u.smaz(id);
+			return null;
+		});
+	}
+
+	private interface Uloha<T> {
+		T proved(VyletyUlozisko ulozisko) throws IOException;
+	}
+
+	private <T> T provedUlozisko(final Uloha<T> uloha) {
+		try {
+			return uloha.proved(ulozisko());
+		} catch (final IOException e) {
+			throw new RuntimeException("Výlety nelze zpracovat: " + e.getMessage(), e);
+		}
+	}
+
+	private VyletyUlozisko ulozisko() {
+		return new VyletyUlozisko(kesoidModel.getUmisteniSouboru().getAnoGgtFile().getEffectiveFile(), kesoidModel.getUmisteniSouboru().getNeGgtFile().getEffectiveFile());
 	}
 
 	public void inject(final KesoidModel kesoidModel) {
