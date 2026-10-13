@@ -51,6 +51,8 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
+  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
 
 ## 6.4.0
 
