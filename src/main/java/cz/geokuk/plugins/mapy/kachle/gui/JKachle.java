@@ -274,7 +274,7 @@ public class JKachle extends JComponent {
 	}
 
 	/*
-	 * Rendrovací kachlovník může použít pro dopaintování.
+	 * Rendrovací kachlovník může použít pro dopaintování. Volá se pod zámkem dlaždice.
 	 */
 	protected void ziskanPlnyObrazek(final Image img) {
 

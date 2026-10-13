@@ -17,9 +17,6 @@ public class JFiltrVyberIkon extends JVyberIkon0 {
 
 	private KesoidModel kesoidModel;
 
-	/**
-	 * @param aJskelneikony
-	 */
 	public JFiltrVyberIkon() {
 		super(false, true);
 	}

@@ -33,7 +33,6 @@ public class MultiFolder {
 	/**
 	 * Přidá strom resourců
 	 *
-	 * @param rootresource
 	 */
 	public void addResourceTree() {
 		final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();

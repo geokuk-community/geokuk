@@ -152,7 +152,7 @@ public abstract class JVyberIkon0 extends Box {
 	protected abstract boolean shouldEnable(Alela alela);
 
 	/**
-	 * @param aAlelax
+	 * @param aAlela
 	 * @return
 	 */
 	protected abstract boolean shouldRender(Alela aAlela);

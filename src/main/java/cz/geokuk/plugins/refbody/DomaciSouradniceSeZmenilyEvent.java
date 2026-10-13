@@ -15,7 +15,7 @@ public class DomaciSouradniceSeZmenilyEvent extends Event0<RefbodyModel> {
 	public final Wgs hc;
 
 	/**
-	 * @param aWgs
+	 * @param hc
 	 */
 	public DomaciSouradniceSeZmenilyEvent(final Wgs hc) {
 		this.hc = hc;

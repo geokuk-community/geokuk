@@ -332,7 +332,6 @@ public class Cesta implements Iterable<Bousek0> {
 	 * Vrací nejbližší objekt. Dá se vždy přednost bodu před úsekem. Vrací null, pokud nic není do zadané vzdálenosti
 	 *
 	 * @param mou
-	 * @param maximalniVzdalenost
 	 * @return
 	 */
 	public Bousek0 locateNejblizsi(final Mou mou) {
@@ -359,7 +358,7 @@ public class Cesta implements Iterable<Bousek0> {
 	 * Vrací nejbližší objekt, ale jen když je do zadané vzálenosti. Dá se vždy přednost bodu před úsekem. Vrací null, pokud nic není do zadané vzdálenosti
 	 *
 	 * @param mou
-	 * @param maximalniVzdalenost
+	 * @param kvadratMaximalniVzdalenosti
 	 * @return
 	 */
 	public SearchResult locateNejblizsiDoKvadratuVzdalenosi(final Mou mou, final long kvadratMaximalniVzdalenosti, final boolean aDatPrednostBoduPredUsekem) {

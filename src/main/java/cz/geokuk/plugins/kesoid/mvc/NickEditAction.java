@@ -14,9 +14,6 @@ public class NickEditAction extends DialogOpeningAction0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
 
-	/**
-	 * @param aBoard
-	 */
 	public NickEditAction() {
 		super("Nastavit nick...");
 		putValue(SHORT_DESCRIPTION, "Nastaví nick, který používáte na geocaching.com. Podle něj se označí vámi založené keše.");

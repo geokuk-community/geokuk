@@ -18,9 +18,6 @@ public class ZnovuSpojitCestyAction extends BodAction0 {
 	private static final long serialVersionUID = -2882817111560336824L;
 
 	// private Pozice pozice;
-	/**
-	 * @param aBoard
-	 */
 	public ZnovuSpojitCestyAction(final Bod bod) {
 		super(bod);
 		putValue(NAME, "Znovu spojit cesty");

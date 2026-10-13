@@ -17,9 +17,6 @@ public class OProgramuAction extends DialogOpeningAction0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
 
-	/**
-	 * @param aBoard
-	 */
 	public OProgramuAction() {
 		super("O programu");
 		putValue(SHORT_DESCRIPTION, "Zobrazí obrazovku s verzí programu, autorem a dalšími informacemi.");
