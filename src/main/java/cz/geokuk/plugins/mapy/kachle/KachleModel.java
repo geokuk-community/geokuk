@@ -273,11 +273,6 @@ public class KachleModel extends Model0 {
 		return TemaOfflineMapy.klicNastaveni(temaDoNastaveni(tema));
 	}
 
-	/** Složka offline map podle nastavení; čte se i dřív, než se model inicializuje. */
-	public static cz.geokuk.util.file.Filex offlineMapyDir(final MyPreferences pref) {
-		return pref.getFilex(OFFLINE_MAPY_DIR, KachleUmisteniSouboru.OFFLINE_MAPY_DIR);
-	}
-
 	/** Text tématu do nastavení; soubor ve složce programu se uloží relativně, aby téma přežilo přesun přenosného GeoKuku. */
 	static String temaDoNastaveni(final TemaOfflineMapy tema) {
 		final String text = tema.naText();
