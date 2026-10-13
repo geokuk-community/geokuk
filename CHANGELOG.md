@@ -3,6 +3,7 @@
 ## 6.5.0
 
 ### Změny
+- OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
 
 ## 6.4.0
 
