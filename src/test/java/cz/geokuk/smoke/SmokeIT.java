@@ -680,7 +680,22 @@ public class SmokeIT {
 		if (!mimo.isEmpty()) {
 			problemy.add("Zapsáno mimo složku programu: " + mimo);
 		}
+		if (problemy.stream().anyMatch(pr -> pr.startsWith("Událost na EDT"))) {
+			problemy.add("GC po startu " + zprava.getProperty("gc.startMs") + " ms, na konci " + zprava.getProperty("gc.konecMs") + " ms");
+			final File[] logy = adresar.listFiles((d, n) -> n.endsWith(".log"));
+			for (final File log : logy == null ? new File[0] : logy) {
+				problemy.add(zasobnikyEdtZLogu(log));
+			}
+		}
 		assertTrue(String.join("\n", problemy), problemy.isEmpty());
+	}
+
+	private static String zasobnikyEdtZLogu(final File log) {
+		try {
+			return log.getName() + ": " + zasobnikyEdt(log);
+		} catch (final IOException e) {
+			return "Log " + log + " nejde přečíst: " + e;
+		}
 	}
 
 	private static void zkontrolujEdt(final Properties zprava, final String klic, final long limitMs, final String druh, final List<String> problemy) {

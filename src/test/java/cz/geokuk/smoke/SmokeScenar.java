@@ -164,6 +164,7 @@ public class SmokeScenar {
 		zapniMapu();
 		pockejNaKlid("start");
 		hlidac.konecStartu();
+		zprava.setProperty("gc.startMs", String.valueOf(hlidac.getGcMs()));
 		for (final String krok : kroky) {
 			switch (krok) {
 			case "meritka":
@@ -351,6 +352,15 @@ public class SmokeScenar {
 	}
 
 	private List<String> klikni(final JMenuItem polozka, final String jmeno) throws Exception {
+		hlidac.krok(jmeno);
+		try {
+			return klikniNaPolozku(polozka, jmeno);
+		} finally {
+			hlidac.krok(null);
+		}
+	}
+
+	private List<String> klikniNaPolozku(final JMenuItem polozka, final String jmeno) throws Exception {
 		final Set<Window> predtim = new HashSet<>(Arrays.asList(Window.getWindows()));
 		SwingUtilities.invokeLater(() -> polozka.doClick(0));
 		// Modální dialog má vlastní smyčku událostí, značka za kliknutím proto doběhne i s otevřeným dialogem.
@@ -875,6 +885,7 @@ public class SmokeScenar {
 			zprava.setProperty("edt.startMs", String.valueOf(hlidac.getNejdelsiStartMs()));
 			zprava.setProperty("edt.vzhledMs", String.valueOf(hlidac.getNejdelsiVzhledMs()));
 			zprava.setProperty("edt.udalostiPoStartu", String.valueOf(hlidac.getUdalostiPoStartu()));
+			zprava.setProperty("gc.konecMs", String.valueOf(hlidac.getGcMs()));
 			final List<String> pomale = hlidac.getPomale();
 			for (int j = 0; j < pomale.size(); j++) {
 				zprava.setProperty("edt.pomala." + j, pomale.get(j));
