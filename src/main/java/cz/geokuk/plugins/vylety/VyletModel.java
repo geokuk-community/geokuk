@@ -89,6 +89,7 @@ public class VyletModel extends Model0 {
 	private KesBag posledniVsechny;
 	private int pocetZmen;
 	private int generaceNacitani;
+	private volatile boolean prepina;
 
 	public VyletModel() {
 		// Konec programu volá System.exit, rozepsaný výlet by se jinak ztratil.
@@ -96,6 +97,9 @@ public class VyletModel extends Model0 {
 	}
 
 	public void add(final EVylet evyl, final Kesoid kes) {
+		if (prepina) {
+			return; // výlet se právě přepíná, úprava by patřila neznámému výletu
+		}
 		final EVylet evylPuvodni = vylet.add(evyl, kes);
 		if (evyl != evylPuvodni) {
 			ulozit(v -> v.add(evyl, kes));
@@ -175,12 +179,30 @@ public class VyletModel extends Model0 {
 		});
 	}
 
-	/** Operace s výlety jdou za rozepsanými zápisy; změny výletu během přepínání se přehrají na nově načtený výlet. */
+	/**
+	 * Přepíná se výlet: od aktivace (nebo smazání aktivního výletu) do načtení nového obsahu. Úpravy výletu ({@code add}, {@code removeAll}) se
+	 * v té době ignorují a operace s výlety končí {@link IllegalStateException}; GUI má v té době zakázat ovládání. Po skončení přijde
+	 * {@link VyletyZmenenyEvent}.
+	 */
+	public boolean isPrepina() {
+		return prepina;
+	}
+
+	void nacitaniSelhalo(final int generace) {
+		if (generace == generaceNacitani && prepina) {
+			prepina = false;
+			fire(new VyletyZmenenyEvent(this));
+		}
+	}
+
+	/** Operace s výlety jdou za rozepsanými zápisy. */
 	private <T> CompletableFuture<T> proved(final boolean prenacist, final Callable<T> uloha) {
 		final CompletableFuture<T> budoucnost = new CompletableFuture<>();
-		if (prenacist && zmenyPredNactenim == null) {
-			zmenyPredNactenim = new ArrayList<>();
+		if (prepina) {
+			budoucnost.completeExceptionally(new IllegalStateException("Výlet se právě přepíná."));
+			return budoucnost;
 		}
+		prepina = prenacist;
 		zapisovac.execute(() -> {
 			T vysledek = null;
 			Throwable chyba = null;
@@ -207,6 +229,9 @@ public class VyletModel extends Model0 {
 	}
 
 	public void removeAll(final EVylet evyl) {
+		if (prepina) {
+			return;
+		}
 		vylet.removeAll(evyl);
 		ulozit(v -> v.removeAll(evyl));
 		onChange(null, null, null);
@@ -246,6 +271,10 @@ public class VyletModel extends Model0 {
 			odlozene.forEach(zmena -> zmena.accept(nacteny));
 		}
 		setNewVylet(nacteny);
+		if (prepina) {
+			prepina = false;
+			fire(new VyletyZmenenyEvent(this));
+		}
 		if (odlozene != null && !odlozene.isEmpty()) {
 			ulozit(null);
 		}
