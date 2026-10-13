@@ -37,11 +37,11 @@ public class DiagnostikaMapy {
 			sb.append("  téma: ").append(tema.getNazev()).append(tema.isVestavene() ? " (vestavěné)" : " (soubor)").append('\n');
 		}
 		if (chybaTematu != null) {
-			sb.append("  chyba tématu: ").append(chybaTematu).append('\n');
+			sb.append("  chyba tématu: ").append(Diagnostika.textBezDomova(chybaTematu)).append('\n');
 		}
 		if (chybaMapy != null) {
 			final String text = slozka == null ? chybaMapy : chybaMapy.replace(slozka.getPath(), Diagnostika.bezDomova(slozka));
-			sb.append("  poslední chyba mapy: ").append(text).append('\n');
+			sb.append("  poslední chyba mapy: ").append(Diagnostika.textBezDomova(text)).append('\n');
 		}
 		final List<File> soubory = OfflineMapy.mapyVeSlozce(slozka);
 		boolean prehled = false;

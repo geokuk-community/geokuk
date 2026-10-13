@@ -54,6 +54,16 @@ public class DiagnostikaMapyTest {
 	}
 
 	@Test
+	public void chybyBezDomovskeSlozky() throws Exception {
+		final String domov = cz.geokuk.core.program.FConst.HOME_DIR.getAbsolutePath();
+		final String text = DiagnostikaMapy.popis(tmp.newFolder("mapy"), TemaOfflineMapy.VYCHOZI, "file does not exist: " + domov + "/GeoKuk/tema.xml",
+				"Ve složce " + domov + "/./GeoKuk/mapy nejsou offline mapy", null);
+		assertTrue(text, text.contains("  chyba tématu: file does not exist: ~/GeoKuk/tema.xml\n"));
+		assertTrue(text, text.contains("  poslední chyba mapy: Ve složce ~/./GeoKuk/mapy nejsou"));
+		assertFalse(text, text.contains(domov));
+	}
+
+	@Test
 	public void bezMapAPrehledu() throws Exception {
 		final String text = DiagnostikaMapy.popis(tmp.newFolder("prazdna"), TemaOfflineMapy.VYCHOZI, "téma nejde načíst", null, null);
 		assertTrue(text, text.contains("  chyba tématu: téma nejde načíst\n"));

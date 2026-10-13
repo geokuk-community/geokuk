@@ -458,6 +458,20 @@ public final class Diagnostika {
 	}
 
 	/** Domovskou složku zkrátí na ~, ať text neobsahuje jméno uživatele. */
+	/** Text (třeba zpráva výjimky) s domovskou složkou nahrazenou „~“. */
+	static String textBezDomova(final String text) {
+		if (text == null) {
+			return null;
+		}
+		String vysledek = text;
+		for (final String domov : new String[] { FConst.HOME_DIR.getAbsolutePath(), FConst.HOME_DIR.getPath() }) {
+			if (!domov.isEmpty()) {
+				vysledek = vysledek.replace(domov, "~");
+			}
+		}
+		return vysledek;
+	}
+
 	static String bezDomova(final File soubor) {
 		final String cesta = soubor.getAbsolutePath();
 		final String domov = FConst.HOME_DIR.getAbsolutePath();
