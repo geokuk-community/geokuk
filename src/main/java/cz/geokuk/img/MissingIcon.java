@@ -11,8 +11,8 @@ import javax.swing.Icon;
  */
 public class MissingIcon implements Icon {
 
-	private final int width = 32;
-	private final int height = 32;
+	private static final int width = 32;
+	private static final int height = 32;
 
 	private final BasicStroke stroke = new BasicStroke(4);
 

@@ -68,8 +68,7 @@ public class JRenderSlide extends JSingleSlide0 {
 		g.rotate(uhel);
 		g.setColor(Color.MAGENTA);
 		g.setStroke(new BasicStroke(3));
-		Dvoj orezavaci = new Dvoj();
-		orezavaci = renderModel.spoctiOrezavaciOblednik();
+		final Dvoj orezavaci = renderModel.spoctiOrezavaciOblednik();
 		final int x0 = (int) -orezavaci.a / 2;
 		final int y0 = (int) -orezavaci.b / 2;
 		g.drawRect(x0, y0, (int) orezavaci.a, (int) orezavaci.b);

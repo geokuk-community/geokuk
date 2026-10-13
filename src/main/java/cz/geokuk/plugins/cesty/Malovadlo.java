@@ -145,7 +145,28 @@ public class Malovadlo {
 			gg.fillPolygon(bodovaSipecka);
 		}
 
+		/** Tmavý lem pod úseky vybrané cesty: plný pod rovnými úseky, tečkovaný pod vzdušnými. */
+		private void paintLem() {
+			final Graphics2D gg = createGraphics();
+			gg.setColor(FBarvy.CURTA_LEM);
+			Point konec = null;
+			for (final Usek usek : cesta.getUseky()) {
+				final Point p1 = konec != null ? konec : soord.transform(usek.getBvzad().getMou());
+				final Point p2 = soord.transform(usek.getBvpred().getMou());
+				konec = p2;
+				if (p1.equals(p2) || !vKresleneOblasti(p1, p2)) {
+					continue;
+				}
+				gg.setStroke(usek.isVzdusny() ? strokeVzdusnyLem : strokeUsekuLem);
+				gg.drawLine(p1.x, p1.y, p2.x, p2.y);
+			}
+			gg.dispose();
+		}
+
 		private void paintUseky() {
+			if (jeCurta) {
+				paintLem();
+			}
 
 			// Vykreslování úseků této cesty
 			g.setColor(barvaCestyPredKurzorem);
@@ -208,8 +229,11 @@ public class Malovadlo {
 
 	private final Graphics2D g;
 
-	private final Stroke strokeVzdusny = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 3, 3 }, 0);
-	private final Stroke strokeUseku = new BasicStroke(SIRKA_CARY_VYBRANE);
+	/** Vzdušný úsek tečkovaně, rovný úsek čárkovaně, oba přes tmavý lem. */
+	private final Stroke strokeVzdusny = new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[] { 0.1f, 8 }, 0);
+	private final Stroke strokeVzdusnyLem = new BasicStroke(7, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[] { 0.1f, 8 }, 0);
+	private final Stroke strokeUseku = new BasicStroke(SIRKA_CARY_VYBRANE - 1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 12, 6 }, 0);
+	private final Stroke strokeUsekuLem = new BasicStroke(SIRKA_CARY_VYBRANE + 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 
 	/** Překreslovaná oblast s okrajem na šířku čáry a značky bodu, null = celá komponenta. */
 	private final Rectangle kreslenaOblast;

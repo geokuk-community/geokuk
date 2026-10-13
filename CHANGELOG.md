@@ -25,6 +25,21 @@
   V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
   platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
   pro všechny sady ikon.
+- Pojmenované výlety: ve stavovém řádku je jméno aktivního výletu a najetím
+  myší na něj se otevře seznam výletů. Výlet lze založit, aktivovat,
+  přejmenovat a smazat; aktivní výlet je v souborech lovim.ggt a tedne.ggt.
+  Během přepínání výletu nejde výlet upravovat. Rozbalovač v liště nástrojů
+  se jmenuje Zobrazit.
+- Cesty mají novou barvu: azurovou s tmavým lemem, aby byly vidět i přes
+  cyklotrasy a na tmavém podkladu. Rovné úseky jsou čárkované, vzdušné
+  tečkované.
+- Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
+  počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
+  Panel cesty.
+- Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
+  přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
+  z osm.paws.cz ve složce offline map. Nad offline mapou s tématem paws, které
+  trasy kreslí samo, se překryv nekreslí.
 - Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
   použijí ho úseky cesty vedené po cestě.
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho

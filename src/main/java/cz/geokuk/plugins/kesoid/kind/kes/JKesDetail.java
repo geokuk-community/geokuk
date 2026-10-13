@@ -23,7 +23,7 @@ import cz.geokuk.util.lang.FString;
  */
 public class JKesDetail extends JKesoidDetail0 {
 
-	private class Popisek extends JLabel {
+	private static class Popisek extends JLabel {
 		private static final long serialVersionUID = -79636254895417957L;
 
 		public Popisek(final String text) {

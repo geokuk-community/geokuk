@@ -56,15 +56,20 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			kresliRadu((Graphics2D) g);
 		}
 		final String text = getKachloType().isOffline() && getKachleModel() != null ? getKachleModel().getAtribuceOfflineMapy() : getKachloType().getAtribuce();
+		kresliAtribuci(g, this, text, 0);
+	}
+
+	/** Atribuce vpravo dole; řádek 0 je u spodního okraje, další nad ním. */
+	static void kresliAtribuci(final Graphics g, final Component c, final String text, final int radek) {
 		final Graphics2D g2 = (Graphics2D) g.create();
 		try {
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			g2.setFont(getFont().deriveFont(Font.PLAIN, 11f));
+			g2.setFont(c.getFont().deriveFont(Font.PLAIN, 11f));
 			final FontMetrics fm = g2.getFontMetrics();
 			final int w = fm.stringWidth(text) + 8;
 			final int h = fm.getHeight() + 2;
-			final int x = getWidth() - w;
-			final int y = getHeight() - h;
+			final int x = c.getWidth() - w;
+			final int y = c.getHeight() - h * (radek + 1);
 			g2.setColor(new Color(255, 255, 255, 190));
 			g2.fillRect(x, y, w, h);
 			g2.setColor(Color.DARK_GRAY);

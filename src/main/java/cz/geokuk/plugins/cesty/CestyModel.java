@@ -112,6 +112,7 @@ public class CestyModel extends Model0 {
 	private static final String MUJ_VYLET = "Můj výlet";
 
 	public static final String VYLET_EXTENSION = "gpx";
+	private static final String PANEL_CESTY_value = "panelCesty";
 	private Doc doc = new Doc();
 
 	private final Updator updator = new Updator();
@@ -611,6 +612,20 @@ public class CestyModel extends Model0 {
 		}
 		fireCesta();
 		fire(new PridavaniBoduEvent(false)); // přidávání neprobíhá, tak aŤ se provede příslušný event
+		fire(new PanelCestyEvent(isPanelCesty()));
+	}
+
+	/** Panel s údaji o vybrané cestě v rohu mapy. */
+	public boolean isPanelCesty() {
+		return currPrefe().node(FPref.VYLET_node).getBoolean(PANEL_CESTY_value, true);
+	}
+
+	public void setPanelCesty(final boolean zobrazit) {
+		if (zobrazit == isPanelCesty()) {
+			return;
+		}
+		currPrefe().node(FPref.VYLET_node).putBoolean(PANEL_CESTY_value, zobrazit);
+		fire(new PanelCestyEvent(zobrazit));
 	}
 
 	/** Při startu se otevře výlet, který byl otevřený při minulém ukončení. */
