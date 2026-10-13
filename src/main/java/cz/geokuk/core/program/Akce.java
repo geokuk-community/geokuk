@@ -150,6 +150,7 @@ public class Akce {
 	public final UzavritCestuAction uzavritCestuAction = new UzavritCestuAction(null);
 	public final ZoomovatCestuAction zoomovatCestuAction = new ZoomovatCestuAction(null);
 	public final PromazatJednobodoveAPrazdneCesty promazatJednobodoveAPrazdneCesty = new PromazatJednobodoveAPrazdneCesty(null);
+	public final PanelCestyAction panelCestyAction = new PanelCestyAction();
 
 	public final PosouvejSipkamiAction posouvejSipkamiActionSEVER = new PosouvejSipkamiAction(ESmer.SEVER, false);
 	public final PosouvejSipkamiAction posouvejSipkamiActionVYCHOD = new PosouvejSipkamiAction(ESmer.VYCHOD, false);

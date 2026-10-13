@@ -47,7 +47,7 @@ public class Cesta implements Iterable<Bousek0> {
 	}
 
 	public String dalkaHtml() {
-		return dalkaHtml(dalka(), FBarvy.CURTA_NORMALNE);
+		return dalkaHtml(dalka(), FBarvy.CESTA_TEXT);
 	}
 
 	public double dalkaStartuACile() {
