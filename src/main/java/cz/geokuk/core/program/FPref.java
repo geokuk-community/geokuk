@@ -80,6 +80,7 @@ public class FPref {
 	public static final String VYLET_node = "vylet";
 	public static final String AKTUALNI_SOUBOR_value = "aktualniSoubor";
 	public static final String JE_OTEVRENY_VYLET_value = "jeOtevrenyVylet";
+	public static final String TYP_NOVYCH_USEKU_value = "typNovychUseku";
 	public static final String CESTY_DIR_value = "cesty-dir";
 
 	// Specifická nastavení pro GSAK:

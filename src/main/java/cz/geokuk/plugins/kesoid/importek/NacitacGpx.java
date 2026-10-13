@@ -32,6 +32,7 @@ public class NacitacGpx extends NacitacInputStream0 {
 	private static String GROUNSPEAK_NAMESPACE_1_0 = "http://www.groundspeak.com/cache/1/0";
 	private static String GROUNSPEAK_NAMESPACE_1_0_1 = "http://www.groundspeak.com/cache/1/0/1";
 	private static String GROUNSPEAK_NAMESPACE_1_0_2 = "http://www.groundspeak.com/cache/1/0/2";
+	private static final String GEOKUK_NAMESPACE = "http://geokuk.cz/gpx/1";
 	private static Set<String> GPXG_NAMESPACES = Sets.newHashSet("https://www.geoget.cz/GpxExtensions/v2", "http://geoget.ararat.cz/GpxExtensions/v2");
 
 	private static QName URL = new QName(TOPOGRAFIC_NAMESPACE_1_0, "url");
@@ -466,6 +467,9 @@ public class NacitacGpx extends NacitacInputStream0 {
 				if (GPXG_GEOGET_EXTENSION.is(jmeno)) {
 					readGeogetExtension(rdr, wpt);
 				} // konec GPXG
+				if (GEOKUK_NAMESPACE.equals(jmeno.getNamespaceURI()) && "bod".equals(jmeno.getLocalPart())) {
+					wpt.gkBod = true;
+				}
 			} // start element
 		} // konec wpt cyklu
 	}

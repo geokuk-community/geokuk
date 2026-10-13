@@ -5,6 +5,9 @@
 ### Změny
 - Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
   použijí ho úseky cesty vedené po cestě.
+- Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
+  ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
+  Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
 
 ## 6.4.0
 

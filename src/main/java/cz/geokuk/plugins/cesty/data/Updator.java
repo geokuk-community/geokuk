@@ -1,7 +1,10 @@
 package cz.geokuk.plugins.cesty.data;
 
-import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.coordinates.Mouable;
+import java.util.ArrayList;
+import java.util.List;
+
+import cz.geokuk.core.coordinates.*;
+import cz.geokuk.plugins.cesty.routovani.Trasa;
 
 public class Updator {
 
@@ -81,6 +84,51 @@ public class Updator {
 	public void setVzdusny(final Usek usek, final boolean vzdusny) {
 		usek.setChanged();
 		usek.setVzdusny(vzdusny);
+	}
+
+	public void setTyp(final Usek usek, final TypUseku typ) {
+		if (usek.getTyp() == typ) {
+			return;
+		}
+		usek.setChanged();
+		usek.setTyp(typ);
+	}
+
+	/**
+	 * Uloží výsledek hledání trasy mezi body {@code od} a {@code kam} do úseku po cestě. Když se mezitím krajní body úseku posunuly, nebo úsek už po cestě nevede,
+	 * nic neudělá.
+	 *
+	 * @return zda se výsledek uložil
+	 */
+	public boolean setTrasa(final Usek usek, final Mou od, final Mou kam, final Trasa trasa) {
+		if (!usek.isPoCeste() || trasa.getStav() == Trasa.Stav.ZRUSENO || usek.getBvzad() == null || !od.equals(usek.getBvzad().getMou())
+				|| !kam.equals(usek.getBvpred().getMou())) {
+			return false;
+		}
+		List<Mou> body = null;
+		if (trasa.isNalezena()) {
+			body = new ArrayList<>(trasa.getBody().size());
+			for (final Wgs w : trasa.getBody()) {
+				body.add(w.toMou());
+			}
+			// Krajní body trasy jsou přesně body úseku, převod přes Wgs je může o kousek posunout.
+			body.set(0, od);
+			body.set(body.size() - 1, kam);
+		}
+		usek.setChanged();
+		usek.setTrasa(od, kam, trasa.getStav(), body);
+		return true;
+	}
+
+	/** Trasa úseku po cestě načtená ze souboru: body od {@link Usek#getBvzad()} k {@link Usek#getBvpred()} včetně krajních. */
+	public void setNactenaTrasa(final Usek usek, final List<Mou> body) {
+		usek.setTyp(TypUseku.PO_CESTE);
+		usek.setTrasa(usek.getBvzad().getMou(), usek.getBvpred().getMou(), Trasa.Stav.NALEZENO, body);
+	}
+
+	/** Zapomene výsledek hledání trasy, takže se úsek po cestě spočítá znovu. */
+	public void zapomenTrasu(final Usek usek) {
+		usek.setTrasa(null, null, null, null);
 	}
 
 	public void smazatUsekAOtevritNeboRozdelitCestu(final Usek usek) {

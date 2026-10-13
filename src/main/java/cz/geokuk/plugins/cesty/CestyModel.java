@@ -20,9 +20,12 @@ import cz.geokuk.core.coordinates.Mouable;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.cesty.data.*;
+import cz.geokuk.plugins.cesty.routovani.Trasa;
+import cz.geokuk.plugins.cesty.routovani.TrasyUseku;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.lang.FUtil;
@@ -124,6 +127,12 @@ public class CestyModel extends Model0 {
 	private Coord moord;
 
 	private boolean probihaPridavani;
+
+	private KachleModel kachleModel;
+	/** Hledání tras úseků po cestě; založí se, až je potřeba. */
+	private TrasyUseku trasyUseku;
+	/** Úseky, které dostaly typ podle {@link #getTypNovychUseku()}, ne volbou uživatele; bez offline mapy z nich budou úseky rovně. */
+	private final Set<Usek> automatickyPoCeste = Collections.newSetFromMap(new WeakHashMap<>());
 
 	public void addToVylet(final Mouable mouable) {
 		pridejBodNaMisto(mouable);
@@ -237,6 +246,10 @@ public class CestyModel extends Model0 {
 		this.cestyZperzistentnovac = cestyZperzistentnovac;
 	}
 
+	public void inject(final KachleModel kachleModel) {
+		this.kachleModel = kachleModel;
+	}
+
 	public void inject(final KesoidModel kesoidModel) {
 		this.kesoidModel = kesoidModel;
 	}
@@ -319,8 +332,74 @@ public class CestyModel extends Model0 {
 		if (usek.isVzdusny() == vzdusny) {
 			return;
 		}
-		updator.setVzdusny(usek, vzdusny);
+		nastavTypUseku(usek, vzdusny ? TypUseku.VZDUSNY : getTypNovychUseku());
+	}
+
+	/** Typ úseku zvolený uživatelem. */
+	public void nastavTypUseku(final Usek usek, final TypUseku typ) {
+		automatickyPoCeste.remove(usek);
+		if (usek.getTyp() == typ) {
+			return;
+		}
+		updator.setTyp(usek, typ);
 		fireCesta();
+	}
+
+	/** Typ nových úseků: po cestě, nebo rovně. */
+	public TypUseku getTypNovychUseku() {
+		final String typ = currPrefe().node(FPref.VYLET_node).get(FPref.TYP_NOVYCH_USEKU_value, TypUseku.PO_CESTE.name());
+		return TypUseku.ROVNE.name().equals(typ) ? TypUseku.ROVNE : TypUseku.PO_CESTE;
+	}
+
+	public void setTypNovychUseku(final TypUseku typ) {
+		if (typ == TypUseku.VZDUSNY) {
+			throw new IllegalArgumentException("Nové úseky nemohou být vzdušné");
+		}
+		if (typ == getTypNovychUseku()) {
+			return;
+		}
+		currPrefe().node(FPref.VYLET_node).put(FPref.TYP_NOVYCH_USEKU_value, typ.name());
+		fireCesta();
+	}
+
+	/** Znovu hledá trasy úseků po cestě, které nebyly nalezeny nebo neměly offline mapu. */
+	public void prepocitejUsekyPoCeste() {
+		trasyUseku().prepocitej(doc);
+	}
+
+	/** Pro úsek se právě hledá trasa po cestách. */
+	public boolean isHledaSeTrasa(final Usek usek) {
+		return trasyUseku != null && trasyUseku.isPocita(usek);
+	}
+
+	private TrasyUseku trasyUseku() {
+		if (trasyUseku == null) {
+			trasyUseku = new TrasyUseku(this::slozkaOfflineMap, this::poVypoctuTrasy);
+		}
+		return trasyUseku;
+	}
+
+	File slozkaOfflineMap() {
+		return kachleModel == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+	}
+
+	private void poVypoctuTrasy(final Usek usek) {
+		if (usek.getStavTrasy() == Trasa.Stav.BEZ_MAPY && automatickyPoCeste.remove(usek)) {
+			updator.setTyp(usek, TypUseku.ROVNE);
+		}
+		fireCesta();
+	}
+
+	/** Nově vzniklý úsek dostane typ nových úseků. */
+	private void novyUsek(final Usek usek) {
+		if (usek == null) {
+			return;
+		}
+		final TypUseku typ = getTypNovychUseku();
+		updator.setTyp(usek, typ);
+		if (typ == TypUseku.PO_CESTE) {
+			automatickyPoCeste.add(usek);
+		}
 	}
 
 	public void presunBod(final Bod bb, Mouable mouable) {
@@ -352,7 +431,11 @@ public class CestyModel extends Model0 {
 			updator.xadd(doc, cesta);
 			curta = cesta;
 		}
+		final Bod cilPred = getCurta().getCil();
 		final Bod bod = updator.pridejNaKonec(getCurta(), mouable);
+		if (bod != cilPred) {
+			novyUsek(bod.getUvzad());
+		}
 		fireCesta();
 		return bod;
 	}
@@ -366,7 +449,15 @@ public class CestyModel extends Model0 {
 			updator.xadd(doc, cesta);
 			curta = cesta;
 		}
-		updator.pridejNaMisto(getCurta(), mouable);
+		final Bod startPred = getCurta().getStart();
+		final Bod cilPred = getCurta().getCil();
+		final Bod bod = updator.pridejNaMisto(getCurta(), mouable);
+		// Bod vložený doprostřed úseku převezme jeho typ; nový úsek je jen na začátku nebo na konci cesty.
+		if (bod == getCurta().getCil() && bod != cilPred) {
+			novyUsek(bod.getUvzad());
+		} else if (bod == getCurta().getStart() && bod != startPred) {
+			novyUsek(bod.getUvpred());
+		}
 		fireCesta();
 	}
 
@@ -480,7 +571,11 @@ public class CestyModel extends Model0 {
 		if (cesta.isKruh()) {
 			return;
 		}
-		updator.pridejNaKonec(cesta, cesta.getStart().getMouable());
+		final Bod cilPred = cesta.getCil();
+		final Bod bod = updator.pridejNaKonec(cesta, cesta.getStart().getMouable());
+		if (bod != cilPred) {
+			novyUsek(bod.getUvzad());
+		}
 		fireCesta();
 	}
 
@@ -563,6 +658,23 @@ public class CestyModel extends Model0 {
 			curta.kontrolaKonzistence();
 		}
 		fire(new CestyChangedEvent(doc, curta));
+		dopocitejTrasy();
+	}
+
+	private void dopocitejTrasy() {
+		if (slozkaOfflineMap() == null) {
+			return; // bez mapových podkladů (testy) se trasy nehledají
+		}
+		if (trasyUseku == null) {
+			boolean potreba = false;
+			for (final Usek usek : doc.getUseky()) {
+				potreba |= usek.isPoCeste() && usek.getStavTrasy() == null;
+			}
+			if (!potreba) {
+				return;
+			}
+		}
+		trasyUseku().dopocitej(doc);
 	}
 
 	private InvalidacniPesek invalidacniPesek() {

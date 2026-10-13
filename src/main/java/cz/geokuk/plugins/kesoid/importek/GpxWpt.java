@@ -20,6 +20,8 @@ public class GpxWpt {
 	public final Gpxg gpxg = new Gpxg();
 	public double ele;
 	public boolean explicitneUrcenoVlastnictvi;
+	/** Bod trasy je řídicí bod cesty GeoKuku (rozšíření {@code gk:bod}). */
+	public boolean gkBod;
 
 	// Je to potřeba kvůli zjištění počtů z každého zdroje a přebíjení
 	public InformaceOZdroji iInformaceOZdroji;

@@ -34,11 +34,11 @@ public final class Trasa {
 		delka = d;
 	}
 
-	static Trasa nalezena(final List<Wgs> body) {
+	public static Trasa nalezena(final List<Wgs> body) {
 		return new Trasa(Stav.NALEZENO, body);
 	}
 
-	static Trasa bez(final Stav stav) {
+	public static Trasa bez(final Stav stav) {
 		return new Trasa(stav, Collections.emptyList());
 	}
 
