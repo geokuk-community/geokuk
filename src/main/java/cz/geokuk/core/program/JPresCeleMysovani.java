@@ -30,9 +30,6 @@ public final class JPresCeleMysovani extends JSingleSlide0 implements MouseInput
 	private Point cur;
 	private PoziceModel poziceModel;
 
-	/**
-	 * @param jKachlovnik
-	 */
 	JPresCeleMysovani() {
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -204,7 +201,7 @@ public final class JPresCeleMysovani extends JSingleSlide0 implements MouseInput
 	}
 
 	/**
-	 * @param aE
+	 * @param e
 	 */
 	private void maybeShowPopup(final MouseEvent e) {
 		if (e.isPopupTrigger()) {

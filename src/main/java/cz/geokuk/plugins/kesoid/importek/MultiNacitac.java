@@ -865,12 +865,6 @@ public class MultiNacitac {
 		ds.seRootDirs(prenacti, roots.toArray(new Root[roots.size()]));
 	}
 
-	/**
-	 * @param kefile
-	 * @param builder
-	 * @param future
-	 * @throws IOException
-	 */
 	/** Cizí soubor s naší příponou jen přeskočíme, není to chyba uživatele. Databázi, kterou nejde přečíst, ale ohlásíme. */
 	private boolean umiNacist(final Nacitac0 nacitac, final File file) {
 		try {

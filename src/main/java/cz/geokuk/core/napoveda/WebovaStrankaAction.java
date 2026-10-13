@@ -20,9 +20,6 @@ public class WebovaStrankaAction extends Action0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
 
-	/**
-	 * @param aBoard
-	 */
 	public WebovaStrankaAction() {
 		super("Webová stránka");
 		putValue(SHORT_DESCRIPTION, "Zobrazí webovou stránku programu s nápovědou a jinými informacemi.");

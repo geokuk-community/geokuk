@@ -25,9 +25,6 @@ public class ZadatProblemAction extends Action0 {
 	private static final int MAX_DELKA_URL = 6000;
 	private final transient Runnable dialog;
 
-	/**
-	 * @param aBoard
-	 */
 	public ZadatProblemAction() {
 		this(null);
 	}
