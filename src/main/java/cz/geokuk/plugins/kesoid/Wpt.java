@@ -39,12 +39,12 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 	 */
 	private String sym;
 
-	/**
-	 * Sožadnice
-	 */
 	/** Nadmořská výška, která se čte z databáze až při prvním dotazu. */
 	public static final int VYSKA_NENACTENA = Integer.MIN_VALUE;
 
+	/**
+	 * Sožadnice
+	 */
 	private int elevation;
 
 	// private String prefix;

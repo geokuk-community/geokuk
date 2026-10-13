@@ -109,7 +109,7 @@ public class Kes extends Kesoid {
 		try {
 			return hintZDatabaze.nadmorskaVyska(getIdentifier());
 		} catch (final UncheckedIOException e) {
-			log.warn("Nadmořská výška keše {} nejde přečíst z databáze: {}", getIdentifier(), e.getMessage());
+			log.debug("Nadmořská výška keše {} nejde přečíst z databáze: {}", getIdentifier(), e.getMessage());
 			return Wpt.VYSKA_NENACTENA;
 		}
 	}

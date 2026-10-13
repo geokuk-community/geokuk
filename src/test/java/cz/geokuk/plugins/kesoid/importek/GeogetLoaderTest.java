@@ -235,10 +235,38 @@ public class GeogetLoaderTest {
 
 		try (Connection zamek = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = zamek.createStatement()) {
 			s.execute("BEGIN EXCLUSIVE");
+			final long start = System.nanoTime();
 			Assert.assertEquals("při zamčené databázi výška chybí", 0, wpt.getElevation());
+			Assert.assertTrue("čeká se na zámek jen krátce, ne celou minutu", System.nanoTime() - start < 10_000_000_000L);
+			final long druhy = System.nanoTime();
+			Assert.assertEquals("po chybě se databáze chvíli nezkouší", 0, wpt.getElevation());
+			Assert.assertTrue("druhý dotaz nečeká na zámek", System.nanoTime() - druhy < 500_000_000L);
 			s.execute("ROLLBACK");
 		}
-		Assert.assertEquals("po odemčení se výška dotáhne", 450, wpt.getElevation());
+	}
+
+	/** Po chybě (zamčená databáze) dotahovač výšku znovu zkusí, až uplyne odstup. */
+	@Test
+	public void dotahovacVyskyPoOdstupuZnovuZkusi() throws Exception {
+		final File db = new File(tmp.getRoot(), "vyska-odstup.db3");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+			vytvorTabulky(s);
+			s.execute("INSERT INTO geotagcategory VALUES (4, 'Elevation')");
+			s.execute("INSERT INTO geotagvalue VALUES (4, '450')");
+			s.execute("INSERT INTO geotag VALUES ('GC00001', 4, 4)");
+		}
+		final cz.geokuk.plugins.kesoid.kind.kes.DotahovacZDatabaze dotahovac = HintZDatabaze.dotahovac(db, HintZDatabaze.GEOGET, HintZDatabaze.GEOGET_VYSKA, 0);
+		try (Connection zamek = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = zamek.createStatement()) {
+			s.execute("BEGIN EXCLUSIVE");
+			try {
+				dotahovac.nadmorskaVyska("GC00001");
+				Assert.fail("zamčená databáze");
+			} catch (final java.io.UncheckedIOException e) {
+				// očekávané
+			}
+			s.execute("ROLLBACK");
+		}
+		Assert.assertEquals(450, dotahovac.nadmorskaVyska("GC00001"));
 	}
 
 	/** Nesmyslná hodnota tagu nesmí zabránit načtení keše. */

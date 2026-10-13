@@ -27,9 +27,20 @@ final class HintZDatabaze {
 		return dotahovac(databaze, dotaz, null);
 	}
 
-	/** Dotahovač, který čte i nadmořskou výšku dotazem {@code dotazVyska} (jeden parametr, kód keše). */
+	/** Jak dlouho se po chybě čtení výšky (zamčená databáze) výška nezkouší, ať detail nečeká na zámek při každém výběru keše. */
+	static final long ODSTUP_PO_CHYBE_MS = 30_000;
+
 	static DotahovacZDatabaze dotahovac(final File databaze, final String dotaz, final String dotazVyska) {
+		return dotahovac(databaze, dotaz, dotazVyska, ODSTUP_PO_CHYBE_MS);
+	}
+
+	/** Dotahovač, který čte i nadmořskou výšku dotazem {@code dotazVyska} (jeden parametr, kód keše). */
+	static DotahovacZDatabaze dotahovac(final File databaze, final String dotaz, final String dotazVyska, final long odstupPoChybeMs) {
 		return new DotahovacZDatabaze() {
+			private volatile long nezkousetDo = System.nanoTime();
+			private volatile boolean selhalo;
+
+
 			@Override
 			public String apply(final String kod) {
 				return nacti(databaze, dotaz, kod, DatabazeJinehoProgramu.CEKANI_NA_ZAMEK_MS);
@@ -40,7 +51,18 @@ final class HintZDatabaze {
 				if (dotazVyska == null) {
 					return 0;
 				}
-				final String hodnota = nacti(databaze, dotazVyska, kod, DatabazeJinehoProgramu.CEKANI_PRI_ZJISTOVANI_MS);
+				if (selhalo && System.nanoTime() - nezkousetDo < 0) {
+					throw new UncheckedIOException(new IOException("Databáze " + databaze + " byla před chvílí nedostupná, nadmořská výška keše " + kod + " se zatím nezkouší."));
+				}
+				final String hodnota;
+				try {
+					hodnota = nacti(databaze, dotazVyska, kod, DatabazeJinehoProgramu.CEKANI_PRI_ZJISTOVANI_MS);
+				} catch (final UncheckedIOException e) {
+					nezkousetDo = System.nanoTime() + odstupPoChybeMs * 1_000_000;
+					selhalo = true;
+					throw e;
+				}
+				selhalo = false;
 				try {
 					return hodnota == null ? 0 : Integer.parseInt(hodnota.trim());
 				} catch (final NumberFormatException e) {
