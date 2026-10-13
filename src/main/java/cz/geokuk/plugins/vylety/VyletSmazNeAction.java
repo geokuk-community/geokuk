@@ -28,4 +28,8 @@ public class VyletSmazNeAction extends VyletAction0 {
 		setEnabled(vyletModel.get(EVylet.NE).size() > 0);
 	}
 
+	@Override
+	protected boolean upravujeVylet() {
+		return true;
+	}
 }

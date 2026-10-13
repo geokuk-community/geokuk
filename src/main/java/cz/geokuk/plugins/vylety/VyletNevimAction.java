@@ -29,4 +29,9 @@ public class VyletNevimAction extends VyletActionIndividual0 {
 	protected void enablujPokudMaSmysl() {
 		setEnabled(vyletModel.get(kesoid()) != EVylet.NEVIM);
 	}
+
+	@Override
+	protected boolean upravujeVylet() {
+		return true;
+	}
 }
