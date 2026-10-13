@@ -51,6 +51,9 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Téma offline mapy ze složky programu zůstane zvolené i po přesunu přenosného
+  GeoKuku jinam. Menu Téma offline mapy se otevře hned, i když jsou témata na
+  pomalém disku.
 
 ## 6.4.0
 
