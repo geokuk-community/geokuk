@@ -77,6 +77,7 @@
   načte i tehdy, když některou její podsložku nejde přečíst.
 - Soubor `.geokuk` s waypointem před první keší se načte bez hlášení chyb,
   takový waypoint se přeskočí.
+- OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
 
 ### Vývoj
 - Knihovna mapsforge 0.25.0 pro vykreslování offline map; její licence
