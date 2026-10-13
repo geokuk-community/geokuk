@@ -23,15 +23,15 @@ public class VychoziPodkladTest {
 	@Test
 	public void jenPrehledovaMapaNestaci() throws Exception {
 		final File slozka = tmp.newFolder("offline-mapy");
-		new File(slozka, PrehledovaMapa.SOUBOR).createNewFile();
+		Assert.assertTrue(new File(slozka, PrehledovaMapa.SOUBOR).createNewFile());
 		Assert.assertSame(EKaType.CUZK_ORTO, MapyModel.vychoziPodklad(slozka));
 	}
 
 	@Test
 	public void sPodrobnouMapouOfflineMapa() throws Exception {
 		final File slozka = tmp.newFolder("offline-mapy");
-		new File(slozka, PrehledovaMapa.SOUBOR).createNewFile();
-		new File(slozka, "czech_republic_gccz.MAP").createNewFile();
+		Assert.assertTrue(new File(slozka, PrehledovaMapa.SOUBOR).createNewFile());
+		Assert.assertTrue(new File(slozka, "czech_republic_gccz.MAP").createNewFile());
 		Assert.assertSame(EKaType.OFFLINE_MF, MapyModel.vychoziPodklad(slozka));
 	}
 }
