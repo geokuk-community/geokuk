@@ -80,8 +80,6 @@ public final class EKaType {
 	private final KachleUrlBuilder urlBuilder;
 
 	/**
-	 * @param podklad
-	 *            true, pokud se jedná o neprůhledný podlad, false jinak.
 	 * @param jeMozneNavrsitTexty
 	 *            zde je možné ještě aplikovat samostatnou vrstvu s texty. Zadejte true, pokud mapa texty neobsahuje (napříkald fotomapy).
 	 * @param minMoumer

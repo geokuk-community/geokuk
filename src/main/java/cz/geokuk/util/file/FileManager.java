@@ -132,8 +132,6 @@ public class FileManager {
 	 *
 	 * @param aFile
 	 *            Soubor, který má být čten.
-	 * @param aEncoding
-	 *            Kódování, pokud je null, nečte nic.
 	 * @return
 	 */
 	public byte[] readWholeFileAsBytes(final File aFile) throws IOException {
@@ -161,8 +159,6 @@ public class FileManager {
 	 *
 	 * @param aFile
 	 *            Soubor, který má být čten.
-	 * @param aEncoding
-	 *            Kódování, pokud je null, nečte nic.
 	 * @return Obsah souborui vrácený jako řetězec.
 	 */
 	public String readWholeFileAsString(final File aFile) throws IOException {
@@ -175,7 +171,7 @@ public class FileManager {
 	 *
 	 * @param aFile
 	 *            Soubor, který má být čten.
-	 * @param aEncoding
+	 * @param aCharSetName
 	 *            Kódování, pokud je null, nečte nic.
 	 * @return Obsah souborui vrácený jako řetězec.
 	 */
@@ -208,8 +204,6 @@ public class FileManager {
 	 *            Soubor, do kterého se zapisuje.
 	 * @param aString
 	 *            Zapisovaný řetězec.
-	 * @param aEncoding
-	 *            Požadované kódování, null pokud defaultní.
 	 * @throws IOException
 	 */
 	public void writeStringToFile(final File aFile, final String aString) throws IOException {

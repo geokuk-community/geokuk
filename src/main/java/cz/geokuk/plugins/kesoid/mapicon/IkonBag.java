@@ -63,7 +63,7 @@ public class IkonBag {
 	}
 
 	/**
-	 * @param aNactiIkonySad
+	 * @param aJmenaAIkonySad
 	 */
 	public void setJmenaAIkonySad(final Map<ASada, Icon> aJmenaAIkonySad) {
 		iJmenaAIkonySad = aJmenaAIkonySad;

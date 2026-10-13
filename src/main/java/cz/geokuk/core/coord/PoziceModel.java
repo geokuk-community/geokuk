@@ -54,7 +54,7 @@ public class PoziceModel extends Model0 implements AfterInjectInit {
 	}
 
 	/**
-	 * @param pozice
+	 * @param mouable
 	 *            the pozice to set
 	 */
 	public void setPozice(final Mouable mouable) {

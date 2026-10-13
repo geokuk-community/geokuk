@@ -250,7 +250,7 @@ public class Genom {
 	/**
 	 * Vyhledá alelu podle kvalifikovaného jména.
 	 *
-	 * @param alelaName
+	 * @param qualName
 	 * @return Nalezenou alelu nebo empty, pokud alela není nalezena. Totéž vrátí pro nekvalifikvoané jméno neboď dle něho nemůže být nalezena.
 	 */
 	public Optional<Alela> locateQualAlela(final String qualName) {

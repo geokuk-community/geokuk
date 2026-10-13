@@ -15,9 +15,6 @@ public class IkonNacitacSwingWorker extends MySwingWorker0<IkonBag, Void> {
 	private final boolean iPrenacti;
 	private final KesoidModel kesoidModel;
 
-	/**
-	 * @param aBoard
-	 */
 	public IkonNacitacSwingWorker(final IkonNacitacLoader multiNacitac, final boolean prenacti, final KesoidModel kesoidModel) {
 		ikonNacitac = multiNacitac;
 		iPrenacti = prenacti;

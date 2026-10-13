@@ -26,8 +26,8 @@ public class DlazdicovaMetrikaXY implements Iterable<Dlazdice> {
 	final DlazdicovaMetrika yy;
 
 	/**
-	 * @param x
-	 * @param y
+	 * @param xx
+	 * @param yy
 	 */
 	public DlazdicovaMetrikaXY(final DlazdicovaMetrika xx, final DlazdicovaMetrika yy) {
 		super();

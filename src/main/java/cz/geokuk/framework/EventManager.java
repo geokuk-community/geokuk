@@ -30,8 +30,6 @@ public class EventManager implements EventFirer {
 		/**
 		 * @param aObserverObject
 		 * @param aObserverOnEventMethod
-		 * @param aStrongly
-		 * @param aEvent
 		 */
 		public ObserverInvocation(final Object aObserverObject, final Method aObserverOnEventMethod, final List<ObserverInvocation> parentList) {
 			super(aObserverObject, referencequeue);
@@ -190,7 +188,7 @@ public class EventManager implements EventFirer {
 	}
 
 	/**
-	 * @param string
+	 * @param text
 	 */
 	private void log(final String text) {
 		final String pading = "                                                                                 ".substring(0, urovenZanoreni * 3);
@@ -231,10 +229,8 @@ public class EventManager implements EventFirer {
 	}
 
 	/**
-	 * @param aTypeventu
 	 * @param aObserver
 	 * @param method
-	 * @param aStrongly
 	 * @param aOnlyInvoke
 	 *            Parametr říká, že se vlastně neprovádí registrace, ele pouze se pošlou současné eventy
 	 */

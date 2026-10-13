@@ -281,7 +281,7 @@ public class Kes extends Kesoid {
 	}
 
 	/**
-	 * @param aFound
+	 * @param fountTime
 	 */
 	public void setFoundTime(final String fountTime) {
 		iFountTime = fountTime;

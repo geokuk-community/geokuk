@@ -114,7 +114,7 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 	}
 
 	/**
-	 * @param aGpxwpt
+	 * @param gpxwpt
 	 * @return
 	 */
 	private CzechGeodeticPoint createCgp(final GpxWpt gpxwpt) {
@@ -147,8 +147,8 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 	}
 
 	/**
-	 * @param aCgp
-	 * @param aGpxwpt
+	 * @param cgp
+	 * @param gpxwpt
 	 */
 	private Wpt pridruz(final CzechGeodeticPoint cgp, final GpxWpt gpxwpt) {
 		final Wpt wpt = builder.createWpt(gpxwpt, CgpPlugin.CGP);
@@ -205,7 +205,7 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 	}
 
 	/**
-	 * @param aGpxwpt
+	 * @param gpxwpt
 	 * @return
 	 */
 	private String urciSymCgpZPseudoKese(final GpxWpt gpxwpt) {
@@ -389,7 +389,7 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 		EKesVztah vztahx;
 	}
 	/**
-	 * @param aType
+	 * @param s
 	 * @return
 	 */
 	private String odstranNadbytecneMezery(final String s) {

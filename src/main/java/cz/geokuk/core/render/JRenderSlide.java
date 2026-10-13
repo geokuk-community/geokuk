@@ -96,7 +96,7 @@ public class JRenderSlide extends JSingleSlide0 {
 	}
 
 	/**
-	 * @param g
+	 * @param ag
 	 * @param d
 	 */
 	private void drawDlazdice(final Graphics ag, final Dvoj d) {
