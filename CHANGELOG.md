@@ -40,6 +40,8 @@
   přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
   z osm.paws.cz ve složce offline map. Nad offline mapou s tématem paws, které
   trasy kreslí samo, se překryv nekreslí.
+- Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
+  použijí ho úseky cesty vedené po cestě.
 
 ## 6.4.0
 
