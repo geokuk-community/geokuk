@@ -431,12 +431,7 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 			String smilis = mat.group(7); // milisekundy
 			int milis = 0;
 			if (smilis != null) {
-				while (smilis.length() < 3) {
-					smilis += "0"; // nevýkonné, ale nebude se dělat často
-				}
-				if (smilis.length() > 3) {
-					smilis = smilis.substring(0, 3);
-				}
+				smilis = (smilis + "000").substring(0, 3);
 				milis = Integer.parseInt(smilis);
 			}
 
@@ -463,7 +458,7 @@ public final class ATimestamp extends Object0 implements IElement, IElementLong,
 	private static long fromString(final String datum) {
 
 		try {
-			return Long.valueOf(datum);
+			return Long.parseLong(datum);
 		} catch (final Exception e) {
 			return fromFormatedStringByRegexp(datum, null); // pi použití této metody
 			// musí být zadána zóna

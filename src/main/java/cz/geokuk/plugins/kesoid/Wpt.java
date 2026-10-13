@@ -293,7 +293,7 @@ public class Wpt extends Weikoid0 implements Uchopenec {
 	 */
 	@Override
 	public String toString() {
-		return "Wpt [name=" + nazev + ", type=" + getType() + ", wgs=" + getWgs() + "] " + (getKesoid() == null ? "" : getKesoid().getIdentifier());
+		return "Wpt [name=" + nazev + ", type=" + getType() + ", wgs=" + getWgs() + "] " + getKesoid().getIdentifier();
 	}
 
 	/**

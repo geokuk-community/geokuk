@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,7 +57,7 @@ public class FileBasedExceptionDumperRepository implements ExceptionDumperReposi
 					}
 					runNumber++; // inkrementujeme načtené číslo, pokud jsme nenačetli minule nic, inkrementujeme jedničku
 					raf.seek(0);
-					raf.write(Integer.toString(runNumber).getBytes());
+					raf.write(Integer.toString(runNumber).getBytes(StandardCharsets.US_ASCII));
 					raf.setLength(raf.getFilePointer());
 				} finally {
 					// Release the lock

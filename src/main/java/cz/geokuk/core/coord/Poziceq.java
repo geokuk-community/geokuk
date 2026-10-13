@@ -23,7 +23,6 @@ public class Poziceq {
 	public Poziceq(final Mouable mouable) {
 		this.mouable = mouable;
 		originalMou = mouable.getMou();
-		assert this.mouable != null;
 		assert originalMou != null;
 	}
 
