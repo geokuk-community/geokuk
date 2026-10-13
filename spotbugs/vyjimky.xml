@@ -7,4 +7,87 @@
 	<Match>
 		<Bug pattern="CT_CONSTRUCTOR_THROW,PA_PUBLIC_PRIMITIVE_ATTRIBUTE,SF_SWITCH_NO_DEFAULT,DM_EXIT"/>
 	</Match>
+	<!-- Záměr nebo bez dopadu u konkrétních míst (schválil vedoucí 13. 10. 2026). -->
+	<!-- Dotaz se skládá jen z konstant v kódu podle schématu databáze, bez vstupu uživatele. -->
+	<Match>
+		<Or>
+			<Class name="cz.geokuk.plugins.kesoid.importek.GeogetLoader"/>
+			<Class name="cz.geokuk.plugins.kesoid.importek.OpensakDbLoader"/>
+		</Or>
+		<Bug pattern="SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE"/>
+	</Match>
+	<!-- Úklid paměti na vyžádání: servisní okno, vývojové dálkové ovládání, po nedostatku paměti. -->
+	<Match>
+		<Or>
+			<Class name="~cz\.geokuk\.core\.program\.JServiceFrame(\$.*)?"/>
+			<And>
+				<Class name="cz.geokuk.core.ovladani.DalkoveOvladani"/>
+				<Method name="obsluz"/>
+			</And>
+			<Class name="cz.geokuk.plugins.kesoid.importek.Nacitac0"/>
+		</Or>
+		<Bug pattern="DM_GC"/>
+	</Match>
+	<!-- Token je ze SecureRandom. -->
+	<Match>
+		<Class name="cz.geokuk.core.ovladani.DalkoveOvladani"/>
+		<Method name="zapnoutVyvojovou"/>
+		<Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/>
+	</Match>
+	<!-- Rozestup dotazů podle podmínek Nominatimu; zámek na třídě je smyslem. -->
+	<Match>
+		<Class name="cz.geokuk.plugins.geocoding.Nominatim"/>
+		<Method name="stahni"/>
+		<Bug pattern="SWL_SLEEP_WITH_LOCK_HELD"/>
+	</Match>
+	<!-- Úklid souboru při jakékoli chybě, výjimka se vyhodí dál. -->
+	<Match>
+		<Class name="cz.geokuk.core.render.GoogleEarthRenderSwingWorker"/>
+		<Method name="doInBackground"/>
+		<Bug pattern="REC_CATCH_EXCEPTION"/>
+	</Match>
+	<!-- Výchozí složka GeoGetu, uživatel ji mění v nastavení. -->
+	<Match>
+		<Class name="cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru"/>
+		<Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+	</Match>
+	<!-- Porovnání referencí: řetězec identifikuje místo nálezu. -->
+	<Match>
+		<Class name="cz.geokuk.plugins.kesoid.hledani.JKesTable$MyTableModel"/>
+		<Method name="formatuj"/>
+		<Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ"/>
+	</Match>
+	<!-- Swing komponenta se neserializuje. -->
+	<Match>
+		<Class name="cz.geokuk.plugins.cesty.JCestySlide"/>
+		<Field name="blizkyBousek"/>
+		<Bug pattern="SE_BAD_FIELD_STORE"/>
+	</Match>
+	<!-- Zapisuje se jen pod zámkem instance, volatile je kvůli čtení bez zámku. -->
+	<Match>
+		<Class name="cz.geokuk.plugins.mapy.kachle.podklady.KachleDBManager"/>
+		<Field name="odlozeni"/>
+		<Bug pattern="VO_VOLATILE_INCREMENT"/>
+	</Match>
+	<!-- Čítače a jedináčci zapisovaní při startu nebo z EDT. -->
+	<Match>
+		<Or>
+			<And><Class name="cz.geokuk.core.program.GeokukMain"/><Field name="zamek"/></And>
+			<And><Class name="cz.geokuk.core.program.JServiceFrame"/><Field name="callback"/></And>
+			<And><Class name="cz.geokuk.core.render.Rendrovadlo"/><Field name="citac"/></And>
+			<And><Class name="cz.geokuk.plugins.kesoid.KesFilteringSwingWorker"/><Field name="citac"/></And>
+			<And><Class name="cz.geokuk.plugins.refbody.NaKonkretniBodAction"/><Field name="citac"/></And>
+		</Or>
+		<Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+	</Match>
+	<!-- Nastaví se při startu nebo načtení a pak se jen čte; nanejvýš starší hodnota, bez poškození dat. -->
+	<Match>
+		<Or>
+			<And><Class name="cz.geokuk.plugins.geocoding.GeocodingModel"/><Or><Field name="hledaciSluzba"/><Field name="referencniBod"/></Or></And>
+			<And><Class name="cz.geokuk.plugins.kesoid.genetika.Gen"/><Or><Field name="locked"/><Field name="grupy"/></Or></And>
+			<And><Class name="cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac$Kachlice"/><Field name="image"/></And>
+			<And><Class name="cz.geokuk.util.file.TPumpReaderToWriter"/><Field name="iIsFinished"/></And>
+		</Or>
+		<Bug pattern="IS2_INCONSISTENT_SYNC"/>
+	</Match>
 </FindBugsFilter>
