@@ -10,6 +10,9 @@
   a její dlaždice v cache se jednou vykreslí znovu.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
   žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
+- Nové mapové podklady pro sousední země: DE topografická mapa (BKG
+  TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
+  Německou a švýcarskou mapu nejde hromadně stahovat do cache.
 
 ## 6.4.0
 
