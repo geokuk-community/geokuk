@@ -217,7 +217,7 @@ jobs:
           PRIZNAK=""
           case "$TAG" in *-*) PRIZNAK="--prerelease" ;; esac
           # Vydání starší řady (např. 6.4.1 po 6.5.0) nesmí být „latest“, jinak by updater a stránka ke stažení couvly.
-          LATEST=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name 2>/dev/null || true)
+          LATEST=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name 2>/dev/null) || LATEST=""
           if [ -n "$LATEST" ] && [ -z "$PRIZNAK" ] && [ "$(printf '%s\n%s\n' "${LATEST#v}" "${TAG#v}" | sort -V | tail -n1)" != "${TAG#v}" ]; then
             PRIZNAK="--latest=false"
           fi
