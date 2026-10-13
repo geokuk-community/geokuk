@@ -28,7 +28,7 @@ public abstract class DocAction0 extends PositionedAction0 {
 	/**
 	 * Zda se pro dany Cesta ma akce povolit.
 	 *
-	 * @param Cesta
+	 * @param doc
 	 *            Nikdy nebude predano null
 	 * @return
 	 */
@@ -37,7 +37,7 @@ public abstract class DocAction0 extends PositionedAction0 {
 	/**
 	 * Pokud je daný Cesta, tak se nechá natavit jméno. Natavovací metoda také ví, zda je akce z kontexotvého menu nebo z hlavního
 	 *
-	 * @param Cesta
+	 * @param doc
 	 * @param aZKontextovehoMenu
 	 */
 	protected abstract void nastavJmenoAkce(Doc doc, boolean aZKontextovehoMenu);
@@ -45,7 +45,7 @@ public abstract class DocAction0 extends PositionedAction0 {
 	/**
 	 * Provedení akce pro daný Cesta.
 	 *
-	 * @param Cesta
+	 * @param doc
 	 */
 	protected abstract void provedProDoc(Doc doc);
 

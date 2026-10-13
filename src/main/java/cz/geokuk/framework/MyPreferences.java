@@ -156,8 +156,8 @@ public class MyPreferences extends Preferences {
 	}
 
 	/**
-	 * @param string
-	 * @param methodName
+	 * @param prefix
+	 * @param method
 	 * @param descrs
 	 * @throws IntrospectionException
 	 */

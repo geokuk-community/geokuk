@@ -79,7 +79,7 @@ public abstract class JSingleSlide0 extends JSlide0 {
 	}
 
 	/**
-	 * @param coord
+	 * @param soord
 	 *            the coord to set
 	 */
 	public void setSoord(final Coord soord) {

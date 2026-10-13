@@ -14,8 +14,6 @@ public abstract class Drawer0 {
 	/**
 	 * Vykreslí zdrojový obrázek do dané vrstvy. Obrázek přidá do seznamu,
 	 *
-	 * @param src
-	 * @param dest
 	 */
 	public abstract void draw(Deque<Imagant> imaganti);
 
