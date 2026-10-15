@@ -15,8 +15,6 @@ public final class HlavickaMapy {
 	private static final byte[] MAGIE = "mapsforge binary OSM".getBytes(StandardCharsets.US_ASCII);
 	private static final int NEJMENSI_HLAVICKA = 70;
 	private static final int NEJVETSI_HLAVICKA = 1_000_000;
-	/** Pevná část, kterou čteme: magie, délka hlavičky, verze, velikost, datum, obdélník. */
-	static final int DELKA_CTENE_CASTI = 20 + 4 + 4 + 8 + 8 + 16;
 
 	private final int verze;
 	private final long velikostSouboru;
@@ -72,7 +70,7 @@ public final class HlavickaMapy {
 			final double zapad = in.readInt() / 1e6;
 			final double sever = in.readInt() / 1e6;
 			final double vychod = in.readInt() / 1e6;
-			if (velikost < DELKA_CTENE_CASTI || !(jih >= -90 && jih < sever && sever <= 90) || !(zapad >= -180 && zapad < vychod && vychod <= 180)) {
+			if (velikost < 24L + delkaHlavicky || datum < 0 || !(jih >= -90 && jih < sever && sever <= 90) || !(zapad >= -180 && zapad < vychod && vychod <= 180)) {
 				throw new IOException("Mapa má neplatnou hlavičku");
 			}
 			return new HlavickaMapy(verze, velikost, Instant.ofEpochMilli(datum), jih, zapad, sever, vychod);

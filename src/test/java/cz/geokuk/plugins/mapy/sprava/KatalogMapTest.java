@@ -29,19 +29,35 @@ public class KatalogMapTest {
 		assertEquals("Česko", cr.getNazev());
 		assertNull(cr.getSkupina());
 		assertEquals("czech-republic.map", cr.getNazevSouboru());
-		assertEquals("https://download.mapsforge.org/maps/v5/europe/czech-republic.map", cr.getUrlMapy().toString());
-		assertEquals("https://download.mapsforge.org/maps/poly/europe/czech-republic.poly", cr.getUrlPolygonu().toString());
-		assertTrue(cr.getPribliznaVelikost() > 100_000_000L);
+		assertEquals("https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/v5/europe/czech-republic.map", cr.getUrlMapy().toString());
+		assertEquals("https://download.mapsforge.org/maps/v5/europe/czech-republic.map", cr.getUrlyMapy().get(1).toString());
+		assertEquals("https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/poly/europe/czech-republic.poly", cr.getUrlPolygonu().toString());
+		assertEquals("https://download.mapsforge.org/maps/poly/europe/czech-republic.poly", cr.getUrlyPolygonu().get(1).toString());
+		assertEquals(605_630_432L, cr.getPribliznaVelikost());
 		assertEquals("ODbL 1.0", cr.getLicence());
 		assertEquals("© přispěvatelé OpenStreetMap", cr.getAtribuce());
 		assertEquals("Německo", k.podleId("europe/germany/bayern").get().getSkupina());
 		assertSame(cr, k.podleSouboru("Czech-Republic.MAP").get());
 		assertFalse(k.podleSouboru("paws_cz.map").isPresent());
-		assertTrue(k.pokryvajiBod(new Wgs(50.08, 14.42)).contains(cr));
 		assertTrue(k.pokryvajiBod(new Wgs(0, 0)).isEmpty());
 		for (final KatalogovaMapa m : k.getMapy()) {
-			assertTrue(m.getId(), m.getUrlMapy().toString().startsWith("https://download.mapsforge.org/maps/v5/europe/"));
+			assertTrue(m.getId(), m.getUrlyMapy().get(1).toString().startsWith("https://download.mapsforge.org/maps/v5/europe/"));
+			assertNotNull("obrys pokrytí v jaru: " + m.getId(), KatalogMap.class.getResource("poly/" + m.getId() + ".poly"));
 		}
+	}
+
+	@Test
+	public void pokrytiPodleSkutecnychObrysu() {
+		final KatalogMap k = KatalogMap.vestaveny();
+		assertEquals(Arrays.asList("europe/czech-republic"), ids(k.pokryvajiBod(new Wgs(50.08, 14.42)))); // Praha
+		assertEquals(Arrays.asList("europe/czech-republic"), ids(k.pokryvajiBod(new Wgs(50.08, 12.37)))); // Cheb
+		assertEquals("Mnichov: region před zemí", "europe/germany/bayern", k.pokryvajiBod(new Wgs(48.14, 11.58)).get(0).getId());
+		assertEquals("europe/germany/sachsen", k.pokryvajiBod(new Wgs(51.05, 13.74)).get(0).getId()); // Drážďany
+		assertEquals("europe/austria", k.pokryvajiBod(new Wgs(48.21, 16.37)).get(0).getId()); // Vídeň
+		assertEquals("europe/slovakia", k.pokryvajiBod(new Wgs(48.15, 17.11)).get(0).getId()); // Bratislava
+		assertEquals("europe/poland", k.pokryvajiBod(new Wgs(50.06, 19.94)).get(0).getId()); // Krakov
+		assertEquals("europe/germany/berlin", k.pokryvajiBod(new Wgs(52.52, 13.40)).get(0).getId());
+		assertTrue("Paříž", k.pokryvajiBod(new Wgs(48.86, 2.35)).isEmpty());
 	}
 
 	@Test
@@ -81,6 +97,41 @@ public class KatalogMapTest {
 				id -> null);
 		assertEquals("A \"b\" Č", k.getMapy().get(0).getNazev());
 		assertEquals(5000, k.getMapy().get(0).getPribliznaVelikost());
+	}
+
+	@Test
+	public void jsonEscapyVsechny() throws IOException {
+		assertEquals("a\nb\rc\td\be\ff/g\\h\"", JsonCteni.precti("\"a\\nb\\rc\\td\\be\\ff\\/g\\\\h\\\"\""));
+		for (final String spatny : new String[] { "\"\\x\"", "\"\\u+041\"", "\"\\u12\"", "\"\\u12G4\"" }) {
+			try {
+				JsonCteni.precti(spatny);
+				fail(spatny);
+			} catch (final IOException e) {
+				assertTrue(e.getMessage(), e.getMessage().contains("JSON"));
+			}
+		}
+	}
+
+	@Test
+	public void jsonHloubka() throws IOException {
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 64; i++) {
+			sb.append('[');
+		}
+		for (int i = 0; i < 64; i++) {
+			sb.append(']');
+		}
+		assertNotNull(JsonCteni.precti(sb.toString()));
+		final StringBuilder hluboky = new StringBuilder();
+		for (int i = 0; i < 200_000; i++) {
+			hluboky.append('[');
+		}
+		try {
+			JsonCteni.precti(hluboky.toString());
+			fail();
+		} catch (final IOException e) {
+			assertTrue(e.getMessage(), e.getMessage().contains("hluboké"));
+		}
 	}
 
 	private static void chyba(final String polozky, final String cast) {

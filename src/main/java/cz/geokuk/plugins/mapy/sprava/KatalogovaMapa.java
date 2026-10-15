@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.mapy.sprava;
 
 import java.net.URI;
+import java.util.List;
 
 /** Jedna mapa z katalogu offline map. */
 public final class KatalogovaMapa {
@@ -8,21 +9,21 @@ public final class KatalogovaMapa {
 	private final String id;
 	private final String nazev;
 	private final String skupina;
-	private final URI urlMapy;
-	private final URI urlPolygonu;
+	private final List<URI> urlyMapy;
+	private final List<URI> urlyPolygonu;
 	private final long pribliznaVelikost;
 	private final PolygonPokryti pokryti;
 	private final String zdroj;
 	private final String licence;
 	private final String atribuce;
 
-	KatalogovaMapa(final String id, final String nazev, final String skupina, final URI urlMapy, final URI urlPolygonu, final long pribliznaVelikost,
+	KatalogovaMapa(final String id, final String nazev, final String skupina, final List<URI> urlyMapy, final List<URI> urlyPolygonu, final long pribliznaVelikost,
 			final PolygonPokryti pokryti, final String zdroj, final String licence, final String atribuce) {
 		this.id = id;
 		this.nazev = nazev;
 		this.skupina = skupina;
-		this.urlMapy = urlMapy;
-		this.urlPolygonu = urlPolygonu;
+		this.urlyMapy = urlyMapy;
+		this.urlyPolygonu = urlyPolygonu;
 		this.pribliznaVelikost = pribliznaVelikost;
 		this.pokryti = pokryti;
 		this.zdroj = zdroj;
@@ -49,12 +50,22 @@ public final class KatalogovaMapa {
 		return id.substring(id.lastIndexOf('/') + 1) + ".map";
 	}
 
+	/** Hlavní adresa mapy (zrcadlo). */
 	public URI getUrlMapy() {
-		return urlMapy;
+		return urlyMapy.get(0);
+	}
+
+	/** Adresy mapy v pořadí, v jakém se zkoušejí: hlavní, pak záložní. */
+	public List<URI> getUrlyMapy() {
+		return urlyMapy;
 	}
 
 	public URI getUrlPolygonu() {
-		return urlPolygonu;
+		return urlyPolygonu.get(0);
+	}
+
+	public List<URI> getUrlyPolygonu() {
+		return urlyPolygonu;
 	}
 
 	/** Velikost v bajtech podle katalogu; skutečnou řekne až server. */

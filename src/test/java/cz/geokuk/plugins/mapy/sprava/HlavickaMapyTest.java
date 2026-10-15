@@ -62,6 +62,30 @@ public class HlavickaMapyTest {
 		chyba(f, "neplatnou hlavičku");
 		Files.write(f.toPath(), new byte[0]);
 		chyba(f, "kratší");
+		zapis(f, b, 27, (byte) 6);
+		chyba(f, "verze");
+		// Délka hlavičky 69 (pod nejmenší možnou) a 70.
+		final byte[] kratka = b.clone();
+		kratka[22] = 0;
+		kratka[23] = 69;
+		Files.write(f.toPath(), kratka);
+		chyba(f, "délku hlavičky");
+		// Jih −91° (0xFA92_E4C0 = −91 000 000).
+		final byte[] jih = b.clone();
+		jih[44] = (byte) 0xfa;
+		jih[45] = (byte) 0x92;
+		jih[46] = (byte) 0xe4;
+		jih[47] = (byte) 0xc0;
+		Files.write(f.toPath(), jih);
+		chyba(f, "neplatnou hlavičku");
+		zapis(f, b, 36, (byte) 0x80);
+		chyba(f, "neplatnou hlavičku");
+		// Velikost souboru v hlavičce menší než hlavička sama.
+		final byte[] mala = b.clone();
+		java.util.Arrays.fill(mala, 28, 36, (byte) 0);
+		mala[35] = 100;
+		Files.write(f.toPath(), mala);
+		chyba(f, "neplatnou hlavičku");
 	}
 
 	private static void zapis(final File f, final byte[] puvodni, final int pozice, final byte hodnota) throws IOException {
