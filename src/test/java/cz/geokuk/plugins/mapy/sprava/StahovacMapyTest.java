@@ -395,7 +395,8 @@ public class StahovacMapyTest {
 		server.stop(0);
 		final StavMapy s = stahni();
 		assertEquals(Faze.CHYBA, s.getFaze());
-		assertNotNull(s.getChyba());
+		assertEquals("Server s mapami není dostupný.", s.getChyba());
+		assertEquals("Server s mapami není dostupný.", stahovac.zkontroluj(StavMapy.novy(mapa), slozka, zmeny::add).getChyba());
 		assertFalse(cil().exists());
 	}
 

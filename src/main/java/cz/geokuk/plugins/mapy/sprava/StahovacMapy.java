@@ -125,7 +125,7 @@ final class StahovacMapy {
 			return s.sServerem(s.getMistni() == Mistni.MAME ? s.porovnej() : s.getServer()).sFazi(Faze.NIC, null);
 		} catch (final IOException e) {
 			log.info("Kontrola mapy {} selhala: {}", stav.getMapa(), e.toString());
-			return s.sServerem(Server.NEDOSTUPNY).sFazi(Faze.CHYBA, "Server není dostupný.");
+			return s.sServerem(Server.NEDOSTUPNY).sFazi(Faze.CHYBA, e instanceof ChybaProUzivatele ? e.getMessage() : "Server s mapami není dostupný.");
 		} finally {
 			if (c != null) {
 				c.disconnect();
@@ -320,7 +320,8 @@ final class StahovacMapy {
 		try {
 			new MapFile(soubor).close();
 		} catch (final RuntimeException e) {
-			return "Stažená mapa je poškozená: " + e.getMessage();
+			log.info("Stažená mapa {} nejde otevřít: {}", soubor, e.toString());
+			return "Stažená mapa je poškozená.";
 		}
 		return null;
 	}
@@ -342,7 +343,8 @@ final class StahovacMapy {
 			} catch (final FileSystemException e) {
 				posledni = e;
 			} catch (final IOException e) {
-				return "Mapu nejde uložit: " + e.getMessage();
+				log.info("Mapu {} nejde přesunout na {}: {}", cast, cil, e.toString());
+				return "Mapu nejde uložit do složky offline map.";
 			}
 			try {
 				Thread.sleep(pauzaPresunuMs);
@@ -379,7 +381,7 @@ final class StahovacMapy {
 				log.info("Server {} není dostupný: {}", adresy.get(i).getHost(), e.toString());
 				chyba = e;
 				if (posledni) {
-					throw e;
+					throw new ChybaProUzivatele("Server s mapami není dostupný.");
 				}
 				continue;
 			}
