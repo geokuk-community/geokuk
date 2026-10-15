@@ -48,6 +48,8 @@ public final class RadekMapy {
 	final String zdroj;
 	final String licence;
 	final String chyba;
+	/** Kdy se naposledy ptal server na novější data, null = nikdy. */
+	final Instant zkontrolovano;
 
 	private RadekMapy(final Builder b) {
 		id = b.id;
@@ -67,6 +69,7 @@ public final class RadekMapy {
 		zdroj = b.zdroj;
 		licence = b.licence;
 		chyba = b.chyba;
+		zkontrolovano = b.zkontrolovano;
 	}
 
 	public static Builder katalogova(final String id, final String nazev, final Stav stav) {
@@ -194,6 +197,7 @@ public final class RadekMapy {
 		private String zdroj;
 		private String licence;
 		private String chyba;
+		private Instant zkontrolovano;
 
 		public Builder skupina(final String s) {
 			skupina = s;
@@ -257,6 +261,11 @@ public final class RadekMapy {
 
 		public Builder licence(final String l) {
 			licence = l;
+			return this;
+		}
+
+		public Builder zkontrolovano(final Instant z) {
+			zkontrolovano = z;
 			return this;
 		}
 

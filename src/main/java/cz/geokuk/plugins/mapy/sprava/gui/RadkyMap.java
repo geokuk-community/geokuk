@@ -39,7 +39,7 @@ final class RadkyMap {
 		final boolean mame = s.getMistni() != StavMapy.Mistni.NEMAME;
 		final RadekMapy.Builder b = RadekMapy.katalogova(m.getId(), m.getNazev(), stav(s)).skupina(m.getSkupina()).zdroj(m.getZdroj())
 				.licence(m.getLicence() + ", " + m.getAtribuce()).proZobrazeneMisto(proMisto).veSlozce(mame).rozpracovano(s.isRozpracovano())
-				.datumDat(s.getDatumDatMistni()).datumNaServeru(s.getDatumNaServeru()).chyba(s.getChyba());
+				.datumDat(s.getDatumDatMistni()).datumNaServeru(s.getDatumNaServeru()).zkontrolovano(s.getZkontrolovano()).chyba(s.getChyba());
 		if (s.isBezi()) {
 			b.kontroluje(s.getFaze() == StavMapy.Faze.KONTROLUJE).overuje(s.getFaze() == StavMapy.Faze.OVERUJE).stazeno(s.getStazeno())
 					.velikost(s.getCelkem() > 0 ? s.getCelkem() : velikostNaServeru(m, s));

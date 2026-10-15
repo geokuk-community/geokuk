@@ -7,8 +7,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.function.LongSupplier;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -42,6 +45,8 @@ public class JMapyPopup extends JPanel {
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
 	static final String OTEVRIT_SLOZKU = "Otevřít složku";
 	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
+	static final String VSE_AKTUALNI = "Vše aktuální";
+	static final String KONTROLA_SELHALA = "Kontrola se nepovedla";
 
 	static final String URL_PAWS = "https://osm.paws.cz/";
 	static final String URL_OAM = "https://www.openandromaps.org/";
@@ -71,6 +76,11 @@ public class JMapyPopup extends JPanel {
 	private Runnable poZmeneObsahu = () -> {};
 	/** Mapa, jejíž stahování uživatel zrušil a čeká se na potvrzení; null, když nic. */
 	private String rusenaMapa;
+	private final OdhadStahovani odhad = new OdhadStahovani();
+	/** Čas pro odhad stahování; v testech nahrazený. */
+	LongSupplier hodiny = System::currentTimeMillis;
+	/** Volné místo na disku se složkou offline map v bajtech, -1 neznámé. */
+	private long volneMisto = -1;
 
 	public JMapyPopup() {
 		super(new GridBagLayout());
@@ -117,6 +127,7 @@ public class JMapyPopup extends JPanel {
 
 	/** Nové řádky; při stahování se jen přepíší popisy, jinak se popup sestaví znovu. */
 	public void obnov(final List<RadekMapy> nove) {
+		odhad.zapomenKromě(stahovane(nove));
 		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky));
 		radky = new ArrayList<>(nove);
 		if (stejnaStruktura) {
@@ -128,7 +139,7 @@ public class JMapyPopup extends JPanel {
 				}
 				final JLabel popis = bunky[2];
 				final int predtim = popis.getPreferredSize().width;
-				popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
+				popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r), popis.getFontMetrics(popis.getFont())));
 				sirsi |= popis.getPreferredSize().width > predtim;
 				final String tooltip = r.tooltip();
 				for (final JLabel b : bunky) {
@@ -154,16 +165,108 @@ public class JMapyPopup extends JPanel {
 		return radky;
 	}
 
-	private static List<String> struktura(final List<RadekMapy> radky) {
+	private List<String> struktura(final List<RadekMapy> radky) {
 		final List<String> s = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null));
+			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null) + "|" + r.zkontrolovano + "|" + nedostatekMista(r));
 		}
 		return s;
 	}
 
 	private static String klic(final RadekMapy r) {
 		return r.vlastni ? "soubor:" + r.nazev : r.id;
+	}
+
+	/** Výsledek poslední kontroly: vše aktuální, počet novějších, nebo že kontrola selhala; s časem; null, když se ještě nekontrolovalo. */
+	String vysledekKontroly(final List<RadekMapy> kontrolovane) {
+		Instant nejnovejsi = null;
+		int novejsich = 0;
+		boolean selhala = false;
+		for (final RadekMapy r : kontrolovane) {
+			if (r.zkontrolovano != null && (nejnovejsi == null || r.zkontrolovano.isAfter(nejnovejsi))) {
+				nejnovejsi = r.zkontrolovano;
+			}
+			novejsich += r.stav == RadekMapy.Stav.NOVEJSI ? 1 : 0;
+			selhala |= r.chyba != null;
+		}
+		if (nejnovejsi == null) {
+			return null;
+		}
+		final String cas = " · zkontrolováno " + cas(nejnovejsi);
+		if (selhala) {
+			return KONTROLA_SELHALA + cas;
+		}
+		return (novejsich == 0 ? VSE_AKTUALNI : "Novější data: " + novejsich + " " + (novejsich == 1 ? "mapa" : novejsich < 5 ? "mapy" : "map")) + cas;
+	}
+
+	private String cas(final Instant i) {
+		final ZonedDateTime t = i.atZone(ZoneId.systemDefault());
+		final boolean dnes = t.toLocalDate().equals(LocalDate.now(ZoneId.systemDefault()));
+		return t.format(DateTimeFormatter.ofPattern(dnes ? "H:mm" : "d. M. H:mm"));
+	}
+
+	private static Set<String> stahovane(final List<RadekMapy> radky) {
+		final Set<String> s = new HashSet<>();
+		for (final RadekMapy r : radky) {
+			if (r.id != null && r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje && !r.overuje) {
+				s.add(r.id);
+			}
+		}
+		return s;
+	}
+
+	/** Popis řádku; u stahované mapy s odhadem, za jak dlouho se dostáhne. */
+	private String popisRadku(final RadekMapy r) {
+		final String popis = r.popis();
+		if (r.id == null || r.stav != RadekMapy.Stav.STAHUJE || r.kontroluje || r.overuje || r.velikost <= 0) {
+			return popis;
+		}
+		final long sekund = odhad.zbyva(r.id, r.stazeno, r.velikost, hodiny.getAsLong());
+		return sekund < 0 ? popis : popis + " · " + OdhadStahovani.text(sekund);
+	}
+
+	/** Volné místo na disku se složkou offline map; mapy, které se nevejdou, nejdou stáhnout. */
+	public void setVolneMisto(final long bajtu) {
+		if (bajtu == volneMisto) {
+			return;
+		}
+		final List<RadekMapy> vsechny = radky;
+		final Set<String> pred = bezMista(vsechny);
+		volneMisto = bajtu;
+		if (!bezMista(vsechny).equals(pred)) {
+			sestav();
+			poZmeneObsahu.run();
+		}
+	}
+
+	private Set<String> bezMista(final List<RadekMapy> vsechny) {
+		final Set<String> s = new HashSet<>();
+		for (final RadekMapy r : vsechny) {
+			if (nedostatekMista(r)) {
+				s.add(klic(r));
+			}
+		}
+		return s;
+	}
+
+	/** Mapa ke stažení nebo k aktualizaci se na disk nevejde (s malou rezervou). */
+	private boolean nedostatekMista(final RadekMapy r) {
+		return volneMisto >= 0 && potrebneMisto(r) * 21 / 20 > volneMisto;
+	}
+
+	static long potrebneMisto(final RadekMapy r) {
+		if (r.vlastni || r.velikost <= 0) {
+			return 0;
+		}
+		switch (r.stav) {
+		case NEMAME:
+			return Math.max(0, r.velikost - r.stazeno);
+		case NOVEJSI:
+		case CHYBA:
+			return r.velikost;
+		default:
+			return 0;
+		}
 	}
 
 	private int sirkaNazvu;
@@ -233,6 +336,11 @@ public class JMapyPopup extends JPanel {
 			oddilSlozka.add(zkontrolovat, BorderLayout.EAST);
 		}
 		add(oddilSlozka, gbc);
+		final String vysledek = vysledekKontroly(kontrolovatelne);
+		if (vysledek != null) {
+			gbc.gridy++;
+			add(maly(vysledek), gbc);
+		}
 		final JPanel slozka = panelRadku();
 		if (veSlozce.isEmpty()) {
 			final JLabel nic = maly(ZADNA_MAPA);
@@ -360,7 +468,7 @@ public class JMapyPopup extends JPanel {
 		panel.add(nazev, bunka(1, y, 1));
 
 		final JLabel popis = maly("");
-		popis.setText(zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
+		popis.setText(zkrat(popisRadku(r), popis.getFontMetrics(popis.getFont())));
 		popis.setToolTipText(tooltip);
 		popis.addMouseListener(nadRadkem);
 		if (r.stav == RadekMapy.Stav.CHYBA) {
@@ -427,6 +535,9 @@ public class JMapyPopup extends JPanel {
 		if (stahujeSe) {
 			b.setEnabled(false);
 			b.setToolTipText(STAHUJE_SE_JINA);
+		} else if (nedostatekMista(r)) {
+			b.setEnabled(false);
+			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(volneMisto) + ", mapa potřebuje asi " + RadekMapy.velikost(potrebneMisto(r)) + ".");
 		}
 		return b;
 	}
