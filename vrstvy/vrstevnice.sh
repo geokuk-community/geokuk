@@ -16,7 +16,7 @@ for f in hgt/*.hgt; do
   b=$(basename "$f" .hgt)
   echo "pyhgtmap --step=10 --line-cat=100,50 --pbf --max-nodes-per-way=1000 --simplifyContoursEpsilon=0.00001 --max-nodes-per-tile=0 --start-node-id=$((i * 1000000000)) --start-way-id=$((i * 1000000000)) --output-prefix=kont/$b $f" >> prikazy.txt
 done
-( while sleep 30; do echo "pamet: $(free -m | sed -n 2p)"; done ) &
+( while sleep 30; do echo "pamet: $(free -m | sed -n 2p) | disk: $(df -m / | tail -1 | tr -s " " | cut -d" " -f3,4) MB | zatez: $(cut -d" " -f1-3 /proc/loadavg) | kont: $(du -sm kont | cut -f1) MB, $(ls kont | wc -l) souboru"; done ) &
 sledovani=$!
 "$D/mer.sh" pyhgtmap bash -c "xargs -P ${PARALELNE:-2} -I{} bash -c '{}' < prikazy.txt"
 kill "$sledovani" 2>/dev/null || true

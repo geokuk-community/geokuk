@@ -17,6 +17,9 @@ on:
         type: choice
         options: [vse, trasy, dem, vrstevnice]
         default: vse
+      paralelne:
+        description: "Počet souběžných pyhgtmap pro vrstevnice"
+        default: "2"
       zapis:
         description: "Zápis tras do .map: ram (rychlý, paměťově náročný) nebo hd"
         type: choice
@@ -42,6 +45,7 @@ env:
   TYPY: ${{ inputs.typy || 'vse' }}
   JAVA_OPTS: -Xmx10g
   ZAPIS: ${{ inputs.zapis || 'ram' }}
+  PARALELNE: ${{ inputs.paralelne || '2' }}
 
 jobs:
   trasy:
