@@ -15,6 +15,9 @@ on:
       xmx:
         description: "Paměť programu (-Xmx)"
         default: "3g"
+      dlazdic:
+        description: "Dlaždic v testu Postahovat dlaždice (0 = test přeskočit)"
+        default: "20000"
   pull_request:
     branches: [main]
     paths:
@@ -56,6 +59,14 @@ jobs:
           "${displej[@]}" ./mvnw -B -P smoke verify -Dtest=Zadny -Dsurefire.failIfNoSpecifiedTests=false \
             -Dit.test='SmokeIT#velkaData+velkaDatabazeGeogetu+velkaDatabazeGsaku' "${vlastnosti[@]}"
 
+      - name: Postahovat dlaždice v reálném objemu
+        shell: bash
+        env:
+          DLAZDIC: ${{ inputs.dlazdic || '20000' }}
+        run: |
+          [ "$DLAZDIC" = 0 ] && exit 0
+          ./mvnw -B test -Dtest=StahovaniVelkyObjemTest -Dsurefire.failIfNoSpecifiedTests=false -Dscenare.dlazdic="$DLAZDIC"
+
       - name: Souhrn
         if: always()
         shell: bash
@@ -95,3 +106,4 @@ jobs:
             target/smoke/*/*-diagnostika.txt
             target/smoke/*/data/log/
             target/failsafe-reports/
+            target/surefire-reports/
