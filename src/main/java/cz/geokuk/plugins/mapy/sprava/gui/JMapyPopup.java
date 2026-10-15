@@ -7,10 +7,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -55,7 +58,12 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_POPISU = 240;
 
 	/** Nejvyšší výška seznamu dalších map, pak se posouvá. */
-	static final int VYSKA_SEZNAMU = 220;
+	static final int VYSKA_SEZNAMU = 340;
+
+	/** Od kolika dalších map se nabídne hledání. */
+	static final int HLEDANI_OD = 8;
+	static final String HLEDAT = "Hledat mapu";
+	static final String NIC_NENALEZENO = "Nic nenalezeno.";
 
 	private static final Color SEDY_TEXT = new Color(90, 90, 90);
 	private static final Color ODKAZ = new Color(0x1A5FB4);
@@ -68,6 +76,24 @@ public class JMapyPopup extends JPanel {
 	private final Map<String, JLabel[]> popisy = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private JScrollPane seznam;
+	/** Hledání mezi dalšími mapami; filtruje se skrytím řádků, popup se nepřestavuje, aby hledání nepřišlo o fokus. */
+	private final JTextField hledat = new JTextField(14) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected void paintComponent(final java.awt.Graphics g) {
+			super.paintComponent(g);
+			if (getText().isEmpty() && !hasFocus()) {
+				g.setColor(Color.GRAY);
+				g.setFont(getFont().deriveFont(Font.ITALIC));
+				g.drawString(HLEDAT + "…", getInsets().left + 2, (getHeight() + g.getFontMetrics().getAscent() - g.getFontMetrics().getDescent()) / 2);
+			}
+		}
+	};
+	/** Řádky dalších map: jejich políčka a text, podle kterého se hledá. */
+	private final List<RadekHledani> hledatelne = new ArrayList<>();
+	private final List<JLabel> hlavickySkupin = new ArrayList<>();
+	private JLabel nicNenalezeno;
 	private Runnable poZmeneObsahu = () -> {};
 	/** Mapa, jejíž stahování uživatel zrušil a čeká se na potvrzení; null, když nic. */
 	private String rusenaMapa;
@@ -85,9 +111,80 @@ public class JMapyPopup extends JPanel {
 		addHierarchyListener(e -> {
 			if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && !isShowing()) {
 				zvyrazni(null);
+				hledat.setText("");
+			}
+		});
+		hledat.setFont(hledat.getFont().deriveFont(Font.PLAIN, 11f));
+		hledat.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void insertUpdate(final DocumentEvent e) {
+				filtruj();
+			}
+
+			@Override
+			public void removeUpdate(final DocumentEvent e) {
+				filtruj();
+			}
+
+			@Override
+			public void changedUpdate(final DocumentEvent e) {
+				filtruj();
 			}
 		});
 		sestav();
+	}
+
+	/** V poli hledání se píše; popup se nesmí zavřít odjetím myši. */
+	public boolean isHledaniAktivni() {
+		return hledat.hasFocus();
+	}
+
+	JTextField getHledat() {
+		return hledat;
+	}
+
+	private static final class RadekHledani {
+		final String text;
+		final String skupina;
+		final List<Component> bunky;
+
+		RadekHledani(final String text, final String skupina, final List<Component> bunky) {
+			this.text = text;
+			this.skupina = skupina;
+			this.bunky = bunky;
+		}
+	}
+
+	static String bezDiakritiky(final String s) {
+		return Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+	}
+
+	/** Ukáže jen další mapy, jejichž název nebo země obsahuje hledaný text (bez ohledu na diakritiku a velikost písmen). */
+	void filtruj() {
+		final String hledany = bezDiakritiky(hledat.getText().trim());
+		final Set<String> zobrazeneSkupiny = new HashSet<>();
+		int nalezeno = 0;
+		for (final RadekHledani r : hledatelne) {
+			final boolean ano = hledany.isEmpty() || r.text.contains(hledany);
+			nalezeno += ano ? 1 : 0;
+			if (ano && r.skupina != null) {
+				zobrazeneSkupiny.add(r.skupina);
+			}
+			for (final Component c : r.bunky) {
+				c.setVisible(ano);
+			}
+		}
+		for (final JLabel h : hlavickySkupin) {
+			h.setVisible(zobrazeneSkupiny.contains(h.getText()));
+		}
+		if (nicNenalezeno != null) {
+			nicNenalezeno.setVisible(nalezeno == 0);
+		}
+		if (seznam != null) {
+			seznam.revalidate();
+		}
+		revalidate();
+		poZmeneObsahu.run();
 	}
 
 	private void zvyrazni(final String klic) {
@@ -172,6 +269,9 @@ public class JMapyPopup extends JPanel {
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
+		hledatelne.clear();
+		hlavickySkupin.clear();
+		nicNenalezeno = null;
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
 		sirkaNazvu = 0;
 		for (final RadekMapy r : radky) {
@@ -261,6 +361,10 @@ public class JMapyPopup extends JPanel {
 		if (!dalsi.isEmpty()) {
 			gbc.gridy++;
 			add(nadpisOddilu(DALSI), gbc);
+			if (dalsi.size() >= HLEDANI_OD) {
+				gbc.gridy++;
+				add(hledat, gbc);
+			}
 			final JPanel ostatni = panelRadku();
 			y = 0;
 			String skupina = null;
@@ -270,10 +374,17 @@ public class JMapyPopup extends JPanel {
 					zeme.setFont(zeme.getFont().deriveFont(Font.BOLD));
 					zeme.setBorder(new EmptyBorder(3, 0, 0, 0));
 					ostatni.add(zeme, bunka(0, y++, 4));
+					hlavickySkupin.add(zeme);
 				}
 				skupina = r.skupina;
+				final int pred = ostatni.getComponentCount();
 				radek(ostatni, y++, r, stahujeSe);
+				hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), r.skupina,
+						new ArrayList<>(Arrays.asList(ostatni.getComponents()).subList(pred, ostatni.getComponentCount()))));
 			}
+			nicNenalezeno = maly(NIC_NENALEZENO);
+			nicNenalezeno.setVisible(false);
+			ostatni.add(nicNenalezeno, bunka(0, y++, 4));
 			final JPanel obal = new JPanel(new BorderLayout());
 			obal.setOpaque(false);
 			obal.add(ostatni, BorderLayout.NORTH);
@@ -308,6 +419,9 @@ public class JMapyPopup extends JPanel {
 			add(zdroj, gbc);
 		}
 
+		if (seznam != null && !hledat.getText().isEmpty()) {
+			filtruj();
+		}
 		gbc.gridy++;
 		gbc.insets = new Insets(6, 0, 0, 0);
 		add(new JSeparator(), gbc);

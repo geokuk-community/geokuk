@@ -57,6 +57,7 @@ public class JBlokMap extends JLabel {
 		setIconTextGap(4);
 		setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
 		obnov(java.util.Collections.emptyList());
+		popup.setDrzOtevreny(obsah::isHledaniAktivni);
 		obsah.setPoZmeneObsahu(() -> {
 			if (popup.viditelny() == obsah) {
 				popup.ukaz(obsah, this, true);

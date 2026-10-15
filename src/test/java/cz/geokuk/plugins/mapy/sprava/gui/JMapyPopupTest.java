@@ -82,6 +82,68 @@ public class JMapyPopupTest {
 		}
 	}
 
+	private static List<RadekMapy> dalsiMapy() {
+		final List<RadekMapy> r = new ArrayList<>();
+		for (final String n : new String[] { "Bavorsko", "Berlín", "Sasko", "Šlesvicko-Holštýnsko" }) {
+			r.add(RadekMapy.katalogova("de/" + n, n, RadekMapy.Stav.NEMAME).skupina("Německo").velikost(100 * MB).build());
+		}
+		for (final String n : new String[] { "Rakousko", "Slovensko", "Švýcarsko", "Polsko", "Česko" }) {
+			r.add(RadekMapy.katalogova("x/" + n, n, RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
+		}
+		return r;
+	}
+
+	private static long viditelnychLabelu(final JMapyPopup p, final String text) {
+		return labels(p).stream().filter(l -> text.equals(l.getText()) && l.isVisible()).count();
+	}
+
+	/** Hledání ukáže jen shodné mapy a země; bez diakritiky a velikosti písmen; prázdné hledání ukáže vše. */
+	@Test
+	public void hledaniFiltrujeMapy() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			Assert.assertNotNull("od 8 map je hledání", java.util.Arrays.stream(p.getComponents()).filter(c -> c == p.getHledat()).findFirst().orElse(null));
+			p.getHledat().setText("slesvi");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Šlesvicko-Holštýnsko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals("země s nalezenou mapou zůstane", 1, viditelnychLabelu(p, "Německo"));
+			p.getHledat().setText("NĚMECKO");
+			Assert.assertEquals("hledá se i podle země", 1, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Rakousko"));
+			p.getHledat().setText("rak");
+			Assert.assertEquals(0, viditelnychLabelu(p, "Německo"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
+			p.getHledat().setText("zzz");
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.NIC_NENALEZENO));
+			p.getHledat().setText("");
+			Assert.assertEquals(0, viditelnychLabelu(p, JMapyPopup.NIC_NENALEZENO));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Hledání přežije přestavbu popupu (třeba při změně stavu mapy) a bez mála map se nenabízí. */
+	@Test
+	public void hledaniPrezijePrestavbuAMaloMapBezHledani() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			p.getHledat().setText("rak");
+			final List<RadekMapy> zmenene = dalsiMapy();
+			zmenene.set(4, RadekMapy.katalogova("x/Rakousko", "Rakousko", RadekMapy.Stav.CHYBA).chyba("Stažení se přerušilo").build());
+			p.obnov(zmenene);
+			Assert.assertEquals("rak", p.getHledat().getText());
+			Assert.assertEquals(0, viditelnychLabelu(p, "Slovensko"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
+			final JMapyPopup malo = new JMapyPopup();
+			malo.setOvladani(new Zaznam());
+			malo.obnov(dalsiMapy().subList(0, 3));
+			Assert.assertNull(java.util.Arrays.stream(malo.getComponents()).filter(c -> c == malo.getHledat()).findFirst().orElse(null));
+		});
+	}
+
 	/** Myš nad řádkem (kterýmkoli políčkem) zvýrazní obrys té mapy, odjetí ho zruší. */
 	@Test
 	public void najetiNaRadekZvyrazniObrys() throws Exception {
