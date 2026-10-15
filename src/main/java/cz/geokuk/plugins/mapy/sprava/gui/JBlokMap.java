@@ -54,7 +54,7 @@ public class JBlokMap extends JLabel {
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
 	private volatile long volne = -1;
-	private volatile List<PokrytiMap.DvojitaMapa> dvojite = java.util.Collections.emptyList();
+	private transient volatile List<PokrytiMap.DvojitaMapa> dvojite = java.util.Collections.emptyList();
 
 	public JBlokMap() {
 		super(TEXT);
