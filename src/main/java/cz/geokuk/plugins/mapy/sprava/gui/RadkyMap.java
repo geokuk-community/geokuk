@@ -36,7 +36,7 @@ final class RadkyMap {
 		for (final KatalogovaMapa m : katalog.getMapy()) {
 			final StavMapy s = stavy.apply(m);
 			radky.add(radek(m, s, stred != null && m.getPokryti().obsahuje(stred)));
-			if (vrstvy != null && s.getMistni() == StavMapy.Mistni.MAME) {
+			if (vrstvy != null && stavyVrstev != null && s.getMistni() == StavMapy.Mistni.MAME) {
 				for (final KatalogovaVrstva v : vrstvy.vrstvyProMapu(m)) {
 					radky.add(radekVrstvy(m, v, stavyVrstev.apply(v)));
 				}

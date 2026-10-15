@@ -455,6 +455,54 @@ public class JMapyPopupTest {
 		});
 	}
 
+	private static java.awt.event.KeyEvent klavesa(final int id, final char c, final int modifikatory) {
+		return new java.awt.event.KeyEvent(new JPanel(), id, 0, modifikatory, id == java.awt.event.KeyEvent.KEY_TYPED ? java.awt.event.KeyEvent.VK_UNDEFINED : java.awt.event.KeyEvent.VK_O, c);
+	}
+
+	/** Změna obsahu popupu (tik průběhu s delším popisem) sama vrací fokus píšícímu uživateli, bez zapojení v JBlokMap. */
+	@Test
+	public void zmenaObsahuVraciFokusPiscimuUzivateli() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final int[] zmen = { 0 };
+			p.setPoZmeneObsahu(() -> zmen[0]++);
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(10 * MB).build()));
+			fokusDoPole(p);
+			final int pred = p.pozadavkuNaFokus;
+			final String dlouhaChyba = "Stahování se přerušilo: velmi dlouhý text chyby, který rozšíří popis řádku nad původní šířku popupu a vynutí jeho znovuzobrazení";
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.CHYBA).chyba(dlouhaChyba).build()));
+			Assert.assertTrue("popup se znovu zobrazil", zmen[0] > 0);
+			Assert.assertTrue("a pole žádá o fokus", p.pozadavkuNaFokus > pred);
+		});
+	}
+
+	/** Písmena psaná v okně, kdy pole o fokus přišlo (popup se na okamžik zobrazí znovu), jdou do pole, ne do hlavního okna; zkratky s Ctrl, Enter a Esc ne. */
+	@Test
+	public void klavesyBehemZtratyFokusuJdouDoPole() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			p.vidiSe = true;
+			Assert.assertFalse("nepíše se, klávesy jdou dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
+			fokusDoPole(p);
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, 'r', 0)));
+			Assert.assertEquals("stisk sám text nemění", "", p.getHledat().getText());
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'r', 0)));
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
+			Assert.assertEquals("ro", p.getHledat().getText());
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, '\b', 0)));
+			Assert.assertEquals("r", p.getHledat().getText());
+			Assert.assertFalse("Ctrl+znak jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, 'o', java.awt.event.InputEvent.CTRL_DOWN_MASK)));
+			Assert.assertFalse("Esc jde dál (zavře popup)", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, '\u001b', 0)));
+			Assert.assertFalse("Enter jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, '\n', 0)));
+			p.vidiSe = false;
+			Assert.assertFalse("skrytý popup klávesy nechává", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			Assert.assertEquals("r", p.getHledat().getText());
+		});
+	}
+
 	/** Těžký popup (nevejde se do okna) nepřijme fokus, proto v něm pole hledání není a písmena nejdou do hlavního okna. */
 	@Test(timeout = 30000)
 	public void vTezkemPopupuBezHledani() throws Exception {
