@@ -137,6 +137,7 @@
 						<manifestEntries>
 							<Geokuk-Version>${geokuk.version}</Geokuk-Version>
 							<Geokuk-Commit>${geokuk.commit}</Geokuk-Commit>
+							<Mapsforge-Version>${mapsforge.version}</Mapsforge-Version>
 							<SplashScreen-Image>img/geokuk400.jpg</SplashScreen-Image>
 						</manifestEntries>
 					</archive>
