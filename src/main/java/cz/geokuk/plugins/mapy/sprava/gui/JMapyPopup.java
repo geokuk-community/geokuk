@@ -724,7 +724,7 @@ public class JMapyPopup extends JPanel {
 		radek(panel, y, r, stahujeSe);
 		final JLabel nazev = popisy.get(klic(r))[1];
 		nazev.setBorder(new EmptyBorder(0, odsazeni, 0, 0));
-		if (hlavicka) {
+		if (hlavicka && uzel != null) {
 			nazev.setBorder(null);
 			uzel.hlavicka = nazev;
 			nastavRozbaleni(uzel, nazev);
