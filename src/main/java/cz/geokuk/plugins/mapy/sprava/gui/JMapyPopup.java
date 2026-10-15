@@ -62,7 +62,7 @@ public class JMapyPopup extends JPanel {
 
 	/** Od kolika dalších map se nabídne hledání. */
 	static final int HLEDANI_OD = 8;
-	static final String HLEDAT = "Hledat mapu";
+	static final String HLEDAT = "Hledat v dalších mapách";
 	static final String NIC_NENALEZENO = "Nic nenalezeno.";
 
 	private static final Color SEDY_TEXT = new Color(90, 90, 90);
@@ -109,9 +109,15 @@ public class JMapyPopup extends JPanel {
 			}
 		});
 		addHierarchyListener(e -> {
-			if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && !isShowing()) {
+			if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0) {
+				return;
+			}
+			if (isShowing()) {
+				// Těžký popup (přesahuje okno) nepřijme fokus, písmena by šla do hlavního okna a spouštěla jeho zkratky.
+				final Window okno = SwingUtilities.getWindowAncestor(this);
+				hledat.setVisible(okno == null || okno instanceof Frame || okno instanceof Dialog);
+			} else {
 				zvyrazni(null);
-				hledat.setText("");
 			}
 		});
 		hledat.setFont(hledat.getFont().deriveFont(Font.PLAIN, 11f));
@@ -132,6 +138,11 @@ public class JMapyPopup extends JPanel {
 			}
 		});
 		sestav();
+	}
+
+	/** Popup se zavřel: hledání se vymaže, příště začne od nuly. */
+	public void popupZavren() {
+		hledat.setText("");
 	}
 
 	/** V poli hledání se píše; popup se nesmí zavřít odjetím myši. */
@@ -159,13 +170,23 @@ public class JMapyPopup extends JPanel {
 		return Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
 	}
 
+	/** Každé slovo hledaného textu je v textu řádku (v libovolném pořadí). */
+	static boolean obsahujeVse(final String text, final String hledany) {
+		for (final String slovo : hledany.split("\\s+")) {
+			if (!slovo.isEmpty() && !text.contains(slovo)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/** Ukáže jen další mapy, jejichž název nebo země obsahuje hledaný text (bez ohledu na diakritiku a velikost písmen). */
 	void filtruj() {
 		final String hledany = bezDiakritiky(hledat.getText().trim());
 		final Set<String> zobrazeneSkupiny = new HashSet<>();
 		int nalezeno = 0;
 		for (final RadekHledani r : hledatelne) {
-			final boolean ano = hledany.isEmpty() || r.text.contains(hledany);
+			final boolean ano = obsahujeVse(r.text, hledany);
 			nalezeno += ano ? 1 : 0;
 			if (ano && r.skupina != null) {
 				zobrazeneSkupiny.add(r.skupina);
@@ -182,9 +203,8 @@ public class JMapyPopup extends JPanel {
 		}
 		if (seznam != null) {
 			seznam.revalidate();
+			seznam.repaint();
 		}
-		revalidate();
-		poZmeneObsahu.run();
 	}
 
 	private void zvyrazni(final String klic) {
@@ -266,6 +286,7 @@ public class JMapyPopup extends JPanel {
 	private int sirkaNazvu;
 
 	private void sestav() {
+		final boolean meliFokus = hledat.hasFocus();
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
@@ -388,15 +409,14 @@ public class JMapyPopup extends JPanel {
 			final JPanel obal = new JPanel(new BorderLayout());
 			obal.setOpaque(false);
 			obal.add(ostatni, BorderLayout.NORTH);
+			// Velikost podle všech map, aby se při hledání popup nemusel zavírat a znovu otevírat.
+			final Dimension vse = obal.getPreferredSize();
 			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 				private static final long serialVersionUID = 1L;
 
 				@Override
 				public Dimension getPreferredSize() {
-					final Dimension d = super.getPreferredSize();
-					d.height = Math.min(d.height, VYSKA_SEZNAMU);
-					d.width += getVerticalScrollBar().getPreferredSize().width;
-					return d;
+					return new Dimension(vse.width + getVerticalScrollBar().getPreferredSize().width, Math.min(vse.height, VYSKA_SEZNAMU));
 				}
 			};
 			seznam.setBorder(BorderFactory.createEmptyBorder());
@@ -437,6 +457,9 @@ public class JMapyPopup extends JPanel {
 		web.add(odkaz("osm.paws.cz", URL_PAWS));
 		web.add(odkaz("OpenAndroMaps", URL_OAM));
 		add(web, gbc);
+		if (meliFokus) {
+			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
+		}
 		revalidate();
 		repaint();
 	}

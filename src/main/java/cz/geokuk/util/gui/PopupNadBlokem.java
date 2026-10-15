@@ -24,6 +24,8 @@ public class PopupNadBlokem {
 	private final javax.swing.Timer hlidani;
 	/** Popup se odjetím myši nezavírá, třeba když se v něm píše. */
 	private BooleanSupplier drzOtevreny = () -> false;
+	/** Zavolá se, když se popup zavře (ne když se jen znovu zobrazí po změně velikosti). */
+	private Runnable poZavreni = () -> {};
 	/** Od kdy je myš mimo blok i popup, -1 když není. */
 	private long mimoOd = -1;
 	/** Popup, který se otevře, když na jeho cíli myš vydrží; null, když se nic nečeká. */
@@ -60,6 +62,10 @@ public class PopupNadBlokem {
 		});
 	}
 
+	public void setPoZavreni(final Runnable poZavreni) {
+		this.poZavreni = poZavreni;
+	}
+
 	public void setDrzOtevreny(final BooleanSupplier drzOtevreny) {
 		this.drzOtevreny = drzOtevreny;
 	}
@@ -74,7 +80,7 @@ public class PopupNadBlokem {
 		if (!blok.isShowing() || obsahPopupu == obsah && !znovu) {
 			return;
 		}
-		zavri();
+		skryj();
 		predUkazanim.run();
 		obsah.setSize(obsah.getPreferredSize());
 		final Point p = poloha(obsah.getPreferredSize(), kotva);
@@ -128,6 +134,13 @@ public class PopupNadBlokem {
 	}
 
 	public void zavri() {
+		if (popup != null) {
+			skryj();
+			poZavreni.run();
+		}
+	}
+
+	private void skryj() {
 		if (popup != null) {
 			popup.hide();
 			popup = null;
