@@ -35,8 +35,8 @@ public class SpravaMapModel extends Model0 {
 	/** Podsložka složky offline map; základní mapy se berou jen přímo ze složky, takže vrstvy mezi ně nepřijdou. */
 	public static final String SLOZKA_VRSTEV = "vrstvy";
 
-	private final KatalogMap katalog;
-	private final KatalogVrstev katalogVrstev;
+	private final Supplier<KatalogMap> katalog;
+	private final Supplier<KatalogVrstev> katalogVrstev;
 	private final ExecutorService vlakno = vlakno("Stahování offline mapy");
 	/** Kontroly a stav z disku, aby nečekaly na dlouhé stahování. */
 	private final ExecutorService kontrola = vlakno("Kontrola offline map");
@@ -61,16 +61,25 @@ public class SpravaMapModel extends Model0 {
 	}
 
 	public SpravaMapModel() {
-		this(KatalogMap.vestaveny(), KatalogVrstev.vestaveny());
+		this(KatalogMap::vestaveny, KatalogVrstev::vestaveny);
 	}
 
 	SpravaMapModel(final KatalogMap katalog) {
-		this(katalog, KatalogVrstev.vestaveny());
+		this(() -> katalog, KatalogVrstev::vestaveny);
 	}
 
 	SpravaMapModel(final KatalogMap katalog, final KatalogVrstev katalogVrstev) {
+		this(() -> katalog, () -> katalogVrstev);
+	}
+
+	/** Katalogy se načtou hned na pozadí, ať je GUI nečte poprvé na EDT. */
+	SpravaMapModel(final Supplier<KatalogMap> katalog, final Supplier<KatalogVrstev> katalogVrstev) {
 		this.katalog = katalog;
 		this.katalogVrstev = katalogVrstev;
+		kontrola.execute(() -> {
+			katalog.get();
+			katalogVrstev.get();
+		});
 		stahovac = new StahovacMapy("GeoKuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")", this::uvolniOfflineMapy);
 		stahovacVrstev = new StahovacVrstev(stahovac);
 	}
@@ -117,7 +126,7 @@ public class SpravaMapModel extends Model0 {
 	}
 
 	public KatalogMap getKatalog() {
-		return katalog;
+		return katalog.get();
 	}
 
 	/** Poslední známý stav mapy, bez sítě a bez disku. */
@@ -132,7 +141,7 @@ public class SpravaMapModel extends Model0 {
 	}
 
 	public KatalogVrstev getKatalogVrstev() {
-		return katalogVrstev;
+		return katalogVrstev.get();
 	}
 
 	/** Složka, kam se stahují vrstvy; null, když složka offline map není nastavená. */
@@ -194,7 +203,7 @@ public class SpravaMapModel extends Model0 {
 			if (s == null) {
 				return;
 			}
-			for (final KatalogovaMapa m : katalog.getMapy()) {
+			for (final KatalogovaMapa m : katalog.get().getMapy()) {
 				final StavMapy predtim = getStav(m);
 				if (predtim.isBezi()) {
 					continue;
@@ -207,7 +216,7 @@ public class SpravaMapModel extends Model0 {
 				}
 			}
 			final File sv = new File(s, SLOZKA_VRSTEV);
-			for (final KatalogovaVrstva v : katalogVrstev.getVrstvy()) {
+			for (final KatalogovaVrstva v : katalogVrstev.get().getVrstvy()) {
 				final StavVrstvy predtim = getStav(v);
 				if (predtim.isBezi()) {
 					continue;

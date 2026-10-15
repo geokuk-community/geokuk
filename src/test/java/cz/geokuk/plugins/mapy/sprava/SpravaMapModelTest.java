@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -103,5 +104,20 @@ public class SpravaMapModelTest {
 		model.obnovStavy();
 		model.pockej();
 		assertEquals("beze změny bez události", 1, udalosti.size());
+	}
+
+	@Test
+	public void katalogySeNactouNaPozadi() throws Exception {
+		final List<String> vlakna = new CopyOnWriteArrayList<>();
+		final KatalogMap mapy = StahovacMapyTest.katalog(server);
+		final SpravaMapModel model = new SpravaMapModel(() -> {
+			vlakna.add(Thread.currentThread().getName());
+			return mapy;
+		}, () -> {
+			vlakna.add(Thread.currentThread().getName());
+			return KatalogVrstev.vestaveny();
+		});
+		model.pockej();
+		assertEquals(Arrays.asList("Kontrola offline map", "Kontrola offline map"), vlakna);
 	}
 }
