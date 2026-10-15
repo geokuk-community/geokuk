@@ -1,0 +1,198 @@
+name: Vrstvy
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "Cesta regionu na Geofabriku (europe/czech-republic, europe/germany/bayern)"
+        default: "europe/luxembourg"
+      nazev:
+        description: "Název pro katalog (Česko, Bavorsko)"
+        default: "Lucembursko"
+      bbox:
+        description: "Obdélník oblasti: jih,západ,sever,východ"
+        default: "49.4,5.7,50.2,6.55"
+      typy:
+        description: "Které vrstvy vyrobit (vrstevnice potřebují DEM)"
+        type: choice
+        options: [vse, trasy, dem, vrstevnice]
+        default: vse
+      zapis:
+        description: "Zápis tras do .map: ram (rychlý, paměťově náročný) nebo hd"
+        type: choice
+        options: [ram, hd]
+        default: ram
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/vrstvy.yml"
+      - "vrstvy/**"
+
+permissions:
+  contents: read
+
+env:
+  REGION: ${{ inputs.region || 'europe/luxembourg' }}
+  NAZEV: ${{ inputs.nazev || 'Lucembursko' }}
+  BBOX: ${{ inputs.bbox || '49.4,5.7,50.2,6.55' }}
+  TYPY: ${{ inputs.typy || 'vse' }}
+  JAVA_OPTS: -Xmx10g
+
+jobs:
+  trasy:
+    if: ${{ inputs.typy == 'vse' || inputs.typy == 'trasy' || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Nástroje
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq osmium-tool
+          vrstvy/priprav-nastroje.sh
+      - name: Trasy
+        run: |
+          export ZAKLAD=$(basename "$REGION" | tr - _)
+          VYSTUP="$PWD/out" PRACE="$PWD/prace" TYP_ZAPISU="${{ inputs.zapis || 'ram' }}" vrstvy/trasy.sh
+      - name: Souhrn
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### Trasy – $REGION"
+            echo '| krok | čas [s] | RAM [MB] | rc |'
+            echo '|---|---|---|---|'
+            [ -f out/mereni.tsv ] && awk -F'\t' '{printf "| %s | %s | %s | %s |\n",$1,$2,$3,$4}' out/mereni.tsv
+            echo
+            ls -l out
+            df -h / | tail -1
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vrstva-trasy
+          path: |
+            out/*.map
+            out/*.poly
+            out/mereni.tsv
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: meta-trasy
+          path: |
+            out/*.meta.json
+            out/*.poly
+
+  dem:
+    if: ${{ inputs.typy == 'vse' || inputs.typy == 'dem' || inputs.typy == 'vrstevnice' || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v7
+      - name: Nástroje
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gdal-bin python3-numpy zip
+      - name: DEM
+        run: |
+          export ZAKLAD=$(basename "$REGION" | tr - _)
+          VYSTUP="$PWD/out" PRACE="$PWD/prace" vrstvy/dem.sh
+      - name: Souhrn
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### DEM – $REGION"
+            echo '| krok | čas [s] | RAM [MB] | rc |'
+            echo '|---|---|---|---|'
+            [ -f out/mereni.tsv ] && awk -F'\t' '{printf "| %s | %s | %s | %s |\n",$1,$2,$3,$4}' out/mereni.tsv
+            echo
+            ls -l out
+            df -h / | tail -1
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vrstva-dem
+          path: |
+            out/*.zip
+            out/mereni.tsv
+          compression-level: 0
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: meta-dem
+          path: out/*.meta.json
+
+  vrstevnice:
+    needs: dem
+    if: ${{ !cancelled() && needs.dem.result == 'success' && (inputs.typy == 'vse' || inputs.typy == 'vrstevnice' || github.event_name == 'pull_request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/download-artifact@v8
+        with:
+          name: vrstva-dem
+          path: dem
+      - name: Nástroje
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq osmium-tool unzip
+          python3 -m venv "$HOME/venv"
+          "$HOME/venv/bin/pip" install -q "numpy<2" pyhgtmap
+          echo "$HOME/venv/bin" >> "$GITHUB_PATH"
+          vrstvy/priprav-nastroje.sh
+      - name: Vrstevnice
+        run: |
+          export ZAKLAD=$(basename "$REGION" | tr - _)
+          HGT_ZIP="$PWD/dem/${ZAKLAD}_hgt.zip" VYSTUP="$PWD/out" PRACE="$PWD/prace" vrstvy/vrstevnice.sh
+      - name: Souhrn
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### Vrstevnice – $REGION"
+            echo '| krok | čas [s] | RAM [MB] | rc |'
+            echo '|---|---|---|---|'
+            [ -f out/mereni.tsv ] && awk -F'\t' '{printf "| %s | %s | %s | %s |\n",$1,$2,$3,$4}' out/mereni.tsv
+            echo
+            ls -l out
+            df -h / | tail -1
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vrstva-vrstevnice
+          path: |
+            out/*.map
+            out/mereni.tsv
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: meta-vrstevnice
+          path: out/*.meta.json
+
+  katalog:
+    needs: [trasy, dem, vrstevnice]
+    if: ${{ !cancelled() && (needs.trasy.result == 'success' || needs.dem.result == 'success' || needs.vrstevnice.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: meta-*
+          merge-multiple: true
+          path: katalog
+      - name: Katalog
+        run: |
+          python3 vrstvy/katalog.py katalog "$REGION" "$NAZEV" "$BBOX"
+          cat katalog/vrstvy.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vrstvy-katalog
+          path: |
+            katalog/vrstvy.json
+            katalog/SHA256SUMS
