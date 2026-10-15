@@ -9,7 +9,7 @@ grep -o '"browser_download_url": *"[^"]*"' "$N/release.json" || true
 url=$(grep -o '"browser_download_url": *"[^"]*\.tar"' "$N/release.json" | head -1 | sed 's/.*"\(http[^"]*\)"/\1/')
 [ -n "$url" ] || { echo "Archiv Osmosis nenalezen" >&2; exit 1; }
 curl -fL --retry 5 --retry-delay 10 -o "$N/osmosis.tar" "$url"
-OSMOSIS_SHA256=${OSMOSIS_SHA256:-}
+OSMOSIS_SHA256=${OSMOSIS_SHA256:-2a23a7bf7499a0727ae6987cf66fcafc03b37379dc02177c730f352bd67a0b97}
 sha=$(sha256sum "$N/osmosis.tar" | cut -d' ' -f1)
 echo "osmosis.tar sha256: $sha"
 if [ -n "$OSMOSIS_SHA256" ] && [ "$sha" != "$OSMOSIS_SHA256" ]; then echo "Nesouhlasí sha256 Osmosis" >&2; exit 1; fi
