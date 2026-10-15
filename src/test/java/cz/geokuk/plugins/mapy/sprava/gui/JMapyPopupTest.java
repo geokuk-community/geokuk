@@ -11,6 +11,7 @@ import java.util.*;
 import javax.swing.*;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -104,6 +105,7 @@ public class JMapyPopupTest {
 	/** Skrytí popupu během najetí na řádek obrys zruší. */
 	@Test(timeout = 20000)
 	public void skrytiPopupuZrusiZvyrazneni() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
 		final JMapyPopup p = new JMapyPopup();
 		final Zaznam z = new Zaznam();
 		final JFrame okno = new JFrame();
