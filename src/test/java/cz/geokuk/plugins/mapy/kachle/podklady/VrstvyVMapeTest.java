@@ -88,9 +88,8 @@ public class VrstvyVMapeTest {
 		Assert.assertNotEquals("klíč dlaždic zahrnuje vrstvy", bez, s);
 		Assert.assertEquals("vrstva není základní mapa", 1, pocetMap());
 		Assert.assertNotNull(vyrendruj());
+		mapy.zavri(); // Windows otevřený soubor nesmaže; program mapy před smazáním zavírá
 		Assert.assertTrue(new File(vrstvy(), "kukov_trasy.map").delete());
-		mapy.zkontrolujSlozku();
-		mapy.zkontrolujSlozku();
 		Assert.assertEquals("bez vrstvy je klíč zpět", bez, klic());
 	}
 
@@ -149,9 +148,8 @@ public class VrstvyVMapeTest {
 			}
 		}
 		Assert.assertTrue("stínování mění dlaždici", jine);
+		mapy.zavri();
 		Assert.assertTrue(new File(vrstvy(), "N50E014.hgt").delete());
-		mapy.zkontrolujSlozku();
-		mapy.zkontrolujSlozku();
 		Assert.assertEquals(bez, klic());
 	}
 
