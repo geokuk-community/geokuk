@@ -35,6 +35,11 @@ public final class TemaOfflineMapy {
 		this.xmlVZipu = xmlVZipu;
 	}
 
+	/** Totéž téma z jiného souboru, třeba po přesunu složky. */
+	public TemaOfflineMapy sSouborem(final File jiny) {
+		return new TemaOfflineMapy(null, jiny, xmlVZipu);
+	}
+
 	public static TemaOfflineMapy zeSouboru(final File soubor, final String xmlVZipu) {
 		return new TemaOfflineMapy(null, soubor, xmlVZipu);
 	}
