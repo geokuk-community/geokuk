@@ -45,7 +45,7 @@ final class StahovacMapy {
 	static final String PRIPONA_INFO = ".stahuje.info";
 	/** Rezerva volného místa, aby stažení nezaplnilo disk úplně. */
 	static final long REZERVA_MISTA = 50L * 1024 * 1024;
-	private static final Pattern CONTENT_RANGE = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)");
+	private static final Pattern CONTENT_RANGE = Pattern.compile("bytes (\\d{1,18})-(\\d{1,18})/(\\d{1,18})");
 	private static final int POKUSY_PRESUNU = 5;
 	private static final int PRESMEROVANI = 5;
 
@@ -202,11 +202,7 @@ final class StahovacMapy {
 			final int kod = c.getResponseCode();
 			final long celkem;
 			if (kod == HttpURLConnection.HTTP_PARTIAL && od > 0) {
-				final Matcher m = CONTENT_RANGE.matcher(String.valueOf(c.getHeaderField("Content-Range")));
-				if (!m.matches() || Long.parseLong(m.group(1)) != od) {
-					throw new ChybaProUzivatele("Server poslal jinou část mapy, než o kterou byl požádán.");
-				}
-				celkem = Long.parseLong(m.group(3));
+				celkem = celkemZRozsahu(c.getHeaderField("Content-Range"), od);
 			} else if (kod == HttpURLConnection.HTTP_OK) {
 				od = 0;
 				celkem = c.getContentLengthLong();
@@ -264,6 +260,19 @@ final class StahovacMapy {
 		} finally {
 			c.disconnect();
 		}
+	}
+
+	/** Celková velikost z Content-Range odpovědi na pokračování od bajtu {@code od}. */
+	static long celkemZRozsahu(final String contentRange, final long od) throws ChybaProUzivatele {
+		final Matcher m = CONTENT_RANGE.matcher(String.valueOf(contentRange));
+		try {
+			if (m.matches() && Long.parseLong(m.group(1)) == od) {
+				return Long.parseLong(m.group(3));
+			}
+		} catch (final NumberFormatException e) {
+			// spadne do chyby níže
+		}
+		throw new ChybaProUzivatele("Server poslal jinou část mapy, než o kterou byl požádán.");
 	}
 
 	/** Null když je stažený soubor platná mapa očekávané velikosti, jinak popis vady. */

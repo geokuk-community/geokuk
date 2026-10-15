@@ -121,7 +121,11 @@ public class StahovacMapyTest {
 			final String range = z.get("range");
 			final String ifRange = z.get("if-range");
 			if (range != null && (ifRange == null || ifRange.equals(etag))) {
-				od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				try {
+					od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				} catch (final NumberFormatException e) {
+					od = d.length;
+				}
 				if (od >= d.length) {
 					ex.sendResponseHeaders(416, -1);
 					return;
@@ -480,6 +484,19 @@ public class StahovacMapyTest {
 		server.stop(0);
 		final StavMapy n = stahovac.zkontroluj(StavMapy.novy(mapa), slozka, zmeny::add);
 		assertEquals(Server.NEDOSTUPNY, n.getServer());
+	}
+
+	@Test
+	public void rozsahOdpovedi() throws IOException {
+		assertEquals(2615, StahovacMapy.celkemZRozsahu("bytes 1000-2614/2615", 1000));
+		for (final String spatny : new String[] { null, "bytes 999-2614/2615", "bytes 1000-2614/*", "bytes 1000-2614/99999999999999999999", "x" }) {
+			try {
+				StahovacMapy.celkemZRozsahu(spatny, 1000);
+				fail(spatny);
+			} catch (final StahovacMapy.ChybaProUzivatele e) {
+				assertTrue(e.getMessage().contains("jinou část"));
+			}
+		}
 	}
 
 	@Test
