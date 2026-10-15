@@ -18,6 +18,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.util.process.BrowserOpener;
 
 /**
@@ -78,7 +79,7 @@ public class JMapyPopup extends JPanel {
 	private String rusenaMapa;
 	private final OdhadStahovani odhad = new OdhadStahovani();
 	/** Čas pro odhad stahování; v testech nahrazený. */
-	LongSupplier hodiny = System::currentTimeMillis;
+	LongSupplier hodiny = () -> System.nanoTime() / 1_000_000;
 	/** Volné místo na disku se složkou offline map v bajtech, -1 neznámé. */
 	private long volneMisto = -1;
 
@@ -127,7 +128,7 @@ public class JMapyPopup extends JPanel {
 
 	/** Nové řádky; při stahování se jen přepíší popisy, jinak se popup sestaví znovu. */
 	public void obnov(final List<RadekMapy> nove) {
-		odhad.zapomenKromě(stahovane(nove));
+		odhad.zapomenKrome(stahovane(nove));
 		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky));
 		radky = new ArrayList<>(nove);
 		if (stejnaStruktura) {
@@ -222,7 +223,7 @@ public class JMapyPopup extends JPanel {
 			return popis;
 		}
 		final long sekund = odhad.zbyva(r.id, r.stazeno, r.velikost, hodiny.getAsLong());
-		return sekund < 0 ? popis : popis + " · " + OdhadStahovani.text(sekund);
+		return sekund < 0 ? popis : popis + " · zbývá " + OdhadStahovani.text(sekund);
 	}
 
 	/** Volné místo na disku se složkou offline map; mapy, které se nevejdou, nejdou stáhnout. */
@@ -233,7 +234,9 @@ public class JMapyPopup extends JPanel {
 		final List<RadekMapy> vsechny = radky;
 		final Set<String> pred = bezMista(vsechny);
 		volneMisto = bajtu;
-		if (!bezMista(vsechny).equals(pred)) {
+		final Set<String> po = bezMista(vsechny);
+		if (!po.equals(pred) || !po.isEmpty()) { // tooltip vypnutých tlačítek ukazuje volné místo
+
 			sestav();
 			poZmeneObsahu.run();
 		}
@@ -249,21 +252,22 @@ public class JMapyPopup extends JPanel {
 		return s;
 	}
 
-	/** Mapa ke stažení nebo k aktualizaci se na disk nevejde (s malou rezervou). */
+	/** Mapa ke stažení nebo k aktualizaci se na disk nevejde (s toutéž rezervou jako ve stahovači). */
 	private boolean nedostatekMista(final RadekMapy r) {
-		return volneMisto >= 0 && potrebneMisto(r) * 21 / 20 > volneMisto;
+		return volneMisto >= 0 && potrebneMisto(r) > volneMisto;
 	}
 
+	/** Místo, které stažení (zbytku) mapy potřebuje včetně rezervy stahovače; 0, když se nic nestahuje. */
 	static long potrebneMisto(final RadekMapy r) {
 		if (r.vlastni || r.velikost <= 0) {
 			return 0;
 		}
 		switch (r.stav) {
 		case NEMAME:
-			return Math.max(0, r.velikost - r.stazeno);
-		case NOVEJSI:
 		case CHYBA:
-			return r.velikost;
+			return Math.max(0, r.velikost - r.stazeno) + SpravaMapModel.REZERVA_MISTA;
+		case NOVEJSI:
+			return r.velikost + SpravaMapModel.REZERVA_MISTA;
 		default:
 			return 0;
 		}

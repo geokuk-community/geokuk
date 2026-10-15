@@ -29,6 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SpravaMapModel extends Model0 {
 
+	/** Volné místo, které stahovač nechává na disku navíc; popup podle něj hlídá, jestli se mapa vejde. */
+	public static final long REZERVA_MISTA = StahovacMapy.REZERVA_MISTA;
+
 	private static final long INTERVAL_PRUBEHU_NS = TimeUnit.MILLISECONDS.toNanos(250);
 
 	private final KatalogMap katalog;

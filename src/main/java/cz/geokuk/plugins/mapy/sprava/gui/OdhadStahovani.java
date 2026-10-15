@@ -24,7 +24,12 @@ final class OdhadStahovani {
 
 	/** Zapíše stav stahování mapy; vrátí zbývající čas v sekundách, nebo -1, když se zatím odhadnout nedá. */
 	long zbyva(final String id, final long stazeno, final long celkem, final long ms) {
-		final Vzorek v = prvni.computeIfAbsent(id, k -> new Vzorek(ms, stazeno));
+		Vzorek v = prvni.computeIfAbsent(id, k -> new Vzorek(ms, stazeno));
+		if (stazeno < v.bajtu) {
+			// Stahování začalo znovu od začátku.
+			v = new Vzorek(ms, stazeno);
+			prvni.put(id, v);
+		}
 		final long uplynulo = ms - v.ms;
 		final long prirustek = stazeno - v.bajtu;
 		if (celkem <= 0 || uplynulo < NEJKRATSI_POZOROVANI_MS || prirustek < NEJMENSI_PRIRUSTEK) {
@@ -34,12 +39,8 @@ final class OdhadStahovani {
 		return Math.max(0, Math.round((celkem - stazeno) / bajtuZaSekundu));
 	}
 
-	/** Mapa, která se nestahuje, se přestane sledovat; další stahování začne odhad znovu. */
-	void zapomen(final String id) {
-		prvni.remove(id);
-	}
-
-	void zapomenKromě(final java.util.Set<String> stahovane) {
+	/** Mapy, které se nestahují, se přestanou sledovat; další stahování začne odhad znovu. */
+	void zapomenKrome(final java.util.Set<String> stahovane) {
 		prvni.keySet().retainAll(stahovane);
 	}
 

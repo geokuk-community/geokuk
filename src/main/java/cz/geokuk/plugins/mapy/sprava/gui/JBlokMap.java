@@ -205,7 +205,12 @@ public class JBlokMap extends JLabel {
 		while (f != null && !f.exists()) {
 			f = f.getParentFile();
 		}
-		return f == null ? -1 : f.getUsableSpace();
+		return f == null ? -1 : bezNuly(f.getUsableSpace());
+	}
+
+	/** Nulu vrací systém i při chybě; plný disk od neznámého nejde rozeznat, tak 0 platí jako neznámé. */
+	static long bezNuly(final long volne) {
+		return volne <= 0 ? -1 : volne;
 	}
 
 	/** Přečte mapy ve složce mimo EDT; změny během čtení se sloučí do jednoho dalšího čtení. */

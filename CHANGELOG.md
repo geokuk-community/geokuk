@@ -71,7 +71,7 @@
   download.mapsforge.org jde z popupu stáhnout (po jedné, přerušené stahování
   pokračuje) a na požádání zkontrolovat, jestli nejsou novější; popup ukáže
   výsledek kontroly, při stahování odhad zbývajícího času a mapu, která se
-  nevejde na disk, nenabídne ke stažení. Když pro
+  nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
