@@ -19,7 +19,7 @@ O=$(dirname "$(dirname "$(find "$N/osmosis" -path '*/bin/osmosis' | head -1)")")
 mkdir -p "$N/zavislosti" "$N/fat" "$HOME/.openstreetmap/osmosis/plugins"
 mvn -q -B -f "$D/zapisovac/pom.xml" dependency:copy-dependencies -DoutputDirectory="$N/zavislosti" -DincludeScope=runtime
 # Plugin Osmosis (JPF) vidí jen vlastní jar, proto závislosti slijeme do jednoho (writer naposled kvůli plugin.xml).
-for j in "$N"/zavislosti/*.jar; do case "$j" in *mapsforge-map-writer-*) ;; *) unzip -qo "$j" -x 'META-INF/*'-d "$N/fat";; esac; done
+for j in "$N"/zavislosti/*.jar; do case "$j" in *mapsforge-map-writer-*) ;; *) unzip -qo "$j" -x 'META-INF/*' -d "$N/fat";; esac; done
 rm -f "$N/fat/module-info.class"
 unzip -qo "$N"/zavislosti/mapsforge-map-writer-*.jar -x 'META-INF/MANIFEST.MF' -d "$N/fat"
 (cd "$N/fat" && jar cf "$HOME/.openstreetmap/osmosis/plugins/mapsforge-map-writer-0.25.0-jar-with-dependencies.jar" .)
