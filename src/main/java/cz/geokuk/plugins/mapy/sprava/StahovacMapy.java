@@ -112,7 +112,7 @@ final class StahovacMapy {
 			c = spojeniNaServer(stav.getMapa().getUrlyMapy(), "HEAD", hlavicky).spojeni;
 			final int kod = c.getResponseCode();
 			final Instant ted = Instant.now();
-			if (kod == HttpURLConnection.HTTP_NOT_MODIFIED && s.getVelikostNaServeru() >= 0) {
+			if (kod == HttpURLConnection.HTTP_NOT_MODIFIED) {
 				s = s.sServerem(s.getServer(), s.getDatumNaServeru(), s.getVelikostNaServeru(), s.getEtag(), s.getLastModified(), ted);
 			} else if (kod == HttpURLConnection.HTTP_OK) {
 				s = s.sServerem(Server.NEZNAMY, datum(c), c.getContentLengthLong(), c.getHeaderField("ETag"), c.getHeaderField("Last-Modified"), ted);
@@ -151,7 +151,11 @@ final class StahovacMapy {
 		}
 		try {
 			if (info.celkem < 0 || cast.length() < info.celkem) {
-				s = stahniData(s, slozka, cast, infoSoubor, info, zruseno, posluchac);
+				try {
+					s = stahniData(s, slozka, cast, infoSoubor, info, zruseno, posluchac);
+				} catch (final ZacitZnovu e) {
+					s = stahniData(s, slozka, cast, infoSoubor, new Info(), zruseno, posluchac);
+				}
 				if (s.getFaze() != Faze.STAHUJE) {
 					return s;
 				}
@@ -177,7 +181,15 @@ final class StahovacMapy {
 				return mistniStav(s, slozka).sFazi(Faze.ZRUSENO, null);
 			}
 			log.info("Stahování mapy {} selhalo: {}", mapa, e.toString());
-			return mistniStav(s, slozka).sFazi(Faze.CHYBA, e instanceof ChybaProUzivatele ? e.getMessage() : "Stahování se přerušilo: " + e.getMessage());
+			final String text;
+			if (e instanceof ChybaProUzivatele) {
+				text = e.getMessage();
+			} else if (slozka.getUsableSpace() < REZERVA_MISTA) {
+				text = "Na disku došlo místo. Rozpracovanou mapu můžete zahodit.";
+			} else {
+				text = "Stahování se přerušilo, lze ho dokončit.";
+			}
+			return mistniStav(s, slozka).sFazi(Faze.CHYBA, text);
 		}
 	}
 
@@ -203,14 +215,21 @@ final class StahovacMapy {
 			final long celkem;
 			if (kod == HttpURLConnection.HTTP_PARTIAL && od > 0) {
 				celkem = celkemZRozsahu(c.getHeaderField("Content-Range"), od);
+				if (celkem != info.celkem || !stejnaVerze(info, c.getHeaderField("ETag"), c.getHeaderField("Last-Modified"))) {
+					// Server navázal jinou verzí mapy (If-Range nerespektoval); slepenec dvou verzí by prošel ověřením.
+					log.info("Mapa {} se na serveru změnila, rozpracovaná část se zahodí", mapa);
+					smaz(cast);
+					smaz(infoSoubor);
+					throw new ZacitZnovu();
+				}
 			} else if (kod == HttpURLConnection.HTTP_OK) {
 				od = 0;
 				celkem = c.getContentLengthLong();
 			} else if (kod == 416) {
-				// Rozpracovaný soubor nesedí se serverem; příště se začne od nuly.
+				// Rozpracovaný soubor nesedí se serverem.
 				smaz(cast);
 				smaz(infoSoubor);
-				throw new ChybaProUzivatele("Rozpracovaná mapa nesedí s mapou na serveru, stahování začne znovu.");
+				throw new ZacitZnovu();
 			} else if (kod == HttpURLConnection.HTTP_NOT_FOUND || kod == HttpURLConnection.HTTP_GONE) {
 				return s.sServerem(Server.CHYBI).sFazi(Faze.CHYBA, "Mapa na serveru není.");
 			} else {
@@ -223,11 +242,13 @@ final class StahovacMapy {
 			if (volno < celkem - od + REZERVA_MISTA) {
 				return s.sFazi(Faze.CHYBA, "Na disku je málo místa: mapa potřebuje " + (celkem - od) / (1024 * 1024) + " MB.");
 			}
-			info.url = odpoved.adresa.toString();
-			info.etag = c.getHeaderField("ETag");
-			info.lastModified = c.getHeaderField("Last-Modified");
-			info.celkem = celkem;
-			ulozInfo(infoSoubor, info);
+			if (od == 0) {
+				info.url = odpoved.adresa.toString();
+				info.etag = c.getHeaderField("ETag");
+				info.lastModified = c.getHeaderField("Last-Modified");
+				info.celkem = celkem;
+				ulozInfo(infoSoubor, info);
+			}
 			s = s.sServerem(Server.AKTUALNI, datum(c), celkem, info.etag, info.lastModified, Instant.now()).sPrubehem(od, celkem, true);
 			posluchac.zmena(s);
 			final byte[] buf = new byte[64 * 1024];
@@ -275,10 +296,21 @@ final class StahovacMapy {
 		throw new ChybaProUzivatele("Server poslal jinou část mapy, než o kterou byl požádán.");
 	}
 
+	/** Odpověď na pokračování patří ke stejné verzi mapy jako rozpracovaná část. */
+	static boolean stejnaVerze(final Info info, final String etag, final String lastModified) {
+		if (info.etag != null) {
+			return info.etag.equals(etag);
+		}
+		return info.lastModified != null && info.lastModified.equals(lastModified);
+	}
+
 	/** Null když je stažený soubor platná mapa očekávané velikosti, jinak popis vady. */
 	static String over(final File soubor, final long ocekavanaVelikost) {
 		if (ocekavanaVelikost >= 0 && soubor.length() != ocekavanaVelikost) {
 			return "Stažená mapa má jinou velikost, než uvedl server.";
+		}
+		if (!soubor.isFile()) {
+			return "Rozpracovaná mapa zmizela z disku.";
 		}
 		try {
 			HlavickaMapy.precti(soubor);
@@ -361,6 +393,12 @@ final class StahovacMapy {
 		throw chyba != null ? chyba : new IOException("Žádný server");
 	}
 
+	/** Z http jen na http nebo https, ze zabezpečeného https zase jen na https. */
+	static boolean smiPresmerovat(final URL z, final URL na) {
+		final String kam = na.getProtocol();
+		return "https".equals(kam) || "http".equals(kam) && "http".equals(z.getProtocol());
+	}
+
 	/** Spojení s odpovědí; přesměrování (i z http na https, třeba na zrcadlo) následuje samo, nejvýš {@value #PRESMEROVANI}×. */
 	private HttpURLConnection spojeni(final URL url, final String metoda, final Map<String, String> hlavicky) throws IOException {
 		URL adresa = url;
@@ -381,8 +419,8 @@ final class StahovacMapy {
 			}
 			c.disconnect();
 			final URL dalsi = new URL(adresa, kam);
-			if (i >= PRESMEROVANI || !("https".equals(dalsi.getProtocol()) || "http".equals(dalsi.getProtocol()))) {
-				throw new ChybaProUzivatele("Server mapu přesměroval na neplatnou adresu.");
+			if (i >= PRESMEROVANI || !smiPresmerovat(adresa, dalsi)) {
+				throw new ChybaProUzivatele("Server mapu přesměroval na neplatnou nebo nezabezpečenou adresu.");
 			}
 			adresa = dalsi;
 		}
@@ -447,6 +485,11 @@ final class StahovacMapy {
 		} catch (final IOException e) {
 			log.info("Soubor {} nejde smazat: {}", f, e.toString());
 		}
+	}
+
+	/** Rozpracovaná část nepatří k mapě na serveru; stahuje se znovu od začátku. */
+	private static final class ZacitZnovu extends IOException {
+		private static final long serialVersionUID = 1L;
 	}
 
 	/** Chyba, jejíž text je pro uživatele. */

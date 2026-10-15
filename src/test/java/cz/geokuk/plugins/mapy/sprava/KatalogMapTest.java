@@ -99,6 +99,41 @@ public class KatalogMapTest {
 		assertEquals(5000, k.getMapy().get(0).getPribliznaVelikost());
 	}
 
+	@Test
+	public void jsonEscapyVsechny() throws IOException {
+		assertEquals("a\nb\rc\td\be\ff/g\\h\"", JsonCteni.precti("\"a\\nb\\rc\\td\\be\\ff\\/g\\\\h\\\"\""));
+		for (final String spatny : new String[] { "\"\\x\"", "\"\\u+041\"", "\"\\u12\"", "\"\\u12G4\"" }) {
+			try {
+				JsonCteni.precti(spatny);
+				fail(spatny);
+			} catch (final IOException e) {
+				assertTrue(e.getMessage(), e.getMessage().contains("JSON"));
+			}
+		}
+	}
+
+	@Test
+	public void jsonHloubka() throws IOException {
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 64; i++) {
+			sb.append('[');
+		}
+		for (int i = 0; i < 64; i++) {
+			sb.append(']');
+		}
+		assertNotNull(JsonCteni.precti(sb.toString()));
+		final StringBuilder hluboky = new StringBuilder();
+		for (int i = 0; i < 200_000; i++) {
+			hluboky.append('[');
+		}
+		try {
+			JsonCteni.precti(hluboky.toString());
+			fail();
+		} catch (final IOException e) {
+			assertTrue(e.getMessage(), e.getMessage().contains("hluboké"));
+		}
+	}
+
 	private static void chyba(final String polozky, final String cast) {
 		try {
 			katalog(polozky, id -> null);

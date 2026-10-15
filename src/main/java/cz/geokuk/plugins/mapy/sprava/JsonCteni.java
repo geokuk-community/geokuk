@@ -9,8 +9,12 @@ import java.util.Map;
 /** Malá čtečka JSON pro vestavěný katalog: objekt → Map, pole → List, číslo → Double, text, true/false, null. */
 final class JsonCteni {
 
+	/** Hloubka vnoření; hlubší JSON je chybný, ne přetečení zásobníku. */
+	private static final int NEJVETSI_HLOUBKA = 64;
+
 	private final String text;
 	private int pozice;
+	private int hloubka;
 
 	private JsonCteni(final String text) {
 		this.text = text;
@@ -34,9 +38,13 @@ final class JsonCteni {
 		final char z = text.charAt(pozice);
 		switch (z) {
 		case '{':
-			return objekt();
 		case '[':
-			return pole();
+			if (++hloubka > NEJVETSI_HLOUBKA) {
+				throw chyba("příliš hluboké vnoření");
+			}
+			final Object o = z == '{' ? objekt() : pole();
+			hloubka--;
+			return o;
 		case '"':
 			return retezec();
 		case 't':
@@ -123,19 +131,29 @@ final class JsonCteni {
 			case 't':
 				sb.append('\t');
 				break;
+			case 'r':
+				sb.append('\r');
+				break;
+			case 'b':
+				sb.append('\b');
+				break;
+			case 'f':
+				sb.append('\f');
+				break;
+			case '"':
+			case '\\':
+			case '/':
+				sb.append(e);
+				break;
 			case 'u':
-				if (pozice + 4 > text.length()) {
-					throw chyba("neúplné \\u");
-				}
-				try {
-					sb.append((char) Integer.parseInt(text.substring(pozice, pozice + 4), 16));
-				} catch (final NumberFormatException ex) {
+				if (pozice + 4 > text.length() || !text.substring(pozice, pozice + 4).matches("[0-9a-fA-F]{4}")) {
 					throw chyba("neplatné \\u");
 				}
+				sb.append((char) Integer.parseInt(text.substring(pozice, pozice + 4), 16));
 				pozice += 4;
 				break;
 			default:
-				sb.append(e);
+				throw chyba("neplatný escape \\" + e);
 			}
 		}
 	}
