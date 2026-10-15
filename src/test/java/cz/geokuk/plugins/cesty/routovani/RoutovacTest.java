@@ -52,6 +52,28 @@ public class RoutovacTest {
 		return routovac.najdi(new Wgs(lat1, lon1), new Wgs(lat2, lon2), () -> false);
 	}
 
+	/** Kopie {@code cesty.map} jen se dvěma zoom intervaly (do zoomu 11) jako přehledová mapa bez podrobného zoomu. */
+	static File mapaBezPodrobnehoZoomu(final File slozka, final String jmeno) throws IOException {
+		final byte[] b;
+		try (InputStream is = RoutovacTest.class.getResourceAsStream("/routovani/cesty.map")) {
+			b = com.google.common.io.ByteStreams.toByteArray(is);
+		}
+		final int pocetIntervalu = 224; // pozice počtu zoom intervalů v hlavičce cesty.map
+		assertEquals(3, b[pocetIntervalu]);
+		b[pocetIntervalu] = 2;
+		final File f = new File(slozka, jmeno);
+		Files.write(f.toPath(), b);
+		return f;
+	}
+
+	@Test
+	public void mapaBezPodrobnehoZoomuSeTichePreskoci() throws IOException {
+		assertNull(MapaCest.otevri(mapaBezPodrobnehoZoomu(tmp.getRoot(), "prehled.map"), 1000));
+		mapaBezPodrobnehoZoomu(slozka, "prehled-svet-ne.map");
+		final Trasa t = najdi(49.99, 14.38, 50.01, 14.40);
+		assertEquals(Trasa.Stav.NALEZENO, t.getStav());
+	}
+
 	@Test
 	public void poMrizceBezDalniceASoukromeCesty() {
 		final Trasa t = najdi(49.99, 14.38, 50.01, 14.40);

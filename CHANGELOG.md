@@ -84,6 +84,8 @@
   už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
 - Mapy > Postahovat dlaždice: stahování víc než asi 110 dlaždic se už
   nezastaví, stáhnou se všechny.
+- Hledání cest přeskočí přehledovou mapu světa a mapy bez podrobného zoomu,
+  aniž by do logu zapsalo chybu.
 
 ## 6.4.0
 
