@@ -1,0 +1,4 @@
+Data: OpenStreetMap, upravená (odvozená) databáze
+Licence dat: Open Database License (ODbL) 1.0
+Atribuce: © přispěvatelé OpenStreetMap
+https://www.openstreetmap.org/copyright

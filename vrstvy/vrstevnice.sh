@@ -22,4 +22,5 @@ out="$VYSTUP/${ZAKLAD}_vrstevnice.map"
   --mw file="$out" type="${TYP_ZAPISU:-hd}" bbox="$BBOX" threads="$(nproc)" \
   tag-conf-file="$D/tag-mapping-vrstevnice.xml" zoom-interval-conf=5,0,7,10,8,11,14,12,21 \
   comment="Contours from Copernicus GLO-30 DEM"
+cp "$D/LICENCE-COPERNICUS.txt" "$VYSTUP/${ZAKLAD}_vrstevnice.LICENCE.txt"
 "$D/meta.sh" vrstevnice "$out" "$(date -u +%F)" "Copernicus GLO-30 DEM (AWS Open Data)" '"zoom":{"min":12,"max":21},"krokVrstevnic":10'

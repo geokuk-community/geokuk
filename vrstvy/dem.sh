@@ -8,6 +8,6 @@ export VYSTUP
 "$D/mer.sh" cop2hgt python3 "$D/cop2hgt.py" "$BBOX" "$PRACE/hgt" "$PRACE"
 out="$VYSTUP/${ZAKLAD}_hgt.zip"
 rm -f "$out"
-"$D/mer.sh" zip-hgt bash -c "cd '$PRACE/hgt' && zip -q -j -9 '$out' *.hgt"
+"$D/mer.sh" zip-hgt bash -c "cp '$D/LICENCE-COPERNICUS.txt' '$PRACE/hgt/LICENCE.txt' && cd '$PRACE/hgt' && zip -q -j -9 '$out' *.hgt LICENCE.txt"
 datum=$(date -u -d "$(curl -fsSI https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N50_00_E013_00_DEM/Copernicus_DSM_COG_10_N50_00_E013_00_DEM.tif | sed -n 's/^[Ll]ast-[Mm]odified: *//p' | tr -d '\r')" +%F 2>/dev/null || date -u +%F)
 "$D/meta.sh" dem "$out" "$datum" "Copernicus GLO-30 DEM (AWS Open Data copernicus-dem-30m)"

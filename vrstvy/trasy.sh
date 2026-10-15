@@ -19,5 +19,6 @@ out="$VYSTUP/${ZAKLAD}_trasy.map"
   --mw file="$out" type="${TYP_ZAPISU:-ram}" bbox="$BBOX" threads="$(nproc)" \
   tag-conf-file="$D/tag-mapping-trasy.xml" zoom-interval-conf=5,0,7,10,8,11,14,12,21 \
   comment="(c) OpenStreetMap contributors (ODbL), Geofabrik $datum"
+cp "$D/LICENCE-OSM.txt" "$VYSTUP/${ZAKLAD}_trasy.LICENCE.txt"
 "$D/meta.sh" trasy "$out" "${datum%%T*}" "Geofabrik ${REGION}-latest.osm.pbf ($datum)" '"zoom":{"min":0,"max":21}'
 curl -fsSL --retry 3 -o "$VYSTUP/${ZAKLAD}.poly" "https://download.geofabrik.de/${REGION}.poly" || true
