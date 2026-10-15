@@ -4,8 +4,10 @@ set -euo pipefail
 D=$(cd "$(dirname "$0")" && pwd)
 N=${NASTROJE:-$PWD/nastroje}
 mkdir -p "$N"
-url=$(curl -fsSL --retry 5 https://api.github.com/repos/openstreetmap/osmosis/releases/tags/0.49.2 \
-  | grep -o '"browser_download_url": *"[^"]*\.tgz"' | head -1 | sed 's/.*"\(http[^"]*\)"/\1/')
+curl -fsSL --retry 5 -o "$N/release.json" https://api.github.com/repos/openstreetmap/osmosis/releases/tags/0.49.2
+grep -o '"browser_download_url": *"[^"]*"' "$N/release.json" || true
+url=$(grep -o '"browser_download_url": *"[^"]*\.\(tgz\|tar\.gz\)"' "$N/release.json" | head -1 | sed 's/.*"\(http[^"]*\)"/\1/')
+[ -n "$url" ] || { echo "Archiv Osmosis nenalezen" >&2; exit 1; }
 curl -fL --retry 5 --retry-delay 10 -o "$N/osmosis.tgz" "$url"
 OSMOSIS_SHA256=${OSMOSIS_SHA256:-}
 sha=$(sha256sum "$N/osmosis.tgz" | cut -d' ' -f1)
