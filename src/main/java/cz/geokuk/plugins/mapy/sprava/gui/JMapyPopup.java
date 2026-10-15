@@ -92,6 +92,10 @@ public class JMapyPopup extends JPanel {
 	};
 	/** Řádky dalších map: jejich políčka a text, podle kterého se hledá. */
 	private final List<RadekHledani> hledatelne = new ArrayList<>();
+	/** Uživatel píše do pole hledání; nastaví se fokusem v poli, ruší klikem mimo popup a zavřením popupu. */
+	private boolean uzivatelPise;
+	/** Kolikrát se po znovuzobrazení popupu žádal fokus do pole (pro test). */
+	int pozadavkuNaFokus;
 	private final List<JLabel> hlavickySkupin = new ArrayList<>();
 	private JLabel nicNenalezeno;
 	private Runnable poZmeneObsahu = () -> {};
@@ -116,8 +120,16 @@ public class JMapyPopup extends JPanel {
 				// Těžký popup (přesahuje okno) nepřijme fokus, písmena by šla do hlavního okna a spouštěla jeho zkratky.
 				final Window okno = SwingUtilities.getWindowAncestor(this);
 				hledat.setVisible(okno == null || okno instanceof Frame || okno instanceof Dialog);
+				zacniSledovatKlikyMimo();
 			} else {
 				zvyrazni(null);
+				prestanSledovatKlikyMimo();
+			}
+		});
+		hledat.addFocusListener(new java.awt.event.FocusAdapter() {
+			@Override
+			public void focusGained(final java.awt.event.FocusEvent e) {
+				uzivatelPise = true;
 			}
 		});
 		hledat.setFont(hledat.getFont().deriveFont(Font.PLAIN, 11f));
@@ -142,12 +154,38 @@ public class JMapyPopup extends JPanel {
 
 	/** Popup se zavřel: hledání se vymaže, příště začne od nuly. */
 	public void popupZavren() {
+		uzivatelPise = false;
 		hledat.setText("");
 	}
 
-	/** V poli hledání se píše; popup se nesmí zavřít odjetím myši. */
+	/** Uživatel píše do pole hledání (pole dostalo fokus a nekliklo se mimo popup); popup se nesmí zavřít odjetím myši. */
 	public boolean isHledaniAktivni() {
-		return hledat.hasFocus();
+		return uzivatelPise;
+	}
+
+	/** Popup se zobrazil znovu (změna velikosti): fokus zmizel spolu s odebraným popupem, píše-li uživatel, vrátí se do pole. */
+	public void poZnovuZobrazeni() {
+		if (uzivatelPise) {
+			pozadavkuNaFokus++;
+			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
+		}
+	}
+
+	/** Klik mimo popup ukončí psaní: pole přijde o fokus a popup se pak zavře odjetím myši jako jindy. */
+	private final java.awt.event.AWTEventListener klikMimo = e -> {
+		if (e.getID() == java.awt.event.MouseEvent.MOUSE_PRESSED && uzivatelPise && !(e.getSource() instanceof Component && SwingUtilities.isDescendingFrom((Component) e.getSource(), this))) {
+			uzivatelPise = false;
+			java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearFocusOwner();
+		}
+	};
+
+	void zacniSledovatKlikyMimo() {
+		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
+		Toolkit.getDefaultToolkit().addAWTEventListener(klikMimo, AWTEvent.MOUSE_EVENT_MASK);
+	}
+
+	void prestanSledovatKlikyMimo() {
+		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
 	}
 
 	JTextField getHledat() {
@@ -286,7 +324,6 @@ public class JMapyPopup extends JPanel {
 	private int sirkaNazvu;
 
 	private void sestav() {
-		final boolean meliFokus = hledat.hasFocus();
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
@@ -457,7 +494,7 @@ public class JMapyPopup extends JPanel {
 		web.add(odkaz("osm.paws.cz", URL_PAWS));
 		web.add(odkaz("OpenAndroMaps", URL_OAM));
 		add(web, gbc);
-		if (meliFokus) {
+		if (uzivatelPise) {
 			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
 		}
 		revalidate();

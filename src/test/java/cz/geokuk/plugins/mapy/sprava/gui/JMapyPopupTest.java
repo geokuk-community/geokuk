@@ -220,6 +220,47 @@ public class JMapyPopupTest {
 		}
 	}
 
+	private static void fokusDoPole(final JMapyPopup p) {
+		for (final java.awt.event.FocusListener l : p.getHledat().getFocusListeners()) {
+			l.focusGained(new java.awt.event.FocusEvent(p.getHledat(), java.awt.event.FocusEvent.FOCUS_GAINED));
+		}
+	}
+
+	private static void klik(final java.awt.Component kde) {
+		kde.dispatchEvent(new java.awt.event.MouseEvent(kde, java.awt.event.MouseEvent.MOUSE_PRESSED, 0, 0, 1, 1, 1, false));
+	}
+
+	/** Píše-li uživatel, po znovuzobrazení popupu (změna velikosti při průběhu stahování) se pole znovu žádá o fokus; klik mimo popup psaní ukončí. */
+	@Test
+	public void psaniPrezijeZnovuzobraveniAKlikMimoHoUkonci() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			Assert.assertFalse(p.isHledaniAktivni());
+			p.poZnovuZobrazeni();
+			Assert.assertEquals("nepíše se, fokus se nežádá", 0, p.pozadavkuNaFokus);
+			fokusDoPole(p);
+			Assert.assertTrue(p.isHledaniAktivni());
+			p.poZnovuZobrazeni();
+			Assert.assertEquals(1, p.pozadavkuNaFokus);
+			p.zacniSledovatKlikyMimo();
+			try {
+				klik(labels(p).get(0));
+				Assert.assertTrue("klik do popupu psaní neukončí", p.isHledaniAktivni());
+				klik(new JPanel());
+				Assert.assertFalse("klik mimo popup psaní ukončí, popup se pak zavře odjetím myši", p.isHledaniAktivni());
+				p.poZnovuZobrazeni();
+				Assert.assertEquals(1, p.pozadavkuNaFokus);
+			} finally {
+				p.prestanSledovatKlikyMimo();
+			}
+			fokusDoPole(p);
+			p.popupZavren();
+			Assert.assertFalse("zavřením popupu psaní končí", p.isHledaniAktivni());
+		});
+	}
+
 	/** Těžký popup (nevejde se do okna) nepřijme fokus, proto v něm pole hledání není a písmena nejdou do hlavního okna. */
 	@Test(timeout = 30000)
 	public void vTezkemPopupuBezHledani() throws Exception {
