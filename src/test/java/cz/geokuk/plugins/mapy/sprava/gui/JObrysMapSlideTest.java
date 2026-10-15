@@ -37,11 +37,14 @@ public class JObrysMapSlideTest {
 		Assert.assertFalse(cesta.contains(viden));
 	}
 
-	private static BufferedImage nakresli(final int zoom, final List<PolygonPokryti> obrysy) {
+	private static JObrysMapSlide slide(final int zoom) {
 		final JObrysMapSlide s = new JObrysMapSlide();
 		s.setSize(400, 300);
 		s.setSoord(new Coord(zoom, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0));
-		s.setObrysy(obrysy);
+		return s;
+	}
+
+	private static BufferedImage nakresli(final JObrysMapSlide s) {
 		final BufferedImage img = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = img.createGraphics();
 		s.paintComponent(g);
@@ -53,53 +56,74 @@ public class JObrysMapSlideTest {
 		return img.getRGB(x, y) >>> 24;
 	}
 
-	/** V přehledu (do Z9) se zašedne území bez mapy, pokryté zůstane čisté; od Z10 se nekreslí nic. */
-	@Test
-	public void zasedneMimoMapyJenVPrehledu() {
-		final List<PolygonPokryti> mapa = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
-		final BufferedImage z9 = nakresli(JObrysMapSlide.NEJVETSI_ZOOM, mapa);
-		Assert.assertTrue("mimo mapu šedá", alfa(z9, 2, 2) > 0);
-		Assert.assertEquals("uvnitř mapy čisto", 0, alfa(z9, 200, 150));
-		final BufferedImage z10 = nakresli(JObrysMapSlide.NEJVETSI_ZOOM + 1, mapa);
-		Assert.assertEquals(0, alfa(z10, 2, 2));
-	}
-
-	/** Posun mapy plochu nepřepočítá, jen posune; výsledek je stejný jako při čerstvém výpočtu. */
-	@Test
-	public void posunMapyPouzijeSkladAVykresliStejne() {
-		final List<PolygonPokryti> mapa = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
-		final JObrysMapSlide s = new JObrysMapSlide();
-		s.setSize(400, 300);
-		s.setSoord(new Coord(8, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0));
-		s.setObrysy(mapa);
-		s.paintComponent(new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB).createGraphics());
-		final JObrysMapSlide.Sklad pred = s.sklad;
-		final Coord posunuty = new Coord(8, new Wgs(50.01, 15.03).toMou(), new Dimension(400, 300), 0);
-		s.setSoord(posunuty);
-		final BufferedImage img = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
-		s.paintComponent(img.createGraphics());
-		Assert.assertSame(pred, s.sklad);
-		final BufferedImage cerstvy = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
-		final JObrysMapSlide t = new JObrysMapSlide();
-		t.setSize(400, 300);
-		t.setSoord(posunuty);
-		t.setObrysy(mapa);
-		t.paintComponent(cerstvy.createGraphics());
-		for (int y = 0; y < 300; y += 7) {
-			for (int x = 0; x < 400; x += 7) {
-				Assert.assertEquals(x + "," + y, alfa(cerstvy, x, y), alfa(img, x, y));
+	private static boolean neprazdny(final BufferedImage img) {
+		for (int y = 0; y < img.getHeight(); y++) {
+			for (int x = 0; x < img.getWidth(); x++) {
+				if (alfa(img, x, y) > 0) {
+					return true;
+				}
 			}
 		}
-		s.setSoord(new Coord(8, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0).derive(7));
-		s.paintComponent(new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB).createGraphics());
-		Assert.assertNotSame(pred, s.sklad);
+		return false;
 	}
 
+	private static final List<PolygonPokryti> MAPA = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
+
+	/** Ve výchozím stavu se nekreslí nic, ani když jsou mapy ve složce. */
 	@Test
-	public void bezMapNicNezasedne() {
-		final BufferedImage img = nakresli(6, Collections.emptyList());
-		Assert.assertEquals(0, alfa(img, 2, 2));
-		Assert.assertEquals(0, alfa(img, 200, 150));
+	public void vychoziStavNekresliNic() {
+		final JObrysMapSlide s = slide(6);
+		s.setObrysy(MAPA);
+		Assert.assertFalse(neprazdny(nakresli(s)));
+		Assert.assertFalse(s.isVisible());
+	}
+
+	/** Trvalý obrys je jen čára bez výplně okolí, do Z7 včetně; od Z8 nic. */
+	@Test
+	public void trvalyObrysJenDoZ7TenkouCarou() {
+		final JObrysMapSlide s = slide(JObrysMapSlide.NEJVETSI_ZOOM);
+		s.setObrysy(MAPA);
+		s.trvaly = true;
+		final BufferedImage z7 = nakresli(s);
+		Assert.assertTrue(neprazdny(z7));
+		Assert.assertEquals("mimo mapu čisto", 0, alfa(z7, 2, 2));
+		Assert.assertEquals("uvnitř mapy čisto", 0, alfa(z7, 200, 150));
+		final JObrysMapSlide z8 = slide(JObrysMapSlide.NEJVETSI_ZOOM + 1);
+		z8.setObrysy(MAPA);
+		z8.trvaly = true;
+		Assert.assertFalse(neprazdny(nakresli(z8)));
+	}
+
+	/** Najetí na řádek ukáže obrys jen té mapy, i v podrobném zoomu; odjetí ho skryje. */
+	@Test
+	public void obrysMapyNadKterouJeMys() {
+		final JObrysMapSlide s = slide(11);
+		s.setObrysy(MAPA);
+		s.trvaly = true;
+		Assert.assertFalse("trvalý obrys od Z8 nic", neprazdny(nakresli(s)));
+		s.trvaly = false;
+		s.zvyrazni("europe/liechtenstein");
+		Assert.assertTrue(s.isVisible());
+		Assert.assertNotNull(s.pokrytiZvyrazneni);
+		s.setSoord(new Coord(11, new Wgs(47.14, 9.52).toMou(), new Dimension(400, 300), 0));
+		Assert.assertTrue(neprazdny(nakresli(s)));
+		s.zvyrazni(null);
+		Assert.assertFalse(s.isVisible());
+		Assert.assertFalse(neprazdny(nakresli(s)));
+	}
+
+	/** Obrys stahované mapy je vidět po dobu stahování a po dokončení zmizí. */
+	@Test
+	public void obrysStahovaneMapy() {
+		final JObrysMapSlide s = slide(11);
+		s.setSoord(new Coord(11, new Wgs(47.14, 9.52).toMou(), new Dimension(400, 300), 0));
+		final KatalogovaMapa lichtenstejnsko = KatalogMap.vestaveny().podleId("europe/liechtenstein").get();
+		s.onEvent(new SpravaMapEvent(StavMapyProGui.stav(lichtenstejnsko, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.STAHUJE, 5, 100, null)));
+		Assert.assertTrue(s.isVisible());
+		Assert.assertTrue(neprazdny(nakresli(s)));
+		s.onEvent(new SpravaMapEvent(StavMapyProGui.stav(lichtenstejnsko, StavMapy.Mistni.MAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.HOTOVO, 0, -1, null)));
+		Assert.assertFalse(s.isVisible());
+		Assert.assertFalse(neprazdny(nakresli(s)));
 	}
 
 	@Test

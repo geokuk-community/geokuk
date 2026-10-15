@@ -67,8 +67,9 @@
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře jejich seznam (velikost, datum dat, nečitelné soubory),
-  odkaz na složku offline map a na weby s mapami. Volbou v něm jde v mapě
-  ukázat, kde offline mapy jsou. Mapy zemí a regionů Evropy z
+  odkaz na složku offline map a na weby s mapami. Najetím na řádek mapy se v
+  mapě ukáže její obrys, stejně při stahování; volbou v popupu jde ukázat
+  obrysy všech map v přehledu (do zoomu 7). Mapy zemí a regionů Evropy z
   download.mapsforge.org jde z popupu stáhnout (po jedné, přerušené stahování
   pokračuje) a na požádání zkontrolovat, jestli nejsou novější. Když pro
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení.

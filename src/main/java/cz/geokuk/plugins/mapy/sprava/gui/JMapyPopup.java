@@ -2,6 +2,9 @@ package cz.geokuk.plugins.mapy.sprava.gui;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -58,6 +61,8 @@ public class JMapyPopup extends JPanel {
 	private static final Color ODKAZ = new Color(0x1A5FB4);
 
 	private OvladaniMap ovladani;
+	/** Klíč řádku, jehož obrys je teď v mapě zvýrazněný; null, když žádný. */
+	private String zvyraznena;
 	private List<RadekMapy> radky = Collections.emptyList();
 	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
 	private final Map<String, JLabel[]> popisy = new HashMap<>();
@@ -77,7 +82,22 @@ public class JMapyPopup extends JPanel {
 				ovladani.setObrysPokryti(obrys.isSelected());
 			}
 		});
+		addHierarchyListener(e -> {
+			if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && !isShowing()) {
+				zvyrazni(null);
+			}
+		});
 		sestav();
+	}
+
+	private void zvyrazni(final String klic) {
+		if (Objects.equals(klic, zvyraznena)) {
+			return;
+		}
+		zvyraznena = klic;
+		if (ovladani != null) {
+			ovladani.zvyrazniMapu(klic);
+		}
 	}
 
 	public void setOvladani(final OvladaniMap ovladani) {
@@ -149,6 +169,7 @@ public class JMapyPopup extends JPanel {
 	private int sirkaNazvu;
 
 	private void sestav() {
+		zvyrazni(null);
 		removeAll();
 		popisy.clear();
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
@@ -306,15 +327,33 @@ public class JMapyPopup extends JPanel {
 		repaint();
 	}
 
+	/** Klíč řádku pro zvýraznění obrysu mapy: id z katalogu, u souboru uživatele jeho jméno. */
+	static String klicZvyrazneni(final RadekMapy r) {
+		return r.vlastni ? JObrysMapSlide.VLASTNI + r.nazev : r.id;
+	}
+
 	private void radek(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe) {
+		final MouseAdapter nadRadkem = new MouseAdapter() {
+			@Override
+			public void mouseEntered(final MouseEvent e) {
+				zvyrazni(klicZvyrazneni(r));
+			}
+
+			@Override
+			public void mouseExited(final MouseEvent e) {
+				zvyrazni(null);
+			}
+		};
 		final String tooltip = r.tooltip();
 		final JLabel ikona = new JLabel(IkonyMap.pro(r.stav));
+		ikona.addMouseListener(nadRadkem);
 		ikona.setToolTipText(tooltip);
 		final GridBagConstraints c = bunka(0, y, 1);
 		c.insets = new Insets(1, 0, 1, 4);
 		panel.add(ikona, c);
 
 		final JLabel nazev = new JLabel(r.nazev);
+		nazev.addMouseListener(nadRadkem);
 		nazev.setToolTipText(tooltip);
 		// Stejná šířka sloupce názvů ve všech oddílech, aby popisy byly pod sebou.
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
@@ -323,6 +362,7 @@ public class JMapyPopup extends JPanel {
 		final JLabel popis = maly("");
 		popis.setText(zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
 		popis.setToolTipText(tooltip);
+		popis.addMouseListener(nadRadkem);
 		if (r.stav == RadekMapy.Stav.CHYBA) {
 			popis.setForeground(IkonyMap.CERVENA);
 		}
@@ -333,6 +373,9 @@ public class JMapyPopup extends JPanel {
 		popisy.put(klic(r), new JLabel[] { ikona, nazev, popis });
 
 		final JButton akce = akce(r, stahujeSe);
+		if (akce != null) {
+			akce.addMouseListener(nadRadkem);
+		}
 		final GridBagConstraints ca = bunka(3, y, 1);
 		ca.anchor = GridBagConstraints.EAST;
 		ca.fill = GridBagConstraints.NONE;

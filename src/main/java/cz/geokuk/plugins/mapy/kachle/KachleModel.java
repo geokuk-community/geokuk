@@ -151,6 +151,11 @@ public class KachleModel extends Model0 {
 		fire(new ObrysPokrytiEvent(zapnuto));
 	}
 
+	/** Obrys mapy, nad jejímž řádkem v popupu je myš; neukládá se. */
+	public void setZvyrazneniMapy(final String klic) {
+		fire(new ZvyrazneniMapyEvent(klic));
+	}
+
 	private void fajrujPrekryvTras() {
 		fire(new PrekryvTrasEvent(isPrekryvTras(), isPrekryvTrasNadbytecny()));
 	}

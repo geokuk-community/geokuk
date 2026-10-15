@@ -22,4 +22,7 @@ public interface OvladaniMap {
 	default boolean isObrysPokryti() {
 		return false;
 	}
+
+	/** Myš je nad řádkem mapy (klíč řádku), nebo z něj odešla (null). */
+	default void zvyrazniMapu(final String klic) {}
 }

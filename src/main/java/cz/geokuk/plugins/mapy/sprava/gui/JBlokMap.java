@@ -139,6 +139,11 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public void zvyrazniMapu(final String klic) {
+				kachleModel.setZvyrazneniMapy(klic);
+			}
+
+			@Override
 			public void setObrysPokryti(final boolean zapnuto) {
 				kachleModel.setObrysPokryti(zapnuto);
 			}
