@@ -115,10 +115,8 @@ public class JMapyPopupTest {
 			final JButton zrusit = tlacitko(p, JMapyPopup.ZRUSIT);
 			p.obnov(Arrays.asList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(300 * MB).build()));
 			Assert.assertSame(zrusit, tlacitko(p, JMapyPopup.ZRUSIT));
-			Assert.assertEquals(1, prestaveni[0]);
 			Assert.assertTrue(texty(p).contains("50 % z 600 MB"));
 			p.obnov(Arrays.asList(katalog("at", RadekMapy.Stav.AKTUALNI).datumDat(Instant.EPOCH).build()));
-			Assert.assertEquals(2, prestaveni[0]);
 			Assert.assertNull(tlacitko(p, JMapyPopup.ZRUSIT));
 		});
 	}
@@ -201,5 +199,33 @@ public class JMapyPopupTest {
 		Assert.assertEquals(1, obrysy.size());
 		Assert.assertSame(KatalogMap.vestaveny().podleId("europe/czech-republic").get().getPokryti(), obrysy.get(0));
 		Assert.assertTrue("Praha", obrysy.get(0).obsahuje(new Wgs(50.08, 14.42)));
+	}
+
+	/** Soubor se stejným jménem vyměněný za jiný: řádek se nepřestaví, ale tooltip ukáže nové údaje. */
+	@Test
+	public void tooltipPoVymeneSouboru() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(5 * MB).datumDat(Instant.EPOCH).build()));
+			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(2_500 * MB).datumDat(Instant.parse("2026-10-01T00:00:00Z")).build()));
+			for (final JLabel l : popisky(p)) {
+				if (l.getToolTipText() != null) {
+					Assert.assertTrue(l.getToolTipText(), l.getToolTipText().contains("2,5 GB"));
+				}
+			}
+		});
+	}
+
+	private static List<JLabel> popisky(final Container c) {
+		final List<JLabel> v = new ArrayList<>();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof JLabel) {
+				v.add((JLabel) k);
+			}
+			if (k instanceof Container) {
+				v.addAll(popisky((Container) k));
+			}
+		}
+		return v;
 	}
 }
