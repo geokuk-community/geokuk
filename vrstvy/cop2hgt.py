@@ -2,7 +2,7 @@
 """Copernicus GLO-30 (AWS Open Data) -> HGT 1" (3601x3601, int16 BE) pro oblast.
 Použití: cop2hgt.py jih,západ,sever,východ vystupni_slozka pracovni_slozka
 Vyžaduje numpy a GDAL (gdalbuildvrt, gdalwarp)."""
-import email.utils, math, os, subprocess, sys, urllib.error, urllib.request
+import email.utils, math, os, subprocess, sys, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
@@ -37,7 +37,7 @@ def stahni(args):
             if ex.code in (403, 404):
                 return None
         except OSError:
-            pass
+            time.sleep(2 * (pokus + 1))
     raise RuntimeError('stažení %s%s selhalo' % (n, e))
 
 

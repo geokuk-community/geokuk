@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ověří vstupy (REGION, BBOX, ZAKLAD) dřív, než se použijí v URL a příkazech.
-[[ "${REGION:-x}" =~ ^[a-z0-9_-]+(/[a-z0-9_-]+)*$ ]] || { echo "Neplatný REGION: $REGION" >&2; exit 2; }
+[[ "${REGION:-x}" =~ ^[a-z0-9-]+(/[a-z0-9-]+)*$ ]] || { echo "Neplatný REGION: $REGION" >&2; exit 2; }
 num='-?[0-9]+(\.[0-9]+)?'
 [[ "${BBOX:?}" =~ ^$num,$num,$num,$num$ ]] || { echo "Neplatný BBOX: $BBOX" >&2; exit 2; }
 IFS=, read -r jih zapad sever vychod <<< "$BBOX"

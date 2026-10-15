@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # read the given .pbf/.osm file and add fmrel* tags for ways in relations (type=route, route=*)
-# Upraveno: isValidHikingSymbol porovnává hodnotu doslova (ne jako regulární výraz).
+# Upraveno: isValidHikingSymbol porovnává hodnotu doslova (ne jako regulární výraz); symbol mimo seznam se u ostatních tras nahradí hodnotou none.
 #
 # Parameters:
 # <1> - imported file
@@ -302,7 +302,7 @@ sub getFmRelHikingTags {
 	my $fmRelTags = {};
 	my $symbol = getSymbol($relTags);
 
-	if (!isValidHikingSymbol($symbol)) { return $fmRelTags; }	# avoid strange relations
+	if (!isValidHikingSymbol($relTags->{"symbol"} // "none")) { return $fmRelTags; }	# avoid strange relations
 	my $colour = getColour($relTags);
 	my $ref = undef;
 
@@ -428,6 +428,7 @@ sub getSymbol {
 
 	if (defined($relTags->{"symbol"})) { $symbol = $relTags->{"symbol"}; }
 	if ($symbol eq "") { $symbol = "none"; }
+	if (!isValidHikingSymbol($symbol)) { $symbol = "none"; }
 
 	return $symbol;
 }

@@ -4,6 +4,8 @@ Použití: katalog.py slozka_s_meta region nazev jih,západ,sever,východ [predp
 import glob, json, os, sys
 from datetime import datetime, timezone
 
+ZDROJ = 'https://github.com/geokuk-community/geokuk-maps/releases/download/'
+
 COPERNICUS = ('produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 '
               'provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the '
               'Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30.')
@@ -47,7 +49,7 @@ def main():
                 v[k] = sablona[k]
         v['licenceText'] = m['licenceText']
         vrstvy.append(v)
-    out = {'format': 1, 'vygenerovano': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'zdroje': [], 'vrstvy': vrstvy}
+    out = {'format': 1, 'vygenerovano': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'zdroje': [ZDROJ], 'vrstvy': vrstvy}
     with open(os.path.join(slozka, 'vrstvy.json'), 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
         f.write('\n')
