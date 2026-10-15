@@ -12,6 +12,10 @@ import org.mapsforge.core.graphics.TileBitmap;
 import org.mapsforge.core.model.Tile;
 import org.mapsforge.map.awt.graphics.AwtGraphicFactory;
 import org.mapsforge.map.datastore.MultiMapDataStore;
+import org.mapsforge.map.layer.hills.DemFolderFS;
+import org.mapsforge.map.layer.hills.DiffuseLightShadingAlgorithm;
+import org.mapsforge.map.layer.hills.HillsRenderConfig;
+import org.mapsforge.map.layer.hills.MemoryCachingHgtReaderTileSource;
 import org.mapsforge.map.layer.renderer.*;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
@@ -97,19 +101,22 @@ final class OfflineRenderer {
 	/** Překryv přes jiný podklad: dlaždice s průhledným pozadím. */
 	private final boolean prekryv;
 	private String preskoceno;
+	/** Stínování terénu z DEM dlaždic (HGT), null bez nich. */
+	private final HillsRenderConfig kopce;
 
 	private int rozdelanych;
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv) {
+	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce) {
 		this.data = data;
 		this.pokryti = pokryti;
 		this.tema = tema;
 		this.klic = klic;
 		this.prekryv = prekryv;
+		this.kopce = kopce;
 		tema.future.incrementRefCount();
-		renderer = new DatabaseRenderer(data, tema.grafika, null, new PopiskyOfflineMapy(data, tema.future, tema.displayModel, tema.grafika), true, false, null);
+		renderer = new DatabaseRenderer(data, tema.grafika, null, new PopiskyOfflineMapy(data, tema.future, tema.displayModel, tema.grafika), true, false, kopce);
 	}
 
 	/** Otevře mapy a načte téma; když téma načíst nejde, použije výchozí. Volající drží jeden odkaz na výsledek. */
@@ -137,6 +144,17 @@ final class OfflineRenderer {
 	 *            průhledné dlaždice pro překryv přes jiný podklad; mají v cache vlastní klíče
 	 */
 	static OfflineRenderer otevri(final List<File> mapy, final NacteneTema tema, final boolean prekryv) throws IOException {
+		return otevri(mapy, Collections.emptyList(), null, tema, prekryv);
+	}
+
+	/**
+	 * @param vrstvy
+	 *            soubory .map s vrstvami (trasy, vrstevnice), které se kreslí jedním průchodem spolu se základními mapami a téma je kreslí podle svých pravidel;
+	 *            nepočítají se do pokrytí podrobnou mapou
+	 * @param slozkaDem
+	 *            složka s DEM dlaždicemi (HGT, případně zazipované) pro stínování terénu, null = bez stínování
+	 */
+	static OfflineRenderer otevri(final List<File> mapy, final List<File> vrstvy, final File slozkaDem, final NacteneTema tema, final boolean prekryv) throws IOException {
 		if (mapy.isEmpty()) {
 			throw new IOException("Žádný soubor mapy.");
 		}
@@ -164,6 +182,14 @@ final class OfflineRenderer {
 			if (otisk.length() == 0) {
 				throw prvniChyba;
 			}
+			for (final File f : vrstvy) {
+				try {
+					data.addMapDataStore(new MapFile(f), false, false);
+					otisk.append("vrstva:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
+				} catch (final RuntimeException e) {
+					log.debug("Vrstvu {} nejde otevřít, kreslí se bez ní: {}", f, e.getMessage());
+				}
+			}
 		} catch (final IOException | RuntimeException e) {
 			data.close();
 			throw e;
@@ -172,9 +198,39 @@ final class OfflineRenderer {
 		if (tema.pismo != 1) {
 			otisk.append('\n').append(tema.pismo);
 		}
-		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv);
+		final HillsRenderConfig kopce = prekryv ? null : kopce(slozkaDem, tema.grafika, otisk);
+		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv, kopce);
 		r.preskoceno = prvniChyba == null ? null : prvniChyba.getMessage();
 		return r;
+	}
+
+	/** DEM dlaždice ve složce: soubory .hgt nebo .zip. */
+	static List<File> demDlazdice(final File slozka) {
+		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> f.isFile() && (f.getName().toLowerCase(Locale.ROOT).endsWith(".hgt") || f.getName().toLowerCase(Locale.ROOT).endsWith(".zip")));
+		if (soubory == null) {
+			return Collections.emptyList();
+		}
+		final List<File> dlazdice = new ArrayList<>(Arrays.asList(soubory));
+		dlazdice.sort(Comparator.comparing(File::getName));
+		return dlazdice;
+	}
+
+	/** Stínování terénu z DEM dlaždic ve složce; bez nich nebo při chybě null (mapa se kreslí bez stínování). Přidá do otisku, ze kterých souborů stínuje. */
+	private static HillsRenderConfig kopce(final File slozkaDem, final GraphicFactory grafika, final StringBuilder otisk) {
+		final List<File> dlazdice = demDlazdice(slozkaDem);
+		if (dlazdice.isEmpty()) {
+			return null;
+		}
+		try {
+			final HillsRenderConfig kopce = new HillsRenderConfig(new MemoryCachingHgtReaderTileSource(new DemFolderFS(slozkaDem), new DiffuseLightShadingAlgorithm(), grafika)).indexOnThread();
+			for (final File f : dlazdice) {
+				otisk.append("dem:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
+			}
+			return kopce;
+		} catch (final RuntimeException e) {
+			log.warn("Stínování terénu z {} nejde připravit, kreslí se bez něj: {}", slozkaDem, e.toString());
+			return null;
+		}
 	}
 
 	/** Proč se některá mapa ze složky neotevřela (první z nich), null když se otevřely všechny. */
@@ -349,6 +405,9 @@ final class OfflineRenderer {
 		zavreny = true;
 		tema.uvolni();
 		data.close();
+		if (kopce != null) {
+			kopce.interruptAndDestroy();
+		}
 	}
 
 	/** Vykreslí dlaždici; volat mezi {@link #zacni()} a {@link #skonci()}. Do PNG pro cache se převádí až při ukládání. */

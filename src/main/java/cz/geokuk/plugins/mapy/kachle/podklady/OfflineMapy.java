@@ -155,6 +155,14 @@ public class OfflineMapy {
 		return e == null ? null : e.getMessage();
 	}
 
+	/** Složka vrstev (trasy, vrstevnice, DEM dlaždice) uvnitř složky offline map; stejná jako ve správě map. */
+	public static final String SLOZKA_VRSTEV = "vrstvy";
+
+	/** Soubory .map vrstev (trasy, vrstevnice) ze složky vrstev. */
+	public static List<File> vrstvyVeSlozce(final File slozka) {
+		return slozka == null ? Collections.emptyList() : mapyVeSlozce(new File(slozka, SLOZKA_VRSTEV));
+	}
+
 	/** Soubory .map ve složce podle abecedy, velikost písmen v příponě nehraje roli. */
 	public static List<File> mapyVeSlozce(final File slozka) {
 		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> f.isFile() && f.getName().toLowerCase(Locale.ROOT).endsWith(".map"));
@@ -233,10 +241,26 @@ public class OfflineMapy {
 		}
 	}
 
+	/** Vrstvy kreslené spolu se základní mapou; překryv tras je nekreslí. */
+	private List<File> vrstvyPouzite() {
+		return prekryv ? Collections.emptyList() : vrstvyVeSlozce(slozkaOtevrena);
+	}
+
+	/** DEM dlaždice pro stínování terénu; překryv tras je nepoužívá. */
+	private List<File> demPouzite() {
+		return prekryv || slozkaOtevrena == null ? Collections.emptyList() : OfflineRenderer.demDlazdice(new File(slozkaOtevrena, SLOZKA_VRSTEV));
+	}
+
 	private String otisk(final List<File> mapy) {
 		final StringBuilder sb = new StringBuilder(temaOtevrene.otisk()).append('\n').append(meritkoOtevrene).append(' ').append(pismoOtevrene).append('\n');
 		for (final File f : mapy) {
 			sb.append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
+		}
+		for (final File f : vrstvyPouzite()) {
+			sb.append("vrstva:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
+		}
+		for (final File f : demPouzite()) {
+			sb.append("dem:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 		}
 		return sb.toString();
 	}
@@ -256,7 +280,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, nacteneTema(), prekryv);
+				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), prekryv ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv);
 				chyba = null;
 				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
