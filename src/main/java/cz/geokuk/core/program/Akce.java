@@ -112,6 +112,7 @@ public class Akce {
 
 	public final WebovaStrankaAction webovaStrankaAction = new WebovaStrankaAction();
 	public final OProgramuAction oProgramuAction = new OProgramuAction();
+	public final CoJeNovehoAction coJeNovehoAction = new CoJeNovehoAction();
 	public final FullScreenAction fullScreenAction = new FullScreenAction();
 	public final NastavMapuCeskaAction nastavMapuCeskaAction = new NastavMapuCeskaAction();
 	public final ZobrazVsechnyKeseAction zobrazVsechnyKeseAction = new ZobrazVsechnyKeseAction();
