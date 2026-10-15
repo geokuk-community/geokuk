@@ -78,6 +78,8 @@
 ### Opravy
 - Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
   už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
+- Mapy > Postahovat dlaždice: stahování víc než asi 110 dlaždic se už
+  nezastaví, stáhnou se všechny.
 
 ## 6.4.0
 
