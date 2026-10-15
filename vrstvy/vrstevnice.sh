@@ -20,7 +20,8 @@ done
 sledovani=$!
 "$D/mer.sh" pyhgtmap bash -c "xargs -P ${PARALELNE:-2} -I{} bash -c '{}' < prikazy.txt"
 kill "$sledovani" 2>/dev/null || true
-"$D/mer.sh" osmium-sort osmium sort --overwrite -o kont.pbf kont/*.pbf
+# Soubory dlaždic jsou seřazené a mají disjunktní id, merge běží streamově; sort drží vše v paměti.
+"$D/mer.sh" osmium-merge osmium merge --overwrite -o kont.pbf kont/*.pbf || "$D/mer.sh" osmium-sort osmium sort --overwrite -o kont.pbf kont/*.pbf
 out="$VYSTUP/${ZAKLAD}_vrstevnice.map"
 "$D/mer.sh" zapis-map osmosis -q --rb file=kont.pbf \
   --mw file="$out" type="${TYP_ZAPISU:-hd}" bbox="$BBOX" threads="$(nproc)" \
