@@ -13,24 +13,33 @@ import org.junit.*;
 
 import com.sun.net.httpserver.HttpServer;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 
-/** Hromadné stahování víc dlaždic, než se vejde do fronty dávkového web executoru: každá dlaždice dostane odpověď. */
+/** Hromadné stahování víc dlaždic, než se vejde do fronty dávkového web executoru. */
 public class StahovaniPlnaFrontaTest {
-	@Test(timeout = 120000)
-	public void vsechnyDlazdiceDostanouOdpoved() throws Exception {
+
+	private static final int N = 300;
+
+	private HttpServer server;
+	private final AtomicInteger prijato = new AtomicInteger();
+	private volatile long zpozdeniMs;
+	private EKaType mapa;
+	private KachleZiskavac z;
+
+	@Before
+	public void setUp() throws Exception {
 		final ByteArrayOutputStream png = new ByteArrayOutputStream();
 		ImageIO.write(new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB), "png", png);
 		final byte[] data = png.toByteArray();
-		final HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.setExecutor(Executors.newCachedThreadPool());
-		final AtomicInteger prijato = new AtomicInteger();
 		server.createContext("/", ex -> {
 			prijato.incrementAndGet();
 			try {
-				Thread.sleep(50);
+				Thread.sleep(zpozdeniMs);
 			} catch (final InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -39,8 +48,8 @@ public class StahovaniPlnaFrontaTest {
 			ex.close();
 		});
 		server.start();
-		final EKaType mapa = UzivatelskeMapyPristup.sHromadnymStahovanim("pokus", "http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{x}/{y}", 10, 18);
-		final KachleZiskavac z = new KachleZiskavac();
+		mapa = UzivatelskeMapyPristup.sHromadnymStahovanim("pokus", "http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{x}/{y}", 10, 18);
+		z = new KachleZiskavac();
 		z.inject(new OnofflineModel() {
 			@Override
 			public boolean isOnlineMode() {
@@ -69,18 +78,54 @@ public class StahovaniPlnaFrontaTest {
 				return true;
 			}
 		});
-		final int N = 300;
-		final AtomicInteger ok = new AtomicInteger(), chyb = new AtomicInteger();
+	}
+
+	@After
+	public void tearDown() {
+		server.stop(0);
+	}
+
+	private Ka dlazdice(final int i) {
+		return new Ka(KaLoc.ofSZ(new Wgs(50 + i % 20 * 0.05, 14 + i / 20 * 0.05).toMou(), 14), mapa);
+	}
+
+	private void zadejDavku(final AtomicInteger ok, final AtomicInteger chyb) {
 		for (int i = 0; i < N; i++) {
-			final KaLoc loc = KaLoc.ofSZ(new cz.geokuk.core.coordinates.Wgs(50 + (i % 20) * 0.05, 14 + (i / 20) * 0.05).toMou(), 14);
-			z.ziskejObsah(new KaOneReq(new Ka(loc, mapa), stav -> (stav.getThr() == null ? ok : chyb).incrementAndGet(), Priority.STAHOVANI), DiagnosticsData.create(null, "pokus", (a, b) -> {}));
+			z.ziskejObsah(new KaOneReq(dlazdice(i), stav -> (stav.getThr() == null ? ok : chyb).incrementAndGet(), Priority.STAHOVANI),
+					DiagnosticsData.create(null, "dávka", (a, b) -> {}));
 		}
+	}
+
+	@Test(timeout = 120000)
+	public void vsechnyDlazdiceDostanouOdpoved() throws Exception {
+		zpozdeniMs = 50;
+		final AtomicInteger ok = new AtomicInteger(), chyb = new AtomicInteger();
+		zadejDavku(ok, chyb);
 		final long konec = System.currentTimeMillis() + 60000;
 		while (ok.get() + chyb.get() < N && System.currentTimeMillis() < konec) {
 			Thread.sleep(200);
 		}
-		server.stop(0);
 		Assert.assertEquals("ok " + ok + " chyb " + chyb + ", server přijal " + prijato, N, ok.get() + chyb.get());
 		Assert.assertEquals(0, chyb.get());
+	}
+
+	/** Dávka stahuje při plné frontě ve svém vlákně; obrazovka chce tytéž dlaždice a nesmí na stahování čekat. */
+	@Test(timeout = 120000)
+	public void obrazovkaNecekaNaStahovaniDavky() throws Exception {
+		zpozdeniMs = 1000;
+		final AtomicInteger ok = new AtomicInteger(), chyb = new AtomicInteger();
+		final Thread davka = new Thread(() -> zadejDavku(ok, chyb), "dávka");
+		davka.setDaemon(true);
+		davka.start();
+		Thread.sleep(3000);
+		long nejdele = 0;
+		for (int kolo = 0; kolo < 3; kolo++) {
+			for (int i = 0; i < N; i++) {
+				final long zacatek = System.nanoTime();
+				z.ziskejObsah(new KaOneReq(dlazdice(i), stav -> {}, Priority.KACHLE), DiagnosticsData.create(null, "obrazovka", (a, b) -> {})).cancel();
+				nejdele = Math.max(nejdele, System.nanoTime() - zacatek);
+			}
+		}
+		Assert.assertTrue("nejdelší žádost obrazovky " + TimeUnit.NANOSECONDS.toMillis(nejdele) + " ms", nejdele < TimeUnit.MILLISECONDS.toNanos(300));
 	}
 }
