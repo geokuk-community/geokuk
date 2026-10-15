@@ -63,7 +63,6 @@ public class JBlokMap extends JLabel {
 		obsah.setPoZmeneObsahu(() -> {
 			if (popup.viditelny() == obsah) {
 				popup.ukaz(obsah, this, true);
-				obsah.poZnovuZobrazeni();
 			}
 		});
 		addMouseListener(new MouseAdapter() {
