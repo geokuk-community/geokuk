@@ -73,7 +73,8 @@
   výsledek kontroly, při stahování odhad zbývajícího času a mapu, která se
   nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení. Seznam
-  dalších map je větší a jde v něm hledat.
+  dalších map je větší, jde v něm hledat a země s regiony (Německo, Francie, Itálie,
+  Nizozemsko, Španělsko, Spojené království) se rozbalují.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno

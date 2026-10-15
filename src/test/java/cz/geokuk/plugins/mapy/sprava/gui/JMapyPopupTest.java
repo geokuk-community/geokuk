@@ -86,8 +86,12 @@ public class JMapyPopupTest {
 
 	private static List<RadekMapy> dalsiMapy() {
 		final List<RadekMapy> r = new ArrayList<>();
+		r.add(RadekMapy.katalogova("de", "Německo", RadekMapy.Stav.NEMAME).velikost(3000 * MB).build());
 		for (final String n : new String[] { "Bavorsko", "Berlín", "Sasko", "Šlesvicko-Holštýnsko" }) {
 			r.add(RadekMapy.katalogova("de/" + n, n, RadekMapy.Stav.NEMAME).skupina("Německo").velikost(100 * MB).build());
+		}
+		for (final String n : new String[] { "Skotsko", "Wales" }) {
+			r.add(RadekMapy.katalogova("uk/" + n, n, RadekMapy.Stav.NEMAME).skupina("Spojené království").velikost(100 * MB).build());
 		}
 		for (final String n : new String[] { "Rakousko", "Slovensko", "Švýcarsko", "Polsko", "Česko" }) {
 			r.add(RadekMapy.katalogova("x/" + n, n, RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
@@ -121,7 +125,69 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.NIC_NENALEZENO));
 			p.getHledat().setText("");
 			Assert.assertEquals(0, viditelnychLabelu(p, JMapyPopup.NIC_NENALEZENO));
+			Assert.assertEquals("bez hledání jsou regiony sbalené", 0, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Německo"));
+		});
+	}
+
+	/** Země s regiony jsou ve stromu sbalené; klik na zemi regiony rozbalí a sbalí; samostatné mapy jsou vidět vždy. */
+	@Test
+	public void stromZemiSbalenyARozbalovany() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			Assert.assertEquals(1, viditelnychLabelu(p, "Německo"));
+			Assert.assertEquals("země bez vlastní mapy má hlavičku", 1, viditelnychLabelu(p, "Spojené království"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Wales"));
+			p.prepniUzel("Německo");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals("jiná země zůstane sbalená", 0, viditelnychLabelu(p, "Wales"));
+			p.prepniUzel("Spojené království");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Wales"));
+			p.prepniUzel("Německo");
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			p.prepniUzel("Německo");
+			p.obnov(dalsiMapy());
+			Assert.assertEquals("rozbalení přežije přestavbu popupu", 1, viditelnychLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Hledání rozbalí země s nalezenou mapou, ostatní zmizí; po vymazání se vrátí ruční rozbalení. */
+	@Test
+	public void hledaniRozbaliZemeSNalezenouMapou() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			p.getHledat().setText("bav");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals("hlavička země zůstane", 1, viditelnychLabelu(p, "Německo"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Berlín"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Spojené království"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Rakousko"));
+			p.getHledat().setText("");
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Vestavěný katalog Evropy: země s regiony (Německo, Francie…) jsou sbalené, popup nemá stovky viditelných řádků. */
+	@Test
+	public void katalogEvropyJeVPopupuSbaleny() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(), cz.geokuk.plugins.mapy.sprava.StavMapy::novy, Collections.emptyList(), null));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Německo"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Francie"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Spojené království"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			p.prepniUzel("Německo");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
+			long viditelnychRadku = labels(p).stream().filter(l -> l.isVisible() && l.getText() != null && !l.getText().isEmpty()).count();
+			Assert.assertTrue("rozbalené Německo + sbalené ostatní, ne všech 130 map: " + viditelnychRadku, viditelnychRadku < 250);
 		});
 	}
 
@@ -308,7 +374,7 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
 			final JMapyPopup malo = new JMapyPopup();
 			malo.setOvladani(new Zaznam());
-			malo.obnov(dalsiMapy().subList(0, 3));
+			malo.obnov(dalsiMapy().subList(7, 10));
 			Assert.assertNull(java.util.Arrays.stream(malo.getComponents()).filter(c -> c == malo.getHledat()).findFirst().orElse(null));
 		});
 	}
