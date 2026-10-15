@@ -264,7 +264,7 @@ public final class EKaType {
 		return "© OpenStreetMap contributors";
 	}
 
-	/** Z vestavěných jde hromadně stahovat jen Freemap, uživatelské mapy jen když to uživatel zapne a server to nezakazuje. */
+	/** Hromadně jde stahovat jen online mapa, jejíž poskytovatel to dovoluje; uživatelská mapa jen se zapnutým hromadným stahováním. */
 	public boolean isHromadneStahovaniPovoleno() {
 		if (isOffline() || jeServerBezHromadnehoStahovani(hostitel())) {
 			return false;

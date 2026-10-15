@@ -1,0 +1,152 @@
+package cz.geokuk.plugins.mapy.sprava.gui;
+
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.concurrent.*;
+
+import javax.swing.SwingUtilities;
+
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import cz.geokuk.core.coord.Coord;
+import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.plugins.mapy.kachle.ObrysPokrytiEvent;
+import cz.geokuk.plugins.mapy.sprava.*;
+
+/** Obrys pokrytí se kreslí v pixelech výřezu: uvnitř je území mapy, mimo ne. */
+public class JObrysMapSlideTest {
+
+	@Rule
+	public TemporaryFolder tmp = new TemporaryFolder();
+
+	@Test
+	public void obrysVPixelechVyrezu() {
+		final Coord soord = new Coord(8, new Wgs(50, 15).toMou(), new Dimension(800, 600), 0);
+		final PolygonPokryti cesko = PolygonPokryti.obdelnik(48.55, 12.09, 51.06, 18.86);
+		final Path2D cesta = JObrysMapSlide.cesta(soord, cesko);
+		final Point praha = soord.transform(new Wgs(50.08, 14.42).toMou());
+		final Point viden = soord.transform(new Wgs(48.21, 16.37).toMou());
+		Assert.assertTrue(cesta.contains(praha));
+		Assert.assertFalse(cesta.contains(viden));
+	}
+
+	private static BufferedImage nakresli(final int zoom, final List<PolygonPokryti> obrysy) {
+		final JObrysMapSlide s = new JObrysMapSlide();
+		s.setSize(400, 300);
+		s.setSoord(new Coord(zoom, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0));
+		s.setObrysy(obrysy);
+		final BufferedImage img = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = img.createGraphics();
+		s.paintComponent(g);
+		g.dispose();
+		return img;
+	}
+
+	private static int alfa(final BufferedImage img, final int x, final int y) {
+		return img.getRGB(x, y) >>> 24;
+	}
+
+	/** V přehledu (do Z9) se zašedne území bez mapy, pokryté zůstane čisté; od Z10 se nekreslí nic. */
+	@Test
+	public void zasedneMimoMapyJenVPrehledu() {
+		final List<PolygonPokryti> mapa = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
+		final BufferedImage z9 = nakresli(JObrysMapSlide.NEJVETSI_ZOOM, mapa);
+		Assert.assertTrue("mimo mapu šedá", alfa(z9, 2, 2) > 0);
+		Assert.assertEquals("uvnitř mapy čisto", 0, alfa(z9, 200, 150));
+		final BufferedImage z10 = nakresli(JObrysMapSlide.NEJVETSI_ZOOM + 1, mapa);
+		Assert.assertEquals(0, alfa(z10, 2, 2));
+	}
+
+	/** Posun mapy plochu nepřepočítá, jen posune; výsledek je stejný jako při čerstvém výpočtu. */
+	@Test
+	public void posunMapyPouzijeSkladAVykresliStejne() {
+		final List<PolygonPokryti> mapa = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
+		final JObrysMapSlide s = new JObrysMapSlide();
+		s.setSize(400, 300);
+		s.setSoord(new Coord(8, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0));
+		s.setObrysy(mapa);
+		s.paintComponent(new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB).createGraphics());
+		final JObrysMapSlide.Sklad pred = s.sklad;
+		final Coord posunuty = new Coord(8, new Wgs(50.01, 15.03).toMou(), new Dimension(400, 300), 0);
+		s.setSoord(posunuty);
+		final BufferedImage img = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+		s.paintComponent(img.createGraphics());
+		Assert.assertSame(pred, s.sklad);
+		final BufferedImage cerstvy = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+		final JObrysMapSlide t = new JObrysMapSlide();
+		t.setSize(400, 300);
+		t.setSoord(posunuty);
+		t.setObrysy(mapa);
+		t.paintComponent(cerstvy.createGraphics());
+		for (int y = 0; y < 300; y += 7) {
+			for (int x = 0; x < 400; x += 7) {
+				Assert.assertEquals(x + "," + y, alfa(cerstvy, x, y), alfa(img, x, y));
+			}
+		}
+		s.setSoord(new Coord(8, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0).derive(7));
+		s.paintComponent(new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB).createGraphics());
+		Assert.assertNotSame(pred, s.sklad);
+	}
+
+	@Test
+	public void bezMapNicNezasedne() {
+		final BufferedImage img = nakresli(6, Collections.emptyList());
+		Assert.assertEquals(0, alfa(img, 2, 2));
+		Assert.assertEquals(0, alfa(img, 200, 150));
+	}
+
+	@Test
+	public void doTiskuNejde() {
+		Assert.assertNull(new JObrysMapSlide().createRenderableSlide());
+	}
+
+	/** Obrysy se čtou mimo EDT; hlídání složky je bez změny map znovu nečte, dokončené stažení ano. */
+	@Test(timeout = 20000)
+	public void cteniMimoEdtAJenPoZmene() throws Exception {
+		final BlockingQueue<Boolean> cteni = new LinkedBlockingQueue<>();
+		final JObrysMapSlide[] s = new JObrysMapSlide[1];
+		SwingUtilities.invokeAndWait(() -> {
+			s[0] = new JObrysMapSlide();
+			s[0].ctecka = (slozka, katalog) -> {
+				cteni.add(SwingUtilities.isEventDispatchThread());
+				return Collections.emptyList();
+			};
+			s[0].onEvent(new ObrysPokrytiEvent(true));
+		});
+		Assert.assertEquals(Boolean.FALSE, cteni.poll(10, TimeUnit.SECONDS));
+		dokonciCteni(s[0]);
+		SwingUtilities.invokeAndWait(() -> s[0].nacti(false));
+		Assert.assertNull("bez změny map se obrysy znovu nečtou", cteni.poll(1, TimeUnit.SECONDS));
+		final KatalogovaMapa cesko = KatalogMap.vestaveny().podleId("europe/czech-republic").get();
+		final StavMapy stazena = StavMapyProGui.stav(cesko, StavMapy.Mistni.MAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.HOTOVO, 0, -1, null);
+		SwingUtilities.invokeAndWait(() -> s[0].onEvent(new SpravaMapEvent(stazena)));
+		Assert.assertEquals("po stažení mapy se obrysy čtou znovu", Boolean.FALSE, cteni.poll(10, TimeUnit.SECONDS));
+		SwingUtilities.invokeAndWait(() -> s[0].setVisible(false));
+	}
+
+	private static void dokonciCteni(final JObrysMapSlide s) throws Exception {
+		final boolean[] cte = { true };
+		while (cte[0]) {
+			SwingUtilities.invokeAndWait(() -> cte[0] = s.isCteni());
+		}
+	}
+
+	@Test
+	public void otiskSeMeniSMapamiVeSlozce() throws Exception {
+		final File slozka = tmp.getRoot();
+		final String prazdna = SouboryMap.otisk(slozka);
+		Files.write(new File(slozka, "czech-republic.map").toPath(), new byte[10]);
+		final String sMapou = SouboryMap.otisk(slozka);
+		Assert.assertNotEquals(prazdna, sMapou);
+		Assert.assertEquals(sMapou, SouboryMap.otisk(slozka));
+		Files.write(new File(slozka, "czech-republic.map").toPath(), new byte[20]);
+		Assert.assertNotEquals(sMapou, SouboryMap.otisk(slozka));
+	}
+}

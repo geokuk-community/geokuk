@@ -15,7 +15,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.PrehledovaMapa;
+import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
 
 /** Popup Mapy: řádky podle stavu, akce, odkazy na weby a čtení složky offline map. */
 public class JMapyPopupTest {
@@ -40,6 +43,10 @@ public class JMapyPopupTest {
 			}
 		}
 		return v;
+	}
+
+	static List<JButton> tlacitkaV(final Container c) {
+		return tlacitka(c);
 	}
 
 	private static JButton tlacitko(final Container c, final String text) {
@@ -138,7 +145,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			int odkazu = 0;
 			for (final JButton b : tlacitka(p)) {
-				if (b.getToolTipText() != null && b.getToolTipText().startsWith("http")) {
+				if (b.getToolTipText() != null && (b.getToolTipText().contains("paws") || b.getToolTipText().contains("andromaps"))) {
 					final URI u = URI.create(b.getToolTipText());
 					Assert.assertTrue(b.getToolTipText(), u.getPath() == null || u.getPath().isEmpty() || "/".equals(u.getPath()));
 					odkazu++;
@@ -169,7 +176,7 @@ public class JMapyPopupTest {
 		Files.write(new File(slozka, "rozbita.map").toPath(), new byte[5000]);
 		Files.write(new File(slozka, PrehledovaMapa.SOUBOR).toPath(), new byte[10]);
 		Files.write(new File(slozka, "tema.zip").toPath(), new byte[10]);
-		final List<RadekMapy> radky = SouboryMap.nacti(slozka);
+		final List<RadekMapy> radky = SouboryMap.nacti(slozka, KatalogMap.vestaveny());
 		Assert.assertEquals(2, radky.size());
 		final RadekMapy kukov = radky.get(0);
 		Assert.assertEquals("kukov.map", kukov.getNazev());
@@ -178,7 +185,38 @@ public class JMapyPopupTest {
 		Assert.assertTrue(kukov.isVlastni());
 		Assert.assertEquals(RadekMapy.Stav.CHYBA, radky.get(1).getStav());
 		Assert.assertTrue(radky.get(1).isVeSlozce());
-		Assert.assertTrue(SouboryMap.nacti(new File(slozka, "neni")).isEmpty());
+		Assert.assertTrue(SouboryMap.nacti(new File(slozka, "neni"), KatalogMap.vestaveny()).isEmpty());
+		Assert.assertEquals("nečitelná mapa nic nepokrývá", 1, SouboryMap.obrysy(slozka, KatalogMap.vestaveny()).size());
+	}
+
+	/** Soubor se jménem z katalogu je katalogová mapa: název země a obrys země, ne obdélník z hlavičky. */
+	@Test
+	public void mapaZKatalogu() throws Exception {
+		final File slozka = tmp.newFolder("offline-mapy");
+		Files.copy(new File("src/test/resources/offline-mapy/kukov.map").toPath(), new File(slozka, "czech-republic.map").toPath());
+		final RadekMapy r = SouboryMap.nacti(slozka, KatalogMap.vestaveny()).get(0);
+		Assert.assertFalse(r.isVlastni());
+		Assert.assertEquals("europe/czech-republic", r.getId());
+		Assert.assertEquals("Česko", r.getNazev());
+		Assert.assertEquals(RadekMapy.Stav.AKTUALNI, r.getStav());
+		final List<PolygonPokryti> obrysy = SouboryMap.obrysy(slozka, KatalogMap.vestaveny());
+		Assert.assertEquals(1, obrysy.size());
+		Assert.assertSame(KatalogMap.vestaveny().podleId("europe/czech-republic").get().getPokryti(), obrysy.get(0));
+		Assert.assertTrue("Praha", obrysy.get(0).obsahuje(new Wgs(50.08, 14.42)));
+	}
+
+	/** Dlouhý text chyby popup neroztáhne, celý je v tooltipu. */
+	@Test
+	public void dlouhaChybaSeZkrati() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final String chyba = "Stahování se přerušilo: " + String.join("", Collections.nCopies(20, "dlouhý technický text "));
+			final JMapyPopup p = new JMapyPopup();
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.CHYBA).chyba(chyba).build()));
+			final JLabel popis = popisky(p).stream().filter(l -> l.getText() != null && l.getText().startsWith("Stahování")).findFirst().get();
+			Assert.assertTrue(popis.getText().endsWith("…"));
+			Assert.assertTrue(popis.getPreferredSize().width <= JMapyPopup.SIRKA_POPISU + 10);
+			Assert.assertTrue(popis.getToolTipText().contains(chyba.trim()));
+		});
 	}
 
 	/** Soubor se stejným jménem vyměněný za jiný: řádek se nepřestaví, ale tooltip ukáže nové údaje. */
@@ -207,5 +245,36 @@ public class JMapyPopupTest {
 			}
 		}
 		return v;
+	}
+
+	/** U map z katalogu je odkaz na projekt, licenci a atribuci OSM; bez nich (jen vlastní soubory) ne. */
+	@Test
+	public void zdrojALicenceMapZKatalogu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").build()));
+			Assert.assertNull(tlacitko(p, "licence ODbL"));
+			p.obnov(Arrays.asList(RadekMapy.vlastni("paws.map").build(), katalog("at", RadekMapy.Stav.NEMAME).build()));
+			Assert.assertEquals(JMapyPopup.URL_ODBL, tlacitko(p, "licence ODbL").getToolTipText());
+			Assert.assertEquals(JMapyPopup.URL_OSM, tlacitko(p, "© přispěvatelé OpenStreetMap").getToolTipText());
+			Assert.assertEquals(JMapyPopup.URL_MAPSFORGE, tlacitko(p, "mapsforge").getToolTipText());
+		});
+	}
+
+	/** Po Zrušit se až do potvrzení ukazuje „Ruší se…“, i když ještě chodí průběh. */
+	@Test
+	public void rusiSe() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(60 * MB).build()));
+			tlacitko(p, JMapyPopup.ZRUSIT).doClick();
+			Assert.assertFalse(tlacitko(p, JMapyPopup.ZRUSIT).isEnabled());
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(120 * MB).build()));
+			Assert.assertTrue(texty(p).contains(JMapyPopup.RUSI_SE));
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.NEMAME).rozpracovano(true).stazeno(120 * MB).build()));
+			Assert.assertFalse(texty(p).contains(JMapyPopup.RUSI_SE));
+			Assert.assertNotNull(tlacitko(p, JMapyPopup.POKRACOVAT));
+		});
 	}
 }

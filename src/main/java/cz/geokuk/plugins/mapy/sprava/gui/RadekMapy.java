@@ -39,6 +39,12 @@ public final class RadekMapy {
 	final Instant datumDat;
 	final Instant datumNaServeru;
 	final boolean rozpracovano;
+	/** Soubor mapy je ve složce offline map (i poškozený nebo právě nahrazovaný). */
+	final boolean veSlozce;
+	/** Zjišťuje se stav na serveru, nic se nestahuje. */
+	final boolean kontroluje;
+	/** Stažená mapa se ověřuje. */
+	final boolean overuje;
 	final String zdroj;
 	final String licence;
 	final String chyba;
@@ -55,6 +61,9 @@ public final class RadekMapy {
 		datumDat = b.datumDat;
 		datumNaServeru = b.datumNaServeru;
 		rozpracovano = b.rozpracovano;
+		veSlozce = b.veSlozce != null ? b.veSlozce : b.vlastni || b.stav == Stav.AKTUALNI || b.stav == Stav.NOVEJSI;
+		kontroluje = b.kontroluje;
+		overuje = b.overuje;
 		zdroj = b.zdroj;
 		licence = b.licence;
 		chyba = b.chyba;
@@ -94,13 +103,19 @@ public final class RadekMapy {
 
 	/** Je ve složce map (i poškozená); jinak je k stažení. */
 	public boolean isVeSlozce() {
-		return vlastni || stav == Stav.AKTUALNI || stav == Stav.NOVEJSI || stav == Stav.CHYBA && datumDat != null;
+		return veSlozce;
 	}
 
 	/** Krátký popis stavu za názvem. */
 	String popis() {
 		switch (stav) {
 		case STAHUJE:
+			if (kontroluje) {
+				return "Zjišťuji na serveru…";
+			}
+			if (overuje) {
+				return "Ověřuji…";
+			}
 			return velikost > 0 ? String.format(new Locale("cs"), "%d %% z %s", procenta(), velikost(velikost)) : "Stahuje se " + velikost(stazeno);
 		case NOVEJSI:
 			return datumNaServeru != null ? "Novější data z " + DATUM.format(datumNaServeru) : "Novější verze ke stažení";
@@ -110,6 +125,9 @@ public final class RadekMapy {
 			return velikost > 0 ? (rozpracovano ? "Staženo " + velikost(stazeno) + " z " : "") + "~" + velikost(velikost) : "";
 		case AKTUALNI:
 		default:
+			if (chyba != null) {
+				return chyba;
+			}
 			final StringBuilder sb = new StringBuilder();
 			if (velikost > 0) {
 				sb.append(velikost(velikost));
@@ -170,6 +188,9 @@ public final class RadekMapy {
 		private Instant datumDat;
 		private Instant datumNaServeru;
 		private boolean rozpracovano;
+		private Boolean veSlozce;
+		private boolean kontroluje;
+		private boolean overuje;
 		private String zdroj;
 		private String licence;
 		private String chyba;
@@ -206,6 +227,26 @@ public final class RadekMapy {
 
 		public Builder rozpracovano(final boolean b) {
 			rozpracovano = b;
+			return this;
+		}
+
+		public Builder stav(final Stav s) {
+			stav = s;
+			return this;
+		}
+
+		public Builder veSlozce(final boolean b) {
+			veSlozce = b;
+			return this;
+		}
+
+		public Builder kontroluje(final boolean b) {
+			kontroluje = b;
+			return this;
+		}
+
+		public Builder overuje(final boolean b) {
+			overuje = b;
 			return this;
 		}
 

@@ -33,6 +33,7 @@ public class JMapyPopup extends JPanel {
 	static final String POKRACOVAT = "Pokračovat";
 	static final String AKTUALIZOVAT = "Aktualizovat";
 	static final String STAHNOUT_ZNOVU = "Stáhnout znovu";
+	static final String ZKUSIT_ZNOVU = "Zkusit znovu";
 	static final String ZRUSIT = "Zrušit";
 	static final String ZKONTROLOVAT = "Zkontrolovat aktualizace";
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
@@ -41,6 +42,14 @@ public class JMapyPopup extends JPanel {
 
 	static final String URL_PAWS = "https://osm.paws.cz/";
 	static final String URL_OAM = "https://www.openandromaps.org/";
+	static final String ZDROJ = "Mapy ke stažení:";
+	static final String URL_MAPSFORGE = "https://github.com/mapsforge/mapsforge";
+	static final String URL_ODBL = "https://opendatacommons.org/licenses/odbl/";
+	static final String URL_OSM = "https://www.openstreetmap.org/copyright";
+	static final String RUSI_SE = "Ruší se…";
+
+	/** Delší popis (třeba text chyby) se zkrátí, celý je v tooltipu. */
+	static final int SIRKA_POPISU = 240;
 
 	/** Nejvyšší výška seznamu dalších map, pak se posouvá. */
 	static final int VYSKA_SEZNAMU = 220;
@@ -55,6 +64,8 @@ public class JMapyPopup extends JPanel {
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private JScrollPane seznam;
 	private Runnable poZmeneObsahu = () -> {};
+	/** Mapa, jejíž stahování uživatel zrušil a čeká se na potvrzení; null, když nic. */
+	private String rusenaMapa;
 
 	public JMapyPopup() {
 		super(new GridBagLayout());
@@ -75,6 +86,10 @@ public class JMapyPopup extends JPanel {
 		sestav();
 	}
 
+	public void setObrysZapnuty(final boolean zapnuty) {
+		obrys.setSelected(zapnuty);
+	}
+
 	/** Zavolá se, když se změnila velikost obsahu a popup se má zobrazit znovu. */
 	public void setPoZmeneObsahu(final Runnable poZmeneObsahu) {
 		this.poZmeneObsahu = poZmeneObsahu;
@@ -93,7 +108,7 @@ public class JMapyPopup extends JPanel {
 				}
 				final JLabel popis = bunky[2];
 				final int predtim = popis.getPreferredSize().width;
-				popis.setText(r.popis());
+				popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
 				sirsi |= popis.getPreferredSize().width > predtim;
 				final String tooltip = r.tooltip();
 				for (final JLabel b : bunky) {
@@ -106,6 +121,7 @@ public class JMapyPopup extends JPanel {
 			}
 			return;
 		}
+		rusenaMapa = null;
 		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
 		sestav();
 		if (seznam != null) {
@@ -121,7 +137,7 @@ public class JMapyPopup extends JPanel {
 	private static List<String> struktura(final List<RadekMapy> radky) {
 		final List<String> s = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano);
+			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null));
 		}
 		return s;
 	}
@@ -140,7 +156,7 @@ public class JMapyPopup extends JPanel {
 		for (final RadekMapy r : radky) {
 			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2);
 		}
-		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE);
+		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje);
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -164,7 +180,7 @@ public class JMapyPopup extends JPanel {
 		final List<RadekMapy> proMisto = new ArrayList<>();
 		final List<RadekMapy> dalsi = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			if (r.isVeSlozce() || r.stav == RadekMapy.Stav.STAHUJE && r.datumDat != null) {
+			if (r.isVeSlozce()) {
 				veSlozce.add(r);
 			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE) {
 				proMisto.add(r);
@@ -257,6 +273,20 @@ public class JMapyPopup extends JPanel {
 			add(seznam, gbc);
 		}
 
+		if (radky.stream().anyMatch(r -> !r.vlastni)) {
+			// Projekt, licence a atribuce map z katalogu.
+			gbc.gridy++;
+			final JPanel zdroj = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+			zdroj.setOpaque(false);
+			zdroj.add(maly(ZDROJ));
+			zdroj.add(odkaz("mapsforge", URL_MAPSFORGE));
+			zdroj.add(maly("·"));
+			zdroj.add(odkaz("licence ODbL", URL_ODBL));
+			zdroj.add(maly("·"));
+			zdroj.add(odkaz("© přispěvatelé OpenStreetMap", URL_OSM));
+			add(zdroj, gbc);
+		}
+
 		gbc.gridy++;
 		gbc.insets = new Insets(6, 0, 0, 0);
 		add(new JSeparator(), gbc);
@@ -290,7 +320,8 @@ public class JMapyPopup extends JPanel {
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
 		panel.add(nazev, bunka(1, y, 1));
 
-		final JLabel popis = maly(r.popis());
+		final JLabel popis = maly("");
+		popis.setText(zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
 		popis.setToolTipText(tooltip);
 		if (r.stav == RadekMapy.Stav.CHYBA) {
 			popis.setForeground(IkonyMap.CERVENA);
@@ -320,18 +351,30 @@ public class JMapyPopup extends JPanel {
 		final JButton b;
 		switch (r.stav) {
 		case STAHUJE:
-			return odkaz(ZRUSIT, e -> {
+			if (r.kontroluje) {
+				return null;
+			}
+			final JButton zrusit = odkaz(ZRUSIT, (ActionListener) null);
+			zrusit.addActionListener(e -> {
 				if (ovladani != null) {
 					ovladani.zrusStahovani();
 				}
+				// Zaseknutý server zrušení potvrdí až po chvíli.
+				rusenaMapa = r.id;
+				zrusit.setEnabled(false);
+				final JLabel[] bunky = popisy.get(klic(r));
+				if (bunky != null) {
+					bunky[2].setText(RUSI_SE);
+				}
 			});
+			return zrusit;
 		case AKTUALNI:
 			return null;
 		case NOVEJSI:
 			b = odkaz(AKTUALIZOVAT, e -> stahni(r));
 			break;
 		case CHYBA:
-			b = odkaz(STAHNOUT_ZNOVU, e -> stahni(r));
+			b = odkaz(r.isVeSlozce() ? STAHNOUT_ZNOVU : ZKUSIT_ZNOVU, e -> stahni(r));
 			break;
 		case NEMAME:
 		default:
@@ -349,6 +392,17 @@ public class JMapyPopup extends JPanel {
 		if (ovladani != null) {
 			ovladani.stahni(r.id);
 		}
+	}
+
+	static String zkrat(final String text, final FontMetrics fm) {
+		if (text == null || fm.stringWidth(text) <= SIRKA_POPISU) {
+			return text;
+		}
+		int n = text.length();
+		while (n > 1 && fm.stringWidth(text.substring(0, n) + "…") > SIRKA_POPISU) {
+			n--;
+		}
+		return text.substring(0, n).trim() + "…";
 	}
 
 	private static JPanel panelRadku() {
@@ -391,7 +445,9 @@ public class JMapyPopup extends JPanel {
 		b.setFont(b.getFont().deriveFont(Font.PLAIN, 11f));
 		b.setForeground(ODKAZ);
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		b.addActionListener(akce);
+		if (akce != null) {
+			b.addActionListener(akce);
+		}
 		return b;
 	}
 

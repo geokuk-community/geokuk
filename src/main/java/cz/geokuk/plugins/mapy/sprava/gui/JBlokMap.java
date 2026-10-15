@@ -11,7 +11,13 @@ import javax.swing.*;
 
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.plugins.mapy.kachle.ObrysPokrytiEvent;
 import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
+import cz.geokuk.core.coord.VyrezChangedEvent;
+import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.gui.PopupNadBlokem;
@@ -30,13 +36,17 @@ public class JBlokMap extends JLabel {
 	static final String NEJDELSI_TEXT = TEXT + " 100 %";
 
 	/** Čtení složky; v testech se dá nahradit. */
-	transient java.util.function.Function<File, List<RadekMapy>> cteniSlozky = SouboryMap::nacti;
+	transient java.util.function.Function<File, List<RadekMapy>> cteniSlozky = f -> SouboryMap.nacti(f, KatalogMap.vestaveny());
 	private transient java.util.function.Supplier<File> zdrojSlozky = () -> null;
 
 	private final JMapyPopup obsah = new JMapyPopup();
 	private final transient PopupNadBlokem popup = new PopupNadBlokem(this, () -> {});
 	private final Timer tocitko = new Timer(80, e -> repaint());
 	private transient KachleModel kachleModel;
+	private transient SpravaMapModel spravaMap;
+	/** Mapy ve složce podle posledního čtení. */
+	private transient List<RadekMapy> soubory = java.util.Collections.emptyList();
+	private transient Wgs stred;
 	/** Čtení složky běží, další změna počká na jeho konec. */
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
@@ -96,8 +106,66 @@ public class JBlokMap extends JLabel {
 					}
 				}, "Otevření složky offline map").start();
 			}
+
+			@Override
+			public void stahni(final String id) {
+				if (spravaMap != null) {
+					spravaMap.getKatalog().podleId(id).ifPresent(spravaMap::stahni);
+				}
+			}
+
+			@Override
+			public void zrusStahovani() {
+				if (spravaMap != null) {
+					spravaMap.zrusStahovani();
+				}
+			}
+
+			@Override
+			public void zkontroluj(final String id) {
+				if (spravaMap != null) {
+					spravaMap.getKatalog().podleId(id).ifPresent(spravaMap::zkontroluj);
+				}
+			}
+
+			@Override
+			public boolean isObrysDostupny() {
+				return true;
+			}
+
+			@Override
+			public boolean isObrysPokryti() {
+				return kachleModel.isObrysPokryti();
+			}
+
+			@Override
+			public void setObrysPokryti(final boolean zapnuto) {
+				kachleModel.setObrysPokryti(zapnuto);
+			}
 		});
 		nactiSlozku();
+	}
+
+	public void inject(final SpravaMapModel spravaMap) {
+		this.spravaMap = spravaMap;
+	}
+
+	public void onEvent(final SpravaMapEvent event) {
+		prestav();
+	}
+
+	/** Střed výřezu určuje mapy „Pro zobrazené místo“; popup se přestaví, jen když se jejich výběr změní. */
+	public void onEvent(final VyrezChangedEvent event) {
+		stred = event.getMoord().getMoustred().toWgs();
+		prestav();
+	}
+
+	private void prestav() {
+		obnov(spravaMap == null ? soubory : RadkyMap.sestav(spravaMap.getKatalog(), spravaMap::getStav, soubory, stred));
+	}
+
+	public void onEvent(final ObrysPokrytiEvent event) {
+		obsah.setObrysZapnuty(event.isZapnuto());
 	}
 
 	public void onEvent(final OfflineMapaChangedEvent event) {
@@ -142,7 +210,8 @@ public class JBlokMap extends JLabel {
 			protected void done() {
 				cteni = null;
 				try {
-					obnov(get());
+					soubory = get();
+					prestav();
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} catch (final ExecutionException e) {
@@ -218,6 +287,9 @@ public class JBlokMap extends JLabel {
 		}
 		// Hlídání složky běží jen u offline podkladu; mapu nakopírovanou při jiném podkladu tak popup ukáže hned.
 		nactiSlozku();
+		if (spravaMap != null) {
+			spravaMap.obnovStavy();
+		}
 		popup.ukaz(obsah, this, false);
 	}
 

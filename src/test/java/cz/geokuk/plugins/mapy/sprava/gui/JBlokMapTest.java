@@ -43,7 +43,7 @@ public class JBlokMapTest {
 			blok[0].setZdrojSlozky(() -> slozka);
 			blok[0].cteniSlozky = f -> {
 				naEdt.add(SwingUtilities.isEventDispatchThread());
-				return SouboryMap.nacti(f);
+				return SouboryMap.nacti(f, cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny());
 			};
 			blok[0].setOvladani(new OvladaniMap() {
 				@Override
