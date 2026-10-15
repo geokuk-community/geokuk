@@ -4,6 +4,7 @@ import sys
 
 SYMBOLY = ['cave', 'edu', 'education', 'interesting_object', 'local', 'major', 'none', 'peak', 'roundtrip',
            'ruin', 'shelter', 'spring', 'stripe', 'yes']
+KCT = ['learning', 'alternative', 'horse', 'ski', 'bicycle', 'wheelchair']
 BARVY = ['red', 'blue', 'green', 'yellow', 'black', 'white', 'default']
 KLICE = []
 for sit in ('', 'local', 'unknown'):
@@ -25,6 +26,9 @@ with open(sys.argv[1] if len(sys.argv) > 1 else 'tag-mapping-trasy.xml', 'w', en
     for k in KLICE:
         for v in SYMBOLY:
             f.write('\t\t<osm-tag key="%s" value="%s" zoom-appear="11" />\n' % (k, v))
+    for b in ('red', 'blue', 'green', 'yellow'):
+        for v in KCT:
+            f.write('\t\t<osm-tag key="fmrelhiking%s" value="%s" zoom-appear="11" />\n' % (b, v))
     for v in ('edu', 'education'):
         f.write('\t\t<osm-tag key="fmreleducation" value="%s" zoom-appear="11" />\n' % v)
     f.write('\t</ways>\n</tag-mapping>\n')

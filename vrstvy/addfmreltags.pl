@@ -31,6 +31,7 @@ use strict;
 use warnings;
 
 my @allowedHikingSymbols = qw(cave edu education interesting_object local major none peak roundtrip ruin shelter spring stripe yes);
+my @allowedFootValues = (@allowedHikingSymbols, qw(learning alternative horse ski bicycle wheelchair));
 my $line;
 
 # input file
@@ -252,7 +253,7 @@ sub getColour {
 		if (defined($relTags->{"colour"})) { $colour = $relTags->{"colour"}; }
 		elsif (defined($relTags->{"color"})) { $colour = $relTags->{"color"}; }
 	}
-	if (!grep(/^$colour$/, @colours)) { $colour = "default"; }
+	if (!grep($_ eq $colour, @colours)) { $colour = "default"; }
 
 	return $colour;
 }
@@ -292,7 +293,9 @@ sub getFmRelFootTags {
 		}
 	}
 	if ($key ne "") {
-		$fmRelTags->{"fmrelhiking" . $key} = $relTags->{"kct_" . $key};
+		my $value = $relTags->{"kct_" . $key};
+		if (!grep($_ eq $value, @allowedFootValues)) { $value = "none"; }
+		$fmRelTags->{"fmrelhiking" . $key} = $value;
 	}
 	return $fmRelTags;
 }

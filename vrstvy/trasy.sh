@@ -9,7 +9,11 @@ mkdir -p "$VYSTUP" "$PRACE"
 export VYSTUP
 pbf="$PRACE/zdroj.osm.pbf"
 "$D/mer.sh" stazeni-pbf curl -fL --retry 5 --retry-delay 10 -o "$pbf" "https://download.geofabrik.de/${REGION}-latest.osm.pbf"
-curl -fsSL --retry 5 "https://download.geofabrik.de/${REGION}-latest.osm.pbf.md5" | awk -v f="$pbf" '{print $1"  "f}' | md5sum -c -
+for pokus in 1 2 3; do
+  curl -fsSL --retry 5 "https://download.geofabrik.de/${REGION}-latest.osm.pbf.md5" | awk -v f="$pbf" '{print $1"  "f}' | md5sum -c - && break
+  [ "$pokus" -lt 3 ] || exit 1
+  "$D/mer.sh" stazeni-pbf curl -fL --retry 5 --retry-delay 10 -o "$pbf" "https://download.geofabrik.de/${REGION}-latest.osm.pbf"
+done
 datum=$(osmium fileinfo -g header.option.osmosis_replication_timestamp "$pbf" || true)
 datum=${datum:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
 "$D/mer.sh" osmium-filtr osmium tags-filter --overwrite -o "$PRACE/trasy.pbf" "$pbf" r/route=hiking,foot,bicycle,mtb,horse,ski

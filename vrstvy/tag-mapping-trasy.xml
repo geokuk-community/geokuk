@@ -691,6 +691,30 @@
 		<osm-tag key="fmrelskidefault" value="spring" zoom-appear="11" />
 		<osm-tag key="fmrelskidefault" value="stripe" zoom-appear="11" />
 		<osm-tag key="fmrelskidefault" value="yes" zoom-appear="11" />
+		<osm-tag key="fmrelhikingred" value="learning" zoom-appear="11" />
+		<osm-tag key="fmrelhikingred" value="alternative" zoom-appear="11" />
+		<osm-tag key="fmrelhikingred" value="horse" zoom-appear="11" />
+		<osm-tag key="fmrelhikingred" value="ski" zoom-appear="11" />
+		<osm-tag key="fmrelhikingred" value="bicycle" zoom-appear="11" />
+		<osm-tag key="fmrelhikingred" value="wheelchair" zoom-appear="11" />
+		<osm-tag key="fmrelhikingblue" value="learning" zoom-appear="11" />
+		<osm-tag key="fmrelhikingblue" value="alternative" zoom-appear="11" />
+		<osm-tag key="fmrelhikingblue" value="horse" zoom-appear="11" />
+		<osm-tag key="fmrelhikingblue" value="ski" zoom-appear="11" />
+		<osm-tag key="fmrelhikingblue" value="bicycle" zoom-appear="11" />
+		<osm-tag key="fmrelhikingblue" value="wheelchair" zoom-appear="11" />
+		<osm-tag key="fmrelhikinggreen" value="learning" zoom-appear="11" />
+		<osm-tag key="fmrelhikinggreen" value="alternative" zoom-appear="11" />
+		<osm-tag key="fmrelhikinggreen" value="horse" zoom-appear="11" />
+		<osm-tag key="fmrelhikinggreen" value="ski" zoom-appear="11" />
+		<osm-tag key="fmrelhikinggreen" value="bicycle" zoom-appear="11" />
+		<osm-tag key="fmrelhikinggreen" value="wheelchair" zoom-appear="11" />
+		<osm-tag key="fmrelhikingyellow" value="learning" zoom-appear="11" />
+		<osm-tag key="fmrelhikingyellow" value="alternative" zoom-appear="11" />
+		<osm-tag key="fmrelhikingyellow" value="horse" zoom-appear="11" />
+		<osm-tag key="fmrelhikingyellow" value="ski" zoom-appear="11" />
+		<osm-tag key="fmrelhikingyellow" value="bicycle" zoom-appear="11" />
+		<osm-tag key="fmrelhikingyellow" value="wheelchair" zoom-appear="11" />
 		<osm-tag key="fmreleducation" value="edu" zoom-appear="11" />
 		<osm-tag key="fmreleducation" value="education" zoom-appear="11" />
 	</ways>

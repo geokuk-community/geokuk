@@ -36,6 +36,7 @@ def stahni(args):
         except urllib.error.HTTPError as ex:
             if ex.code in (403, 404):
                 return None
+            time.sleep(2 * (pokus + 1))
         except OSError:
             time.sleep(2 * (pokus + 1))
     raise RuntimeError('stažení %s%s selhalo' % (n, e))
@@ -75,7 +76,7 @@ def main():
         subprocess.run(['gdalwarp', '-q', '-overwrite', '-te', str(o - pul), str(a - pul), str(o + 1 + pul), str(a + 1 + pul),
                         '-ts', '3601', '3601', '-r', 'bilinear', '-ot', 'Float32', '-of', 'ENVI', vrt, raw], check=True)
         v = np.fromfile(raw, dtype='<f4').reshape(3601, 3601)
-        v = np.nan_to_num(v, nan=0.0)
+        v = np.nan_to_num(v, nan=0.0)  # chybějící dlaždice jsou moře (výška 0 jako v SRTM)
         if not (v > 0).any():
             continue
         np.rint(v).astype('>i2').tofile(os.path.join(vystup, n + e + '.hgt'))

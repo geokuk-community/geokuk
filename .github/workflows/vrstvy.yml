@@ -65,7 +65,7 @@ jobs:
           vrstvy/priprav-nastroje.sh
       - name: Trasy
         run: |
-          export ZAKLAD=$(basename "$REGION" | tr - _)
+          export ZAKLAD=$(echo "${REGION#europe/}" | tr '/-' '__')
           VYSTUP="$PWD/out" PRACE="$PWD/prace" TYP_ZAPISU="$ZAPIS" vrstvy/trasy.sh
       - name: Souhrn
         if: ${{ always() }}
@@ -109,7 +109,7 @@ jobs:
           sudo apt-get install -y -qq gdal-bin python3-numpy zip
       - name: DEM
         run: |
-          export ZAKLAD=$(basename "$REGION" | tr - _)
+          export ZAKLAD=$(echo "${REGION#europe/}" | tr '/-' '__')
           VYSTUP="$PWD/out" PRACE="$PWD/prace" vrstvy/dem.sh
       - name: Souhrn
         if: ${{ always() }}
@@ -160,11 +160,12 @@ jobs:
           sudo apt-get install -y -qq osmium-tool unzip
           python3 -m venv "$HOME/venv"
           "$HOME/venv/bin/pip" install -q numpy==1.26.4 pyhgtmap==4.1
+          "$HOME/venv/bin/pip" freeze
           echo "$HOME/venv/bin" >> "$GITHUB_PATH"
           vrstvy/priprav-nastroje.sh
       - name: Vrstevnice
         run: |
-          export ZAKLAD=$(basename "$REGION" | tr - _)
+          export ZAKLAD=$(echo "${REGION#europe/}" | tr '/-' '__')
           HGT_ZIP="$PWD/dem/${ZAKLAD}_hgt.zip" VYSTUP="$PWD/out" PRACE="$PWD/prace" vrstvy/vrstevnice.sh
       - name: Souhrn
         if: ${{ always() }}
@@ -206,7 +207,7 @@ jobs:
           path: katalog
       - name: Katalog
         run: |
-          python3 vrstvy/katalog.py katalog "$REGION" "$NAZEV" "$BBOX" "$(basename "$REGION")/"
+          python3 vrstvy/katalog.py katalog "$REGION" "$NAZEV" "$BBOX" "$(echo "${REGION#europe/}" | tr '/-' '__')/"
           cat katalog/vrstvy.json
       - uses: actions/upload-artifact@v7
         with:
