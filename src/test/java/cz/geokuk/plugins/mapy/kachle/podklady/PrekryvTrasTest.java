@@ -98,6 +98,14 @@ public class PrekryvTrasTest {
 		Assert.assertTrue("modrá trasa vedle červené", pocet(img, 0x10, 0x60, 0xE0) > 50);
 	}
 
+	/** Trasa bez barvy a pořadí (v mapách paws jen nosič symbolu značky) ve stejné stopě nepřekryje barevné trasy šedou čarou. */
+	@Test(timeout = 30000)
+	public void nosicSymboluSeNekresliSede() throws IOException {
+		final BufferedImage img = vyrendruj(trasy, PESINA_Z16);
+		Assert.assertEquals("šedé pixely", 0, pocet(img, 0x70, 0x70, 0x70));
+		Assert.assertTrue("barevné trasy zůstávají vidět", pocet(img, 0xE0, 0x00, 0x00) > 50);
+	}
+
 	@Test(timeout = 30000)
 	public void silniceBezTrasySeNekresli() throws IOException {
 		Assert.assertTrue("podklad silnici kreslí", pruhlednych(vyrendruj(podklad, SILNICE_Z17)) == 0);

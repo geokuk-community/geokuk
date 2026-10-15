@@ -8,6 +8,8 @@ import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -43,6 +45,8 @@ public class StahovacSyntetickaMapaTest {
 	private final Collection<String> pozadavky = new ConcurrentLinkedQueue<>();
 	private final AtomicInteger limit = new AtomicInteger(Integer.MAX_VALUE);
 	private HttpServer server;
+	private ExecutorService vlaknaServeru;
+	private Boolean imageIoCache;
 	private EKaType mapa;
 	private KachleModel kachleModel;
 	private JKachleOflinerDialog dialog;
@@ -50,6 +54,9 @@ public class StahovacSyntetickaMapaTest {
 	@Before
 	public void setUp() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		// Jako program (GeokukMain): bez toho jde každá dlaždice přes dočasný soubor a pomalý disk zastaví server i stahování.
+		imageIoCache = ImageIO.getUseCache();
+		ImageIO.setUseCache(false);
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", ex -> {
 			pozadavky.add(ex.getRequestURI().getPath());
@@ -72,6 +79,9 @@ public class StahovacSyntetickaMapaTest {
 			ex.getResponseBody().write(out.toByteArray());
 			ex.close();
 		});
+		// Pomalá odpověď na jeden požadavek nezdrží ostatní.
+		vlaknaServeru = Executors.newFixedThreadPool(10);
+		server.setExecutor(vlaknaServeru);
 		server.start();
 		mapa = UzivatelskeMapyPristup.sHromadnymStahovanim("synteticka", "http://127.0.0.1:" + server.getAddress().getPort() + "/{z}/{x}/{y}", MIN, 18);
 
@@ -105,6 +115,7 @@ public class StahovacSyntetickaMapaTest {
 			}
 		};
 		kachleModel.inject(ziskavac);
+		ziskavac.inject(kachleModel);
 
 		SwingUtilities.invokeAndWait(() -> {
 			dialog = new JKachleOflinerDialog();
@@ -143,6 +154,10 @@ public class StahovacSyntetickaMapaTest {
 		}
 		if (server != null) {
 			server.stop(0);
+			vlaknaServeru.shutdownNow();
+		}
+		if (imageIoCache != null) {
+			ImageIO.setUseCache(imageIoCache);
 		}
 		pref.removeNode();
 	}
