@@ -5,11 +5,11 @@
 ### Změny
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
-- OpenSAK: ověřeno načítání databází se schématem verze 25 (beta větev OpenSAKu).
+- Načítání databází OpenSAKu je ověřené i se schématem verze 25.
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
-  Motorider), kreslí jen vrstvy, které má zapnuté autor tématu, takže
-  turistické značení je přehlednější. Vzhled offline mapy se tím změní
-  a její dlaždice v cache se jednou vykreslí znovu.
+  Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
+  tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
+  tím změní a její dlaždice v cache se jednou vykreslí znovu.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
   žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
 - Nové mapové podklady pro sousední země: DE topografická mapa (BKG
@@ -30,9 +30,9 @@
   přejmenovat a smazat; aktivní výlet je v souborech lovim.ggt a tedne.ggt.
   Během přepínání výletu nejde výlet upravovat. Rozbalovač v liště nástrojů
   se jmenuje Zobrazit.
-- Cesty mají novou barvu: azurovou s tmavým lemem, aby byly vidět i přes
-  cyklotrasy a na tmavém podkladu. Rovné úseky jsou čárkované, vzdušné
-  tečkované.
+- Cesty mají novou barvu: azurovou, vybraná cesta navíc s tmavým lemem,
+  aby byla vidět i přes cyklotrasy a na tmavém podkladu. Úseky vedené po cestě jsou plnou čarou,
+  rovné úseky čárkovaně a vzdušné tečkovaně.
 - Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
   počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
   Panel cesty.
@@ -40,19 +40,15 @@
   přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
   z osm.paws.cz ve složce offline map. Nad offline mapou s tématem paws, které
   trasy kreslí samo, se překryv nekreslí.
-- Hledání pěší trasy po cestách a pěšinách z offline mapy, bez internetu;
-  použijí ho úseky cesty vedené po cestě.
-- Úseky cesty mohou vést po cestách a pěšinách z offline mapy (pěší trasa,
-  plná čára). Nové úseky vedou po cestě, kde je offline mapa, jinde rovně;
-  přepínač Nové úseky je v panelu cesty. Úsek jde přepnout v jeho
-  kontextovém menu (Vést úsek po cestě / rovně). Panel cesty ukazuje i délku
-  po cestách a úseky, pro které se trasa nenašla; Cesty > Přepočítat úseky
-  po cestě je zkusí znovu, třeba po přidání offline mapy.
+- Úseky cesty mohou vést po cestách a pěšinách z offline mapy (pěší trasa
+  hledaná bez internetu). Nové úseky vedou po cestě, kde je offline mapa,
+  jinde rovně; přepínač Nové úseky je v panelu cesty. Úsek jde přepnout
+  v jeho kontextovém menu (Vést úsek po cestě / rovně). Panel cesty ukazuje
+  i délku po cestách a úseky, pro které se trasa nenašla; Cesty > Přepočítat
+  úseky po cestě je zkusí znovu, třeba po přidání offline mapy.
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
-- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
-  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
 - Nová instalace začíná offline mapou, když je ve složce offline map podrobná
   mapa, jinak ortofotem ČÚZK. Mapy.cz zůstávají v menu Mapy. Stávajícím
   uživatelům se zvolený podklad nemění.
@@ -69,6 +65,12 @@
 - Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
   mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
+- Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
+  se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
+
+### Opravy
+- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
+  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
 
 ## 6.4.0
 
