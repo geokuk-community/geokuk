@@ -69,6 +69,16 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void smazVrstvu(final String id) {
+			volani.add("smazVrstvu " + id);
+		}
+
+		@Override
+		public void smazDvojite(final String idCelku, final boolean regiony) {
+			volani.add("smazDvojite " + idCelku + " " + regiony);
+		}
+
+		@Override
 		public void zrusStahovani() {
 			volani.add("zrus");
 		}
@@ -187,6 +197,49 @@ public class JMapyPopupTest {
 			Assert.assertTrue("mapy ke stažení volají stahování mapy", z.volani.stream().anyMatch(v -> v.startsWith("stahni europe/")));
 			final RadekMapy vrstva = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC).stream().filter(RadekMapy::isVrstva).findFirst().get();
 			Assert.assertEquals("europe/czech-republic", JMapyPopup.klicZvyrazneni(vrstva));
+		});
+	}
+
+	/** Stažená vrstva má Smazat, vrstva ke stažení a stahovaná ne. */
+	@Test
+	public void smazaniVrstvy() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			final List<JButton> smazat = tlacitkaSTextem(p, JMapyPopup.SMAZAT);
+			Assert.assertEquals("jen stažená vrstva (trasy), ne ty ke stažení", 1, smazat.size());
+			smazat.get(0).doClick();
+			Assert.assertEquals(Collections.singletonList("smazVrstvu trasy/europe/czech-republic"), z.volani);
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
+			Assert.assertTrue("během stahování nejde mazat", tlacitkaSTextem(p, JMapyPopup.SMAZAT).isEmpty());
+		});
+	}
+
+	/** Země celá i s regiony: popup to napíše a nabídne smazat regiony, nebo celou zemi. */
+	@Test
+	public void dvojiteMapy() throws Exception {
+		final java.io.File slozka = tmp.newFolder("dvojite");
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		for (final String id : new String[] { "europe/germany", "europe/germany/bayern", "europe/germany/sachsen", "europe/czech-republic" }) {
+			Assert.assertTrue(new java.io.File(slozka, katalog.podleId(id).get().getNazevSouboru()).createNewFile());
+		}
+		final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> dvojite = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozka, katalog);
+		Assert.assertEquals(1, dvojite.size());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(dalsiMapy());
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
+			p.setDvojite(dvojite);
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo je ve složce celá i s regiony (Bavorsko, Sasko)")));
+			tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).get(0).doClick();
+			tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).get(0).doClick();
+			Assert.assertEquals(Arrays.asList("smazDvojite europe/germany true", "smazDvojite europe/germany false"), z.volani);
+			p.setDvojite(Collections.emptyList());
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
 		});
 	}
 

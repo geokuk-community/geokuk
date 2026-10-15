@@ -16,6 +16,9 @@ import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
 import cz.geokuk.core.coord.VyrezChangedEvent;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
+import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
+import cz.geokuk.plugins.mapy.sprava.PokrytiMap;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
@@ -51,6 +54,7 @@ public class JBlokMap extends JLabel {
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
 	private volatile long volne = -1;
+	private volatile List<PokrytiMap.DvojitaMapa> dvojite = java.util.Collections.emptyList();
 
 	public JBlokMap() {
 		super(TEXT);
@@ -122,6 +126,35 @@ public class JBlokMap extends JLabel {
 			public void stahniVrstvu(final String id) {
 				if (spravaMap != null) {
 					spravaMap.getKatalogVrstev().podleId(id).ifPresent(spravaMap::stahni);
+				}
+			}
+
+			@Override
+			public void smazVrstvu(final String id) {
+				if (spravaMap == null) {
+					return;
+				}
+				spravaMap.getKatalogVrstev().podleId(id).ifPresent(v -> smazSPotvrzenim("Smazat vrstvu " + v.getNazev(), SmazaniSouboru.souboryVrstvy(spravaMap.getSlozkaVrstev(), v)));
+			}
+
+			@Override
+			public void smazDvojite(final String idCelku, final boolean regiony) {
+				if (spravaMap == null) {
+					return;
+				}
+				for (final PokrytiMap.DvojitaMapa d : PokrytiMap.dvojiteMapy(slozka(), spravaMap.getKatalog())) {
+					if (!d.getCelek().getId().equals(idCelku)) {
+						continue;
+					}
+					final List<java.io.File> soubory = new java.util.ArrayList<>();
+					if (regiony) {
+						for (final KatalogovaMapa r : d.getRegiony()) {
+							soubory.addAll(SmazaniSouboru.souboryMapy(slozka(), r));
+						}
+					} else {
+						soubory.addAll(SmazaniSouboru.souboryMapy(slozka(), d.getCelek()));
+					}
+					smazSPotvrzenim(regiony ? "Smazat regiony země " + d.getCelek().getNazev() : "Smazat celou zemi " + d.getCelek().getNazev(), soubory);
 				}
 			}
 
@@ -227,6 +260,46 @@ public class JBlokMap extends JLabel {
 		return volne <= 0 ? -1 : volne;
 	}
 
+	/** Potvrzení smazání: ukáže přesně, které soubory se smažou. Pro testy se dá nahradit. */
+	transient java.util.function.BiFunction<String, String, Boolean> potvrzeni = (titulek, text) -> JOptionPane.showConfirmDialog(SwingUtilities.getWindowAncestor(this), text, titulek,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION;
+
+	/** Smaže soubory po potvrzení; otevřené offline mapy se předtím zavřou (Windows otevřený soubor nesmaže), mazání běží mimo EDT. */
+	void smazSPotvrzenim(final String titulek, final List<File> soubory) {
+		if (soubory.isEmpty() || !potvrzeni.apply(titulek, "Smažou se tyto soubory:\n" + SmazaniSouboru.popis(soubory) + "\nSmazání nejde vrátit.")) {
+			return;
+		}
+		if (kachleModel != null && kachleModel.getZiskavac() != null) {
+			kachleModel.getZiskavac().getOfflineMapy().zavri();
+			kachleModel.getZiskavac().getOfflineTrasy().zavri();
+		}
+		new SwingWorker<List<File>, Void>() {
+			@Override
+			protected List<File> doInBackground() {
+				return SmazaniSouboru.smaz(soubory);
+			}
+
+			@Override
+			protected void done() {
+				try {
+					final List<File> nesmazane = get();
+					if (!nesmazane.isEmpty()) {
+						JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(JBlokMap.this), "Nešlo smazat: " + nesmazane.get(0).getName() + (nesmazane.size() > 1 ? " a další" : ""),
+								titulek, JOptionPane.ERROR_MESSAGE);
+					}
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				} catch (final ExecutionException e) {
+					FExceptionDumper.dump(e.getCause(), EExceptionSeverity.WORKARROUND, "Smazání souborů offline map");
+				}
+				if (spravaMap != null) {
+					spravaMap.obnovStavy();
+				}
+				nactiSlozku();
+			}
+		}.execute();
+	}
+
 	/** Přečte mapy ve složce mimo EDT; změny během čtení se sloučí do jednoho dalšího čtení. */
 	void nactiSlozku() {
 		if (cteni != null) {
@@ -238,6 +311,7 @@ public class JBlokMap extends JLabel {
 			@Override
 			protected List<RadekMapy> doInBackground() {
 				volne = volneMisto(slozka);
+				dvojite = spravaMap == null ? java.util.Collections.emptyList() : PokrytiMap.dvojiteMapy(slozka, spravaMap.getKatalog());
 				return cteniSlozky.apply(slozka);
 			}
 
@@ -247,6 +321,7 @@ public class JBlokMap extends JLabel {
 				try {
 					soubory = get();
 					obsah.setVolneMisto(volne);
+					obsah.setDvojite(dvojite);
 					prestav();
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();

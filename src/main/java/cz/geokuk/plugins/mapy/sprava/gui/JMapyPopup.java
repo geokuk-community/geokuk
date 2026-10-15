@@ -21,6 +21,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
+import cz.geokuk.plugins.mapy.sprava.PokrytiMap;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.util.process.BrowserOpener;
 
@@ -40,6 +41,9 @@ public class JMapyPopup extends JPanel {
 	static final String OBRYS = "Ukázat v mapě, kde offline mapy jsou";
 	static final String WEB = "Další offline mapy:";
 	static final String STAHNOUT = "Stáhnout";
+	static final String SMAZAT = "Smazat";
+	static final String SMAZAT_REGIONY = "Smazat regiony";
+	static final String SMAZAT_CELEK = "Smazat celou zemi";
 	static final String POKRACOVAT = "Pokračovat";
 	static final String AKTUALIZOVAT = "Aktualizovat";
 	static final String STAHNOUT_ZNOVU = "Stáhnout znovu";
@@ -115,6 +119,8 @@ public class JMapyPopup extends JPanel {
 	LongSupplier hodiny = () -> System.nanoTime() / 1_000_000;
 	/** Volné místo na disku se složkou offline map v bajtech, -1 neznámé. */
 	private long volneMisto = -1;
+	/** Celé země, které jsou ve složce zároveň se svými regiony. */
+	private List<PokrytiMap.DvojitaMapa> dvojite = Collections.emptyList();
 
 	public JMapyPopup() {
 		super(new GridBagLayout());
@@ -458,6 +464,24 @@ public class JMapyPopup extends JPanel {
 		return sekund < 0 ? popis : popis + " · zbývá " + OdhadStahovani.text(sekund);
 	}
 
+	/** Země, které jsou ve složce dvakrát (celá i s regiony); popup nabídne smazání jedné z variant. */
+	public void setDvojite(final List<PokrytiMap.DvojitaMapa> nove) {
+		final List<String> stare = dvojiteKlice(dvojite);
+		dvojite = nove == null ? Collections.emptyList() : nove;
+		if (!stare.equals(dvojiteKlice(dvojite))) {
+			sestav();
+			poZmeneObsahu.run();
+		}
+	}
+
+	private static List<String> dvojiteKlice(final List<PokrytiMap.DvojitaMapa> d) {
+		final List<String> k = new ArrayList<>();
+		for (final PokrytiMap.DvojitaMapa m : d) {
+			k.add(m.getCelek().getId() + m.getRegiony().size());
+		}
+		return k;
+	}
+
 	/** Volné místo na disku se složkou offline map; mapy, které se nevejdou, nejdou stáhnout. */
 	public void setVolneMisto(final long bajtu) {
 		if (bajtu == volneMisto) {
@@ -597,6 +621,22 @@ public class JMapyPopup extends JPanel {
 		}
 		gbc.gridy++;
 		add(slozka, gbc);
+		for (final PokrytiMap.DvojitaMapa d : dvojite) {
+			final StringBuilder regiony = new StringBuilder();
+			for (final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa r : d.getRegiony()) {
+				regiony.append(regiony.length() > 0 ? ", " : "").append(r.getNazev());
+			}
+			final JLabel upozorneni = maly(d.getCelek().getNazev() + " je ve složce celá i s regiony (" + regiony + "), území je dvakrát.");
+			upozorneni.setForeground(IkonyMap.CERVENA);
+			gbc.gridy++;
+			add(upozorneni, gbc);
+			final JPanel akceDvojite = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+			akceDvojite.setOpaque(false);
+			akceDvojite.add(odkaz(SMAZAT_REGIONY, e -> smazDvojite(d, true)));
+			akceDvojite.add(odkaz(SMAZAT_CELEK, e -> smazDvojite(d, false)));
+			gbc.gridy++;
+			add(akceDvojite, gbc);
+		}
 
 		if (!proMisto.isEmpty()) {
 			gbc.gridy++;
@@ -821,6 +861,18 @@ public class JMapyPopup extends JPanel {
 		} else {
 			panel.add(Box.createVerticalStrut(odkaz(STAHNOUT, e -> {}).getPreferredSize().height), ca);
 		}
+		if (r.isVrstva() && !r.kontroluje && r.stav != RadekMapy.Stav.STAHUJE && (r.isVeSlozce() || r.rozpracovano)) {
+			final JButton smazat = odkaz(SMAZAT, e -> {
+				if (ovladani != null) {
+					ovladani.smazVrstvu(r.id);
+				}
+			});
+			smazat.setForeground(IkonyMap.CERVENA);
+			final GridBagConstraints cs = bunka(4, y, 1);
+			cs.anchor = GridBagConstraints.EAST;
+			cs.fill = GridBagConstraints.NONE;
+			panel.add(smazat, cs);
+		}
 	}
 
 	/** Jediná akce řádku podle stavu; soubory uživatele žádnou nemají. */
@@ -869,6 +921,12 @@ public class JMapyPopup extends JPanel {
 			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(volneMisto) + ", mapa potřebuje asi " + RadekMapy.velikost(potrebneMisto(r)) + ".");
 		}
 		return b;
+	}
+
+	private void smazDvojite(final PokrytiMap.DvojitaMapa d, final boolean regiony) {
+		if (ovladani != null) {
+			ovladani.smazDvojite(d.getCelek().getId(), regiony);
+		}
 	}
 
 	private void stahni(final RadekMapy r) {
