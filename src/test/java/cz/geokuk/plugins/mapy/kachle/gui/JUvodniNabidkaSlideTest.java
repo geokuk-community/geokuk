@@ -120,4 +120,26 @@ public class JUvodniNabidkaSlideTest {
 	public void mimoKatalogNic() {
 		Assert.assertFalse(kresli(slide(new Stav(), new Wgs(35.68, 139.69))));
 	}
+
+	/** Stisk, uvolnění i klik na odkaz nabídky se spotřebují, takže nepohnou mapou ani nenastaví pozici. */
+	@Test
+	public void udalostiNadOdkazemSeSpotrebuji() {
+		final Stav stav = new Stav();
+		final JUvodniNabidkaSlide s = slide(stav, new Wgs(50.08, 14.42));
+		kresli(s);
+		final Point p = najdi(s, false, new Stav());
+		Assert.assertNotNull(p);
+		final java.awt.Component zdroj = new javax.swing.JPanel();
+		for (final int id : new int[] { java.awt.event.MouseEvent.MOUSE_PRESSED, java.awt.event.MouseEvent.MOUSE_RELEASED, java.awt.event.MouseEvent.MOUSE_CLICKED }) {
+			final java.awt.event.MouseEvent e = new java.awt.event.MouseEvent(zdroj, id, 0, java.awt.event.InputEvent.BUTTON1_DOWN_MASK, p.x, p.y, 1, false, java.awt.event.MouseEvent.BUTTON1);
+			if (id == java.awt.event.MouseEvent.MOUSE_PRESSED) {
+				s.mousePressed(e, null);
+			} else if (id == java.awt.event.MouseEvent.MOUSE_RELEASED) {
+				s.mouseReleased(e, null);
+			} else {
+				s.mouseClicked(e, null);
+			}
+			Assert.assertTrue("událost " + id + " nad odkazem se spotřebuje", e.isConsumed());
+		}
+	}
 }

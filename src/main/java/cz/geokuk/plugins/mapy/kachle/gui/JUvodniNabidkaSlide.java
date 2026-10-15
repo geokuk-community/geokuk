@@ -145,6 +145,7 @@ public class JUvodniNabidkaSlide extends JSingleSlide0 {
 	@Override
 	public void mouseClicked(final MouseEvent e, final MouseGestureContext ctx) {
 		if (SwingUtilities.isLeftMouseButton(e) && klik(e.getPoint())) {
+			e.consume();
 			return;
 		}
 		chain().mouseClicked(e, ctx);
@@ -153,6 +154,7 @@ public class JUvodniNabidkaSlide extends JSingleSlide0 {
 	@Override
 	public void mousePressed(final MouseEvent e, final MouseGestureContext ctx) {
 		if (SwingUtilities.isLeftMouseButton(e) && jeNadOdkazem(e.getPoint())) {
+			e.consume();
 			return;
 		}
 		chain().mousePressed(e, ctx);
@@ -161,6 +163,7 @@ public class JUvodniNabidkaSlide extends JSingleSlide0 {
 	@Override
 	public void mouseReleased(final MouseEvent e, final MouseGestureContext ctx) {
 		if (SwingUtilities.isLeftMouseButton(e) && jeNadOdkazem(e.getPoint())) {
+			e.consume();
 			return;
 		}
 		chain().mouseReleased(e, ctx);
