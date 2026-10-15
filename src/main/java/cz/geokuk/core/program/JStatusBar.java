@@ -21,6 +21,7 @@ import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.mvc.*;
+import cz.geokuk.plugins.mapy.sprava.gui.JBlokMap;
 import cz.geokuk.plugins.vylety.*;
 import cz.geokuk.util.gui.ZalamovaciLayout;
 import cz.geokuk.util.lang.FString;
@@ -166,6 +167,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private JPanel jFilterProgressPanel;
 	private final JPrepinaceZdroju prepinaceZdroju = new JPrepinaceZdroju();
 	private final JPopisekVyletu popisekVyletu = new JPopisekVyletu();
+	private final JBlokMap blokMap = new JBlokMap();
 
 	private final JValue jSouborSVyletem = new JValue("vylet-26.ggt", true);
 	/** Hvězdička neuloženého výletu má místo i bez hvězdičky, aby blok cest neměnil šířku. */
@@ -195,7 +197,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	private CestyModel cestyModel;
 
-	/** Výlet a zdroje vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
+	/** Výlet, zdroje a mapy vpravo na pevném místě, nezávisle na zalomení zbytku řádku. */
 	private final JPanel pravyBlok = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
 	public JStatusBar() {
@@ -214,6 +216,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	public void inject(final Factory factory) {
 		factory.init(popisekVyletu);
+		factory.init(blokMap);
 	}
 
 	/** Výlet obnovený při startu se načte až po zobrazení okna; místo pro cesty je připravené předem, aby se lišta nepohnula. */
@@ -453,6 +456,9 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 		pravyBlok.add(vylety);
 		pravyBlok.add(prepinaceZdroju);
+		final JPanel mapy = createPanel();
+		mapy.add(blokMap);
+		pravyBlok.add(mapy);
 		add(pravyBlok);
 		layout.vpravo(pravyBlok);
 

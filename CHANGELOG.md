@@ -65,6 +65,9 @@
 - Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
   mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
+- Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
+  myší se otevře jejich seznam (velikost, datum dat, nečitelné soubory),
+  odkaz na složku offline map a na weby s mapami.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 
