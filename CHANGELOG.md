@@ -5,7 +5,7 @@
 ### Změny
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
-- OpenSAK: GeoKuk načte i databáze OpenSAKu se schématem verze 25.
+- Načítání databází OpenSAKu je ověřené i se schématem verze 25.
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
@@ -49,8 +49,6 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
-- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
-  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
 - Nová instalace začíná offline mapou, když je ve složce offline map podrobná
   mapa, jinak ortofotem ČÚZK. Mapy.cz zůstávají v menu Mapy. Stávajícím
   uživatelům se zvolený podklad nemění.
@@ -67,6 +65,10 @@
 - Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
   mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
+
+### Opravy
+- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
+  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
 
 ## 6.4.0
 
