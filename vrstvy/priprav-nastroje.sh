@@ -17,6 +17,8 @@ mkdir -p "$N/osmosis"
 tar -xf "$N/osmosis.tar" -C "$N/osmosis"
 O=$(dirname "$(dirname "$(find "$N/osmosis" -path '*/bin/osmosis' | head -1)")")
 mvn -q -B -f "$D/zapisovac/pom.xml" dependency:copy-dependencies -DoutputDirectory="$O/lib" -DincludeScope=runtime
+mkdir -p "$HOME/.openstreetmap/osmosis/plugins"
+mv "$O"/lib/mapsforge-map-writer-*.jar "$HOME/.openstreetmap/osmosis/plugins/"
 "$O/bin/osmosis" -v | head -3 || true
 echo "$O/bin" >> "${GITHUB_PATH:-/dev/null}"
 echo "$O"
