@@ -6,15 +6,15 @@ N=${NASTROJE:-$PWD/nastroje}
 mkdir -p "$N"
 curl -fsSL --retry 5 -o "$N/release.json" https://api.github.com/repos/openstreetmap/osmosis/releases/tags/0.49.2
 grep -o '"browser_download_url": *"[^"]*"' "$N/release.json" || true
-url=$(grep -o '"browser_download_url": *"[^"]*\.\(tgz\|tar\.gz\)"' "$N/release.json" | head -1 | sed 's/.*"\(http[^"]*\)"/\1/')
+url=$(grep -o '"browser_download_url": *"[^"]*\.tar"' "$N/release.json" | head -1 | sed 's/.*"\(http[^"]*\)"/\1/')
 [ -n "$url" ] || { echo "Archiv Osmosis nenalezen" >&2; exit 1; }
-curl -fL --retry 5 --retry-delay 10 -o "$N/osmosis.tgz" "$url"
+curl -fL --retry 5 --retry-delay 10 -o "$N/osmosis.tar" "$url"
 OSMOSIS_SHA256=${OSMOSIS_SHA256:-}
-sha=$(sha256sum "$N/osmosis.tgz" | cut -d' ' -f1)
-echo "osmosis.tgz sha256: $sha"
+sha=$(sha256sum "$N/osmosis.tar" | cut -d' ' -f1)
+echo "osmosis.tar sha256: $sha"
 if [ -n "$OSMOSIS_SHA256" ] && [ "$sha" != "$OSMOSIS_SHA256" ]; then echo "Nesouhlasí sha256 Osmosis" >&2; exit 1; fi
 mkdir -p "$N/osmosis"
-tar -xzf "$N/osmosis.tgz" -C "$N/osmosis"
+tar -xf "$N/osmosis.tar" -C "$N/osmosis"
 O=$(dirname "$(dirname "$(find "$N/osmosis" -path '*/bin/osmosis' | head -1)")")
 mvn -q -B -f "$D/zapisovac/pom.xml" dependency:copy-dependencies -DoutputDirectory="$O/lib" -DincludeScope=runtime
 "$O/bin/osmosis" -v | head -3 || true
