@@ -24,7 +24,7 @@ public final class PolygonPokryti {
 		this.diry = diry;
 		double j = Double.POSITIVE_INFINITY, s = Double.NEGATIVE_INFINITY, z = Double.POSITIVE_INFINITY, v = Double.NEGATIVE_INFINITY;
 		for (final double[] kruh : obrysy) {
-			for (int i = 0; i < kruh.length; i += 2) {
+			for (int i = 0; i + 1 < kruh.length; i += 2) {
 				z = Math.min(z, kruh[i]);
 				v = Math.max(v, kruh[i]);
 				j = Math.min(j, kruh[i + 1]);
@@ -187,7 +187,7 @@ public final class PolygonPokryti {
 		final List<List<Wgs>> vysledek = new ArrayList<>(kruhy.size());
 		for (final double[] kruh : kruhy) {
 			final List<Wgs> body = new ArrayList<>(kruh.length / 2);
-			for (int i = 0; i < kruh.length; i += 2) {
+			for (int i = 0; i + 1 < kruh.length; i += 2) {
 				body.add(new Wgs(kruh[i + 1], kruh[i]));
 			}
 			vysledek.add(Collections.unmodifiableList(body));

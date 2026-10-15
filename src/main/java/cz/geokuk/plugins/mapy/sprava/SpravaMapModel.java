@@ -141,7 +141,7 @@ public class SpravaMapModel extends Model0 {
 				zmena(stahovac.stahni(getStav(mapa), s, zruseno::get, this::prubeh));
 			} catch (final RuntimeException e) {
 				log.warn("Stahování mapy {} selhalo", mapa, e);
-				zmena(getStav(mapa).sFazi(Faze.CHYBA, "Stahování selhalo: " + e));
+				zmena(getStav(mapa).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
 			} finally {
 				bezici.set(null);
 			}
@@ -174,7 +174,7 @@ public class SpravaMapModel extends Model0 {
 		}
 		kontrola.execute(() -> {
 			final File s = slozka.get();
-			if (s == null || getStav(mapa).isBezi()) {
+			if (s == null || getStav(mapa).isBezi() || bezici.get() == mapa) {
 				return;
 			}
 			zmena(stahovac.zkontroluj(getStav(mapa), s, this::prubeh));

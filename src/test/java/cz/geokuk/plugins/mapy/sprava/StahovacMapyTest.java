@@ -46,6 +46,10 @@ public class StahovacMapyTest {
 	private volatile int zdrzetPo;
 	/** Posílá data po kouscích s pauzou, jako pomalé spojení. */
 	private volatile boolean pomalu;
+	/** Server (nebo proxy) nerespektuje If-Range a vždy navazuje. */
+	private volatile boolean ignorujIfRange;
+	/** Přesměruje sám na sebe (smyčka). */
+	private volatile boolean smycka;
 	private final List<Map<String, String>> pozadavky = new CopyOnWriteArrayList<>();
 
 	static byte[] kukov() throws IOException {
@@ -104,8 +108,15 @@ public class StahovacMapyTest {
 				ex.sendResponseHeaders(vynucenyKod, -1);
 				return;
 			}
+			if (smycka) {
+				ex.getResponseHeaders().add("Location", ex.getRequestURI().getPath());
+				ex.sendResponseHeaders(302, -1);
+				return;
+			}
 			ex.getResponseHeaders().add("Last-Modified", lm);
-			ex.getResponseHeaders().add("ETag", etag);
+			if (etag != null) {
+				ex.getResponseHeaders().add("ETag", etag);
+			}
 			ex.getResponseHeaders().add("Accept-Ranges", "bytes");
 			if ("HEAD".equals(ex.getRequestMethod())) {
 				final String inm = z.get("if-none-match");
@@ -120,8 +131,12 @@ public class StahovacMapyTest {
 			int od = 0;
 			final String range = z.get("range");
 			final String ifRange = z.get("if-range");
-			if (range != null && (ifRange == null || ifRange.equals(etag))) {
-				od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+			if (range != null && (ignorujIfRange || ifRange == null || ifRange.equals(etag) || ifRange.equals(lm))) {
+				try {
+					od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				} catch (final NumberFormatException e) {
+					od = d.length;
+				}
 				if (od >= d.length) {
 					ex.sendResponseHeaders(416, -1);
 					return;
@@ -380,7 +395,8 @@ public class StahovacMapyTest {
 		server.stop(0);
 		final StavMapy s = stahni();
 		assertEquals(Faze.CHYBA, s.getFaze());
-		assertNotNull(s.getChyba());
+		assertEquals("Server s mapami není dostupný.", s.getChyba());
+		assertEquals("Server s mapami není dostupný.", stahovac.zkontroluj(StavMapy.novy(mapa), slozka, zmeny::add).getChyba());
 		assertFalse(cil().exists());
 	}
 
@@ -418,6 +434,109 @@ public class StahovacMapyTest {
 		} finally {
 			e.shutdownNow();
 		}
+	}
+
+	@Test
+	public void serverIgnorujiciIfRangeSJinouVerziZacneZnovu() throws IOException {
+		useknoutPo = 1000;
+		stahni();
+		assertEquals(1000, cast().length());
+		useknoutPo = -1;
+		ignorujIfRange = true;
+		etag = "\"abc-2\"";
+		final byte[] nova = data.clone();
+		data = nova;
+		pozadavky.clear();
+		final StavMapy s = stahni();
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		assertEquals("napřed pokus o navázání, pak znovu od nuly", 2, pozadavky.size());
+		assertNull(pozadavky.get(1).get("range"));
+		assertArrayEquals(nova, Files.readAllBytes(cil().toPath()));
+	}
+
+	@Test
+	public void jinaCelkovaVelikostPriNavazaniZacneZnovu() throws IOException {
+		useknoutPo = 1000;
+		stahni();
+		useknoutPo = -1;
+		ignorujIfRange = true;
+		// Stejný ETag, ale info tvrdí jinou celkovou velikost (jiná verze se stejným validátorem).
+		Files.write(StahovacMapy.info(slozka, mapa).toPath(),
+				("url=" + mapa.getUrlMapy() + "\netag=" + ETAG + "\ncelkem=" + (data.length + 7) + "\n").getBytes("UTF-8"));
+		pozadavky.clear();
+		final StavMapy s = stahni();
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		assertNull(pozadavky.get(pozadavky.size() - 1).get("range"));
+		assertArrayEquals(data, Files.readAllBytes(cil().toPath()));
+	}
+
+	@Test
+	public void bezEtaguNavazujePodleLastModified() throws IOException {
+		etag = null;
+		useknoutPo = 1000;
+		stahni();
+		useknoutPo = -1;
+		pozadavky.clear();
+		final StavMapy s = stahni();
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		assertEquals("bytes=1000-", pozadavky.get(0).get("range"));
+		assertEquals(LM, pozadavky.get(0).get("if-range"));
+		assertArrayEquals(data, Files.readAllBytes(cil().toPath()));
+	}
+
+	@Test
+	public void rozsahMimoSouborZacneZnovu() throws IOException {
+		Files.write(cast().toPath(), new byte[data.length]);
+		Files.write(StahovacMapy.info(slozka, mapa).toPath(),
+				("url=" + mapa.getUrlMapy() + "\netag=" + ETAG + "\ncelkem=" + (data.length + 10) + "\n").getBytes("UTF-8"));
+		pozadavky.clear();
+		final StavMapy s = stahni();
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		assertEquals("416, pak od nuly", 2, pozadavky.size());
+		assertArrayEquals(data, Files.readAllBytes(cil().toPath()));
+	}
+
+	@Test
+	public void jinaAdresaVUdajichZacneOdNuly() throws IOException {
+		Files.write(cast().toPath(), Arrays.copyOf(data, 1000));
+		Files.write(StahovacMapy.info(slozka, mapa).toPath(),
+				("url=https://jinde.example.org/kukov.map\netag=" + ETAG + "\ncelkem=" + data.length + "\n").getBytes("UTF-8"));
+		final StavMapy s = stahni();
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		assertNull(pozadavky.get(0).get("range"));
+		assertArrayEquals(data, Files.readAllBytes(cil().toPath()));
+	}
+
+	@Test
+	public void smyckaPresmerovani() {
+		smycka = true;
+		final StavMapy s = stahni();
+		assertEquals(Faze.CHYBA, s.getFaze());
+		assertTrue(s.getChyba(), s.getChyba().contains("přesměroval"));
+		assertTrue(pozadavky.size() <= 7);
+	}
+
+	@Test
+	public void presmerovaniJenNaZabezpecene() throws IOException {
+		assertTrue(StahovacMapy.smiPresmerovat(new java.net.URL("http://a/x"), new java.net.URL("https://b/x")));
+		assertTrue(StahovacMapy.smiPresmerovat(new java.net.URL("http://a/x"), new java.net.URL("http://b/x")));
+		assertTrue(StahovacMapy.smiPresmerovat(new java.net.URL("https://a/x"), new java.net.URL("https://b/x")));
+		assertFalse(StahovacMapy.smiPresmerovat(new java.net.URL("https://a/x"), new java.net.URL("http://b/x")));
+		assertFalse(StahovacMapy.smiPresmerovat(new java.net.URL("http://a/x"), new java.net.URL("ftp://b/x")));
+	}
+
+	@Test
+	public void mapsforgeOdmitneMapuSPlatnymZacatkemHlavicky() throws IOException {
+		data[63] = 'X'; // projekce „Xercator“: začátek hlavičky platí, mapsforge ji neotevře
+		final StavMapy s = stahni();
+		assertEquals(Faze.CHYBA, s.getFaze());
+		assertTrue(s.getChyba(), s.getChyba().contains("poškozená"));
+		assertFalse(cil().exists());
+	}
+
+	@Test
+	public void zmizelyRozpracovanySoubor() {
+		assertEquals("Rozpracovaná mapa zmizela z disku.", StahovacMapy.over(cast(), -1));
 	}
 
 	@Test
@@ -480,6 +599,19 @@ public class StahovacMapyTest {
 		server.stop(0);
 		final StavMapy n = stahovac.zkontroluj(StavMapy.novy(mapa), slozka, zmeny::add);
 		assertEquals(Server.NEDOSTUPNY, n.getServer());
+	}
+
+	@Test
+	public void rozsahOdpovedi() throws IOException {
+		assertEquals(2615, StahovacMapy.celkemZRozsahu("bytes 1000-2614/2615", 1000));
+		for (final String spatny : new String[] { null, "bytes 999-2614/2615", "bytes 1000-2614/*", "bytes 1000-2614/99999999999999999999", "x" }) {
+			try {
+				StahovacMapy.celkemZRozsahu(spatny, 1000);
+				fail(spatny);
+			} catch (final StahovacMapy.ChybaProUzivatele e) {
+				assertTrue(e.getMessage().contains("jinou část"));
+			}
+		}
 	}
 
 	@Test
