@@ -73,8 +73,8 @@ public final class KatalogMap {
 
 	static KatalogMap nacti(final String json, final ZdrojPolygonu polygony) throws IOException {
 		final Map<?, ?> koren = objekt(JsonCteni.precti(json), "katalog");
-		final URI mapy = URI.create(text(koren, "mapy"));
-		final URI poly = URI.create(text(koren, "polygony"));
+		final List<URI> mapy = adresy(koren, "mapy");
+		final List<URI> poly = adresy(koren, "polygony");
 		final String zdroj = text(koren, "zdroj");
 		final String licence = text(koren, "licence");
 		final String atribuce = text(koren, "atribuce");
@@ -99,14 +99,39 @@ public final class KatalogMap {
 			if (pokryti == null) {
 				pokryti = obdelnik(p.get("obdelnik"), id);
 			}
-			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, mapy.resolve(id + ".map"),
-					poly.resolve(id + ".poly"), ((Double) velikost).longValue(), pokryti, zdroj, licence, atribuce);
+			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, vyres(mapy, id + ".map"),
+					vyres(poly, id + ".poly"), ((Double) velikost).longValue(), pokryti, zdroj, licence, atribuce);
 			if (!soubory.add(m.getNazevSouboru().toLowerCase(Locale.ROOT))) {
 				throw new IOException("Dvě mapy v katalogu mají stejné jméno souboru " + m.getNazevSouboru());
 			}
 			vysledek.add(m);
 		}
 		return new KatalogMap(vysledek);
+	}
+
+	/** Jedna adresa, nebo seznam (první je hlavní, další záloha). */
+	private static List<URI> adresy(final Map<?, ?> m, final String klic) throws IOException {
+		final Object o = m.get(klic);
+		final List<?> seznam = o instanceof List ? (List<?>) o : Collections.singletonList(o);
+		final List<URI> vysledek = new ArrayList<>();
+		for (final Object a : seznam) {
+			if (!(a instanceof String) || !((String) a).matches("https?://.+/")) {
+				throw new IOException("Katalog map: neplatná adresa v " + klic);
+			}
+			vysledek.add(URI.create((String) a));
+		}
+		if (vysledek.isEmpty()) {
+			throw new IOException("Katalog map: chybí " + klic);
+		}
+		return vysledek;
+	}
+
+	private static List<URI> vyres(final List<URI> zaklady, final String cesta) {
+		final List<URI> vysledek = new ArrayList<>(zaklady.size());
+		for (final URI z : zaklady) {
+			vysledek.add(z.resolve(cesta));
+		}
+		return Collections.unmodifiableList(vysledek);
 	}
 
 	private static PolygonPokryti obdelnik(final Object o, final String id) throws IOException {
