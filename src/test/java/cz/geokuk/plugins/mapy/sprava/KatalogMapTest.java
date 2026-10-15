@@ -81,6 +81,13 @@ public class KatalogMapTest {
 				assertEquals(r.getId(), celek.getNazev(), r.getSkupina());
 			}
 		}
+		assertEquals(3_499_658_275L, francie.getPribliznaVelikost());
+		assertEquals(java.time.Instant.parse("2026-08-25T13:57:35Z"), francie.getDatumNaServeru());
+		assertEquals(64_958_567L, k.podleId("europe/spain/madrid").get().getPribliznaVelikost());
+		assertEquals(java.time.Instant.parse("2026-05-10T09:03:31Z"), k.podleId("europe/united-kingdom/wales").get().getDatumNaServeru());
+		// Součty podle výpisu serveru: hlídají velikost a datum u všech map, ne jen u vybraných.
+		assertEquals(37_437_237_882L, k.getMapy().stream().mapToLong(KatalogovaMapa::getPribliznaVelikost).sum());
+		assertEquals(232_450_576_092L, k.getMapy().stream().mapToLong(m -> m.getDatumNaServeru().getEpochSecond()).sum());
 		final KatalogovaMapa skotsko = k.podleId("europe/united-kingdom/scotland").get();
 		assertEquals("Spojené království", skotsko.getSkupina());
 		assertFalse("celé Spojené království server nemá", k.celek(skotsko).isPresent());
