@@ -5,9 +5,11 @@ import java.awt.geom.Path2D;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
+import javax.swing.Timer;
 
 import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coord.JSingleSlide0;
@@ -18,6 +20,8 @@ import cz.geokuk.plugins.mapy.kachle.ObrysPokrytiEvent;
 import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
 import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
+import cz.geokuk.plugins.mapy.sprava.StavMapy;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 
@@ -27,17 +31,30 @@ public class JObrysMapSlide extends JSingleSlide0 {
 	private static final long serialVersionUID = 1L;
 
 	static final Color CARA = new Color(0x2E, 0x9E, 0x4F, 210);
-	static final Color VYPLN = new Color(0x2E, 0x9E, 0x4F, 28);
 
 	private transient KachleModel kachleModel;
 	private transient List<PolygonPokryti> obrysy = Collections.emptyList();
 	private transient SwingWorker<List<PolygonPokryti>, Void> cteni;
 	private boolean znovu;
+	/** Otisk složky při posledním čtení; s online podkladem složku nikdo jiný nehlídá. */
+	private String otisk;
+	private final Timer hlidani = new Timer(2000, e -> nacti(false));
+	transient BiFunction<File, KatalogMap, List<PolygonPokryti>> ctecka = SouboryMap::obrysy;
 
 	public JObrysMapSlide() {
 		setOpaque(false);
 		setCursor(null);
 		setVisible(false);
+	}
+
+	@Override
+	public void setVisible(final boolean viditelny) {
+		super.setVisible(viditelny);
+		if (viditelny) {
+			hlidani.start();
+		} else {
+			hlidani.stop();
+		}
 	}
 
 	public void inject(final KachleModel kachleModel) {
@@ -47,39 +64,55 @@ public class JObrysMapSlide extends JSingleSlide0 {
 	public void onEvent(final ObrysPokrytiEvent event) {
 		setVisible(event.isZapnuto());
 		if (event.isZapnuto()) {
-			nacti();
+			nacti(true);
 		}
 	}
 
 	public void onEvent(final OfflineMapaChangedEvent event) {
 		if (isVisible()) {
-			nacti();
+			nacti(true);
 		}
 	}
 
 	public void onEvent(final KachleUmisteniSouboruChangedEvent event) {
 		if (isVisible()) {
-			nacti();
+			nacti(true);
 		}
 	}
 
-	private void nacti() {
+	public void onEvent(final SpravaMapEvent event) {
+		if (isVisible() && event.getStav().getFaze() == StavMapy.Faze.HOTOVO) {
+			nacti(true);
+		}
+	}
+
+	/** Obrysy se čtou mimo EDT; bez vynucení jen když se mapy ve složce změnily. */
+	void nacti(final boolean vynutit) {
 		if (cteni != null) {
-			znovu = true;
+			znovu |= vynutit;
 			return;
 		}
 		final File slozka = kachleModel == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+		final String predchozi = vynutit ? null : otisk;
+		final BiFunction<File, KatalogMap, List<PolygonPokryti>> cti = ctecka;
 		cteni = new SwingWorker<List<PolygonPokryti>, Void>() {
+			private String novy;
+
 			@Override
 			protected List<PolygonPokryti> doInBackground() {
-				return SouboryMap.obrysy(slozka, KatalogMap.vestaveny());
+				novy = SouboryMap.otisk(slozka);
+				return novy.equals(predchozi) ? null : cti.apply(slozka, KatalogMap.vestaveny());
 			}
 
 			@Override
 			protected void done() {
 				cteni = null;
 				try {
-					setObrysy(get());
+					final List<PolygonPokryti> nove = get();
+					if (nove != null) {
+						otisk = novy;
+						setObrysy(nove);
+					}
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} catch (final ExecutionException e) {
@@ -87,11 +120,15 @@ public class JObrysMapSlide extends JSingleSlide0 {
 				}
 				if (znovu) {
 					znovu = false;
-					nacti();
+					nacti(true);
 				}
 			}
 		};
 		cteni.execute();
+	}
+
+	boolean isCteni() {
+		return cteni != null;
 	}
 
 	void setObrysy(final List<PolygonPokryti> obrysy) {
@@ -109,11 +146,8 @@ public class JObrysMapSlide extends JSingleSlide0 {
 			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			for (final PolygonPokryti p : obrysy) {
-				final Path2D cesta = cesta(getSoord(), p);
-				g.setColor(VYPLN);
-				g.fill(cesta);
 				g.setColor(CARA);
-				g.draw(cesta);
+				g.draw(cesta(getSoord(), p));
 			}
 		} finally {
 			g.dispose();
@@ -133,17 +167,18 @@ public class JObrysMapSlide extends JSingleSlide0 {
 	}
 
 	private static void pridej(final Path2D cesta, final Coord soord, final List<Wgs> kruh) {
-		boolean prvni = true;
+		Point posledni = null;
 		for (final Wgs w : kruh) {
 			final Point b = soord.transform(w.toMou());
-			if (prvni) {
+			if (posledni == null) {
 				cesta.moveTo(b.x, b.y);
-				prvni = false;
-			} else {
+				posledni = b;
+			} else if (Math.abs(b.x - posledni.x) > 1 || Math.abs(b.y - posledni.y) > 1) { // při oddálení padne mnoho bodů obrysu na stejné místo
 				cesta.lineTo(b.x, b.y);
+				posledni = b;
 			}
 		}
-		if (!prvni) {
+		if (posledni != null) {
 			cesta.closePath();
 		}
 	}

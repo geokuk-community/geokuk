@@ -24,6 +24,15 @@ final class SouboryMap {
 		return Arrays.asList(soubory);
 	}
 
+	/** Otisk map ve složce (jméno, velikost, čas změny); změní se po stažení, zkopírování i smazání mapy. */
+	static String otisk(final File slozka) {
+		final StringBuilder sb = new StringBuilder();
+		for (final File f : soubory(slozka)) {
+			sb.append(f.getName()).append('|').append(f.length()).append('|').append(f.lastModified()).append('\n');
+		}
+		return sb.toString();
+	}
+
 	/** Mapa se jménem souboru z katalogu je katalogová (název země, zdroj, licence), ostatní jsou soubory uživatele. */
 	static List<RadekMapy> nacti(final File slozka, final KatalogMap katalog) {
 		final List<RadekMapy> radky = new ArrayList<>();
