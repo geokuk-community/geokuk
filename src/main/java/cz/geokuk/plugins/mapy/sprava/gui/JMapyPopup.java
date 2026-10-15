@@ -517,7 +517,7 @@ public class JMapyPopup extends JPanel {
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
 		sirkaNazvu = 0;
 		for (final RadekMapy r : radky) {
-			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2);
+			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2 + (r.isVrstva() ? ODSAZENI : 0));
 		}
 		if (radky.stream().anyMatch(r -> r.skupina != null)) {
 			sirkaNazvu += 2 * ODSAZENI; // šipka a odsazení regionů ve stromu zemí
@@ -545,8 +545,11 @@ public class JMapyPopup extends JPanel {
 		final List<RadekMapy> veSlozce = new ArrayList<>();
 		final List<RadekMapy> proMisto = new ArrayList<>();
 		final List<RadekMapy> dalsi = new ArrayList<>();
+		final Map<String, List<RadekMapy>> vrstvyMap = new HashMap<>();
 		for (final RadekMapy r : radky) {
-			if (r.isVeSlozce()) {
+			if (r.isVrstva()) {
+				vrstvyMap.computeIfAbsent(r.mapaId, k -> new ArrayList<>()).add(r);
+			} else if (r.isVeSlozce()) {
 				veSlozce.add(r);
 			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE) {
 				proMisto.add(r);
@@ -590,7 +593,7 @@ public class JMapyPopup extends JPanel {
 		}
 		int y = 0;
 		for (final RadekMapy r : veSlozce) {
-			radek(slozka, y++, r, stahujeSe);
+			y = radekSVrstvami(slozka, y, r, stahujeSe, vrstvyMap);
 		}
 		gbc.gridy++;
 		add(slozka, gbc);
@@ -601,7 +604,7 @@ public class JMapyPopup extends JPanel {
 			final JPanel misto = panelRadku();
 			y = 0;
 			for (final RadekMapy r : proMisto) {
-				radek(misto, y++, r, stahujeSe);
+				y = radekSVrstvami(misto, y, r, stahujeSe, vrstvyMap);
 			}
 			gbc.gridy++;
 			add(misto, gbc);
@@ -712,7 +715,20 @@ public class JMapyPopup extends JPanel {
 
 	/** Klíč řádku pro zvýraznění obrysu mapy: id z katalogu, u souboru uživatele jeho jméno. */
 	static String klicZvyrazneni(final RadekMapy r) {
+		if (r.isVrstva()) {
+			return r.mapaId;
+		}
 		return r.vlastni ? JObrysMapSlide.VLASTNI + r.nazev : r.id;
+	}
+
+	/** Řádek mapy a hned pod ním řádky jejích vrstev (trasy, vrstevnice, stínování). */
+	private int radekSVrstvami(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe, final Map<String, List<RadekMapy>> vrstvy) {
+		int dalsi = y;
+		radek(panel, dalsi++, r, stahujeSe);
+		for (final RadekMapy v : vrstvy.getOrDefault(r.id, Collections.emptyList())) {
+			radek(panel, dalsi++, v, stahujeSe);
+		}
+		return dalsi;
 	}
 
 	/** Odsazení názvu o šířku šipky rozbalení, aby se názvy zemí a regionů zarovnaly. */
@@ -770,6 +786,12 @@ public class JMapyPopup extends JPanel {
 		final JLabel nazev = new JLabel(r.nazev);
 		nazev.addMouseListener(nadRadkem);
 		nazev.setToolTipText(tooltip);
+		if (r.isVrstva()) {
+			// Vrstva patří k mapě nad ní: odsazená, menším písmem.
+			nazev.setFont(nazev.getFont().deriveFont(Font.PLAIN, 11f));
+			nazev.setForeground(SEDY_TEXT);
+			nazev.setBorder(new EmptyBorder(0, ODSAZENI, 0, 0));
+		}
 		// Stejná šířka sloupce názvů ve všech oddílech, aby popisy byly pod sebou.
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
 		panel.add(nazev, bunka(1, y, 1));
@@ -851,7 +873,11 @@ public class JMapyPopup extends JPanel {
 
 	private void stahni(final RadekMapy r) {
 		if (ovladani != null) {
-			ovladani.stahni(r.id);
+			if (r.isVrstva()) {
+				ovladani.stahniVrstvu(r.id);
+			} else {
+				ovladani.stahni(r.id);
+			}
 		}
 	}
 

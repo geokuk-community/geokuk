@@ -119,6 +119,13 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public void stahniVrstvu(final String id) {
+				if (spravaMap != null) {
+					spravaMap.getKatalogVrstev().podleId(id).ifPresent(spravaMap::stahni);
+				}
+			}
+
+			@Override
 			public void zrusStahovani() {
 				if (spravaMap != null) {
 					spravaMap.zrusStahovani();
@@ -163,6 +170,10 @@ public class JBlokMap extends JLabel {
 		prestav();
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.SpravaVrstevEvent event) {
+		prestav();
+	}
+
 	/** Střed výřezu určuje mapy „Pro zobrazené místo“; popup se přestaví, jen když se jejich výběr změní. */
 	public void onEvent(final VyrezChangedEvent event) {
 		stred = event.getMoord().getMoustred().toWgs();
@@ -170,7 +181,7 @@ public class JBlokMap extends JLabel {
 	}
 
 	private void prestav() {
-		obnov(spravaMap == null ? soubory : RadkyMap.sestav(spravaMap.getKatalog(), spravaMap::getStav, soubory, stred));
+		obnov(spravaMap == null ? soubory : RadkyMap.sestav(spravaMap.getKatalog(), spravaMap::getStav, soubory, stred, spravaMap.getKatalogVrstev(), spravaMap::getStav));
 	}
 
 	public void onEvent(final ObrysPokrytiEvent event) {
@@ -296,7 +307,7 @@ public class JBlokMap extends JLabel {
 		final long veSlozce = radky.stream().filter(RadekMapy::isVeSlozce).count();
 		switch (stav) {
 		case STAHUJE:
-			return "Stahuje se mapa " + stahovana.nazev + ".";
+			return (stahovana.isVrstva() ? "Stahuje se vrstva " : "Stahuje se mapa ") + stahovana.nazev + ".";
 		case CHYBA:
 			return "Některá offline mapa má problém.";
 		case NOVEJSI:

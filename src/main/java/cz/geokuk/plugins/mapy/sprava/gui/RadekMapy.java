@@ -50,6 +50,10 @@ public final class RadekMapy {
 	final String chyba;
 	/** Kdy se naposledy ptal server na novější data, null = nikdy. */
 	final Instant zkontrolovano;
+	/** Druh vrstvy (Trasy, Vrstevnice, Stínování), když řádek není mapa, ale vrstva k mapě; jinak null. */
+	final String vrstvaTyp;
+	/** Id mapy, ke které vrstva patří. */
+	final String mapaId;
 
 	private RadekMapy(final Builder b) {
 		id = b.id;
@@ -70,6 +74,8 @@ public final class RadekMapy {
 		licence = b.licence;
 		chyba = b.chyba;
 		zkontrolovano = b.zkontrolovano;
+		vrstvaTyp = b.vrstvaTyp;
+		mapaId = b.mapaId;
 	}
 
 	public static Builder katalogova(final String id, final String nazev, final Stav stav) {
@@ -78,6 +84,11 @@ public final class RadekMapy {
 		b.nazev = nazev;
 		b.stav = stav;
 		return b;
+	}
+
+	/** Vrstva (trasy, vrstevnice, stínování) k stažené mapě; id vrstvy z katalogu vrstev. */
+	public static Builder vrstva(final String id, final String nazev, final Stav stav) {
+		return katalogova(id, nazev, stav);
 	}
 
 	public static Builder vlastni(final String nazevSouboru) {
@@ -98,6 +109,10 @@ public final class RadekMapy {
 
 	public Stav getStav() {
 		return stav;
+	}
+
+	public boolean isVrstva() {
+		return vrstvaTyp != null;
 	}
 
 	public boolean isVlastni() {
@@ -198,6 +213,8 @@ public final class RadekMapy {
 		private String licence;
 		private String chyba;
 		private Instant zkontrolovano;
+		private String vrstvaTyp;
+		private String mapaId;
 
 		public Builder skupina(final String s) {
 			skupina = s;
@@ -261,6 +278,13 @@ public final class RadekMapy {
 
 		public Builder licence(final String l) {
 			licence = l;
+			return this;
+		}
+
+		/** Řádek je vrstva k mapě. */
+		public Builder vrstva(final String typ, final String mapa) {
+			vrstvaTyp = typ;
+			mapaId = mapa;
 			return this;
 		}
 

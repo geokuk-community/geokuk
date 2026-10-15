@@ -5,6 +5,9 @@ public interface OvladaniMap {
 
 	default void stahni(final String id) {}
 
+	/** Stáhne vrstvu (trasy, vrstevnice, stínování) podle id z katalogu vrstev. */
+	default void stahniVrstvu(final String id) {}
+
 	default void zrusStahovani() {}
 
 	/** Zjistí jen u této mapy, jestli je na serveru novější. */
