@@ -7,6 +7,10 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -99,7 +103,7 @@ public final class KatalogMap {
 			if (pokryti == null) {
 				pokryti = obdelnik(p.get("obdelnik"), id);
 			}
-			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, vyres(mapy, id + ".map"),
+			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, datum(p.get("datum"), id), vyres(mapy, id + ".map"),
 					vyres(poly, id + ".poly"), ((Double) velikost).longValue(), pokryti, zdroj, licence, atribuce);
 			if (!soubory.add(m.getNazevSouboru().toLowerCase(Locale.ROOT))) {
 				throw new IOException("Dvě mapy v katalogu mají stejné jméno souboru " + m.getNazevSouboru());
@@ -107,6 +111,18 @@ public final class KatalogMap {
 			vysledek.add(m);
 		}
 		return new KatalogMap(vysledek);
+	}
+
+	/** Datum ve tvaru hlavičky Last-Modified (RFC 1123); chybí = null. */
+	private static Instant datum(final Object o, final String id) throws IOException {
+		if (o == null) {
+			return null;
+		}
+		try {
+			return ZonedDateTime.parse(String.valueOf(o), DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
+		} catch (final DateTimeParseException e) {
+			throw new IOException("Mapa " + id + " má v katalogu neplatné datum: " + o, e);
+		}
 	}
 
 	/** Jedna adresa, nebo seznam (první je hlavní, další záloha). */
@@ -179,6 +195,22 @@ public final class KatalogMap {
 	/** Katalogová mapa uložená pod tímto jménem souboru; prázdné = soubor uživatele. */
 	public Optional<KatalogovaMapa> podleSouboru(final String nazevSouboru) {
 		return mapy.stream().filter(m -> m.getNazevSouboru().equalsIgnoreCase(nazevSouboru)).findFirst();
+	}
+
+	/** Celá země, jejímž regionem mapa je, když je v katalogu. */
+	public Optional<KatalogovaMapa> celek(final KatalogovaMapa region) {
+		return region.getIdCelku() == null ? Optional.empty() : podleId(region.getIdCelku());
+	}
+
+	/** Regiony celé země v pořadí katalogu; prázdné, když mapa regiony nemá. */
+	public List<KatalogovaMapa> regiony(final KatalogovaMapa celek) {
+		final List<KatalogovaMapa> vysledek = new ArrayList<>();
+		for (final KatalogovaMapa m : mapy) {
+			if (celek.getId().equals(m.getIdCelku())) {
+				vysledek.add(m);
+			}
+		}
+		return vysledek;
 	}
 
 	/** Mapy, jejichž obrys pokrývá bod, od nejmenší (region dřív než země). */
