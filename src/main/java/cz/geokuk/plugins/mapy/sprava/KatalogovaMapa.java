@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.mapy.sprava;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 
 /** Jedna mapa z katalogu offline map. */
@@ -9,6 +10,7 @@ public final class KatalogovaMapa {
 	private final String id;
 	private final String nazev;
 	private final String skupina;
+	private final Instant datumNaServeru;
 	private final List<URI> urlyMapy;
 	private final List<URI> urlyPolygonu;
 	private final long pribliznaVelikost;
@@ -17,11 +19,12 @@ public final class KatalogovaMapa {
 	private final String licence;
 	private final String atribuce;
 
-	KatalogovaMapa(final String id, final String nazev, final String skupina, final List<URI> urlyMapy, final List<URI> urlyPolygonu, final long pribliznaVelikost,
+	KatalogovaMapa(final String id, final String nazev, final String skupina, final Instant datumNaServeru, final List<URI> urlyMapy, final List<URI> urlyPolygonu, final long pribliznaVelikost,
 			final PolygonPokryti pokryti, final String zdroj, final String licence, final String atribuce) {
 		this.id = id;
 		this.nazev = nazev;
 		this.skupina = skupina;
+		this.datumNaServeru = datumNaServeru;
 		this.urlyMapy = urlyMapy;
 		this.urlyPolygonu = urlyPolygonu;
 		this.pribliznaVelikost = pribliznaVelikost;
@@ -43,6 +46,18 @@ public final class KatalogovaMapa {
 	/** Země u regionu (například „Německo“), jinak null. */
 	public String getSkupina() {
 		return skupina;
+	}
+
+	/** Datum mapy na serveru podle katalogu (Last-Modified při jeho sestavení), null když ho katalog neuvádí. */
+	public Instant getDatumNaServeru() {
+		return datumNaServeru;
+	}
+
+	/** Id celé země, když je mapa jejím regionem (například „europe/germany“ u „europe/germany/bayern“), jinak null. */
+	public String getIdCelku() {
+		final int i = id.lastIndexOf('/');
+		final int j = id.indexOf('/');
+		return i > j ? id.substring(0, i) : null;
 	}
 
 	/** Jméno souboru ve složce offline map. */
