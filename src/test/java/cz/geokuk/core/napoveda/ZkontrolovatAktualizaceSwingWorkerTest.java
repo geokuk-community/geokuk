@@ -102,4 +102,13 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 		Assert.assertEquals("Přejít na stabilní verzi", tlacitka(true)[ZkontrolovatAktualizaceSwingWorker.AKTUALIZOVAT]);
 		Assert.assertEquals("Zůstat u testovací verze", tlacitka(true)[ZkontrolovatAktualizaceSwingWorker.POZDEJI]);
 	}
+
+	/** Odkaz „Co je nového“ v okně aktualizace jde ovládat i z klávesnice. */
+	@Test
+	public void odkazCoJeNovehoMaFokus() {
+		final javax.swing.JComponent zprava = ZkontrolovatAktualizaceSwingWorker.zpravaSOdkazem("Je nová verze.", "6.5.0", false);
+		final javax.swing.JButton odkaz = (javax.swing.JButton) java.util.Arrays.stream(zprava.getComponents()).filter(c -> c instanceof javax.swing.JButton).findFirst().get();
+		Assert.assertTrue(odkaz.isFocusable());
+		Assert.assertTrue(odkaz.getText().contains("6.5.0"));
+	}
 }

@@ -83,7 +83,7 @@ public class JCoJeNoveho extends JPanel {
 			protected void done() {
 				try {
 					final List<CoJeNoveho.Vydani> vydani = get();
-					setHtml(vydani.isEmpty() ? chyba(nova) : CoJeNoveho.html(vydani));
+					setHtml(vydani.isEmpty() ? bezPopisu(nova) : CoJeNoveho.html(vydani));
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} catch (final ExecutionException e) {
@@ -94,9 +94,21 @@ public class JCoJeNoveho extends JPanel {
 		}.execute();
 	}
 
+	/** Seznam vydání má stovky kilobajtů; víc už je chyba. */
+	static final int MAX_ODPOVED = 2_000_000;
+
 	static String chyba(final String nova) {
-		return "<html><body><p>Popis nové verze se nepodařilo načíst.</p><p><a href=\"" + FConst.RELEASE_TAG_URL + CoJeNoveho.escape(nova)
-				+ "\">Zobrazit popis verze " + CoJeNoveho.escape(nova) + " na webu</a></p></body></html>";
+		return zprava("Popis nové verze se nepodařilo načíst.", nova);
+	}
+
+	/** Server odpověděl, ale vydání pro vybrané verze nemají popis. */
+	static String bezPopisu(final String nova) {
+		return zprava("K nové verzi není ve vydáních žádný popis.", nova);
+	}
+
+	private static String zprava(final String text, final String nova) {
+		return "<html><body><p>" + text + "</p><p><a href=\"" + FConst.RELEASE_TAG_URL + CoJeNoveho.escape(nova) + "\">Zobrazit popis verze " + CoJeNoveho.escape(nova)
+				+ " na webu</a></p></body></html>";
 	}
 
 	static JDialog dialog(final Window vlastnik, final JCoJeNoveho obsah) {
@@ -134,8 +146,16 @@ public class JCoJeNoveho extends JPanel {
 		c.setRequestProperty("Accept", "application/vnd.github+json");
 		c.setConnectTimeout(30000);
 		c.setReadTimeout(30000);
-		try (java.util.Scanner sc = new java.util.Scanner(c.getInputStream(), "UTF-8").useDelimiter("\\A")) {
-			return sc.hasNext() ? sc.next() : "";
+		try (java.io.InputStream in = c.getInputStream()) {
+			return precti(in);
 		}
+	}
+
+	static String precti(final java.io.InputStream in) throws IOException {
+		final byte[] data = com.google.common.io.ByteStreams.toByteArray(com.google.common.io.ByteStreams.limit(in, MAX_ODPOVED + 1L));
+		if (data.length > MAX_ODPOVED) {
+			throw new IOException("Odpověď serveru je příliš velká");
+		}
+		return new String(data, java.nio.charset.StandardCharsets.UTF_8);
 	}
 }
