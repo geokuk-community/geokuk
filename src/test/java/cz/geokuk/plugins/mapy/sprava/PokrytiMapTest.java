@@ -36,4 +36,24 @@ public class PokrytiMapTest {
 		assertTrue(PokrytiMap.stazeneMapyProBod(slozka, new Wgs(48, 17), k).isEmpty());
 		assertTrue(PokrytiMap.stazeneMapyProBod(new File(slozka, "neni"), KUKOV, k).isEmpty());
 	}
+
+	@Test
+	public void dvojiteMapy() throws IOException {
+		final File slozka = tmp.newFolder("dvojite");
+		final KatalogMap k = KatalogMap.nacti("{\"zdroj\": \"s\", \"licence\": \"l\", \"atribuce\": \"a\", \"mapy\": \"https://x.org/m/\", \"polygony\": \"https://x.org/p/\", \"polozky\": ["
+				+ "{\"id\": \"europe/zeme\", \"nazev\": \"Z\", \"velikost\": 1, \"obdelnik\": [0, 0, 1, 1]},"
+				+ "{\"id\": \"europe/zeme/a\", \"nazev\": \"A\", \"velikost\": 1, \"obdelnik\": [0, 0, 1, 1]},"
+				+ "{\"id\": \"europe/zeme/b\", \"nazev\": \"B\", \"velikost\": 1, \"obdelnik\": [0, 0, 1, 1]},"
+				+ "{\"id\": \"europe/jina\", \"nazev\": \"J\", \"velikost\": 1, \"obdelnik\": [0, 0, 1, 1]}]}", id -> null);
+		Files.write(new File(slozka, "a.map").toPath(), new byte[1]);
+		Files.write(new File(slozka, "jina.map").toPath(), new byte[1]);
+		assertTrue("jen region, bez celé země", PokrytiMap.dvojiteMapy(slozka, k).isEmpty());
+		Files.write(new File(slozka, "Zeme.MAP").toPath(), new byte[1]);
+		Files.write(new File(slozka, "b.map.stahuje").toPath(), new byte[1]);
+		final List<PokrytiMap.DvojitaMapa> d = PokrytiMap.dvojiteMapy(slozka, k);
+		assertEquals(1, d.size());
+		assertEquals("europe/zeme", d.get(0).getCelek().getId());
+		assertEquals(1, d.get(0).getRegiony().size());
+		assertEquals("europe/zeme/a", d.get(0).getRegiony().get(0).getId());
+	}
 }
