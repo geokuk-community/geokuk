@@ -58,7 +58,35 @@ public class KatalogMapTest {
 		assertEquals("europe/slovakia", k.pokryvajiBod(new Wgs(48.15, 17.11)).get(0).getId()); // Bratislava
 		assertEquals("europe/poland", k.pokryvajiBod(new Wgs(50.06, 19.94)).get(0).getId()); // Krakov
 		assertEquals("europe/germany/berlin", k.pokryvajiBod(new Wgs(52.52, 13.40)).get(0).getId());
-		assertTrue("Paříž", k.pokryvajiBod(new Wgs(48.86, 2.35)).isEmpty());
+		assertEquals("Paříž", Arrays.asList("europe/france/ile-de-france", "europe/france"), ids(k.pokryvajiBod(new Wgs(48.86, 2.35))));
+		assertEquals("europe/spain/madrid", k.pokryvajiBod(new Wgs(40.42, -3.70)).get(0).getId());
+		assertEquals("europe/italy/centro", k.pokryvajiBod(new Wgs(41.90, 12.50)).get(0).getId()); // Řím
+		assertEquals("europe/netherlands/noord-holland", k.pokryvajiBod(new Wgs(52.37, 4.90)).get(0).getId()); // Amsterdam
+		assertEquals("Londýn", Arrays.asList("europe/united-kingdom/england", "europe/great-britain"), ids(k.pokryvajiBod(new Wgs(51.51, -0.13))));
+		assertEquals("europe/norway", k.pokryvajiBod(new Wgs(59.91, 10.75)).get(0).getId()); // Oslo
+	}
+
+	@Test
+	public void celaEvropaZemeARegiony() {
+		final KatalogMap k = KatalogMap.vestaveny();
+		assertTrue(k.getMapy().size() >= 130);
+		final KatalogovaMapa francie = k.podleId("europe/france").get();
+		assertEquals("Francie", francie.getNazev());
+		assertEquals(27, k.regiony(francie).size());
+		for (final String zeme : Arrays.asList("france", "germany", "italy", "netherlands", "spain")) {
+			final KatalogovaMapa celek = k.podleId("europe/" + zeme).get();
+			assertFalse(zeme, k.regiony(celek).isEmpty());
+			for (final KatalogovaMapa r : k.regiony(celek)) {
+				assertSame(r.getId(), celek, k.celek(r).get());
+				assertEquals(r.getId(), celek.getNazev(), r.getSkupina());
+			}
+		}
+		final KatalogovaMapa skotsko = k.podleId("europe/united-kingdom/scotland").get();
+		assertEquals("Spojené království", skotsko.getSkupina());
+		assertFalse("celé Spojené království server nemá", k.celek(skotsko).isPresent());
+		for (final KatalogovaMapa m : k.getMapy()) {
+			assertEquals(m.getId(), m.getSkupina() != null, m.getIdCelku() != null);
+		}
 	}
 
 	@Test
