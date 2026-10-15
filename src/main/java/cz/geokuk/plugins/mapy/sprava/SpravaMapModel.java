@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
 
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.framework.Event0;
 import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -31,16 +32,23 @@ public class SpravaMapModel extends Model0 {
 
 	private static final long INTERVAL_PRUBEHU_NS = TimeUnit.MILLISECONDS.toNanos(250);
 
+	/** Podsložka složky offline map; základní mapy se berou jen přímo ze složky, takže vrstvy mezi ně nepřijdou. */
+	public static final String SLOZKA_VRSTEV = "vrstvy";
+
 	private final KatalogMap katalog;
+	private final KatalogVrstev katalogVrstev;
 	private final ExecutorService vlakno = vlakno("Stahování offline mapy");
 	/** Kontroly a stav z disku, aby nečekaly na dlouhé stahování. */
 	private final ExecutorService kontrola = vlakno("Kontrola offline map");
 	private final Map<String, StavMapy> stavy = new ConcurrentHashMap<>();
-	private final AtomicReference<KatalogovaMapa> bezici = new AtomicReference<>();
+	private final Map<String, StavVrstvy> stavyVrstev = new ConcurrentHashMap<>();
+	/** Právě stahovaná mapa nebo vrstva; stahuje se vždy jen jedna. */
+	private final AtomicReference<Object> bezici = new AtomicReference<>();
 	private final AtomicBoolean zruseno = new AtomicBoolean();
 	private final StahovacMapy stahovac;
+	private final StahovacVrstev stahovacVrstev;
 	private Supplier<File> slozka = () -> null;
-	private Consumer<SpravaMapEvent> odpalovac = e -> SwingUtilities.invokeLater(() -> fire(e));
+	private Consumer<Event0<SpravaMapModel>> odpalovac = e -> SwingUtilities.invokeLater(() -> fire(e));
 	private KachleModel kachleModel;
 	private volatile long posledniPrubeh;
 
@@ -53,12 +61,18 @@ public class SpravaMapModel extends Model0 {
 	}
 
 	public SpravaMapModel() {
-		this(KatalogMap.vestaveny());
+		this(KatalogMap.vestaveny(), KatalogVrstev.vestaveny());
 	}
 
 	SpravaMapModel(final KatalogMap katalog) {
+		this(katalog, KatalogVrstev.vestaveny());
+	}
+
+	SpravaMapModel(final KatalogMap katalog, final KatalogVrstev katalogVrstev) {
 		this.katalog = katalog;
+		this.katalogVrstev = katalogVrstev;
 		stahovac = new StahovacMapy("GeoKuk/" + FConst.VERSION + " (" + FConst.WEB_PAGE_URL + ")", this::uvolniOfflineMapy);
+		stahovacVrstev = new StahovacVrstev(stahovac);
 	}
 
 	public void inject(final KachleModel kachleModel) {
@@ -67,13 +81,26 @@ public class SpravaMapModel extends Model0 {
 	}
 
 	/** Pro testy: složka a odpalování událostí bez Swingu. */
-	void nastavProTest(final Supplier<File> slozka, final Consumer<SpravaMapEvent> odpalovac) {
+	void nastavProTest(final Supplier<File> slozka, final Consumer<Event0<SpravaMapModel>> odpalovac) {
 		this.slozka = slozka;
 		this.odpalovac = odpalovac;
 	}
 
+	/** Pro testy map: jen události map. */
+	void nastavProTestMap(final Supplier<File> slozka, final Consumer<SpravaMapEvent> odpalovac) {
+		nastavProTest(slozka, e -> {
+			if (e instanceof SpravaMapEvent) {
+				odpalovac.accept((SpravaMapEvent) e);
+			}
+		});
+	}
+
 	StahovacMapy getStahovac() {
 		return stahovac;
+	}
+
+	StahovacVrstev getStahovacVrstev() {
+		return stahovacVrstev;
 	}
 
 	@Override
@@ -98,9 +125,66 @@ public class SpravaMapModel extends Model0 {
 		return stavy.computeIfAbsent(mapa.getId(), id -> StavMapy.novy(mapa));
 	}
 
+	/** Běžící stahování mapy; prázdné, když se nestahuje nic nebo se stahuje vrstva. */
 	public Optional<StavMapy> getBeziciStahovani() {
-		final KatalogovaMapa m = bezici.get();
-		return m == null ? Optional.empty() : Optional.of(getStav(m));
+		final Object m = bezici.get();
+		return m instanceof KatalogovaMapa ? Optional.of(getStav((KatalogovaMapa) m)) : Optional.empty();
+	}
+
+	public KatalogVrstev getKatalogVrstev() {
+		return katalogVrstev;
+	}
+
+	/** Složka, kam se stahují vrstvy; null, když složka offline map není nastavená. */
+	public File getSlozkaVrstev() {
+		final File s = slozka.get();
+		return s == null ? null : new File(s, SLOZKA_VRSTEV);
+	}
+
+	/** Poslední známý stav vrstvy, bez sítě a bez disku. */
+	public StavVrstvy getStav(final KatalogovaVrstva vrstva) {
+		return stavyVrstev.computeIfAbsent(vrstva.getId(), id -> StavVrstvy.novy(vrstva));
+	}
+
+	/** Běžící stahování vrstvy; prázdné, když se nestahuje nic nebo se stahuje mapa. */
+	public Optional<StavVrstvy> getBeziciStahovaniVrstvy() {
+		final Object v = bezici.get();
+		return v instanceof KatalogovaVrstva ? Optional.of(getStav((KatalogovaVrstva) v)) : Optional.empty();
+	}
+
+	/** Stáhne všechny soubory vrstvy do {@link #getSlozkaVrstev()}. False, když se už něco stahuje. */
+	public boolean stahni(final KatalogovaVrstva vrstva) {
+		if (!bezici.compareAndSet(null, vrstva)) {
+			return false;
+		}
+		zruseno.set(false);
+		vlakno.execute(() -> {
+			try {
+				final File s = getSlozkaVrstev();
+				if (s == null) {
+					zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Složka offline map není nastavená."));
+					return;
+				}
+				zmena(stahovacVrstev.stahni(getStav(vrstva), s, zruseno::get, this::prubeh));
+			} catch (final RuntimeException e) {
+				log.warn("Stahování vrstvy {} selhalo", vrstva, e);
+				zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
+			} finally {
+				bezici.set(null);
+			}
+		});
+		return true;
+	}
+
+	/** Zahodí rozpracované stahování vrstvy (ne to, které právě běží). */
+	public void zahodRozpracovane(final KatalogovaVrstva vrstva) {
+		kontrola.execute(() -> {
+			final File s = getSlozkaVrstev();
+			if (s != null && bezici.get() != vrstva) {
+				StahovacVrstev.zahod(s, vrstva);
+				zmena(StahovacVrstev.mistniStav(getStav(vrstva).sFazi(Faze.NIC, null), s));
+			}
+		});
 	}
 
 	/** Přečte stav všech katalogových map z disku (bez sítě); změny přijdou událostmi. */
@@ -120,6 +204,19 @@ public class SpravaMapModel extends Model0 {
 					zmena(ted);
 				} else {
 					stavy.put(m.getId(), ted);
+				}
+			}
+			final File sv = new File(s, SLOZKA_VRSTEV);
+			for (final KatalogovaVrstva v : katalogVrstev.getVrstvy()) {
+				final StavVrstvy predtim = getStav(v);
+				if (predtim.isBezi()) {
+					continue;
+				}
+				final StavVrstvy ted = StahovacVrstev.mistniStav(predtim, sv);
+				if (!ted.toString().equals(predtim.toString())) {
+					zmena(ted);
+				} else {
+					stavyVrstev.put(v.getId(), ted);
 				}
 			}
 		});
@@ -188,6 +285,20 @@ public class SpravaMapModel extends Model0 {
 			posledniPrubeh = ted;
 			odpalovac.accept(new SpravaMapEvent(stav));
 		}
+	}
+
+	private void prubeh(final StavVrstvy stav) {
+		final StavVrstvy predtim = stavyVrstev.put(stav.getVrstva().getId(), stav);
+		final long ted = System.nanoTime();
+		if (predtim == null || predtim.getFaze() != stav.getFaze() || ted - posledniPrubeh >= INTERVAL_PRUBEHU_NS) {
+			posledniPrubeh = ted;
+			odpalovac.accept(new SpravaVrstevEvent(stav));
+		}
+	}
+
+	private void zmena(final StavVrstvy stav) {
+		stavyVrstev.put(stav.getVrstva().getId(), stav);
+		odpalovac.accept(new SpravaVrstevEvent(stav));
 	}
 
 	private void zmena(final StavMapy stav) {

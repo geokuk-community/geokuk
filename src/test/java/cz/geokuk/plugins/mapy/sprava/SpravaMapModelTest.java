@@ -65,7 +65,7 @@ public class SpravaMapModelTest {
 		final File slozka = tmp.newFolder("mapy");
 		final List<SpravaMapEvent> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(StahovacMapyTest.katalog(server));
-		model.nastavProTest(() -> slozka, udalosti::add);
+		model.nastavProTestMap(() -> slozka, udalosti::add);
 		final KatalogovaMapa mapa = model.getKatalog().getMapy().get(0);
 
 		assertTrue(model.stahni(mapa));
@@ -93,7 +93,7 @@ public class SpravaMapModelTest {
 		Files.write(new File(slozka, "kukov.map").toPath(), data);
 		final SpravaMapModel model = new SpravaMapModel(StahovacMapyTest.katalog(server));
 		final List<SpravaMapEvent> udalosti = new CopyOnWriteArrayList<>();
-		model.nastavProTest(() -> slozka, udalosti::add);
+		model.nastavProTestMap(() -> slozka, udalosti::add);
 		final KatalogovaMapa mapa = model.getKatalog().getMapy().get(0);
 		assertEquals(Mistni.NEMAME, model.getStav(mapa).getMistni());
 		model.obnovStavy();
