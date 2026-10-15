@@ -1,0 +1,39 @@
+package cz.geokuk.plugins.mapy.sprava;
+
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.util.*;
+
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import cz.geokuk.core.coordinates.Wgs;
+
+public class PokrytiMapTest {
+
+	@Rule
+	public TemporaryFolder tmp = new TemporaryFolder();
+
+	private static final Wgs KUKOV = new Wgs(50.003, 14.405);
+
+	@Test
+	public void souborUzivatelePodleHlavickyKatalogovaPodleObrysu() throws IOException {
+		final File slozka = tmp.newFolder("mapy");
+		final File uzivatel = HlavickaMapyTest.kukov(slozka);
+		// Stejná mapa pod jménem katalogové, jejíž obrys Kukov nepokrývá.
+		final File katalogova = new File(slozka, "region.map");
+		Files.copy(uzivatel.toPath(), katalogova.toPath());
+		final File poskozena = new File(slozka, "poskozena.map");
+		Files.write(poskozena.toPath(), new byte[] { 1, 2, 3 });
+		Files.write(new File(slozka, "kukov.map.stahuje").toPath(), Files.readAllBytes(uzivatel.toPath()));
+
+		final KatalogMap k = KatalogMap.nacti("{\"zdroj\": \"s\", \"licence\": \"l\", \"atribuce\": \"a\", \"mapy\": \"https://x.org/m/\", \"polygony\": \"https://x.org/p/\","
+				+ "\"polozky\": [{\"id\": \"europe/region\", \"nazev\": \"R\", \"velikost\": 1, \"obdelnik\": [0, 0, 1, 1]}]}", id -> null);
+		assertEquals(Collections.singletonList(uzivatel), PokrytiMap.stazeneMapyProBod(slozka, KUKOV, k));
+		assertTrue(PokrytiMap.stazeneMapyProBod(slozka, new Wgs(0.5, 0.5), k).contains(katalogova));
+		assertTrue(PokrytiMap.stazeneMapyProBod(slozka, new Wgs(48, 17), k).isEmpty());
+		assertTrue(PokrytiMap.stazeneMapyProBod(new File(slozka, "neni"), KUKOV, k).isEmpty());
+	}
+}
