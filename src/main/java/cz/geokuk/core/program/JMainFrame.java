@@ -25,6 +25,7 @@ import cz.geokuk.plugins.kesoidobsazenost.JObsazenost;
 import cz.geokuk.plugins.kesoidpopisky.JPopiskySlide;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.gui.*;
+import cz.geokuk.plugins.mapy.sprava.gui.JObrysMapSlide;
 import cz.geokuk.plugins.mrizky.*;
 import cz.geokuk.util.gui.CornerLayoutManager;
 import cz.geokuk.util.gui.ERoh;
@@ -105,6 +106,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			final JComponent obsazenik = new JObsazenost();
 			final JComponent kachlovnik = new JKachlovnikPresCele();
 			final JComponent kachlovnikTras = new JKachlovnikTras();
+			final JComponent obrysMap = new JObrysMapSlide();
 			final JComponent pozadi = new JSlidePozadi();
 
 			smrizema.add(mysovani);
@@ -123,6 +125,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			smrizema.add(pozicovnik);
 			smrizema.add(zvyraznovaciKruhy);
 			smrizema.add(obsazenik);
+			smrizema.add(obrysMap);
 			smrizema.add(kachlovnikTras);
 			smrizema.add(kachlovnik);
 			smrizema.add(pozadi);
@@ -145,6 +148,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(pozicovnik);
 			factory.init(zvyraznovaciKruhy);
 			factory.init(obsazenik);
+			factory.init(obrysMap);
 			factory.init(kachlovnikTras);
 			factory.init(kachlovnik);
 			factory.init(pozadi);

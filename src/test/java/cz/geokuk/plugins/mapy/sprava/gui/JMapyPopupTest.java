@@ -15,7 +15,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.PrehledovaMapa;
+import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
 
 /** Popup Mapy: řádky podle stavu, akce, odkazy na weby a čtení složky offline map. */
 public class JMapyPopupTest {
@@ -171,7 +174,7 @@ public class JMapyPopupTest {
 		Files.write(new File(slozka, "rozbita.map").toPath(), new byte[5000]);
 		Files.write(new File(slozka, PrehledovaMapa.SOUBOR).toPath(), new byte[10]);
 		Files.write(new File(slozka, "tema.zip").toPath(), new byte[10]);
-		final List<RadekMapy> radky = SouboryMap.nacti(slozka);
+		final List<RadekMapy> radky = SouboryMap.nacti(slozka, KatalogMap.vestaveny());
 		Assert.assertEquals(2, radky.size());
 		final RadekMapy kukov = radky.get(0);
 		Assert.assertEquals("kukov.map", kukov.getNazev());
@@ -180,6 +183,23 @@ public class JMapyPopupTest {
 		Assert.assertTrue(kukov.isVlastni());
 		Assert.assertEquals(RadekMapy.Stav.CHYBA, radky.get(1).getStav());
 		Assert.assertTrue(radky.get(1).isVeSlozce());
-		Assert.assertTrue(SouboryMap.nacti(new File(slozka, "neni")).isEmpty());
+		Assert.assertTrue(SouboryMap.nacti(new File(slozka, "neni"), KatalogMap.vestaveny()).isEmpty());
+		Assert.assertEquals("nečitelná mapa nic nepokrývá", 1, SouboryMap.obrysy(slozka, KatalogMap.vestaveny()).size());
+	}
+
+	/** Soubor se jménem z katalogu je katalogová mapa: název země a obrys země, ne obdélník z hlavičky. */
+	@Test
+	public void mapaZKatalogu() throws Exception {
+		final File slozka = tmp.newFolder("offline-mapy");
+		Files.copy(new File("src/test/resources/offline-mapy/kukov.map").toPath(), new File(slozka, "czech-republic.map").toPath());
+		final RadekMapy r = SouboryMap.nacti(slozka, KatalogMap.vestaveny()).get(0);
+		Assert.assertFalse(r.isVlastni());
+		Assert.assertEquals("europe/czech-republic", r.getId());
+		Assert.assertEquals("Česko", r.getNazev());
+		Assert.assertEquals(RadekMapy.Stav.AKTUALNI, r.getStav());
+		final List<PolygonPokryti> obrysy = SouboryMap.obrysy(slozka, KatalogMap.vestaveny());
+		Assert.assertEquals(1, obrysy.size());
+		Assert.assertSame(KatalogMap.vestaveny().podleId("europe/czech-republic").get().getPokryti(), obrysy.get(0));
+		Assert.assertTrue("Praha", obrysy.get(0).obsahuje(new Wgs(50.08, 14.42)));
 	}
 }

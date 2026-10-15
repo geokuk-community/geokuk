@@ -11,7 +11,9 @@ import javax.swing.*;
 
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.plugins.mapy.kachle.ObrysPokrytiEvent;
 import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
+import cz.geokuk.plugins.mapy.sprava.KatalogMap;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.gui.PopupNadBlokem;
@@ -89,8 +91,27 @@ public class JBlokMap extends JLabel {
 					}
 				}, "Otevření složky offline map").start();
 			}
+
+			@Override
+			public boolean isObrysDostupny() {
+				return true;
+			}
+
+			@Override
+			public boolean isObrysPokryti() {
+				return kachleModel.isObrysPokryti();
+			}
+
+			@Override
+			public void setObrysPokryti(final boolean zapnuto) {
+				kachleModel.setObrysPokryti(zapnuto);
+			}
 		});
 		nactiSlozku();
+	}
+
+	public void onEvent(final ObrysPokrytiEvent event) {
+		obsah.setObrysZapnuty(event.isZapnuto());
 	}
 
 	public void onEvent(final OfflineMapaChangedEvent event) {
@@ -115,7 +136,7 @@ public class JBlokMap extends JLabel {
 		cteni = new SwingWorker<List<RadekMapy>, Void>() {
 			@Override
 			protected List<RadekMapy> doInBackground() {
-				return SouboryMap.nacti(slozka);
+				return SouboryMap.nacti(slozka, KatalogMap.vestaveny());
 			}
 
 			@Override

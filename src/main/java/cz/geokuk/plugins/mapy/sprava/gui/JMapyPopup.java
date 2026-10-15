@@ -75,6 +75,10 @@ public class JMapyPopup extends JPanel {
 		sestav();
 	}
 
+	public void setObrysZapnuty(final boolean zapnuty) {
+		obrys.setSelected(zapnuty);
+	}
+
 	/** Zavolá se, když se změnila velikost obsahu a popup se má zobrazit znovu. */
 	public void setPoZmeneObsahu(final Runnable poZmeneObsahu) {
 		this.poZmeneObsahu = poZmeneObsahu;

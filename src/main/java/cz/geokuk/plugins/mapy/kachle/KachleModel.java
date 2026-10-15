@@ -44,6 +44,7 @@ public class KachleModel extends Model0 {
 	private static final String OFFLINE_PISMO = "offlineMapaPismo";
 
 	private static final String PREKRYV_TRAS = "prekryvTras";
+	private static final String OBRYS_POKRYTI = "obrysPokrytiOfflineMap";
 
 	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
 	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
@@ -137,6 +138,19 @@ public class KachleModel extends Model0 {
 		return isPrekryvTras() && !isPrekryvTrasNadbytecny();
 	}
 
+	/** V mapě se kreslí obrys území, které pokrývají offline mapy ve složce. */
+	public boolean isObrysPokryti() {
+		return currPrefe().getBoolean(OBRYS_POKRYTI, false);
+	}
+
+	public void setObrysPokryti(final boolean zapnuto) {
+		if (zapnuto == isObrysPokryti()) {
+			return;
+		}
+		currPrefe().putBoolean(OBRYS_POKRYTI, zapnuto);
+		fire(new ObrysPokrytiEvent(zapnuto));
+	}
+
 	private void fajrujPrekryvTras() {
 		fire(new PrekryvTrasEvent(isPrekryvTras(), isPrekryvTrasNadbytecny()));
 	}
@@ -187,6 +201,7 @@ public class KachleModel extends Model0 {
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
 		fajrujPrekryvTras();
+		fire(new ObrysPokrytiEvent(isObrysPokryti()));
 		hlidaniSlozky.scheduleWithFixedDelay(this::zkontrolujSlozkuOfflineMap, 2, 2, TimeUnit.SECONDS);
 	}
 

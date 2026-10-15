@@ -71,7 +71,8 @@
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře jejich seznam (velikost, datum dat, nečitelné soubory),
-  odkaz na složku offline map a na weby s mapami.
+  odkaz na složku offline map a na weby s mapami. Volbou v něm jde v mapě
+  ukázat, kde offline mapy jsou.
 
 ## 6.4.0
 

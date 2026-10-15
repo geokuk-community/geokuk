@@ -225,7 +225,7 @@ public final class RadekMapy {
 		}
 
 		public RadekMapy build() {
-			if (vlastni && chyba != null) {
+			if (chyba != null && stav == Stav.AKTUALNI) {
 				stav = Stav.CHYBA;
 			}
 			return new RadekMapy(this);
