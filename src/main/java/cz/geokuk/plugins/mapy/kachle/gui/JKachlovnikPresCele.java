@@ -83,7 +83,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		return odkazyRady.stream().anyMatch(r -> r.contains(bod));
 	}
 
-	/** Zeměpisný obdélník zobrazeného výřezu, i když je mapa natočená. */
+	/** Zeměpisný obdélník, do kterého se vejdou všechny čtyři rohy výřezu. */
 	private RadaOfflineMapy.Vyrez vyrez() {
 		final Wgs[] rohy = { getSoord().getMouSZ().toWgs(), getSoord().getMouSV().toWgs(), getSoord().getMouJV().toWgs(), getSoord().getMouJZ().toWgs() };
 		double jih = 90;
@@ -206,7 +206,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 				g2.drawString(odkaz, x + 8, yy);
 				final int sirka = fm.stringWidth(odkaz);
 				g2.drawLine(x + 8, yy + 2, x + 8 + sirka, yy + 2);
-				odkazyRady.add(new Rectangle(x + 4, yy - fm.getAscent() - 2, sirka + 8, fm.getHeight() + 4));
+				odkazyRady.add(new Rectangle(x + 4, yy - fm.getAscent(), sirka + 8, fm.getHeight()));
 				mapyRady.add(mapy.get(i));
 				yy += fm.getHeight();
 			}

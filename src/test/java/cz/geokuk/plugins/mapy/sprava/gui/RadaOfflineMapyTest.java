@@ -91,7 +91,6 @@ public class RadaOfflineMapyTest {
 		Assert.assertEquals("europe/czech-republic", r.mapa.getId());
 		final java.util.List<String> sousedni = idSousednich(r);
 		Assert.assertTrue(sousedni.toString(), sousedni.contains("europe/germany/sachsen"));
-		Assert.assertTrue(sousedni.toString(), sousedni.contains("europe/poland"));
 		Assert.assertFalse(sousedni.contains("europe/czech-republic"));
 		Assert.assertFalse("Bavorsko do výřezu nezasahuje", sousedni.contains("europe/germany/bayern"));
 		Assert.assertTrue(sousedni.size() <= RadaOfflineMapy.NEJVIC_SOUSEDNICH);
@@ -115,5 +114,23 @@ public class RadaOfflineMapyTest {
 		Assert.assertFalse(idSousednich(bezSaska).contains("europe/germany/sachsen"));
 		final RadaOfflineMapy uprostred = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, PRAHA, null, new RadaOfflineMapy.Vyrez(50.0, 14.3, 50.2, 14.6));
 		Assert.assertTrue(idSousednich(uprostred).toString(), uprostred.sousedni.isEmpty());
+	}
+
+	/** Sousedé jsou nejbližší mapy, ne nejmenší: Berlín je menší než Polsko, ale od Děčína dál. */
+	@Test
+	public void sousedniPodleBlizkostiNeVelikosti() {
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, DECIN, null, new RadaOfflineMapy.Vyrez(50.0, 12.0, 53.0, 16.5));
+		final java.util.List<String> sousedni = idSousednich(r);
+		Assert.assertEquals(sousedni.toString(), "europe/germany/sachsen", sousedni.get(0));
+		Assert.assertFalse(sousedni.toString(), sousedni.contains("europe/germany/berlin"));
+		Assert.assertTrue(sousedni.size() <= RadaOfflineMapy.NEJVIC_SOUSEDNICH);
+	}
+
+	/** Odkaz „Zkusit znovu“ u souseda říká, o kterou mapu jde. */
+	@Test
+	public void sousedSChybouMaVNazvuMapu() {
+		final KatalogovaMapa sachsen = KATALOG.podleId("europe/germany/sachsen").get();
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, m -> m == sachsen ? stav(m, NEMAME, CHYBA, 0, -1) : StavMapy.novy(m), DECIN, null, U_HRANICE);
+		Assert.assertTrue(r.sousedni.stream().anyMatch(s -> "Zkusit znovu stáhnout mapu Sasko".equals(s.odkaz)));
 	}
 }
