@@ -6,8 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Malá čtečka JSON pro vestavěný katalog: objekt → Map, pole → List, číslo → Double, text, true/false, null. */
-final class JsonCteni {
+/** Malá čtečka JSON (vestavěný katalog map, popisy vydání): objekt → Map, pole → List, číslo → Double, text, true/false, null. */
+public final class JsonCteni {
 
 	/** Hloubka vnoření; hlubší JSON je chybný, ne přetečení zásobníku. */
 	private static final int NEJVETSI_HLOUBKA = 64;
@@ -20,7 +20,7 @@ final class JsonCteni {
 		this.text = text;
 	}
 
-	static Object precti(final String text) throws IOException {
+	public static Object precti(final String text) throws IOException {
 		final JsonCteni c = new JsonCteni(text);
 		final Object hodnota = c.hodnota();
 		c.mezery();
