@@ -193,7 +193,6 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 		final JButton odkaz = new JButton("<html><a href=\"#\">Co je nového ve verzi " + nova + "</a></html>");
 		odkaz.setBorderPainted(false);
 		odkaz.setContentAreaFilled(false);
-		odkaz.setFocusable(false);
 		odkaz.setHorizontalAlignment(SwingConstants.LEFT);
 		odkaz.setBorder(BorderFactory.createEmptyBorder());
 		odkaz.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
