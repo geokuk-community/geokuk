@@ -41,8 +41,8 @@ public final class CoJeNoveho {
 
 	static final String CHANGELOG = "/CHANGELOG.md";
 
-	private static final Pattern ODKAZ = Pattern.compile("\\[([^\\]]+)\\]\\((https?://[^)\\s]+)\\)");
-	private static final Pattern HOLY_ODKAZ = Pattern.compile("(?<![\"=>])(https?://[^\\s<]+[^\\s<.,;:)])");
+	/** Odkaz v Markdownu, nebo holá adresa; jedním průchodem, aby se adresa uvnitř odkazu nepřevedla podruhé. */
+	private static final Pattern ODKAZY = Pattern.compile("\\[([^\\]]+)\\]\\((https?://[^)\\s]+)\\)|(?<![\"=>])(https?://[^\\s<]+[^\\s<.,;:)])");
 	private static final Pattern NADPIS = Pattern.compile("^(#{1,6})\\s+(.*)$");
 	private static final Pattern KOD = Pattern.compile("`([^`]+)`");
 	private static final Pattern TUCNE = Pattern.compile("\\*\\*([^*]+)\\*\\*");
@@ -213,9 +213,13 @@ public final class CoJeNoveho {
 		String s = escape(text);
 		s = KOD.matcher(s).replaceAll("<code>$1</code>");
 		s = TUCNE.matcher(s).replaceAll("<b>$1</b>");
-		s = ODKAZ.matcher(s).replaceAll("<a href=\"$2\">$1</a>");
-		s = HOLY_ODKAZ.matcher(s).replaceAll("<a href=\"$1\">$1</a>");
-		return s;
+		final Matcher m = ODKAZY.matcher(s);
+		final StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			final String odkaz = m.group(1) != null ? "<a href=\"" + m.group(2) + "\">" + m.group(1) + "</a>" : "<a href=\"" + m.group(3) + "\">" + m.group(3) + "</a>";
+			m.appendReplacement(sb, Matcher.quoteReplacement(odkaz));
+		}
+		return m.appendTail(sb).toString();
 	}
 
 	static String escape(final String s) {

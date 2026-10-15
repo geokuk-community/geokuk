@@ -101,6 +101,28 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Skrytí popupu během najetí na řádek obrys zruší; popup bez displeje není vidět, takže stačí událost o změně viditelnosti. */
+	@Test
+	public void skrytiPopupuZrusiZvyrazneni() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(Collections.singletonList(katalog("cz", RadekMapy.Stav.AKTUALNI).datumDat(Instant.EPOCH).build()));
+			final JLabel nazev = labels(p).stream().filter(l -> "cz".equals(l.getText())).findFirst().get();
+			for (final java.awt.event.MouseListener l : nazev.getMouseListeners()) {
+				l.mouseEntered(new java.awt.event.MouseEvent(nazev, java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
+			}
+			Assert.assertEquals(Collections.singletonList("zvyrazni cz"), z.volani);
+			final java.awt.event.HierarchyEvent skryti = new java.awt.event.HierarchyEvent(p, java.awt.event.HierarchyEvent.HIERARCHY_CHANGED, p, null,
+					java.awt.event.HierarchyEvent.SHOWING_CHANGED);
+			for (final java.awt.event.HierarchyListener l : p.getHierarchyListeners()) {
+				l.hierarchyChanged(skryti);
+			}
+			Assert.assertEquals(Arrays.asList("zvyrazni cz", "zvyrazni null"), z.volani);
+		});
+	}
+
 	private static List<JLabel> labels(final Container c) {
 		final List<JLabel> v = new ArrayList<>();
 		for (final java.awt.Component k : c.getComponents()) {
