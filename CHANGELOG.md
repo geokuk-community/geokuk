@@ -69,6 +69,8 @@
 - Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
   mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
+- Mapy > Postahovat dlaždice: stahování víc než asi 110 dlaždic se už
+  nezastaví, stáhnou se všechny.
 
 ## 6.4.0
 
