@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Mapování tagů pro mapsforge-map-writer. Klíče fmrel* vznikají skriptem addfmreltags.pl převzatým z Freemap Slovakia
+     (https://github.com/FreemapSlovakia/mapsforge-freemap-hiking-style, Apache-2.0); seznam hodnot rozšířen o cyklo, MTB, jezdecké a lyžařské trasy. -->
 <tag-mapping xmlns="http://mapsforge.org/tag-mapping" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://mapsforge.org/tag-mapping tag-mapping.xsd" default-zoom-appear="16" profile-name="default-profile">
 	<ways>

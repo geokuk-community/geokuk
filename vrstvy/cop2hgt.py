@@ -2,7 +2,7 @@
 """Copernicus GLO-30 (AWS Open Data) -> HGT 1" (3601x3601, int16 BE) pro oblast.
 Použití: cop2hgt.py jih,západ,sever,východ vystupni_slozka pracovni_slozka
 Vyžaduje numpy a GDAL (gdalbuildvrt, gdalwarp)."""
-import math, os, subprocess, sys, urllib.error, urllib.request
+import email.utils, math, os, subprocess, sys, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
@@ -28,6 +28,10 @@ def stahni(args):
                         break
                     f.write(blok)
             os.replace(cil + '.cast', cil)
+            posledni = r.headers.get('Last-Modified')
+            if posledni:
+                with open(cil + '.datum', 'w') as f:
+                    f.write(email.utils.parsedate_to_datetime(posledni).strftime('%Y-%m-%d'))
             return cil
         except urllib.error.HTTPError as ex:
             if ex.code in (403, 404):
@@ -50,6 +54,14 @@ def main():
     with ThreadPoolExecutor(8) as ex:
         tify = [t for t in ex.map(stahni, kandidati) if t]
     print('dlaždic Copernicu', len(tify), 'z', len(kandidati), flush=True)
+    datumy = []
+    for t in tify:
+        if os.path.exists(t + '.datum'):
+            with open(t + '.datum') as f:
+                datumy.append(f.read().strip())
+    if datumy:
+        with open(os.path.join(prace, 'datum-dem.txt'), 'w') as f:
+            f.write(max(datumy))
     vrt = os.path.join(prace, 'cop.vrt')
     seznam = os.path.join(prace, 'cop.txt')
     with open(seznam, 'w') as f:

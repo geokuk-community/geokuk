@@ -31,12 +31,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: vrstvy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGION: ${{ inputs.region || 'europe/luxembourg' }}
   NAZEV: ${{ inputs.nazev || 'Lucembursko' }}
   BBOX: ${{ inputs.bbox || '49.4,5.7,50.2,6.55' }}
   TYPY: ${{ inputs.typy || 'vse' }}
   JAVA_OPTS: -Xmx10g
+  ZAPIS: ${{ inputs.zapis || 'ram' }}
 
 jobs:
   trasy:
@@ -57,7 +62,7 @@ jobs:
       - name: Trasy
         run: |
           export ZAKLAD=$(basename "$REGION" | tr - _)
-          VYSTUP="$PWD/out" PRACE="$PWD/prace" TYP_ZAPISU="${{ inputs.zapis || 'ram' }}" vrstvy/trasy.sh
+          VYSTUP="$PWD/out" PRACE="$PWD/prace" TYP_ZAPISU="$ZAPIS" vrstvy/trasy.sh
       - name: Souhrn
         if: ${{ always() }}
         run: |
@@ -79,9 +84,11 @@ jobs:
             out/*.poly
             out/mereni.tsv
           if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         with:
           name: meta-trasy
+          retention-days: 14
           path: |
             out/*.meta.json
             out/*.poly
@@ -120,9 +127,11 @@ jobs:
             out/mereni.tsv
           compression-level: 0
           if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         with:
           name: meta-dem
+          retention-days: 14
           path: out/*.meta.json
 
   vrstevnice:
@@ -145,7 +154,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq osmium-tool unzip
           python3 -m venv "$HOME/venv"
-          "$HOME/venv/bin/pip" install -q "numpy<2" pyhgtmap
+          "$HOME/venv/bin/pip" install -q numpy==1.26.4 pyhgtmap==4.1
           echo "$HOME/venv/bin" >> "$GITHUB_PATH"
           vrstvy/priprav-nastroje.sh
       - name: Vrstevnice
@@ -172,14 +181,16 @@ jobs:
             out/*.LICENCE.txt
             out/mereni.tsv
           if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         with:
           name: meta-vrstevnice
+          retention-days: 14
           path: out/*.meta.json
 
   katalog:
     needs: [trasy, dem, vrstevnice]
-    if: ${{ !cancelled() && (needs.trasy.result == 'success' || needs.dem.result == 'success' || needs.vrstevnice.result == 'success') }}
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (needs.trasy.result == 'success' || needs.dem.result == 'success' || needs.vrstevnice.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -195,6 +206,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: vrstvy-katalog
+          retention-days: 14
           path: |
             katalog/vrstvy.json
             katalog/SHA256SUMS

@@ -45,6 +45,7 @@ def main():
         for k in ('licence', 'atribuce', 'atribuceDlouha', 'tema', 'pozn'):
             if k in sablona:
                 v[k] = sablona[k]
+        v['licenceText'] = m['licenceText']
         vrstvy.append(v)
     out = {'format': 1, 'vygenerovano': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'zdroje': [], 'vrstvy': vrstvy}
     with open(os.path.join(slozka, 'vrstvy.json'), 'w', encoding='utf-8') as f:
