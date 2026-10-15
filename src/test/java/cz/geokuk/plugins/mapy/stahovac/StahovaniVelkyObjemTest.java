@@ -35,7 +35,7 @@ import cz.geokuk.util.file.Filex;
 
 /**
  * Mapy > Postahovat dlaždice v reálném objemu: tisíce dlaždic ze syntetického serveru do skutečné cache (SQLite), pak zastavení uprostřed,
- * opakované stažení téhož výřezu a „restart“ programu. Počet dlaždic mění {@code scenare.dlazdic} (výchozí 1500, limit dialogu je 100 000).
+ * opakované stažení téhož výřezu a „restart“ programu. Počet dlaždic mění {@code scenare.dlazdic} (výchozí 1500, 0 test přeskočí, limit dialogu je 100 000).
  * Potřebuje displej (dialog), jinak se přeskočí.
  */
 public class StahovaniVelkyObjemTest {
@@ -148,6 +148,7 @@ public class StahovaniVelkyObjemTest {
 	@Before
 	public void setUp() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		Assume.assumeTrue("scenare.dlazdic=0 test vypíná", CIL > 0);
 		imageIoCache = ImageIO.getUseCache();
 		ImageIO.setUseCache(false);
 		final ByteArrayOutputStream png = new ByteArrayOutputStream();
