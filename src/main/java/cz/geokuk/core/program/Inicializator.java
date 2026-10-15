@@ -32,6 +32,7 @@ import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.UzivatelskeMapy;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachloDownloader;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.plugins.mrizky.MrizkaModel;
 import cz.geokuk.plugins.refbody.HlidacReferencnihoBodu;
 import cz.geokuk.plugins.refbody.RefbodyModel;
@@ -80,6 +81,7 @@ public class Inicializator {
 
 		bb.registerSigleton(new RefbodyModel());
 		bb.registerSigleton(new KachleModel());
+		bb.registerSigleton(new SpravaMapModel());
 		bb.registerSigleton(new KachloDownloader());
 
 		bb.registerSigleton(new MapyModel());
