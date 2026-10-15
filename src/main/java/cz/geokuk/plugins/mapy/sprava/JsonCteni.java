@@ -146,11 +146,18 @@ final class JsonCteni {
 				sb.append(e);
 				break;
 			case 'u':
-				if (pozice + 4 > text.length() || !text.substring(pozice, pozice + 4).matches("[0-9a-fA-F]{4}")) {
+				if (pozice + 4 > text.length()) {
 					throw chyba("neplatné \\u");
 				}
-				sb.append((char) Integer.parseInt(text.substring(pozice, pozice + 4), 16));
-				pozice += 4;
+				int kod = 0;
+				for (int i = 0; i < 4; i++) {
+					final int cislice = Character.digit(text.charAt(pozice++), 16);
+					if (cislice < 0) {
+						throw chyba("neplatné \\u");
+					}
+					kod = kod * 16 + cislice;
+				}
+				sb.append((char) kod);
 				break;
 			default:
 				throw chyba("neplatný escape \\" + e);
