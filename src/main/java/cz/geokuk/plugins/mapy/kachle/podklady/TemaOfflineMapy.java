@@ -22,8 +22,11 @@ public final class TemaOfflineMapy {
 	/** Průhledné téma s turistickými a cyklotrasami pro překryv přes jiný podklad; kreslí jen trasy z map osm.paws.cz. */
 	public static final TemaOfflineMapy TRASY = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "trasy.xml");
 
+	/** Tlumené téma pro turistiku odvozené z výchozího tématu mapsforge; používá se, dokud uživatel nezvolí jiné. */
+	public static final TemaOfflineMapy TURISTICKA = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "turisticka.xml");
+
 	/** Vestavěná témata, která má smysl nabízet; výškové stínování potřebuje data, která nemáme. */
-	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(Arrays.asList(VYCHOZI, new TemaOfflineMapy(MapsforgeThemes.OSMARENDER, null, null),
+	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(Arrays.asList(TURISTICKA, VYCHOZI, new TemaOfflineMapy(MapsforgeThemes.OSMARENDER, null, null),
 			new TemaOfflineMapy(MapsforgeThemes.BIKER, null, null), new TemaOfflineMapy(MapsforgeThemes.MOTORIDER, null, null)));
 
 	private static final char ODDELOVAC = '|';
@@ -82,13 +85,13 @@ public final class TemaOfflineMapy {
 		return new TemaOfflineMapy(null, soubor, xmlVZipu);
 	}
 
-	/** Téma z textu v nastavení; prázdný nebo neznámý text je výchozí téma. */
+	/** Téma z textu v nastavení; prázdný text (nic nezvoleno) je Turistická. */
 	public static TemaOfflineMapy zTextu(final String text) {
 		if (text == null || text.trim().isEmpty()) {
-			return VYCHOZI;
+			return TURISTICKA;
 		}
 		for (final TemaOfflineMapy t : VESTAVENA) {
-			if (t.vestavene.name().equals(text)) {
+			if (t.naText().equals(text)) {
 				return t;
 			}
 		}
@@ -125,12 +128,12 @@ public final class TemaOfflineMapy {
 	/** Název do menu. */
 	public String getNazev() {
 		if (zdroj != null) {
-			return "Turistické a cyklotrasy";
+			return TURISTICKA.zdroj.equals(zdroj) ? "Turistická" : "Turistické a cyklotrasy";
 		}
 		if (vestavene != null) {
 			switch (vestavene) {
 			case DEFAULT:
-				return "Výchozí";
+				return "Mapsforge (původní)";
 			case OSMARENDER:
 				return "Osmarender";
 			case BIKER:
