@@ -16,9 +16,12 @@ if [ -n "$OSMOSIS_SHA256" ] && [ "$sha" != "$OSMOSIS_SHA256" ]; then echo "Nesou
 mkdir -p "$N/osmosis"
 tar -xf "$N/osmosis.tar" -C "$N/osmosis"
 O=$(dirname "$(dirname "$(find "$N/osmosis" -path '*/bin/osmosis' | head -1)")")
-mvn -q -B -f "$D/zapisovac/pom.xml" dependency:copy-dependencies -DoutputDirectory="$O/lib" -DincludeScope=runtime
-mkdir -p "$HOME/.openstreetmap/osmosis/plugins"
-mv "$O"/lib/mapsforge-map-writer-*.jar "$HOME/.openstreetmap/osmosis/plugins/"
+mkdir -p "$N/zavislosti" "$N/fat" "$HOME/.openstreetmap/osmosis/plugins"
+mvn -q -B -f "$D/zapisovac/pom.xml" dependency:copy-dependencies -DoutputDirectory="$N/zavislosti" -DincludeScope=runtime
+# Plugin Osmosis (JPF) vidí jen vlastní jar, proto závislosti slijeme do jednoho (writer naposled kvůli plugin.xml).
+for j in "$N"/zavislosti/*.jar; do case "$j" in *mapsforge-map-writer-*) ;; *) unzip -qo "$j" -x 'META-INF/*' 'module-info.class' -d "$N/fat";; esac; done
+unzip -qo "$N"/zavislosti/mapsforge-map-writer-*.jar -x 'META-INF/MANIFEST.MF' -d "$N/fat"
+(cd "$N/fat" && jar cf "$HOME/.openstreetmap/osmosis/plugins/mapsforge-map-writer-0.25.0-jar-with-dependencies.jar" .)
 "$O/bin/osmosis" -v | head -3 || true
 echo "$O/bin" >> "${GITHUB_PATH:-/dev/null}"
 echo "$O"
