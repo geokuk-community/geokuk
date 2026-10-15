@@ -37,7 +37,7 @@ public class JMapyPopup extends JPanel {
 	static final String ZKONTROLOVAT = "Zkontrolovat aktualizace";
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
 	static final String OTEVRIT_SLOZKU = "Otevřít složku";
-	static final String STAHUJE_SE_JINA = "Stahuje se jiná mapa, stahuje se vždy jedna.";
+	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
 
 	static final String URL_PAWS = "https://osm.paws.cz/";
 	static final String URL_OAM = "https://www.openandromaps.org/";
@@ -50,8 +50,8 @@ public class JMapyPopup extends JPanel {
 
 	private OvladaniMap ovladani;
 	private List<RadekMapy> radky = Collections.emptyList();
-	/** Popisky stavu podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
-	private final Map<String, JLabel> popisy = new HashMap<>();
+	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
+	private final Map<String, JLabel[]> popisy = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private JScrollPane seznam;
 	private Runnable poZmeneObsahu = () -> {};
@@ -85,11 +85,24 @@ public class JMapyPopup extends JPanel {
 		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky));
 		radky = new ArrayList<>(nove);
 		if (stejnaStruktura) {
+			boolean sirsi = false;
 			for (final RadekMapy r : radky) {
-				final JLabel popis = popisy.get(klic(r));
-				if (popis != null) {
-					popis.setText(r.popis());
+				final JLabel[] bunky = popisy.get(klic(r));
+				if (bunky == null) {
+					continue;
 				}
+				final JLabel popis = bunky[2];
+				final int predtim = popis.getPreferredSize().width;
+				popis.setText(r.popis());
+				sirsi |= popis.getPreferredSize().width > predtim;
+				final String tooltip = r.tooltip();
+				for (final JLabel b : bunky) {
+					b.setToolTipText(tooltip);
+				}
+			}
+			if (sirsi) {
+				revalidate();
+				poZmeneObsahu.run();
 			}
 			return;
 		}
@@ -286,7 +299,7 @@ public class JMapyPopup extends JPanel {
 		cp.weightx = 1;
 		cp.insets = new Insets(1, 8, 1, 8);
 		panel.add(popis, cp);
-		popisy.put(klic(r), popis);
+		popisy.put(klic(r), new JLabel[] { ikona, nazev, popis });
 
 		final JButton akce = akce(r, stahujeSe);
 		final GridBagConstraints ca = bunka(3, y, 1);

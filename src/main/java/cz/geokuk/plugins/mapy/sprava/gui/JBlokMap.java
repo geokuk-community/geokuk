@@ -26,6 +26,12 @@ public class JBlokMap extends JLabel {
 	private static final long serialVersionUID = 1L;
 
 	static final String TEXT = "Mapy";
+	/** Nejdelší text bloku; šířka se pro něj drží, aby procenta při stahování neposouvala sousední bloky. */
+	static final String NEJDELSI_TEXT = TEXT + " 100 %";
+
+	/** Čtení složky; v testech se dá nahradit. */
+	transient java.util.function.Function<File, List<RadekMapy>> cteniSlozky = SouboryMap::nacti;
+	private transient java.util.function.Supplier<File> zdrojSlozky = () -> null;
 
 	private final JMapyPopup obsah = new JMapyPopup();
 	private final transient PopupNadBlokem popup = new PopupNadBlokem(this, () -> {});
@@ -70,6 +76,7 @@ public class JBlokMap extends JLabel {
 
 	public void inject(final KachleModel kachleModel) {
 		this.kachleModel = kachleModel;
+		zdrojSlozky = () -> kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
 		setOvladani(new OvladaniMap() {
 			@Override
 			public void otevriSlozku() {
@@ -102,7 +109,20 @@ public class JBlokMap extends JLabel {
 	}
 
 	private File slozka() {
-		return kachleModel == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+		return zdrojSlozky.get();
+	}
+
+	void setZdrojSlozky(final java.util.function.Supplier<File> zdrojSlozky) {
+		this.zdrojSlozky = zdrojSlozky;
+	}
+
+	@Override
+	public java.awt.Dimension getPreferredSize() {
+		final java.awt.Dimension d = super.getPreferredSize();
+		final java.awt.Insets ins = getInsets();
+		final int nejvic = getFontMetrics(getFont()).stringWidth(NEJDELSI_TEXT) + getIconTextGap() + IkonyMap.VELIKOST + ins.left + ins.right;
+		d.width = Math.max(d.width, nejvic);
+		return d;
 	}
 
 	/** Přečte mapy ve složce mimo EDT; změny během čtení se sloučí do jednoho dalšího čtení. */
@@ -115,7 +135,7 @@ public class JBlokMap extends JLabel {
 		cteni = new SwingWorker<List<RadekMapy>, Void>() {
 			@Override
 			protected List<RadekMapy> doInBackground() {
-				return SouboryMap.nacti(slozka);
+				return cteniSlozky.apply(slozka);
 			}
 
 			@Override
@@ -196,6 +216,8 @@ public class JBlokMap extends JLabel {
 		if (popup.viditelny() == obsah) {
 			return;
 		}
+		// Hlídání složky běží jen u offline podkladu; mapu nakopírovanou při jiném podkladu tak popup ukáže hned.
+		nactiSlozku();
 		popup.ukaz(obsah, this, false);
 	}
 
