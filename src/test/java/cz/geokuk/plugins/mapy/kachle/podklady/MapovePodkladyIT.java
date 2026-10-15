@@ -22,10 +22,29 @@ public class MapovePodkladyIT {
 
 	private static final Wgs PRAHA = new Wgs(50.0875, 14.4213);
 	private static final Wgs BRATISLAVA = new Wgs(48.1486, 17.1077);
+	/** Podklady s omezeným územím se zkouší uvnitř území; mimo něj server vrací chybu, i když funguje. */
+	private static final Map<EKaType, Wgs> MISTA = new HashMap<>();
+	static {
+		MISTA.put(EKaType.CUZK_ORTO, PRAHA);
+		MISTA.put(EKaType.CUZK_ZTM, PRAHA);
+		MISTA.put(EKaType.SK_ZBGIS_ORTO, BRATISLAVA);
+		MISTA.put(EKaType.DE_TOPPLUS, new Wgs(52.5163, 13.3777));
+		MISTA.put(EKaType.AT_BASEMAP, new Wgs(48.2082, 16.3738));
+		MISTA.put(EKaType.CH_SWISSTOPO, new Wgs(46.9480, 7.4474));
+	}
 	private static final int[] ZOOMY = { 8, 13, 16 };
 	private static final int TIMEOUT_S = 30;
 	/** Server ZBGIS spojení z datových center mimo Slovensko odmítá, kontrola by trvale hlásila chybu. */
 	private static final Set<EKaType> BEZ_KONTROLY = Collections.singleton(EKaType.SK_ZBGIS_ORTO);
+
+	@Test
+	public void kazdyPodkladSOmezenymUzemimMaMisto() {
+		for (final EKaType typ : EKaType.values()) {
+			if (typ.isOmezeneUzemi()) {
+				Assert.assertTrue("chybí místo uvnitř území podkladu " + typ.name(), MISTA.containsKey(typ));
+			}
+		}
+	}
 
 	@Test
 	public void vsechnyPodkladyVraceji() throws Exception {
@@ -42,7 +61,7 @@ public class MapovePodkladyIT {
 					report.append("| ").append(typ.name()).append(" (").append(typ.getNazev()).append(") | nekontroluje se |\n");
 					continue;
 				}
-				final Wgs misto = typ.name().startsWith("TUR_FREEMAP_SK") ? BRATISLAVA : PRAHA;
+				final Wgs misto = MISTA.containsKey(typ) ? MISTA.get(typ) : typ.name().startsWith("TUR_FREEMAP_SK") ? BRATISLAVA : PRAHA;
 				String chyba = null;
 				for (final int zoom : ZOOMY) {
 					final int z = typ.fitMoumer(zoom);
