@@ -103,18 +103,24 @@ final class OfflineRenderer {
 	private String preskoceno;
 	/** Stínování terénu z DEM dlaždic (HGT), null bez nich. */
 	private final HillsRenderConfig kopce;
+	/** Základní mapy (ne vrstvy): jen ony určují, kam se dlaždice kreslí. */
+	private final List<MapFile> zakladni;
+	private final int pocetVrstev;
 
 	private int rozdelanych;
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce) {
+	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce,
+			final List<MapFile> zakladni, final int pocetVrstev) {
 		this.data = data;
 		this.pokryti = pokryti;
 		this.tema = tema;
 		this.klic = klic;
 		this.prekryv = prekryv;
 		this.kopce = kopce;
+		this.zakladni = zakladni;
+		this.pocetVrstev = pocetVrstev;
 		tema.future.incrementRefCount();
 		renderer = new DatabaseRenderer(data, tema.grafika, null, new PopiskyOfflineMapy(data, tema.future, tema.displayModel, tema.grafika), true, false, kopce);
 	}
@@ -161,6 +167,8 @@ final class OfflineRenderer {
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
 		final List<MapFileInfo> pokryti = new ArrayList<>();
+		final List<MapFile> zakladni = new ArrayList<>();
+		int vrstev = 0;
 		OfflineMapaChyba prvniChyba = null;
 		try {
 			for (final File f : mapy) {
@@ -176,6 +184,7 @@ final class OfflineRenderer {
 					continue;
 				}
 				data.addMapDataStore(mapFile, false, false);
+				zakladni.add(mapFile);
 				pokryti.add(mapFile.getMapFileInfo());
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(f.lastModified()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
 			}
@@ -185,6 +194,7 @@ final class OfflineRenderer {
 			for (final File f : vrstvy) {
 				try {
 					data.addMapDataStore(new MapFile(f), false, false);
+					vrstev++;
 					otisk.append("vrstva:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 				} catch (final RuntimeException e) {
 					log.debug("Vrstvu {} nejde otevřít, kreslí se bez ní: {}", f, e.getMessage());
@@ -199,7 +209,7 @@ final class OfflineRenderer {
 			otisk.append('\n').append(tema.pismo);
 		}
 		final HillsRenderConfig kopce = prekryv ? null : kopce(slozkaDem, tema.grafika, otisk);
-		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv, kopce);
+		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv, kopce, zakladni, vrstev);
 		r.preskoceno = prvniChyba == null ? null : prvniChyba.getMessage();
 		return r;
 	}
@@ -367,7 +377,18 @@ final class OfflineRenderer {
 
 	/** Dlaždice zasahuje do některé z map. */
 	boolean pokryva(final KaLoc loc) {
-		return data.supportsTile(dlazdice(loc));
+		final Tile t = dlazdice(loc);
+		for (final MapFile m : zakladni) {
+			if (m.supportsTile(t)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Kolik vrstev (trasy, vrstevnice) se kreslí spolu se základními mapami. */
+	int getPocetVrstev() {
+		return pocetVrstev;
 	}
 
 	/** Začátek vykreslování; false, když už je renderer zavřený. */

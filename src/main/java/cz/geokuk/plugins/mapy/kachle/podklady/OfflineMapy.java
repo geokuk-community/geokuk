@@ -57,6 +57,8 @@ public class OfflineMapy {
 	/** Čte se i bez zámku pro informace pro hlášení chyby. */
 	private volatile IOException chyba;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
+	/** Stínování terénu z DEM dlaždic je zapnuté. */
+	private boolean stinovani = true;
 	private String otiskSlozky;
 	/** Změněný otisk, který se teprve ověřuje: soubor, který se právě kopíruje, se mezi kontrolami mění. */
 	private String otiskZmeny;
@@ -155,8 +157,8 @@ public class OfflineMapy {
 		return e == null ? null : e.getMessage();
 	}
 
-	/** Složka vrstev (trasy, vrstevnice, DEM dlaždice) uvnitř složky offline map; stejná jako ve správě map. */
-	public static final String SLOZKA_VRSTEV = "vrstvy";
+	/** Složka vrstev (trasy, vrstevnice, DEM dlaždice) uvnitř složky offline map. */
+	public static final String SLOZKA_VRSTEV = cz.geokuk.plugins.mapy.sprava.SpravaMapModel.SLOZKA_VRSTEV;
 
 	/** Soubory .map vrstev (trasy, vrstevnice) ze složky vrstev. */
 	public static List<File> vrstvyVeSlozce(final File slozka) {
@@ -246,9 +248,9 @@ public class OfflineMapy {
 		return prekryv ? Collections.emptyList() : vrstvyVeSlozce(slozkaOtevrena);
 	}
 
-	/** DEM dlaždice pro stínování terénu; překryv tras je nepoužívá. */
+	/** DEM dlaždice pro stínování terénu; překryv tras je nepoužívá a uživatel stínování může vypnout. */
 	private List<File> demPouzite() {
-		return prekryv || slozkaOtevrena == null ? Collections.emptyList() : OfflineRenderer.demDlazdice(new File(slozkaOtevrena, SLOZKA_VRSTEV));
+		return prekryv || !stinovani || slozkaOtevrena == null ? Collections.emptyList() : OfflineRenderer.demDlazdice(new File(slozkaOtevrena, SLOZKA_VRSTEV));
 	}
 
 	private String otisk(final List<File> mapy) {
@@ -280,7 +282,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), prekryv ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv);
+				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), demPouzite().isEmpty() ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv);
 				chyba = null;
 				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
@@ -351,6 +353,19 @@ public class OfflineMapy {
 			renderer.zavri();
 			renderer = null;
 		}
+	}
+
+	/** Zapne nebo vypne stínování terénu; mapy se otevřou znovu. */
+	public synchronized void setStinovani(final boolean zapnuto) {
+		if (zapnuto != stinovani) {
+			stinovani = zapnuto;
+			otiskSlozky = null;
+		}
+	}
+
+	/** Ve složce vrstev jsou DEM dlaždice (soubory .hgt nebo .zip). */
+	public static boolean maDem(final File slozkaOfflineMap) {
+		return slozkaOfflineMap != null && !OfflineRenderer.demDlazdice(new File(slozkaOfflineMap, SLOZKA_VRSTEV)).isEmpty();
 	}
 
 	/** Zavře mapy; při dalším použití se otevřou znovu. */

@@ -179,4 +179,48 @@ public class VrstvyVMapeTest {
 		}
 		Assert.assertTrue("stínování ze zipu mění dlaždici", jine);
 	}
+
+	/** Vrstva větší než podklad (třeba přehledová mapa světa) nerozšíří pokrytí podkladu: mimo podklad se dlaždice dál nekreslí jako prázdné. */
+	@Test
+	public void vrstvaNerozsiriPokrytiPodkladu() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		try (java.io.InputStream in = VrstvyVMapeTest.class.getResourceAsStream("/offline-mapy/" + cz.geokuk.core.program.PrehledovaMapa.SOUBOR)) {
+			Files.copy(in, new File(vrstvy(), "svet_vrstva.map").toPath());
+		}
+		final KaLoc daleko = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(48.0, 17.0).toMou(), 10);
+		final OfflineRenderer r = mapy.pouzij();
+		try {
+			Assert.assertEquals("vrstva je otevřená", 1, r.getPocetVrstev());
+			Assert.assertEquals(1, r.getPocetMap());
+			Assert.assertFalse("mimo podkladovou mapu se nekreslí, i když vrstva dlaždici má", r.pokryva(daleko));
+			Assert.assertTrue(r.pokryva(OfflineMapyTest.STRED_Z15));
+		} finally {
+			r.skonci();
+		}
+	}
+
+	/** Přepínač stínování: vypnuté stínování dává klíč bez DEM, zapnuté zase stínování. */
+	@Test(timeout = 60000)
+	public void stinovaniJdeVypnout() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final String bez = klic();
+		napisDem(new File(vrstvy(), "N50E014.hgt"));
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		final String se = klic();
+		Assert.assertNotEquals(bez, se);
+		Assert.assertTrue(OfflineMapy.maDem(slozka));
+		mapy.setStinovani(false);
+		Assert.assertEquals("bez stínování je klíč jako bez DEM", bez, klic());
+		mapy.setStinovani(true);
+		Assert.assertEquals(se, klic());
+	}
+
+	@Test
+	public void demJenSDlazdicemi() throws Exception {
+		Assert.assertFalse(OfflineMapy.maDem(slozka));
+		Assert.assertFalse(OfflineMapy.maDem(null));
+		Assert.assertTrue(new File(vrstvy(), "poznamka.txt").createNewFile());
+		Assert.assertFalse("jiné soubory nejsou DEM", OfflineMapy.maDem(slozka));
+	}
 }

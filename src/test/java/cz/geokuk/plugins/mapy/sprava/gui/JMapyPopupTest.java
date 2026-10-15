@@ -62,6 +62,11 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void setStinovani(final boolean zapnuto) {
+			volani.add("stinovani " + zapnuto);
+		}
+
+		@Override
 		public void zrusStahovani() {
 			volani.add("zrus");
 		}
