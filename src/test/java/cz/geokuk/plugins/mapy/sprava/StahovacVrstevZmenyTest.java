@@ -280,7 +280,8 @@ public class StahovacVrstevZmenyTest {
 		slozka.mkdirs();
 		final byte[] staraA = nahodna(90_000, 3);
 		Files.write(new File(slozka, "a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
-		Files.write(new File(slozka, "a.zip").toPath(), data.get("a.zip"));
+		rozpracuj(v, 0, data.get("a.zip"), 100_000, "\"v-1\"");
+		Files.move(new File(slozka, "a.zip.stahuje").toPath(), new File(slozka, "a.zip").toPath());
 		rozpracuj(v, 1, data.get("b.zip"), 50_000, "\"v-1\"");
 		StahovacVrstev.obnovPoPreruseneVymene(slozka, v);
 		assertArrayEquals("stará verze zpět na místě", staraA, obsah("a.zip"));
@@ -318,5 +319,78 @@ public class StahovacVrstevZmenyTest {
 		assertEquals(StavVrstvy.Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(nova), slozka).getMistni());
 		assertEquals(Faze.HOTOVO, stahni(nova).getFaze());
 		assertArrayEquals(data.get("a.zip"), obsah("a.zip"));
+	}
+
+	/** Pád v úklidu: všechny nové soubory jsou na místě, u některých ještě odsunutá stará verze. Výměna se dokončí, žádný mix verzí. */
+	@Test
+	public void padPriUkliduDokonciVymenu() throws IOException {
+		data.put("a.zip", nahodna(100_000, 1));
+		data.put("b.zip", nahodna(50_000, 2));
+		data.put("c.zip", nahodna(30_000, 3));
+		final KatalogovaVrstva v = vrstva("a.zip", "b.zip", "c.zip");
+		slozka.mkdirs();
+		for (int i = 0; i < 3; i++) {
+			final KatalogovaVrstva.Soubor so = v.getSoubory().get(i);
+			rozpracuj(v, i, data.get(so.getNazev()), (int) so.getVelikost(), "\"v-1\"");
+			Files.move(StahovacVrstev.rozpracovany(slozka, so).toPath(), StahovacVrstev.cil(slozka, so).toPath());
+			Files.write(StahovacVrstev.soucet(slozka, so).toPath(), so.getSha256().getBytes("US-ASCII"));
+		}
+		StahovacMapy.smaz(StahovacVrstev.info(slozka, v.getSoubory().get(0)));
+		Files.write(new File(slozka, "b.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), nahodna(45_000, 4));
+		Files.write(new File(slozka, "c.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), nahodna(25_000, 5));
+		StahovacVrstev.obnovPoPreruseneVymene(slozka, v);
+		for (final String n : Arrays.asList("a.zip", "b.zip", "c.zip")) {
+			assertArrayEquals(n, data.get(n), obsah(n));
+		}
+		assertEquals(Arrays.asList("a.zip", "a.zip.sha256", "b.zip", "b.zip.sha256", "c.zip", "c.zip.sha256"), vSlozce());
+		assertEquals(StavVrstvy.Mistni.MAME, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
+	}
+
+	/** Pád uprostřed přesunů a pak Zahodit: na místě zůstane celá stará verze. */
+	@Test
+	public void padAZahodVratiStarouVerzi() throws IOException {
+		data.put("a.zip", nahodna(100_000, 1));
+		data.put("b.zip", nahodna(50_000, 2));
+		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
+		slozka.mkdirs();
+		final byte[] staraA = nahodna(90_000, 3);
+		final byte[] staraB = nahodna(45_000, 4);
+		Files.write(new File(slozka, "a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
+		Files.write(new File(slozka, "b.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraB);
+		rozpracuj(v, 0, data.get("a.zip"), 100_000, "\"v-1\"");
+		Files.move(new File(slozka, "a.zip.stahuje").toPath(), new File(slozka, "a.zip").toPath());
+		rozpracuj(v, 1, data.get("b.zip"), 50_000, "\"v-1\"");
+		StahovacVrstev.zahod(slozka, v);
+		assertArrayEquals(staraA, obsah("a.zip"));
+		assertArrayEquals(staraB, obsah("b.zip"));
+		assertEquals(Arrays.asList("a.zip", "b.zip"), vSlozce());
+	}
+
+	/** Vrácená stará verze stejné velikosti jako nová se nesmí tvářit jako stažená nová. */
+	@Test
+	public void vracenaStaraVerzeStejneVelikostiNeniAktualni() throws IOException {
+		data.put("a.zip", nahodna(100_000, 1));
+		data.put("b.zip", nahodna(50_000, 2));
+		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
+		slozka.mkdirs();
+		final byte[] staraA = nahodna(100_000, 3);
+		Files.write(new File(slozka, "a.zip").toPath(), staraA);
+		Files.write(new File(slozka, "b.zip").toPath(), nahodna(50_000, 4));
+		priUvolneni = () -> {
+			if (uvolneni.get() == 1) {
+				StahovacMapy.smaz(new File(slozka, "b.zip.stahuje"));
+			}
+		};
+		final StavVrstvy s = stahni(v);
+		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
+		assertArrayEquals(staraA, obsah("a.zip"));
+		assertEquals(StavVrstvy.Mistni.JINA_VERZE, s.getMistni());
+		assertEquals(StavVrstvy.Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
+	}
+
+	private List<String> vSlozce() {
+		final List<String> l = new ArrayList<>(Arrays.asList(slozka.list()));
+		Collections.sort(l);
+		return l;
 	}
 }

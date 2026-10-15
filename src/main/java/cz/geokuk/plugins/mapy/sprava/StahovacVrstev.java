@@ -245,33 +245,52 @@ final class StahovacVrstev {
 			for (final Soubor so : odsunute) {
 				vrat(stara(slozka, so), cil(slozka, so));
 			}
+			for (final Soubor so : nove) {
+				if (!rozpracovany(slozka, so).exists()) {
+					StahovacMapy.smaz(info(slozka, so));
+				}
+			}
 			return "Starou vrstvu " + vrstva.getNazev() + " nejde nahradit, asi ji používá jiný program. Stažení dokončíte znovu tlačítkem Stáhnout.";
 		}
+		// Všechny nové soubory jsou na místě; úklid po pádu už jen dokončí výměnu dopředu (obnovPoPreruseneVymene).
+		String chyba = null;
 		for (final Soubor so : nove) {
-			StahovacMapy.smaz(stara(slozka, so));
-			StahovacMapy.smaz(info(slozka, so));
 			try {
 				Files.write(soucet(slozka, so).toPath(), so.getSha256().getBytes(StandardCharsets.US_ASCII));
 			} catch (final IOException e) {
 				log.info("Kontrolní součet {} nejde zapsat: {}", so, e.toString());
-				return "Do složky vrstev nejde zapisovat.";
+				chyba = "Do složky vrstev nejde zapisovat.";
 			}
 		}
-		return null;
+		for (final Soubor so : nove) {
+			StahovacMapy.smaz(stara(slozka, so));
+			StahovacMapy.smaz(info(slozka, so));
+		}
+		return chyba;
 	}
 
-	/** Po pádu uprostřed výměny vrátí staré soubory na místo; nové zůstanou rozpracované a znovu se ověří. */
+	/**
+	 * Po pádu uprostřed výměny dá vrstvu do celistvého stavu, rozhoduje se za celou vrstvu. Když je některý nový soubor ještě rozpracovaný, výměna se vrátí:
+	 * přesunuté nové soubory (na místě, s infem této verze a bez rozpracovaného souboru) zpět mezi rozpracované a staré na místo. Když jsou všechny nové na místě, výměna se
+	 * dokončí: odsunuté staré a info se smažou.
+	 */
 	static void obnovPoPreruseneVymene(final File slozka, final KatalogovaVrstva vrstva) {
+		final boolean rozpracovano = vrstva.getSoubory().stream().anyMatch(so -> rozpracovany(slozka, so).exists());
 		for (final Soubor so : vrstva.getSoubory()) {
+			final File c = cil(slozka, so);
 			final File st = stara(slozka, so);
-			if (!st.exists()) {
-				continue;
-			}
-			if (cil(slozka, so).exists() && !rozpracovany(slozka, so).exists()) {
-				vrat(cil(slozka, so), rozpracovany(slozka, so));
-			}
-			if (!cil(slozka, so).exists()) {
-				vrat(st, cil(slozka, so));
+			if (rozpracovano) {
+				if (!rozpracovany(slozka, so).exists() && c.length() == so.getVelikost() && so.getSha256().equals(StahovacMapy.nactiInfo(info(slozka, so)).sha256)) {
+					vrat(c, rozpracovany(slozka, so));
+				}
+				if (st.exists() && !c.exists()) {
+					vrat(st, c);
+				}
+			} else if (st.exists() && !c.exists()) {
+				vrat(st, c);
+			} else {
+				StahovacMapy.smaz(st);
+				StahovacMapy.smaz(info(slozka, so));
 			}
 		}
 	}
@@ -318,6 +337,8 @@ final class StahovacVrstev {
 		if (!cast.isFile() || !so.getSha256().equals(info.sha256) || so.getUrly().stream().noneMatch(u -> u.toString().equals(puvodniUrl))) {
 			info = new Info();
 			StahovacMapy.smaz(cast);
+			// Info bez rozpracovaného souboru znamená při obnově po pádu „přesunutý nový soubor“.
+			StahovacMapy.smaz(infoSoubor);
 		}
 		final Info i = info;
 		final String validator = info.etag != null ? info.etag : info.lastModified;
