@@ -69,6 +69,8 @@
 - Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
   mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
+- Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
+  se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 
 ## 6.4.0
 
