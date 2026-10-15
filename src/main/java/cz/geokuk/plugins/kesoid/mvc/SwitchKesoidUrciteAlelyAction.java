@@ -3,6 +3,8 @@
  */
 package cz.geokuk.plugins.kesoid.mvc;
 
+import javax.swing.Icon;
+
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.ToggleAction0;
 import cz.geokuk.plugins.kesoid.KesBag;
@@ -17,7 +19,7 @@ import cz.geokuk.util.lang.FString;
 public class SwitchKesoidUrciteAlelyAction extends ToggleAction0 implements AfterEventReceiverRegistrationInit {
 
 	private static final long serialVersionUID = -8054017274338240706L;
-	private IkonBag ikonBag;
+	private volatile IkonBag ikonBag;
 	private final Alela alela;
 	private KesoidModel kesoidModel;
 	private KesBag vsechny;
@@ -46,8 +48,17 @@ public class SwitchKesoidUrciteAlelyAction extends ToggleAction0 implements Afte
 	@Override
 	public void initAfterEventReceiverRegistration() {
 		super.putValue(NAME, sestavJmeno());
-		super.putValue(SMALL_ICON, ikonBag.seekIkon(ikonBag.getGenom().UNIVERZALNI_DRUH.genotypVychozi().with(alela)));
 		super.putValue(SHORT_DESCRIPTION, sestavJmeno());
+	}
+
+	/** Vykreslí ikonu alely; skládá obrázky ze sady, proto mimo EDT. */
+	public Icon pripravIkonu() {
+		final IkonBag bag = ikonBag;
+		return bag.seekIkon(bag.getGenom().UNIVERZALNI_DRUH.genotypVychozi().with(alela));
+	}
+
+	public void setIkona(final Icon ikona) {
+		super.putValue(SMALL_ICON, ikona);
 	}
 
 	public void inject(final KesoidModel kesoidModel) {
