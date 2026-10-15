@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Téma Turistická: upravená kopie default.xml z mapsforge-themes 0.25.0.
+     Původní dílo: Copyright 2010-2013 mapsforge.org, 2014 Ludwig M Brinckmann, 2014-2024 devemux86, 2024-2025 Sublimis a další
+     přispěvatelé, GNU LGPL verze 3 nebo novější (omezení §4(d) a §4(e) se neuplatní).
+     Upraveno pro GeoKuk v roce 2026 (barvy, obrysy, počet ikon, turistické značení a cyklotrasy podle tagů dat); úpravy jsou pod toutéž licencí.
+     Zdroj původního díla: https://github.com/mapsforge/mapsforge -->
 <rendertheme xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" map-background="#F1EEE4"
     map-background-outside="#DDDDDD" version="5" xmlns="http://mapsforge.org/renderTheme"
     xsi:schemaLocation="http://mapsforge.org/renderTheme https://raw.githubusercontent.com/mapsforge/mapsforge/master/resources/renderTheme.xsd">
@@ -214,11 +219,11 @@
             <area fill="#9DBEDD" />
         </rule>
         <rule e="way" k="waterway" v="river" zoom-min="13">
-            <pathText fill="#4F7FB8" font-size="11" font-style="italic" k="name"
+            <pathText display="always" fill="#4F7FB8" font-size="11" font-style="italic" k="name"
                 priority="-20" stroke="#FFFFFF" stroke-width="1.5" />
         </rule>
         <rule e="way" k="waterway" v="stream|canal" zoom-min="15">
-            <pathText fill="#4F7FB8" font-size="10" font-style="italic" k="name"
+            <pathText display="always" fill="#4F7FB8" font-size="10" font-style="italic" k="name"
                 priority="-19" stroke="#FFFFFF" stroke-width="1.5" />
         </rule>
         <rule e="way" k="natural|landuse" v="water|reservoir|basin">
