@@ -56,9 +56,7 @@
   a mapa v okně se sama obnoví, bez posunu. Mapu, kterou chvíli nešlo číst
   (například ji držel antivirus nebo synchronizace), program za půl minuty
   zkusí znovu.
-- Téma offline mapy ze složky programu zůstane zvolené i po přesunu přenosného
-  GeoKuku jinam. Menu Téma offline mapy se otevře hned, i když jsou témata na
-  pomalém disku.
+- Menu Téma offline mapy se otevře hned, i když jsou témata na pomalém disku.
 - Po uspání nebo hibernaci počítače se v Informacích pro hlášení chyby
   objeví „Probuzení po N min“ místo nesmyslně dlouhého záseku programu a doba
   uspání se nezapočítá do měření odezvy.
@@ -79,11 +77,7 @@
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
 
-### Opravy
-- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
-  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
-- Mapy > Postahovat dlaždice: stahování víc než asi 110 dlaždic se už
-  nezastaví, stáhnou se všechny.
+Obsahuje i všechny opravy z 6.4.1.
 
 ## 6.4.1
 
