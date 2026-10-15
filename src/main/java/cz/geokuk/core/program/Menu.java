@@ -286,6 +286,7 @@ public class Menu extends MenuStrujce {
 		menu.setMnemonic(KeyEvent.VK_N);
 		item(akce.napovedaAction);
 		item(akce.webovaStrankaAction);
+		item(akce.coJeNovehoAction);
 		separator();
 		item(akce.zkontrolovatAktualizaceAction);
 		item(akce.betaKanalAction);

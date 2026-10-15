@@ -6,7 +6,10 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JOptionPane;
+import java.awt.BorderLayout;
+import java.awt.Cursor;
+
+import javax.swing.*;
 
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
@@ -157,7 +160,8 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 			final String text = prechod
 					? "<html>Používáte testovací verzi <b>" + FConst.VERSION + "</b>.<br>Poslední stabilní verze je <b>" + lastVersion + "</b>."
 					: "<html>Používaná verze programu GeoKuk je <b>" + FConst.VERSION + "</b>.<br>Nová verze je <b>" + lastVersion + "</b>.";
-			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), text, prechod ? "Přechod na stabilní verzi" : "Nová verze programu",
+			final Object zprava = prechod ? text : zpravaSOdkazem(text, lastVersion, betaKanal);
+			final int n = JOptionPane.showOptionDialog(Dlg.parentFrame(), zprava, prechod ? "Přechod na stabilní verzi" : "Nová verze programu",
 					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[POZDEJI]);
 			switch (n) {
 			case WEB:
@@ -179,6 +183,23 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 				break;
 			}
 		}
+	}
+
+	/** Text okna nové verze s odkazem na Co je nového; odkaz okno nezavře. */
+	static JComponent zpravaSOdkazem(final String text, final String nova, final boolean betaKanal) {
+		final JPanel panel = new JPanel(new BorderLayout(0, 8));
+		panel.setOpaque(false);
+		panel.add(new JLabel(text), BorderLayout.CENTER);
+		final JButton odkaz = new JButton("<html><a href=\"#\">Co je nového ve verzi " + nova + "</a></html>");
+		odkaz.setBorderPainted(false);
+		odkaz.setContentAreaFilled(false);
+		odkaz.setFocusable(false);
+		odkaz.setHorizontalAlignment(SwingConstants.LEFT);
+		odkaz.setBorder(BorderFactory.createEmptyBorder());
+		odkaz.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		odkaz.addActionListener(e -> JCoJeNoveho.ukazZGitHubu(SwingUtilities.getWindowAncestor(odkaz), nova, betaKanal));
+		panel.add(odkaz, BorderLayout.SOUTH);
+		return panel;
 	}
 
 	static final int AKTUALIZOVAT = 0;

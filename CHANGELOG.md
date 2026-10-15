@@ -70,6 +70,9 @@
   odkaz na složku offline map a na weby s mapami.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
+- Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
+  nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
+  od používané po nabízenou.
 
 ### Opravy
 - Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,

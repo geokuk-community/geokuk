@@ -16,6 +16,7 @@
 				<directory>${project.basedir}</directory>
 				<includes>
 					<include>LICENSE</include>
+					<include>CHANGELOG.md</include>
 				</includes>
 			</resource>
 			<resource>
