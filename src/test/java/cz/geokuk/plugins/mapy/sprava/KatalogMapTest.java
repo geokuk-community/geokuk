@@ -43,6 +43,7 @@ public class KatalogMapTest {
 		for (final KatalogovaMapa m : k.getMapy()) {
 			assertTrue(m.getId(), m.getUrlyMapy().get(1).toString().startsWith("https://download.mapsforge.org/maps/v5/europe/"));
 			assertNotNull("obrys pokrytí v jaru: " + m.getId(), KatalogMap.class.getResource("poly/" + m.getId() + ".poly"));
+			assertNotNull("datum na serveru: " + m.getId(), m.getDatumNaServeru());
 		}
 	}
 
@@ -77,6 +78,26 @@ public class KatalogMapTest {
 		assertTrue("obdélník z katalogu u regionu neplatí, má obrys", k.pokryvajiBod(new Wgs(0.5, 0.5)).isEmpty());
 		assertEquals("https://example.org/maps/v5/europe/zeme/region.map", k.podleId("europe/zeme/region").get().getUrlMapy().toString());
 		assertEquals(5, k.podleId("europe/zeme/region").get().getPribliznaVelikost());
+	}
+
+	@Test
+	public void celekRegionyADatum() throws IOException {
+		final KatalogMap k = katalog("{\"id\": \"europe/zeme\", \"nazev\": \"Země\", \"velikost\": 50, \"datum\": \"Fri, 28 Aug 2026 07:34:31 GMT\", \"obdelnik\": [40, 10, 50, 20]},"
+				+ "{\"id\": \"europe/zeme/a\", \"nazev\": \"A\", \"skupina\": \"Země\", \"velikost\": 5, \"obdelnik\": [40, 10, 45, 15]},"
+				+ "{\"id\": \"europe/zeme/b\", \"nazev\": \"B\", \"skupina\": \"Země\", \"velikost\": 5, \"obdelnik\": [45, 15, 50, 20]},"
+				+ "{\"id\": \"europe/sama\", \"nazev\": \"Sama\", \"velikost\": 5, \"obdelnik\": [0, 0, 1, 1]},"
+				+ "{\"id\": \"europe/bezcelku/c\", \"nazev\": \"C\", \"velikost\": 5, \"obdelnik\": [0, 0, 1, 1]}", id -> null);
+		final KatalogovaMapa zeme = k.podleId("europe/zeme").get();
+		assertEquals(java.time.Instant.parse("2026-08-28T07:34:31Z"), zeme.getDatumNaServeru());
+		assertNull(k.podleId("europe/zeme/a").get().getDatumNaServeru());
+		assertNull(zeme.getIdCelku());
+		assertEquals("europe/zeme", k.podleId("europe/zeme/a").get().getIdCelku());
+		assertEquals(Arrays.asList("europe/zeme/a", "europe/zeme/b"), ids(k.regiony(zeme)));
+		assertSame(zeme, k.celek(k.podleId("europe/zeme/b").get()).get());
+		assertFalse(k.celek(zeme).isPresent());
+		assertTrue(k.regiony(k.podleId("europe/sama").get()).isEmpty());
+		assertFalse("region bez celé země v katalogu", k.celek(k.podleId("europe/bezcelku/c").get()).isPresent());
+		chyba("{\"id\": \"europe/a\", \"nazev\": \"A\", \"velikost\": 5, \"datum\": \"včera\", \"obdelnik\": [0, 0, 1, 1]}", "neplatné datum");
 	}
 
 	@Test
