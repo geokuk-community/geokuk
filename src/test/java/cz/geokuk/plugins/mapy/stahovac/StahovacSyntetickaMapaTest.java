@@ -188,6 +188,15 @@ public class StahovacSyntetickaMapaTest {
 		while (!davka.jeHotova() && System.currentTimeMillis() < konec) {
 			Thread.sleep(20);
 		}
+		if (!davka.jeHotova()) {
+			System.err.println("DIAG zaseknuto: " + davka.popis() + " pozadavku na serveru " + pozadavky.size());
+			for (final Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
+				System.err.println("DIAG VLAKNO " + e.getKey().getName() + " " + e.getKey().getState());
+				for (final StackTraceElement el : e.getValue()) {
+					System.err.println("DIAG     " + el);
+				}
+			}
+		}
 		Assert.assertTrue("stahování nedoběhlo: " + davka.popis(), davka.jeHotova());
 		return davka;
 	}
