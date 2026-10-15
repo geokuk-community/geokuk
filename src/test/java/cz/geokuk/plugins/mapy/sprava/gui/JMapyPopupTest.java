@@ -101,6 +101,32 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Skrytí popupu během najetí na řádek obrys zruší. */
+	@Test(timeout = 20000)
+	public void skrytiPopupuZrusiZvyrazneni() throws Exception {
+		final JMapyPopup p = new JMapyPopup();
+		final Zaznam z = new Zaznam();
+		final JFrame okno = new JFrame();
+		SwingUtilities.invokeAndWait(() -> {
+			p.setOvladani(z);
+			p.obnov(Collections.singletonList(katalog("cz", RadekMapy.Stav.AKTUALNI).datumDat(Instant.EPOCH).build()));
+			okno.add(p);
+			okno.pack();
+			okno.setVisible(true);
+			final JLabel nazev = labels(p).stream().filter(l -> "cz".equals(l.getText())).findFirst().get();
+			for (final java.awt.event.MouseListener l : nazev.getMouseListeners()) {
+				l.mouseEntered(new java.awt.event.MouseEvent(nazev, java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
+			}
+		});
+		Assert.assertEquals(Collections.singletonList("zvyrazni cz"), z.volani);
+		SwingUtilities.invokeAndWait(() -> okno.setVisible(false));
+		while (z.volani.size() < 2) {
+			SwingUtilities.invokeAndWait(() -> {});
+		}
+		okno.dispose();
+		Assert.assertEquals(Arrays.asList("zvyrazni cz", "zvyrazni null"), z.volani);
+	}
+
 	private static List<JLabel> labels(final Container c) {
 		final List<JLabel> v = new ArrayList<>();
 		for (final java.awt.Component k : c.getComponents()) {
