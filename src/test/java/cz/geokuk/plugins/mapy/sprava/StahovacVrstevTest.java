@@ -75,7 +75,12 @@ public class StahovacVrstevTest {
 			int od = 0;
 			final String ifRange = ex.getRequestHeaders().getFirst("If-Range");
 			if (range != null && ETAG.equals(ifRange)) {
-				od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				try {
+					od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				} catch (final NumberFormatException e) {
+					ex.sendResponseHeaders(416, -1);
+					return;
+				}
 				ex.getResponseHeaders().add("Content-Range", "bytes " + od + "-" + (d.length - 1) + "/" + d.length);
 				ex.sendResponseHeaders(206, d.length - od);
 			} else {
