@@ -77,7 +77,12 @@ public class StahovacVrstevZmenyTest {
 				return;
 			}
 			if (range != null && !ignorujRange && (ignorujIfRange || etag.equals(ifRange))) {
-				od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				try {
+					od = Integer.parseInt(range.replaceAll("bytes=(\\d+)-", "$1"));
+				} catch (final NumberFormatException e) {
+					ex.sendResponseHeaders(416, -1);
+					return;
+				}
 				final int start = spatnyStart ? 0 : od;
 				ex.getResponseHeaders().add("Content-Range", "bytes " + start + "-" + (d.length - 1) + "/" + d.length);
 				ex.sendResponseHeaders(206, d.length - od);
