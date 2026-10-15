@@ -49,6 +49,24 @@
 - Úsek cesty vedený po cestě se do GPX ukládá se všemi body trasy, takže ho
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
+- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
+  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
+- Nová instalace začíná offline mapou, když je ve složce offline map podrobná
+  mapa, jinak ortofotem ČÚZK. Mapy.cz zůstávají v menu Mapy. Stávajícím
+  uživatelům se zvolený podklad nemění.
+- Offline mapa zkopírovaná do složky za běhu se otevře až po dokopírování
+  a mapa v okně se sama obnoví, bez posunu. Mapu, kterou chvíli nešlo číst
+  (například ji držel antivirus nebo synchronizace), program za půl minuty
+  zkusí znovu.
+- Téma offline mapy ze složky programu zůstane zvolené i po přesunu přenosného
+  GeoKuku jinam. Menu Téma offline mapy se otevře hned, i když jsou témata na
+  pomalém disku.
+- Po uspání nebo hibernaci počítače se v Informacích pro hlášení chyby
+  objeví „Probuzení po N min“ místo nesmyslně dlouhého záseku programu a doba
+  uspání se nezapočítá do měření odezvy.
+- Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
+  mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
+  formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
 
 ## 6.4.0
 

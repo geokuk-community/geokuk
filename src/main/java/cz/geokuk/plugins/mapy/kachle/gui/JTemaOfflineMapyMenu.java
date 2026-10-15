@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.*;
@@ -16,8 +17,10 @@ import cz.geokuk.plugins.mapy.kachle.podklady.TemaOfflineMapy;
 import cz.geokuk.plugins.mapy.kachle.podklady.VolbaVrstev;
 import cz.geokuk.plugins.mapy.kachle.podklady.VrstvyTematu;
 import cz.geokuk.util.process.BrowserOpener;
+import lombok.extern.slf4j.Slf4j;
 
 /** Podmenu s tématy offline mapy: vestavěná a soubory .zip a .xml ve složce offline map. Sestaví se při každém otevření. */
+@Slf4j
 public class JTemaOfflineMapyMenu extends JMenu {
 
 	private static final long serialVersionUID = 1L;
@@ -25,6 +28,8 @@ public class JTemaOfflineMapyMenu extends JMenu {
 	static final String LEGENDA_PAWS = "https://osm.paws.cz/legend_paws.php";
 
 	private final KachleModel kachleModel;
+	private List<TemaOfflineMapy> temataZeSlozky;
+	private boolean nacitaSe;
 
 	public JTemaOfflineMapyMenu(final KachleModel kachleModel) {
 		super("Téma offline mapy");
@@ -34,6 +39,7 @@ public class JTemaOfflineMapyMenu extends JMenu {
 			@Override
 			public void menuSelected(final MenuEvent e) {
 				sestav();
+				nactiTemataNaPozadi();
 			}
 
 			@Override
@@ -51,11 +57,50 @@ public class JTemaOfflineMapyMenu extends JMenu {
 		return kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
 	}
 
+	/** Témata ve složce map, jak je naposledy načetlo vlákno na pozadí; null, dokud se nenačetla. Zipy (třeba na OneDrivu) se na EDT neotevírají. */
+	List<TemaOfflineMapy> getTemataZeSlozky() {
+		return temataZeSlozky;
+	}
+
+	/** Načte témata ze složky mimo EDT; když se seznam změnil a menu je otevřené, sestaví ho znovu. */
+	void nactiTemataNaPozadi() {
+		if (nacitaSe) {
+			return;
+		}
+		nacitaSe = true;
+		final File s = slozka();
+		new SwingWorker<List<TemaOfflineMapy>, Void>() {
+			@Override
+			protected List<TemaOfflineMapy> doInBackground() {
+				return TemaOfflineMapy.temataVeSlozce(s);
+			}
+
+			@Override
+			protected void done() {
+				nacitaSe = false;
+				try {
+					final List<TemaOfflineMapy> nacteno = get();
+					if (!nacteno.equals(temataZeSlozky)) {
+						temataZeSlozky = nacteno;
+						if (isPopupMenuVisible()) {
+							sestav();
+							getPopupMenu().pack();
+						}
+					}
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				} catch (final java.util.concurrent.ExecutionException e) {
+					log.warn("Témata offline mapy ve složce nejde přečíst: {}", e.getCause().toString());
+				}
+			}
+		}.execute();
+	}
+
 	void sestav() {
 		removeAll();
 		final TemaOfflineMapy aktualni = kachleModel.getTemaOfflineMapy();
 		final List<TemaOfflineMapy> temata = new ArrayList<>(TemaOfflineMapy.VESTAVENA);
-		final List<TemaOfflineMapy> zeSlozky = TemaOfflineMapy.temataVeSlozce(slozka());
+		final List<TemaOfflineMapy> zeSlozky = temataZeSlozky == null ? Collections.emptyList() : temataZeSlozky;
 		temata.addAll(zeSlozky);
 		if (temata.stream().noneMatch(aktualni::stejnyZdroj)) {
 			temata.add(aktualni);
@@ -73,6 +118,14 @@ public class JTemaOfflineMapyMenu extends JMenu {
 			polozka.addActionListener(e -> kachleModel.setTemaOfflineMapy(tema));
 			skupina.add(polozka);
 			add(polozka);
+		}
+		if (temataZeSlozky == null) {
+			if (temata.size() == TemaOfflineMapy.VESTAVENA.size()) {
+				addSeparator();
+			}
+			final JMenuItem nacitam = new JMenuItem("Načítám témata ze složky…");
+			nacitam.setEnabled(false);
+			add(nacitam);
 		}
 		addSeparator();
 		final JMenuItem jiny = new JMenuItem("Jiný soubor…");
