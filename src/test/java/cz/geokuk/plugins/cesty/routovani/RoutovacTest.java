@@ -67,6 +67,22 @@ public class RoutovacTest {
 	}
 
 	@Test
+	public void mapaKonciciZoomemCestSePouzije() throws IOException {
+		final byte[] b;
+		try (InputStream is = RoutovacTest.class.getResourceAsStream("/routovani/cesty.map")) {
+			b = com.google.common.io.ByteStreams.toByteArray(is);
+		}
+		final int maxPosledni = 265; // nejvyšší zoom posledního intervalu v hlavičce cesty.map
+		assertEquals(21, b[maxPosledni]);
+		b[maxPosledni] = MapaCest.ZOOM_CEST;
+		final File f = new File(tmp.getRoot(), "do14.map");
+		Files.write(f.toPath(), b);
+		final MapaCest mc = MapaCest.otevri(f, 1000);
+		assertNotNull(mc);
+		mc.close();
+	}
+
+	@Test
 	public void mapaBezPodrobnehoZoomuSeTichePreskoci() throws IOException {
 		assertNull(MapaCest.otevri(mapaBezPodrobnehoZoomu(tmp.getRoot(), "prehled.map"), 1000));
 		mapaBezPodrobnehoZoomu(slozka, "prehled-svet-ne.map");
