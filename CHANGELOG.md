@@ -30,8 +30,8 @@
   přejmenovat a smazat; aktivní výlet je v souborech lovim.ggt a tedne.ggt.
   Během přepínání výletu nejde výlet upravovat. Rozbalovač v liště nástrojů
   se jmenuje Zobrazit.
-- Cesty mají novou barvu: azurovou s tmavým lemem, aby byly vidět i přes
-  cyklotrasy a na tmavém podkladu. Úseky vedené po cestě jsou plnou čarou,
+- Cesty mají novou barvu: azurovou, vybraná cesta navíc s tmavým lemem,
+  aby byla vidět i přes cyklotrasy a na tmavém podkladu. Úseky vedené po cestě jsou plnou čarou,
   rovné úseky čárkovaně a vzdušné tečkovaně.
 - Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
   počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
