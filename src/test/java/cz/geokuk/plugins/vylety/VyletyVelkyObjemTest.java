@@ -72,6 +72,16 @@ public class VyletyVelkyObjemTest {
 		return mnozina;
 	}
 
+	/** Jako assertEquals na množiny, ale s výpisem jen rozdílu (množiny mají tisíce kódů). */
+	private static void shoda(final String zprava, final Set<String> ocekavane, final Set<String> skutecne) {
+		final Set<String> chybi = new TreeSet<>(ocekavane);
+		chybi.removeAll(skutecne);
+		final Set<String> navic = new TreeSet<>(skutecne);
+		navic.removeAll(ocekavane);
+		Assert.assertTrue(zprava + ": chybí " + chybi.size() + " " + new ArrayList<>(chybi).subList(0, Math.min(5, chybi.size())) + ", navíc " + navic.size() + " "
+				+ new ArrayList<>(navic).subList(0, Math.min(5, navic.size())), chybi.isEmpty() && navic.isEmpty());
+	}
+
 	private static Kesoid kes(final String kod) {
 		final Kes kes = new Kes();
 		kes.setIdentifier(kod);
@@ -129,8 +139,8 @@ public class VyletyVelkyObjemTest {
 				}
 			}
 			dopis();
-			Assert.assertEquals("výlet " + v + " hned po přidávání", a, radky(ano));
-			Assert.assertEquals(n, radky(ne));
+			shoda("výlet " + v + " hned po přidávání", a, radky(ano));
+			shoda("tedne.ggt výletu", n, radky(ne));
 			ocekavaneAno.put(id, a);
 			ocekavaneNe.put(id, n);
 		}
@@ -139,13 +149,19 @@ public class VyletyVelkyObjemTest {
 		final Random rnd = new Random(7);
 		for (int k = 0; k < 80; k++) {
 			final String id = ids.get(rnd.nextInt(ids.size()));
+			if (k % 10 == 0) {
+				// Skript GeoGetu přidá keš do lovim.ggt, než uživatel výlet opustí; musí zůstat i po návratu.
+				final String zvenku = "GCZVENKU" + k;
+				Files.write(ano.toPath(), Collections.singletonList(zvenku), StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND);
+				ocekavaneAno.get(soubory.aktivniVylet()).add(zvenku);
+			}
 			prepni(id);
 			Assert.assertEquals("po přepnutí " + k + " na " + id, id, soubory.aktivniVylet());
-			Assert.assertEquals("lovim.ggt po přepnutí " + k, ocekavaneAno.get(id), radky(ano));
-			Assert.assertEquals("tedne.ggt po přepnutí " + k, ocekavaneNe.get(id), radky(ne));
+			shoda("lovim.ggt po přepnutí " + k, ocekavaneAno.get(id), radky(ano));
+			shoda("tedne.ggt po přepnutí " + k, ocekavaneNe.get(id), radky(ne));
 		}
 		prepni(vychozi);
-		Assert.assertEquals("Výchozí výlet z GeoGetu je celý", vychoziAno, radky(ano));
+		shoda("Výchozí výlet z GeoGetu je celý", vychoziAno, radky(ano));
 		Assert.assertEquals(VYLETU + 1, model.getVylety().size());
 	}
 }
