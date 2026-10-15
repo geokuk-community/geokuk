@@ -50,8 +50,9 @@
   ostatní programy zobrazí celý; GeoKuk po načtení pozná původní body cesty.
   Starší verze GeoKuku načtou takovou cestu jako mnoho bodů.
 - Nová instalace začíná offline mapou, když je ve složce offline map podrobná
-  mapa, jinak ortofotem ČÚZK. Mapy.cz zůstávají v menu Mapy. Stávajícím
-  uživatelům se zvolený podklad nemění.
+  mapa, jinak ortofotem ČÚZK a nahoře v mapě nabídne stažení turistické mapy,
+  která funguje i bez internetu; po stažení se program přepne na offline mapu.
+  Mapy.cz zůstávají v menu Mapy. Stávajícím uživatelům se zvolený podklad nemění.
 - Offline mapa zkopírovaná do složky za běhu se otevře až po dokopírování
   a mapa v okně se sama obnoví, bez posunu. Mapu, kterou chvíli nešlo číst
   (například ji držel antivirus nebo synchronizace), program za půl minuty
