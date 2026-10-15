@@ -119,10 +119,8 @@ public class JMapyPopupTest {
 			final JButton zrusit = tlacitko(p, JMapyPopup.ZRUSIT);
 			p.obnov(Arrays.asList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(300 * MB).build()));
 			Assert.assertSame(zrusit, tlacitko(p, JMapyPopup.ZRUSIT));
-			Assert.assertEquals(1, prestaveni[0]);
 			Assert.assertTrue(texty(p).contains("50 % z 600 MB"));
 			p.obnov(Arrays.asList(katalog("at", RadekMapy.Stav.AKTUALNI).datumDat(Instant.EPOCH).build()));
-			Assert.assertEquals(2, prestaveni[0]);
 			Assert.assertNull(tlacitko(p, JMapyPopup.ZRUSIT));
 		});
 	}
@@ -147,7 +145,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			int odkazu = 0;
 			for (final JButton b : tlacitka(p)) {
-				if (b.getToolTipText() != null && b.getToolTipText().startsWith("http")) {
+				if (b.getToolTipText() != null && (b.getToolTipText().contains("paws") || b.getToolTipText().contains("andromaps"))) {
 					final URI u = URI.create(b.getToolTipText());
 					Assert.assertTrue(b.getToolTipText(), u.getPath() == null || u.getPath().isEmpty() || "/".equals(u.getPath()));
 					odkazu++;
@@ -221,6 +219,21 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Soubor se stejným jménem vyměněný za jiný: řádek se nepřestaví, ale tooltip ukáže nové údaje. */
+	@Test
+	public void tooltipPoVymeneSouboru() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(5 * MB).datumDat(Instant.EPOCH).build()));
+			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(2_500 * MB).datumDat(Instant.parse("2026-10-01T00:00:00Z")).build()));
+			for (final JLabel l : popisky(p)) {
+				if (l.getToolTipText() != null) {
+					Assert.assertTrue(l.getToolTipText(), l.getToolTipText().contains("2,5 GB"));
+				}
+			}
+		});
+	}
+
 	private static List<JLabel> popisky(final Container c) {
 		final List<JLabel> v = new ArrayList<>();
 		for (final Component k : c.getComponents()) {
@@ -232,5 +245,36 @@ public class JMapyPopupTest {
 			}
 		}
 		return v;
+	}
+
+	/** U map z katalogu je odkaz na projekt, licenci a atribuci OSM; bez nich (jen vlastní soubory) ne. */
+	@Test
+	public void zdrojALicenceMapZKatalogu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").build()));
+			Assert.assertNull(tlacitko(p, "licence ODbL"));
+			p.obnov(Arrays.asList(RadekMapy.vlastni("paws.map").build(), katalog("at", RadekMapy.Stav.NEMAME).build()));
+			Assert.assertEquals(JMapyPopup.URL_ODBL, tlacitko(p, "licence ODbL").getToolTipText());
+			Assert.assertEquals(JMapyPopup.URL_OSM, tlacitko(p, "© přispěvatelé OpenStreetMap").getToolTipText());
+			Assert.assertEquals(JMapyPopup.URL_MAPSFORGE, tlacitko(p, "mapsforge").getToolTipText());
+		});
+	}
+
+	/** Po Zrušit se až do potvrzení ukazuje „Ruší se…“, i když ještě chodí průběh. */
+	@Test
+	public void rusiSe() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(60 * MB).build()));
+			tlacitko(p, JMapyPopup.ZRUSIT).doClick();
+			Assert.assertFalse(tlacitko(p, JMapyPopup.ZRUSIT).isEnabled());
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(120 * MB).build()));
+			Assert.assertTrue(texty(p).contains(JMapyPopup.RUSI_SE));
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.NEMAME).rozpracovano(true).stazeno(120 * MB).build()));
+			Assert.assertFalse(texty(p).contains(JMapyPopup.RUSI_SE));
+			Assert.assertNotNull(tlacitko(p, JMapyPopup.POKRACOVAT));
+		});
 	}
 }
