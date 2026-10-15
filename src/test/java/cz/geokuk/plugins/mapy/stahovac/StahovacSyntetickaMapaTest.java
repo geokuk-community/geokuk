@@ -168,14 +168,18 @@ public class StahovacSyntetickaMapaTest {
 
 	/** Dlaždice (jako „z/x/y“) viditelné ve výřezu o středu a velikosti v daném měřítku, pro měřítka od nejvyššího po nejnižší; počítá se z pixelových souřadnic světa. */
 	static Set<String> ocekavane(final Wgs stred, final int aktualniMoumer, final int maxMoumer, final int minMoumer) {
+		return ocekavane(VELIKOST, stred, aktualniMoumer, maxMoumer, minMoumer);
+	}
+
+	static Set<String> ocekavane(final Dimension velikost, final Wgs stred, final int aktualniMoumer, final int maxMoumer, final int minMoumer) {
 		final Set<String> vysledek = new TreeSet<>();
 		for (int z = maxMoumer; z >= minMoumer; z--) {
 			final double svet = 256.0 * (1L << z);
 			final double sin = Math.sin(Math.toRadians(stred.lat));
 			final double px = (stred.lon + 180) / 360 * svet;
 			final double py = (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * svet;
-			final double w = z >= aktualniMoumer ? VELIKOST.width * (double) (1L << (z - aktualniMoumer)) : Math.floor(VELIKOST.width / (double) (1L << (aktualniMoumer - z)));
-			final double h = z >= aktualniMoumer ? VELIKOST.height * (double) (1L << (z - aktualniMoumer)) : Math.floor(VELIKOST.height / (double) (1L << (aktualniMoumer - z)));
+			final double w = z >= aktualniMoumer ? velikost.width * (double) (1L << (z - aktualniMoumer)) : Math.floor(velikost.width / (double) (1L << (aktualniMoumer - z)));
+			final double h = z >= aktualniMoumer ? velikost.height * (double) (1L << (z - aktualniMoumer)) : Math.floor(velikost.height / (double) (1L << (aktualniMoumer - z)));
 			final int x0 = (int) Math.floor((px - w / 2) / 256);
 			final int x1 = (int) Math.floor((px + w / 2 - 1) / 256);
 			final int y0 = (int) Math.floor((py - h / 2) / 256);
