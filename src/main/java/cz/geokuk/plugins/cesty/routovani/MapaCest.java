@@ -59,7 +59,8 @@ final class MapaCest implements AutoCloseable {
 	 */
 	static MapaCest otevri(final File soubor, final long maxBoduCache) {
 		final MapFile mf = new MapFile(soubor);
-		final SubFileParameter sp = mf.getMapFileHeader().getSubFileParameter(ZOOM_CEST);
+		// Mapa bez podrobného zoomu (přehledová mapa světa) cesty nemá; pole parametrů sahá jen po její nejvyšší zoom.
+		final SubFileParameter sp = mf.getMapFileInfo().zoomLevelMax < ZOOM_CEST ? null : mf.getMapFileHeader().getSubFileParameter(ZOOM_CEST);
 		if (sp == null || sp.zoomLevelMin > ZOOM_CEST || sp.zoomLevelMax < ZOOM_CEST) {
 			mf.close();
 			return null;
