@@ -3,6 +3,7 @@ package cz.geokuk.plugins.mapy.sprava.gui;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
@@ -120,9 +121,11 @@ public class JMapyPopup extends JPanel {
 				// Těžký popup (přesahuje okno) nepřijme fokus, písmena by šla do hlavního okna a spouštěla jeho zkratky.
 				final Window okno = SwingUtilities.getWindowAncestor(this);
 				hledat.setVisible(okno == null || okno instanceof Frame || okno instanceof Dialog);
+				vidiSe = true;
 				zacniSledovatKlikyMimo();
 			} else {
 				zvyrazni(null);
+				vidiSe = false;
 				prestanSledovatKlikyMimo();
 			}
 		});
@@ -163,6 +166,12 @@ public class JMapyPopup extends JPanel {
 		return uzivatelPise;
 	}
 
+	/** Obsah se změnil: popup se znovu zobrazí a píše-li uživatel, vrátí se mu fokus do pole. */
+	private void zmenaObsahu() {
+		poZmeneObsahu.run();
+		poZnovuZobrazeni();
+	}
+
 	/** Popup se zobrazil znovu (změna velikosti): fokus zmizel spolu s odebraným popupem, píše-li uživatel, vrátí se do pole. */
 	public void poZnovuZobrazeni() {
 		if (uzivatelPise) {
@@ -179,13 +188,48 @@ public class JMapyPopup extends JPanel {
 		}
 	};
 
+	/** Popup je vidět; nastavuje ho sledování viditelnosti (v testech i ručně). */
+	boolean vidiSe;
+
+	/**
+	 * Píše-li uživatel do popupu a fokus je zrovna jinde (popup se při změně obsahu na okamžik zobrazí znovu a pole o fokus přijde), psané znaky se nenechají
+	 * propadnout do hlavního okna, kde by spouštěly klávesové zkratky (o, t, z… přepínají mapu), ale vloží se do pole hledání. Ctrl/Alt/Meta, Enter a Esc jdou dál.
+	 */
+	final KeyEventDispatcher klavesy = e -> {
+		if (!uzivatelPise || !vidiSe || !hledat.isVisible() || hledat.isFocusOwner() || e.isControlDown() || e.isAltDown() || e.isMetaDown()) {
+			return false;
+		}
+		final char c = e.getKeyChar();
+		if (c == KeyEvent.CHAR_UNDEFINED || c == '\u001b' || c == '\n' || c == '\r') {
+			return false;
+		}
+		if (e.getID() == KeyEvent.KEY_TYPED) {
+			final javax.swing.text.Document d = hledat.getDocument();
+			try {
+				if (c == '\b') {
+					if (d.getLength() > 0) {
+						d.remove(d.getLength() - 1, 1);
+					}
+				} else if (c >= ' ' && c != '\u007f') {
+					d.insertString(d.getLength(), String.valueOf(c), null);
+				}
+			} catch (final javax.swing.text.BadLocationException ex) {
+				throw new IllegalStateException(ex);
+			}
+		}
+		return true;
+	};
+
 	void zacniSledovatKlikyMimo() {
 		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
 		Toolkit.getDefaultToolkit().addAWTEventListener(klikMimo, AWTEvent.MOUSE_EVENT_MASK);
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(klavesy);
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(klavesy);
 	}
 
 	void prestanSledovatKlikyMimo() {
 		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(klavesy);
 	}
 
 	JTextField getHledat() {
@@ -292,7 +336,7 @@ public class JMapyPopup extends JPanel {
 			}
 			if (sirsi) {
 				revalidate();
-				poZmeneObsahu.run();
+				zmenaObsahu();
 			}
 			return;
 		}
@@ -302,7 +346,7 @@ public class JMapyPopup extends JPanel {
 		if (seznam != null) {
 			seznam.getVerticalScrollBar().setValue(posun);
 		}
-		poZmeneObsahu.run();
+		zmenaObsahu();
 	}
 
 	List<RadekMapy> getRadky() {
