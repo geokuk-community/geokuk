@@ -72,9 +72,46 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void zvyrazniMapu(final String klic) {
+			volani.add("zvyrazni " + klic);
+		}
+
+		@Override
 		public void otevriSlozku() {
 			volani.add("slozka");
 		}
+	}
+
+	/** Myš nad řádkem (kterýmkoli políčkem) zvýrazní obrys té mapy, odjetí ho zruší. */
+	@Test
+	public void najetiNaRadekZvyrazniObrys() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.AKTUALNI).datumDat(Instant.EPOCH).build(), RadekMapy.vlastni("paws.map").build()));
+			final JLabel nazev = labels(p).stream().filter(l -> "cz".equals(l.getText())).findFirst().get();
+			z.volani.clear();
+			for (final java.awt.event.MouseListener l : nazev.getMouseListeners()) {
+				l.mouseEntered(new java.awt.event.MouseEvent(nazev, java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
+				l.mouseExited(new java.awt.event.MouseEvent(nazev, java.awt.event.MouseEvent.MOUSE_EXITED, 0, 0, 1, 1, 0, false));
+			}
+			Assert.assertEquals(Arrays.asList("zvyrazni cz", "zvyrazni null"), z.volani);
+			Assert.assertEquals("soubor:paws.map", JMapyPopup.klicZvyrazneni(RadekMapy.vlastni("paws.map").build()));
+		});
+	}
+
+	private static List<JLabel> labels(final Container c) {
+		final List<JLabel> v = new ArrayList<>();
+		for (final java.awt.Component k : c.getComponents()) {
+			if (k instanceof JLabel) {
+				v.add((JLabel) k);
+			}
+			if (k instanceof Container) {
+				v.addAll(labels((Container) k));
+			}
+		}
+		return v;
 	}
 
 	@Test
