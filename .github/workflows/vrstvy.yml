@@ -32,7 +32,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: vrstvy-${{ github.ref }}
+  group: vrstvy-${{ github.ref }}-${{ inputs.region || 'pr' }}
   cancel-in-progress: true
 
 env:
@@ -74,7 +74,7 @@ jobs:
             echo
             ls -l out
             df -h / | tail -1
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: vrstva-trasy
@@ -118,7 +118,7 @@ jobs:
             echo
             ls -l out
             df -h / | tail -1
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: vrstva-dem
@@ -172,7 +172,7 @@ jobs:
             echo
             ls -l out
             df -h / | tail -1
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: vrstva-vrstevnice
