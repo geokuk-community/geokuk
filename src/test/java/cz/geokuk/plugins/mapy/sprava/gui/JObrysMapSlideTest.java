@@ -1,8 +1,10 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.*;
@@ -33,6 +35,40 @@ public class JObrysMapSlideTest {
 		final Point viden = soord.transform(new Wgs(48.21, 16.37).toMou());
 		Assert.assertTrue(cesta.contains(praha));
 		Assert.assertFalse(cesta.contains(viden));
+	}
+
+	private static BufferedImage nakresli(final int zoom, final List<PolygonPokryti> obrysy) {
+		final JObrysMapSlide s = new JObrysMapSlide();
+		s.setSize(400, 300);
+		s.setSoord(new Coord(zoom, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0));
+		s.setObrysy(obrysy);
+		final BufferedImage img = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = img.createGraphics();
+		s.paintComponent(g);
+		g.dispose();
+		return img;
+	}
+
+	private static int alfa(final BufferedImage img, final int x, final int y) {
+		return img.getRGB(x, y) >>> 24;
+	}
+
+	/** V přehledu (do Z9) se zašedne území bez mapy, pokryté zůstane čisté; od Z10 se nekreslí nic. */
+	@Test
+	public void zasedneMimoMapyJenVPrehledu() {
+		final List<PolygonPokryti> mapa = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
+		final BufferedImage z9 = nakresli(JObrysMapSlide.NEJVETSI_ZOOM, mapa);
+		Assert.assertTrue("mimo mapu šedá", alfa(z9, 2, 2) > 0);
+		Assert.assertEquals("uvnitř mapy čisto", 0, alfa(z9, 200, 150));
+		final BufferedImage z10 = nakresli(JObrysMapSlide.NEJVETSI_ZOOM + 1, mapa);
+		Assert.assertEquals(0, alfa(z10, 2, 2));
+	}
+
+	@Test
+	public void bezMapNicNezasedne() {
+		final BufferedImage img = nakresli(6, Collections.emptyList());
+		Assert.assertEquals(0, alfa(img, 2, 2));
+		Assert.assertEquals(0, alfa(img, 200, 150));
 	}
 
 	@Test

@@ -27,12 +27,21 @@ public final class RadaOfflineMapy {
 	}
 
 	public static RadaOfflineMapy pro(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred) {
+		return pro(katalog, stavy, stred, null);
+	}
+
+	/** Když se stahuje jiná mapa (stahovana), nabídka počká, stahuje se vždy jedna. */
+	public static RadaOfflineMapy pro(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final KatalogovaMapa stahovana) {
 		for (final KatalogovaMapa m : katalog.pokryvajiBod(stred)) {
 			final StavMapy s = stavy.apply(m);
 			if (s.getMistni() == StavMapy.Mistni.MAME && !s.isBezi()) {
 				continue;
 			}
-			return pro(m, s);
+			final RadaOfflineMapy r = pro(m, s);
+			if (r.odkaz != null && stahovana != null && !stahovana.getId().equals(m.getId())) {
+				return new RadaOfflineMapy("Stahuje se mapa " + stahovana.getNazev() + ". Mapu " + m.getNazev() + " stáhnete, až skončí.", null, m);
+			}
+			return r;
 		}
 		return new RadaOfflineMapy(BEZ_KATALOGU, null, null);
 	}

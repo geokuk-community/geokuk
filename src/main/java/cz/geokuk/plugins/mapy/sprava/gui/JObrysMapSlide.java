@@ -1,8 +1,10 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
 import java.awt.*;
+import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -25,12 +27,17 @@ import cz.geokuk.plugins.mapy.sprava.StavMapy;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 
-/** Obrys území, které pokrývají offline mapy ve složce; jen na obrazovce, do tisku a exportu nejde. */
+/**
+ * V přehledu (do zoomu {@link #NEJVETSI_ZOOM}) lehce zašedne území, které offline mapy ve složce nepokrývají; v podrobnějším
+ * zoomu ukazuje pokrytí sama mapa. Jen na obrazovce, do tisku a exportu nejde.
+ */
 public class JObrysMapSlide extends JSingleSlide0 {
 
 	private static final long serialVersionUID = 1L;
 
-	static final Color CARA = new Color(0x2E, 0x9E, 0x4F, 210);
+	static final int NEJVETSI_ZOOM = 9;
+	static final Color MIMO = new Color(0x50, 0x50, 0x50, 70);
+	static final Color CARA = new Color(0x40, 0x40, 0x40, 160);
 
 	private transient KachleModel kachleModel;
 	private transient List<PolygonPokryti> obrysy = Collections.emptyList();
@@ -138,16 +145,25 @@ public class JObrysMapSlide extends JSingleSlide0 {
 
 	@Override
 	protected void paintComponent(final Graphics g0) {
-		if (!isSoordInitialized() || obrysy.isEmpty()) {
+		if (!isSoordInitialized() || obrysy.isEmpty() || getSoord().getMoumer() > NEJVETSI_ZOOM) {
 			return;
 		}
 		final Graphics2D g = (Graphics2D) g0.create();
 		try {
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			final Area mimo = new Area(new Rectangle(0, 0, getWidth(), getHeight()));
+			final List<Path2D> cesty = new ArrayList<>(obrysy.size());
 			for (final PolygonPokryti p : obrysy) {
-				g.setColor(CARA);
-				g.draw(cesta(getSoord(), p));
+				final Path2D cesta = cesta(getSoord(), p);
+				cesty.add(cesta);
+				mimo.subtract(new Area(cesta));
+			}
+			g.setColor(MIMO);
+			g.fill(mimo);
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g.setColor(CARA);
+			for (final Path2D cesta : cesty) {
+				g.draw(cesta);
 			}
 		} finally {
 			g.dispose();

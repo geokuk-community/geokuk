@@ -33,6 +33,19 @@ public class RadaOfflineMapyTest {
 	@Test
 	public void regionPredZemi() {
 		Assert.assertEquals("Bavorsko", RadaOfflineMapy.pro(KATALOG, StavMapy::novy, MNICHOV).mapa.getNazev());
+		Assert.assertEquals("Berlín", RadaOfflineMapy.pro(KATALOG, StavMapy::novy, new Wgs(52.52, 13.40)).mapa.getNazev());
+	}
+
+	/** Během stahování jiné mapy rada stažení nenabízí (klik by nic neudělal), ale řekne proč. */
+	@Test
+	public void behemStahovaniJineMapy() {
+		final KatalogovaMapa bavorsko = KATALOG.podleId("europe/germany/bayern").get();
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, PRAHA, bavorsko);
+		Assert.assertNull(r.odkaz);
+		Assert.assertEquals("Stahuje se mapa Bavorsko. Mapu Česko stáhnete, až skončí.", r.text);
+		final KatalogovaMapa cesko = KATALOG.podleId("europe/czech-republic").get();
+		Assert.assertEquals("stahovaná mapa sama", "Stahuje se mapa Česko: 25 %.",
+				RadaOfflineMapy.pro(KATALOG, m -> stav(m, NEMAME, STAHUJE, 150, 600), PRAHA, cesko).text);
 	}
 
 	@Test

@@ -8,6 +8,7 @@ import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
+import cz.geokuk.plugins.mapy.sprava.StavMapy;
 import cz.geokuk.plugins.mapy.sprava.gui.RadaOfflineMapy;
 
 public class JKachlovnikPresCele extends JKachlovnik {
@@ -80,11 +81,11 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	@Override
 	protected void paintChildren(final Graphics g) {
 		super.paintChildren(g);
+		odkazRady = null;
+		rada = null;
 		if (getKachloType() == null || getKachloType().getAtribuce().isEmpty()) {
 			return;
 		}
-		odkazRady = null;
-		rada = null;
 		if (jeRada()) {
 			kresliRadu((Graphics2D) g);
 		}
@@ -126,7 +127,8 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			final Font obycejne = getFont().deriveFont(Font.PLAIN, 12f);
 			final FontMetrics fmTucne = g2.getFontMetrics(tucne);
 			final FontMetrics fm = g2.getFontMetrics(obycejne);
-			rada = spravaMap == null ? null : RadaOfflineMapy.pro(spravaMap.getKatalog(), spravaMap::getStav, getSoord().getMoustred().toWgs());
+			rada = spravaMap == null ? null : RadaOfflineMapy.pro(spravaMap.getKatalog(), spravaMap::getStav, getSoord().getMoustred().toWgs(),
+					spravaMap.getBeziciStahovani().map(StavMapy::getMapa).orElse(null));
 			final String text = rada == null ? RADA_BEZ_SPRAVY : rada.text;
 			final List<String> radky = text == null ? new ArrayList<>() : zalom(text, fm, Math.max(200, getWidth() - 40));
 			final String odkaz = rada == null ? null : rada.odkaz;
