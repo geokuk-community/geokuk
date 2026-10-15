@@ -1,5 +1,15 @@
 # Změny
 
+## 6.4.1
+
+### Opravy
+- Mapy > Postahovat dlaždice: stahování víc než asi 110 dlaždic se už
+  nezastaví, stáhnou se všechny.
+- Geodetický bod (ČGP), jehož popis má souřadnice JTSK v nečekaném tvaru,
+  už nezpůsobí chybu při načítání; načte se bez souřadnic JTSK.
+- Téma offline mapy ze složky programu zůstane zvolené i po přesunu přenosného
+  GeoKuku jinam.
+
 ## 6.4.0
 
 ### Změny
