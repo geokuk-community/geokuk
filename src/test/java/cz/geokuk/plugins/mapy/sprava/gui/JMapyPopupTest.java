@@ -45,6 +45,10 @@ public class JMapyPopupTest {
 		return v;
 	}
 
+	static List<JButton> tlacitkaV(final Container c) {
+		return tlacitka(c);
+	}
+
 	private static JButton tlacitko(final Container c, final String text) {
 		return tlacitka(c).stream().filter(b -> text.equals(b.getText())).findFirst().orElse(null);
 	}
@@ -201,5 +205,32 @@ public class JMapyPopupTest {
 		Assert.assertEquals(1, obrysy.size());
 		Assert.assertSame(KatalogMap.vestaveny().podleId("europe/czech-republic").get().getPokryti(), obrysy.get(0));
 		Assert.assertTrue("Praha", obrysy.get(0).obsahuje(new Wgs(50.08, 14.42)));
+	}
+
+	/** Dlouhý text chyby popup neroztáhne, celý je v tooltipu. */
+	@Test
+	public void dlouhaChybaSeZkrati() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final String chyba = "Stahování se přerušilo: " + String.join("", Collections.nCopies(20, "dlouhý technický text "));
+			final JMapyPopup p = new JMapyPopup();
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.CHYBA).chyba(chyba).build()));
+			final JLabel popis = popisky(p).stream().filter(l -> l.getText() != null && l.getText().startsWith("Stahování")).findFirst().get();
+			Assert.assertTrue(popis.getText().endsWith("…"));
+			Assert.assertTrue(popis.getPreferredSize().width <= JMapyPopup.SIRKA_POPISU + 10);
+			Assert.assertTrue(popis.getToolTipText().contains(chyba.trim()));
+		});
+	}
+
+	private static List<JLabel> popisky(final Container c) {
+		final List<JLabel> v = new ArrayList<>();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof JLabel) {
+				v.add((JLabel) k);
+			}
+			if (k instanceof Container) {
+				v.addAll(popisky((Container) k));
+			}
+		}
+		return v;
 	}
 }

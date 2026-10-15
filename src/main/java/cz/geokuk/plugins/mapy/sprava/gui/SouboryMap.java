@@ -46,7 +46,7 @@ final class SouboryMap {
 		try {
 			b.datumDat(HlavickaMapy.precti(f).getDatumDat());
 		} catch (final IOException | RuntimeException e) {
-			b.chyba(POSKOZENA);
+			b.chyba(POSKOZENA).stav(RadekMapy.Stav.CHYBA).veSlozce(true);
 		}
 		return b.build();
 	}

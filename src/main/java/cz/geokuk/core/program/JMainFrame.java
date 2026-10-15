@@ -104,12 +104,14 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			final JComponent pozicovnik = new JPozicovnikSlide();
 			final JComponent zvyraznovaciKruhy = new JZvyraznovaciKruhySlide();
 			final JComponent obsazenik = new JObsazenost();
-			final JComponent kachlovnik = new JKachlovnikPresCele();
+			final JKachlovnikPresCele kachlovnik = new JKachlovnikPresCele();
+			final JComponent odkazRady = new JOdkazRadySlide(kachlovnik);
 			final JComponent kachlovnikTras = new JKachlovnikTras();
 			final JComponent obrysMap = new JObrysMapSlide();
 			final JComponent pozadi = new JSlidePozadi();
 
 			smrizema.add(mysovani);
+			smrizema.add(odkazRady);
 			smrizema.add(renderSlide);
 			smrizema.add(zoomovaciObdelnik);
 			smrizema.add(meritkovnik);
@@ -133,6 +135,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			mysovani.addKeyListener(mysovani);
 
 			factory.init(mysovani);
+			factory.init(odkazRady);
 			factory.init(renderSlide);
 			factory.init(zoomovaciObdelnik);
 			factory.init(meritkovnik);

@@ -72,7 +72,10 @@
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře jejich seznam (velikost, datum dat, nečitelné soubory),
   odkaz na složku offline map a na weby s mapami. Volbou v něm jde v mapě
-  ukázat, kde offline mapy jsou.
+  ukázat, kde offline mapy jsou. Mapy zemí a regionů Evropy z
+  download.mapsforge.org jde z popupu stáhnout (po jedné, přerušené stahování
+  pokračuje) a na požádání zkontrolovat, jestli nejsou novější. Když pro
+  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení.
 
 ## 6.4.0
 

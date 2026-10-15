@@ -6,6 +6,9 @@ import java.util.List;
 
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
+import cz.geokuk.plugins.mapy.sprava.gui.RadaOfflineMapy;
 
 public class JKachlovnikPresCele extends JKachlovnik {
 
@@ -41,9 +44,37 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 
-	static final String RADA_NADPIS = "Pro toto místo nemáte podrobnou offline mapu.";
-	static final String RADA_TEXT = "Stáhněte soubor .map (Česko a Slovensko: osm.paws.cz, celý svět: download.mapsforge.org) a uložte ho do složky offline map"
-			+ " (Soubor > Umístění souborů, karta Mapy).";
+	private static final Color ODKAZ = new Color(0x1A5FB4);
+
+	private transient SpravaMapModel spravaMap;
+	/** Kde je v kachlovníku odkaz rady, null když se nekreslí. */
+	private Rectangle odkazRady;
+	private transient RadaOfflineMapy rada;
+
+	public void inject(final SpravaMapModel spravaMap) {
+		this.spravaMap = spravaMap;
+	}
+
+	public void onEvent(final SpravaMapEvent event) {
+		if (odkazRady != null || rada != null && rada.mapa != null && rada.mapa.getId().equals(event.getMapa().getId())) {
+			repaint();
+		}
+	}
+
+	/** Klik na odkaz rady stáhne nabízenou mapu; vrací, jestli klik patřil odkazu. */
+	public boolean klikNaRadu(final Point bod) {
+		if (odkazRady == null || !odkazRady.contains(bod) || rada == null || rada.mapa == null || spravaMap == null) {
+			return false;
+		}
+		spravaMap.stahni(rada.mapa);
+		return true;
+	}
+
+	public boolean jeNadOdkazemRady(final Point bod) {
+		return odkazRady != null && odkazRady.contains(bod);
+	}
+
+	static final String RADA_BEZ_SPRAVY = "Offline mapy najdete v bloku Mapy vpravo dole ve stavovém řádku.";
 
 	/** Atribuci kreslí přes kachle vpravo dole, radu, kde vzít offline mapu, nahoře uprostřed. */
 	@Override
@@ -52,6 +83,8 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		if (getKachloType() == null || getKachloType().getAtribuce().isEmpty()) {
 			return;
 		}
+		odkazRady = null;
+		rada = null;
 		if (jeRada()) {
 			kresliRadu((Graphics2D) g);
 		}
@@ -93,13 +126,19 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			final Font obycejne = getFont().deriveFont(Font.PLAIN, 12f);
 			final FontMetrics fmTucne = g2.getFontMetrics(tucne);
 			final FontMetrics fm = g2.getFontMetrics(obycejne);
-			final List<String> radky = zalom(RADA_TEXT, fm, Math.max(200, getWidth() - 40));
-			int w = fmTucne.stringWidth(RADA_NADPIS);
+			rada = spravaMap == null ? null : RadaOfflineMapy.pro(spravaMap.getKatalog(), spravaMap::getStav, getSoord().getMoustred().toWgs());
+			final String text = rada == null ? RADA_BEZ_SPRAVY : rada.text;
+			final List<String> radky = text == null ? new ArrayList<>() : zalom(text, fm, Math.max(200, getWidth() - 40));
+			final String odkaz = rada == null ? null : rada.odkaz;
+			int w = fmTucne.stringWidth(RadaOfflineMapy.NADPIS);
 			for (final String r : radky) {
 				w = Math.max(w, fm.stringWidth(r));
 			}
+			if (odkaz != null) {
+				w = Math.max(w, fm.stringWidth(odkaz));
+			}
 			w += 16;
-			final int h = fmTucne.getHeight() + radky.size() * fm.getHeight() + 8;
+			final int h = fmTucne.getHeight() + (radky.size() + (odkaz != null ? 1 : 0)) * fm.getHeight() + 8;
 			final int x = (getWidth() - w) / 2;
 			final int y = 8;
 			g2.setColor(new Color(255, 255, 255, 215));
@@ -107,12 +146,19 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			g2.setColor(Color.DARK_GRAY);
 			int yy = y + 4 + fmTucne.getAscent();
 			g2.setFont(tucne);
-			g2.drawString(RADA_NADPIS, x + 8, yy);
+			g2.drawString(RadaOfflineMapy.NADPIS, x + 8, yy);
 			g2.setFont(obycejne);
 			yy += fmTucne.getDescent() + fm.getAscent() + fmTucne.getLeading();
 			for (final String r : radky) {
 				g2.drawString(r, x + 8, yy);
 				yy += fm.getHeight();
+			}
+			if (odkaz != null) {
+				g2.setColor(ODKAZ);
+				g2.drawString(odkaz, x + 8, yy);
+				final int sirka = fm.stringWidth(odkaz);
+				g2.drawLine(x + 8, yy + 2, x + 8 + sirka, yy + 2);
+				odkazRady = new Rectangle(x + 4, yy - fm.getAscent() - 2, sirka + 8, fm.getHeight() + 4);
 			}
 		} finally {
 			g2.dispose();

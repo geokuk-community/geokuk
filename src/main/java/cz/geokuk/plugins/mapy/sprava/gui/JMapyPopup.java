@@ -33,6 +33,7 @@ public class JMapyPopup extends JPanel {
 	static final String POKRACOVAT = "Pokračovat";
 	static final String AKTUALIZOVAT = "Aktualizovat";
 	static final String STAHNOUT_ZNOVU = "Stáhnout znovu";
+	static final String ZKUSIT_ZNOVU = "Zkusit znovu";
 	static final String ZRUSIT = "Zrušit";
 	static final String ZKONTROLOVAT = "Zkontrolovat aktualizace";
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
@@ -41,6 +42,9 @@ public class JMapyPopup extends JPanel {
 
 	static final String URL_PAWS = "https://osm.paws.cz/";
 	static final String URL_OAM = "https://www.openandromaps.org/";
+
+	/** Delší popis (třeba text chyby) se zkrátí, celý je v tooltipu. */
+	static final int SIRKA_POPISU = 240;
 
 	/** Nejvyšší výška seznamu dalších map, pak se posouvá. */
 	static final int VYSKA_SEZNAMU = 220;
@@ -92,7 +96,7 @@ public class JMapyPopup extends JPanel {
 			for (final RadekMapy r : radky) {
 				final JLabel popis = popisy.get(klic(r));
 				if (popis != null) {
-					popis.setText(r.popis());
+					popis.setText(zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
 				}
 			}
 			return;
@@ -112,7 +116,7 @@ public class JMapyPopup extends JPanel {
 	private static List<String> struktura(final List<RadekMapy> radky) {
 		final List<String> s = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano);
+			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null));
 		}
 		return s;
 	}
@@ -131,7 +135,7 @@ public class JMapyPopup extends JPanel {
 		for (final RadekMapy r : radky) {
 			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2);
 		}
-		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE);
+		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje);
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -155,7 +159,7 @@ public class JMapyPopup extends JPanel {
 		final List<RadekMapy> proMisto = new ArrayList<>();
 		final List<RadekMapy> dalsi = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			if (r.isVeSlozce() || r.stav == RadekMapy.Stav.STAHUJE && r.datumDat != null) {
+			if (r.isVeSlozce()) {
 				veSlozce.add(r);
 			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE) {
 				proMisto.add(r);
@@ -281,7 +285,8 @@ public class JMapyPopup extends JPanel {
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
 		panel.add(nazev, bunka(1, y, 1));
 
-		final JLabel popis = maly(r.popis());
+		final JLabel popis = maly("");
+		popis.setText(zkrat(r.popis(), popis.getFontMetrics(popis.getFont())));
 		popis.setToolTipText(tooltip);
 		if (r.stav == RadekMapy.Stav.CHYBA) {
 			popis.setForeground(IkonyMap.CERVENA);
@@ -311,6 +316,9 @@ public class JMapyPopup extends JPanel {
 		final JButton b;
 		switch (r.stav) {
 		case STAHUJE:
+			if (r.kontroluje) {
+				return null;
+			}
 			return odkaz(ZRUSIT, e -> {
 				if (ovladani != null) {
 					ovladani.zrusStahovani();
@@ -322,7 +330,7 @@ public class JMapyPopup extends JPanel {
 			b = odkaz(AKTUALIZOVAT, e -> stahni(r));
 			break;
 		case CHYBA:
-			b = odkaz(STAHNOUT_ZNOVU, e -> stahni(r));
+			b = odkaz(r.isVeSlozce() ? STAHNOUT_ZNOVU : ZKUSIT_ZNOVU, e -> stahni(r));
 			break;
 		case NEMAME:
 		default:
@@ -340,6 +348,17 @@ public class JMapyPopup extends JPanel {
 		if (ovladani != null) {
 			ovladani.stahni(r.id);
 		}
+	}
+
+	static String zkrat(final String text, final FontMetrics fm) {
+		if (text == null || fm.stringWidth(text) <= SIRKA_POPISU) {
+			return text;
+		}
+		int n = text.length();
+		while (n > 1 && fm.stringWidth(text.substring(0, n) + "…") > SIRKA_POPISU) {
+			n--;
+		}
+		return text.substring(0, n).trim() + "…";
 	}
 
 	private static JPanel panelRadku() {
