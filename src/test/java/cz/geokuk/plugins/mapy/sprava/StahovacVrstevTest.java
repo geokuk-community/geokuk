@@ -162,7 +162,7 @@ public class StahovacVrstevTest {
 		assertEquals(Mistni.MAME, s.getMistni());
 		assertEquals(500_000, s.getStazeno());
 		assertFalse(s.isRozpracovano());
-		assertEquals(Arrays.asList("cz_1.zip", "cz_2.zip"), vSlozce());
+		assertEquals(Arrays.asList("cz_1.zip", "cz_1.zip.sha256", "cz_2.zip", "cz_2.zip.sha256"), vSlozce());
 		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(new File(slozka, "cz_2.zip").toPath()));
 
 		pozadavky.clear();
@@ -229,7 +229,7 @@ public class StahovacVrstevTest {
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
 		assertEquals("navazuje druhý soubor", Collections.singletonList("cz_2.zip bytes=" + mame + "-"), pozadavky);
 		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(new File(slozka, "cz_2.zip").toPath()));
-		assertEquals(Arrays.asList("cz_1.zip", "cz_2.zip"), vSlozce());
+		assertEquals(Arrays.asList("cz_1.zip", "cz_1.zip.sha256", "cz_2.zip", "cz_2.zip.sha256"), vSlozce());
 	}
 
 	@Test

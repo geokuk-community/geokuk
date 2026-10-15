@@ -5,7 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -31,6 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 final class StahovacVrstev {
 
+	static final String PRIPONA_SOUCTU = ".sha256";
+	static final String PRIPONA_STARA = ".stara";
+	private static final int POKUSY_PRESUNU = 5;
+
 	interface Posluchac {
 		void zmena(StavVrstvy stav);
 	}
@@ -55,24 +63,47 @@ final class StahovacVrstev {
 		return new File(slozka, s.getNazev() + StahovacMapy.PRIPONA_INFO);
 	}
 
-	/** Doplní stav podle souborů na disku; soubor sedí s katalogem, když má jeho velikost. */
+	/** Kontrolní součet souboru na místě, zapsaný po jeho ověření. */
+	static File soucet(final File slozka, final Soubor s) {
+		return new File(slozka, s.getNazev() + PRIPONA_SOUCTU);
+	}
+
+	/** Stará verze souboru odsunutá stranou během výměny vrstvy. */
+	static File stara(final File slozka, final Soubor s) {
+		return new File(slozka, s.getNazev() + PRIPONA_STARA);
+	}
+
+	/** Na místě je soubor, který odpovídá katalogu: velikost a kontrolní součet zapsaný po ověření. */
+	static boolean sedi(final File slozka, final Soubor s) {
+		final File c = cil(slozka, s);
+		if (!c.isFile() || c.length() != s.getVelikost()) {
+			return false;
+		}
+		try {
+			return s.getSha256().equals(new String(Files.readAllBytes(soucet(slozka, s).toPath()), StandardCharsets.US_ASCII).trim());
+		} catch (final IOException e) {
+			return false;
+		}
+	}
+
+	/** Doplní stav podle souborů na disku. */
 	static StavVrstvy mistniStav(final StavVrstvy stav, final File slozka) {
 		int mame = 0;
 		int jine = 0;
 		long stazeno = 0;
 		boolean rozpracovano = false;
 		for (final Soubor s : stav.getVrstva().getSoubory()) {
-			final File c = cil(slozka, s);
-			if (c.isFile() && c.length() == s.getVelikost()) {
+			final boolean sedi = sedi(slozka, s);
+			if (sedi) {
 				mame++;
-			} else if (c.exists()) {
+			} else if (cil(slozka, s).exists()) {
 				jine++;
 			}
 			final File r = rozpracovany(slozka, s);
 			if (r.isFile()) {
 				rozpracovano = true;
 				stazeno += r.length();
-			} else if (c.isFile() && c.length() == s.getVelikost()) {
+			} else if (sedi) {
 				stazeno += s.getVelikost();
 			}
 		}
@@ -100,6 +131,7 @@ final class StahovacVrstev {
 		if (!slozka.isDirectory() || !Files.isWritable(slozka.toPath())) {
 			return s.sFazi(Faze.CHYBA, "Do složky vrstev " + slozka + " nejde zapisovat.");
 		}
+		obnovPoPreruseneVymene(slozka, vrstva);
 		long chybi = 0;
 		for (final Soubor so : vrstva.getSoubory()) {
 			if (!hotovy(slozka, so)) {
@@ -142,14 +174,9 @@ final class StahovacVrstev {
 					}
 				}
 			}
-			for (final Soubor so : vrstva.getSoubory()) {
-				if (rozpracovany(slozka, so).isFile()) {
-					final String chybaPresunu = http.presun(rozpracovany(slozka, so), cil(slozka, so));
-					if (chybaPresunu != null) {
-						return mistniStav(s, slozka).sFazi(Faze.CHYBA, chybaPresunu);
-					}
-				}
-				StahovacMapy.smaz(info(slozka, so));
+			final String chybaVymeny = vymen(slozka, vrstva);
+			if (chybaVymeny != null) {
+				return mistniStav(s, slozka).sFazi(Faze.CHYBA, chybaVymeny);
 			}
 			log.info("Vrstva {} stažena do {}", vrstva, slozka);
 			return mistniStav(s, slozka).sFazi(Faze.HOTOVO, null);
@@ -179,10 +206,107 @@ final class StahovacVrstev {
 		return r.isFile() && r.length() == so.getVelikost() && so.getSha256().equals(StahovacMapy.nactiInfo(info(slozka, so)).sha256);
 	}
 
-	/** Na místě je soubor této verze (velikost podle katalogu) a nic se pro něj nestahuje. */
+	/** Na místě je soubor této verze a nic se pro něj nestahuje. */
 	private static boolean cilSedi(final File slozka, final Soubor so) {
-		final File c = cil(slozka, so);
-		return c.isFile() && c.length() == so.getVelikost() && !rozpracovany(slozka, so).exists();
+		return sedi(slozka, so) && !rozpracovany(slozka, so).exists();
+	}
+
+	/**
+	 * Vymění všechny ověřené soubory vrstvy najednou: staré odsune stranou, nové přesune na místo a když cokoli selže, vrátí staré. Null = povedlo se.
+	 */
+	String vymen(final File slozka, final KatalogovaVrstva vrstva) {
+		final List<Soubor> nove = new ArrayList<>();
+		for (final Soubor so : vrstva.getSoubory()) {
+			if (rozpracovany(slozka, so).isFile()) {
+				nove.add(so);
+			}
+		}
+		if (nove.stream().anyMatch(so -> cil(slozka, so).exists())) {
+			http.uvolniMapy.run();
+		}
+		final List<Soubor> odsunute = new ArrayList<>();
+		final List<Soubor> presunute = new ArrayList<>();
+		try {
+			for (final Soubor so : nove) {
+				if (cil(slozka, so).exists()) {
+					presunSOpakovanim(cil(slozka, so), stara(slozka, so));
+					odsunute.add(so);
+				}
+			}
+			for (final Soubor so : nove) {
+				presunSOpakovanim(rozpracovany(slozka, so), cil(slozka, so));
+				presunute.add(so);
+			}
+		} catch (final IOException e) {
+			log.info("Vrstvu {} nejde vyměnit: {}", vrstva, e.toString());
+			for (final Soubor so : presunute) {
+				vrat(cil(slozka, so), rozpracovany(slozka, so));
+			}
+			for (final Soubor so : odsunute) {
+				vrat(stara(slozka, so), cil(slozka, so));
+			}
+			return "Starou vrstvu " + vrstva.getNazev() + " nejde nahradit, asi ji používá jiný program. Stažení dokončíte znovu tlačítkem Stáhnout.";
+		}
+		for (final Soubor so : nove) {
+			StahovacMapy.smaz(stara(slozka, so));
+			StahovacMapy.smaz(info(slozka, so));
+			try {
+				Files.write(soucet(slozka, so).toPath(), so.getSha256().getBytes(StandardCharsets.US_ASCII));
+			} catch (final IOException e) {
+				log.info("Kontrolní součet {} nejde zapsat: {}", so, e.toString());
+				return "Do složky vrstev nejde zapisovat.";
+			}
+		}
+		return null;
+	}
+
+	/** Po pádu uprostřed výměny vrátí staré soubory na místo; nové zůstanou rozpracované a znovu se ověří. */
+	static void obnovPoPreruseneVymene(final File slozka, final KatalogovaVrstva vrstva) {
+		for (final Soubor so : vrstva.getSoubory()) {
+			final File st = stara(slozka, so);
+			if (!st.exists()) {
+				continue;
+			}
+			if (cil(slozka, so).exists() && !rozpracovany(slozka, so).exists()) {
+				vrat(cil(slozka, so), rozpracovany(slozka, so));
+			}
+			if (!cil(slozka, so).exists()) {
+				vrat(st, cil(slozka, so));
+			}
+		}
+	}
+
+	private static void vrat(final File z, final File na) {
+		try {
+			Files.move(z.toPath(), na.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} catch (final IOException e) {
+			log.warn("Soubor {} nejde vrátit na {}: {}", z, na, e.toString());
+		}
+	}
+
+	/** Přesun; zamčený soubor (Windows) zkusí znovu po uvolnění offline map. */
+	private void presunSOpakovanim(final File z, final File na) throws IOException {
+		for (int pokus = 1;; pokus++) {
+			try {
+				try {
+					Files.move(z.toPath(), na.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+				} catch (final AtomicMoveNotSupportedException e) {
+					Files.move(z.toPath(), na.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}
+				return;
+			} catch (final FileSystemException e) {
+				if (pokus >= POKUSY_PRESUNU || !z.exists()) {
+					throw e;
+				}
+			}
+			try {
+				Thread.sleep(http.pauzaPresunuMs);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new IOException("Přerušeno", e);
+			}
+			http.uvolniMapy.run();
+		}
 	}
 
 	/** Stáhne jeden soubor do rozpracovaného souboru, od místa, kde skončil. Vrátí počet bajtů na disku. */
@@ -293,6 +417,7 @@ final class StahovacVrstev {
 
 	/** Zahodí rozpracované soubory vrstvy. */
 	static void zahod(final File slozka, final KatalogovaVrstva vrstva) {
+		obnovPoPreruseneVymene(slozka, vrstva);
 		for (final Soubor so : vrstva.getSoubory()) {
 			StahovacMapy.smaz(rozpracovany(slozka, so));
 			StahovacMapy.smaz(info(slozka, so));

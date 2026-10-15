@@ -55,7 +55,7 @@ final class StahovacMapy {
 	}
 
 	private final String userAgent;
-	private final Runnable uvolniMapy;
+	final Runnable uvolniMapy;
 	int casovyLimitMs = (int) TimeUnit.SECONDS.toMillis(15);
 	long pauzaPresunuMs = 1000;
 	long volneMisto = -1;

@@ -147,6 +147,13 @@ public class KatalogVrstevTest {
 				"dvakrát");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("../x.map", "x.map", 1, SHA), "")), "jméno");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.stahuje", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("X.MAP.STAHUJE", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.sha256", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.stara", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("CON.map", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("nul", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", "{\"nazev\": \"x.map\", \"url\": \"x.map\", \"velikost\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "../jinam/x.map", 1, SHA), "")), "adresu");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "/x.map", 1, SHA), "")), "adresu");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "file:///etc/x.map", 1, SHA), "")), "adresu");

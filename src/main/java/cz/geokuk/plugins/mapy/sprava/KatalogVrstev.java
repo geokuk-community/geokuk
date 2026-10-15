@@ -145,7 +145,7 @@ public final class KatalogVrstev {
 
 	private static Soubor soubor(final Map<?, ?> s, final String id, final List<URI> zdroje) throws IOException {
 		final String nazev = text(s, "nazev");
-		if (!nazev.matches(JMENO_SOUBORU) || nazev.endsWith(StahovacMapy.PRIPONA) || nazev.endsWith(StahovacMapy.PRIPONA_INFO)) {
+		if (!platneJmenoSouboru(nazev)) {
 			throw new IOException("Vrstva " + id + " má neplatné jméno souboru " + nazev);
 		}
 		final String url = text(s, "url");
@@ -160,7 +160,7 @@ public final class KatalogVrstev {
 			throw new IOException("Vrstva " + id + " má neplatnou adresu souboru " + url);
 		}
 		final Object velikost = s.get("velikost");
-		if (!(velikost instanceof Double) || (Double) velikost <= 0) {
+		if (!(velikost instanceof Double) || (Double) velikost <= 0 || (Double) velikost != Math.floor((Double) velikost)) {
 			throw new IOException("Soubor " + nazev + " vrstvy " + id + " nemá velikost");
 		}
 		final String sha = text(s, "sha256").toLowerCase(Locale.ROOT);
@@ -168,6 +168,18 @@ public final class KatalogVrstev {
 			throw new IOException("Soubor " + nazev + " vrstvy " + id + " nemá platný sha256");
 		}
 		return new Soubor(nazev, Collections.unmodifiableList(urly), ((Double) velikost).longValue(), sha, okamzik(s.get("datumSouboru"), id));
+	}
+
+	/** Jméno souboru bez cesty, které jde založit i na Windows a nekoliduje s pomocnými soubory stahování. */
+	static boolean platneJmenoSouboru(final String nazev) {
+		final String male = nazev.toLowerCase(Locale.ROOT);
+		for (final String pripona : new String[] { StahovacMapy.PRIPONA, StahovacMapy.PRIPONA_INFO, StahovacVrstev.PRIPONA_SOUCTU, StahovacVrstev.PRIPONA_STARA }) {
+			if (male.endsWith(pripona)) {
+				return false;
+			}
+		}
+		final String zaklad = male.indexOf('.') < 0 ? male : male.substring(0, male.indexOf('.'));
+		return nazev.matches(JMENO_SOUBORU) && !nazev.endsWith(".") && !zaklad.matches("con|prn|aux|nul|com[0-9]|lpt[0-9]");
 	}
 
 	/** Obrys regionu z katalogu map, jinak obdélník z katalogu vrstev. */
