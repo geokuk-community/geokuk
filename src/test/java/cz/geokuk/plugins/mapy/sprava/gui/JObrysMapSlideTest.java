@@ -64,6 +64,37 @@ public class JObrysMapSlideTest {
 		Assert.assertEquals(0, alfa(z10, 2, 2));
 	}
 
+	/** Posun mapy plochu nepřepočítá, jen posune; výsledek je stejný jako při čerstvém výpočtu. */
+	@Test
+	public void posunMapyPouzijeSkladAVykresliStejne() {
+		final List<PolygonPokryti> mapa = Collections.singletonList(PolygonPokryti.obdelnik(49.97, 14.95, 50.03, 15.05));
+		final JObrysMapSlide s = new JObrysMapSlide();
+		s.setSize(400, 300);
+		s.setSoord(new Coord(8, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0));
+		s.setObrysy(mapa);
+		s.paintComponent(new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB).createGraphics());
+		final JObrysMapSlide.Sklad pred = s.sklad;
+		final Coord posunuty = new Coord(8, new Wgs(50.01, 15.03).toMou(), new Dimension(400, 300), 0);
+		s.setSoord(posunuty);
+		final BufferedImage img = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+		s.paintComponent(img.createGraphics());
+		Assert.assertSame(pred, s.sklad);
+		final BufferedImage cerstvy = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+		final JObrysMapSlide t = new JObrysMapSlide();
+		t.setSize(400, 300);
+		t.setSoord(posunuty);
+		t.setObrysy(mapa);
+		t.paintComponent(cerstvy.createGraphics());
+		for (int y = 0; y < 300; y += 7) {
+			for (int x = 0; x < 400; x += 7) {
+				Assert.assertEquals(x + "," + y, alfa(cerstvy, x, y), alfa(img, x, y));
+			}
+		}
+		s.setSoord(new Coord(8, new Wgs(50, 15).toMou(), new Dimension(400, 300), 0).derive(7));
+		s.paintComponent(new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB).createGraphics());
+		Assert.assertNotSame(pred, s.sklad);
+	}
+
 	@Test
 	public void bezMapNicNezasedne() {
 		final BufferedImage img = nakresli(6, Collections.emptyList());

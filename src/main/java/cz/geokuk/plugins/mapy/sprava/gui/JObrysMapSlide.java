@@ -1,8 +1,8 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
 import java.awt.*;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +15,7 @@ import javax.swing.Timer;
 
 import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coord.JSingleSlide0;
+import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -42,6 +43,7 @@ public class JObrysMapSlide extends JSingleSlide0 {
 	private transient KachleModel kachleModel;
 	private transient List<PolygonPokryti> obrysy = Collections.emptyList();
 	private transient SwingWorker<List<PolygonPokryti>, Void> cteni;
+	transient Sklad sklad;
 	private boolean znovu;
 	/** Otisk složky při posledním čtení; s online podkladem složku nikdo jiný nehlídá. */
 	private String otisk;
@@ -140,33 +142,74 @@ public class JObrysMapSlide extends JSingleSlide0 {
 
 	void setObrysy(final List<PolygonPokryti> obrysy) {
 		this.obrysy = obrysy;
+		sklad = null;
 		repaint();
 	}
 
 	@Override
 	protected void paintComponent(final Graphics g0) {
 		if (!isSoordInitialized() || obrysy.isEmpty() || getSoord().getMoumer() > NEJVETSI_ZOOM) {
+			sklad = null;
 			return;
 		}
-		final Graphics2D g = (Graphics2D) g0.create();
-		try {
-			final Area mimo = new Area(new Rectangle(0, 0, getWidth(), getHeight()));
-			final List<Path2D> cesty = new ArrayList<>(obrysy.size());
-			for (final PolygonPokryti p : obrysy) {
-				final Path2D cesta = cesta(getSoord(), p);
-				cesty.add(cesta);
-				mimo.subtract(new Area(cesta));
+		final Coord soord = getSoord();
+		if (sklad == null || !sklad.platnyPro(soord, obrysy)) {
+			sklad = new Sklad(soord, obrysy);
+		}
+		final Point posun = soord.transform(sklad.stred);
+		g0.drawImage(sklad.obraz, posun.x - sklad.stredPx.x - sklad.okraj.width, posun.y - sklad.stredPx.y - sklad.okraj.height, null);
+	}
+
+	/**
+	 * Hotový obraz šedé plochy a obrysů pro jeden zoom a sadu obrysů. Je o okraj větší než výřez, takže se posunem mapy
+	 * jen posouvá a skládání plochy se nepočítá při každém překreslení.
+	 */
+	static final class Sklad {
+		final Coord soord;
+		final List<PolygonPokryti> obrysy;
+		final Mou stred;
+		final Point stredPx;
+		final Dimension okraj;
+		final BufferedImage obraz;
+
+		Sklad(final Coord soord, final List<PolygonPokryti> obrysy) {
+			this.soord = soord;
+			this.obrysy = obrysy;
+			stred = soord.getMoustred();
+			stredPx = soord.transform(stred);
+			okraj = new Dimension(soord.getWidth() / 4, soord.getHeight() / 4);
+			obraz = new BufferedImage(soord.getWidth() + 2 * okraj.width, soord.getHeight() + 2 * okraj.height, BufferedImage.TYPE_INT_ARGB);
+			final Graphics2D g = obraz.createGraphics();
+			try {
+				g.translate(okraj.width, okraj.height);
+				g.setColor(MIMO);
+				g.fillRect(-okraj.width, -okraj.height, obraz.getWidth(), obraz.getHeight());
+				final List<Path2D> cesty = new ArrayList<>(obrysy.size());
+				g.setComposite(AlphaComposite.Clear);
+				for (final PolygonPokryti p : obrysy) {
+					final Path2D cesta = cesta(soord, p);
+					cesty.add(cesta);
+					g.fill(cesta);
+				}
+				g.setComposite(AlphaComposite.SrcOver);
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				g.setColor(CARA);
+				for (final Path2D cesta : cesty) {
+					g.draw(cesta);
+				}
+			} finally {
+				g.dispose();
 			}
-			g.setColor(MIMO);
-			g.fill(mimo);
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.setColor(CARA);
-			for (final Path2D cesta : cesty) {
-				g.draw(cesta);
+		}
+
+		boolean platnyPro(final Coord novy, final List<PolygonPokryti> noveObrysy) {
+			if (noveObrysy != obrysy || novy.getMoumer() != soord.getMoumer() || novy.getNatoceni() != soord.getNatoceni()
+					|| !novy.getDim().equals(soord.getDim())) {
+				return false;
 			}
-		} finally {
-			g.dispose();
+			final Point p = novy.transform(stred);
+			return Math.abs(p.x - stredPx.x) <= okraj.width && Math.abs(p.y - stredPx.y) <= okraj.height;
 		}
 	}
 
