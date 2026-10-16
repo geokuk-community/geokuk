@@ -251,9 +251,12 @@ public class OfflineMapy {
 	 * Základní mapa, ke které vrstva tras je, se vynechá, jinak by se stejné trasy kreslily dvakrát.
 	 */
 	static List<File> mapyPrekryvu(final File slozka) {
+		if (slozka == null) {
+			return Collections.emptyList();
+		}
 		final List<File> vysledek = new ArrayList<>();
 		final Set<String> klice = new HashSet<>();
-		final File slozkaVrstev = slozka == null ? null : new File(slozka, SLOZKA_VRSTEV);
+		final File slozkaVrstev = new File(slozka, SLOZKA_VRSTEV);
 		for (final File f : vrstvyVeSlozce(slozka)) {
 			final String cesta = slozkaVrstev.toPath().relativize(f.toPath()).toString().replace('\\', '/');
 			if (cesta.toLowerCase(Locale.ROOT).endsWith(PRIPONA_TRAS)) {
