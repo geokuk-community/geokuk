@@ -102,6 +102,7 @@ public class KachleModel extends Model0 {
 
 	public void onEvent(final ZmenaMapNastalaEvent event) {
 		offlinePodklad = event.getKatype() != null && event.getKatype().isOffline();
+		nastavTrasyPodkladu();
 		predpripravOfflineMapu();
 		fajrujPrekryvTras();
 	}
@@ -376,7 +377,15 @@ public class KachleModel extends Model0 {
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
 		ziskavac.getOfflineTrasy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-trasy"));
 		ziskavac.getOfflineTrasy().nastav(u.getOfflineMapyDir().getEffectiveFile(), TemaOfflineMapy.TRASY);
+		nastavTrasyPodkladu();
 		predpripravOfflineMapu();
+	}
+
+	/** Offline podklad s tématem, které kreslí vrstvy tras, je kreslí sám; překryv by je nakreslil podruhé přes popisky. */
+	private void nastavTrasyPodkladu() {
+		if (ziskavac != null) {
+			ziskavac.getOfflineTrasy().setTrasyKresliPodklad(offlinePodklad && getTemaOfflineMapy().isKresliVrstvyTras());
+		}
 	}
 
 	/** Střed výřezu pokrývá podrobná offline mapa (nebo mapy ještě nejsou otevřené). */

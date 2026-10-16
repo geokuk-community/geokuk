@@ -108,8 +108,10 @@ public class PrekryvVrstvyTrasTest {
 		Assert.assertTrue(new File(vrstvy, "germany").mkdir());
 		Files.write(new File(vrstvy, "germany/bayern.routes.map").toPath(), new byte[1]);
 		Assert.assertEquals(Arrays.asList(new File(vrstvy, "czech-republic.routes.map"), new File(vrstvy, "germany/bayern.routes.map"),
-				new File(slozka, "austria.map"), new File(slozka, "moje.map")), OfflineMapy.mapyPrekryvu(slozka));
-		Assert.assertEquals(Collections.emptyList(), OfflineMapy.mapyPrekryvu(null));
+				new File(slozka, "austria.map"), new File(slozka, "moje.map")), OfflineMapy.mapyPrekryvu(slozka, false));
+		Assert.assertEquals(Collections.emptyList(), OfflineMapy.mapyPrekryvu(null, false));
+		Assert.assertEquals("vrstvy tras kreslí podklad, překryv bere jen základní mapy",
+				Arrays.asList(new File(slozka, "austria.map"), new File(slozka, "czech-republic.map"), new File(slozka, "moje.map")), OfflineMapy.mapyPrekryvu(slozka, true));
 	}
 
 	/** Se základní mapou i vrstvou tras jiného území se kreslí obojí; po stažení vrstvy se renderer otevře znovu. */
@@ -125,6 +127,21 @@ public class PrekryvVrstvyTrasTest {
 		final OfflineRenderer r1 = trasy.pouzij();
 		r1.skonci();
 		Assert.assertEquals(2, r1.getPocetMap());
+		Assert.assertNotEquals(r0.getKlic(), r1.getKlic());
+	}
+
+	/** Když vrstvy tras kreslí podklad (offline mapa s tématem Turistická), překryv je vynechá a otevře se znovu jen se základní mapou. */
+	@Test(timeout = 30000)
+	public void vrstvuTrasKresliPodklad() throws IOException {
+		PrekryvTrasTest.zkopirujMapu(slozka);
+		zkopiruj("/offline-mapy-trasy/vrstva.routes.map", new File(vrstvy, "kukov.routes.map"));
+		final OfflineRenderer r0 = trasy.pouzij();
+		r0.skonci();
+		Assert.assertEquals(2, r0.getPocetMap());
+		trasy.setTrasyKresliPodklad(true);
+		final OfflineRenderer r1 = trasy.pouzij();
+		r1.skonci();
+		Assert.assertEquals(1, r1.getPocetMap());
 		Assert.assertNotEquals(r0.getKlic(), r1.getKlic());
 	}
 }

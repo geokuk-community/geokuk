@@ -121,6 +121,11 @@ public final class TemaOfflineMapy {
 		return soubor != null && soubor.getName().toLowerCase(Locale.ROOT).startsWith("paws");
 	}
 
+	/** Téma kreslí turistické a cyklotrasy ze stažených vrstev tras (tagy fmrel*). */
+	public boolean isKresliVrstvyTras() {
+		return TURISTICKA.zdroj.equals(zdroj);
+	}
+
 	public File getSoubor() {
 		return soubor;
 	}
