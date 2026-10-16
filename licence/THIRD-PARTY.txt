@@ -40,6 +40,11 @@ zdrojových souborů v přibalené verzi 0.25.0).
 Mapové téma Turistické a cyklotrasy (trasy.xml) je součástí GeoKuku
 a je pod jeho licencí GNU GPL verze 3.
 
+Vestavěné mapové téma Turistická (turisticka.xml) je upravená kopie default.xml
+z mapsforge-themes 0.25.0 (GNU LGPL verze 3 nebo novější, bez §4(d) a §4(e);
+Copyright viz výše). Úpravy provedl GeoKuk; upravený soubor zůstává pod
+GNU LGPL 3 nebo novější a je součástí GeoKuku, který se šíří pod GNU GPL 3.
+
 Zdrojový kód knihoven pod GPL a LGPL v přibalených verzích:
   SQLJet:  https://repo1.maven.org/maven2/org/tmatesoft/sqljet/sqljet/1.1.15/sqljet-1.1.15-sources.jar
   Logback: https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.3.16/logback-classic-1.3.16-sources.jar

@@ -53,6 +53,7 @@ public class JBlokMap extends JLabel {
 	/** Čtení složky běží, další změna počká na jeho konec. */
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
+	private volatile boolean stinovaniDostupne;
 	private volatile long volne = -1;
 	private transient volatile List<PokrytiMap.DvojitaMapa> dvojite = java.util.Collections.emptyList();
 
@@ -187,6 +188,21 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public boolean isStinovaniDostupne() {
+				return stinovaniDostupne;
+			}
+
+			@Override
+			public boolean isStinovani() {
+				return kachleModel.isStinovaniTerenu();
+			}
+
+			@Override
+			public void setStinovani(final boolean zapnuto) {
+				kachleModel.setStinovaniTerenu(zapnuto);
+			}
+
+			@Override
 			public void setObrysPokryti(final boolean zapnuto) {
 				kachleModel.setObrysPokryti(zapnuto);
 			}
@@ -309,6 +325,7 @@ public class JBlokMap extends JLabel {
 		cteni = new SwingWorker<List<RadekMapy>, Void>() {
 			@Override
 			protected List<RadekMapy> doInBackground() {
+				stinovaniDostupne = cz.geokuk.plugins.mapy.kachle.podklady.OfflineMapy.maDem(slozka);
 				volne = volneMisto(slozka);
 				dvojite = spravaMap == null ? java.util.Collections.emptyList() : PokrytiMap.dvojiteMapy(slozka, spravaMap.getKatalog());
 				return cteniSlozky.apply(slozka);
@@ -319,6 +336,7 @@ public class JBlokMap extends JLabel {
 				cteni = null;
 				try {
 					soubory = get();
+					obsah.setStinovaniDostupne(stinovaniDostupne);
 					obsah.setVolneMisto(volne);
 					obsah.setDvojite(dvojite);
 					prestav();

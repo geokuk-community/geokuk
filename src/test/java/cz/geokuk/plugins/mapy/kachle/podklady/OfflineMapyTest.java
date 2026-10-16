@@ -478,8 +478,8 @@ public class OfflineMapyTest {
 
 	@Test
 	public void temaZTextuAZpet() {
-		Assert.assertSame(TemaOfflineMapy.VYCHOZI, TemaOfflineMapy.zTextu(""));
-		Assert.assertSame(TemaOfflineMapy.VYCHOZI, TemaOfflineMapy.zTextu(null));
+		Assert.assertSame(TemaOfflineMapy.TURISTICKA, TemaOfflineMapy.zTextu(""));
+		Assert.assertSame(TemaOfflineMapy.TURISTICKA, TemaOfflineMapy.zTextu(null));
 		Assert.assertEquals("OSMARENDER", TemaOfflineMapy.zTextu("OSMARENDER").naText());
 		final TemaOfflineMapy zip = TemaOfflineMapy.zeSouboru(new File("x", "paws_5.zip"), "paws_5.xml");
 		Assert.assertEquals(zip, TemaOfflineMapy.zTextu(zip.naText()));
