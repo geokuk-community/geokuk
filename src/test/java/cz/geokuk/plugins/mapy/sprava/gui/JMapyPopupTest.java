@@ -10,6 +10,7 @@ import java.util.*;
 
 import javax.swing.*;
 
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -80,6 +81,97 @@ public class JMapyPopupTest {
 		public void otevriSlozku() {
 			volani.add("slozka");
 		}
+	}
+
+	/** Výsledek kontroly: vše aktuální, počet novějších, nebo že selhala; vždy s časem. */
+	@Test
+	public void vysledekKontroly() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Instant ted = Instant.now();
+			final RadekMapy cz = katalog("cz", RadekMapy.Stav.AKTUALNI).datumDat(Instant.EPOCH).build();
+			Assert.assertNull("ještě se nekontrolovalo", p.vysledekKontroly(Collections.singletonList(cz)));
+			final RadekMapy aktualni = katalog("cz", RadekMapy.Stav.AKTUALNI).zkontrolovano(ted).build();
+			final RadekMapy novejsi = katalog("sk", RadekMapy.Stav.NOVEJSI).zkontrolovano(ted).build();
+			final RadekMapy selhala = katalog("at", RadekMapy.Stav.AKTUALNI).zkontrolovano(ted).chyba("Server není dostupný").build();
+			Assert.assertTrue(p.vysledekKontroly(Collections.singletonList(aktualni)).startsWith(JMapyPopup.VSE_AKTUALNI + " · zkontrolováno "));
+			Assert.assertTrue(p.vysledekKontroly(Arrays.asList(aktualni, novejsi)).startsWith("Novější data: 1 mapa · zkontrolováno "));
+			Assert.assertTrue(p.vysledekKontroly(Arrays.asList(aktualni, selhala)).startsWith(JMapyPopup.KONTROLA_SELHALA));
+			p.setOvladani(new Zaznam());
+			p.obnov(Arrays.asList(aktualni));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith(JMapyPopup.VSE_AKTUALNI)));
+		});
+	}
+
+	/** U stahované mapy je za procenty odhad času z rychlosti. */
+	@Test
+	public void stahovaniMaOdhadCasu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final long[] cas = { 0 };
+			p.hodiny = () -> cas[0];
+			p.setOvladani(new Zaznam());
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(10 * MB).build()));
+			cas[0] = 10_000;
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(110 * MB).build()));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().contains("%") && l.getText().contains("zbývá asi 50 s")));
+		});
+	}
+
+	private static List<JButton> tlacitkaSTextem(final JMapyPopup p, final String text) {
+		final List<JButton> v = new ArrayList<>();
+		for (final JButton b : tlacitka(p)) {
+			if (text.equals(b.getText())) {
+				v.add(b);
+			}
+		}
+		return v;
+	}
+
+	/** Mapa, která se na disk nevejde (s rezervou stahovače), se nedá stáhnout; tooltip říká totéž číslo, se kterým se porovnává. */
+	@Test
+	public void nedostatekMistaNaDisku() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final long rezerva = SpravaMapModel.REZERVA_MISTA;
+			p.setVolneMisto(300 * MB);
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NEMAME).build(), katalog("pl", RadekMapy.Stav.NEMAME).velikost(100 * MB).build()));
+			final List<JButton> stahnout = tlacitkaSTextem(p, JMapyPopup.STAHNOUT);
+			Assert.assertEquals(2, stahnout.size());
+			Assert.assertFalse("600 MB na 300 MB nejde", stahnout.get(0).isEnabled());
+			Assert.assertTrue(stahnout.get(0).getToolTipText(), stahnout.get(0).getToolTipText().contains("Na disku je volných jen 300 MB"));
+			Assert.assertTrue("100 MB + rezerva se vejde", stahnout.get(1).isEnabled());
+			// přesně na hranici: mapa + rezerva se vejde, o bajt míň ne
+			p.setVolneMisto(600 * MB + rezerva);
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().allMatch(JButton::isEnabled));
+			p.setVolneMisto(600 * MB + rezerva - 1);
+			Assert.assertFalse("o bajt méně už ne", tlacitkaSTextem(p, JMapyPopup.STAHNOUT).get(0).isEnabled());
+			p.setVolneMisto(610 * MB);
+			final JButton nejde = tlacitkaSTextem(p, JMapyPopup.STAHNOUT).get(0);
+			Assert.assertFalse("610 MB na 600 MB mapu s rezervou nestačí", nejde.isEnabled());
+			Assert.assertTrue("tooltip počítá i rezervu: " + nejde.getToolTipText(), nejde.getToolTipText().contains("volných jen 610 MB, mapa potřebuje asi 652 MB"));
+			p.setVolneMisto(-1);
+			Assert.assertTrue("neznámé volné místo nic nevypíná", tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().allMatch(JButton::isEnabled));
+		});
+	}
+
+	/** Chyba u rozpracované mapy počítá jen zbytek, ne celou mapu; aktualizace celou. */
+	@Test
+	public void rozpracovanaMapaPotrebujeJenZbytek() {
+		final RadekMapy chyba = katalog("cz", RadekMapy.Stav.CHYBA).velikost(600 * MB).stazeno(500 * MB).build();
+		Assert.assertEquals(100 * MB + SpravaMapModel.REZERVA_MISTA, JMapyPopup.potrebneMisto(chyba));
+		final RadekMapy novejsi = katalog("sk", RadekMapy.Stav.NOVEJSI).velikost(300 * MB).build();
+		Assert.assertEquals(300 * MB + SpravaMapModel.REZERVA_MISTA, JMapyPopup.potrebneMisto(novejsi));
+		Assert.assertEquals(0, JMapyPopup.potrebneMisto(katalog("at", RadekMapy.Stav.AKTUALNI).build()));
+	}
+
+	/** Nula z getUsableSpace je chyba, ne plný disk. */
+	@Test
+	public void nulaJeNeznameMisto() {
+		Assert.assertEquals(-1, JBlokMap.bezNuly(0));
+		Assert.assertEquals(-1, JBlokMap.bezNuly(-5));
+		Assert.assertEquals(1234, JBlokMap.bezNuly(1234));
 	}
 
 	/** Myš nad řádkem (kterýmkoli políčkem) zvýrazní obrys té mapy, odjetí ho zruší. */

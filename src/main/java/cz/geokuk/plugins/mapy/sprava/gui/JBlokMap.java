@@ -50,6 +50,7 @@ public class JBlokMap extends JLabel {
 	/** Čtení složky běží, další změna počká na jeho konec. */
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
+	private volatile long volne = -1;
 
 	public JBlokMap() {
 		super(TEXT);
@@ -198,6 +199,20 @@ public class JBlokMap extends JLabel {
 		return d;
 	}
 
+	/** Volné místo na disku, na kterém je (nebo bude) složka; -1 když není známé. */
+	static long volneMisto(final File slozka) {
+		File f = slozka;
+		while (f != null && !f.exists()) {
+			f = f.getParentFile();
+		}
+		return f == null ? -1 : bezNuly(f.getUsableSpace());
+	}
+
+	/** Nulu vrací systém i při chybě; plný disk od neznámého nejde rozeznat, tak 0 platí jako neznámé. */
+	static long bezNuly(final long volne) {
+		return volne <= 0 ? -1 : volne;
+	}
+
 	/** Přečte mapy ve složce mimo EDT; změny během čtení se sloučí do jednoho dalšího čtení. */
 	void nactiSlozku() {
 		if (cteni != null) {
@@ -208,6 +223,7 @@ public class JBlokMap extends JLabel {
 		cteni = new SwingWorker<List<RadekMapy>, Void>() {
 			@Override
 			protected List<RadekMapy> doInBackground() {
+				volne = volneMisto(slozka);
 				return cteniSlozky.apply(slozka);
 			}
 
@@ -216,6 +232,7 @@ public class JBlokMap extends JLabel {
 				cteni = null;
 				try {
 					soubory = get();
+					obsah.setVolneMisto(volne);
 					prestav();
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();
