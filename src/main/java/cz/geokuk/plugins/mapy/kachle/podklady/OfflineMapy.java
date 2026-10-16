@@ -221,7 +221,7 @@ public class OfflineMapy {
 			return;
 		}
 		posledniKontrola = ted;
-		final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
+		final List<File> mapy = mapyPouzite();
 		final String otisk = otisk(mapy);
 		if (otiskSlozky == null) {
 			otiskSlozky = otisk;
@@ -242,6 +242,27 @@ public class OfflineMapy {
 			}
 		}
 	}
+
+	/**
+	 * Zdroje dat: základní mapy; překryv tras k nim přidá vrstvy tras, a tak jde kreslit i přes online podklad, když je stažená jen vrstva tras bez
+	 * základní mapy.
+	 */
+	private List<File> mapyPouzite() {
+		final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
+		if (!prekryv) {
+			return mapy;
+		}
+		final List<File> vsechny = new ArrayList<>(mapy);
+		for (final File f : vrstvyVeSlozce(slozkaOtevrena)) {
+			if (f.getName().toLowerCase(Locale.ROOT).contains(TYP_TRASY)) {
+				vsechny.add(f);
+			}
+		}
+		return vsechny;
+	}
+
+	/** Část jména souboru vrstvy tras (europe/czech-republic.routes.map). */
+	static final String TYP_TRASY = ".routes.";
 
 	/** Vrstvy kreslené spolu se základní mapou; překryv tras je nekreslí. */
 	private List<File> vrstvyPouzite() {
