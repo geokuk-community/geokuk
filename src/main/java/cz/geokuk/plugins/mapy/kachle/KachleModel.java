@@ -45,6 +45,7 @@ public class KachleModel extends Model0 {
 
 	private static final String PREKRYV_TRAS = "prekryvTras";
 	private static final String OBRYS_POKRYTI = "obrysPokrytiOfflineMap";
+	private static final String STINOVANI_TERENU = "stinovaniTerenu";
 
 	/** Otevírá offline mapu a načítá téma předem, mimo EDT. */
 	private final ExecutorService priprava = Executors.newSingleThreadExecutor(r -> {
@@ -136,6 +137,20 @@ public class KachleModel extends Model0 {
 	/** Překryv tras se kreslí: je zapnutý a nad podkladem není nadbytečný. */
 	public boolean isPrekryvTrasViditelny() {
 		return isPrekryvTras() && !isPrekryvTrasNadbytecny();
+	}
+
+	/** Stínování terénu z DEM dlaždic ve složce vrstev je zapnuté (výchozí); bez DEM dlaždic nemá žádný účinek. */
+	public boolean isStinovaniTerenu() {
+		return currPrefe().getBoolean(STINOVANI_TERENU, true);
+	}
+
+	public void setStinovaniTerenu(final boolean zapnuto) {
+		if (zapnuto == isStinovaniTerenu()) {
+			return;
+		}
+		currPrefe().putBoolean(STINOVANI_TERENU, zapnuto);
+		nastavOfflineMapy(getUmisteniSouboru());
+		fire(new OfflineMapaChangedEvent());
 	}
 
 	/** V mapě se kreslí obrys území, které pokrývají offline mapy ve složce. */
@@ -356,6 +371,7 @@ public class KachleModel extends Model0 {
 	}
 
 	private void nastavOfflineMapy(final KachleUmisteniSouboru u) {
+		ziskavac.getOfflineMapy().setStinovani(isStinovaniTerenu());
 		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
 		ziskavac.getOfflineTrasy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-trasy"));

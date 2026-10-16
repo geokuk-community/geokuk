@@ -79,6 +79,10 @@
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
   u hranice i sousední mapy, které jsou v záběru.
   Seznam dalších map je větší a jde v něm hledat.
+- Stažené vrstvy (turistické trasy a vrstevnice) se v offline mapě kreslí
+  spolu s mapou a DEM dlaždice ve složce vrstev dávají stínování terénu, které
+  jde v popupu Mapy vypnout. Povinná atribuce dat vrstev (třeba Copernicus) je
+  v rohu mapy.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno

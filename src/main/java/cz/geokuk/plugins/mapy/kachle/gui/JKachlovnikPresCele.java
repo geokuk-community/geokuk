@@ -8,7 +8,9 @@ import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
+import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
+import cz.geokuk.plugins.mapy.sprava.StavVrstvy;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.plugins.mapy.sprava.StavMapy;
 import cz.geokuk.plugins.mapy.sprava.gui.RadaOfflineMapy;
@@ -65,6 +67,10 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.SpravaVrstevEvent event) {
+		repaint();
+	}
+
 	/** Klik na odkaz rady stáhne nabízenou mapu; vrací, jestli klik patřil odkazu. */
 	public boolean klikNaRadu(final Point bod) {
 		if (spravaMap == null) {
@@ -116,6 +122,40 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 		final String text = getKachloType().isOffline() && getKachleModel() != null ? getKachleModel().getAtribuceOfflineMapy() : getKachloType().getAtribuce();
 		kresliAtribuci(g, this, text, 0);
+		if (getKachloType().isOffline()) {
+			kresliAtribuceVrstev(g);
+		}
+	}
+
+	/** Plná atribuce nainstalovaných vrstev (třeba povinná věta u dat Copernicus) nad atribucí mapy, zalomená na šířku mapy. */
+	private void kresliAtribuceVrstev(final Graphics g) {
+		final List<String> texty = atribuceVrstev();
+		if (texty.isEmpty()) {
+			return;
+		}
+		final FontMetrics fm = g.getFontMetrics(getFont().deriveFont(Font.PLAIN, 11f));
+		final List<String> radky = new ArrayList<>();
+		for (final String t : texty) {
+			radky.addAll(zalom(t, fm, Math.max(200, getWidth() - 24)));
+		}
+		for (int i = 0; i < radky.size(); i++) {
+			kresliAtribuci(g, this, radky.get(i), radky.size() - i);
+		}
+	}
+
+	/** Atribuce nainstalovaných vrstev z katalogu vrstev; stejný text jen jednou. */
+	List<String> atribuceVrstev() {
+		final List<String> texty = new ArrayList<>();
+		if (spravaMap == null) {
+			return texty;
+		}
+		for (final KatalogovaVrstva v : spravaMap.getKatalogVrstev().getVrstvy()) {
+			final String t = v.getAtribuceDlouha();
+			if (t != null && !t.trim().isEmpty() && !texty.contains(t.trim()) && spravaMap.getStav(v).getMistni() == StavVrstvy.Mistni.MAME) {
+				texty.add(t.trim());
+			}
+		}
+		return texty;
 	}
 
 	/** Atribuce vpravo dole; řádek 0 je u spodního okraje, další nad ním. */

@@ -39,6 +39,7 @@ public class JMapyPopup extends JPanel {
 	static final String PRO_MISTO = "Pro zobrazené místo";
 	static final String DALSI = "Další mapy ke stažení";
 	static final String OBRYS = "Ukázat v mapě, kde offline mapy jsou";
+	static final String STINOVANI = "Stínovat terén";
 	static final String WEB = "Další offline mapy:";
 	static final String STAHNOUT = "Stáhnout";
 	static final String POKRACOVAT = "Pokračovat";
@@ -82,6 +83,8 @@ public class JMapyPopup extends JPanel {
 	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
 	private final Map<String, JLabel[]> popisy = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
+	private final JCheckBox stinovani = new JCheckBox(STINOVANI);
+	private boolean stinovaniDostupne;
 	private JScrollPane seznam;
 	/** Hledání mezi dalšími mapami; filtruje se skrytím řádků, popup se nepřestavuje, aby hledání nepřišlo o fokus. */
 	private final JTextField hledat = new JTextField(14) {
@@ -128,6 +131,13 @@ public class JMapyPopup extends JPanel {
 		setBorder(new CompoundBorder(new LineBorder(Color.GRAY), new EmptyBorder(6, 8, 6, 8)));
 		obrys.setFont(obrys.getFont().deriveFont(Font.PLAIN, 11f));
 		obrys.setFocusable(false);
+		stinovani.setFont(stinovani.getFont().deriveFont(Font.PLAIN, 11f));
+		stinovani.setFocusable(false);
+		stinovani.addActionListener(e -> {
+			if (ovladani != null) {
+				ovladani.setStinovani(stinovani.isSelected());
+			}
+		});
 		obrys.addActionListener(e -> {
 			if (ovladani != null) {
 				ovladani.setObrysPokryti(obrys.isSelected());
@@ -331,11 +341,22 @@ public class JMapyPopup extends JPanel {
 	public void setOvladani(final OvladaniMap ovladani) {
 		this.ovladani = ovladani;
 		obrys.setSelected(ovladani != null && ovladani.isObrysPokryti());
+		stinovani.setSelected(ovladani == null || ovladani.isStinovani());
 		sestav();
 	}
 
 	public void setObrysZapnuty(final boolean zapnuty) {
 		obrys.setSelected(zapnuty);
+	}
+
+	/** Ve složce vrstev jsou DEM dlaždice: popup nabídne přepínač stínování terénu. */
+	public void setStinovaniDostupne(final boolean dostupne) {
+		if (dostupne != stinovaniDostupne) {
+			stinovaniDostupne = dostupne;
+			stinovani.setSelected(ovladani == null || ovladani.isStinovani());
+			sestav();
+			poZmeneObsahu.run();
+		}
 	}
 
 	/** Zavolá se, když se změnila velikost obsahu a popup se má zobrazit znovu. */
@@ -660,6 +681,10 @@ public class JMapyPopup extends JPanel {
 		if (ovladani != null && ovladani.isObrysDostupny()) {
 			gbc.gridy++;
 			add(obrys, gbc);
+		}
+		if (stinovaniDostupne) {
+			gbc.gridy++;
+			add(stinovani, gbc);
 		}
 		gbc.gridy++;
 		final JPanel web = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
