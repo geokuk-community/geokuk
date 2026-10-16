@@ -78,6 +78,7 @@
   nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
   u hranice i sousední mapy, které jsou v záběru.
+  Seznam dalších map je větší a jde v něm hledat.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno

@@ -12,6 +12,7 @@ import javax.swing.*;
 
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -81,6 +82,337 @@ public class JMapyPopupTest {
 		public void otevriSlozku() {
 			volani.add("slozka");
 		}
+	}
+
+	private static List<RadekMapy> dalsiMapy() {
+		final List<RadekMapy> r = new ArrayList<>();
+		for (final String n : new String[] { "Bavorsko", "Berlín", "Sasko", "Šlesvicko-Holštýnsko" }) {
+			r.add(RadekMapy.katalogova("de/" + n, n, RadekMapy.Stav.NEMAME).skupina("Německo").velikost(100 * MB).build());
+		}
+		for (final String n : new String[] { "Rakousko", "Slovensko", "Švýcarsko", "Polsko", "Česko" }) {
+			r.add(RadekMapy.katalogova("x/" + n, n, RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
+		}
+		return r;
+	}
+
+	private static long viditelnychLabelu(final JMapyPopup p, final String text) {
+		return labels(p).stream().filter(l -> text.equals(l.getText()) && l.isVisible()).count();
+	}
+
+	/** Hledání ukáže jen shodné mapy a země; bez diakritiky a velikosti písmen; prázdné hledání ukáže vše. */
+	@Test
+	public void hledaniFiltrujeMapy() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			Assert.assertNotNull("od 8 map je hledání", java.util.Arrays.stream(p.getComponents()).filter(c -> c == p.getHledat()).findFirst().orElse(null));
+			p.getHledat().setText("slesvi");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Šlesvicko-Holštýnsko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals("země s nalezenou mapou zůstane", 1, viditelnychLabelu(p, "Německo"));
+			p.getHledat().setText("NĚMECKO");
+			Assert.assertEquals("hledá se i podle země", 1, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Rakousko"));
+			p.getHledat().setText("rak");
+			Assert.assertEquals(0, viditelnychLabelu(p, "Německo"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
+			p.getHledat().setText("zzz");
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.NIC_NENALEZENO));
+			p.getHledat().setText("");
+			Assert.assertEquals(0, viditelnychLabelu(p, JMapyPopup.NIC_NENALEZENO));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Hledání popup nezavírá ani neotevírá znovu (měnila by se velikost); víc slov se hledá v libovolném pořadí. */
+	@Test
+	public void filtrovaniNemeniVelikostPopupu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final int[] zmen = { 0 };
+			p.setPoZmeneObsahu(() -> zmen[0]++);
+			p.obnov(dalsiMapy());
+			zmen[0] = 0;
+			final java.awt.Dimension pred = p.getPreferredSize();
+			for (final String t : new String[] { "r", "ra", "rak", "zzz", "" }) {
+				p.getHledat().setText(t);
+			}
+			Assert.assertEquals(0, zmen[0]);
+			Assert.assertEquals("velikost popupu se při hledání nemění", pred, p.getPreferredSize());
+			p.getHledat().setText("nemecko sasko");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Sasko"));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			p.getHledat().setText("sasko nemecko");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Sasko"));
+		});
+	}
+
+	/** Text hledání se maže až při skutečném zavření popupu, ne při skrytí kvůli změně velikosti nebo přestavbě. */
+	@Test
+	public void hledaniSeMazeJenPriZavreni() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			p.getHledat().setText("rak");
+			final java.awt.event.HierarchyEvent skryti = new java.awt.event.HierarchyEvent(p, java.awt.event.HierarchyEvent.HIERARCHY_CHANGED, p, null,
+					java.awt.event.HierarchyEvent.SHOWING_CHANGED);
+			for (final java.awt.event.HierarchyListener l : p.getHierarchyListeners()) {
+				l.hierarchyChanged(skryti);
+			}
+			Assert.assertEquals("rak", p.getHledat().getText());
+			p.obnov(dalsiMapy());
+			Assert.assertEquals("rak", p.getHledat().getText());
+			p.popupZavren();
+			Assert.assertEquals("", p.getHledat().getText());
+		});
+	}
+
+	/** Skutečně zobrazený popup: psaní do pole po znacích ho nezavře ani nezničí hledání, zavření ho vymaže, Esc zavře. */
+	@Test(timeout = 30000)
+	public void psaniDoPoleVeSkutecnemPopupu() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JPanel kotva = new JPanel();
+		final JMapyPopup p = new JMapyPopup();
+		final cz.geokuk.util.gui.PopupNadBlokem popup = new cz.geokuk.util.gui.PopupNadBlokem(kotva, () -> {});
+		// stejné zapojení jako v JBlokMap
+		popup.setDrzOtevreny(p::isHledaniAktivni);
+		popup.setPoZavreni(p::popupZavren);
+		p.setPoZmeneObsahu(() -> {
+			if (popup.viditelny() == p) {
+				popup.ukaz(p, kotva, true);
+			}
+		});
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				okno.setSize(900, 700);
+				okno.getContentPane().add(kotva, java.awt.BorderLayout.SOUTH);
+				okno.setVisible(true);
+				p.setOvladani(new Zaznam());
+				p.obnov(dalsiMapy());
+				popup.ukaz(p, kotva, false);
+			});
+			SwingUtilities.invokeAndWait(() -> Assert.assertTrue("popup je vidět", p.isShowing()));
+			for (final char c : "rak".toCharArray()) {
+				SwingUtilities.invokeAndWait(() -> {
+					try {
+						p.getHledat().getDocument().insertString(p.getHledat().getDocument().getLength(), String.valueOf(c), null);
+					} catch (final javax.swing.text.BadLocationException e) {
+						throw new IllegalStateException(e);
+					}
+				});
+			}
+			SwingUtilities.invokeAndWait(() -> {
+				Assert.assertTrue("popup po psaní zůstal otevřený", p.isShowing());
+				Assert.assertEquals("rak", p.getHledat().getText());
+				Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
+				Assert.assertEquals(0, viditelnychLabelu(p, "Slovensko"));
+				popup.zavri();
+				Assert.assertEquals("", p.getHledat().getText());
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				popup.zastav();
+				okno.dispose();
+			});
+		}
+	}
+
+	private static void fokusDoPole(final JMapyPopup p) {
+		for (final java.awt.event.FocusListener l : p.getHledat().getFocusListeners()) {
+			l.focusGained(new java.awt.event.FocusEvent(p.getHledat(), java.awt.event.FocusEvent.FOCUS_GAINED));
+		}
+	}
+
+	private static void klik(final java.awt.Component kde) {
+		kde.dispatchEvent(new java.awt.event.MouseEvent(kde, java.awt.event.MouseEvent.MOUSE_PRESSED, 0, 0, 1, 1, 1, false));
+	}
+
+	/** Píše-li uživatel, po znovuzobrazení popupu (změna velikosti při průběhu stahování) se pole znovu žádá o fokus; klik mimo popup psaní ukončí. */
+	@Test
+	public void psaniPrezijeZnovuzobraveniAKlikMimoHoUkonci() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			Assert.assertFalse(p.isHledaniAktivni());
+			p.poZnovuZobrazeni();
+			Assert.assertEquals("nepíše se, fokus se nežádá", 0, p.pozadavkuNaFokus);
+			fokusDoPole(p);
+			Assert.assertTrue(p.isHledaniAktivni());
+			p.poZnovuZobrazeni();
+			Assert.assertEquals(1, p.pozadavkuNaFokus);
+			p.zacniSledovatKlikyMimo();
+			try {
+				klik(labels(p).get(0));
+				Assert.assertTrue("klik do popupu psaní neukončí", p.isHledaniAktivni());
+				klik(new JPanel());
+				Assert.assertFalse("klik mimo popup psaní ukončí, popup se pak zavře odjetím myši", p.isHledaniAktivni());
+				p.poZnovuZobrazeni();
+				Assert.assertEquals(1, p.pozadavkuNaFokus);
+			} finally {
+				p.prestanSledovatKlikyMimo();
+			}
+			fokusDoPole(p);
+			p.popupZavren();
+			Assert.assertFalse("zavřením popupu psaní končí", p.isHledaniAktivni());
+		});
+	}
+
+	private static java.awt.event.KeyEvent klavesa(final int id, final char c, final int modifikatory) {
+		return new java.awt.event.KeyEvent(new JPanel(), id, 0, modifikatory, id == java.awt.event.KeyEvent.KEY_TYPED ? java.awt.event.KeyEvent.VK_UNDEFINED : java.awt.event.KeyEvent.VK_O, c);
+	}
+
+	/** Změna obsahu popupu (tik průběhu s delším popisem) sama vrací fokus píšícímu uživateli, bez zapojení v JBlokMap. */
+	@Test
+	public void zmenaObsahuVraciFokusPiscimuUzivateli() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final int[] zmen = { 0 };
+			p.setPoZmeneObsahu(() -> zmen[0]++);
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(10 * MB).build()));
+			fokusDoPole(p);
+			final int pred = p.pozadavkuNaFokus;
+			final String dlouhaChyba = "Stahování se přerušilo: velmi dlouhý text chyby, který rozšíří popis řádku nad původní šířku popupu a vynutí jeho znovuzobrazení";
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.CHYBA).chyba(dlouhaChyba).build()));
+			Assert.assertTrue("popup se znovu zobrazil", zmen[0] > 0);
+			Assert.assertTrue("a pole žádá o fokus", p.pozadavkuNaFokus > pred);
+		});
+	}
+
+	/** Písmena psaná v okně, kdy pole o fokus přišlo (popup se na okamžik zobrazí znovu), jdou do pole, ne do hlavního okna; zkratky s Ctrl, Enter a Esc ne. */
+	@Test
+	public void klavesyBehemZtratyFokusuJdouDoPole() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			p.vidiSe = true;
+			Assert.assertFalse("nepíše se, klávesy jdou dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
+			fokusDoPole(p);
+			Assert.assertFalse("pole má fokus a nic se nežádá, klávesy jdou dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
+			p.poZnovuZobrazeni();
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, 'r', 0)));
+			Assert.assertEquals("stisk sám text nemění", "", p.getHledat().getText());
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'r', 0)));
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
+			Assert.assertEquals("ro", p.getHledat().getText());
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, '\b', 0)));
+			Assert.assertEquals("r", p.getHledat().getText());
+			Assert.assertFalse("Ctrl+znak jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, 'o', java.awt.event.InputEvent.CTRL_DOWN_MASK)));
+			Assert.assertFalse("Esc jde dál (zavře popup)", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, '\u001b', 0)));
+			Assert.assertFalse("Enter jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, '\n', 0)));
+			Assert.assertFalse("Tab jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, '\t', 0)));
+			Assert.assertFalse("Delete jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, '\u007f', 0)));
+			fokusDoPole(p);
+			Assert.assertFalse("po návratu fokusu se nekrade", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			p.poZnovuZobrazeni();
+			p.vidiSe = false;
+			Assert.assertFalse("skrytý popup klávesy nechává", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			Assert.assertEquals("r", p.getHledat().getText());
+		});
+	}
+
+	/** Je-li fokus v jiném okně (dialog, jiná aplikace), klávesy se do pole nekradou. */
+	@Test
+	public void klavesyVJinemOkneNejdouDoPole() throws Exception {
+		Assume.assumeFalse(java.awt.GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JFrame okno = new JFrame();
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			okno.add(p);
+			p.vidiSe = true;
+			fokusDoPole(p);
+			p.poZnovuZobrazeni();
+			p.aktivniOkno = () -> null;
+			Assert.assertFalse(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			p.aktivniOkno = () -> okno;
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			Assert.assertEquals("x", p.getHledat().getText());
+		});
+	}
+
+	/** Dispatcher kláves je zaregistrovaný jen po dobu zobrazení popupu a nikdy dvakrát. */
+	@Test
+	public void dispatcherSeRegistrujeAOdregistruje() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final List<java.awt.KeyEventDispatcher> zaregistrovano = new ArrayList<>();
+			final java.awt.KeyboardFocusManager m = new java.awt.DefaultKeyboardFocusManager() {
+				@Override
+				public void addKeyEventDispatcher(final java.awt.KeyEventDispatcher d) {
+					zaregistrovano.add(d);
+				}
+
+				@Override
+				public void removeKeyEventDispatcher(final java.awt.KeyEventDispatcher d) {
+					zaregistrovano.remove(d);
+				}
+			};
+			p.spravceFokusu = () -> m;
+			p.zacniSledovatKlikyMimo();
+			p.zacniSledovatKlikyMimo();
+			Assert.assertEquals("po zobrazení je zaregistrovaný právě jednou", Collections.singletonList(p.klavesy), zaregistrovano);
+			p.prestanSledovatKlikyMimo();
+			Assert.assertTrue("po skrytí je odregistrovaný", zaregistrovano.isEmpty());
+		});
+	}
+
+	/** Těžký popup (nevejde se do okna) nepřijme fokus, proto v něm pole hledání není a písmena nejdou do hlavního okna. */
+	@Test(timeout = 30000)
+	public void vTezkemPopupuBezHledani() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JPanel kotva = new JPanel();
+		final JMapyPopup p = new JMapyPopup();
+		final cz.geokuk.util.gui.PopupNadBlokem popup = new cz.geokuk.util.gui.PopupNadBlokem(kotva, () -> {});
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				okno.setSize(300, 250);
+				okno.getContentPane().add(kotva, java.awt.BorderLayout.SOUTH);
+				okno.setVisible(true);
+				p.setOvladani(new Zaznam());
+				p.obnov(dalsiMapy());
+				popup.ukaz(p, kotva, false);
+			});
+			SwingUtilities.invokeAndWait(() -> {
+				Assert.assertTrue(p.isShowing());
+				Assert.assertFalse("popup je vyšší než okno, takže těžký", SwingUtilities.getWindowAncestor(p) instanceof java.awt.Frame);
+				Assert.assertFalse(p.getHledat().isVisible());
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				popup.zastav();
+				okno.dispose();
+			});
+		}
+	}
+
+	/** Hledání přežije přestavbu popupu (třeba při změně stavu mapy) a bez mála map se nenabízí. */
+	@Test
+	public void hledaniPrezijePrestavbuAMaloMapBezHledani() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			p.getHledat().setText("rak");
+			final List<RadekMapy> zmenene = dalsiMapy();
+			zmenene.set(4, RadekMapy.katalogova("x/Rakousko", "Rakousko", RadekMapy.Stav.CHYBA).chyba("Stažení se přerušilo").build());
+			p.obnov(zmenene);
+			Assert.assertEquals("rak", p.getHledat().getText());
+			Assert.assertEquals(0, viditelnychLabelu(p, "Slovensko"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Rakousko"));
+			final JMapyPopup malo = new JMapyPopup();
+			malo.setOvladani(new Zaznam());
+			malo.obnov(dalsiMapy().subList(0, 3));
+			Assert.assertNull(java.util.Arrays.stream(malo.getComponents()).filter(c -> c == malo.getHledat()).findFirst().orElse(null));
+		});
 	}
 
 	/** Výsledek kontroly: vše aktuální, počet novějších, nebo že selhala; vždy s časem. */
