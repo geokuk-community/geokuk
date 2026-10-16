@@ -12,6 +12,12 @@ import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 public class MapyModel extends Model0 {
 
 	private EKaType podklad;
+	private boolean prvniSpusteni;
+
+	/** Nová instalace: podklad ještě nikdy nebyl uložený v nastavení. */
+	public boolean isPrvniSpusteni() {
+		return prvniSpusteni;
+	}
 
 	public EKaType getKaSet() {
 		return podklad;
@@ -33,6 +39,7 @@ public class MapyModel extends Model0 {
 	@Override
 	protected void initAndFire() {
 		final String ulozeny = currPrefe().node(FPref.NODE_KTERE_MAPY_node).get(FPref.VALUE_MAPOVE_PODKLADY_value, null);
+		prvniSpusteni = ulozeny == null;
 		final EKaType podklad = ulozeny == null ? vychoziPodklad(KachleModel.offlineMapyDir(currPrefe()).getEffectiveFile()) : EKaType.podleJmena(ulozeny);
 		setPodklad(podklad == null ? EKaType.TURIST_M : podklad);
 	}

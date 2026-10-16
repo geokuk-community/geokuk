@@ -1,0 +1,188 @@
+package cz.geokuk.plugins.mapy.pruvodce;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.GraphicsEnvironment;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.AbstractButton;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+
+import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Polozka;
+import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.MatriceMap;
+import cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast;
+import cz.geokuk.plugins.mapy.sprava.StavMapy;
+import cz.geokuk.plugins.mapy.sprava.StavMapyProGui;
+import cz.geokuk.plugins.mapy.sprava.StavVrstvy;
+import cz.geokuk.plugins.mapy.sprava.VrstvyProGui;
+
+/** Dialog průvodce: kroky, výchozí volby, tlačítka na konci; s displejem, model je zkoušený bez něj. */
+public class JPruvodceMapTest {
+
+	private static final class Kontext implements PruvodceKontext {
+		long volne = 84_000_000_000L;
+		final List<PruvodceVolba> prepnuti = new ArrayList<>();
+		final List<String> stazene = new ArrayList<>();
+		boolean zruseno;
+
+		@Override
+		public KatalogMap getKatalog() {
+			return KatalogMap.vestaveny();
+		}
+
+		@Override
+		public List<MatriceMap.Radek> matice() {
+			return MatriceMap.sestav(KatalogMap.vestaveny(), m -> StavMapyProGui.stav(m, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null),
+					VrstvyProGui.katalogCesko(), StavVrstvy::novy);
+		}
+
+		@Override
+		public long volneMisto() {
+			return volne;
+		}
+
+		@Override
+		public void stahni(final Polozka polozka) {
+			stazene.add(polozka.getId());
+		}
+
+		@Override
+		public void zrusStahovani() {
+			zruseno = true;
+		}
+
+		@Override
+		public void prepni(final PruvodceVolba volba) {
+			prepnuti.add(volba);
+		}
+	}
+
+	@After
+	public void uklid() {
+		SpousteniPruvodce.zrus();
+	}
+
+	private static List<AbstractButton> tlacitka(final Container c) {
+		final List<AbstractButton> v = new ArrayList<>();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof AbstractButton) {
+				v.add((AbstractButton) k);
+			}
+			if (k instanceof Container) {
+				v.addAll(tlacitka((Container) k));
+			}
+		}
+		return v;
+	}
+
+	private static AbstractButton tlacitko(final Container c, final String text) {
+		return tlacitka(c).stream().filter(b -> b.getText() != null && b.getText().contains(text)).findFirst().orElseThrow(() -> new AssertionError("chybí tlačítko " + text));
+	}
+
+	private static List<JLabel> popisky(final Container c) {
+		final List<JLabel> v = new ArrayList<>();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof JLabel) {
+				v.add((JLabel) k);
+			}
+			if (k instanceof Container) {
+				v.addAll(popisky((Container) k));
+			}
+		}
+		return v;
+	}
+
+	private static void naEdt(final Runnable r) throws Exception {
+		SwingUtilities.invokeAndWait(r);
+	}
+
+	@Test
+	public void projdeKrokyAPrepneBezStahovani() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final Kontext k = new Kontext();
+			final JPruvodceMap d = new JPruvodceMap(null, k);
+			Assert.assertTrue("Česko je předvybrané a jde dál", tlacitko(d.getContentPane(), JPruvodceMap.DAL).isEnabled());
+			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			Assert.assertTrue("Turistická offline je předvybraná", ((JToggleButton) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JToggleButton && b.getText().contains("Turistická")).findFirst().get()).isSelected());
+			Assert.assertTrue("ČÚZK topo je u Česka", tlacitka(d.getContentPane()).stream().anyMatch(b -> b instanceof JToggleButton && b.getText().contains("ČÚZK topo")));
+			Assert.assertFalse("ZBGIS Slovenska u Česka není", tlacitka(d.getContentPane()).stream().anyMatch(b -> b instanceof JToggleButton && b.getText().contains("ZBGIS")));
+			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			final JCheckBox trasy = (JCheckBox) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JCheckBox && b.getText().startsWith("Turistické a cyklotrasy")).findFirst().get();
+			Assert.assertTrue("trasy jsou předvolené i u offline Turistické", trasy.isSelected());
+			Assert.assertTrue(trasy.isEnabled());
+			final JCheckBox vrstevnice = (JCheckBox) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JCheckBox && b.getText().startsWith("Vrstevnice")).findFirst().get();
+			Assert.assertFalse(vrstevnice.isSelected());
+			Assert.assertTrue(vrstevnice.isEnabled());
+			vrstevnice.doClick();
+			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			Assert.assertTrue("shrnutí uvádí položky", popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("Česko – vrstevnice")));
+			tlacitko(d.getContentPane(), JPruvodceMap.JEN_PREPNOUT).doClick();
+			Assert.assertEquals(1, k.prepnuti.size());
+			Assert.assertEquals(PodkladPruvodce.TURISTICKA_OFFLINE, k.prepnuti.get(0).getPodklad());
+			Assert.assertTrue(k.prepnuti.get(0).getVrstvy().contains(Cast.TRASY) && k.prepnuti.get(0).getVrstvy().contains(Cast.VRSTEVNICE));
+			Assert.assertTrue("nic se nestahuje", k.stazene.isEmpty());
+			Assert.assertFalse(d.isDisplayable());
+		});
+	}
+
+	@Test
+	public void stahnoutAPrepnoutSpustiPrvniPolozku() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final Kontext k = new Kontext();
+			final JPruvodceMap d = new JPruvodceMap(null, k);
+			for (int i = 0; i < 3; i++) {
+				tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			}
+			tlacitko(d.getContentPane(), JPruvodceMap.STAHNOUT_A_PREPNOUT).doClick();
+			Assert.assertEquals("první se stahuje mapa", java.util.Collections.singletonList("europe/czech-republic"), k.stazene);
+			Assert.assertTrue("na stažení mapy se čeká", k.prepnuti.isEmpty());
+			Assert.assertTrue(SpousteniPruvodce.bezi());
+		});
+	}
+
+	@Test
+	public void nedostatekMistaVypneStahovani() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final Kontext k = new Kontext();
+			k.volne = 100_000_000L;
+			final JPruvodceMap d = new JPruvodceMap(null, k);
+			for (int i = 0; i < 3; i++) {
+				tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			}
+			Assert.assertFalse(tlacitko(d.getContentPane(), JPruvodceMap.STAHNOUT_A_PREPNOUT).isEnabled());
+			Assert.assertTrue("jen přepnout jde", tlacitko(d.getContentPane(), JPruvodceMap.JEN_PREPNOUT).isEnabled());
+			Assert.assertTrue(popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("není dost místa")));
+		});
+	}
+
+	@Test
+	public void onlinePodkladNenabidneVrstevniceAStinovani() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final Kontext k = new Kontext();
+			final JPruvodceMap d = new JPruvodceMap(null, k);
+			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			tlacitko(d.getContentPane(), "OpenStreetMap").doClick();
+			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			final JCheckBox vrstevnice = (JCheckBox) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JCheckBox && b.getText().startsWith("Vrstevnice")).findFirst().get();
+			Assert.assertFalse("vrstevnice jen s offline mapou", vrstevnice.isEnabled());
+			Assert.assertTrue(popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("Jen s offline mapou.")));
+			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			Assert.assertTrue("přepnutí na OSM s trasami", popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("OpenStreetMap") && l.getText().contains("trasy")));
+		});
+	}
+}
