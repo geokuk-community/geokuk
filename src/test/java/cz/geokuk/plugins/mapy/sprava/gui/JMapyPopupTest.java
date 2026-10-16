@@ -314,6 +314,108 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Katalogové mapy s danými id jsou stažené, ostatní ne. */
+	private static List<RadekMapy> stazene(final String... ids) {
+		final Set<String> mame = new HashSet<>(Arrays.asList(ids));
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null);
+	}
+
+	/** Je vidět doopravdy: viditelná je i každá nadřazená komponenta. */
+	private static boolean jeVidet(final Component c) {
+		for (Component k = c; k != null; k = k.getParent()) {
+			if (!k.isVisible()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static long videtLabelu(final Container p, final String text) {
+		return labels(p).stream().filter(l -> text.equals(l.getText()) && jeVidet(l)).count();
+	}
+
+	private static final String[] STAZENE_6 = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england" };
+
+	/** Oddíl Ve složce je do pěti map rozbalený, od šesti sbalený; volba uživatele se uloží a platí i pro nový popup. */
+	@Test
+	public void slozkaSeSbalujeAPamatujeSi() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup malo = new JMapyPopup();
+			malo.setOvladani(new Zaznam());
+			malo.obnov(stazene("europe/czech-republic", "europe/austria"));
+			Assert.assertEquals("dvě mapy: rozbaleno", 1, videtLabelu(malo, "Rakousko"));
+
+			final JMapyPopup moc = new JMapyPopup();
+			moc.setOvladani(new Zaznam());
+			final Boolean[] ulozeno = { null };
+			moc.ulozStavSlozky = b -> ulozeno[0] = b;
+			moc.obnov(stazene(STAZENE_6));
+			Assert.assertEquals("šest map: sbaleno", 0, videtLabelu(moc, "Rakousko"));
+			Assert.assertEquals("nadpis oddílu zůstává", 1, videtLabelu(moc, JMapyPopup.VE_SLOZCE));
+			moc.prepniSlozku(true);
+			Assert.assertEquals(Boolean.TRUE, ulozeno[0]);
+			Assert.assertEquals(1, videtLabelu(moc, "Rakousko"));
+			moc.prepniSlozku(false);
+			Assert.assertEquals(Boolean.FALSE, ulozeno[0]);
+			Assert.assertEquals(0, videtLabelu(moc, "Rakousko"));
+
+			final JMapyPopup novy = new JMapyPopup();
+			novy.setOvladani(new Zaznam());
+			novy.nactiStavSlozky = () -> Optional.of(false);
+			novy.obnov(stazene("europe/czech-republic"));
+			Assert.assertEquals("zapamatovaná volba má přednost před počtem map", 0, videtLabelu(novy, "Česko"));
+			novy.nactiStavSlozky = () -> Optional.of(true);
+			final JMapyPopup otevreny = new JMapyPopup();
+			otevreny.setOvladani(new Zaznam());
+			otevreny.nactiStavSlozky = () -> Optional.of(true);
+			otevreny.obnov(stazene(STAZENE_6));
+			Assert.assertEquals(1, videtLabelu(otevreny, "Rakousko"));
+		});
+	}
+
+	/** Stažené regiony jsou ve složce pod zemí se souhrnem a šipkou; rozbalí se klikem, země má v prvním sloupci kroužek jako ostatní. */
+	@Test
+	public void stazeneRegionyJsouPodZemi() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(stazene(STAZENE_6));
+			Assert.assertTrue("souhrn regionů u země", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("3 regiony · ") && jeVidet(l)));
+			Assert.assertTrue("souhrn regionů u Spojeného království", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("1 region") && jeVidet(l)));
+			Assert.assertEquals("regiony jsou sbalené", 0, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
+			Assert.assertEquals(1, videtLabelu(p, "Berlín"));
+			Assert.assertEquals("Anglie je pod Spojeným královstvím, to zůstalo sbalené", 0, videtLabelu(p, "Anglie"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals(0, videtLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Země, kterou nejde stáhnout celou, má vlevo šedý kroužek jako ostatní země. */
+	@Test
+	public void zemeBezCelkuMaKrouzek() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(stazene());
+			final JLabel zeme = labels(p).stream().filter(l -> "Spojené království".equals(l.getText())).findFirst().get();
+			final java.awt.GridBagLayout lm = (java.awt.GridBagLayout) zeme.getParent().getLayout();
+			final int radek = lm.getConstraints(zeme).gridy;
+			final JLabel prvni = Arrays.stream(zeme.getParent().getComponents()).filter(c -> lm.getConstraints(c).gridy == radek && lm.getConstraints(c).gridx == 0).map(c -> (JLabel) c).findFirst().get();
+			Assert.assertNotNull("kroužek vlevo", prvni.getIcon());
+			final JLabel jina = labels(p).stream().filter(l -> "Albánie".equals(l.getText())).findFirst().get();
+			final int radekJine = ((java.awt.GridBagLayout) jina.getParent().getLayout()).getConstraints(jina).gridy;
+			final JLabel prvniJine = Arrays.stream(jina.getParent().getComponents()).filter(c -> ((java.awt.GridBagLayout) jina.getParent().getLayout()).getConstraints(c).gridy == radekJine
+					&& ((java.awt.GridBagLayout) jina.getParent().getLayout()).getConstraints(c).gridx == 0).map(c -> (JLabel) c).findFirst().get();
+			Assert.assertEquals("stejný kroužek jako u ostatních zemí", prvniJine.getIcon().getIconWidth(), prvni.getIcon().getIconWidth());
+		});
+	}
+
 	/** Země celá i s regiony: popup to napíše a nabídne smazat regiony, nebo celou zemi. */
 	@Test
 	public void dvojiteMapy() throws Exception {
@@ -1014,7 +1116,7 @@ public class JMapyPopupTest {
 			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(5 * MB).datumDat(Instant.EPOCH).build()));
 			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(2_500 * MB).datumDat(Instant.parse("2026-10-01T00:00:00Z")).build()));
 			for (final JLabel l : popisky(p)) {
-				if (l.getToolTipText() != null) {
+				if (l.getToolTipText() != null && !JMapyPopup.VE_SLOZCE.equals(l.getText())) {
 					Assert.assertTrue(l.getToolTipText(), l.getToolTipText().contains("2,5 GB"));
 				}
 			}

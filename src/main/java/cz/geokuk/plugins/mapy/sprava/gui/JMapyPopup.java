@@ -690,6 +690,9 @@ public class JMapyPopup extends JPanel {
 		sirkaNazvu = 0;
 		for (final RadekMapy r : radky) {
 			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2);
+			if (r.skupina != null) {
+				sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.skupina) + 2 + ODSAZENI);
+			}
 		}
 		if (radky.stream().anyMatch(r -> r.skupina != null)) {
 			sirkaNazvu += 2 * ODSAZENI; // šipka a odsazení regionů ve stromu zemí
@@ -734,7 +737,21 @@ public class JMapyPopup extends JPanel {
 		gbc.gridy++;
 		final JPanel oddilSlozka = new JPanel(new BorderLayout());
 		oddilSlozka.setOpaque(false);
-		oddilSlozka.add(nadpisOddilu(VE_SLOZCE), BorderLayout.WEST);
+		final boolean slozkaOtevrena = jeSlozkaOtevrena(veSlozce.size());
+		final JLabel nadpisSlozky = nadpisOddilu(VE_SLOZCE);
+		if (!veSlozce.isEmpty()) {
+			nadpisSlozky.setIcon(new Sipka(slozkaOtevrena));
+			nadpisSlozky.setIconTextGap(4);
+			nadpisSlozky.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			nadpisSlozky.setToolTipText(slozkaOtevrena ? "Sbalit seznam map ve složce" : "Rozbalit seznam map ve složce");
+			nadpisSlozky.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(final MouseEvent e) {
+					prepniSlozku(!slozkaOtevrena);
+				}
+			});
+		}
+		oddilSlozka.add(nadpisSlozky, BorderLayout.WEST);
 		final List<RadekMapy> kontrolovatelne = new ArrayList<>();
 		for (final RadekMapy r : veSlozce) {
 			if (!r.vlastni && (r.stav == RadekMapy.Stav.AKTUALNI || r.stav == RadekMapy.Stav.NOVEJSI)) {
@@ -765,9 +782,8 @@ public class JMapyPopup extends JPanel {
 			slozka.add(nic, bunka(0, 0, 4));
 		}
 		int y = 0;
-		for (final RadekMapy r : veSlozce) {
-			y = pridejRadek(slozka, y, r, stahujeSe);
-		}
+		y = stromSlozky(slozka, y, veSlozce, stahujeSe);
+		slozka.setVisible(slozkaOtevrena || veSlozce.isEmpty());
 		gbc.gridy++;
 		add(slozka, gbc);
 		for (final PokrytiMap.DvojitaMapa d : dvojite) {
@@ -979,17 +995,25 @@ public class JMapyPopup extends JPanel {
 
 	/** Země, kterou nejde stáhnout celou, jen po regionech: vypadá jako ostatní země (název s šipkou rozbalení), v buňce Mapa je „jen regiony“. */
 	private int radekZemeBezCelku(final JPanel panel, final int y, final Uzel u) {
+		return radekZemeBezCelku(panel, y, u, JEN_REGIONY, false, null);
+	}
+
+	/** Řádek země bez celku; v oddílu Ve složce s vlastním popisem (souhrn regionů) a vlastním přepínáním, v seznamu dalších map s hledáním. */
+	private int radekZemeBezCelku(final JPanel panel, final int y, final Uzel u, final String popisText, final boolean rozbaleno, final Runnable prepni) {
 		final int pred = panel.getComponentCount();
 		final GridBagConstraints ci = bunka(0, y, 1);
 		ci.insets = new Insets(1, 0, 1, 4);
-		final Icon prazdna = IkonyMap.pro(RadekMapy.Stav.NEMAME);
-		panel.add(Box.createHorizontalStrut(prazdna.getIconWidth()), ci);
+		panel.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.NEMAME)), ci);
 		final JLabel nazev = new JLabel(u.nazev);
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
-		u.hlavicka = nazev;
-		nastavRozbaleni(u, nazev);
+		if (prepni == null) {
+			u.hlavicka = nazev;
+			nastavRozbaleni(u, nazev);
+		} else {
+			nastavRozbaleni(nazev, rozbaleno, prepni);
+		}
 		panel.add(nazev, bunka(1, y, 1));
-		final JLabel popis = maly(JEN_REGIONY);
+		final JLabel popis = maly(popisText);
 		popis.setPreferredSize(new Dimension(SIRKA_POPISU, popis.getPreferredSize().height));
 		final GridBagConstraints cp = bunka(2, y, 1);
 		cp.weightx = 1;
@@ -1003,21 +1027,121 @@ public class JMapyPopup extends JPanel {
 			cb.fill = GridBagConstraints.NONE;
 			panel.add(prazdnaBunka(), cb);
 		}
-		hledatelne.add(new RadekHledani(bezDiakritiky(u.nazev), u.nazev, true, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
+		if (prepni == null) {
+			hledatelne.add(new RadekHledani(bezDiakritiky(u.nazev), u.nazev, true, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
+		}
 		return y + 1;
 	}
 
 	/** Popisek země s regiony se chová jako přepínač: šipka a klik rozbalí regiony. */
 	private void nastavRozbaleni(final Uzel uzel, final JLabel popisek) {
-		popisek.setIcon(new Sipka(false));
+		nastavRozbaleni(popisek, false, () -> prepniUzel(uzel.nazev));
+	}
+
+	private static void nastavRozbaleni(final JLabel popisek, final boolean rozbaleno, final Runnable prepni) {
+		popisek.setIcon(new Sipka(rozbaleno));
 		popisek.setIconTextGap(4);
 		popisek.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		popisek.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(final MouseEvent e) {
-				prepniUzel(uzel.nazev);
+				prepni.run();
 			}
 		});
+	}
+
+	/** Od kolika map ve složce je oddíl Ve složce na začátku sbalený. */
+	static final int SLOZKA_ROZBALENA_DO = 5;
+
+	/** Stav oddílu Ve složce zvolený uživatelem, null = ještě nevolil (rozhodne počet map); ukládá se přes {@link #ulozStavSlozky}. */
+	private Boolean slozkaOtevrena;
+	transient java.util.function.Supplier<Optional<Boolean>> nactiStavSlozky = Optional::empty;
+	transient java.util.function.Consumer<Boolean> ulozStavSlozky = b -> {};
+	private final Set<String> rozbaleneSlozka = new HashSet<>();
+
+	private boolean jeSlozkaOtevrena(final int pocetMap) {
+		if (slozkaOtevrena == null) {
+			slozkaOtevrena = nactiStavSlozky.get().orElse(null);
+		}
+		return slozkaOtevrena != null ? slozkaOtevrena : pocetMap <= SLOZKA_ROZBALENA_DO;
+	}
+
+	/** Sbalí nebo rozbalí celý oddíl Ve složce a zapamatuje si to. */
+	void prepniSlozku(final boolean otevrit) {
+		slozkaOtevrena = otevrit;
+		ulozStavSlozky.accept(otevrit);
+		prestav();
+	}
+
+	/** Klik na zemi ve složce rozbalí nebo sbalí její stažené regiony. */
+	void prepniUzelSlozky(final String nazev) {
+		if (!rozbaleneSlozka.remove(nazev)) {
+			rozbaleneSlozka.add(nazev);
+		}
+		prestav();
+	}
+
+	/** Přestaví popup po změně sbalení; posun seznamu dalších map zůstane. */
+	private void prestav() {
+		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
+		sestav();
+		if (seznam != null) {
+			seznam.getVerticalScrollBar().setValue(posun);
+		}
+		zmenaObsahu();
+	}
+
+	/** Stažené mapy po zemích: regiony pod zemí se šipkou, souhrn u země bez staženého celku; celý strom v tabulce Ve složce. */
+	private int stromSlozky(final JPanel panel, final int zacatek, final List<RadekMapy> mapy, final boolean stahujeSe) {
+		int y = zacatek;
+		final java.text.Collator cs = java.text.Collator.getInstance(new Locale("cs"));
+		final Map<String, Uzel> podleZeme = new TreeMap<>(cs);
+		final List<RadekMapy> vlastni = new ArrayList<>();
+		for (final RadekMapy r : mapy) {
+			if (r.vlastni) {
+				vlastni.add(r);
+			} else if (r.skupina != null) {
+				podleZeme.computeIfAbsent(r.skupina, Uzel::new).regiony.add(r);
+			} else {
+				podleZeme.computeIfAbsent(r.nazev, Uzel::new).celek = r;
+			}
+		}
+		for (final Uzel u : podleZeme.values()) {
+			u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
+			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev);
+			if (u.regiony.isEmpty()) {
+				y = pridejRadek(panel, y, u.celek, stahujeSe);
+				continue;
+			}
+			if (u.celek != null) {
+				radek(panel, y++, u.celek, stahujeSe);
+				final JLabel nazev = popisy.get(klic(u.celek))[1];
+				nazev.setBorder(null);
+				nastavRozbaleni(nazev, rozbaleno, () -> prepniUzelSlozky(u.nazev));
+			} else {
+				y = radekZemeBezCelku(panel, y, u, souhrnRegionu(u.regiony), rozbaleno, () -> prepniUzelSlozky(u.nazev));
+			}
+			if (rozbaleno) {
+				for (final RadekMapy r : u.regiony) {
+					radek(panel, y++, r, stahujeSe);
+					popisy.get(klic(r))[1].setBorder(new EmptyBorder(0, 2 * ODSAZENI, 0, 0));
+				}
+			}
+		}
+		for (final RadekMapy r : vlastni) {
+			y = pridejRadek(panel, y, r, stahujeSe);
+		}
+		return y;
+	}
+
+	/** „3 regiony · 1,9 GB“ ze stažených regionů země. */
+	static String souhrnRegionu(final List<RadekMapy> regiony) {
+		long velikost = 0;
+		for (final RadekMapy r : regiony) {
+			velikost += Math.max(0, r.velikost);
+		}
+		final int n = regiony.size();
+		return n + " " + (n == 1 ? "region" : n < 5 ? "regiony" : "regionů") + (velikost > 0 ? " · " + RadekMapy.velikost(velikost) : "");
 	}
 
 	private void radek(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe) {
