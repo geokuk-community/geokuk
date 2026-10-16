@@ -3,6 +3,7 @@ package cz.geokuk.plugins.mapy.sprava;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,17 +33,29 @@ public class KatalogVrstevTest {
 	}
 
 	static String vrstva(final String id, final String typ, final String region, final String format, final String soubory, final String navic) {
-		return "{\"id\": \"" + id + "\", \"typ\": \"" + typ + "\", \"region\": \"" + region + "\", \"nazev\": \"Vrstva " + id + "\", \"format\": \"" + format
-				+ "\", \"soubory\": [" + soubory + "], \"licence\": \"ODbL 1.0\", \"atribuce\": \"© přispěvatelé OpenStreetMap\"" + navic + "}";
+		final String cesty = soubory.replace(CESTA, region + "." + typ).replace(PRIPONA, "hgt-zip".equals(format) ? ".zip" : "." + format);
+		return "{\"id\": \"" + id + "\", \"type\": \"" + typ + "\", \"region\": \"" + region + "\", \"name\": \"Vrstva " + id + "\", \"format\": \"" + format
+				+ "\", \"files\": [" + cesty + "], \"license\": \"ODbL 1.0\", \"attribution\": \"© přispěvatelé OpenStreetMap\"" + navic + "}";
 	}
 
+	/** Zástupci v cestě souboru, {@link #vrstva} je nahradí klíčem a typem vrstvy a příponou formátu. */
+	static final String CESTA = "@CESTA@";
+	static final String PRIPONA = "@PRIPONA@";
+
+	/** Soubor s cestou „klíč.typ.část.přípona“, kde část je jméno souboru bez přípony. */
 	static String soubor(final String nazev, final String url, final long velikost, final String sha) {
-		return "{\"nazev\": \"" + nazev + "\", \"url\": \"" + url + "\", \"velikost\": " + velikost + ", \"sha256\": \"" + sha + "\"}";
+		final String cast = (nazev.contains(".") ? nazev.substring(0, nazev.lastIndexOf('.')) : nazev).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_-]", "-");
+		return soubor(nazev, CESTA + "." + cast + PRIPONA, url, velikost, sha);
+	}
+
+	static String soubor(final String nazev, final String cesta, final String url, final long velikost, final String sha) {
+		return "{\"name\": \"" + nazev + "\", \"path\": \"" + cesta + "\", \"url\": \"" + url + "\", \"size\": " + velikost + ", \"sha256\": \"" + sha
+				+ "\"}";
 	}
 
 	static String katalog(final String... vrstvy) {
-		return "{\"format\": 1, \"vygenerovano\": \"2026-10-16T08:12:00Z\", \"zdroje\": [\"https://a.example.org/rel/\", \"https://b.example.org/zaloha/\"],"
-				+ " \"vrstvy\": [" + String.join(",", vrstvy) + "]}";
+		return "{\"version\": 1, \"generated\": \"2026-10-16T08:12:00Z\", \"sources\": [\"https://a.example.org/rel/\", \"https://b.example.org/zaloha/\"],"
+				+ " \"layers\": [" + String.join(",", vrstvy) + "]}";
 	}
 
 	private static KatalogVrstev nacti(final String... vrstvy) throws IOException {
@@ -60,14 +73,14 @@ public class KatalogVrstevTest {
 	@Test
 	public void vsechnaPole() throws IOException {
 		final KatalogMap mapy = mapy();
-		final KatalogVrstev k = KatalogVrstev.nacti(katalog(vrstva("vrstevnice/europe/czech-republic", "vrstevnice", "europe/czech-republic", "map",
-				soubor("cz_vrstevnice_1.map", "v1/cz_vrstevnice_1.map", 1000, SHA.toUpperCase()) + ","
-						+ soubor("cz_vrstevnice_2.map", "https://jinde.example.org/cz_vrstevnice_2.map", 234, SHA),
-				", \"datumDat\": \"2021-12-31\", \"vyrobeno\": \"2026-10-16T09:40:00Z\", \"zdrojDat\": \"Copernicus\", \"zoom\": {\"min\": 12, \"max\": 21},"
-						+ " \"krokVrstevnic\": 10, \"atribuceDlouha\": \"plné znění\", \"tema\": \"vrstevnice\", \"pozn\": \"DSM\", \"neznamePole\": [1, 2]")), mapy);
+		final KatalogVrstev k = KatalogVrstev.nacti(katalog(vrstva("contours/europe/czech-republic", "contours", "europe/czech-republic", "map",
+				soubor("europe_czech-republic.contours.map", "europe/czech-republic.contours.map", "v1/europe_czech-republic.contours.map", 1000, SHA.toUpperCase()) + ","
+						+ soubor("cz_vrstevnice_2.map", "europe/czech-republic.contours.2.map", "https://jinde.example.org/cz_vrstevnice_2.map", 234, SHA),
+				", \"dataDate\": \"2021-12-31\", \"produced\": \"2026-10-16T09:40:00Z\", \"dataSource\": \"Copernicus\", \"zoom\": {\"min\": 12, \"max\": 21},"
+						+ " \"contourInterval\": 10, \"attributionFull\": \"plné znění\", \"theme\": \"contours\", \"note\": \"DSM\", \"neznamePole\": [1, 2]")), mapy);
 		assertEquals(1, k.getVrstvy().size());
 		final KatalogovaVrstva v = k.getVrstvy().get(0);
-		assertEquals("vrstevnice/europe/czech-republic", v.getId());
+		assertEquals("contours/europe/czech-republic", v.getId());
 		assertEquals(Typ.VRSTEVNICE, v.getTyp());
 		assertEquals(Format.MAP, v.getFormat());
 		assertEquals("europe/czech-republic", v.getRegion());
@@ -79,24 +92,30 @@ public class KatalogVrstevTest {
 		assertEquals(21, v.getZoomMax());
 		assertEquals(10, v.getKrokVrstevnic());
 		assertEquals("plné znění", v.getAtribuceDlouha());
-		assertEquals("vrstevnice", v.getTema());
+		assertEquals("contours", v.getTema());
 		assertEquals("DSM", v.getPoznamka());
 		assertEquals("© přispěvatelé OpenStreetMap", v.getAtribuce());
 		final Soubor s1 = v.getSoubory().get(0);
 		assertEquals("SHA malými písmeny", SHA, s1.getSha256());
-		assertEquals(Arrays.asList(URI.create("https://a.example.org/rel/v1/cz_vrstevnice_1.map"), URI.create("https://b.example.org/zaloha/v1/cz_vrstevnice_1.map")),
-				s1.getUrly());
+		assertEquals("europe_czech-republic.contours.map", s1.getNazev());
+		assertEquals("cesta podle klíče mapy", "europe/czech-republic.contours.map", s1.getCesta());
+		assertEquals("europe/czech-republic", v.getKlic());
+		assertEquals(Arrays.asList(URI.create("https://a.example.org/rel/v1/europe_czech-republic.contours.map"),
+				URI.create("https://b.example.org/zaloha/v1/europe_czech-republic.contours.map")), s1.getUrly());
 		assertEquals(Arrays.asList(URI.create("https://jinde.example.org/cz_vrstevnice_2.map")), v.getSoubory().get(1).getUrly());
 		assertSame("obrys z katalogu map", mapy.podleId("europe/czech-republic").get().getPokryti(), v.getPokryti());
 		assertTrue(v.getPokryti().obsahuje(new Wgs(50, 15)));
-		assertSame(v, k.podleSouboru("CZ_VRSTEVNICE_2.MAP").get());
-		assertSame(v, k.podleId("vrstevnice/europe/czech-republic").get());
-		assertFalse(k.podleSouboru("czech-republic.map").isPresent());
+		assertSame(v, k.podleCesty("Europe/Czech-Republic.contours.2.map").get());
+		assertSame(v, k.podleId("contours/europe/czech-republic").get());
+		assertFalse(k.podleCesty("czech-republic.map").isPresent());
+		assertSame(v, k.vrstva("europe/czech-republic", Typ.VRSTEVNICE).get());
+		assertFalse(k.vrstva("europe/czech-republic", Typ.TRASY).isPresent());
+		assertFalse(k.vrstva("europe/germany", Typ.VRSTEVNICE).isPresent());
 	}
 
 	@Test
 	public void volitelnaPoleChybi() throws IOException {
-		final KatalogovaVrstva v = nacti(jednoducha("trasy/europe/czech-republic", "trasy", "europe/czech-republic")).getVrstvy().get(0);
+		final KatalogovaVrstva v = nacti(jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic")).getVrstvy().get(0);
 		assertNull(v.getDatumDat());
 		assertNull(v.getVyrobeno());
 		assertNull(v.getAtribuceDlouha());
@@ -108,7 +127,7 @@ public class KatalogVrstevTest {
 	@Test
 	public void obdelnikURegionuMimoKatalogMap() throws IOException {
 		final KatalogovaVrstva v = nacti(vrstva("dem/europe/alpy", "dem", "europe/alpy", "hgt-zip", soubor("alpy.zip", "alpy.zip", 5, SHA),
-				", \"pokryti\": {\"poly\": \"poly/europe/alpy.poly\", \"bbox\": [45, 5, 48, 16]}")).getVrstvy().get(0);
+				", \"coverage\": {\"poly\": \"poly/europe/alpy.poly\", \"bbox\": [45, 5, 48, 16]}")).getVrstvy().get(0);
 		assertEquals(Format.HGT_ZIP, v.getFormat());
 		assertTrue(v.getPokryti().obsahuje(new Wgs(46, 10)));
 		assertFalse(v.getPokryti().obsahuje(new Wgs(50, 10)));
@@ -122,48 +141,55 @@ public class KatalogVrstevTest {
 
 	@Test
 	public void datumDatPodleRfc1123() throws IOException {
-		final KatalogovaVrstva v = nacti(vrstva("trasy/europe/czech-republic", "trasy", "europe/czech-republic", "map", soubor("t.map", "t.map", 1, SHA),
-				", \"datumDat\": \"Tue, 13 Oct 2026 21:04:00 GMT\"")).getVrstvy().get(0);
+		final KatalogovaVrstva v = nacti(vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("t.map", "t.map", 1, SHA),
+				", \"dataDate\": \"Tue, 13 Oct 2026 21:04:00 GMT\"")).getVrstvy().get(0);
 		assertEquals(LocalDate.of(2026, 10, 13), v.getDatumDat());
 	}
 
 	@Test
 	public void neznamyTypAFormatSePreskoci() throws IOException {
 		final KatalogVrstev k = nacti(jednoducha("lyzovani/europe/czech-republic", "lyzovani", "europe/czech-republic"),
-				vrstva("trasy/europe/germany", "trasy", "europe/germany", "pmtiles", soubor("de.pmtiles", "de.pmtiles", 1, SHA), ""),
-				jednoducha("trasy/europe/czech-republic", "trasy", "europe/czech-republic"));
-		assertEquals(Arrays.asList("trasy/europe/czech-republic"), idcka(k.getVrstvy()));
+				vrstva("routes/europe/germany", "routes", "europe/germany", "pmtiles", soubor("de.pmtiles", "de.pmtiles", 1, SHA), ""),
+				jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic"));
+		assertEquals(Arrays.asList("routes/europe/czech-republic"), idcka(k.getVrstvy()));
 	}
 
 	@Test
 	public void vadnyKatalog() throws IOException {
-		final String ok = jednoducha("trasy/europe/czech-republic", "trasy", "europe/czech-republic");
-		vada("{\"format\": 2, \"zdroje\": [\"https://a.example.org/\"], \"vrstvy\": []}", "novějším");
-		vada("{\"zdroje\": [\"https://a.example.org/\"], \"vrstvy\": []}", "format");
-		vada("{\"format\": 1, \"zdroje\": [], \"vrstvy\": []}", "zdroje");
-		vada("{\"format\": 1, \"zdroje\": [\"ftp://a.example.org/\"], \"vrstvy\": []}", "zdroj");
+		final String ok = jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic");
+		vada("{\"version\": 2, \"sources\": [\"https://a.example.org/\"], \"layers\": []}", "novějším");
+		vada("{\"sources\": [\"https://a.example.org/\"], \"layers\": []}", "version");
+		vada("{\"version\": 1, \"sources\": [], \"layers\": []}", "sources");
+		vada("{\"version\": 1, \"sources\": [\"ftp://a.example.org/\"], \"layers\": []}", "zdroj");
 		vada(katalog(ok, ok), "dvakrát");
-		vada(katalog(ok, vrstva("trasy/europe/germany", "trasy", "europe/germany", "map", soubor("TRASY_EUROPE_CZECH-REPUBLIC.map", "x.map", 1, SHA), "")),
+		vada(katalog(ok, vrstva("trasy2/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("jiny.map", "europe/czech-republic.routes.map", "x.map", 1, SHA), ""),
+				vrstva("trasy3/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("jiny2.map", "europe/czech-republic.routes.map", "y.map", 1, SHA), "")),
 				"dvakrát");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("../x.map", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.stahuje", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("X.MAP.STAHUJE", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.sha256", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.stara", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("CON.map", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("nul", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", "{\"nazev\": \"x.map\", \"url\": \"x.map\", \"velikost\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "../jinam/x.map", 1, SHA), "")), "adresu");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "/x.map", 1, SHA), "")), "adresu");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "file:///etc/x.map", 1, SHA), "")), "adresu");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "x.map", 1, "abc"), "")), "sha256");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "x.map", 0, SHA), "")), "velikost");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", "", "")), "soubory");
-		vada(katalog(vrstva("trasy/Europe/X", "trasy", "europe/x", "map", soubor("x.map", "x.map", 1, SHA), "")), "id");
-		vada(katalog(vrstva("trasy/europe/czech-republic", "trasy", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"datumDat\": \"včera\"")),
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/y.routes.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/x.contours.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/x.routes.zip", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/x.routes.map/../../x.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "/europe/x.routes.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", "{\"name\": \"x.map\", \"url\": \"x.map\", \"size\": 1, \"sha256\": \"" + SHA + "\"}", "")), "path");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("../x.map", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.stahuje", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("X.MAP.STAHUJE", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.sha256", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.stara", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("CON.map", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("nul", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", "{\"name\": \"x.map\", \"path\": \"europe/x.routes.map\", \"url\": \"x.map\", \"size\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "../jinam/x.map", 1, SHA), "")), "adresu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "/x.map", 1, SHA), "")), "adresu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "file:///etc/x.map", 1, SHA), "")), "adresu");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "x.map", 1, "abc"), "")), "sha256");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "x.map", 0, SHA), "")), "velikost");
+		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", "", "")), "soubory");
+		vada(katalog(vrstva("routes/Europe/X", "routes", "europe/x", "map", soubor("x.map", "x.map", 1, SHA), "")), "id");
+		vada(katalog(vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"dataDate\": \"včera\"")),
 				"datum");
-		vada(katalog(vrstva("trasy/europe/czech-republic", "trasy", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"zoom\": {\"min\": 1.5}")),
+		vada(katalog(vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"zoom\": {\"min\": 1.5}")),
 				"zoom");
 	}
 
@@ -179,18 +205,18 @@ public class KatalogVrstevTest {
 	@Test
 	public void vrstvyProMapu() throws IOException {
 		final KatalogMap mapy = mapy();
-		final KatalogVrstev k = KatalogVrstev.nacti(katalog(jednoducha("trasy/europe/czech-republic", "trasy", "europe/czech-republic"),
-				jednoducha("dem/europe/czech-republic", "dem", "europe/czech-republic"), jednoducha("trasy/europe/germany", "trasy", "europe/germany"),
-				jednoducha("trasy/europe/germany/bayern", "trasy", "europe/germany/bayern"),
-				jednoducha("vrstevnice/europe/germany/bayern", "vrstevnice", "europe/germany/bayern"),
-				jednoducha("vrstevnice/europe/germany/berlin", "vrstevnice", "europe/germany/berlin"), vrstva("dem/europe", "dem", "europe", "hgt-zip", soubor("eu.zip", "eu.zip", 1, SHA), ", \"pokryti\": {\"bbox\": [35, -10, 70, 40]}")), mapy);
-		assertEquals(Arrays.asList("trasy/europe/czech-republic", "dem/europe/czech-republic"),
+		final KatalogVrstev k = KatalogVrstev.nacti(katalog(jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic"),
+				jednoducha("dem/europe/czech-republic", "dem", "europe/czech-republic"), jednoducha("routes/europe/germany", "routes", "europe/germany"),
+				jednoducha("routes/europe/germany/bayern", "routes", "europe/germany/bayern"),
+				jednoducha("contours/europe/germany/bayern", "contours", "europe/germany/bayern"),
+				jednoducha("contours/europe/germany/berlin", "contours", "europe/germany/berlin"), vrstva("dem/europe", "dem", "europe", "hgt-zip", soubor("eu.zip", "eu.zip", 1, SHA), ", \"coverage\": {\"bbox\": [35, -10, 70, 40]}")), mapy);
+		assertEquals(Arrays.asList("routes/europe/czech-republic", "dem/europe/czech-republic"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/czech-republic").get())));
-		assertEquals("vlastní trasy, vrstevnice regionů", Arrays.asList("trasy/europe/germany", "vrstevnice/europe/germany/bayern", "vrstevnice/europe/germany/berlin"),
+		assertEquals("vlastní trasy, vrstevnice regionů", Arrays.asList("routes/europe/germany", "contours/europe/germany/bayern", "contours/europe/germany/berlin"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/germany").get())));
-		assertEquals("vlastní vrstvy, chybějící z celé země", Arrays.asList("trasy/europe/germany/bayern", "vrstevnice/europe/germany/bayern"),
+		assertEquals("vlastní vrstvy, chybějící z celé země", Arrays.asList("routes/europe/germany/bayern", "contours/europe/germany/bayern"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/germany/bayern").get())));
-		assertEquals("trasy celé země, vlastní vrstevnice", Arrays.asList("vrstevnice/europe/germany/berlin", "trasy/europe/germany"),
+		assertEquals("trasy celé země, vlastní vrstevnice", Arrays.asList("contours/europe/germany/berlin", "routes/europe/germany"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/germany/berlin").get())));
 	}
 
@@ -198,8 +224,39 @@ public class KatalogVrstevTest {
 	public void vestavenyKatalog() {
 		final KatalogVrstev k = KatalogVrstev.vestaveny();
 		assertSame(k, KatalogVrstev.vestaveny());
+		assertEquals("https://github.com/geokuk-community/geokuk-maps/releases/latest/download/layers.json", KatalogVrstev.URL_KATALOGU.toString());
 		for (final KatalogovaVrstva v : k.getVrstvy()) {
 			assertTrue("vrstva " + v + " patří k mapě z katalogu", KatalogMap.vestaveny().podleId(v.getRegion()).isPresent());
 		}
+	}
+
+	/** Katalog tak, jak ho vyrábí scripts/build-catalog.py v geokuk-maps (Lucembursko: trasy, vrstevnice, výškový model). */
+	@Test
+	public void katalogZGeokukMaps() throws IOException {
+		final String json;
+		try (InputStream in = KatalogVrstevTest.class.getResourceAsStream("layers-geokuk-maps.json")) {
+			json = new String(com.google.common.io.ByteStreams.toByteArray(in), java.nio.charset.StandardCharsets.UTF_8);
+		}
+		final KatalogMap mapy = KatalogMap.vestaveny();
+		final KatalogVrstev k = KatalogVrstev.nacti(json, mapy);
+		assertEquals(Arrays.asList("contours/europe/luxembourg", "dem/europe/luxembourg", "routes/europe/luxembourg"), idcka(k.getVrstvy()));
+		final KatalogovaMapa lucembursko = mapy.podleId("europe/luxembourg").get();
+		final KatalogovaVrstva trasy = k.vrstva(lucembursko.getId(), Typ.TRASY).get();
+		assertEquals("europe/luxembourg.routes.map", trasy.getSoubory().get(0).getCesta());
+		assertEquals("europe_luxembourg.routes.map", trasy.getSoubory().get(0).getNazev());
+		assertEquals(URI.create("https://github.com/geokuk-community/geokuk-maps/releases/download/layers-2026-10/europe_luxembourg.routes.map"),
+				trasy.getSoubory().get(0).getUrly().get(0));
+		assertEquals("routes", trasy.getTema());
+		assertEquals("© OpenStreetMap contributors", trasy.getAtribuce());
+		assertNotNull(trasy.getLicenceText());
+		assertEquals(LocalDate.of(2026, 10, 15), trasy.getDatumDat());
+		assertSame("obrys z katalogu map, ne .poly z release", lucembursko.getPokryti(), trasy.getPokryti());
+		final KatalogovaVrstva vrstevnice = k.vrstva(lucembursko.getId(), Typ.VRSTEVNICE).get();
+		assertEquals(10, vrstevnice.getKrokVrstevnic());
+		assertNotNull(vrstevnice.getAtribuceDlouha());
+		assertEquals("europe/luxembourg.contours.map", vrstevnice.getSoubory().get(0).getCesta());
+		final KatalogovaVrstva dem = k.vrstva(lucembursko.getId(), Typ.DEM).get();
+		assertEquals(Format.HGT_ZIP, dem.getFormat());
+		assertEquals("europe/luxembourg.dem.zip", dem.getSoubory().get(0).getCesta());
 	}
 }

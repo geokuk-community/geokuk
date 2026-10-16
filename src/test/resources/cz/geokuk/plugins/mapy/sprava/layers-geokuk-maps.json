@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "generated": "2026-10-16T06:08:12Z",
+  "sources": [
+    "https://github.com/geokuk-community/geokuk-maps/releases/download/"
+  ],
+  "layers": [
+    {
+      "id": "contours/europe/luxembourg",
+      "type": "contours",
+      "region": "europe/luxembourg",
+      "format": "map",
+      "name": "Contour lines – Luxembourg (10 m)",
+      "files": [
+        {
+          "name": "europe_luxembourg.contours.map",
+          "path": "europe/luxembourg.contours.map",
+          "url": "layers-2026-10/europe_luxembourg.contours.map",
+          "size": 5123456,
+          "sha256": "328b29b599a73c96d839706c1674538c92f9113176f53bc05e3dc5e8c5efa6be",
+          "date": "2026-10-16T05:40:00Z"
+        }
+      ],
+      "size": 5123456,
+      "dataDate": "2021-12-31",
+      "produced": "2026-10-16T05:40:00Z",
+      "dataSource": "Copernicus GLO-30 DEM (AWS Open Data)",
+      "zoom": {
+        "min": 12,
+        "max": 21
+      },
+      "contourInterval": 10,
+      "coverage": {
+        "bbox": [
+          49.4,
+          5.7,
+          50.2,
+          6.55
+        ],
+        "poly": "layers-2026-10/europe_luxembourg.poly"
+      },
+      "license": "Copernicus COP-DEM-GLO-30-F",
+      "attribution": "Contours: Copernicus DEM GLO-30 © DLR/Airbus, ESA",
+      "attributionFull": "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30.",
+      "note": "Copernicus DEM is a surface model (includes buildings and forest canopy).",
+      "licenseText": "Copernicus"
+    },
+    {
+      "id": "dem/europe/luxembourg",
+      "type": "dem",
+      "region": "europe/luxembourg",
+      "format": "hgt-zip",
+      "name": "Hillshade elevation data – Luxembourg (HGT 1\")",
+      "files": [
+        {
+          "name": "europe_luxembourg.dem.zip",
+          "path": "europe/luxembourg.dem.zip",
+          "url": "layers-2026-10/europe_luxembourg.dem.zip",
+          "size": 4000000,
+          "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          "date": "2026-10-16T05:38:00Z"
+        }
+      ],
+      "size": 4000000,
+      "dataDate": "2021-12-31",
+      "produced": "2026-10-16T05:38:00Z",
+      "dataSource": "Copernicus GLO-30 DEM (AWS Open Data)",
+      "coverage": {
+        "bbox": [
+          49.4,
+          5.7,
+          50.2,
+          6.55
+        ],
+        "poly": "layers-2026-10/europe_luxembourg.poly"
+      },
+      "license": "Copernicus COP-DEM-GLO-30-F",
+      "attribution": "Elevation: Copernicus DEM GLO-30 © DLR/Airbus, ESA",
+      "attributionFull": "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30.",
+      "licenseText": "Copernicus"
+    },
+    {
+      "id": "routes/europe/luxembourg",
+      "type": "routes",
+      "region": "europe/luxembourg",
+      "format": "map",
+      "name": "Hiking, cycling and MTB routes – Luxembourg",
+      "files": [
+        {
+          "name": "europe_luxembourg.routes.map",
+          "path": "europe/luxembourg.routes.map",
+          "url": "layers-2026-10/europe_luxembourg.routes.map",
+          "size": 1878359,
+          "sha256": "5fda7090e7ec75859ceb023279685ebd50310c685d719fbfa02391bc17f100eb",
+          "date": "2026-10-16T05:35:03Z"
+        }
+      ],
+      "size": 1878359,
+      "dataDate": "2026-10-15",
+      "produced": "2026-10-16T05:35:03Z",
+      "dataSource": "Geofabrik europe/luxembourg-latest.osm.pbf (2026-10-15T20:21:00Z)",
+      "zoom": {
+        "min": 0,
+        "max": 21
+      },
+      "coverage": {
+        "bbox": [
+          49.4,
+          5.7,
+          50.2,
+          6.55
+        ],
+        "poly": "layers-2026-10/europe_luxembourg.poly"
+      },
+      "license": "ODbL 1.0",
+      "attribution": "© OpenStreetMap contributors",
+      "theme": "routes",
+      "licenseText": "Data: OpenStreetMap (ODbL 1.0)"
+    }
+  ]
+}

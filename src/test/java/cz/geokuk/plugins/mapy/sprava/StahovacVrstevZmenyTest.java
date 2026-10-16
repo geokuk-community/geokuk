@@ -43,7 +43,7 @@ public class StahovacVrstevZmenyTest {
 		server.createContext("/rel/", this::obsluz);
 		server.setExecutor(Executors.newCachedThreadPool());
 		server.start();
-		slozka = new File(tmp.getRoot(), "offline-mapy/vrstvy");
+		slozka = new File(tmp.getRoot(), "offline-mapy/layers");
 		final StahovacMapy http = new StahovacMapy("GeoKuk/test", () -> {
 			uvolneni.incrementAndGet();
 			priUvolneni.run();
@@ -123,7 +123,7 @@ public class StahovacVrstevZmenyTest {
 			}
 			sb.append(KatalogVrstevTest.soubor(s, s, data.get(s).length, sha(data.get(s))));
 		}
-		final String json = "{\"format\": 1, \"zdroje\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"vrstvy\": ["
+		final String json = "{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"layers\": ["
 				+ KatalogVrstevTest.vrstva("dem/europe/czech-republic", "dem", "europe/czech-republic", "hgt-zip", sb.toString(), "") + "]}";
 		return KatalogVrstev.nacti(json, KatalogVrstevTest.mapy()).getVrstvy().get(0);
 	}
@@ -136,7 +136,7 @@ public class StahovacVrstevZmenyTest {
 	/** Rozpracovaná část: prvních {@code kolik} bajtů {@code obsah} a info jako po přerušeném stahování. */
 	private void rozpracuj(final KatalogovaVrstva v, final int index, final byte[] obsah, final int kolik, final String etag) throws IOException {
 		final KatalogovaVrstva.Soubor so = v.getSoubory().get(index);
-		slozka.mkdirs();
+		StahovacVrstev.rozpracovany(slozka, so).getParentFile().mkdirs();
 		Files.write(StahovacVrstev.rozpracovany(slozka, so).toPath(), Arrays.copyOf(obsah, kolik));
 		final StahovacMapy.Info i = new StahovacMapy.Info();
 		i.url = so.getUrly().get(0).toString();
@@ -147,7 +147,7 @@ public class StahovacVrstevZmenyTest {
 	}
 
 	private byte[] obsah(final String jmeno) throws IOException {
-		return Files.readAllBytes(new File(slozka, jmeno).toPath());
+		return Files.readAllBytes(naDisku(jmeno).toPath());
 	}
 
 	/** Server Range ignoruje (200): stahuje se od nuly, žádný slepenec. */
@@ -191,7 +191,7 @@ public class StahovacVrstevZmenyTest {
 		ignorujIfRange = true;
 		final StavVrstvy s = stahni(v);
 		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
-		assertFalse(new File(slozka, "a.zip").exists());
+		assertFalse(naDisku("a.zip").exists());
 		assertFalse(StahovacVrstev.rozpracovany(slozka, v.getSoubory().get(0)).exists());
 		assertEquals(Faze.HOTOVO, stahni(v).getFaze());
 		assertArrayEquals(stara, obsah("a.zip"));
@@ -220,7 +220,7 @@ public class StahovacVrstevZmenyTest {
 		final StavVrstvy s1 = stahni(v);
 		assertEquals(Faze.CHYBA, s1.getFaze());
 		assertTrue(s1.getChyba(), s1.getChyba().contains("jinou část"));
-		assertFalse(new File(slozka, "a.zip").exists());
+		assertFalse(naDisku("a.zip").exists());
 	}
 
 	/** Pokračování po přerušení: SHA se počítá z celého souboru. */
@@ -233,7 +233,7 @@ public class StahovacVrstevZmenyTest {
 		final StavVrstvy s = stahni(v);
 		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
 		assertTrue(s.getChyba(), s.getChyba().contains("poškozený"));
-		assertFalse(new File(slozka, "a.zip").exists());
+		assertFalse(naDisku("a.zip").exists());
 		assertFalse(StahovacVrstev.rozpracovany(slozka, v.getSoubory().get(0)).exists());
 	}
 
@@ -246,12 +246,12 @@ public class StahovacVrstevZmenyTest {
 		slozka.mkdirs();
 		final byte[] staraA = nahodna(90_000, 3);
 		final byte[] staraB = nahodna(45_000, 4);
-		Files.write(new File(slozka, "a.zip").toPath(), staraA);
-		Files.write(new File(slozka, "b.zip").toPath(), staraB);
+		Files.write(naDisku("a.zip").toPath(), staraA);
+		Files.write(naDisku("b.zip").toPath(), staraB);
 		// Před výměnou zmizí nový b.zip, jeho přesun selže jako u zamčeného souboru.
 		priUvolneni = () -> {
 			if (uvolneni.get() == 1) {
-				StahovacMapy.smaz(new File(slozka, "b.zip.stahuje"));
+				StahovacMapy.smaz(naDisku("b.zip.stahuje"));
 			}
 		};
 		final StavVrstvy s = stahni(v);
@@ -260,7 +260,7 @@ public class StahovacVrstevZmenyTest {
 		assertArrayEquals("b.zip je stará verze", staraB, obsah("b.zip"));
 		assertArrayEquals("a.zip zůstane stará verze (vše, nebo nic)", staraA, obsah("a.zip"));
 		assertArrayEquals("nový a.zip čeká rozpracovaný", data.get("a.zip"), obsah("a.zip.stahuje"));
-		assertFalse(new File(slozka, "a.zip" + StahovacVrstev.PRIPONA_STARA).exists());
+		assertFalse(naDisku("a.zip" + StahovacVrstev.PRIPONA_STARA).exists());
 
 		priUvolneni = () -> {
 		};
@@ -279,9 +279,9 @@ public class StahovacVrstevZmenyTest {
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
 		slozka.mkdirs();
 		final byte[] staraA = nahodna(90_000, 3);
-		Files.write(new File(slozka, "a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
+		Files.write(naDisku("a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
 		rozpracuj(v, 0, data.get("a.zip"), 100_000, "\"v-1\"");
-		Files.move(new File(slozka, "a.zip.stahuje").toPath(), new File(slozka, "a.zip").toPath());
+		Files.move(naDisku("a.zip.stahuje").toPath(), naDisku("a.zip").toPath());
 		rozpracuj(v, 1, data.get("b.zip"), 50_000, "\"v-1\"");
 		StahovacVrstev.obnovPoPreruseneVymene(slozka, v);
 		assertArrayEquals("stará verze zpět na místě", staraA, obsah("a.zip"));
@@ -291,7 +291,7 @@ public class StahovacVrstevZmenyTest {
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
 		assertArrayEquals(data.get("a.zip"), obsah("a.zip"));
 		assertArrayEquals(data.get("b.zip"), obsah("b.zip"));
-		assertFalse(new File(slozka, "a.zip" + StahovacVrstev.PRIPONA_STARA).exists());
+		assertFalse(naDisku("a.zip" + StahovacVrstev.PRIPONA_STARA).exists());
 	}
 
 	/** Soubor správné velikosti, ale jiného obsahu (jiná verze se stejnou velikostí / poškozený) se bere za stažený. */
@@ -300,7 +300,7 @@ public class StahovacVrstevZmenyTest {
 		data.put("a.zip", nahodna(100_000, 1));
 		final KatalogovaVrstva v = vrstva("a.zip");
 		slozka.mkdirs();
-		Files.write(new File(slozka, "a.zip").toPath(), new byte[100_000]);
+		Files.write(naDisku("a.zip").toPath(), new byte[100_000]);
 		assertEquals(StavVrstvy.Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
 		final StavVrstvy s = stahni(v);
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
@@ -336,8 +336,8 @@ public class StahovacVrstevZmenyTest {
 			Files.write(StahovacVrstev.soucet(slozka, so).toPath(), so.getSha256().getBytes("US-ASCII"));
 		}
 		StahovacMapy.smaz(StahovacVrstev.info(slozka, v.getSoubory().get(0)));
-		Files.write(new File(slozka, "b.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), nahodna(45_000, 4));
-		Files.write(new File(slozka, "c.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), nahodna(25_000, 5));
+		Files.write(naDisku("b.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), nahodna(45_000, 4));
+		Files.write(naDisku("c.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), nahodna(25_000, 5));
 		StahovacVrstev.obnovPoPreruseneVymene(slozka, v);
 		for (final String n : Arrays.asList("a.zip", "b.zip", "c.zip")) {
 			assertArrayEquals(n, data.get(n), obsah(n));
@@ -355,10 +355,10 @@ public class StahovacVrstevZmenyTest {
 		slozka.mkdirs();
 		final byte[] staraA = nahodna(90_000, 3);
 		final byte[] staraB = nahodna(45_000, 4);
-		Files.write(new File(slozka, "a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
-		Files.write(new File(slozka, "b.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraB);
+		Files.write(naDisku("a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
+		Files.write(naDisku("b.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraB);
 		rozpracuj(v, 0, data.get("a.zip"), 100_000, "\"v-1\"");
-		Files.move(new File(slozka, "a.zip.stahuje").toPath(), new File(slozka, "a.zip").toPath());
+		Files.move(naDisku("a.zip.stahuje").toPath(), naDisku("a.zip").toPath());
 		rozpracuj(v, 1, data.get("b.zip"), 50_000, "\"v-1\"");
 		StahovacVrstev.zahod(slozka, v);
 		assertArrayEquals(staraA, obsah("a.zip"));
@@ -374,11 +374,11 @@ public class StahovacVrstevZmenyTest {
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
 		slozka.mkdirs();
 		final byte[] staraA = nahodna(100_000, 3);
-		Files.write(new File(slozka, "a.zip").toPath(), staraA);
-		Files.write(new File(slozka, "b.zip").toPath(), nahodna(50_000, 4));
+		Files.write(naDisku("a.zip").toPath(), staraA);
+		Files.write(naDisku("b.zip").toPath(), nahodna(50_000, 4));
 		priUvolneni = () -> {
 			if (uvolneni.get() == 1) {
-				StahovacMapy.smaz(new File(slozka, "b.zip.stahuje"));
+				StahovacMapy.smaz(naDisku("b.zip.stahuje"));
 			}
 		};
 		final StavVrstvy s = stahni(v);
@@ -389,8 +389,10 @@ public class StahovacVrstevZmenyTest {
 	}
 
 	private List<String> vSlozce() {
-		final List<String> l = new ArrayList<>(Arrays.asList(slozka.list()));
-		Collections.sort(l);
-		return l;
+		return StahovacVrstevTest.vSlozce(slozka);
+	}
+
+	private File naDisku(final String jmeno) {
+		return StahovacVrstevTest.naDisku(slozka, jmeno);
 	}
 }
