@@ -221,7 +221,7 @@ public class OfflineMapy {
 			return;
 		}
 		posledniKontrola = ted;
-		final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
+		final List<File> mapy = prekryv ? mapyPrekryvu(slozkaOtevrena) : mapyVeSlozce(slozkaOtevrena);
 		final String otisk = otisk(mapy);
 		if (otiskSlozky == null) {
 			otiskSlozky = otisk;
@@ -243,7 +243,35 @@ public class OfflineMapy {
 		}
 	}
 
-	/** Vrstvy kreslené spolu se základní mapou; překryv tras je nekreslí. */
+	/** Přípona stažené vrstvy tras ve složce vrstev. */
+	static final String PRIPONA_TRAS = "." + cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Typ.TRASY.getKod() + ".map";
+
+	/**
+	 * Mapy pro překryv tras: stažené vrstvy tras (stačí i bez základní mapy, třeba přes online podklad) a základní mapy, ke kterým vrstva tras stažená není.
+	 * Základní mapa, ke které vrstva tras je, se vynechá, jinak by se stejné trasy kreslily dvakrát.
+	 */
+	static List<File> mapyPrekryvu(final File slozka) {
+		final List<File> vysledek = new ArrayList<>();
+		final Set<String> klice = new HashSet<>();
+		final File slozkaVrstev = slozka == null ? null : new File(slozka, SLOZKA_VRSTEV);
+		for (final File f : vrstvyVeSlozce(slozka)) {
+			final String cesta = slozkaVrstev.toPath().relativize(f.toPath()).toString().replace('\\', '/');
+			if (cesta.toLowerCase(Locale.ROOT).endsWith(PRIPONA_TRAS)) {
+				vysledek.add(f);
+				klice.add(cesta.substring(0, cesta.length() - PRIPONA_TRAS.length()).toLowerCase(Locale.ROOT));
+			}
+		}
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		for (final File f : mapyVeSlozce(slozka)) {
+			final String klic = katalog.podleSouboru(f.getName()).map(m -> m.getId().toLowerCase(Locale.ROOT)).orElse(null);
+			if (klic == null || !klice.contains(klic)) {
+				vysledek.add(f);
+			}
+		}
+		return vysledek;
+	}
+
+	/** Vrstvy kreslené spolu se základní mapou; překryv tras je nekreslí, jeho vrstvy tras jsou v {@link #mapyPrekryvu(File)}. */
 	private List<File> vrstvyPouzite() {
 		return prekryv ? Collections.emptyList() : vrstvyVeSlozce(slozkaOtevrena);
 	}
@@ -278,7 +306,8 @@ public class OfflineMapy {
 		zavriRenderer();
 		nazvyMap = mapy.stream().map(File::getName).collect(Collectors.toList());
 		if (mapy.isEmpty()) {
-			chyba = new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
+			chyba = prekryv ? new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy ani stažené trasy.", "nejsou mapy ani trasy", null)
+					: new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
 		} else {
 			try {
 				final long start = System.nanoTime();
