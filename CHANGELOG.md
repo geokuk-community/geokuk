@@ -3,6 +3,10 @@
 ## 6.5.0
 
 ### Změny
+- Offline mapy se kreslí novým tématem Turistická: tlumené barvy, jemnější
+  obrysy a méně ikon. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
+  jiné; původní téma je tam jako Mapsforge (původní). Dlaždice v cache se
+  jednou vykreslí znovu.
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 25.
@@ -69,7 +73,9 @@
   mapě ukáže její obrys, stejně při stahování; volbou v popupu jde ukázat
   obrysy všech map v přehledu (do zoomu 7). Mapy zemí a regionů Evropy z
   download.mapsforge.org jde z popupu stáhnout (po jedné, přerušené stahování
-  pokračuje) a na požádání zkontrolovat, jestli nejsou novější. Když pro
+  pokračuje) a na požádání zkontrolovat, jestli nejsou novější; popup ukáže
+  výsledek kontroly, při stahování odhad zbývajícího času a mapu, která se
+  nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení.
 - Stažené vrstvy (turistické trasy a vrstevnice) se v offline mapě kreslí
   spolu s mapou a DEM dlaždice ve složce vrstev dávají stínování terénu, které
@@ -80,6 +86,10 @@
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
+
+### Opravy
+- Mapy > Postahovat dlaždice: stahování velkého výřezu (tisíce dlaždic)
+  už nedojde paměť, stažené dlaždice se průběžně uvolňují.
 
 Obsahuje i všechny opravy z 6.4.1.
 

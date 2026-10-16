@@ -32,7 +32,7 @@ public class DiagnostikaMapyTest {
 		assertTrue(text, text.startsWith("Offline mapy:\n"));
 		assertTrue(text, text.contains("  mapsforge: "));
 		assertTrue(text, text.contains("  složka: " + Diagnostika.bezDomova(slozka) + "\n"));
-		assertTrue(text, text.contains("  téma: Výchozí (vestavěné)\n"));
+		assertTrue(text, text.contains("  téma: Mapsforge (původní) (vestavěné)\n"));
 		assertTrue(text, text.contains("  poslední chyba mapy: Ve složce " + Diagnostika.bezDomova(slozka) + " nejsou"));
 		assertTrue(text, text.contains("  přehledová mapa: ano\n"));
 		assertTrue(text, text.contains("  cache dlaždic: 2.0 MB, symboly témat 0.0 MB\n"));
