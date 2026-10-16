@@ -160,52 +160,65 @@ public class JMapyPopupTest {
 				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("routes") ? trasy : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, faze, 0, null));
 	}
 
-	/** Vrstvy jsou jen u stažené mapy, každá pod svou mapou; ostatní mapy vrstvy nemají. */
-	@Test
-	public void vrstvyJsouPodStazenouMapou() {
-		final List<RadekMapy> radky = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC);
-		final List<String> vrstvy = new ArrayList<>();
-		String posledniMapa = null;
-		for (final RadekMapy r : radky) {
-			if (r.isVrstva()) {
-				Assert.assertEquals("vrstva je hned za svou mapou", "europe/czech-republic", posledniMapa);
-				Assert.assertEquals("europe/czech-republic", r.mapaId);
-				vrstvy.add(r.nazev);
-			} else {
-				posledniMapa = r.id;
-			}
-		}
-		Assert.assertEquals(Arrays.asList("Turistické trasy", "Vrstevnice", "Stínování terénu"), vrstvy);
-		final RadekMapy trasy = radky.stream().filter(RadekMapy::isVrstva).findFirst().get();
-		Assert.assertEquals(RadekMapy.Stav.AKTUALNI, trasy.stav);
-		Assert.assertEquals(25_000_000L, trasy.velikost);
-		Assert.assertEquals(RadekMapy.Stav.NEMAME, radky.stream().filter(r -> "Vrstevnice".equals(r.nazev)).findFirst().get().stav);
+	private static RadekMapy cesko(final List<RadekMapy> radky) {
+		return radky.stream().filter(r -> "europe/czech-republic".equals(r.id)).findFirst().get();
 	}
 
-	/** Vrstvy v popupu: tlačítko Stáhnout u vrstvy volá stahování vrstvy, ne mapy; hover na vrstvě ukazuje obrys její mapy. */
+	/** Každá mapa má buňky vrstev ze svého klíče: Česko trasy staženo, vrstevnice a stínování ke stažení; mapy bez vrstev „—“. */
 	@Test
-	public void popupMaVrstvyAStahujeJe() throws Exception {
+	public void radekMaBunkyVrstev() {
+		final List<RadekMapy> radky = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC);
+		final RadekMapy ceskoRadek = cesko(radky);
+		Assert.assertEquals(cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky.STAZENO, ceskoRadek.bunka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.TRASY).getStav());
+		Assert.assertEquals(25_000_000L, ceskoRadek.bunka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.TRASY).getVelikost());
+		Assert.assertEquals(cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky.KE_STAZENI, ceskoRadek.bunka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.VRSTEVNICE).getStav());
+		Assert.assertEquals(cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky.KE_STAZENI, ceskoRadek.bunka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.STINOVANI).getStav());
+		final RadekMapy jina = radky.stream().filter(r -> "europe/austria".equals(r.id)).findFirst().get();
+		Assert.assertEquals(cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky.NENI, jina.bunka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.TRASY).getStav());
+	}
+
+	/** Stažená vrstva nebo jen vrstva bez základní mapy dá řádek do oddílu Ve složce. */
+	@Test
+	public void vrstvaBezMapyJeVeSlozce() {
+		final List<RadekMapy> radky = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(),
+				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null));
+		Assert.assertTrue(cesko(radky).isVeSlozce());
+		Assert.assertFalse(radky.stream().filter(r -> "europe/austria".equals(r.id)).findFirst().get().isVeSlozce());
+	}
+
+	/** Buňky vrstev v popupu: ke stažení volá stahování vrstvy, mapy dál stahování mapy; hover na řádku ukazuje obrys mapy. */
+	@Test
+	public void popupMaSloupceVrstevAStahujeJe() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			final Zaznam z = new Zaznam();
 			p.setOvladani(z);
-			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> "Turistické trasy".equals(l.getText())));
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> "Stínování terénu".equals(l.getText())));
-			final List<JButton> stahnout = tlacitkaSTextem(p, JMapyPopup.STAHNOUT);
-			Assert.assertTrue(stahnout.size() >= 3);
-			for (final JButton b : stahnout) {
+			final List<RadekMapy> radky = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC);
+			p.obnov(radky);
+			for (final String sloupec : new String[] { JMapyPopup.SLOUPEC_TRASY, JMapyPopup.SLOUPEC_VRSTEVNICE, JMapyPopup.SLOUPEC_STINOVANI }) {
+				Assert.assertTrue(sloupec, labels(p).stream().anyMatch(l -> sloupec.equals(l.getText())));
+			}
+			final List<JButton> vrstvy = tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ")).collect(java.util.stream.Collectors.toList());
+			Assert.assertEquals("trasy, vrstevnice a stínování Česka", 3, vrstvy.size());
+			for (final JButton b : vrstvy) {
 				b.doClick();
 			}
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu routes/europe/czech-republic"));
+			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu contours/europe/czech-republic"));
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu dem/europe/czech-republic"));
+			for (final JButton b : tlacitkaSTextem(p, JMapyPopup.STAHNOUT)) {
+				b.doClick();
+			}
 			Assert.assertTrue("mapy ke stažení volají stahování mapy", z.volani.stream().anyMatch(v -> v.startsWith("stahni europe/")));
-			final RadekMapy vrstva = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC).stream().filter(RadekMapy::isVrstva).findFirst().get();
-			Assert.assertEquals("europe/czech-republic", JMapyPopup.klicZvyrazneni(vrstva));
+			Assert.assertEquals("europe/czech-republic", JMapyPopup.klicZvyrazneni(cesko(radky)));
 		});
 	}
 
-	/** Stažená vrstva má Smazat, vrstva ke stažení a stahovaná ne. */
+	/** Stažená vrstva má ×, vrstva ke stažení a stahovaná ne; během jakéhokoli stahování je × vypnuté. */
 	@Test
 	public void smazaniVrstvy() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
@@ -213,12 +226,269 @@ public class JMapyPopupTest {
 			final Zaznam z = new Zaznam();
 			p.setOvladani(z);
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
-			final List<JButton> smazat = tlacitkaSTextem(p, JMapyPopup.SMAZAT);
+			final List<JButton> smazat = tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU);
 			Assert.assertEquals("jen stažená vrstva (trasy), ne ty ke stažení", 1, smazat.size());
 			smazat.get(0).doClick();
 			Assert.assertEquals(Collections.singletonList("smazVrstvu routes/europe/czech-republic"), z.volani);
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
-			Assert.assertTrue("během stahování nejde mazat", tlacitkaSTextem(p, JMapyPopup.SMAZAT).isEmpty());
+			Assert.assertTrue("stahovaná vrstva se nemaže", tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU).isEmpty());
+			final List<RadekMapy> sJinouMapou = new ArrayList<>(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			sJinouMapou.add(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(MB).build());
+			p.obnov(sJinouMapou);
+			final List<JButton> zakazane = tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU);
+			Assert.assertEquals("tlačítko zůstává vidět", 1, zakazane.size());
+			Assert.assertFalse("při stahování jiné mapy je vypnuté", zakazane.get(0).isEnabled());
+			Assert.assertEquals(JMapyPopup.BEHEM_STAHOVANI_NEJDE_MAZAT, zakazane.get(0).getToolTipText());
+			zakazane.get(0).doClick();
+			Assert.assertEquals("vypnuté tlačítko nic nespustí", 1, z.volani.size());
+		});
+	}
+
+	private static List<RadekMapy> cesko(final cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni mapa, final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> vrstvy) {
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? mapa : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), vrstvy);
+	}
+
+	/** Stahuje se jen vrstva nestažené mapy: řádek je v oddílu Pro zobrazené místo, má procenta a Zrušit. */
+	@Test
+	public void stahovaniVrstvyNestazeneMapyJeVidet() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+					v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("routes") ? 7_500_000 : 0, null)));
+			Assert.assertEquals("řádek se stahovanou vrstvou je nahoře v oddílu pro zobrazené místo", 1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+			Assert.assertFalse(tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> "30 %".equals(l.getText())));
+		});
+	}
+
+	/** Stáhnout, Aktualizovat i Zkusit znovu u vrstvy jsou při stahování jiné mapy vypnuté s vysvětlením, jinak zapnuté. */
+	@Test
+	public void vrstvyNejdeStahovatPriJinemStahovani() throws Exception {
+		final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> vrstvy = v -> {
+			if (v.getId().startsWith("routes")) {
+				return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.JINA_VERZE, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getVelikost(), null);
+			}
+			if (v.getId().startsWith("contours")) {
+				return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null);
+			}
+			return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.CHYBA, 0, "chyba");
+		};
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final List<RadekMapy> radky = cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, vrstvy);
+			p.obnov(radky);
+			final List<JButton> akce = tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ") || JMapyPopup.AKTUALIZOVAT.equals(b.getText()) || JMapyPopup.ZKUSIT_ZNOVU.equals(b.getText()))
+					.collect(java.util.stream.Collectors.toList());
+			Assert.assertEquals(3, akce.stream().filter(b -> !b.getText().equals(JMapyPopup.STAHNOUT)).count());
+			Assert.assertTrue("bez jiného stahování jsou zapnuté", akce.stream().allMatch(JButton::isEnabled));
+			final List<RadekMapy> s = new ArrayList<>(radky);
+			s.add(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(MB).build());
+			p.obnov(s);
+			final List<JButton> pri = tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ") || JMapyPopup.AKTUALIZOVAT.equals(b.getText()) || JMapyPopup.ZKUSIT_ZNOVU.equals(b.getText()))
+					.collect(java.util.stream.Collectors.toList());
+			Assert.assertEquals(3, pri.size());
+			for (final JButton b : pri) {
+				Assert.assertFalse(b.getText(), b.isEnabled());
+				Assert.assertEquals(JMapyPopup.STAHUJE_SE_JINA, b.getToolTipText());
+			}
+		});
+	}
+
+	/** Stažená vrstva má tooltip s datem dat, rozpracovaná vrstva jde smazat. */
+	@Test
+	public void tooltipStazeneVrstvyARozpracovana() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			final JLabel stazena = labels(p).stream().filter(l -> "25 MB".equals(l.getText())).findFirst().get();
+			Assert.assertEquals("Turistické trasy: staženo, data z 13. 10. 2026", stazena.getToolTipText());
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+					cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("contours") ? 50_000_000 : 0, null)));
+			Assert.assertEquals("jen rozpracovaná vrstevnice má ×", 1, tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU).size());
+		});
+	}
+
+	/** Změna volného místa přepočítá i buňky vrstev: ↓ se vypne, když se vrstva nevejde, a zase zapne. */
+	@Test
+	public void volneMistoPrepocitaBunkyVrstev() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+					cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null)));
+			final java.util.function.Supplier<List<JButton>> stahnout = () -> tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ")).collect(java.util.stream.Collectors.toList());
+			Assert.assertEquals(3, stahnout.get().size());
+			Assert.assertTrue(stahnout.get().stream().allMatch(JButton::isEnabled));
+			p.setVolneMisto(10 * MB);
+			Assert.assertTrue("nic se nevejde", stahnout.get().stream().noneMatch(JButton::isEnabled));
+			Assert.assertTrue(stahnout.get().get(0).getToolTipText().startsWith("Na disku je volných jen"));
+			p.setVolneMisto(100_000L * MB);
+			Assert.assertTrue("zase se vejde", stahnout.get().stream().allMatch(JButton::isEnabled));
+		});
+	}
+
+	/** Katalogové mapy s danými id jsou stažené, ostatní ne. */
+	private static List<RadekMapy> stazene(final String... ids) {
+		final Set<String> mame = new HashSet<>(Arrays.asList(ids));
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null);
+	}
+
+	/** Je vidět doopravdy: viditelná je i každá nadřazená komponenta. */
+	private static boolean jeVidet(final Component c) {
+		for (Component k = c; k != null; k = k.getParent()) {
+			if (!k.isVisible()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static long videtLabelu(final Container p, final String text) {
+		return labels(p).stream().filter(l -> text.equals(l.getText()) && jeVidet(l)).count();
+	}
+
+	private static final String[] STAZENE_6 = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england" };
+
+	/** Oddíl Ve složce je do pěti map rozbalený, od šesti sbalený; volba uživatele se uloží a platí i pro nový popup. */
+	@Test
+	public void slozkaSeSbalujeAPamatujeSi() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup malo = new JMapyPopup();
+			malo.setOvladani(new Zaznam());
+			malo.obnov(stazene("europe/czech-republic", "europe/austria"));
+			Assert.assertEquals("dvě mapy: rozbaleno", 1, videtLabelu(malo, "Rakousko"));
+
+			final JMapyPopup moc = new JMapyPopup();
+			moc.setOvladani(new Zaznam());
+			final Boolean[] ulozeno = { null };
+			moc.ulozStavSlozky = b -> ulozeno[0] = b;
+			moc.obnov(stazene(STAZENE_6));
+			Assert.assertEquals("šest map: sbaleno", 0, videtLabelu(moc, "Rakousko"));
+			Assert.assertEquals("nadpis oddílu zůstává", 1, videtLabelu(moc, JMapyPopup.VE_SLOZCE));
+			moc.prepniSlozku(true);
+			Assert.assertEquals(Boolean.TRUE, ulozeno[0]);
+			Assert.assertEquals(1, videtLabelu(moc, "Rakousko"));
+			moc.prepniSlozku(false);
+			Assert.assertEquals(Boolean.FALSE, ulozeno[0]);
+			Assert.assertEquals(0, videtLabelu(moc, "Rakousko"));
+
+			final JMapyPopup novy = new JMapyPopup();
+			novy.setOvladani(new Zaznam());
+			novy.nactiStavSlozky = () -> Optional.of(false);
+			novy.obnov(stazene("europe/czech-republic"));
+			Assert.assertEquals("zapamatovaná volba má přednost před počtem map", 0, videtLabelu(novy, "Česko"));
+			novy.nactiStavSlozky = () -> Optional.of(true);
+			final JMapyPopup otevreny = new JMapyPopup();
+			otevreny.setOvladani(new Zaznam());
+			otevreny.nactiStavSlozky = () -> Optional.of(true);
+			otevreny.obnov(stazene(STAZENE_6));
+			Assert.assertEquals(1, videtLabelu(otevreny, "Rakousko"));
+		});
+	}
+
+	/** Stahování, chyba nebo aktualizace ve sbalené složce nezmizí: oddíl i sbalená země se kvůli takovému řádku ukážou. */
+	@Test
+	public void stahovaniVeSbaleneSlozceJeVidet() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final String[] osm = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england", "europe/united-kingdom/wales", "europe/poland" };
+			final Set<String> mame = new HashSet<>(Arrays.asList(osm));
+			final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> bezVrstev = v -> cz.geokuk.plugins.mapy.sprava.StavVrstvy.novy(v);
+			p.obnov(stazene(osm));
+			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Rakousko"));
+
+			// Stahuje se vrstva stažené mapy.
+			final List<RadekMapy> sVrstvou = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(),
+					v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+							v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("routes") ? 7_500_000 : 0, null));
+			p.obnov(sVrstvou);
+			Assert.assertEquals("řádek se stahovanou vrstvou je vidět i při sbalení", 1, videtLabelu(p, "Česko"));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> "30 %".equals(l.getText()) && jeVidet(l)));
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.ZRUSIT).stream().anyMatch(JMapyPopupTest::jeVidet));
+
+			// Aktualizuje se mapa v regionu sbalené země.
+			final List<RadekMapy> region = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> "europe/germany/sachsen".equals(m.getId())
+							? cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NOVEJSI,
+									cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 30_000_000, 100_000_000, null)
+							: cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+									cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null);
+			final JMapyPopup q = new JMapyPopup();
+			q.setOvladani(new Zaznam());
+			q.obnov(region);
+			Assert.assertEquals("země s aktualizovaným regionem je rozbalená", 1, videtLabelu(q, "Sasko"));
+			Assert.assertEquals("země se rozbalí celá", 1, videtLabelu(q, "Bavorsko"));
+			Assert.assertEquals("jiná sbalená země zůstala sbalená", 0, videtLabelu(q, "Anglie"));
+		});
+	}
+
+	/** Hranice výchozího sbalení: pět map rozbaleno, šest sbaleno. */
+	@Test
+	public void hranicePetASestMap() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final String[] pet = { "europe/czech-republic", "europe/austria", "europe/poland", "europe/hungary", "europe/slovakia" };
+			final JMapyPopup a = new JMapyPopup();
+			a.setOvladani(new Zaznam());
+			a.obnov(stazene(pet));
+			Assert.assertEquals("pět map: rozbaleno", 1, videtLabelu(a, "Rakousko"));
+			final JMapyPopup b = new JMapyPopup();
+			b.setOvladani(new Zaznam());
+			b.obnov(stazene(pet[0], pet[1], pet[2], pet[3], pet[4], "europe/italy/nord-est"));
+			Assert.assertEquals("šest map: sbaleno", 0, videtLabelu(b, "Rakousko"));
+		});
+	}
+
+	/** Stažené regiony jsou ve složce pod zemí se souhrnem a šipkou; rozbalí se klikem, země má v prvním sloupci kroužek jako ostatní. */
+	@Test
+	public void stazeneRegionyJsouPodZemi() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(stazene(STAZENE_6));
+			Assert.assertTrue("souhrn regionů u země", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("3 regiony · ") && jeVidet(l)));
+			Assert.assertTrue("souhrn regionů u Spojeného království", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("1 region") && jeVidet(l)));
+			Assert.assertEquals("regiony jsou sbalené", 0, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
+			Assert.assertEquals(1, videtLabelu(p, "Berlín"));
+			Assert.assertEquals("Anglie je pod Spojeným královstvím, to zůstalo sbalené", 0, videtLabelu(p, "Anglie"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals(0, videtLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Země, kterou nejde stáhnout celou, má vlevo šedý kroužek jako ostatní země. */
+	@Test
+	public void zemeBezCelkuMaKrouzek() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(stazene());
+			final JLabel zeme = labels(p).stream().filter(l -> "Spojené království".equals(l.getText())).findFirst().get();
+			final java.awt.GridBagLayout lm = (java.awt.GridBagLayout) zeme.getParent().getLayout();
+			final int radek = lm.getConstraints(zeme).gridy;
+			final JLabel prvni = Arrays.stream(zeme.getParent().getComponents()).filter(c -> lm.getConstraints(c).gridy == radek && lm.getConstraints(c).gridx == 0).map(c -> (JLabel) c).findFirst().get();
+			Assert.assertNotNull("kroužek vlevo", prvni.getIcon());
+			final JLabel jina = labels(p).stream().filter(l -> "Albánie".equals(l.getText())).findFirst().get();
+			final int radekJine = ((java.awt.GridBagLayout) jina.getParent().getLayout()).getConstraints(jina).gridy;
+			final JLabel prvniJine = Arrays.stream(jina.getParent().getComponents()).filter(c -> ((java.awt.GridBagLayout) jina.getParent().getLayout()).getConstraints(c).gridy == radekJine
+					&& ((java.awt.GridBagLayout) jina.getParent().getLayout()).getConstraints(c).gridx == 0).map(c -> (JLabel) c).findFirst().get();
+			Assert.assertEquals("stejný kroužek jako u ostatních zemí", prvniJine.getIcon().getIconWidth(), prvni.getIcon().getIconWidth());
 		});
 	}
 
@@ -269,6 +539,7 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
 			Assert.assertFalse("během stahování vrstvy jde jen zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
+			Assert.assertTrue("procenta stahované vrstvy", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().endsWith(" %")));
 			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().noneMatch(JButton::isEnabled));
 		});
 	}
@@ -327,9 +598,11 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, viditelnychLabelu(p, "Francie"));
 			Assert.assertEquals(1, viditelnychLabelu(p, "Spojené království"));
 			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals("země bez celku má v buňce Mapa „jen regiony“, ostatní země ne", 1, viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
+			Assert.assertEquals("záhlaví sloupce Mapa", 1, viditelnychLabelu(p, JMapyPopup.SLOUPEC_MAPA));
 			p.prepniUzel("Německo");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
-			long viditelnychRadku = labels(p).stream().filter(l -> l.isVisible() && l.getText() != null && !l.getText().isEmpty()).count();
+			long viditelnychRadku = labels(p).stream().filter(l -> l.isVisible() && l.getText() != null && !l.getText().isEmpty() && !JMapyPopup.NENI_VRSTVA.equals(l.getText())).count();
 			Assert.assertTrue("rozbalené Německo + sbalené ostatní, ne všech 130 map: " + viditelnychRadku, viditelnychRadku < 250);
 		});
 	}
@@ -919,7 +1192,7 @@ public class JMapyPopupTest {
 			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(5 * MB).datumDat(Instant.EPOCH).build()));
 			p.obnov(Collections.singletonList(RadekMapy.vlastni("paws.map").velikost(2_500 * MB).datumDat(Instant.parse("2026-10-01T00:00:00Z")).build()));
 			for (final JLabel l : popisky(p)) {
-				if (l.getToolTipText() != null) {
+				if (l.getToolTipText() != null && !JMapyPopup.VE_SLOZCE.equals(l.getText())) {
 					Assert.assertTrue(l.getToolTipText(), l.getToolTipText().contains("2,5 GB"));
 				}
 			}

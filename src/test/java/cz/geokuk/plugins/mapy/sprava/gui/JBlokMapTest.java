@@ -73,4 +73,22 @@ public class JBlokMapTest {
 		Assert.assertEquals(Collections.singletonList(Boolean.FALSE), naEdt);
 		Assert.assertTrue("otevření popupu nic nestahuje ani nekontroluje: " + volani, volani.isEmpty());
 	}
+
+	/** Sbalení oddílu Ve složce se ukládá do nastavení a dá se zase načíst; původní hodnotu test vrátí. */
+	@Test
+	public void stavSlozkyVNastaveni() {
+		final java.util.Optional<Boolean> puvodni = JBlokMap.nactiStavSlozky();
+		try {
+			JBlokMap.ulozStavSlozky(false);
+			Assert.assertEquals(java.util.Optional.of(false), JBlokMap.nactiStavSlozky());
+			JBlokMap.ulozStavSlozky(true);
+			Assert.assertEquals(java.util.Optional.of(true), JBlokMap.nactiStavSlozky());
+		} finally {
+			if (puvodni.isPresent()) {
+				JBlokMap.ulozStavSlozky(puvodni.get());
+			} else {
+				cz.geokuk.framework.MyPreferences.current().node(JBlokMap.PREFE_NODE).putBoolean(JBlokMap.PREFE_SLOZKA_VOLBA, false);
+			}
+		}
+	}
 }
