@@ -225,7 +225,7 @@ public class JMapyPopupTest {
 			final List<JButton> zakazane = tlacitkaSTextem(p, JMapyPopup.SMAZAT);
 			Assert.assertEquals("tlačítko zůstává vidět", 1, zakazane.size());
 			Assert.assertFalse("při stahování jiné mapy je vypnuté", zakazane.get(0).isEnabled());
-			Assert.assertEquals(JMapyPopup.STAHUJE_SE_JINA, zakazane.get(0).getToolTipText());
+			Assert.assertEquals(JMapyPopup.BEHEM_STAHOVANI_NEJDE_MAZAT, zakazane.get(0).getToolTipText());
 			zakazane.get(0).doClick();
 			Assert.assertEquals("vypnuté tlačítko nic nespustí", 1, z.volani.size());
 		});

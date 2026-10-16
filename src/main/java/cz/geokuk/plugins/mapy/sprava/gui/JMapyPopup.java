@@ -55,6 +55,7 @@ public class JMapyPopup extends JPanel {
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
 	static final String OTEVRIT_SLOZKU = "Otevřít složku";
 	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
+	static final String BEHEM_STAHOVANI_NEJDE_MAZAT = "Během stahování nejde mazat.";
 	static final String VSE_AKTUALNI = "Vše aktuální";
 	static final String KONTROLA_SELHALA = "Kontrola se nepovedla";
 
@@ -964,7 +965,7 @@ public class JMapyPopup extends JPanel {
 			smazat.setForeground(IkonyMap.CERVENA);
 			if (stahujeSe) {
 				smazat.setEnabled(false);
-				smazat.setToolTipText(STAHUJE_SE_JINA);
+				smazat.setToolTipText(BEHEM_STAHOVANI_NEJDE_MAZAT);
 			}
 			final GridBagConstraints cs = bunka(4, y, 1);
 			cs.anchor = GridBagConstraints.EAST;
