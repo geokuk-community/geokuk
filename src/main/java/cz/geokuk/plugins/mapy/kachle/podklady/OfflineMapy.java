@@ -41,12 +41,15 @@ public class OfflineMapy {
 	private volatile double meritko = 1;
 	/** Násobek velikosti písma a značek na mapě (1 = 100 %). */
 	private volatile double pismo = 1;
+	/** Překryv tras: vrstvy tras už kreslí podklad (offline mapa s tématem, které je umí), překryv je vynechá. */
+	private volatile boolean trasyKresliPodklad;
 
 	/** Nastavení, podle kterého jsou otevřené mapy; mění se jen v {@link #pouzij()}. */
 	private File slozkaOtevrena;
 	private TemaOfflineMapy temaOtevrene;
 	private double meritkoOtevrene;
 	private double pismoOtevrene;
+	private boolean trasyKresliPodkladOtevrene;
 
 	private volatile OfflineRenderer renderer;
 	/** Názvy souborů otevřených map, podle nich se volí atribuce. */
@@ -86,6 +89,15 @@ public class OfflineMapy {
 	public void nastav(final File slozka, final TemaOfflineMapy tema) {
 		this.slozka = slozka;
 		this.tema = tema;
+	}
+
+	/** Jen pro překryv tras: podklad sám kreslí stažené vrstvy tras, překryv je proto nebere. */
+	public void setTrasyKresliPodklad(final boolean kresli) {
+		trasyKresliPodklad = kresli;
+	}
+
+	public boolean isTrasyKresliPodklad() {
+		return trasyKresliPodklad;
 	}
 
 	/** Nastaví měřítko displeje, zaokrouhlené na čtvrtiny v rozsahu 1–3; při změně se mapy vykreslí znovu. */
@@ -188,11 +200,13 @@ public class OfflineMapy {
 		final TemaOfflineMapy t = tema;
 		final double m = meritko;
 		final double pi = pismo;
-		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene) {
+		final boolean k = trasyKresliPodklad;
+		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene || k != trasyKresliPodkladOtevrene) {
 			slozkaOtevrena = s;
 			temaOtevrene = t;
 			meritkoOtevrene = m;
 			pismoOtevrene = pi;
+			trasyKresliPodkladOtevrene = k;
 			otiskSlozky = null;
 		}
 		zkontrolujSlozku(System.nanoTime());
@@ -210,7 +224,8 @@ public class OfflineMapy {
 	 * Nevolat z EDT.
 	 */
 	public synchronized void zkontrolujSlozku() {
-		if (otiskSlozky != null && Objects.equals(slozka, slozkaOtevrena) && tema.equals(temaOtevrene) && meritko == meritkoOtevrene && pismo == pismoOtevrene) {
+		if (otiskSlozky != null && Objects.equals(slozka, slozkaOtevrena) && tema.equals(temaOtevrene) && meritko == meritkoOtevrene && pismo == pismoOtevrene
+				&& trasyKresliPodklad == trasyKresliPodkladOtevrene) {
 			zkontrolujSlozku(System.nanoTime());
 		}
 	}
@@ -221,7 +236,7 @@ public class OfflineMapy {
 			return;
 		}
 		posledniKontrola = ted;
-		final List<File> mapy = mapyVeSlozce(slozkaOtevrena);
+		final List<File> mapy = prekryv ? mapyPrekryvu(slozkaOtevrena, trasyKresliPodkladOtevrene) : mapyVeSlozce(slozkaOtevrena);
 		final String otisk = otisk(mapy);
 		if (otiskSlozky == null) {
 			otiskSlozky = otisk;
@@ -243,7 +258,41 @@ public class OfflineMapy {
 		}
 	}
 
-	/** Vrstvy kreslené spolu se základní mapou; překryv tras je nekreslí. */
+	/** Přípona stažené vrstvy tras ve složce vrstev. */
+	static final String PRIPONA_TRAS = "." + cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Typ.TRASY.getKod() + ".map";
+
+	/**
+	 * Mapy pro překryv tras: stažené vrstvy tras (stačí i bez základní mapy, třeba přes online podklad) a základní mapy, ke kterým vrstva tras stažená není.
+	 * Základní mapa, ke které vrstva tras je, se vynechá, jinak by se stejné trasy kreslily dvakrát.
+	 *
+	 * @param trasyKresliPodklad
+	 *            vrstvy tras kreslí už podklad, překryv bere jen základní mapy
+	 */
+	static List<File> mapyPrekryvu(final File slozka, final boolean trasyKresliPodklad) {
+		if (slozka == null) {
+			return Collections.emptyList();
+		}
+		final List<File> vysledek = new ArrayList<>();
+		final Set<String> klice = new HashSet<>();
+		final File slozkaVrstev = new File(slozka, SLOZKA_VRSTEV);
+		for (final File f : trasyKresliPodklad ? Collections.<File> emptyList() : vrstvyVeSlozce(slozka)) {
+			final String cesta = slozkaVrstev.toPath().relativize(f.toPath()).toString().replace('\\', '/');
+			if (cesta.toLowerCase(Locale.ROOT).endsWith(PRIPONA_TRAS)) {
+				vysledek.add(f);
+				klice.add(cesta.substring(0, cesta.length() - PRIPONA_TRAS.length()).toLowerCase(Locale.ROOT));
+			}
+		}
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		for (final File f : mapyVeSlozce(slozka)) {
+			final String klic = katalog.podleSouboru(f.getName()).map(m -> m.getId().toLowerCase(Locale.ROOT)).orElse(null);
+			if (klic == null || !klice.contains(klic)) {
+				vysledek.add(f);
+			}
+		}
+		return vysledek;
+	}
+
+	/** Vrstvy kreslené spolu se základní mapou; překryv tras je nekreslí, jeho vrstvy tras jsou v {@link #mapyPrekryvu(File, boolean)}. */
 	private List<File> vrstvyPouzite() {
 		return prekryv ? Collections.emptyList() : vrstvyVeSlozce(slozkaOtevrena);
 	}
@@ -278,7 +327,8 @@ public class OfflineMapy {
 		zavriRenderer();
 		nazvyMap = mapy.stream().map(File::getName).collect(Collectors.toList());
 		if (mapy.isEmpty()) {
-			chyba = new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
+			chyba = prekryv ? new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy ani stažené trasy.", "nejsou mapy ani trasy", null)
+					: new OfflineMapaChyba("Ve složce " + slozkaOtevrena + " nejsou offline mapy (soubory .map).", "ve složce nejsou soubory .map", null);
 		} else {
 			try {
 				final long start = System.nanoTime();

@@ -88,4 +88,25 @@ public class PrekryvTrasNastaveniTest {
 		model.onEvent(new ZmenaMapNastalaEvent(EKaType.CUZK_ORTO));
 		Assert.assertTrue(posledni().isViditelny());
 	}
+
+	/** Offline podklad s tématem Turistická kreslí stažené vrstvy tras sám, překryv je proto nebere (jinak by trasy byly dvakrát přes popisky). */
+	@Test
+	public void vrstvyTrasKresliTuristickyPodklad() {
+		model.setPrekryvTras(true);
+		final OfflineMapy trasy = model.getZiskavac().getOfflineTrasy();
+		model.setTemaOfflineMapy(TemaOfflineMapy.TURISTICKA);
+		Assert.assertFalse("online podklad vrstvy tras nekreslí", trasy.isTrasyKresliPodklad());
+
+		model.onEvent(new ZmenaMapNastalaEvent(EKaType.OFFLINE_MF));
+		Assert.assertTrue(trasy.isTrasyKresliPodklad());
+		Assert.assertTrue("překryv dál kreslí trasy ze základních map", posledni().isViditelny());
+
+		model.setTemaOfflineMapy(TemaOfflineMapy.VYCHOZI);
+		Assert.assertFalse("výchozí téma vrstvy tras nekreslí", trasy.isTrasyKresliPodklad());
+
+		model.setTemaOfflineMapy(TemaOfflineMapy.TURISTICKA.sVrstvami(VolbaVrstev.AUTOR));
+		Assert.assertTrue(trasy.isTrasyKresliPodklad());
+		model.onEvent(new ZmenaMapNastalaEvent(EKaType.CUZK_ORTO));
+		Assert.assertFalse(trasy.isTrasyKresliPodklad());
+	}
 }

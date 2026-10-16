@@ -65,6 +65,8 @@ public class Menu extends MenuStrujce {
 		item(akce.prekryvTrasAction);
 
 		separator();
+		item(akce.pruvodceMapAction);
+		separator();
 
 	}
 
