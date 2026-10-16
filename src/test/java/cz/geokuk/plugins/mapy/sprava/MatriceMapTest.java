@@ -130,4 +130,26 @@ public class MatriceMapTest {
 		assertEquals(StavBunky.NENI, radek(radky, "europe/germany").getBunka(Cast.TRASY).getStav());
 		assertEquals(StavBunky.NENI, radek(radky, "europe/germany/sachsen").getBunka(Cast.TRASY).getStav());
 	}
+
+	/** Vrstva celé země se regionu nepřidá (a naopak): párování je přesné, ne podle prefixu klíče. */
+	@Test
+	public void vrstvaCeleZemeNepatriRegionu() throws IOException {
+		final KatalogVrstev k = KatalogVrstev.nacti(KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("routes/europe/germany", "routes", "europe/germany", "map",
+				KatalogVrstevTest.soubor("germany.routes.map", "v1/germany.routes.map", 150_000_000, VrstvyProGui.SHA), "")), KatalogMap.vestaveny());
+		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), k, StavVrstvy::novy);
+		assertEquals(StavBunky.KE_STAZENI, radek(radky, "europe/germany").getBunka(Cast.TRASY).getStav());
+		assertEquals(StavBunky.NENI, radek(radky, "europe/germany/bayern").getBunka(Cast.TRASY).getStav());
+		assertEquals(StavBunky.NENI, radek(radky, "europe/germany/berlin").getBunka(Cast.TRASY).getStav());
+		assertEquals(StavBunky.NENI, radek(radky, "europe/czech-republic").getBunka(Cast.TRASY).getStav());
+	}
+
+	@Test
+	public void datumDatARozpracovanostVBunce() {
+		final Radek cz = radek(MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), VrstvyProGui.katalogCesko(),
+				v -> VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, v.getId().startsWith("contours") ? 5_000_000 : 0, null)), CZ);
+		assertEquals(java.time.LocalDate.of(2026, 10, 13), cz.getBunka(Cast.TRASY).getDatumDat());
+		assertFalse(cz.getBunka(Cast.TRASY).jeCoMazat());
+		assertTrue("rozpracovaná vrstva jde smazat", cz.getBunka(Cast.VRSTEVNICE).jeCoMazat());
+		assertEquals(StavBunky.KE_STAZENI, cz.getBunka(Cast.VRSTEVNICE).getStav());
+	}
 }

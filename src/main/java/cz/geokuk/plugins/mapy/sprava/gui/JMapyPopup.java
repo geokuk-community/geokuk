@@ -529,6 +529,8 @@ public class JMapyPopup extends JPanel {
 		return sb.toString();
 	}
 
+	private static final java.time.format.DateTimeFormatter DATUM_DAT = java.time.format.DateTimeFormatter.ofPattern("d. M. yyyy");
+
 	private static final MatriceMap.Cast[] VRSTVY = { MatriceMap.Cast.TRASY, MatriceMap.Cast.VRSTEVNICE, MatriceMap.Cast.STINOVANI };
 
 	private static String klic(final RadekMapy r) {
@@ -623,6 +625,12 @@ public class JMapyPopup extends JPanel {
 			if (nedostatekMista(r)) {
 				s.add(klic(r));
 			}
+			for (final MatriceMap.Cast c : VRSTVY) {
+				final MatriceMap.Bunka b = r.bunka(c);
+				if (b != null && nedostatekMista(b)) {
+					s.add(klic(r) + "#" + c);
+				}
+			}
 		}
 		return s;
 	}
@@ -716,7 +724,7 @@ public class JMapyPopup extends JPanel {
 		for (final RadekMapy r : radky) {
 			if (r.isVeSlozce()) {
 				veSlozce.add(r);
-			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE) {
+			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE || r.bezicVrstva() != null) {
 				proMisto.add(r);
 			} else {
 				dalsi.add(r);
@@ -1108,7 +1116,7 @@ public class JMapyPopup extends JPanel {
 		case STAZENO: {
 			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.AKTUALNI)));
 			final JLabel l = maly(velikost);
-			l.setToolTipText(nazev + " je stažená");
+			l.setToolTipText(nazev + ": staženo" + (b.getDatumDat() == null ? "" : ", data z " + DATUM_DAT.format(b.getDatumDat())));
 			p.add(l);
 			break;
 		}
@@ -1144,13 +1152,13 @@ public class JMapyPopup extends JPanel {
 		case KE_STAZENI:
 		default: {
 			final JButton stahnout = odkaz("↓ " + velikost, e -> stahniVrstvu(b));
-			stahnout.setToolTipText(nazev + ": stáhnout" + (velikost.isEmpty() ? "" : ", " + velikost));
+			stahnout.setToolTipText(nazev + ": stáhnout" + (velikost.isEmpty() ? "" : ", " + velikost) + (b.getStazeno() > 0 ? " (rozpracováno)" : ""));
 			zakazDokudNeniMisto(stahnout, b, stahujeSe);
 			p.add(stahnout);
-			return p;
+			break;
 		}
 		}
-		if (b.jeStazeno()) {
+		if (b.jeCoMazat()) {
 			final JButton smazat = odkaz(SMAZAT_VRSTVU, e -> {
 				if (ovladani != null) {
 					ovladani.smazVrstvu(b.getId());

@@ -66,14 +66,16 @@ public final class MatriceMap {
 		private final long velikost;
 		private final long stazeno;
 		private final String chyba;
+		private final java.time.LocalDate datumDat;
 
-		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba) {
+		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba, final java.time.LocalDate datumDat) {
 			this.cast = cast;
 			this.stav = stav;
 			this.id = id;
 			this.velikost = velikost;
 			this.stazeno = stazeno;
 			this.chyba = chyba;
+			this.datumDat = datumDat;
 		}
 
 		public Cast getCast() {
@@ -102,6 +104,16 @@ public final class MatriceMap {
 		/** Chyba pro uživatele, jen u stavu CHYBA. */
 		public String getChyba() {
 			return chyba;
+		}
+
+		/** Datum dat staženého souboru nebo vrstvy z katalogu, null když není známé. */
+		public java.time.LocalDate getDatumDat() {
+			return datumDat;
+		}
+
+		/** Je co mazat: stažené, nebo rozpracované stahování. */
+		public boolean jeCoMazat() {
+			return jeStazeno() || (stav == StavBunky.KE_STAZENI || stav == StavBunky.CHYBA) && stazeno > 0;
 		}
 
 		/** Je co stahovat nebo aktualizovat. */
@@ -161,7 +173,7 @@ public final class MatriceMap {
 					continue;
 				}
 				final KatalogovaVrstva v = vrstvy == null ? null : vrstvy.vrstva(m.getId(), c.typ()).orElse(null);
-				bunky.put(c, v == null || stavyVrstev == null ? new Bunka(c, StavBunky.NENI, null, -1, 0, null) : bunkaVrstvy(c, v, stavyVrstev.apply(v)));
+				bunky.put(c, v == null || stavyVrstev == null ? new Bunka(c, StavBunky.NENI, null, -1, 0, null, null) : bunkaVrstvy(c, v, stavyVrstev.apply(v)));
 			}
 			radky.add(new Radek(m, bunky));
 		}
@@ -181,7 +193,8 @@ public final class MatriceMap {
 			stav = StavBunky.KE_STAZENI;
 		}
 		final long stazeno = stav == StavBunky.STAZENO ? velikost : Math.min(s.getStazeno(), Math.max(velikost, 0));
-		return new Bunka(Cast.MAPA, stav, m.getId(), velikost, stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null);
+		final java.time.LocalDate datum = s.getDatumDatMistni() == null ? null : s.getDatumDatMistni().atZone(java.time.ZoneOffset.UTC).toLocalDate();
+		return new Bunka(Cast.MAPA, stav, m.getId(), velikost, stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null, datum);
 	}
 
 	static Bunka bunkaVrstvy(final Cast cast, final KatalogovaVrstva v, final StavVrstvy s) {
@@ -198,6 +211,6 @@ public final class MatriceMap {
 			stav = StavBunky.KE_STAZENI;
 		}
 		final long stazeno = stav == StavBunky.STAZENO ? v.getVelikost() : Math.min(s.getStazeno(), v.getVelikost());
-		return new Bunka(cast, stav, v.getId(), v.getVelikost(), stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null);
+		return new Bunka(cast, stav, v.getId(), v.getVelikost(), stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null, v.getDatumDat());
 	}
 }
