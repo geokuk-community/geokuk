@@ -69,6 +69,7 @@ public class PruvodceMapAction extends Action0 {
 			return;
 		}
 		spravaMap.obnovStavy();
+		spravaMap.obnovKatalogVrstevKdyzJeStary();
 		new JPruvodceMap(getMainFrame(), new ProgramPruvodceKontext(spravaMap, mapyModel, kachleModel)).setVisible(true);
 	}
 }
