@@ -146,6 +146,11 @@ public class Inicializator {
 		akce.dalkoveOvladaniAction.ukazStav();
 	}
 
+	/** Nová instalace: průvodce nastavením map se otevře sám. */
+	public void nabidniPruvodceMap(final boolean automatizace) {
+		akce.pruvodceMapAction.nabidniPriPrvnimSpusteni(automatizace);
+	}
+
 	public void zkontrolovatAktualizace() {
 		napovedaModel.zkontrolujNoveAktualizace(false);
 	}

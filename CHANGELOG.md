@@ -88,6 +88,9 @@
   Vrstvy se stahují a mažou v popupu Mapy ve sloupcích Trasy, Vrstevnice a
   Stínování u každé mapy, i u mapy, která ještě není stažená.
   Seznam map ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
+- Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
+  se otevře sám) vybere zemi, podklad a vrstvy, stáhne jen to, co chybí, a
+  přepne mapu.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno

@@ -99,6 +99,7 @@ public class GeokukMain {
 			new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
 			new Thread(PrehledovaMapa::doplnPriStartu, "Přehledová mapa").start();
 			VytvoritZastupceAction.nabidniStart(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless());
+			SwingUtilities.invokeLater(() -> inicializator.nabidniPruvodceMap(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless()));
 			if (portOvladani != null) {
 				inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);
 			} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {
