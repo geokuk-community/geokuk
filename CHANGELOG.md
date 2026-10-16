@@ -77,6 +77,10 @@
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
 
+### Opravy
+- Mapy > Postahovat dlaždice: stahování velkého výřezu (tisíce dlaždic)
+  už nedojde paměť, stažené dlaždice se průběžně uvolňují.
+
 Obsahuje i všechny opravy z 6.4.1.
 
 ## 6.4.1
