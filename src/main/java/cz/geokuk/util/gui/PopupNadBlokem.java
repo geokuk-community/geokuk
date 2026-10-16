@@ -85,7 +85,7 @@ public class PopupNadBlokem {
 		obsah.setSize(obsah.getPreferredSize());
 		final Point p = poloha(obsah.getPreferredSize(), kotva);
 		SwingUtilities.convertPointToScreen(p, blok);
-		popup = PopupFactory.getSharedInstance().getPopup(blok, obsah, p.x, p.y);
+		popup = new OknoPopup(blok, obsah, p.x, p.y);
 		obsahPopupu = obsah;
 		popup.show();
 		mimoOd = -1;
@@ -210,5 +210,30 @@ public class PopupNadBlokem {
 
 	private static boolean obsahuje(final Component c, final Point obrazovka) {
 		return c.isShowing() && new Rectangle(c.getLocationOnScreen(), c.getSize()).contains(obrazovka);
+	}
+
+	/** Popup v nezávislém okně; lehký popup při zavření prochází celý strom komponent hlavního okna. */
+	private static final class OknoPopup extends Popup {
+		private final JWindow okno;
+
+		OknoPopup(final Component vlastnik, final Component obsah, final int x, final int y) {
+			final Window rodic = SwingUtilities.getWindowAncestor(vlastnik);
+			okno = new JWindow(rodic);
+			okno.setFocusableWindowState(false);
+			okno.getContentPane().add(obsah);
+			okno.pack();
+			okno.setLocation(x, y);
+		}
+
+		@Override
+		public void show() {
+			okno.setVisible(true);
+		}
+
+		@Override
+		public void hide() {
+			okno.setVisible(false);
+			okno.dispose();
+		}
 	}
 }
