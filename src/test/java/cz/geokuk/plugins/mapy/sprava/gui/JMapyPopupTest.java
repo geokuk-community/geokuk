@@ -314,6 +314,25 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Změna volného místa přepočítá i buňky vrstev: ↓ se vypne, když se vrstva nevejde, a zase zapne. */
+	@Test
+	public void volneMistoPrepocitaBunkyVrstev() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+					cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null)));
+			final java.util.function.Supplier<List<JButton>> stahnout = () -> tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ")).collect(java.util.stream.Collectors.toList());
+			Assert.assertEquals(3, stahnout.get().size());
+			Assert.assertTrue(stahnout.get().stream().allMatch(JButton::isEnabled));
+			p.setVolneMisto(10 * MB);
+			Assert.assertTrue("nic se nevejde", stahnout.get().stream().noneMatch(JButton::isEnabled));
+			Assert.assertTrue(stahnout.get().get(0).getToolTipText().startsWith("Na disku je volných jen"));
+			p.setVolneMisto(100_000L * MB);
+			Assert.assertTrue("zase se vejde", stahnout.get().stream().allMatch(JButton::isEnabled));
+		});
+	}
+
 	/** Katalogové mapy s danými id jsou stažené, ostatní ne. */
 	private static List<RadekMapy> stazene(final String... ids) {
 		final Set<String> mame = new HashSet<>(Arrays.asList(ids));
