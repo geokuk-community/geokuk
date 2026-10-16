@@ -1062,7 +1062,8 @@ public class JMapyPopup extends JPanel {
 	/** Stahuje se mapa nebo její vrstva, nebo se něco nepovedlo: takový řádek je vidět i ve sbaleném oddílu a sbalené zemi. */
 	private static boolean vyzadujePozornost(final RadekMapy r) {
 		final RadekMapy.Stav s = r.celkovyStav();
-		return s == RadekMapy.Stav.STAHUJE || s == RadekMapy.Stav.CHYBA;
+		// Kontrola aktualizací řádek jen označí, nic se nestahuje, proto oddíl nerozbaluje.
+		return s == RadekMapy.Stav.STAHUJE && !r.kontroluje || s == RadekMapy.Stav.CHYBA;
 	}
 
 	private boolean jeSlozkaOtevrena(final int pocetMap) {

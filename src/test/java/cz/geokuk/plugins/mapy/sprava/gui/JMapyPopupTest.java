@@ -436,6 +436,30 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Chyba ve sbalené složce zůstane vidět; kontrola aktualizací složku ani zemi nerozbaluje. */
+	@Test
+	public void chybaVeSbaleneSlozceAKontrola() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final String[] osm = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england", "europe/united-kingdom/wales", "europe/poland" };
+			final Set<String> mame = new HashSet<>(Arrays.asList(osm));
+			final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.StavMapy.Faze, List<RadekMapy>> radky = faze -> RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, faze == cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.CHYBA && ("europe/austria".equals(m.getId()) || "europe/germany/sachsen".equals(m.getId())) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.POSKOZENA
+							: mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, "europe/austria".equals(m.getId()) || "europe/germany/sachsen".equals(m.getId()) ? faze : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1,
+							faze == cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.CHYBA ? "chyba" : null),
+					Collections.emptyList(), null);
+			final JMapyPopup chyba = new JMapyPopup();
+			chyba.setOvladani(new Zaznam());
+			chyba.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.CHYBA));
+			Assert.assertEquals("poškozená mapa je vidět i ve sbalené složce", 1, videtLabelu(chyba, "Rakousko"));
+			Assert.assertEquals("země s chybným regionem je rozbalená", 1, videtLabelu(chyba, "Bavorsko"));
+			final JMapyPopup kontrola = new JMapyPopup();
+			kontrola.setOvladani(new Zaznam());
+			kontrola.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.KONTROLUJE));
+			Assert.assertEquals("kontrola aktualizací složku nerozbaluje", 0, videtLabelu(kontrola, "Rakousko"));
+		});
+	}
+
 	/** Hranice výchozího sbalení: pět map rozbaleno, šest sbaleno. */
 	@Test
 	public void hranicePetASestMap() throws Exception {
