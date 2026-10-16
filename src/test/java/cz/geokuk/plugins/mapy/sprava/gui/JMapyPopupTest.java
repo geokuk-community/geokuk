@@ -350,6 +350,8 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, viditelnychLabelu(p, "Francie"));
 			Assert.assertEquals(1, viditelnychLabelu(p, "Spojené království"));
 			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
+			Assert.assertEquals("země bez celku má v buňce Mapa „jen regiony“, ostatní země ne", 1, viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
+			Assert.assertEquals("záhlaví sloupce Mapa", 1, viditelnychLabelu(p, JMapyPopup.SLOUPEC_MAPA));
 			p.prepniUzel("Německo");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
 			long viditelnychRadku = labels(p).stream().filter(l -> l.isVisible() && l.getText() != null && !l.getText().isEmpty() && !JMapyPopup.NENI_VRSTVA.equals(l.getText())).count();
