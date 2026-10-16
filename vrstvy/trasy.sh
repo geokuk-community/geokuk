@@ -20,11 +20,11 @@ datum=${datum:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
 rm -f "$pbf"
 "$D/mer.sh" addfmreltags perl "$D/addfmreltags.pl" "$PRACE/trasy.pbf" "$PRACE"
 test -s "$PRACE/trasy.pbf-fmrel.pbf"
-out="$VYSTUP/${ZAKLAD}.trasy.map"
+out="$VYSTUP/${ZAKLAD}.routes.map"
 "$D/mer.sh" zapis-map osmosis -q --rb file="$PRACE/trasy.pbf-fmrel.pbf" \
   --mw file="$out" type="${TYP_ZAPISU:-ram}" bbox="$BBOX" threads="$(nproc)" \
   tag-conf-file="$D/tag-mapping-trasy.xml" zoom-interval-conf=5,0,7,10,8,11,14,12,21 \
   comment="(c) OpenStreetMap contributors (ODbL), Geofabrik $datum"
-cp "$D/LICENCE-OSM.txt" "$VYSTUP/${ZAKLAD}.trasy.LICENCE.txt"
-"$D/meta.py" trasy "$out" "${datum%%T*}" "Geofabrik ${REGION}-latest.osm.pbf ($datum)" "$D/LICENCE-OSM.txt" '{"zoom":{"min":0,"max":21}}'
+cp "$D/LICENCE-OSM.txt" "$VYSTUP/${ZAKLAD}.routes.LICENCE.txt"
+"$D/meta.py" routes "$out" "${datum%%T*}" "Geofabrik ${REGION}-latest.osm.pbf ($datum)" "$D/LICENCE-OSM.txt" '{"zoom":{"min":0,"max":21}}'
 curl -fsSL --retry 3 -o "$VYSTUP/${ZAKLAD}.poly" "https://download.geofabrik.de/${REGION}.poly" || true

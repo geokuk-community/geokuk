@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Složí vrstvy.json a SHA256SUMS z *.meta.json (zapisuje meta.sh).
+"""Složí layers.json a SHA256SUMS z *.meta.json (zapisuje meta.sh).
 Použití: katalog.py slozka_s_meta region nazev jih,západ,sever,východ [predpona_url]
 nazev souboru = <region s / nahrazeným _>.<typ>.<přípona>; soubory[].cesta = lokální cesta ve složce vrstev (<region>.<typ>.<přípona>)"""
 import glob, json, os, sys
@@ -12,9 +12,9 @@ COPERNICUS = ('produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and �
               'Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30.')
 
 TYPY = {
-    'trasy': dict(nazev='Turistické, cyklo a MTB trasy – %s', format='map', licence='ODbL 1.0',
-                  atribuce='© přispěvatelé OpenStreetMap', tema='trasy-kct'),
-    'vrstevnice': dict(nazev='Vrstevnice – %s (10 m)', format='map', licence='Copernicus COP-DEM-GLO-30-F',
+    'routes': dict(nazev='Turistické, cyklo a MTB trasy – %s', format='map', licence='ODbL 1.0',
+                  atribuce='© přispěvatelé OpenStreetMap', tema='routes'),
+    'contours': dict(nazev='Vrstevnice – %s (10 m)', format='map', licence='Copernicus COP-DEM-GLO-30-F',
                        atribuce='Vrstevnice: Copernicus DEM GLO-30 © DLR/Airbus, ESA', atribuceDlouha=COPERNICUS,
                        pozn='Copernicus je DSM (povrch včetně budov a lesa).'),
     'dem': dict(nazev='Stínovaný reliéf – %s (HGT 1″)', format='hgt-zip', licence='Copernicus COP-DEM-GLO-30-F',
@@ -52,7 +52,7 @@ def main():
         v['licenceText'] = m['licenceText']
         vrstvy.append(v)
     out = {'format': 1, 'vygenerovano': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'zdroje': [ZDROJ], 'vrstvy': vrstvy}
-    with open(os.path.join(slozka, 'vrstvy.json'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(slozka, 'layers.json'), 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
         f.write('\n')
     with open(os.path.join(slozka, 'SHA256SUMS'), 'w', encoding='utf-8') as f:

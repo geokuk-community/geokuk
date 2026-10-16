@@ -15,8 +15,8 @@ on:
       typy:
         description: "Které vrstvy vyrobit (vrstevnice potřebují DEM)"
         type: choice
-        options: [vse, trasy, dem, vrstevnice]
-        default: vse
+        options: [all, routes, dem, contours]
+        default: all
       paralelne:
         description: "Počet souběžných pyhgtmap pro vrstevnice"
         default: "2"
@@ -42,14 +42,14 @@ env:
   REGION: ${{ inputs.region || 'europe/luxembourg' }}
   NAZEV: ${{ inputs.nazev || 'Lucembursko' }}
   BBOX: ${{ inputs.bbox || '49.4,5.7,50.2,6.55' }}
-  TYPY: ${{ inputs.typy || 'vse' }}
+  TYPY: ${{ inputs.typy || 'all' }}
   JAVA_OPTS: -Xmx10g
   ZAPIS: ${{ inputs.zapis || 'ram' }}
   PARALELNE: ${{ inputs.paralelne || '2' }}
 
 jobs:
   trasy:
-    if: ${{ inputs.typy == 'vse' || inputs.typy == 'trasy' || github.event_name == 'pull_request' }}
+    if: ${{ inputs.typy == 'all' || inputs.typy == 'routes' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
@@ -98,7 +98,7 @@ jobs:
             out/*.poly
 
   dem:
-    if: ${{ inputs.typy == 'vse' || inputs.typy == 'dem' || inputs.typy == 'vrstevnice' || github.event_name == 'pull_request' }}
+    if: ${{ inputs.typy == 'all' || inputs.typy == 'dem' || inputs.typy == 'contours' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
@@ -141,7 +141,7 @@ jobs:
 
   vrstevnice:
     needs: dem
-    if: ${{ !cancelled() && needs.dem.result == 'success' && (inputs.typy == 'vse' || inputs.typy == 'vrstevnice' || github.event_name == 'pull_request') }}
+    if: ${{ !cancelled() && needs.dem.result == 'success' && (inputs.typy == 'all' || inputs.typy == 'contours' || github.event_name == 'pull_request') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
@@ -206,12 +206,12 @@ jobs:
           path: katalog
       - name: Katalog
         run: |
-          python3 vrstvy/katalog.py katalog "$REGION" "$NAZEV" "$BBOX" "vrstvy-$(date -u +%Y-%m)/"
-          cat katalog/vrstvy.json
+          python3 vrstvy/katalog.py katalog "$REGION" "$NAZEV" "$BBOX" "layers-$(date -u +%Y-%m)/"
+          cat katalog/layers.json
       - uses: actions/upload-artifact@v7
         with:
-          name: vrstvy-katalog
+          name: layers-catalog
           retention-days: 14
           path: |
-            katalog/vrstvy.json
+            katalog/layers.json
             katalog/SHA256SUMS

@@ -6,7 +6,7 @@ Skripty workflow **Vrstvy** (`.github/workflows/vrstvy.yml`, ruční spuštění
 - `trasy.sh` – turistické, cyklo, MTB, jezdecké a lyžařské trasy (`osmium tags-filter`, `addfmreltags.pl`, Osmosis + mapsforge-map-writer, `tag-mapping-trasy.xml`)
 - `dem.sh`, `cop2hgt.py` – dlaždice HGT 1″ z Copernicus GLO-30 (AWS Open Data) v zipu
 - `vrstevnice.sh` – vrstevnice po 10 m (pyhgtmap, `tag-mapping-vrstevnice.xml`)
-- `katalog.py` – složí `vrstvy.json` a `SHA256SUMS`
+- `katalog.py` – složí `layers.json` a `SHA256SUMS`
 
 Data © přispěvatelé OpenStreetMap (ODbL). Výškový model: produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
 
