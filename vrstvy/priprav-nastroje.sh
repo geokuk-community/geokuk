@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Osmosis 0.49.2 s pluginem mapsforge-map-writer 0.25.0 do $NASTROJE (výchozí ./nastroje); do $GITHUB_PATH přidá bin.
+set -euo pipefail
+D=$(cd "$(dirname "$0")" && pwd)
+N=${NASTROJE:-$PWD/nastroje}
+mkdir -p "$N"
+url=https://github.com/openstreetmap/osmosis/releases/download/0.49.2/osmosis-0.49.2.tar
+curl -fL --retry 5 --retry-delay 10 -o "$N/osmosis.tar" "$url"
+OSMOSIS_SHA256=${OSMOSIS_SHA256:-2a23a7bf7499a0727ae6987cf66fcafc03b37379dc02177c730f352bd67a0b97}
+sha=$(sha256sum "$N/osmosis.tar" | cut -d' ' -f1)
+echo "osmosis.tar sha256: $sha"
+if [ -n "$OSMOSIS_SHA256" ] && [ "$sha" != "$OSMOSIS_SHA256" ]; then echo "Nesouhlasí sha256 Osmosis" >&2; exit 1; fi
+mkdir -p "$N/osmosis"
+tar -xf "$N/osmosis.tar" -C "$N/osmosis"
+O=$(dirname "$(dirname "$(find "$N/osmosis" -path '*/bin/osmosis' | head -1)")")
+mkdir -p "$N/zavislosti" "$N/fat" "$HOME/.openstreetmap/osmosis/plugins"
+mvn -q -B -f "$D/zapisovac/pom.xml" dependency:copy-dependencies -DoutputDirectory="$N/zavislosti" -DincludeScope=runtime
+# Plugin Osmosis (JPF) vidí jen vlastní jar, proto závislosti slijeme do jednoho (writer naposled kvůli plugin.xml).
+for j in "$N"/zavislosti/*.jar; do case "$j" in *mapsforge-map-writer-*) ;; *) unzip -qo "$j" -x 'META-INF/*' -d "$N/fat" || [ $? -eq 11 ];; esac; done
+rm -f "$N/fat/module-info.class"
+unzip -qo "$N"/zavislosti/mapsforge-map-writer-*.jar -x 'META-INF/MANIFEST.MF' -d "$N/fat"
+(cd "$N/fat" && jar cf "$HOME/.openstreetmap/osmosis/plugins/mapsforge-map-writer-0.25.0-jar-with-dependencies.jar" .)
+"$O/bin/osmosis" -v | head -3 || true
+echo "$O/bin" >> "${GITHUB_PATH:-/dev/null}"
+echo "$O"
