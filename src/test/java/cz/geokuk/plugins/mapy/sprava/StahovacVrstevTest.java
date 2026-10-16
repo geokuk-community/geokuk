@@ -44,7 +44,7 @@ public class StahovacVrstevTest {
 		server.createContext("/rel/", this::obsluz);
 		server.setExecutor(Executors.newCachedThreadPool());
 		server.start();
-		slozka = new File(tmp.getRoot(), "offline-mapy/vrstvy");
+		slozka = new File(tmp.getRoot(), "offline-mapy/layers");
 		final StahovacMapy http = new StahovacMapy("GeoKuk/test (https://example.org)", () -> {
 		});
 		http.casovyLimitMs = 10_000;
@@ -130,7 +130,7 @@ public class StahovacVrstevTest {
 			}
 			sb.append(KatalogVrstevTest.soubor(s, s, data.get(s).length, shaPodvrh.getOrDefault(s, sha(data.get(s)))));
 		}
-		final String json = "{\"format\": 1, \"zdroje\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"vrstvy\": ["
+		final String json = "{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"layers\": ["
 				+ KatalogVrstevTest.vrstva("dem/europe/czech-republic", "dem", "europe/czech-republic", format, sb.toString(), "") + "]}";
 		return KatalogVrstev.nacti(json, KatalogVrstevTest.mapy()).getVrstvy().get(0);
 	}
@@ -299,8 +299,8 @@ public class StahovacVrstevTest {
 	@Test
 	public void modelStahujeVrstvuAMapuNesoubezne() throws Exception {
 		final KatalogovaVrstva v = dvaSoubory();
-		final KatalogVrstev katalog = KatalogVrstev.nacti("{\"format\": 1, \"zdroje\": [\"http://127.0.0.1:" + server.getAddress().getPort()
-				+ "/rel/\"], \"vrstvy\": [" + KatalogVrstevTest.vrstva(v.getId(), "dem", v.getRegion(), "hgt-zip", KatalogVrstevTest.soubor("cz_1.zip", "cz_1.zip",
+		final KatalogVrstev katalog = KatalogVrstev.nacti("{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort()
+				+ "/rel/\"], \"layers\": [" + KatalogVrstevTest.vrstva(v.getId(), "dem", v.getRegion(), "hgt-zip", KatalogVrstevTest.soubor("cz_1.zip", "cz_1.zip",
 						300_000, v.getSoubory().get(0).getSha256()) + "," + KatalogVrstevTest.soubor("cz_2.zip", "cz_2.zip", 200_000, v.getSoubory().get(1).getSha256()), "")
 				+ "]}", KatalogVrstevTest.mapy());
 		final File mapy = new File(tmp.getRoot(), "offline-mapy");

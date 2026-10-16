@@ -32,9 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class KatalogVrstev {
 
-	private static final String VESTAVENY = "katalog-vrstev.json";
+	private static final String VESTAVENY = "layers.json";
 	/** Aktuální katalog vrstev: vždy u posledního vydání vrstev. */
-	public static final URI URL_KATALOGU = URI.create("https://github.com/geokuk-community/geokuk-maps/releases/latest/download/vrstvy.json");
+	public static final URI URL_KATALOGU = URI.create("https://github.com/geokuk-community/geokuk-maps/releases/latest/download/layers.json");
 	private static final int FORMAT = 1;
 	private static final String ID = "[a-z0-9-]+(/[a-z0-9-]+)*";
 	private static final String JMENO_SOUBORU = "[A-Za-z0-9][A-Za-z0-9._-]*";
@@ -70,18 +70,18 @@ public final class KatalogVrstev {
 		return k;
 	}
 
-	/** Načte katalog ve formátu vrstvy.json. Vrstvy neznámého typu nebo formátu přeskočí, ostatní vady jsou chyba. */
+	/** Načte katalog ve formátu layers.json. Vrstvy neznámého typu nebo formátu přeskočí, ostatní vady jsou chyba. */
 	public static KatalogVrstev nacti(final String json, final KatalogMap mapy) throws IOException {
 		final Map<?, ?> koren = objekt(JsonCteni.precti(json), "katalog");
-		final Object format = koren.get("format");
+		final Object format = koren.get("version");
 		if (!(format instanceof Double) || ((Double) format).intValue() != (Double) format) {
-			throw new IOException("Katalog vrstev: chybí format");
+			throw new IOException("Katalog vrstev: chybí version");
 		}
 		if (((Double) format).intValue() > FORMAT) {
 			throw new IOException("Katalog vrstev je v novějším formátu, než program zná");
 		}
-		final List<URI> zdroje = zdroje(koren.get("zdroje"));
-		final Object polozky = koren.get("vrstvy");
+		final List<URI> zdroje = zdroje(koren.get("sources"));
+		final Object polozky = koren.get("layers");
 		if (!(polozky instanceof List)) {
 			throw new IOException("Katalog vrstev nemá vrstvy");
 		}
@@ -91,7 +91,7 @@ public final class KatalogVrstev {
 		for (final Object o : (List<?>) polozky) {
 			final Map<?, ?> p = objekt(o, "vrstva");
 			final String id = text(p, "id");
-			final Typ typ = Typ.podleKodu(text(p, "typ"));
+			final Typ typ = Typ.podleKodu(text(p, "type"));
 			final Format fmt = Format.podleKodu(text(p, "format"));
 			if (typ == null || fmt == null) {
 				log.info("Vrstva {} má typ nebo formát, který program nezná, přeskakuje se", id);
@@ -120,7 +120,7 @@ public final class KatalogVrstev {
 		if (!region.matches(ID)) {
 			throw new IOException("Vrstva " + id + " má neplatný region " + region);
 		}
-		final Object seznam = p.get("soubory");
+		final Object seznam = p.get("files");
 		if (!(seznam instanceof List) || ((List<?>) seznam).isEmpty()) {
 			throw new IOException("Vrstva " + id + " nemá soubory");
 		}
@@ -139,19 +139,19 @@ public final class KatalogVrstev {
 			zoomMin = cele(z.get("min"), "zoom vrstvy " + id);
 			zoomMax = cele(z.get("max"), "zoom vrstvy " + id);
 		}
-		final Object krok = p.get("krokVrstevnic");
-		return new KatalogovaVrstva(id, typ, region, text(p, "nazev"), fmt, Collections.unmodifiableList(soubory), soucet, datumDat(p.get("datumDat"), id),
-				okamzik(p.get("vyrobeno"), id), volitelny(p, "zdrojDat"), zoomMin, zoomMax, krok == null ? 0 : cele(krok, "krok vrstevnic " + id),
-				pokryti(p.get("pokryti"), region, id, mapy), text(p, "licence"), text(p, "atribuce"), volitelny(p, "atribuceDlouha"), volitelny(p, "tema"),
-				volitelny(p, "pozn"));
+		final Object krok = p.get("contourInterval");
+		return new KatalogovaVrstva(id, typ, region, text(p, "name"), fmt, Collections.unmodifiableList(soubory), soucet, datumDat(p.get("dataDate"), id),
+				okamzik(p.get("produced"), id), volitelny(p, "dataSource"), zoomMin, zoomMax, krok == null ? 0 : cele(krok, "krok vrstevnic " + id),
+				pokryti(p.get("coverage"), region, id, mapy), text(p, "license"), text(p, "attribution"), volitelny(p, "attributionFull"),
+				volitelny(p, "licenseText"), volitelny(p, "theme"), volitelny(p, "note"));
 	}
 
 	private static Soubor soubor(final Map<?, ?> s, final String id, final List<URI> zdroje, final String zacatekCesty, final String pripona) throws IOException {
-		final String nazev = text(s, "nazev");
+		final String nazev = text(s, "name");
 		if (!platneJmenoSouboru(nazev)) {
 			throw new IOException("Vrstva " + id + " má neplatné jméno souboru " + nazev);
 		}
-		final String cesta = text(s, "cesta");
+		final String cesta = text(s, "path");
 		if (!platnaCesta(cesta) || !cesta.matches(Pattern.quote(zacatekCesty) + "(\\.[a-z0-9_-]+)?" + Pattern.quote(pripona))) {
 			throw new IOException("Vrstva " + id + " má neplatnou cestu souboru " + cesta + " (čekám " + zacatekCesty + pripona + ")");
 		}
@@ -166,7 +166,7 @@ public final class KatalogVrstev {
 		} else {
 			throw new IOException("Vrstva " + id + " má neplatnou adresu souboru " + url);
 		}
-		final Object velikost = s.get("velikost");
+		final Object velikost = s.get("size");
 		if (!(velikost instanceof Double) || (Double) velikost <= 0 || (Double) velikost != Math.floor((Double) velikost)) {
 			throw new IOException("Soubor " + nazev + " vrstvy " + id + " nemá velikost");
 		}
@@ -174,7 +174,7 @@ public final class KatalogVrstev {
 		if (!sha.matches("[0-9a-f]{64}")) {
 			throw new IOException("Soubor " + nazev + " vrstvy " + id + " nemá platný sha256");
 		}
-		return new Soubor(nazev, cesta, Collections.unmodifiableList(urly), ((Double) velikost).longValue(), sha, okamzik(s.get("datumSouboru"), id));
+		return new Soubor(nazev, cesta, Collections.unmodifiableList(urly), ((Double) velikost).longValue(), sha, okamzik(s.get("date"), id));
 	}
 
 	/** Relativní cesta s lomítky, každá část platné jméno souboru. */
@@ -226,7 +226,7 @@ public final class KatalogVrstev {
 
 	private static List<URI> zdroje(final Object o) throws IOException {
 		if (!(o instanceof List) || ((List<?>) o).isEmpty()) {
-			throw new IOException("Katalog vrstev: chybí zdroje");
+			throw new IOException("Katalog vrstev: chybí sources");
 		}
 		final List<URI> vysledek = new ArrayList<>();
 		for (final Object a : (List<?>) o) {

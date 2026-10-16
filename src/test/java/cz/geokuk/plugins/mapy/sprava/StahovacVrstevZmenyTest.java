@@ -43,7 +43,7 @@ public class StahovacVrstevZmenyTest {
 		server.createContext("/rel/", this::obsluz);
 		server.setExecutor(Executors.newCachedThreadPool());
 		server.start();
-		slozka = new File(tmp.getRoot(), "offline-mapy/vrstvy");
+		slozka = new File(tmp.getRoot(), "offline-mapy/layers");
 		final StahovacMapy http = new StahovacMapy("GeoKuk/test", () -> {
 			uvolneni.incrementAndGet();
 			priUvolneni.run();
@@ -123,7 +123,7 @@ public class StahovacVrstevZmenyTest {
 			}
 			sb.append(KatalogVrstevTest.soubor(s, s, data.get(s).length, sha(data.get(s))));
 		}
-		final String json = "{\"format\": 1, \"zdroje\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"vrstvy\": ["
+		final String json = "{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"layers\": ["
 				+ KatalogVrstevTest.vrstva("dem/europe/czech-republic", "dem", "europe/czech-republic", "hgt-zip", sb.toString(), "") + "]}";
 		return KatalogVrstev.nacti(json, KatalogVrstevTest.mapy()).getVrstvy().get(0);
 	}

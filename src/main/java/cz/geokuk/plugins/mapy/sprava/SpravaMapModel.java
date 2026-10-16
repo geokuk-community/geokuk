@@ -41,9 +41,11 @@ public class SpravaMapModel extends Model0 {
 	private static final long INTERVAL_PRUBEHU_NS = TimeUnit.MILLISECONDS.toNanos(250);
 
 	/** Podsložka složky offline map; základní mapy se berou jen přímo ze složky, takže vrstvy mezi ně nepřijdou. */
-	public static final String SLOZKA_VRSTEV = "vrstvy";
+	public static final String SLOZKA_VRSTEV = "layers";
+	/** Složka vrstev z dřívějších bet; při startu se přejmenuje na {@link #SLOZKA_VRSTEV}. */
+	static final String STARA_SLOZKA_VRSTEV = "vrstvy";
 	/** Kopie staženého katalogu vrstev ve složce vrstev. */
-	static final String SOUBOR_KATALOGU = "vrstvy.json";
+	static final String SOUBOR_KATALOGU = "layers.json";
 
 	private final Supplier<KatalogMap> katalog;
 	private final Supplier<KatalogVrstev> katalogVrstev;
@@ -166,7 +168,7 @@ public class SpravaMapModel extends Model0 {
 	 */
 	public void obnovKatalogVrstev() {
 		kontrola.execute(() -> {
-			final File sv = getSlozkaVrstev();
+			final File sv = slozkaVrstevNaPozadi();
 			if (sv == null) {
 				odpalovac.accept(new KatalogVrstevEvent(getKatalogVrstev(), "Složka offline map není nastavená."));
 				return;
@@ -218,6 +220,27 @@ public class SpravaMapModel extends Model0 {
 		stavyVrstev.values().removeIf(st -> !st.isBezi());
 	}
 
+	/** Složka vrstev pro práci na pozadí: složku z dřívějších bet napřed přejmenuje, ať uživatel nepřijde o stažené vrstvy. */
+	private File slozkaVrstevNaPozadi() {
+		final File s = slozka.get();
+		if (s == null) {
+			return null;
+		}
+		final File nova = new File(s, SLOZKA_VRSTEV);
+		final File stara = new File(s, STARA_SLOZKA_VRSTEV);
+		if (stara.isDirectory() && !nova.exists()) {
+			try {
+				Files.move(stara.toPath(), nova.toPath());
+				// Kopie katalogu ve starém formátu; nový se stáhne znovu.
+				Files.deleteIfExists(new File(nova, "vrstvy.json").toPath());
+				log.info("Složka vrstev {} přejmenována na {}", stara, nova);
+			} catch (final IOException e) {
+				log.warn("Složku vrstev {} nejde přejmenovat na {}: {}", stara, nova, e.toString());
+			}
+		}
+		return nova;
+	}
+
 	/** Složka, kam se stahují vrstvy; null, když složka offline map není nastavená. */
 	public File getSlozkaVrstev() {
 		final File s = slozka.get();
@@ -243,7 +266,7 @@ public class SpravaMapModel extends Model0 {
 		zruseno.set(false);
 		vlakno.execute(() -> {
 			try {
-				final File s = getSlozkaVrstev();
+				final File s = slozkaVrstevNaPozadi();
 				if (s == null) {
 					zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Složka offline map není nastavená."));
 					return;
@@ -262,7 +285,7 @@ public class SpravaMapModel extends Model0 {
 	/** Zahodí rozpracované stahování vrstvy (ne to, které právě běží). */
 	public void zahodRozpracovane(final KatalogovaVrstva vrstva) {
 		kontrola.execute(() -> {
-			final File s = getSlozkaVrstev();
+			final File s = slozkaVrstevNaPozadi();
 			if (s != null && bezici.get() != vrstva) {
 				StahovacVrstev.zahod(s, vrstva);
 				zmena(StahovacVrstev.mistniStav(getStav(vrstva).sFazi(Faze.NIC, null), s));
@@ -289,7 +312,7 @@ public class SpravaMapModel extends Model0 {
 					stavy.put(m.getId(), ted);
 				}
 			}
-			final File sv = new File(s, SLOZKA_VRSTEV);
+			final File sv = slozkaVrstevNaPozadi();
 			nactiStazenyKatalog(sv);
 			for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
 				final StavVrstvy predtim = getStav(v);

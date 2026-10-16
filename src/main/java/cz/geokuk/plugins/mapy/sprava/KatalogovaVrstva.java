@@ -10,9 +10,9 @@ public final class KatalogovaVrstva {
 
 	public enum Typ {
 		/** Turistické, cyklo a další trasy (.map). */
-		TRASY("trasy"),
+		TRASY("routes"),
 		/** Vrstevnice (.map). */
-		VRSTEVNICE("vrstevnice"),
+		VRSTEVNICE("contours"),
 		/** Výškový model pro stínování (zip s dlaždicemi .hgt). */
 		DEM("dem");
 
@@ -22,7 +22,7 @@ public final class KatalogovaVrstva {
 			this.kod = kod;
 		}
 
-		/** Kód typu v katalogu a ve jméně souboru vrstvy („trasy“, „vrstevnice“, „dem“). */
+		/** Kód typu v katalogu a ve jméně souboru vrstvy („routes“, „contours“, „dem“). */
 		public String getKod() {
 			return kod;
 		}
@@ -90,7 +90,7 @@ public final class KatalogovaVrstva {
 		}
 
 		/**
-		 * Cesta ve složce vrstev s lomítky: klíč základní mapy, typ vrstvy a přípona, například „europe/czech-republic.trasy.map“. Podsložky odpovídají cestě
+		 * Cesta ve složce vrstev s lomítky: klíč základní mapy, typ vrstvy a přípona, například „europe/czech-republic.routes.map“. Podsložky odpovídají cestě
 		 * mapy na serveru map.
 		 */
 		public String getCesta() {
@@ -139,12 +139,13 @@ public final class KatalogovaVrstva {
 	private final String licence;
 	private final String atribuce;
 	private final String atribuceDlouha;
+	private final String licenceText;
 	private final String tema;
 	private final String poznamka;
 
 	KatalogovaVrstva(final String id, final Typ typ, final String region, final String nazev, final Format format, final List<Soubor> soubory, final long velikost,
 			final LocalDate datumDat, final Instant vyrobeno, final String zdrojDat, final int zoomMin, final int zoomMax, final int krokVrstevnic,
-			final PolygonPokryti pokryti, final String licence, final String atribuce, final String atribuceDlouha, final String tema, final String poznamka) {
+			final PolygonPokryti pokryti, final String licence, final String atribuce, final String atribuceDlouha, final String licenceText, final String tema, final String poznamka) {
 		this.id = id;
 		this.typ = typ;
 		this.region = region;
@@ -162,11 +163,12 @@ public final class KatalogovaVrstva {
 		this.licence = licence;
 		this.atribuce = atribuce;
 		this.atribuceDlouha = atribuceDlouha;
+		this.licenceText = licenceText;
 		this.tema = tema;
 		this.poznamka = poznamka;
 	}
 
-	/** Například „trasy/europe/czech-republic“. */
+	/** Například „routes/europe/czech-republic“. */
 	public String getId() {
 		return id;
 	}
@@ -250,6 +252,11 @@ public final class KatalogovaVrstva {
 	/** Plné znění atribuce pro „O mapě“; null = stačí krátká. */
 	public String getAtribuceDlouha() {
 		return atribuceDlouha;
+	}
+
+	/** Plné znění licence (dodává se i vedle vrstvy); null = neuvedeno. */
+	public String getLicenceText() {
+		return licenceText;
 	}
 
 	/** Doporučené překryvné téma; null = neuvedeno. */
