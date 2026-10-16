@@ -1,5 +1,11 @@
 # Změny
 
+## 6.4.2
+
+### Opravy
+- Mapy > Postahovat dlaždice: stahování velkého výřezu (tisíce dlaždic)
+  už nedojde paměť, stažené dlaždice se průběžně uvolňují.
+
 ## 6.4.1
 
 ### Opravy
