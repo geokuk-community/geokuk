@@ -6,7 +6,10 @@ import java.util.function.Function;
 
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.KatalogVrstev;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
+import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
+import cz.geokuk.plugins.mapy.sprava.StavVrstvy;
 import cz.geokuk.plugins.mapy.sprava.StavMapy;
 
 /** Řádky popupu Mapy ze stavu katalogových map a ze souborů uživatele. */
@@ -23,9 +26,21 @@ final class RadkyMap {
 	 *            střed zobrazené mapy, null když není znám
 	 */
 	static List<RadekMapy> sestav(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final List<RadekMapy> vlastni, final Wgs stred) {
+		return sestav(katalog, stavy, vlastni, stred, null, null);
+	}
+
+	/** Navíc řádky vrstev (trasy, vrstevnice, stínování) k mapám, které jsou stažené; každá hned za svou mapou. */
+	static List<RadekMapy> sestav(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final List<RadekMapy> vlastni, final Wgs stred,
+			final KatalogVrstev vrstvy, final Function<KatalogovaVrstva, StavVrstvy> stavyVrstev) {
 		final List<RadekMapy> radky = new ArrayList<>();
 		for (final KatalogovaMapa m : katalog.getMapy()) {
-			radky.add(radek(m, stavy.apply(m), stred != null && m.getPokryti().obsahuje(stred)));
+			final StavMapy s = stavy.apply(m);
+			radky.add(radek(m, s, stred != null && m.getPokryti().obsahuje(stred)));
+			if (vrstvy != null && stavyVrstev != null && s.getMistni() == StavMapy.Mistni.MAME) {
+				for (final KatalogovaVrstva v : vrstvy.vrstvyProMapu(m)) {
+					radky.add(radekVrstvy(m, v, stavyVrstev.apply(v)));
+				}
+			}
 		}
 		for (final RadekMapy r : vlastni) {
 			if (r.isVlastni()) {
@@ -52,6 +67,40 @@ final class RadkyMap {
 			b.chyba(POSKOZENA);
 		}
 		return b.build();
+	}
+
+	/** Řádek vrstvy k mapě: stejné stavy jako u mapy, „jiná verze“ je novější. */
+	static RadekMapy radekVrstvy(final KatalogovaMapa mapa, final KatalogovaVrstva v, final StavVrstvy s) {
+		final RadekMapy.Stav stav;
+		if (s.isBezi()) {
+			stav = RadekMapy.Stav.STAHUJE;
+		} else if (s.getMistni() == StavVrstvy.Mistni.MAME) {
+			stav = RadekMapy.Stav.AKTUALNI;
+		} else if (s.getMistni() == StavVrstvy.Mistni.JINA_VERZE) {
+			stav = RadekMapy.Stav.NOVEJSI;
+		} else {
+			stav = s.getFaze() == StavMapy.Faze.CHYBA ? RadekMapy.Stav.CHYBA : RadekMapy.Stav.NEMAME;
+		}
+		final boolean mame = s.getMistni() != StavVrstvy.Mistni.NEMAME;
+		final RadekMapy.Builder b = RadekMapy.vrstva(v.getId(), nazevVrstvy(v), stav).vrstva(nazevVrstvy(v), mapa.getId()).velikost(v.getVelikost()).stazeno(s.getStazeno())
+				.rozpracovano(s.isRozpracovano()).veSlozce(mame).zdroj(v.getZdrojDat()).licence(v.getLicence() + (v.getAtribuce() == null ? "" : ", " + v.getAtribuce()))
+				.chyba(s.getChyba());
+		if (v.getDatumDat() != null) {
+			b.datumDat(v.getDatumDat().atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
+		}
+		return b.build();
+	}
+
+	static String nazevVrstvy(final KatalogovaVrstva v) {
+		switch (v.getTyp()) {
+		case TRASY:
+			return "Turistické trasy";
+		case VRSTEVNICE:
+			return "Vrstevnice";
+		case DEM:
+		default:
+			return "Stínování terénu";
+		}
 	}
 
 	private static long velikostNaServeru(final KatalogovaMapa m, final StavMapy s) {

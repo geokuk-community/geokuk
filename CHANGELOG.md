@@ -78,7 +78,8 @@
   nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
   zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
   u hranice i sousední mapy, které jsou v záběru.
-  Seznam dalších map je větší a jde v něm hledat.
+  Seznam dalších map je větší, jde v něm hledat a země s regiony (Německo, Francie, Itálie,
+  Nizozemsko, Španělsko, Spojené království) se rozbalují.
 - Stažené vrstvy (turistické trasy a vrstevnice) se v offline mapě kreslí
   spolu s mapou a DEM dlaždice ve složce vrstev dávají stínování terénu, které
   jde v popupu Mapy vypnout. Povinná atribuce dat vrstev (třeba Copernicus) je

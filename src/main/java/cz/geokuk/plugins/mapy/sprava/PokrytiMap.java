@@ -24,10 +24,17 @@ public final class PokrytiMap {
 	public static final class DvojitaMapa {
 		private final KatalogovaMapa celek;
 		private final List<KatalogovaMapa> regiony;
+		private final boolean regionyPokryvajiCelek;
 
-		DvojitaMapa(final KatalogovaMapa celek, final List<KatalogovaMapa> regiony) {
+		DvojitaMapa(final KatalogovaMapa celek, final List<KatalogovaMapa> regiony, final boolean regionyPokryvajiCelek) {
 			this.celek = celek;
 			this.regiony = Collections.unmodifiableList(regiony);
+			this.regionyPokryvajiCelek = regionyPokryvajiCelek;
+		}
+
+		/** Jsou stažené všechny regiony země; jen tehdy je bezpečné smazat celou zemi, jinak by se ztratilo pokrytí zbylých regionů. */
+		public boolean isRegionyPokryvajiCelek() {
+			return regionyPokryvajiCelek;
 		}
 
 		public KatalogovaMapa getCelek() {
@@ -52,13 +59,14 @@ public final class PokrytiMap {
 				continue;
 			}
 			final List<KatalogovaMapa> regiony = new ArrayList<>();
-			for (final KatalogovaMapa r : katalog.regiony(m)) {
+			final List<KatalogovaMapa> vsechnyRegiony = katalog.regiony(m);
+			for (final KatalogovaMapa r : vsechnyRegiony) {
 				if (stazene.contains(r.getNazevSouboru().toLowerCase(Locale.ROOT))) {
 					regiony.add(r);
 				}
 			}
 			if (!regiony.isEmpty()) {
-				vysledek.add(new DvojitaMapa(m, regiony));
+				vysledek.add(new DvojitaMapa(m, regiony, regiony.size() == vsechnyRegiony.size()));
 			}
 		}
 		return vysledek;

@@ -5,6 +5,15 @@ public interface OvladaniMap {
 
 	default void stahni(final String id) {}
 
+	/** Stáhne vrstvu (trasy, vrstevnice, stínování) podle id z katalogu vrstev. */
+	default void stahniVrstvu(final String id) {}
+
+	/** Po potvrzení smaže soubory vrstvy (včetně kontrolních součtů). */
+	default void smazVrstvu(final String id) {}
+
+	/** Po potvrzení smaže regiony, nebo celou zemi, která je ve složce zároveň s regiony; id je id celé země. */
+	default void smazDvojite(final String idCelku, final boolean regiony) {}
+
 	default void zrusStahovani() {}
 
 	/** Zjistí jen u této mapy, jestli je na serveru novější. */
