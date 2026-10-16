@@ -1,0 +1,68 @@
+package cz.geokuk.plugins.mapy.pruvodce;
+
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
+
+/** Země, ze kterých si uživatel v prvním kroku průvodce vybírá: Česko a Slovensko nahoře, další z katalogu podle abecedy. */
+public final class NabidkaZemi {
+
+	/** Země a klíče map, které se pro ni berou (celá země, nebo u země bez celku všechny její regiony). */
+	public static final class Zeme {
+		private final String nazev;
+		private final List<String> klice;
+
+		Zeme(final String nazev, final List<String> klice) {
+			this.nazev = nazev;
+			this.klice = Collections.unmodifiableList(klice);
+		}
+
+		public String getNazev() {
+			return nazev;
+		}
+
+		public List<String> getKlice() {
+			return klice;
+		}
+	}
+
+	private static final List<String> NAHORE = java.util.Arrays.asList("europe/czech-republic", "europe/slovakia");
+
+	private NabidkaZemi() {}
+
+	public static List<Zeme> sestav(final KatalogMap katalog) {
+		final List<Zeme> zeme = new ArrayList<>();
+		final List<String> nazvyBezCelku = new ArrayList<>();
+		for (final KatalogovaMapa m : katalog.getMapy()) {
+			if (m.getSkupina() == null) {
+				zeme.add(new Zeme(m.getNazev(), new ArrayList<>(Collections.singletonList(m.getId()))));
+			} else if (!katalog.celek(m).isPresent()) {
+				nazvyBezCelku.add(m.getSkupina());
+			}
+		}
+		for (final String skupina : new java.util.TreeSet<>(nazvyBezCelku)) {
+			final List<String> regiony = new ArrayList<>();
+			for (final KatalogovaMapa m : katalog.getMapy()) {
+				if (skupina.equals(m.getSkupina()) && !katalog.celek(m).isPresent()) {
+					regiony.add(m.getId());
+				}
+			}
+			zeme.add(new Zeme(skupina, regiony));
+		}
+		final Collator cs = Collator.getInstance(new Locale("cs"));
+		zeme.sort((a, b) -> {
+			final int pa = NAHORE.indexOf(a.getKlice().get(0));
+			final int pb = NAHORE.indexOf(b.getKlice().get(0));
+			if (pa >= 0 || pb >= 0) {
+				return pa < 0 ? 1 : pb < 0 ? -1 : Integer.compare(pa, pb);
+			}
+			return cs.compare(a.getNazev(), b.getNazev());
+		});
+		return zeme;
+	}
+}

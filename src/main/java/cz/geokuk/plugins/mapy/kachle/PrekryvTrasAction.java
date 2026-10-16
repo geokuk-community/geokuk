@@ -6,7 +6,7 @@ import cz.geokuk.framework.ToggleAction0;
 public class PrekryvTrasAction extends ToggleAction0 {
 	private static final long serialVersionUID = 1L;
 
-	static final String POPIS = "Turistické a cyklotrasy přes jakoukoli mapu. Kreslí se z offline map z osm.paws.cz ve složce offline map.";
+	static final String POPIS = "Turistické a cyklotrasy přes jakoukoli mapu. Kreslí se z vrstvy tras nebo z offline map z osm.paws.cz ve složce offline map.";
 	static final String POPIS_NADBYTECNY = "Trasy kreslí téma offline mapy.";
 
 	private KachleModel kachleModel;

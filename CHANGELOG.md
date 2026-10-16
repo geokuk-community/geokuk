@@ -42,8 +42,9 @@
   Panel cesty.
 - Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
   přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
-  z osm.paws.cz ve složce offline map. Nad offline mapou s tématem paws, které
-  trasy kreslí samo, se překryv nekreslí.
+  z osm.paws.cz ve složce offline map, nebo ze stažené vrstvy tras. Ta stačí
+  sama, bez offline mapy, třeba přes ortofoto nebo jiný online podklad. Nad
+  offline mapou s tématem paws, které trasy kreslí samo, se překryv nekreslí.
 - Úseky cesty mohou vést po cestách a pěšinách z offline mapy (pěší trasa
   hledaná bez internetu). Nové úseky vedou po cestě, kde je offline mapa,
   jinde rovně; přepínač Nové úseky je v panelu cesty. Úsek jde přepnout
@@ -88,6 +89,9 @@
   mapou, stínování jde v popupu vypnout. Atribuce dat (OpenStreetMap,
   Copernicus) je v rohu mapy. Mapy ve složce jde sbalit a stažené regiony
   jsou seskupené pod zemí.
+- Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
+  se otevře sám) vybere zemi, podklad a vrstvy, stáhne jen to, co chybí, a
+  přepne mapu.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
