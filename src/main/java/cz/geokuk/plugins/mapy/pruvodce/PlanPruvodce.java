@@ -64,8 +64,8 @@ public final class PlanPruvodce {
 	}
 
 	/**
-	 * Vrstva se u podkladu nabízí takto: trasy jen u online podkladu (offline mapa je má v sobě), vrstevnice a stínování jen u offline mapy, která je kreslí.
-	 * Důvod, proč ne, je v {@link #duvodNedostupnosti}.
+	 * Vrstva se u podkladu nabízí takto: trasy u každého (offline Turistická kreslí značené trasy z vrstvy tras, ne ze základní mapy; u online podkladu jsou
+	 * překryvem), vrstevnice a stínování jen u offline mapy, která je kreslí. Důvod, proč ne, je v {@link #duvodNedostupnosti}.
 	 */
 	public static boolean jeVrstvaDostupna(final PodkladPruvodce podklad, final Cast cast) {
 		return duvodNedostupnosti(podklad, cast) == null;
@@ -75,7 +75,7 @@ public final class PlanPruvodce {
 	public static String duvodNedostupnosti(final PodkladPruvodce podklad, final Cast cast) {
 		switch (cast) {
 		case TRASY:
-			return podklad.isOffline() ? "Turistická offline mapa už trasy obsahuje." : null;
+			return null;
 		case VRSTEVNICE:
 		case STINOVANI:
 			return podklad.isOffline() ? null : "Jen s offline mapou.";

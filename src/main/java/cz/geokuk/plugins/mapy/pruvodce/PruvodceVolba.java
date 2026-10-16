@@ -24,6 +24,11 @@ public final class PruvodceVolba {
 		this.vrstvy = Collections.unmodifiableSet(v);
 	}
 
+	/** Vrstvy zaškrtnuté na začátku: turistické trasy (u offline Turistické z nich je značení v mapě, u online podkladu jsou překryvem). */
+	public static Set<Cast> vychoziVrstvy() {
+		return EnumSet.of(Cast.TRASY);
+	}
+
 	/** Klíče map (cesty mapy na serveru bez přípony) ze zvolených zemí. */
 	public List<String> getKlice() {
 		return klice;

@@ -84,7 +84,8 @@ public class PruvodceModelTest {
 
 	@Test
 	public void kterePodkladyNabizejiKterevrstvy() {
-		assertFalse("offline Turistická má trasy v mapě", PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY));
+		assertTrue("offline Turistická kreslí trasy z vrstvy tras", PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY));
+		assertEquals(EnumSet.of(Cast.TRASY), PruvodceVolba.vychoziVrstvy());
 		assertTrue(PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.VRSTEVNICE));
 		assertTrue(PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.STINOVANI));
 		assertTrue(PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.CUZK_TOPO, Cast.TRASY));
@@ -112,7 +113,7 @@ public class PruvodceModelTest {
 				new PruvodceVolba(Collections.singletonList(CZ), PodkladPruvodce.TURISTICKA_OFFLINE, EnumSet.of(Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI)), nicNemame());
 		final List<String> nazvy = new ArrayList<>();
 		plan.getPolozky().forEach(p -> nazvy.add(p.getNazev()));
-		assertEquals("trasy se u offline mapy nestahují (jsou v mapě)", Arrays.asList("Česko – mapa", "Česko – vrstevnice", "Česko – stínování"), nazvy);
+		assertEquals(Arrays.asList("Česko – mapa", "Česko – trasy", "Česko – vrstevnice", "Česko – stínování"), nazvy);
 		assertEquals(Cast.MAPA, plan.getPolozky().get(0).getCast());
 		assertFalse("mapa není stažená, přepne se až po jejím stažení", plan.prepnoutHned());
 		assertTrue(plan.getCelkovaVelikost() > 266_000_000L + 80_000_000L);
