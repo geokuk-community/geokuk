@@ -64,6 +64,11 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void setStinovani(final boolean zapnuto) {
+			volani.add("stinovani " + zapnuto);
+		}
+
+		@Override
 		public void zrusStahovani() {
 			volani.add("zrus");
 		}
@@ -360,6 +365,8 @@ public class JMapyPopupTest {
 			p.vidiSe = true;
 			Assert.assertFalse("nepíše se, klávesy jdou dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
 			fokusDoPole(p);
+			Assert.assertFalse("pole má fokus a nic se nežádá, klávesy jdou dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'o', 0)));
+			p.poZnovuZobrazeni();
 			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, 'r', 0)));
 			Assert.assertEquals("stisk sám text nemění", "", p.getHledat().getText());
 			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'r', 0)));
@@ -370,9 +377,61 @@ public class JMapyPopupTest {
 			Assert.assertFalse("Ctrl+znak jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, 'o', java.awt.event.InputEvent.CTRL_DOWN_MASK)));
 			Assert.assertFalse("Esc jde dál (zavře popup)", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, '\u001b', 0)));
 			Assert.assertFalse("Enter jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_PRESSED, '\n', 0)));
+			Assert.assertFalse("Tab jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, '\t', 0)));
+			Assert.assertFalse("Delete jde dál", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, '\u007f', 0)));
+			fokusDoPole(p);
+			Assert.assertFalse("po návratu fokusu se nekrade", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			p.poZnovuZobrazeni();
 			p.vidiSe = false;
 			Assert.assertFalse("skrytý popup klávesy nechává", p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
 			Assert.assertEquals("r", p.getHledat().getText());
+		});
+	}
+
+	/** Je-li fokus v jiném okně (dialog, jiná aplikace), klávesy se do pole nekradou. */
+	@Test
+	public void klavesyVJinemOkneNejdouDoPole() throws Exception {
+		Assume.assumeFalse(java.awt.GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JFrame okno = new JFrame();
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(dalsiMapy());
+			okno.add(p);
+			p.vidiSe = true;
+			fokusDoPole(p);
+			p.poZnovuZobrazeni();
+			p.aktivniOkno = () -> null;
+			Assert.assertFalse(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			p.aktivniOkno = () -> okno;
+			Assert.assertTrue(p.klavesy.dispatchKeyEvent(klavesa(java.awt.event.KeyEvent.KEY_TYPED, 'x', 0)));
+			Assert.assertEquals("x", p.getHledat().getText());
+		});
+	}
+
+	/** Dispatcher kláves je zaregistrovaný jen po dobu zobrazení popupu a nikdy dvakrát. */
+	@Test
+	public void dispatcherSeRegistrujeAOdregistruje() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final List<java.awt.KeyEventDispatcher> zaregistrovano = new ArrayList<>();
+			final java.awt.KeyboardFocusManager m = new java.awt.DefaultKeyboardFocusManager() {
+				@Override
+				public void addKeyEventDispatcher(final java.awt.KeyEventDispatcher d) {
+					zaregistrovano.add(d);
+				}
+
+				@Override
+				public void removeKeyEventDispatcher(final java.awt.KeyEventDispatcher d) {
+					zaregistrovano.remove(d);
+				}
+			};
+			p.spravceFokusu = () -> m;
+			p.zacniSledovatKlikyMimo();
+			p.zacniSledovatKlikyMimo();
+			Assert.assertEquals("po zobrazení je zaregistrovaný právě jednou", Collections.singletonList(p.klavesy), zaregistrovano);
+			p.prestanSledovatKlikyMimo();
+			Assert.assertTrue("po skrytí je odregistrovaný", zaregistrovano.isEmpty());
 		});
 	}
 
