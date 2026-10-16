@@ -130,8 +130,8 @@ public class FrontaPruvodceTest {
 	@Test
 	public void novejsiMapaUprostredPlanuSePreskoci() {
 		final FrontaPruvodce f = new FrontaPruvodce(plan());
-		final FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.NOVEJSI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get);
+		final FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.STAZENO, StavBunky.NOVEJSI, StavBunky.KE_STAZENI)::get);
 		assertEquals(Akce.STAHUJ, k.getAkce());
-		assertEquals(TRASY, k.getPolozka().getId());
+		assertEquals(VRSTEVNICE, k.getPolozka().getId());
 	}
 }
