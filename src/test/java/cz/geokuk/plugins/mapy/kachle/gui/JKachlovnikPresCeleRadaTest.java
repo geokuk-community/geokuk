@@ -70,6 +70,52 @@ public class JKachlovnikPresCeleRadaTest {
 		Assert.assertEquals(0, stazeni[0]);
 	}
 
+	/** U hranice nabízí rada vedle mapy pod středem i sousední mapy, každá má svůj odkaz. */
+	@Test
+	public void radaNabidneVicMapVeVyrezu() {
+		final JKachlovnikPresCele k = new JKachlovnikPresCele() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected EKaType getKachloType() {
+				return EKaType.OFFLINE_MF;
+			}
+
+			@Override
+			protected KachleModel getKachleModel() {
+				return new KachleModel() {
+					@Override
+					public boolean jePodrobnaOfflineMapa(final Wgs bod, final int moumer) {
+						return false;
+					}
+
+					@Override
+					public String getAtribuceOfflineMapy() {
+						return "© přispěvatelé OpenStreetMap";
+					}
+				};
+			}
+		};
+		final java.util.List<String> stazeno = new java.util.ArrayList<>();
+		k.inject(new SpravaMapModel() {
+			@Override
+			public boolean stahni(final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa mapa) {
+				stazeno.add(mapa.getId());
+				return true;
+			}
+		});
+		k.setSize(800, 600);
+		k.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+		k.setSoord(new Coord(9, new Wgs(50.78, 14.2).toMou(), new Dimension(800, 600), 0));
+		kresli(k);
+		for (int y = 0; y < 300; y += 2) {
+			k.klikNaRadu(new Point(400, y));
+		}
+		Assert.assertEquals("mapa pod středem je první", "europe/czech-republic", stazeno.get(0));
+		Assert.assertTrue(stazeno.toString(), stazeno.contains("europe/germany/sachsen"));
+		Assert.assertTrue(stazeno.toString(), new java.util.HashSet<>(stazeno).size() >= 2);
+	}
+
 	private static void kresli(final JKachlovnikPresCele k) {
 		final BufferedImage img = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = img.createGraphics();
