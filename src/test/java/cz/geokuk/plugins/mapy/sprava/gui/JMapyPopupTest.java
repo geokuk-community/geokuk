@@ -232,6 +232,11 @@ public class JMapyPopupTest {
 		}
 		final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> dvojite = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozka, katalog);
 		Assert.assertEquals(1, dvojite.size());
+		final java.io.File slozkaUplne = tmp.newFolder("dvojite-uplne");
+		Assert.assertTrue(new java.io.File(slozkaUplne, katalog.podleId("europe/germany").get().getNazevSouboru()).createNewFile());
+		for (final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa r : katalog.regiony(katalog.podleId("europe/germany").get())) {
+			Assert.assertTrue(new java.io.File(slozkaUplne, r.getNazevSouboru()).createNewFile());
+		}
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			final Zaznam z = new Zaznam();
@@ -240,9 +245,15 @@ public class JMapyPopupTest {
 			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
 			p.setDvojite(dvojite);
 			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo je ve složce celá i s regiony (Bavorsko, Sasko)")));
+			Assert.assertTrue("stažené jsou jen dva z regionů, celá země se smazat nenabídne", tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).isEmpty());
 			tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).get(0).doClick();
+			final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> uplne = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozkaUplne, katalog);
+			p.setDvojite(uplne);
 			tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).get(0).doClick();
 			Assert.assertEquals(Arrays.asList("smazDvojite europe/germany true", "smazDvojite europe/germany false"), z.volani);
+			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(MB).build()));
+			Assert.assertTrue("během stahování se nemaže", tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).stream().noneMatch(JButton::isEnabled));
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).stream().noneMatch(JButton::isEnabled));
 			p.setDvojite(Collections.emptyList());
 			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
 		});

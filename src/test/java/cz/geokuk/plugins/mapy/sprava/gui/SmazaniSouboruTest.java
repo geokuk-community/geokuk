@@ -102,4 +102,41 @@ public class SmazaniSouboruTest {
 		javax.swing.SwingUtilities.invokeAndWait(() -> blok[0].smazSPotvrzenim("Smazat nic", new ArrayList<>()));
 		Assert.assertEquals("prázdný seznam se ani neptá", 2, texty.size());
 	}
+
+	/** Země stažená s jedním regionem: nabídne se jen smazání regionu; celá země až když jsou stažené všechny regiony; vždy jen jedna z kopií. */
+	@Test
+	public void souboryDvojitychMap() throws Exception {
+		final File slozka = tmp.newFolder("dvojite");
+		final KatalogMap katalog = KatalogMap.vestaveny();
+		final KatalogovaMapa celek = katalog.podleId("europe/germany").get();
+		vytvor(slozka, celek.getNazevSouboru(), 3);
+		final List<KatalogovaMapa> vsechny = katalog.regiony(celek);
+		Assert.assertTrue(vsechny.size() > 1);
+		vytvor(slozka, vsechny.get(0).getNazevSouboru(), 2);
+
+		final cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa cast = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozka, katalog).get(0);
+		Assert.assertFalse("stažen jediný region, zbytek země by se smazáním celku ztratil", cast.isRegionyPokryvajiCelek());
+		Assert.assertEquals(Arrays.asList(vsechny.get(0).getNazevSouboru()), nazvy(SmazaniSouboru.souboryDvojite(slozka, cast, true)));
+		Assert.assertTrue(SmazaniSouboru.souboryDvojite(slozka, cast, false).isEmpty());
+
+		for (final KatalogovaMapa r : vsechny) {
+			final File f = new File(slozka, r.getNazevSouboru());
+			if (!f.exists()) {
+				vytvor(slozka, r.getNazevSouboru(), 2);
+			}
+		}
+		final cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa cela = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozka, katalog).get(0);
+		Assert.assertTrue(cela.isRegionyPokryvajiCelek());
+		Assert.assertEquals(Arrays.asList(celek.getNazevSouboru()), nazvy(SmazaniSouboru.souboryDvojite(slozka, cela, false)));
+		Assert.assertEquals(vsechny.size(), SmazaniSouboru.souboryDvojite(slozka, cela, true).size());
+		Assert.assertFalse(nazvy(SmazaniSouboru.souboryDvojite(slozka, cela, true)).contains(celek.getNazevSouboru()));
+	}
+
+	private static List<String> nazvy(final List<File> f) {
+		final List<String> n = new ArrayList<>();
+		for (final File x : f) {
+			n.add(x.getName());
+		}
+		return n;
+	}
 }

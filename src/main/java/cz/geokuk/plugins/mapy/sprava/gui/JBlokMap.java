@@ -146,13 +146,9 @@ public class JBlokMap extends JLabel {
 					if (!d.getCelek().getId().equals(idCelku)) {
 						continue;
 					}
-					final List<java.io.File> soubory = new java.util.ArrayList<>();
-					if (regiony) {
-						for (final KatalogovaMapa r : d.getRegiony()) {
-							soubory.addAll(SmazaniSouboru.souboryMapy(slozka(), r));
-						}
-					} else {
-						soubory.addAll(SmazaniSouboru.souboryMapy(slozka(), d.getCelek()));
+					final List<java.io.File> soubory = SmazaniSouboru.souboryDvojite(slozka(), d, regiony);
+					if (soubory.isEmpty()) {
+						return;
 					}
 					smazSPotvrzenim(regiony ? "Smazat regiony země " + d.getCelek().getNazev() : "Smazat celou zemi " + d.getCelek().getNazev(), soubory);
 				}
@@ -281,7 +277,8 @@ public class JBlokMap extends JLabel {
 
 	/** Smaže soubory po potvrzení; otevřené offline mapy se předtím zavřou (Windows otevřený soubor nesmaže), mazání běží mimo EDT. */
 	void smazSPotvrzenim(final String titulek, final List<File> soubory) {
-		if (soubory.isEmpty() || !potvrzeni.apply(titulek, "Smažou se tyto soubory:\n" + SmazaniSouboru.popis(soubory) + "\nSmazání nejde vrátit.")) {
+		if (soubory.isEmpty() || spravaMap != null && (spravaMap.getBeziciStahovani().isPresent() || spravaMap.getBeziciStahovaniVrstvy().isPresent())
+				|| !potvrzeni.apply(titulek, "Smažou se tyto soubory:\n" + SmazaniSouboru.popis(soubory) + "\nSmazání nejde vrátit.")) {
 			return;
 		}
 		if (kachleModel != null && kachleModel.getZiskavac() != null) {

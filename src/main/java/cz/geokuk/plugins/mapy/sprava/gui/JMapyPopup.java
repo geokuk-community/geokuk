@@ -715,8 +715,14 @@ public class JMapyPopup extends JPanel {
 			add(upozorneni, gbc);
 			final JPanel akceDvojite = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 			akceDvojite.setOpaque(false);
-			akceDvojite.add(odkaz(SMAZAT_REGIONY, e -> smazDvojite(d, true)));
-			akceDvojite.add(odkaz(SMAZAT_CELEK, e -> smazDvojite(d, false)));
+			final JButton smazRegiony = odkaz(SMAZAT_REGIONY, e -> smazDvojite(d, true));
+			smazRegiony.setEnabled(!stahujeSe);
+			akceDvojite.add(smazRegiony);
+			if (d.isRegionyPokryvajiCelek()) {
+				final JButton smazCelek = odkaz(SMAZAT_CELEK, e -> smazDvojite(d, false));
+				smazCelek.setEnabled(!stahujeSe);
+				akceDvojite.add(smazCelek);
+			}
 			gbc.gridy++;
 			add(akceDvojite, gbc);
 		}

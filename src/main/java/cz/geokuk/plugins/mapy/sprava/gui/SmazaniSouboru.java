@@ -53,6 +53,19 @@ final class SmazaniSouboru {
 		return soubory;
 	}
 
+	/** Soubory ke smazání u země staženou dvakrát: regiony, nebo celá země (ta jen když ji regiony pokrývají). */
+	static List<File> souboryDvojite(final File slozkaMap, final cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa d, final boolean regiony) {
+		final List<File> soubory = new ArrayList<>();
+		if (regiony) {
+			for (final KatalogovaMapa r : d.getRegiony()) {
+				soubory.addAll(souboryMapy(slozkaMap, r));
+			}
+		} else if (d.isRegionyPokryvajiCelek()) {
+			soubory.addAll(souboryMapy(slozkaMap, d.getCelek()));
+		}
+		return soubory;
+	}
+
 	/** Seznam souborů pro potvrzení: jméno, velikost a datum změny. */
 	static String popis(final List<File> soubory) {
 		final StringBuilder sb = new StringBuilder();
