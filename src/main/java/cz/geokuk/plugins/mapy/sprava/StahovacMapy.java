@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.LongConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,7 +55,7 @@ final class StahovacMapy {
 	}
 
 	private final String userAgent;
-	private final Runnable uvolniMapy;
+	final Runnable uvolniMapy;
 	int casovyLimitMs = (int) TimeUnit.SECONDS.toMillis(15);
 	long pauzaPresunuMs = 1000;
 	long volneMisto = -1;
@@ -251,26 +252,9 @@ final class StahovacMapy {
 			}
 			s = s.sServerem(Server.AKTUALNI, datum(c), celkem, info.etag, info.lastModified, Instant.now()).sPrubehem(od, celkem, true);
 			posluchac.zmena(s);
-			final byte[] buf = new byte[64 * 1024];
-			long mame = od;
-			try (InputStream in = c.getInputStream();
-					OutputStream out = Files.newOutputStream(cast.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE,
-							od > 0 ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING)) {
-				// Zrušení se projeví u dalšího úseku dat; zaseknutý server ukončí časový limit čtení.
-				while (mame < celkem) {
-					if (zruseno.getAsBoolean()) {
-						return s.sPrubehem(mame, celkem, true).sFazi(Faze.ZRUSENO, null);
-					}
-					final int n = in.read(buf, 0, (int) Math.min(buf.length, celkem - mame));
-					if (n < 0) {
-						break;
-					}
-					out.write(buf, 0, n);
-					mame += n;
-					s = s.sPrubehem(mame, celkem, true);
-					posluchac.zmena(s);
-				}
-			}
+			final StavMapy zaklad = s;
+			final long mame = prenes(c, cast, od, celkem, zruseno, n -> posluchac.zmena(zaklad.sPrubehem(n, celkem, true)));
+			s = s.sPrubehem(mame, celkem, true);
 			if (zruseno.getAsBoolean()) {
 				return s.sFazi(Faze.ZRUSENO, null);
 			}
@@ -281,6 +265,31 @@ final class StahovacMapy {
 		} finally {
 			c.disconnect();
 		}
+	}
+
+	/**
+	 * Zapíše data odpovědi do souboru od bajtu {@code od} (od nuly soubor přepíše), nejvýš do velikosti {@code celkem}. Vrátí počet bajtů v souboru; méně než
+	 * {@code celkem} po zrušení nebo předčasném konci dat.
+	 */
+	static long prenes(final HttpURLConnection c, final File cast, final long od, final long celkem, final BooleanSupplier zruseno, final LongConsumer prubeh)
+			throws IOException {
+		final byte[] buf = new byte[64 * 1024];
+		long mame = od;
+		try (InputStream in = c.getInputStream();
+				OutputStream out = Files.newOutputStream(cast.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+						od > 0 ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING)) {
+			// Zrušení se projeví u dalšího úseku dat; zaseknutý server ukončí časový limit čtení.
+			while (mame < celkem && !zruseno.getAsBoolean()) {
+				final int n = in.read(buf, 0, (int) Math.min(buf.length, celkem - mame));
+				if (n < 0) {
+					break;
+				}
+				out.write(buf, 0, n);
+				mame += n;
+				prubeh.accept(mame);
+			}
+		}
+		return mame;
 	}
 
 	/** Celková velikost z Content-Range odpovědi na pokračování od bajtu {@code od}. */
@@ -357,7 +366,7 @@ final class StahovacMapy {
 		return "Starou mapu " + cil.getName() + " nejde nahradit, asi ji používá jiný program. Stažení dokončíte znovu tlačítkem Stáhnout.";
 	}
 
-	private static final class Odpoved {
+	static final class Odpoved {
 		final HttpURLConnection spojeni;
 		final URI adresa;
 
@@ -368,7 +377,7 @@ final class StahovacMapy {
 	}
 
 	/** Zkouší servery po řadě; další zkusí, když předchozí není dostupný, mapu nemá nebo hlásí chybu serveru. */
-	private Odpoved spojeniNaServer(final List<URI> adresy, final String metoda, final Map<String, String> hlavicky) throws IOException {
+	Odpoved spojeniNaServer(final List<URI> adresy, final String metoda, final Map<String, String> hlavicky) throws IOException {
 		IOException chyba = null;
 		for (int i = 0; i < adresy.size(); i++) {
 			final boolean posledni = i == adresy.size() - 1;
@@ -437,12 +446,17 @@ final class StahovacMapy {
 		String url;
 		String etag;
 		String lastModified;
+		/** Jen u vrstev: kontrolní součet souboru, ke kterému rozpracovaná část patří. */
+		String sha256;
 		long celkem = -1;
 	}
 
 	static Info nactiInfo(final File slozka, final KatalogovaMapa mapa) {
+		return nactiInfo(info(slozka, mapa));
+	}
+
+	static Info nactiInfo(final File f) {
 		final Info info = new Info();
-		final File f = info(slozka, mapa);
 		if (!f.isFile()) {
 			return info;
 		}
@@ -452,6 +466,7 @@ final class StahovacMapy {
 			info.url = p.getProperty("url");
 			info.etag = p.getProperty("etag");
 			info.lastModified = p.getProperty("lastModified");
+			info.sha256 = p.getProperty("sha256");
 			info.celkem = Long.parseLong(p.getProperty("celkem", "-1"));
 		} catch (final IOException | RuntimeException e) {
 			log.info("Údaje o rozpracované mapě {} nejde přečíst: {}", f, e.toString());
@@ -460,7 +475,7 @@ final class StahovacMapy {
 		return info;
 	}
 
-	private static void ulozInfo(final File f, final Info info) throws IOException {
+	static void ulozInfo(final File f, final Info info) throws IOException {
 		final Properties p = new Properties();
 		p.setProperty("url", info.url);
 		if (info.etag != null) {
@@ -468,6 +483,9 @@ final class StahovacMapy {
 		}
 		if (info.lastModified != null) {
 			p.setProperty("lastModified", info.lastModified);
+		}
+		if (info.sha256 != null) {
+			p.setProperty("sha256", info.sha256);
 		}
 		p.setProperty("celkem", Long.toString(info.celkem));
 		try (Writer w = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
@@ -481,7 +499,7 @@ final class StahovacMapy {
 		smaz(info(slozka, mapa));
 	}
 
-	private static void smaz(final File f) {
+	static void smaz(final File f) {
 		try {
 			Files.deleteIfExists(f.toPath());
 		} catch (final IOException e) {

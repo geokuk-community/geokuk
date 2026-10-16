@@ -90,9 +90,10 @@ public class JKachleOflinerDialog extends JMyDialog0 implements AfterEventReceiv
 							final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
 								log.trace("Stahování offline kache: {}: {}", diagnosticesFazeStr, diagnosticsData);
 							};
-							final KaOneReq req = new KaOneReq(kaall, davka.prijemce(), Priority.STAHOVANI);
+							final DavkaStahovani.Dlazdice dlazdice = davka.dlazdice();
+							final KaOneReq req = new KaOneReq(kaall, dlazdice, Priority.STAHOVANI);
 							// kachleModel.getZiskavac().hloupěČekejAžNebudeZabránoMocZdrojů();
-							if (!davka.zarazeno(kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, "Stathování pro offline", diagListener).with("kaAllReq", req)))) {
+							if (!davka.zarazeno(dlazdice, kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, "Stathování pro offline", diagListener).with("kaAllReq", req)))) {
 								return pocetKachli;
 							}
 						}
