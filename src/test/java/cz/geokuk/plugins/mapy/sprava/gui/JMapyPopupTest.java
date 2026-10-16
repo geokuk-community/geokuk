@@ -395,6 +395,63 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Stahování, chyba nebo aktualizace ve sbalené složce nezmizí: oddíl i sbalená země se kvůli takovému řádku ukážou. */
+	@Test
+	public void stahovaniVeSbaleneSlozceJeVidet() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final String[] osm = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england", "europe/united-kingdom/wales", "europe/poland" };
+			final Set<String> mame = new HashSet<>(Arrays.asList(osm));
+			final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> bezVrstev = v -> cz.geokuk.plugins.mapy.sprava.StavVrstvy.novy(v);
+			p.obnov(stazene(osm));
+			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Rakousko"));
+
+			// Stahuje se vrstva stažené mapy.
+			final List<RadekMapy> sVrstvou = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(),
+					v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+							v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("routes") ? 7_500_000 : 0, null));
+			p.obnov(sVrstvou);
+			Assert.assertEquals("řádek se stahovanou vrstvou je vidět i při sbalení", 1, videtLabelu(p, "Česko"));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> "30 %".equals(l.getText()) && jeVidet(l)));
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.ZRUSIT).stream().anyMatch(JMapyPopupTest::jeVidet));
+
+			// Aktualizuje se mapa v regionu sbalené země.
+			final List<RadekMapy> region = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> "europe/germany/sachsen".equals(m.getId())
+							? cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NOVEJSI,
+									cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 30_000_000, 100_000_000, null)
+							: cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+									cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null);
+			final JMapyPopup q = new JMapyPopup();
+			q.setOvladani(new Zaznam());
+			q.obnov(region);
+			Assert.assertEquals("země s aktualizovaným regionem je rozbalená", 1, videtLabelu(q, "Sasko"));
+			Assert.assertEquals("země se rozbalí celá", 1, videtLabelu(q, "Bavorsko"));
+			Assert.assertEquals("jiná sbalená země zůstala sbalená", 0, videtLabelu(q, "Anglie"));
+		});
+	}
+
+	/** Hranice výchozího sbalení: pět map rozbaleno, šest sbaleno. */
+	@Test
+	public void hranicePetASestMap() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final String[] pet = { "europe/czech-republic", "europe/austria", "europe/poland", "europe/hungary", "europe/slovakia" };
+			final JMapyPopup a = new JMapyPopup();
+			a.setOvladani(new Zaznam());
+			a.obnov(stazene(pet));
+			Assert.assertEquals("pět map: rozbaleno", 1, videtLabelu(a, "Rakousko"));
+			final JMapyPopup b = new JMapyPopup();
+			b.setOvladani(new Zaznam());
+			b.obnov(stazene(pet[0], pet[1], pet[2], pet[3], pet[4], "europe/italy/nord-est"));
+			Assert.assertEquals("šest map: sbaleno", 0, videtLabelu(b, "Rakousko"));
+		});
+	}
+
 	/** Stažené regiony jsou ve složce pod zemí se souhrnem a šipkou; rozbalí se klikem, země má v prvním sloupci kroužek jako ostatní. */
 	@Test
 	public void stazeneRegionyJsouPodZemi() throws Exception {

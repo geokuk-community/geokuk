@@ -737,7 +737,7 @@ public class JMapyPopup extends JPanel {
 		gbc.gridy++;
 		final JPanel oddilSlozka = new JPanel(new BorderLayout());
 		oddilSlozka.setOpaque(false);
-		final boolean slozkaOtevrena = jeSlozkaOtevrena(veSlozce.size());
+		final boolean slozkaOtevrena = jeSlozkaOtevrena(veSlozce.size()) || veSlozce.stream().anyMatch(JMapyPopup::vyzadujePozornost);
 		final JLabel nadpisSlozky = nadpisOddilu(VE_SLOZCE);
 		if (!veSlozce.isEmpty()) {
 			nadpisSlozky.setIcon(new Sipka(slozkaOtevrena));
@@ -1059,6 +1059,12 @@ public class JMapyPopup extends JPanel {
 	transient java.util.function.Consumer<Boolean> ulozStavSlozky = b -> {};
 	private final Set<String> rozbaleneSlozka = new HashSet<>();
 
+	/** Stahuje se mapa nebo její vrstva, nebo se něco nepovedlo: takový řádek je vidět i ve sbaleném oddílu a sbalené zemi. */
+	private static boolean vyzadujePozornost(final RadekMapy r) {
+		final RadekMapy.Stav s = r.celkovyStav();
+		return s == RadekMapy.Stav.STAHUJE || s == RadekMapy.Stav.CHYBA;
+	}
+
 	private boolean jeSlozkaOtevrena(final int pocetMap) {
 		if (slozkaOtevrena == null) {
 			slozkaOtevrena = nactiStavSlozky.get().orElse(null);
@@ -1108,7 +1114,7 @@ public class JMapyPopup extends JPanel {
 		}
 		for (final Uzel u : podleZeme.values()) {
 			u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
-			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev);
+			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev) || u.regiony.stream().anyMatch(JMapyPopup::vyzadujePozornost);
 			if (u.regiony.isEmpty()) {
 				y = pridejRadek(panel, y, u.celek, stahujeSe);
 				continue;

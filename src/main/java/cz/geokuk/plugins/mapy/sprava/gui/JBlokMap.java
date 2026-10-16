@@ -58,9 +58,9 @@ public class JBlokMap extends JLabel {
 	private volatile long volne = -1;
 	private transient volatile List<PokrytiMap.DvojitaMapa> dvojite = java.util.Collections.emptyList();
 
-	private static final String PREFE_NODE = "offline-mapy-popup";
-	private static final String PREFE_SLOZKA_VOLBA = "veSlozceVolba";
-	private static final String PREFE_SLOZKA_OTEVRENA = "veSlozceOtevrena";
+	static final String PREFE_NODE = "offline-mapy-popup";
+	static final String PREFE_SLOZKA_VOLBA = "veSlozceVolba";
+	static final String PREFE_SLOZKA_OTEVRENA = "veSlozceOtevrena";
 
 	/** Zapamatované sbalení oddílu Ve složce, null když uživatel nikdy nevolil. */
 	static java.util.Optional<Boolean> nactiStavSlozky() {
