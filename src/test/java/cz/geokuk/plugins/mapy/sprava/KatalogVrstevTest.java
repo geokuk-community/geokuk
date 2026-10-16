@@ -32,12 +32,24 @@ public class KatalogVrstevTest {
 	}
 
 	static String vrstva(final String id, final String typ, final String region, final String format, final String soubory, final String navic) {
+		final String cesty = soubory.replace(CESTA, region + "." + typ).replace(PRIPONA, "hgt-zip".equals(format) ? ".zip" : "." + format);
 		return "{\"id\": \"" + id + "\", \"typ\": \"" + typ + "\", \"region\": \"" + region + "\", \"nazev\": \"Vrstva " + id + "\", \"format\": \"" + format
-				+ "\", \"soubory\": [" + soubory + "], \"licence\": \"ODbL 1.0\", \"atribuce\": \"© přispěvatelé OpenStreetMap\"" + navic + "}";
+				+ "\", \"soubory\": [" + cesty + "], \"licence\": \"ODbL 1.0\", \"atribuce\": \"© přispěvatelé OpenStreetMap\"" + navic + "}";
 	}
 
+	/** Zástupci v cestě souboru, {@link #vrstva} je nahradí klíčem a typem vrstvy a příponou formátu. */
+	static final String CESTA = "@CESTA@";
+	static final String PRIPONA = "@PRIPONA@";
+
+	/** Soubor s cestou „klíč.typ.část.přípona“, kde část je jméno souboru bez přípony. */
 	static String soubor(final String nazev, final String url, final long velikost, final String sha) {
-		return "{\"nazev\": \"" + nazev + "\", \"url\": \"" + url + "\", \"velikost\": " + velikost + ", \"sha256\": \"" + sha + "\"}";
+		final String cast = (nazev.contains(".") ? nazev.substring(0, nazev.lastIndexOf('.')) : nazev).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_-]", "-");
+		return soubor(nazev, CESTA + "." + cast + PRIPONA, url, velikost, sha);
+	}
+
+	static String soubor(final String nazev, final String cesta, final String url, final long velikost, final String sha) {
+		return "{\"nazev\": \"" + nazev + "\", \"cesta\": \"" + cesta + "\", \"url\": \"" + url + "\", \"velikost\": " + velikost + ", \"sha256\": \"" + sha
+				+ "\"}";
 	}
 
 	static String katalog(final String... vrstvy) {
@@ -61,8 +73,8 @@ public class KatalogVrstevTest {
 	public void vsechnaPole() throws IOException {
 		final KatalogMap mapy = mapy();
 		final KatalogVrstev k = KatalogVrstev.nacti(katalog(vrstva("vrstevnice/europe/czech-republic", "vrstevnice", "europe/czech-republic", "map",
-				soubor("cz_vrstevnice_1.map", "v1/cz_vrstevnice_1.map", 1000, SHA.toUpperCase()) + ","
-						+ soubor("cz_vrstevnice_2.map", "https://jinde.example.org/cz_vrstevnice_2.map", 234, SHA),
+				soubor("europe_czech-republic.vrstevnice.map", "europe/czech-republic.vrstevnice.map", "v1/europe_czech-republic.vrstevnice.map", 1000, SHA.toUpperCase()) + ","
+						+ soubor("cz_vrstevnice_2.map", "europe/czech-republic.vrstevnice.2.map", "https://jinde.example.org/cz_vrstevnice_2.map", 234, SHA),
 				", \"datumDat\": \"2021-12-31\", \"vyrobeno\": \"2026-10-16T09:40:00Z\", \"zdrojDat\": \"Copernicus\", \"zoom\": {\"min\": 12, \"max\": 21},"
 						+ " \"krokVrstevnic\": 10, \"atribuceDlouha\": \"plné znění\", \"tema\": \"vrstevnice\", \"pozn\": \"DSM\", \"neznamePole\": [1, 2]")), mapy);
 		assertEquals(1, k.getVrstvy().size());
@@ -84,14 +96,20 @@ public class KatalogVrstevTest {
 		assertEquals("© přispěvatelé OpenStreetMap", v.getAtribuce());
 		final Soubor s1 = v.getSoubory().get(0);
 		assertEquals("SHA malými písmeny", SHA, s1.getSha256());
-		assertEquals(Arrays.asList(URI.create("https://a.example.org/rel/v1/cz_vrstevnice_1.map"), URI.create("https://b.example.org/zaloha/v1/cz_vrstevnice_1.map")),
-				s1.getUrly());
+		assertEquals("europe_czech-republic.vrstevnice.map", s1.getNazev());
+		assertEquals("cesta podle klíče mapy", "europe/czech-republic.vrstevnice.map", s1.getCesta());
+		assertEquals("europe/czech-republic", v.getKlic());
+		assertEquals(Arrays.asList(URI.create("https://a.example.org/rel/v1/europe_czech-republic.vrstevnice.map"),
+				URI.create("https://b.example.org/zaloha/v1/europe_czech-republic.vrstevnice.map")), s1.getUrly());
 		assertEquals(Arrays.asList(URI.create("https://jinde.example.org/cz_vrstevnice_2.map")), v.getSoubory().get(1).getUrly());
 		assertSame("obrys z katalogu map", mapy.podleId("europe/czech-republic").get().getPokryti(), v.getPokryti());
 		assertTrue(v.getPokryti().obsahuje(new Wgs(50, 15)));
-		assertSame(v, k.podleSouboru("CZ_VRSTEVNICE_2.MAP").get());
+		assertSame(v, k.podleCesty("Europe/Czech-Republic.vrstevnice.2.map").get());
 		assertSame(v, k.podleId("vrstevnice/europe/czech-republic").get());
-		assertFalse(k.podleSouboru("czech-republic.map").isPresent());
+		assertFalse(k.podleCesty("czech-republic.map").isPresent());
+		assertSame(v, k.vrstva("europe/czech-republic", Typ.VRSTEVNICE).get());
+		assertFalse(k.vrstva("europe/czech-republic", Typ.TRASY).isPresent());
+		assertFalse(k.vrstva("europe/germany", Typ.VRSTEVNICE).isPresent());
 	}
 
 	@Test
@@ -143,8 +161,15 @@ public class KatalogVrstevTest {
 		vada("{\"format\": 1, \"zdroje\": [], \"vrstvy\": []}", "zdroje");
 		vada("{\"format\": 1, \"zdroje\": [\"ftp://a.example.org/\"], \"vrstvy\": []}", "zdroj");
 		vada(katalog(ok, ok), "dvakrát");
-		vada(katalog(ok, vrstva("trasy/europe/germany", "trasy", "europe/germany", "map", soubor("TRASY_EUROPE_CZECH-REPUBLIC.map", "x.map", 1, SHA), "")),
+		vada(katalog(ok, vrstva("trasy2/europe/czech-republic", "trasy", "europe/czech-republic", "map", soubor("jiny.map", "europe/czech-republic.trasy.map", "x.map", 1, SHA), ""),
+				vrstva("trasy3/europe/czech-republic", "trasy", "europe/czech-republic", "map", soubor("jiny2.map", "europe/czech-republic.trasy.map", "y.map", 1, SHA), "")),
 				"dvakrát");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "europe/y.trasy.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "europe/x.vrstevnice.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "europe/x.trasy.zip", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "europe/x.trasy.map/../../x.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "/europe/x.trasy.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", "{\"nazev\": \"x.map\", \"url\": \"x.map\", \"velikost\": 1, \"sha256\": \"" + SHA + "\"}", "")), "cesta");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("../x.map", "x.map", 1, SHA), "")), "jméno");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.stahuje", "x.map", 1, SHA), "")), "jméno");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("X.MAP.STAHUJE", "x.map", 1, SHA), "")), "jméno");
@@ -153,7 +178,7 @@ public class KatalogVrstevTest {
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("CON.map", "x.map", 1, SHA), "")), "jméno");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("nul", "x.map", 1, SHA), "")), "jméno");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map.", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", "{\"nazev\": \"x.map\", \"url\": \"x.map\", \"velikost\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
+		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", "{\"nazev\": \"x.map\", \"cesta\": \"europe/x.trasy.map\", \"url\": \"x.map\", \"velikost\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "../jinam/x.map", 1, SHA), "")), "adresu");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "/x.map", 1, SHA), "")), "adresu");
 		vada(katalog(vrstva("trasy/europe/x", "trasy", "europe/x", "map", soubor("x.map", "file:///etc/x.map", 1, SHA), "")), "adresu");
@@ -198,6 +223,7 @@ public class KatalogVrstevTest {
 	public void vestavenyKatalog() {
 		final KatalogVrstev k = KatalogVrstev.vestaveny();
 		assertSame(k, KatalogVrstev.vestaveny());
+		assertEquals("https://github.com/geokuk-community/geokuk-maps/releases/latest/download/vrstvy.json", KatalogVrstev.URL_KATALOGU.toString());
 		for (final KatalogovaVrstva v : k.getVrstvy()) {
 			assertTrue("vrstva " + v + " patří k mapě z katalogu", KatalogMap.vestaveny().podleId(v.getRegion()).isPresent());
 		}

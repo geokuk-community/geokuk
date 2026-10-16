@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.google.common.io.ByteStreams;
 
@@ -32,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public final class KatalogVrstev {
 
 	private static final String VESTAVENY = "katalog-vrstev.json";
+	/** Aktuální katalog vrstev: vždy u posledního vydání vrstev. */
+	public static final URI URL_KATALOGU = URI.create("https://github.com/geokuk-community/geokuk-maps/releases/latest/download/vrstvy.json");
 	private static final int FORMAT = 1;
 	private static final String ID = "[a-z0-9-]+(/[a-z0-9-]+)*";
 	private static final String JMENO_SOUBORU = "[A-Za-z0-9][A-Za-z0-9._-]*";
@@ -99,8 +102,8 @@ public final class KatalogVrstev {
 				throw new IOException("Katalog vrstev: id " + id + " je dvakrát");
 			}
 			for (final Soubor s : v.getSoubory()) {
-				if (!soubory.add(s.getNazev().toLowerCase(Locale.ROOT))) {
-					throw new IOException("Katalog vrstev: soubor " + s.getNazev() + " je dvakrát");
+				if (!soubory.add(s.getCesta().toLowerCase(Locale.ROOT))) {
+					throw new IOException("Katalog vrstev: soubor " + s.getCesta() + " je dvakrát");
 				}
 			}
 			vysledek.add(v);
@@ -124,7 +127,7 @@ public final class KatalogVrstev {
 		final List<Soubor> soubory = new ArrayList<>();
 		long soucet = 0;
 		for (final Object o : (List<?>) seznam) {
-			final Soubor s = soubor(objekt(o, "soubor vrstvy " + id), id, zdroje);
+			final Soubor s = soubor(objekt(o, "soubor vrstvy " + id), id, zdroje, region + "." + typ.getKod(), fmt.getPripona());
 			soucet += s.getVelikost();
 			soubory.add(s);
 		}
@@ -143,10 +146,14 @@ public final class KatalogVrstev {
 				volitelny(p, "pozn"));
 	}
 
-	private static Soubor soubor(final Map<?, ?> s, final String id, final List<URI> zdroje) throws IOException {
+	private static Soubor soubor(final Map<?, ?> s, final String id, final List<URI> zdroje, final String zacatekCesty, final String pripona) throws IOException {
 		final String nazev = text(s, "nazev");
 		if (!platneJmenoSouboru(nazev)) {
 			throw new IOException("Vrstva " + id + " má neplatné jméno souboru " + nazev);
+		}
+		final String cesta = text(s, "cesta");
+		if (!platnaCesta(cesta) || !cesta.matches(Pattern.quote(zacatekCesty) + "(\\.[a-z0-9_-]+)?" + Pattern.quote(pripona))) {
+			throw new IOException("Vrstva " + id + " má neplatnou cestu souboru " + cesta + " (čekám " + zacatekCesty + pripona + ")");
 		}
 		final String url = text(s, "url");
 		final List<URI> urly = new ArrayList<>();
@@ -167,7 +174,17 @@ public final class KatalogVrstev {
 		if (!sha.matches("[0-9a-f]{64}")) {
 			throw new IOException("Soubor " + nazev + " vrstvy " + id + " nemá platný sha256");
 		}
-		return new Soubor(nazev, Collections.unmodifiableList(urly), ((Double) velikost).longValue(), sha, okamzik(s.get("datumSouboru"), id));
+		return new Soubor(nazev, cesta, Collections.unmodifiableList(urly), ((Double) velikost).longValue(), sha, okamzik(s.get("datumSouboru"), id));
+	}
+
+	/** Relativní cesta s lomítky, každá část platné jméno souboru. */
+	static boolean platnaCesta(final String cesta) {
+		for (final String cast : cesta.split("/", -1)) {
+			if (!platneJmenoSouboru(cast)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** Jméno souboru bez cesty, které jde založit i na Windows a nekoliduje s pomocnými soubory stahování. */
@@ -286,9 +303,14 @@ public final class KatalogVrstev {
 		return vrstvy.stream().filter(v -> v.getId().equals(id)).findFirst();
 	}
 
-	/** Vrstva, ke které patří soubor tohoto jména; prázdné = soubor uživatele. */
-	public Optional<KatalogovaVrstva> podleSouboru(final String nazevSouboru) {
-		return vrstvy.stream().filter(v -> v.getSoubory().stream().anyMatch(s -> s.getNazev().equalsIgnoreCase(nazevSouboru))).findFirst();
+	/** Vrstva, ke které patří soubor s touto cestou ve složce vrstev (s lomítky); prázdné = soubor uživatele. */
+	public Optional<KatalogovaVrstva> podleCesty(final String cesta) {
+		return vrstvy.stream().filter(v -> v.getSoubory().stream().anyMatch(s -> s.getCesta().equalsIgnoreCase(cesta))).findFirst();
+	}
+
+	/** Vrstva daného typu k základní mapě s tímto klíčem (cesta mapy na serveru bez přípony); pro sloupce Správy map. */
+	public Optional<KatalogovaVrstva> vrstva(final String klic, final Typ typ) {
+		return vrstvy.stream().filter(v -> v.getKlic().equals(klic) && v.getTyp() == typ).findFirst();
 	}
 
 	/**

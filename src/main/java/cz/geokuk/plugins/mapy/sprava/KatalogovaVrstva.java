@@ -22,6 +22,11 @@ public final class KatalogovaVrstva {
 			this.kod = kod;
 		}
 
+		/** Kód typu v katalogu a ve jméně souboru vrstvy („trasy“, „vrstevnice“, „dem“). */
+		public String getKod() {
+			return kod;
+		}
+
 		static Typ podleKodu(final String kod) {
 			for (final Typ t : values()) {
 				if (t.kod.equals(kod)) {
@@ -34,14 +39,21 @@ public final class KatalogovaVrstva {
 
 	public enum Format {
 		/** Mapsforge .map. */
-		MAP("map"),
+		MAP("map", ".map"),
 		/** Zip s dlaždicemi SRTM .hgt. */
-		HGT_ZIP("hgt-zip");
+		HGT_ZIP("hgt-zip", ".zip");
 
 		private final String kod;
+		private final String pripona;
 
-		Format(final String kod) {
+		Format(final String kod, final String pripona) {
 			this.kod = kod;
+			this.pripona = pripona;
+		}
+
+		/** Přípona souboru vrstvy tohoto formátu. */
+		public String getPripona() {
+			return pripona;
 		}
 
 		static Format podleKodu(final String kod) {
@@ -57,22 +69,32 @@ public final class KatalogovaVrstva {
 	/** Jeden soubor vrstvy. */
 	public static final class Soubor {
 		private final String nazev;
+		private final String cesta;
 		private final List<URI> urly;
 		private final long velikost;
 		private final String sha256;
 		private final Instant datumSouboru;
 
-		Soubor(final String nazev, final List<URI> urly, final long velikost, final String sha256, final Instant datumSouboru) {
+		Soubor(final String nazev, final String cesta, final List<URI> urly, final long velikost, final String sha256, final Instant datumSouboru) {
 			this.nazev = nazev;
+			this.cesta = cesta;
 			this.urly = urly;
 			this.velikost = velikost;
 			this.sha256 = sha256;
 			this.datumSouboru = datumSouboru;
 		}
 
-		/** Jméno souboru ve složce vrstev. */
+		/** Jméno souboru na serveru. */
 		public String getNazev() {
 			return nazev;
+		}
+
+		/**
+		 * Cesta ve složce vrstev s lomítky: klíč základní mapy, typ vrstvy a přípona, například „europe/czech-republic.trasy.map“. Podsložky odpovídají cestě
+		 * mapy na serveru map.
+		 */
+		public String getCesta() {
+			return cesta;
 		}
 
 		/** Adresy v pořadí, v jakém se zkoušejí. */
@@ -96,7 +118,7 @@ public final class KatalogovaVrstva {
 
 		@Override
 		public String toString() {
-			return nazev;
+			return cesta;
 		}
 	}
 
@@ -155,6 +177,11 @@ public final class KatalogovaVrstva {
 
 	/** Id regionu jako u katalogové mapy, například „europe/czech-republic“. */
 	public String getRegion() {
+		return region;
+	}
+
+	/** Klíč, podle kterého vrstva patří k základní mapě: cesta mapy na serveru map bez přípony (stejné jako {@link #getRegion()}). */
+	public String getKlic() {
 		return region;
 	}
 

@@ -13,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -52,25 +53,25 @@ final class StahovacVrstev {
 	}
 
 	static File cil(final File slozka, final Soubor s) {
-		return new File(slozka, s.getNazev());
+		return new File(slozka, s.getCesta());
 	}
 
 	static File rozpracovany(final File slozka, final Soubor s) {
-		return new File(slozka, s.getNazev() + StahovacMapy.PRIPONA);
+		return new File(slozka, s.getCesta() + StahovacMapy.PRIPONA);
 	}
 
 	static File info(final File slozka, final Soubor s) {
-		return new File(slozka, s.getNazev() + StahovacMapy.PRIPONA_INFO);
+		return new File(slozka, s.getCesta() + StahovacMapy.PRIPONA_INFO);
 	}
 
 	/** Kontrolní součet souboru na místě, zapsaný po jeho ověření. */
 	static File soucet(final File slozka, final Soubor s) {
-		return new File(slozka, s.getNazev() + PRIPONA_SOUCTU);
+		return new File(slozka, s.getCesta() + PRIPONA_SOUCTU);
 	}
 
 	/** Stará verze souboru odsunutá stranou během výměny vrstvy. */
 	static File stara(final File slozka, final Soubor s) {
-		return new File(slozka, s.getNazev() + PRIPONA_STARA);
+		return new File(slozka, s.getCesta() + PRIPONA_STARA);
 	}
 
 	/** Na místě je soubor, který odpovídá katalogu: velikost a kontrolní součet zapsaný po ověření. */
@@ -357,21 +358,22 @@ final class StahovacVrstev {
 			if (kod == HttpURLConnection.HTTP_PARTIAL && od > 0) {
 				final long celkem = StahovacMapy.celkemZRozsahu(c.getHeaderField("Content-Range"), od);
 				if (celkem != so.getVelikost() || !StahovacMapy.stejnaVerze(info, c.getHeaderField("ETag"), c.getHeaderField("Last-Modified"))) {
-					throw zacitZnovu(cast, infoSoubor, "Soubor " + so.getNazev() + " se na serveru změnil, stáhněte vrstvu znovu.");
+					throw zacitZnovu(cast, infoSoubor, "Soubor " + so.getCesta() + " se na serveru změnil, stáhněte vrstvu znovu.");
 				}
 			} else if (kod == HttpURLConnection.HTTP_OK) {
 				od = 0;
 				if (c.getContentLengthLong() >= 0 && c.getContentLengthLong() != so.getVelikost()) {
-					throw new ChybaProUzivatele("Soubor " + so.getNazev() + " má na serveru jinou velikost než v katalogu.");
+					throw new ChybaProUzivatele("Soubor " + so.getCesta() + " má na serveru jinou velikost než v katalogu.");
 				}
 			} else if (kod == 416) {
 				throw zacitZnovu(cast, infoSoubor, "Stahování nejde dokončit, stáhněte vrstvu znovu.");
 			} else if (kod == HttpURLConnection.HTTP_NOT_FOUND || kod == HttpURLConnection.HTTP_GONE) {
-				throw new ChybaProUzivatele("Soubor " + so.getNazev() + " na serveru není.");
+				throw new ChybaProUzivatele("Soubor " + so.getCesta() + " na serveru není.");
 			} else {
 				throw new ChybaProUzivatele("Server odpověděl " + kod + ".");
 			}
 			if (od == 0) {
+				Files.createDirectories(cast.getParentFile().toPath());
 				info.url = odpoved.adresa.toString();
 				info.etag = c.getHeaderField("ETag");
 				info.lastModified = c.getHeaderField("Last-Modified");
@@ -394,17 +396,17 @@ final class StahovacVrstev {
 	/** Null když soubor odpovídá katalogu (velikost, SHA-256, u .map platná mapa), jinak popis vady. */
 	static String over(final File soubor, final Soubor so, final Format format, final BooleanSupplier zruseno) throws IOException {
 		if (!soubor.isFile()) {
-			return "Rozpracovaný soubor " + so.getNazev() + " zmizel z disku.";
+			return "Rozpracovaný soubor " + so.getCesta() + " zmizel z disku.";
 		}
 		if (soubor.length() != so.getVelikost()) {
-			return "Stažený soubor " + so.getNazev() + " má jinou velikost, než uvádí katalog.";
+			return "Stažený soubor " + so.getCesta() + " má jinou velikost, než uvádí katalog.";
 		}
 		final String sha = sha256(soubor, zruseno);
 		if (sha == null) {
 			return null;
 		}
 		if (!sha.equals(so.getSha256())) {
-			return "Stažený soubor " + so.getNazev() + " je poškozený, stáhněte vrstvu znovu.";
+			return "Stažený soubor " + so.getCesta() + " je poškozený, stáhněte vrstvu znovu.";
 		}
 		if (format == Format.MAP) {
 			return StahovacMapy.over(soubor, so.getVelikost());
@@ -434,6 +436,36 @@ final class StahovacVrstev {
 			sb.append(Character.forDigit(b >> 4 & 0xf, 16)).append(Character.forDigit(b & 0xf, 16));
 		}
 		return sb.toString();
+	}
+
+	/** Největší katalog vrstev, který se ještě přečte. */
+	static final int NEJVETSI_KATALOG = 10 * 1024 * 1024;
+
+	/** Stáhne text katalogu vrstev. */
+	String stahniKatalog(final URI url) throws IOException {
+		final HttpURLConnection c = http.spojeniNaServer(Collections.singletonList(url), "GET", Collections.emptyMap()).spojeni;
+		try {
+			final int kod = c.getResponseCode();
+			if (kod == HttpURLConnection.HTTP_NOT_FOUND) {
+				throw new ChybaProUzivatele("Katalog vrstev na serveru zatím není.");
+			}
+			if (kod != HttpURLConnection.HTTP_OK) {
+				throw new ChybaProUzivatele("Server s katalogem vrstev odpověděl " + kod + ".");
+			}
+			final java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+			final byte[] buf = new byte[64 * 1024];
+			try (InputStream in = c.getInputStream()) {
+				for (int n; (n = in.read(buf)) > 0;) {
+					out.write(buf, 0, n);
+					if (out.size() > NEJVETSI_KATALOG) {
+						throw new ChybaProUzivatele("Katalog vrstev na serveru je příliš velký.");
+					}
+				}
+			}
+			return new String(out.toByteArray(), StandardCharsets.UTF_8);
+		} finally {
+			c.disconnect();
+		}
 	}
 
 	/** Zahodí rozpracované soubory vrstvy. */

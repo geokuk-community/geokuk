@@ -1,6 +1,11 @@
 package cz.geokuk.plugins.mapy.sprava;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,9 +42,15 @@ public class SpravaMapModel extends Model0 {
 
 	/** Podsložka složky offline map; základní mapy se berou jen přímo ze složky, takže vrstvy mezi ně nepřijdou. */
 	public static final String SLOZKA_VRSTEV = "vrstvy";
+	/** Kopie staženého katalogu vrstev ve složce vrstev. */
+	static final String SOUBOR_KATALOGU = "vrstvy.json";
 
 	private final Supplier<KatalogMap> katalog;
 	private final Supplier<KatalogVrstev> katalogVrstev;
+	/** Katalog vrstev stažený ze serveru (kopie ve složce vrstev); null = vestavěný. */
+	private volatile KatalogVrstev stazenyKatalog;
+	private volatile File stazenyKatalogZ;
+	URI urlKataloguVrstev = KatalogVrstev.URL_KATALOGU;
 	private final ExecutorService vlakno = vlakno("Stahování offline mapy");
 	/** Kontroly a stav z disku, aby nečekaly na dlouhé stahování. */
 	private final ExecutorService kontrola = vlakno("Kontrola offline map");
@@ -143,8 +154,68 @@ public class SpravaMapModel extends Model0 {
 		return m instanceof KatalogovaMapa ? Optional.of(getStav((KatalogovaMapa) m)) : Optional.empty();
 	}
 
+	/** Katalog vrstev: naposledy stažený ze serveru, jinak vestavěný. */
 	public KatalogVrstev getKatalogVrstev() {
-		return katalogVrstev.get();
+		final KatalogVrstev k = stazenyKatalog;
+		return k != null ? k : katalogVrstev.get();
+	}
+
+	/**
+	 * Stáhne aktuální katalog vrstev ze serveru (jen na žádost uživatele) a uloží ho do složky vrstev, kde ho program najde i po dalším startu. Výsledek přijde
+	 * událostí {@link KatalogVrstevEvent}.
+	 */
+	public void obnovKatalogVrstev() {
+		kontrola.execute(() -> {
+			final File sv = getSlozkaVrstev();
+			if (sv == null) {
+				odpalovac.accept(new KatalogVrstevEvent(getKatalogVrstev(), "Složka offline map není nastavená."));
+				return;
+			}
+			try {
+				final String text = stahovacVrstev.stahniKatalog(urlKataloguVrstev);
+				final KatalogVrstev k = KatalogVrstev.nacti(text, getKatalog());
+				Files.createDirectories(sv.toPath());
+				final File docasny = new File(sv, SOUBOR_KATALOGU + StahovacMapy.PRIPONA);
+				Files.write(docasny.toPath(), text.getBytes(StandardCharsets.UTF_8));
+				Files.move(docasny.toPath(), new File(sv, SOUBOR_KATALOGU).toPath(), StandardCopyOption.REPLACE_EXISTING);
+				zmenKatalogVrstev(k, sv);
+				odpalovac.accept(new KatalogVrstevEvent(k, null));
+			} catch (final IOException e) {
+				log.info("Katalog vrstev nejde stáhnout: {}", e.toString());
+				odpalovac.accept(new KatalogVrstevEvent(getKatalogVrstev(),
+						e instanceof StahovacMapy.ChybaProUzivatele ? e.getMessage() : "Katalog vrstev nejde stáhnout ani načíst."));
+			}
+			obnovStavy();
+		});
+	}
+
+	/** Kopie staženého katalogu ve složce vrstev; čte se jednou pro každou složku. Volá se na vlákně kontroly. */
+	private void nactiStazenyKatalog(final File sv) {
+		if (sv.equals(stazenyKatalogZ)) {
+			return;
+		}
+		KatalogVrstev k = null;
+		final File f = new File(sv, SOUBOR_KATALOGU);
+		if (f.isFile()) {
+			try {
+				k = KatalogVrstev.nacti(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8), getKatalog());
+			} catch (final IOException | RuntimeException e) {
+				log.info("Uložený katalog vrstev {} nejde načíst, platí vestavěný: {}", f, e.toString());
+			}
+		}
+		if (k == null && stazenyKatalog == null) {
+			stazenyKatalogZ = sv;
+			return;
+		}
+		zmenKatalogVrstev(k, sv);
+		odpalovac.accept(new KatalogVrstevEvent(getKatalogVrstev(), null));
+	}
+
+	private void zmenKatalogVrstev(final KatalogVrstev k, final File z) {
+		stazenyKatalog = k;
+		stazenyKatalogZ = z;
+		// Stav drží vrstvu z katalogu; s novým katalogem se přečte znovu (běžící stahování zůstane).
+		stavyVrstev.values().removeIf(st -> !st.isBezi());
 	}
 
 	/** Složka, kam se stahují vrstvy; null, když složka offline map není nastavená. */
@@ -219,7 +290,8 @@ public class SpravaMapModel extends Model0 {
 				}
 			}
 			final File sv = new File(s, SLOZKA_VRSTEV);
-			for (final KatalogovaVrstva v : katalogVrstev.get().getVrstvy()) {
+			nactiStazenyKatalog(sv);
+			for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
 				final StavVrstvy predtim = getStav(v);
 				if (predtim.isBezi()) {
 					continue;

@@ -147,8 +147,37 @@ public class StahovacVrstevTest {
 	}
 
 	private List<String> vSlozce() {
-		final String[] jmena = slozka.list();
-		final List<String> l = jmena == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(jmena));
+		return vSlozce(slozka);
+	}
+
+	private File naDisku(final String jmeno) {
+		return naDisku(slozka, jmeno);
+	}
+
+	/** Předpona souborů testovací vrstvy dem/europe/czech-republic ve složce vrstev. */
+	static final String PREDPONA = "europe/czech-republic.dem.";
+
+	/** Soubor testovací vrstvy podle jména souboru na serveru („a.zip“, „a.zip.stahuje“); založí podsložku. */
+	static File naDisku(final File slozka, final String jmeno) {
+		final java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*?)(\\.zip|\\.map)(.*)").matcher(jmeno);
+		if (!m.matches()) {
+			throw new IllegalArgumentException(jmeno);
+		}
+		final File f = new File(slozka, PREDPONA + m.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_-]", "-") + m.group(2) + m.group(3));
+		f.getParentFile().mkdirs();
+		return f;
+	}
+
+	/** Soubory ve složce vrstev i v podsložkách, s předponou testovací vrstvy zkrácenou na jméno souboru na serveru. */
+	static List<String> vSlozce(final File slozka) {
+		final List<String> l = new ArrayList<>();
+		if (slozka.isDirectory()) {
+			try (java.util.stream.Stream<java.nio.file.Path> s = Files.walk(slozka.toPath())) {
+				s.filter(Files::isRegularFile).forEach(f -> l.add(slozka.toPath().relativize(f).toString().replace('\\', '/').replace(PREDPONA, "")));
+			} catch (final IOException e) {
+				throw new java.io.UncheckedIOException(e);
+			}
+		}
 		Collections.sort(l);
 		return l;
 	}
@@ -163,7 +192,7 @@ public class StahovacVrstevTest {
 		assertEquals(500_000, s.getStazeno());
 		assertFalse(s.isRozpracovano());
 		assertEquals(Arrays.asList("cz_1.zip", "cz_1.zip.sha256", "cz_2.zip", "cz_2.zip.sha256"), vSlozce());
-		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(new File(slozka, "cz_2.zip").toPath()));
+		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(naDisku("cz_2.zip").toPath()));
 
 		pozadavky.clear();
 		assertEquals("stažená vrstva se znovu nestahuje", Faze.HOTOVO, stahni(v, new AtomicBoolean()).getFaze());
@@ -189,7 +218,7 @@ public class StahovacVrstevTest {
 		final StavVrstvy s = stahni(v, new AtomicBoolean());
 		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
 		assertTrue(s.getChyba(), s.getChyba().contains("na serveru není"));
-		assertFalse(new File(slozka, "cz_1.zip").exists());
+		assertFalse(naDisku("cz_1.zip").exists());
 
 		chybi.clear();
 		pozadavky.clear();
@@ -212,14 +241,14 @@ public class StahovacVrstevTest {
 			final StavVrstvy s = f.get(20, TimeUnit.SECONDS);
 			assertEquals(s.toString(), Faze.ZRUSENO, s.getFaze());
 			assertTrue(s.isRozpracovano());
-			assertFalse("nic není na místě", new File(slozka, "cz_1.zip").exists());
+			assertFalse("nic není na místě", naDisku("cz_1.zip").exists());
 		} finally {
 			e.shutdownNow();
 		}
 		final StavVrstvy zDisku = StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka);
 		assertTrue(zDisku.isRozpracovano());
 		assertEquals(Mistni.NEMAME, zDisku.getMistni());
-		final long mame = new File(slozka, "cz_2.zip.stahuje").length();
+		final long mame = naDisku("cz_2.zip.stahuje").length();
 		assertTrue("půlka druhého souboru: " + mame, mame > 0 && mame < 200_000);
 		assertEquals(300_000 + mame, zDisku.getStazeno());
 
@@ -228,7 +257,7 @@ public class StahovacVrstevTest {
 		final StavVrstvy s = stahni(v, new AtomicBoolean());
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
 		assertEquals("navazuje druhý soubor", Collections.singletonList("cz_2.zip bytes=" + mame + "-"), pozadavky);
-		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(new File(slozka, "cz_2.zip").toPath()));
+		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(naDisku("cz_2.zip").toPath()));
 		assertEquals(Arrays.asList("cz_1.zip", "cz_1.zip.sha256", "cz_2.zip", "cz_2.zip.sha256"), vSlozce());
 	}
 
@@ -236,11 +265,11 @@ public class StahovacVrstevTest {
 	public void jinaVerzeSeNahradi() throws IOException {
 		final KatalogovaVrstva v = dvaSoubory();
 		assertTrue(slozka.mkdirs());
-		Files.write(new File(slozka, "cz_1.zip").toPath(), new byte[10]);
+		Files.write(naDisku("cz_1.zip").toPath(), new byte[10]);
 		assertEquals(Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
 		final StavVrstvy s = stahni(v, new AtomicBoolean());
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
-		assertArrayEquals(data.get("cz_1.zip"), Files.readAllBytes(new File(slozka, "cz_1.zip").toPath()));
+		assertArrayEquals(data.get("cz_1.zip"), Files.readAllBytes(naDisku("cz_1.zip").toPath()));
 	}
 
 	@Test
@@ -254,7 +283,7 @@ public class StahovacVrstevTest {
 		final StavVrstvy s = stahni(vrstva("map", Collections.emptyMap(), "vadna.map"), new AtomicBoolean());
 		assertEquals("součet sedí, ale mapa je vadná: " + s, Faze.CHYBA, s.getFaze());
 		assertTrue(s.getChyba(), s.getChyba().contains("poškozená"));
-		assertFalse(new File(slozka, "vadna.map").exists());
+		assertFalse(naDisku("vadna.map").exists());
 	}
 
 	@Test
