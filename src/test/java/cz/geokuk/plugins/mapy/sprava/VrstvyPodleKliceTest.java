@@ -31,6 +31,7 @@ public class VrstvyPodleKliceTest {
 	private final Map<String, byte[]> data = new ConcurrentHashMap<>();
 	private volatile int kodKatalogu = 200;
 	private volatile String katalog;
+	private final java.util.concurrent.atomic.AtomicInteger dotazyNaKatalog = new java.util.concurrent.atomic.AtomicInteger();
 
 	@Before
 	public void setUp() throws IOException {
@@ -50,6 +51,9 @@ public class VrstvyPodleKliceTest {
 			final String jmeno = ex.getRequestURI().getPath().replace("/rel/", "");
 			final byte[] d = "latest/layers.json".equals(jmeno) ? katalog == null ? null : katalog.getBytes(StandardCharsets.UTF_8) : data.get(jmeno);
 			final int kod = "latest/layers.json".equals(jmeno) ? kodKatalogu : 200;
+			if ("latest/layers.json".equals(jmeno)) {
+				dotazyNaKatalog.incrementAndGet();
+			}
 			if (d == null || kod != 200) {
 				ex.sendResponseHeaders(d == null ? 404 : kod, -1);
 				return;
@@ -167,6 +171,49 @@ public class VrstvyPodleKliceTest {
 		znovu.pockej();
 		assertEquals(2, znovu.getKatalogVrstev().getVrstvy().size());
 		assertTrue(udalosti2.stream().anyMatch(e -> e instanceof KatalogVrstevEvent));
+	}
+
+	/** Čistá instalace (vestavěný katalog je prázdný): katalog vrstev se stáhne sám při startu a obnoví se, až je kopie stará; bez sítě tiše platí kopie. */
+	@Test
+	public void katalogVrstevSeStahneSam() throws Exception {
+		final File mapy = tmp.newFolder("offline-mapy");
+		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.nastavProTest(() -> mapy, udalosti::add);
+		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
+		katalog = katalogBavorska();
+
+		model.initAndFire();
+		model.pockej();
+		assertEquals(2, model.getKatalogVrstev().getVrstvy().size());
+		assertNull(posledni(udalosti).getChyba());
+		final File kopie = new File(mapy, "layers/layers.json");
+		assertTrue(kopie.isFile());
+		assertEquals(1, dotazyNaKatalog.get());
+
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals("čerstvá kopie se znovu nestahuje", 1, dotazyNaKatalog.get());
+
+		assertTrue(kopie.setLastModified(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(25)));
+		kodKatalogu = 404;
+		final int udalostiPred = udalosti.size();
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(2, dotazyNaKatalog.get());
+		assertEquals("bez katalogu na serveru platí kopie", 2, model.getKatalogVrstev().getVrstvy().size());
+		assertFalse("chyba se uživateli neukazuje", udalosti.subList(udalostiPred, udalosti.size()).stream().anyMatch(e -> e instanceof KatalogVrstevEvent));
+
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals("po chybě se hned znovu nezkouší", 2, dotazyNaKatalog.get());
+
+		kodKatalogu = 200;
+		model.opakovaniKataloguNs = 0;
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(3, dotazyNaKatalog.get());
+		assertTrue("stará kopie se obnoví", System.currentTimeMillis() - kopie.lastModified() < TimeUnit.HOURS.toMillis(1));
 	}
 
 	private static KatalogVrstevEvent posledni(final List<Event0<SpravaMapModel>> udalosti) {

@@ -85,7 +85,9 @@
   jde v popupu Mapy vypnout. Povinná atribuce dat vrstev (třeba Copernicus) je
   v rohu mapy.
   Vrstvy se stahují a mažou v popupu Mapy ve sloupcích Trasy, Vrstevnice a
-  Stínování u každé mapy, i u mapy, která ještě není stažená.
+  Stínování u každé mapy, i u mapy, která ještě není stažená. Seznam vrstev
+  ke stažení si program sám obnoví při startu a při otevření popupu, nejvýš
+  jednou denně.
   Seznam map ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
