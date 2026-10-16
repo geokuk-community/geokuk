@@ -50,6 +50,7 @@ public class JBlokMap extends JLabel {
 	/** Čtení složky běží, další změna počká na jeho konec. */
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
+	private volatile boolean stinovaniDostupne;
 	private volatile long volne = -1;
 
 	public JBlokMap() {
@@ -154,6 +155,21 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public boolean isStinovaniDostupne() {
+				return stinovaniDostupne;
+			}
+
+			@Override
+			public boolean isStinovani() {
+				return kachleModel.isStinovaniTerenu();
+			}
+
+			@Override
+			public void setStinovani(final boolean zapnuto) {
+				kachleModel.setStinovaniTerenu(zapnuto);
+			}
+
+			@Override
 			public void setObrysPokryti(final boolean zapnuto) {
 				kachleModel.setObrysPokryti(zapnuto);
 			}
@@ -236,6 +252,7 @@ public class JBlokMap extends JLabel {
 		cteni = new SwingWorker<List<RadekMapy>, Void>() {
 			@Override
 			protected List<RadekMapy> doInBackground() {
+				stinovaniDostupne = cz.geokuk.plugins.mapy.kachle.podklady.OfflineMapy.maDem(slozka);
 				volne = volneMisto(slozka);
 				return cteniSlozky.apply(slozka);
 			}
@@ -245,6 +262,7 @@ public class JBlokMap extends JLabel {
 				cteni = null;
 				try {
 					soubory = get();
+					obsah.setStinovaniDostupne(stinovaniDostupne);
 					obsah.setVolneMisto(volne);
 					prestav();
 				} catch (final InterruptedException e) {

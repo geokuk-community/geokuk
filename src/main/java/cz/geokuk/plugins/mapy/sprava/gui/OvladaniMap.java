@@ -28,4 +28,15 @@ public interface OvladaniMap {
 
 	/** Myš je nad řádkem mapy (klíč řádku), nebo z něj odešla (null). */
 	default void zvyrazniMapu(final String klic) {}
+
+	/** Ve složce vrstev jsou DEM dlaždice, takže má smysl nabídnout přepínač stínování terénu. */
+	default boolean isStinovaniDostupne() {
+		return false;
+	}
+
+	default boolean isStinovani() {
+		return true;
+	}
+
+	default void setStinovani(final boolean zapnuto) {}
 }
