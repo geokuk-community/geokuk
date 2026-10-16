@@ -1,7 +1,9 @@
 package cz.geokuk.plugins.mapy.stahovac;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -13,7 +15,8 @@ class DavkaStahovani {
 	private final AtomicInteger zarazeno = new AtomicInteger();
 	private final AtomicInteger hotovo = new AtomicInteger();
 	private final AtomicInteger chyb = new AtomicInteger();
-	private final List<Kanceler> kancelery = new ArrayList<>();
+	/** Jen rozpracované dlaždice; hotová se hned pustí, jinak by dávka držela v paměti všechny stažené obrázky. */
+	private final Set<Dlazdice> rozpracovane = new HashSet<>();
 	private final Runnable priZmene;
 	private volatile boolean zarazovaniSkonceno;
 	private volatile String duvodZastaveni;
@@ -23,8 +26,18 @@ class DavkaStahovani {
 		this.priZmene = priZmene;
 	}
 
-	ImageReceiver prijemce() {
-		return stav -> {
+	/** Jedna dlaždice dávky: příjemce jejího výsledku a zrušení jejího stahování. */
+	final class Dlazdice implements ImageReceiver {
+		private Kanceler kanceler;
+		private boolean hotova;
+
+		@Override
+		public void send(final KachloStav stav) {
+			synchronized (DavkaStahovani.this) {
+				hotova = true;
+				kanceler = null;
+				rozpracovane.remove(this);
+			}
 			if (stav.getThr() == null) {
 				hotovo.incrementAndGet();
 			} else {
@@ -35,18 +48,32 @@ class DavkaStahovani {
 				}
 			}
 			priZmene.run();
-		};
+		}
+	}
+
+	/** Nová dlaždice; její příjemce patří do požadavku, kanceler z něj pak do {@link #zarazeno(Dlazdice, Kanceler)}. */
+	Dlazdice dlazdice() {
+		return new Dlazdice();
 	}
 
 	/** Vrací false, když je dávka zastavená a další dlaždice se už nemají zařazovat. */
-	synchronized boolean zarazeno(final Kanceler kanceler) {
+	synchronized boolean zarazeno(final Dlazdice dlazdice, final Kanceler kanceler) {
 		if (duvodZastaveni != null) {
 			kanceler.cancel();
 			return false;
 		}
-		kancelery.add(kanceler);
+		// Dlaždice z cache bývá hotová dřív, než se zařadí.
+		if (!dlazdice.hotova) {
+			dlazdice.kanceler = kanceler;
+			rozpracovane.add(dlazdice);
+		}
 		zarazeno.incrementAndGet();
 		return true;
+	}
+
+	/** Počet dlaždic, které dávka drží (zařazené a ještě nedokončené). */
+	synchronized int pocetRozpracovanych() {
+		return rozpracovane.size();
 	}
 
 	void zarazovaniSkonceno() {
@@ -59,14 +86,17 @@ class DavkaStahovani {
 	}
 
 	void zastav(final String duvod) {
-		final List<Kanceler> kZruseni;
+		final List<Kanceler> kZruseni = new ArrayList<>();
 		synchronized (this) {
 			if (duvodZastaveni != null) {
 				return;
 			}
 			duvodZastaveni = duvod;
-			kZruseni = new ArrayList<>(kancelery);
-			kancelery.clear();
+			for (final Dlazdice d : rozpracovane) {
+				kZruseni.add(d.kanceler);
+				d.kanceler = null;
+			}
+			rozpracovane.clear();
 		}
 		kZruseni.forEach(Kanceler::cancel);
 		priZmene.run();
