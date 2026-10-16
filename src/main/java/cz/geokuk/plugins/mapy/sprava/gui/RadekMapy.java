@@ -5,6 +5,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+import cz.geokuk.plugins.mapy.sprava.MatriceMap;
+
 /** Jeden řádek popupu Mapy: mapa z katalogu nebo soubor uživatele ve složce offline map. */
 public final class RadekMapy {
 
@@ -50,10 +52,8 @@ public final class RadekMapy {
 	final String chyba;
 	/** Kdy se naposledy ptal server na novější data, null = nikdy. */
 	final Instant zkontrolovano;
-	/** Druh vrstvy (Trasy, Vrstevnice, Stínování), když řádek není mapa, ale vrstva k mapě; jinak null. */
-	final String vrstvaTyp;
-	/** Id mapy, ke které vrstva patří. */
-	final String mapaId;
+	/** Stavy mapy a jejích vrstev (trasy, vrstevnice, stínování) pro sloupce popupu; null u souboru uživatele. */
+	final MatriceMap.Radek matice;
 
 	private RadekMapy(final Builder b) {
 		id = b.id;
@@ -74,8 +74,7 @@ public final class RadekMapy {
 		licence = b.licence;
 		chyba = b.chyba;
 		zkontrolovano = b.zkontrolovano;
-		vrstvaTyp = b.vrstvaTyp;
-		mapaId = b.mapaId;
+		matice = b.matice;
 	}
 
 	public static Builder katalogova(final String id, final String nazev, final Stav stav) {
@@ -84,11 +83,6 @@ public final class RadekMapy {
 		b.nazev = nazev;
 		b.stav = stav;
 		return b;
-	}
-
-	/** Vrstva (trasy, vrstevnice, stínování) k stažené mapě; id vrstvy z katalogu vrstev. */
-	public static Builder vrstva(final String id, final String nazev, final Stav stav) {
-		return katalogova(id, nazev, stav);
 	}
 
 	public static Builder vlastni(final String nazevSouboru) {
@@ -111,8 +105,68 @@ public final class RadekMapy {
 		return stav;
 	}
 
-	public boolean isVrstva() {
-		return vrstvaTyp != null;
+	/** Buňka vrstvy v řádku, null když řádek vrstvy nemá (soubor uživatele, matice nebyla sestavena). */
+	MatriceMap.Bunka bunka(final MatriceMap.Cast cast) {
+		return matice == null ? null : matice.getBunka(cast);
+	}
+
+	/** Právě se stahuje některá vrstva mapy. */
+	MatriceMap.Bunka bezicVrstva() {
+		if (matice != null) {
+			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
+				if (c != MatriceMap.Cast.MAPA && matice.getBunka(c).getStav() == MatriceMap.StavBunky.STAHUJE) {
+					return matice.getBunka(c);
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Stav řádku včetně vrstev: běží-li stahování mapy nebo vrstvy, je to stahování; chyba nebo novější vrstva se promítne, když mapa nic horšího nemá. */
+	Stav celkovyStav() {
+		if (matice == null || stav == Stav.STAHUJE) {
+			return stav;
+		}
+		Stav vysledek = stav;
+		for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
+			if (c == MatriceMap.Cast.MAPA) {
+				continue;
+			}
+			final Stav vrstva = stavVrstvy(matice.getBunka(c).getStav());
+			if (vrstva != null && poradi(vrstva) < poradi(vysledek)) {
+				vysledek = vrstva;
+			}
+		}
+		return vysledek;
+	}
+
+	private static Stav stavVrstvy(final MatriceMap.StavBunky s) {
+		switch (s) {
+		case STAHUJE:
+			return Stav.STAHUJE;
+		case CHYBA:
+			return Stav.CHYBA;
+		case NOVEJSI:
+			return Stav.NOVEJSI;
+		default:
+			return null;
+		}
+	}
+
+	static int poradi(final Stav s) {
+		switch (s) {
+		case STAHUJE:
+			return 0;
+		case CHYBA:
+			return 1;
+		case NOVEJSI:
+			return 2;
+		case AKTUALNI:
+			return 3;
+		case NEMAME:
+		default:
+			return 4;
+		}
 	}
 
 	public boolean isVlastni() {
@@ -213,8 +267,7 @@ public final class RadekMapy {
 		private String licence;
 		private String chyba;
 		private Instant zkontrolovano;
-		private String vrstvaTyp;
-		private String mapaId;
+		private MatriceMap.Radek matice;
 
 		public Builder skupina(final String s) {
 			skupina = s;
@@ -281,10 +334,8 @@ public final class RadekMapy {
 			return this;
 		}
 
-		/** Řádek je vrstva k mapě. */
-		public Builder vrstva(final String typ, final String mapa) {
-			vrstvaTyp = typ;
-			mapaId = mapa;
+		Builder matice(final MatriceMap.Radek m) {
+			matice = m;
 			return this;
 		}
 

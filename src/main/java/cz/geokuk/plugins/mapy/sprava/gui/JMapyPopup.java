@@ -22,6 +22,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
+import cz.geokuk.plugins.mapy.sprava.MatriceMap;
 import cz.geokuk.plugins.mapy.sprava.PokrytiMap;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.util.process.BrowserOpener;
@@ -43,7 +44,11 @@ public class JMapyPopup extends JPanel {
 	static final String STINOVANI = "Stínovat terén";
 	static final String WEB = "Další offline mapy:";
 	static final String STAHNOUT = "Stáhnout";
-	static final String SMAZAT = "Smazat";
+	static final String SMAZAT_VRSTVU = "×";
+	static final String SLOUPEC_TRASY = "Trasy";
+	static final String SLOUPEC_VRSTEVNICE = "Vrstevnice";
+	static final String SLOUPEC_STINOVANI = "Stínování";
+	static final String NENI_VRSTVA = "—";
 	static final String SMAZAT_REGIONY = "Smazat regiony";
 	static final String SMAZAT_CELEK = "Smazat celou zemi";
 	static final String POKRACOVAT = "Pokračovat";
@@ -54,6 +59,7 @@ public class JMapyPopup extends JPanel {
 	static final String ZKONTROLOVAT = "Zkontrolovat aktualizace";
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
 	static final String OTEVRIT_SLOZKU = "Otevřít složku";
+	static final String BEHEM_STAHOVANI_NEJDE_MAZAT = "Během stahování nejde mazat.";
 	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
 	static final String VSE_AKTUALNI = "Vše aktuální";
 	static final String KONTROLA_SELHALA = "Kontrola se nepovedla";
@@ -65,6 +71,9 @@ public class JMapyPopup extends JPanel {
 	static final String URL_ODBL = "https://opendatacommons.org/licenses/odbl/";
 	static final String URL_OSM = "https://www.openstreetmap.org/copyright";
 	static final String RUSI_SE = "Ruší se…";
+
+	/** Šířka sloupce vrstvy (trasy, vrstevnice, stínování), ve všech oddílech stejná, aby byly buňky pod sebou. */
+	static final int SIRKA_BUNKY = 118;
 
 	/** Delší popis (třeba text chyby) se zkrátí, celý je v tooltipu. */
 	static final int SIRKA_POPISU = 240;
@@ -86,6 +95,8 @@ public class JMapyPopup extends JPanel {
 	private transient List<RadekMapy> radky = Collections.emptyList();
 	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
 	private final Map<String, JLabel[]> popisy = new HashMap<>();
+	/** Procenta právě stahované vrstvy podle řádku a sloupce, aby šla při stahování přepsat bez přestavění popupu. */
+	private final Map<String, JLabel> postupVrstev = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private final JCheckBox stinovani = new JCheckBox(STINOVANI);
 	private boolean stinovaniDostupne;
@@ -467,6 +478,13 @@ public class JMapyPopup extends JPanel {
 				for (final JLabel b : bunky) {
 					b.setToolTipText(tooltip);
 				}
+				for (final MatriceMap.Cast c : VRSTVY) {
+					final JLabel postup = postupVrstev.get(klic(r) + "#" + c);
+					final MatriceMap.Bunka vrstva = r.bunka(c);
+					if (postup != null && vrstva != null) {
+						postup.setText(procenta(vrstva));
+					}
+				}
 			}
 			if (sirsi) {
 				revalidate();
@@ -490,10 +508,23 @@ public class JMapyPopup extends JPanel {
 	private List<String> struktura(final List<RadekMapy> radky) {
 		final List<String> s = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null) + "|" + r.zkontrolovano + "|" + nedostatekMista(r));
+			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null) + "|" + r.zkontrolovano + "|" + nedostatekMista(r) + "|" + strukturaVrstev(r));
 		}
 		return s;
 	}
+
+	private String strukturaVrstev(final RadekMapy r) {
+		final StringBuilder sb = new StringBuilder();
+		for (final MatriceMap.Cast c : VRSTVY) {
+			final MatriceMap.Bunka b = r.bunka(c);
+			if (b != null) {
+				sb.append(b.getStav()).append(b.getChyba() != null).append(nedostatekMista(b)).append(',');
+			}
+		}
+		return sb.toString();
+	}
+
+	private static final MatriceMap.Cast[] VRSTVY = { MatriceMap.Cast.TRASY, MatriceMap.Cast.VRSTEVNICE, MatriceMap.Cast.STINOVANI };
 
 	private static String klic(final RadekMapy r) {
 		return r.vlastni ? "soubor:" + r.nazev : r.id;
@@ -596,6 +627,26 @@ public class JMapyPopup extends JPanel {
 		return volneMisto >= 0 && potrebneMisto(r) > volneMisto;
 	}
 
+	private boolean nedostatekMista(final MatriceMap.Bunka b) {
+		return volneMisto >= 0 && potrebneMisto(b) > volneMisto;
+	}
+
+	/** Místo pro stažení (zbytku) vrstvy včetně rezervy stahovače; 0, když se nic nestahuje. */
+	static long potrebneMisto(final MatriceMap.Bunka b) {
+		if (b.getVelikost() <= 0) {
+			return 0;
+		}
+		switch (b.getStav()) {
+		case KE_STAZENI:
+		case CHYBA:
+			return Math.max(0, b.getVelikost() - b.getStazeno()) + SpravaMapModel.REZERVA_MISTA;
+		case NOVEJSI:
+			return b.getVelikost() + SpravaMapModel.REZERVA_MISTA;
+		default:
+			return 0;
+		}
+	}
+
 	/** Místo, které stažení (zbytku) mapy potřebuje včetně rezervy stahovače; 0, když se nic nestahuje. */
 	static long potrebneMisto(final RadekMapy r) {
 		if (r.vlastni || r.velikost <= 0) {
@@ -618,18 +669,19 @@ public class JMapyPopup extends JPanel {
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
+		postupVrstev.clear();
 		hledatelne.clear();
 		uzly.clear();
 		nicNenalezeno = null;
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
 		sirkaNazvu = 0;
 		for (final RadekMapy r : radky) {
-			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2 + (r.isVrstva() ? ODSAZENI : 0));
+			sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.nazev) + 2);
 		}
 		if (radky.stream().anyMatch(r -> r.skupina != null)) {
 			sirkaNazvu += 2 * ODSAZENI; // šipka a odsazení regionů ve stromu zemí
 		}
-		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje);
+		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje || r.bezicVrstva() != null);
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -648,15 +700,16 @@ public class JMapyPopup extends JPanel {
 			}
 		}), BorderLayout.EAST);
 		add(hlavicka, gbc);
+		if (radky.stream().anyMatch(r -> r.matice != null && !r.vlastni)) {
+			gbc.gridy++;
+			add(hlavickaSloupcu(), gbc);
+		}
 
 		final List<RadekMapy> veSlozce = new ArrayList<>();
 		final List<RadekMapy> proMisto = new ArrayList<>();
 		final List<RadekMapy> dalsi = new ArrayList<>();
-		final Map<String, List<RadekMapy>> vrstvyMap = new HashMap<>();
 		for (final RadekMapy r : radky) {
-			if (r.isVrstva()) {
-				vrstvyMap.computeIfAbsent(r.mapaId, k -> new ArrayList<>()).add(r);
-			} else if (r.isVeSlozce()) {
+			if (r.isVeSlozce()) {
 				veSlozce.add(r);
 			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE) {
 				proMisto.add(r);
@@ -700,7 +753,7 @@ public class JMapyPopup extends JPanel {
 		}
 		int y = 0;
 		for (final RadekMapy r : veSlozce) {
-			y = radekSVrstvami(slozka, y, r, stahujeSe, vrstvyMap);
+			y = pridejRadek(slozka, y, r, stahujeSe);
 		}
 		gbc.gridy++;
 		add(slozka, gbc);
@@ -733,7 +786,7 @@ public class JMapyPopup extends JPanel {
 			final JPanel misto = panelRadku();
 			y = 0;
 			for (final RadekMapy r : proMisto) {
-				y = radekSVrstvami(misto, y, r, stahujeSe, vrstvyMap);
+				y = pridejRadek(misto, y, r, stahujeSe);
 			}
 			gbc.gridy++;
 			add(misto, gbc);
@@ -747,7 +800,7 @@ public class JMapyPopup extends JPanel {
 				gbc.gridy++;
 				add(hledat, gbc);
 			}
-			final JPanel ostatni = panelRadku();
+			final JPanel ostatni = panelRadkuVSeznamu();
 			y = 0;
 			final java.text.Collator cs = java.text.Collator.getInstance(new Locale("cs"));
 			final Map<String, Uzel> podleZeme = new TreeMap<>(cs);
@@ -789,7 +842,7 @@ public class JMapyPopup extends JPanel {
 			// Velikost podle seznamu bez hledání (regiony sbalené), aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
 			filtruj("");
 			final Dimension vse = obal.getPreferredSize();
-			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
+			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 				private static final long serialVersionUID = 1L;
 
 				@Override
@@ -849,20 +902,35 @@ public class JMapyPopup extends JPanel {
 
 	/** Klíč řádku pro zvýraznění obrysu mapy: id z katalogu, u souboru uživatele jeho jméno. */
 	static String klicZvyrazneni(final RadekMapy r) {
-		if (r.isVrstva()) {
-			return r.mapaId;
-		}
 		return r.vlastni ? JObrysMapSlide.VLASTNI + r.nazev : r.id;
 	}
 
-	/** Řádek mapy a hned pod ním řádky jejích vrstev (trasy, vrstevnice, stínování). */
-	private int radekSVrstvami(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe, final Map<String, List<RadekMapy>> vrstvy) {
-		int dalsi = y;
-		radek(panel, dalsi++, r, stahujeSe);
-		for (final RadekMapy v : vrstvy.getOrDefault(r.id, Collections.emptyList())) {
-			radek(panel, dalsi++, v, stahujeSe);
+	private int pridejRadek(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe) {
+		radek(panel, y, r, stahujeSe);
+		return y + 1;
+	}
+
+	/** Názvy sloupců vrstev nad oddíly, zarovnané s buňkami řádků. */
+	private JPanel hlavickaSloupcu() {
+		final JPanel p = new JPanel(new BorderLayout());
+		p.setOpaque(false);
+		final JPanel sloupce = new JPanel(new GridLayout(1, 3));
+		sloupce.setOpaque(false);
+		for (final String nazev : new String[] { SLOUPEC_TRASY, SLOUPEC_VRSTEVNICE, SLOUPEC_STINOVANI }) {
+			final JLabel l = maly(nazev);
+			l.setFont(l.getFont().deriveFont(Font.BOLD, 11f));
+			l.setBorder(new EmptyBorder(6, 4, 0, 0));
+			sloupce.add(l);
 		}
-		return dalsi;
+		sloupce.setPreferredSize(new Dimension(3 * SIRKA_BUNKY, sloupce.getPreferredSize().height));
+		p.add(sloupce, BorderLayout.EAST);
+		p.setBorder(new EmptyBorder(0, 0, 0, sirkaPosuvniku()));
+		return p;
+	}
+
+	/** Šířka svislého posuvníku seznamu dalších map, o kterou se posouvají buňky v seznamu; ostatní oddíly ji odsazují, aby sloupce lícovaly. */
+	private static int sirkaPosuvniku() {
+		return new JScrollBar(Adjustable.VERTICAL).getPreferredSize().width;
 	}
 
 	/** Odsazení názvu o šířku šipky rozbalení, aby se názvy zemí a regionů zarovnaly. */
@@ -920,12 +988,6 @@ public class JMapyPopup extends JPanel {
 		final JLabel nazev = new JLabel(r.nazev);
 		nazev.addMouseListener(nadRadkem);
 		nazev.setToolTipText(tooltip);
-		if (r.isVrstva()) {
-			// Vrstva patří k mapě nad ní: odsazená, menším písmem.
-			nazev.setFont(nazev.getFont().deriveFont(Font.PLAIN, 11f));
-			nazev.setForeground(SEDY_TEXT);
-			nazev.setBorder(new EmptyBorder(0, ODSAZENI, 0, 0));
-		}
 		// Stejná šířka sloupce názvů ve všech oddílech, aby popisy byly pod sebou.
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
 		panel.add(nazev, bunka(1, y, 1));
@@ -955,17 +1017,124 @@ public class JMapyPopup extends JPanel {
 		} else {
 			panel.add(Box.createVerticalStrut(odkaz(STAHNOUT, e -> {}).getPreferredSize().height), ca);
 		}
-		if (r.isVrstva() && !r.kontroluje && r.stav != RadekMapy.Stav.STAHUJE && (r.isVeSlozce() || r.rozpracovano)) {
-			final JButton smazat = odkaz(SMAZAT, e -> {
+		if (r.matice != null && !r.vlastni) {
+			for (int i = 0; i < VRSTVY.length; i++) {
+				final JComponent bunka = bunkaVrstvy(r, VRSTVY[i], stahujeSe, nadRadkem);
+				final GridBagConstraints cb = bunka(4 + i, y, 1);
+				cb.anchor = GridBagConstraints.WEST;
+				cb.fill = GridBagConstraints.NONE;
+				panel.add(bunka, cb);
+			}
+		}
+	}
+
+	/** Buňka vrstvy v řádku mapy: stav a velikost, akce podle stavu (stáhnout, aktualizovat, zrušit, smazat). */
+	private JComponent bunkaVrstvy(final RadekMapy r, final MatriceMap.Cast cast, final boolean stahujeSe, final MouseAdapter nadRadkem) {
+		final MatriceMap.Bunka b = r.bunka(cast);
+		final JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+		p.setOpaque(false);
+		p.setPreferredSize(new Dimension(SIRKA_BUNKY, odkaz(STAHNOUT, e -> {}).getPreferredSize().height));
+		p.addMouseListener(nadRadkem);
+		if (b.getStav() == MatriceMap.StavBunky.NENI) {
+			final JLabel nic = maly(NENI_VRSTVA);
+			nic.setBorder(new EmptyBorder(0, 6, 0, 0));
+			p.add(nic);
+			return p;
+		}
+		final String nazev = nazevVrstvy(cast);
+		final String velikost = b.getVelikost() > 0 ? RadekMapy.velikost(b.getVelikost()) : "";
+		switch (b.getStav()) {
+		case STAZENO: {
+			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.AKTUALNI)));
+			final JLabel l = maly(velikost);
+			l.setToolTipText(nazev + " je stažená");
+			p.add(l);
+			break;
+		}
+		case NOVEJSI: {
+			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.NOVEJSI)));
+			final JButton aktualizovat = odkaz(AKTUALIZOVAT, e -> stahniVrstvu(b));
+			aktualizovat.setToolTipText(nazev + ": novější verze, " + velikost);
+			zakazDokudNeniMisto(aktualizovat, b, stahujeSe);
+			p.add(aktualizovat);
+			break;
+		}
+		case STAHUJE: {
+			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.STAHUJE)));
+			final JLabel procenta = maly(procenta(b));
+			postupVrstev.put(klic(r) + "#" + cast, procenta);
+			p.add(procenta);
+			final JButton zrusit = odkaz(ZRUSIT, e -> {
 				if (ovladani != null) {
-					ovladani.smazVrstvu(r.id);
+					ovladani.zrusStahovani();
+				}
+			});
+			p.add(zrusit);
+			return p;
+		}
+		case CHYBA: {
+			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.CHYBA)));
+			final JButton znovu = odkaz(ZKUSIT_ZNOVU, e -> stahniVrstvu(b));
+			znovu.setToolTipText(nazev + ": " + (b.getChyba() == null ? "stažení se nepovedlo" : b.getChyba()));
+			zakazDokudNeniMisto(znovu, b, stahujeSe);
+			p.add(znovu);
+			break;
+		}
+		case KE_STAZENI:
+		default: {
+			final JButton stahnout = odkaz("↓ " + velikost, e -> stahniVrstvu(b));
+			stahnout.setToolTipText(nazev + ": stáhnout" + (velikost.isEmpty() ? "" : ", " + velikost));
+			zakazDokudNeniMisto(stahnout, b, stahujeSe);
+			p.add(stahnout);
+			return p;
+		}
+		}
+		if (b.jeStazeno()) {
+			final JButton smazat = odkaz(SMAZAT_VRSTVU, e -> {
+				if (ovladani != null) {
+					ovladani.smazVrstvu(b.getId());
 				}
 			});
 			smazat.setForeground(IkonyMap.CERVENA);
-			final GridBagConstraints cs = bunka(4, y, 1);
-			cs.anchor = GridBagConstraints.EAST;
-			cs.fill = GridBagConstraints.NONE;
-			panel.add(smazat, cs);
+			smazat.setToolTipText("Smazat vrstvu " + nazev.toLowerCase(new Locale("cs")));
+			if (stahujeSe) {
+				smazat.setEnabled(false);
+				smazat.setToolTipText(BEHEM_STAHOVANI_NEJDE_MAZAT);
+			}
+			p.add(smazat);
+		}
+		return p;
+	}
+
+	private void zakazDokudNeniMisto(final JButton b, final MatriceMap.Bunka bunka, final boolean stahujeSe) {
+		if (stahujeSe) {
+			b.setEnabled(false);
+			b.setToolTipText(STAHUJE_SE_JINA);
+		} else if (nedostatekMista(bunka)) {
+			b.setEnabled(false);
+			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(volneMisto) + ", potřebuje asi " + RadekMapy.velikost(potrebneMisto(bunka)) + ".");
+		}
+	}
+
+	private static String procenta(final MatriceMap.Bunka b) {
+		return b.getVelikost() > 0 ? Math.min(100, b.getStazeno() * 100 / b.getVelikost()) + " %" : "";
+	}
+
+	static String nazevVrstvy(final MatriceMap.Cast cast) {
+		switch (cast) {
+		case TRASY:
+			return "Turistické trasy";
+		case VRSTEVNICE:
+			return "Vrstevnice";
+		case STINOVANI:
+		default:
+			return "Stínování terénu";
+		}
+	}
+
+	private void stahniVrstvu(final MatriceMap.Bunka b) {
+		if (ovladani != null) {
+			ovladani.stahniVrstvu(b.getId());
 		}
 	}
 
@@ -1025,11 +1194,7 @@ public class JMapyPopup extends JPanel {
 
 	private void stahni(final RadekMapy r) {
 		if (ovladani != null) {
-			if (r.isVrstva()) {
-				ovladani.stahniVrstvu(r.id);
-			} else {
-				ovladani.stahni(r.id);
-			}
+			ovladani.stahni(r.id);
 		}
 	}
 
@@ -1045,6 +1210,14 @@ public class JMapyPopup extends JPanel {
 	}
 
 	private static JPanel panelRadku() {
+		final JPanel p = new JPanel(new GridBagLayout());
+		p.setOpaque(false);
+		p.setBorder(new EmptyBorder(0, 0, 0, sirkaPosuvniku()));
+		return p;
+	}
+
+	/** Řádky v posuvném seznamu; posuvník si šířku bere sám. */
+	private static JPanel panelRadkuVSeznamu() {
 		final JPanel p = new JPanel(new GridBagLayout());
 		p.setOpaque(false);
 		return p;

@@ -18,6 +18,7 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
+import cz.geokuk.plugins.mapy.sprava.MatriceMap;
 import cz.geokuk.plugins.mapy.sprava.PokrytiMap;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
@@ -354,8 +355,8 @@ public class JBlokMap extends JLabel {
 	public void obnov(final List<RadekMapy> radky) {
 		final RadekMapy.Stav stav = souhrn(radky);
 		setIcon(IkonyMap.pro(stav));
-		final RadekMapy stahovana = radky.stream().filter(r -> r.stav == RadekMapy.Stav.STAHUJE).findFirst().orElse(null);
-		setText(stahovana != null && stahovana.velikost > 0 ? TEXT + " " + stahovana.procenta() + " %" : TEXT);
+		final RadekMapy stahovana = radky.stream().filter(r -> r.celkovyStav() == RadekMapy.Stav.STAHUJE).findFirst().orElse(null);
+		setText(procentaStahovani(stahovana) >= 0 ? TEXT + " " + procentaStahovani(stahovana) + " %" : TEXT);
 		setToolTipText(tooltip(radky, stav, stahovana));
 		if (stav == RadekMapy.Stav.STAHUJE) {
 			tocitko.start();
@@ -365,12 +366,24 @@ public class JBlokMap extends JLabel {
 		obsah.obnov(radky);
 	}
 
+	/** Procenta právě stahované mapy nebo vrstvy, -1 když se nic nestahuje nebo velikost není známá. */
+	static int procentaStahovani(final RadekMapy stahovana) {
+		if (stahovana == null) {
+			return -1;
+		}
+		if (stahovana.stav == RadekMapy.Stav.STAHUJE) {
+			return stahovana.velikost > 0 ? stahovana.procenta() : -1;
+		}
+		final MatriceMap.Bunka vrstva = stahovana.bezicVrstva();
+		return vrstva == null || vrstva.getVelikost() <= 0 ? -1 : (int) Math.min(100, vrstva.getStazeno() * 100 / vrstva.getVelikost());
+	}
+
 	/** Nejdůležitější stav: stahování, chyba, novější verze, pak mapy ve složce; bez map šedá. */
 	static RadekMapy.Stav souhrn(final List<RadekMapy> radky) {
 		RadekMapy.Stav vysledek = RadekMapy.Stav.NEMAME;
 		for (final RadekMapy r : radky) {
-			if (poradi(r.stav) < poradi(vysledek)) {
-				vysledek = r.stav;
+			if (poradi(r.celkovyStav()) < poradi(vysledek)) {
+				vysledek = r.celkovyStav();
 			}
 		}
 		return vysledek;
@@ -396,7 +409,7 @@ public class JBlokMap extends JLabel {
 		final long veSlozce = radky.stream().filter(RadekMapy::isVeSlozce).count();
 		switch (stav) {
 		case STAHUJE:
-			return (stahovana.isVrstva() ? "Stahuje se vrstva " : "Stahuje se mapa ") + stahovana.nazev + ".";
+			return (stahovana.stav == RadekMapy.Stav.STAHUJE ? "Stahuje se mapa " : "Stahuje se vrstva mapy ") + stahovana.nazev + ".";
 		case CHYBA:
 			return "Některá offline mapa má problém.";
 		case NOVEJSI:
