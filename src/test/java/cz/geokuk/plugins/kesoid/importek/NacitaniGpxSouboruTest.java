@@ -26,7 +26,7 @@ public class NacitaniGpxSouboruTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
-	private static class Model extends KesoidModel {
+	static class Model extends KesoidModel {
 		Model() {
 			final ProgressModel progress = new ProgressModel();
 			progress.inject(udalost -> {});

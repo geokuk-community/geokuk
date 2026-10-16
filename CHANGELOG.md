@@ -76,7 +76,8 @@
   pokračuje) a na požádání zkontrolovat, jestli nejsou novější; popup ukáže
   výsledek kontroly, při stahování odhad zbývajícího času a mapu, která se
   nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
-  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení.
+  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
+  u hranice i sousední mapy, které jsou v záběru.
 - Stažené vrstvy (turistické trasy a vrstevnice) se v offline mapě kreslí
   spolu s mapou a DEM dlaždice ve složce vrstev dávají stínování terénu, které
   jde v popupu Mapy vypnout. Povinná atribuce dat vrstev (třeba Copernicus) je
