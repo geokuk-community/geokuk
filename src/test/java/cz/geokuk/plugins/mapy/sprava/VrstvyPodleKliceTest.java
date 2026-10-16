@@ -124,7 +124,7 @@ public class VrstvyPodleKliceTest {
 		}
 		assertEquals(Arrays.asList(new File(slozka, "europe/czech-republic.trasy.map"), new File(slozka, "europe/germany/bayern.vrstevnice.MAP")),
 				SouboryVrstev.mapy(slozka));
-		assertEquals(Arrays.asList(new File(slozka, "europe/germany/N48E011.hgt"), new File(slozka, "europe/germany/bayern.dem.zip")), SouboryVrstev.dem(slozka));
+		assertEquals(Arrays.asList(new File(slozka, "europe/germany/bayern.dem.zip"), new File(slozka, "europe/germany/N48E011.hgt")), SouboryVrstev.dem(slozka));
 		assertEquals(Collections.emptyList(), SouboryVrstev.mapy(new File(slozka, "neni")));
 	}
 

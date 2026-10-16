@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -21,7 +22,7 @@ public final class SouboryVrstev {
 	private SouboryVrstev() {
 	}
 
-	/** Vrstvy ve formátu .map (trasy, vrstevnice) ve složce i v podsložkách, seřazené podle cesty. */
+	/** Vrstvy ve formátu .map (trasy, vrstevnice) ve složce i v podsložkách, seřazené podle cesty bez ohledu na velikost písmen. */
 	public static List<File> mapy(final File slozkaVrstev) {
 		return soubory(slozkaVrstev, ".map");
 	}
@@ -36,7 +37,8 @@ public final class SouboryVrstev {
 			return Collections.emptyList();
 		}
 		try (Stream<Path> s = Files.walk(slozka.toPath(), HLOUBKA)) {
-			return s.filter(Files::isRegularFile).filter(p -> maPriponu(p.getFileName().toString(), pripony)).sorted().map(Path::toFile).collect(Collectors.toList());
+			return s.filter(Files::isRegularFile).filter(p -> maPriponu(p.getFileName().toString(), pripony))
+					.sorted(Comparator.comparing(p -> p.toString().toLowerCase(Locale.ROOT))).map(Path::toFile).collect(Collectors.toList());
 		} catch (final IOException | RuntimeException e) {
 			log.info("Složku vrstev {} nejde projít: {}", slozka, e.toString());
 			return Collections.emptyList();
