@@ -214,15 +214,9 @@ final class OfflineRenderer {
 		return r;
 	}
 
-	/** DEM dlaždice ve složce: soubory .hgt nebo .zip. */
+	/** DEM dlaždice ve složce vrstev i v podsložkách: soubory .hgt nebo .zip. */
 	static List<File> demDlazdice(final File slozka) {
-		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> f.isFile() && (f.getName().toLowerCase(Locale.ROOT).endsWith(".hgt") || f.getName().toLowerCase(Locale.ROOT).endsWith(".zip")));
-		if (soubory == null) {
-			return Collections.emptyList();
-		}
-		final List<File> dlazdice = new ArrayList<>(Arrays.asList(soubory));
-		dlazdice.sort(Comparator.comparing(File::getName));
-		return dlazdice;
+		return cz.geokuk.plugins.mapy.sprava.SouboryVrstev.dem(slozka);
 	}
 
 	/** Stínování terénu z DEM dlaždic ve složce; bez nich nebo při chybě null (mapa se kreslí bez stínování). Přidá do otisku, ze kterých souborů stínuje. */

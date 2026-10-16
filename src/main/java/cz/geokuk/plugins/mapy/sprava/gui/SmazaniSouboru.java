@@ -30,7 +30,7 @@ final class SmazaniSouboru {
 		}
 		for (final KatalogovaVrstva.Soubor s : vrstva.getSoubory()) {
 			for (final String pripona : PRIPONY) {
-				final File f = new File(slozkaVrstev, s.getNazev() + pripona);
+				final File f = new File(slozkaVrstev, s.getCesta() + pripona);
 				if (f.isFile()) {
 					soubory.add(f);
 				}

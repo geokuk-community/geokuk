@@ -13,9 +13,9 @@ public final class VrstvyProGui {
 	public static KatalogVrstev katalogCesko() {
 		try {
 			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(
-					KatalogVrstevTest.vrstva("trasy/europe/czech-republic", "trasy", "europe/czech-republic", "map",
-							KatalogVrstevTest.soubor("czech_republic_trasy.map", "v1/czech_republic_trasy.map", 25_000_000, SHA), ", \"datumDat\": \"2026-10-13\""),
-					KatalogVrstevTest.vrstva("vrstevnice/europe/czech-republic", "vrstevnice", "europe/czech-republic", "map",
+					KatalogVrstevTest.vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map",
+							KatalogVrstevTest.soubor("czech_republic_trasy.map", "v1/czech_republic_trasy.map", 25_000_000, SHA), ", \"dataDate\": \"2026-10-13\""),
+					KatalogVrstevTest.vrstva("contours/europe/czech-republic", "contours", "europe/czech-republic", "map",
 							KatalogVrstevTest.soubor("czech_republic_vrstevnice.map", "v1/czech_republic_vrstevnice.map", 266_000_000, SHA), ""),
 					KatalogVrstevTest.vrstva("dem/europe/czech-republic", "dem", "europe/czech-republic", "hgt-zip",
 							KatalogVrstevTest.soubor("czech_republic_hgt.zip", "v1/czech_republic_hgt.zip", 80_000_000, SHA), "")),

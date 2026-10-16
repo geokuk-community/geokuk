@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.KatalogVrstev;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
 import cz.geokuk.plugins.mapy.sprava.VrstvyProGui;
@@ -40,21 +41,22 @@ public class SmazaniSouboruTest {
 
 	@Test
 	public void souboryVrstvyVcetneSouctuARozpracovanych() throws Exception {
-		final File slozka = tmp.newFolder("vrstvy");
-		final KatalogovaVrstva trasy = VrstvyProGui.katalogCesko().podleId("trasy/europe/czech-republic").get();
-		vytvor(slozka, "czech_republic_trasy.map", 100);
-		vytvor(slozka, "czech_republic_trasy.map.sha256", 64);
-		vytvor(slozka, "czech_republic_trasy.map.stahuje", 10);
-		vytvor(slozka, "czech_republic_trasy.map.stahuje.info", 10);
-		vytvor(slozka, "czech_republic_trasy.map.stara", 10);
-		vytvor(slozka, "czech_republic_vrstevnice.map", 100);
+		final File slozka = tmp.newFolder("layers");
+		final KatalogVrstev katalog = VrstvyProGui.katalogCesko();
+		final KatalogovaVrstva trasy = katalog.podleId("routes/europe/czech-republic").get();
+		final String cesta = trasy.getSoubory().get(0).getCesta();
+		final String vrstevnice = katalog.podleId("contours/europe/czech-republic").get().getSoubory().get(0).getCesta();
+		new File(slozka, cesta).getParentFile().mkdirs();
+		final File[] vytvorene = { vytvor(slozka, cesta, 100), vytvor(slozka, cesta + ".sha256", 64), vytvor(slozka, cesta + ".stahuje", 10),
+				vytvor(slozka, cesta + ".stahuje.info", 10), vytvor(slozka, cesta + ".stara", 10) };
+		vytvor(slozka, vrstevnice, 100);
 		vytvor(slozka, "cizi.map", 100);
 		final List<File> soubory = SmazaniSouboru.souboryVrstvy(slozka, trasy);
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("czech_republic_trasy.map", "czech_republic_trasy.map.sha256", "czech_republic_trasy.map.stahuje",
-				"czech_republic_trasy.map.stahuje.info", "czech_republic_trasy.map.stara")), jmena(soubory));
+		Assert.assertEquals(5, soubory.size());
+		Assert.assertEquals(new TreeSet<>(Arrays.asList(vytvorene[0].getName(), vytvorene[1].getName(), vytvorene[2].getName(), vytvorene[3].getName(), vytvorene[4].getName())), jmena(soubory));
 		Assert.assertTrue("bez složky nic", SmazaniSouboru.souboryVrstvy(null, trasy).isEmpty());
 		Assert.assertTrue(SmazaniSouboru.smaz(soubory).isEmpty());
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("cizi.map", "czech_republic_vrstevnice.map")), jmena(Arrays.asList(slozka.listFiles())));
+		Assert.assertTrue("cizí a jiná vrstva zůstaly", new File(slozka, "cizi.map").isFile() && new File(slozka, vrstevnice).isFile());
 		Assert.assertTrue("smazat už smazané nevadí", SmazaniSouboru.smaz(soubory).isEmpty());
 	}
 

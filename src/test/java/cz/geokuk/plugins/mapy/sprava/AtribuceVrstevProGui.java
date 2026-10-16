@@ -12,7 +12,7 @@ public final class AtribuceVrstevProGui {
 		try {
 			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("dem/europe/czech-republic", "dem", "europe/czech-republic", "hgt-zip",
 					KatalogVrstevTest.soubor("czech_republic_hgt.zip", "v1/czech_republic_hgt.zip", 80_000_000, KatalogVrstevTest.SHA),
-					", \"atribuceDlouha\": \"" + atribuceDlouha + "\"")), KatalogMap.vestaveny());
+					", \"attributionFull\": \"" + atribuceDlouha + "\"")), KatalogMap.vestaveny());
 		} catch (final IOException e) {
 			throw new IllegalStateException(e);
 		}
