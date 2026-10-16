@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Složí vrstvy.json a SHA256SUMS z *.meta.json (zapisuje meta.sh).
-Použití: katalog.py slozka_s_meta region nazev jih,západ,sever,východ [predpona_url]"""
+Použití: katalog.py slozka_s_meta region nazev jih,západ,sever,východ [predpona_url]
+nazev souboru = <region s / nahrazeným _>.<typ>.<přípona>; soubory[].cesta = lokální cesta ve složce vrstev (<region>.<typ>.<přípona>)"""
 import glob, json, os, sys
 from datetime import datetime, timezone
 
@@ -30,13 +31,14 @@ def main():
         with open(cesta, encoding='utf-8') as f:
             m = json.load(f)
         sablona = TYPY[m['typ']]
-        zaklad = os.path.basename(cesta).rsplit('_', 1)[0]
+        zaklad = os.path.basename(cesta)[:-len('.%s.meta.json' % m['typ'])]
         pokryti = {'bbox': [jih, zapad, sever, vychod]}
         if os.path.exists(os.path.join(slozka, zaklad + '.poly')):
             pokryti['poly'] = predpona + zaklad + '.poly'
         v = {'id': '%s/%s' % (m['typ'], region), 'typ': m['typ'], 'region': region, 'nazev': sablona['nazev'] % nazev,
              'format': sablona['format'],
-             'soubory': [{'nazev': m['nazev'], 'url': predpona + m['nazev'], 'velikost': m['velikost'],
+             'soubory': [{'nazev': m['nazev'], 'cesta': '%s.%s.%s' % (region, m['typ'], m['nazev'].rsplit('.', 1)[1]),
+                          'url': predpona + m['nazev'], 'velikost': m['velikost'],
                           'sha256': m['sha256'], 'datumSouboru': m['vyrobeno']}],
              'velikost': m['velikost'], 'datumDat': m['datumDat'], 'vyrobeno': m['vyrobeno'], 'zdrojDat': m['zdrojDat']}
         if 'zoom' in m:
