@@ -3,10 +3,12 @@ package cz.geokuk.plugins.mapy.sprava.gui;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.Normalizer;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -14,6 +16,8 @@ import java.util.List;
 import java.util.function.LongSupplier;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -62,27 +66,63 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_POPISU = 240;
 
 	/** Nejvyšší výška seznamu dalších map, pak se posouvá. */
-	static final int VYSKA_SEZNAMU = 220;
+	static final int VYSKA_SEZNAMU = 340;
+
+	/** Od kolika dalších map se nabídne hledání. */
+	static final int HLEDANI_OD = 8;
+	static final String HLEDAT = "Hledat v dalších mapách";
+	static final String NIC_NENALEZENO = "Nic nenalezeno.";
 
 	private static final Color SEDY_TEXT = new Color(90, 90, 90);
 	private static final Color ODKAZ = new Color(0x1A5FB4);
 
-	private OvladaniMap ovladani;
+	private transient OvladaniMap ovladani;
 	/** Klíč řádku, jehož obrys je teď v mapě zvýrazněný; null, když žádný. */
 	private String zvyraznena;
-	private List<RadekMapy> radky = Collections.emptyList();
+	private transient List<RadekMapy> radky = Collections.emptyList();
 	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
 	private final Map<String, JLabel[]> popisy = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private final JCheckBox stinovani = new JCheckBox(STINOVANI);
 	private boolean stinovaniDostupne;
 	private JScrollPane seznam;
+	/** Hledání mezi dalšími mapami; filtruje se skrytím řádků, popup se nepřestavuje, aby hledání nepřišlo o fokus. */
+	private final JTextField hledat = new JTextField(14) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected void paintComponent(final java.awt.Graphics g) {
+			super.paintComponent(g);
+			if (getText().isEmpty() && !hasFocus()) {
+				g.setColor(Color.GRAY);
+				g.setFont(getFont().deriveFont(Font.ITALIC));
+				g.drawString(HLEDAT + "…", getInsets().left + 2, (getHeight() + g.getFontMetrics().getAscent() - g.getFontMetrics().getDescent()) / 2);
+			}
+		}
+	};
+	/** Řádky dalších map: jejich políčka a text, podle kterého se hledá. */
+	private final transient List<RadekHledani> hledatelne = new ArrayList<>();
+	/** Uživatel píše do pole hledání; nastaví se fokusem v poli, ruší klikem mimo popup a zavřením popupu. */
+	private boolean uzivatelPise;
+
+	/** Pole hledání o fokus přišlo při změně obsahu a žádá se o jeho vrácení; jen v tomto okně se klávesy berou do pole. */
+	private boolean cekaNaFokus;
+
+	/** Správce fokusu, u kterého je dispatcher kláves zaregistrovaný; v testech nahraditelný. */
+	transient java.util.function.Supplier<KeyboardFocusManager> spravceFokusu = KeyboardFocusManager::getCurrentKeyboardFocusManager;
+
+	/** Okno aplikace, které má právě fokus; v testech nahraditelné. */
+	transient java.util.function.Supplier<Window> aktivniOkno = () -> KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+	/** Kolikrát se po znovuzobrazení popupu žádal fokus do pole (pro test). */
+	int pozadavkuNaFokus;
+	private final List<JLabel> hlavickySkupin = new ArrayList<>();
+	private JLabel nicNenalezeno;
 	private Runnable poZmeneObsahu = () -> {};
 	/** Mapa, jejíž stahování uživatel zrušil a čeká se na potvrzení; null, když nic. */
 	private String rusenaMapa;
-	private final OdhadStahovani odhad = new OdhadStahovani();
+	private final transient OdhadStahovani odhad = new OdhadStahovani();
 	/** Čas pro odhad stahování; v testech nahrazený. */
-	LongSupplier hodiny = () -> System.nanoTime() / 1_000_000;
+	transient LongSupplier hodiny = () -> System.nanoTime() / 1_000_000;
 	/** Volné místo na disku se složkou offline map v bajtech, -1 neznámé. */
 	private long volneMisto = -1;
 
@@ -104,11 +144,188 @@ public class JMapyPopup extends JPanel {
 			}
 		});
 		addHierarchyListener(e -> {
-			if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && !isShowing()) {
+			if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0) {
+				return;
+			}
+			if (isShowing()) {
+				// Těžký popup (přesahuje okno) nepřijme fokus, písmena by šla do hlavního okna a spouštěla jeho zkratky.
+				final Window okno = SwingUtilities.getWindowAncestor(this);
+				hledat.setVisible(okno == null || okno instanceof Frame || okno instanceof Dialog);
+				vidiSe = true;
+				zacniSledovatKlikyMimo();
+			} else {
 				zvyrazni(null);
+				vidiSe = false;
+				prestanSledovatKlikyMimo();
+			}
+		});
+		hledat.addFocusListener(new java.awt.event.FocusAdapter() {
+			@Override
+			public void focusGained(final java.awt.event.FocusEvent e) {
+				uzivatelPise = true;
+				cekaNaFokus = false;
+			}
+		});
+		hledat.setFont(hledat.getFont().deriveFont(Font.PLAIN, 11f));
+		hledat.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void insertUpdate(final DocumentEvent e) {
+				filtruj();
+			}
+
+			@Override
+			public void removeUpdate(final DocumentEvent e) {
+				filtruj();
+			}
+
+			@Override
+			public void changedUpdate(final DocumentEvent e) {
+				filtruj();
 			}
 		});
 		sestav();
+	}
+
+	/** Popup se zavřel: hledání se vymaže, příště začne od nuly. */
+	public void popupZavren() {
+		uzivatelPise = false;
+		cekaNaFokus = false;
+		hledat.setText("");
+	}
+
+	/** Uživatel píše do pole hledání (pole dostalo fokus a nekliklo se mimo popup); popup se nesmí zavřít odjetím myši. */
+	public boolean isHledaniAktivni() {
+		return uzivatelPise;
+	}
+
+	/** Obsah se změnil: popup se znovu zobrazí a píše-li uživatel, vrátí se mu fokus do pole. */
+	private void zmenaObsahu() {
+		poZmeneObsahu.run();
+		poZnovuZobrazeni();
+	}
+
+	/** Popup se zobrazil znovu (změna velikosti): fokus zmizel spolu s odebraným popupem, píše-li uživatel, vrátí se do pole. */
+	public void poZnovuZobrazeni() {
+		if (uzivatelPise) {
+			pozadavkuNaFokus++;
+			cekaNaFokus = true;
+			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
+		}
+	}
+
+	/** Klik mimo popup ukončí psaní: pole přijde o fokus a popup se pak zavře odjetím myši jako jindy. */
+	private final java.awt.event.AWTEventListener klikMimo = e -> {
+		if (e.getID() == java.awt.event.MouseEvent.MOUSE_PRESSED && uzivatelPise && !(e.getSource() instanceof Component && SwingUtilities.isDescendingFrom((Component) e.getSource(), this))) {
+			uzivatelPise = false;
+			cekaNaFokus = false;
+			java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearFocusOwner();
+		}
+	};
+
+	/** Popup je vidět; nastavuje ho sledování viditelnosti (v testech i ručně). */
+	boolean vidiSe;
+
+	/**
+	 * Píše-li uživatel do popupu a fokus je zrovna jinde (popup se při změně obsahu na okamžik zobrazí znovu a pole o fokus přijde), psané znaky se nenechají
+	 * propadnout do hlavního okna, kde by spouštěly klávesové zkratky (o, t, z… přepínají mapu), ale vloží se do pole hledání. Ctrl/Alt/Meta, Enter a Esc jdou dál.
+	 */
+	final KeyEventDispatcher klavesy = e -> {
+		if (!cekaNaFokus || !uzivatelPise || !vidiSe || !hledat.isVisible() || hledat.isFocusOwner() || e.isControlDown() || e.isAltDown() || e.isMetaDown()) {
+			return false;
+		}
+		final Window okno = SwingUtilities.getWindowAncestor(this);
+		if (okno != null && aktivniOkno.get() != okno) {
+			return false;
+		}
+		final char c = e.getKeyChar();
+		if (c == KeyEvent.CHAR_UNDEFINED || c == '\u001b' || c == '\n' || c == '\r' || c == '\t' || c == '\u007f') {
+			return false;
+		}
+		if (e.getID() == KeyEvent.KEY_TYPED) {
+			final javax.swing.text.Document d = hledat.getDocument();
+			try {
+				if (c == '\b') {
+					if (d.getLength() > 0) {
+						d.remove(d.getLength() - 1, 1);
+					}
+				} else if (c >= ' ') {
+					d.insertString(d.getLength(), String.valueOf(c), null);
+				}
+			} catch (final javax.swing.text.BadLocationException ex) {
+				throw new IllegalStateException(ex);
+			}
+		}
+		return true;
+	};
+
+	void zacniSledovatKlikyMimo() {
+		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
+		Toolkit.getDefaultToolkit().addAWTEventListener(klikMimo, AWTEvent.MOUSE_EVENT_MASK);
+		final KeyboardFocusManager m = spravceFokusu.get();
+		m.removeKeyEventDispatcher(klavesy);
+		m.addKeyEventDispatcher(klavesy);
+	}
+
+	void prestanSledovatKlikyMimo() {
+		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
+		spravceFokusu.get().removeKeyEventDispatcher(klavesy);
+	}
+
+	JTextField getHledat() {
+		return hledat;
+	}
+
+	private static final class RadekHledani {
+		final String text;
+		final String skupina;
+		final List<Component> bunky;
+
+		RadekHledani(final String text, final String skupina, final List<Component> bunky) {
+			this.text = text;
+			this.skupina = skupina;
+			this.bunky = bunky;
+		}
+	}
+
+	static String bezDiakritiky(final String s) {
+		return Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+	}
+
+	/** Každé slovo hledaného textu je v textu řádku (v libovolném pořadí). */
+	static boolean obsahujeVse(final String text, final String hledany) {
+		for (final String slovo : hledany.split("\\s+")) {
+			if (!slovo.isEmpty() && !text.contains(slovo)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Ukáže jen další mapy, jejichž název nebo země obsahuje hledaný text (bez ohledu na diakritiku a velikost písmen). */
+	void filtruj() {
+		final String hledany = bezDiakritiky(hledat.getText().trim());
+		final Set<String> zobrazeneSkupiny = new HashSet<>();
+		int nalezeno = 0;
+		for (final RadekHledani r : hledatelne) {
+			final boolean ano = obsahujeVse(r.text, hledany);
+			nalezeno += ano ? 1 : 0;
+			if (ano && r.skupina != null) {
+				zobrazeneSkupiny.add(r.skupina);
+			}
+			for (final Component c : r.bunky) {
+				c.setVisible(ano);
+			}
+		}
+		for (final JLabel h : hlavickySkupin) {
+			h.setVisible(zobrazeneSkupiny.contains(h.getText()));
+		}
+		if (nicNenalezeno != null) {
+			nicNenalezeno.setVisible(nalezeno == 0);
+		}
+		if (seznam != null) {
+			seznam.revalidate();
+			seznam.repaint();
+		}
 	}
 
 	private void zvyrazni(final String klic) {
@@ -170,7 +387,7 @@ public class JMapyPopup extends JPanel {
 			}
 			if (sirsi) {
 				revalidate();
-				poZmeneObsahu.run();
+				zmenaObsahu();
 			}
 			return;
 		}
@@ -180,7 +397,7 @@ public class JMapyPopup extends JPanel {
 		if (seznam != null) {
 			seznam.getVerticalScrollBar().setValue(posun);
 		}
-		poZmeneObsahu.run();
+		zmenaObsahu();
 	}
 
 	List<RadekMapy> getRadky() {
@@ -300,6 +517,9 @@ public class JMapyPopup extends JPanel {
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
+		hledatelne.clear();
+		hlavickySkupin.clear();
+		nicNenalezeno = null;
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
 		sirkaNazvu = 0;
 		for (final RadekMapy r : radky) {
@@ -394,6 +614,10 @@ public class JMapyPopup extends JPanel {
 		if (!dalsi.isEmpty()) {
 			gbc.gridy++;
 			add(nadpisOddilu(DALSI), gbc);
+			if (dalsi.size() >= HLEDANI_OD) {
+				gbc.gridy++;
+				add(hledat, gbc);
+			}
 			final JPanel ostatni = panelRadku();
 			y = 0;
 			String skupina = null;
@@ -403,22 +627,28 @@ public class JMapyPopup extends JPanel {
 					zeme.setFont(zeme.getFont().deriveFont(Font.BOLD));
 					zeme.setBorder(new EmptyBorder(3, 0, 0, 0));
 					ostatni.add(zeme, bunka(0, y++, 4));
+					hlavickySkupin.add(zeme);
 				}
 				skupina = r.skupina;
+				final int pred = ostatni.getComponentCount();
 				radek(ostatni, y++, r, stahujeSe);
+				hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), r.skupina,
+						new ArrayList<>(Arrays.asList(ostatni.getComponents()).subList(pred, ostatni.getComponentCount()))));
 			}
+			nicNenalezeno = maly(NIC_NENALEZENO);
+			nicNenalezeno.setVisible(false);
+			ostatni.add(nicNenalezeno, bunka(0, y++, 4));
 			final JPanel obal = new JPanel(new BorderLayout());
 			obal.setOpaque(false);
 			obal.add(ostatni, BorderLayout.NORTH);
+			// Velikost podle všech map, aby se při hledání popup nemusel zavírat a znovu otevírat.
+			final Dimension vse = obal.getPreferredSize();
 			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 				private static final long serialVersionUID = 1L;
 
 				@Override
 				public Dimension getPreferredSize() {
-					final Dimension d = super.getPreferredSize();
-					d.height = Math.min(d.height, VYSKA_SEZNAMU);
-					d.width += getVerticalScrollBar().getPreferredSize().width;
-					return d;
+					return new Dimension(vse.width + getVerticalScrollBar().getPreferredSize().width, Math.min(vse.height, VYSKA_SEZNAMU));
 				}
 			};
 			seznam.setBorder(BorderFactory.createEmptyBorder());
@@ -441,6 +671,9 @@ public class JMapyPopup extends JPanel {
 			add(zdroj, gbc);
 		}
 
+		if (seznam != null && !hledat.getText().isEmpty()) {
+			filtruj();
+		}
 		gbc.gridy++;
 		gbc.insets = new Insets(6, 0, 0, 0);
 		add(new JSeparator(), gbc);
@@ -460,6 +693,10 @@ public class JMapyPopup extends JPanel {
 		web.add(odkaz("osm.paws.cz", URL_PAWS));
 		web.add(odkaz("OpenAndroMaps", URL_OAM));
 		add(web, gbc);
+		if (uzivatelPise) {
+			cekaNaFokus = true;
+			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
+		}
 		revalidate();
 		repaint();
 	}
