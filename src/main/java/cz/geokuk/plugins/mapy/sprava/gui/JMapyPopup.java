@@ -133,7 +133,7 @@ public class JMapyPopup extends JPanel {
 	/** Volné místo na disku se složkou offline map v bajtech, -1 neznámé. */
 	private long volneMisto = -1;
 	/** Celé země, které jsou ve složce zároveň se svými regiony. */
-	private List<PokrytiMap.DvojitaMapa> dvojite = Collections.emptyList();
+	private transient List<PokrytiMap.DvojitaMapa> dvojite = Collections.emptyList();
 
 	public JMapyPopup() {
 		super(new GridBagLayout());
