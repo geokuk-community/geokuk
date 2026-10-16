@@ -403,7 +403,6 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			final String[] osm = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england", "europe/united-kingdom/wales", "europe/poland" };
 			final Set<String> mame = new HashSet<>(Arrays.asList(osm));
-			final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> bezVrstev = v -> cz.geokuk.plugins.mapy.sprava.StavVrstvy.novy(v);
 			p.obnov(stazene(osm));
 			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Rakousko"));
 
