@@ -85,7 +85,13 @@ public class PopupNadBlokem {
 		obsah.setSize(obsah.getPreferredSize());
 		final Point p = poloha(obsah.getPreferredSize(), kotva);
 		SwingUtilities.convertPointToScreen(p, blok);
-		popup = new OknoPopup(blok, obsah, p.x, p.y);
+		final JRootPane koren = SwingUtilities.getRootPane(blok);
+		final Rectangle kde = new Rectangle(p, obsah.getPreferredSize());
+		if (koren != null && koren.isShowing() && new Rectangle(koren.getLocationOnScreen(), koren.getSize()).contains(kde)) {
+			popup = new VrstvovyPopup(koren, obsah, kde);
+		} else {
+			popup = new OknoPopup(blok, obsah, p.x, p.y);
+		}
 		obsahPopupu = obsah;
 		popup.show();
 		mimoOd = -1;
@@ -212,7 +218,35 @@ public class PopupNadBlokem {
 		return c.isShowing() && new Rectangle(c.getLocationOnScreen(), c.getSize()).contains(obrazovka);
 	}
 
-	/** Popup v nezávislém okně; lehký popup při zavření prochází celý strom komponent hlavního okna. */
+	/** Popup ve vrstvě popupů okna: pole v něm dostane fokus a zavření nic neprochází, na rozdíl od těžkého popupu z PopupFactory. */
+	private static final class VrstvovyPopup extends Popup {
+		private final JLayeredPane vrstvy;
+		private final Component obsah;
+		private final Rectangle hranice;
+
+		VrstvovyPopup(final JRootPane koren, final Component obsah, final Rectangle naObrazovce) {
+			vrstvy = koren.getLayeredPane();
+			this.obsah = obsah;
+			final Point v = new Point(naObrazovce.x, naObrazovce.y);
+			SwingUtilities.convertPointFromScreen(v, vrstvy);
+			hranice = new Rectangle(v, naObrazovce.getSize());
+		}
+
+		@Override
+		public void show() {
+			obsah.setBounds(hranice);
+			vrstvy.add(obsah, JLayeredPane.POPUP_LAYER);
+			vrstvy.repaint(hranice);
+		}
+
+		@Override
+		public void hide() {
+			vrstvy.remove(obsah);
+			vrstvy.repaint(hranice);
+		}
+	}
+
+	/** Popup přesahující okno v nezávislém okně; těžký popup z PopupFactory při zavření prochází celý strom komponent hlavního okna. */
 	private static final class OknoPopup extends Popup {
 		private final JWindow okno;
 

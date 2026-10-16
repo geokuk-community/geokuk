@@ -700,10 +700,7 @@ public class JMapyPopupTest {
 				p.obnov(dalsiMapy());
 				popup.ukaz(p, kotva, false);
 			});
-			SwingUtilities.invokeAndWait(() -> {
-				Assert.assertTrue("popup je vidět", p.isShowing());
-				Assert.assertTrue("pole hledání je vidět i v okně popupu", p.getHledat().isVisible());
-			});
+			SwingUtilities.invokeAndWait(() -> Assert.assertTrue("popup je vidět", p.isShowing()));
 			for (final char c : "rak".toCharArray()) {
 				SwingUtilities.invokeAndWait(() -> {
 					try {
@@ -872,9 +869,9 @@ public class JMapyPopupTest {
 		});
 	}
 
-	/** Popup přesahující hlavní okno běží v samostatném okně a pole hledání v něm zůstává. */
+	/** Těžký popup (nevejde se do okna) nepřijme fokus, proto v něm pole hledání není a písmena nejdou do hlavního okna. */
 	@Test(timeout = 30000)
-	public void vTezkemPopupuSHledanim() throws Exception {
+	public void vTezkemPopupuBezHledani() throws Exception {
 		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
 		final JFrame okno = new JFrame();
 		final JPanel kotva = new JPanel();
@@ -892,7 +889,7 @@ public class JMapyPopupTest {
 			SwingUtilities.invokeAndWait(() -> {
 				Assert.assertTrue(p.isShowing());
 				Assert.assertFalse("popup je vyšší než okno, takže těžký", SwingUtilities.getWindowAncestor(p) instanceof java.awt.Frame);
-				Assert.assertTrue(p.getHledat().isVisible());
+				Assert.assertFalse(p.getHledat().isVisible());
 			});
 		} finally {
 			SwingUtilities.invokeAndWait(() -> {

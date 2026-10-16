@@ -173,25 +173,15 @@ public class JMapyPopup extends JPanel {
 				return;
 			}
 			if (isShowing()) {
-				// Okno popupu přijme fokus až po kliku do pole; jinak by písmena šla do hlavního okna a spouštěla jeho zkratky.
+				// Těžký popup (přesahuje okno) nepřijme fokus, písmena by šla do hlavního okna a spouštěla jeho zkratky.
 				final Window okno = SwingUtilities.getWindowAncestor(this);
-				hledat.setVisible(okno == null || okno instanceof Frame || okno instanceof Dialog || okno instanceof JWindow);
+				hledat.setVisible(okno == null || okno instanceof Frame || okno instanceof Dialog);
 				vidiSe = true;
 				zacniSledovatKlikyMimo();
 			} else {
 				zvyrazni(null);
 				vidiSe = false;
 				prestanSledovatKlikyMimo();
-			}
-		});
-		hledat.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override
-			public void mousePressed(final java.awt.event.MouseEvent e) {
-				final Window okno = SwingUtilities.getWindowAncestor(hledat);
-				if (okno instanceof JWindow && !okno.getFocusableWindowState()) {
-					okno.setFocusableWindowState(true);
-					hledat.requestFocusInWindow();
-				}
 			}
 		});
 		hledat.addFocusListener(new java.awt.event.FocusAdapter() {
