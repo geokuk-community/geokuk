@@ -157,7 +157,7 @@ public class JMapyPopupTest {
 				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
 						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
 				Collections.emptyList(), null, vrstvy,
-				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("trasy") ? trasy : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, faze, 0, null));
+				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("routes") ? trasy : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, faze, 0, null));
 	}
 
 	/** Vrstvy jsou jen u stažené mapy, každá pod svou mapou; ostatní mapy vrstvy nemají. */
@@ -197,7 +197,7 @@ public class JMapyPopupTest {
 			for (final JButton b : stahnout) {
 				b.doClick();
 			}
-			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu trasy/europe/czech-republic"));
+			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu routes/europe/czech-republic"));
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu dem/europe/czech-republic"));
 			Assert.assertTrue("mapy ke stažení volají stahování mapy", z.volani.stream().anyMatch(v -> v.startsWith("stahni europe/")));
 			final RadekMapy vrstva = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC).stream().filter(RadekMapy::isVrstva).findFirst().get();
@@ -216,7 +216,7 @@ public class JMapyPopupTest {
 			final List<JButton> smazat = tlacitkaSTextem(p, JMapyPopup.SMAZAT);
 			Assert.assertEquals("jen stažená vrstva (trasy), ne ty ke stažení", 1, smazat.size());
 			smazat.get(0).doClick();
-			Assert.assertEquals(Collections.singletonList("smazVrstvu trasy/europe/czech-republic"), z.volani);
+			Assert.assertEquals(Collections.singletonList("smazVrstvu routes/europe/czech-republic"), z.volani);
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
 			Assert.assertTrue("během stahování nejde mazat", tlacitkaSTextem(p, JMapyPopup.SMAZAT).isEmpty());
 		});

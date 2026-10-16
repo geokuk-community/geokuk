@@ -160,9 +160,9 @@ public class OfflineMapy {
 	/** Složka vrstev (trasy, vrstevnice, DEM dlaždice) uvnitř složky offline map. */
 	public static final String SLOZKA_VRSTEV = cz.geokuk.plugins.mapy.sprava.SpravaMapModel.SLOZKA_VRSTEV;
 
-	/** Soubory .map vrstev (trasy, vrstevnice) ze složky vrstev. */
+	/** Soubory .map vrstev (trasy, vrstevnice) ze složky vrstev včetně podsložek. */
 	public static List<File> vrstvyVeSlozce(final File slozka) {
-		return slozka == null ? Collections.emptyList() : mapyVeSlozce(new File(slozka, SLOZKA_VRSTEV));
+		return slozka == null ? Collections.emptyList() : cz.geokuk.plugins.mapy.sprava.SouboryVrstev.mapy(new File(slozka, SLOZKA_VRSTEV));
 	}
 
 	/** Soubory .map ve složce podle abecedy, velikost písmen v příponě nehraje roli. */
