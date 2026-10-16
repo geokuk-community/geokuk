@@ -35,6 +35,7 @@ public class JPruvodceMapTest {
 		final List<PruvodceVolba> prepnuti = new ArrayList<>();
 		final List<String> stazene = new ArrayList<>();
 		boolean zruseno;
+		boolean mapaStazena;
 
 		@Override
 		public KatalogMap getKatalog() {
@@ -43,7 +44,7 @@ public class JPruvodceMapTest {
 
 		@Override
 		public List<MatriceMap.Radek> matice() {
-			return MatriceMap.sestav(KatalogMap.vestaveny(), m -> StavMapyProGui.stav(m, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null),
+			return MatriceMap.sestav(KatalogMap.vestaveny(), m -> StavMapyProGui.stav(m, mapaStazena ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null),
 					VrstvyProGui.katalogCesko(), StavVrstvy::novy);
 		}
 
@@ -53,8 +54,9 @@ public class JPruvodceMapTest {
 		}
 
 		@Override
-		public void stahni(final Polozka polozka) {
+		public boolean stahni(final Polozka polozka) {
 			stazene.add(polozka.getId());
+			return true;
 		}
 
 		@Override
@@ -112,6 +114,7 @@ public class JPruvodceMapTest {
 		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
 		naEdt(() -> {
 			final Kontext k = new Kontext();
+			k.mapaStazena = true;
 			final JPruvodceMap d = new JPruvodceMap(null, k);
 			Assert.assertTrue("Česko je předvybrané a jde dál", tlacitko(d.getContentPane(), JPruvodceMap.DAL).isEnabled());
 			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
@@ -164,7 +167,7 @@ public class JPruvodceMapTest {
 				tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
 			}
 			Assert.assertFalse(tlacitko(d.getContentPane(), JPruvodceMap.STAHNOUT_A_PREPNOUT).isEnabled());
-			Assert.assertTrue("jen přepnout jde", tlacitko(d.getContentPane(), JPruvodceMap.JEN_PREPNOUT).isEnabled());
+			Assert.assertFalse("bez stažené mapy by přepnutí nechalo mapu prázdnou", tlacitko(d.getContentPane(), JPruvodceMap.JEN_PREPNOUT).isEnabled());
 			Assert.assertTrue(popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("není dost místa")));
 		});
 	}
@@ -183,6 +186,32 @@ public class JPruvodceMapTest {
 			Assert.assertTrue(popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("Jen s offline mapou.")));
 			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
 			Assert.assertTrue("přepnutí na OSM s trasami", popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("OpenStreetMap") && l.getText().contains("trasy")));
+		});
+	}
+
+	@Test
+	public void escZavreDialogAEnterJdeDal() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final JPruvodceMap d = new JPruvodceMap(null, new Kontext());
+			Assert.assertSame("Enter v prvním kroku je Dál", tlacitko(d.getContentPane(), JPruvodceMap.DAL), d.getRootPane().getDefaultButton());
+			final java.awt.event.ActionListener esc = d.getRootPane().getActionForKeyStroke(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0));
+			Assert.assertNotNull(esc);
+			esc.actionPerformed(null);
+			Assert.assertFalse("Esc dialog zavřel", d.isDisplayable());
+		});
+	}
+
+	/** Offline Turistická bez stažené mapy by po „jen přepnout“ zůstala prázdná, proto je to tlačítko vypnuté. */
+	@Test
+	public void jenPrepnoutNaOfflineBezMapyJeVypnute() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final JPruvodceMap d = new JPruvodceMap(null, new Kontext());
+			for (int i = 0; i < 3; i++) {
+				tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
+			}
+			Assert.assertFalse(tlacitko(d.getContentPane(), JPruvodceMap.JEN_PREPNOUT).isEnabled());
 		});
 	}
 }

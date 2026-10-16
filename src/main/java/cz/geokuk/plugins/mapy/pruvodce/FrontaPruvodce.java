@@ -30,10 +30,21 @@ public final class FrontaPruvodce {
 	public static final class Krok {
 		private final Akce akce;
 		private final Polozka polozka;
+		private final boolean chyba;
 
 		Krok(final Akce akce, final Polozka polozka) {
+			this(akce, polozka, false);
+		}
+
+		Krok(final Akce akce, final Polozka polozka, final boolean chyba) {
 			this.akce = akce;
 			this.polozka = polozka;
+			this.chyba = chyba;
+		}
+
+		/** Zastaveno kvůli chybě stahování (ne kvůli zrušení). */
+		public boolean isChyba() {
+			return chyba;
 		}
 
 		public Akce getAkce() {
@@ -54,6 +65,11 @@ public final class FrontaPruvodce {
 
 	public FrontaPruvodce(final PlanPruvodce plan) {
 		this.plan = plan;
+	}
+
+	/** Položku se nepodařilo spustit (třeba se zrovna stahuje jiná): příště se zkusí znovu. */
+	public void nespusteno(final Polozka polozka) {
+		spustene.remove(polozka.getId());
 	}
 
 	/** Uživatel stahování zrušil: dál se nic nespouští. */
@@ -83,7 +99,7 @@ public final class FrontaPruvodce {
 			}
 			if (s == StavBunky.CHYBA) {
 				zastaveno = true;
-				return new Krok(Akce.ZASTAVENO, p);
+				return new Krok(Akce.ZASTAVENO, p, true);
 			}
 			final int n = zpozdeni.merge(p.getId(), 1, Integer::sum);
 			if (n >= 2) {

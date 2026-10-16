@@ -14,6 +14,10 @@ public final class SpousteniPruvodce {
 
 	private SpousteniPruvodce() {}
 
+	static String textChyby(final String polozka, final String duvod) {
+		return "Stahování se zastavilo u „" + polozka + "“" + (duvod == null || duvod.isEmpty() ? "." : ": " + duvod) + "\nZkuste to znovu přes Mapy > Průvodce nastavením map.";
+	}
+
 	/** Právě běží stahování z průvodce. */
 	public static boolean bezi() {
 		return aktualni != null && aktualni.getStav() == Stav.BEZI;
@@ -40,8 +44,7 @@ public final class SpousteniPruvodce {
 			if (beh.getStav() != Stav.BEZI) {
 				casovac.stop();
 				if (beh.getSelhala() != null) {
-					JOptionPane.showMessageDialog(rodic, "Stahování se zastavilo u „" + beh.getSelhala().getNazev() + "“. Zkuste to znovu přes Mapy > Průvodce nastavením map.",
-							"Nastavení map", JOptionPane.WARNING_MESSAGE);
+					JOptionPane.showMessageDialog(rodic, textChyby(beh.getSelhala().getNazev(), beh.getDuvod()), "Nastavení map", JOptionPane.WARNING_MESSAGE);
 				}
 			}
 		});

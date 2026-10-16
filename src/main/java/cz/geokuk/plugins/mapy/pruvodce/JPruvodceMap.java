@@ -55,6 +55,7 @@ public final class JPruvodceMap extends JDialog {
 		this.zeme = NabidkaZemi.sestav(kontext.getKatalog());
 		predvyber();
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		final JPanel obsah = new JPanel(new BorderLayout(0, 10));
 		obsah.setBorder(new EmptyBorder(12, 16, 12, 16));
 		final JPanel hlava = new JPanel(new BorderLayout());
@@ -151,6 +152,7 @@ public final class JPruvodceMap extends JDialog {
 			dal.addActionListener(e -> zobraz(krok + 1));
 			dalsi = dal;
 			tlacitka.add(dal);
+			getRootPane().setDefaultButton(dal);
 		}
 		kroky.revalidate();
 		stred.revalidate();
@@ -401,6 +403,11 @@ public final class JPruvodceMap extends JDialog {
 		}
 		if (!plan.jeHotovo()) {
 			final JButton jen = new JButton(JEN_PREPNOUT);
+			final boolean cekaNaMapu = !plan.prepnoutHned();
+			jen.setEnabled(!cekaNaMapu);
+			if (cekaNaMapu) {
+				jen.setToolTipText("Offline mapa se musí nejdřív stáhnout, jinak by zůstala prázdná.");
+			}
 			jen.addActionListener(e -> {
 				dispose();
 				kontext.prepni(volba());

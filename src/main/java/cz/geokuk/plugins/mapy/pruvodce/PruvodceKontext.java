@@ -17,8 +17,8 @@ public interface PruvodceKontext {
 	/** Volné místo na disku se složkou offline map v bajtech, -1 když není známé. */
 	long volneMisto();
 
-	/** Spustí stažení položky (mapy nebo vrstvy). Nic jiného se v tu chvíli nesmí stahovat. */
-	void stahni(Polozka polozka);
+	/** Spustí stažení položky (mapy nebo vrstvy). False, když se nepodařilo spustit, třeba protože se už něco stahuje (například z popupu Mapy). */
+	boolean stahni(Polozka polozka);
 
 	/** Zruší běžící stahování. */
 	void zrusStahovani();

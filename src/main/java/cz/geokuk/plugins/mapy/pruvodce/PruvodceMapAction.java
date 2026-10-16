@@ -47,13 +47,19 @@ public class PruvodceMapAction extends Action0 {
 	/** Při prvním spuštění nové instalace průvodce otevře sám; jinak se jen zapamatuje, že už se nenabízí. Nic se neotevírá při automatizaci a bez displeje. */
 	public void nabidniPriPrvnimSpusteni(final boolean automatizace) {
 		final MyPreferences pref = MyPreferences.current().node(NODE);
-		if (automatizace || GraphicsEnvironment.isHeadless() || pref.getBoolean(VIDEL, false)) {
-			return;
+		final boolean videl = pref.getBoolean(VIDEL, false);
+		final boolean otevrit = mapyModel != null && lzeOtevritSam(automatizace, GraphicsEnvironment.isHeadless(), videl, mapyModel.isPrvniSpusteni());
+		if (!automatizace && !GraphicsEnvironment.isHeadless() && !videl) {
+			pref.putBoolean(VIDEL, true);
 		}
-		pref.putBoolean(VIDEL, true);
-		if (mapyModel != null && mapyModel.isPrvniSpusteni()) {
+		if (otevrit) {
 			actionPerformed(null);
 		}
+	}
+
+	/** Průvodce se sám otevře jen při první instalaci, jen jednou a ne při automatizaci ani bez displeje. */
+	static boolean lzeOtevritSam(final boolean automatizace, final boolean headless, final boolean videl, final boolean prvniSpusteni) {
+		return !automatizace && !headless && !videl && prvniSpusteni;
 	}
 
 	@Override

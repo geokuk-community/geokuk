@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.mapy.pruvodce;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -69,6 +71,7 @@ public class FrontaPruvodceTest {
 		final FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.CHYBA, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get);
 		assertEquals(Akce.ZASTAVENO, k.getAkce());
 		assertEquals(MAPA, k.getPolozka().getId());
+		assertTrue("chyba, ne zrušení", k.isChyba());
 		assertEquals("a už nic dalšího", Akce.ZASTAVENO, f.dalsi(stavy(StavBunky.STAZENO, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get).getAkce());
 	}
 
@@ -87,7 +90,20 @@ public class FrontaPruvodceTest {
 		final Map<String, StavBunky> ke = stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
 		assertEquals(Akce.STAHUJ, f.dalsi(ke::get).getAkce());
 		assertEquals("stav ještě nedoběhl", Akce.CEKEJ, f.dalsi(ke::get).getAkce());
-		assertEquals(Akce.ZASTAVENO, f.dalsi(ke::get).getAkce());
+		final FrontaPruvodce.Krok krok = f.dalsi(ke::get);
+		assertEquals(Akce.ZASTAVENO, krok.getAkce());
+		assertFalse("zrušení není chyba", krok.isChyba());
+	}
+
+	@Test
+	public void nespustenaPolozkaSePoustiZnovu() {
+		final FrontaPruvodce f = new FrontaPruvodce(plan());
+		final Map<String, StavBunky> ke = stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
+		final FrontaPruvodce.Krok prvni = f.dalsi(ke::get);
+		f.nespusteno(prvni.getPolozka());
+		final FrontaPruvodce.Krok druhy = f.dalsi(ke::get);
+		assertEquals(Akce.STAHUJ, druhy.getAkce());
+		assertEquals(prvni.getPolozka().getId(), druhy.getPolozka().getId());
 	}
 
 	@Test

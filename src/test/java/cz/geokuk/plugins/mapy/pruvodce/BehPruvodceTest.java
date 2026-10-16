@@ -36,6 +36,8 @@ public class BehPruvodceTest {
 		final List<String> stazene = new ArrayList<>();
 		final List<PruvodceVolba> prepnuti = new ArrayList<>();
 		int zruseni;
+		boolean obsazeno;
+		int pokusy;
 
 		String dej(final String id) {
 			return stav.getOrDefault(id, "NEMAME");
@@ -62,9 +64,14 @@ public class BehPruvodceTest {
 		}
 
 		@Override
-		public void stahni(final Polozka polozka) {
+		public boolean stahni(final Polozka polozka) {
+			if (obsazeno) {
+				pokusy++;
+				return false;
+			}
 			stazene.add(polozka.getId());
 			stav.put(polozka.getId(), "STAHUJE");
+			return true;
 		}
 
 		@Override
@@ -156,5 +163,40 @@ public class BehPruvodceTest {
 		assertEquals(Collections.singletonList(Stav.ZASTAVENO), zmeny);
 		beh.zrus();
 		assertEquals("podruhé nic", 1, k.zruseni);
+	}
+
+	/** Stahovač je zaneprázdněný (stahuje se z popupu): položka se nepovažuje za spuštěnou a zkusí se znovu. */
+	@Test
+	public void obsazenyStahovacSeZkusiZnovu() {
+		final Kontext k = new Kontext();
+		k.obsazeno = true;
+		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE), s -> {});
+		beh.spust();
+		beh.krok();
+		assertEquals(Stav.BEZI, beh.getStav());
+		assertTrue("zkouší se dál, nic nezastavilo", k.pokusy >= 2 && k.stazene.isEmpty());
+		k.obsazeno = false;
+		beh.krok();
+		assertEquals(Collections.singletonList(CZ), k.stazene);
+	}
+
+	@Test
+	public void chybaMaDuvodAZrusenaPolozkaNe() {
+		final Kontext k = new Kontext();
+		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE), s -> {});
+		beh.spust();
+		k.stav.put(CZ, "CHYBA");
+		beh.krok();
+		assertEquals("chyba", beh.getDuvod());
+		assertNotNull(beh.getSelhala());
+
+		final Kontext z = new Kontext();
+		final BehPruvodce zrusena = new BehPruvodce(z, plan(z, PodkladPruvodce.TURISTICKA_OFFLINE), s -> {});
+		zrusena.spust();
+		z.stav.put(CZ, "NEMAME"); // zrušeno v popupu: není stahování ani chyba
+		zrusena.krok();
+		zrusena.krok();
+		assertEquals(Stav.ZASTAVENO, zrusena.getStav());
+		assertNull("zrušení není chyba, žádná hláška", zrusena.getSelhala());
 	}
 }

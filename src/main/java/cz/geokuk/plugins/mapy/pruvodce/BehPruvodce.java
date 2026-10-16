@@ -25,6 +25,7 @@ public final class BehPruvodce {
 	private boolean prepnuto;
 	private Stav stav = Stav.BEZI;
 	private Polozka selhala;
+	private String duvod;
 
 	public BehPruvodce(final PruvodceKontext kontext, final PlanPruvodce plan, final Consumer<Stav> poZmene) {
 		this.kontext = kontext;
@@ -49,14 +50,20 @@ public final class BehPruvodce {
 		final Krok k = fronta.dalsi(this::stavPodleId);
 		switch (k.getAkce()) {
 		case STAHUJ:
-			kontext.stahni(k.getPolozka());
+			if (!kontext.stahni(k.getPolozka())) {
+				// Stahovač je zrovna zaneprázdněný (třeba stahování z popupu Mapy): zkusí se při dalším kroku.
+				fronta.nespusteno(k.getPolozka());
+			}
 			break;
 		case HOTOVO:
 			prepni();
 			konec(Stav.HOTOVO);
 			break;
 		case ZASTAVENO:
-			selhala = k.getPolozka();
+			if (k.isChyba()) {
+				selhala = k.getPolozka();
+				duvod = chybaPodleId(k.getPolozka().getId());
+			}
 			konec(Stav.ZASTAVENO);
 			break;
 		case CEKEJ:
@@ -85,6 +92,22 @@ public final class BehPruvodce {
 	/** Položka, kvůli které se průvodce zastavil, null když se nezastavil kvůli chybě. */
 	public Polozka getSelhala() {
 		return selhala;
+	}
+
+	/** Text chyby stahování, null když ho program nehlásí. */
+	public String getDuvod() {
+		return duvod;
+	}
+
+	private String chybaPodleId(final String id) {
+		for (final MatriceMap.Radek r : kontext.matice()) {
+			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
+				if (id.equals(r.getBunka(c).getId())) {
+					return r.getBunka(c).getChyba();
+				}
+			}
+		}
+		return null;
 	}
 
 	private void konec(final Stav novy) {

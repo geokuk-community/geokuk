@@ -47,12 +47,11 @@ public final class ProgramPruvodceKontext implements PruvodceKontext {
 	}
 
 	@Override
-	public void stahni(final Polozka polozka) {
+	public boolean stahni(final Polozka polozka) {
 		if (polozka.isVrstva()) {
-			spravaMap.getKatalogVrstev().podleId(polozka.getId()).ifPresent(spravaMap::stahni);
-		} else {
-			spravaMap.getKatalog().podleId(polozka.getId()).ifPresent(spravaMap::stahni);
+			return spravaMap.getKatalogVrstev().podleId(polozka.getId()).map(spravaMap::stahni).orElse(false);
 		}
+		return spravaMap.getKatalog().podleId(polozka.getId()).map(spravaMap::stahni).orElse(false);
 	}
 
 	@Override
