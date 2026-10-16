@@ -89,8 +89,7 @@
   Seznam map ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
   se otevře sám) vybere zemi, podklad a vrstvy, stáhne jen to, co chybí, a
-  přepne mapu. Turistické a cyklotrasy se přes online podklad kreslí i z
-  samotné vrstvy tras, bez stažené offline mapy.
+  přepne mapu.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
