@@ -73,13 +73,11 @@
   mapě ukáže její obrys, stejně při stahování; volbou v popupu jde ukázat
   obrysy všech map v přehledu (do zoomu 7). Mapy zemí a regionů Evropy z
   download.mapsforge.org jde z popupu stáhnout (po jedné, přerušené stahování
-  pokračuje) a na požádání zkontrolovat, jestli nejsou novější. Když pro
-  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
-  u hranice i sousední mapy, které jsou v záběru.
   pokračuje) a na požádání zkontrolovat, jestli nejsou novější; popup ukáže
   výsledek kontroly, při stahování odhad zbývajícího času a mapu, která se
   nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
-  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení.
+  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
+  u hranice i sousední mapy, které jsou v záběru.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
