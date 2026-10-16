@@ -69,10 +69,10 @@ public class JMapyPopup extends JPanel {
 	private static final Color SEDY_TEXT = new Color(90, 90, 90);
 	private static final Color ODKAZ = new Color(0x1A5FB4);
 
-	private OvladaniMap ovladani;
+	private transient OvladaniMap ovladani;
 	/** Klíč řádku, jehož obrys je teď v mapě zvýrazněný; null, když žádný. */
 	private String zvyraznena;
-	private List<RadekMapy> radky = Collections.emptyList();
+	private transient List<RadekMapy> radky = Collections.emptyList();
 	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
 	private final Map<String, JLabel[]> popisy = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
@@ -92,9 +92,18 @@ public class JMapyPopup extends JPanel {
 		}
 	};
 	/** Řádky dalších map: jejich políčka a text, podle kterého se hledá. */
-	private final List<RadekHledani> hledatelne = new ArrayList<>();
+	private final transient List<RadekHledani> hledatelne = new ArrayList<>();
 	/** Uživatel píše do pole hledání; nastaví se fokusem v poli, ruší klikem mimo popup a zavřením popupu. */
 	private boolean uzivatelPise;
+
+	/** Pole hledání o fokus přišlo při změně obsahu a žádá se o jeho vrácení; jen v tomto okně se klávesy berou do pole. */
+	private boolean cekaNaFokus;
+
+	/** Správce fokusu, u kterého je dispatcher kláves zaregistrovaný; v testech nahraditelný. */
+	transient java.util.function.Supplier<KeyboardFocusManager> spravceFokusu = KeyboardFocusManager::getCurrentKeyboardFocusManager;
+
+	/** Okno aplikace, které má právě fokus; v testech nahraditelné. */
+	transient java.util.function.Supplier<Window> aktivniOkno = () -> KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
 	/** Kolikrát se po znovuzobrazení popupu žádal fokus do pole (pro test). */
 	int pozadavkuNaFokus;
 	private final List<JLabel> hlavickySkupin = new ArrayList<>();
@@ -133,6 +142,7 @@ public class JMapyPopup extends JPanel {
 			@Override
 			public void focusGained(final java.awt.event.FocusEvent e) {
 				uzivatelPise = true;
+				cekaNaFokus = false;
 			}
 		});
 		hledat.setFont(hledat.getFont().deriveFont(Font.PLAIN, 11f));
@@ -158,6 +168,7 @@ public class JMapyPopup extends JPanel {
 	/** Popup se zavřel: hledání se vymaže, příště začne od nuly. */
 	public void popupZavren() {
 		uzivatelPise = false;
+		cekaNaFokus = false;
 		hledat.setText("");
 	}
 
@@ -176,6 +187,7 @@ public class JMapyPopup extends JPanel {
 	public void poZnovuZobrazeni() {
 		if (uzivatelPise) {
 			pozadavkuNaFokus++;
+			cekaNaFokus = true;
 			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
 		}
 	}
@@ -184,6 +196,7 @@ public class JMapyPopup extends JPanel {
 	private final java.awt.event.AWTEventListener klikMimo = e -> {
 		if (e.getID() == java.awt.event.MouseEvent.MOUSE_PRESSED && uzivatelPise && !(e.getSource() instanceof Component && SwingUtilities.isDescendingFrom((Component) e.getSource(), this))) {
 			uzivatelPise = false;
+			cekaNaFokus = false;
 			java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearFocusOwner();
 		}
 	};
@@ -196,11 +209,15 @@ public class JMapyPopup extends JPanel {
 	 * propadnout do hlavního okna, kde by spouštěly klávesové zkratky (o, t, z… přepínají mapu), ale vloží se do pole hledání. Ctrl/Alt/Meta, Enter a Esc jdou dál.
 	 */
 	final KeyEventDispatcher klavesy = e -> {
-		if (!uzivatelPise || !vidiSe || !hledat.isVisible() || hledat.isFocusOwner() || e.isControlDown() || e.isAltDown() || e.isMetaDown()) {
+		if (!cekaNaFokus || !uzivatelPise || !vidiSe || !hledat.isVisible() || hledat.isFocusOwner() || e.isControlDown() || e.isAltDown() || e.isMetaDown()) {
+			return false;
+		}
+		final Window okno = SwingUtilities.getWindowAncestor(this);
+		if (okno != null && aktivniOkno.get() != okno) {
 			return false;
 		}
 		final char c = e.getKeyChar();
-		if (c == KeyEvent.CHAR_UNDEFINED || c == '\u001b' || c == '\n' || c == '\r') {
+		if (c == KeyEvent.CHAR_UNDEFINED || c == '\u001b' || c == '\n' || c == '\r' || c == '\t' || c == '\u007f') {
 			return false;
 		}
 		if (e.getID() == KeyEvent.KEY_TYPED) {
@@ -210,7 +227,7 @@ public class JMapyPopup extends JPanel {
 					if (d.getLength() > 0) {
 						d.remove(d.getLength() - 1, 1);
 					}
-				} else if (c >= ' ' && c != '\u007f') {
+				} else if (c >= ' ') {
 					d.insertString(d.getLength(), String.valueOf(c), null);
 				}
 			} catch (final javax.swing.text.BadLocationException ex) {
@@ -223,13 +240,14 @@ public class JMapyPopup extends JPanel {
 	void zacniSledovatKlikyMimo() {
 		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
 		Toolkit.getDefaultToolkit().addAWTEventListener(klikMimo, AWTEvent.MOUSE_EVENT_MASK);
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(klavesy);
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(klavesy);
+		final KeyboardFocusManager m = spravceFokusu.get();
+		m.removeKeyEventDispatcher(klavesy);
+		m.addKeyEventDispatcher(klavesy);
 	}
 
 	void prestanSledovatKlikyMimo() {
 		Toolkit.getDefaultToolkit().removeAWTEventListener(klikMimo);
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(klavesy);
+		spravceFokusu.get().removeKeyEventDispatcher(klavesy);
 	}
 
 	JTextField getHledat() {
@@ -539,6 +557,7 @@ public class JMapyPopup extends JPanel {
 		web.add(odkaz("OpenAndroMaps", URL_OAM));
 		add(web, gbc);
 		if (uzivatelPise) {
+			cekaNaFokus = true;
 			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
 		}
 		revalidate();
