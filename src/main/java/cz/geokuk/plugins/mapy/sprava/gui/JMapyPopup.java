@@ -962,6 +962,10 @@ public class JMapyPopup extends JPanel {
 				}
 			});
 			smazat.setForeground(IkonyMap.CERVENA);
+			if (stahujeSe) {
+				smazat.setEnabled(false);
+				smazat.setToolTipText(STAHUJE_SE_JINA);
+			}
 			final GridBagConstraints cs = bunka(4, y, 1);
 			cs.anchor = GridBagConstraints.EAST;
 			cs.fill = GridBagConstraints.NONE;

@@ -219,6 +219,15 @@ public class JMapyPopupTest {
 			Assert.assertEquals(Collections.singletonList("smazVrstvu routes/europe/czech-republic"), z.volani);
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
 			Assert.assertTrue("během stahování nejde mazat", tlacitkaSTextem(p, JMapyPopup.SMAZAT).isEmpty());
+			final List<RadekMapy> sJinouMapou = new ArrayList<>(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			sJinouMapou.add(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(MB).build());
+			p.obnov(sJinouMapou);
+			final List<JButton> zakazane = tlacitkaSTextem(p, JMapyPopup.SMAZAT);
+			Assert.assertEquals("tlačítko zůstává vidět", 1, zakazane.size());
+			Assert.assertFalse("při stahování jiné mapy je vypnuté", zakazane.get(0).isEnabled());
+			Assert.assertEquals(JMapyPopup.STAHUJE_SE_JINA, zakazane.get(0).getToolTipText());
+			zakazane.get(0).doClick();
+			Assert.assertEquals("vypnuté tlačítko nic nespustí", 1, z.volani.size());
 		});
 	}
 

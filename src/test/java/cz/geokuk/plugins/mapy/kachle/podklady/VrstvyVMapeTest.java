@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Arrays;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -91,6 +92,37 @@ public class VrstvyVMapeTest {
 		mapy.zavri(); // Windows otevřený soubor nesmaže; program mapy před smazáním zavírá
 		Assert.assertTrue(new File(vrstvy(), "kukov_trasy.map").delete());
 		Assert.assertEquals("bez vrstvy je klíč zpět", bez, klic());
+	}
+
+	/** Vrstvy leží v podsložkách podle klíče základní mapy (layers/europe/germany/bayern.routes.map): najdou se a změní klíč dlaždic. */
+	@Test
+	public void vrstvaVPodslozceSeNajdeARenderuje() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final String bez = klic();
+		final File podslozka = new File(vrstvy(), "europe/czech-republic");
+		Assert.assertTrue(podslozka.mkdirs());
+		OfflineMapyTest.zkopirujMapu(podslozka, "kukov.routes.map");
+		Assert.assertEquals(Arrays.asList(new File(podslozka, "kukov.routes.map")), OfflineMapy.vrstvyVeSlozce(slozka));
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		Assert.assertNotEquals("vrstva z podsložky je v klíči dlaždic", bez, klic());
+		Assert.assertEquals("a není další základní mapa", 1, pocetMap());
+		Assert.assertNotNull(vyrendruj());
+	}
+
+	/** DEM dlaždice v podsložkách složky vrstev se najdou (zip i holé .hgt), cizí soubory ne. */
+	@Test
+	public void demVPodslozkachSeNajde() throws Exception {
+		final File a = new File(vrstvy(), "europe/germany");
+		Assert.assertTrue(a.mkdirs());
+		final File zip = new File(a, "bayern.dem.zip");
+		final File hgt = new File(vrstvy(), "europe/N50E014.hgt");
+		Files.write(zip.toPath(), new byte[1]);
+		Files.write(hgt.toPath(), new byte[1]);
+		Files.write(new File(a, "bayern.routes.map").toPath(), new byte[1]);
+		Files.write(new File(a, "._bayern.dem.zip").toPath(), new byte[1]);
+		Assert.assertEquals(Arrays.asList(zip, hgt), OfflineRenderer.demDlazdice(vrstvy()));
+		Assert.assertTrue(OfflineMapy.maDem(slozka));
 	}
 
 	/** Samotné vrstvy bez základní mapy nejsou mapa: dál platí „ve složce nejsou offline mapy“. */
