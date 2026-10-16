@@ -4,24 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       region:
-        description: "Cesta regionu na Geofabriku (europe/czech-republic, europe/germany/bayern)"
+        description: "Geofabrik region path = mapsforge map key (europe/czech-republic, europe/germany/bayern)"
         default: "europe/luxembourg"
-      nazev:
-        description: "Název pro katalog (Česko, Bavorsko)"
-        default: "Lucembursko"
+      name:
+        description: "Region name for the catalog (Czechia, Bavaria)"
+        default: "Luxembourg"
       bbox:
-        description: "Obdélník oblasti: jih,západ,sever,východ"
+        description: "Area: south,west,north,east"
         default: "49.4,5.7,50.2,6.55"
-      typy:
-        description: "Které vrstvy vyrobit (vrstevnice potřebují DEM)"
+      types:
+        description: "Layers to build (contours need dem)"
         type: choice
         options: [all, routes, dem, contours]
         default: all
-      paralelne:
-        description: "Počet souběžných pyhgtmap pro vrstevnice"
+      parallel:
+        description: "Concurrent pyhgtmap processes for contours"
         default: "2"
-      zapis:
-        description: "Zápis tras do .map: ram (rychlý, paměťově náročný) nebo hd"
+      writer:
+        description: "Map writer for routes: ram (fast, memory-hungry) or hd"
         type: choice
         options: [ram, hd]
         default: ram
@@ -40,16 +40,16 @@ concurrency:
 
 env:
   REGION: ${{ inputs.region || 'europe/luxembourg' }}
-  NAZEV: ${{ inputs.nazev || 'Lucembursko' }}
+  NAZEV: ${{ inputs.name || 'Luxembourg' }}
   BBOX: ${{ inputs.bbox || '49.4,5.7,50.2,6.55' }}
-  TYPY: ${{ inputs.typy || 'all' }}
+  TYPY: ${{ inputs.types || 'all' }}
   JAVA_OPTS: -Xmx10g
-  ZAPIS: ${{ inputs.zapis || 'ram' }}
-  PARALELNE: ${{ inputs.paralelne || '2' }}
+  ZAPIS: ${{ inputs.writer || 'ram' }}
+  PARALELNE: ${{ inputs.parallel || '2' }}
 
 jobs:
   trasy:
-    if: ${{ inputs.typy == 'all' || inputs.typy == 'routes' || github.event_name == 'pull_request' }}
+    if: ${{ inputs.types == 'all' || inputs.types == 'routes' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
@@ -98,7 +98,7 @@ jobs:
             out/*.poly
 
   dem:
-    if: ${{ inputs.typy == 'all' || inputs.typy == 'dem' || inputs.typy == 'contours' || github.event_name == 'pull_request' }}
+    if: ${{ inputs.types == 'all' || inputs.types == 'dem' || inputs.types == 'contours' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
@@ -141,7 +141,7 @@ jobs:
 
   vrstevnice:
     needs: dem
-    if: ${{ !cancelled() && needs.dem.result == 'success' && (inputs.typy == 'all' || inputs.typy == 'contours' || github.event_name == 'pull_request') }}
+    if: ${{ !cancelled() && needs.dem.result == 'success' && (inputs.types == 'all' || inputs.types == 'contours' || github.event_name == 'pull_request') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
