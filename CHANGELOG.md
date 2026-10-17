@@ -116,6 +116,9 @@
 
 Obsahuje i všechny opravy z 6.4.2.
 
+### Opravy
+- GPX, který se právě kopíruje do složky s daty, už nehlásí chybu načítání; načte se, až je kopie hotová.
+
 ## 6.4.2
 
 ### Opravy
