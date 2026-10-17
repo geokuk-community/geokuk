@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import cz.geokuk.core.coordinates.Wgs;
@@ -66,6 +67,11 @@ public class OfflineMapy {
 	/** Změněný otisk, který se teprve ověřuje: soubor, který se právě kopíruje, se mezi kontrolami mění. */
 	private String otiskZmeny;
 	private long posledniKontrola;
+	/** Při hromadném stahování se změna složky projeví nejvýš jednou za {@link #odstupPriDavceNs}; jinak by každá stažená vrstva znovu otevřela všechny mapy. */
+	private volatile BooleanSupplier davka = () -> false;
+	long odstupPriDavceNs = TimeUnit.SECONDS.toNanos(30);
+	/** Kdy se mapy naposledy otevřely kvůli změně ve složce; null = zatím ne. */
+	private Long otevrenoPriZmene;
 	/** Některé mapy nešly otevřít a zkusí se znovu od {@link #opakovatOd}. */
 	private boolean opakovat;
 	private long opakovatOd;
@@ -126,6 +132,11 @@ public class OfflineMapy {
 
 	public double getMeritko() {
 		return meritko;
+	}
+
+	/** Zda právě běží hromadné stahování; změny složky se pak otevírají s odstupem. */
+	public void setDavka(final BooleanSupplier davka) {
+		this.davka = davka;
 	}
 
 	public void setPriOtevreni(final BiConsumer<String, File> priOtevreni) {
@@ -244,6 +255,10 @@ public class OfflineMapy {
 			otevri(mapy, ted, true);
 		} else if (!otisk.equals(otiskSlozky)) {
 			if (otisk.equals(otiskZmeny)) {
+				if (davka.getAsBoolean() && otevrenoPriZmene != null && ted - otevrenoPriZmene < odstupPriDavceNs) {
+					return; // změna počká na konec dávky nebo na uplynutí odstupu
+				}
+				otevrenoPriZmene = ted;
 				otiskSlozky = otisk;
 				otiskZmeny = null;
 				otevri(mapy, ted, true);

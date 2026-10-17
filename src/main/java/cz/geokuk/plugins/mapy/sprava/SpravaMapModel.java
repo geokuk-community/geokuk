@@ -77,6 +77,9 @@ public class SpravaMapModel extends Model0 {
 	/** Pořadí spuštěných stahování; zrušení platí pro všechna spuštěná do {@link #zrusenoDo}. */
 	private final AtomicLong poradi = new AtomicLong();
 	private volatile long zrusenoDo;
+	/** Konec posledního stahování; dávka (průvodce, Stáhnout vše) mezi položkami chvíli nic nestahuje. */
+	private volatile long konecStahovaniNs = System.nanoTime() - DOZNIVANI_DAVKY_NS;
+	static final long DOZNIVANI_DAVKY_NS = TimeUnit.SECONDS.toNanos(15);
 	private final StahovacMapy stahovac;
 	private final StahovacVrstev stahovacVrstev;
 	private Supplier<File> slozka = () -> null;
@@ -349,6 +352,7 @@ public class SpravaMapModel extends Model0 {
 			}
 		}
 		final BooleanSupplier zruseno = novyZruseni();
+		nastavDavkuOfflineMapam();
 		vlaknaVrstev.execute(() -> {
 			try {
 				final File s = slozkaVrstevNaPozadi();
@@ -362,6 +366,7 @@ public class SpravaMapModel extends Model0 {
 				zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
 			} finally {
 				beziciVrstvy.remove(vrstva);
+				konecStahovaniNs = System.nanoTime();
 			}
 		});
 		return true;
@@ -420,6 +425,7 @@ public class SpravaMapModel extends Model0 {
 			return false;
 		}
 		final BooleanSupplier zruseno = novyZruseni();
+		nastavDavkuOfflineMapam();
 		vlakno.execute(() -> {
 			try {
 				final File s = slozka.get();
@@ -433,6 +439,7 @@ public class SpravaMapModel extends Model0 {
 				zmena(getStav(mapa).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
 			} finally {
 				beziciMapa.set(null);
+				konecStahovaniNs = System.nanoTime();
 			}
 		});
 		return true;
@@ -500,6 +507,20 @@ public class SpravaMapModel extends Model0 {
 	private void zmena(final StavMapy stav) {
 		stavy.put(stav.getMapa().getId(), stav);
 		odpalovac.accept(new SpravaMapEvent(stav));
+	}
+
+	/** Stahuje se, nebo se stahovalo před chvílí (mezi položkami dávky). */
+	public boolean isDavka() {
+		return beziciMapa.get() != null || !beziciVrstvy.isEmpty() || System.nanoTime() - konecStahovaniNs < DOZNIVANI_DAVKY_NS;
+	}
+
+	/** Offline mapy během dávky neotevírají znovu po každém staženém souboru. */
+	private void nastavDavkuOfflineMapam() {
+		final KachleModel k = kachleModel;
+		if (k != null && k.getZiskavac() != null) {
+			k.getZiskavac().getOfflineMapy().setDavka(this::isDavka);
+			k.getZiskavac().getOfflineTrasy().setDavka(this::isDavka);
+		}
 	}
 
 	/** Zavře otevřené offline mapy, aby šlo starou mapu nahradit (Windows otevřený soubor nepřepíše); otevřou se znovu při dalším kreslení. */
