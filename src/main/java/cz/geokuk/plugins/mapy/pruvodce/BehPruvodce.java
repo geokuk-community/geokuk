@@ -54,7 +54,8 @@ public final class BehPruvodce {
 
 	/** Jeden krok fronty; vrací, jestli se spustila další položka (a má smysl zkusit ještě jednu). */
 	private boolean krokFronty(final boolean prvni) {
-		final Krok k = fronta.dalsi(this::stavPodleId, prvni);
+		final java.util.Map<String, StavBunky> stavy = stavy();
+		final Krok k = fronta.dalsi(id -> stavy.getOrDefault(id, StavBunky.NENI), prvni);
 		boolean spusteno = false;
 		switch (k.getAkce()) {
 		case STAHUJ:
@@ -135,18 +136,21 @@ public final class BehPruvodce {
 
 	/** Všechny mapy z plánu jsou stažené (nebo se žádné nestahují). */
 	private boolean mapyJsou() {
-		return plan.getPolozky().stream().filter(p -> p.getCast() == MatriceMap.Cast.MAPA).allMatch(p -> stavPodleId(p.getId()) == StavBunky.STAZENO);
+		final java.util.Map<String, StavBunky> stavy = stavy();
+		return plan.getPolozky().stream().filter(p -> p.getCast() == MatriceMap.Cast.MAPA).allMatch(p -> stavy.get(p.getId()) == StavBunky.STAZENO);
 	}
 
-	private StavBunky stavPodleId(final String id) {
+	/** Stavy buněk matice podle id položky; matice se sestaví jednou pro celý krok, ne pro každou položku. */
+	private java.util.Map<String, StavBunky> stavy() {
+		final java.util.Map<String, StavBunky> stavy = new java.util.HashMap<>();
 		for (final MatriceMap.Radek r : kontext.matice()) {
 			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
 				final MatriceMap.Bunka b = r.getBunka(c);
-				if (id.equals(b.getId())) {
-					return b.getStav();
+				if (b.getId() != null) {
+					stavy.putIfAbsent(b.getId(), b.getStav());
 				}
 			}
 		}
-		return StavBunky.NENI;
+		return stavy;
 	}
 }
