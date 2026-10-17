@@ -60,6 +60,21 @@ public class MatriceMapTest {
 	}
 
 	@Test
+	public void overovaniSePoznaVBunce() {
+		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), VrstvyProGui.katalogCesko(), v -> StavVrstvy.novy(v).sFazi(StavMapy.Faze.OVERUJE, null)
+				.sPrubehem(v.getVelikost() / 2));
+		final Radek cz = radek(radky, CZ);
+		final MatriceMap.Bunka trasy = cz.getBunka(Cast.TRASY);
+		assertEquals(StavBunky.STAHUJE, trasy.getStav());
+		assertTrue(trasy.isOveruje());
+		assertEquals(trasy.getVelikost() / 2, trasy.getStazeno());
+		assertFalse(cz.getBunka(Cast.MAPA).isOveruje());
+		final List<Radek> stahuje = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), VrstvyProGui.katalogCesko(), v -> StavVrstvy.novy(v).sFazi(StavMapy.Faze.STAHUJE,
+				null));
+		assertFalse(radek(stahuje, CZ).getBunka(Cast.TRASY).isOveruje());
+	}
+
+	@Test
 	public void bezKataloguVrstevJenSloupecMapa() {
 		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), null, null);
 		final Radek cz = radek(radky, CZ);
