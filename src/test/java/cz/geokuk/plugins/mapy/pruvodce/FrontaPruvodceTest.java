@@ -113,4 +113,25 @@ public class FrontaPruvodceTest {
 		final PlanPruvodce plan = PlanPruvodce.sestav(new PruvodceVolba(Collections.singletonList(CZ), PodkladPruvodce.TURISTICKA_OFFLINE, EnumSet.noneOf(Cast.class)), m);
 		assertEquals(Akce.HOTOVO, new FrontaPruvodce(plan).dalsi(id -> StavBunky.NOVEJSI).getAkce());
 	}
+
+	@Test
+	public void stahovaniCekaNaDokonceniBezOhleduNaPocetTiknuti() {
+		final FrontaPruvodce f = new FrontaPruvodce(plan());
+		assertEquals(Akce.STAHUJ, f.dalsi(stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get).getAkce());
+		final Map<String, StavBunky> bezi = stavy(StavBunky.STAHUJE, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
+		for (int i = 0; i < 5; i++) {
+			assertEquals("tik " + i, Akce.CEKEJ, f.dalsi(bezi::get).getAkce());
+		}
+		final FrontaPruvodce.Krok dal = f.dalsi(stavy(StavBunky.STAZENO, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get);
+		assertEquals(Akce.STAHUJ, dal.getAkce());
+		assertEquals(TRASY, dal.getPolozka().getId());
+	}
+
+	@Test
+	public void novejsiMapaUprostredPlanuSePreskoci() {
+		final FrontaPruvodce f = new FrontaPruvodce(plan());
+		final FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.STAZENO, StavBunky.NOVEJSI, StavBunky.KE_STAZENI)::get);
+		assertEquals(Akce.STAHUJ, k.getAkce());
+		assertEquals(VRSTEVNICE, k.getPolozka().getId());
+	}
 }
