@@ -18,6 +18,13 @@ public interface OvladaniMap {
 	default void stahniVse(final String nazevZeme, final String celekKlic, final java.util.List<String> klice) {}
 	/** Otevře souhrn „Dostáhnout vrstvy“ ke všem staženým základním mapám (jen vrstvy z GitHubu). */
 	default void dostahnoutVrstvy() {}
+	/** Souhrn skončené hromadné dávky s chybami: nadpis a řádek na selhanou položku; prázdný, když není co hlásit. */
+	default java.util.List<String> souhrnDavky() {
+		return java.util.Collections.emptyList();
+	}
+	/** Zkusí znovu jen to, co v dávce selhalo. */
+	default void zkusZnovuDavku() {}
+	default void zavriSouhrnDavky() {}
 	default void zrusStahovani() {}
 
 	/** Zjistí jen u této mapy, jestli je na serveru novější. */

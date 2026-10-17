@@ -513,7 +513,7 @@ public final class JPruvodceMap extends JDialog {
 			if (plan.jeHotovo()) {
 				kontext.prepni(volba());
 			} else {
-				SpousteniPruvodce.spust(kontext, plan, getOwner());
+				SpousteniPruvodce.spust(kontext, plan);
 			}
 		});
 		tlacitka.add(hotovo);

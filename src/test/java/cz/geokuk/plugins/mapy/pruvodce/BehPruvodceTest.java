@@ -136,19 +136,26 @@ public class BehPruvodceTest {
 	}
 
 	@Test
-	public void chybaZastaviAZapamatujeSelhanouPolozku() {
+	public void chybaNezastaviDavkuAJdeZkusitZnovu() {
 		final Kontext k = new Kontext();
 		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY), s -> {});
 		beh.spust();
 		k.stav.put(CZ, "CHYBA");
+		k.stav.put("routes/" + CZ, "MAME");
 		beh.krok();
-		assertEquals(Stav.ZASTAVENO, beh.getStav());
-		assertNotNull(beh.getSelhala());
-		assertEquals(CZ, beh.getSelhala().getId());
-		assertTrue("po chybě se nic nepřepíná", k.prepnuti.isEmpty());
+		assertEquals("dávka skončila", Stav.HOTOVO, beh.getStav());
+		assertEquals(1, beh.getSelhane().size());
+		assertEquals(CZ, beh.getSelhane().get(0).getPolozka().getId());
+		assertEquals("chyba", beh.getSelhane().get(0).getDuvod());
+		assertTrue("po selhání mapy se zobrazení nepřepíná na prázdnou offline mapu", k.prepnuti.isEmpty());
+		beh.zkusZnovu();
+		assertEquals(Stav.BEZI, beh.getStav());
+		assertEquals("selhaná mapa se stahuje znovu", Arrays.asList(CZ, "routes/" + CZ, CZ), k.stazene);
 		k.stav.put(CZ, "MAME");
 		beh.krok();
-		assertEquals("zastavený průvodce už nepokračuje", 2, k.stazene.size());
+		assertEquals(Stav.HOTOVO, beh.getStav());
+		assertTrue(beh.getSelhane().isEmpty());
+		assertEquals("teď už je mapa a zobrazení se přepne", 1, k.prepnuti.size());
 	}
 
 	@Test
@@ -160,7 +167,7 @@ public class BehPruvodceTest {
 		beh.zrus();
 		assertEquals(1, k.zruseni);
 		assertEquals(Stav.ZASTAVENO, beh.getStav());
-		assertNull(beh.getSelhala());
+		assertTrue(beh.getSelhane().isEmpty());
 		assertEquals(Collections.singletonList(Stav.ZASTAVENO), zmeny);
 		beh.zrus();
 		assertEquals("podruhé nic", 1, k.zruseni);
@@ -182,15 +189,7 @@ public class BehPruvodceTest {
 	}
 
 	@Test
-	public void chybaMaDuvodAZrusenaPolozkaNe() {
-		final Kontext k = new Kontext();
-		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE), s -> {});
-		beh.spust();
-		k.stav.put(CZ, "CHYBA");
-		beh.krok();
-		assertEquals("chyba", beh.getDuvod());
-		assertNotNull(beh.getSelhala());
-
+	public void zrusenaPolozkaNeniChyba() {
 		final Kontext z = new Kontext();
 		final BehPruvodce zrusena = new BehPruvodce(z, plan(z, PodkladPruvodce.TURISTICKA_OFFLINE), s -> {});
 		zrusena.spust();
@@ -198,7 +197,7 @@ public class BehPruvodceTest {
 		zrusena.krok();
 		zrusena.krok();
 		assertEquals(Stav.ZASTAVENO, zrusena.getStav());
-		assertNull("zrušení není chyba, žádná hláška", zrusena.getSelhala());
+		assertTrue("zrušení není chyba", zrusena.getSelhane().isEmpty());
 	}
 
 	/** Matice (celý katalog map a vrstev) se v kroku sestaví jednou, ne pro každou položku plánu; na pomalém PC to byly sekundy na EDT. */

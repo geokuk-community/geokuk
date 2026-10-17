@@ -98,7 +98,7 @@ public final class JStahnoutVse extends JDialog {
 			final PlanPruvodce plan = plan();
 			dispose();
 			if (!plan.jeHotovo()) {
-				SpousteniPruvodce.spust(kontext, plan, rodic);
+				SpousteniPruvodce.spust(kontext, plan);
 			}
 		});
 		tlacitka.add(zrusit);

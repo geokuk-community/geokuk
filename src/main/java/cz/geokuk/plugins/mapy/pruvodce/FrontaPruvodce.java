@@ -2,9 +2,11 @@ package cz.geokuk.plugins.mapy.pruvodce;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Polozka;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky;
@@ -21,9 +23,9 @@ public final class FrontaPruvodce {
 		CEKEJ,
 		/** Spustit stažení {@link Krok#getPolozka()}. */
 		STAHUJ,
-		/** Vše z plánu je na disku. */
+		/** Nic dalšího se nestahuje: vše z plánu je na disku, kromě případných selhaných ({@link #getSelhane()}). */
 		HOTOVO,
-		/** Zastaveno: položka selhala, nebo uživatel stahování zrušil; další se nestahují. */
+		/** Zastaveno: uživatel stahování zrušil, nebo se položka po spuštění neobjevila; další se nestahují. */
 		ZASTAVENO
 	}
 
@@ -31,21 +33,10 @@ public final class FrontaPruvodce {
 	public static final class Krok {
 		private final Akce akce;
 		private final Polozka polozka;
-		private final boolean chyba;
 
 		Krok(final Akce akce, final Polozka polozka) {
-			this(akce, polozka, false);
-		}
-
-		Krok(final Akce akce, final Polozka polozka, final boolean chyba) {
 			this.akce = akce;
 			this.polozka = polozka;
-			this.chyba = chyba;
-		}
-
-		/** Zastaveno kvůli chybě stahování (ne kvůli zrušení). */
-		public boolean isChyba() {
-			return chyba;
 		}
 
 		public Akce getAkce() {
@@ -63,6 +54,7 @@ public final class FrontaPruvodce {
 	/** Kolikrát po spuštění položka nebyla ani ve stahování, ani hotová; po spuštění může stav chvíli zaostávat. */
 	private final Map<String, Integer> zpozdeni = new HashMap<>();
 	private boolean zastaveno;
+	private final Set<String> selhane = new java.util.LinkedHashSet<>();
 
 	public FrontaPruvodce(final PlanPruvodce plan) {
 		this.plan = plan;
@@ -97,7 +89,7 @@ public final class FrontaPruvodce {
 		int vrstevBezi = 0;
 		for (final Polozka p : plan.getPolozky()) {
 			final StavBunky s = stavy.apply(p.getId());
-			if (hotovo(s) || !(s == StavBunky.STAHUJE || spustene.contains(p.getId()))) {
+			if (hotovo(s) || selhala(p, s) || !(s == StavBunky.STAHUJE || spustene.contains(p.getId()))) {
 				continue;
 			}
 			if (p.isVrstva()) {
@@ -113,6 +105,11 @@ public final class FrontaPruvodce {
 			if (hotovo(s)) {
 				continue;
 			}
+			if (selhala(p, s)) {
+				// Selhaná položka dávku nezastaví; zbytek se dostahuje a na konci jde selhané zkusit znovu.
+				selhane.add(p.getId());
+				continue;
+			}
 			neco = true;
 			if (s == StavBunky.STAHUJE) {
 				continue;
@@ -122,10 +119,6 @@ public final class FrontaPruvodce {
 					dalsi = p;
 				}
 				continue;
-			}
-			if (s == StavBunky.CHYBA) {
-				zastaveno = true;
-				return new Krok(Akce.ZASTAVENO, p, true);
 			}
 			if (pocitejZpozdeni && zpozdeni.merge(p.getId(), 1, Integer::sum) >= 2) {
 				zastaveno = true;
@@ -137,6 +130,25 @@ public final class FrontaPruvodce {
 			return new Krok(Akce.STAHUJ, dalsi);
 		}
 		return new Krok(neco ? Akce.CEKEJ : Akce.HOTOVO, null);
+	}
+
+	/** Položka už byla spuštěna a skončila chybou. */
+	private boolean selhala(final Polozka p, final StavBunky s) {
+		return s == StavBunky.CHYBA && spustene.contains(p.getId());
+	}
+
+	/** Položky, které selhaly; dávka s nimi skončí jako HOTOVO a jdou zkusit znovu. */
+	public List<Polozka> getSelhane() {
+		return plan.getPolozky().stream().filter(p -> selhane.contains(p.getId())).collect(Collectors.toList());
+	}
+
+	/** Zkusit selhané znovu: znovu se spustí jen ony. */
+	public void znovuSelhane() {
+		for (final String id : selhane) {
+			spustene.remove(id);
+			zpozdeni.remove(id);
+		}
+		selhane.clear();
 	}
 
 	private boolean hotovo(final StavBunky s) {

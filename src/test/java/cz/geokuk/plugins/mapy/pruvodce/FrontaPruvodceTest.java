@@ -90,15 +90,22 @@ public class FrontaPruvodceTest {
 		assertEquals(st, f.dalsi(s::get, false).getPolozka().getId());
 	}
 
+	/** Selhaná položka dávku nezastaví: ostatní se dostáhnou, dávka skončí jako HOTOVO a selhané jdou zkusit znovu. */
 	@Test
-	public void chybaZastaviFrontu() {
+	public void chybaNezastaviDavku() {
 		final FrontaPruvodce f = new FrontaPruvodce(plan());
 		assertEquals(Akce.STAHUJ, f.dalsi(stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get).getAkce());
-		final FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.CHYBA, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get);
-		assertEquals(Akce.ZASTAVENO, k.getAkce());
-		assertEquals(MAPA, k.getPolozka().getId());
-		assertTrue("chyba, ne zrušení", k.isChyba());
-		assertEquals("a už nic dalšího", Akce.ZASTAVENO, f.dalsi(stavy(StavBunky.STAZENO, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get).getAkce());
+		final FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.CHYBA, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get, false);
+		assertEquals("po chybě mapy se pokračuje vrstvami", Akce.STAHUJ, k.getAkce());
+		assertEquals(TRASY, k.getPolozka().getId());
+		final Map<String, StavBunky> konec = stavy(StavBunky.CHYBA, StavBunky.STAZENO, StavBunky.STAZENO);
+		assertEquals(Akce.HOTOVO, f.dalsi(konec::get).getAkce());
+		assertEquals(Collections.singletonList(MAPA), f.getSelhane().stream().map(PlanPruvodce.Polozka::getId).collect(java.util.stream.Collectors.toList()));
+		f.znovuSelhane();
+		assertTrue(f.getSelhane().isEmpty());
+		final FrontaPruvodce.Krok znovu = f.dalsi(konec::get);
+		assertEquals("selhaná mapa se pustí znovu", Akce.STAHUJ, znovu.getAkce());
+		assertEquals(MAPA, znovu.getPolozka().getId());
 	}
 
 	@Test
@@ -118,7 +125,6 @@ public class FrontaPruvodceTest {
 		assertEquals("stav ještě nedoběhl", Akce.CEKEJ, f.dalsi(ke::get).getAkce());
 		final FrontaPruvodce.Krok krok = f.dalsi(ke::get);
 		assertEquals(Akce.ZASTAVENO, krok.getAkce());
-		assertFalse("zrušení není chyba", krok.isChyba());
 	}
 
 	@Test

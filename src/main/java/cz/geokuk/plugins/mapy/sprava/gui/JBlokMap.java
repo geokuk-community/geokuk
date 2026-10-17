@@ -81,6 +81,7 @@ public class JBlokMap extends JLabel {
 		setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
 		obsah.nactiStavSlozky = JBlokMap::nactiStavSlozky;
 		obsah.ulozStavSlozky = JBlokMap::ulozStavSlozky;
+		cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.setPoZmene(() -> javax.swing.SwingUtilities.invokeLater(() -> obsah.obnov(obsah.getRadky())));
 		obsah.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
 		obnov(java.util.Collections.emptyList());
 		popup.setDrzOtevreny(obsah::isHledaniAktivni);
@@ -151,6 +152,21 @@ public class JBlokMap extends JLabel {
 				final java.awt.Window okno = javax.swing.SwingUtilities.getWindowAncestor(JBlokMap.this);
 				new cz.geokuk.plugins.mapy.pruvodce.JStahnoutVse(okno instanceof java.awt.Frame ? (java.awt.Frame) okno : null,
 						new cz.geokuk.plugins.mapy.pruvodce.ProgramPruvodceKontext(spravaMap, null, kachleModel), nazevZeme, celekKlic, klice).setVisible(true);
+			}
+
+			@Override
+			public java.util.List<String> souhrnDavky() {
+				return cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.souhrn();
+			}
+
+			@Override
+			public void zkusZnovuDavku() {
+				cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.zkusZnovu();
+			}
+
+			@Override
+			public void zavriSouhrnDavky() {
+				cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.zavriSouhrn();
 			}
 
 			@Override
