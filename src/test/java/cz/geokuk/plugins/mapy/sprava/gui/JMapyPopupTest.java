@@ -625,7 +625,7 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, viditelnychLabelu(p, "Francie"));
 			Assert.assertEquals(1, viditelnychLabelu(p, "Spojené království"));
 			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
-			Assert.assertEquals("skupina bez celku (Spojené království, Afrika) má v buňce Mapa „jen regiony“, ostatní země ne", 2,
+			Assert.assertEquals("evropská skupina bez celku (Spojené království) má v buňce Mapa „jen regiony“, Afrika a ostatní země ne", 1,
 					viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
 			Assert.assertEquals("záhlaví sloupce Mapa", 1, viditelnychLabelu(p, JMapyPopup.SLOUPEC_MAPA));
 			p.prepniUzel("Německo");
