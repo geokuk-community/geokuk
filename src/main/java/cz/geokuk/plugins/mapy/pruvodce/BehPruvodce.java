@@ -6,6 +6,7 @@ import cz.geokuk.plugins.mapy.pruvodce.FrontaPruvodce.Akce;
 import cz.geokuk.plugins.mapy.pruvodce.FrontaPruvodce.Krok;
 import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Polozka;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky;
 
 /**
@@ -44,7 +45,7 @@ public final class BehPruvodce {
 
 	/** Jeden krok fronty; volat po každé změně stavu stahování nebo v pravidelných odstupech. */
 	public void krok() {
-		for (int i = 0; i < FrontaPruvodce.SOUBEZNE_VRSTVY + 1 && stav == Stav.BEZI; i++) {
+		for (int i = 0; i < SpravaMapModel.SOUBEZNE_VRSTVY + 1 && stav == Stav.BEZI; i++) {
 			if (!krokFronty(i == 0)) {
 				break;
 			}

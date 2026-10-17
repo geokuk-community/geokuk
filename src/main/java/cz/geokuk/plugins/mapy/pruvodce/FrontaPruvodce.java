@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Polozka;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap.StavBunky;
+import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 
 /**
  * Pořadí stahování z plánu průvodce. Stahovač zvládá jen jednu věc najednou, proto se další položka pustí, až předchozí skončí. Sama nic nestahuje:
@@ -77,9 +78,6 @@ public final class FrontaPruvodce {
 		zastaveno = true;
 	}
 
-	/** Kolik vrstev se smí stahovat naráz; mapa běží vedle nich, ale vždy jen jedna. */
-	static final int SOUBEZNE_VRSTVY = 2;
-
 	/**
 	 * Co dál: spustit další položku, čekat, nebo skončit. Volá se opakovaně; po STAHUJ ji volající zavolá znovu, dokud nepřijde CEKEJ.
 	 *
@@ -120,7 +118,7 @@ public final class FrontaPruvodce {
 				continue;
 			}
 			if (!spustene.contains(p.getId())) {
-				if (dalsi == null && (p.isVrstva() ? vrstevBezi < SOUBEZNE_VRSTVY : !mapaBezi)) {
+				if (dalsi == null && (p.isVrstva() ? vrstevBezi < SpravaMapModel.SOUBEZNE_VRSTVY : !mapaBezi)) {
 					dalsi = p;
 				}
 				continue;

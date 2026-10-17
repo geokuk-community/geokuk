@@ -77,15 +77,15 @@ public class JMapyPopup extends JPanel {
 	/** Šířka sloupce vrstvy (trasy, vrstevnice, stínování), ve všech oddílech stejná, aby byly buňky pod sebou. */
 	static final int SIRKA_BUNKY = 112;
 
+	static final String STAHNOUT_VSE = "Stáhnout vše";
+
 	/** Šířka sloupce s akcí mapy (Stáhnout, Zrušit…), ve všech oddílech stejná. */
-	/** Kolik vrstev se smí stahovat naráz; víc jich nejde spustit, mapa běží vedle nich. */
-	static final int SOUBEZNE_VRSTVY = 2;
+	static final int SIRKA_AKCE = 88;
+
 	private boolean mapaBezi;
 	/** Kolik se ještě dostahuje z běžících stahování; to místo se z volného odečítá. */
 	private long rozdelano;
 	private boolean vrstvyPlne;
-	static final String STAHNOUT_VSE = "Stáhnout vše";
-	static final int SIRKA_AKCE = 88;
 
 	/** Delší popis (třeba text chyby) se zkrátí, celý je v tooltipu. */
 	static final int SIRKA_POPISU = 176;
@@ -658,9 +658,10 @@ public class JMapyPopup extends JPanel {
 			if (r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje && r.velikost > 0) {
 				zbyva += Math.max(0, r.velikost - r.stazeno);
 			}
-			final MatriceMap.Bunka v = r.bezicVrstva();
-			if (v != null && v.getVelikost() > 0) {
-				zbyva += Math.max(0, v.getVelikost() - v.getStazeno());
+			for (final MatriceMap.Bunka v : r.bezicVrstvy()) {
+				if (v.getVelikost() > 0) {
+					zbyva += Math.max(0, v.getVelikost() - v.getStazeno());
+				}
 			}
 		}
 		return zbyva;
@@ -731,7 +732,7 @@ public class JMapyPopup extends JPanel {
 		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje || r.bezicVrstva() != null);
 		mapaBezi = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje);
 		rozdelano = zbyvaStahnout(radky);
-		vrstvyPlne = radky.stream().filter(r -> r.bezicVrstva() != null).count() >= SOUBEZNE_VRSTVY;
+		vrstvyPlne = radky.stream().mapToInt(r -> r.bezicVrstvy().size()).sum() >= SpravaMapModel.SOUBEZNE_VRSTVY;
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
