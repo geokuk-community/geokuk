@@ -162,7 +162,7 @@ public class NacitacGpxTest {
 		Assert.assertEquals("Kačer", z.waypointy.get(0).groundspeak.owner);
 		final List<String> varovani = zachycene.list.stream().filter(e -> e.getLevel() == ch.qos.logback.classic.Level.WARN).map(e -> e.getFormattedMessage())
 				.collect(java.util.stream.Collectors.toList());
-		Assert.assertEquals(Collections.singletonList("Nenumerické číslo vlastníka u 2 kešoidů, například \"abc\""), varovani);
+		Assert.assertEquals(Collections.singletonList("Nenumerické číslo vlastníka u 2 kešoidů v test.gpx, například \"abc\""), varovani);
 	}
 
 	@Test

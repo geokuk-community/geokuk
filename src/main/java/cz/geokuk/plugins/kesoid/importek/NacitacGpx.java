@@ -133,6 +133,8 @@ public class NacitacGpx extends NacitacInputStream0 {
 	/** Nečíselná čísla vlastníka v právě čteném souboru; hlásí se jednou za soubor, ne u každé keše. */
 	private int nenumerickychVlastniku;
 	private String prikladVlastnika;
+	/** Jméno čteného souboru pro hlášení; null u čtení bez jména. */
+	private String jmenoSouboru;
 
 	// priloudne do waypointu
 	public void load(final XMLStreamReader rdr, final IImportBuilder builder, final Future<?> future) throws XMLStreamException {
@@ -142,7 +144,7 @@ public class NacitacGpx extends NacitacInputStream0 {
 			nactiVse(rdr, builder, future);
 		} finally {
 			if (nenumerickychVlastniku > 0) {
-				log.warn("Nenumerické číslo vlastníka u {} kešoidů, například \"{}\"", nenumerickychVlastniku, prikladVlastnika);
+				log.warn("Nenumerické číslo vlastníka u {} kešoidů v {}, například \"{}\"", nenumerickychVlastniku, jmenoSouboru, prikladVlastnika);
 			}
 		}
 	}
@@ -217,7 +219,12 @@ public class NacitacGpx extends NacitacInputStream0 {
 		XMLStreamReader reader;
 		try {
 			reader = inputFactory.createXMLStreamReader(istm);
-			load(reader, builder, future);
+			jmenoSouboru = name;
+			try {
+				load(reader, builder, future);
+			} finally {
+				jmenoSouboru = null;
+			}
 		} catch (final XMLStreamException e) {
 			throw new IOException(e);
 		}
