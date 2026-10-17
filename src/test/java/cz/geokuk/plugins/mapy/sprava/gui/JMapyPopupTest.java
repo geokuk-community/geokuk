@@ -1404,4 +1404,47 @@ public class JMapyPopupTest {
 		}
 		SwingUtilities.invokeAndWait(() -> Assert.assertEquals("po odstupu se přestaví s novými řádky", 1, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size()));
 	}
+
+	/** Po přestavbě (třeba po kliku na Stáhnout) zůstane posuvník oddílu Ve složce i seznamu všech map na místě. */
+	@Test(timeout = 30000)
+	public void prestavbaZachovaPoziciPosuvniku() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JMapyPopup p = new JMapyPopup();
+		final List<RadekMapy> radky = new ArrayList<>();
+		for (int i = 0; i < 80; i++) {
+			radky.add(katalog("f/" + i, RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
+		}
+		for (int i = 0; i < 120; i++) {
+			radky.add(katalog("d/" + i, RadekMapy.Stav.NEMAME).build());
+		}
+		final int[] pred = new int[2];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				p.setDostupnaVyska(() -> 700);
+				p.setOvladani(new Zaznam());
+				p.prepniSlozku(true);
+				p.obnov(radky);
+				okno.add(p);
+				okno.pack();
+				okno.setVisible(true);
+				okno.validate();
+				Assert.assertNotNull("Ve složce je posuvné", p.getSlozkaPosuvnik());
+				p.getSlozkaPosuvnik().getVerticalScrollBar().setValue(300);
+				p.seznam().getVerticalScrollBar().setValue(400);
+				pred[0] = p.getSlozkaPosuvnik().getVerticalScrollBar().getValue();
+				pred[1] = p.seznam().getVerticalScrollBar().getValue();
+				Assert.assertTrue(pred[0] > 0 && pred[1] > 0);
+				final List<RadekMapy> zmena = new ArrayList<>(radky);
+				zmena.set(79, katalog("f/79", RadekMapy.Stav.STAHUJE).veSlozce(true).stazeno(MB).build());
+				p.obnov(zmena);
+			});
+			SwingUtilities.invokeAndWait(() -> {
+				Assert.assertEquals("Ve složce zůstalo na místě", pred[0], p.getSlozkaPosuvnik().getVerticalScrollBar().getValue());
+				Assert.assertEquals("seznam zůstal na místě", pred[1], p.seznam().getVerticalScrollBar().getValue());
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(okno::dispose);
+		}
+	}
 }

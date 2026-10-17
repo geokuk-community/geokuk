@@ -533,12 +533,12 @@ public class JMapyPopup extends JPanel {
 	private void prestavPopup() {
 		odlozenaPrestavba.stop();
 		rusenaMapa = null;
-		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
+		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
 		sestav();
 		posledniPrestavba = System.nanoTime();
-		if (seznam != null) {
-			seznam.getVerticalScrollBar().setValue(posun);
-		}
+		obnovPosuny(posuny);
+		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
+		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
 		zmenaObsahu();
 	}
 
@@ -550,6 +550,31 @@ public class JMapyPopup extends JPanel {
 	/** Přestavba odložená kvůli dávce čeká na spuštění. */
 	boolean isPrestavbaOdlozena() {
 		return odlozenaPrestavba.isRunning();
+	}
+
+	private transient JScrollPane slozkaPosuvnik;
+	private transient JScrollPane mistoPosuvnik;
+
+	private static int posun(final JScrollPane sp) {
+		return sp == null ? 0 : sp.getVerticalScrollBar().getValue();
+	}
+
+	/** Po přestavbě zůstanou posuvníky všech oddílů tam, kde byly, aby seznam po kliku na řádek neskočil nahoru. */
+	private void obnovPosuny(final int[] posuny) {
+		final JScrollPane[] sp = { slozkaPosuvnik, mistoPosuvnik, seznam };
+		for (int i = 0; i < sp.length; i++) {
+			if (sp[i] != null && posuny[i] > 0) {
+				sp[i].getVerticalScrollBar().setValue(posuny[i]);
+			}
+		}
+	}
+
+	JScrollPane seznam() {
+		return seznam;
+	}
+
+	JScrollPane getSlozkaPosuvnik() {
+		return slozkaPosuvnik;
 	}
 
 	private transient java.util.function.BooleanSupplier davkaBezi = () -> false;
@@ -1040,9 +1065,14 @@ public class JMapyPopup extends JPanel {
 		rozpocet = rozpocetSekci();
 		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
-		slozkaObal.add(sekce(slozka, prideleno[0]));
+		final JComponent slozkaSekce = sekce(slozka, prideleno[0]);
+		slozkaPosuvnik = slozkaSekce instanceof JScrollPane ? (JScrollPane) slozkaSekce : null;
+		slozkaObal.add(slozkaSekce);
+		mistoPosuvnik = null;
 		if (misto != null) {
-			mistoObal.add(sekce(misto, prideleno[1]));
+			final JComponent mistoSekce = sekce(misto, prideleno[1]);
+			mistoPosuvnik = mistoSekce instanceof JScrollPane ? (JScrollPane) mistoSekce : null;
+			mistoObal.add(mistoSekce);
 		}
 		if (uzivatelPise) {
 			cekaNaFokus = true;
