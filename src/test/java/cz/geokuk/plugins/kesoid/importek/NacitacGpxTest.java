@@ -136,6 +136,35 @@ public class NacitacGpxTest {
 		Assert.assertEquals("Geocache|Traditional Cache", kes.type);
 	}
 
+	/** GUID vlastníka (Lab Cache) není chyba; jiné nečíselné číslo se hlásí jednou za soubor, ne u každé keše. */
+	@Test
+	public void nenumerickyVlastnikJednouZaSoubor() throws Exception {
+		final int od = GPX_GEOGET.indexOf("<wpt");
+		final int po = GPX_GEOGET.indexOf("</wpt>") + "</wpt>".length();
+		final String wpt = GPX_GEOGET.substring(od, po);
+		final StringBuilder vse = new StringBuilder();
+		for (final String id : new String[] { "5b9f3c27-1d3e-4a8b-9c11-2f6e7d8a9b0c", "5B9F3C271D3E4A8B9C112F6E7D8A9B0C", "abc", "xyz" }) {
+			vse.append(wpt.replace("owner id=\"1487776\"", "owner id=\"" + id + "\""));
+		}
+		final String gpx = GPX_GEOGET.substring(0, od) + vse + GPX_GEOGET.substring(po);
+		final ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(NacitacGpx.class);
+		final ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> zachycene = new ch.qos.logback.core.read.ListAppender<>();
+		zachycene.start();
+		logger.addAppender(zachycene);
+		final Zaznam z;
+		try {
+			z = nacti(gpx);
+		} finally {
+			logger.detachAppender(zachycene);
+		}
+		Assert.assertEquals(nacti(GPX_GEOGET).waypointy.size() + 3, z.waypointy.size());
+		Assert.assertEquals(-999, z.waypointy.get(0).groundspeak.ownerid);
+		Assert.assertEquals("Kačer", z.waypointy.get(0).groundspeak.owner);
+		final List<String> varovani = zachycene.list.stream().filter(e -> e.getLevel() == ch.qos.logback.classic.Level.WARN).map(e -> e.getFormattedMessage())
+				.collect(java.util.stream.Collectors.toList());
+		Assert.assertEquals(Collections.singletonList("Nenumerické číslo vlastníka u 2 kešoidů v test.gpx, například \"abc\""), varovani);
+	}
+
 	@Test
 	public void groundspeak() throws Exception {
 		final Groundspeak gs = nacti(GPX_GEOGET).waypointy.get(0).groundspeak;

@@ -128,8 +128,28 @@ public class NacitacGpx extends NacitacInputStream0 {
 	// <groundspeak:short_description html;
 	private QName GS_SHORT_DESCRIPTION;
 
+	/** Číslo vlastníka v podobě GUID (třeba u Lab Cache); není chyba, číslo vlastníka prostě není. */
+	private static final java.util.regex.Pattern GUID = java.util.regex.Pattern.compile("[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}");
+	/** Nečíselná čísla vlastníka v právě čteném souboru; hlásí se jednou za soubor, ne u každé keše. */
+	private int nenumerickychVlastniku;
+	private String prikladVlastnika;
+	/** Jméno čteného souboru pro hlášení; null u čtení bez jména. */
+	private String jmenoSouboru;
+
 	// priloudne do waypointu
 	public void load(final XMLStreamReader rdr, final IImportBuilder builder, final Future<?> future) throws XMLStreamException {
+		nenumerickychVlastniku = 0;
+		prikladVlastnika = null;
+		try {
+			nactiVse(rdr, builder, future);
+		} finally {
+			if (nenumerickychVlastniku > 0) {
+				log.warn("Nenumerické číslo vlastníka u {} kešoidů v {}, například \"{}\"", nenumerickychVlastniku, jmenoSouboru, prikladVlastnika);
+			}
+		}
+	}
+
+	private void nactiVse(final XMLStreamReader rdr, final IImportBuilder builder, final Future<?> future) throws XMLStreamException {
 		// nejdrive naplnit tim co uz mame
 		while (rdr.hasNext()) {
 			if (future != null && future.isCancelled()) {
@@ -199,7 +219,12 @@ public class NacitacGpx extends NacitacInputStream0 {
 		XMLStreamReader reader;
 		try {
 			reader = inputFactory.createXMLStreamReader(istm);
-			load(reader, builder, future);
+			jmenoSouboru = name;
+			try {
+				load(reader, builder, future);
+			} finally {
+				jmenoSouboru = null;
+			}
 		} catch (final XMLStreamException e) {
 			throw new IOException(e);
 		}
@@ -349,7 +374,11 @@ public class NacitacGpx extends NacitacInputStream0 {
 					try {
 						wpt.groundspeak.ownerid = Integer.parseInt(ownerIdStr);
 					} catch (final NumberFormatException e) {
-						log.warn("Nenumerické číslo vlastníka: \"{}\" {}", ownerIdStr, wpt);
+						if (!GUID.matcher(ownerIdStr).matches()) {
+							if (nenumerickychVlastniku++ == 0) {
+								prikladVlastnika = ownerIdStr;
+							}
+						}
 						wpt.groundspeak.ownerid = -999;
 					}
 				}
