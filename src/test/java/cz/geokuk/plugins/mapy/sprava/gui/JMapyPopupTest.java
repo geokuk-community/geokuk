@@ -1384,4 +1384,18 @@ public class JMapyPopupTest {
 			Assert.assertTrue("v nízkém okně aspoň minimální rozpočet", nizke.rozpocetSekci() >= JMapyPopup.MIN_ROZPOCET);
 		});
 	}
+
+	/** Za ověřování staženého souboru je v buňce „Ověřuji N %“ a u položky není Zrušit; při stahování jsou procenta a Zrušit. */
+	@Test
+	public void overovaniVrstvyBezZrusit() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
+			Assert.assertFalse("při stahování je Zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.OVERUJE));
+			Assert.assertTrue("za ověřování není Zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Ověřuji ")));
+		});
+	}
 }
