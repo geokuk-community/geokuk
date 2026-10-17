@@ -44,6 +44,8 @@ final class StahovacMapy {
 
 	static final String PRIPONA = ".stahuje";
 	static final String PRIPONA_INFO = ".stahuje.info";
+	static final String SPOJENI_PRERUSENO = "Spojení se přerušilo, stahování lze dokončit.";
+	static final String STAHOVANI_PRERUSENO = "Stahování se přerušilo, lze ho dokončit.";
 	/** Rezerva volného místa, aby stažení nezaplnilo disk úplně. */
 	static final long REZERVA_MISTA = 50L * 1024 * 1024;
 	private static final Pattern CONTENT_RANGE = Pattern.compile("bytes (\\d{1,18})-(\\d{1,18})/(\\d{1,18})");
@@ -188,7 +190,7 @@ final class StahovacMapy {
 			} else if (slozka.getUsableSpace() < REZERVA_MISTA) {
 				text = "Na disku došlo místo. Rozpracovanou mapu můžete zahodit.";
 			} else {
-				text = "Stahování se přerušilo, lze ho dokončit.";
+				text = STAHOVANI_PRERUSENO;
 			}
 			return mistniStav(s, slozka).sFazi(Faze.CHYBA, text);
 		}
@@ -259,7 +261,7 @@ final class StahovacMapy {
 				return s.sFazi(Faze.ZRUSENO, null);
 			}
 			if (mame < celkem) {
-				return s.sFazi(Faze.CHYBA, "Spojení se přerušilo, stahování lze dokončit.");
+				return s.sFazi(Faze.CHYBA, SPOJENI_PRERUSENO);
 			}
 			return s;
 		} finally {
@@ -364,6 +366,11 @@ final class StahovacMapy {
 		}
 		log.info("Mapu {} nejde přesunout na {}: {}", cast, cil, String.valueOf(posledni));
 		return "Starou mapu " + cil.getName() + " nejde nahradit, asi ji používá jiný program. Stažení dokončíte znovu tlačítkem Stáhnout.";
+	}
+
+	/** Chyba stahování, která může být jen chvilková (přerušené spojení, přetížený server); takové stahování má smysl za chvíli zopakovat. */
+	static boolean lzeOpakovat(final String chyba) {
+		return SPOJENI_PRERUSENO.equals(chyba) || STAHOVANI_PRERUSENO.equals(chyba) || chyba != null && chyba.matches("Server odpověděl (5\\d\\d|429|408)\\.");
 	}
 
 	static final class Odpoved {

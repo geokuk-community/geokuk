@@ -101,7 +101,7 @@ public final class MatriceMap {
 			return stazeno;
 		}
 
-		/** Chyba pro uživatele, jen u stavu CHYBA. */
+		/** Chyba pro uživatele u stavu CHYBA; u STAHUJE text čekání na další pokus po přerušení, jinak null. */
 		public String getChyba() {
 			return chyba;
 		}
@@ -194,7 +194,7 @@ public final class MatriceMap {
 		}
 		final long stazeno = stav == StavBunky.STAZENO ? velikost : Math.min(s.getStazeno(), Math.max(velikost, 0));
 		final java.time.LocalDate datum = s.getDatumDatMistni() == null ? null : s.getDatumDatMistni().atZone(java.time.ZoneOffset.UTC).toLocalDate();
-		return new Bunka(Cast.MAPA, stav, m.getId(), velikost, stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null, datum);
+		return new Bunka(Cast.MAPA, stav, m.getId(), velikost, stazeno, stav == StavBunky.CHYBA || stav == StavBunky.STAHUJE ? s.getChyba() : null, datum);
 	}
 
 	static Bunka bunkaVrstvy(final Cast cast, final KatalogovaVrstva v, final StavVrstvy s) {
@@ -211,6 +211,6 @@ public final class MatriceMap {
 			stav = StavBunky.KE_STAZENI;
 		}
 		final long stazeno = stav == StavBunky.STAZENO ? v.getVelikost() : Math.min(s.getStazeno(), v.getVelikost());
-		return new Bunka(cast, stav, v.getId(), v.getVelikost(), stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null, v.getDatumDat());
+		return new Bunka(cast, stav, v.getId(), v.getVelikost(), stazeno, stav == StavBunky.CHYBA || stav == StavBunky.STAHUJE ? s.getChyba() : null, v.getDatumDat());
 	}
 }

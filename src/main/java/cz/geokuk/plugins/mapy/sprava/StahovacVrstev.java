@@ -156,7 +156,7 @@ final class StahovacVrstev {
 						return s.sFazi(Faze.ZRUSENO, null);
 					}
 					if (mame < so.getVelikost()) {
-						return s.sFazi(Faze.CHYBA, "Spojení se přerušilo, stahování lze dokončit.");
+						return s.sFazi(Faze.CHYBA, StahovacMapy.SPOJENI_PRERUSENO);
 					}
 				}
 				predchozi += so.getVelikost();
@@ -193,7 +193,7 @@ final class StahovacVrstev {
 			} else if (slozka.getUsableSpace() < StahovacMapy.REZERVA_MISTA) {
 				text = "Na disku došlo místo. Rozpracovanou vrstvu můžete zahodit.";
 			} else {
-				text = "Stahování se přerušilo, lze ho dokončit.";
+				text = StahovacMapy.STAHOVANI_PRERUSENO;
 			}
 			return mistniStav(s, slozka).sFazi(Faze.CHYBA, text);
 		}
