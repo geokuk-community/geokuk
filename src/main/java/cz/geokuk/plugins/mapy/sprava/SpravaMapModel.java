@@ -50,6 +50,8 @@ public class SpravaMapModel extends Model0 {
 	static final String STARA_SLOZKA_VRSTEV = "vrstvy";
 	/** Kopie staženého katalogu vrstev ve složce vrstev. */
 	static final String SOUBOR_KATALOGU = "layers.json";
+	/** Přípona souboru vedle kopie katalogu se značkou (ETag) jeho verze na serveru. */
+	static final String PRIPONA_ETAG = ".etag";
 
 	private final Supplier<KatalogMap> katalog;
 	private final Supplier<KatalogVrstev> katalogVrstev;
@@ -81,8 +83,8 @@ public class SpravaMapModel extends Model0 {
 	private Consumer<Event0<SpravaMapModel>> odpalovac = e -> SwingUtilities.invokeLater(() -> fire(e));
 	private KachleModel kachleModel;
 	private volatile long posledniPrubeh;
-	/** Jak starou kopii katalogu vrstev program sám obnoví. */
-	long stariKataloguMs = TimeUnit.HOURS.toMillis(24);
+	/** Jak často program sám ověří u serveru, jestli nemá novější katalog vrstev, než je kopie ve složce vrstev. */
+	long stariKataloguMs = TimeUnit.HOURS.toMillis(1);
 	/** Po nepovedeném samočinném stažení katalogu vrstev (třeba bez sítě) se další zkusí nejdřív za tuto dobu. */
 	long opakovaniKataloguNs = TimeUnit.HOURS.toNanos(1);
 	/** Čas posledního nepovedeného samočinného stažení katalogu, jen na vlákně kontroly; null = žádné. */
@@ -196,7 +198,7 @@ public class SpravaMapModel extends Model0 {
 				return;
 			}
 			try {
-				stahniKatalogVrstev(sv);
+				stahniKatalogVrstev(sv, false);
 			} catch (final IOException e) {
 				log.info("Katalog vrstev nejde stáhnout: {}", e.toString());
 				odpalovac.accept(new KatalogVrstevEvent(getKatalogVrstev(),
@@ -207,7 +209,8 @@ public class SpravaMapModel extends Model0 {
 	}
 
 	/**
-	 * Stáhne katalog vrstev na pozadí, když jeho kopie ve složce vrstev chybí nebo je starší než {@link #stariKataloguMs}. Bez sítě nebo při chybě serveru
+	 * Stáhne katalog vrstev na pozadí, když jeho kopie ve složce vrstev chybí, nebo když je kopie starší než {@link #stariKataloguMs} a server má novější
+	 * (podmíněný dotaz podle ETag, nezměněný katalog se nestahuje). Bez sítě nebo při chybě serveru
 	 * zůstane poslední kopie (nebo vestavěný katalog) a uživatel nic nevidí; další pokus nejdřív za {@link #opakovaniKataloguNs}.
 	 */
 	public void obnovKatalogVrstevKdyzJeStary() {
@@ -222,9 +225,10 @@ public class SpravaMapModel extends Model0 {
 				return;
 			}
 			try {
-				stahniKatalogVrstev(sv);
 				posledniPokusKatalogu = null;
-				obnovStavy();
+				if (stahniKatalogVrstev(sv, true)) {
+					obnovStavy();
+				}
 			} catch (final IOException e) {
 				posledniPokusKatalogu = ted;
 				log.info("Katalog vrstev nejde stáhnout, platí poslední známý: {}", e.toString());
@@ -232,16 +236,38 @@ public class SpravaMapModel extends Model0 {
 		});
 	}
 
-	/** Stáhne katalog vrstev, uloží jeho kopii do složky vrstev a ohlásí ho. Volá se na vlákně kontroly. */
-	private void stahniKatalogVrstev(final File sv) throws IOException {
-		final String text = stahovacVrstev.stahniKatalog(urlKataloguVrstev);
+	/**
+	 * Stáhne katalog vrstev, uloží jeho kopii do složky vrstev a ohlásí ho. Podmíněně stáhne jen katalog změněný od kopie; vrátí false, když se nezměnil.
+	 * Volá se na vlákně kontroly.
+	 */
+	private boolean stahniKatalogVrstev(final File sv, final boolean podminene) throws IOException {
+		final File kopie = new File(sv, SOUBOR_KATALOGU);
+		final File souborEtag = new File(sv, SOUBOR_KATALOGU + PRIPONA_ETAG);
+		String etag = null;
+		if (podminene && kopie.isFile() && souborEtag.isFile()) {
+			etag = new String(Files.readAllBytes(souborEtag.toPath()), StandardCharsets.UTF_8).trim();
+		}
+		final String[] novyEtag = new String[1];
+		final String text = stahovacVrstev.stahniKatalog(urlKataloguVrstev, etag == null || etag.isEmpty() ? null : etag, e -> novyEtag[0] = e);
+		if (text == null) {
+			if (!kopie.setLastModified(System.currentTimeMillis())) {
+				log.info("Čas ověření katalogu vrstev nejde zapsat do {}", kopie);
+			}
+			return false;
+		}
 		final KatalogVrstev k = KatalogVrstev.nacti(text, getKatalog());
 		Files.createDirectories(sv.toPath());
 		final File docasny = new File(sv, SOUBOR_KATALOGU + StahovacMapy.PRIPONA);
 		Files.write(docasny.toPath(), text.getBytes(StandardCharsets.UTF_8));
-		Files.move(docasny.toPath(), new File(sv, SOUBOR_KATALOGU).toPath(), StandardCopyOption.REPLACE_EXISTING);
+		Files.move(docasny.toPath(), kopie.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		if (novyEtag[0] == null) {
+			Files.deleteIfExists(souborEtag.toPath());
+		} else {
+			Files.write(souborEtag.toPath(), novyEtag[0].getBytes(StandardCharsets.UTF_8));
+		}
 		zmenKatalogVrstev(k, sv);
 		odpalovac.accept(new KatalogVrstevEvent(k, null));
+		return true;
 	}
 
 	/** Kopie staženého katalogu ve složce vrstev; čte se jednou pro každou složku. Volá se na vlákně kontroly. */
