@@ -8,13 +8,41 @@
   ikony zajímavých míst až v podrobnějším měřítku. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
   jiné; původní téma je tam jako Mapsforge (původní). Dlaždice v cache se
   jednou vykreslí znovu.
-- U země v popupu Mapy je odkaz Stáhnout vše: souhrn s velikostí a volným místem a
-  stažení mapy, tras, vrstevnic a stínování naráz. Vrstvy se stahují až dvě najednou,
-  i během stahování mapy.
+- Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
+  myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
+  nečitelné soubory), odkazem na složku offline map a na weby s mapami.
+  Najetím na řádek mapy se v mapě ukáže její obrys, stejně při stahování;
+  volbou v panelu jde ukázat obrysy všech map v přehledu (do zoomu 7). Při
+  hodně mapách mají sekce panelu posuvníky, v seznamu dalších map jde hledat a
+  země s regiony (Německo, Francie, Itálie, Nizozemsko, Španělsko, Spojené
+  království) se rozbalují.
+- Mapy zemí a regionů Evropy z download.mapsforge.org jde z panelu Offline
+  mapy stáhnout (po jedné, přerušené stahování pokračuje) a na požádání
+  zkontrolovat, jestli nejsou novější. Panel ukáže výsledek kontroly a při
+  stahování odhad zbývajícího času; mapu, která se nevejde na disk, nejde
+  stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
+  po regionech (dvojitě stažená), panel na to upozorní a nabídne smazat
+  regiony, nebo celek.
+- V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistické a
+  cyklotrasy, vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a
+  Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
+  spolu s offline mapou, stínování jde vypnout. Seznam vrstev ke stažení si
+  program sám obnoví při startu a při otevření panelu, nejvýš jednou denně.
+  Mapy ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
+  Nahoře v panelu je Dostáhnout vrstvy ke staženým mapám: stáhne chybějící
+  nebo zastaralé vrstvy ke všem staženým mapám.
+- U země v panelu Offline mapy je odkaz Stáhnout vše: souhrn s velikostí a
+  volným místem (části jdou odškrtnout) a stažení mapy, tras, vrstevnic a
+  stínování naráz. Vrstvy se stahují až dvě najednou, i během stahování mapy.
+  U země stažené celé stáhne i vrstvy, které existují jen po regionech, bez
+  základních map regionů.
+- Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
+  se otevře sám) nabídne Česko a okolí (hledat jde i jinou zemi nebo region),
+  vybere podklad a vrstvy, stáhne jen to, co chybí, a přepne mapu. Před
+  velkým stažením (nad 5 základních map nebo 10 GB) se zeptá na potvrzení.
 - Zdroje map jsou v mapě na jednom řádku vpravo dole s ikonou ⓘ, plné znění se
-  ukáže po kliku na ikonu. Měřítko je vlevo dole.
-- Nahoře v popupu Mapy je Dostáhnout vrstvy ke staženým mapám. Stáhnout vše u země
-  stáhne i vrstvy, které existují jen po regionech, bez základních map regionů.
+  ukáže po kliku na ikonu. Měřítko je vlevo dole. Atribuce dat vrstev
+  (OpenStreetMap, Copernicus) je tamtéž.
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 25.
@@ -23,7 +51,8 @@
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
   tím změní a její dlaždice v cache se jednou vykreslí znovu.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
-  žádná není (třeba jen s přehledovou mapou světa při větším přiblížení).
+  žádná není (třeba jen s přehledovou mapou světa při větším přiblížení), a
+  nabídne její stažení; u hranice i sousední mapy, které jsou v záběru.
 - Nové mapové podklady pro sousední země: DE topografická mapa (BKG
   TopPlusOpen), AT mapa (basemap.at) a CH topografická mapa (swisstopo).
   Německou a švýcarskou mapu nejde hromadně stahovat do cache.
@@ -76,31 +105,6 @@
 - Informace pro hlášení chyby uvádějí i offline mapy: verzi knihovny
   mapsforge, téma, soubory map (velikost, datum dat, oblast, zoomy, verze
   formátu), přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
-- Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
-  myší se otevře jejich seznam (velikost, datum dat, nečitelné soubory),
-  odkaz na složku offline map a na weby s mapami. Najetím na řádek mapy se v
-  mapě ukáže její obrys, stejně při stahování; volbou v popupu jde ukázat
-  obrysy všech map v přehledu (do zoomu 7). Mapy zemí a regionů Evropy z
-  download.mapsforge.org jde z popupu stáhnout (po jedné, přerušené stahování
-  pokračuje) a na požádání zkontrolovat, jestli nejsou novější; popup ukáže
-  výsledek kontroly, při stahování odhad zbývajícího času a mapu, která se
-  nevejde na disk, nejde stáhnout (tlačítko je vypnuté s vysvětlením). Když pro
-  zobrazené místo offline mapa chybí, rada v mapě nabídne její stažení,
-  u hranice i sousední mapy, které jsou v záběru.
-  Seznam dalších map je větší, jde v něm hledat a země s regiony (Německo, Francie, Itálie,
-  Nizozemsko, Španělsko, Spojené království) se rozbalují.
-  Když je země ve složce celá i po regionech (dvojitě stažená), popup na to
-  upozorní a nabídne smazat regiony, nebo celek.
-- V popupu Mapy jde ke každé mapě Evropy stáhnout turistické a cyklotrasy,
-  vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a Stínování), i
-  k mapě, která ještě není stažená. Stažené vrstvy se kreslí spolu s offline
-  mapou, stínování jde v popupu vypnout. Atribuce dat (OpenStreetMap,
-  Copernicus) je v rohu mapy. Seznam vrstev ke stažení si program sám obnoví
-  při startu a při otevření popupu, nejvýš jednou denně. Mapy ve složce jde
-  sbalit a stažené regiony jsou seskupené pod zemí.
-- Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
-  se otevře sám) vybere zemi, podklad a vrstvy, stáhne jen to, co chybí, a
-  přepne mapu.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
