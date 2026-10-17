@@ -1379,4 +1379,29 @@ public class JMapyPopupTest {
 			Assert.assertTrue("v nízkém okně aspoň minimální rozpočet", nizke.rozpocetSekci() >= JMapyPopup.MIN_ROZPOCET);
 		});
 	}
+
+	/** Za hromadné dávky se změna struktury nepřestaví hned, ale až po odstupu, a to jednou s nejnovějšími řádky. */
+	@Test(timeout = 30000)
+	public void behemDavkyPrestavbaPopupuCeka() throws Exception {
+		final JMapyPopup[] pp = new JMapyPopup[1];
+		SwingUtilities.invokeAndWait(() -> {
+			pp[0] = new JMapyPopup();
+			pp[0].odstupPrestavbyMs = 300;
+			pp[0].setDavkaBezi(() -> true);
+			pp[0].setOvladani(new Zaznam());
+			pp[0].obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.NEMAME).build()));
+			pp[0].obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.AKTUALNI).veSlozce(true).build()));
+			Assert.assertTrue("přestavba čeká", pp[0].isPrestavbaOdlozena());
+			Assert.assertEquals("zatím je vidět starý stav", 0, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size());
+		});
+		while (true) {
+			final boolean[] ceka = new boolean[1];
+			SwingUtilities.invokeAndWait(() -> ceka[0] = pp[0].isPrestavbaOdlozena());
+			if (!ceka[0]) {
+				break;
+			}
+			Thread.sleep(50);
+		}
+		SwingUtilities.invokeAndWait(() -> Assert.assertEquals("po odstupu se přestaví s novými řádky", 1, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size()));
+	}
 }

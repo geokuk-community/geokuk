@@ -54,6 +54,7 @@ public final class BehPruvodce {
 
 	/** Jeden krok fronty; vrací, jestli se spustila další položka (a má smysl zkusit ještě jednu). */
 	private boolean krokFronty(final boolean prvni) {
+		obnovSnimek();
 		final Krok k = fronta.dalsi(this::stavPodleId, prvni);
 		boolean spusteno = false;
 		switch (k.getAkce()) {
@@ -111,14 +112,8 @@ public final class BehPruvodce {
 	}
 
 	private String chybaPodleId(final String id) {
-		for (final MatriceMap.Radek r : kontext.matice()) {
-			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
-				if (id.equals(r.getBunka(c).getId())) {
-					return r.getBunka(c).getChyba();
-				}
-			}
-		}
-		return null;
+		final MatriceMap.Bunka b = snimek.get(id);
+		return b == null ? null : b.getChyba();
 	}
 
 	private void konec(final Stav novy) {
@@ -139,14 +134,22 @@ public final class BehPruvodce {
 	}
 
 	private StavBunky stavPodleId(final String id) {
+		final MatriceMap.Bunka b = snimek.get(id);
+		return b == null ? StavBunky.NENI : b.getStav();
+	}
+
+	/** Buňky matice podle id mapy nebo vrstvy; matice se sestavuje jednou za krok, ne při každém dotazu na stav položky. */
+	private void obnovSnimek() {
+		snimek = new java.util.HashMap<>();
 		for (final MatriceMap.Radek r : kontext.matice()) {
 			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
 				final MatriceMap.Bunka b = r.getBunka(c);
-				if (id.equals(b.getId())) {
-					return b.getStav();
+				if (b.getId() != null) {
+					snimek.putIfAbsent(b.getId(), b);
 				}
 			}
 		}
-		return StavBunky.NENI;
 	}
+
+	private java.util.Map<String, MatriceMap.Bunka> snimek = new java.util.HashMap<>();
 }

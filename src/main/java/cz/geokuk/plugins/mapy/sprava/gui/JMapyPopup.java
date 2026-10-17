@@ -13,6 +13,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
 import javax.swing.*;
@@ -520,13 +521,44 @@ public class JMapyPopup extends JPanel {
 			}
 			return;
 		}
+		// Za hromadné dávky stahování se mění stavy po každém souboru; celá přestavba popupu je drahá, proto se spojuje do jedné za odstup.
+		if (davkaBezi.getAsBoolean() && System.nanoTime() - posledniPrestavba < TimeUnit.MILLISECONDS.toNanos(odstupPrestavbyMs)) {
+			odlozenaPrestavba.setInitialDelay(odstupPrestavbyMs);
+			odlozenaPrestavba.restart();
+			return;
+		}
+		prestavPopup();
+	}
+
+	private void prestavPopup() {
+		odlozenaPrestavba.stop();
 		rusenaMapa = null;
 		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
 		sestav();
+		posledniPrestavba = System.nanoTime();
 		if (seznam != null) {
 			seznam.getVerticalScrollBar().setValue(posun);
 		}
 		zmenaObsahu();
+	}
+
+	/** Za hromadné dávky stahování se popup nepřestavuje po každé změně stavu, ale nejvýš jednou za {@link #odstupPrestavbyMs}. */
+	public void setDavkaBezi(final java.util.function.BooleanSupplier davkaBezi) {
+		this.davkaBezi = davkaBezi;
+	}
+
+	/** Přestavba odložená kvůli dávce čeká na spuštění. */
+	boolean isPrestavbaOdlozena() {
+		return odlozenaPrestavba.isRunning();
+	}
+
+	private transient java.util.function.BooleanSupplier davkaBezi = () -> false;
+	int odstupPrestavbyMs = 5000;
+	private long posledniPrestavba;
+	private final javax.swing.Timer odlozenaPrestavba = new javax.swing.Timer(5000, e -> prestavPopup());
+
+	{
+		odlozenaPrestavba.setRepeats(false);
 	}
 
 	List<RadekMapy> getRadky() {
