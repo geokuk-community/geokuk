@@ -1592,7 +1592,12 @@ public class JMapyPopup extends JPanel {
 		if (b.getVelikost() <= 0) {
 			return b.isOveruje() ? "Ověřuji…" : "";
 		}
-		final String p = Math.min(100, b.getStazeno() * 100 / b.getVelikost()) + " %";
+		final long stazeno = b.getStazeno();
+		if (b.isOveruje() && (stazeno <= 0 || stazeno >= b.getVelikost())) {
+			// Průběh nic neříká (začátek nebo hotovo bez hlášení průběhu): bez procent.
+			return "Ověřuji…";
+		}
+		final String p = Math.min(100, stazeno * 100 / b.getVelikost()) + " %";
 		return b.isOveruje() ? "Ověřuji " + p : p;
 	}
 

@@ -1395,7 +1395,20 @@ public class JMapyPopupTest {
 			Assert.assertFalse("při stahování je Zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.OVERUJE));
 			Assert.assertTrue("za ověřování není Zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Ověřuji ")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Ověřuji")));
+		});
+	}
+
+	/** Řádek mapy při ověřování staženého souboru nemá Zrušit; při stahování ano. */
+	@Test
+	public void overovaniMapyBezZrusit() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.STAHUJE).stazeno(MB).build()));
+			Assert.assertFalse("při stahování je Zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
+			p.obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.STAHUJE).stazeno(MB).overuje(true).build()));
+			Assert.assertTrue("při ověřování není Zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
 		});
 	}
 }

@@ -204,7 +204,8 @@ public final class RadekMapy {
 				return chyba;
 			}
 			if (overuje) {
-				return velikost > 0 ? String.format(new Locale("cs"), "Ověřuji %d %%", procenta()) : "Ověřuji…";
+				// Stahovač map při ověřování průběh nehlásí.
+				return "Ověřuji…";
 			}
 			return velikost > 0 ? String.format(new Locale("cs"), "%d %% z %s", procenta(), velikost(velikost)) : "Stahuje se " + velikost(stazeno);
 		case NOVEJSI:
