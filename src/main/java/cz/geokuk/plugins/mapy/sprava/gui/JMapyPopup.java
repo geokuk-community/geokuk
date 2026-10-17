@@ -533,12 +533,8 @@ public class JMapyPopup extends JPanel {
 	private void prestavPopup() {
 		odlozenaPrestavba.stop();
 		rusenaMapa = null;
-		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
 		sestav();
 		posledniPrestavba = System.nanoTime();
-		obnovPosuny(posuny);
-		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
-		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
 		zmenaObsahu();
 	}
 
@@ -773,7 +769,16 @@ public class JMapyPopup extends JPanel {
 
 	private int sirkaNazvu;
 
+	/** Sestaví popup znovu a nechá posuvníky všech oddílů tam, kde byly (klik na řádek ani šipka uzlu neskočí nahoru). */
 	private void sestav() {
+		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
+		sestavZNovu();
+		obnovPosuny(posuny);
+		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
+		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
+	}
+
+	private void sestavZNovu() {
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();

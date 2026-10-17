@@ -1452,4 +1452,36 @@ public class JMapyPopupTest {
 			SwingUtilities.invokeAndWait(okno::dispose);
 		}
 	}
+
+	/** I přepnutí šipky složky (přestavba mimo obnov) nechá posuvník Ve složce na místě. */
+	@Test(timeout = 30000)
+	public void prepnutiSlozkyZachovaPosuvnik() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JMapyPopup p = new JMapyPopup();
+		final List<RadekMapy> radky = new ArrayList<>();
+		for (int i = 0; i < 80; i++) {
+			radky.add(katalog("f/" + i, RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
+		}
+		final int[] pred = new int[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				p.setDostupnaVyska(() -> 500);
+				p.setOvladani(new Zaznam());
+				p.prepniSlozku(true);
+				p.obnov(radky);
+				okno.add(p);
+				okno.pack();
+				okno.setVisible(true);
+				okno.validate();
+				p.getSlozkaPosuvnik().getVerticalScrollBar().setValue(250);
+				pred[0] = p.getSlozkaPosuvnik().getVerticalScrollBar().getValue();
+				Assert.assertTrue(pred[0] > 0);
+				p.setStinovaniDostupne(true);
+			});
+			SwingUtilities.invokeAndWait(() -> Assert.assertEquals("po přestavbě mimo obnov zůstalo na místě", pred[0], p.getSlozkaPosuvnik().getVerticalScrollBar().getValue()));
+		} finally {
+			SwingUtilities.invokeAndWait(okno::dispose);
+		}
+	}
 }
