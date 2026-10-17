@@ -13,6 +13,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,9 +44,20 @@ public final class KatalogVrstev {
 	private static volatile KatalogVrstev vestaveny;
 
 	private final List<KatalogovaVrstva> vrstvy;
+	/** Indexy pro dotazy z GUI, které se volají pro každou buňku seznamu map. */
+	private final Map<String, KatalogovaVrstva> podleId = new HashMap<>();
+	private final Map<String, KatalogovaVrstva> podleKliceATypu = new HashMap<>();
+	private final Map<String, KatalogovaVrstva> podleCesty = new HashMap<>();
 
 	private KatalogVrstev(final List<KatalogovaVrstva> vrstvy) {
 		this.vrstvy = Collections.unmodifiableList(vrstvy);
+		for (final KatalogovaVrstva v : vrstvy) {
+			podleId.putIfAbsent(v.getId(), v);
+			podleKliceATypu.putIfAbsent(v.getKlic() + "|" + v.getTyp(), v);
+			for (final Soubor so : v.getSoubory()) {
+				podleCesty.putIfAbsent(so.getCesta().toLowerCase(Locale.ROOT), v);
+			}
+		}
 	}
 
 	/** Katalog z jaru; obrysy pokrytí bere z vestavěného katalogu map. */
@@ -300,17 +312,17 @@ public final class KatalogVrstev {
 	}
 
 	public Optional<KatalogovaVrstva> podleId(final String id) {
-		return vrstvy.stream().filter(v -> v.getId().equals(id)).findFirst();
+		return Optional.ofNullable(podleId.get(id));
 	}
 
 	/** Vrstva, ke které patří soubor s touto cestou ve složce vrstev (s lomítky); prázdné = soubor uživatele. */
 	public Optional<KatalogovaVrstva> podleCesty(final String cesta) {
-		return vrstvy.stream().filter(v -> v.getSoubory().stream().anyMatch(s -> s.getCesta().equalsIgnoreCase(cesta))).findFirst();
+		return Optional.ofNullable(podleCesty.get(cesta.toLowerCase(Locale.ROOT)));
 	}
 
 	/** Vrstva daného typu k základní mapě s tímto klíčem (cesta mapy na serveru bez přípony); pro sloupce Správy map. */
 	public Optional<KatalogovaVrstva> vrstva(final String klic, final Typ typ) {
-		return vrstvy.stream().filter(v -> v.getKlic().equals(klic) && v.getTyp() == typ).findFirst();
+		return Optional.ofNullable(podleKliceATypu.get(klic + "|" + typ));
 	}
 
 	/**

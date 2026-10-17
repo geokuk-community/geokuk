@@ -212,6 +212,13 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public void zkontrolujKatalogVrstev() {
+				if (spravaMap != null) {
+					spravaMap.zkontrolujKatalogVrstev();
+				}
+			}
+
+			@Override
 			public boolean isObrysDostupny() {
 				return true;
 			}

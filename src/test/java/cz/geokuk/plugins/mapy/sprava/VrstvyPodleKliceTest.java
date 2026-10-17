@@ -58,7 +58,12 @@ public class VrstvyPodleKliceTest {
 				ex.sendResponseHeaders(d == null ? 404 : kod, -1);
 				return;
 			}
-			ex.getResponseHeaders().add("ETag", "\"v-1\"");
+			final String etag = "\"v-" + Arrays.hashCode(d) + "\"";
+			if (etag.equals(ex.getRequestHeaders().getFirst("If-None-Match"))) {
+				ex.sendResponseHeaders(304, -1);
+				return;
+			}
+			ex.getResponseHeaders().add("ETag", etag);
 			ex.sendResponseHeaders(200, d.length);
 			try (OutputStream out = ex.getResponseBody()) {
 				out.write(d);
@@ -195,7 +200,7 @@ public class VrstvyPodleKliceTest {
 		model.pockej();
 		assertEquals("čerstvá kopie se znovu nestahuje", 1, dotazyNaKatalog.get());
 
-		assertTrue(kopie.setLastModified(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(25)));
+		assertTrue(kopie.setLastModified(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2)));
 		kodKatalogu = 404;
 		final int udalostiPred = udalosti.size();
 		model.obnovKatalogVrstevKdyzJeStary();
@@ -214,6 +219,76 @@ public class VrstvyPodleKliceTest {
 		model.pockej();
 		assertEquals(3, dotazyNaKatalog.get());
 		assertTrue("stará kopie se obnoví", System.currentTimeMillis() - kopie.lastModified() < TimeUnit.HOURS.toMillis(1));
+	}
+
+	/** Kopie katalogu starší než hodina se ověří podmíněným dotazem: nezměněný katalog se nestahuje, novější (třeba s vícedílnou vrstvou) se převezme. */
+	@Test
+	public void novejsiKatalogVrstevSePrevezmeDoHodiny() throws Exception {
+		final File mapy = tmp.newFolder("offline-mapy");
+		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.nastavProTest(() -> mapy, udalosti::add);
+		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
+		katalog = katalogBavorska();
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(2, model.getKatalogVrstev().getVrstvy().size());
+		final File kopie = new File(mapy, "layers/layers.json");
+
+		assertTrue(kopie.setLastModified(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(90)));
+		final int udalostiPred = udalosti.size();
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(2, dotazyNaKatalog.get());
+		assertFalse("nezměněný katalog se znovu neohlásí", udalosti.subList(udalostiPred, udalosti.size()).stream().anyMatch(e -> e instanceof KatalogVrstevEvent));
+		assertTrue("ověření se počítá od teď", System.currentTimeMillis() - kopie.lastModified() < TimeUnit.MINUTES.toMillis(1));
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals("do hodiny se znovu neověřuje", 2, dotazyNaKatalog.get());
+
+		final StringBuilder dily = new StringBuilder();
+		for (int i = 1; i <= 4; i++) {
+			dily.append(i == 1 ? "" : ",").append(KatalogVrstevTest.soubor("europe_germany_bayern.contours." + i + ".map", "europe/germany/bayern.contours." + i + ".map",
+					"layers-2026-10b/europe_germany_bayern.contours." + i + ".map", 10, sha(new byte[10])));
+		}
+		katalog = katalogBavorska().replace("]}", "," + KatalogVrstevTest.vrstva("contours/europe/germany/bayern", "contours", "europe/germany/bayern", "map", dily.toString(), "")
+				+ "]}");
+		assertTrue(kopie.setLastModified(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(90)));
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(3, dotazyNaKatalog.get());
+		final KatalogovaVrstva vrstevnice = model.getKatalogVrstev().vrstva("europe/germany/bayern", Typ.VRSTEVNICE).get();
+		assertEquals(4, vrstevnice.getSoubory().size());
+		assertSame(model.getKatalogVrstev(), posledni(udalosti).getKatalog());
+	}
+
+	/** Na žádost uživatele (Zkontrolovat aktualizace) se katalog ověří hned, i když je kopie čerstvá; nezměněný se nestahuje. */
+	@Test
+	public void kontrolaKataloguVrstevNaZadostHned() throws Exception {
+		final File mapy = tmp.newFolder("offline-mapy");
+		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.nastavProTest(() -> mapy, udalosti::add);
+		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
+		katalog = katalogBavorska();
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(1, dotazyNaKatalog.get());
+
+		final int udalostiPred = udalosti.size();
+		model.zkontrolujKatalogVrstev();
+		model.pockej();
+		assertEquals("čerstvá kopie se na žádost ověří", 2, dotazyNaKatalog.get());
+		assertFalse("nezměněný katalog se neohlásí", udalosti.subList(udalostiPred, udalosti.size()).stream().anyMatch(e -> e instanceof KatalogVrstevEvent));
+
+		katalog = katalogBavorska().replace("]}", "," + KatalogVrstevTest.vrstva("contours/europe/germany/bayern", "contours", "europe/germany/bayern", "map",
+				KatalogVrstevTest.soubor("europe_germany_bayern.contours.map", "europe/germany/bayern.contours.map", "layers-2026-10b/europe_germany_bayern.contours.map", 10,
+						sha(new byte[10])), "") + "]}");
+		model.zkontrolujKatalogVrstev();
+		model.pockej();
+		assertEquals(3, dotazyNaKatalog.get());
+		assertTrue("změněný katalog se převezme", model.getKatalogVrstev().vrstva("europe/germany/bayern", Typ.VRSTEVNICE).isPresent());
+		assertSame(model.getKatalogVrstev(), posledni(udalosti).getKatalog());
 	}
 
 	private static KatalogVrstevEvent posledni(final List<Event0<SpravaMapModel>> udalosti) {

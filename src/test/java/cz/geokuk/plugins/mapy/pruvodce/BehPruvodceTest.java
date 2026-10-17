@@ -38,6 +38,7 @@ public class BehPruvodceTest {
 		int zruseni;
 		boolean obsazeno;
 		int pokusy;
+		int volaniMatice;
 
 		String dej(final String id) {
 			return stav.getOrDefault(id, "NEMAME");
@@ -50,6 +51,7 @@ public class BehPruvodceTest {
 
 		@Override
 		public List<MatriceMap.Radek> matice() {
+			volaniMatice++;
 			return MatriceMap.sestav(KatalogMap.vestaveny(),
 					m -> StavMapyProGui.stav(m, "MAME".equals(dej(m.getId())) ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY,
 							"STAHUJE".equals(dej(m.getId())) ? StavMapy.Faze.STAHUJE : "CHYBA".equals(dej(m.getId())) ? StavMapy.Faze.CHYBA : StavMapy.Faze.NIC, 0, -1, "CHYBA".equals(dej(m.getId())) ? "chyba" : null),
@@ -197,5 +199,16 @@ public class BehPruvodceTest {
 		zrusena.krok();
 		assertEquals(Stav.ZASTAVENO, zrusena.getStav());
 		assertNull("zrušení není chyba, žádná hláška", zrusena.getSelhala());
+	}
+
+	/** Matice (celý katalog map a vrstev) se v kroku sestaví jednou, ne pro každou položku plánu; na pomalém PC to byly sekundy na EDT. */
+	@Test
+	public void krokSestaviMaticiJenJednou() {
+		final Kontext k = new Kontext();
+		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI), s -> {});
+		k.obsazeno = true;
+		k.volaniMatice = 0;
+		beh.krok();
+		assertTrue("sestavení matice: " + k.volaniMatice, k.volaniMatice <= 2);
 	}
 }

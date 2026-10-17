@@ -892,6 +892,7 @@ public class JMapyPopup extends JPanel {
 		if (!kontrolovatelne.isEmpty()) {
 			final JButton zkontrolovat = odkaz(ZKONTROLOVAT, e -> {
 				if (ovladani != null) {
+					ovladani.zkontrolujKatalogVrstev();
 					for (final RadekMapy r : kontrolovatelne) {
 						ovladani.zkontroluj(r.id);
 					}
@@ -1285,7 +1286,7 @@ public class JMapyPopup extends JPanel {
 
 	/** Země, kterou nejde stáhnout celou, jen po regionech: vypadá jako ostatní země (název s šipkou rozbalení), v buňce Mapa je „jen regiony“. */
 	private int radekZemeBezCelku(final JPanel panel, final int y, final Uzel u) {
-		return radekZemeBezCelku(panel, y, u, JEN_REGIONY, false, null);
+		return radekZemeBezCelku(panel, y, u, u.regiony.stream().allMatch(r -> r.id.startsWith("europe/")) ? JEN_REGIONY : "", false, null);
 	}
 
 	/** Řádek země bez celku; v oddílu Ve složce s vlastním popisem (souhrn regionů) a vlastním přepínáním, v seznamu dalších map s hledáním. */
