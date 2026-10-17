@@ -46,7 +46,7 @@ public class RadkyMapTest {
 	@Test
 	public void popisPrubehu() {
 		Assert.assertEquals("25 % z 400 MB", radek(NEMAME, NEZNAMY, STAHUJE, 100_000_000L, 400_000_000L, null).popis());
-		Assert.assertEquals("Ověřuji…", radek(NEMAME, NEZNAMY, OVERUJE, 400_000_000L, 400_000_000L, null).popis());
+		Assert.assertEquals("Ověřuji 100 %", radek(NEMAME, NEZNAMY, OVERUJE, 400_000_000L, 400_000_000L, null).popis());
 		Assert.assertEquals("Zjišťuji na serveru…", radek(MAME, NEZNAMY, KONTROLUJE, 0, -1, null).popis());
 		final RadekMapy rozpracovana = radek(NEMAME, NEZNAMY, ZRUSENO, 100_000_000L, 400_000_000L, null);
 		Assert.assertEquals(RadekMapy.Stav.NEMAME, rozpracovana.getStav());
