@@ -513,6 +513,7 @@ public class JMapyPopup extends JPanel {
 					}
 					for (final JLabel postup : postupVrstev.getOrDefault(klic(r) + "#" + c, Collections.emptyList())) {
 						postup.setText(procenta(vrstva));
+						postup.setToolTipText(vrstva.getChyba());
 					}
 				}
 			}
@@ -604,7 +605,7 @@ public class JMapyPopup extends JPanel {
 		for (final MatriceMap.Cast c : VRSTVY) {
 			final MatriceMap.Bunka b = r.bunka(c);
 			if (b != null) {
-				sb.append(b.getStav()).append(b.getChyba() != null).append(nedostatekMista(b)).append(',');
+				sb.append(b.getStav()).append(b.isOveruje()).append(b.getChyba() != null).append(nedostatekMista(b)).append(',');
 			}
 		}
 		return sb.toString();
@@ -1634,14 +1635,18 @@ public class JMapyPopup extends JPanel {
 		case STAHUJE: {
 			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.STAHUJE)));
 			final JLabel procenta = maly(procenta(b));
+			procenta.setToolTipText(b.getChyba());
 			postupVrstev.computeIfAbsent(klic(r) + "#" + cast, k -> new ArrayList<>()).add(procenta);
 			p.add(procenta);
-			final JButton zrusit = odkaz(ZRUSIT, e -> {
-				if (ovladani != null) {
-					ovladani.zrusStahovani();
-				}
-			});
-			p.add(zrusit);
+			// Za ověřování staženého souboru se položka nezrušuje; zrušit jde jen celá dávka.
+			if (!b.isOveruje()) {
+				final JButton zrusit = odkaz(ZRUSIT, e -> {
+					if (ovladani != null) {
+						ovladani.zrusStahovani();
+					}
+				});
+				p.add(zrusit);
+			}
 			return p;
 		}
 		case CHYBA: {
@@ -1688,8 +1693,18 @@ public class JMapyPopup extends JPanel {
 		}
 	}
 
-	private static String procenta(final MatriceMap.Bunka b) {
-		return b.getVelikost() > 0 ? Math.min(100, b.getStazeno() * 100 / b.getVelikost()) + " %" : "";
+	/** „37 %“ při stahování, „Ověřuji 37 %“ při ověřování staženého souboru. */
+	static String procenta(final MatriceMap.Bunka b) {
+		if (b.getVelikost() <= 0) {
+			return b.isOveruje() ? "Ověřuji…" : "";
+		}
+		final long stazeno = b.getStazeno();
+		if (b.isOveruje() && (stazeno <= 0 || stazeno >= b.getVelikost())) {
+			// Průběh nic neříká (začátek nebo hotovo bez hlášení průběhu): bez procent.
+			return "Ověřuji…";
+		}
+		final String p = Math.min(100, stazeno * 100 / b.getVelikost()) + " %";
+		return b.isOveruje() ? "Ověřuji " + p : p;
 	}
 
 	static String nazevVrstvy(final MatriceMap.Cast cast) {
@@ -1718,7 +1733,7 @@ public class JMapyPopup extends JPanel {
 		final JButton b;
 		switch (r.stav) {
 		case STAHUJE:
-			if (r.kontroluje) {
+			if (r.kontroluje || r.overuje) {
 				return null;
 			}
 			final JButton zrusit = odkaz(ZRUSIT, (ActionListener) null);

@@ -200,7 +200,11 @@ public final class RadekMapy {
 			if (kontroluje) {
 				return "Zjišťuji na serveru…";
 			}
+			if (chyba != null) {
+				return chyba;
+			}
 			if (overuje) {
+				// Stahovač map při ověřování průběh nehlásí.
 				return "Ověřuji…";
 			}
 			return velikost > 0 ? String.format(new Locale("cs"), "%d %% z %s", procenta(), velikost(velikost)) : "Stahuje se " + velikost(stazeno);

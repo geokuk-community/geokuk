@@ -46,7 +46,9 @@ public class RadkyMapTest {
 	@Test
 	public void popisPrubehu() {
 		Assert.assertEquals("25 % z 400 MB", radek(NEMAME, NEZNAMY, STAHUJE, 100_000_000L, 400_000_000L, null).popis());
-		Assert.assertEquals("Ověřuji…", radek(NEMAME, NEZNAMY, OVERUJE, 400_000_000L, 400_000_000L, null).popis());
+		Assert.assertEquals("průběh nic neříká: bez procent", "Ověřuji…", radek(NEMAME, NEZNAMY, OVERUJE, 400_000_000L, 400_000_000L, null).popis());
+		Assert.assertEquals("text čekání na další pokus má přednost před procenty", "Spojení se přerušilo, další pokus za 5 s (1. ze 3).",
+				radek(NEMAME, NEZNAMY, STAHUJE, 100_000_000L, 400_000_000L, "Spojení se přerušilo, další pokus za 5 s (1. ze 3).").popis());
 		Assert.assertEquals("Zjišťuji na serveru…", radek(MAME, NEZNAMY, KONTROLUJE, 0, -1, null).popis());
 		final RadekMapy rozpracovana = radek(NEMAME, NEZNAMY, ZRUSENO, 100_000_000L, 400_000_000L, null);
 		Assert.assertEquals(RadekMapy.Stav.NEMAME, rozpracovana.getStav());
