@@ -10,7 +10,8 @@
   jednou vykreslí znovu.
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
-  nečitelné soubory), odkazem na složku offline map a na weby s mapami.
+  nečitelné soubory), odkazem, který složku offline map otevře ve správci
+  souborů, a odkazy na weby s mapami.
   Najetím na řádek mapy se v mapě ukáže její obrys, stejně při stahování;
   volbou v panelu jde ukázat obrysy všech map v přehledu (do zoomu 7). Při
   hodně mapách mají sekce panelu posuvníky, v seznamu dalších map jde hledat a
@@ -28,6 +29,8 @@
   Stažený soubor se po dokončení ověří (Ověřuji N %). Hromadné stahování
   (Stáhnout vše, průvodce) po chybě pokračuje dalšími položkami; na konci panel
   ukáže souhrn, co se stáhlo a co ne, a tlačítko Zkusit znovu.
+  Panel se při hromadném stahování nepřestavuje po každém souboru a posuvníky
+  sekcí zůstávají na místě.
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistické a
   cyklotrasy, vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a
   Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
