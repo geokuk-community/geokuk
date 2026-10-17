@@ -1331,4 +1331,24 @@ public class JMapyPopupTest {
 			Assert.assertTrue("zbývá dostahovat obě vrstvy", JMapyPopup.zbyvaStahnout(radky) > 0);
 		});
 	}
+
+	/** Stažená celá země (ve složce) má Stáhnout vše se všemi řádky země včetně regionů z jiného oddílu; nahoře je Dostáhnout vrstvy. */
+	@Test
+	public void stazenaZemeMaStahnoutVseSeVsemiRegiony() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+			final List<RadekMapy> radky = RadkyMap.sestav(katalog,
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/germany") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogNemecko(), v -> cz.geokuk.plugins.mapy.sprava.StavVrstvy.novy(v));
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.prepniSlozku(true);
+			p.obnov(radky);
+			Assert.assertTrue("nahoře Dostáhnout vrstvy", tlacitka(p).stream().anyMatch(b -> b.getText().startsWith("Dostáhnout vrstvy ke staženým mapám (")));
+			tlacitka(p).stream().filter(b -> JMapyPopup.STAHNOUT_VSE.equals(b.getText())).forEach(JButton::doClick);
+			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniVse Německo europe/germany ") && Integer.parseInt(v.substring(v.lastIndexOf(' ') + 1)) > 2));
+		});
+	}
 }

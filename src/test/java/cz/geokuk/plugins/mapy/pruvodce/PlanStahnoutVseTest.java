@@ -96,4 +96,32 @@ public class PlanStahnoutVseTest {
 		assertTrue(JPruvodceMap.potrebujePotvrzeni(PlanPruvodce.sestavVse(null, sest, EnumSet.of(Cast.MAPA), m)));
 		assertFalse(JPruvodceMap.potrebujePotvrzeni(PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(Cast.MAPA), m)));
 	}
+
+	private static final String DE = "europe/germany";
+
+	private static List<MatriceMap.Radek> maticeNemecko(final boolean celekStazen, final boolean bayernStazen) {
+		return MatriceMap.sestav(KatalogMap.vestaveny(), k -> StavMapyProGui.stav(k,
+				k.getId().equals(DE) && celekStazen || k.getId().equals(DE + "/bayern") && bayernStazen ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null),
+				VrstvyProGui.katalogNemecko(), StavVrstvy::novy);
+	}
+
+	/** Stažená celá země: Stáhnout vše i Dostáhnout vrstvy stáhnou trasy celku a vrstevnice regionů, ale žádnou základní mapu regionu. */
+	@Test
+	public void celaZemeStahujeRegionalniVrstvyBezMapRegionu() {
+		final List<MatriceMap.Radek> m = maticeNemecko(true, false);
+		final List<String> klice = m.stream().map(MatriceMap.Radek::getKlic).filter(k -> k.equals(DE) || k.startsWith(DE + "/")).collect(Collectors.toList());
+		assertTrue("země má regiony", klice.size() > 2);
+		for (final PlanPruvodce plan : new PlanPruvodce[] { PlanPruvodce.sestavVse(DE, klice, VSE, m), PlanPruvodce.sestavDostahnout(VSE, m) }) {
+			final List<String> id = plan.getPolozky().stream().map(PlanPruvodce.Polozka::getId).collect(Collectors.toList());
+			assertEquals(Arrays.asList("routes/" + DE, "contours/" + DE + "/bayern", "contours/" + DE + "/sachsen"), id);
+		}
+	}
+
+	/** Dostáhnout vrstvy se dívá jen na stažené mapy: nestažené Německo nic, stažený region jen své vrstvy. */
+	@Test
+	public void dostahnoutVrstvyJenKeStazenymMapam() {
+		assertTrue(PlanPruvodce.sestavDostahnout(VSE, maticeNemecko(false, false)).jeHotovo());
+		final PlanPruvodce region = PlanPruvodce.sestavDostahnout(VSE, maticeNemecko(false, true));
+		assertEquals(Collections.singletonList("contours/" + DE + "/bayern"), region.getPolozky().stream().map(PlanPruvodce.Polozka::getId).collect(Collectors.toList()));
+	}
 }

@@ -16,6 +16,8 @@ public interface OvladaniMap {
 
 	/** Otevře souhrn „Stáhnout vše“ k zemi: klíče řádků země (celek a regiony), celekKlic je null, když země má jen regiony. */
 	default void stahniVse(final String nazevZeme, final String celekKlic, final java.util.List<String> klice) {}
+	/** Otevře souhrn „Dostáhnout vrstvy“ ke všem staženým základním mapám (jen vrstvy z GitHubu). */
+	default void dostahnoutVrstvy() {}
 	default void zrusStahovani() {}
 
 	/** Zjistí jen u této mapy, jestli je na serveru novější. */

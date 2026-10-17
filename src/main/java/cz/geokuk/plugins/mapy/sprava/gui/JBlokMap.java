@@ -153,6 +153,17 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public void dostahnoutVrstvy() {
+				if (spravaMap == null) {
+					return;
+				}
+				popup.zavri();
+				final java.awt.Window okno = javax.swing.SwingUtilities.getWindowAncestor(JBlokMap.this);
+				cz.geokuk.plugins.mapy.pruvodce.JStahnoutVse.dostahnoutVrstvy(okno instanceof java.awt.Frame ? (java.awt.Frame) okno : null,
+						new cz.geokuk.plugins.mapy.pruvodce.ProgramPruvodceKontext(spravaMap, null, kachleModel)).setVisible(true);
+			}
+
+			@Override
 			public void stahniVrstvu(final String id) {
 				if (spravaMap != null) {
 					spravaMap.getKatalogVrstev().podleId(id).ifPresent(spravaMap::stahni);
