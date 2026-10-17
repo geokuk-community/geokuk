@@ -3,7 +3,6 @@ package cz.geokuk.plugins.mapy.sprava.gui;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -25,7 +24,7 @@ import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.gui.PopupNadBlokem;
-import cz.geokuk.util.process.BrowserOpener;
+import cz.geokuk.util.process.OtevreniSlozky;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -127,11 +126,7 @@ public class JBlokMap extends JLabel {
 						log.warn("Složku offline map {} nejde založit", slozka);
 						return;
 					}
-					try {
-						BrowserOpener.displayFile(slozka.toURI().toURL());
-					} catch (final MalformedURLException e) {
-						FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Otevření složky offline map");
-					}
+					OtevreniSlozky.otevri(slozka);
 				}, "Otevření složky offline map").start();
 			}
 
