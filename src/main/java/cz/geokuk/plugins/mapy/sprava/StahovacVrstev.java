@@ -144,13 +144,17 @@ final class StahovacVrstev {
 		if (volno < chybi + StahovacMapy.REZERVA_MISTA) {
 			return s.sFazi(Faze.CHYBA, "Na disku je málo místa: vrstva potřebuje " + chybi / (1024 * 1024) + " MB.");
 		}
+		// SHA-256 souborů spočítaný při stahování; po stažení se pak soubor kvůli ověření nemusí číst znovu.
+		final Map<String, String> soucty = new HashMap<>();
 		try {
 			long predchozi = 0;
 			for (final Soubor so : vrstva.getSoubory()) {
 				if (!hotovy(slozka, so)) {
 					final StavVrstvy zaklad = s;
+					final StavVrstvy overuje = s.sFazi(Faze.OVERUJE, null);
 					final long pred = predchozi;
-					final long mame = stahniSoubor(so, slozka, zruseno, n -> posluchac.zmena(zaklad.sPrubehem(pred + n)));
+					final long mame = stahniSoubor(so, slozka, zruseno, n -> posluchac.zmena(zaklad.sPrubehem(pred + n)),
+							n -> posluchac.zmena(overuje.sPrubehem(pred + n)), sha -> soucty.put(so.getCesta(), sha));
 					s = s.sPrubehem(predchozi + mame);
 					if (zruseno.getAsBoolean()) {
 						return s.sFazi(Faze.ZRUSENO, null);
@@ -161,11 +165,15 @@ final class StahovacVrstev {
 				}
 				predchozi += so.getVelikost();
 			}
-			s = s.sFazi(Faze.OVERUJE, null);
+			s = s.sFazi(Faze.OVERUJE, null).sPrubehem(0);
 			posluchac.zmena(s);
+			long overeno = 0;
 			for (final Soubor so : vrstva.getSoubory()) {
 				if (!cilSedi(slozka, so)) {
-					final String vada = over(rozpracovany(slozka, so), so, vrstva.getFormat(), zruseno);
+					final StavVrstvy zaklad = s;
+					final long pred = overeno;
+					final String vada = over(rozpracovany(slozka, so), so, vrstva.getFormat(), zruseno, soucty.get(so.getCesta()),
+							n -> posluchac.zmena(zaklad.sPrubehem(pred + n)));
 					if (zruseno.getAsBoolean()) {
 						return mistniStav(s, slozka).sFazi(Faze.ZRUSENO, null);
 					}
@@ -175,6 +183,9 @@ final class StahovacVrstev {
 						return mistniStav(s, slozka).sFazi(Faze.CHYBA, vada);
 					}
 				}
+				overeno += so.getVelikost();
+				s = s.sPrubehem(overeno);
+				posluchac.zmena(s);
 			}
 			final String chybaVymeny = vymen(slozka, vrstva);
 			if (chybaVymeny != null) {
@@ -331,7 +342,8 @@ final class StahovacVrstev {
 	}
 
 	/** Stáhne jeden soubor do rozpracovaného souboru, od místa, kde skončil. Vrátí počet bajtů na disku. */
-	private long stahniSoubor(final Soubor so, final File slozka, final BooleanSupplier zruseno, final LongConsumer prubeh) throws IOException {
+	private long stahniSoubor(final Soubor so, final File slozka, final BooleanSupplier zruseno, final LongConsumer prubeh, final LongConsumer prubehOvereni,
+			final Consumer<String> sha) throws IOException {
 		final File cast = rozpracovany(slozka, so);
 		final File infoSoubor = info(slozka, so);
 		Info info = StahovacMapy.nactiInfo(infoSoubor);
@@ -345,6 +357,11 @@ final class StahovacVrstev {
 		final Info i = info;
 		final String validator = info.etag != null ? info.etag : info.lastModified;
 		long od = cast.isFile() && validator != null ? Math.min(cast.length(), so.getVelikost()) : 0;
+		final MessageDigest soucet = novySoucet();
+		// Při navázání se součet nejdřív dopočítá z části na disku (jednou, s průběhem ověřování), dál roste se stahovanými daty.
+		if (od > 0 && !pridejDoSouctu(soucet, cast, od, zruseno, prubehOvereni)) {
+			return od;
+		}
 		final Map<String, String> hlavicky = new HashMap<>();
 		if (od > 0) {
 			hlavicky.put("Range", "bytes=" + od + "-");
@@ -363,6 +380,7 @@ final class StahovacVrstev {
 				}
 			} else if (kod == HttpURLConnection.HTTP_OK) {
 				od = 0;
+				soucet.reset();
 				if (c.getContentLengthLong() >= 0 && c.getContentLengthLong() != so.getVelikost()) {
 					throw new ChybaProUzivatele("Soubor " + so.getCesta() + " má na serveru jinou velikost než v katalogu.");
 				}
@@ -382,7 +400,11 @@ final class StahovacVrstev {
 				info.celkem = so.getVelikost();
 				StahovacMapy.ulozInfo(infoSoubor, info);
 			}
-			return StahovacMapy.prenes(c, cast, od, so.getVelikost(), zruseno, prubeh);
+			final long mame = StahovacMapy.prenes(c, cast, od, so.getVelikost(), zruseno, prubeh, soucet);
+			if (mame == so.getVelikost()) {
+				sha.accept(hex(soucet.digest()));
+			}
+			return mame;
 		} finally {
 			c.disconnect();
 		}
@@ -396,13 +418,19 @@ final class StahovacVrstev {
 
 	/** Null když soubor odpovídá katalogu (velikost, SHA-256, u .map platná mapa), jinak popis vady. */
 	static String over(final File soubor, final Soubor so, final Format format, final BooleanSupplier zruseno) throws IOException {
+		return over(soubor, so, format, zruseno, null, n -> {});
+	}
+
+	/** Jako {@link #over(File, Soubor, Format, BooleanSupplier)}; se součtem spočítaným při stahování soubor kvůli SHA-256 nečte, jinak hlásí přečtené bajty. */
+	static String over(final File soubor, final Soubor so, final Format format, final BooleanSupplier zruseno, final String spoctenySoucet,
+			final LongConsumer prubeh) throws IOException {
 		if (!soubor.isFile()) {
 			return "Rozpracovaný soubor " + so.getCesta() + " zmizel z disku.";
 		}
 		if (soubor.length() != so.getVelikost()) {
 			return "Stažený soubor " + so.getCesta() + " má jinou velikost, než uvádí katalog.";
 		}
-		final String sha = sha256(soubor, zruseno);
+		final String sha = spoctenySoucet != null ? spoctenySoucet : sha256(soubor, zruseno, prubeh);
 		if (sha == null) {
 			return null;
 		}
@@ -417,23 +445,52 @@ final class StahovacVrstev {
 
 	/** SHA-256 souboru malými písmeny; null po zrušení. */
 	static String sha256(final File soubor, final BooleanSupplier zruseno) throws IOException {
-		final MessageDigest md;
+		return sha256(soubor, zruseno, n -> {});
+	}
+
+	/** SHA-256 souboru malými písmeny, průběžně hlásí přečtené bajty; null po zrušení. */
+	static String sha256(final File soubor, final BooleanSupplier zruseno, final LongConsumer prubeh) throws IOException {
+		final MessageDigest md = novySoucet();
+		return pridejDoSouctu(md, soubor, Long.MAX_VALUE, zruseno, prubeh) ? hex(md.digest()) : null;
+	}
+
+	private static MessageDigest novySoucet() {
 		try {
-			md = MessageDigest.getInstance("SHA-256");
+			return MessageDigest.getInstance("SHA-256");
 		} catch (final NoSuchAlgorithmException e) {
 			throw new IllegalStateException(e);
 		}
+	}
+
+	/** Přidá do součtu prvních {@code kolik} bajtů souboru (nebo celý kratší soubor); false po zrušení. */
+	private static boolean pridejDoSouctu(final MessageDigest md, final File soubor, final long kolik, final BooleanSupplier zruseno, final LongConsumer prubeh)
+			throws IOException {
 		final byte[] buf = new byte[64 * 1024];
+		long precteno = 0;
+		long nahlaseno = 0;
 		try (InputStream in = Files.newInputStream(soubor.toPath())) {
-			for (int n; (n = in.read(buf)) > 0;) {
+			for (int n; precteno < kolik && (n = in.read(buf, 0, (int) Math.min(buf.length, kolik - precteno))) > 0;) {
 				if (zruseno.getAsBoolean()) {
-					return null;
+					return false;
 				}
 				md.update(buf, 0, n);
+				precteno += n;
+				if (precteno - nahlaseno >= PRUBEH_OVERENI) {
+					prubeh.accept(precteno);
+					nahlaseno = precteno;
+				}
 			}
 		}
+		prubeh.accept(precteno);
+		return true;
+	}
+
+	/** Po kolika přečtených bajtech se hlásí průběh ověřování. */
+	private static final long PRUBEH_OVERENI = 4L * 1024 * 1024;
+
+	private static String hex(final byte[] digest) {
 		final StringBuilder sb = new StringBuilder(64);
-		for (final byte b : md.digest()) {
+		for (final byte b : digest) {
 			sb.append(Character.forDigit(b >> 4 & 0xf, 16)).append(Character.forDigit(b & 0xf, 16));
 		}
 		return sb.toString();
