@@ -44,13 +44,22 @@ public final class BehPruvodce {
 
 	/** Jeden krok fronty; volat po každé změně stavu stahování nebo v pravidelných odstupech. */
 	public void krok() {
-		if (stav != Stav.BEZI) {
-			return;
+		for (int i = 0; i < FrontaPruvodce.SOUBEZNE_VRSTVY + 1 && stav == Stav.BEZI; i++) {
+			if (!krokFronty(i == 0)) {
+				break;
+			}
 		}
-		final Krok k = fronta.dalsi(this::stavPodleId);
+	}
+
+	/** Jeden krok fronty; vrací, jestli se spustila další položka (a má smysl zkusit ještě jednu). */
+	private boolean krokFronty(final boolean prvni) {
+		final Krok k = fronta.dalsi(this::stavPodleId, prvni);
+		boolean spusteno = false;
 		switch (k.getAkce()) {
 		case STAHUJ:
-			if (!kontext.stahni(k.getPolozka())) {
+			if (kontext.stahni(k.getPolozka())) {
+				spusteno = true;
+			} else {
 				// Stahovač je zrovna zaneprázdněný (třeba stahování z popupu Mapy): zkusí se při dalším kroku.
 				fronta.nespusteno(k.getPolozka());
 			}
@@ -74,6 +83,7 @@ public final class BehPruvodce {
 		if (!prepnuto && stav == Stav.BEZI && mapyJsou()) {
 			prepni();
 		}
+		return spusteno;
 	}
 
 	/** Uživatel stahování zrušil. */

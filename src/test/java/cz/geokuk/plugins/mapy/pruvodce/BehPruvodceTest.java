@@ -95,13 +95,12 @@ public class BehPruvodceTest {
 		final List<Stav> zmeny = new ArrayList<>();
 		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY), zmeny::add);
 		beh.spust();
-		assertEquals(Collections.singletonList(CZ), k.stazene);
+		assertEquals("mapa a vedle ní vrstva", Arrays.asList(CZ, "routes/" + CZ), k.stazene);
 		assertTrue("na mapu se čeká, zobrazení se zatím nepřepíná", k.prepnuti.isEmpty());
 		beh.krok();
-		assertEquals("mapa se stahuje, nic dalšího se nespouští", 1, k.stazene.size());
+		assertEquals("nic dalšího se nespouští", 2, k.stazene.size());
 		k.stav.put(CZ, "MAME");
 		beh.krok();
-		assertEquals("po mapě se pustí trasy", Arrays.asList(CZ, "routes/" + CZ), k.stazene);
 		assertEquals("zobrazení se přepne hned po mapě, nečeká na trasy", 1, k.prepnuti.size());
 		k.stav.put("routes/" + CZ, "MAME");
 		beh.krok();
@@ -147,7 +146,7 @@ public class BehPruvodceTest {
 		assertTrue("po chybě se nic nepřepíná", k.prepnuti.isEmpty());
 		k.stav.put(CZ, "MAME");
 		beh.krok();
-		assertEquals("zastavený průvodce už nepokračuje", 1, k.stazene.size());
+		assertEquals("zastavený průvodce už nepokračuje", 2, k.stazene.size());
 	}
 
 	@Test

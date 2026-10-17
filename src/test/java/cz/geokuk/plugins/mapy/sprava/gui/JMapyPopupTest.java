@@ -270,7 +270,7 @@ public class JMapyPopupTest {
 		});
 	}
 
-	/** Stáhnout, Aktualizovat i Zkusit znovu u vrstvy jsou při stahování jiné mapy vypnuté s vysvětlením, jinak zapnuté. */
+	/** Stáhnout, Aktualizovat i Zkusit znovu u vrstvy zůstávají zapnuté i při stahování mapy; mapa a vrstvy se stahují vedle sebe. */
 	@Test
 	public void vrstvyNejdeStahovatPriJinemStahovani() throws Exception {
 		final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> vrstvy = v -> {
@@ -298,8 +298,7 @@ public class JMapyPopupTest {
 					.collect(java.util.stream.Collectors.toList());
 			Assert.assertEquals(3, pri.size());
 			for (final JButton b : pri) {
-				Assert.assertFalse(b.getText(), b.isEnabled());
-				Assert.assertEquals(JMapyPopup.STAHUJE_SE_JINA, b.getToolTipText());
+				Assert.assertTrue("vrstvy se stahují i vedle stahované mapy: " + b.getText(), b.isEnabled());
 			}
 		});
 	}
@@ -557,7 +556,7 @@ public class JMapyPopupTest {
 		});
 	}
 
-	/** Nová verze vrstvy se nabídne k aktualizaci, chyba má „Stáhnout znovu“; během stahování vrstvy nejde stáhnout nic jiného. */
+	/** Nová verze vrstvy se nabídne k aktualizaci, chyba má „Stáhnout znovu“; vrstvy se stahují až dvě najednou. */
 	@Test
 	public void stavyVrstev() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
@@ -568,7 +567,7 @@ public class JMapyPopupTest {
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
 			Assert.assertFalse("během stahování vrstvy jde jen zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
 			Assert.assertTrue("procenta stahované vrstvy", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().endsWith(" %")));
-			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().noneMatch(JButton::isEnabled));
+			Assert.assertTrue("mapa jde stahovat vedle vrstvy", tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().anyMatch(JButton::isEnabled));
 		});
 	}
 
@@ -1285,6 +1284,8 @@ public class JMapyPopupTest {
 			vse.get(0).doClick();
 			Assert.assertEquals(1, z.volani.size());
 			Assert.assertTrue(z.volani.get(0), z.volani.get(0).startsWith("stahniVse "));
+			vse.get(vse.size() - 1).doClick();
+			Assert.assertTrue("i země bez regionů má Stáhnout vše: " + z.volani, z.volani.get(1).endsWith(" 1"));
 		});
 	}
 }

@@ -33,7 +33,39 @@ public final class NabidkaZemi {
 
 	private static final List<String> NAHORE = java.util.Arrays.asList("europe/czech-republic", "europe/slovakia");
 
+	/** Výchozí pohled prvního kroku: Česko a sousedé, z Německa jen Bavorsko a Sasko. */
+	private static final List<String> OKOLI = java.util.Arrays.asList("europe/czech-republic", "europe/slovakia", "europe/austria", "europe/poland", "europe/germany/bayern", "europe/germany/sachsen");
+
 	private NabidkaZemi() {}
+
+	/** Regiony zemí, které mají i celek, jako samostatné položky „Německo – Bavorsko“; země bez celku se berou celé po regionech. */
+	public static List<Zeme> regiony(final KatalogMap katalog) {
+		final List<Zeme> v = new ArrayList<>();
+		for (final KatalogovaMapa m : katalog.getMapy()) {
+			if (m.getSkupina() != null && katalog.celek(m).isPresent()) {
+				v.add(new Zeme(m.getSkupina() + " – " + m.getNazev(), new ArrayList<>(Collections.singletonList(m.getId()))));
+			}
+		}
+		return v;
+	}
+
+	/** Výchozí pohled: Česko a okolí z nabídky všech zemí a regionů. */
+	public static List<Zeme> okoli(final List<Zeme> vse) {
+		final List<Zeme> v = new ArrayList<>();
+		for (final String klic : OKOLI) {
+			vse.stream().filter(z -> z.getKlice().size() == 1 && z.getKlice().get(0).equals(klic)).findFirst().ifPresent(v::add);
+		}
+		return v;
+	}
+
+	/** Název odpovídá hledanému textu; bez ohledu na velikost písmen a diakritiku, prázdný text vyhovuje všem. */
+	public static boolean vyhovuje(final Zeme z, final String dotaz) {
+		return bezDiakritiky(z.getNazev()).contains(bezDiakritiky(dotaz.trim()));
+	}
+
+	private static String bezDiakritiky(final String s) {
+		return java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+	}
 
 	public static List<Zeme> sestav(final KatalogMap katalog) {
 		final List<Zeme> zeme = new ArrayList<>();

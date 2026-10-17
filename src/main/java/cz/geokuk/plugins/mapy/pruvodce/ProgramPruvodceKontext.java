@@ -11,6 +11,7 @@ import cz.geokuk.plugins.mapy.sprava.KatalogMap;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
+import cz.geokuk.plugins.mapy.sprava.StavVrstvy;
 
 /** Průvodce napojený na modely programu: Správa map (katalogy, stavy, stahování), podklad a nastavení kachlí. */
 public final class ProgramPruvodceKontext implements PruvodceKontext {
@@ -43,7 +44,14 @@ public final class ProgramPruvodceKontext implements PruvodceKontext {
 			f = f.getParentFile();
 		}
 		final long volne = f == null ? 0 : f.getUsableSpace();
-		return volne <= 0 ? -1 : volne;
+		if (volne <= 0) {
+			return -1;
+		}
+		long dostahuje = spravaMap.getBeziciStahovani().filter(m -> m.getCelkem() > 0).map(m -> Math.max(0, m.getCelkem() - m.getStazeno())).orElse(0L);
+		for (final StavVrstvy v : spravaMap.getBeziciStahovaniVrstev()) {
+			dostahuje += Math.max(0, v.getCelkem() - v.getStazeno());
+		}
+		return Math.max(0, volne - dostahuje);
 	}
 
 	@Override

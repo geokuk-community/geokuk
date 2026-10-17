@@ -172,4 +172,20 @@ public class PruvodceModelTest {
 		final PruvodceVolba v = new PruvodceVolba(Collections.singletonList(CZ), PodkladPruvodce.OSM, EnumSet.of(Cast.MAPA, Cast.TRASY));
 		assertEquals(EnumSet.of(Cast.TRASY), v.getVrstvy());
 	}
+
+	/** Výchozí pohled prvního kroku: Česko, sousedé a z Německa Bavorsko a Sasko; hledání ignoruje diakritiku a najde i regiony. */
+	@Test
+	public void nabidkaZemiOkoliAHledani() {
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		final List<NabidkaZemi.Zeme> vse = new java.util.ArrayList<>(NabidkaZemi.sestav(katalog));
+		final List<NabidkaZemi.Zeme> regiony = NabidkaZemi.regiony(katalog);
+		vse.addAll(regiony);
+		final List<String> okoli = NabidkaZemi.okoli(vse).stream().map(NabidkaZemi.Zeme::getNazev).collect(java.util.stream.Collectors.toList());
+		org.junit.Assert.assertEquals(java.util.Arrays.asList("Česko", "Slovensko", "Rakousko", "Polsko", "Německo – Bavorsko", "Německo – Sasko"), okoli);
+		final NabidkaZemi.Zeme bavorsko = regiony.stream().filter(z -> z.getNazev().equals("Německo – Bavorsko")).findFirst().get();
+		org.junit.Assert.assertTrue(NabidkaZemi.vyhovuje(bavorsko, "bavor"));
+		org.junit.Assert.assertTrue(NabidkaZemi.vyhovuje(bavorsko, "NEMECKO"));
+		org.junit.Assert.assertTrue("prázdné hledání vyhovuje všem", NabidkaZemi.vyhovuje(bavorsko, " "));
+		org.junit.Assert.assertFalse(NabidkaZemi.vyhovuje(bavorsko, "sasko"));
+	}
 }

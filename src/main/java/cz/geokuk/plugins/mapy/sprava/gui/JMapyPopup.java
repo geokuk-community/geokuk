@@ -78,6 +78,12 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_BUNKY = 112;
 
 	/** Šířka sloupce s akcí mapy (Stáhnout, Zrušit…), ve všech oddílech stejná. */
+	/** Kolik vrstev se smí stahovat naráz; víc jich nejde spustit, mapa běží vedle nich. */
+	static final int SOUBEZNE_VRSTVY = 2;
+	private boolean mapaBezi;
+	/** Kolik se ještě dostahuje z běžících stahování; to místo se z volného odečítá. */
+	private long rozdelano;
+	private boolean vrstvyPlne;
 	static final String STAHNOUT_VSE = "Stáhnout vše";
 	static final int SIRKA_AKCE = 88;
 
@@ -646,13 +652,27 @@ public class JMapyPopup extends JPanel {
 		return s;
 	}
 
+	static long zbyvaStahnout(final List<RadekMapy> radky) {
+		long zbyva = 0;
+		for (final RadekMapy r : radky) {
+			if (r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje && r.velikost > 0) {
+				zbyva += Math.max(0, r.velikost - r.stazeno);
+			}
+			final MatriceMap.Bunka v = r.bezicVrstva();
+			if (v != null && v.getVelikost() > 0) {
+				zbyva += Math.max(0, v.getVelikost() - v.getStazeno());
+			}
+		}
+		return zbyva;
+	}
+
 	/** Mapa ke stažení nebo k aktualizaci se na disk nevejde (s toutéž rezervou jako ve stahovači). */
 	private boolean nedostatekMista(final RadekMapy r) {
-		return volneMisto >= 0 && potrebneMisto(r) > volneMisto;
+		return volneMisto >= 0 && potrebneMisto(r) > volneMisto - rozdelano;
 	}
 
 	private boolean nedostatekMista(final MatriceMap.Bunka b) {
-		return volneMisto >= 0 && potrebneMisto(b) > volneMisto;
+		return volneMisto >= 0 && potrebneMisto(b) > volneMisto - rozdelano;
 	}
 
 	/** Místo pro stažení (zbytku) vrstvy včetně rezervy stahovače; 0, když se nic nestahuje. */
@@ -709,6 +729,9 @@ public class JMapyPopup extends JPanel {
 			sirkaNazvu += 2 * ODSAZENI; // šipka a odsazení regionů ve stromu zemí
 		}
 		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje || r.bezicVrstva() != null);
+		mapaBezi = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje);
+		rozdelano = zbyvaStahnout(radky);
+		vrstvyPlne = radky.stream().filter(r -> r.bezicVrstva() != null).count() >= SOUBEZNE_VRSTVY;
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -999,6 +1022,10 @@ public class JMapyPopup extends JPanel {
 			uzel.hlavicka = nazev;
 			nastavRozbaleni(uzel, nazev);
 			pridejStahnoutVse(panel, popisy.get(klic(r))[2], uzel, stahujeSe);
+		} else if (uzel == null && r.skupina == null && r.matice != null && !r.vlastni) {
+			final Uzel sama = new Uzel(r.nazev);
+			sama.celek = r;
+			pridejStahnoutVse(panel, popisy.get(klic(r))[2], sama, stahujeSe);
 		}
 		final String zeme = uzel == null ? null : uzel.nazev;
 		hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), zeme, hlavicka, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
@@ -1240,7 +1267,7 @@ public class JMapyPopup extends JPanel {
 		panel.add(popis, cp);
 		popisy.put(klic(r), new JLabel[] { ikona, nazev, popis });
 
-		final JButton akce = akce(r, stahujeSe);
+		final JButton akce = akce(r, mapaBezi);
 		if (akce != null) {
 			akce.addMouseListener(nadRadkem);
 		}
@@ -1250,7 +1277,7 @@ public class JMapyPopup extends JPanel {
 		panel.add(sloupecAkce(akce), ca);
 		for (int i = 0; i < VRSTVY.length; i++) {
 			final boolean maVrstvy = r.matice != null && !r.vlastni;
-			final JComponent bunka = maVrstvy ? bunkaVrstvy(r, VRSTVY[i], stahujeSe, nadRadkem) : prazdnaBunka();
+			final JComponent bunka = maVrstvy ? bunkaVrstvy(r, VRSTVY[i], stahujeSe, vrstvyPlne, nadRadkem) : prazdnaBunka();
 			final GridBagConstraints cb = bunka(PRVNI_SLOUPEC_VRSTEV + i, y, 1);
 			cb.anchor = GridBagConstraints.WEST;
 			cb.fill = GridBagConstraints.NONE;
@@ -1277,7 +1304,7 @@ public class JMapyPopup extends JPanel {
 	}
 
 	/** Buňka vrstvy v řádku mapy: stav a velikost, akce podle stavu (stáhnout, aktualizovat, zrušit, smazat). */
-	private JComponent bunkaVrstvy(final RadekMapy r, final MatriceMap.Cast cast, final boolean stahujeSe, final MouseAdapter nadRadkem) {
+	private JComponent bunkaVrstvy(final RadekMapy r, final MatriceMap.Cast cast, final boolean stahujeSe, final boolean vrstvyPlne, final MouseAdapter nadRadkem) {
 		final MatriceMap.Bunka b = r.bunka(cast);
 		final JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 		p.setOpaque(false);
@@ -1303,7 +1330,7 @@ public class JMapyPopup extends JPanel {
 			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.NOVEJSI)));
 			final JButton aktualizovat = odkaz(AKTUALIZOVAT, e -> stahniVrstvu(b));
 			aktualizovat.setToolTipText(nazev + ": novější verze, " + velikost);
-			zakazDokudNeniMisto(aktualizovat, b, stahujeSe);
+			zakazDokudNeniMisto(aktualizovat, b, vrstvyPlne);
 			p.add(aktualizovat);
 			break;
 		}
@@ -1324,7 +1351,7 @@ public class JMapyPopup extends JPanel {
 			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.CHYBA)));
 			final JButton znovu = odkaz(ZKUSIT_ZNOVU, e -> stahniVrstvu(b));
 			znovu.setToolTipText(nazev + ": " + (b.getChyba() == null ? "stažení se nepovedlo" : b.getChyba()));
-			zakazDokudNeniMisto(znovu, b, stahujeSe);
+			zakazDokudNeniMisto(znovu, b, vrstvyPlne);
 			p.add(znovu);
 			break;
 		}
@@ -1332,7 +1359,7 @@ public class JMapyPopup extends JPanel {
 		default: {
 			final JButton stahnout = odkaz("↓ " + velikost, e -> stahniVrstvu(b));
 			stahnout.setToolTipText(nazev + ": stáhnout" + (velikost.isEmpty() ? "" : ", " + velikost) + (b.getStazeno() > 0 ? " (rozpracováno)" : ""));
-			zakazDokudNeniMisto(stahnout, b, stahujeSe);
+			zakazDokudNeniMisto(stahnout, b, vrstvyPlne);
 			p.add(stahnout);
 			break;
 		}
@@ -1360,7 +1387,7 @@ public class JMapyPopup extends JPanel {
 			b.setToolTipText(STAHUJE_SE_JINA);
 		} else if (nedostatekMista(bunka)) {
 			b.setEnabled(false);
-			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(volneMisto) + ", potřebuje asi " + RadekMapy.velikost(potrebneMisto(bunka)) + ".");
+			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(Math.max(0, volneMisto - rozdelano)) + ", potřebuje asi " + RadekMapy.velikost(potrebneMisto(bunka)) + ".");
 		}
 	}
 
@@ -1429,7 +1456,7 @@ public class JMapyPopup extends JPanel {
 			b.setToolTipText(STAHUJE_SE_JINA);
 		} else if (nedostatekMista(r)) {
 			b.setEnabled(false);
-			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(volneMisto) + ", mapa potřebuje asi " + RadekMapy.velikost(potrebneMisto(r)) + ".");
+			b.setToolTipText("Na disku je volných jen " + RadekMapy.velikost(Math.max(0, volneMisto - rozdelano)) + ", mapa potřebuje asi " + RadekMapy.velikost(potrebneMisto(r)) + ".");
 		}
 		return b;
 	}

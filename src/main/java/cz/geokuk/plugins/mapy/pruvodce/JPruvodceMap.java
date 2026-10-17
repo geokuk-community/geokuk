@@ -33,12 +33,19 @@ public final class JPruvodceMap extends JDialog {
 	static final String STAHNOUT_A_PREPNOUT = "Stáhnout a přepnout";
 	static final String PREPNOUT = "Přepnout";
 	static final String VICE_ZEMI = "Vybrat víc zemí";
+	static final String VSECHNY_ZEME = "Zobrazit všechny země";
 
 	private static final Color SEDY = new Color(90, 90, 90);
 	private static final Color CERVENY = new Color(0xC6, 0x28, 0x28);
 
 	private final transient PruvodceKontext kontext;
 	private final transient List<Zeme> zeme;
+	private final transient List<Zeme> regiony;
+	private final transient List<Zeme> okoli;
+	private boolean vsechnyZeme;
+	private String dotaz = "";
+	private transient DefaultComboBoxModel<Zeme> modelJine;
+	private transient JPanel seznamZemi;
 	private final transient Set<Zeme> vybrane = new LinkedHashSet<>();
 	private boolean viceZemi;
 	private PodkladPruvodce podklad;
@@ -53,7 +60,12 @@ public final class JPruvodceMap extends JDialog {
 		super(rodic, NADPIS, true);
 		this.kontext = kontext;
 		this.zeme = NabidkaZemi.sestav(kontext.getKatalog());
+		this.regiony = NabidkaZemi.regiony(kontext.getKatalog());
+		final List<Zeme> vse = new ArrayList<>(zeme);
+		vse.addAll(regiony);
+		this.okoli = NabidkaZemi.okoli(vse);
 		predvyber();
+		vsechnyZeme = !vybrane.isEmpty() && !okoli.containsAll(vybrane) && !zeme.subList(0, Math.min(2, zeme.size())).containsAll(vybrane);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		final JPanel obsah = new JPanel(new BorderLayout(0, 10));
@@ -176,6 +188,7 @@ public final class JPruvodceMap extends JDialog {
 		final JPanel p = new JPanel();
 		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 		p.add(nadpisKroku("Kde budete mapy používat?"));
+		p.add(hledaniZemi());
 		final JCheckBox vice = new JCheckBox(VICE_ZEMI, viceZemi);
 		if (!viceZemi) {
 			final ButtonGroup skupina = new ButtonGroup();
@@ -190,7 +203,8 @@ public final class JPruvodceMap extends JDialog {
 			final JRadioButton rJina = new JRadioButton("Jiná země:");
 			skupina.add(rJina);
 			final DefaultComboBoxModel<Zeme> model = new DefaultComboBoxModel<>();
-			zeme.subList(horni.size(), zeme.size()).forEach(model::addElement);
+			modelJine = model;
+			naplnJine(horni);
 			final JComboBox<Zeme> combo = new JComboBox<>(model);
 			combo.setRenderer(new DefaultListCellRenderer() {
 				private static final long serialVersionUID = 1L;
@@ -226,18 +240,8 @@ public final class JPruvodceMap extends JDialog {
 		} else {
 			final JPanel seznam = new JPanel();
 			seznam.setLayout(new BoxLayout(seznam, BoxLayout.Y_AXIS));
-			for (final Zeme z : zeme) {
-				final JCheckBox c = new JCheckBox(z.getNazev(), vybrane.contains(z));
-				c.addActionListener(e -> {
-					if (c.isSelected()) {
-						vybrane.add(z);
-					} else {
-						vybrane.remove(z);
-					}
-					aktualizujDal();
-				});
-				seznam.add(c);
-			}
+			seznamZemi = seznam;
+			naplnSeznam();
 			final JScrollPane sp = new JScrollPane(seznam);
 			sp.setPreferredSize(new Dimension(420, 200));
 			sp.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -264,6 +268,91 @@ public final class JPruvodceMap extends JDialog {
 			}
 		}
 		return p;
+	}
+
+	/** Nabídka zemí a regionů: bez hledání Česko a okolí, nebo všechny země; hledání prohledá země i regiony. */
+	private List<Zeme> nabidka() {
+		if (!dotaz.trim().isEmpty()) {
+			final List<Zeme> vse = new ArrayList<>(zeme);
+			vse.addAll(regiony);
+			return vse.stream().filter(z -> NabidkaZemi.vyhovuje(z, dotaz)).collect(java.util.stream.Collectors.toList());
+		}
+		return vsechnyZeme ? zeme : okoli;
+	}
+
+	private JComponent hledaniZemi() {
+		final JPanel r = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+		r.setBorder(new EmptyBorder(0, 0, 6, 0));
+		final JTextField hledat = new JTextField(dotaz, 16);
+		hledat.setToolTipText("Hledat zemi/region…");
+		hledat.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+			@Override
+			public void insertUpdate(final javax.swing.event.DocumentEvent e) {
+				zmenaHledani();
+			}
+
+			@Override
+			public void removeUpdate(final javax.swing.event.DocumentEvent e) {
+				zmenaHledani();
+			}
+
+			@Override
+			public void changedUpdate(final javax.swing.event.DocumentEvent e) {
+				zmenaHledani();
+			}
+
+			private void zmenaHledani() {
+				dotaz = hledat.getText();
+				obnovNabidku();
+			}
+		});
+		r.add(new JLabel("Hledat zemi/region:"));
+		r.add(hledat);
+		final JCheckBox vsechny = new JCheckBox(VSECHNY_ZEME, vsechnyZeme);
+		vsechny.addActionListener(e -> {
+			vsechnyZeme = vsechny.isSelected();
+			obnovNabidku();
+		});
+		r.add(vsechny);
+		return r;
+	}
+
+	private void obnovNabidku() {
+		if (modelJine != null) {
+			final Object vybrano = modelJine.getSelectedItem();
+			naplnJine(zeme.subList(0, Math.min(2, zeme.size())));
+			if (vybrano != null && modelJine.getIndexOf(vybrano) >= 0) {
+				modelJine.setSelectedItem(vybrano);
+			}
+		}
+		if (seznamZemi != null) {
+			naplnSeznam();
+			seznamZemi.revalidate();
+			seznamZemi.repaint();
+		}
+	}
+
+	private void naplnJine(final List<Zeme> horni) {
+		modelJine.removeAllElements();
+		nabidka().stream().filter(z -> !horni.contains(z)).forEach(modelJine::addElement);
+	}
+
+	private void naplnSeznam() {
+		seznamZemi.removeAll();
+		final List<Zeme> zobrazene = new ArrayList<>(nabidka());
+		vybrane.stream().filter(z -> !zobrazene.contains(z)).forEach(zobrazene::add);
+		for (final Zeme z : zobrazene) {
+			final JCheckBox c = new JCheckBox(z.getNazev(), vybrane.contains(z));
+			c.addActionListener(e -> {
+				if (c.isSelected()) {
+					vybrane.add(z);
+				} else {
+					vybrane.remove(z);
+				}
+				aktualizujDal();
+			});
+			seznamZemi.add(c);
+		}
 	}
 
 	private void vyber(final Zeme z) {
@@ -417,6 +506,9 @@ public final class JPruvodceMap extends JDialog {
 		final JButton hotovo = new JButton(plan.jeHotovo() ? PREPNOUT : STAHNOUT_A_PREPNOUT);
 		hotovo.setEnabled(misto);
 		hotovo.addActionListener(e -> {
+			if (!plan.jeHotovo() && potrebujePotvrzeni(plan) && !potvrzeni.test(plan)) {
+				return;
+			}
 			dispose();
 			if (plan.jeHotovo()) {
 				kontext.prepni(volba());
@@ -428,6 +520,20 @@ public final class JPruvodceMap extends JDialog {
 		getRootPane().setDefaultButton(hotovo);
 		return p;
 	}
+
+	/** Od kolika základních map a bajtů se před stažením ptáme, jestli to uživatel opravdu chce. */
+	static final int POTVRZENI_MAP = 5;
+	static final long POTVRZENI_BAJTU = 10_000_000_000L;
+
+	static boolean potrebujePotvrzeni(final PlanPruvodce plan) {
+		return plan.getPolozky().stream().filter(p -> p.getCast() == Cast.MAPA).count() > POTVRZENI_MAP || plan.getCelkovaVelikost() > POTVRZENI_BAJTU;
+	}
+
+	/** Zeptá se před velkým stahováním; v testech jde nahradit. */
+	transient java.util.function.Predicate<PlanPruvodce> potvrzeni = plan -> {
+		final long map = plan.getPolozky().stream().filter(p -> p.getCast() == Cast.MAPA).count();
+		return JOptionPane.showConfirmDialog(this, "Opravdu stáhnout " + map + " " + (map == 1 ? "mapu" : map < 5 ? "mapy" : "map") + ", " + velikost(plan.getCelkovaVelikost()) + "?", "Nastavení map", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+	};
 
 	private String vrstvyText() {
 		final List<String> v = new ArrayList<>();

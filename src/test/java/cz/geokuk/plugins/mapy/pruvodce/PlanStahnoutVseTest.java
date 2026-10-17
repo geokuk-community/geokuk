@@ -87,4 +87,13 @@ public class PlanStahnoutVseTest {
 		assertEquals("trasy jen z celku, když je celek má", 1, trasyCelku);
 		assertTrue(plan.getPolozky().stream().noneMatch(p -> p.getKlic().equals(druhy) && p.getCast() == Cast.TRASY));
 	}
+
+	/** Před stažením víc než pěti map nebo víc než 10 GB se uživatel ptá. */
+	@Test
+	public void velkeStahovaniVyzadujePotvrzeni() {
+		final List<MatriceMap.Radek> m = matice(StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY);
+		final List<String> sest = m.stream().map(MatriceMap.Radek::getKlic).limit(6).collect(Collectors.toList());
+		assertTrue(JPruvodceMap.potrebujePotvrzeni(PlanPruvodce.sestavVse(null, sest, EnumSet.of(Cast.MAPA), m)));
+		assertFalse(JPruvodceMap.potrebujePotvrzeni(PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(Cast.MAPA), m)));
+	}
 }
