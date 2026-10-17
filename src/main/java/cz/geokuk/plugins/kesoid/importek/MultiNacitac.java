@@ -322,7 +322,8 @@ public class MultiNacitac {
 		zamcene = zamceneTed;
 		posledniZapnute = otiskyTed.keySet();
 		posledniKontext = kontext;
-		kesoidModel.setZamceneDatabaze(jmena(zamceneTed));
+		final Set<File> rozepsane = cteni.rozepsane;
+		kesoidModel.setZamceneDatabaze(jmena(zamceneTed.stream().filter(f -> !rozepsane.contains(f)).collect(Collectors.toSet())));
 		for (final Map.Entry<File, String> e : otiskyPredCtenim.entrySet()) {
 			sledovane.put(e.getKey(), e.getValue());
 		}
@@ -367,6 +368,8 @@ public class MultiNacitac {
 		final Map<File, int[]> pocty = new HashMap<>();
 		final List<String> vadne = new ArrayList<>();
 		final Set<File> zamceneTed = new HashSet<>();
+		/** Zamčené zdroje, které jsou ve skutečnosti čerstvě zapisované soubory (GPX), ne databáze. */
+		final Set<File> rozepsane = new HashSet<>();
 		final Set<File> prevzateZamcene = new HashSet<>();
 		/** Pořadí členů převzatých skupin, ve kterém šly do bagu. */
 		final Map<SkupinyZdroju.Skupina, List<File>> poradiCasti = new HashMap<>();
@@ -438,6 +441,9 @@ public class MultiNacitac {
 				registr.cekaNaZapis(generace, soubor);
 				log.info(e.getMessage());
 				cteni.zamceneTed.add(soubor);
+				if (e instanceof RozepsanySoubor.Rozepsany) {
+					cteni.rozepsane.add(soubor);
+				}
 				if (zobrazene.contains(soubor)) {
 					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
 					if (genom == zobrazenyGenom && !builder.maWaypointyZe(soubor)) {

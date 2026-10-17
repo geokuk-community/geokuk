@@ -79,8 +79,7 @@ public abstract class Nacitac0 {
 				throw new DatabazeJinehoProgramu.Zamcena(file, e);
 			}
 			if (RozepsanySoubor.jeRozepsany(file)) {
-				RozepsanySoubor.ohlas(file, e);
-				return;
+				throw new RozepsanySoubor.Rozepsany(file, e);
 			}
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
 		} catch (final StackOverflowError | OutOfMemoryError e) {

@@ -79,6 +79,10 @@ public class RozepsanyGpxTest {
 		return kody;
 	}
 
+	private StavZdroje stavSouboru() {
+		return nacitac.getRegistr().getSnimek().getPolozky().stream().filter(p -> p.getSoubor().getName().equals("kesky.gpx")).findFirst().get().getStav();
+	}
+
 	private static byte[] pulka(final byte[] obsah) {
 		return Arrays.copyOf(obsah, obsah.length * 2 / 3);
 	}
@@ -89,10 +93,12 @@ public class RozepsanyGpxTest {
 		zapis(pulka(vse), System.currentTimeMillis());
 		nacti();
 		Assert.assertEquals(Collections.emptyList(), hlaseni);
+		Assert.assertEquals("čeká na dokončení zápisu, ne načteno", StavZdroje.CEKA_NA_ZAPIS, stavSouboru());
 
 		zapis(vse, System.currentTimeMillis() + 5000);
 		Assert.assertEquals(new HashSet<>(Arrays.asList("GC0001", "GC0002", "GC0003")), kody(nacti()));
 		Assert.assertEquals(Collections.emptyList(), hlaseni);
+		Assert.assertEquals(StavZdroje.NACTENO, stavSouboru());
 	}
 
 	@Test
@@ -111,6 +117,20 @@ public class RozepsanyGpxTest {
 	@Test
 	public void useknutyStarySouborSeHlasiJakoChyba() throws Exception {
 		zapis(pulka(cely("GC0001", "GC0002", "GC0003")), System.currentTimeMillis() - 60_000);
+		nacti();
+		Assert.assertEquals(hlaseni.toString(), 1, hlaseni.size());
+		Assert.assertTrue(hlaseni.get(0), hlaseni.get(0).startsWith("DISPLAY"));
+	}
+
+	@Test
+	public void useknutyCerstvySouborKterySeNezmeniSeNakonecNahlasi() throws Exception {
+		final byte[] obsah = pulka(cely("GC0001", "GC0002", "GC0003"));
+		zapis(obsah, System.currentTimeMillis());
+		nacti();
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+		Assert.assertEquals(StavZdroje.CEKA_NA_ZAPIS, stavSouboru());
+
+		new File(gpx, "kesky.gpx").setLastModified(System.currentTimeMillis() - 60_000);
 		nacti();
 		Assert.assertEquals(hlaseni.toString(), 1, hlaseni.size());
 		Assert.assertTrue(hlaseni.get(0), hlaseni.get(0).startsWith("DISPLAY"));
