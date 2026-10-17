@@ -262,6 +262,35 @@ public class VrstvyPodleKliceTest {
 		assertSame(model.getKatalogVrstev(), posledni(udalosti).getKatalog());
 	}
 
+	/** Na žádost uživatele (Zkontrolovat aktualizace) se katalog ověří hned, i když je kopie čerstvá; nezměněný se nestahuje. */
+	@Test
+	public void kontrolaKataloguVrstevNaZadostHned() throws Exception {
+		final File mapy = tmp.newFolder("offline-mapy");
+		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.nastavProTest(() -> mapy, udalosti::add);
+		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
+		katalog = katalogBavorska();
+		model.obnovKatalogVrstevKdyzJeStary();
+		model.pockej();
+		assertEquals(1, dotazyNaKatalog.get());
+
+		final int udalostiPred = udalosti.size();
+		model.zkontrolujKatalogVrstev();
+		model.pockej();
+		assertEquals("čerstvá kopie se na žádost ověří", 2, dotazyNaKatalog.get());
+		assertFalse("nezměněný katalog se neohlásí", udalosti.subList(udalostiPred, udalosti.size()).stream().anyMatch(e -> e instanceof KatalogVrstevEvent));
+
+		katalog = katalogBavorska().replace("]}", "," + KatalogVrstevTest.vrstva("contours/europe/germany/bayern", "contours", "europe/germany/bayern", "map",
+				KatalogVrstevTest.soubor("europe_germany_bayern.contours.map", "europe/germany/bayern.contours.map", "layers-2026-10b/europe_germany_bayern.contours.map", 10,
+						sha(new byte[10])), "") + "]}");
+		model.zkontrolujKatalogVrstev();
+		model.pockej();
+		assertEquals(3, dotazyNaKatalog.get());
+		assertTrue("změněný katalog se převezme", model.getKatalogVrstev().vrstva("europe/germany/bayern", Typ.VRSTEVNICE).isPresent());
+		assertSame(model.getKatalogVrstev(), posledni(udalosti).getKatalog());
+	}
+
 	private static KatalogVrstevEvent posledni(final List<Event0<SpravaMapModel>> udalosti) {
 		for (int i = udalosti.size() - 1; i >= 0; i--) {
 			if (udalosti.get(i) instanceof KatalogVrstevEvent) {

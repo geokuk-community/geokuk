@@ -217,14 +217,23 @@ public class SpravaMapModel extends Model0 {
 	 * zůstane poslední kopie (nebo vestavěný katalog) a uživatel nic nevidí; další pokus nejdřív za {@link #opakovaniKataloguNs}.
 	 */
 	public void obnovKatalogVrstevKdyzJeStary() {
+		obnovKatalogVrstevPodminene(false);
+	}
+
+	/** Hned ověří u serveru, jestli nemá novější katalog vrstev (podmíněný dotaz, nezměněný se nestahuje); na žádost uživatele. */
+	public void zkontrolujKatalogVrstev() {
+		obnovKatalogVrstevPodminene(true);
+	}
+
+	private void obnovKatalogVrstevPodminene(final boolean hned) {
 		kontrola.execute(() -> {
 			final File sv = slozkaVrstevNaPozadi();
 			final long ted = System.nanoTime();
-			if (sv == null || posledniPokusKatalogu != null && ted - posledniPokusKatalogu < opakovaniKataloguNs) {
+			if (sv == null || !hned && posledniPokusKatalogu != null && ted - posledniPokusKatalogu < opakovaniKataloguNs) {
 				return;
 			}
 			final File kopie = new File(sv, SOUBOR_KATALOGU);
-			if (kopie.isFile() && System.currentTimeMillis() - kopie.lastModified() < stariKataloguMs) {
+			if (!hned && kopie.isFile() && System.currentTimeMillis() - kopie.lastModified() < stariKataloguMs) {
 				return;
 			}
 			try {
