@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
 import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Format;
@@ -442,10 +443,15 @@ final class StahovacVrstev {
 	static final int NEJVETSI_KATALOG = 10 * 1024 * 1024;
 
 	/** Stáhne text katalogu vrstev. */
-	String stahniKatalog(final URI url) throws IOException {
-		final HttpURLConnection c = http.spojeniNaServer(Collections.singletonList(url), "GET", Collections.emptyMap()).spojeni;
+	/** Katalog ze serveru; null, když se nezměnil od verze se značkou etag (null = stáhnout vždy). Značku nové verze předá příjemci. */
+	String stahniKatalog(final URI url, final String etag, final Consumer<String> novyEtag) throws IOException {
+		final HttpURLConnection c = http.spojeniNaServer(Collections.singletonList(url), "GET",
+				etag == null ? Collections.emptyMap() : Collections.singletonMap("If-None-Match", etag)).spojeni;
 		try {
 			final int kod = c.getResponseCode();
+			if (kod == HttpURLConnection.HTTP_NOT_MODIFIED && etag != null) {
+				return null;
+			}
 			if (kod == HttpURLConnection.HTTP_NOT_FOUND) {
 				throw new ChybaProUzivatele("Katalog vrstev na serveru zatím není.");
 			}
@@ -462,6 +468,7 @@ final class StahovacVrstev {
 					}
 				}
 			}
+			novyEtag.accept(c.getHeaderField("ETag"));
 			return new String(out.toByteArray(), StandardCharsets.UTF_8);
 		} finally {
 			c.disconnect();
