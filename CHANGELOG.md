@@ -15,7 +15,8 @@
   volbou v panelu jde ukázat obrysy všech map v přehledu (do zoomu 7). Při
   hodně mapách mají sekce panelu posuvníky, v seznamu dalších map jde hledat a
   země s regiony (Německo, Francie, Itálie, Nizozemsko, Španělsko, Spojené
-  království) se rozbalují.
+  království) se rozbalují. Nabízí i Kanárské ostrovy (u Španělska) a Egypt
+  (Afrika).
 - Mapy zemí a regionů Evropy z download.mapsforge.org jde z panelu Offline
   mapy stáhnout (po jedné, přerušené stahování pokračuje) a na požádání
   zkontrolovat, jestli nejsou novější. Panel ukáže výsledek kontroly a při

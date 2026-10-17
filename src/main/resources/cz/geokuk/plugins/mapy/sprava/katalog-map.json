@@ -6,6 +6,8 @@
  "mapy": ["https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/v5/", "https://download.mapsforge.org/maps/v5/"],
  "polygony": ["https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/poly/", "https://download.mapsforge.org/maps/poly/"],
  "polozky": [
+  {"id": "africa/canary-islands", "nazev": "Kanárské ostrovy (Afrika)", "skupina": "Španělsko", "velikost": 50633839, "datum": "Sun, 10 May 2026 04:28:56 GMT"},
+  {"id": "africa/egypt", "nazev": "Egypt", "skupina": "Afrika", "velikost": 181190736, "datum": "Tue, 12 May 2026 23:59:53 GMT"},
   {"id": "europe/albania", "nazev": "Albánie", "velikost": 44849299, "datum": "Fri, 21 Aug 2026 07:48:25 GMT"},
   {"id": "europe/andorra", "nazev": "Andorra", "velikost": 2539895, "datum": "Mon, 07 Sep 2026 07:30:19 GMT"},
   {"id": "europe/austria", "nazev": "Rakousko", "velikost": 554110376, "datum": "Fri, 21 Aug 2026 12:21:09 GMT"},
