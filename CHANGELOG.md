@@ -10,7 +10,8 @@
   jednou vykreslí znovu.
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
-  nečitelné soubory), odkazem na složku offline map a na weby s mapami.
+  nečitelné soubory), odkazem, který složku offline map otevře ve správci
+  souborů, a odkazy na weby s mapami.
   Najetím na řádek mapy se v mapě ukáže její obrys, stejně při stahování;
   volbou v panelu jde ukázat obrysy všech map v přehledu (do zoomu 7). Při
   hodně mapách mají sekce panelu posuvníky, v seznamu dalších map jde hledat a
@@ -25,6 +26,11 @@
   stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
   po regionech (dvojitě stažená), panel na to upozorní a nabídne smazat
   regiony, nebo celek.
+  Stažený soubor se po dokončení ověří (Ověřuji N %). Hromadné stahování
+  (Stáhnout vše, průvodce) po chybě pokračuje dalšími položkami; na konci panel
+  ukáže souhrn, co se stáhlo a co ne, a tlačítko Zkusit znovu.
+  Panel se při hromadném stahování nepřestavuje po každém souboru a posuvníky
+  sekcí zůstávají na místě.
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistické a
   cyklotrasy, vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a
   Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
@@ -113,6 +119,11 @@
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
+
+### Opravy
+- Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
+  keše), už nezahltí log tisíci varováními. Jiná nečíselná čísla vlastníka
+  program ohlásí jedním varováním za soubor.
 
 Obsahuje i všechny opravy z 6.4.2.
 
