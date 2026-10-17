@@ -16,8 +16,10 @@ public class PruvodceMapActionTest {
 	}
 
 	@Test
-	public void hlaskaOChybeSPricinou() {
-		Assert.assertEquals("Stahování se zastavilo u „Česko – mapa“: Na disku není místo.\nZkuste to znovu přes Mapy > Průvodce nastavením map.", SpousteniPruvodce.textChyby("Česko – mapa", "Na disku není místo."));
-		Assert.assertEquals("Stahování se zastavilo u „Česko – mapa“.\nZkuste to znovu přes Mapy > Průvodce nastavením map.", SpousteniPruvodce.textChyby("Česko – mapa", null));
+	public void souhrnDavkySChybami() {
+		final PlanPruvodce.Polozka p = new PlanPruvodce.Polozka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.MAPA, "x", "x", "Česko – mapa", 1);
+		final PlanPruvodce.Polozka q = new PlanPruvodce.Polozka(cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast.TRASY, "x", "t", "Česko – trasy", 1);
+		Assert.assertEquals(java.util.Arrays.asList("Staženo 3, nepodařilo se 2:", "Česko – mapa – Na disku není místo.", "Česko – trasy"),
+				SpousteniPruvodce.radkySouhrnu(5, java.util.Arrays.asList(new BehPruvodce.Selhana(p, "Na disku není místo."), new BehPruvodce.Selhana(q, null))));
 	}
 }

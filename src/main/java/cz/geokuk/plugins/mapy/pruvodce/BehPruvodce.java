@@ -1,5 +1,8 @@
 package cz.geokuk.plugins.mapy.pruvodce;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 import cz.geokuk.plugins.mapy.pruvodce.FrontaPruvodce.Akce;
@@ -25,8 +28,7 @@ public final class BehPruvodce {
 	private final Consumer<Stav> poZmene;
 	private boolean prepnuto;
 	private Stav stav = Stav.BEZI;
-	private Polozka selhala;
-	private String duvod;
+	private List<Selhana> selhane = Collections.emptyList();
 
 	public BehPruvodce(final PruvodceKontext kontext, final PlanPruvodce plan, final Consumer<Stav> poZmene) {
 		this.kontext = kontext;
@@ -67,14 +69,14 @@ public final class BehPruvodce {
 			}
 			break;
 		case HOTOVO:
-			prepni();
+			// Když selhala některá mapa, zobrazení se nepřepíná na prázdnou offline mapu.
+			if (mapyJsou()) {
+				prepni();
+			}
+			selhane = sestavSelhane();
 			konec(Stav.HOTOVO);
 			break;
 		case ZASTAVENO:
-			if (k.isChyba()) {
-				selhala = k.getPolozka();
-				duvod = chybaPodleId(k.getPolozka().getId());
-			}
 			konec(Stav.ZASTAVENO);
 			break;
 		case CEKEJ:
@@ -97,29 +99,68 @@ public final class BehPruvodce {
 		}
 	}
 
+	/** Kolik položek plán obsahuje. */
+	public int getPocetPolozek() {
+		return plan.getPolozky().size();
+	}
+
 	public Stav getStav() {
 		return stav;
 	}
 
-	/** Položka, kvůli které se průvodce zastavil, null když se nezastavil kvůli chybě. */
-	public Polozka getSelhala() {
-		return selhala;
+	/** Položka, která po spuštění skončila chybou, a text chyby (null, když ho program nehlásí). */
+	public static final class Selhana {
+		private final Polozka polozka;
+		private final String duvod;
+
+		Selhana(final Polozka polozka, final String duvod) {
+			this.polozka = polozka;
+			this.duvod = duvod;
+		}
+
+		public Polozka getPolozka() {
+			return polozka;
+		}
+
+		public String getDuvod() {
+			return duvod;
+		}
 	}
 
-	/** Text chyby stahování, null když ho program nehlásí. */
-	public String getDuvod() {
-		return duvod;
+	/** Co se nepodařilo stáhnout, když dávka skončila ({@link Stav#HOTOVO}); jinak prázdné. */
+	public List<Selhana> getSelhane() {
+		return selhane;
 	}
 
-	private String chybaPodleId(final String id) {
+	/** Zkusí znovu jen to, co selhalo; průvodce běží dál ({@link Stav#BEZI}). Volající musí znovu spustit časovač. */
+	public void zkusZnovu() {
+		if (stav == Stav.HOTOVO && !selhane.isEmpty()) {
+			fronta.znovuSelhane();
+			selhane = Collections.emptyList();
+			stav = Stav.BEZI;
+			krok();
+		}
+	}
+
+	private List<Selhana> sestavSelhane() {
+		final List<Polozka> polozky = fronta.getSelhane();
+		final List<Selhana> v = new ArrayList<>();
+		if (polozky.isEmpty()) {
+			return v;
+		}
+		final java.util.Map<String, String> chyby = new java.util.HashMap<>();
 		for (final MatriceMap.Radek r : kontext.matice()) {
 			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
-				if (id.equals(r.getBunka(c).getId())) {
-					return r.getBunka(c).getChyba();
+				final MatriceMap.Bunka b = r.getBunka(c);
+				if (b.getId() != null && b.getChyba() != null) {
+					chyby.putIfAbsent(b.getId(), b.getChyba());
 				}
 			}
 		}
-		return null;
+		for (final Polozka p : polozky) {
+			v.add(new Selhana(p, chyby.get(p.getId())));
+		}
+		return v;
 	}
 
 	private void konec(final Stav novy) {

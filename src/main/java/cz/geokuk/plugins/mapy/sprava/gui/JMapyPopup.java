@@ -81,6 +81,7 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_BUNKY = 112;
 
 	static final String STAHNOUT_VSE = "Stáhnout vše";
+	static final String ZAVRIT = "Zavřít";
 	static final String DOSTAHNOUT_VRSTVY = "Dostáhnout vrstvy ke staženým mapám (%s, %s)";
 
 	/** Šířka sloupce s akcí mapy (Stáhnout, Zrušit…), ve všech oddílech stejná. */
@@ -490,7 +491,7 @@ public class JMapyPopup extends JPanel {
 	/** Nové řádky; při stahování se jen přepíší popisy, jinak se popup sestaví znovu. */
 	public void obnov(final List<RadekMapy> nove) {
 		odhad.zapomenKrome(stahovane(nove));
-		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky));
+		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky)) && zobrazenySouhrn.equals(souhrnDavky());
 		radky = new ArrayList<>(nove);
 		if (stejnaStruktura) {
 			boolean sirsi = false;
@@ -846,6 +847,11 @@ public class JMapyPopup extends JPanel {
 		}));
 		hlavicka.add(akceHlavicky, BorderLayout.EAST);
 		add(hlavicka, gbc);
+		zobrazenySouhrn = new ArrayList<>(souhrnDavky());
+		if (!zobrazenySouhrn.isEmpty()) {
+			gbc.gridy++;
+			add(souhrnDavkyPanel(zobrazenySouhrn), gbc);
+		}
 		if (radky.stream().anyMatch(r -> r.matice != null && !r.vlastni)) {
 			gbc.gridy++;
 			add(hlavickaSloupcu(), gbc);
@@ -1081,6 +1087,44 @@ public class JMapyPopup extends JPanel {
 		}
 		revalidate();
 		repaint();
+	}
+
+	private List<String> zobrazenySouhrn = Collections.emptyList();
+
+	private List<String> souhrnDavky() {
+		return ovladani == null ? Collections.emptyList() : ovladani.souhrnDavky();
+	}
+
+	/** Souhrn skončené dávky: kolik se stáhlo, co se nepodařilo, a tlačítka Zkusit znovu a Zavřít. */
+	private JPanel souhrnDavkyPanel(final List<String> radky) {
+		final JPanel p = new JPanel(new BorderLayout(8, 2));
+		p.setOpaque(false);
+		p.setBorder(new CompoundBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, IkonyMap.CERVENA), new EmptyBorder(3, 0, 3, 0)));
+		final JPanel text = new JPanel(new GridLayout(0, 1));
+		text.setOpaque(false);
+		for (int i = 0; i < radky.size(); i++) {
+			final JLabel l = maly(radky.get(i));
+			if (i == 0) {
+				l.setForeground(IkonyMap.CERVENA);
+				l.setFont(l.getFont().deriveFont(Font.BOLD));
+			}
+			text.add(l);
+		}
+		p.add(text, BorderLayout.CENTER);
+		final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+		tlacitka.setOpaque(false);
+		tlacitka.add(odkaz(ZKUSIT_ZNOVU, e -> {
+			if (ovladani != null) {
+				ovladani.zkusZnovuDavku();
+			}
+		}));
+		tlacitka.add(odkaz(ZAVRIT, e -> {
+			if (ovladani != null) {
+				ovladani.zavriSouhrnDavky();
+			}
+		}));
+		p.add(tlacitka, BorderLayout.EAST);
+		return p;
 	}
 
 	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */

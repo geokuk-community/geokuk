@@ -1385,6 +1385,47 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Souhrn skončené dávky s chybami je v popupu s tlačítky Zkusit znovu a Zavřít; po změně souhrnu se popup přestaví. */
+	@Test
+	public void souhrnDavkySChybami() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final List<String> souhrn = new ArrayList<>();
+			final List<String> volani = new ArrayList<>();
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new OvladaniMap() {
+				@Override
+				public void otevriSlozku() {}
+
+				@Override
+				public List<String> souhrnDavky() {
+					return souhrn;
+				}
+
+				@Override
+				public void zkusZnovuDavku() {
+					volani.add("znovu");
+				}
+
+				@Override
+				public void zavriSouhrnDavky() {
+					volani.add("zavri");
+				}
+			});
+			final List<RadekMapy> radky = Collections.singletonList(katalog("a", RadekMapy.Stav.NEMAME).build());
+			p.obnov(radky);
+			Assert.assertTrue("bez souhrnu nic", tlacitkaSTextem(p, JMapyPopup.ZAVRIT).isEmpty());
+			souhrn.addAll(Arrays.asList("Staženo 3, nepodařilo se 1:", "Česko – mapa – chyba"));
+			p.obnov(radky);
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> "Staženo 3, nepodařilo se 1:".equals(l.getText())));
+			tlacitkaSTextem(p, JMapyPopup.ZAVRIT).get(0).doClick();
+			tlacitkaSTextem(p, JMapyPopup.ZKUSIT_ZNOVU).get(0).doClick();
+			Assert.assertEquals(Arrays.asList("zavri", "znovu"), volani);
+			souhrn.clear();
+			p.obnov(radky);
+			Assert.assertTrue("po zavření souhrn zmizí", tlacitkaSTextem(p, JMapyPopup.ZAVRIT).isEmpty());
+		});
+	}
+
 	/** Za hromadné dávky se změna struktury nepřestaví hned, ale až po odstupu, a to jednou s nejnovějšími řádky. */
 	@Test(timeout = 30000)
 	public void behemDavkyPrestavbaPopupuCeka() throws Exception {
