@@ -39,7 +39,7 @@ public class JMapyPopup extends JPanel {
 	static final String VE_SLOZCE = "Ve složce";
 	static final String ZADNA_MAPA = "Zatím tu není žádná offline mapa.";
 	static final String PRO_MISTO = "Pro zobrazené místo";
-	static final String DALSI = "Další mapy ke stažení";
+	static final String DALSI = "Všechny mapy ke stažení";
 	static final String OBRYS = "Ukázat v mapě, kde offline mapy jsou";
 	static final String STINOVANI = "Stínovat terén";
 	static final String WEB = "Další offline mapy:";
@@ -106,9 +106,9 @@ public class JMapyPopup extends JPanel {
 	private String zvyraznena;
 	private transient List<RadekMapy> radky = Collections.emptyList();
 	/** Ikona, název a popis podle id řádku, aby šly při stahování obnovit bez přestavění popupu. */
-	private final Map<String, JLabel[]> popisy = new HashMap<>();
+	private final Map<String, List<JLabel[]>> popisy = new HashMap<>();
 	/** Procenta právě stahované vrstvy podle řádku a sloupce, aby šla při stahování přepsat bez přestavění popupu. */
-	private final Map<String, JLabel> postupVrstev = new HashMap<>();
+	private final Map<String, List<JLabel>> postupVrstev = new HashMap<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private final JCheckBox stinovani = new JCheckBox(STINOVANI);
 	private boolean stinovaniDostupne;
@@ -488,22 +488,22 @@ public class JMapyPopup extends JPanel {
 		if (stejnaStruktura) {
 			boolean sirsi = false;
 			for (final RadekMapy r : radky) {
-				final JLabel[] bunky = popisy.get(klic(r));
-				if (bunky == null) {
-					continue;
-				}
-				final JLabel popis = bunky[2];
-				final int predtim = popis.getPreferredSize().width;
-				popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r), popis.getFontMetrics(popis.getFont())));
-				sirsi |= popis.getPreferredSize().width > predtim;
-				final String tooltip = r.tooltip();
-				for (final JLabel b : bunky) {
-					b.setToolTipText(tooltip);
+				for (final JLabel[] bunky : popisy.getOrDefault(klic(r), Collections.emptyList())) {
+					final JLabel popis = bunky[2];
+					final int predtim = popis.getPreferredSize().width;
+					popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r), popis.getFontMetrics(popis.getFont())));
+					sirsi |= popis.getPreferredSize().width > predtim;
+					final String tooltip = r.tooltip();
+					for (final JLabel b : bunky) {
+						b.setToolTipText(tooltip);
+					}
 				}
 				for (final MatriceMap.Cast c : VRSTVY) {
-					final JLabel postup = postupVrstev.get(klic(r) + "#" + c);
 					final MatriceMap.Bunka vrstva = r.bunka(c);
-					if (postup != null && vrstva != null) {
+					if (vrstva == null) {
+						continue;
+					}
+					for (final JLabel postup : postupVrstev.getOrDefault(klic(r) + "#" + c, Collections.emptyList())) {
 						postup.setText(procenta(vrstva));
 					}
 				}
@@ -761,9 +761,10 @@ public class JMapyPopup extends JPanel {
 		for (final RadekMapy r : radky) {
 			if (r.isVeSlozce()) {
 				veSlozce.add(r);
-			} else if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE || r.bezicVrstva() != null) {
-				proMisto.add(r);
 			} else {
+				if (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE || r.bezicVrstva() != null) {
+					proMisto.add(r);
+				}
 				dalsi.add(r);
 			}
 		}
@@ -810,16 +811,19 @@ public class JMapyPopup extends JPanel {
 			gbc.gridy++;
 			add(maly(vysledek), gbc);
 		}
-		final JPanel slozka = panelRadku();
+		final TabulkaRadku slozka = panelRadku();
 		if (veSlozce.isEmpty()) {
 			final JLabel nic = maly(ZADNA_MAPA);
 			slozka.add(nic, bunka(0, 0, 4));
 		}
 		int y = 0;
 		y = stromSlozky(slozka, y, veSlozce, stahujeSe);
-		slozka.setVisible(slozkaOtevrena || veSlozce.isEmpty());
+		final boolean slozkaViditelna = slozkaOtevrena || veSlozce.isEmpty();
+		final JPanel slozkaObal = new JPanel(new BorderLayout());
+		slozkaObal.setOpaque(false);
+		slozkaObal.setVisible(slozkaViditelna);
 		gbc.gridy++;
-		add(slozka, gbc);
+		add(slozkaObal, gbc);
 		for (final PokrytiMap.DvojitaMapa d : dvojite) {
 			final StringBuilder regiony = new StringBuilder();
 			for (final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa r : d.getRegiony()) {
@@ -843,19 +847,24 @@ public class JMapyPopup extends JPanel {
 			add(akceDvojite, gbc);
 		}
 
+		TabulkaRadku misto = null;
+		final JPanel mistoObal = new JPanel(new BorderLayout());
+		mistoObal.setOpaque(false);
 		if (!proMisto.isEmpty()) {
 			gbc.gridy++;
 			add(nadpisOddilu(PRO_MISTO), gbc);
-			final JPanel misto = panelRadku();
+			misto = panelRadku();
 			y = 0;
 			for (final RadekMapy r : proMisto) {
 				y = pridejRadek(misto, y, r, stahujeSe);
 			}
 			gbc.gridy++;
-			add(misto, gbc);
+			add(mistoObal, gbc);
 		}
 
 		seznam = null;
+		final int[] vyska = new int[3];
+		int vyskaDalsi = 0;
 		if (!dalsi.isEmpty()) {
 			gbc.gridy++;
 			add(nadpisOddilu(DALSI), gbc);
@@ -899,18 +908,25 @@ public class JMapyPopup extends JPanel {
 			// Velikost podle seznamu bez hledání (regiony sbalené), aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
 			filtruj("");
 			final Dimension vse = obal.getPreferredSize();
+			vyskaDalsi = vse.height;
 			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 				private static final long serialVersionUID = 1L;
 
 				@Override
 				public Dimension getPreferredSize() {
-					return new Dimension(vse.width + getVerticalScrollBar().getPreferredSize().width, Math.min(vse.height, VYSKA_SEZNAMU));
+					return new Dimension(vse.width + getVerticalScrollBar().getPreferredSize().width, Math.min(vse.height, vyska[2]));
 				}
 			};
 			seznam.setBorder(BorderFactory.createEmptyBorder());
 			seznam.getVerticalScrollBar().setUnitIncrement(16);
 			gbc.gridy++;
 			add(seznam, gbc);
+		}
+		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocetSekci(), MIN_VYSKA_SEKCE);
+		System.arraycopy(prideleno, 0, vyska, 0, 3);
+		slozkaObal.add(sekce(slozka, prideleno[0]));
+		if (misto != null) {
+			mistoObal.add(sekce(misto, prideleno[1]));
 		}
 
 		if (radky.stream().anyMatch(r -> !r.vlastni)) {
@@ -934,21 +950,26 @@ public class JMapyPopup extends JPanel {
 		gbc.insets = new Insets(6, 0, 0, 0);
 		add(new JSeparator(), gbc);
 		gbc.insets = new Insets(2, 0, 0, 0);
+		// Zaškrtávátka vlevo a odkazy na weby vpravo na jednom řádku.
+		final JPanel pata = new JPanel(new BorderLayout(12, 0));
+		pata.setOpaque(false);
+		final JPanel volby = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+		volby.setOpaque(false);
 		if (ovladani != null && ovladani.isObrysDostupny()) {
-			gbc.gridy++;
-			add(obrys, gbc);
+			volby.add(obrys);
 		}
 		if (stinovaniDostupne) {
-			gbc.gridy++;
-			add(stinovani, gbc);
+			volby.add(stinovani);
 		}
-		gbc.gridy++;
-		final JPanel web = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+		final JPanel web = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
 		web.setOpaque(false);
 		web.add(maly(WEB));
 		web.add(odkaz("osm.paws.cz", URL_PAWS));
 		web.add(odkaz("OpenAndroMaps", URL_OAM));
-		add(web, gbc);
+		pata.add(volby, BorderLayout.WEST);
+		pata.add(web, BorderLayout.EAST);
+		gbc.gridy++;
+		add(pata, gbc);
 		if (uzivatelPise) {
 			cekaNaFokus = true;
 			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
@@ -957,9 +978,101 @@ public class JMapyPopup extends JPanel {
 		repaint();
 	}
 
+	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */
+	static final int MIN_VYSKA_SEKCE = 80;
+
+	/** Kolik výšky smějí dohromady mít seznamy map: nejvýš polovina obrazovky, 260 až 520 px. */
+	static int rozpocetSekci() {
+		int obrazovka = 1000;
+		if (!GraphicsEnvironment.isHeadless()) {
+			obrazovka = Toolkit.getDefaultToolkit().getScreenSize().height;
+		}
+		return Math.max(260, Math.min(520, obrazovka / 2));
+	}
+
+	/**
+	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí rovným dílem mezi sekce, které se nevejdou,
+	 * každá nejméně minimum. Součet může minimy překročit rozpočet.
+	 */
+	static int[] rozdelVysky(final int[] pozadovano, final int rozpocet, final int minimum) {
+		final int[] v = pozadovano.clone();
+		int soucet = 0;
+		for (final int p : pozadovano) {
+			soucet += p;
+		}
+		if (soucet <= rozpocet) {
+			return v;
+		}
+		final boolean[] pevna = new boolean[v.length];
+		int zbyva = rozpocet;
+		boolean zmena = true;
+		while (zmena) {
+			zmena = false;
+			int volnych = 0;
+			for (int i = 0; i < v.length; i++) {
+				if (!pevna[i] && pozadovano[i] > 0) {
+					volnych++;
+				}
+			}
+			if (volnych == 0) {
+				break;
+			}
+			final int podil = Math.max(minimum, zbyva / volnych);
+			for (int i = 0; i < v.length; i++) {
+				if (!pevna[i] && pozadovano[i] > 0 && pozadovano[i] <= podil) {
+					pevna[i] = true;
+					zbyva -= pozadovano[i];
+					zmena = true;
+				}
+			}
+		}
+		int volnych = 0;
+		for (int i = 0; i < v.length; i++) {
+			if (!pevna[i] && pozadovano[i] > 0) {
+				volnych++;
+			}
+		}
+		for (int i = 0; i < v.length; i++) {
+			if (!pevna[i] && pozadovano[i] > 0) {
+				v[i] = Math.min(pozadovano[i], Math.max(minimum, zbyva / volnych));
+			}
+		}
+		return v;
+	}
+
+	/** Sekce se seznamem řádků: celá, když se vejde do přidělené výšky, jinak v posuvníku. */
+	private static JComponent sekce(final TabulkaRadku tabulka, final int vyska) {
+		if (tabulka.getPreferredSize().height <= vyska) {
+			return tabulka;
+		}
+		tabulka.bezRezervyVpravo();
+		final JPanel obal = new JPanel(new BorderLayout());
+		obal.setOpaque(false);
+		obal.add(tabulka, BorderLayout.NORTH);
+		final JScrollPane sp = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Dimension getPreferredSize() {
+				return new Dimension(obal.getPreferredSize().width + getVerticalScrollBar().getPreferredSize().width, vyska);
+			}
+		};
+		sp.setBorder(BorderFactory.createEmptyBorder());
+		sp.setOpaque(false);
+		sp.getViewport().setOpaque(false);
+		sp.getVerticalScrollBar().setUnitIncrement(16);
+		return sp;
+	}
+
 	/** Klíč řádku pro zvýraznění obrysu mapy: id z katalogu, u souboru uživatele jeho jméno. */
 	static String klicZvyrazneni(final RadekMapy r) {
 		return r.vlastni ? JObrysMapSlide.VLASTNI + r.nazev : r.id;
+	}
+
+	/** Naposledy sestavený řádek mapy; stejná mapa může být vidět ve dvou oddílech. */
+	private JLabel[] posledniPopis(final RadekMapy r) {
+		final List<JLabel[]> v = popisy.get(klic(r));
+		return v.get(v.size() - 1);
 	}
 
 	private int pridejRadek(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe) {
@@ -1015,17 +1128,17 @@ public class JMapyPopup extends JPanel {
 	private int pridejRadekSeznamu(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe, final int odsazeni, final Uzel uzel, final boolean hlavicka) {
 		final int pred = panel.getComponentCount();
 		radek(panel, y, r, stahujeSe);
-		final JLabel nazev = popisy.get(klic(r))[1];
+		final JLabel nazev = posledniPopis(r)[1];
 		nazev.setBorder(new EmptyBorder(0, odsazeni, 0, 0));
 		if (hlavicka && uzel != null) {
 			nazev.setBorder(null);
 			uzel.hlavicka = nazev;
 			nastavRozbaleni(uzel, nazev);
-			pridejStahnoutVse(panel, popisy.get(klic(r))[2], uzel, stahujeSe);
+			pridejStahnoutVse(panel, posledniPopis(r)[2], uzel, stahujeSe);
 		} else if (uzel == null && r.skupina == null && r.matice != null && !r.vlastni) {
 			final Uzel sama = new Uzel(r.nazev);
 			sama.celek = r;
-			pridejStahnoutVse(panel, popisy.get(klic(r))[2], sama, stahujeSe);
+			pridejStahnoutVse(panel, posledniPopis(r)[2], sama, stahujeSe);
 		}
 		final String zeme = uzel == null ? null : uzel.nazev;
 		hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), zeme, hlavicka, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
@@ -1197,7 +1310,7 @@ public class JMapyPopup extends JPanel {
 			}
 			if (u.celek != null) {
 				radek(panel, y++, u.celek, stahujeSe);
-				final JLabel nazev = popisy.get(klic(u.celek))[1];
+				final JLabel nazev = posledniPopis(u.celek)[1];
 				nazev.setBorder(null);
 				nastavRozbaleni(nazev, rozbaleno, () -> prepniUzelSlozky(u.nazev));
 			} else {
@@ -1206,7 +1319,7 @@ public class JMapyPopup extends JPanel {
 			if (rozbaleno) {
 				for (final RadekMapy r : u.regiony) {
 					radek(panel, y++, r, stahujeSe);
-					popisy.get(klic(r))[1].setBorder(new EmptyBorder(0, 2 * ODSAZENI, 0, 0));
+					posledniPopis(r)[1].setBorder(new EmptyBorder(0, 2 * ODSAZENI, 0, 0));
 				}
 			}
 		}
@@ -1265,7 +1378,7 @@ public class JMapyPopup extends JPanel {
 		cp.weightx = 1;
 		cp.insets = new Insets(1, 8, 1, 8);
 		panel.add(popis, cp);
-		popisy.put(klic(r), new JLabel[] { ikona, nazev, popis });
+		popisy.computeIfAbsent(klic(r), k -> new ArrayList<>()).add(new JLabel[] { ikona, nazev, popis });
 
 		final JButton akce = akce(r, mapaBezi);
 		if (akce != null) {
@@ -1337,7 +1450,7 @@ public class JMapyPopup extends JPanel {
 		case STAHUJE: {
 			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.STAHUJE)));
 			final JLabel procenta = maly(procenta(b));
-			postupVrstev.put(klic(r) + "#" + cast, procenta);
+			postupVrstev.computeIfAbsent(klic(r) + "#" + cast, k -> new ArrayList<>()).add(procenta);
 			p.add(procenta);
 			final JButton zrusit = odkaz(ZRUSIT, e -> {
 				if (ovladani != null) {
@@ -1432,8 +1545,7 @@ public class JMapyPopup extends JPanel {
 				// Zaseknutý server zrušení potvrdí až po chvíli.
 				rusenaMapa = r.id;
 				zrusit.setEnabled(false);
-				final JLabel[] bunky = popisy.get(klic(r));
-				if (bunky != null) {
+				for (final JLabel[] bunky : popisy.getOrDefault(klic(r), Collections.emptyList())) {
 					bunky[2].setText(RUSI_SE);
 				}
 			});
@@ -1484,7 +1596,7 @@ public class JMapyPopup extends JPanel {
 		return text.substring(0, n).trim() + "…";
 	}
 
-	private static JPanel panelRadku() {
+	private static TabulkaRadku panelRadku() {
 		return new TabulkaRadku(PRVNI_SLOUPEC_VRSTEV, sirkaPosuvniku());
 	}
 
