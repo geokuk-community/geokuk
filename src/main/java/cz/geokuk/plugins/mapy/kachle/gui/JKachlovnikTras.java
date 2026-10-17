@@ -1,7 +1,6 @@
 package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.Component;
-import java.awt.Graphics;
 
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.plugins.mapy.kachle.PrekryvTrasEvent;
@@ -68,16 +67,8 @@ public class JKachlovnikTras extends JKachlovnik {
 		}
 	}
 
-	/** Podklad, který data OpenStreetMap nepřiznává sám, dostane nad svou atribucí řádek pro trasy. */
+	/** Podklad, který data OpenStreetMap nepřiznává sám, dostane do atribuce OpenStreetMap kvůli trasám. */
 	static boolean potrebujeAtribuci(final EKaType podklad) {
 		return podklad != null && !podklad.isOffline() && !podklad.getAtribuce().contains("OpenStreetMap");
-	}
-
-	@Override
-	protected void paintChildren(final Graphics g) {
-		super.paintChildren(g);
-		if (potrebujeAtribuci(podklad)) {
-			JKachlovnikPresCele.kresliAtribuci(g, this, ATRIBUCE, podklad.getAtribuce().isEmpty() ? 0 : 1);
-		}
 	}
 }

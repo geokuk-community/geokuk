@@ -140,7 +140,14 @@ public class JKachlovnikPresCeleRadaTest {
 		final String veta = "Povinná věta Copernicus © DLR";
 		final cz.geokuk.plugins.mapy.sprava.KatalogVrstev katalog = cz.geokuk.plugins.mapy.sprava.AtribuceVrstevProGui.katalog(veta);
 		final boolean[] mame = { false };
-		final JKachlovnikPresCele k = new JKachlovnikPresCele();
+		final JKachlovnikPresCele k = new JKachlovnikPresCele() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected EKaType getKachloType() {
+				return EKaType.OFFLINE_MF;
+			}
+		};
 		k.inject(new SpravaMapModel() {
 			@Override
 			public cz.geokuk.plugins.mapy.sprava.KatalogVrstev getKatalogVrstev() {
@@ -152,8 +159,8 @@ public class JKachlovnikPresCeleRadaTest {
 				return mame[0] ? cz.geokuk.plugins.mapy.sprava.AtribuceVrstevProGui.mame(v) : cz.geokuk.plugins.mapy.sprava.StavVrstvy.novy(v);
 			}
 		});
-		Assert.assertTrue("vrstva není stažená, atribuce se neukazuje", k.atribuceVrstev().isEmpty());
+		Assert.assertFalse("vrstva není stažená, atribuce se neukazuje", k.plnaAtribuce().contains(veta));
 		mame[0] = true;
-		Assert.assertEquals(java.util.Collections.singletonList(veta), k.atribuceVrstev());
+		Assert.assertTrue(k.plnaAtribuce().contains(veta));
 	}
 }
