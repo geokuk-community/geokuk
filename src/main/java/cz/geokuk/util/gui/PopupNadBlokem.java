@@ -85,7 +85,13 @@ public class PopupNadBlokem {
 		obsah.setSize(obsah.getPreferredSize());
 		final Point p = poloha(obsah.getPreferredSize(), kotva);
 		SwingUtilities.convertPointToScreen(p, blok);
-		popup = PopupFactory.getSharedInstance().getPopup(blok, obsah, p.x, p.y);
+		final JRootPane koren = SwingUtilities.getRootPane(blok);
+		final Rectangle kde = new Rectangle(p, obsah.getPreferredSize());
+		if (koren != null && koren.isShowing() && new Rectangle(koren.getLocationOnScreen(), koren.getSize()).contains(kde)) {
+			popup = new VrstvovyPopup(koren, obsah, kde);
+		} else {
+			popup = new OknoPopup(blok, obsah, p.x, p.y);
+		}
 		obsahPopupu = obsah;
 		popup.show();
 		mimoOd = -1;
@@ -210,5 +216,58 @@ public class PopupNadBlokem {
 
 	private static boolean obsahuje(final Component c, final Point obrazovka) {
 		return c.isShowing() && new Rectangle(c.getLocationOnScreen(), c.getSize()).contains(obrazovka);
+	}
+
+	/** Popup ve vrstvě popupů okna: pole v něm dostane fokus a zavření nic neprochází, na rozdíl od těžkého popupu z PopupFactory. */
+	private static final class VrstvovyPopup extends Popup {
+		private final JLayeredPane vrstvy;
+		private final Component obsah;
+		private final Rectangle hranice;
+
+		VrstvovyPopup(final JRootPane koren, final Component obsah, final Rectangle naObrazovce) {
+			vrstvy = koren.getLayeredPane();
+			this.obsah = obsah;
+			final Point v = new Point(naObrazovce.x, naObrazovce.y);
+			SwingUtilities.convertPointFromScreen(v, vrstvy);
+			hranice = new Rectangle(v, naObrazovce.getSize());
+		}
+
+		@Override
+		public void show() {
+			obsah.setBounds(hranice);
+			vrstvy.add(obsah, JLayeredPane.POPUP_LAYER);
+			vrstvy.repaint(hranice);
+		}
+
+		@Override
+		public void hide() {
+			vrstvy.remove(obsah);
+			vrstvy.repaint(hranice);
+		}
+	}
+
+	/** Popup přesahující okno v nezávislém okně; těžký popup z PopupFactory při zavření prochází celý strom komponent hlavního okna. */
+	private static final class OknoPopup extends Popup {
+		private final JWindow okno;
+
+		OknoPopup(final Component vlastnik, final Component obsah, final int x, final int y) {
+			final Window rodic = SwingUtilities.getWindowAncestor(vlastnik);
+			okno = new JWindow(rodic);
+			okno.setFocusableWindowState(false);
+			okno.getContentPane().add(obsah);
+			okno.pack();
+			okno.setLocation(x, y);
+		}
+
+		@Override
+		public void show() {
+			okno.setVisible(true);
+		}
+
+		@Override
+		public void hide() {
+			okno.setVisible(false);
+			okno.dispose();
+		}
 	}
 }
