@@ -435,6 +435,7 @@ final class StahovacVrstev {
 			return null;
 		}
 		if (!sha.equals(so.getSha256())) {
+			log.warn("Stažený soubor {} nemá SHA-256 z katalogu: očekáváno {}, je {}", soubor, so.getSha256(), sha);
 			return "Stažený soubor " + so.getCesta() + " je poškozený, stáhněte vrstvu znovu.";
 		}
 		if (format == Format.MAP) {
