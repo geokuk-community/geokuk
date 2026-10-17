@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Assume;
 import org.junit.Test;
 
 import cz.geokuk.plugins.mapy.pruvodce.FrontaPruvodce.Akce;
@@ -33,6 +34,12 @@ public class FrontaPruvodceTest {
 		return PlanPruvodce.sestav(new PruvodceVolba(Collections.singletonList(CZ), PodkladPruvodce.TURISTICKA_OFFLINE, EnumSet.of(Cast.TRASY, Cast.VRSTEVNICE)), m);
 	}
 
+	private static PlanPruvodce planMapa() {
+		final List<MatriceMap.Radek> m = MatriceMap.sestav(KatalogMap.vestaveny(),
+				k -> StavMapyProGui.stav(k, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null), VrstvyProGui.katalogCesko(), StavVrstvy::novy);
+		return PlanPruvodce.sestav(new PruvodceVolba(Collections.singletonList(CZ), PodkladPruvodce.TURISTICKA_OFFLINE, EnumSet.noneOf(Cast.class)), m);
+	}
+
 	private static final String MAPA = CZ;
 	private static final String TRASY = "routes/" + CZ;
 	private static final String VRSTEVNICE = "contours/" + CZ;
@@ -46,22 +53,41 @@ public class FrontaPruvodceTest {
 	}
 
 	@Test
-	public void poustiPoJedneACeka() {
+	public void mapaPoJedneVrstvyPoDvou() {
 		final FrontaPruvodce f = new FrontaPruvodce(plan());
-		Map<String, StavBunky> s = stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
-		FrontaPruvodce.Krok k = f.dalsi(s::get);
+		FrontaPruvodce.Krok k = f.dalsi(stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get);
 		assertEquals(Akce.STAHUJ, k.getAkce());
 		assertEquals(MAPA, k.getPolozka().getId());
-		s = stavy(StavBunky.STAHUJE, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
-		assertEquals("mapa se stahuje, čekáme", Akce.CEKEJ, f.dalsi(s::get).getAkce());
-		s = stavy(StavBunky.STAZENO, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
-		k = f.dalsi(s::get);
-		assertEquals(Akce.STAHUJ, k.getAkce());
-		assertEquals(TRASY, k.getPolozka().getId());
-		s = stavy(StavBunky.STAZENO, StavBunky.STAZENO, StavBunky.KE_STAZENI);
-		assertEquals(VRSTEVNICE, f.dalsi(s::get).getPolozka().getId());
-		s = stavy(StavBunky.STAZENO, StavBunky.STAZENO, StavBunky.STAZENO);
-		assertEquals(Akce.HOTOVO, f.dalsi(s::get).getAkce());
+		k = f.dalsi(stavy(StavBunky.STAHUJE, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get, false);
+		assertEquals("vrstva vedle stahované mapy", TRASY, k.getPolozka().getId());
+		k = f.dalsi(stavy(StavBunky.STAHUJE, StavBunky.STAHUJE, StavBunky.KE_STAZENI)::get, false);
+		assertEquals("druhá vrstva", VRSTEVNICE, k.getPolozka().getId());
+		assertEquals(Akce.CEKEJ, f.dalsi(stavy(StavBunky.STAHUJE, StavBunky.STAHUJE, StavBunky.STAHUJE)::get).getAkce());
+		assertEquals(Akce.HOTOVO, f.dalsi(stavy(StavBunky.STAZENO, StavBunky.STAZENO, StavBunky.STAZENO)::get).getAkce());
+	}
+
+	/** Třetí vrstva čeká, až se některá ze dvou běžících dokončí. */
+	@Test
+	public void trretiVrstvaCeka() {
+		final List<MatriceMap.Radek> m = MatriceMap.sestav(KatalogMap.vestaveny(),
+				k -> StavMapyProGui.stav(k, StavMapy.Mistni.MAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null), VrstvyProGui.katalogCesko(), StavVrstvy::novy);
+		final PlanPruvodce tri = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI), m);
+		Assume.assumeTrue("katalog má tři vrstvy", tri.getPolozky().size() == 3);
+		final FrontaPruvodce f = new FrontaPruvodce(tri);
+		final String t = tri.getPolozky().get(0).getId();
+		final String v = tri.getPolozky().get(1).getId();
+		final String st = tri.getPolozky().get(2).getId();
+		final Map<String, StavBunky> s = new HashMap<>();
+		s.put(t, StavBunky.KE_STAZENI);
+		s.put(v, StavBunky.KE_STAZENI);
+		s.put(st, StavBunky.KE_STAZENI);
+		assertEquals(t, f.dalsi(s::get, false).getPolozka().getId());
+		s.put(t, StavBunky.STAHUJE);
+		assertEquals(v, f.dalsi(s::get, false).getPolozka().getId());
+		s.put(v, StavBunky.STAHUJE);
+		assertEquals("třetí čeká", Akce.CEKEJ, f.dalsi(s::get, false).getAkce());
+		s.put(t, StavBunky.STAZENO);
+		assertEquals(st, f.dalsi(s::get, false).getPolozka().getId());
 	}
 
 	@Test
@@ -86,7 +112,7 @@ public class FrontaPruvodceTest {
 	/** Zrušená položka (zpátky ve stavu ke stažení bez chyby) frontu zastaví, ale až když se to potvrdí podruhé, aby to nespletlo zpoždění stavu po spuštění. */
 	@Test
 	public void zrusenaPolozkaBezChybyZastaviPoDruhemPozorovani() {
-		final FrontaPruvodce f = new FrontaPruvodce(plan());
+		final FrontaPruvodce f = new FrontaPruvodce(planMapa());
 		final Map<String, StavBunky> ke = stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
 		assertEquals(Akce.STAHUJ, f.dalsi(ke::get).getAkce());
 		assertEquals("stav ještě nedoběhl", Akce.CEKEJ, f.dalsi(ke::get).getAkce());
@@ -116,15 +142,13 @@ public class FrontaPruvodceTest {
 
 	@Test
 	public void stahovaniCekaNaDokonceniBezOhleduNaPocetTiknuti() {
-		final FrontaPruvodce f = new FrontaPruvodce(plan());
+		final FrontaPruvodce f = new FrontaPruvodce(planMapa());
 		assertEquals(Akce.STAHUJ, f.dalsi(stavy(StavBunky.KE_STAZENI, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get).getAkce());
 		final Map<String, StavBunky> bezi = stavy(StavBunky.STAHUJE, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
 		for (int i = 0; i < 5; i++) {
 			assertEquals("tik " + i, Akce.CEKEJ, f.dalsi(bezi::get).getAkce());
 		}
-		final FrontaPruvodce.Krok dal = f.dalsi(stavy(StavBunky.STAZENO, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get);
-		assertEquals(Akce.STAHUJ, dal.getAkce());
-		assertEquals(TRASY, dal.getPolozka().getId());
+		assertEquals(Akce.HOTOVO, f.dalsi(stavy(StavBunky.STAZENO, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI)::get).getAkce());
 	}
 
 	@Test

@@ -150,7 +150,7 @@ public class JPruvodceMapTest {
 				tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
 			}
 			tlacitko(d.getContentPane(), JPruvodceMap.STAHNOUT_A_PREPNOUT).doClick();
-			Assert.assertEquals("první se stahuje mapa", java.util.Collections.singletonList("europe/czech-republic"), k.stazene);
+			Assert.assertEquals("mapa a vedle ní trasy", java.util.Arrays.asList("europe/czech-republic", "routes/europe/czech-republic"), k.stazene);
 			Assert.assertTrue("na stažení mapy se čeká", k.prepnuti.isEmpty());
 			Assert.assertTrue(SpousteniPruvodce.bezi());
 		});
