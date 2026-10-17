@@ -3,8 +3,9 @@
 ## 6.5.0
 
 ### Změny
-- Offline mapy se kreslí novým tématem Turistická: tlumené barvy, jemnější
-  obrysy a méně ikon. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
+- Offline mapy se kreslí novým tématem Turistická blíž Mapy.cz: světlejší les
+  a pole, chráněná území bez zelené výplně, decentní vrstevnice a stínování,
+  ikony zajímavých míst až v podrobnějším měřítku. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
   jiné; původní téma je tam jako Mapsforge (původní). Dlaždice v cache se
   jednou vykreslí znovu.
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
