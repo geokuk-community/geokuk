@@ -78,6 +78,7 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_BUNKY = 112;
 
 	/** Šířka sloupce s akcí mapy (Stáhnout, Zrušit…), ve všech oddílech stejná. */
+	static final String STAHNOUT_VSE = "Stáhnout vše";
 	static final int SIRKA_AKCE = 88;
 
 	/** Delší popis (třeba text chyby) se zkrátí, celý je v tooltipu. */
@@ -326,6 +327,16 @@ public class JMapyPopup extends JPanel {
 
 		Uzel(final String nazev) {
 			this.nazev = nazev;
+		}
+
+		/** Celek (když je) a regiony. */
+		List<RadekMapy> vsechnyRadky() {
+			final List<RadekMapy> v = new ArrayList<>();
+			if (celek != null) {
+				v.add(celek);
+			}
+			v.addAll(regiony);
+			return v;
 		}
 	}
 
@@ -987,6 +998,7 @@ public class JMapyPopup extends JPanel {
 			nazev.setBorder(null);
 			uzel.hlavicka = nazev;
 			nastavRozbaleni(uzel, nazev);
+			pridejStahnoutVse(panel, popisy.get(klic(r))[2], uzel, stahujeSe);
 		}
 		final String zeme = uzel == null ? null : uzel.nazev;
 		hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), zeme, hlavicka, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
@@ -1019,6 +1031,9 @@ public class JMapyPopup extends JPanel {
 		cp.weightx = 1;
 		cp.insets = new Insets(1, 8, 1, 8);
 		panel.add(popis, cp);
+		if (prepni == null) {
+			pridejStahnoutVse(panel, popis, u, false);
+		}
 		final GridBagConstraints ca = bunka(3, y, 1);
 		ca.fill = GridBagConstraints.NONE;
 		panel.add(sloupecAkce(null), ca);
@@ -1031,6 +1046,39 @@ public class JMapyPopup extends JPanel {
 			hledatelne.add(new RadekHledani(bezDiakritiky(u.nazev), u.nazev, true, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
 		}
 		return y + 1;
+	}
+
+	/** Odkaz „Stáhnout vše“ vedle popisu země, pokud k zemi je co stáhnout nebo aktualizovat. */
+	private void pridejStahnoutVse(final JPanel panel, final JLabel popis, final Uzel u, final boolean stahujeSe) {
+		final List<String> klice = new ArrayList<>();
+		boolean coStahnout = false;
+		for (final RadekMapy r : u.vsechnyRadky()) {
+			if (r.matice == null || r.vlastni) {
+				continue;
+			}
+			klice.add(r.id);
+			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
+				coStahnout |= r.matice.getBunka(c).jeKeStazeni();
+			}
+		}
+		if (!coStahnout) {
+			return;
+		}
+		final GridBagConstraints cp = ((GridBagLayout) panel.getLayout()).getConstraints(popis);
+		final JButton vse = odkaz(STAHNOUT_VSE, e -> {
+			if (ovladani != null) {
+				ovladani.stahniVse(u.nazev, u.celek == null ? null : u.celek.id, klice);
+			}
+		});
+		vse.setToolTipText(stahujeSe ? STAHUJE_SE_JINA : "Stáhne k zemi mapu, trasy, vrstevnice i stínování, co chybí nebo je zastaralé.");
+		vse.setEnabled(!stahujeSe);
+		popis.setPreferredSize(new Dimension(Math.max(40, SIRKA_POPISU - vse.getPreferredSize().width), popis.getPreferredSize().height));
+		final JPanel obal = new JPanel(new BorderLayout());
+		obal.setOpaque(false);
+		panel.remove(popis);
+		obal.add(popis, BorderLayout.CENTER);
+		obal.add(vse, BorderLayout.EAST);
+		panel.add(obal, cp);
 	}
 
 	/** Popisek země s regiony se chová jako přepínač: šipka a klik rozbalí regiony. */

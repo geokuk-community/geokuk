@@ -3,6 +3,7 @@ package cz.geokuk.plugins.mapy.pruvodce;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import cz.geokuk.plugins.mapy.sprava.MatriceMap;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast;
@@ -57,10 +58,12 @@ public final class PlanPruvodce {
 
 	private final PruvodceVolba volba;
 	private final List<Polozka> polozky;
+	private final boolean stahnoutVse;
 
-	private PlanPruvodce(final PruvodceVolba volba, final List<Polozka> polozky) {
+	private PlanPruvodce(final PruvodceVolba volba, final List<Polozka> polozky, final boolean stahnoutVse) {
 		this.volba = volba;
 		this.polozky = Collections.unmodifiableList(polozky);
+		this.stahnoutVse = stahnoutVse;
 	}
 
 	/**
@@ -102,7 +105,42 @@ public final class PlanPruvodce {
 				}
 			}
 		}
-		return new PlanPruvodce(volba, polozky);
+		return new PlanPruvodce(volba, polozky, false);
+	}
+
+	/**
+	 * Plán „Stáhnout vše“ pro zemi: co z vybraných částí chybí nebo je zastaralé, v pořadí mapa, trasy, vrstevnice, stínování. Zobrazení se nepřepíná.
+	 *
+	 * @param celekKlic
+	 *            klíč celé země, nebo null, když země má jen regiony; mapy regionů se stahují jen bez celku, vrstvy vždy u všech řádků
+	 * @param klice
+	 *            klíče řádků země (celek a regiony)
+	 */
+	public static PlanPruvodce sestavVse(final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
+		final List<Polozka> polozky = new ArrayList<>();
+		final boolean celekMaMapu = celekKlic != null && matice.stream().anyMatch(r -> r.getKlic().equals(celekKlic) && r.getBunka(Cast.MAPA).getStav() != StavBunky.NENI);
+		for (final Cast cast : new Cast[] { Cast.MAPA, Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI }) {
+			if (!casti.contains(cast)) {
+				continue;
+			}
+			for (final String klic : klice) {
+				if (cast == Cast.MAPA && celekMaMapu && !klic.equals(celekKlic)) {
+					continue;
+				}
+				matice.stream().filter(r -> r.getKlic().equals(klic)).findFirst().ifPresent(r -> {
+					final MatriceMap.Bunka b = r.getBunka(cast);
+					if (b.jeKeStazeni()) {
+						polozky.add(new Polozka(cast, r.getKlic(), b.getId(), r.getMapa().getNazev() + " – " + nazevCasti(cast), Math.max(0, b.getVelikost())));
+					}
+				});
+			}
+		}
+		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), polozky, true);
+	}
+
+	/** Plán „Stáhnout vše“: nic se nepřepíná a stahují se i novější verze. */
+	public boolean isStahnoutVse() {
+		return stahnoutVse;
 	}
 
 	private static void pridej(final List<Polozka> polozky, final MatriceMap.Radek radek, final Cast cast, final String popis) {
@@ -147,6 +185,6 @@ public final class PlanPruvodce {
 
 	/** Zobrazení se přepne hned: online podklad, nebo offline podklad, jehož mapy už jsou stažené. */
 	public boolean prepnoutHned() {
-		return polozky.stream().noneMatch(p -> p.getCast() == Cast.MAPA);
+		return !stahnoutVse && polozky.stream().noneMatch(p -> p.getCast() == Cast.MAPA);
 	}
 }
