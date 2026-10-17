@@ -6,16 +6,20 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
@@ -30,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Správa offline map z katalogu: stav map, kontrola na serveru a stažení. Ze serveru se samo stahuje jen katalog vrstev, jinak vše na žádost uživatele, a stahuje se vždy jen jedna
- * mapa. Síť i disk běží na vlastním vlákně, události {@link SpravaMapEvent} chodí na EDT.
+ * mapa (vrstvy nejvýš dvě souběžně). Síť i disk běží na vlastním vlákně, události {@link SpravaMapEvent} chodí na EDT.
  */
 @Slf4j
 public class SpravaMapModel extends Model0 {
@@ -53,14 +57,24 @@ public class SpravaMapModel extends Model0 {
 	private volatile KatalogVrstev stazenyKatalog;
 	private volatile File stazenyKatalogZ;
 	URI urlKataloguVrstev = KatalogVrstev.URL_KATALOGU;
+	/** Vrstev se stahuje nejvýš tolik současně; mapa jen jedna (zrcadla map mají omezený počet spojení), vedle ní mohou běžet vrstvy. */
+	static final int SOUBEZNE_VRSTVY = 2;
 	private final ExecutorService vlakno = vlakno("Stahování offline mapy");
+	private final ExecutorService vlaknaVrstev = Executors.newFixedThreadPool(SOUBEZNE_VRSTVY, r -> {
+		final Thread t = new Thread(r, "Stahování vrstvy");
+		t.setDaemon(true);
+		return t;
+	});
 	/** Kontroly a stav z disku, aby nečekaly na dlouhé stahování. */
 	private final ExecutorService kontrola = vlakno("Kontrola offline map");
 	private final Map<String, StavMapy> stavy = new ConcurrentHashMap<>();
 	private final Map<String, StavVrstvy> stavyVrstev = new ConcurrentHashMap<>();
 	/** Právě stahovaná mapa nebo vrstva; stahuje se vždy jen jedna. */
-	private final AtomicReference<Object> bezici = new AtomicReference<>();
-	private final AtomicBoolean zruseno = new AtomicBoolean();
+	private final AtomicReference<KatalogovaMapa> beziciMapa = new AtomicReference<>();
+	private final Set<KatalogovaVrstva> beziciVrstvy = ConcurrentHashMap.newKeySet();
+	/** Pořadí spuštěných stahování; zrušení platí pro všechna spuštěná do {@link #zrusenoDo}. */
+	private final AtomicLong poradi = new AtomicLong();
+	private volatile long zrusenoDo;
 	private final StahovacMapy stahovac;
 	private final StahovacVrstev stahovacVrstev;
 	private Supplier<File> slozka = () -> null;
@@ -160,8 +174,8 @@ public class SpravaMapModel extends Model0 {
 
 	/** Běžící stahování mapy; prázdné, když se nestahuje nic nebo se stahuje vrstva. */
 	public Optional<StavMapy> getBeziciStahovani() {
-		final Object m = bezici.get();
-		return m instanceof KatalogovaMapa ? Optional.of(getStav((KatalogovaMapa) m)) : Optional.empty();
+		final KatalogovaMapa m = beziciMapa.get();
+		return m == null ? Optional.empty() : Optional.of(getStav(m));
 	}
 
 	/** Katalog vrstev: naposledy stažený ze serveru, jinak vestavěný. */
@@ -291,31 +305,37 @@ public class SpravaMapModel extends Model0 {
 		return stavyVrstev.computeIfAbsent(vrstva.getId(), id -> StavVrstvy.novy(vrstva));
 	}
 
-	/** Běžící stahování vrstvy; prázdné, když se nestahuje nic nebo se stahuje mapa. */
+	/** Jedno z běžících stahování vrstev; prázdné, když se žádná vrstva nestahuje. */
 	public Optional<StavVrstvy> getBeziciStahovaniVrstvy() {
-		final Object v = bezici.get();
-		return v instanceof KatalogovaVrstva ? Optional.of(getStav((KatalogovaVrstva) v)) : Optional.empty();
+		return getBeziciStahovaniVrstev().stream().findFirst();
 	}
 
-	/** Stáhne všechny soubory vrstvy do {@link #getSlozkaVrstev()}. False, když se už něco stahuje. */
+	/** Běžící stahování vrstev (nejvýš {@link #SOUBEZNE_VRSTVY}). */
+	public List<StavVrstvy> getBeziciStahovaniVrstev() {
+		return beziciVrstvy.stream().map(this::getStav).collect(Collectors.toList());
+	}
+
+	/** Stáhne všechny soubory vrstvy do {@link #getSlozkaVrstev()}. False, když se tato vrstva už stahuje nebo jich běží {@link #SOUBEZNE_VRSTVY}. */
 	public boolean stahni(final KatalogovaVrstva vrstva) {
-		if (!bezici.compareAndSet(null, vrstva)) {
-			return false;
+		synchronized (beziciVrstvy) {
+			if (beziciVrstvy.size() >= SOUBEZNE_VRSTVY || !beziciVrstvy.add(vrstva)) {
+				return false;
+			}
 		}
-		zruseno.set(false);
-		vlakno.execute(() -> {
+		final BooleanSupplier zruseno = novyZruseni();
+		vlaknaVrstev.execute(() -> {
 			try {
 				final File s = slozkaVrstevNaPozadi();
 				if (s == null) {
 					zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Složka offline map není nastavená."));
 					return;
 				}
-				zmena(stahovacVrstev.stahni(getStav(vrstva), s, zruseno::get, this::prubeh));
+				zmena(stahovacVrstev.stahni(getStav(vrstva), s, zruseno, this::prubeh));
 			} catch (final RuntimeException e) {
 				log.warn("Stahování vrstvy {} selhalo", vrstva, e);
 				zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
 			} finally {
-				bezici.set(null);
+				beziciVrstvy.remove(vrstva);
 			}
 		});
 		return true;
@@ -325,7 +345,7 @@ public class SpravaMapModel extends Model0 {
 	public void zahodRozpracovane(final KatalogovaVrstva vrstva) {
 		kontrola.execute(() -> {
 			final File s = slozkaVrstevNaPozadi();
-			if (s != null && bezici.get() != vrstva) {
+			if (s != null && !beziciVrstvy.contains(vrstva)) {
 				StahovacVrstev.zahod(s, vrstva);
 				zmena(StahovacVrstev.mistniStav(getStav(vrstva).sFazi(Faze.NIC, null), s));
 			}
@@ -370,10 +390,10 @@ public class SpravaMapModel extends Model0 {
 
 	/** Stáhne mapu do složky offline map. False, když se už nějaká mapa stahuje. */
 	public boolean stahni(final KatalogovaMapa mapa) {
-		if (!bezici.compareAndSet(null, mapa)) {
+		if (!beziciMapa.compareAndSet(null, mapa)) {
 			return false;
 		}
-		zruseno.set(false);
+		final BooleanSupplier zruseno = novyZruseni();
 		vlakno.execute(() -> {
 			try {
 				final File s = slozka.get();
@@ -381,29 +401,33 @@ public class SpravaMapModel extends Model0 {
 					zmena(getStav(mapa).sFazi(Faze.CHYBA, "Složka offline map není nastavená."));
 					return;
 				}
-				zmena(stahovac.stahni(getStav(mapa), s, zruseno::get, this::prubeh));
+				zmena(stahovac.stahni(getStav(mapa), s, zruseno, this::prubeh));
 			} catch (final RuntimeException e) {
 				log.warn("Stahování mapy {} selhalo", mapa, e);
 				zmena(getStav(mapa).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
 			} finally {
-				bezici.set(null);
+				beziciMapa.set(null);
 			}
 		});
 		return true;
 	}
 
-	/** Zruší běžící stahování; rozpracovaný soubor zůstane pro pokračování. */
+	/** Zruší všechna běžící stahování (mapu i vrstvy); rozpracované soubory zůstanou pro pokračování. */
 	public void zrusStahovani() {
-		if (bezici.get() != null) {
-			zruseno.set(true);
-		}
+		zrusenoDo = poradi.get();
+	}
+
+	/** Příznak zrušení pro nově spuštěné stahování: platí, když se po spuštění zavolalo {@link #zrusStahovani()}. */
+	private BooleanSupplier novyZruseni() {
+		final long id = poradi.incrementAndGet();
+		return () -> id <= zrusenoDo;
 	}
 
 	/** Zahodí rozpracované stahování mapy (ne to, které právě běží). */
 	public void zahodRozpracovane(final KatalogovaMapa mapa) {
 		kontrola.execute(() -> {
 			final File s = slozka.get();
-			if (s != null && bezici.get() != mapa) {
+			if (s != null && beziciMapa.get() != mapa) {
 				StahovacMapy.zahod(s, mapa);
 				zmena(StahovacMapy.mistniStav(getStav(mapa).sPrubehem(0, -1, false).sFazi(Faze.NIC, null), s));
 			}
@@ -417,7 +441,7 @@ public class SpravaMapModel extends Model0 {
 		}
 		kontrola.execute(() -> {
 			final File s = slozka.get();
-			if (s == null || getStav(mapa).isBezi() || bezici.get() == mapa) {
+			if (s == null || getStav(mapa).isBezi() || beziciMapa.get() == mapa) {
 				return;
 			}
 			zmena(stahovac.zkontroluj(getStav(mapa), s, this::prubeh));
@@ -463,12 +487,20 @@ public class SpravaMapModel extends Model0 {
 
 	/** Pro testy: počká, až vlákno dokončí zadanou práci. */
 	void pockej() throws InterruptedException {
-		for (final ExecutorService e : new ExecutorService[] { kontrola, vlakno }) {
+		for (final ExecutorService e : new ExecutorService[] { kontrola, vlakno, vlaknaVrstev }) {
 			final java.util.concurrent.CountDownLatch l = new java.util.concurrent.CountDownLatch(1);
 			e.execute(l::countDown);
 			if (!l.await(30, TimeUnit.SECONDS)) {
 				throw new IllegalStateException("Vlákno správy map nedoběhlo");
 			}
+		}
+		// Vrstvy běží na více vláknech, úloha výše mohla doběhnout na volném z nich.
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+		while (!beziciVrstvy.isEmpty()) {
+			if (System.nanoTime() > konec) {
+				throw new IllegalStateException("Stahování vrstev nedoběhlo");
+			}
+			Thread.sleep(10);
 		}
 	}
 }
