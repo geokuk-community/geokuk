@@ -29,11 +29,6 @@ public class OfflineMapy {
 
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
-	/** Za hromadné dávky stahování se změněná složka otevře nejdřív po tomto odstupu od předchozího otevření. */
-	static final long ODSTUP_DAVKY_NS = TimeUnit.SECONDS.toNanos(30);
-	private static volatile boolean hromadnaDavka;
-	long odstupDavkyNs = ODSTUP_DAVKY_NS;
-	private long posledniOtevreni;
 	/** Za jak dlouho se znovu zkusí mapa, kterou nešlo otevřít (třeba ji drží antivirus nebo synchronizace). */
 	long opakovaniNs = OPAKOVANI_NS;
 
@@ -228,14 +223,6 @@ public class OfflineMapy {
 	 * Podívá se do složky, i když se zrovna nic nekreslí, aby se dokopírovaná mapa projevila bez pohybu mapou. Nic nedělá, dokud se mapy poprvé neotevřou.
 	 * Nevolat z EDT.
 	 */
-	/**
-	 * Hromadné stahování běží: mapa se kvůli každému dokončenému souboru nepřekresluje, změny se použijí nejdřív za {@link #ODSTUP_DAVKY_NS} od předchozího
-	 * otevření a po skončení dávky hned při další kontrole složky.
-	 */
-	public static void setHromadnaDavka(final boolean bezi) {
-		hromadnaDavka = bezi;
-	}
-
 	public synchronized void zkontrolujSlozku() {
 		if (otiskSlozky != null && Objects.equals(slozka, slozkaOtevrena) && tema.equals(temaOtevrene) && meritko == meritkoOtevrene && pismo == pismoOtevrene
 				&& trasyKresliPodklad == trasyKresliPodkladOtevrene) {
@@ -257,9 +244,6 @@ public class OfflineMapy {
 			otevri(mapy, ted, true);
 		} else if (!otisk.equals(otiskSlozky)) {
 			if (otisk.equals(otiskZmeny)) {
-				if (hromadnaDavka && ted - posledniOtevreni < odstupDavkyNs) {
-					return;
-				}
 				otiskSlozky = otisk;
 				otiskZmeny = null;
 				otevri(mapy, ted, true);
@@ -338,7 +322,6 @@ public class OfflineMapy {
 	 */
 	private void otevri(final List<File> mapy, final long ted, final boolean zmena) {
 		// Při prvním otevření nejsou na obrazovce dlaždice, které by změna zneplatnila; ohlášení by zahodilo i rozdělaná vykreslení.
-		posledniOtevreni = ted;
 		final boolean predtim = renderer != null || chyba != null;
 		final String vysledekPredtim = vysledekOtevreni;
 		zavriRenderer();

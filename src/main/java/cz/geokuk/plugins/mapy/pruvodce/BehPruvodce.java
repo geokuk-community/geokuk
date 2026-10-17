@@ -37,9 +37,6 @@ public final class BehPruvodce {
 
 	/** Začátek: když netřeba čekat na mapu, přepne zobrazení hned. */
 	public void spust() {
-		if (plan.getPolozky().size() > 1) {
-			kontext.hromadnaDavka(true);
-		}
 		if (plan.prepnoutHned()) {
 			prepni();
 		}
@@ -125,7 +122,6 @@ public final class BehPruvodce {
 	}
 
 	private void konec(final Stav novy) {
-		kontext.hromadnaDavka(false);
 		stav = novy;
 		poZmene.accept(novy);
 	}

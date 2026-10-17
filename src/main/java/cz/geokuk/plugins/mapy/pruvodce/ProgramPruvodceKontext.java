@@ -80,9 +80,4 @@ public final class ProgramPruvodceKontext implements PruvodceKontext {
 		}
 		mapyModel.setPodklad(podklad.getPodklad());
 	}
-
-	@Override
-	public void hromadnaDavka(final boolean bezi) {
-		cz.geokuk.plugins.mapy.kachle.podklady.OfflineMapy.setHromadnaDavka(bezi);
-	}
 }

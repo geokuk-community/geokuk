@@ -25,7 +25,4 @@ public interface PruvodceKontext {
 
 	/** Přepne zobrazení na zvolený podklad: nastaví podklad, u offline Turistickou, překryv tras u online podkladu, stínování terénu podle vrstev. */
 	void prepni(PruvodceVolba volba);
-
-	/** Hromadné stahování běží (nebo skončilo): mapa se mezitím nemá překreslovat po každém dokončeném souboru. */
-	default void hromadnaDavka(final boolean bezi) {}
 }
