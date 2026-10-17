@@ -164,4 +164,44 @@ public class FrontaPruvodceTest {
 		assertEquals(Akce.STAHUJ, k.getAkce());
 		assertEquals(VRSTEVNICE, k.getPolozka().getId());
 	}
+
+	/** Selhaná mapa neblokuje slot: další mapa v plánu se spustí. */
+	@Test
+	public void selhanaMapaNeblokujeDalsiMapu() {
+		final List<MatriceMap.Radek> m = MatriceMap.sestav(KatalogMap.vestaveny(),
+				k -> StavMapyProGui.stav(k, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null), null, null);
+		final PlanPruvodce dve = PlanPruvodce.sestavVse(null, java.util.Arrays.asList("europe/austria", CZ), EnumSet.of(Cast.MAPA), m);
+		final FrontaPruvodce f = new FrontaPruvodce(dve);
+		final String prvni = dve.getPolozky().get(0).getId();
+		final String druha = dve.getPolozky().get(1).getId();
+		final Map<String, StavBunky> s = new HashMap<>();
+		s.put(prvni, StavBunky.KE_STAZENI);
+		s.put(druha, StavBunky.KE_STAZENI);
+		assertEquals(prvni, f.dalsi(s::get, false).getPolozka().getId());
+		s.put(prvni, StavBunky.CHYBA);
+		final FrontaPruvodce.Krok k = f.dalsi(s::get, false);
+		assertEquals("druhá mapa se spustí i po selhání první", Akce.STAHUJ, k.getAkce());
+		assertEquals(druha, k.getPolozka().getId());
+	}
+
+	/** Dvě selhané vrstvy neblokují sloty: třetí vrstva se spustí. */
+	@Test
+	public void dveSelhaneVrstvyNeblokujiTreti() {
+		final List<MatriceMap.Radek> m = MatriceMap.sestav(KatalogMap.vestaveny(),
+				k -> StavMapyProGui.stav(k, StavMapy.Mistni.MAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null), VrstvyProGui.katalogCesko(), StavVrstvy::novy);
+		final PlanPruvodce tri = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI), m);
+		Assume.assumeTrue("katalog má tři vrstvy", tri.getPolozky().size() == 3);
+		final FrontaPruvodce f = new FrontaPruvodce(tri);
+		final Map<String, StavBunky> s = new HashMap<>();
+		tri.getPolozky().forEach(p -> s.put(p.getId(), StavBunky.KE_STAZENI));
+		final String a = f.dalsi(s::get, false).getPolozka().getId();
+		s.put(a, StavBunky.STAHUJE);
+		final String b = f.dalsi(s::get, false).getPolozka().getId();
+		s.put(a, StavBunky.CHYBA);
+		s.put(b, StavBunky.CHYBA);
+		final FrontaPruvodce.Krok k = f.dalsi(s::get, false);
+		assertEquals(Akce.STAHUJ, k.getAkce());
+		final String c = k.getPolozka().getId();
+		assertTrue("třetí vrstva je jiná", !c.equals(a) && !c.equals(b));
+	}
 }
