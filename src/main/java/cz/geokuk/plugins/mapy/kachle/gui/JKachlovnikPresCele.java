@@ -77,12 +77,13 @@ public class JKachlovnikPresCele extends JKachlovnik {
 
 	/** Klik na odkaz rady stáhne nabízenou mapu; vrací, jestli klik patřil odkazu. */
 	public boolean klikNaRadu(final Point bod) {
-		if (spravaMap == null) {
-			return false;
-		}
 		for (int i = 0; i < odkazyRady.size(); i++) {
 			if (odkazyRady.get(i).contains(bod)) {
-				spravaMap.stahni(mapyRady.get(i));
+				if (mapyRady.get(i) == null) {
+					ukazPlnouAtribuci();
+				} else if (spravaMap != null) {
+					spravaMap.stahni(mapyRady.get(i));
+				}
 				return true;
 			}
 		}
@@ -124,62 +125,109 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		if (jeRada()) {
 			kresliRadu((Graphics2D) g);
 		}
-		final String text = getKachloType().isOffline() && getKachleModel() != null ? getKachleModel().getAtribuceOfflineMapy() : getKachloType().getAtribuce();
-		kresliAtribuci(g, this, text, 0);
-		if (getKachloType().isOffline()) {
-			kresliAtribuceVrstev(g);
-		}
+		kresliAtribuci((Graphics2D) g);
 	}
 
-	/** Plná atribuce nainstalovaných vrstev (třeba povinná věta u dat Copernicus) nad atribucí mapy, zalomená na šířku mapy. */
-	private void kresliAtribuceVrstev(final Graphics g) {
-		final List<String> texty = atribuceVrstev();
-		if (texty.isEmpty()) {
-			return;
-		}
-		final FontMetrics fm = g.getFontMetrics(getFont().deriveFont(Font.PLAIN, 11f));
-		final List<String> radky = new ArrayList<>();
-		for (final String t : texty) {
-			radky.addAll(zalom(t, fm, Math.max(200, getWidth() - 24)));
-		}
-		for (int i = 0; i < radky.size(); i++) {
-			kresliAtribuci(g, this, radky.get(i), radky.size() - i);
-		}
-	}
-
-	/** Atribuce nainstalovaných vrstev z katalogu vrstev; stejný text jen jednou. */
-	List<String> atribuceVrstev() {
-		final List<String> texty = new ArrayList<>();
-		if (spravaMap == null) {
-			return texty;
-		}
-		for (final KatalogovaVrstva v : spravaMap.getKatalogVrstev().getVrstvy()) {
-			final String t = v.getAtribuceDlouha();
-			if (t != null && !t.trim().isEmpty() && !texty.contains(t.trim()) && spravaMap.getStav(v).getMistni() == StavVrstvy.Mistni.MAME) {
-				texty.add(t.trim());
-			}
-		}
-		return texty;
-	}
-
-	/** Atribuce vpravo dole; řádek 0 je u spodního okraje, další nad ním. */
-	static void kresliAtribuci(final Graphics g, final Component c, final String text, final int radek) {
+	/** Atribuce: jeden zkrácený řádek vpravo dole, nezasahuje do měřítka vlevo; plné znění po kliku na ikonu ⓘ. */
+	private void kresliAtribuci(final Graphics2D g) {
 		final Graphics2D g2 = (Graphics2D) g.create();
 		try {
-			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			g2.setFont(c.getFont().deriveFont(Font.PLAIN, 11f));
+			g2.setFont(getFont().deriveFont(Font.PLAIN, 10f));
 			final FontMetrics fm = g2.getFontMetrics();
-			final int w = fm.stringWidth(text) + 8;
-			final int h = fm.getHeight() + 2;
-			final int x = c.getWidth() - w;
-			final int y = c.getHeight() - h * (radek + 1);
-			g2.setColor(new Color(255, 255, 255, 190));
-			g2.fillRect(x, y, w, h);
-			g2.setColor(Color.DARK_GRAY);
-			g2.drawString(text, x + 4, y + 1 + fm.getAscent());
+			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), Math.max(120, getWidth() - ODSTUP_MERITKA));
+			AtribuceMapy.kresli(g2, r, fm);
+			odkazyRady.add(r.ikona);
+			mapyRady.add(null);
 		} finally {
 			g2.dispose();
 		}
+	}
+
+	/** Šířka vlevo dole vyhrazená měřítku; atribuce do ní nezasahuje. */
+	static final int ODSTUP_MERITKA = 220;
+
+	/** Zkrácené zdroje atribuce: podklad, data offline mapy, vrstvy a překryv tras. */
+	List<String> zkratkyAtribuce() {
+		final List<String> v = new ArrayList<>();
+		v.addAll(AtribuceMapy.zkrat(textAtribuce()));
+		for (final KatalogovaVrstva k : vrstvyAtribuce()) {
+			v.addAll(AtribuceMapy.zkrat(k.getAtribuce()));
+		}
+		if (prekryvTrasPotrebujeAtribuci()) {
+			v.add(AtribuceMapy.OSM);
+		}
+		return AtribuceMapy.slouc(v);
+	}
+
+	/** Plné znění atribuce: jeden zdroj na řádek. */
+	List<String> plnaAtribuce() {
+		final List<String> v = new ArrayList<>();
+		v.add(textAtribuce());
+		if (prekryvTrasPotrebujeAtribuci()) {
+			v.add(JKachlovnikTras.ATRIBUCE);
+		}
+		for (final KatalogovaVrstva k : vrstvyAtribuce()) {
+			final String t = k.getAtribuceDlouha() != null && !k.getAtribuceDlouha().trim().isEmpty() ? k.getAtribuceDlouha().trim() : k.getAtribuce();
+			if (t != null && !t.trim().isEmpty() && !v.contains(t.trim())) {
+				v.add(t.trim());
+			}
+		}
+		return v;
+	}
+
+	private String textAtribuce() {
+		if (getKachloType() == null) {
+			return "";
+		}
+		return getKachloType().isOffline() && getKachleModel() != null ? getKachleModel().getAtribuceOfflineMapy() : getKachloType().getAtribuce();
+	}
+
+	private boolean prekryvTrasPotrebujeAtribuci() {
+		return JKachlovnikTras.potrebujeAtribuci(getKachloType()) && getKachleModel() != null && getKachleModel().isPrekryvTras();
+	}
+
+	private List<KatalogovaVrstva> vrstvyAtribuce() {
+		final List<KatalogovaVrstva> v = new ArrayList<>();
+		if (spravaMap == null || getKachloType() == null || !getKachloType().isOffline()) {
+			return v;
+		}
+		for (final KatalogovaVrstva k : spravaMap.getKatalogVrstev().getVrstvy()) {
+			if (k.getAtribuce() != null && !k.getAtribuce().trim().isEmpty() && spravaMap.getStav(k).getMistni() == StavVrstvy.Mistni.MAME) {
+				v.add(k);
+			}
+		}
+		return v;
+	}
+
+	/** Ukáže plné znění atribuce nad ikonou ⓘ. */
+	void ukazPlnouAtribuci() {
+		final javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		final javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.GridLayout(0, 1, 0, 3));
+		panel.setBorder(javax.swing.BorderFactory.createEmptyBorder(6, 8, 6, 8));
+		for (final String t : plnaAtribuce()) {
+			if (!t.trim().isEmpty()) {
+				panel.add(new javax.swing.JLabel(t));
+			}
+		}
+		final javax.swing.JButton osm = new javax.swing.JButton("Autorská práva OpenStreetMap");
+		osm.setBorderPainted(false);
+		osm.setContentAreaFilled(false);
+		osm.setForeground(ODKAZ);
+		osm.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		osm.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+		osm.addActionListener(e -> {
+			try {
+				cz.geokuk.util.process.BrowserOpener.displayURL(new java.net.URL("https://www.openstreetmap.org/copyright"));
+			} catch (final java.net.MalformedURLException ex) {
+				throw new IllegalStateException(ex);
+			}
+			menu.setVisible(false);
+		});
+		panel.add(osm);
+		menu.add(panel);
+		final Rectangle ikona = odkazyRady.isEmpty() ? new Rectangle(getWidth() - 20, getHeight() - 16, 16, 14) : odkazyRady.get(odkazyRady.size() - 1);
+		final Dimension d = menu.getPreferredSize();
+		menu.show(this, Math.max(0, Math.min(ikona.x + ikona.width - d.width, getWidth() - d.width)), ikona.y - d.height);
 	}
 
 	/** Offline mapa a střed výřezu nepokrývá žádná podrobná mapa. */

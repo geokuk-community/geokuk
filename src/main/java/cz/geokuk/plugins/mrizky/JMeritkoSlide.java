@@ -41,19 +41,26 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		// paint(g);
 		final Graphics2D g = (Graphics2D) gg.create();
 		final Coord soord = getSoord();
-		final int maximalniSirka = soord.getWidth() * 3 / 4;
+		final int maximalniSirka = maximalniSirka(soord.getWidth());
 		meritko.setMaximalniSirkaMeritka(maximalniSirka);
 		meritko.setPixluNaMetr(soord.getPixluNaMetr());
 		meritko.setSize(meritko.getPreferredSize());
-		final int x = (soord.getWidth() - meritko.getSize().width) / 2;
+		final int x = OKRAJ;
 		g.translate(x, soord.getHeight() - meritko.getSize().getHeight() - 20);
 		meritko.paintComponent(g);
 
 	}
 
+	/** Měřítko je vlevo dole, atribuce vpravo dole; bar je nejvýš tak široký, aby je od sebe oddělil odstup atribuce. */
+	static final int OKRAJ = 12;
+
+	public static int maximalniSirka(final int sirkaMapy) {
+		return Math.max(60, Math.min(sirkaMapy / 3, 196));
+	}
+
 	@Override
 	protected void onVyrezChanged() {
-		final int maximalniSirka = getSoord().getWidth() * 3 / 4;
+		final int maximalniSirka = maximalniSirka(getSoord().getWidth());
 		meritko.setMaximalniSirkaMeritka(maximalniSirka);
 		meritko.setPixluNaMetr(getSoord().getPixluNaMetr());
 	}
