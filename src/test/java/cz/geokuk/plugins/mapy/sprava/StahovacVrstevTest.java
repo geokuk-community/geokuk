@@ -146,6 +146,15 @@ public class StahovacVrstevTest {
 		});
 	}
 
+	private static int indexZmeny(final List<StavVrstvy> zmeny, final java.util.function.Predicate<StavVrstvy> p) {
+		for (int i = 0; i < zmeny.size(); i++) {
+			if (p.test(zmeny.get(i))) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	private List<String> vSlozce() {
 		return vSlozce(slozka);
 	}
@@ -197,6 +206,25 @@ public class StahovacVrstevTest {
 		pozadavky.clear();
 		assertEquals("stažená vrstva se znovu nestahuje", Faze.HOTOVO, stahni(v, new AtomicBoolean()).getFaze());
 		assertEquals(Collections.emptyList(), pozadavky);
+	}
+
+	/** SHA-256 se počítá při stahování: ověření po stažení soubor znovu nečte (změna na disku po stažení se už neprojeví). */
+	@Test
+	public void soucetSeNepocitaZnovuZDisku() throws IOException {
+		final KatalogovaVrstva v = dvaSoubory();
+		final AtomicBoolean podvrzeno = new AtomicBoolean();
+		final StavVrstvy s = stahovac.stahni(StavVrstvy.novy(v), slozka, () -> false, st -> {
+			if (st.getFaze() == Faze.OVERUJE && !podvrzeno.getAndSet(true)) {
+				try (java.io.RandomAccessFile f = new java.io.RandomAccessFile(naDisku("cz_1.zip.stahuje"), "rw")) {
+					f.seek(10);
+					f.write(~data.get("cz_1.zip")[10]);
+				} catch (final IOException e) {
+					throw new java.io.UncheckedIOException(e);
+				}
+			}
+		});
+		assertTrue(podvrzeno.get());
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
 	}
 
 	@Test
@@ -259,8 +287,12 @@ public class StahovacVrstevTest {
 
 		zdrzetSoubor = null;
 		pozadavky.clear();
-		final StavVrstvy s = stahni(v, new AtomicBoolean());
+		final List<StavVrstvy> zmeny = new CopyOnWriteArrayList<>();
+		final StavVrstvy s = stahovac.stahni(StavVrstvy.novy(v), slozka, () -> false, zmeny::add);
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		final int dopocteno = indexZmeny(zmeny, z -> z.getFaze() == Faze.OVERUJE && z.getStazeno() == 300_000 + mame);
+		assertTrue("při navázání se součet rozpracované části dopočítá s průběhem ověřování", dopocteno >= 0);
+		assertTrue("pak se stahuje dál", indexZmeny(zmeny.subList(dopocteno, zmeny.size()), z -> z.getFaze() == Faze.STAHUJE) >= 0);
 		assertEquals("navazuje druhý soubor", Collections.singletonList("cz_2.zip bytes=" + mame + "-"), pozadavky);
 		assertArrayEquals(data.get("cz_2.zip"), Files.readAllBytes(naDisku("cz_2.zip").toPath()));
 		assertEquals(Arrays.asList("cz_1.zip", "cz_1.zip.sha256", "cz_2.zip", "cz_2.zip.sha256"), vSlozce());

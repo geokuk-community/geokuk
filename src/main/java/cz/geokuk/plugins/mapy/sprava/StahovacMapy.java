@@ -273,6 +273,12 @@ final class StahovacMapy {
 	 */
 	static long prenes(final HttpURLConnection c, final File cast, final long od, final long celkem, final BooleanSupplier zruseno, final LongConsumer prubeh)
 			throws IOException {
+		return prenes(c, cast, od, celkem, zruseno, prubeh, null);
+	}
+
+	/** Jako {@link #prenes(HttpURLConnection, File, long, long, BooleanSupplier, LongConsumer)}, zapsaná data navíc přidá do součtu (může být null). */
+	static long prenes(final HttpURLConnection c, final File cast, final long od, final long celkem, final BooleanSupplier zruseno, final LongConsumer prubeh,
+			final java.security.MessageDigest soucet) throws IOException {
 		final byte[] buf = new byte[64 * 1024];
 		long mame = od;
 		try (InputStream in = c.getInputStream();
@@ -285,6 +291,9 @@ final class StahovacMapy {
 					break;
 				}
 				out.write(buf, 0, n);
+				if (soucet != null) {
+					soucet.update(buf, 0, n);
+				}
 				mame += n;
 				prubeh.accept(mame);
 			}
