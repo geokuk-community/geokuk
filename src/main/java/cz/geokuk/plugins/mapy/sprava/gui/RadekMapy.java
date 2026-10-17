@@ -3,6 +3,8 @@ package cz.geokuk.plugins.mapy.sprava.gui;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import cz.geokuk.plugins.mapy.sprava.MatriceMap;
@@ -108,6 +110,19 @@ public final class RadekMapy {
 	/** Buňka vrstvy v řádku, null když řádek vrstvy nemá (soubor uživatele, matice nebyla sestavena). */
 	MatriceMap.Bunka bunka(final MatriceMap.Cast cast) {
 		return matice == null ? null : matice.getBunka(cast);
+	}
+
+	/** Vrstvy mapy, které se právě stahují (až dvě najednou). */
+	List<MatriceMap.Bunka> bezicVrstvy() {
+		final List<MatriceMap.Bunka> v = new ArrayList<>();
+		if (matice != null) {
+			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
+				if (c != MatriceMap.Cast.MAPA && matice.getBunka(c).getStav() == MatriceMap.StavBunky.STAHUJE) {
+					v.add(matice.getBunka(c));
+				}
+			}
+		}
+		return v;
 	}
 
 	/** Právě se stahuje některá vrstva mapy. */

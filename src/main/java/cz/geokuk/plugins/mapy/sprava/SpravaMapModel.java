@@ -58,7 +58,7 @@ public class SpravaMapModel extends Model0 {
 	private volatile File stazenyKatalogZ;
 	URI urlKataloguVrstev = KatalogVrstev.URL_KATALOGU;
 	/** Vrstev se stahuje nejvýš tolik současně; mapa jen jedna (zrcadla map mají omezený počet spojení), vedle ní mohou běžet vrstvy. */
-	static final int SOUBEZNE_VRSTVY = 2;
+	public static final int SOUBEZNE_VRSTVY = 2;
 	private final ExecutorService vlakno = vlakno("Stahování offline mapy");
 	private final ExecutorService vlaknaVrstev = Executors.newFixedThreadPool(SOUBEZNE_VRSTVY, r -> {
 		final Thread t = new Thread(r, "Stahování vrstvy");

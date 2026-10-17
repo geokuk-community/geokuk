@@ -1311,4 +1311,24 @@ public class JMapyPopupTest {
 			Assert.assertEquals("v obou oddílech", 2, labels(p).stream().filter(l -> "pm".equals(l.getText())).count());
 		});
 	}
+
+	/** Dvě vrstvy téže země se stahují: počítají se obě, ostatní tlačítka vrstev jsou vypnutá a odečte se zbytek obou. */
+	@Test
+	public void dveBeziciVrstvyTehozRadku() throws Exception {
+		final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> vrstvy = v -> {
+			if (v.getId().startsWith("routes") || v.getId().startsWith("contours")) {
+				return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 1, null);
+			}
+			return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null);
+		};
+		SwingUtilities.invokeAndWait(() -> {
+			final List<RadekMapy> radky = cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, vrstvy);
+			Assert.assertEquals("obě vrstvy řádku", 2, cesko(radky).bezicVrstvy().size());
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky);
+			Assert.assertTrue("třetí vrstva nejde spustit", tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ")).allMatch(b -> !b.isEnabled()));
+			Assert.assertTrue("zbývá dostahovat obě vrstvy", JMapyPopup.zbyvaStahnout(radky) > 0);
+		});
+	}
 }
