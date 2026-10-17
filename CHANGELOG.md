@@ -28,7 +28,8 @@
   cyklotrasy, vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a
   Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
   spolu s offline mapou, stínování jde vypnout. Seznam vrstev ke stažení si
-  program sám obnoví při startu a při otevření panelu, nejvýš jednou denně.
+  program sám obnoví při startu a při otevření panelu; jestli je novější,
+  ověří nejvýš jednou za hodinu.
   Mapy ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
   Nahoře v panelu je Dostáhnout vrstvy ke staženým mapám: stáhne chybějící
   nebo zastaralé vrstvy ke všem staženým mapám.
