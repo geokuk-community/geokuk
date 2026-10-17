@@ -1525,4 +1525,30 @@ public class JMapyPopupTest {
 			SwingUtilities.invokeAndWait(okno::dispose);
 		}
 	}
+
+	/** Změna souhrnu dávky se při probíhajícím spojování přestaveb projeví hned, ne až po odstupu. */
+	@Test
+	public void zmenaSouhrnuSeProjeviHnedBehemDavky() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final List<String> souhrn = new ArrayList<>();
+			final JMapyPopup p = new JMapyPopup();
+			p.odstupPrestavbyMs = 60_000;
+			p.setDavkaBezi(() -> true);
+			p.setOvladani(new OvladaniMap() {
+				@Override
+				public void otevriSlozku() {}
+
+				@Override
+				public List<String> souhrnDavky() {
+					return souhrn;
+				}
+			});
+			final List<RadekMapy> radky = Collections.singletonList(katalog("a", RadekMapy.Stav.NEMAME).build());
+			p.obnov(radky);
+			souhrn.addAll(Arrays.asList("Staženo 1, nepodařilo se 1:", "x"));
+			p.obnov(radky);
+			Assert.assertFalse("souhrn je vidět hned", tlacitkaSTextem(p, JMapyPopup.ZAVRIT).isEmpty());
+			Assert.assertFalse("bez odloženého spojování", p.isPrestavbaOdlozena());
+		});
+	}
 }
