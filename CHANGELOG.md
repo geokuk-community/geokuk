@@ -25,6 +25,9 @@
   stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
   po regionech (dvojitě stažená), panel na to upozorní a nabídne smazat
   regiony, nebo celek.
+  Staženého souboru se po dokončení ověřuje (Ověřuji N %). Hromadné stahování
+  (Stáhnout vše, průvodce) po chybě pokračuje dalšími položkami; na konci panel
+  ukáže souhrn, co se stáhlo a co ne, a tlačítko Zkusit znovu.
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistické a
   cyklotrasy, vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a
   Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
@@ -113,6 +116,11 @@
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
+
+### Opravy
+- Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
+  keše), už nezahltí log tisíci varováními. Jiná nečíselná čísla vlastníka
+  program ohlásí jedním varováním za soubor.
 
 Obsahuje i všechny opravy z 6.4.2.
 
