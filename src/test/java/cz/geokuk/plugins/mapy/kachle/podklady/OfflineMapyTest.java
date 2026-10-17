@@ -188,6 +188,26 @@ public class OfflineMapyTest {
 		Assert.assertNotEquals(dveMapy, klic());
 	}
 
+	/** Při hromadném stahování se změna složky projeví hned poprvé, další až po odstupu nebo po konci dávky; mapy se neotevírají po každém souboru. */
+	@Test
+	public void priDavceSeMapyNeotevirajiPoKazdemSouboru() throws Exception {
+		final boolean[] davka = { true };
+		mapy.setDavka(() -> davka[0]);
+		zkopirujMapu(slozka, "kukov.map");
+		klic();
+		zkopirujMapu(slozka, "druha.map");
+		mapy.zkontrolujSlozku();
+		final String prvniZmena = klic();
+		Assert.assertEquals("první změna v dávce se projeví", Arrays.asList("druha.map", "kukov.map"), mapy.getNazvyMap());
+		zkopirujMapu(slozka, "treti.map");
+		mapy.zkontrolujSlozku();
+		Assert.assertEquals("další změna počká", prvniZmena, klic());
+		Assert.assertEquals(2, mapy.getNazvyMap().size());
+		davka[0] = false;
+		Assert.assertNotEquals("po dávce se otevře", prvniZmena, klic());
+		Assert.assertEquals(3, mapy.getNazvyMap().size());
+	}
+
 	/** Mapa, která se ještě kopíruje (mění se mezi kontrolami), se otevře, až se dvě kontroly po sobě shodnou. */
 	@Test
 	public void menicSeMapaSeOtevreAzUstalena() throws Exception {
