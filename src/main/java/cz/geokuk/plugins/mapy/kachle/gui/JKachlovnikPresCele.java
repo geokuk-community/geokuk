@@ -71,6 +71,10 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		repaint();
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.KatalogVrstevEvent event) {
+		repaint();
+	}
+
 	/** Klik na odkaz rady stáhne nabízenou mapu; vrací, jestli klik patřil odkazu. */
 	public boolean klikNaRadu(final Point bod) {
 		if (spravaMap == null) {

@@ -87,8 +87,9 @@
   vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a Stínování), i
   k mapě, která ještě není stažená. Stažené vrstvy se kreslí spolu s offline
   mapou, stínování jde v popupu vypnout. Atribuce dat (OpenStreetMap,
-  Copernicus) je v rohu mapy. Mapy ve složce jde sbalit a stažené regiony
-  jsou seskupené pod zemí.
+  Copernicus) je v rohu mapy. Seznam vrstev ke stažení si program sám obnoví
+  při startu a při otevření popupu, nejvýš jednou denně. Mapy ve složce jde
+  sbalit a stažené regiony jsou seskupené pod zemí.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
   se otevře sám) vybere zemi, podklad a vrstvy, stáhne jen to, co chybí, a
   přepne mapu.

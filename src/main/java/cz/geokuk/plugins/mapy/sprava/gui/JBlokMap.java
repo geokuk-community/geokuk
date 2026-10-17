@@ -237,6 +237,10 @@ public class JBlokMap extends JLabel {
 		prestav();
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.KatalogVrstevEvent event) {
+		prestav();
+	}
+
 	/** Střed výřezu určuje mapy „Pro zobrazené místo“; popup se přestaví, jen když se jejich výběr změní. */
 	public void onEvent(final VyrezChangedEvent event) {
 		stred = event.getMoord().getMoustred().toWgs();
@@ -445,6 +449,7 @@ public class JBlokMap extends JLabel {
 		nactiSlozku();
 		if (spravaMap != null) {
 			spravaMap.obnovStavy();
+			spravaMap.obnovKatalogVrstevKdyzJeStary();
 		}
 		popup.ukaz(obsah, this, false);
 	}
