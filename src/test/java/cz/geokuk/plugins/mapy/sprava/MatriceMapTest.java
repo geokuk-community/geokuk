@@ -46,6 +46,19 @@ public class MatriceMapTest {
 		}
 	}
 
+	/** Při čekání na další pokus po přerušení nese běžící buňka text pro uživatele. */
+	@Test
+	public void bezicBunkaNeseTextCekaniNaPokus() {
+		final String text = "Spojení se přerušilo, další pokus za 5 s (1. ze 3).";
+		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), m -> mapa(m, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0).sFazi(
+				StavMapy.Faze.STAHUJE, text), VrstvyProGui.katalogCesko(), v -> StavVrstvy.novy(v).sFazi(StavMapy.Faze.STAHUJE, text));
+		final Radek cz = radek(radky, CZ);
+		assertEquals(StavBunky.STAHUJE, cz.getBunka(Cast.MAPA).getStav());
+		assertEquals(text, cz.getBunka(Cast.MAPA).getChyba());
+		assertEquals(StavBunky.STAHUJE, cz.getBunka(Cast.TRASY).getStav());
+		assertEquals(text, cz.getBunka(Cast.TRASY).getChyba());
+	}
+
 	@Test
 	public void bezKataloguVrstevJenSloupecMapa() {
 		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), null, null);
