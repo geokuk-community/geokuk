@@ -41,7 +41,7 @@ public class KatalogMapTest {
 		assertFalse(k.podleSouboru("paws_cz.map").isPresent());
 		assertTrue(k.pokryvajiBod(new Wgs(0, 0)).isEmpty());
 		for (final KatalogovaMapa m : k.getMapy()) {
-			assertTrue(m.getId(), m.getUrlyMapy().get(1).toString().startsWith("https://download.mapsforge.org/maps/v5/europe/"));
+			assertTrue(m.getId(), m.getUrlyMapy().get(1).toString().matches("https://download\\.mapsforge\\.org/maps/v5/(europe|africa)/.+"));
 			assertNotNull("obrys pokrytí v jaru: " + m.getId(), KatalogMap.class.getResource("poly/" + m.getId() + ".poly"));
 			assertNotNull("datum na serveru: " + m.getId(), m.getDatumNaServeru());
 		}
@@ -86,13 +86,18 @@ public class KatalogMapTest {
 		assertEquals(64_958_567L, k.podleId("europe/spain/madrid").get().getPribliznaVelikost());
 		assertEquals(java.time.Instant.parse("2026-05-10T09:03:31Z"), k.podleId("europe/united-kingdom/wales").get().getDatumNaServeru());
 		// Součty podle výpisu serveru: hlídají velikost a datum u všech map, ne jen u vybraných.
-		assertEquals(37_437_237_882L, k.getMapy().stream().mapToLong(KatalogovaMapa::getPribliznaVelikost).sum());
-		assertEquals(232_450_576_092L, k.getMapy().stream().mapToLong(m -> m.getDatumNaServeru().getEpochSecond()).sum());
+		assertEquals(37_669_062_457L, k.getMapy().stream().mapToLong(KatalogovaMapa::getPribliznaVelikost).sum());
+		assertEquals(236_007_593_821L, k.getMapy().stream().mapToLong(m -> m.getDatumNaServeru().getEpochSecond()).sum());
+		final KatalogovaMapa kanary = k.podleId("africa/canary-islands").get();
+		assertEquals("Španělsko", kanary.getSkupina());
+		assertFalse("Kanáry nejsou regionem mapy Španělska", k.celek(kanary).isPresent());
+		assertEquals("Afrika", k.podleId("africa/egypt").get().getSkupina());
 		final KatalogovaMapa skotsko = k.podleId("europe/united-kingdom/scotland").get();
 		assertEquals("Spojené království", skotsko.getSkupina());
 		assertFalse("celé Spojené království server nemá", k.celek(skotsko).isPresent());
 		for (final KatalogovaMapa m : k.getMapy()) {
-			assertEquals(m.getId(), m.getSkupina() != null, m.getIdCelku() != null);
+			// Mapy mimo Evropu jsou ve skupině pro přehled (Kanáry u Španělska, Afrika), regionem žádné mapy nejsou.
+			assertEquals(m.getId(), m.getSkupina() != null, m.getIdCelku() != null || m.getId().startsWith("africa/"));
 		}
 	}
 
