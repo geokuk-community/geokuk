@@ -56,6 +56,8 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	private final transient List<Rectangle> odkazyRady = new ArrayList<>();
 	private final transient List<KatalogovaMapa> mapyRady = new ArrayList<>();
 	private transient RadaOfflineMapy rada;
+	/** Kde je v kachlovníku ikona ⓘ atribuce; null, když se nekreslí. */
+	private transient Rectangle ikonaAtribuce;
 
 	public void inject(final SpravaMapModel spravaMap) {
 		this.spravaMap = spravaMap;
@@ -77,13 +79,16 @@ public class JKachlovnikPresCele extends JKachlovnik {
 
 	/** Klik na odkaz rady stáhne nabízenou mapu; vrací, jestli klik patřil odkazu. */
 	public boolean klikNaRadu(final Point bod) {
+		if (ikonaAtribuce != null && ikonaAtribuce.contains(bod)) {
+			ukazPlnouAtribuci();
+			return true;
+		}
+		if (spravaMap == null) {
+			return false;
+		}
 		for (int i = 0; i < odkazyRady.size(); i++) {
 			if (odkazyRady.get(i).contains(bod)) {
-				if (mapyRady.get(i) == null) {
-					ukazPlnouAtribuci();
-				} else if (spravaMap != null) {
-					spravaMap.stahni(mapyRady.get(i));
-				}
+				spravaMap.stahni(mapyRady.get(i));
 				return true;
 			}
 		}
@@ -91,7 +96,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 	public boolean jeNadOdkazemRady(final Point bod) {
-		return odkazyRady.stream().anyMatch(r -> r.contains(bod));
+		return odkazyRady.stream().anyMatch(r -> r.contains(bod)) || ikonaAtribuce != null && ikonaAtribuce.contains(bod);
 	}
 
 	/** Zeměpisný obdélník, do kterého se vejdou všechny čtyři rohy výřezu. */
@@ -119,6 +124,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		odkazyRady.clear();
 		mapyRady.clear();
 		rada = null;
+		ikonaAtribuce = null;
 		if (getKachloType() == null || getKachloType().getAtribuce().isEmpty()) {
 			return;
 		}
@@ -136,8 +142,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			final FontMetrics fm = g2.getFontMetrics();
 			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), Math.max(120, getWidth() - ODSTUP_MERITKA));
 			AtribuceMapy.kresli(g2, r, fm);
-			odkazyRady.add(r.ikona);
-			mapyRady.add(null);
+			ikonaAtribuce = r.ikona;
 		} finally {
 			g2.dispose();
 		}
@@ -168,11 +173,18 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 		for (final KatalogovaVrstva k : vrstvyAtribuce()) {
 			final String t = k.getAtribuceDlouha() != null && !k.getAtribuceDlouha().trim().isEmpty() ? k.getAtribuceDlouha().trim() : k.getAtribuce();
-			if (t != null && !t.trim().isEmpty() && !v.contains(t.trim())) {
+			if (t != null && !t.trim().isEmpty() && !v.contains(t.trim()) && !uzJeVeZneni(v, t)) {
 				v.add(t.trim());
 			}
 		}
 		return v;
+	}
+
+	/** Všechny zdroje z textu už jsou ve znění; jinak by se třeba OpenStreetMap opakovalo. */
+	private static boolean uzJeVeZneni(final List<String> zneni, final String text) {
+		final List<String> mam = new ArrayList<>();
+		zneni.forEach(z -> mam.addAll(AtribuceMapy.zkrat(z)));
+		return mam.containsAll(AtribuceMapy.zkrat(text));
 	}
 
 	private String textAtribuce() {
@@ -225,7 +237,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		});
 		panel.add(osm);
 		menu.add(panel);
-		final Rectangle ikona = odkazyRady.isEmpty() ? new Rectangle(getWidth() - 20, getHeight() - 16, 16, 14) : odkazyRady.get(odkazyRady.size() - 1);
+		final Rectangle ikona = ikonaAtribuce != null ? ikonaAtribuce : new Rectangle(getWidth() - 20, getHeight() - 16, 16, 14);
 		final Dimension d = menu.getPreferredSize();
 		menu.show(this, Math.max(0, Math.min(ikona.x + ikona.width - d.width, getWidth() - d.width)), ikona.y - d.height);
 	}

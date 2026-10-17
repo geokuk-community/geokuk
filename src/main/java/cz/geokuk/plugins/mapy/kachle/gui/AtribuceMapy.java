@@ -82,10 +82,8 @@ final class AtribuceMapy {
 		final int textMax = Math.max(0, maxSirka - IKONA - 8);
 		final List<String> zbyva = new ArrayList<>(zdroje);
 		String text = String.join(" · ", zbyva);
-		boolean zkraceno = false;
 		while (fm.stringWidth(text) > textMax && zbyva.size() > 1) {
 			zbyva.remove(zbyva.size() - 1);
-			zkraceno = true;
 			text = String.join(" · ", zbyva) + " " + ELIPSA;
 		}
 		if (fm.stringWidth(text) > textMax) {
@@ -100,7 +98,7 @@ final class AtribuceMapy {
 		final int y = vyska - vysokaPole;
 		final Rectangle pole = new Rectangle(x, y, sirkaPole, vysokaPole);
 		final Rectangle ikona = new Rectangle(x + sirkaPole - IKONA - 2, y, IKONA + 2, vysokaPole);
-		return new Rozlozeni(zkraceno && text.isEmpty() ? ELIPSA : text, pole, ikona);
+		return new Rozlozeni(text, pole, ikona);
 	}
 
 	static void kresli(final Graphics2D g, final Rozlozeni r, final FontMetrics fm) {

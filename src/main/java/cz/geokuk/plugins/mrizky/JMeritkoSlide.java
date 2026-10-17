@@ -80,7 +80,10 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		setLayout(new BorderLayout());
 		meritko = new JMeritko();
 		meritko.setBorder(BorderFactory.createEmptyBorder(0, 0, 25, 0));
-		add(meritko, BorderLayout.SOUTH);
+		final javax.swing.JPanel vlevo = new javax.swing.JPanel(new FlowLayout(FlowLayout.LEFT, OKRAJ, 0));
+		vlevo.setOpaque(false);
+		vlevo.add(meritko);
+		add(vlevo, BorderLayout.SOUTH);
 
 	}
 
