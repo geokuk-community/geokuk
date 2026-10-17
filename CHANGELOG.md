@@ -18,7 +18,8 @@
   království) se rozbalují. Nabízí i Kanárské ostrovy (u Španělska) a Egypt
   (Afrika).
 - Mapy zemí a regionů Evropy z download.mapsforge.org jde z panelu Offline
-  mapy stáhnout (po jedné, přerušené stahování pokračuje) a na požádání
+  mapy stáhnout (po jedné; přerušené stahování mapy nebo vrstvy program
+  sám až třikrát zkusí znovu a naváže, kde skončilo) a na požádání
   zkontrolovat, jestli nejsou novější. Panel ukáže výsledek kontroly a při
   stahování odhad zbývajícího času; mapu, která se nevejde na disk, nejde
   stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
@@ -29,7 +30,7 @@
   Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
   spolu s offline mapou, stínování jde vypnout. Seznam vrstev ke stažení si
   program sám obnoví při startu a při otevření panelu; jestli je novější,
-  ověří nejvýš jednou za hodinu.
+  ověří nejvýš jednou za hodinu a hned po Zkontrolovat aktualizace.
   Mapy ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
   Nahoře v panelu je Dostáhnout vrstvy ke staženým mapám: stáhne chybějící
   nebo zastaralé vrstvy ke všem staženým mapám.

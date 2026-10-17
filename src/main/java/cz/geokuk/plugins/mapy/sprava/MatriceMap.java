@@ -67,8 +67,14 @@ public final class MatriceMap {
 		private final long stazeno;
 		private final String chyba;
 		private final java.time.LocalDate datumDat;
+		private final boolean overuje;
 
 		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba, final java.time.LocalDate datumDat) {
+			this(cast, stav, id, velikost, stazeno, chyba, datumDat, false);
+		}
+
+		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba, final java.time.LocalDate datumDat,
+				final boolean overuje) {
 			this.cast = cast;
 			this.stav = stav;
 			this.id = id;
@@ -76,6 +82,12 @@ public final class MatriceMap {
 			this.stazeno = stazeno;
 			this.chyba = chyba;
 			this.datumDat = datumDat;
+			this.overuje = overuje;
+		}
+
+		/** Stažené se ověřuje (stav STAHUJE); {@link #getStazeno()} je pak ověřená část z {@link #getVelikost()}. */
+		public boolean isOveruje() {
+			return overuje;
 		}
 
 		public Cast getCast() {
@@ -101,7 +113,7 @@ public final class MatriceMap {
 			return stazeno;
 		}
 
-		/** Chyba pro uživatele, jen u stavu CHYBA. */
+		/** Chyba pro uživatele u stavu CHYBA; u STAHUJE text čekání na další pokus po přerušení, jinak null. */
 		public String getChyba() {
 			return chyba;
 		}
@@ -194,7 +206,7 @@ public final class MatriceMap {
 		}
 		final long stazeno = stav == StavBunky.STAZENO ? velikost : Math.min(s.getStazeno(), Math.max(velikost, 0));
 		final java.time.LocalDate datum = s.getDatumDatMistni() == null ? null : s.getDatumDatMistni().atZone(java.time.ZoneOffset.UTC).toLocalDate();
-		return new Bunka(Cast.MAPA, stav, m.getId(), velikost, stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null, datum);
+		return new Bunka(Cast.MAPA, stav, m.getId(), velikost, stazeno, stav == StavBunky.CHYBA || stav == StavBunky.STAHUJE ? s.getChyba() : null, datum, s.getFaze() == StavMapy.Faze.OVERUJE);
 	}
 
 	static Bunka bunkaVrstvy(final Cast cast, final KatalogovaVrstva v, final StavVrstvy s) {
@@ -211,6 +223,6 @@ public final class MatriceMap {
 			stav = StavBunky.KE_STAZENI;
 		}
 		final long stazeno = stav == StavBunky.STAZENO ? v.getVelikost() : Math.min(s.getStazeno(), v.getVelikost());
-		return new Bunka(cast, stav, v.getId(), v.getVelikost(), stazeno, stav == StavBunky.CHYBA ? s.getChyba() : null, v.getDatumDat());
+		return new Bunka(cast, stav, v.getId(), v.getVelikost(), stazeno, stav == StavBunky.CHYBA || stav == StavBunky.STAHUJE ? s.getChyba() : null, v.getDatumDat(), s.getFaze() == StavMapy.Faze.OVERUJE);
 	}
 }

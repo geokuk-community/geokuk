@@ -46,6 +46,34 @@ public class MatriceMapTest {
 		}
 	}
 
+	/** Při čekání na další pokus po přerušení nese běžící buňka text pro uživatele. */
+	@Test
+	public void bezicBunkaNeseTextCekaniNaPokus() {
+		final String text = "Spojení se přerušilo, další pokus za 5 s (1. ze 3).";
+		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), m -> mapa(m, StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0).sFazi(
+				StavMapy.Faze.STAHUJE, text), VrstvyProGui.katalogCesko(), v -> StavVrstvy.novy(v).sFazi(StavMapy.Faze.STAHUJE, text));
+		final Radek cz = radek(radky, CZ);
+		assertEquals(StavBunky.STAHUJE, cz.getBunka(Cast.MAPA).getStav());
+		assertEquals(text, cz.getBunka(Cast.MAPA).getChyba());
+		assertEquals(StavBunky.STAHUJE, cz.getBunka(Cast.TRASY).getStav());
+		assertEquals(text, cz.getBunka(Cast.TRASY).getChyba());
+	}
+
+	@Test
+	public void overovaniSePoznaVBunce() {
+		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), VrstvyProGui.katalogCesko(), v -> StavVrstvy.novy(v).sFazi(StavMapy.Faze.OVERUJE, null)
+				.sPrubehem(v.getVelikost() / 2));
+		final Radek cz = radek(radky, CZ);
+		final MatriceMap.Bunka trasy = cz.getBunka(Cast.TRASY);
+		assertEquals(StavBunky.STAHUJE, trasy.getStav());
+		assertTrue(trasy.isOveruje());
+		assertEquals(trasy.getVelikost() / 2, trasy.getStazeno());
+		assertFalse(cz.getBunka(Cast.MAPA).isOveruje());
+		final List<Radek> stahuje = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), VrstvyProGui.katalogCesko(), v -> StavVrstvy.novy(v).sFazi(StavMapy.Faze.STAHUJE,
+				null));
+		assertFalse(radek(stahuje, CZ).getBunka(Cast.TRASY).isOveruje());
+	}
+
 	@Test
 	public void bezKataloguVrstevJenSloupecMapa() {
 		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), null, null);

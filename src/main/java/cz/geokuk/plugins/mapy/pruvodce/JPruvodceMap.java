@@ -46,6 +46,8 @@ public final class JPruvodceMap extends JDialog {
 	private String dotaz = "";
 	private transient DefaultComboBoxModel<Zeme> modelJine;
 	private transient JPanel seznamZemi;
+	/** Nabídka se právě plní: události combo boxu se ignorují, aby se plněním neměnil výběr. */
+	private boolean plniNabidku;
 	private final transient Set<Zeme> vybrane = new LinkedHashSet<>();
 	private boolean viceZemi;
 	private PodkladPruvodce podklad;
@@ -187,6 +189,8 @@ public final class JPruvodceMap extends JDialog {
 	private JComponent krokZeme() {
 		final JPanel p = new JPanel();
 		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+		modelJine = null;
+		seznamZemi = null;
 		p.add(nadpisKroku("Kde budete mapy používat?"));
 		p.add(hledaniZemi());
 		final JCheckBox vice = new JCheckBox(VICE_ZEMI, viceZemi);
@@ -204,7 +208,9 @@ public final class JPruvodceMap extends JDialog {
 			skupina.add(rJina);
 			final DefaultComboBoxModel<Zeme> model = new DefaultComboBoxModel<>();
 			modelJine = model;
+			plniNabidku = true;
 			naplnJine(horni);
+			plniNabidku = false;
 			final JComboBox<Zeme> combo = new JComboBox<>(model);
 			combo.setRenderer(new DefaultListCellRenderer() {
 				private static final long serialVersionUID = 1L;
@@ -225,7 +231,7 @@ public final class JPruvodceMap extends JDialog {
 				vyber((Zeme) combo.getSelectedItem());
 			});
 			combo.addActionListener(e -> {
-				if (rJina.isSelected()) {
+				if (rJina.isSelected() && !plniNabidku) {
 					vyber((Zeme) combo.getSelectedItem());
 				}
 			});
@@ -320,9 +326,12 @@ public final class JPruvodceMap extends JDialog {
 	private void obnovNabidku() {
 		if (modelJine != null) {
 			final Object vybrano = modelJine.getSelectedItem();
-			naplnJine(zeme.subList(0, Math.min(2, zeme.size())));
-			if (vybrano != null && modelJine.getIndexOf(vybrano) >= 0) {
-				modelJine.setSelectedItem(vybrano);
+			plniNabidku = true;
+			try {
+				naplnJine(zeme.subList(0, Math.min(2, zeme.size())));
+				modelJine.setSelectedItem(vybrano != null && modelJine.getIndexOf(vybrano) >= 0 ? vybrano : null);
+			} finally {
+				plniNabidku = false;
 			}
 		}
 		if (seznamZemi != null) {

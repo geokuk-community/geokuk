@@ -214,4 +214,41 @@ public class JPruvodceMapTest {
 			Assert.assertFalse(tlacitko(d.getContentPane(), JPruvodceMap.JEN_PREPNOUT).isEnabled());
 		});
 	}
+
+	/** Výběr zemí přežije přepnutí „Zobrazit všechny země“ oběma směry. */
+	@Test
+	public void vyberPrezijePrepnutiVsechnyZeme() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final JPruvodceMap d = new JPruvodceMap(null, new Kontext());
+			// Jednozemní režim s „Jinou zemí“ nechává po přepnutí na víc zemí zastaralý combo box, který výběr dřív vynuloval.
+			tlacitko(d.getContentPane(), "Jiná země").doClick();
+			tlacitko(d.getContentPane(), JPruvodceMap.VICE_ZEMI).doClick();
+			tlacitko(d.getContentPane(), "Česko").doClick();
+			tlacitko(d.getContentPane(), "Slovensko").doClick();
+			tlacitko(d.getContentPane(), "Bavorsko").doClick();
+			final String[] zeme = { "Česko", "Slovensko", "Bavorsko" };
+			for (int kolo = 0; kolo < 2; kolo++) {
+				tlacitko(d.getContentPane(), JPruvodceMap.VSECHNY_ZEME).doClick();
+				for (final String z : zeme) {
+					Assert.assertTrue(z + " zůstalo vybrané po přepnutí " + kolo, tlacitko(d.getContentPane(), z).isSelected());
+				}
+			}
+			d.dispose();
+		});
+	}
+
+	/** Přepnutí „Zobrazit všechny země“ při jedné zvolené „Jiné zemi“ výběr nezmění. */
+	@Test
+	public void jinaZemePrezijePrepnutiVsechnyZeme() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		naEdt(() -> {
+			final JPruvodceMap d = new JPruvodceMap(null, new Kontext());
+			tlacitko(d.getContentPane(), "Jiná země").doClick();
+			tlacitko(d.getContentPane(), JPruvodceMap.VSECHNY_ZEME).doClick();
+			tlacitko(d.getContentPane(), JPruvodceMap.VSECHNY_ZEME).doClick();
+			Assert.assertTrue("Dál zůstává povolené", tlacitko(d.getContentPane(), JPruvodceMap.DAL).isEnabled());
+			d.dispose();
+		});
+	}
 }

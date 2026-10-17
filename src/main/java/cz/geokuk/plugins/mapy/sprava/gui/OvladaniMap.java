@@ -30,6 +30,9 @@ public interface OvladaniMap {
 	/** Zjistí jen u této mapy, jestli je na serveru novější. */
 	default void zkontroluj(final String id) {}
 
+	/** Zjistí, jestli je na serveru novější seznam vrstev. */
+	default void zkontrolujKatalogVrstev() {}
+
 	void otevriSlozku();
 
 	/** Obrys pokrytí map jde kreslit, jen když jsou známé hranice map. */
