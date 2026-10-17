@@ -88,7 +88,7 @@ public class StahovacVrstevTest {
 			}
 			final OutputStream out = ex.getResponseBody();
 			for (int i = od; i < d.length; i++) {
-				if (jmeno.equals(zdrzetSoubor) && i - od == d.length / 2) {
+				if (zdrzetSoubor != null && jmeno.startsWith(zdrzetSoubor) && i - od == d.length / 2) {
 					out.flush();
 					zdrzeno.countDown();
 					zdrzet.await(20, TimeUnit.SECONDS);
@@ -297,7 +297,7 @@ public class StahovacVrstevTest {
 	}
 
 	@Test
-	public void modelStahujeVrstvuAMapuNesoubezne() throws Exception {
+	public void modelStahujeVrstvu() throws Exception {
 		final KatalogovaVrstva v = dvaSoubory();
 		final KatalogVrstev katalog = KatalogVrstev.nacti("{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort()
 				+ "/rel/\"], \"layers\": [" + KatalogVrstevTest.vrstva(v.getId(), "dem", v.getRegion(), "hgt-zip", KatalogVrstevTest.soubor("cz_1.zip", "cz_1.zip",
@@ -314,7 +314,6 @@ public class StahovacVrstevTest {
 		zdrzetSoubor = "cz_1.zip";
 		assertTrue(model.stahni(vm));
 		assertTrue(zdrzeno.await(20, TimeUnit.SECONDS));
-		assertFalse("mapa se nestahuje souběžně s vrstvou", model.stahni(model.getKatalog().getMapy().get(0)));
 		assertFalse(model.stahni(vm));
 		assertTrue(model.getBeziciStahovaniVrstvy().isPresent());
 		assertFalse(model.getBeziciStahovani().isPresent());
@@ -332,5 +331,49 @@ public class StahovacVrstevTest {
 		model.pockej();
 		assertEquals("stav z disku se nezměnil, bez události", Collections.emptyList(), udalosti);
 		assertEquals(Mistni.MAME, model.getStav(vm).getMistni());
+	}
+
+	/** Vrstvy se stahují nejvýš dvě souběžně; zrušení zastaví obě a nové stahování po něm už běží. */
+	@Test(timeout = 60_000)
+	public void modelStahujeDveVrstvySoubezne() throws Exception {
+		final StringBuilder vrstvy = new StringBuilder();
+		final String[] regiony = { "europe/czech-republic", "europe/germany", "europe/germany/bayern" };
+		for (int i = 0; i < regiony.length; i++) {
+			final String jmeno = "d_" + i + ".zip";
+			data.put(jmeno, nahodna(200_000, 10 + i));
+			vrstvy.append(i == 0 ? "" : ",").append(KatalogVrstevTest.vrstva("dem/" + regiony[i], "dem", regiony[i], "hgt-zip",
+					KatalogVrstevTest.soubor(jmeno, jmeno, 200_000, sha(data.get(jmeno))), ""));
+		}
+		final KatalogVrstev katalog = KatalogVrstev.nacti("{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"layers\": ["
+				+ vrstvy + "]}", KatalogVrstevTest.mapy());
+		final File mapy = new File(tmp.getRoot(), "offline-mapy");
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), katalog);
+		model.nastavProTest(() -> mapy, e -> {
+		});
+		model.getStahovac().casovyLimitMs = 10_000;
+		final KatalogovaVrstva a = katalog.getVrstvy().get(0);
+		final KatalogovaVrstva b = katalog.getVrstvy().get(1);
+		final KatalogovaVrstva c = katalog.getVrstvy().get(2);
+		zdrzet = new CountDownLatch(1);
+		zdrzetSoubor = "d_";
+		assertTrue(model.stahni(a));
+		assertTrue(model.stahni(b));
+		while (!(pozadavky.contains("d_0.zip") && pozadavky.contains("d_1.zip"))) {
+			Thread.sleep(10);
+		}
+		assertFalse("třetí vrstva čeká", model.stahni(c));
+		assertFalse(model.stahni(a));
+		assertEquals(2, model.getBeziciStahovaniVrstev().size());
+
+		model.zrusStahovani();
+		zdrzet.countDown();
+		model.pockej();
+		assertEquals(Collections.emptyList(), model.getBeziciStahovaniVrstev());
+		assertNotEquals(Faze.HOTOVO, model.getStav(a).getFaze());
+		assertNotEquals(Faze.HOTOVO, model.getStav(b).getFaze());
+
+		assertTrue(model.stahni(c));
+		model.pockej();
+		assertEquals("dřívější zrušení nové stahování nezastaví", Faze.HOTOVO, model.getStav(c).getFaze());
 	}
 }
