@@ -1289,6 +1289,29 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Co se vejde, dostane celou výšku; zbytek se dělí mezi sekce, které se nevejdou, každá aspoň minimum. */
+	@Test
+	public void rozdeleniVysekSekci() {
+		Assert.assertArrayEquals("vejde se: beze změny", new int[] { 100, 200, 0 }, JMapyPopup.rozdelVysky(new int[] { 100, 200, 0 }, 500, 80));
+		Assert.assertArrayEquals("malá sekce celá, velká zbytek", new int[] { 120, 380 }, JMapyPopup.rozdelVysky(new int[] { 120, 2000 }, 500, 80));
+		Assert.assertArrayEquals("dvě velké rovným dílem", new int[] { 200, 200, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
+		Assert.assertArrayEquals("minimum, i když rozpočet nestačí", new int[] { 80, 80, 80 }, JMapyPopup.rozdelVysky(new int[] { 900, 900, 900 }, 150, 80));
+		Assert.assertTrue("rozpočet je rozumný", JMapyPopup.rozpocetSekci() >= 260 && JMapyPopup.rozpocetSekci() <= 520);
+	}
+
+	/** Mapa z oddílu Pro zobrazené místo je vidět i v seznamu všech map; popisy obou řádků se při stahování přepisují. */
+	@Test
+	public void mapaProMistoJeVidetISeznamuVsechMap() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final List<RadekMapy> radky = new ArrayList<>(dalsiMapy());
+			radky.add(katalog("pm", RadekMapy.Stav.NEMAME).proZobrazeneMisto(true).build());
+			p.obnov(radky);
+			Assert.assertEquals("v obou oddílech", 2, labels(p).stream().filter(l -> "pm".equals(l.getText())).count());
+		});
+	}
+
 	/** Dvě vrstvy téže země se stahují: počítají se obě, ostatní tlačítka vrstev jsou vypnutá a odečte se zbytek obou. */
 	@Test
 	public void dveBeziciVrstvyTehozRadku() throws Exception {
