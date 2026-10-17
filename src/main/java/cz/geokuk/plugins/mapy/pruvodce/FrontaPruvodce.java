@@ -55,6 +55,10 @@ public final class FrontaPruvodce {
 	private final Map<String, Integer> zpozdeni = new HashMap<>();
 	private boolean zastaveno;
 	private final Set<String> selhane = new java.util.LinkedHashSet<>();
+	/** Položky spuštěné, když ještě měly starou chybu: stav se po spuštění přepne až chvíli poté, stará chyba proto není nová. */
+	private final Set<String> zChyby = new HashSet<>();
+	/** Položky, které fronta po spuštění aspoň jednou viděla mimo chybu. */
+	private final Set<String> videnoMimoChybu = new HashSet<>();
 
 	public FrontaPruvodce(final PlanPruvodce plan) {
 		this.plan = plan;
@@ -63,6 +67,7 @@ public final class FrontaPruvodce {
 	/** Položku se nepodařilo spustit (třeba se zrovna stahuje jiná): příště se zkusí znovu. */
 	public void nespusteno(final Polozka polozka) {
 		spustene.remove(polozka.getId());
+		zChyby.remove(polozka.getId());
 	}
 
 	/** Uživatel stahování zrušil: dál se nic nespouští. */
@@ -89,6 +94,9 @@ public final class FrontaPruvodce {
 		int vrstevBezi = 0;
 		for (final Polozka p : plan.getPolozky()) {
 			final StavBunky s = stavy.apply(p.getId());
+			if (s != StavBunky.CHYBA && spustene.contains(p.getId())) {
+				videnoMimoChybu.add(p.getId());
+			}
 			if (hotovo(s) || selhala(p, s) || !(s == StavBunky.STAHUJE || spustene.contains(p.getId()))) {
 				continue;
 			}
@@ -120,6 +128,13 @@ public final class FrontaPruvodce {
 				}
 				continue;
 			}
+			if (s == StavBunky.CHYBA) {
+				// Spuštěno ze staré chyby a stav se ještě nepřepnul: po dvou kontrolách je to nová chyba (zpozdeni se tu jen počítá).
+				if (pocitejZpozdeni) {
+					zpozdeni.merge(p.getId(), 1, Integer::sum);
+				}
+				continue;
+			}
 			if (pocitejZpozdeni && zpozdeni.merge(p.getId(), 1, Integer::sum) >= 2) {
 				zastaveno = true;
 				return new Krok(Akce.ZASTAVENO, p);
@@ -127,6 +142,13 @@ public final class FrontaPruvodce {
 		}
 		if (dalsi != null) {
 			spustene.add(dalsi.getId());
+			videnoMimoChybu.remove(dalsi.getId());
+			zpozdeni.remove(dalsi.getId());
+			if (stavy.apply(dalsi.getId()) == StavBunky.CHYBA) {
+				zChyby.add(dalsi.getId());
+			} else {
+				zChyby.remove(dalsi.getId());
+			}
 			return new Krok(Akce.STAHUJ, dalsi);
 		}
 		return new Krok(neco ? Akce.CEKEJ : Akce.HOTOVO, null);
@@ -134,7 +156,8 @@ public final class FrontaPruvodce {
 
 	/** Položka už byla spuštěna a skončila chybou. */
 	private boolean selhala(final Polozka p, final StavBunky s) {
-		return s == StavBunky.CHYBA && spustene.contains(p.getId());
+		final String id = p.getId();
+		return s == StavBunky.CHYBA && spustene.contains(id) && (!zChyby.contains(id) || videnoMimoChybu.contains(id) || zpozdeni.getOrDefault(id, 0) >= 2);
 	}
 
 	/** Položky, které selhaly; dávka s nimi skončí jako HOTOVO a jdou zkusit znovu. */
@@ -147,6 +170,8 @@ public final class FrontaPruvodce {
 		for (final String id : selhane) {
 			spustene.remove(id);
 			zpozdeni.remove(id);
+			zChyby.remove(id);
+			videnoMimoChybu.remove(id);
 		}
 		selhane.clear();
 	}

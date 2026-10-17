@@ -37,6 +37,15 @@ public class BehPruvodceTest {
 		final List<PruvodceVolba> prepnuti = new ArrayList<>();
 		int zruseni;
 		boolean obsazeno;
+		/** Jako skutečný stahovač: stav se přepne až později (dokonciStart). */
+		boolean asynchronne;
+		final List<String> cekajiciStart = new ArrayList<>();
+
+		void dokonciStart() {
+			cekajiciStart.forEach(id -> stav.put(id, "STAHUJE"));
+			cekajiciStart.clear();
+		}
+
 		int pokusy;
 		int volaniMatice;
 
@@ -72,7 +81,11 @@ public class BehPruvodceTest {
 				return false;
 			}
 			stazene.add(polozka.getId());
-			stav.put(polozka.getId(), "STAHUJE");
+			if (asynchronne) {
+				cekajiciStart.add(polozka.getId());
+			} else {
+				stav.put(polozka.getId(), "STAHUJE");
+			}
 			return true;
 		}
 
@@ -209,5 +222,26 @@ public class BehPruvodceTest {
 		k.volaniMatice = 0;
 		beh.krok();
 		assertTrue("sestavení matice: " + k.volaniMatice, k.volaniMatice <= 2);
+	}
+
+	/** Zkusit znovu při asynchronním stahovači: stará chyba se hned po spuštění nehlásí jako nová a dávka neskončí předčasně. */
+	@Test
+	public void zkusitZnovuPriAsynchronnimStahovaci() {
+		final Kontext k = new Kontext();
+		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE), s -> {});
+		beh.spust();
+		k.stav.put(CZ, "CHYBA");
+		beh.krok();
+		assertEquals(Stav.HOTOVO, beh.getStav());
+		k.asynchronne = true;
+		beh.zkusZnovu();
+		assertEquals(Stav.BEZI, beh.getStav());
+		beh.krok();
+		assertEquals("stará chyba po spuštění dávku neukončí", Stav.BEZI, beh.getStav());
+		k.dokonciStart();
+		k.stav.put(CZ, "MAME");
+		beh.krok();
+		assertEquals(Stav.HOTOVO, beh.getStav());
+		assertTrue(beh.getSelhane().isEmpty());
 	}
 }

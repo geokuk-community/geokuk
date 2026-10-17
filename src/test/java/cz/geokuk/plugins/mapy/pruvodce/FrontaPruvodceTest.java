@@ -204,4 +204,32 @@ public class FrontaPruvodceTest {
 		final String c = k.getPolozka().getId();
 		assertTrue("třetí vrstva je jiná", !c.equals(a) && !c.equals(b));
 	}
+
+	/** Stahování se po spuštění přepne ze staré chyby až později (asynchronně): stará chyba se nehlásí jako nová. */
+	@Test
+	public void starouChybuPoSpusteniNehlasiJakoNovou() {
+		final FrontaPruvodce f = new FrontaPruvodce(planMapa());
+		final Map<String, StavBunky> s = stavy(StavBunky.CHYBA, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
+		assertEquals(Akce.STAHUJ, f.dalsi(s::get).getAkce());
+		// stahni() přepíná stav až ve vlákně: fronta ještě vidí starou chybu
+		assertEquals(Akce.CEKEJ, f.dalsi(s::get, false).getAkce());
+		assertTrue("zatím nic nehlášeno jako selhané", f.getSelhane().isEmpty());
+		s.put(MAPA, StavBunky.STAHUJE);
+		assertEquals(Akce.CEKEJ, f.dalsi(s::get).getAkce());
+		s.put(MAPA, StavBunky.CHYBA);
+		assertEquals("nová chyba po viděném stahování", Akce.HOTOVO, f.dalsi(s::get).getAkce());
+		assertEquals(1, f.getSelhane().size());
+	}
+
+	/** Rychlé selhání, které fronta mezi dvěma kontrolami nezachytí jako stahování, se po dvou kontrolách přizná. */
+	@Test
+	public void rychleSelhaniZeStareChybyJeNakonecChyba() {
+		final FrontaPruvodce f = new FrontaPruvodce(planMapa());
+		final Map<String, StavBunky> s = stavy(StavBunky.CHYBA, StavBunky.KE_STAZENI, StavBunky.KE_STAZENI);
+		assertEquals(Akce.STAHUJ, f.dalsi(s::get).getAkce());
+		assertEquals(Akce.CEKEJ, f.dalsi(s::get).getAkce());
+		assertEquals(Akce.CEKEJ, f.dalsi(s::get).getAkce());
+		assertEquals(Akce.HOTOVO, f.dalsi(s::get).getAkce());
+		assertEquals(1, f.getSelhane().size());
+	}
 }
