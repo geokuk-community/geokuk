@@ -99,6 +99,11 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void zkontrolujKatalogVrstev() {
+			volani.add("zkontroluj vrstvy");
+		}
+
+		@Override
 		public void zvyrazniMapu(final String klic) {
 			volani.add("zvyrazni " + klic);
 		}
@@ -1084,7 +1089,7 @@ public class JMapyPopupTest {
 			tlacitko(p, JMapyPopup.POKRACOVAT).doClick();
 			tlacitko(p, JMapyPopup.ZKONTROLOVAT).doClick();
 			tlacitko(p, JMapyPopup.OTEVRIT_SLOZKU).doClick();
-			Assert.assertEquals(Arrays.asList("stahni sk", "stahni at", "stahni pl", "zkontroluj cz", "zkontroluj sk", "slozka"), z.volani);
+			Assert.assertEquals(Arrays.asList("stahni sk", "stahni at", "stahni pl", "zkontroluj vrstvy", "zkontroluj cz", "zkontroluj sk", "slozka"), z.volani);
 		});
 	}
 

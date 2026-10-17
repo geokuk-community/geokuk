@@ -835,6 +835,7 @@ public class JMapyPopup extends JPanel {
 		if (!kontrolovatelne.isEmpty()) {
 			final JButton zkontrolovat = odkaz(ZKONTROLOVAT, e -> {
 				if (ovladani != null) {
+					ovladani.zkontrolujKatalogVrstev();
 					for (final RadekMapy r : kontrolovatelne) {
 						ovladani.zkontroluj(r.id);
 					}
