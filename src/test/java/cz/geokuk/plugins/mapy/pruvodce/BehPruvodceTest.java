@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.mapy.pruvodce;
 
 import static org.junit.Assert.assertEquals;
+import org.junit.Assert;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -77,6 +78,13 @@ public class BehPruvodceTest {
 		@Override
 		public void zrusStahovani() {
 			zruseni++;
+		}
+
+		final List<Boolean> davka = new ArrayList<>();
+
+		@Override
+		public void hromadnaDavka(final boolean bezi) {
+			davka.add(bezi);
 		}
 
 		@Override
@@ -197,5 +205,16 @@ public class BehPruvodceTest {
 		zrusena.krok();
 		assertEquals(Stav.ZASTAVENO, zrusena.getStav());
 		assertNull("zrušení není chyba, žádná hláška", zrusena.getSelhala());
+	}
+
+	/** Dávka víc položek hlásí kontextu začátek a konec, aby se mapa nepřekreslovala po každém souboru. */
+	@Test
+	public void davkaHlasiZacatekAKonec() {
+		final Kontext k = new Kontext();
+		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY), s -> {});
+		beh.spust();
+		Assert.assertEquals(Collections.singletonList(true), k.davka);
+		beh.zrus();
+		Assert.assertEquals(Arrays.asList(true, false), k.davka);
 	}
 }

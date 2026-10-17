@@ -129,6 +129,25 @@ public class OfflineMapyTest {
 		Assert.assertEquals(2, zmen.get());
 	}
 
+	/** Za hromadné dávky stahování se nová mapa nepoužije hned, ale až po skončení dávky; mapa se kvůli každému souboru nepřekresluje. */
+	@Test
+	public void behemDavkyStahovaniSeMapaNepreotvira() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		Assert.assertNotNull(vyrendruj(STRED_Z15));
+		OfflineMapy.setHromadnaDavka(true);
+		try {
+			zkopirujMapu(slozka, "druha.map");
+			mapy.zkontrolujSlozku();
+			mapy.zkontrolujSlozku();
+			Assert.assertEquals("změna se za dávky neprojeví", 0, zmen.get());
+		} finally {
+			OfflineMapy.setHromadnaDavka(false);
+		}
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		Assert.assertEquals("po skončení dávky se mapa otevře jednou", 1, zmen.get());
+	}
+
 	@Test
 	public void nazvyOtevrenychMap() throws Exception {
 		Assert.assertEquals(Collections.emptyList(), mapy.getNazvyMap());

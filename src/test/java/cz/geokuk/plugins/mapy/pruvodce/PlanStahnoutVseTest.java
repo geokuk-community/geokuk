@@ -37,14 +37,18 @@ public class PlanStahnoutVseTest {
 	}
 
 	@Test
-	public void chybejiciCastiVPoradiMapaTrasyVrstevnice() {
+	public void chybejiciCastiOdNejmensiho() {
 		final PlanPruvodce plan = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), VSE, matice(StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY));
 		assertTrue(plan.isStahnoutVse());
 		assertFalse("zobrazení se nepřepíná", plan.prepnoutHned());
 		final List<Cast> c = casti(plan);
-		assertEquals(Cast.MAPA, c.get(0));
-		assertTrue(c.indexOf(Cast.TRASY) > 0);
-		assertTrue(c.indexOf(Cast.VRSTEVNICE) > c.indexOf(Cast.TRASY));
+		assertTrue(c.containsAll(Arrays.asList(Cast.MAPA, Cast.TRASY, Cast.VRSTEVNICE)));
+		long predchozi = 0;
+		for (final PlanPruvodce.Polozka p : plan.getPolozky()) {
+			assertTrue("fronta jde od nejmenších souborů: " + p.getNazev(), p.getVelikost() >= predchozi);
+			predchozi = p.getVelikost();
+		}
+		assertEquals("nejmenší jsou trasy, největší mapa", Cast.TRASY, c.get(0));
 	}
 
 	@Test
@@ -56,7 +60,7 @@ public class PlanStahnoutVseTest {
 	@Test
 	public void stazenaMapaSeVynechaANovejsiSeAktualizuje() {
 		final PlanPruvodce plan = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), VSE, matice(StavMapy.Mistni.MAME, StavMapy.Server.NOVEJSI));
-		assertEquals("novější mapa se aktualizuje", Cast.MAPA, casti(plan).get(0));
+		assertTrue("novější mapa se aktualizuje", casti(plan).contains(Cast.MAPA));
 		final FrontaPruvodce f = new FrontaPruvodce(plan);
 		final FrontaPruvodce.Krok k = f.dalsi(id -> StavBunky.NOVEJSI);
 		assertEquals("fronta novější nepřeskočí", Akce.STAHUJ, k.getAkce());
@@ -114,7 +118,7 @@ public class PlanStahnoutVseTest {
 		assertTrue("země má regiony", klice.size() > 2);
 		for (final PlanPruvodce plan : new PlanPruvodce[] { PlanPruvodce.sestavVse(DE, klice, VSE, m), PlanPruvodce.sestavDostahnout(VSE, m) }) {
 			final List<String> id = plan.getPolozky().stream().map(PlanPruvodce.Polozka::getId).collect(Collectors.toList());
-			assertEquals(Arrays.asList("routes/" + DE, "contours/" + DE + "/bayern", "contours/" + DE + "/sachsen"), id);
+			assertEquals(new java.util.HashSet<>(Arrays.asList("routes/" + DE, "contours/" + DE + "/bayern", "contours/" + DE + "/sachsen")), new java.util.HashSet<>(id));
 		}
 	}
 
@@ -133,6 +137,6 @@ public class PlanStahnoutVseTest {
 		final String es = "europe/spain";
 		final String kanary = "africa/canary-islands";
 		final PlanPruvodce plan = PlanPruvodce.sestavVse(es, Arrays.asList(es, kanary), EnumSet.of(Cast.MAPA), m);
-		assertEquals(Arrays.asList(es, kanary), plan.getPolozky().stream().map(PlanPruvodce.Polozka::getKlic).collect(Collectors.toList()));
+		assertEquals(new java.util.HashSet<>(Arrays.asList(es, kanary)), plan.getPolozky().stream().map(PlanPruvodce.Polozka::getKlic).collect(Collectors.toSet()));
 	}
 }

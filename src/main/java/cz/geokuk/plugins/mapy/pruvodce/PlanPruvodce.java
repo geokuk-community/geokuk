@@ -119,7 +119,7 @@ public final class PlanPruvodce {
 	public static PlanPruvodce sestavVse(final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
 		final List<Polozka> polozky = new ArrayList<>();
 		pridejVse(polozky, celekKlic, klice, casti, matice);
-		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), polozky, true);
+		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), serad(polozky), true);
 	}
 
 	/**
@@ -150,7 +150,14 @@ public final class PlanPruvodce {
 		}
 		final java.util.Map<String, Polozka> bezDuplicit = new java.util.LinkedHashMap<>();
 		polozky.forEach(p -> bezDuplicit.putIfAbsent(p.getId(), p));
-		return new PlanPruvodce(new PruvodceVolba(vsechnyKlice, PodkladPruvodce.TURISTICKA_OFFLINE, vrstvy), new ArrayList<>(bezDuplicit.values()), true);
+		return new PlanPruvodce(new PruvodceVolba(vsechnyKlice, PodkladPruvodce.TURISTICKA_OFFLINE, vrstvy), serad(new ArrayList<>(bezDuplicit.values())), true);
+	}
+
+	/** Fronta jde od nejmenších souborů po největší; položky se stejnou nebo neznámou velikostí zůstávají v původním pořadí (neznámá je nakonec). */
+	static List<Polozka> serad(final List<Polozka> polozky) {
+		final List<Polozka> v = new ArrayList<>(polozky);
+		v.sort(java.util.Comparator.comparingLong(p -> p.getVelikost() > 0 ? p.getVelikost() : Long.MAX_VALUE));
+		return v;
 	}
 
 	private static void pridejVse(final List<Polozka> polozky, final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
