@@ -160,10 +160,11 @@ public final class PlanPruvodce {
 			}
 			final boolean celekMaCast = celekKlic != null && matice.stream().anyMatch(r -> r.getKlic().equals(celekKlic) && r.getBunka(cast).getStav() != StavBunky.NENI);
 			for (final String klic : klice) {
-				if (celekMaCast && !klic.equals(celekKlic)) {
-					continue;
-				}
 				matice.stream().filter(r -> r.getKlic().equals(klic)).findFirst().ifPresent(r -> {
+					// Celek pokrývá jen své regiony; řádek skupiny bez vazby na celek (Kanáry u Španělska) se bere samostatně.
+					if (celekMaCast && !klic.equals(celekKlic) && celekKlic.equals(r.getMapa().getIdCelku())) {
+						return;
+					}
 					final MatriceMap.Bunka b = r.getBunka(cast);
 					if (b.jeKeStazeni()) {
 						polozky.add(new Polozka(cast, r.getKlic(), b.getId(), r.getMapa().getNazev() + " – " + nazevCasti(cast), Math.max(0, b.getVelikost())));

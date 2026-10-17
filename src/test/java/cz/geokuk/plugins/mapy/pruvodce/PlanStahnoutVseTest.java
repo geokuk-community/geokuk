@@ -71,10 +71,11 @@ public class PlanStahnoutVseTest {
 	@Test
 	public void mapyRegionuSeBeruJenBezCelku() {
 		final List<MatriceMap.Radek> m = matice(StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY);
-		final String druhy = m.stream().map(MatriceMap.Radek::getKlic).filter(k -> !k.equals(CZ)).findFirst().get();
-		final PlanPruvodce sCelkem = PlanPruvodce.sestavVse(CZ, Arrays.asList(CZ, druhy), EnumSet.of(Cast.MAPA), m);
-		assertEquals("s celkem jen mapa celku", Collections.singletonList(CZ), sCelkem.getPolozky().stream().map(PlanPruvodce.Polozka::getKlic).collect(Collectors.toList()));
-		final PlanPruvodce bezCelku = PlanPruvodce.sestavVse(null, Arrays.asList(CZ, druhy), EnumSet.of(Cast.MAPA), m);
+		final String de = "europe/germany";
+		final String bayern = "europe/germany/bayern";
+		final PlanPruvodce sCelkem = PlanPruvodce.sestavVse(de, Arrays.asList(de, bayern), EnumSet.of(Cast.MAPA), m);
+		assertEquals("s celkem jen mapa celku", Collections.singletonList(de), sCelkem.getPolozky().stream().map(PlanPruvodce.Polozka::getKlic).collect(Collectors.toList()));
+		final PlanPruvodce bezCelku = PlanPruvodce.sestavVse(null, Arrays.asList(de, bayern), EnumSet.of(Cast.MAPA), m);
 		assertEquals("bez celku mapy všech řádků", 2, bezCelku.getPolozky().size());
 	}
 
@@ -123,5 +124,15 @@ public class PlanStahnoutVseTest {
 		assertTrue(PlanPruvodce.sestavDostahnout(VSE, maticeNemecko(false, false)).jeHotovo());
 		final PlanPruvodce region = PlanPruvodce.sestavDostahnout(VSE, maticeNemecko(false, true));
 		assertEquals(Collections.singletonList("contours/" + DE + "/bayern"), region.getPolozky().stream().map(PlanPruvodce.Polozka::getId).collect(Collectors.toList()));
+	}
+
+	/** Kanáry jsou ve skupině Španělsko, ale mapa Španělska je nepokrývá: Stáhnout vše je bere samostatně. */
+	@Test
+	public void kanaryNejsouRegionemSpanelska() {
+		final List<MatriceMap.Radek> m = matice(StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY);
+		final String es = "europe/spain";
+		final String kanary = "africa/canary-islands";
+		final PlanPruvodce plan = PlanPruvodce.sestavVse(es, Arrays.asList(es, kanary), EnumSet.of(Cast.MAPA), m);
+		assertEquals(Arrays.asList(es, kanary), plan.getPolozky().stream().map(PlanPruvodce.Polozka::getKlic).collect(Collectors.toList()));
 	}
 }
