@@ -64,6 +64,7 @@ public class JMapyPopup extends JPanel {
 	static final String OTEVRIT_SLOZKU = "Otevřít složku";
 	static final String BEHEM_STAHOVANI_NEJDE_MAZAT = "Během stahování nejde mazat.";
 	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
+	static final String BEZI_STAHOVANI = "Až se dokončí běžící stahování.";
 	static final String VSE_AKTUALNI = "Vše aktuální";
 	static final String KONTROLA_SELHALA = "Kontrola se nepovedla";
 
@@ -777,7 +778,7 @@ public class JMapyPopup extends JPanel {
 					ovladani.dostahnoutVrstvy();
 				}
 			});
-			vrstvy.setToolTipText(stahujeSe ? STAHUJE_SE_JINA : "Stáhne z GitHubu chybějící nebo zastaralé vrstvy ke všem staženým mapám; mapy z mapsforge se nestahují.");
+			vrstvy.setToolTipText(stahujeSe ? BEZI_STAHOVANI : "Stáhne z GitHubu chybějící nebo zastaralé vrstvy ke všem staženým mapám; mapy z mapsforge se nestahují.");
 			vrstvy.setEnabled(!stahujeSe);
 			akceHlavicky.add(vrstvy);
 		}
@@ -1257,7 +1258,7 @@ public class JMapyPopup extends JPanel {
 				ovladani.stahniVse(u.nazev, u.celek == null ? null : u.celek.id, klice);
 			}
 		});
-		vse.setToolTipText(stahujeSe ? STAHUJE_SE_JINA : "Stáhne k zemi mapu, trasy, vrstevnice i stínování, co chybí nebo je zastaralé.");
+		vse.setToolTipText(stahujeSe ? BEZI_STAHOVANI : "Stáhne k zemi mapu, trasy, vrstevnice i stínování, co chybí nebo je zastaralé.");
 		vse.setEnabled(!stahujeSe);
 		popis.setPreferredSize(new Dimension(Math.max(40, SIRKA_POPISU - vse.getPreferredSize().width), popis.getPreferredSize().height));
 		final JPanel obal = new JPanel(new BorderLayout());

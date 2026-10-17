@@ -123,7 +123,7 @@ public final class PlanPruvodce {
 	}
 
 	/**
-	 * Plán „Dostáhnout vrstvy“ ke všem stáhnutým základním mapám: jen vrstvy z GitHubu (žádná mapa z mapsforge). U stažené celé země i vrstvy, které existují jen po
+	 * Plán „Dostáhnout vrstvy“ ke všem staženým základním mapám: jen vrstvy z GitHubu (žádná mapa z mapsforge). U stažené celé země i vrstvy, které existují jen po
 	 * regionech, a to bez základních map regionů; u staženého regionu jeho vrstvy.
 	 */
 	public static PlanPruvodce sestavDostahnout(final Set<Cast> casti, final List<MatriceMap.Radek> matice) {

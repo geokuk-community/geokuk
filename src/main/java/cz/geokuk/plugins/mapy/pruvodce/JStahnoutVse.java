@@ -37,6 +37,8 @@ public final class JStahnoutVse extends JDialog {
 	private final transient PruvodceKontext kontext;
 	private final transient java.util.function.BiFunction<Set<Cast>, List<MatriceMap.Radek>, PlanPruvodce> planOd;
 	private final transient List<String> klice;
+	/** Dostáhnout vrstvy: základní mapy se nestahují, část Offline mapa se nenabízí. */
+	private final boolean jenVrstvy;
 	private final Map<Cast, JCheckBox> casti = new EnumMap<>(Cast.class);
 	private final JLabel souhrn = new JLabel(" ");
 	private final JButton stahnout = new JButton("Stáhnout");
@@ -53,7 +55,7 @@ public final class JStahnoutVse extends JDialog {
 
 	/** Souhrn k jedné zemi, nebo „Dostáhnout vrstvy“ ke všem staženým mapám (bez části Offline mapa). */
 	public static JStahnoutVse dostahnoutVrstvy(final Frame rodic, final PruvodceKontext kontext) {
-		return new JStahnoutVse(rodic, kontext, "Dostáhnout vrstvy", "Vrstvy ke stáhnutým mapám", PlanPruvodce::sestavDostahnout, Collections.emptyList());
+		return new JStahnoutVse(rodic, kontext, "Dostáhnout vrstvy", "Vrstvy ke staženým mapám", PlanPruvodce::sestavDostahnout, Collections.emptyList());
 	}
 
 	private JStahnoutVse(final Frame rodic, final PruvodceKontext kontext, final String titulek, final String nadpisOkna,
@@ -61,6 +63,7 @@ public final class JStahnoutVse extends JDialog {
 		super(rodic, titulek, true);
 		this.kontext = kontext;
 		this.planOd = planOd;
+		this.jenVrstvy = klice.isEmpty();
 		this.klice = klice;
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -73,10 +76,13 @@ public final class JStahnoutVse extends JDialog {
 		final List<MatriceMap.Radek> matice = kontext.matice();
 		final Set<Cast> cileCasti = EnumSet.allOf(Cast.class);
 		for (final Cast c : cileCasti) {
+			if (c == Cast.MAPA && jenVrstvy) {
+				continue;
+			}
 			final PlanPruvodce jen = planOd.apply(EnumSet.of(c), matice);
 			final JCheckBox box = new JCheckBox(popis(c, jen));
 			box.setEnabled(!jen.jeHotovo());
-			box.setSelected(!jen.jeHotovo() && (c != Cast.STINOVANI || maOfflineMapu(matice) || casti.get(Cast.MAPA).isSelected()));
+			box.setSelected(!jen.jeHotovo() && (c != Cast.STINOVANI || maOfflineMapu(matice) || (casti.get(Cast.MAPA) != null && casti.get(Cast.MAPA).isSelected())));
 			box.addActionListener(e -> prepocti());
 			casti.put(c, box);
 			seznam.add(box);
@@ -120,13 +126,17 @@ public final class JStahnoutVse extends JDialog {
 		}
 	}
 
+	static String souboru(final int n) {
+		return n + " " + (n == 1 ? "soubor" : n < 5 ? "soubory" : "souborů");
+	}
+
 	private static String popis(final Cast c, final PlanPruvodce jen) {
 		if (jen.jeHotovo()) {
 			return nazevCasti(c) + " – nic ke stažení";
 		}
 		final int n = jen.getPolozky().size();
 		final long v = jen.getCelkovaVelikost();
-		return nazevCasti(c) + " – " + n + " " + (n == 1 ? "soubor" : n < 5 ? "soubory" : "souborů") + (v > 0 ? ", " + JPruvodceMap.velikost(v) : "");
+		return nazevCasti(c) + " – " + souboru(n) + (v > 0 ? ", " + JPruvodceMap.velikost(v) : "");
 	}
 
 	/** Stínování je jen nad offline mapou: předvybere se, jen když je mapa země už stažená, nebo se teprve stahuje. */
@@ -152,7 +162,7 @@ public final class JStahnoutVse extends JDialog {
 		if (plan.jeHotovo()) {
 			souhrn.setText("Nic není vybráno.");
 		} else {
-			souhrn.setText("Celkem " + plan.getPolozky().size() + " souborů, " + JPruvodceMap.velikost(potrebuje) + (volne >= 0 ? " · volno na disku " + JPruvodceMap.velikost(volne) : ""));
+			souhrn.setText("Celkem " + souboru(plan.getPolozky().size()) + ", " + JPruvodceMap.velikost(potrebuje) + (volne >= 0 ? " · volno na disku " + JPruvodceMap.velikost(volne) : ""));
 		}
 		souhrn.setForeground(malo ? CERVENA : SEDY);
 		if (malo) {
