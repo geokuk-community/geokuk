@@ -116,7 +116,7 @@ public final class BehPruvodce {
 	}
 
 	private void prepni() {
-		if (!prepnuto) {
+		if (!prepnuto && !plan.isStahnoutVse()) {
 			prepnuto = true;
 			kontext.prepni(plan.getVolba());
 		}

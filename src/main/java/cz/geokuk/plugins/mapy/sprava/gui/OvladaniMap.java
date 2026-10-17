@@ -14,6 +14,8 @@ public interface OvladaniMap {
 	/** Po potvrzení smaže regiony, nebo celou zemi, která je ve složce zároveň s regiony; id je id celé země. */
 	default void smazDvojite(final String idCelku, final boolean regiony) {}
 
+	/** Otevře souhrn „Stáhnout vše“ k zemi: klíče řádků země (celek a regiony), celekKlic je null, když země má jen regiony. */
+	default void stahniVse(final String nazevZeme, final String celekKlic, final java.util.List<String> klice) {}
 	default void zrusStahovani() {}
 
 	/** Zjistí jen u této mapy, jestli je na serveru novější. */

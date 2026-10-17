@@ -74,6 +74,11 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void stahniVse(final String nazevZeme, final String celekKlic, final List<String> klice) {
+			volani.add("stahniVse " + nazevZeme + " " + celekKlic + " " + klice.size());
+		}
+
+		@Override
 		public void smazDvojite(final String idCelku, final boolean regiony) {
 			volani.add("smazDvojite " + idCelku + " " + regiony);
 		}
@@ -1263,6 +1268,23 @@ public class JMapyPopupTest {
 			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.NEMAME).rozpracovano(true).stazeno(120 * MB).build()));
 			Assert.assertFalse(texty(p).contains(JMapyPopup.RUSI_SE));
 			Assert.assertNotNull(tlacitko(p, JMapyPopup.POKRACOVAT));
+		});
+	}
+
+	/** Země s regiony má odkaz Stáhnout vše; klik předá ovládání zemi, její celek a klíče všech řádků. */
+	@Test
+	public void zemeSRegionyMaStahnoutVse() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			final List<JButton> vse = tlacitka(p).stream().filter(b -> JMapyPopup.STAHNOUT_VSE.equals(b.getText())).collect(java.util.stream.Collectors.toList());
+			Assert.assertFalse("aspoň jedna země s regiony", vse.isEmpty());
+			Assert.assertTrue(vse.get(0).isEnabled());
+			vse.get(0).doClick();
+			Assert.assertEquals(1, z.volani.size());
+			Assert.assertTrue(z.volani.get(0), z.volani.get(0).startsWith("stahniVse "));
 		});
 	}
 }

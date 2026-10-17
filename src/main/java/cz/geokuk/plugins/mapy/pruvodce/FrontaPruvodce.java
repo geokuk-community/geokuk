@@ -90,7 +90,7 @@ public final class FrontaPruvodce {
 			if (s == StavBunky.STAHUJE) {
 				return new Krok(Akce.CEKEJ, null);
 			}
-			if (s == StavBunky.STAZENO || s == StavBunky.NOVEJSI) {
+			if (s == StavBunky.STAZENO || s == StavBunky.NOVEJSI && !plan.isStahnoutVse()) {
 				continue;
 			}
 			if (!spustene.contains(p.getId())) {
