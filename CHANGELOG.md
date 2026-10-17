@@ -13,6 +13,8 @@
   i během stahování mapy.
 - Zdroje map jsou v mapě na jednom řádku vpravo dole s ikonou ⓘ, plné znění se
   ukáže po kliku na ikonu. Měřítko je vlevo dole.
+- Nahoře v popupu Mapy je Dostáhnout vrstvy ke staženým mapám. Stáhnout vše u země
+  stáhne i vrstvy, které existují jen po regionech, bez základních map regionů.
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 25.

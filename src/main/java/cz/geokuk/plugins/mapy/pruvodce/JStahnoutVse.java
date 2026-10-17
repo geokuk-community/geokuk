@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -34,7 +35,7 @@ public final class JStahnoutVse extends JDialog {
 	private static final Color CERVENA = new Color(180, 30, 30);
 
 	private final transient PruvodceKontext kontext;
-	private final transient String celekKlic;
+	private final transient java.util.function.BiFunction<Set<Cast>, List<MatriceMap.Radek>, PlanPruvodce> planOd;
 	private final transient List<String> klice;
 	private final Map<Cast, JCheckBox> casti = new EnumMap<>(Cast.class);
 	private final JLabel souhrn = new JLabel(" ");
@@ -47,22 +48,32 @@ public final class JStahnoutVse extends JDialog {
 	 *            klíče řádků země (celek a regiony)
 	 */
 	public JStahnoutVse(final Frame rodic, final PruvodceKontext kontext, final String nazevZeme, final String celekKlic, final List<String> klice) {
-		super(rodic, "Stáhnout vše – " + nazevZeme, true);
+		this(rodic, kontext, "Stáhnout vše – " + nazevZeme, nazevZeme, (casti, matice) -> PlanPruvodce.sestavVse(celekKlic, klice, casti, matice), klice);
+	}
+
+	/** Souhrn k jedné zemi, nebo „Dostáhnout vrstvy“ ke všem staženým mapám (bez části Offline mapa). */
+	public static JStahnoutVse dostahnoutVrstvy(final Frame rodic, final PruvodceKontext kontext) {
+		return new JStahnoutVse(rodic, kontext, "Dostáhnout vrstvy", "Vrstvy ke stáhnutým mapám", PlanPruvodce::sestavDostahnout, Collections.emptyList());
+	}
+
+	private JStahnoutVse(final Frame rodic, final PruvodceKontext kontext, final String titulek, final String nadpisOkna,
+			final java.util.function.BiFunction<Set<Cast>, List<MatriceMap.Radek>, PlanPruvodce> planOd, final List<String> klice) {
+		super(rodic, titulek, true);
 		this.kontext = kontext;
-		this.celekKlic = celekKlic;
+		this.planOd = planOd;
 		this.klice = klice;
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		final JPanel obsah = new JPanel(new BorderLayout(0, 10));
 		obsah.setBorder(new EmptyBorder(12, 16, 12, 16));
-		final JLabel nadpis = new JLabel(nazevZeme);
+		final JLabel nadpis = new JLabel(nadpisOkna);
 		nadpis.setFont(nadpis.getFont().deriveFont(Font.BOLD, 15f));
 		obsah.add(nadpis, BorderLayout.NORTH);
 		final JPanel seznam = new JPanel(new GridLayout(0, 1, 0, 2));
 		final List<MatriceMap.Radek> matice = kontext.matice();
 		final Set<Cast> cileCasti = EnumSet.allOf(Cast.class);
 		for (final Cast c : cileCasti) {
-			final PlanPruvodce jen = PlanPruvodce.sestavVse(celekKlic, klice, EnumSet.of(c), matice);
+			final PlanPruvodce jen = planOd.apply(EnumSet.of(c), matice);
 			final JCheckBox box = new JCheckBox(popis(c, jen));
 			box.setEnabled(!jen.jeHotovo());
 			box.setSelected(!jen.jeHotovo() && (c != Cast.STINOVANI || maOfflineMapu(matice) || casti.get(Cast.MAPA).isSelected()));
@@ -120,7 +131,7 @@ public final class JStahnoutVse extends JDialog {
 
 	/** Stínování je jen nad offline mapou: předvybere se, jen když je mapa země už stažená, nebo se teprve stahuje. */
 	private boolean maOfflineMapu(final List<MatriceMap.Radek> matice) {
-		return matice.stream().filter(r -> klice.contains(r.getKlic())).anyMatch(r -> r.getBunka(Cast.MAPA).jeStazeno());
+		return matice.stream().filter(r -> klice.isEmpty() || klice.contains(r.getKlic())).anyMatch(r -> r.getBunka(Cast.MAPA).jeStazeno());
 	}
 
 	private PlanPruvodce plan() {
@@ -130,7 +141,7 @@ public final class JStahnoutVse extends JDialog {
 				vybrane.add(c);
 			}
 		});
-		return PlanPruvodce.sestavVse(celekKlic, klice, vybrane, kontext.matice());
+		return planOd.apply(vybrane, kontext.matice());
 	}
 
 	private void prepocti() {

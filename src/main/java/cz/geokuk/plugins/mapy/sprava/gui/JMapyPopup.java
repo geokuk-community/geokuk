@@ -22,6 +22,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
+import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce;
 import cz.geokuk.plugins.mapy.sprava.MatriceMap;
 import cz.geokuk.plugins.mapy.sprava.PokrytiMap;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
@@ -78,11 +79,15 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_BUNKY = 112;
 
 	static final String STAHNOUT_VSE = "Stáhnout vše";
+	static final String DOSTAHNOUT_VRSTVY = "Dostáhnout vrstvy ke staženým mapám (%s, %s)";
 
 	/** Šířka sloupce s akcí mapy (Stáhnout, Zrušit…), ve všech oddílech stejná. */
 	static final int SIRKA_AKCE = 88;
 
 	private boolean mapaBezi;
+	private boolean cokoliBezi;
+	/** Země podle názvu z celého katalogu bez ohledu na oddíl: celek a všechny regiony. */
+	private final transient Map<String, Uzel> zemeVsechny = new HashMap<>();
 	/** Kolik se ještě dostahuje z běžících stahování; to místo se z volného odečítá. */
 	private long rozdelano;
 	private boolean vrstvyPlne;
@@ -730,6 +735,18 @@ public class JMapyPopup extends JPanel {
 			sirkaNazvu += 2 * ODSAZENI; // šipka a odsazení regionů ve stromu zemí
 		}
 		final boolean stahujeSe = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje || r.bezicVrstva() != null);
+		cokoliBezi = stahujeSe;
+		zemeVsechny.clear();
+		for (final RadekMapy r : radky) {
+			if (!r.vlastni) {
+				final Uzel u = zemeVsechny.computeIfAbsent(r.skupina != null ? r.skupina : r.nazev, Uzel::new);
+				if (r.skupina != null) {
+					u.regiony.add(r);
+				} else {
+					u.celek = r;
+				}
+			}
+		}
 		mapaBezi = radky.stream().anyMatch(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje);
 		rozdelano = zbyvaStahnout(radky);
 		vrstvyPlne = radky.stream().mapToInt(r -> r.bezicVrstvy().size()).sum() >= SpravaMapModel.SOUBEZNE_VRSTVY;
@@ -745,11 +762,31 @@ public class JMapyPopup extends JPanel {
 		final JLabel nadpis = new JLabel(NADPIS);
 		nadpis.setFont(nadpis.getFont().deriveFont(Font.BOLD));
 		hlavicka.add(nadpis, BorderLayout.WEST);
-		hlavicka.add(odkaz(OTEVRIT_SLOZKU, e -> {
+		final JPanel akceHlavicky = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+		akceHlavicky.setOpaque(false);
+		final List<MatriceMap.Radek> matice = new ArrayList<>();
+		for (final RadekMapy r : radky) {
+			if (r.matice != null && !r.vlastni) {
+				matice.add(r.matice);
+			}
+		}
+		final PlanPruvodce dostahnout = PlanPruvodce.sestavDostahnout(EnumSet.of(MatriceMap.Cast.TRASY, MatriceMap.Cast.VRSTEVNICE, MatriceMap.Cast.STINOVANI), matice);
+		if (!dostahnout.jeHotovo()) {
+			final JButton vrstvy = odkaz(String.format(Locale.ROOT, DOSTAHNOUT_VRSTVY, souboru(dostahnout.getPolozky().size()), RadekMapy.velikost(dostahnout.getCelkovaVelikost())), e -> {
+				if (ovladani != null) {
+					ovladani.dostahnoutVrstvy();
+				}
+			});
+			vrstvy.setToolTipText(stahujeSe ? STAHUJE_SE_JINA : "Stáhne z GitHubu chybějící nebo zastaralé vrstvy ke všem staženým mapám; mapy z mapsforge se nestahují.");
+			vrstvy.setEnabled(!stahujeSe);
+			akceHlavicky.add(vrstvy);
+		}
+		akceHlavicky.add(odkaz(OTEVRIT_SLOZKU, e -> {
 			if (ovladani != null) {
 				ovladani.otevriSlozku();
 			}
-		}), BorderLayout.EAST);
+		}));
+		hlavicka.add(akceHlavicky, BorderLayout.EAST);
 		add(hlavicka, gbc);
 		if (radky.stream().anyMatch(r -> r.matice != null && !r.vlastni)) {
 			gbc.gridy++;
@@ -1065,6 +1102,10 @@ public class JMapyPopup extends JPanel {
 		return sp;
 	}
 
+	static String souboru(final int n) {
+		return n + " " + (n == 1 ? "soubor" : n < 5 ? "soubory" : "souborů");
+	}
+
 	/** Klíč řádku pro zvýraznění obrysu mapy: id z katalogu, u souboru uživatele jeho jméno. */
 	static String klicZvyrazneni(final RadekMapy r) {
 		return r.vlastni ? JObrysMapSlide.VLASTNI + r.nazev : r.id;
@@ -1078,6 +1119,11 @@ public class JMapyPopup extends JPanel {
 
 	private int pridejRadek(final JPanel panel, final int y, final RadekMapy r, final boolean stahujeSe) {
 		radek(panel, y, r, stahujeSe);
+		if (r.skupina == null && r.matice != null && !r.vlastni) {
+			final Uzel sama = new Uzel(r.nazev);
+			sama.celek = r;
+			pridejStahnoutVse(panel, posledniPopis(r)[2], sama);
+		}
 		return y + 1;
 	}
 
@@ -1135,11 +1181,11 @@ public class JMapyPopup extends JPanel {
 			nazev.setBorder(null);
 			uzel.hlavicka = nazev;
 			nastavRozbaleni(uzel, nazev);
-			pridejStahnoutVse(panel, posledniPopis(r)[2], uzel, stahujeSe);
+			pridejStahnoutVse(panel, posledniPopis(r)[2], uzel);
 		} else if (uzel == null && r.skupina == null && r.matice != null && !r.vlastni) {
 			final Uzel sama = new Uzel(r.nazev);
 			sama.celek = r;
-			pridejStahnoutVse(panel, posledniPopis(r)[2], sama, stahujeSe);
+			pridejStahnoutVse(panel, posledniPopis(r)[2], sama);
 		}
 		final String zeme = uzel == null ? null : uzel.nazev;
 		hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), zeme, hlavicka, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
@@ -1172,9 +1218,7 @@ public class JMapyPopup extends JPanel {
 		cp.weightx = 1;
 		cp.insets = new Insets(1, 8, 1, 8);
 		panel.add(popis, cp);
-		if (prepni == null) {
-			pridejStahnoutVse(panel, popis, u, false);
-		}
+		pridejStahnoutVse(panel, popis, u);
 		final GridBagConstraints ca = bunka(3, y, 1);
 		ca.fill = GridBagConstraints.NONE;
 		panel.add(sloupecAkce(null), ca);
@@ -1190,7 +1234,9 @@ public class JMapyPopup extends JPanel {
 	}
 
 	/** Odkaz „Stáhnout vše“ vedle popisu země, pokud k zemi je co stáhnout nebo aktualizovat. */
-	private void pridejStahnoutVse(final JPanel panel, final JLabel popis, final Uzel u, final boolean stahujeSe) {
+	private void pridejStahnoutVse(final JPanel panel, final JLabel popis, final Uzel uzel) {
+		final boolean stahujeSe = cokoliBezi;
+		final Uzel u = zemeVsechny.getOrDefault(uzel.nazev, uzel);
 		final List<String> klice = new ArrayList<>();
 		boolean coStahnout = false;
 		for (final RadekMapy r : u.vsechnyRadky()) {
@@ -1311,6 +1357,7 @@ public class JMapyPopup extends JPanel {
 			}
 			if (u.celek != null) {
 				radek(panel, y++, u.celek, stahujeSe);
+				pridejStahnoutVse(panel, posledniPopis(u.celek)[2], u);
 				final JLabel nazev = posledniPopis(u.celek)[1];
 				nazev.setBorder(null);
 				nastavRozbaleni(nazev, rozbaleno, () -> prepniUzelSlozky(u.nazev));

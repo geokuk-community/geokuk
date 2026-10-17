@@ -118,6 +118,42 @@ public final class PlanPruvodce {
 	 */
 	public static PlanPruvodce sestavVse(final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
 		final List<Polozka> polozky = new ArrayList<>();
+		pridejVse(polozky, celekKlic, klice, casti, matice);
+		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), polozky, true);
+	}
+
+	/**
+	 * Plán „Dostáhnout vrstvy“ ke všem stáhnutým základním mapám: jen vrstvy z GitHubu (žádná mapa z mapsforge). U stažené celé země i vrstvy, které existují jen po
+	 * regionech, a to bez základních map regionů; u staženého regionu jeho vrstvy.
+	 */
+	public static PlanPruvodce sestavDostahnout(final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
+		final Set<Cast> vrstvy = java.util.EnumSet.copyOf(casti);
+		vrstvy.remove(Cast.MAPA);
+		final List<Polozka> polozky = new ArrayList<>();
+		final List<String> vsechnyKlice = new ArrayList<>();
+		for (final MatriceMap.Radek r : matice) {
+			if (!r.getBunka(Cast.MAPA).jeStazeno()) {
+				continue;
+			}
+			final String idCelku = r.getMapa().getIdCelku();
+			if (idCelku != null && matice.stream().anyMatch(x -> x.getKlic().equals(idCelku) && x.getBunka(Cast.MAPA).jeStazeno())) {
+				continue;
+			}
+			final List<String> klice = new ArrayList<>();
+			klice.add(r.getKlic());
+			final boolean celek = r.getMapa().getSkupina() == null;
+			if (celek) {
+				matice.stream().filter(x -> r.getKlic().equals(x.getMapa().getIdCelku())).forEach(x -> klice.add(x.getKlic()));
+			}
+			pridejVse(polozky, celek ? r.getKlic() : null, klice, vrstvy, matice);
+			klice.stream().filter(k -> !vsechnyKlice.contains(k)).forEach(vsechnyKlice::add);
+		}
+		final java.util.Map<String, Polozka> bezDuplicit = new java.util.LinkedHashMap<>();
+		polozky.forEach(p -> bezDuplicit.putIfAbsent(p.getId(), p));
+		return new PlanPruvodce(new PruvodceVolba(vsechnyKlice, PodkladPruvodce.TURISTICKA_OFFLINE, vrstvy), new ArrayList<>(bezDuplicit.values()), true);
+	}
+
+	private static void pridejVse(final List<Polozka> polozky, final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
 		for (final Cast cast : new Cast[] { Cast.MAPA, Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI }) {
 			if (!casti.contains(cast)) {
 				continue;
@@ -135,7 +171,6 @@ public final class PlanPruvodce {
 				});
 			}
 		}
-		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), polozky, true);
 	}
 
 	/** Plán „Stáhnout vše“: nic se nepřepíná a stahují se i novější verze. */

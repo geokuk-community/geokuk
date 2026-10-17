@@ -25,6 +25,21 @@ public final class VrstvyProGui {
 		}
 	}
 
+	/** Německo: trasy jen pro celou zemi, vrstevnice jen pro Bavorsko a Sasko. */
+	public static KatalogVrstev katalogNemecko() {
+		try {
+			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(
+					KatalogVrstevTest.vrstva("routes/europe/germany", "routes", "europe/germany", "map", KatalogVrstevTest.soubor("germany_trasy.map", "v1/germany_trasy.map", 100_000_000, SHA), ""),
+					KatalogVrstevTest.vrstva("contours/europe/germany/bayern", "contours", "europe/germany/bayern", "map",
+							KatalogVrstevTest.soubor("bayern_vrstevnice.map", "v1/bayern_vrstevnice.map", 50_000_000, SHA), ""),
+					KatalogVrstevTest.vrstva("contours/europe/germany/sachsen", "contours", "europe/germany/sachsen", "map",
+							KatalogVrstevTest.soubor("sachsen_vrstevnice.map", "v1/sachsen_vrstevnice.map", 20_000_000, SHA), "")),
+					KatalogMap.vestaveny());
+		} catch (final IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
 	public static StavVrstvy stav(final KatalogovaVrstva v, final StavVrstvy.Mistni mistni, final StavMapy.Faze faze, final long stazeno, final String chyba) {
 		return StavVrstvy.novy(v).sMistni(mistni, stazeno, stazeno > 0 && mistni == StavVrstvy.Mistni.NEMAME).sFazi(faze, chyba);
 	}
