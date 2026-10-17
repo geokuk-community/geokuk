@@ -81,13 +81,14 @@
   u hranice i sousední mapy, které jsou v záběru.
   Seznam dalších map je větší, jde v něm hledat a země s regiony (Německo, Francie, Itálie,
   Nizozemsko, Španělsko, Spojené království) se rozbalují.
-- Stažené vrstvy (turistické trasy a vrstevnice) se v offline mapě kreslí
-  spolu s mapou a DEM dlaždice ve složce vrstev dávají stínování terénu, které
-  jde v popupu Mapy vypnout. Povinná atribuce dat vrstev (třeba Copernicus) je
-  v rohu mapy.
-  Vrstvy se stahují a mažou v popupu Mapy ve sloupcích Trasy, Vrstevnice a
-  Stínování u každé mapy, i u mapy, která ještě není stažená.
-  Seznam map ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
+  Když je země ve složce celá i po regionech (dvojitě stažená), popup na to
+  upozorní a nabídne smazat regiony, nebo celek.
+- V popupu Mapy jde ke každé mapě Evropy stáhnout turistické a cyklotrasy,
+  vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a Stínování), i
+  k mapě, která ještě není stažená. Stažené vrstvy se kreslí spolu s offline
+  mapou, stínování jde v popupu vypnout. Atribuce dat (OpenStreetMap,
+  Copernicus) je v rohu mapy. Mapy ve složce jde sbalit a stažené regiony
+  jsou seskupené pod zemí.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
   se otevře sám) vybere zemi, podklad a vrstvy, stáhne jen to, co chybí, a
   přepne mapu.
@@ -97,11 +98,13 @@
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
 
+Obsahuje i všechny opravy z 6.4.2.
+
+## 6.4.2
+
 ### Opravy
 - Mapy > Postahovat dlaždice: stahování velkého výřezu (tisíce dlaždic)
   už nedojde paměť, stažené dlaždice se průběžně uvolňují.
-
-Obsahuje i všechny opravy z 6.4.1.
 
 ## 6.4.1
 
