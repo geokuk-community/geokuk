@@ -491,7 +491,8 @@ public class JMapyPopup extends JPanel {
 	/** Nové řádky; při stahování se jen přepíší popisy, jinak se popup sestaví znovu. */
 	public void obnov(final List<RadekMapy> nove) {
 		odhad.zapomenKrome(stahovane(nove));
-		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky)) && zobrazenySouhrn.equals(souhrnDavky());
+		final boolean souhrnSeZmenil = !zobrazenySouhrn.equals(souhrnDavky());
+		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky)) && !souhrnSeZmenil;
 		radky = new ArrayList<>(nove);
 		if (stejnaStruktura) {
 			boolean sirsi = false;
@@ -524,7 +525,8 @@ public class JMapyPopup extends JPanel {
 			return;
 		}
 		// Za hromadné dávky stahování se mění stavy po každém souboru; celá přestavba popupu je drahá, proto se spojuje do jedné za odstup.
-		if (davkaBezi.getAsBoolean() && System.nanoTime() - posledniPrestavba < TimeUnit.MILLISECONDS.toNanos(odstupPrestavbyMs)) {
+		// Změna souhrnu dávky (Zavřít, Zkusit znovu, konec dávky) se projeví hned, spojují se jen změny stavů.
+		if (!souhrnSeZmenil && davkaBezi.getAsBoolean() && System.nanoTime() - posledniPrestavba < TimeUnit.MILLISECONDS.toNanos(odstupPrestavbyMs)) {
 			odlozenaPrestavba.setInitialDelay(odstupPrestavbyMs);
 			odlozenaPrestavba.restart();
 			return;
@@ -535,12 +537,8 @@ public class JMapyPopup extends JPanel {
 	private void prestavPopup() {
 		odlozenaPrestavba.stop();
 		rusenaMapa = null;
-		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
 		sestav();
 		posledniPrestavba = System.nanoTime();
-		obnovPosuny(posuny);
-		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
-		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
 		zmenaObsahu();
 	}
 
@@ -775,7 +773,16 @@ public class JMapyPopup extends JPanel {
 
 	private int sirkaNazvu;
 
+	/** Sestaví popup znovu a nechá posuvníky všech oddílů tam, kde byly (klik na řádek ani šipka uzlu neskočí nahoru). */
 	private void sestav() {
+		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
+		sestavZNovu();
+		obnovPosuny(posuny);
+		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
+		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
+	}
+
+	private void sestavZNovu() {
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
