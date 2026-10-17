@@ -25,7 +25,7 @@
   stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
   po regionech (dvojitě stažená), panel na to upozorní a nabídne smazat
   regiony, nebo celek.
-  Staženého souboru se po dokončení ověřuje (Ověřuji N %). Hromadné stahování
+  Stažený soubor se po dokončení ověří (Ověřuji N %). Hromadné stahování
   (Stáhnout vše, průvodce) po chybě pokračuje dalšími položkami; na konci panel
   ukáže souhrn, co se stáhlo a co ne, a tlačítko Zkusit znovu.
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistické a
