@@ -1296,7 +1296,8 @@ public class JMapyPopupTest {
 		Assert.assertArrayEquals("malá sekce celá, velká zbytek", new int[] { 120, 380 }, JMapyPopup.rozdelVysky(new int[] { 120, 2000 }, 500, 80));
 		Assert.assertArrayEquals("dvě velké rovným dílem", new int[] { 200, 200, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
 		Assert.assertArrayEquals("minimum, i když rozpočet nestačí", new int[] { 80, 80, 80 }, JMapyPopup.rozdelVysky(new int[] { 900, 900, 900 }, 150, 80));
-		Assert.assertTrue("rozpočet je rozumný", JMapyPopup.rozpocetSekci() >= 260 && JMapyPopup.rozpocetSekci() <= 520);
+		final JMapyPopup bezOkna = new JMapyPopup();
+		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 520);
 	}
 
 	/** Mapa z oddílu Pro zobrazené místo je vidět i v seznamu všech map; popisy obou řádků se při stahování přepisují. */
@@ -1349,6 +1350,32 @@ public class JMapyPopupTest {
 			Assert.assertTrue("nahoře Dostáhnout vrstvy", tlacitka(p).stream().anyMatch(b -> b.getText().startsWith("Dostáhnout vrstvy ke staženým mapám (")));
 			tlacitka(p).stream().filter(b -> JMapyPopup.STAHNOUT_VSE.equals(b.getText())).forEach(JButton::doClick);
 			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniVse Německo europe/germany ") && Integer.parseInt(v.substring(v.lastIndexOf(' ') + 1)) > 2));
+		});
+	}
+
+	/** Popup se vejde do dostupné výšky nad stavovým řádkem a ve vyšším okně je vyšší; v nízkém má seznamy aspoň minimální rozpočet. */
+	@Test
+	public void vyskaPopupuPodleDostupneVysky() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final List<RadekMapy> mnoho = new ArrayList<>();
+			for (int i = 0; i < 300; i++) {
+				mnoho.add(katalog("m/" + i, RadekMapy.Stav.NEMAME).build());
+			}
+			final int[] vyskaPodleOkna = new int[3];
+			final int[] dostupna = { 500, 700, 1000 };
+			for (int k = 0; k < dostupna.length; k++) {
+				final int d = dostupna[k];
+				final JMapyPopup p = new JMapyPopup();
+				p.setDostupnaVyska(() -> d);
+				p.obnov(mnoho);
+				vyskaPodleOkna[k] = p.getPreferredSize().height;
+				Assert.assertTrue("vejde se do " + d + ": " + vyskaPodleOkna[k], vyskaPodleOkna[k] <= d);
+			}
+			Assert.assertTrue("vyšší okno, vyšší popup", vyskaPodleOkna[0] < vyskaPodleOkna[1] && vyskaPodleOkna[1] < vyskaPodleOkna[2]);
+			final JMapyPopup nizke = new JMapyPopup();
+			nizke.setDostupnaVyska(() -> 100);
+			nizke.obnov(mnoho);
+			Assert.assertTrue("v nízkém okně aspoň minimální rozpočet", nizke.rozpocetSekci() >= JMapyPopup.MIN_ROZPOCET);
 		});
 	}
 }
