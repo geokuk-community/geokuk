@@ -961,12 +961,6 @@ public class JMapyPopup extends JPanel {
 			gbc.gridy++;
 			add(seznam, gbc);
 		}
-		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocetSekci(), MIN_VYSKA_SEKCE);
-		System.arraycopy(prideleno, 0, vyska, 0, 3);
-		slozkaObal.add(sekce(slozka, prideleno[0]));
-		if (misto != null) {
-			mistoObal.add(sekce(misto, prideleno[1]));
-		}
 
 		if (radky.stream().anyMatch(r -> !r.vlastni)) {
 			// Projekt, licence a atribuce map z katalogu.
@@ -1009,6 +1003,15 @@ public class JMapyPopup extends JPanel {
 		pata.add(web, BorderLayout.EAST);
 		gbc.gridy++;
 		add(pata, gbc);
+		// Výška seznamů: co zbude z dostupné výšky nad stavovým řádkem po ostatních částech popupu.
+		pevnaVyska = getPreferredSize().height;
+		rozpocet = rozpocetSekci();
+		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocet, MIN_VYSKA_SEKCE);
+		System.arraycopy(prideleno, 0, vyska, 0, 3);
+		slozkaObal.add(sekce(slozka, prideleno[0]));
+		if (misto != null) {
+			mistoObal.add(sekce(misto, prideleno[1]));
+		}
 		if (uzivatelPise) {
 			cekaNaFokus = true;
 			SwingUtilities.invokeLater(hledat::requestFocusInWindow);
@@ -1020,14 +1023,39 @@ public class JMapyPopup extends JPanel {
 	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */
 	static final int MIN_VYSKA_SEKCE = 80;
 
-	/** Kolik výšky smějí dohromady mít seznamy map: nejvýš polovina obrazovky, 260 až 520 px. */
-	static int rozpocetSekci() {
-		int obrazovka = 1000;
-		if (!GraphicsEnvironment.isHeadless()) {
-			obrazovka = Toolkit.getDefaultToolkit().getScreenSize().height;
-		}
-		return Math.max(260, Math.min(520, obrazovka / 2));
+	/** Kolik px je nad stavovým řádkem až po horní lištu okna, -1 když není známé; nastavuje blok Mapy. */
+	private transient java.util.function.IntSupplier dostupnaVyska = () -> -1;
+	/** Výška popupu bez seznamů z posledního sestavení a rozpočet seznamů, podle kterého se naposledy rozdělovalo. */
+	private int pevnaVyska;
+	private int rozpocet;
+
+	public void setDostupnaVyska(final java.util.function.IntSupplier dostupnaVyska) {
+		this.dostupnaVyska = dostupnaVyska;
 	}
+
+	/** Okno se mohlo od posledního sestavení zvětšit nebo zmenšit: seznamy se rozdělí znovu, když se rozpočet změnil. */
+	public void prepocitejVysku() {
+		if (rozpocet != 0 && rozpocetSekci() != rozpocet) {
+			sestav();
+		}
+	}
+
+	/** Kolik výšky smějí dohromady mít seznamy map: dostupná výška po horní lištu okna bez ostatních částí popupu, nejméně 260 px; bez znalosti okna půl obrazovky. */
+	int rozpocetSekci() {
+		final int dostupna = dostupnaVyska.getAsInt();
+		if (dostupna > 0) {
+			return Math.max(MIN_ROZPOCET, dostupna - pevnaVyska - OKRAJ_POPUPU);
+		}
+		return Math.min(520, Math.max(MIN_ROZPOCET, obrazovka() / 2));
+	}
+
+	private static int obrazovka() {
+		return GraphicsEnvironment.isHeadless() ? 1000 : Toolkit.getDefaultToolkit().getScreenSize().height;
+	}
+
+	static final int MIN_ROZPOCET = 260;
+	/** Rezerva na ohraničení popupu. */
+	private static final int OKRAJ_POPUPU = 12;
 
 	/**
 	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí rovným dílem mezi sekce, které se nevejdou,
