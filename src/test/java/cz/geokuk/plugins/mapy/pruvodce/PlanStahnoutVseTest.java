@@ -77,4 +77,14 @@ public class PlanStahnoutVseTest {
 		final PlanPruvodce bezCelku = PlanPruvodce.sestavVse(null, Arrays.asList(CZ, druhy), EnumSet.of(Cast.MAPA), m);
 		assertEquals("bez celku mapy všech řádků", 2, bezCelku.getPolozky().size());
 	}
+
+	@Test
+	public void vrstvuMaCelekNeboRegionyNikdyOboje() {
+		final List<MatriceMap.Radek> m = matice(StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY);
+		final String druhy = m.stream().map(MatriceMap.Radek::getKlic).filter(k -> !k.equals(CZ)).findFirst().get();
+		final PlanPruvodce plan = PlanPruvodce.sestavVse(CZ, Arrays.asList(CZ, druhy), EnumSet.of(Cast.TRASY, Cast.VRSTEVNICE), m);
+		final long trasyCelku = plan.getPolozky().stream().filter(p -> p.getCast() == Cast.TRASY).count();
+		assertEquals("trasy jen z celku, když je celek má", 1, trasyCelku);
+		assertTrue(plan.getPolozky().stream().noneMatch(p -> p.getKlic().equals(druhy) && p.getCast() == Cast.TRASY));
+	}
 }

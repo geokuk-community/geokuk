@@ -112,19 +112,19 @@ public final class PlanPruvodce {
 	 * Plán „Stáhnout vše“ pro zemi: co z vybraných částí chybí nebo je zastaralé, v pořadí mapa, trasy, vrstevnice, stínování. Zobrazení se nepřepíná.
 	 *
 	 * @param celekKlic
-	 *            klíč celé země, nebo null, když země má jen regiony; mapy regionů se stahují jen bez celku, vrstvy vždy u všech řádků
+	 *            klíč celé země, nebo null, když země má jen regiony; každá část se bere jen z celku, když ji celek má, jinak z regionů
 	 * @param klice
 	 *            klíče řádků země (celek a regiony)
 	 */
 	public static PlanPruvodce sestavVse(final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
 		final List<Polozka> polozky = new ArrayList<>();
-		final boolean celekMaMapu = celekKlic != null && matice.stream().anyMatch(r -> r.getKlic().equals(celekKlic) && r.getBunka(Cast.MAPA).getStav() != StavBunky.NENI);
 		for (final Cast cast : new Cast[] { Cast.MAPA, Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI }) {
 			if (!casti.contains(cast)) {
 				continue;
 			}
+			final boolean celekMaCast = celekKlic != null && matice.stream().anyMatch(r -> r.getKlic().equals(celekKlic) && r.getBunka(cast).getStav() != StavBunky.NENI);
 			for (final String klic : klice) {
-				if (cast == Cast.MAPA && celekMaMapu && !klic.equals(celekKlic)) {
+				if (celekMaCast && !klic.equals(celekKlic)) {
 					continue;
 				}
 				matice.stream().filter(r -> r.getKlic().equals(klic)).findFirst().ifPresent(r -> {
