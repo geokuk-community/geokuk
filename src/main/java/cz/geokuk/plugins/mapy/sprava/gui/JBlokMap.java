@@ -80,6 +80,7 @@ public class JBlokMap extends JLabel {
 		setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
 		obsah.nactiStavSlozky = JBlokMap::nactiStavSlozky;
 		obsah.ulozStavSlozky = JBlokMap::ulozStavSlozky;
+		obsah.setDavkaBezi(() -> spravaMap != null && spravaMap.isDavka());
 		obsah.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
 		obnov(java.util.Collections.emptyList());
 		popup.setDrzOtevreny(obsah::isHledaniAktivni);

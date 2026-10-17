@@ -1384,4 +1384,72 @@ public class JMapyPopupTest {
 			Assert.assertTrue("v nízkém okně aspoň minimální rozpočet", nizke.rozpocetSekci() >= JMapyPopup.MIN_ROZPOCET);
 		});
 	}
+
+	/** Za hromadné dávky se změna struktury nepřestaví hned, ale až po odstupu, a to jednou s nejnovějšími řádky. */
+	@Test(timeout = 30000)
+	public void behemDavkyPrestavbaPopupuCeka() throws Exception {
+		final JMapyPopup[] pp = new JMapyPopup[1];
+		SwingUtilities.invokeAndWait(() -> {
+			pp[0] = new JMapyPopup();
+			pp[0].odstupPrestavbyMs = 300;
+			pp[0].setDavkaBezi(() -> true);
+			pp[0].setOvladani(new Zaznam());
+			pp[0].obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.NEMAME).build()));
+			pp[0].obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.AKTUALNI).veSlozce(true).build()));
+			Assert.assertTrue("přestavba čeká", pp[0].isPrestavbaOdlozena());
+			Assert.assertEquals("zatím je vidět starý stav", 0, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size());
+		});
+		while (true) {
+			final boolean[] ceka = new boolean[1];
+			SwingUtilities.invokeAndWait(() -> ceka[0] = pp[0].isPrestavbaOdlozena());
+			if (!ceka[0]) {
+				break;
+			}
+			Thread.sleep(50);
+		}
+		SwingUtilities.invokeAndWait(() -> Assert.assertEquals("po odstupu se přestaví s novými řádky", 1, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size()));
+	}
+
+	/** Po přestavbě (třeba po kliku na Stáhnout) zůstane posuvník oddílu Ve složce i seznamu všech map na místě. */
+	@Test(timeout = 30000)
+	public void prestavbaZachovaPoziciPosuvniku() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JMapyPopup p = new JMapyPopup();
+		final List<RadekMapy> radky = new ArrayList<>();
+		for (int i = 0; i < 80; i++) {
+			radky.add(katalog("f/" + i, RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
+		}
+		for (int i = 0; i < 120; i++) {
+			radky.add(katalog("d/" + i, RadekMapy.Stav.NEMAME).build());
+		}
+		final int[] pred = new int[2];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				p.setDostupnaVyska(() -> 700);
+				p.setOvladani(new Zaznam());
+				p.prepniSlozku(true);
+				p.obnov(radky);
+				okno.add(p);
+				okno.pack();
+				okno.setVisible(true);
+				okno.validate();
+				Assert.assertNotNull("Ve složce je posuvné", p.getSlozkaPosuvnik());
+				p.getSlozkaPosuvnik().getVerticalScrollBar().setValue(300);
+				p.seznam().getVerticalScrollBar().setValue(400);
+				pred[0] = p.getSlozkaPosuvnik().getVerticalScrollBar().getValue();
+				pred[1] = p.seznam().getVerticalScrollBar().getValue();
+				Assert.assertTrue(pred[0] > 0 && pred[1] > 0);
+				final List<RadekMapy> zmena = new ArrayList<>(radky);
+				zmena.set(79, katalog("f/79", RadekMapy.Stav.STAHUJE).veSlozce(true).stazeno(MB).build());
+				p.obnov(zmena);
+			});
+			SwingUtilities.invokeAndWait(() -> {
+				Assert.assertEquals("Ve složce zůstalo na místě", pred[0], p.getSlozkaPosuvnik().getVerticalScrollBar().getValue());
+				Assert.assertEquals("seznam zůstal na místě", pred[1], p.seznam().getVerticalScrollBar().getValue());
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(okno::dispose);
+		}
+	}
 }

@@ -13,6 +13,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
 import javax.swing.*;
@@ -520,13 +521,69 @@ public class JMapyPopup extends JPanel {
 			}
 			return;
 		}
-		rusenaMapa = null;
-		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
-		sestav();
-		if (seznam != null) {
-			seznam.getVerticalScrollBar().setValue(posun);
+		// Za hromadné dávky stahování se mění stavy po každém souboru; celá přestavba popupu je drahá, proto se spojuje do jedné za odstup.
+		if (davkaBezi.getAsBoolean() && System.nanoTime() - posledniPrestavba < TimeUnit.MILLISECONDS.toNanos(odstupPrestavbyMs)) {
+			odlozenaPrestavba.setInitialDelay(odstupPrestavbyMs);
+			odlozenaPrestavba.restart();
+			return;
 		}
+		prestavPopup();
+	}
+
+	private void prestavPopup() {
+		odlozenaPrestavba.stop();
+		rusenaMapa = null;
+		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
+		sestav();
+		posledniPrestavba = System.nanoTime();
+		obnovPosuny(posuny);
+		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
+		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
 		zmenaObsahu();
+	}
+
+	/** Za hromadné dávky stahování se popup nepřestavuje po každé změně stavu, ale nejvýš jednou za {@link #odstupPrestavbyMs}. */
+	public void setDavkaBezi(final java.util.function.BooleanSupplier davkaBezi) {
+		this.davkaBezi = davkaBezi;
+	}
+
+	/** Přestavba odložená kvůli dávce čeká na spuštění. */
+	boolean isPrestavbaOdlozena() {
+		return odlozenaPrestavba.isRunning();
+	}
+
+	private transient JScrollPane slozkaPosuvnik;
+	private transient JScrollPane mistoPosuvnik;
+
+	private static int posun(final JScrollPane sp) {
+		return sp == null ? 0 : sp.getVerticalScrollBar().getValue();
+	}
+
+	/** Po přestavbě zůstanou posuvníky všech oddílů tam, kde byly, aby seznam po kliku na řádek neskočil nahoru. */
+	private void obnovPosuny(final int[] posuny) {
+		final JScrollPane[] sp = { slozkaPosuvnik, mistoPosuvnik, seznam };
+		for (int i = 0; i < sp.length; i++) {
+			if (sp[i] != null && posuny[i] > 0) {
+				sp[i].getVerticalScrollBar().setValue(posuny[i]);
+			}
+		}
+	}
+
+	JScrollPane seznam() {
+		return seznam;
+	}
+
+	JScrollPane getSlozkaPosuvnik() {
+		return slozkaPosuvnik;
+	}
+
+	private transient java.util.function.BooleanSupplier davkaBezi = () -> false;
+	int odstupPrestavbyMs = 5000;
+	private long posledniPrestavba;
+	private final javax.swing.Timer odlozenaPrestavba = new javax.swing.Timer(5000, e -> prestavPopup());
+
+	{
+		odlozenaPrestavba.setRepeats(false);
 	}
 
 	List<RadekMapy> getRadky() {
@@ -1009,9 +1066,14 @@ public class JMapyPopup extends JPanel {
 		rozpocet = rozpocetSekci();
 		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
-		slozkaObal.add(sekce(slozka, prideleno[0]));
+		final JComponent slozkaSekce = sekce(slozka, prideleno[0]);
+		slozkaPosuvnik = slozkaSekce instanceof JScrollPane ? (JScrollPane) slozkaSekce : null;
+		slozkaObal.add(slozkaSekce);
+		mistoPosuvnik = null;
 		if (misto != null) {
-			mistoObal.add(sekce(misto, prideleno[1]));
+			final JComponent mistoSekce = sekce(misto, prideleno[1]);
+			mistoPosuvnik = mistoSekce instanceof JScrollPane ? (JScrollPane) mistoSekce : null;
+			mistoObal.add(mistoSekce);
 		}
 		if (uzivatelPise) {
 			cekaNaFokus = true;
