@@ -232,9 +232,21 @@ public class StahovacVrstevTest {
 		data.put("cz_1.zip", nahodna(300_000, 1));
 		data.put("cz_2.zip", nahodna(200_000, 2));
 		final KatalogovaVrstva v = vrstva("hgt-zip", Collections.singletonMap("cz_2.zip", KatalogVrstevTest.SHA), "cz_1.zip", "cz_2.zip");
-		final StavVrstvy s = stahni(v, new AtomicBoolean());
+		final ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(StahovacVrstev.class);
+		final ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> zachycene = new ch.qos.logback.core.read.ListAppender<>();
+		zachycene.start();
+		logger.addAppender(zachycene);
+		final StavVrstvy s;
+		try {
+			s = stahni(v, new AtomicBoolean());
+		} finally {
+			logger.detachAppender(zachycene);
+		}
 		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
 		assertTrue(s.getChyba(), s.getChyba().contains("cz_2.zip je poškozený"));
+		final String skutecny = sha(data.get("cz_2.zip"));
+		assertTrue("vadný součet je v logu s cestou a oběma součty", zachycene.list.stream().anyMatch(e -> e.getLevel() == ch.qos.logback.classic.Level.WARN
+				&& e.getFormattedMessage().contains("cz_2.zip") && e.getFormattedMessage().contains(KatalogVrstevTest.SHA) && e.getFormattedMessage().contains(skutecny)));
 		assertEquals(Mistni.NEMAME, s.getMistni());
 		assertEquals("ověřený první soubor čeká, vadný je pryč", Arrays.asList("cz_1.zip.stahuje", "cz_1.zip.stahuje.info"), vSlozce());
 	}

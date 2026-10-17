@@ -13,6 +13,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
 import javax.swing.*;
@@ -80,6 +81,7 @@ public class JMapyPopup extends JPanel {
 	static final int SIRKA_BUNKY = 112;
 
 	static final String STAHNOUT_VSE = "Stáhnout vše";
+	static final String ZAVRIT = "Zavřít";
 	static final String DOSTAHNOUT_VRSTVY = "Dostáhnout vrstvy ke staženým mapám (%s, %s)";
 
 	/** Šířka sloupce s akcí mapy (Stáhnout, Zrušit…), ve všech oddílech stejná. */
@@ -489,7 +491,7 @@ public class JMapyPopup extends JPanel {
 	/** Nové řádky; při stahování se jen přepíší popisy, jinak se popup sestaví znovu. */
 	public void obnov(final List<RadekMapy> nove) {
 		odhad.zapomenKrome(stahovane(nove));
-		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky));
+		final boolean stejnaStruktura = struktura(nove).equals(struktura(radky)) && zobrazenySouhrn.equals(souhrnDavky());
 		radky = new ArrayList<>(nove);
 		if (stejnaStruktura) {
 			boolean sirsi = false;
@@ -521,13 +523,69 @@ public class JMapyPopup extends JPanel {
 			}
 			return;
 		}
-		rusenaMapa = null;
-		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
-		sestav();
-		if (seznam != null) {
-			seznam.getVerticalScrollBar().setValue(posun);
+		// Za hromadné dávky stahování se mění stavy po každém souboru; celá přestavba popupu je drahá, proto se spojuje do jedné za odstup.
+		if (davkaBezi.getAsBoolean() && System.nanoTime() - posledniPrestavba < TimeUnit.MILLISECONDS.toNanos(odstupPrestavbyMs)) {
+			odlozenaPrestavba.setInitialDelay(odstupPrestavbyMs);
+			odlozenaPrestavba.restart();
+			return;
 		}
+		prestavPopup();
+	}
+
+	private void prestavPopup() {
+		odlozenaPrestavba.stop();
+		rusenaMapa = null;
+		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
+		sestav();
+		posledniPrestavba = System.nanoTime();
+		obnovPosuny(posuny);
+		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
+		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
 		zmenaObsahu();
+	}
+
+	/** Za hromadné dávky stahování se popup nepřestavuje po každé změně stavu, ale nejvýš jednou za {@link #odstupPrestavbyMs}. */
+	public void setDavkaBezi(final java.util.function.BooleanSupplier davkaBezi) {
+		this.davkaBezi = davkaBezi;
+	}
+
+	/** Přestavba odložená kvůli dávce čeká na spuštění. */
+	boolean isPrestavbaOdlozena() {
+		return odlozenaPrestavba.isRunning();
+	}
+
+	private transient JScrollPane slozkaPosuvnik;
+	private transient JScrollPane mistoPosuvnik;
+
+	private static int posun(final JScrollPane sp) {
+		return sp == null ? 0 : sp.getVerticalScrollBar().getValue();
+	}
+
+	/** Po přestavbě zůstanou posuvníky všech oddílů tam, kde byly, aby seznam po kliku na řádek neskočil nahoru. */
+	private void obnovPosuny(final int[] posuny) {
+		final JScrollPane[] sp = { slozkaPosuvnik, mistoPosuvnik, seznam };
+		for (int i = 0; i < sp.length; i++) {
+			if (sp[i] != null && posuny[i] > 0) {
+				sp[i].getVerticalScrollBar().setValue(posuny[i]);
+			}
+		}
+	}
+
+	JScrollPane seznam() {
+		return seznam;
+	}
+
+	JScrollPane getSlozkaPosuvnik() {
+		return slozkaPosuvnik;
+	}
+
+	private transient java.util.function.BooleanSupplier davkaBezi = () -> false;
+	int odstupPrestavbyMs = 5000;
+	private long posledniPrestavba;
+	private final javax.swing.Timer odlozenaPrestavba = new javax.swing.Timer(5000, e -> prestavPopup());
+
+	{
+		odlozenaPrestavba.setRepeats(false);
 	}
 
 	List<RadekMapy> getRadky() {
@@ -790,6 +848,11 @@ public class JMapyPopup extends JPanel {
 		}));
 		hlavicka.add(akceHlavicky, BorderLayout.EAST);
 		add(hlavicka, gbc);
+		zobrazenySouhrn = new ArrayList<>(souhrnDavky());
+		if (!zobrazenySouhrn.isEmpty()) {
+			gbc.gridy++;
+			add(souhrnDavkyPanel(zobrazenySouhrn), gbc);
+		}
 		if (radky.stream().anyMatch(r -> r.matice != null && !r.vlastni)) {
 			gbc.gridy++;
 			add(hlavickaSloupcu(), gbc);
@@ -1010,9 +1073,14 @@ public class JMapyPopup extends JPanel {
 		rozpocet = rozpocetSekci();
 		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
-		slozkaObal.add(sekce(slozka, prideleno[0]));
+		final JComponent slozkaSekce = sekce(slozka, prideleno[0]);
+		slozkaPosuvnik = slozkaSekce instanceof JScrollPane ? (JScrollPane) slozkaSekce : null;
+		slozkaObal.add(slozkaSekce);
+		mistoPosuvnik = null;
 		if (misto != null) {
-			mistoObal.add(sekce(misto, prideleno[1]));
+			final JComponent mistoSekce = sekce(misto, prideleno[1]);
+			mistoPosuvnik = mistoSekce instanceof JScrollPane ? (JScrollPane) mistoSekce : null;
+			mistoObal.add(mistoSekce);
 		}
 		if (uzivatelPise) {
 			cekaNaFokus = true;
@@ -1020,6 +1088,44 @@ public class JMapyPopup extends JPanel {
 		}
 		revalidate();
 		repaint();
+	}
+
+	private List<String> zobrazenySouhrn = Collections.emptyList();
+
+	private List<String> souhrnDavky() {
+		return ovladani == null ? Collections.emptyList() : ovladani.souhrnDavky();
+	}
+
+	/** Souhrn skončené dávky: kolik se stáhlo, co se nepodařilo, a tlačítka Zkusit znovu a Zavřít. */
+	private JPanel souhrnDavkyPanel(final List<String> radky) {
+		final JPanel p = new JPanel(new BorderLayout(8, 2));
+		p.setOpaque(false);
+		p.setBorder(new CompoundBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, IkonyMap.CERVENA), new EmptyBorder(3, 0, 3, 0)));
+		final JPanel text = new JPanel(new GridLayout(0, 1));
+		text.setOpaque(false);
+		for (int i = 0; i < radky.size(); i++) {
+			final JLabel l = maly(radky.get(i));
+			if (i == 0) {
+				l.setForeground(IkonyMap.CERVENA);
+				l.setFont(l.getFont().deriveFont(Font.BOLD));
+			}
+			text.add(l);
+		}
+		p.add(text, BorderLayout.CENTER);
+		final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+		tlacitka.setOpaque(false);
+		tlacitka.add(odkaz(ZKUSIT_ZNOVU, e -> {
+			if (ovladani != null) {
+				ovladani.zkusZnovuDavku();
+			}
+		}));
+		tlacitka.add(odkaz(ZAVRIT, e -> {
+			if (ovladani != null) {
+				ovladani.zavriSouhrnDavky();
+			}
+		}));
+		p.add(tlacitka, BorderLayout.EAST);
+		return p;
 	}
 
 	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */
