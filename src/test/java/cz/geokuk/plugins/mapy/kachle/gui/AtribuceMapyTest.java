@@ -23,8 +23,8 @@ public class AtribuceMapyTest {
 	public void zkratkyZdroju() {
 		assertEquals(Arrays.asList("© OpenStreetMap"), AtribuceMapy.zkrat("© přispěvatelé OpenStreetMap"));
 		assertEquals(Arrays.asList("© Freemap Slovakia", "© OpenStreetMap"), AtribuceMapy.zkrat("© Freemap Slovakia, © OpenStreetMap contributors"));
-		assertEquals(Arrays.asList("© ČÚZK"), AtribuceMapy.zkrat("© ČÚZK, CC BY 4.0"));
-		assertEquals(Arrays.asList("© Seznam.cz"), AtribuceMapy.zkrat("© Seznam.cz, a.s. a další"));
+		assertEquals("ČÚZK celé", Arrays.asList("© ČÚZK, CC BY 4.0"), AtribuceMapy.zkrat("© ČÚZK, CC BY 4.0"));
+		assertEquals("Seznam.cz celé", Arrays.asList("© Seznam.cz, a.s. a další"), AtribuceMapy.zkrat("© Seznam.cz, a.s. a další"));
 		assertEquals(Arrays.asList("Made with Natural Earth"), AtribuceMapy.zkrat("Made with Natural Earth"));
 		assertEquals(Arrays.asList("© OpenStreetMap", "Made with Natural Earth"), AtribuceMapy.zkrat("© přispěvatelé OpenStreetMap, Made with Natural Earth"));
 		assertTrue(AtribuceMapy.zkrat("").isEmpty());

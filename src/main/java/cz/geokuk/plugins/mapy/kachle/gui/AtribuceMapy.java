@@ -39,6 +39,11 @@ final class AtribuceMapy {
 		if (atribuce == null || atribuce.trim().isEmpty()) {
 			return v;
 		}
+		if (atribuce.contains("Seznam.cz") || atribuce.contains("ČÚZK")) {
+			// Podmínky těchto poskytovatelů se zkracovat nemají.
+			v.add(atribuce.trim());
+			return v;
+		}
 		if (!atribuce.contains("©")) {
 			v.add(atribuce.contains("OpenStreetMap") ? OSM : atribuce.trim());
 			return v;
