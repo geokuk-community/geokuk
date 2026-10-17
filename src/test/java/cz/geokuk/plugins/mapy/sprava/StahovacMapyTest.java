@@ -172,6 +172,57 @@ public class StahovacMapyTest {
 		}
 	}
 
+	/** Přerušené stahování model sám zopakuje (navazuje od staženého místa); trvalá chyba skončí po posledním pokusu, zrušení přeruší čekání. */
+	@Test
+	public void prerusenaMapaSeStahneZnovuSama() throws Exception {
+		useknoutPo = 1000;
+		final SpravaMapModel model = new SpravaMapModel(katalog(server));
+		final List<SpravaMapEvent> udalosti = new CopyOnWriteArrayList<>();
+		model.nastavProTestMap(() -> slozka, udalosti::add);
+		model.prodlevyOpakovaniMs = new long[] { 1, 1, 1 };
+		assertTrue(model.stahni(mapa));
+		model.pockej();
+		assertEquals(model.getStav(mapa).toString(), Faze.HOTOVO, model.getStav(mapa).getFaze());
+		assertArrayEquals(data, Files.readAllBytes(new File(slozka, "kukov.map").toPath()));
+		assertEquals("dva pokusy navazují", 2, pozadavky.stream().filter(z -> z.get("range") != null).count());
+		assertFalse("během čekání se stahování nehlásí jako chyba", udalosti.stream().anyMatch(e -> e.getStav().getFaze() == Faze.CHYBA));
+
+		Files.delete(new File(slozka, "kukov.map").toPath());
+		useknoutPo = -1;
+		vynucenyKod = 503;
+		pozadavky.clear();
+		assertTrue(model.stahni(mapa));
+		model.pockej();
+		assertEquals(Faze.CHYBA, model.getStav(mapa).getFaze());
+		assertEquals("Server odpověděl 503.", model.getStav(mapa).getChyba());
+		assertEquals("první pokus a tři opakování", 4, pozadavky.size());
+
+		model.prodlevyOpakovaniMs = new long[] { 60_000 };
+		pozadavky.clear();
+		assertTrue(model.stahni(mapa));
+		final long start = System.nanoTime();
+		while (pozadavky.isEmpty() && System.nanoTime() - start < TimeUnit.SECONDS.toNanos(10)) {
+			Thread.sleep(10);
+		}
+		Thread.sleep(100);
+		model.zrusStahovani();
+		model.pockej();
+		assertEquals(Faze.ZRUSENO, model.getStav(mapa).getFaze());
+		assertTrue("zrušení nečeká na celou prodlevu", System.nanoTime() - start < TimeUnit.SECONDS.toNanos(30));
+	}
+
+	@Test
+	public void chvilkoveChybyLzeOpakovat() {
+		assertTrue(StahovacMapy.lzeOpakovat(StahovacMapy.SPOJENI_PRERUSENO));
+		assertTrue(StahovacMapy.lzeOpakovat(StahovacMapy.STAHOVANI_PRERUSENO));
+		assertTrue(StahovacMapy.lzeOpakovat("Server odpověděl 502."));
+		assertTrue(StahovacMapy.lzeOpakovat("Server odpověděl 429."));
+		assertFalse(StahovacMapy.lzeOpakovat("Server odpověděl 403."));
+		assertFalse(StahovacMapy.lzeOpakovat("Mapa na serveru není."));
+		assertFalse(StahovacMapy.lzeOpakovat("Na disku došlo místo. Rozpracovanou mapu můžete zahodit."));
+		assertFalse(StahovacMapy.lzeOpakovat(null));
+	}
+
 	private StavMapy stahni() {
 		return stahovac.stahni(StavMapy.novy(mapa), slozka, () -> false, zmeny::add);
 	}

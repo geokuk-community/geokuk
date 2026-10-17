@@ -85,6 +85,8 @@ public class SpravaMapModel extends Model0 {
 	long stariKataloguMs = TimeUnit.HOURS.toMillis(24);
 	/** Po nepovedeném samočinném stažení katalogu vrstev (třeba bez sítě) se další zkusí nejdřív za tuto dobu. */
 	long opakovaniKataloguNs = TimeUnit.HOURS.toNanos(1);
+	/** Prodlevy před dalšími pokusy, když se stahování mapy nebo vrstvy přeruší; pokračuje se od staženého místa. */
+	long[] prodlevyOpakovaniMs = { 5_000, 15_000, 30_000 };
 	/** Čas posledního nepovedeného samočinného stažení katalogu, jen na vlákně kontroly; null = žádné. */
 	private Long posledniPokusKatalogu;
 
@@ -330,7 +332,17 @@ public class SpravaMapModel extends Model0 {
 					zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Složka offline map není nastavená."));
 					return;
 				}
-				zmena(stahovacVrstev.stahni(getStav(vrstva), s, zruseno, this::prubeh));
+				StavVrstvy st = stahovacVrstev.stahni(getStav(vrstva), s, zruseno, this::prubeh);
+				for (int pokus = 0; st.getFaze() == Faze.CHYBA && StahovacMapy.lzeOpakovat(st.getChyba()) && pokus < prodlevyOpakovaniMs.length; pokus++) {
+					log.info("Stahování vrstvy {} se přerušilo ({}), pokus {} za {} ms", vrstva, st.getChyba(), pokus + 1, prodlevyOpakovaniMs[pokus]);
+					zmena(st.sFazi(Faze.STAHUJE, textOpakovani(pokus)));
+					if (!pockejNaOpakovani(prodlevyOpakovaniMs[pokus], zruseno)) {
+						st = st.sFazi(Faze.ZRUSENO, null);
+						break;
+					}
+					st = stahovacVrstev.stahni(getStav(vrstva), s, zruseno, this::prubeh);
+				}
+				zmena(st);
 			} catch (final RuntimeException e) {
 				log.warn("Stahování vrstvy {} selhalo", vrstva, e);
 				zmena(getStav(vrstva).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
@@ -401,7 +413,17 @@ public class SpravaMapModel extends Model0 {
 					zmena(getStav(mapa).sFazi(Faze.CHYBA, "Složka offline map není nastavená."));
 					return;
 				}
-				zmena(stahovac.stahni(getStav(mapa), s, zruseno, this::prubeh));
+				StavMapy st = stahovac.stahni(getStav(mapa), s, zruseno, this::prubeh);
+				for (int pokus = 0; st.getFaze() == Faze.CHYBA && StahovacMapy.lzeOpakovat(st.getChyba()) && pokus < prodlevyOpakovaniMs.length; pokus++) {
+					log.info("Stahování mapy {} se přerušilo ({}), pokus {} za {} ms", mapa, st.getChyba(), pokus + 1, prodlevyOpakovaniMs[pokus]);
+					zmena(st.sFazi(Faze.STAHUJE, textOpakovani(pokus)));
+					if (!pockejNaOpakovani(prodlevyOpakovaniMs[pokus], zruseno)) {
+						st = st.sFazi(Faze.ZRUSENO, null);
+						break;
+					}
+					st = stahovac.stahni(getStav(mapa), s, zruseno, this::prubeh);
+				}
+				zmena(st);
 			} catch (final RuntimeException e) {
 				log.warn("Stahování mapy {} selhalo", mapa, e);
 				zmena(getStav(mapa).sFazi(Faze.CHYBA, "Stahování selhalo, podrobnosti jsou v logu."));
@@ -410,6 +432,28 @@ public class SpravaMapModel extends Model0 {
 			}
 		});
 		return true;
+	}
+
+	private String textOpakovani(final int pokus) {
+		return "Spojení se přerušilo, další pokus za " + prodlevyOpakovaniMs[pokus] / 1000 + " s (" + (pokus + 1) + ". ze " + prodlevyOpakovaniMs.length + ").";
+	}
+
+	/** Počká před dalším pokusem o stažení; false, když uživatel mezitím stahování zrušil. */
+	private static boolean pockejNaOpakovani(final long ms, final BooleanSupplier zruseno) {
+		final long konec = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(ms);
+		while (!zruseno.getAsBoolean()) {
+			final long zbyva = konec - System.nanoTime();
+			if (zbyva <= 0) {
+				return true;
+			}
+			try {
+				Thread.sleep(Math.min(TimeUnit.NANOSECONDS.toMillis(zbyva) + 1, 200));
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return false;
+			}
+		}
+		return false;
 	}
 
 	/** Zruší všechna běžící stahování (mapu i vrstvy); rozpracované soubory zůstanou pro pokračování. */
