@@ -236,6 +236,11 @@ public class StahovacVrstevTest {
 		try {
 			final Future<StavVrstvy> f = e.submit(() -> stahni(v, zruseno));
 			assertTrue(zdrzeno.await(20, TimeUnit.SECONDS));
+			// Server poslal půlku, klient ji ale nemusel ještě zapsat; zrušit až po zápisu.
+			final long konec = System.currentTimeMillis() + 20_000;
+			while (naDisku("cz_2.zip.stahuje").length() == 0 && System.currentTimeMillis() < konec) {
+				Thread.sleep(10);
+			}
 			zruseno.set(true);
 			zdrzet.countDown();
 			final StavVrstvy s = f.get(20, TimeUnit.SECONDS);
