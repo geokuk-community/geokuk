@@ -124,7 +124,7 @@ public class JKesoidySlideGoldenTest {
 	}
 
 	private static BufferedImage vykresli(final int zoom, final KesBag data, final Dimension okno) {
-		return vykresli(zoom, data, okno, ZvetseniIkonEvent.AUTO);
+		return vykresli(zoom, data, okno, ZvetseniIkonEvent.VYCHOZI);
 	}
 
 	private static BufferedImage vykresli(final int zoom, final KesBag data, final Dimension okno, final int zvetseniIkon) {

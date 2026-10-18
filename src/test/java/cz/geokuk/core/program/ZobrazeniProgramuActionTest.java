@@ -50,7 +50,6 @@ public class ZobrazeniProgramuActionTest {
 
 	@Test
 	public void znackyZvetseni() {
-		Assert.assertEquals("Auto", ZobrazeniProgramuAction.znackaZvetseni(0));
 		Assert.assertEquals("1", ZobrazeniProgramuAction.znackaZvetseni(100));
 		Assert.assertEquals("1,5", ZobrazeniProgramuAction.znackaZvetseni(150));
 		Assert.assertEquals("1,25", ZobrazeniProgramuAction.znackaZvetseni(125));

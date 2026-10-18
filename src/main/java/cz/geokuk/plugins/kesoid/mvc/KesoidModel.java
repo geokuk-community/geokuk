@@ -73,7 +73,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	private ProgressModel progressModel;
 	private Boolean onoff;
 	private EZobrazeniKesi zobrazeniKesi;
-	private int zvetseniIkonProcent = ZvetseniIkonEvent.AUTO;
+	private int zvetseniIkonProcent = ZvetseniIkonEvent.VYCHOZI;
 	private volatile List<String> zamceneDatabaze = Collections.emptyList();
 	/** Zdroje rozběhnutého prvního načítání, dokud žádné keše načtené nejsou. */
 	private volatile InformaceOZdrojich nacitaneZdroje;
@@ -517,7 +517,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		fire(new ZobrazeniKesiEvent(zobrazeniKesi));
 	}
 
-	/** Zvětšení ikon keší v procentech, {@link ZvetseniIkonEvent#AUTO} = podle systému. */
+	/** Zvětšení ikon keší v procentech. */
 	public int getZvetseniIkonProcent() {
 		return zvetseniIkonProcent;
 	}
@@ -713,7 +713,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
 		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
 		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
-		zvetseniIkonProcent = ZvetseniIkonEvent.oriznout(kesoid.getInt(FPref.ZVETSENI_IKON_value, ZvetseniIkonEvent.AUTO));
+		zvetseniIkonProcent = ZvetseniIkonEvent.oriznout(kesoid.getInt(FPref.ZVETSENI_IKON_value, ZvetseniIkonEvent.VYCHOZI));
 		fire(new ZvetseniIkonEvent(zvetseniIkonProcent));
 		nactiLimityKresleni(kesoid);
 		fajruj();

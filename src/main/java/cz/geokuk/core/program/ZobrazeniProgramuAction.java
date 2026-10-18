@@ -12,7 +12,6 @@ import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
-import cz.geokuk.plugins.kesoid.mvc.ZvetseniIkonEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.util.gui.JPosuvnikPredvoleb;
 import cz.geokuk.start.Start;
@@ -27,8 +26,8 @@ public class ZobrazeniProgramuAction extends Action0 {
 	static final String RYCHLEJSI = "Rychlejší";
 	static final String DIRECT3D = "Hardwarové vykreslování (Direct3D)";
 
-	/** Předvolby zvětšení ikon keší v procentech, 0 = Auto. */
-	static final int[] PREDVOLBY_IKON = { ZvetseniIkonEvent.AUTO, 100, 150, 200, 250, 300, 350, 400, 450, 500 };
+	/** Předvolby zvětšení ikon keší v procentech. */
+	static final int[] PREDVOLBY_IKON = { 100, 150, 200, 250, 300, 350, 400, 450, 500 };
 
 	private KachleModel kachleModel;
 	private KesoidModel kesoidModel;
@@ -51,17 +50,14 @@ public class ZobrazeniProgramuAction extends Action0 {
 		return s;
 	}
 
-	/** Násobek k procentům, třeba „1,5“; Auto jako „Auto“. */
+	/** Násobek k procentům, třeba „1,5“. */
 	static String znackaZvetseni(final int procent) {
-		if (procent == ZvetseniIkonEvent.AUTO) {
-			return "Auto";
-		}
 		final String s = procent % 100 == 0 ? Integer.toString(procent / 100) : String.format(java.util.Locale.ROOT, "%.2f", procent / 100.0).replaceAll("0+$", "");
 		return s.replace('.', ',');
 	}
 
 	static String popisZvetseniIkon(final int procent) {
-		return procent == ZvetseniIkonEvent.AUTO ? "Auto (1×)" : znackaZvetseni(procent) + "×";
+		return znackaZvetseni(procent) + "×";
 	}
 
 	public ZobrazeniProgramuAction() {

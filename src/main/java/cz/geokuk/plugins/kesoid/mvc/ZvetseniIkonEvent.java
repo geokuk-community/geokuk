@@ -5,8 +5,7 @@ import cz.geokuk.framework.Event0;
 /** Zvětšení ikon keší na mapě. */
 public class ZvetseniIkonEvent extends Event0<KesoidModel> {
 
-	/** Auto: Windows už zvětšuje celé okno podle DPI, ikony se dál nezvětšují (1×). */
-	public static final int AUTO = 0;
+	public static final int VYCHOZI = 100;
 	public static final int MIN = 50;
 	public static final int MAX = 500;
 
@@ -16,17 +15,17 @@ public class ZvetseniIkonEvent extends Event0<KesoidModel> {
 		this.procent = procent;
 	}
 
-	/** Násobek velikosti ikon, Auto = 1. */
+	/** Násobek velikosti ikon. */
 	public double getNasobek() {
-		return procent == AUTO ? 1 : procent / 100.0;
+		return procent / 100.0;
 	}
 
 	public int getProcent() {
 		return procent;
 	}
 
-	/** Hodnota z nastavení v povoleném rozsahu; neplatná je Auto. */
+	/** Hodnota z nastavení v povoleném rozsahu; neplatná je výchozí. */
 	public static int oriznout(final int procent) {
-		return procent <= AUTO ? AUTO : Math.max(MIN, Math.min(MAX, procent));
+		return procent <= 0 ? VYCHOZI : Math.max(MIN, Math.min(MAX, procent));
 	}
 }
