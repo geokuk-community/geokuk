@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.Component;
 
+import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.plugins.mapy.kachle.ReliefCuzkEvent;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
@@ -37,7 +38,7 @@ public class JKachlovnikReliefu extends JKachlovnik {
 
 	@Override
 	protected void init(final boolean smimZnovuPouzitKachle) {
-		if (!viditelny) {
+		if (!viditelny || !jeVMeritku(isSoordInitialized() ? getSoord() : null)) {
 			for (final Component c : getComponents()) {
 				((JKachle) c).uzTeNepotrebuju();
 			}
@@ -45,6 +46,11 @@ public class JKachlovnikReliefu extends JKachlovnik {
 			return;
 		}
 		super.init(smimZnovuPouzitKachle);
+	}
+
+	/** Pod nejmenším měřítkem reliéfu se dlaždice nevytvářejí, aby se server neptal na celé kraje. */
+	static boolean jeVMeritku(final Coord soord) {
+		return soord == null || soord.getMoumer() >= EKaType.RELIEF_CUZK.getMinMoumer();
 	}
 
 	@Override
@@ -59,6 +65,13 @@ public class JKachlovnikReliefu extends JKachlovnik {
 		@Override
 		public void setKachloType(final EKaType katype) {
 			super.setKachloType(EKaType.RELIEF_CUZK);
+		}
+
+		@Override
+		protected void init(final boolean smimZnovuPouzitKachle) {
+			if (jeVMeritku(isSoordInitialized() ? getSoord() : null)) {
+				super.init(smimZnovuPouzitKachle);
+			}
 		}
 	}
 }

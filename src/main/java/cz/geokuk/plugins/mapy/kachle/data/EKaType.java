@@ -58,10 +58,10 @@ public final class EKaType {
 	public static final EKaType OFFLINE_MF = new EKaType("OFFLINE_MF", false, 0, 20, 20, "Offline mapa", "Vektorová mapa ze souborů .map v počítači (mapsforge)", KeyEvent.VK_F,
 			KeyStroke.getKeyStroke(KeyEvent.VK_V, 0), null);
 
-	/** Průhledný překryv s turistickými a cyklotrasami přes podklad, kreslí se z offline map; není podkladem. */
 	/** Stínovaný reliéf z DMR 5G (ČÚZK) přes podklad, jen online. */
 	public static final EKaType RELIEF_CUZK = new EKaType("RELIEF_CUZK", false, 12, 20, 20, "ČÚZK – Stínovaný reliéf", "Stínovaný reliéf České republiky z DMR 5G, otevřená data ČÚZK", 0,
 			null, new WmsUrlBuilder("https://ags.cuzk.gov.cz/arcgis2/services/dmr5g/ImageServer/WMSServer", "dmr5g:GrayscaleHillshade"));
+	/** Průhledný překryv s turistickými a cyklotrasami přes podklad, kreslí se z offline map; není podkladem. */
 	public static final EKaType TRASY = new EKaType("TRASY", false, 0, 20, 20, "Turistické a cyklotrasy", "Turistické a cyklotrasy z offline map osm.paws.cz přes mapu", 0, null, null);
 
 	// Nefunguje, jakási ochrana přes kukačku
