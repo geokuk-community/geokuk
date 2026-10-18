@@ -11,7 +11,7 @@ public class ReliefCuzkAction extends ToggleAction0 {
 	private KachleModel kachleModel;
 
 	public ReliefCuzkAction() {
-		super("Stínovaný reliéf ČÚZK");
+		super("ČÚZK – Stínovaný reliéf");
 		putValue(SHORT_DESCRIPTION, POPIS);
 	}
 
