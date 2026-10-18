@@ -227,7 +227,7 @@ final class OfflineRenderer {
 			return null;
 		}
 		try {
-			final HillsRenderConfig kopce = new HillsRenderConfig(new MemoryCachingHgtReaderTileSource(new DemFolderFS(slozkaDem), new StinovaniTerenu(), grafika)).indexOnThread();
+			final HillsRenderConfig kopce = new HillsRenderConfig(new MemoryCachingHgtReaderTileSource(new SlouceneDem(new DemFolderFS(slozkaDem)), new StinovaniTerenu(), grafika)).indexOnThread();
 			for (final File f : dlazdice) {
 				otisk.append("dem:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 			}
