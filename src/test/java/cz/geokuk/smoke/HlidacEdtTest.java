@@ -117,6 +117,22 @@ public class HlidacEdtTest {
 		}
 	}
 
+	/** Vzorkovač už pauzu zapsal, ale ještě neposunul tik: pauza se nesmí započítat dvakrát. */
+	@Test
+	public void zapsanaPauzaSeNezapocitaDvakrat() {
+		final long s = 1_000_000_000L;
+		final List<long[]> pauzy = java.util.Collections.singletonList(new long[] { 10 * s + s / 10, 13 * s });
+		Assert.assertEquals(3 * s - s / 10, HlidacEdt.pauzaBehem(pauzy, 10 * s, 9 * s, 13 * s));
+	}
+
+	/** Probíhající pauza se počítá od konce spánku vzorkovače po posledním tiku. */
+	@Test
+	public void probihajiciPauzaBezSpankuVzorkovace() {
+		final long s = 1_000_000_000L;
+		Assert.assertEquals(2 * s - s / 10, HlidacEdt.pauzaBehem(java.util.Collections.<long[]> emptyList(), 10 * s, 9 * s, 12 * s));
+		Assert.assertEquals("kratší mezera není pauza", 0, HlidacEdt.pauzaBehem(java.util.Collections.<long[]> emptyList(), 10 * s, 9 * s, 10 * s + s / 2));
+	}
+
 	private static void vnorenaDlouhaObsluha() {
 		spi(HlidacEdt.PRAH_ZASOBNIKU_MS + 700);
 	}

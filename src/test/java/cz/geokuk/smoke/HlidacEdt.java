@@ -22,6 +22,8 @@ public class HlidacEdt extends EventQueue {
 	static final long PRAH_ZASOBNIKU_MS = 1500;
 	/** Vzorkovač tiká po 100 ms; mezera aspoň takhle dlouhá znamená, že stál celý proces, ne jen EDT. */
 	static final long PAUZA_MS = 1000;
+	/** Spánek vzorkovače mezi tiky; ten do pauzy nepatří. */
+	private static final long SPANEK_NS = 100_000_000;
 	private static final int HLOUBKA_ZASOBNIKU = 40;
 
 	private final long prahMs;
@@ -86,7 +88,7 @@ public class HlidacEdt extends EventQueue {
 			final long konec = System.nanoTime();
 			final long celkemMs = (konec - start) / 1_000_000;
 			final long pauzaMs = pauzaBehem(start, konec) / 1_000_000;
-			final long ms = celkemMs - pauzaMs;
+			final long ms = Math.max(0, celkemMs - pauzaMs);
 			final String zasobnikUdalosti = zasobniky.remove(cislo);
 			final boolean priStartu = !startSkoncil || start - konecStartuNs < 0;
 			if (priStartu) {
@@ -119,13 +121,22 @@ public class HlidacEdt extends EventQueue {
 
 	/** Kolik ns z intervalu stál celý proces: zapsané pauzy i ta, která ještě trvá (vzorkovač od té doby netikl). */
 	private long pauzaBehem(final long od, final long doNs) {
+		return pauzaBehem(pauzy, posledniTikNs, od, doNs);
+	}
+
+	/**
+	 * @param tik
+	 *            poslední tik vzorkovače; vzorkovač zapisuje pauzu dřív, než ho posune, takže probíhající pauza začíná až po konci poslední zapsané
+	 */
+	static long pauzaBehem(final Iterable<long[]> pauzy, final long tik, final long od, final long doNs) {
 		long ns = 0;
+		long konecZapsanych = Long.MIN_VALUE;
 		for (final long[] p : pauzy) {
 			ns += Math.max(0, Math.min(p[1], doNs) - Math.max(p[0], od));
+			konecZapsanych = Math.max(konecZapsanych, p[1]);
 		}
-		final long tik = posledniTikNs;
 		if (doNs - tik >= PAUZA_MS * 1_000_000) {
-			ns += Math.max(0, doNs - Math.max(tik, od));
+			ns += Math.max(0, doNs - Math.max(Math.max(tik + SPANEK_NS, konecZapsanych), od));
 		}
 		return ns;
 	}
@@ -146,7 +157,7 @@ public class HlidacEdt extends EventQueue {
 			final long mezera = ted - posledniTikNs;
 			if (mezera >= PAUZA_MS * 1_000_000) {
 				// Zapsat dřív než nový tik, aby událost, která právě končí, pauzu neminula.
-				pauzy.add(new long[] { posledniTikNs, ted });
+				pauzy.add(new long[] { posledniTikNs + SPANEK_NS, ted });
 				nejdelsiPauzaMs = Math.max(nejdelsiPauzaMs, mezera / 1_000_000);
 				while (pauzy.size() > 1000) {
 					pauzy.pollFirst();
