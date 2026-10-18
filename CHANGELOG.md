@@ -128,6 +128,9 @@
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
+- Když se s programem chvíli nepracuje, předkreslí offline mapy pro
+  oddálená měřítka do cache. Oddálení na celou zemi je pak rychlé i na
+  pomalém počítači; při práci s programem předkreslování počká.
 
 ### Opravy
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab

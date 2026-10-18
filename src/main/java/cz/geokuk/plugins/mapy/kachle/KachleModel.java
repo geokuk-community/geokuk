@@ -239,6 +239,7 @@ public class KachleModel extends Model0 {
 		fire(new ReliefCuzkEvent(isReliefCuzk()));
 		fire(new ObrysPokrytiEvent(isObrysPokryti()));
 		hlidaniSlozky.scheduleWithFixedDelay(this::zkontrolujSlozkuOfflineMap, 2, 2, TimeUnit.SECONDS);
+		ziskavac.spustPredvykresleniPrehledu();
 	}
 
 	void zkontrolujSlozkuOfflineMap() {

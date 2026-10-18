@@ -39,6 +39,12 @@ public class KaLoc {
 		return ofJZ(new Mou(mouSZ.xx, mouSZ.yy - (1 << Coord.MOU_BITS - moumer)), moumer);
 	}
 
+	/** Lokace dlaždice ze standardních souřadnic XYZ (y od severu), viz {@link #getFromSzUnsignedX()}. */
+	public static KaLoc ofXyz(final int x, final int y, final int moumer) {
+		final int size = 1 << moumer;
+		return new KaLoc(x - size / 2, moumer == 0 ? 0 : size / 2 - 1 - y, moumer);
+	}
+
 	/** Dlaždice o úroveň výš (menší měřítko), která tuto pokrývá; null, když taková není. */
 	public KaLoc rodic() {
 		return moumer <= 1 ? null : new KaLoc(ksx >> 1, ksy >> 1, moumer - 1);
