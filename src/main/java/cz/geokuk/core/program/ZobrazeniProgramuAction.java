@@ -11,7 +11,10 @@ import cz.geokuk.core.napoveda.Restart;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.kesoid.mvc.ZvetseniIkonEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.util.gui.JPosuvnikPredvoleb;
 import cz.geokuk.start.Start;
 
 /** Zvětšení a hardwarové vykreslování, které spouštěč start.jar nastaví programu při příštím spuštění. */
@@ -24,10 +27,31 @@ public class ZobrazeniProgramuAction extends Action0 {
 	static final String RYCHLEJSI = "Rychlejší";
 	static final String DIRECT3D = "Hardwarové vykreslování (Direct3D)";
 
+	/** Předvolby zvětšení ikon keší v procentech, 0 = Auto. */
+	static final int[] PREDVOLBY_IKON = { ZvetseniIkonEvent.AUTO, 100, 150, 200, 250, 300, 350, 400, 450, 500 };
+
 	private KachleModel kachleModel;
+	private KesoidModel kesoidModel;
 
 	public void inject(final KachleModel kachleModel) {
 		this.kachleModel = kachleModel;
+	}
+
+	public void inject(final KesoidModel kesoidModel) {
+		this.kesoidModel = kesoidModel;
+	}
+
+	/** Násobek k procentům, třeba „1,5“; Auto jako „Auto“. */
+	static String znackaZvetseni(final int procent) {
+		if (procent == ZvetseniIkonEvent.AUTO) {
+			return "Auto";
+		}
+		final String s = procent % 100 == 0 ? Integer.toString(procent / 100) : String.format(java.util.Locale.ROOT, "%.2f", procent / 100.0).replaceAll("0+$", "");
+		return s.replace('.', ',');
+	}
+
+	static String popisZvetseniIkon(final int procent) {
+		return procent == ZvetseniIkonEvent.AUTO ? "Auto (podle systému)" : znackaZvetseni(procent) + "×";
 	}
 
 	public ZobrazeniProgramuAction() {
@@ -94,6 +118,9 @@ public class ZobrazeniProgramuAction extends Action0 {
 		final JRadioButton ostra = new JRadioButton(OSTRA);
 		final JRadioButton rychlejsi = new JRadioButton(RYCHLEJSI);
 		final JSpinner pismo = new JSpinner(new SpinnerNumberModel(100, 80, 150, 5));
+		final JPosuvnikPredvoleb ikony = kesoidModel == null ? null
+				: new JPosuvnikPredvoleb(PREDVOLBY_IKON, kesoidModel.getZvetseniIkonProcent(), ZobrazeniProgramuAction::znackaZvetseni, ZobrazeniProgramuAction::popisZvetseniIkon);
+		final JPanel mapa = ramecek("Mapa (platí hned)");
 		if (kachleModel != null) {
 			final ButtonGroup skupina = new ButtonGroup();
 			skupina.add(ostra);
@@ -116,9 +143,16 @@ public class ZobrazeniProgramuAction extends Action0 {
 			popisOstrosti.setToolTipText(rada);
 			final JLabel popisPisma = new JLabel("Písmo a ikony na mapě:");
 			popisPisma.setLabelFor(pismo);
-			final JPanel mapa = ramecek("Mapa (platí hned)");
 			radek(mapa, 0, popisOstrosti, volbyOstrosti);
 			radek(mapa, 1, popisPisma, velikost);
+		}
+		if (ikony != null) {
+			final JLabel popisIkon = new JLabel("Ikony keší:");
+			popisIkon.setLabelFor(ikony.getSlider());
+			ikony.getSlider().setToolTipText("Velikost ikon keší na mapě.");
+			radek(mapa, 2, popisIkon, ikony);
+		}
+		if (kachleModel != null || ikony != null) {
 			mapa.setAlignmentX(0);
 			panel.add(mapa);
 		}
@@ -136,6 +170,9 @@ public class ZobrazeniProgramuAction extends Action0 {
 		}
 		if (kachleModel != null) {
 			kachleModel.setVzhledOfflineMapy(ostra.isSelected(), ((Number) pismo.getValue()).intValue());
+		}
+		if (ikony != null) {
+			kesoidModel.setZvetseniIkonProcent(ikony.getHodnota());
 		}
 		if (oknoProgramu && uloz(pref, zvetseni.isSelected(), direct3d.isSelected()) && Restart.lze()
 				&& JOptionPane.showConfirmDialog(Dlg.parentFrame(), "Změna se projeví po restartu GeoKuku. Restartovat teď?", "Zobrazení programu",

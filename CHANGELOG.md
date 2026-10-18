@@ -133,6 +133,8 @@
   pomalém počítači; při práci s programem předkreslování počká.
 - Offline mapa se stínováním terénu se při oddálení (celá země, kraj)
   kreslí několikrát rychleji a potřebuje méně paměti.
+- V Soubor > Zobrazení programu jde posuvníkem zvětšit ikony keší na mapě
+  (Auto, 1× až 5× po 0,5).
 
 ### Opravy
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab

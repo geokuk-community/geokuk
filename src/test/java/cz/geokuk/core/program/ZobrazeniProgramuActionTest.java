@@ -49,6 +49,15 @@ public class ZobrazeniProgramuActionTest {
 	}
 
 	@Test
+	public void znackyZvetseni() {
+		Assert.assertEquals("Auto", ZobrazeniProgramuAction.znackaZvetseni(0));
+		Assert.assertEquals("1", ZobrazeniProgramuAction.znackaZvetseni(100));
+		Assert.assertEquals("1,5", ZobrazeniProgramuAction.znackaZvetseni(150));
+		Assert.assertEquals("1,25", ZobrazeniProgramuAction.znackaZvetseni(125));
+		Assert.assertEquals("2,5×", ZobrazeniProgramuAction.popisZvetseniIkon(250));
+	}
+
+	@Test
 	public void akceJeVzdyDostupna() {
 		Assert.assertTrue(new ZobrazeniProgramuAction().isEnabled());
 	}
