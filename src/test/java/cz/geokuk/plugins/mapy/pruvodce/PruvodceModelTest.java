@@ -84,7 +84,7 @@ public class PruvodceModelTest {
 
 	@Test
 	public void kterePodkladyNabizejiKterevrstvy() {
-		assertTrue("offline Turistická kreslí trasy z vrstvy tras", PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY));
+		assertTrue("offline GeoKuk kreslí trasy z vrstvy tras", PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY));
 		assertEquals(EnumSet.of(Cast.TRASY), PruvodceVolba.vychoziVrstvy());
 		assertTrue(PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.VRSTEVNICE));
 		assertTrue(PlanPruvodce.jeVrstvaDostupna(PodkladPruvodce.TURISTICKA_OFFLINE, Cast.STINOVANI));

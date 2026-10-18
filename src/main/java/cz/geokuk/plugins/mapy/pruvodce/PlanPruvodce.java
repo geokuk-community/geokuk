@@ -67,7 +67,7 @@ public final class PlanPruvodce {
 	}
 
 	/**
-	 * Vrstva se u podkladu nabízí takto: trasy u každého (offline Turistická kreslí značené trasy z vrstvy tras, ne ze základní mapy; u online podkladu jsou
+	 * Vrstva se u podkladu nabízí takto: trasy u každého (offline GeoKuk kreslí značené trasy z vrstvy tras, ne ze základní mapy; u online podkladu jsou
 	 * překryvem), vrstevnice a stínování jen u offline mapy, která je kreslí. Důvod, proč ne, je v {@link #duvodNedostupnosti}.
 	 */
 	public static boolean jeVrstvaDostupna(final PodkladPruvodce podklad, final Cast cast) {

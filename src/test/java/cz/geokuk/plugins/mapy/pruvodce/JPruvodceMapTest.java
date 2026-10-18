@@ -118,7 +118,7 @@ public class JPruvodceMapTest {
 			final JPruvodceMap d = new JPruvodceMap(null, k);
 			Assert.assertTrue("Česko je předvybrané a jde dál", tlacitko(d.getContentPane(), JPruvodceMap.DAL).isEnabled());
 			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
-			Assert.assertTrue("Turistická offline je předvybraná", ((JToggleButton) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JToggleButton && b.getText().contains("Turistická")).findFirst().get()).isSelected());
+			Assert.assertTrue("GeoKuk offline je předvybraný", ((JToggleButton) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JToggleButton && b.getText().contains("GeoKuk")).findFirst().get()).isSelected());
 			Assert.assertTrue("ČÚZK topo je u Česka", tlacitka(d.getContentPane()).stream().anyMatch(b -> b instanceof JToggleButton && b.getText().contains("ČÚZK topo")));
 			Assert.assertFalse("ZBGIS Slovenska u Česka není", tlacitka(d.getContentPane()).stream().anyMatch(b -> b instanceof JToggleButton && b.getText().contains("ZBGIS")));
 			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
@@ -202,7 +202,7 @@ public class JPruvodceMapTest {
 		});
 	}
 
-	/** Offline Turistická bez stažené mapy by po „jen přepnout“ zůstala prázdná, proto je to tlačítko vypnuté. */
+	/** Offline GeoKuk bez stažené mapy by po „jen přepnout“ zůstala prázdná, proto je to tlačítko vypnuté. */
 	@Test
 	public void jenPrepnoutNaOfflineBezMapyJeVypnute() throws Exception {
 		Assume.assumeFalse(GraphicsEnvironment.isHeadless());

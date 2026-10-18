@@ -71,7 +71,7 @@ public final class ProgramPruvodceKontext implements PruvodceKontext {
 	public void prepni(final PruvodceVolba volba) {
 		final PodkladPruvodce podklad = volba.getPodklad();
 		if (podklad.isOffline()) {
-			kachleModel.setTemaOfflineMapy(TemaOfflineMapy.TURISTICKA);
+			kachleModel.setTemaOfflineMapy(TemaOfflineMapy.GEOKUK);
 			if (volba.getVrstvy().contains(Cast.STINOVANI)) {
 				kachleModel.setStinovaniTerenu(true);
 			}

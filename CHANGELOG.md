@@ -3,9 +3,10 @@
 ## 6.5.0
 
 ### Změny
-- Offline mapy se kreslí novým tématem Turistická blíž Mapy.cz: světlejší les
+- Offline mapy se kreslí novým tématem GeoKuk blíž Mapy.cz: světlejší les
   a pole, chráněná území bez zelené výplně, decentní vrstevnice a stínování,
-  ikony zajímavých míst až v podrobnějším měřítku. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
+  ikony zajímavých míst až v podrobnějším měřítku, skály, rozcestníky, boží
+  muka, rozhledny, prameny a vodopády a u značených tras jejich jména. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
   jiné; původní téma je tam jako Mapsforge (původní). Dlaždice v cache se
   jednou vykreslí znovu.
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
@@ -91,7 +92,8 @@
   Panel cesty.
 - Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
   přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
-  z osm.paws.cz ve složce offline map, nebo ze stažené vrstvy tras. Ta stačí
+  z osm.paws.cz ve složce offline map, nebo ze stažené vrstvy tras (z ní
+  i skály, rozcestníky, boží muka, rozhledny a vodopády). Ta stačí
   sama, bez offline mapy, třeba přes ortofoto nebo jiný online podklad. Nad
   offline mapou s tématem paws, které trasy kreslí samo, se překryv nekreslí.
 - Úseky cesty mohou vést po cestách a pěšinách z offline mapy (pěší trasa

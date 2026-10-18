@@ -143,7 +143,7 @@ public class PrekryvVrstvyTrasTest {
 		Assert.assertNotEquals(r0.getKlic(), r1.getKlic());
 	}
 
-	/** Když vrstvy tras kreslí podklad (offline mapa s tématem Turistická), překryv je vynechá a otevře se znovu jen se základní mapou. */
+	/** Když vrstvy tras kreslí podklad (offline mapa s tématem GeoKuk), překryv je vynechá a otevře se znovu jen se základní mapou. */
 	@Test(timeout = 30000)
 	public void vrstvuTrasKresliPodklad() throws IOException {
 		PrekryvTrasTest.zkopirujMapu(slozka);
