@@ -107,6 +107,7 @@ public class StahovaniPlnaFrontaTest {
 		}
 		Assert.assertEquals("ok " + ok + " chyb " + chyb + ", server přijal " + prijato, N, ok.get() + chyb.get());
 		Assert.assertEquals(0, chyb.get());
+		Assert.assertEquals("každá dlaždice se stáhla jednou", N, prijato.get());
 	}
 
 	/** Dávka stahuje při plné frontě ve svém vlákně; obrazovka chce tytéž dlaždice a nesmí na stahování čekat. */
