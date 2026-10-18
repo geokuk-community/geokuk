@@ -100,7 +100,7 @@ public class PruvodceModelTest {
 		final PlanPruvodce plan = PlanPruvodce.sestav(new PruvodceVolba(Collections.singletonList(CZ), PodkladPruvodce.CUZK_TOPO, EnumSet.of(Cast.TRASY)), nicNemame());
 		assertEquals(1, plan.getPolozky().size());
 		assertEquals("Česko – trasy", plan.getPolozky().get(0).getNazev());
-		assertEquals("routes/" + CZ, plan.getPolozky().get(0).getId());
+		assertEquals("tourist/" + CZ, plan.getPolozky().get(0).getId());
 		assertTrue(plan.getPolozky().get(0).isVrstva());
 		assertEquals(25_000_000L, plan.getCelkovaVelikost());
 		assertTrue(plan.prepnoutHned());

@@ -43,7 +43,7 @@ public class SmazaniSouboruTest {
 	public void souboryVrstvyVcetneSouctuARozpracovanych() throws Exception {
 		final File slozka = tmp.newFolder("layers");
 		final KatalogVrstev katalog = VrstvyProGui.katalogCesko();
-		final KatalogovaVrstva trasy = katalog.podleId("routes/europe/czech-republic").get();
+		final KatalogovaVrstva trasy = katalog.podleId("tourist/europe/czech-republic").get();
 		final String cesta = trasy.getSoubory().get(0).getCesta();
 		final String vrstevnice = katalog.podleId("contours/europe/czech-republic").get().getSoubory().get(0).getCesta();
 		new File(slozka, cesta).getParentFile().mkdirs();
@@ -58,6 +58,18 @@ public class SmazaniSouboruTest {
 		Assert.assertTrue(SmazaniSouboru.smaz(soubory).isEmpty());
 		Assert.assertTrue("cizí a jiná vrstva zůstaly", new File(slozka, "cizi.map").isFile() && new File(slozka, vrstevnice).isFile());
 		Assert.assertTrue("smazat už smazané nevadí", SmazaniSouboru.smaz(soubory).isEmpty());
+	}
+
+	/** Smazání vrstvy tras smaže i její starší verzi (*.routes.map). */
+	@Test
+	public void souboryVrstvyVcetneStarsiVerze() throws Exception {
+		final File slozka = tmp.newFolder("layers");
+		final KatalogovaVrstva trasy = VrstvyProGui.katalogCesko().podleId("tourist/europe/czech-republic").get();
+		new File(slozka, "europe").mkdirs();
+		final File stara = vytvor(slozka, "europe/czech-republic.routes.map", 100);
+		final File soucet = vytvor(slozka, "europe/czech-republic.routes.map.sha256", 64);
+		vytvor(slozka, "europe/slovakia.routes.map", 100);
+		Assert.assertEquals(Arrays.asList(stara, soucet), SmazaniSouboru.souboryVrstvy(slozka, trasy));
 	}
 
 	@Test

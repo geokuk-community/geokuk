@@ -118,7 +118,7 @@ public class PlanStahnoutVseTest {
 		assertTrue("země má regiony", klice.size() > 2);
 		for (final PlanPruvodce plan : new PlanPruvodce[] { PlanPruvodce.sestavVse(DE, klice, VSE, m), PlanPruvodce.sestavDostahnout(VSE, m) }) {
 			final List<String> id = plan.getPolozky().stream().map(PlanPruvodce.Polozka::getId).collect(Collectors.toList());
-			assertEquals(new java.util.HashSet<>(Arrays.asList("routes/" + DE, "contours/" + DE + "/bayern", "contours/" + DE + "/sachsen")), new java.util.HashSet<>(id));
+			assertEquals(new java.util.HashSet<>(Arrays.asList("tourist/" + DE, "contours/" + DE + "/bayern", "contours/" + DE + "/sachsen")), new java.util.HashSet<>(id));
 		}
 	}
 
