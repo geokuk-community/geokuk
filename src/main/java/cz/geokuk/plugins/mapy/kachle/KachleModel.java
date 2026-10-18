@@ -278,7 +278,7 @@ public class KachleModel extends Model0 {
 		return currPrefe().getBoolean(OFFLINE_OSTRA, true);
 	}
 
-	/** Velikost písma a značek offline mapy v procentech, 80–150. */
+	/** Velikost písma a značek offline mapy v procentech, 80–200. */
 	public int getOfflineMapaPismoProcent() {
 		return (int) Math.round(OfflineMapy.zaokrouhliPismo(currPrefe().getInt(OFFLINE_PISMO, 100) / 100.0) * 100);
 	}

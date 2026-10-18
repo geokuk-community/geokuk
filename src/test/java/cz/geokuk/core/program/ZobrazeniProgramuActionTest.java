@@ -49,6 +49,23 @@ public class ZobrazeniProgramuActionTest {
 	}
 
 	@Test
+	public void znackyZvetseni() {
+		Assert.assertEquals("1", ZobrazeniProgramuAction.znackaZvetseni(100));
+		Assert.assertEquals("1,5", ZobrazeniProgramuAction.znackaZvetseni(150));
+		Assert.assertEquals("1,25", ZobrazeniProgramuAction.znackaZvetseni(125));
+		Assert.assertEquals("2,5×", ZobrazeniProgramuAction.popisZvetseniIkon(250));
+	}
+
+	@Test
+	public void posuvnikMapyOd80Do200Po5() {
+		final JSlider s = ZobrazeniProgramuAction.posuvnikMapy();
+		Assert.assertEquals(80, s.getMinimum());
+		Assert.assertEquals(200, s.getMaximum());
+		Assert.assertEquals(5, s.getMinorTickSpacing());
+		Assert.assertTrue(s.getSnapToTicks());
+	}
+
+	@Test
 	public void akceJeVzdyDostupna() {
 		Assert.assertTrue(new ZobrazeniProgramuAction().isEnabled());
 	}

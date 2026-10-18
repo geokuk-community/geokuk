@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -87,12 +88,48 @@ public class JKesoidySlideGoldenTest {
 		GoldenSnimek.porovnej("ikony-z14", vykresli(14, keseZblizka, new Dimension(400, 200)));
 	}
 
+	/** Zvětšené ikony zaberou zhruba čtyřikrát víc plochy a myš je zasáhne z dvojnásobné vzdálenosti. */
+	@Test
+	public void zvetseneIkony() {
+		final Dimension okno = new Dimension(800, 400);
+		final int puvodni = neprusvitnych(vykresli(16, keseZblizka, okno, 100));
+		final int dvojnasobne = neprusvitnych(vykresli(16, keseZblizka, okno, 200));
+		Assert.assertTrue(puvodni + " → " + dvojnasobne, dvojnasobne > 3 * puvodni && dvojnasobne < 5 * puvodni);
+		final JKesoidySlide slide = new JKesoidySlide(true);
+		final int polomer = slide.polomerCitlivosti();
+		slide.onEvent(new ZvetseniIkonEvent(200));
+		Assert.assertEquals(2L * polomer, slide.polomerCitlivosti());
+		Assert.assertEquals(new Insets(20, 6, 4, 22), JKesoidySlide.zvetsi(new Insets(10, 3, 2, 11), 2));
+		// překresluje se i okolí zvětšené ikony, jinak by u okraje zůstaly zbytky
+		slide.onEvent(new IkonyNactenyEvent(ikony, ASada.STANDARD));
+		final Insets puvodniInsety = ikony.getSada().getBigiestIconInsets();
+		Assert.assertEquals(JKesoidySlide.zvetsi(puvodniInsety, 2), slide.insetyIkon());
+		Assert.assertNotEquals(puvodniInsety, slide.insetyIkon());
+	}
+
+	private static int neprusvitnych(final BufferedImage img) {
+		int n = 0;
+		for (int y = 0; y < img.getHeight(); y++) {
+			for (int x = 0; x < img.getWidth(); x++) {
+				if (img.getRGB(x, y) >>> 24 > 128) {
+					n++;
+				}
+			}
+		}
+		return n;
+	}
+
 	private static BufferedImage vykresli(final int zoom) {
 		return vykresli(zoom, kese, OKNO);
 	}
 
 	private static BufferedImage vykresli(final int zoom, final KesBag data, final Dimension okno) {
+		return vykresli(zoom, data, okno, ZvetseniIkonEvent.VYCHOZI);
+	}
+
+	private static BufferedImage vykresli(final int zoom, final KesBag data, final Dimension okno, final int zvetseniIkon) {
 		final JKesoidySlide slide = new JKesoidySlide(true);
+		slide.onEvent(new ZvetseniIkonEvent(zvetseniIkon));
 		slide.inject(new VyletModel() {
 			@Override
 			public EVylet get(final Kesoid kes) {

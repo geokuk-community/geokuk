@@ -126,8 +126,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 				if (jKesoidy.ikonBag == null) {
 					return; // sada ikon ještě není načtená
 				}
-				final Insets bigiestIconInsets = jKesoidy.ikonBag.getSada().getBigiestIconInsets();
-				final Rectangle rect = jKesoidy.getSoord().transform(aMouRect, bigiestIconInsets);
+				final Rectangle rect = jKesoidy.getSoord().transform(aMouRect, jKesoidy.insetyIkon());
 				jKesoidy.repaint(rect);
 			});
 		}
@@ -155,7 +154,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	private static final long serialVersionUID = -5858146658366237217L;
 
-	private static final double scale = 1;
+	/** Zvětšení ikon keší, viz {@link ZvetseniIkonEvent}. */
+	private volatile double meritkoIkon = 1;
 
 	final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
 	private Indexator<Wpt> indexator;
@@ -201,10 +201,6 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private final boolean vykreslovatOkamtiteAleDlouho;
 
 	private VyletModel vyletModel;
-
-	public static double getScale() {
-		return scale;
-	}
 
 	public JKesoidySlide(final boolean vykreslovatOkamtiteAleDlouho) {
 		this.vykreslovatOkamtiteAleDlouho = vykreslovatOkamtiteAleDlouho;
@@ -399,6 +395,28 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		repaint();
 	}
 
+	public void onEvent(final ZvetseniIkonEvent event) {
+		meritkoIkon = event.getNasobek();
+		repaint();
+	}
+
+	/** Kam až od bodu sahá největší ikona sady při aktuálním zvětšení. */
+	Insets insetyIkon() {
+		return zvetsi(ikonBag.getSada().getBigiestIconInsets(), meritkoIkon);
+	}
+
+	static Insets zvetsi(final Insets i, final double meritko) {
+		if (meritko == 1) {
+			return i;
+		}
+		return new Insets((int) Math.ceil(i.top * meritko), (int) Math.ceil(i.left * meritko), (int) Math.ceil(i.bottom * meritko), (int) Math.ceil(i.right * meritko));
+	}
+
+	/** Jak daleko od keše myš ještě keš zasáhne. */
+	int polomerCitlivosti() {
+		return (int) Math.ceil(POLOMER_CITLIVOSTI * meritkoIkon);
+	}
+
 	public void onEvent(final LimityKresleniEvent event) {
 		limity = event.getLimity();
 		repaint();
@@ -428,7 +446,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	public void onEvent(final PoziceSeMaMenitEvent event) {
 		// TODO-vylet Tato metoda by měla být na modelu, pak je otázkou s jakou citlivostí vybírat
-		final int polomerCitlivosi = POLOMER_CITLIVOSTI;
+		final int polomerCitlivosi = polomerCitlivosti();
 		final Point p = getSoord().transform(event.mou);
 		final Rectangle rect = new Rectangle(p.x - polomerCitlivosi, p.y - polomerCitlivosi, polomerCitlivosi * 2, polomerCitlivosi * 2);
 
@@ -629,7 +647,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	}
 
 	private BoundingRect coVykreslovat(final Graphics gg) {
-		final Insets bii = ikonBag.getSada().getBigiestIconInsets();
+		final Insets bii = insetyIkon();
 		Rectangle rect = gg.getClipBounds();
 		if (vykreslovatOkamtiteAleDlouho) {
 			log.debug("Omezení: {}", rect);
@@ -699,7 +717,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 
 	private Wpt najdiWptVBlizkosti(final Point p) {
 		// System.out.println("POSUNOVACKA TO ASI BUDE: " + e);
-		final int polomerCitlivosi = POLOMER_CITLIVOSTI;
+		final int polomerCitlivosi = polomerCitlivosti();
 		final Rectangle rect = new Rectangle(p.x - polomerCitlivosi, p.y - polomerCitlivosi, polomerCitlivosi * 2, polomerCitlivosi * 2);
 		final Wpt wpt = indexator == null ? null : indexator.bound(getSoord().transforToBounding(rect)).locateAnyOne().orElse(null);
 		return wpt;
@@ -738,17 +756,22 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 			return; // neni co vykreslovat
 		}
 
-		// getScale() vrací vždy 1, ale tento kód zde chceme, protože se někdy zřejmě hodil
-		if (getScale() == 1) {
+		final double meritko = meritkoIkon;
+		if (meritko == 1) {
 			final int x = p.x + imagant.getXpos();
 			final int y = p.y + imagant.getYpos();
 			g.drawImage(imagant.getImage(), x, y, null);
 		} else {
 			g = (Graphics2D) g.create();
-			g.translate(p.x, p.y);
-			g.scale(scale, scale);
-			g.translate(imagant.getXpos(), imagant.getYpos());
-			g.drawImage(imagant.getImage(), 0, 0, null);
+			try {
+				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				g.translate(p.x, p.y);
+				g.scale(meritko, meritko);
+				g.translate(imagant.getXpos(), imagant.getYpos());
+				g.drawImage(imagant.getImage(), 0, 0, null);
+			} finally {
+				g.dispose();
+			}
 		}
 	}
 

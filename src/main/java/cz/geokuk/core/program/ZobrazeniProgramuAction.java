@@ -11,7 +11,9 @@ import cz.geokuk.core.napoveda.Restart;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
+import cz.geokuk.util.gui.JPosuvnikPredvoleb;
 import cz.geokuk.start.Start;
 
 /** Zvětšení a hardwarové vykreslování, které spouštěč start.jar nastaví programu při příštím spuštění. */
@@ -24,10 +26,38 @@ public class ZobrazeniProgramuAction extends Action0 {
 	static final String RYCHLEJSI = "Rychlejší";
 	static final String DIRECT3D = "Hardwarové vykreslování (Direct3D)";
 
+	/** Předvolby zvětšení ikon keší v procentech. */
+	static final int[] PREDVOLBY_IKON = { 100, 150, 200, 250, 300, 350, 400, 450, 500 };
+
 	private KachleModel kachleModel;
+	private KesoidModel kesoidModel;
 
 	public void inject(final KachleModel kachleModel) {
 		this.kachleModel = kachleModel;
+	}
+
+	public void inject(final KesoidModel kesoidModel) {
+		this.kesoidModel = kesoidModel;
+	}
+
+	/** Velikost offline mapy (písmo, symboly, čáry) v procentech, po 5 %. */
+	static JSlider posuvnikMapy() {
+		final JSlider s = new JSlider(80, 200, 100);
+		s.setMinorTickSpacing(5);
+		s.setMajorTickSpacing(20);
+		s.setSnapToTicks(true);
+		s.setPaintTicks(true);
+		return s;
+	}
+
+	/** Násobek k procentům, třeba „1,5“. */
+	static String znackaZvetseni(final int procent) {
+		final String s = procent % 100 == 0 ? Integer.toString(procent / 100) : String.format(java.util.Locale.ROOT, "%.2f", procent / 100.0).replaceAll("0+$", "");
+		return s.replace('.', ',');
+	}
+
+	static String popisZvetseniIkon(final int procent) {
+		return znackaZvetseni(procent) + "×";
 	}
 
 	public ZobrazeniProgramuAction() {
@@ -93,7 +123,10 @@ public class ZobrazeniProgramuAction extends Action0 {
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		final JRadioButton ostra = new JRadioButton(OSTRA);
 		final JRadioButton rychlejsi = new JRadioButton(RYCHLEJSI);
-		final JSpinner pismo = new JSpinner(new SpinnerNumberModel(100, 80, 150, 5));
+		final JSlider pismo = posuvnikMapy();
+		final JPosuvnikPredvoleb ikony = kesoidModel == null ? null
+				: new JPosuvnikPredvoleb(PREDVOLBY_IKON, kesoidModel.getZvetseniIkonProcent(), ZobrazeniProgramuAction::znackaZvetseni, ZobrazeniProgramuAction::popisZvetseniIkon);
+		final JPanel mapa = ramecek("Mapa (platí hned)");
 		if (kachleModel != null) {
 			final ButtonGroup skupina = new ButtonGroup();
 			skupina.add(ostra);
@@ -104,21 +137,32 @@ public class ZobrazeniProgramuAction extends Action0 {
 			ostra.setToolTipText(rada);
 			rychlejsi.setToolTipText(rada);
 			pismo.setValue(kachleModel.getOfflineMapaPismoProcent());
-			pismo.setToolTipText("Velikost popisků a symbolů offline mapy.");
+			pismo.setToolTipText("Velikost popisků, symbolů a čar offline mapy.");
 			final JPanel volbyOstrosti = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 			volbyOstrosti.add(ostra);
 			volbyOstrosti.add(Box.createHorizontalStrut(8));
 			volbyOstrosti.add(rychlejsi);
 			final JPanel velikost = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+			final JLabel procent = new JLabel();
+			final Runnable obnov = () -> procent.setText(pismo.getValue() + " %");
+			pismo.addChangeListener(ev -> obnov.run());
+			obnov.run();
 			velikost.add(pismo);
-			velikost.add(new JLabel("%"));
+			velikost.add(procent);
 			final JLabel popisOstrosti = new JLabel("Offline mapa:");
 			popisOstrosti.setToolTipText(rada);
-			final JLabel popisPisma = new JLabel("Písmo a ikony na mapě:");
+			final JLabel popisPisma = new JLabel("Mapa (offline):");
 			popisPisma.setLabelFor(pismo);
-			final JPanel mapa = ramecek("Mapa (platí hned)");
 			radek(mapa, 0, popisOstrosti, volbyOstrosti);
 			radek(mapa, 1, popisPisma, velikost);
+		}
+		if (ikony != null) {
+			final JLabel popisIkon = new JLabel("Ikony keší:");
+			popisIkon.setLabelFor(ikony.getSlider());
+			ikony.getSlider().setToolTipText("Velikost ikon keší na mapě.");
+			radek(mapa, 2, popisIkon, ikony);
+		}
+		if (kachleModel != null || ikony != null) {
 			mapa.setAlignmentX(0);
 			panel.add(mapa);
 		}
@@ -135,7 +179,10 @@ public class ZobrazeniProgramuAction extends Action0 {
 			return;
 		}
 		if (kachleModel != null) {
-			kachleModel.setVzhledOfflineMapy(ostra.isSelected(), ((Number) pismo.getValue()).intValue());
+			kachleModel.setVzhledOfflineMapy(ostra.isSelected(), pismo.getValue());
+		}
+		if (ikony != null) {
+			kesoidModel.setZvetseniIkonProcent(ikony.getHodnota());
 		}
 		if (oknoProgramu && uloz(pref, zvetseni.isSelected(), direct3d.isSelected()) && Restart.lze()
 				&& JOptionPane.showConfirmDialog(Dlg.parentFrame(), "Změna se projeví po restartu GeoKuku. Restartovat teď?", "Zobrazení programu",
