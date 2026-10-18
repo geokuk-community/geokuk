@@ -110,14 +110,14 @@ public class BehPruvodceTest {
 		final List<Stav> zmeny = new ArrayList<>();
 		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY), zmeny::add);
 		beh.spust();
-		assertEquals("mapa a vedle ní vrstva", Arrays.asList(CZ, "routes/" + CZ), k.stazene);
+		assertEquals("mapa a vedle ní vrstva", Arrays.asList(CZ, "tourist/" + CZ), k.stazene);
 		assertTrue("na mapu se čeká, zobrazení se zatím nepřepíná", k.prepnuti.isEmpty());
 		beh.krok();
 		assertEquals("nic dalšího se nespouští", 2, k.stazene.size());
 		k.stav.put(CZ, "MAME");
 		beh.krok();
 		assertEquals("zobrazení se přepne hned po mapě, nečeká na trasy", 1, k.prepnuti.size());
-		k.stav.put("routes/" + CZ, "MAME");
+		k.stav.put("tourist/" + CZ, "MAME");
 		beh.krok();
 		assertEquals(Stav.HOTOVO, beh.getStav());
 		assertEquals("přepnutí jen jednou", 1, k.prepnuti.size());
@@ -130,8 +130,8 @@ public class BehPruvodceTest {
 		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.CUZK_TOPO, Cast.TRASY), s -> {});
 		beh.spust();
 		assertEquals("přepnuto před stažením tras", 1, k.prepnuti.size());
-		assertEquals(Collections.singletonList("routes/" + CZ), k.stazene);
-		k.stav.put("routes/" + CZ, "MAME");
+		assertEquals(Collections.singletonList("tourist/" + CZ), k.stazene);
+		k.stav.put("tourist/" + CZ, "MAME");
 		beh.krok();
 		assertEquals(Stav.HOTOVO, beh.getStav());
 		assertEquals(1, k.prepnuti.size());
@@ -154,7 +154,7 @@ public class BehPruvodceTest {
 		final BehPruvodce beh = new BehPruvodce(k, plan(k, PodkladPruvodce.TURISTICKA_OFFLINE, Cast.TRASY), s -> {});
 		beh.spust();
 		k.stav.put(CZ, "CHYBA");
-		k.stav.put("routes/" + CZ, "MAME");
+		k.stav.put("tourist/" + CZ, "MAME");
 		beh.krok();
 		assertEquals("dávka skončila", Stav.HOTOVO, beh.getStav());
 		assertEquals(1, beh.getSelhane().size());
@@ -163,7 +163,7 @@ public class BehPruvodceTest {
 		assertTrue("po selhání mapy se zobrazení nepřepíná na prázdnou offline mapu", k.prepnuti.isEmpty());
 		beh.zkusZnovu();
 		assertEquals(Stav.BEZI, beh.getStav());
-		assertEquals("selhaná mapa se stahuje znovu", Arrays.asList(CZ, "routes/" + CZ, CZ), k.stazene);
+		assertEquals("selhaná mapa se stahuje znovu", Arrays.asList(CZ, "tourist/" + CZ, CZ), k.stazene);
 		k.stav.put(CZ, "MAME");
 		beh.krok();
 		assertEquals(Stav.HOTOVO, beh.getStav());

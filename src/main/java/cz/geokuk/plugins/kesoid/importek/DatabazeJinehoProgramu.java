@@ -35,6 +35,10 @@ final class DatabazeJinehoProgramu {
 		Zamcena(final File soubor, final Throwable pricina) {
 			super("Databáze \"" + jmeno(soubor) + "\" je zamčená, GeoGet, GSAK nebo OpenSAK do ní právě zapisuje. Keše z ní se načtou, až zápis skončí.", pricina);
 		}
+
+		Zamcena(final String zprava, final Throwable pricina) {
+			super(zprava, pricina);
+		}
 	}
 
 	/** Databáze GSAKu se jmenují všechny sqlite.db3, uživatel je zná podle jména složky. */

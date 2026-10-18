@@ -122,7 +122,7 @@ public class JPruvodceMapTest {
 			Assert.assertTrue("ČÚZK topo je u Česka", tlacitka(d.getContentPane()).stream().anyMatch(b -> b instanceof JToggleButton && b.getText().contains("ČÚZK topo")));
 			Assert.assertFalse("ZBGIS Slovenska u Česka není", tlacitka(d.getContentPane()).stream().anyMatch(b -> b instanceof JToggleButton && b.getText().contains("ZBGIS")));
 			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
-			final JCheckBox trasy = (JCheckBox) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JCheckBox && b.getText().startsWith("Turistické a cyklotrasy")).findFirst().get();
+			final JCheckBox trasy = (JCheckBox) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JCheckBox && b.getText().startsWith("Turistická vrstva")).findFirst().get();
 			Assert.assertTrue("trasy jsou předvolené i u offline Turistické", trasy.isSelected());
 			Assert.assertTrue(trasy.isEnabled());
 			final JCheckBox vrstevnice = (JCheckBox) tlacitka(d.getContentPane()).stream().filter(b -> b instanceof JCheckBox && b.getText().startsWith("Vrstevnice")).findFirst().get();
@@ -150,7 +150,7 @@ public class JPruvodceMapTest {
 				tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
 			}
 			tlacitko(d.getContentPane(), JPruvodceMap.STAHNOUT_A_PREPNOUT).doClick();
-			Assert.assertEquals("mapa a vedle ní trasy", java.util.Arrays.asList("europe/czech-republic", "routes/europe/czech-republic"), k.stazene);
+			Assert.assertEquals("mapa a vedle ní trasy", java.util.Arrays.asList("europe/czech-republic", "tourist/europe/czech-republic"), k.stazene);
 			Assert.assertTrue("na stažení mapy se čeká", k.prepnuti.isEmpty());
 			Assert.assertTrue(SpousteniPruvodce.bezi());
 		});
@@ -185,7 +185,7 @@ public class JPruvodceMapTest {
 			Assert.assertFalse("vrstevnice jen s offline mapou", vrstevnice.isEnabled());
 			Assert.assertTrue(popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("Jen s offline mapou.")));
 			tlacitko(d.getContentPane(), JPruvodceMap.DAL).doClick();
-			Assert.assertTrue("přepnutí na OSM s trasami", popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("OpenStreetMap") && l.getText().contains("trasy")));
+			Assert.assertTrue("přepnutí na OSM s trasami", popisky(d.getContentPane()).stream().anyMatch(l -> l.getText().contains("OpenStreetMap") && l.getText().contains("turistická vrstva")));
 		});
 	}
 
