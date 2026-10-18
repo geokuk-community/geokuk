@@ -13,7 +13,6 @@ import org.mapsforge.core.model.Tile;
 import org.mapsforge.map.awt.graphics.AwtGraphicFactory;
 import org.mapsforge.map.datastore.MultiMapDataStore;
 import org.mapsforge.map.layer.hills.DemFolderFS;
-import org.mapsforge.map.layer.hills.DiffuseLightShadingAlgorithm;
 import org.mapsforge.map.layer.hills.HillsRenderConfig;
 import org.mapsforge.map.layer.hills.MemoryCachingHgtReaderTileSource;
 import org.mapsforge.map.layer.renderer.*;
@@ -226,7 +225,7 @@ final class OfflineRenderer {
 			return null;
 		}
 		try {
-			final HillsRenderConfig kopce = new HillsRenderConfig(new MemoryCachingHgtReaderTileSource(new DemFolderFS(slozkaDem), new DiffuseLightShadingAlgorithm(), grafika)).indexOnThread();
+			final HillsRenderConfig kopce = new HillsRenderConfig(new MemoryCachingHgtReaderTileSource(new DemFolderFS(slozkaDem), new StinovaniTerenu(), grafika)).indexOnThread();
 			for (final File f : dlazdice) {
 				otisk.append("dem:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
 			}
