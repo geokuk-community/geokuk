@@ -163,4 +163,38 @@ public class JKachlovnikPresCeleRadaTest {
 		mame[0] = true;
 		Assert.assertTrue(k.plnaAtribuce().contains(veta));
 	}
+
+	private static JKachlovnikPresCele sReliefem(final EKaType podklad) {
+		final JKachlovnikPresCele k = new JKachlovnikPresCele() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected EKaType getKachloType() {
+				return podklad;
+			}
+		};
+		k.onEvent(new cz.geokuk.plugins.mapy.kachle.ReliefCuzkEvent(true));
+		return k;
+	}
+
+	/** Zapnutý reliéf přidá do atribuce ČÚZK; nad podkladem ČÚZK se neopakuje. */
+	@Test
+	public void reliefCuzkVAtribuci() {
+		final String cuzk = EKaType.RELIEF_CUZK.getAtribuce();
+		final JKachlovnikPresCele osm = sReliefem(EKaType.OPEN_STREET);
+		Assert.assertTrue(osm.zkratkyAtribuce().toString(), osm.zkratkyAtribuce().containsAll(AtribuceMapy.zkrat(cuzk)));
+		Assert.assertTrue(osm.plnaAtribuce().contains(JKachlovnikPresCele.ATRIBUCE_RELIEFU));
+		final JKachlovnikPresCele ztm = sReliefem(EKaType.CUZK_ZTM);
+		Assert.assertEquals(java.util.Collections.singletonList(cuzk), ztm.plnaAtribuce());
+		Assert.assertEquals(AtribuceMapy.zkrat(cuzk), ztm.zkratkyAtribuce());
+		final JKachlovnikPresCele bez = new JKachlovnikPresCele() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected EKaType getKachloType() {
+				return EKaType.OPEN_STREET;
+			}
+		};
+		Assert.assertFalse(bez.plnaAtribuce().contains(JKachlovnikPresCele.ATRIBUCE_RELIEFU));
+	}
 }

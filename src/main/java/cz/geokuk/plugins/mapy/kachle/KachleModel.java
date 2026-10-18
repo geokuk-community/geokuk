@@ -44,6 +44,7 @@ public class KachleModel extends Model0 {
 	private static final String OFFLINE_PISMO = "offlineMapaPismo";
 
 	private static final String PREKRYV_TRAS = "prekryvTras";
+	private static final String RELIEF_CUZK = "reliefCuzk";
 	private static final String OBRYS_POKRYTI = "obrysPokrytiOfflineMap";
 	private static final String STINOVANI_TERENU = "stinovaniTerenu";
 
@@ -140,6 +141,19 @@ public class KachleModel extends Model0 {
 		return isPrekryvTras() && !isPrekryvTrasNadbytecny();
 	}
 
+	/** Uživatel zapnul překryv Stínovaný reliéf ČÚZK. */
+	public boolean isReliefCuzk() {
+		return currPrefe().getBoolean(RELIEF_CUZK, false);
+	}
+
+	public void setReliefCuzk(final boolean zapnuto) {
+		if (zapnuto == isReliefCuzk()) {
+			return;
+		}
+		currPrefe().putBoolean(RELIEF_CUZK, zapnuto);
+		fire(new ReliefCuzkEvent(zapnuto));
+	}
+
 	/** Stínování terénu z DEM dlaždic ve složce vrstev je zapnuté (výchozí); bez DEM dlaždic nemá žádný účinek. */
 	public boolean isStinovaniTerenu() {
 		return currPrefe().getBoolean(STINOVANI_TERENU, true);
@@ -222,8 +236,10 @@ public class KachleModel extends Model0 {
 		setUmisteniSouboru(loadUmisteniSouboru());
 		fire(new KachleModelChangeEvent());
 		fajrujPrekryvTras();
+		fire(new ReliefCuzkEvent(isReliefCuzk()));
 		fire(new ObrysPokrytiEvent(isObrysPokryti()));
 		hlidaniSlozky.scheduleWithFixedDelay(this::zkontrolujSlozkuOfflineMap, 2, 2, TimeUnit.SECONDS);
+		ziskavac.spustPredvykresleniPrehledu();
 	}
 
 	void zkontrolujSlozkuOfflineMap() {

@@ -90,6 +90,10 @@
 - Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
   počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
   Panel cesty.
+- Mapy > ČÚZK – Stínovaný reliéf: jemné stínování terénu České republiky
+  z výškového modelu DMR 5G přes jakoukoli mapu, i v tisku a exportu výřezu.
+  Je vidět i skály, rokle a lesní cesty. Jen s připojením k internetu,
+  od podrobnějšího měřítka.
 - Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
   přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
   z osm.paws.cz ve složce offline map, nebo ze stažené vrstvy tras (z ní
@@ -124,6 +128,9 @@
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
+- Když se s programem chvíli nepracuje, předkreslí offline mapy pro
+  oddálená měřítka do cache. Oddálení na celou zemi je pak rychlé i na
+  pomalém počítači; při práci s programem předkreslování počká.
 - Offline mapa se stínováním terénu se při oddálení (celá země, kraj)
   kreslí několikrát rychleji a potřebuje méně paměti.
 
@@ -131,11 +138,10 @@
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
   keše), už nezahltí log tisíci varováními. Jiná nečíselná čísla vlastníka
   program ohlásí jedním varováním za soubor.
+- GPX, který se právě kopíruje do složky s daty, už nehlásí chybu načítání;
+  načte se, až je kopie hotová.
 
 Obsahuje i všechny opravy z 6.4.2.
-
-### Opravy
-- GPX, který se právě kopíruje do složky s daty, už nehlásí chybu načítání; načte se, až je kopie hotová.
 
 ## 6.4.2
 

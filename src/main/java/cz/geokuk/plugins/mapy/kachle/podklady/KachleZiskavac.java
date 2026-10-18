@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
+import java.awt.AWTEvent;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.DiagnosticsData;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
+import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleManager.ItemToSave;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachloDownloader.EPraznyObrazek;
 import cz.geokuk.util.exception.*;
@@ -374,6 +377,7 @@ public class KachleZiskavac {
 		private BlockingQueue<Runnable> diskQueue;
 		private BlockingQueue<Runnable> webQueue;
 		private BlockingQueue<Runnable> renderQueue;
+		private final ThreadPoolExecutor[] vlakna;
 
 		public DvojiceExekucnichSluzeb(final Priority priority, final ExecutorService disk, final ExecutorService web, final ExecutorService render, final Logger log) {
 			this.priority = priority;
@@ -385,6 +389,17 @@ public class KachleZiskavac {
 			diskQueue = ((ThreadPoolExecutor) disk).getQueue();
 			webQueue = ((ThreadPoolExecutor) web).getQueue();
 			renderQueue = ((ThreadPoolExecutor) render).getQueue();
+			vlakna = new ThreadPoolExecutor[] { (ThreadPoolExecutor) disk, (ThreadPoolExecutor) web, (ThreadPoolExecutor) render };
+		}
+
+		/** Nic nečeká ani neběží. */
+		boolean jeNecinna() {
+			for (final ThreadPoolExecutor v : vlakna) {
+				if (v.getActiveCount() > 0 || !v.getQueue().isEmpty()) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		// ExecutorService nedekorovanyServisProZjisteni
@@ -517,6 +532,8 @@ public class KachleZiskavac {
 
 	private KachleModel kachleModel;
 
+	private final PredvykresleniPrehledu predvykresleniPrehledu = new PredvykresleniPrehledu(new PrehledOfflineMap(), this::jeVolnoProPredvykresleni, System::nanoTime);
+
 	/** Úklid cache offline mapy běží v jednom vlákně na pozadí, dlaždice na obrazovce nezdržuje. */
 	private final ExecutorService uklidOfflineCache = Executors.newSingleThreadExecutor(vlaknaRenderu("Úklid cache offline mapy"));
 
@@ -588,6 +605,87 @@ public class KachleZiskavac {
 		}
 	}
 
+	/**
+	 * Spustí předvykreslování přehledových zoomů offline map v nečinnosti; jakýkoli vstup myší nebo klávesnicí ho přeruší. Na jednojádrovém počítači nic
+	 * nedělá.
+	 */
+	public void spustPredvykresleniPrehledu() {
+		if (!PredvykresleniPrehledu.jeVhodne(Runtime.getRuntime().availableProcessors())) {
+			return;
+		}
+		Toolkit.getDefaultToolkit().addAWTEventListener(e -> predvykresleniPrehledu.aktivita(),
+				AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.MOUSE_WHEEL_EVENT_MASK | AWTEvent.KEY_EVENT_MASK);
+		final ScheduledExecutorService vlakno = Executors.newSingleThreadScheduledExecutor(r -> {
+			final Thread t = vlaknaRenderu("Předvykreslení přehledu").newThread(r);
+			t.setPriority(Thread.MIN_PRIORITY);
+			return t;
+		});
+		vlakno.scheduleWithFixedDelay(() -> {
+			try {
+				final int n = predvykresleniPrehledu.pracuj();
+				if (n > 0) {
+					log.debug("Předvykresleno {} dlaždic přehledu offline map, zbývá {}", n, predvykresleniPrehledu.zbyva());
+				}
+			} catch (final RuntimeException e) {
+				log.warn("Předvykreslení přehledu offline map selhalo: {}", e.toString());
+			}
+		}, 1, 1, TimeUnit.SECONDS);
+	}
+
+	/** Mapy se nestahují, nic jiného se nekreslí ani nečte z cache a dlaždice se ukládají na disk. */
+	boolean jeVolnoProPredvykresleni() {
+		final KachleModel km = kachleModel;
+		return km != null && km.isUkladatMapyNaDisk() && kachleManager != null && offlineMapy.getSlozka() != null && !offlineMapy.isDavka()
+				&& exekucniSluzby.get(Priority.KACHLE).jeNecinna() && exekucniSluzby.get(Priority.STAHOVANI).jeNecinna();
+	}
+
+	/** Podkladová offline mapa; dlaždice jdou do cache stejně jako při kreslení na obrazovku. */
+	private final class PrehledOfflineMap implements PredvykresleniPrehledu.Mapy {
+
+		@Override
+		public String klic() throws IOException {
+			final OfflineRenderer r = offlineMapy.pouzij();
+			try {
+				return r.getKlic();
+			} finally {
+				r.skonci();
+			}
+		}
+
+		@Override
+		public List<KaLoc> dlazdice(final int zMin, final int zMax) throws IOException {
+			final OfflineRenderer r = offlineMapy.pouzij();
+			try {
+				return r.dlazdicePokryti(zMin, zMax);
+			} finally {
+				r.skonci();
+			}
+		}
+
+		@Override
+		public boolean jeVCache(final KaLoc loc, final String klic) {
+			final KachleManager km = kachleManager;
+			return km == null || km.load(new Ka(loc, EKaType.OFFLINE_MF), klic) != null;
+		}
+
+		@Override
+		public void vykresli(final KaLoc loc, final String klic) throws IOException {
+			final OfflineRenderer r = offlineMapy.pouzij();
+			try {
+				if (!klic.equals(r.getKlic()) || !r.pokryva(loc)) {
+					return;
+				}
+				final long zacatek = System.nanoTime();
+				final BufferedImage obrazek = r.vyrendruj(loc);
+				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
+				pocitRenderOk.inc();
+				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), klic, obrazek, null));
+			} finally {
+				r.skonci();
+			}
+		}
+	}
+
 	/** Smazat se musí třeba při zapnutí online módi */
 	public void clearMemoryCache() {
 		log.debug("Cache cleared");
@@ -609,7 +707,7 @@ public class KachleZiskavac {
 
 	/** Offline mapy, ze kterých se kreslí dlaždice daného typu. */
 	OfflineMapy offlineMapy(final EKaType typ) {
-		return typ.isPrekryv() ? offlineTrasy : offlineMapy;
+		return typ == EKaType.TRASY ? offlineTrasy : offlineMapy;
 	}
 
 	/** Zavolá se (z vlákna vykreslování), když se změní soubory offline mapy nebo téma. */

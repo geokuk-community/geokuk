@@ -139,6 +139,11 @@ public class OfflineMapy {
 		this.davka = davka;
 	}
 
+	/** Právě se stahují mapy nebo vrstvy, viz {@link #setDavka(BooleanSupplier)}. */
+	boolean isDavka() {
+		return davka.getAsBoolean();
+	}
+
 	public void setPriOtevreni(final BiConsumer<String, File> priOtevreni) {
 		this.priOtevreni = priOtevreni;
 	}

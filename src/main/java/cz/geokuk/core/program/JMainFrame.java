@@ -107,6 +107,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			final JKachlovnikPresCele kachlovnik = new JKachlovnikPresCele();
 			final JComponent odkazRady = new JOdkazRadySlide(kachlovnik);
 			final JComponent kachlovnikTras = new JKachlovnikTras();
+			final JComponent kachlovnikReliefu = new cz.geokuk.plugins.mapy.kachle.gui.JKachlovnikReliefu();
 			final JComponent obrysMap = new JObrysMapSlide();
 			final JComponent pozadi = new JSlidePozadi();
 
@@ -129,6 +130,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			smrizema.add(obsazenik);
 			smrizema.add(obrysMap);
 			smrizema.add(kachlovnikTras);
+			smrizema.add(kachlovnikReliefu);
 			smrizema.add(kachlovnik);
 			smrizema.add(pozadi);
 
@@ -153,6 +155,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(obsazenik);
 			factory.init(obrysMap);
 			factory.init(kachlovnikTras);
+			factory.init(kachlovnikReliefu);
 			factory.init(kachlovnik);
 			factory.init(pozadi);
 
