@@ -98,8 +98,13 @@ public class JKesoidySlideGoldenTest {
 		final JKesoidySlide slide = new JKesoidySlide(true);
 		final int polomer = slide.polomerCitlivosti();
 		slide.onEvent(new ZvetseniIkonEvent(200));
-		Assert.assertEquals(2 * polomer, slide.polomerCitlivosti());
+		Assert.assertEquals(2L * polomer, slide.polomerCitlivosti());
 		Assert.assertEquals(new Insets(20, 6, 4, 22), JKesoidySlide.zvetsi(new Insets(10, 3, 2, 11), 2));
+		// překresluje se i okolí zvětšené ikony, jinak by u okraje zůstaly zbytky
+		slide.onEvent(new IkonyNactenyEvent(ikony, ASada.STANDARD));
+		final Insets puvodniInsety = ikony.getSada().getBigiestIconInsets();
+		Assert.assertEquals(JKesoidySlide.zvetsi(puvodniInsety, 2), slide.insetyIkon());
+		Assert.assertNotEquals(puvodniInsety, slide.insetyIkon());
 	}
 
 	private static int neprusvitnych(final BufferedImage img) {

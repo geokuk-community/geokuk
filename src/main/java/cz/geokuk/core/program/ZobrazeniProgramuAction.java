@@ -61,7 +61,7 @@ public class ZobrazeniProgramuAction extends Action0 {
 	}
 
 	static String popisZvetseniIkon(final int procent) {
-		return procent == ZvetseniIkonEvent.AUTO ? "Auto (podle systému)" : znackaZvetseni(procent) + "×";
+		return procent == ZvetseniIkonEvent.AUTO ? "Auto (1×)" : znackaZvetseni(procent) + "×";
 	}
 
 	public ZobrazeniProgramuAction() {

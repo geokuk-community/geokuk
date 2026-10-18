@@ -5,7 +5,7 @@ import cz.geokuk.framework.Event0;
 /** Zvětšení ikon keší na mapě. */
 public class ZvetseniIkonEvent extends Event0<KesoidModel> {
 
-	/** Podle systému: Windows už zvětšuje celé okno, ikony se dál nezvětšují. */
+	/** Auto: Windows už zvětšuje celé okno podle DPI, ikony se dál nezvětšují (1×). */
 	public static final int AUTO = 0;
 	public static final int MIN = 50;
 	public static final int MAX = 500;
