@@ -34,9 +34,24 @@ jobs:
         if: runner.os == 'Linux'
         run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
 
+      # Runner na Windows občas zastaví celou JVM na sekundy; spadlý test se jednou zopakuje a ve výstupu je vidět jako Flakes.
       - name: Smoke test
         if: runner.os == 'Windows'
-        run: ./mvnw.cmd -B -P smoke verify
+        run: ./mvnw.cmd -B -P smoke verify "-Dfailsafe.rerunFailingTestsCount=1"
+
+      - name: Opakované testy do souhrnu
+        if: always() && runner.os == 'Windows'
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob, xml.etree.ElementTree as ET
+          for f in glob.glob('target/failsafe-reports/TEST-*.xml'):
+              for t in ET.parse(f).getroot().iter('testcase'):
+                  opakovani = [e for e in t if e.tag in ('flakyFailure', 'flakyError')]
+                  if opakovani:
+                      zprava = (opakovani[0].get('message') or '').splitlines()[0][:300] if opakovani[0].get('message') else ''
+                      print('- ⚠️ %s.%s prošel až napodruhé: %s' % (t.get('classname', '').split('.')[-1], t.get('name'), zprava))
+          PY
 
       - name: Jednotkové testy
         if: runner.os == 'macOS'

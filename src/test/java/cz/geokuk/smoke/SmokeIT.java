@@ -570,9 +570,17 @@ public class SmokeIT {
 	@Test
 	public void vsechnyPolozkyMenu() throws Exception {
 		final File adresar = pripravAdresar("menu");
-		final Properties zprava = spust(adresar, "menu", "menu,vzhled");
+		final Properties zprava = spust(adresar, "menu", "menu");
 		zkontrolujBezChyb(adresar, zprava);
 		assertTrue(zprava.stringPropertyNames().stream().filter(k -> k.startsWith("menu.")).count() > 50);
+	}
+
+	@Test
+	public void vsechnyVzhledy() throws Exception {
+		final File adresar = pripravAdresar("vzhled");
+		final Properties zprava = spust(adresar, "vzhled", "vzhled");
+		zkontrolujBezChyb(adresar, zprava);
+		assertTrue(zprava.stringPropertyNames().stream().anyMatch(k -> k.startsWith("vzhled.")));
 	}
 
 	private File pripravAdresar(final String jmeno) throws IOException {
@@ -667,6 +675,7 @@ public class SmokeIT {
 		zkontrolujEdt(zprava, "edt.startMs", EDT_LIMIT_START_MS, "při startu: ", problemy);
 		// Přepnutí vzhledu přestaví všechny komponenty okna a na Windows runneru trvá jednotky sekund.
 		zkontrolujEdt(zprava, "edt.vzhledMs", EDT_LIMIT_VZHLED_MS, "při přepnutí vzhledu: ", problemy);
+		vypisPauzyJvm(adresar, zprava);
 		final long pamet = Long.parseLong(zprava.getProperty("pamet.mb", "0"));
 		if (pamet > 400) {
 			problemy.add("Po scénáři zůstalo obsazeno " + pamet + " MB paměti");
@@ -696,6 +705,12 @@ public class SmokeIT {
 		} catch (final IOException e) {
 			return "Log " + log + " nejde přečíst: " + e;
 		}
+	}
+
+	/** Události, které přes limit protáhla pauza JVM (runner stál i s vzorkovačem), test neshodí; ať jsou aspoň vidět ve výstupu. */
+	private static void vypisPauzyJvm(final File adresar, final Properties zprava) {
+		zprava.stringPropertyNames().stream().filter(k -> k.startsWith("edt.pomala.")).sorted().map(zprava::getProperty).filter(p -> p.contains("\nPauza JVM "))
+				.forEach(p -> System.out.println("VAROVÁNÍ " + adresar.getName() + ": událost na EDT protáhla pauza JVM: " + p.replace('\n', ' ')));
 	}
 
 	private static void zkontrolujEdt(final Properties zprava, final String klic, final long limitMs, final String druh, final List<String> problemy) {
