@@ -118,7 +118,7 @@ public class OfflineMapy {
 		return Math.max(1, Math.min(3, Math.round(meritkoDispleje * 4) / 4.0));
 	}
 
-	/** Nastaví velikost písma a značek (1 = 100 %), zaokrouhlenou na 5 % v rozsahu 80–150 %; mapy se vykreslí znovu. */
+	/** Nastaví velikost písma a značek (1 = 100 %), zaokrouhlenou na 5 % v rozsahu 80–200 %; mapy se vykreslí znovu. */
 	public void nastavPismo(final double velikost) {
 		pismo = zaokrouhliPismo(velikost);
 	}
@@ -127,7 +127,7 @@ public class OfflineMapy {
 		if (Double.isNaN(velikost)) {
 			return 1;
 		}
-		return Math.max(0.8, Math.min(1.5, Math.round(velikost * 20) / 20.0));
+		return Math.max(0.8, Math.min(2, Math.round(velikost * 20) / 20.0));
 	}
 
 	public double getMeritko() {

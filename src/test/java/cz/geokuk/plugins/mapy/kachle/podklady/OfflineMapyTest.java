@@ -481,7 +481,8 @@ public class OfflineMapyTest {
 	public void pismoNaPetProcent() {
 		Assert.assertEquals(1, OfflineMapy.zaokrouhliPismo(1.0), 0);
 		Assert.assertEquals(0.8, OfflineMapy.zaokrouhliPismo(0.5), 0);
-		Assert.assertEquals(1.5, OfflineMapy.zaokrouhliPismo(3), 0);
+		Assert.assertEquals(2, OfflineMapy.zaokrouhliPismo(3), 0);
+		Assert.assertEquals(1.75, OfflineMapy.zaokrouhliPismo(1.76), 0);
 		Assert.assertEquals(1.05, OfflineMapy.zaokrouhliPismo(1.06), 0);
 		Assert.assertEquals(1, OfflineMapy.zaokrouhliPismo(Double.NaN), 0);
 	}

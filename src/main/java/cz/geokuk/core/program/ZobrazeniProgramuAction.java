@@ -41,6 +41,16 @@ public class ZobrazeniProgramuAction extends Action0 {
 		this.kesoidModel = kesoidModel;
 	}
 
+	/** Velikost offline mapy (písmo, symboly, čáry) v procentech, po 5 %. */
+	static JSlider posuvnikMapy() {
+		final JSlider s = new JSlider(80, 200, 100);
+		s.setMinorTickSpacing(5);
+		s.setMajorTickSpacing(20);
+		s.setSnapToTicks(true);
+		s.setPaintTicks(true);
+		return s;
+	}
+
 	/** Násobek k procentům, třeba „1,5“; Auto jako „Auto“. */
 	static String znackaZvetseni(final int procent) {
 		if (procent == ZvetseniIkonEvent.AUTO) {
@@ -117,7 +127,7 @@ public class ZobrazeniProgramuAction extends Action0 {
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		final JRadioButton ostra = new JRadioButton(OSTRA);
 		final JRadioButton rychlejsi = new JRadioButton(RYCHLEJSI);
-		final JSpinner pismo = new JSpinner(new SpinnerNumberModel(100, 80, 150, 5));
+		final JSlider pismo = posuvnikMapy();
 		final JPosuvnikPredvoleb ikony = kesoidModel == null ? null
 				: new JPosuvnikPredvoleb(PREDVOLBY_IKON, kesoidModel.getZvetseniIkonProcent(), ZobrazeniProgramuAction::znackaZvetseni, ZobrazeniProgramuAction::popisZvetseniIkon);
 		final JPanel mapa = ramecek("Mapa (platí hned)");
@@ -131,17 +141,21 @@ public class ZobrazeniProgramuAction extends Action0 {
 			ostra.setToolTipText(rada);
 			rychlejsi.setToolTipText(rada);
 			pismo.setValue(kachleModel.getOfflineMapaPismoProcent());
-			pismo.setToolTipText("Velikost popisků a symbolů offline mapy.");
+			pismo.setToolTipText("Velikost popisků, symbolů a čar offline mapy.");
 			final JPanel volbyOstrosti = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 			volbyOstrosti.add(ostra);
 			volbyOstrosti.add(Box.createHorizontalStrut(8));
 			volbyOstrosti.add(rychlejsi);
 			final JPanel velikost = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+			final JLabel procent = new JLabel();
+			final Runnable obnov = () -> procent.setText(pismo.getValue() + " %");
+			pismo.addChangeListener(ev -> obnov.run());
+			obnov.run();
 			velikost.add(pismo);
-			velikost.add(new JLabel("%"));
+			velikost.add(procent);
 			final JLabel popisOstrosti = new JLabel("Offline mapa:");
 			popisOstrosti.setToolTipText(rada);
-			final JLabel popisPisma = new JLabel("Písmo a ikony na mapě:");
+			final JLabel popisPisma = new JLabel("Mapa (offline):");
 			popisPisma.setLabelFor(pismo);
 			radek(mapa, 0, popisOstrosti, volbyOstrosti);
 			radek(mapa, 1, popisPisma, velikost);
@@ -169,7 +183,7 @@ public class ZobrazeniProgramuAction extends Action0 {
 			return;
 		}
 		if (kachleModel != null) {
-			kachleModel.setVzhledOfflineMapy(ostra.isSelected(), ((Number) pismo.getValue()).intValue());
+			kachleModel.setVzhledOfflineMapy(ostra.isSelected(), pismo.getValue());
 		}
 		if (ikony != null) {
 			kesoidModel.setZvetseniIkonProcent(ikony.getHodnota());

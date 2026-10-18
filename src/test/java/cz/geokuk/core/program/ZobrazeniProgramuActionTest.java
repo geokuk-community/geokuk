@@ -58,6 +58,15 @@ public class ZobrazeniProgramuActionTest {
 	}
 
 	@Test
+	public void posuvnikMapyOd80Do200Po5() {
+		final JSlider s = ZobrazeniProgramuAction.posuvnikMapy();
+		Assert.assertEquals(80, s.getMinimum());
+		Assert.assertEquals(200, s.getMaximum());
+		Assert.assertEquals(5, s.getMinorTickSpacing());
+		Assert.assertTrue(s.getSnapToTicks());
+	}
+
+	@Test
 	public void akceJeVzdyDostupna() {
 		Assert.assertTrue(new ZobrazeniProgramuAction().isEnabled());
 	}
