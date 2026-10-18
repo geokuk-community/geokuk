@@ -78,6 +78,9 @@ public abstract class Nacitac0 {
 			if (DatabazeJinehoProgramu.jeZamcena(e)) {
 				throw new DatabazeJinehoProgramu.Zamcena(file, e);
 			}
+			if (RozepsanySoubor.jeRozepsany(file)) {
+				throw new RozepsanySoubor.Rozepsany(file, e);
+			}
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Problém při načítání keší, ostatní soubory se načtou");
 		} catch (final StackOverflowError | OutOfMemoryError e) {
 			// Poškozený soubor (třeba EXIF fotky) nesmí ukončit načítání ostatních.
