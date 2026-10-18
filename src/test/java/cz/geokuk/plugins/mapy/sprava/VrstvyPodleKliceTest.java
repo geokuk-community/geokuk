@@ -85,13 +85,13 @@ public class VrstvyPodleKliceTest {
 
 	/** Katalog s trasami a stínováním Bavorska; assety bez lomítek, jako v GitHub Releases. */
 	private String katalogBavorska() throws IOException {
-		data.put("layers-2026-10/europe_germany_bayern.routes.map", StahovacMapyTest.kukov());
+		data.put("layers-2026-10/europe_germany_bayern.tourist.map", StahovacMapyTest.kukov());
 		data.put("layers-2026-10/europe_germany_bayern.dem.zip", "dem".getBytes(StandardCharsets.US_ASCII));
-		final byte[] t = data.get("layers-2026-10/europe_germany_bayern.routes.map");
+		final byte[] t = data.get("layers-2026-10/europe_germany_bayern.tourist.map");
 		final byte[] d = data.get("layers-2026-10/europe_germany_bayern.dem.zip");
 		return "{\"version\": 1, \"sources\": [\"" + zaklad() + "\"], \"layers\": ["
-				+ KatalogVrstevTest.vrstva("routes/europe/germany/bayern", "routes", "europe/germany/bayern", "map", KatalogVrstevTest.soubor("europe_germany_bayern.routes.map",
-						"europe/germany/bayern.routes.map", "layers-2026-10/europe_germany_bayern.routes.map", t.length, sha(t)), "")
+				+ KatalogVrstevTest.vrstva("tourist/europe/germany/bayern", "tourist", "europe/germany/bayern", "map", KatalogVrstevTest.soubor("europe_germany_bayern.tourist.map",
+						"europe/germany/bayern.tourist.map", "layers-2026-10/europe_germany_bayern.tourist.map", t.length, sha(t)), "")
 				+ "," + KatalogVrstevTest.vrstva("dem/europe/germany/bayern", "dem", "europe/germany/bayern", "hgt-zip", KatalogVrstevTest.soubor(
 						"europe_germany_bayern.dem.zip", "europe/germany/bayern.dem.zip", "layers-2026-10/europe_germany_bayern.dem.zip", d.length, sha(d)), "")
 				+ "]}";
@@ -115,23 +115,23 @@ public class VrstvyPodleKliceTest {
 			assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
 			assertEquals(Mistni.MAME, s.getMistni());
 		}
-		final File naDisku = new File(slozka, "europe/germany/bayern.routes.map");
+		final File naDisku = new File(slozka, "europe/germany/bayern.tourist.map");
 		assertArrayEquals(StahovacMapyTest.kukov(), Files.readAllBytes(naDisku.toPath()));
 		assertTrue(new File(slozka, "europe/germany/bayern.dem.zip").isFile());
 		assertEquals(Collections.singletonList(naDisku), SouboryVrstev.mapy(slozka));
 		assertEquals(Collections.singletonList(new File(slozka, "europe/germany/bayern.dem.zip")), SouboryVrstev.dem(slozka));
-		assertSame(trasy, k.podleCesty("europe/germany/bayern.routes.map").get());
+		assertSame(trasy, k.podleCesty("europe/germany/bayern.tourist.map").get());
 	}
 
 	@Test
 	public void souboryVrstevNajdouJenVrstvy() throws IOException {
 		final File slozka = tmp.newFolder("vrstvy");
 		new File(slozka, "europe/germany").mkdirs();
-		for (final String f : Arrays.asList("europe/czech-republic.routes.map", "europe/czech-republic.routes.map.sha256", "europe/germany/bayern.routes.map.stahuje",
+		for (final String f : Arrays.asList("europe/czech-republic.tourist.map", "europe/czech-republic.tourist.map.sha256", "europe/germany/bayern.tourist.map.stahuje",
 				"europe/germany/bayern.contours.MAP", "europe/germany/bayern.dem.zip", "europe/germany/N48E011.hgt", "._skryty.map", "vrstvy.json")) {
 			Files.write(new File(slozka, f).toPath(), new byte[1]);
 		}
-		assertEquals(Arrays.asList(new File(slozka, "europe/czech-republic.routes.map"), new File(slozka, "europe/germany/bayern.contours.MAP")),
+		assertEquals(Arrays.asList(new File(slozka, "europe/czech-republic.tourist.map"), new File(slozka, "europe/germany/bayern.contours.MAP")),
 				SouboryVrstev.mapy(slozka));
 		assertEquals(Arrays.asList(new File(slozka, "europe/germany/bayern.dem.zip"), new File(slozka, "europe/germany/N48E011.hgt")), SouboryVrstev.dem(slozka));
 		assertEquals(Collections.emptyList(), SouboryVrstev.mapy(new File(slozka, "neni")));
@@ -306,7 +306,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final File stara = new File(mapy, "vrstvy/europe");
 		assertTrue(stara.mkdirs());
-		Files.write(new File(stara, "czech-republic.routes.map").toPath(), new byte[] { 1 });
+		Files.write(new File(stara, "czech-republic.tourist.map").toPath(), new byte[] { 1 });
 		Files.write(new File(mapy, "vrstvy/vrstvy.json").toPath(), "{}".getBytes(StandardCharsets.US_ASCII));
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
 		model.nastavProTest(() -> mapy, e -> {
@@ -314,7 +314,7 @@ public class VrstvyPodleKliceTest {
 		model.obnovStavy();
 		model.pockej();
 		assertFalse(new File(mapy, "vrstvy").exists());
-		assertTrue(new File(mapy, "layers/europe/czech-republic.routes.map").isFile());
+		assertTrue(new File(mapy, "layers/europe/czech-republic.tourist.map").isFile());
 		assertFalse("kopie katalogu ve starém formátu pryč", new File(mapy, "layers/vrstvy.json").exists());
 		assertEquals(new File(mapy, "layers"), model.getSlozkaVrstev());
 
@@ -323,6 +323,6 @@ public class VrstvyPodleKliceTest {
 		model.obnovStavy();
 		model.pockej();
 		assertTrue(new File(mapy, "vrstvy").isDirectory());
-		assertTrue(new File(mapy, "layers/europe/czech-republic.routes.map").isFile());
+		assertTrue(new File(mapy, "layers/europe/czech-republic.tourist.map").isFile());
 	}
 }

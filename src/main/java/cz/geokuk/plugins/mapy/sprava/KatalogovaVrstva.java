@@ -9,8 +9,8 @@ import java.util.List;
 public final class KatalogovaVrstva {
 
 	public enum Typ {
-		/** Turistické, cyklo a další trasy (.map). */
-		TRASY("routes"),
+		/** Turistická vrstva: trasy, skály a body pro orientaci (.map). */
+		TRASY("tourist"),
 		/** Vrstevnice (.map). */
 		VRSTEVNICE("contours"),
 		/** Výškový model pro stínování (zip s dlaždicemi .hgt). */
@@ -22,7 +22,7 @@ public final class KatalogovaVrstva {
 			this.kod = kod;
 		}
 
-		/** Kód typu v katalogu a ve jméně souboru vrstvy („routes“, „contours“, „dem“). */
+		/** Kód typu v katalogu a ve jméně souboru vrstvy („tourist“, „contours“, „dem“). */
 		public String getKod() {
 			return kod;
 		}
@@ -90,7 +90,7 @@ public final class KatalogovaVrstva {
 		}
 
 		/**
-		 * Cesta ve složce vrstev s lomítky: klíč základní mapy, typ vrstvy a přípona, například „europe/czech-republic.routes.map“. Podsložky odpovídají cestě
+		 * Cesta ve složce vrstev s lomítky: klíč základní mapy, typ vrstvy a přípona, například „europe/czech-republic.tourist.map“. Podsložky odpovídají cestě
 		 * mapy na serveru map.
 		 */
 		public String getCesta() {
@@ -168,7 +168,7 @@ public final class KatalogovaVrstva {
 		this.poznamka = poznamka;
 	}
 
-	/** Například „routes/europe/czech-republic“. */
+	/** Například „tourist/europe/czech-republic“. */
 	public String getId() {
 		return id;
 	}

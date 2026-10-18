@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
 
-/** Stažené vrstvy ve složce vrstev; leží v podsložkách podle cesty základní mapy na serveru (europe/germany/bayern.routes.map). */
+/** Stažené vrstvy ve složce vrstev; leží v podsložkách podle cesty základní mapy na serveru (europe/germany/bayern.tourist.map). */
 @Slf4j
 public final class SouboryVrstev {
 

@@ -167,7 +167,7 @@ public class JMapyPopupTest {
 				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
 						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
 				Collections.emptyList(), null, vrstvy,
-				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("routes") ? trasy : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, faze, 0, null));
+				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? trasy : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, faze, 0, null));
 	}
 
 	private static RadekMapy cesko(final List<RadekMapy> radky) {
@@ -194,7 +194,7 @@ public class JMapyPopupTest {
 				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY,
 						cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
 				Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(),
-				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
 						cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null));
 		Assert.assertTrue(cesko(radky).isVeSlozce());
 		Assert.assertFalse(radky.stream().filter(r -> "europe/austria".equals(r.id)).findFirst().get().isVeSlozce());
@@ -217,7 +217,7 @@ public class JMapyPopupTest {
 			for (final JButton b : vrstvy) {
 				b.doClick();
 			}
-			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu routes/europe/czech-republic"));
+			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu tourist/europe/czech-republic"));
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu contours/europe/czech-republic"));
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniVrstvu dem/europe/czech-republic"));
 			for (final JButton b : tlacitkaSTextem(p, JMapyPopup.STAHNOUT)) {
@@ -239,7 +239,7 @@ public class JMapyPopupTest {
 			final List<JButton> smazat = tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU);
 			Assert.assertEquals("jen stažená vrstva (trasy), ne ty ke stažení", 1, smazat.size());
 			smazat.get(0).doClick();
-			Assert.assertEquals(Collections.singletonList("smazVrstvu routes/europe/czech-republic"), z.volani);
+			Assert.assertEquals(Collections.singletonList("smazVrstvu tourist/europe/czech-republic"), z.volani);
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
 			Assert.assertTrue("stahovaná vrstva se nemaže", tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU).isEmpty());
 			final List<RadekMapy> sJinouMapou = new ArrayList<>(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
@@ -268,7 +268,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
-					v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("routes") ? 7_500_000 : 0, null)));
+					v.getId().startsWith("tourist") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("tourist") ? 7_500_000 : 0, null)));
 			Assert.assertEquals("řádek se stahovanou vrstvou je nahoře v oddílu pro zobrazené místo", 1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
 			Assert.assertFalse(tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
 			Assert.assertTrue(labels(p).stream().anyMatch(l -> "30 %".equals(l.getText())));
@@ -279,7 +279,7 @@ public class JMapyPopupTest {
 	@Test
 	public void vrstvyNejdeStahovatPriJinemStahovani() throws Exception {
 		final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> vrstvy = v -> {
-			if (v.getId().startsWith("routes")) {
+			if (v.getId().startsWith("tourist")) {
 				return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.JINA_VERZE, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getVelikost(), null);
 			}
 			if (v.getId().startsWith("contours")) {
@@ -421,7 +421,7 @@ public class JMapyPopupTest {
 							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
 					Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(),
 					v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
-							v.getId().startsWith("routes") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("routes") ? 7_500_000 : 0, null));
+							v.getId().startsWith("tourist") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("tourist") ? 7_500_000 : 0, null));
 			p.obnov(sVrstvou);
 			Assert.assertEquals("řádek se stahovanou vrstvou je vidět i při sbalení", 1, videtLabelu(p, "Česko"));
 			Assert.assertTrue(labels(p).stream().anyMatch(l -> "30 %".equals(l.getText()) && jeVidet(l)));
@@ -1323,7 +1323,7 @@ public class JMapyPopupTest {
 	@Test
 	public void dveBeziciVrstvyTehozRadku() throws Exception {
 		final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva, cz.geokuk.plugins.mapy.sprava.StavVrstvy> vrstvy = v -> {
-			if (v.getId().startsWith("routes") || v.getId().startsWith("contours")) {
+			if (v.getId().startsWith("tourist") || v.getId().startsWith("contours")) {
 				return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 1, null);
 			}
 			return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null);

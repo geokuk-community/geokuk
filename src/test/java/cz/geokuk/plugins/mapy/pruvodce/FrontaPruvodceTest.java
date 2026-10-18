@@ -41,7 +41,7 @@ public class FrontaPruvodceTest {
 	}
 
 	private static final String MAPA = CZ;
-	private static final String TRASY = "routes/" + CZ;
+	private static final String TRASY = "tourist/" + CZ;
 	private static final String VRSTEVNICE = "contours/" + CZ;
 
 	private static Map<String, StavBunky> stavy(final StavBunky mapa, final StavBunky trasy, final StavBunky vrstevnice) {

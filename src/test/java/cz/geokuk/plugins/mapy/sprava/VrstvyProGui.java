@@ -13,7 +13,7 @@ public final class VrstvyProGui {
 	public static KatalogVrstev katalogCesko() {
 		try {
 			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(
-					KatalogVrstevTest.vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map",
+					KatalogVrstevTest.vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map",
 							KatalogVrstevTest.soubor("czech_republic_trasy.map", "v1/czech_republic_trasy.map", 25_000_000, SHA), ", \"dataDate\": \"2026-10-13\""),
 					KatalogVrstevTest.vrstva("contours/europe/czech-republic", "contours", "europe/czech-republic", "map",
 							KatalogVrstevTest.soubor("czech_republic_vrstevnice.map", "v1/czech_republic_vrstevnice.map", 266_000_000, SHA), ""),
@@ -29,7 +29,7 @@ public final class VrstvyProGui {
 	public static KatalogVrstev katalogNemecko() {
 		try {
 			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(
-					KatalogVrstevTest.vrstva("routes/europe/germany", "routes", "europe/germany", "map", KatalogVrstevTest.soubor("germany_trasy.map", "v1/germany_trasy.map", 100_000_000, SHA), ""),
+					KatalogVrstevTest.vrstva("tourist/europe/germany", "tourist", "europe/germany", "map", KatalogVrstevTest.soubor("germany_trasy.map", "v1/germany_trasy.map", 100_000_000, SHA), ""),
 					KatalogVrstevTest.vrstva("contours/europe/germany/bayern", "contours", "europe/germany/bayern", "map",
 							KatalogVrstevTest.soubor("bayern_vrstevnice.map", "v1/bayern_vrstevnice.map", 50_000_000, SHA), ""),
 					KatalogVrstevTest.vrstva("contours/europe/germany/sachsen", "contours", "europe/germany/sachsen", "map",

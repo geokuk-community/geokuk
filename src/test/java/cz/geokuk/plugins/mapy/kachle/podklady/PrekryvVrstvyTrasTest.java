@@ -13,7 +13,7 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 
 /**
- * Překryv tras ze stažené vrstvy tras (layers/…/*.routes.map) i bez základní mapy: syntetická vrstva {@code vrstva.routes.map} s červenou a modrou turistickou
+ * Překryv tras ze stažené vrstvy tras (layers/…/*.tourist.map) i bez základní mapy: syntetická vrstva {@code vrstva.tourist.map} s červenou a modrou turistickou
  * trasou a cyklotrasou (tagy fmrel* jako z geokuk-maps), bez silnic.
  */
 public class PrekryvVrstvyTrasTest {
@@ -71,7 +71,7 @@ public class PrekryvVrstvyTrasTest {
 
 	@Test(timeout = 30000)
 	public void trasyZeVrstvyBezZakladniMapy() throws IOException {
-		zkopiruj("/offline-mapy-trasy/vrstva.routes.map", new File(vrstvy, "kukov.routes.map"));
+		zkopiruj("/offline-mapy-trasy/vrstva.tourist.map", new File(vrstvy, "kukov.tourist.map"));
 		Assert.assertEquals("základní mapa ve složce není", Collections.emptyList(), OfflineMapy.mapyVeSlozce(slozka));
 		final OfflineRenderer r = trasy.pouzij();
 		try {
@@ -103,11 +103,11 @@ public class PrekryvVrstvyTrasTest {
 		for (final String f : Arrays.asList("czech-republic.map", "austria.map", "moje.map")) {
 			Files.write(new File(slozka, f).toPath(), new byte[1]);
 		}
-		Files.write(new File(vrstvy, "czech-republic.routes.map").toPath(), new byte[1]);
+		Files.write(new File(vrstvy, "czech-republic.tourist.map").toPath(), new byte[1]);
 		Files.write(new File(vrstvy, "czech-republic.contours.map").toPath(), new byte[1]);
 		Assert.assertTrue(new File(vrstvy, "germany").mkdir());
-		Files.write(new File(vrstvy, "germany/bayern.routes.map").toPath(), new byte[1]);
-		Assert.assertEquals(Arrays.asList(new File(vrstvy, "czech-republic.routes.map"), new File(vrstvy, "germany/bayern.routes.map"),
+		Files.write(new File(vrstvy, "germany/bayern.tourist.map").toPath(), new byte[1]);
+		Assert.assertEquals(Arrays.asList(new File(vrstvy, "czech-republic.tourist.map"), new File(vrstvy, "germany/bayern.tourist.map"),
 				new File(slozka, "austria.map"), new File(slozka, "moje.map")), OfflineMapy.mapyPrekryvu(slozka, false));
 		Assert.assertEquals(Collections.emptyList(), OfflineMapy.mapyPrekryvu(null, false));
 		Assert.assertEquals("vrstvy tras kreslí podklad, překryv bere jen základní mapy",
@@ -121,7 +121,7 @@ public class PrekryvVrstvyTrasTest {
 		final OfflineRenderer r0 = trasy.pouzij();
 		r0.skonci();
 		Assert.assertEquals(1, r0.getPocetMap());
-		zkopiruj("/offline-mapy-trasy/vrstva.routes.map", new File(vrstvy, "kukov.routes.map"));
+		zkopiruj("/offline-mapy-trasy/vrstva.tourist.map", new File(vrstvy, "kukov.tourist.map"));
 		trasy.zkontrolujSlozku();
 		trasy.zkontrolujSlozku();
 		final OfflineRenderer r1 = trasy.pouzij();
@@ -134,7 +134,7 @@ public class PrekryvVrstvyTrasTest {
 	@Test(timeout = 30000)
 	public void vrstvuTrasKresliPodklad() throws IOException {
 		PrekryvTrasTest.zkopirujMapu(slozka);
-		zkopiruj("/offline-mapy-trasy/vrstva.routes.map", new File(vrstvy, "kukov.routes.map"));
+		zkopiruj("/offline-mapy-trasy/vrstva.tourist.map", new File(vrstvy, "kukov.tourist.map"));
 		final OfflineRenderer r0 = trasy.pouzij();
 		r0.skonci();
 		Assert.assertEquals(2, r0.getPocetMap());

@@ -43,7 +43,7 @@ public class SmazaniSouboruTest {
 	public void souboryVrstvyVcetneSouctuARozpracovanych() throws Exception {
 		final File slozka = tmp.newFolder("layers");
 		final KatalogVrstev katalog = VrstvyProGui.katalogCesko();
-		final KatalogovaVrstva trasy = katalog.podleId("routes/europe/czech-republic").get();
+		final KatalogovaVrstva trasy = katalog.podleId("tourist/europe/czech-republic").get();
 		final String cesta = trasy.getSoubory().get(0).getCesta();
 		final String vrstevnice = katalog.podleId("contours/europe/czech-republic").get().getSoubory().get(0).getCesta();
 		new File(slozka, cesta).getParentFile().mkdirs();

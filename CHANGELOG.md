@@ -34,7 +34,9 @@
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistické a
   cyklotrasy, vrstevnice a stínování terénu (sloupce Trasy, Vrstevnice a
   Stínování), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí
-  spolu s offline mapou, stínování jde vypnout. Seznam vrstev ke stažení si
+  spolu s offline mapou, stínování jde vypnout. Trasy jsou ve vrstvě
+  `*.tourist.map`; vrstvy `*.routes.map` z betaverzí je potřeba ze složky
+  layers smazat a trasy stáhnout znovu. Seznam vrstev ke stažení si
   program sám obnoví při startu a při otevření panelu; jestli je novější,
   ověří nejvýš jednou za hodinu a hned po Zkontrolovat aktualizace.
   Mapy ve složce jde sbalit a stažené regiony jsou seskupené pod zemí.
