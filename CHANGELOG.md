@@ -124,6 +124,8 @@
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
   nové verze má odkaz Co je nového ve verzi …, který ukáže popis všech verzí
   od používané po nabízenou.
+- Offline mapa se stínováním terénu se při oddálení (celá země, kraj)
+  kreslí několikrát rychleji a potřebuje méně paměti.
 
 ### Opravy
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
