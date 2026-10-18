@@ -39,7 +39,7 @@ public class StinovaniTerenuTest {
 	@Test
 	public void podrobneJeStinovaniShodneSPlnymRozlisenim() throws IOException {
 		final HgtFileInfo info = teren();
-		// z11 a víc: na stupeň připadá víc pixelů dlaždice než bodů HGT
+		// podrobně: na stupeň připadá v obou směrech víc pixelů dlaždice než bodů HGT
 		for (final double px : new double[] { 400, 2264, 9000 }) {
 			final RawShadingResult plne = new DiffuseLightShadingAlgorithm().transformToByteBuffer(info, 1, 11, px, px);
 			final RawShadingResult nove = new StinovaniTerenu().transformToByteBuffer(info, 1, 11, px, px);
@@ -54,16 +54,20 @@ public class StinovaniTerenuTest {
 		final HgtFileInfo info = teren();
 		final StinovaniTerenu s = new StinovaniTerenu();
 		final RawShadingResult r = s.transformToByteBuffer(info, 1, 7, 90, 60);
-		Assert.assertEquals(90, r.width);
-		Assert.assertEquals(92 * 92, r.bytes.length);
+		Assert.assertEquals(60, r.width); // podle užšího směru
+		Assert.assertEquals(r.width, s.getOutputAxisLen(info, 7, 90, 60));
+		Assert.assertEquals(62 * 62, r.bytes.length);
+		Assert.assertEquals(r.bytes.length, s.getOutputSizeBytes(info, 1, 7, 90, 60));
 		Assert.assertNotEquals(s.getCacheTag(info, 1, 7, 90, 60), s.getCacheTag(info, 1, 11, 400, 400));
 	}
 
 	@Test
 	public void krokStaciNaPixelyDlazdice() {
-		Assert.assertEquals(6, StinovaniTerenu.krok(3600, 566)); // z9, 50° s. š.
-		Assert.assertEquals(3, StinovaniTerenu.krok(3600, 1132)); // z10
-		Assert.assertEquals(1, StinovaniTerenu.krok(3600, 2264)); // z11
+		// px na stupeň zeměpisné délky dlaždice 256 px
+		Assert.assertEquals(9, StinovaniTerenu.krok(3600, 364)); // z9
+		Assert.assertEquals(4, StinovaniTerenu.krok(3600, 728)); // z10
+		Assert.assertEquals(2, StinovaniTerenu.krok(3600, 1456)); // z11
+		Assert.assertEquals(1, StinovaniTerenu.krok(3600, 2913)); // z12
 		Assert.assertEquals(1, StinovaniTerenu.krok(1200, 2000)); // 3" HGT podrobně
 		for (int px = 1; px < 4000; px += 37) {
 			final int k = StinovaniTerenu.krok(3600, px);

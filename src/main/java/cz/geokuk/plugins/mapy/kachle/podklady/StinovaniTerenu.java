@@ -9,11 +9,11 @@ import org.mapsforge.map.layer.hills.HgtFileInfo;
 
 /**
  * Stínování terénu jako {@link DiffuseLightShadingAlgorithm}, ale při oddálení počítá z řidší mřížky výšek: bitmapa stínování má jen tolik bodů na stupeň, kolik má
- * dlaždice pixelů. HGT se čte najednou, ne po bajtech.
+ * dlaždice pixelů ve směru s menším počtem pixelů na stupeň (zeměpisná délka). HGT se čte najednou, ne po bajtech.
  */
 class StinovaniTerenu extends DiffuseLightShadingAlgorithm {
 
-	/** Kolikrát víc bodů na stupeň než pixelů dlaždice má bitmapa stínování; při kreslení se zmenšuje, ne zvětšuje. */
+	/** Kolikrát víc bodů na stupeň než pixelů dlaždice má bitmapa stínování. */
 	private static final double PREVZORKOVANI = 1.0;
 
 	/** Po kolika bodech HGT se bere výška: největší dělitel délky osy, se kterým má bitmapa aspoň tolik bodů na stupeň, kolik pixelů dlaždice. */
@@ -28,7 +28,7 @@ class StinovaniTerenu extends DiffuseLightShadingAlgorithm {
 	}
 
 	private static int krok(final HgtFileInfo info, final double pxPerLat, final double pxPerLon) {
-		return krok(info.getAxisLen(), Math.max(pxPerLat, pxPerLon));
+		return krok(info.getAxisLen(), Math.min(pxPerLat, pxPerLon));
 	}
 
 	@Override
