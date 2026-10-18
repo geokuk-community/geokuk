@@ -224,6 +224,7 @@ public class KachleModel extends Model0 {
 		fajrujPrekryvTras();
 		fire(new ObrysPokrytiEvent(isObrysPokryti()));
 		hlidaniSlozky.scheduleWithFixedDelay(this::zkontrolujSlozkuOfflineMap, 2, 2, TimeUnit.SECONDS);
+		ziskavac.spustPredvykresleniPrehledu();
 	}
 
 	void zkontrolujSlozkuOfflineMap() {
