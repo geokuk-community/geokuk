@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Téma Turistická: upravená kopie default.xml z mapsforge-themes 0.25.0.
+<!-- Téma GeoKuk: upravená kopie default.xml z mapsforge-themes 0.25.0.
      Původní dílo: Copyright 2010-2013 mapsforge.org, 2014 Ludwig M Brinckmann, 2014-2024 devemux86, 2024-2025 Sublimis a další
      přispěvatelé, GNU LGPL verze 3 nebo novější (omezení §4(d) a §4(e) se neuplatní).
      Upraveno pro GeoKuk v roce 2026 (barvy, obrysy, počet ikon, turistické značení a cyklotrasy podle tagů dat); úpravy jsou pod toutéž licencí.
@@ -47,7 +47,7 @@
     </rule>
 
     <rule e="way" k="landuse|natural" v="meadow|grassland" zoom-min="13">
-        <area fill="#BBEDE6BE" stroke="#E0E4B4" stroke-width="0.1" />
+        <area fill="#D6EBBC" stroke="#D6EBBC" stroke-width="0.1" />
     </rule>
     <rule e="way" k="landuse" v="field|farm|farmland|orchard|vineyard" zoom-min="13">
         <area fill="#F1F0E5" />
@@ -60,8 +60,10 @@
         <area fill="#FAEBB9" />
     </rule>
     <rule e="way" k="natural" v="rock|stone|bare_rock|bedrock" zoom-min="14">
-        <area fill="#BBF1F1F1" stroke="#F1F1F1" stroke-width="0.1" />
-        <area src="jar:patterns/hills.svg" symbol-height="40" symbol-width="40" />
+        <area fill="#80B8B2A6" stroke="#7F7B6F" stroke-width="0.15" />
+        <rule e="way" k="*" v="*" zoom-min="16">
+            <area src="file:symbols/rock-pattern.svg" symbol-width="22" symbol-height="22" />
+        </rule>
     </rule>
     <rule e="way" k="natural" v="heath" zoom-min="14">
         <area fill="#BBEBF7E4" stroke="#EBF7E4" stroke-width="0.1" />
@@ -73,6 +75,10 @@
     </rule>
     <rule e="way" k="natural" v="fell" zoom-min="14">
         <area fill="#BBE9FCE6" stroke="#E9FCE6" stroke-width="0.1" />
+    </rule>
+    <rule e="way" k="natural" v="cliff" zoom-min="15">
+        <line stroke="#6F6A5E" stroke-width="0.6" stroke-linecap="butt" />
+        <lineSymbol src="file:symbols/cliff.svg" repeat="true" repeat-gap="14" repeat-start="5" rotate="true" symbol-width="8" symbol-height="16" />
     </rule>
     <rule e="way" k="natural" v="scree" zoom-min="14">
         <area fill="#BBF5F5F5" stroke="#F5F5F5" stroke-width="0.1" />
@@ -504,9 +510,9 @@
         </rule>
         <rule e="way" k="highway"
             v="tertiary|tertiary_link|secondary_link|primary_link|trunk_link|motorway_link|secondary|primary|trunk">
-            <line stroke="#333333" stroke-linecap="butt" stroke-width="3.0" />
-            <line stroke="#EEEEEE" stroke-linecap="butt" stroke-width="2.4" />
-            <line stroke="#000000" stroke-linecap="butt" stroke-width="2.0" />
+            <line stroke="#8C8478" stroke-linecap="butt" stroke-width="2.4" />
+            <line stroke="#F5F0E6" stroke-linecap="butt" stroke-width="2.0" />
+            <line stroke="#B8AC94" stroke-linecap="butt" stroke-width="1.7" />
         </rule>
         <rule e="way" k="highway" v="motorway">
             <line stroke="#333333" stroke-linecap="butt" stroke-width="3.5" />
@@ -568,7 +574,7 @@
                     <line stroke="#C99A5B" stroke-width="2.0" />
                 </rule>
                 <rule e="way" k="highway" v="tertiary|tertiary_link" zoom-min="11">
-                    <line stroke="#C99A5B" stroke-width="2.0" />
+                    <line stroke="#D2BE96" stroke-width="1.7" />
                 </rule>
                 <rule e="way" k="highway" v="motorway">
                     <line stroke="#4E9348" stroke-width="2.5" />
@@ -644,7 +650,7 @@
                 <line stroke="#FFFFFF" stroke-width="1.3" />
             </rule>
             <rule e="way" k="highway" v="tertiary|tertiary_link" zoom-min="11">
-                <line stroke="#FFE79A" stroke-width="1.5" />
+                <line stroke="#FFEFB8" stroke-width="1.3" />
             </rule>
             <rule e="way" k="highway" v="secondary_link">
                 <line stroke="#FFE79A" stroke-width="1.5" />
@@ -1049,7 +1055,7 @@
     <!-- natural -->
     <rule e="any" k="*" v="*">
         <rule e="node" k="natural" v="cave_entrance" zoom-min="14">
-            <symbol id="cave" src="jar:symbols/poi/cave.svg" />
+            <symbol display="always" id="cave" src="jar:symbols/poi/cave.svg" />
             <rule e="any" k="*" v="*" zoom-min="16">
                 <caption fill="#666666" font-size="12" font-style="bold" k="name" priority="10"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="cave" />
@@ -1079,14 +1085,14 @@
             </rule>
         </rule>
         <rule e="any" k="mountain_pass" v="yes" zoom-min="14">
-            <symbol id="pass" src="jar:symbols/poi/mountain_pass.svg" />
+            <symbol display="always" id="pass" src="jar:symbols/poi/mountain_pass.svg" />
             <rule e="any" k="*" v="*" zoom-min="15">
                 <caption fill="#666666" font-size="12" font-style="bold" k="ele" position="above"
                     priority="10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="pass" />
             </rule>
         </rule>
         <rule e="any" k="natural" v="saddle" zoom-min="14">
-            <symbol id="saddle" src="jar:symbols/poi/mountain_pass.svg" />
+            <symbol display="always" id="saddle" src="jar:symbols/poi/mountain_pass.svg" />
             <caption fill="#666666" font-size="12" font-style="bold" k="name" priority="10"
                 stroke="#FFFFFF" stroke-width="2.0" symbol-id="saddle" />
             <rule e="any" k="*" v="*" zoom-min="15">
@@ -1125,7 +1131,7 @@
                 stroke="#FFFFFF" stroke-width="2.0" symbol-id="embassy" />
         </rule>
         <rule e="any" k="amenity" v="shelter" zoom-min="14">
-            <symbol id="shelter" src="jar:symbols/accommodation/shelter2.svg" />
+            <symbol display="always" id="shelter" src="jar:symbols/accommodation/shelter2.svg" />
             <caption fill="#0092DA" font-size="12" font-style="bold" k="name" priority="10"
                 stroke="#FFFFFF" stroke-width="2.0" symbol-id="shelter" />
         </rule>
@@ -1140,7 +1146,7 @@
     <!-- accommodation -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="tourism" v="alpine_hut" zoom-min="12">
-            <symbol id="alpine-hut" src="jar:symbols/accommodation/alpinehut.svg" />
+            <symbol display="always" id="alpine-hut" src="jar:symbols/accommodation/alpinehut.svg" />
             <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                 stroke-width="2.0" symbol-id="alpine-hut" />
             <caption fill="#0092DA" font-size="12" font-style="bold" k="ele" stroke="#FFFFFF"
@@ -1425,7 +1431,7 @@
     <!-- tourism & POI -->
     <rule e="any" k="*" v="*">
         <rule e="node" k="tourism" v="viewpoint" zoom-min="15">
-            <symbol id="viewpoint" src="jar:symbols/tourist/view_point.svg" />
+            <symbol display="always" id="viewpoint" src="jar:symbols/tourist/view_point.svg" />
             <rule e="any" k="natural" v="~" zoom-min="17">
                 <caption fill="#734A08" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="viewpoint" />
@@ -1450,22 +1456,22 @@
                 stroke-width="2.0" symbol-id="museum" />
         </rule>
         <rule e="any" k="historic" v="castle" zoom-min="14">
-            <symbol src="jar:symbols/tourist/castle2.svg" />
+            <symbol display="always" src="jar:symbols/tourist/castle2.svg" />
         </rule>
         <rule e="any" k="building" v="castle" zoom-min="18">
-            <symbol src="jar:symbols/tourist/castle2.svg" />
+            <symbol display="always" src="jar:symbols/tourist/castle2.svg" />
         </rule>
         <rule e="any" k="historic|building" v="ruins" zoom-min="14">
-            <symbol src="jar:symbols/tourist/ruin.svg" />
+            <symbol display="always" src="jar:symbols/tourist/ruin.svg" />
         </rule>
         <rule e="any" k="historic" v="monument" zoom-min="15">
-            <symbol src="jar:symbols/tourist/monument.svg" />
+            <symbol display="always" src="jar:symbols/tourist/monument.svg" />
         </rule>
         <rule e="any" k="historic" v="memorial" zoom-min="19">
             <symbol src="jar:symbols/tourist/memorial.svg" />
         </rule>
         <rule e="any" k="historic" v="archaeological_site" zoom-min="15">
-            <symbol src="jar:symbols/tourist/archaeological2.svg" />
+            <symbol display="always" src="jar:symbols/tourist/archaeological2.svg" />
         </rule>
         <rule e="any" k="historic|building" v="ruins|castle|monument" zoom-min="17">
             <caption fill="#734a08" font-size="12" font-style="bold" k="name" position="above"
@@ -1640,4 +1646,41 @@
     </rule>
 
 
+
+    <!-- prameny, rozhledny, boží muka, rozcestníky, vodopády -->
+    <rule e="node" k="natural" v="spring" zoom-min="15">
+        <symbol display="always" src="file:symbols/spring.svg" symbol-width="14" symbol-height="14" />
+        <rule e="node" k="*" v="*" zoom-min="17">
+            <caption fill="#2F7CC4" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+    <rule e="node" k="tower:type" v="observation" zoom-min="13">
+        <symbol display="always" src="file:symbols/tower.svg" symbol-width="18" symbol-height="18" />
+        <rule e="node" k="*" v="*" zoom-min="15">
+            <caption fill="#734A08" font-size="11" font-style="bold" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+    <rule e="node" k="historic" v="wayside_cross|wayside_shrine" zoom-min="15">
+        <symbol display="always" src="file:symbols/cross.svg" symbol-width="13" symbol-height="13" />
+    </rule>
+    <rule e="node" k="man_made" v="cross" zoom-min="15">
+        <symbol display="always" src="file:symbols/cross.svg" symbol-width="13" symbol-height="13" />
+    </rule>
+    <rule e="node" k="information" v="guidepost" zoom-min="15">
+        <symbol display="always" src="file:symbols/guidepost.svg" symbol-width="15" symbol-height="15" />
+        <rule e="node" k="*" v="*" zoom-min="17">
+            <caption fill="#734A08" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+    <rule e="node" k="waterway" v="waterfall" zoom-min="14">
+        <symbol display="always" src="file:symbols/waterfall.svg" symbol-width="15" symbol-height="15" />
+        <rule e="node" k="*" v="*" zoom-min="16">
+            <caption fill="#2F7CC4" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+
+    <!-- názvy značených tras (jméno trasy je ve vrstvě tourist v poli ref) -->
+    <rule e="way" k="fmrelhikingred|fmrelhikingblue|fmrelhikinggreen|fmrelhikingyellow" v="*" zoom-min="15">
+        <pathText k="ref" fill="#8A2B2B" font-size="10" font-style="italic" priority="-9" stroke="#FFFFFF" stroke-width="1.6" dy="-5" />
+    </rule>
 </rendertheme>

@@ -94,15 +94,15 @@ public class VrstvyVMapeTest {
 		Assert.assertEquals("bez vrstvy je klíč zpět", bez, klic());
 	}
 
-	/** Vrstvy leží v podsložkách podle klíče základní mapy (layers/europe/germany/bayern.routes.map): najdou se a změní klíč dlaždic. */
+	/** Vrstvy leží v podsložkách podle klíče základní mapy (layers/europe/germany/bayern.tourist.map): najdou se a změní klíč dlaždic. */
 	@Test
 	public void vrstvaVPodslozceSeNajdeARenderuje() throws Exception {
 		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
 		final String bez = klic();
 		final File podslozka = new File(vrstvy(), "europe/czech-republic");
 		Assert.assertTrue(podslozka.mkdirs());
-		OfflineMapyTest.zkopirujMapu(podslozka, "kukov.routes.map");
-		Assert.assertEquals(Arrays.asList(new File(podslozka, "kukov.routes.map")), OfflineMapy.vrstvyVeSlozce(slozka));
+		OfflineMapyTest.zkopirujMapu(podslozka, "kukov.tourist.map");
+		Assert.assertEquals(Arrays.asList(new File(podslozka, "kukov.tourist.map")), OfflineMapy.vrstvyVeSlozce(slozka));
 		mapy.zkontrolujSlozku();
 		mapy.zkontrolujSlozku();
 		Assert.assertNotEquals("vrstva z podsložky je v klíči dlaždic", bez, klic());
@@ -119,7 +119,7 @@ public class VrstvyVMapeTest {
 		final File hgt = new File(vrstvy(), "europe/N50E014.hgt");
 		Files.write(zip.toPath(), new byte[1]);
 		Files.write(hgt.toPath(), new byte[1]);
-		Files.write(new File(a, "bayern.routes.map").toPath(), new byte[1]);
+		Files.write(new File(a, "bayern.tourist.map").toPath(), new byte[1]);
 		Files.write(new File(a, "._bayern.dem.zip").toPath(), new byte[1]);
 		Assert.assertEquals(Arrays.asList(zip, hgt), OfflineRenderer.demDlazdice(vrstvy()));
 		Assert.assertTrue(OfflineMapy.maDem(slozka));

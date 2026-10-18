@@ -115,7 +115,7 @@ public class KatalogVrstevTest {
 
 	@Test
 	public void volitelnaPoleChybi() throws IOException {
-		final KatalogovaVrstva v = nacti(jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic")).getVrstvy().get(0);
+		final KatalogovaVrstva v = nacti(jednoducha("tourist/europe/czech-republic", "tourist", "europe/czech-republic")).getVrstvy().get(0);
 		assertNull(v.getDatumDat());
 		assertNull(v.getVyrobeno());
 		assertNull(v.getAtribuceDlouha());
@@ -141,7 +141,7 @@ public class KatalogVrstevTest {
 
 	@Test
 	public void datumDatPodleRfc1123() throws IOException {
-		final KatalogovaVrstva v = nacti(vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("t.map", "t.map", 1, SHA),
+		final KatalogovaVrstva v = nacti(vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map", soubor("t.map", "t.map", 1, SHA),
 				", \"dataDate\": \"Tue, 13 Oct 2026 21:04:00 GMT\"")).getVrstvy().get(0);
 		assertEquals(LocalDate.of(2026, 10, 13), v.getDatumDat());
 	}
@@ -149,47 +149,55 @@ public class KatalogVrstevTest {
 	@Test
 	public void neznamyTypAFormatSePreskoci() throws IOException {
 		final KatalogVrstev k = nacti(jednoducha("lyzovani/europe/czech-republic", "lyzovani", "europe/czech-republic"),
-				vrstva("routes/europe/germany", "routes", "europe/germany", "pmtiles", soubor("de.pmtiles", "de.pmtiles", 1, SHA), ""),
-				jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic"));
-		assertEquals(Arrays.asList("routes/europe/czech-republic"), idcka(k.getVrstvy()));
+				vrstva("tourist/europe/germany", "tourist", "europe/germany", "pmtiles", soubor("de.pmtiles", "de.pmtiles", 1, SHA), ""),
+				jednoducha("tourist/europe/czech-republic", "tourist", "europe/czech-republic"));
+		assertEquals(Arrays.asList("tourist/europe/czech-republic"), idcka(k.getVrstvy()));
+	}
+
+	@Test
+	public void vrstvaRoutesSePreskoci() throws IOException {
+		final KatalogVrstev k = nacti(jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic"),
+				jednoducha("tourist/europe/czech-republic", "tourist", "europe/czech-republic"));
+		assertEquals(Arrays.asList("tourist/europe/czech-republic"), idcka(k.getVrstvy()));
+		assertTrue(k.getVrstvy().get(0).getSoubory().get(0).getCesta().startsWith("europe/czech-republic.tourist."));
 	}
 
 	@Test
 	public void vadnyKatalog() throws IOException {
-		final String ok = jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic");
+		final String ok = jednoducha("tourist/europe/czech-republic", "tourist", "europe/czech-republic");
 		vada("{\"version\": 2, \"sources\": [\"https://a.example.org/\"], \"layers\": []}", "novějším");
 		vada("{\"sources\": [\"https://a.example.org/\"], \"layers\": []}", "version");
 		vada("{\"version\": 1, \"sources\": [], \"layers\": []}", "sources");
 		vada("{\"version\": 1, \"sources\": [\"ftp://a.example.org/\"], \"layers\": []}", "zdroj");
 		vada(katalog(ok, ok), "dvakrát");
-		vada(katalog(ok, vrstva("trasy2/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("jiny.map", "europe/czech-republic.routes.map", "x.map", 1, SHA), ""),
-				vrstva("trasy3/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("jiny2.map", "europe/czech-republic.routes.map", "y.map", 1, SHA), "")),
+		vada(katalog(ok, vrstva("trasy2/europe/czech-republic", "tourist", "europe/czech-republic", "map", soubor("jiny.map", "europe/czech-republic.tourist.map", "x.map", 1, SHA), ""),
+				vrstva("trasy3/europe/czech-republic", "tourist", "europe/czech-republic", "map", soubor("jiny2.map", "europe/czech-republic.tourist.map", "y.map", 1, SHA), "")),
 				"dvakrát");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/y.routes.map", "x.map", 1, SHA), "")), "cestu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/x.contours.map", "x.map", 1, SHA), "")), "cestu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/x.routes.zip", "x.map", 1, SHA), "")), "cestu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "europe/x.routes.map/../../x.map", "x.map", 1, SHA), "")), "cestu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "/europe/x.routes.map", "x.map", 1, SHA), "")), "cestu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", "{\"name\": \"x.map\", \"url\": \"x.map\", \"size\": 1, \"sha256\": \"" + SHA + "\"}", "")), "path");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("../x.map", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.stahuje", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("X.MAP.STAHUJE", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.sha256", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.stara", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("CON.map", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("nul", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map.", "x.map", 1, SHA), "")), "jméno");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", "{\"name\": \"x.map\", \"path\": \"europe/x.routes.map\", \"url\": \"x.map\", \"size\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "../jinam/x.map", 1, SHA), "")), "adresu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "/x.map", 1, SHA), "")), "adresu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "file:///etc/x.map", 1, SHA), "")), "adresu");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "x.map", 1, "abc"), "")), "sha256");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", soubor("x.map", "x.map", 0, SHA), "")), "velikost");
-		vada(katalog(vrstva("routes/europe/x", "routes", "europe/x", "map", "", "")), "soubory");
-		vada(katalog(vrstva("routes/Europe/X", "routes", "europe/x", "map", soubor("x.map", "x.map", 1, SHA), "")), "id");
-		vada(katalog(vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"dataDate\": \"včera\"")),
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "europe/y.tourist.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "europe/x.contours.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "europe/x.tourist.zip", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "europe/x.tourist.map/../../x.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "/europe/x.tourist.map", "x.map", 1, SHA), "")), "cestu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", "{\"name\": \"x.map\", \"url\": \"x.map\", \"size\": 1, \"sha256\": \"" + SHA + "\"}", "")), "path");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("../x.map", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map.stahuje", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("X.MAP.STAHUJE", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map.sha256", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map.stara", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("CON.map", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("nul", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map.", "x.map", 1, SHA), "")), "jméno");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", "{\"name\": \"x.map\", \"path\": \"europe/x.tourist.map\", \"url\": \"x.map\", \"size\": 1.5, \"sha256\": \"" + SHA + "\"}", "")), "velikost");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "../jinam/x.map", 1, SHA), "")), "adresu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "/x.map", 1, SHA), "")), "adresu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "file:///etc/x.map", 1, SHA), "")), "adresu");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "x.map", 1, "abc"), "")), "sha256");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", soubor("x.map", "x.map", 0, SHA), "")), "velikost");
+		vada(katalog(vrstva("tourist/europe/x", "tourist", "europe/x", "map", "", "")), "soubory");
+		vada(katalog(vrstva("tourist/Europe/X", "tourist", "europe/x", "map", soubor("x.map", "x.map", 1, SHA), "")), "id");
+		vada(katalog(vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"dataDate\": \"včera\"")),
 				"datum");
-		vada(katalog(vrstva("routes/europe/czech-republic", "routes", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"zoom\": {\"min\": 1.5}")),
+		vada(katalog(vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map", soubor("x.map", "x.map", 1, SHA), ", \"zoom\": {\"min\": 1.5}")),
 				"zoom");
 	}
 
@@ -205,18 +213,18 @@ public class KatalogVrstevTest {
 	@Test
 	public void vrstvyProMapu() throws IOException {
 		final KatalogMap mapy = mapy();
-		final KatalogVrstev k = KatalogVrstev.nacti(katalog(jednoducha("routes/europe/czech-republic", "routes", "europe/czech-republic"),
-				jednoducha("dem/europe/czech-republic", "dem", "europe/czech-republic"), jednoducha("routes/europe/germany", "routes", "europe/germany"),
-				jednoducha("routes/europe/germany/bayern", "routes", "europe/germany/bayern"),
+		final KatalogVrstev k = KatalogVrstev.nacti(katalog(jednoducha("tourist/europe/czech-republic", "tourist", "europe/czech-republic"),
+				jednoducha("dem/europe/czech-republic", "dem", "europe/czech-republic"), jednoducha("tourist/europe/germany", "tourist", "europe/germany"),
+				jednoducha("tourist/europe/germany/bayern", "tourist", "europe/germany/bayern"),
 				jednoducha("contours/europe/germany/bayern", "contours", "europe/germany/bayern"),
 				jednoducha("contours/europe/germany/berlin", "contours", "europe/germany/berlin"), vrstva("dem/europe", "dem", "europe", "hgt-zip", soubor("eu.zip", "eu.zip", 1, SHA), ", \"coverage\": {\"bbox\": [35, -10, 70, 40]}")), mapy);
-		assertEquals(Arrays.asList("routes/europe/czech-republic", "dem/europe/czech-republic"),
+		assertEquals(Arrays.asList("tourist/europe/czech-republic", "dem/europe/czech-republic"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/czech-republic").get())));
-		assertEquals("vlastní trasy, vrstevnice regionů", Arrays.asList("routes/europe/germany", "contours/europe/germany/bayern", "contours/europe/germany/berlin"),
+		assertEquals("vlastní trasy, vrstevnice regionů", Arrays.asList("tourist/europe/germany", "contours/europe/germany/bayern", "contours/europe/germany/berlin"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/germany").get())));
-		assertEquals("vlastní vrstvy, chybějící z celé země", Arrays.asList("routes/europe/germany/bayern", "contours/europe/germany/bayern"),
+		assertEquals("vlastní vrstvy, chybějící z celé země", Arrays.asList("tourist/europe/germany/bayern", "contours/europe/germany/bayern"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/germany/bayern").get())));
-		assertEquals("trasy celé země, vlastní vrstevnice", Arrays.asList("contours/europe/germany/berlin", "routes/europe/germany"),
+		assertEquals("trasy celé země, vlastní vrstevnice", Arrays.asList("contours/europe/germany/berlin", "tourist/europe/germany"),
 				idcka(k.vrstvyProMapu(mapy.podleId("europe/germany/berlin").get())));
 	}
 
@@ -239,14 +247,14 @@ public class KatalogVrstevTest {
 		}
 		final KatalogMap mapy = KatalogMap.vestaveny();
 		final KatalogVrstev k = KatalogVrstev.nacti(json, mapy);
-		assertEquals(Arrays.asList("contours/europe/luxembourg", "dem/europe/luxembourg", "routes/europe/luxembourg"), idcka(k.getVrstvy()));
+		assertEquals(Arrays.asList("contours/europe/luxembourg", "dem/europe/luxembourg", "tourist/europe/luxembourg"), idcka(k.getVrstvy()));
 		final KatalogovaMapa lucembursko = mapy.podleId("europe/luxembourg").get();
 		final KatalogovaVrstva trasy = k.vrstva(lucembursko.getId(), Typ.TRASY).get();
-		assertEquals("europe/luxembourg.routes.map", trasy.getSoubory().get(0).getCesta());
-		assertEquals("europe_luxembourg.routes.map", trasy.getSoubory().get(0).getNazev());
-		assertEquals(URI.create("https://github.com/geokuk-community/geokuk-maps/releases/download/layers-2026-10/europe_luxembourg.routes.map"),
+		assertEquals("europe/luxembourg.tourist.map", trasy.getSoubory().get(0).getCesta());
+		assertEquals("europe_luxembourg.tourist.map", trasy.getSoubory().get(0).getNazev());
+		assertEquals(URI.create("https://github.com/geokuk-community/geokuk-maps/releases/download/layers-2026-10/europe_luxembourg.tourist.map"),
 				trasy.getSoubory().get(0).getUrly().get(0));
-		assertEquals("routes", trasy.getTema());
+		assertEquals("tourist", trasy.getTema());
 		assertEquals("© OpenStreetMap contributors", trasy.getAtribuce());
 		assertNotNull(trasy.getLicenceText());
 		assertEquals(LocalDate.of(2026, 10, 15), trasy.getDatumDat());

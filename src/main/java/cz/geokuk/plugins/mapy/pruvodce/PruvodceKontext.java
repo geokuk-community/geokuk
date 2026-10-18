@@ -23,6 +23,6 @@ public interface PruvodceKontext {
 	/** Zruší běžící stahování. */
 	void zrusStahovani();
 
-	/** Přepne zobrazení na zvolený podklad: nastaví podklad, u offline Turistickou, překryv tras u online podkladu, stínování terénu podle vrstev. */
+	/** Přepne zobrazení na zvolený podklad: nastaví podklad, u offline téma GeoKuk, překryv tras u online podkladu, stínování terénu podle vrstev. */
 	void prepni(PruvodceVolba volba);
 }

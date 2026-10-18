@@ -80,16 +80,16 @@
       "licenseText": "Copernicus"
     },
     {
-      "id": "routes/europe/luxembourg",
-      "type": "routes",
+      "id": "tourist/europe/luxembourg",
+      "type": "tourist",
       "region": "europe/luxembourg",
       "format": "map",
-      "name": "Hiking, cycling and MTB routes – Luxembourg",
+      "name": "Hiking, cycling and MTB tourist – Luxembourg",
       "files": [
         {
-          "name": "europe_luxembourg.routes.map",
-          "path": "europe/luxembourg.routes.map",
-          "url": "layers-2026-10/europe_luxembourg.routes.map",
+          "name": "europe_luxembourg.tourist.map",
+          "path": "europe/luxembourg.tourist.map",
+          "url": "layers-2026-10/europe_luxembourg.tourist.map",
           "size": 1878359,
           "sha256": "5fda7090e7ec75859ceb023279685ebd50310c685d719fbfa02391bc17f100eb",
           "date": "2026-10-16T05:35:03Z"
@@ -114,7 +114,7 @@
       },
       "license": "ODbL 1.0",
       "attribution": "© OpenStreetMap contributors",
-      "theme": "routes",
+      "theme": "tourist",
       "licenseText": "Data: OpenStreetMap (ODbL 1.0)"
     }
   ]

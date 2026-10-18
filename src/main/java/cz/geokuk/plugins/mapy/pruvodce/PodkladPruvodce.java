@@ -7,8 +7,8 @@ import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 /** Podklad, který průvodce nastavením map nabízí; offline podklad se kreslí z map ve složce, online ze serveru. */
 public enum PodkladPruvodce {
 
-	/** Offline mapy z katalogu s tématem Turistická. */
-	TURISTICKA_OFFLINE("Turistická", true, null, EKaType.OFFLINE_MF),
+	/** Offline mapy z katalogu s tématem GeoKuk. */
+	TURISTICKA_OFFLINE("GeoKuk", true, null, EKaType.OFFLINE_MF),
 	CUZK_TOPO("ČÚZK topo", false, "europe/czech-republic", EKaType.CUZK_ZTM),
 	CUZK_ORTO("ČÚZK ortofoto", false, "europe/czech-republic", EKaType.CUZK_ORTO),
 	SK_ORTO("ZBGIS ortofoto", false, "europe/slovakia", EKaType.SK_ZBGIS_ORTO),

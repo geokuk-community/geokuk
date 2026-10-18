@@ -103,7 +103,7 @@ public class MatriceMapTest {
 				StavMapy.Faze.NIC, 0), vrstvy, stavy), CZ);
 		assertEquals(StavBunky.STAZENO, cz.getBunka(Cast.MAPA).getStav());
 		assertEquals(StavBunky.STAZENO, cz.getBunka(Cast.TRASY).getStav());
-		assertEquals("routes/" + CZ, cz.getBunka(Cast.TRASY).getId());
+		assertEquals("tourist/" + CZ, cz.getBunka(Cast.TRASY).getId());
 		assertEquals(25_000_000, cz.getBunka(Cast.TRASY).getVelikost());
 		assertEquals(25_000_000, cz.getBunka(Cast.TRASY).getStazeno());
 		assertEquals(StavBunky.KE_STAZENI, cz.getBunka(Cast.VRSTEVNICE).getStav());
@@ -119,7 +119,7 @@ public class MatriceMapTest {
 	@Test
 	public void vrstvaBezZakladniMapy() {
 		final Radek cz = radek(MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), VrstvyProGui.katalogCesko(),
-				v -> VrstvyProGui.stav(v, v.getId().startsWith("routes") ? StavVrstvy.Mistni.MAME : StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, v.getId().startsWith("routes") ? v.getVelikost() : 0, null)),
+				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.MAME : StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, v.getId().startsWith("tourist") ? v.getVelikost() : 0, null)),
 				CZ);
 		assertEquals(StavBunky.KE_STAZENI, cz.getBunka(Cast.MAPA).getStav());
 		assertEquals(StavBunky.STAZENO, cz.getBunka(Cast.TRASY).getStav());
@@ -151,8 +151,8 @@ public class MatriceMapTest {
 	/** Vrstva patří přesně svému klíči: vrstvy regionů se u celé země neukazují a naopak. */
 	@Test
 	public void vrstvaPatriPresneSvemuKlici() throws IOException {
-		final KatalogVrstev k = KatalogVrstev.nacti(KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("routes/europe/germany/bayern", "routes", "europe/germany/bayern", "map",
-				KatalogVrstevTest.soubor("bayern.routes.map", "v1/bayern.routes.map", 40_000_000, VrstvyProGui.SHA), "")), KatalogMap.vestaveny());
+		final KatalogVrstev k = KatalogVrstev.nacti(KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("tourist/europe/germany/bayern", "tourist", "europe/germany/bayern", "map",
+				KatalogVrstevTest.soubor("bayern.tourist.map", "v1/bayern.tourist.map", 40_000_000, VrstvyProGui.SHA), "")), KatalogMap.vestaveny());
 		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), k, StavVrstvy::novy);
 		assertEquals(StavBunky.KE_STAZENI, radek(radky, "europe/germany/bayern").getBunka(Cast.TRASY).getStav());
 		assertEquals(StavBunky.NENI, radek(radky, "europe/germany").getBunka(Cast.TRASY).getStav());
@@ -162,8 +162,8 @@ public class MatriceMapTest {
 	/** Vrstva celé země se regionu nepřidá (a naopak): párování je přesné, ne podle prefixu klíče. */
 	@Test
 	public void vrstvaCeleZemeNepatriRegionu() throws IOException {
-		final KatalogVrstev k = KatalogVrstev.nacti(KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("routes/europe/germany", "routes", "europe/germany", "map",
-				KatalogVrstevTest.soubor("germany.routes.map", "v1/germany.routes.map", 150_000_000, VrstvyProGui.SHA), "")), KatalogMap.vestaveny());
+		final KatalogVrstev k = KatalogVrstev.nacti(KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("tourist/europe/germany", "tourist", "europe/germany", "map",
+				KatalogVrstevTest.soubor("germany.tourist.map", "v1/germany.tourist.map", 150_000_000, VrstvyProGui.SHA), "")), KatalogMap.vestaveny());
 		final List<Radek> radky = MatriceMap.sestav(KatalogMap.vestaveny(), nemame(), k, StavVrstvy::novy);
 		assertEquals(StavBunky.KE_STAZENI, radek(radky, "europe/germany").getBunka(Cast.TRASY).getStav());
 		assertEquals(StavBunky.NENI, radek(radky, "europe/germany/bayern").getBunka(Cast.TRASY).getStav());

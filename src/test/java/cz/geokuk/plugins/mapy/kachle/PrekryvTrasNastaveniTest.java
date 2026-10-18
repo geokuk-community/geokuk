@@ -89,12 +89,12 @@ public class PrekryvTrasNastaveniTest {
 		Assert.assertTrue(posledni().isViditelny());
 	}
 
-	/** Offline podklad s tématem Turistická kreslí stažené vrstvy tras sám, překryv je proto nebere (jinak by trasy byly dvakrát přes popisky). */
+	/** Offline podklad s tématem GeoKuk kreslí stažené vrstvy tras sám, překryv je proto nebere (jinak by trasy byly dvakrát přes popisky). */
 	@Test
 	public void vrstvyTrasKresliTuristickyPodklad() {
 		model.setPrekryvTras(true);
 		final OfflineMapy trasy = model.getZiskavac().getOfflineTrasy();
-		model.setTemaOfflineMapy(TemaOfflineMapy.TURISTICKA);
+		model.setTemaOfflineMapy(TemaOfflineMapy.GEOKUK);
 		Assert.assertFalse("online podklad vrstvy tras nekreslí", trasy.isTrasyKresliPodklad());
 
 		model.onEvent(new ZmenaMapNastalaEvent(EKaType.OFFLINE_MF));
@@ -104,7 +104,7 @@ public class PrekryvTrasNastaveniTest {
 		model.setTemaOfflineMapy(TemaOfflineMapy.VYCHOZI);
 		Assert.assertFalse("výchozí téma vrstvy tras nekreslí", trasy.isTrasyKresliPodklad());
 
-		model.setTemaOfflineMapy(TemaOfflineMapy.TURISTICKA.sVrstvami(VolbaVrstev.AUTOR));
+		model.setTemaOfflineMapy(TemaOfflineMapy.GEOKUK.sVrstvami(VolbaVrstev.AUTOR));
 		Assert.assertTrue(trasy.isTrasyKresliPodklad());
 		model.onEvent(new ZmenaMapNastalaEvent(EKaType.CUZK_ORTO));
 		Assert.assertFalse(trasy.isTrasyKresliPodklad());

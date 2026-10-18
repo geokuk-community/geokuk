@@ -19,17 +19,23 @@ public final class TemaOfflineMapy {
 
 	public static final TemaOfflineMapy VYCHOZI = new TemaOfflineMapy(MapsforgeThemes.DEFAULT, null, null);
 
-	/** Průhledné téma s turistickými a cyklotrasami pro překryv přes jiný podklad; kreslí jen trasy z map osm.paws.cz. */
-	public static final TemaOfflineMapy TRASY = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "trasy.xml");
+	/** Průhledné téma pro překryv přes jiný podklad: trasy z map osm.paws.cz, trasy a prvky ze stažené vrstvy tourist. */
+	public static final TemaOfflineMapy TRASY = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "trasy.xml", "Turistické a cyklotrasy");
 
-	/** Tlumené téma pro turistiku odvozené z výchozího tématu mapsforge; používá se, dokud uživatel nezvolí jiné. */
-	public static final TemaOfflineMapy TURISTICKA = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "turisticka.xml");
+	/** Složka vestavěných stylů GeoKuk vedle této třídy; styly sdílejí symboly v její podsložce symbols. */
+	private static final String SLOZKA_GEOKUK = "geokuk/";
+
+	/** Přehledné téma pro turistiku odvozené z výchozího tématu mapsforge; používá se, dokud uživatel nezvolí jiné. */
+	public static final TemaOfflineMapy GEOKUK = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, SLOZKA_GEOKUK + "GeoKuk.xml", "GeoKuk");
+
+	/** Vestavěné styly GeoKuk v pořadí v menu; každý styl je soubor ve složce geokuk. */
+	static final List<TemaOfflineMapy> STYLY_GEOKUK = Collections.singletonList(GEOKUK);
 
 	/** Vestavěná témata, která má smysl nabízet; výškové stínování potřebuje data, která nemáme. */
-	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(Arrays.asList(TURISTICKA, VYCHOZI, new TemaOfflineMapy(MapsforgeThemes.OSMARENDER, null, null),
-			new TemaOfflineMapy(MapsforgeThemes.BIKER, null, null), new TemaOfflineMapy(MapsforgeThemes.MOTORIDER, null, null)));
+	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(vestavena());
 
 	private static final char ODDELOVAC = '|';
+	private static final String PREDPONA_ZDROJE = "zdroj:";
 
 	private final MapsforgeThemes vestavene;
 	private final File soubor;
@@ -38,23 +44,34 @@ public final class TemaOfflineMapy {
 	private final VolbaVrstev vrstvy;
 	/** Téma přibalené v programu (soubor vedle této třídy), null u ostatních. */
 	private final String zdroj;
+	/** Název přibaleného tématu do menu. */
+	private final String nazevZdroje;
 	private String otiskZdroje;
 
 	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu) {
-		this(vestavene, soubor, xmlVZipu, VolbaVrstev.AUTOR, null);
+		this(vestavene, soubor, xmlVZipu, VolbaVrstev.AUTOR, null, null);
 	}
 
-	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu, final VolbaVrstev vrstvy, final String zdroj) {
+	private TemaOfflineMapy(final MapsforgeThemes vestavene, final File soubor, final String xmlVZipu, final VolbaVrstev vrstvy, final String zdroj,
+			final String nazevZdroje) {
 		this.vestavene = vestavene;
 		this.soubor = soubor;
 		this.xmlVZipu = xmlVZipu;
 		this.vrstvy = vrstvy;
 		this.zdroj = zdroj;
+		this.nazevZdroje = nazevZdroje;
+	}
+
+	private static List<TemaOfflineMapy> vestavena() {
+		final List<TemaOfflineMapy> temata = new ArrayList<>(STYLY_GEOKUK);
+		temata.addAll(Arrays.asList(VYCHOZI, new TemaOfflineMapy(MapsforgeThemes.OSMARENDER, null, null), new TemaOfflineMapy(MapsforgeThemes.BIKER, null, null),
+				new TemaOfflineMapy(MapsforgeThemes.MOTORIDER, null, null)));
+		return temata;
 	}
 
 	/** Totéž téma s výběrem vrstev uživatele. */
 	public TemaOfflineMapy sVrstvami(final VolbaVrstev volba) {
-		return new TemaOfflineMapy(vestavene, soubor, xmlVZipu, volba, zdroj);
+		return new TemaOfflineMapy(vestavene, soubor, xmlVZipu, volba, zdroj, nazevZdroje);
 	}
 
 	public VolbaVrstev getVrstvy() {
@@ -78,22 +95,25 @@ public final class TemaOfflineMapy {
 
 	/** Totéž téma z jiného souboru, třeba po přesunu složky. */
 	public TemaOfflineMapy sSouborem(final File jiny) {
-		return new TemaOfflineMapy(null, jiny, xmlVZipu, vrstvy, null);
+		return new TemaOfflineMapy(null, jiny, xmlVZipu, vrstvy, null, null);
 	}
 
 	public static TemaOfflineMapy zeSouboru(final File soubor, final String xmlVZipu) {
 		return new TemaOfflineMapy(null, soubor, xmlVZipu);
 	}
 
-	/** Téma z textu v nastavení; prázdný text (nic nezvoleno) je Turistická. */
+	/** Téma z textu v nastavení; prázdný text (nic nezvoleno) a přibalené téma, které program nemá, je GeoKuk. */
 	public static TemaOfflineMapy zTextu(final String text) {
 		if (text == null || text.trim().isEmpty()) {
-			return TURISTICKA;
+			return GEOKUK;
 		}
 		for (final TemaOfflineMapy t : VESTAVENA) {
 			if (t.naText().equals(text)) {
 				return t;
 			}
+		}
+		if (text.startsWith(PREDPONA_ZDROJE)) {
+			return GEOKUK;
 		}
 		final int i = text.indexOf(ODDELOVAC);
 		if (i < 0) {
@@ -107,7 +127,7 @@ public final class TemaOfflineMapy {
 			return vestavene.name();
 		}
 		if (zdroj != null) {
-			return "zdroj:" + zdroj;
+			return PREDPONA_ZDROJE + zdroj;
 		}
 		return xmlVZipu == null ? soubor.getPath() : soubor.getPath() + ODDELOVAC + xmlVZipu;
 	}
@@ -123,7 +143,7 @@ public final class TemaOfflineMapy {
 
 	/** Téma kreslí turistické a cyklotrasy ze stažených vrstev tras (tagy fmrel*). */
 	public boolean isKresliVrstvyTras() {
-		return TURISTICKA.zdroj.equals(zdroj);
+		return zdroj != null && zdroj.startsWith(SLOZKA_GEOKUK);
 	}
 
 	public File getSoubor() {
@@ -133,7 +153,7 @@ public final class TemaOfflineMapy {
 	/** Název do menu. */
 	public String getNazev() {
 		if (zdroj != null) {
-			return TURISTICKA.zdroj.equals(zdroj) ? "Turistická" : "Turistické a cyklotrasy";
+			return nazevZdroje;
 		}
 		if (vestavene != null) {
 			switch (vestavene) {
@@ -224,7 +244,9 @@ public final class TemaOfflineMapy {
 			return vestavene;
 		}
 		if (zdroj != null) {
-			return new StreamRenderTheme("", otevriZdroj(zdroj));
+			final XmlRenderTheme tema = new StreamRenderTheme("", otevriZdroj(zdroj));
+			tema.setResourceProvider(new ZdrojeVProgramu(zdroj.substring(0, zdroj.lastIndexOf('/') + 1)));
+			return tema;
 		}
 		if (!soubor.getName().toLowerCase(Locale.ROOT).endsWith(".zip")) {
 			return new ExternalRenderTheme(soubor);
@@ -344,6 +366,20 @@ public final class TemaOfflineMapy {
 		@Override
 		public void setResourceProvider(final XmlThemeResourceProvider zdroje) {
 			tema.setResourceProvider(zdroje);
+		}
+	}
+
+	/** Soubory vedle přibaleného tématu ({@code file:symbols/…}); zdroje jar: hledá mapsforge sám. */
+	private static final class ZdrojeVProgramu implements XmlThemeResourceProvider {
+		private final String slozka;
+
+		ZdrojeVProgramu(final String slozka) {
+			this.slozka = slozka;
+		}
+
+		@Override
+		public InputStream createInputStream(final String relativePath, final String source) {
+			return source.startsWith("file:") ? TemaOfflineMapy.class.getResourceAsStream(slozka + source.substring("file:".length())) : null;
 		}
 	}
 

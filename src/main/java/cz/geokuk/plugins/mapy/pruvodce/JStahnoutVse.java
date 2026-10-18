@@ -117,7 +117,7 @@ public final class JStahnoutVse extends JDialog {
 		case MAPA:
 			return "Offline mapa";
 		case TRASY:
-			return "Turistické trasy";
+			return "Turistická vrstva";
 		case VRSTEVNICE:
 			return "Vrstevnice";
 		case STINOVANI:

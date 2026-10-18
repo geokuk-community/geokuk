@@ -22,7 +22,7 @@ final class SmazaniSouboru {
 
 	private SmazaniSouboru() {}
 
-	/** Existující soubory vrstvy ve složce vrstev včetně kontrolních součtů a rozpracovaných souborů. */
+	/** Existující soubory vrstvy ve složce vrstev včetně kontrolních součtů, rozpracovaných souborů a starší verze vrstvy. */
 	static List<File> souboryVrstvy(final File slozkaVrstev, final KatalogovaVrstva vrstva) {
 		final List<File> soubory = new ArrayList<>();
 		if (slozkaVrstev == null) {
@@ -36,6 +36,7 @@ final class SmazaniSouboru {
 				}
 			}
 		}
+		soubory.addAll(cz.geokuk.plugins.mapy.sprava.SouboryVrstev.starsiSoubory(slozkaVrstev, vrstva));
 		return soubory;
 	}
 

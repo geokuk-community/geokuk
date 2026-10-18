@@ -461,7 +461,7 @@ public final class JPruvodceMap extends JDialog {
 	static String nazev(final Cast c) {
 		switch (c) {
 		case TRASY:
-			return "Turistické a cyklotrasy";
+			return "Turistická vrstva";
 		case VRSTEVNICE:
 			return "Vrstevnice";
 		case STINOVANI:
