@@ -49,7 +49,7 @@ public class JMapyPopup extends JPanel {
 	static final String SMAZAT_VRSTVU = "×";
 	static final String SLOUPEC_MAPA = "Mapa";
 	static final String JEN_REGIONY = "jen regiony";
-	static final String SLOUPEC_TRASY = "Trasy";
+	static final String SLOUPEC_TRASY = "Turistika";
 	static final String SLOUPEC_VRSTEVNICE = "Vrstevnice";
 	static final String SLOUPEC_STINOVANI = "Stínování";
 	static final String NENI_VRSTVA = "—";
@@ -1717,7 +1717,7 @@ public class JMapyPopup extends JPanel {
 	static String nazevVrstvy(final MatriceMap.Cast cast) {
 		switch (cast) {
 		case TRASY:
-			return "Turistické trasy";
+			return "Turistická vrstva";
 		case VRSTEVNICE:
 			return "Vrstevnice";
 		case STINOVANI:

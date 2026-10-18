@@ -316,7 +316,7 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
 			final JLabel stazena = labels(p).stream().filter(l -> "25 MB".equals(l.getText())).findFirst().get();
-			Assert.assertEquals("Turistické trasy: staženo, data z 13. 10. 2026", stazena.getToolTipText());
+			Assert.assertEquals("Turistická vrstva: staženo, data z 13. 10. 2026", stazena.getToolTipText());
 			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
 					cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("contours") ? 50_000_000 : 0, null)));
 			Assert.assertEquals("jen rozpracovaná vrstevnice má ×", 1, tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU).size());
