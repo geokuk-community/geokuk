@@ -142,6 +142,19 @@ public class SlouceneDemTest {
 	}
 
 	@Test
+	public void mensiSouborDiryVPodrobnemNedoplni() throws IOException {
+		final short[] sDirami = orizni(teren(), true);
+		final short[] hrube = new short[121 * 121];
+		java.util.Arrays.fill(hrube, (short) 999);
+		final File slozka = tmp.newFolder("layers");
+		zip(new File(slozka, "a.dem.zip"), "N50E014.hgt", hgt(hrube));
+		zip(new File(slozka, "b.dem.zip"), "N50E014.hgt", hgt(sDirami));
+		final List<DemFile> d = dlazdice(slozka);
+		Assert.assertEquals(1, d.size());
+		Assert.assertArrayEquals(hgt(sDirami), precti(d.get(0)));
+	}
+
+	@Test
 	public void ostatniSouboryProjdou() throws IOException {
 		final File slozka = tmp.newFolder("layers");
 		zip(new File(slozka, "a.dem.zip"), "N50E014.hgt", hgt(teren()));
