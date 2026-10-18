@@ -86,6 +86,10 @@
 - Panel cesty vpravo nahoře v mapě ukazuje u vybrané cesty její délku,
   počet bodů a keší a vzdušné úseky. Vypnout jde křížkem nebo v Cesty >
   Panel cesty.
+- Mapy > Stínovaný reliéf ČÚZK: jemné stínování terénu České republiky
+  z výškového modelu DMR 5G přes jakoukoli mapu, i v tisku a exportu výřezu.
+  Je vidět i skály, rokle a lesní cesty. Jen s připojením k internetu,
+  od podrobnějšího měřítka.
 - Mapy > Turistické a cyklotrasy: turistické trasy v barvě značky a cyklotrasy
   přes jakoukoli mapu, i v tisku a exportu výřezu. Kreslí se z offline map
   z osm.paws.cz ve složce offline map, nebo ze stažené vrstvy tras. Ta stačí

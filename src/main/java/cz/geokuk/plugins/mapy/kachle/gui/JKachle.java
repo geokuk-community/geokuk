@@ -218,6 +218,9 @@ public class JKachle extends JComponent {
 	}
 
 	private void kresli(final Graphics2D g) {
+		if (ka.getType().getKryti() < 1) {
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, ka.getType().getKryti()));
+		}
 		if (image != null) {
 			if (image.getWidth(null) == KACHLE_WIDTH) {
 				g.drawImage(image, 0, 0, null);

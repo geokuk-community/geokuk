@@ -25,8 +25,8 @@ Data a obsah pocházejí z OpenStreetMap a dalších poskytovatelů a podléhaj�
 jejich licencím a atribuci.
 Podmínky:      https://github.com/FreemapSlovakia/freemap-v3-react/blob/HEAD/src/documents/termsOfService.en.md
 
-ČÚZK – ortofoto a Základní topografická mapa České republiky
-------------------------------------------------------------
+ČÚZK – ortofoto, Základní topografická mapa a stínovaný reliéf České republiky
+------------------------------------------------------------------------------
 Poskytovatel:  Zeměměřický úřad (ČÚZK)
                (ags.cuzk.gov.cz)
 Licence:       otevřená data, Creative Commons Uvedení autorství 4.0
@@ -36,6 +36,8 @@ Metainformace poskytovatele o službách:
   ortofoto:    https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer?f=json
   Základní topografická mapa:
                https://ags.cuzk.gov.cz/arcgis1/rest/services/ZTM_WM/MapServer?f=json
+  stínovaný reliéf (DMR 5G, WMS):
+               https://ags.cuzk.gov.cz/arcgis2/services/dmr5g/ImageServer/WMSServer?SERVICE=WMS&REQUEST=GetCapabilities
 Otevřená data ČÚZK:  https://ags.cuzk.gov.cz/opendata/
 Podmínky:      https://geoportal.cuzk.gov.cz/Dokumenty/Podminky.pdf
                https://geoportal.cuzk.gov.cz/Dokumenty/Podminky_sluzby_CUZK.pdf

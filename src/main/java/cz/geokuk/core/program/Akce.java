@@ -86,6 +86,7 @@ public class Akce {
 	public final UkladatMapyNaDiskAction ukladatMapyNaDiskAction = new UkladatMapyNaDiskAction();
 	public final OnlineModeAction onlineModeAction = new OnlineModeAction();
 	public final PrekryvTrasAction prekryvTrasAction = new PrekryvTrasAction();
+	public final cz.geokuk.plugins.mapy.kachle.ReliefCuzkAction reliefCuzkAction = new cz.geokuk.plugins.mapy.kachle.ReliefCuzkAction();
 	public final cz.geokuk.plugins.mapy.pruvodce.PruvodceMapAction pruvodceMapAction = new cz.geokuk.plugins.mapy.pruvodce.PruvodceMapAction();
 	public final TadyJsemDomaAction tadyJsemDomaAction = new TadyJsemDomaAction();
 
