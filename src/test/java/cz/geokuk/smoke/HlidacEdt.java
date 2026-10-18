@@ -7,17 +7,21 @@ import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Měří, jak dlouho trvá obsluha jednotlivých událostí na EDT, a pamatuje si ty pomalé. Události začaté před {@link #konecStartu()} se počítají
  * zvlášť, start programu běží na EDT v jedné události. Zvlášť se počítá i přepínání vzhledu, které přestaví celé okno. U události delší než
  * {@link #PRAH_ZASOBNIKU_MS} si zapamatuje zásobník EDT, aby bylo vidět, kde obsluha visí, i u události vnořené v modálním dialogu. K pomalé
- * události připíše krok scénáře, čas GC během ní a kdy naposledy tikl vzorkovač; když stál i on, stál celý proces.
+ * události připíše krok scénáře, čas GC během ní a kdy naposledy tikl vzorkovač; když stál i on, stál celý proces. Dobu, kdy vzorkovač netikl
+ * aspoň {@link #PAUZA_MS}, bere jako pauzu JVM (runner, GC) a do délky události ji nepočítá.
  */
 public class HlidacEdt extends EventQueue {
 
 	static final long PRAH_ZASOBNIKU_MS = 1500;
+	/** Vzorkovač tiká po 100 ms; mezera aspoň takhle dlouhá znamená, že stál celý proces, ne jen EDT. */
+	static final long PAUZA_MS = 1000;
 	private static final int HLOUBKA_ZASOBNIKU = 40;
 
 	private final long prahMs;
@@ -37,6 +41,10 @@ public class HlidacEdt extends EventQueue {
 	private volatile long[][] beziProVzorkovac = new long[0][];
 	private final Map<Long, String> zasobniky = new ConcurrentHashMap<>();
 	private volatile long posledniTikNs = System.nanoTime();
+	/** Pauzy JVM jako dvojice začátek a konec v ns. */
+	private final Deque<long[]> pauzy = new ConcurrentLinkedDeque<>();
+	private volatile long nejdelsiPauzaMs;
+	private volatile boolean vzorkovacStoji;
 	private volatile String krok;
 	private final List<GarbageCollectorMXBean> gc = ManagementFactory.getGarbageCollectorMXBeans();
 	private Thread vzorkovac;
@@ -76,7 +84,9 @@ public class HlidacEdt extends EventQueue {
 			bezi.pop();
 			beziProVzorkovac = bezi.toArray(new long[0][]);
 			final long konec = System.nanoTime();
-			final long ms = (konec - start) / 1_000_000;
+			final long celkemMs = (konec - start) / 1_000_000;
+			final long pauzaMs = pauzaBehem(start, konec) / 1_000_000;
+			final long ms = celkemMs - pauzaMs;
 			final String zasobnikUdalosti = zasobniky.remove(cislo);
 			final boolean priStartu = !startSkoncil || start - konecStartuNs < 0;
 			if (priStartu) {
@@ -89,10 +99,11 @@ public class HlidacEdt extends EventQueue {
 					nejdelsiMs = Math.max(nejdelsiMs, ms);
 				}
 			}
-			if (ms >= prahMs) {
+			if (celkemMs >= prahMs) {
 				pomale.add(ms + " ms: " + (priStartu ? "při startu: " : priVzhledu ? "při přepnutí vzhledu: " : "") + popis(event)
 						+ (krokUdalosti == null ? "" : "\nKrok: " + krokUdalosti) + (bezi.isEmpty() ? "" : "\nVnořená událost (modální dialog)")
 						+ "\nGC během události " + (casGcMs() - gcPred) + " ms, vzorkovač naposledy tikl před " + (konec - posledniTikNs) / 1_000_000 + " ms"
+						+ (pauzaMs == 0 ? "" : "\nPauza JVM " + pauzaMs + " ms se nepočítá, celkem " + celkemMs + " ms")
 						+ (zasobnikUdalosti == null ? "" : "\nZásobník EDT po " + PRAH_ZASOBNIKU_MS + " ms:" + zasobnikUdalosti));
 			}
 		}
@@ -106,6 +117,19 @@ public class HlidacEdt extends EventQueue {
 		return ms;
 	}
 
+	/** Kolik ns z intervalu stál celý proces: zapsané pauzy i ta, která ještě trvá (vzorkovač od té doby netikl). */
+	private long pauzaBehem(final long od, final long doNs) {
+		long ns = 0;
+		for (final long[] p : pauzy) {
+			ns += Math.max(0, Math.min(p[1], doNs) - Math.max(p[0], od));
+		}
+		final long tik = posledniTikNs;
+		if (doNs - tik >= PAUZA_MS * 1_000_000) {
+			ns += Math.max(0, doNs - Math.max(tik, od));
+		}
+		return ns;
+	}
+
 	/** Jednou za 100 ms se podívá, jestli obsluha některé probíhající události na EDT neběží déle než práh, a zapamatuje si zásobník. */
 	private void vzorkuj() {
 		final Set<Long> hotovo = new HashSet<>();
@@ -115,7 +139,20 @@ public class HlidacEdt extends EventQueue {
 			} catch (final InterruptedException e) {
 				return;
 			}
-			posledniTikNs = System.nanoTime();
+			if (vzorkovacStoji) {
+				continue;
+			}
+			final long ted = System.nanoTime();
+			final long mezera = ted - posledniTikNs;
+			if (mezera >= PAUZA_MS * 1_000_000) {
+				// Zapsat dřív než nový tik, aby událost, která právě končí, pauzu neminula.
+				pauzy.add(new long[] { posledniTikNs, ted });
+				nejdelsiPauzaMs = Math.max(nejdelsiPauzaMs, mezera / 1_000_000);
+				while (pauzy.size() > 1000) {
+					pauzy.pollFirst();
+				}
+			}
+			posledniTikNs = ted;
 			final long[][] udalosti = beziProVzorkovac;
 			final Thread vlakno = edt;
 			final List<Long> nove = new ArrayList<>();
@@ -145,6 +182,20 @@ public class HlidacEdt extends EventQueue {
 			}
 			hotovo.retainAll(stale);
 		}
+	}
+
+	/** Pro testy: vzorkovač přestane tikat jako při pauze JVM. */
+	void zastavVzorkovac(final boolean stoji) {
+		vzorkovacStoji = stoji;
+	}
+
+	/** Kolikrát stál celý proces aspoň {@link #PAUZA_MS}. */
+	public int getPocetPauz() {
+		return pauzy.size();
+	}
+
+	public long getNejdelsiPauzaMs() {
+		return nejdelsiPauzaMs;
 	}
 
 	/** Krok scénáře (třeba položka menu), ke kterému patří následující události; null = žádný. */

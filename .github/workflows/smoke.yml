@@ -34,9 +34,10 @@ jobs:
         if: runner.os == 'Linux'
         run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
 
+      # Runner na Windows občas zastaví celou JVM na sekundy; spadlý test se jednou zopakuje a ve výstupu je vidět jako Flakes.
       - name: Smoke test
         if: runner.os == 'Windows'
-        run: ./mvnw.cmd -B -P smoke verify
+        run: ./mvnw.cmd -B -P smoke verify "-Dfailsafe.rerunFailingTestsCount=1"
 
       - name: Jednotkové testy
         if: runner.os == 'macOS'

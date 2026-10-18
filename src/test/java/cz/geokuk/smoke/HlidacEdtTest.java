@@ -59,6 +59,64 @@ public class HlidacEdtTest {
 		}
 	}
 
+	/** Zásek EDT, při kterém vzorkovač tiká dál, je náš kód: počítá se celý. */
+	@Test(timeout = 30_000)
+	public void zasekEdtSeCelyPocita() throws Exception {
+		final HlidacEdt hlidac = HlidacEdt.zapni(200);
+		try {
+			hlidac.konecStartu();
+			EventQueue.invokeAndWait(() -> spi(HlidacEdt.PAUZA_MS + 500));
+			EventQueue.invokeAndWait(() -> {});
+			Assert.assertTrue("nejdelší " + hlidac.getNejdelsiMs(), hlidac.getNejdelsiMs() >= HlidacEdt.PAUZA_MS + 400);
+			Assert.assertEquals(0, hlidac.getPocetPauz());
+			Assert.assertFalse(hlidac.getPomale().toString(), hlidac.getPomale().toString().contains("Pauza JVM"));
+		} finally {
+			hlidac.vypni();
+		}
+	}
+
+	/** Pauza JVM, která trvá ještě na konci události (vzorkovač od té doby netikl), se do délky události nepočítá. */
+	@Test(timeout = 30_000)
+	public void pauzaJvmDoKonceUdalostiSeNepocita() throws Exception {
+		final HlidacEdt hlidac = HlidacEdt.zapni(200);
+		try {
+			hlidac.konecStartu();
+			EventQueue.invokeAndWait(() -> {
+				hlidac.zastavVzorkovac(true);
+				spi(HlidacEdt.PAUZA_MS + 500);
+			});
+			hlidac.zastavVzorkovac(false);
+			EventQueue.invokeAndWait(() -> {});
+			Assert.assertTrue("nejdelší " + hlidac.getNejdelsiMs(), hlidac.getNejdelsiMs() < 400);
+			final String pomale = hlidac.getPomale().toString();
+			Assert.assertTrue(pomale, pomale.contains("\nPauza JVM "));
+			Assert.assertTrue(pomale, pomale.contains(" se nepočítá, celkem "));
+		} finally {
+			hlidac.vypni();
+		}
+	}
+
+	/** Pauza JVM uprostřed události se odečte, zbytek události se počítá. */
+	@Test(timeout = 30_000)
+	public void pauzaJvmUprostredUdalostiSeOdecte() throws Exception {
+		final HlidacEdt hlidac = HlidacEdt.zapni(200);
+		try {
+			hlidac.konecStartu();
+			EventQueue.invokeAndWait(() -> {
+				hlidac.zastavVzorkovac(true);
+				spi(HlidacEdt.PAUZA_MS + 500);
+				hlidac.zastavVzorkovac(false);
+				spi(600);
+			});
+			EventQueue.invokeAndWait(() -> {});
+			Assert.assertEquals(1, hlidac.getPocetPauz());
+			Assert.assertTrue("pauza " + hlidac.getNejdelsiPauzaMs(), hlidac.getNejdelsiPauzaMs() >= HlidacEdt.PAUZA_MS + 400);
+			Assert.assertTrue("nejdelší " + hlidac.getNejdelsiMs(), hlidac.getNejdelsiMs() >= 450 && hlidac.getNejdelsiMs() < 1000);
+		} finally {
+			hlidac.vypni();
+		}
+	}
+
 	private static void vnorenaDlouhaObsluha() {
 		spi(HlidacEdt.PRAH_ZASOBNIKU_MS + 700);
 	}

@@ -885,6 +885,8 @@ public class SmokeScenar {
 			zprava.setProperty("edt.startMs", String.valueOf(hlidac.getNejdelsiStartMs()));
 			zprava.setProperty("edt.vzhledMs", String.valueOf(hlidac.getNejdelsiVzhledMs()));
 			zprava.setProperty("edt.udalostiPoStartu", String.valueOf(hlidac.getUdalostiPoStartu()));
+			zprava.setProperty("edt.pauzyJvm", String.valueOf(hlidac.getPocetPauz()));
+			zprava.setProperty("edt.nejdelsiPauzaJvmMs", String.valueOf(hlidac.getNejdelsiPauzaMs()));
 			zprava.setProperty("gc.konecMs", String.valueOf(hlidac.getGcMs()));
 			final List<String> pomale = hlidac.getPomale();
 			for (int j = 0; j < pomale.size(); j++) {
