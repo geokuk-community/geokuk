@@ -382,12 +382,15 @@ final class OfflineRenderer {
 		return false;
 	}
 
-	/** Dlaždice zoomů od {@code zMin} do {@code zMax}, které zasahují do některé z map, po zoomech od nejmenšího. */
+	/** Dlaždice zoomů od {@code zMin} do {@code zMax}, které zasahují do některé z podrobných map, po zoomech od nejmenšího; přehledová mapa světa se nepočítá. */
 	List<KaLoc> dlazdicePokryti(final int zMin, final int zMax) {
 		final Set<KaLoc> vysledek = new LinkedHashSet<>();
 		for (int z = zMin; z <= zMax; z++) {
 			final byte zoom = (byte) z;
 			for (final MapFile m : zakladni) {
+				if (m.getMapFileInfo().zoomLevelMax < PODROBNY_ZOOM) {
+					continue;
+				}
 				final BoundingBox bb = m.getMapFileInfo().boundingBox;
 				final int x0 = MercatorProjection.longitudeToTileX(bb.minLongitude, zoom);
 				final int x1 = MercatorProjection.longitudeToTileX(bb.maxLongitude, zoom);

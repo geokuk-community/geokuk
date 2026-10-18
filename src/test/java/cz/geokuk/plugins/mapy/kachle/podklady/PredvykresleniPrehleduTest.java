@@ -2,6 +2,7 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -144,6 +145,32 @@ public class PredvykresleniPrehleduTest {
 		Assert.assertTrue(PredvykresleniPrehledu.jeVhodne(2));
 	}
 
+	private static List<KaLoc> fronta(final File slozka) throws IOException {
+		final OfflineMapy om = new OfflineMapy(() -> {});
+		try {
+			om.kontrolaSlozkyNs = 0;
+			om.nastav(slozka, TemaOfflineMapy.VYCHOZI);
+			final OfflineRenderer r = om.pouzij();
+			try {
+				return r.dlazdicePokryti(PredvykresleniPrehledu.Z_MIN, PredvykresleniPrehledu.Z_MAX);
+			} finally {
+				r.skonci();
+			}
+		} finally {
+			om.zavri();
+		}
+	}
+
+	@Test
+	public void prehledovaMapaSvetaSeDoFrontyNepocita() throws IOException {
+		final File jen = tmp.newFolder("jen-mala");
+		OfflineMapyTest.zkopirujMapu(jen, "kukov.map");
+		final File sPrehledem = tmp.newFolder("s-prehledem");
+		OfflineMapyTest.zkopirujMapu(sPrehledem, "kukov.map");
+		Files.copy(new File("distribuce/offline-mapy/prehled-svet-ne.map").toPath(), new File(sPrehledem, "prehled-svet-ne.map").toPath());
+		Assert.assertEquals(fronta(jen), fronta(sPrehledem));
+	}
+
 	@Test
 	public void frontaJsouDlazdicePokrytiMapy() throws IOException {
 		final File slozka = tmp.newFolder("offline-mapy");
@@ -170,7 +197,8 @@ public class PredvykresleniPrehleduTest {
 				for (int x = 0; x < 128; x++) {
 					for (int y = 0; y < 128; y++) {
 						final KaLoc loc = KaLoc.ofXyz(x, y, 7);
-						Assert.assertEquals(loc.getFromSzUnsignedX() + "/" + loc.getFromSzUnsignedY(), x * 1000 + y, loc.getFromSzUnsignedX() * 1000 + loc.getFromSzUnsignedY());
+						Assert.assertEquals(x, loc.getFromSzUnsignedX());
+						Assert.assertEquals(y, loc.getFromSzUnsignedY());
 						if (r.pokryva(loc)) {
 							pokrytych++;
 							Assert.assertTrue(fronta.contains(loc));
