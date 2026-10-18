@@ -137,6 +137,38 @@ public class VrstvyPodleKliceTest {
 		assertEquals(Collections.emptyList(), SouboryVrstev.mapy(new File(slozka, "neni")));
 	}
 
+	/** Starší verze vrstvy tras se kreslí, jen dokud vedle ní není vrstva tourist (i vícedílná); vlastní mapy a jiné regiony zůstávají. */
+	@Test
+	public void starsiVerzeVrstvyJenBezSoucasne() throws IOException {
+		final File slozka = tmp.newFolder("vrstvy");
+		new File(slozka, "europe/germany").mkdirs();
+		for (final String f : Arrays.asList("europe/czech-republic.routes.map", "europe/czech-republic.tourist.map", "europe/slovakia.routes.map",
+				"europe/germany/bayern.routes.map", "europe/germany/bayern.TOURIST.1.map", "europe/austria.routes.2.map", "europe/austria.tourist.map.stahuje",
+				"europe/vlastni.map")) {
+			Files.write(new File(slozka, f).toPath(), new byte[1]);
+		}
+		assertEquals(Arrays.asList(new File(slozka, "europe/austria.routes.2.map"), new File(slozka, "europe/czech-republic.tourist.map"),
+				new File(slozka, "europe/germany/bayern.TOURIST.1.map"), new File(slozka, "europe/slovakia.routes.map"), new File(slozka, "europe/vlastni.map")),
+				SouboryVrstev.mapy(slozka));
+	}
+
+	/** Ke starší verzi vrstvy patří i součet a rozpracované stahování; jen u vrstvy tras, jen pro její region. */
+	@Test
+	public void starsiSouboryVrstvy() throws IOException {
+		final File slozka = tmp.newFolder("vrstvy");
+		new File(slozka, "europe/germany").mkdirs();
+		for (final String f : Arrays.asList("europe/germany/bayern.routes.map", "europe/germany/bayern.routes.map.sha256", "europe/germany/bayern.routes.1.map.stahuje",
+				"europe/germany/bayern-x.routes.map", "europe/germany/bayern.routes.map.bak", "europe/germany/bayern.contours.map", "europe/germany.routes.map")) {
+			Files.write(new File(slozka, f).toPath(), new byte[1]);
+		}
+		final KatalogVrstev k = KatalogVrstev.nacti(katalogBavorska(), KatalogVrstevTest.mapy());
+		final File d = new File(slozka, "europe/germany");
+		assertEquals(Arrays.asList(new File(d, "bayern.routes.1.map.stahuje"), new File(d, "bayern.routes.map"), new File(d, "bayern.routes.map.sha256")),
+				SouboryVrstev.starsiSoubory(slozka, k.vrstva("europe/germany/bayern", Typ.TRASY).get()));
+		assertEquals(Collections.emptyList(), SouboryVrstev.starsiSoubory(slozka, k.vrstva("europe/germany/bayern", Typ.DEM).get()));
+		assertEquals(Collections.emptyList(), SouboryVrstev.starsiSoubory(new File(slozka, "neni"), k.vrstva("europe/germany/bayern", Typ.TRASY).get()));
+	}
+
 	@Test
 	public void katalogVrstevZeServeru() throws Exception {
 		final File mapy = tmp.newFolder("offline-mapy");

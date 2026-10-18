@@ -114,6 +114,19 @@ public class PrekryvVrstvyTrasTest {
 				Arrays.asList(new File(slozka, "austria.map"), new File(slozka, "czech-republic.map"), new File(slozka, "moje.map")), OfflineMapy.mapyPrekryvu(slozka, true));
 	}
 
+	/** Starší verze vrstvy tras (*.routes.map) slouží překryvu jako vrstva tras, dokud vedle ní není vrstva tourist. */
+	@Test
+	public void starsiVerzeVrstvyTras() throws IOException {
+		for (final String f : Arrays.asList("czech-republic.map", "austria.map")) {
+			Files.write(new File(slozka, f).toPath(), new byte[1]);
+		}
+		Files.write(new File(vrstvy, "czech-republic.routes.map").toPath(), new byte[1]);
+		Files.write(new File(vrstvy, "austria.routes.map").toPath(), new byte[1]);
+		Files.write(new File(vrstvy, "austria.tourist.map").toPath(), new byte[1]);
+		Assert.assertEquals(Arrays.asList(new File(vrstvy, "austria.tourist.map"), new File(vrstvy, "czech-republic.routes.map")),
+				OfflineMapy.mapyPrekryvu(slozka, false));
+	}
+
 	/** Se základní mapou i vrstvou tras jiného území se kreslí obojí; po stažení vrstvy se renderer otevře znovu. */
 	@Test(timeout = 30000)
 	public void vrstvaTrasPribudePoStazeni() throws IOException {

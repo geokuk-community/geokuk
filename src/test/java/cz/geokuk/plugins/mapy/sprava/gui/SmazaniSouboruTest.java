@@ -60,6 +60,18 @@ public class SmazaniSouboruTest {
 		Assert.assertTrue("smazat už smazané nevadí", SmazaniSouboru.smaz(soubory).isEmpty());
 	}
 
+	/** Smazání vrstvy tras smaže i její starší verzi (*.routes.map). */
+	@Test
+	public void souboryVrstvyVcetneStarsiVerze() throws Exception {
+		final File slozka = tmp.newFolder("layers");
+		final KatalogovaVrstva trasy = VrstvyProGui.katalogCesko().podleId("tourist/europe/czech-republic").get();
+		new File(slozka, "europe").mkdirs();
+		final File stara = vytvor(slozka, "europe/czech-republic.routes.map", 100);
+		final File soucet = vytvor(slozka, "europe/czech-republic.routes.map.sha256", 64);
+		vytvor(slozka, "europe/slovakia.routes.map", 100);
+		Assert.assertEquals(Arrays.asList(stara, soucet), SmazaniSouboru.souboryVrstvy(slozka, trasy));
+	}
+
 	@Test
 	public void souboryMapyAPopis() throws Exception {
 		final File slozka = tmp.newFolder("mapy");

@@ -10,21 +10,28 @@ public final class KatalogovaVrstva {
 
 	public enum Typ {
 		/** Turistická vrstva: trasy, skály a body pro orientaci (.map). */
-		TRASY("tourist"),
+		TRASY("tourist", "routes"),
 		/** Vrstevnice (.map). */
-		VRSTEVNICE("contours"),
+		VRSTEVNICE("contours", null),
 		/** Výškový model pro stínování (zip s dlaždicemi .hgt). */
-		DEM("dem");
+		DEM("dem", null);
 
 		private final String kod;
+		private final String starsiKod;
 
-		Typ(final String kod) {
+		Typ(final String kod, final String starsiKod) {
 			this.kod = kod;
+			this.starsiKod = starsiKod;
 		}
 
 		/** Kód typu v katalogu a ve jméně souboru vrstvy („tourist“, „contours“, „dem“). */
 		public String getKod() {
 			return kod;
+		}
+
+		/** Kód typu ve jménech souborů starších verzí vrstvy; takový soubor se kreslí, dokud se nestáhne vrstva s kódem {@link #getKod()}. Null = není. */
+		public String getStarsiKod() {
+			return starsiKod;
 		}
 
 		static Typ podleKodu(final String kod) {

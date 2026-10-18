@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -112,7 +113,7 @@ final class StahovacVrstev {
 		final Mistni m;
 		if (mame == stav.getVrstva().getSoubory().size()) {
 			m = Mistni.MAME;
-		} else if (mame == 0 && jine == 0) {
+		} else if (mame == 0 && jine == 0 && SouboryVrstev.starsiSoubory(slozka, stav.getVrstva()).stream().noneMatch(f -> f.getName().toLowerCase(Locale.ROOT).endsWith(".map"))) {
 			m = Mistni.NEMAME;
 		} else {
 			m = Mistni.JINA_VERZE;
@@ -191,6 +192,7 @@ final class StahovacVrstev {
 			if (chybaVymeny != null) {
 				return mistniStav(s, slozka).sFazi(Faze.CHYBA, chybaVymeny);
 			}
+			smazStarsiVerzi(slozka, vrstva);
 			log.info("Vrstva {} stažena do {}", vrstva, slozka);
 			return mistniStav(s, slozka).sFazi(Faze.HOTOVO, null);
 		} catch (final IOException e) {
@@ -207,6 +209,18 @@ final class StahovacVrstev {
 				text = StahovacMapy.STAHOVANI_PRERUSENO;
 			}
 			return mistniStav(s, slozka).sFazi(Faze.CHYBA, text);
+		}
+	}
+
+	/** Starší verze vrstvy se po stažení současné smaže; co smazat nejde, se nekreslí (viz {@link SouboryVrstev#mapy(File)}). */
+	private void smazStarsiVerzi(final File slozka, final KatalogovaVrstva vrstva) {
+		final List<File> starsi = SouboryVrstev.starsiSoubory(slozka, vrstva);
+		if (!starsi.isEmpty()) {
+			http.uvolniMapy.run();
+			for (final File f : starsi) {
+				StahovacMapy.smaz(f);
+			}
+			log.info("Starší verze vrstvy {} smazána: {}", vrstva, starsi);
 		}
 	}
 

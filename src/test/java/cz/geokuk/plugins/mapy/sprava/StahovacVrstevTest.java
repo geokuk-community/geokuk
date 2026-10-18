@@ -335,6 +335,29 @@ public class StahovacVrstevTest {
 		assertFalse(naDisku("vadna.map").exists());
 	}
 
+	/** Vrstva tras starší verze (*.routes.map) se nabídne k aktualizaci a po stažení vrstvy tourist se i se součtem smaže; jiné soubory zůstanou. */
+	@Test
+	public void starsiVerzeTrasSePoStazeniSmaze() throws IOException {
+		final byte[] mapa = StahovacMapyTest.kukov();
+		data.put("cz.tourist.map", mapa);
+		final String json = "{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"layers\": ["
+				+ KatalogVrstevTest.vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map",
+						KatalogVrstevTest.soubor("cz.tourist.map", "europe/czech-republic.tourist.map", "cz.tourist.map", mapa.length, sha(mapa)), "")
+				+ "]}";
+		final KatalogovaVrstva v = KatalogVrstev.nacti(json, KatalogVrstevTest.mapy()).getVrstvy().get(0);
+		final File europe = new File(slozka, "europe");
+		assertTrue(europe.mkdirs());
+		for (final String f : Arrays.asList("czech-republic.routes.map", "czech-republic.routes.map.sha256", "czech-republic.contours.map", "slovakia.routes.map")) {
+			Files.write(new File(europe, f).toPath(), new byte[1]);
+		}
+		assertEquals(Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
+		final StavVrstvy s = stahni(v, new AtomicBoolean());
+		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
+		assertEquals(Mistni.MAME, s.getMistni());
+		assertEquals(Arrays.asList("europe/czech-republic.contours.map", "europe/czech-republic.tourist.map", "europe/czech-republic.tourist.map.sha256",
+				"europe/slovakia.routes.map"), vSlozce());
+	}
+
 	@Test
 	public void maloMista() throws IOException {
 		final KatalogovaVrstva v = dvaSoubory();

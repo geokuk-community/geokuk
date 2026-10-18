@@ -273,8 +273,9 @@ public class OfflineMapy {
 		}
 	}
 
-	/** Přípona stažené vrstvy tras ve složce vrstev. */
-	static final String PRIPONA_TRAS = "." + cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Typ.TRASY.getKod() + ".map";
+	/** Přípony stažené vrstvy tras ve složce vrstev: současná a starší verze. */
+	static final List<String> PRIPONY_TRAS = Arrays.asList("." + cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Typ.TRASY.getKod() + ".map",
+			"." + cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Typ.TRASY.getStarsiKod() + ".map");
 
 	/**
 	 * Mapy pro překryv tras: stažené vrstvy tras (stačí i bez základní mapy, třeba přes online podklad) a základní mapy, ke kterým vrstva tras stažená není.
@@ -292,9 +293,11 @@ public class OfflineMapy {
 		final File slozkaVrstev = new File(slozka, SLOZKA_VRSTEV);
 		for (final File f : trasyKresliPodklad ? Collections.<File> emptyList() : vrstvyVeSlozce(slozka)) {
 			final String cesta = slozkaVrstev.toPath().relativize(f.toPath()).toString().replace('\\', '/');
-			if (cesta.toLowerCase(Locale.ROOT).endsWith(PRIPONA_TRAS)) {
-				vysledek.add(f);
-				klice.add(cesta.substring(0, cesta.length() - PRIPONA_TRAS.length()).toLowerCase(Locale.ROOT));
+			for (final String pripona : PRIPONY_TRAS) {
+				if (cesta.toLowerCase(Locale.ROOT).endsWith(pripona)) {
+					vysledek.add(f);
+					klice.add(cesta.substring(0, cesta.length() - pripona.length()).toLowerCase(Locale.ROOT));
+				}
 			}
 		}
 		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
