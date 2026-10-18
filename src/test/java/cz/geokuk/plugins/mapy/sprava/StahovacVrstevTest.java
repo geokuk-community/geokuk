@@ -335,27 +335,67 @@ public class StahovacVrstevTest {
 		assertFalse(naDisku("vadna.map").exists());
 	}
 
-	/** Vrstva tras starší verze (*.routes.map) se nabídne k aktualizaci a po stažení vrstvy tourist se i se součtem smaže; jiné soubory zůstanou. */
-	@Test
-	public void starsiVerzeTrasSePoStazeniSmaze() throws IOException {
+	/** Vrstva tourist pro Česko se souborem cz.tourist.map ze serveru; {@code sha} null = správný součet. */
+	private KatalogovaVrstva vrstvaTourist(final String sha) throws IOException {
 		final byte[] mapa = StahovacMapyTest.kukov();
 		data.put("cz.tourist.map", mapa);
 		final String json = "{\"version\": 1, \"sources\": [\"http://127.0.0.1:" + server.getAddress().getPort() + "/rel/\"], \"layers\": ["
 				+ KatalogVrstevTest.vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map",
-						KatalogVrstevTest.soubor("cz.tourist.map", "europe/czech-republic.tourist.map", "cz.tourist.map", mapa.length, sha(mapa)), "")
+						KatalogVrstevTest.soubor("cz.tourist.map", "europe/czech-republic.tourist.map", "cz.tourist.map", mapa.length, sha == null ? sha(mapa) : sha), "")
 				+ "]}";
-		final KatalogovaVrstva v = KatalogVrstev.nacti(json, KatalogVrstevTest.mapy()).getVrstvy().get(0);
+		return KatalogVrstev.nacti(json, KatalogVrstevTest.mapy()).getVrstvy().get(0);
+	}
+
+	/** Starší verze vrstvy tras Česka se součtem, k tomu vrstevnice a starší trasy Slovenska. */
+	private void staraVrstvaTras() throws IOException {
 		final File europe = new File(slozka, "europe");
 		assertTrue(europe.mkdirs());
 		for (final String f : Arrays.asList("czech-republic.routes.map", "czech-republic.routes.map.sha256", "czech-republic.contours.map", "slovakia.routes.map")) {
 			Files.write(new File(europe, f).toPath(), new byte[1]);
 		}
+	}
+
+	private boolean staraVrstvaZustala() {
+		return vSlozce().containsAll(Arrays.asList("europe/czech-republic.routes.map", "europe/czech-republic.routes.map.sha256"));
+	}
+
+	/** Vrstva tras starší verze (*.routes.map) se nabídne k aktualizaci a po stažení vrstvy tourist se i se součtem smaže; jiné soubory zůstanou. */
+	@Test
+	public void starsiVerzeTrasSePoStazeniSmaze() throws IOException {
+		final KatalogovaVrstva v = vrstvaTourist(null);
+		staraVrstvaTras();
 		assertEquals(Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
 		final StavVrstvy s = stahni(v, new AtomicBoolean());
 		assertEquals(s.toString(), Faze.HOTOVO, s.getFaze());
 		assertEquals(Mistni.MAME, s.getMistni());
 		assertEquals(Arrays.asList("europe/czech-republic.contours.map", "europe/czech-republic.tourist.map", "europe/czech-republic.tourist.map.sha256",
 				"europe/slovakia.routes.map"), vSlozce());
+	}
+
+	/** Starší verze vrstvy tras zůstane, když se nová nestáhne, neprojde ověřením nebo ji nejde dát na místo. */
+	@Test
+	public void starsiVerzeTrasZustanePriChybe() throws IOException {
+		staraVrstvaTras();
+		chybi.add("cz.tourist.map");
+		StavVrstvy s = stahni(vrstvaTourist(null), new AtomicBoolean());
+		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
+		assertTrue("stažení selhalo", staraVrstvaZustala());
+		chybi.clear();
+
+		s = stahni(vrstvaTourist(KatalogVrstevTest.SHA), new AtomicBoolean());
+		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
+		assertTrue("nová verze neprošla ověřením", staraVrstvaZustala());
+
+		// Na místě je jiná verze vrstvy tourist; nový soubor zmizí, když se před výměnou uvolňují mapy, a výměna selže.
+		final KatalogovaVrstva v = vrstvaTourist(null);
+		Files.write(new File(slozka, "europe/czech-republic.tourist.map").toPath(), new byte[1]);
+		final StahovacMapy http = new StahovacMapy("GeoKuk/test (https://example.org)", () -> StahovacMapy.smaz(StahovacVrstev.rozpracovany(slozka, v.getSoubory().get(0))));
+		http.pauzaPresunuMs = 10;
+		stahovac = new StahovacVrstev(http);
+		s = stahni(v, new AtomicBoolean());
+		assertEquals(s.toString(), Faze.CHYBA, s.getFaze());
+		assertTrue(s.getChyba(), s.getChyba().contains("nejde nahradit"));
+		assertTrue("výměna selhala", staraVrstvaZustala());
 	}
 
 	@Test
