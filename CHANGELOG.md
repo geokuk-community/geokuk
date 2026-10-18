@@ -131,16 +131,17 @@
 - Když se s programem chvíli nepracuje, předkreslí offline mapy pro
   oddálená měřítka do cache. Oddálení na celou zemi je pak rychlé i na
   pomalém počítači; při práci s programem předkreslování počká.
+- Offline mapa se stínováním terénu se při oddálení (celá země, kraj)
+  kreslí několikrát rychleji a potřebuje méně paměti.
 
 ### Opravy
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
   keše), už nezahltí log tisíci varováními. Jiná nečíselná čísla vlastníka
   program ohlásí jedním varováním za soubor.
+- GPX, který se právě kopíruje do složky s daty, už nehlásí chybu načítání;
+  načte se, až je kopie hotová.
 
 Obsahuje i všechny opravy z 6.4.2.
-
-### Opravy
-- GPX, který se právě kopíruje do složky s daty, už nehlásí chybu načítání; načte se, až je kopie hotová.
 
 ## 6.4.2
 
