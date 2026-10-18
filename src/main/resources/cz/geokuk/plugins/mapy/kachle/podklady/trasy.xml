@@ -376,7 +376,8 @@
   <rule e="way" k="osmc_color" v="white"><line stroke="#B0FFFFFF" stroke-width="5.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" scale="none" dy="0"/></rule>
  </rule>
 </rule>
-<!-- Trasy ze stažené vrstvy tras (tagy fmrel*), stejně jako v tématu Turistická. -->
+<!-- Trasy, skály a body ze stažené vrstvy tourist, stejně jako v tématu GeoKuk. -->
+    <!-- turistické značení (tagy fmrel*, z vlastní mapy tras) – kresleno pod popisky -->
 <rule e="way" k="*" v="*" zoom-min="12" zoom-max="12">
  <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="3.0" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
  <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="3.0" stroke-linecap="round" scale="none" dy="2.0"/><line stroke="#0A50E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.0"/></rule>
@@ -469,4 +470,42 @@
  <rule e="way" k="fmrelmtbgreen" v="*"><line stroke="#C46A1A" stroke-width="2.0" stroke-dasharray="6,4" stroke-linecap="butt" scale="none" dy="3.0"/></rule>
  <rule e="way" k="fmrelmtbyellow" v="*"><line stroke="#C46A1A" stroke-width="2.0" stroke-dasharray="6,4" stroke-linecap="butt" scale="none" dy="3.0"/></rule>
 </rule>
+    <rule e="way" k="natural" v="rock|stone|bare_rock|bedrock" zoom-min="14">
+        <area fill="#80B8B2A6" stroke="#7F7B6F" stroke-width="0.15" />
+        <rule e="way" k="*" v="*" zoom-min="16">
+            <area src="file:geokuk/symbols/rock-pattern.svg" symbol-width="22" symbol-height="22" />
+        </rule>
+    </rule>
+    <rule e="way" k="natural" v="cliff" zoom-min="15">
+        <line stroke="#6F6A5E" stroke-width="0.6" stroke-linecap="butt" />
+        <lineSymbol src="file:geokuk/symbols/cliff.svg" repeat="true" repeat-gap="14" repeat-start="5" rotate="true" symbol-width="8" symbol-height="16" />
+    </rule>
+    <rule e="node" k="tower:type" v="observation" zoom-min="13">
+        <symbol display="always" src="file:geokuk/symbols/tower.svg" symbol-width="18" symbol-height="18" />
+        <rule e="node" k="*" v="*" zoom-min="15">
+            <caption fill="#734A08" font-size="11" font-style="bold" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+    <rule e="node" k="historic" v="wayside_cross|wayside_shrine" zoom-min="15">
+        <symbol display="always" src="file:geokuk/symbols/cross.svg" symbol-width="13" symbol-height="13" />
+    </rule>
+    <rule e="node" k="man_made" v="cross" zoom-min="15">
+        <symbol display="always" src="file:geokuk/symbols/cross.svg" symbol-width="13" symbol-height="13" />
+    </rule>
+    <rule e="node" k="information" v="guidepost" zoom-min="15">
+        <symbol display="always" src="file:geokuk/symbols/guidepost.svg" symbol-width="15" symbol-height="15" />
+        <rule e="node" k="*" v="*" zoom-min="17">
+            <caption fill="#734A08" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+    <rule e="node" k="waterway" v="waterfall" zoom-min="14">
+        <symbol display="always" src="file:geokuk/symbols/waterfall.svg" symbol-width="15" symbol-height="15" />
+        <rule e="node" k="*" v="*" zoom-min="16">
+            <caption fill="#2F7CC4" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
+        </rule>
+    </rule>
+    <!-- názvy značených tras (jméno trasy je ve vrstvě tourist v poli ref) -->
+    <rule e="way" k="fmrelhikingred|fmrelhikingblue|fmrelhikinggreen|fmrelhikingyellow" v="*" zoom-min="15">
+        <pathText k="ref" fill="#8A2B2B" font-size="10" font-style="italic" priority="-9" stroke="#FFFFFF" stroke-width="1.6" dy="-5" />
+    </rule>
 </rendertheme>

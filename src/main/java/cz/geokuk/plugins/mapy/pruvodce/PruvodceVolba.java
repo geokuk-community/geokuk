@@ -24,7 +24,7 @@ public final class PruvodceVolba {
 		this.vrstvy = Collections.unmodifiableSet(v);
 	}
 
-	/** Vrstvy zaškrtnuté na začátku: turistické trasy (u offline Turistické z nich je značení v mapě, u online podkladu jsou překryvem). */
+	/** Vrstvy zaškrtnuté na začátku: turistické trasy (u offline GeoKuk z nich je značení v mapě, u online podkladu jsou překryvem). */
 	public static Set<Cast> vychoziVrstvy() {
 		return EnumSet.of(Cast.TRASY);
 	}
