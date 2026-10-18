@@ -6,6 +6,7 @@ import java.util.List;
 
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
@@ -74,6 +75,11 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 	public void onEvent(final cz.geokuk.plugins.mapy.sprava.KatalogVrstevEvent event) {
+		repaint();
+	}
+
+	public void onEvent(final cz.geokuk.plugins.mapy.kachle.ReliefCuzkEvent event) {
+		reliefCuzk = event.isZapnuto();
 		repaint();
 	}
 
@@ -151,7 +157,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	/** Šířka vlevo dole vyhrazená měřítku; atribuce do ní nezasahuje. */
 	static final int ODSTUP_MERITKA = 220;
 
-	/** Zkrácené zdroje atribuce: podklad, data offline mapy, vrstvy a překryv tras. */
+	/** Zkrácené zdroje atribuce: podklad, data offline mapy, vrstvy a překryvy. */
 	List<String> zkratkyAtribuce() {
 		final List<String> v = new ArrayList<>();
 		v.addAll(AtribuceMapy.zkrat(textAtribuce()));
@@ -160,6 +166,9 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 		if (prekryvTrasPotrebujeAtribuci()) {
 			v.add(AtribuceMapy.OSM);
+		}
+		if (reliefCuzk) {
+			v.addAll(AtribuceMapy.zkrat(EKaType.RELIEF_CUZK.getAtribuce()));
 		}
 		return AtribuceMapy.slouc(v);
 	}
@@ -170,6 +179,9 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		v.add(textAtribuce());
 		if (prekryvTrasPotrebujeAtribuci()) {
 			v.add(JKachlovnikTras.ATRIBUCE);
+		}
+		if (reliefCuzk && !uzJeVeZneni(v, EKaType.RELIEF_CUZK.getAtribuce())) {
+			v.add(ATRIBUCE_RELIEFU);
 		}
 		for (final KatalogovaVrstva k : vrstvyAtribuce()) {
 			final String t = k.getAtribuceDlouha() != null && !k.getAtribuceDlouha().trim().isEmpty() ? k.getAtribuceDlouha().trim() : k.getAtribuce();
@@ -193,6 +205,11 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 		return getKachloType().isOffline() && getKachleModel() != null ? getKachleModel().getAtribuceOfflineMapy() : getKachloType().getAtribuce();
 	}
+
+	/** Přes mapu se kreslí stínovaný reliéf ČÚZK. */
+	private boolean reliefCuzk;
+
+	static final String ATRIBUCE_RELIEFU = "Stínovaný reliéf " + EKaType.RELIEF_CUZK.getAtribuce();
 
 	private boolean prekryvTrasPotrebujeAtribuci() {
 		return JKachlovnikTras.potrebujeAtribuci(getKachloType()) && getKachleModel() != null && getKachleModel().isPrekryvTras();

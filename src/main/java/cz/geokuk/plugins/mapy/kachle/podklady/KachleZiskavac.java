@@ -609,7 +609,7 @@ public class KachleZiskavac {
 
 	/** Offline mapy, ze kterých se kreslí dlaždice daného typu. */
 	OfflineMapy offlineMapy(final EKaType typ) {
-		return typ.isPrekryv() ? offlineTrasy : offlineMapy;
+		return typ == EKaType.TRASY ? offlineTrasy : offlineMapy;
 	}
 
 	/** Zavolá se (z vlákna vykreslování), když se změní soubory offline mapy nebo téma. */

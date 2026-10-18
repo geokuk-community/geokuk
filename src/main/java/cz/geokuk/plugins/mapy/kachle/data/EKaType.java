@@ -58,6 +58,9 @@ public final class EKaType {
 	public static final EKaType OFFLINE_MF = new EKaType("OFFLINE_MF", false, 0, 20, 20, "Offline mapa", "Vektorová mapa ze souborů .map v počítači (mapsforge)", KeyEvent.VK_F,
 			KeyStroke.getKeyStroke(KeyEvent.VK_V, 0), null);
 
+	/** Stínovaný reliéf z DMR 5G (ČÚZK) přes podklad, jen online. */
+	public static final EKaType RELIEF_CUZK = new EKaType("RELIEF_CUZK", false, 12, 20, 20, "ČÚZK – Stínovaný reliéf", "Stínovaný reliéf České republiky z DMR 5G, otevřená data ČÚZK", 0,
+			null, new WmsUrlBuilder("https://ags.cuzk.gov.cz/arcgis2/services/dmr5g/ImageServer/WMSServer", "dmr5g:GrayscaleHillshade"));
 	/** Průhledný překryv s turistickými a cyklotrasami přes podklad, kreslí se z offline map; není podkladem. */
 	public static final EKaType TRASY = new EKaType("TRASY", false, 0, 20, 20, "Turistické a cyklotrasy", "Turistické a cyklotrasy z offline map osm.paws.cz přes mapu", 0, null, null);
 
@@ -243,7 +246,7 @@ public final class EKaType {
 		if (this == TUR_FREEMAP_SK_F) {
 			return "© GKÚ, NLC, © ČÚZK";
 		}
-		if (this == CUZK_ORTO || this == CUZK_ZTM) {
+		if (this == CUZK_ORTO || this == CUZK_ZTM || this == RELIEF_CUZK) {
 			return "© ČÚZK, CC BY 4.0";
 		}
 		if (this == SK_ZBGIS_ORTO) {
@@ -269,7 +272,7 @@ public final class EKaType {
 		if (isOffline() || jeServerBezHromadnehoStahovani(hostitel())) {
 			return false;
 		}
-		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
+		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != RELIEF_CUZK && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
 	}
 
 	static boolean jeServerBezHromadnehoStahovani(final String hostitel) {
@@ -299,7 +302,12 @@ public final class EKaType {
 
 	/** Průhledný překryv přes podklad. */
 	public boolean isPrekryv() {
-		return this == TRASY;
+		return this == TRASY || this == RELIEF_CUZK;
+	}
+
+	/** Krytí dlaždic při kreslení (1 = neprůhledné); reliéf je šedý obrázek, podklad musí prosvítat. */
+	public float getKryti() {
+		return this == RELIEF_CUZK ? 0.4f : 1f;
 	}
 
 	/** Podklad pokrývá jen část světa; mimo ni je dlaždice prázdná, ne chybná. */
