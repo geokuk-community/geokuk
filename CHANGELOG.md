@@ -156,6 +156,10 @@
 - Oddíl Ve složce a země v panelu Offline mapy zůstávají rozbalené nebo
   sbalené, jak je uživatel nechal; nesbalí se po stažení další mapy ani po
   skončení stahování.
+- Bublinová nápověda bloku Mapy a Výlet ve stavovém řádku se při otevřeném
+  panelu neukazuje, takže už nepřekrývá sousední bloky.
+- Soubor > Zobrazení programu: při posunu posuvníku Mapa (offline) na 100 %
+  a víc už nezmizí hodnota ani jezdec posuvníku; stejně u Ikony keší.
 
 Obsahuje i všechny opravy z 6.4.2.
 
