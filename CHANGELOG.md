@@ -138,6 +138,11 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou
+  čerchovanou čárou; široký růžový pás zůstal jen v přehledu do měřítka 9.
+  Hranice krajů, okresů a obcí jsou tenčí a nevýrazné. V podrobnějších
+  měřítcích se už vedle hranice nekreslí druhá, hrubá hranice z přehledové
+  mapy světa. Dlaždice v cache se jednou vykreslí znovu.
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
   keše), už nezahltí log tisíci varováními. Jiná nečíselná čísla vlastníka
   program ohlásí jedním varováním za soubor.
