@@ -44,6 +44,11 @@ Vestavěné mapové téma GeoKuk (geokuk/GeoKuk.xml) je upravená kopie default.
 z mapsforge-themes 0.25.0 (GNU LGPL verze 3 nebo novější, bez §4(d) a §4(e);
 Copyright viz výše). Úpravy provedl GeoKuk; upravený soubor zůstává pod
 GNU LGPL 3 nebo novější a je součástí GeoKuku, který se šíří pod GNU GPL 3.
+Varianta GeoKuk – detail (geokuk/GeoKuk_detail.xml) je pod stejnou licencí.
+
+Ikony ve složce geokuk/symbols/osmic jsou z projektu Osmic
+(https://github.com/gmgeo/osmic, gmgeo a přispěvatelé), volné dílo
+pod CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/).
 
 Zdrojový kód knihoven pod GPL a LGPL v přibalených verzích:
   SQLJet:  https://repo1.maven.org/maven2/org/tmatesoft/sqljet/sqljet/1.1.15/sqljet-1.1.15-sources.jar

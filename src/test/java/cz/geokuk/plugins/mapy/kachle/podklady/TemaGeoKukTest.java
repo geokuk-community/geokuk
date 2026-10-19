@@ -146,6 +146,28 @@ public class TemaGeoKukTest {
 		Assert.assertEquals(TemaOfflineMapy.GEOKUK.naText() + ':' + Long.toHexString(crc.getValue()), TemaOfflineMapy.GEOKUK.otiskSouboru());
 	}
 
+	/** Varianta detail je v nabídce hned za GeoKukem, načte se s ikonami vedle tématu a uvádí jejich původ. */
+	@Test
+	public void detailSeNacteSIkonami() throws Exception {
+		final TemaOfflineMapy detail = TemaOfflineMapy.GEOKUK_DETAIL;
+		Assert.assertEquals(detail, TemaOfflineMapy.VESTAVENA.get(1));
+		Assert.assertSame(detail, TemaOfflineMapy.zTextu(detail.naText()));
+		Assert.assertTrue(detail.isKresliVrstvyTras());
+		final OfflineRenderer.NacteneTema nactene = OfflineRenderer.nactiTema(detail);
+		try {
+			Assert.assertNull(nactene.chyba, nactene.chyba);
+		} finally {
+			nactene.uvolni();
+		}
+		Assert.assertTrue(symbolyTematu("geokuk/GeoKuk_detail.xml", "geokuk/") > symbolyTematu("geokuk/GeoKuk.xml", "geokuk/"));
+		try (java.io.InputStream in = detail.vytvor(new TemaOfflineMapy.VyberVrstev(VolbaVrstev.AUTOR)).getResourceProvider().createInputStream("",
+				"file:symbols/osmic/hunting-stand-18.svg")) {
+			Assert.assertNotNull(in);
+		}
+		Assert.assertTrue(detail.getAtribuce().contains("Osmic"));
+		Assert.assertNull(TemaOfflineMapy.GEOKUK.getAtribuce());
+	}
+
 	/** Názvy vodních toků se vykreslí i při kolizi s názvy ulic. */
 	@Test
 	public void nazvyVodnichTokuSeVzdyKresli() throws IOException {

@@ -28,8 +28,13 @@ public final class TemaOfflineMapy {
 	/** Přehledné téma pro turistiku odvozené z výchozího tématu mapsforge; používá se, dokud uživatel nezvolí jiné. */
 	public static final TemaOfflineMapy GEOKUK = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, SLOZKA_GEOKUK + "GeoKuk.xml", "GeoKuk");
 
+	/** GeoKuk s dalšími body pro orientaci a cestu ke keši ve větších měřítkách. */
+	public static final TemaOfflineMapy GEOKUK_DETAIL = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, SLOZKA_GEOKUK + "GeoKuk_detail.xml", "GeoKuk – detail");
+
 	/** Vestavěné styly GeoKuk v pořadí v menu; každý styl je soubor ve složce geokuk. */
-	static final List<TemaOfflineMapy> STYLY_GEOKUK = Collections.singletonList(GEOKUK);
+	static final List<TemaOfflineMapy> STYLY_GEOKUK = Collections.unmodifiableList(Arrays.asList(GEOKUK, GEOKUK_DETAIL));
+
+	private static final String ATRIBUCE_OSMIC = "Ikony tématu GeoKuk – detail: Osmic (https://github.com/gmgeo/osmic), CC0";
 
 	/** Vestavěná témata, která má smysl nabízet; výškové stínování potřebuje data, která nemáme. */
 	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(vestavena());
@@ -148,6 +153,11 @@ public final class TemaOfflineMapy {
 
 	public File getSoubor() {
 		return soubor;
+	}
+
+	/** Atribuce přibalených zdrojů tématu do plného znění, null když žádnou nepotřebuje. */
+	public String getAtribuce() {
+		return zdroj != null && zdroj.equals(GEOKUK_DETAIL.zdroj) ? ATRIBUCE_OSMIC : null;
 	}
 
 	/** Název do menu. */
