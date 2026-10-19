@@ -49,6 +49,9 @@
   stínování naráz. Vrstvy se stahují až dvě najednou, i během stahování mapy.
   U země stažené celé stáhne i vrstvy, které existují jen po regionech, bez
   základních map regionů.
+- Panel Offline mapy: země ve složce lícují jako ve Všech mapách, region pro
+  zobrazené místo má u sebe zemi, země stažená celá má u svých regionů „celá
+  země ve složce“ a Stáhnout vše je jen tam, kde stáhne víc než jednu položku.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
   se otevře sám) nabídne Česko a okolí (hledat jde i jinou zemi nebo region),
   vybere podklad a vrstvy, stáhne jen to, co chybí, a přepne mapu. Před

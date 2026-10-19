@@ -48,6 +48,7 @@ public class JMapyPopup extends JPanel {
 	static final String SMAZAT_VRSTVU = "×";
 	static final String SLOUPEC_MAPA = "Mapa";
 	static final String JEN_REGIONY = "jen regiony";
+	static final String CELA_VE_SLOZCE = "celá země ve složce";
 	static final String SLOUPEC_TRASY = "Turistika";
 	static final String SLOUPEC_VRSTEVNICE = "Vrstevnice";
 	static final String SLOUPEC_STINOVANI = "Stínování";
@@ -697,15 +698,13 @@ public class JMapyPopup extends JPanel {
 	/** Co určuje rozložení popupu: řádky v oddílech a odkazy nad nimi; stavy řádků do ní nepatří, ty se mění na místě. */
 	private List<String> struktura() {
 		final List<String> s = new ArrayList<>();
-		final Set<String> zemeKeStazeni = new TreeSet<>();
 		for (final RadekMapy r : radky) {
 			s.add(klic(r) + "|" + r.isVeSlozce() + "|" + proMisto(r) + "|" + (r.matice != null));
-			if (r.matice != null && !r.vlastni) {
-				for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
-					if (r.matice.getBunka(c).jeKeStazeni()) {
-						zemeKeStazeni.add(r.skupina != null ? r.skupina : r.nazev);
-					}
-				}
+		}
+		final Set<String> zemeKeStazeni = new TreeSet<>();
+		for (final Uzel u : zeme(radky).values()) {
+			if (maStahnoutVse(u)) {
+				zemeKeStazeni.add(u.nazev);
 			}
 		}
 		final List<RadekMapy> kontrolovatelne = kontrolovatelne(radky);
@@ -944,21 +943,11 @@ public class JMapyPopup extends JPanel {
 				sirkaNazvu = Math.max(sirkaNazvu, fm.stringWidth(r.skupina) + 2 + ODSAZENI);
 			}
 		}
-		if (radky.stream().anyMatch(r -> r.skupina != null)) {
-			sirkaNazvu += 2 * ODSAZENI; // šipka a odsazení regionů ve stromu zemí
-		}
+		// Šipka (a odsazení regionů) ve stromu zemí; země bez regionů jsou odsazené o šipku vždy.
+		sirkaNazvu += radky.stream().anyMatch(r -> r.skupina != null) ? 2 * ODSAZENI : ODSAZENI;
 		prepocitejSouhrny();
 		zemeVsechny.clear();
-		for (final RadekMapy r : radky) {
-			if (!r.vlastni) {
-				final Uzel u = zemeVsechny.computeIfAbsent(r.skupina != null ? r.skupina : r.nazev, Uzel::new);
-				if (r.skupina != null) {
-					u.regiony.add(r);
-				} else {
-					u.celek = r;
-				}
-			}
-		}
+		zemeVsechny.putAll(zeme(radky));
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -1109,6 +1098,11 @@ public class JMapyPopup extends JPanel {
 			y = 0;
 			for (final RadekMapy r : proMisto) {
 				y = pridejRadek(misto, y, r);
+				if (r.skupina != null) {
+					// Plochý seznam: bez stromu by u regionu nebylo vidět, ze které země je.
+					posledniPohled(r).zeme = r.skupina;
+					posledniPohled(r).aktualizuj(r);
+				}
 			}
 			gbc.gridy++;
 			add(mistoObal, gbc);
@@ -1137,18 +1131,19 @@ public class JMapyPopup extends JPanel {
 			}
 			for (final Uzel u : podleZeme.values()) {
 				u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
-				if (u.regiony.isEmpty()) {
-					y = pridejRadekSeznamu(ostatni, y, u.celek, ODSAZENI, null, false);
-					continue;
+				final boolean sRegiony = !u.regiony.isEmpty();
+				if (sRegiony) {
+					uzly.add(u);
 				}
-				uzly.add(u);
 				if (u.celek != null) {
-					y = pridejRadekSeznamu(ostatni, y, u.celek, 0, u, true);
+					final int pred = ostatni.getComponentCount();
+					y = radekCelku(ostatni, y, u, false, () -> prepniUzel(u.nazev));
+					hledatelne.add(new RadekHledani(bezDiakritiky(u.celek.nazev), sRegiony ? u.nazev : null, sRegiony, komponentyOd(ostatni, pred)));
 				} else {
 					y = radekZemeBezCelku(ostatni, y, u);
 				}
 				for (final RadekMapy r : u.regiony) {
-					y = pridejRadekSeznamu(ostatni, y, r, 2 * ODSAZENI, u, false);
+					y = pridejRegionSeznamu(ostatni, y, r, u);
 				}
 			}
 			nicNenalezeno = maly(NIC_NENALEZENO);
@@ -1469,30 +1464,42 @@ public class JMapyPopup extends JPanel {
 	/** Odsazení názvu o šířku šipky rozbalení, aby se názvy zemí a regionů zarovnaly. */
 	private static final int ODSAZENI = Sipka.VELIKOST + 4;
 
-	/** Přidá řádek mapy do seznamu dalších map a zapíše ho pro hledání; vrací další volný řádek mřížky. */
-	private int pridejRadekSeznamu(final JPanel panel, final int y, final RadekMapy r, final int odsazeni, final Uzel uzel, final boolean hlavicka) {
+	/** Přidá řádek regionu do seznamu dalších map a zapíše ho pro hledání; vrací další volný řádek mřížky. */
+	private int pridejRegionSeznamu(final JPanel panel, final int y, final RadekMapy r, final Uzel uzel) {
 		final int pred = panel.getComponentCount();
 		radek(panel, y, r);
-		final JLabel nazev = posledniPohled(r).nazev;
-		nazev.setBorder(new EmptyBorder(0, odsazeni, 0, 0));
-		if (hlavicka && uzel != null) {
-			nazev.setBorder(null);
-			uzel.hlavicka = nazev;
-			nastavRozbaleni(uzel, nazev);
-			pridejStahnoutVse(panel, posledniPohled(r).popis, uzel);
-		} else if (uzel == null && r.skupina == null && r.matice != null && !r.vlastni) {
-			final Uzel sama = new Uzel(r.nazev);
-			sama.celek = r;
-			pridejStahnoutVse(panel, posledniPohled(r).popis, sama);
-		}
-		final String zeme = uzel == null ? null : uzel.nazev;
-		hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + (r.skupina == null ? "" : r.skupina)), zeme, hlavicka, new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()))));
+		posledniPohled(r).nazev.setBorder(new EmptyBorder(0, 2 * ODSAZENI, 0, 0));
+		hledatelne.add(new RadekHledani(bezDiakritiky(r.nazev + " " + r.skupina), uzel.nazev, false, komponentyOd(panel, pred)));
 		return y + 1;
 	}
 
-	/** Země, kterou nejde stáhnout celou, jen po regionech: vypadá jako ostatní země (název s šipkou rozbalení), v buňce Mapa je „jen regiony“. */
+	private static List<Component> komponentyOd(final JPanel panel, final int pred) {
+		return new ArrayList<>(Arrays.asList(panel.getComponents()).subList(pred, panel.getComponentCount()));
+	}
+
+	/** Řádek celé země v obou stromech: s regiony je hlavičkou se šipkou, bez nich je odsazený o šířku šipky, aby názvy zemí lícovaly. */
+	private int radekCelku(final JPanel panel, final int y, final Uzel u, final boolean rozbaleno, final Runnable prepni) {
+		radek(panel, y, u.celek);
+		final RadekView v = posledniPohled(u.celek);
+		if (u.regiony.isEmpty()) {
+			v.nazev.setBorder(new EmptyBorder(0, ODSAZENI, 0, 0));
+		} else {
+			u.hlavicka = v.nazev;
+			nastavRozbaleni(v.nazev, rozbaleno, prepni);
+		}
+		pridejStahnoutVse(panel, v.popis, u);
+		return y + 1;
+	}
+
+	/**
+	 * Země v seznamu dalších map bez vlastního řádku celku: vypadá jako ostatní země (název s šipkou rozbalení); v buňce Mapa „celá země ve složce“, když je celek
+	 * stažený, jinak „jen regiony“, když ji nejde stáhnout celou.
+	 */
 	private int radekZemeBezCelku(final JPanel panel, final int y, final Uzel u) {
-		return radekZemeBezCelku(panel, y, u, u.regiony.stream().allMatch(r -> r.id.startsWith("europe/")) ? JEN_REGIONY : "", false, null);
+		final Uzel vse = zemeVsechny.get(u.nazev);
+		final String popis = vse != null && vse.celek != null && vse.celek.isVeSlozce() ? CELA_VE_SLOZCE
+				: u.regiony.stream().allMatch(r -> r.id.startsWith("europe/")) ? JEN_REGIONY : "";
+		return radekZemeBezCelku(panel, y, u, popis, false, null);
 	}
 
 	/** Řádek země bez celku; v oddílu Ve složce s vlastním popisem (souhrn regionů) a vlastním přepínáním, v seznamu dalších map s hledáním. */
@@ -1513,6 +1520,9 @@ public class JMapyPopup extends JPanel {
 		}
 		panel.add(nazev, bunka(1, y, 1));
 		final JLabel popis = maly(popisText);
+		if (CELA_VE_SLOZCE.equals(popisText)) {
+			popis.setForeground(IkonyMap.ZELENA);
+		}
 		popis.setPreferredSize(new Dimension(SIRKA_POPISU, popis.getPreferredSize().height));
 		final GridBagConstraints cp = bunka(2, y, 1);
 		cp.weightx = 1;
@@ -1533,22 +1543,17 @@ public class JMapyPopup extends JPanel {
 		return y + 1;
 	}
 
-	/** Odkaz „Stáhnout vše“ vedle popisu země, pokud k zemi je co stáhnout nebo aktualizovat. */
+	/** Odkaz „Stáhnout vše“ vedle popisu země, pokud k zemi stáhne nebo aktualizuje víc než jednu položku. */
 	private void pridejStahnoutVse(final JPanel panel, final JLabel popis, final Uzel uzel) {
 		final Uzel u = zemeVsechny.getOrDefault(uzel.nazev, uzel);
-		final List<String> klice = new ArrayList<>();
-		boolean coStahnout = false;
-		for (final RadekMapy r : u.vsechnyRadky()) {
-			if (r.matice == null || r.vlastni) {
-				continue;
-			}
-			klice.add(r.id);
-			for (final MatriceMap.Cast c : MatriceMap.Cast.values()) {
-				coStahnout |= r.matice.getBunka(c).jeKeStazeni();
-			}
-		}
-		if (!coStahnout) {
+		if (!maStahnoutVse(u)) {
 			return;
+		}
+		final List<String> klice = new ArrayList<>();
+		for (final RadekMapy r : u.vsechnyRadky()) {
+			if (r.matice != null && !r.vlastni) {
+				klice.add(r.id);
+			}
 		}
 		final GridBagConstraints cp = ((GridBagLayout) panel.getLayout()).getConstraints(popis);
 		final JButton vse = odkaz(STAHNOUT_VSE, e -> {
@@ -1567,6 +1572,40 @@ public class JMapyPopup extends JPanel {
 		obal.add(popis, BorderLayout.CENTER);
 		obal.add(vse, BorderLayout.EAST);
 		panel.add(obal, cp);
+	}
+
+	/** Země z katalogu podle názvu: celek a všechny regiony bez ohledu na oddíl. */
+	private static Map<String, Uzel> zeme(final List<RadekMapy> radky) {
+		final Map<String, Uzel> zeme = new HashMap<>();
+		for (final RadekMapy r : radky) {
+			if (!r.vlastni) {
+				final Uzel u = zeme.computeIfAbsent(r.skupina != null ? r.skupina : r.nazev, Uzel::new);
+				if (r.skupina != null) {
+					u.regiony.add(r);
+				} else {
+					u.celek = r;
+				}
+			}
+		}
+		return zeme;
+	}
+
+	/**
+	 * „Stáhnout vše“ má smysl, jen když stáhne víc než „Stáhnout“ u jedné položky: počítá se plán, jaký dialog nabídne se všemi částmi, a k němu běžící
+	 * stahování země, aby odkaz za stahování nezmizel a popup se nepřestavoval.
+	 */
+	private static boolean maStahnoutVse(final Uzel u) {
+		final List<String> klice = new ArrayList<>();
+		final List<MatriceMap.Radek> matice = new ArrayList<>();
+		int polozek = 0;
+		for (final RadekMapy r : u.vsechnyRadky()) {
+			if (r.matice != null && !r.vlastni) {
+				klice.add(r.id);
+				matice.add(r.matice);
+				polozek += r.bezicVrstvy().size() + (r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje ? 1 : 0);
+			}
+		}
+		return polozek + PlanPruvodce.sestavVse(u.celek == null ? null : u.celek.id, klice, EnumSet.allOf(MatriceMap.Cast.class), matice).getPolozky().size() > 1;
 	}
 
 	/** Popisek země s regiony se chová jako přepínač: šipka a klik rozbalí regiony. */
@@ -1673,16 +1712,8 @@ public class JMapyPopup extends JPanel {
 		for (final Uzel u : podleZeme.values()) {
 			u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
 			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev) || zemeSamyRozbalene.contains(u.nazev);
-			if (u.regiony.isEmpty()) {
-				y = pridejRadek(panel, y, u.celek);
-				continue;
-			}
 			if (u.celek != null) {
-				radek(panel, y++, u.celek);
-				pridejStahnoutVse(panel, posledniPohled(u.celek).popis, u);
-				final JLabel nazev = posledniPohled(u.celek).nazev;
-				nazev.setBorder(null);
-				nastavRozbaleni(nazev, rozbaleno, () -> prepniUzelSlozky(u.nazev));
+				y = radekCelku(panel, y, u, rozbaleno, () -> prepniUzelSlozky(u.nazev));
 			} else {
 				y = radekZemeBezCelku(panel, y, u, souhrnRegionu(u.regiony), rozbaleno, () -> prepniUzelSlozky(u.nazev));
 			}
@@ -1775,6 +1806,8 @@ public class JMapyPopup extends JPanel {
 		final JLabel[] procenta = new JLabel[VRSTVY.length];
 		final MouseAdapter nadRadkem;
 		RadekMapy radek;
+		/** Země připsaná za popis regionu, null když se nepíše. */
+		String zeme;
 		/** Stav, podle kterého jsou naplněné akce a buňky; null před prvním naplněním. */
 		String stav;
 
@@ -1795,7 +1828,7 @@ public class JMapyPopup extends JPanel {
 			ikona.setToolTipText(tooltip);
 			nazev.setToolTipText(tooltip);
 			popis.setToolTipText(tooltip);
-			popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r), popis.getFontMetrics(popis.getFont())));
+			popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r) + (zeme == null ? "" : " · " + zeme), popis.getFontMetrics(popis.getFont())));
 			popis.setForeground(r.stav == RadekMapy.Stav.CHYBA ? IkonyMap.CERVENA : SEDY_TEXT);
 			final String novy = stavRadku(r);
 			if (novy.equals(stav)) {
