@@ -1748,4 +1748,53 @@ public class JMapyPopupTest {
 			Assert.assertEquals("po kontrole", 1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
 		});
 	}
+
+	/** Po zavření popupu rozbalí oddíl znovu i mapa, která ho rozbalila už předtím. */
+	@Test
+	public void poZavreniPopupuStahovaniZnovuRozbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final List<RadekMapy> stahuje = stazeneSFazi("europe/austria", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_8);
+			p.obnov(stahuje);
+			Assert.assertEquals(1, videtLabelu(p, "Polsko"));
+			p.popupZavren();
+			p.obnov(stazene(STAZENE_8));
+			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Polsko"));
+			p.obnov(stahuje);
+			Assert.assertEquals("po zavření popupu stahování oddíl zase rozbalí", 1, videtLabelu(p, "Polsko"));
+		});
+	}
+
+	/** Klik na zemi, kterou rozbalilo stahování, ji sbalí; další klik ji zase rozbalí. */
+	@Test
+	public void klikNaSamRozbalenouZemiJiSbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(stazeneSFazi("europe/germany/sachsen", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_8));
+			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals("sbaleno", 0, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals("zase rozbaleno", 1, videtLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Chyba stahování rozbalí oddíl, i když ho uživatel během stahování sbalil. */
+	@Test
+	public void chybaPoStahovaniZnovuRozbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
+			Assert.assertEquals(1, videtLabelu(p, "Česko"));
+			p.prepniSlozku(false);
+			Assert.assertEquals("sbaleno", 0, videtLabelu(p, "Česko"));
+			final List<RadekMapy> chyba = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.CHYBA);
+			Assert.assertEquals(RadekMapy.Stav.CHYBA, cesko(chyba).celkovyStav());
+			p.obnov(chyba);
+			Assert.assertEquals("chyba oddíl rozbalí", 1, videtLabelu(p, "Česko"));
+		});
+	}
 }

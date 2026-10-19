@@ -1509,22 +1509,22 @@ public class JMapyPopup extends JPanel {
 	private Boolean slozkaVychozi;
 	/** Oddíl Ve složce, jak je zrovna vidět. */
 	private boolean slozkaZobrazenaOtevrena;
-	/** Řádky ve složce, které už oddíl nebo zemi samy rozbalily (stahování, chyba); rozbalené zůstanou do zavření popupu. */
+	/** Řádky ve složce se stavem, kterým už oddíl nebo zemi samy rozbalily (stahování, chyba); rozbalené zůstanou do zavření popupu. */
 	private final Set<String> pozornost = new HashSet<>();
 	private boolean slozkaSamaOtevrena;
 	private final Set<String> zemeSamyRozbalene = new HashSet<>();
 
-	/** Stahuje se mapa nebo její vrstva, nebo se něco nepovedlo: takový řádek je vidět i ve sbaleném oddílu a sbalené zemi. */
+	/** Stahuje se mapa nebo její vrstva, nebo se něco nepovedlo: takový řádek sám rozbalí oddíl i svou zemi, dokud je uživatel nesbalí. */
 	private static boolean vyzadujePozornost(final RadekMapy r) {
 		final RadekMapy.Stav s = r.celkovyStav();
 		// Kontrola aktualizací řádek jen označí, nic se nestahuje, proto oddíl nerozbaluje.
 		return s == RadekMapy.Stav.STAHUJE && !r.kontroluje || s == RadekMapy.Stav.CHYBA;
 	}
 
-	/** Nový řádek se stahováním nebo chybou rozbalí oddíl i svou zemi; volbu uživatele to nemění. */
+	/** Nový řádek se stahováním nebo chybou (i chyba po stahování) rozbalí oddíl i svou zemi; volbu uživatele to nemění. */
 	private void zaznamenejPozornost(final List<RadekMapy> veSlozce) {
 		for (final RadekMapy r : veSlozce) {
-			if (vyzadujePozornost(r) && pozornost.add(klic(r))) {
+			if (vyzadujePozornost(r) && pozornost.add(klic(r) + "|" + r.celkovyStav())) {
 				slozkaSamaOtevrena = true;
 				if (r.skupina != null) {
 					zemeSamyRozbalene.add(r.skupina);
