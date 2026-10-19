@@ -1320,6 +1320,22 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Bez zemí s regiony se odsazený nejdelší název do sloupce vejde celý. */
+	@Test
+	public void odsazenyNazevBezRegionuSeVejde() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final String dlouhy = "Bosna a Hercegovina s velmi dlouhým názvem";
+			p.obnov(Arrays.asList(RadekMapy.katalogova("europe/a", dlouhy, RadekMapy.Stav.AKTUALNI).velikost(MB).veSlozce(true).build(),
+					RadekMapy.katalogova("europe/b", "Malta", RadekMapy.Stav.AKTUALNI).velikost(MB).veSlozce(true).build()));
+			final JLabel nazev = labels(p).stream().filter(l -> dlouhy.equals(l.getText())).findFirst().get();
+			Assert.assertTrue("odsazený", nazev.getInsets().left > 0);
+			Assert.assertTrue(nazev.getPreferredSize().width + " px",
+					nazev.getPreferredSize().width >= nazev.getInsets().left + nazev.getFontMetrics(nazev.getFont()).stringWidth(dlouhy));
+		});
+	}
+
 	/** V plochém oddílu Pro zobrazené místo je u regionu za popisem země, i po změně stavu na místě; u celé země ne. */
 	@Test
 	public void regionProMistoMaVPopisuZemi() throws Exception {
