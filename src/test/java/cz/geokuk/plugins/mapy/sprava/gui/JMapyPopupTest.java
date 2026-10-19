@@ -1578,4 +1578,30 @@ public class JMapyPopupTest {
 			Assert.assertFalse("bez odloženého spojování", p.isPrestavbaOdlozena());
 		});
 	}
+
+	/** Změny po čtení složky (stínování, volné místo, dvojité mapy, řádky) přestaví popup jednou, ne po každé. */
+	@Test
+	public void zmenyPoCteniSlozkyPrestaviPopupJednou() throws Exception {
+		final java.io.File slozka = tmp.newFolder("dvojite-naraz");
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap k = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		for (final String id : new String[] { "europe/germany", "europe/germany/bayern" }) {
+			Assert.assertTrue(new java.io.File(slozka, k.podleId(id).get().getNazevSouboru()).createNewFile());
+		}
+		final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> dvojite = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozka, k);
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.NEMAME).build()));
+			final int pred = p.prestaveb;
+			p.zmenyNaraz(() -> {
+				p.setStinovaniDostupne(true);
+				p.setVolneMisto(10 * MB);
+				p.setDvojite(dvojite);
+				p.obnov(Arrays.asList(katalog("a", RadekMapy.Stav.NEMAME).build(), katalog("b", RadekMapy.Stav.NEMAME).build()));
+			});
+			Assert.assertEquals("jedna přestavba", pred + 1, p.prestaveb);
+			Assert.assertEquals(2, tlacitkaSTextem(p, JMapyPopup.STAHNOUT).size());
+			Assert.assertTrue("volné místo se projevilo", tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().noneMatch(JButton::isEnabled));
+		});
+	}
 }
