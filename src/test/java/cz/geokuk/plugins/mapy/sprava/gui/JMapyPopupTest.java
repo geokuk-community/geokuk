@@ -1604,4 +1604,71 @@ public class JMapyPopupTest {
 			Assert.assertTrue("volné místo se projevilo", tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().noneMatch(JButton::isEnabled));
 		});
 	}
+
+	/** Kontrola aktualizací popup nepřestavuje: řádek jen přepíše popis na „Zjišťuji na serveru…“ a zpět. */
+	@Test
+	public void kontrolaAktualizaciNeprestavujePopup() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			final cz.geokuk.plugins.mapy.sprava.KatalogMap k = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+			final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.StavMapy.Faze, List<RadekMapy>> radky = faze -> {
+				final List<RadekMapy> r = new ArrayList<>();
+				for (final String id : new String[] { "europe/czech-republic", "europe/austria", "europe/poland" }) {
+					final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa m = k.podleId(id).get();
+					r.add(RadkyMap.radek(m, cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, "europe/austria".equals(id) ? faze : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null), false));
+				}
+				return r;
+			};
+			p.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.KONTROLUJE));
+			Assert.assertEquals(1, videtLabelu(p, "Zjišťuji na serveru…"));
+			Assert.assertEquals("tlačítko kontroly zůstává", 1, tlacitkaSTextem(p, JMapyPopup.ZKONTROLOVAT).size());
+			p.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertEquals(0, videtLabelu(p, "Zjišťuji na serveru…"));
+			Assert.assertEquals("kontrola popup nepřestavěla", pred, p.prestaveb);
+		});
+	}
+
+	/** Nový výsledek kontroly se ukáže i bez přestavby popupu. */
+	@Test
+	public void novyVysledekKontrolyBezPrestavby() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			final Instant ted = Instant.now();
+			final List<RadekMapy> prvni = Arrays.asList(katalog("cz", RadekMapy.Stav.AKTUALNI).zkontrolovano(ted.minusSeconds(2 * 3600)).build());
+			final List<RadekMapy> druha = Arrays.asList(katalog("cz", RadekMapy.Stav.AKTUALNI).zkontrolovano(ted.minusSeconds(3600)).build());
+			p.obnov(prvni);
+			final int pred = p.prestaveb;
+			final String predtim = p.vysledekKontroly(prvni);
+			final String potom = p.vysledekKontroly(druha);
+			Assert.assertNotEquals(predtim, potom);
+			Assert.assertEquals(1, videtLabelu(p, predtim));
+			p.obnov(druha);
+			Assert.assertEquals("kontrola popup nepřestavěla", pred, p.prestaveb);
+			Assert.assertEquals("je vidět nový čas kontroly", 1, videtLabelu(p, potom));
+			Assert.assertEquals(0, videtLabelu(p, predtim));
+		});
+	}
+
+	/** Během kontroly novější mapy není vidět Aktualizovat, po kontrole se vrátí. */
+	@Test
+	public void kontrolaNovejsiMapySkryjeAktualizovat() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).build()));
+			Assert.assertEquals(1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).kontroluje(true).build()));
+			Assert.assertEquals("během kontroly", 0, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).build()));
+			Assert.assertEquals("po kontrole", 1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+		});
+	}
 }

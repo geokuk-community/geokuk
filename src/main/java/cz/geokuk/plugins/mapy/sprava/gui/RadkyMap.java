@@ -60,8 +60,9 @@ final class RadkyMap {
 		final RadekMapy.Builder b = RadekMapy.katalogova(m.getId(), m.getNazev(), stav(s)).skupina(m.getSkupina()).zdroj(m.getZdroj())
 				.licence(m.getLicence() + ", " + m.getAtribuce()).proZobrazeneMisto(proMisto).veSlozce(mame || matice != null && matice.mameCokoli()).matice(matice)
 				.rozpracovano(s.isRozpracovano()).datumDat(s.getDatumDatMistni()).datumNaServeru(s.getDatumNaServeru()).zkontrolovano(s.getZkontrolovano()).chyba(s.getChyba());
-		if (s.isBezi()) {
-			b.kontroluje(s.getFaze() == StavMapy.Faze.KONTROLUJE).overuje(s.getFaze() == StavMapy.Faze.OVERUJE).stazeno(s.getStazeno())
+		b.kontroluje(s.getFaze() == StavMapy.Faze.KONTROLUJE);
+		if (bezi(s)) {
+			b.overuje(s.getFaze() == StavMapy.Faze.OVERUJE).stazeno(s.getStazeno())
 					.velikost(s.getCelkem() > 0 ? s.getCelkem() : velikostNaServeru(m, s));
 		} else if (mame) {
 			b.velikost(s.getVelikostMistni());
@@ -78,9 +79,14 @@ final class RadkyMap {
 		return s.getVelikostNaServeru() > 0 ? s.getVelikostNaServeru() : m.getPribliznaVelikost();
 	}
 
+	/** Stahuje se nebo ověřuje; kontrola aktualizací stav mapy nemění, jen popis. */
+	private static boolean bezi(final StavMapy s) {
+		return s.isBezi() && s.getFaze() != StavMapy.Faze.KONTROLUJE;
+	}
+
 	/** Jedna ikona: běží-li něco, modrá; poškozená nebo nestažená s chybou červená; novější žlutá; stažená zelená. */
 	static RadekMapy.Stav stav(final StavMapy s) {
-		if (s.isBezi()) {
+		if (bezi(s)) {
 			return RadekMapy.Stav.STAHUJE;
 		}
 		switch (s.getMistni()) {

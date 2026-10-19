@@ -150,6 +150,9 @@
   načte se, až je kopie hotová.
 - Panel Offline mapy při změnách stavu map nebliká a zavřený nezdržuje
   program zbytečnou prací.
+- Zkontrolovat aktualizace v panelu Offline mapy panel nepřekresluje a blok
+  Mapy ve stavovém řádku při tom ukazuje Kontroluji… místo 0 %. Po obnovení
+  seznamu vrstev se stažené vrstvy už na chvíli neukazují jako ke stažení.
 
 Obsahuje i všechny opravy z 6.4.2.
 

@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
+import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -37,6 +38,8 @@ public class JBlokMap extends JLabel {
 	static final String TEXT = "Mapy";
 	/** Nejdelší text bloku; šířka se pro něj drží, aby procenta při stahování neposouvala sousední bloky. */
 	static final String NEJDELSI_TEXT = TEXT + " 100 %";
+	static final String KONTROLUJE = "Kontroluji…";
+	static final String KONTROLUJE_TIP = "Zjišťuji na serveru, jestli jsou pro offline mapy novější data.";
 
 	/** Čtení složky; v testech se dá nahradit. */
 	transient java.util.function.Function<File, List<RadekMapy>> cteniSlozky = f -> SouboryMap.nacti(f, KatalogMap.vestaveny());
@@ -287,6 +290,10 @@ public class JBlokMap extends JLabel {
 		prestav();
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.StavyMapEvent event) {
+		prestav();
+	}
+
 	/** Střed výřezu určuje mapy „Pro zobrazené místo“; popup se přestaví, jen když se jejich výběr změní. */
 	public void onEvent(final VyrezChangedEvent event) {
 		setStred(event.getMoord().getMoustred().toWgs());
@@ -341,7 +348,8 @@ public class JBlokMap extends JLabel {
 	public java.awt.Dimension getPreferredSize() {
 		final java.awt.Dimension d = super.getPreferredSize();
 		final java.awt.Insets ins = getInsets();
-		final int nejvic = getFontMetrics(getFont()).stringWidth(NEJDELSI_TEXT) + getIconTextGap() + IkonyMap.VELIKOST + ins.left + ins.right;
+		final FontMetrics fm = getFontMetrics(getFont());
+		final int nejvic = Math.max(fm.stringWidth(NEJDELSI_TEXT), fm.stringWidth(KONTROLUJE)) + getIconTextGap() + IkonyMap.VELIKOST + ins.left + ins.right;
 		d.width = Math.max(d.width, nejvic);
 		return d;
 	}
@@ -446,8 +454,14 @@ public class JBlokMap extends JLabel {
 		final RadekMapy.Stav stav = souhrn(radky);
 		setIcon(IkonyMap.pro(stav));
 		final RadekMapy stahovana = radky.stream().filter(r -> r.celkovyStav() == RadekMapy.Stav.STAHUJE).findFirst().orElse(null);
-		setText(procentaStahovani(stahovana) >= 0 ? TEXT + " " + procentaStahovani(stahovana) + " %" : TEXT);
-		setToolTipText(tooltip(radky, stav, stahovana));
+		final boolean kontroluje = stav != RadekMapy.Stav.STAHUJE && radky.stream().anyMatch(r -> r.kontroluje);
+		if (kontroluje) {
+			setText(KONTROLUJE);
+			setToolTipText(KONTROLUJE_TIP);
+		} else {
+			setText(procentaStahovani(stahovana) >= 0 ? TEXT + " " + procentaStahovani(stahovana) + " %" : TEXT);
+			setToolTipText(tooltip(radky, stav, stahovana));
+		}
 		if (stav == RadekMapy.Stav.STAHUJE) {
 			tocitko.start();
 		} else {

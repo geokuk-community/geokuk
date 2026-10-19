@@ -78,6 +78,10 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		repaint();
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.StavyMapEvent event) {
+		repaint();
+	}
+
 	public void onEvent(final cz.geokuk.plugins.mapy.kachle.ReliefCuzkEvent event) {
 		reliefCuzk = event.isZapnuto();
 		repaint();
