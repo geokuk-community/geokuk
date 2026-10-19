@@ -85,7 +85,7 @@ final class OfflineRenderer {
 	 * Verze knihovny mapsforge a vykreslování GeoKuku v klíči cache: jiná verze kreslí jinak, dlaždice se pak vykreslí znovu. Při změně mapsforge v pom.xml
 	 * změnit i tady (hlídá test), při změně vykreslování v GeoKuku zvýšit číslo za lomítkem.
 	 */
-	static final String VERZE_VYKRESLOVANI = "mapsforge 0.25.0/1";
+	static final String VERZE_VYKRESLOVANI = "mapsforge 0.25.0/2";
 
 	static final char PREDPONA_KLICE = 'o';
 	static final char PREDPONA_KLICE_PREKRYVU = 't';
@@ -105,7 +105,7 @@ final class OfflineRenderer {
 	/** Stínování terénu z DEM dlaždic (HGT), null bez nich. */
 	private final HillsRenderConfig kopce;
 	/** Základní mapy (ne vrstvy): jen ony určují, kam se dlaždice kreslí. */
-	private final List<MapFile> zakladni;
+	private final List<? extends MapFile> zakladni;
 	private final int pocetVrstev;
 
 	private int rozdelanych;
@@ -113,7 +113,7 @@ final class OfflineRenderer {
 	private boolean zavreny;
 
 	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce,
-			final List<MapFile> zakladni, final int pocetVrstev) {
+			final List<? extends MapFile> zakladni, final int pocetVrstev) {
 		this.data = data;
 		this.pokryti = pokryti;
 		this.tema = tema;
@@ -168,14 +168,14 @@ final class OfflineRenderer {
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
 		final List<MapFileInfo> pokryti = new ArrayList<>();
-		final List<MapFile> zakladni = new ArrayList<>();
+		final List<SouborMapy> zakladni = new ArrayList<>();
 		int vrstev = 0;
 		OfflineMapaChyba prvniChyba = null;
 		try {
 			for (final File f : mapy) {
-				final MapFile mapFile;
+				final SouborMapy mapFile;
 				try {
-					mapFile = new MapFile(f);
+					mapFile = new SouborMapy(f);
 				} catch (final RuntimeException e) {
 					// Mapa, která se třeba právě kopíruje, nezastaví kreslení ostatních.
 					log.debug("Soubor mapy {} nejde otevřít, kreslí se bez něj: {}", f, e.getMessage());
@@ -191,6 +191,17 @@ final class OfflineRenderer {
 			}
 			if (otisk.length() == 0) {
 				throw prvniChyba;
+			}
+			final List<SouborMapy> podrobne = new ArrayList<>();
+			for (final SouborMapy m : zakladni) {
+				if (m.getMapFileInfo().zoomLevelMax >= PODROBNY_ZOOM) {
+					podrobne.add(m);
+				}
+			}
+			for (final SouborMapy m : zakladni) {
+				if (m.getMapFileInfo().zoomLevelMax < PODROBNY_ZOOM) {
+					m.setPodrobne(podrobne);
+				}
 			}
 			for (final File f : vrstvy) {
 				try {
@@ -405,6 +416,11 @@ final class OfflineRenderer {
 			}
 		}
 		return new ArrayList<>(vysledek);
+	}
+
+	/** Data map a vrstev, ze kterých se kreslí. */
+	MultiMapDataStore getData() {
+		return data;
 	}
 
 	/** Kolik vrstev (trasy, vrstevnice) se kreslí spolu se základními mapami. */

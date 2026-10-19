@@ -138,6 +138,9 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Offline mapa už v podrobnějších měřítcích nekreslí vedle hranice státu ještě
+  druhou, hrubou hranici z přehledové mapy světa. Dlaždice v cache se jednou
+  vykreslí znovu.
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
   keše), už nezahltí log tisíci varováními. Jiná nečíselná čísla vlastníka
   program ohlásí jedním varováním za soubor.
