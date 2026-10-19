@@ -53,9 +53,11 @@
   se otevře sám) nabídne Česko a okolí (hledat jde i jinou zemi nebo region),
   vybere podklad a vrstvy, stáhne jen to, co chybí, a přepne mapu. Před
   velkým stažením (nad 5 základních map nebo 10 GB) se zeptá na potvrzení.
-- Zdroje map jsou v mapě na jednom řádku vpravo dole s ikonou ⓘ, plné znění se
-  ukáže po kliku na ikonu. Atribuce dat vrstev
-  (OpenStreetMap, Copernicus) je tamtéž.
+- Zdroje map jsou v mapě na jednom řádku vpravo dole nad všemi vrstvami
+  (keše je nezakryjí); co se nevejde, je za ikonou ⓘ, která otevře okno
+  s plným zněním. Atribuce dat vrstev (OpenStreetMap, Copernicus) je tamtéž.
+- Měřítková lišta je zpět uprostřed dole (nezakrývá ji detail v rohu), má
+  aspoň 4 dílky a na konci délku celé lišty s jednotkou (0 1 2 3 4 km).
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 25.
@@ -193,9 +195,8 @@ Obsahuje i všechny opravy z 6.4.2.
 - Keše z databází GeoGetu, GSAKu a OpenSAKu zabírají méně paměti.
 - Prostorový index načtených keší zabírá méně paměti.
 - Odkazy keší a názvy jejich přídavných waypointů zabírají méně paměti.
-- Měřítková lišta je uprostřed dole mimo detail v rohu, má aspoň 4 dílky po 1,
-  2 a 5 s délkou celé lišty a jednotkou na konci (0 1 2 3 4 km) a při posunu
-  mapy už neskáče.
+- Měřítková lišta má dílky po 1, 2 a 5 a délku zhruba čtvrtiny okna, při
+  posunu mapy už neskáče.
 - Nový podklad Mapy > Offline mapa (klávesa V): vektorové mapy `.map`
   (mapsforge, například z osm.paws.cz) ze složky `data/offline-mapy` se
   vykreslují přímo v počítači, bez internetu. Více map ve složce (třeba ČR
