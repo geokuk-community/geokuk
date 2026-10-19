@@ -258,10 +258,14 @@ public class StahovacSyntetickaMapaTest {
 
 	@Test(timeout = 60000)
 	public void omezeniServeruDavkuZastavi() throws Exception {
+		// Výřez tak velký, aby dlaždic bylo o hodně víc, než kolik jich je po omezení už rozjetých ve vláknech a frontě stahování.
+		final Dimension velky = new Dimension(6000, 4000);
+		udalost(() -> dialog.onEvent(new VyrezChangedEvent(new Coord(MAX, STRED.toMou(), velky, 0.0))));
+		final int vsech = ocekavane(velky, STRED, MAX, MAX, MIN).size();
 		limit.set(5);
 		final DavkaStahovani davka = stahni(spocitej());
 		Assert.assertTrue(davka.jeZastavena());
 		Assert.assertTrue(davka.popis(), davka.popis().contains("HTTP 429"));
-		Assert.assertTrue("po omezení se další dlaždice nežádají: " + pozadavky.size(), pozadavky.size() < ocekavane(STRED, MAX, MAX, MIN).size());
+		Assert.assertTrue("po omezení se další dlaždice nežádají: " + pozadavky.size() + " z " + vsech, pozadavky.size() < vsech / 2);
 	}
 }
