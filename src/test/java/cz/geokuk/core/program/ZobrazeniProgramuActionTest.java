@@ -108,4 +108,64 @@ public class ZobrazeniProgramuActionTest {
 			}
 		}
 	}
+
+	/** Dialog zabalený na 80 %: po posunu na 200 % má posuvník i popisek plnou šířku a popisek se nezalomí. */
+	@Test
+	public void posunNa200NicNeorizne() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JSlider pismo = ZobrazeniProgramuAction.posuvnikMapy();
+			pismo.setValue(80);
+			final JPanel radek = ZobrazeniProgramuAction.sProcenty(pismo);
+			final JPanel ramecek = zabal(new JLabel("Mapa (offline):"), radek);
+			pismo.setValue(200);
+			rozvrhni(ramecek);
+			plnaSirka(radek, pismo);
+		});
+	}
+
+	@Test
+	public void posunIkonNa45NicNeorizne() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final cz.geokuk.util.gui.JPosuvnikPredvoleb ikony = new cz.geokuk.util.gui.JPosuvnikPredvoleb(ZobrazeniProgramuAction.PREDVOLBY_IKON, 100,
+					ZobrazeniProgramuAction::znackaZvetseni, ZobrazeniProgramuAction::popisZvetseniIkon);
+			final JPanel ramecek = zabal(new JLabel("Ikony keší:"), ikony);
+			ikony.setHodnota(450);
+			rozvrhni(ramecek);
+			plnaSirka(ikony, ikony.getSlider());
+		});
+	}
+
+	/** Jako dialog: řádek popisek – prvek v GridBagLayout, velikost podle preferované při otevření. */
+	private static JPanel zabal(final JComponent popisek, final JComponent prvek) {
+		final JPanel p = new JPanel(new GridBagLayout());
+		final GridBagConstraints c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.WEST;
+		p.add(popisek, c);
+		c.gridx = 1;
+		p.add(prvek, c);
+		p.setSize(p.getPreferredSize());
+		rozvrhni(p);
+		return p;
+	}
+
+	private static void rozvrhni(final Container c) {
+		c.doLayout();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof Container) {
+				rozvrhni((Container) k);
+			}
+		}
+	}
+
+	private static void plnaSirka(final JPanel radek, final JSlider posuvnik) {
+		Assert.assertEquals("posuvník", posuvnik.getPreferredSize().width, posuvnik.getWidth());
+		for (final Component k : radek.getComponents()) {
+			if (k instanceof JLabel) {
+				Assert.assertTrue("popisek celý: " + ((JLabel) k).getText(), k.getWidth() >= ((JLabel) k).getUI().getPreferredSize((JLabel) k).width
+						&& k.getHeight() >= ((JLabel) k).getUI().getPreferredSize((JLabel) k).height);
+				Assert.assertEquals("popisek vedle posuvníku", posuvnik.getY(), k.getY(), posuvnik.getHeight());
+				Assert.assertTrue("popisek v řádku", k.getX() + k.getWidth() <= radek.getWidth() && k.getY() + k.getHeight() <= radek.getHeight());
+			}
+		}
+	}
 }

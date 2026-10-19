@@ -50,6 +50,23 @@ public class ZobrazeniProgramuAction extends Action0 {
 		return s;
 	}
 
+	/** Posuvník s popiskem „… %“ vedle. */
+	static JPanel sProcenty(final JSlider posuvnik) {
+		final JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		final JLabel procent = new JLabel();
+		final java.util.List<String> texty = new java.util.ArrayList<>();
+		for (int h = posuvnik.getMinimum(); h <= posuvnik.getMaximum(); h++) {
+			texty.add(h + " %");
+		}
+		JPosuvnikPredvoleb.pevnaSirka(procent, texty);
+		final Runnable obnov = () -> procent.setText(posuvnik.getValue() + " %");
+		posuvnik.addChangeListener(ev -> obnov.run());
+		obnov.run();
+		p.add(posuvnik);
+		p.add(procent);
+		return p;
+	}
+
 	/** Násobek k procentům, třeba „1,5“. */
 	static String znackaZvetseni(final int procent) {
 		final String s = procent % 100 == 0 ? Integer.toString(procent / 100) : String.format(java.util.Locale.ROOT, "%.2f", procent / 100.0).replaceAll("0+$", "");
@@ -142,13 +159,7 @@ public class ZobrazeniProgramuAction extends Action0 {
 			volbyOstrosti.add(ostra);
 			volbyOstrosti.add(Box.createHorizontalStrut(8));
 			volbyOstrosti.add(rychlejsi);
-			final JPanel velikost = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-			final JLabel procent = new JLabel();
-			final Runnable obnov = () -> procent.setText(pismo.getValue() + " %");
-			pismo.addChangeListener(ev -> obnov.run());
-			obnov.run();
-			velikost.add(pismo);
-			velikost.add(procent);
+			final JPanel velikost = sProcenty(pismo);
 			final JLabel popisOstrosti = new JLabel("Offline mapa:");
 			popisOstrosti.setToolTipText(rada);
 			final JLabel popisPisma = new JLabel("Mapa (offline):");
