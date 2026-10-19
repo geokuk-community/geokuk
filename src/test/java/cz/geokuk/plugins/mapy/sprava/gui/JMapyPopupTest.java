@@ -21,6 +21,10 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
 import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
+import cz.geokuk.plugins.mapy.sprava.StavMapy;
+import cz.geokuk.plugins.mapy.sprava.StavMapyProGui;
+import cz.geokuk.plugins.mapy.sprava.StavVrstvy;
+import cz.geokuk.plugins.mapy.sprava.VrstvyProGui;
 
 /** Popup Mapy: řádky podle stavu, akce, odkazy na weby a čtení složky offline map. */
 public class JMapyPopupTest {
@@ -1453,29 +1457,128 @@ public class JMapyPopupTest {
 		});
 	}
 
-	/** Za hromadné dávky se změna struktury nepřestaví hned, ale až po odstupu, a to jednou s nejnovějšími řádky. */
-	@Test(timeout = 30000)
-	public void behemDavkyPrestavbaPopupuCeka() throws Exception {
-		final JMapyPopup[] pp = new JMapyPopup[1];
-		SwingUtilities.invokeAndWait(() -> {
-			pp[0] = new JMapyPopup();
-			pp[0].odstupPrestavbyMs = 300;
-			pp[0].setDavkaBezi(() -> true);
-			pp[0].setOvladani(new Zaznam());
-			pp[0].obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.NEMAME).build()));
-			pp[0].obnov(Collections.singletonList(katalog("a", RadekMapy.Stav.AKTUALNI).veSlozce(true).build()));
-			Assert.assertTrue("přestavba čeká", pp[0].isPrestavbaOdlozena());
-			Assert.assertEquals("zatím je vidět starý stav", 0, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size());
-		});
-		while (true) {
-			final boolean[] ceka = new boolean[1];
-			SwingUtilities.invokeAndWait(() -> ceka[0] = pp[0].isPrestavbaOdlozena());
-			if (!ceka[0]) {
-				break;
+	/** Stažené Česko a Rakousko; trasy a vrstevnice Česka v daném stavu, stínování ke stažení. */
+	private static List<RadekMapy> ceskoARakouskoSVrstvami(final cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni trasy, final cz.geokuk.plugins.mapy.sprava.StavMapy.Faze fazeTras,
+			final cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni vrstevnice, final cz.geokuk.plugins.mapy.sprava.StavMapy.Faze fazeVrstevnic) {
+		final Set<String> mame = new HashSet<>(Arrays.asList("europe/czech-republic", "europe/austria"));
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), v -> {
+					if (v.getId().startsWith("tourist")) {
+						return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, trasy, fazeTras, fazeTras == cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE ? v.getVelikost() / 2 : 0, null);
+					}
+					if (v.getId().startsWith("contours")) {
+						return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, vrstevnice, fazeVrstevnic, 0, null);
+					}
+					return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null);
+				});
+	}
+
+	/** Všechny komponenty řádku mřížky, ve kterém je popisek s textem (i vnořené), v pořadí, jak jsou v panelu. */
+	private static List<Component> komponentyRadku(final JMapyPopup p, final String nazev) {
+		final JLabel l = labels(p).stream().filter(k -> nazev.equals(k.getText())).findFirst().get();
+		final Container tabulka = l.getParent();
+		final int y = ((java.awt.GridBagLayout) tabulka.getLayout()).getConstraints(l).gridy;
+		final List<Component> v = new ArrayList<>();
+		for (final Component k : tabulka.getComponents()) {
+			if (((java.awt.GridBagLayout) tabulka.getLayout()).getConstraints(k).gridy == y) {
+				pridejSPotomky(v, k);
 			}
-			Thread.sleep(50);
 		}
-		SwingUtilities.invokeAndWait(() -> Assert.assertEquals("po odstupu se přestaví s novými řádky", 1, tlacitkaSTextem(pp[0], JMapyPopup.ZKONTROLOVAT).size()));
+		return v;
+	}
+
+	private static void pridejSPotomky(final List<Component> v, final Component k) {
+		v.add(k);
+		if (k instanceof Container) {
+			for (final Component d : ((Container) k).getComponents()) {
+				pridejSPotomky(v, d);
+			}
+		}
+	}
+
+	/**
+	 * Za dávky vrstev skončí jedna vrstva a začne další: buňka další vrstvy hned ukáže procenta, popup se nepřestaví a řádek jiné mapy zůstane z týchž
+	 * komponent.
+	 */
+	@Test
+	public void zmenaStavuVrstvyNaMisteBezPrestavby() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(ceskoARakouskoSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE,
+					cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertEquals(1, videtLabelu(p, "50 %"));
+			Assert.assertEquals("vrstevnice ke stažení", 1, tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ") && b.getToolTipText().startsWith("Vrstevnice")).count());
+			final int pred = p.prestaveb;
+			final List<Component> rakousko = komponentyRadku(p, "Rakousko");
+			final List<Component> cesko = komponentyRadku(p, "Česko").subList(0, 3);
+			p.obnov(ceskoARakouskoSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC,
+					cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
+			Assert.assertEquals("buňka vrstevnic hned ukazuje procenta", 1, videtLabelu(p, "0 %"));
+			Assert.assertEquals(0, videtLabelu(p, "50 %"));
+			Assert.assertEquals(0, tlacitka(p).stream().filter(b -> b.getText().startsWith("↓ ") && b.getToolTipText().startsWith("Vrstevnice")).count());
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			final List<Component> rakouskoPo = komponentyRadku(p, "Rakousko");
+			Assert.assertEquals(rakousko.size(), rakouskoPo.size());
+			for (int i = 0; i < rakousko.size(); i++) {
+				Assert.assertSame("nezměněný řádek má tytéž komponenty", rakousko.get(i), rakouskoPo.get(i));
+			}
+			final List<Component> ceskoPo = komponentyRadku(p, "Česko").subList(0, 3);
+			for (int i = 0; i < cesko.size(); i++) {
+				Assert.assertSame("změněný řádek zůstal na místě", cesko.get(i), ceskoPo.get(i));
+			}
+		});
+	}
+
+	/** Osm stažených map; trasy Česka v dané fázi, ostatní vrstvy ke stažení. */
+	private static List<RadekMapy> osmSTrasamiCeska(final cz.geokuk.plugins.mapy.sprava.StavMapy.Faze faze) {
+		final Set<String> mame = new HashSet<>(Arrays.asList(STAZENE_8));
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(),
+				v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+						v.getId().startsWith("tourist") ? faze : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, null));
+	}
+
+	/** Stahování, které začalo při zavřeném popupu, se přepíše na místě a oddíl Ve složce rozbalí až při otevření. */
+	@Test
+	public void stahovaniPriZavrenemPopupuRozbaliPriOtevreni() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final boolean[] otevreny = { true };
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.setZobrazeny(() -> otevreny[0]);
+			p.obnov(osmSTrasamiCeska(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Rakousko"));
+			otevreny[0] = false;
+			p.popupZavren();
+			final int pred = p.prestaveb;
+			p.obnov(osmSTrasamiCeska(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
+			Assert.assertEquals("zavřený popup se nepřestavuje", pred, p.prestaveb);
+			Assert.assertFalse(p.isZastaraly());
+			Assert.assertEquals("dokud je zavřený, nerozbaluje se", 0, videtLabelu(p, "Rakousko"));
+			otevreny[0] = true;
+			p.pripravKZobrazeni();
+			Assert.assertEquals("při otevření se oddíl kvůli stahování rozbalí", 1, videtLabelu(p, "Rakousko"));
+		});
+	}
+
+	/** Volné místo na disku se promítne do tlačítek na místě, bez přestavby popupu. */
+	@Test
+	public void volneMistoBezPrestavby() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NEMAME).build(), katalog("pl", RadekMapy.Stav.NEMAME).velikost(100 * MB).build()));
+			final int pred = p.prestaveb;
+			p.setVolneMisto(300 * MB);
+			Assert.assertFalse(tlacitkaSTextem(p, JMapyPopup.STAHNOUT).get(0).isEnabled());
+			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.STAHNOUT).get(1).isEnabled());
+			Assert.assertEquals(pred, p.prestaveb);
+		});
 	}
 
 	/** Po přestavbě (třeba po kliku na Stáhnout) zůstane posuvník oddílu Ve složce i seznamu všech map na místě. */
@@ -1553,14 +1656,12 @@ public class JMapyPopupTest {
 		}
 	}
 
-	/** Změna souhrnu dávky se při probíhajícím spojování přestaveb projeví hned, ne až po odstupu. */
+	/** Změna souhrnu dávky se projeví hned. */
 	@Test
 	public void zmenaSouhrnuSeProjeviHnedBehemDavky() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
 			final List<String> souhrn = new ArrayList<>();
 			final JMapyPopup p = new JMapyPopup();
-			p.odstupPrestavbyMs = 60_000;
-			p.setDavkaBezi(() -> true);
 			p.setOvladani(new OvladaniMap() {
 				@Override
 				public void otevriSlozku() {}
@@ -1575,7 +1676,6 @@ public class JMapyPopupTest {
 			souhrn.addAll(Arrays.asList("Staženo 1, nepodařilo se 1:", "x"));
 			p.obnov(radky);
 			Assert.assertFalse("souhrn je vidět hned", tlacitkaSTextem(p, JMapyPopup.ZAVRIT).isEmpty());
-			Assert.assertFalse("bez odloženého spojování", p.isPrestavbaOdlozena());
 		});
 	}
 
@@ -1795,6 +1895,163 @@ public class JMapyPopupTest {
 			Assert.assertEquals(RadekMapy.Stav.CHYBA, cesko(chyba).celkovyStav());
 			p.obnov(chyba);
 			Assert.assertEquals("chyba oddíl rozbalí", 1, videtLabelu(p, "Česko"));
+		});
+	}
+
+	/** Tlačítko s textem v řádku mapy s názvem. */
+	private static JButton tlacitkoRadku(final JMapyPopup p, final String nazev, final String text) {
+		return komponentyRadku(p, nazev).stream().filter(k -> k instanceof JButton && text.equals(((JButton) k).getText())).map(k -> (JButton) k).findFirst().orElse(null);
+	}
+
+	/** Za stahování vrstvy začne stahování mapy ve složce: Stáhnout u ostatních map se na místě vypne. */
+	@Test
+	public void stahovaniMapyZaVrstvyVypneStahnoutNaMiste() throws Exception {
+		final java.util.function.Function<RadekMapy.Stav, List<RadekMapy>> radky = stav -> {
+			final List<RadekMapy> r = new ArrayList<>(cesko(StavMapy.Mistni.MAME,
+					v -> VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME, v.getId().startsWith("tourist") ? StavMapy.Faze.STAHUJE : StavMapy.Faze.NIC, 0, null)));
+			r.add(katalog("x", stav).veSlozce(true).build());
+			return r;
+		};
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply(RadekMapy.Stav.CHYBA));
+			Assert.assertTrue("stahování vrstvy mapy nevypíná", tlacitkoRadku(p, "Rakousko", JMapyPopup.STAHNOUT).isEnabled());
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(RadekMapy.Stav.STAHUJE));
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			final JButton stahnout = tlacitkoRadku(p, "Rakousko", JMapyPopup.STAHNOUT);
+			Assert.assertFalse(stahnout.isEnabled());
+			Assert.assertEquals(JMapyPopup.STAHUJE_SE_JINA, stahnout.getToolTipText());
+		});
+	}
+
+	/** Začne stahování vrstvy jiné mapy: smazání stažené vrstvy se na místě vypne. */
+	@Test
+	public void stahovaniVrstvyVypneMazaniNaMiste() throws Exception {
+		final java.util.function.Function<StavMapy.Faze, List<RadekMapy>> radky = faze -> RadkyMap.sestav(KatalogMap.vestaveny(),
+				m -> StavMapyProGui.stav(m, m.getId().equals("europe/germany") || m.getId().equals("europe/germany/bayern") ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME,
+						StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, VrstvyProGui.katalogNemecko(), v -> v.getId().startsWith("tourist") ? VrstvyProGui.stav(v, StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null)
+						: VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME, v.getId().endsWith("bayern") ? faze : StavMapy.Faze.NIC, 0, null));
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply(StavMapy.Faze.NIC));
+			p.prepniUzelSlozky("Německo");
+			final List<JButton> smazat = tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU);
+			Assert.assertEquals("trasy Německa", 1, smazat.size());
+			Assert.assertTrue(smazat.get(0).isEnabled());
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(StavMapy.Faze.STAHUJE));
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			final List<JButton> po = tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU);
+			Assert.assertEquals(1, po.size());
+			Assert.assertFalse(po.get(0).isEnabled());
+			Assert.assertEquals(JMapyPopup.BEHEM_STAHOVANI_NEJDE_MAZAT, po.get(0).getToolTipText());
+		});
+	}
+
+	/** Zrušené stahování mapy ve složce, po kterém se popup nepřestaví, už neukazuje „Ruší se…“. */
+	@Test
+	public void zruseniMapyVeSlozceNaMiste() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(Collections.singletonList(katalog("cz", RadekMapy.Stav.STAHUJE).veSlozce(true).stazeno(60 * MB).build()));
+			tlacitko(p, JMapyPopup.ZRUSIT).doClick();
+			Assert.assertTrue(texty(p).contains(JMapyPopup.RUSI_SE));
+			final int pred = p.prestaveb;
+			p.obnov(Collections.singletonList(katalog("cz", RadekMapy.Stav.NEMAME).veSlozce(true).rozpracovano(true).stazeno(60 * MB).build()));
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			Assert.assertFalse(texty(p).contains(JMapyPopup.RUSI_SE));
+		});
+	}
+
+	/** Řádek, který na místě přejde do chyby, má červený popis; po novém stahování zase šedý. */
+	@Test
+	public void chybaNaMisteZcervenaPopis() throws Exception {
+		final java.util.function.Function<RadekMapy.Stav, List<RadekMapy>> radky = stav -> Collections
+				.singletonList(katalog("cz", stav).veSlozce(true).chyba(stav == RadekMapy.Stav.CHYBA ? "Spojení se přerušilo." : null).build());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply(RadekMapy.Stav.STAHUJE));
+			final JLabel popis = (JLabel) komponentyRadku(p, "cz").get(2);
+			Assert.assertNotEquals(IkonyMap.CERVENA, popis.getForeground());
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(RadekMapy.Stav.CHYBA));
+			Assert.assertEquals(IkonyMap.CERVENA, popis.getForeground());
+			p.obnov(radky.apply(RadekMapy.Stav.STAHUJE));
+			Assert.assertNotEquals(IkonyMap.CERVENA, popis.getForeground());
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+		});
+	}
+
+	/** Když se při aktualizaci na místě změní preferovaná velikost popupu, ohlásí se změna obsahu; jinak ne. */
+	@Test
+	public void zmenaVelikostiNaMisteOhlasiZmenuObsahu() throws Exception {
+		final java.util.function.Function<String, List<RadekMapy>> radky = chyba -> Collections.singletonList(katalog("cz", RadekMapy.Stav.CHYBA).veSlozce(true).chyba(chyba).build());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply("x"));
+			// Popisek bez pevné šířky se s delším textem rozšíří.
+			((JLabel) komponentyRadku(p, "cz").get(2)).setPreferredSize(null);
+			final int[] zmen = new int[1];
+			p.setPoZmeneObsahu(() -> zmen[0]++);
+			final int pred = p.prestaveb;
+			final java.awt.Dimension predtim = p.getPreferredSize();
+			p.obnov(radky.apply("Server neodpovídá, spojení se přerušilo"));
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			Assert.assertNotEquals(predtim, p.getPreferredSize());
+			Assert.assertEquals(1, zmen[0]);
+			p.obnov(radky.apply("Server neodpovídá, spojení se přerušilo"));
+			Assert.assertEquals("beze změny velikosti nic", 1, zmen[0]);
+		});
+	}
+
+	/** Během kontroly aktualizací se odkaz Dostáhnout vrstvy nemění, aby neblikal. */
+	@Test
+	public void kontrolaNemeniOdkazDostahnoutVrstvy() throws Exception {
+		final java.util.function.Function<StavMapy.Faze, List<RadekMapy>> radky = faze -> RadkyMap.sestav(KatalogMap.vestaveny(),
+				m -> StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY,
+						m.getId().equals("europe/czech-republic") ? faze : StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, VrstvyProGui.katalogCesko(),
+				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.JINA_VERZE : StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null));
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply(StavMapy.Faze.NIC));
+			final JButton odkaz = tlacitka(p).stream().filter(b -> b.getText().startsWith("Dostáhnout vrstvy")).findFirst().get();
+			Assert.assertTrue(odkaz.isVisible());
+			final String text = odkaz.getText();
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(StavMapy.Faze.KONTROLUJE));
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			Assert.assertTrue("během kontroly odkaz nezmizí", odkaz.isVisible());
+			Assert.assertEquals(text, odkaz.getText());
+		});
+	}
+
+	/** Za stahování vrstvy ukazuje tooltip mapy, která se nevejde, volné místo bez toho, co se ještě stáhne. */
+	@Test
+	public void tooltipMistaZaStahovaniVrstvy() throws Exception {
+		final java.util.function.LongFunction<List<RadekMapy>> radky = stazeno -> cesko(StavMapy.Mistni.MAME,
+				v -> VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME, v.getId().startsWith("tourist") ? StavMapy.Faze.STAHUJE : StavMapy.Faze.NIC, v.getId().startsWith("tourist") ? stazeno : 0, null));
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.setVolneMisto(100 * MB);
+			p.obnov(radky.apply(5 * MB));
+			final JButton stahnout = tlacitkoRadku(p, "Rakousko", JMapyPopup.STAHNOUT);
+			Assert.assertFalse(stahnout.isEnabled());
+			Assert.assertTrue(stahnout.getToolTipText(), stahnout.getToolTipText().contains("volných jen 80 MB"));
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(20 * MB));
+			Assert.assertEquals("popup se nepřestavěl", pred, p.prestaveb);
+			final String tooltip = tlacitkoRadku(p, "Rakousko", JMapyPopup.STAHNOUT).getToolTipText();
+			Assert.assertTrue(tooltip, tooltip.contains("volných jen 95 MB"));
 		});
 	}
 }

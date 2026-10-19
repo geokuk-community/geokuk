@@ -160,6 +160,8 @@
   panelu neukazuje, takže už nepřekrývá sousední bloky.
 - Soubor > Zobrazení programu: při posunu posuvníku Mapa (offline) na 100 %
   a víc už nezmizí hodnota ani jezdec posuvníku; stejně u Ikony keší.
+- Panel Offline mapy ukazuje stav stahování (procenta, hotovo, chyba) hned,
+  i při dostahování více vrstev za sebou, a seznam se při tom nepřekresluje.
 
 Obsahuje i všechny opravy z 6.4.2.
 
