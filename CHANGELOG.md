@@ -162,6 +162,9 @@
   a víc už nezmizí hodnota ani jezdec posuvníku; stejně u Ikony keší.
 - Panel Offline mapy ukazuje stav stahování (procenta, hotovo, chyba) hned,
   i při dostahování více vrstev za sebou, a seznam se při tom nepřekresluje.
+- Panel Offline mapy má výšku podle obsahu (s jednou mapou ve složce je
+  nízký) a za otevření ji mění jen sbalení nebo rozbalení; při stahování se
+  nezvětšuje, posuvníky drží tytéž řádky a po sbalení se panel nezavře.
 
 Obsahuje i všechny opravy z 6.4.2.
 

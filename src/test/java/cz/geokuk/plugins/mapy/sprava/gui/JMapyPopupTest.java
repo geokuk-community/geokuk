@@ -1363,25 +1363,27 @@ public class JMapyPopupTest {
 		});
 	}
 
-	/** Popup se vejde do dostupné výšky nad stavovým řádkem a ve vyšším okně je vyšší; v nízkém má seznamy aspoň minimální rozpočet. */
+	/** Popup se vejde do dostupné výšky nad stavovým řádkem a ve vyšším okně je vyšší, nejvýš po strop; v nízkém má seznamy aspoň minimální rozpočet. */
 	@Test
 	public void vyskaPopupuPodleDostupneVysky() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
 			final List<RadekMapy> mnoho = new ArrayList<>();
 			for (int i = 0; i < 300; i++) {
-				mnoho.add(katalog("m/" + i, RadekMapy.Stav.NEMAME).build());
+				mnoho.add(katalog("m/" + i, RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
 			}
 			final int[] vyskaPodleOkna = new int[3];
-			final int[] dostupna = { 500, 700, 1000 };
+			final int[] dostupna = { 400, 600, 1000 };
 			for (int k = 0; k < dostupna.length; k++) {
 				final int d = dostupna[k];
 				final JMapyPopup p = new JMapyPopup();
 				p.setDostupnaVyska(() -> d);
+				p.prepniSlozku(true);
 				p.obnov(mnoho);
 				vyskaPodleOkna[k] = p.getPreferredSize().height;
 				Assert.assertTrue("vejde se do " + d + ": " + vyskaPodleOkna[k], vyskaPodleOkna[k] <= d);
 			}
 			Assert.assertTrue("vyšší okno, vyšší popup", vyskaPodleOkna[0] < vyskaPodleOkna[1] && vyskaPodleOkna[1] < vyskaPodleOkna[2]);
+			Assert.assertTrue("ve vysokém okně nejvýš strop: " + vyskaPodleOkna[2], vyskaPodleOkna[2] < 1000 - JMapyPopup.MIN_ROZPOCET);
 			final JMapyPopup nizke = new JMapyPopup();
 			nizke.setDostupnaVyska(() -> 100);
 			nizke.obnov(mnoho);
@@ -1896,6 +1898,197 @@ public class JMapyPopupTest {
 			p.obnov(chyba);
 			Assert.assertEquals("chyba oddíl rozbalí", 1, videtLabelu(p, "Česko"));
 		});
+	}
+
+	/** Katalog, ve kterém je Česko ve složce a Rakousko v daném stavu. */
+	private static List<RadekMapy> ceskoARakousko(final cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni rakousko, final cz.geokuk.plugins.mapy.sprava.StavMapy.Faze faze, final long stazeno) {
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(), m -> {
+			if (m.getId().equals("europe/austria")) {
+				return cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, rakousko, cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, faze, stazeno, 100 * MB, null);
+			}
+			return cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+					cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null);
+		}, Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), cz.geokuk.plugins.mapy.sprava.StavVrstvy::novy);
+	}
+
+	/** S jedinou mapou ve složce je popup nízký: seznam všech map ke stažení nevyplní celou dostupnou výšku. */
+	@Test
+	public void popupSJednouMapouJeNizky() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.setDostupnaVyska(() -> 1000);
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavVrstvy::novy));
+			Assert.assertEquals(1, videtLabelu(p, "Česko"));
+			Assert.assertTrue("výška " + p.getPreferredSize().height, p.getPreferredSize().height < 500);
+		});
+	}
+
+	/** Popup nad blokem zapojený jako v JBlokMap. */
+	private static cz.geokuk.util.gui.PopupNadBlokem popupNad(final JPanel kotva, final JMapyPopup p) {
+		final cz.geokuk.util.gui.PopupNadBlokem popup = new cz.geokuk.util.gui.PopupNadBlokem(kotva, () -> {});
+		p.setDostupnaVyska(() -> kotva.getLocationOnScreen().y - popup.horniHranice());
+		p.setPoZmeneObsahu(() -> {
+			if (popup.viditelny() == p) {
+				popup.ukaz(p, kotva, true);
+			}
+		});
+		return popup;
+	}
+
+	/**
+	 * Stahování za otevřeného popupu (řádek přibude v Pro zobrazené místo, pak se přesune do složky a zmizí mu Stáhnout vše) ani smazání mapy velikost popupu
+	 * nemění a popup se znovu nezobrazí; při novém otevření se velikost řídí obsahem.
+	 */
+	@Test(timeout = 30000)
+	public void stahovaniNemeniVelikostPopupu() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JPanel kotva = new JPanel();
+		final JMapyPopup p = new JMapyPopup();
+		final cz.geokuk.util.gui.PopupNadBlokem popup = popupNad(kotva, p);
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				okno.setBounds(0, 0, 1100, 800);
+				okno.getContentPane().add(kotva, java.awt.BorderLayout.SOUTH);
+				okno.setVisible(true);
+			});
+			SwingUtilities.invokeAndWait(() -> {
+				p.setOvladani(new Zaznam());
+				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0));
+				popup.ukaz(p, kotva, false);
+				final java.awt.Dimension pred = p.getSize();
+				final int[] zobrazeni = { 0 };
+				p.addHierarchyListener(e -> {
+					if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0) {
+						zobrazeni[0]++;
+					}
+				});
+				final int prestaveb = p.prestaveb;
+				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 30 * MB));
+				Assert.assertEquals("Rakousko se stahuje v Pro zobrazené místo", 1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+				Assert.assertEquals(pred, p.getPreferredSize());
+				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 60 * MB));
+				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0));
+				Assert.assertEquals("Rakousko je ve složce", 0, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+				Assert.assertTrue("struktura se změnila", p.prestaveb >= prestaveb + 2);
+				Assert.assertEquals(pred, p.getPreferredSize());
+				Assert.assertEquals(pred, p.getSize());
+				Assert.assertEquals("popup se znovu nezobrazil", 0, zobrazeni[0]);
+				Assert.assertTrue(p.isShowing());
+				popup.zavri();
+				p.pripravKZobrazeni();
+				popup.ukaz(p, kotva, false);
+				Assert.assertTrue("po novém otevření se výška řídí obsahem: o řádek ve složce víc", p.getHeight() > pred.height);
+				final java.awt.Dimension dva = p.getSize();
+				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0));
+				Assert.assertEquals("smazaná mapa ubyla, velikost zůstala", dva, p.getPreferredSize());
+				Assert.assertEquals(dva, p.getSize());
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				popup.zastav();
+				okno.dispose();
+			});
+		}
+	}
+
+	/** Název řádku, který je v posuvníku nahoře. */
+	private static String prvniViditelny(final JScrollPane sp) {
+		final java.awt.Component pohled = sp.getViewport().getView();
+		final int y = sp.getViewport().getViewPosition().y;
+		JLabel prvni = null;
+		int yPrvni = Integer.MAX_VALUE;
+		for (final JLabel l : labels((Container) pohled)) {
+			final int ly = SwingUtilities.convertPoint(l.getParent(), l.getLocation(), pohled).y;
+			if (l.getText() != null && l.getText().contains("/") && ly + l.getHeight() > y && ly < yPrvni) {
+				prvni = l;
+				yPrvni = ly;
+			}
+		}
+		return prvni == null ? null : prvni.getText();
+	}
+
+	/** Přibude-li nad viditelnými řádky oddílu řádek, posuvník po přestavbě drží tentýž řádek nahoře, ne stejný počet pixelů. */
+	@Test(timeout = 30000)
+	public void posuvnikDrziRadekPoPridaniRadkuNad() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JMapyPopup p = new JMapyPopup();
+		final List<RadekMapy> radky = new ArrayList<>();
+		for (int i = 0; i < 80; i++) {
+			radky.add(katalog(String.format("f/%02d", i), RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
+		}
+		final String[] pred = new String[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				p.setDostupnaVyska(() -> 500);
+				p.setOvladani(new Zaznam());
+				p.prepniSlozku(true);
+				p.obnov(radky);
+				okno.add(p);
+				okno.pack();
+				okno.setVisible(true);
+				okno.validate();
+				final JLabel f40 = labels(p).stream().filter(l -> "f/40".equals(l.getText())).findFirst().get();
+				p.getSlozkaPosuvnik().getVerticalScrollBar().setValue(SwingUtilities.convertPoint(f40.getParent(), f40.getLocation(), p.getSlozkaPosuvnik().getViewport().getView()).y);
+				pred[0] = prvniViditelny(p.getSlozkaPosuvnik());
+				Assert.assertEquals("f/40", pred[0]);
+				final List<RadekMapy> vic = new ArrayList<>(radky);
+				vic.add(katalog("a/00", RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
+				p.obnov(vic);
+			});
+			SwingUtilities.invokeAndWait(() -> Assert.assertEquals("nahoře zůstal tentýž řádek", pred[0], prvniViditelny(p.getSlozkaPosuvnik())));
+		} finally {
+			SwingUtilities.invokeAndWait(okno::dispose);
+		}
+	}
+
+	/** Po sbalení oddílu kliknutím se popup zmenší a horní okraj klesne pod myš; popup se tím nezavře, zavře se až po odjetí myši. */
+	@Test(timeout = 30000)
+	public void sbaleniOddiluKliknutimPopupNezavre() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final JFrame okno = new JFrame();
+		final JPanel kotva = new JPanel();
+		final JMapyPopup p = new JMapyPopup();
+		final cz.geokuk.util.gui.PopupNadBlokem popup = popupNad(kotva, p);
+		final List<RadekMapy> radky = new ArrayList<>();
+		for (int i = 0; i < 20; i++) {
+			radky.add(katalog("f/" + i, RadekMapy.Stav.AKTUALNI).veSlozce(true).build());
+		}
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				okno.setBounds(0, 0, 1100, 800);
+				okno.getContentPane().add(kotva, java.awt.BorderLayout.SOUTH);
+				okno.setVisible(true);
+			});
+			SwingUtilities.invokeAndWait(() -> {
+				p.setOvladani(new Zaznam());
+				p.prepniSlozku(true);
+				p.obnov(radky);
+				popup.ukaz(p, kotva, false);
+				p.validate();
+				final JLabel nadpis = labels(p).stream().filter(l -> JMapyPopup.VE_SLOZCE.equals(l.getText())).findFirst().get();
+				final java.awt.Point klik = nadpis.getLocationOnScreen();
+				klik.translate(5, nadpis.getHeight() / 2);
+				final int vyska = p.getHeight();
+				nadpis.dispatchEvent(new java.awt.event.MouseEvent(nadpis, java.awt.event.MouseEvent.MOUSE_CLICKED, 0, 0, 5, nadpis.getHeight() / 2, 1, false));
+				Assert.assertTrue("popup se zmenšil", p.isShowing() && p.getHeight() < vyska);
+				Assert.assertFalse("myš je nad horním okrajem", new java.awt.Rectangle(p.getLocationOnScreen(), p.getSize()).contains(klik));
+				popup.tik(klik, 0);
+				popup.tik(klik, 1000);
+				Assert.assertTrue("myš zůstala na místě kliku, popup je otevřený", p.isShowing());
+				final java.awt.Point mimo = new java.awt.Point(okno.getLocationOnScreen().x + 5, okno.getLocationOnScreen().y + 5);
+				popup.tik(mimo, 2000);
+				popup.tik(mimo, 3000);
+				Assert.assertFalse("myš odjela, popup se zavřel", p.isShowing());
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				popup.zastav();
+				okno.dispose();
+			});
+		}
 	}
 
 	/** Tlačítko s textem v řádku mapy s názvem. */

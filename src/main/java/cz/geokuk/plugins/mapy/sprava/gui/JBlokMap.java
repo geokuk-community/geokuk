@@ -92,8 +92,7 @@ public class JBlokMap extends JLabel {
 		popup.setDrzOtevreny(obsah::isHledaniAktivni);
 		popup.setPoZavreni(obsah::popupZavren);
 		obsah.setPoZmeneObsahu(() -> {
-			// Znovu zobrazit (skrýt a vložit) jen při změně velikosti, jinak by popup bliknul.
-			if (popup.viditelny() == obsah && !obsah.getSize().equals(obsah.getPreferredSize())) {
+			if (popup.viditelny() == obsah) {
 				popup.ukaz(obsah, this, true);
 			}
 		});
