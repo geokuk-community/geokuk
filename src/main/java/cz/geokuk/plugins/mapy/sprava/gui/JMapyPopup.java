@@ -228,6 +228,9 @@ public class JMapyPopup extends JPanel {
 
 	/** Popup se zavřel: hledání se vymaže, příště začne od nuly. */
 	public void popupZavren() {
+		pozornost.clear();
+		slozkaSamaOtevrena = false;
+		zemeSamyRozbalene.clear();
 		uzivatelPise = false;
 		cekaNaFokus = false;
 		hledat.setText("");
@@ -948,7 +951,9 @@ public class JMapyPopup extends JPanel {
 		gbc.gridy++;
 		final JPanel oddilSlozka = new JPanel(new BorderLayout());
 		oddilSlozka.setOpaque(false);
-		final boolean slozkaOtevrena = jeSlozkaOtevrena(veSlozce.size()) || veSlozce.stream().anyMatch(JMapyPopup::vyzadujePozornost);
+		zaznamenejPozornost(veSlozce);
+		final boolean slozkaOtevrena = jeSlozkaOtevrena(veSlozce.size());
+		slozkaZobrazenaOtevrena = slozkaOtevrena;
 		final JLabel nadpisSlozky = nadpisOddilu(VE_SLOZCE);
 		if (!veSlozce.isEmpty()) {
 			nadpisSlozky.setIcon(new Sipka(slozkaOtevrena));
@@ -958,7 +963,7 @@ public class JMapyPopup extends JPanel {
 			nadpisSlozky.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(final MouseEvent e) {
-					prepniSlozku(!slozkaOtevrena);
+					prepniSlozku(!slozkaZobrazenaOtevrena);
 				}
 			});
 		}
@@ -1500,6 +1505,14 @@ public class JMapyPopup extends JPanel {
 	transient java.util.function.Supplier<Optional<Boolean>> nactiStavSlozky = Optional::empty;
 	transient java.util.function.Consumer<Boolean> ulozStavSlozky = b -> {};
 	private final Set<String> rozbaleneSlozka = new HashSet<>();
+	/** Výchozí rozbalení oddílu podle počtu map, určené jednou při prvním zobrazení map ve složce; null, dokud nebylo co zobrazit. */
+	private Boolean slozkaVychozi;
+	/** Oddíl Ve složce, jak je zrovna vidět. */
+	private boolean slozkaZobrazenaOtevrena;
+	/** Řádky ve složce, které už oddíl nebo zemi samy rozbalily (stahování, chyba); rozbalené zůstanou do zavření popupu. */
+	private final Set<String> pozornost = new HashSet<>();
+	private boolean slozkaSamaOtevrena;
+	private final Set<String> zemeSamyRozbalene = new HashSet<>();
 
 	/** Stahuje se mapa nebo její vrstva, nebo se něco nepovedlo: takový řádek je vidět i ve sbaleném oddílu a sbalené zemi. */
 	private static boolean vyzadujePozornost(final RadekMapy r) {
@@ -1508,23 +1521,40 @@ public class JMapyPopup extends JPanel {
 		return s == RadekMapy.Stav.STAHUJE && !r.kontroluje || s == RadekMapy.Stav.CHYBA;
 	}
 
+	/** Nový řádek se stahováním nebo chybou rozbalí oddíl i svou zemi; volbu uživatele to nemění. */
+	private void zaznamenejPozornost(final List<RadekMapy> veSlozce) {
+		for (final RadekMapy r : veSlozce) {
+			if (vyzadujePozornost(r) && pozornost.add(klic(r))) {
+				slozkaSamaOtevrena = true;
+				if (r.skupina != null) {
+					zemeSamyRozbalene.add(r.skupina);
+				}
+			}
+		}
+	}
+
 	private boolean jeSlozkaOtevrena(final int pocetMap) {
 		if (slozkaOtevrena == null) {
 			slozkaOtevrena = nactiStavSlozky.get().orElse(null);
 		}
-		return slozkaOtevrena != null ? slozkaOtevrena : pocetMap <= SLOZKA_ROZBALENA_DO;
+		if (slozkaVychozi == null && pocetMap > 0) {
+			slozkaVychozi = pocetMap <= SLOZKA_ROZBALENA_DO;
+		}
+		return slozkaSamaOtevrena || (slozkaOtevrena != null ? slozkaOtevrena : slozkaVychozi == null || slozkaVychozi);
 	}
 
 	/** Sbalí nebo rozbalí celý oddíl Ve složce a zapamatuje si to. */
 	void prepniSlozku(final boolean otevrit) {
 		slozkaOtevrena = otevrit;
+		slozkaSamaOtevrena &= otevrit;
 		ulozStavSlozky.accept(otevrit);
 		prestav();
 	}
 
 	/** Klik na zemi ve složce rozbalí nebo sbalí její stažené regiony. */
 	void prepniUzelSlozky(final String nazev) {
-		if (!rozbaleneSlozka.remove(nazev)) {
+		final boolean byla = rozbaleneSlozka.remove(nazev);
+		if (!zemeSamyRozbalene.remove(nazev) && !byla) {
 			rozbaleneSlozka.add(nazev);
 		}
 		prestav();
@@ -1557,7 +1587,7 @@ public class JMapyPopup extends JPanel {
 		}
 		for (final Uzel u : podleZeme.values()) {
 			u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
-			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev) || u.regiony.stream().anyMatch(JMapyPopup::vyzadujePozornost);
+			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev) || zemeSamyRozbalene.contains(u.nazev);
 			if (u.regiony.isEmpty()) {
 				y = pridejRadek(panel, y, u.celek, stahujeSe);
 				continue;
