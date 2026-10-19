@@ -90,6 +90,8 @@ public class JMeritkoTest {
 					final int sirkaTextu = meritko.getFontMetricsPopisku().stringWidth(popisky.get(i));
 					Assert.assertTrue(kde + popisky.get(i) + " " + sirkaTextu + " px", sirkaTextu + 4 <= meritko.getPixluNaDilek());
 				}
+				final int sKoncovym = pocet * meritko.getPixluNaDilek() + meritko.getFontMetricsPopisku().stringWidth(popisky.get(pocet));
+				Assert.assertTrue(kde + "koncový popisek se vejde: " + meritko.getPreferredSize().width + " < " + sKoncovym, meritko.getPreferredSize().width >= sKoncovym);
 				Assert.assertTrue(kde + meritko.getPreferredSize().width, meritko.getPreferredSize().width <= JMeritkoSlide.maximalniSirka(sirkaOkna));
 			}
 		}
