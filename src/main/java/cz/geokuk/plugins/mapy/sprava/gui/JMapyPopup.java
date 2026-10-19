@@ -728,13 +728,13 @@ public class JMapyPopup extends JPanel {
 	private String stavRadku(final RadekMapy r) {
 		final StringBuilder sb = new StringBuilder().append(r.stav).append(r.rozpracovano).append(r.kontroluje).append(r.overuje).append(r.isVeSlozce()).append(mapaBezi).append(cokoliBezi)
 				.append(vrstvyPlne);
-		// Tooltip vypnutého tlačítka uvádí volné místo.
-		sb.append(nedostatekMista(r) ? volneMisto : -1);
+		// Tooltip vypnutého tlačítka uvádí volné místo bez toho, co se ještě stáhne.
+		sb.append(nedostatekMista(r) ? volneMisto - rozdelano : -1);
 		for (final MatriceMap.Cast c : VRSTVY) {
 			final MatriceMap.Bunka b = r.bunka(c);
 			if (b != null) {
 				sb.append('|').append(b.getStav()).append(b.isOveruje()).append(b.getChyba()).append(b.getVelikost()).append(b.getStazeno() > 0).append(b.getDatumDat())
-						.append(nedostatekMista(b) ? volneMisto : -1);
+						.append(nedostatekMista(b) ? volneMisto - rozdelano : -1);
 			}
 		}
 		return sb.toString();
