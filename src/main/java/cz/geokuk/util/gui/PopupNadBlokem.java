@@ -34,6 +34,8 @@ public class PopupNadBlokem {
 	private long cekaOd;
 	private Popup popup;
 	private JComponent obsahPopupu;
+	/** Kde byl popup před zmenšením; dokud v tom místě myš zůstane, počítá se, jako by byla nad popupem. */
+	private Rectangle predZmensenim;
 
 	/**
 	 * @param blok
@@ -74,11 +76,20 @@ public class PopupNadBlokem {
 	 * Zobrazí obsah těsně nad blokem a uvnitř obrazovky: bez kotvy zarovnaný k pravému okraji bloku, s kotvou k ní.
 	 *
 	 * @param znovu
-	 *            zobrazí znovu i obsah, který už je vidět (po změně velikosti)
+	 *            zobrazí znovu i obsah, který už je vidět, když se mu změnila velikost
 	 */
 	public void ukaz(final JComponent obsah, final Component kotva, final boolean znovu) {
 		if (!blok.isShowing() || obsahPopupu == obsah && !znovu) {
 			return;
+		}
+		Rectangle predtim = null;
+		if (obsahPopupu == obsah && obsah.isShowing()) {
+			if (obsah.getSize().equals(obsah.getPreferredSize())) {
+				obsah.revalidate();
+				obsah.repaint();
+				return;
+			}
+			predtim = new Rectangle(obsah.getLocationOnScreen(), obsah.getSize());
 		}
 		skryj();
 		predUkazanim.run();
@@ -94,6 +105,8 @@ public class PopupNadBlokem {
 		}
 		obsahPopupu = obsah;
 		popup.show();
+		// Kotva je dole: po sbalení oddílu klesne horní okraj a myš, která na šipku klikla, by byla nad popupem.
+		predZmensenim = predtim;
 		mimoOd = -1;
 		hlidani.start();
 	}
@@ -151,6 +164,7 @@ public class PopupNadBlokem {
 			popup.hide();
 			popup = null;
 			obsahPopupu = null;
+			predZmensenim = null;
 		}
 	}
 
@@ -205,8 +219,11 @@ public class PopupNadBlokem {
 			cekajici = null;
 			ukazani.run();
 		}
+		if (predZmensenim != null && !predZmensenim.contains(mys)) {
+			predZmensenim = null;
+		}
 		// Otevřené kontextové menu v popupu může popup přesahovat.
-		if (obsahPopupu == null || obsahuje(blok, mys) || obsahuje(obsahPopupu, mys) || MenuSelectionManager.defaultManager().getSelectedPath().length > 0
+		if (obsahPopupu == null || obsahuje(blok, mys) || obsahuje(obsahPopupu, mys) || predZmensenim != null || MenuSelectionManager.defaultManager().getSelectedPath().length > 0
 				|| drzOtevreny.getAsBoolean()) {
 			mimoOd = -1;
 			return;

@@ -550,7 +550,8 @@ public class JMapyPopup extends JPanel {
 	private void prestavPopup() {
 		zastaraly = false;
 		rusenaMapa = null;
-		sestav();
+		// Velikost otevřeného popupu mění jen akce uživatele, jinak by se popup při stahování znovu zobrazoval.
+		sestav(isShowing() ? getHeight() : -1);
 		zmenaObsahu();
 	}
 
@@ -572,10 +573,10 @@ public class JMapyPopup extends JPanel {
 		this.zobrazeny = zobrazeny;
 	}
 
-	/** Před otevřením popupu: přestaví ho, když se od zavření změnila struktura nebo rozbalení. */
+	/** Před otevřením popupu: přestaví ho, když se od zavření změnila struktura nebo rozbalení nebo když drží výšku z minulého otevření. */
 	public void pripravKZobrazeni() {
 		zaznamenejPozornost(veSlozce());
-		if (zastaraly || !rozbaleni().equals(zobrazeneRozbaleni)) {
+		if (zastaraly || drzenaVyska > 0 || !rozbaleni().equals(zobrazeneRozbaleni)) {
 			zastaraly = false;
 			rusenaMapa = null;
 			sestav();
@@ -589,17 +590,70 @@ public class JMapyPopup extends JPanel {
 	private transient JScrollPane slozkaPosuvnik;
 	private transient JScrollPane mistoPosuvnik;
 
-	private static int posun(final JScrollPane sp) {
-		return sp == null ? 0 : sp.getVerticalScrollBar().getValue();
+	/** Klientská vlastnost první buňky řádku s klíčem řádku, podle kterého se po přestavbě najde tentýž řádek. */
+	private static final String KLIC_RADKU = "klicRadku";
+
+	/** Řádek nahoře v posuvníku, o kolik px je posuvník pod jeho začátkem, a posun v px pro případ, že řádek po přestavbě chybí. */
+	private static final class Pozice {
+		final String klic;
+		final int pod;
+		final int px;
+
+		Pozice(final String klic, final int pod, final int px) {
+			this.klic = klic;
+			this.pod = pod;
+			this.px = px;
+		}
 	}
 
-	/** Po přestavbě zůstanou posuvníky všech oddílů tam, kde byly, aby seznam po kliku na řádek neskočil nahoru. */
-	private void obnovPosuny(final int[] posuny) {
+	private static Pozice pozice(final JScrollPane sp) {
+		if (sp == null) {
+			return null;
+		}
+		final int y = sp.getViewport().getViewPosition().y;
+		Component prvni = null;
+		for (final Component c : radky(sp.getViewport().getView(), new ArrayList<>())) {
+			if (y(c, sp) + c.getHeight() > y && (prvni == null || y(c, sp) < y(prvni, sp))) {
+				prvni = c;
+			}
+		}
+		return prvni == null ? new Pozice(null, 0, y) : new Pozice((String) ((JComponent) prvni).getClientProperty(KLIC_RADKU), y - y(prvni, sp), y);
+	}
+
+	/** První buňky viditelných řádků. */
+	private static List<Component> radky(final Component c, final List<Component> v) {
+		if (c instanceof JComponent && ((JComponent) c).getClientProperty(KLIC_RADKU) != null) {
+			if (c.isVisible()) {
+				v.add(c);
+			}
+		} else if (c instanceof Container) {
+			for (final Component k : ((Container) c).getComponents()) {
+				radky(k, v);
+			}
+		}
+		return v;
+	}
+
+	private static int y(final Component c, final JScrollPane sp) {
+		return SwingUtilities.convertPoint(c.getParent(), c.getLocation(), sp.getViewport().getView()).y;
+	}
+
+	/** Po přestavbě je v posuvnících oddílů nahoře tentýž řádek, i když nad ním řádek přibyl nebo ubyl; posuvník nahoře zůstane nahoře. */
+	private void obnovPozice(final Pozice[] pozice) {
+		validate();
 		final JScrollPane[] sp = { slozkaPosuvnik, mistoPosuvnik, seznam };
 		for (int i = 0; i < sp.length; i++) {
-			if (sp[i] != null && posuny[i] > 0) {
-				sp[i].getVerticalScrollBar().setValue(posuny[i]);
+			if (sp[i] == null || pozice[i] == null || pozice[i].px <= 0) {
+				continue;
 			}
+			int y = pozice[i].px;
+			for (final Component c : radky(sp[i].getViewport().getView(), new ArrayList<>())) {
+				if (((JComponent) c).getClientProperty(KLIC_RADKU).equals(pozice[i].klic)) {
+					y = y(c, sp[i]) + pozice[i].pod;
+					break;
+				}
+			}
+			sp[i].getVerticalScrollBar().setValue(y);
 		}
 	}
 
@@ -854,13 +908,23 @@ public class JMapyPopup extends JPanel {
 
 	private int sirkaNazvu;
 
-	/** Sestaví popup znovu a nechá posuvníky všech oddílů tam, kde byly (klik na řádek ani šipka uzlu neskočí nahoru). */
 	private void sestav() {
-		final int[] posuny = { posun(slozkaPosuvnik), posun(mistoPosuvnik), posun(seznam) };
+		sestav(-1);
+	}
+
+	/**
+	 * Sestaví popup znovu a nechá posuvníky všech oddílů na stejných řádcích (klik na řádek ani šipka uzlu neskočí nahoru).
+	 *
+	 * @param vyska
+	 *            výška, kterou má popup mít i po přestavbě, nebo -1, když se řídí obsahem
+	 */
+	private void sestav(final int vyska) {
+		final Pozice[] pozice = { pozice(slozkaPosuvnik), pozice(mistoPosuvnik), pozice(seznam) };
+		drzenaVyska = vyska;
 		sestavZNovu();
-		obnovPosuny(posuny);
+		obnovPozice(pozice);
 		// Rozměry posuvníků se určí až při rozložení: po něm se pozice nastaví znovu.
-		SwingUtilities.invokeLater(() -> obnovPosuny(posuny));
+		SwingUtilities.invokeLater(() -> obnovPozice(pozice));
 	}
 
 	private void sestavZNovu() {
@@ -1110,6 +1174,8 @@ public class JMapyPopup extends JPanel {
 			gbc.gridy++;
 			add(seznam, gbc);
 		}
+		gbc.gridy++;
+		final GridBagConstraints vypln = (GridBagConstraints) gbc.clone();
 
 		if (radky.stream().anyMatch(r -> !r.vlastni)) {
 			// Projekt, licence a atribuce map z katalogu.
@@ -1155,8 +1221,13 @@ public class JMapyPopup extends JPanel {
 		// Výška seznamů: co zbude z dostupné výšky nad stavovým řádkem po ostatních částech popupu.
 		pevnaVyska = getPreferredSize().height;
 		rozpocet = rozpocetSekci();
-		final int[] prideleno = rozdelVysky(new int[] { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi }, rozpocet, MIN_VYSKA_SEKCE);
+		final int[] pozadovano = { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, Math.min(vyskaDalsi, MAX_VYSKA_SEZNAMU) };
+		final int[] prideleno = rozdelVysky(pozadovano, drzenaVyska > 0 ? drzenaVyska - pevnaVyska : rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
+		final int zbyva = drzenaVyska - pevnaVyska - prideleno[0] - prideleno[1] - prideleno[2];
+		if (drzenaVyska > 0 && zbyva > 0) {
+			add(Box.createVerticalStrut(zbyva), vypln);
+		}
 		final JComponent slozkaSekce = sekce(slozka, prideleno[0]);
 		slozkaPosuvnik = slozkaSekce instanceof JScrollPane ? (JScrollPane) slozkaSekce : null;
 		slozkaObal.add(slozkaSekce);
@@ -1214,12 +1285,16 @@ public class JMapyPopup extends JPanel {
 
 	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */
 	static final int MIN_VYSKA_SEKCE = 80;
+	/** Seznam všech map má hledání, stačí mu asi deset řádků; jinak by i s jedinou mapou ve složce vyplnil celou výšku nad stavovým řádkem. */
+	static final int MAX_VYSKA_SEZNAMU = 180;
 
 	/** Kolik px je nad stavovým řádkem až po horní lištu okna, -1 když není známé; nastavuje blok Mapy. */
 	private transient java.util.function.IntSupplier dostupnaVyska = () -> -1;
 	/** Výška popupu bez seznamů z posledního sestavení a rozpočet seznamů, podle kterého se naposledy rozdělovalo. */
 	private int pevnaVyska;
 	private int rozpocet;
+	/** Výška, kterou popup držel při posledním sestavení, -1 když se řídil obsahem. */
+	private int drzenaVyska = -1;
 
 	public void setDostupnaVyska(final java.util.function.IntSupplier dostupnaVyska) {
 		this.dostupnaVyska = dostupnaVyska;
@@ -1232,13 +1307,13 @@ public class JMapyPopup extends JPanel {
 		}
 	}
 
-	/** Kolik výšky smějí dohromady mít seznamy map: dostupná výška po horní lištu okna bez ostatních částí popupu, nejméně 260 px; bez znalosti okna půl obrazovky. */
+	/**
+	 * Kolik výšky smějí dohromady mít seznamy map: dostupná výška po horní lištu okna bez ostatních částí popupu, nejméně 260 a nejvýš 520 px; bez znalosti okna půl
+	 * obrazovky.
+	 */
 	int rozpocetSekci() {
 		final int dostupna = dostupnaVyska.getAsInt();
-		if (dostupna > 0) {
-			return Math.max(MIN_ROZPOCET, dostupna - pevnaVyska - OKRAJ_POPUPU);
-		}
-		return Math.min(520, Math.max(MIN_ROZPOCET, obrazovka() / 2));
+		return Math.min(MAX_ROZPOCET, Math.max(MIN_ROZPOCET, dostupna > 0 ? dostupna - pevnaVyska - OKRAJ_POPUPU : obrazovka() / 2));
 	}
 
 	private static int obrazovka() {
@@ -1246,6 +1321,8 @@ public class JMapyPopup extends JPanel {
 	}
 
 	static final int MIN_ROZPOCET = 260;
+	/** Ani ve vysokém okně popup nepřeroste přes půl obrazovky; další řádky (třeba po rozbalení země) jsou v posuvníku. */
+	static final int MAX_ROZPOCET = 520;
 	/** Rezerva na ohraničení popupu. */
 	private static final int OKRAJ_POPUPU = 12;
 
@@ -1423,7 +1500,9 @@ public class JMapyPopup extends JPanel {
 		final int pred = panel.getComponentCount();
 		final GridBagConstraints ci = bunka(0, y, 1);
 		ci.insets = new Insets(1, 0, 1, 4);
-		panel.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.NEMAME)), ci);
+		final JLabel ikona = new JLabel(IkonyMap.pro(RadekMapy.Stav.NEMAME));
+		ikona.putClientProperty(KLIC_RADKU, "země:" + u.nazev);
+		panel.add(ikona, ci);
 		final JLabel nazev = new JLabel(u.nazev);
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
 		if (prepni == null) {
@@ -1570,13 +1649,9 @@ public class JMapyPopup extends JPanel {
 		prestav();
 	}
 
-	/** Přestaví popup po změně sbalení; posun seznamu dalších map zůstane. */
+	/** Přestaví popup po změně sbalení; výška se určí znovu podle obsahu. */
 	private void prestav() {
-		final int posun = seznam == null ? 0 : seznam.getVerticalScrollBar().getValue();
 		sestav();
-		if (seznam != null) {
-			seznam.getVerticalScrollBar().setValue(posun);
-		}
 		zmenaObsahu();
 	}
 
@@ -1647,6 +1722,7 @@ public class JMapyPopup extends JPanel {
 			}
 		};
 		final JLabel ikona = new JLabel();
+		ikona.putClientProperty(KLIC_RADKU, klic(r));
 		ikona.addMouseListener(nadRadkem);
 		final GridBagConstraints c = bunka(0, y, 1);
 		c.insets = new Insets(1, 0, 1, 4);
