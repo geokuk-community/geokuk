@@ -210,4 +210,20 @@ public class JBlokMapTest {
 			Assert.assertEquals("šířka bloku se nemění", sirka, blok.getPreferredSize().width);
 		});
 	}
+
+	/** Tooltip bloku by překryl Zdroje; při otevírání popupu (najetí myší) se neukazuje, po odjetí zase ano. */
+	@Test
+	public void priOtevireniPopupuBezTooltipu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			blok.obnov(Collections.singletonList(RadekMapy.katalogova("at", "Rakousko", RadekMapy.Stav.STAHUJE).velikost(1000).stazeno(500).build()));
+			final java.awt.event.MouseEvent mys = new java.awt.event.MouseEvent(blok, java.awt.event.MouseEvent.MOUSE_MOVED, 0, 0, 5, 5, 0, false);
+			Assert.assertEquals("Stahuje se mapa Rakousko.", blok.getToolTipText(mys));
+			blok.dispatchEvent(new java.awt.event.MouseEvent(blok, java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 5, 5, 0, false));
+			Assert.assertNull(blok.getToolTipText(mys));
+			blok.dispatchEvent(new java.awt.event.MouseEvent(blok, java.awt.event.MouseEvent.MOUSE_EXITED, 0, 0, -5, -5, 0, false));
+			Assert.assertEquals("Stahuje se mapa Rakousko.", blok.getToolTipText(mys));
+			blok.removeNotify(); // zastaví hlídání myši, bez displeje nejde zjistit její polohu
+		});
+	}
 }

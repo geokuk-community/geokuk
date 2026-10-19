@@ -523,6 +523,12 @@ public class JBlokMap extends JLabel {
 		}
 	}
 
+	/** Tooltip by překryl sousední bloky a říká totéž co popup. */
+	@Override
+	public String getToolTipText(final MouseEvent e) {
+		return popup.otevira(obsah) ? null : super.getToolTipText(e);
+	}
+
 	public void ukaz() {
 		if (popup.viditelny() == obsah) {
 			return;
