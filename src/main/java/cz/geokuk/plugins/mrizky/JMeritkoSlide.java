@@ -45,17 +45,15 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		meritko.setMaximalniSirkaMeritka(maximalniSirka);
 		meritko.setPixluNaMetr(soord.getPixluNaMetr());
 		meritko.setSize(meritko.getPreferredSize());
-		final int x = OKRAJ;
+		final int x = (soord.getWidth() - meritko.getSize().width) / 2;
 		g.translate(x, soord.getHeight() - meritko.getSize().getHeight() - 20);
 		meritko.paintComponent(g);
 
 	}
 
-	/** Měřítko je vlevo dole, atribuce vpravo dole; bar je nejvýš tak široký, aby je od sebe oddělil odstup atribuce. */
-	static final int OKRAJ = 12;
-
+	/** Měřítko je uprostřed dole a nejvýš na polovině šířky, aby nezasahovalo do rohů (ty mají nejvýš čtvrtinu šířky). */
 	public static int maximalniSirka(final int sirkaMapy) {
-		return Math.max(60, Math.min(sirkaMapy / 3, 196));
+		return sirkaMapy / 2;
 	}
 
 	@Override
@@ -80,10 +78,7 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		setLayout(new BorderLayout());
 		meritko = new JMeritko();
 		meritko.setBorder(BorderFactory.createEmptyBorder(0, 0, 25, 0));
-		final javax.swing.JPanel vlevo = new javax.swing.JPanel(new FlowLayout(FlowLayout.LEFT, OKRAJ, 0));
-		vlevo.setOpaque(false);
-		vlevo.add(meritko);
-		add(vlevo, BorderLayout.SOUTH);
+		add(meritko, BorderLayout.SOUTH);
 
 	}
 
