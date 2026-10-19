@@ -113,8 +113,12 @@ public class AtribuceNadVrstvamiTest {
 		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
 		final JKachlovnikPresCele k = kachlovnik();
 		final JFrame[] okno = new JFrame[1];
+		final JDialog[] jine = new JDialog[1];
 		final Point[] ikona = new Point[1];
 		SwingUtilities.invokeAndWait(() -> {
+			jine[0] = new JDialog((java.awt.Frame) null, "Jiné okno");
+			jine[0].setSize(200, 100);
+			jine[0].setVisible(true);
 			okno[0] = new JFrame();
 			okno[0].getContentPane().add(k);
 			okno[0].setSize(SIRKA, VYSKA);
@@ -128,17 +132,20 @@ public class AtribuceNadVrstvamiTest {
 		Assert.assertNotNull(ikona[0]);
 		try {
 			SwingUtilities.invokeLater(() -> k.klikNaRadu(ikona[0]));
-			JDialog dialog = null;
-			for (final long konec = System.currentTimeMillis() + 10000; dialog == null && System.currentTimeMillis() < konec;) {
+			// Jiná okna z dřívějších testů nebo systému se nepočítají, jen dialog atribuce s načteným obsahem.
+			final JDialog[] dialog = new JDialog[1];
+			for (final long konec = System.currentTimeMillis() + 10000; dialog[0] == null && System.currentTimeMillis() < konec;) {
 				Thread.sleep(50);
-				for (final Window w : Window.getWindows()) {
-					if (w instanceof JDialog && w.isShowing()) {
-						dialog = (JDialog) w;
+				SwingUtilities.invokeAndWait(() -> {
+					for (final Window w : Window.getWindows()) {
+						if (w instanceof JDialog && w.isShowing() && "Atribuce mapy".equals(((JDialog) w).getTitle()) && najdi(w, JEditorPane.class) != null) {
+							dialog[0] = (JDialog) w;
+						}
 					}
-				}
+				});
 			}
-			Assert.assertNotNull("klik na ⓘ otevře okno", dialog);
-			final JDialog d = dialog;
+			Assert.assertNotNull("klik na ⓘ otevře okno", dialog[0]);
+			final JDialog d = dialog[0];
 			final String[] text = new String[1];
 			final List<String> plna = k.plnaAtribuce();
 			SwingUtilities.invokeAndWait(() -> {
@@ -149,15 +156,21 @@ public class AtribuceNadVrstvamiTest {
 				} catch (final BadLocationException e) {
 					throw new IllegalStateException(e);
 				}
-				Assert.assertTrue(editor.getText(), editor.getText().contains("https://www.openstreetmap.org/copyright"));
-				d.dispose();
+				try {
+					Assert.assertTrue(editor.getText(), editor.getText().contains("https://www.openstreetmap.org/copyright"));
+				} finally {
+					d.dispose();
+				}
 			});
 			Assert.assertTrue(plna.size() > 1);
 			for (final String t : plna) {
 				Assert.assertTrue(text[0], text[0].contains(t));
 			}
 		} finally {
-			SwingUtilities.invokeAndWait(() -> okno[0].dispose());
+			SwingUtilities.invokeAndWait(() -> {
+				okno[0].dispose();
+				jine[0].dispose();
+			});
 		}
 	}
 
