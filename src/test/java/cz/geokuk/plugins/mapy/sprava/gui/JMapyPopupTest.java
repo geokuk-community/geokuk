@@ -1709,4 +1709,43 @@ public class JMapyPopupTest {
 			Assert.assertEquals("stahování oddíl znovu nerozbalí", 0, videtLabelu(p, "Polsko"));
 		});
 	}
+
+	/** Nový výsledek kontroly se ukáže i bez přestavby popupu. */
+	@Test
+	public void novyVysledekKontrolyBezPrestavby() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			final Instant ted = Instant.now();
+			final List<RadekMapy> prvni = Arrays.asList(katalog("cz", RadekMapy.Stav.AKTUALNI).zkontrolovano(ted.minusSeconds(2 * 3600)).build());
+			final List<RadekMapy> druha = Arrays.asList(katalog("cz", RadekMapy.Stav.AKTUALNI).zkontrolovano(ted.minusSeconds(3600)).build());
+			p.obnov(prvni);
+			final int pred = p.prestaveb;
+			final String predtim = p.vysledekKontroly(prvni);
+			final String potom = p.vysledekKontroly(druha);
+			Assert.assertNotEquals(predtim, potom);
+			Assert.assertEquals(1, videtLabelu(p, predtim));
+			p.obnov(druha);
+			Assert.assertEquals("kontrola popup nepřestavěla", pred, p.prestaveb);
+			Assert.assertEquals("je vidět nový čas kontroly", 1, videtLabelu(p, potom));
+			Assert.assertEquals(0, videtLabelu(p, predtim));
+		});
+	}
+
+	/** Během kontroly novější mapy není vidět Aktualizovat, po kontrole se vrátí. */
+	@Test
+	public void kontrolaNovejsiMapySkryjeAktualizovat() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).build()));
+			Assert.assertEquals(1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).kontroluje(true).build()));
+			Assert.assertEquals("během kontroly", 0, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).build()));
+			Assert.assertEquals("po kontrole", 1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+		});
+	}
 }

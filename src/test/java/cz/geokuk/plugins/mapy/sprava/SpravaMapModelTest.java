@@ -153,10 +153,14 @@ public class SpravaMapModelTest {
 		final File[] slozka = { prvni };
 		final List<cz.geokuk.framework.Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final List<String> priNovemKatalogu = new CopyOnWriteArrayList<>();
+		final List<String> staraVrstva = new CopyOnWriteArrayList<>();
 		model.nastavProTest(() -> slozka[0], e -> {
 			if (e instanceof KatalogVrstevEvent) {
 				for (final KatalogovaVrstva v : ((KatalogVrstevEvent) e).getKatalog().getVrstvy()) {
 					priNovemKatalogu.add(v.getId() + " " + model.getStav(v).getMistni());
+					if (model.getStav(v).getVrstva() != v) {
+						staraVrstva.add(v.getId());
+					}
 				}
 			} else {
 				udalosti.add(e);
@@ -173,6 +177,7 @@ public class SpravaMapModelTest {
 		model.pockej();
 		assertEquals("stažené vrstvy nejsou s novým katalogem chvíli ke stažení", Arrays.asList("contours/europe/czech-republic MAME", "tourist/europe/czech-republic MAME"),
 				priNovemKatalogu.stream().sorted().collect(java.util.stream.Collectors.toList()));
+		assertEquals("stav drží vrstvu z nového katalogu", Arrays.asList(), staraVrstva);
 		for (final KatalogovaVrstva v : model.getKatalogVrstev().getVrstvy()) {
 			assertEquals(StavVrstvy.Mistni.JINA_VERZE, model.getStav(v).getMistni());
 			assertSame(v, model.getStav(v).getVrstva());
