@@ -158,10 +158,11 @@ a šířit jen v souladu s ní; GeoKuk je s programem nedodává.
 
 ### Vzhled offline map
 
-Výchozí téma GeoKuk kreslí offline mapu přehledně pro plánování výletů:
-turistické trasy v barvách značení, vrstevnice a stínování terénu, keše
-jako ikony, v menším měřítku jako barevné tečky. Trasu výletu jde vést
-po cestách, panel Cesta ukazuje její délku a body.
+Snímky ukazují offline mapu z dat OpenStreetMap (mapsforge) s vlastními
+vrstvami GeoKuku (turistické a cyklotrasy, vrstevnice, stínování terénu)
+a vlastním vzhledem, tématem GeoKuk: trasy v barvách značení, keše jako
+ikony, v menším měřítku jako barevné tečky. Trasu výletu jde vést po
+cestách, panel Cesta ukazuje její délku a body.
 
 ![Přehled kraje s keškami jako tečkami](docs/geokuk-z12.png)
 
