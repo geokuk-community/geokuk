@@ -161,6 +161,16 @@ public class AtribuceNadVrstvamiTest {
 		}
 	}
 
+	/** Text atribuce ze staženého katalogu se v okně ukáže doslova, ne jako HTML. */
+	@Test
+	public void plneZneniSeEscapuje() throws Exception {
+		final String text = "Data <b>tučně</b> & <a href=\"x\">odkaz</a>";
+		final JEditorPane editor = new JEditorPane("text/html", JKachlovnikPresCele.htmlAtribuce(java.util.Arrays.asList(text, " ")));
+		final String zobrazeny = editor.getDocument().getText(0, editor.getDocument().getLength());
+		Assert.assertTrue(zobrazeny, zobrazeny.contains(text));
+		Assert.assertTrue(zobrazeny, zobrazeny.contains("Autorská práva OpenStreetMap"));
+	}
+
 	private static Point najdiIkonu(final JKachlovnikPresCele k) {
 		for (int y = k.getHeight() - 1; y > k.getHeight() - 30; y--) {
 			for (int x = k.getWidth() - 1; x > k.getWidth() - 60; x--) {

@@ -241,16 +241,20 @@ public class JKachlovnikPresCele extends JKachlovnik {
 
 	/** Ukáže plné znění atribuce v okně jako Co je nového. */
 	void ukazPlnouAtribuci() {
+		final JCoJeNoveho obsah = new JCoJeNoveho();
+		obsah.setHtml(htmlAtribuce(plnaAtribuce()));
+		JCoJeNoveho.dialog(SwingUtilities.getWindowAncestor(this), "Atribuce mapy", obsah).setVisible(true);
+	}
+
+	/** Plné znění jako HTML; texty atribuce přicházejí i ze staženého katalogu, proto se escapují. */
+	static String htmlAtribuce(final List<String> texty) {
 		final StringBuilder html = new StringBuilder("<html><body>");
-		for (final String t : plnaAtribuce()) {
+		for (final String t : texty) {
 			if (!t.trim().isEmpty()) {
 				html.append("<p>").append(CoJeNoveho.escape(t)).append("</p>");
 			}
 		}
-		html.append("<p><a href=\"https://www.openstreetmap.org/copyright\">Autorská práva OpenStreetMap</a></p></body></html>");
-		final JCoJeNoveho obsah = new JCoJeNoveho();
-		obsah.setHtml(html.toString());
-		JCoJeNoveho.dialog(SwingUtilities.getWindowAncestor(this), "Atribuce mapy", obsah).setVisible(true);
+		return html.append("<p><a href=\"https://www.openstreetmap.org/copyright\">Autorská práva OpenStreetMap</a></p></body></html>").toString();
 	}
 
 	/** Offline mapa a střed výřezu nepokrývá žádná podrobná mapa. */
