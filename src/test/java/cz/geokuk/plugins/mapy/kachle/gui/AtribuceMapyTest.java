@@ -60,7 +60,7 @@ public class AtribuceMapyTest {
 
 	@Test
 	public void meritkoMaOmezenouSirku() {
-		assertEquals(196, cz.geokuk.plugins.mrizky.JMeritkoSlide.maximalniSirka(1920));
-		assertEquals(100, cz.geokuk.plugins.mrizky.JMeritkoSlide.maximalniSirka(300));
+		assertEquals(960, cz.geokuk.plugins.mrizky.JMeritkoSlide.maximalniSirka(1920));
+		assertEquals(150, cz.geokuk.plugins.mrizky.JMeritkoSlide.maximalniSirka(300));
 	}
 }
