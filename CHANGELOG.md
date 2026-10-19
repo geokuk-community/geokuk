@@ -153,6 +153,9 @@
 - Zkontrolovat aktualizace v panelu Offline mapy panel nepřekresluje a blok
   Mapy ve stavovém řádku při tom ukazuje Kontroluji… místo 0 %. Po obnovení
   seznamu vrstev se stažené vrstvy už na chvíli neukazují jako ke stažení.
+- Oddíl Ve složce a země v panelu Offline mapy zůstávají rozbalené nebo
+  sbalené, jak je uživatel nechal; nesbalí se po stažení další mapy ani po
+  skončení stahování.
 
 Obsahuje i všechny opravy z 6.4.2.
 

@@ -1633,6 +1633,83 @@ public class JMapyPopupTest {
 		});
 	}
 
+	private static final String[] STAZENE_8 = { "europe/czech-republic", "europe/austria", "europe/germany/bayern", "europe/germany/sachsen", "europe/germany/berlin", "europe/united-kingdom/england", "europe/united-kingdom/wales", "europe/poland" };
+
+	/** Stažené mapy, jedna z nich ve fázi {@code faze} (stahuje se nebo skončila). */
+	private static List<RadekMapy> stazeneSFazi(final String id, final cz.geokuk.plugins.mapy.sprava.StavMapy.Faze faze, final String... ids) {
+		final Set<String> mame = new HashSet<>(Arrays.asList(ids));
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, mame.contains(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						id.equals(m.getId()) ? cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NOVEJSI : cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY,
+						id.equals(m.getId()) ? faze : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, id.equals(m.getId()) && faze == cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE ? 30_000_000 : 0,
+						id.equals(m.getId()) && faze == cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE ? 100_000_000 : -1, null),
+				Collections.emptyList(), null);
+	}
+
+	private static void klikNa(final JLabel l) {
+		for (final java.awt.event.MouseListener m : l.getMouseListeners()) {
+			m.mouseClicked(new java.awt.event.MouseEvent(l, java.awt.event.MouseEvent.MOUSE_CLICKED, 0, 0, 1, 1, 1, false));
+		}
+	}
+
+	/** Šestá stažená mapa oddíl Ve složce nesbalí: výchozí stav podle počtu map platí jen při prvním zobrazení. */
+	@Test
+	public void sestaMapaNesbaliSlozku() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final Boolean[] ulozeno = { null };
+			p.ulozStavSlozky = b -> ulozeno[0] = b;
+			p.obnov(stazene("europe/czech-republic", "europe/austria", "europe/poland", "europe/hungary", "europe/slovakia"));
+			Assert.assertEquals(1, videtLabelu(p, "Rakousko"));
+			p.obnov(stazene("europe/czech-republic", "europe/austria", "europe/poland", "europe/hungary", "europe/slovakia", "europe/slovenia"));
+			Assert.assertEquals("po šesté mapě zůstává rozbaleno", 1, videtLabelu(p, "Rakousko"));
+			Assert.assertNull("nic se neuložilo", ulozeno[0]);
+		});
+	}
+
+	/** Oddíl a země rozbalené kvůli stahování zůstanou rozbalené i po jeho konci, do uložené volby se to nepíše; po zavření popupu platí zase volba. */
+	@Test
+	public void samoRozbaleniPoStahovaniZustane() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final Boolean[] ulozeno = { null };
+			p.ulozStavSlozky = b -> ulozeno[0] = b;
+			p.obnov(stazene(STAZENE_8));
+			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Rakousko"));
+			p.obnov(stazeneSFazi("europe/germany/sachsen", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_8));
+			Assert.assertEquals(1, videtLabelu(p, "Rakousko"));
+			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
+			p.obnov(stazeneSFazi("europe/germany/sachsen", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.HOTOVO, STAZENE_8));
+			Assert.assertEquals("po stažení se oddíl nesbalí", 1, videtLabelu(p, "Rakousko"));
+			Assert.assertEquals("ani země", 1, videtLabelu(p, "Bavorsko"));
+			Assert.assertNull("samo rozbalení se neukládá", ulozeno[0]);
+			p.popupZavren();
+			p.obnov(stazene(STAZENE_8));
+			Assert.assertEquals("po zavření popupu zase podle volby", 0, videtLabelu(p, "Rakousko"));
+		});
+	}
+
+	/** Klik na nadpis sám rozbaleného oddílu ho sbalí a uloží sbalení; během dalšího stahování téže mapy se znovu nerozbalí. */
+	@Test
+	public void klikNaSamRozbalenyOddilHoSbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final Boolean[] ulozeno = { null };
+			p.ulozStavSlozky = b -> ulozeno[0] = b;
+			final List<RadekMapy> stahuje = stazeneSFazi("europe/austria", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_8);
+			p.obnov(stahuje);
+			Assert.assertEquals(1, videtLabelu(p, "Polsko"));
+			klikNa(labels(p).stream().filter(l -> JMapyPopup.VE_SLOZCE.equals(l.getText())).findFirst().get());
+			Assert.assertEquals(Boolean.FALSE, ulozeno[0]);
+			Assert.assertEquals("sbaleno", 0, videtLabelu(p, "Polsko"));
+			p.obnov(stahuje);
+			Assert.assertEquals("stahování oddíl znovu nerozbalí", 0, videtLabelu(p, "Polsko"));
+		});
+	}
+
 	/** Nový výsledek kontroly se ukáže i bez přestavby popupu. */
 	@Test
 	public void novyVysledekKontrolyBezPrestavby() throws Exception {
@@ -1669,6 +1746,55 @@ public class JMapyPopupTest {
 			Assert.assertEquals("během kontroly", 0, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
 			p.obnov(Arrays.asList(katalog("cz", RadekMapy.Stav.NOVEJSI).build()));
 			Assert.assertEquals("po kontrole", 1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+		});
+	}
+
+	/** Po zavření popupu rozbalí oddíl znovu i mapa, která ho rozbalila už předtím. */
+	@Test
+	public void poZavreniPopupuStahovaniZnovuRozbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			final List<RadekMapy> stahuje = stazeneSFazi("europe/austria", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_8);
+			p.obnov(stahuje);
+			Assert.assertEquals(1, videtLabelu(p, "Polsko"));
+			p.popupZavren();
+			p.obnov(stazene(STAZENE_8));
+			Assert.assertEquals("osm map: sbaleno", 0, videtLabelu(p, "Polsko"));
+			p.obnov(stahuje);
+			Assert.assertEquals("po zavření popupu stahování oddíl zase rozbalí", 1, videtLabelu(p, "Polsko"));
+		});
+	}
+
+	/** Klik na zemi, kterou rozbalilo stahování, ji sbalí; další klik ji zase rozbalí. */
+	@Test
+	public void klikNaSamRozbalenouZemiJiSbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(stazeneSFazi("europe/germany/sachsen", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_8));
+			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals("sbaleno", 0, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals("zase rozbaleno", 1, videtLabelu(p, "Bavorsko"));
+		});
+	}
+
+	/** Chyba stahování rozbalí oddíl, i když ho uživatel během stahování sbalil. */
+	@Test
+	public void chybaPoStahovaniZnovuRozbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
+			Assert.assertEquals(1, videtLabelu(p, "Česko"));
+			p.prepniSlozku(false);
+			Assert.assertEquals("sbaleno", 0, videtLabelu(p, "Česko"));
+			final List<RadekMapy> chyba = mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.CHYBA);
+			Assert.assertEquals(RadekMapy.Stav.CHYBA, cesko(chyba).celkovyStav());
+			p.obnov(chyba);
+			Assert.assertEquals("chyba oddíl rozbalí", 1, videtLabelu(p, "Česko"));
 		});
 	}
 }
