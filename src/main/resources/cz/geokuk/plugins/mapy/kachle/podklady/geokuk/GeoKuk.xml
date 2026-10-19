@@ -339,34 +339,25 @@
     <!-- administrative borders -->
     <rule e="any" k="*" v="*">
         <rule e="way" k="admin_level" v="2">
-            <rule e="any" k="*" v="*" zoom-max="13">
-                <line stroke="#C0EDC2EC" stroke-linecap="butt" stroke-width="8" />
-                <line stroke="#C0ffff00" stroke-width="1" />
-                <line stroke="#693937" stroke-dasharray="15, 15" stroke-width="0.5" />
-            </rule>
-            <rule e="any" k="*" v="*" zoom-min="14">
+            <rule e="any" k="*" v="*" zoom-max="9">
                 <line stroke="#80EDC2EC" stroke-linecap="butt" stroke-width="6" />
-                <line stroke="#80ffff00" stroke-width="0.75" />
-                <line stroke="#693937" stroke-dasharray="15, 15" stroke-width="0.25" />
+                <line stroke="#9E5A9E" stroke-dasharray="6, 2, 1, 2" stroke-width="1" />
+            </rule>
+            <rule e="any" k="*" v="*" zoom-min="10">
+                <line scale="none" stroke="#9E5A9E" stroke-dasharray="10, 3, 2, 3" stroke-width="1.2" />
             </rule>
         </rule>
         <rule e="way" k="admin_level" v="4">
-            <line stroke="#70EDC2EC" stroke-linecap="butt" stroke-width="4" />
-            <line stroke="#693937" stroke-dasharray="15, 5, 5, 5" stroke-width="0.25" />
+            <line scale="none" stroke="#B09E5A9E" stroke-dasharray="8, 3, 2, 3" stroke-width="0.8" />
         </rule>
         <rule e="way" k="admin_level" v="6">
-            <line stroke="#70EDC2EC" stroke-linecap="butt" stroke-width="4" />
-            <line stroke="#693937" stroke-dasharray="5, 5" stroke-width="0.25" />
+            <line scale="none" stroke="#909E5A9E" stroke-dasharray="6, 3" stroke-width="0.8" />
         </rule>
         <rule e="way" k="admin_level" v="8">
-            <line stroke="#70EDC2EC" stroke-dasharray="15, 5, 5, 5" stroke-linecap="butt"
-                stroke-width="4" />
-            <line stroke="#693937" stroke-dasharray="15, 5, 5, 5" stroke-width="0.25" />
+            <line scale="none" stroke="#809E5A9E" stroke-dasharray="6, 3, 2, 3" stroke-width="0.6" />
         </rule>
         <rule e="way" k="admin_level" v="9">
-            <line stroke="#70EDC2EC" stroke-dasharray="15, 15" stroke-linecap="butt"
-                stroke-width="4" />
-            <line stroke="#693937" stroke-dasharray="15, 15" stroke-width="0.25" />
+            <line scale="none" stroke="#709E5A9E" stroke-dasharray="3, 3" stroke-width="0.6" />
         </rule>
 
         <!-- special areas -->
