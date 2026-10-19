@@ -86,7 +86,6 @@ public class JBlokMap extends JLabel {
 		obsah.nactiStavSlozky = JBlokMap::nactiStavSlozky;
 		obsah.ulozStavSlozky = JBlokMap::ulozStavSlozky;
 		cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.setPoZmene(() -> javax.swing.SwingUtilities.invokeLater(() -> obsah.obnov(obsah.getRadky())));
-		obsah.setDavkaBezi(() -> spravaMap != null && spravaMap.isDavka());
 		obsah.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
 		obsah.setZobrazeny(() -> popup.viditelny() == obsah);
 		obnov(java.util.Collections.emptyList());

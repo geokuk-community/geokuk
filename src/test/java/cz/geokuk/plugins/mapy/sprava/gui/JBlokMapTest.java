@@ -184,7 +184,7 @@ public class JBlokMapTest {
 				final int pred = blok[0].getObsah().prestaveb;
 				blok[0].obnov(veSlozce("chyba"));
 				blok[0].obnov(veSlozce(null));
-				Assert.assertEquals("otevřený popup se přestavěl", pred + 2, blok[0].getObsah().prestaveb);
+				Assert.assertEquals("chyba řádku se přepsala na místě", pred, blok[0].getObsah().prestaveb);
 			});
 			SwingUtilities.invokeAndWait(() -> Assert.assertEquals("bez nového zobrazení", 0, zobrazeni[0]));
 		} finally {
