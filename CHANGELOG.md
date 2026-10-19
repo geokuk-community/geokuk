@@ -148,6 +148,8 @@
   program ohlásí jedním varováním za soubor.
 - GPX, který se právě kopíruje do složky s daty, už nehlásí chybu načítání;
   načte se, až je kopie hotová.
+- Panel Offline mapy při změnách stavu map nebliká a zavřený nezdržuje
+  program zbytečnou prací.
 
 Obsahuje i všechny opravy z 6.4.2.
 

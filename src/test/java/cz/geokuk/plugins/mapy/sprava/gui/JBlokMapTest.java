@@ -7,6 +7,7 @@ import java.util.*;
 import javax.swing.*;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -89,6 +90,108 @@ public class JBlokMapTest {
 			} else {
 				cz.geokuk.framework.MyPreferences.current().node(JBlokMap.PREFE_NODE).putBoolean(JBlokMap.PREFE_SLOZKA_VOLBA, false);
 			}
+		}
+	}
+
+	private static List<RadekMapy> veSlozce(final String chybaPrvni) {
+		final List<RadekMapy> r = new ArrayList<>();
+		for (final String id : new String[] { "a", "b", "c" }) {
+			r.add(RadekMapy.katalogova(id, id, RadekMapy.Stav.AKTUALNI).velikost(600_000_000L).veSlozce(true).chyba("a".equals(id) ? chybaPrvni : null).build());
+		}
+		return r;
+	}
+
+	/** Zavřený popup se při změnách nepřestavuje, jen se označí jako zastaralý; přestaví se jednou před otevřením. */
+	@Test
+	public void zavrenyPopupSeNeprestavuje() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			final JMapyPopup obsah = blok.getObsah();
+			final int pred = obsah.prestaveb;
+			blok.obnov(veSlozce(null));
+			blok.obnov(veSlozce("chyba"));
+			blok.obnov(veSlozce(null));
+			obsah.zmenyNaraz(() -> obsah.setStinovaniDostupne(true));
+			Assert.assertEquals("zavřený popup se nepřestavuje", pred, obsah.prestaveb);
+			Assert.assertTrue(obsah.isZastaraly());
+			obsah.pripravKZobrazeni();
+			Assert.assertEquals("před otevřením jedna přestavba", pred + 1, obsah.prestaveb);
+			Assert.assertFalse(obsah.isZastaraly());
+			Assert.assertEquals(3, obsah.getRadky().size());
+		});
+	}
+
+	/** Posun mapy, po kterém pokrývají střed tytéž mapy, řádky nepřestavuje; přechod do jiné země ano. */
+	@Test
+	public void posunMapyBezZmenyMistaNeprestavuje() throws Exception {
+		final cz.geokuk.plugins.mapy.sprava.SpravaMapModel sprava = new cz.geokuk.plugins.mapy.sprava.SpravaMapModel();
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			blok.inject(sprava);
+			blok.setStred(new cz.geokuk.core.coordinates.Wgs(50.08, 14.42));
+			final List<RadekMapy> praha = blok.getObsah().getRadky();
+			Assert.assertTrue(praha.stream().anyMatch(r -> "europe/czech-republic".equals(r.id) && r.proZobrazeneMisto));
+			blok.setStred(new cz.geokuk.core.coordinates.Wgs(50.09, 14.45));
+			Assert.assertSame("posun v Česku řádky nesestavuje", praha, blok.getObsah().getRadky());
+			blok.setStred(new cz.geokuk.core.coordinates.Wgs(48.2, 16.37));
+			Assert.assertTrue(blok.getObsah().getRadky().stream().anyMatch(r -> "europe/austria".equals(r.id) && r.proZobrazeneMisto));
+		});
+	}
+
+	/** Změna obsahu otevřeného popupu, která nemění jeho velikost, popup znovu nezobrazuje (neblikne). */
+	@Test(timeout = 30000)
+	public void otevrenyPopupSeBezZmenyVelikostiNezobraziZnovu() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final File slozka = tmp.newFolder("prazdna");
+		final JFrame okno = new JFrame();
+		final JBlokMap[] blok = new JBlokMap[1];
+		final int[] zobrazeni = new int[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				blok[0] = new JBlokMap();
+				blok[0].setZdrojSlozky(() -> slozka);
+				blok[0].cteniSlozky = f -> veSlozce(null);
+				final JPanel lista = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+				lista.add(blok[0]);
+				okno.add(lista, java.awt.BorderLayout.SOUTH);
+				okno.setBounds(0, 0, 1300, 850);
+				okno.setVisible(true);
+				blok[0].getObsah().addHierarchyListener(e -> {
+					if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && blok[0].getObsah().isShowing()) {
+						zobrazeni[0]++;
+					}
+				});
+				blok[0].obnov(veSlozce(null));
+			});
+			final long konec = System.currentTimeMillis() + 10_000;
+			while (System.currentTimeMillis() < konec) {
+				final boolean[] videt = new boolean[1];
+				SwingUtilities.invokeAndWait(() -> {
+					if (blok[0].isShowing()) {
+						blok[0].ukaz();
+					}
+					videt[0] = blok[0].getObsah().isShowing();
+				});
+				if (videt[0]) {
+					break;
+				}
+				Thread.sleep(50);
+			}
+			Thread.sleep(300);
+			SwingUtilities.invokeAndWait(() -> {
+				Assert.assertTrue(blok[0].getObsah().isShowing());
+				zobrazeni[0] = 0;
+				final int pred = blok[0].getObsah().prestaveb;
+				blok[0].obnov(veSlozce("chyba"));
+				blok[0].obnov(veSlozce(null));
+				Assert.assertEquals("otevřený popup se přestavěl", pred + 2, blok[0].getObsah().prestaveb);
+			});
+			SwingUtilities.invokeAndWait(() -> Assert.assertEquals("bez nového zobrazení", 0, zobrazeni[0]));
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				blok[0].zavri();
+				okno.dispose();
+			});
 		}
 	}
 }

@@ -478,8 +478,7 @@ public class JMapyPopup extends JPanel {
 		if (dostupne != stinovaniDostupne) {
 			stinovaniDostupne = dostupne;
 			stinovani.setSelected(ovladani == null || ovladani.isStinovani());
-			sestav();
-			poZmeneObsahu.run();
+			naplanujPrestavbu();
 		}
 	}
 
@@ -531,15 +530,59 @@ public class JMapyPopup extends JPanel {
 			odlozenaPrestavba.restart();
 			return;
 		}
+		naplanujPrestavbu();
+	}
+
+	/** Přestaví popup, jen když je vidět a neprobíhá hromadná změna; jinak si zapamatuje, že je zastaralý. */
+	private void naplanujPrestavbu() {
+		if (!zobrazeny.getAsBoolean() || hromadnaZmena > 0) {
+			odlozenaPrestavba.stop();
+			zastaraly = true;
+			return;
+		}
 		prestavPopup();
 	}
 
 	private void prestavPopup() {
 		odlozenaPrestavba.stop();
+		zastaraly = false;
 		rusenaMapa = null;
 		sestav();
 		posledniPrestavba = System.nanoTime();
 		zmenaObsahu();
+	}
+
+	/** Provede změny (řádky, volné místo, dvojité mapy…) a popup přestaví nejvýš jednou na konci. */
+	public void zmenyNaraz(final Runnable zmeny) {
+		hromadnaZmena++;
+		try {
+			zmeny.run();
+		} finally {
+			hromadnaZmena--;
+		}
+		if (zastaraly && hromadnaZmena == 0) {
+			naplanujPrestavbu();
+		}
+	}
+
+	/** Zavřený popup se nepřestavuje; nastavuje blok Mapy. */
+	public void setZobrazeny(final java.util.function.BooleanSupplier zobrazeny) {
+		this.zobrazeny = zobrazeny;
+	}
+
+	/** Před otevřením popupu: přestaví ho, když se od zavření něco změnilo. */
+	public void pripravKZobrazeni() {
+		if (zastaraly) {
+			odlozenaPrestavba.stop();
+			zastaraly = false;
+			rusenaMapa = null;
+			sestav();
+			posledniPrestavba = System.nanoTime();
+		}
+	}
+
+	boolean isZastaraly() {
+		return zastaraly;
 	}
 
 	/** Za hromadné dávky stahování se popup nepřestavuje po každé změně stavu, ale nejvýš jednou za {@link #odstupPrestavbyMs}. */
@@ -580,7 +623,13 @@ public class JMapyPopup extends JPanel {
 	private transient java.util.function.BooleanSupplier davkaBezi = () -> false;
 	int odstupPrestavbyMs = 5000;
 	private long posledniPrestavba;
-	private final javax.swing.Timer odlozenaPrestavba = new javax.swing.Timer(5000, e -> prestavPopup());
+	private final javax.swing.Timer odlozenaPrestavba = new javax.swing.Timer(5000, e -> naplanujPrestavbu());
+	private transient java.util.function.BooleanSupplier zobrazeny = () -> true;
+	/** Obsah neodpovídá řádkům a nastavení, přestaví se při nejbližší příležitosti. */
+	private boolean zastaraly;
+	private int hromadnaZmena;
+	/** Kolikrát se popup sestavil znovu (pro test). */
+	int prestaveb;
 
 	{
 		odlozenaPrestavba.setRepeats(false);
@@ -670,8 +719,7 @@ public class JMapyPopup extends JPanel {
 		final List<String> stare = dvojiteKlice(dvojite);
 		dvojite = nove == null ? Collections.emptyList() : nove;
 		if (!stare.equals(dvojiteKlice(dvojite))) {
-			sestav();
-			poZmeneObsahu.run();
+			naplanujPrestavbu();
 		}
 	}
 
@@ -694,8 +742,7 @@ public class JMapyPopup extends JPanel {
 		final Set<String> po = bezMista(vsechny);
 		if (!po.equals(pred) || !po.isEmpty()) { // tooltip vypnutých tlačítek ukazuje volné místo
 
-			sestav();
-			poZmeneObsahu.run();
+			naplanujPrestavbu();
 		}
 	}
 
@@ -783,6 +830,7 @@ public class JMapyPopup extends JPanel {
 	}
 
 	private void sestavZNovu() {
+		prestaveb++;
 		zvyrazni(null);
 		removeAll();
 		popisy.clear();
@@ -1151,7 +1199,7 @@ public class JMapyPopup extends JPanel {
 	/** Okno se mohlo od posledního sestavení zvětšit nebo zmenšit: seznamy se rozdělí znovu, když se rozpočet změnil. */
 	public void prepocitejVysku() {
 		if (rozpocet != 0 && rozpocetSekci() != rozpocet) {
-			sestav();
+			naplanujPrestavbu();
 		}
 	}
 

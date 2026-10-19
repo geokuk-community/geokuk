@@ -50,6 +50,8 @@ public class JBlokMap extends JLabel {
 	/** Mapy ve složce podle posledního čtení. */
 	private transient List<RadekMapy> soubory = java.util.Collections.emptyList();
 	private transient Wgs stred;
+	/** Mapy pokrývající střed výřezu podle posledního sestavení řádků. */
+	private transient java.util.Set<String> proMisto = java.util.Collections.emptySet();
 	/** Čtení složky běží, další změna počká na jeho konec. */
 	private transient SwingWorker<List<RadekMapy>, Void> cteni;
 	private boolean znovu;
@@ -83,11 +85,13 @@ public class JBlokMap extends JLabel {
 		cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.setPoZmene(() -> javax.swing.SwingUtilities.invokeLater(() -> obsah.obnov(obsah.getRadky())));
 		obsah.setDavkaBezi(() -> spravaMap != null && spravaMap.isDavka());
 		obsah.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
+		obsah.setZobrazeny(() -> popup.viditelny() == obsah);
 		obnov(java.util.Collections.emptyList());
 		popup.setDrzOtevreny(obsah::isHledaniAktivni);
 		popup.setPoZavreni(obsah::popupZavren);
 		obsah.setPoZmeneObsahu(() -> {
-			if (popup.viditelny() == obsah) {
+			// Znovu zobrazit (skrýt a vložit) jen při změně velikosti, jinak by popup bliknul.
+			if (popup.viditelny() == obsah && !obsah.getSize().equals(obsah.getPreferredSize())) {
 				popup.ukaz(obsah, this, true);
 			}
 		});
@@ -285,8 +289,28 @@ public class JBlokMap extends JLabel {
 
 	/** Střed výřezu určuje mapy „Pro zobrazené místo“; popup se přestaví, jen když se jejich výběr změní. */
 	public void onEvent(final VyrezChangedEvent event) {
-		stred = event.getMoord().getMoustred().toWgs();
-		prestav();
+		setStred(event.getMoord().getMoustred().toWgs());
+	}
+
+	void setStred(final Wgs novy) {
+		final java.util.Set<String> nove = mapyProMisto(novy);
+		stred = novy;
+		if (!nove.equals(proMisto)) {
+			proMisto = nove;
+			prestav();
+		}
+	}
+
+	private java.util.Set<String> mapyProMisto(final Wgs s) {
+		final java.util.Set<String> v = new java.util.HashSet<>();
+		if (spravaMap != null && s != null) {
+			for (final KatalogovaMapa m : spravaMap.getKatalog().getMapy()) {
+				if (m.getPokryti().obsahuje(s)) {
+					v.add(m.getId());
+				}
+			}
+		}
+		return v;
 	}
 
 	private void prestav() {
@@ -398,10 +422,12 @@ public class JBlokMap extends JLabel {
 				cteni = null;
 				try {
 					soubory = get();
-					obsah.setStinovaniDostupne(stinovaniDostupne);
-					obsah.setVolneMisto(volne);
-					obsah.setDvojite(dvojite);
-					prestav();
+					obsah.zmenyNaraz(() -> {
+						obsah.setStinovaniDostupne(stinovaniDostupne);
+						obsah.setVolneMisto(volne);
+						obsah.setDvojite(dvojite);
+						prestav();
+					});
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} catch (final ExecutionException e) {
@@ -494,6 +520,7 @@ public class JBlokMap extends JLabel {
 			spravaMap.obnovKatalogVrstevKdyzJeStary();
 		}
 		obsah.prepocitejVysku();
+		obsah.pripravKZobrazeni();
 		popup.ukaz(obsah, this, false);
 	}
 
