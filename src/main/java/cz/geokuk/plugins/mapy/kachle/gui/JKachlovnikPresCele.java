@@ -148,7 +148,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 	/**
-	 * Atribuce: jeden zkrácený řádek vpravo dole, nezasahuje do měřítka vlevo; plné znění po kliku na ikonu ⓘ. Kreslí ji vrstva {@link JOdkazRadySlide} nad
+	 * Atribuce: jeden zkrácený řádek vpravo dole v pravé čtvrtině šířky, prostředek dole patří měřítku; plné znění po kliku na ikonu ⓘ. Kreslí ji vrstva {@link JOdkazRadySlide} nad
 	 * všemi ostatními vrstvami mapy, aby ji nezakryly.
 	 */
 	void kresliAtribuci(final Graphics2D g) {
@@ -160,16 +160,13 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		try {
 			g2.setFont(getFont().deriveFont(Font.PLAIN, 10f));
 			final FontMetrics fm = g2.getFontMetrics();
-			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), Math.max(120, getWidth() - ODSTUP_MERITKA));
+			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), getWidth() / 4);
 			AtribuceMapy.kresli(g2, r, fm);
 			ikonaAtribuce = r.ikona;
 		} finally {
 			g2.dispose();
 		}
 	}
-
-	/** Šířka vlevo dole vyhrazená měřítku; atribuce do ní nezasahuje. */
-	static final int ODSTUP_MERITKA = 220;
 
 	/** Zkrácené zdroje atribuce: podklad, data offline mapy, vrstvy a překryvy. */
 	List<String> zkratkyAtribuce() {

@@ -73,7 +73,38 @@ public class AtribuceNadVrstvamiTest {
 			}
 		}
 		Assert.assertTrue("atribuce je vidět přes keše: " + atribuce, atribuce > 1000);
+		int x0 = SIRKA - 1;
+		while (img.getRGB(x0 - 1, VYSKA - 1) != KESE.getRGB()) {
+			x0--;
+		}
+		int y0 = VYSKA - 1;
+		while (img.getRGB(SIRKA - 1, y0 - 1) != KESE.getRGB()) {
+			y0--;
+		}
+		for (int y = y0; y < VYSKA; y++) {
+			for (int x = x0; x < SIRKA; x++) {
+				final Color c = new Color(img.getRGB(x, y));
+				Assert.assertTrue("keše pod atribucí neprosvítají: x=" + x + " y=" + y + " " + c, Math.abs(c.getRed() - c.getGreen()) < 8 && Math.abs(c.getGreen() - c.getBlue()) < 8);
+			}
+		}
 		Assert.assertEquals("nad atribucí nic nekreslí", KESE.getRGB(), img.getRGB(SIRKA / 2, VYSKA / 2));
+	}
+
+	/** Atribuce zůstane v pravé čtvrtině, prostředek dole patří měřítku; co se nevejde, zkrátí se. */
+	@Test
+	public void atribuceNezasahujeKMeritku() {
+		final JKachlovnikPresCele k = kachlovnik();
+		k.setSize(600, 400);
+		final BufferedImage img = new BufferedImage(600, 400, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = img.createGraphics();
+		k.kresliAtribuci(g);
+		g.dispose();
+		for (int y = 380; y < 400; y++) {
+			for (int x = 0; x < 450; x++) {
+				Assert.assertEquals("x=" + x + " y=" + y, 0, img.getRGB(x, y));
+			}
+		}
+		Assert.assertNotEquals(0, img.getRGB(599, 395));
 	}
 
 	/** Klik na ⓘ otevře okno ve stylu Co je nového s plným zněním atribuce, ne vyskakovací menu. */
