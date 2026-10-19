@@ -1,5 +1,6 @@
 package cz.geokuk.util.gui;
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -46,9 +47,28 @@ public class JPosuvnikPredvoleb extends JPanel {
 		slider.setLabelTable(znacky);
 		slider.setPaintLabels(true);
 		slider.addChangeListener(e -> obnovPopisek());
+		final List<String> popisy = new ArrayList<>();
+		for (final int h : hodnoty) {
+			popisy.add(popis.apply(h));
+		}
+		pevnaSirka(popisek, popisy);
 		obnovPopisek();
 		add(slider);
 		add(popisek);
+	}
+
+	/** Popisek široký podle nejdelšího textu: při změně hodnoty se okno nepřizpůsobuje a delší text by posuvník ořízl. */
+	public static void pevnaSirka(final JLabel popisek, final Iterable<String> texty) {
+		final String puvodni = popisek.getText();
+		final Dimension d = new Dimension();
+		for (final String t : texty) {
+			popisek.setText(t);
+			d.width = Math.max(d.width, popisek.getPreferredSize().width);
+			d.height = Math.max(d.height, popisek.getPreferredSize().height);
+		}
+		popisek.setText(puvodni);
+		popisek.setPreferredSize(d);
+		popisek.setMinimumSize(d);
 	}
 
 	static List<Integer> hodnoty(final int[] predvolby, final int hodnota) {
