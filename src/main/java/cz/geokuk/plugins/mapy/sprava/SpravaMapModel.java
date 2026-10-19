@@ -309,8 +309,6 @@ public class SpravaMapModel extends Model0 {
 	private void zmenKatalogVrstev(final KatalogVrstev k, final File z) {
 		stazenyKatalog = k;
 		stazenyKatalogZ = z;
-		// Stav drží vrstvu z katalogu; s novým katalogem se přečte znovu (běžící stahování zůstane).
-		stavyVrstev.values().removeIf(st -> !st.isBezi());
 	}
 
 	/** Složka vrstev pro práci na pozadí: složku z dřívějších bet napřed přejmenuje, ať uživatel nepřijde o stažené vrstvy. */
@@ -340,9 +338,10 @@ public class SpravaMapModel extends Model0 {
 		return s == null ? null : new File(s, SLOZKA_VRSTEV);
 	}
 
-	/** Poslední známý stav vrstvy, bez sítě a bez disku. */
+	/** Poslední známý stav vrstvy, bez sítě a bez disku; po novém katalogu vrstev platí starý stav, dokud ho {@link #obnovStavy()} nepřečte znovu. */
 	public StavVrstvy getStav(final KatalogovaVrstva vrstva) {
-		return stavyVrstev.computeIfAbsent(vrstva.getId(), id -> StavVrstvy.novy(vrstva));
+		final StavVrstvy s = stavyVrstev.computeIfAbsent(vrstva.getId(), id -> StavVrstvy.novy(vrstva));
+		return s.getVrstva() == vrstva || s.isBezi() ? s : s.sVrstvou(vrstva);
 	}
 
 	/** Jedno z běžících stahování vrstev; prázdné, když se žádná vrstva nestahuje. */
@@ -404,38 +403,43 @@ public class SpravaMapModel extends Model0 {
 		});
 	}
 
-	/** Přečte stav všech katalogových map z disku (bez sítě); změny přijdou událostmi. */
+	/** Přečte stav všech katalogových map z disku (bez sítě); jedna změna přijde svou událostí, víc změn jednou {@link StavyMapEvent}. */
 	public void obnovStavy() {
 		kontrola.execute(() -> {
 			final File s = slozka.get();
 			if (s == null) {
 				return;
 			}
+			final List<Event0<SpravaMapModel>> zmeny = new java.util.ArrayList<>();
 			for (final KatalogovaMapa m : katalog.get().getMapy()) {
 				final StavMapy predtim = getStav(m);
 				if (predtim.isBezi()) {
 					continue;
 				}
 				final StavMapy ted = StahovacMapy.mistniStav(predtim, s);
+				stavy.put(m.getId(), ted);
 				if (!ted.toString().equals(predtim.toString())) {
-					zmena(ted);
-				} else {
-					stavy.put(m.getId(), ted);
+					zmeny.add(new SpravaMapEvent(ted));
 				}
 			}
 			final File sv = slozkaVrstevNaPozadi();
 			nactiStazenyKatalog(sv);
 			for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
-				final StavVrstvy predtim = getStav(v);
+				final StavVrstvy predtim = stavyVrstev.computeIfAbsent(v.getId(), id -> StavVrstvy.novy(v));
 				if (predtim.isBezi()) {
 					continue;
 				}
-				final StavVrstvy ted = StahovacVrstev.mistniStav(predtim, sv);
+				// Stav z dřívějšího katalogu vrstev se přečte znovu podle nové vrstvy.
+				final StavVrstvy ted = StahovacVrstev.mistniStav(predtim.getVrstva() == v ? predtim : StavVrstvy.novy(v), sv);
+				stavyVrstev.put(v.getId(), ted);
 				if (!ted.toString().equals(predtim.toString())) {
-					zmena(ted);
-				} else {
-					stavyVrstev.put(v.getId(), ted);
+					zmeny.add(new SpravaVrstevEvent(ted));
 				}
+			}
+			if (zmeny.size() == 1) {
+				odpalovac.accept(zmeny.get(0));
+			} else if (!zmeny.isEmpty()) {
+				odpalovac.accept(new StavyMapEvent());
 			}
 		});
 	}

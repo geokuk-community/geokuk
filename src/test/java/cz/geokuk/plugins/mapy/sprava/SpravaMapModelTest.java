@@ -120,4 +120,64 @@ public class SpravaMapModelTest {
 		model.pockej();
 		assertEquals(Arrays.asList("Kontrola offline map", "Kontrola offline map"), vlakna);
 	}
+
+	/** Vrstva ve složce: soubor s délkou a kontrolním součtem podle katalogu. */
+	private static String vrstvaNaDisku(final File sv, final String typ, final long velikost, final String sha) throws IOException {
+		final String soubor = KatalogVrstevTest.soubor(typ + ".map", typ + ".map", velikost, sha);
+		final String json = KatalogVrstevTest.vrstva(typ + "/europe/czech-republic", typ, "europe/czech-republic", "map", soubor, "");
+		final String cesta = "europe/czech-republic." + typ + "." + typ + ".map";
+		final File f = new File(sv, cesta);
+		assertTrue(f.getParentFile().isDirectory() || f.getParentFile().mkdirs());
+		Files.write(f.toPath(), new byte[(int) velikost]);
+		Files.write(new File(sv, cesta + StahovacVrstev.PRIPONA_SOUCTU).toPath(), sha.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+		return json;
+	}
+
+	/** Nový katalog vrstev nechá stažené vrstvy stažené, dokud se jejich stav znovu nepřečte; pak přijde za všechny změny jedna událost. */
+	@Test
+	public void novyKatalogVrstevDrziStavyAPosleJednuUdalost() throws Exception {
+		final String jinySha = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
+		final File prvni = tmp.newFolder("prvni");
+		final File druha = tmp.newFolder("druha");
+		final KatalogVrstev puvodni = KatalogVrstev.nacti(KatalogVrstevTest.katalog(vrstvaNaDisku(new File(prvni, SpravaMapModel.SLOZKA_VRSTEV), "tourist", 1000, KatalogVrstevTest.SHA),
+				vrstvaNaDisku(new File(prvni, SpravaMapModel.SLOZKA_VRSTEV), "contours", 2000, KatalogVrstevTest.SHA)), KatalogVrstevTest.mapy());
+		final File sv2 = new File(druha, SpravaMapModel.SLOZKA_VRSTEV);
+		vrstvaNaDisku(sv2, "tourist", 1000, KatalogVrstevTest.SHA);
+		vrstvaNaDisku(sv2, "contours", 2000, KatalogVrstevTest.SHA);
+		// Ve druhé složce je kopie novějšího katalogu: obě vrstvy mají jinou verzi souborů.
+		Files.write(new File(sv2, SpravaMapModel.SOUBOR_KATALOGU).toPath(), KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("tourist/europe/czech-republic", "tourist", "europe/czech-republic", "map",
+				KatalogVrstevTest.soubor("tourist.map", "tourist.map", 1100, jinySha), ""), KatalogVrstevTest.vrstva("contours/europe/czech-republic", "contours", "europe/czech-republic", "map",
+				KatalogVrstevTest.soubor("contours.map", "contours.map", 2100, jinySha), "")).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), puvodni);
+		final File[] slozka = { prvni };
+		final List<cz.geokuk.framework.Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
+		final List<String> priNovemKatalogu = new CopyOnWriteArrayList<>();
+		model.nastavProTest(() -> slozka[0], e -> {
+			if (e instanceof KatalogVrstevEvent) {
+				for (final KatalogovaVrstva v : ((KatalogVrstevEvent) e).getKatalog().getVrstvy()) {
+					priNovemKatalogu.add(v.getId() + " " + model.getStav(v).getMistni());
+				}
+			} else {
+				udalosti.add(e);
+			}
+		});
+		model.obnovStavy();
+		model.pockej();
+		for (final KatalogovaVrstva v : puvodni.getVrstvy()) {
+			assertEquals(StavVrstvy.Mistni.MAME, model.getStav(v).getMistni());
+		}
+		udalosti.clear();
+		slozka[0] = druha;
+		model.obnovStavy();
+		model.pockej();
+		assertEquals("stažené vrstvy nejsou s novým katalogem chvíli ke stažení", Arrays.asList("contours/europe/czech-republic MAME", "tourist/europe/czech-republic MAME"),
+				priNovemKatalogu.stream().sorted().collect(java.util.stream.Collectors.toList()));
+		for (final KatalogovaVrstva v : model.getKatalogVrstev().getVrstvy()) {
+			assertEquals(StavVrstvy.Mistni.JINA_VERZE, model.getStav(v).getMistni());
+			assertSame(v, model.getStav(v).getVrstva());
+		}
+		assertEquals("dvě změny, jedna událost: " + udalosti, 1, udalosti.size());
+		assertTrue(udalosti.get(0) instanceof StavyMapEvent);
+	}
 }

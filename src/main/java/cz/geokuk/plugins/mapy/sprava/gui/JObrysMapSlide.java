@@ -139,6 +139,12 @@ public class JObrysMapSlide extends JSingleSlide0 {
 		}
 	}
 
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.StavyMapEvent event) {
+		if (trvaly) {
+			nacti(false);
+		}
+	}
+
 	public void onEvent(final KachleUmisteniSouboruChangedEvent event) {
 		if (trvaly) {
 			nacti(true);

@@ -517,6 +517,9 @@ public class JMapyPopup extends JPanel {
 					}
 				}
 			}
+			if (vysledekKontrolyText != null) {
+				vysledekKontrolyText.setText(vysledekKontroly(kontrolovatelne(radky)));
+			}
 			if (sirsi) {
 				revalidate();
 				zmenaObsahu();
@@ -642,8 +645,10 @@ public class JMapyPopup extends JPanel {
 	private List<String> struktura(final List<RadekMapy> radky) {
 		final List<String> s = new ArrayList<>();
 		for (final RadekMapy r : radky) {
-			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + r.kontroluje + "|" + r.overuje + "|" + (r.chyba != null) + "|" + r.zkontrolovano + "|" + nedostatekMista(r) + "|" + strukturaVrstev(r));
+			// Kontrola mění jen popis řádku; u novější mapy navíc skryje Aktualizovat.
+			s.add(klic(r) + "|" + r.stav + "|" + r.proZobrazeneMisto + "|" + r.rozpracovano + "|" + (r.kontroluje && r.stav == RadekMapy.Stav.NOVEJSI) + "|" + r.overuje + "|" + (r.chyba != null) + "|" + nedostatekMista(r) + "|" + strukturaVrstev(r));
 		}
+		s.add("kontrola|" + (vysledekKontroly(kontrolovatelne(radky)) != null));
 		return s;
 	}
 
@@ -664,6 +669,19 @@ public class JMapyPopup extends JPanel {
 
 	private static String klic(final RadekMapy r) {
 		return r.vlastni ? "soubor:" + r.nazev : r.id;
+	}
+
+	private JLabel vysledekKontrolyText;
+
+	/** Stažené mapy z katalogu, u kterých jde zjistit novější data. */
+	private static List<RadekMapy> kontrolovatelne(final List<RadekMapy> radky) {
+		final List<RadekMapy> k = new ArrayList<>();
+		for (final RadekMapy r : radky) {
+			if (r.isVeSlozce() && !r.vlastni && (r.stav == RadekMapy.Stav.AKTUALNI || r.stav == RadekMapy.Stav.NOVEJSI)) {
+				k.add(r);
+			}
+		}
+		return k;
 	}
 
 	/** Výsledek poslední kontroly: vše aktuální, počet novějších, nebo že kontrola selhala; s časem; null, když se ještě nekontrolovalo. */
@@ -945,12 +963,7 @@ public class JMapyPopup extends JPanel {
 			});
 		}
 		oddilSlozka.add(nadpisSlozky, BorderLayout.WEST);
-		final List<RadekMapy> kontrolovatelne = new ArrayList<>();
-		for (final RadekMapy r : veSlozce) {
-			if (!r.vlastni && (r.stav == RadekMapy.Stav.AKTUALNI || r.stav == RadekMapy.Stav.NOVEJSI)) {
-				kontrolovatelne.add(r);
-			}
-		}
+		final List<RadekMapy> kontrolovatelne = kontrolovatelne(veSlozce);
 		if (!kontrolovatelne.isEmpty()) {
 			final JButton zkontrolovat = odkaz(ZKONTROLOVAT, e -> {
 				if (ovladani != null) {
@@ -966,9 +979,11 @@ public class JMapyPopup extends JPanel {
 		}
 		add(oddilSlozka, gbc);
 		final String vysledek = vysledekKontroly(kontrolovatelne);
+		vysledekKontrolyText = null;
 		if (vysledek != null) {
 			gbc.gridy++;
-			add(maly(vysledek), gbc);
+			vysledekKontrolyText = maly(vysledek);
+			add(vysledekKontrolyText, gbc);
 		}
 		final TabulkaRadku slozka = panelRadku();
 		if (veSlozce.isEmpty()) {
@@ -1807,6 +1822,9 @@ public class JMapyPopup extends JPanel {
 		case AKTUALNI:
 			return null;
 		case NOVEJSI:
+			if (r.kontroluje) {
+				return null;
+			}
 			b = odkaz(AKTUALIZOVAT, e -> stahni(r));
 			break;
 		case CHYBA:

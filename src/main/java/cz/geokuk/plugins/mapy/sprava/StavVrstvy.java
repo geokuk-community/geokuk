@@ -41,6 +41,10 @@ public final class StavVrstvy {
 		return new StavVrstvy(vrstva, mistni, f, stazeno, rozpracovano, ch);
 	}
 
+	StavVrstvy sVrstvou(final KatalogovaVrstva v) {
+		return new StavVrstvy(v, mistni, faze, stazeno, rozpracovano, chyba);
+	}
+
 	StavVrstvy sPrubehem(final long st) {
 		return new StavVrstvy(vrstva, mistni, faze, st, true, chyba);
 	}

@@ -31,7 +31,7 @@ public class RadkyMapTest {
 		Assert.assertEquals(RadekMapy.Stav.CHYBA, radek(POSKOZENA, NEZNAMY, NIC, 0, -1, null).getStav());
 		Assert.assertEquals(RadekMapy.Stav.CHYBA, radek(NEMAME, NEDOSTUPNY, StavMapy.Faze.CHYBA, 0, -1, "Server je nedostupný.").getStav());
 		Assert.assertEquals(RadekMapy.Stav.STAHUJE, radek(NEMAME, NEZNAMY, STAHUJE, 1, 100, null).getStav());
-		Assert.assertEquals(RadekMapy.Stav.STAHUJE, radek(MAME, NEZNAMY, KONTROLUJE, 0, -1, null).getStav());
+		Assert.assertEquals("kontrola mění jen popis", RadekMapy.Stav.AKTUALNI, radek(MAME, NEZNAMY, KONTROLUJE, 0, -1, null).getStav());
 	}
 
 	/** Nepovedená kontrola stažené mapy ji neoznačí za poškozenou: zůstane zelená, chyba je v popisu. */

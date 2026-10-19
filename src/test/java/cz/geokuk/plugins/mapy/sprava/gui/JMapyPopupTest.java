@@ -1604,4 +1604,32 @@ public class JMapyPopupTest {
 			Assert.assertTrue("volné místo se projevilo", tlacitkaSTextem(p, JMapyPopup.STAHNOUT).stream().noneMatch(JButton::isEnabled));
 		});
 	}
+
+	/** Kontrola aktualizací popup nepřestavuje: řádek jen přepíše popis na „Zjišťuji na serveru…“ a zpět. */
+	@Test
+	public void kontrolaAktualizaciNeprestavujePopup() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			final cz.geokuk.plugins.mapy.sprava.KatalogMap k = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+			final java.util.function.Function<cz.geokuk.plugins.mapy.sprava.StavMapy.Faze, List<RadekMapy>> radky = faze -> {
+				final List<RadekMapy> r = new ArrayList<>();
+				for (final String id : new String[] { "europe/czech-republic", "europe/austria", "europe/poland" }) {
+					final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa m = k.podleId(id).get();
+					r.add(RadkyMap.radek(m, cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, "europe/austria".equals(id) ? faze : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null), false));
+				}
+				return r;
+			};
+			p.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.KONTROLUJE));
+			Assert.assertEquals(1, videtLabelu(p, "Zjišťuji na serveru…"));
+			Assert.assertEquals("tlačítko kontroly zůstává", 1, tlacitkaSTextem(p, JMapyPopup.ZKONTROLOVAT).size());
+			p.obnov(radky.apply(cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertEquals(0, videtLabelu(p, "Zjišťuji na serveru…"));
+			Assert.assertEquals("kontrola popup nepřestavěla", pred, p.prestaveb);
+		});
+	}
 }

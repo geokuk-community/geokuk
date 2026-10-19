@@ -20,7 +20,7 @@ public final class RadekMapy {
 		NOVEJSI,
 		/** Soubor je poškozený nebo stažení skončilo chybou. */
 		CHYBA,
-		/** Stahuje se, ověřuje nebo kontroluje. */
+		/** Stahuje se nebo ověřuje. */
 		STAHUJE,
 		/** Mapa z katalogu, která ve složce není. */
 		NEMAME
@@ -195,11 +195,11 @@ public final class RadekMapy {
 
 	/** Krátký popis stavu za názvem. */
 	String popis() {
+		if (kontroluje) {
+			return "Zjišťuji na serveru…";
+		}
 		switch (stav) {
 		case STAHUJE:
-			if (kontroluje) {
-				return "Zjišťuji na serveru…";
-			}
 			if (chyba != null) {
 				return chyba;
 			}

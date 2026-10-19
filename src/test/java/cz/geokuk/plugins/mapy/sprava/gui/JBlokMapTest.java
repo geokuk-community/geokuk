@@ -194,4 +194,20 @@ public class JBlokMapTest {
 			});
 		}
 	}
+
+	/** Při kontrole aktualizací blok neukazuje procenta ani točítko stahování, ale že se kontroluje. */
+	@Test
+	public void kontrolaBezProcent() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			final int sirka = blok.getPreferredSize().width;
+			final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa cesko = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny().podleId("europe/czech-republic").get();
+			blok.obnov(Collections.singletonList(RadkyMap.radek(cesko, cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(cesko, cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME,
+					cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.KONTROLUJE, 0, -1, null), false)));
+			Assert.assertEquals(JBlokMap.KONTROLUJE, blok.getText());
+			Assert.assertEquals(JBlokMap.KONTROLUJE_TIP, blok.getToolTipText());
+			Assert.assertNotSame("bez ikony stahování", IkonyMap.pro(RadekMapy.Stav.STAHUJE), blok.getIcon());
+			Assert.assertEquals("šířka bloku se nemění", sirka, blok.getPreferredSize().width);
+		});
+	}
 }
