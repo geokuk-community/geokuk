@@ -3,7 +3,9 @@ package cz.geokuk.util.file;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -118,5 +120,48 @@ public class BezpecnyZapisTest {
 	public void nezapisovatelneMistoSeOhlasi() throws Exception {
 		final File soubor = tmp.newFile("data.txt");
 		BezpecnyZapis.zapisText(new File(soubor, "nelze"), StandardCharsets.UTF_8, wrt -> wrt.print("x"));
+	}
+
+	/** Přesun, který prvních několik pokusů selže, jako když cíl ve Windows drží jiný proces. */
+	private static AtomicInteger podvrhniPresun(final int selhani) {
+		final AtomicInteger pokusu = new AtomicInteger();
+		BezpecnyZapis.presun = (zdroj, cil, volby) -> {
+			if (pokusu.incrementAndGet() <= selhani) {
+				throw new AccessDeniedException(cil.toString());
+			}
+			Files.move(zdroj, cil, volby);
+		};
+		return pokusu;
+	}
+
+	@After
+	public void obnovPresun() {
+		BezpecnyZapis.presun = Files::move;
+	}
+
+	@Test
+	public void prejmenovaniSeZkusiZnovuPriOdepreniPristupu() throws Exception {
+		final File soubor = tmp.newFile("data.txt");
+		final AtomicInteger pokusu = podvrhniPresun(2);
+		BezpecnyZapis.zapisText(soubor, StandardCharsets.UTF_8, wrt -> wrt.print("nové"));
+		Assert.assertEquals(3, pokusu.get());
+		Assert.assertEquals("nové", obsah(soubor));
+		Assert.assertEquals(1, tmp.getRoot().list().length);
+	}
+
+	@Test
+	public void trvaleOdepreniPristupuSeOhlasi() throws Exception {
+		final File soubor = tmp.newFile("data.txt");
+		Files.write(soubor.toPath(), "původní".getBytes(StandardCharsets.UTF_8));
+		final AtomicInteger pokusu = podvrhniPresun(Integer.MAX_VALUE);
+		try {
+			BezpecnyZapis.zapisText(soubor, StandardCharsets.UTF_8, wrt -> wrt.print("nové"));
+			Assert.fail("odepřený přístup se má ohlásit");
+		} catch (final AccessDeniedException e) {
+			// čekáno
+		}
+		Assert.assertEquals(5, pokusu.get());
+		Assert.assertEquals("původní", obsah(soubor));
+		Assert.assertEquals("dočasný soubor nesmí zůstat", 1, tmp.getRoot().list().length);
 	}
 }

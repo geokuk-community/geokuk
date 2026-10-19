@@ -2,9 +2,7 @@ package cz.geokuk.util.file;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 
 /**
  * Zápis souboru, po kterém je na disku buď celý nový obsah, nebo nedotčený
@@ -21,6 +19,15 @@ public final class BezpecnyZapis {
 	public interface TextovyObsah {
 		void zapis(PrintWriter out) throws IOException;
 	}
+
+	/** Přesun souboru, v testech podvržitelný. */
+	interface Presun {
+		void presun(Path zdroj, Path cil, CopyOption... volby) throws IOException;
+	}
+
+	private static final int POKUSU_PREJMENOVANI = 5;
+
+	static Presun presun = Files::move;
 
 	public static void zapis(final File soubor, final Obsah obsah) throws IOException {
 		final File slozka = soubor.getAbsoluteFile().getParentFile();
@@ -56,10 +63,30 @@ public final class BezpecnyZapis {
 	}
 
 	private static void prejmenuj(final File zdroj, final File cil) throws IOException {
+		for (int pokus = 1;; pokus++) {
+			try {
+				prejmenujJednou(zdroj.toPath(), cil.toPath());
+				return;
+			} catch (final AccessDeniedException e) {
+				// Ve Windows cíl chvíli drží jiný proces (antivir, indexace), přístup se brzy uvolní.
+				if (pokus >= POKUSU_PREJMENOVANI) {
+					throw e;
+				}
+				try {
+					Thread.sleep(50L * pokus);
+				} catch (final InterruptedException ie) {
+					Thread.currentThread().interrupt();
+					throw e;
+				}
+			}
+		}
+	}
+
+	private static void prejmenujJednou(final Path zdroj, final Path cil) throws IOException {
 		try {
-			Files.move(zdroj.toPath(), cil.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+			presun.presun(zdroj, cil, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
 		} catch (final AtomicMoveNotSupportedException e) {
-			Files.move(zdroj.toPath(), cil.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			presun.presun(zdroj, cil, StandardCopyOption.REPLACE_EXISTING);
 		}
 	}
 
