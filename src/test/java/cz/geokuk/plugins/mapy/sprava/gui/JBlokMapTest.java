@@ -93,6 +93,20 @@ public class JBlokMapTest {
 		}
 	}
 
+	/** Rozbalené země se ukládají do nastavení a dají se zase načíst; původní hodnotu test vrátí. */
+	@Test
+	public void rozbaleniZemiVNastaveni() {
+		final java.util.Set<String> puvodni = JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY);
+		try {
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, new java.util.HashSet<>(java.util.Arrays.asList("Německo", "Velká Británie")));
+			Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList("Německo", "Velká Británie")), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, Collections.emptySet());
+			Assert.assertEquals(Collections.emptySet(), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
+		} finally {
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, puvodni);
+		}
+	}
+
 	private static List<RadekMapy> veSlozce(final String chybaPrvni) {
 		final List<RadekMapy> r = new ArrayList<>();
 		for (final String id : new String[] { "a", "b", "c" }) {

@@ -7,7 +7,7 @@
  "polygony": ["https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/poly/", "https://download.mapsforge.org/maps/poly/"],
  "polozky": [
   {"id": "africa/canary-islands", "nazev": "Kanárské ostrovy (Afrika)", "skupina": "Španělsko", "velikost": 50633839, "datum": "Sun, 10 May 2026 04:28:56 GMT"},
-  {"id": "africa/egypt", "nazev": "Egypt", "skupina": "Afrika", "velikost": 181190736, "datum": "Tue, 12 May 2026 23:59:53 GMT"},
+  {"id": "africa/egypt", "nazev": "Egypt", "velikost": 181190736, "datum": "Tue, 12 May 2026 23:59:53 GMT"},
   {"id": "europe/albania", "nazev": "Albánie", "velikost": 44849299, "datum": "Fri, 21 Aug 2026 07:48:25 GMT"},
   {"id": "europe/andorra", "nazev": "Andorra", "velikost": 2539895, "datum": "Mon, 07 Sep 2026 07:30:19 GMT"},
   {"id": "europe/austria", "nazev": "Rakousko", "velikost": 554110376, "datum": "Fri, 21 Aug 2026 12:21:09 GMT"},
@@ -135,8 +135,8 @@
   {"id": "europe/switzerland", "nazev": "Švýcarsko", "velikost": 334266727, "datum": "Wed, 23 Sep 2026 04:53:23 GMT"},
   {"id": "europe/turkey", "nazev": "Turecko", "velikost": 614175859, "datum": "Wed, 23 Sep 2026 10:51:06 GMT"},
   {"id": "europe/ukraine", "nazev": "Ukrajina", "velikost": 873985569, "datum": "Thu, 24 Sep 2026 01:49:14 GMT"},
-  {"id": "europe/united-kingdom/england", "nazev": "Anglie", "skupina": "Spojené království", "velikost": 1210840443, "datum": "Sun, 10 May 2026 03:57:33 GMT"},
-  {"id": "europe/united-kingdom/scotland", "nazev": "Skotsko", "skupina": "Spojené království", "velikost": 282418096, "datum": "Sun, 10 May 2026 08:02:11 GMT"},
-  {"id": "europe/united-kingdom/wales", "nazev": "Wales", "skupina": "Spojené království", "velikost": 110405003, "datum": "Sun, 10 May 2026 09:03:31 GMT"}
+  {"id": "europe/united-kingdom/england", "nazev": "Anglie", "skupina": "Velká Británie", "celek": "europe/great-britain", "velikost": 1210840443, "datum": "Sun, 10 May 2026 03:57:33 GMT"},
+  {"id": "europe/united-kingdom/scotland", "nazev": "Skotsko", "skupina": "Velká Británie", "celek": "europe/great-britain", "velikost": 282418096, "datum": "Sun, 10 May 2026 08:02:11 GMT"},
+  {"id": "europe/united-kingdom/wales", "nazev": "Wales", "skupina": "Velká Británie", "celek": "europe/great-britain", "velikost": 110405003, "datum": "Sun, 10 May 2026 09:03:31 GMT"}
  ]
 }

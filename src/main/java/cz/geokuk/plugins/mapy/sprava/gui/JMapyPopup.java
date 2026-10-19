@@ -105,6 +105,13 @@ public class JMapyPopup extends JPanel {
 	static final int HLEDANI_OD = 8;
 	static final String HLEDAT = "Hledat v dalších mapách";
 	static final String NIC_NENALEZENO = "Nic nenalezeno.";
+	static final String MIMO_EVROPU = "Mimo Evropu";
+	/** Kontinenty mimo Evropu podle prvního dílu id mapy (složky na serveru mapsforge). */
+	private static final Set<String> KONTINENTY_MIMO_EVROPU = new HashSet<>(
+			Arrays.asList("africa", "antarctica", "asia", "australia-oceania", "central-america", "north-america", "south-america"));
+	/** Klíče v nastavení, pod kterými se pamatuje rozbalení zemí ve Všech mapách a ve složce. */
+	static final String ROZBALENE_VSECHNY = "rozbaleneZeme";
+	static final String ROZBALENE_SLOZKA = "rozbaleneZemeVeSlozce";
 
 	private static final Color SEDY_TEXT = new Color(90, 90, 90);
 	private static final Color ODKAZ = new Color(0x1A5FB4);
@@ -154,7 +161,13 @@ public class JMapyPopup extends JPanel {
 	private final transient List<Uzel> uzly = new ArrayList<>();
 	/** Země, které má uživatel rozbalené; přežije přestavbu popupu. */
 	private final Set<String> rozbalene = new HashSet<>();
+	private transient java.util.function.BiConsumer<String, Set<String>> ulozRozbalene = (k, z) -> {};
+	/** Celé země, které minulá obnova nabízela ke stažení. */
+	private Set<String> nabizeneCelky = Collections.emptySet();
 	private JLabel nicNenalezeno;
+	private JLabel nadpisMimoEvropu;
+	/** Od kterého řádku hledání jsou mapy mimo Evropu. */
+	private int mimoEvropuOd;
 	private Runnable poZmeneObsahu = () -> {};
 	/** Mapa, jejíž stahování uživatel zrušil a čeká se na potvrzení; null, když nic. */
 	private String rusenaMapa;
@@ -421,7 +434,9 @@ public class JMapyPopup extends JPanel {
 			}
 		}
 		int viditelnych = 0;
-		for (final RadekHledani r : hledatelne) {
+		boolean mimoEvropuVidet = false;
+		for (int i = 0; i < hledatelne.size(); i++) {
+			final RadekHledani r = hledatelne.get(i);
 			final boolean ano;
 			if (r.hlavicka) {
 				ano = hledany.isEmpty() || obsahujeVse(r.text, hledany) || uzlySeShodou.contains(r.uzel);
@@ -431,6 +446,7 @@ public class JMapyPopup extends JPanel {
 				ano = obsahujeVse(r.text, hledany);
 			}
 			viditelnych += ano ? 1 : 0;
+			mimoEvropuVidet |= ano && i >= mimoEvropuOd;
 			for (final Component c : r.bunky) {
 				c.setVisible(ano);
 			}
@@ -440,6 +456,9 @@ public class JMapyPopup extends JPanel {
 		}
 		if (nicNenalezeno != null) {
 			nicNenalezeno.setVisible(viditelnych == 0);
+		}
+		if (nadpisMimoEvropu != null) {
+			nadpisMimoEvropu.setVisible(mimoEvropuVidet);
 		}
 		if (seznam != null) {
 			seznam.revalidate();
@@ -452,7 +471,15 @@ public class JMapyPopup extends JPanel {
 		if (!rozbalene.remove(nazev)) {
 			rozbalene.add(nazev);
 		}
+		ulozRozbalene.accept(ROZBALENE_VSECHNY, new HashSet<>(rozbalene));
 		filtruj();
+	}
+
+	/** Načte rozbalení zemí z minulého spuštění a každé přepnutí uloží; nastavuje blok Mapy. */
+	void pamatujRozbaleni(final java.util.function.Function<String, Set<String>> nacti, final java.util.function.BiConsumer<String, Set<String>> uloz) {
+		rozbalene.addAll(nacti.apply(ROZBALENE_VSECHNY));
+		rozbaleneSlozka.addAll(nacti.apply(ROZBALENE_SLOZKA));
+		ulozRozbalene = uloz;
 	}
 
 	private void zvyrazni(final String klic) {
@@ -493,6 +520,12 @@ public class JMapyPopup extends JPanel {
 	/** Nové řádky: změna stavu se přepíše na místě v komponentách řádků, popup se přestaví jen při změně struktury (řádky v oddílech, odkazy, rozbalení). */
 	public void obnov(final List<RadekMapy> nove) {
 		odhad.zapomenKrome(stahovane(nove));
+		// Regiony země, která se právě stáhla celá, už jsou navíc: ve Všech mapách se sbalí.
+		final Set<String> stazeneCelky = celky(nove, true);
+		if (rozbalene.removeIf(z -> nabizeneCelky.contains(z) && stazeneCelky.contains(z))) {
+			ulozRozbalene.accept(ROZBALENE_VSECHNY, new HashSet<>(rozbalene));
+		}
+		nabizeneCelky = celky(nove, false);
 		radky = new ArrayList<>(nove);
 		if (zastaraly) {
 			naplanujPrestavbu();
@@ -540,6 +573,17 @@ public class JMapyPopup extends JPanel {
 			return;
 		}
 		prestavPopup();
+	}
+
+	/** Názvy celých zemí z katalogu, které jsou (nebo nejsou) ve složce. */
+	private static Set<String> celky(final List<RadekMapy> radky, final boolean veSlozce) {
+		final Set<String> v = new HashSet<>();
+		for (final RadekMapy r : radky) {
+			if (r.skupina == null && !r.vlastni && r.isVeSlozce() == veSlozce) {
+				v.add(r.nazev);
+			}
+		}
+		return v;
 	}
 
 	/** Nastaví odkaz podle stavů řádků hned a znovu při každé aktualizaci na místě. */
@@ -935,6 +979,7 @@ public class JMapyPopup extends JPanel {
 		hledatelne.clear();
 		uzly.clear();
 		nicNenalezeno = null;
+		nadpisMimoEvropu = null;
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
 		sirkaNazvu = 0;
 		for (final RadekMapy r : radky) {
@@ -1129,7 +1174,14 @@ public class JMapyPopup extends JPanel {
 					podleZeme.computeIfAbsent(r.nazev, Uzel::new).celek = r;
 				}
 			}
-			for (final Uzel u : podleZeme.values()) {
+			final List<Uzel> uzlySeznamu = new ArrayList<>(podleZeme.values());
+			uzlySeznamu.sort(Comparator.comparing(this::mimoEvropu));
+			for (final Uzel u : uzlySeznamu) {
+				if (nadpisMimoEvropu == null && mimoEvropu(u)) {
+					nadpisMimoEvropu = nadpisOddilu(MIMO_EVROPU);
+					ostatni.add(nadpisMimoEvropu, bunka(0, y++, 4));
+					mimoEvropuOd = hledatelne.size();
+				}
 				u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
 				final boolean sRegiony = !u.regiony.isEmpty();
 				if (sRegiony) {
@@ -1574,6 +1626,11 @@ public class JMapyPopup extends JPanel {
 		panel.add(obal, cp);
 	}
 
+	/** Celá země i se staženými mapami leží mimo Evropu. */
+	private boolean mimoEvropu(final Uzel u) {
+		return zemeVsechny.getOrDefault(u.nazev, u).vsechnyRadky().stream().allMatch(r -> KONTINENTY_MIMO_EVROPU.contains(r.id.substring(0, Math.max(0, r.id.indexOf('/')))));
+	}
+
 	/** Země z katalogu podle názvu: celek a všechny regiony bez ohledu na oddíl. */
 	private static Map<String, Uzel> zeme(final List<RadekMapy> radky) {
 		final Map<String, Uzel> zeme = new HashMap<>();
@@ -1685,6 +1742,7 @@ public class JMapyPopup extends JPanel {
 		if (!zemeSamyRozbalene.remove(nazev) && !byla) {
 			rozbaleneSlozka.add(nazev);
 		}
+		ulozRozbalene.accept(ROZBALENE_SLOZKA, new HashSet<>(rozbaleneSlozka));
 		prestav();
 	}
 
@@ -1709,7 +1767,19 @@ public class JMapyPopup extends JPanel {
 				podleZeme.computeIfAbsent(r.nazev, Uzel::new).celek = r;
 			}
 		}
-		for (final Uzel u : podleZeme.values()) {
+		final List<Uzel> uzlySlozky = new ArrayList<>(podleZeme.values());
+		uzlySlozky.sort(Comparator.comparing(this::mimoEvropu));
+		boolean mimoEvropuPridano = false;
+		for (final Uzel u : uzlySlozky) {
+			if (!mimoEvropuPridano && mimoEvropu(u)) {
+				// Soubory uživatele nepatří pod nadpis kontinentu, jsou nad ním.
+				for (final RadekMapy r : vlastni) {
+					y = pridejRadek(panel, y, r);
+				}
+				vlastni.clear();
+				panel.add(nadpisOddilu(MIMO_EVROPU), bunka(0, y++, 4));
+				mimoEvropuPridano = true;
+			}
 			u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
 			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev) || zemeSamyRozbalene.contains(u.nazev);
 			if (u.celek != null) {

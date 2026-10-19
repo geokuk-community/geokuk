@@ -10,6 +10,7 @@ public final class KatalogovaMapa {
 	private final String id;
 	private final String nazev;
 	private final String skupina;
+	private final String celek;
 	private final Instant datumNaServeru;
 	private final List<URI> urlyMapy;
 	private final List<URI> urlyPolygonu;
@@ -19,11 +20,12 @@ public final class KatalogovaMapa {
 	private final String licence;
 	private final String atribuce;
 
-	KatalogovaMapa(final String id, final String nazev, final String skupina, final Instant datumNaServeru, final List<URI> urlyMapy, final List<URI> urlyPolygonu, final long pribliznaVelikost,
+	KatalogovaMapa(final String id, final String nazev, final String skupina, final String celek, final Instant datumNaServeru, final List<URI> urlyMapy, final List<URI> urlyPolygonu, final long pribliznaVelikost,
 			final PolygonPokryti pokryti, final String zdroj, final String licence, final String atribuce) {
 		this.id = id;
 		this.nazev = nazev;
 		this.skupina = skupina;
+		this.celek = celek;
 		this.datumNaServeru = datumNaServeru;
 		this.urlyMapy = urlyMapy;
 		this.urlyPolygonu = urlyPolygonu;
@@ -53,8 +55,14 @@ public final class KatalogovaMapa {
 		return datumNaServeru;
 	}
 
-	/** Id celé země, když je mapa jejím regionem (například „europe/germany“ u „europe/germany/bayern“), jinak null. */
+	/**
+	 * Id celé země, když je mapa jejím regionem (například „europe/germany“ u „europe/germany/bayern“), jinak null. Katalog ho může určit sám, když celá země
+	 * leží na serveru jinde (Velká Británie je „europe/great-britain“, regiony „europe/united-kingdom/…“).
+	 */
 	public String getIdCelku() {
+		if (celek != null) {
+			return celek;
+		}
 		final int i = id.lastIndexOf('/');
 		final int j = id.indexOf('/');
 		return i > j ? id.substring(0, i) : null;

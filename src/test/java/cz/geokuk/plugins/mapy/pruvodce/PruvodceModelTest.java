@@ -50,13 +50,13 @@ public class PruvodceModelTest {
 	}
 
 	@Test
-	public void zemeSRegionyMaCelekZemeBezCelkuVsechnyRegiony() {
+	public void zemeSRegionyMaCelek() {
 		final List<Zeme> zeme = NabidkaZemi.sestav(KatalogMap.vestaveny());
 		final Zeme nemecko = zeme.stream().filter(z -> z.getNazev().equals("Německo")).findFirst().get();
 		assertEquals("celá země je jedna mapa", Collections.singletonList("europe/germany"), nemecko.getKlice());
-		final Zeme uk = zeme.stream().filter(z -> z.getNazev().equals("Spojené království")).findFirst().get();
-		assertTrue("země bez celku se bere po regionech", uk.getKlice().size() >= 3);
-		assertTrue(uk.getKlice().contains("europe/united-kingdom/wales"));
+		final Zeme velkaBritanie = zeme.stream().filter(z -> z.getNazev().equals("Velká Británie")).findFirst().get();
+		assertEquals("celá země je jedna mapa", Collections.singletonList("europe/great-britain"), velkaBritanie.getKlice());
+		assertTrue(NabidkaZemi.regiony(KatalogMap.vestaveny()).stream().anyMatch(z -> z.getNazev().equals("Velká Británie – Wales")));
 		// Nic se v nabídce neopakuje a regiony samostatně v seznamu nejsou.
 		final List<String> vsechna = new ArrayList<>();
 		zeme.forEach(z -> vsechna.addAll(z.getKlice()));

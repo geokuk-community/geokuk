@@ -14,6 +14,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -88,6 +89,7 @@ public final class KatalogMap {
 		}
 		final List<KatalogovaMapa> vysledek = new ArrayList<>();
 		final Set<String> soubory = new HashSet<>();
+		final Map<String, String> celky = new HashMap<>();
 		for (final Object o : (List<?>) polozky) {
 			final Map<?, ?> p = objekt(o, "položka katalogu");
 			final String id = text(p, "id");
@@ -95,6 +97,10 @@ public final class KatalogMap {
 				throw new IOException("Neplatné id mapy v katalogu: " + id);
 			}
 			final Object skupina = p.get("skupina");
+			final String celek = p.get("celek") instanceof String ? (String) p.get("celek") : null;
+			if (celek != null) {
+				celky.put(id, celek);
+			}
 			final Object velikost = p.get("velikost");
 			if (!(velikost instanceof Double) || (Double) velikost <= 0) {
 				throw new IOException("Mapa " + id + " v katalogu nemá velikost");
@@ -103,14 +109,20 @@ public final class KatalogMap {
 			if (pokryti == null) {
 				pokryti = obdelnik(p.get("obdelnik"), id);
 			}
-			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, datum(p.get("datum"), id), vyres(mapy, id + ".map"),
-					vyres(poly, id + ".poly"), ((Double) velikost).longValue(), pokryti, zdroj, licence, atribuce);
+			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, celek, datum(p.get("datum"), id),
+					vyres(mapy, id + ".map"), vyres(poly, id + ".poly"), ((Double) velikost).longValue(), pokryti, zdroj, licence, atribuce);
 			if (!soubory.add(m.getNazevSouboru().toLowerCase(Locale.ROOT))) {
 				throw new IOException("Dvě mapy v katalogu mají stejné jméno souboru " + m.getNazevSouboru());
 			}
 			vysledek.add(m);
 		}
-		return new KatalogMap(vysledek);
+		final KatalogMap k = new KatalogMap(vysledek);
+		for (final Map.Entry<String, String> e : celky.entrySet()) {
+			if (!k.podleId(e.getValue()).isPresent()) {
+				throw new IOException("Mapa " + e.getKey() + " má v katalogu neznámou celou zemi " + e.getValue());
+			}
+		}
+		return k;
 	}
 
 	/** Datum ve tvaru hlavičky Last-Modified (RFC 1123); chybí = null. */

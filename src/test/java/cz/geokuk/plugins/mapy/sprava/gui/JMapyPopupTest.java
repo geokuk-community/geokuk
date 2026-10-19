@@ -497,12 +497,12 @@ public class JMapyPopupTest {
 			p.nactiStavSlozky = () -> Optional.of(true);
 			p.obnov(stazene(STAZENE_6));
 			Assert.assertTrue("souhrn regionů u země", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("3 regiony · ") && jeVidet(l)));
-			Assert.assertTrue("souhrn regionů u Spojeného království", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("1 region") && jeVidet(l)));
+			Assert.assertTrue("souhrn regionů u Velké Británie", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("1 region") && jeVidet(l)));
 			Assert.assertEquals("regiony jsou sbalené", 0, videtLabelu(p, "Bavorsko"));
 			p.prepniUzelSlozky("Německo");
 			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
 			Assert.assertEquals(1, videtLabelu(p, "Berlín"));
-			Assert.assertEquals("Anglie je pod Spojeným královstvím, to zůstalo sbalené", 0, videtLabelu(p, "Anglie"));
+			Assert.assertEquals("Anglie je pod Velkou Británií, ta zůstala sbalená", 0, videtLabelu(p, "Anglie"));
 			p.prepniUzelSlozky("Německo");
 			Assert.assertEquals(0, videtLabelu(p, "Bavorsko"));
 		});
@@ -515,7 +515,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.obnov(stazene());
-			final JLabel zeme = labels(p).stream().filter(l -> "Spojené království".equals(l.getText())).findFirst().get();
+			final JLabel zeme = labels(p).stream().filter(l -> "Velká Británie".equals(l.getText())).findFirst().get();
 			final java.awt.GridBagLayout lm = (java.awt.GridBagLayout) zeme.getParent().getLayout();
 			final int radek = lm.getConstraints(zeme).gridy;
 			final JLabel prvni = Arrays.stream(zeme.getParent().getComponents()).filter(c -> lm.getConstraints(c).gridy == radek && lm.getConstraints(c).gridx == 0).map(c -> (JLabel) c).findFirst().get();
@@ -632,10 +632,10 @@ public class JMapyPopupTest {
 			p.obnov(RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(), cz.geokuk.plugins.mapy.sprava.StavMapy::novy, Collections.emptyList(), null));
 			Assert.assertEquals(1, viditelnychLabelu(p, "Německo"));
 			Assert.assertEquals(1, viditelnychLabelu(p, "Francie"));
-			Assert.assertEquals(1, viditelnychLabelu(p, "Spojené království"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Velká Británie"));
 			Assert.assertEquals(0, viditelnychLabelu(p, "Bavorsko"));
-			Assert.assertEquals("evropská skupina bez celku (Spojené království) má v buňce Mapa „jen regiony“, Afrika a ostatní země ne", 1,
-					viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
+			Assert.assertEquals("Velká Británie má celou zemi, „jen regiony“ nemá žádná země", 0, viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
+			Assert.assertEquals("Spojené království není samostatná země", 0, labels(p).stream().filter(l -> "Spojené království".equals(l.getText())).count());
 			Assert.assertEquals("záhlaví sloupce Mapa", 1, viditelnychLabelu(p, JMapyPopup.SLOUPEC_MAPA));
 			p.prepniUzel("Německo");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Bavorsko"));
@@ -1370,10 +1370,144 @@ public class JMapyPopupTest {
 			Assert.assertTrue("po stažení se popup přestavěl", p.prestaveb > pred);
 			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
 			Assert.assertEquals(IkonyMap.ZELENA, labels(p).stream().filter(l -> JMapyPopup.CELA_VE_SLOZCE.equals(l.getText())).findFirst().get().getForeground());
-			Assert.assertEquals("jen regiony zůstanou u Spojeného království", 1, viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
 			Assert.assertEquals("regiony sbalené", 0, viditelnychLabelu(p, "Drenthe"));
 			p.prepniUzel("Nizozemsko");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Drenthe"));
+		});
+	}
+
+	/** Země rozbalená ve Všech mapách se po stažení celé země sbalí; znovu rozbalená už zůstane. Uložené rozbalení se tím také změní. */
+	@Test
+	public void rozbalenaZemeSeStazenimCelkuSbali() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final Map<String, Set<String>> nastaveni = new HashMap<>();
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.pamatujRozbaleni(k -> Collections.emptySet(), nastaveni::put);
+			p.obnov(stazene());
+			p.prepniUzel("Nizozemsko");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Drenthe"));
+			p.obnov(stazene("europe/netherlands"));
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
+			Assert.assertEquals("po stažení celé země jsou regiony sbalené", 0, viditelnychLabelu(p, "Drenthe"));
+			Assert.assertEquals(Collections.emptySet(), nastaveni.get(JMapyPopup.ROZBALENE_VSECHNY));
+			p.prepniUzel("Nizozemsko");
+			p.obnov(stazene("europe/netherlands"));
+			Assert.assertEquals("ručně rozbalené zůstane", 1, viditelnychLabelu(p, "Drenthe"));
+		});
+	}
+
+	/** Rozbalení zemí ve Všech mapách i ve složce platí i pro popup po dalším spuštění; země rozbalená sama stahováním se neukládá. */
+	@Test
+	public void rozbaleniZemiSePamatujeMeziSpustenimi() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final Map<String, Set<String>> nastaveni = new HashMap<>();
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.pamatujRozbaleni(k -> nastaveni.getOrDefault(k, Collections.emptySet()), nastaveni::put);
+			p.obnov(stazeneSFazi("europe/united-kingdom/england", cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, STAZENE_6));
+			Assert.assertEquals("stahování rozbalí zemi", 1, videtLabelu(p, "Anglie"));
+			p.prepniUzel("Francie");
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals(Collections.singleton("Francie"), nastaveni.get(JMapyPopup.ROZBALENE_VSECHNY));
+			Assert.assertEquals(Collections.singleton("Německo"), nastaveni.get(JMapyPopup.ROZBALENE_SLOZKA));
+
+			final JMapyPopup novy = new JMapyPopup();
+			novy.setOvladani(new Zaznam());
+			novy.nactiStavSlozky = () -> Optional.of(true);
+			novy.pamatujRozbaleni(k -> nastaveni.getOrDefault(k, Collections.emptySet()), nastaveni::put);
+			novy.obnov(stazene(STAZENE_6));
+			Assert.assertEquals("region Francie ve Všech mapách", 1, viditelnychLabelu(novy, "Alsasko"));
+			Assert.assertEquals("region Německa ve složce", 1, videtLabelu(novy, "Bavorsko"));
+			Assert.assertEquals("samo rozbalené se neuložilo", 0, videtLabelu(novy, "Anglie"));
+		});
+	}
+
+	/** Mapy mimo Evropu jsou na konci Všech map pod nadpisem; Kanáry zůstanou u Španělska, hledání najde i je. */
+	@Test
+	public void mapyMimoEvropuNaKonciPodNadpisem() throws Exception {
+		final List<RadekMapy> r = new ArrayList<>();
+		r.add(RadekMapy.katalogova("africa/egypt", "Egypt", RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
+		r.add(RadekMapy.katalogova("africa/canary-islands", "Kanárské ostrovy", RadekMapy.Stav.NEMAME).skupina("Španělsko").velikost(100 * MB).build());
+		r.add(RadekMapy.katalogova("asia/japan", "Japonsko", RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
+		r.add(RadekMapy.katalogova("europe/spain", "Španělsko", RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
+		for (final String n : new String[] { "Anglie", "Wales" }) {
+			r.add(RadekMapy.katalogova("europe/united-kingdom/" + n, n, RadekMapy.Stav.NEMAME).skupina("Velká Británie").velikost(100 * MB).build());
+		}
+		for (final String n : new String[] { "Albánie", "Česko", "Rakousko" }) {
+			r.add(RadekMapy.katalogova("europe/" + n, n, RadekMapy.Stav.NEMAME).velikost(100 * MB).build());
+		}
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(r);
+			final java.util.function.ToIntFunction<String> radek = t -> {
+				final JLabel l = labels(p).stream().filter(k -> t.equals(k.getText())).findFirst().get();
+				return ((java.awt.GridBagLayout) l.getParent().getLayout()).getConstraints(l).gridy;
+			};
+			final int nadpis = radek.applyAsInt(JMapyPopup.MIMO_EVROPU);
+			for (final String evropa : new String[] { "Albánie", "Rakousko", "Velká Británie", "Španělsko", "Kanárské ostrovy" }) {
+				Assert.assertTrue(evropa, radek.applyAsInt(evropa) < nadpis);
+			}
+			Assert.assertTrue(nadpis < radek.applyAsInt("Egypt"));
+			Assert.assertTrue("mimo Evropu podle abecedy", radek.applyAsInt("Egypt") < radek.applyAsInt("Japonsko"));
+			Assert.assertEquals("evropská země bez celku má „jen regiony“", 1, viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
+			p.getHledat().setText("egypt");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Egypt"));
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.MIMO_EVROPU));
+			Assert.assertEquals(0, viditelnychLabelu(p, "Japonsko"));
+			p.getHledat().setText("kanar");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Kanárské ostrovy"));
+			Assert.assertEquals("nadpis bez nalezené mapy zmizí", 0, viditelnychLabelu(p, JMapyPopup.MIMO_EVROPU));
+			p.getHledat().setText("");
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.MIMO_EVROPU));
+		});
+	}
+
+	/** Ve složce jsou mapy mimo Evropu také na konci pod nadpisem, soubory uživatele nad ním. */
+	@Test
+	public void mapyMimoEvropuVeSlozcePodNadpisem() throws Exception {
+		final List<RadekMapy> r = new ArrayList<>(stazene("africa/egypt", "europe/czech-republic", "europe/austria"));
+		r.add(RadekMapy.vlastni("moje.map").build());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(r);
+			final List<JLabel> nadpisy = labels(p).stream().filter(l -> JMapyPopup.MIMO_EVROPU.equals(l.getText())).collect(java.util.stream.Collectors.toList());
+			Assert.assertEquals("jen ve složce, ve Všech mapách nic mimo Evropu není", 1, nadpisy.size());
+			final Container slozka = nadpisy.get(0).getParent();
+			final java.util.function.ToIntFunction<String> radek = t -> {
+				final JLabel l = labels(slozka).stream().filter(k -> t.equals(k.getText())).findFirst().get();
+				return ((java.awt.GridBagLayout) slozka.getLayout()).getConstraints(l).gridy;
+			};
+			final int nadpis = radek.applyAsInt(JMapyPopup.MIMO_EVROPU);
+			Assert.assertTrue(radek.applyAsInt("Česko") < nadpis);
+			Assert.assertTrue(radek.applyAsInt("Rakousko") < nadpis);
+			Assert.assertEquals("soubor uživatele jen jednou", 1, labels(slozka).stream().filter(k -> "moje.map".equals(k.getText())).count());
+			Assert.assertTrue("soubor uživatele nad nadpisem", radek.applyAsInt("moje.map") < nadpis);
+			Assert.assertTrue(nadpis < radek.applyAsInt("Egypt"));
+			Assert.assertTrue(jeVidet(nadpisy.get(0)));
+		});
+	}
+
+	/** Stažená mapa Velké Británie je ve složce celou zemí jejích regionů; s regionem hlásí, že je území dvakrát. */
+	@Test
+	public void velkaBritanieVeSlozceJeCelkemRegionu() throws Exception {
+		final java.io.File slozka = tmp.newFolder("velka-britanie");
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		Assert.assertTrue(new java.io.File(slozka, "great-britain.map").createNewFile());
+		Assert.assertTrue(new java.io.File(slozka, "england.map").createNewFile());
+		final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> dvojite = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozka, katalog);
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(stazene("europe/great-britain"));
+			Assert.assertEquals("ve složce i jako hlavička regionů ve Všech mapách", 2, videtLabelu(p, "Velká Británie"));
+			Assert.assertEquals("ve Všech mapách jeho regiony", 1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
+			p.setDvojite(dvojite);
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie je ve složce celá i s regiony (Anglie)")));
 		});
 	}
 
@@ -1387,7 +1521,7 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
 			Assert.assertTrue("Česko: tři vrstvy", maVse.test(p, "Česko"));
-			Assert.assertTrue("Spojené království: tři regiony", maVse.test(p, "Spojené království"));
+			Assert.assertFalse("Velká Británie bez vrstev: celá země nahrazuje regiony", maVse.test(p, "Velká Británie"));
 			Assert.assertFalse("Německo bez vrstev: celá země nahrazuje regiony, stáhne jen svou mapu", maVse.test(p, "Německo"));
 			Assert.assertFalse("Albánie: jen mapa, totéž co Stáhnout", maVse.test(p, "Albánie"));
 			Assert.assertFalse("Rakousko ve složce bez vrstev", maVse.test(p, "Rakousko"));
