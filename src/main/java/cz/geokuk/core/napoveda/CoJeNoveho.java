@@ -222,7 +222,7 @@ public final class CoJeNoveho {
 		return m.appendTail(sb).toString();
 	}
 
-	static String escape(final String s) {
+	public static String escape(final String s) {
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
 	}
 }
