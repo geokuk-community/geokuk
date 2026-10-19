@@ -98,8 +98,8 @@ public class JBlokMapTest {
 	public void rozbaleniZemiVNastaveni() {
 		final java.util.Set<String> puvodni = JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY);
 		try {
-			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, new java.util.HashSet<>(java.util.Arrays.asList("Německo", "Spojené království")));
-			Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList("Německo", "Spojené království")), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, new java.util.HashSet<>(java.util.Arrays.asList("Německo", "Velká Británie")));
+			Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList("Německo", "Velká Británie")), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
 			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, Collections.emptySet());
 			Assert.assertEquals(Collections.emptySet(), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
 		} finally {

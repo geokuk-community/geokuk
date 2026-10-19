@@ -93,10 +93,10 @@ public class KatalogMapTest {
 		assertFalse("Kanáry nejsou regionem mapy Španělska", k.celek(kanary).isPresent());
 		assertNull("Egypt je samostatná země", k.podleId("africa/egypt").get().getSkupina());
 		final KatalogovaMapa skotsko = k.podleId("europe/united-kingdom/scotland").get();
-		assertEquals("Spojené království", skotsko.getSkupina());
+		assertEquals("Velká Británie", skotsko.getSkupina());
 		final KatalogovaMapa velkaBritanie = k.podleId("europe/great-britain").get();
-		assertSame("celé Spojené království je na serveru jako Velká Británie", velkaBritanie, k.celek(skotsko).get());
-		assertEquals("Spojené království", velkaBritanie.getNazev());
+		assertSame("Skotsko je regionem Velké Británie, i když leží na serveru jinde", velkaBritanie, k.celek(skotsko).get());
+		assertEquals("Velká Británie", velkaBritanie.getNazev());
 		assertEquals("great-britain.map", velkaBritanie.getNazevSouboru());
 		assertEquals(Arrays.asList("europe/united-kingdom/england", "europe/united-kingdom/scotland", "europe/united-kingdom/wales"), ids(k.regiony(velkaBritanie)));
 		for (final KatalogovaMapa m : k.getMapy()) {

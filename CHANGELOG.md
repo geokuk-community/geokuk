@@ -16,9 +16,9 @@
   Najetím na řádek mapy se v mapě ukáže její obrys, stejně při stahování;
   volbou v panelu jde ukázat obrysy všech map v přehledu (do zoomu 7). Při
   hodně mapách mají sekce panelu posuvníky, v seznamu dalších map jde hledat a
-  země s regiony (Německo, Francie, Itálie, Nizozemsko, Španělsko, Spojené
-  království) se rozbalují. Nabízí i Kanárské ostrovy (u Španělska) a Egypt
-  (Afrika).
+  země s regiony (Německo, Francie, Itálie, Nizozemsko, Španělsko, Velká
+  Británie) se rozbalují. Nabízí i Kanárské ostrovy (u Španělska) a Egypt
+  (mimo Evropu).
 - Mapy zemí a regionů Evropy z download.mapsforge.org jde z panelu Offline
   mapy stáhnout (po jedné; přerušené stahování mapy nebo vrstvy program
   sám až třikrát zkusí znovu a naváže, kde skončilo) a na požádání
@@ -52,8 +52,8 @@
 - Panel Offline mapy: země ve složce lícují jako ve Všech mapách, region pro
   zobrazené místo má u sebe zemi, země stažená celá má u svých regionů „celá
   země ve složce“ a Stáhnout vše je jen tam, kde stáhne víc než jednu položku.
-- Panel Offline mapy: mapy mimo Evropu (Egypt) jsou na konci Všech map pod
-  nadpisem „Mimo Evropu“, Velká Británie je celé Spojené království s regiony
+- Panel Offline mapy: mapy mimo Evropu (Egypt) jsou na konci Všech map i map
+  ve složce pod nadpisem „Mimo Evropu“, Velká Británie je jedna země s regiony
   Anglie, Skotsko a Wales (stažená mapa zůstává) a rozbalení zemí si panel
   pamatuje i po novém spuštění.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci

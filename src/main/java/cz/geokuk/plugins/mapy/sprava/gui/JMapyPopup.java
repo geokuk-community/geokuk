@@ -1767,7 +1767,19 @@ public class JMapyPopup extends JPanel {
 				podleZeme.computeIfAbsent(r.nazev, Uzel::new).celek = r;
 			}
 		}
-		for (final Uzel u : podleZeme.values()) {
+		final List<Uzel> uzlySlozky = new ArrayList<>(podleZeme.values());
+		uzlySlozky.sort(Comparator.comparing(this::mimoEvropu));
+		boolean mimoEvropuPridano = false;
+		for (final Uzel u : uzlySlozky) {
+			if (!mimoEvropuPridano && mimoEvropu(u)) {
+				// Soubory uživatele nepatří pod nadpis kontinentu, jsou nad ním.
+				for (final RadekMapy r : vlastni) {
+					y = pridejRadek(panel, y, r);
+				}
+				vlastni.clear();
+				panel.add(nadpisOddilu(MIMO_EVROPU), bunka(0, y++, 4));
+				mimoEvropuPridano = true;
+			}
 			u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
 			final boolean rozbaleno = rozbaleneSlozka.contains(u.nazev) || zemeSamyRozbalene.contains(u.nazev);
 			if (u.celek != null) {

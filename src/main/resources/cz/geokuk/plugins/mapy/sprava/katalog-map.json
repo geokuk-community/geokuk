@@ -69,7 +69,7 @@
   {"id": "europe/germany/sachsen-anhalt", "nazev": "Sasko-Anhaltsko", "skupina": "Německo", "velikost": 129582786, "datum": "Wed, 07 Oct 2026 03:18:38 GMT"},
   {"id": "europe/germany/schleswig-holstein", "nazev": "Šlesvicko-Holštýnsko", "skupina": "Německo", "velikost": 115376781, "datum": "Wed, 07 Oct 2026 03:50:55 GMT"},
   {"id": "europe/germany/thueringen", "nazev": "Durynsko", "skupina": "Německo", "velikost": 117289421, "datum": "Wed, 07 Oct 2026 04:21:40 GMT"},
-  {"id": "europe/great-britain", "nazev": "Spojené království", "velikost": 1647208232, "datum": "Sat, 05 Sep 2026 21:31:16 GMT"},
+  {"id": "europe/great-britain", "nazev": "Velká Británie", "velikost": 1647208232, "datum": "Sat, 05 Sep 2026 21:31:16 GMT"},
   {"id": "europe/greece", "nazev": "Řecko", "velikost": 268046610, "datum": "Sun, 06 Sep 2026 02:57:46 GMT"},
   {"id": "europe/guernsey-jersey", "nazev": "Guernsey a Jersey", "velikost": 3542425, "datum": "Fri, 28 Aug 2026 09:45:42 GMT"},
   {"id": "europe/hungary", "nazev": "Maďarsko", "velikost": 266972269, "datum": "Thu, 06 Aug 2026 14:43:16 GMT"},
@@ -135,8 +135,8 @@
   {"id": "europe/switzerland", "nazev": "Švýcarsko", "velikost": 334266727, "datum": "Wed, 23 Sep 2026 04:53:23 GMT"},
   {"id": "europe/turkey", "nazev": "Turecko", "velikost": 614175859, "datum": "Wed, 23 Sep 2026 10:51:06 GMT"},
   {"id": "europe/ukraine", "nazev": "Ukrajina", "velikost": 873985569, "datum": "Thu, 24 Sep 2026 01:49:14 GMT"},
-  {"id": "europe/united-kingdom/england", "nazev": "Anglie", "skupina": "Spojené království", "celek": "europe/great-britain", "velikost": 1210840443, "datum": "Sun, 10 May 2026 03:57:33 GMT"},
-  {"id": "europe/united-kingdom/scotland", "nazev": "Skotsko", "skupina": "Spojené království", "celek": "europe/great-britain", "velikost": 282418096, "datum": "Sun, 10 May 2026 08:02:11 GMT"},
-  {"id": "europe/united-kingdom/wales", "nazev": "Wales", "skupina": "Spojené království", "celek": "europe/great-britain", "velikost": 110405003, "datum": "Sun, 10 May 2026 09:03:31 GMT"}
+  {"id": "europe/united-kingdom/england", "nazev": "Anglie", "skupina": "Velká Británie", "celek": "europe/great-britain", "velikost": 1210840443, "datum": "Sun, 10 May 2026 03:57:33 GMT"},
+  {"id": "europe/united-kingdom/scotland", "nazev": "Skotsko", "skupina": "Velká Británie", "celek": "europe/great-britain", "velikost": 282418096, "datum": "Sun, 10 May 2026 08:02:11 GMT"},
+  {"id": "europe/united-kingdom/wales", "nazev": "Wales", "skupina": "Velká Británie", "celek": "europe/great-britain", "velikost": 110405003, "datum": "Sun, 10 May 2026 09:03:31 GMT"}
  ]
 }

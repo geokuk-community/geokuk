@@ -57,7 +57,7 @@ public final class KatalogovaMapa {
 
 	/**
 	 * Id celé země, když je mapa jejím regionem (například „europe/germany“ u „europe/germany/bayern“), jinak null. Katalog ho může určit sám, když celá země
-	 * leží na serveru jinde (Spojené království je „europe/great-britain“).
+	 * leží na serveru jinde (Velká Británie je „europe/great-britain“, regiony „europe/united-kingdom/…“).
 	 */
 	public String getIdCelku() {
 		if (celek != null) {
