@@ -91,13 +91,17 @@ public class KatalogMapTest {
 		final KatalogovaMapa kanary = k.podleId("africa/canary-islands").get();
 		assertEquals("Španělsko", kanary.getSkupina());
 		assertFalse("Kanáry nejsou regionem mapy Španělska", k.celek(kanary).isPresent());
-		assertEquals("Afrika", k.podleId("africa/egypt").get().getSkupina());
+		assertNull("Egypt je samostatná země", k.podleId("africa/egypt").get().getSkupina());
 		final KatalogovaMapa skotsko = k.podleId("europe/united-kingdom/scotland").get();
 		assertEquals("Spojené království", skotsko.getSkupina());
-		assertFalse("celé Spojené království server nemá", k.celek(skotsko).isPresent());
+		final KatalogovaMapa velkaBritanie = k.podleId("europe/great-britain").get();
+		assertSame("celé Spojené království je na serveru jako Velká Británie", velkaBritanie, k.celek(skotsko).get());
+		assertEquals("Spojené království", velkaBritanie.getNazev());
+		assertEquals("great-britain.map", velkaBritanie.getNazevSouboru());
+		assertEquals(Arrays.asList("europe/united-kingdom/england", "europe/united-kingdom/scotland", "europe/united-kingdom/wales"), ids(k.regiony(velkaBritanie)));
 		for (final KatalogovaMapa m : k.getMapy()) {
-			// Mapy mimo Evropu jsou ve skupině pro přehled (Kanáry u Španělska, Afrika), regionem žádné mapy nejsou.
-			assertEquals(m.getId(), m.getSkupina() != null, m.getIdCelku() != null || m.getId().startsWith("africa/"));
+			// Skupina regionu je název celé země; Kanáry mají skupinu Španělsko, ale regionem jeho mapy nejsou.
+			assertEquals(m.getId(), m.getSkupina(), k.celek(m).map(KatalogovaMapa::getNazev).orElse(m == kanary ? "Španělsko" : null));
 		}
 	}
 
@@ -137,6 +141,11 @@ public class KatalogMapTest {
 		assertFalse(k.celek(zeme).isPresent());
 		assertTrue(k.regiony(k.podleId("europe/sama").get()).isEmpty());
 		assertFalse("region bez celé země v katalogu", k.celek(k.podleId("europe/bezcelku/c").get()).isPresent());
+		final KatalogMap jinde = katalog("{\"id\": \"europe/ostrov\", \"nazev\": \"Země\", \"velikost\": 50, \"obdelnik\": [40, 10, 50, 20]},"
+				+ "{\"id\": \"europe/zeme/a\", \"nazev\": \"A\", \"skupina\": \"Země\", \"celek\": \"europe/ostrov\", \"velikost\": 5, \"obdelnik\": [40, 10, 45, 15]}", id -> null);
+		assertEquals("celá země jinde na serveru", "europe/ostrov", jinde.podleId("europe/zeme/a").get().getIdCelku());
+		assertEquals(Collections.singletonList("europe/zeme/a"), ids(jinde.regiony(jinde.podleId("europe/ostrov").get())));
+		chyba("{\"id\": \"europe/zeme/a\", \"nazev\": \"A\", \"celek\": \"europe/zeme\", \"velikost\": 5, \"obdelnik\": [0, 0, 1, 1]}", "neznámou celou zemi");
 		chyba("{\"id\": \"europe/a\", \"nazev\": \"A\", \"velikost\": 5, \"datum\": \"včera\", \"obdelnik\": [0, 0, 1, 1]}", "neplatné datum");
 	}
 

@@ -78,6 +78,14 @@ public class JBlokMap extends JLabel {
 		p.putBoolean(PREFE_SLOZKA_OTEVRENA, otevrena);
 	}
 
+	static java.util.Set<String> nactiRozbaleneZeme(final String klic) {
+		return cz.geokuk.framework.MyPreferences.current().node(PREFE_NODE).getStringSet(klic, java.util.Collections.emptySet());
+	}
+
+	static void ulozRozbaleneZeme(final String klic, final java.util.Set<String> zeme) {
+		cz.geokuk.framework.MyPreferences.current().node(PREFE_NODE).putStringSet(klic, zeme);
+	}
+
 	public JBlokMap() {
 		super(TEXT);
 		setHorizontalTextPosition(SwingConstants.LEFT);
@@ -85,6 +93,7 @@ public class JBlokMap extends JLabel {
 		setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
 		obsah.nactiStavSlozky = JBlokMap::nactiStavSlozky;
 		obsah.ulozStavSlozky = JBlokMap::ulozStavSlozky;
+		obsah.pamatujRozbaleni(JBlokMap::nactiRozbaleneZeme, JBlokMap::ulozRozbaleneZeme);
 		cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.setPoZmene(() -> javax.swing.SwingUtilities.invokeLater(() -> obsah.obnov(obsah.getRadky())));
 		obsah.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
 		obsah.setZobrazeny(() -> popup.viditelny() == obsah);

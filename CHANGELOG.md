@@ -52,6 +52,10 @@
 - Panel Offline mapy: země ve složce lícují jako ve Všech mapách, region pro
   zobrazené místo má u sebe zemi, země stažená celá má u svých regionů „celá
   země ve složce“ a Stáhnout vše je jen tam, kde stáhne víc než jednu položku.
+- Panel Offline mapy: mapy mimo Evropu (Egypt) jsou na konci Všech map pod
+  nadpisem „Mimo Evropu“, Velká Británie je celé Spojené království s regiony
+  Anglie, Skotsko a Wales (stažená mapa zůstává) a rozbalení zemí si panel
+  pamatuje i po novém spuštění.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
   se otevře sám) nabídne Česko a okolí (hledat jde i jinou zemi nebo region),
   vybere podklad a vrstvy, stáhne jen to, co chybí, a přepne mapu. Před
