@@ -111,8 +111,8 @@ public class JCoJeNoveho extends JPanel {
 				+ " na webu</a></p></body></html>";
 	}
 
-	static JDialog dialog(final Window vlastnik, final JCoJeNoveho obsah) {
-		final JDialog d = new JDialog(vlastnik, "Co je nového", Dialog.ModalityType.APPLICATION_MODAL);
+	public static JDialog dialog(final Window vlastnik, final String titulek, final JCoJeNoveho obsah) {
+		final JDialog d = new JDialog(vlastnik, titulek, Dialog.ModalityType.APPLICATION_MODAL);
 		final JButton zavrit = new JButton("Zavřít");
 		zavrit.addActionListener(e -> d.dispose());
 		final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -130,14 +130,14 @@ public class JCoJeNoveho extends JPanel {
 	public static void ukazZProgramu() {
 		final JCoJeNoveho obsah = new JCoJeNoveho();
 		obsah.zProgramu();
-		dialog(Dlg.parentFrame(), obsah).setVisible(true);
+		dialog(Dlg.parentFrame(), "Co je nového", obsah).setVisible(true);
 	}
 
 	/** Z okna nové verze: co přinesou verze od používané po nabízenou. */
 	public static void ukazZGitHubu(final Window vlastnik, final String nova, final boolean betaKanal) {
 		final JCoJeNoveho obsah = new JCoJeNoveho();
 		obsah.zGitHubu(() -> stahni(FConst.RELEASES_API_URL + "?per_page=100"), FConst.VERSION, nova, betaKanal);
-		dialog(vlastnik, obsah).setVisible(true);
+		dialog(vlastnik, "Co je nového", obsah).setVisible(true);
 	}
 
 	private static String stahni(final String url) throws IOException {

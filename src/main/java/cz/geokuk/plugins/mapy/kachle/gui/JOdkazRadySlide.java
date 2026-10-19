@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.Cursor;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 
@@ -11,7 +13,7 @@ import cz.geokuk.framework.MouseGestureContext;
 
 /**
  * Odkaz v radě kachlovníku („Stáhnout mapu …“) se kreslí pod ostatními vrstvami, klik na něj ale musí dostat dřív než ostatní vrstvy (jinak by klik nastavil
- * pozici). Tato vrstva nic nekreslí, je v řetězu myši na začátku.
+ * pozici). Tato vrstva je v řetězu myši na začátku a jako nejvyšší vrstva mapy kreslí atribuci kachlovníku, aby ji nic nezakrylo.
  */
 public class JOdkazRadySlide extends JSingleSlide0 {
 
@@ -24,6 +26,18 @@ public class JOdkazRadySlide extends JSingleSlide0 {
 		this.kachlovnik = kachlovnik;
 		setOpaque(false);
 		setCursor(null);
+	}
+
+	@Override
+	protected void paintComponent(final Graphics g) {
+		final Point p = SwingUtilities.convertPoint(kachlovnik, 0, 0, this);
+		final Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			g2.translate(p.x, p.y);
+			kachlovnik.kresliAtribuci(g2);
+		} finally {
+			g2.dispose();
+		}
 	}
 
 	@Override

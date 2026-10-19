@@ -109,7 +109,7 @@ final class AtribuceMapy {
 	static void kresli(final Graphics2D g, final Rozlozeni r, final FontMetrics fm) {
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g.setColor(new Color(255, 255, 255, 170));
+		g.setColor(Color.WHITE);
 		g.fillRect(r.pole.x, r.pole.y, r.pole.width, r.pole.height);
 		g.setColor(Color.DARK_GRAY);
 		g.drawString(r.text, r.pole.x + 4, r.pole.y + 1 + fm.getAscent());

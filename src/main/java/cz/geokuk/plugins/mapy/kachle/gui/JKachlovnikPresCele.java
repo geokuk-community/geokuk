@@ -4,8 +4,12 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.CoJeNoveho;
+import cz.geokuk.core.napoveda.JCoJeNoveho;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
@@ -127,39 +131,42 @@ public class JKachlovnikPresCele extends JKachlovnik {
 
 	static final String RADA_BEZ_SPRAVY = "Offline mapy najdete v bloku Mapy vpravo dole ve stavovém řádku.";
 
-	/** Atribuci kreslí přes kachle vpravo dole, radu, kde vzít offline mapu, nahoře uprostřed. */
+	/** Radu, kde vzít offline mapu, kreslí přes kachle nahoře uprostřed. */
 	@Override
 	protected void paintChildren(final Graphics g) {
 		super.paintChildren(g);
 		odkazyRady.clear();
 		mapyRady.clear();
 		rada = null;
-		ikonaAtribuce = null;
-		if (getKachloType() == null || getKachloType().getAtribuce().isEmpty()) {
-			return;
-		}
-		if (jeRada()) {
+		if (maAtribuci() && jeRada()) {
 			kresliRadu((Graphics2D) g);
 		}
-		kresliAtribuci((Graphics2D) g);
 	}
 
-	/** Atribuce: jeden zkrácený řádek vpravo dole, nezasahuje do měřítka vlevo; plné znění po kliku na ikonu ⓘ. */
-	private void kresliAtribuci(final Graphics2D g) {
+	private boolean maAtribuci() {
+		return getKachloType() != null && !getKachloType().getAtribuce().isEmpty();
+	}
+
+	/**
+	 * Atribuce: jeden zkrácený řádek vpravo dole v pravé čtvrtině šířky, prostředek dole patří měřítku; plné znění po kliku na ikonu ⓘ. Kreslí ji vrstva {@link JOdkazRadySlide} nad
+	 * všemi ostatními vrstvami mapy, aby ji nezakryly.
+	 */
+	void kresliAtribuci(final Graphics2D g) {
+		ikonaAtribuce = null;
+		if (!maAtribuci()) {
+			return;
+		}
 		final Graphics2D g2 = (Graphics2D) g.create();
 		try {
 			g2.setFont(getFont().deriveFont(Font.PLAIN, 10f));
 			final FontMetrics fm = g2.getFontMetrics();
-			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), Math.max(120, getWidth() - ODSTUP_MERITKA));
+			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), getWidth() / 4);
 			AtribuceMapy.kresli(g2, r, fm);
 			ikonaAtribuce = r.ikona;
 		} finally {
 			g2.dispose();
 		}
 	}
-
-	/** Šířka vlevo dole vyhrazená měřítku; atribuce do ní nezasahuje. */
-	static final int ODSTUP_MERITKA = 220;
 
 	/** Zkrácené zdroje atribuce: podklad, data offline mapy, vrstvy a překryvy. */
 	List<String> zkratkyAtribuce() {
@@ -232,35 +239,22 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		return v;
 	}
 
-	/** Ukáže plné znění atribuce nad ikonou ⓘ. */
+	/** Ukáže plné znění atribuce v okně jako Co je nového. */
 	void ukazPlnouAtribuci() {
-		final javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-		final javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.GridLayout(0, 1, 0, 3));
-		panel.setBorder(javax.swing.BorderFactory.createEmptyBorder(6, 8, 6, 8));
-		for (final String t : plnaAtribuce()) {
+		final JCoJeNoveho obsah = new JCoJeNoveho();
+		obsah.setHtml(htmlAtribuce(plnaAtribuce()));
+		JCoJeNoveho.dialog(SwingUtilities.getWindowAncestor(this), "Atribuce mapy", obsah).setVisible(true);
+	}
+
+	/** Plné znění jako HTML; texty atribuce přicházejí i ze staženého katalogu, proto se escapují. */
+	static String htmlAtribuce(final List<String> texty) {
+		final StringBuilder html = new StringBuilder("<html><body>");
+		for (final String t : texty) {
 			if (!t.trim().isEmpty()) {
-				panel.add(new javax.swing.JLabel(t));
+				html.append("<p>").append(CoJeNoveho.escape(t)).append("</p>");
 			}
 		}
-		final javax.swing.JButton osm = new javax.swing.JButton("Autorská práva OpenStreetMap");
-		osm.setBorderPainted(false);
-		osm.setContentAreaFilled(false);
-		osm.setForeground(ODKAZ);
-		osm.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		osm.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-		osm.addActionListener(e -> {
-			try {
-				cz.geokuk.util.process.BrowserOpener.displayURL(new java.net.URL("https://www.openstreetmap.org/copyright"));
-			} catch (final java.net.MalformedURLException ex) {
-				throw new IllegalStateException(ex);
-			}
-			menu.setVisible(false);
-		});
-		panel.add(osm);
-		menu.add(panel);
-		final Rectangle ikona = ikonaAtribuce != null ? ikonaAtribuce : new Rectangle(getWidth() - 20, getHeight() - 16, 16, 14);
-		final Dimension d = menu.getPreferredSize();
-		menu.show(this, Math.max(0, Math.min(ikona.x + ikona.width - d.width, getWidth() - d.width)), ikona.y - d.height);
+		return html.append("<p><a href=\"https://www.openstreetmap.org/copyright\">Autorská práva OpenStreetMap</a></p></body></html>").toString();
 	}
 
 	/** Offline mapa a střed výřezu nepokrývá žádná podrobná mapa. */
