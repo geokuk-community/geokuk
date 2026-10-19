@@ -1292,10 +1292,95 @@ public class JMapyPopupTest {
 			Assert.assertFalse("aspoň jedna země s regiony", vse.isEmpty());
 			Assert.assertTrue(vse.get(0).isEnabled());
 			vse.get(0).doClick();
-			Assert.assertEquals(1, z.volani.size());
-			Assert.assertTrue(z.volani.get(0), z.volani.get(0).startsWith("stahniVse "));
+			Assert.assertEquals("země bez regionů s vrstvami ke stažení má Stáhnout vše", Collections.singletonList("stahniVse Česko europe/czech-republic 1"), z.volani);
 			vse.get(vse.size() - 1).doClick();
-			Assert.assertTrue("i země bez regionů má Stáhnout vše: " + z.volani, z.volani.get(1).endsWith(" 1"));
+			Assert.assertTrue("země s regiony předá klíče všech řádků: " + z.volani, Integer.parseInt(z.volani.get(1).substring(z.volani.get(1).lastIndexOf(' ') + 1)) > 1);
+		});
+	}
+
+	/** Začátek textu popisku v buňce názvu: odsazení a šipka rozbalení. */
+	private static int zacatekTextu(final JLabel l) {
+		return l.getInsets().left + (l.getIcon() == null ? 0 : l.getIcon().getIconWidth() + l.getIconTextGap());
+	}
+
+	/** Ve složce jsou země bez regionů odsazené o šipku jako ve Všech mapách, takže jejich názvy lícují se zeměmi se šipkou. */
+	@Test
+	public void zemeBezRegionuVeSlozceLicujeSeZemiSeSipkou() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(stazene(STAZENE_6));
+			final java.util.function.Function<String, JLabel> nazev = n -> labels(p).stream().filter(l -> n.equals(l.getText())).findFirst().get();
+			final int sipka = zacatekTextu(nazev.apply("Německo"));
+			Assert.assertNotNull("Německo ve složce má šipku", nazev.apply("Německo").getIcon());
+			Assert.assertEquals("Česko ve složce", sipka, zacatekTextu(nazev.apply("Česko")));
+			Assert.assertEquals("Rakousko ve složce", sipka, zacatekTextu(nazev.apply("Rakousko")));
+			Assert.assertEquals("Albánie ve Všech mapách", sipka, zacatekTextu(nazev.apply("Albánie")));
+		});
+	}
+
+	/** V plochém oddílu Pro zobrazené místo je u regionu za popisem země, i po změně stavu na místě; u celé země ne. */
+	@Test
+	public void regionProMistoMaVPopisuZemi() throws Exception {
+		final java.util.function.Function<RadekMapy.Stav, List<RadekMapy>> radky = stav -> Arrays.asList(
+				RadekMapy.katalogova("europe/netherlands/noord-brabant", "Severní Brabantsko", stav).skupina("Nizozemsko").velikost(142 * MB).stazeno(stav == RadekMapy.Stav.STAHUJE ? 71 * MB : 0)
+						.proZobrazeneMisto(true).build(),
+				RadekMapy.katalogova("europe/belgium", "Belgie", RadekMapy.Stav.NEMAME).velikost(300 * MB).proZobrazeneMisto(true).build());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply(RadekMapy.Stav.NEMAME));
+			Assert.assertEquals("jen v oddílu Pro zobrazené místo", 1, labels(p).stream().filter(l -> l.getText() != null && l.getText().endsWith(" · Nizozemsko")).count());
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("~142 MB · Nizozemsko")));
+			Assert.assertTrue("celá země bez země v popisu", labels(p).stream().noneMatch(l -> l.getText() != null && l.getText().startsWith("~300 MB ·")));
+			final int pred = p.prestaveb;
+			p.obnov(radky.apply(RadekMapy.Stav.STAHUJE));
+			Assert.assertEquals("změna stavu na místě", pred, p.prestaveb);
+			Assert.assertEquals(1, labels(p).stream().filter(l -> l.getText() != null && l.getText().startsWith("50 % z ") && l.getText().endsWith(" · Nizozemsko")).count());
+		});
+	}
+
+	/** Celá země ve složce: ve Všech mapách má hlavička jejích regionů „celá země ve složce“ (ne „jen regiony“) a regiony jsou sbalené; po stažení se popup přestaví. */
+	@Test
+	public void celaZemeVeSlozceVeVsechMapach() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(stazene());
+			Assert.assertEquals(0, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
+			final int pred = p.prestaveb;
+			p.obnov(stazene("europe/netherlands"));
+			Assert.assertTrue("po stažení se popup přestavěl", p.prestaveb > pred);
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
+			Assert.assertEquals(IkonyMap.ZELENA, labels(p).stream().filter(l -> JMapyPopup.CELA_VE_SLOZCE.equals(l.getText())).findFirst().get().getForeground());
+			Assert.assertEquals("jen regiony zůstanou u Spojeného království", 1, viditelnychLabelu(p, JMapyPopup.JEN_REGIONY));
+			Assert.assertEquals("regiony sbalené", 0, viditelnychLabelu(p, "Drenthe"));
+			p.prepniUzel("Nizozemsko");
+			Assert.assertEquals(1, viditelnychLabelu(p, "Drenthe"));
+		});
+	}
+
+	/** Stáhnout vše je jen u země, kde stáhne víc než jednu položku: ne u země, kde by stáhlo jen mapu nebo jedinou vrstvu; za stahování zůstane. */
+	@Test
+	public void stahnoutVseJenKdyzStahneViceNezJednuPolozku() throws Exception {
+		final java.util.function.BiPredicate<JMapyPopup, String> maVse = (p, zeme) -> komponentyRadku(p, zeme).stream()
+				.anyMatch(k -> k instanceof JButton && JMapyPopup.STAHNOUT_VSE.equals(((JButton) k).getText()));
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertTrue("Česko: tři vrstvy", maVse.test(p, "Česko"));
+			Assert.assertTrue("Spojené království: tři regiony", maVse.test(p, "Spojené království"));
+			Assert.assertFalse("Německo bez vrstev: celá země nahrazuje regiony, stáhne jen svou mapu", maVse.test(p, "Německo"));
+			Assert.assertFalse("Albánie: jen mapa, totéž co Stáhnout", maVse.test(p, "Albánie"));
+			Assert.assertFalse("Rakousko ve složce bez vrstev", maVse.test(p, "Rakousko"));
+			p.obnov(ceskoARakouskoSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC,
+					cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertFalse("Česko: chybí jen stínování", maVse.test(p, "Česko"));
+			p.obnov(ceskoARakouskoSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE,
+					cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			Assert.assertTrue("Česko: trasy se stahují, stínování chybí", maVse.test(p, "Česko"));
 		});
 	}
 
