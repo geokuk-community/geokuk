@@ -156,6 +156,22 @@ neupravené, se souborem licence od jeho autora. Některá témata mají
 nekomerční licenci (například CC BY-NC-SA); taková se smějí používat
 a šířit jen v souladu s ní; GeoKuk je s programem nedodává.
 
+### Vzhled offline map
+
+Snímky ukazují offline mapu z dat OpenStreetMap (mapsforge) s vlastními
+vrstvami GeoKuku (turistické a cyklotrasy, vrstevnice, stínování terénu)
+a vlastním vzhledem, tématem GeoKuk: trasy v barvách značení, keše jako
+ikony, v menším měřítku jako barevné tečky. Trasu výletu jde vést po
+cestách, panel Cesta ukazuje její délku a body.
+
+![Přehled kraje s keškami jako tečkami](docs/geokuk-z12.png)
+
+![Detail s ikonami keší a cestou po cestách](docs/geokuk-z14.png)
+
+Mapová data © přispěvatelé OpenStreetMap ([ODbL](https://www.openstreetmap.org/copyright)),
+Made with Natural Earth, vrstevnice Copernicus DEM GLO-30 © DLR/Airbus, ESA;
+letecký snímek v rohu © Seznam.cz.
+
 ## Dálkové ovládání
 
 Soubor > Dálkové ovládání (nebo parametr `--ovladani[=port]`, výchozí port
