@@ -3,7 +3,7 @@
 ## 6.5.0
 
 ### Změny
-- Offline mapy se kreslí novým tématem GeoKuk blíž Mapy.cz: světlejší les
+- Offline mapy se kreslí novým tématem GeoKuk s vylepšeným vzhledem: světlejší les
   a pole, chráněná území bez zelené výplně, decentní vrstevnice a stínování,
   ikony zajímavých míst až v podrobnějším měřítku, skály, rozcestníky, boží
   muka, rozhledny, prameny a vodopády a u značených tras jejich jména. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
