@@ -1485,6 +1485,7 @@ public class JMapyPopupTest {
 			final int nadpis = radek.applyAsInt(JMapyPopup.MIMO_EVROPU);
 			Assert.assertTrue(radek.applyAsInt("Česko") < nadpis);
 			Assert.assertTrue(radek.applyAsInt("Rakousko") < nadpis);
+			Assert.assertEquals("soubor uživatele jen jednou", 1, labels(slozka).stream().filter(k -> "moje.map".equals(k.getText())).count());
 			Assert.assertTrue("soubor uživatele nad nadpisem", radek.applyAsInt("moje.map") < nadpis);
 			Assert.assertTrue(nadpis < radek.applyAsInt("Egypt"));
 			Assert.assertTrue(jeVidet(nadpisy.get(0)));
