@@ -104,4 +104,17 @@ public class JPopisekVyletuTest {
 			Assert.assertNull(popup.viditelny());
 		});
 	}
+
+	@Test
+	public void sOtevrenymPopupemBezTooltipu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final java.awt.event.MouseEvent mys = new java.awt.event.MouseEvent(popisek, java.awt.event.MouseEvent.MOUSE_MOVED, 0, 0, 5, 5, 0, false);
+			Assert.assertEquals("Aktivní výlet „Výchozí“", popisek.getToolTipText(mys));
+			popisek.ukaz();
+			Assert.assertNotNull(popisek.getPopup().viditelny());
+			Assert.assertNull(popisek.getToolTipText(mys));
+			popisek.zavri();
+			Assert.assertEquals("Aktivní výlet „Výchozí“", popisek.getToolTipText(mys));
+		});
+	}
 }

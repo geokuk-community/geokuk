@@ -165,6 +165,11 @@ public class PopupNadBlokem {
 		return obsahPopupu;
 	}
 
+	/** Popup je otevřený, nebo se otevře, až na cíli myš vydrží. */
+	public boolean otevira(final JComponent obsah) {
+		return obsahPopupu == obsah || cekajici == obsah;
+	}
+
 	/** Myš vjela na cíl: popup se otevře nebo přepne, až na něm vydrží. */
 	public void naCil(final JComponent obsah, final Runnable ukazani, final long ted) {
 		if (obsahPopupu == obsah) {

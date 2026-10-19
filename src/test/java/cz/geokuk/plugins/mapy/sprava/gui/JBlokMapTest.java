@@ -210,4 +210,68 @@ public class JBlokMapTest {
 			Assert.assertEquals("šířka bloku se nemění", sirka, blok.getPreferredSize().width);
 		});
 	}
+
+	/** Tooltip bloku by překryl Zdroje; při otevírání popupu (najetí myší) se neukazuje, po odjetí zase ano. */
+	@Test
+	public void priOtevireniPopupuBezTooltipu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			blok.obnov(Collections.singletonList(RadekMapy.katalogova("at", "Rakousko", RadekMapy.Stav.STAHUJE).velikost(1000).stazeno(500).build()));
+			final java.awt.event.MouseEvent mys = new java.awt.event.MouseEvent(blok, java.awt.event.MouseEvent.MOUSE_MOVED, 0, 0, 5, 5, 0, false);
+			Assert.assertEquals("Stahuje se mapa Rakousko.", blok.getToolTipText(mys));
+			blok.dispatchEvent(new java.awt.event.MouseEvent(blok, java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 5, 5, 0, false));
+			Assert.assertNull(blok.getToolTipText(mys));
+			blok.dispatchEvent(new java.awt.event.MouseEvent(blok, java.awt.event.MouseEvent.MOUSE_EXITED, 0, 0, -5, -5, 0, false));
+			Assert.assertEquals("Stahuje se mapa Rakousko.", blok.getToolTipText(mys));
+			blok.removeNotify(); // zastaví hlídání myši, bez displeje nejde zjistit její polohu
+		});
+	}
+
+	/** Popup se otevře za 150 ms, tooltip by přišel později: s otevřeným popupem se neukazuje. */
+	@Test(timeout = 30000)
+	public void sOtevrenymPopupemBezTooltipu() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final File slozka = tmp.newFolder("prazdna");
+		final JFrame okno = new JFrame();
+		final JBlokMap[] blok = new JBlokMap[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				blok[0] = new JBlokMap();
+				blok[0].setZdrojSlozky(() -> slozka);
+				blok[0].cteniSlozky = f -> veSlozce(null);
+				final JPanel lista = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+				lista.add(blok[0]);
+				okno.add(lista, java.awt.BorderLayout.SOUTH);
+				okno.setBounds(0, 0, 1300, 850);
+				okno.setVisible(true);
+			});
+			final java.awt.event.MouseEvent[] mys = new java.awt.event.MouseEvent[1];
+			final long konec = System.currentTimeMillis() + 10_000;
+			boolean videt = false;
+			while (!videt && System.currentTimeMillis() < konec) {
+				final boolean[] v = new boolean[1];
+				SwingUtilities.invokeAndWait(() -> {
+					if (blok[0].isShowing()) {
+						mys[0] = new java.awt.event.MouseEvent(blok[0], java.awt.event.MouseEvent.MOUSE_MOVED, 0, 0, 5, 5, 0, false);
+						Assert.assertNotNull("zavřený popup: tooltip je", blok[0].getToolTipText(mys[0]));
+						blok[0].ukaz();
+					}
+					v[0] = blok[0].getObsah().isShowing();
+				});
+				videt = v[0];
+				Thread.sleep(50);
+			}
+			Assert.assertTrue(videt);
+			SwingUtilities.invokeAndWait(() -> {
+				Assert.assertNull(blok[0].getToolTipText(mys[0]));
+				blok[0].zavri();
+				Assert.assertNotNull(blok[0].getToolTipText(mys[0]));
+			});
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				blok[0].zavri();
+				okno.dispose();
+			});
+		}
+	}
 }

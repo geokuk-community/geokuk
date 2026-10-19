@@ -64,6 +64,12 @@ public class JPopisekVyletu extends JLabel {
 		}
 	}
 
+	/** Tooltip by překryl sousední bloky a jméno je v popupu celé. */
+	@Override
+	public String getToolTipText(final MouseEvent e) {
+		return popup.otevira(obsah) ? null : super.getToolTipText(e);
+	}
+
 	/** Otevře popup s aktuálním seznamem výletů. */
 	public void ukaz() {
 		if (popup.viditelny() == obsah) {
