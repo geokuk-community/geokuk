@@ -123,14 +123,16 @@ public class BezpecnyZapisTest {
 	}
 
 	/** Přesun, který prvních několik pokusů selže, jako když cíl ve Windows drží jiný proces. */
-	private static AtomicInteger podvrhniPresun(final int selhani) {
+	private AtomicInteger podvrhniPresun(final int selhani) {
 		return podvrhniPresun(selhani, cil -> new AccessDeniedException(cil.toString()));
 	}
 
-	private static AtomicInteger podvrhniPresun(final int selhani, final java.util.function.Function<java.nio.file.Path, IOException> chyba) {
+	private AtomicInteger podvrhniPresun(final int selhani, final java.util.function.Function<java.nio.file.Path, IOException> chyba) {
 		final AtomicInteger pokusu = new AtomicInteger();
+		final java.nio.file.Path koren = tmp.getRoot().toPath();
 		BezpecnyZapis.presun = (zdroj, cil, volby) -> {
-			if (pokusu.incrementAndGet() <= selhani) {
+			// Přesuny jiných souborů (zápis nastavení z jiného vlákna) se nepočítají.
+			if (cil.startsWith(koren) && pokusu.incrementAndGet() <= selhani) {
 				throw chyba.apply(cil);
 			}
 			Files.move(zdroj, cil, volby);
