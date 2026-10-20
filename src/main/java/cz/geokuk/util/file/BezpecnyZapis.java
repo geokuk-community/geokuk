@@ -67,9 +67,9 @@ public final class BezpecnyZapis {
 			try {
 				prejmenujJednou(zdroj.toPath(), cil.toPath());
 				return;
-			} catch (final AccessDeniedException e) {
-				// Ve Windows cíl chvíli drží jiný proces (antivir, indexace), přístup se brzy uvolní.
-				if (pokus >= POKUSU_PREJMENOVANI) {
+			} catch (final FileSystemException e) {
+				// Ve Windows cíl chvíli drží jiný proces (antivir, indexace): odepřený přístup nebo porušení sdílení se brzy uvolní.
+				if (e instanceof NoSuchFileException || pokus >= POKUSU_PREJMENOVANI) {
 					throw e;
 				}
 				try {

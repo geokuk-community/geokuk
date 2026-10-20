@@ -124,10 +124,14 @@ public class BezpecnyZapisTest {
 
 	/** Přesun, který prvních několik pokusů selže, jako když cíl ve Windows drží jiný proces. */
 	private static AtomicInteger podvrhniPresun(final int selhani) {
+		return podvrhniPresun(selhani, cil -> new AccessDeniedException(cil.toString()));
+	}
+
+	private static AtomicInteger podvrhniPresun(final int selhani, final java.util.function.Function<java.nio.file.Path, IOException> chyba) {
 		final AtomicInteger pokusu = new AtomicInteger();
 		BezpecnyZapis.presun = (zdroj, cil, volby) -> {
 			if (pokusu.incrementAndGet() <= selhani) {
-				throw new AccessDeniedException(cil.toString());
+				throw chyba.apply(cil);
 			}
 			Files.move(zdroj, cil, volby);
 		};
@@ -149,7 +153,18 @@ public class BezpecnyZapisTest {
 		Assert.assertEquals(1, tmp.getRoot().list().length);
 	}
 
+	/** Ve Windows hlásí soubor držený jiným procesem obecnou FileSystemException (porušení sdílení), ne AccessDeniedException. */
 	@Test
+	public void prejmenovaniSeZkusiZnovuPriPoruseniSdileni() throws Exception {
+		final File soubor = tmp.newFile("data.txt");
+		final AtomicInteger pokusu = podvrhniPresun(2,
+				cil -> new java.nio.file.FileSystemException(cil.toString(), null, "The process cannot access the file because it is being used by another process"));
+		BezpecnyZapis.zapisText(soubor, StandardCharsets.UTF_8, wrt -> wrt.print("nové"));
+		Assert.assertEquals(3, pokusu.get());
+		Assert.assertEquals("nové", obsah(soubor));
+	}
+
+	@Test(timeout = 10000)
 	public void trvaleOdepreniPristupuSeOhlasi() throws Exception {
 		final File soubor = tmp.newFile("data.txt");
 		Files.write(soubor.toPath(), "původní".getBytes(StandardCharsets.UTF_8));
