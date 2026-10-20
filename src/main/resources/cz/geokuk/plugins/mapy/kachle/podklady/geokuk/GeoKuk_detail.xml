@@ -1096,7 +1096,7 @@
         </rule>
         <rule e="node" k="natural" v="peak" zoom-min="13">
             <rule e="node" k="name" v="*">
-                <symbol symbol-height="20" id="peak" src="jar:symbols/peak.svg" />
+                <symbol symbol-height="20" display="always" id="peak" src="jar:symbols/peak.svg" />
                 <caption fill="#4E4030" font-size="11" font-style="italic" k="name" position="above"
                     priority="8" stroke="#FFFFFF" stroke-width="1.5" symbol-id="peak" />
                 <caption fill="#7A6A52" font-size="10" font-style="normal" k="ele" position="below"
@@ -1259,7 +1259,7 @@
             </rule>
         </rule>
         <rule e="node" k="highway" v="bus_stop" zoom-min="17">
-            <symbol symbol-height="20" id="bus-stop" src="jar:symbols/transport/bus_stop.svg" />
+            <symbol symbol-height="20" id="bus-stop" position="below_left" src="jar:symbols/transport/bus_stop.svg" />
             <rule e="any" k="*" v="*" zoom-min="16">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="bus-stop" />
@@ -1445,7 +1445,7 @@
                 <symbol symbol-height="20" src="jar:symbols/transport/parking_private.svg" />
             </rule>
             <rule e="any" k="*" v="*">
-                <symbol symbol-height="20" src="jar:symbols/transport/parking.svg" />
+                <symbol symbol-height="20" position="below_right" src="jar:symbols/transport/parking.svg" />
             </rule>
         </rule>
         <rule e="node" k="highway" v="traffic_signals" zoom-min="17">
@@ -1469,7 +1469,14 @@
                 stroke-width="2.0" symbol-id="attraction" />
         </rule>
         <rule e="any" k="tourism" v="information" zoom-min="16">
-            <symbol symbol-height="18" display="always" src="file:symbols/informace.svg" />
+            <symbol symbol-height="18" display="always" position="above_right" src="file:symbols/informace.svg" />
+        </rule>
+        <!-- informační prvky z vrstvy tourist (v základní mapě je tourism=information až od z17, tabule a mapy jsou už od z13) -->
+        <rule e="node" k="information" v="board" zoom-min="15">
+            <symbol symbol-height="18" display="always" position="above_right" src="file:symbols/informace.svg" />
+        </rule>
+        <rule e="node" k="information" v="map|office|terminal" zoom-min="16">
+            <symbol symbol-height="18" display="always" position="above_right" src="file:symbols/informace.svg" />
         </rule>
         <rule e="any" k="tourism" v="zoo" zoom-min="15">
             <symbol symbol-height="20" src="jar:symbols/tourist/zoo.svg" />
@@ -1694,7 +1701,7 @@
         <symbol symbol-height="20" display="always" src="file:symbols/cross.svg" />
     </rule>
     <rule e="node" k="information" v="guidepost" zoom-min="14">
-        <symbol symbol-height="20" display="always" src="file:symbols/guidepost.svg" />
+        <symbol symbol-height="20" display="always" position="above_left" src="file:symbols/guidepost.svg" />
         <rule e="node" k="*" v="*" zoom-min="17">
             <caption fill="#734A08" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
         </rule>
@@ -1712,50 +1719,56 @@
     </rule>
     <!-- ===== GeoKuk – detail: další body pro orientaci a cestu ke keši (modul připojený za základ) =====
          Ikony: Osmic (https://github.com/gmgeo/osmic, gmgeo a přispěvatelé), CC0. -->
-    <!-- informační tabule: zelená ikona na z15 (od z16 ji kreslí základ) -->
-    <rule e="node" k="information" v="board" zoom-min="15" zoom-max="15">
-        <symbol symbol-height="18" display="always" src="file:symbols/informace.svg" />
-    </rule>
     <!-- posed, krmelec, stůl, ohniště -->
     <rule e="node" k="amenity" v="hunting_stand" zoom-min="17">
-        <symbol symbol-height="20" src="file:symbols/osmic/hunting-stand-18.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/hunting-stand-18.svg" />
     </rule>
     <rule e="node" k="amenity" v="feeding_place" zoom-min="17">
-        <symbol symbol-height="20" src="file:symbols/osmic/game-feeding-16.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/game-feeding-16.svg" />
     </rule>
     <rule e="node" k="leisure" v="picnic_table" zoom-min="17">
-        <symbol symbol-height="20" src="file:symbols/osmic/table-16.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/table-16.svg" />
     </rule>
     <rule e="node" k="leisure" v="firepit" zoom-min="18">
-        <symbol symbol-height="20" src="file:symbols/osmic/fire-18.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/fire-18.svg" />
     </rule>
     <!-- zastávka a parkoviště (z16) o zoom dřív než v základu (z17) (příjezd ke keši) -->
     <rule e="node" k="highway" v="bus_stop" zoom-min="16" zoom-max="16">
-        <symbol symbol-height="20" src="file:symbols/osmic/bus-16.svg" />
+        <symbol symbol-height="20" position="below_left" src="file:symbols/osmic/bus-16.svg" />
     </rule>
     <rule e="any" k="amenity" v="parking" zoom-min="16" zoom-max="16">
         <rule e="any" k="access" v="~|yes|public|customers|permissive">
-            <symbol symbol-height="20" src="file:symbols/osmic/parking-car-18.svg" />
+            <symbol symbol-height="20" position="below_right" src="file:symbols/osmic/parking-car-18.svg" />
         </rule>
     </rule>
     <!-- hospoda u stezky o zoom dřív, pamětní místo o zoom dřív -->
     <rule e="any" k="amenity" v="pub" zoom-min="17" zoom-max="17">
-        <symbol symbol-height="20" src="file:symbols/osmic/pub-16.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/pub-16.svg" />
     </rule>
     <rule e="any" k="historic" v="memorial" zoom-min="18" zoom-max="18">
-        <symbol symbol-height="20" src="file:symbols/osmic/memorial-18.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/memorial-18.svg" />
+    </rule>
+    <!-- orientační body v terénu: kameny, skalky a umělecká díla (data vrstvy tourist od z14 a z13) -->
+    <rule e="node" k="natural" v="stone" zoom-min="17">
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/stone-18.svg" />
+    </rule>
+    <rule e="node" k="natural" v="rock" zoom-min="17">
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/rock-16.svg" />
+    </rule>
+    <rule e="node" k="tourism" v="artwork" zoom-min="17">
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/artwork-16.svg" />
     </rule>
     <!-- důlní, vojenské a technické orientační objekty -->
-    <rule e="node" k="man_made" v="adit|mineshaft" zoom-min="16">
-        <symbol symbol-height="20" src="file:symbols/osmic/adit-16.svg" />
+    <rule e="node" k="man_made" v="adit|mineshaft" zoom-min="17">
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/adit-16.svg" />
     </rule>
     <rule e="any" k="military|building" v="bunker" zoom-min="16">
-        <symbol symbol-height="20" src="file:symbols/osmic/pillbox-16.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/pillbox-16.svg" />
     </rule>
     <rule e="any" k="man_made" v="water_tower" zoom-min="16">
-        <symbol symbol-height="20" src="file:symbols/osmic/water-tower-16.svg" />
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/water-tower-16.svg" />
     </rule>
-    <rule e="node" k="man_made" v="mast" zoom-min="16">
-        <symbol symbol-height="20" src="file:symbols/osmic/mast-16.svg" />
+    <rule e="node" k="man_made" v="mast" zoom-min="17">
+        <symbol symbol-height="20" display="always" src="file:symbols/osmic/mast-16.svg" />
     </rule>
 </rendertheme>

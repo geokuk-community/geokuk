@@ -14,12 +14,14 @@
   skály světlejší, vesnice v přehledu výraznějším písmem a hrady se
   v podrobnějších měřítkách nepřekrývají s okolím. Rozcestníky, zastávky
   a parkoviště jsou vidět o měřítko dřív, pole mají jemnější tón a názvy toků
-  se ukazují dřív. Vrstevnice jsou hnědší a jejich tloušťka se řídí měřítkem,
-  popisky hlavních vrstevnic se ukazují dřív. Ikony mají jednotnou velikost
-  a informace zelenou ikonu.
+  se ukazují dřív. Vrstevnice jsou hnědooranžové, odlišné od cest, a jejich
+  tloušťka se řídí měřítkem; popisky hlavních vrstevnic se ukazují dřív.
+  Ikony bodů mají jednotnou velikost a nepřekrývají se navzájem; informace
+  má zelenou ikonu, vidět je i u informačních tabulí.
 - V Mapy > Téma offline mapy je nová varianta GeoKuk – detail: navíc
-  parkoviště, zastávky, posedy, informační tabule, štoly, bunkry, vodárny
-  a vysílače, vše až ve větších měřítkách. Ikony jsou z projektu Osmic (CC0).
+  parkoviště, zastávky, posedy, informační tabule, štoly a šachty, bunkry,
+  vodárny, vysílače, kameny, skalky a umělecká díla, vše až ve větších
+  měřítkách. Ikony jsou z projektu Osmic (CC0).
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
   nečitelné soubory), odkazem, který složku offline map otevře ve správci
