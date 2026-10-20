@@ -1,7 +1,10 @@
 package cz.geokuk.plugins.kesoid.detail;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import javax.swing.*;
@@ -12,6 +15,7 @@ import org.mockito.Mockito;
 
 import cz.geokuk.core.lookandfeel.*;
 import cz.geokuk.core.program.Akce;
+import cz.geokuk.plugins.kesoid.EKesVztah;
 import cz.geokuk.plugins.kesoid.kind.KesoidPlugin;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.kind.kes.JKesDetail;
@@ -55,6 +59,41 @@ public class CitelneBarvyDetailuTest {
 		Assert.assertTrue(zelena.toString(), JCitelnyPopisek.kontrast(zelena, new Color(238, 238, 238)) >= JCitelnyPopisek.MIN_KONTRAST);
 		final Color naTmave = JCitelnyPopisek.citelna(Color.RED, new Color(40, 40, 40));
 		Assert.assertTrue(naTmave.toString(), naTmave.getRed() > 200 && JCitelnyPopisek.kontrast(naTmave, new Color(40, 40, 40)) >= JCitelnyPopisek.MIN_KONTRAST);
+	}
+
+	/** Šipka a paprsky ikony vlastní keše (nad nápisem) mají na světlých pozadích vzhledů obrys s kontrastem aspoň 3:1. */
+	@Test
+	public void ikonaVlastniKeseMaKontrastniObrys() throws Exception {
+		final Method vztah = JKesoidDetailContainer.class.getDeclaredMethod("vztah", EKesVztah.class);
+		vztah.setAccessible(true);
+		final Icon ikona = (Icon) vztah.invoke(null, EKesVztah.OWN);
+		final BufferedImage img = new BufferedImage(ikona.getIconWidth(), ikona.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = img.createGraphics();
+		ikona.paintIcon(null, g, 0, 0);
+		g.dispose();
+		final int bezNapisu = img.getHeight() - 10;
+		for (final Color pozadi : new Color[] { new Color(238, 238, 238), new Color(204, 204, 204), new Color(214, 217, 223), Color.WHITE }) {
+			int okraj = 0;
+			int slabych = 0;
+			for (int y = 0; y < bezNapisu; y++) {
+				for (int x = 0; x < img.getWidth(); x++) {
+					if (alfa(img, x, y) >= 128 && (alfa(img, x + 1, y) < 128 || alfa(img, x - 1, y) < 128 || alfa(img, x, y + 1) < 128 || alfa(img, x, y - 1) < 128)) {
+						okraj++;
+						if (JCitelnyPopisek.kontrast(new Color(img.getRGB(x, y)), pozadi) < 3) {
+							slabych++;
+						}
+					}
+				}
+			}
+			Assert.assertTrue("Na pozadí " + pozadi + " splývá " + slabych + " z " + okraj + " pixelů obrysu", slabych * 20 <= okraj);
+		}
+	}
+
+	private static int alfa(final BufferedImage img, final int x, final int y) {
+		if (x < 0 || y < 0 || x >= img.getWidth() || y >= img.getHeight()) {
+			return 0;
+		}
+		return img.getRGB(x, y) >>> 24;
 	}
 
 	private static void over(final String vzhled, final List<String> chyby) throws Exception {

@@ -105,7 +105,7 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		case FOUND:
 			return ImageLoader.seekResIcon("kesvztah/found.gif");
 		case OWN:
-			return ImageLoader.seekResIcon("kesvztah/own.gif");
+			return ImageLoader.seekResIcon("kesvztah/own.png");
 		case NORMAL:
 			return null;
 		case NOT:
