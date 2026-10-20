@@ -9,6 +9,10 @@
   muka, rozhledny, prameny a vodopády a u značených tras jejich jména. Platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte
   jiné; původní téma je tam jako Mapsforge (původní). Dlaždice v cache se
   jednou vykreslí znovu.
+- Téma GeoKuk má přehlednější vzhled: les v přehledu výraznější, stínování
+  terénu v podrobných měřítkách jemnější, cyklotrasy tenčí a průhlednější,
+  skály světlejší, vesnice v přehledu výraznějším písmem a hrady se
+  v podrobnějších měřítkách nepřekrývají s okolím.
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
   nečitelné soubory), odkazem, který složku offline map otevře ve správci
