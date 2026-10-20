@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OpensakDbLoader extends Nacitac0 {
 
 	/** Nejvyšší verze schématu ({@code PRAGMA user_version}), se kterou je načítání ověřené. */
-	static final int OVERENA_VERZE_SCHEMATU = 25;
+	static final int OVERENA_VERZE_SCHEMATU = 26;
 
 	private static final int PROGRESS_VAHA_CACHES = 1;
 	private static final int PROGRESS_VAHA_WAYPOINTS = 1;
