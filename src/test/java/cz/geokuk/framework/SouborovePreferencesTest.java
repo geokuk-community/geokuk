@@ -6,6 +6,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -106,5 +107,34 @@ public class SouborovePreferencesTest {
 		assertThat(nactene.node("geokuk").get("bezne", null)).isEqualTo("ěščř \uD83D\uDE00 tab\tnl\ncr\r");
 		assertThat(nactene.node("geokuk").get("klic", null)).isEqualTo("k");
 		assertThat(nactene.node("geokuk").node("uzel").get("u", null)).isEqualTo("v");
+	}
+
+	/** Odložený zápis na pozadí a okamžitý zápis při ukončení se nesmějí přetahovat o soubor. */
+	@Test
+	public void soubeznyZapisNechaPlatnySouborSPosledniHodnotou() throws Exception {
+		final File soubor = new File(tmp.getRoot(), "soubeh.xml");
+		final SouborovePreferences pref = SouborovePreferences.prazdne(soubor);
+		final int opakovani = 200;
+		final AtomicReference<Throwable> chyba = new AtomicReference<>();
+		final Thread casovac = new Thread(() -> {
+			try {
+				for (int i = 0; i < opakovani; i++) {
+					pref.put("casovac", Integer.toString(i));
+					pref.flush();
+				}
+			} catch (final Throwable e) {
+				chyba.compareAndSet(null, e);
+			}
+		});
+		casovac.start();
+		for (int i = 0; i < opakovani; i++) {
+			pref.put("hned", Integer.toString(i));
+			pref.ulozHned();
+		}
+		casovac.join();
+		assertThat(chyba.get()).isNull();
+		final SouborovePreferences nactene = SouborovePreferences.nacti(soubor);
+		assertThat(nactene.get("casovac", null)).isEqualTo(Integer.toString(opakovani - 1));
+		assertThat(nactene.get("hned", null)).isEqualTo(Integer.toString(opakovani - 1));
 	}
 }

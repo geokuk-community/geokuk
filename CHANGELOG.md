@@ -178,6 +178,8 @@
 - Panel Offline mapy má výšku podle obsahu (s jednou mapou ve složce je
   nízký) a za otevření ji mění jen sbalení nebo rozbalení; při stahování se
   nezvětšuje, posuvníky drží tytéž řádky a po sbalení se panel nezavře.
+- Nastavení se při ukončení nebo restartu uloží spolehlivě i při souběžném
+  zápisu na pozadí.
 
 Obsahuje i všechny opravy z 6.4.2.
 
