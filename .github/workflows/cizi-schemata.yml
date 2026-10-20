@@ -30,6 +30,11 @@ jobs:
           for vetev in main beta; do
             git clone -q --depth 1 -b "$vetev" https://github.com/OpenSAK-Org/OpenSAK.git "opensak-$vetev"
             python3 .github/skripty/opensak_schema.py "opensak-$vetev" > "schema-$vetev.txt"
+            # Větev se starší verzí a stejnými sloupci (main před vydáním bety) je v pořádku.
+            if [ "$(tail -n +2 "schema-$vetev.txt")" = "$(tail -n +2 src/test/resources/opensak-schema.txt)" ] \
+                && [ "$(head -1 "schema-$vetev.txt" | cut -d' ' -f2)" -le "$(head -1 src/test/resources/opensak-schema.txt | cut -d' ' -f2)" ]; then
+              continue
+            fi
             if ! diff -u src/test/resources/opensak-schema.txt "schema-$vetev.txt" > "diff-$vetev.txt"; then
               rozdil=1
               {
