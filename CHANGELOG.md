@@ -13,8 +13,10 @@
   terénu v podrobných měřítkách jemnější, cyklotrasy tenčí a průhlednější,
   skály světlejší, vesnice v přehledu výraznějším písmem a hrady se
   v podrobnějších měřítkách nepřekrývají s okolím. Rozcestníky, zastávky
-  a parkoviště jsou vidět o měřítko dřív, pole mají jemnější tón, popisky
-  vrstevnic a názvy toků se ukazují dřív a informace mají malou zelenou ikonu.
+  a parkoviště jsou vidět o měřítko dřív, pole mají jemnější tón a názvy toků
+  se ukazují dřív. Vrstevnice jsou hnědší a jejich tloušťka se řídí měřítkem,
+  popisky hlavních vrstevnic se ukazují dřív. Ikony mají jednotnou velikost
+  a informace zelenou ikonu.
 - V Mapy > Téma offline mapy je nová varianta GeoKuk – detail: navíc
   parkoviště, zastávky, posedy, informační tabule, štoly, bunkry, vodárny
   a vysílače, vše až ve větších měřítkách. Ikony jsou z projektu Osmic (CC0).
