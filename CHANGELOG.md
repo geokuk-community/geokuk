@@ -193,6 +193,8 @@
   zápisu na pozadí.
 - Domácí souřadnice z GeoGetu (geohome.ini) se načtou i ze souboru v UTF-8
   se značkou BOM; GeoKuk ho už nehlásí jako poškozený.
+- V detailu keše jsou datum nálezu a kód keše dobře čitelné: zelená a červená
+  se podle vzhledu ztmaví nebo zesvětlí, aby se neztrácely v pozadí.
 
 Obsahuje i všechny opravy z 6.4.2.
 

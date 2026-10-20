@@ -215,7 +215,7 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 	}
 
 	private void initComponents() {
-		jKesoidCode = new JLabel();
+		jKesoidCode = new JCitelnyPopisek(Color.RED);
 		jKesoidNazev = new JLabel();
 		jKesoidSym = new JLabel();
 
@@ -252,7 +252,6 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		vyletNevimButton.setText(null);
 		vyletNevimButton.setMnemonic(0);
 
-		jKesoidCode.setForeground(Color.RED);
 		jKesoidNazev.setFont(jKesoidNazev.getFont().deriveFont(Font.BOLD));
 		jKesoidSym.setFont(jKesoidSym.getFont().deriveFont(Font.ITALIC));
 		final Box hlav = Box.createVerticalBox();
