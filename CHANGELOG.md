@@ -80,7 +80,7 @@
   aspoň 4 dílky a na konci délku celé lišty s jednotkou (0 1 2 3 4 km).
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
-- Načítání databází OpenSAKu je ověřené i se schématem verze 25.
+- Načítání databází OpenSAKu je ověřené i se schématem verze 26.
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
