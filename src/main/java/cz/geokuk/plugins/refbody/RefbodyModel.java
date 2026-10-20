@@ -14,6 +14,7 @@ import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.TextovySoubor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -76,8 +77,8 @@ public class RefbodyModel extends Model0 {
 		final List<RefBod> list = new ArrayList<>();
 		try {
 			if (file.canRead()) {
-				// TODO prozkoumat, zda opravdu geogetí data jsou v tomto kódování
-				try (FileInputStream fis = new FileInputStream(file); BufferedReader br = new BufferedReader(new InputStreamReader(fis, "CP1250"))) {
+				// GeoGet ukládá soubor v cp1250 i v UTF-8 se značkou BOM.
+				try (BufferedReader br = new BufferedReader(new StringReader(TextovySoubor.nacti(file)))) {
 					String line;
 					while ((line = br.readLine()) != null) {
 						final String[] aa = line.split(" +", 3);

@@ -191,6 +191,8 @@
   nezvětšuje, posuvníky drží tytéž řádky a po sbalení se panel nezavře.
 - Nastavení se při ukončení nebo restartu uloží spolehlivě i při souběžném
   zápisu na pozadí.
+- Domácí souřadnice z GeoGetu (geohome.ini) se načtou i ze souboru v UTF-8
+  se značkou BOM; GeoKuk ho už nehlásí jako poškozený.
 
 Obsahuje i všechny opravy z 6.4.2.
 
