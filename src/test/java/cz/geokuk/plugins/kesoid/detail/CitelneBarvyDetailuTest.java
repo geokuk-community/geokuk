@@ -50,7 +50,7 @@ public class CitelneBarvyDetailuTest {
 
 	@Test
 	public void odstinSeZachovaJenKdyzJeCitelny() {
-		Assert.assertEquals(Color.BLACK, JCitelnyPopisek.citelna(Color.BLACK, Color.WHITE));
+		Assert.assertEquals(Color.GREEN, JCitelnyPopisek.citelna(Color.GREEN, Color.BLACK));
 		final Color zelena = JCitelnyPopisek.citelna(Color.GREEN, new Color(238, 238, 238));
 		Assert.assertTrue(zelena.toString(), JCitelnyPopisek.kontrast(zelena, new Color(238, 238, 238)) >= JCitelnyPopisek.MIN_KONTRAST);
 		final Color naTmave = JCitelnyPopisek.citelna(Color.RED, new Color(40, 40, 40));
