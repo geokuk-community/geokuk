@@ -120,6 +120,8 @@
   i skály, rozcestníky, boží muka, rozhledny a vodopády). Ta stačí
   sama, bez offline mapy, třeba přes ortofoto nebo jiný online podklad. Nad
   offline mapou s tématem paws, které trasy kreslí samo, se překryv nekreslí.
+- Překryv Turistické a cyklotrasy: cyklotrasy tenčí a průhledné zelené, skály
+  světlejší s jemným obrysem a rozcestníky už o měřítko dřív.
 - Úseky cesty mohou vést po cestách a pěšinách z offline mapy (pěší trasa
   hledaná bez internetu). Nové úseky vedou po cestě, kde je offline mapa,
   jinde rovně; přepínač Nové úseky je v panelu cesty. Úsek jde přepnout
