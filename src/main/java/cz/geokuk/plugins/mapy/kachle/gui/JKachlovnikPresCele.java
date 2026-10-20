@@ -188,6 +188,9 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	List<String> plnaAtribuce() {
 		final List<String> v = new ArrayList<>();
 		v.add(textAtribuce());
+		if (getKachloType() != null && getKachloType().isOffline() && getKachleModel() != null && getKachleModel().getTemaOfflineMapy().getAtribuce() != null) {
+			v.add(getKachleModel().getTemaOfflineMapy().getAtribuce());
+		}
 		if (prekryvTrasPotrebujeAtribuci()) {
 			v.add(JKachlovnikTras.ATRIBUCE);
 		}

@@ -13,6 +13,9 @@
   terénu v podrobných měřítkách jemnější, cyklotrasy tenčí a průhlednější,
   skály světlejší, vesnice v přehledu výraznějším písmem a hrady se
   v podrobnějších měřítkách nepřekrývají s okolím.
+- V Mapy > Téma offline mapy je nová varianta GeoKuk – detail: navíc
+  parkoviště, zastávky, posedy, informační tabule, štoly, bunkry, vodárny
+  a vysílače, vše až ve větších měřítkách. Ikony jsou z projektu Osmic (CC0).
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
   nečitelné soubory), odkazem, který složku offline map otevře ve správci

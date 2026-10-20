@@ -63,6 +63,7 @@ public class JTemaOfflineMapyMenuTest {
 			menu[0] = new JTemaOfflineMapyMenu(model);
 			menu[0].sestav();
 			Assert.assertTrue("zipy se na EDT neotvírají", polozky(menu[0]).contains("Načítám témata ze složky…"));
+			Assert.assertEquals("GeoKuk – detail", polozky(menu[0]).get(1));
 			menu[0].nactiTemataNaPozadi();
 		});
 		final boolean[] nacteno = new boolean[1];
