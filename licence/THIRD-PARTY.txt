@@ -46,7 +46,8 @@ Copyright viz výše). Úpravy provedl GeoKuk; upravený soubor zůstává pod
 GNU LGPL 3 nebo novější a je součástí GeoKuku, který se šíří pod GNU GPL 3.
 Varianta GeoKuk – detail (geokuk/GeoKuk_detail.xml) je pod stejnou licencí.
 
-Ikony ve složce geokuk/symbols/osmic jsou z projektu Osmic
+Ikony ve složce geokuk/symbols/osmic a ikona geokuk/symbols/informace.svg,
+které používá téma GeoKuk i varianta GeoKuk – detail, jsou z projektu Osmic
 (https://github.com/gmgeo/osmic, gmgeo a přispěvatelé), volné dílo
 pod CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/).
 
