@@ -33,6 +33,8 @@ public final class SouborovePreferences extends AbstractPreferences {
 	private static final class Uloziste {
 		private final File soubor;
 		private final SouborovePreferences koren;
+		// Vlastní zámek: držet při zápisu monitor úložiště by zablokovalo put() a hrozilo uváznutí se zámky uzlů.
+		private final Object zapisuje = new Object();
 		private Timer casovac;
 		private boolean zmeneno;
 		private boolean naplanovano;
@@ -68,27 +70,29 @@ public final class SouborovePreferences extends AbstractPreferences {
 		}
 
 		void uloz(final boolean vzdy) throws IOException {
-			synchronized (this) {
-				if (!zmeneno && !vzdy) {
-					return;
-				}
-				zmeneno = false;
-			}
-			try {
-				final Document doc = koren.doDokumentu();
-				BezpecnyZapis.zapis(soubor, out -> zapisDokument(doc, out));
+			synchronized (zapisuje) {
 				synchronized (this) {
-					chybaOhlasena = false;
-				}
-			} catch (final IOException | RuntimeException e) {
-				synchronized (this) {
-					zmeneno = true;
-					if (!chybaOhlasena) {
-						chybaOhlasena = true;
-						log.warn("Nastavení nelze zapsat do {}", soubor, e);
+					if (!zmeneno && !vzdy) {
+						return;
 					}
+					zmeneno = false;
 				}
-				throw e instanceof IOException ? (IOException) e : new IOException(e);
+				try {
+					final Document doc = koren.doDokumentu();
+					BezpecnyZapis.zapis(soubor, out -> zapisDokument(doc, out));
+					synchronized (this) {
+						chybaOhlasena = false;
+					}
+				} catch (final IOException | RuntimeException e) {
+					synchronized (this) {
+						zmeneno = true;
+						if (!chybaOhlasena) {
+							chybaOhlasena = true;
+							log.warn("Nastavení nelze zapsat do {}", soubor, e);
+						}
+					}
+					throw e instanceof IOException ? (IOException) e : new IOException(e);
+				}
 			}
 		}
 	}

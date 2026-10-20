@@ -275,7 +275,12 @@ try {
     Copy-Item $jar "$jar.new"
     Volej $o POST "/restart" | Out-Null
     $stary = Get-Process -Id $beh.Proces.ProcessId -ErrorAction SilentlyContinue
-    Ocekavej ((-not $stary) -or $stary.WaitForExit(30000)) "původní GeoKuk po restartu skončil"
+    $skoncil = (-not $stary) -or $stary.WaitForExit(30000)
+    Ocekavej $skoncil "původní GeoKuk po restartu skončil: okna $([Okna]::Titulky([uint32]$beh.Proces.ProcessId) -join ', ')"
+    if (-not $skoncil) {
+        Get-Content -Tail 60 -ErrorAction SilentlyContinue (Join-Path $slozka "data\log\geokuk.log")
+        Get-ChildItem -ErrorAction SilentlyContinue (Join-Path $slozka "data\log\chyby") | ForEach-Object Name
+    }
     $novy = Cekej 60 {
         Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe'" | Where-Object { $_.CommandLine -like "*-jar*$jar*" -and $_.ProcessId -ne $beh.Proces.ProcessId }
     }
