@@ -215,6 +215,8 @@
   až ho program pustí.
 - Nová verze ikon vestavěného tématu offline map překreslí dlaždice v cache,
   i když se samotné téma nezměnilo.
+- Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
+  dlaždice; dřív se mohla část ztratit.
 
 Obsahuje i všechny opravy z 6.4.3.
 
