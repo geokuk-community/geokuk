@@ -96,4 +96,32 @@ public class JCestySlidePrekreslovaniTest {
 			Assert.assertTrue(r.toString(), r.width < OKNO.width && r.height < OKNO.height);
 		}
 	}
+
+	/** Dělicí bod se nad úsekem posouvá s myší; každý posun po témže úseku se musí překreslit. */
+	@Test
+	public void posunPoTemzeUsekuSePrekresli() {
+		slide.onEvent(new CestyChangedEvent(vytvorDoc(), null));
+		mys(new Wgs(50.005, 14.005));
+		zaznam.oblasti.clear();
+		mys(new Wgs(50.0051, 14.0051));
+		Assert.assertFalse("posun po úseku", zaznam.oblasti.isEmpty());
+	}
+
+	/** Když myš od cesty odjede, zvýraznění musí zmizet: překreslí se celá oblast cesty. */
+	@Test
+	public void odjezdOdCestySmazeZvyrazneni() {
+		slide.onEvent(new CestyChangedEvent(vytvorDoc(), null));
+		mys(new Wgs(50.005, 14.005));
+		zaznam.oblasti.clear();
+		mys(new Wgs(50.005, 14.03));
+		final Point a = slide.getSoord().transform(new Wgs(50.00, 14.00).toMou());
+		final Point b = slide.getSoord().transform(new Wgs(50.01, 14.01).toMou());
+		Rectangle vse = null;
+		for (final Rectangle r : zaznam.oblasti) {
+			vse = vse == null ? new Rectangle(r) : vse.union(r);
+		}
+		Assert.assertNotNull("odjezd od cesty", vse);
+		Assert.assertTrue(vse + " má obsahovat " + a, vse.contains(a));
+		Assert.assertTrue(vse + " má obsahovat " + b, vse.contains(b));
+	}
 }
