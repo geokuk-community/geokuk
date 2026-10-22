@@ -208,6 +208,9 @@
 - Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
+- Po změně nicku se keše z databáze, kterou zrovna drží GeoGet nebo GSAK,
+  neukazují jako nalezené či vlastní podle starého nicku; načtou se znovu,
+  až ji program pustí.
 
 Obsahuje i všechny opravy z 6.4.3.
 
