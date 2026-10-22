@@ -55,4 +55,30 @@ public class JKachleZapecKrytiTest {
 		Assert.assertSame(puvodni, JKachle.zapecKryti(puvodni, 1f));
 		Assert.assertNull(JKachle.zapecKryti(null, 0.4f));
 	}
+
+	/** Reliéf ČÚZK se na mapě kreslí s krytím 0,4: nesmí být ani plně neprůhledný, ani zprůhledněný dvakrát. */
+	@Test
+	public void dlazdiceReliefuSeKresliSeKrytim() {
+		final cz.geokuk.plugins.mapy.kachle.data.Ka ka = new cz.geokuk.plugins.mapy.kachle.data.Ka(
+				cz.geokuk.plugins.mapy.kachle.data.KaLoc.ofJZ(new cz.geokuk.core.coordinates.Mou(0x23800000, 0x28100000), 13), cz.geokuk.plugins.mapy.kachle.data.EKaType.RELIEF_CUZK);
+		final JKachle kachle = new JKachle(null, ka);
+		final BufferedImage cervena = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D gc = cervena.createGraphics();
+		gc.setColor(Color.RED);
+		gc.fillRect(0, 0, 256, 256);
+		gc.dispose();
+		kachle.prijmi(new cz.geokuk.plugins.mapy.kachle.podklady.KachloStav(cervena), cz.geokuk.plugins.mapy.kachle.podklady.Priority.KACHLE);
+		kachle.setSize(256, 256);
+		final BufferedImage out = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
+		final Graphics2D g = out.createGraphics();
+		g.setColor(Color.WHITE);
+		g.fillRect(0, 0, 256, 256);
+		kachle.paint(g);
+		g.dispose();
+		final Color px = new Color(out.getRGB(100, 100));
+		Assert.assertEquals(255, px.getRed());
+		// červená s krytím 0,4 přes bílou: zelený a modrý kanál 255 * 0,6 = 153
+		Assert.assertEquals("zelený kanál " + px.getGreen(), 153, px.getGreen(), 3);
+		Assert.assertEquals("modrý kanál " + px.getBlue(), 153, px.getBlue(), 3);
+	}
 }
