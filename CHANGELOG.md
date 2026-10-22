@@ -213,6 +213,8 @@
   a nespadne.
 - Soubor s kešemi, který zrovna drží jiný program, už nehlásí chybu; načte se,
   až ho program pustí.
+- Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
+  dlaždice; dřív se mohla část ztratit.
 
 Obsahuje i všechny opravy z 6.4.3.
 
