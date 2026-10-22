@@ -212,6 +212,9 @@
 - Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
+- Po změně nicku se keše z databáze, kterou zrovna drží GeoGet nebo GSAK,
+  neukazují jako nalezené či vlastní podle starého nicku; načtou se znovu,
+  až ji program pustí.
 - Soubor s kešemi, který zrovna drží jiný program, už nehlásí chybu; načte se,
   až ho program pustí.
 - Nová verze ikon vestavěného tématu offline map překreslí dlaždice v cache,

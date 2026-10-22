@@ -73,7 +73,8 @@ public class MultiNacitac {
 	/** Waypointy zobrazených databází; keše databáze, kterou jiný program zamkne, se z nich převezmou do dalšího výsledku. */
 	private Map<File, List<Wpt>> zobrazeneWpty = Collections.emptyMap();
 	private InformaceOZdrojich zobrazeneInformace;
-	private Genom zobrazenyGenom;
+	/** Genom, nick a parametry, se kterými se načetly zobrazené keše; keše zamčeného zdroje se převezmou jen při stejném kontextu. */
+	private Object zobrazenyKontext;
 
 	private final List<Nacitac0> nacitace = new ArrayList<>();
 	private final KesoidModel kesoidModel;
@@ -290,7 +291,7 @@ public class MultiNacitac {
 		boolean posledniPokus = false;
 		while (true) {
 			cteni = new Cteni(new KesoidImportBuilder(genom, kesoidModel.getGccomNick(), kesoidModel.getProgressModel(), kesoidModel.getKesopidPluginManager()));
-			precti(serazene(list, poradi), kCteni, prevzate, cteni, future, genom, generace);
+			precti(serazene(list, poradi), kCteni, prevzate, cteni, future, kontext, generace);
 			pocetCteni += cteni.zkouseno.size();
 			if (future != null && future.isCancelled()) {
 				ds.nulujLastScaned();
@@ -354,7 +355,7 @@ public class MultiNacitac {
 		zobrazene = nactene;
 		zobrazeneWpty = builder.getWptyPodleZdroje();
 		zobrazeneInformace = bag.getInformaceOZdrojich();
-		zobrazenyGenom = genom;
+		zobrazenyKontext = kontext;
 		return bag;
 	}
 
@@ -391,8 +392,8 @@ public class MultiNacitac {
 		return vysledek;
 	}
 
-	private void precti(final List<KeFile> serazene, final Set<File> kCteni, final Set<SkupinyZdroju.Skupina> prevzate, final Cteni cteni, final Future<?> future, final Genom genom,
-			final int generace) {
+	private void precti(final List<KeFile> serazene, final Set<File> kCteni, final Set<SkupinyZdroju.Skupina> prevzate, final Cteni cteni, final Future<?> future,
+			final Object kontext, final int generace) {
 		final Map<File, SkupinyZdroju.Skupina> skupinaClena = new HashMap<>();
 		for (final SkupinyZdroju.Skupina g : prevzate) {
 			for (final File clen : g.otisky.keySet()) {
@@ -447,7 +448,7 @@ public class MultiNacitac {
 				}
 				if (zobrazene.contains(soubor)) {
 					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
-					if (genom == zobrazenyGenom && !builder.maWaypointyZe(soubor)) {
+					if (kontext.equals(zobrazenyKontext) && !builder.maWaypointyZe(soubor)) {
 						builder.prevezmi(file, zobrazeneWpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
 						cteni.prevzateZamcene.add(soubor);
 					} else {

@@ -43,6 +43,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 	private final List<InformaceOZdrojich> predbezneZdroje = new CopyOnWriteArrayList<>();
 	private final Set<File> vypnute = new HashSet<>();
 	private final Genom genom = new Genom();
+	private volatile GccomNick nick = new GccomNick("Ja", 42);
 
 	@Before
 	public void setUp() throws Exception {
@@ -107,6 +108,22 @@ public class ZamcenaDatabazeOpakovaniTest {
 
 		zapisGpx("c.gpx", "GC3333");
 		Assert.assertEquals("převzaté keše se převezmou i podruhé", set("GC1111", "GC000A", "GC2222", "GC3333"), kody(nacti()));
+	}
+
+	/** Po změně nicku se keše zamčené databáze nepřevezmou se starým stavem „moje/nalezené“; zůstane zobrazené vše, dokud ji program nepustí. */
+	@Test
+	public void poZmeneNickuSeZamcenaNeprevezme() throws Exception {
+		final File a = zalozGeoget("a.db3", "GC000A");
+		start();
+		Assert.assertEquals(set("GC1111", "GC000A"), kody(nacti()));
+
+		final CountDownLatch pustit = zamkni(a);
+		nick = new GccomNick("Jiny", 7);
+		zapisGpx("b.gpx", "GC2222");
+		Assert.assertNull("se starým nickem se nic nepřevezme, zobrazení zůstává", nacti());
+
+		pustit.countDown();
+		Assert.assertEquals(set("GC1111", "GC000A", "GC2222"), kody(nacti()));
 	}
 
 	/** Dvě zobrazené zamčené databáze: uvolněná se načte znovu, i když druhá je pořád zamčená. */
@@ -406,7 +423,7 @@ public class ZamcenaDatabazeOpakovaniTest {
 		final KesoidModel model = new KesoidModel() {
 			@Override
 			public GccomNick getGccomNick() {
-				return new GccomNick("Ja", 42);
+				return nick;
 			}
 
 			@Override
