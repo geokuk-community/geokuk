@@ -69,6 +69,8 @@ public class JPopiskySlide extends JSingleSlide0 {
 		repaint();
 	}
 
+	private final SirkaTextuCache sirkyTextu = new SirkaTextuCache();
+
 	@Override
 	public void paintComponent(final Graphics aG) {
 		if (iIndexator == null) {
@@ -112,7 +114,7 @@ public class JPopiskySlide extends JSingleSlide0 {
 			final String[] popisky = sestavmapa.get(wpt.getKepodr()).sestavPopisek(wpt);
 			int stringWidth = 0;
 			for (final String popisek1 : popisky) {
-				stringWidth = Math.max(fontMetrics.stringWidth(popisek1), stringWidth);
+				stringWidth = Math.max(sirkyTextu.sirka(fontMetrics, popisek1), stringWidth);
 			}
 			g.fillRect(p.x + pose.posuX, p.y + posuny + pose.posuY, stringWidth, height2 * popisky.length);
 
