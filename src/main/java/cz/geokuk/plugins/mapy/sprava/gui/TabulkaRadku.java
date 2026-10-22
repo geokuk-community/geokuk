@@ -19,15 +19,15 @@ final class TabulkaRadku extends JPanel {
 	/** Od kterého sloupce mřížky začínají buňky vrstev; před ním je svislá čárka. */
 	private final int prvniSloupecVrstev;
 
-	/**
-	 * @param rezervaVpravo
-	 *            šířka, o kterou je panel užší než seznam v posuvníku, aby sloupce lícovaly s posuvným seznamem
-	 */
 	/** Tabulka v posuvníku: posuvník si šířku bere sám, rezerva vpravo odpadá. */
 	void bezRezervyVpravo() {
 		setBorder(javax.swing.BorderFactory.createEmptyBorder());
 	}
 
+	/**
+	 * @param rezervaVpravo
+	 *            šířka, o kterou je panel užší než seznam v posuvníku, aby sloupce lícovaly s posuvným seznamem
+	 */
 	TabulkaRadku(final int prvniSloupecVrstev, final int rezervaVpravo) {
 		super(new GridBagLayout());
 		this.prvniSloupecVrstev = prvniSloupecVrstev;
