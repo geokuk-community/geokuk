@@ -2,6 +2,7 @@ package cz.geokuk.plugins.cesty;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.Objects;
 
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
@@ -82,6 +83,9 @@ public class JCestySlide extends JSingleSlide0 {
 	private Mouable pridavanyBod1;
 
 	private Mouable pridavanyBod2;
+
+	/** Obdélník, ve kterém byla naposledy nakreslena přidávací úsečka. */
+	private Rectangle oblastPridavaciUsecky;
 
 	private PoziceModel poziceModel;
 
@@ -336,11 +340,75 @@ public class JCestySlide extends JSingleSlide0 {
 	}
 
 	public void onEvent(final ZmenaSouradnicMysiEvent event) {
+		final Mou puvodniMoucur = moucur;
+		final Bousek0 puvodniBousek = blizkyBousek;
 		moucur = event.moucur;
 		prepocitatBlizkehoBouska();
 		zobrazeniDalky();
-		// LATER-vylet repaintovat jen to, co je potřeba
-		repaint();
+		if (doc == null) {
+			return;
+		}
+		Rectangle oblast = null;
+		if (puvodniBousek != blizkyBousek) {
+			oblast = sjednot(oblast, oblastCesty(puvodniBousek));
+			oblast = sjednot(oblast, oblastCesty(blizkyBousek));
+		} else if (blizkyBousek instanceof Usek && !moucur.equals(puvodniMoucur)) {
+			oblast = sjednot(oblast, oblastCesty(blizkyBousek));
+		}
+		final Rectangle pridavaci = oblastPridavaciUsecky();
+		if (!Objects.equals(pridavaci, oblastPridavaciUsecky)) {
+			oblast = sjednot(sjednot(oblast, oblastPridavaciUsecky), pridavaci);
+			oblastPridavaciUsecky = pridavaci;
+		}
+		if (oblast != null) {
+			repaint(oblast);
+		}
+	}
+
+	private static Rectangle sjednot(final Rectangle a, final Rectangle b) {
+		return a == null ? b : b == null ? a : a.union(b);
+	}
+
+	/** Obdélník, ve kterém se kreslí cesta bouska, včetně okraje; null, když bousek není. */
+	private Rectangle oblastCesty(final Bousek0 bousek) {
+		if (bousek == null) {
+			return null;
+		}
+		final Coord soord = getSoord();
+		Rectangle r = null;
+		for (final Usek usek : bousek.getCesta().getUseky()) {
+			r = rozsir(r, soord.transform(usek.getBvzad().getMou()));
+			r = rozsir(r, soord.transform(usek.getBvpred().getMou()));
+			final java.util.List<Mou> trasa = usek.getTrasa();
+			if (trasa != null) {
+				for (final Mou m : trasa) {
+					r = rozsir(r, soord.transform(m));
+				}
+			}
+		}
+		if (r == null) { // cesta bez úseku, jen osamocený bod
+			r = rozsir(null, soord.transform(bousek instanceof Bod ? ((Bod) bousek).getMou() : moucur));
+		}
+		r.grow(Malovadlo.OKRAJ, Malovadlo.OKRAJ);
+		return r;
+	}
+
+	private Rectangle oblastPridavaciUsecky() {
+		if (pridavanyBod1 == null || pridavanyBod2 == null) {
+			return null;
+		}
+		final Coord soord = getSoord();
+		final Rectangle r = rozsir(rozsir(null, soord.transform(pridavanyBod1.getMou())), soord.transform(pridavanyBod2.getMou()));
+		r.grow(Malovadlo.OKRAJ, Malovadlo.OKRAJ);
+		return r;
+	}
+
+	private static Rectangle rozsir(final Rectangle r, final Point p) {
+		if (r == null) {
+			return new Rectangle(p.x, p.y, 0, 0);
+		}
+		r.add(p);
+		return r;
 	}
 
 	@Override
@@ -516,6 +584,7 @@ public class JCestySlide extends JSingleSlide0 {
 		}
 		pridavanyBod1 = null;
 		pridavanyBod2 = null;
+		oblastPridavaciUsecky = null;
 		cestyModel.setPridavaniBodu(false);
 	}
 
