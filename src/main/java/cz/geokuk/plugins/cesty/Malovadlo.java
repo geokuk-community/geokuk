@@ -293,7 +293,7 @@ public class Malovadlo {
 
 	private static final int SIRKA_CARY_VYBRANE = 6;
 	/** Největší přesah kreslení přes bod: koncová šipka, kolečko startu. */
-	private static final int OKRAJ = 12;
+	static final int OKRAJ = 12;
 	/** Značka bodu vybrané cesty má 8 px. */
 	private static final int ROZESTUP_ZNACEK = 4;
 
