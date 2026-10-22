@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rendertheme xmlns="http://mapsforge.org/renderTheme" version="6" map-background="#f8f8f8">
+<rule e="way" k="highway" v="*"><line stroke="#ff0000" stroke-width="1.0"/></rule>
+</rendertheme>

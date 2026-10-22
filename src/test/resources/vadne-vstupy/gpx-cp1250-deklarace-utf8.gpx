@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/0" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1" version="1.0" creator="vzorek">
+<wpt lat="50.08" lon="14.42"><time>2020-01-01T00:00:00Z</time><name>GC1ABCD</name><desc>luouèkı kùò</desc><sym>Geocache</sym><type>Geocache|Traditional Cache</type>
+<groundspeak:cache id="1" available="True" archived="False"><groundspeak:name>luouèkı kùò úpìl ïábelské ódy</groundspeak:name><groundspeak:placed_by>Šastnı</groundspeak:placed_by><groundspeak:owner id="1">Šastnı</groundspeak:owner><groundspeak:type>Traditional Cache</groundspeak:type><groundspeak:container>Small</groundspeak:container><groundspeak:difficulty>1.5</groundspeak:difficulty><groundspeak:terrain>2</groundspeak:terrain><groundspeak:country>Czech Republic</groundspeak:country><groundspeak:state>Praha</groundspeak:state></groundspeak:cache>
+</wpt>
+</gpx>
