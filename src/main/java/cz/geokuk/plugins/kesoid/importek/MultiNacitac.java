@@ -907,6 +907,9 @@ public class MultiNacitac {
 			} catch (final IOException e852) {
 				e.addSuppressed(e852);
 			}
+			if (Nacitac0.jeDrzenyJinymProgramem(e, file)) {
+				throw new DatabazeJinehoProgramu.Zamcena(file, e);
+			}
 			if (RozepsanySoubor.jeRozepsany(file)) {
 				throw new RozepsanySoubor.Rozepsany(file, e);
 			}
@@ -918,6 +921,7 @@ public class MultiNacitac {
 		final File file = kefile.getFile();
 		if (isZipFile(file)) {
 			try (ZipFile zipFile = otevriZip(file)) {
+				Nacitac0.prectenCely(file);
 				final boolean nacitat = kesoidModel.maSeNacist(kefile);
 				for (final Enumeration<? extends ZipEntry> en = zipFile.entries(); en.hasMoreElements();) {
 					final ZipEntry entry = en.nextElement();

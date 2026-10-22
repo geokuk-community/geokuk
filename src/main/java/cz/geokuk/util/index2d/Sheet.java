@@ -153,6 +153,11 @@ class Sheet<T> extends Node<T> {
 	}
 
 	@Override
+	int count(final BoundingRect rect, final int xx1, final int yy1, final int xx2, final int yy2) {
+		return xx >= rect.xx1 && xx < rect.xx2 && yy >= rect.yy1 && yy < rect.yy2 ? count : 0;
+	}
+
+	@Override
 	boolean tryAdvance(final MySplitIterator<T> splititerator, final Consumer<? super Sheet<T>> action) {
 		if (!(hodnoty instanceof Lst)) {
 			action.accept(this);

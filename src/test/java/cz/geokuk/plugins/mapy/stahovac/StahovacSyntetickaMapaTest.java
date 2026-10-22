@@ -242,8 +242,13 @@ public class StahovacSyntetickaMapaTest {
 		udalost(() -> dialog.onEvent(new VyrezChangedEvent(coord(STRED, MAX - 1))));
 		final Set<String> ocekavane = ocekavane(STRED, MAX - 1, MAX, MIN);
 		Assert.assertEquals(ocekavane.size(), spocitej());
-		stahni(ocekavane.size());
-		Assert.assertEquals(ocekavane, new TreeSet<>(pozadavky));
+		final DavkaStahovani davka = stahni(ocekavane.size());
+		final Set<String> pozadovane = new TreeSet<>(pozadavky);
+		final Set<String> chybi = new TreeSet<>(ocekavane);
+		chybi.removeAll(pozadovane);
+		final Set<String> navic = new TreeSet<>(pozadovane);
+		navic.removeAll(ocekavane);
+		Assert.assertEquals("dávka: " + davka.popis() + "; chybí požadavky " + chybi + ", navíc " + navic, ocekavane, pozadovane);
 	}
 
 	@Test(timeout = 60000)

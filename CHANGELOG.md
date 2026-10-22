@@ -22,6 +22,8 @@
   parkoviště, zastávky, posedy, informační tabule, štoly a šachty, bunkry,
   vodárny, vysílače, kameny, skalky a umělecká díla, vše až ve větších
   měřítkách. Ikony jsou z projektu Osmic (CC0).
+- Vydání obsahuje GeoKuk-tema.zip: téma GeoKuk a GeoKuk – detail pro
+  aplikace s mapami ve formátu mapsforge (například c:geo, aDrake).
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
   nečitelné soubory), odkazem, který složku offline map otevře ve správci
@@ -162,6 +164,7 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Mapa se zvětšenými ikonami keší se kreslí rychleji.
 - Mapa je při pohybu myši plynulejší.
 - Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou
   čerchovanou čárou; široký růžový pás zůstal jen v přehledu do měřítka 9.
@@ -211,6 +214,10 @@
 - Po změně nicku se keše z databáze, kterou zrovna drží GeoGet nebo GSAK,
   neukazují jako nalezené či vlastní podle starého nicku; načtou se znovu,
   až ji program pustí.
+- Soubor s kešemi, který zrovna drží jiný program, už nehlásí chybu; načte se,
+  až ho program pustí.
+- Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
+  dlaždice; dřív se mohla část ztratit.
 
 Obsahuje i všechny opravy z 6.4.3.
 

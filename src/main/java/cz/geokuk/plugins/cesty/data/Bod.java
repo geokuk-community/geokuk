@@ -269,6 +269,7 @@ public class Bod extends Bousek0 implements Uchopenec {
 	 * Odstraní bod z cesty včetně přilehlých úseků a zbylé body spojí novým úsekem. Vrací nově vytvořený úsek
 	 */
 	Usek remove() {
+		getCesta().invalidujObalku();
 		setChanged();
 		if (isKrajovy()) {
 			if (isStart()) {
@@ -294,6 +295,7 @@ public class Bod extends Bousek0 implements Uchopenec {
 	}
 
 	void setMouable(final Mouable mouable) {
+		getCesta().invalidujObalku();
 		this.mouable = mouable;
 		zneschopniDelkuPrilehlychUseku();
 	}
