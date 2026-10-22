@@ -97,6 +97,9 @@ public class JKachlovnikPresCelePrekreslovaniTest {
 		for (final Rectangle r : zaznam.oblasti) {
 			Assert.assertTrue("jen rada a atribuce, ne celá mapa: " + r, r.height < 300);
 		}
+		// Uživatel nesmí vidět zbytek rady nahoře uprostřed ani starou atribuci vpravo dole.
+		Assert.assertTrue("překreslí se místo rady: " + zaznam.oblasti, zaznam.oblasti.stream().anyMatch(r -> r.contains(400, 12)));
+		Assert.assertTrue("překreslí se místo atribuce: " + zaznam.oblasti, zaznam.oblasti.stream().anyMatch(r -> r.contains(795, 595)));
 		g.dispose();
 	}
 }
