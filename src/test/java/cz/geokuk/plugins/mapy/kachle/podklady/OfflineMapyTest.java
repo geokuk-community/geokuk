@@ -352,15 +352,15 @@ public class OfflineMapyTest {
 	@Test
 	public void vadnaMapaHlasiJmenoADobraSeKresli() throws Exception {
 		final Map<String, byte[]> vadne = vadneMapy();
-		zkopirujMapu(slozka, "kukov.map");
+		// Každý případ ve vlastní složce: otevřenou mapu Windows smazat nedovolí.
 		for (final Map.Entry<String, byte[]> v : vadne.entrySet()) {
-			final File vadna = new File(slozka, v.getKey());
-			Files.write(vadna.toPath(), v.getValue());
-			mapy.kontrolaSlozkyNs = 0;
+			final File sDobrou = tmp.newFolder("s-dobrou-" + v.getKey());
+			zkopirujMapu(sDobrou, "kukov.map");
+			Files.write(new File(sDobrou, v.getKey()).toPath(), v.getValue());
+			mapy = new OfflineMapy(() -> {});
+			mapy.nastav(sDobrou, TemaOfflineMapy.VYCHOZI);
 			Assert.assertTrue(v.getKey() + ": dobrá mapa se má kreslit", barev(pixely(vyrendruj(STRED_Z15))) > 10);
-			Files.delete(vadna.toPath());
 		}
-		Files.delete(new File(slozka, "kukov.map").toPath());
 		// Prázdný soubor se jen tiše přeskočí (vzniká při zakládání), hlásí se ostatní.
 		vadne.remove("prazdna.map");
 		final List<String> chyby = new ArrayList<>();
