@@ -762,16 +762,8 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 			final int y = p.y + imagant.getYpos();
 			g.drawImage(imagant.getImage(), x, y, null);
 		} else {
-			g = (Graphics2D) g.create();
-			try {
-				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				g.translate(p.x, p.y);
-				g.scale(meritko, meritko);
-				g.translate(imagant.getXpos(), imagant.getYpos());
-				g.drawImage(imagant.getImage(), 0, 0, null);
-			} finally {
-				g.dispose();
-			}
+			final Imagant zvetseny = imagant.zvetseny(meritko);
+			g.drawImage(zvetseny.getImage(), p.x + zvetseny.getXpos(), p.y + zvetseny.getYpos(), null);
 		}
 	}
 

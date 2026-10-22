@@ -6,6 +6,7 @@ import java.util.*;
 import cz.geokuk.core.coordinates.*;
 import cz.geokuk.plugins.cesty.FBarvy;
 import cz.geokuk.plugins.kesoid.Wpt;
+import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.lang.FString;
 import cz.geokuk.util.lang.FUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -394,6 +395,9 @@ public class Cesta implements Iterable<Bousek0> {
 	 * @return
 	 */
 	public SearchResult locateNejblizsiDoKvadratuVzdalenosi(final Mou mou, final long kvadratMaximalniVzdalenosti, final boolean aDatPrednostBoduPredUsekem) {
+		if (!jeObalkaDoVzdalenosti(mou, kvadratMaximalniVzdalenosti)) {
+			return new SearchResult();
+		}
 		long minKvadrat = Long.MAX_VALUE;
 		Bousek0 neblizsiBousek = null;
 		for (final Bod bod : getBody()) {
@@ -444,7 +448,40 @@ public class Cesta implements Iterable<Bousek0> {
 		}
 	}
 
+	/** Obálka všech bodů a bodů tras, null dokud se nespočítá nebo po změně cesty. */
+	private MouRect obalka;
+
+	void invalidujObalku() {
+		obalka = null;
+	}
+
+	/** Může být nějaký bod nebo úsek cesty do dané vzdálenosti od bodu? Nejdřív se zkouší obálka, ne všechny body. */
+	private boolean jeObalkaDoVzdalenosti(final Mou mou, final long kvadratMaximalniVzdalenosti) {
+		MouRect o = obalka;
+		if (o == null) {
+			o = new MouRect();
+			for (final Bod bod : getBody()) {
+				o.add(bod.getMou());
+			}
+			for (final Usek usek : getUseky()) {
+				final List<Mou> trasa = usek.getTrasa();
+				if (trasa != null) {
+					trasa.forEach(o::add);
+				}
+			}
+			obalka = o;
+		}
+		if (o.isEmpty()) {
+			return true;
+		}
+		final BoundingRect r = o.getBoundingRect();
+		final long dx = Math.max(Math.max((long) r.xx1 - mou.xx, (long) mou.xx - r.xx2), 0);
+		final long dy = Math.max(Math.max((long) r.yy1 - mou.yy, (long) mou.yy - r.yy2), 0);
+		return dx * dx + dy * dy <= kvadratMaximalniVzdalenosti;
+	}
+
 	void clear() {
+		obalka = null;
 		// System.out.println(System.identityHashCode(this) + ": clear()");
 		// new Throwable().printStackTrace(System.out);
 		start = null;
@@ -452,10 +489,12 @@ public class Cesta implements Iterable<Bousek0> {
 	}
 
 	Bod createBod(final Mouable mouable) {
+		obalka = null;
 		return new Bod(this, mouable);
 	}
 
 	Usek createUsek() {
+		obalka = null;
 		return new Usek(this);
 	}
 
@@ -599,6 +638,7 @@ public class Cesta implements Iterable<Bousek0> {
 	}
 
 	void setChanged() {
+		obalka = null;
 		if (doc != null) {
 			doc.setChanged();
 		}
