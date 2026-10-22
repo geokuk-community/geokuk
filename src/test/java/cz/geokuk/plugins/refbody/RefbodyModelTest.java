@@ -45,6 +45,25 @@ public class RefbodyModelTest {
 		Assert.assertEquals(50.0197, body.get(0).wgs.lat, 1e-9);
 	}
 
+	/** Poznámkový blok ve Windows umí uložit i v UTF-16 (Unicode); domácí body se načtou stejně. */
+	@Test
+	public void souborVUtf16() throws Exception {
+		for (final Charset kodovani : new Charset[] { StandardCharsets.UTF_16LE, StandardCharsets.UTF_16BE }) {
+			final File ini = tmp.newFile("geohome-" + kodovani + ".ini");
+			final boolean le = kodovani == StandardCharsets.UTF_16LE;
+			final byte[] text = "49.5625 15.9392 Domov Žďár\r\n50.0197 14.42 Chata\r\n".getBytes(kodovani);
+			final byte[] sBom = new byte[text.length + 2];
+			sBom[0] = (byte) (le ? 0xFF : 0xFE);
+			sBom[1] = (byte) (le ? 0xFE : 0xFF);
+			System.arraycopy(text, 0, sBom, 2, text.length);
+			Files.write(ini.toPath(), sBom);
+			final List<RefbodyModel.RefBod> body = RefbodyModel.precti(ini);
+			Assert.assertEquals(kodovani.toString(), 2, body.size());
+			Assert.assertEquals("Domov Žďár", body.get(0).nazev);
+			Assert.assertEquals(15.9392, body.get(0).wgs.lon, 1e-9);
+		}
+	}
+
 	@Test
 	public void souborVUtf8BezZnackyBom() throws Exception {
 		final File ini = tmp.newFile("geohome.ini");
