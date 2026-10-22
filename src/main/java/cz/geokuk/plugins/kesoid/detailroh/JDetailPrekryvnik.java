@@ -48,7 +48,6 @@ public class JDetailPrekryvnik extends JCoordPrekryvnik0 {
 		if (probihaPridavani) {
 			if (moucur != null) {
 				nastavSeSpozdenim();
-				repaint(); // musíme překreslit při změně středu
 				setVisible(true);
 			} else {
 				nastavNaPozici();
@@ -63,23 +62,24 @@ public class JDetailPrekryvnik extends JCoordPrekryvnik0 {
 		if (poziceq == null || poziceq.isNoPosition()) {
 			setVisible(false);
 		} else {
-			setSoord(getSoord().derive(DETAIL_MOUMER, poziceq.getWgs().toMou()));
-			repaint(); // musíme překreslit při změně středu
+			final Coord puvodni = getSoord();
+			setSoord(puvodni.derive(DETAIL_MOUMER, poziceq.getWgs().toMou()));
+			if (!getSoord().equals(puvodni)) {
+				repaint(); // musíme překreslit při změně středu
+			}
 			setVisible(true);
 		}
 	}
 
 	private void nastavSeSpozdenim() {
-		if (zpozdovaciTimer != null) {
-			zpozdovaciTimer.stop();
+		if (zpozdovaciTimer == null) {
+			zpozdovaciTimer = new Timer(SPOZDENI_ZOBRAZENI_DETAILU, e -> {
+				if (moucur != null) {
+					setSoord(getSoord().derive(DETAIL_MOUMER, moucur));
+				}
+			});
+			zpozdovaciTimer.setRepeats(false);
 		}
-		zpozdovaciTimer = new Timer(SPOZDENI_ZOBRAZENI_DETAILU, e -> {
-			zpozdovaciTimer = null;
-			if (moucur != null) {
-				setSoord(getSoord().derive(DETAIL_MOUMER, moucur));
-			}
-		});
-		zpozdovaciTimer.setRepeats(false);
-		zpozdovaciTimer.start();
+		zpozdovaciTimer.restart();
 	}
 }
