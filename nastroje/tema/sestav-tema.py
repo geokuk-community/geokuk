@@ -12,8 +12,16 @@ KOREN = os.path.join(D, '..', '..')
 SYMBOLY = os.path.join(KOREN, 'src', 'main', 'resources', 'cz', 'geokuk', 'plugins', 'mapy', 'kachle', 'podklady', 'geokuk')
 jar, vystup = sys.argv[1], sys.argv[2]
 
+def bajty(p):
+    with open(p, 'rb') as f:
+        return f.read()
+
+def zapis(p, data):
+    with open(p, 'wb') as f:
+        f.write(data)
+
 def cti(jm):
-    return open(os.path.join(Z, jm), encoding='utf-8').read()
+    return bajty(os.path.join(Z, jm)).decode('utf-8')
 
 spolecne = cti('geokuk-spolecne.xml')
 for m in ('#DATA-TRASY#', '#DATA-NAZVY#'):
@@ -68,7 +76,7 @@ android = android.replace('<?xml version="1.0" encoding="UTF-8"?>', '<?xml versi
 android = android.replace('src="jar:', 'src="file:')
 android_detail = android_detail.replace('src="jar:', 'src="file:')
 
-zj = zipfile.ZipFile(jar)
+zj = zipfile.ZipFile(jar)  # otevřený do konce běhu skriptu
 assety = {n for n in zj.namelist() if n.startswith(('assets/symbols/', 'assets/patterns/')) and not n.endswith('/')}
 
 def zdroje(xml):
@@ -78,24 +86,24 @@ def obsah(cesta):
     """Vlastní symbol z resources, jinak symbol z jaru."""
     p = os.path.join(SYMBOLY, cesta)
     if os.path.isfile(p):
-        return open(p, 'rb').read()
+        return bajty(p)
     if 'assets/' + cesta in assety:
         return zj.read('assets/' + cesta)
     raise SystemExit('chybí zdroj %s' % cesta)
 
 os.makedirs(os.path.join(vystup, 'geokuk'), exist_ok=True)
-open(os.path.join(vystup, 'geokuk', 'GeoKuk.xml'), 'w', encoding='utf-8', newline='\n').write(geokuk)
-open(os.path.join(vystup, 'geokuk', 'GeoKuk_detail.xml'), 'w', encoding='utf-8', newline='\n').write(geokuk_detail)
+zapis(os.path.join(vystup, 'geokuk', 'GeoKuk.xml'), geokuk.encode('utf-8'))
+zapis(os.path.join(vystup, 'geokuk', 'GeoKuk_detail.xml'), geokuk_detail.encode('utf-8'))
 for typ, c in zdroje(geokuk_detail):
     if typ == 'file':   # vlastní symboly vedle tématu
-        d = os.path.join(vystup, 'geokuk', c); os.makedirs(os.path.dirname(d), exist_ok=True); open(d, 'wb').write(obsah(c))
+        d = os.path.join(vystup, 'geokuk', c); os.makedirs(os.path.dirname(d), exist_ok=True); zapis(d, obsah(c))
 
 # Zip se stálým časem souborů, aby stejný zdroj dal stejný zip.
 zip_cesta = os.path.join(vystup, 'GeoKuk-tema.zip')
 soubory = {'GeoKuk.xml': android.encode('utf-8'), 'GeoKuk_detail.xml': android_detail.encode('utf-8'),
-           'README.txt': open(os.path.join(D, 'zip', 'README.txt'), 'rb').read(),
-           'LICENSE-GPL-3.0.txt': open(os.path.join(KOREN, 'LICENSE'), 'rb').read(),
-           'LICENSE-LGPL-3.0.txt': open(os.path.join(KOREN, 'licence', 'LGPL-3.0.txt'), 'rb').read()}
+           'README.txt': bajty(os.path.join(D, 'zip', 'README.txt')),
+           'LICENSE-GPL-3.0.txt': bajty(os.path.join(KOREN, 'LICENSE')),
+           'LICENSE-LGPL-3.0.txt': bajty(os.path.join(KOREN, 'licence', 'LGPL-3.0.txt'))}
 for typ, c in zdroje(android + android_detail):
     soubory[c] = obsah(c)
 with zipfile.ZipFile(zip_cesta, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -110,11 +118,11 @@ with zipfile.ZipFile(zip_cesta) as z:
 # Překryv tras: trasy z tagů osmc_*, pak data GeoKuku, prvky vrstvy tourist a jména tras; symboly vestavěného tématu ze složky geokuk/.
 with tempfile.TemporaryDirectory() as d:
     subprocess.check_call([sys.executable, '-I', os.path.join(D, 'generuj-trasy.py'), os.path.join(d, 't.xml')])
-    trasy = open(os.path.join(d, 't.xml'), encoding='utf-8').read()
+    trasy = bajty(os.path.join(d, 't.xml')).decode('utf-8')
 konec = '</rendertheme>\n'
 assert trasy.endswith(konec)
 trasy = (trasy[:-len(konec)] + '<!-- Trasy, skály a body ze stažené vrstvy tourist, stejně jako v tématu GeoKuk. -->\n'
          + cti('data-geokuk-trasy.xml').rstrip('\n') + '\n' + '\n'.join(useky_tourist) + '\n' + cti('data-geokuk-nazvy.xml').rstrip('\n') + '\n' + konec)
 trasy = trasy.replace('src="file:symbols/', 'src="file:geokuk/symbols/')
-open(os.path.join(vystup, 'trasy.xml'), 'w', encoding='utf-8', newline='\n').write(trasy)
+zapis(os.path.join(vystup, 'trasy.xml'), trasy.encode('utf-8'))
 print('GeoKuk.xml %d B; GeoKuk-tema.zip %d B, %d souborů' % (len(geokuk.encode('utf-8')), os.path.getsize(zip_cesta), len(v_zipu)))
