@@ -498,7 +498,7 @@ public class KachleZiskavac {
 
 	private final EnumMap<Priority, DvojiceExekucnichSluzeb> exekucniSluzby = new EnumMap<>(Priority.class);
 
-	private final ExecutorService execDiskWrite = Executors.newFixedThreadPool(1);
+	private final ThreadPoolExecutor execDiskWrite = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
 
 	private final ScheduledExecutorService tikacVelikostiFront = Executors.newSingleThreadScheduledExecutor();
 	private final KachloDownloader downloader = new KachloDownloader();
@@ -569,7 +569,7 @@ public class KachleZiskavac {
 				pocitVelikostDiskFrontyBatch.set(dvojiceBatch.diskQueue.size());
 				pocitVelikostWebFrontyOnline.set(dvojiceOnline.webQueue.size());
 				pocitVelikostWebFrontyBatch.set(dvojiceBatch.webQueue.size());
-				pocitVelikostZapisoveFronty.set(((ThreadPoolExecutor) execDiskWrite).getQueue().size());
+				pocitVelikostZapisoveFronty.set(execDiskWrite.getQueue().size());
 				pocitVelikostPametoveKese.set(kachlmap.asMap().size());
 			} catch (final Exception e) {
 				log.error("Chyba při tikání a zjišťování velikosti fornt: {}", e);
@@ -584,10 +584,26 @@ public class KachleZiskavac {
 		ukladac.submitChunks();
 		execDiskWrite.shutdown();
 		try {
-			execDiskWrite.awaitTermination(5, TimeUnit.SECONDS);
+			if (!pockejNaZapis(execDiskWrite, 10_000, 60_000)) {
+				log.warn("Při ukončení se nestihly zapsat všechny dlaždice do cache");
+			}
 		} catch (final InterruptedException e) {
 			Thread.currentThread().interrupt();
 		}
+	}
+
+	/** Čeká na dokončení zápisu, dokud postupuje: pomalý disk dostane čas, zaseknutý zápis konec programu nezdrží o víc než jeden krok. */
+	static boolean pockejNaZapis(final ThreadPoolExecutor zapis, final long krokMs, final long nejvicMs) throws InterruptedException {
+		final long konec = System.currentTimeMillis() + nejvicMs;
+		long hotovo = zapis.getCompletedTaskCount();
+		while (!zapis.awaitTermination(krokMs, TimeUnit.MILLISECONDS)) {
+			final long ted = zapis.getCompletedTaskCount();
+			if (ted == hotovo || System.currentTimeMillis() >= konec) {
+				return false;
+			}
+			hotovo = ted;
+		}
+		return true;
 	}
 
 	void uklidOfflineCache(final String klic, final File symboly) {

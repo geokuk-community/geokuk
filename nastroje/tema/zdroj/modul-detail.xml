@@ -1,0 +1,54 @@
+    <!-- ===== GeoKuk – detail: další body pro orientaci a cestu ke keši (modul připojený za základ) =====
+         Ikony: Osmic (https://github.com/gmgeo/osmic, gmgeo a přispěvatelé), CC0. -->
+    <!-- posed, krmelec, stůl, ohniště -->
+    <rule e="node" k="amenity" v="hunting_stand" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/hunting-stand-18.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="node" k="amenity" v="feeding_place" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/game-feeding-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="node" k="leisure" v="picnic_table" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/table-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="node" k="leisure" v="firepit" zoom-min="18">
+        <symbol display="always" src="file:symbols/osmic/fire-18.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <!-- zastávka a parkoviště (z16) o zoom dřív než v základu (z17) (příjezd ke keši) -->
+    <rule e="node" k="highway" v="bus_stop" zoom-min="16" zoom-max="16">
+        <symbol position="below_left" src="file:symbols/osmic/bus-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="any" k="amenity" v="parking" zoom-min="16" zoom-max="16">
+        <rule e="any" k="access" v="~|yes|public|customers|permissive">
+            <symbol position="below_right" src="file:symbols/osmic/parking-car-18.svg" symbol-width="16" symbol-height="16" />
+        </rule>
+    </rule>
+    <!-- hospoda u stezky o zoom dřív, pamětní místo o zoom dřív -->
+    <rule e="any" k="amenity" v="pub" zoom-min="17" zoom-max="17">
+        <symbol display="always" src="file:symbols/osmic/pub-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="any" k="historic" v="memorial" zoom-min="18" zoom-max="18">
+        <symbol display="always" src="file:symbols/osmic/memorial-18.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <!-- orientační body v terénu: kameny, skalky a umělecká díla (data vrstvy tourist od z14 a z13) -->
+    <rule e="node" k="natural" v="stone" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/stone-18.svg" />
+    </rule>
+    <rule e="node" k="natural" v="rock" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/rock-16.svg" />
+    </rule>
+    <rule e="node" k="tourism" v="artwork" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/artwork-16.svg" />
+    </rule>
+    <!-- důlní, vojenské a technické orientační objekty -->
+    <rule e="node" k="man_made" v="adit|mineshaft" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/adit-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="any" k="military|building" v="bunker" zoom-min="16">
+        <symbol display="always" src="file:symbols/osmic/pillbox-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="any" k="man_made" v="water_tower" zoom-min="16">
+        <symbol display="always" src="file:symbols/osmic/water-tower-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>
+    <rule e="node" k="man_made" v="mast" zoom-min="17">
+        <symbol display="always" src="file:symbols/osmic/mast-16.svg" symbol-width="16" symbol-height="16" />
+    </rule>

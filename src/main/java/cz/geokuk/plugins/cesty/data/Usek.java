@@ -435,6 +435,7 @@ public class Usek extends Bousek0 {
 
 	/** Uloží výsledek hledání trasy mezi body {@code od} a {@code kam}; trasa platí, dokud krajní body úseku zůstanou na místě. */
 	void setTrasa(final Mou od, final Mou kam, final Trasa.Stav stav, final List<Mou> body) {
+		getCesta().invalidujObalku();
 		trasaOd = od;
 		trasaDo = kam;
 		stavTrasy = stav;
