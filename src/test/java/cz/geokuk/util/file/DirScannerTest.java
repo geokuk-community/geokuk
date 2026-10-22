@@ -75,4 +75,24 @@ public class DirScannerTest {
 			necitelna.setReadable(true);
 		}
 	}
+
+	@Test
+	public void prepsanySouborSeNacteZnovu() throws Exception {
+		final File gpx = tmp.newFile("a.gpx");
+		Files.write(gpx.toPath(), "x".getBytes(StandardCharsets.UTF_8));
+		final DirScanner ds = new DirScanner();
+		ds.seRootDirs(false, new Root(tmp.getRoot(), VSE));
+		Assert.assertNotNull(ds.coMamNacist());
+		Assert.assertNull("beze změny se nenačítá", ds.coMamNacist());
+
+		final long cas = gpx.lastModified();
+		Files.write(gpx.toPath(), "delsi obsah".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(gpx.setLastModified(cas));
+		Assert.assertNotNull("jiná velikost, stejný čas", ds.coMamNacist());
+
+		Files.write(gpx.toPath(), "jiny obsah!".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(gpx.setLastModified(cas + 10_000));
+		Assert.assertNotNull("stejná velikost, jiný čas", ds.coMamNacist());
+		Assert.assertNull(ds.coMamNacist());
+	}
 }

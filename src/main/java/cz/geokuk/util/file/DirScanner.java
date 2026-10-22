@@ -18,7 +18,7 @@ public class DirScanner {
 
 	// TODO : Use file watchers
 	private volatile List<Root> roots;
-	private List<KeFile> lastScaned = null;
+	private Set<String> lastScaned = null;
 	/** Bez zámku, aby GUI nečekalo, než doběhne sken velké složky. */
 	private volatile boolean nacistZnovu = true;
 	private volatile Set<File> nedostupne = Collections.emptySet();
@@ -39,11 +39,21 @@ public class DirScanner {
 		}
 		nedostupne = nedostupneTed;
 		final List<KeFile> list = new ArrayList<>(set);
-		if (!vynutit && list.equals(lastScaned)) {
+		final Set<String> otisk = otisk(list);
+		if (!vynutit && otisk.equals(lastScaned)) {
 			return null; // nezměnilo se nic
 		}
-		lastScaned = list;
+		lastScaned = otisk;
 		return list;
+	}
+
+	/** Cesta, čas změny a velikost každého souboru; přepsaný soubor se tak načte znovu, i když se seznam souborů nezměnil. */
+	private static Set<String> otisk(final List<KeFile> list) {
+		final Set<String> otisk = new HashSet<>();
+		for (final KeFile f : list) {
+			otisk.add(f.root.dir + "|" + f.getFile() + "|" + f.getLastModified() + "|" + f.getFile().length());
+		}
+		return otisk;
 	}
 
 	/** Kořeny a složky, které se při posledním {@link #coMamNacist()} nepodařilo přečíst; nevíme, co v nich je. */
