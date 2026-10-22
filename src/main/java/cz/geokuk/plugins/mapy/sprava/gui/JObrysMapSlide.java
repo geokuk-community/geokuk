@@ -215,6 +215,7 @@ public class JObrysMapSlide extends JSingleSlide0 {
 
 	void setObrysy(final List<PolygonPokryti> obrysy) {
 		this.obrysy = obrysy;
+		cesty.clear();
 		repaint();
 	}
 
