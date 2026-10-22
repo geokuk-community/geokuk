@@ -90,7 +90,7 @@ public class RozepsanyGpxTest {
 	private void zapisZip(final byte[] obsah, final long zmenen) throws Exception {
 		final File f = new File(gpx, "kesky.zip");
 		Files.write(f.toPath(), obsah);
-		f.setLastModified(zmenen);
+		Assert.assertTrue(f.setLastModified(zmenen));
 	}
 
 	private static byte[] zip(final byte[] gpxObsah) throws Exception {
