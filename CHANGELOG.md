@@ -208,6 +208,8 @@
 - Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
+- Překryv Turistické a cyklotrasy nad offline mapou s jiným tématem než GeoKuk
+  už nekreslí skály a body podruhé.
 
 Obsahuje i všechny opravy z 6.4.3.
 

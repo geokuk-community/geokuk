@@ -392,7 +392,7 @@ public class KachleModel extends Model0 {
 		ziskavac.getOfflineMapy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-temata"));
 		ziskavac.getOfflineMapy().nastav(u.getOfflineMapyDir().getEffectiveFile(), getTemaOfflineMapy());
 		ziskavac.getOfflineTrasy().setSlozkaSymbolu(new java.io.File(u.getKachleCacheDir().getEffectiveFile(), "offline-trasy"));
-		ziskavac.getOfflineTrasy().nastav(u.getOfflineMapyDir().getEffectiveFile(), TemaOfflineMapy.TRASY);
+		ziskavac.getOfflineTrasy().nastav(u.getOfflineMapyDir().getEffectiveFile(), temaTras());
 		nastavTrasyPodkladu();
 		predpripravOfflineMapu();
 	}
@@ -401,7 +401,13 @@ public class KachleModel extends Model0 {
 	private void nastavTrasyPodkladu() {
 		if (ziskavac != null) {
 			ziskavac.getOfflineTrasy().setTrasyKresliPodklad(offlinePodklad && getTemaOfflineMapy().isKresliVrstvyTras());
+			ziskavac.getOfflineTrasy().nastav(ziskavac.getOfflineTrasy().getSlozka(), temaTras());
 		}
+	}
+
+	/** Nad offline podkladem kreslí skály a body ze stažené vrstvy tourist už téma podkladu, překryv by je nakreslil podruhé. */
+	private TemaOfflineMapy temaTras() {
+		return offlinePodklad ? TemaOfflineMapy.TRASY_BEZ_PRVKU : TemaOfflineMapy.TRASY;
 	}
 
 	/** Střed výřezu pokrývá podrobná offline mapa (nebo mapy ještě nejsou otevřené). */

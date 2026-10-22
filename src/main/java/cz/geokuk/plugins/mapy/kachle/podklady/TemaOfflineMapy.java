@@ -22,6 +22,10 @@ public final class TemaOfflineMapy {
 	/** Průhledné téma pro překryv přes jiný podklad: trasy z map osm.paws.cz, trasy a prvky ze stažené vrstvy tourist. */
 	public static final TemaOfflineMapy TRASY = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR, "trasy.xml", "Turistické a cyklotrasy");
 
+	/** Překryv tras nad offline podkladem: skály a body ze stažené vrstvy tourist kreslí téma podkladu, překryv jen trasy. */
+	public static final TemaOfflineMapy TRASY_BEZ_PRVKU = new TemaOfflineMapy(null, null, null, VolbaVrstev.AUTOR.sVrstvou("prvky", false, true), "trasy.xml",
+			"Turistické a cyklotrasy");
+
 	/** Složka vestavěných stylů GeoKuk vedle této třídy; styly sdílejí symboly v její podsložce symbols. */
 	private static final String SLOZKA_GEOKUK = "geokuk/";
 

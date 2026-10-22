@@ -109,4 +109,20 @@ public class PrekryvTrasNastaveniTest {
 		model.onEvent(new ZmenaMapNastalaEvent(EKaType.CUZK_ORTO));
 		Assert.assertFalse(trasy.isTrasyKresliPodklad());
 	}
+
+	/** Nad offline podkladem jiného tématu kreslí skály a body vrstvy tourist téma podkladu; překryv je vynechá, nad online podkladem je kreslí. */
+	@Test
+	public void nadOfflinePodklademBezSkalABodu() {
+		model.setPrekryvTras(true);
+		final OfflineMapy trasy = model.getZiskavac().getOfflineTrasy();
+		Assert.assertSame(TemaOfflineMapy.TRASY, trasy.getTema());
+
+		model.onEvent(new ZmenaMapNastalaEvent(EKaType.OFFLINE_MF));
+		Assert.assertSame(TemaOfflineMapy.TRASY_BEZ_PRVKU, trasy.getTema());
+		Assert.assertFalse(trasy.getTema().getVrstvy().jeZapnuta("prvky", true));
+		Assert.assertEquals("složka zůstává", model.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile(), trasy.getSlozka());
+
+		model.onEvent(new ZmenaMapNastalaEvent(EKaType.OPEN_STREET));
+		Assert.assertSame(TemaOfflineMapy.TRASY, trasy.getTema());
+	}
 }
