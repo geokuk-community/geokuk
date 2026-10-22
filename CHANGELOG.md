@@ -164,6 +164,7 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Kruhy obsazenosti se při velkém počtu keší ve výřezu nekreslí, mapa pak nezpomaluje.
 - Mapa se zvětšenými ikonami keší se kreslí rychleji.
 - Mapa je při pohybu myši plynulejší.
 - Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou

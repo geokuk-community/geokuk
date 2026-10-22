@@ -10,8 +10,10 @@ import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.MouseGestureContext;
+import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
+import cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent;
 import cz.geokuk.util.gui.JBarvovyDvojSlider;
 import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
@@ -46,6 +48,8 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 
 	private ObsazenostModel obsazenostModel;
 
+	private volatile int limitIkon = LimityKresleni.VYCHOZI_IKON;
+
 	public JObsazenost() {
 		setOpaque(false);
 		setCursor(null);
@@ -77,6 +81,11 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		repaint();
 	}
 
+	public void onEvent(final LimityKresleniEvent event) {
+		limitIkon = event.getLimity().getIkon();
+		repaint();
+	}
+
 	public void onEvent(final ObsazenostOnoffEvent event) {
 		setVisible(event.isOnoff());
 		repaint();
@@ -100,6 +109,9 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 			return;
 		}
 		// obsazenost.setColor(new Color(128,128,128,128));
+		if (prekrocenLimit(iIndexator.count(getSoord().getBoundingRect()), r)) {
+			return;
+		}
 		g.setColor(obsazenost.getColor());
 		final BoundingRect boundingRect = oblastKresleni(g, r + 1);
 		// final Area area = new Area();
@@ -113,6 +125,11 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		});
 
 		// g.fill(area);
+	}
+
+	/** Kruhy se nekreslí, když je keší ve výřezu víc než limit ikon nebo když by se kruhy přes sebe jen slévaly. */
+	boolean prekrocenLimit(final int pocet, final int polomer) {
+		return pocet > limitIkon || prilisHuste(pocet, Math.PI * polomer * polomer);
 	}
 
 	/**
