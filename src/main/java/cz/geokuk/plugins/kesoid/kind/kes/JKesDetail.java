@@ -10,6 +10,7 @@ import javax.swing.*;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.img.ImageLoader;
 import cz.geokuk.plugins.kesoid.*;
+import cz.geokuk.plugins.kesoid.detail.JCitelnyPopisek;
 import cz.geokuk.plugins.kesoid.detail.JKesoidDetail0;
 import cz.geokuk.plugins.refbody.DomaciSouradniceSeZmenilyEvent;
 import cz.geokuk.util.gui.JSmallPictureButton;
@@ -111,8 +112,7 @@ public class JKesDetail extends JKesoidDetail0 {
 		difficulty.setToolTipText("Počet hvězdiček obtížnosti.");
 		terrain = new JLabel();
 		terrain.setToolTipText("Počet hvězdiček terénu.");
-		jFoundTime = new JLabel();
-		jFoundTime.setForeground(Color.GREEN);
+		jFoundTime = new JCitelnyPopisek(Color.GREEN);
 		jFoundTime.setToolTipText("Datum a čas nalezení keše.");
 
 		zobrazHint = new JSmallPictureButton("Hint");
