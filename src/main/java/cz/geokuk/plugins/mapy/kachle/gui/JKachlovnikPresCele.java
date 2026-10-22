@@ -2,7 +2,9 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import javax.swing.SwingUtilities;
 
@@ -63,6 +65,9 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	private transient RadaOfflineMapy rada;
 	/** Kde je v kachlovníku ikona ⓘ atribuce; null, když se nekreslí. */
 	private transient Rectangle ikonaAtribuce;
+	/** Rada a atribuce, jak se naposledy kreslily nebo zkontrolovaly; null, když se nekreslí. */
+	private transient RozlozeniRady posledniRada;
+	private transient AtribuceMapy.Rozlozeni posledniAtribuce;
 
 	public void inject(final SpravaMapModel spravaMap) {
 		this.spravaMap = spravaMap;
@@ -75,15 +80,47 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 	public void onEvent(final cz.geokuk.plugins.mapy.sprava.SpravaVrstevEvent event) {
-		repaint();
+		prekresliRaduAAtribuci();
 	}
 
 	public void onEvent(final cz.geokuk.plugins.mapy.sprava.KatalogVrstevEvent event) {
-		repaint();
+		prekresliRaduAAtribuci();
 	}
 
 	public void onEvent(final cz.geokuk.plugins.mapy.sprava.StavyMapEvent event) {
-		repaint();
+		prekresliRaduAAtribuci();
+	}
+
+	/** Překreslí rozhraní rady a atribuce, jen když se jejich obsah od posledního kreslení změnil; mapa pod nimi se nepřekresluje. */
+	private void prekresliRaduAAtribuci() {
+		final RozlozeniRady novaRada = maAtribuci() && jeRada() ? sestavRadu(getFontMetrics(getFont().deriveFont(Font.BOLD, 12f)), getFontMetrics(getFont().deriveFont(Font.PLAIN, 12f))) : null;
+		if (!Objects.equals(podpis(novaRada), podpis(posledniRada))) {
+			prekresli(sjednot(posledniRada == null ? null : posledniRada.oblast(), novaRada == null ? null : novaRada.oblast()));
+		}
+		posledniRada = novaRada;
+		final AtribuceMapy.Rozlozeni novaAtribuce = rozlozAtribuci(getFontMetrics(getFont().deriveFont(Font.PLAIN, 10f)));
+		if (!Objects.equals(podpis(novaAtribuce), podpis(posledniAtribuce))) {
+			prekresli(sjednot(posledniAtribuce == null ? null : posledniAtribuce.pole, novaAtribuce == null ? null : novaAtribuce.pole));
+		}
+		posledniAtribuce = novaAtribuce;
+	}
+
+	private void prekresli(final Rectangle oblast) {
+		if (oblast != null) {
+			repaint(oblast.x - 2, oblast.y - 2, oblast.width + 4, oblast.height + 4);
+		}
+	}
+
+	private static Rectangle sjednot(final Rectangle a, final Rectangle b) {
+		return a == null ? b : b == null ? a : a.union(b);
+	}
+
+	private static List<Object> podpis(final RozlozeniRady r) {
+		return r == null ? null : Arrays.asList(r.oblast(), r.radky, r.odkazy);
+	}
+
+	private static List<Object> podpis(final AtribuceMapy.Rozlozeni r) {
+		return r == null ? null : Arrays.asList(r.text, r.pole);
 	}
 
 	public void onEvent(final cz.geokuk.plugins.mapy.kachle.ReliefCuzkEvent event) {
@@ -138,6 +175,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		odkazyRady.clear();
 		mapyRady.clear();
 		rada = null;
+		posledniRada = null;
 		if (maAtribuci() && jeRada()) {
 			kresliRadu((Graphics2D) g);
 		}
@@ -153,6 +191,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	 */
 	void kresliAtribuci(final Graphics2D g) {
 		ikonaAtribuce = null;
+		posledniAtribuce = null;
 		if (!maAtribuci()) {
 			return;
 		}
@@ -160,12 +199,17 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		try {
 			g2.setFont(getFont().deriveFont(Font.PLAIN, 10f));
 			final FontMetrics fm = g2.getFontMetrics();
-			final AtribuceMapy.Rozlozeni r = AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), getWidth() / 4);
+			final AtribuceMapy.Rozlozeni r = rozlozAtribuci(fm);
 			AtribuceMapy.kresli(g2, r, fm);
 			ikonaAtribuce = r.ikona;
+			posledniAtribuce = r;
 		} finally {
 			g2.dispose();
 		}
+	}
+
+	private AtribuceMapy.Rozlozeni rozlozAtribuci(final FontMetrics fm) {
+		return maAtribuci() ? AtribuceMapy.rozloz(zkratkyAtribuce(), fm, getWidth(), getHeight(), getWidth() / 4) : null;
 	}
 
 	/** Zkrácené zdroje atribuce: podklad, data offline mapy, vrstvy a překryvy. */
@@ -266,6 +310,69 @@ public class JKachlovnikPresCele extends JKachlovnik {
 				&& !getKachleModel().jePodrobnaOfflineMapa(getSoord().getMoustred().toWgs(), getSoord().getMoumer());
 	}
 
+	/** Rada rozložená do kachlovníku: text, odkazy a obdélník, který zabírá. */
+	private static final class RozlozeniRady {
+		final RadaOfflineMapy rada;
+		final List<String> radky;
+		final List<String> odkazy = new ArrayList<>();
+		final List<KatalogovaMapa> mapy = new ArrayList<>();
+		final boolean sousedni;
+		final int x;
+		final int y;
+		final int w;
+		final int h;
+
+		RozlozeniRady(final RadaOfflineMapy rada, final List<String> radky, final boolean sousedni, final int x, final int y, final int w, final int h) {
+			this.rada = rada;
+			this.radky = radky;
+			this.sousedni = sousedni;
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+		}
+
+		Rectangle oblast() {
+			return new Rectangle(x, y, w, h);
+		}
+	}
+
+	private RozlozeniRady sestavRadu(final FontMetrics fmTucne, final FontMetrics fm) {
+		final RadaOfflineMapy novaRada = spravaMap == null ? null : RadaOfflineMapy.pro(spravaMap.getKatalog(), spravaMap::getStav, getSoord().getMoustred().toWgs(),
+				spravaMap.getBeziciStahovani().map(StavMapy::getMapa).orElse(null), vyrez());
+		final String text = novaRada == null ? RADA_BEZ_SPRAVY : novaRada.text;
+		final List<String> radky = text == null ? new ArrayList<>() : zalom(text, fm, Math.max(200, getWidth() - 40));
+		final List<String> odkazy = new ArrayList<>();
+		final List<KatalogovaMapa> mapy = new ArrayList<>();
+		if (novaRada != null && novaRada.odkaz != null) {
+			odkazy.add(novaRada.odkaz);
+			mapy.add(novaRada.mapa);
+		}
+		final boolean sousedni = novaRada != null && !novaRada.sousedni.isEmpty();
+		if (sousedni) {
+			for (final RadaOfflineMapy r : novaRada.sousedni) {
+				odkazy.add(r.odkaz);
+				mapy.add(r.mapa);
+			}
+		}
+		int w = fmTucne.stringWidth(RadaOfflineMapy.NADPIS);
+		if (sousedni) {
+			w = Math.max(w, fm.stringWidth(RadaOfflineMapy.SOUSEDNI));
+		}
+		for (final String r : radky) {
+			w = Math.max(w, fm.stringWidth(r));
+		}
+		for (final String odkaz : odkazy) {
+			w = Math.max(w, fm.stringWidth(odkaz));
+		}
+		w += 16;
+		final int h = fmTucne.getHeight() + (radky.size() + odkazy.size() + (sousedni ? 1 : 0)) * fm.getHeight() + 8;
+		final RozlozeniRady r = new RozlozeniRady(novaRada, radky, sousedni, (getWidth() - w) / 2, 8, w, h);
+		r.odkazy.addAll(odkazy);
+		r.mapy.addAll(mapy);
+		return r;
+	}
+
 	private void kresliRadu(final Graphics2D g) {
 		final Graphics2D g2 = (Graphics2D) g.create();
 		try {
@@ -274,37 +381,17 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			final Font obycejne = getFont().deriveFont(Font.PLAIN, 12f);
 			final FontMetrics fmTucne = g2.getFontMetrics(tucne);
 			final FontMetrics fm = g2.getFontMetrics(obycejne);
-			rada = spravaMap == null ? null : RadaOfflineMapy.pro(spravaMap.getKatalog(), spravaMap::getStav, getSoord().getMoustred().toWgs(),
-					spravaMap.getBeziciStahovani().map(StavMapy::getMapa).orElse(null), vyrez());
-			final String text = rada == null ? RADA_BEZ_SPRAVY : rada.text;
-			final List<String> radky = text == null ? new ArrayList<>() : zalom(text, fm, Math.max(200, getWidth() - 40));
-			final List<String> odkazy = new ArrayList<>();
-			final List<KatalogovaMapa> mapy = new ArrayList<>();
-			if (rada != null && rada.odkaz != null) {
-				odkazy.add(rada.odkaz);
-				mapy.add(rada.mapa);
-			}
-			final boolean sousedni = rada != null && !rada.sousedni.isEmpty();
-			if (sousedni) {
-				for (final RadaOfflineMapy r : rada.sousedni) {
-					odkazy.add(r.odkaz);
-					mapy.add(r.mapa);
-				}
-			}
-			int w = fmTucne.stringWidth(RadaOfflineMapy.NADPIS);
-			if (sousedni) {
-				w = Math.max(w, fm.stringWidth(RadaOfflineMapy.SOUSEDNI));
-			}
-			for (final String r : radky) {
-				w = Math.max(w, fm.stringWidth(r));
-			}
-			for (final String odkaz : odkazy) {
-				w = Math.max(w, fm.stringWidth(odkaz));
-			}
-			w += 16;
-			final int h = fmTucne.getHeight() + (radky.size() + odkazy.size() + (sousedni ? 1 : 0)) * fm.getHeight() + 8;
-			final int x = (getWidth() - w) / 2;
-			final int y = 8;
+			final RozlozeniRady rr = sestavRadu(fmTucne, fm);
+			posledniRada = rr;
+			rada = rr.rada;
+			final List<String> radky = rr.radky;
+			final List<String> odkazy = rr.odkazy;
+			final List<KatalogovaMapa> mapy = rr.mapy;
+			final boolean sousedni = rr.sousedni;
+			final int x = rr.x;
+			final int y = rr.y;
+			final int w = rr.w;
+			final int h = rr.h;
 			g2.setColor(new Color(255, 255, 255, 215));
 			g2.fillRect(x, y, w, h);
 			g2.setColor(Color.DARK_GRAY);
