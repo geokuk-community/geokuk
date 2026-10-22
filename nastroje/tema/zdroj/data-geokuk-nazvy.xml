@@ -1,0 +1,4 @@
+    <!-- názvy značených tras (jméno trasy je ve vrstvě tourist v poli ref) -->
+    <rule e="way" k="fmrelhikingred|fmrelhikingblue|fmrelhikinggreen|fmrelhikingyellow" v="*" zoom-min="15">
+        <pathText k="ref" fill="#8A2B2B" font-size="10" font-style="italic" priority="-9" stroke="#FFFFFF" stroke-width="1.6" dy="-5" />
+    </rule>

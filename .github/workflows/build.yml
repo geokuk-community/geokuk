@@ -50,6 +50,11 @@ jobs:
           mv target/geokuk-*.jar target/geokuk.jar
           mv target/temporary-start.jar target/start.jar
 
+      - name: Mapové téma pro aplikace
+        run: |
+          python3 -I nastroje/tema/sestav-tema.py target/geokuk.jar target/tema
+          mv target/tema/GeoKuk-tema.zip target/GeoKuk-tema.zip
+
       - name: Pokrytí testy
         if: always()
         run: |
@@ -76,6 +81,7 @@ jobs:
           path: |
             target/geokuk.jar
             target/start.jar
+            target/GeoKuk-tema.zip
 
   testy-windows:
     runs-on: windows-latest
@@ -189,7 +195,7 @@ jobs:
         run: |
           unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${TAG#v}"
           cp src/main/resources/java.properties java.properties
-          for f in geokuk.jar start.jar GeoKuk-windows.zip; do sha256sum "$f" > "$f.sha256"; done
+          for f in geokuk.jar start.jar GeoKuk-windows.zip GeoKuk-tema.zip; do sha256sum "$f" > "$f.sha256"; done
 
       - uses: actions/attest-build-provenance@v4
         with:
@@ -197,6 +203,7 @@ jobs:
             geokuk.jar
             start.jar
             GeoKuk-windows.zip
+            GeoKuk-tema.zip
             java.properties
 
       # Popis vydání je oddíl CHANGELOG.md pro verzi bez přípony (6.0.1-beta.3 → 6.0.1).
@@ -232,6 +239,6 @@ jobs:
           fi
           if [ "$GITHUB_REF_TYPE" = tag ]; then CIL="--verify-tag"; else CIL="--target $GITHUB_SHA"; fi
           gh release create "$TAG" geokuk.jar geokuk.jar.sha256 start.jar start.jar.sha256 \
-            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 java.properties \
+            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 GeoKuk-tema.zip GeoKuk-tema.zip.sha256 java.properties \
             --draft $CIL --title "$TAG" --notes-file popis.md $PRIZNAK
           gh release edit "$TAG" --draft=false $PRIZNAK
