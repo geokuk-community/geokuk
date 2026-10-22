@@ -241,6 +241,7 @@ public class Malovadlo {
 					gg.setColor(FBarvy.USEK_ZVYRAZNENY);
 					gg.setStroke(new BasicStroke(1));
 					gg.drawLine(p1.x, p1.y, p2.x, p2.y);
+					gg.dispose();
 				} else {
 					// Hlavní vykreslování úseku
 					g.drawLine(p1.x, p1.y, p2.x, p2.y);
@@ -384,5 +385,6 @@ public class Malovadlo {
 		gg.setStroke(new BasicStroke(2));
 		gg.drawLine(0, -2, (int) delka, -2);
 		gg.drawLine(0, 2, (int) delka, 2);
+		gg.dispose();
 	}
 }
