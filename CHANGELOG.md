@@ -201,6 +201,13 @@
   program ho odloží vedle, výlety obnoví ze složky uložených výletů a ohlásí to.
 - Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
   načte se, až je kopie hotová.
+- Domácí souřadnice z GeoGetu (geohome.ini) a seznamy výletů se načtou
+  i ze souboru v UTF-16.
+- Export GeoKuku (.geokuk) ve starším kódování Windows (cp1250) se načte
+  se správnou diakritikou.
+- Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
+- Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
+  a nespadne.
 - Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
   dlaždice; dřív se mohla část ztratit.
 
