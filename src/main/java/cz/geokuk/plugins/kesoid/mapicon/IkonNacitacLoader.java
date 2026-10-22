@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.kesoid.mapicon;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -93,7 +94,11 @@ public class IkonNacitacLoader {
 				if (klic.startsWith(IKONA_SADY)) {
 					final KeyNode<String, LamUrl> node = nodeSada.getItems().get(klic);
 					try {
-						icon = new ImageIcon(ImageIO.read(node.getData().url));
+						final BufferedImage obrazek = ImageIO.read(node.getData().url);
+						if (obrazek == null) {
+							throw new IOException("Neznámý formát obrázku");
+						}
+						icon = new ImageIcon(obrazek);
 					} catch (final IOException e) {
 						FExceptionDumper.dump(e, EExceptionSeverity.WORKARROUND, "Načtení ikony ze sady: " + node.getData().url);
 					}
