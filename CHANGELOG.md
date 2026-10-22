@@ -164,6 +164,7 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Kruhy obsazenosti se při velkém počtu keší ve výřezu nekreslí, mapa pak nezpomaluje.
 - Mapa se zvětšenými ikonami keší se kreslí rychleji.
 - Mapa je při pohybu myši plynulejší.
 - Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou
@@ -216,6 +217,8 @@
 - Nesmyslné číslo ve vlastní sadě ikon (jméno nebo nastavení ikony) už
   nezabrání načtení ikon ani keší; použije se výchozí hodnota. Výsledek hledání
   adresy bez platné polohy se vynechá, ostatní výsledky zůstanou.
+- Nová verze ikon vestavěného tématu offline map překreslí dlaždice v cache,
+  i když se samotné téma nezměnilo.
 - Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
   dlaždice; dřív se mohla část ztratit.
 
