@@ -498,7 +498,7 @@ public class KachleZiskavac {
 
 	private final EnumMap<Priority, DvojiceExekucnichSluzeb> exekucniSluzby = new EnumMap<>(Priority.class);
 
-	private final ExecutorService execDiskWrite = Executors.newFixedThreadPool(1);
+	private final ThreadPoolExecutor execDiskWrite = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
 
 	private final ScheduledExecutorService tikacVelikostiFront = Executors.newSingleThreadScheduledExecutor();
 	private final KachloDownloader downloader = new KachloDownloader();
@@ -569,7 +569,7 @@ public class KachleZiskavac {
 				pocitVelikostDiskFrontyBatch.set(dvojiceBatch.diskQueue.size());
 				pocitVelikostWebFrontyOnline.set(dvojiceOnline.webQueue.size());
 				pocitVelikostWebFrontyBatch.set(dvojiceBatch.webQueue.size());
-				pocitVelikostZapisoveFronty.set(((ThreadPoolExecutor) execDiskWrite).getQueue().size());
+				pocitVelikostZapisoveFronty.set(execDiskWrite.getQueue().size());
 				pocitVelikostPametoveKese.set(kachlmap.asMap().size());
 			} catch (final Exception e) {
 				log.error("Chyba při tikání a zjišťování velikosti fornt: {}", e);
@@ -584,7 +584,7 @@ public class KachleZiskavac {
 		ukladac.submitChunks();
 		execDiskWrite.shutdown();
 		try {
-			if (!pockejNaZapis((ThreadPoolExecutor) execDiskWrite, 10_000, 60_000)) {
+			if (!pockejNaZapis(execDiskWrite, 10_000, 60_000)) {
 				log.warn("Při ukončení se nestihly zapsat všechny dlaždice do cache");
 			}
 		} catch (final InterruptedException e) {

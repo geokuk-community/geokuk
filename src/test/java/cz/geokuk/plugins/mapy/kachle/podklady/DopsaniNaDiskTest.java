@@ -42,6 +42,40 @@ public class DopsaniNaDiskTest {
 		pustit.countDown();
 	}
 
+	@Test
+	public void stalyPostupKonciNaHorniMezi() throws Exception {
+		final ThreadPoolExecutor zapis = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+		for (int i = 0; i < 200; i++) {
+			zapis.execute(() -> spi(50));
+		}
+		zapis.shutdown();
+		final long t = System.currentTimeMillis();
+		Assert.assertFalse(KachleZiskavac.pockejNaZapis(zapis, 100, 400));
+		Assert.assertTrue("čeká nejvýš horní mez a krok", System.currentTimeMillis() - t < 1_500);
+		zapis.shutdownNow();
+	}
+
+	@Test
+	public void zaseknutiPoPostupuNezdrzi() throws Exception {
+		final ThreadPoolExecutor zapis = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+		final CountDownLatch pustit = new CountDownLatch(1);
+		for (int i = 0; i < 3; i++) {
+			zapis.execute(() -> spi(50));
+		}
+		zapis.execute(() -> {
+			try {
+				pustit.await();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		zapis.shutdown();
+		final long t = System.currentTimeMillis();
+		Assert.assertFalse(KachleZiskavac.pockejNaZapis(zapis, 300, 10_000));
+		Assert.assertTrue("po posledním postupu čeká jen jeden krok", System.currentTimeMillis() - t < 2_000);
+		pustit.countDown();
+	}
+
 	private static void spi(final long ms) {
 		try {
 			Thread.sleep(ms);
