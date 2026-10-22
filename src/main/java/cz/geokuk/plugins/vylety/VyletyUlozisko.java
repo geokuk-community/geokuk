@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.BezpecnyZapis;
 
 /**
@@ -229,7 +231,7 @@ final class VyletyUlozisko {
 		try (Reader r = new InputStreamReader(new FileInputStream(indexSoubor), StandardCharsets.UTF_8)) {
 			p.load(r);
 		} catch (final IllegalArgumentException e) {
-			return index; // poškozený index = jediný výlet Výchozí
+			return obnovIndex();
 		}
 		final String poradi = p.getProperty(KLIC_PORADI, "");
 		final Map<String, String> jmena = new LinkedHashMap<>();
@@ -241,13 +243,59 @@ final class VyletyUlozisko {
 		}
 		final String aktivni = p.getProperty(KLIC_AKTIVNI, "").trim();
 		if (!jmena.containsKey(VYCHOZI_ID) || !jmena.containsKey(aktivni)) {
-			return index; // poškozený index = jediný výlet Výchozí
+			return obnovIndex();
 		}
 		index.jmena.clear();
 		index.jmena.putAll(jmena);
 		index.aktivni = aktivni;
 		index.zDisku = true;
 		return index;
+	}
+
+	/** Poškozený seznam výletů se odloží vedle a sestaví se znovu z uložených složek, aby se žádný uložený výlet nepřepsal. */
+	private Index obnovIndex() throws IOException {
+		final File odlozeny = new File(slozka, "vylety-poskozeny-" + System.currentTimeMillis() + ".txt");
+		Files.move(indexSoubor.toPath(), odlozeny.toPath());
+		final Index index = new Index();
+		final File[] slozky = ulozene.listFiles(f -> f.isDirectory() && f.getName().matches("v\\d{1,9}"));
+		if (slozky != null && slozky.length > 0) {
+			Arrays.sort(slozky, Comparator.comparingInt(f -> cisloId(f.getName())));
+			int nejvetsi = 0;
+			String aktivni = null;
+			for (final File s : slozky) {
+				final String id = s.getName();
+				nejvetsi = Math.max(nejvetsi, cisloId(id));
+				if (!VYCHOZI_ID.equals(id)) {
+					index.jmena.put(id, "Výlet " + cisloId(id));
+				}
+				if (aktivni == null && stejnyObsah(new File(s, ano.getName()), ano) && stejnyObsah(new File(s, ne.getName()), ne)) {
+					aktivni = id;
+				}
+			}
+			if (!slozkaVyletu(VYCHOZI_ID).isDirectory()) {
+				zapisKody(Collections.<String>emptyList(), new File(slozkaVyletu(VYCHOZI_ID), ano.getName()));
+				zapisKody(Collections.<String>emptyList(), new File(slozkaVyletu(VYCHOZI_ID), ne.getName()));
+			}
+			if (aktivni == null) {
+				aktivni = "v" + (nejvetsi + 1);
+				kopiruj(ano, new File(slozkaVyletu(aktivni), ano.getName()));
+				kopiruj(ne, new File(slozkaVyletu(aktivni), ne.getName()));
+				index.jmena.put(aktivni, "Obnovený výlet");
+			}
+			index.aktivni = aktivni;
+			index.zDisku = true;
+			zapisIndex(index);
+		}
+		FExceptionDumper.dump(new IOException("Seznam výletů je poškozený"), EExceptionSeverity.WORKARROUND,
+				"Seznam výletů " + indexSoubor + " byl poškozený a je uložený jako " + odlozeny.getName() + ". Uložené výlety zůstaly zachované, jen mají místo názvů čísla.");
+		return index;
+	}
+
+	private static boolean stejnyObsah(final File a, final File b) throws IOException {
+		if (!a.isFile() || !b.isFile()) {
+			return a.isFile() == b.isFile();
+		}
+		return Arrays.equals(Files.readAllBytes(a.toPath()), Files.readAllBytes(b.toPath()));
 	}
 
 	private void zapisIndex(final Index index) throws IOException {
