@@ -90,7 +90,7 @@ public class RozepsanyGpxTest {
 	private void zapisZip(final byte[] obsah, final long zmenen) throws Exception {
 		final File f = new File(gpx, "kesky.zip");
 		Files.write(f.toPath(), obsah);
-		f.setLastModified(zmenen);
+		Assert.assertTrue(f.setLastModified(zmenen));
 	}
 
 	private static byte[] zip(final byte[] gpxObsah) throws Exception {
@@ -166,6 +166,19 @@ public class RozepsanyGpxTest {
 
 		zapisZip(vse, System.currentTimeMillis() + 5000);
 		Assert.assertEquals(new HashSet<>(Arrays.asList("GC0001", "GC0002", "GC0003")), kody(nacti()));
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+	}
+
+	/** Kopírování s předem vyhrazeným místem: zip je zatím jen nuly, nemá ani hlavičku. */
+	@Test
+	public void zipSNulamiZPredemRezervovanehoMistaNehlasiChybu() throws Exception {
+		final byte[] vse = zip(cely("GC0001", "GC0002"));
+		zapisZip(new byte[vse.length], System.currentTimeMillis());
+		nacti();
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+
+		zapisZip(vse, System.currentTimeMillis() + 5000);
+		Assert.assertEquals(new HashSet<>(Arrays.asList("GC0001", "GC0002")), kody(nacti()));
 		Assert.assertEquals(Collections.emptyList(), hlaseni);
 	}
 
