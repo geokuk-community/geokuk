@@ -208,6 +208,9 @@
 - Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
+- Nesmyslné číslo ve vlastní sadě ikon (jméno nebo nastavení ikony) už
+  nezabrání načtení ikon ani keší; použije se výchozí hodnota. Výsledek hledání
+  adresy bez platné polohy se vynechá, ostatní výsledky zůstanou.
 
 Obsahuje i všechny opravy z 6.4.3.
 

@@ -71,7 +71,10 @@ public final class Nominatim {
 		final NodeList mista = dokument(xml).getElementsByTagName("place");
 		for (int i = 0; i < mista.getLength(); i++) {
 			final Element misto = (Element) mista.item(i);
-			vysledek.add(nalezenec(misto, misto.getAttribute("display_name"), misto));
+			final Nalezenec n = nalezenec(misto, misto.getAttribute("display_name"), misto);
+			if (n != null) {
+				vysledek.add(n);
+			}
 		}
 		return vysledek;
 	}
@@ -90,7 +93,11 @@ public final class Nominatim {
 	private static Nalezenec nalezenec(final Element poloha, final String adresa, final Element casti) {
 		final Nalezenec n = new Nalezenec();
 		n.adresa = adresa;
-		n.wgs = new Wgs(Double.parseDouble(poloha.getAttribute("lat")), Double.parseDouble(poloha.getAttribute("lon")));
+		try {
+			n.wgs = new Wgs(Double.parseDouble(poloha.getAttribute("lat")), Double.parseDouble(poloha.getAttribute("lon")));
+		} catch (final NumberFormatException e) {
+			return null; // místo bez platné polohy se vynechá
+		}
 		final String trida = poloha.getAttribute("class");
 		final String typ = poloha.getAttribute("type");
 		n.locationType = trida.isEmpty() ? typ : typ.isEmpty() ? trida : trida + "/" + typ;
