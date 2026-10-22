@@ -194,6 +194,8 @@
 - V detailu keše jsou datum nálezu a kód keše dobře čitelné: zelená a červená
   se podle vzhledu ztmaví nebo zesvětlí, aby se neztrácely v pozadí.
   Ikona vlastní keše má výraznější obrys a nesplývá se světlým pozadím.
+- Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
+  načte se, až je kopie hotová.
 
 Obsahuje i všechny opravy z 6.4.3.
 
