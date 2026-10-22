@@ -194,6 +194,8 @@
 - V detailu keše jsou datum nálezu a kód keše dobře čitelné: zelená a červená
   se podle vzhledu ztmaví nebo zesvětlí, aby se neztrácely v pozadí.
   Ikona vlastní keše má výraznější obrys a nesplývá se světlým pozadím.
+- Přepsaný soubor s kešemi (GPX, zip, .geokuk) ve složce dat se načte znovu,
+  i když v ní nepřibyl ani neubyl žádný soubor.
 - Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
   načte se, až je kopie hotová.
 - Domácí souřadnice z GeoGetu (geohome.ini) a seznamy výletů se načtou
