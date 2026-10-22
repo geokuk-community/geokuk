@@ -176,6 +176,19 @@ public class RozepsanyGpxTest {
 		Assert.assertEquals(hlaseni.toString(), 1, hlaseni.size());
 	}
 
+	@Test
+	public void zipSeJmenyVCp852SeNacte() throws Exception {
+		final java.io.ByteArrayOutputStream bajty = new java.io.ByteArrayOutputStream();
+		try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(bajty, java.nio.charset.Charset.forName("IBM852"))) {
+			zos.putNextEntry(new java.util.zip.ZipEntry("Kešky Jiří.gpx"));
+			zos.write(cely("GC0001"));
+			zos.closeEntry();
+		}
+		zapisZip(bajty.toByteArray(), System.currentTimeMillis() - 60_000);
+		Assert.assertEquals(Collections.singleton("GC0001"), kody(nacti()));
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+	}
+
 	private KesoidModel model() {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});

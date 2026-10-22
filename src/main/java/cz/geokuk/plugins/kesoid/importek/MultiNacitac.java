@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -899,6 +900,12 @@ public class MultiNacitac {
 		try {
 			return new ZipFile(file);
 		} catch (final IOException e) {
+			// Zip z Windows bez příznaku UTF-8 má jména v cp852.
+			try {
+				return new ZipFile(file, Charset.forName("IBM852"));
+			} catch (final IOException e852) {
+				e.addSuppressed(e852);
+			}
 			if (RozepsanySoubor.jeRozepsany(file)) {
 				throw new RozepsanySoubor.Rozepsany(file, e);
 			}
