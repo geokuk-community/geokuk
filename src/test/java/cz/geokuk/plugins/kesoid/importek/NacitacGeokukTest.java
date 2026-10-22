@@ -20,6 +20,10 @@ public class NacitacGeokukTest {
 			+ "/\n";
 
 	private static List<GpxWpt> nacti(final String obsah) throws Exception {
+		return nacti(obsah.getBytes(StandardCharsets.UTF_8));
+	}
+
+	private static List<GpxWpt> nacti(final byte[] obsah) throws Exception {
 		final List<GpxWpt> w = new ArrayList<>();
 		final IImportBuilder builder = new IImportBuilder() {
 			@Override
@@ -51,8 +55,15 @@ public class NacitacGeokukTest {
 			@Override
 			public void setTrackName(final String nazev) {}
 		};
-		new NacitacGeokuk().nacti(new ByteArrayInputStream(obsah.getBytes(StandardCharsets.UTF_8)), "test.geokuk", builder, null);
+		new NacitacGeokuk().nacti(new ByteArrayInputStream(obsah), "test.geokuk", builder, null);
 		return w;
+	}
+
+	@Test
+	public void exportVCp1250() throws Exception {
+		final List<GpxWpt> w = nacti((HLAVICKA + KES).getBytes(java.nio.charset.Charset.forName("windows-1250")));
+		Assert.assertEquals("Keš u řeky", w.get(0).groundspeak.name);
+		Assert.assertEquals("Kačer", w.get(0).groundspeak.placedBy);
 	}
 
 	@Test

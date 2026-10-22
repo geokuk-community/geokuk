@@ -1,13 +1,13 @@
 package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.TextovySoubor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,7 +25,13 @@ public class NacitacGeokuk extends NacitacInputStream0 {
 
 	@Override
 	protected void nacti(final InputStream aIstm, final String name, final IImportBuilder builder, final Future<?> future) throws IOException {
-		final BufferedReader rdr = new BufferedReader(new InputStreamReader(aIstm, Charset.forName("UTF8")));
+		final ByteArrayOutputStream bajty = new ByteArrayOutputStream();
+		final byte[] buf = new byte[65536];
+		for (int n; (n = aIstm.read(buf)) != -1;) {
+			bajty.write(buf, 0, n);
+		}
+		// Starší exporty jsou v cp1250; neplatné UTF-8 se nesmí tiše změnit na náhradní znaky.
+		final BufferedReader rdr = new BufferedReader(new StringReader(TextovySoubor.dekoduj(bajty.toByteArray())));
 
 		String hlavicka = rdr.readLine();
 		if (hlavicka == null) {

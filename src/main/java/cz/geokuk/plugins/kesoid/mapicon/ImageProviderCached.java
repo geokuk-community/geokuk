@@ -7,6 +7,8 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import cz.geokuk.util.exception.EExceptionSeverity;
+import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.pocitadla.*;
 
 public class ImageProviderCached implements ImageProvider {
@@ -28,6 +30,10 @@ public class ImageProviderCached implements ImageProvider {
 			BufferedImage bi = sourceImageCache.get(url.toExternalForm());
 			if (bi == null) {
 				bi = ImageIO.read(url);
+				if (bi == null) {
+					FExceptionDumper.dump(new IOException("Neznámý formát obrázku"), EExceptionSeverity.WORKARROUND, "Obrázek ikony nejde přečíst: " + url);
+					bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+				}
 				sourceImageCache.put(url.toExternalForm(), bi);
 				pocitSourceImagu.set(sourceImageCache.size());
 			} else {
