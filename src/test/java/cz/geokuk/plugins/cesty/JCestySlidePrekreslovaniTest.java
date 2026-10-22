@@ -124,4 +124,39 @@ public class JCestySlidePrekreslovaniTest {
 		Assert.assertTrue(vse + " má obsahovat " + a, vse.contains(a));
 		Assert.assertTrue(vse + " má obsahovat " + b, vse.contains(b));
 	}
+
+	private static void nastav(final Object cil, final String pole, final Object hodnota) throws Exception {
+		final java.lang.reflect.Field f = JCestySlide.class.getDeclaredField(pole);
+		f.setAccessible(true);
+		f.set(cil, hodnota);
+	}
+
+	/** Při tažení bodu se překresluje jen tažená cesta, ne celá mapa; mimo tažení vše. */
+	@Test
+	public void tazeniPrekreslujeJenTazenouCestu() throws Exception {
+		final Doc doc = vytvorDoc();
+		final Cesta tazena = doc.getCesty().iterator().next();
+		final CestyModel model = new CestyModel() {
+			@Override
+			public Cesta getCurta() {
+				return tazena;
+			}
+		};
+		slide.inject(model);
+		slide.onEvent(new CestyChangedEvent(doc, model.getCurta()));
+		nastav(slide, "dragujeme", Boolean.TRUE);
+		nastav(slide, "oblastCurty", new Rectangle(100, 60, 120, 180));
+		zaznam.oblasti.clear();
+		for (int i = 0; i < 20; i++) {
+			slide.onEvent(new CestyChangedEvent(doc, model.getCurta()));
+		}
+		Assert.assertFalse(zaznam.oblasti.isEmpty());
+		for (final Rectangle r : zaznam.oblasti) {
+			Assert.assertTrue(r.toString(), r.width < OKNO.width && r.height < OKNO.height);
+		}
+		nastav(slide, "dragujeme", Boolean.FALSE);
+		zaznam.oblasti.clear();
+		slide.onEvent(new CestyChangedEvent(doc, model.getCurta()));
+		Assert.assertEquals(new Rectangle(OKNO), zaznam.oblasti.get(0));
+	}
 }

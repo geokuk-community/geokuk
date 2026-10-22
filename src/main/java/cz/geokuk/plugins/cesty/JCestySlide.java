@@ -87,6 +87,9 @@ public class JCestySlide extends JSingleSlide0 {
 	/** Obdélník, ve kterém byla naposledy nakreslena přidávací úsečka. */
 	private Rectangle oblastPridavaciUsecky;
 
+	/** Obdélník tažené cesty před změnou, null mimo tažení. */
+	private Rectangle oblastCurty;
+
 	private PoziceModel poziceModel;
 
 	private Poziceq poziceq = new Poziceq();
@@ -260,7 +263,6 @@ public class JCestySlide extends JSingleSlide0 {
 						blizkyBousek = cestyModel.removeBod(bb);
 					}
 				}
-				repaint();
 			}
 			if (blizkyBousek instanceof Usek) {
 				// táhneme za úsek a možná budeme rozdělovat na dva
@@ -270,7 +272,6 @@ public class JCestySlide extends JSingleSlide0 {
 				if (kvadratVzdalenosti > getKvadratMaximalniVzdalenosti()) {
 					blizkyBousek = cestyModel.rozdelUsekNaDvaNove(usek, mouNovy.getMou());
 				}
-				repaint();
 			}
 			propojovaciAutmomat.mouseDragged();
 		} else {
@@ -304,11 +305,14 @@ public class JCestySlide extends JSingleSlide0 {
 	public void mousePressed(final MouseEvent e, final MouseGestureContext ctx) {
 		zahajCiZrsuPridavaniBoduNaZakladeMyssihoEventu(e.getModifiers());
 		dragujeme = blizkyBousek != null;
+		oblastCurty = null;
 		if (SwingUtilities.isLeftMouseButton(e)) {
 			if (blizkyBousek != null) {
 				cestyModel.setCurta(blizkyBousek.getCesta());
 			}
 		}
+		// až po setCurta: změna vybrané cesty překreslí vše, tažení pak jen taženou cestu
+		oblastCurty = dragujeme ? oblastCesty(blizkyBousek) : null;
 		chain().mousePressed(e, ctx);
 		if (dragujeme) {
 			e.consume();
@@ -319,6 +323,7 @@ public class JCestySlide extends JSingleSlide0 {
 	@Override
 	public void mouseReleased(final MouseEvent e, final MouseGestureContext ctx) {
 		dragujeme = false;
+		oblastCurty = null;
 		propojovaciAutmomat.mouseReleased();
 		chain().mouseReleased(e, ctx);
 	}
@@ -330,8 +335,19 @@ public class JCestySlide extends JSingleSlide0 {
 			prepocitatBlizkehoBouska();
 			zobrazeniDalky();
 		}
-		// TODO repaintovat jen to, co je potřeba
-		repaint();
+		prekresliPoZmeneCest();
+	}
+
+	/** Při tažení se mění jen tažená cesta, stačí překreslit její původní a nový obdélník; jinak se překreslí vše. */
+	void prekresliPoZmeneCest() {
+		final Cesta curta = cestyModel == null ? null : cestyModel.getCurta();
+		if (dragujeme && curta != null && oblastCurty != null) {
+			final Rectangle nova = oblastCesty(curta);
+			repaint(sjednot(oblastCurty, nova));
+			oblastCurty = nova;
+		} else {
+			repaint();
+		}
 	}
 
 	public void onEvent(final PoziceChangedEvent event) {
@@ -371,12 +387,17 @@ public class JCestySlide extends JSingleSlide0 {
 
 	/** Obdélník, ve kterém se kreslí cesta bouska, včetně okraje; null, když bousek není. */
 	private Rectangle oblastCesty(final Bousek0 bousek) {
-		if (bousek == null) {
+		return bousek == null ? null : oblastCesty(bousek.getCesta());
+	}
+
+	/** Obdélník, ve kterém se kreslí cesta, včetně okraje; null, když cesta není nebo je prázdná. */
+	private Rectangle oblastCesty(final Cesta cesta) {
+		if (cesta == null) {
 			return null;
 		}
 		final Coord soord = getSoord();
 		Rectangle r = null;
-		for (final Usek usek : bousek.getCesta().getUseky()) {
+		for (final Usek usek : cesta.getUseky()) {
 			r = rozsir(r, soord.transform(usek.getBvzad().getMou()));
 			r = rozsir(r, soord.transform(usek.getBvpred().getMou()));
 			final java.util.List<Mou> trasa = usek.getTrasa();
@@ -387,7 +408,10 @@ public class JCestySlide extends JSingleSlide0 {
 			}
 		}
 		if (r == null) { // cesta bez úseku, jen osamocený bod
-			r = rozsir(null, soord.transform(bousek instanceof Bod ? ((Bod) bousek).getMou() : moucur));
+			if (cesta.getStart() == null) {
+				return null;
+			}
+			r = rozsir(null, soord.transform(cesta.getStart().getMou()));
 		}
 		r.grow(Malovadlo.OKRAJ, Malovadlo.OKRAJ);
 		return r;
