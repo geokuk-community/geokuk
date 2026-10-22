@@ -201,6 +201,8 @@
   program ho odloží vedle, výlety obnoví ze složky uložených výletů a ohlásí to.
 - Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
   načte se, až je kopie hotová.
+- Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
+  dlaždice; dřív se mohla část ztratit.
 
 Obsahuje i všechny opravy z 6.4.3.
 

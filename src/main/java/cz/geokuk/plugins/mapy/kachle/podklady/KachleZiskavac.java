@@ -584,10 +584,26 @@ public class KachleZiskavac {
 		ukladac.submitChunks();
 		execDiskWrite.shutdown();
 		try {
-			execDiskWrite.awaitTermination(5, TimeUnit.SECONDS);
+			if (!pockejNaZapis((ThreadPoolExecutor) execDiskWrite, 10_000, 60_000)) {
+				log.warn("Při ukončení se nestihly zapsat všechny dlaždice do cache");
+			}
 		} catch (final InterruptedException e) {
 			Thread.currentThread().interrupt();
 		}
+	}
+
+	/** Čeká na dokončení zápisu, dokud postupuje: pomalý disk dostane čas, zaseknutý zápis konec programu nezdrží o víc než jeden krok. */
+	static boolean pockejNaZapis(final ThreadPoolExecutor zapis, final long krokMs, final long nejvicMs) throws InterruptedException {
+		final long konec = System.currentTimeMillis() + nejvicMs;
+		long hotovo = zapis.getCompletedTaskCount();
+		while (!zapis.awaitTermination(krokMs, TimeUnit.MILLISECONDS)) {
+			final long ted = zapis.getCompletedTaskCount();
+			if (ted == hotovo || System.currentTimeMillis() >= konec) {
+				return false;
+			}
+			hotovo = ted;
+		}
+		return true;
 	}
 
 	void uklidOfflineCache(final String klic, final File symboly) {
