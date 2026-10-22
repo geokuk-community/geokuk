@@ -46,6 +46,31 @@ public class JKesoidySlideTest {
 		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
 	}
 
+	/** Po zpracování se waypoint smí naplánovat znovu, jinak by se ikona po změně (filtr, výlet) už nepřepočítala. */
+	@Test(timeout = 30000)
+	public void zpracovanyWaypointSePlanujeZnovu() throws Exception {
+		final java.util.concurrent.atomic.AtomicInteger vypocty = new java.util.concurrent.atomic.AtomicInteger();
+		final JKesoidySlide slide = new JKesoidySlide(false) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void computeSklivec(final Wpt wpt) {
+				vypocty.incrementAndGet();
+			}
+		};
+		final Wpt wpt = new Wpt();
+		slide.zaplanujNaplneniSklivce(wpt, new Mou(0, 0));
+		pockejNaPrazdnouFrontu(slide);
+		while (vypocty.get() < 1) {
+			Thread.sleep(10);
+		}
+		slide.zaplanujNaplneniSklivce(wpt, new Mou(0, 0));
+		pockejNaPrazdnouFrontu(slide);
+		while (vypocty.get() < 2) {
+			Thread.sleep(10);
+		}
+	}
+
 	/** Waypoint, který už čeká ve frontě nebo se právě počítá, se při dalších překresleních neplánuje znovu. */
 	@Test(timeout = 30000)
 	public void cekajiciWaypointSeNeplanujeZnovu() throws Exception {
