@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -147,7 +148,7 @@ public class JKachle extends JComponent {
 		synchronized (JKachle.this) { // paintování spoléhá na stálost údajů
 			nahled = Collections.emptyList();
 			if (kastat.getImg() != null) {
-				image = kastat.getImg(); // přepíšeme, jen když jde něco lepšího
+				image = zapecKryti(kastat.getImg(), ka.getType().getKryti()); // přepíšeme, jen když jde něco lepšího
 				chyba = null;
 				chybVRade = 0;
 			} else {
@@ -217,8 +218,30 @@ public class JKachle extends JComponent {
 		}
 	}
 
+	/** Průhlednost podkladu (např. stínovaný reliéf) se vloží do obrázku jednou, ne při každém kreslení. */
+	static Image zapecKryti(final Image obrazek, final float kryti) {
+		if (kryti >= 1 || obrazek == null) {
+			return obrazek;
+		}
+		final int w = obrazek.getWidth(null);
+		final int h = obrazek.getHeight(null);
+		if (w <= 0 || h <= 0) {
+			return obrazek;
+		}
+		final BufferedImage vysledek = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
+		final Graphics2D g = vysledek.createGraphics();
+		try {
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, kryti));
+			g.drawImage(obrazek, 0, 0, null);
+		} finally {
+			g.dispose();
+		}
+		return vysledek;
+	}
+
 	private void kresli(final Graphics2D g) {
-		if (ka.getType().getKryti() < 1) {
+		if (ka.getType().getKryti() < 1 && image == null) {
+			// Obrázek má krytí zapečené, průhledná je jen případná dočasná kresba místo něj.
 			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, ka.getType().getKryti()));
 		}
 		if (image != null) {
