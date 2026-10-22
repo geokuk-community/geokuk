@@ -75,7 +75,7 @@ public abstract class Nacitac0 {
 				throw new RuntimeException(popis != null ? popis : "Chyba při čtení \"" + file + "\"", e);
 			}
 		} catch (final Exception e) {
-			if (DatabazeJinehoProgramu.jeZamcena(e)) {
+			if (DatabazeJinehoProgramu.jeZamcena(e) || jeDrzenyJinymProgramem(e, file)) {
 				throw new DatabazeJinehoProgramu.Zamcena(file, e);
 			}
 			if (RozepsanySoubor.jeRozepsany(file)) {
@@ -89,6 +89,16 @@ public abstract class Nacitac0 {
 			}
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Soubor \"" + file + "\" je asi poškozený, ostatní soubory se načtou");
 		}
+	}
+
+	/** Soubor existuje, ale nejde otevřít, protože ho drží jiný program (ve Windows sharing violation nebo zámek); přečte se při dalším pokusu. */
+	static boolean jeDrzenyJinymProgramem(final Throwable chyba, final File file) {
+		for (Throwable t = chyba; t != null; t = t.getCause()) {
+			if (t instanceof java.nio.file.FileSystemException && !(t instanceof java.nio.file.NoSuchFileException) || t instanceof java.io.FileNotFoundException && file.isFile()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	protected final void nactiBezVyjimky(final ZipFile zipFile, final ZipEntry zipEntry, final IImportBuilder builder, final Future<?> future, final ProgressModel aProgressModel) {

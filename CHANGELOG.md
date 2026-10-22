@@ -201,6 +201,8 @@
   program ho odloží vedle, výlety obnoví ze složky uložených výletů a ohlásí to.
 - Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
   načte se, až je kopie hotová.
+- Soubor s kešemi, který zrovna drží jiný program, už nehlásí chybu; načte se,
+  až ho program pustí.
 
 Obsahuje i všechny opravy z 6.4.3.
 
