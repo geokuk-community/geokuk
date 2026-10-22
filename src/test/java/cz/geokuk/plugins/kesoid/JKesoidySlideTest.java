@@ -46,6 +46,35 @@ public class JKesoidySlideTest {
 		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
 	}
 
+	/** Waypoint, který už čeká ve frontě nebo se právě počítá, se při dalších překresleních neplánuje znovu. */
+	@Test(timeout = 30000)
+	public void cekajiciWaypointSeNeplanujeZnovu() throws Exception {
+		final java.util.concurrent.CountDownLatch pocita = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch uvolni = new java.util.concurrent.CountDownLatch(1);
+		final JKesoidySlide slide = new JKesoidySlide(false) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void computeSklivec(final Wpt wpt) {
+				pocita.countDown();
+				try {
+					uvolni.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		};
+		final Wpt wpt = new Wpt();
+		slide.zaplanujNaplneniSklivce(wpt, new Mou(0, 0));
+		pocita.await(); // vlákno wpt převzalo a počítá ho
+		for (int i = 0; i < 100; i++) {
+			slide.zaplanujNaplneniSklivce(wpt, new Mou(0, 0));
+		}
+		assertTrue("ve frontě " + slide.frontaWaypointu.size(), slide.frontaWaypointu.size() <= 1);
+		uvolni.countDown();
+		pockejNaPrazdnouFrontu(slide);
+	}
+
 	private static long pocetVypisu() throws IOException {
 		final Path slozka = FExceptionDumper.EXCEPTION_DIR.toPath();
 		if (!Files.isDirectory(slozka)) {
