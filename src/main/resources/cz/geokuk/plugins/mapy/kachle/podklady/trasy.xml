@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Turistické a cyklotrasy z map osm.paws.cz přes libovolný podklad. Součást GeoKuku, licence GNU GPL 3 nebo novější. -->
+<!-- Turistické a cyklotrasy z tagů osmc_* v mapovém souboru přes libovolný podklad. Součást GeoKuku, licence GNU GPL 3 nebo novější. -->
 <rendertheme xmlns="http://mapsforge.org/renderTheme" version="5" map-background="#00000000" map-background-outside="#00000000">
 <rule e="way" k="route" v="bicycle|mtb" zoom-min="10" zoom-max="12">
  <rule e="way" k="network" v="ncn|icn"><line stroke="#C000B0" stroke-width="1.6" stroke-dasharray="6.4,3.2" stroke-linecap="butt" scale="none" dy="-5.5"/></rule>

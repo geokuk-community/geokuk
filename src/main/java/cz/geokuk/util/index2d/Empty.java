@@ -55,6 +55,11 @@ class Empty<T> extends Node<T> {
 	}
 
 	@Override
+	int count(final BoundingRect br, final int xx1, final int yy1, final int xx2, final int yy2) {
+		return 0;
+	}
+
+	@Override
 	boolean tryAdvance(final MySplitIterator<T> splititerator,  final Consumer<? super Sheet<T>> action) {
 		// Jednoduše provoláme, není potřeba nic dělat.
 		return splititerator.tryAdvance(action);

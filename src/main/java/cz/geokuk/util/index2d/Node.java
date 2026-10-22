@@ -42,6 +42,9 @@ abstract class Node<T> {
 	 */
 	abstract Node<T> bound(BoundingRect br, int xx1, int yy1, int xx2, int yy2);
 
+	/** Počet objektů v obdélníku, stejný jako {@code bound(...).count}, ale bez vytváření nových uzlů. */
+	abstract int count(BoundingRect br, int xx1, int yy1, int xx2, int yy2);
+
 
 	abstract boolean tryAdvance(MySplitIterator<T> splititerator, final Consumer<? super Sheet<T>> action);
 

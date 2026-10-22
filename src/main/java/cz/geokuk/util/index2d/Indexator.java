@@ -222,7 +222,7 @@ public class Indexator<T> {
 	}
 
 	public int count(final BoundingRect rect) {
-		return bound(rect).getCount();
+		return root.count(rect, br.xx1, br.yy1, br.xx2, br.yy2);
 	}
 
 
