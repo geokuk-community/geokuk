@@ -129,6 +129,8 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private static final String POCET = "999999";
 
 	private Mou cur;
+	/** Úhel, pro který je nastavená ikona směru. */
+	private long uhelSmeru = Long.MIN_VALUE;
 
 	private Poziceq poziceq = new Poziceq();
 	private final JValue souradnice = new JValue(SOURADNICE);
@@ -477,14 +479,21 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	private void prepocitejVzdalenostAAzimut() {
 		if (!poziceq.isNoPosition() && cur != null) {
+			final double azimut = azimutPoziceAMysi();
+			final long uhel = Math.round(azimut);
 			vzdalenost.setText(vzdalenostPoziceAMysia());
-			azimutSmer.setIcon(Ikonizer.findSmerIcon(azimutPoziceAMysi()));
-			// azimutSmer.set
-			azimutCislo.setText(Math.round(azimutPoziceAMysi()) + "°");
-			odPozice.setVisible(true);
-			revalidate();
+			if (uhel != uhelSmeru) {
+				uhelSmeru = uhel;
+				azimutSmer.setIcon(Ikonizer.findSmerIcon(azimut));
+			}
+			azimutCislo.setText(uhel + "°");
+			if (!odPozice.isVisible()) {
+				odPozice.setVisible(true);
+				revalidate();
+			}
 		} else {
 			odPozice.setVisible(false);
+			uhelSmeru = Long.MIN_VALUE;
 		}
 		// meritkoMapy.setText(coord.getMoumer() + "");
 	}

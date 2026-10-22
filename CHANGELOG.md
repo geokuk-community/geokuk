@@ -162,6 +162,7 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Mapa je při pohybu myši plynulejší.
 - Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou
   čerchovanou čárou; široký růžový pás zůstal jen v přehledu do měřítka 9.
   Hranice krajů, okresů a obcí jsou tenčí a nevýrazné. V podrobnějších
@@ -196,6 +197,8 @@
   Ikona vlastní keše má výraznější obrys a nesplývá se světlým pozadím.
 - Přepsaný soubor s kešemi (GPX, zip, .geokuk) ve složce dat se načte znovu,
   i když v ní nepřibyl ani neubyl žádný soubor.
+- Poškozený seznam výletů (vylety.txt) už nevede k přepsání uložených výletů:
+  program ho odloží vedle, výlety obnoví ze složky uložených výletů a ohlásí to.
 - Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
   načte se, až je kopie hotová.
 - Domácí souřadnice z GeoGetu (geohome.ini) a seznamy výletů se načtou
