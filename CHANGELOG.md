@@ -201,6 +201,8 @@
   program ho odloží vedle, výlety obnoví ze složky uložených výletů a ohlásí to.
 - Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
   načte se, až je kopie hotová.
+- Nová verze ikon vestavěného tématu offline map překreslí dlaždice v cache,
+  i když se samotné téma nezměnilo.
 
 Obsahuje i všechny opravy z 6.4.3.
 
