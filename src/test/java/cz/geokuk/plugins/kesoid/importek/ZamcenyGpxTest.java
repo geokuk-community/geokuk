@@ -126,6 +126,26 @@ public class ZamcenyGpxTest {
 		Assert.assertEquals(Collections.singleton("GC0001"), kody());
 	}
 
+	@Test
+	public void drzenySeHlasiAzPoLimitu() throws Exception {
+		final File f = tmp.newFile("drzeny.gpx");
+		final Exception drzeni = new java.nio.file.FileSystemException(f.getPath(), null, "The process cannot access the file because it is being used by another process");
+		Assert.assertTrue(Nacitac0.jeDrzenyJinymProgramem(drzeni, f, 1_000));
+		Assert.assertTrue(Nacitac0.jeDrzenyJinymProgramem(drzeni, f, 1_000 + Nacitac0.LIMIT_DRZENI_MS - 1));
+		Assert.assertFalse("po limitu se hlásí jako chyba", Nacitac0.jeDrzenyJinymProgramem(drzeni, f, 1_000 + Nacitac0.LIMIT_DRZENI_MS));
+		Assert.assertTrue("nový zámek se počítá znovu", Nacitac0.jeDrzenyJinymProgramem(drzeni, f, 2_000_000));
+		Nacitac0.prectenCely(f);
+	}
+
+	@Test
+	public void nepristupnyNeboChybejiciNeniDrzeny() throws Exception {
+		final File f = tmp.newFile("bezprav.gpx");
+		Assert.assertFalse(Nacitac0.jeDrzenyJinymProgramem(new java.nio.file.AccessDeniedException(f.getPath()), f));
+		Assert.assertFalse(Nacitac0.jeDrzenyJinymProgramem(new java.io.FileNotFoundException("neni"), new File(tmp.getRoot(), "neni.gpx")));
+		Assume.assumeTrue("práva jdou odebrat (ne root)", f.setReadable(false) && !f.canRead());
+		Assert.assertFalse(Nacitac0.jeDrzenyJinymProgramem(new java.io.FileNotFoundException(f + " (Permission denied)"), f));
+	}
+
 	private KesoidModel model() {
 		final ProgressModel progress = new ProgressModel();
 		progress.inject(udalost -> {});
