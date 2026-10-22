@@ -162,6 +162,7 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Kruhy obsazenosti se při velkém počtu keší ve výřezu nekreslí, mapa pak nezpomaluje.
 - Mapa je při pohybu myši plynulejší.
 - Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou
   čerchovanou čárou; široký růžový pás zůstal jen v přehledu do měřítka 9.
