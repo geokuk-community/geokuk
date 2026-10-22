@@ -10,6 +10,8 @@ import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.RepaintManager;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import org.junit.*;
 
@@ -22,12 +24,13 @@ import cz.geokuk.plugins.cesty.PridavaniBoduEvent;
 /** Pohyb myši při nastavené pozici nepřekresluje detail, dokud se jeho střed nezmění. */
 public class JDetailPrekryvnikTest {
 
-	private static class ZaznamPrekresleni extends RepaintManager {
+	private class ZaznamPrekresleni extends RepaintManager {
 		final List<Rectangle> oblasti = new ArrayList<>();
 
 		@Override
 		public void addDirtyRegion(final JComponent c, final int x, final int y, final int w, final int h) {
-			if (c instanceof JDetailPrekryvnik) {
+			// Jen detail tohoto testu; časovač detailu z jiného testu se může ozvat později.
+			if (c == detail) {
 				oblasti.add(new Rectangle(x, y, w, h));
 			}
 		}
@@ -48,11 +51,19 @@ public class JDetailPrekryvnikTest {
 		final Constructor<PoziceChangedEvent> k = PoziceChangedEvent.class.getDeclaredConstructor(Poziceq.class);
 		k.setAccessible(true);
 		detail.onEvent(k.newInstance(new Poziceq(new Wgs(50.08, 14.42))));
+		// Změna velikosti se zpracuje na EDT později; počkat na ni, ať se nezapočítá do pohybu myši.
+		SwingUtilities.invokeAndWait(() -> {});
 		zaznam.oblasti.clear();
 	}
 
 	@After
-	public void tearDown() {
+	public void tearDown() throws Exception {
+		final Field f = JDetailPrekryvnik.class.getDeclaredField("zpozdovaciTimer");
+		f.setAccessible(true);
+		final Timer timer = (Timer) f.get(detail);
+		if (timer != null) {
+			timer.stop();
+		}
 		if (puvodni != null) {
 			RepaintManager.setCurrentManager(puvodni);
 		}
