@@ -138,12 +138,12 @@ public class TemaGeoKukTest {
 		Assert.assertEquals(1, xml.split("k=\"ref\"", -1).length - 1);
 	}
 
-	/** Klíč cache dlaždic vestavěného tématu vychází z obsahu souboru, takže nová verze tématu dlaždice vykreslí znovu. */
+	/** Klíč cache dlaždic vestavěného tématu vychází z obsahu souboru a jeho symbolů, takže nová verze tématu dlaždice vykreslí znovu. */
 	@Test
 	public void otiskVestavenehoTematuJeZObsahu() throws IOException {
-		final java.util.zip.CRC32 crc = new java.util.zip.CRC32();
-		crc.update(text().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-		Assert.assertEquals(TemaOfflineMapy.GEOKUK.naText() + ':' + Long.toHexString(crc.getValue()), TemaOfflineMapy.GEOKUK.otiskSouboru());
+		Assert.assertEquals(TemaOfflineMapy.GEOKUK.naText() + ':' + TemaOfflineMapy.otiskZdroje("geokuk/GeoKuk.xml", TemaOfflineMapy.class::getResourceAsStream),
+				TemaOfflineMapy.GEOKUK.otiskSouboru());
+		Assert.assertNotEquals("chybi", TemaOfflineMapy.otiskZdroje("geokuk/GeoKuk.xml", TemaOfflineMapy.class::getResourceAsStream));
 	}
 
 	/** Varianta detail je v nabídce hned za GeoKukem, načte se s ikonami vedle tématu a uvádí jejich původ. */

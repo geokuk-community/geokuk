@@ -1,7 +1,11 @@
 package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -40,6 +44,7 @@ public final class TemaOfflineMapy {
 	public static final List<TemaOfflineMapy> VESTAVENA = Collections.unmodifiableList(vestavena());
 
 	private static final char ODDELOVAC = '|';
+	private static final Pattern ODKAZ_NA_SOUBOR = Pattern.compile("[\"']file:([^\"']+)[\"']");
 	private static final String PREDPONA_ZDROJE = "zdroj:";
 
 	private final MapsforgeThemes vestavene;
@@ -283,9 +288,32 @@ public final class TemaOfflineMapy {
 
 	/** Obsah přibaleného tématu se s verzí programu může změnit, dlaždice se pak vykreslí znovu. */
 	private static String otiskZdroje(final String zdroj) {
+		return otiskZdroje(zdroj, TemaOfflineMapy.class::getResourceAsStream);
+	}
+
+	/** Otisk XML tématu i souborů, na které odkazuje ({@code file:symbols/…}), aby změna samotné ikony dlaždice také překreslila. */
+	static String otiskZdroje(final String zdroj, final Function<String, InputStream> otevri) {
 		final CRC32 crc = new CRC32();
-		try (InputStream in = otevriZdroj(zdroj)) {
-			crc.update(ByteStreams.toByteArray(in));
+		try (InputStream in = otevri.apply(zdroj)) {
+			if (in == null) {
+				return "chybi";
+			}
+			final byte[] xml = ByteStreams.toByteArray(in);
+			crc.update(xml);
+			final String slozka = zdroj.substring(0, zdroj.lastIndexOf('/') + 1);
+			final Matcher m = ODKAZ_NA_SOUBOR.matcher(new String(xml, StandardCharsets.UTF_8));
+			final SortedSet<String> soubory = new TreeSet<>();
+			while (m.find()) {
+				soubory.add(m.group(1));
+			}
+			for (final String soubor : soubory) {
+				crc.update(soubor.getBytes(StandardCharsets.UTF_8));
+				try (InputStream s = otevri.apply(slozka + soubor)) {
+					if (s != null) {
+						crc.update(ByteStreams.toByteArray(s));
+					}
+				}
+			}
 		} catch (final IOException e) {
 			return "chybi";
 		}
