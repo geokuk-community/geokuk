@@ -81,7 +81,7 @@ public class DirScannerTest {
 		final File gpx = tmp.newFile("a.gpx");
 		Files.write(gpx.toPath(), "x".getBytes(StandardCharsets.UTF_8));
 		final DirScanner ds = new DirScanner();
-		ds.seRootDirs(false, new Root(tmp.getRoot(), VSE));
+		ds.seRootDirs(false, new Root(tmp.getRoot(), new Root.Def(10, null, null, true)));
 		Assert.assertNotNull(ds.coMamNacist());
 		Assert.assertNull("beze změny se nenačítá", ds.coMamNacist());
 

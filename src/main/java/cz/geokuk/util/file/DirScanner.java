@@ -47,11 +47,11 @@ public class DirScanner {
 		return list;
 	}
 
-	/** Cesta, čas změny a velikost každého souboru; přepsaný soubor se tak načte znovu, i když se seznam souborů nezměnil. */
+	/** Cesta souboru, u sledovaných kořenů i čas změny a velikost; přepsaný soubor se tak načte znovu, i když se seznam souborů nezměnil. */
 	private static Set<String> otisk(final List<KeFile> list) {
 		final Set<String> otisk = new HashSet<>();
 		for (final KeFile f : list) {
-			otisk.add(f.root.dir + "|" + f.getFile() + "|" + f.getLastModified() + "|" + f.getFile().length());
+			otisk.add(f.root.dir + "|" + f.getFile() + (f.root.def.sledovatZmeny ? "|" + f.getLastModified() + "|" + f.getFile().length() : ""));
 		}
 		return otisk;
 	}
