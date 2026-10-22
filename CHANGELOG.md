@@ -191,6 +191,9 @@
   nezvětšuje, posuvníky drží tytéž řádky a po sbalení se panel nezavře.
 - Nastavení se při ukončení nebo restartu uloží spolehlivě i při souběžném
   zápisu na pozadí.
+- V detailu keše jsou datum nálezu a kód keše dobře čitelné: zelená a červená
+  se podle vzhledu ztmaví nebo zesvětlí, aby se neztrácely v pozadí.
+  Ikona vlastní keše má výraznější obrys a nesplývá se světlým pozadím.
 
 Obsahuje i všechny opravy z 6.4.3.
 
@@ -199,9 +202,6 @@ Obsahuje i všechny opravy z 6.4.3.
 ### Opravy
 - Domácí souřadnice z GeoGetu (geohome.ini) se načtou i ze souboru v UTF-8
   se značkou BOM; GeoKuk ho už nehlásí jako poškozený.
-- V detailu keše jsou datum nálezu a kód keše dobře čitelné: zelená a červená
-  se podle vzhledu ztmaví nebo zesvětlí, aby se neztrácely v pozadí.
-  Ikona vlastní keše má výraznější obrys a nesplývá se světlým pozadím.
 
 ## 6.4.2
 
