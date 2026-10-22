@@ -22,6 +22,7 @@ public class Ikonizer {
 		g.translate(-8, -8);
 		final BufferedImage severni = ImageLoader.locateResImage("x16/smery/N.gif");
 		g.drawImage(severni, 0, 0, null);
+		g.dispose();
 		return new ImageIcon(sm);
 		// int index = ((int)smer + 45) % 360 / 45;
 		// return smery[index];
