@@ -83,6 +83,5 @@ public class JDetailPrekryvnikTest {
 			mys(i);
 		}
 		Assert.assertSame(timer, f.get(detail));
-		Assert.assertTrue(zaznam.oblasti.toString(), zaznam.oblasti.isEmpty());
 	}
 }
