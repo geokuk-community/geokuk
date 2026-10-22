@@ -40,4 +40,19 @@ public class TextovySouborTest {
 		Files.write(f.toPath(), "GC1\r\nJiří.jpg\r\n".getBytes(TextovySoubor.CP1250));
 		Assert.assertEquals("GC1\r\nJiří.jpg\r\n", TextovySoubor.nacti(f));
 	}
+
+	@Test
+	public void souborVUtf16() throws Exception {
+		final File le = tmp.newFile("le.ini");
+		final byte[] text = "50.1 14.4 Domov Jiří\r\n".getBytes(StandardCharsets.UTF_16LE);
+		final byte[] sBom = new byte[text.length + 2];
+		sBom[0] = (byte) 0xFF;
+		sBom[1] = (byte) 0xFE;
+		System.arraycopy(text, 0, sBom, 2, text.length);
+		Files.write(le.toPath(), sBom);
+		Assert.assertEquals("50.1 14.4 Domov Jiří\r\n", TextovySoubor.nacti(le));
+		final File be = tmp.newFile("be.ini");
+		Files.write(be.toPath(), "50.1 14.4 Domov Jiří\r\n".getBytes(StandardCharsets.UTF_16));
+		Assert.assertEquals("50.1 14.4 Domov Jiří\r\n", TextovySoubor.nacti(be));
+	}
 }

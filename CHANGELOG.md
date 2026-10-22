@@ -164,6 +164,7 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Mapa je při pohybu myši plynulejší.
 - Hranice státu se v offline mapě (téma GeoKuk) kreslí tenkou fialovou
   čerchovanou čárou; široký růžový pás zůstal jen v přehledu do měřítka 9.
   Hranice krajů, okresů a obcí jsou tenčí a nevýrazné. V podrobnějších
@@ -193,13 +194,30 @@
   nezvětšuje, posuvníky drží tytéž řádky a po sbalení se panel nezavře.
 - Nastavení se při ukončení nebo restartu uloží spolehlivě i při souběžném
   zápisu na pozadí.
-- Domácí souřadnice z GeoGetu (geohome.ini) se načtou i ze souboru v UTF-8
-  se značkou BOM; GeoKuk ho už nehlásí jako poškozený.
 - V detailu keše jsou datum nálezu a kód keše dobře čitelné: zelená a červená
   se podle vzhledu ztmaví nebo zesvětlí, aby se neztrácely v pozadí.
   Ikona vlastní keše má výraznější obrys a nesplývá se světlým pozadím.
+- Přepsaný soubor s kešemi (GPX, zip, .geokuk) ve složce dat se načte znovu,
+  i když v ní nepřibyl ani neubyl žádný soubor.
+- Poškozený seznam výletů (vylety.txt) už nevede k přepsání uložených výletů:
+  program ho odloží vedle, výlety obnoví ze složky uložených výletů a ohlásí to.
+- Zip s kešemi, který se právě kopíruje do složky s daty, už nehlásí chybu;
+  načte se, až je kopie hotová.
+- Domácí souřadnice z GeoGetu (geohome.ini) a seznamy výletů se načtou
+  i ze souboru v UTF-16.
+- Export GeoKuku (.geokuk) ve starším kódování Windows (cp1250) se načte
+  se správnou diakritikou.
+- Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
+- Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
+  a nespadne.
 
-Obsahuje i všechny opravy z 6.4.2.
+Obsahuje i všechny opravy z 6.4.3.
+
+## 6.4.3
+
+### Opravy
+- Domácí souřadnice z GeoGetu (geohome.ini) se načtou i ze souboru v UTF-8
+  se značkou BOM; GeoKuk ho už nehlásí jako poškozený.
 
 ## 6.4.2
 

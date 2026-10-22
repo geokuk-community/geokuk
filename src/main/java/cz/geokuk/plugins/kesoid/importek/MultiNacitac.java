@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid.importek;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -31,7 +32,7 @@ public class MultiNacitac {
 
 
 	// TODO: Doporučuji přejmenovat na GEOKUK_ROOTDIR_DEF resp. GEOGET_ROOTDIR_DEF. Už dávno nejde jen o jméno souboru/složky. [2016-04-09, Bohusz]
-	static final Root.Def FILE_NAME_REGEX_GEOKUK_DIR = new Root.Def(Integer.MAX_VALUE, Pattern.compile("(?i).*\\.(geokuk|gpx|zip|jpg|raw|tif)"), null);
+	static final Root.Def FILE_NAME_REGEX_GEOKUK_DIR = new Root.Def(Integer.MAX_VALUE, Pattern.compile("(?i).*\\.(geokuk|gpx|zip|jpg|raw|tif)"), null, true);
 	static final Root.Def FILE_NAME_REGEX_GEOGET_DIR = new Root.Def(1, Pattern.compile("(?i).*\\.db3"), Pattern.compile("(?i).*\\.[0-9]{8}\\.db3"));
 	static final Root.Def GSAK_ROOTDIR_DEF = new Root.Def(2, Pattern.compile("sqlite.db3"), null);
 	static final Root.Def OPENSAK_ROOTDIR_DEF = new Root.Def(1, Pattern.compile("(?i).*\\.db"), null);
@@ -894,10 +895,28 @@ public class MultiNacitac {
 		}
 	}
 
+	/** Zip, který se ještě kopíruje, nejde otevřít; načte se, až se dopíše, stejně jako ostatní rozepsané soubory. */
+	private static ZipFile otevriZip(final File file) throws IOException {
+		try {
+			return new ZipFile(file);
+		} catch (final IOException e) {
+			// Zip z Windows bez příznaku UTF-8 má jména v cp852.
+			try {
+				return new ZipFile(file, Charset.forName("IBM852"));
+			} catch (final IOException e852) {
+				e.addSuppressed(e852);
+			}
+			if (RozepsanySoubor.jeRozepsany(file)) {
+				throw new RozepsanySoubor.Rozepsany(file, e);
+			}
+			throw e;
+		}
+	}
+
 	private void zpracujJedenFile(final KeFile kefile, final KesoidImportBuilder builder, final Future<?> future) throws IOException {
 		final File file = kefile.getFile();
 		if (isZipFile(file)) {
-			try (ZipFile zipFile = new ZipFile(file)) {
+			try (ZipFile zipFile = otevriZip(file)) {
 				final boolean nacitat = kesoidModel.maSeNacist(kefile);
 				for (final Enumeration<? extends ZipEntry> en = zipFile.entries(); en.hasMoreElements();) {
 					final ZipEntry entry = en.nextElement();
