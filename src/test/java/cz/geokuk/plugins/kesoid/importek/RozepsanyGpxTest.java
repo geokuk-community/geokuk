@@ -80,7 +80,27 @@ public class RozepsanyGpxTest {
 	}
 
 	private StavZdroje stavSouboru() {
-		return nacitac.getRegistr().getSnimek().getPolozky().stream().filter(p -> p.getSoubor().getName().equals("kesky.gpx")).findFirst().get().getStav();
+		return stavSouboru("kesky.gpx");
+	}
+
+	private StavZdroje stavSouboru(final String jmeno) {
+		return nacitac.getRegistr().getSnimek().getPolozky().stream().filter(p -> p.getSoubor().getName().equals(jmeno)).findFirst().get().getStav();
+	}
+
+	private void zapisZip(final byte[] obsah, final long zmenen) throws Exception {
+		final File f = new File(gpx, "kesky.zip");
+		Files.write(f.toPath(), obsah);
+		Assert.assertTrue(f.setLastModified(zmenen));
+	}
+
+	private static byte[] zip(final byte[] gpxObsah) throws Exception {
+		final java.io.ByteArrayOutputStream bajty = new java.io.ByteArrayOutputStream();
+		try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(bajty)) {
+			zos.putNextEntry(new java.util.zip.ZipEntry("kesky.gpx"));
+			zos.write(gpxObsah);
+			zos.closeEntry();
+		}
+		return bajty.toByteArray();
 	}
 
 	private static byte[] pulka(final byte[] obsah) {
@@ -134,6 +154,39 @@ public class RozepsanyGpxTest {
 		nacti();
 		Assert.assertEquals(hlaseni.toString(), 1, hlaseni.size());
 		Assert.assertTrue(hlaseni.get(0), hlaseni.get(0).startsWith("DISPLAY"));
+	}
+
+	@Test
+	public void useknutyCerstvyZipNehlasiChybuAPrectesePoDokonceni() throws Exception {
+		final byte[] vse = zip(cely("GC0001", "GC0002", "GC0003"));
+		zapisZip(pulka(vse), System.currentTimeMillis());
+		nacti();
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+		Assert.assertEquals(StavZdroje.CEKA_NA_ZAPIS, stavSouboru("kesky.zip"));
+
+		zapisZip(vse, System.currentTimeMillis() + 5000);
+		Assert.assertEquals(new HashSet<>(Arrays.asList("GC0001", "GC0002", "GC0003")), kody(nacti()));
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+	}
+
+	/** Kopírování s předem vyhrazeným místem: zip je zatím jen nuly, nemá ani hlavičku. */
+	@Test
+	public void zipSNulamiZPredemRezervovanehoMistaNehlasiChybu() throws Exception {
+		final byte[] vse = zip(cely("GC0001", "GC0002"));
+		zapisZip(new byte[vse.length], System.currentTimeMillis());
+		nacti();
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+
+		zapisZip(vse, System.currentTimeMillis() + 5000);
+		Assert.assertEquals(new HashSet<>(Arrays.asList("GC0001", "GC0002")), kody(nacti()));
+		Assert.assertEquals(Collections.emptyList(), hlaseni);
+	}
+
+	@Test
+	public void useknutyStaryZipSeHlasiJakoChyba() throws Exception {
+		zapisZip(pulka(zip(cely("GC0001"))), System.currentTimeMillis() - 60_000);
+		nacti();
+		Assert.assertEquals(hlaseni.toString(), 1, hlaseni.size());
 	}
 
 	private KesoidModel model() {

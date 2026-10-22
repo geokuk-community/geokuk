@@ -894,10 +894,22 @@ public class MultiNacitac {
 		}
 	}
 
+	/** Zip, který se ještě kopíruje, nejde otevřít; načte se, až se dopíše, stejně jako ostatní rozepsané soubory. */
+	private static ZipFile otevriZip(final File file) throws IOException {
+		try {
+			return new ZipFile(file);
+		} catch (final IOException e) {
+			if (RozepsanySoubor.jeRozepsany(file)) {
+				throw new RozepsanySoubor.Rozepsany(file, e);
+			}
+			throw e;
+		}
+	}
+
 	private void zpracujJedenFile(final KeFile kefile, final KesoidImportBuilder builder, final Future<?> future) throws IOException {
 		final File file = kefile.getFile();
 		if (isZipFile(file)) {
-			try (ZipFile zipFile = new ZipFile(file)) {
+			try (ZipFile zipFile = otevriZip(file)) {
 				final boolean nacitat = kesoidModel.maSeNacist(kefile);
 				for (final Enumeration<? extends ZipEntry> en = zipFile.entries(); en.hasMoreElements();) {
 					final ZipEntry entry = en.nextElement();
