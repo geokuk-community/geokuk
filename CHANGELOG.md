@@ -210,6 +210,8 @@
 - Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
+- Soubor s kešemi, který zrovna drží jiný program, už nehlásí chybu; načte se,
+  až ho program pustí.
 
 Obsahuje i všechny opravy z 6.4.3.
 
