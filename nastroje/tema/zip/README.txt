@@ -1,11 +1,14 @@
 Mapové téma GeoKuk pro aplikace s mapami ve formátu mapsforge
-(například aDrake, Locus, OruxMaps)
+(například c:geo, aDrake)
 
 GeoKuk.xml         základní téma
 GeoKuk_detail.xml  téma s dalšími body od většího přiblížení
 symbols/, patterns/  symboly a vzorky obou témat
 
 Zip rozbalte nebo vložte do složky témat aplikace podle jejího návodu.
+c:geo: zip vložte do složky cgeo/maps/_themes/, nebo jeho obsah rozbalte
+do složky cgeo/maps/_themes/geokuk/. Po novém spuštění c:geo je téma
+v nabídce motivů mapy.
 Turistické a cyklotrasy se kreslí z tagů osmc_* v mapovém souboru.
 Téma neobsahuje mapová data; atribuci dat zobrazuje aplikace.
 

@@ -2,7 +2,7 @@
 Ze společného zdroje vzhledu GeoKuk (zdroj/geokuk-spolecne.xml + bloky dat) vyrobí:
   VYSTUP/geokuk/GeoKuk.xml, GeoKuk_detail.xml (+ symbols/)  vestavěná témata, trasy z vrstvy GeoKuku (fmrel*), zdroje jar: z programu
   VYSTUP/trasy.xml                                          překryv Turistické a cyklotrasy (podklady/trasy.xml v programu)
-  VYSTUP/GeoKuk-tema.zip                                    téma pro aplikace s mapami mapsforge (aDrake, Locus, OruxMaps),
+  VYSTUP/GeoKuk-tema.zip                                    téma pro aplikace s mapami mapsforge (c:geo, aDrake),
                                                             trasy z tagů osmc_*, všechny zdroje relativně file:
 Symboly jar:symbols a jar:patterns se berou z JAR (geokuk.jar, složka assets/), vlastní symboly z resources programu."""
 import os, re, subprocess, sys, tempfile, zipfile
@@ -69,7 +69,7 @@ def s_detailem(xml):
 geokuk_detail = s_detailem(geokuk)
 android_detail = s_detailem(android)
 
-hlavicka_android = ('<!-- GeoKuk: téma GeoKuku pro aplikace s mapami mapsforge (aDrake, Locus, OruxMaps). Odvozeno z tématu GeoKuk '
+hlavicka_android = ('<!-- GeoKuk: téma GeoKuku pro aplikace s mapami mapsforge (c:geo, aDrake). Odvozeno z tématu GeoKuk '
                     '(GNU LGPL 3 nebo novější, původně mapsforge default.xml). Stínování terénu a vrstvy GeoKuku v této variantě nejsou; '
                     'turistické a cyklotrasy z tagů osmc_* jsou součástí stylu. -->')
 android = android.replace('<?xml version="1.0" encoding="UTF-8"?>', '<?xml version="1.0" encoding="UTF-8"?>\n' + hlavicka_android, 1)

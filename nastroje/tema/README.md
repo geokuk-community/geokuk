@@ -4,7 +4,7 @@
 - `VYSTUP/geokuk/GeoKuk.xml`, `GeoKuk_detail.xml` (+ `symbols/`): vestavěná témata programu
   (`src/main/resources/cz/geokuk/plugins/mapy/kachle/podklady/geokuk/`),
 - `VYSTUP/trasy.xml`: překryv Turistické a cyklotrasy (`podklady/trasy.xml`),
-- `VYSTUP/GeoKuk-tema.zip`: téma pro aplikace s mapami mapsforge (aDrake, Locus, OruxMaps), soubor vydání.
+- `VYSTUP/GeoKuk-tema.zip`: téma pro aplikace s mapami mapsforge (c:geo, aDrake), soubor vydání.
 
 `JAR` je `geokuk.jar` (symboly mapsforge ve složce `assets/`). Vlastní symboly jsou v resources programu.
 
