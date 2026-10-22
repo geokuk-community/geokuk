@@ -29,6 +29,22 @@ public class IndexatorCountTest {
 		}
 	}
 
+	/** Obdélníky s body přesně na hranách: horní a pravá hrana nepatří dovnitř, stejně jako u oříznutého indexu. */
+	@Test
+	public void shodaNaHranach() {
+		Indexator<Integer> ix = new Indexator<>(BoundingRect.ALL);
+		for (int i = 0; i < 50; i++) {
+			ix = ix.add(400_000_000 + i * 1000, 300_000_000 + i * 1000, i);
+		}
+		for (int i = 0; i < 50; i++) {
+			final int a = 400_000_000 + i * 1000;
+			final int b = 300_000_000 + i * 1000;
+			for (final BoundingRect br : new BoundingRect[] { new BoundingRect(a - 5000, b - 5000, a, b), new BoundingRect(a, b, a + 5000, b + 5000), new BoundingRect(a, b, a + 1, b + 1) }) {
+				Assert.assertEquals(br.toString(), ix.bound(br).getCount(), ix.count(br));
+			}
+		}
+	}
+
 	@Test
 	public void countNealokuje() {
 		Assume.assumeTrue(ManagementFactory.getThreadMXBean() instanceof com.sun.management.ThreadMXBean);
