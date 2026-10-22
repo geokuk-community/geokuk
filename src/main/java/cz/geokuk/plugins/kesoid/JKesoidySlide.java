@@ -74,6 +74,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 					}
 					final MouRect mouRect = new MouRect();
 					while (wpr != null) {
+						jKesoidy.naplanovane.remove(wpr.wpt);
 						if (wpr.wpt.getSklivec() == null) {
 							try {
 								spocitejSklivece(wpr.wpt, jKesoidy);
@@ -158,6 +159,9 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private volatile double meritkoIkon = 1;
 
 	final BlockingQueue<WptPaintRequest> frontaWaypointu = new LinkedBlockingQueue<>();
+
+	/** Waypointy, které už ve frontě čekají; každé překreslení a každá vrstva skla je jinak plánují znovu. */
+	final Set<Wpt> naplanovane = ConcurrentHashMap.newKeySet();
 	private Indexator<Wpt> indexator;
 	/** Od tohoto zoomu výš ikony, níž tečky. */
 	static final int ZOOM_IKON = 13;
@@ -641,7 +645,7 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 		return g;
 	}
 
-	private void computeSklivec(final Wpt wpt) {
+	void computeSklivec(final Wpt wpt) {
 		final Sklivec sklivec = ikonBag.getSada().getSklivec(computeGenotyp(wpt));
 		wpt.setSklivec(sklivec);
 	}
@@ -797,12 +801,16 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	private void repaintWpt(final Wpt wpt) {
 		wpt.invalidate();
 
-		frontaWaypointu.add(new WptPaintRequest(wpt, null));
+		if (naplanovane.add(wpt)) {
+			frontaWaypointu.add(new WptPaintRequest(wpt, null));
+		}
 	}
 
 	void zaplanujNaplneniSklivce(final Wpt wpt, final Mou mou) {
 
-		frontaWaypointu.add(new WptPaintRequest(wpt, mou));
+		if (naplanovane.add(wpt)) {
+			frontaWaypointu.add(new WptPaintRequest(wpt, mou));
+		}
 		pocitVelikostFrontyWaypointu.set(frontaWaypointu.size());
 		// spocitejSklivece(wpt);
 	}

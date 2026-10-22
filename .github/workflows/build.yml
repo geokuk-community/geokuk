@@ -53,6 +53,10 @@ jobs:
       - name: Mapové téma pro aplikace
         run: |
           python3 -I nastroje/tema/sestav-tema.py target/geokuk.jar target/tema
+          # Témata v resources musí odpovídat generátoru.
+          R=src/main/resources/cz/geokuk/plugins/mapy/kachle/podklady
+          diff -r "$R/geokuk" target/tema/geokuk
+          diff "$R/trasy.xml" target/tema/trasy.xml
           mv target/tema/GeoKuk-tema.zip target/GeoKuk-tema.zip
 
       - name: Pokrytí testy

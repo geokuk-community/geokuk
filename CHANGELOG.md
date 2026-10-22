@@ -216,6 +216,8 @@
 - Nesmyslné číslo ve vlastní sadě ikon (jméno nebo nastavení ikony) už
   nezabrání načtení ikon ani keší; použije se výchozí hodnota. Výsledek hledání
   adresy bez platné polohy se vynechá, ostatní výsledky zůstanou.
+- Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené
+  dlaždice; dřív se mohla část ztratit.
 
 Obsahuje i všechny opravy z 6.4.3.
 

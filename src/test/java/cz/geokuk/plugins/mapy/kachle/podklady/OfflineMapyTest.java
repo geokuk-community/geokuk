@@ -334,6 +334,82 @@ public class OfflineMapyTest {
 		Assert.assertEquals("klíč dlaždic nezávisí na nečitelné mapě", sVadnou, klic());
 	}
 
+	/** Vadné soubory .map, jak vzniknou přerušeným stahováním nebo kopírováním: prázdný, jen hlavička, samé nuly, chybová stránka, useknutá mapa. */
+	private Map<String, byte[]> vadneMapy() throws Exception {
+		final File dobra = tmp.newFolder("zdroj");
+		zkopirujMapu(dobra, "cela.map");
+		final byte[] cela = Files.readAllBytes(new File(dobra, "cela.map").toPath());
+		final Map<String, byte[]> m = new LinkedHashMap<>();
+		m.put("prazdna.map", new byte[0]);
+		m.put("hlavicka.map", Arrays.copyOf(cela, 64));
+		m.put("nuly.map", new byte[8192]);
+		m.put("html.map", "<!DOCTYPE html><html><body>Not Found</body></html>".getBytes(StandardCharsets.UTF_8));
+		m.put("pulka.map", Arrays.copyOf(cela, cela.length / 2));
+		return m;
+	}
+
+	/** Uživatel vidí chybu se jménem souboru, ne pád; dobrá mapa vedle vadné se kreslí dál. */
+	@Test
+	public void vadnaMapaHlasiJmenoADobraSeKresli() throws Exception {
+		final Map<String, byte[]> vadne = vadneMapy();
+		// Každý případ ve vlastní složce: otevřenou mapu Windows smazat nedovolí.
+		for (final Map.Entry<String, byte[]> v : vadne.entrySet()) {
+			final File sDobrou = tmp.newFolder("s-dobrou-" + v.getKey());
+			zkopirujMapu(sDobrou, "kukov.map");
+			Files.write(new File(sDobrou, v.getKey()).toPath(), v.getValue());
+			mapy = new OfflineMapy(() -> {});
+			mapy.nastav(sDobrou, TemaOfflineMapy.VYCHOZI);
+			Assert.assertTrue(v.getKey() + ": dobrá mapa se má kreslit", barev(pixely(vyrendruj(STRED_Z15))) > 10);
+		}
+		// Prázdný soubor se jen tiše přeskočí (vzniká při zakládání), hlásí se ostatní.
+		vadne.remove("prazdna.map");
+		final List<String> chyby = new ArrayList<>();
+		for (final Map.Entry<String, byte[]> v : vadne.entrySet()) {
+			final File jen = tmp.newFolder("jen-" + v.getKey());
+			final File vadna = new File(jen, v.getKey());
+			Files.write(vadna.toPath(), v.getValue());
+			// Starý soubor: nekopíruje se, je trvale poškozený.
+			Assert.assertTrue(vadna.setLastModified(System.currentTimeMillis() - 600_000));
+			mapy = new OfflineMapy(() -> {});
+			mapy.nastav(jen, TemaOfflineMapy.VYCHOZI);
+			try {
+				final OfflineRenderer r = mapy.pouzij();
+				chyby.add(v.getKey() + ": vadná mapa se otevřela, mapy " + mapy.getNazvyMap() + ", chyba " + mapy.getChyba());
+				r.skonci();
+			} catch (final IOException e) {
+				if (!String.valueOf(e.getMessage()).contains(v.getKey())) {
+					chyby.add(v.getKey() + ": hláška bez jména souboru: " + e.getMessage());
+				}
+			}
+		}
+		Assert.assertTrue(String.join("\n", chyby), chyby.isEmpty());
+	}
+
+	/** Useknutý zip nebo prázdné XML tématu: mapa se kreslí výchozím tématem a chyba tématu je známá. */
+	@Test
+	public void vadneTemaKresliVychozim() throws Exception {
+		zkopirujMapu(slozka, "kukov.map");
+		final String vychozi = klic();
+		final File zip = new File(tmp.getRoot(), "tema.zip");
+		try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+			out.putNextEntry(new ZipEntry("tema/tema.xml"));
+			for (int i = 0; i < 50; i++) {
+				out.write("<?xml version=\"1.0\"?><rendertheme xmlns=\"http://mapsforge.org/renderTheme\" version=\"5\"></rendertheme>\n".getBytes(StandardCharsets.UTF_8));
+			}
+			out.closeEntry();
+		}
+		final byte[] celyZip = Files.readAllBytes(zip.toPath());
+		Files.write(zip.toPath(), Arrays.copyOf(celyZip, celyZip.length / 2));
+		final File prazdne = new File(tmp.getRoot(), "prazdne.xml");
+		Files.write(prazdne.toPath(), new byte[0]);
+		for (final File tema : new File[] { zip, prazdne }) {
+			mapy.nastav(slozka, TemaOfflineMapy.zeSouboru(tema, null));
+			Assert.assertEquals(tema.getName(), vychozi, klic());
+			Assert.assertNotNull(tema.getName(), mapy.getChybaTematu());
+			Assert.assertTrue(tema.getName(), barev(pixely(vyrendruj(STRED_Z15))) > 10);
+		}
+	}
+
 	/** Přehledová mapa světa, která jde do zipu s programem, se otevře a vykreslí se z ní pevnina, moře a hranice. */
 	@Test
 	public void prehledovaMapaSvetaSeVykresli() throws Exception {
