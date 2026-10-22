@@ -37,6 +37,19 @@ public class JObrysMapSlideTest {
 		Assert.assertFalse(cesta.contains(viden));
 	}
 
+	/** Obrys v pixelech se při dílčích překresleních nepřepočítává; po změně výřezu ano. */
+	@Test
+	public void obrysSeDrziVCachiDokudSeNezmeniVyrez() {
+		final JObrysMapSlide s = slide(8);
+		final PolygonPokryti cesko = PolygonPokryti.obdelnik(48.55, 12.09, 51.06, 18.86);
+		final Path2D prvni = s.cestaZCache(cesko);
+		Assert.assertSame(prvni, s.cestaZCache(cesko));
+		s.setSoord(new Coord(8, new Wgs(50, 16).toMou(), new Dimension(400, 300), 0));
+		final Path2D druha = s.cestaZCache(cesko);
+		Assert.assertNotSame(prvni, druha);
+		Assert.assertNotEquals(prvni.getBounds2D(), druha.getBounds2D());
+	}
+
 	private static JObrysMapSlide slide(final int zoom) {
 		final JObrysMapSlide s = new JObrysMapSlide();
 		s.setSize(400, 300);
