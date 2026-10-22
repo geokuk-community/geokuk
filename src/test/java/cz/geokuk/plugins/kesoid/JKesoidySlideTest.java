@@ -22,7 +22,7 @@ public class JKesoidySlideTest {
 	@Test(timeout = 30000)
 	public void paintovaciVlaknoPrezijeVyjimku() throws Exception {
 		JKesoidySlide.ohlaseneChyby.clear();
-		final long vypisuPred = pocetVypisu();
+		final Set<Path> vypisyPred = vypisy();
 		final List<Throwable> naEdt = new CopyOnWriteArrayList<>();
 		final AtomicReference<Thread.UncaughtExceptionHandler> puvodni = new AtomicReference<>();
 		SwingUtilities.invokeAndWait(() -> {
@@ -38,7 +38,9 @@ public class JKesoidySlideTest {
 			}
 			pockejNaPrazdnouFrontu(slide);
 			assertTrue(JKesoidySlide.ohlaseneChyby.contains(NullPointerException.class));
-			assertEquals("chyba se ohlásí jen jednou", vypisuPred + 1, pocetVypisu());
+			final Set<Path> nove = vypisy();
+			nove.removeAll(vypisyPred);
+			assertEquals("chyba se ohlásí jen jednou: " + nove, 1, nove.size());
 			SwingUtilities.invokeAndWait(() -> {});
 		} finally {
 			SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler(puvodni.get()));
@@ -46,14 +48,15 @@ public class JKesoidySlideTest {
 		assertEquals("výjimky na EDT", Collections.emptyList(), naEdt);
 	}
 
-	private static long pocetVypisu() throws IOException {
+	/** Výpisy chyb ve složce; počítají se nové, protože nejstarší se ze sdílené složky průběžně mažou. */
+	private static Set<Path> vypisy() throws IOException {
 		final Path slozka = FExceptionDumper.EXCEPTION_DIR.toPath();
 		if (!Files.isDirectory(slozka)) {
-			return 0;
+			return new HashSet<>();
 		}
 		try (Stream<Path> soubory = Files.walk(slozka)) {
 			// Jen výpisy chyb; první výpis po smazání složky vytvoří i runNumber.txt.
-			return soubory.filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".html")).count();
+			return soubory.filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".html")).collect(java.util.stream.Collectors.toCollection(HashSet::new));
 		}
 	}
 
