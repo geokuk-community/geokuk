@@ -6,7 +6,9 @@ import java.util.Deque;
 import java.util.Properties;
 
 import cz.geokuk.plugins.kesoid.mapicon.IkonDrawingProperties;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class Drawer0 {
 
 	private IkonDrawingProperties idp;
@@ -40,7 +42,11 @@ public abstract class Drawer0 {
 	}
 
 	protected final float getFloat(final String propname, final float def) {
-		return Float.parseFloat(getString(propname, def + ""));
+		try {
+			return Float.parseFloat(getString(propname, def + ""));
+		} catch (final NumberFormatException e) {
+			return neplatne(propname, def);
+		}
 	}
 
 	protected final float[] getFloats(final String propname, final float[] def) {
@@ -49,14 +55,22 @@ public abstract class Drawer0 {
 			return def;
 		}
 		final float[] ff = new float[ss.length];
-		for (int i = 0; i < ss.length; i++) {
-			ff[i] = Float.parseFloat(ss[i]);
+		try {
+			for (int i = 0; i < ss.length; i++) {
+				ff[i] = Float.parseFloat(ss[i]);
+			}
+		} catch (final NumberFormatException e) {
+			return neplatne(propname, def);
 		}
 		return ff;
 	}
 
 	protected final int getInt(final String propname, final int def) {
-		return Integer.parseInt(getString(propname, def + "").trim());
+		try {
+			return Integer.parseInt(getString(propname, def + "").trim());
+		} catch (final NumberFormatException e) {
+			return neplatne(propname, def);
+		}
 	}
 
 	protected final int[] getInts(final String propname, final int[] def) {
@@ -65,10 +79,20 @@ public abstract class Drawer0 {
 			return def;
 		}
 		final int[] ii = new int[ss.length];
-		for (int i = 0; i < ss.length; i++) {
-			ii[i] = Integer.parseInt(ss[i]);
+		try {
+			for (int i = 0; i < ss.length; i++) {
+				ii[i] = Integer.parseInt(ss[i].trim());
+			}
+		} catch (final NumberFormatException e) {
+			return neplatne(propname, def);
 		}
 		return ii;
+	}
+
+	/** Nesmyslná hodnota v nastavení sady ikon nesmí shodit kreslení keší; kreslí se s výchozí. */
+	private <T> T neplatne(final String propname, final T def) {
+		log.warn("Sada ikon: neplatná hodnota {}={}, použije se výchozí", propname, getString(propname, null));
+		return def;
 	}
 
 	protected final Properties getProperties() {

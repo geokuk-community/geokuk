@@ -217,6 +217,9 @@
   až ji program pustí.
 - Soubor s kešemi, který zrovna drží jiný program, už nehlásí chybu; načte se,
   až ho program pustí.
+- Nesmyslné číslo ve vlastní sadě ikon (jméno nebo nastavení ikony) už
+  nezabrání načtení ikon ani keší; použije se výchozí hodnota. Výsledek hledání
+  adresy bez platné polohy se vynechá, ostatní výsledky zůstanou.
 - Nová verze ikon vestavěného tématu offline map překreslí dlaždice v cache,
   i když se samotné téma nezměnilo.
 - Při ukončení programu se na pomalém disku zapíšou do cache všechny stažené

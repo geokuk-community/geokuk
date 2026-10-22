@@ -63,4 +63,14 @@ public class NominatimTest {
 	public void odkazNaMapu() {
 		assertEquals("https://www.openstreetmap.org/?mlat=50.080000&mlon=14.420000#map=17/50.080000/14.420000", Nominatim.odkazNaMapu(new Wgs(50.08, 14.42)));
 	}
+
+	/** Místo bez platné polohy se vynechá, ostatní výsledky hledání zůstanou. */
+	@Test
+	public void mistoBezPolohySeVynecha() throws Exception {
+		final List<Nalezenec> nalezenci = Nominatim.ctiHledani(xml("<searchresults><place lat=\"\" lon=\"14.4\" display_name=\"Bez polohy\"/>"
+				+ "<place lat=\"50.08\" lon=\"14.42\" display_name=\"Praha\"/></searchresults>"));
+		org.junit.Assert.assertEquals(1, nalezenci.size());
+		org.junit.Assert.assertEquals("Praha", nalezenci.get(0).adresa);
+		assertNull(Nominatim.ctiZpetne(xml("<reversegeocode><result lat=\"x\" lon=\"16\">Nikde</result></reversegeocode>")));
+	}
 }

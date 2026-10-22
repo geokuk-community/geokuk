@@ -73,7 +73,7 @@ public final class VerzeJavy {
 				break;
 			}
 			if (!c.isEmpty()) {
-				vysledek[n++] = Integer.parseInt(c);
+				vysledek[n++] = c.length() > 9 ? Integer.MAX_VALUE : Integer.parseInt(c);
 			}
 		}
 		final int[] oriznute = new int[n];

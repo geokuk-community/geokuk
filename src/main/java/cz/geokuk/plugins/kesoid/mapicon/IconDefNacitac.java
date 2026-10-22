@@ -194,15 +194,24 @@ public class IconDefNacitac {
 		if (zadano == null) {
 			return 0;
 		}
-		final int zadanapozice = Integer.parseInt(zadano.substring(2));
-		return zadanapozice;
+		return cislo(zadano, 0, jmenoSPriponou);
 	}
 
 	private int zpracujNaPrioritu(final String zadano) {
 		if (zadano == null) {
 			return IconDef.VYCHOZI_PRIORITA;
 		}
-		return Integer.parseInt(zadano.substring(2));
+		return cislo(zadano, IconDef.VYCHOZI_PRIORITA, jmenoSPriponou);
+	}
+
+	/** Číslo za dvouznakovou předponou ve jménu ikony; nesmyslné číslo ikonu nevyřadí, jen se ohlásí. */
+	static int cislo(final String zadano, final int vychozi, final String jmenoSPriponou) {
+		try {
+			return Integer.parseInt(zadano.substring(2));
+		} catch (final NumberFormatException e) {
+			log.warn("Ikona {}: neplatné číslo {}, použije se {}", jmenoSPriponou, zadano, vychozi);
+			return vychozi;
+		}
 	}
 
 }
