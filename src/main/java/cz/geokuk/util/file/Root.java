@@ -10,12 +10,18 @@ public class Root {
 		final int maxDepth;
 		final Pattern patternIncludes;
 		final Pattern patternExcludes;
+		/** Přepsaný soubor se načte znovu; databáze jiných programů hlídá načítání samo podle zámku. */
+		final boolean sledovatZmeny;
 
 		public Def(final int aMaxDepth, final Pattern aPatternIncludes, final Pattern aPatternExcludes) {
-			super();
+			this(aMaxDepth, aPatternIncludes, aPatternExcludes, false);
+		}
+
+		public Def(final int aMaxDepth, final Pattern aPatternIncludes, final Pattern aPatternExcludes, final boolean aSledovatZmeny) {
 			maxDepth = aMaxDepth;
 			patternIncludes = aPatternIncludes;
 			patternExcludes = aPatternExcludes;
+			sledovatZmeny = aSledovatZmeny;
 		}
 
 		@Override
