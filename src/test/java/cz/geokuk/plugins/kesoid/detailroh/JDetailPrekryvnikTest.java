@@ -58,6 +58,9 @@ public class JDetailPrekryvnikTest {
 
 	@After
 	public void tearDown() throws Exception {
+		if (detail == null) {
+			return; // test se bez obrazovky přeskočil
+		}
 		final Field f = JDetailPrekryvnik.class.getDeclaredField("zpozdovaciTimer");
 		f.setAccessible(true);
 		final Timer timer = (Timer) f.get(detail);
