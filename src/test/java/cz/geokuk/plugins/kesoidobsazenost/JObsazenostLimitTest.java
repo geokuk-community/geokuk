@@ -36,4 +36,17 @@ public class JObsazenostLimitTest {
 		// 10 000 kruhů o poloměru 40 px pokryje 800×600 mnohonásobně
 		Assert.assertTrue(slide().prekrocenLimit(10_000, 40));
 	}
+
+	/** Limit ikon z nastavení platí i tam, kde by kruhy hustotou ještě prošly. */
+	@Test
+	public void limitZNastaveniPlatiSamostatne() throws Exception {
+		final JObsazenost s = slide();
+		final java.lang.reflect.Constructor<cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent> k = cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent.class
+				.getDeclaredConstructor(LimityKresleni.class);
+		k.setAccessible(true);
+		final LimityKresleni limity = LimityKresleni.of(LimityKresleni.MIN_IKON, LimityKresleni.VYCHOZI_TECEK);
+		s.onEvent(k.newInstance(limity));
+		Assert.assertFalse(s.prekrocenLimit(limity.getIkon(), 0));
+		Assert.assertTrue(s.prekrocenLimit(limity.getIkon() + 1, 0));
+	}
 }
