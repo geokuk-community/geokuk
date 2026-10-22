@@ -22,6 +22,8 @@
   parkoviště, zastávky, posedy, informační tabule, štoly a šachty, bunkry,
   vodárny, vysílače, kameny, skalky a umělecká díla, vše až ve větších
   měřítkách. Ikony jsou z projektu Osmic (CC0).
+- Vydání obsahuje GeoKuk-tema.zip: téma GeoKuk a GeoKuk – detail pro
+  aplikace s mapami ve formátu mapsforge (například aDrake, Locus, OruxMaps).
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
   myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
   nečitelné soubory), odkazem, který složku offline map otevře ve správci
