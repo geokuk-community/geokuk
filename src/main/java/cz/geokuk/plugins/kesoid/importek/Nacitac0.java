@@ -3,6 +3,8 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.function.LongSupplier;
 import java.util.regex.Pattern;
@@ -70,12 +72,13 @@ public abstract class Nacitac0 {
 		try {
 			try {
 				nacti(file, builder, future, aProgressModel);
+				prectenCely(file);
 			} catch (final IOException e) {
 				final String popis = DatabazeJinehoProgramu.popisChyby(file, e);
 				throw new RuntimeException(popis != null ? popis : "Chyba při čtení \"" + file + "\"", e);
 			}
 		} catch (final Exception e) {
-			if (DatabazeJinehoProgramu.jeZamcena(e)) {
+			if (DatabazeJinehoProgramu.jeZamcena(e) || jeDrzenyJinymProgramem(e, file)) {
 				throw new DatabazeJinehoProgramu.Zamcena(file, e);
 			}
 			if (RozepsanySoubor.jeRozepsany(file)) {
@@ -89,6 +92,41 @@ public abstract class Nacitac0 {
 			}
 			FExceptionDumper.dump(e, EExceptionSeverity.DISPLAY, "Soubor \"" + file + "\" je asi poškozený, ostatní soubory se načtou");
 		}
+	}
+
+	/** Jak dlouho se soubor držený jiným programem jen tiše zkouší znovu; pak se chyba ohlásí jako u jiných souborů. */
+	static final long LIMIT_DRZENI_MS = 60_000;
+	private static final Map<File, Long> prvniDrzeni = new ConcurrentHashMap<>();
+
+	/**
+	 * Čitelný soubor, který nejde otevřít, protože ho drží jiný program (ve Windows sharing violation); přečte se při dalším pokusu. Soubor bez práv
+	 * ke čtení nebo držený déle než {@link #LIMIT_DRZENI_MS} se hlásí jako chyba.
+	 */
+	static boolean jeDrzenyJinymProgramem(final Throwable chyba, final File file) {
+		return jeDrzenyJinymProgramem(chyba, file, System.currentTimeMillis());
+	}
+
+	static boolean jeDrzenyJinymProgramem(final Throwable chyba, final File file, final long ted) {
+		if (!file.isFile() || !file.canRead()) {
+			return false;
+		}
+		for (Throwable t = chyba; t != null; t = t.getCause()) {
+			if (t instanceof java.nio.file.FileSystemException && !(t instanceof java.nio.file.NoSuchFileException) && !(t instanceof java.nio.file.AccessDeniedException)
+					|| t instanceof java.io.FileNotFoundException) {
+				final long prvni = prvniDrzeni.computeIfAbsent(file, f -> ted);
+				if (ted - prvni < LIMIT_DRZENI_MS) {
+					return true;
+				}
+				prvniDrzeni.remove(file);
+				return false;
+			}
+		}
+		return false;
+	}
+
+	/** Soubor se přečetl, příští zámek jiného programu se počítá znovu od začátku. */
+	static void prectenCely(final File file) {
+		prvniDrzeni.remove(file);
 	}
 
 	protected final void nactiBezVyjimky(final ZipFile zipFile, final ZipEntry zipEntry, final IImportBuilder builder, final Future<?> future, final ProgressModel aProgressModel) {

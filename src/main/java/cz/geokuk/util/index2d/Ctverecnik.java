@@ -101,6 +101,21 @@ class Ctverecnik<T> extends Node<T> {
 	}
 
 	@Override
+	int count(final BoundingRect rect, final int xx1, final int yy1, final int xx2, final int yy2) {
+		final boolean jeToMimo = xx1 >= rect.xx2 || xx2 <= rect.xx1 || yy1 >= rect.yy2 || yy2 <= rect.yy1;
+		if (jeToMimo) {
+			return 0;
+		}
+		final boolean jeToKompletUvnitr = xx1 >= rect.xx1 && xx2 <= rect.xx2 && yy1 >= rect.yy1 && yy2 <= rect.yy2;
+		if (jeToKompletUvnitr) {
+			return count;
+		}
+		final int xMid = Indexator.mid(xx1, xx2);
+		final int yMid = Indexator.mid(yy1, yy2);
+		return jz.count(rect, xx1, yy1, xMid, yMid) + jv.count(rect, xMid, yy1, xx2, yMid) + sz.count(rect, xx1, yMid, xMid, yy2) + sv.count(rect, xMid, yMid, xx2, yy2);
+	}
+
+	@Override
 	boolean tryAdvance(final MySplitIterator<T> splititerator,  final Consumer<? super Sheet<T>> action) {
 		// zde hodnotu nemáme, ale dáme vše pod sebou na stack a zkusíme jít dál
 		splititerator.push(jz);
