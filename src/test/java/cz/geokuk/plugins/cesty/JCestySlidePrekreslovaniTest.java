@@ -159,4 +159,66 @@ public class JCestySlidePrekreslovaniTest {
 		slide.onEvent(new CestyChangedEvent(doc, model.getCurta()));
 		Assert.assertEquals(new Rectangle(OKNO), zaznam.oblasti.get(0));
 	}
+
+	private static Rectangle sjednoceni(final List<Rectangle> oblasti) {
+		Rectangle vse = null;
+		for (final Rectangle r : oblasti) {
+			vse = vse == null ? new Rectangle(r) : vse.union(r);
+		}
+		return vse;
+	}
+
+	/** Tažený bod nesmí za sebou nechat stopu: každé překreslení zahrne i polohu cesty z minulého kroku. */
+	@Test
+	public void tazeniNenechavaStopu() throws Exception {
+		final Doc doc = vytvorDoc();
+		final Cesta tazena = doc.getCesty().iterator().next();
+		final CestyModel model = new CestyModel() {
+			@Override
+			public Cesta getCurta() {
+				return tazena;
+			}
+		};
+		slide.inject(model);
+		slide.onEvent(new CestyChangedEvent(doc, tazena));
+		nastav(slide, "dragujeme", Boolean.TRUE);
+		// poloha před tažením mimo cestu
+		nastav(slide, "oblastCurty", new Rectangle(5, 5, 10, 10));
+		final Updator updator = new Updator();
+		final Bod cil = tazena.getCil();
+		final Wgs b = new Wgs(50.012, 14.012);
+		updator.setMouable(cil, b.toMou());
+		zaznam.oblasti.clear();
+		slide.onEvent(new CestyChangedEvent(doc, tazena));
+		Assert.assertTrue("původní poloha: " + zaznam.oblasti, sjednoceni(zaznam.oblasti).contains(10, 10));
+	}
+
+	/** Při dalším kroku tažení se smaže i poloha z kroku předchozího (mezipoloha), ne jen ta před tažením. */
+	@Test
+	public void tazeniSmazeMezipolohu() throws Exception {
+		final Doc doc = vytvorDoc();
+		final Cesta tazena = doc.getCesty().iterator().next();
+		final CestyModel model = new CestyModel() {
+			@Override
+			public Cesta getCurta() {
+				return tazena;
+			}
+		};
+		slide.inject(model);
+		slide.onEvent(new CestyChangedEvent(doc, tazena));
+		nastav(slide, "dragujeme", Boolean.TRUE);
+		// před tažením jen kolem jižního bodu cesty, mezipoloha je severně
+		final Point jih = slide.getSoord().transform(new Wgs(50.0, 14.0).toMou());
+		nastav(slide, "oblastCurty", new Rectangle(jih.x - 5, jih.y - 5, 10, 10));
+		final Updator updator = new Updator();
+		final Bod cil = tazena.getCil();
+		final Wgs b = new Wgs(50.012, 14.012);
+		updator.setMouable(cil, b.toMou());
+		slide.onEvent(new CestyChangedEvent(doc, tazena));
+		final Point mezipoloha = slide.getSoord().transform(b.toMou());
+		updator.setMouable(cil, new Wgs(50.0, 14.012).toMou());
+		zaznam.oblasti.clear();
+		slide.onEvent(new CestyChangedEvent(doc, tazena));
+		Assert.assertTrue("mezipoloha " + mezipoloha + ": " + zaznam.oblasti, sjednoceni(zaznam.oblasti).contains(mezipoloha));
+	}
 }
