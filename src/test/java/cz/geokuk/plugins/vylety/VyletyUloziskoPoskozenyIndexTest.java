@@ -23,7 +23,7 @@ public class VyletyUloziskoPoskozenyIndexTest {
 		final VyletyUlozisko u = new VyletyUlozisko(ano, ne);
 		final String druhy = u.novy("Druhý");
 		u.aktivuj(druhy);
-		zapis(ano, "GC2\n");
+		zapis(ano, "GC2\r\n");
 		u.zrcadli(Collections.singletonList("GC2"), Collections.<String>emptyList());
 
 		zapis(new File(tmp.getRoot(), "vylety.txt"), "jmeno.v1=\\u12\n");

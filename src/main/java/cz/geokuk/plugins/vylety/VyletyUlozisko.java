@@ -291,11 +291,9 @@ final class VyletyUlozisko {
 		return index;
 	}
 
+	/** Stejné kódy keší; konce řádků a pořadí nerozhodují. */
 	private static boolean stejnyObsah(final File a, final File b) throws IOException {
-		if (!a.isFile() || !b.isFile()) {
-			return a.isFile() == b.isFile();
-		}
-		return Arrays.equals(Files.readAllBytes(a.toPath()), Files.readAllBytes(b.toPath()));
+		return kody(a).equals(kody(b));
 	}
 
 	private void zapisIndex(final Index index) throws IOException {
@@ -311,17 +309,21 @@ final class VyletyUlozisko {
 	}
 
 	private static int pocetKodu(final File soubor) throws IOException {
-		if (!soubor.isFile()) {
-			return 0;
-		}
+		return kody(soubor).size();
+	}
+
+	private static Set<String> kody(final File soubor) throws IOException {
 		final Set<String> kody = new HashSet<>();
+		if (!soubor.isFile()) {
+			return kody;
+		}
 		// Počítají se jen neprázdné řádky, kódování nevadí.
 		for (final String radek : Files.readAllLines(soubor.toPath(), StandardCharsets.ISO_8859_1)) {
 			if (!radek.trim().isEmpty()) {
 				kody.add(radek.trim());
 			}
 		}
-		return kody.size();
+		return kody;
 	}
 
 	private static void kopiruj(final File zdroj, final File cil) throws IOException {
