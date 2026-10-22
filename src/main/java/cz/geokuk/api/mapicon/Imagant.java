@@ -4,6 +4,8 @@
 package cz.geokuk.api.mapicon;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -40,6 +42,46 @@ public class Imagant {
 		this.yoffset = yoffset;
 		x0 = -image.getWidth() / 2;
 		y0 = -image.getHeight() / 2;
+	}
+
+	/** Naposledy použitá zvětšená podoba, aby se neškálovalo při každém kreslení. */
+	private volatile Zvetseny zvetseny;
+
+	private static final class Zvetseny {
+		final double meritko;
+		final Imagant imagant;
+
+		Zvetseny(final double meritko, final Imagant imagant) {
+			this.meritko = meritko;
+			this.imagant = imagant;
+		}
+	}
+
+	/** Obrázek zvětšený o měřítko, spočítaný jednou pro dané měřítko; pozice vůči středu se zvětší také. */
+	public Imagant zvetseny(final double meritko) {
+		if (meritko == 1) {
+			return this;
+		}
+		final Zvetseny z = zvetseny;
+		if (z != null && z.meritko == meritko) {
+			return z.imagant;
+		}
+		final int w = (int) Math.ceil(image.getWidth() * meritko);
+		final int h = (int) Math.ceil(image.getHeight() * meritko);
+		final BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
+		final Graphics2D g = bi.createGraphics();
+		try {
+			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+			g.scale(meritko, meritko);
+			g.drawImage(image, 0, 0, null);
+		} finally {
+			g.dispose();
+		}
+		final int xpos = (int) Math.round(getXpos() * meritko);
+		final int ypos = (int) Math.round(getYpos() * meritko);
+		final Imagant vysledek = new Imagant(bi, xpos + w / 2, ypos + h / 2);
+		zvetseny = new Zvetseny(meritko, vysledek);
+		return vysledek;
 	}
 
 	public Imagant cloneEmpty() {
