@@ -6,7 +6,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.concurrent.ExecutionException;
 
@@ -213,6 +215,7 @@ public class JObrysMapSlide extends JSingleSlide0 {
 
 	void setObrysy(final List<PolygonPokryti> obrysy) {
 		this.obrysy = obrysy;
+		cesty.clear();
 		repaint();
 	}
 
@@ -241,11 +244,23 @@ public class JObrysMapSlide extends JSingleSlide0 {
 			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			g.setColor(CARA);
 			for (final PolygonPokryti p : kresli) {
-				g.draw(cesta(getSoord(), p));
+				g.draw(cestaZCache(p));
 			}
 		} finally {
 			g.dispose();
 		}
+	}
+
+	/** Obrysy přepočtené do pixelů pro {@link #cestyPro}; platí, dokud se nezmění výřez, aby se při dílčím překreslení nepřevádělo tisíce vrcholů znovu. */
+	private final transient Map<PolygonPokryti, Path2D> cesty = new IdentityHashMap<>();
+	private transient Coord cestyPro;
+
+	Path2D cestaZCache(final PolygonPokryti p) {
+		if (!getSoord().equals(cestyPro)) {
+			cesty.clear();
+			cestyPro = getSoord();
+		}
+		return cesty.computeIfAbsent(p, k -> cesta(cestyPro, k));
 	}
 
 	/** Obrys v pixelech výřezu; díry se z výplně vyříznou. */
