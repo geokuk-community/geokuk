@@ -168,4 +168,17 @@ public class NabidkaRadkuTest {
 		Assert.assertEquals("Až se dokončí stahování mapy Polsko.", n.getMapa().getTooltip());
 		Assert.assertEquals("text zůstává stálý", "Stáhnout mapu (606 MB)", n.getMapa().getText());
 	}
+
+	@Test
+	public void chybejiciMaPrednostPredNovejsi() {
+		final NabidkaRadku n = nabidka(mapa(StavBunky.NOVEJSI), trasy(StavBunky.KE_STAZENI), vrstevnice(StavBunky.STAZENO), stinovani(StavBunky.STAZENO));
+		Assert.assertEquals("Stáhnout mapu a vrstvy (25 MB)", n.getVrstvy().getText());
+		Assert.assertEquals(Rezim.STAHNOUT, n.getVrstvy().getRezim());
+	}
+
+	@Test
+	public void staciPresneTolikMista() {
+		final NabidkaRadku n = nabidka(new Okolnosti(606 * MB, null), mapa(StavBunky.KE_STAZENI), trasy(StavBunky.STAZENO));
+		Assert.assertTrue(n.getMapa().isPovoleno());
+	}
 }
