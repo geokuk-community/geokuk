@@ -687,7 +687,7 @@ public class KachleZiskavac {
 		@Override
 		public boolean jeVCache(final KaLoc loc, final String klic) {
 			final KachleManager km = kachleManager;
-			return km == null || km.load(new Ka(loc, EKaType.OFFLINE_MF), klic) != null;
+			return km == null || km.exists(new Ka(loc, EKaType.OFFLINE_MF), klic);
 		}
 
 		@Override
