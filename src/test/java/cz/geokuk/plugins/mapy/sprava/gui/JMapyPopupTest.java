@@ -536,6 +536,25 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Střed ve španělském regionu: Španělsko je v panelu jednou (Pro toto místo), s tlačítkem pro celou zemi a regionem pod ním. */
+	@Test
+	public void zemeSRegionyJeVPanelutJednou() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(), cz.geokuk.plugins.mapy.sprava.StavMapy::novy, Collections.emptyList(),
+					new cz.geokuk.core.coordinates.Wgs(39.86, -4.02)));
+			Assert.assertEquals("Pro toto místo", 1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+			Assert.assertEquals("Španělsko jednou", 1, viditelnychLabelu(p, "Španělsko"));
+			Assert.assertEquals("region jednou", 1, viditelnychLabelu(p, "Kastilie-La Mancha"));
+			final JButton celek = tlacitkoRadku(p, "Španělsko", JMapyPopup.STAHNOUT);
+			Assert.assertNotNull("celou zemi jde stáhnout", celek);
+			celek.doClick();
+			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahni europe/spain"));
+		});
+	}
+
 	/** Země, kterou nejde stáhnout celou, má vlevo šedý kroužek jako ostatní země. */
 	@Test
 	public void zemeBezCelkuMaKrouzek() throws Exception {
