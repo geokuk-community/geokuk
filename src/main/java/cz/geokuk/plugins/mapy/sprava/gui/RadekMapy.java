@@ -112,6 +112,11 @@ public final class RadekMapy {
 		return matice == null ? null : matice.getBunka(cast);
 	}
 
+	/** Buňka pro tlačítka řádku, u celé země souhrn vrstev regionů. */
+	MatriceMap.Bunka bunkaNabidky(final MatriceMap.Cast cast) {
+		return matice == null ? null : matice.getBunkaNabidky(cast);
+	}
+
 	/** Vrstvy mapy, které se právě stahují (až dvě najednou). */
 	List<MatriceMap.Bunka> bezicVrstvy() {
 		final List<MatriceMap.Bunka> v = new ArrayList<>();

@@ -208,6 +208,18 @@ public class RadaOfflineMapyTest {
 		}
 	}
 
+	/** Celá země bez vlastní vrstvy má v radě i druhé tlačítko, když vrstvy mají její regiony. */
+	@Test
+	public void celaZemeMaVrstvyZRegionu() {
+		final java.util.List<cz.geokuk.plugins.mapy.sprava.MatriceMap.Radek> matice = cz.geokuk.plugins.mapy.sprava.MatriceMap.sestav(KATALOG, StavMapy::novy,
+				cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogSpanelsko(), v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, NIC, 0, null));
+		final java.util.function.Function<KatalogovaMapa, cz.geokuk.plugins.mapy.sprava.NabidkaRadku> nabidky = m -> matice.stream().filter(r -> r.getKlic().equals(m.getId())).findFirst()
+				.map(r -> cz.geokuk.plugins.mapy.sprava.NabidkaRadku.pro(r, new cz.geokuk.plugins.mapy.sprava.NabidkaRadku.Okolnosti(-1, null))).orElse(null);
+		final RadaOfflineMapy.RadekRady celek = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, TOLEDO, null, null, nabidky).tabulka().get(0);
+		Assert.assertEquals("europe/spain", celek.rada.mapa.getId());
+		Assert.assertTrue(celek.rada.odkaz2, celek.rada.odkaz2 != null && celek.rada.odkaz2.startsWith("Stáhnout mapu a vrstvy ("));
+	}
+
 	/** Když máme region, celou zemi rada nenabízí. */
 	@Test
 	public void stazenyRegionCelekNenabidne() {

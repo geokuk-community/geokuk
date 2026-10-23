@@ -143,10 +143,16 @@ public final class MatriceMap {
 	public static final class Radek {
 		private final KatalogovaMapa mapa;
 		private final Map<Cast, Bunka> bunky;
+		private final Map<Cast, Bunka> souhrnRegionu;
 
 		Radek(final KatalogovaMapa mapa, final Map<Cast, Bunka> bunky) {
+			this(mapa, bunky, Collections.emptyMap());
+		}
+
+		Radek(final KatalogovaMapa mapa, final Map<Cast, Bunka> bunky, final Map<Cast, Bunka> souhrnRegionu) {
 			this.mapa = mapa;
 			this.bunky = Collections.unmodifiableMap(bunky);
+			this.souhrnRegionu = souhrnRegionu;
 		}
 
 		public KatalogovaMapa getMapa() {
@@ -160,6 +166,15 @@ public final class MatriceMap {
 
 		public Bunka getBunka(final Cast cast) {
 			return bunky.get(cast);
+		}
+
+		/**
+		 * Buňka pro tlačítka řádku: u celé země bez vlastní vrstvy daného typu souhrn vrstev jejích regionů (velikost je součet), jinak vlastní buňka. Souhrn se
+		 * nikde jinde nepočítá, jako vlastní buňka celku se nepočítá.
+		 */
+		public Bunka getBunkaNabidky(final Cast cast) {
+			final Bunka souhrn = souhrnRegionu.get(cast);
+			return souhrn != null ? souhrn : bunky.get(cast);
 		}
 
 		/** Jedna věc z řádku se právě stahuje. */
@@ -192,9 +207,47 @@ public final class MatriceMap {
 				final KatalogovaVrstva v = vrstvy == null ? null : vrstvy.vrstva(m.getId(), c.typ()).orElse(null);
 				bunky.put(c, v == null || stavyVrstev == null ? new Bunka(c, StavBunky.NENI, null, -1, 0, null, null) : bunkaVrstvy(c, v, stavyVrstev.apply(v)));
 			}
-			radky.add(new Radek(m, bunky));
+			radky.add(new Radek(m, bunky, souhrnRegionu(katalog, m, bunky, vrstvy, stavyVrstev)));
 		}
 		return radky;
+	}
+
+	/** Celá země bez vlastní vrstvy daného typu: jedna buňka za vrstvy všech jejích regionů, jen pro tlačítka řádku. */
+	private static Map<Cast, Bunka> souhrnRegionu(final KatalogMap katalog, final KatalogovaMapa m, final Map<Cast, Bunka> bunky, final KatalogVrstev vrstvy,
+			final Function<KatalogovaVrstva, StavVrstvy> stavyVrstev) {
+		final List<KatalogovaMapa> regiony = vrstvy == null || stavyVrstev == null ? Collections.emptyList() : katalog.regiony(m);
+		final Map<Cast, Bunka> souhrn = new EnumMap<>(Cast.class);
+		for (final Cast c : Cast.values()) {
+			if (c == Cast.MAPA || bunky.get(c).getStav() != StavBunky.NENI) {
+				continue;
+			}
+			final List<Bunka> b = new ArrayList<>();
+			for (final KatalogovaMapa r : regiony) {
+				final KatalogovaVrstva v = vrstvy.vrstva(r.getId(), c.typ()).orElse(null);
+				if (v != null) {
+					b.add(bunkaVrstvy(c, v, stavyVrstev.apply(v)));
+				}
+			}
+			if (!b.isEmpty()) {
+				souhrn.put(c, souhrn(c, b));
+			}
+		}
+		return souhrn;
+	}
+
+	private static Bunka souhrn(final Cast cast, final List<Bunka> b) {
+		StavBunky stav = StavBunky.STAZENO;
+		for (final StavBunky s : new StavBunky[] { StavBunky.STAHUJE, StavBunky.CHYBA, StavBunky.KE_STAZENI, StavBunky.NOVEJSI }) {
+			if (b.stream().anyMatch(x -> x.getStav() == s)) {
+				stav = s;
+				break;
+			}
+		}
+		final StavBunky vysledek = stav;
+		final long velikost = b.stream().filter(x -> vysledek != StavBunky.NOVEJSI || x.getStav() == StavBunky.NOVEJSI).mapToLong(x -> Math.max(0, x.getVelikost())).sum();
+		final long stazeno = b.stream().filter(x -> vysledek != StavBunky.NOVEJSI || x.getStav() == StavBunky.NOVEJSI).mapToLong(x -> x.getStav() == StavBunky.STAZENO ? Math.max(0, x.getVelikost()) : Math.max(0, x.getStazeno())).sum();
+		final Bunka prvni = b.stream().filter(x -> x.getStav() == vysledek).findFirst().get();
+		return new Bunka(cast, vysledek, null, velikost, stazeno, prvni.getChyba(), null, prvni.isOveruje());
 	}
 
 	static Bunka bunkaMapy(final KatalogovaMapa m, final StavMapy s) {

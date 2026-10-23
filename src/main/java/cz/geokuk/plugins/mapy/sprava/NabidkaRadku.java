@@ -107,7 +107,7 @@ public final class NabidkaRadku {
 	}
 
 	public static NabidkaRadku pro(final MatriceMap.Radek radek, final Okolnosti okolnosti) {
-		return pro(radek::getBunka, okolnosti);
+		return pro(radek::getBunkaNabidky, okolnosti);
 	}
 
 	public static NabidkaRadku pro(final Function<Cast, Bunka> bunky, final Okolnosti okolnosti) {
