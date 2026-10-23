@@ -30,6 +30,17 @@ public class DirScannerTest {
 	}
 
 	@Test
+	public void casAVelikostZeSkenuBezDalsihoCteni() throws Exception {
+		final File a = tmp.newFile("a.gpx");
+		Files.write(a.toPath(), "xyz".getBytes(StandardCharsets.UTF_8));
+		Assert.assertTrue(a.setLastModified(1_600_000_000_000L));
+		final KeFile f = scan().get(0);
+		Assert.assertEquals("velikost z atributů skenu", 3, f.fat.velikost);
+		Assert.assertEquals(1_600_000_000_000L, f.getLastModified());
+		Assert.assertEquals(3, f.getVelikost());
+	}
+
+	@Test
 	public void zacyklenyOdkazNevadi() throws Exception {
 		Files.write(tmp.newFile("a.gpx").toPath(), "x".getBytes(StandardCharsets.UTF_8));
 		final File podslozka = tmp.newFolder("smycka");
