@@ -113,12 +113,21 @@ public class PodrobnaOfflineMapaTest {
 		Assert.assertFalse("daleko za hranicí", cesko(true).obsahuje(lat + 0.5, 14.5));
 	}
 
+	/** Obrys platí jen uvnitř obdélníku souboru: menší soubor se jménem katalogové mapy nezíská území celé země. */
+	@Test
+	public void obrysJenUvnitrObdelniku() {
+		final OfflineRenderer.Pokryti male = new OfflineRenderer.Pokryti(new org.mapsforge.core.model.BoundingBox(49.9, 14.3, 50.1, 14.5), 16, obrysCeska());
+		Assert.assertTrue(male.obsahuje(50.003, 14.405));
+		Assert.assertFalse("v obrysu, mimo soubor", male.obsahuje(49.2, 16.6));
+	}
+
 	/** Soubor z katalogu: pokrytí podle obrysu z katalogu, ne podle obdélníku souboru. */
 	@Test
 	public void souborZKatalogu() throws Exception {
 		OfflineMapyTest.zkopirujMapu(slozka, "czech-republic.map");
 		otevri();
-		Assert.assertTrue("Praha je v obrysu Česka", mapy.jePodrobnaMapa(PRAHA, 15));
+		Assert.assertTrue("Kukov je v obrysu i v souboru", mapy.jePodrobnaMapa(KUKOV, 15));
+		Assert.assertFalse("Praha je v obrysu Česka, ale mimo soubor", mapy.jePodrobnaMapa(PRAHA, 15));
 		Assert.assertFalse("Varšava není v obrysu", mapy.jePodrobnaMapa(VARSAVA, 15));
 	}
 }

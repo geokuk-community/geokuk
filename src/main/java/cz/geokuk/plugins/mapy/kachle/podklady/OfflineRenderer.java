@@ -396,7 +396,7 @@ final class OfflineRenderer {
 		return false;
 	}
 
-	/** Území jedné mapy: obrys z katalogu, u souboru uživatele a mapy bez obrysu obdélník souboru. */
+	/** Území jedné mapy: uvnitř obdélníku souboru obrys z katalogu, u souboru uživatele a mapy bez obrysu celý obdélník. */
 	static final class Pokryti {
 		/** Tolerance u hranice obrysu ve stupních (asi 1 km), aby rada neblikala na čáře. */
 		static final double TOLERANCE = 0.01;
@@ -412,8 +412,11 @@ final class OfflineRenderer {
 		}
 
 		boolean obsahuje(final double lat, final double lon) {
+			if (!obdelnik.contains(lat, lon)) {
+				return false;
+			}
 			if (obrys == null) {
-				return obdelnik.contains(lat, lon);
+				return true;
 			}
 			return obrys.obsahuje(lat, lon) || obrys.obsahuje(lat + TOLERANCE, lon) || obrys.obsahuje(lat - TOLERANCE, lon) || obrys.obsahuje(lat, lon + TOLERANCE)
 					|| obrys.obsahuje(lat, lon - TOLERANCE);
