@@ -42,7 +42,9 @@ public class JMapyPopup extends JPanel {
 	static final String PRO_MISTO = "Pro zobrazené místo";
 	static final String DALSI = "Všechny mapy ke stažení";
 	static final String OBRYS = "Ukázat v mapě, kde offline mapy jsou";
-	static final String STINOVANI = "Stínovat terén";
+	static final String STINOVANI = "Stínování terénu";
+	static final String PRES_MAPU = "Přes mapu:";
+	static final String PREKRYV_TRASY = "Turistické a cyklotrasy";
 	static final String WEB = "Další offline mapy:";
 	static final String STAHNOUT = "Stáhnout";
 	static final String SMAZAT_VRSTVU = "×";
@@ -126,6 +128,7 @@ public class JMapyPopup extends JPanel {
 	private final transient List<Runnable> naMiste = new ArrayList<>();
 	private final JCheckBox obrys = new JCheckBox(OBRYS);
 	private final JCheckBox stinovani = new JCheckBox(STINOVANI);
+	private final JCheckBox prekryvTras = new JCheckBox(PREKRYV_TRASY);
 	private boolean stinovaniDostupne;
 	private JScrollPane seznam;
 	/** Hledání mezi dalšími mapami; filtruje se skrytím řádků, popup se nepřestavuje, aby hledání nepřišlo o fokus. */
@@ -186,6 +189,13 @@ public class JMapyPopup extends JPanel {
 		obrys.setFocusable(false);
 		stinovani.setFont(stinovani.getFont().deriveFont(Font.PLAIN, 11f));
 		stinovani.setFocusable(false);
+		prekryvTras.setFont(prekryvTras.getFont().deriveFont(Font.PLAIN, 11f));
+		prekryvTras.setFocusable(false);
+		prekryvTras.addActionListener(e -> {
+			if (ovladani != null) {
+				ovladani.setPrekryvTras(prekryvTras.isSelected());
+			}
+		});
 		stinovani.addActionListener(e -> {
 			if (ovladani != null) {
 				ovladani.setStinovani(stinovani.isSelected());
@@ -496,6 +506,7 @@ public class JMapyPopup extends JPanel {
 		this.ovladani = ovladani;
 		obrys.setSelected(ovladani != null && ovladani.isObrysPokryti());
 		stinovani.setSelected(ovladani == null || ovladani.isStinovani());
+		prekryvTras.setSelected(ovladani != null && ovladani.isPrekryvTras());
 		sestav();
 	}
 
@@ -1250,11 +1261,19 @@ public class JMapyPopup extends JPanel {
 		pata.setOpaque(false);
 		final JPanel volby = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
 		volby.setOpaque(false);
-		if (ovladani != null && ovladani.isObrysDostupny()) {
-			volby.add(obrys);
+		final boolean sTrasami = ovladani != null && ovladani.isPrekryvTrasDostupny();
+		if (sTrasami || stinovaniDostupne) {
+			volby.add(maly(PRES_MAPU));
+		}
+		if (sTrasami) {
+			prekryvTras.setSelected(ovladani.isPrekryvTras());
+			volby.add(prekryvTras);
 		}
 		if (stinovaniDostupne) {
 			volby.add(stinovani);
+		}
+		if (ovladani != null && ovladani.isObrysDostupny()) {
+			volby.add(obrys);
 		}
 		final JPanel web = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
 		web.setOpaque(false);
