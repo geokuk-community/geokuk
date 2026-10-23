@@ -456,7 +456,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 			final int x2 = x1 + rr.sloupce[1] + MEZERA_SLOUPCU;
 			int pruh = 0;
 			for (final RadaOfflineMapy.RadekRady r : rr.tabulka) {
-				if (!r.stitek && pruh++ % 2 == 1) {
+				if (!r.stitek && pruh++ % 2 != 0) {
 					g2.setColor(new Color(0, 0, 0, 14));
 					g2.fillRect(x + 4, yy - fm.getAscent(), rr.w - 8, fm.getHeight());
 				}
