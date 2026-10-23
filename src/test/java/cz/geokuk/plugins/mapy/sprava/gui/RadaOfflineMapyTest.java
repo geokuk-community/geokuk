@@ -29,6 +29,35 @@ public class RadaOfflineMapyTest {
 		Assert.assertNull(r.text);
 	}
 
+	/** S nabídkou řádku rada nabídne dvě tlačítka na jedné mapě: Stáhnout mapu (velikost) a Stáhnout mapu a vrstvy (velikost). */
+	@Test
+	public void dveTlacitkaNaJednePrazdneMape() {
+		final java.util.function.Function<KatalogovaMapa, cz.geokuk.plugins.mapy.sprava.NabidkaRadku> nabidky = nabidky(StavMapy::novy);
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, PRAHA, null, null, nabidky);
+		Assert.assertEquals("Česko:", r.predpona);
+		Assert.assertTrue(r.odkaz, r.odkaz.startsWith("Stáhnout mapu ("));
+		Assert.assertTrue(r.odkaz2, r.odkaz2 != null && r.odkaz2.startsWith("Stáhnout mapu a vrstvy ("));
+		Assert.assertEquals(cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim.STAHNOUT, r.rezim2);
+		Assert.assertEquals("europe/czech-republic", r.mapa.getId());
+		final RadaOfflineMapy bezNabidky = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, PRAHA, null, null, null);
+		Assert.assertNull("bez nabídky jen jeden odkaz", bezNabidky.odkaz2);
+	}
+
+	/** Po chybě a u rozpracované mapy se nabízí jen jedno tlačítko. */
+	@Test
+	public void poChybeJenJednoTlacitko() {
+		final java.util.function.Function<KatalogovaMapa, StavMapy> chyba = m -> stav(m, NEMAME, CHYBA, 0, -1);
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, chyba, PRAHA, null, null, nabidky(chyba));
+		Assert.assertEquals("Zkusit znovu", r.odkaz);
+		Assert.assertNull(r.odkaz2);
+	}
+
+	private static java.util.function.Function<KatalogovaMapa, cz.geokuk.plugins.mapy.sprava.NabidkaRadku> nabidky(final java.util.function.Function<KatalogovaMapa, StavMapy> stavy) {
+		final java.util.List<cz.geokuk.plugins.mapy.sprava.MatriceMap.Radek> matice = cz.geokuk.plugins.mapy.sprava.MatriceMap.sestav(KATALOG, stavy,
+				cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, NIC, 0, null));
+		return m -> matice.stream().filter(r -> r.getKlic().equals(m.getId())).findFirst().map(r -> cz.geokuk.plugins.mapy.sprava.NabidkaRadku.pro(r, new cz.geokuk.plugins.mapy.sprava.NabidkaRadku.Okolnosti(-1, null))).orElse(null);
+	}
+
 	/** Region má přednost před zemí: v Mnichově se nabídne Bavorsko, ne celé Německo. */
 	@Test
 	public void regionPredZemi() {

@@ -14,7 +14,13 @@ import cz.geokuk.core.napoveda.CoJeNoveho;
 import cz.geokuk.core.napoveda.JCoJeNoveho;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
+import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce;
+import cz.geokuk.plugins.mapy.pruvodce.PruvodceKontext;
+import cz.geokuk.plugins.mapy.pruvodce.ProgramPruvodceKontext;
+import cz.geokuk.plugins.mapy.pruvodce.StahnoutMapuAVrstvy;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
+import cz.geokuk.plugins.mapy.sprava.MatriceMap;
+import cz.geokuk.plugins.mapy.sprava.NabidkaRadku;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
 import cz.geokuk.plugins.mapy.sprava.StavVrstvy;
@@ -62,6 +68,8 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	/** Kde jsou v kachlovníku odkazy rady a mapy, které stahují; prázdné, když se nekreslí. */
 	private final transient List<Rectangle> odkazyRady = new ArrayList<>();
 	private final transient List<KatalogovaMapa> mapyRady = new ArrayList<>();
+	/** Pravidlo plánu u odkazů „a vrstvy“, null u odkazu jen na mapu; souběžně s {@link #odkazyRady}. */
+	private final transient List<PlanPruvodce.Rezim> rezimyRady = new ArrayList<>();
 	private transient RadaOfflineMapy rada;
 	/** Kde je v kachlovníku ikona ⓘ atribuce; null, když se nekreslí. */
 	private transient Rectangle ikonaAtribuce;
@@ -116,7 +124,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 	private static List<Object> podpis(final RozlozeniRady r) {
-		return r == null ? null : Arrays.asList(r.oblast(), r.radky, r.odkazy);
+		return r == null ? null : Arrays.asList(r.oblast(), r.radky, r.odkazy, r.predpony, r.odkazy2);
 	}
 
 	private static List<Object> podpis(final AtribuceMapy.Rozlozeni r) {
@@ -139,11 +147,29 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 		for (int i = 0; i < odkazyRady.size(); i++) {
 			if (odkazyRady.get(i).contains(bod)) {
-				spravaMap.stahni(mapyRady.get(i));
+				if (rezimyRady.get(i) == null) {
+					spravaMap.stahni(mapyRady.get(i));
+				} else {
+					stahniMapuAVrstvy(mapyRady.get(i), rezimyRady.get(i));
+				}
 				return true;
 			}
 		}
 		return false;
+	}
+
+	/** Mapa a všechny vrstvy; u celé země s regiony i jejich vrstvy, hned bez dialogu, dotaz jen nad mezí průvodce. */
+	private void stahniMapuAVrstvy(final KatalogovaMapa mapa, final PlanPruvodce.Rezim rezim) {
+		if (getKachleModel() == null) {
+			return;
+		}
+		final PruvodceKontext kontext = new ProgramPruvodceKontext(spravaMap, null, getKachleModel());
+		final List<KatalogovaMapa> regiony = spravaMap.getKatalog().regiony(mapa);
+		final List<String> klice = new ArrayList<>();
+		klice.add(mapa.getId());
+		regiony.forEach(r -> klice.add(r.getId()));
+		final PlanPruvodce plan = StahnoutMapuAVrstvy.plan(kontext, regiony.isEmpty() ? null : mapa.getId(), klice, rezim);
+		StahnoutMapuAVrstvy.spust(kontext, plan, StahnoutMapuAVrstvy.dialog(this));
 	}
 
 	public boolean jeNadOdkazemRady(final Point bod) {
@@ -174,6 +200,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		super.paintChildren(g);
 		odkazyRady.clear();
 		mapyRady.clear();
+		rezimyRady.clear();
 		rada = null;
 		posledniRada = null;
 		if (maAtribuci() && jeRada()) {
@@ -316,6 +343,10 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		final List<String> radky;
 		final List<String> odkazy = new ArrayList<>();
 		final List<KatalogovaMapa> mapy = new ArrayList<>();
+		/** Souběžné s odkazy: „Česko:“ před odkazem a druhý odkaz za ním, null když nejsou. */
+		final List<String> predpony = new ArrayList<>();
+		final List<String> odkazy2 = new ArrayList<>();
+		final List<PlanPruvodce.Rezim> rezimy2 = new ArrayList<>();
 		final boolean sousedni;
 		final int x;
 		final int y;
@@ -339,20 +370,23 @@ public class JKachlovnikPresCele extends JKachlovnik {
 
 	private RozlozeniRady sestavRadu(final FontMetrics fmTucne, final FontMetrics fm) {
 		final RadaOfflineMapy novaRada = spravaMap == null ? null : RadaOfflineMapy.pro(spravaMap.getKatalog(), spravaMap::getStav, getSoord().getMoustred().toWgs(),
-				spravaMap.getBeziciStahovani().map(StavMapy::getMapa).orElse(null), vyrez());
+				spravaMap.getBeziciStahovani().map(StavMapy::getMapa).orElse(null), vyrez(), nabidkyMap());
 		final String text = novaRada == null ? RADA_BEZ_SPRAVY : novaRada.text;
 		final List<String> radky = text == null ? new ArrayList<>() : zalom(text, fm, Math.max(200, getWidth() - 40));
 		final List<String> odkazy = new ArrayList<>();
 		final List<KatalogovaMapa> mapy = new ArrayList<>();
+		final List<RadaOfflineMapy> radyOdkazu = new ArrayList<>();
 		if (novaRada != null && novaRada.odkaz != null) {
 			odkazy.add(novaRada.odkaz);
 			mapy.add(novaRada.mapa);
+			radyOdkazu.add(novaRada);
 		}
 		final boolean sousedni = novaRada != null && !novaRada.sousedni.isEmpty();
 		if (sousedni) {
 			for (final RadaOfflineMapy r : novaRada.sousedni) {
 				odkazy.add(r.odkaz);
 				mapy.add(r.mapa);
+				radyOdkazu.add(r);
 			}
 		}
 		int w = fmTucne.stringWidth(RadaOfflineMapy.NADPIS);
@@ -362,15 +396,43 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		for (final String r : radky) {
 			w = Math.max(w, fm.stringWidth(r));
 		}
-		for (final String odkaz : odkazy) {
-			w = Math.max(w, fm.stringWidth(odkaz));
+		for (final RadaOfflineMapy r : radyOdkazu) {
+			w = Math.max(w, fm.stringWidth(radekOdkazu(r)));
 		}
 		w += 16;
 		final int h = fmTucne.getHeight() + (radky.size() + odkazy.size() + (sousedni ? 1 : 0)) * fm.getHeight() + 8;
 		final RozlozeniRady r = new RozlozeniRady(novaRada, radky, sousedni, (getWidth() - w) / 2, 8, w, h);
 		r.odkazy.addAll(odkazy);
 		r.mapy.addAll(mapy);
+		for (final RadaOfflineMapy o : radyOdkazu) {
+			r.predpony.add(o.predpona);
+			r.odkazy2.add(o.odkaz2);
+			r.rezimy2.add(o.rezim2);
+		}
 		return r;
+	}
+
+	/** Celý řádek odkazů rady: „Česko: Stáhnout mapu (606 MB) · Stáhnout mapu a vrstvy (977 MB)“. */
+	private static String radekOdkazu(final RadaOfflineMapy r) {
+		return (r.predpona == null ? "" : r.predpona + " ") + r.odkaz + (r.odkaz2 == null ? "" : ODDELOVAC + r.odkaz2);
+	}
+
+	private static final String ODDELOVAC = "  ·  ";
+
+	/** Stavy a velikosti map a vrstev pro dvě tlačítka rady; matice se sestaví až při prvním dotazu. */
+	private java.util.function.Function<KatalogovaMapa, NabidkaRadku> nabidkyMap() {
+		if (spravaMap == null || spravaMap.getKatalogVrstev() == null) {
+			return null;
+		}
+		final List<MatriceMap.Radek> matice = new ArrayList<>();
+		final boolean[] sestavena = { false };
+		return m -> {
+			if (!sestavena[0]) {
+				sestavena[0] = true;
+				matice.addAll(MatriceMap.sestav(spravaMap.getKatalog(), spravaMap::getStav, spravaMap.getKatalogVrstev(), spravaMap::getStav));
+			}
+			return matice.stream().filter(r -> r.getKlic().equals(m.getId())).findFirst().map(r -> NabidkaRadku.pro(r, new NabidkaRadku.Okolnosti(-1, null))).orElse(null);
+		};
 	}
 
 	private void kresliRadu(final Graphics2D g) {
@@ -410,13 +472,34 @@ public class JKachlovnikPresCele extends JKachlovnik {
 					g2.drawString(RadaOfflineMapy.SOUSEDNI, x + 8, yy);
 					yy += fm.getHeight();
 				}
+				int xx = x + 8;
+				final String predpona = rr.predpony.get(i);
+				if (predpona != null) {
+					g2.setColor(Color.DARK_GRAY);
+					g2.drawString(predpona, xx, yy);
+					xx += fm.stringWidth(predpona + " ");
+				}
 				final String odkaz = odkazy.get(i);
 				g2.setColor(ODKAZ);
-				g2.drawString(odkaz, x + 8, yy);
+				g2.drawString(odkaz, xx, yy);
 				final int sirka = fm.stringWidth(odkaz);
-				g2.drawLine(x + 8, yy + 2, x + 8 + sirka, yy + 2);
-				odkazyRady.add(new Rectangle(x + 4, yy - fm.getAscent(), sirka + 8, fm.getHeight()));
+				g2.drawLine(xx, yy + 2, xx + sirka, yy + 2);
+				odkazyRady.add(new Rectangle(xx - 4, yy - fm.getAscent(), sirka + 8, fm.getHeight()));
 				mapyRady.add(mapy.get(i));
+				rezimyRady.add(null);
+				final String odkaz2 = rr.odkazy2.get(i);
+				if (odkaz2 != null) {
+					g2.setColor(Color.DARK_GRAY);
+					g2.drawString(ODDELOVAC, xx + sirka, yy);
+					final int x2 = xx + sirka + fm.stringWidth(ODDELOVAC);
+					g2.setColor(ODKAZ);
+					g2.drawString(odkaz2, x2, yy);
+					final int sirka2 = fm.stringWidth(odkaz2);
+					g2.drawLine(x2, yy + 2, x2 + sirka2, yy + 2);
+					odkazyRady.add(new Rectangle(x2 - 4, yy - fm.getAscent(), sirka2 + 8, fm.getHeight()));
+					mapyRady.add(mapy.get(i));
+					rezimyRady.add(rr.rezimy2.get(i));
+				}
 				yy += fm.getHeight();
 			}
 		} finally {
