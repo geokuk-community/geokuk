@@ -55,7 +55,7 @@ public final class JStahnoutVse extends JDialog {
 
 	/** Souhrn k jedné zemi, nebo „Dostáhnout vrstvy“ ke všem staženým mapám (bez části Offline mapa). */
 	public static JStahnoutVse dostahnoutVrstvy(final Frame rodic, final PruvodceKontext kontext) {
-		return new JStahnoutVse(rodic, kontext, "Dostáhnout vrstvy", "Vrstvy ke staženým mapám", PlanPruvodce::sestavDostahnout, Collections.emptyList());
+		return new JStahnoutVse(rodic, kontext, "Stáhnout vrstvy ke všem staženým mapám", "Vrstvy ke staženým mapám", PlanPruvodce::sestavDostahnout, Collections.emptyList());
 	}
 
 	private JStahnoutVse(final Frame rodic, final PruvodceKontext kontext, final String titulek, final String nadpisOkna,
@@ -115,9 +115,9 @@ public final class JStahnoutVse extends JDialog {
 	private static String nazevCasti(final Cast c) {
 		switch (c) {
 		case MAPA:
-			return "Offline mapa";
+			return "Mapa";
 		case TRASY:
-			return "Turistická vrstva";
+			return "Trasy";
 		case VRSTEVNICE:
 			return "Vrstevnice";
 		case STINOVANI:
