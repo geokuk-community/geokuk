@@ -38,33 +38,32 @@ public class JMapyPopup extends JPanel {
 	private static final long serialVersionUID = 1L;
 
 	static final String NADPIS = "Offline mapy";
-	static final String VE_SLOZCE = "Ve složce";
-	static final String ZADNA_MAPA = "Zatím tu není žádná offline mapa.";
-	static final String PRO_MISTO = "Pro zobrazené místo";
-	static final String DALSI = "Všechny mapy ke stažení";
-	static final String OBRYS = "Ukázat v mapě, kde offline mapy jsou";
+	static final String VE_SLOZCE = TextyMap.STAZENE_MAPY;
+	static final String ZADNA_MAPA = TextyMap.ZADNA_MAPA;
+	static final String PRO_MISTO = TextyMap.PRO_TOTO_MISTO;
+	static final String DALSI = TextyMap.MAPY_KE_STAZENI;
+	static final String OBRYS = TextyMap.OBRYS;
 	static final String STINOVANI = "Stínovat terén";
-	static final String WEB = "Další offline mapy:";
+	static final String WEB = TextyMap.DALSI_WEBY;
 	static final String STAHNOUT = "Stáhnout";
 	static final String SMAZAT_VRSTVU = "Smazat";
 	static final String STAHNOUT_VRSTVU = "↓";
 	static final String SLOUPEC_MAPA = "Mapa";
 	static final String JEN_REGIONY = "jen regiony";
-	static final String CELA_VE_SLOZCE = "celá země ve složce";
+	static final String CELA_VE_SLOZCE = TextyMap.CELA_ZEME;
 	static final String SLOUPEC_TRASY = "T";
 	static final String SLOUPEC_VRSTEVNICE = "V";
 	static final String SLOUPEC_STINOVANI = "S";
 	static final String NENI_VRSTVA = "—";
 	static final String SMAZAT_REGIONY = "Smazat regiony";
 	static final String SMAZAT_CELEK = "Smazat celou zemi";
-	static final String POKRACOVAT = "Pokračovat";
+	static final String POKRACOVAT = TextyMap.DOKONCIT_STAZENI;
 	static final String AKTUALIZOVAT = "Aktualizovat";
-	static final String STAHNOUT_ZNOVU = "Stáhnout znovu";
-	static final String ZKUSIT_ZNOVU = "Zkusit znovu";
+	static final String ZKUSIT_ZNOVU = TextyMap.ZKUSIT_ZNOVU;
 	static final String ZRUSIT = "Zrušit";
 	static final String ZKONTROLOVAT = "Zkontrolovat aktualizace";
 	static final String ZKONTROLOVAT_TIP = "Zjistí na serveru, jestli jsou pro stažené mapy novější data.";
-	static final String OTEVRIT_SLOZKU = "Otevřít složku";
+	static final String OTEVRIT_SLOZKU = TextyMap.OTEVRIT_SLOZKU;
 	static final String BEHEM_STAHOVANI_NEJDE_MAZAT = "Během stahování nejde mazat.";
 	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
 	static final String BEZI_STAHOVANI = "Až se dokončí běžící stahování.";
@@ -73,7 +72,7 @@ public class JMapyPopup extends JPanel {
 
 	static final String URL_PAWS = "https://osm.paws.cz/";
 	static final String URL_OAM = "https://www.openandromaps.org/";
-	static final String ZDROJ = "Mapy ke stažení:";
+	static final String ZDROJ = TextyMap.ZDROJ;
 	static final String URL_MAPSFORGE = "https://github.com/mapsforge/mapsforge";
 	static final String URL_ODBL = "https://opendatacommons.org/licenses/odbl/";
 	static final String URL_OSM = "https://www.openstreetmap.org/copyright";
@@ -85,7 +84,7 @@ public class JMapyPopup extends JPanel {
 	static final String STAHNOUT_VSE = "Stáhnout vše";
 	static final String VYBRAT_CASTI = "Vybrat části…";
 	static final String ZAVRIT = "Zavřít";
-	static final String DOSTAHNOUT_VRSTVY = "Dostáhnout vrstvy ke staženým mapám (%s, %s)";
+	static final String DOSTAHNOUT_VRSTVY = TextyMap.STAHNOUT_VRSTVY_KE_STAZENYM;
 
 	/** Šířka pozice 1 (Stáhnout mapu…) a pozice 2 (Stáhnout mapu a vrstvy…) podle nejdelších textů, ve všech oddílech stejná. */
 	static int sirkaPozice1() {
@@ -126,7 +125,7 @@ public class JMapyPopup extends JPanel {
 
 	/** Od kolika dalších map se nabídne hledání. */
 	static final int HLEDANI_OD = 8;
-	static final String HLEDAT = "Hledat v dalších mapách";
+	static final String HLEDAT = TextyMap.HLEDAT;
 	static final String NIC_NENALEZENO = "Nic nenalezeno.";
 	static final String MIMO_EVROPU = "Mimo Evropu";
 	/** Kontinenty mimo Evropu podle prvního dílu id mapy (složky na serveru mapsforge). */
@@ -1057,8 +1056,8 @@ public class JMapyPopup extends JPanel {
 			}
 			final PlanPruvodce dostahnout = planDostahnout();
 			vrstvy.setVisible(!dostahnout.jeHotovo());
-			vrstvy.setText(String.format(Locale.ROOT, DOSTAHNOUT_VRSTVY, souboru(dostahnout.getPolozky().size()), RadekMapy.velikost(dostahnout.getCelkovaVelikost())));
-			vrstvy.setToolTipText(cokoliBezi ? BEZI_STAHOVANI : "Stáhne z GitHubu chybějící nebo zastaralé vrstvy ke všem staženým mapám; mapy z mapsforge se nestahují.");
+			vrstvy.setText(String.format(Locale.ROOT, DOSTAHNOUT_VRSTVY, RadekMapy.velikost(dostahnout.getCelkovaVelikost())));
+			vrstvy.setToolTipText(cokoliBezi ? BEZI_STAHOVANI : TextyMap.STAHNOUT_VRSTVY_KE_STAZENYM_TIP);
 			vrstvy.setEnabled(!cokoliBezi);
 		});
 		akceHlavicky.add(vrstvy);
@@ -1104,7 +1103,7 @@ public class JMapyPopup extends JPanel {
 			nadpisSlozky.setIcon(new Sipka(slozkaOtevrena));
 			nadpisSlozky.setIconTextGap(4);
 			nadpisSlozky.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			nadpisSlozky.setToolTipText(slozkaOtevrena ? "Sbalit seznam map ve složce" : "Rozbalit seznam map ve složce");
+			nadpisSlozky.setToolTipText(slozkaOtevrena ? TextyMap.SBALIT_STAZENE : TextyMap.ROZBALIT_STAZENE);
 			nadpisSlozky.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(final MouseEvent e) {
@@ -1153,7 +1152,7 @@ public class JMapyPopup extends JPanel {
 			for (final cz.geokuk.plugins.mapy.sprava.KatalogovaMapa r : d.getRegiony()) {
 				regiony.append(regiony.length() > 0 ? ", " : "").append(r.getNazev());
 			}
-			final JLabel upozorneni = maly(d.getCelek().getNazev() + " je ve složce celá i s regiony (" + regiony + "), území je dvakrát.");
+			final JLabel upozorneni = maly(TextyMap.zemeDvakrat(d.getCelek().getNazev(), regiony.toString()));
 			upozorneni.setForeground(IkonyMap.CERVENA);
 			gbc.gridy++;
 			add(upozorneni, gbc);
@@ -2110,12 +2109,12 @@ public class JMapyPopup extends JPanel {
 	static String nazevVrstvy(final MatriceMap.Cast cast) {
 		switch (cast) {
 		case TRASY:
-			return "Turistická vrstva";
+			return TextyMap.TRASY;
 		case VRSTEVNICE:
-			return "Vrstevnice";
+			return TextyMap.VRSTEVNICE;
 		case STINOVANI:
 		default:
-			return "Stínování terénu";
+			return TextyMap.STINOVANI_TERENU;
 		}
 	}
 
@@ -2158,7 +2157,7 @@ public class JMapyPopup extends JPanel {
 			b = odkaz(AKTUALIZOVAT, e -> stahni(r));
 			break;
 		case CHYBA:
-			b = odkaz(r.isVeSlozce() ? STAHNOUT_ZNOVU : ZKUSIT_ZNOVU, e -> stahni(r));
+			b = odkaz(ZKUSIT_ZNOVU, e -> stahni(r));
 			break;
 		case NEMAME:
 		default:

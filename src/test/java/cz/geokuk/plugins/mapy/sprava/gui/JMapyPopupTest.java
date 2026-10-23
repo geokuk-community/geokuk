@@ -78,6 +78,11 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void stahniMapuAVrstvy(final String celekKlic, final List<String> klice, final cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim rezim) {
+			volani.add("stahniMapuAVrstvy " + celekKlic + " " + klice + " " + rezim);
+		}
+
+		@Override
 		public void stahniVse(final String nazevZeme, final String celekKlic, final List<String> klice) {
 			volani.add("stahniVse " + nazevZeme + " " + celekKlic + " " + klice.size());
 		}
@@ -204,6 +209,28 @@ public class JMapyPopupTest {
 		Assert.assertFalse(radky.stream().filter(r -> "europe/austria".equals(r.id)).findFirst().get().isVeSlozce());
 	}
 
+	/** Každý řádek mapy má dvě tlačítka: Stáhnout mapu (velikost) a Stáhnout mapu a vrstvy (velikost); druhé předá řádek i režim. */
+	@Test
+	public void radekMaDveTlacitka() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
+			final JButton mapa = tlacitkoRadku(p, "Rakousko", JMapyPopup.STAHNOUT);
+			Assert.assertNotNull("pozice 1 u nestažené mapy", mapa);
+			Assert.assertTrue(mapa.getText(), mapa.getText().matches("Stáhnout mapu \\(.* [MG]B\\)"));
+			Assert.assertTrue("Rakousko nemá vrstvy", komponentyRadku(p, "Rakousko").stream().anyMatch(k -> k instanceof JLabel && "Vrstvy zatím nejsou".equals(((JLabel) k).getText())));
+			Assert.assertTrue("Česko má mapu", komponentyRadku(p, "Česko").stream().anyMatch(k -> k instanceof JLabel && "✔ Mapa stažená".equals(((JLabel) k).getText())));
+			final JButton obe = komponentyRadku(p, "Česko").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout mapu a vrstvy (")).map(k -> (JButton) k).findFirst().orElse(null);
+			Assert.assertNotNull("pozice 2", obe);
+			obe.doClick();
+			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniMapuAVrstvy ") && v.endsWith("[europe/czech-republic] STAHNOUT")));
+			mapa.doClick();
+			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahni europe/austria"));
+		});
+	}
+
 	/** Buňky vrstev v popupu: ke stažení volá stahování vrstvy, mapy dál stahování mapy; hover na řádku ukazuje obrys mapy. */
 	@Test
 	public void popupMaSloupceVrstevAStahujeJe() throws Exception {
@@ -296,14 +323,14 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			final List<RadekMapy> radky = cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, vrstvy);
 			p.obnov(radky);
-			final List<JButton> akce = tlacitka(p).stream().filter(b -> JMapyPopup.STAHNOUT_VRSTVU.equals(b.getText()) || b.getText().isEmpty())
+			final List<JButton> akce = tlacitka(p).stream().filter(b -> jeTlacitkoVrstvy(b))
 					.collect(java.util.stream.Collectors.toList());
 			Assert.assertEquals(3, akce.stream().filter(b -> !b.getText().equals(JMapyPopup.STAHNOUT)).count());
 			Assert.assertTrue("bez jiného stahování jsou zapnuté", akce.stream().allMatch(JButton::isEnabled));
 			final List<RadekMapy> s = new ArrayList<>(radky);
 			s.add(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(MB).build());
 			p.obnov(s);
-			final List<JButton> pri = tlacitka(p).stream().filter(b -> JMapyPopup.STAHNOUT_VRSTVU.equals(b.getText()) || b.getText().isEmpty())
+			final List<JButton> pri = tlacitka(p).stream().filter(b -> jeTlacitkoVrstvy(b))
 					.collect(java.util.stream.Collectors.toList());
 			Assert.assertEquals(3, pri.size());
 			for (final JButton b : pri) {
@@ -550,7 +577,7 @@ public class JMapyPopupTest {
 			p.obnov(dalsiMapy());
 			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
 			p.setDvojite(dvojite);
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo je ve složce celá i s regiony (Bavorsko, Sasko)")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo: máte staženou celou zemi i regiony (Bavorsko, Sasko)")));
 			Assert.assertTrue("stažené jsou jen dva z regionů, celá země se smazat nenabídne", tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).isEmpty());
 			tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).get(0).doClick();
 			final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> uplne = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozkaUplne, katalog);
@@ -572,7 +599,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.JINA_VERZE, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
-			Assert.assertEquals(1, tlacitkaSTextem(p, JMapyPopup.AKTUALIZOVAT).size());
+			Assert.assertEquals(1, tlacitka(p).stream().filter(b -> b.getText().isEmpty() && b.getToolTipText() != null && b.getToolTipText().contains("novější verze")).count());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE));
 			Assert.assertFalse("během stahování vrstvy jde jen zrušit", tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
 			Assert.assertTrue("procenta stahované vrstvy", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().endsWith(" %")));
@@ -967,6 +994,13 @@ public class JMapyPopupTest {
 			p.obnov(Collections.singletonList(katalog("at", RadekMapy.Stav.STAHUJE).stazeno(110 * MB).build()));
 			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().contains("%") && l.getText().contains("zbývá asi 50 s")));
 		});
+	}
+
+	/** Tlačítko buňky vrstvy: ↓ ke stažení, ikona pro novější verzi nebo chybu; tooltip začíná názvem vrstvy. */
+	private static boolean jeTlacitkoVrstvy(final JButton b) {
+		final String t = b.getToolTipText();
+		return (JMapyPopup.STAHNOUT_VRSTVU.equals(b.getText()) || b.getText().isEmpty()) && t != null
+				&& (t.startsWith("Trasy:") || t.startsWith("Vrstevnice:") || t.startsWith("Stínování terénu:"));
 	}
 
 	/** Pozice 1 řádku má text „Stáhnout mapu (606 MB)“, takže Stáhnout se hledá podle začátku; ostatní texty přesně. */
@@ -1544,7 +1578,7 @@ public class JMapyPopupTest {
 			Assert.assertEquals("ve složce i jako hlavička regionů ve Všech mapách", 2, videtLabelu(p, "Velká Británie"));
 			Assert.assertEquals("ve Všech mapách jeho regiony", 1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
 			p.setDvojite(dvojite);
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie je ve složce celá i s regiony (Anglie)")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie: máte staženou celou zemi i regiony (Anglie)")));
 		});
 	}
 
@@ -1552,7 +1586,8 @@ public class JMapyPopupTest {
 	@Test
 	public void stahnoutVseJenKdyzStahneViceNezJednuPolozku() throws Exception {
 		final java.util.function.BiPredicate<JMapyPopup, String> maVse = (p, zeme) -> komponentyRadku(p, zeme).stream()
-				.anyMatch(k -> k instanceof javax.swing.JComponent && ((javax.swing.JComponent) k).getComponentPopupMenu() != null);
+				.anyMatch(k -> k instanceof javax.swing.JComponent && ((javax.swing.JComponent) k).getComponentPopupMenu() != null
+						&& Arrays.stream(((javax.swing.JComponent) k).getComponentPopupMenu().getComponents()).anyMatch(m -> m instanceof javax.swing.JMenuItem && JMapyPopup.VYBRAT_CASTI.equals(((javax.swing.JMenuItem) m).getText())));
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
@@ -1629,7 +1664,7 @@ public class JMapyPopupTest {
 			p.setOvladani(z);
 			p.prepniSlozku(true);
 			p.obnov(radky);
-			Assert.assertTrue("nahoře Dostáhnout vrstvy", tlacitka(p).stream().anyMatch(b -> b.getText().startsWith("Dostáhnout vrstvy ke staženým mapám (")));
+			Assert.assertTrue("nahoře Stáhnout vrstvy", tlacitka(p).stream().anyMatch(b -> b.getText().startsWith("Stáhnout vrstvy ke všem staženým mapám (")));
 			vybratCasti(p).forEach(javax.swing.JMenuItem::doClick);
 			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniVse Německo europe/germany ") && Integer.parseInt(v.substring(v.lastIndexOf(' ') + 1)) > 2));
 		});
@@ -2488,7 +2523,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.obnov(radky.apply(StavMapy.Faze.NIC));
-			final JButton odkaz = tlacitka(p).stream().filter(b -> b.getText().startsWith("Dostáhnout vrstvy")).findFirst().get();
+			final JButton odkaz = tlacitka(p).stream().filter(b -> b.getText().startsWith("Stáhnout vrstvy")).findFirst().get();
 			Assert.assertTrue(odkaz.isVisible());
 			final String text = odkaz.getText();
 			final int pred = p.prestaveb;

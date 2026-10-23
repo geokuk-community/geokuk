@@ -95,7 +95,7 @@ public class JStahnoutVseTest {
 		SwingUtilities.invokeAndWait(() -> okno[0] = new JStahnoutVse(null, k, "Česko", CZ, Collections.singletonList(CZ)));
 		try {
 			SwingUtilities.invokeAndWait(() -> {
-				final JCheckBox mapa = (JCheckBox) tlacitko(okno[0], "Offline mapa");
+				final JCheckBox mapa = (JCheckBox) tlacitko(okno[0], "Mapa");
 				Assert.assertTrue(mapa.isSelected());
 				Assert.assertTrue("stínování se předvybere s mapou", ((JCheckBox) tlacitko(okno[0], "Stínování")).isSelected() == ((JCheckBox) tlacitko(okno[0], "Stínování")).isEnabled());
 				Assert.assertTrue(tlacitko(okno[0], "Stáhnout").isEnabled());
