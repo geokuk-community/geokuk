@@ -552,6 +552,11 @@ public class JMapyPopupTest {
 			Assert.assertNotNull("celou zemi jde stáhnout", celek);
 			celek.doClick();
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahni europe/spain"));
+			Assert.assertEquals("všechny regiony země jsou pod ní, ne v seznamu", 1, viditelnychLabelu(p, "Andalusie"));
+			komponentyRadku(p, "Španělsko").stream().filter(k -> k instanceof JLabel && "Španělsko".equals(((JLabel) k).getText())).findFirst()
+					.ifPresent(k -> klikNa((JLabel) k));
+			Assert.assertEquals("sbalená země skryje regiony", 0, viditelnychLabelu(p, "Andalusie"));
+			Assert.assertEquals(1, viditelnychLabelu(p, "Španělsko"));
 		});
 	}
 
@@ -1443,7 +1448,8 @@ public class JMapyPopupTest {
 			Assert.assertNotNull("hlavička země regionu", zeme);
 			Assert.assertNotNull(region);
 			Assert.assertTrue("region je odsazený víc než země", region.getInsets().left > zeme.getInsets().left);
-			Assert.assertEquals("celá země je odsazená jako hlavička země", zeme.getInsets().left, belgie.getInsets().left);
+			Assert.assertNotNull("země s regiony má šipku", zeme.getIcon());
+			Assert.assertTrue("celá země bez regionů je odsazená o šířku šipky", belgie.getInsets().left > 0);
 			Assert.assertTrue("popis regionu bez země", labels(p).stream().anyMatch(l -> "~142 MB".equals(l.getText())));
 		});
 	}
