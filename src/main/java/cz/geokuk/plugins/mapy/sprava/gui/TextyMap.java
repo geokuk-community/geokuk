@@ -1,5 +1,7 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
+import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva;
+
 /**
  * Texty správy offline map, ze kterých berou panel, rada v mapě, dialogy i blok ve stavovém řádku. Slovník: mapa = stažená mapa země nebo regionu, vrstvy = trasy,
  * vrstevnice a stínování terénu.
@@ -34,6 +36,24 @@ final class TextyMap {
 	static final String TRASY = "Trasy";
 	static final String VRSTEVNICE = "Vrstevnice";
 	static final String STINOVANI_TERENU = "Stínování terénu";
+
+	/** Název vrstvy v textech pro uživatele podle typu vrstvy z katalogu. */
+	static String nazevVrstvy(final KatalogovaVrstva.Typ typ) {
+		switch (typ) {
+		case TRASY:
+			return TRASY;
+		case VRSTEVNICE:
+			return VRSTEVNICE;
+		case DEM:
+		default:
+			return STINOVANI_TERENU;
+		}
+	}
+
+	/** Titulek potvrzení smazání vrstvy: „Smazat vrstvu trasy – Andorra“. */
+	static String smazatVrstvu(final KatalogovaVrstva.Typ typ, final String mapa) {
+		return "Smazat vrstvu " + nazevVrstvy(typ).toLowerCase(java.util.Locale.forLanguageTag("cs")) + " – " + mapa;
+	}
 
 	/** Upozornění na zemi staženou celou i po regionech; parametry: název země, seznam regionů. */
 	static String zemeDvakrat(final String zeme, final String regiony) {

@@ -25,7 +25,7 @@ public final class RadaOfflineMapy {
 	public final String odkaz;
 	/** Mapa, kterou odkaz stáhne. */
 	public final KatalogovaMapa mapa;
-	/** Název mapy před odkazy („Česko:“), když rada nabízí dvě tlačítka; jinak null. */
+	/** Název mapy v prvním sloupci tabulky rady („Česko“), null když se nic nenabízí. */
 	public final String predpona;
 	/** Druhý odkaz „Stáhnout mapu a vrstvy (977 MB)“ na stejné mapě, null když se nenabízí. */
 	public final String odkaz2;
@@ -155,8 +155,7 @@ public final class RadaOfflineMapy {
 			if (r.odkaz == null) {
 				continue;
 			}
-			// Odkaz „Zkusit znovu“ říká, kterou mapu.
-			sousedni.add(s.getFaze() == StavMapy.Faze.CHYBA ? new RadaOfflineMapy(r.text, "Zkusit znovu stáhnout mapu " + m.getNazev(), m) : r);
+			sousedni.add(r);
 		}
 		return sousedni;
 	}
@@ -220,17 +219,69 @@ public final class RadaOfflineMapy {
 		case OVERUJE:
 			return new RadaOfflineMapy("Mapa " + nazev + " je stažená, ověřuji ji.", null, m);
 		case CHYBA:
-			return new RadaOfflineMapy("Stažení mapy " + nazev + " se nepovedlo.", "Zkusit znovu", m);
+			return jedenOdkaz("Zkusit znovu", "Stažení mapy " + nazev + " se nepovedlo.", m);
 		default:
-			if (s.isRozpracovano()) {
-				return new RadaOfflineMapy(null, "Dokončit stažení mapy " + nazev, m);
-			}
 			final NabidkaRadku n = nabidky == null ? null : nabidky.apply(m);
 			if (n != null && n.getMapa().getDruh() == NabidkaRadku.Druh.TLACITKO && n.getVrstvy().getDruh() == NabidkaRadku.Druh.TLACITKO) {
-				return new RadaOfflineMapy(null, n.getMapa().getText(), m, Collections.emptyList(), nazev + ":", n.getVrstvy().getText(), n.getVrstvy().getRezim());
+				return new RadaOfflineMapy(null, n.getMapa().getText(), m, Collections.emptyList(), nazev, n.getVrstvy().getText(), n.getVrstvy().getRezim());
+			}
+			if (s.isRozpracovano()) {
+				return jedenOdkaz("Dokončit stažení", null, m);
 			}
 			final long velikost = s.getVelikostNaServeru() > 0 ? s.getVelikostNaServeru() : m.getPribliznaVelikost();
-			return new RadaOfflineMapy(null, "Stáhnout mapu " + nazev + (velikost > 0 ? " (~" + RadekMapy.velikost(velikost) + ")" : ""), m);
+			return jedenOdkaz("Stáhnout mapu" + (velikost > 0 ? " (~" + RadekMapy.velikost(velikost) + ")" : ""), null, m);
 		}
+	}
+
+	private static RadaOfflineMapy jedenOdkaz(final String odkaz, final String text, final KatalogovaMapa m) {
+		return new RadaOfflineMapy(text, odkaz, m, Collections.emptyList(), m.getNazev(), null, null);
+	}
+
+	/** Řádek tabulky rady: mapa s odkazy, hlavička země s regiony pod ní (rada null), nebo štítek skupiny (stitek). */
+	public static final class RadekRady {
+		public final String nazev;
+		/** Region pod zemí: název se odsadí. */
+		public final boolean region;
+		/** Odkazy řádku, null u hlavičky země bez vlastní mapy a u štítku. */
+		public final RadaOfflineMapy rada;
+		public final boolean stitek;
+
+		RadekRady(final String nazev, final boolean region, final RadaOfflineMapy rada, final boolean stitek) {
+			this.nazev = nazev;
+			this.region = region;
+			this.rada = rada;
+			this.stitek = stitek;
+		}
+	}
+
+	/** Tabulka rady: hlavní mapa a pod štítkem „V záběru je i:“ sousední, regiony vždy pod svou zemí. */
+	public List<RadekRady> tabulka() {
+		final List<RadekRady> radky = new ArrayList<>(seskup(Collections.singletonList(this)));
+		final List<RadekRady> dalsi = seskup(sousedni);
+		if (!dalsi.isEmpty()) {
+			radky.add(new RadekRady(SOUSEDNI, false, null, true));
+			radky.addAll(dalsi);
+		}
+		return radky;
+	}
+
+	private static List<RadekRady> seskup(final List<RadaOfflineMapy> rady) {
+		final java.util.Map<String, List<RadaOfflineMapy>> podleZeme = new java.util.LinkedHashMap<>();
+		for (final RadaOfflineMapy r : rady) {
+			if (r.odkaz != null && r.mapa != null) {
+				podleZeme.computeIfAbsent(r.mapa.getSkupina() != null ? r.mapa.getSkupina() : r.mapa.getNazev(), k -> new ArrayList<>()).add(r);
+			}
+		}
+		final List<RadekRady> radky = new ArrayList<>();
+		for (final java.util.Map.Entry<String, List<RadaOfflineMapy>> e : podleZeme.entrySet()) {
+			final RadaOfflineMapy celek = e.getValue().stream().filter(r -> r.mapa.getSkupina() == null).findFirst().orElse(null);
+			radky.add(new RadekRady(e.getKey(), false, celek, false));
+			for (final RadaOfflineMapy r : e.getValue()) {
+				if (r != celek) {
+					radky.add(new RadekRady(r.mapa.getNazev(), true, r, false));
+				}
+			}
+		}
+		return radky;
 	}
 }

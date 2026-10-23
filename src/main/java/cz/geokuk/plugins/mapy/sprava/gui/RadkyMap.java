@@ -58,7 +58,7 @@ final class RadkyMap {
 	static RadekMapy radek(final KatalogovaMapa m, final StavMapy s, final boolean proMisto, final MatriceMap.Radek matice) {
 		final boolean mame = s.getMistni() != StavMapy.Mistni.NEMAME;
 		final RadekMapy.Builder b = RadekMapy.katalogova(m.getId(), m.getNazev(), stav(s)).skupina(m.getSkupina()).zdroj(m.getZdroj())
-				.licence(m.getLicence() + ", " + m.getAtribuce()).proZobrazeneMisto(proMisto).veSlozce(mame || matice != null && matice.mameCokoli()).matice(matice)
+				.licence(m.getLicence() + ", " + m.getAtribuce()).proZobrazeneMisto(proMisto).veSlozce(mame || bezi(s) || s.isRozpracovano() || matice != null && matice.maCokoli()).matice(matice)
 				.rozpracovano(s.isRozpracovano()).datumDat(s.getDatumDatMistni()).datumNaServeru(s.getDatumNaServeru()).zkontrolovano(s.getZkontrolovano()).chyba(s.getChyba());
 		b.kontroluje(s.getFaze() == StavMapy.Faze.KONTROLUJE);
 		if (bezi(s)) {

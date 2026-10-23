@@ -209,7 +209,7 @@ public class JMapyPopupTest {
 		Assert.assertFalse(radky.stream().filter(r -> "europe/austria".equals(r.id)).findFirst().get().isVeSlozce());
 	}
 
-	/** Každý řádek mapy má dvě tlačítka: Stáhnout mapu (velikost) a Stáhnout mapu a vrstvy (velikost); druhé předá řádek i režim. */
+	/** Každý řádek mapy má dvě tlačítka: Stáhnout mapu (velikost) a Stáhnout mapu a vrstvy, u stažené mapy Stáhnout vrstvy (velikost); druhé předá řádek i režim. */
 	@Test
 	public void radekMaDveTlacitka() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
@@ -222,8 +222,8 @@ public class JMapyPopupTest {
 			Assert.assertTrue(mapa.getText(), mapa.getText().matches("Stáhnout mapu \\(.* [MG]B\\)"));
 			Assert.assertTrue("Rakousko nemá vrstvy", komponentyRadku(p, "Rakousko").stream().anyMatch(k -> k instanceof JLabel && "Vrstvy zatím nejsou".equals(((JLabel) k).getText())));
 			Assert.assertTrue("Česko má mapu", komponentyRadku(p, "Česko").stream().anyMatch(k -> k instanceof JLabel && "✔ Mapa stažená".equals(((JLabel) k).getText())));
-			final JButton obe = komponentyRadku(p, "Česko").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout mapu a vrstvy (")).map(k -> (JButton) k).findFirst().orElse(null);
-			Assert.assertNotNull("pozice 2", obe);
+			final JButton obe = komponentyRadku(p, "Česko").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout vrstvy (")).map(k -> (JButton) k).findFirst().orElse(null);
+			Assert.assertNotNull("pozice 2 u stažené mapy bez vrstev jsou jen vrstvy", obe);
 			obe.doClick();
 			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniMapuAVrstvy ") && v.endsWith("[europe/czech-republic] STAHNOUT")));
 			mapa.doClick();
@@ -292,7 +292,7 @@ public class JMapyPopupTest {
 				Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), vrstvy);
 	}
 
-	/** Stahuje se jen vrstva nestažené mapy: řádek je v oddílu Pro zobrazené místo, má procenta a Zrušit. */
+	/** Stahuje se jen vrstva nestažené mapy: řádek je mezi staženými mapami, ne v Pro toto místo, má procenta a Zrušit. */
 	@Test
 	public void stahovaniVrstvyNestazeneMapyJeVidet() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
@@ -300,7 +300,8 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
 					v.getId().startsWith("tourist") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("tourist") ? 7_500_000 : 0, null)));
-			Assert.assertEquals("řádek se stahovanou vrstvou je nahoře v oddílu pro zobrazené místo", 1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+			Assert.assertEquals("řádek se stahovanou vrstvou není v oddílu pro toto místo", 0, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+			Assert.assertEquals("je mezi staženými mapami", 1, labels(p).stream().filter(l -> "Česko".equals(l.getText())).count());
 			Assert.assertFalse(tlacitkaSTextem(p, JMapyPopup.ZRUSIT).isEmpty());
 			Assert.assertTrue(labels(p).stream().anyMatch(l -> "30 %".equals(l.getText())));
 		});
@@ -1407,24 +1408,24 @@ public class JMapyPopupTest {
 		});
 	}
 
-	/** V plochém oddílu Pro zobrazené místo je u regionu za popisem země, i po změně stavu na místě; u celé země ne. */
+	/** V oddílu Pro toto místo je region pod svou zemí (odsazený), i když země sama mapu pro místo nenabízí; u celé země odsazení regionu není. */
 	@Test
-	public void regionProMistoMaVPopisuZemi() throws Exception {
-		final java.util.function.Function<RadekMapy.Stav, List<RadekMapy>> radky = stav -> Arrays.asList(
-				RadekMapy.katalogova("europe/netherlands/noord-brabant", "Severní Brabantsko", stav).skupina("Nizozemsko").velikost(142 * MB).stazeno(stav == RadekMapy.Stav.STAHUJE ? 71 * MB : 0)
-						.proZobrazeneMisto(true).build(),
+	public void regionProMistoJePodSvouZemi() throws Exception {
+		final List<RadekMapy> radky = Arrays.asList(
+				RadekMapy.katalogova("europe/netherlands/noord-brabant", "Severní Brabantsko", RadekMapy.Stav.NEMAME).skupina("Nizozemsko").velikost(142 * MB).proZobrazeneMisto(true).build(),
 				RadekMapy.katalogova("europe/belgium", "Belgie", RadekMapy.Stav.NEMAME).velikost(300 * MB).proZobrazeneMisto(true).build());
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
-			p.obnov(radky.apply(RadekMapy.Stav.NEMAME));
-			Assert.assertEquals("jen v oddílu Pro zobrazené místo", 1, labels(p).stream().filter(l -> l.getText() != null && l.getText().endsWith(" · Nizozemsko")).count());
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("~142 MB · Nizozemsko")));
-			Assert.assertTrue("celá země bez země v popisu", labels(p).stream().noneMatch(l -> l.getText() != null && l.getText().startsWith("~300 MB ·")));
-			final int pred = p.prestaveb;
-			p.obnov(radky.apply(RadekMapy.Stav.STAHUJE));
-			Assert.assertEquals("změna stavu na místě", pred, p.prestaveb);
-			Assert.assertEquals(1, labels(p).stream().filter(l -> l.getText() != null && l.getText().startsWith("50 % z ") && l.getText().endsWith(" · Nizozemsko")).count());
+			p.obnov(radky);
+			final JLabel zeme = labels(p).stream().filter(l -> "Nizozemsko".equals(l.getText())).findFirst().orElse(null);
+			final JLabel region = labels(p).stream().filter(l -> "Severní Brabantsko".equals(l.getText())).findFirst().orElse(null);
+			final JLabel belgie = labels(p).stream().filter(l -> "Belgie".equals(l.getText())).findFirst().orElse(null);
+			Assert.assertNotNull("hlavička země regionu", zeme);
+			Assert.assertNotNull(region);
+			Assert.assertTrue("region je odsazený víc než země", region.getInsets().left > zeme.getInsets().left);
+			Assert.assertEquals("celá země je odsazená jako hlavička země", zeme.getInsets().left, belgie.getInsets().left);
+			Assert.assertTrue("popis regionu bez země", labels(p).stream().anyMatch(l -> "~142 MB".equals(l.getText())));
 		});
 	}
 
@@ -1611,22 +1612,23 @@ public class JMapyPopupTest {
 	public void rozdeleniVysekSekci() {
 		Assert.assertArrayEquals("vejde se: beze změny", new int[] { 100, 200, 0 }, JMapyPopup.rozdelVysky(new int[] { 100, 200, 0 }, 500, 80));
 		Assert.assertArrayEquals("malá sekce celá, velká zbytek", new int[] { 120, 380 }, JMapyPopup.rozdelVysky(new int[] { 120, 2000 }, 500, 80));
-		Assert.assertArrayEquals("dvě velké rovným dílem", new int[] { 200, 200, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
+		Assert.assertArrayEquals("dvě velké podle obsahu", new int[] { 160, 240, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
 		Assert.assertArrayEquals("minimum, i když rozpočet nestačí", new int[] { 80, 80, 80 }, JMapyPopup.rozdelVysky(new int[] { 900, 900, 900 }, 150, 80));
 		final JMapyPopup bezOkna = new JMapyPopup();
-		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 520);
+		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 850);
 	}
 
-	/** Mapa z oddílu Pro zobrazené místo je vidět i v seznamu všech map; popisy obou řádků se při stahování přepisují. */
+	/** Mapa z oddílu Pro toto místo není ještě jednou v seznamu map ke stažení. */
 	@Test
-	public void mapaProMistoJeVidetISeznamuVsechMap() throws Exception {
+	public void mapaProMistoNeniVSeznamuVsechMap() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			final List<RadekMapy> radky = new ArrayList<>(dalsiMapy());
 			radky.add(katalog("pm", RadekMapy.Stav.NEMAME).proZobrazeneMisto(true).build());
 			p.obnov(radky);
-			Assert.assertEquals("v obou oddílech", 2, labels(p).stream().filter(l -> "pm".equals(l.getText())).count());
+			Assert.assertEquals("jen v oddílu Pro toto místo", 1, labels(p).stream().filter(l -> "pm".equals(l.getText())).count());
+			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
 		});
 	}
 
@@ -1683,7 +1685,7 @@ public class JMapyPopupTest {
 			p.setOvladani(z);
 			p.prepniSlozku(true);
 			p.obnov(radky);
-			final JButton obe = komponentyRadku(p, "Německo").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout mapu a vrstvy (")).map(k -> (JButton) k)
+			final JButton obe = komponentyRadku(p, "Německo").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout vrstvy (")).map(k -> (JButton) k)
 					.findFirst().get();
 			obe.doClick();
 			final String v = z.volani.stream().filter(x -> x.startsWith("stahniMapuAVrstvy ")).findFirst().get();
@@ -1742,7 +1744,7 @@ public class JMapyPopupTest {
 				Assert.assertTrue("vejde se do " + d + ": " + vyskaPodleOkna[k], vyskaPodleOkna[k] <= d);
 			}
 			Assert.assertTrue("vyšší okno, vyšší popup", vyskaPodleOkna[0] < vyskaPodleOkna[1] && vyskaPodleOkna[1] < vyskaPodleOkna[2]);
-			Assert.assertTrue("ve vysokém okně nejvýš strop: " + vyskaPodleOkna[2], vyskaPodleOkna[2] < 1000 - JMapyPopup.MIN_ROZPOCET);
+			Assert.assertTrue("ve vysokém okně nejvýš 90 %: " + vyskaPodleOkna[2], vyskaPodleOkna[2] <= 900);
 			final JMapyPopup nizke = new JMapyPopup();
 			nizke.setDostupnaVyska(() -> 100);
 			nizke.obnov(mnoho);
@@ -2270,16 +2272,16 @@ public class JMapyPopupTest {
 		}, Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), cz.geokuk.plugins.mapy.sprava.StavVrstvy::novy);
 	}
 
-	/** S jedinou mapou ve složce je popup nízký: seznam všech map ke stažení nevyplní celou dostupnou výšku. */
+	/** Seznam map ke stažení využije výšku okna, ale nejvýš 90 % dostupné výšky. */
 	@Test
-	public void popupSJednouMapouJeNizky() throws Exception {
+	public void popupSJednouMapouVyuzijeVyskuOkna() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.setDostupnaVyska(() -> 1000);
 			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavVrstvy::novy));
 			Assert.assertEquals(1, videtLabelu(p, "Česko"));
-			Assert.assertTrue("výška " + p.getPreferredSize().height, p.getPreferredSize().height < 500);
+			Assert.assertTrue("výška " + p.getPreferredSize().height, p.getPreferredSize().height <= 900 && p.getPreferredSize().height > 500);
 		});
 	}
 
@@ -2325,7 +2327,7 @@ public class JMapyPopupTest {
 				});
 				final int prestaveb = p.prestaveb;
 				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 30 * MB));
-				Assert.assertEquals("Rakousko se stahuje v Pro zobrazené místo", 1, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
+				Assert.assertEquals("Rakousko se stahuje mezi staženými mapami", 0, viditelnychLabelu(p, JMapyPopup.PRO_MISTO));
 				Assert.assertEquals(pred, p.getPreferredSize());
 				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE, 60 * MB));
 				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0));
@@ -2338,7 +2340,7 @@ public class JMapyPopupTest {
 				popup.zavri();
 				p.pripravKZobrazeni();
 				popup.ukaz(p, kotva, false);
-				Assert.assertTrue("po novém otevření se výška řídí obsahem: o řádek ve složce víc " + p.getHeight() + " vs " + pred.height + " " + p.getPreferredSize(), p.getHeight() > pred.height);
+				Assert.assertTrue("po novém otevření se výška řídí obsahem: o řádek ve složce víc " + p.getHeight() + " vs " + pred.height + " " + p.getPreferredSize(), p.getHeight() >= pred.height);
 				final java.awt.Dimension dva = p.getSize();
 				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0));
 				Assert.assertEquals("smazaná mapa ubyla, velikost zůstala", dva, p.getPreferredSize());

@@ -212,7 +212,9 @@ public class JBlokMap extends JLabel {
 				if (spravaMap == null) {
 					return;
 				}
-				spravaMap.getKatalogVrstev().podleId(id).ifPresent(v -> smazSPotvrzenim("Smazat vrstvu " + v.getNazev(), SmazaniSouboru.souboryVrstvy(spravaMap.getSlozkaVrstev(), v)));
+				spravaMap.getKatalogVrstev().podleId(id).ifPresent(v -> smazSPotvrzenim(
+						TextyMap.smazatVrstvu(v.getTyp(), spravaMap.getKatalog().podleId(v.getRegion()).map(KatalogovaMapa::getNazev).orElse(v.getRegion())),
+						SmazaniSouboru.souboryVrstvy(spravaMap.getSlozkaVrstev(), v)));
 			}
 
 			@Override
@@ -413,7 +415,7 @@ public class JBlokMap extends JLabel {
 	/** Smaže soubory po potvrzení; otevřené offline mapy se předtím zavřou (Windows otevřený soubor nesmaže), mazání běží mimo EDT. */
 	void smazSPotvrzenim(final String titulek, final List<File> soubory) {
 		if (soubory.isEmpty() || spravaMap != null && (spravaMap.getBeziciStahovani().isPresent() || spravaMap.getBeziciStahovaniVrstvy().isPresent())
-				|| !potvrzeni.apply(titulek, "Smažou se tyto soubory:\n" + SmazaniSouboru.popis(soubory) + "\nSmazání nejde vrátit.")) {
+				|| !popup.sDialogem(() -> potvrzeni.apply(titulek, "Smažou se tyto soubory:\n" + SmazaniSouboru.popis(soubory) + "\nSmazání nejde vrátit."))) {
 			return;
 		}
 		if (kachleModel != null && kachleModel.getZiskavac() != null) {
@@ -431,8 +433,11 @@ public class JBlokMap extends JLabel {
 				try {
 					final List<File> nesmazane = get();
 					if (!nesmazane.isEmpty()) {
-						JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(JBlokMap.this), "Nešlo smazat: " + nesmazane.get(0).getName() + (nesmazane.size() > 1 ? " a další" : ""),
-								titulek, JOptionPane.ERROR_MESSAGE);
+						popup.sDialogem(() -> {
+							JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(JBlokMap.this), "Nešlo smazat: " + nesmazane.get(0).getName() + (nesmazane.size() > 1 ? " a další" : ""),
+									titulek, JOptionPane.ERROR_MESSAGE);
+							return null;
+						});
 					}
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();

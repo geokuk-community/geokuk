@@ -171,6 +171,11 @@ public final class MatriceMap {
 		public boolean mameCokoli() {
 			return bunky.values().stream().anyMatch(Bunka::jeStazeno);
 		}
+
+		/** Na disku je cokoli z mapy a jejích vrstev, i rozpracované, nebo se něco stahuje. */
+		public boolean maCokoli() {
+			return bunky.values().stream().anyMatch(b -> b.jeCoMazat() || b.getStav() == StavBunky.STAHUJE);
+		}
 	}
 
 	/** Matice pro všechny mapy katalogu v jeho pořadí; vrstvy a jejich stavy mohou být null (jen sloupec Mapa). */
