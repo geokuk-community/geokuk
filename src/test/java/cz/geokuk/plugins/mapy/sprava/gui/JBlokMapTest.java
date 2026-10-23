@@ -324,6 +324,16 @@ public class JBlokMapTest {
 				}
 			}
 			Assert.assertTrue("panel otevřený z menu", videt);
+			boolean drzi = false;
+			while (System.currentTimeMillis() < konec && !drzi) {
+				final boolean[] d = new boolean[1];
+				SwingUtilities.invokeAndWait(() -> d[0] = blok[0].getObsah().isHledaniAktivni());
+				drzi = d[0];
+				if (!drzi) {
+					Thread.sleep(50);
+				}
+			}
+			Assert.assertTrue("s fokusem z menu panel nezavře odjetí myši", drzi);
 		} finally {
 			SwingUtilities.invokeAndWait(() -> {
 				blok[0].zavri();
