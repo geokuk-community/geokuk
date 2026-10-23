@@ -177,7 +177,7 @@ public class Gen implements Grupa, Indexable {
 	 * @param alelaName
 	 * @return
 	 */
-	public Optional<Alela> locateAlela(final String alelaName) {
+	public synchronized Optional<Alela> locateAlela(final String alelaName) {
 		return Optional.ofNullable(alelyMap.get(alelaName));
 	}
 

@@ -13,4 +13,14 @@ public class IkonNacitacLoaderTest {
 		Assert.assertNotNull(bag);
 		Assert.assertEquals(ASada.STANDARD.name(), bag.getSada().getName());
 	}
+
+	/** Genom je součástí kontextu načtených keší; nový by při změně zvýraznění vynutil přečtení všech zdrojů. */
+	@Test
+	public void zmenaZvyrazneniZachovaGenom() throws Exception {
+		final IkonNacitacLoader loader = new IkonNacitacLoader();
+		final IkonBag prvni = loader.nacti(true, ASada.STANDARD, Zvyrazneni.VYCHOZI);
+		final IkonBag druhy = loader.nacti(true, ASada.STANDARD, Zvyrazneni.BEZ);
+		Assert.assertNotSame(prvni, druhy);
+		Assert.assertSame(prvni.getGenom(), druhy.getGenom());
+	}
 }
