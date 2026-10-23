@@ -823,7 +823,7 @@ public class JMapyPopup extends JPanel {
 		if (r.matice == null || r.vlastni || r.bunka(MatriceMap.Cast.MAPA) == null) {
 			return null;
 		}
-		return NabidkaRadku.pro(r::bunka, new NabidkaRadku.Okolnosti(volneMisto < 0 ? -1 : Math.max(0, volneMisto - rozdelano), beziNazev));
+		return NabidkaRadku.pro(r::bunkaNabidky, new NabidkaRadku.Okolnosti(volneMisto < 0 ? -1 : Math.max(0, volneMisto - rozdelano), beziNazev));
 	}
 
 	private String stavRadku(final RadekMapy r) {

@@ -180,4 +180,37 @@ public class MatriceMapTest {
 		assertTrue("rozpracovaná vrstva jde smazat", cz.getBunka(Cast.VRSTEVNICE).jeCoMazat());
 		assertEquals(StavBunky.KE_STAZENI, cz.getBunka(Cast.VRSTEVNICE).getStav());
 	}
+
+	/** Celá země bez vlastní vrstvy: tlačítka dostanou souhrn vrstev regionů, velikost je součet; vlastní buňka celku zůstává prázdná. */
+	@Test
+	public void celekBezVlastniVrstvyMaSouhrnRegionu() {
+		final java.util.List<MatriceMap.Radek> matice = MatriceMap.sestav(KatalogMap.vestaveny(), StavMapy::novy, VrstvyProGui.katalogSpanelsko(), v -> VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, 0, null));
+		final MatriceMap.Radek spanelsko = matice.stream().filter(r -> r.getKlic().equals("europe/spain")).findFirst().get();
+		assertEquals("vlastní buňka celku", MatriceMap.StavBunky.NENI, spanelsko.getBunka(MatriceMap.Cast.TRASY).getStav());
+		assertEquals(40_000_000L, spanelsko.getBunkaNabidky(MatriceMap.Cast.TRASY).getVelikost());
+		assertEquals("vrstevnice regiony nemají", MatriceMap.StavBunky.NENI, spanelsko.getBunkaNabidky(MatriceMap.Cast.VRSTEVNICE).getStav());
+		final NabidkaRadku n = NabidkaRadku.pro(spanelsko, new NabidkaRadku.Okolnosti(-1, null));
+		assertEquals(NabidkaRadku.Druh.TLACITKO, n.getVrstvy().getDruh());
+		final long mapa = KatalogMap.vestaveny().podleId("europe/spain").get().getPribliznaVelikost();
+		assertEquals("mapa celku + vrstvy regionů", mapa + 40_000_000L, n.getVrstvy().getVelikost());
+	}
+
+	/** Regiony vrstvy nemají: druhé tlačítko u celé země není. */
+	@Test
+	public void celekBezVrstevRegionuNemaDruheTlacitko() {
+		final java.util.List<MatriceMap.Radek> matice = MatriceMap.sestav(KatalogMap.vestaveny(), StavMapy::novy, VrstvyProGui.katalogCesko(), v -> VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, 0, null));
+		final MatriceMap.Radek spanelsko = matice.stream().filter(r -> r.getKlic().equals("europe/spain")).findFirst().get();
+		assertEquals(NabidkaRadku.Druh.NENI, NabidkaRadku.pro(spanelsko, new NabidkaRadku.Okolnosti(-1, null)).getVrstvy().getDruh());
+	}
+
+	/** Část vrstev regionů už je stažená: souhrn počítá jen zbytek. */
+	@Test
+	public void souhrnRegionuOdecitaStazene() {
+		final java.util.List<MatriceMap.Radek> matice = MatriceMap.sestav(KatalogMap.vestaveny(), StavMapy::novy, VrstvyProGui.katalogSpanelsko(),
+				v -> VrstvyProGui.stav(v, v.getId().contains("andalucia") ? StavVrstvy.Mistni.MAME : StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, 0, null));
+		final MatriceMap.Radek spanelsko = matice.stream().filter(r -> r.getKlic().equals("europe/spain")).findFirst().get();
+		final MatriceMap.Bunka b = spanelsko.getBunkaNabidky(MatriceMap.Cast.TRASY);
+		assertEquals(MatriceMap.StavBunky.KE_STAZENI, b.getStav());
+		assertEquals(10_000_000L, b.getVelikost() - b.getStazeno());
+	}
 }

@@ -40,6 +40,20 @@ public final class VrstvyProGui {
 		}
 	}
 
+	/** Španělsko: trasy jen pro regiony Andalusie a Aragonie, celá země vlastní vrstvu nemá. */
+	public static KatalogVrstev katalogSpanelsko() {
+		try {
+			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(
+					KatalogVrstevTest.vrstva("tourist/europe/spain/andalucia", "tourist", "europe/spain/andalucia", "map",
+							KatalogVrstevTest.soubor("andalucia_trasy.map", "v1/andalucia_trasy.map", 30_000_000, SHA), ""),
+					KatalogVrstevTest.vrstva("tourist/europe/spain/aragon", "tourist", "europe/spain/aragon", "map",
+							KatalogVrstevTest.soubor("aragon_trasy.map", "v1/aragon_trasy.map", 10_000_000, SHA), "")),
+					KatalogMap.vestaveny());
+		} catch (final IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
 	public static StavVrstvy stav(final KatalogovaVrstva v, final StavVrstvy.Mistni mistni, final StavMapy.Faze faze, final long stazeno, final String chyba) {
 		return StavVrstvy.novy(v).sMistni(mistni, stazeno, stazeno > 0 && mistni == StavVrstvy.Mistni.NEMAME).sFazi(faze, chyba);
 	}
