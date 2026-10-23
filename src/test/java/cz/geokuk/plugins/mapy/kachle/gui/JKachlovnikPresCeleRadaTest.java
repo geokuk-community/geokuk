@@ -197,4 +197,55 @@ public class JKachlovnikPresCeleRadaTest {
 		};
 		Assert.assertFalse(bez.plnaAtribuce().contains(JKachlovnikPresCele.ATRIBUCE_RELIEFU));
 	}
+
+	/** Rada nabízí na řádku dvě oddělená místa ke kliku: Stáhnout mapu a Stáhnout mapu a vrstvy. */
+	@Test
+	public void radaMaNaRadkuDveOblastiKKliku() {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final JKachlovnikPresCele k = new JKachlovnikPresCele() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected EKaType getKachloType() {
+				return EKaType.OFFLINE_MF;
+			}
+
+			@Override
+			protected KachleModel getKachleModel() {
+				return new KachleModel() {
+					@Override
+					public boolean jePodrobnaOfflineMapa(final Wgs bod, final int moumer) {
+						return false;
+					}
+
+					@Override
+					public String getAtribuceOfflineMapy() {
+						return "© přispěvatelé OpenStreetMap";
+					}
+				};
+			}
+		};
+		k.inject(new SpravaMapModel() {
+			@Override
+			public cz.geokuk.plugins.mapy.sprava.KatalogVrstev getKatalogVrstev() {
+				return cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko();
+			}
+		});
+		k.setSize(800, 600);
+		k.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+		k.setSoord(new Coord(12, new Wgs(50.08, 14.42).toMou(), new Dimension(800, 600), 0));
+		kresli(k);
+		final Point prvni = najdiOdkaz(k);
+		Assert.assertNotNull(prvni);
+		int useku = 0;
+		boolean uvnitr = false;
+		for (int x = 0; x < 800; x++) {
+			final boolean over = k.jeNadOdkazemRady(new Point(x, prvni.y));
+			if (over && !uvnitr) {
+				useku++;
+			}
+			uvnitr = over;
+		}
+		Assert.assertEquals("dvě oddělená místa ke kliku na řádku rady", 2, useku);
+	}
 }

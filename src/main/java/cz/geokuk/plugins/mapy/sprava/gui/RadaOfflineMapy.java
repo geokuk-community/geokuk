@@ -7,7 +7,9 @@ import java.util.function.Function;
 
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce;
 import cz.geokuk.plugins.mapy.sprava.KatalogovaMapa;
+import cz.geokuk.plugins.mapy.sprava.NabidkaRadku;
 import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
 import cz.geokuk.plugins.mapy.sprava.StavMapy;
 
@@ -23,6 +25,12 @@ public final class RadaOfflineMapy {
 	public final String odkaz;
 	/** Mapa, kterou odkaz stáhne. */
 	public final KatalogovaMapa mapa;
+	/** Název mapy před odkazy („Česko:“), když rada nabízí dvě tlačítka; jinak null. */
+	public final String predpona;
+	/** Druhý odkaz „Stáhnout mapu a vrstvy (977 MB)“ na stejné mapě, null když se nenabízí. */
+	public final String odkaz2;
+	/** Pravidlo plánu pro druhý odkaz. */
+	public final PlanPruvodce.Rezim rezim2;
 	/** Další mapy, které zasahují do zobrazeného výřezu a nepokrývají jeho střed (sousední země); prázdné, když se jiná mapa stahuje. */
 	public final List<RadaOfflineMapy> sousedni;
 
@@ -76,10 +84,18 @@ public final class RadaOfflineMapy {
 	}
 
 	private RadaOfflineMapy(final String text, final String odkaz, final KatalogovaMapa mapa, final List<RadaOfflineMapy> sousedni) {
+		this(text, odkaz, mapa, sousedni, null, null, null);
+	}
+
+	private RadaOfflineMapy(final String text, final String odkaz, final KatalogovaMapa mapa, final List<RadaOfflineMapy> sousedni, final String predpona, final String odkaz2,
+			final PlanPruvodce.Rezim rezim2) {
 		this.text = text;
 		this.odkaz = odkaz;
 		this.mapa = mapa;
 		this.sousedni = sousedni;
+		this.predpona = predpona;
+		this.odkaz2 = odkaz2;
+		this.rezim2 = rezim2;
 	}
 
 	public static RadaOfflineMapy pro(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred) {
@@ -94,19 +110,28 @@ public final class RadaOfflineMapy {
 	/** Navíc nabídne mapy, které zasahují do výřezu a nepokrývají jeho střed, třeba sousední země. */
 	public static RadaOfflineMapy pro(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final KatalogovaMapa stahovana,
 			final Vyrez vyrez) {
-		final RadaOfflineMapy hlavni = hlavni(katalog, stavy, stred, stahovana);
+		return pro(katalog, stavy, stred, stahovana, vyrez, null);
+	}
+
+	/**
+	 * Totéž s dvěma tlačítky u map, které jde stáhnout: „Česko: Stáhnout mapu (606 MB) · Stáhnout mapu a vrstvy (977 MB)“ podle nabídky řádku (null = jen jeden odkaz bez vrstev).
+	 */
+	public static RadaOfflineMapy pro(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final KatalogovaMapa stahovana,
+			final Vyrez vyrez, final Function<KatalogovaMapa, NabidkaRadku> nabidky) {
+		final RadaOfflineMapy hlavni = hlavni(katalog, stavy, stred, stahovana, nabidky);
 		if (vyrez == null || stahovana != null) {
 			return hlavni;
 		}
-		final List<RadaOfflineMapy> sousedni = sousedni(katalog, stavy, stred, vyrez);
-		return sousedni.isEmpty() ? hlavni : new RadaOfflineMapy(hlavni.text, hlavni.odkaz, hlavni.mapa, Collections.unmodifiableList(sousedni));
+		final List<RadaOfflineMapy> sousedni = sousedni(katalog, stavy, stred, vyrez, nabidky);
+		return sousedni.isEmpty() ? hlavni : new RadaOfflineMapy(hlavni.text, hlavni.odkaz, hlavni.mapa, Collections.unmodifiableList(sousedni), hlavni.predpona, hlavni.odkaz2, hlavni.rezim2);
 	}
 
 	/**
 	 * Mapy do výřezu zasahující, které nepokrývají střed, od nejbližší ke středu. Nenabízí se území, které už máme (region stažené země, ani celá země, když
 	 * máme některý její region), a celek spolu se svými regiony.
 	 */
-	private static List<RadaOfflineMapy> sousedni(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final Vyrez vyrez) {
+	private static List<RadaOfflineMapy> sousedni(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final Vyrez vyrez,
+			final Function<KatalogovaMapa, NabidkaRadku> nabidky) {
 		final List<KatalogovaMapa> kandidati = new ArrayList<>();
 		for (final KatalogovaMapa m : katalog.getMapy()) {
 			if (!m.getPokryti().obsahuje(stred) && vyrez.protina(m.getPokryti()) && !mameUzemi(katalog, stavy, m)) {
@@ -126,7 +151,7 @@ public final class RadaOfflineMapy {
 				break;
 			}
 			final StavMapy s = stavy.apply(m);
-			final RadaOfflineMapy r = pro(m, s);
+			final RadaOfflineMapy r = pro(m, s, nabidky);
 			if (r.odkaz == null) {
 				continue;
 			}
@@ -166,13 +191,14 @@ public final class RadaOfflineMapy {
 		return nejmene;
 	}
 
-	private static RadaOfflineMapy hlavni(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final KatalogovaMapa stahovana) {
+	private static RadaOfflineMapy hlavni(final KatalogMap katalog, final Function<KatalogovaMapa, StavMapy> stavy, final Wgs stred, final KatalogovaMapa stahovana,
+			final Function<KatalogovaMapa, NabidkaRadku> nabidky) {
 		for (final KatalogovaMapa m : katalog.pokryvajiBod(stred)) {
 			final StavMapy s = stavy.apply(m);
 			if (s.getMistni() == StavMapy.Mistni.MAME && !s.isBezi()) {
 				continue;
 			}
-			final RadaOfflineMapy r = pro(m, s);
+			final RadaOfflineMapy r = pro(m, s, nabidky);
 			if (r.odkaz != null && stahovana != null && !stahovana.getId().equals(m.getId())) {
 				return new RadaOfflineMapy("Stahuje se mapa " + stahovana.getNazev() + ". Mapu " + m.getNazev() + " stáhnete, až skončí.", null, m);
 			}
@@ -182,6 +208,10 @@ public final class RadaOfflineMapy {
 	}
 
 	static RadaOfflineMapy pro(final KatalogovaMapa m, final StavMapy s) {
+		return pro(m, s, null);
+	}
+
+	static RadaOfflineMapy pro(final KatalogovaMapa m, final StavMapy s, final Function<KatalogovaMapa, NabidkaRadku> nabidky) {
 		final String nazev = m.getNazev();
 		switch (s.getFaze()) {
 		case STAHUJE:
@@ -194,6 +224,10 @@ public final class RadaOfflineMapy {
 		default:
 			if (s.isRozpracovano()) {
 				return new RadaOfflineMapy(null, "Dokončit stažení mapy " + nazev, m);
+			}
+			final NabidkaRadku n = nabidky == null ? null : nabidky.apply(m);
+			if (n != null && n.getMapa().getDruh() == NabidkaRadku.Druh.TLACITKO && n.getVrstvy().getDruh() == NabidkaRadku.Druh.TLACITKO) {
+				return new RadaOfflineMapy(null, n.getMapa().getText(), m, Collections.emptyList(), nazev + ":", n.getVrstvy().getText(), n.getVrstvy().getRezim());
 			}
 			final long velikost = s.getVelikostNaServeru() > 0 ? s.getVelikostNaServeru() : m.getPribliznaVelikost();
 			return new RadaOfflineMapy(null, "Stáhnout mapu " + nazev + (velikost > 0 ? " (~" + RadekMapy.velikost(velikost) + ")" : ""), m);
