@@ -227,7 +227,7 @@ public class KachleZiskavac {
 				if (!renderer.pokryva(ka.getLoc())) {
 					return null; // dlaždice mimo mapy se jen vybarví a neukládá
 				}
-				return kachleManager.load(ka, renderer.getKlic());
+				return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
 			} finally {
 				renderer.skonci();
 			}
@@ -539,7 +539,7 @@ public class KachleZiskavac {
 	private final ExecutorService uklidOfflineCache = Executors.newSingleThreadExecutor(vlaknaRenderu("Úklid cache offline mapy"));
 
 	public KachleZiskavac() {
-		final BiConsumer<String, File> uklid = (klic, symboly) -> {
+		final BiConsumer<OblastniKlic, File> uklid = (klic, symboly) -> {
 			if (symboly != null) {
 				uklidOfflineCache.execute(() -> uklidOfflineCache(klic, symboly));
 			}
@@ -607,15 +607,24 @@ public class KachleZiskavac {
 		return true;
 	}
 
-	void uklidOfflineCache(final String klic, final File symboly) {
+	void uklidOfflineCache(final OblastniKlic klic, final File symboly) {
 		try {
-			final Set<String> pred = UklidOfflineCache.ponechane(symboly.getParentFile());
-			final Set<String> ponechat = UklidOfflineCache.zaznamenej(symboly.getParentFile(), klic, symboly);
-			if (ponechat.equals(pred)) {
+			final File slozka = symboly.getParentFile();
+			final Set<String> pred = UklidOfflineCache.ponechane(slozka);
+			final String predSestava = UklidOfflineCache.sestava(slozka, klic.getGlobalni());
+			final Set<String> ponechat = UklidOfflineCache.zaznamenej(slozka, klic.getGlobalni(), symboly, klic.getSestava());
+			final boolean jinaSestava = !klic.getSestava().equals(predSestava);
+			if (ponechat.equals(pred) && !jinaSestava) {
 				return; // dlaždice jiných klíčů smazal už dřívější úklid
 			}
 			final KachleManager km = kachleManager;
-			final int smazano = km == null ? 0 : km.smazOfflineKrome(ponechat);
+			int smazano = 0;
+			if (km != null) {
+				smazano = ponechat.equals(pred) ? 0 : km.smazOfflineKrome(ponechat);
+				if (jinaSestava) {
+					smazano += km.smazOfflineNesedici(klic.getGlobalni(), klic::klic);
+				}
+			}
 			log.info("Úklid cache offline mapy: zůstávají klíče {}, smazáno {} dlaždic", ponechat, smazano);
 		} catch (final IOException | RuntimeException e) {
 			log.warn("Cache offline mapy nejde uklidit: {}", e.toString());
@@ -668,7 +677,7 @@ public class KachleZiskavac {
 		public String klic() throws IOException {
 			final OfflineRenderer r = offlineMapy.pouzij();
 			try {
-				return r.getKlic();
+				return r.getKlic() + '.' + r.getOblastniKlic().getSestava();
 			} finally {
 				r.skonci();
 			}
@@ -687,21 +696,34 @@ public class KachleZiskavac {
 		@Override
 		public boolean jeVCache(final KaLoc loc, final String klic) {
 			final KachleManager km = kachleManager;
-			return km == null || km.exists(new Ka(loc, EKaType.OFFLINE_MF), klic);
+			if (km == null) {
+				return true;
+			}
+			final OfflineRenderer r;
+			try {
+				r = offlineMapy.pouzij();
+			} catch (final IOException e) {
+				return true;
+			}
+			try {
+				return km.exists(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc));
+			} finally {
+				r.skonci();
+			}
 		}
 
 		@Override
 		public boolean vykresli(final KaLoc loc, final String klic) throws IOException {
 			final OfflineRenderer r = offlineMapy.pouzij();
 			try {
-				if (!klic.equals(r.getKlic()) || !r.pokryva(loc)) {
+				if (!klic.equals(r.getKlic() + '.' + r.getOblastniKlic().getSestava()) || !r.pokryva(loc)) {
 					return false;
 				}
 				final long zacatek = System.nanoTime();
 				final BufferedImage obrazek = r.vyrendruj(loc);
 				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
 				pocitRenderOk.inc();
-				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), klic, obrazek, null));
+				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc), obrazek, null));
 				return true;
 			} finally {
 				r.skonci();
@@ -844,7 +866,7 @@ public class KachleZiskavac {
 					Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
 					pocitRenderOk.inc();
 					if (renderer.pokryva(ka.getLoc())) {
-						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlic(), obrazek, kachlice));
+						ukladac.zaplanujUlozeni(new Ukladanec(ka, renderer.getKlicDlazdice(ka.getLoc()), obrazek, kachlice));
 					}
 					return obrazek;
 				} finally {

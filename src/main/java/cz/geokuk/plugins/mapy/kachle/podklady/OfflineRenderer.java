@@ -98,7 +98,7 @@ final class OfflineRenderer {
 	private final List<MapFileInfo> pokryti;
 	private final NacteneTema tema;
 	private final DatabaseRenderer renderer;
-	private final String klic;
+	private final OblastniKlic klic;
 	/** Překryv přes jiný podklad: dlaždice s průhledným pozadím. */
 	private final boolean prekryv;
 	private String preskoceno;
@@ -112,7 +112,7 @@ final class OfflineRenderer {
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce,
+	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final OblastniKlic klic, final boolean prekryv, final HillsRenderConfig kopce,
 			final List<? extends MapFile> zakladni, final int pocetVrstev) {
 		this.data = data;
 		this.pokryti = pokryti;
@@ -166,7 +166,7 @@ final class OfflineRenderer {
 			throw new IOException("Žádný soubor mapy.");
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
-		final StringBuilder otisk = new StringBuilder();
+		final List<OblastniKlic.Zdroj> zdroje = new ArrayList<>();
 		final List<MapFileInfo> pokryti = new ArrayList<>();
 		final List<SouborMapy> zakladni = new ArrayList<>();
 		int vrstev = 0;
@@ -187,9 +187,9 @@ final class OfflineRenderer {
 				data.addMapDataStore(mapFile, false, false);
 				zakladni.add(mapFile);
 				pokryti.add(mapFile.getMapFileInfo());
-				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(f.lastModified()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
+				zdroje.add(OblastniKlic.soubor("mapa", f, mapFile.getMapFileInfo().boundingBox, mapFile.getMapFileInfo().mapDate));
 			}
-			if (otisk.length() == 0) {
+			if (zdroje.isEmpty()) {
 				throw prvniChyba;
 			}
 			final List<SouborMapy> podrobne = new ArrayList<>();
@@ -205,9 +205,10 @@ final class OfflineRenderer {
 			}
 			for (final File f : vrstvy) {
 				try {
-					data.addMapDataStore(new MapFile(f), false, false);
+					final MapFile vrstva = new MapFile(f);
+					data.addMapDataStore(vrstva, false, false);
 					vrstev++;
-					otisk.append("vrstva:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
+					zdroje.add(OblastniKlic.soubor("vrstva", f, vrstva.getMapFileInfo().boundingBox, vrstva.getMapFileInfo().mapDate));
 				} catch (final RuntimeException e) {
 					log.debug("Vrstvu {} nejde otevřít, kreslí se bez ní: {}", f, e.getMessage());
 				}
@@ -216,12 +217,14 @@ final class OfflineRenderer {
 			data.close();
 			throw e;
 		}
+		final StringBuilder otisk = new StringBuilder();
 		otisk.append(tema.otiskPouziteho).append('\n').append(tema.displayModel.getTileSize()).append('\n').append(VERZE_VYKRESLOVANI);
 		if (tema.pismo != 1) {
 			otisk.append('\n').append(tema.pismo);
 		}
-		final HillsRenderConfig kopce = prekryv ? null : kopce(slozkaDem, tema.grafika, otisk);
-		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString()), prekryv, kopce, zakladni, vrstev);
+		final HillsRenderConfig kopce = prekryv ? null : kopce(slozkaDem, tema.grafika, zdroje);
+		final String globalni = prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString());
+		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, new OblastniKlic(globalni, zdroje), prekryv, kopce, zakladni, vrstev);
 		r.preskoceno = prvniChyba == null ? null : prvniChyba.getMessage();
 		return r;
 	}
@@ -231,8 +234,8 @@ final class OfflineRenderer {
 		return cz.geokuk.plugins.mapy.sprava.SouboryVrstev.dem(slozka);
 	}
 
-	/** Stínování terénu z DEM dlaždic ve složce; bez nich nebo při chybě null (mapa se kreslí bez stínování). Přidá do otisku, ze kterých souborů stínuje. */
-	private static HillsRenderConfig kopce(final File slozkaDem, final GraphicFactory grafika, final StringBuilder otisk) {
+	/** Stínování terénu z DEM dlaždic ve složce; bez nich nebo při chybě null (mapa se kreslí bez stínování). Přidá do zdrojů, ze kterých souborů stínuje. */
+	private static HillsRenderConfig kopce(final File slozkaDem, final GraphicFactory grafika, final List<OblastniKlic.Zdroj> zdroje) {
 		final List<File> dlazdice = demDlazdice(slozkaDem);
 		if (dlazdice.isEmpty()) {
 			return null;
@@ -240,7 +243,7 @@ final class OfflineRenderer {
 		try {
 			final HillsRenderConfig kopce = new HillsRenderConfig(new MemoryCachingHgtReaderTileSource(new SlouceneDem(new DemFolderFS(slozkaDem)), new StinovaniTerenu(), grafika)).indexOnThread();
 			for (final File f : dlazdice) {
-				otisk.append("dem:").append(f.getName()).append(':').append(f.length()).append(':').append(f.lastModified()).append('\n');
+				OblastniKlic.dem(zdroje, f);
 			}
 			return kopce;
 		} catch (final RuntimeException e) {
@@ -341,7 +344,17 @@ final class OfflineRenderer {
 		return pokryti.size();
 	}
 
+	/** Globální část klíče dlaždic: téma, měřítko, písmo a verze vykreslování. */
 	String getKlic() {
+		return klic.getGlobalni();
+	}
+
+	/** Typ dlaždice v cache, závislý jen na souborech, které dlaždici pokrývají. */
+	String getKlicDlazdice(final KaLoc loc) {
+		return klic.klic(loc);
+	}
+
+	OblastniKlic getOblastniKlic() {
 		return klic;
 	}
 

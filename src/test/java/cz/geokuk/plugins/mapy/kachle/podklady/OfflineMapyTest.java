@@ -62,7 +62,7 @@ public class OfflineMapyTest {
 	private String klic() throws IOException {
 		final OfflineRenderer r = mapy.pouzij();
 		r.skonci();
-		return r.getKlic();
+		return r.getKlicDlazdice(STRED_Z15);
 	}
 
 	private static int[] pixely(final BufferedImage img) {
@@ -167,7 +167,7 @@ public class OfflineMapyTest {
 	public void klicJeStabilniAKratky() throws Exception {
 		zkopirujMapu(slozka, "kukov.map");
 		final String klic = klic();
-		Assert.assertTrue(klic, klic.matches("o[0-9a-f]{8}"));
+		Assert.assertTrue(klic, klic.matches("o[0-9a-f]{8}\\.[0-9a-f]{8}"));
 		mapy.zavri();
 		Assert.assertEquals(klic, klic());
 	}

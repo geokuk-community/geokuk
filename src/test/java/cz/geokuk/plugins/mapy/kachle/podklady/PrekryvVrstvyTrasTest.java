@@ -140,7 +140,7 @@ public class PrekryvVrstvyTrasTest {
 		final OfflineRenderer r1 = trasy.pouzij();
 		r1.skonci();
 		Assert.assertEquals(2, r1.getPocetMap());
-		Assert.assertNotEquals(r0.getKlic(), r1.getKlic());
+		Assert.assertNotEquals(r0.getKlicDlazdice(PrekryvTrasTest.PESINA_Z16), r1.getKlicDlazdice(PrekryvTrasTest.PESINA_Z16));
 	}
 
 	/** Když vrstvy tras kreslí podklad (offline mapa s tématem GeoKuk), překryv je vynechá a otevře se znovu jen se základní mapou. */
@@ -155,6 +155,6 @@ public class PrekryvVrstvyTrasTest {
 		final OfflineRenderer r1 = trasy.pouzij();
 		r1.skonci();
 		Assert.assertEquals(1, r1.getPocetMap());
-		Assert.assertNotEquals(r0.getKlic(), r1.getKlic());
+		Assert.assertNotEquals(r0.getKlicDlazdice(PrekryvTrasTest.PESINA_Z16), r1.getKlicDlazdice(PrekryvTrasTest.PESINA_Z16));
 	}
 }

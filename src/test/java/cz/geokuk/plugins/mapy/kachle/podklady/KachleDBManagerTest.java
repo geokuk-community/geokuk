@@ -13,6 +13,7 @@ import javax.imageio.ImageIO;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.mapsforge.core.model.BoundingBox;
 import org.tmatesoft.sqljet.core.SqlJetException;
 import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.table.ISqlJetCursor;
@@ -20,6 +21,7 @@ import org.tmatesoft.sqljet.core.table.ISqlJetTable;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.ChybyVDiagnostice;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.KachleManager.ItemToSave;
@@ -101,6 +103,68 @@ public class KachleDBManagerTest {
 
 		Assert.assertEquals(0, manager.smazOfflineKrome(Collections.singleton("o00000001")));
 		Assert.assertNotNull("úklid podkladu nemaže překryv", manager.load(trasy, "t00000002"));
+	}
+
+	/** Nová verze dlaždice (po změně souboru v její oblasti) nahradí starou stejné globální části, jiné dlaždice a jiné globální části zůstávají. */
+	@Test
+	public void zapisNoveVerzeSmazeStarouJenStejneMistoAGlobalniCast() throws Exception {
+		final Ka misto = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
+		final Ka jine = new Ka(KaLoc.ofJZ(new Mou(0x40000000 + (1 << 19), 0x20000000), 13), EKaType.OFFLINE_MF);
+		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(misto, "o0000000a.00000001", png()), new ItemToSave(misto, "o0000000b.00000001", png()),
+				new ItemToSave(jine, "o0000000a.00000001", png()), new ItemToSave(misto, "o00000001", png()))));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(misto, "o0000000a.00000002", png()))));
+		Assert.assertNull("stará oblastní verze zmizela", manager.load(misto, "o0000000a.00000001"));
+		Assert.assertNotNull(manager.load(misto, "o0000000a.00000002"));
+		Assert.assertNotNull("jiná globální část zůstává", manager.load(misto, "o0000000b.00000001"));
+		Assert.assertNotNull("jiné místo zůstává", manager.load(jine, "o0000000a.00000001"));
+		Assert.assertNotNull("starý tvar mažou jen úklidy", manager.load(misto, "o00000001"));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(misto, "o0000000a.00000002", png()))));
+		Assert.assertNotNull("opakovaný zápis téže verze ji nesmaže", manager.load(misto, "o0000000a.00000002"));
+	}
+
+	@Test
+	public void zapisPrekryvuNemazePodklad() throws Exception {
+		final Ka misto = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
+		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(misto, "o0000000a.00000001", png()), new ItemToSave(misto, "t0000000a.00000001", png()))));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(misto, "t0000000a.00000002", png()))));
+		Assert.assertNull(manager.load(misto, "t0000000a.00000001"));
+		Assert.assertNotNull(manager.load(misto, "o0000000a.00000001"));
+	}
+
+	/** Zametení po změně sestavy smaže jen dlaždice, jejichž typ neodpovídá aktuálním souborům; ostatní nechá. */
+	@Test
+	public void zametenSmazeJenNesedici() throws Exception {
+		final BoundingBox kukov = new BoundingBox(49.99, 14.39, 50.01, 14.42);
+		final OblastniKlic pred = new OblastniKlic("o0000000a", Arrays.asList(new OblastniKlic.Zdroj(kukov, "kukov-1"), new OblastniKlic.Zdroj(new BoundingBox(40, 10, 41, 11), "jina-1")));
+		final OblastniKlic po = new OblastniKlic("o0000000a", Arrays.asList(new OblastniKlic.Zdroj(kukov, "kukov-1"), new OblastniKlic.Zdroj(new BoundingBox(40, 10, 41, 11), "jina-2")));
+		final Ka blizko = new Ka(KaLoc.ofJZ(new Wgs(50.0, 14.4).toMou(), 14), EKaType.OFFLINE_MF);
+		final Ka daleko = new Ka(KaLoc.ofJZ(new Wgs(40.5, 10.5).toMou(), 14), EKaType.OFFLINE_MF);
+		final Ka jinyPodklad = new Ka(KaLoc.ofJZ(new Wgs(45, 12).toMou(), 14), EKaType.OFFLINE_MF);
+		final Ka trasy = new Ka(KaLoc.ofJZ(new Wgs(40.5, 10.5).toMou(), 14), EKaType.TRASY);
+		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(blizko, pred.klic(blizko.getLoc()), png()), new ItemToSave(daleko, pred.klic(daleko.getLoc()), png()),
+				new ItemToSave(jinyPodklad, "o0000000b.00000001", png()), new ItemToSave(trasy, "t0000000a.00000001", png()))));
+		Assert.assertEquals("souřadnice dlaždic v cache sedí s KaLoc", 0, manager.smazOfflineNesedici("o0000000a", pred::klic));
+
+		Assert.assertEquals(1, manager.smazOfflineNesedici("o0000000a", po::klic));
+		Assert.assertNotNull("soubor mimo dlaždici se nezměnil", manager.load(blizko, pred.klic(blizko.getLoc())));
+		Assert.assertNull("soubor v oblasti dlaždice se změnil", manager.load(daleko, pred.klic(daleko.getLoc())));
+		Assert.assertNotNull("jiný globální klíč zametení nechá", manager.load(jinyPodklad, "o0000000b.00000001"));
+		Assert.assertNotNull("překryv zametení nechá", manager.load(trasy, "t0000000a.00000001"));
+		Assert.assertEquals(0, manager.smazOfflineNesedici("o0000000a", po::klic));
+	}
+
+	/** Úklid globálních klíčů smaže i dlaždice starého tvaru bez oblastní části a nové tvary pozná podle globální části. */
+	@Test
+	public void uklidGlobalnichKlicuZnaNovyITvar() throws Exception {
+		final Ka misto = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
+		final Ka druhe = new Ka(KaLoc.ofJZ(new Mou(0x40000000 + (1 << 19), 0x20000000), 13), EKaType.OFFLINE_MF);
+		final Ka treti = new Ka(KaLoc.ofJZ(new Mou(0x40000000 + (2 << 19), 0x20000000), 13), EKaType.OFFLINE_MF);
+		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(misto, "o0000000a.00000001", png()), new ItemToSave(druhe, "o0000000c.00000001", png()),
+				new ItemToSave(treti, "o0000000d", png()))));
+		Assert.assertEquals(2, manager.smazOfflineKrome(Collections.singleton("o0000000a")));
+		Assert.assertNotNull(manager.load(misto, "o0000000a.00000001"));
+		Assert.assertNull(manager.load(druhe, "o0000000c.00000001"));
+		Assert.assertNull(manager.load(treti, "o0000000d"));
 	}
 
 	@Test
