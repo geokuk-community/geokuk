@@ -2446,7 +2446,7 @@ public class JMapyPopupTest {
 				m -> StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY,
 						m.getId().equals("europe/czech-republic") ? faze : StavMapy.Faze.NIC, 0, -1, null),
 				Collections.emptyList(), null, VrstvyProGui.katalogCesko(),
-				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.JINA_VERZE : StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null));
+				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.NEMAME : StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null));
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());

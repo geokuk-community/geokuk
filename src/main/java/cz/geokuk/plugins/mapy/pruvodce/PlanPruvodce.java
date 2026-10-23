@@ -56,14 +56,38 @@ public final class PlanPruvodce {
 		}
 	}
 
+	/** Jedno pravidlo pro všechny plány: Stáhnout bere, co chybí nebo skončilo chybou; novější verze se stahují jen přes Aktualizovat. */
+	public enum Rezim {
+		/** Co chybí nebo skončilo chybou. */
+		STAHNOUT,
+		/** Co chybí, skončilo chybou nebo má novější verzi. */
+		STAHNOUT_A_AKTUALIZOVAT,
+		/** Jen to, co má novější verzi. */
+		AKTUALIZOVAT;
+
+		boolean bere(final StavBunky stav) {
+			switch (this) {
+			case AKTUALIZOVAT:
+				return stav == StavBunky.NOVEJSI;
+			case STAHNOUT_A_AKTUALIZOVAT:
+				return stav == StavBunky.KE_STAZENI || stav == StavBunky.CHYBA || stav == StavBunky.NOVEJSI;
+			case STAHNOUT:
+			default:
+				return stav == StavBunky.KE_STAZENI || stav == StavBunky.CHYBA;
+			}
+		}
+	}
+
 	private final PruvodceVolba volba;
 	private final List<Polozka> polozky;
 	private final boolean stahnoutVse;
+	private final Rezim rezim;
 
-	private PlanPruvodce(final PruvodceVolba volba, final List<Polozka> polozky, final boolean stahnoutVse) {
+	private PlanPruvodce(final PruvodceVolba volba, final List<Polozka> polozky, final boolean stahnoutVse, final Rezim rezim) {
 		this.volba = volba;
 		this.polozky = Collections.unmodifiableList(polozky);
 		this.stahnoutVse = stahnoutVse;
+		this.rezim = rezim;
 	}
 
 	/**
@@ -105,7 +129,7 @@ public final class PlanPruvodce {
 				}
 			}
 		}
-		return new PlanPruvodce(volba, polozky, false);
+		return new PlanPruvodce(volba, polozky, false, Rezim.STAHNOUT);
 	}
 
 	/**
@@ -117,9 +141,25 @@ public final class PlanPruvodce {
 	 *            klíče řádků země (celek a regiony)
 	 */
 	public static PlanPruvodce sestavVse(final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
+		return sestavVse(celekKlic, klice, casti, matice, Rezim.STAHNOUT);
+	}
+
+	/** Totéž v daném režimu, třeba {@link Rezim#STAHNOUT_A_AKTUALIZOVAT} pro tlačítko Aktualizovat mapu a vrstvy. */
+	public static PlanPruvodce sestavVse(final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice, final Rezim rezim) {
 		final List<Polozka> polozky = new ArrayList<>();
-		pridejVse(polozky, celekKlic, klice, casti, matice);
-		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), serad(polozky), true);
+		pridejVse(polozky, celekKlic, klice, casti, matice, rezim);
+		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, casti), serad(polozky), true, rezim);
+	}
+
+	/** Plán „Aktualizovat vše“: novější verze všech map a vrstev, které už máte; nic nového se nestahuje. */
+	public static PlanPruvodce sestavAktualizovatVse(final List<MatriceMap.Radek> matice) {
+		final List<String> klice = new ArrayList<>();
+		final List<Polozka> polozky = new ArrayList<>();
+		for (final MatriceMap.Radek r : matice) {
+			klice.add(r.getKlic());
+			pridejVse(polozky, null, Collections.singletonList(r.getKlic()), java.util.EnumSet.allOf(Cast.class), matice, Rezim.AKTUALIZOVAT);
+		}
+		return new PlanPruvodce(new PruvodceVolba(klice, PodkladPruvodce.TURISTICKA_OFFLINE, java.util.EnumSet.allOf(Cast.class)), serad(polozky), true, Rezim.AKTUALIZOVAT);
 	}
 
 	/**
@@ -145,12 +185,12 @@ public final class PlanPruvodce {
 			if (celek) {
 				matice.stream().filter(x -> r.getKlic().equals(x.getMapa().getIdCelku())).forEach(x -> klice.add(x.getKlic()));
 			}
-			pridejVse(polozky, celek ? r.getKlic() : null, klice, vrstvy, matice);
+			pridejVse(polozky, celek ? r.getKlic() : null, klice, vrstvy, matice, Rezim.STAHNOUT);
 			klice.stream().filter(k -> !vsechnyKlice.contains(k)).forEach(vsechnyKlice::add);
 		}
 		final java.util.Map<String, Polozka> bezDuplicit = new java.util.LinkedHashMap<>();
 		polozky.forEach(p -> bezDuplicit.putIfAbsent(p.getId(), p));
-		return new PlanPruvodce(new PruvodceVolba(vsechnyKlice, PodkladPruvodce.TURISTICKA_OFFLINE, vrstvy), serad(new ArrayList<>(bezDuplicit.values())), true);
+		return new PlanPruvodce(new PruvodceVolba(vsechnyKlice, PodkladPruvodce.TURISTICKA_OFFLINE, vrstvy), serad(new ArrayList<>(bezDuplicit.values())), true, Rezim.STAHNOUT);
 	}
 
 	/** Fronta jde od nejmenších souborů po největší; položky se stejnou nebo neznámou velikostí zůstávají v původním pořadí (neznámá je nakonec). */
@@ -160,7 +200,7 @@ public final class PlanPruvodce {
 		return v;
 	}
 
-	private static void pridejVse(final List<Polozka> polozky, final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice) {
+	private static void pridejVse(final List<Polozka> polozky, final String celekKlic, final List<String> klice, final Set<Cast> casti, final List<MatriceMap.Radek> matice, final Rezim rezim) {
 		for (final Cast cast : new Cast[] { Cast.MAPA, Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI }) {
 			if (!casti.contains(cast)) {
 				continue;
@@ -173,7 +213,7 @@ public final class PlanPruvodce {
 						return;
 					}
 					final MatriceMap.Bunka b = r.getBunka(cast);
-					if (b.jeKeStazeni()) {
+					if (rezim.bere(b.getStav())) {
 						polozky.add(new Polozka(cast, r.getKlic(), b.getId(), r.getMapa().getNazev() + " – " + nazevCasti(cast), Math.max(0, b.getVelikost())));
 					}
 				});
@@ -181,14 +221,23 @@ public final class PlanPruvodce {
 		}
 	}
 
-	/** Plán „Stáhnout vše“: nic se nepřepíná a stahují se i novější verze. */
+	/** Plán „Stáhnout vše“: nic se nepřepíná. */
 	public boolean isStahnoutVse() {
 		return stahnoutVse;
 	}
 
+	/** Plán stahuje i novější verze, takže novější buňka se nepočítá za hotovou. */
+	public boolean isAktualizace() {
+		return rezim != Rezim.STAHNOUT;
+	}
+
+	public Rezim getRezim() {
+		return rezim;
+	}
+
 	private static void pridej(final List<Polozka> polozky, final MatriceMap.Radek radek, final Cast cast, final String popis) {
 		final MatriceMap.Bunka b = radek.getBunka(cast);
-		if (b.getStav() == StavBunky.KE_STAZENI || b.getStav() == StavBunky.CHYBA) {
+		if (Rezim.STAHNOUT.bere(b.getStav())) {
 			polozky.add(new Polozka(cast, radek.getKlic(), b.getId(), radek.getMapa().getNazev() + " – " + popis, Math.max(0, b.getVelikost())));
 		}
 	}
