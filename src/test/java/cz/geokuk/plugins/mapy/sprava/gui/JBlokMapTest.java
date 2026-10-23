@@ -288,4 +288,47 @@ public class JBlokMapTest {
 			});
 		}
 	}
+
+	/** Mapy > Offline mapy… otevře panel, i když myš nad blokem nikdy nebyla. */
+	@Test(timeout = 30000)
+	public void udalostZMenuOtevrePanel() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		final File slozka = tmp.newFolder("z-menu");
+		final JFrame okno = new JFrame();
+		final JBlokMap[] blok = new JBlokMap[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				blok[0] = new JBlokMap();
+				blok[0].setZdrojSlozky(() -> slozka);
+				blok[0].cteniSlozky = f -> veSlozce(null);
+				final JPanel lista = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+				lista.add(blok[0]);
+				okno.add(lista, java.awt.BorderLayout.SOUTH);
+				okno.setBounds(0, 0, 1300, 850);
+				okno.setVisible(true);
+				blok[0].obnov(veSlozce(null));
+			});
+			final long konec = System.currentTimeMillis() + 10_000;
+			boolean videt = false;
+			while (System.currentTimeMillis() < konec && !videt) {
+				final boolean[] v = new boolean[1];
+				SwingUtilities.invokeAndWait(() -> {
+					if (blok[0].isShowing()) {
+						blok[0].onEvent(new cz.geokuk.plugins.mapy.sprava.OtevriPanelMapEvent());
+					}
+					v[0] = blok[0].getObsah().isShowing();
+				});
+				videt = v[0];
+				if (!videt) {
+					Thread.sleep(50);
+				}
+			}
+			Assert.assertTrue("panel otevřený z menu", videt);
+		} finally {
+			SwingUtilities.invokeAndWait(() -> {
+				blok[0].zavri();
+				okno.dispose();
+			});
+		}
+	}
 }

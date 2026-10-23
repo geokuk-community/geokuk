@@ -285,6 +285,12 @@ public class JBlokMap extends JLabel {
 		this.spravaMap = spravaMap;
 	}
 
+	/** Menu Mapy > Offline mapy…: panel se otevře a fokus dostane jeho první ovladatelná část, takže zůstane otevřený, dokud je v něm fokus. */
+	public void onEvent(final cz.geokuk.plugins.mapy.sprava.OtevriPanelMapEvent event) {
+		ukaz();
+		obsah.zaostri();
+	}
+
 	public void onEvent(final SpravaMapEvent event) {
 		prestav();
 	}
