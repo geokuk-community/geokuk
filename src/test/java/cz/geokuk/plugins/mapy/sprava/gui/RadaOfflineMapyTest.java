@@ -25,7 +25,7 @@ public class RadaOfflineMapyTest {
 	public void nabidneZemiProMisto() {
 		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, PRAHA);
 		Assert.assertEquals("europe/czech-republic", r.mapa.getId());
-		Assert.assertTrue(r.odkaz, r.odkaz.startsWith("Stáhnout mapu Česko (~"));
+		Assert.assertTrue(r.odkaz, r.odkaz.startsWith("Stáhnout mapu (~"));
 		Assert.assertNull(r.text);
 	}
 
@@ -34,7 +34,7 @@ public class RadaOfflineMapyTest {
 	public void dveTlacitkaNaJednePrazdneMape() {
 		final java.util.function.Function<KatalogovaMapa, cz.geokuk.plugins.mapy.sprava.NabidkaRadku> nabidky = nabidky(StavMapy::novy);
 		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, PRAHA, null, null, nabidky);
-		Assert.assertEquals("Česko:", r.predpona);
+		Assert.assertEquals("Česko", r.predpona);
 		Assert.assertTrue(r.odkaz, r.odkaz.startsWith("Stáhnout mapu ("));
 		Assert.assertTrue(r.odkaz2, r.odkaz2 != null && r.odkaz2.startsWith("Stáhnout mapu a vrstvy ("));
 		Assert.assertEquals(cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim.STAHNOUT, r.rezim2);
@@ -99,7 +99,7 @@ public class RadaOfflineMapyTest {
 		Assert.assertNull(stahuje.odkaz);
 		final RadaOfflineMapy chyba = RadaOfflineMapy.pro(cesko, stav(cesko, NEMAME, CHYBA, 0, -1));
 		Assert.assertEquals("Zkusit znovu", chyba.odkaz);
-		Assert.assertEquals("Dokončit stažení mapy Česko", RadaOfflineMapy.pro(cesko, stav(cesko, NEMAME, ZRUSENO, 150, 600)).odkaz);
+		Assert.assertEquals("Dokončit stažení", RadaOfflineMapy.pro(cesko, stav(cesko, NEMAME, ZRUSENO, 150, 600)).odkaz);
 	}
 
 	private static final RadaOfflineMapy.Vyrez U_HRANICE = new RadaOfflineMapy.Vyrez(50.4, 13.4, 51.2, 15.0);
@@ -155,11 +155,37 @@ public class RadaOfflineMapyTest {
 		Assert.assertTrue(sousedni.size() <= RadaOfflineMapy.NEJVIC_SOUSEDNICH);
 	}
 
-	/** Odkaz „Zkusit znovu“ u souseda říká, o kterou mapu jde. */
+	/** Tabulka rady: hlavní mapa, štítek a sousedé; region je pod hlavičkou své země. */
+	@Test
+	public void tabulkaMaRegionyPodZemi() {
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, DECIN, null, U_HRANICE);
+		final java.util.List<RadaOfflineMapy.RadekRady> t = r.tabulka();
+		Assert.assertEquals("Česko", t.get(0).nazev);
+		Assert.assertFalse(t.get(0).region);
+		Assert.assertSame(r, t.get(0).rada);
+		Assert.assertTrue("štítek před sousedy", t.get(1).stitek);
+		Assert.assertEquals(RadaOfflineMapy.SOUSEDNI, t.get(1).nazev);
+		final int sasko = indexNazvu(t, "Sasko");
+		Assert.assertTrue(t.toString(), sasko > 2);
+		Assert.assertTrue(t.get(sasko).region);
+		Assert.assertEquals("hlavička země nad regionem", "Německo", t.get(sasko - 1).nazev);
+		Assert.assertNull("země bez vlastní mapy v nabídce nemá tlačítka", t.get(sasko - 1).rada);
+	}
+
+	private static int indexNazvu(final java.util.List<RadaOfflineMapy.RadekRady> t, final String nazev) {
+		for (int i = 0; i < t.size(); i++) {
+			if (nazev.equals(t.get(i).nazev)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/** Odkaz „Zkusit znovu“ u souseda je v tabulce u názvu mapy. */
 	@Test
 	public void sousedSChybouMaVNazvuMapu() {
 		final KatalogovaMapa sachsen = KATALOG.podleId("europe/germany/sachsen").get();
 		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, m -> m == sachsen ? stav(m, NEMAME, CHYBA, 0, -1) : StavMapy.novy(m), DECIN, null, U_HRANICE);
-		Assert.assertTrue(r.sousedni.stream().anyMatch(s -> "Zkusit znovu stáhnout mapu Sasko".equals(s.odkaz)));
+		Assert.assertTrue(r.sousedni.stream().anyMatch(s -> "Zkusit znovu".equals(s.odkaz) && "Sasko".equals(s.mapa.getNazev())));
 	}
 }

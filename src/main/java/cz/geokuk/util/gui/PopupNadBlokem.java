@@ -26,6 +26,10 @@ public class PopupNadBlokem {
 	private BooleanSupplier drzOtevreny = () -> false;
 	/** Zavolá se, když se popup zavře (ne když se jen znovu zobrazí po změně velikosti). */
 	private Runnable poZavreni = () -> {};
+	/** Běží dialog otevřený z popupu: popup se nezavírá. */
+	private int dialogu;
+	/** Po dialogu popup zůstane, dokud se myš nevrátí na blok nebo popup. */
+	private boolean cekaNaNavrat;
 	/** Od kdy je myš mimo blok i popup, -1 když není. */
 	private long mimoOd = -1;
 	/** Popup, který se otevře, když na jeho cíli myš vydrží; null, když se nic nečeká. */
@@ -152,7 +156,19 @@ public class PopupNadBlokem {
 		return hranice;
 	}
 
+	/** Provede dialog z popupu (potvrzení): popup za něj nezmizí, ani když myš odjede, a zůstane, dokud se myš po dialogu nevrátí. */
+	public <T> T sDialogem(final java.util.function.Supplier<T> dialog) {
+		dialogu++;
+		try {
+			return dialog.get();
+		} finally {
+			dialogu--;
+			cekaNaNavrat = true;
+		}
+	}
+
 	public void zavri() {
+		cekaNaNavrat = false;
 		if (popup != null) {
 			skryj();
 			poZavreni.run();
@@ -222,8 +238,11 @@ public class PopupNadBlokem {
 		if (predZmensenim != null && !predZmensenim.contains(mys)) {
 			predZmensenim = null;
 		}
+		if (cekaNaNavrat && obsahPopupu != null && (obsahuje(blok, mys) || obsahuje(obsahPopupu, mys))) {
+			cekaNaNavrat = false;
+		}
 		// Otevřené kontextové menu v popupu může popup přesahovat.
-		if (obsahPopupu == null || obsahuje(blok, mys) || obsahuje(obsahPopupu, mys) || predZmensenim != null || MenuSelectionManager.defaultManager().getSelectedPath().length > 0
+		if (obsahPopupu == null || dialogu > 0 || cekaNaNavrat || obsahuje(blok, mys) || obsahuje(obsahPopupu, mys) || predZmensenim != null || MenuSelectionManager.defaultManager().getSelectedPath().length > 0
 				|| drzOtevreny.getAsBoolean()) {
 			mimoOd = -1;
 			return;

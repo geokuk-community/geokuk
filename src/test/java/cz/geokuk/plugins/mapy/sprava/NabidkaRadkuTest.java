@@ -71,7 +71,8 @@ public class NabidkaRadkuTest {
 		final NabidkaRadku n = nabidka(mapa(StavBunky.STAZENO), trasy(StavBunky.KE_STAZENI), vrstevnice(StavBunky.KE_STAZENI), stinovani(StavBunky.KE_STAZENI));
 		Assert.assertEquals("✔ Mapa stažená", n.getMapa().getText());
 		Assert.assertEquals(Druh.HOTOVO, n.getMapa().getDruh());
-		Assert.assertEquals("Stáhnout mapu a vrstvy (371 MB)", n.getVrstvy().getText());
+		Assert.assertEquals("stažená mapa: jen vrstvy a jejich velikost", "Stáhnout vrstvy (371 MB)", n.getVrstvy().getText());
+		Assert.assertEquals(Rezim.STAHNOUT, n.getVrstvy().getRezim());
 	}
 
 	@Test
