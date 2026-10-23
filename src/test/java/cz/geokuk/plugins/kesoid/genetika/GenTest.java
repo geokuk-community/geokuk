@@ -2,6 +2,8 @@ package cz.geokuk.plugins.kesoid.genetika;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 import org.junit.*;
 
@@ -59,4 +61,23 @@ public class GenTest {
 		Assert.assertEquals("gujin", gen.getNazev());
 	}
 
+
+	/** Alely přidává import keší, zatímco GUI je prochází; seznam proto musí být snímek. */
+	@Test
+	public void seznamAlelJeSnimek() {
+		final Gen gen = genom.gen("snimek");
+		gen.alela("a");
+		final Set<Alela> alely = gen.getAlely();
+		final int pred = alely.size();
+		final Collection<Alela> vsechny = genom.getAlely();
+		final int vsechnyPred = vsechny.size();
+		final List<Gen> geny = genom.getGeny();
+		final int genyPred = geny.size();
+		gen.alela("b");
+		genom.gen("dalsi");
+		Assert.assertEquals(pred, alely.size());
+		Assert.assertEquals(pred + 1, gen.getAlely().size());
+		Assert.assertEquals(vsechnyPred, vsechny.size());
+		Assert.assertEquals(genyPred, geny.size());
+	}
 }

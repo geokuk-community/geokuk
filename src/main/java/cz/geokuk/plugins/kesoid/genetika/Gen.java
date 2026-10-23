@@ -71,11 +71,11 @@ public class Gen implements Grupa, Indexable {
 	}
 
 	/**
-	 * Vrací seznam všech alel genu.
+	 * Vrací kopii seznamu všech alel genu; alely může přidávat jiné vlákno.
 	 */
 	@Override
-	public Set<Alela> getAlely() {
-		return alely;
+	public synchronized Set<Alela> getAlely() {
+		return new LinkedHashSet<>(alely);
 	}
 
 	@Override
