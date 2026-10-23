@@ -784,9 +784,9 @@ public class JMapyPopup extends JPanel {
 		return v;
 	}
 
-	/** Mapa mimo složku je i v oddílu Pro zobrazené místo: pokrývá ho, nebo se právě stahuje ona či její vrstva. */
+	/** Mapa mimo složku, která pokrývá zobrazené místo, je v oddílu Pro toto místo a ne mezi mapami ke stažení. */
 	private static boolean proMisto(final RadekMapy r) {
-		return !r.isVeSlozce() && (r.proZobrazeneMisto || r.stav == RadekMapy.Stav.STAHUJE || r.bezicVrstva() != null);
+		return !r.isVeSlozce() && r.proZobrazeneMisto;
 	}
 
 	/** Co určuje rozložení popupu: řádky v oddílech a odkazy nad nimi; stavy řádků do ní nepatří, ty se mění na místě. */
@@ -1112,11 +1112,20 @@ public class JMapyPopup extends JPanel {
 		for (final RadekMapy r : radky) {
 			if (r.isVeSlozce()) {
 				veSlozce.add(r);
+			} else if (proMisto(r)) {
+				proMisto.add(r);
 			} else {
-				if (proMisto(r)) {
-					proMisto.add(r);
-				}
 				dalsi.add(r);
+			}
+		}
+		// Země, která má mapu pro zobrazené místo, je jen v tomto oddílu i se zbylými regiony, ne podruhé mezi mapami ke stažení.
+		final Set<String> zemeMista = new HashSet<>();
+		proMisto.forEach(r -> zemeMista.add(r.skupina != null ? r.skupina : r.nazev));
+		for (final Iterator<RadekMapy> it = dalsi.iterator(); it.hasNext();) {
+			final RadekMapy r = it.next();
+			if (zemeMista.contains(r.skupina != null ? r.skupina : r.nazev)) {
+				proMisto.add(r);
+				it.remove();
 			}
 		}
 
@@ -1206,14 +1215,7 @@ public class JMapyPopup extends JPanel {
 			add(nadpisOddilu(PRO_MISTO), gbc);
 			misto = panelRadku();
 			y = 0;
-			for (final RadekMapy r : proMisto) {
-				y = pridejRadek(misto, y, r);
-				if (r.skupina != null) {
-					// Plochý seznam: bez stromu by u regionu nebylo vidět, ze které země je.
-					posledniPohled(r).zeme = r.skupina;
-					posledniPohled(r).aktualizuj(r);
-				}
-			}
+			y = stromMista(misto, y, proMisto);
 			gbc.gridy++;
 			add(mistoObal, gbc);
 		}
@@ -1269,9 +1271,10 @@ public class JMapyPopup extends JPanel {
 			final JPanel obal = new JPanel(new BorderLayout());
 			obal.setOpaque(false);
 			obal.add(ostatni, BorderLayout.NORTH);
-			// Velikost podle seznamu bez hledání (regiony sbalené), aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
-			filtruj("");
+			// Velikost podle seznamu se všemi regiony rozbalenými, aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
+			hledatelne.forEach(r -> r.bunky.forEach(c -> c.setVisible(true)));
 			final Dimension vse = obal.getPreferredSize();
+			filtruj("");
 			vyskaDalsi = vse.height;
 			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 				private static final long serialVersionUID = 1L;
@@ -1341,7 +1344,7 @@ public class JMapyPopup extends JPanel {
 		// Výška seznamů: co zbude z dostupné výšky nad stavovým řádkem po ostatních částech popupu.
 		pevnaVyska = getPreferredSize().height;
 		rozpocet = rozpocetSekci();
-		final int[] pozadovano = { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, Math.min(vyskaDalsi, MAX_VYSKA_SEZNAMU) };
+		final int[] pozadovano = { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi };
 		final int[] prideleno = rozdelVysky(pozadovano, drzenaVyska > 0 ? drzenaVyska - pevnaVyska : rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
 		final int zbyva = drzenaVyska - pevnaVyska - prideleno[0] - prideleno[1] - prideleno[2];
@@ -1405,8 +1408,6 @@ public class JMapyPopup extends JPanel {
 
 	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */
 	static final int MIN_VYSKA_SEKCE = 80;
-	/** Seznam všech map má hledání, stačí mu asi deset řádků; jinak by i s jedinou mapou ve složce vyplnil celou výšku nad stavovým řádkem. */
-	static final int MAX_VYSKA_SEZNAMU = 180;
 
 	/** Kolik px je nad stavovým řádkem až po horní lištu okna, -1 když není známé; nastavuje blok Mapy. */
 	private transient java.util.function.IntSupplier dostupnaVyska = () -> -1;
@@ -1428,12 +1429,12 @@ public class JMapyPopup extends JPanel {
 	}
 
 	/**
-	 * Kolik výšky smějí dohromady mít seznamy map: dostupná výška po horní lištu okna bez ostatních částí popupu, nejméně 260 a nejvýš 520 px; bez znalosti okna půl
+	 * Kolik výšky smějí dohromady mít seznamy map: 90 % dostupné výšky po horní lištu okna bez ostatních částí popupu, nejméně 260 px; bez znalosti okna 85 %
 	 * obrazovky.
 	 */
 	int rozpocetSekci() {
 		final int dostupna = dostupnaVyska.getAsInt();
-		return Math.min(MAX_ROZPOCET, Math.max(MIN_ROZPOCET, dostupna > 0 ? dostupna - pevnaVyska - OKRAJ_POPUPU : obrazovka() / 2));
+		return Math.max(MIN_ROZPOCET, dostupna > 0 ? dostupna * 90 / 100 - pevnaVyska - OKRAJ_POPUPU : obrazovka() * 85 / 100 - pevnaVyska);
 	}
 
 	private static int obrazovka() {
@@ -1441,13 +1442,11 @@ public class JMapyPopup extends JPanel {
 	}
 
 	static final int MIN_ROZPOCET = 260;
-	/** Ani ve vysokém okně popup nepřeroste přes půl obrazovky; další řádky (třeba po rozbalení země) jsou v posuvníku. */
-	static final int MAX_ROZPOCET = 520;
 	/** Rezerva na ohraničení popupu. */
 	private static final int OKRAJ_POPUPU = 12;
 
 	/**
-	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí rovným dílem mezi sekce, které se nevejdou,
+	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí podle obsahu mezi sekce, které se nevejdou,
 	 * každá nejméně minimum. Součet může minimy překročit rozpočet.
 	 */
 	static int[] rozdelVysky(final int[] pozadovano, final int rozpocet, final int minimum) {
@@ -1482,15 +1481,15 @@ public class JMapyPopup extends JPanel {
 				}
 			}
 		}
-		int volnych = 0;
+		long obsah = 0;
 		for (int i = 0; i < v.length; i++) {
 			if (!pevna[i] && pozadovano[i] > 0) {
-				volnych++;
+				obsah += pozadovano[i];
 			}
 		}
 		for (int i = 0; i < v.length; i++) {
 			if (!pevna[i] && pozadovano[i] > 0) {
-				v[i] = Math.min(pozadovano[i], Math.max(minimum, zbyva / volnych));
+				v[i] = (int) Math.min(pozadovano[i], Math.max(minimum, zbyva * pozadovano[i] / obsah));
 			}
 		}
 		return v;
@@ -1624,7 +1623,7 @@ public class JMapyPopup extends JPanel {
 	private int radekZemeBezCelku(final JPanel panel, final int y, final Uzel u) {
 		final Uzel vse = zemeVsechny.get(u.nazev);
 		final String popis = vse != null && vse.celek != null && vse.celek.isVeSlozce() ? CELA_VE_SLOZCE
-				: u.regiony.stream().allMatch(r -> r.id.startsWith("europe/")) ? JEN_REGIONY : "";
+				: (vse == null || vse.celek == null) && u.regiony.stream().allMatch(r -> r.id.startsWith("europe/")) ? JEN_REGIONY : "";
 		return radekZemeBezCelku(panel, y, u, popis, false, null);
 	}
 
@@ -1822,6 +1821,45 @@ public class JMapyPopup extends JPanel {
 		zmenaObsahu();
 	}
 
+	/** Mapy pro zobrazené místo po zemích jako ve stromu map: region je pod svou zemí, i když je země sama už ve složce nebo ji místo nenabízí. */
+	private int stromMista(final JPanel panel, final int zacatek, final List<RadekMapy> mapy) {
+		int y = zacatek;
+		final Map<String, Uzel> podleZeme = new LinkedHashMap<>();
+		for (final RadekMapy r : mapy) {
+			final Uzel u = podleZeme.computeIfAbsent(r.skupina != null ? r.skupina : r.nazev, Uzel::new);
+			if (r.skupina != null) {
+				u.regiony.add(r);
+			} else {
+				u.celek = r;
+			}
+		}
+		for (final Uzel u : podleZeme.values()) {
+			if (u.celek != null) {
+				y = pridejRadek(panel, y, u.celek);
+				posledniPohled(u.celek).nazev.setBorder(new EmptyBorder(0, ODSAZENI, 0, 0));
+			} else {
+				y = hlavickaZeme(panel, y, u.nazev);
+			}
+			for (final RadekMapy r : u.regiony) {
+				radek(panel, y++, r);
+				posledniPohled(r).nazev.setBorder(new EmptyBorder(0, 2 * ODSAZENI, 0, 0));
+			}
+		}
+		return y;
+	}
+
+	/** Řádek země bez vlastní mapy v oddílu: jen název, aby bylo vidět, pod kterou zemi regiony patří. */
+	private int hlavickaZeme(final JPanel panel, final int y, final String nazev) {
+		final GridBagConstraints ci = bunka(0, y, 1);
+		ci.insets = new Insets(1, 0, 1, 4);
+		panel.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.NEMAME)), ci);
+		final JLabel jmeno = new JLabel(nazev);
+		jmeno.setBorder(new EmptyBorder(0, ODSAZENI, 0, 0));
+		jmeno.setPreferredSize(new Dimension(sirkaNazvu, jmeno.getPreferredSize().height));
+		panel.add(jmeno, bunka(1, y, 1));
+		return y + 1;
+	}
+
 	/** Stažené mapy po zemích: regiony pod zemí se šipkou, souhrn u země bez staženého celku; celý strom v tabulce Ve složce. */
 	private int stromSlozky(final JPanel panel, final int zacatek, final List<RadekMapy> mapy) {
 		int y = zacatek;
@@ -1946,8 +1984,6 @@ public class JMapyPopup extends JPanel {
 		final JLabel[] procenta = new JLabel[VRSTVY.length];
 		final MouseAdapter nadRadkem;
 		RadekMapy radek;
-		/** Země připsaná za popis regionu, null když se nepíše. */
-		String zeme;
 		/** Stav, podle kterého jsou naplněné akce a buňky; null před prvním naplněním. */
 		String stav;
 
@@ -1968,7 +2004,7 @@ public class JMapyPopup extends JPanel {
 			ikona.setToolTipText(tooltip);
 			nazev.setToolTipText(tooltip);
 			popis.setToolTipText(tooltip);
-			popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r) + (zeme == null ? "" : " · " + zeme), popis.getFontMetrics(popis.getFont())));
+			popis.setText(r.id != null && r.id.equals(rusenaMapa) ? RUSI_SE : zkrat(popisRadku(r), popis.getFontMetrics(popis.getFont())));
 			popis.setForeground(r.stav == RadekMapy.Stav.CHYBA ? IkonyMap.CERVENA : SEDY_TEXT);
 			final String novy = stavRadku(r);
 			if (novy.equals(stav)) {

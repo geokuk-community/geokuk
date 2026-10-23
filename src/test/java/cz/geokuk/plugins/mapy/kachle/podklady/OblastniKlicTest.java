@@ -1,0 +1,203 @@
+package cz.geokuk.plugins.mapy.kachle.podklady;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+import org.mapsforge.core.model.BoundingBox;
+
+import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.plugins.mapy.kachle.podklady.OblastniKlic.Zdroj;
+
+/** Typ dlaždice v cache závisí jen na souborech, které dlaždici pokrývají. */
+public class OblastniKlicTest {
+
+	@Rule
+	public TemporaryFolder tmp = new TemporaryFolder();
+
+	private static final int Z = 10;
+	/** Dlaždice, do které padají zdroje; sousedé jsou o jednu a o dvě dlaždice dál. */
+	private static final int X = 550;
+	private static final int Y = 350;
+
+	private static KaLoc dlazdice(final int dx) {
+		return KaLoc.ofXyz(X + dx, Y, Z);
+	}
+
+	/** Malý rozsah uprostřed dlaždice, takže sousední dlaždice se ho dotýkají jen přes okolí. */
+	private static BoundingBox uvnitr() {
+		final BoundingBox oblast = OblastniKlic.oblast(dlazdice(0));
+		final double sirka = (oblast.maxLongitude - oblast.minLongitude) / 3;
+		final double vyska = (oblast.maxLatitude - oblast.minLatitude) / 3;
+		final double lon = oblast.minLongitude + sirka * 1.45;
+		final double lat = oblast.minLatitude + vyska * 1.45;
+		return new BoundingBox(lat, lon, lat + vyska * 0.1, lon + sirka * 0.1);
+	}
+
+	private static Zdroj zdroj(final BoundingBox rozsah, final String otisk) {
+		return new Zdroj(rozsah, otisk);
+	}
+
+	private static String klic(final List<Zdroj> zdroje, final int dx) {
+		return new OblastniKlic("o0000000a", zdroje).klic(dlazdice(dx));
+	}
+
+	@Test
+	public void tvarKlice() {
+		Assert.assertTrue(klic(Arrays.asList(zdroj(uvnitr(), "a")), 0), UklidOfflineCache.TYP.matcher(klic(Arrays.asList(zdroj(uvnitr(), "a")), 0)).matches());
+	}
+
+	@Test
+	public void zmenaSouboruMimoDlazdiciJiNezneplatni() {
+		final BoundingBox a = uvnitr();
+		final BoundingBox b = new BoundingBox(10, 10, 11, 11);
+		final String pred = klic(Arrays.asList(zdroj(a, "A"), zdroj(b, "B")), 0);
+		Assert.assertEquals(pred, klic(Arrays.asList(zdroj(a, "A"), zdroj(b, "B-nové")), 0));
+		Assert.assertEquals("přidaný soubor jinde dlaždici nemění", pred, klic(Arrays.asList(zdroj(a, "A"), zdroj(b, "B"), zdroj(new BoundingBox(-30, 100, -29, 101), "C")), 0));
+		Assert.assertEquals("odebraný soubor jinde dlaždici nemění", pred, klic(Arrays.asList(zdroj(a, "A")), 0));
+	}
+
+	@Test
+	public void zmenaSouboruKryjicihoDlazdiciJiZneplatni() {
+		final BoundingBox a = uvnitr();
+		final String pred = klic(Arrays.asList(zdroj(a, "A")), 0);
+		Assert.assertNotEquals(pred, klic(Arrays.asList(zdroj(a, "A-nové")), 0));
+		Assert.assertNotEquals("nový soubor v oblasti", pred, klic(Arrays.asList(zdroj(a, "A"), zdroj(a, "D")), 0));
+		Assert.assertNotEquals("odebraný soubor z oblasti", pred, klic(Arrays.<Zdroj> asList(), 0));
+	}
+
+	/** Popisky a okraje se berou ze sousedních dlaždic: soubor uvnitř jedné se projeví i v sousedních, ne ve vzdálenějších. */
+	@Test
+	public void okoliDlazdiceSeZapocita() {
+		final BoundingBox a = uvnitr();
+		final List<Zdroj> pred = Arrays.asList(zdroj(a, "A"));
+		final List<Zdroj> po = Arrays.asList(zdroj(a, "A-nové"));
+		Assert.assertNotEquals(klic(pred, -1), klic(po, -1));
+		Assert.assertNotEquals(klic(pred, 1), klic(po, 1));
+		Assert.assertEquals(klic(pred, 3), klic(po, 3));
+		Assert.assertEquals(klic(pred, -3), klic(po, -3));
+	}
+
+	@Test
+	public void poradiSouboruVOblastiRozhoduje() {
+		final BoundingBox a = uvnitr();
+		final BoundingBox daleko = new BoundingBox(10, 10, 11, 11);
+		final Zdroj x = zdroj(a, "X");
+		final Zdroj y = zdroj(a, "Y");
+		Assert.assertNotEquals(klic(Arrays.asList(x, y), 0), klic(Arrays.asList(y, x), 0));
+		final Zdroj p = zdroj(daleko, "P");
+		final Zdroj q = zdroj(new BoundingBox(20, 20, 21, 21), "Q");
+		Assert.assertEquals("pořadí souborů mimo oblast nevadí", klic(Arrays.asList(x, p, q), 0), klic(Arrays.asList(x, q, p), 0));
+	}
+
+	@Test
+	public void globalniCastMeniVsechnyDlazdice() {
+		final List<Zdroj> zdroje = Arrays.asList(zdroj(uvnitr(), "A"));
+		for (final int dx : new int[] { 0, 1, 5 }) {
+			Assert.assertNotEquals(new OblastniKlic("o0000000a", zdroje).klic(dlazdice(dx)), new OblastniKlic("o0000000b", zdroje).klic(dlazdice(dx)));
+		}
+		Assert.assertNotEquals("podklad a překryv se nepletou", new OblastniKlic("o0000000a", zdroje).klic(dlazdice(0)), new OblastniKlic("t0000000a", zdroje).klic(dlazdice(0)));
+	}
+
+	@Test
+	public void sestavaSeMeniPriJakekolivZmene() {
+		final Zdroj a = zdroj(uvnitr(), "A");
+		final Zdroj b = zdroj(new BoundingBox(10, 10, 11, 11), "B");
+		final String s = new OblastniKlic("o0000000a", Arrays.asList(a, b)).getSestava();
+		Assert.assertNotEquals(s, new OblastniKlic("o0000000a", Arrays.asList(a, zdroj(new BoundingBox(10, 10, 11, 11), "B-nové"))).getSestava());
+		Assert.assertNotEquals(s, new OblastniKlic("o0000000a", Arrays.asList(a)).getSestava());
+		Assert.assertEquals(s, new OblastniKlic("o0000000a", Arrays.asList(a, b)).getSestava());
+	}
+
+	@Test
+	public void bunkaDemPodleJmena() {
+		Assert.assertEquals(new BoundingBox(50, 14, 51, 15), OblastniKlic.bunkaDem("N50E014.hgt"));
+		Assert.assertEquals(new BoundingBox(50, 14, 51, 15), OblastniKlic.bunkaDem("europe/cz/n50e014.HGT"));
+		Assert.assertEquals(new BoundingBox(-10, -3, -9, -2), OblastniKlic.bunkaDem("S10W003.hgt"));
+		Assert.assertNull(OblastniKlic.bunkaDem("czech.hgt"));
+		Assert.assertNull(OblastniKlic.bunkaDem("N95E014.hgt"));
+	}
+
+	/** Stínování sousedí přes švy: DEM buňka ovlivní dlaždice u svého okraje, ne vzdálené. */
+	@Test
+	public void demBunkaPlatiProDlazdiceVJejimOkoli() throws Exception {
+		final File hgt = tmp.newFile("N50E014.hgt");
+		final List<Zdroj> zdroje = new ArrayList<>();
+		OblastniKlic.dem(zdroje, hgt);
+		final List<Zdroj> zmena = new ArrayList<>();
+		Assert.assertTrue(hgt.setLastModified(hgt.lastModified() + 5000));
+		OblastniKlic.dem(zmena, hgt);
+		final OblastniKlic pred = new OblastniKlic("o0000000a", zdroje);
+		final OblastniKlic po = new OblastniKlic("o0000000a", zmena);
+		final KaLoc uvnitr = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(50.5, 14.5).toMou(), 14);
+		final KaLoc pod = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(49.995, 14.5).toMou(), 14);
+		final KaLoc daleko = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(49.5, 14.5).toMou(), 14);
+		final KaLoc jinde = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(48.5, 11.5).toMou(), 14);
+		Assert.assertNotEquals(pred.klic(uvnitr), po.klic(uvnitr));
+		Assert.assertNotEquals("sousední dlaždice přes šev buňky", pred.klic(pod), po.klic(pod));
+		Assert.assertEquals(pred.klic(daleko), po.klic(daleko));
+		Assert.assertEquals(pred.klic(jinde), po.klic(jinde));
+	}
+
+	@Test
+	public void demZipPlatiJenProSvéBunky() throws Exception {
+		final File zip = tmp.newFile("cesko.zip");
+		try (ZipOutputStream z = new ZipOutputStream(new FileOutputStream(zip))) {
+			z.putNextEntry(new ZipEntry("N50E014.hgt"));
+			z.write(1);
+			z.closeEntry();
+			z.putNextEntry(new ZipEntry("N49E015.hgt"));
+			z.write(1);
+			z.closeEntry();
+		}
+		final List<Zdroj> zdroje = new ArrayList<>();
+		OblastniKlic.dem(zdroje, zip);
+		Assert.assertEquals(2, zdroje.size());
+	}
+
+	@Test
+	public void nerozpoznanyDemPlatiProCelySvet() throws Exception {
+		final File hgt = tmp.newFile("neznamy.hgt");
+		final File zip = tmp.newFile("rozbity.zip");
+		final List<Zdroj> zdroje = new ArrayList<>();
+		OblastniKlic.dem(zdroje, hgt);
+		OblastniKlic.dem(zdroje, zip);
+		Assert.assertEquals(2, zdroje.size());
+		final KaLoc kdekoli = KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(-30, 120).toMou(), 14);
+		Assert.assertNotEquals(OblastniKlic.bezSouboru("o0000000a").klic(kdekoli), new OblastniKlic("o0000000a", zdroje).klic(kdekoli));
+	}
+
+	/** Záložní vypnutí: každý soubor platí pro každou dlaždici. */
+	@Test
+	public void bezOblastniCastiMeniVsechnoVse() {
+		OblastniKlic.oblastni = false;
+		try {
+			final BoundingBox b = new BoundingBox(10, 10, 11, 11);
+			final String pred = klic(Arrays.asList(zdroj(uvnitr(), "A"), zdroj(b, "B")), 0);
+			Assert.assertNotEquals(pred, klic(Arrays.asList(zdroj(uvnitr(), "A"), zdroj(b, "B-nové")), 0));
+		} finally {
+			OblastniKlic.oblastni = true;
+		}
+	}
+
+	/** Soubor téhož jména se stejným rozsahem, ale jinou délkou nebo datem mapy, je jiný soubor. */
+	@Test
+	public void jinaDelkaNeboDatumMapyJeJinyKlic() throws Exception {
+		final File a = new File(tmp.newFolder("a"), "mapa.map");
+		final File b = new File(tmp.newFolder("b"), "mapa.map");
+		java.nio.file.Files.write(a.toPath(), new byte[10]);
+		java.nio.file.Files.write(b.toPath(), new byte[11]);
+		Assert.assertTrue(b.setLastModified(a.lastModified()));
+		final BoundingBox rozsah = uvnitr();
+		final String zaklad = klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 1000)), 0);
+		Assert.assertEquals(zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 1000)), 0));
+		Assert.assertNotEquals("jiná délka", zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", b, rozsah, 1000)), 0));
+		Assert.assertNotEquals("jiné datum mapy", zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 2000)), 0));
+	}
+}

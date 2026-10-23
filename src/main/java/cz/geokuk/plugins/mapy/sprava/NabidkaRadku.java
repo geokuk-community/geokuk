@@ -160,7 +160,7 @@ public final class NabidkaRadku {
 		}
 		if (chybi) {
 			final long velikost = vse.stream().filter(b -> b.getStav() == StavBunky.KE_STAZENI || b.getStav() == StavBunky.CHYBA).mapToLong(PomocnikVelikosti::zbyva).sum();
-			return tlacitko("Stáhnout mapu a vrstvy", velikost, seznam(vse, Rezim.STAHNOUT), Rezim.STAHNOUT, ok);
+			return tlacitko(m.getStav() == StavBunky.STAZENO ? "Stáhnout vrstvy" : "Stáhnout mapu a vrstvy", velikost, seznam(vse, Rezim.STAHNOUT), Rezim.STAHNOUT, ok);
 		}
 		final long velikost = vse.stream().filter(b -> b.getStav() == StavBunky.NOVEJSI).mapToLong(b -> Math.max(0, b.getVelikost())).sum();
 		return tlacitko("Aktualizovat mapu a vrstvy", velikost, seznam(vse, Rezim.AKTUALIZOVAT), Rezim.STAHNOUT_A_AKTUALIZOVAT, ok);

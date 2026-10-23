@@ -106,7 +106,7 @@ public class OfflineKachleZiskavacTest {
 		final KachleManager.ItemToSave ulozena = ulozene.poll(15, TimeUnit.SECONDS);
 		Assert.assertNotNull("vykreslená dlaždice se uloží", ulozena);
 		Assert.assertEquals(trasy, ulozena.key);
-		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("t[0-9a-f]{8}"));
+		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("t[0-9a-f]{8}\\.[0-9a-f]{8}"));
 	}
 
 	/** Bez map překryv nic nekreslí a chybu neukazuje, tu má jen offline mapa jako podklad. */
@@ -132,7 +132,7 @@ public class OfflineKachleZiskavacTest {
 
 		final KachleManager.ItemToSave ulozena = ulozene.poll(15, TimeUnit.SECONDS);
 		Assert.assertNotNull("vykreslená dlaždice se uloží", ulozena);
-		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("o[0-9a-f]{8}"));
+		Assert.assertTrue(ulozena.typ, ulozena.typ.matches("o[0-9a-f]{8}\\.[0-9a-f]{8}"));
 		Assert.assertEquals(KACHLE, ulozena.key);
 		final BufferedImage zobrazena = (BufferedImage) stav.getImg();
 		final BufferedImage png = ImageIO.read(new ByteArrayInputStream(ulozena.imageData));

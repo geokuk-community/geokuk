@@ -85,7 +85,8 @@ public class SpravaMapModel extends Model0 {
 	private Supplier<File> slozka = () -> null;
 	private Consumer<Event0<SpravaMapModel>> odpalovac = e -> SwingUtilities.invokeLater(() -> fire(e));
 	private KachleModel kachleModel;
-	private volatile long posledniPrubeh;
+	/** Kdy se naposledy ohlásil průběh které mapy nebo vrstvy; souběžná stahování se při ohlašování nepřebíjejí. */
+	private final Map<String, Long> posledniPrubeh = new ConcurrentHashMap<>();
 	/** Jak často program sám ověří u serveru, jestli nemá novější katalog vrstev, než je kopie ve složce vrstev. */
 	long stariKataloguMs = TimeUnit.HOURS.toMillis(1);
 	/** Po nepovedeném samočinném stažení katalogu vrstev (třeba bez sítě) se další zkusí nejdřív za tuto dobu. */
@@ -546,8 +547,8 @@ public class SpravaMapModel extends Model0 {
 	private void prubeh(final StavMapy stav) {
 		final StavMapy predtim = stavy.put(stav.getMapa().getId(), stav);
 		final long ted = System.nanoTime();
-		if (predtim == null || predtim.getFaze() != stav.getFaze() || ted - posledniPrubeh >= INTERVAL_PRUBEHU_NS) {
-			posledniPrubeh = ted;
+		if (predtim == null || predtim.getFaze() != stav.getFaze() || ted - posledniPrubeh.getOrDefault(stav.getMapa().getId(), 0L) >= INTERVAL_PRUBEHU_NS) {
+			posledniPrubeh.put(stav.getMapa().getId(), ted);
 			odpalovac.accept(new SpravaMapEvent(stav));
 		}
 	}
@@ -555,8 +556,8 @@ public class SpravaMapModel extends Model0 {
 	private void prubeh(final StavVrstvy stav) {
 		final StavVrstvy predtim = stavyVrstev.put(stav.getVrstva().getId(), stav);
 		final long ted = System.nanoTime();
-		if (predtim == null || predtim.getFaze() != stav.getFaze() || ted - posledniPrubeh >= INTERVAL_PRUBEHU_NS) {
-			posledniPrubeh = ted;
+		if (predtim == null || predtim.getFaze() != stav.getFaze() || ted - posledniPrubeh.getOrDefault(stav.getVrstva().getId(), 0L) >= INTERVAL_PRUBEHU_NS) {
+			posledniPrubeh.put(stav.getVrstva().getId(), ted);
 			odpalovac.accept(new SpravaVrstevEvent(stav));
 		}
 	}

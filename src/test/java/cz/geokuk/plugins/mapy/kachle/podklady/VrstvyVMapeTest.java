@@ -43,7 +43,7 @@ public class VrstvyVMapeTest {
 	private String klic() throws IOException {
 		final OfflineRenderer r = mapy.pouzij();
 		r.skonci();
-		return r.getKlic();
+		return r.getKlicDlazdice(OfflineMapyTest.STRED_Z15);
 	}
 
 	private int pocetMap() throws IOException {
@@ -147,13 +147,13 @@ public class VrstvyVMapeTest {
 			trasy.nastav(slozka, TemaOfflineMapy.TRASY);
 			final OfflineRenderer r0 = trasy.pouzij();
 			r0.skonci();
-			final String bez = r0.getKlic();
+			final String bez = r0.getKlicDlazdice(OfflineMapyTest.STRED_Z15);
 			OfflineMapyTest.zkopirujMapu(vrstvy(), "kukov_trasy.map");
 			trasy.zkontrolujSlozku();
 			trasy.zkontrolujSlozku();
 			final OfflineRenderer r1 = trasy.pouzij();
 			r1.skonci();
-			Assert.assertEquals(bez, r1.getKlic());
+			Assert.assertEquals(bez, r1.getKlicDlazdice(OfflineMapyTest.STRED_Z15));
 		} finally {
 			trasy.zavri();
 		}
@@ -183,6 +183,42 @@ public class VrstvyVMapeTest {
 		mapy.zavri();
 		Assert.assertTrue(new File(vrstvy(), "N50E014.hgt").delete());
 		Assert.assertEquals(bez, klic());
+	}
+
+	/** DEM jinde na světě dlaždice v mapě nezneplatní, DEM nad ní ano. */
+	@Test(timeout = 60000)
+	public void demJindeKlicDlazdiceNemeni() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final String bez = klic();
+		Files.write(new File(vrstvy(), "N10E010.hgt").toPath(), new byte[1]);
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		Assert.assertEquals("DEM mimo oblast dlaždice", bez, klic());
+		Files.write(new File(vrstvy(), "N50E014.hgt").toPath(), new byte[1]);
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		Assert.assertNotEquals("DEM nad dlaždicí", bez, klic());
+	}
+
+	/** Změna souboru DEM jinde nezmění dlaždici nad jiným DEM. */
+	@Test(timeout = 60000)
+	public void zmenaJinehoDemKlicDlazdiceNemeni() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		final File nad = new File(vrstvy(), "N50E014.hgt");
+		final File jinde = new File(vrstvy(), "N10E010.hgt");
+		Files.write(nad.toPath(), new byte[1]);
+		Files.write(jinde.toPath(), new byte[1]);
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		final String pred = klic();
+		Files.write(jinde.toPath(), new byte[2]);
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		Assert.assertEquals(pred, klic());
+		Files.write(nad.toPath(), new byte[2]);
+		mapy.zkontrolujSlozku();
+		mapy.zkontrolujSlozku();
+		Assert.assertNotEquals(pred, klic());
 	}
 
 	/** Dlaždice ve formátu vrstvy DEM (zip s HGT uvnitř) se stínují stejně jako holý soubor. */

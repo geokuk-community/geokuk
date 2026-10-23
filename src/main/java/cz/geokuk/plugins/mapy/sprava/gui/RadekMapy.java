@@ -43,7 +43,7 @@ public final class RadekMapy {
 	final Instant datumDat;
 	final Instant datumNaServeru;
 	final boolean rozpracovano;
-	/** Soubor mapy je ve složce offline map (i poškozený nebo právě nahrazovaný). */
+	/** Mapa je ve složce offline map: soubor (i poškozený nebo právě nahrazovaný), rozpracované nebo právě běžící stahování. */
 	final boolean veSlozce;
 	/** Zjišťuje se stav na serveru, nic se nestahuje. */
 	final boolean kontroluje;
@@ -69,7 +69,7 @@ public final class RadekMapy {
 		datumDat = b.datumDat;
 		datumNaServeru = b.datumNaServeru;
 		rozpracovano = b.rozpracovano;
-		veSlozce = b.veSlozce != null ? b.veSlozce : b.vlastni || b.stav == Stav.AKTUALNI || b.stav == Stav.NOVEJSI;
+		veSlozce = b.veSlozce != null ? b.veSlozce : b.vlastni || b.stav == Stav.AKTUALNI || b.stav == Stav.NOVEJSI || b.stav == Stav.STAHUJE || b.rozpracovano;
 		kontroluje = b.kontroluje;
 		overuje = b.overuje;
 		zdroj = b.zdroj;
