@@ -1333,7 +1333,7 @@ public class JMapyPopup extends JPanel {
 		// Výška seznamů: co zbude z dostupné výšky nad stavovým řádkem po ostatních částech popupu.
 		pevnaVyska = getPreferredSize().height;
 		rozpocet = rozpocetSekci();
-		final int[] pozadovano = { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, Math.min(vyskaDalsi, MAX_VYSKA_SEZNAMU) };
+		final int[] pozadovano = { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi };
 		final int[] prideleno = rozdelVysky(pozadovano, drzenaVyska > 0 ? drzenaVyska - pevnaVyska : rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
 		final int zbyva = drzenaVyska - pevnaVyska - prideleno[0] - prideleno[1] - prideleno[2];
@@ -1397,8 +1397,6 @@ public class JMapyPopup extends JPanel {
 
 	/** Nejmenší výška posuvné sekce, aby nezbyl jen proužek. */
 	static final int MIN_VYSKA_SEKCE = 80;
-	/** Seznam všech map má hledání, stačí mu asi deset řádků; jinak by i s jedinou mapou ve složce vyplnil celou výšku nad stavovým řádkem. */
-	static final int MAX_VYSKA_SEZNAMU = 180;
 
 	/** Kolik px je nad stavovým řádkem až po horní lištu okna, -1 když není známé; nastavuje blok Mapy. */
 	private transient java.util.function.IntSupplier dostupnaVyska = () -> -1;
@@ -1420,12 +1418,12 @@ public class JMapyPopup extends JPanel {
 	}
 
 	/**
-	 * Kolik výšky smějí dohromady mít seznamy map: dostupná výška po horní lištu okna bez ostatních částí popupu, nejméně 260 a nejvýš 520 px; bez znalosti okna půl
+	 * Kolik výšky smějí dohromady mít seznamy map: 90 % dostupné výšky po horní lištu okna bez ostatních částí popupu, nejméně 260 px; bez znalosti okna 85 %
 	 * obrazovky.
 	 */
 	int rozpocetSekci() {
 		final int dostupna = dostupnaVyska.getAsInt();
-		return Math.min(MAX_ROZPOCET, Math.max(MIN_ROZPOCET, dostupna > 0 ? dostupna - pevnaVyska - OKRAJ_POPUPU : obrazovka() / 2));
+		return Math.max(MIN_ROZPOCET, dostupna > 0 ? dostupna * 90 / 100 - pevnaVyska - OKRAJ_POPUPU : obrazovka() * 85 / 100 - pevnaVyska);
 	}
 
 	private static int obrazovka() {
@@ -1433,13 +1431,11 @@ public class JMapyPopup extends JPanel {
 	}
 
 	static final int MIN_ROZPOCET = 260;
-	/** Ani ve vysokém okně popup nepřeroste přes půl obrazovky; další řádky (třeba po rozbalení země) jsou v posuvníku. */
-	static final int MAX_ROZPOCET = 520;
 	/** Rezerva na ohraničení popupu. */
 	private static final int OKRAJ_POPUPU = 12;
 
 	/**
-	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí rovným dílem mezi sekce, které se nevejdou,
+	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí podle obsahu mezi sekce, které se nevejdou,
 	 * každá nejméně minimum. Součet může minimy překročit rozpočet.
 	 */
 	static int[] rozdelVysky(final int[] pozadovano, final int rozpocet, final int minimum) {
@@ -1474,15 +1470,15 @@ public class JMapyPopup extends JPanel {
 				}
 			}
 		}
-		int volnych = 0;
+		long obsah = 0;
 		for (int i = 0; i < v.length; i++) {
 			if (!pevna[i] && pozadovano[i] > 0) {
-				volnych++;
+				obsah += pozadovano[i];
 			}
 		}
 		for (int i = 0; i < v.length; i++) {
 			if (!pevna[i] && pozadovano[i] > 0) {
-				v[i] = Math.min(pozadovano[i], Math.max(minimum, zbyva / volnych));
+				v[i] = (int) Math.min(pozadovano[i], Math.max(minimum, zbyva * pozadovano[i] / obsah));
 			}
 		}
 		return v;

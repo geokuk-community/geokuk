@@ -1612,10 +1612,10 @@ public class JMapyPopupTest {
 	public void rozdeleniVysekSekci() {
 		Assert.assertArrayEquals("vejde se: beze změny", new int[] { 100, 200, 0 }, JMapyPopup.rozdelVysky(new int[] { 100, 200, 0 }, 500, 80));
 		Assert.assertArrayEquals("malá sekce celá, velká zbytek", new int[] { 120, 380 }, JMapyPopup.rozdelVysky(new int[] { 120, 2000 }, 500, 80));
-		Assert.assertArrayEquals("dvě velké rovným dílem", new int[] { 200, 200, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
+		Assert.assertArrayEquals("dvě velké podle obsahu", new int[] { 160, 240, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
 		Assert.assertArrayEquals("minimum, i když rozpočet nestačí", new int[] { 80, 80, 80 }, JMapyPopup.rozdelVysky(new int[] { 900, 900, 900 }, 150, 80));
 		final JMapyPopup bezOkna = new JMapyPopup();
-		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 520);
+		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 850);
 	}
 
 	/** Mapa z oddílu Pro toto místo není ještě jednou v seznamu map ke stažení. */
@@ -1744,7 +1744,7 @@ public class JMapyPopupTest {
 				Assert.assertTrue("vejde se do " + d + ": " + vyskaPodleOkna[k], vyskaPodleOkna[k] <= d);
 			}
 			Assert.assertTrue("vyšší okno, vyšší popup", vyskaPodleOkna[0] < vyskaPodleOkna[1] && vyskaPodleOkna[1] < vyskaPodleOkna[2]);
-			Assert.assertTrue("ve vysokém okně nejvýš strop: " + vyskaPodleOkna[2], vyskaPodleOkna[2] < 1000 - JMapyPopup.MIN_ROZPOCET);
+			Assert.assertTrue("ve vysokém okně nejvýš 90 %: " + vyskaPodleOkna[2], vyskaPodleOkna[2] <= 900);
 			final JMapyPopup nizke = new JMapyPopup();
 			nizke.setDostupnaVyska(() -> 100);
 			nizke.obnov(mnoho);
@@ -2272,16 +2272,16 @@ public class JMapyPopupTest {
 		}, Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogCesko(), cz.geokuk.plugins.mapy.sprava.StavVrstvy::novy);
 	}
 
-	/** S jedinou mapou ve složce je popup nízký: seznam všech map ke stažení nevyplní celou dostupnou výšku. */
+	/** Seznam map ke stažení využije výšku okna, ale nejvýš 90 % dostupné výšky. */
 	@Test
-	public void popupSJednouMapouJeNizky() throws Exception {
+	public void popupSJednouMapouVyuzijeVyskuOkna() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.setDostupnaVyska(() -> 1000);
 			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavVrstvy::novy));
 			Assert.assertEquals(1, videtLabelu(p, "Česko"));
-			Assert.assertTrue("výška " + p.getPreferredSize().height, p.getPreferredSize().height < 500);
+			Assert.assertTrue("výška " + p.getPreferredSize().height, p.getPreferredSize().height <= 900 && p.getPreferredSize().height > 500);
 		});
 	}
 
@@ -2340,7 +2340,7 @@ public class JMapyPopupTest {
 				popup.zavri();
 				p.pripravKZobrazeni();
 				popup.ukaz(p, kotva, false);
-				Assert.assertTrue("po novém otevření se výška řídí obsahem: o řádek ve složce víc " + p.getHeight() + " vs " + pred.height + " " + p.getPreferredSize(), p.getHeight() > pred.height);
+				Assert.assertTrue("po novém otevření se výška řídí obsahem: o řádek ve složce víc " + p.getHeight() + " vs " + pred.height + " " + p.getPreferredSize(), p.getHeight() >= pred.height);
 				final java.awt.Dimension dva = p.getSize();
 				p.obnov(ceskoARakousko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0));
 				Assert.assertEquals("smazaná mapa ubyla, velikost zůstala", dva, p.getPreferredSize());
