@@ -395,7 +395,7 @@ public class Cesta implements Iterable<Bousek0> {
 	 * @return
 	 */
 	public SearchResult locateNejblizsiDoKvadratuVzdalenosi(final Mou mou, final long kvadratMaximalniVzdalenosti, final boolean aDatPrednostBoduPredUsekem) {
-		if (!jeObalkaDoVzdalenosti(mou, kvadratMaximalniVzdalenosti)) {
+		if (mou == null || !jeObalkaDoVzdalenosti(mou, kvadratMaximalniVzdalenosti)) { // myš mimo mapu
 			return new SearchResult();
 		}
 		long minKvadrat = Long.MAX_VALUE;
