@@ -1261,9 +1261,10 @@ public class JMapyPopup extends JPanel {
 			final JPanel obal = new JPanel(new BorderLayout());
 			obal.setOpaque(false);
 			obal.add(ostatni, BorderLayout.NORTH);
-			// Velikost podle seznamu bez hledání (regiony sbalené), aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
-			filtruj("");
+			// Velikost podle seznamu se všemi regiony rozbalenými, aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
+			hledatelne.forEach(r -> r.bunky.forEach(c -> c.setVisible(true)));
 			final Dimension vse = obal.getPreferredSize();
+			filtruj("");
 			vyskaDalsi = vse.height;
 			seznam = new JScrollPane(obal, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 				private static final long serialVersionUID = 1L;
