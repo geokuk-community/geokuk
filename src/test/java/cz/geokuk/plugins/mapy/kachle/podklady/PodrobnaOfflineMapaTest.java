@@ -69,4 +69,56 @@ public class PodrobnaOfflineMapaTest {
 		}
 		Assert.assertTrue(mapy.jePodrobnaMapa(KUKOV, 15));
 	}
+
+	private static final Wgs PRAHA = new Wgs(50.08, 14.42);
+	private static final Wgs VARSAVA = new Wgs(52.23, 21.01);
+	private static final Wgs WROCLAW = new Wgs(51.11, 17.04);
+	/** Obdélník stažené mapy Česka zasahuje hluboko do Polska. */
+	private static final org.mapsforge.core.model.BoundingBox OBDELNIK_CESKA = new org.mapsforge.core.model.BoundingBox(48.5, 12.0, 53.0, 22.0);
+
+	private static cz.geokuk.plugins.mapy.sprava.PolygonPokryti obrysCeska() {
+		return cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny().podleId("europe/czech-republic").get().getPokryti();
+	}
+
+	private static OfflineRenderer.Pokryti cesko(final boolean sObrysem) {
+		return new OfflineRenderer.Pokryti(OBDELNIK_CESKA, 16, sObrysem ? obrysCeska() : null);
+	}
+
+	/** Mapa z katalogu pokrývá jen svůj obrys, ne celý obdélník souboru: střed v bílém čtverci v Polsku rada ukáže. */
+	@Test
+	public void obrysMistoObdelniku() {
+		Assert.assertTrue("střed uvnitř obrysu", cesko(true).obsahuje(PRAHA.lat, PRAHA.lon));
+		Assert.assertFalse("bílý čtverec v Polsku mimo obrys", cesko(true).obsahuje(VARSAVA.lat, VARSAVA.lon));
+		Assert.assertFalse(cesko(true).obsahuje(WROCLAW.lat, WROCLAW.lon));
+	}
+
+	/** Soubor uživatele a mapa bez obrysu mají obdélník souboru. */
+	@Test
+	public void bezObrysuObdelnik() {
+		Assert.assertTrue(cesko(false).obsahuje(VARSAVA.lat, VARSAVA.lon));
+		Assert.assertFalse(cesko(false).obsahuje(40.0, 14.0));
+	}
+
+	/** U hranice obrysu je malá tolerance, aby rada neblikala přímo na čáře. */
+	@Test
+	public void tolerancePriHranici() {
+		final cz.geokuk.plugins.mapy.sprava.PolygonPokryti obrys = obrysCeska();
+		double lat = 51.5;
+		while (!obrys.obsahuje(lat, 14.5)) {
+			lat -= 0.001;
+		}
+		final double mimo = lat + 0.002;
+		Assert.assertFalse("bod je těsně mimo obrys", obrys.obsahuje(mimo, 14.5));
+		Assert.assertTrue("a přesto v toleranci", cesko(true).obsahuje(mimo, 14.5));
+		Assert.assertFalse("daleko za hranicí", cesko(true).obsahuje(lat + 0.5, 14.5));
+	}
+
+	/** Soubor z katalogu: pokrytí podle obrysu z katalogu, ne podle obdélníku souboru. */
+	@Test
+	public void souborZKatalogu() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "czech-republic.map");
+		otevri();
+		Assert.assertTrue("Praha je v obrysu Česka", mapy.jePodrobnaMapa(PRAHA, 15));
+		Assert.assertFalse("Varšava není v obrysu", mapy.jePodrobnaMapa(VARSAVA, 15));
+	}
 }

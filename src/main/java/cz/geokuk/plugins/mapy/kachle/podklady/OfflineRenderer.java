@@ -95,7 +95,7 @@ final class OfflineRenderer {
 
 	private final MultiMapDataStore data;
 	/** Rozsah a nejvyšší zoom dat každé otevřené mapy. */
-	private final List<MapFileInfo> pokryti;
+	private final List<Pokryti> pokryti;
 	private final NacteneTema tema;
 	private final DatabaseRenderer renderer;
 	private final String klic;
@@ -112,7 +112,7 @@ final class OfflineRenderer {
 	private boolean zavrit;
 	private boolean zavreny;
 
-	private OfflineRenderer(final MultiMapDataStore data, final List<MapFileInfo> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce,
+	private OfflineRenderer(final MultiMapDataStore data, final List<Pokryti> pokryti, final NacteneTema tema, final String klic, final boolean prekryv, final HillsRenderConfig kopce,
 			final List<? extends MapFile> zakladni, final int pocetVrstev) {
 		this.data = data;
 		this.pokryti = pokryti;
@@ -167,7 +167,8 @@ final class OfflineRenderer {
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final StringBuilder otisk = new StringBuilder();
-		final List<MapFileInfo> pokryti = new ArrayList<>();
+		final List<Pokryti> pokryti = new ArrayList<>();
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
 		final List<SouborMapy> zakladni = new ArrayList<>();
 		int vrstev = 0;
 		OfflineMapaChyba prvniChyba = null;
@@ -186,7 +187,8 @@ final class OfflineRenderer {
 				}
 				data.addMapDataStore(mapFile, false, false);
 				zakladni.add(mapFile);
-				pokryti.add(mapFile.getMapFileInfo());
+				final MapFileInfo info = mapFile.getMapFileInfo();
+				pokryti.add(new Pokryti(info.boundingBox, info.zoomLevelMax, katalog.podleSouboru(f.getName()).map(m -> m.getPokryti()).orElse(null)));
 				otisk.append(f.getAbsolutePath()).append(':').append(f.length()).append(':').append(f.lastModified()).append(':').append(mapFile.getMapFileInfo().mapDate).append('\n');
 			}
 			if (otisk.length() == 0) {
@@ -373,12 +375,36 @@ final class OfflineRenderer {
 
 	/** Bod pokrývá mapa s daty pro tento zoom; mapsforge nad svým maximem jen zvětšuje, proto stačí maximum od podrobného zoomu. */
 	boolean jePodrobnaMapa(final double lat, final double lon, final int zoom) {
-		for (final MapFileInfo info : pokryti) {
-			if (info.zoomLevelMax >= Math.min(zoom, PODROBNY_ZOOM) && info.boundingBox.contains(lat, lon)) {
+		for (final Pokryti p : pokryti) {
+			if (p.zoomMax >= Math.min(zoom, PODROBNY_ZOOM) && p.obsahuje(lat, lon)) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	/** Území jedné mapy: obrys z katalogu, u souboru uživatele a mapy bez obrysu obdélník souboru. */
+	static final class Pokryti {
+		/** Tolerance u hranice obrysu ve stupních (asi 1 km), aby rada neblikala na čáře. */
+		static final double TOLERANCE = 0.01;
+
+		private final BoundingBox obdelnik;
+		final int zoomMax;
+		private final cz.geokuk.plugins.mapy.sprava.PolygonPokryti obrys;
+
+		Pokryti(final BoundingBox obdelnik, final int zoomMax, final cz.geokuk.plugins.mapy.sprava.PolygonPokryti obrys) {
+			this.obdelnik = obdelnik;
+			this.zoomMax = zoomMax;
+			this.obrys = obrys;
+		}
+
+		boolean obsahuje(final double lat, final double lon) {
+			if (obrys == null) {
+				return obdelnik.contains(lat, lon);
+			}
+			return obrys.obsahuje(lat, lon) || obrys.obsahuje(lat + TOLERANCE, lon) || obrys.obsahuje(lat - TOLERANCE, lon) || obrys.obsahuje(lat, lon + TOLERANCE)
+					|| obrys.obsahuje(lat, lon - TOLERANCE);
+		}
 	}
 
 	/** Dlaždice zasahuje do některé z map. */
