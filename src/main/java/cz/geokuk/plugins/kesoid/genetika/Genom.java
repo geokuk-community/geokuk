@@ -214,12 +214,12 @@ public class Genom {
 	/**
 	 * @return Věechny alely genomu.
 	 */
-	public Collection<Alela> getAlely() {
-		return Collections.unmodifiableCollection(alely.values());
+	public synchronized Collection<Alela> getAlely() {
+		return Collections.unmodifiableCollection(new ArrayList<>(alely.values()));
 	}
 
-	public Collection<Druh> getDruhy() {
-		return Collections.unmodifiableCollection(druhy.values());
+	public synchronized Collection<Druh> getDruhy() {
+		return Collections.unmodifiableCollection(new ArrayList<>(druhy.values()));
 	}
 
 	/**
@@ -227,8 +227,8 @@ public class Genom {
 	 *
 	 * @return
 	 */
-	public List<Gen> getGeny() {
-		return Collections.unmodifiableList(genyList);
+	public synchronized List<Gen> getGeny() {
+		return Collections.unmodifiableList(new ArrayList<>(genyList));
 	}
 
 	/**
