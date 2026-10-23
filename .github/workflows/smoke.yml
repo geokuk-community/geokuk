@@ -42,6 +42,8 @@ jobs:
       - name: Opakované testy do souhrnu
         if: always() && runner.os == 'Windows'
         shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
           python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import glob, xml.etree.ElementTree as ET
