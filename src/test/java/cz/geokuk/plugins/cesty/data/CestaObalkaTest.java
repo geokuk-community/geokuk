@@ -107,4 +107,16 @@ public class CestaObalkaTest {
 		final Mou blizko = new Mou(start.xx - 9_000, start.yy);
 		Assert.assertNotNull(doc.locateNejblizsiDoKvadratuVzdalenosi(blizko, KVADRAT, null, true));
 	}
+
+	/** Když myš opustí mapu, hledá se bez polohy; nic se nenajde a nic nespadne. */
+	@Test
+	public void bezPolohyMysiNicNenajde() {
+		final Updator updator = new Updator();
+		final Doc doc = new Doc();
+		final Cesta cesta = Cesta.create();
+		updator.xadd(doc, cesta);
+		updator.pridejNaKonec(cesta, new Wgs(50.0, 14.0).toMou());
+		updator.pridejNaKonec(cesta, new Wgs(50.001, 14.0).toMou());
+		Assert.assertNull(doc.locateNejblizsiDoKvadratuVzdalenosi(null, KVADRAT, null, true));
+	}
 }
