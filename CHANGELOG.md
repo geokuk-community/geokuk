@@ -140,8 +140,8 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
-- Mapa je plynulejší při pohybu myši, při tažení bodu cesty, s popisky keší
-  a se stínovaným reliéfem.
+- Mapa je plynulejší při pohybu myši, při tažení bodu cesty, se zvětšenými
+  ikonami keší, s popisky keší a se stínovaným reliéfem.
 - Kruhy obsazenosti se při velkém počtu keší ve výřezu nekreslí, mapa pak
   nezpomaluje.
 - Soubor GPX s kešemi, které mají místo čísla vlastníka GUID (například Lab
@@ -156,8 +156,9 @@
 - Přepsaný soubor s kešemi (GPX, zip, .geokuk) ve složce dat se načte znovu,
   i když v ní nepřibyl ani neubyl žádný soubor.
 - Domácí souřadnice z GeoGetu (geohome.ini) a seznamy výletů se načtou
-  i ze souboru v UTF-16. Export GeoKuku (.geokuk) a zip s kešemi ve starším
-  kódování Windows se načtou se správnou diakritikou.
+  i ze souboru v UTF-16. Export GeoKuku (.geokuk) ve starším kódování Windows
+  se načte se správnou diakritikou.
+- Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
 - Nesmyslné číslo ve vlastní sadě ikon (jméno nebo nastavení ikony) už
