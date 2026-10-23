@@ -50,7 +50,7 @@ public final class JStahnoutVse extends JDialog {
 	 *            klíče řádků země (celek a regiony)
 	 */
 	public JStahnoutVse(final Frame rodic, final PruvodceKontext kontext, final String nazevZeme, final String celekKlic, final List<String> klice) {
-		this(rodic, kontext, "Stáhnout vše – " + nazevZeme, nazevZeme, (casti, matice) -> PlanPruvodce.sestavVse(celekKlic, klice, casti, matice), klice);
+		this(rodic, kontext, "Vybrat části – " + nazevZeme, nazevZeme, (casti, matice) -> PlanPruvodce.sestavVse(celekKlic, klice, casti, matice), klice);
 	}
 
 	/** Souhrn k jedné zemi, nebo „Dostáhnout vrstvy“ ke všem staženým mapám (bez části Offline mapa). */

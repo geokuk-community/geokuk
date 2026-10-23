@@ -165,6 +165,16 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public void stahniMapuAVrstvy(final String celekKlic, final List<String> klice, final cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim rezim) {
+				if (spravaMap == null) {
+					return;
+				}
+				final cz.geokuk.plugins.mapy.pruvodce.ProgramPruvodceKontext kontext = new cz.geokuk.plugins.mapy.pruvodce.ProgramPruvodceKontext(spravaMap, null, kachleModel);
+				final cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce plan = cz.geokuk.plugins.mapy.pruvodce.StahnoutMapuAVrstvy.plan(kontext, celekKlic, klice, rezim);
+				cz.geokuk.plugins.mapy.pruvodce.StahnoutMapuAVrstvy.spust(kontext, plan, cz.geokuk.plugins.mapy.pruvodce.StahnoutMapuAVrstvy.dialog(JBlokMap.this));
+			}
+
+			@Override
 			public java.util.List<String> souhrnDavky() {
 				return cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.souhrn();
 			}
