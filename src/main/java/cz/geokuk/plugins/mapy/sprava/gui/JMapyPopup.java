@@ -57,7 +57,6 @@ public class JMapyPopup extends JPanel {
 	static final String SMAZAT_CELEK = "Smazat celou zemi";
 	static final String POKRACOVAT = TextyMap.DOKONCIT_STAZENI;
 	static final String AKTUALIZOVAT = "Aktualizovat";
-	static final String STAHNOUT_ZNOVU = TextyMap.ZKUSIT_ZNOVU;
 	static final String ZKUSIT_ZNOVU = TextyMap.ZKUSIT_ZNOVU;
 	static final String ZRUSIT = "Zrušit";
 	static final String ZKONTROLOVAT = "Zkontrolovat aktualizace";
@@ -2113,7 +2112,7 @@ public class JMapyPopup extends JPanel {
 			b = odkaz(AKTUALIZOVAT, e -> stahni(r));
 			break;
 		case CHYBA:
-			b = odkaz(r.isVeSlozce() ? STAHNOUT_ZNOVU : ZKUSIT_ZNOVU, e -> stahni(r));
+			b = odkaz(ZKUSIT_ZNOVU, e -> stahni(r));
 			break;
 		case NEMAME:
 		default:
