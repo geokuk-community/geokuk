@@ -85,4 +85,13 @@ public class StahnoutMapuAVrstvyTest {
 		assertTrue(zeptal[0]);
 		assertEquals(0, spusteno[0]);
 	}
+
+	@Test
+	public void dotazNerikaNulaMap() {
+		final List<MatriceMap.Radek> m = matice();
+		final PlanPruvodce jenVrstvy = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(MatriceMap.Cast.TRASY), m);
+		assertTrue(StahnoutMapuAVrstvy.textDotazu(jenVrstvy), StahnoutMapuAVrstvy.textDotazu(jenVrstvy).startsWith("Opravdu stáhnout vrstvy, "));
+		final PlanPruvodce mapa = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(MatriceMap.Cast.MAPA), m);
+		assertTrue(StahnoutMapuAVrstvy.textDotazu(mapa), StahnoutMapuAVrstvy.textDotazu(mapa).startsWith("Opravdu stáhnout 1 mapu, "));
+	}
 }

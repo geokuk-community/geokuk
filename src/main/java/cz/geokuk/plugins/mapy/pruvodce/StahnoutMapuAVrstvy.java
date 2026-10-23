@@ -31,12 +31,15 @@ public final class StahnoutMapuAVrstvy {
 		return true;
 	}
 
-	/** Dialog Opravdu stáhnout N map, X GB? */
+	/** Text dotazu před velkým stahováním: „Opravdu stáhnout 6 map, 12 GB?“, u plánu jen z vrstev „Opravdu stáhnout vrstvy, 12 GB?“. */
+	static String textDotazu(final PlanPruvodce plan) {
+		final long map = plan.getPolozky().stream().filter(p -> p.getCast() == Cast.MAPA).count();
+		final String co = map == 0 ? "vrstvy" : map + " " + (map == 1 ? "mapu" : map < 5 ? "mapy" : "map");
+		return "Opravdu stáhnout " + co + ", " + JPruvodceMap.velikost(plan.getCelkovaVelikost()) + "?";
+	}
+
+	/** Dialog s dotazem podle {@link #textDotazu}. */
 	public static Predicate<PlanPruvodce> dialog(final Component rodic) {
-		return plan -> {
-			final long map = plan.getPolozky().stream().filter(p -> p.getCast() == Cast.MAPA).count();
-			return JOptionPane.showConfirmDialog(rodic, "Opravdu stáhnout " + map + " " + (map == 1 ? "mapu" : map < 5 ? "mapy" : "map") + ", "
-					+ JPruvodceMap.velikost(plan.getCelkovaVelikost()) + "?", "Offline mapy", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
-		};
+		return plan -> JOptionPane.showConfirmDialog(rodic, textDotazu(plan), "Offline mapy", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 	}
 }
