@@ -118,8 +118,14 @@ final class OblastniKlic {
 		}
 		final String d = m.group(1).toUpperCase(Locale.ROOT);
 		final int e = d.indexOf('E') >= 0 ? d.indexOf('E') : d.indexOf('W');
-		final int sirka = (d.charAt(0) == 'S' ? -1 : 1) * Integer.parseInt(d.substring(1, e));
-		final int delka = (d.charAt(e) == 'W' ? -1 : 1) * Integer.parseInt(d.substring(e + 1));
+		final int sirka;
+		final int delka;
+		try {
+			sirka = (d.charAt(0) == 'S' ? -1 : 1) * Integer.parseInt(d.substring(1, e));
+			delka = (d.charAt(e) == 'W' ? -1 : 1) * Integer.parseInt(d.substring(e + 1));
+		} catch (final NumberFormatException ex) {
+			return null;
+		}
 		if (sirka < -90 || sirka > 89 || delka < -180 || delka > 179) {
 			return null;
 		}
