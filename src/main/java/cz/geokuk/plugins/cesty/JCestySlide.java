@@ -368,7 +368,7 @@ public class JCestySlide extends JSingleSlide0 {
 		if (puvodniBousek != blizkyBousek) {
 			oblast = sjednot(oblast, oblastCesty(puvodniBousek));
 			oblast = sjednot(oblast, oblastCesty(blizkyBousek));
-		} else if (blizkyBousek instanceof Usek && !moucur.equals(puvodniMoucur)) {
+		} else if (blizkyBousek instanceof Usek && !Objects.equals(moucur, puvodniMoucur)) {
 			oblast = sjednot(oblast, oblastCesty(blizkyBousek));
 		}
 		final Rectangle pridavaci = oblastPridavaciUsecky();

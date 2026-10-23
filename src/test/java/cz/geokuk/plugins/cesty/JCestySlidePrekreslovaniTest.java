@@ -221,4 +221,14 @@ public class JCestySlidePrekreslovaniTest {
 		slide.onEvent(new CestyChangedEvent(doc, tazena));
 		Assert.assertTrue("mezipoloha " + mezipoloha + ": " + zaznam.oblasti, sjednoceni(zaznam.oblasti).contains(mezipoloha));
 	}
+
+	/** Myš opustí mapu (poloha null) i při tažení, kdy se nejbližší úsek nepřepočítává: nesmí to spadnout. */
+	@Test
+	public void mysMimoMapuPriTazeniNespadne() throws Exception {
+		final Doc doc = vytvorDoc();
+		slide.onEvent(new CestyChangedEvent(doc, null));
+		mys(new Wgs(50.005, 14.005));
+		nastav(slide, "dragujeme", Boolean.TRUE);
+		slide.onEvent(new ZmenaSouradnicMysiEvent(null, null, null));
+	}
 }
