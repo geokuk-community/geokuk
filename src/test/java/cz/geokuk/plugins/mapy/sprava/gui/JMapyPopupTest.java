@@ -1670,6 +1670,58 @@ public class JMapyPopupTest {
 		});
 	}
 
+	/** Stáhnout mapu a vrstvy u celé země s regiony předá klíč celku a řádky země včetně regionů. */
+	@Test
+	public void mapaAVrstvyCeleZemeIRegiony() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final List<RadekMapy> radky = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/germany") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null, cz.geokuk.plugins.mapy.sprava.VrstvyProGui.katalogNemecko(), v -> cz.geokuk.plugins.mapy.sprava.StavVrstvy.novy(v));
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.prepniSlozku(true);
+			p.obnov(radky);
+			final JButton obe = komponentyRadku(p, "Německo").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout mapu a vrstvy (")).map(k -> (JButton) k)
+					.findFirst().get();
+			obe.doClick();
+			final String v = z.volani.stream().filter(x -> x.startsWith("stahniMapuAVrstvy ")).findFirst().get();
+			Assert.assertTrue(v, v.startsWith("stahniMapuAVrstvy europe/germany [europe/germany, ") && v.contains("europe/germany/bayern") && v.endsWith(" STAHNOUT"));
+		});
+	}
+
+	/** Jen novější verze: pozice 2 je Aktualizovat mapu a vrstvy a předá režim s aktualizací. */
+	@Test
+	public void mapaAVrstvyAktualizujeVRezimuSAktualizaci() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v,
+					v.getId().startsWith("tourist") ? cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.JINA_VERZE : cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME,
+					cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getVelikost(), null)));
+			final JButton obe = komponentyRadku(p, "Česko").stream().filter(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Aktualizovat mapu a vrstvy")).map(k -> (JButton) k)
+					.findFirst().get();
+			obe.doClick();
+			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahniMapuAVrstvy null [europe/czech-republic] STAHNOUT_A_AKTUALIZOVAT"));
+		});
+	}
+
+	/** Zrušit u stahované vrstvy nestažené mapy zruší stahování. */
+	@Test
+	public void zrusitStahovaniVrstvy() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
+					v.getId().startsWith("tourist") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.STAHUJE : cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("tourist") ? 7_500_000 : 0, null)));
+			tlacitkaSTextem(p, JMapyPopup.ZRUSIT).get(0).doClick();
+			Assert.assertEquals(Collections.singletonList("zrus"), z.volani);
+		});
+	}
+
 	/** Popup se vejde do dostupné výšky nad stavovým řádkem a ve vyšším okně je vyšší, nejvýš po strop; v nízkém má seznamy aspoň minimální rozpočet. */
 	@Test
 	public void vyskaPopupuPodleDostupneVysky() throws Exception {
