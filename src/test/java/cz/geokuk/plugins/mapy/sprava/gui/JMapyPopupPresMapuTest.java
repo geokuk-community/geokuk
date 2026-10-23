@@ -19,6 +19,7 @@ public class JMapyPopupPresMapuTest {
 
 	private static final class Ovladani implements OvladaniMap {
 		boolean trasy;
+		boolean trasyDostupne = true;
 		boolean stinovani = true;
 		final List<String> volani = new ArrayList<>();
 
@@ -27,7 +28,7 @@ public class JMapyPopupPresMapuTest {
 
 		@Override
 		public boolean isPrekryvTrasDostupny() {
-			return true;
+			return trasyDostupne;
 		}
 
 		@Override
@@ -83,6 +84,35 @@ public class JMapyPopupPresMapuTest {
 			stinovani.doClick();
 			Assert.assertEquals(java.util.Arrays.asList("trasy true", "stinovani false"), o.volani);
 			Assert.assertTrue(najdi(p, JCheckBox.class).stream().noneMatch(c -> "Stínovat terén".equals(c.getText())));
+		});
+	}
+
+	@Test
+	public void zapnuteTrasySeUkazouAVypnou() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Ovladani o = new Ovladani();
+			o.trasy = true;
+			p.setOvladani(o);
+			final JCheckBox trasy = najdi(p, JCheckBox.class).stream().filter(c -> "Turistické a cyklotrasy".equals(c.getText())).findFirst().get();
+			Assert.assertTrue(trasy.isSelected());
+			trasy.doClick();
+			Assert.assertEquals(java.util.Collections.singletonList("trasy false"), o.volani);
+		});
+	}
+
+	@Test
+	public void presMapuIJenSeStinovanim() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Ovladani o = new Ovladani();
+			o.trasyDostupne = false;
+			p.setOvladani(o);
+			p.setStinovaniDostupne(true);
+			Assert.assertTrue(najdi(p, JLabel.class).stream().anyMatch(l -> "Přes mapu:".equals(l.getText())));
+			Assert.assertTrue(najdi(p, JCheckBox.class).stream().noneMatch(c -> "Turistické a cyklotrasy".equals(c.getText())));
 		});
 	}
 }
