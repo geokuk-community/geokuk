@@ -23,7 +23,7 @@ class SlouceneDem implements DemFolder {
 
 	static final short PRAZDNA = Short.MIN_VALUE;
 
-	private static final Pattern DLAZDICE = Pattern.compile("(?:.*[/\\\\])?([ns]\\d{1,2}[ew]\\d{1,3})\\.hgt", Pattern.CASE_INSENSITIVE);
+	static final Pattern DLAZDICE = Pattern.compile("(?:.*[/\\\\])?([ns]\\d{1,2}[ew]\\d{1,3})\\.hgt", Pattern.CASE_INSENSITIVE);
 
 	private final DemFolder koren;
 

@@ -11,6 +11,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
+import java.util.regex.Matcher;
 
 import javax.swing.SwingUtilities;
 
@@ -276,12 +278,27 @@ class KachleDBManager implements KachleManager {
 	/** Dlaždice se mažou po dávkách, aby mezitím šlo zapisovat nové. */
 	private static final int DAVKA_MAZANI = 1000;
 
+	/** Rozhoduje o smazání řádku cache. */
+	private interface NaSmazani {
+		boolean smazat(int x, int y, int z, String typ);
+	}
+
 	@Override
 	public int smazOfflineKrome(final Set<String> ponechat) {
 		if (ponechat.isEmpty()) {
 			return 0;
 		}
 		final char predpona = ponechat.iterator().next().charAt(0);
+		return smaz((x, y, z, typ) -> smazatTyp(typ, predpona, ponechat));
+	}
+
+	@Override
+	public int smazOfflineNesedici(final String globalni, final Function<KaLoc, String> ocekavany) {
+		final String predpona = globalni + '.';
+		return smaz((x, y, z, typ) -> typ != null && typ.startsWith(predpona) && UklidOfflineCache.TYP.matcher(typ).matches() && !typ.equals(ocekavany.apply(KaLoc.ofXyz(x, y, z))));
+	}
+
+	private int smaz(final NaSmazani naSmazani) {
 		final int odlozeniPred = odlozeni;
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
@@ -298,7 +315,7 @@ class KachleDBManager implements KachleManager {
 				final ISqlJetCursor cursor = database.getTable(TABLE_NAME).open();
 				try {
 					while (!cursor.eof()) {
-						if (smazatTyp(cursor.getString("s"), predpona, ponechat)) {
+						if (naSmazani.smazat((int) cursor.getInteger("x"), (int) cursor.getInteger("y"), (int) cursor.getInteger("z"), cursor.getString("s"))) {
 							smazat.add(cursor.getRowId());
 						}
 						cursor.next();
@@ -330,7 +347,7 @@ class KachleDBManager implements KachleManager {
 						try {
 							for (final long rowId : smazat.subList(od, Math.min(od + DAVKA_MAZANI, smazat.size()))) {
 								// Mezi průchodem a mazáním mohl řádek zmizet a jeho rowid dostat jiná dlaždice.
-								if (cursor.goTo(rowId) && smazatTyp(cursor.getString("s"), predpona, ponechat)) {
+								if (cursor.goTo(rowId) && naSmazani.smazat((int) cursor.getInteger("x"), (int) cursor.getInteger("y"), (int) cursor.getInteger("z"), cursor.getString("s"))) {
 									cursor.delete();
 									vDavce++;
 								}
@@ -356,7 +373,37 @@ class KachleDBManager implements KachleManager {
 	}
 
 	private static boolean smazatTyp(final String typ, final char predpona, final Set<String> ponechat) {
-		return typ != null && UklidOfflineCache.KLIC.matcher(typ).matches() && typ.charAt(0) == predpona && !ponechat.contains(typ);
+		if (typ == null || typ.charAt(0) != predpona) {
+			return false;
+		}
+		final Matcher m = UklidOfflineCache.TYP.matcher(typ);
+		if (m.matches()) {
+			return !ponechat.contains(m.group(1));
+		}
+		return UklidOfflineCache.KLIC.matcher(typ).matches() && !ponechat.contains(typ);
+	}
+
+	/** Dlaždice jiné verze téhož místa a téže globální části (po změně souboru map, vrstev nebo DEM) se při zápisu nové mažou, aby cache nerostla. */
+	private void smazJineVerze(final SqlJetDb database, final int x, final int y, final int z, final String typ) throws SqlJetException {
+		final Matcher m = UklidOfflineCache.TYP.matcher(typ);
+		if (!m.matches()) {
+			return;
+		}
+		final String predpona = m.group(1) + '.';
+		final ISqlJetTable table = database.getTable(TABLE_NAME);
+		final ISqlJetCursor cursor = table.lookup(table.getPrimaryKeyIndexName(), x, y, z);
+		try {
+			while (!cursor.eof()) {
+				final String jiny = cursor.getString("s");
+				if (jiny != null && jiny.startsWith(predpona) && !jiny.equals(typ)) {
+					cursor.delete();
+				} else {
+					cursor.next();
+				}
+			}
+		} finally {
+			cursor.close();
+		}
 	}
 
 	/** Jeden pokus o zápis; vrátí chybu, {@link #BEZ_CACHE}, nebo null, když se zapsalo. */
@@ -408,6 +455,7 @@ class KachleDBManager implements KachleManager {
 				final int kx = kaloc.getFromSzUnsignedX();
 				final int ky = kaloc.getFromSzUnsignedY();
 				log.debug("Adding {} {} {} {}", kx, ky, kaloc.getMoumer(), imageToSave.typ);
+				smazJineVerze(database, kx, ky, kaloc.getMoumer(), imageToSave.typ);
 				database.getTable(TABLE_NAME).insertOr(SqlJetConflictAction.REPLACE, kx, ky, kaloc.getMoumer(), imageToSave.typ, dataToSave);
 			}
 			database.commit();

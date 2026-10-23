@@ -26,7 +26,7 @@ public class OfflineMapy {
 	/** Průhledný překryv přes jiný podklad, viz {@link OfflineRenderer#otevri(List, OfflineRenderer.NacteneTema, boolean)}. */
 	private final boolean prekryv;
 	/** Zavolá se po každém otevření map s klíčem dlaždic a souborem symbolů (null = neukládají se). */
-	private volatile BiConsumer<String, File> priOtevreni = (klic, symboly) -> {};
+	private volatile BiConsumer<OblastniKlic, File> priOtevreni = (klic, symboly) -> {};
 
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
 	long kontrolaSlozkyNs = KONTROLA_SLOZKY_NS;
@@ -144,7 +144,7 @@ public class OfflineMapy {
 		return davka.getAsBoolean();
 	}
 
-	public void setPriOtevreni(final BiConsumer<String, File> priOtevreni) {
+	public void setPriOtevreni(final BiConsumer<OblastniKlic, File> priOtevreni) {
 		this.priOtevreni = priOtevreni;
 	}
 
@@ -358,7 +358,7 @@ public class OfflineMapy {
 				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), demPouzite().isEmpty() ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv);
 				chyba = null;
 				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-				priOtevreni.accept(renderer.getKlic(), renderer.getSouborSymbolu());
+				priOtevreni.accept(renderer.getOblastniKlic(), renderer.getSouborSymbolu());
 			} catch (final IOException e) {
 				chyba = e;
 			} catch (final RuntimeException | OutOfMemoryError e) {
