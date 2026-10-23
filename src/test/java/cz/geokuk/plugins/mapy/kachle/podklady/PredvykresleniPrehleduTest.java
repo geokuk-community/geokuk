@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 
 public class PredvykresleniPrehleduTest {
@@ -26,6 +27,7 @@ public class PredvykresleniPrehleduTest {
 	private final List<KaLoc> vykreslene = new ArrayList<>();
 	private int sestaveniFronty;
 	private Runnable priVykresleni = () -> {};
+	private boolean vMapach = true;
 
 	private final PredvykresleniPrehledu.Mapy mapy = new PredvykresleniPrehledu.Mapy() {
 		@Override
@@ -45,10 +47,14 @@ public class PredvykresleniPrehleduTest {
 		}
 
 		@Override
-		public void vykresli(final KaLoc loc, final String k) {
+		public boolean vykresli(final KaLoc loc, final String k) {
+			if (!vMapach) {
+				return false;
+			}
 			vykreslene.add(loc);
 			cache.add(loc);
 			priVykresleni.run();
+			return true;
 		}
 	};
 
@@ -212,5 +218,43 @@ public class PredvykresleniPrehleduTest {
 		} finally {
 			om.zavri();
 		}
+	}
+
+	@Test
+	public void poPrehleduKresliOkoliPoziceOdZ12() {
+		final Wgs praha = new Wgs(50.08, 14.42);
+		p.setPozice(praha);
+		cas += 10 * SEKUNDA;
+		final List<KaLoc> okoli = PredvykresleniPrehledu.okoli(praha, PredvykresleniPrehledu.OKRUH_KM);
+		Assert.assertEquals(pokryti.size() + okoli.size(), p.pracuj());
+		Assert.assertEquals(pokryti, vykreslene.subList(0, pokryti.size()));
+		Assert.assertEquals(okoli, vykreslene.subList(pokryti.size(), vykreslene.size()));
+		Assert.assertEquals(KaLoc.ofXyz(2212, 1387, 12), okoli.get(0));
+		Assert.assertEquals(10, okoli.get(okoli.size() - 1).getMoumer());
+		Assert.assertTrue("okruh 15 km je desítky dlaždic, ne stovky: " + okoli.size(), okoli.size() > 20 && okoli.size() < 100);
+	}
+
+	@Test
+	public void okoliMaStropNoveVykreslenychDlazdic() {
+		cas += 10 * SEKUNDA;
+		for (int i = 0; i < 20; i++) {
+			p.setPozice(new Wgs(45 + i, 5 + i * 3));
+			p.pracuj();
+		}
+		Assert.assertEquals(pokryti.size() + PredvykresleniPrehledu.STROP_OKOLI, vykreslene.size());
+	}
+
+	@Test
+	public void dlazdiceMimoMapyDoStropuNepocita() {
+		cas += 10 * SEKUNDA;
+		p.pracuj();
+		vMapach = false;
+		for (int i = 0; i < 10; i++) {
+			p.setPozice(new Wgs(45 + i, 5 + i * 3));
+			p.pracuj();
+		}
+		vMapach = true;
+		p.setPozice(new Wgs(50.08, 14.42));
+		Assert.assertEquals(PredvykresleniPrehledu.okoli(new Wgs(50.08, 14.42), PredvykresleniPrehledu.OKRUH_KM).size(), p.pracuj());
 	}
 }

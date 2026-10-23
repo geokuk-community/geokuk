@@ -22,6 +22,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.*;
 
+import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -648,6 +649,11 @@ public class KachleZiskavac {
 		}, 1, 1, TimeUnit.SECONDS);
 	}
 
+	/** Místo, kolem kterého se v nečinnosti předvykreslí z10–12. */
+	public void setPoziceProPredvykresleni(final Wgs pozice) {
+		predvykresleniPrehledu.setPozice(pozice);
+	}
+
 	/** Mapy se nestahují, nic jiného se nekreslí ani nečte z cache a dlaždice se ukládají na disk. */
 	boolean jeVolnoProPredvykresleni() {
 		final KachleModel km = kachleModel;
@@ -685,17 +691,18 @@ public class KachleZiskavac {
 		}
 
 		@Override
-		public void vykresli(final KaLoc loc, final String klic) throws IOException {
+		public boolean vykresli(final KaLoc loc, final String klic) throws IOException {
 			final OfflineRenderer r = offlineMapy.pouzij();
 			try {
 				if (!klic.equals(r.getKlic()) || !r.pokryva(loc)) {
-					return;
+					return false;
 				}
 				final long zacatek = System.nanoTime();
 				final BufferedImage obrazek = r.vyrendruj(loc);
 				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
 				pocitRenderOk.inc();
 				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), klic, obrazek, null));
+				return true;
 			} finally {
 				r.skonci();
 			}

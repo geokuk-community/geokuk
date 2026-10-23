@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.SwingUtilities;
 
+import cz.geokuk.core.coord.VyrezChangedEvent;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.core.program.FConst;
@@ -106,6 +107,12 @@ public class KachleModel extends Model0 {
 		nastavTrasyPodkladu();
 		predpripravOfflineMapu();
 		fajrujPrekryvTras();
+	}
+
+	public void onEvent(final VyrezChangedEvent event) {
+		if (ziskavac != null) {
+			ziskavac.setPoziceProPredvykresleni(event.getMoord().getMoustred().toWgs());
+		}
 	}
 
 	private void predpripravOfflineMapu() {
