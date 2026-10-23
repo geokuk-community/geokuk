@@ -62,4 +62,15 @@ public class UklidOfflineCacheTest {
 		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
 		Assert.assertTrue(a.isFile());
 	}
+
+	/** Soubor symbolů, který nejde smazat, úklid nezastaví: klíče se zapíšou a vrátí. */
+	@Test
+	public void nesmazatelnySouborSymbolu() throws Exception {
+		final File a = symboly("0000000a");
+		final File zamceny = new File(slozka, "symboly-0000000f.bin");
+		Assert.assertTrue(zamceny.mkdir());
+		Files.createFile(new File(zamceny, "obsah").toPath());
+		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.zaznamenej(slozka, "o00000001", a, "00000000"));
+		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
+	}
 }

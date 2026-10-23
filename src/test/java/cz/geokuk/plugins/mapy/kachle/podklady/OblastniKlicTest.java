@@ -185,4 +185,19 @@ public class OblastniKlicTest {
 			OblastniKlic.oblastni = true;
 		}
 	}
+
+	/** Soubor téhož jména se stejným rozsahem, ale jinou délkou nebo datem mapy, je jiný soubor. */
+	@Test
+	public void jinaDelkaNeboDatumMapyJeJinyKlic() throws Exception {
+		final File a = new File(tmp.newFolder("a"), "mapa.map");
+		final File b = new File(tmp.newFolder("b"), "mapa.map");
+		java.nio.file.Files.write(a.toPath(), new byte[10]);
+		java.nio.file.Files.write(b.toPath(), new byte[11]);
+		Assert.assertTrue(b.setLastModified(a.lastModified()));
+		final BoundingBox rozsah = uvnitr();
+		final String zaklad = klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 1000)), 0);
+		Assert.assertEquals(zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 1000)), 0));
+		Assert.assertNotEquals("jiná délka", zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", b, rozsah, 1000)), 0));
+		Assert.assertNotEquals("jiné datum mapy", zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 2000)), 0));
+	}
 }

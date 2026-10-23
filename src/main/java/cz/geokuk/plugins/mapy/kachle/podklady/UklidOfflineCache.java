@@ -7,10 +7,13 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Cache offline mapy drží dlaždice a symboly jen posledních několika globálních klíčů (téma, měřítko, písmo), aby po výměně tématu nerostla. Klíče si pamatuje
  * v souboru ve složce symbolů, nejnovější první, s otiskem sestavy souborů, pro kterou se cache naposledy uklízela.
  */
+@Slf4j
 final class UklidOfflineCache {
 
 	static final int PONECHAT = 3;
@@ -49,7 +52,12 @@ final class UklidOfflineCache {
 		final File[] soubory = slozka.listFiles(f -> SYMBOLY.matcher(f.getName()).matches() && klice.values().stream().noneMatch(v -> v.startsWith(f.getName() + ' ')));
 		if (soubory != null) {
 			for (final File f : soubory) {
-				Files.deleteIfExists(f.toPath());
+				try {
+					Files.deleteIfExists(f.toPath());
+				} catch (final IOException e) {
+					// Zamčený soubor (Windows) nesmí zabránit úklidu dlaždic.
+					log.debug("Soubor symbolů {} nejde smazat: {}", f, e.toString());
+				}
 			}
 		}
 		return klice.keySet();
