@@ -61,6 +61,7 @@ public class Menu extends MenuStrujce {
 				item(mapoakce1, mapPodkladButtonGroup);
 			}
 		}
+		item(akce.offlineMapyAction);
 		menu.add(new JTemaOfflineMapyMenu(kachleModel));
 		item(akce.prekryvTrasAction);
 		item(akce.reliefCuzkAction);
