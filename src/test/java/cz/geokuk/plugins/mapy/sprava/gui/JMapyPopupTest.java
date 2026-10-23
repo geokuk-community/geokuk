@@ -550,7 +550,7 @@ public class JMapyPopupTest {
 			p.obnov(dalsiMapy());
 			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
 			p.setDvojite(dvojite);
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo máte staženou celou i po regionech (Bavorsko, Sasko)")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo: máte staženou celou zemi i regiony (Bavorsko, Sasko)")));
 			Assert.assertTrue("stažené jsou jen dva z regionů, celá země se smazat nenabídne", tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).isEmpty());
 			tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).get(0).doClick();
 			final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> uplne = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozkaUplne, katalog);
@@ -1507,7 +1507,7 @@ public class JMapyPopupTest {
 			Assert.assertEquals("ve složce i jako hlavička regionů ve Všech mapách", 2, videtLabelu(p, "Velká Británie"));
 			Assert.assertEquals("ve Všech mapách jeho regiony", 1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
 			p.setDvojite(dvojite);
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie máte staženou celou i po regionech (Anglie)")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie: máte staženou celou zemi i regiony (Anglie)")));
 		});
 	}
 

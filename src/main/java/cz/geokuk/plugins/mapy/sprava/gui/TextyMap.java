@@ -37,7 +37,7 @@ final class TextyMap {
 
 	/** Upozornění na zemi staženou celou i po regionech; parametry: název země, seznam regionů. */
 	static String zemeDvakrat(final String zeme, final String regiony) {
-		return zeme + " máte staženou celou i po regionech (" + regiony + "). Stačí jedno.";
+		return zeme + ": máte staženou celou zemi i regiony (" + regiony + "). Stačí jedno.";
 	}
 
 	// rada v mapě
