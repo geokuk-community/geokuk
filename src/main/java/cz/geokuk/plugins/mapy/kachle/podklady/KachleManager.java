@@ -39,6 +39,11 @@ public interface KachleManager {
 	 */
 	public boolean exists(Ka ki);
 
+	/** Dlaždice daného typu je v úložišti. */
+	default boolean exists(final Ka ki, final String typ) {
+		return load(ki, typ) != null;
+	}
+
 	/**
 	 * Loads the requested tile from the storage.
 	 *

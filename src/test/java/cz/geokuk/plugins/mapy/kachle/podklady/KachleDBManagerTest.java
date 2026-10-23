@@ -666,4 +666,13 @@ public class KachleDBManagerTest {
 		obsah[(stranka - 1) * velikost] = 7;
 		Files.write(soubor.toPath(), obsah);
 	}
+
+	@Test
+	public void existenceNedekodujeObrazek() throws Exception {
+		Assert.assertFalse(manager.exists(KACHLE, KACHLE.typToString()));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(KACHLE, "není obrázek".getBytes(StandardCharsets.UTF_8)))));
+		Assert.assertTrue(manager.exists(KACHLE, KACHLE.typToString()));
+		Assert.assertTrue(manager.exists(KACHLE));
+		Assert.assertFalse(manager.exists(KACHLE, "o00000001"));
+	}
 }
