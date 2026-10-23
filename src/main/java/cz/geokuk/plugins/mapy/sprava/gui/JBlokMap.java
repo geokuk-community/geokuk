@@ -274,6 +274,21 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public boolean isPrekryvTrasDostupny() {
+				return true;
+			}
+
+			@Override
+			public boolean isPrekryvTras() {
+				return kachleModel.isPrekryvTras();
+			}
+
+			@Override
+			public void setPrekryvTras(final boolean zapnuto) {
+				kachleModel.setPrekryvTras(zapnuto);
+			}
+
+			@Override
 			public void setObrysPokryti(final boolean zapnuto) {
 				kachleModel.setObrysPokryti(zapnuto);
 			}

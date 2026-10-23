@@ -59,4 +59,15 @@ public interface OvladaniMap {
 	}
 
 	default void setStinovani(final boolean zapnuto) {}
+
+	/** Přepínač „Turistické a cyklotrasy“ přes mapu je stejný jako v menu Mapy. */
+	default boolean isPrekryvTrasDostupny() {
+		return false;
+	}
+
+	default boolean isPrekryvTras() {
+		return false;
+	}
+
+	default void setPrekryvTras(final boolean zapnuto) {}
 }
