@@ -123,8 +123,13 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public boolean exists(final Ka ki) {
-		// TODO : No need to load the whole image
-		return load(ki) != null;
+		return exists(ki, ki.typToString());
+	}
+
+	/** Jen najde klíč, obrázek nečte ani nedekóduje. */
+	@Override
+	public boolean exists(final Ka ki, final String typ) {
+		return cti(ki, typ, false) != null;
 	}
 
 	/**
@@ -137,32 +142,7 @@ class KachleDBManager implements KachleManager {
 
 	@Override
 	public Image load(final Ka ki, final String typ) {
-		final int odlozeniPred = odlozeni;
-		final SqlJetDb database = getDatabaseConnection();
-		if (database == null) {
-			return null;
-		}
-		byte[] data = null;
-		boolean poskozena = false;
-		zamek.readLock().lock();
-		try {
-			if (odlozeniPred != odlozeni) {
-				return null; // spojení k odložené cache je zavřené
-			}
-			data = nactiData(database, ki, typ);
-		} catch (final RuntimeException e) {
-			if (!(e.getCause() instanceof SqlJetException) || !jePoskozena((SqlJetException) e.getCause())) {
-				throw e;
-			}
-			poskozena = true;
-		} finally {
-			zamek.readLock().unlock();
-		}
-		if (poskozena) {
-			// Odložit jde až po uvolnění čtecího zámku; dlaždice se zatím stáhne znovu.
-			odlozZaBehu(database.getFile(), odlozeniPred);
-			return null;
-		}
+		final byte[] data = cti(ki, typ, true);
 		if (data == null) {
 			return null;
 		}
@@ -182,8 +162,39 @@ class KachleDBManager implements KachleManager {
 		}
 	}
 
+	/** Bajty obrázku, bez {@code obrazek} jen prázdné pole, když dlaždice existuje; null, když není nebo cache nejde číst. */
+	private byte[] cti(final Ka ki, final String typ, final boolean obrazek) {
+		final int odlozeniPred = odlozeni;
+		final SqlJetDb database = getDatabaseConnection();
+		if (database == null) {
+			return null;
+		}
+		byte[] data = null;
+		boolean poskozena = false;
+		zamek.readLock().lock();
+		try {
+			if (odlozeniPred != odlozeni) {
+				return null; // spojení k odložené cache je zavřené
+			}
+			data = nactiData(database, ki, typ, obrazek);
+		} catch (final RuntimeException e) {
+			if (!(e.getCause() instanceof SqlJetException) || !jePoskozena((SqlJetException) e.getCause())) {
+				throw e;
+			}
+			poskozena = true;
+		} finally {
+			zamek.readLock().unlock();
+		}
+		if (poskozena) {
+			// Odložit jde až po uvolnění čtecího zámku; dlaždice se zatím stáhne znovu.
+			odlozZaBehu(database.getFile(), odlozeniPred);
+			return null;
+		}
+		return data;
+	}
+
 	/** Čtecí transakce blokuje zápis, proto se v ní jen přečtou bajty a obrázek se dekóduje až po ní. */
-	private byte[] nactiData(final SqlJetDb database, final Ka ki, final String typ) {
+	private byte[] nactiData(final SqlJetDb database, final Ka ki, final String typ, final boolean obrazek) {
 		ISqlJetCursor cursor = null;
 		boolean vadne = false;
 
@@ -197,7 +208,7 @@ class KachleDBManager implements KachleManager {
 			if (log.isDebugEnabled()) {
 				log.debug("{} : {} {} {} {} loading from DB", cursor.getRowId(), cursor.getInteger("x"), cursor.getInteger("y"), cursor.getInteger("z"), cursor.getString("s"));
 			}
-			return cursor.getBlobAsArray("image");
+			return obrazek ? cursor.getBlobAsArray("image") : new byte[0];
 		} catch (final SqlJetException e) {
 			if (e.getErrorCode() == SqlJetErrorCode.BUSY) {
 				// Cache zamyká zápis jiného programu; dlaždice se zatím stáhne, spojení zůstává použitelné.
