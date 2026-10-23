@@ -526,13 +526,13 @@ public class JBlokMap extends JLabel {
 		final long veSlozce = radky.stream().filter(RadekMapy::isVeSlozce).count();
 		switch (stav) {
 		case STAHUJE:
-			return (stahovana.stav == RadekMapy.Stav.STAHUJE ? "Stahuje se mapa " : "Stahuje se vrstva mapy ") + stahovana.nazev + ".";
+			return (stahovana.stav == RadekMapy.Stav.STAHUJE ? "Stahuje se mapa " : "Stahují se vrstvy k mapě ") + stahovana.nazev + ".";
 		case CHYBA:
 			return "Některá offline mapa má problém.";
 		case NOVEJSI:
 			return "Pro některou offline mapu jsou novější data.";
 		default:
-			return veSlozce == 0 ? "Offline mapy: zatím žádná" : "Offline mapy: " + veSlozce + " ve složce";
+			return veSlozce == 0 ? TextyMap.ZADNA_MAPA : "Stažené mapy: " + veSlozce;
 		}
 	}
 

@@ -29,7 +29,7 @@ public final class JPruvodceMap extends JDialog {
 	static final String PRESKOCIT = "Přeskočit";
 	static final String ZPET = "◂ Zpět";
 	static final String DAL = "Dál ▸";
-	static final String JEN_PREPNOUT = "Jen přepnout, nic nestahovat";
+	static final String JEN_PREPNOUT = "Přepnout bez stahování";
 	static final String STAHNOUT_A_PREPNOUT = "Stáhnout a přepnout";
 	static final String PREPNOUT = "Přepnout";
 	static final String VICE_ZEMI = "Vybrat víc zemí";
@@ -290,7 +290,7 @@ public final class JPruvodceMap extends JDialog {
 		final JPanel r = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 		r.setBorder(new EmptyBorder(0, 0, 6, 0));
 		final JTextField hledat = new JTextField(dotaz, 16);
-		hledat.setToolTipText("Hledat zemi/region…");
+		hledat.setToolTipText("Hledat zemi nebo region…");
 		hledat.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
 			@Override
 			public void insertUpdate(final javax.swing.event.DocumentEvent e) {
@@ -312,7 +312,7 @@ public final class JPruvodceMap extends JDialog {
 				obnovNabidku();
 			}
 		});
-		r.add(new JLabel("Hledat zemi/region:"));
+		r.add(new JLabel("Hledat zemi nebo region:"));
 		r.add(hledat);
 		final JCheckBox vsechny = new JCheckBox(VSECHNY_ZEME, vsechnyZeme);
 		vsechny.addActionListener(e -> {
@@ -461,7 +461,7 @@ public final class JPruvodceMap extends JDialog {
 	static String nazev(final Cast c) {
 		switch (c) {
 		case TRASY:
-			return "Turistická vrstva";
+			return "Trasy";
 		case VRSTEVNICE:
 			return "Vrstevnice";
 		case STINOVANI:
