@@ -47,6 +47,11 @@ public class KeFile {
 		return fat.lastmodify;
 	}
 
+	/** Velikost souboru, ze skenu, je-li známá. */
+	public long getVelikost() {
+		return fat.velikost >= 0 ? fat.velikost : getFile().length();
+	}
+
 	public KeFile getParent() {
 		final Path relativePath = getRelativePath();
 		if (relativePath.toString().isEmpty()) {

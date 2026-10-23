@@ -10,6 +10,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import cz.geokuk.framework.Atom;
+import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.*;
@@ -33,6 +34,9 @@ public class IkonNacitacLoader {
 	private File image3rdPartyDir;
 
 	private MultiFolder lastScan;
+
+	/** Jeden genom pro všechna načtení ikon: keše načtené s ním zůstanou platné i po změně zvýraznění nebo sady. */
+	private final Genom genom = new Genom();
 
 	public IkonBag nacti(final boolean aPrenacti, final ASada jmenoSady, final Zvyrazneni zvyrazneni) throws IOException {
 		if (aPrenacti) {
@@ -64,7 +68,7 @@ public class IkonNacitacLoader {
 	}
 
 	IkonBag sestav(final MultiFolder mf, final ASada jmenoSady, final Zvyrazneni zvyrazneni) throws IOException {
-		final IkonBag ikonBag = new IkonBag();
+		final IkonBag ikonBag = new IkonBag(genom);
 		final KeyNode<String, LamUrl> mapNode = mf.getNode(MAPUZEL);
 
 		ikonBag.setJmenaSad(mapNode.getKeys());

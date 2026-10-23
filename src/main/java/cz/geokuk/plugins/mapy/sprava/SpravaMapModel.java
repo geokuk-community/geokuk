@@ -95,6 +95,11 @@ public class SpravaMapModel extends Model0 {
 	/** Čas posledního nepovedeného samočinného stažení katalogu, jen na vlákně kontroly; null = žádné. */
 	private Long posledniPokusKatalogu;
 
+	/** Požádá blok Mapy ve stavovém řádku, aby otevřel panel offline map s fokusem. */
+	public void otevriPanel() {
+		odpalovac.accept(new OtevriPanelMapEvent());
+	}
+
 	private static ExecutorService vlakno(final String jmeno) {
 		return Executors.newSingleThreadExecutor(r -> {
 			final Thread t = new Thread(r, jmeno);

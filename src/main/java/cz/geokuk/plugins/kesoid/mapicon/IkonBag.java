@@ -17,8 +17,16 @@ public class IkonBag {
 
 	private Set<String> jmenaSad;
 	private Sada sada;
-	private final Genom genom = new Genom();
+	private final Genom genom;
 	private Map<ASada, Icon> iJmenaAIkonySad;
+
+	public IkonBag() {
+		this(new Genom());
+	}
+
+	public IkonBag(final Genom genom) {
+		this.genom = genom;
+	}
 
 	public Genom getGenom() {
 		return genom;

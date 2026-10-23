@@ -273,7 +273,24 @@ public class JMapyPopup extends JPanel {
 
 	/** Uživatel píše do pole hledání (pole dostalo fokus a nekliklo se mimo popup); popup se nesmí zavřít odjetím myši. */
 	public boolean isHledaniAktivni() {
-		return uzivatelPise;
+		return uzivatelPise || maFokus();
+	}
+
+	/** Fokus je kdekoli v panelu, třeba po otevření z menu: panel nezmizí odjetím myši, dokud fokus neodejde (Esc, klik jinam). */
+	boolean maFokus() {
+		final java.awt.Component vlastnik = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+		return vlastnik != null && SwingUtilities.isDescendingFrom(vlastnik, this);
+	}
+
+	/** Dá fokus poli hledání, nebo když není, samotnému panelu (musí jít z klávesnice ovládat stejně jako myší). */
+	void zaostri() {
+		final JTextField pole = hledat;
+		if (pole != null && pole.isShowing()) {
+			pole.requestFocusInWindow();
+			return;
+		}
+		setFocusable(true);
+		requestFocusInWindow();
 	}
 
 	/** Obsah se změnil: popup se znovu zobrazí a píše-li uživatel, vrátí se mu fokus do pole. */

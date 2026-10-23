@@ -253,7 +253,7 @@ public class Genom {
 	 * @param qualName
 	 * @return Nalezenou alelu nebo empty, pokud alela není nalezena. Totéž vrátí pro nekvalifikvoané jméno neboď dle něho nemůže být nalezena.
 	 */
-	public Optional<Alela> locateQualAlela(final String qualName) {
+	public synchronized Optional<Alela> locateQualAlela(final String qualName) {
 		final int poz = qualName.lastIndexOf(ODDELOVAC_KVALIFOVANY);
 		if (poz < 0) {
 			return Optional.empty();
