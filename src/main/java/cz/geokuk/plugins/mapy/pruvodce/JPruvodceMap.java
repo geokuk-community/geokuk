@@ -534,7 +534,7 @@ public final class JPruvodceMap extends JDialog {
 	static final int POTVRZENI_MAP = 5;
 	static final long POTVRZENI_BAJTU = 10_000_000_000L;
 
-	static boolean potrebujePotvrzeni(final PlanPruvodce plan) {
+	public static boolean potrebujePotvrzeni(final PlanPruvodce plan) {
 		return plan.getPolozky().stream().filter(p -> p.getCast() == Cast.MAPA).count() > POTVRZENI_MAP || plan.getCelkovaVelikost() > POTVRZENI_BAJTU;
 	}
 
@@ -554,7 +554,7 @@ public final class JPruvodceMap extends JDialog {
 		return v.isEmpty() ? "" : " + " + String.join(", ", v);
 	}
 
-	static String velikost(final long bajtu) {
+	public static String velikost(final long bajtu) {
 		if (bajtu >= 1_000_000_000L) {
 			return String.format(new Locale("cs"), "%.1f GB", bajtu / 1e9);
 		}
