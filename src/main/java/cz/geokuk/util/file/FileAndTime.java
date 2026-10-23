@@ -6,14 +6,21 @@ public class FileAndTime implements Comparable<FileAndTime> {
 
 	final File file;
 	final long lastmodify;
+	/** Velikost v bajtech; -1, když není známá. */
+	final long velikost;
 
 	public FileAndTime(final File aFile) {
 		this(aFile, aFile.lastModified());
 	}
 
 	public FileAndTime(final File aFile, final long aLastmodify) {
+		this(aFile, aLastmodify, -1);
+	}
+
+	public FileAndTime(final File aFile, final long aLastmodify, final long aVelikost) {
 		file = aFile;
 		lastmodify = aLastmodify;
+		velikost = aVelikost;
 	}
 
 	/*

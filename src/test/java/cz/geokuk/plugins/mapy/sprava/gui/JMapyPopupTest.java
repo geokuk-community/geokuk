@@ -320,7 +320,7 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			p.obnov(mapaSVrstvami(cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.MAME, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC));
 			final JLabel stazena = labels(p).stream().filter(l -> "25 MB".equals(l.getText())).findFirst().get();
-			Assert.assertEquals("Turistická vrstva: staženo, data z 13. 10. 2026", stazena.getToolTipText());
+			Assert.assertEquals("Trasy: staženo, data z 13. 10. 2026", stazena.getToolTipText());
 			p.obnov(cesko(cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME, v -> cz.geokuk.plugins.mapy.sprava.VrstvyProGui.stav(v, cz.geokuk.plugins.mapy.sprava.StavVrstvy.Mistni.NEMAME,
 					cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, v.getId().startsWith("contours") ? 50_000_000 : 0, null)));
 			Assert.assertEquals("jen rozpracovaná vrstevnice má ×", 1, tlacitkaSTextem(p, JMapyPopup.SMAZAT_VRSTVU).size());
@@ -550,7 +550,7 @@ public class JMapyPopupTest {
 			p.obnov(dalsiMapy());
 			Assert.assertTrue(tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).isEmpty());
 			p.setDvojite(dvojite);
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo je ve složce celá i s regiony (Bavorsko, Sasko)")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Německo: máte staženou celou zemi i regiony (Bavorsko, Sasko)")));
 			Assert.assertTrue("stažené jsou jen dva z regionů, celá země se smazat nenabídne", tlacitkaSTextem(p, JMapyPopup.SMAZAT_CELEK).isEmpty());
 			tlacitkaSTextem(p, JMapyPopup.SMAZAT_REGIONY).get(0).doClick();
 			final List<cz.geokuk.plugins.mapy.sprava.PokrytiMap.DvojitaMapa> uplne = cz.geokuk.plugins.mapy.sprava.PokrytiMap.dvojiteMapy(slozkaUplne, katalog);
@@ -1507,7 +1507,7 @@ public class JMapyPopupTest {
 			Assert.assertEquals("ve složce i jako hlavička regionů ve Všech mapách", 2, videtLabelu(p, "Velká Británie"));
 			Assert.assertEquals("ve Všech mapách jeho regiony", 1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
 			p.setDvojite(dvojite);
-			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie je ve složce celá i s regiony (Anglie)")));
+			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie: máte staženou celou zemi i regiony (Anglie)")));
 		});
 	}
 
@@ -1592,7 +1592,7 @@ public class JMapyPopupTest {
 			p.setOvladani(z);
 			p.prepniSlozku(true);
 			p.obnov(radky);
-			Assert.assertTrue("nahoře Dostáhnout vrstvy", tlacitka(p).stream().anyMatch(b -> b.getText().startsWith("Dostáhnout vrstvy ke staženým mapám (")));
+			Assert.assertTrue("nahoře Dostáhnout vrstvy", tlacitka(p).stream().anyMatch(b -> b.getText().startsWith("Stáhnout vrstvy ke všem staženým mapám (")));
 			tlacitka(p).stream().filter(b -> JMapyPopup.STAHNOUT_VSE.equals(b.getText())).forEach(JButton::doClick);
 			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniVse Německo europe/germany ") && Integer.parseInt(v.substring(v.lastIndexOf(' ') + 1)) > 2));
 		});
@@ -2446,12 +2446,12 @@ public class JMapyPopupTest {
 				m -> StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY,
 						m.getId().equals("europe/czech-republic") ? faze : StavMapy.Faze.NIC, 0, -1, null),
 				Collections.emptyList(), null, VrstvyProGui.katalogCesko(),
-				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.JINA_VERZE : StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null));
+				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.NEMAME : StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null));
 		SwingUtilities.invokeAndWait(() -> {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.obnov(radky.apply(StavMapy.Faze.NIC));
-			final JButton odkaz = tlacitka(p).stream().filter(b -> b.getText().startsWith("Dostáhnout vrstvy")).findFirst().get();
+			final JButton odkaz = tlacitka(p).stream().filter(b -> b.getText().startsWith("Stáhnout vrstvy")).findFirst().get();
 			Assert.assertTrue(odkaz.isVisible());
 			final String text = odkaz.getText();
 			final int pred = p.prestaveb;

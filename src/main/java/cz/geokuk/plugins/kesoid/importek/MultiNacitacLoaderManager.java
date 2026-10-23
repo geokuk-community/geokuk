@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.File;
 import java.nio.file.InvalidPathException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.Timer;
 
@@ -10,6 +11,7 @@ import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru;
 import cz.geokuk.util.file.Filex;
+import cz.geokuk.util.gui.RidnutiVNecinnosti;
 
 public class MultiNacitacLoaderManager {
 
@@ -78,7 +80,12 @@ public class MultiNacitacLoaderManager {
 	}
 
 	private void startTimer(final Genom genom) {
-		iTimer = new Timer(10000, e -> startLoad(false, genom));
+		final RidnutiVNecinnosti ridnuti = new RidnutiVNecinnosti(60, TimeUnit.SECONDS);
+		iTimer = new Timer(10000, e -> {
+			if (ridnuti.ted()) {
+				startLoad(false, genom);
+			}
+		});
 		iTimer.start();
 
 	}

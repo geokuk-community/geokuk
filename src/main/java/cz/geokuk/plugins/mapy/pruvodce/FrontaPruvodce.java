@@ -177,6 +177,6 @@ public final class FrontaPruvodce {
 	}
 
 	private boolean hotovo(final StavBunky s) {
-		return s == StavBunky.STAZENO || s == StavBunky.NOVEJSI && !plan.isStahnoutVse();
+		return s == StavBunky.STAZENO || s == StavBunky.NOVEJSI && !plan.isAktualizace();
 	}
 }

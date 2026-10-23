@@ -57,13 +57,29 @@ public class PlanStahnoutVseTest {
 		assertEquals(Collections.singletonList(Cast.TRASY), casti(plan));
 	}
 
+	/** Jedno pravidlo: Stáhnout bere jen to, co chybí; novější verze se stahují jen v režimu Aktualizovat. */
 	@Test
-	public void stazenaMapaSeVynechaANovejsiSeAktualizuje() {
-		final PlanPruvodce plan = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), VSE, matice(StavMapy.Mistni.MAME, StavMapy.Server.NOVEJSI));
-		assertTrue("novější mapa se aktualizuje", casti(plan).contains(Cast.MAPA));
-		final FrontaPruvodce f = new FrontaPruvodce(plan);
-		final FrontaPruvodce.Krok k = f.dalsi(id -> StavBunky.NOVEJSI);
+	public void novejsiMapaSeStahujeJenPriAktualizaci() {
+		final List<MatriceMap.Radek> m = matice(StavMapy.Mistni.MAME, StavMapy.Server.NOVEJSI);
+		final PlanPruvodce stahnout = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), VSE, m);
+		assertFalse("novější mapa se při Stáhnout nestahuje", casti(stahnout).contains(Cast.MAPA));
+		assertFalse(stahnout.isAktualizace());
+		final PlanPruvodce aktualizovat = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), VSE, m, PlanPruvodce.Rezim.STAHNOUT_A_AKTUALIZOVAT);
+		assertTrue("novější mapa se aktualizuje", casti(aktualizovat).contains(Cast.MAPA));
+		assertTrue(aktualizovat.isAktualizace());
+		final FrontaPruvodce.Krok k = new FrontaPruvodce(aktualizovat).dalsi(id -> StavBunky.NOVEJSI);
 		assertEquals("fronta novější nepřeskočí", Akce.STAHUJ, k.getAkce());
+	}
+
+	@Test
+	public void aktualizovatVseBereJenNovejsi() {
+		final PlanPruvodce nic = PlanPruvodce.sestavAktualizovatVse(matice(StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY));
+		assertTrue("nestažené se při Aktualizovat vše nestahuje", nic.jeHotovo());
+		final PlanPruvodce novejsi = PlanPruvodce.sestavAktualizovatVse(matice(StavMapy.Mistni.MAME, StavMapy.Server.NOVEJSI));
+		assertTrue(casti(novejsi).contains(Cast.MAPA));
+		assertTrue(novejsi.isAktualizace());
+		final PlanPruvodce aktualni = PlanPruvodce.sestavAktualizovatVse(matice(StavMapy.Mistni.MAME, StavMapy.Server.AKTUALNI));
+		assertTrue(aktualni.jeHotovo());
 	}
 
 	@Test

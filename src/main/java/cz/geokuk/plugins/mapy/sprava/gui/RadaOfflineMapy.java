@@ -14,7 +14,7 @@ import cz.geokuk.plugins.mapy.sprava.StavMapy;
 /** Rada v mapě, když pro zobrazené místo není podrobná offline mapa: nabídne stažení mapy z katalogu, která místo pokrývá. */
 public final class RadaOfflineMapy {
 
-	public static final String NADPIS = "Pro toto místo nemáte podrobnou offline mapu.";
+	public static final String NADPIS = TextyMap.RADA_NADPIS;
 	static final String BEZ_KATALOGU = "Další offline mapy najdete v bloku Mapy vpravo dole ve stavovém řádku.";
 
 	/** Text pod nadpisem, null když není. */
@@ -27,7 +27,7 @@ public final class RadaOfflineMapy {
 	public final List<RadaOfflineMapy> sousedni;
 
 	static final int NEJVIC_SOUSEDNICH = 2;
-	public static final String SOUSEDNI = "V záběru jsou i další mapy:";
+	public static final String SOUSEDNI = TextyMap.RADA_SOUSEDNI;
 
 	/** Zeměpisný obdélník zobrazeného výřezu (ohraničení jeho rohů). */
 	public static final class Vyrez {
