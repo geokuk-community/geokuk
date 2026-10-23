@@ -133,8 +133,8 @@
 - Když se s programem chvíli nepracuje, předkreslí offline mapy pro
   oddálená měřítka do cache. Oddálení na celou zemi je pak rychlé i na
   pomalém počítači; při práci s programem předkreslování počká.
-- Stejně se v okolí zobrazeného místa připraví předem i podrobná offline
-  mapa, takže je její první zobrazení rychlejší.
+- Stejně se v okolí zobrazeného místa připraví předem i offline mapa ve
+  středních měřítkách (kraj, okres), takže je jejich první zobrazení rychlejší.
 - Offline mapa se stínováním terénu se při oddálení (celá země, kraj)
   kreslí několikrát rychleji a potřebuje méně paměti.
 - V Soubor > Zobrazení programu jde posuvníkem zvětšit ikony keší na mapě
