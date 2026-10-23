@@ -36,4 +36,10 @@ public class RidnutiVNecinnostiTest {
 		aktivni = true;
 		Assert.assertTrue("po návratu do programu hned", r.ted());
 	}
+
+	@Test
+	public void prvniKontrolaProbehneIPriNizkemCasu() {
+		final RidnutiVNecinnosti hned = new RidnutiVNecinnosti(30, TimeUnit.SECONDS, () -> false, () -> -5 * SEKUNDA);
+		Assert.assertTrue("nanoTime může začínat kdekoli", hned.ted());
+	}
 }
