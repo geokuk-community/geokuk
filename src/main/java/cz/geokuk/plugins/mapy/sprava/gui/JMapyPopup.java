@@ -160,7 +160,7 @@ public class JMapyPopup extends JPanel {
 			if (getText().isEmpty() && !hasFocus()) {
 				g.setColor(Color.GRAY);
 				g.setFont(getFont().deriveFont(Font.ITALIC));
-				g.drawString(HLEDAT + "…", getInsets().left + 2, (getHeight() + g.getFontMetrics().getAscent() - g.getFontMetrics().getDescent()) / 2);
+				g.drawString(HLEDAT, getInsets().left + 2, (getHeight() + g.getFontMetrics().getAscent() - g.getFontMetrics().getDescent()) / 2);
 			}
 		}
 	};
