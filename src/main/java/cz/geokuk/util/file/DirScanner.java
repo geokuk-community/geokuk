@@ -51,7 +51,7 @@ public class DirScanner {
 	private static Set<String> otisk(final List<KeFile> list) {
 		final Set<String> otisk = new HashSet<>();
 		for (final KeFile f : list) {
-			otisk.add(f.root.dir + "|" + f.getFile() + (f.root.def.sledovatZmeny ? "|" + f.getLastModified() + "|" + f.getFile().length() : ""));
+			otisk.add(f.root.dir + "|" + f.getFile() + (f.root.def.sledovatZmeny ? "|" + f.getLastModified() + "|" + f.getVelikost() : ""));
 		}
 		return otisk;
 	}
@@ -110,7 +110,7 @@ public class DirScanner {
 
 					final Path jmeno = path.getFileName();
 					if (jmeno != null && matches(jmeno.toString(), root.def)) {
-						list.add(new KeFile(new FileAndTime(path.toFile()), root));
+						list.add(new KeFile(new FileAndTime(path.toFile(), aAttrs.lastModifiedTime().toMillis(), aAttrs.size()), root));
 					}
 					return FileVisitResult.CONTINUE;
 				}

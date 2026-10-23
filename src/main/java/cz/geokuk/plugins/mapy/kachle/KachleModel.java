@@ -23,6 +23,7 @@ import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
+import cz.geokuk.util.gui.RidnutiVNecinnosti;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -55,6 +56,9 @@ public class KachleModel extends Model0 {
 		t.setDaemon(true);
 		return t;
 	});
+
+	/** Při neaktivním programu se složka kontroluje jen jednou za 30 s. */
+	private final RidnutiVNecinnosti ridnutiKontrolySlozky = new RidnutiVNecinnosti(30, TimeUnit.SECONDS);
 
 	/** Složka offline map se hlídá i bez kreslení, aby se dokopírovaná mapa ukázala bez pohybu mapou. */
 	private final ScheduledExecutorService hlidaniSlozky = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -250,6 +254,9 @@ public class KachleModel extends Model0 {
 	}
 
 	void zkontrolujSlozkuOfflineMap() {
+		if (!ridnutiKontrolySlozky.ted()) {
+			return;
+		}
 		try {
 			if (offlinePodklad) {
 				ziskavac.getOfflineMapy().zkontrolujSlozku();
