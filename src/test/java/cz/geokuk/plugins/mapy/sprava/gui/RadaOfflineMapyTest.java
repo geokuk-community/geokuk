@@ -169,7 +169,52 @@ public class RadaOfflineMapyTest {
 		Assert.assertTrue(t.toString(), sasko > 2);
 		Assert.assertTrue(t.get(sasko).region);
 		Assert.assertEquals("hlavička země nad regionem", "Německo", t.get(sasko - 1).nazev);
-		Assert.assertNull("země bez vlastní mapy v nabídce nemá tlačítka", t.get(sasko - 1).rada);
+		Assert.assertEquals("celá země před regionem", "europe/germany", t.get(sasko - 1).rada.mapa.getId());
+	}
+
+	private static final Wgs TOLEDO = new Wgs(39.86, -4.02);
+
+	private static long pocetNazvu(final java.util.List<RadaOfflineMapy.RadekRady> t, final String nazev) {
+		return t.stream().filter(r -> nazev.equals(r.nazev)).count();
+	}
+
+	/** Střed v regionu: celá země má řádek se dvěma tlačítky a střed-region je první pod ní. */
+	@Test
+	public void spanelskoNabidneCelekARegionPodNim() {
+		final java.util.List<RadaOfflineMapy.RadekRady> t = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, TOLEDO, null, null, nabidky(StavMapy::novy)).tabulka();
+		Assert.assertEquals("Španělsko", t.get(0).nazev);
+		Assert.assertFalse(t.get(0).region);
+		Assert.assertEquals("europe/spain", t.get(0).rada.mapa.getId());
+		Assert.assertTrue(t.get(0).rada.odkaz, t.get(0).rada.odkaz.startsWith("Stáhnout mapu ("));
+		Assert.assertEquals("Kastilie-La Mancha", t.get(1).nazev);
+		Assert.assertTrue(t.get(1).region);
+		Assert.assertEquals("europe/spain/castilla-la-mancha", t.get(1).rada.mapa.getId());
+	}
+
+	/** Španělsko je v tabulce jednou, i když je současně hlavní a v záběru jsou další jeho regiony. */
+	@Test
+	public void zemeVTabulceJednou() {
+		final RadaOfflineMapy.Vyrez siroky = new RadaOfflineMapy.Vyrez(37.0, -7.0, 42.5, 2.0);
+		final java.util.List<RadaOfflineMapy.RadekRady> t = RadaOfflineMapy.pro(KATALOG, StavMapy::novy, TOLEDO, null, siroky, nabidky(StavMapy::novy)).tabulka();
+		Assert.assertEquals(t.toString(), 1, pocetNazvu(t, "Španělsko"));
+		Assert.assertEquals(1, pocetNazvu(t, "Kastilie-La Mancha"));
+		Assert.assertTrue("sousední regiony Španělska jsou pod ním", t.stream().filter(r -> r.region).count() > 1);
+		Assert.assertTrue("Španělsko nemá štítek „V záběru je i:“ před svými regiony", t.stream().noneMatch(r -> r.stitek) || t.indexOf(t.stream().filter(r -> r.stitek).findFirst().get()) > 1);
+		final java.util.Set<String> id = new java.util.HashSet<>();
+		for (final RadaOfflineMapy.RadekRady r : t) {
+			if (r.rada != null) {
+				Assert.assertTrue("mapa jednou: " + r.rada.mapa.getId(), id.add(r.rada.mapa.getId()));
+			}
+		}
+	}
+
+	/** Když máme region, celou zemi rada nenabízí. */
+	@Test
+	public void stazenyRegionCelekNenabidne() {
+		final java.util.function.Function<KatalogovaMapa, StavMapy> stavy = m -> m.getId().equals("europe/spain/andalucia") ? stav(m, MAME, NIC, 0, -1) : StavMapy.novy(m);
+		final java.util.List<RadaOfflineMapy.RadekRady> t = RadaOfflineMapy.pro(KATALOG, stavy, TOLEDO, null, null, nabidky(stavy)).tabulka();
+		Assert.assertEquals("europe/spain/castilla-la-mancha", t.get(t.size() - 1).rada.mapa.getId());
+		Assert.assertNull(t.get(0).rada);
 	}
 
 	private static int indexNazvu(final java.util.List<RadaOfflineMapy.RadekRady> t, final String nazev) {

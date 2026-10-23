@@ -1118,6 +1118,16 @@ public class JMapyPopup extends JPanel {
 				dalsi.add(r);
 			}
 		}
+		// Země, která má mapu pro zobrazené místo, je jen v tomto oddílu i se zbylými regiony, ne podruhé mezi mapami ke stažení.
+		final Set<String> zemeMista = new HashSet<>();
+		proMisto.forEach(r -> zemeMista.add(r.skupina != null ? r.skupina : r.nazev));
+		for (final Iterator<RadekMapy> it = dalsi.iterator(); it.hasNext();) {
+			final RadekMapy r = it.next();
+			if (zemeMista.contains(r.skupina != null ? r.skupina : r.nazev)) {
+				proMisto.add(r);
+				it.remove();
+			}
+		}
 
 		gbc.gridy++;
 		final JPanel oddilSlozka = new JPanel(new BorderLayout());
