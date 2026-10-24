@@ -189,6 +189,15 @@ public class JMapyPopup extends JPanel {
 	private transient java.util.function.BiConsumer<String, Set<String>> ulozRozbalene = (k, z) -> {};
 	/** Celé země, které minulá obnova nabízela ke stažení. */
 	private Set<String> nabizeneCelky = Collections.emptySet();
+	/** Regiony zemí ve Stažených; hledáním se ukážou i ve sbalené zemi. */
+	private final transient List<RadekHledani> hledatelneSlozky = new ArrayList<>();
+	/** Země ve Stažených s regiony. */
+	private final transient List<Uzel> uzlyVeSlozce = new ArrayList<>();
+	private JPanel slozkaObalPanel;
+	private TabulkaRadku slozkaTabulka;
+	private boolean slozkaViditelnaVychozi;
+	/** Oddíl Ve složce je kvůli hledání rozevřený, i když je sbalený. */
+	private boolean slozkaOdkrytaHledanim;
 	private JLabel nicNenalezeno;
 	private JLabel nadpisMimoEvropu;
 	/** Od kterého řádku hledání jsou mapy mimo Evropu. */
@@ -389,6 +398,8 @@ public class JMapyPopup extends JPanel {
 		final List<Component> bunky;
 		/** Řádek stažené země, který se ukáže jen při hledání. */
 		boolean jenHledani;
+		/** Řádek regionu ve Stažených: je vidět, když se nehledá. */
+		boolean vychozi;
 
 		RadekHledani(final String text, final String uzel, final boolean hlavicka, final List<Component> bunky) {
 			this.text = text;
@@ -507,6 +518,7 @@ public class JMapyPopup extends JPanel {
 		for (final Uzel u : uzly) {
 			u.hlavicka.setIcon(new Sipka(hledany.isEmpty() ? rozbalene.contains(u.nazev) : uzlySeShodou.contains(u.nazev)));
 		}
+		filtrujSlozku(hledany);
 		if (nicNenalezeno != null) {
 			nicNenalezeno.setVisible(viditelnych == 0);
 		}
@@ -517,6 +529,47 @@ public class JMapyPopup extends JPanel {
 			seznam.revalidate();
 			seznam.repaint();
 		}
+	}
+
+	/** Hledání ukáže ve Stažených i regiony sbalené země, zemi s nalezeným regionem rozbalí a ukáže jen shodné regiony. */
+	private void filtrujSlozku(final String hledany) {
+		if (slozkaObalPanel == null) {
+			return;
+		}
+		final Set<String> zemeSeShodou = new HashSet<>();
+		if (!hledany.isEmpty()) {
+			for (final RadekHledani r : hledatelneSlozky) {
+				if (obsahujeVse(r.text, hledany)) {
+					zemeSeShodou.add(r.uzel);
+				}
+			}
+		}
+		for (final RadekHledani r : hledatelneSlozky) {
+			final boolean ano = zemeSeShodou.contains(r.uzel) ? obsahujeVse(r.text, hledany) : r.vychozi;
+			for (final Component c : r.bunky) {
+				c.setVisible(ano);
+			}
+		}
+		for (final Uzel u : uzlyVeSlozce) {
+			if (u.hlavicka != null) {
+				u.hlavicka.setIcon(new Sipka(zemeSeShodou.contains(u.nazev) || rozbaleneSlozka.contains(u.nazev) || zemeSamyRozbalene.contains(u.nazev)));
+			}
+		}
+		final boolean ukazat = slozkaViditelnaVychozi || !zemeSeShodou.isEmpty();
+		final boolean sestaveno = slozkaObalPanel.getComponentCount() > 0;
+		if (ukazat && !slozkaViditelnaVychozi && !slozkaOdkrytaHledanim && sestaveno) {
+			slozkaOdkrytaHledanim = true;
+			slozkaObalPanel.removeAll();
+			slozkaObalPanel.add(sekce(slozkaTabulka, Math.min(slozkaTabulka.getPreferredSize().height, Math.max(MIN_VYSKA_SEKCE, rozpocet / 2))));
+		}
+		if (slozkaObalPanel.isVisible() != ukazat) {
+			slozkaObalPanel.setVisible(ukazat);
+			slozkaObalPanel.revalidate();
+			if (sestaveno) {
+				zmenaObsahu();
+			}
+		}
+		slozkaTabulka.revalidate();
 	}
 
 	/** Klik na zemi s regiony rozbalí nebo sbalí její regiony. */
@@ -1051,6 +1104,9 @@ public class JMapyPopup extends JPanel {
 		naMiste.clear();
 		hledatelne.clear();
 		uzly.clear();
+		hledatelneSlozky.clear();
+		uzlyVeSlozce.clear();
+		slozkaOdkrytaHledanim = false;
 		nicNenalezeno = null;
 		nadpisMimoEvropu = null;
 		final FontMetrics fm = getFontMetrics(new JLabel().getFont());
@@ -1201,6 +1257,9 @@ public class JMapyPopup extends JPanel {
 		final JPanel slozkaObal = new JPanel(new BorderLayout());
 		slozkaObal.setOpaque(false);
 		slozkaObal.setVisible(slozkaViditelna);
+		slozkaObalPanel = slozkaObal;
+		slozkaTabulka = slozka;
+		slozkaViditelnaVychozi = slozkaViditelna;
 		gbc.gridy++;
 		add(slozkaObal, gbc);
 		for (final PokrytiMap.DvojitaMapa d : dvojite) {
@@ -1260,6 +1319,14 @@ public class JMapyPopup extends JPanel {
 					podleZeme.computeIfAbsent(r.nazev, Uzel::new).celek = r;
 				}
 			}
+			// Nestažené regiony stažené země jsou ve Stažených; hledáním se najdou i tady, u své země.
+			final Set<String> zbyleZeme = new HashSet<>();
+			for (final RadekMapy r : zbyleRegiony) {
+				if (r.skupina != null) {
+					podleZeme.computeIfAbsent(r.skupina, Uzel::new).regiony.add(r);
+					zbyleZeme.add(r.skupina);
+				}
+			}
 			final List<Uzel> uzlySeznamu = new ArrayList<>(podleZeme.values());
 			uzlySeznamu.sort(Comparator.comparing(this::mimoEvropu));
 			for (final Uzel u : uzlySeznamu) {
@@ -1273,6 +1340,15 @@ public class JMapyPopup extends JPanel {
 				if (sRegiony) {
 					uzly.add(u);
 				}
+				if (zbyleZeme.contains(u.nazev)) {
+					final int od = hledatelne.size();
+					y = radekZemeBezCelku(ostatni, y, u, "", false, null);
+					for (final RadekMapy r : u.regiony) {
+						y = pridejRegionSeznamu(ostatni, y, r, u);
+					}
+					hledatelne.subList(od, hledatelne.size()).forEach(h -> h.jenHledani = true);
+					continue;
+				}
 				if (u.celek != null) {
 					final int pred = ostatni.getComponentCount();
 					y = radekCelku(ostatni, y, u, false, () -> prepniUzel(u.nazev));
@@ -1283,23 +1359,6 @@ public class JMapyPopup extends JPanel {
 				for (final RadekMapy r : u.regiony) {
 					y = pridejRegionSeznamu(ostatni, y, r, u);
 				}
-			}
-			// Nestažené regiony stažené země jsou ve Stažených; hledáním se najdou i tady.
-			final Map<String, Uzel> zbyleZeme = new TreeMap<>(cs);
-			for (final RadekMapy r : zbyleRegiony) {
-				if (r.skupina != null) {
-					zbyleZeme.computeIfAbsent(r.skupina, Uzel::new).regiony.add(r);
-				}
-			}
-			for (final Uzel u : zbyleZeme.values()) {
-				final int od = hledatelne.size();
-				u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
-				uzly.add(u);
-				y = radekZemeBezCelku(ostatni, y, u, "", false, null);
-				for (final RadekMapy r : u.regiony) {
-					y = pridejRegionSeznamu(ostatni, y, r, u);
-				}
-				hledatelne.subList(od, hledatelne.size()).forEach(h -> h.jenHledani = true);
 			}
 			nicNenalezeno = maly(NIC_NENALEZENO);
 			nicNenalezeno.setVisible(false);
@@ -1390,6 +1449,7 @@ public class JMapyPopup extends JPanel {
 		final JComponent slozkaSekce = sekce(slozka, prideleno[0]);
 		slozkaPosuvnik = slozkaSekce instanceof JScrollPane ? (JScrollPane) slozkaSekce : null;
 		slozkaObal.add(slozkaSekce);
+		filtrujSlozku(bezDiakritiky(hledat.getText().trim()));
 		mistoPosuvnik = null;
 		if (misto != null) {
 			final JComponent mistoSekce = sekce(misto, prideleno[1]);
@@ -1680,8 +1740,8 @@ public class JMapyPopup extends JPanel {
 		panel.add(ikona, ci);
 		final JLabel nazev = new JLabel(u.nazev);
 		nazev.setPreferredSize(new Dimension(sirkaNazvu, nazev.getPreferredSize().height));
+		u.hlavicka = nazev;
 		if (prepni == null) {
-			u.hlavicka = nazev;
 			nastavRozbaleni(u, nazev);
 		} else {
 			nastavRozbaleni(nazev, rozbaleno, prepni);
@@ -1946,10 +2006,19 @@ public class JMapyPopup extends JPanel {
 			} else {
 				y = radekZemeBezCelku(panel, y, u, souhrnRegionu(u.regiony.stream().filter(RadekMapy::isVeSlozce).collect(java.util.stream.Collectors.toList())), rozbaleno, () -> prepniUzelSlozky(u.nazev));
 			}
-			if (rozbaleno) {
-				for (final RadekMapy r : u.regiony) {
+			if (!u.regiony.isEmpty()) {
+				uzlyVeSlozce.add(u);
+			}
+			for (final RadekMapy r : u.regiony) {
+				// Ve sbalené zemi jsou skryté regiony ve složce; nestažené regiony se hledáním najdou mezi mapami ke stažení.
+				if (rozbaleno || r.isVeSlozce()) {
+					final int pred = panel.getComponentCount();
 					radek(panel, y++, r);
 					posledniPohled(r).nazev.setBorder(new EmptyBorder(0, 2 * ODSAZENI, 0, 0));
+					final RadekHledani h = new RadekHledani(bezDiakritiky(r.nazev), u.nazev, false, komponentyOd(panel, pred));
+					h.vychozi = rozbaleno;
+					hledatelneSlozky.add(h);
+					h.bunky.forEach(c -> c.setVisible(rozbaleno));
 				}
 			}
 		}
