@@ -107,10 +107,10 @@ public class PodrobnaOfflineMapaTest {
 		while (!obrys.obsahuje(lat, 14.5)) {
 			lat -= 0.001;
 		}
-		final double mimo = lat + 0.002;
+		final double mimo = lat + 0.02;
 		Assert.assertFalse("bod je těsně mimo obrys", obrys.obsahuje(mimo, 14.5));
 		Assert.assertTrue("a přesto v toleranci", cesko(true).obsahuje(mimo, 14.5));
-		Assert.assertFalse("daleko za hranicí", cesko(true).obsahuje(lat + 0.5, 14.5));
+		Assert.assertFalse("daleko za hranicí", cesko(true).obsahuje(lat + 0.1, 14.5));
 	}
 
 	/** Obrys platí jen uvnitř obdélníku souboru: menší soubor se jménem katalogové mapy nezíská území celé země. */
