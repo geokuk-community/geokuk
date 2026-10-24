@@ -17,6 +17,8 @@ public final class StavIkona {
 	/** Průměr, resp. strana symbolu. */
 	static final int SYMBOL = 12;
 
+	private static final int PRESAH = 4;
+
 	private static final Color CERVENA = new Color(0xD8, 0x1E, 0x1E);
 
 	private StavIkona() {}
@@ -47,7 +49,11 @@ public final class StavIkona {
 	private static Icon nakresli(final Icon zaklad, final int maxVyska, final boolean zakaz) {
 		final int vyska = Math.min(zaklad.getIconHeight(), maxVyska);
 		final int sirka = Math.max(1, zaklad.getIconWidth() * vyska / zaklad.getIconHeight());
-		final BufferedImage img = new BufferedImage(sirka, vyska, BufferedImage.TYPE_INT_ARGB);
+		// Malé ikony sady (16 px) symbol zakrýval, proto symbol přesahuje přes okraj ikony.
+		final int presah = Math.max(0, Math.min(PRESAH, maxVyska - vyska));
+		final int celkSirka = sirka + presah;
+		final int celkVyska = vyska + presah;
+		final BufferedImage img = new BufferedImage(celkSirka, celkVyska, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = img.createGraphics();
 		try {
 			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -59,9 +65,9 @@ public final class StavIkona {
 			zaklad.paintIcon(null, gp, 0, 0);
 			gp.dispose();
 			g.drawImage(puvodni, 0, 0, sirka, vyska, null);
-			final int s = Math.min(SYMBOL, Math.min(sirka, vyska));
-			final double x = sirka - s;
-			final double y = vyska - s;
+			final int s = Math.min(SYMBOL, Math.min(celkSirka, celkVyska));
+			final double x = celkSirka - s;
+			final double y = celkVyska - s;
 			if (zakaz) {
 				kresliZakaz(g, x, y, s);
 			} else {
