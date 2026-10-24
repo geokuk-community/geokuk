@@ -524,8 +524,8 @@ public class JMapyPopupTest {
 			p.setOvladani(new Zaznam());
 			p.nactiStavSlozky = () -> Optional.of(true);
 			p.obnov(stazene(STAZENE_6));
-			Assert.assertTrue("souhrn regionů u země", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("3 regiony · ") && jeVidet(l)));
-			Assert.assertTrue("souhrn regionů u Velké Británie", labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("1 region") && jeVidet(l)));
+			Assert.assertEquals("země jednou", 1, videtLabelu(p, "Německo"));
+			Assert.assertEquals("Velká Británie jednou", 1, videtLabelu(p, "Velká Británie"));
 			Assert.assertEquals("regiony jsou sbalené", 0, videtLabelu(p, "Bavorsko"));
 			p.prepniUzelSlozky("Německo");
 			Assert.assertEquals(1, videtLabelu(p, "Bavorsko"));
@@ -552,6 +552,26 @@ public class JMapyPopupTest {
 			Assert.assertNotNull("celou zemi jde stáhnout", celek);
 			celek.doClick();
 			Assert.assertTrue(z.volani.toString(), z.volani.contains("stahni europe/spain"));
+		});
+	}
+
+	/** Stažená celá země je jen ve Stažených mapách; její regiony jsou pod ní (sbalené), ne podruhé mezi mapami ke stažení. */
+	@Test
+	public void stazenaZemeJeJenVeStazenych() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final List<RadekMapy> radky = RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/germany") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null);
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(radky);
+			Assert.assertEquals("Německo jednou", 1, videtLabelu(p, "Německo"));
+			Assert.assertEquals("regiony jsou sbalené", 0, videtLabelu(p, "Bavorsko"));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertEquals("Německo pořád jednou", 1, videtLabelu(p, "Německo"));
+			Assert.assertEquals("Bavorsko pod zemí jednou", 1, videtLabelu(p, "Bavorsko"));
 		});
 	}
 
@@ -1459,10 +1479,9 @@ public class JMapyPopupTest {
 			final int pred = p.prestaveb;
 			p.obnov(stazene("europe/netherlands"));
 			Assert.assertTrue("po stažení se popup přestavěl", p.prestaveb > pred);
-			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
-			Assert.assertEquals(IkonyMap.ZELENA, labels(p).stream().filter(l -> JMapyPopup.CELA_VE_SLOZCE.equals(l.getText())).findFirst().get().getForeground());
+			Assert.assertEquals("stažená země jen ve Stažených mapách", 1, viditelnychLabelu(p, "Nizozemsko"));
 			Assert.assertEquals("regiony sbalené", 0, viditelnychLabelu(p, "Drenthe"));
-			p.prepniUzel("Nizozemsko");
+			p.prepniUzelSlozky("Nizozemsko");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Drenthe"));
 		});
 	}
@@ -1479,10 +1498,9 @@ public class JMapyPopupTest {
 			p.prepniUzel("Nizozemsko");
 			Assert.assertEquals(1, viditelnychLabelu(p, "Drenthe"));
 			p.obnov(stazene("europe/netherlands"));
-			Assert.assertEquals(1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
 			Assert.assertEquals("po stažení celé země jsou regiony sbalené", 0, viditelnychLabelu(p, "Drenthe"));
 			Assert.assertEquals(Collections.emptySet(), nastaveni.get(JMapyPopup.ROZBALENE_VSECHNY));
-			p.prepniUzel("Nizozemsko");
+			p.prepniUzelSlozky("Nizozemsko");
 			p.obnov(stazene("europe/netherlands"));
 			Assert.assertEquals("ručně rozbalené zůstane", 1, viditelnychLabelu(p, "Drenthe"));
 		});
@@ -1595,8 +1613,7 @@ public class JMapyPopupTest {
 			final JMapyPopup p = new JMapyPopup();
 			p.setOvladani(new Zaznam());
 			p.obnov(stazene("europe/great-britain"));
-			Assert.assertEquals("ve složce i jako hlavička regionů ve Všech mapách", 2, videtLabelu(p, "Velká Británie"));
-			Assert.assertEquals("ve Všech mapách jeho regiony", 1, viditelnychLabelu(p, JMapyPopup.CELA_VE_SLOZCE));
+			Assert.assertEquals("jen ve složce, ne podruhé ve Všech mapách", 1, videtLabelu(p, "Velká Británie"));
 			p.setDvojite(dvojite);
 			Assert.assertTrue(labels(p).stream().anyMatch(l -> l.getText() != null && l.getText().startsWith("Velká Británie: máte staženou celou zemi i regiony (Anglie)")));
 		});

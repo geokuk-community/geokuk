@@ -1118,6 +1118,17 @@ public class JMapyPopup extends JPanel {
 				dalsi.add(r);
 			}
 		}
+		// Země, kterou máme ve složce, je jen tam; její zbylé regiony jsou pod ní, ne podruhé mezi mapami ke stažení.
+		final Set<String> zemeSlozky = new HashSet<>();
+		veSlozce.forEach(r -> zemeSlozky.add(r.skupina != null ? r.skupina : r.nazev));
+		final List<RadekMapy> zbyleRegiony = new ArrayList<>();
+		for (final Iterator<RadekMapy> it = dalsi.iterator(); it.hasNext();) {
+			final RadekMapy r = it.next();
+			if (!r.vlastni && zemeSlozky.contains(r.skupina != null ? r.skupina : r.nazev)) {
+				zbyleRegiony.add(r);
+				it.remove();
+			}
+		}
 		// Země, která má mapu pro zobrazené místo, je jen v tomto oddílu i se zbylými regiony, ne podruhé mezi mapami ke stažení.
 		final Set<String> zemeMista = new HashSet<>();
 		proMisto.forEach(r -> zemeMista.add(r.skupina != null ? r.skupina : r.nazev));
@@ -1177,7 +1188,7 @@ public class JMapyPopup extends JPanel {
 			slozka.add(nic, bunka(0, 0, 4));
 		}
 		int y = 0;
-		y = stromSlozky(slozka, y, veSlozce);
+		y = stromSlozky(slozka, y, veSlozce, zbyleRegiony);
 		final boolean slozkaViditelna = slozkaOtevrena || veSlozce.isEmpty();
 		final JPanel slozkaObal = new JPanel(new BorderLayout());
 		slozkaObal.setOpaque(false);
@@ -1861,7 +1872,7 @@ public class JMapyPopup extends JPanel {
 	}
 
 	/** Stažené mapy po zemích: regiony pod zemí se šipkou, souhrn u země bez staženého celku; celý strom v tabulce Ve složce. */
-	private int stromSlozky(final JPanel panel, final int zacatek, final List<RadekMapy> mapy) {
+	private int stromSlozky(final JPanel panel, final int zacatek, final List<RadekMapy> mapy, final List<RadekMapy> zbyleRegiony) {
 		int y = zacatek;
 		final java.text.Collator cs = java.text.Collator.getInstance(new Locale("cs"));
 		final Map<String, Uzel> podleZeme = new TreeMap<>(cs);
@@ -1873,6 +1884,14 @@ public class JMapyPopup extends JPanel {
 				podleZeme.computeIfAbsent(r.skupina, Uzel::new).regiony.add(r);
 			} else {
 				podleZeme.computeIfAbsent(r.nazev, Uzel::new).celek = r;
+			}
+		}
+		for (final RadekMapy r : zbyleRegiony) {
+			final Uzel u = podleZeme.get(r.skupina != null ? r.skupina : r.nazev);
+			if (u != null && r.skupina != null) {
+				u.regiony.add(r);
+			} else if (u != null && u.celek == null) {
+				u.celek = r;
 			}
 		}
 		final List<Uzel> uzlySlozky = new ArrayList<>(podleZeme.values());
@@ -1893,7 +1912,7 @@ public class JMapyPopup extends JPanel {
 			if (u.celek != null) {
 				y = radekCelku(panel, y, u, rozbaleno, () -> prepniUzelSlozky(u.nazev));
 			} else {
-				y = radekZemeBezCelku(panel, y, u, souhrnRegionu(u.regiony), rozbaleno, () -> prepniUzelSlozky(u.nazev));
+				y = radekZemeBezCelku(panel, y, u, souhrnRegionu(u.regiony.stream().filter(RadekMapy::isVeSlozce).collect(java.util.stream.Collectors.toList())), rozbaleno, () -> prepniUzelSlozky(u.nazev));
 			}
 			if (rozbaleno) {
 				for (final RadekMapy r : u.regiony) {
