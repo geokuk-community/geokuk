@@ -45,6 +45,8 @@ public final class RadekMapy {
 	final boolean rozpracovano;
 	/** Mapa je ve složce offline map: soubor (i poškozený nebo právě nahrazovaný), rozpracované nebo právě běžící stahování. */
 	final boolean veSlozce;
+	/** Region, který ještě nemáme, ale máme celou jeho zemi. */
+	final boolean vCeleZemi;
 	/** Zjišťuje se stav na serveru, nic se nestahuje. */
 	final boolean kontroluje;
 	/** Stažená mapa se ověřuje. */
@@ -70,6 +72,7 @@ public final class RadekMapy {
 		datumNaServeru = b.datumNaServeru;
 		rozpracovano = b.rozpracovano;
 		veSlozce = b.veSlozce != null ? b.veSlozce : b.vlastni || b.stav == Stav.AKTUALNI || b.stav == Stav.NOVEJSI || b.stav == Stav.STAHUJE || b.rozpracovano;
+		vCeleZemi = b.vCeleZemi;
 		kontroluje = b.kontroluje;
 		overuje = b.overuje;
 		zdroj = b.zdroj;
@@ -285,6 +288,7 @@ public final class RadekMapy {
 		private Instant datumNaServeru;
 		private boolean rozpracovano;
 		private Boolean veSlozce;
+		private boolean vCeleZemi;
 		private boolean kontroluje;
 		private boolean overuje;
 		private String zdroj;
@@ -292,6 +296,11 @@ public final class RadekMapy {
 		private String chyba;
 		private Instant zkontrolovano;
 		private MatriceMap.Radek matice;
+
+		public Builder vCeleZemi(final boolean b) {
+			vCeleZemi = b;
+			return this;
+		}
 
 		public Builder skupina(final String s) {
 			skupina = s;
