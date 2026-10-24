@@ -169,12 +169,12 @@ public class OptimalizaceDatabazeOknaTest {
 	@Test
 	public void okno_pri_startu_texty_a_snimky() throws Exception {
 		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
-		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(10));
+		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(30, false));
 		final JPanel doporucit = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.DOPORUCIT, 100L << 30, odpocet, new JButton("Optimalizovat teď"),
 				new JButton("Spustit bez optimalizace"));
 		final String t = texty(doporucit);
 		Assert.assertTrue(t, t.contains("fragmentovaná (46 % volného místa, 1.9 GB)") || t.contains("fragmentovaná (46 % volného místa, 1,9 GB)"));
-		Assert.assertTrue(t, t.contains("[Optimalizovat teď]") && t.contains("Připomeneme to za týden.") && !t.contains("Připomenout za týden"));
+		Assert.assertTrue(t, t.contains("[Optimalizovat teď]") && t.contains("Připomeneme to za 3 dny") && !t.contains("Připomenout za týden"));
 		snimek(doporucit, "start-doporuceni");
 		final JPanel malo = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.MALO_MISTA, 200L << 20, odpocet, new JButton("Optimalizovat teď"),
 				new JButton("Spustit bez optimalizace"));
@@ -200,6 +200,10 @@ public class OptimalizaceDatabazeOknaTest {
 				volba[0] = "bez";
 			}
 
+			@Override
+			public void vyprseni() {
+				volba[0] = "vyprseni";
+			}
 		};
 		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, Doporuceni.DOPORUCIT, 100L << 30, v));
 		final java.awt.Window[] okna = new java.awt.Window[1];

@@ -14,7 +14,29 @@ import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 /** Při startu doporučí optimalizaci databáze; odložení si pamatuje v nastavení. */
 public final class PripominkaOptimalizace {
 
-	static final long ODLOZENI_MS = TimeUnit.DAYS.toMillis(7);
+	/** Odložení po vypršení odpočtu. */
+	static final long ODLOZENI_VYPRSENI_MS = TimeUnit.DAYS.toMillis(3);
+
+	/** Odložení po volbě „Spustit bez optimalizace“. */
+	static final long ODLOZENI_BEZ_MS = TimeUnit.DAYS.toMillis(7);
+
+	/** Odložení u kritického stavu. */
+	static final long ODLOZENI_KRITICKY_MS = TimeUnit.DAYS.toMillis(1);
+
+	/** Kritický stav: podíl volných stránek nad tuto hranici a soubor větší než {@link OptimalizaceDatabaze#PRAH_VELIKOSTI}. */
+	static final double PRAH_KRITICKY = 0.60;
+
+	static boolean kriticky(final StavSouboruCache stav) {
+		return stav != null && stav.podilVolnych() > PRAH_KRITICKY && stav.velikost() > OptimalizaceDatabaze.PRAH_VELIKOSTI;
+	}
+
+	/** Na jak dlouho odložit; {@code vyprsel} = vypršel odpočet, jinak uživatel zvolil „Spustit bez optimalizace“. */
+	static long odlozeniMs(final StavSouboruCache stav, final boolean vyprsel) {
+		if (kriticky(stav)) {
+			return ODLOZENI_KRITICKY_MS;
+		}
+		return vyprsel ? ODLOZENI_VYPRSENI_MS : ODLOZENI_BEZ_MS;
+	}
 
 	/** O kolik se musí podíl volných stránek zhoršit, aby se okno ukázalo i během odložení. */
 	static final double ZHORSENI = 0.15;
@@ -50,7 +72,12 @@ public final class PripominkaOptimalizace {
 
 			@Override
 			public void bezOptimalizace() {
-				model.odlozOptimalizaci(System.currentTimeMillis() + ODLOZENI_MS, stav.podilVolnych());
+				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(stav, false), stav.podilVolnych());
+			}
+
+			@Override
+			public void vyprseni() {
+				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(stav, true), stav.podilVolnych());
 			}
 		}));
 	}

@@ -10,24 +10,57 @@ import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Doporuceni;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
-/** Okno při startu s doporučením optimalizace; neblokuje program a po odpočtu se samo zavře. */
+/** Okno při startu s doporučením optimalizace; neblokuje program a po odpočtu se samo zavře, odpočet stojí, když uživatel čte. */
 public class OknoDoporuceniOptimalizace extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 
-	static final int ODPOCET_S = 10;
+	static final int ODPOCET_S = 30;
 
 	/** Rozhodnutí uživatele, aby se dalo uložit. */
 	public interface Volba {
 		/** Spustit optimalizaci. */
 		void optimalizovat();
 
-		/** Zavřeno bez optimalizace, i po vypršení odpočtu; odloží se o týden. */
+		/** Zvoleno „Spustit bez optimalizace“. */
 		void bezOptimalizace();
+
+		/** Vypršel odpočet. */
+		void vyprseni();
+	}
+
+	/** Odpočet po sekundách, který se dá pozastavit a zrušit. */
+	static final class Odpocet {
+		private int zbyva;
+		private boolean zruseno;
+
+		Odpocet(final int sekund) {
+			zbyva = sekund;
+		}
+
+		/** Uplynula sekunda; vrací true, když odpočet právě vypršel. */
+		boolean tik(final boolean pozastaveno) {
+			if (zruseno || pozastaveno) {
+				return false;
+			}
+			return --zbyva <= 0;
+		}
+
+		void zrus() {
+			zruseno = true;
+		}
+
+		boolean zruseno() {
+			return zruseno;
+		}
+
+		int zbyva() {
+			return zbyva;
+		}
 	}
 
 	private final Timer casovac;
-	private int zbyva = ODPOCET_S;
+	private final Odpocet odpocet = new Odpocet(ODPOCET_S);
 
 	/** Obsah okna; zvlášť, aby šel nakreslit bez zobrazení. */
 	static JPanel panel(final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final JLabel odpocet, final JButton optimalizovat, final JButton bez) {
@@ -56,28 +89,33 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 
 	private OknoDoporuceniOptimalizace(final Window vlastnik, final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final Volba volba) {
 		super(vlastnik, OptimalizaceTexty.NAZEV, ModalityType.MODELESS);
-		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S));
+		final boolean kriticky = PripominkaOptimalizace.kriticky(stav);
+		final JLabel popisek = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S, kriticky));
 		final JButton optimalizovat = new JButton("Optimalizovat teď");
 		final JButton bez = new JButton("Spustit bez optimalizace");
-		final JPanel panel = panel(stav, doporuceni, volne, odpocet, optimalizovat, bez);
+		final JPanel panel = panel(stav, doporuceni, volne, popisek, optimalizovat, bez);
 		setContentPane(panel);
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		casovac = new Timer(1000, e -> {
-			if (--zbyva <= 0) {
-				zavri(volba::bezOptimalizace);
+			final boolean pozastaveno = uzivatelCte();
+			if (odpocet.tik(pozastaveno)) {
+				zavri(volba::vyprseni);
+			} else if (pozastaveno) {
+				popisek.setText(OptimalizaceTexty.odpocetPozastaven(kriticky));
 			} else {
-				odpocet.setText(OptimalizaceTexty.odpocet(zbyva));
+				popisek.setText(OptimalizaceTexty.odpocet(odpocet.zbyva(), kriticky));
 			}
 		});
 		// Klik do okna odpočet zruší, okno zůstane, dokud uživatel nevybere.
 		final MouseAdapter zastav = new MouseAdapter() {
 			@Override
 			public void mousePressed(final MouseEvent e) {
+				odpocet.zrus();
 				casovac.stop();
-				odpocet.setText("");
+				popisek.setText("");
 			}
 		};
-		for (final java.awt.Component c : new java.awt.Component[] { panel, odpocet }) {
+		for (final java.awt.Component c : new java.awt.Component[] { panel, popisek }) {
 			c.addMouseListener(zastav);
 		}
 		optimalizovat.addActionListener(e -> zavri(volba::optimalizovat));
@@ -90,7 +128,13 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		});
 		pack();
 		setLocationRelativeTo(vlastnik);
-		setFocusableWindowState(false);
+		setAutoRequestFocus(false);
+	}
+
+	/** Myš je nad oknem nebo má okno fokus. */
+	private boolean uzivatelCte() {
+		final PointerInfo mys = MouseInfo.getPointerInfo();
+		return isFocused() || mys != null && isShowing() && new Rectangle(getLocationOnScreen(), getSize()).contains(mys.getLocation());
 	}
 
 	private void zavri(final Runnable akce) {
