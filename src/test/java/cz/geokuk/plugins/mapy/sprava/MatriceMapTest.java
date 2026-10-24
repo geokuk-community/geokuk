@@ -224,4 +224,19 @@ public class MatriceMapTest {
 		assertEquals(2, b.getRegionuCelkem());
 		assertEquals(1, b.getRegionuHotovo());
 	}
+
+	/** Vlastní vrstvu regionu pokrývá stažená vrstva celé země: buňka regionu je stažená a nenabízí stažení. */
+	@Test
+	public void regionPokrytyStazenouVrstvouCelku() throws IOException {
+		final KatalogVrstev k = KatalogVrstev.nacti(KatalogVrstevTest.katalog(
+				KatalogVrstevTest.jednoducha("tourist/europe/germany", "tourist", "europe/germany"),
+				KatalogVrstevTest.jednoducha("tourist/europe/germany/bayern", "tourist", "europe/germany/bayern"),
+				KatalogVrstevTest.jednoducha("contours/europe/germany/bayern", "contours", "europe/germany/bayern")), KatalogMap.vestaveny());
+		final List<Radek> matice = MatriceMap.sestav(KatalogMap.vestaveny(), StavMapy::novy, k,
+				v -> VrstvyProGui.stav(v, v.getId().equals("tourist/europe/germany") ? StavVrstvy.Mistni.MAME : StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, 0, null));
+		final Radek bayern = radek(matice, "europe/germany/bayern");
+		assertEquals(StavBunky.STAZENO, bayern.getBunkaNabidky(Cast.TRASY).getStav());
+		assertNull(bayern.getBunkaNabidky(Cast.TRASY).getId());
+		assertEquals("vrstevnice celku nepokrývá", StavBunky.KE_STAZENI, bayern.getBunkaNabidky(Cast.VRSTEVNICE).getStav());
+	}
 }
