@@ -90,8 +90,6 @@
   dlaždice existuje, bez načtení obrázku. Změna zvýraznění nebo sady ikon
   nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
   v nečinnosti se složky kontrolují řidčeji.
-- Nová cache offline dlaždic se zakládá s větší stránkou, dlaždice se z ní
-  čtou rychleji.
 - Mapy > Optimalizace databáze… zhutní cache dlaždic a ukáže velikost,
   odhad úspory, volné místo a odhad času. Má-li soubor cache hodně
   nevyužitého místa (nad 30 % a soubor nad 200 MB), program při startu nabídne optimalizaci s odpočtem; jde ji odložit o 7 dní.
