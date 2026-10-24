@@ -34,8 +34,13 @@ final class OptimalizaceTexty {
 				velikost(OptimalizaceDatabaze.potrebneMisto(stav)));
 	}
 
-	static String odpocet(final int sekund) {
-		return "Program se mezitím normálně spouští, okno se za " + sekund + " s zavře bez optimalizace. Připomeneme to za týden.";
+	static String odpocet(final int sekund, final boolean kriticky) {
+		return "Program se mezitím normálně spouští, okno se za " + sekund + " s zavře bez optimalizace. "
+				+ (kriticky ? "Připomeneme to zítra." : "Připomeneme to za 3 dny, po volbě Spustit bez optimalizace za týden.");
+	}
+
+	static String odpocetPozastaven(final boolean kriticky) {
+		return "Program se mezitím normálně spouští, odpočet je pozastaven. " + (kriticky ? "Připomeneme to zítra." : "Připomeneme to za 3 dny, po volbě Spustit bez optimalizace za týden.");
 	}
 
 	/** Přehled v dialogu před spuštěním. */
