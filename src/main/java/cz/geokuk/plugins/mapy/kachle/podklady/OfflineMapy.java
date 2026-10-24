@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import cz.geokuk.core.coordinates.Wgs;
@@ -26,6 +27,11 @@ public class OfflineMapy {
 	/** Průhledný překryv přes jiný podklad, viz {@link OfflineRenderer#otevri(List, OfflineRenderer.NacteneTema, boolean)}. */
 	private final boolean prekryv;
 	/** Zavolá se po každém otevření map s klíčem dlaždic a souborem symbolů (null = neukládají se). */
+	private volatile Supplier<cz.geokuk.plugins.mapy.sprava.KatalogMap> katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap::vestaveny;
+	private volatile Supplier<cz.geokuk.plugins.mapy.sprava.KatalogVrstev> katalogVrstev = cz.geokuk.plugins.mapy.sprava.KatalogVrstev::vestaveny;
+	/** Katalogy, podle kterých jsou otevřené mapy; po jejich změně se mapy otevřou znovu s novými obrysy. */
+	private cz.geokuk.plugins.mapy.sprava.KatalogMap katalogOtevreny;
+	private cz.geokuk.plugins.mapy.sprava.KatalogVrstev katalogVrstevOtevreny;
 	private volatile BiConsumer<OblastniKlic, File> priOtevreni = (klic, symboly) -> {};
 
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
@@ -144,6 +150,17 @@ public class OfflineMapy {
 		return davka.getAsBoolean();
 	}
 
+	/** Katalogy, podle kterých se katalogovým mapám a vrstvám přiřadí obrys pokrytí; výchozí jsou vestavěné. */
+	public void setKatalogy(final Supplier<cz.geokuk.plugins.mapy.sprava.KatalogMap> katalog, final Supplier<cz.geokuk.plugins.mapy.sprava.KatalogVrstev> katalogVrstev) {
+		this.katalog = katalog;
+		this.katalogVrstev = katalogVrstev;
+	}
+
+	/** Katalog vrstev, podle kterého se vrstvám přiřazují obrysy. */
+	public cz.geokuk.plugins.mapy.sprava.KatalogVrstev getKatalogVrstev() {
+		return katalogVrstev.get();
+	}
+
 	public void setPriOtevreni(final BiConsumer<OblastniKlic, File> priOtevreni) {
 		this.priOtevreni = priOtevreni;
 	}
@@ -217,7 +234,12 @@ public class OfflineMapy {
 		final double m = meritko;
 		final double pi = pismo;
 		final boolean k = trasyKresliPodklad;
-		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene || k != trasyKresliPodkladOtevrene) {
+		final cz.geokuk.plugins.mapy.sprava.KatalogMap km = katalog.get();
+		final cz.geokuk.plugins.mapy.sprava.KatalogVrstev kv = katalogVrstev.get();
+		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene || k != trasyKresliPodkladOtevrene || km != katalogOtevreny
+				|| kv != katalogVrstevOtevreny) {
+			katalogOtevreny = km;
+			katalogVrstevOtevreny = kv;
 			slozkaOtevrena = s;
 			temaOtevrene = t;
 			meritkoOtevrene = m;
@@ -241,7 +263,7 @@ public class OfflineMapy {
 	 */
 	public synchronized void zkontrolujSlozku() {
 		if (otiskSlozky != null && Objects.equals(slozka, slozkaOtevrena) && tema.equals(temaOtevrene) && meritko == meritkoOtevrene && pismo == pismoOtevrene
-				&& trasyKresliPodklad == trasyKresliPodkladOtevrene) {
+				&& trasyKresliPodklad == trasyKresliPodkladOtevrene && katalog.get() == katalogOtevreny && katalogVrstev.get() == katalogVrstevOtevreny) {
 			zkontrolujSlozku(System.nanoTime());
 		}
 	}
@@ -355,7 +377,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), demPouzite().isEmpty() ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv);
+				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), demPouzite().isEmpty() ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv, katalogOtevreny, katalogVrstevOtevreny);
 				chyba = null;
 				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 				priOtevreni.accept(renderer.getOblastniKlic(), renderer.getSouborSymbolu());

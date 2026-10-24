@@ -29,6 +29,7 @@ import cz.geokuk.framework.Model0;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
+import cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac;
 import cz.geokuk.plugins.mapy.sprava.StavMapy.Faze;
 import lombok.extern.slf4j.Slf4j;
 
@@ -136,6 +137,12 @@ public class SpravaMapModel extends Model0 {
 	public void inject(final KachleModel kachleModel) {
 		this.kachleModel = kachleModel;
 		slozka = () -> kachleModel.getUmisteniSouboru() == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+	}
+
+	/** Offline mapy dostanou živé katalogy, podle kterých se katalogovým mapám a vrstvám přiřadí obrys; po změně katalogu se otevřou znovu. */
+	public void inject(final KachleZiskavac ziskavac) {
+		ziskavac.getOfflineMapy().setKatalogy(this::getKatalog, this::getKatalogVrstev);
+		ziskavac.getOfflineTrasy().setKatalogy(this::getKatalog, this::getKatalogVrstev);
 	}
 
 	/** Pro testy: složka a odpalování událostí bez Swingu. */

@@ -96,6 +96,11 @@ public final class NabidkaRadku {
 		this.vrstvy = vrstvy;
 	}
 
+	/** Region, který nemáme zvlášť, protože máme celou jeho zemi: místo tlačítek jen stav. */
+	public static NabidkaRadku vCeleZemi() {
+		return new NabidkaRadku(new Pozice(Druh.HOTOVO, "✔ v mapě celé země", null, 0, null, false), new Pozice(Druh.NENI, "", null, 0, null, false));
+	}
+
 	/** Pozice 1: Stáhnout mapu. */
 	public Pozice getMapa() {
 		return mapa;
