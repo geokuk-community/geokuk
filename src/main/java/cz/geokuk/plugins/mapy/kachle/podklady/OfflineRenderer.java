@@ -169,6 +169,7 @@ final class OfflineRenderer {
 		final List<OblastniKlic.Zdroj> zdroje = new ArrayList<>();
 		final List<Pokryti> pokryti = new ArrayList<>();
 		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
+		final cz.geokuk.plugins.mapy.sprava.KatalogVrstev katalogVrstev = cz.geokuk.plugins.mapy.sprava.KatalogVrstev.vestaveny();
 		final List<SouborMapy> zakladni = new ArrayList<>();
 		int vrstev = 0;
 		OfflineMapaChyba prvniChyba = null;
@@ -189,7 +190,7 @@ final class OfflineRenderer {
 				zakladni.add(mapFile);
 				final MapFileInfo info = mapFile.getMapFileInfo();
 				pokryti.add(new Pokryti(info.boundingBox, info.zoomLevelMax, katalog.podleSouboru(f.getName()).map(m -> m.getPokryti()).orElse(null)));
-				zdroje.add(OblastniKlic.soubor("mapa", f, mapFile.getMapFileInfo().boundingBox, mapFile.getMapFileInfo().mapDate));
+				zdroje.add(OblastniKlic.soubor("mapa", f, mapFile.getMapFileInfo().boundingBox, mapFile.getMapFileInfo().mapDate, katalog.podleSouboru(f.getName()).map(m -> m.getPokryti()).orElse(null)));
 			}
 			if (zdroje.isEmpty()) {
 				throw prvniChyba;
@@ -210,7 +211,7 @@ final class OfflineRenderer {
 					final MapFile vrstva = new MapFile(f);
 					data.addMapDataStore(vrstva, false, false);
 					vrstev++;
-					zdroje.add(OblastniKlic.soubor("vrstva", f, vrstva.getMapFileInfo().boundingBox, vrstva.getMapFileInfo().mapDate));
+					zdroje.add(OblastniKlic.soubor("vrstva", f, vrstva.getMapFileInfo().boundingBox, vrstva.getMapFileInfo().mapDate, obrysVrstvy(katalogVrstev, f)));
 				} catch (final RuntimeException e) {
 					log.debug("Vrstvu {} nejde otevřít, kreslí se bez ní: {}", f, e.getMessage());
 				}
@@ -229,6 +230,24 @@ final class OfflineRenderer {
 		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, new OblastniKlic(globalni, zdroje), prekryv, kopce, zakladni, vrstev);
 		r.preskoceno = prvniChyba == null ? null : prvniChyba.getMessage();
 		return r;
+	}
+
+	/** Obrys katalogové vrstvy podle cesty souboru ve složce vrstev (klíč mapy a typ, např. europe/czech-republic.tourist.map); null u souboru uživatele. */
+	private static cz.geokuk.plugins.mapy.sprava.PolygonPokryti obrysVrstvy(final cz.geokuk.plugins.mapy.sprava.KatalogVrstev katalog, final File f) {
+		String cesta = f.getName();
+		File rodic = f.getParentFile();
+		for (int i = 0; i < 4; i++) {
+			final java.util.Optional<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva> v = katalog.podleCesty(cesta);
+			if (v.isPresent()) {
+				return v.get().getPokryti();
+			}
+			if (rodic == null || rodic.getName().isEmpty()) {
+				break;
+			}
+			cesta = rodic.getName() + '/' + cesta;
+			rodic = rodic.getParentFile();
+		}
+		return null;
 	}
 
 	/** DEM dlaždice ve složce vrstev i v podsložkách: soubory .hgt nebo .zip. */

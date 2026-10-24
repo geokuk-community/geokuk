@@ -200,4 +200,58 @@ public class OblastniKlicTest {
 		Assert.assertNotEquals("jiná délka", zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", b, rozsah, 1000)), 0));
 		Assert.assertNotEquals("jiné datum mapy", zaklad, klic(Arrays.asList(OblastniKlic.soubor("mapa", a, rozsah, 2000)), 0));
 	}
+
+	/** Trojúhelník pod přeponou (lon 14,07–24,15, lat 49–55,23): obdélník souboru obsahuje Prahu, obrys ne. */
+	private static cz.geokuk.plugins.mapy.sprava.PolygonPokryti polsko() throws Exception {
+		return cz.geokuk.plugins.mapy.sprava.PolygonPokryti.nacti(new java.io.StringReader("polsko\n1\n 14.07 49.0\n 24.15 49.0\n 24.15 55.23\n 14.07 49.0\nEND\nEND\n"));
+	}
+
+	private static String klicSObrysem(final String otisk, final KaLoc loc) throws Exception {
+		final BoundingBox obdelnik = new BoundingBox(48.99, 14.07, 55.23, 24.15);
+		return new OblastniKlic("o0000000a", Arrays.asList(new Zdroj(obdelnik, otisk, polsko()))).klic(loc);
+	}
+
+	private static KaLoc na(final double lat, final double lon, final int zoom) {
+		return KaLoc.ofJZ(new cz.geokuk.core.coordinates.Wgs(lat, lon).toMou(), zoom);
+	}
+
+	/** Velký obdélník souboru nezneplatní dlaždice, které leží v obdélníku, ale daleko od obrysu (Praha × Polsko). */
+	@Test
+	public void dlazdiceMimoObrysVObdelnikuSouboruSeNezneplatni() throws Exception {
+		final KaLoc praha = na(50.08, 14.42, 12);
+		Assert.assertEquals(klicSObrysem("polsko-1", praha), klicSObrysem("polsko-2", praha));
+	}
+
+	@Test
+	public void dlazdiceUvnitrObrysuAUHranicSeZneplatni() throws Exception {
+		final KaLoc uvnitr = na(51.0, 21.0, 12);
+		Assert.assertNotEquals(klicSObrysem("polsko-1", uvnitr), klicSObrysem("polsko-2", uvnitr));
+		// Přepona leží v lat = 49 + (lon - 14,07) * 0,618; v lon 18 je to 51,429; dlaždice 0,10° nad ní (mimo obrys) data ještě dostane.
+		final KaLoc zaHranici = na(51.429 + 0.10, 18.0, 16);
+		Assert.assertNotEquals("0,10° za obrysem", klicSObrysem("polsko-1", zaHranici), klicSObrysem("polsko-2", zaHranici));
+		// Kolmo na přeponu (sklon 0,618) 0,14° od ní: data souboru tam ještě sahají, bez bufferu by dlaždice zůstala stará.
+		final KaLoc v14 = na(51.429 + 0.14 / 0.852, 18.0, 16);
+		Assert.assertNotEquals("0,14° za obrysem", klicSObrysem("polsko-1", v14), klicSObrysem("polsko-2", v14));
+		final KaLoc daleko = na(51.429 + 0.80, 18.0, 16);
+		Assert.assertEquals("0,7° za obrysem už ne", klicSObrysem("polsko-1", daleko), klicSObrysem("polsko-2", daleko));
+	}
+
+	/** Bez obrysu (soubor uživatele) platí celý obdélník jako dřív. */
+	@Test
+	public void bezObrysuPlatiObdelnik() {
+		final KaLoc praha = na(50.08, 14.42, 12);
+		final BoundingBox obdelnik = new BoundingBox(48.99, 14.07, 55.23, 24.15);
+		Assert.assertNotEquals(new OblastniKlic("o0000000a", Arrays.asList(new Zdroj(obdelnik, "a"))).klic(praha), new OblastniKlic("o0000000a", Arrays.asList(new Zdroj(obdelnik, "b"))).klic(praha));
+	}
+
+	@Test
+	public void obrysRasterNadDirouAHranicemi() throws Exception {
+		final cz.geokuk.plugins.mapy.sprava.PolygonPokryti ctverec = cz.geokuk.plugins.mapy.sprava.PolygonPokryti.nacti(new java.io.StringReader("c\n1\n 10 10\n 12 10\n 12 12\n 10 12\nEND\nEND\n"));
+		final ObrysRaster r = new ObrysRaster(ctverec, OblastniKlic.BUFFER_OBRYSU);
+		Assert.assertTrue(r.zasahuje(new BoundingBox(10.9, 10.9, 11.0, 11.0)));
+		Assert.assertTrue("do bufferu", r.zasahuje(new BoundingBox(12.1, 11, 12.12, 11.02)));
+		Assert.assertFalse("daleko za bufferem", r.zasahuje(new BoundingBox(12.5, 11, 12.52, 11.02)));
+		Assert.assertFalse(r.zasahuje(new BoundingBox(30, 30, 30.1, 30.1)));
+		Assert.assertTrue("obdélník přes celý obrys", r.zasahuje(new BoundingBox(0, 0, 40, 40)));
+	}
 }
