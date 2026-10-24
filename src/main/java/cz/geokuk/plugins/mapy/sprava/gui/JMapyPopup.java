@@ -387,6 +387,8 @@ public class JMapyPopup extends JPanel {
 		final String uzel;
 		final boolean hlavicka;
 		final List<Component> bunky;
+		/** Řádek stažené země, který se ukáže jen při hledání. */
+		boolean jenHledani;
 
 		RadekHledani(final String text, final String uzel, final boolean hlavicka, final List<Component> bunky) {
 			this.text = text;
@@ -487,7 +489,9 @@ public class JMapyPopup extends JPanel {
 		for (int i = 0; i < hledatelne.size(); i++) {
 			final RadekHledani r = hledatelne.get(i);
 			final boolean ano;
-			if (r.hlavicka) {
+			if (r.jenHledani) {
+				ano = !hledany.isEmpty() && (r.hlavicka ? uzlySeShodou.contains(r.uzel) : obsahujeVse(r.text, hledany));
+			} else if (r.hlavicka) {
 				ano = hledany.isEmpty() || obsahujeVse(r.text, hledany) || uzlySeShodou.contains(r.uzel);
 			} else if (r.uzel != null) {
 				ano = hledany.isEmpty() ? rozbalene.contains(r.uzel) : obsahujeVse(r.text, hledany);
@@ -820,6 +824,9 @@ public class JMapyPopup extends JPanel {
 	/** Stav řádku, podle kterého se znovu naplní jeho akce a buňky vrstev; průběh, popis a tooltipy se přepisují vždy. */
 	/** Dvě pozice tlačítek řádku; null u řádku bez vrstev a matice (soubor uživatele). */
 	private NabidkaRadku nabidka(final RadekMapy r) {
+		if (r.vCeleZemi && !r.isVeSlozce()) {
+			return NabidkaRadku.vCeleZemi();
+		}
 		if (r.matice == null || r.vlastni || r.bunka(MatriceMap.Cast.MAPA) == null) {
 			return null;
 		}
@@ -1276,6 +1283,23 @@ public class JMapyPopup extends JPanel {
 					y = pridejRegionSeznamu(ostatni, y, r, u);
 				}
 			}
+			// Nestažené regiony stažené země jsou ve Stažených; hledáním se najdou i tady.
+			final Map<String, Uzel> zbyleZeme = new TreeMap<>(cs);
+			for (final RadekMapy r : zbyleRegiony) {
+				if (r.skupina != null) {
+					zbyleZeme.computeIfAbsent(r.skupina, Uzel::new).regiony.add(r);
+				}
+			}
+			for (final Uzel u : zbyleZeme.values()) {
+				final int od = hledatelne.size();
+				u.regiony.sort((a, b) -> cs.compare(a.nazev, b.nazev));
+				uzly.add(u);
+				y = radekZemeBezCelku(ostatni, y, u, "", false, null);
+				for (final RadekMapy r : u.regiony) {
+					y = pridejRegionSeznamu(ostatni, y, r, u);
+				}
+				hledatelne.subList(od, hledatelne.size()).forEach(h -> h.jenHledani = true);
+			}
 			nicNenalezeno = maly(NIC_NENALEZENO);
 			nicNenalezeno.setVisible(false);
 			ostatni.add(nicNenalezeno, bunka(0, y++, 4));
@@ -1283,7 +1307,7 @@ public class JMapyPopup extends JPanel {
 			obal.setOpaque(false);
 			obal.add(ostatni, BorderLayout.NORTH);
 			// Velikost podle seznamu se všemi regiony rozbalenými, aby se popup při hledání a rozbalování nemusel zavírat a znovu otevírat.
-			hledatelne.forEach(r -> r.bunky.forEach(c -> c.setVisible(true)));
+			hledatelne.stream().filter(r -> !r.jenHledani).forEach(r -> r.bunky.forEach(c -> c.setVisible(true)));
 			final Dimension vse = obal.getPreferredSize();
 			filtruj("");
 			vyskaDalsi = vse.height;

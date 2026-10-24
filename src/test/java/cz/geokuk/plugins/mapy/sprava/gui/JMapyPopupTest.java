@@ -572,6 +572,26 @@ public class JMapyPopupTest {
 			p.prepniUzelSlozky("Německo");
 			Assert.assertEquals("Německo pořád jednou", 1, videtLabelu(p, "Německo"));
 			Assert.assertEquals("Bavorsko pod zemí jednou", 1, videtLabelu(p, "Bavorsko"));
+			Assert.assertTrue("region celé stažené země nemá tlačítka", komponentyRadku(p, "Bavorsko").stream().noneMatch(k -> k instanceof JButton));
+			Assert.assertTrue(komponentyRadku(p, "Bavorsko").stream().anyMatch(k -> k instanceof JLabel && "✔ v mapě celé země".equals(((JLabel) k).getText())));
+		});
+	}
+
+	/** Nestažený region částečně stažené země se najde hledáním, i když je jinak sbalený pod zemí ve Stažených. */
+	@Test
+	public void hledaniNajdeRegionStazeneZeme() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(stazene("europe/germany/bayern"));
+			Assert.assertEquals("bez hledání je Hamburk sbalený", 0, videtLabelu(p, "Hamburk"));
+			p.getHledat().setText("hamburk");
+			Assert.assertEquals("hledáním se najde", 1, videtLabelu(p, "Hamburk"));
+			Assert.assertEquals("jen shodný region", 0, videtLabelu(p, "Berlín"));
+			Assert.assertNotNull("s tlačítkem Stáhnout", komponentyRadku(p, "Hamburk").stream().filter(k -> k instanceof JButton).findFirst().orElse(null));
+			p.getHledat().setText("");
+			Assert.assertEquals(0, videtLabelu(p, "Hamburk"));
 		});
 	}
 

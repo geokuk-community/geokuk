@@ -41,7 +41,11 @@ final class RadkyMap {
 			matice.put(r.getKlic(), r);
 		}
 		for (final KatalogovaMapa m : katalog.getMapy()) {
-			radky.add(radek(m, stavy.apply(m), stred != null && m.getPokryti().obsahuje(stred), matice.get(m.getId())));
+			final boolean vCeleZemi = katalog.celek(m).map(c -> {
+				final StavMapy sc = stavy.apply(c);
+				return sc.getMistni() == StavMapy.Mistni.MAME && !bezi(sc);
+			}).orElse(false);
+			radky.add(radek(m, stavy.apply(m), stred != null && m.getPokryti().obsahuje(stred), matice.get(m.getId()), vCeleZemi));
 		}
 		for (final RadekMapy r : vlastni) {
 			if (r.isVlastni()) {
@@ -56,9 +60,13 @@ final class RadkyMap {
 	}
 
 	static RadekMapy radek(final KatalogovaMapa m, final StavMapy s, final boolean proMisto, final MatriceMap.Radek matice) {
+		return radek(m, s, proMisto, matice, false);
+	}
+
+	static RadekMapy radek(final KatalogovaMapa m, final StavMapy s, final boolean proMisto, final MatriceMap.Radek matice, final boolean vCeleZemi) {
 		final boolean mame = s.getMistni() != StavMapy.Mistni.NEMAME;
 		final RadekMapy.Builder b = RadekMapy.katalogova(m.getId(), m.getNazev(), stav(s)).skupina(m.getSkupina()).zdroj(m.getZdroj())
-				.licence(m.getLicence() + ", " + m.getAtribuce()).proZobrazeneMisto(proMisto).veSlozce(mame || bezi(s) || s.isRozpracovano() || matice != null && matice.maCokoli()).matice(matice)
+				.licence(m.getLicence() + ", " + m.getAtribuce()).proZobrazeneMisto(proMisto).vCeleZemi(vCeleZemi).veSlozce(mame || bezi(s) || s.isRozpracovano() || matice != null && matice.maCokoli()).matice(matice)
 				.rozpracovano(s.isRozpracovano()).datumDat(s.getDatumDatMistni()).datumNaServeru(s.getDatumNaServeru()).zkontrolovano(s.getZkontrolovano()).chyba(s.getChyba());
 		b.kontroluje(s.getFaze() == StavMapy.Faze.KONTROLUJE);
 		if (bezi(s)) {
