@@ -46,42 +46,44 @@ public class StavIkonaTest {
 		return ((argb >> 16) & 0xFF) > 170 && ((argb >> 8) & 0xFF) < 80 && (argb & 0xFF) < 80 && (argb >>> 24) > 200;
 	}
 
+	private static boolean viditelne(final int argb) {
+		return (argb >>> 24) > 40;
+	}
+
 	@Test
-	public void symbolyJsouVRohuAObeSeLisi() {
-		for (final int velikost : new int[] { 24, 48 }) {
-			final BufferedImage z = obraz(StavIkona.zakaz(zaklad(velikost), V));
+	public void zakazJeCervenyPresCelouIkonuAArchivSeLisi() {
+		for (final int velikost : new int[] { 16, 24, 48 }) {
+			final BufferedImage z = obraz(StavIkona.zakaz(V));
 			final BufferedImage a = obraz(StavIkona.archiv(zaklad(velikost), V));
+			Assert.assertEquals(V, z.getWidth());
 			Assert.assertEquals(V, z.getHeight());
+			Assert.assertEquals(V, a.getWidth());
 			Assert.assertEquals(V, a.getHeight());
-			// Střed rohu mimo čáru a křížek je červený, levý horní roh ikony je bez symbolu.
-			Assert.assertTrue(cervene(z.getRGB(V - 6, V - 10)));
-			Assert.assertTrue(cervene(a.getRGB(V - 6, V - 10)));
-			Assert.assertFalse(cervene(z.getRGB(3, 3)));
-			// Tvary se liší: roh čtverce je červený jen u archivu, u kruhu je průhledný nebo bílý.
-			Assert.assertTrue(cervene(a.getRGB(V - 2, V - 2)));
-			Assert.assertFalse(cervene(z.getRGB(V - 2, V - 2)));
-			Assert.assertNotEquals(z.getRGB(V - 2, V - 2), a.getRGB(V - 2, V - 2));
-			// Obě se liší od původní ikony.
-			Assert.assertNotEquals(obraz(zaklad(V)).getRGB(V - 4, V - 9), z.getRGB(V - 6, V - 10));
+			// Zákaz: červený kruh přes celou plochu, střed mimo čáru průhledný (žádná krychle).
+			Assert.assertTrue(cervene(z.getRGB(V / 2, 1)));
+			Assert.assertTrue(cervene(z.getRGB(1, V / 2)));
+			Assert.assertFalse(viditelne(z.getRGB(V / 2 - 4, V / 2 - 4)));
+			// Archiv: červený čtvereček včetně rohu, zákaz tam kruhem červený není.
+			Assert.assertTrue(cervene(a.getRGB(V - 3, V - 10)));
+			Assert.assertTrue(viditelne(a.getRGB(V - 1, V - 1)));
+			Assert.assertFalse(viditelne(z.getRGB(V - 1, V - 1)));
 		}
 	}
 
 	@Test
-	public void symbolMaAspon12PxVUvnitrIkony() {
-		final BufferedImage z = obraz(StavIkona.zakaz(zaklad(V), V));
-		int minX = z.getWidth();
-		int minY = z.getHeight();
-		for (int y = 0; y < z.getHeight(); y++) {
-			for (int x = 0; x < z.getWidth(); x++) {
-				if (cervene(z.getRGB(x, y))) {
-					minX = Math.min(minX, x);
-					minY = Math.min(minY, y);
-				}
-			}
+	public void duchMaViditelnyObrysAVyblednutouIkonu() {
+		final BufferedImage a = obraz(StavIkona.archiv(zaklad(16), V));
+		// Střed ikony je šedý a poloprůhledný, ne původní modrý.
+		final int stred = a.getRGB(V / 2 - 3, V / 2 - 3);
+		Assert.assertTrue(viditelne(stred));
+		Assert.assertTrue((stred >>> 24) < 160);
+		Assert.assertEquals((stred >> 16) & 0xFF, (stred >> 8) & 0xFF, 2);
+		// Čárkovaný obrys je v okraji ikony.
+		boolean obrys = false;
+		for (int x = 0; x < V / 2; x++) {
+			obrys |= viditelne(a.getRGB(x, 1));
 		}
-		Assert.assertTrue(z.getWidth() - minX >= 10);
-		Assert.assertTrue(z.getHeight() - minY >= 10);
-		Assert.assertEquals(V, z.getWidth());
+		Assert.assertTrue(obrys);
 	}
 
 	@Test
@@ -138,7 +140,7 @@ public class StavIkonaTest {
 		if (cesta == null) {
 			return;
 		}
-		final Icon[] ikony = { zaklad(V), StavIkona.zakaz(zaklad(V), V), StavIkona.archiv(zaklad(V), V), StavIkona.zakaz(zaklad(48), V) };
+		final Icon[] ikony = { zaklad(V), StavIkona.zakaz(V), StavIkona.archiv(zaklad(V), V), StavIkona.archiv(zaklad(48), V) };
 		final BufferedImage img = new BufferedImage(ikony.length * 30 + 6, 36, BufferedImage.TYPE_INT_ARGB);
 		final java.awt.Graphics2D g = img.createGraphics();
 		g.setColor(new Color(238, 238, 238));
