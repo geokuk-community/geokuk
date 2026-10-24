@@ -51,7 +51,7 @@ public class CacheDbTest {
 		final CacheDb db = CacheDb.otevri(f, true);
 		naplni(db, 50);
 		db.close();
-		Assert.assertEquals(CacheDb.STRANKA_NOVE, StavSouboruCache.precti(f).velikostStranky);
+		Assert.assertEquals(4096, StavSouboruCache.precti(f).velikostStranky);
 		final SqlJetDb znovu = CacheDb.otevri(f, true);
 		znovu.beginTransaction(SqlJetTransactionMode.READ_ONLY);
 		Assert.assertEquals(50, znovu.getTable("tiles").open().getRowCount());

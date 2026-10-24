@@ -296,4 +296,19 @@ public class OptimalizaceDatabazeTest {
 		Assert.assertEquals(7, OptimalizaceDatabaze.odhadMinut(velka));
 		Assert.assertTrue(OptimalizaceDatabaze.potrebneMisto(velka) > 10 * gb);
 	}
+
+	@Test
+	public void spojeniOtevreneTesnePredPozastavenimSeNezaregistruje() throws Exception {
+		vyrobStarouCache(50, 1000);
+		final Ka ka = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 13), EKaType.TURIST_M);
+		manager.predRegistraciSpojeni = () -> {
+			manager.predRegistraciSpojeni = () -> {};
+			Assert.assertTrue(manager.pozastav());
+		};
+		Assert.assertNull("cache je pozastavená", manager.load(ka));
+		Assert.assertTrue("staré spojení se nesmí držet", manager.connections.isEmpty());
+		manager.obnov();
+		cachePoUdalostiPouzitelna();
+		Assert.assertEquals(1, manager.connections.size());
+	}
 }

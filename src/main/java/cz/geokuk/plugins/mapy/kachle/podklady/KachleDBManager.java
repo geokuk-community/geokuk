@@ -103,6 +103,9 @@ class KachleDBManager implements KachleManager {
 	/** Cache je zavřená, soubor upravuje optimalizace; dlaždice se čtou a ukládají jen v paměti. */
 	private volatile boolean optimalizuje;
 
+	/** Jen pro test souběhu: běží po otevření spojení, před jeho zaregistrováním. */
+	volatile Runnable predRegistraciSpojeni = () -> {};
+
 	/** Stav cache se do logu píše jen při prvním otevření, ne pro spojení každého vlákna. */
 	private final Set<File> souboryVLogu = ConcurrentHashMap.newKeySet();
 
@@ -632,22 +635,30 @@ class KachleDBManager implements KachleManager {
 				return null;
 			}
 		}
-		try {
-			// Close all deprecated connections (should be exactly one or zero)
-			// Done here for synchronization reasons. This way, we never close an active connection that's
-			// needed elsewhere at the same moment and there's always at most one connection per thread.
-			for (final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn : connections.entrySet()) {
-				if (conn.getKey().getKey().equals(t)) {
-					conn.getValue().close();
-					connections.remove(conn.getKey());
-				}
+		predRegistraciSpojeni.run();
+		// Pod zámkem jako pozastav(): spojení otevřené těsně před pozastavením nesmí zůstat zaregistrované.
+		synchronized (this) {
+			if (optimalizuje) {
+				zavri(database);
+				return null;
 			}
-		} catch (final SqlJetException e) {
-			log.error("Unable to close the deprecated DB connection!", e);
-		}
+			try {
+				// Close all deprecated connections (should be exactly one or zero)
+				// Done here for synchronization reasons. This way, we never close an active connection that's
+				// needed elsewhere at the same moment and there's always at most one connection per thread.
+				for (final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn : connections.entrySet()) {
+					if (conn.getKey().getKey().equals(t)) {
+						conn.getValue().close();
+						connections.remove(conn.getKey());
+					}
+				}
+			} catch (final SqlJetException e) {
+				log.error("Unable to close the deprecated DB connection!", e);
+			}
 
-		neuspesnychOtevreniZaSebou = 0;
-		connections.put(mapKey, database);
+			neuspesnychOtevreniZaSebou = 0;
+			connections.put(mapKey, database);
+		}
 		return database;
 	}
 
