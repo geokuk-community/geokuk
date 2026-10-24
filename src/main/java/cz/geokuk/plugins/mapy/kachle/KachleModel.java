@@ -22,6 +22,7 @@ import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboruChangedEvent;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
+import cz.geokuk.plugins.mapy.kachle.gui.PripominkaOptimalizace;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
 import cz.geokuk.util.gui.RidnutiVNecinnosti;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,8 @@ public class KachleModel extends Model0 {
 	/** Výběr vrstev každého tématu zvlášť; klíč je otisk jména tématu, jméno samo může být delší, než dovolí klíč nastavení. */
 	private static final String OFFLINE_MAPA_VRSTVY_node = "offlineMapaVrstvy";
 
+	private static final String OPTIMALIZACE_ODLOZENA_DO = "optimalizaceCacheOdlozenaDo";
+	private static final String OPTIMALIZACE_PODIL = "optimalizaceCachePodilPriOdlozeni";
 	private static final String OFFLINE_OSTRA = "offlineMapaOstra";
 	private static final String OSM = "© přispěvatelé OpenStreetMap";
 	private static final String NATURAL_EARTH = "Made with Natural Earth";
@@ -251,6 +254,22 @@ public class KachleModel extends Model0 {
 		fire(new ObrysPokrytiEvent(isObrysPokryti()));
 		hlidaniSlozky.scheduleWithFixedDelay(this::zkontrolujSlozkuOfflineMap, 2, 2, TimeUnit.SECONDS);
 		ziskavac.spustPredvykresleniPrehledu();
+		hlidaniSlozky.schedule(() -> PripominkaOptimalizace.zkontroluj(this), 3, TimeUnit.SECONDS);
+	}
+
+	/** Čas, do kdy uživatel odložil doporučení optimalizace databáze cache; 0 = neodloženo. */
+	public long getOptimalizaceOdlozenaDo() {
+		return currPrefe().getLong(OPTIMALIZACE_ODLOZENA_DO, 0);
+	}
+
+	/** Podíl volných stránek cache (0 až 1) v okamžiku odložení. */
+	public double getOptimalizacePodilPriOdlozeni() {
+		return currPrefe().getInt(OPTIMALIZACE_PODIL, 0) / 100.0;
+	}
+
+	public void odlozOptimalizaci(final long dokdy, final double podil) {
+		currPrefe().putLong(OPTIMALIZACE_ODLOZENA_DO, dokdy);
+		currPrefe().putInt(OPTIMALIZACE_PODIL, (int) Math.round(podil * 100));
 	}
 
 	void zkontrolujSlozkuOfflineMap() {

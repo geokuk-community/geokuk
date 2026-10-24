@@ -87,4 +87,9 @@ public interface KachleManager {
 	public default int smazOfflineNesedici(final String globalni, final Function<KaLoc, String> ocekavany) {
 		return 0;
 	}
+
+	/** Optimalizace databáze cache, null, když úložiště nic takového nemá. */
+	public default OptimalizaceDatabaze optimalizace() {
+		return null;
+	}
 }

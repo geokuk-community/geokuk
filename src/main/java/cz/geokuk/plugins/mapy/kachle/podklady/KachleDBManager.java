@@ -100,6 +100,12 @@ class KachleDBManager implements KachleManager {
 
 	private boolean upozornenoNaMisto;
 
+	/** Cache je zavřená, soubor upravuje optimalizace; dlaždice se čtou a ukládají jen v paměti. */
+	private volatile boolean optimalizuje;
+
+	/** Jen pro test souběhu: běží po otevření spojení, před jeho zaregistrováním. */
+	volatile Runnable predRegistraciSpojeni = () -> {};
+
 	/** Stav cache se do logu píše jen při prvním otevření, ne pro spojení každého vlákna. */
 	private final Set<File> souboryVLogu = ConcurrentHashMap.newKeySet();
 
@@ -518,6 +524,45 @@ class KachleDBManager implements KachleManager {
 		return volne == 0 && slozka.getTotalSpace() == 0 ? -1 : volne;
 	}
 
+	@Override
+	public OptimalizaceDatabaze optimalizace() {
+		return new OptimalizaceDatabaze(this);
+	}
+
+	/** Soubor cache podle aktuálního umístění; null, když umístění není známé. */
+	File souborCache() {
+		final cz.geokuk.util.file.Filex slozka = folderHolder.getKachleCacheFolder();
+		return slozka == null ? null : new File(slozka.getEffectiveFile(), FILE_NAME);
+	}
+
+	/**
+	 * Zavře všechna spojení a cache dál nepoužívá, dokud se nezavolá {@link #obnov()}; čtení pak dlaždice nenajde a zápis selže.
+	 *
+	 * @return false, když cache zrovna kontroluje běžící kontrola po pádu
+	 */
+	synchronized boolean pozastav() {
+		zamek.writeLock().lock();
+		try {
+			final File f = souborCache();
+			if (f != null && kontroly.containsKey(f)) {
+				return false;
+			}
+			optimalizuje = true;
+			odlozeni++;
+			for (final Iterator<Map.Entry<Map.Entry<Thread, File>, SqlJetDb>> it = connections.entrySet().iterator(); it.hasNext();) {
+				zavri(it.next().getValue());
+				it.remove();
+			}
+			return true;
+		} finally {
+			zamek.writeLock().unlock();
+		}
+	}
+
+	void obnov() {
+		optimalizuje = false;
+	}
+
 	/**
 	 * Poškození zjištěné při čtení nebo zápisu: zavřou se všechna spojení a cache se odloží. Odkládá se jen cache, ve které chyba
 	 * vznikla, ne nová, kterou mezitím založilo jiné vlákno.
@@ -566,6 +611,9 @@ class KachleDBManager implements KachleManager {
 	 * @see #connections
 	 */
 	private SqlJetDb getDatabaseConnection() {
+		if (optimalizuje) {
+			return null;
+		}
 		final Thread t = Thread.currentThread();
 		final File folder = folderHolder.getKachleCacheFolder().getEffectiveFile();
 		if (!lzePouzit(folder)) {
@@ -587,22 +635,30 @@ class KachleDBManager implements KachleManager {
 				return null;
 			}
 		}
-		try {
-			// Close all deprecated connections (should be exactly one or zero)
-			// Done here for synchronization reasons. This way, we never close an active connection that's
-			// needed elsewhere at the same moment and there's always at most one connection per thread.
-			for (final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn : connections.entrySet()) {
-				if (conn.getKey().getKey().equals(t)) {
-					conn.getValue().close();
-					connections.remove(conn.getKey());
-				}
+		predRegistraciSpojeni.run();
+		// Pod zámkem jako pozastav(): spojení otevřené těsně před pozastavením nesmí zůstat zaregistrované.
+		synchronized (this) {
+			if (optimalizuje) {
+				zavri(database);
+				return null;
 			}
-		} catch (final SqlJetException e) {
-			log.error("Unable to close the deprecated DB connection!", e);
-		}
+			try {
+				// Close all deprecated connections (should be exactly one or zero)
+				// Done here for synchronization reasons. This way, we never close an active connection that's
+				// needed elsewhere at the same moment and there's always at most one connection per thread.
+				for (final Map.Entry<Map.Entry<Thread, File>, SqlJetDb> conn : connections.entrySet()) {
+					if (conn.getKey().getKey().equals(t)) {
+						conn.getValue().close();
+						connections.remove(conn.getKey());
+					}
+				}
+			} catch (final SqlJetException e) {
+				log.error("Unable to close the deprecated DB connection!", e);
+			}
 
-		neuspesnychOtevreniZaSebou = 0;
-		connections.put(mapKey, database);
+			neuspesnychOtevreniZaSebou = 0;
+			connections.put(mapKey, database);
+		}
 		return database;
 	}
 

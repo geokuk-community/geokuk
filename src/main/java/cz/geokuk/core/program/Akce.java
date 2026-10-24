@@ -84,6 +84,7 @@ public class Akce {
 	public final ZkontrolovatAktualizaceAction zkontrolovatAktualizaceAction = new ZkontrolovatAktualizaceAction();
 
 	public final UkladatMapyNaDiskAction ukladatMapyNaDiskAction = new UkladatMapyNaDiskAction();
+	public final cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabazeAction optimalizaceDatabazeAction = new cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabazeAction();
 	public final OnlineModeAction onlineModeAction = new OnlineModeAction();
 	public final PrekryvTrasAction prekryvTrasAction = new PrekryvTrasAction();
 	public final cz.geokuk.plugins.mapy.kachle.ReliefCuzkAction reliefCuzkAction = new cz.geokuk.plugins.mapy.kachle.ReliefCuzkAction();

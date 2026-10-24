@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /** Stav souboru cache dlaždic přečtený z hlavičky SQLite bez otevření databáze. */
-final class StavSouboruCache {
+public final class StavSouboruCache {
 
 	private static final byte[] HLAVICKA = "SQLite format 3\0".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
 
@@ -15,7 +15,7 @@ final class StavSouboruCache {
 	final long stranek;
 	final long volnych;
 
-	private StavSouboruCache(final long velikost, final int velikostStranky, final long stranek, final long volnych) {
+	public StavSouboruCache(final long velikost, final int velikostStranky, final long stranek, final long volnych) {
 		this.velikost = velikost;
 		this.velikostStranky = velikostStranky;
 		this.stranek = stranek;
@@ -59,13 +59,22 @@ final class StavSouboruCache {
 	}
 
 	/** Podíl volných stránek 0 až 1. */
-	double podilVolnych() {
+	public double podilVolnych() {
 		return stranek == 0 ? 0 : (double) volnych / stranek;
 	}
 
 	/** Odhad bajtů, které zůstanou po zhutnění. */
-	long zivaData() {
+	public long zivaData() {
 		return (stranek - volnych) * velikostStranky;
+	}
+
+	public int velikostStranky() {
+		return velikostStranky;
+	}
+
+	/** Velikost souboru v bajtech. */
+	public long velikost() {
+		return velikost;
 	}
 
 	@Override
