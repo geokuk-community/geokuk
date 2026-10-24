@@ -830,7 +830,8 @@ public class JMapyPopup extends JPanel {
 		if (r.matice == null || r.vlastni || r.bunka(MatriceMap.Cast.MAPA) == null) {
 			return null;
 		}
-		return NabidkaRadku.pro(r::bunkaNabidky, new NabidkaRadku.Okolnosti(volneMisto < 0 ? -1 : Math.max(0, volneMisto - rozdelano), beziNazev));
+		final NabidkaRadku n = NabidkaRadku.pro(r::bunkaNabidky, new NabidkaRadku.Okolnosti(volneMisto < 0 ? -1 : Math.max(0, volneMisto - rozdelano), beziNazev));
+		return r.vCeleZemi && !r.bunka(MatriceMap.Cast.MAPA).jeStazeno() ? n.zakazanoVCeleZemi() : n;
 	}
 
 	private String stavRadku(final RadekMapy r) {
@@ -845,9 +846,9 @@ public class JMapyPopup extends JPanel {
 			}
 		}
 		for (final MatriceMap.Cast c : VRSTVY) {
-			final MatriceMap.Bunka b = r.bunka(c);
+			final MatriceMap.Bunka b = r.bunkaNabidky(c);
 			if (b != null) {
-				sb.append('|').append(b.getStav()).append(b.isOveruje()).append(b.getChyba()).append(b.getVelikost()).append(b.getStazeno() > 0).append(b.getDatumDat())
+				sb.append('|').append(b.getStav()).append(b.isOveruje()).append(b.getChyba()).append(b.getVelikost()).append(b.getStazeno() > 0).append(b.getDatumDat()).append(b.getRegionuHotovo())
 						.append(nedostatekMista(b) ? volneMisto - rozdelano : -1);
 			}
 		}
@@ -2053,9 +2054,9 @@ public class JMapyPopup extends JPanel {
 			if (novy.equals(stav)) {
 				for (int i = 0; i < VRSTVY.length; i++) {
 					if (procenta[i] != null) {
-						final MatriceMap.Bunka b = r.bunka(VRSTVY[i]);
+						final MatriceMap.Bunka b = r.bunkaNabidky(VRSTVY[i]);
 						procenta[i].setText(procenta(b));
-						procenta[i].setToolTipText(b.getChyba());
+						procenta[i].setToolTipText(tooltipPrubehu(b));
 					}
 				}
 				return;
@@ -2115,7 +2116,7 @@ public class JMapyPopup extends JPanel {
 	/** Buňka vrstvy v řádku mapy: jedna ikona nebo tlačítko podle stavu, velikost a datum v tooltipu, Smazat v kontextovém menu buňky. */
 	private void naplnBunku(final RadekView v, final int sloupec) {
 		final MatriceMap.Cast cast = VRSTVY[sloupec];
-		final MatriceMap.Bunka b = v.radek.bunka(cast);
+		final MatriceMap.Bunka b = v.radek.bunkaNabidky(cast);
 		final JPanel p = v.vrstvy[sloupec];
 		p.removeAll();
 		p.setComponentPopupMenu(null);
@@ -2128,17 +2129,19 @@ public class JMapyPopup extends JPanel {
 			return;
 		}
 		final String nazev = nazevVrstvy(cast);
-		final String velikost = b.getVelikost() > 0 ? RadekMapy.velikost(b.getVelikost()) : "";
+		final boolean zbyva = b.isSouhrn() && (b.getStav() == MatriceMap.StavBunky.KE_STAZENI || b.getStav() == MatriceMap.StavBunky.CHYBA);
+		final long ukazana = zbyva ? Math.max(0, b.getVelikost() - b.getStazeno()) : b.getVelikost();
+		final String velikost = ukazana > 0 ? RadekMapy.velikost(ukazana) : "";
 		final String data = b.getDatumDat() == null ? "" : ", data z " + DATUM_DAT.format(b.getDatumDat());
 		switch (b.getStav()) {
 		case STAZENO: {
 			final JLabel ikona = new JLabel(IkonyMap.pro(RadekMapy.Stav.AKTUALNI));
-			ikona.setToolTipText(nazev + ": staženo" + (velikost.isEmpty() ? "" : ", " + velikost) + data);
+			ikona.setToolTipText(nazev + ": staženo" + (b.isSouhrn() ? " u všech regionů (" + b.getRegionuCelkem() + ")" : "") + (velikost.isEmpty() ? "" : ", " + velikost) + data);
 			p.add(ikona);
 			break;
 		}
 		case NOVEJSI: {
-			final JButton aktualizovat = ikonaOdkaz(IkonyMap.pro(RadekMapy.Stav.NOVEJSI), e -> stahniVrstvu(b));
+			final JButton aktualizovat = ikonaOdkaz(IkonyMap.pro(RadekMapy.Stav.NOVEJSI), e -> stahniVrstvu(v.radek, b));
 			aktualizovat.setToolTipText(nazev + ": novější verze" + (velikost.isEmpty() ? "" : ", " + velikost) + ". Kliknutím aktualizujete.");
 			zakazDokudNeniMisto(aktualizovat, b, vrstvyPlne);
 			p.add(aktualizovat);
@@ -2147,13 +2150,13 @@ public class JMapyPopup extends JPanel {
 		case STAHUJE: {
 			p.add(new JLabel(IkonyMap.pro(RadekMapy.Stav.STAHUJE)));
 			final JLabel procenta = maly(procenta(b));
-			procenta.setToolTipText(b.getChyba());
+			procenta.setToolTipText(tooltipPrubehu(b));
 			v.procenta[sloupec] = procenta;
 			p.add(procenta);
 			return;
 		}
 		case CHYBA: {
-			final JButton znovu = ikonaOdkaz(IkonyMap.pro(RadekMapy.Stav.CHYBA), e -> stahniVrstvu(b));
+			final JButton znovu = ikonaOdkaz(IkonyMap.pro(RadekMapy.Stav.CHYBA), e -> stahniVrstvu(v.radek, b));
 			znovu.setToolTipText(nazev + ": " + (b.getChyba() == null ? "stažení se nepovedlo" : b.getChyba()) + ". Kliknutím zkusíte znovu.");
 			zakazDokudNeniMisto(znovu, b, vrstvyPlne);
 			p.add(znovu);
@@ -2161,14 +2164,14 @@ public class JMapyPopup extends JPanel {
 		}
 		case KE_STAZENI:
 		default: {
-			final JButton stahnout = odkaz(STAHNOUT_VRSTVU, e -> stahniVrstvu(b));
-			stahnout.setToolTipText(nazev + ": nestaženo" + (velikost.isEmpty() ? "" : ", " + velikost) + (b.getStazeno() > 0 ? " (rozpracováno)" : "") + ". Kliknutím stáhnete.");
+			final JButton stahnout = odkaz(STAHNOUT_VRSTVU, e -> stahniVrstvu(v.radek, b));
+			stahnout.setToolTipText(nazev + ": nestaženo" + (b.isSouhrn() ? " u " + (b.getRegionuCelkem() - b.getRegionuHotovo()) + " z " + b.getRegionuCelkem() + " regionů" : "") + (velikost.isEmpty() ? "" : ", " + velikost) + (b.getStazeno() > 0 ? " (rozpracováno)" : "") + ". Kliknutím stáhnete.");
 			zakazDokudNeniMisto(stahnout, b, vrstvyPlne);
 			p.add(stahnout);
 			break;
 		}
 		}
-		if (b.jeCoMazat()) {
+		if (b.jeCoMazat() && !b.isSouhrn()) {
 			final JMenuItem smazat = new JMenuItem(SMAZAT_VRSTVU + " " + nazev.toLowerCase(new Locale("cs")));
 			smazat.addActionListener(e -> {
 				if (ovladani != null) {
@@ -2209,6 +2212,9 @@ public class JMapyPopup extends JPanel {
 
 	/** „37 %“ při stahování, „Ověřuji 37 %“ při ověřování staženého souboru. */
 	static String procenta(final MatriceMap.Bunka b) {
+		if (b.isSouhrn()) {
+			return b.getRegionuHotovo() + " z " + b.getRegionuCelkem();
+		}
 		if (b.getVelikost() <= 0) {
 			return b.isOveruje() ? "Ověřuji…" : "";
 		}
@@ -2219,6 +2225,10 @@ public class JMapyPopup extends JPanel {
 		}
 		final String p = Math.min(100, stazeno * 100 / b.getVelikost()) + " %";
 		return b.isOveruje() ? "Ověřuji " + p : p;
+	}
+
+	private static String tooltipPrubehu(final MatriceMap.Bunka b) {
+		return b.getChyba() != null || !b.isSouhrn() ? b.getChyba() : "Staženo " + b.getRegionuHotovo() + " z " + b.getRegionuCelkem() + " regionů";
 	}
 
 	static String nazevVrstvy(final MatriceMap.Cast cast) {
@@ -2233,8 +2243,13 @@ public class JMapyPopup extends JPanel {
 		}
 	}
 
-	private void stahniVrstvu(final MatriceMap.Bunka b) {
-		if (ovladani != null) {
+	private void stahniVrstvu(final RadekMapy r, final MatriceMap.Bunka b) {
+		if (ovladani == null) {
+			return;
+		}
+		if (b.isSouhrn()) {
+			ovladani.stahniVrstvyZeme(r.id, klicePlanu(r), b.getCast(), b.getStav() == MatriceMap.StavBunky.NOVEJSI ? PlanPruvodce.Rezim.AKTUALIZOVAT : PlanPruvodce.Rezim.STAHNOUT);
+		} else {
 			ovladani.stahniVrstvu(b.getId());
 		}
 	}
@@ -2352,8 +2367,14 @@ public class JMapyPopup extends JPanel {
 		}
 		final Uzel u = zemeVsechny.get(r.skupina != null ? r.skupina : r.nazev);
 		final boolean celek = r.skupina == null && u != null && !u.regiony.isEmpty();
+		ovladani.stahniMapuAVrstvy(celek ? r.id : null, klicePlanu(r), rezim);
+	}
+
+	/** Klíče řádků plánu: u celé země s regiony celek a regiony, jinak jen řádek. */
+	private List<String> klicePlanu(final RadekMapy r) {
+		final Uzel u = zemeVsechny.get(r.skupina != null ? r.skupina : r.nazev);
 		final List<String> klice = new ArrayList<>();
-		if (celek) {
+		if (r.skupina == null && u != null && !u.regiony.isEmpty()) {
 			for (final RadekMapy x : u.vsechnyRadky()) {
 				if (x.matice != null && !x.vlastni) {
 					klice.add(x.id);
@@ -2362,7 +2383,7 @@ public class JMapyPopup extends JPanel {
 		} else {
 			klice.add(r.id);
 		}
-		ovladani.stahniMapuAVrstvy(celek ? r.id : null, klice, rezim);
+		return klice;
 	}
 
 	private void smazDvojite(final PokrytiMap.DvojitaMapa d, final boolean regiony) {

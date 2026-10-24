@@ -40,6 +40,24 @@ public final class VrstvyProGui {
 		}
 	}
 
+	/** Německo po regionech: trasy u všech regionů, vrstevnice jen u Bavorska a Saska, celá země vlastní vrstvu nemá. */
+	public static KatalogVrstev katalogNemeckoPoRegionech() {
+		final KatalogMap katalog = KatalogMap.vestaveny();
+		final java.util.List<String> vrstvy = new java.util.ArrayList<>();
+		for (final KatalogovaMapa r : katalog.regiony(katalog.podleId("europe/germany").get())) {
+			final String n = r.getNazevSouboru().replace(".map", "");
+			vrstvy.add(KatalogVrstevTest.vrstva("tourist/" + r.getId(), "tourist", r.getId(), "map", KatalogVrstevTest.soubor(n + "_trasy.map", "v1/" + n + "_trasy.map", 10_000_000, SHA), ""));
+			if (n.equals("bayern") || n.equals("sachsen")) {
+				vrstvy.add(KatalogVrstevTest.vrstva("contours/" + r.getId(), "contours", r.getId(), "map", KatalogVrstevTest.soubor(n + "_vrstevnice.map", "v1/" + n + "_vrstevnice.map", 5_000_000, SHA), ""));
+			}
+		}
+		try {
+			return KatalogVrstev.nacti(KatalogVrstevTest.katalog(vrstvy.toArray(new String[0])), katalog);
+		} catch (final IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
 	/** Španělsko: trasy jen pro regiony Andalusie a Aragonie, celá země vlastní vrstvu nemá. */
 	public static KatalogVrstev katalogSpanelsko() {
 		try {

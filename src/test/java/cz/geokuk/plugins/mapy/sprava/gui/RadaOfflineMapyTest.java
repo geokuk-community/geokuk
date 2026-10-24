@@ -65,6 +65,14 @@ public class RadaOfflineMapyTest {
 		Assert.assertEquals("Berlín", RadaOfflineMapy.pro(KATALOG, StavMapy::novy, new Wgs(52.52, 13.40)).mapa.getNazev());
 	}
 
+	/** Stažená celá země: rada v mapě nenabízí její region (dvojité stažení). */
+	@Test
+	public void regionStazeneZemeSeNenabizi() {
+		final RadaOfflineMapy r = RadaOfflineMapy.pro(KATALOG, m -> stav(m, m.getId().equals("europe/germany") ? MAME : NEMAME, NIC, 0, -1), MNICHOV);
+		Assert.assertNull(r.odkaz);
+		Assert.assertNotEquals("Bavorsko", r.mapa == null ? null : r.mapa.getNazev());
+	}
+
 	/** Během stahování jiné mapy rada stažení nenabízí (klik by nic neudělal), ale řekne proč. */
 	@Test
 	public void behemStahovaniJineMapy() {
