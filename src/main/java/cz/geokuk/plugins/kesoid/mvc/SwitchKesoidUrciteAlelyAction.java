@@ -10,6 +10,7 @@ import cz.geokuk.framework.ToggleAction0;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.mapicon.IkonBag;
+import cz.geokuk.plugins.kesoid.mapicon.StavIkona;
 import cz.geokuk.util.lang.FString;
 
 /**
@@ -53,8 +54,7 @@ public class SwitchKesoidUrciteAlelyAction extends ToggleAction0 implements Afte
 
 	/** Vykreslí ikonu alely; skládá obrázky ze sady, proto mimo EDT. */
 	public Icon pripravIkonu() {
-		final IkonBag bag = ikonBag;
-		return bag.seekIkon(bag.getGenom().UNIVERZALNI_DRUH.genotypVychozi().with(alela));
+		return StavIkona.ikonaToolbaru(ikonBag, alela);
 	}
 
 	public void setIkona(final Icon ikona) {

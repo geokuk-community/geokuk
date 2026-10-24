@@ -3,6 +3,7 @@
  */
 package cz.geokuk.plugins.kesoid.mapicon;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.*;
@@ -71,11 +72,11 @@ public class JToolbarOvladaceAlel extends JPanel {
 		ovladac(bezIkony, vsechny, genom.ALELA_hnf);
 		ovladac(bezIkony, vsechny, genom.ALELA_fnd);
 		ovladac(bezIkony, vsechny, genom.ALELA_own);
-		ovladac(bezIkony, vsechny, genom.ALELA_dsbl);
-		ovladac(bezIkony, vsechny, genom.ALELA_arch);
 		ovladac(bezIkony, vsechny, genom.ALELA_cpt);
 		ovladac(bezIkony, vsechny, genom.ALELA_dpl);
-		// add(new JToolBar.Separator());
+		add(new JSeparator(SwingConstants.VERTICAL));
+		ovladac(bezIkony, vsechny, genom.ALELA_dsbl);
+		ovladac(bezIkony, vsechny, genom.ALELA_arch);
 		add(new JSeparator(SwingConstants.VERTICAL));
 		ovladac(bezIkony, vsechny, genom.ALELA_gc);
 		ovladac(bezIkony, vsechny, genom.ALELA_mz);
@@ -97,8 +98,28 @@ public class JToolbarOvladaceAlel extends JPanel {
 				ovladac(bezIkony, vsechny, alela);
 			}
 		}
+		skryjPrazdneOddelovace();
 		setVisible(true);
 		nactiIkony(bezIkony);
+	}
+
+	/** Oddělovač je vidět jen mezi dvěma skupinami, které mají aspoň jeden viditelný ovladač. */
+	private void skryjPrazdneOddelovace() {
+		final Component[] komponenty = getComponents();
+		boolean predchoziSkupina = false;
+		for (int i = 0; i < komponenty.length; i++) {
+			if (komponenty[i] instanceof JSeparator) {
+				boolean dalsiSkupina = false;
+				for (int j = i + 1; j < komponenty.length && !(komponenty[j] instanceof JSeparator); j++) {
+					dalsiSkupina |= komponenty[j].isVisible();
+				}
+				final boolean videt = predchoziSkupina && dalsiSkupina;
+				komponenty[i].setVisible(videt);
+				predchoziSkupina &= !videt;
+			} else {
+				predchoziSkupina |= komponenty[i].isVisible();
+			}
+		}
 	}
 
 	/** Ikony alel se skládají z obrázků sady, při prvním startu to trvá i sekundy; ovladače mezitím drží místo prázdnou ikonou. */
