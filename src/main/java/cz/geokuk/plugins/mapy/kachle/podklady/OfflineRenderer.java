@@ -162,14 +162,23 @@ final class OfflineRenderer {
 	 *            složka s DEM dlaždicemi (HGT, případně zazipované) pro stínování terénu, null = bez stínování
 	 */
 	static OfflineRenderer otevri(final List<File> mapy, final List<File> vrstvy, final File slozkaDem, final NacteneTema tema, final boolean prekryv) throws IOException {
+		return otevri(mapy, vrstvy, slozkaDem, tema, prekryv, cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(), cz.geokuk.plugins.mapy.sprava.KatalogVrstev.vestaveny());
+	}
+
+	/**
+	 * @param katalog
+	 *            katalog map, podle kterého se z jména souboru pozná katalogová mapa s obrysem
+	 * @param katalogVrstev
+	 *            katalog vrstev, podle kterého se z cesty souboru pozná katalogová vrstva s obrysem
+	 */
+	static OfflineRenderer otevri(final List<File> mapy, final List<File> vrstvy, final File slozkaDem, final NacteneTema tema, final boolean prekryv,
+			final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog, final cz.geokuk.plugins.mapy.sprava.KatalogVrstev katalogVrstev) throws IOException {
 		if (mapy.isEmpty()) {
 			throw new IOException("Žádný soubor mapy.");
 		}
 		final MultiMapDataStore data = new MultiMapDataStore(MultiMapDataStore.DataPolicy.DEDUPLICATE);
 		final List<OblastniKlic.Zdroj> zdroje = new ArrayList<>();
 		final List<Pokryti> pokryti = new ArrayList<>();
-		final cz.geokuk.plugins.mapy.sprava.KatalogMap katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny();
-		final cz.geokuk.plugins.mapy.sprava.KatalogVrstev katalogVrstev = cz.geokuk.plugins.mapy.sprava.KatalogVrstev.vestaveny();
 		final List<SouborMapy> zakladni = new ArrayList<>();
 		int vrstev = 0;
 		OfflineMapaChyba prvniChyba = null;
@@ -227,7 +236,7 @@ final class OfflineRenderer {
 		}
 		final HillsRenderConfig kopce = prekryv ? null : kopce(slozkaDem, tema.grafika, zdroje);
 		final String globalni = prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString());
-		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, new OblastniKlic(globalni, zdroje), prekryv, kopce, zakladni, vrstev);
+		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, new OblastniKlic(globalni, zdroje, data.boundingBox()), prekryv, kopce, zakladni, vrstev);
 		r.preskoceno = prvniChyba == null ? null : prvniChyba.getMessage();
 		return r;
 	}

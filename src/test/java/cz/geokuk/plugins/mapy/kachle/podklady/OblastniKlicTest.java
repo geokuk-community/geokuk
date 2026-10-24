@@ -254,4 +254,41 @@ public class OblastniKlicTest {
 		Assert.assertFalse(r.zasahuje(new BoundingBox(30, 30, 30.1, 30.1)));
 		Assert.assertTrue("obdélník přes celý obrys", r.zasahuje(new BoundingBox(0, 0, 40, 40)));
 	}
+
+	private static BoundingBox sjednoceni(final BoundingBox a, final BoundingBox b) {
+		return new BoundingBox(Math.min(a.minLatitude, b.minLatitude), Math.min(a.minLongitude, b.minLongitude), Math.max(a.maxLatitude, b.maxLatitude), Math.max(a.maxLongitude, b.maxLongitude));
+	}
+
+	/** Mimo sjednocený rozsah souborů se kreslí šedá plocha: dlaždice vyčnívající ze sjednocení závisí na celé sestavě, vnitřní ne. */
+	@Test
+	public void dlazdiceNaOkrajiSjednoceniZavisiNaCeleSestave() {
+		final BoundingBox a = OblastniKlic.bezOkoli(dlazdice(0));
+		final BoundingBox b = new BoundingBox(10, 10, 11, 11);
+		final Zdroj za = zdroj(a, "A");
+		final Zdroj zb = zdroj(b, "B");
+		final OblastniKlic bez = new OblastniKlic("o0000000a", Arrays.asList(za), a);
+		final OblastniKlic s = new OblastniKlic("o0000000a", Arrays.asList(za, zb), sjednoceni(a, b));
+		Assert.assertEquals("vnitřní dlaždice vzdálený soubor nezajímá", bez.klic(dlazdice(0)), s.klic(dlazdice(0)));
+		Assert.assertNotEquals("dlaždice vyčnívající ze sjednocení: přidaný vzdálený soubor mění šedou plochu", bez.klic(dlazdice(1)), s.klic(dlazdice(1)));
+		Assert.assertEquals("dlaždice uvnitř sjednocení vzdálený soubor nezajímá ani na okraji souboru", bez.klic(dlazdice(-1)), s.klic(dlazdice(-1)));
+	}
+
+	@Test
+	public void bezSjednoceniSeNeuplatni() {
+		final BoundingBox a = OblastniKlic.bezOkoli(dlazdice(0));
+		final Zdroj za = zdroj(a, "A");
+		final Zdroj zb = zdroj(new BoundingBox(10, 10, 11, 11), "B");
+		Assert.assertEquals(new OblastniKlic("o0000000a", Arrays.asList(za), null).klic(dlazdice(1)), new OblastniKlic("o0000000a", Arrays.asList(za, zb), null).klic(dlazdice(1)));
+	}
+
+	/** Obrys z katalogu platí jen pro soubor odpovídající katalogové mapě. */
+	@Test
+	public void obrysPlatiJenKdyzSouborOdpovidaMape() throws Exception {
+		final cz.geokuk.plugins.mapy.sprava.PolygonPokryti p = polsko();
+		Assert.assertSame(p, OblastniKlic.platnyObrys(p, new BoundingBox(48.99, 14.07, 55.23, 24.15)));
+		Assert.assertSame("data o trochu za obrysem", p, OblastniKlic.platnyObrys(p, new BoundingBox(48.9, 13.95, 55.3, 24.3)));
+		Assert.assertNull("oříznutý soubor", OblastniKlic.platnyObrys(p, new BoundingBox(50, 14.07, 55.23, 24.15)));
+		Assert.assertNull("větší soubor", OblastniKlic.platnyObrys(p, new BoundingBox(45, 10, 58, 28)));
+		Assert.assertNull(OblastniKlic.platnyObrys(null, new BoundingBox(48.99, 14.07, 55.23, 24.15)));
+	}
 }

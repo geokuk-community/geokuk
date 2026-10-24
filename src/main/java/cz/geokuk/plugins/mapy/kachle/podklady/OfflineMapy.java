@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import cz.geokuk.core.coordinates.Wgs;
@@ -26,6 +27,8 @@ public class OfflineMapy {
 	/** Průhledný překryv přes jiný podklad, viz {@link OfflineRenderer#otevri(List, OfflineRenderer.NacteneTema, boolean)}. */
 	private final boolean prekryv;
 	/** Zavolá se po každém otevření map s klíčem dlaždic a souborem symbolů (null = neukládají se). */
+	private volatile Supplier<cz.geokuk.plugins.mapy.sprava.KatalogMap> katalog = cz.geokuk.plugins.mapy.sprava.KatalogMap::vestaveny;
+	private volatile Supplier<cz.geokuk.plugins.mapy.sprava.KatalogVrstev> katalogVrstev = cz.geokuk.plugins.mapy.sprava.KatalogVrstev::vestaveny;
 	private volatile BiConsumer<OblastniKlic, File> priOtevreni = (klic, symboly) -> {};
 
 	/** Jak často se nejvýš dívá do složky, jestli se mapy nezměnily. */
@@ -142,6 +145,12 @@ public class OfflineMapy {
 	/** Právě se stahují mapy nebo vrstvy, viz {@link #setDavka(BooleanSupplier)}. */
 	boolean isDavka() {
 		return davka.getAsBoolean();
+	}
+
+	/** Katalogy, podle kterých se katalogovým mapám a vrstvám přiřadí obrys pokrytí; výchozí jsou vestavěné. */
+	public void setKatalogy(final Supplier<cz.geokuk.plugins.mapy.sprava.KatalogMap> katalog, final Supplier<cz.geokuk.plugins.mapy.sprava.KatalogVrstev> katalogVrstev) {
+		this.katalog = katalog;
+		this.katalogVrstev = katalogVrstev;
 	}
 
 	public void setPriOtevreni(final BiConsumer<OblastniKlic, File> priOtevreni) {
@@ -355,7 +364,7 @@ public class OfflineMapy {
 		} else {
 			try {
 				final long start = System.nanoTime();
-				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), demPouzite().isEmpty() ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv);
+				renderer = OfflineRenderer.otevri(mapy, vrstvyPouzite(), demPouzite().isEmpty() ? null : new File(slozkaOtevrena, SLOZKA_VRSTEV), nacteneTema(), prekryv, katalog.get(), katalogVrstev.get());
 				chyba = null;
 				otevrenoMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 				priOtevreni.accept(renderer.getOblastniKlic(), renderer.getSouborSymbolu());
