@@ -70,24 +70,25 @@
 - Správa offline map používá jednotné názvy: Stažené mapy, Mapy ke stažení,
   Pro toto místo, Trasy. Panel se otevře i z nabídky Mapy > Offline mapy…
   nebo klávesnicí a podle velikosti okna se přizpůsobí.
-- V panelu Offline mapy je každá země jen jednou: mapa stahovaná nebo
-  rozpracovaná je jen ve Stažených mapách, země s regiony má regiony pod
-  sebou a u země s regiony jde stáhnout i celá země. Rozpracovaná stažení
-  jsou ve Stažených mapách; průběh se hlásí u každé mapy a vrstvy zvlášť.
+- V panelu Offline mapy je každá země jen jednou: stahované, rozpracované a
+  stažené mapy jsou jen ve Stažených mapách, regiony stažené země jsou pod
+  ní a jdou hledat. U země s regiony jde stáhnout i celá země. Průběh
+  stahování se hlásí u každé mapy a vrstvy zvlášť.
 - Dole v panelu Offline mapy jsou přepínače Přes mapu stejně jako v nabídce
   Mapy. Panel se nezavře za dialogem smazání.
 - Rada v mapě bez offline mapy nabízí Stáhnout mapu i Stáhnout mapu a vrstvy
   s velikostí; u regionu nabídne celou zemi a regiony v záběru pod ní.
-- Rada bez offline mapy se ukáže podle skutečného obrysu stažené mapy, ne
-  podle obdélníku souboru, takže například u Česka nabídne sousední Polsko.
-- Změna jedné offline mapy, vrstvy nebo výškového modelu nezneplatní celou
-  cache dlaždic, jen dlaždice v její oblasti. Při prvním spuštění se cache
-  jednou přepočítá.
+- Rada bez offline mapy se u map z nabídky ke stažení ukáže podle
+  skutečného obrysu mapy, takže například u Česka nabídne sousední Polsko;
+  u vlastních souborů podle oblasti souboru.
+- Po změně jedné offline mapy nebo vrstvy se dlaždice v cache vykreslí znovu
+  jen v oblasti kolem ní. Po aktualizaci programu se offline dlaždice
+  jednorázově vykreslí znovu.
 - Předkreslování offline map je rychlejší: cache dlaždic zjišťuje, jestli
   dlaždice existuje, bez načtení obrázku. Změna zvýraznění nebo sady ikon
   nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
   v nečinnosti se složky kontrolují řidčeji.
-- Novější verzi už stažené mapy nebo vrstvy nabídne až Aktualizovat.
+- Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
 - Úklid cache dlaždic nezastaví soubor, který nejde smazat.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
   žádná není (třeba jen s přehledovou mapou světa při větším přiblížení), a
