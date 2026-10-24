@@ -77,7 +77,7 @@
   ní a jdou hledat. U země s regiony jde stáhnout i celá země. Průběh
   stahování se hlásí u každé mapy a vrstvy zvlášť. Vrstva stažená k celé
   zemi je u jejích regionů vidět jako stažená. Seznam ve Stažených mapách
-  a v Pro toto místo se natáhne na výšku obsahu a nemá vlastní posuvník.
+  a v Pro toto místo se natáhne na výšku obsahu, posuvník má jen když se nevejde.
 - Dole v panelu Offline mapy jsou přepínače Přes mapu stejně jako v nabídce
   Mapy. Panel se nezavře za dialogem smazání.
 - Rada v mapě bez offline mapy nabízí Stáhnout mapu i Stáhnout mapu a vrstvy
@@ -97,8 +97,8 @@
   nevyužitého místa (nad 30 % a soubor nad 200 MB), program při startu
   nabídne optimalizaci s odpočtem 30 s, který stojí, dokud je myš nad oknem
   nebo má okno fokus. Po odmítnutí nebo vypršení odpočtu se nabídka
-  připomene za týden, resp. za 3 dny; při velmi zaplněné cache (nad 60 %)
-  hned zítra.
+  připomene za týden, resp. za 3 dny; při více než 60 % nevyužitého místa
+  už zítra.
 - Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
 - Úklid cache dlaždic nezastaví soubor, který nejde smazat.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
