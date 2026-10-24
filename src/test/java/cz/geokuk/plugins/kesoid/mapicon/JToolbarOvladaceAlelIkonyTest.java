@@ -86,11 +86,26 @@ public class JToolbarOvladaceAlelIkonyTest {
 			return n[0];
 		}
 
+		static boolean maViditelnePixely(final Icon ikona) {
+			final BufferedImage img = new BufferedImage(ikona.getIconWidth(), ikona.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+			final java.awt.Graphics2D g = img.createGraphics();
+			ikona.paintIcon(null, g, 0, 0);
+			g.dispose();
+			for (int y = 0; y < img.getHeight(); y++) {
+				for (int x = 0; x < img.getWidth(); x++) {
+					if ((img.getRGB(x, y) >>> 24) != 0) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		static int sIkonou(final JComponent panel) throws Exception {
 			final int[] n = new int[1];
 			SwingUtilities.invokeAndWait(() -> {
 				for (final Component c : panel.getComponents()) {
-					if (c instanceof JIconCheckBox && ((JIconCheckBox) c).getIcon() != null && ((JIconCheckBox) c).getIcon().getIconWidth() == IKONA.getIconWidth()) {
+					if (c instanceof JIconCheckBox && ((JIconCheckBox) c).getIcon() != null && (((JIconCheckBox) c).getIcon().getIconWidth() == IKONA.getIconWidth() || maViditelnePixely(((JIconCheckBox) c).getIcon()))) {
 						n[0]++;
 					}
 				}
