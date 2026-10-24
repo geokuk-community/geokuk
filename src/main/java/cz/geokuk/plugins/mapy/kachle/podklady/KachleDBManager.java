@@ -100,6 +100,9 @@ class KachleDBManager implements KachleManager {
 
 	private boolean upozornenoNaMisto;
 
+	/** Cache je zavřená, soubor upravuje optimalizace; dlaždice se čtou a ukládají jen v paměti. */
+	private volatile boolean optimalizuje;
+
 	/** Stav cache se do logu píše jen při prvním otevření, ne pro spojení každého vlákna. */
 	private final Set<File> souboryVLogu = ConcurrentHashMap.newKeySet();
 
@@ -518,6 +521,45 @@ class KachleDBManager implements KachleManager {
 		return volne == 0 && slozka.getTotalSpace() == 0 ? -1 : volne;
 	}
 
+	@Override
+	public OptimalizaceDatabaze optimalizace() {
+		return new OptimalizaceDatabaze(this);
+	}
+
+	/** Soubor cache podle aktuálního umístění; null, když umístění není známé. */
+	File souborCache() {
+		final cz.geokuk.util.file.Filex slozka = folderHolder.getKachleCacheFolder();
+		return slozka == null ? null : new File(slozka.getEffectiveFile(), FILE_NAME);
+	}
+
+	/**
+	 * Zavře všechna spojení a cache dál nepoužívá, dokud se nezavolá {@link #obnov()}; čtení pak dlaždice nenajde a zápis selže.
+	 *
+	 * @return false, když cache zrovna kontroluje běžící kontrola po pádu
+	 */
+	synchronized boolean pozastav() {
+		zamek.writeLock().lock();
+		try {
+			final File f = souborCache();
+			if (f != null && kontroly.containsKey(f)) {
+				return false;
+			}
+			optimalizuje = true;
+			odlozeni++;
+			for (final Iterator<Map.Entry<Map.Entry<Thread, File>, SqlJetDb>> it = connections.entrySet().iterator(); it.hasNext();) {
+				zavri(it.next().getValue());
+				it.remove();
+			}
+			return true;
+		} finally {
+			zamek.writeLock().unlock();
+		}
+	}
+
+	void obnov() {
+		optimalizuje = false;
+	}
+
 	/**
 	 * Poškození zjištěné při čtení nebo zápisu: zavřou se všechna spojení a cache se odloží. Odkládá se jen cache, ve které chyba
 	 * vznikla, ne nová, kterou mezitím založilo jiné vlákno.
@@ -566,6 +608,9 @@ class KachleDBManager implements KachleManager {
 	 * @see #connections
 	 */
 	private SqlJetDb getDatabaseConnection() {
+		if (optimalizuje) {
+			return null;
+		}
 		final Thread t = Thread.currentThread();
 		final File folder = folderHolder.getKachleCacheFolder().getEffectiveFile();
 		if (!lzePouzit(folder)) {

@@ -155,6 +155,7 @@ public class Menu extends MenuStrujce {
 		separator();
 		item(akce.onlineModeAction);
 		item(akce.ukladatMapyNaDiskAction);
+		item(akce.optimalizaceDatabazeAction);
 		item(akce.kachleOflinerAction);
 
 		// Ovládání zobrazení keší
