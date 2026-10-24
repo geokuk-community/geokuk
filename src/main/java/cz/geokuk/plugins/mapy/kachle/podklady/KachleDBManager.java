@@ -100,6 +100,9 @@ class KachleDBManager implements KachleManager {
 
 	private boolean upozornenoNaMisto;
 
+	/** Stav cache se do logu píše jen při prvním otevření, ne pro spojení každého vlákna. */
+	private final Set<File> souboryVLogu = ConcurrentHashMap.newKeySet();
+
 	/** Zvýší se při odložení poškozené cache, aby chyba starého spojení neodložila i novou cache. */
 	volatile int odlozeni;
 
@@ -667,7 +670,11 @@ class KachleDBManager implements KachleManager {
 		if (zurnal(f).isFile()) {
 			kOvereni.add(f);
 		}
-		final SqlJetDb database = SqlJetDb.open(f, true);
+		final StavSouboruCache stav = StavSouboruCache.precti(f);
+		if (stav != null && souboryVLogu.add(f)) {
+			log.info("Cache dlaždic {}: {}.", f, stav);
+		}
+		final SqlJetDb database = CacheDb.otevri(f, true);
 		try {
 			// Poškozený soubor ohlásí CORRUPT nebo NOTADB už při čtení schématu.
 			database.getSchema();
