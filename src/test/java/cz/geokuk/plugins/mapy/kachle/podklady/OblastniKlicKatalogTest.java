@@ -73,4 +73,34 @@ public class OblastniKlicKatalogTest {
 		final KatalogMap velka = KatalogyProOfflineTest.mapa("test/kukov", bbox.minLatitude - 3, bbox.minLongitude - 3, bbox.maxLatitude + 3, bbox.maxLongitude + 3);
 		Assert.assertEquals(0, otevri(velka, KatalogyProOfflineTest.vrstva(velka, "test/kukov", "tourist")).pocetObrysu());
 	}
+
+	private OfflineRenderer pouzij(final OfflineMapy mapy) throws Exception {
+		final OfflineRenderer r = mapy.pouzij();
+		r.skonci();
+		return r;
+	}
+
+	/** Katalogy nastavené na OfflineMapy se použijí při otevření a po jejich změně se mapy otevřou znovu, jinak ne. */
+	@Test
+	public void zmenaKataloguPoOtevreniMapyOtevreZnovu() throws Exception {
+		final File slozka = mapa.getParentFile();
+		final OfflineMapy mapy = new OfflineMapy(() -> {});
+		mapy.kontrolaSlozkyNs = 0;
+		try {
+			mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
+			final OfflineRenderer pred = pouzij(mapy);
+			Assert.assertEquals("vestavěné katalogy kukovskou mapu ani vrstvu neznají", 0, pred.getOblastniKlic().pocetObrysu());
+			Assert.assertSame("bez změny se nic neotvírá", pred, pouzij(mapy));
+
+			final KatalogMap katalog = katalog();
+			final KatalogVrstev vrstvy = KatalogyProOfflineTest.vrstva(katalog, "test/kukov", "tourist");
+			mapy.setKatalogy(() -> katalog, () -> vrstvy);
+			final OfflineRenderer po = pouzij(mapy);
+			Assert.assertNotSame("nový katalog = nové obrysy", pred, po);
+			Assert.assertEquals(2, po.getOblastniKlic().pocetObrysu());
+			Assert.assertSame("stejné katalogy znovu neotvírají", po, pouzij(mapy));
+		} finally {
+			mapy.zavri();
+		}
+	}
 }
