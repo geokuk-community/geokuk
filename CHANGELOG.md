@@ -41,12 +41,14 @@
   stínování naráz. Části jdou vybrat v nabídce na pravé tlačítko u země
   (Vybrat části…), kde je souhrn s velikostí a volným místem. Vrstvy se
   stahují až dvě najednou, i během stahování mapy. U země stažené celé stáhne
-  i vrstvy, které existují jen po regionech, bez základních map regionů. Hromadné stahování po chybě pokračuje dalšími
+  i vrstvy, které existují jen po regionech, bez základních map regionů;
+  regiony celé stažené země se po jednom stáhnout nedají. Hromadné stahování po chybě pokračuje dalšími
   položkami; na konci panel ukáže souhrn, co se stáhlo a co ne, a tlačítko
   Zkusit znovu.
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistickou
   vrstvu (turistické a cyklotrasy, skály a body pro orientaci), vrstevnice a
-  stínování terénu (sloupce T, V a S), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí spolu s offline mapou,
+  stínování terénu (sloupce T, V a S), i k mapě, která ještě není stažená;
+  u celé stažené země souhrn T, V a S zahrnuje i vrstvy po regionech. Stažené vrstvy se kreslí spolu s offline mapou,
   stínování jde vypnout. Mapy ve složce jde sbalit a stažené regiony jsou
   seskupené pod zemí. Nahoře v panelu je Stáhnout vrstvy ke všem staženým mapám:
   stáhne chybějící nebo zastaralé vrstvy ke všem staženým mapám. U stažené
@@ -88,6 +90,11 @@
   dlaždice existuje, bez načtení obrázku. Změna zvýraznění nebo sady ikon
   nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
   v nečinnosti se složky kontrolují řidčeji.
+- Nová cache offline dlaždic je menší a šetří paměť. Stav souboru cache je
+  v logu.
+- Mapy > Optimalizace databáze… zhutní cache dlaždic a ukáže velikost,
+  odhad úspory, volné místo a odhad času. Má-li cache hodně volného místa,
+  program při startu nabídne optimalizaci s odpočtem; jde ji odložit o 7 dní.
 - Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
 - Úklid cache dlaždic nezastaví soubor, který nejde smazat.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
