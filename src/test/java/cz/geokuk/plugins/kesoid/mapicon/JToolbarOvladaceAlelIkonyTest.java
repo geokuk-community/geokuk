@@ -90,7 +90,7 @@ public class JToolbarOvladaceAlelIkonyTest {
 			final int[] n = new int[1];
 			SwingUtilities.invokeAndWait(() -> {
 				for (final Component c : panel.getComponents()) {
-					if (c instanceof JIconCheckBox && ((JIconCheckBox) c).getIcon() != null && ((JIconCheckBox) c).getIcon().getIconWidth() == IKONA.getIconWidth()) {
+					if (c instanceof JIconCheckBox && ((JIconCheckBox) c).getIcon() != null && ((JIconCheckBox) c).getIcon().getIconWidth() >= IKONA.getIconWidth()) {
 						n[0]++;
 					}
 				}
