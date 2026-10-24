@@ -1381,7 +1381,7 @@ public class JMapyPopup extends JPanel {
 		pevnaVyska = getPreferredSize().height;
 		rozpocet = rozpocetSekci();
 		final int[] pozadovano = { slozkaViditelna ? slozka.getPreferredSize().height : 0, misto == null ? 0 : misto.getPreferredSize().height, vyskaDalsi };
-		final int[] prideleno = rozdelVysky(pozadovano, drzenaVyska > 0 ? drzenaVyska - pevnaVyska : rozpocet, MIN_VYSKA_SEKCE);
+		final int[] prideleno = rozdelVyskyPrednostne(pozadovano, drzenaVyska > 0 ? drzenaVyska - pevnaVyska : rozpocet, MIN_VYSKA_SEKCE);
 		System.arraycopy(prideleno, 0, vyska, 0, 3);
 		final int zbyva = drzenaVyska - pevnaVyska - prideleno[0] - prideleno[1] - prideleno[2];
 		if (drzenaVyska > 0 && zbyva > 0) {
@@ -1480,6 +1480,13 @@ public class JMapyPopup extends JPanel {
 	static final int MIN_ROZPOCET = 260;
 	/** Rezerva na ohraničení popupu. */
 	private static final int OKRAJ_POPUPU = 12;
+
+	/** Stažené mapy a Pro toto místo dostanou výšku obsahu, mapám ke stažení zbyde zbytek rozpočtu, nejméně minimum. */
+	static int[] rozdelVyskyPrednostne(final int[] pozadovano, final int rozpocet, final int minimum) {
+		final int rezerva = Math.min(pozadovano[2], minimum);
+		final int[] horni = rozdelVysky(new int[] { pozadovano[0], pozadovano[1] }, rozpocet - rezerva, minimum);
+		return new int[] { horni[0], horni[1], Math.min(pozadovano[2], Math.max(rezerva, rozpocet - horni[0] - horni[1])) };
+	}
 
 	/**
 	 * Rozdělí rozpočet výšky mezi sekce: co se vejde, dostane celou výšku (bez prázdného místa), zbytek se dělí podle obsahu mezi sekce, které se nevejdou,
@@ -2171,7 +2178,7 @@ public class JMapyPopup extends JPanel {
 			break;
 		}
 		}
-		if (b.jeCoMazat() && !b.isSouhrn()) {
+		if (b.jeCoMazat() && !b.isSouhrn() && b.getId() != null) {
 			final JMenuItem smazat = new JMenuItem(SMAZAT_VRSTVU + " " + nazev.toLowerCase(new Locale("cs")));
 			smazat.addActionListener(e -> {
 				if (ovladani != null) {
