@@ -68,6 +68,8 @@ public final class MatriceMap {
 		private final String chyba;
 		private final java.time.LocalDate datumDat;
 		private final boolean overuje;
+		private final int regionuCelkem;
+		private final int regionuHotovo;
 
 		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba, final java.time.LocalDate datumDat) {
 			this(cast, stav, id, velikost, stazeno, chyba, datumDat, false);
@@ -75,6 +77,13 @@ public final class MatriceMap {
 
 		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba, final java.time.LocalDate datumDat,
 				final boolean overuje) {
+			this(cast, stav, id, velikost, stazeno, chyba, datumDat, overuje, 0, 0);
+		}
+
+		Bunka(final Cast cast, final StavBunky stav, final String id, final long velikost, final long stazeno, final String chyba, final java.time.LocalDate datumDat,
+				final boolean overuje, final int regionuCelkem, final int regionuHotovo) {
+			this.regionuCelkem = regionuCelkem;
+			this.regionuHotovo = regionuHotovo;
 			this.cast = cast;
 			this.stav = stav;
 			this.id = id;
@@ -88,6 +97,21 @@ public final class MatriceMap {
 		/** Stažené se ověřuje (stav STAHUJE); {@link #getStazeno()} je pak ověřená část z {@link #getVelikost()}. */
 		public boolean isOveruje() {
 			return overuje;
+		}
+
+		/** Souhrn vrstev regionů celé země (ne vlastní vrstva řádku). */
+		public boolean isSouhrn() {
+			return regionuCelkem > 0;
+		}
+
+		/** U souhrnu počet regionů, které mají vrstvu tohoto typu. */
+		public int getRegionuCelkem() {
+			return regionuCelkem;
+		}
+
+		/** U souhrnu počet regionů se staženou vrstvou. */
+		public int getRegionuHotovo() {
+			return regionuHotovo;
 		}
 
 		public Cast getCast() {
@@ -247,7 +271,8 @@ public final class MatriceMap {
 		final long velikost = b.stream().filter(x -> vysledek != StavBunky.NOVEJSI || x.getStav() == StavBunky.NOVEJSI).mapToLong(x -> Math.max(0, x.getVelikost())).sum();
 		final long stazeno = b.stream().filter(x -> vysledek != StavBunky.NOVEJSI || x.getStav() == StavBunky.NOVEJSI).mapToLong(x -> x.getStav() == StavBunky.STAZENO ? Math.max(0, x.getVelikost()) : Math.max(0, x.getStazeno())).sum();
 		final Bunka prvni = b.stream().filter(x -> x.getStav() == vysledek).findFirst().get();
-		return new Bunka(cast, vysledek, null, velikost, stazeno, prvni.getChyba(), null, prvni.isOveruje());
+		final int hotovo = (int) b.stream().filter(x -> x.getStav() == StavBunky.STAZENO).count();
+		return new Bunka(cast, vysledek, null, velikost, stazeno, prvni.getChyba(), null, prvni.isOveruje(), b.size(), hotovo);
 	}
 
 	static Bunka bunkaMapy(final KatalogovaMapa m, final StavMapy s) {

@@ -213,4 +213,15 @@ public class MatriceMapTest {
 		assertEquals(MatriceMap.StavBunky.KE_STAZENI, b.getStav());
 		assertEquals(10_000_000L, b.getVelikost() - b.getStazeno());
 	}
+
+	/** Souhrn nese počet regionů a počet regionů se staženou vrstvou, pro průběh „N z M“. */
+	@Test
+	public void souhrnNesePocetRegionu() {
+		final java.util.List<MatriceMap.Radek> matice = MatriceMap.sestav(KatalogMap.vestaveny(), StavMapy::novy, VrstvyProGui.katalogSpanelsko(),
+				v -> VrstvyProGui.stav(v, v.getId().contains("andalucia") ? StavVrstvy.Mistni.MAME : StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, 0, null));
+		final MatriceMap.Bunka b = matice.stream().filter(r -> r.getKlic().equals("europe/spain")).findFirst().get().getBunkaNabidky(MatriceMap.Cast.TRASY);
+		assertTrue(b.isSouhrn());
+		assertEquals(2, b.getRegionuCelkem());
+		assertEquals(1, b.getRegionuHotovo());
+	}
 }

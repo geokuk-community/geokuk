@@ -182,4 +182,14 @@ public class NabidkaRadkuTest {
 		final NabidkaRadku n = nabidka(new Okolnosti(606 * MB, null), mapa(StavBunky.KE_STAZENI), trasy(StavBunky.STAZENO));
 		Assert.assertTrue(n.getMapa().isPovoleno());
 	}
+
+	/** Region stažené země: tlačítka zůstanou, ale jsou vypnutá s vysvětlením. */
+	@Test
+	public void regionStazeneZemeMaVypnutaTlacitka() {
+		final NabidkaRadku n = NabidkaRadku.pro(c -> new Bunka(c, c == Cast.MAPA ? StavBunky.KE_STAZENI : StavBunky.NENI, "x", 100_000_000, 0, null, null), NabidkaRadku.Okolnosti.ZADNE)
+				.zakazanoVCeleZemi();
+		org.junit.Assert.assertEquals(NabidkaRadku.Druh.TLACITKO, n.getMapa().getDruh());
+		org.junit.Assert.assertFalse(n.getMapa().isPovoleno());
+		org.junit.Assert.assertEquals(NabidkaRadku.V_CELE_ZEME_NEJDE, n.getMapa().getTooltip());
+	}
 }

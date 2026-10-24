@@ -220,7 +220,7 @@ public final class RadaOfflineMapy {
 			final Function<KatalogovaMapa, NabidkaRadku> nabidky) {
 		for (final KatalogovaMapa m : katalog.pokryvajiBod(stred)) {
 			final StavMapy s = stavy.apply(m);
-			if (s.getMistni() == StavMapy.Mistni.MAME && !s.isBezi()) {
+			if (s.getMistni() == StavMapy.Mistni.MAME && !s.isBezi() || katalog.celek(m).filter(c -> mame(stavy, c)).isPresent()) {
 				continue;
 			}
 			final RadaOfflineMapy r = pro(m, s, nabidky);

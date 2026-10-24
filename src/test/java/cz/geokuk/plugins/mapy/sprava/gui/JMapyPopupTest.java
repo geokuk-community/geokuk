@@ -83,6 +83,12 @@ public class JMapyPopupTest {
 		}
 
 		@Override
+		public void stahniVrstvyZeme(final String celekKlic, final List<String> klice, final cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast cast,
+				final cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim rezim) {
+			volani.add("stahniVrstvyZeme " + celekKlic + " " + klice.size() + " " + cast + " " + rezim);
+		}
+
+		@Override
 		public void stahniVse(final String nazevZeme, final String celekKlic, final List<String> klice) {
 			volani.add("stahniVse " + nazevZeme + " " + celekKlic + " " + klice.size());
 		}
@@ -574,6 +580,91 @@ public class JMapyPopupTest {
 			Assert.assertEquals("Bavorsko pod zemí jednou", 1, videtLabelu(p, "Bavorsko"));
 			Assert.assertTrue("region celé stažené země nemá tlačítka", komponentyRadku(p, "Bavorsko").stream().noneMatch(k -> k instanceof JButton));
 			Assert.assertTrue(komponentyRadku(p, "Bavorsko").stream().anyMatch(k -> k instanceof JLabel && "✔ v mapě celé země".equals(((JLabel) k).getText())));
+		});
+	}
+
+	private static List<RadekMapy> nemeckoSVrstvami(final boolean celaZeme, final java.util.function.Predicate<cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva> stazenaVrstva) {
+		return RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+				m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, celaZeme && m.getId().equals("europe/germany") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+						cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+				Collections.emptyList(), null, VrstvyProGui.katalogNemeckoPoRegionech(),
+				v -> VrstvyProGui.stav(v, stazenaVrstva.test(v) ? StavVrstvy.Mistni.MAME : StavVrstvy.Mistni.NEMAME, StavMapy.Faze.NIC, 0, null));
+	}
+
+	private static boolean tlacitkaVypnuta(final JMapyPopup p, final String nazev) {
+		final List<JButton> t = komponentyRadku(p, nazev).stream().filter(k -> k instanceof JButton).map(k -> (JButton) k).collect(java.util.stream.Collectors.toList());
+		final List<JButton> akce = t.stream().filter(b -> b.getText().startsWith("Stáhnout")).collect(java.util.stream.Collectors.toList());
+		return !akce.isEmpty() && akce.stream().noneMatch(JButton::isEnabled) && akce.stream().allMatch(b -> cz.geokuk.plugins.mapy.sprava.NabidkaRadku.V_CELE_ZEME_NEJDE.equals(b.getToolTipText()));
+	}
+
+	/** Stažená celá země: region s vlastní stažennou vrstvou je ve složce, ale jeho tlačítka ke stažení jsou vypnutá; ostatní regiony mají jen stav. */
+	@Test
+	public void regionyStazeneZemeSeNedajiStahnout() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(nemeckoSVrstvami(true, v -> v.getRegion().equals("europe/germany/bayern")));
+			p.prepniUzelSlozky("Německo");
+			Assert.assertTrue("Bavorsko má vypnutá tlačítka s vysvětlením", tlacitkaVypnuta(p, "Bavorsko"));
+			Assert.assertTrue(komponentyRadku(p, "Hamburk").stream().anyMatch(k -> k instanceof JLabel && "✔ v mapě celé země".equals(((JLabel) k).getText())));
+			Assert.assertTrue(komponentyRadku(p, "Hamburk").stream().noneMatch(k -> k instanceof JButton && ((JButton) k).getText().startsWith("Stáhnout")));
+			p.getHledat().setText("bavorsko");
+			Assert.assertTrue("i po hledání", tlacitkaVypnuta(p, "Bavorsko"));
+		});
+	}
+
+	/** Jen některé regiony: celek jde stáhnout. */
+	@Test
+	public void celekSJenNekterymiRegionyJdeStahnout() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(RadkyMap.sestav(cz.geokuk.plugins.mapy.sprava.KatalogMap.vestaveny(),
+					m -> cz.geokuk.plugins.mapy.sprava.StavMapyProGui.stav(m, m.getId().equals("europe/germany/bayern") ? cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.MAME : cz.geokuk.plugins.mapy.sprava.StavMapy.Mistni.NEMAME,
+							cz.geokuk.plugins.mapy.sprava.StavMapy.Server.NEZNAMY, cz.geokuk.plugins.mapy.sprava.StavMapy.Faze.NIC, 0, -1, null),
+					Collections.emptyList(), null));
+			final JButton celek = tlacitkoRadku(p, "Německo", JMapyPopup.STAHNOUT);
+			Assert.assertNotNull(celek);
+			Assert.assertTrue(celek.isEnabled());
+		});
+	}
+
+	private static List<String> tooltipyVrstev(final JMapyPopup p, final String nazev) {
+		final List<String> t = new ArrayList<>();
+		for (final Component k : komponentyRadku(p, nazev)) {
+			if (k instanceof JComponent && ((JComponent) k).getToolTipText() != null && k.getParent() instanceof JPanel && ((JPanel) k.getParent()).getPreferredSize().width < 200
+					&& (k instanceof JButton || k instanceof JLabel)) {
+				t.add(((JComponent) k).getToolTipText());
+			}
+		}
+		return t;
+	}
+
+	/** Souhrn vrstev regionů v T V S celku: všechny regiony, část, žádný. */
+	@Test
+	public void souhrnVrstevRegionuVCelku() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			final Zaznam z = new Zaznam();
+			p.setOvladani(z);
+			p.nactiStavSlozky = () -> Optional.of(true);
+			p.obnov(nemeckoSVrstvami(true, v -> true));
+			final List<String> vse = tooltipyVrstev(p, "Německo");
+			Assert.assertTrue(vse.toString(), vse.stream().anyMatch(t -> t.contains("staženo u všech regionů (16)")));
+			Assert.assertTrue(vse.toString(), vse.stream().anyMatch(t -> t.contains("staženo u všech regionů (2)")));
+
+			p.obnov(nemeckoSVrstvami(true, v -> v.getRegion().equals("europe/germany/bayern")));
+			final List<String> cast = tooltipyVrstev(p, "Německo");
+			Assert.assertTrue(cast.toString(), cast.stream().anyMatch(t -> t.contains("nestaženo u 15 z 16 regionů") && t.contains("150 MB")));
+			final JButton t = komponentyRadku(p, "Německo").stream().filter(k -> k instanceof JButton && ((JButton) k).getToolTipText() != null && ((JButton) k).getToolTipText().contains("u 15 z 16")).map(k -> (JButton) k).findFirst().get();
+			t.doClick();
+			Assert.assertTrue(z.volani.toString(), z.volani.stream().anyMatch(v -> v.startsWith("stahniVrstvyZeme europe/germany ") && v.endsWith("TRASY STAHNOUT")));
+
+			p.obnov(nemeckoSVrstvami(true, v -> false));
+			Assert.assertTrue(tooltipyVrstev(p, "Německo").stream().anyMatch(t2 -> t2.contains("nestaženo u 16 z 16 regionů")));
 		});
 	}
 

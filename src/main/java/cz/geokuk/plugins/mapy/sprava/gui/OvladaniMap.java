@@ -18,6 +18,9 @@ public interface OvladaniMap {
 	default void stahniVse(final String nazevZeme, final String celekKlic, final java.util.List<String> klice) {}
 	/** Tlačítko „Stáhnout mapu a vrstvy“ u řádku: spustí hned plán pro řádek (celekKlic je null, když to není celá země s regiony). */
 	default void stahniMapuAVrstvy(final String celekKlic, final java.util.List<String> klice, final cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim rezim) {}
+	/** Stáhne jeden typ vrstev u regionů celé země (klik na souhrn ve sloupci T, V nebo S celku); rezim AKTUALIZOVAT pro novější verze. */
+	default void stahniVrstvyZeme(final String celekKlic, final java.util.List<String> klice, final cz.geokuk.plugins.mapy.sprava.MatriceMap.Cast cast,
+			final cz.geokuk.plugins.mapy.pruvodce.PlanPruvodce.Rezim rezim) {}
 	/** Otevře souhrn „Dostáhnout vrstvy“ ke všem staženým základním mapám (jen vrstvy z GitHubu). */
 	default void dostahnoutVrstvy() {}
 	/** Souhrn skončené hromadné dávky s chybami: nadpis a řádek na selhanou položku; prázdný, když není co hlásit. */

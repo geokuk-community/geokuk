@@ -86,6 +86,9 @@ public final class NabidkaRadku {
 		}
 	}
 
+	/** Tooltip vypnutých tlačítek u regionu stažené země. */
+	public static final String V_CELE_ZEME_NEJDE = "Pro stažení jednotlivých oblastí nejdřív smažte celou zemi";
+
 	private static final Cast[] VRSTVY = { Cast.TRASY, Cast.VRSTEVNICE, Cast.STINOVANI };
 
 	private final Pozice mapa;
@@ -99,6 +102,15 @@ public final class NabidkaRadku {
 	/** Region, který nemáme zvlášť, protože máme celou jeho zemi: místo tlačítek jen stav. */
 	public static NabidkaRadku vCeleZemi() {
 		return new NabidkaRadku(new Pozice(Druh.HOTOVO, "✔ v mapě celé země", null, 0, null, false), new Pozice(Druh.NENI, "", null, 0, null, false));
+	}
+
+	/** Region celé stažené země: tlačítka ke stažení zůstanou vidět, ale nejdou stisknout. */
+	public NabidkaRadku zakazanoVCeleZemi() {
+		return new NabidkaRadku(zakazana(mapa), zakazana(vrstvy));
+	}
+
+	private static Pozice zakazana(final Pozice p) {
+		return p.druh == Druh.TLACITKO ? new Pozice(p.druh, p.text, V_CELE_ZEME_NEJDE, p.velikost, p.rezim, false) : p;
 	}
 
 	/** Pozice 1: Stáhnout mapu. */
