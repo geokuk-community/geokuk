@@ -35,7 +35,7 @@ final class OptimalizaceTexty {
 	}
 
 	static String odpocet(final int sekund) {
-		return "Program se mezitím normálně spouští, okno se za " + sekund + " s zavře bez optimalizace.";
+		return "Program se mezitím normálně spouští, okno se za " + sekund + " s zavře bez optimalizace. Připomeneme to za týden.";
 	}
 
 	/** Přehled v dialogu před spuštěním. */

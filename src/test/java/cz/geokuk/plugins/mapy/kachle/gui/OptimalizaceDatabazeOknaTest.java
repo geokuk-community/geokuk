@@ -171,13 +171,13 @@ public class OptimalizaceDatabazeOknaTest {
 		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
 		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(10));
 		final JPanel doporucit = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.DOPORUCIT, 100L << 30, odpocet, new JButton("Optimalizovat teď"),
-				new JButton("Spustit bez optimalizace"), new JButton("Připomenout za týden"));
+				new JButton("Spustit bez optimalizace"));
 		final String t = texty(doporucit);
 		Assert.assertTrue(t, t.contains("fragmentovaná (46 % volného místa, 1.9 GB)") || t.contains("fragmentovaná (46 % volného místa, 1,9 GB)"));
-		Assert.assertTrue(t, t.contains("[Optimalizovat teď]"));
+		Assert.assertTrue(t, t.contains("[Optimalizovat teď]") && t.contains("Připomeneme to za týden.") && !t.contains("Připomenout za týden"));
 		snimek(doporucit, "start-doporuceni");
 		final JPanel malo = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.MALO_MISTA, 200L << 20, odpocet, new JButton("Optimalizovat teď"),
-				new JButton("Spustit bez optimalizace"), new JButton("Připomenout za týden"));
+				new JButton("Spustit bez optimalizace"));
 		final String m = texty(malo);
 		Assert.assertFalse(m, m.contains("[Optimalizovat teď]"));
 		Assert.assertTrue(m, m.contains("chybí místo na disku"));
@@ -200,10 +200,6 @@ public class OptimalizaceDatabazeOknaTest {
 				volba[0] = "bez";
 			}
 
-			@Override
-			public void pripomenout() {
-				volba[0] = "pripomenout";
-			}
 		};
 		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, Doporuceni.DOPORUCIT, 100L << 30, v));
 		final java.awt.Window[] okna = new java.awt.Window[1];
@@ -216,10 +212,10 @@ public class OptimalizaceDatabazeOknaTest {
 		});
 		Assert.assertNotNull(okna[0]);
 		SwingUtilities.invokeAndWait(() -> {
-			final JButton b = hledej(okna[0], "Připomenout za týden");
+			final JButton b = hledej(okna[0], "Spustit bez optimalizace");
 			b.doClick();
 		});
-		Assert.assertEquals("pripomenout", volba[0]);
+		Assert.assertEquals("bez", volba[0]);
 		Assert.assertFalse(okna[0].isShowing());
 	}
 

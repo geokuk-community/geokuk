@@ -22,19 +22,15 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		/** Spustit optimalizaci. */
 		void optimalizovat();
 
-		/** Zavřeno bez odložení, příště se zeptá znovu. */
+		/** Zavřeno bez optimalizace, i po vypršení odpočtu; odloží se o týden. */
 		void bezOptimalizace();
-
-		/** Odloženo o týden. */
-		void pripomenout();
 	}
 
 	private final Timer casovac;
 	private int zbyva = ODPOCET_S;
 
 	/** Obsah okna; zvlášť, aby šel nakreslit bez zobrazení. */
-	static JPanel panel(final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final JLabel odpocet, final JButton optimalizovat, final JButton bez,
-			final JButton pripomenout) {
+	static JPanel panel(final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final JLabel odpocet, final JButton optimalizovat, final JButton bez) {
 		final JPanel p = new JPanel(new BorderLayout(0, 10));
 		p.setBorder(BorderFactory.createEmptyBorder(14, 16, 12, 16));
 		final JTextArea text = new JTextArea(OptimalizaceTexty.doporuceni(stav, doporuceni == Doporuceni.MALO_MISTA, volne));
@@ -54,7 +50,6 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 			tlacitka.add(optimalizovat);
 		}
 		tlacitka.add(bez);
-		tlacitka.add(pripomenout);
 		p.add(tlacitka, BorderLayout.SOUTH);
 		return p;
 	}
@@ -64,8 +59,7 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S));
 		final JButton optimalizovat = new JButton("Optimalizovat teď");
 		final JButton bez = new JButton("Spustit bez optimalizace");
-		final JButton pripomenout = new JButton("Připomenout za týden");
-		final JPanel panel = panel(stav, doporuceni, volne, odpocet, optimalizovat, bez, pripomenout);
+		final JPanel panel = panel(stav, doporuceni, volne, odpocet, optimalizovat, bez);
 		setContentPane(panel);
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		casovac = new Timer(1000, e -> {
@@ -88,7 +82,6 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		}
 		optimalizovat.addActionListener(e -> zavri(volba::optimalizovat));
 		bez.addActionListener(e -> zavri(volba::bezOptimalizace));
-		pripomenout.addActionListener(e -> zavri(volba::pripomenout));
 		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(final java.awt.event.WindowEvent e) {

@@ -49,10 +49,7 @@ public final class PripominkaOptimalizace {
 			}
 
 			@Override
-			public void bezOptimalizace() {}
-
-			@Override
-			public void pripomenout() {
+			public void bezOptimalizace() {
 				model.odlozOptimalizaci(System.currentTimeMillis() + ODLOZENI_MS, stav.podilVolnych());
 			}
 		}));
