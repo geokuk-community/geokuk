@@ -36,20 +36,21 @@
   stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
   po regionech (dvojitě stažená), panel na to upozorní a nabídne smazat
   regiony, nebo celek. Stažený soubor se po dokončení ověří.
-- U země v panelu Offline mapy je odkaz Stáhnout vše: souhrn s velikostí a
-  volným místem (části jdou odškrtnout) a stažení mapy, tras, vrstevnic a
-  stínování naráz. Vrstvy se stahují až dvě najednou, i během stahování mapy.
-  U země stažené celé stáhne i vrstvy, které existují jen po regionech, bez
-  základních map regionů. Hromadné stahování po chybě pokračuje dalšími
+- U každé země a regionu v panelu Offline mapy jsou tlačítka Stáhnout mapu a
+  Stáhnout mapu a vrstvy s velikostí; druhé stáhne mapu, trasy, vrstevnice a
+  stínování naráz. Části jdou vybrat v nabídce na pravé tlačítko u země
+  (Vybrat části…), kde je souhrn s velikostí a volným místem. Vrstvy se
+  stahují až dvě najednou, i během stahování mapy. U země stažené celé stáhne
+  i vrstvy, které existují jen po regionech, bez základních map regionů. Hromadné stahování po chybě pokračuje dalšími
   položkami; na konci panel ukáže souhrn, co se stáhlo a co ne, a tlačítko
   Zkusit znovu.
 - V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistickou
   vrstvu (turistické a cyklotrasy, skály a body pro orientaci), vrstevnice a
-  stínování terénu (sloupce Turistika, Vrstevnice a Stínování), i k mapě,
-  která ještě není stažená. Stažené vrstvy se kreslí spolu s offline mapou,
+  stínování terénu (sloupce T, V a S), i k mapě, která ještě není stažená. Stažené vrstvy se kreslí spolu s offline mapou,
   stínování jde vypnout. Mapy ve složce jde sbalit a stažené regiony jsou
-  seskupené pod zemí. Nahoře v panelu je Dostáhnout vrstvy ke staženým mapám:
-  stáhne chybějící nebo zastaralé vrstvy ke všem staženým mapám.
+  seskupené pod zemí. Nahoře v panelu je Stáhnout vrstvy ke všem staženým mapám:
+  stáhne chybějící nebo zastaralé vrstvy ke všem staženým mapám. U stažené
+  mapy bez vrstev je tlačítko Stáhnout vrstvy.
 - Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
   se otevře sám) nabídne Česko a okolí (hledat jde i jinou zemi nebo region),
   vybere podklad a vrstvy, stáhne jen to, co chybí, a přepne mapu. Před
@@ -66,6 +67,29 @@
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
   tím změní a její dlaždice v cache se jednou vykreslí znovu.
+- Správa offline map používá jednotné názvy: Stažené mapy, Mapy ke stažení,
+  Pro toto místo, Trasy. Panel se otevře i z nabídky Mapy > Offline mapy…
+  nebo klávesnicí a podle velikosti okna se přizpůsobí.
+- V panelu Offline mapy je každá země jen jednou: stahované, rozpracované a
+  stažené mapy jsou jen ve Stažených mapách, regiony stažené země jsou pod
+  ní a jdou hledat. U země s regiony jde stáhnout i celá země. Průběh
+  stahování se hlásí u každé mapy a vrstvy zvlášť.
+- Dole v panelu Offline mapy jsou přepínače Přes mapu stejně jako v nabídce
+  Mapy. Panel se nezavře za dialogem smazání.
+- Rada v mapě bez offline mapy nabízí Stáhnout mapu i Stáhnout mapu a vrstvy
+  s velikostí; u regionu nabídne celou zemi a regiony v záběru pod ní.
+- Rada bez offline mapy se u map z nabídky ke stažení ukáže podle
+  skutečného obrysu mapy, takže například u Česka nabídne sousední Polsko;
+  u vlastních souborů podle oblasti souboru.
+- Po změně jedné offline mapy nebo vrstvy se dlaždice v cache vykreslí znovu
+  jen v oblasti kolem ní. Po aktualizaci programu se offline dlaždice
+  jednorázově vykreslí znovu.
+- Předkreslování offline map je rychlejší: cache dlaždic zjišťuje, jestli
+  dlaždice existuje, bez načtení obrázku. Změna zvýraznění nebo sady ikon
+  nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
+  v nečinnosti se složky kontrolují řidčeji.
+- Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
+- Úklid cache dlaždic nezastaví soubor, který nejde smazat.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
   žádná není (třeba jen s přehledovou mapou světa při větším přiblížení), a
   nabídne její stažení; u hranice i sousední mapy, které jsou v záběru.
