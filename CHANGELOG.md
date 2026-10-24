@@ -75,7 +75,9 @@
 - V panelu Offline mapy je každá země jen jednou: stahované, rozpracované a
   stažené mapy jsou jen ve Stažených mapách, regiony stažené země jsou pod
   ní a jdou hledat. U země s regiony jde stáhnout i celá země. Průběh
-  stahování se hlásí u každé mapy a vrstvy zvlášť.
+  stahování se hlásí u každé mapy a vrstvy zvlášť. Vrstva stažená k celé
+  zemi je u jejích regionů vidět jako stažená. Seznam ve Stažených mapách
+  a v Pro toto místo se natáhne na výšku obsahu, posuvník má jen když se nevejde.
 - Dole v panelu Offline mapy jsou přepínače Přes mapu stejně jako v nabídce
   Mapy. Panel se nezavře za dialogem smazání.
 - Rada v mapě bez offline mapy nabízí Stáhnout mapu i Stáhnout mapu a vrstvy
@@ -92,7 +94,11 @@
   v nečinnosti se složky kontrolují řidčeji.
 - Mapy > Optimalizace databáze… zhutní cache dlaždic a ukáže velikost,
   odhad úspory, volné místo a odhad času. Má-li soubor cache hodně
-  nevyužitého místa (nad 30 % a soubor nad 200 MB), program při startu nabídne optimalizaci s odpočtem; jde ji odložit o 7 dní.
+  nevyužitého místa (nad 30 % a soubor nad 200 MB), program při startu
+  nabídne optimalizaci s odpočtem 30 s, který stojí, dokud je myš nad oknem
+  nebo má okno fokus. Po odmítnutí nebo vypršení odpočtu se nabídka
+  připomene za týden, resp. za 3 dny; při více než 60 % nevyužitého místa
+  už zítra.
 - Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
 - Úklid cache dlaždic nezastaví soubor, který nejde smazat.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
@@ -111,6 +117,9 @@
   V Upravit zvýraznění… lze sestavit vlastní pravidla (vlastnosti keše, které
   platí zároveň, a barva čtverce) a uložit je jako předvolbu. Zvýraznění platí
   pro všechny sady ikon.
+- Na liště nástrojů je ikona Disablovaná s výrazným červeným zákazem
+  a Archivovaný jako vyblednutá ikona s červeným křížkem. Ovladače stavů
+  keše jsou seskupené za oddělovačem.
 - Pojmenované výlety: ve stavovém řádku je jméno aktivního výletu a najetím
   myší na něj se otevře seznam výletů. Výlet lze založit, aktivovat,
   přejmenovat a smazat; aktivní výlet je v souborech lovim.ggt a tedne.ggt.
