@@ -1761,6 +1761,8 @@ public class JMapyPopupTest {
 		Assert.assertArrayEquals("malá sekce celá, velká zbytek", new int[] { 120, 380 }, JMapyPopup.rozdelVysky(new int[] { 120, 2000 }, 500, 80));
 		Assert.assertArrayEquals("dvě velké podle obsahu", new int[] { 160, 240, 100 }, JMapyPopup.rozdelVysky(new int[] { 2000, 3000, 100 }, 500, 80));
 		Assert.assertArrayEquals("minimum, i když rozpočet nestačí", new int[] { 80, 80, 80 }, JMapyPopup.rozdelVysky(new int[] { 900, 900, 900 }, 150, 80));
+		Assert.assertArrayEquals("stažené celé, ke stažení zbytek", new int[] { 400, 0, 160 }, JMapyPopup.rozdelVyskyPrednostne(new int[] { 400, 0, 5000 }, 560, 80));
+		Assert.assertArrayEquals("ke stažení aspoň minimum", new int[] { 452, 80, 80 }, JMapyPopup.rozdelVyskyPrednostne(new int[] { 2000, 300, 5000 }, 600, 80));
 		final JMapyPopup bezOkna = new JMapyPopup();
 		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 850);
 	}

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import cz.geokuk.plugins.mapy.sprava.KatalogovaVrstva.Typ;
@@ -241,8 +242,21 @@ public final class MatriceMap {
 			final Function<KatalogovaVrstva, StavVrstvy> stavyVrstev) {
 		final List<KatalogovaMapa> regiony = vrstvy == null || stavyVrstev == null ? Collections.emptyList() : katalog.regiony(m);
 		final Map<Cast, Bunka> souhrn = new EnumMap<>(Cast.class);
+		final Optional<KatalogovaMapa> celek = vrstvy == null || stavyVrstev == null ? Optional.empty() : katalog.celek(m);
 		for (final Cast c : Cast.values()) {
-			if (c == Cast.MAPA || bunky.get(c).getStav() != StavBunky.NENI) {
+			if (c == Cast.MAPA) {
+				continue;
+			}
+			// Vlastní vrstvu regionu pokrývá stažená vrstva celé země.
+			if (bunky.get(c).getStav() == StavBunky.KE_STAZENI && celek.isPresent()) {
+				final KatalogovaVrstva vc = vrstvy.vrstva(celek.get().getId(), c.typ()).orElse(null);
+				if (vc != null && bunkaVrstvy(c, vc, stavyVrstev.apply(vc)).getStav() == StavBunky.STAZENO) {
+					final Bunka vlastni = bunky.get(c);
+					souhrn.put(c, new Bunka(c, StavBunky.STAZENO, null, vlastni.getVelikost(), vlastni.getVelikost(), null, vc.getDatumDat()));
+				}
+				continue;
+			}
+			if (bunky.get(c).getStav() != StavBunky.NENI) {
 				continue;
 			}
 			final List<Bunka> b = new ArrayList<>();

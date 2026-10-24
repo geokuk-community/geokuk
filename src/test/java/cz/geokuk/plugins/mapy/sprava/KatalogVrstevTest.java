@@ -62,7 +62,7 @@ public class KatalogVrstevTest {
 		return KatalogVrstev.nacti(katalog(vrstvy), mapy());
 	}
 
-	private static String jednoducha(final String id, final String typ, final String region) {
+	static String jednoducha(final String id, final String typ, final String region) {
 		return vrstva(id, typ, region, "map", soubor(id.replace('/', '_') + ".map", "v1/" + id.replace('/', '_') + ".map", 10, SHA), "");
 	}
 
