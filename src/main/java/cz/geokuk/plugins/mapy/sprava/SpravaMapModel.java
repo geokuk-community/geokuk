@@ -583,6 +583,8 @@ public class SpravaMapModel extends Model0 {
 		if (k != null && k.getZiskavac() != null) {
 			k.getZiskavac().getOfflineMapy().setDavka(this::isDavka);
 			k.getZiskavac().getOfflineTrasy().setDavka(this::isDavka);
+			k.getZiskavac().getOfflineMapy().setKatalogy(this::getKatalog, this::getKatalogVrstev);
+			k.getZiskavac().getOfflineTrasy().setKatalogy(this::getKatalog, this::getKatalogVrstev);
 		}
 	}
 

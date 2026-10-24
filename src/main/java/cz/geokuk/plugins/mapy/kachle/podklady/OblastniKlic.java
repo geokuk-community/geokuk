@@ -17,6 +17,7 @@ import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.util.MercatorProjection;
 
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
 
 /**
  * Typ dlaždice offline mapy v cache: globální část (téma, měřítko, písmo, verze vykreslování) a oblastní část z otisků jen těch souborů map, vrstev a DEM,
@@ -30,28 +31,50 @@ final class OblastniKlic {
 	/** Kolik dlaždic kolem se bere do oblasti: popisky se berou z okolí 3×3 a stínování terénu sousedí přes švy DEM. */
 	static final int OKOLI = 1;
 
+	/**
+	 * Jak daleko za obrysem mapy z katalogu mohou ještě sahat data souboru, ve stupních (naměřeno až asi 0,10°).
+	 */
+	static final double BUFFER_OBRYSU = 0.15;
+
+	/** O kolik stupňů se smí obdélník souboru lišit od obdélníku obrysu, aby soubor šel za katalogovou mapu. */
+	static final double TOLERANCE_OBDELNIKU = 0.25;
+
 	private static final BoundingBox SVET = new BoundingBox(-90, -180, 90, 180);
 
 	/** Soubor, jeho rozsah a otisk. */
 	static final class Zdroj {
 		private final BoundingBox rozsah;
 		private final int otisk;
+		/** Obrys z katalogu s bufferem uvnitř obdélníku souboru; null = platí celý obdélník. */
+		private final ObrysRaster obrys;
 
 		Zdroj(final BoundingBox rozsah, final String otisk) {
+			this(rozsah, otisk, null);
+		}
+
+		Zdroj(final BoundingBox rozsah, final String otisk, final PolygonPokryti obrys) {
 			this.rozsah = rozsah;
 			this.otisk = (int) crc(otisk);
+			this.obrys = obrys == null ? null : new ObrysRaster(obrys, BUFFER_OBRYSU);
 		}
 	}
 
 	private final String globalni;
 	private final List<Zdroj> zdroje;
 	private final String sestava;
+	/** Sjednocený rozsah všech otevřených map a vrstev; dlaždice, která z něj vyčnívá, má mimo něj šedou plochu, takže závisí na celé sestavě. Null = neznámý. */
+	private final BoundingBox sjednoceni;
 
 	/**
 	 * @param zdroje
 	 *            v pořadí, v jakém se kreslí (priorita při překryvu map)
 	 */
 	OblastniKlic(final String globalni, final List<Zdroj> zdroje) {
+		this(globalni, zdroje, null);
+	}
+
+	OblastniKlic(final String globalni, final List<Zdroj> zdroje, final BoundingBox sjednoceni) {
+		this.sjednoceni = sjednoceni;
 		this.globalni = globalni;
 		this.zdroje = Collections.unmodifiableList(new ArrayList<>(zdroje));
 		final CRC32 crc = new CRC32();
@@ -80,12 +103,57 @@ final class OblastniKlic {
 	String klic(final KaLoc loc) {
 		final BoundingBox oblast = oblast(loc);
 		final CRC32 crc = new CRC32();
+		final boolean zCelkuSestavy = !oblastni || vyclivaZeSjednoceni(loc);
 		for (final Zdroj z : zdroje) {
-			if (!oblastni || z.rozsah.intersects(oblast)) {
+			if (zCelkuSestavy || z.rozsah.intersects(oblast) && (z.obrys == null || z.obrys.zasahuje(oblast))) {
 				pridej(crc, z.otisk);
 			}
 		}
 		return globalni + '.' + String.format("%08x", crc.getValue());
+	}
+
+	/** Dlaždice zasahuje mimo sjednocený rozsah souborů: tam mapsforge kreslí šedou plochu, která se po změně sjednocení mění. */
+	private boolean vyclivaZeSjednoceni(final KaLoc loc) {
+		if (sjednoceni == null) {
+			return false;
+		}
+		final BoundingBox dlazdice = bezOkoli(loc);
+		return dlazdice.minLatitude < sjednoceni.minLatitude || dlazdice.maxLatitude > sjednoceni.maxLatitude || dlazdice.minLongitude < sjednoceni.minLongitude
+				|| dlazdice.maxLongitude > sjednoceni.maxLongitude;
+	}
+
+	static BoundingBox bezOkoli(final KaLoc loc) {
+		final byte zoom = (byte) loc.getMoumer();
+		final int x = loc.getFromSzUnsignedX();
+		final int y = loc.getFromSzUnsignedY();
+		final double zapad = MercatorProjection.tileXToLongitude(x, zoom);
+		final double vychod = MercatorProjection.tileXToLongitude(x + 1L, zoom);
+		final double sever = MercatorProjection.tileYToLatitude(y, zoom);
+		final double jih = MercatorProjection.tileYToLatitude(y + 1L, zoom);
+		return new BoundingBox(Math.min(jih, sever), Math.min(zapad, vychod), Math.max(jih, sever), Math.max(zapad, vychod));
+	}
+
+	/** Kolik zdrojů má obrys z katalogu. */
+	int pocetObrysu() {
+		int pocet = 0;
+		for (final Zdroj z : zdroje) {
+			if (z.obrys != null) {
+				pocet++;
+			}
+		}
+		return pocet;
+	}
+
+	/**
+	 * Obrys z katalogu platí jen pro soubor, který odpovídá katalogové mapě: obdélník souboru se od obdélníku obrysu liší nejvýš o tolerance. Oříznutý nebo větší
+	 * soubor uživatele téhož jména dostane celý obdélník.
+	 */
+	static PolygonPokryti platnyObrys(final PolygonPokryti obrys, final BoundingBox soubor) {
+		if (obrys == null || Math.abs(obrys.getJih() - soubor.minLatitude) > TOLERANCE_OBDELNIKU || Math.abs(obrys.getSever() - soubor.maxLatitude) > TOLERANCE_OBDELNIKU
+				|| Math.abs(obrys.getZapad() - soubor.minLongitude) > TOLERANCE_OBDELNIKU || Math.abs(obrys.getVychod() - soubor.maxLongitude) > TOLERANCE_OBDELNIKU) {
+			return null;
+		}
+		return obrys;
 	}
 
 	/** Rozsah dlaždice s okolím, ze kterého se kreslí. */
@@ -105,7 +173,15 @@ final class OblastniKlic {
 
 	/** Jeden soubor map nebo vrstev. */
 	static Zdroj soubor(final String druh, final File f, final BoundingBox rozsah, final long mapDate) {
-		return new Zdroj(rozsah, druh + ':' + f.getName() + ':' + f.length() + ':' + f.lastModified() + ':' + mapDate);
+		return soubor(druh, f, rozsah, mapDate, null);
+	}
+
+	/**
+	 * @param obrys
+	 *            obrys katalogové mapy nebo vrstvy; dlaždice mimo obrys a jeho buffer soubor nezneplatní, i když leží v obdélníku souboru. Null u souboru uživatele.
+	 */
+	static Zdroj soubor(final String druh, final File f, final BoundingBox rozsah, final long mapDate, final PolygonPokryti obrys) {
+		return new Zdroj(rozsah, druh + ':' + f.getName() + ':' + f.length() + ':' + f.lastModified() + ':' + mapDate, platnyObrys(obrys, rozsah));
 	}
 
 	/**
