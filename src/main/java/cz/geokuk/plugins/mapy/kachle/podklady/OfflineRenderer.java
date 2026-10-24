@@ -398,8 +398,8 @@ final class OfflineRenderer {
 
 	/** Území jedné mapy: uvnitř obdélníku souboru obrys z katalogu, u souboru uživatele a mapy bez obrysu celý obdélník. */
 	static final class Pokryti {
-		/** Tolerance u hranice obrysu ve stupních (asi 1 km), aby rada neblikala na čáře. */
-		static final double TOLERANCE = 0.01;
+		/** Tolerance u hranice obrysu ve stupních (asi 3 km), aby rada neblikala na čáře. */
+		static final double TOLERANCE = 0.03;
 
 		private final BoundingBox obdelnik;
 		final int zoomMax;
