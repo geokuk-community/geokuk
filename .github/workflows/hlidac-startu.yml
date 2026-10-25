@@ -1,0 +1,74 @@
+name: Výkon – hlídač startu
+
+# Čas do otevření okna proti poslední ostré verzi (tagu bez -beta). Medián ze střídavých běhů;
+# job selže jen nad prahem, jinak je výsledek jen informativní (souhrn běhu).
+on:
+  workflow_dispatch:
+    inputs:
+      stara:
+        description: "Srovnávací verze (tag, větev, commit); prázdné = poslední ostrá verze"
+        default: ""
+      nova:
+        description: "Měřená verze"
+        default: "HEAD"
+      behu:
+        description: "Počet střídavých běhů"
+        default: "7"
+      prah:
+        description: "Nejvyšší přípustné zpomalení v procentech"
+        default: "15"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/main/**"
+      - "pom.xml"
+      - "vykon/**"
+      - ".github/workflows/hlidac-startu.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  start:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Měření startu
+        shell: bash
+        env:
+          STARA_VSTUP: ${{ inputs.stara }}
+          NOVA: ${{ inputs.nova || github.event.pull_request.head.sha || 'HEAD' }}
+          CO: start
+          START_BEHU: ${{ inputs.behu || '7' }}
+          START_PRAH: ${{ inputs.prah || '15' }}
+          PRACOVNI: ${{ runner.temp }}/vykon
+          VYSTUP: ${{ runner.temp }}/start-${{ runner.os }}.txt
+        run: |
+          STARA="${STARA_VSTUP:-$(git tag --list 'v*' --sort=-v:refname | grep -v -- '-' | head -1)}"
+          echo "Srovnávací verze: $STARA"
+          status=0
+          vykon/mer.sh "$STARA" "$NOVA" || status=$?
+          { echo "### Start programu na $RUNNER_OS (proti $STARA)"; echo '```'; cat "$VYSTUP"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+      - name: Výsledek
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: start-${{ runner.os }}
+          path: ${{ runner.temp }}/start-${{ runner.os }}.txt

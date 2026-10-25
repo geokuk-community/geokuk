@@ -60,5 +60,13 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   vypíše čas do zobrazení okna, načtení keší, obsazenou paměť a nejdelší
   událost na EDT.
 
+- `start` (jen na vyžádání, výchozí v workflow **Výkon – hlídač startu**): `start.py`
+  spustí `geokuk-*.jar` obou verzí střídavě (`START_BEHU`, výchozí 7, první dvojice
+  se zahazuje) s prázdnou datovou složkou a změří čas do řádku „Otevřeno okno“
+  v logu. Medián a poměr nové verze proti staré; `mer.sh` končí chybou, když je
+  nová o víc než `START_PRAH` procent (výchozí 15) pomalejší. Workflow porovnává
+  s poslední ostrou verzí (tag bez `-beta`) a běží u pull requestů měnících
+  `src/main/**`.
+
 Harness sahá na balíčkově viditelné API a přes reflexi na pole tříd.
 Když se ve verzi změní, uprav `src/`.

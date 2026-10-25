@@ -5,6 +5,8 @@
 #
 # Proměnné:
 #   CO        části: db (načtení databází GeoGetu a GSAKu), hint, kresleni, program (spuštěný program),
+#             start (čas do otevření okna, medián ze START_BEHU střídavých běhů; končí chybou, když je nová verze
+#             o víc než START_PRAH procent pomalejší; ve výchozích není),
 #             kesoidy (kreslení ikon a teček pro počty v IKONY a TECKY, jen nová verze; ve výchozích není),
 #             paralelne (obě databáze naráz v 1 a 2 vláknech, jen nová verze; ve výchozích není),
 #             offline (vykreslování offline mapy .map, jen nová verze; ve výchozích není),
@@ -152,6 +154,16 @@ fi
 		java -Xmx3g -Djava.awt.headless=true -Dstdout.encoding=UTF-8 -cp "$CP_NOVA" cz.geokuk.plugins.mapy.kachle.podklady.MerOffline slozka="$(nativni "${MAPY:-$REPO/src/test/resources/offline-mapy}")" tema="${TEMA:-}" \
 			symboly="$(nativni "$PRACOVNI/offline-symboly")" lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}" vlakna="${VLAKNA:-1,2}" 2>&1 | grep -v -E " (INFO|DEBUG) |^Picked up JAVA_TOOL_OPTIONS"
 	fi
+	if [[ "$CO" == *start* ]]; then
+		echo "## Start programu (okno otevřeno, medián ze ${START_BEHU:-7} střídavých běhů, prázdná data)"
+		jar_stara="$(ls "$PRACOVNI"/stara/target/geokuk-[0-9]*.jar | head -1)"
+		jar_nova="$(ls "$PRACOVNI"/nova/target/geokuk-[0-9]*.jar | head -1)"
+		displej=()
+		if [ -n "$LINUX" ] && [ -z "${DISPLAY:-}" ]; then
+			displej=(xvfb-run -a -s "-screen 0 1400x900x24")
+		fi
+		"${displej[@]}" "$PY" "$(nativni "$SADA/start.py")" "${START_BEHU:-7}" "${START_PRAH:-15}" "$(nativni "$jar_stara")" "$(nativni "$jar_nova")" || touch "$PRACOVNI/start-kod-$?"
+	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"
 		for v in stara nova; do
@@ -163,3 +175,11 @@ fi
 
 for v in stara nova; do git -C "$REPO" worktree remove --force "$PRACOVNI/$v" >/dev/null 2>&1 || true; done
 echo "Výsledek: $VYSTUP"
+# Start programu: 3 = nová verze je pomalejší než práh, 2 = okno se neotevřelo, jiný kód = chyba skriptu.
+for soubor in "$PRACOVNI"/start-kod-*; do
+	if [ -e "$soubor" ]; then
+		kod="${soubor##*start-kod-}"
+		rm -f "$PRACOVNI"/start-kod-*
+		exit "$kod"
+	fi
+done
