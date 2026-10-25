@@ -17,6 +17,7 @@ import javax.swing.SwingUtilities;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.junit.rules.Timeout;
 import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.table.ISqlJetCursor;
 import org.tmatesoft.sqljet.core.table.SqlJetDb;
@@ -47,6 +48,12 @@ public class StahovaniVelkyObjemTest {
 	/** Poměr stran okna; šířka a výška se dopočítají tak, aby všechna měřítka dala zhruba {@link #CIL} dlaždic. */
 	private static final Dimension VELIKOST = velikostProDlazdic(CIL);
 
+	/** Čas na jedno stažení celého výřezu; při velkém počtu roste s ním (na CI se zapisuje stovky dlaždic za sekundu). */
+	private static final long LIMIT_STAZENI_MS = Math.max(120_000L, CIL * 10L);
+
+	@Rule
+	public Timeout limitTestu = Timeout.millis(Math.max(180_000L, 2 * LIMIT_STAZENI_MS + 60_000L));
+
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
@@ -59,6 +66,7 @@ public class StahovaniVelkyObjemTest {
 	private EKaType mapa;
 	private File slozkaCache;
 	private final List<JKachleOflinerDialog> dialogy = new ArrayList<>();
+	private final List<DavkaStahovani> davky = new ArrayList<>();
 
 	/** Okno 3:2, ve kterém měřítka MIN až MAX dají dohromady asi {@code cil} dlaždic (v nejpodrobnějším 16/21 z nich). */
 	private static Dimension velikostProDlazdic(final int cil) {
@@ -120,6 +128,7 @@ public class StahovaniVelkyObjemTest {
 			f.setAccessible(true);
 			f.set(dialog, davka);
 			dialog.new KachleOflinerSwingWorker(true).doInBackground();
+			davky.add(davka);
 			return davka;
 		}
 
@@ -182,6 +191,8 @@ public class StahovaniVelkyObjemTest {
 
 	@After
 	public void tearDown() throws Exception {
+		// Rozpracovaná dávka by po vypnutí serveru dál hlásila chyby spojení.
+		davky.forEach(d -> d.zastav("konec testu."));
 		SwingUtilities.invokeAndWait(() -> dialogy.forEach(JKachleOflinerDialog::dispose));
 		if (server != null) {
 			server.stop(0);
@@ -220,13 +231,15 @@ public class StahovaniVelkyObjemTest {
 	}
 
 	/** Tisíce dlaždic jako uživatel: dialog spočítá, stáhne se, program se ukončí a po novém spuštění je všechno v cache. */
-	@Test(timeout = 180000)
+	@Test
 	public void tisiceDlazdicDoCachePoRestartuVsechnyJsouTam() throws Exception {
 		final Set<String> ocekavane = StahovacSyntetickaMapaTest.ocekavane(VELIKOST, STRED, MAX, MAX, MIN);
 		Assert.assertTrue("výřez má dát tisíce dlaždic: " + ocekavane.size(), ocekavane.size() > CIL * 0.8);
 		final Sestava s = new Sestava();
 		Assert.assertEquals(ocekavane.size(), s.spocitej());
-		final DavkaStahovani davka = s.stahni(ocekavane.size(), 120_000);
+		final long t0 = System.currentTimeMillis();
+		final DavkaStahovani davka = s.stahni(ocekavane.size(), LIMIT_STAZENI_MS);
+		System.out.println("Stažení " + ocekavane.size() + " dlaždic: " + (System.currentTimeMillis() - t0) / 1000 + " s, " + ocekavane.size() * 1000L / Math.max(1, System.currentTimeMillis() - t0) + " dlaždic/s");
 		Assert.assertTrue(davka.popis(), davka.popis().startsWith("Hotovo: v cache je " + ocekavane.size() + " z " + ocekavane.size() + " dlaždic, chyb 0."));
 		Assert.assertEquals(ocekavane, bezDuplicit(pozadavky, "první stažení"));
 
@@ -235,23 +248,25 @@ public class StahovaniVelkyObjemTest {
 
 		pozadavky.clear();
 		final Sestava po = new Sestava();
-		final DavkaStahovani znovu = po.stahni(ocekavane.size(), 120_000);
+		final DavkaStahovani znovu = po.stahni(ocekavane.size(), LIMIT_STAZENI_MS);
 		Assert.assertTrue(znovu.popis(), znovu.popis().startsWith("Hotovo: v cache je " + ocekavane.size() + " z " + ocekavane.size() + " dlaždic, chyb 0."));
 		Assert.assertEquals("stejný výřez po restartu nestahuje nic", Collections.emptySet(), new TreeSet<>(pozadavky));
 	}
 
 	/** Uživatel stáhne část výřezu, zmáčkne Zastavit stahování a spustí stejný výřez znovu: dostáhne se jen zbytek. */
-	@Test(timeout = 180000)
+	@Test
 	public void zastaveniUprostredAPokracovaniDostahneJenZbytek() throws Exception {
 		final Set<String> ocekavane = StahovacSyntetickaMapaTest.ocekavane(VELIKOST, STRED, MAX, MAX, MIN);
 		zpozdeniMs.set(10);
 		final Sestava s = new Sestava();
 		final DavkaStahovani davka = s.spust(ocekavane.size());
+		// Při velkém počtu stačí rozjetá dávka, ne desetina všech dlaždic.
+		final int rozjeto = Math.min(ocekavane.size() / 10, 2000);
 		final long konec = System.currentTimeMillis() + 60_000;
-		while (pozadavky.size() < ocekavane.size() / 10 && System.currentTimeMillis() < konec) {
+		while (pozadavky.size() < rozjeto && System.currentTimeMillis() < konec) {
 			Thread.sleep(20);
 		}
-		Assert.assertTrue("stahování se nerozběhlo: " + davka.popis(), pozadavky.size() >= ocekavane.size() / 10);
+		Assert.assertTrue("stahování se nerozběhlo: " + davka.popis(), pozadavky.size() >= rozjeto);
 		davka.zastav("na přání uživatele.");
 		pockej(davka, 10_000);
 		Assert.assertTrue(davka.popis(), davka.popis().startsWith("Zastaveno: na přání uživatele."));
@@ -268,7 +283,7 @@ public class StahovaniVelkyObjemTest {
 		pozadavky.clear();
 		zpozdeniMs.set(0);
 		final Sestava po = new Sestava();
-		final DavkaStahovani zbytek = po.stahni(ocekavane.size(), 120_000);
+		final DavkaStahovani zbytek = po.stahni(ocekavane.size(), LIMIT_STAZENI_MS);
 		Assert.assertTrue(zbytek.popis(), zbytek.popis().startsWith("Hotovo: v cache je " + ocekavane.size() + " z " + ocekavane.size() + " dlaždic, chyb 0."));
 		Assert.assertEquals("stáhne se přesně to, co v cache chybělo", ocekavane.size() - vCache, bezDuplicit(pozadavky, "pokračování").size());
 		po.ukonciProgram();
