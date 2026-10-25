@@ -52,7 +52,7 @@ public class JPrepinaceZdrojuLazyTest {
 				l.mouseEntered(new java.awt.event.MouseEvent(blok.getPopisek(), java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
 			}
 			Assert.assertTrue(blok.jsouTabulkyVytvoreny());
-			blok.zavriSeznam();
+			blok.removeNotify();
 		});
 	}
 }

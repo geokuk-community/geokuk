@@ -46,6 +46,7 @@ public class JBlokMapTest {
 				l.mouseEntered(new MouseEvent(blok, MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
 			}
 			Assert.assertTrue(blok.isObsahVytvoren());
+			blok.removeNotify();
 		});
 	}
 
