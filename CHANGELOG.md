@@ -74,14 +74,16 @@
   nebo klávesnicí a podle velikosti okna se přizpůsobí.
 - V panelu Offline mapy je každá země jen jednou: stahované, rozpracované a
   stažené mapy jsou jen ve Stažených mapách, regiony stažené země jsou pod
-  ní a jdou hledat. U země s regiony jde stáhnout i celá země. Průběh
+  ní a jdou hledat, i ve Stažených mapách; nestažené regiony stažené země
+  jsou také u ní. U země s regiony jde stáhnout i celá země. Průběh
   stahování se hlásí u každé mapy a vrstvy zvlášť. Vrstva stažená k celé
   zemi je u jejích regionů vidět jako stažená. Seznam ve Stažených mapách
   a v Pro toto místo se natáhne na výšku obsahu, posuvník má jen když se nevejde.
 - Dole v panelu Offline mapy jsou přepínače Přes mapu stejně jako v nabídce
   Mapy. Panel se nezavře za dialogem smazání.
 - Rada v mapě bez offline mapy nabízí Stáhnout mapu i Stáhnout mapu a vrstvy
-  s velikostí; u regionu nabídne celou zemi a regiony v záběru pod ní.
+  s velikostí; u regionu nabídne celou zemi a regiony v záběru pod ní;
+  celou zemi nenabídne, když je stažený některý její region.
 - Rada bez offline mapy se u map z nabídky ke stažení ukáže podle
   skutečného obrysu mapy, takže například u Česka nabídne sousední Polsko;
   u vlastních souborů podle oblasti souboru.
