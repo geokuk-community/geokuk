@@ -125,6 +125,7 @@ public class GeokukMain {
 			inicializator.spustDalkoveOvladani(0, true);
 		}
 		inicializator.zkontrolovatAktualizace();
+		inicializator.poStartu();
 		Diagnostika.znackaStartu("start dokončen");
 	}
 

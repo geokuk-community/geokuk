@@ -174,6 +174,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, udalosti::add);
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		assertEquals("vestavěný je prázdný", 0, model.getKatalogVrstev().getVrstvy().size());
@@ -222,6 +223,11 @@ public class VrstvyPodleKliceTest {
 
 		model.initAndFire();
 		model.pockej();
+		assertEquals("při startu okna se katalog nestahuje", 0, dotazyNaKatalog.get());
+		assertEquals(0, model.getKatalogVrstev().getVrstvy().size());
+		model.zpozdeniPoStartuMs = 0;
+		model.poStartu();
+		model.pockej();
 		assertEquals(2, model.getKatalogVrstev().getVrstvy().size());
 		assertNull(posledni(udalosti).getChyba());
 		final File kopie = new File(mapy, "layers/layers.json");
@@ -259,6 +265,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, udalosti::add);
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		katalog = katalogBavorska();
@@ -300,6 +307,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, udalosti::add);
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		katalog = katalogBavorska();
@@ -341,6 +349,7 @@ public class VrstvyPodleKliceTest {
 		Files.write(new File(stara, "czech-republic.tourist.map").toPath(), new byte[] { 1 });
 		Files.write(new File(mapy, "vrstvy/vrstvy.json").toPath(), "{}".getBytes(StandardCharsets.US_ASCII));
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, e -> {
 		});
 		model.obnovStavy();
