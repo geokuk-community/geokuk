@@ -181,6 +181,7 @@
 - V Soubor > Zobrazení programu jde posuvníkem zvětšit ikony keší na mapě
   (1× až 5× po 0,5) a posuvníkem Mapa (offline) zvětšit písmo, symboly
   a čáry offline mapy až na 200 %.
+- Log programu je po startu kratší: 31 řádků místo 156.
 
 ### Opravy
 - Mapa je plynulejší při pohybu myši, při tažení bodu cesty, se zvětšenými
