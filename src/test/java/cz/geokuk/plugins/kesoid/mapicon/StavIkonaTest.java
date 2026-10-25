@@ -174,6 +174,16 @@ public class StavIkonaTest {
 	}
 
 	@Test
+	public void naCtverecSVyplniNechaRezervuKolemObsahu() {
+		final Icon ikona = StavIkona.naCtverec(zaklad(V), V, 0.8);
+		Assert.assertEquals(V, ikona.getIconWidth());
+		final BufferedImage n = obraz(ikona);
+		Assert.assertFalse(viditelne(n.getRGB(0, V / 2)));
+		Assert.assertFalse(viditelne(n.getRGB(1, V / 2)));
+		Assert.assertTrue(viditelne(n.getRGB(V / 2, V / 2)));
+	}
+
+	@Test
 	public void nevylusteJeDilekSkladanky() {
 		final BufferedImage n = obraz(StavIkona.nevyluste(V));
 		Assert.assertEquals(V, n.getWidth());
