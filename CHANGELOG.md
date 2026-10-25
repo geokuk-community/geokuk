@@ -3,6 +3,8 @@
 ## 6.5.0
 
 ### Změny
+- Dokud se mapa načítá, je místo dlaždic bílá plocha se slabým logem GeoKuk
+  uprostřed okna místo přeškrtnutých rámečků s čísly.
 - Offline mapy se kreslí novým tématem GeoKuk: světlejší les a pole,
   chráněná území bez zelené výplně, decentní hnědooranžové vrstevnice
   a jemné stínování, skály, rozcestníky, boží muka, rozhledny, prameny

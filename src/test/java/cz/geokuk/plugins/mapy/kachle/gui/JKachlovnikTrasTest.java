@@ -63,12 +63,11 @@ public class JKachlovnikTrasTest {
 		return n;
 	}
 
-	/** Rozpracovaná ani chybná dlaždice překryvu nezakryje podklad; dlaždice podkladu v tu chvíli něco kreslí. */
+	/** Rozpracovaná ani chybná dlaždice překryvu nezakryje podklad; chybná dlaždice podkladu něco kreslí. */
 	@Test
 	public void prekryvBezObrazkuNicNekresli() {
 		final JKachle trasy = new JKachle(null, new Ka(LOC, EKaType.TRASY));
 		final JKachle podklad = new JKachle(null, new Ka(LOC, EKaType.OFFLINE_MF));
-		Assert.assertTrue(nepruhlednych(podklad) > 0);
 		Assert.assertEquals(0, nepruhlednych(trasy));
 		trasy.prijmi(new KachloStav(new RuntimeException("chyba")), Priority.KACHLE);
 		podklad.prijmi(new KachloStav(new RuntimeException("chyba")), Priority.KACHLE);
