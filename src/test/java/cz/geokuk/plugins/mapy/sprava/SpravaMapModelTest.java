@@ -185,4 +185,40 @@ public class SpravaMapModelTest {
 		assertEquals("dvě změny, jedna událost: " + udalosti, 1, udalosti.size());
 		assertTrue(udalosti.get(0) instanceof StavyMapEvent);
 	}
+
+	/** Žádosti o obnovu stavů, které čekají na vlákně kontroly (třeba při startu), se sloučí do jedné. */
+	@Test(timeout = 60000)
+	public void obnovyStavuCekajiciNaVlaknuSeSlouci() throws Exception {
+		final CountDownLatch uvolnit = new CountDownLatch(1);
+		final java.util.concurrent.atomic.AtomicInteger cteniSlozky = new java.util.concurrent.atomic.AtomicInteger();
+		final java.util.concurrent.atomic.AtomicBoolean prvni = new java.util.concurrent.atomic.AtomicBoolean(true);
+		// Konstruktor posílá na vlákno kontroly načtení katalogu; zdržené drží vlákno obsazené, zatímco se žádosti hromadí.
+		final SpravaMapModel model = new SpravaMapModel(() -> {
+			if (prvni.getAndSet(false)) {
+				try {
+					uvolnit.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+			return KatalogMap.vestaveny();
+		}, KatalogVrstev::vestaveny);
+		final File mapy = tmp.newFolder("sloucene");
+		model.nastavProTest(() -> {
+			cteniSlozky.incrementAndGet();
+			return mapy;
+		}, e -> {
+		});
+		for (int i = 0; i < 20; i++) {
+			model.obnovStavy();
+		}
+		uvolnit.countDown();
+		model.pockej();
+		assertTrue("20 žádostí se sloučilo, čtení složky: " + cteniSlozky.get(), cteniSlozky.get() <= 4);
+		// Po doběhnutí se další žádost provede znovu.
+		final int pred = cteniSlozky.get();
+		model.obnovStavy();
+		model.pockej();
+		assertTrue(cteniSlozky.get() > pred);
+	}
 }
