@@ -364,7 +364,7 @@ public class JBlokMap extends JLabel {
 		final java.util.Set<String> v = new java.util.HashSet<>();
 		if (spravaMap != null && s != null) {
 			for (final KatalogovaMapa m : spravaMap.getKatalog().getMapy()) {
-				if (m.getPokryti().obsahuje(s)) {
+				if (m.pokryva(s.lat, s.lon)) {
 					v.add(m.getId());
 				}
 			}

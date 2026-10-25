@@ -49,7 +49,7 @@ public final class KatalogMap {
 						if (in == null) {
 							throw new IOException("V programu chybí " + VESTAVENY);
 						}
-						k = nacti(new String(ByteStreams.toByteArray(in), StandardCharsets.UTF_8), KatalogMap::vestavenyPolygon);
+						k = nacti(new String(ByteStreams.toByteArray(in), StandardCharsets.UTF_8), KatalogMap::vestavenyPolygon, true);
 					} catch (final IOException e) {
 						throw new UncheckedIOException(e);
 					}
@@ -77,6 +77,11 @@ public final class KatalogMap {
 	}
 
 	static KatalogMap nacti(final String json, final ZdrojPolygonu polygony) throws IOException {
+		return nacti(json, polygony, false);
+	}
+
+	/** Obrysy se s {@code lenive} nečtou při načtení katalogu, ale při prvním použití; mapa bez obrysu a bez obdélníku pak hlásí chybu až tehdy. */
+	static KatalogMap nacti(final String json, final ZdrojPolygonu polygony, final boolean lenive) throws IOException {
 		final Map<?, ?> koren = objekt(JsonCteni.precti(json), "katalog");
 		final List<URI> mapy = adresy(koren, "mapy");
 		final List<URI> poly = adresy(koren, "polygony");
@@ -105,12 +110,23 @@ public final class KatalogMap {
 			if (!(velikost instanceof Double) || (Double) velikost <= 0) {
 				throw new IOException("Mapa " + id + " v katalogu nemá velikost");
 			}
-			PolygonPokryti pokryti = polygony.polygon(id);
-			if (pokryti == null) {
-				pokryti = obdelnik(p.get("obdelnik"), id);
+			final double[] ohraniceni = lenive ? ohraniceni(p.get("ohraniceni"), id) : null;
+			final Object obdelnik = p.get("obdelnik");
+			PolygonPokryti pokryti = null;
+			KatalogovaMapa.PolygonZdroj zdrojPokryti = null;
+			if (lenive && ohraniceni != null) {
+				zdrojPokryti = () -> {
+					final PolygonPokryti z = polygony.polygon(id);
+					return z != null ? z : obdelnik(obdelnik, id);
+				};
+			} else {
+				pokryti = polygony.polygon(id);
+				if (pokryti == null) {
+					pokryti = obdelnik(obdelnik, id);
+				}
 			}
 			final KatalogovaMapa m = new KatalogovaMapa(id, text(p, "nazev"), skupina instanceof String ? (String) skupina : null, celek, datum(p.get("datum"), id),
-					vyres(mapy, id + ".map"), vyres(poly, id + ".poly"), ((Double) velikost).longValue(), pokryti, zdroj, licence, atribuce);
+					vyres(mapy, id + ".map"), vyres(poly, id + ".poly"), ((Double) velikost).longValue(), pokryti, zdrojPokryti, ohraniceni, zdroj, licence, atribuce);
 			if (!soubory.add(m.getNazevSouboru().toLowerCase(Locale.ROOT))) {
 				throw new IOException("Dvě mapy v katalogu mají stejné jméno souboru " + m.getNazevSouboru());
 			}
@@ -160,6 +176,28 @@ public final class KatalogMap {
 			vysledek.add(z.resolve(cesta));
 		}
 		return Collections.unmodifiableList(vysledek);
+	}
+
+	/** Ohraničení obrysu {jih, západ, sever, východ} z katalogu; chybí = null. */
+	private static double[] ohraniceni(final Object o, final String id) throws IOException {
+		if (o == null) {
+			return null;
+		}
+		if (!(o instanceof List) || ((List<?>) o).size() != 4) {
+			throw new IOException("Mapa " + id + " má v katalogu neplatné ohraničení");
+		}
+		final double[] d = new double[4];
+		for (int i = 0; i < 4; i++) {
+			final Object c = ((List<?>) o).get(i);
+			if (!(c instanceof Double)) {
+				throw new IOException("Mapa " + id + " má v katalogu neplatné ohraničení");
+			}
+			d[i] = (Double) c;
+		}
+		if (!(d[0] < d[2]) || !(d[1] < d[3])) {
+			throw new IOException("Mapa " + id + " má v katalogu prázdné ohraničení");
+		}
+		return d;
 	}
 
 	private static PolygonPokryti obdelnik(final Object o, final String id) throws IOException {
@@ -229,7 +267,7 @@ public final class KatalogMap {
 	public List<KatalogovaMapa> pokryvajiBod(final Wgs bod) {
 		final List<KatalogovaMapa> vysledek = new ArrayList<>();
 		for (final KatalogovaMapa m : mapy) {
-			if (m.getPokryti().obsahuje(bod)) {
+			if (m.pokryva(bod.lat, bod.lon)) {
 				vysledek.add(m);
 			}
 		}
