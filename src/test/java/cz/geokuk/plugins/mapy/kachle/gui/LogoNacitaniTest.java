@@ -128,4 +128,11 @@ public class LogoNacitaniTest {
 		Assert.assertEquals(480, LogoNacitani.velikost(800, 600, 2));
 		Assert.assertEquals(0, LogoNacitani.velikost(100, 100, 1));
 	}
+
+	/** Předčtení při startu načte obrázek loga, takže se při prvním vykreslení nedekóduje. */
+	@Test
+	public void nactiZdrojPredemNacteObrazek() {
+		LogoNacitani.nactiZdroj();
+		Assert.assertTrue(LogoNacitani.jeZdrojNacten());
+	}
 }

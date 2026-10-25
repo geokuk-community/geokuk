@@ -7,9 +7,10 @@ import java.awt.font.FontRenderContext;
 import java.awt.image.BufferedImage;
 
 import cz.geokuk.framework.FKurzory;
+import cz.geokuk.plugins.mapy.kachle.gui.LogoNacitani;
 import lombok.extern.slf4j.Slf4j;
 
-/** Při startu vedle EDT načte písma a třídy Swingu, které by si okno jinak načítalo na EDT samo. */
+/** Při startu vedle EDT načte písma, třídy Swingu a logo načítání mapy, které by si okno jinak načítalo na EDT samo. */
 @Slf4j
 final class PredehrevaniStartu {
 
@@ -45,6 +46,7 @@ final class PredehrevaniStartu {
 			}
 			// Kurzory se kreslí při prvním použití třídy.
 			Class.forName(FKurzory.class.getName());
+			LogoNacitani.nactiZdroj();
 		} catch (final Exception | LinkageError e) {
 			log.debug("Předehřátí startu selhalo: {}", e.toString());
 		}

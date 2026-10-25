@@ -5,6 +5,8 @@
 ### Změny
 - Dokud se mapa načítá, je místo dlaždic bílá plocha se slabým logem GeoKuk
   uprostřed okna místo přeškrtnutých rámečků s čísly.
+  Logo se čte na pozadí už při startu: od zobrazení okna do dokončení
+  startu to na Linuxu trvá 273 ms místo 311 ms (32 střídavých běhů, medián).
 - Offline mapy se kreslí novým tématem GeoKuk: světlejší les a pole,
   chráněná území bez zelené výplně, decentní hnědooranžové vrstevnice
   a jemné stínování, skály, rozcestníky, boží muka, rozhledny, prameny
