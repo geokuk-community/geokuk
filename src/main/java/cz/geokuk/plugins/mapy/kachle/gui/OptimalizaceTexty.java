@@ -1,16 +1,20 @@
 package cz.geokuk.plugins.mapy.kachle.gui;
 
+import java.util.Locale;
+
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
 /** Texty oken Optimalizace databáze. */
 final class OptimalizaceTexty {
 
+	private static final Locale CS = new Locale("cs");
+
 	static final String NAZEV = "Optimalizace databáze";
 
 	static String velikost(final long bajtu) {
 		if (bajtu >= 1L << 30) {
-			return String.format("%.1f GB", bajtu / (double) (1L << 30));
+			return String.format(CS, "%.1f GB", bajtu / (double) (1L << 30));
 		}
 		return Math.max(1, bajtu >> 20) + " MB";
 	}
