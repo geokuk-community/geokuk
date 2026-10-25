@@ -108,6 +108,24 @@ public class KachleDBManagerSoubehTest {
 		}
 	}
 
+	/** Velká dávka se zapíše po částech a všechny dlaždice jsou pak v cache. */
+	@Test(timeout = 60000)
+	public void velkaDavkaSeZapisePoCastech() throws Exception {
+		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
+		holder.setKachleCacheDir(new Filex(tmp.newFolder("cache2"), false, true));
+		final KachleDBManager manager = new KachleDBManager(holder);
+		final int pocet = 3 * KachleDBManager.DAVKA_ZAPISU + 7;
+		final List<ItemToSave> davka = new ArrayList<>();
+		for (int i = 0; i < pocet; i++) {
+			davka.add(new ItemToSave(ka(i), new byte[] { (byte) i }));
+		}
+		Assert.assertTrue(manager.save(davka));
+		for (int i = 0; i < pocet; i++) {
+			Assert.assertTrue("Dlaždice " + i + " v cache", manager.exists(ka(i)));
+		}
+		Assert.assertFalse("Ztracený zápis", manager.exists(ka(pocet)));
+	}
+
 	private static boolean stejny(final BufferedImage a, final BufferedImage b) {
 		if (a == null || a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) {
 			return false;

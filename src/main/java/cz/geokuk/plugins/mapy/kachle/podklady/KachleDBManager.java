@@ -253,6 +253,22 @@ class KachleDBManager implements KachleManager {
 	 */
 	@Override
 	public boolean save(final Collection<ItemToSave> imagesToSave) {
+		if (imagesToSave.size() <= DAVKA_ZAPISU) {
+			return zapisDavku(imagesToSave);
+		}
+		final List<ItemToSave> vse = new ArrayList<>(imagesToSave);
+		for (int od = 0; od < vse.size(); od += DAVKA_ZAPISU) {
+			if (!zapisDavku(vse.subList(od, Math.min(od + DAVKA_ZAPISU, vse.size())))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Největší počet dlaždic v jedné transakci; commit drží zámek cache a čtení mezitím čeká. */
+	static final int DAVKA_ZAPISU = 50;
+
+	private boolean zapisDavku(final Collection<ItemToSave> imagesToSave) {
 		for (int pokus = 1;; pokus++) {
 			final SqlJetException chyba = zapisJednou(imagesToSave);
 			if (chyba == null) {

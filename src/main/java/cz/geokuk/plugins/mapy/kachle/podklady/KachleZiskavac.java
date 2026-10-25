@@ -298,7 +298,8 @@ public class KachleZiskavac {
 	 *
 	 */
 	class KachleUkladac {
-		private static final int CAS_PO_KTEREM_SE_ZAHAJI_UKLADANI_NA_DISK = 5;
+		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat. */
+		long casPoKteremSeZahajiUkladaniMs = TimeUnit.SECONDS.toMillis(5);
 		private final BlockingQueue<Ukladanec> queue = Queues.newLinkedBlockingQueue();
 
 		ScheduledExecutorService planovacUkladani = Executors.newSingleThreadScheduledExecutor();
@@ -311,21 +312,23 @@ public class KachleZiskavac {
 		 * @param ukladanec
 		 */
 		synchronized void zaplanujUlozeni(final Ukladanec ukladanec) {
-			if (future != null) {
-				future.cancel(false); // pokud je něco naplánováno, zabiju to, tím odložím ukládání, false aby to nezabylo, když ukládání začalo
-			}
 			queue.add(ukladanec);
 			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
 				submitChunks();
-			} else { // plánuji zahájit ukládání pro případ, že nová kachle nepřijde.
+			} else if (future == null) { // časovač běží od první čekající dlaždice, další ho neodkládají
 				future = planovacUkladani.schedule(() -> {
 					try {
-						submitChunks();
+						casovacVyprsel();
 					} catch (final RuntimeException e) {
 						log.error("Naplánované ukládání dlaždic na disk selhalo", e);
 					}
-				}, CAS_PO_KTEREM_SE_ZAHAJI_UKLADANI_NA_DISK, TimeUnit.SECONDS);
+				}, casPoKteremSeZahajiUkladaniMs, TimeUnit.MILLISECONDS);
 			}
+		}
+
+		private synchronized void casovacVyprsel() {
+			future = null;
+			submitChunks();
 		}
 
 		private void submitDiskSave(final Collection<Ukladanec> ukladanci) {
@@ -355,6 +358,10 @@ public class KachleZiskavac {
 		}
 
 		synchronized private void submitChunks() {
+			if (future != null) {
+				future.cancel(false);
+				future = null;
+			}
 			for (;;) {
 				final ArrayList<Ukladanec> list = new ArrayList<>(MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU);
 				queue.drainTo(list, MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU);
@@ -409,7 +416,7 @@ public class KachleZiskavac {
 	private static Pocitadlo pocitBrzdeniOfflineKdyzJeOnline = new PocitadloRoste("ka61 #počet brzdení dávkového downloadu",
 			"Počítá, kolikrát se o 100 ms zbrzdilo dávkové dotahování, protože běžel online.");
 
-	private static final int MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU = 300;
+	private static final int MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU = 50;
 
 	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
