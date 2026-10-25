@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import cz.geokuk.framework.Factory;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
 import cz.geokuk.plugins.kesoid.mvc.*;
@@ -131,6 +132,49 @@ public class StavIkonaTest {
 		Assert.assertTrue(s, hnf >= 0 && hnf < dpl && dpl < sep1);
 		Assert.assertTrue(s, sep1 < dsbl && dsbl < arch && arch < sep2);
 		Assert.assertTrue(s, sep2 < gc);
+	}
+
+	@Test
+	public void ikonyToolbaruMajiStejnouVelikostKromeDruhuWaypointu() {
+		final Genom genom = new Genom();
+		final IkonBag bag = new IkonBag(genom) {
+			@Override
+			public Icon seekIkon(final Genotyp genotyp) {
+				return zaklad(16);
+			}
+		};
+		final Alela[] stejne = { genom.ALELA_hnf, genom.ALELA_fnd, genom.ALELA_own, genom.ALELA_cpt, genom.ALELA_dpl, genom.ALELA_dsbl, genom.ALELA_arch, genom.ALELA_gc, genom.ALELA_mz, genom.ALELA_wp,
+				genom.ALELA_nevyluste };
+		for (final Alela alela : stejne) {
+			final Icon ikona = StavIkona.ikonaToolbaru(bag, alela);
+			Assert.assertEquals(alela.qualName(), V, ikona.getIconWidth());
+			Assert.assertEquals(alela.qualName(), V, ikona.getIconHeight());
+		}
+		final Alela druhWaypointu = genom.symGen.getVychoziAlela();
+		Assert.assertEquals(16, StavIkona.ikonaToolbaru(bag, druhWaypointu).getIconHeight());
+	}
+
+	@Test
+	public void naCtverecZachovaPomerStranACentruje() {
+		final BufferedImage uzka = obraz(StavIkona.naCtverec(zaklad(12), V));
+		Assert.assertEquals(V, uzka.getWidth());
+		Assert.assertEquals(V, uzka.getHeight());
+		Assert.assertFalse(viditelne(uzka.getRGB(0, V / 2)));
+		Assert.assertFalse(viditelne(uzka.getRGB(V - 1, V / 2)));
+		Assert.assertTrue(viditelne(uzka.getRGB(V / 2, V / 2)));
+		final Icon hotova = zaklad(V);
+		Assert.assertSame(hotova, StavIkona.naCtverec(hotova, V));
+		Assert.assertNull(StavIkona.naCtverec(null, V));
+	}
+
+	@Test
+	public void nevylusteJeVidetPresPlochuIkony() {
+		final BufferedImage n = obraz(StavIkona.nevyluste(V));
+		Assert.assertEquals(V, n.getWidth());
+		Assert.assertEquals(V, n.getHeight());
+		Assert.assertTrue(viditelne(n.getRGB(V / 2, V / 2)));
+		Assert.assertTrue(viditelne(n.getRGB(V / 2, 3)));
+		Assert.assertFalse(viditelne(n.getRGB(0, 0)));
 	}
 
 	/** Snímek toolbaru do poznámek, jen když je zadána cesta. */
