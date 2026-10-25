@@ -5,8 +5,8 @@
 
 Každý běh má novou prázdnou datovou složku. Měří se doba od spuštění procesu
 do řádku „Otevřeno okno: GeoKuk“ v logu. První dvojice běhů se zahazuje
-(studená cache systému). Končí kódem 1, když je nová verze o víc než PRAH_PROCENT
-pomalejší, a kódem 2, když okno nějaký běh neotevřel.
+(studená cache systému). Končí kódem 3, když je nová verze o víc než PRAH_PROCENT
+pomalejší, a kódem 2, když okno nějaký běh neotevřel. Jiný nenulový kód je chyba skriptu.
 """
 import os
 import shutil
@@ -50,6 +50,8 @@ def beh(jar):
 
 
 def main():
+    # Windows má výchozí kódování konzole cp1252, české znaky by shodily výpis.
+    sys.stdout.reconfigure(encoding="utf-8")
     pocet, prah = int(sys.argv[1]), float(sys.argv[2])
     jary = {"stará": sys.argv[3], "nová": sys.argv[4]}
     casy = {k: [] for k in jary}
@@ -68,7 +70,7 @@ def main():
     print("nová proti staré: %+.1f %% (práh +%.0f %%)" % (zmena, prah))
     if zmena > prah:
         print("PRÁH PŘEKROČEN: start nové verze je pomalejší o víc než %.0f %%" % prah)
-        return 1
+        return 3
     return 0
 
 

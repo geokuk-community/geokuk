@@ -175,9 +175,10 @@ fi
 
 for v in stara nova; do git -C "$REPO" worktree remove --force "$PRACOVNI/$v" >/dev/null 2>&1 || true; done
 echo "Výsledek: $VYSTUP"
-# Start programu: 1 = nová verze je pomalejší než práh, 2 = okno se neotevřelo.
-for kod in 1 2; do
-	if [ -e "$PRACOVNI/start-kod-$kod" ]; then
+# Start programu: 3 = nová verze je pomalejší než práh, 2 = okno se neotevřelo, jiný kód = chyba skriptu.
+for soubor in "$PRACOVNI"/start-kod-*; do
+	if [ -e "$soubor" ]; then
+		kod="${soubor##*start-kod-}"
 		rm -f "$PRACOVNI"/start-kod-*
 		exit "$kod"
 	fi
