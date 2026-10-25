@@ -36,7 +36,7 @@ def beh(jar):
                         if OKNO in f.read():
                             return (time.perf_counter() - t0) * 1000
                 except OSError:
-                    pass
+                    pass  # log ještě nevznikl nebo ho program právě zapisuje, zkusí se znovu
                 time.sleep(0.02)
             return None
         finally:
