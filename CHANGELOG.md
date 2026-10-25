@@ -76,8 +76,7 @@
   aktualizaci trvá o několik sekund déle.
 - Posouvání mapy se při ukládání dlaždic do cache méně seká: dlaždice se
   zapisují po nejvýš 50 a nejpozději 5 s po první čekající, čtení z cache se
-  při zápisu zdrží zhruba čtyřikrát méně (na Linuxu 20 → 5 ms u nejpomalejšího
-  1 % čtení).
+  při zápisu zdrží výrazně méně (zhruba 2× až 4× podle měření).
 - Načítání databází OpenSAKu je ověřené i se schématem verze 26.
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
