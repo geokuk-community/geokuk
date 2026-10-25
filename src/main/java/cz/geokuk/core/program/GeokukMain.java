@@ -126,6 +126,9 @@ public class GeokukMain {
 		}
 		inicializator.zkontrolovatAktualizace();
 		Diagnostika.znackaStartu("start dokončen");
+		Diagnostika.znackaStartu("findProperties-ms");
+		log.info("Start: findProperties-volani za {} ms", cz.geokuk.framework.MyPreferences.TMP_N.get());
+		log.info("Start: findProperties-us za {} ms", cz.geokuk.framework.MyPreferences.TMP_NS.get() / 1000);
 	}
 
 	/** Hláška pro uživatele, když spouštěč spustil předchozí verzi ze zálohy. */

@@ -139,7 +139,20 @@ public class MyPreferences extends Preferences {
 		return duo;
 	}
 
+	public static final java.util.concurrent.atomic.AtomicLong TMP_NS = new java.util.concurrent.atomic.AtomicLong();
+	public static final java.util.concurrent.atomic.AtomicLong TMP_N = new java.util.concurrent.atomic.AtomicLong();
+
 	private static Map<String, PropertyDescriptor> findProperties(final Class<?> cls) {
+		final long t0 = System.nanoTime();
+		try {
+			return findProperties0(cls);
+		} finally {
+			TMP_NS.addAndGet(System.nanoTime() - t0);
+			TMP_N.incrementAndGet();
+		}
+	}
+
+	private static Map<String, PropertyDescriptor> findProperties0(final Class<?> cls) {
 		try {
 			final Map<String, PropertyDescriptor> descrs = new HashMap<>();
 			for (final Method method : cls.getMethods()) {
