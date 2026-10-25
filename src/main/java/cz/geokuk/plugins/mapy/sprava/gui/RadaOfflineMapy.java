@@ -160,7 +160,7 @@ public final class RadaOfflineMapy {
 			final Function<KatalogovaMapa, NabidkaRadku> nabidky) {
 		final List<KatalogovaMapa> kandidati = new ArrayList<>();
 		for (final KatalogovaMapa m : katalog.getMapy()) {
-			if (!m.getPokryti().obsahuje(stred) && vyrez.protina(m.getPokryti()) && !mameUzemi(katalog, stavy, m)) {
+			if (!m.pokryva(stred.lat, stred.lon) && m.zasahujeDo(vyrez.jih, vyrez.zapad, vyrez.sever, vyrez.vychod) && vyrez.protina(m.getPokryti()) && !mameUzemi(katalog, stavy, m)) {
 				kandidati.add(m);
 			}
 		}
