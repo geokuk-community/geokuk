@@ -237,4 +237,86 @@ public class OptimalizaceDatabazeOknaTest {
 		}
 		return null;
 	}
+
+	private static java.awt.Window zobrazOkno(final OknoDoporuceniOptimalizace.Volba v) throws Exception {
+		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
+		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, Doporuceni.DOPORUCIT, 100L << 30, v));
+		final java.awt.Window[] okna = new java.awt.Window[1];
+		SwingUtilities.invokeAndWait(() -> {
+			for (final java.awt.Window w : java.awt.Window.getWindows()) {
+				if (w.isShowing() && w instanceof JDialog) {
+					okna[0] = w;
+				}
+			}
+			// Mimo obrazovku, ať myš nad oknem nepozastaví odpočet.
+			okna[0].setLocation(-20000, -20000);
+		});
+		return okna[0];
+	}
+
+	private static void tikej(final java.awt.Window okno, final int kolikrat) throws Exception {
+		final java.lang.reflect.Field f = OknoDoporuceniOptimalizace.class.getDeclaredField("casovac");
+		f.setAccessible(true);
+		final javax.swing.Timer casovac = (javax.swing.Timer) f.get(okno);
+		final java.awt.event.ActionListener[] posluchaci = casovac.getActionListeners();
+		SwingUtilities.invokeAndWait(() -> {
+			casovac.stop();
+			for (int i = 0; i < kolikrat && okno.isShowing(); i++) {
+				for (final java.awt.event.ActionListener l : posluchaci) {
+					l.actionPerformed(new java.awt.event.ActionEvent(casovac, 0, "tik"));
+				}
+			}
+		});
+	}
+
+	private static OknoDoporuceniOptimalizace.Volba zaznam(final String[] volba) {
+		return new OknoDoporuceniOptimalizace.Volba() {
+			@Override
+			public void optimalizovat() {
+				volba[0] = "opt";
+			}
+
+			@Override
+			public void bezOptimalizace() {
+				volba[0] = "bez";
+			}
+
+			@Override
+			public void vyprseni() {
+				volba[0] = "vyprseni";
+			}
+		};
+	}
+
+	/** Po 30 s okno zavře časovač a oznámí vypršení, ne volbu „Spustit bez optimalizace“. */
+	@Test
+	public void vyprseniOdpoctuOznamiVyprseni() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final String[] volba = new String[1];
+		final java.awt.Window okno = zobrazOkno(zaznam(volba));
+		tikej(okno, OknoDoporuceniOptimalizace.ODPOCET_S - 1);
+		Assert.assertNull("před koncem odpočtu nic", volba[0]);
+		tikej(okno, 1);
+		Assert.assertEquals("vyprseni", volba[0]);
+		Assert.assertFalse(okno.isShowing());
+	}
+
+	/** Klik do okna odpočet zruší: ani po vypršení času se okno nezavře a nic se neuloží. */
+	@Test
+	public void klikOdpocetZrusi() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final String[] volba = new String[1];
+		final java.awt.Window okno = zobrazOkno(zaznam(volba));
+		SwingUtilities.invokeAndWait(() -> {
+			final java.awt.Component panel = ((JDialog) okno).getContentPane();
+			for (final java.awt.event.MouseListener l : panel.getMouseListeners()) {
+				l.mousePressed(new java.awt.event.MouseEvent(panel, java.awt.event.MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0, 5, 5, 1, false));
+			}
+		});
+		tikej(okno, OknoDoporuceniOptimalizace.ODPOCET_S + 5);
+		Assert.assertNull(volba[0]);
+		Assert.assertTrue(okno.isShowing());
+		SwingUtilities.invokeAndWait(() -> hledej(okno, "Spustit bez optimalizace").doClick());
+		Assert.assertEquals("bez", volba[0]);
+	}
 }
