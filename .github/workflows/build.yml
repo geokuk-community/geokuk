@@ -134,7 +134,7 @@ jobs:
         run: |
           $moduly = "java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.prefs,java.sql,java.xml," +
             "jdk.accessibility,jdk.charsets,jdk.crypto.ec,jdk.crypto.mscapi,jdk.httpserver,jdk.localedata,jdk.management,jdk.unsupported,jdk.zipfs"
-          jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --output GeoKuk/program/runtime
+          jlink --add-modules $moduly --strip-debug --no-header-files --no-man-pages --generate-cds-archive --output GeoKuk/program/runtime
           if ($LASTEXITCODE -ne 0) { exit 1 }
           $podpis = Get-AuthenticodeSignature GeoKuk/program/runtime/bin/javaw.exe
           if ($podpis.Status -ne "Valid") { throw "javaw.exe není podepsaný: $($podpis.Status)" }
