@@ -18,6 +18,10 @@ final class PredehrevaniStartu {
 			"javax.swing.JTextField", "javax.swing.JSlider", "javax.swing.JComboBox", "javax.swing.JSpinner", "javax.swing.JTabbedPane", "javax.swing.JLayeredPane",
 			"javax.swing.OverlayLayout", "javax.swing.text.html.HTMLEditorKit", "javax.swing.text.html.StyleSheet", "javax.swing.border.EmptyBorder" };
 
+	/** Znaky textů v okně: každý znak nového písma si Windows poprvé vykreslí zvlášť, a to na EDT při prvním měření textu. */
+	static final String ZNAKY = " 0123456789%.,:;-+/()[]°×–…„“\"'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+			+ "ÁČĎÉĚÍŇÓŘŠŤÚŮÝŽáčďéěíňóřšťúůýž";
+
 	private PredehrevaniStartu() {
 	}
 
@@ -27,7 +31,7 @@ final class PredehrevaniStartu {
 		vlakno.start();
 	}
 
-	private static void predehrej() {
+	static void predehrej() {
 		try {
 			Toolkit.getDefaultToolkit();
 			final FontRenderContext frc = new FontRenderContext(null, true, true);
@@ -36,7 +40,7 @@ final class PredehrevaniStartu {
 				for (final int styl : new int[] { Font.PLAIN, Font.BOLD }) {
 					final Font font = new Font(rodina, styl, 12);
 					font.getLineMetrics("Ážq0", frc);
-					g.getFontMetrics(font).stringWidth("Ážq0");
+					g.getFontMetrics(font).stringWidth(Font.DIALOG.equals(rodina) ? ZNAKY : "Ážq0");
 				}
 			}
 			g.dispose();
