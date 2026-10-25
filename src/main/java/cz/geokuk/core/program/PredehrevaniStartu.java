@@ -5,11 +5,15 @@ import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.font.FontRenderContext;
 import java.awt.image.BufferedImage;
+import java.text.NumberFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 
 import cz.geokuk.framework.FKurzory;
 import lombok.extern.slf4j.Slf4j;
 
-/** Při startu vedle EDT načte písma a třídy Swingu, které by si okno jinak načítalo na EDT samo. */
+/** Při startu vedle EDT načte data lokalizace, písma a třídy Swingu, které by si okno jinak načítalo na EDT samo. */
 @Slf4j
 final class PredehrevaniStartu {
 
@@ -27,8 +31,13 @@ final class PredehrevaniStartu {
 		vlakno.start();
 	}
 
-	private static void predehrej() {
+	static void predehrej() {
 		try {
+			// První použití formátování času, čísel a kalendáře čte lokalizační data JDK.
+			DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalTime.now());
+			NumberFormat.getInstance().format(1234.5);
+			Calendar.getInstance();
+			String.format("%,d %s", 1234, "a");
 			Toolkit.getDefaultToolkit();
 			final FontRenderContext frc = new FontRenderContext(null, true, true);
 			final Graphics2D g = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
