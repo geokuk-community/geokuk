@@ -106,7 +106,7 @@ public final class KatalogVrstev {
 			final Typ typ = Typ.podleKodu(text(p, "type"));
 			final Format fmt = Format.podleKodu(text(p, "format"));
 			if (typ == null || fmt == null) {
-				log.info("Vrstva {} má typ nebo formát, který program nezná, přeskakuje se", id);
+				log.debug("Vrstva {} má typ nebo formát, který program nezná, přeskakuje se", id);
 				continue;
 			}
 			final KatalogovaVrstva v = vrstva(p, id, typ, fmt, zdroje, mapy);

@@ -66,7 +66,9 @@ public class GsakDbLoader extends Nacitac0 {
 				throw new IllegalArgumentException("DB schema doesn't match, cannot load from file " + aDbFile);
 			}
 			dao.zkontrolujSloupce(aDbFile);
-			final int pocet = dao.cacheCount() * PROGRESS_VAHA_CACHES + dao.waypointCount() * PROGRESS_VAHA_WAYPOINTS + dao.tagCount() * PROGRESS_VAHA_TAGS;
+			// Značky se čtou s každou keší, jejich počet je počet keší.
+			final int kese = dao.cacheCount();
+			final int pocet = kese * PROGRESS_VAHA_CACHES + dao.waypointCount() * PROGRESS_VAHA_WAYPOINTS + kese * PROGRESS_VAHA_TAGS;
 			final Progressor progressor = zahajPrubeh(aProgressModel, pocet, aDbFile.toString());
 			// Vlastní hodnoty před kešemi, keš si je přebírá už při přidání.
 			// Bez nich se keše dají zobrazit, jejich poškození nesmí připravit uživatele o celou databázi.
@@ -447,7 +449,6 @@ public class GsakDbLoader extends Nacitac0 {
 
 		private static final String CACHE_COUNT = "SELECT COUNT(*) FROM Caches";
 		private static final String WAYPOINT_COUNT = "SELECT COUNT(*) FROM Waypoints";
-		private static final String TAG_COUNT = "SELECT COUNT(*) FROM Caches";
 		private static final String SELECT_CUSTOMVALUES = "SELECT * FROM Custom";
 
 		private final Connection iConnection;
@@ -481,10 +482,6 @@ public class GsakDbLoader extends Nacitac0 {
 
 		public int waypointCount() throws SQLException {
 			return containsTables(Collections.singleton("Waypoints")) ? count(WAYPOINT_COUNT) : 0;
-		}
-
-		public int tagCount() throws SQLException {
-			return count(TAG_COUNT);
 		}
 
 		/** Hodnoty sloupců z {@code aSloupceHodnot} dostane keš navíc v {@link AllValues#values}. */
