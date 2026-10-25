@@ -114,7 +114,9 @@ public class Inicializator {
 		intMapAkce(bb, akce);
 		//
 		bb.registerSigleton(mainFrameHolder);
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T registrace modelu hotova");
 		bb.init();
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T BeanBag.init hotovo");
 		// Board.eveman = eveman;
 	}
 

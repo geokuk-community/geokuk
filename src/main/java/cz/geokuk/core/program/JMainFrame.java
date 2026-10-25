@@ -74,8 +74,10 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		final JGeokukToolbar jGeokukToolbar = factory.init(new JGeokukToolbar());
 		menux = factory.init(new Menu(this, jGeokukToolbar));
 
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T toolbar ctor");
 		menux.makeMenu();
 
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T menu");
 		final JComponent srohama = new JSRohamaPrekryvnik();
 		srohama.setLayout(new CornerLayoutManager());
 		// srohama.setBorder(BorderFactory.createLineBorder(Color.ORANGE, 5));
@@ -83,6 +85,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		srohama.add(createKesInfoRoh(), ERoh.JV);
 		srohama.add(factory.init(new JPanelCesty()), ERoh.SV);
 
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T rohy");
 		final JPresCeleMysovani mysovani = new JPresCeleMysovani();
 		{
 			final JComponent smrizema = new JPresCelePrekryvnik();
@@ -111,7 +114,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			final JComponent obrysMap = new JObrysMapSlide();
 			final JComponent pozadi = new JSlidePozadi();
 
-			smrizema.add(mysovani);
+			cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T slidy vytvoreny");
+		smrizema.add(mysovani);
 			smrizema.add(odkazRady);
 			smrizema.add(renderSlide);
 			smrizema.add(zoomovaciObdelnik);
@@ -161,7 +165,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 
 			// Obezlička, aby myšování bylo podle myšího toku událostí nahoře, ale komponentně dole.
 			// Musí být dole ,aby fungovaly slidery.
-			smrizema.remove(mysovani);
+			cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T slidy init");
+		smrizema.remove(mysovani);
 			slideList = new ArrayList<>();
 			for (final Component comp : smrizema.getComponents()) {
 				if (comp instanceof JSingleSlide0) {
@@ -176,6 +181,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			srohama.add(smrizema);
 		}
 
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T smrizema");
 		getContentPane().add(srohama);
 
 		// Menu a toolbar
@@ -184,9 +190,11 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		toolBar = menux.getToolBar();
 		getContentPane().add(toolBar, BorderLayout.NORTH);
 
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T menubar");
 		statusbar = factory.init(new JStatusBar());
 		add(statusbar, BorderLayout.SOUTH);
 
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("T statusbar");
 		addWindowListener();
 
 		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F11"), "fullscreen");

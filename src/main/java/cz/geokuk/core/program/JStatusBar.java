@@ -133,6 +133,8 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private long uhelSmeru = Long.MIN_VALUE;
 
 	private Poziceq poziceq = new Poziceq();
+	private static <T> T t(String l, T v){ cz.geokuk.core.napoveda.Diagnostika.znackaStartu(l); return v;}
+	private final Object m0 = t("SB start", null);
 	private final JValue souradnice = new JValue(SOURADNICE);
 	private final JValue celkovePoctyVsude = new JValue(POCTY);
 	private final JValue filtrovanePocetyVsude = new JValue(POCTY);
@@ -167,9 +169,12 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
 	private JPanel jFilterProgressPanel;
+	private final Object m2 = t("SB pred prepinace", null);
 	private final JPrepinaceZdroju prepinaceZdroju = new JPrepinaceZdroju();
+	private final Object m3 = t("SB po prepinace", null);
 	private final JPopisekVyletu popisekVyletu = new JPopisekVyletu();
 	private final JBlokMap blokMap = new JBlokMap();
+	private final Object m4 = t("SB po JBlokMap", null);
 
 	private final JValue jSouborSVyletem = new JValue("vylet-26.ggt", true);
 	/** Hvězdička neuloženého výletu má místo i bez hvězdičky, aby blok cest neměnil šířku. */
@@ -203,7 +208,9 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private final JPanel pravyBlok = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
 	public JStatusBar() {
+		t("SB pole hotova", null);
 		initComponents();
+		t("SB initComponents", null);
 	}
 
 	public void inject(final KesoidModel kesoidModel) {
