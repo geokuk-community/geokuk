@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.DosFileAttributeView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -179,8 +180,9 @@ final class Cds {
 	private static void smaz(final File f) {
 		try {
 			// Java zapisuje archiv jen pro čtení a Windows takový soubor nesmažou.
-			if (f.exists() && !f.canWrite()) {
-				f.setWritable(true);
+			final DosFileAttributeView dos = Files.getFileAttributeView(f.toPath(), DosFileAttributeView.class);
+			if (dos != null) {
+				dos.setReadOnly(false);
 			}
 			Files.deleteIfExists(f.toPath());
 		} catch (final IOException | RuntimeException e) {
