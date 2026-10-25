@@ -48,46 +48,61 @@ public final class StavIkona {
 		ikona.paintIcon(null, gp, 0, 0);
 		gp.dispose();
 		final double meritko = (double) velikost / Math.max(puvodni.getWidth(), puvodni.getHeight());
-		final int sirka = Math.max(1, (int) Math.round(puvodni.getWidth() * meritko));
-		final int vyska = Math.max(1, (int) Math.round(puvodni.getHeight() * meritko));
-		final BufferedImage img = new BufferedImage(velikost, velikost, BufferedImage.TYPE_INT_ARGB);
-		final Graphics2D g = kresleni(img);
-		try {
-			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-			g.drawImage(puvodni, (velikost - sirka) / 2, (velikost - vyska) / 2, sirka, vyska, null);
-		} finally {
-			g.dispose();
-		}
-		return new ImageIcon(img);
-	}
-
-	/** Uzavřený zámek; kreslí se přímo do cílové grafiky, na displejích se zvětšením zůstává ostrý. */
-	static Icon nevyluste(final int velikost) {
-		return new Icon() {
+		return new CtvercovaIkona(velikost) {
 			@Override
-			public int getIconWidth() {
-				return velikost;
-			}
-
-			@Override
-			public int getIconHeight() {
-				return velikost;
-			}
-
-			@Override
-			public void paintIcon(final Component c, final Graphics g0, final int x, final int y) {
-				final Graphics2D g = (Graphics2D) g0.create();
-				try {
-					g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-					g.translate(x, y);
-					g.scale(velikost / 24.0, velikost / 24.0);
-					kresliZamek(g);
-				} finally {
-					g.dispose();
-				}
+			void kresli(final Graphics2D g) {
+				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+				g.translate((velikost - puvodni.getWidth() * meritko) / 2, (velikost - puvodni.getHeight() * meritko) / 2);
+				g.scale(meritko, meritko);
+				g.drawImage(puvodni, 0, 0, null);
 			}
 		};
+	}
+
+	/** Uzavřený zámek. */
+	static Icon nevyluste(final int velikost) {
+		return new CtvercovaIkona(velikost) {
+			@Override
+			void kresli(final Graphics2D g) {
+				g.scale(velikost / 24.0, velikost / 24.0);
+				kresliZamek(g);
+			}
+		};
+	}
+
+	/** Čtvercová ikona, která se kreslí přímo do cílové grafiky, takže na displejích se zvětšením zůstává ostrá. */
+	private abstract static class CtvercovaIkona implements Icon {
+		private final int velikost;
+
+		CtvercovaIkona(final int velikost) {
+			this.velikost = velikost;
+		}
+
+		/** Kreslí do čtverce o straně {@code velikost} s počátkem v bodě 0, 0. */
+		abstract void kresli(Graphics2D g);
+
+		@Override
+		public int getIconWidth() {
+			return velikost;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return velikost;
+		}
+
+		@Override
+		public void paintIcon(final Component c, final Graphics g0, final int x, final int y) {
+			final Graphics2D g = (Graphics2D) g0.create();
+			try {
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+				g.translate(x, y);
+				kresli(g);
+			} finally {
+				g.dispose();
+			}
+		}
 	}
 
 	private static void kresliZamek(final Graphics2D g) {
