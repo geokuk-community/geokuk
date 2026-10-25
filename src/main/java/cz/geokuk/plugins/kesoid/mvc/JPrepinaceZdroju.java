@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 
 import cz.geokuk.plugins.kesoid.importek.*;
 import cz.geokuk.plugins.kesoid.importek.StavZdroju.StavVyberu;
@@ -37,8 +38,9 @@ public class JPrepinaceZdroju extends JPanel {
 	static final int VYSKA = 20;
 
 	private final JLabel popisek = new JNatazenyPopisek("Zdroje:");
-	private final JTabulkaZdroju uplna = new JTabulkaZdroju(null);
-	private final JComponent souhrn = obal(uplna);
+	/** Tabulky popupů se skládají až při prvním zobrazení, při startu stačí řádek bloku. */
+	private JTabulkaZdroju uplna;
+	private JComponent souhrn;
 	private final Map<TypZdroje, JComponent> popupyTypu = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JTabulkaZdroju> detaily = new EnumMap<>(TypZdroje.class);
 	private final Map<TypZdroje, JButton> zaskrtavatka = new EnumMap<>(TypZdroje.class);
@@ -47,7 +49,13 @@ public class JPrepinaceZdroju extends JPanel {
 	private final Map<TypZdroje, JPanel> bunky = new EnumMap<>(TypZdroje.class);
 	private final PopupNadBlokem popup = new PopupNadBlokem(this, this::prizpusob);
 
+	private static final Border RAMECEK_POPUPU = BorderFactory.createLineBorder(new Color(0x8AA0C0));
+
 	private StavZdroju stav = StavZdroju.PRAZDNY;
+	private Set<TypZdroje> povolene;
+	private String casDat;
+	private int dostupnaSirka = Integer.MAX_VALUE;
+	private int dostupnaVyska = Integer.MAX_VALUE;
 	private final Tocitko tocitko = new Tocitko(this, this::prekresliTocitka);
 	private OvladaniZdroju ovladani;
 
@@ -59,7 +67,7 @@ public class JPrepinaceZdroju extends JPanel {
 		popisek.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(final MouseEvent e) {
-				naCil(souhrn, JPrepinaceZdroju.this::ukazSouhrn, System.currentTimeMillis());
+				naCil(souhrn(), JPrepinaceZdroju.this::ukazSouhrn, System.currentTimeMillis());
 			}
 
 			@Override
@@ -72,10 +80,6 @@ public class JPrepinaceZdroju extends JPanel {
 		add(popisek);
 
 		for (final TypZdroje typ : TypZdroje.values()) {
-			final JTabulkaZdroju detail = new JTabulkaZdroju(typ);
-			detaily.put(typ, detail);
-			popupyTypu.put(typ, obal(detail));
-
 			// Tlačítko, ne JCheckBox: jeho vlastní stav „vybráno“ by neodpovídal stavu typu (záznam kliknutí v Diagnostice).
 			final JButton zaskrtavatko = new JButton(IkonyZdroju.zaskrtavatko(StavVyberu.VYPNUTO)) {
 				private static final long serialVersionUID = 1L;
@@ -123,7 +127,7 @@ public class JPrepinaceZdroju extends JPanel {
 			nazev.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseEntered(final MouseEvent e) {
-					naCil(popupyTypu.get(typ), () -> ukazTyp(typ), System.currentTimeMillis());
+					naCil(popupTypu(typ), () -> ukazTyp(typ), System.currentTimeMillis());
 				}
 
 				@Override
@@ -135,7 +139,7 @@ public class JPrepinaceZdroju extends JPanel {
 				@Override
 				public void mouseEntered(final MouseEvent e) {
 					if (!nazev.isVisible()) {
-						naCil(popupyTypu.get(typ), () -> ukazTyp(typ), System.currentTimeMillis());
+						naCil(popupTypu(typ), () -> ukazTyp(typ), System.currentTimeMillis());
 					}
 				}
 
@@ -174,10 +178,48 @@ public class JPrepinaceZdroju extends JPanel {
 
 	public void setOvladani(final OvladaniZdroju ovladani) {
 		this.ovladani = ovladani;
-		uplna.setOvladani(ovladani);
+		if (uplna != null) {
+			uplna.setOvladani(ovladani);
+		}
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.setOvladani(ovladani);
 		}
+	}
+
+	/** Tabulka všech zdrojů v popupu; při prvním použití ji složí a předá jí stav bloku. */
+	private JComponent souhrn() {
+		if (souhrn == null) {
+			uplna = new JTabulkaZdroju(null);
+			nastav(uplna);
+			souhrn = obal(uplna);
+		}
+		return souhrn;
+	}
+
+	private JComponent popupTypu(final TypZdroje typ) {
+		JComponent popup = popupyTypu.get(typ);
+		if (popup == null) {
+			final JTabulkaZdroju detail = new JTabulkaZdroju(typ);
+			nastav(detail);
+			detaily.put(typ, detail);
+			popup = obal(detail);
+			popupyTypu.put(typ, popup);
+		}
+		return popup;
+	}
+
+	/** Předá nové tabulce to, co blok dosud nastavil ostatním. */
+	private void nastav(final JTabulkaZdroju t) {
+		t.setOvladani(ovladani);
+		if (povolene != null && t == uplna) {
+			t.setPovoleneTypy(povolene);
+		}
+		if (casDat != null && t == uplna) {
+			t.setCasDat(casDat);
+		}
+		t.nastavDostupnouSirku(dostupnaSirka);
+		t.nastavDostupnouVysku(dostupnaVyska);
+		t.obnov(stav);
 	}
 
 	/**
@@ -190,7 +232,11 @@ public class JPrepinaceZdroju extends JPanel {
 			zmena |= e.getValue().isVisible() != videt;
 			e.getValue().setVisible(videt);
 		}
-		uplna.setPovoleneTypy(povolene);
+		this.povolene = EnumSet.noneOf(TypZdroje.class);
+		this.povolene.addAll(povolene);
+		if (uplna != null) {
+			uplna.setPovoleneTypy(povolene);
+		}
 		if (zmena) {
 			zavriSeznam();
 			revalidate();
@@ -218,7 +264,10 @@ public class JPrepinaceZdroju extends JPanel {
 	}
 
 	public void setCasDat(final String cas) {
-		uplna.setCasDat(cas);
+		casDat = cas;
+		if (uplna != null) {
+			uplna.setCasDat(cas);
+		}
 	}
 
 	@Override
@@ -296,10 +345,14 @@ public class JPrepinaceZdroju extends JPanel {
 			zmena |= n.isVisible() == kompaktni;
 			n.setVisible(!kompaktni);
 		}
-		final Insets ramecek = souhrn.getInsets();
+		final Insets ramecek = RAMECEK_POPUPU.getBorderInsets(this);
 		final int vyska = isShowing() ? getLocationOnScreen().y - popup.horniHranice() - ramecek.top - ramecek.bottom : Integer.MAX_VALUE;
-		uplna.nastavDostupnouSirku(sirka);
-		uplna.nastavDostupnouVysku(vyska);
+		dostupnaSirka = sirka;
+		dostupnaVyska = vyska;
+		if (uplna != null) {
+			uplna.nastavDostupnouSirku(sirka);
+			uplna.nastavDostupnouVysku(vyska);
+		}
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.nastavDostupnouSirku(sirka);
 			t.nastavDostupnouVysku(vyska);
@@ -316,7 +369,7 @@ public class JPrepinaceZdroju extends JPanel {
 
 	private static JComponent obal(final JComponent obsah) {
 		final JPanel obal = new JPanel(new BorderLayout());
-		obal.setBorder(BorderFactory.createLineBorder(new Color(0x8AA0C0)));
+		obal.setBorder(RAMECEK_POPUPU);
 		obal.add(obsah);
 		return obal;
 	}
@@ -337,7 +390,9 @@ public class JPrepinaceZdroju extends JPanel {
 			nazvy.get(typ).setForeground(zapnuto ? UIManager.getColor("Label.foreground") : sedaNazvu());
 		}
 		tocitko.nastav(ikony.values().stream().anyMatch(i -> i.getIcon() == IkonyZdroju.pro(StavZdroje.NACITA_SE)));
-		uplna.obnov(stav);
+		if (uplna != null) {
+			uplna.obnov(stav);
+		}
 		for (final JTabulkaZdroju t : detaily.values()) {
 			t.obnov(stav);
 		}
@@ -426,12 +481,12 @@ public class JPrepinaceZdroju extends JPanel {
 
 	/** Zobrazí tabulku všech zdrojů. */
 	public void ukazSouhrn() {
-		ukaz(souhrn, null, false);
+		ukaz(souhrn(), null, false);
 	}
 
 	/** Zobrazí jen zdroje jednoho typu. */
 	public void ukazTyp(final TypZdroje typ) {
-		ukaz(popupyTypu.get(typ), zaskrtavatka.get(typ), false);
+		ukaz(popupTypu(typ), zaskrtavatka.get(typ), false);
 	}
 
 	/** Úplná tabulka je zarovnaná k pravému okraji bloku, detail k buňce typu; vždy těsně nad blokem a uvnitř obrazovky. */
@@ -453,11 +508,11 @@ public class JPrepinaceZdroju extends JPanel {
 	}
 
 	JComponent getObsahSouhrnu() {
-		return souhrn;
+		return souhrn();
 	}
 
 	JComponent getObsahDetailu(final TypZdroje typ) {
-		return popupyTypu.get(typ);
+		return popupTypu(typ);
 	}
 
 	/** Myš vjela na popisek či název: popup se otevře nebo přepne, až na něm vydrží. */
@@ -533,11 +588,17 @@ public class JPrepinaceZdroju extends JPanel {
 		return popisek;
 	}
 
+	boolean jsouTabulkyVytvoreny() {
+		return uplna != null || !detaily.isEmpty();
+	}
+
 	JTabulkaZdroju getUplna() {
+		souhrn();
 		return uplna;
 	}
 
 	JTabulkaZdroju getDetail(final TypZdroje typ) {
+		popupTypu(typ);
 		return detaily.get(typ);
 	}
 }

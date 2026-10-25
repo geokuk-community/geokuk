@@ -610,6 +610,10 @@ public class JMapyPopup extends JPanel {
 		obrys.setSelected(zapnuty);
 	}
 
+	boolean isObrysZapnuty() {
+		return obrys.isSelected();
+	}
+
 	/** Ve složce vrstev jsou DEM dlaždice: popup nabídne přepínač stínování terénu. */
 	public void setStinovaniDostupne(final boolean dostupne) {
 		if (dostupne != stinovaniDostupne) {
@@ -628,8 +632,7 @@ public class JMapyPopup extends JPanel {
 	public void obnov(final List<RadekMapy> nove) {
 		odhad.zapomenKrome(stahovane(nove));
 		// Regiony země, která se právě stáhla celá, už jsou navíc: ve Všech mapách se sbalí.
-		final Set<String> stazeneCelky = celky(nove, true);
-		if (rozbalene.removeIf(z -> nabizeneCelky.contains(z) && stazeneCelky.contains(z))) {
+		if (sbalStazene(rozbalene, nabizeneCelky, nove)) {
 			ulozRozbalene.accept(ROZBALENE_VSECHNY, new HashSet<>(rozbalene));
 		}
 		nabizeneCelky = celky(nove, false);
@@ -680,6 +683,17 @@ public class JMapyPopup extends JPanel {
 			return;
 		}
 		prestavPopup();
+	}
+
+	/** Ze země, která byla nabízená a podle nových řádků je už stažená celá, odebere rozbalení Všech map; vrací, jestli se něco změnilo. */
+	static boolean sbalStazene(final Set<String> rozbalene, final Set<String> nabizene, final List<RadekMapy> nove) {
+		final Set<String> stazene = celky(nove, true);
+		return rozbalene.removeIf(z -> nabizene.contains(z) && stazene.contains(z));
+	}
+
+	/** Názvy zemí, které blok Mapy nabízí ke stažení podle řádků. */
+	static Set<String> nabizene(final List<RadekMapy> radky) {
+		return celky(radky, false);
 	}
 
 	/** Názvy celých zemí z katalogu, které jsou (nebo nejsou) ve složce. */

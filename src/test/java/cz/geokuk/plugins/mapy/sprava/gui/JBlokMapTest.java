@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.*;
@@ -17,6 +18,54 @@ public class JBlokMapTest {
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
+
+	/** Obsah popupu se při startu neskládá; vznikne při prvním použití a dostane řádky i obrys, které blok mezitím dostal. */
+	@Test
+	public void obsahPopupuVznikneAzPriPouziti() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			Assert.assertFalse("při startu jen ikona bloku", blok.isObsahVytvoren());
+			final List<RadekMapy> radky = veSlozce(null);
+			blok.obnov(radky);
+			blok.onEvent(new cz.geokuk.plugins.mapy.kachle.ObrysPokrytiEvent(true));
+			Assert.assertFalse("změny stavu popup nevytváří", blok.isObsahVytvoren());
+			final JMapyPopup obsah = blok.getObsah();
+			Assert.assertTrue(blok.isObsahVytvoren());
+			Assert.assertEquals(radky, obsah.getRadky());
+			Assert.assertTrue("obrys zapnutý před vytvořením popupu", obsah.isObrysZapnuty());
+			Assert.assertSame(obsah, blok.getObsah());
+		});
+	}
+
+	/** Najetí myší popup vytvoří, aby byl při otevření hotový. */
+	@Test
+	public void najetiMysiVytvoriObsah() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			for (final java.awt.event.MouseListener l : blok.getMouseListeners()) {
+				l.mouseEntered(new MouseEvent(blok, MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
+			}
+			Assert.assertTrue(blok.isObsahVytvoren());
+		});
+	}
+
+	/** Země, která se mezitím stáhla celá, se ve Všech mapách sbalí, i když popup ještě nevznikl. */
+	@Test
+	public void stazenaZemeSeSbaliBezPopupu() throws Exception {
+		final java.util.Set<String> puvodni = JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY);
+		try {
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, new java.util.HashSet<>(java.util.Arrays.asList("Rakousko", "Německo")));
+			SwingUtilities.invokeAndWait(() -> {
+				final JBlokMap blok = new JBlokMap();
+				blok.obnov(Collections.singletonList(RadekMapy.katalogova("at", "Rakousko", RadekMapy.Stav.NEMAME).build()));
+				blok.obnov(Collections.singletonList(RadekMapy.katalogova("at", "Rakousko", RadekMapy.Stav.AKTUALNI).veSlozce(true).build()));
+				Assert.assertFalse(blok.isObsahVytvoren());
+			});
+			Assert.assertEquals(Collections.singleton("Německo"), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
+		} finally {
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, puvodni);
+		}
+	}
 
 	/** Procenta při stahování nesmí blok rozšířit, jinak poskočí Výlety a Zdroje. */
 	@Test
