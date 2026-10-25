@@ -20,8 +20,7 @@ final class LogoNacitani {
 	/** Podíl kratší strany výřezu, který logo zabere. */
 	private static final double PODIL_STRANY = 0.4;
 	private static final int NEJVETSI_LOGICKA_VELIKOST = 500;
-	private static final float KRYTI_NA_SVETLEM = 0.22f;
-	private static final float KRYTI_NA_TMAVEM = 0.22f;
+	private static final float KRYTI = 0.22f;
 
 	private static BufferedImage zdroj;
 	private static boolean zdrojNacten;
@@ -36,7 +35,7 @@ final class LogoNacitani {
 	}
 
 	/** Nakreslí logo doprostřed {@code 0,0,sirka,vyska}, ale jen do oblasti {@code kamSmi}; null znamená všude. */
-	void kresli(final Graphics2D g, final int sirka, final int vyska, final Area kamSmi, final boolean tmavePozadi) {
+	void kresli(final Graphics2D g, final int sirka, final int vyska, final Area kamSmi) {
 		final double sx = g.getTransform().getScaleX();
 		final int velikost = velikost(sirka, vyska, sx);
 		if (velikost == 0) {
@@ -51,7 +50,7 @@ final class LogoNacitani {
 			if (kamSmi != null) {
 				g2.clip(kamSmi);
 			}
-			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, tmavePozadi ? KRYTI_NA_TMAVEM : KRYTI_NA_SVETLEM));
+			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, KRYTI));
 			// Zmenšené logo má pixely zařízení, proto se kreslí bez měřítka displeje.
 			final double sy = g2.getTransform().getScaleY();
 			g2.scale(1 / sx, 1 / sy);
