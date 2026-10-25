@@ -57,6 +57,11 @@ public class JKachlovnikPresCele extends JKachlovnik {
 	}
 
 	@Override
+	protected boolean kreslitLogoNacitani() {
+		return getKachloType() != null && !getKachloType().isPrekryv();
+	}
+
+	@Override
 	public JSingleSlide0 createRenderableSlide() {
 		return new JKachlovnikRendrovaci();
 	}

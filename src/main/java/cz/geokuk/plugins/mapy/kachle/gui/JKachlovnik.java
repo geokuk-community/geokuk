@@ -1,8 +1,12 @@
 package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.*;
+import java.awt.geom.Area;
+import java.awt.geom.Path2D;
 import java.util.*;
 import java.util.List;
+
+import javax.swing.UIManager;
 
 import com.google.common.collect.LinkedListMultimap;
 
@@ -52,6 +56,8 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	private final javax.swing.Timer opakovaniChybnych = new javax.swing.Timer((int) JKachle.PRVNI_POKUS_PO_CHYBE_MS, e -> zkusZnovuChybne());
 
 	private PredvykresleniOkoli predvykresleni;
+
+	private transient LogoNacitani logoNacitani;
 
 	// je to jen kvuli garbage collectoru, aby nezrusil, NERUSIT PROMENNU i kdyz zdanlive je to na nic
 	public JKachlovnik(final String nazevKachlovniku, final Priority priority) {
@@ -109,6 +115,45 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		}
 		this.katype = katype;
 		init(false);
+	}
+
+	/** Jestli se má tam, kde dlaždice ještě nedorazily, kreslit slabé logo místo prázdna. */
+	protected boolean kreslitLogoNacitani() {
+		return false;
+	}
+
+	@Override
+	protected void paintComponent(final Graphics g) {
+		super.paintComponent(g);
+		if (kreslitLogoNacitani()) {
+			kresliLogoNacitani((Graphics2D) g);
+		}
+	}
+
+	private void kresliLogoNacitani(final Graphics2D g) {
+		final Path2D.Float cekajici = new Path2D.Float(Path2D.WIND_NON_ZERO);
+		for (final Component c : getComponents()) {
+			if (c instanceof JKachle && ((JKachle) c).cekaNaObrazek()) {
+				cekajici.append(c.getBounds(), false);
+			}
+		}
+		if (cekajici.getCurrentPoint() == null) {
+			return;
+		}
+		final Area oblast = new Area(cekajici);
+		final Color pozadiPanelu = UIManager.getColor("Panel.background");
+		final boolean tmave = pozadiPanelu != null && pozadiPanelu.getRed() + pozadiPanelu.getGreen() + pozadiPanelu.getBlue() < 3 * 128;
+		final Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			g2.setColor(tmave ? pozadiPanelu : Color.WHITE);
+			g2.fill(oblast);
+		} finally {
+			g2.dispose();
+		}
+		if (logoNacitani == null) {
+			logoNacitani = new LogoNacitani();
+		}
+		logoNacitani.kresli(g, getWidth(), getHeight(), oblast, tmave);
 	}
 
 	protected KachleModel getKachleModel() {

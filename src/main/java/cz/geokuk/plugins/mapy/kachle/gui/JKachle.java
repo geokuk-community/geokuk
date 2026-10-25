@@ -93,6 +93,11 @@ public class JKachle extends JComponent {
 		return ka.getLoc();
 	}
 
+	/** Dlaždice, na kterou se ještě čeká: nemá obrázek ani dočasný výřez a nezjistila se u ní chyba. */
+	synchronized boolean cekaNaObrazek() {
+		return image == null && nahled.isEmpty() && chyba == null;
+	}
+
 	public boolean jeTamUzCelyObrazek() {
 		return jeTamUzCelyObrazek;
 	}
@@ -267,7 +272,7 @@ public class JKachle extends JComponent {
 				drawPsanicko(g);
 			}
 			vypisChybu(g);
-		} else if (image == null && nahled.isEmpty() || ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+		} else if (ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
 			g.setColor(Color.blue);
 			drawPsanicko(g);
 			g.setColor(Color.RED);
