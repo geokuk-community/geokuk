@@ -19,6 +19,10 @@ public final class StavIkona {
 	private static final Color ZAKAZ = new Color(0xD8, 0x1E, 0x1E, 200);
 	private static final Color OBRYS = new Color(0x40, 0x40, 0x40);
 	private static final float PRUHLEDNOST_DUCHA = 0.5f;
+	/** Podíl strany ikony, který zabere keš uvnitř zákazu. */
+	private static final double VYPLN_ZAKAZU = 0.58;
+	/** Podíl strany ikony, který zabere obsah ikon Nehledané, Nalezené a Moje vlastní. */
+	private static final double VYPLN_VZTAHU = 0.85;
 
 	private StavIkona() {}
 
@@ -36,19 +40,28 @@ public final class StavIkona {
 			return nevyluste(JToolbarOvladaceAlel.VYSKA_IKONY);
 		}
 		final Icon ikona = bag.seekIkon(vychozi.with(alela));
-		return alela.getGen() == genom.symGen ? ikona : naCtverec(ikona, JToolbarOvladaceAlel.VYSKA_IKONY);
+		if (alela.getGen() == genom.symGen) {
+			return ikona;
+		}
+		final boolean vztah = alela == genom.ALELA_hnf || alela == genom.ALELA_fnd || alela == genom.ALELA_own;
+		return naCtverec(ikona, JToolbarOvladaceAlel.VYSKA_IKONY, vztah ? VYPLN_VZTAHU : 1.0);
 	}
 
 	/** Ikona vycentrovaná do čtverce o dané straně, menší se zvětší, větší zmenší; poměr stran zůstává. */
 	static Icon naCtverec(final Icon ikona, final int velikost) {
-		if (ikona == null || ikona.getIconWidth() == velikost && ikona.getIconHeight() == velikost) {
+		return naCtverec(ikona, velikost, 1.0);
+	}
+
+	/** Jako {@link #naCtverec(Icon, int)}, obsah ale zabere jen {@code vypln} strany čtverce. */
+	static Icon naCtverec(final Icon ikona, final int velikost, final double vypln) {
+		if (ikona == null || vypln == 1.0 && ikona.getIconWidth() == velikost && ikona.getIconHeight() == velikost) {
 			return ikona;
 		}
 		final BufferedImage puvodni = new BufferedImage(ikona.getIconWidth(), ikona.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D gp = puvodni.createGraphics();
 		ikona.paintIcon(null, gp, 0, 0);
 		gp.dispose();
-		final double meritko = (double) velikost / Math.max(puvodni.getWidth(), puvodni.getHeight());
+		final double meritko = vypln * velikost / Math.max(puvodni.getWidth(), puvodni.getHeight());
 		return new CtvercovaIkona(velikost) {
 			@Override
 			void kresli(final Graphics2D g) {
@@ -118,7 +131,7 @@ public final class StavIkona {
 		g.draw(dilek);
 	}
 
-	/** Šedá ikona keše pod červeným kruhem s šikmou čárou přes celou plochu ikony. */
+	/** Šedá ikona keše uvnitř červeného kruhu s šikmou čárou přes celou plochu ikony. */
 	static Icon zakaz(final Icon zaklad, final int velikost) {
 		final BufferedImage img = new BufferedImage(velikost, velikost, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = kresleni(img);
@@ -127,7 +140,7 @@ public final class StavIkona {
 			final Graphics2D gp = puvodni.createGraphics();
 			zaklad.paintIcon(null, gp, 0, 0);
 			gp.dispose();
-			final double meritko = Math.min(1.0, (double) velikost / Math.max(puvodni.getWidth(), puvodni.getHeight()));
+			final double meritko = Math.min(1.0, VYPLN_ZAKAZU * velikost / Math.max(puvodni.getWidth(), puvodni.getHeight()));
 			final int sirka = Math.max(1, (int) Math.round(puvodni.getWidth() * meritko));
 			final int vyska = Math.max(1, (int) Math.round(puvodni.getHeight() * meritko));
 			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
