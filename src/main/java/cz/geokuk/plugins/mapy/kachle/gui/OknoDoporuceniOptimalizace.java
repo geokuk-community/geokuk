@@ -72,26 +72,29 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		text.setLineWrap(true);
 		text.setWrapStyleWord(true);
 		text.setColumns(46);
-		text.setRows(4);
-		final JPanel horni = new JPanel(new BorderLayout(0, 8));
-		horni.setOpaque(false);
-		horni.add(text, BorderLayout.CENTER);
-		horni.add(odpocet, BorderLayout.SOUTH);
-		p.add(horni, BorderLayout.CENTER);
+		text.setRows(2);
+		p.add(text, BorderLayout.CENTER);
+		final boolean kriticky = PripominkaOptimalizace.kriticky(stav);
+		odpocet.setFont(odpocet.getFont().deriveFont(Font.PLAIN));
+		odpocet.setForeground(UIManager.getColor("Label.disabledForeground"));
+		odpocet.setToolTipText(OptimalizaceTexty.pripomenuti(kriticky, true));
+		bez.setToolTipText(OptimalizaceTexty.pripomenuti(kriticky, false));
+		final JPanel dole = new JPanel(new BorderLayout(8, 0));
+		dole.add(odpocet, BorderLayout.WEST);
 		final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		if (doporuceni == Doporuceni.DOPORUCIT) {
 			tlacitka.add(optimalizovat);
 		}
 		tlacitka.add(bez);
-		p.add(tlacitka, BorderLayout.SOUTH);
+		dole.add(tlacitka, BorderLayout.EAST);
+		p.add(dole, BorderLayout.SOUTH);
 		return p;
 	}
 
 	private OknoDoporuceniOptimalizace(final Window vlastnik, final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final Volba volba) {
 		super(vlastnik, OptimalizaceTexty.NAZEV, ModalityType.MODELESS);
-		final boolean kriticky = PripominkaOptimalizace.kriticky(stav);
-		final JLabel popisek = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S, kriticky));
-		final JButton optimalizovat = new JButton("Optimalizovat teď");
+		final JLabel popisek = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S));
+		final JButton optimalizovat = new JButton("Optimalizovat");
 		final JButton bez = new JButton("Spustit bez optimalizace");
 		final JPanel panel = panel(stav, doporuceni, volne, popisek, optimalizovat, bez);
 		setContentPane(panel);
@@ -101,9 +104,9 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 			if (odpocet.tik(pozastaveno)) {
 				zavri(volba::vyprseni);
 			} else if (pozastaveno) {
-				popisek.setText(OptimalizaceTexty.odpocetPozastaven(kriticky));
+				popisek.setText(OptimalizaceTexty.ODPOCET_POZASTAVEN);
 			} else {
-				popisek.setText(OptimalizaceTexty.odpocet(odpocet.zbyva(), kriticky));
+				popisek.setText(OptimalizaceTexty.odpocet(odpocet.zbyva()));
 			}
 		});
 		// Klik do okna odpočet zruší, okno zůstane, dokud uživatel nevybere.
