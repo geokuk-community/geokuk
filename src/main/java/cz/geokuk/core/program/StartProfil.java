@@ -18,7 +18,7 @@ public final class StartProfil {
 
 	public static void spust() {
 		final Thread t = new Thread(() -> {
-			final long konecCas = System.currentTimeMillis() + 7000;
+			final long konecCas = System.currentTimeMillis() + 6000;
 			while (!konec && System.currentTimeMillis() < konecCas) {
 				final Thread e = edt;
 				if (e != null) {
@@ -27,9 +27,9 @@ public final class StartProfil {
 						final StringBuilder sb = new StringBuilder(faze).append(" | ");
 						int n = 0;
 						for (final StackTraceElement s : st) {
-							if (s.getClassName().startsWith("cz.geokuk")) {
+							if (s.getClassName().startsWith("cz.geokuk") && !s.getClassName().contains("Vykon")) {
 								sb.append(zkrat(s)).append(" < ");
-								if (++n >= 3) {
+								if (++n >= 4) {
 									break;
 								}
 							}
@@ -61,7 +61,7 @@ public final class StartProfil {
 
 	private static void vypis() {
 		synchronized (pocty) {
-			pocty.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(90).forEach(e -> log.info("PROF {} x {}", e.getValue(), e.getKey()));
+			pocty.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(120).forEach(e -> log.info("PROF {} x {}", e.getValue(), e.getKey()));
 		}
 	}
 }

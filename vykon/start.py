@@ -37,7 +37,17 @@ def beh(jar):
                 try:
                     with open(log, encoding="utf-8", errors="replace") as f:
                         if OKNO in f.read():
-                            return (time.perf_counter() - t0) * 1000
+                            ms = (time.perf_counter() - t0) * 1000
+                            # Dočasně: počkat na výpis profilu EDT, aby se do logu dostal.
+                            while time.perf_counter() - t0 < 14:
+                                try:
+                                    with open(log, encoding="utf-8", errors="replace") as g:
+                                        if "PROF " in g.read():
+                                            break
+                                except OSError:
+                                    pass
+                                time.sleep(0.2)
+                            return ms
                 except OSError:
                     pass  # log ještě nevznikl nebo ho program právě zapisuje, zkusí se znovu
                 time.sleep(0.02)
