@@ -50,6 +50,9 @@ public class GeokukMain {
 	public void execute(final String[] args) {
 		FConst.logInit();
 		Diagnostika.znackaStartu("log připraven");
+		if (!GraphicsEnvironment.isHeadless()) {
+			PredehrevaniStartu.spust();
+		}
 		AppUserModelId.nastav();
 		presmerujJulDoSlf4j();
 		final File souborZamku = new File(FConst.DATA_DIR, Start.ZAMEK);
