@@ -78,6 +78,27 @@ public class CdsTest {
 	}
 
 	@Test
+	public void priPlnemDiskuSeArchivNevytvari() {
+		assertEquals(Collections.emptyList(), Cds.prepinace("21", javaHome, "21.0.5+11", data, jar, zamek, a -> true, TED, () -> Cds.MIN_VOLNE_MISTO_B - 1));
+		assertEquals(2, Cds.prepinace("21", javaHome, "21.0.5+11", data, jar, zamek, a -> true, TED, () -> Cds.MIN_VOLNE_MISTO_B).size());
+	}
+
+	@Test
+	public void priPlnemDiskuSeHotovyArchivPresto() throws IOException {
+		hotovyArchiv(38 * MB);
+		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:SharedArchiveFile=" + hotovy().getPath()), Cds.prepinace("21", javaHome, "21.0.5+11", data, jar, zamek, a -> true, TED, () -> 0));
+	}
+
+	@Test
+	public void archivJenProCteniSeSmaze() throws IOException {
+		slozka.mkdirs();
+		final File stary = velky(new File(slozka, Cds.PREDPONA_HOTOVEHO + "21.0.1-1-2-3" + Cds.PRIPONA), 30 * MB, 0);
+		assertTrue(stary.setWritable(false));
+		prepinace();
+		assertFalse("Windows nesmažou soubor jen pro čtení", stary.exists());
+	}
+
+	@Test
 	public void starsiJavaBezPrepinacu() {
 		assertEquals(Collections.emptyList(), prepinace("17", a -> true));
 		assertEquals(Collections.emptyList(), prepinace("1.8", a -> true));
@@ -97,8 +118,9 @@ public class CdsTest {
 	@Test
 	public void bezArchivuSeVytvoriVRozepsanemSouboru() {
 		final List<String> p = prepinace();
-		assertEquals(1, p.size());
-		assertTrue(p.get(0), p.get(0).startsWith("-XX:ArchiveClassesAtExit=" + slozka.getPath() + File.separator + Cds.PREDPONA_NOVEHO + id + "-"));
+		assertEquals(2, p.size());
+		assertEquals(Cds.KONTROLA, p.get(0));
+		assertTrue(p.get(1), p.get(1).startsWith("-XX:ArchiveClassesAtExit=" + slozka.getPath() + File.separator + Cds.PREDPONA_NOVEHO + id + "-"));
 		assertFalse("hotový archiv se nezakládá předem", hotovy().exists());
 	}
 
@@ -116,7 +138,7 @@ public class CdsTest {
 	@Test
 	public void hotovyArchivSePouzije() throws IOException {
 		hotovyArchiv(38 * MB);
-		assertEquals(Collections.singletonList("-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());
+		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());
 		assertTrue("hotový archiv se nemaže", hotovy().isFile());
 	}
 
@@ -124,7 +146,7 @@ public class CdsTest {
 	public void bezBeznehoZakladnihoArchivuSePouzijeHotovy() throws IOException {
 		hotovyArchiv(38 * MB);
 		assertTrue(new File(javaHome, "lib/server/classes.jsa").delete());
-		assertEquals(Collections.singletonList("-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());
+		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());
 	}
 
 	@Test
@@ -151,8 +173,8 @@ public class CdsTest {
 		hotovyArchiv(8);
 		final List<String> p = prepinace();
 		assertFalse(hotovy().exists());
-		assertEquals(1, p.size());
-		assertTrue(p.get(0).startsWith("-XX:ArchiveClassesAtExit="));
+		assertEquals(2, p.size());
+		assertTrue(p.get(1).startsWith("-XX:ArchiveClassesAtExit="));
 	}
 
 	@Test
@@ -162,13 +184,13 @@ public class CdsTest {
 		final List<String> p = prepinace();
 		assertFalse(hotovy().exists());
 		assertFalse(Cds.souborDelky(hotovy()).exists());
-		assertTrue(p.get(0).startsWith("-XX:ArchiveClassesAtExit="));
+		assertTrue(p.get(1).startsWith("-XX:ArchiveClassesAtExit="));
 	}
 
 	@Test
 	public void archivBezZapsaneDelkySeSmaze() throws IOException {
 		velky(hotovy(), 38 * MB, 0);
-		assertTrue(prepinace().get(0).startsWith("-XX:ArchiveClassesAtExit="));
+		assertTrue(prepinace().get(1).startsWith("-XX:ArchiveClassesAtExit="));
 		assertFalse(hotovy().exists());
 	}
 
@@ -180,7 +202,7 @@ public class CdsTest {
 		prepinace();
 		assertEquals(String.valueOf(30 * MB), new String(java.nio.file.Files.readAllBytes(Cds.souborDelky(hotovy()).toPath()), java.nio.charset.StandardCharsets.UTF_8));
 		assertFalse(osirela.exists());
-		assertEquals(Collections.singletonList("-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());
+		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());
 	}
 
 	@Test
@@ -217,7 +239,7 @@ public class CdsTest {
 		id = Cds.id("21.0.5+11", javaHome, jar);
 		final List<String> p = prepinace();
 		assertFalse("archiv původního jaru se smaže", puvodni.exists());
-		assertTrue(p.get(0).startsWith("-XX:ArchiveClassesAtExit="));
+		assertTrue(p.get(1).startsWith("-XX:ArchiveClassesAtExit="));
 	}
 
 	@Test
@@ -227,7 +249,7 @@ public class CdsTest {
 		final List<File> overovane = new ArrayList<>();
 		final List<String> p = prepinace("21", a -> overovane.add(a));
 		assertEquals(Collections.singletonList(vetsi), overovane);
-		assertEquals(Collections.singletonList("-XX:SharedArchiveFile=" + hotovy().getPath()), p);
+		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:SharedArchiveFile=" + hotovy().getPath()), p);
 		assertEquals(30 * MB, hotovy().length());
 		assertFalse(vetsi.exists());
 		assertFalse("ostatní rozepsané se uklidí", mensi.exists());
@@ -239,7 +261,7 @@ public class CdsTest {
 		final List<String> p = prepinace("21", a -> false);
 		assertFalse(hotovy().exists());
 		assertFalse(kandidat.exists());
-		assertTrue("vytvoří se znovu", p.get(0).startsWith("-XX:ArchiveClassesAtExit="));
+		assertTrue("vytvoří se znovu", p.get(1).startsWith("-XX:ArchiveClassesAtExit="));
 	}
 
 	@Test

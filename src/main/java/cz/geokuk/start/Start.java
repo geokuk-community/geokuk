@@ -84,7 +84,7 @@ public final class Start {
 			pridejVraceniPameti(prikaz, System.getProperty("java.specification.version"));
 			pridejZalohu(prikaz, adresar, jar);
 			prikaz.addAll(Cds.prepinace(System.getProperty("java.specification.version"), new File(System.getProperty("java.home")), System.getProperty("java.runtime.version", "java"), data, jar,
-					new File(data, ZAMEK), Cds.overeniJavou(java(), jar, adresar), System.currentTimeMillis()));
+					new File(data, ZAMEK), Cds.overeniJavou(java(), jar, adresar, new File(data, "log")), System.currentTimeMillis()));
 			prikaz.add("-jar");
 			prikaz.add(jar.getPath());
 			prikaz.addAll(parametry);

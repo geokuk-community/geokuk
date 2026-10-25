@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /**
  * Archiv tříd programu (AppCDS) pro rychlejší start, jen od Javy 19. Hotový archiv se nikdy nepřepisuje, běžící program ho má namapovaný. První běh bez archivu ho při
@@ -30,6 +31,10 @@ final class Cds {
 	/** Rozepsaný archiv mladší než toto se nechá být, program do něj ještě může zapisovat. */
 	static final long ROZEPSANY_MS = 30_000;
 	static final long OVERENI_MAX_MS = 20_000;
+	/** Při méně volném místě se archiv nezapisuje, plný disk by zkoušel zápis při každém ukončení. */
+	static final long MIN_VOLNE_MISTO_B = 150L << 20;
+	/** Kontrolní součet archivu; bez něj Java archiv s nulami na konci (po výpadku proudu) použije a spadne. */
+	static final String KONTROLA = "-XX:+VerifySharedSpaces";
 	static final int PRVNI_VERZE_JAVY = 19;
 
 	/** Zkouška, že Java archiv přijme. */
@@ -43,6 +48,11 @@ final class Cds {
 	/** Přepínače JVM pro archiv; nikdy nevyhodí výjimku. */
 	static List<String> prepinace(final String verzeJavy, final File javaHome, final String jmenoJavy, final File data, final File jar, final File zamekInstance, final Overeni overeni,
 			final long ted) {
+		return prepinace(verzeJavy, javaHome, jmenoJavy, data, jar, zamekInstance, overeni, ted, () -> new File(data, SLOZKA).getUsableSpace());
+	}
+
+	static List<String> prepinace(final String verzeJavy, final File javaHome, final String jmenoJavy, final File data, final File jar, final File zamekInstance, final Overeni overeni,
+			final long ted, final LongSupplier volneMisto) {
 		final List<String> prikaz = new ArrayList<>();
 		try {
 			if (!jeJavaDostatecneNova(verzeJavy)) {
@@ -56,8 +66,10 @@ final class Cds {
 			final File hotovy = new File(slozka, PREDPONA_HOTOVEHO + id + PRIPONA);
 			uklid(slozka, hotovy, id, overeni, ted);
 			if (hotovy.isFile()) {
+				prikaz.add(KONTROLA);
 				prikaz.add("-XX:SharedArchiveFile=" + hotovy.getPath());
-			} else if (maZakladniArchiv(javaHome) && !Start.jeZamceno(zamekInstance) && !jeCerstvyRozepsany(slozka, id, ted)) {
+			} else if (maZakladniArchiv(javaHome) && volneMisto.getAsLong() >= MIN_VOLNE_MISTO_B && !Start.jeZamceno(zamekInstance) && !jeCerstvyRozepsany(slozka, id, ted)) {
+				prikaz.add(KONTROLA);
 				// Archiv vznikne jen v prvním běhu; druhá instance, která hned skončí, dostane vlastní soubor a zůstane nepovýšená.
 				prikaz.add("-XX:ArchiveClassesAtExit=" + new File(slozka, PREDPONA_NOVEHO + id + "-" + UUID.randomUUID() + PRIPONA).getPath());
 			}
@@ -166,29 +178,46 @@ final class Cds {
 
 	private static void smaz(final File f) {
 		try {
+			// Java zapisuje archiv jen pro čtení a Windows takový soubor nesmažou.
+			if (f.exists() && !f.canWrite()) {
+				f.setWritable(true);
+			}
 			Files.deleteIfExists(f.toPath());
 		} catch (final IOException | RuntimeException e) {
 			// smaže se příště
 		}
 	}
 
-	/** Spustí Javu s archivem a pozná, jestli ho přijala; {@code -Xshare:on} končí chybou, když archiv nejde použít. */
-	static Overeni overeniJavou(final File java, final File jar, final File pracovni) {
+	/**
+	 * Spustí Javu s archivem a pozná, jestli ho opravdu použila: bez varování z CDS a s kódem 0. Poškozený archiv Java při {@code -XX:+VerifySharedSpaces} mlčky odmítne,
+	 * {@code -Xshare:auto} nezobrazí okno s chybou ani ve {@code javaw}; záznam o případném pádu patří do logu programu, ne do složky programu.
+	 */
+	static Overeni overeniJavou(final File java, final File jar, final File pracovni, final File logSlozka) {
 		return archiv -> {
+			File varovani = null;
 			try {
+				Files.createDirectories(logSlozka.toPath());
+				// Soubor se nezakládá předem, Java by ho při startu přejmenovala na .0.
+				varovani = new File(logSlozka, "cds-overeni-" + UUID.randomUUID() + ".log");
 				final File nic = new File(System.getProperty("os.name", "").startsWith("Windows") ? "NUL" : "/dev/null");
-				final Process p = new ProcessBuilder(java.getPath(), "-Xshare:on", "-XX:SharedArchiveFile=" + archiv.getPath(), "-cp", jar.getPath(), "-version").directory(pracovni)
-						.redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.appendTo(nic)).start();
+				final Process p = new ProcessBuilder(java.getPath(), "-Xshare:auto", KONTROLA, "-XX:SharedArchiveFile=" + archiv.getPath(), "-Xlog:cds*=warning:file=" + varovani.getPath(),
+						"-XX:ErrorFile=" + new File(logSlozka, "hs_err_cds_%p.log").getPath(), "-cp", jar.getPath(), "-version").directory(pracovni).redirectErrorStream(true)
+								.redirectOutput(ProcessBuilder.Redirect.appendTo(nic)).start();
 				if (!p.waitFor(OVERENI_MAX_MS, TimeUnit.MILLISECONDS)) {
 					p.destroyForcibly();
 					return false;
 				}
-				return p.exitValue() == 0;
+				return p.exitValue() == 0 && (!varovani.exists() || varovani.length() == 0);
 			} catch (final IOException | RuntimeException e) {
 				return false;
 			} catch (final InterruptedException e) {
 				Thread.currentThread().interrupt();
 				return false;
+			} finally {
+				if (varovani != null) {
+					smaz(varovani);
+					smaz(new File(varovani.getPath() + ".0"));
+				}
 			}
 		};
 	}
