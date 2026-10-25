@@ -47,6 +47,7 @@ public class Inicializator {
 
 	private final MainFrameHolder mainFrameHolder = new MainFrameHolder();
 	private NapovedaModel napovedaModel;
+	private SpravaMapModel spravaMapModel;
 	private DalkoveOvladani dalkoveOvladani;
 	private Akce akce;
 
@@ -81,7 +82,7 @@ public class Inicializator {
 
 		bb.registerSigleton(new RefbodyModel());
 		bb.registerSigleton(new KachleModel());
-		bb.registerSigleton(new SpravaMapModel());
+		spravaMapModel = bb.registerSigleton(new SpravaMapModel());
 		bb.registerSigleton(new KachloDownloader());
 
 		bb.registerSigleton(new MapyModel());
@@ -149,6 +150,11 @@ public class Inicializator {
 	/** Nová instalace: průvodce nastavením map se otevře sám. */
 	public void nabidniPruvodceMap(final boolean automatizace) {
 		akce.pruvodceMapAction.nabidniPriPrvnimSpusteni(automatizace);
+	}
+
+	/** Okno je zobrazené, spustí se věci, které nemají zdržovat jeho stavbu. */
+	public void poStartu() {
+		spravaMapModel.poStartu();
 	}
 
 	public void zkontrolovatAktualizace() {

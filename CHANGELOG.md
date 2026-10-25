@@ -66,6 +66,17 @@
   aspoň 4 dílky a na konci délku celé lišty s jednotkou (0 1 2 3 4 km).
 - Databáze GeoGetu se načítá rychleji: nadmořská výška keše se čte až při zobrazení
   jejího detailu.
+- Start programu je rychlejší: okno se vykreslí před dialogy, panely Mapy
+  a Zdroje ve stavovém řádku, katalog offline map a jeho ověření se zpracují
+  až když jsou potřeba, písma a prvky Swingu se připravují na pozadí. Při
+  spuštění bez archivu tříd (jar napřímo) se okno na Windows otevře za 1633 ms
+  místo 1767 ms ve verzi 6.4.3 (−7,6 %, medián z 9 běhů).
+- S Javou 19 a novější si přenosná verze po prvním spuštění uloží archiv tříd
+  do složky data/cds (asi 40 MB) a další starty jsou asi o čtvrtinu rychlejší.
+  První ukončení po instalaci nebo aktualizaci trvá o několik sekund déle.
+- Čtení dlaždic z cache se při ukládání nových dlaždic méně zdržuje (zhruba
+  2× až 4× podle měření); dlaždice se zapisují po nejvýš 50 a nejpozději 5 s
+  po první čekající.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 26.
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor

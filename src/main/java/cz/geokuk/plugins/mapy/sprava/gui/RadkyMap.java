@@ -45,7 +45,7 @@ final class RadkyMap {
 				final StavMapy sc = stavy.apply(c);
 				return sc.getMistni() == StavMapy.Mistni.MAME && !bezi(sc);
 			}).orElse(false);
-			radky.add(radek(m, stavy.apply(m), stred != null && m.getPokryti().obsahuje(stred), matice.get(m.getId()), vCeleZemi));
+			radky.add(radek(m, stavy.apply(m), stred != null && m.pokryva(stred.lat, stred.lon), matice.get(m.getId()), vCeleZemi));
 		}
 		for (final RadekMapy r : vlastni) {
 			if (r.isVlastni()) {

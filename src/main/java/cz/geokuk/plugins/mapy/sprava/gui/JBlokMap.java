@@ -45,7 +45,14 @@ public class JBlokMap extends JLabel {
 	transient java.util.function.Function<File, List<RadekMapy>> cteniSlozky = f -> SouboryMap.nacti(f, KatalogMap.vestaveny());
 	private transient java.util.function.Supplier<File> zdrojSlozky = () -> null;
 
-	private final JMapyPopup obsah = new JMapyPopup();
+	/** Obsah popupu se skládá až při prvním otevření, při startu stačí ikona bloku. */
+	private JMapyPopup obsah;
+	private transient OvladaniMap ovladani;
+	private transient Boolean obrysZapnuty;
+	/** Řádky podle posledního sestavení; popup je dostane při vytvoření. */
+	private transient List<RadekMapy> radky = java.util.Collections.emptyList();
+	/** Země nabízené ke stažení, dokud popup neexistuje (rozbalení Všech map se u staženého celku sbaluje i bez něj). */
+	private transient java.util.Set<String> nabizeneCelky = java.util.Collections.emptySet();
 	private final transient PopupNadBlokem popup = new PopupNadBlokem(this, () -> {});
 	private final Timer tocitko = new Timer(80, e -> repaint());
 	private transient KachleModel kachleModel;
@@ -91,29 +98,23 @@ public class JBlokMap extends JLabel {
 		setHorizontalTextPosition(SwingConstants.LEFT);
 		setIconTextGap(4);
 		setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
-		obsah.nactiStavSlozky = JBlokMap::nactiStavSlozky;
-		obsah.ulozStavSlozky = JBlokMap::ulozStavSlozky;
-		obsah.pamatujRozbaleni(JBlokMap::nactiRozbaleneZeme, JBlokMap::ulozRozbaleneZeme);
-		cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.setPoZmene(() -> javax.swing.SwingUtilities.invokeLater(() -> obsah.obnov(obsah.getRadky())));
-		obsah.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
-		obsah.setZobrazeny(() -> popup.viditelny() == obsah);
-		obnov(java.util.Collections.emptyList());
-		popup.setDrzOtevreny(obsah::isHledaniAktivni);
-		popup.setPoZavreni(obsah::popupZavren);
-		obsah.setPoZmeneObsahu(() -> {
-			if (popup.viditelny() == obsah) {
-				popup.ukaz(obsah, this, true);
+		cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.setPoZmene(() -> javax.swing.SwingUtilities.invokeLater(() -> {
+			if (obsah != null) {
+				obsah.obnov(obsah.getRadky());
 			}
-		});
+		}));
+		obnov(java.util.Collections.emptyList());
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(final MouseEvent e) {
-				popup.naCil(obsah, JBlokMap.this::ukaz, System.currentTimeMillis());
+				popup.naCil(obsah(), JBlokMap.this::ukaz, System.currentTimeMillis());
 			}
 
 			@Override
 			public void mouseExited(final MouseEvent e) {
-				popup.opustenCil(obsah);
+				if (obsah != null) {
+					popup.opustenCil(obsah);
+				}
 			}
 
 			@Override
@@ -124,7 +125,41 @@ public class JBlokMap extends JLabel {
 	}
 
 	public void setOvladani(final OvladaniMap ovladani) {
-		obsah.setOvladani(ovladani);
+		this.ovladani = ovladani;
+		if (obsah != null) {
+			obsah.setOvladani(ovladani);
+		}
+	}
+
+	/** Obsah popupu; při prvním použití ho složí a předá mu stav, který blok mezitím nasbíral. */
+	private JMapyPopup obsah() {
+		if (obsah == null) {
+			final JMapyPopup o = new JMapyPopup();
+			o.nactiStavSlozky = JBlokMap::nactiStavSlozky;
+			o.ulozStavSlozky = JBlokMap::ulozStavSlozky;
+			o.pamatujRozbaleni(JBlokMap::nactiRozbaleneZeme, JBlokMap::ulozRozbaleneZeme);
+			o.setDostupnaVyska(() -> isShowing() ? getLocationOnScreen().y - popup.horniHranice() : -1);
+			o.setZobrazeny(() -> popup.viditelny() == o);
+			popup.setDrzOtevreny(o::isHledaniAktivni);
+			popup.setPoZavreni(o::popupZavren);
+			o.setPoZmeneObsahu(() -> {
+				if (popup.viditelny() == o) {
+					popup.ukaz(o, this, true);
+				}
+			});
+			o.setOvladani(ovladani);
+			if (obrysZapnuty != null) {
+				o.setObrysZapnuty(obrysZapnuty);
+			}
+			o.zmenyNaraz(() -> {
+				o.setStinovaniDostupne(stinovaniDostupne);
+				o.setVolneMisto(volne);
+				o.setDvojite(dvojite);
+				o.obnov(radky);
+			});
+			obsah = o;
+		}
+		return obsah;
 	}
 
 	public void inject(final KachleModel kachleModel) {
@@ -327,7 +362,7 @@ public class JBlokMap extends JLabel {
 	/** Menu Mapy > Offline mapy…: panel se otevře a fokus dostane jeho první ovladatelná část, takže zůstane otevřený, dokud je v něm fokus. */
 	public void onEvent(final cz.geokuk.plugins.mapy.sprava.OtevriPanelMapEvent event) {
 		ukaz();
-		obsah.zaostri();
+		obsah().zaostri();
 	}
 
 	public void onEvent(final SpravaMapEvent event) {
@@ -364,7 +399,7 @@ public class JBlokMap extends JLabel {
 		final java.util.Set<String> v = new java.util.HashSet<>();
 		if (spravaMap != null && s != null) {
 			for (final KatalogovaMapa m : spravaMap.getKatalog().getMapy()) {
-				if (m.getPokryti().obsahuje(s)) {
+				if (m.pokryva(s.lat, s.lon)) {
 					v.add(m.getId());
 				}
 			}
@@ -377,7 +412,10 @@ public class JBlokMap extends JLabel {
 	}
 
 	public void onEvent(final ObrysPokrytiEvent event) {
-		obsah.setObrysZapnuty(event.isZapnuto());
+		obrysZapnuty = event.isZapnuto();
+		if (obsah != null) {
+			obsah.setObrysZapnuty(event.isZapnuto());
+		}
 	}
 
 	public void onEvent(final OfflineMapaChangedEvent event) {
@@ -485,12 +523,16 @@ public class JBlokMap extends JLabel {
 				cteni = null;
 				try {
 					soubory = get();
-					obsah.zmenyNaraz(() -> {
-						obsah.setStinovaniDostupne(stinovaniDostupne);
-						obsah.setVolneMisto(volne);
-						obsah.setDvojite(dvojite);
+					if (obsah == null) {
 						prestav();
-					});
+					} else {
+						obsah.zmenyNaraz(() -> {
+							obsah.setStinovaniDostupne(stinovaniDostupne);
+							obsah.setVolneMisto(volne);
+							obsah.setDvojite(dvojite);
+							prestav();
+						});
+					}
 				} catch (final InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} catch (final ExecutionException e) {
@@ -522,7 +564,20 @@ public class JBlokMap extends JLabel {
 		} else {
 			tocitko.stop();
 		}
-		obsah.obnov(radky);
+		if (obsah != null) {
+			obsah.obnov(radky);
+		} else {
+			sbalStazeneBezPopupu(radky);
+		}
+		this.radky = radky;
+	}
+
+	private void sbalStazeneBezPopupu(final List<RadekMapy> nove) {
+		final java.util.Set<String> rozbalene = new java.util.HashSet<>(nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
+		if (JMapyPopup.sbalStazene(rozbalene, nabizeneCelky, nove)) {
+			ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, rozbalene);
+		}
+		nabizeneCelky = JMapyPopup.nabizene(nove);
 	}
 
 	/** Procenta právě stahované mapy nebo vrstvy, -1 když se nic nestahuje nebo velikost není známá. */
@@ -581,10 +636,11 @@ public class JBlokMap extends JLabel {
 	/** Tooltip by překryl sousední bloky a říká totéž co popup. */
 	@Override
 	public String getToolTipText(final MouseEvent e) {
-		return popup.otevira(obsah) ? null : super.getToolTipText(e);
+		return obsah != null && popup.otevira(obsah) ? null : super.getToolTipText(e);
 	}
 
 	public void ukaz() {
+		final JMapyPopup obsah = obsah();
 		if (popup.viditelny() == obsah) {
 			return;
 		}
@@ -604,7 +660,11 @@ public class JBlokMap extends JLabel {
 	}
 
 	JMapyPopup getObsah() {
-		return obsah;
+		return obsah();
+	}
+
+	boolean isObsahVytvoren() {
+		return obsah != null;
 	}
 
 	@Override

@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -96,6 +97,11 @@ public class SpravaMapModel extends Model0 {
 	long[] prodlevyOpakovaniMs = { 5_000, 15_000, 30_000 };
 	/** Čas posledního nepovedeného samočinného stažení katalogu, jen na vlákně kontroly; null = žádné. */
 	private Long posledniPokusKatalogu;
+	/** Za jak dlouho po dokončení startu okna se poprvé ověří katalog vrstev; do té doby stavba okna nesoutěží o procesor a hlavní vlákno se sítí. */
+	long zpozdeniPoStartuMs = TimeUnit.SECONDS.toMillis(3);
+	volatile boolean startDokoncen;
+	/** Obnova stavů už čeká na vlákně kontroly; další žádosti se s ní sloučí, přečte aktuální stav. */
+	private final AtomicBoolean obnovaStavuCeka = new AtomicBoolean();
 
 	/** Požádá blok Mapy ve stavovém řádku, aby otevřel panel offline map s fokusem. */
 	public void otevriPanel() {
@@ -232,6 +238,32 @@ public class SpravaMapModel extends Model0 {
 	 * zůstane poslední kopie (nebo vestavěný katalog) a uživatel nic nevidí; další pokus nejdřív za {@link #opakovaniKataloguNs}.
 	 */
 	public void obnovKatalogVrstevKdyzJeStary() {
+		if (startDokoncen) {
+			obnovKatalogVrstevPodminene(false);
+		}
+	}
+
+	/** Okno je zobrazené a start dokončený: po {@link #zpozdeniPoStartuMs} se poprvé ověří katalog vrstev, dřív se samočinně nestahuje. */
+	public void poStartu() {
+		if (zpozdeniPoStartuMs <= 0) {
+			dokonciStart();
+			return;
+		}
+		final Thread t = new Thread(() -> {
+			try {
+				Thread.sleep(zpozdeniPoStartuMs);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			dokonciStart();
+		}, "Katalog vrstev po startu");
+		t.setDaemon(true);
+		t.start();
+	}
+
+	private void dokonciStart() {
+		startDokoncen = true;
 		obnovKatalogVrstevPodminene(false);
 	}
 
@@ -418,7 +450,11 @@ public class SpravaMapModel extends Model0 {
 
 	/** Přečte stav všech katalogových map z disku (bez sítě); jedna změna přijde svou událostí, víc změn jednou {@link StavyMapEvent}. */
 	public void obnovStavy() {
+		if (!obnovaStavuCeka.compareAndSet(false, true)) {
+			return;
+		}
 		kontrola.execute(() -> {
+			obnovaStavuCeka.set(false);
 			final File s = slozka.get();
 			if (s == null) {
 				return;
