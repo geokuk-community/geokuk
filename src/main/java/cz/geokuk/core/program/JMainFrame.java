@@ -72,9 +72,12 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		// Jen kvůli tomu, aby se nezničilo a chodili eventy
 		// TODO Na menu by neměly být asi události
 		final JGeokukToolbar jGeokukToolbar = factory.init(new JGeokukToolbar());
+		Diagnostika.znackaStartu("mf: toolbar");
 		menux = factory.init(new Menu(this, jGeokukToolbar));
+		Diagnostika.znackaStartu("mf: menu vytvořeno");
 
 		menux.makeMenu();
+		Diagnostika.znackaStartu("mf: menu sestaveno");
 
 		final JComponent srohama = new JSRohamaPrekryvnik();
 		srohama.setLayout(new CornerLayoutManager());
@@ -83,6 +86,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		srohama.add(createKesInfoRoh(), ERoh.JV);
 		srohama.add(factory.init(new JPanelCesty()), ERoh.SV);
 
+		Diagnostika.znackaStartu("mf: rohy");
 		final JPresCeleMysovani mysovani = new JPresCeleMysovani();
 		{
 			final JComponent smrizema = new JPresCelePrekryvnik();
@@ -176,6 +180,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			srohama.add(smrizema);
 		}
 
+		Diagnostika.znackaStartu("mf: slidy");
 		getContentPane().add(srohama);
 
 		// Menu a toolbar
@@ -184,7 +189,9 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		toolBar = menux.getToolBar();
 		getContentPane().add(toolBar, BorderLayout.NORTH);
 
+		Diagnostika.znackaStartu("mf: lišty připojeny");
 		statusbar = factory.init(new JStatusBar());
+		Diagnostika.znackaStartu("mf: stavový řádek");
 		add(statusbar, BorderLayout.SOUTH);
 
 		addWindowListener();

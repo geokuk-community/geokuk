@@ -20,6 +20,9 @@ OKNO = "Otevřeno okno: GeoKuk"
 LIMIT_S = 90
 
 
+POSLEDNI = {}
+
+
 def beh(jar):
     data = tempfile.mkdtemp(prefix="geokuk-start-")
     try:
@@ -46,6 +49,11 @@ def beh(jar):
             except subprocess.TimeoutExpired:
                 p.kill()
     finally:
+        try:
+            with open(log, encoding="utf-8", errors="replace") as f:
+                POSLEDNI[jar] = [r.split(" - ", 1)[-1].rstrip() for r in f if "Start: " in r or "PROF " in r]
+        except OSError:
+            pass
         shutil.rmtree(data, ignore_errors=True)
 
 
@@ -63,6 +71,9 @@ def main():
                 return 2
             if i > 0:
                 casy[k].append(ms)
+    for k, jar in jary.items():
+        print("=== log %s" % k)
+        print("\n".join(POSLEDNI.get(jar, [])))
     med = {k: statistics.median(v) for k, v in casy.items()}
     for k, v in casy.items():
         print("%s: okno %.0f ms (medián z %d běhů: %s)" % (k, med[k], len(v), " ".join("%.0f" % x for x in v)))

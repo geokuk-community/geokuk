@@ -71,6 +71,7 @@ public final class Diagnostika {
 
 	/** Časová značka kroku startu do logu: milisekundy od načtení diagnostiky (začátek startu programu). */
 	public static void znackaStartu(final String krok) {
+		cz.geokuk.core.program.StartProfil.faze = krok;
 		log.info("Start: {} za {} ms", krok, System.currentTimeMillis() - START);
 	}
 

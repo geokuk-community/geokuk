@@ -50,6 +50,7 @@ public class GeokukMain {
 	public void execute(final String[] args) {
 		FConst.logInit();
 		Diagnostika.znackaStartu("log připraven");
+		StartProfil.spust();
 		if (!GraphicsEnvironment.isHeadless()) {
 			PredehrevaniStartu.spust();
 		}
@@ -85,6 +86,7 @@ public class GeokukMain {
 		final boolean vyvojoveOvladani = DalkoveOvladani.vyvojovaZParametru(args);
 
 		SwingUtilities.invokeLater(() -> {
+			StartProfil.edt = Thread.currentThread();
 			Diagnostika.znackaStartu("začátek inicializace na EDT");
 			final Inicializator inicializator = new Inicializator();
 			inicializator.inicializace();
@@ -126,6 +128,7 @@ public class GeokukMain {
 		}
 		inicializator.zkontrolovatAktualizace();
 		Diagnostika.znackaStartu("start dokončen");
+		SwingUtilities.invokeLater(StartProfil::konec);
 	}
 
 	/** Hláška pro uživatele, když spouštěč spustil předchozí verzi ze zálohy. */

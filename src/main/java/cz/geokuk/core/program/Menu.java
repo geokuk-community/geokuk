@@ -63,6 +63,7 @@ public class Menu extends MenuStrujce {
 		}
 		item(akce.offlineMapyAction);
 		menu.add(new JTemaOfflineMapyMenu(kachleModel));
+		Diagnostika.znackaStartu("menu: téma");
 		item(akce.prekryvTrasAction);
 		item(akce.reliefCuzkAction);
 
@@ -174,6 +175,7 @@ public class Menu extends MenuStrujce {
 		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
 		item(akce.limityKresleniAction);
 		menu.add(factory.init(new JMenuZvyrazneni()));
+		Diagnostika.znackaStartu("menu: zvýraznění");
 		separator();
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
@@ -203,6 +205,7 @@ public class Menu extends MenuStrujce {
 
 		final JVybiracHodnoceni jVybiracHodnoceni = factory.init(new JVybiracHodnoceni());
 		tb.add(jVybiracHodnoceni);
+		Diagnostika.znackaStartu("menu: hodnocení");
 
 		final JVybiracBestOf jVybiraceBestOf = factory.init(new JVybiracBestOf());
 		tb.add(jVybiraceBestOf);
@@ -215,6 +218,7 @@ public class Menu extends MenuStrujce {
 		lbl.setLabelFor(iVybiracVyletu);
 		tb.add(lbl);
 		tb.add(iVybiracVyletu);
+		Diagnostika.znackaStartu("menu: výběr výletu");
 		menu("Výlety", "Plánování výletů");
 		menu.setMnemonic(KeyEvent.VK_V);
 		item(akce.vyletAnoAction);

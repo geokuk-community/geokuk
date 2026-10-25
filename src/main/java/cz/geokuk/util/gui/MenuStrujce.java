@@ -72,6 +72,7 @@ public abstract class MenuStrujce {
 	protected abstract void makeMenu();
 
 	protected void menu(final String name, final String aTooltip) {
+		cz.geokuk.core.napoveda.Diagnostika.znackaStartu("menu před " + name);
 		menu = new JMenu(name);
 		menu.setToolTipText(aTooltip);
 		menuBar.add(menu);
