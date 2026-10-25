@@ -49,6 +49,7 @@ public class GeokukMain {
 
 	public void execute(final String[] args) {
 		FConst.logInit();
+		Diagnostika.znackaStartu("log připraven");
 		AppUserModelId.nastav();
 		presmerujJulDoSlf4j();
 		final File souborZamku = new File(FConst.DATA_DIR, Start.ZAMEK);
@@ -81,34 +82,47 @@ public class GeokukMain {
 		final boolean vyvojoveOvladani = DalkoveOvladani.vyvojovaZParametru(args);
 
 		SwingUtilities.invokeLater(() -> {
+			Diagnostika.znackaStartu("začátek inicializace na EDT");
 			final Inicializator inicializator = new Inicializator();
 			inicializator.inicializace();
+			Diagnostika.znackaStartu("modely inicializovány");
 			final JMainFrame mainFrame = new JMainFrame();
 			inicializator.setMainFrame(mainFrame);
 			mainFrame.init();
+			Diagnostika.znackaStartu("okno sestaveno");
 			mainFrame.setVisible(true);
-			final String varovani = Nastaveni.prevzitVarovani();
-			if (varovani != null) {
-				Dlg.error(varovani);
-			}
-			if (zaloha != null) {
-				Dlg.upozorneni(textZalohy());
-			}
-			SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
-			VytvoritZastupceAction.aktualizujZastupceVeSlozce();
-			new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
-			new Thread(PrehledovaMapa::doplnPriStartu, "Přehledová mapa").start();
-			VytvoritZastupceAction.nabidniStart(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless());
-			SwingUtilities.invokeLater(() -> inicializator.nabidniPruvodceMap(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless()));
-			if (portOvladani != null) {
-				inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);
-			} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {
-				inicializator.spustDalkoveOvladani(DalkoveOvladani.VYCHOZI_PORT, vyvojoveOvladani);
-			} else if (vyvojoveOvladani) {
-				inicializator.spustDalkoveOvladani(0, true);
-			}
-			inicializator.zkontrolovatAktualizace();
+			Diagnostika.znackaStartu("okno zobrazeno");
+			// Okno se nejdřív vykreslí, dialogy a zbytek startu jsou až v dalších událostech.
+			SwingUtilities.invokeLater(() -> {
+				final String varovani = Nastaveni.prevzitVarovani();
+				if (varovani != null) {
+					Dlg.error(varovani);
+				}
+				if (zaloha != null) {
+					Dlg.upozorneni(textZalohy());
+				}
+				SwingUtilities.invokeLater(() -> dokonciStart(inicializator, portOvladani, vyvojoveOvladani));
+			});
 		});
+	}
+
+	private void dokonciStart(final Inicializator inicializator, final Integer portOvladani, final boolean vyvojoveOvladani) {
+		Diagnostika.znackaStartu("dokončení startu");
+		SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
+		VytvoritZastupceAction.aktualizujZastupceVeSlozce();
+		new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
+		new Thread(PrehledovaMapa::doplnPriStartu, "Přehledová mapa").start();
+		VytvoritZastupceAction.nabidniStart(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeLater(() -> inicializator.nabidniPruvodceMap(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless()));
+		if (portOvladani != null) {
+			inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);
+		} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {
+			inicializator.spustDalkoveOvladani(DalkoveOvladani.VYCHOZI_PORT, vyvojoveOvladani);
+		} else if (vyvojoveOvladani) {
+			inicializator.spustDalkoveOvladani(0, true);
+		}
+		inicializator.zkontrolovatAktualizace();
+		Diagnostika.znackaStartu("start dokončen");
 	}
 
 	/** Hláška pro uživatele, když spouštěč spustil předchozí verzi ze zálohy. */
