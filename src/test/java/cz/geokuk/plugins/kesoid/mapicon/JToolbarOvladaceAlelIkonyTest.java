@@ -18,7 +18,16 @@ import cz.geokuk.util.gui.JIconCheckBox;
 /** Ikony alel na toolbaru se po načtení kešek skládají mimo EDT, ovladače se vytvoří hned. */
 public class JToolbarOvladaceAlelIkonyTest {
 
-	private static final Icon IKONA = new ImageIcon(new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB));
+	private static final Icon IKONA = ikona();
+
+	private static Icon ikona() {
+		final BufferedImage img = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = img.createGraphics();
+		g.setColor(java.awt.Color.BLUE);
+		g.fillOval(2, 2, 16, 16);
+		g.dispose();
+		return new ImageIcon(img);
+	}
 
 	private final List<Boolean> naEdt = Collections.synchronizedList(new ArrayList<>());
 

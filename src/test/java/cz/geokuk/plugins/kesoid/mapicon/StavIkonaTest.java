@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import cz.geokuk.framework.Factory;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.genetika.Genotyp;
 import cz.geokuk.plugins.kesoid.mvc.*;
@@ -46,23 +47,29 @@ public class StavIkonaTest {
 		return ((argb >> 16) & 0xFF) > 170 && ((argb >> 8) & 0xFF) < 80 && (argb & 0xFF) < 80 && (argb >>> 24) > 200;
 	}
 
+	private static boolean cervenaCara(final int argb) {
+		return ((argb >> 16) & 0xFF) > 170 && ((argb >> 8) & 0xFF) < 80 && (argb & 0xFF) < 80 && (argb >>> 24) > 100;
+	}
+
 	private static boolean viditelne(final int argb) {
 		return (argb >>> 24) > 40;
 	}
 
 	@Test
-	public void zakazJeCervenyPresCelouIkonuAArchivSeLisi() {
+	public void zakazJeCervenyPresSedouIkonuAArchivSeLisi() {
 		for (final int velikost : new int[] { 16, 24, 48 }) {
-			final BufferedImage z = obraz(StavIkona.zakaz(V));
+			final BufferedImage z = obraz(StavIkona.zakaz(zaklad(velikost), V));
 			final BufferedImage a = obraz(StavIkona.archiv(zaklad(velikost), V));
 			Assert.assertEquals(V, z.getWidth());
 			Assert.assertEquals(V, z.getHeight());
 			Assert.assertEquals(V, a.getWidth());
 			Assert.assertEquals(V, a.getHeight());
-			// Zákaz: červený kruh přes celou plochu, střed mimo čáru průhledný (žádná krychle).
-			Assert.assertTrue(cervene(z.getRGB(V / 2, 1)));
-			Assert.assertTrue(cervene(z.getRGB(1, V / 2)));
-			Assert.assertFalse(viditelne(z.getRGB(V / 2 - 4, V / 2 - 4)));
+			// Zákaz: červený kruh přes celou plochu, uvnitř šedá ikona.
+			Assert.assertTrue(cervenaCara(z.getRGB(V / 2, 2)));
+			Assert.assertTrue(cervenaCara(z.getRGB(2, V / 2)));
+			final int uvnitr = z.getRGB(V / 2 - 3, V / 2 - 3);
+			Assert.assertTrue(viditelne(uvnitr));
+			Assert.assertEquals((uvnitr >> 16) & 0xFF, (uvnitr >> 8) & 0xFF, 2);
 			// Archiv: červený čtvereček včetně rohu, zákaz tam kruhem červený není.
 			Assert.assertTrue(cervene(a.getRGB(V - 3, V - 10)));
 			Assert.assertTrue(viditelne(a.getRGB(V - 1, V - 1)));
@@ -133,6 +140,49 @@ public class StavIkonaTest {
 		Assert.assertTrue(s, sep2 < gc);
 	}
 
+	@Test
+	public void ikonyToolbaruMajiStejnouVelikostKromeDruhuWaypointu() {
+		final Genom genom = new Genom();
+		final IkonBag bag = new IkonBag(genom) {
+			@Override
+			public Icon seekIkon(final Genotyp genotyp) {
+				return zaklad(16);
+			}
+		};
+		final Alela[] stejne = { genom.ALELA_hnf, genom.ALELA_fnd, genom.ALELA_own, genom.ALELA_cpt, genom.ALELA_dpl, genom.ALELA_dsbl, genom.ALELA_arch, genom.ALELA_gc, genom.ALELA_mz, genom.ALELA_wp,
+				genom.ALELA_nevyluste };
+		for (final Alela alela : stejne) {
+			final Icon ikona = StavIkona.ikonaToolbaru(bag, alela);
+			Assert.assertEquals(alela.qualName(), V, ikona.getIconWidth());
+			Assert.assertEquals(alela.qualName(), V, ikona.getIconHeight());
+		}
+		final Alela druhWaypointu = genom.symGen.getVychoziAlela();
+		Assert.assertEquals(16, StavIkona.ikonaToolbaru(bag, druhWaypointu).getIconHeight());
+	}
+
+	@Test
+	public void naCtverecZachovaPomerStranACentruje() {
+		final BufferedImage uzka = obraz(StavIkona.naCtverec(zaklad(12), V));
+		Assert.assertEquals(V, uzka.getWidth());
+		Assert.assertEquals(V, uzka.getHeight());
+		Assert.assertFalse(viditelne(uzka.getRGB(0, V / 2)));
+		Assert.assertFalse(viditelne(uzka.getRGB(V - 1, V / 2)));
+		Assert.assertTrue(viditelne(uzka.getRGB(V / 2, V / 2)));
+		final Icon hotova = zaklad(V);
+		Assert.assertSame(hotova, StavIkona.naCtverec(hotova, V));
+		Assert.assertNull(StavIkona.naCtverec(null, V));
+	}
+
+	@Test
+	public void nevylusteJeDilekSkladanky() {
+		final BufferedImage n = obraz(StavIkona.nevyluste(V));
+		Assert.assertEquals(V, n.getWidth());
+		Assert.assertEquals(V, n.getHeight());
+		Assert.assertTrue(viditelne(n.getRGB(V / 2, V / 2)));
+		Assert.assertTrue(viditelne(n.getRGB(V / 2 - 2, 6)));
+		Assert.assertFalse(viditelne(n.getRGB(0, 0)));
+	}
+
 	/** Snímek toolbaru do poznámek, jen když je zadána cesta. */
 	@Test
 	public void snimek() throws Exception {
@@ -140,7 +190,7 @@ public class StavIkonaTest {
 		if (cesta == null) {
 			return;
 		}
-		final Icon[] ikony = { zaklad(V), StavIkona.zakaz(V), StavIkona.archiv(zaklad(V), V), StavIkona.archiv(zaklad(48), V) };
+		final Icon[] ikony = { zaklad(V), StavIkona.zakaz(zaklad(V), V), StavIkona.archiv(zaklad(V), V), StavIkona.archiv(zaklad(48), V) };
 		final BufferedImage img = new BufferedImage(ikony.length * 30 + 6, 36, BufferedImage.TYPE_INT_ARGB);
 		final java.awt.Graphics2D g = img.createGraphics();
 		g.setColor(new Color(238, 238, 238));
