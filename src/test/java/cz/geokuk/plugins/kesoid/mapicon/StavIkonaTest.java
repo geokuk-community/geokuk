@@ -47,23 +47,29 @@ public class StavIkonaTest {
 		return ((argb >> 16) & 0xFF) > 170 && ((argb >> 8) & 0xFF) < 80 && (argb & 0xFF) < 80 && (argb >>> 24) > 200;
 	}
 
+	private static boolean cervenaCara(final int argb) {
+		return ((argb >> 16) & 0xFF) > 170 && ((argb >> 8) & 0xFF) < 80 && (argb & 0xFF) < 80 && (argb >>> 24) > 100;
+	}
+
 	private static boolean viditelne(final int argb) {
 		return (argb >>> 24) > 40;
 	}
 
 	@Test
-	public void zakazJeCervenyPresCelouIkonuAArchivSeLisi() {
+	public void zakazJeCervenyPresSedouIkonuAArchivSeLisi() {
 		for (final int velikost : new int[] { 16, 24, 48 }) {
-			final BufferedImage z = obraz(StavIkona.zakaz(V));
+			final BufferedImage z = obraz(StavIkona.zakaz(zaklad(velikost), V));
 			final BufferedImage a = obraz(StavIkona.archiv(zaklad(velikost), V));
 			Assert.assertEquals(V, z.getWidth());
 			Assert.assertEquals(V, z.getHeight());
 			Assert.assertEquals(V, a.getWidth());
 			Assert.assertEquals(V, a.getHeight());
-			// Zákaz: červený kruh přes celou plochu, střed mimo čáru průhledný (žádná krychle).
-			Assert.assertTrue(cervene(z.getRGB(V / 2, 1)));
-			Assert.assertTrue(cervene(z.getRGB(1, V / 2)));
-			Assert.assertFalse(viditelne(z.getRGB(V / 2 - 4, V / 2 - 4)));
+			// Zákaz: červený kruh přes celou plochu, uvnitř šedá ikona.
+			Assert.assertTrue(cervenaCara(z.getRGB(V / 2, 2)));
+			Assert.assertTrue(cervenaCara(z.getRGB(2, V / 2)));
+			final int uvnitr = z.getRGB(V / 2 - 3, V / 2 - 3);
+			Assert.assertTrue(viditelne(uvnitr));
+			Assert.assertEquals((uvnitr >> 16) & 0xFF, (uvnitr >> 8) & 0xFF, 2);
 			// Archiv: červený čtvereček včetně rohu, zákaz tam kruhem červený není.
 			Assert.assertTrue(cervene(a.getRGB(V - 3, V - 10)));
 			Assert.assertTrue(viditelne(a.getRGB(V - 1, V - 1)));
@@ -168,12 +174,12 @@ public class StavIkonaTest {
 	}
 
 	@Test
-	public void nevylusteJeVidetPresPlochuIkony() {
+	public void nevylusteJeDilekSkladanky() {
 		final BufferedImage n = obraz(StavIkona.nevyluste(V));
 		Assert.assertEquals(V, n.getWidth());
 		Assert.assertEquals(V, n.getHeight());
 		Assert.assertTrue(viditelne(n.getRGB(V / 2, V / 2)));
-		Assert.assertTrue(viditelne(n.getRGB(V / 2, 3)));
+		Assert.assertTrue(viditelne(n.getRGB(V / 2 - 2, 6)));
 		Assert.assertFalse(viditelne(n.getRGB(0, 0)));
 	}
 
@@ -184,7 +190,7 @@ public class StavIkonaTest {
 		if (cesta == null) {
 			return;
 		}
-		final Icon[] ikony = { zaklad(V), StavIkona.zakaz(V), StavIkona.archiv(zaklad(V), V), StavIkona.archiv(zaklad(48), V) };
+		final Icon[] ikony = { zaklad(V), StavIkona.zakaz(zaklad(V), V), StavIkona.archiv(zaklad(V), V), StavIkona.archiv(zaklad(48), V) };
 		final BufferedImage img = new BufferedImage(ikony.length * 30 + 6, 36, BufferedImage.TYPE_INT_ARGB);
 		final java.awt.Graphics2D g = img.createGraphics();
 		g.setColor(new Color(238, 238, 238));

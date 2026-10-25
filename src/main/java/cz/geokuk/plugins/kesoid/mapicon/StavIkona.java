@@ -9,13 +9,14 @@ import javax.swing.ImageIcon;
 
 import cz.geokuk.plugins.kesoid.genetika.*;
 
-/** Ikony alel na toolbaru: disablovaná je velký červený zákaz, archivovaná vyblednutá ikona keše s červenou značkou v rohu, nevyluštěná zámek; ostatní ikony se srovnají na stejnou velikost. */
+/** Ikony alel na toolbaru: disablovaná je šedá ikona keše pod červeným zákazem, archivovaná vyblednutá ikona keše s červenou značkou v rohu, nevyluštěná dílek skládačky; ostatní ikony se srovnají na stejnou velikost. */
 public final class StavIkona {
 
 	/** Strana značky archivu v rohu. */
 	static final int SYMBOL = 11;
 
 	private static final Color CERVENA = new Color(0xD8, 0x1E, 0x1E);
+	private static final Color ZAKAZ = new Color(0xD8, 0x1E, 0x1E, 200);
 	private static final Color OBRYS = new Color(0x40, 0x40, 0x40);
 	private static final float PRUHLEDNOST_DUCHA = 0.5f;
 
@@ -26,7 +27,7 @@ public final class StavIkona {
 		final Genom genom = bag.getGenom();
 		final Genotyp vychozi = genom.UNIVERZALNI_DRUH.genotypVychozi();
 		if (alela == genom.ALELA_dsbl) {
-			return zakaz(JToolbarOvladaceAlel.VYSKA_IKONY);
+			return zakaz(bag.seekIkon(vychozi), JToolbarOvladaceAlel.VYSKA_IKONY);
 		}
 		if (alela == genom.ALELA_arch) {
 			return archiv(bag.seekIkon(vychozi), JToolbarOvladaceAlel.VYSKA_IKONY);
@@ -59,13 +60,13 @@ public final class StavIkona {
 		};
 	}
 
-	/** Uzavřený zámek. */
+	/** Dílek skládačky. */
 	static Icon nevyluste(final int velikost) {
 		return new CtvercovaIkona(velikost) {
 			@Override
 			void kresli(final Graphics2D g) {
 				g.scale(velikost / 24.0, velikost / 24.0);
-				kresliZamek(g);
+				kresliDilek(g);
 			}
 		};
 	}
@@ -105,36 +106,35 @@ public final class StavIkona {
 		}
 	}
 
-	private static void kresliZamek(final Graphics2D g) {
-		final Path2D.Double oblouk = new Path2D.Double();
-		oblouk.moveTo(7.8, 11);
-		oblouk.lineTo(7.8, 7.6);
-		oblouk.curveTo(7.8, 2.4, 16.2, 2.4, 16.2, 7.6);
-		oblouk.lineTo(16.2, 11);
-		g.setStroke(new BasicStroke(4.4f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+	private static void kresliDilek(final Graphics2D g) {
+		final Area dilek = new Area(new RoundRectangle2D.Double(4.5, 7.5, 14, 13.5, 2, 2));
+		dilek.add(new Area(new Ellipse2D.Double(7.7, 3.4, 5.6, 5.6)));
+		dilek.add(new Area(new Ellipse2D.Double(17.2, 11, 5.6, 5.6)));
+		dilek.subtract(new Area(new Ellipse2D.Double(2.2, 11.6, 5.4, 5.4)));
+		g.setColor(new Color(0x8A, 0x5C, 0xC8));
+		g.fill(dilek);
 		g.setColor(OBRYS);
-		g.draw(oblouk);
-		g.setStroke(new BasicStroke(2.4f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
-		g.setColor(new Color(0xC4, 0xCA, 0xD2));
-		g.draw(oblouk);
-		final RoundRectangle2D.Double telo = new RoundRectangle2D.Double(4.5, 10.5, 15, 11.5, 3, 3);
-		g.setColor(new Color(0xF0, 0xB4, 0x2C));
-		g.fill(telo);
-		g.setColor(OBRYS);
-		g.setStroke(new BasicStroke(1.3f));
-		g.draw(telo);
-		g.fill(new Ellipse2D.Double(10.4, 13.4, 3.2, 3.2));
-		g.fill(new RoundRectangle2D.Double(11.2, 15.2, 1.6, 3.6, 0.8, 0.8));
+		g.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g.draw(dilek);
 	}
 
-	/** Červený kruh s šikmou čárou přes celou plochu ikony. */
-	static Icon zakaz(final int velikost) {
+	/** Šedá ikona keše pod červeným kruhem s šikmou čárou přes celou plochu ikony. */
+	static Icon zakaz(final Icon zaklad, final int velikost) {
 		final BufferedImage img = new BufferedImage(velikost, velikost, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = kresleni(img);
 		try {
-			g.setColor(CERVENA);
-			g.setStroke(new BasicStroke(3.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-			final double m = 2.25;
+			final BufferedImage puvodni = new BufferedImage(zaklad.getIconWidth(), zaklad.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+			final Graphics2D gp = puvodni.createGraphics();
+			zaklad.paintIcon(null, gp, 0, 0);
+			gp.dispose();
+			final double meritko = Math.min(1.0, (double) velikost / Math.max(puvodni.getWidth(), puvodni.getHeight()));
+			final int sirka = Math.max(1, (int) Math.round(puvodni.getWidth() * meritko));
+			final int vyska = Math.max(1, (int) Math.round(puvodni.getHeight() * meritko));
+			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			g.drawImage(sedy(puvodni), (velikost - sirka) / 2, (velikost - vyska) / 2, sirka, vyska, null);
+			g.setColor(ZAKAZ);
+			g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+			final double m = 2.5;
 			g.draw(new Ellipse2D.Double(m, m, velikost - 2 * m, velikost - 2 * m));
 			final double stred = velikost / 2.0;
 			final double d = (velikost - 2 * m) / 2 * Math.sqrt(0.5);
@@ -167,6 +167,18 @@ public final class StavIkona {
 			g.dispose();
 		}
 		return new ImageIcon(img);
+	}
+
+	private static BufferedImage sedy(final BufferedImage puvodni) {
+		final BufferedImage vysledek = new BufferedImage(puvodni.getWidth(), puvodni.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		for (int y = 0; y < puvodni.getHeight(); y++) {
+			for (int x = 0; x < puvodni.getWidth(); x++) {
+				final int p = puvodni.getRGB(x, y);
+				final int sedost = (int) (0.3 * ((p >> 16) & 0xFF) + 0.59 * ((p >> 8) & 0xFF) + 0.11 * (p & 0xFF));
+				vysledek.setRGB(x, y, (p & 0xFF000000) | (sedost << 16) | (sedost << 8) | sedost);
+			}
+		}
+		return vysledek;
 	}
 
 	private static BufferedImage duch(final BufferedImage puvodni) {
