@@ -216,4 +216,163 @@ public class StavIkonaTest {
 		gv.dispose();
 		ImageIO.write(velky, "png", new File(cesta.replace(".png", "-x8.png")));
 	}
+
+	private static Icon plnyCtverec(final int velikost) {
+		final BufferedImage img = new BufferedImage(velikost, velikost, BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = img.createGraphics();
+		g.setColor(new Color(40, 120, 220));
+		g.fillRect(0, 0, velikost, velikost);
+		g.dispose();
+		return new ImageIcon(img);
+	}
+
+	private static IkonBag bagSPlnymCtvercem() {
+		return new IkonBag(new Genom()) {
+			@Override
+			public Icon seekIkon(final Genotyp genotyp) {
+				return plnyCtverec(V);
+			}
+		};
+	}
+
+	/** Nehledané, Nalezené a Moje vlastní mají kolem obsahu rezervu, ostatní ikony ne. */
+	@Test
+	public void rezervuKolemObsahuMajiJenVztahy() {
+		final IkonBag bag = bagSPlnymCtvercem();
+		final Genom g = bag.getGenom();
+		for (final Alela a : new Alela[] { g.ALELA_hnf, g.ALELA_fnd, g.ALELA_own }) {
+			final BufferedImage n = obraz(StavIkona.ikonaToolbaru(bag, a));
+			Assert.assertFalse(a.qualName(), viditelne(n.getRGB(0, V / 2)));
+			Assert.assertTrue(a.qualName(), viditelne(n.getRGB(V / 2, V / 2)));
+		}
+		for (final Alela a : new Alela[] { g.ALELA_cpt, g.ALELA_dpl, g.ALELA_gc, g.ALELA_wp }) {
+			Assert.assertTrue(a.qualName(), viditelne(obraz(StavIkona.ikonaToolbaru(bag, a)).getRGB(0, V / 2)));
+		}
+	}
+
+	/** Disablovaná i Archivovaný z ikonaToolbaru mají svůj symbol, ne ikonu sady. */
+	@Test
+	public void disablovanaAArchivovanyMajiSymbolPresIkonaToolbaru() {
+		final IkonBag bag = bagSPlnymCtvercem();
+		final Genom g = bag.getGenom();
+		final BufferedImage z = obraz(StavIkona.ikonaToolbaru(bag, g.ALELA_dsbl));
+		Assert.assertTrue(cervenaCara(z.getRGB(V / 2, 2)));
+		final BufferedImage a = obraz(StavIkona.ikonaToolbaru(bag, g.ALELA_arch));
+		Assert.assertTrue(cervene(a.getRGB(V - 3, V - 10)));
+		final BufferedImage obycejna = obraz(StavIkona.ikonaToolbaru(bag, g.ALELA_gc));
+		Assert.assertFalse(cervenaCara(obycejna.getRGB(V / 2, 2)));
+		Assert.assertFalse(cervene(obycejna.getRGB(V - 3, V - 10)));
+	}
+
+	/** Šikmá čára zákazu vede přes střed ikony. */
+	@Test
+	public void zakazMaSikmouCaruPresStred() {
+		final BufferedImage z = obraz(StavIkona.zakaz(zaklad(V), V));
+		Assert.assertTrue(cervenaCara(z.getRGB(V / 2, V / 2)));
+		Assert.assertTrue(cervenaCara(z.getRGB(V / 2 - 4, V / 2 + 4)));
+		Assert.assertFalse("mimo čáru je šedá keš", cervenaCara(z.getRGB(V / 2 - 4, V / 2 - 4)));
+	}
+
+	/** Nečtvercová ikona se zvětší na výšku, vycentruje a po stranách zůstane průhledná. */
+	@Test
+	public void naCtverecCentrujeNeCtvercovouIkonu() {
+		final BufferedImage uzka = new BufferedImage(10, 20, BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = uzka.createGraphics();
+		g.setColor(Color.BLACK);
+		g.fillRect(0, 0, 10, 20);
+		g.dispose();
+		final BufferedImage n = obraz(StavIkona.naCtverec(new ImageIcon(uzka), V));
+		Assert.assertEquals(V, n.getWidth());
+		int vlevo = 0;
+		while (vlevo < V && !viditelne(n.getRGB(vlevo, V / 2))) {
+			vlevo++;
+		}
+		int vpravo = 0;
+		while (vpravo < V && !viditelne(n.getRGB(V - 1 - vpravo, V / 2))) {
+			vpravo++;
+		}
+		Assert.assertTrue("okraje po stranách: " + vlevo + " / " + vpravo, vlevo >= 4);
+		Assert.assertTrue(Math.abs(vlevo - vpravo) <= 1);
+		Assert.assertTrue(viditelne(n.getRGB(V / 2, 0)));
+		Assert.assertTrue(viditelne(n.getRGB(V / 2, V - 1)));
+	}
+
+	/** Oddělovač je vidět jen před viditelnou skupinou, která má před sebou jinou viditelnou; žádný na začátku ani na konci. */
+	@Test
+	public void oddelovaceSkryvajiPrazdneSkupiny() throws Exception {
+		final IkonBag bag = new IkonBag(new Genom()) {
+			@Override
+			public Icon seekIkon(final Genotyp genotyp) {
+				return zaklad(V);
+			}
+		};
+		final KesBag kesky = new KesBag(bag.getGenom());
+		kesky.done();
+		final Factory factory = new Factory() {
+			@Override
+			public <T> T init(final T obj) {
+				if (obj instanceof SwitchKesoidUrciteAlelyAction) {
+					final SwitchKesoidUrciteAlelyAction a = (SwitchKesoidUrciteAlelyAction) obj;
+					a.onEvent(new IkonyNactenyEvent(bag, ASada.STANDARD));
+					a.onEvent(new KeskyNactenyEvent(kesky));
+					a.initAfterEventReceiverRegistration();
+				}
+				return obj;
+			}
+
+			@Override
+			public <T> T initNow(final T obj) {
+				return init(obj);
+			}
+		};
+		final JToolbarOvladaceAlel panel = new JToolbarOvladaceAlel(null);
+		panel.inject(factory);
+		SwingUtilities.invokeAndWait(() -> panel.onEvent(new KeskyNactenyEvent(kesky)));
+		SwingUtilities.invokeAndWait(() -> {
+			for (final Component c : panel.getComponents()) {
+				if (c instanceof JSeparator) {
+					Assert.assertFalse("bez viditelných ovladačů se po načtení keší oddělovače skryjí", c.isVisible());
+				}
+			}
+		});
+		final java.lang.reflect.Method skryj = JToolbarOvladaceAlel.class.getDeclaredMethod("skryjPrazdneOddelovace");
+		skryj.setAccessible(true);
+		SwingUtilities.invokeAndWait(() -> {
+			final Component[] komponenty = panel.getComponents();
+			// Skupiny ovladačů mezi oddělovači.
+			final List<List<Component>> skupiny = new ArrayList<>();
+			final List<Component> oddelovace = new ArrayList<>();
+			skupiny.add(new ArrayList<>());
+			for (final Component c : komponenty) {
+				if (c instanceof JSeparator) {
+					oddelovace.add(c);
+					skupiny.add(new ArrayList<>());
+				} else {
+					skupiny.get(skupiny.size() - 1).add(c);
+				}
+			}
+			final int m = skupiny.size();
+			Assert.assertTrue("aspoň tři skupiny: " + m, m >= 4);
+			for (int maska = 0; maska < (1 << m); maska++) {
+				for (int k = 0; k < m; k++) {
+					for (final Component c : skupiny.get(k)) {
+						c.setVisible((maska & (1 << k)) != 0 && c == skupiny.get(k).get(0));
+					}
+				}
+				try {
+					skryj.invoke(panel);
+				} catch (final ReflectiveOperationException e) {
+					throw new IllegalStateException(e);
+				}
+				boolean videlJsem = false;
+				for (int k = 0; k < m; k++) {
+					final boolean skupinaVidet = (maska & (1 << k)) != 0 && !skupiny.get(k).isEmpty();
+					if (k >= 1) {
+						Assert.assertEquals("maska " + Integer.toBinaryString(maska) + " oddělovač před skupinou " + k, videlJsem && skupinaVidet, oddelovace.get(k - 1).isVisible());
+					}
+					videlJsem |= skupinaVidet;
+				}
+			}
+		});
+	}
 }
