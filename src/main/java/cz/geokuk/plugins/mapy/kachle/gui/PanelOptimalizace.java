@@ -23,8 +23,8 @@ class PanelOptimalizace extends JPanel {
 	}
 
 	private final OptimalizaceDatabaze optimalizace;
-	private final JLabel uvod = new JLabel("<html><div style='width:380px'>" + OptimalizaceTexty.UVOD + "</div></html>");
-	private final JLabel prehled = new JLabel();
+	private final JLabel uvod = new JLabel(OptimalizaceTexty.UVOD);
+	private final JPanel prehled = new JPanel(new GridBagLayout());
 	private final JTextArea zprava = new JTextArea();
 	private final JProgressBar prubeh = new JProgressBar(0, 100);
 	private final JButton optimalizovat = new JButton("Optimalizovat");
@@ -37,6 +37,7 @@ class PanelOptimalizace extends JPanel {
 		super(new BorderLayout(0, 10));
 		this.optimalizace = optimalizace;
 		setBorder(BorderFactory.createEmptyBorder(14, 16, 12, 16));
+		prehled.setOpaque(false);
 		zprava.setEditable(false);
 		zprava.setOpaque(false);
 		zprava.setLineWrap(true);
@@ -84,11 +85,31 @@ class PanelOptimalizace extends JPanel {
 			return;
 		}
 		final long volne = optimalizace.volneMisto();
-		prehled.setText(OptimalizaceTexty.prehled(stav, volne));
+		naplnPrehled(OptimalizaceTexty.prehled(stav, volne));
 		if (volne >= 0 && volne < OptimalizaceDatabaze.potrebneMisto(stav)) {
 			nastav(Faze.MALO_MISTA, OptimalizaceTexty.maloMista(stav, volne));
 		} else {
 			nastav(Faze.PRIPRAVENO, "");
+		}
+	}
+
+	private void naplnPrehled(final String[][] radky) {
+		prehled.removeAll();
+		final GridBagConstraints c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.WEST;
+		for (int i = 0; i < radky.length; i++) {
+			c.gridy = i;
+			c.gridx = 0;
+			c.insets = new Insets(1, 0, 1, 16);
+			final JLabel popisek = new JLabel(radky[i][0]);
+			popisek.setFont(popisek.getFont().deriveFont(Font.PLAIN));
+			prehled.add(popisek, c);
+			c.gridx = 1;
+			c.weightx = 1;
+			c.insets = new Insets(1, 0, 1, 0);
+			final JLabel hodnota = new JLabel(radky[i][1]);
+			hodnota.setFont(hodnota.getFont().deriveFont(Font.BOLD));
+			prehled.add(hodnota, c);
 		}
 	}
 

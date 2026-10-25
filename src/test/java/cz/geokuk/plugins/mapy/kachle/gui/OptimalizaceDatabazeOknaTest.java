@@ -142,7 +142,7 @@ public class OptimalizaceDatabazeOknaTest {
 		Assert.assertEquals(Faze.PRIPRAVENO, panel.faze());
 		Assert.assertTrue(panel.tlacitkoOptimalizovat().isVisible());
 		final String pred = texty(panel);
-		Assert.assertTrue(pred, pred.contains("Volných stránek:") && pred.contains("Potrvá asi 1 minutu"));
+		Assert.assertTrue(pred, pred.contains("Volných stránek") && pred.contains("asi 1 minutu"));
 		snimek(panel, "dialog-pripraveno");
 		SwingUtilities.invokeAndWait(panel::spust);
 		Assert.assertTrue(panel.bezi() || panel.faze() == Faze.HOTOVO);
@@ -169,17 +169,17 @@ public class OptimalizaceDatabazeOknaTest {
 	@Test
 	public void okno_pri_startu_texty_a_snimky() throws Exception {
 		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
-		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(30, false));
-		final JPanel doporucit = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.DOPORUCIT, 100L << 30, odpocet, new JButton("Optimalizovat teď"),
+		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(30));
+		final JPanel doporucit = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.DOPORUCIT, 100L << 30, odpocet, new JButton("Optimalizovat"),
 				new JButton("Spustit bez optimalizace"));
 		final String t = texty(doporucit);
-		Assert.assertTrue(t, t.contains("fragmentovaná (46 % volného místa, 1.9 GB)") || t.contains("fragmentovaná (46 % volného místa, 1,9 GB)"));
-		Assert.assertTrue(t, t.contains("[Optimalizovat teď]") && t.contains("Připomeneme to za 3 dny") && !t.contains("Připomenout za týden"));
+		Assert.assertTrue(t, t.contains("fragmentovaná: 46 % volného místa z 1.9 GB") || t.contains("fragmentovaná: 46 % volného místa z 1,9 GB"));
+		Assert.assertTrue(t, t.contains("[Optimalizovat]") && t.contains("Zavře se za 30 s") && !t.contains("normálně"));
 		snimek(doporucit, "start-doporuceni");
-		final JPanel malo = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.MALO_MISTA, 200L << 20, odpocet, new JButton("Optimalizovat teď"),
+		final JPanel malo = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.MALO_MISTA, 200L << 20, odpocet, new JButton("Optimalizovat"),
 				new JButton("Spustit bez optimalizace"));
 		final String m = texty(malo);
-		Assert.assertFalse(m, m.contains("[Optimalizovat teď]"));
+		Assert.assertFalse(m, m.contains("[Optimalizovat]"));
 		Assert.assertTrue(m, m.contains("chybí místo na disku"));
 		snimek(malo, "start-malo-mista");
 	}

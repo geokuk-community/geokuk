@@ -108,8 +108,10 @@ public class PripominkaOptimalizaceTest {
 
 	@Test
 	public void textyOdlozeni() {
-		Assert.assertTrue(OptimalizaceTexty.odpocet(30, false).contains("za 3 dny"));
-		Assert.assertTrue(OptimalizaceTexty.odpocet(30, true).contains("zítra"));
-		Assert.assertTrue(OptimalizaceTexty.odpocetPozastaven(true).contains("zítra"));
+		Assert.assertEquals("Zavře se za 30 s", OptimalizaceTexty.odpocet(30));
+		Assert.assertTrue(OptimalizaceTexty.pripomenuti(false, true).contains("za 3 dny"));
+		Assert.assertTrue(OptimalizaceTexty.pripomenuti(false, false).contains("za týden"));
+		Assert.assertTrue(OptimalizaceTexty.pripomenuti(true, true).contains("zítra"));
+		Assert.assertTrue(OptimalizaceTexty.pripomenuti(true, false).contains("zítra"));
 	}
 }
