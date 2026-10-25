@@ -102,10 +102,15 @@ final class Cds {
 		}
 	}
 
-	/** Dynamický archiv se staví nad základním archivem Javy; přibalená Java bez něj archiv vytvořit neumí. */
+	/** Dynamický archiv se staví nad základním archivem Javy; přibalená Java bez něj archiv vytvořit neumí. Na Linuxu je v lib/server, na Windows v bin/server. */
 	static boolean maZakladniArchiv(final File javaHome) {
-		final File server = new File(new File(javaHome, "lib"), "server");
-		return new File(server, "classes.jsa").isFile() || new File(server, "classes_nocoops.jsa").isFile();
+		for (final String slozka : new String[] { "lib", "bin" }) {
+			final File server = new File(new File(javaHome, slozka), "server");
+			if (new File(server, "classes.jsa").isFile() || new File(server, "classes_nocoops.jsa").isFile()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Archiv platí jen pro tutéž Javu a tentýž jar na témže místě. */
