@@ -57,6 +57,11 @@ public class CdsJavaTest {
 		assumeTrue("Archiv se nevytvořil", archiv.isFile() && archiv.length() > 100_000);
 	}
 
+	/** Java archiv zapisuje jen pro čtení, test ho před poškozením odemkne. */
+	private void odemkni() {
+		assertTrue(archiv.setWritable(true));
+	}
+
 	private boolean overit(final File a) {
 		return Cds.overeniJavou(javaExe, classpath, tmp.getRoot(), logSlozka).overit(a);
 	}
@@ -75,6 +80,7 @@ public class CdsJavaTest {
 
 	@Test(timeout = 120000)
 	public void archivSNulamiNaKonciNeprojdeAleNespadne() throws IOException {
+		odemkni();
 		final long delka = archiv.length();
 		try (RandomAccessFile r = new RandomAccessFile(archiv, "rw")) {
 			final int nuly = (int) (delka / 4);
@@ -89,6 +95,7 @@ public class CdsJavaTest {
 
 	@Test(timeout = 120000)
 	public void oriznutyArchivNeprojde() throws IOException {
+		odemkni();
 		try (RandomAccessFile r = new RandomAccessFile(archiv, "rw")) {
 			r.setLength(r.length() / 2);
 		}
@@ -97,6 +104,7 @@ public class CdsJavaTest {
 
 	@Test(timeout = 120000)
 	public void ciziSouborNeprojde() throws IOException {
+		odemkni();
 		Files.write(archiv.toPath(), "ahoj".getBytes("UTF-8"));
 		assertFalse(overit(archiv));
 	}
