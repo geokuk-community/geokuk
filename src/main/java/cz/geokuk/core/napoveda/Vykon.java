@@ -327,6 +327,10 @@ public final class Vykon {
 			log.warn("EDT stojí {} ms, zásobník:{}", (tedNs - od) / 1_000_000, sb);
 		}
 
+		Thread edtVlakno() {
+			return edt;
+		}
+
 		void spustHlidace() {
 			posledniTik = System.nanoTime();
 			hlidacBezi = true;
@@ -385,5 +389,6 @@ public final class Vykon {
 		final MericiFronta fronta = new MericiFronta();
 		Toolkit.getDefaultToolkit().getSystemEventQueue().push(fronta);
 		fronta.spustHlidace();
+		VzorkovaniEdt.spustPokudZapnuto(fronta::edtVlakno);
 	}
 }
