@@ -32,12 +32,12 @@ jobs:
 
       - name: Smoke test
         if: runner.os == 'Linux'
-        run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
+        run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify -Dgeokuk.testy.limitSekund=600
 
       # Runner na Windows občas zastaví celou JVM na sekundy; spadlý test se jednou zopakuje a ve výstupu je vidět jako Flakes.
       - name: Smoke test
         if: runner.os == 'Windows'
-        run: ./mvnw.cmd -B -P smoke verify "-Dfailsafe.rerunFailingTestsCount=1"
+        run: ./mvnw.cmd -B -P smoke verify "-Dfailsafe.rerunFailingTestsCount=1" "-Dgeokuk.testy.limitSekund=600"
 
       - name: Opakované testy do souhrnu
         if: always() && runner.os == 'Windows'

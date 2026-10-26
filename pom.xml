@@ -97,7 +97,7 @@
 					<properties>
 						<property>
 							<name>listener</name>
-							<value>cz.geokuk.testy.NezachyceneVyjimky</value>
+							<value>cz.geokuk.testy.NezachyceneVyjimky,cz.geokuk.testy.ZabranaZaseknuti</value>
 						</property>
 					</properties>
 				</configuration>
@@ -288,6 +288,12 @@
 								<smoke.testClasses>${project.build.testOutputDirectory}</smoke.testClasses>
 							</systemPropertyVariables>
 							<argLine>-Dfile.encoding=UTF-8</argLine>
+							<properties>
+								<property>
+									<name>listener</name>
+									<value>cz.geokuk.testy.ZabranaZaseknuti</value>
+								</property>
+							</properties>
 						</configuration>
 					</plugin>
 				</plugins>
