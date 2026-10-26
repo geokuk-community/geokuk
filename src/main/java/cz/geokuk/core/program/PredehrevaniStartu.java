@@ -2,9 +2,13 @@ package cz.geokuk.core.program;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.font.FontRenderContext;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import cz.geokuk.framework.FKurzory;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +35,23 @@ final class PredehrevaniStartu {
 		vlakno.start();
 	}
 
+	/**
+	 * Kontexty, se kterými Swing měří text: bez vyhlazování a s hinty plochy (třeba ClearType). Každá dvojice písma a kontextu má ve Windows vlastní sadu glyfů.
+	 */
+	static List<FontRenderContext> kontextyMereni(final Object hintyPlochy) {
+		final List<FontRenderContext> kontexty = new ArrayList<>();
+		kontexty.add(new FontRenderContext(null, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF, RenderingHints.VALUE_FRACTIONALMETRICS_OFF));
+		if (hintyPlochy instanceof Map) {
+			final Map<?, ?> hinty = (Map<?, ?>) hintyPlochy;
+			final Object vyhlazeni = hinty.get(RenderingHints.KEY_TEXT_ANTIALIASING);
+			if (vyhlazeni != null) {
+				final Object zlomkove = hinty.get(RenderingHints.KEY_FRACTIONALMETRICS);
+				kontexty.add(new FontRenderContext(null, vyhlazeni, zlomkove != null ? zlomkove : RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT));
+			}
+		}
+		return kontexty;
+	}
+
 	static void predehrej() {
 		try {
 			Toolkit.getDefaultToolkit();
@@ -44,6 +65,11 @@ final class PredehrevaniStartu {
 				}
 			}
 			g.dispose();
+			for (final FontRenderContext kontext : kontextyMereni(Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints"))) {
+				for (final int styl : new int[] { Font.PLAIN, Font.BOLD }) {
+					new Font(Font.DIALOG, styl, 12).getStringBounds(ZNAKY, kontext);
+				}
+			}
 			for (final String trida : TRIDY) {
 				Class.forName(trida);
 			}
