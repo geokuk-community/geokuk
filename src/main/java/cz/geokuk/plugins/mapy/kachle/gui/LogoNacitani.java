@@ -58,7 +58,7 @@ final class LogoNacitani {
 
 	static synchronized void obnovProTesty() {
 		ukonceno = false;
-		hodiny = Diagnostika::dobaBehuMs;
+		hodiny = () -> 0;
 	}
 
 	/** Kolik pixelů zařízení má mít logo pro daný výřez; 0, když se nemá kreslit. */
