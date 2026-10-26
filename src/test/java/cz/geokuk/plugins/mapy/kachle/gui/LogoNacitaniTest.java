@@ -3,11 +3,14 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
@@ -19,7 +22,7 @@ public class LogoNacitaniTest {
 
 	@Before
 	public void obnovLogo() {
-		LogoNacitani.obnovProTesty();
+		PrvniNacitaniMapy.obnovProTesty();
 	}
 
 	private static final int SIRKA = 800;
@@ -171,12 +174,12 @@ public class LogoNacitaniTest {
 	@Test
 	public void logoSeNekresliPoLimitu() {
 		final long[] cas = { 5_000 };
-		LogoNacitani.hodiny = () -> cas[0];
+		PrvniNacitaniMapy.nastavHodiny(() -> cas[0]);
 		final Kachlovnik k = kachlovnikSDlazdici(true, dlazdice());
 		Assert.assertTrue(maBarevnyPixel(vykresliPozadi(k)));
-		cas[0] = LogoNacitani.LIMIT_MS;
+		cas[0] = PrvniNacitaniMapy.LIMIT_MS;
 		Assert.assertTrue("přesně na limitu ještě ano", maBarevnyPixel(vykresliPozadi(k)));
-		cas[0] = LogoNacitani.LIMIT_MS + 1;
+		cas[0] = PrvniNacitaniMapy.LIMIT_MS + 1;
 		Assert.assertFalse(maBarevnyPixel(vykresliPozadi(k)));
 	}
 
@@ -184,6 +187,84 @@ public class LogoNacitaniTest {
 	public void prazdnyKachlovnikLogoNeukonci() {
 		final Kachlovnik prazdny = new Kachlovnik(true);
 		vykresliPozadi(prazdny);
-		Assert.assertTrue(LogoNacitani.jeAktivni());
+		Assert.assertTrue(PrvniNacitaniMapy.probiha());
+	}
+
+	private static List<JKachle> dlazdice(final Kachlovnik k, final int pocet) {
+		final List<JKachle> d = new ArrayList<>();
+		for (int i = 0; i < pocet; i++) {
+			final JKachle j = dlazdice();
+			j.setLocation(i * 256, 0);
+			k.add(j);
+			d.add(j);
+		}
+		return d;
+	}
+
+	@Test
+	public void vrstvyNadMapouSeZobraziPoCtyricetiProcentechDlazdicALogoTrvaDoUplnehoNacteni() {
+		final Kachlovnik k = new Kachlovnik(true);
+		final List<JKachle> d = dlazdice(k, 5);
+		vykresliPozadi(k);
+		Assert.assertTrue("před načtením vrstvy čekají", PrvniNacitaniMapy.vrstvyCekaji());
+		nacti(d.get(0));
+		vykresliPozadi(k);
+		Assert.assertTrue("20 % ještě ne", PrvniNacitaniMapy.vrstvyCekaji());
+		nacti(d.get(1));
+		vykresliPozadi(k);
+		Assert.assertFalse("40 % ano", PrvniNacitaniMapy.vrstvyCekaji());
+		Assert.assertTrue("logo trvá do úplného načtení", PrvniNacitaniMapy.probiha());
+		for (final JKachle j : d.subList(2, 5)) {
+			nacti(j);
+		}
+		vykresliPozadi(k);
+		Assert.assertFalse(PrvniNacitaniMapy.probiha());
+	}
+
+	@Test
+	public void poPrvnimDosazeniPrahuSeVrstvyUzNeskryji() {
+		final Kachlovnik k = new Kachlovnik(true);
+		final List<JKachle> d = dlazdice(k, 5);
+		nacti(d.get(0));
+		nacti(d.get(1));
+		vykresliPozadi(k);
+		Assert.assertFalse(PrvniNacitaniMapy.vrstvyCekaji());
+		// Posun do nové oblasti: všechny dlaždice jsou nové a čekají.
+		for (final JKachle j : d) {
+			k.remove(j);
+		}
+		dlazdice(k, 5);
+		vykresliPozadi(k);
+		Assert.assertFalse(PrvniNacitaniMapy.vrstvyCekaji());
+	}
+
+	@Test
+	public void chybnaDlazdiceUkonciCekaniVrstev() {
+		final Kachlovnik k = new Kachlovnik(true);
+		final List<JKachle> d = dlazdice(k, 5);
+		d.get(0).prijmi(new KachloStav(new RuntimeException("chyba")), Priority.KACHLE);
+		vykresliPozadi(k);
+		Assert.assertFalse(PrvniNacitaniMapy.vrstvyCekaji());
+		Assert.assertFalse(PrvniNacitaniMapy.probiha());
+	}
+
+	@Test
+	public void chybnaDlazdiceSePoPrahuNepocitaZaHotovou() {
+		Assert.assertFalse(PrvniNacitaniMapy.jeDostNactenych(0, 5));
+		final JKachle d = dlazdice();
+		d.prijmi(new KachloStav(new RuntimeException("chyba")), Priority.KACHLE);
+		Assert.assertFalse(d.maHotovyObrazek());
+		final JKachle ok = dlazdice();
+		nacti(ok);
+		Assert.assertTrue(ok.maHotovyObrazek());
+	}
+
+	@Test
+	public void vrstvyNadMapouSeKresliPoLimitu() {
+		final long[] cas = { 5_000 };
+		PrvniNacitaniMapy.nastavHodiny(() -> cas[0]);
+		Assert.assertTrue(PrvniNacitaniMapy.vrstvyCekaji());
+		cas[0] = PrvniNacitaniMapy.LIMIT_MS + 1;
+		Assert.assertFalse(PrvniNacitaniMapy.vrstvyCekaji());
 	}
 }

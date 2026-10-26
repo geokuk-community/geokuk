@@ -121,6 +121,11 @@ public class JCestySlide extends JSingleSlide0 {
 	}
 
 	@Override
+	protected boolean jeNadMapouKNacitani() {
+		return true;
+	}
+
+	@Override
 	public JSingleSlide0 createRenderableSlide() {
 		return new JCestySlide();
 	}

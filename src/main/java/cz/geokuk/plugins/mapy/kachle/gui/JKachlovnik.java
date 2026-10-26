@@ -12,6 +12,7 @@ import com.google.common.collect.LinkedListMultimap;
 
 import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coord.JSingleSlide0;
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
@@ -133,11 +134,15 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	private void kresliLogoNacitani(final Graphics2D g) {
 		final Path2D.Float cekajici = new Path2D.Float(Path2D.WIND_NON_ZERO);
 		int dlazdic = 0;
+		int hotovych = 0;
 		boolean chyba = false;
 		for (final Component c : getComponents()) {
 			if (c instanceof JKachle) {
 				final JKachle dlazdice = (JKachle) c;
 				dlazdic++;
+				if (dlazdice.maHotovyObrazek()) {
+					hotovych++;
+				}
 				if (dlazdice.cekaNaObrazek()) {
 					cekajici.append(c.getBounds(), false);
 				} else if (dlazdice.jeChybna()) {
@@ -147,7 +152,9 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		}
 		// Logo patří jen k prvnímu načítání mapy; po úplném načtení výřezu nebo první chybě už se neukáže.
 		if (dlazdic > 0 && (chyba || cekajici.getCurrentPoint() == null)) {
-			LogoNacitani.ukonci();
+			PrvniNacitaniMapy.ukonci();
+		} else if (PrvniNacitaniMapy.jeDostNactenych(hotovych, dlazdic)) {
+			PrvniNacitaniMapy.zobrazVrstvy();
 		}
 		if (cekajici.getCurrentPoint() == null) {
 			return;
@@ -162,15 +169,12 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		} finally {
 			g2.dispose();
 		}
-		if (!LogoNacitani.jeAktivni()) {
+		if (!PrvniNacitaniMapy.probiha()) {
 			return;
 		}
 		if (logoNacitani == null) {
 			logoNacitani = new LogoNacitani();
-			// Bez sítě se nic nepřekreslí samo, logo by po limitu zůstalo vidět.
-			final javax.swing.Timer limit = new javax.swing.Timer((int) LogoNacitani.doLimituMs() + 200, e -> repaint());
-			limit.setRepeats(false);
-			limit.start();
+			PrvniNacitaniMapy.prekresliPoUkonceni(this);
 		}
 		logoNacitani.kresli(g, getWidth(), getHeight(), oblast);
 	}

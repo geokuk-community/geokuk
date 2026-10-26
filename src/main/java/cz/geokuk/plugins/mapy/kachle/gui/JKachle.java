@@ -98,6 +98,11 @@ public class JKachle extends JComponent {
 		return image == null && nahled.isEmpty() && chyba == null;
 	}
 
+	/** Dlaždice se skutečným obrázkem: ne čekající, ne s pouhým náhledem a ne chybná. */
+	synchronized boolean maHotovyObrazek() {
+		return image != null && jeTamUzCelyObrazek && chyba == null;
+	}
+
 	public boolean jeTamUzCelyObrazek() {
 		return jeTamUzCelyObrazek;
 	}
