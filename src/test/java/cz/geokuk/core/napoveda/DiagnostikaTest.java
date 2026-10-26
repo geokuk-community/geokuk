@@ -23,6 +23,41 @@ public class DiagnostikaTest {
 	public TemporaryFolder tmp = new TemporaryFolder();
 
 	@Test
+	public void udalostMaCasHodinyMinutySekundy() {
+		Diagnostika.zaznamenej("znacka-casu");
+		Assert.assertTrue(Diagnostika.text().matches("(?s).*\\n\\d{2}:\\d{2}:\\d{2} znacka-casu\\n.*"));
+	}
+
+	@Test
+	public void udalostiZVicevlaken() throws Exception {
+		final List<Thread> vlakna = new ArrayList<>();
+		final List<Throwable> chyby = Collections.synchronizedList(new ArrayList<>());
+		for (int v = 0; v < 8; v++) {
+			final int cislo = v;
+			final Thread vlakno = new Thread(() -> {
+				try {
+					for (int i = 0; i < 50; i++) {
+						Diagnostika.zaznamenej("souběh " + cislo + "/" + i);
+					}
+				} catch (final Throwable e) {
+					chyby.add(e);
+				}
+			});
+			vlakna.add(vlakno);
+			vlakno.start();
+		}
+		for (final Thread vlakno : vlakna) {
+			vlakno.join();
+		}
+		Assert.assertEquals(Collections.emptyList(), chyby);
+		for (final String radek : Diagnostika.text().split("\\n")) {
+			if (radek.contains(" souběh ")) {
+				Assert.assertTrue(radek, radek.matches("\\d{2}:\\d{2}:\\d{2} souběh \\d/\\d+"));
+			}
+		}
+	}
+
+	@Test
 	public void textObsahujeVerziAUdalosti() {
 		Diagnostika.zaznamenej("první");
 		Diagnostika.zaznamenejChybu("chyba stahování");

@@ -5,7 +5,8 @@ import java.awt.event.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.swing.*;
@@ -122,13 +123,18 @@ public final class Diagnostika {
 	}
 
 	private static void pridej(final Deque<String> seznam, final String text) {
-		final String radek = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " " + soukrome(text);
+		final String radek = Cas.FORMAT.format(LocalTime.now()) + " " + soukrome(text);
 		synchronized (seznam) {
 			seznam.addLast(radek);
 			if (seznam.size() > MAX_ZAZNAMU) {
 				seznam.removeFirst();
 			}
 		}
+	}
+
+	/** Formátovač vzniká až při první události, ne při načtení třídy. */
+	private static final class Cas {
+		static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 	}
 
 	/** Zaznamenává kliknutí na tlačítka a otevírání a zavírání oken. Položky menu sleduje {@link #sledujMenu(JMenuBar)}. */
