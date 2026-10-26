@@ -29,6 +29,23 @@ public class JOProgramuDialog extends JMyDialog0 {
 		return null;
 	}
 
+	static final String PODTITUL = "Plánování geovýletů na českých mapách";
+	static final String AUTORSTVI_PUVODNI = "© Martin Veverka a spoluautoři (původní dílo, 2009)";
+	static final String AUTORSTVI_UPRAVENA = "Upravená verze od 2026: GeoKuk community";
+	static final String LICENCE_VETA = "GeoKuk je svobodný software pod licencí GNU GPL v3.";
+	static final String PODEKOVANI_VETA = "Autoři a poděkování jsou v README, oddíly Původ a Poděkování.";
+
+	static final String TEXT_GITHUB = "Projekt na GitHubu";
+	static final String TEXT_WIKI = "Uživatelská wiki";
+	static final String TEXT_PUVODNI_PROJEKT = "Původní projekt";
+	static final String TEXT_PROFIL_AUTORA = "Původní autor Martin Veverka na geocaching.com";
+	static final String TEXT_README = "README";
+
+	static final String URL_PUVODNI_PROJEKT = "https://github.com/marvertin/geokuk";
+	static final String URL_PROFIL_AUTORA = "http://www.geocaching.com/profile/?guid=22cad0c7-59a3-417c-99d1-7c9079e9ae27";
+	/** Oddíl Původ v README (kotva je v ASCII, aby ji přijal každý prohlížeč). */
+	static final String URL_README = FConst.WEB_PAGE_URL + "#p%C5%AFvod";
+
 	@Override
 	protected void initComponents() {
 		final Box box = Box.createVerticalBox();
@@ -42,47 +59,57 @@ public class JOProgramuDialog extends JMyDialog0 {
 		c1.setFont(new Font("Arial", Font.BOLD, 30));
 		box.add(c1);
 
-		final JLabel c2 = new JLabel("Verze " + FConst.VERSION);
-		c2.setAlignmentX(CENTER_ALIGNMENT);
-		box.add(c2);
+		box.add(vystredeny(new JLabel("Verze " + FConst.VERSION)));
+		box.add(vystredeny(new JLabel(PODTITUL)));
 
 		box.add(Box.createVerticalStrut(10));
-		final JLabel c3 = new JLabel("(c) 2009 Martin Veverka");
-		c3.setAlignmentX(CENTER_ALIGNMENT);
-		box.add(c3);
-
-		final JLabel c4 = new JLabel("Profil na GC.COM a GC.CZ: \"rodinka veverek\"");
-
-		c4.setAlignmentX(CENTER_ALIGNMENT);
-		c4.setFont(new Font("Serif", Font.ITALIC, 12));
-		box.add(c4);
-
-		final JButton bgccom = new JButton(ImageLoader.seekResIcon("gccom.png"));
-		bgccom.addActionListener(e -> {
-			final String urls = "http://www.geocaching.com/profile/?guid=22cad0c7-59a3-417c-99d1-7c9079e9ae27";
-			try {
-				BrowserOpener.displayURL(new URL(urls));
-			} catch (final MalformedURLException e1) { // to půjde
-			}
-		});
-		bgccom.setAlignmentX(CENTER_ALIGNMENT);
-		box.add(bgccom);
+		box.add(vystredeny(new JLabel(AUTORSTVI_PUVODNI)));
+		box.add(vystredeny(new JLabel(AUTORSTVI_UPRAVENA)));
 
 		box.add(Box.createVerticalStrut(10));
-		final JLabel zdarma1 = new JLabel("GeoKuk je svobodný software");
-		final JLabel zdarma2 = new JLabel("pod licencí GNU GPL v3.");
-		zdarma1.setFont(new Font("Serif", Font.ITALIC, 12));
-		zdarma1.setAlignmentX(CENTER_ALIGNMENT);
-		box.add(zdarma1);
-		zdarma2.setFont(new Font("Serif", Font.ITALIC, 12));
-		zdarma2.setAlignmentX(CENTER_ALIGNMENT);
-		box.add(zdarma2);
+		final JPanel odkazy = new JPanel();
+		odkazy.add(odkaz(TEXT_GITHUB, FConst.WEB_PAGE_URL));
+		odkazy.add(odkaz(TEXT_WIKI, FConst.WEB_PAGE_WIKI));
+		odkazy.add(odkaz(TEXT_PUVODNI_PROJEKT, URL_PUVODNI_PROJEKT));
+		box.add(vystredeny(odkazy));
+
+		final JButton bgccom = odkaz(TEXT_PROFIL_AUTORA, URL_PROFIL_AUTORA);
+		bgccom.setIcon(ImageLoader.seekResIcon("gccom.png"));
+		box.add(vystredeny(bgccom));
+
+		box.add(Box.createVerticalStrut(10));
+		final JLabel licenceVeta = new JLabel(LICENCE_VETA);
+		licenceVeta.setFont(new Font("Serif", Font.ITALIC, 12));
+		box.add(vystredeny(licenceVeta));
 		final JButton licence = new JButton("Licence a použité knihovny");
 		licence.addActionListener(e -> ukazLicence());
-		licence.setAlignmentX(CENTER_ALIGNMENT);
-		box.add(licence);
+		box.add(vystredeny(licence));
+
+		box.add(Box.createVerticalStrut(10));
+		final JLabel podekovani = new JLabel(PODEKOVANI_VETA);
+		podekovani.setFont(new Font("Serif", Font.ITALIC, 12));
+		box.add(vystredeny(podekovani));
+		box.add(vystredeny(odkaz(TEXT_README, URL_README)));
 		box.add(Box.createVerticalStrut(20));
 		box.add(Box.createGlue());
+	}
+
+	private static <T extends JComponent> T vystredeny(final T c) {
+		c.setAlignmentX(CENTER_ALIGNMENT);
+		return c;
+	}
+
+	/** Tlačítko, které otevře webovou stránku v prohlížeči. */
+	private static JButton odkaz(final String text, final String url) {
+		final JButton b = new JButton(text);
+		b.addActionListener(e -> {
+			try {
+				BrowserOpener.displayURL(new URL(url));
+			} catch (final MalformedURLException e1) {
+				// Adresy jsou pevné a ověřuje je test.
+			}
+		});
+		return b;
 	}
 
 	private void ukazLicence() {
