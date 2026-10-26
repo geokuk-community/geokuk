@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 
@@ -40,7 +41,6 @@ public class JOProgramuDialog extends JMyDialog0 {
 
 	static final String PODTITUL = "Plánování geovýletů na českých mapách";
 	static final String AUTORSTVI_UPRAVENA = "GeoKuk community od 2026";
-	static final String LICENCE_VETA = "GeoKuk je svobodný software pod licencí GNU GPL v3.";
 	static final String PODEKOVANI_VETA = "Autoři a poděkování jsou v README, oddíly Původ a Poděkování.";
 
 	static final String TEXT_GITHUB = "Projekt na GitHubu";
@@ -61,6 +61,9 @@ public class JOProgramuDialog extends JMyDialog0 {
 
 	static final String KLIC_URL = "url";
 
+	/** Otevře webovou stránku; v testech se dá nahradit. */
+	static Consumer<URL> otevirac = BrowserOpener::displayURL;
+
 	@Override
 	protected void initComponents() {
 		final Box box = Box.createVerticalBox();
@@ -70,6 +73,16 @@ public class JOProgramuDialog extends JMyDialog0 {
 		final JLabel nadpis = new JLabel("GeoKuk");
 		nadpis.setFont(new Font("Arial", Font.BOLD, 30));
 		box.add(vystredeny(nadpis));
+		box.add(vystredeny(new JLabel("Verze " + FConst.VERSION)));
+		box.add(Box.createVerticalStrut(6));
+		for (final String radek : new String[] { LICENCE_PUVODNI_1, LICENCE_PUVODNI_2 }) {
+			final JLabel l = new JLabel(radek);
+			l.setFont(new Font("Serif", Font.ITALIC, 12));
+			box.add(vystredeny(l));
+		}
+		final JButton licence = new JButton("Licence a použité knihovny");
+		licence.addActionListener(e -> ukazLicence());
+		box.add(vystredeny(licence));
 		box.add(Box.createVerticalStrut(10));
 
 		final JPanel puvodni = sekce(NADPIS_PUVODNI);
@@ -83,18 +96,11 @@ public class JOProgramuDialog extends JMyDialog0 {
 		bgccom.getAccessibleContext().setAccessibleName(TEXT_PROFIL_AUTORA);
 		puvodni.add(vystredeny(bgccom));
 		puvodni.add(Box.createVerticalStrut(6));
-		for (final String radek : new String[] { LICENCE_PUVODNI_1, LICENCE_PUVODNI_2 }) {
-			final JLabel l = new JLabel(radek);
-			l.setFont(new Font("Serif", Font.ITALIC, 12));
-			puvodni.add(vystredeny(l));
-		}
-		puvodni.add(Box.createVerticalStrut(6));
 		puvodni.add(vystredeny(odkaz(TEXT_PUVODNI_PROJEKT)));
 		box.add(puvodni);
 		box.add(Box.createVerticalStrut(10));
 
 		final JPanel upravena = sekce(NADPIS_UPRAVENA);
-		upravena.add(vystredeny(new JLabel("Verze " + FConst.VERSION)));
 		upravena.add(vystredeny(new JLabel(PODTITUL)));
 		upravena.add(vystredeny(new JLabel(AUTORSTVI_UPRAVENA)));
 		upravena.add(Box.createVerticalStrut(6));
@@ -102,13 +108,6 @@ public class JOProgramuDialog extends JMyDialog0 {
 		odkazy.add(odkaz(TEXT_GITHUB));
 		odkazy.add(odkaz(TEXT_WIKI));
 		upravena.add(vystredeny(odkazy));
-		upravena.add(Box.createVerticalStrut(6));
-		final JLabel licenceVeta = new JLabel(LICENCE_VETA);
-		licenceVeta.setFont(new Font("Serif", Font.ITALIC, 12));
-		upravena.add(vystredeny(licenceVeta));
-		final JButton licence = new JButton("Licence a použité knihovny");
-		licence.addActionListener(e -> ukazLicence());
-		upravena.add(vystredeny(licence));
 		upravena.add(Box.createVerticalStrut(6));
 		final JLabel podekovani = new JLabel(PODEKOVANI_VETA);
 		podekovani.setFont(new Font("Serif", Font.ITALIC, 12));
@@ -147,7 +146,7 @@ public class JOProgramuDialog extends JMyDialog0 {
 		b.putClientProperty(KLIC_URL, url);
 		b.addActionListener(e -> {
 			try {
-				BrowserOpener.displayURL(new URL(url));
+				otevirac.accept(new URL(url));
 			} catch (final MalformedURLException e1) {
 				// Adresy jsou pevné a ověřuje je test.
 			}

@@ -31,8 +31,7 @@ public class JOProgramuDialogTest {
 	@Test
 	public void textyAOdkazyNejsouPrazdne() throws MalformedURLException {
 		for (final String s : new String[] { JOProgramuDialog.NADPIS_PUVODNI, JOProgramuDialog.NADPIS_UPRAVENA, JOProgramuDialog.AUTORSTVI_PUVODNI, JOProgramuDialog.PROFIL_PUVODNI,
-				JOProgramuDialog.LICENCE_PUVODNI_1, JOProgramuDialog.LICENCE_PUVODNI_2, JOProgramuDialog.PODTITUL, JOProgramuDialog.AUTORSTVI_UPRAVENA, JOProgramuDialog.LICENCE_VETA,
-				JOProgramuDialog.PODEKOVANI_VETA }) {
+				JOProgramuDialog.LICENCE_PUVODNI_1, JOProgramuDialog.LICENCE_PUVODNI_2, JOProgramuDialog.PODTITUL, JOProgramuDialog.AUTORSTVI_UPRAVENA, JOProgramuDialog.PODEKOVANI_VETA }) {
 			Assert.assertFalse(s.trim().isEmpty());
 		}
 		for (final String[] odkaz : JOProgramuDialog.ODKAZY) {
@@ -85,5 +84,67 @@ public class JOProgramuDialogTest {
 		for (final String[] odkaz : JOProgramuDialog.ODKAZY) {
 			Assert.assertTrue(odkaz[0], tlacitka.stream().anyMatch(t -> odkaz[0].equals(t[0]) && odkaz[1].equals(t[1])));
 		}
+	}
+
+	@Test
+	public void adresyTlacitekJsouOcekavane() {
+		Assert.assertEquals(FConst.WEB_PAGE_URL, JOProgramuDialog.adresa(JOProgramuDialog.TEXT_GITHUB));
+		Assert.assertEquals("https://github.com/geokuk-community/geokuk", JOProgramuDialog.adresa(JOProgramuDialog.TEXT_GITHUB));
+		Assert.assertEquals(FConst.WEB_PAGE_WIKI, JOProgramuDialog.adresa(JOProgramuDialog.TEXT_WIKI));
+		Assert.assertEquals("https://github.com/geokuk-community/geokuk/wiki", JOProgramuDialog.adresa(JOProgramuDialog.TEXT_WIKI));
+		Assert.assertEquals("https://github.com/geokuk-community/geokuk#p%C5%AFvod", JOProgramuDialog.adresa(JOProgramuDialog.TEXT_README));
+	}
+
+	/** Tlačítko otevře právě tu adresu, kterou má ve vlastnosti a v seznamu odkazů. */
+	@Test
+	public void tlacitkoOtevreSvouAdresu() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final List<String> otevrene = new ArrayList<>();
+		final java.util.function.Consumer<URL> puvodni = JOProgramuDialog.otevirac;
+		JOProgramuDialog.otevirac = u -> otevrene.add(u.toString());
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				final JOProgramuDialog d = new JOProgramuDialog();
+				try {
+					final List<Component> vse = new ArrayList<>();
+					komponenty(d.getContentPane(), vse);
+					for (final Component c : vse) {
+						if (c instanceof AbstractButton && ((AbstractButton) c).getClientProperty(JOProgramuDialog.KLIC_URL) != null) {
+							final AbstractButton b = (AbstractButton) c;
+							otevrene.clear();
+							b.doClick();
+							Assert.assertEquals(1, otevrene.size());
+							Assert.assertEquals(b.getClientProperty(JOProgramuDialog.KLIC_URL), otevrene.get(0));
+							Assert.assertEquals(JOProgramuDialog.adresa(c.getAccessibleContext().getAccessibleName()), otevrene.get(0));
+						}
+					}
+				} finally {
+					d.dispose();
+				}
+			});
+		} finally {
+			JOProgramuDialog.otevirac = puvodni;
+		}
+	}
+
+	@Test
+	public void licenceMaVDialoguJenJednuVetuNahoreSPuvodnimZnenim() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final List<String> texty = new ArrayList<>();
+		SwingUtilities.invokeAndWait(() -> {
+			final JOProgramuDialog d = new JOProgramuDialog();
+			try {
+				final List<Component> vse = new ArrayList<>();
+				komponenty(d.getContentPane(), vse);
+				for (final Component c : vse) {
+					if (c instanceof JLabel && ((JLabel) c).getText() != null && ((JLabel) c).getText().contains("GPL")) {
+						texty.add(((JLabel) c).getText());
+					}
+				}
+			} finally {
+				d.dispose();
+			}
+		});
+		Assert.assertEquals(java.util.Collections.singletonList("pod licencí GNU GPL v3."), texty);
 	}
 }
