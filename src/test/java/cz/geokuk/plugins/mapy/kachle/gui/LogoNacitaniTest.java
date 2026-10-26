@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
@@ -19,7 +20,7 @@ public class LogoNacitaniTest {
 
 	@Before
 	public void obnovLogo() {
-		LogoNacitani.obnovProTesty();
+		PrvniNacitaniMapy.obnovProTesty();
 	}
 
 	private static final int SIRKA = 800;
@@ -171,12 +172,12 @@ public class LogoNacitaniTest {
 	@Test
 	public void logoSeNekresliPoLimitu() {
 		final long[] cas = { 5_000 };
-		LogoNacitani.hodiny = () -> cas[0];
+		PrvniNacitaniMapy.nastavHodiny(() -> cas[0]);
 		final Kachlovnik k = kachlovnikSDlazdici(true, dlazdice());
 		Assert.assertTrue(maBarevnyPixel(vykresliPozadi(k)));
-		cas[0] = LogoNacitani.LIMIT_MS;
+		cas[0] = PrvniNacitaniMapy.LIMIT_MS;
 		Assert.assertTrue("přesně na limitu ještě ano", maBarevnyPixel(vykresliPozadi(k)));
-		cas[0] = LogoNacitani.LIMIT_MS + 1;
+		cas[0] = PrvniNacitaniMapy.LIMIT_MS + 1;
 		Assert.assertFalse(maBarevnyPixel(vykresliPozadi(k)));
 	}
 
@@ -184,6 +185,6 @@ public class LogoNacitaniTest {
 	public void prazdnyKachlovnikLogoNeukonci() {
 		final Kachlovnik prazdny = new Kachlovnik(true);
 		vykresliPozadi(prazdny);
-		Assert.assertTrue(LogoNacitani.jeAktivni());
+		Assert.assertTrue(PrvniNacitaniMapy.probiha());
 	}
 }

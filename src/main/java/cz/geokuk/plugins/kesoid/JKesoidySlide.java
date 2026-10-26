@@ -235,6 +235,11 @@ public class JKesoidySlide extends JSingleSlide0 implements AfterEventReceiverRe
 	 * @see cz.geokuk.core.coord.JSingleSlide0#createRenderableSlide()
 	 */
 	@Override
+	protected boolean jeNadMapouKNacitani() {
+		return true;
+	}
+
+	@Override
 	public JSingleSlide0 createRenderableSlide() {
 		return new JKesoidySlide(true);
 	}
