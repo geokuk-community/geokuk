@@ -37,7 +37,6 @@ final class PredehrevaniStartu {
 			DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalTime.now());
 			NumberFormat.getInstance().format(1234.5);
 			Calendar.getInstance();
-			String.format("%,d %s", 1234, "a");
 			Toolkit.getDefaultToolkit();
 			final FontRenderContext frc = new FontRenderContext(null, true, true);
 			final Graphics2D g = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
