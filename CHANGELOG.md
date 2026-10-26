@@ -3,9 +3,9 @@
 ## 6.5.0
 
 ### Změny
-- Dialog Nápověda > O programu má texty o autorství (Martin Veverka a spoluautoři,
-  GeoKuk community) a odkazy na projekt na GitHubu, uživatelskou wiki, původní
-  projekt a README s poděkováním.
+- Dialog Nápověda > O programu má dvě části: původní texty Martina Veverky
+  s odkazem na původní projekt a údaje o upravené verzi (GeoKuk community)
+  s odkazy na projekt na GitHubu, uživatelskou wiki a README s poděkováním.
 - Při prvním načítání mapy po spuštění je místo dlaždic bílá plocha se slabým
   logem GeoKuk uprostřed okna místo přeškrtnutých rámečků s čísly. Body keší
   a waypointů, popisky, kruhy a cesty se začnou kreslit, až je načteno 40 %

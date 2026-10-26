@@ -29,69 +29,101 @@ public class JOProgramuDialog extends JMyDialog0 {
 		return null;
 	}
 
+	static final String NADPIS_PUVODNI = "Původní program";
+	static final String NADPIS_UPRAVENA = "Upravená verze";
+
+	/** Texty původního dialogu beze změny. */
+	static final String AUTORSTVI_PUVODNI = "(c) 2009 Martin Veverka";
+	static final String PROFIL_PUVODNI = "Profil na GC.COM a GC.CZ: \"rodinka veverek\"";
+	static final String LICENCE_PUVODNI_1 = "GeoKuk je svobodný software";
+	static final String LICENCE_PUVODNI_2 = "pod licencí GNU GPL v3.";
+
 	static final String PODTITUL = "Plánování geovýletů na českých mapách";
-	static final String AUTORSTVI_PUVODNI = "© Martin Veverka a spoluautoři (původní dílo, 2009)";
-	static final String AUTORSTVI_UPRAVENA = "Upravená verze od 2026: GeoKuk community";
+	static final String AUTORSTVI_UPRAVENA = "GeoKuk community od 2026";
 	static final String LICENCE_VETA = "GeoKuk je svobodný software pod licencí GNU GPL v3.";
 	static final String PODEKOVANI_VETA = "Autoři a poděkování jsou v README, oddíly Původ a Poděkování.";
 
 	static final String TEXT_GITHUB = "Projekt na GitHubu";
 	static final String TEXT_WIKI = "Uživatelská wiki";
 	static final String TEXT_PUVODNI_PROJEKT = "Původní projekt";
-	static final String TEXT_PROFIL_AUTORA = "Původní autor Martin Veverka na geocaching.com";
+	/** Tlačítko s ikonou nemá text; jméno se používá jen pro čtečky obrazovky. */
+	static final String TEXT_PROFIL_AUTORA = "Profil Martina Veverky na geocaching.com";
 	static final String TEXT_README = "README";
 
-	static final String URL_PUVODNI_PROJEKT = "https://github.com/marvertin/geokuk";
-	static final String URL_PROFIL_AUTORA = "http://www.geocaching.com/profile/?guid=22cad0c7-59a3-417c-99d1-7c9079e9ae27";
-	/** Oddíl Původ v README (kotva je v ASCII, aby ji přijal každý prohlížeč). */
-	static final String URL_README = FConst.WEB_PAGE_URL + "#p%C5%AFvod";
+	/** Všechna tlačítka-odkazy dialogu: text a adresa. */
+	static final String[][] ODKAZY = {
+			{ TEXT_PROFIL_AUTORA, "http://www.geocaching.com/profile/?guid=22cad0c7-59a3-417c-99d1-7c9079e9ae27" },
+			{ TEXT_PUVODNI_PROJEKT, "https://github.com/marvertin/geokuk" },
+			{ TEXT_GITHUB, FConst.WEB_PAGE_URL },
+			{ TEXT_WIKI, FConst.WEB_PAGE_WIKI },
+			// Oddíl Původ v README; kotva je v ASCII, aby ji přijal každý prohlížeč.
+			{ TEXT_README, FConst.WEB_PAGE_URL + "#p%C5%AFvod" } };
+
+	static final String KLIC_URL = "url";
 
 	@Override
 	protected void initComponents() {
 		final Box box = Box.createVerticalBox();
 		add(box);
+		box.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
 
-		box.add(Box.createGlue());
-		box.add(Box.createVerticalStrut(20));
-
-		final JLabel c1 = new JLabel("GeoKuk");
-		c1.setAlignmentX(CENTER_ALIGNMENT);
-		c1.setFont(new Font("Arial", Font.BOLD, 30));
-		box.add(c1);
-
-		box.add(vystredeny(new JLabel("Verze " + FConst.VERSION)));
-		box.add(vystredeny(new JLabel(PODTITUL)));
-
+		final JLabel nadpis = new JLabel("GeoKuk");
+		nadpis.setFont(new Font("Arial", Font.BOLD, 30));
+		box.add(vystredeny(nadpis));
 		box.add(Box.createVerticalStrut(10));
-		box.add(vystredeny(new JLabel(AUTORSTVI_PUVODNI)));
-		box.add(vystredeny(new JLabel(AUTORSTVI_UPRAVENA)));
 
-		box.add(Box.createVerticalStrut(10));
-		final JPanel odkazy = new JPanel();
-		odkazy.add(odkaz(TEXT_GITHUB, FConst.WEB_PAGE_URL));
-		odkazy.add(odkaz(TEXT_WIKI, FConst.WEB_PAGE_WIKI));
-		odkazy.add(odkaz(TEXT_PUVODNI_PROJEKT, URL_PUVODNI_PROJEKT));
-		box.add(vystredeny(odkazy));
-
-		final JButton bgccom = odkaz(TEXT_PROFIL_AUTORA, URL_PROFIL_AUTORA);
+		final JPanel puvodni = sekce(NADPIS_PUVODNI);
+		puvodni.add(vystredeny(new JLabel(AUTORSTVI_PUVODNI)));
+		final JLabel profil = new JLabel(PROFIL_PUVODNI);
+		profil.setFont(new Font("Serif", Font.ITALIC, 12));
+		puvodni.add(vystredeny(profil));
+		final JButton bgccom = odkaz(TEXT_PROFIL_AUTORA);
 		bgccom.setIcon(ImageLoader.seekResIcon("gccom.png"));
-		box.add(vystredeny(bgccom));
-
+		bgccom.setText(null);
+		bgccom.getAccessibleContext().setAccessibleName(TEXT_PROFIL_AUTORA);
+		puvodni.add(vystredeny(bgccom));
+		puvodni.add(Box.createVerticalStrut(6));
+		for (final String radek : new String[] { LICENCE_PUVODNI_1, LICENCE_PUVODNI_2 }) {
+			final JLabel l = new JLabel(radek);
+			l.setFont(new Font("Serif", Font.ITALIC, 12));
+			puvodni.add(vystredeny(l));
+		}
+		puvodni.add(Box.createVerticalStrut(6));
+		puvodni.add(vystredeny(odkaz(TEXT_PUVODNI_PROJEKT)));
+		box.add(puvodni);
 		box.add(Box.createVerticalStrut(10));
+
+		final JPanel upravena = sekce(NADPIS_UPRAVENA);
+		upravena.add(vystredeny(new JLabel("Verze " + FConst.VERSION)));
+		upravena.add(vystredeny(new JLabel(PODTITUL)));
+		upravena.add(vystredeny(new JLabel(AUTORSTVI_UPRAVENA)));
+		upravena.add(Box.createVerticalStrut(6));
+		final JPanel odkazy = new JPanel();
+		odkazy.add(odkaz(TEXT_GITHUB));
+		odkazy.add(odkaz(TEXT_WIKI));
+		upravena.add(vystredeny(odkazy));
+		upravena.add(Box.createVerticalStrut(6));
 		final JLabel licenceVeta = new JLabel(LICENCE_VETA);
 		licenceVeta.setFont(new Font("Serif", Font.ITALIC, 12));
-		box.add(vystredeny(licenceVeta));
+		upravena.add(vystredeny(licenceVeta));
 		final JButton licence = new JButton("Licence a použité knihovny");
 		licence.addActionListener(e -> ukazLicence());
-		box.add(vystredeny(licence));
-
-		box.add(Box.createVerticalStrut(10));
+		upravena.add(vystredeny(licence));
+		upravena.add(Box.createVerticalStrut(6));
 		final JLabel podekovani = new JLabel(PODEKOVANI_VETA);
 		podekovani.setFont(new Font("Serif", Font.ITALIC, 12));
-		box.add(vystredeny(podekovani));
-		box.add(vystredeny(odkaz(TEXT_README, URL_README)));
-		box.add(Box.createVerticalStrut(20));
-		box.add(Box.createGlue());
+		upravena.add(vystredeny(podekovani));
+		upravena.add(vystredeny(odkaz(TEXT_README)));
+		box.add(upravena);
+	}
+
+	/** Oddíl dialogu s nadpisem v rámečku. */
+	private static JPanel sekce(final String nadpis) {
+		final JPanel p = new JPanel();
+		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+		p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), nadpis),
+				BorderFactory.createEmptyBorder(2, 10, 6, 10)));
+		return p;
 	}
 
 	private static <T extends JComponent> T vystredeny(final T c) {
@@ -99,9 +131,20 @@ public class JOProgramuDialog extends JMyDialog0 {
 		return c;
 	}
 
-	/** Tlačítko, které otevře webovou stránku v prohlížeči. */
-	private static JButton odkaz(final String text, final String url) {
+	static String adresa(final String text) {
+		for (final String[] o : ODKAZY) {
+			if (o[0].equals(text)) {
+				return o[1];
+			}
+		}
+		throw new IllegalArgumentException(text);
+	}
+
+	/** Tlačítko, které otevře webovou stránku v prohlížeči; adresa je v seznamu {@link #ODKAZY} podle textu. */
+	private static JButton odkaz(final String text) {
+		final String url = adresa(text);
 		final JButton b = new JButton(text);
+		b.putClientProperty(KLIC_URL, url);
 		b.addActionListener(e -> {
 			try {
 				BrowserOpener.displayURL(new URL(url));
