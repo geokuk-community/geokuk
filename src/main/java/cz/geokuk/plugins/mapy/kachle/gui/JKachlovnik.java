@@ -168,7 +168,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		if (logoNacitani == null) {
 			logoNacitani = new LogoNacitani();
 			// Bez sítě se nic nepřekreslí samo, logo by po limitu zůstalo vidět.
-			final javax.swing.Timer limit = new javax.swing.Timer((int) (LogoNacitani.LIMIT_NS / 1_000_000) + 200, e -> repaint());
+			final javax.swing.Timer limit = new javax.swing.Timer((int) LogoNacitani.doLimituMs() + 200, e -> repaint());
 			limit.setRepeats(false);
 			limit.start();
 		}

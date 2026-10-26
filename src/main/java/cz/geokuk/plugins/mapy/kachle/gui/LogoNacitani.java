@@ -8,6 +8,7 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import cz.geokuk.core.napoveda.Diagnostika;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,15 +23,14 @@ final class LogoNacitani {
 	private static final int NEJVETSI_LOGICKA_VELIKOST = 500;
 	private static final float KRYTI = 0.22f;
 
-	/** Nejdéle takto dlouho od prvního vykreslení se logo ukazuje, i když dlaždice stále nedorazily (bez sítě, při chybě serveru). */
-	static final long LIMIT_NS = 10_000_000_000L;
+	/** Nejdéle takto dlouho od spuštění programu se logo ukazuje, i když dlaždice stále nedorazily (bez sítě, při chybě serveru). */
+	static final long LIMIT_MS = 30_000;
 
 	private static BufferedImage zdroj;
 	private static boolean zdrojNacten;
 	private static boolean ukonceno;
-	private static long zacatek = -1;
-	/** Čas pro limit; v testech se dá nahradit. */
-	static java.util.function.LongSupplier hodiny = System::nanoTime;
+	/** Doba od spuštění programu v ms; v testech se dá nahradit. */
+	static java.util.function.LongSupplier hodiny = Diagnostika::dobaBehuMs;
 
 	private BufferedImage zmensene;
 	private int velikostZmenseneho;
@@ -40,15 +40,16 @@ final class LogoNacitani {
 		if (ukonceno) {
 			return false;
 		}
-		final long ted = hodiny.getAsLong();
-		if (zacatek < 0) {
-			zacatek = ted;
-		}
-		if (ted - zacatek > LIMIT_NS) {
+		if (hodiny.getAsLong() > LIMIT_MS) {
 			ukonceno = true;
 			return false;
 		}
 		return true;
+	}
+
+	/** Za jak dlouho má vypršet limit loga, nejméně 0. */
+	static long doLimituMs() {
+		return Math.max(0, LIMIT_MS - hodiny.getAsLong());
 	}
 
 	static synchronized void ukonci() {
@@ -57,8 +58,7 @@ final class LogoNacitani {
 
 	static synchronized void obnovProTesty() {
 		ukonceno = false;
-		zacatek = -1;
-		hodiny = System::nanoTime;
+		hodiny = Diagnostika::dobaBehuMs;
 	}
 
 	/** Kolik pixelů zařízení má mít logo pro daný výřez; 0, když se nemá kreslit. */

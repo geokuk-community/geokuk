@@ -5,7 +5,7 @@
 ### Změny
 - Při prvním načítání mapy po spuštění je místo dlaždic bílá plocha se slabým
   logem GeoKuk uprostřed okna místo přeškrtnutých rámečků s čísly. Logo zmizí
-  po načtení výřezu, po první chybě dlaždice nebo po 10 s a znovu se neukáže.
+  po načtení výřezu, po první chybě dlaždice nebo po 30 s od spuštění a znovu se neukáže.
 - Offline mapy se kreslí novým tématem GeoKuk: světlejší les a pole,
   chráněná území bez zelené výplně, decentní hnědooranžové vrstevnice
   a jemné stínování, skály, rozcestníky, boží muka, rozhledny, prameny

@@ -170,13 +170,13 @@ public class LogoNacitaniTest {
 
 	@Test
 	public void logoSeNekresliPoLimitu() {
-		final long[] cas = { 0 };
+		final long[] cas = { 5_000 };
 		LogoNacitani.hodiny = () -> cas[0];
 		final Kachlovnik k = kachlovnikSDlazdici(true, dlazdice());
 		Assert.assertTrue(maBarevnyPixel(vykresliPozadi(k)));
-		cas[0] = LogoNacitani.LIMIT_NS - 1;
-		Assert.assertTrue("těsně před limitem ještě ano", maBarevnyPixel(vykresliPozadi(k)));
-		cas[0] = LogoNacitani.LIMIT_NS + 1;
+		cas[0] = LogoNacitani.LIMIT_MS;
+		Assert.assertTrue("přesně na limitu ještě ano", maBarevnyPixel(vykresliPozadi(k)));
+		cas[0] = LogoNacitani.LIMIT_MS + 1;
 		Assert.assertFalse(maBarevnyPixel(vykresliPozadi(k)));
 	}
 
