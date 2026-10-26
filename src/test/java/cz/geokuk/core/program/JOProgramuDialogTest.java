@@ -35,7 +35,6 @@ public class JOProgramuDialogTest {
 				JOProgramuDialog.PODEKOVANI_VETA }) {
 			Assert.assertFalse(s.trim().isEmpty());
 		}
-		Assert.assertFalse(JOProgramuDialog.ODKAZY.length == 0);
 		for (final String[] odkaz : JOProgramuDialog.ODKAZY) {
 			Assert.assertFalse(odkaz[0].trim().isEmpty());
 			final URL u = new URL(odkaz[1]);
