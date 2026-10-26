@@ -70,6 +70,11 @@ public final class Diagnostika {
 		return betaKanal() ? verze + " · beta kanál" : verze;
 	}
 
+	/** Milisekundy od spuštění programu. */
+	public static long dobaBehuMs() {
+		return System.currentTimeMillis() - START;
+	}
+
 	/** Časová značka kroku startu do logu: milisekundy od načtení diagnostiky (začátek startu programu). */
 	public static void znackaStartu(final String krok) {
 		log.info("Start: {} za {} ms", krok, System.currentTimeMillis() - START);
