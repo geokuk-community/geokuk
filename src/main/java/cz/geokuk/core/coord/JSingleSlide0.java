@@ -34,15 +34,15 @@ public abstract class JSingleSlide0 extends JSlide0 {
 		return null;
 	}
 
-	/** Vrstva nad mapou (body, popisky, cesty), která se do prvního načtení mapy nekreslí; na obrazovce, ne při rendrování. */
+	/** Vrstva nad mapou (body, popisky, cesty), která se nekreslí, dokud se při prvním načítání nenačte dost dlaždic; na obrazovce, ne při rendrování. */
 	protected boolean jeNadMapouKNacitani() {
 		return false;
 	}
 
 	@Override
 	public void paint(final Graphics g) {
-		if (jeNadMapouKNacitani() && PrvniNacitaniMapy.probiha()) {
-			PrvniNacitaniMapy.prekresliPoUkonceni(this);
+		if (jeNadMapouKNacitani() && PrvniNacitaniMapy.vrstvyCekaji()) {
+			PrvniNacitaniMapy.prekresliPoZobrazeniVrstev(this);
 			return;
 		}
 		super.paint(g);

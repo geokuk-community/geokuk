@@ -132,4 +132,26 @@ public class PrvniNacitaniMapyTest {
 		}
 		Assert.assertTrue("ovládací prvky a měřítko se kreslí vždy", nakreslena(img));
 	}
+
+	@Test
+	public void prahJeCtyricetProcentDlazdic() {
+		Assert.assertFalse(PrvniNacitaniMapy.jeDostNactenych(0, 0));
+		Assert.assertFalse(PrvniNacitaniMapy.jeDostNactenych(1, 3));
+		Assert.assertFalse(PrvniNacitaniMapy.jeDostNactenych(3, 8));
+		Assert.assertTrue(PrvniNacitaniMapy.jeDostNactenych(2, 5));
+		Assert.assertTrue(PrvniNacitaniMapy.jeDostNactenych(4, 9));
+	}
+
+	@Test
+	public void vrstvySeZobraziPoPrahuALogoJesteTrva() {
+		final Vrstva v = new Vrstva();
+		Assert.assertFalse(nakreslena(v.naObrazovku()));
+		PrvniNacitaniMapy.zobrazVrstvy();
+		Assert.assertEquals("vrstva se po prahu překreslí", 1, v.prekresleni.get());
+		Assert.assertTrue(nakreslena(v.naObrazovku()));
+		Assert.assertTrue("logo trvá do úplného načtení", PrvniNacitaniMapy.probiha());
+		PrvniNacitaniMapy.ukonci();
+		Assert.assertFalse(PrvniNacitaniMapy.probiha());
+		Assert.assertTrue(nakreslena(v.naObrazovku()));
+	}
 }

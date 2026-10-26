@@ -134,11 +134,15 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	private void kresliLogoNacitani(final Graphics2D g) {
 		final Path2D.Float cekajici = new Path2D.Float(Path2D.WIND_NON_ZERO);
 		int dlazdic = 0;
+		int hotovych = 0;
 		boolean chyba = false;
 		for (final Component c : getComponents()) {
 			if (c instanceof JKachle) {
 				final JKachle dlazdice = (JKachle) c;
 				dlazdic++;
+				if (dlazdice.maHotovyObrazek()) {
+					hotovych++;
+				}
 				if (dlazdice.cekaNaObrazek()) {
 					cekajici.append(c.getBounds(), false);
 				} else if (dlazdice.jeChybna()) {
@@ -149,6 +153,8 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		// Logo patří jen k prvnímu načítání mapy; po úplném načtení výřezu nebo první chybě už se neukáže.
 		if (dlazdic > 0 && (chyba || cekajici.getCurrentPoint() == null)) {
 			PrvniNacitaniMapy.ukonci();
+		} else if (PrvniNacitaniMapy.jeDostNactenych(hotovych, dlazdic)) {
+			PrvniNacitaniMapy.zobrazVrstvy();
 		}
 		if (cekajici.getCurrentPoint() == null) {
 			return;
