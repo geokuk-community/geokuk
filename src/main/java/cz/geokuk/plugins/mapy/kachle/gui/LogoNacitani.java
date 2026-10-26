@@ -22,11 +22,44 @@ final class LogoNacitani {
 	private static final int NEJVETSI_LOGICKA_VELIKOST = 500;
 	private static final float KRYTI = 0.22f;
 
+	/** Nejdéle takto dlouho od prvního vykreslení se logo ukazuje, i když dlaždice stále nedorazily (bez sítě, při chybě serveru). */
+	static final long LIMIT_NS = 10_000_000_000L;
+
 	private static BufferedImage zdroj;
 	private static boolean zdrojNacten;
+	private static boolean ukonceno;
+	private static long zacatek = -1;
+	/** Čas pro limit; v testech se dá nahradit. */
+	static java.util.function.LongSupplier hodiny = System::nanoTime;
 
 	private BufferedImage zmensene;
 	private int velikostZmenseneho;
+
+	/** Logo se ukazuje jen do prvního úplného načtení výřezu, chyby dlaždice nebo limitu; pak už v tomto běhu programu ne. */
+	static synchronized boolean jeAktivni() {
+		if (ukonceno) {
+			return false;
+		}
+		final long ted = hodiny.getAsLong();
+		if (zacatek < 0) {
+			zacatek = ted;
+		}
+		if (ted - zacatek > LIMIT_NS) {
+			ukonceno = true;
+			return false;
+		}
+		return true;
+	}
+
+	static synchronized void ukonci() {
+		ukonceno = true;
+	}
+
+	static synchronized void obnovProTesty() {
+		ukonceno = false;
+		zacatek = -1;
+		hodiny = System::nanoTime;
+	}
 
 	/** Kolik pixelů zařízení má mít logo pro daný výřez; 0, když se nemá kreslit. */
 	static int velikost(final int sirka, final int vyska, final double meritko) {

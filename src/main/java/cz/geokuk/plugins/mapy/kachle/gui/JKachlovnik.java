@@ -132,10 +132,22 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	private void kresliLogoNacitani(final Graphics2D g) {
 		final Path2D.Float cekajici = new Path2D.Float(Path2D.WIND_NON_ZERO);
+		int dlazdic = 0;
+		boolean chyba = false;
 		for (final Component c : getComponents()) {
-			if (c instanceof JKachle && ((JKachle) c).cekaNaObrazek()) {
-				cekajici.append(c.getBounds(), false);
+			if (c instanceof JKachle) {
+				final JKachle dlazdice = (JKachle) c;
+				dlazdic++;
+				if (dlazdice.cekaNaObrazek()) {
+					cekajici.append(c.getBounds(), false);
+				} else if (dlazdice.jeChybna()) {
+					chyba = true;
+				}
 			}
+		}
+		// Logo patří jen k prvnímu načítání mapy; po úplném načtení výřezu nebo první chybě už se neukáže.
+		if (dlazdic > 0 && (chyba || cekajici.getCurrentPoint() == null)) {
+			LogoNacitani.ukonci();
 		}
 		if (cekajici.getCurrentPoint() == null) {
 			return;
@@ -150,8 +162,15 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		} finally {
 			g2.dispose();
 		}
+		if (!LogoNacitani.jeAktivni()) {
+			return;
+		}
 		if (logoNacitani == null) {
 			logoNacitani = new LogoNacitani();
+			// Bez sítě se nic nepřekreslí samo, logo by po limitu zůstalo vidět.
+			final javax.swing.Timer limit = new javax.swing.Timer((int) (LogoNacitani.LIMIT_NS / 1_000_000) + 200, e -> repaint());
+			limit.setRepeats(false);
+			limit.start();
 		}
 		logoNacitani.kresli(g, getWidth(), getHeight(), oblast);
 	}

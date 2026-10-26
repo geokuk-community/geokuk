@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import cz.geokuk.core.coordinates.Mou;
@@ -15,6 +16,11 @@ import cz.geokuk.plugins.mapy.kachle.podklady.KachloStav;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 
 public class LogoNacitaniTest {
+
+	@Before
+	public void obnovLogo() {
+		LogoNacitani.obnovProTesty();
+	}
 
 	private static final int SIRKA = 800;
 	private static final int VYSKA = 600;
@@ -127,5 +133,57 @@ public class LogoNacitaniTest {
 		Assert.assertEquals(240, LogoNacitani.velikost(800, 600, 1));
 		Assert.assertEquals(480, LogoNacitani.velikost(800, 600, 2));
 		Assert.assertEquals(0, LogoNacitani.velikost(100, 100, 1));
+	}
+
+	private static void vymenDlazdici(final Kachlovnik k, final JKachle stara, final JKachle nova) {
+		k.remove(stara);
+		nova.setLocation(272, 172);
+		k.add(nova);
+	}
+
+	private static void nacti(final JKachle d) {
+		d.prijmi(new KachloStav(new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB)), Priority.KACHLE);
+	}
+
+	@Test
+	public void logoSeNekresliPoPrvnimUplnemNacteniVyrezu() {
+		final JKachle d = dlazdice();
+		final Kachlovnik k = kachlovnikSDlazdici(true, d);
+		Assert.assertTrue("před načtením ano", maBarevnyPixel(vykresliPozadi(k)));
+		nacti(d);
+		Assert.assertFalse(maBarevnyPixel(vykresliPozadi(k)));
+		final JKachle dalsi = dlazdice();
+		vymenDlazdici(k, d, dalsi);
+		Assert.assertFalse("při dalším čekání na dlaždice už ne", maBarevnyPixel(vykresliPozadi(k)));
+	}
+
+	@Test
+	public void logoSeNekresliPoPrvniChybeDlazdice() {
+		final JKachle d = dlazdice();
+		final Kachlovnik k = kachlovnikSDlazdici(true, d);
+		d.prijmi(new KachloStav(new RuntimeException("chyba")), Priority.KACHLE);
+		vykresliPozadi(k);
+		final JKachle dalsi = dlazdice();
+		vymenDlazdici(k, d, dalsi);
+		Assert.assertFalse(maBarevnyPixel(vykresliPozadi(k)));
+	}
+
+	@Test
+	public void logoSeNekresliPoLimitu() {
+		final long[] cas = { 0 };
+		LogoNacitani.hodiny = () -> cas[0];
+		final Kachlovnik k = kachlovnikSDlazdici(true, dlazdice());
+		Assert.assertTrue(maBarevnyPixel(vykresliPozadi(k)));
+		cas[0] = LogoNacitani.LIMIT_NS - 1;
+		Assert.assertTrue("těsně před limitem ještě ano", maBarevnyPixel(vykresliPozadi(k)));
+		cas[0] = LogoNacitani.LIMIT_NS + 1;
+		Assert.assertFalse(maBarevnyPixel(vykresliPozadi(k)));
+	}
+
+	@Test
+	public void prazdnyKachlovnikLogoNeukonci() {
+		final Kachlovnik prazdny = new Kachlovnik(true);
+		vykresliPozadi(prazdny);
+		Assert.assertTrue(LogoNacitani.jeAktivni());
 	}
 }
