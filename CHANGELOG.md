@@ -5,9 +5,10 @@
 ### Změny
 - Při prvním načítání mapy po spuštění je místo dlaždic bílá plocha se slabým
   logem GeoKuk uprostřed okna místo přeškrtnutých rámečků s čísly. Body keší
-  a waypointů, popisky, kruhy a cesty se do té doby nekreslí. Logo zmizí a vrstvy
-  se ukážou po načtení výřezu, po první chybě dlaždice nebo po 30 s od spuštění;
-  logo se pak už neukáže a vrstvy se nad mapou kreslí vždy.
+  a waypointů, popisky, kruhy a cesty se začnou kreslit, až je načteno 40 %
+  dlaždic výřezu. Logo zmizí po úplném načtení výřezu. Obojí skončí i po první
+  chybě dlaždice nebo po 30 s od spuštění; logo se pak už neukáže a vrstvy se
+  nad mapou kreslí vždy.
 - Offline mapy se kreslí novým tématem GeoKuk: světlejší les a pole,
   chráněná území bez zelené výplně, decentní hnědooranžové vrstevnice
   a jemné stínování, skály, rozcestníky, boží muka, rozhledny, prameny
