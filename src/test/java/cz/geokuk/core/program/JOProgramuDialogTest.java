@@ -147,4 +147,41 @@ public class JOProgramuDialogTest {
 		});
 		Assert.assertEquals(java.util.Collections.singletonList("pod licencí GNU GPL v3."), texty);
 	}
+
+	/** Podtitul patří do společné části pod nadpis, ne do bloku Upravená verze. */
+	@Test
+	public void podtitulJeVeSpolecneCastiPodNadpisem() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JOProgramuDialog d = new JOProgramuDialog();
+			try {
+				final List<Component> vse = new ArrayList<>();
+				komponenty(d.getContentPane(), vse);
+				Component nadpis = null;
+				Component podtitul = null;
+				Component upravena = null;
+				for (final Component c : vse) {
+					if (c instanceof JLabel && "GeoKuk".equals(((JLabel) c).getText())) {
+						nadpis = c;
+					}
+					if (c instanceof JLabel && JOProgramuDialog.PODTITUL.equals(((JLabel) c).getText())) {
+						podtitul = c;
+					}
+					if (c instanceof JLabel && JOProgramuDialog.AUTORSTVI_UPRAVENA.equals(((JLabel) c).getText())) {
+						upravena = c;
+					}
+				}
+				Assert.assertNotNull(nadpis);
+				Assert.assertNotNull(podtitul);
+				Assert.assertNotNull(upravena);
+				Assert.assertSame("podtitul je ve stejném kontejneru jako nadpis", nadpis.getParent(), podtitul.getParent());
+				Assert.assertNotSame("blok Upravená verze podtitul neobsahuje", upravena.getParent(), podtitul.getParent());
+				final Container spolecna = nadpis.getParent();
+				Assert.assertTrue("podtitul je pod nadpisem", Math.abs(spolecna.getComponentZOrder(podtitul) - spolecna.getComponentZOrder(nadpis)) == 1
+						&& spolecna.getComponentZOrder(podtitul) > spolecna.getComponentZOrder(nadpis));
+			} finally {
+				d.dispose();
+			}
+		});
+	}
 }

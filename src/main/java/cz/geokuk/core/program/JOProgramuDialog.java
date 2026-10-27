@@ -73,6 +73,7 @@ public class JOProgramuDialog extends JMyDialog0 {
 		final JLabel nadpis = new JLabel("GeoKuk");
 		nadpis.setFont(new Font("Arial", Font.BOLD, 30));
 		box.add(vystredeny(nadpis));
+		box.add(vystredeny(new JLabel(PODTITUL)));
 		box.add(vystredeny(new JLabel("Verze " + FConst.VERSION)));
 		box.add(Box.createVerticalStrut(6));
 		for (final String radek : new String[] { LICENCE_PUVODNI_1, LICENCE_PUVODNI_2 }) {
@@ -101,7 +102,6 @@ public class JOProgramuDialog extends JMyDialog0 {
 		box.add(Box.createVerticalStrut(10));
 
 		final JPanel upravena = sekce(NADPIS_UPRAVENA);
-		upravena.add(vystredeny(new JLabel(PODTITUL)));
 		upravena.add(vystredeny(new JLabel(AUTORSTVI_UPRAVENA)));
 		upravena.add(Box.createVerticalStrut(6));
 		final JPanel odkazy = new JPanel();
