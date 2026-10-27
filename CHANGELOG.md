@@ -4,6 +4,7 @@
 
 ### Změny
 - Logo GeoKuk při načítání mapy má nový vzhled.
+- GeoKuk má novou ikonu programu (okno, zástupce, soubor geokuk.ico).
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
   o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,

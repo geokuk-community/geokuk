@@ -66,6 +66,9 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		imgs.add(ImageLoader.seekResImage("geokuk32.png", 32, 32));
 		imgs.add(ImageLoader.seekResImage("geokuk16.png", 16, 16));
 		imgs.add(ImageLoader.seekResImage("geokuk48.png", 48, 48));
+		imgs.add(ImageLoader.seekResImage("geokuk64.png", 64, 64));
+		imgs.add(ImageLoader.seekResImage("geokuk128.png", 128, 128));
+		imgs.add(ImageLoader.seekResImage("geokuk256.png", 256, 256));
 		setIconImages(imgs);
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
