@@ -267,4 +267,61 @@ public class LogoNacitaniTest {
 		cas[0] = PrvniNacitaniMapy.LIMIT_MS + 1;
 		Assert.assertFalse(PrvniNacitaniMapy.vrstvyCekaji());
 	}
+
+	@Test
+	public void krytiJeProSvetlouATmavouPlochuRozdilne() {
+		Assert.assertEquals(0.13f, LogoNacitani.KRYTI_SVETLE, 0f);
+		Assert.assertEquals(0.32f, LogoNacitani.KRYTI_TMAVE, 0f);
+		Assert.assertEquals(LogoNacitani.KRYTI_SVETLE, LogoNacitani.kryti(false), 0f);
+		Assert.assertEquals(LogoNacitani.KRYTI_TMAVE, LogoNacitani.kryti(true), 0f);
+	}
+
+	/** Průměrná odchylka barvy ve středu od pozadí; míra toho, jak je logo vidět. */
+	private static double odchylka(final BufferedImage img, final Color pozadi) {
+		long soucet = 0;
+		int pocet = 0;
+		for (int y = 172; y < 428; y++) {
+			for (int x = 272; x < 528; x++) {
+				final int p = img.getRGB(x, y);
+				soucet += Math.abs(((p >> 16) & 0xFF) - pozadi.getRed()) + Math.abs(((p >> 8) & 0xFF) - pozadi.getGreen()) + Math.abs((p & 0xFF) - pozadi.getBlue());
+				pocet += 3;
+			}
+		}
+		return (double) soucet / pocet;
+	}
+
+	private static BufferedImage logoNaPozadi(final Color pozadi, final boolean tmave) {
+		final BufferedImage img = new BufferedImage(SIRKA, VYSKA, BufferedImage.TYPE_INT_RGB);
+		final Graphics2D g = img.createGraphics();
+		try {
+			g.setColor(pozadi);
+			g.fillRect(0, 0, SIRKA, VYSKA);
+			new LogoNacitani().kresli(g, SIRKA, VYSKA, null, tmave);
+		} finally {
+			g.dispose();
+		}
+		return img;
+	}
+
+	@Test
+	public void logoNaTmaveJeViditelnejsiSTmavymKrytim() {
+		final Color tmava = new Color(0x3C3F41);
+		Assert.assertTrue(odchylka(logoNaPozadi(tmava, true), tmava) > odchylka(logoNaPozadi(tmava, false), tmava));
+		Assert.assertTrue(odchylka(logoNaPozadi(Color.WHITE, false), Color.WHITE) > 0);
+	}
+
+	/** Kachlovník v tmavém vzhledu kreslí logo s tmavým krytím, ve světlém se světlým. */
+	@Test
+	public void kachlovnikVybiraKrytiPodlePozadiPanelu() {
+		final Object puvodni = javax.swing.UIManager.get("Panel.background");
+		try {
+			final Color tmava = new Color(0x3C3F41);
+			javax.swing.UIManager.put("Panel.background", tmava);
+			final Kachlovnik k = kachlovnikSDlazdici(true, dlazdice());
+			final BufferedImage nadTmavou = vykresliPozadi(k);
+			Assert.assertTrue("na tmavé ploše je logo vidět s tmavým krytím", odchylka(nadTmavou, tmava) > 3.5);
+		} finally {
+			javax.swing.UIManager.put("Panel.background", puvodni);
+		}
+	}
 }

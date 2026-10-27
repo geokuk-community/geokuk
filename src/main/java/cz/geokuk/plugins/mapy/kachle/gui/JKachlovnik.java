@@ -176,7 +176,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 			logoNacitani = new LogoNacitani();
 			PrvniNacitaniMapy.prekresliPoUkonceni(this);
 		}
-		logoNacitani.kresli(g, getWidth(), getHeight(), oblast);
+		logoNacitani.kresli(g, getWidth(), getHeight(), oblast, tmave);
 	}
 
 	protected KachleModel getKachleModel() {
