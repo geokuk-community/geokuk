@@ -7,6 +7,8 @@
   Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
   Průvodce nastavením map… jsou v menu Soubor.
 - Logo GeoKuk při načítání mapy má nový vzhled.
+- GeoKuk má nové logo a ikonu programu; zdrojové soubory a skript pro jejich
+  vygenerování jsou ve složce grafika.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
   o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,
