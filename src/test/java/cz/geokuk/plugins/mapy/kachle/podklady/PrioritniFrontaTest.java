@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public class PrioritniFrontaTest {
 
-	private static final class Uloha implements PrioritniFronta.Razena {
+	private static class Uloha implements PrioritniFronta.Razena {
 		final String jmeno;
 		volatile long poradi;
 		boolean zahozena;
@@ -153,5 +153,49 @@ public class PrioritniFrontaTest {
 		}
 		assertTrue(vybrano.await(15, TimeUnit.SECONDS));
 		vlakna.forEach(Thread::interrupt);
+	}
+
+	/** Posun mapy: vše, co zůstalo ve frontě po předchozím výřezu, se vyřídí podle nového výřezu a co z něj vypadlo, se nespustí. */
+	@Test(timeout = 20_000)
+	public void posunMapyViditelneJdouPrvniAZastaraleSeNespusti() throws Exception {
+		final java.util.concurrent.ThreadPoolExecutor pool = new java.util.concurrent.ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new PrioritniFronta());
+		try {
+			final CountDownLatch blokuje = new CountDownLatch(1);
+			final CountDownLatch bezi = new CountDownLatch(1);
+			pool.execute(() -> { // obsazuje jediné vlákno, dokud uživatel neposune mapu
+				bezi.countDown();
+				try {
+					blokuje.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			});
+			assertTrue(bezi.await(5, TimeUnit.SECONDS));
+			final List<String> spusteno = java.util.Collections.synchronizedList(new ArrayList<>());
+			final List<Uloha> ulohy = new ArrayList<>();
+			for (int i = 0; i < 100; i++) {
+				final Uloha u = new Uloha("u" + i, i) { // původní výřez: pořadí podle čísla
+					@Override
+					public void run() {
+						spusteno.add(jmeno);
+					}
+				};
+				ulohy.add(u);
+				pool.execute(u);
+			}
+			// nový výřez: sudé vypadly z mapy, liché jsou vidět, nejblíž středu ty s nejvyšším číslem
+			for (int i = 0; i < 100; i++) {
+				ulohy.get(i).poradi = i % 2 == 0 ? ImageReceiver.ZASTARALA : 1000 - i;
+			}
+			blokuje.countDown();
+			pool.shutdown();
+			assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
+			assertEquals(50, spusteno.size());
+			assertEquals("u99", spusteno.get(0));
+			assertEquals("u1", spusteno.get(49));
+			assertTrue(ulohy.get(0).zahozena);
+		} finally {
+			pool.shutdownNow();
+		}
 	}
 }

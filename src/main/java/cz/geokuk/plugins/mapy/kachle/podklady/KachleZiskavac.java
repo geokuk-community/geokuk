@@ -113,7 +113,7 @@ public class KachleZiskavac {
 			private final Future<?> budouci;
 			private final long zadano = System.nanoTime();
 
-			<F extends Runnable & Future<?>> Uloha(final F telo, final Kachlice kachlice) {
+			<F extends Runnable & Future<?>> Uloha(final F telo) {
 				this.telo = telo;
 				this.budouci = telo;
 			}
@@ -261,11 +261,11 @@ public class KachleZiskavac {
 									onImageFailure(t);
 								}
 							}, MoreExecutors.directExecutor());
-							return () -> des.render.execute(new Uloha(future, Kachlice.this));
+							return () -> des.render.execute(new Uloha(future));
 						}
 
 					}, MoreExecutors.directExecutor());
-					return () -> des.disk.execute(new Uloha(future, this));
+					return () -> des.disk.execute(new Uloha(future));
 				}
 				return null;
 			}
