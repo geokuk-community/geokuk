@@ -72,6 +72,8 @@ public class KachleZiskavac {
 		/** Stahování už posílá požadavek na server: při zrušení doběhne, aby se tatáž dlaždice nestahovala dvakrát. */
 		private volatile boolean stahujeSe;
 		private final List<ImageReceiver> irs = new ArrayList<ImageReceiver>();
+		/** Časy ve frontách a exekutorech, jen při zapnuté diagnostice dlaždic. */
+		private final DiagnostikaDlazdic.Faze faze = DiagnostikaDlazdic.zapnuto() ? new DiagnostikaDlazdic.Faze() : null;
 
 		public Kachlice(final Ka ka, final DvojiceExekucnichSluzeb des, final DiagnosticsData diagnosticsData) {
 			super();
@@ -100,7 +102,7 @@ public class KachleZiskavac {
 		private Runnable zaregistruj(final ImageReceiver ir) {
 			if (image != null) {
 				// Když už ho máme, tak nás nic nezajímá, ani ho nemusíme zaregistrovávat do seznamu
-				ir.send(new KachloStav(image));
+				ir.send(stav(image, "PAMĚŤ"));
 				return null;
 			} else {
 				irs.add(ir);
@@ -115,7 +117,7 @@ public class KachleZiskavac {
 						public void onSuccess(final Image img) { // čtení u disku
 							if (img != null) {
 								pocitDiskLoadZasah.inc();
-								onImageLoaded(img);
+								onImageLoaded(img, "DISK");
 							} else {
 								pocitDiskLoadMinuti.inc();
 								pocitDownloadWebSubmit.inc();
@@ -162,7 +164,7 @@ public class KachleZiskavac {
 									@Override
 									public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
 										pocitDownloadWebOk.inc();
-										onImageLoaded(imageWithData.getImg());
+										onImageLoaded(imageWithData.getImg(), "WEB");
 									}
 
 									@Override
@@ -175,9 +177,14 @@ public class KachleZiskavac {
 									}
 								}, MoreExecutors.directExecutor());
 								// Až po zaregistrování: při plné frontě poběží úloha hned ve volajícím vlákně a musí už být „moje“.
-								return () -> des.web.execute(future);
+								return () -> {
+										if (faze != null) {
+											faze.webZadano(des.webQueue.size());
+										}
+										des.web.execute(future);
+									};
 							} else { // v offline režimu nesmíme downloadovat a musíme poslat prázdný obrázek
-								onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE));
+								onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE), "PRÁZDNÁ (offline režim)");
 								return null;
 							}
 						}
@@ -191,7 +198,7 @@ public class KachleZiskavac {
 
 								@Override
 								public void onSuccess(final BufferedImage obrazek) {
-									onImageLoaded(obrazek);
+									onImageLoaded(obrazek, "RENDER");
 								}
 
 								@Override
@@ -202,11 +209,21 @@ public class KachleZiskavac {
 									onImageFailure(t);
 								}
 							}, MoreExecutors.directExecutor());
-							return () -> des.render.execute(future);
+							return () -> {
+							if (faze != null) {
+								faze.renderZadano(des.renderQueue.size(), des.vlakna[2].getActiveCount());
+							}
+							des.render.execute(future);
+						};
 						}
 
 					}, MoreExecutors.directExecutor());
-					return () -> des.disk.execute(future);
+					return () -> {
+					if (faze != null) {
+						faze.diskZadano(des.diskQueue.size(), des.vlakna[0].getActiveCount());
+					}
+					des.disk.execute(future);
+				};
 				}
 				return null;
 			}
@@ -214,6 +231,20 @@ public class KachleZiskavac {
 
 		/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
 		private Image nactiZDisku() throws IOException {
+			if (faze == null) {
+				return nactiZDiskuBezMereni();
+			}
+			faze.diskStart();
+			final DiagnostikaDlazdic.Cteni cteni = DiagnostikaDlazdic.zacniCteni();
+			try {
+				return nactiZDiskuBezMereni();
+			} finally {
+				DiagnostikaDlazdic.skonciCteni(cteni);
+				faze.diskKonec();
+			}
+		}
+
+		private Image nactiZDiskuBezMereni() throws IOException {
 			if (!ka.getType().isOffline()) {
 				return kachleManager.load(ka);
 			}
@@ -245,20 +276,31 @@ public class KachleZiskavac {
 			return true;
 		}
 
-		public synchronized void onImageLoaded(final Image image) {
+		public synchronized void onImageLoaded(final Image image, final String zdroj) {
 			futura = null;
 			stahujeSe = false;
 			this.image = image;
+			DiagnostikaDlazdic.faze(faze, zdroj);
 			for (final ImageReceiver ir : odeberPrijemce()) {
-				ir.send(new KachloStav(image));
+				ir.send(stav(image, zdroj));
 			}
+		}
+
+		/** Stav pro příjemce; zdroj slouží jen diagnostice. */
+		private KachloStav stav(final Image obrazek, final String zdroj) {
+			final KachloStav stav = new KachloStav(obrazek);
+			stav.setZdroj(zdroj);
+			return stav;
 		}
 
 		public synchronized void onImageFailure(final Throwable t) {
 			futura = null;
 			stahujeSe = false;
+			DiagnostikaDlazdic.faze(faze, "CHYBA");
 			for (final ImageReceiver ir : odeberPrijemce()) {
-				ir.send(new KachloStav(t));
+				final KachloStav stav = new KachloStav(t);
+				stav.setZdroj("CHYBA");
+				ir.send(stav);
 			}
 		}
 
@@ -822,11 +864,17 @@ public class KachleZiskavac {
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + url);
 			}
+			if (kachlice.faze != null) {
+				kachlice.faze.webStart();
+			}
 			diagnosticsData.send("Web download - start");
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
 			ImageWithData imageWithData;
 			try {
 				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+				if (kachlice.faze != null) {
+					kachlice.faze.webKonec();
+				}
 				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
 				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
@@ -857,6 +905,9 @@ public class KachleZiskavac {
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + ka);
 			}
+			if (kachlice.faze != null) {
+				kachlice.faze.renderStart();
+			}
 			try {
 				final OfflineRenderer renderer;
 				try {
@@ -870,6 +921,9 @@ public class KachleZiskavac {
 				try {
 					final long zacatek = System.nanoTime();
 					final BufferedImage obrazek = renderer.vyrendruj(ka.getLoc());
+					if (kachlice.faze != null) {
+						kachlice.faze.renderKonec();
+					}
 					Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
 					pocitRenderOk.inc();
 					if (renderer.pokryva(ka.getLoc())) {
