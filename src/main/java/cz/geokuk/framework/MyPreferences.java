@@ -139,7 +139,14 @@ public class MyPreferences extends Preferences {
 		return duo;
 	}
 
-	private static Map<String, PropertyDescriptor> findProperties(final Class<?> cls) {
+	/** Vlastnosti struktur podle třídy; introspekce je drahá a getStructure/putStructure se volají při každé změně (třeba polohy okna). */
+	private static final Map<Class<?>, Map<String, PropertyDescriptor>> sVlastnosti = new java.util.concurrent.ConcurrentHashMap<>();
+
+	static Map<String, PropertyDescriptor> findProperties(final Class<?> cls) {
+		return sVlastnosti.computeIfAbsent(cls, MyPreferences::najdiVlastnosti);
+	}
+
+	private static Map<String, PropertyDescriptor> najdiVlastnosti(final Class<?> cls) {
 		try {
 			final Map<String, PropertyDescriptor> descrs = new HashMap<>();
 			for (final Method method : cls.getMethods()) {
@@ -149,7 +156,7 @@ public class MyPreferences extends Preferences {
 					proverProperties("set", method, descrs, cls);
 				}
 			}
-			return descrs;
+			return Collections.unmodifiableMap(descrs);
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}
