@@ -20,10 +20,10 @@ final class LogoNacitani {
 	/** Podíl kratší strany výřezu, který logo zabere. */
 	private static final double PODIL_STRANY = 0.4;
 	private static final int NEJVETSI_LOGICKA_VELIKOST = 500;
-	/** Krytí loga na světlé ploše; nové logo je plnější, proto menší než dřív (0,22), aby působilo stejně světle. */
+	/** Krytí loga na světlé ploše; logo je plné, proto nízké, aby působilo jemně. */
 	static final float KRYTI_SVETLE = 0.13f;
-	/** Krytí loga na tmavé ploše; zelená na tmavé šedé má nízký kontrast, proto větší. */
-	static final float KRYTI_TMAVE = 0.36f;
+	/** Krytí loga na tmavé ploše; zelená na tmavé šedé má nízký kontrast, proto vyšší než na světlé. */
+	static final float KRYTI_TMAVE = 0.32f;
 
 	private static BufferedImage zdroj;
 	private static boolean zdrojNacten;
