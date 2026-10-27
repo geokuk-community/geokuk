@@ -339,7 +339,7 @@ public class JBlokMapTest {
 		}
 	}
 
-	/** Mapy > Offline mapy… otevře panel, i když myš nad blokem nikdy nebyla. */
+	/** Mapy > Správce offline map… otevře panel, i když myš nad blokem nikdy nebyla. */
 	@Test(timeout = 30000)
 	public void udalostZMenuOtevrePanel() throws Exception {
 		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());

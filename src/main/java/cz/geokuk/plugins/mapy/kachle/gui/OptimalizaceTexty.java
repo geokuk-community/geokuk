@@ -5,12 +5,12 @@ import java.util.Locale;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
-/** Texty oken Optimalizace databáze. */
+/** Texty oken Optimalizace cache dlaždic. */
 final class OptimalizaceTexty {
 
 	private static final Locale CS = new Locale("cs");
 
-	static final String NAZEV = "Optimalizace databáze";
+	static final String NAZEV = "Optimalizace cache dlaždic";
 
 	static String velikost(final long bajtu) {
 		if (bajtu >= 1L << 30) {
