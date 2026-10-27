@@ -35,5 +35,7 @@ Kontrola proti souborům v repozitáři: `python3 -I grafika/generator/porovnej.
 ## Úpravy
 SVG jsou ploché a bez transformací, dají se upravit v Inkscape. Po úpravě uložte jako Prostý SVG a spusťte `sestav.sh`. U loga se generuje z `logo-zelene.svg`. Po úpravě `logo-stredove-cary.svg` je potřeba převést tahy na obrysy (Cesta → Tah na cestu, sjednotit) a uložit jako `logo-zelene.svg` / `logo-bile.svg`.
 
-## Licence
-GNU GPL v3, stejně jako zbytek repozitáře.
+## Původ a licence
+Logo GeoKuk: původní motiv © Martin Veverka a spoluautoři; překreslená vektorová podoba GeoKuk community, 2026. Podklad návrhu vznikl pomocí ChatGPT (OpenAI); vektorové zpracování a úpravy proběhly s pomocí AI asistenta (Claude, Anthropic).
+
+Licence: GNU General Public License v3.0 (GPL-3.0), stejně jako zbytek projektu. Zdrojové soubory a generátor jsou ve složkách `zdroje/` a `generator/`, aby je mohl použít a upravit kdokoli.
