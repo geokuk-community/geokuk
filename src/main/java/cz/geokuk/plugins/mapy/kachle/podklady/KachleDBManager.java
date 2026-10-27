@@ -158,7 +158,11 @@ class KachleDBManager implements KachleManager {
 			return null;
 		}
 		try {
+			final long zacatekDekodovani = DiagnostikaDlazdic.zapnuto() ? System.nanoTime() : 0;
 			final Image img = KachloDownloader.precti(new ByteArrayInputStream(data));
+			if (zacatekDekodovani != 0) {
+				DiagnostikaDlazdic.dekodovani(System.nanoTime() - zacatekDekodovani);
+			}
 			if (img == null) {
 				log.debug("Loaded DB image is null!");
 			}
@@ -176,18 +180,34 @@ class KachleDBManager implements KachleManager {
 	/** Bajty obrázku, bez {@code obrazek} jen prázdné pole, když dlaždice existuje; null, když není nebo cache nejde číst. */
 	private byte[] cti(final Ka ki, final String typ, final boolean obrazek) {
 		final int odlozeniPred = odlozeni;
+		final boolean mer = DiagnostikaDlazdic.zapnuto();
+		long t = mer ? System.nanoTime() : 0;
 		final SqlJetDb database = getDatabaseConnection();
+		if (mer) {
+			DiagnostikaDlazdic.spojeni(System.nanoTime() - t);
+		}
 		if (database == null) {
 			return null;
 		}
 		byte[] data = null;
 		boolean poskozena = false;
+		if (mer) {
+			t = System.nanoTime();
+		}
 		zamek.readLock().lock();
 		try {
+			if (mer) {
+				final long ted = System.nanoTime();
+				DiagnostikaDlazdic.zamekCteni(ted - t);
+				t = ted;
+			}
 			if (odlozeniPred != odlozeni) {
 				return null; // spojení k odložené cache je zavřené
 			}
 			data = nactiData(database, ki, typ, obrazek);
+			if (mer) {
+				DiagnostikaDlazdic.dotaz(System.nanoTime() - t);
+			}
 		} catch (final RuntimeException e) {
 			if (!(e.getCause() instanceof SqlJetException) || !jePoskozena((SqlJetException) e.getCause())) {
 				throw e;
@@ -434,9 +454,11 @@ class KachleDBManager implements KachleManager {
 	/** Jeden pokus o zápis; vrátí chybu, {@link #BEZ_CACHE}, nebo null, když se zapsalo. */
 	private SqlJetException zapisJednou(final Collection<ItemToSave> imagesToSave) {
 		// Do SQLite zapisuje vždy jen jedno spojení; souběžné zápisy by si navzájem vracely BUSY.
+		final long cekaniOd = System.nanoTime();
 		synchronized (this) {
 			zamek.writeLock().lock();
 			try {
+				final long zacatekZapisu = System.nanoTime();
 				final SqlJetDb database = getDatabaseConnection();
 				if (database == null) {
 					return BEZ_CACHE;
@@ -449,6 +471,7 @@ class KachleDBManager implements KachleManager {
 				}
 				try {
 					zapis(database, imagesToSave);
+					DiagnostikaDlazdic.zapisDavky(zacatekZapisu - cekaniOd, System.nanoTime() - zacatekZapisu, imagesToSave.size());
 					return null;
 				} catch (final SqlJetException e) {
 					if (e.getErrorCode() != SqlJetErrorCode.BUSY) {
@@ -745,6 +768,7 @@ class KachleDBManager implements KachleManager {
 		final StavSouboruCache stav = StavSouboruCache.precti(f);
 		if (stav != null && souboryVLogu.add(f)) {
 			log.info("Cache dlaždic {}: {}.", f, stav);
+			DiagnostikaDlazdic.soubor("Cache dlaždic " + f + ": " + stav);
 		}
 		final SqlJetDb database = CacheDb.otevri(f, true);
 		try {
