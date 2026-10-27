@@ -20,7 +20,7 @@ final class LogoNacitani {
 	/** Podíl kratší strany výřezu, který logo zabere. */
 	private static final double PODIL_STRANY = 0.4;
 	private static final int NEJVETSI_LOGICKA_VELIKOST = 500;
-	private static final float KRYTI = 0.22f;
+	private static final float KRYTI = 0.13f;
 
 	private static BufferedImage zdroj;
 	private static boolean zdrojNacten;
