@@ -72,6 +72,8 @@ public class KachleZiskavac {
 		/** Stahování už posílá požadavek na server: při zrušení doběhne, aby se tatáž dlaždice nestahovala dvakrát. */
 		private volatile boolean stahujeSe;
 		private final List<ImageReceiver> irs = new ArrayList<ImageReceiver>();
+		/** Kopie {@link #irs} pro výpočet pořadí ve frontách, který nesmí brát zámek dlaždice. */
+		private volatile ImageReceiver[] prijemciProRazeni = new ImageReceiver[0];
 
 		public Kachlice(final Ka ka, final DvojiceExekucnichSluzeb des, final DiagnosticsData diagnosticsData) {
 			super();
@@ -80,6 +82,62 @@ public class KachleZiskavac {
 			this.diagnosticsData = diagnosticsData;
 			pocitKachlice.inc();
 			//System.out.println("Vytvořena kachlice pro: " + ka);
+		}
+
+		private void obnovPrijemceProRazeni() {
+			prijemciProRazeni = irs.toArray(new ImageReceiver[0]);
+		}
+
+		/** Naléhavost nejnaléhavějšího příjemce, {@link ImageReceiver#ZASTARALA}, když dlaždici nikdo nechce. Bez zámků, volá ji fronta úloh. */
+		long dulezitost() {
+			long nejlepsi = ImageReceiver.ZASTARALA;
+			for (final ImageReceiver ir : prijemciProRazeni) {
+				nejlepsi = Math.min(nejlepsi, ir.dulezitost());
+			}
+			return nejlepsi;
+		}
+
+		/** Úloha vyřazená z fronty jako zastaralá: dlaždici nikdo, koho by zajímala, nechce, příští požadavek ji zadá znovu. */
+		synchronized void zahodUlohu(final Future<?> uloha) {
+			if (futura == uloha) {
+				futura = null;
+			}
+			uloha.cancel(false);
+			irs.removeIf(ir -> ir.dulezitost() == ImageReceiver.ZASTARALA);
+			obnovPrijemceProRazeni();
+		}
+
+		/** Úloha čekající ve frontě disku nebo vykreslování; pořadí se vyhodnotí až při výběru podle toho, co uživatel vidí. */
+		final class Uloha implements PrioritniFronta.Razena {
+			private final Runnable telo;
+			private final Future<?> budouci;
+			private final long zadano = System.nanoTime();
+
+			<F extends Runnable & Future<?>> Uloha(final F telo, final Kachlice kachlice) {
+				this.telo = telo;
+				this.budouci = telo;
+			}
+
+			@Override
+			public void run() {
+				telo.run();
+			}
+
+			@Override
+			public long poradi(final long tedNs) {
+				final long zakladni = dulezitost();
+				if (zakladni == ImageReceiver.ZASTARALA) {
+					return ImageReceiver.ZASTARALA;
+				}
+				final long cekani = tedNs - zadano;
+				// Co čeká příliš dlouho, jde před všechno ostatní, nejstarší první; dlaždice na pozadí se tím neposouvají.
+				return zakladni < ImageReceiver.NA_POZADI && cekani > starnutiNs ? -cekani : zakladni;
+			}
+
+			@Override
+			public void zahod() {
+				zahodUlohu(budouci);
+			}
 		}
 
 		synchronized Image getImage() {
@@ -104,6 +162,7 @@ public class KachleZiskavac {
 				return null;
 			} else {
 				irs.add(ir);
+				obnovPrijemceProRazeni();
 				if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
 					pocitDiskLoadSubmit.inc();
 					final ListenableFutureTask<Image> future = ListenableFutureTask.create(this::nactiZDisku);
@@ -202,11 +261,11 @@ public class KachleZiskavac {
 									onImageFailure(t);
 								}
 							}, MoreExecutors.directExecutor());
-							return () -> des.render.execute(future);
+							return () -> des.render.execute(new Uloha(future, Kachlice.this));
 						}
 
 					}, MoreExecutors.directExecutor());
-					return () -> des.disk.execute(future);
+					return () -> des.disk.execute(new Uloha(future, this));
 				}
 				return null;
 			}
@@ -266,6 +325,7 @@ public class KachleZiskavac {
 		private List<ImageReceiver> odeberPrijemce() {
 			final List<ImageReceiver> prijemci = new ArrayList<>(irs);
 			irs.clear();
+			obnovPrijemceProRazeni();
 			return prijemci;
 		}
 
@@ -283,6 +343,7 @@ public class KachleZiskavac {
 				pocitCancelPozde.inc();
 			}
 			irs.remove(imageReceiver); // už nechce, tak mu nebudeme nic říkat
+			obnovPrijemceProRazeni();
 			if (irs.isEmpty() && futura != null && !stahujeSe) {
 				// Bez přerušení vlákna: přerušení zavře kanál souboru diskové cache.
 				futura.cancel(false);
@@ -417,6 +478,9 @@ public class KachleZiskavac {
 			"Počítá, kolikrát se o 100 ms zbrzdilo dávkové dotahování, protože běžel online.");
 
 	private static final int MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU = 50;
+
+	/** Jak dlouho smí dlaždice čekat ve frontě na řadu, než předběhne ostatní; jinak by ji nepřetržitý posun mohl odsouvat. */
+	static volatile long starnutiNs = TimeUnit.SECONDS.toNanos(2);
 
 	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
@@ -556,7 +620,8 @@ public class KachleZiskavac {
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
-				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE), Executors.newFixedThreadPool(NTHREADS_RENDER, vlaknaRenderu("Offline mapa")),
+				Priority.KACHLE, new ThreadPoolExecutor(NTHREADS_DISK, NTHREADS_DISK, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE),
+					new ThreadPoolExecutor(NTHREADS_RENDER, NTHREADS_RENDER, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta(), vlaknaRenderu("Offline mapa")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_online"));
 
 		final DvojiceExekucnichSluzeb dvojiceBatch = new DvojiceExekucnichSluzeb(Priority.STAHOVANI,
