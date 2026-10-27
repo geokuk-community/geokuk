@@ -3,7 +3,7 @@ package cz.geokuk.plugins.mapy.sprava;
 import org.junit.Assert;
 import org.junit.Test;
 
-/** Mapy > Offline mapy… požádá model o otevření panelu. */
+/** Mapy > Správce offline map… požádá model o otevření panelu. */
 public class OfflineMapyActionTest {
 
 	@Test
@@ -18,6 +18,6 @@ public class OfflineMapyActionTest {
 		});
 		akce.actionPerformed(null);
 		Assert.assertEquals(1, otevreno[0]);
-		Assert.assertEquals("Offline mapy…", akce.getValue(javax.swing.Action.NAME));
+		Assert.assertEquals("Správce offline map…", akce.getValue(javax.swing.Action.NAME));
 	}
 }

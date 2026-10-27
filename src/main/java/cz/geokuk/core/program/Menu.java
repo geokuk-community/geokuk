@@ -54,32 +54,40 @@ public class Menu extends MenuStrujce {
 				if (!uzivatelske && ((PodkladAction) mapoakce1).getPodklad().isUzivatelska()) {
 					uzivatelske = true;
 					separator();
-					final JMenuItem nadpis = new JMenuItem("Uživatelské mapy");
-					nadpis.setEnabled(false);
-					menu.add(nadpis);
+					hlavicka("Uživatelské mapy");
 				}
 				item(mapoakce1, mapPodkladButtonGroup);
 			}
 		}
-		item(akce.offlineMapyAction);
-		menu.add(new JTemaOfflineMapyMenu(kachleModel));
+		if (menu.getMenuComponentCount() > 0) {
+			separator();
+		}
+		hlavicka("Přes mapu");
 		item(akce.prekryvTrasAction);
 		item(akce.reliefCuzkAction);
 
 		separator();
-		item(akce.pruvodceMapAction);
+		item(akce.offlineMapyAction);
+		menu.add(new JTemaOfflineMapyMenu(kachleModel));
 		separator();
-
 	}
 
-	@Override
-	protected void makeMenu() {
+	/** Neaktivní položka s nadpisem skupiny položek. */
+	private void hlavicka(final String text) {
+		final JMenuItem nadpis = new JMenuItem(text);
+		nadpis.setEnabled(false);
+		menu.add(nadpis);
+	}
 
+	/** Menu Soubor: práce se soubory, nastavením a údržbou dat programu. */
+	void sestavMenuSoubor() {
 		menu("Soubor", "Práce se soubory a nastaveními.");
 		menu.setMnemonic(KeyEvent.VK_S);
 
 		item(akce.informaceoZdrojichAction);
 		item(akce.umisteniSouboruAction);
+		item(akce.pruvodceMapAction);
+		item(akce.optimalizaceDatabazeAction);
 		separator();
 		item(akce.nickEditAction);
 		item(akce.tadyJsemDomaAction);
@@ -99,6 +107,31 @@ public class Menu extends MenuStrujce {
 		item(akce.fullScreenAction);
 		separator();
 		item(akce.closeAction);
+	}
+
+	/** Menu Mapy: podklady, překryvy, správce offline map, pohyb po mapě a volby ukládání map. */
+	void sestavMenuMapy() {
+		// Ovládat mapy
+		menu("Mapy", "Řízení zobrazení součástí map");
+		menu.setMnemonic(KeyEvent.VK_M);
+
+		makeMapSubmenuPart(akce);
+
+		item(akce.priblizMapuAction);
+		item(akce.oddalMapuAction);
+		item(akce.nastavMapuCeskaAction);
+		item(akce.zobrazVsechnyKeseAction);
+
+		separator();
+		item(akce.onlineModeAction);
+		item(akce.ukladatMapyNaDiskAction);
+		item(akce.kachleOflinerAction);
+	}
+
+	@Override
+	protected void makeMenu() {
+
+		sestavMenuSoubor();
 
 		// Jít
 		menu("Jít", "Přesun aktuálního bodu a mapy na zadané místo.");
@@ -141,22 +174,7 @@ public class Menu extends MenuStrujce {
 		item(akce.posouvejSipkamiRychleJIH);
 		item(akce.posouvejSipkamiRychleZAPAD);
 
-		// Ovládat mapy
-		menu("Mapy", "Řízení zobrazení součástí map");
-		menu.setMnemonic(KeyEvent.VK_M);
-
-		makeMapSubmenuPart(akce);
-
-		item(akce.priblizMapuAction);
-		item(akce.oddalMapuAction);
-		item(akce.nastavMapuCeskaAction);
-		item(akce.zobrazVsechnyKeseAction);
-
-		separator();
-		item(akce.onlineModeAction);
-		item(akce.ukladatMapyNaDiskAction);
-		item(akce.optimalizaceDatabazeAction);
-		item(akce.kachleOflinerAction);
+		sestavMenuMapy();
 
 		// Ovládání zobrazení keší
 		menu("Kešoidy", "Řízení zobrazení keší a waypointů.");

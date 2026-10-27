@@ -33,4 +33,9 @@ public class OptimalizaceTextyTest {
 		Assert.assertEquals("512 MB", OptimalizaceTexty.velikost(512L << 20));
 		Assert.assertEquals("1 MB", OptimalizaceTexty.velikost(10));
 	}
+
+	@Test
+	public void nazevJeOptimalizaceCacheDlazdic() {
+		Assert.assertEquals("Optimalizace cache dlaždic", OptimalizaceTexty.NAZEV);
+	}
 }
