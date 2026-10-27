@@ -3,6 +3,10 @@
 ## 6.5.0
 
 ### Změny
+- Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
+  části: původní texty Martina Veverky s odkazem na původní projekt a údaje
+  o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,
+  uživatelskou wiki a README s poděkováním.
 - Při prvním načítání mapy po spuštění je místo dlaždic bílá plocha se slabým
   logem GeoKuk uprostřed okna místo přeškrtnutých rámečků s čísly. Body keší
   a waypointů, popisky, kruhy a cesty se začnou kreslit, až je načteno 40 %
