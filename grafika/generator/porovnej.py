@@ -5,6 +5,7 @@ import io
 import os
 import struct
 import sys
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -19,7 +20,7 @@ dvojice += [('geokuk-logo.png', 'src/main/resources/img/geokuk-logo.png'),
 
 def obrazy(cesta):
     if cesta.endswith('.ico'):
-        d = open(cesta, 'rb').read()
+        d = Path(cesta).read_bytes()
         n = struct.unpack('<H', d[4:6])[0]
         vysledek = []
         for i in range(n):
@@ -38,7 +39,7 @@ for novy, puvodni in dvojice:
         print(f'{puvodni}: v repu chybí')
         chyba = True
         continue
-    stejne_md5 = hashlib.md5(open(a, 'rb').read()).digest() == hashlib.md5(open(b, 'rb').read()).digest()
+    stejne_md5 = hashlib.md5(Path(a).read_bytes()).digest() == hashlib.md5(Path(b).read_bytes()).digest()
     shoda = min((np.abs(x - y).max(axis=2) <= 8).mean() if x.shape == y.shape else 0 for x, y in zip(obrazy(a), obrazy(b)))
     ok = stejne_md5 or shoda >= 0.998
     chyba |= not ok
