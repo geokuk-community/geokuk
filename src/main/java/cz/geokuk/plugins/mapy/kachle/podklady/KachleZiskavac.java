@@ -767,8 +767,15 @@ public class KachleZiskavac {
 		priZmeneOfflineMapy = priZmene;
 	}
 
-	/** Otevření spojení s cache stojí stovky ms a drží zámek cache; proto se dělá při startu na pozadí ve všech vláknech, která z cache čtou nebo do ní zapisují. */
-	private void predotevriSpojeni(final KachleManager km) {
+	/**
+	 * Otevření spojení s cache stojí stovky ms a drží zámek cache; proto se dělá hned po nastavení složky cache na pozadí ve všech vláknech, která z cache čtou nebo do ní
+	 * zapisují.
+	 */
+	public void predotevriCache() {
+		final KachleManager km = kachleManager;
+		if (km == null) {
+			return;
+		}
 		final DvojiceExekucnichSluzeb online = exekucniSluzby.get(Priority.KACHLE);
 		// Pool zakládá vlákno pro každou z prvních úloh, i když jiné vlákno čeká, takže každé vlákno čtení dostane jednu.
 		for (int i = 0; i < NTHREADS_DISK; i++) {
@@ -787,9 +794,6 @@ public class KachleZiskavac {
 
 	public void setKachleManager(final KachleManager kachleManager) {
 		this.kachleManager = kachleManager;
-		if (kachleManager != null) {
-			predotevriSpojeni(kachleManager);
-		}
 	}
 
 	/**

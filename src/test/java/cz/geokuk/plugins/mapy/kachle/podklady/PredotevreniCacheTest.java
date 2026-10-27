@@ -90,6 +90,7 @@ public class PredotevreniCacheTest {
 				}
 			}
 		});
+		ziskavac.predotevriCache();
 		assertTrue(hotovo.await(10, TimeUnit.SECONDS));
 		assertEquals(KachleZiskavac.NTHREADS_DISK + 1, vlakna.size());
 	}
