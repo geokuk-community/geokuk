@@ -271,7 +271,7 @@ public class LogoNacitaniTest {
 	@Test
 	public void krytiJeProSvetlouATmavouPlochuRozdilne() {
 		Assert.assertEquals(0.13f, LogoNacitani.KRYTI_SVETLE, 0f);
-		Assert.assertEquals(0.36f, LogoNacitani.KRYTI_TMAVE, 0f);
+		Assert.assertEquals(0.32f, LogoNacitani.KRYTI_TMAVE, 0f);
 		Assert.assertEquals(LogoNacitani.KRYTI_SVETLE, LogoNacitani.kryti(false), 0f);
 		Assert.assertEquals(LogoNacitani.KRYTI_TMAVE, LogoNacitani.kryti(true), 0f);
 	}
