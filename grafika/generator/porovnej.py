@@ -1,7 +1,6 @@
 """Porovná vygenerované soubory se soubory v repozitáři (md5 a podíl shodných pixelů).
 python3 -I porovnej.py <koren-repa> [vystup]"""
 import hashlib
-import io
 import os
 import struct
 import sys
