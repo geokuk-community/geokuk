@@ -265,7 +265,7 @@ public final class JPruvodceMap extends JDialog {
 		});
 		p.add(vice);
 		p.add(Box.createVerticalStrut(10));
-		final JLabel napoveda = new JLabel("Výběr jde později změnit: Mapy > Průvodce nastavením map.");
+		final JLabel napoveda = new JLabel("Výběr jde později změnit: Soubor > Průvodce nastavením map.");
 		napoveda.setForeground(SEDY);
 		p.add(napoveda);
 		for (final Component c : p.getComponents()) {

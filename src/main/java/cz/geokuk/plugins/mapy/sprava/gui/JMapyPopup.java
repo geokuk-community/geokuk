@@ -37,7 +37,7 @@ public class JMapyPopup extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	static final String NADPIS = "Offline mapy";
+	static final String NADPIS = "Správce offline map";
 	static final String VE_SLOZCE = TextyMap.STAZENE_MAPY;
 	static final String ZADNA_MAPA = TextyMap.ZADNA_MAPA;
 	static final String PRO_MISTO = TextyMap.PRO_TOTO_MISTO;

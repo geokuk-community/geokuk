@@ -13,7 +13,7 @@ import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Prubeh;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Vysledek;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
-/** Obsah dialogu Optimalizace databáze: přehled, průběh a výsledek. */
+/** Obsah dialogu Optimalizace cache dlaždic: přehled, průběh a výsledek. */
 class PanelOptimalizace extends JPanel {
 
 	private static final long serialVersionUID = 1L;

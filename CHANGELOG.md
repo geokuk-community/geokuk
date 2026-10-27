@@ -3,6 +3,10 @@
 ## 6.5.0
 
 ### Změny
+- Menu Mapy je přeuspořádané: překryvy (Turistické a cyklotrasy, ČÚZK – Stínovaný
+  reliéf) jsou pod nadpisem Přes mapu a Offline mapy… se jmenuje Správce
+  offline map…. Průvodce nastavením map a Optimalizace cache dlaždic
+  (dříve Optimalizace databáze) jsou v menu Soubor.
 - Logo GeoKuk při načítání mapy má nový vzhled.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
@@ -30,7 +34,7 @@
 - Vydání obsahuje GeoKuk-tema.zip: téma GeoKuk a GeoKuk – detail pro
   aplikace s mapami ve formátu mapsforge (například c:geo, aDrake).
 - Ve stavovém řádku je blok Mapy: ikona ukazuje stav offline map a najetím
-  myší se otevře panel Offline mapy se seznamem map (velikost, datum dat,
+  myší se otevře panel Správce offline map se seznamem map (velikost, datum dat,
   nečitelné soubory), odkazem, který složku offline map otevře ve správci
   souborů, a odkazy na weby s mapami.
   Najetím na řádek mapy se v mapě ukáže její obrys, stejně při stahování;
@@ -39,15 +43,15 @@
   Španělsko, Velká Británie s Anglií, Skotskem a Walesem) se rozbalují a panel
   si rozbalení pamatuje i po novém spuštění. Mapy mimo Evropu (Egypt) jsou
   na konci pod nadpisem Mimo Evropu, Kanárské ostrovy u Španělska.
-- Mapy zemí a regionů Evropy z download.mapsforge.org jde z panelu Offline
-  mapy stáhnout (po jedné; přerušené stahování mapy nebo vrstvy program
+- Mapy zemí a regionů Evropy z download.mapsforge.org jde z panelu Správce
+  offline map stáhnout (po jedné; přerušené stahování mapy nebo vrstvy program
   sám až třikrát zkusí znovu a naváže, kde skončilo) a na požádání
   zkontrolovat, jestli nejsou novější. Panel ukáže výsledek kontroly a při
   stahování odhad zbývajícího času; mapu, která se nevejde na disk, nejde
   stáhnout (tlačítko je vypnuté s vysvětlením). Když je země ve složce celá i
   po regionech (dvojitě stažená), panel na to upozorní a nabídne smazat
   regiony, nebo celek. Stažený soubor se po dokončení ověří.
-- U každé země a regionu v panelu Offline mapy jsou tlačítka Stáhnout mapu a
+- U každé země a regionu v panelu Správce offline map jsou tlačítka Stáhnout mapu a
   Stáhnout mapu a vrstvy s velikostí; druhé stáhne mapu, trasy, vrstevnice a
   stínování naráz. Části jdou vybrat v nabídce na pravé tlačítko u země
   (Vybrat části…), kde je souhrn s velikostí a volným místem. Vrstvy se
@@ -56,7 +60,7 @@
   regiony celé stažené země se po jednom stáhnout nedají. Hromadné stahování po chybě pokračuje dalšími
   položkami; na konci panel ukáže souhrn, co se stáhlo a co ne, a tlačítko
   Zkusit znovu.
-- V panelu Offline mapy jde ke každé mapě Evropy stáhnout turistickou
+- V panelu Správce offline map jde ke každé mapě Evropy stáhnout turistickou
   vrstvu (turistické a cyklotrasy, skály a body pro orientaci), vrstevnice a
   stínování terénu (sloupce T, V a S), i k mapě, která ještě není stažená;
   u celé země souhrn T, V a S zahrnuje i vrstvy po regionech. Stažené vrstvy se kreslí spolu s offline mapou,
@@ -64,7 +68,7 @@
   seskupené pod zemí. Nahoře v panelu je Stáhnout vrstvy ke všem staženým mapám:
   stáhne chybějící nebo zastaralé vrstvy ke všem staženým mapám. U stažené
   mapy bez vrstev je tlačítko Stáhnout vrstvy.
-- Průvodce nastavením map (Mapy > Průvodce nastavením map, při první instalaci
+- Průvodce nastavením map (Soubor > Průvodce nastavením map, při první instalaci
   se otevře sám) nabídne Česko a okolí (hledat jde i jinou zemi nebo region),
   vybere podklad a vrstvy, stáhne jen to, co chybí, a přepne mapu. Před
   velkým stažením (nad 5 základních map nebo 10 GB) se zeptá na potvrzení.
@@ -92,16 +96,16 @@
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
   tím změní a její dlaždice v cache se jednou vykreslí znovu.
 - Správa offline map používá jednotné názvy: Stažené mapy, Mapy ke stažení,
-  Pro toto místo, Trasy. Panel se otevře i z nabídky Mapy > Offline mapy…
+  Pro toto místo, Trasy. Panel se otevře i z nabídky Mapy > Správce offline map…
   nebo klávesnicí a podle velikosti okna se přizpůsobí.
-- V panelu Offline mapy je každá země jen jednou: stahované, rozpracované a
+- V panelu Správce offline map je každá země jen jednou: stahované, rozpracované a
   stažené mapy jsou jen ve Stažených mapách, regiony stažené země jsou pod
   ní a jdou hledat, i ve Stažených mapách; nestažené regiony stažené země
   jsou také u ní. U země s regiony jde stáhnout i celá země. Průběh
   stahování se hlásí u každé mapy a vrstvy zvlášť. Vrstva stažená k celé
   zemi je u jejích regionů vidět jako stažená. Seznam ve Stažených mapách
   a v Pro toto místo se natáhne na výšku obsahu, posuvník má jen když se nevejde.
-- Dole v panelu Offline mapy jsou přepínače Přes mapu stejně jako v nabídce
+- Dole v panelu Správce offline map jsou přepínače Přes mapu stejně jako v nabídce
   Mapy. Panel se nezavře za dialogem smazání.
 - Rada v mapě bez offline mapy nabízí Stáhnout mapu i Stáhnout mapu a vrstvy
   s velikostí; u regionu nabídne celou zemi a regiony v záběru pod ní;
@@ -116,7 +120,7 @@
   dlaždice existuje, bez načtení obrázku. Změna zvýraznění nebo sady ikon
   nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
   v nečinnosti se složky kontrolují řidčeji.
-- Mapy > Optimalizace databáze… zhutní cache dlaždic a ukáže velikost,
+- Soubor > Optimalizace cache dlaždic… zhutní cache dlaždic a ukáže velikost,
   odhad úspory, volné místo a odhad času. Má-li soubor cache hodně
   nevyužitého místa (nad 30 % a soubor nad 200 MB), program při startu
   nabídne optimalizaci s odpočtem 30 s, který stojí, dokud je myš nad oknem

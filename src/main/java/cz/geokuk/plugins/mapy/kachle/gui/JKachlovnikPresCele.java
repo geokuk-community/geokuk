@@ -197,7 +197,7 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		return new RadaOfflineMapy.Vyrez(jih, zapad, sever, vychod);
 	}
 
-	static final String RADA_BEZ_SPRAVY = "Offline mapy najdete v bloku Mapy vpravo dole ve stavovém řádku.";
+	static final String RADA_BEZ_SPRAVY = "Správce offline map najdete v menu Mapy a v bloku Mapy vpravo dole ve stavovém řádku.";
 
 	/** Radu, kde vzít offline mapu, kreslí přes kachle nahoře uprostřed. */
 	@Override
