@@ -44,10 +44,10 @@ public class PrioritniFrontaTest {
 		final Uloha b = new Uloha("b", 1);
 		final Uloha c = new Uloha("c", 5);
 		final Uloha d = new Uloha("d", 1);
-		f.offer(a);
-		f.offer(b);
-		f.offer(c);
-		f.offer(d);
+		assertTrue(f.offer(a));
+		assertTrue(f.offer(b));
+		assertTrue(f.offer(c));
+		assertTrue(f.offer(d));
 		assertSame(b, f.poll());
 		assertSame(d, f.poll());
 		assertSame(a, f.poll());
@@ -60,8 +60,8 @@ public class PrioritniFrontaTest {
 		final PrioritniFronta f = new PrioritniFronta();
 		final Uloha a = new Uloha("a", 1);
 		final Uloha b = new Uloha("b", 2);
-		f.offer(a);
-		f.offer(b);
+		assertTrue(f.offer(a));
+		assertTrue(f.offer(b));
 		a.poradi = 10; // uživatel mezitím posunul mapu
 		assertSame(b, f.poll());
 		assertSame(a, f.poll());
@@ -72,8 +72,8 @@ public class PrioritniFrontaTest {
 		final PrioritniFronta f = new PrioritniFronta();
 		final Uloha stara = new Uloha("stara", ImageReceiver.ZASTARALA);
 		final Uloha dobra = new Uloha("dobra", 7);
-		f.offer(stara);
-		f.offer(dobra);
+		assertTrue(f.offer(stara));
+		assertTrue(f.offer(dobra));
 		assertSame(dobra, f.poll());
 		assertTrue(stara.zahozena);
 		assertEquals(0, f.size());
@@ -87,7 +87,7 @@ public class PrioritniFrontaTest {
 			final Runnable r = () -> {
 			};
 			v.add(r);
-			f.offer(r);
+			assertTrue(f.offer(r));
 		}
 		for (final Runnable r : v) {
 			assertSame(r, f.poll());
@@ -109,9 +109,9 @@ public class PrioritniFrontaTest {
 		});
 		t.start();
 		final Uloha stara = new Uloha("stara", ImageReceiver.ZASTARALA);
-		f.offer(stara); // probudí, nic nevybere a musí zase čekat
+		assertTrue(f.offer(stara)); // probudí, nic nevybere a musí zase čekat
 		final Uloha dobra = new Uloha("dobra", 3);
-		f.offer(dobra);
+		assertTrue(f.offer(dobra));
 		assertTrue(hotovo.await(5, TimeUnit.SECONDS));
 		assertSame(dobra, dostal.get());
 		assertTrue(stara.zahozena);
@@ -120,7 +120,7 @@ public class PrioritniFrontaTest {
 	@Test(timeout = 10_000)
 	public void pollSTimeoutemVratiNullKdyzJeJenZastarale() throws Exception {
 		final PrioritniFronta f = new PrioritniFronta();
-		f.offer(new Uloha("stara", ImageReceiver.ZASTARALA));
+		assertTrue(f.offer(new Uloha("stara", ImageReceiver.ZASTARALA)));
 		assertNull(f.poll(50, TimeUnit.MILLISECONDS));
 		assertEquals(0, f.size());
 	}
@@ -149,7 +149,7 @@ public class PrioritniFrontaTest {
 			vlakna.add(t);
 		}
 		for (int i = 0; i < pocet; i++) {
-			f.offer(new Uloha("u" + i, (i * 7919L) % 101));
+			assertTrue(f.offer(new Uloha("u" + i, (i * 7919L) % 101)));
 		}
 		assertTrue(vybrano.await(15, TimeUnit.SECONDS));
 		vlakna.forEach(Thread::interrupt);

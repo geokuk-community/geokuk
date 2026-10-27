@@ -61,8 +61,7 @@ final class PrioritniFronta extends AbstractQueue<Runnable> implements BlockingQ
 		}
 	}
 
-	@Override
-	public boolean offer(final Runnable r) {
+	private void pridej(final Runnable r) {
 		if (r == null) {
 			throw new NullPointerException();
 		}
@@ -70,20 +69,26 @@ final class PrioritniFronta extends AbstractQueue<Runnable> implements BlockingQ
 		try {
 			prvky.add(r);
 			neprazdna.signal();
-			return true;
 		} finally {
 			zamek.unlock();
 		}
 	}
 
 	@Override
+	public boolean offer(final Runnable r) {
+		pridej(r);
+		return true;
+	}
+
+	@Override
 	public boolean offer(final Runnable r, final long timeout, final TimeUnit unit) {
-		return offer(r);
+		pridej(r);
+		return true;
 	}
 
 	@Override
 	public void put(final Runnable r) {
-		offer(r);
+		pridej(r);
 	}
 
 	@Override
