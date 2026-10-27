@@ -20,13 +20,20 @@ final class LogoNacitani {
 	/** Podíl kratší strany výřezu, který logo zabere. */
 	private static final double PODIL_STRANY = 0.4;
 	private static final int NEJVETSI_LOGICKA_VELIKOST = 500;
-	private static final float KRYTI = 0.13f;
+	/** Krytí loga na světlé ploše; nové logo je plnější, proto menší než dřív (0,22), aby působilo stejně světle. */
+	static final float KRYTI_SVETLE = 0.13f;
+	/** Krytí loga na tmavé ploše; zelená na tmavé šedé má nízký kontrast, proto větší. */
+	static final float KRYTI_TMAVE = 0.36f;
 
 	private static BufferedImage zdroj;
 	private static boolean zdrojNacten;
 
 	private BufferedImage zmensene;
 	private int velikostZmenseneho;
+
+	static float kryti(final boolean tmave) {
+		return tmave ? KRYTI_TMAVE : KRYTI_SVETLE;
+	}
 
 	/** Kolik pixelů zařízení má mít logo pro daný výřez; 0, když se nemá kreslit. */
 	static int velikost(final int sirka, final int vyska, final double meritko) {
@@ -35,7 +42,7 @@ final class LogoNacitani {
 	}
 
 	/** Nakreslí logo doprostřed {@code 0,0,sirka,vyska}, ale jen do oblasti {@code kamSmi}; null znamená všude. */
-	void kresli(final Graphics2D g, final int sirka, final int vyska, final Area kamSmi) {
+	void kresli(final Graphics2D g, final int sirka, final int vyska, final Area kamSmi, final boolean tmave) {
 		final double sx = g.getTransform().getScaleX();
 		final int velikost = velikost(sirka, vyska, sx);
 		if (velikost == 0) {
@@ -50,7 +57,7 @@ final class LogoNacitani {
 			if (kamSmi != null) {
 				g2.clip(kamSmi);
 			}
-			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, KRYTI));
+			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, kryti(tmave)));
 			// Zmenšené logo má pixely zařízení, proto se kreslí bez měřítka displeje.
 			final double sy = g2.getTransform().getScaleY();
 			g2.scale(1 / sx, 1 / sy);
