@@ -88,6 +88,10 @@ public interface KachleManager {
 		return 0;
 	}
 
+	/** Připraví úložiště pro čtení z volajícího vlákna (třeba otevře spojení), ať první dlaždice nečeká. */
+	public default void predotevri() {
+	}
+
 	/** Optimalizace databáze cache, null, když úložiště nic takového nemá. */
 	public default OptimalizaceDatabaze optimalizace() {
 		return null;

@@ -22,8 +22,10 @@ import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.schema.SqlJetConflictAction;
 import org.tmatesoft.sqljet.core.table.*;
 
+import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
+import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 import cz.geokuk.util.file.Soubory;
@@ -135,6 +137,19 @@ class KachleDBManager implements KachleManager {
 	@Override
 	public boolean exists(final Ka ki) {
 		return exists(ki, ki.typToString());
+	}
+
+	/** Dlaždice, která v cache nikdy není; dotaz na ni otevře spojení a zavede třídy SqlJet. */
+	private static final Ka PROBA = new Ka(KaLoc.ofJZ(new Mou(0, 0), 16), EKaType.TURIST_M);
+
+	/** Otevře spojení volajícího vlákna s cache a udělá první dotaz, ať ho nezaplatí první dlaždice na obrazovce. */
+	@Override
+	public void predotevri() {
+		try {
+			cti(PROBA, PROBA.typToString(), false);
+		} catch (final RuntimeException e) {
+			log.debug("Cache dlaždic se nepodařilo otevřít předem: {}", e.toString());
+		}
 	}
 
 	/** Jen najde klíč, obrázek nečte ani nedekóduje. */
