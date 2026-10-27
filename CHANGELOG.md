@@ -3,10 +3,9 @@
 ## 6.5.0
 
 ### Změny
-- Menu Mapy je přeuspořádané: překryvy (Turistické a cyklotrasy, ČÚZK – Stínovaný
-  reliéf) jsou pod nadpisem Přes mapu a Offline mapy… se jmenuje Správce
-  offline map…. Průvodce nastavením map a Optimalizace cache dlaždic
-  (dříve Optimalizace databáze) jsou v menu Soubor.
+- V menu Mapy je Správce offline map…; Turistické a cyklotrasy a ČÚZK –
+  Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
+  Průvodce nastavením map… jsou v menu Soubor.
 - Logo GeoKuk při načítání mapy má nový vzhled.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje

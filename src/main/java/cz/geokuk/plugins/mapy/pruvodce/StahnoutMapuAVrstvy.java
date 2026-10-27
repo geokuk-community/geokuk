@@ -38,8 +38,10 @@ public final class StahnoutMapuAVrstvy {
 		return "Opravdu stáhnout " + co + ", " + JPruvodceMap.velikost(plan.getCelkovaVelikost()) + "?";
 	}
 
+	static final String TITULEK = "Správce offline map";
+
 	/** Dialog s dotazem podle {@link #textDotazu}. */
 	public static Predicate<PlanPruvodce> dialog(final Component rodic) {
-		return plan -> JOptionPane.showConfirmDialog(rodic, textDotazu(plan), "Správce offline map", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+		return plan -> JOptionPane.showConfirmDialog(rodic, textDotazu(plan), TITULEK, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 	}
 }

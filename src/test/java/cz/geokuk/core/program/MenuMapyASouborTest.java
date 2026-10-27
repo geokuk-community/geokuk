@@ -11,6 +11,9 @@ import javax.swing.JPopupMenu;
 import org.junit.Assert;
 import org.junit.Test;
 
+import cz.geokuk.plugins.mapy.PodkladAction;
+import cz.geokuk.plugins.mapy.kachle.data.EKaType;
+
 /** Pořadí položek v menu Mapy a Soubor a mnemoniky přesunutých položek. */
 public class MenuMapyASouborTest {
 
@@ -88,5 +91,20 @@ public class MenuMapyASouborTest {
 		final JMenu soubor = new SestavMenu(new Akce()).soubor();
 		Assert.assertEquals(1, pocetSMnemonikem(soubor, java.awt.event.KeyEvent.VK_C));
 		Assert.assertEquals(1, pocetSMnemonikem(soubor, java.awt.event.KeyEvent.VK_P));
+	}
+
+	/** S naplněnými rastrovými podklady je před blokem Přes mapu oddělovač a mnemonik Správce offline map je v menu jediný. */
+	@Test
+	public void sPodkladyJeOddelovacPredPresMapuAMnemonikSJedinecny() {
+		final Akce akce = new Akce();
+		for (final EKaType ka : EKaType.values()) {
+			akce.mapoakce.add(new PodkladAction(ka));
+		}
+		final JMenu mapy = new SestavMenu(akce).mapy();
+		final List<String> t = texty(mapy);
+		final int nadpis = t.indexOf("Přes mapu");
+		Assert.assertTrue(t.toString(), nadpis > 1);
+		Assert.assertEquals(t.toString(), "|", t.get(nadpis - 1));
+		Assert.assertEquals(1, pocetSMnemonikem(mapy, java.awt.event.KeyEvent.VK_S));
 	}
 }

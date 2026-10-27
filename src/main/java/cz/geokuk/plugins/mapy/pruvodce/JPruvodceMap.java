@@ -24,6 +24,8 @@ public final class JPruvodceMap extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 
+	static final String NAPOVEDA_ZMENA_VYBERU = "Výběr jde později změnit: Soubor > Průvodce nastavením map.";
+
 	static final String NADPIS = "Nastavení map";
 	static final String[] KROKY = { "Země", "Podklad", "Vrstvy", "Hotovo" };
 	static final String PRESKOCIT = "Přeskočit";
@@ -265,7 +267,7 @@ public final class JPruvodceMap extends JDialog {
 		});
 		p.add(vice);
 		p.add(Box.createVerticalStrut(10));
-		final JLabel napoveda = new JLabel("Výběr jde později změnit: Soubor > Průvodce nastavením map.");
+		final JLabel napoveda = new JLabel(NAPOVEDA_ZMENA_VYBERU);
 		napoveda.setForeground(SEDY);
 		p.add(napoveda);
 		for (final Component c : p.getComponents()) {
