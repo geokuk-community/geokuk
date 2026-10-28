@@ -187,6 +187,11 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		return katype;
 	}
 
+	/** Třída pořadí ve frontách: menší jde dřív, hlavní mapa před překryvem. */
+	int trida() {
+		return 0;
+	}
+
 	protected JKachle createJKachle(final Ka ka) {
 		return new JKachle(this, ka);
 	}

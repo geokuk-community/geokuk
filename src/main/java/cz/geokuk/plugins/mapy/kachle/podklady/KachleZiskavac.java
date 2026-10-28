@@ -72,6 +72,8 @@ public class KachleZiskavac {
 		/** Stahování už posílá požadavek na server: při zrušení doběhne, aby se tatáž dlaždice nestahovala dvakrát. */
 		private volatile boolean stahujeSe;
 		private final List<ImageReceiver> irs = new ArrayList<ImageReceiver>();
+		/** Kopie {@link #irs} pro výpočet pořadí ve frontách, který nesmí brát zámek dlaždice. */
+		private volatile ImageReceiver[] prijemciProRazeni = new ImageReceiver[0];
 
 		public Kachlice(final Ka ka, final DvojiceExekucnichSluzeb des, final DiagnosticsData diagnosticsData) {
 			super();
@@ -80,6 +82,74 @@ public class KachleZiskavac {
 			this.diagnosticsData = diagnosticsData;
 			pocitKachlice.inc();
 			//System.out.println("Vytvořena kachlice pro: " + ka);
+		}
+
+		private void obnovPrijemceProRazeni() {
+			prijemciProRazeni = irs.toArray(new ImageReceiver[0]);
+		}
+
+		/** Naléhavost nejnaléhavějšího příjemce, {@link ImageReceiver#ZASTARALA}, když dlaždici nikdo nechce. Bez zámků, volá ji fronta úloh. */
+		long dulezitost() {
+			long nejlepsi = ImageReceiver.ZASTARALA;
+			for (final ImageReceiver ir : prijemciProRazeni) {
+				nejlepsi = Math.min(nejlepsi, ir.dulezitost());
+			}
+			return nejlepsi;
+		}
+
+		/** Úloha vyřazená z fronty jako zastaralá: příjemci, které už nikdo nechce, se odeberou; kdo se mezitím přihlásil, dostane úlohu znovu. */
+		void zahodUlohu(final Future<?> uloha) {
+			final Runnable spust;
+			synchronized (this) {
+				uloha.cancel(false);
+				irs.removeIf(ir -> ir.dulezitost() == ImageReceiver.ZASTARALA);
+				obnovPrijemceProRazeni();
+				if (futura != uloha) {
+					return;
+				}
+				futura = null;
+				spust = irs.isEmpty() ? null : zahajNacteni();
+			}
+			if (spust != null) {
+				spust.run();
+			}
+		}
+
+		/** Úloha čekající ve frontě disku nebo vykreslování; pořadí se vyhodnotí až při výběru podle toho, co uživatel vidí. */
+		final class Uloha implements PrioritniFronta.Razena {
+			private final Runnable telo;
+			private final Future<?> budouci;
+			private final long zadano = System.nanoTime();
+
+			<F extends Runnable & Future<?>> Uloha(final F telo) {
+				this.telo = telo;
+				this.budouci = telo;
+			}
+
+			@Override
+			public void run() {
+				telo.run();
+			}
+
+			@Override
+			public long poradi(final long tedNs) {
+				final long zakladni = dulezitost();
+				if (zakladni == ImageReceiver.ZASTARALA) {
+					return ImageReceiver.ZASTARALA;
+				}
+				final long cekani = tedNs - zadano;
+				if (zakladni >= ImageReceiver.NA_POZADI || cekani <= starnutiNs) {
+					return zakladni;
+				}
+				// Co čeká příliš dlouho, jde před ostatní, nejstarší první; dlaždice mimo výřez tím předbíhají jen ostatní mimo výřez ve své třídě a dlaždice na pozadí se neposouvají.
+				final boolean mimoVyrez = zakladni % ImageReceiver.TRIDA >= ImageReceiver.MIMO_VYREZ;
+				return mimoVyrez ? zakladni - cekani : -cekani;
+			}
+
+			@Override
+			public void zahod() {
+				zahodUlohu(budouci);
+			}
 		}
 
 		synchronized Image getImage() {
@@ -102,114 +172,119 @@ public class KachleZiskavac {
 				// Když už ho máme, tak nás nic nezajímá, ani ho nemusíme zaregistrovávat do seznamu
 				ir.send(new KachloStav(image));
 				return null;
-			} else {
-				irs.add(ir);
-				if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
-					pocitDiskLoadSubmit.inc();
-					final ListenableFutureTask<Image> future = ListenableFutureTask.create(this::nactiZDisku);
-					futura = future;
+			}
+			irs.add(ir);
+			obnovPrijemceProRazeni();
+			return zahajNacteni();
+		}
 
-					Futures.addCallback(future, new FutureCallback<Image>() {
+		/** Když se dlaždice právě nezískává, zadá čtení z disku; úlohu vrací ke spuštění mimo zámek. */
+		private Runnable zahajNacteni() {
+			if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
+				pocitDiskLoadSubmit.inc();
+				final ListenableFutureTask<Image> future = ListenableFutureTask.create(this::nactiZDisku);
+				futura = future;
 
-						@Override
-						public void onSuccess(final Image img) { // čtení u disku
-							if (img != null) {
-								pocitDiskLoadZasah.inc();
-								onImageLoaded(img);
-							} else {
-								pocitDiskLoadMinuti.inc();
-								pocitDownloadWebSubmit.inc();
-								submitDownload();
-							}
+				Futures.addCallback(future, new FutureCallback<Image>() {
 
+					@Override
+					public void onSuccess(final Image img) { // čtení u disku
+						if (img != null) {
+							pocitDiskLoadZasah.inc();
+							onImageLoaded(img);
+						} else {
+							pocitDiskLoadMinuti.inc();
+							pocitDownloadWebSubmit.inc();
+							submitDownload();
 						}
 
-						@Override
-						public void onFailure(final Throwable t) { // čtení z disku
-							if (!(t instanceof CancellationException)) { // když nebylo kanclováno, při kanclování se nespoští download
-								pocitDiskLoadError.inc();
-								submitDownload();
-							}
+					}
+
+					@Override
+					public void onFailure(final Throwable t) { // čtení z disku
+						if (!(t instanceof CancellationException)) { // když nebylo kanclováno, při kanclování se nespoští download
+							pocitDiskLoadError.inc();
+							submitDownload();
 						}
+					}
 
-						private void submitDownload() {
-							final Runnable spust;
-							synchronized (Kachlice.this) {
-								if (futura != future) {
-									return; // čtení z disku bylo mezitím zrušeno
-								}
-								futura = null;
-								if (irs.isEmpty()) {
-									return;
-								}
-								spust = spustDownload();
+					private void submitDownload() {
+						final Runnable spust;
+						synchronized (Kachlice.this) {
+							if (futura != future) {
+								return; // čtení z disku bylo mezitím zrušeno
 							}
-							if (spust != null) {
-								spust.run();
+							futura = null;
+							if (irs.isEmpty()) {
+								return;
 							}
+							spust = spustDownload();
 						}
-
-						private Runnable spustDownload() {
-							if (ka.getType().isOffline()) {
-								return spustRender();
-							} else if (onofflineModel.isOnlineMode()) {
-								final AtomicReference<Future<?>> moje = new AtomicReference<>();
-								final ListenableFutureTask<ImageWithData> future = pripravDownload(ka, des, diagnosticsData, Kachlice.this, moje);
-								moje.set(future);
-								futura = future;
-								Futures.addCallback(future, new FutureCallback<ImageWithData>() {
-
-									@Override
-									public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
-										pocitDownloadWebOk.inc();
-										onImageLoaded(imageWithData.getImg());
-									}
-
-									@Override
-									public void onFailure(final Throwable t) { // čtení z webu
-										if (t instanceof CancellationException) {
-											return; // zrušilo se, protože dlaždici už nikdo nechce; příjemci nového požadavku čekají na jiné získání
-										}
-										pocitDownloadWebError.inc();
-										onImageFailure(t);
-									}
-								}, MoreExecutors.directExecutor());
-								// Až po zaregistrování: při plné frontě poběží úloha hned ve volajícím vlákně a musí už být „moje“.
-								return () -> des.web.execute(future);
-							} else { // v offline režimu nesmíme downloadovat a musíme poslat prázdný obrázek
-								onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE));
-								return null;
-							}
+						if (spust != null) {
+							spust.run();
 						}
+					}
 
-						private Runnable spustRender() {
+					private Runnable spustDownload() {
+						if (ka.getType().isOffline()) {
+							return spustRender();
+						} else if (onofflineModel.isOnlineMode()) {
 							final AtomicReference<Future<?>> moje = new AtomicReference<>();
-							final ListenableFutureTask<BufferedImage> future = pripravRender(ka, des, diagnosticsData, Kachlice.this, moje);
+							final ListenableFutureTask<ImageWithData> future = pripravDownload(ka, des, diagnosticsData, Kachlice.this, moje);
 							moje.set(future);
 							futura = future;
-							Futures.addCallback(future, new FutureCallback<BufferedImage>() {
+							Futures.addCallback(future, new FutureCallback<ImageWithData>() {
 
 								@Override
-								public void onSuccess(final BufferedImage obrazek) {
-									onImageLoaded(obrazek);
+								public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
+									pocitDownloadWebOk.inc();
+									onImageLoaded(imageWithData.getImg());
 								}
 
 								@Override
-								public void onFailure(final Throwable t) {
+								public void onFailure(final Throwable t) { // čtení z webu
 									if (t instanceof CancellationException) {
-										return;
+										return; // zrušilo se, protože dlaždici už nikdo nechce; příjemci nového požadavku čekají na jiné získání
 									}
+									pocitDownloadWebError.inc();
 									onImageFailure(t);
 								}
 							}, MoreExecutors.directExecutor());
-							return () -> des.render.execute(future);
+							// Až po zaregistrování: při plné frontě poběží úloha hned ve volajícím vlákně a musí už být „moje“.
+							return () -> des.web.execute(future);
+						} else { // v offline režimu nesmíme downloadovat a musíme poslat prázdný obrázek
+							onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE));
+							return null;
 						}
+					}
 
-					}, MoreExecutors.directExecutor());
-					return () -> des.disk.execute(future);
-				}
-				return null;
+					private Runnable spustRender() {
+						final AtomicReference<Future<?>> moje = new AtomicReference<>();
+						final ListenableFutureTask<BufferedImage> future = pripravRender(ka, des, diagnosticsData, Kachlice.this, moje);
+						moje.set(future);
+						futura = future;
+						Futures.addCallback(future, new FutureCallback<BufferedImage>() {
+
+							@Override
+							public void onSuccess(final BufferedImage obrazek) {
+								onImageLoaded(obrazek);
+							}
+
+							@Override
+							public void onFailure(final Throwable t) {
+								if (t instanceof CancellationException) {
+									return;
+								}
+								onImageFailure(t);
+							}
+						}, MoreExecutors.directExecutor());
+						return () -> des.render.execute(new Uloha(future));
+					}
+
+				}, MoreExecutors.directExecutor());
+				return () -> des.disk.execute(new Uloha(future));
 			}
+			return null;
 		}
 
 		/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
@@ -266,6 +341,7 @@ public class KachleZiskavac {
 		private List<ImageReceiver> odeberPrijemce() {
 			final List<ImageReceiver> prijemci = new ArrayList<>(irs);
 			irs.clear();
+			obnovPrijemceProRazeni();
 			return prijemci;
 		}
 
@@ -283,6 +359,7 @@ public class KachleZiskavac {
 				pocitCancelPozde.inc();
 			}
 			irs.remove(imageReceiver); // už nechce, tak mu nebudeme nic říkat
+			obnovPrijemceProRazeni();
 			if (irs.isEmpty() && futura != null && !stahujeSe) {
 				// Bez přerušení vlákna: přerušení zavře kanál souboru diskové cache.
 				futura.cancel(false);
@@ -417,6 +494,9 @@ public class KachleZiskavac {
 			"Počítá, kolikrát se o 100 ms zbrzdilo dávkové dotahování, protože běžel online.");
 
 	private static final int MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU = 50;
+
+	/** Jak dlouho smí dlaždice čekat ve frontě na řadu, než předběhne ostatní; jinak by ji nepřetržitý posun mohl odsouvat. */
+	static volatile long starnutiNs = TimeUnit.SECONDS.toNanos(2);
 
 	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
@@ -556,7 +636,8 @@ public class KachleZiskavac {
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
-				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE), Executors.newFixedThreadPool(NTHREADS_RENDER, vlaknaRenderu("Offline mapa")),
+				Priority.KACHLE, new ThreadPoolExecutor(NTHREADS_DISK, NTHREADS_DISK, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE),
+					new ThreadPoolExecutor(NTHREADS_RENDER, NTHREADS_RENDER, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta(), vlaknaRenderu("Offline mapa")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_online"));
 
 		final DvojiceExekucnichSluzeb dvojiceBatch = new DvojiceExekucnichSluzeb(Priority.STAHOVANI,
