@@ -30,24 +30,23 @@ jobs:
           for vetev in main beta; do
             git clone -q --depth 1 -b "$vetev" https://github.com/OpenSAK-Org/OpenSAK.git "opensak-$vetev"
             python3 .github/skripty/opensak_schema.py "opensak-$vetev" > "schema-$vetev.txt"
-            # Větev se starší verzí a stejnými sloupci (main před vydáním bety) je v pořádku.
-            if [ "$(tail -n +2 "schema-$vetev.txt")" = "$(tail -n +2 src/test/resources/opensak-schema.txt)" ] \
-                && [ "$(head -1 "schema-$vetev.txt" | cut -d' ' -f2)" -le "$(head -1 src/test/resources/opensak-schema.txt | cut -d' ' -f2)" ]; then
-              continue
+            # Přidané sloupce a vyšší verze schématu jsou jen informace v souhrnu běhu; chyba je jen sloupec, který GeoKuk čte.
+            if python3 .github/skripty/opensak_zmeny.py src/test/resources/opensak-pouzite-sloupce.txt src/test/resources/opensak-schema.txt "schema-$vetev.txt" > "zprava-$vetev.md"; then
+              stav=0
+            else
+              stav=$?
             fi
-            if ! diff -u src/test/resources/opensak-schema.txt "schema-$vetev.txt" > "diff-$vetev.txt"; then
+            {
+              echo "### Větev \`$vetev\` ($(git -C "opensak-$vetev" rev-parse --short HEAD))"
+              echo
+              cat "zprava-$vetev.md"
+              echo
+            } | tee -a "$GITHUB_STEP_SUMMARY" > "uvod-$vetev.md"
+            if [ "$stav" -ne 0 ]; then
               rozdil=1
-              {
-                echo "### Větev \`$vetev\` ($(git -C "opensak-$vetev" rev-parse --short HEAD))"
-                echo
-                echo '```diff'
-                cat "diff-$vetev.txt"
-                echo '```'
-                echo
-              } >> rozdil.md
+              cat "uvod-$vetev.md" >> rozdil.md
             fi
           done
-          cat rozdil.md
           exit $rozdil
 
       - name: Issue s výsledkem
@@ -56,7 +55,7 @@ jobs:
             --jq ".[] | select(.title == \"$NAZEV\") | .number" | head -1)
           if [ "${{ steps.porovnani.outcome }}" = success ]; then
             if [ -n "$CISLO" ]; then
-              gh issue close "$CISLO" --comment "Schéma OpenSAKu opět odpovídá src/test/resources/opensak-schema.txt ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+              gh issue close "$CISLO" --comment "Schéma OpenSAKu obsahuje všechny sloupce, které GeoKuk čte ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
             fi
             exit 0
           fi
@@ -65,10 +64,10 @@ jobs:
             exit 1
           fi
           {
-            echo "Týdenní kontrola $(date -u +%F): schéma databáze v OpenSAKu se liší od src/test/resources/opensak-schema.txt."
+            echo "Týdenní kontrola $(date -u +%F): v databázi OpenSAKu chybí sloupce, které GeoKuk čte (seznam je v src/test/resources/opensak-pouzite-sloupce.txt)."
             echo
             cat rozdil.md
-            echo "Zkontrolujte načítání OpenSAKu a soubor se schématem aktualizujte výstupem .github/skripty/opensak_schema.py."
+            echo "Upravte načítání OpenSAKu (OpensakDbLoader) a soubory se schématem; schéma se vypíše skriptem .github/skripty/opensak_schema.py."
             echo
             echo "Běh: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           } > telo.md
