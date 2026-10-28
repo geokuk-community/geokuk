@@ -41,9 +41,6 @@ public class JKachle extends JComponent {
 
 	private static final long serialVersionUID = -5445121736003161730L;
 
-	/** Posun pořadí dlaždic mimo viditelnou oblast; větší než jakákoli vzdálenost od středu. */
-	private static final long NEVIDITELNA = 1L << 34;
-
 	static final long PRVNI_POKUS_PO_CHYBE_MS = 15_000;
 	private static final long POSLEDNI_POKUS_PO_CHYBE_MS = 300_000;
 
@@ -194,7 +191,7 @@ public class JKachle extends JComponent {
 		final int dx = 2 * getX() + getWidth() - rodic.getWidth();
 		final int dy = 2 * getY() + getHeight() - rodic.getHeight();
 		final boolean vidim = getX() < rodic.getWidth() && getX() + getWidth() > 0 && getY() < rodic.getHeight() && getY() + getHeight() > 0;
-		return jKachlovnik.trida() * ImageReceiver.TRIDA + (vidim ? 0 : NEVIDITELNA) + ((long) dx * dx + (long) dy * dy) / 4;
+		return jKachlovnik.trida() * ImageReceiver.TRIDA + (vidim ? 0 : ImageReceiver.MIMO_VYREZ) + ((long) dx * dx + (long) dy * dy) / 4;
 	}
 
 	/**

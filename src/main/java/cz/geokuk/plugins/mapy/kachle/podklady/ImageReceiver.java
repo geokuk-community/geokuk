@@ -13,6 +13,8 @@ public interface ImageReceiver {
 	long TRIDA = 1L << 40;
 
 	/** Příjemce dlaždici už nechce, její získání se přeskočí. */
+	/** Posun pořadí dlaždic mimo viditelnou oblast; větší než jakákoli vzdálenost od středu. */
+	long MIMO_VYREZ = 1L << 34;
 	long ZASTARALA = Long.MAX_VALUE;
 
 	/** Dlaždice mimo výřez, třeba předvykreslení okolí; jde až za všechno, co je vidět. */
