@@ -7,10 +7,12 @@
   Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
   Průvodce nastavením map… jsou v menu Soubor.
 - Logo, ikona programu a úvodní obrázek GeoKuku jsou nové; zdrojové soubory
-  a skript pro jejich vygenerování jsou ve složce grafika.
-  Po aktualizaci může připnutý zástupce chvíli zobrazovat starou ikonu;
-  pomůže odepnout a znovu připnout zástupce, obnovit ikony (ie4uinit.exe
-  -ClearIconCache), restartovat Průzkumník nebo počítač.
+  a skript pro jejich vygenerování jsou ve složce grafika. Přenosná verze pro
+  Windows si při startu obnoví soubor geokuk.ico ve složce s programem
+  (ukazují na něj zástupci), takže ikonu vymění i aktualizace z programu.
+  Připnutý zástupce může dál chvíli ukazovat starou ikonu, dokud Windows
+  neobnoví mezipaměť ikon; pomůže odepnout a znovu připnout zástupce, obnovit
+  ikony (ie4uinit.exe -ClearIconCache), restartovat Průzkumník nebo počítač.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
   o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,
