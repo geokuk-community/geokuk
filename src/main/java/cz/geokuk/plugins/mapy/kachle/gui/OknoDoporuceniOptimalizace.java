@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import java.util.function.BooleanSupplier;
+
 import javax.swing.*;
 
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
@@ -61,6 +63,8 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 
 	private final Timer casovac;
 	private final Odpocet odpocet = new Odpocet(ODPOCET_S);
+	/** Zda uživatel okno čte (myš nad oknem nebo fokus); test ho nahrazuje, protože fokus a myš závisí na okenním systému. */
+	BooleanSupplier ctePozastavuje = this::uzivatelCte;
 
 	/** Obsah okna; zvlášť, aby šel nakreslit bez zobrazení. */
 	static JPanel panel(final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final JLabel odpocet, final JButton optimalizovat, final JButton bez) {
@@ -100,7 +104,7 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		setContentPane(panel);
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		casovac = new Timer(1000, e -> {
-			final boolean pozastaveno = uzivatelCte();
+			final boolean pozastaveno = ctePozastavuje.getAsBoolean();
 			if (odpocet.tik(pozastaveno)) {
 				zavri(volba::vyprseni);
 			} else if (pozastaveno) {

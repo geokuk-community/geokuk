@@ -248,7 +248,8 @@ public class OptimalizaceDatabazeOknaTest {
 					okna[0] = w;
 				}
 			}
-			// Mimo obrazovku, ať myš nad oknem nepozastaví odpočet.
+			// Fokus a myš závisí na okenním systému (na Xvfb bez správce oken se okno může zaměřit samo); odpočet v testu na nich nesmí záviset.
+			((OknoDoporuceniOptimalizace) okna[0]).ctePozastavuje = () -> false;
 			okna[0].setLocation(-20000, -20000);
 		});
 		return okna[0];
@@ -297,6 +298,23 @@ public class OptimalizaceDatabazeOknaTest {
 		tikej(okno, OknoDoporuceniOptimalizace.ODPOCET_S - 1);
 		Assert.assertNull("před koncem odpočtu nic", volba[0]);
 		tikej(okno, 1);
+		Assert.assertEquals("vyprseni", volba[0]);
+		Assert.assertFalse(okno.isShowing());
+	}
+
+	/** Dokud uživatel okno čte (fokus nebo myš), odpočet stojí; po odchodu pokračuje a vyprší. */
+	@Test
+	public void odpocetStojiDokudUzivatelCte() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final String[] volba = new String[1];
+		final java.awt.Window okno = zobrazOkno(zaznam(volba));
+		final OknoDoporuceniOptimalizace dialog = (OknoDoporuceniOptimalizace) okno;
+		SwingUtilities.invokeAndWait(() -> dialog.ctePozastavuje = () -> true);
+		tikej(okno, OknoDoporuceniOptimalizace.ODPOCET_S + 10);
+		Assert.assertNull("odpočet při čtení stojí", volba[0]);
+		Assert.assertTrue(okno.isShowing());
+		SwingUtilities.invokeAndWait(() -> dialog.ctePozastavuje = () -> false);
+		tikej(okno, OknoDoporuceniOptimalizace.ODPOCET_S);
 		Assert.assertEquals("vyprseni", volba[0]);
 		Assert.assertFalse(okno.isShowing());
 	}
