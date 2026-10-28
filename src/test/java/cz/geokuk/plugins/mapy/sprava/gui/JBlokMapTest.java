@@ -339,6 +339,15 @@ public class JBlokMapTest {
 		}
 	}
 
+	private static java.awt.KeyboardFocusManager spravceSFokusem(final java.awt.Component vlastnik) {
+		return new java.awt.DefaultKeyboardFocusManager() {
+			@Override
+			public java.awt.Component getFocusOwner() {
+				return vlastnik;
+			}
+		};
+	}
+
 	/** Mapy > Správce offline map… otevře panel, i když myš nad blokem nikdy nebyla. */
 	@Test(timeout = 30000)
 	public void udalostZMenuOtevrePanel() throws Exception {
@@ -374,16 +383,22 @@ public class JBlokMapTest {
 				}
 			}
 			Assert.assertTrue("panel otevřený z menu", videt);
-			boolean drzi = false;
-			while (System.currentTimeMillis() < konec && !drzi) {
-				final boolean[] d = new boolean[1];
-				SwingUtilities.invokeAndWait(() -> d[0] = blok[0].getObsah().isHledaniAktivni());
-				drzi = d[0];
-				if (!drzi) {
-					Thread.sleep(50);
+			// Skutečný fokus závisí na okenním systému (na macOS runneru nemusí okno fokus dostat); ověřuje se, o co panel požádal a že fokus v něm panel drží otevřený.
+			SwingUtilities.invokeAndWait(() -> {
+				final JMapyPopup panel = blok[0].getObsah();
+				final java.awt.Component cil = panel.posledniZadostOFokus;
+				Assert.assertNotNull("panel z menu si o fokus řekl", cil);
+				Assert.assertTrue(SwingUtilities.isDescendingFrom(cil, panel));
+				final java.util.function.Supplier<java.awt.KeyboardFocusManager> puvodni = panel.spravceFokusu;
+				try {
+					panel.spravceFokusu = () -> spravceSFokusem(cil);
+					Assert.assertTrue("s fokusem z menu panel nezavře odjetí myši", panel.isHledaniAktivni());
+					panel.spravceFokusu = () -> spravceSFokusem(null);
+					Assert.assertFalse("bez fokusu ho zavře", panel.isHledaniAktivni());
+				} finally {
+					panel.spravceFokusu = puvodni;
 				}
-			}
-			Assert.assertTrue("s fokusem z menu panel nezavře odjetí myši", drzi);
+			});
 		} finally {
 			SwingUtilities.invokeAndWait(() -> {
 				blok[0].zavri();
