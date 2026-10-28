@@ -87,8 +87,7 @@
   až když jsou potřeba, písma a prvky Swingu se připravují na pozadí. Při
   spuštění bez archivu tříd (jar napřímo) se okno na Windows otevře za 1633 ms
   místo 1767 ms ve verzi 6.4.3 (−7,6 %, medián z 9 běhů).
-- Spojení s cache dlaždic se otevírá při startu na pozadí, takže se první
-  dlaždice po spuštění ukáže dřív.
+- Spojení s cache dlaždic se otevírá při startu na pozadí.
 - Fronty dlaždic řadí požadavky podle toho, co je právě vidět: nejdřív hlavní
   mapa a viditelné dlaždice od středu ven; dlaždice, které už na obrazovce
   nejsou, se přeskočí.
