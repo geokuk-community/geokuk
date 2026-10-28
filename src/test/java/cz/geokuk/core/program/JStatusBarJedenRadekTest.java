@@ -46,6 +46,12 @@ public class JStatusBarJedenRadekTest {
 		return radek.getPreferredSize().height;
 	}
 
+	private static boolean popisekZdrojuVidet(final JStatusBar radek) throws Exception {
+		final Field f = JPrepinaceZdroju.class.getDeclaredField("popisek");
+		f.setAccessible(true);
+		return ((javax.swing.JLabel) f.get(pole(radek, "prepinaceZdroju"))).isVisible();
+	}
+
 	/** Šířka řádku s názvy zdrojů skrytými; při ní se řádek ještě vejde do jednoho řádku. */
 	private static int sirkaBezNazvuZdroju(final JStatusBar radek) throws Exception {
 		final JPrepinaceZdroju zdroje = (JPrepinaceZdroju) pole(radek, "prepinaceZdroju");
@@ -66,6 +72,7 @@ public class JStatusBarJedenRadekTest {
 		Assert.assertTrue("názvy zdrojů zabírají místo: " + plna + " × " + uzka, plna > uzka);
 		Assert.assertEquals(jedenRadek, vyska(radek, uzka + 5));
 		Assert.assertTrue(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
+		Assert.assertFalse("popisek Zdroje se skryje", popisekZdrojuVidet(radek));
 	}
 
 	@Test
@@ -75,6 +82,7 @@ public class JStatusBarJedenRadekTest {
 		final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
 		vyska(radek, plna + 5);
 		Assert.assertFalse(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
+		Assert.assertTrue(popisekZdrojuVidet(radek));
 	}
 
 	@Test

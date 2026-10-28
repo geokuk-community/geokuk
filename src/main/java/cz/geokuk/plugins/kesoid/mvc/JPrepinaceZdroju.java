@@ -337,7 +337,7 @@ public class JPrepinaceZdroju extends JPanel {
 		return okno != null ? okno.getWidth() : Integer.MAX_VALUE;
 	}
 
-	/** Když se stavový řádek nevejde do jednoho řádku, zůstane u zdrojů jen zaškrtávátko a ikona. */
+	/** Když se stavový řádek nevejde do jednoho řádku, zůstane u zdrojů jen zaškrtávátko a ikona, bez názvů i bez popisku Zdroje. */
 	public void setUsporny(final boolean usporny) {
 		if (this.usporny != usporny) {
 			this.usporny = usporny;
@@ -349,9 +349,9 @@ public class JPrepinaceZdroju extends JPanel {
 		return usporny;
 	}
 
-	/** Šířka, kterou zabírají názvy zdrojů, když jsou vidět. */
+	/** Šířka, kterou zabírají popisek a názvy zdrojů, když jsou vidět. */
 	public int sirkaNazvu() {
-		int sirka = 0;
+		int sirka = popisek.getPreferredSize().width;
 		for (final Map.Entry<TypZdroje, JLabel> e : nazvy.entrySet()) {
 			if (bunky.get(e.getKey()).isVisible()) {
 				sirka += e.getValue().getPreferredSize().width;
@@ -364,7 +364,8 @@ public class JPrepinaceZdroju extends JPanel {
 	void prizpusob() {
 		final int sirka = sirkaOkna();
 		final boolean kompaktni = sirka < PRAH_KOMPAKTNI || usporny;
-		boolean zmena = false;
+		boolean zmena = popisek.isVisible() == usporny;
+		popisek.setVisible(!usporny);
 		for (final JLabel n : nazvy.values()) {
 			zmena |= n.isVisible() == kompaktni;
 			n.setVisible(!kompaktni);
