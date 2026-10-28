@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OpensakDbLoader extends Nacitac0 {
 
 	/** Nejvyšší verze schématu ({@code PRAGMA user_version}), se kterou je načítání ověřené. */
-	static final int OVERENA_VERZE_SCHEMATU = 26;
+	static final int OVERENA_VERZE_SCHEMATU = 28;
 
 	private static final int PROGRESS_VAHA_CACHES = 1;
 	private static final int PROGRESS_VAHA_WAYPOINTS = 1;
@@ -44,6 +44,21 @@ public class OpensakDbLoader extends Nacitac0 {
 	/** Texty čtené jedním voláním JDBC ({@link SpojeneTexty}). */
 	private static final String[] TEXTY_CACHES = { "gc_code", "name", "cache_type", "container", "placed_by", "owner_name", "owner_id", "hidden_date", "found_date", "country", "state" };
 	private static final String[] TEXTY_WAYPOINTS = { "prefix", "wp_type", "name", "wp_code", "description" };
+
+	/** Sloupce, které načítání čte, podle tabulek; z nich vychází týdenní kontrola schématu OpenSAKu. */
+	static Map<String, SortedSet<String>> pouziteSloupce() {
+		final Map<String, SortedSet<String>> vysledek = new TreeMap<>();
+		POVINNE_SLOUPCE.forEach((tabulka, sloupce) -> vysledek.computeIfAbsent(tabulka, t -> new TreeSet<>()).addAll(sloupce));
+		vysledek.computeIfAbsent("caches", t -> new TreeSet<>()).addAll(Arrays.asList(SLOUPCE_CACHES));
+		vysledek.get("caches").addAll(Arrays.asList(TEXTY_CACHES));
+		vysledek.get("caches").add("encoded_hints"); // HintZDatabaze.OPENSAK
+		vysledek.computeIfAbsent("waypoints", t -> new TreeSet<>()).addAll(Arrays.asList(SLOUPCE_WAYPOINTS));
+		vysledek.get("waypoints").addAll(Arrays.asList(TEXTY_WAYPOINTS));
+		vysledek.get("waypoints").add("id"); // ORDER BY ve čtení waypointů
+		vysledek.computeIfAbsent("user_notes", t -> new TreeSet<>()).addAll(Arrays.asList(SLOUPCE_USER_NOTES));
+		vysledek.get("user_notes").add("cache_id");
+		return vysledek;
+	}
 
 	/** Typy, které OpenSAK pojmenovává jinak než groundspeak:type v GPX, a zkrácené názvy. */
 	private static final Map<String, String> TYPY_KESI = typyKesi();
