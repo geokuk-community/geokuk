@@ -5,6 +5,7 @@ caches container
 caches country
 caches difficulty
 caches elevation
+caches encoded_hints
 caches favorite_points
 caches found
 caches found_date
@@ -25,6 +26,7 @@ user_notes corrected_lon
 user_notes is_corrected
 waypoints cache_id
 waypoints description
+waypoints id
 waypoints latitude
 waypoints longitude
 waypoints name

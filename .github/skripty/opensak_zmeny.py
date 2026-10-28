@@ -6,24 +6,36 @@ Použití: opensak_zmeny.py <pouzite.txt> <ulozene.txt> <aktualni.txt>
   ulozene.txt  schéma, se kterým je GeoKuk ověřený (výstup opensak_schema.py)
   aktualni.txt schéma ze zkoumané větve OpenSAKu (výstup opensak_schema.py)
 Návratový kód 1 jen když v aktuálním schématu chybí sloupec nebo tabulka, které GeoKuk čte; přidané sloupce a vyšší verze jsou jen informace.
+Kód 2 je chyba běhu (chybějící nebo poškozený vstup, prázdný seznam používaných sloupců): kontrola nic neřekla, issue se kvůli ní nezakládá.
 """
 import sys
 from pathlib import Path
 
 
-def nacti(soubor):
-    radky = [r.strip() for r in Path(soubor).read_text(encoding="utf-8").splitlines() if r.strip()]
-    verze = None
-    if radky and radky[0].startswith("verze "):
-        verze = int(radky[0].split()[1])
-        radky = radky[1:]
+def nacti(soubor, ma_verzi=False):
+    try:
+        radky = [r.strip() for r in Path(soubor).read_text(encoding="utf-8").splitlines() if r.strip()]
+        verze = None
+        if ma_verzi:
+            if not radky or not radky[0].startswith("verze "):
+                raise ValueError("chybí řádek „verze N“")
+            verze = int(radky[0].split()[1])
+            radky = radky[1:]
+        if not radky or any(len(r.split()) != 2 for r in radky):
+            raise ValueError("prázdný soubor nebo řádek jiný než „tabulka sloupec“")
+    except (OSError, ValueError) as e:
+        print("Chyba kontroly, vstup %s: %s" % (soubor, e), file=sys.stderr)
+        sys.exit(2)
     return verze, set(radky)
 
 
 def main():
+    if len(sys.argv) != 4:
+        print(__doc__, file=sys.stderr)
+        sys.exit(2)
     _, pouzite = nacti(sys.argv[1])
-    verze_ulozena, ulozene = nacti(sys.argv[2])
-    verze_aktualni, aktualni = nacti(sys.argv[3])
+    verze_ulozena, ulozene = nacti(sys.argv[2], True)
+    verze_aktualni, aktualni = nacti(sys.argv[3], True)
     chybi = sorted(pouzite - aktualni)
     pridane = sorted(aktualni - ulozene)
     zmizele = sorted((ulozene - aktualni) - pouzite)

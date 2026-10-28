@@ -79,6 +79,15 @@ public class OpensakSchemaSkriptyTest {
 		Assert.assertTrue(v.vystup, v.vystup.contains("`caches.found_date`"));
 	}
 
+	@Test
+	public void chybaVstupuJeChybaBehuNeChybejiciSloupce() throws Exception {
+		Assume.assumeTrue(new File(SKRIPTY + "opensak_zmeny.py").isFile() && jePython());
+		final File prazdny = slozka.newFile();
+		Assert.assertEquals(2, spust("python3", SKRIPTY + "opensak_zmeny.py", POUZITE, ULOZENE, new File(slozka.getRoot(), "neexistuje.txt").getPath()).kod);
+		Assert.assertEquals(2, spust("python3", SKRIPTY + "opensak_zmeny.py", prazdny.getPath(), ULOZENE, ULOZENE).kod);
+		Assert.assertEquals(2, spust("python3", SKRIPTY + "opensak_zmeny.py", POUZITE, prazdny.getPath(), ULOZENE).kod);
+	}
+
 	private static boolean jePython() {
 		try {
 			return spust("python3", "--version").kod == 0;

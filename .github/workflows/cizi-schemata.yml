@@ -42,9 +42,12 @@ jobs:
               cat "zprava-$vetev.md"
               echo
             } | tee -a "$GITHUB_STEP_SUMMARY" > "uvod-$vetev.md"
-            if [ "$stav" -ne 0 ]; then
+            if [ "$stav" -eq 1 ]; then
               rozdil=1
               cat "uvod-$vetev.md" >> rozdil.md
+            elif [ "$stav" -ne 0 ]; then
+              echo "::error::Kontrola schématu větve $vetev nedoběhla (kód $stav)."
+              exit 2
             fi
           done
           exit $rozdil

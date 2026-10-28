@@ -51,8 +51,10 @@ public class OpensakDbLoader extends Nacitac0 {
 		POVINNE_SLOUPCE.forEach((tabulka, sloupce) -> vysledek.computeIfAbsent(tabulka, t -> new TreeSet<>()).addAll(sloupce));
 		vysledek.computeIfAbsent("caches", t -> new TreeSet<>()).addAll(Arrays.asList(SLOUPCE_CACHES));
 		vysledek.get("caches").addAll(Arrays.asList(TEXTY_CACHES));
+		vysledek.get("caches").add("encoded_hints"); // HintZDatabaze.OPENSAK
 		vysledek.computeIfAbsent("waypoints", t -> new TreeSet<>()).addAll(Arrays.asList(SLOUPCE_WAYPOINTS));
 		vysledek.get("waypoints").addAll(Arrays.asList(TEXTY_WAYPOINTS));
+		vysledek.get("waypoints").add("id"); // ORDER BY ve čtení waypointů
 		vysledek.computeIfAbsent("user_notes", t -> new TreeSet<>()).addAll(Arrays.asList(SLOUPCE_USER_NOTES));
 		vysledek.get("user_notes").add("cache_id");
 		return vysledek;
