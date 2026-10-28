@@ -11,9 +11,6 @@
   Po aktualizaci může připnutý zástupce chvíli zobrazovat starou ikonu;
   pomůže odepnout a znovu připnout zástupce, obnovit ikony (ie4uinit.exe
   -ClearIconCache), restartovat Průzkumník nebo počítač.
-- Ikona programu v přenosné verzi pro Windows (geokuk.ico ve složce s programem,
-  na kterou ukazují zástupci) je i v geokuk.jar a po aktualizaci programu se
-  podle něj obnoví.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
   o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,
