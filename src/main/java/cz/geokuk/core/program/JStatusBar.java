@@ -206,6 +206,22 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		initComponents();
 	}
 
+	/** Nevejde-li se řádek do jednoho řádku, zdroje se zúží na zaškrtávátka; zalomení zůstává pro opravdu úzké okno. */
+	@Override
+	public void doLayout() {
+		if (getWidth() > 0) {
+			final int bezNazvu = layout.sirkaVJednomRadku(this);
+			final int plna = bezNazvu + (prepinaceZdroju.isUsporny() ? prepinaceZdroju.sirkaNazvu() : 0);
+			final Insets ins = getInsets();
+			final boolean usporny = plna > getWidth() - ins.left - ins.right;
+			if (usporny != prepinaceZdroju.isUsporny()) {
+				prepinaceZdroju.setUsporny(usporny);
+				SwingUtilities.invokeLater(this::revalidate);
+			}
+		}
+		super.doLayout();
+	}
+
 	public void inject(final KesoidModel kesoidModel) {
 		prepinaceZdroju.setOvladani(kesoidModel);
 		prepinaceZdroju.obnov(kesoidModel.getStavZdroju());
@@ -365,7 +381,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	JPanel createPanel() {
 		final JPanel panel = new JPanel();
-		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 3, 0));
+		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 0));
 		panel.setBorder(BorderFactory.createEtchedBorder());
 		return panel;
 	}
@@ -499,7 +515,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	}
 
 	static String textPrekroceni(final boolean tecky, final int limit) {
-		return String.format(new Locale("cs"), "Limit %,d %s", limit, tecky ? "teček" : "waypointů");
+		return String.format(new Locale("cs"), "Max. %,d %s", limit, tecky ? "teček" : "bodů");
 	}
 
 	static String tooltipPrekroceni(final boolean tecky, final int limit) {
