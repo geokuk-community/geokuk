@@ -605,7 +605,7 @@ public class KachleZiskavac {
 	static final Image PRAZDNA_MIMO_UZEMI = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
 	static final BufferedImage PRAZDNY_PREKRYV = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
 	/** Dlaždice, které se nedávno nepodařilo stáhnout; jinak by se při každém překreslení stahovaly znovu. */
-	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).maximumSize(10_000).build();
+	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(java.time.Duration.ofSeconds(30)).maximumSize(10_000).build();
 
 	private OnofflineModel onofflineModel;
 
