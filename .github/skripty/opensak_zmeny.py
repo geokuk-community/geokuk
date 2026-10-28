@@ -30,6 +30,9 @@ def nacti(soubor, ma_verzi=False):
 
 
 def main():
+    # Na Windows je výstup do roury ve výchozí znakové sadě systému, zpráva má diakritiku.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     if len(sys.argv) != 4:
         print(__doc__, file=sys.stderr)
         sys.exit(2)
