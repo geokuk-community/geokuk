@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalCause;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.*;
 
@@ -345,14 +346,6 @@ public class KachleZiskavac {
 			return prijemci;
 		}
 
-		@Override
-		protected void finalize() {
-			if (image != null) {
-				pocitMemZameteni.inc();
-			}
-			pocitKachlice.dec();
-		}
-
 		public synchronized void kancluj(final ImageReceiver imageReceiver, final DiagnosticsData diagnosticsData2) {
 			pocitCancelCelkem.inc();
 			if (image != null) {
@@ -537,7 +530,7 @@ public class KachleZiskavac {
 	private final Pocitadlo pocitMemMinuti = new PocitadloRoste("ka12 MEM cache #minutí",
 			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši nalézt a co se dělo dál není tímto atributem určeno..");
 
-	private final Pocitadlo pocitMemZameteni = new PocitadloRoste("ka13 MEM cache #zametených", "Počet obrázků, které garbage collector zametrl pryč a my díky tomu odstranili referenci z keše.");
+	private final Pocitadlo pocitMemZameteni = new PocitadloRoste("ka13 MEM cache #zametených", "Počet kachlic, které garbage collector zametl pryč a my díky tomu odstranili referenci z keše.");
 
 	private final PocitadloRoste pocitDiskLoadSubmit = new PocitadloRoste("ka21 DISK cache #požadovaných",
 			"Kolikrát bylo požadováno číst dlaždici z disku. Obsahuje všechny zásahy, minutí, chyby a také skutečně zknclované čtení");
@@ -581,7 +574,7 @@ public class KachleZiskavac {
 	private final PocitadloNula pocitVelikostWebFrontyBatch = new PocitadloNula("ka3 veliksot fronty čtení z webu (batch)", "Kolik je ve frontě požadavků na čtení dlaždic z webu.");
 	private final PocitadloNula pocitVelikostZapisoveFronty = new PocitadloNula("ka3 veliksot fronty zápisu na disk", "Kolik bloků dlaždic je ještě ve frontě a čeká na zápis na disk.");
 
-	private final PocitadloMalo pocitKachlice = new PocitadloMalo("#kachlic",
+	final PocitadloMalo pocitKachlice = new PocitadloMalo("#kachlic",
 			"Počet tzv. kachlic, což je objekt určený k řízení získávání kachle z disku, z webu a pak ukládání. Kachlice také reprezentují MEM cache");
 
 	private final EnumMap<Priority, DvojiceExekucnichSluzeb> exekucniSluzby = new EnumMap<>(Priority.class);
@@ -594,7 +587,12 @@ public class KachleZiskavac {
 	/** Dlaždic v paměti je nejvýš pár obrazovek, dál se berou z disku. */
 	private static final int MAX_KACHLI_V_PAMETI = 300;
 
-	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(MAX_KACHLI_V_PAMETI).softValues().build();
+	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(MAX_KACHLI_V_PAMETI).softValues().<Ka, Kachlice>removalListener(oznameni -> {
+		pocitKachlice.dec();
+		if (oznameni.getCause() == RemovalCause.COLLECTED) {
+			pocitMemZameteni.inc();
+		}
+	}).build();
 
 	private KachleManager kachleManager;
 

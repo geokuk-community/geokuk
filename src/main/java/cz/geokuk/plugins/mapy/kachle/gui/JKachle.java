@@ -44,7 +44,6 @@ public class JKachle extends JComponent {
 	static final long PRVNI_POKUS_PO_CHYBE_MS = 15_000;
 	private static final long POSLEDNI_POKUS_PO_CHYBE_MS = 300_000;
 
-	private static final PocitadloMalo pocitJKAchle = new PocitadloMalo("#JKachle", "Počet kompomnent JKachle přes hlavní okno, okno v rohu, rendry, stahování, prostě všude.");
 	private final JKachlovnik jKachlovnik;
 	// private static int cictac;
 	private final Ka ka;
@@ -85,8 +84,6 @@ public class JKachle extends JComponent {
 		this.jKachlovnik = jKachlovnik;
 		this.ka = ka;
 		setSize(KACHLE_WIDTH, KACHLE_HEIGHT);
-		pocitJKAchle.inc();
-
 	}
 
 	public KaLoc getKaLoc() {
@@ -233,12 +230,6 @@ public class JKachle extends JComponent {
 		};
 		final String nazevKachlovniku = jKachlovnik == null ? null : jKachlovnik.nazevKachlovniku;
 		kanceler = kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, nazevKachlovniku, diagListener));
-	}
-
-	@Override
-	protected void finalize() throws Throwable {
-		super.finalize();
-		pocitJKAchle.dec();
 	}
 
 	@Override
