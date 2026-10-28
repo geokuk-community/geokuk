@@ -63,7 +63,7 @@ public class OpensakPouziteSloupceTest {
 					g == null ? "-" : String.join(",", String.valueOf(g.name), String.valueOf(g.type), String.valueOf(g.container), String.valueOf(g.difficulty), String.valueOf(g.terrain),
 							String.valueOf(g.placedBy), String.valueOf(g.owner), String.valueOf(g.ownerid), String.valueOf(g.country), String.valueOf(g.state), String.valueOf(g.archived),
 							String.valueOf(g.availaible), String.valueOf(g.hintZDatabaze != null && g.hintZDatabaze.apply(w.name) != null)),
-					w.gpxg == null ? "-" : String.join(",", String.valueOf(w.gpxg.found), String.valueOf(w.gpxg.favorites), String.valueOf(w.gpxg.elevation))));
+					String.join(",", String.valueOf(w.gpxg.found), String.valueOf(w.gpxg.favorites), String.valueOf(w.gpxg.elevation))));
 		}
 		Collections.sort(vysledek);
 		return vysledek;
