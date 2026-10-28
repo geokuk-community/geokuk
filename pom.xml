@@ -294,6 +294,7 @@
 								<smoke.testClasses>${project.build.testOutputDirectory}</smoke.testClasses>
 							</systemPropertyVariables>
 							<argLine>-Dfile.encoding=UTF-8</argLine>
+							<useModulePath>false</useModulePath>
 							<properties>
 								<property>
 									<name>listener</name>
