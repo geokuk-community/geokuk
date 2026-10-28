@@ -175,4 +175,19 @@ public class TemaGeoKukTest {
 		Assert.assertTrue(xml.contains("<pathText display=\"always\" fill=\"#4F7FB8\" font-size=\"11\""));
 		Assert.assertTrue(xml.contains("<pathText display=\"always\" fill=\"#4F7FB8\" font-size=\"10\""));
 	}
+
+	/** Státní hranici nepřekryje stínování terénu; pás leží pod turistickými trasami a tenká čára hranice je i nad nimi. */
+	@Test
+	public void statniHraniceNadStinovanimAJadroNadTrasami() throws IOException {
+		for (final String zdroj : new String[] { "geokuk/GeoKuk.xml", "geokuk/GeoKuk_detail.xml" }) {
+			final String xml = text(zdroj);
+			final String hranice = "<rule e=\"way\" k=\"admin_level\" v=\"2\"";
+			final int pas = xml.indexOf(hranice);
+			final int nadTrasami = xml.indexOf(hranice, pas + 1);
+			Assert.assertTrue(zdroj, pas > xml.lastIndexOf("<hillshading "));
+			Assert.assertTrue(zdroj, pas < xml.indexOf("k=\"fmrelhikingred\""));
+			Assert.assertTrue(zdroj, nadTrasami > xml.lastIndexOf("k=\"fmrelhikingred\""));
+			Assert.assertEquals(zdroj, -1, xml.indexOf(hranice, nadTrasami + 1));
+		}
+	}
 }

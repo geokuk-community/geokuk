@@ -370,15 +370,6 @@
     <!-- non-physical boundaries -->
     <!-- administrative borders -->
     <rule e="any" k="*" v="*">
-        <rule e="way" k="admin_level" v="2">
-            <rule e="any" k="*" v="*" zoom-max="9">
-                <line stroke="#80EDC2EC" stroke-linecap="butt" stroke-width="6" />
-                <line stroke="#9E5A9E" stroke-dasharray="6, 2, 1, 2" stroke-width="1" />
-            </rule>
-            <rule e="any" k="*" v="*" zoom-min="10">
-                <line scale="none" stroke="#9E5A9E" stroke-dasharray="10, 3, 2, 3" stroke-width="1.2" />
-            </rule>
-        </rule>
         <rule e="way" k="admin_level" v="4">
             <line scale="none" stroke="#B09E5A9E" stroke-dasharray="8, 3, 2, 3" stroke-width="0.8" />
         </rule>
@@ -420,6 +411,29 @@
     <!-- hillshading -->
     <hillshading zoom-min="9" zoom-max="13" magnitude="95" />
     <hillshading zoom-min="14" zoom-max="17" magnitude="68" />
+
+    <!-- státní hranice: nad stínováním terénu, pod turistickými trasami -->
+    <rule e="way" k="admin_level" v="2">
+        <rule e="any" k="*" v="*" zoom-max="9">
+            <line stroke="#80EDC2EC" stroke-linecap="butt" stroke-width="6" />
+            <line stroke="#9E5A9E" stroke-dasharray="6, 2, 1, 2" stroke-width="1" />
+        </rule>
+        <rule e="any" k="*" v="*" zoom-min="10" zoom-max="11">
+            <line scale="none" stroke="#90E8B4E6" stroke-linecap="butt" stroke-width="6" />
+            <line scale="none" stroke="#B0FFFFFF" stroke-width="3.2" />
+            <line scale="none" stroke="#8E4A8E" stroke-dasharray="10, 3, 2, 3" stroke-width="1.6" />
+        </rule>
+        <rule e="any" k="*" v="*" zoom-min="12" zoom-max="13">
+            <line scale="none" stroke="#88E8B4E6" stroke-linecap="butt" stroke-width="8" />
+            <line scale="none" stroke="#B0FFFFFF" stroke-width="3.6" />
+            <line scale="none" stroke="#8E4A8E" stroke-dasharray="12, 3, 2, 3" stroke-width="1.8" />
+        </rule>
+        <rule e="any" k="*" v="*" zoom-min="14">
+            <line scale="none" stroke="#80E8B4E6" stroke-linecap="butt" stroke-width="12" />
+            <line scale="none" stroke="#B0FFFFFF" stroke-width="4" />
+            <line scale="none" stroke="#8E4A8E" stroke-dasharray="14, 4, 2, 4" stroke-width="2" />
+        </rule>
+    </rule>
 
 
     <!-- buildings -->
@@ -796,6 +810,10 @@
  <rule e="way" k="fmrelmtbgreen" v="*"><line stroke="#C46A1A" stroke-width="2.0" stroke-dasharray="6,4" stroke-linecap="butt" scale="none" dy="3.0"/></rule>
  <rule e="way" k="fmrelmtbyellow" v="*"><line stroke="#C46A1A" stroke-width="2.0" stroke-dasharray="6,4" stroke-linecap="butt" scale="none" dy="3.0"/></rule>
 </rule>
+    <!-- státní hranice viditelná i přes turistické trasy -->
+    <rule e="way" k="admin_level" v="2" zoom-min="12">
+        <line scale="none" stroke="#C08E4A8E" stroke-dasharray="12, 3, 2, 3" stroke-width="1.2" />
+    </rule>
     <!-- highway captions etc. -->
     <rule e="way" k="tunnel" v="~|no|false">
         <rule e="way" k="highway" v="footway|path|track|bridleway|steps|byway" zoom-min="14">
