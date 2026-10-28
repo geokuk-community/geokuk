@@ -112,6 +112,7 @@ public class GeokukMain {
 	private void dokonciStart(final Inicializator inicializator, final Integer portOvladani, final boolean vyvojoveOvladani) {
 		Diagnostika.znackaStartu("dokončení startu");
 		SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
+		IkonaProgramu.aktualizujVeSlozceProgramuNaPozadi();
 		VytvoritZastupceAction.aktualizujZastupceVeSlozce();
 		new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
 		new Thread(PrehledovaMapa::doplnPriStartu, "Přehledová mapa").start();

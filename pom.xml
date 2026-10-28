@@ -35,6 +35,12 @@
 				<targetPath>licence</targetPath>
 			</resource>
 			<resource>
+				<directory>${project.basedir}/distribuce/windows</directory>
+				<includes>
+					<include>geokuk.ico</include>
+				</includes>
+			</resource>
+			<resource>
 				<directory>${project.basedir}/distribuce/offline-mapy</directory>
 				<targetPath>offline-mapy</targetPath>
 			</resource>
