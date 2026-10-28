@@ -177,6 +177,24 @@ public class JKachle extends JComponent {
 	}
 
 	/**
+	 * Naléhavost dlaždice pro fronty: viditelné před neviditelnými, od středu ven; {@link ImageReceiver#ZASTARALA}, když už v kachlovníku není. Volá se z vláken
+	 * front bez zámků dlaždice, proto jen čte hodnoty komponenty.
+	 */
+	long dulezitost() {
+		final Container rodic = getParent();
+		if (jKachlovnik == null) {
+			return 0;
+		}
+		if (rodic == null) {
+			return ImageReceiver.ZASTARALA;
+		}
+		final int dx = 2 * getX() + getWidth() - rodic.getWidth();
+		final int dy = 2 * getY() + getHeight() - rodic.getHeight();
+		final boolean vidim = getX() < rodic.getWidth() && getX() + getWidth() > 0 && getY() < rodic.getHeight() && getY() + getHeight() > 0;
+		return jKachlovnik.trida() * ImageReceiver.TRIDA + (vidim ? 0 : ImageReceiver.MIMO_VYREZ) + ((long) dx * dx + (long) dy * dy) / 4;
+	}
+
+	/**
 	 * Získá obsah
 	 *
 	 * @param kachleModel
@@ -192,11 +210,19 @@ public class JKachle extends JComponent {
 			}
 		}
 		final long zadano = System.nanoTime();
-		final KaOneReq req = new KaOneReq(ka, kastat -> {
-			if (priorita == Priority.KACHLE && kastat.getImg() != null) {
-				Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
+		final KaOneReq req = new KaOneReq(ka, new ImageReceiver() {
+			@Override
+			public void send(final KachloStav kastat) {
+				if (priorita == Priority.KACHLE && kastat.getImg() != null) {
+					Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
+				}
+				prijmi(kastat, priorita);
 			}
-			prijmi(kastat, priorita);
+
+			@Override
+			public long dulezitost() {
+				return priorita == Priority.KACHLE ? JKachle.this.dulezitost() : NA_POZADI;
+			}
 		}, priorita);
 
 		final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {

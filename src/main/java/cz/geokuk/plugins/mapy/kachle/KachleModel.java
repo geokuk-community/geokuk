@@ -232,6 +232,9 @@ public class KachleModel extends Model0 {
 		}
 		this.umisteniSouboru = umisteniSouboru;
 		kachleCacheFolderHolder.setKachleCacheDir(umisteniSouboru.getKachleCacheDir());
+		if (ziskavac != null) {
+			ziskavac.predotevriCache();
+		}
 		currPrefe().putFilex(OFFLINE_MAPY_DIR, umisteniSouboru.getOfflineMapyDir());
 		nastavOfflineMapy(umisteniSouboru);
 		fire(new KachleUmisteniSouboruChangedEvent(umisteniSouboru));
