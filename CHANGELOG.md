@@ -26,7 +26,8 @@
 - Offline mapy se kreslí novým tématem GeoKuk: světlejší les a pole,
   chráněná území bez zelené výplně, decentní hnědooranžové vrstevnice
   a jemné stínování, skály, rozcestníky, boží muka, rozhledny, prameny
-  a vodopády, u značených tras jejich jména, tenká hranice státu a nevýrazné
+  a vodopády, u značených tras jejich jména, hranice státu, která je na
+  větších zoomech vidět i tam, kde po ní vedou turistické trasy, a nevýrazné
   hranice krajů, okresů a obcí. Ikony bodů mají jednotnou velikost
   a nepřekrývají se; zajímavá místa jsou až v podrobnějším měřítku. Téma
   platí, dokud v nabídce Mapy > Téma offline mapy nezvolíte jiné; původní
