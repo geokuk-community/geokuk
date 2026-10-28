@@ -8,6 +8,9 @@
   Průvodce nastavením map… jsou v menu Soubor.
 - Logo, ikona programu a úvodní obrázek GeoKuku jsou nové; zdrojové soubory
   a skript pro jejich vygenerování jsou ve složce grafika.
+  Po aktualizaci může připnutý zástupce chvíli zobrazovat starou ikonu;
+  pomůže odepnout a znovu připnout zástupce, obnovit ikony (ie4uinit.exe
+  -ClearIconCache), restartovat Průzkumník nebo počítač.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
   o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,
@@ -84,6 +87,10 @@
   až když jsou potřeba, písma a prvky Swingu se připravují na pozadí. Při
   spuštění bez archivu tříd (jar napřímo) se okno na Windows otevře za 1633 ms
   místo 1767 ms ve verzi 6.4.3 (−7,6 %, medián z 9 běhů).
+- Spojení s cache dlaždic se otevírá při startu na pozadí.
+- Fronty dlaždic řadí požadavky podle toho, co je právě vidět: nejdřív hlavní
+  mapa a viditelné dlaždice od středu ven; dlaždice, které už na obrazovce
+  nejsou, se přeskočí.
 - S Javou 19 a novější si přenosná verze po prvním spuštění uloží archiv tříd
   do složky data/cds (asi 40 MB) a další starty jsou asi o čtvrtinu rychlejší.
   První ukončení po instalaci nebo aktualizaci trvá o několik sekund déle.
