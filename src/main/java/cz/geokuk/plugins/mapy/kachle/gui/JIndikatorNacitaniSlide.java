@@ -61,6 +61,10 @@ public class JIndikatorNacitaniSlide extends JSingleSlide0 {
 		}
 	}
 
+	boolean bezi() {
+		return casovac.isRunning();
+	}
+
 	boolean isKresli() {
 		return kresli;
 	}
