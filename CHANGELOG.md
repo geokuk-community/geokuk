@@ -139,7 +139,6 @@
   už zítra.
 - Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
 - Úklid cache dlaždic nezastaví soubor, který nejde smazat.
-- Po aktualizaci programu nebo úpravě tématu se dlaždice jeho staré verze z cache offline map smažou hned; dlaždice jiných témat a vrstev zůstávají.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo
   žádná není (třeba jen s přehledovou mapou světa při větším přiblížení), a
   nabídne její stažení; u hranice i sousední mapy, které jsou v záběru.

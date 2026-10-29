@@ -693,42 +693,17 @@ public class KachleZiskavac {
 		return true;
 	}
 
+	/**
+	 * Zapíše klíč do souboru klíčů a smaže soubory symbolů, které už nikdo nepoužívá. Dlaždice klíčů, které v souboru nezůstaly, se z cache automaticky nemažou:
+	 * průchod a mazání ve velké cache by na dlouho zastavily čtení dlaždic.
+	 */
 	void uklidOfflineCache(final OblastniKlic klic, final File symboly) {
 		try {
 			final File slozka = symboly.getParentFile();
-			final Set<String> pred = UklidOfflineCache.ponechane(slozka);
-			final String predSestava = UklidOfflineCache.sestava(slozka, klic.getGlobalni());
-			final UklidOfflineCache.Plan plan = UklidOfflineCache.naplanuj(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita());
-			final Set<String> ponechat = plan.klice();
-			final boolean jinaSestava = !klic.getSestava().equals(predSestava);
-			if (ponechat.equals(pred) && !jinaSestava) {
-				plan.uloz();
-				return; // dlaždice jiných klíčů smazal už dřívější úklid
-			}
-			// Soubor klíčů se zapíše až po smazání dlaždic: když mazání selže, příští úklid ho zopakuje.
-			final KachleManager km = kachleManager;
-			int smazano = 0;
-			boolean hotovo = km != null;
-			if (km != null) {
-				if (!ponechat.equals(pred)) {
-					final int n = km.smazOfflineKrome(ponechat);
-					hotovo = n >= 0;
-					smazano += Math.max(0, n);
-				}
-				if (hotovo && jinaSestava) {
-					final int n = km.smazOfflineNesedici(klic.getGlobalni(), klic::klic);
-					hotovo = n >= 0;
-					smazano += Math.max(0, n);
-				}
-			}
-			if (!hotovo) {
-				log.info("Úklid cache offline mapy se nedokončil (smazáno {} dlaždic), zopakuje se při příštím otevření map", smazano);
-				return;
-			}
-			plan.uloz();
-			log.info("Úklid cache offline mapy: zůstávají klíče {}, smazáno {} dlaždic", ponechat, smazano);
+			final Set<String> ponechat = UklidOfflineCache.naplanuj(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita()).uloz();
+			log.info("Cache offline mapy: zůstávají klíče {}", ponechat);
 		} catch (final IOException | RuntimeException e) {
-			log.warn("Cache offline mapy nejde uklidit: {}", e.toString());
+			log.warn("Soubor klíčů cache offline mapy nejde zapsat: {}", e.toString());
 		}
 	}
 
