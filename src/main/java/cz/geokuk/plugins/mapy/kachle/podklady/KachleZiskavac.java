@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -368,9 +369,25 @@ public class KachleZiskavac {
 	 *
 	 */
 	class KachleUkladac {
-		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat. */
+		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat, když se mapou nehýbe. */
 		long casPoKteremSeZahajiUkladaniMs = TimeUnit.SECONDS.toMillis(5);
+
+		/** Při pohybu mapou (nové požadavky na dlaždice) se zápis odkládá, nejdéle takto dlouho od první čekající dlaždice. */
+		long nejdelsiOdlozeniUkladaniMs = TimeUnit.SECONDS.toMillis(15);
+
+		/** Mapou se nehýbe, když nepřišel požadavek na dlaždici tuto dobu. */
+		long necinnostMs = 1000;
+
+		/** Čekajících dlaždic je tolik, že se ukládá i při pohybu mapou. */
+		int nejviceCekajicich = 400;
+
+		/** Hodiny v ms; test je nahrazuje. */
+		LongSupplier hodiny = System::currentTimeMillis;
+
 		private final BlockingQueue<Ukladanec> queue = Queues.newLinkedBlockingQueue();
+
+		/** Kdy přišla první z čekajících dlaždic. */
+		private long prvniCekajici;
 
 		ScheduledExecutorService planovacUkladani = Executors.newSingleThreadScheduledExecutor();
 
@@ -382,22 +399,39 @@ public class KachleZiskavac {
 		 * @param ukladanec
 		 */
 		synchronized void zaplanujUlozeni(final Ukladanec ukladanec) {
+			if (queue.isEmpty()) {
+				prvniCekajici = hodiny.getAsLong();
+			}
 			queue.add(ukladanec);
-			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
+			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU && !lzeOdlozit()) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
 				submitChunks();
 			} else if (future == null) { // časovač běží od první čekající dlaždice, další ho neodkládají
-				future = planovacUkladani.schedule(() -> {
-					try {
-						casovacVyprsel();
-					} catch (final RuntimeException e) {
-						log.error("Naplánované ukládání dlaždic na disk selhalo", e);
-					}
-				}, casPoKteremSeZahajiUkladaniMs, TimeUnit.MILLISECONDS);
+				naplanuj(casPoKteremSeZahajiUkladaniMs);
 			}
+		}
+
+		private void naplanuj(final long zaMs) {
+			future = planovacUkladani.schedule(() -> {
+				try {
+					casovacVyprsel();
+				} catch (final RuntimeException e) {
+					log.error("Naplánované ukládání dlaždic na disk selhalo", e);
+				}
+			}, zaMs, TimeUnit.MILLISECONDS);
+		}
+
+		/** Při pohybu mapou se zápis (commit pod zámkem cache) odkládá, ale ne déle než do horního limitu a ne při mnoha čekajících dlaždicích. */
+		private boolean lzeOdlozit() {
+			final long ted = hodiny.getAsLong();
+			return ted - posledniPozadavek < necinnostMs && ted - prvniCekajici < nejdelsiOdlozeniUkladaniMs && queue.size() < nejviceCekajicich;
 		}
 
 		private synchronized void casovacVyprsel() {
 			future = null;
+			if (!queue.isEmpty() && lzeOdlozit()) {
+				naplanuj(Math.min(necinnostMs, nejdelsiOdlozeniUkladaniMs));
+				return;
+			}
 			submitChunks();
 		}
 
@@ -597,6 +631,9 @@ public class KachleZiskavac {
 	private KachleManager kachleManager;
 
 	final KachleUkladac ukladac = new KachleUkladac();
+
+	/** Kdy (ms) přišel poslední požadavek na dlaždici; zápis dlaždic se při pohybu mapou odkládá. */
+	private volatile long posledniPozadavek;
 
 	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
 	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
@@ -1008,6 +1045,7 @@ public class KachleZiskavac {
 		final ImageReceiver imageReceiver = kaoneReq.getImageReceiver();
 		pocitSubmitJednaDlazdice.inc();
 		final Ka kaone = kaoneReq.getKa();
+		posledniPozadavek = ukladac.hodiny.getAsLong();
 		final DiagnosticsData diagnosticsData = aDiagnosticsData.with("kaOne", kaoneReq);
 
 		final Kachlice kachlice = kachlmap.asMap().computeIfAbsent(kaone, k -> new Kachlice(k, dvojiceExekucnichSluzeb, diagnosticsData));

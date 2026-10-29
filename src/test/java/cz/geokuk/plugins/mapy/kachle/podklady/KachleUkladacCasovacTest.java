@@ -137,4 +137,60 @@ public class KachleUkladacCasovacTest {
 		pockej(vlaken * naVlakno);
 		assertTrue(zapisy.stream().allMatch(z -> z.pocet <= 50));
 	}
+
+	/** Simuluje pohyb mapou: požadavek na dlaždici právě přišel. */
+	private void pohybMapou(final java.util.concurrent.atomic.AtomicLong hodiny) throws Exception {
+		final java.lang.reflect.Field f = KachleZiskavac.class.getDeclaredField("posledniPozadavek");
+		f.setAccessible(true);
+		f.setLong(ziskavac, hodiny.get());
+	}
+
+	@Test(timeout = 30000)
+	public void priPohybuMapouSeZapisOdkladaAleJenDoHorniehoLimitu() throws Exception {
+		final java.util.concurrent.atomic.AtomicLong hodiny = new java.util.concurrent.atomic.AtomicLong(1_000_000);
+		ziskavac.ukladac.hodiny = hodiny::get;
+		ziskavac.ukladac.necinnostMs = 1_000_000;
+		ziskavac.ukladac.nejdelsiOdlozeniUkladaniMs = 700;
+		pohybMapou(hodiny);
+		ukladej(3);
+		Thread.sleep(500);
+		assertEquals("odloženo, mapou se hýbe", 0, zapsano());
+		hodiny.addAndGet(701);
+		pohybMapou(hodiny);
+		pockej(3);
+	}
+
+	@Test(timeout = 30000)
+	public void poZastaveniMapySeZapiseHnedPoUplynutiCasovace() throws Exception {
+		final java.util.concurrent.atomic.AtomicLong hodiny = new java.util.concurrent.atomic.AtomicLong(1_000_000);
+		ziskavac.ukladac.hodiny = hodiny::get;
+		ziskavac.ukladac.necinnostMs = 50;
+		ziskavac.ukladac.nejdelsiOdlozeniUkladaniMs = 60_000;
+		pohybMapou(hodiny);
+		ukladej(2);
+		hodiny.addAndGet(100);
+		pockej(2);
+	}
+
+	@Test(timeout = 30000)
+	public void mnohoCekajicichSeUkladaiPriPohybu() throws Exception {
+		final java.util.concurrent.atomic.AtomicLong hodiny = new java.util.concurrent.atomic.AtomicLong(1_000_000);
+		ziskavac.ukladac.hodiny = hodiny::get;
+		ziskavac.ukladac.necinnostMs = 1_000_000;
+		ziskavac.ukladac.nejdelsiOdlozeniUkladaniMs = 1_000_000;
+		ziskavac.ukladac.nejviceCekajicich = 60;
+		pohybMapou(hodiny);
+		ukladej(59);
+		Thread.sleep(400);
+		assertEquals(0, zapsano());
+		ukladej(1);
+		pockej(60);
+		assertTrue(zapisy.stream().allMatch(z -> z.pocet <= 50));
+	}
+
+	@Test(timeout = 30000)
+	public void bezPohybuMapouSeUkladaHnedVDavkach() throws Exception {
+		ukladej(50);
+		pockej(50);
+	}
 }
