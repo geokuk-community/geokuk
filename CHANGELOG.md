@@ -137,6 +137,9 @@
   nebo má okno fokus. Po odmítnutí nebo vypršení odpočtu se nabídka
   připomene za týden, resp. za 3 dny; při více než 60 % nevyužitého místa
   už zítra.
+- Optimalizace cache dlaždic odstraní i dlaždice staré verze offline map (po
+  aktualizaci programu nebo úpravě tématu) a zmenší soubor; dlaždice jiných
+  témat a vrstev zůstávají.
 - Novější verze už stažené mapy nebo vrstvy se stahují tlačítkem Aktualizovat.
 - Úklid cache dlaždic nezastaví soubor, který nejde smazat.
 - Offline mapa poradí, kde vzít podrobnou mapu, když pro zobrazené místo

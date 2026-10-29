@@ -200,4 +200,25 @@ public class UklidOfflineCacheTest {
 		Assert.assertEquals("čtvrtá identita vytlačí nejstarší", Collections.singleton("o00000001"), UklidOfflineCache.naplanuj(slozka, "o00000004", s, "00000000", "dddddddd").zastarale());
 		Assert.assertEquals("znovu zapsaný klíč nic nezastaralí", Collections.emptySet(), UklidOfflineCache.naplanuj(slozka, "o00000003", s, "00000000", VARIANTA_C).zastarale());
 	}
+
+	@Test
+	public void zastaralaJeJenDlazdiceOfflineKlicuKtereNezustaly() {
+		final java.util.Set<String> ponechat = new java.util.HashSet<>(Arrays.asList("o0000000a", "t0000000c"));
+		Assert.assertFalse(UklidOfflineCache.jeZastarala("o0000000a", ponechat));
+		Assert.assertFalse(UklidOfflineCache.jeZastarala("o0000000a.0000ffff", ponechat));
+		Assert.assertTrue(UklidOfflineCache.jeZastarala("o0000000b", ponechat));
+		Assert.assertTrue(UklidOfflineCache.jeZastarala("o0000000b.0000ffff", ponechat));
+		Assert.assertTrue(UklidOfflineCache.jeZastarala("t0000000d.00000001", ponechat));
+		Assert.assertFalse("online typ", UklidOfflineCache.jeZastarala("TURIST_M", ponechat));
+		Assert.assertFalse(UklidOfflineCache.jeZastarala("", ponechat));
+		Assert.assertFalse(UklidOfflineCache.jeZastarala(null, ponechat));
+		Assert.assertFalse("neznámý tvar", UklidOfflineCache.jeZastarala("oXYZ", ponechat));
+	}
+
+	@Test
+	public void bezPonechanychKlicuPrefixuNicNeniZastarale() {
+		Assert.assertFalse(UklidOfflineCache.jeZastarala("o0000000b", java.util.Collections.emptySet()));
+		Assert.assertFalse("překryv bez svého klíče", UklidOfflineCache.jeZastarala("t0000000d", java.util.Collections.singleton("o0000000a")));
+		Assert.assertTrue(UklidOfflineCache.jeZastarala("o0000000b", java.util.Collections.singleton("o0000000a")));
+	}
 }

@@ -9,6 +9,7 @@ import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Doporuceni;
+import cz.geokuk.plugins.mapy.kachle.podklady.StaraData;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
 /** Při startu doporučí optimalizaci databáze; odložení si pamatuje v nastavení. */
@@ -49,7 +50,10 @@ public final class PripominkaOptimalizace {
 		return nyni >= odlozenoDo || podil >= podilPriOdlozeni + ZHORSENI;
 	}
 
-	/** Ve vlákně na pozadí: levně z hlavičky souboru, a jen když je co doporučit, otevře okno. */
+	/**
+	 * Ve vlákně na pozadí: levně z hlavičky souboru a zapamatovaného odhadu zastaralých dlaždic, a jen když je co doporučit, otevře okno. Odhad, který chybí
+	 * (poprvé nebo po změně klíčů offline map), se spočítá jednou v samostatném vlákně s nejnižší prioritou; kontrola pak běží znovu.
+	 */
 	public static void zkontroluj(final KachleModel model) {
 		if (GraphicsEnvironment.isHeadless()) {
 			return;
@@ -59,12 +63,31 @@ public final class PripominkaOptimalizace {
 			return;
 		}
 		final StavSouboruCache stav = optimalizace.stav();
-		final long volne = optimalizace.volneMisto();
-		final Doporuceni doporuceni = OptimalizaceDatabaze.posud(stav, volne);
-		if (!zobrazit(doporuceni, stav == null ? 0 : stav.podilVolnych(), System.currentTimeMillis(), model.getOptimalizaceOdlozenaDo(), model.getOptimalizacePodilPriOdlozeni())) {
+		final StaraData zapamatovane = stav == null || stav.velikost() <= OptimalizaceDatabaze.PRAH_VELIKOSTI ? StaraData.ZADNA : optimalizace.zapamatovaneStare();
+		if (zapamatovane != null) {
+			vyhodnot(model, optimalizace, stav, zapamatovane);
 			return;
 		}
-		SwingUtilities.invokeLater(() -> OknoDoporuceniOptimalizace.zobraz(Dlg.parentFrame(), stav, doporuceni, volne, new OknoDoporuceniOptimalizace.Volba() {
+		final Thread spocitej = new Thread(() -> {
+			final StaraData stare = optimalizace.spocitejStare();
+			if (stare != null) {
+				vyhodnot(model, optimalizace, optimalizace.stav(), stare);
+			}
+		}, "Zastaralé dlaždice cache");
+		spocitej.setPriority(Thread.MIN_PRIORITY);
+		spocitej.setDaemon(true);
+		spocitej.start();
+	}
+
+	private static void vyhodnot(final KachleModel model, final OptimalizaceDatabaze optimalizace, final StavSouboruCache stav, final StaraData stare) {
+		final long volne = optimalizace.volneMisto();
+		final Doporuceni doporuceni = OptimalizaceDatabaze.posud(stav, stare, volne);
+		if (!zobrazit(doporuceni, stav == null ? 0 : stav.bezStarych(stare.bajtu()).podilVolnych(), System.currentTimeMillis(), model.getOptimalizaceOdlozenaDo(),
+				model.getOptimalizacePodilPriOdlozeni())) {
+			return;
+		}
+		final StavSouboruCache po = stav.bezStarych(stare.bajtu());
+		SwingUtilities.invokeLater(() -> OknoDoporuceniOptimalizace.zobraz(Dlg.parentFrame(), stav, stare, doporuceni, volne, new OknoDoporuceniOptimalizace.Volba() {
 			@Override
 			public void optimalizovat() {
 				DialogOptimalizace.zobraz(Dlg.parentFrame(), optimalizace, true);
@@ -72,12 +95,12 @@ public final class PripominkaOptimalizace {
 
 			@Override
 			public void bezOptimalizace() {
-				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(stav, false), stav.podilVolnych());
+				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(po, false), po.podilVolnych());
 			}
 
 			@Override
 			public void vyprseni() {
-				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(stav, true), stav.podilVolnych());
+				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(po, true), po.podilVolnych());
 			}
 		}));
 	}

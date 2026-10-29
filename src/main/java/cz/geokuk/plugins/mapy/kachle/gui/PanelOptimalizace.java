@@ -11,6 +11,7 @@ import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.OptimalizaceChyba;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Prubeh;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Vysledek;
+import cz.geokuk.plugins.mapy.kachle.podklady.StaraData;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
 /** Obsah dialogu Optimalizace cache dlaždic: přehled, průběh a výsledek. */
@@ -77,17 +78,39 @@ class PanelOptimalizace extends JPanel {
 		return optimalizovat;
 	}
 
-	/** Načte stav souboru a nastaví přehled; cache se tím neotevírá. */
+	/**
+	 * Načte stav souboru a nastaví přehled; cache se tím neotevírá. Objem zastaralých dlaždic se vezme ze zapamatovaného odhadu, jinak se spočítá na pozadí
+	 * s nejnižší prioritou a přehled se doplní.
+	 */
 	void pripravPodleStavu() {
 		final StavSouboruCache stav = optimalizace == null ? null : optimalizace.stav();
 		if (stav == null) {
 			nastav(Faze.NELZE, OptimalizaceTexty.NELZE);
 			return;
 		}
+		final StaraData zapamatovane = optimalizace.zapamatovaneStare();
+		ukazPrehled(stav, zapamatovane);
+		if (zapamatovane == null) {
+			final Thread spocitej = new Thread(() -> {
+				final StaraData stare = optimalizace.spocitejStare();
+				SwingUtilities.invokeLater(() -> {
+					if (stare != null && (faze == Faze.PRIPRAVENO || faze == Faze.MALO_MISTA)) {
+						ukazPrehled(stav, stare);
+					}
+				});
+			}, "Zastaralé dlaždice cache");
+			spocitej.setPriority(Thread.MIN_PRIORITY);
+			spocitej.setDaemon(true);
+			spocitej.start();
+		}
+	}
+
+	private void ukazPrehled(final StavSouboruCache stav, final StaraData stare) {
 		final long volne = optimalizace.volneMisto();
-		naplnPrehled(OptimalizaceTexty.prehled(stav, volne));
-		if (volne >= 0 && volne < OptimalizaceDatabaze.potrebneMisto(stav)) {
-			nastav(Faze.MALO_MISTA, OptimalizaceTexty.maloMista(stav, volne));
+		naplnPrehled(OptimalizaceTexty.prehled(stav, stare, volne));
+		final StavSouboruCache po = stav.bezStarych(stare == null ? 0 : stare.bajtu());
+		if (volne >= 0 && volne < OptimalizaceDatabaze.potrebneMisto(po)) {
+			nastav(Faze.MALO_MISTA, OptimalizaceTexty.maloMista(po, volne));
 		} else {
 			nastav(Faze.PRIPRAVENO, "");
 		}
@@ -133,16 +156,26 @@ class PanelOptimalizace extends JPanel {
 	/** Spustí optimalizaci na pozadí; cache je po dobu běhu zavřená. */
 	void spust() {
 		final StavSouboruCache pred = optimalizace.stav();
+		final long zacatek = System.currentTimeMillis();
 		zruseno.set(false);
 		prubeh.setIndeterminate(true);
 		nastav(Faze.BEZI, "Probíhá optimalizace, může to chvíli trvat.");
 		new SwingWorker<Vysledek, long[]>() {
+			private volatile long zkopirovano;
+			private volatile long vynechano;
+
 			@Override
 			protected Vysledek doInBackground() {
 				return optimalizace.spust(new Prubeh() {
 					@Override
+					public void objem(final long kopie, final long vynechane) {
+						zkopirovano = kopie;
+						vynechano = vynechane;
+					}
+
+					@Override
 					public void zpracovano(final long hotovo, final long celkem) {
-						publish(new long[] { hotovo, celkem });
+						publish(new long[] { hotovo, celkem, zkopirovano, vynechano });
 					}
 
 					@Override
@@ -157,7 +190,7 @@ class PanelOptimalizace extends JPanel {
 				final long[] posledni = chunks.get(chunks.size() - 1);
 				prubeh.setIndeterminate(false);
 				prubeh.setValue(posledni[1] == 0 ? 0 : (int) (posledni[0] * 100 / posledni[1]));
-				zprava.setText(String.format("Zpracováno %d z %d dlaždic.", posledni[0], posledni[1]));
+				zprava.setText(OptimalizaceTexty.prubeh(posledni[0], posledni[1], posledni[2], posledni[3], System.currentTimeMillis() - zacatek));
 			}
 
 			@Override

@@ -170,13 +170,13 @@ public class OptimalizaceDatabazeOknaTest {
 	public void okno_pri_startu_texty_a_snimky() throws Exception {
 		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
 		final JLabel odpocet = new JLabel(OptimalizaceTexty.odpocet(30));
-		final JPanel doporucit = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.DOPORUCIT, 100L << 30, odpocet, new JButton("Optimalizovat"),
+		final JPanel doporucit = OknoDoporuceniOptimalizace.panel(stav, StaraData.ZADNA, Doporuceni.DOPORUCIT, 100L << 30, odpocet, new JButton("Optimalizovat"),
 				new JButton("Spustit bez optimalizace"));
 		final String t = texty(doporucit);
 		Assert.assertTrue(t, t.contains("fragmentovaná: 46 % volného místa z 1.9 GB") || t.contains("fragmentovaná: 46 % volného místa z 1,9 GB"));
 		Assert.assertTrue(t, t.contains("[Optimalizovat]") && t.contains("Zavře se za 30 s") && !t.contains("normálně"));
 		snimek(doporucit, "start-doporuceni");
-		final JPanel malo = OknoDoporuceniOptimalizace.panel(stav, Doporuceni.MALO_MISTA, 200L << 20, odpocet, new JButton("Optimalizovat"),
+		final JPanel malo = OknoDoporuceniOptimalizace.panel(stav, StaraData.ZADNA, Doporuceni.MALO_MISTA, 200L << 20, odpocet, new JButton("Optimalizovat"),
 				new JButton("Spustit bez optimalizace"));
 		final String m = texty(malo);
 		Assert.assertFalse(m, m.contains("[Optimalizovat]"));
@@ -205,7 +205,7 @@ public class OptimalizaceDatabazeOknaTest {
 				volba[0] = "vyprseni";
 			}
 		};
-		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, Doporuceni.DOPORUCIT, 100L << 30, v));
+		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, StaraData.ZADNA, Doporuceni.DOPORUCIT, 100L << 30, v));
 		final java.awt.Window[] okna = new java.awt.Window[1];
 		SwingUtilities.invokeAndWait(() -> {
 			for (final java.awt.Window w : java.awt.Window.getWindows()) {
@@ -240,7 +240,7 @@ public class OptimalizaceDatabazeOknaTest {
 
 	private static java.awt.Window zobrazOkno(final OknoDoporuceniOptimalizace.Volba v) throws Exception {
 		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
-		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, Doporuceni.DOPORUCIT, 100L << 30, v));
+		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, StaraData.ZADNA, Doporuceni.DOPORUCIT, 100L << 30, v));
 		final java.awt.Window[] okna = new java.awt.Window[1];
 		SwingUtilities.invokeAndWait(() -> {
 			for (final java.awt.Window w : java.awt.Window.getWindows()) {

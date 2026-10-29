@@ -311,4 +311,282 @@ public class OptimalizaceDatabazeTest {
 		cachePoUdalostiPouzitelna();
 		Assert.assertEquals(1, manager.connections.size());
 	}
+
+	private static final String PONECHANA = "o0000000a.00000001";
+	private static final String STARA = "o0000000b.00000001";
+	private static final String PREKRYV_PONECHANY = "t0000000c.00000001";
+	private static final String PREKRYV_STARY = "t0000000d.00000001";
+
+	/** Dlaždice o 1000 bajtech pro každý typ, {@code pocet} od x = 0; vrací bajty obrázků. */
+	private void vlozDlazdice(final int pocet, final String... typy) throws Exception {
+		final SqlJetDb db = SqlJetDb.open(soubor, true);
+		try {
+			db.beginTransaction(SqlJetTransactionMode.WRITE);
+			if (!db.getSchema().getTableNames().contains("tiles")) {
+				db.createTable("CREATE TABLE tiles (x int, y int, z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))");
+			}
+			final ISqlJetTable t = db.getTable("tiles");
+			for (final String typ : typy) {
+				for (int i = 0; i < pocet; i++) {
+					t.insertOr(SqlJetConflictAction.REPLACE, i, 0, 14, typ, new byte[1000]);
+				}
+			}
+			db.commit();
+		} finally {
+			db.close();
+		}
+	}
+
+	private void zapisKlice(final String podslozka, final String... klice) throws Exception {
+		final File s = new File(slozka, podslozka);
+		Assert.assertTrue(s.isDirectory() || s.mkdirs());
+		int i = 0;
+		for (final String klic : klice) {
+			final File symboly = new File(s, "symboly-" + klic + ".bin");
+			Files.write(symboly.toPath(), new byte[] { 1 });
+			UklidOfflineCache.zaznamenej(s, klic, symboly, "00000000", String.format("%08x", ++i));
+		}
+	}
+
+	private long pocetTypu(final String typ) throws Exception {
+		final SqlJetDb db = SqlJetDb.open(soubor, false);
+		try {
+			db.beginTransaction(SqlJetTransactionMode.READ_ONLY);
+			final ISqlJetTable t = db.getTable("tiles");
+			long n = 0;
+			for (final ISqlJetCursor c = t.open(); !c.eof(); c.next()) {
+				if (typ.equals(c.getString("s"))) {
+					n++;
+				}
+			}
+			db.commit();
+			return n;
+		} finally {
+			db.close();
+		}
+	}
+
+	private void naplnSmesnouCache() throws Exception {
+		vlozDlazdice(100, PONECHANA, STARA, PREKRYV_PONECHANY, PREKRYV_STARY, "TURIST_M");
+		zapisKlice(UklidOfflineCache.SLOZKA_PODKLADU, PONECHANA.substring(0, 9));
+		zapisKlice(UklidOfflineCache.SLOZKA_PREKRYVU, PREKRYV_PONECHANY.substring(0, 9));
+	}
+
+	@Test
+	public void optimalizaceVynechaZastaraleOfflineDlazdiceAOnlineNechaBezeZmeny() throws Exception {
+		naplnSmesnouCache();
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(BEZ_ZRUSENI));
+		Assert.assertEquals(100, pocetTypu(PONECHANA));
+		Assert.assertEquals(0, pocetTypu(STARA));
+		Assert.assertEquals(100, pocetTypu(PREKRYV_PONECHANY));
+		Assert.assertEquals(0, pocetTypu(PREKRYV_STARY));
+		Assert.assertEquals("online dlaždice zůstávají", 100, pocetTypu("TURIST_M"));
+		Assert.assertEquals(300, pocetRadku(soubor));
+		cachePoUdalostiPouzitelna();
+	}
+
+	@Test
+	public void souboryKlicuOptimalizaceNemeni() throws Exception {
+		naplnSmesnouCache();
+		final byte[] podklad = Files.readAllBytes(new File(slozka, "offline-temata/klice.txt").toPath());
+		final byte[] prekryv = Files.readAllBytes(new File(slozka, "offline-trasy/klice.txt").toPath());
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(BEZ_ZRUSENI));
+		Assert.assertArrayEquals(podklad, Files.readAllBytes(new File(slozka, "offline-temata/klice.txt").toPath()));
+		Assert.assertArrayEquals(prekryv, Files.readAllBytes(new File(slozka, "offline-trasy/klice.txt").toPath()));
+	}
+
+	@Test
+	public void bezSouboruKlicuSeNicNevynecha() throws Exception {
+		vlozDlazdice(50, PONECHANA, STARA, PREKRYV_STARY);
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(BEZ_ZRUSENI));
+		Assert.assertEquals(150, pocetRadku(soubor));
+		Assert.assertSame(StaraData.ZADNA, optimalizace.zapamatovaneStare());
+	}
+
+	@Test
+	public void prekryvBezSvychKlicuNeniZastarely() throws Exception {
+		vlozDlazdice(50, PONECHANA, STARA, PREKRYV_STARY);
+		zapisKlice(UklidOfflineCache.SLOZKA_PODKLADU, PONECHANA.substring(0, 9));
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(BEZ_ZRUSENI));
+		Assert.assertEquals(0, pocetTypu(STARA));
+		Assert.assertEquals("o překryvu soubor klíčů nic neví", 50, pocetTypu(PREKRYV_STARY));
+	}
+
+	@Test
+	public void zruseniSZastaralymiDlazdicemiNechaSouborBeze() throws Exception {
+		naplnSmesnouCache();
+		final byte[] pred = Files.readAllBytes(soubor.toPath());
+		final Vysledek v = optimalizace.spust(new Prubeh() {
+			@Override
+			public void zpracovano(final long hotovo, final long celkem) {}
+
+			@Override
+			public boolean zruseno() {
+				return true;
+			}
+		});
+		Assert.assertEquals(Vysledek.ZRUSENO, v);
+		Assert.assertArrayEquals(pred, Files.readAllBytes(soubor.toPath()));
+	}
+
+	@Test
+	public void prubehHlasiObjemZkopirovanychAVynechanych() throws Exception {
+		naplnSmesnouCache();
+		final long[] posledni = new long[4];
+		optimalizace.spust(new Prubeh() {
+			@Override
+			public void objem(final long zkopirovano, final long vynechano) {
+				posledni[2] = zkopirovano;
+				posledni[3] = vynechano;
+			}
+
+			@Override
+			public void zpracovano(final long hotovo, final long celkem) {
+				posledni[0] = hotovo;
+				posledni[1] = celkem;
+			}
+
+			@Override
+			public boolean zruseno() {
+				return false;
+			}
+		});
+		Assert.assertEquals(500, posledni[0]);
+		Assert.assertEquals(500, posledni[1]);
+		Assert.assertEquals(300 * 1000, posledni[2]);
+		Assert.assertEquals(200 * 1000, posledni[3]);
+	}
+
+	@Test
+	public void odhadZastaralychDlazdicSeSpocitaJednouAZapamatuje() throws Exception {
+		naplnSmesnouCache();
+		Assert.assertNull("zatím nespočteno", optimalizace.zapamatovaneStare());
+		final StaraData stare = optimalizace.spocitejStare();
+		Assert.assertEquals(200, stare.dlazdic());
+		Assert.assertTrue(stare.bajtu() > 0);
+		final StaraData znovu = optimalizace.zapamatovaneStare();
+		Assert.assertNotNull(znovu);
+		Assert.assertEquals(200, znovu.dlazdic());
+		Assert.assertEquals(stare.bajtu(), znovu.bajtu());
+		// Soubor cache se při pamatování neotvírá.
+		Assert.assertTrue(new File(slozka, "stare-dlazdice.txt").isFile());
+	}
+
+	@Test
+	public void odhadPoZmeneKlicuUzNeplati() throws Exception {
+		naplnSmesnouCache();
+		optimalizace.spocitejStare();
+		Assert.assertNotNull(optimalizace.zapamatovaneStare());
+		zapisKlice(UklidOfflineCache.SLOZKA_PODKLADU, STARA.substring(0, 9));
+		Assert.assertNull("jiná sada klíčů", optimalizace.zapamatovaneStare());
+		Assert.assertEquals("teď je zastaralá první", 100 + 100, optimalizace.spocitejStare().dlazdic());
+	}
+
+	@Test
+	public void odhadSObjememVetsimNezSouborPatriKJineCache() throws Exception {
+		naplnSmesnouCache();
+		new StaraData(1, 10L << 30, StaraData.otiskPlanu(UklidOfflineCache.ponechaneVCache(slozka))).uloz(new File(slozka, "stare-dlazdice.txt"));
+		Assert.assertNull(optimalizace.zapamatovaneStare());
+	}
+
+	@Test
+	public void poOptimalizaciJeOdhadNula() throws Exception {
+		naplnSmesnouCache();
+		optimalizace.spocitejStare();
+		optimalizace.spust(BEZ_ZRUSENI);
+		final StaraData po = optimalizace.zapamatovaneStare();
+		Assert.assertNotNull(po);
+		Assert.assertEquals(0, po.bajtu());
+		Assert.assertEquals(0, optimalizace.spocitejStare().dlazdic());
+	}
+
+	@Test
+	public void doporuceniSZastaralymiDlazdicemi() {
+		final long mb = 1L << 20;
+		// Soubor 1000 MB, 10 % volných stránek.
+		final StavSouboruCache stav = new StavSouboruCache(1000 * mb, 1024, 1000 * 1024, 100 * 1024);
+		Assert.assertEquals(Doporuceni.NENI, OptimalizaceDatabaze.posud(stav, StaraData.ZADNA, 10_000 * mb));
+		Assert.assertEquals("10 % volných + 250 MB zastaralých = 35 %", Doporuceni.DOPORUCIT, OptimalizaceDatabaze.posud(stav, new StaraData(1, 250 * mb, "x"), 10_000 * mb));
+		Assert.assertEquals("10 % + 150 MB = 25 %", Doporuceni.NENI, OptimalizaceDatabaze.posud(stav, new StaraData(1, 150 * mb, "x"), 10_000 * mb));
+		Assert.assertEquals("500 MB samy stačí", Doporuceni.DOPORUCIT, OptimalizaceDatabaze.posud(new StavSouboruCache(3000 * mb, 1024, 3000 * 1024, 0), new StaraData(1, 500 * mb, "x"), 10_000 * mb));
+		Assert.assertEquals("pod 500 MB nestačí", Doporuceni.NENI, OptimalizaceDatabaze.posud(new StavSouboruCache(3000 * mb, 1024, 3000 * 1024, 0), new StaraData(1, 500 * mb - 1, "x"), 10_000 * mb));
+		Assert.assertEquals("místo se počítá bez zastaralých", Doporuceni.DOPORUCIT, OptimalizaceDatabaze.posud(new StavSouboruCache(3000 * mb, 1024, 3000 * 1024, 0), new StaraData(1, 2000 * mb, "x"), 1500 * mb));
+		Assert.assertEquals(Doporuceni.MALO_MISTA, OptimalizaceDatabaze.posud(new StavSouboruCache(3000 * mb, 1024, 3000 * 1024, 0), new StaraData(1, 600 * mb, "x"), 1500 * mb));
+	}
+
+	@Test
+	public void stavBezStarychPocitaStareDlazdiceZaVolne() {
+		final StavSouboruCache stav = new StavSouboruCache(1000 << 20, 1024, 1000 * 1024, 100 * 1024);
+		final StavSouboruCache po = stav.bezStarych(200L << 20);
+		Assert.assertEquals(0.30, po.podilVolnych(), 1e-9);
+		Assert.assertEquals(700L << 20, po.zivaData());
+		Assert.assertSame(stav, stav.bezStarych(0));
+		Assert.assertEquals("nejvýš všechny stránky", 0, stav.bezStarych(5000L << 20).zivaData());
+	}
+
+	@Test
+	public void odhadObjemuJePrumernaDlazdiceKratPocetZastaralych() throws Exception {
+		naplnSmesnouCache();
+		final StaraData stare = StaraData.spocti(soubor, UklidOfflineCache.ponechaneVCache(slozka));
+		Assert.assertEquals(200, stare.dlazdic());
+		final long prumer = StavSouboruCache.precti(soubor).zivaData() / 500;
+		Assert.assertEquals(200 * prumer, stare.bajtu(), 200);
+		Assert.assertTrue("řádově jako skutečných 200 kB", stare.bajtu() > 200_000 && stare.bajtu() < 400_000);
+	}
+
+	@Test
+	public void odhadNectObrazkyAMeziVyrazenymiTypyJenPocita() throws Exception {
+		// Obrázky o 1 MB: odhad se opírá jen o počty řádků a velikost souboru.
+		final SqlJetDb db = SqlJetDb.open(soubor, true);
+		try {
+			db.beginTransaction(SqlJetTransactionMode.WRITE);
+			db.createTable("CREATE TABLE tiles (x int, y int, z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))");
+			final ISqlJetTable t = db.getTable("tiles");
+			for (int i = 0; i < 10; i++) {
+				t.insertOr(SqlJetConflictAction.REPLACE, i, 0, 14, i < 4 ? STARA : PONECHANA, new byte[1 << 20]);
+			}
+			db.commit();
+		} finally {
+			db.close();
+		}
+		zapisKlice(UklidOfflineCache.SLOZKA_PODKLADU, PONECHANA.substring(0, 9));
+		final StaraData stare = optimalizace.spocitejStare();
+		Assert.assertEquals(4, stare.dlazdic());
+		Assert.assertEquals(4L << 20, stare.bajtu(), 1L << 19);
+	}
+
+	@Test(timeout = 60000)
+	public void optimalizacePockaNaPocitaniAProtiPocitaniVraciNull() throws Exception {
+		naplnSmesnouCache();
+		final java.util.concurrent.CountDownLatch pocita = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch pust = new java.util.concurrent.CountDownLatch(1);
+		optimalizace.setPriPocitani(() -> {
+			pocita.countDown();
+			try {
+				pust.await();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		final java.util.concurrent.ExecutorService vlakna = java.util.concurrent.Executors.newFixedThreadPool(3);
+		try {
+			final java.util.concurrent.Future<StaraData> prvni = vlakna.submit(() -> optimalizace.spocitejStare());
+			pocita.await();
+			Assert.assertNull("druhé počítání při běžícím", vlakna.submit(() -> optimalizace.spocitejStare()).get());
+			final java.util.concurrent.Future<Vysledek> optim = vlakna.submit(() -> optimalizace.spust(BEZ_ZRUSENI));
+			try {
+				optim.get(500, TimeUnit.MILLISECONDS);
+				Assert.fail("optimalizace nemá běžet při počítání");
+			} catch (final java.util.concurrent.TimeoutException e) {
+				// čeká na konec počítání
+			}
+			pust.countDown();
+			Assert.assertNotNull(prvni.get());
+			Assert.assertEquals(Vysledek.HOTOVO, optim.get());
+			Assert.assertEquals("odhad po optimalizaci", 0, optimalizace.zapamatovaneStare().bajtu());
+		} finally {
+			pust.countDown();
+			vlakna.shutdownNow();
+		}
+	}
 }
