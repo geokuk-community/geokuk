@@ -50,7 +50,7 @@ jobs:
           VYNECHANE: ${{ inputs.vynechane || '*JBlokMapTest*,*Smoke*' }}
           MATICE: ${{ inputs.matice || 'false' }}
         run: |
-          xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B \
+          xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B test-compile \
             org.pitest:pitest-maven:${PITEST_VERSION}:mutationCoverage \
             -DtargetClasses="$BALICEK" \
             -DtargetTests="${TESTY:-$BALICEK}" \
