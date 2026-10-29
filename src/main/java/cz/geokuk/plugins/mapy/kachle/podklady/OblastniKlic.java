@@ -62,6 +62,7 @@ final class OblastniKlic {
 	private final String globalni;
 	private final List<Zdroj> zdroje;
 	private final String sestava;
+	private final String identita;
 	/** Sjednocený rozsah všech otevřených map a vrstev; dlaždice, která z něj vyčnívá, má mimo něj šedou plochu, takže závisí na celé sestavě. Null = neznámý. */
 	private final BoundingBox sjednoceni;
 
@@ -74,6 +75,15 @@ final class OblastniKlic {
 	}
 
 	OblastniKlic(final String globalni, final List<Zdroj> zdroje, final BoundingBox sjednoceni) {
+		this(globalni, zdroje, sjednoceni, null);
+	}
+
+	/**
+	 * @param identita
+	 *            varianta dlaždic bez obsahu souborů tématu, viz {@link OfflineRenderer#identita(OfflineRenderer.NacteneTema, boolean)}; null = neznámá
+	 */
+	OblastniKlic(final String globalni, final List<Zdroj> zdroje, final BoundingBox sjednoceni, final String identita) {
+		this.identita = identita;
 		this.sjednoceni = sjednoceni;
 		this.globalni = globalni;
 		this.zdroje = Collections.unmodifiableList(new ArrayList<>(zdroje));
@@ -92,6 +102,11 @@ final class OblastniKlic {
 	/** Globální část klíče, tj. klíč tématu a měřítka bez souborů. */
 	String getGlobalni() {
 		return globalni;
+	}
+
+	/** Varianta dlaždic (téma, vrstvy, velikost, písmo) bez obsahu souborů; null, když není známa. */
+	String getIdentita() {
+		return identita;
 	}
 
 	/** Otisk všech souborů sestavy, mění se při jakékoli změně některého z nich. */

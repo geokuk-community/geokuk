@@ -73,4 +73,88 @@ public class UklidOfflineCacheTest {
 		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.zaznamenej(slozka, "o00000001", a, "00000000"));
 		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
 	}
+
+	private static final String VARIANTA_A = "aaaaaaaa";
+	private static final String VARIANTA_B = "bbbbbbbb";
+	private static final String VARIANTA_C = "cccccccc";
+
+	private List<String> radky() throws Exception {
+		return Files.readAllLines(new File(slozka, UklidOfflineCache.SOUBOR).toPath(), StandardCharsets.UTF_8);
+	}
+
+	/** Novější verze téže varianty nahradí starší hned, jiné varianty zůstávají. */
+	@Test
+	public void novejsiVerzeStejneVariantyNahradiStarsiJineVariantyZustavaji() throws Exception {
+		final File a1 = symboly("0000000a");
+		UklidOfflineCache.zaznamenej(slozka, "o00000001", a1, "00000000", VARIANTA_A);
+		final File b1 = symboly("0000000b");
+		UklidOfflineCache.zaznamenej(slozka, "o00000002", b1, "00000000", VARIANTA_B);
+		final File a2 = symboly("0000000c");
+		Assert.assertEquals(Arrays.asList("o00000003", "o00000002"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000003", a2, "00000000", VARIANTA_A)));
+		Assert.assertFalse("symboly nahrazeného klíče se smažou", a1.isFile());
+		Assert.assertTrue(b1.isFile() && a2.isFile());
+	}
+
+	/** Jiné vrstvy, velikost, písmo i předpona dávají jinou identitu, takže se navzájem nemažou; strop tří platí pro různé identity. */
+	@Test
+	public void ruzneIdentityZustavajiDoStropuTri() throws Exception {
+		final File s = symboly("0000000a");
+		UklidOfflineCache.zaznamenej(slozka, "o00000001", s, "00000000", VARIANTA_A);
+		UklidOfflineCache.zaznamenej(slozka, "o00000002", s, "00000000", VARIANTA_B);
+		Assert.assertEquals(Arrays.asList("t00000003", "o00000002", "o00000001"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "t00000003", s, "00000000", VARIANTA_C)));
+		Assert.assertEquals("čtvrtá identita vytlačí nejstarší", Arrays.asList("o00000004", "t00000003", "o00000002"),
+				new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000004", s, "00000000", "dddddddd")));
+		Assert.assertEquals("nová verze první varianty nic jiného nesmaže", Arrays.asList("o00000005", "o00000004", "t00000003"),
+				new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000005", s, "00000000", VARIANTA_A)));
+	}
+
+	/** Aktuální klíč zůstává při jakémkoli zápisu, i když se zapíše znovu nebo má stejnou identitu jako starší záznam. */
+	@Test
+	public void aktualniKlicSeNikdyNesmaze() throws Exception {
+		final File s = symboly("0000000a");
+		UklidOfflineCache.zaznamenej(slozka, "o00000001", s, "00000000", VARIANTA_A);
+		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.zaznamenej(slozka, "o00000001", s, "00000000", VARIANTA_A));
+		Assert.assertEquals(Collections.singleton("o00000002"), UklidOfflineCache.zaznamenej(slozka, "o00000002", s, "00000000", VARIANTA_A));
+		Assert.assertEquals("klíč bez identity nic nemaže", Arrays.asList("o00000003", "o00000002"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000003", s, "00000000")));
+	}
+
+	/** Po aktualizaci programu zůstane ze záznamů bez identity jen nejnovější, ostatní i s jejich symboly vypadnou; další zápisy už nic dalšího nemažou. */
+	@Test
+	public void zaznamyBezIdentityZustaneJenNejnovejsi() throws Exception {
+		final File l1 = symboly("00000011");
+		final File l2 = symboly("00000012");
+		final File l3 = symboly("00000013");
+		final File nove = symboly("0000000a");
+		Files.write(new File(slozka, UklidOfflineCache.SOUBOR).toPath(), Arrays.asList("o00000a01 symboly-00000011.bin 00000000", "o00000a02 symboly-00000012.bin 00000000", "o00000a03 symboly-00000013.bin 00000000"),
+				StandardCharsets.UTF_8);
+		Assert.assertEquals(new HashSet<>(Arrays.asList("o00000a01", "o00000a02", "o00000a03")), UklidOfflineCache.ponechane(slozka));
+		Assert.assertEquals(Arrays.asList("o00000001", "o00000a01"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000001", nove, "00000000", VARIANTA_A)));
+		Assert.assertTrue(l1.isFile() && nove.isFile());
+		Assert.assertFalse("symboly zahozených záznamů bez identity se smažou", l2.isFile() || l3.isFile());
+		Assert.assertEquals(Arrays.asList("o00000002", "o00000a01"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000002", nove, "00000000", VARIANTA_A)));
+		Assert.assertEquals(Arrays.asList("o00000003", "o00000002", "o00000a01"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000003", nove, "00000000", VARIANTA_B)));
+	}
+
+	/** Zápis bez identity (neznámá varianta) staré záznamy nechá, jak byly. */
+	@Test
+	public void bezIdentityNicNemaze() throws Exception {
+		final File s = symboly("0000000a");
+		Files.write(new File(slozka, UklidOfflineCache.SOUBOR).toPath(), Arrays.asList("o00000a01 symboly-0000000a.bin 00000000", "o00000a02 symboly-0000000a.bin 00000000"), StandardCharsets.UTF_8);
+		Assert.assertEquals(Arrays.asList("o00000001", "o00000a01", "o00000a02"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000001", s, "00000000")));
+	}
+
+	/**
+	 * Tvar souboru: první tři sloupce jako dosud, čtvrtý je identita. Starší verze programu řádky se čtyřmi sloupci nezná a přeskočí je, po návratu na starší verzi se tedy cache
+	 * jiných klíčů zamete (přijato).
+	 */
+	@Test
+	public void tvarSouboruKlicuAPoskozenaIdentita() throws Exception {
+		final File s = symboly("0000000a");
+		UklidOfflineCache.zaznamenej(slozka, "o00000001", s, "0000abcd", VARIANTA_A);
+		Assert.assertEquals(Collections.singletonList("o00000001 symboly-0000000a.bin 0000abcd aaaaaaaa"), radky());
+		Assert.assertEquals("0000abcd", UklidOfflineCache.sestava(slozka, "o00000001"));
+		Files.write(new File(slozka, UklidOfflineCache.SOUBOR).toPath(), Arrays.asList("o00000001 symboly-0000000a.bin 0000abcd aaaaaaaa", "o00000002 symboly-0000000a.bin 0000abcd nesmysl",
+				"o00000003 symboly-0000000a.bin 0000abcd aaaaaaaa bbbbbbbb"), StandardCharsets.UTF_8);
+		Assert.assertEquals("řádky s nesmyslnou identitou nebo čtvrtým dalším sloupcem se přeskočí", Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
+	}
 }

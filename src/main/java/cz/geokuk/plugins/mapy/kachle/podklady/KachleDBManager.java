@@ -345,6 +345,7 @@ class KachleDBManager implements KachleManager {
 			return 0;
 		}
 		final List<Long> smazat = new ArrayList<>();
+		final StavSouboruCache stavPred = StavSouboruCache.precti(database.getFile());
 		zamek.readLock().lock();
 		try {
 			if (odlozeniPred != odlozeni) {
@@ -408,6 +409,11 @@ class KachleDBManager implements KachleManager {
 					zamek.writeLock().unlock();
 				}
 			}
+		}
+		if (smazano > 0) {
+			final StavSouboruCache stavPo = StavSouboruCache.precti(database.getFile());
+			final String uvolneno = stavPred == null || stavPo == null ? "" : String.format(", uvolněno %d MB v souboru", (stavPo.volnych - stavPred.volnych) * stavPo.velikostStranky >> 20);
+			log.info("Úklid cache offline mapy: smazáno {} dlaždic{}", smazano, uvolneno);
 		}
 		return smazano;
 	}

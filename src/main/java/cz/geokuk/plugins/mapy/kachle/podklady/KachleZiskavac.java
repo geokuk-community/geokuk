@@ -698,7 +698,7 @@ public class KachleZiskavac {
 			final File slozka = symboly.getParentFile();
 			final Set<String> pred = UklidOfflineCache.ponechane(slozka);
 			final String predSestava = UklidOfflineCache.sestava(slozka, klic.getGlobalni());
-			final Set<String> ponechat = UklidOfflineCache.zaznamenej(slozka, klic.getGlobalni(), symboly, klic.getSestava());
+			final Set<String> ponechat = UklidOfflineCache.zaznamenej(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita());
 			final boolean jinaSestava = !klic.getSestava().equals(predSestava);
 			if (ponechat.equals(pred) && !jinaSestava) {
 				return; // dlaždice jiných klíčů smazal už dřívější úklid
