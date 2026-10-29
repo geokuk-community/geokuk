@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +20,8 @@ public class RotaceGeneraciTest {
 	/** Čas dostatečně pozdě, aby žádný soubor v testu nebyl „nedávno změněný“. */
 	private static final long POZDE = System.currentTimeMillis() + 3_600_000;
 
+	private static final RotaceGeneraci.Mazani MAZANI = f -> Files.deleteIfExists(f.toPath());
+
 	private File slozka;
 
 	@Before
@@ -32,148 +35,107 @@ public class RotaceGeneraciTest {
 		return f;
 	}
 
-	private Set<String> soubory() {
-		return new HashSet<>(Arrays.asList(slozka.list()));
+	private void stav(final String... radky) throws IOException {
+		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList(radky));
+	}
+
+	private boolean je(final String jmeno) {
+		return new File(slozka, jmeno).exists();
 	}
 
 	@Test
 	public void bezSouboruNicNeudela() {
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(1, stav.online);
-		Assert.assertEquals(1, stav.offline);
-		Assert.assertTrue("stav se bez rotace nezapisuje", soubory().isEmpty());
+		Assert.assertEquals(1, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertEquals("stav se bez rotace nezapisuje", 0, slozka.list().length);
 	}
 
 	@Test
 	public void souborPodLimitemASPresnymLimitemNerotuje() throws Exception {
-		soubor("tiles-online-1.sqlite", 100);
-		soubor("tiles-offline-1.sqlite", 50);
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(1, stav.online);
-		Assert.assertEquals(1, stav.offline);
-		Assert.assertFalse(new File(slozka, RotaceGeneraci.STAV).exists());
+		soubor("tiles-offline-1.sqlite", 100);
+		Assert.assertEquals(1, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertFalse(je(RotaceGeneraci.STAV));
 	}
 
 	@Test
 	public void prekroceniLimituUdelaZAktualniPredchoziAnicNesmaze() throws Exception {
-		soubor("tiles-online-1.sqlite", 101);
-		soubor("tiles-offline-1.sqlite", 10);
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(2, stav.online);
-		Assert.assertEquals(1, stav.offline);
-		Assert.assertTrue("předchozí generace zůstává", new File(slozka, "tiles-online-1.sqlite").isFile());
-		Assert.assertTrue(new File(slozka, "tiles-offline-1.sqlite").isFile());
-		Assert.assertEquals(Arrays.asList("online=2", "offline=1"), Files.readAllLines(new File(slozka, RotaceGeneraci.STAV).toPath(), StandardCharsets.UTF_8));
+		soubor("tiles-offline-1.sqlite", 101);
+		Assert.assertEquals(2, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertTrue("předchozí generace zůstává", je("tiles-offline-1.sqlite"));
+		Assert.assertEquals(Collections.singletonList("offline=2"), Files.readAllLines(new File(slozka, RotaceGeneraci.STAV).toPath(), StandardCharsets.UTF_8));
 	}
 
 	@Test
 	public void dalsiRotaceSmazeNejstarsiGeneraci() throws Exception {
-		soubor("tiles-online-1.sqlite", 7);
-		soubor("tiles-online-2.sqlite", 101);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList("online=2", "offline=1"));
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(3, stav.online);
-		Assert.assertFalse(new File(slozka, "tiles-online-1.sqlite").exists());
-		Assert.assertTrue(new File(slozka, "tiles-online-2.sqlite").isFile());
-	}
-
-	@Test
-	public void rotaceKazdeRoleJeNezavisla() throws Exception {
-		soubor("tiles-online-1.sqlite", 10);
-		soubor("tiles-offline-1.sqlite", 200);
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(1, stav.online);
-		Assert.assertEquals(2, stav.offline);
+		soubor("tiles-offline-1.sqlite", 7);
+		soubor("tiles-offline-2.sqlite", 101);
+		stav("offline=2");
+		Assert.assertEquals(3, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertFalse(je("tiles-offline-1.sqlite"));
+		Assert.assertTrue(je("tiles-offline-2.sqlite"));
 	}
 
 	@Test
 	public void stavSeZapisePredMazanimASmazaniKtereSelzeSeZopakuje() throws Exception {
-		soubor("tiles-online-1.sqlite", 7);
-		soubor("tiles-online-2.sqlite", 101);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList("online=2", "offline=1"));
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> {
+		soubor("tiles-offline-1.sqlite", 7);
+		soubor("tiles-offline-2.sqlite", 101);
+		stav("offline=2");
+		Assert.assertEquals(3, RotaceGeneraci.rotuj(slozka, 100, POZDE, f -> {
 			// Při pokusu o smazání už musí být nové číslo zapsané.
-			Assert.assertEquals(Arrays.asList("online=3", "offline=1"), Files.readAllLines(new File(slozka, RotaceGeneraci.STAV).toPath(), StandardCharsets.UTF_8));
+			Assert.assertEquals(Collections.singletonList("offline=3"), Files.readAllLines(new File(slozka, RotaceGeneraci.STAV).toPath(), StandardCharsets.UTF_8));
 			throw new IOException("soubor je zamčený");
-		});
-		Assert.assertEquals(3, stav.online);
-		Assert.assertTrue("nesmazaný zůstal", new File(slozka, "tiles-online-1.sqlite").isFile());
-		Assert.assertTrue(new File(slozka, "tiles-online-2.sqlite").isFile());
-		// Při dalším startu se smaže, aktuální číslo je pořád 3 a nic dalšího se neztratí.
-		final RotaceGeneraci.Stav dalsi = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(3, dalsi.online);
-		Assert.assertFalse(new File(slozka, "tiles-online-1.sqlite").exists());
-		Assert.assertTrue(new File(slozka, "tiles-online-2.sqlite").isFile());
+		}));
+		Assert.assertTrue("nesmazaný zůstal", je("tiles-offline-1.sqlite"));
+		Assert.assertTrue(je("tiles-offline-2.sqlite"));
+		Assert.assertEquals(3, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertFalse(je("tiles-offline-1.sqlite"));
+		Assert.assertTrue(je("tiles-offline-2.sqlite"));
 	}
 
 	@Test
 	public void bezStavuSeBereNejvyssiCisloZeSouboru() throws Exception {
-		soubor("tiles-online-4.sqlite", 10);
-		soubor("tiles-online-3.sqlite", 10);
-		soubor("tiles-online-1.sqlite", 10);
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(4, stav.online);
-		Assert.assertFalse("o dvě starší se smaže", new File(slozka, "tiles-online-1.sqlite").exists());
-		Assert.assertTrue(new File(slozka, "tiles-online-3.sqlite").isFile());
-		Assert.assertTrue(new File(slozka, "tiles-online-4.sqlite").isFile());
+		soubor("tiles-offline-4.sqlite", 10);
+		soubor("tiles-offline-3.sqlite", 10);
+		soubor("tiles-offline-1.sqlite", 10);
+		Assert.assertEquals(4, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertFalse("o dvě starší se smaže", je("tiles-offline-1.sqlite"));
+		Assert.assertTrue(je("tiles-offline-3.sqlite"));
+		Assert.assertTrue(je("tiles-offline-4.sqlite"));
 	}
 
 	@Test
 	public void poskozenyStavNicNesmaze() throws Exception {
-		soubor("tiles-online-1.sqlite", 10);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), "nesmysl\nonline=abc\n".getBytes(StandardCharsets.UTF_8));
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(1, stav.online);
-		Assert.assertTrue(new File(slozka, "tiles-online-1.sqlite").isFile());
-	}
-
-	@Test
-	public void staryCommonSouborSeSmazeAzKdyzRotovalyObeRole() throws Exception {
-		soubor("tiles.sqlite", 10);
-		soubor("tiles.sqlite-journal", 1);
-		soubor("tiles-online-1.sqlite", 101);
 		soubor("tiles-offline-1.sqlite", 10);
-		RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertTrue("rotovala jen online", new File(slozka, "tiles.sqlite").isFile());
-		soubor("tiles-offline-1.sqlite", 101);
-		RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertFalse("obě rotovaly", new File(slozka, "tiles.sqlite").exists());
-		Assert.assertFalse(new File(slozka, "tiles.sqlite-journal").exists());
-		Assert.assertTrue("předchozí generace zůstávají", new File(slozka, "tiles-online-1.sqlite").isFile());
-		Assert.assertTrue(new File(slozka, "tiles-offline-1.sqlite").isFile());
+		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), "nesmysl\noffline=abc\n".getBytes(StandardCharsets.UTF_8));
+		Assert.assertEquals(1, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertTrue(je("tiles-offline-1.sqlite"));
 	}
 
 	@Test
 	public void nejdeZapsatStavRotaceSeOdlozi() throws Exception {
-		soubor("tiles-online-1.sqlite", 101);
+		soubor("tiles-offline-1.sqlite", 101);
 		Assert.assertTrue(new File(slozka, RotaceGeneraci.STAV).mkdir());
-		new File(slozka, RotaceGeneraci.STAV + "x").createNewFile();
-		// Stav je složka, takže se nedá přepsat.
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(1, stav.online);
-		Assert.assertTrue(new File(slozka, "tiles-online-1.sqlite").isFile());
+		Assert.assertEquals(1, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertTrue(je("tiles-offline-1.sqlite"));
 	}
 
 	@Test
 	public void vysokeCisloVeStavuNesmazeExistujiciGenerace() throws Exception {
 		soubor("tiles-offline-1.sqlite", 10);
 		soubor("tiles-offline-2.sqlite", 10);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList("online=1", "offline=50"));
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(2, stav.offline);
-		Assert.assertTrue(new File(slozka, "tiles-offline-1.sqlite").isFile());
-		Assert.assertTrue(new File(slozka, "tiles-offline-2.sqlite").isFile());
+		stav("offline=50");
+		Assert.assertEquals(2, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertTrue(je("tiles-offline-1.sqlite"));
+		Assert.assertTrue(je("tiles-offline-2.sqlite"));
 	}
 
 	@Test
 	public void stavONaVetsiNezNejvyssiSouborSeBereJakoPoRotaci() throws Exception {
 		soubor("tiles-offline-1.sqlite", 10);
 		soubor("tiles-offline-2.sqlite", 10);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList("online=1", "offline=3"));
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(3, stav.offline);
-		Assert.assertFalse(new File(slozka, "tiles-offline-1.sqlite").exists());
-		Assert.assertTrue(new File(slozka, "tiles-offline-2.sqlite").isFile());
+		stav("offline=3");
+		Assert.assertEquals(3, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		Assert.assertFalse(je("tiles-offline-1.sqlite"));
+		Assert.assertTrue(je("tiles-offline-2.sqlite"));
 	}
 
 	@Test
@@ -181,38 +143,52 @@ public class RotaceGeneraciTest {
 		soubor("tiles-offline-1.sqlite", 10);
 		soubor("tiles-offline-1.sqlite-journal", 5);
 		soubor("tiles-offline-2.sqlite", 101);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList("online=1", "offline=2"));
-		RotaceGeneraci.rotuj(slozka, 100, 100, POZDE, f -> {
+		stav("offline=2");
+		RotaceGeneraci.rotuj(slozka, 100, POZDE, f -> {
 			if (f.getName().equals("tiles-offline-1.sqlite")) {
 				throw new IOException("zamčeno");
 			}
 			Files.deleteIfExists(f.toPath());
 		});
-		Assert.assertTrue(new File(slozka, "tiles-offline-1.sqlite").isFile());
-		Assert.assertTrue("žurnál patří k nesmazanému souboru", new File(slozka, "tiles-offline-1.sqlite-journal").isFile());
+		Assert.assertTrue(je("tiles-offline-1.sqlite"));
+		Assert.assertTrue("žurnál patří k nesmazanému souboru", je("tiles-offline-1.sqlite-journal"));
+	}
+
+	@Test
+	public void zurnalSeSmazeSHlavnimSouborem() throws Exception {
+		soubor("tiles-offline-1.sqlite", 10);
+		soubor("tiles-offline-1.sqlite-journal", 5);
+		soubor("tiles-offline-2.sqlite", 101);
+		stav("offline=2");
+		RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI);
+		Assert.assertFalse(je("tiles-offline-1.sqlite"));
+		Assert.assertFalse(je("tiles-offline-1.sqlite-journal"));
 	}
 
 	@Test
 	public void nedavnoZmenenyStarySouborSeNesmaze() throws Exception {
 		final File stary = soubor("tiles-offline-1.sqlite", 10);
 		soubor("tiles-offline-2.sqlite", 101);
-		Files.write(new File(slozka, RotaceGeneraci.STAV).toPath(), Arrays.asList("online=1", "offline=2"));
+		stav("offline=2");
 		final long ted = System.currentTimeMillis();
-		RotaceGeneraci.rotuj(slozka, 100, 100, ted, f -> Files.deleteIfExists(f.toPath()));
+		RotaceGeneraci.rotuj(slozka, 100, ted, MAZANI);
 		Assert.assertTrue("druhá instance do něj možná píše", stary.isFile());
 		Assert.assertTrue(stary.setLastModified(ted - RotaceGeneraci.NEDAVNO_MS - 1000));
-		RotaceGeneraci.rotuj(slozka, 100, 100, ted, f -> Files.deleteIfExists(f.toPath()));
+		RotaceGeneraci.rotuj(slozka, 100, ted, MAZANI);
 		Assert.assertFalse(stary.exists());
 	}
 
 	@Test
-	public void onlineDlazdiceSeVeVychozimNastaveniNerotuji() throws Exception {
-		soubor("tiles.sqlite", 10);
-		soubor("tiles-online-1.sqlite", 600 << 10);
-		soubor("tiles-offline-1.sqlite", 10);
-		final RotaceGeneraci.Stav stav = RotaceGeneraci.rotuj(slozka, RotaceGeneraci.LIMIT_ONLINE, 100, POZDE, f -> Files.deleteIfExists(f.toPath()));
-		Assert.assertEquals(1, stav.online);
-		Assert.assertTrue(new File(slozka, "tiles.sqlite").isFile());
-		Assert.assertTrue(new File(slozka, "tiles-online-1.sqlite").isFile());
+	public void onlineASpolecnySouborSeNikdyNemazou() throws Exception {
+		soubor("tiles.sqlite", 600);
+		soubor("tiles.sqlite-journal", 5);
+		soubor("tiles-online-1.sqlite", 600);
+		soubor("tiles-offline-1.sqlite", 7);
+		soubor("tiles-offline-2.sqlite", 101);
+		stav("offline=2");
+		Assert.assertEquals(3, RotaceGeneraci.rotuj(slozka, 100, POZDE, MAZANI));
+		final Set<String> zbylo = new HashSet<>(Arrays.asList(slozka.list()));
+		Assert.assertTrue(zbylo.toString(), zbylo.containsAll(Arrays.asList("tiles.sqlite", "tiles.sqlite-journal", "tiles-online-1.sqlite", "tiles-offline-2.sqlite")));
+		Assert.assertFalse(zbylo.contains("tiles-offline-1.sqlite"));
 	}
 }
