@@ -4,20 +4,27 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 2 * * *"
+  # Změna závislostí může rozbít spuštěný program, i když projdou testy.
+  pull_request:
+    branches: [main, "release/**"]
+    paths:
+      - pom.xml
+      - .github/workflows/smoke.yml
 
 permissions:
   contents: read
 
 concurrency:
   group: smoke-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   smoke:
     strategy:
       fail-fast: false
       matrix:
-        # Noční běh jen na Linuxu, Windows a macOS se spouští ručně.
-        os: ${{ github.event_name == 'schedule' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
+        # Noční běh a PR jen na Linuxu, Windows a macOS se spouští ručně.
+        os: ${{ github.event_name == 'workflow_dispatch' && fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
