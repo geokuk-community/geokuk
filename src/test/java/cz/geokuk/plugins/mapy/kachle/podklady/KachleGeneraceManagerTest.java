@@ -135,4 +135,36 @@ public class KachleGeneraceManagerTest {
 		Assert.assertNotNull(manager.load(OFFLINE, ponechana));
 		Assert.assertNull(manager.load(OFFLINE, stara));
 	}
+
+	private static final java.util.function.LongSupplier POZDE = () -> System.currentTimeMillis() + 3_600_000;
+
+	@Test
+	public void rotaceOfflineGeneraciPriStartuZachovaOnlineAPuvodniSoubor() throws Exception {
+		final KachleDBManager puvodni = new KachleDBManager(holder);
+		final String starsi = "o0000002b.0000ffff";
+		Assert.assertTrue(puvodni.save(Arrays.asList(new ItemToSave(ONLINE, png()), new ItemToSave(OFFLINE, starsi, png()))));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
+		manager.predotevri();
+		manager.zavri();
+		// Další start: offline soubor přesahuje limit, generace 1 se stane předchozí.
+		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, POZDE, Runnable::run);
+		Assert.assertNotNull("offline z předchozí generace", druhy.load(OFFLINE, TYP));
+		Assert.assertNotNull("starší offline z původního souboru", druhy.load(OFFLINE, starsi));
+		Assert.assertNotNull("online z původního souboru", druhy.load(ONLINE));
+		Assert.assertEquals(Collections.singletonList("offline=2"), Files.readAllLines(soubor("generace.txt").toPath()));
+		final String nova = "o0000002c.0000ffff";
+		Assert.assertTrue(druhy.save(Collections.singleton(new ItemToSave(OFFLINE, nova, png()))));
+		Assert.assertTrue(soubor("tiles-offline-2.sqlite").isFile());
+		druhy.predotevri();
+		druhy.zavri();
+		puvodni.pozastav();
+		// Další start: generace 2 je nad limitem, generace 1 se smaže; online a původní soubor zůstávají.
+		final KachleGeneraceManager treti = new KachleGeneraceManager(holder, 100, POZDE, Runnable::run);
+		Assert.assertNotNull(treti.load(OFFLINE, nova));
+		Assert.assertNull("offline z generace 1 zmizela", treti.load(OFFLINE, TYP));
+		Assert.assertNotNull("starší offline v původním souboru zůstává", treti.load(OFFLINE, starsi));
+		Assert.assertNotNull("online zůstává", treti.load(ONLINE));
+		Assert.assertFalse(soubor("tiles-offline-1.sqlite").exists());
+		Assert.assertTrue(soubor("tiles.sqlite").isFile());
+	}
 }
