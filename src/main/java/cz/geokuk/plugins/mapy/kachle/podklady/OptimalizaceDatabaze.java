@@ -93,8 +93,6 @@ public final class OptimalizaceDatabaze {
 	/** Drží ho počítání zastaralých dlaždic i optimalizace, aby spolu nebyly. */
 	private final java.util.concurrent.locks.ReentrantLock pocitani = new java.util.concurrent.locks.ReentrantLock();
 
-	private volatile boolean zrusPocitani;
-
 	private Presun presun = (odkud, kam) -> Files.move(odkud, kam, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
 
 	private long pauzaMezipokusy = 1000;
@@ -195,10 +193,10 @@ public final class OptimalizaceDatabaze {
 	}
 
 	/**
-	 * Spočítá zastaralé dlaždice po malých dávkách ve vlákně volajícího a výsledek zapamatuje; platí, dokud se soubory klíčů nezmění. Soubor cache se jen čte
-	 * a mezi dávkami je volný, takže čtení ani zápis dlaždic nestojí. Optimalizace počítání zruší a počká na konec dávky.
+	 * Odhadne zastaralé dlaždice (počet z indexu, objem podle průměrné dlaždice) ve vlákně volajícího a výsledek zapamatuje; platí, dokud se soubory klíčů
+	 * nezmění. Soubor cache se jen čte a nečtou se obrázky. Počítání a optimalizace se nepřekrývají.
 	 *
-	 * @return null, když se počítání zrušilo, jiné už běží nebo běží optimalizace
+	 * @return null, když jiné počítání nebo optimalizace právě běží
 	 */
 	public StaraData spocitejStare() {
 		final File f = manager.souborCache();
@@ -211,10 +209,7 @@ public final class OptimalizaceDatabaze {
 		}
 		try {
 			final long zacatek = System.nanoTime();
-			final StaraData stare = StaraData.spocti(f, ponechat, StaraData.DAVKA, () -> zrusPocitani, this::pauzaMeziDavkami);
-			if (stare == null) {
-				return null;
-			}
+			final StaraData stare = StaraData.spocti(f, ponechat);
 			stare.uloz(new File(f.getParentFile(), SOUBOR_STARYCH));
 			log.info("Cache dlaždic: zastaralých dlaždic offline map {} ({} MB), zjištěno za {} ms", stare.dlazdic(), stare.bajtu() >> 20, (System.nanoTime() - zacatek) / 1_000_000);
 			return stare;
@@ -223,15 +218,6 @@ public final class OptimalizaceDatabaze {
 			return StaraData.ZADNA;
 		} finally {
 			pocitani.unlock();
-		}
-	}
-
-	private void pauzaMeziDavkami() {
-		try {
-			Thread.sleep(StaraData.PAUZA_MS);
-		} catch (final InterruptedException e) {
-			Thread.currentThread().interrupt();
-			zrusPocitani = true;
 		}
 	}
 
@@ -247,10 +233,8 @@ public final class OptimalizaceDatabaze {
 		if (stav == null) {
 			throw new OptimalizaceChyba("Cache dlaždic nejde použít, není co optimalizovat.");
 		}
-		zrusPocitani = true;
 		pocitani.lock();
 		try {
-			zrusPocitani = false;
 			return spustBezPocitani(puvodni, stav, prubeh);
 		} finally {
 			pocitani.unlock();

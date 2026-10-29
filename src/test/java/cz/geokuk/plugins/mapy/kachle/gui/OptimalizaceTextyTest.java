@@ -48,7 +48,7 @@ public class OptimalizaceTextyTest {
 	public void doporuceniUvedeStareDlazdiceAPocitaMistoBezNich() {
 		final StavSouboruCache stav = new StavSouboruCache(2000 * MB, 1024, 2000 * 1024, 200 * 1024);
 		final String text = OptimalizaceTexty.doporuceni(stav, new StaraData(10, 600 * MB, "x"), false, 100L << 30);
-		Assert.assertTrue(text, text.contains("V cache je 600 MB dlaždic starých verzí tématu; optimalizace je odstraní a zmenší soubor."));
+		Assert.assertTrue(text, text.contains("V cache je asi 600 MB dlaždic starých verzí tématu; optimalizace je odstraní a zmenší soubor."));
 		Assert.assertFalse("fragmentace 10 % se neuvádí", text.contains("fragmentovaná"));
 		final String bezStarych = "potřebuje " + OptimalizaceTexty.velikost(cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.potrebneMisto(stav.bezStarych(600 * MB)));
 		final String sNimi = "potřebuje " + OptimalizaceTexty.velikost(cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.potrebneMisto(stav));
@@ -69,7 +69,7 @@ public class OptimalizaceTextyTest {
 		final StavSouboruCache stav = new StavSouboruCache(1000 * MB, 1024, 1000 * 1024, 100 * 1024);
 		String[][] radky = OptimalizaceTexty.prehled(stav, new StaraData(5, 300 * MB, "x"), 50L << 30);
 		Assert.assertEquals("Dlaždice starých verzí tématu", radky[2][0]);
-		Assert.assertEquals("300 MB", radky[2][1]);
+		Assert.assertEquals("asi 300 MB", radky[2][1]);
 		Assert.assertEquals("asi 600 MB", radky[3][1]);
 		radky = OptimalizaceTexty.prehled(stav, null, 50L << 30);
 		Assert.assertEquals("zjišťuje se…", radky[2][1]);

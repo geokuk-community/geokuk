@@ -463,11 +463,11 @@ public class OptimalizaceDatabazeTest {
 		Assert.assertNull("zatím nespočteno", optimalizace.zapamatovaneStare());
 		final StaraData stare = optimalizace.spocitejStare();
 		Assert.assertEquals(200, stare.dlazdic());
-		Assert.assertEquals(200 * 1000, stare.bajtu());
+		Assert.assertTrue(stare.bajtu() > 0);
 		final StaraData znovu = optimalizace.zapamatovaneStare();
 		Assert.assertNotNull(znovu);
 		Assert.assertEquals(200, znovu.dlazdic());
-		Assert.assertEquals(200 * 1000, znovu.bajtu());
+		Assert.assertEquals(stare.bajtu(), znovu.bajtu());
 		// Soubor cache se při pamatování neotvírá.
 		Assert.assertTrue(new File(slozka, "stare-dlazdice.txt").isFile());
 	}
@@ -525,35 +525,33 @@ public class OptimalizaceDatabazeTest {
 	}
 
 	@Test
-	public void pocitaniZastaralychDlazdicDrziSouborJenPoDobuDavky() throws Exception {
+	public void odhadObjemuJePrumernaDlazdiceKratPocetZastaralych() throws Exception {
 		naplnSmesnouCache();
-		final AtomicInteger davek = new AtomicInteger();
-		final StaraData stare = StaraData.spocti(soubor, UklidOfflineCache.ponechaneVCache(slozka), 70, () -> false, () -> {
-			davek.incrementAndGet();
-			// Mezi dávkami je soubor volný: zápis dlaždic bez čekání projde.
-			try {
-				final SqlJetDb db = SqlJetDb.open(soubor, true);
-				try {
-					db.setBusyHandler(null);
-					db.beginTransaction(SqlJetTransactionMode.WRITE);
-					db.commit();
-				} finally {
-					db.close();
-				}
-			} catch (final org.tmatesoft.sqljet.core.SqlJetException e) {
-				throw new AssertionError("soubor je mezi dávkami zamčený", e);
-			}
-		});
-		Assert.assertTrue("víc dávek", davek.get() >= 6);
+		final StaraData stare = StaraData.spocti(soubor, UklidOfflineCache.ponechaneVCache(slozka));
 		Assert.assertEquals(200, stare.dlazdic());
-		Assert.assertEquals(200 * 1000, stare.bajtu());
+		final long prumer = StavSouboruCache.precti(soubor).zivaData() / 500;
+		Assert.assertEquals(200 * prumer, stare.bajtu(), 200);
+		Assert.assertTrue("řádově jako skutečných 200 kB", stare.bajtu() > 200_000 && stare.bajtu() < 400_000);
 	}
 
 	@Test
-	public void pocitaniLzeZrusitMeziDavkami() throws Exception {
-		naplnSmesnouCache();
-		final AtomicInteger davek = new AtomicInteger();
-		Assert.assertNull(StaraData.spocti(soubor, UklidOfflineCache.ponechaneVCache(slozka), 70, () -> davek.get() >= 2, davek::incrementAndGet));
-		Assert.assertEquals(2, davek.get());
+	public void odhadNectObrazkyAMeziVyrazenymiTypyJenPocita() throws Exception {
+		// Obrázky o 1 MB: odhad se opírá jen o počty řádků a velikost souboru.
+		final SqlJetDb db = SqlJetDb.open(soubor, true);
+		try {
+			db.beginTransaction(SqlJetTransactionMode.WRITE);
+			db.createTable("CREATE TABLE tiles (x int, y int, z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))");
+			final ISqlJetTable t = db.getTable("tiles");
+			for (int i = 0; i < 10; i++) {
+				t.insertOr(SqlJetConflictAction.REPLACE, i, 0, 14, i < 4 ? STARA : PONECHANA, new byte[1 << 20]);
+			}
+			db.commit();
+		} finally {
+			db.close();
+		}
+		zapisKlice(UklidOfflineCache.SLOZKA_PODKLADU, PONECHANA.substring(0, 9));
+		final StaraData stare = optimalizace.spocitejStare();
+		Assert.assertEquals(4, stare.dlazdic());
+		Assert.assertEquals(4L << 20, stare.bajtu(), 1L << 19);
 	}
 }

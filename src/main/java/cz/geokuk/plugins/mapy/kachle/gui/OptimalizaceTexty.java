@@ -29,7 +29,7 @@ final class OptimalizaceTexty {
 	}
 
 	static String starychDlazdic(final StaraData stare) {
-		return "V cache je " + velikost(stare.bajtu()) + " dlaždic starých verzí tématu; optimalizace je odstraní a zmenší soubor.";
+		return "V cache je asi " + velikost(stare.bajtu()) + " dlaždic starých verzí tématu; optimalizace je odstraní a zmenší soubor.";
 	}
 
 	/** Doporučení při startu: co je v cache špatně a řádek s odhadem; zastaralé dlaždice se počítají mezi prázdné stránky. */
@@ -67,7 +67,7 @@ final class OptimalizaceTexty {
 		final java.util.List<String[]> radky = new java.util.ArrayList<>();
 		radky.add(new String[] { "Velikost", velikost(stav.velikost()) });
 		radky.add(new String[] { "Volných stránek", procenta(stav) });
-		radky.add(new String[] { "Dlaždice starých verzí tématu", stare == null ? "zjišťuje se…" : velikost(stare.bajtu()) });
+		radky.add(new String[] { "Dlaždice starých verzí tématu", stare == null ? "zjišťuje se…" : "asi " + velikost(stare.bajtu()) });
 		radky.add(new String[] { "Po optimalizaci", "asi " + velikost(po.zivaData()) });
 		radky.add(new String[] { "Volné místo na disku", volne < 0 ? "neznámé" : velikost(volne) });
 		radky.add(new String[] { "Potrvá", "asi " + minut(OptimalizaceDatabaze.odhadMinut(po)) });
