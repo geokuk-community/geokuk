@@ -123,4 +123,79 @@ public class SledovaniSlozkyTest {
 		Assert.assertTrue(s.zmenaOdPosledniho());
 		Assert.assertTrue(s.zmenaOdPosledniho());
 	}
+
+	/** Sledování, které při dotazu na události selže jako zadaná výjimka a při zavření vyhodí IOException. */
+	private static final class Rozbite implements java.nio.file.WatchService {
+		final RuntimeException vyjimka;
+		boolean zavreno;
+
+		Rozbite(final RuntimeException vyjimka) {
+			this.vyjimka = vyjimka;
+		}
+
+		@Override
+		public void close() throws IOException {
+			zavreno = true;
+			throw new IOException("nejde zavřít");
+		}
+
+		@Override
+		public java.nio.file.WatchKey poll() {
+			throw vyjimka;
+		}
+
+		@Override
+		public java.nio.file.WatchKey poll(final long timeout, final TimeUnit unit) {
+			throw vyjimka;
+		}
+
+		@Override
+		public java.nio.file.WatchKey take() {
+			throw vyjimka;
+		}
+	}
+
+	private static void nahradSluzbu(final SledovaniSlozky s, final java.nio.file.WatchService nova) throws Exception {
+		final java.lang.reflect.Field f = SledovaniSlozky.class.getDeclaredField("sluzba");
+		f.setAccessible(true);
+		final java.nio.file.WatchService puvodni = (java.nio.file.WatchService) f.get(s);
+		f.set(s, nova);
+		puvodni.close();
+	}
+
+	@Test
+	public void zaniknutaSledovanaSlozkaJeZmena() throws Exception {
+		org.junit.Assume.assumeFalse("sledovanou složku jde ve Windows smazat až po zavření sledování", System.getProperty("os.name", "").startsWith("Windows"));
+		final Path slozka = tmp.newFolder("sledovana").toPath();
+		try (SledovaniSlozky s = sledovani(slozka, 1)) {
+			s.zmenaOdPosledniho();
+			Files.delete(slozka);
+			Assert.assertTrue("smazaná složka se hlásí jako změna", pockejNaZmenu(s));
+		}
+	}
+
+	@Test
+	public void uzavrenaSluzbaVedeNaProchazeni() throws Exception {
+		try (SledovaniSlozky s = sledovani(tmp.getRoot().toPath(), 1)) {
+			s.zmenaOdPosledniho();
+			final java.nio.file.WatchService sluzba = new Rozbite(new java.nio.file.ClosedWatchServiceException());
+			nahradSluzbu(s, sluzba);
+			Assert.assertTrue(s.zmenaOdPosledniho());
+			for (int i = 0; i < 3; i++) {
+				Assert.assertTrue("po selhání se prochází vždy", s.zmenaOdPosledniho());
+			}
+		}
+	}
+
+	@Test
+	public void selhaniPriDotazuNaUdalostiVedeNaProchaziAZavreSluzbu() throws Exception {
+		try (SledovaniSlozky s = sledovani(tmp.getRoot().toPath(), 1)) {
+			s.zmenaOdPosledniho();
+			final Rozbite sluzba = new Rozbite(new IllegalStateException("chyba systému"));
+			nahradSluzbu(s, sluzba);
+			Assert.assertTrue(s.zmenaOdPosledniho());
+			Assert.assertTrue("služba se zavřela, i když zavření vyhodilo IOException", sluzba.zavreno);
+			Assert.assertTrue("dál se prochází vždy", s.zmenaOdPosledniho());
+		}
+	}
 }
