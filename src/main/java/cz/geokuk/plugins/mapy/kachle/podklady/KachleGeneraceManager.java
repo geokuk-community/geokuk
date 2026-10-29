@@ -40,15 +40,30 @@ final class KachleGeneraceManager implements KachleManager {
 
 	private volatile Sestava sestava;
 
+	/** Maže staré generace na pozadí, ať první dlaždice nečeká na smazání velkého souboru. */
+	private final java.util.concurrent.Executor mazaci;
+
 	KachleGeneraceManager(final KachleCacheFolderHolder holder) {
 		this(holder, RotaceGeneraci.LIMIT_OFFLINE, System::currentTimeMillis);
 	}
 
 	KachleGeneraceManager(final KachleCacheFolderHolder holder, final long limitOffline, final java.util.function.LongSupplier hodiny) {
+		this(holder, limitOffline, hodiny, KachleGeneraceManager::naPozadi);
+	}
+
+	KachleGeneraceManager(final KachleCacheFolderHolder holder, final long limitOffline, final java.util.function.LongSupplier hodiny, final java.util.concurrent.Executor mazaci) {
+		this.mazaci = mazaci;
 		this.holder = holder;
 		this.limitOffline = limitOffline;
 		this.hodiny = hodiny;
 		puvodni = new KachleDBManager(holder);
+	}
+
+	private static void naPozadi(final Runnable uloha) {
+		final Thread t = new Thread(uloha, "Mazání starých generací cache");
+		t.setDaemon(true);
+		t.setPriority(Thread.MIN_PRIORITY);
+		t.start();
 	}
 
 	/** Správci offline souborů pro složku cache; při prvním použití složky se rotují generace, dřív než se cokoli otevře. */
@@ -64,7 +79,7 @@ final class KachleGeneraceManager implements KachleManager {
 			if (s != null && Objects.equals(s.slozka, slozka)) {
 				return s;
 			}
-			final int generace = slozka == null ? 1 : RotaceGeneraci.rotuj(slozka, limitOffline, hodiny.getAsLong(), f -> java.nio.file.Files.deleteIfExists(f.toPath()));
+			final int generace = slozka == null ? 1 : RotaceGeneraci.rotuj(slozka, limitOffline, hodiny.getAsLong(), mazaci, f -> java.nio.file.Files.deleteIfExists(f.toPath()));
 			s = new Sestava(slozka, new KachleDBManager(holder, RotaceGeneraci.jmeno(generace)),
 					generace > 1 ? new KachleDBManager(holder, RotaceGeneraci.jmeno(generace - 1)) : null);
 			sestava = s;

@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +31,9 @@ final class RotaceGeneraci {
 
 	private static final Pattern GENERACE = Pattern.compile("tiles-offline-(\\d+)\\.sqlite");
 
+	/** Soubor generace včetně poškozených cache odložených stranou, viz {@link KachleDBManager}. */
+	private static final Pattern SOUBOR_GENERACE = Pattern.compile("tiles-offline-(\\d+)\\.sqlite(\\.vadna(\\.1)?)?");
+
 	/** Smazání souboru; v testu nahraditelné selháním. */
 	@FunctionalInterface
 	interface Mazani {
@@ -42,13 +46,11 @@ final class RotaceGeneraci {
 		return "tiles-offline-" + generace + ".sqlite";
 	}
 
-	/** Provede rotaci při startu a vrátí číslo aktuální generace. */
-	static int rotuj(final File slozka, final long limit) {
-		return rotuj(slozka, limit, System.currentTimeMillis(), f -> Files.deleteIfExists(f.toPath()));
-	}
-
-	/** Viz {@link #rotuj(File, long)}; {@code mazani} smaže soubor a vrátí se bez chyby, i když už není. */
-	static int rotuj(final File slozka, final long limit, final long nyni, final Mazani mazani) {
+	/**
+	 * Provede rotaci při startu a vrátí číslo aktuální generace; mazání starých souborů (velké soubory na Windows s antivirem trvají) běží v {@code vykonavatel}.
+	 * {@code mazani} smaže soubor a vrátí se bez chyby, i když už není.
+	 */
+	static int rotuj(final File slozka, final long limit, final long nyni, final Executor vykonavatel, final Mazani mazani) {
 		final int ulozene = nacti(new File(slozka, STAV));
 		final int nejvyssi = nejvyssi(slozka);
 		final int dosavadni = verPouzeBlizkemuStavu(nejvyssi, ulozene);
@@ -62,7 +64,7 @@ final class RotaceGeneraci {
 		if (nove != dosavadni) {
 			log.info("Cache dlaždic: rotace generací offline dlaždic {} -> {}", dosavadni, nove);
 		}
-		smazStarsi(slozka, nove, nyni, mazani);
+		smazStarsi(slozka, nove, nyni, vykonavatel, mazani);
 		return nove;
 	}
 
@@ -130,15 +132,16 @@ final class RotaceGeneraci {
 	}
 
 	/** Smaže generace starší než předchozí (číslo menší než aktuální − 1). */
-	private static void smazStarsi(final File slozka, final int aktualni, final long nyni, final Mazani mazani) {
+	private static void smazStarsi(final File slozka, final int aktualni, final long nyni, final Executor vykonavatel, final Mazani mazani) {
 		final String[] jmena = slozka.list();
 		if (jmena == null) {
 			return;
 		}
 		for (final String jmeno : jmena) {
-			final Matcher m = GENERACE.matcher(jmeno);
+			final Matcher m = SOUBOR_GENERACE.matcher(jmeno);
 			if (m.matches() && parse(m.group(1)) < aktualni - 1) {
-				smaz(new File(slozka, jmeno), nyni, mazani);
+				final File soubor = new File(slozka, jmeno);
+				vykonavatel.execute(() -> smaz(soubor, nyni, mazani));
 			}
 		}
 	}

@@ -146,7 +146,7 @@ public class KachleGeneraceManagerTest {
 		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
 		manager.predotevri();
 		// Další start: offline soubor přesahuje limit, generace 1 se stane předchozí.
-		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, POZDE);
+		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, POZDE, Runnable::run);
 		Assert.assertNotNull("offline z předchozí generace", druhy.load(OFFLINE, TYP));
 		Assert.assertNotNull("starší offline z původního souboru", druhy.load(OFFLINE, starsi));
 		Assert.assertNotNull("online z původního souboru", druhy.load(ONLINE));
@@ -156,7 +156,7 @@ public class KachleGeneraceManagerTest {
 		Assert.assertTrue(soubor("tiles-offline-2.sqlite").isFile());
 		druhy.predotevri();
 		// Další start: generace 2 je nad limitem, generace 1 se smaže; online a původní soubor zůstávají.
-		final KachleGeneraceManager treti = new KachleGeneraceManager(holder, 100, POZDE);
+		final KachleGeneraceManager treti = new KachleGeneraceManager(holder, 100, POZDE, Runnable::run);
 		Assert.assertNotNull(treti.load(OFFLINE, nova));
 		Assert.assertNull("offline z generace 1 zmizela", treti.load(OFFLINE, TYP));
 		Assert.assertNotNull("starší offline v původním souboru zůstává", treti.load(OFFLINE, starsi));
