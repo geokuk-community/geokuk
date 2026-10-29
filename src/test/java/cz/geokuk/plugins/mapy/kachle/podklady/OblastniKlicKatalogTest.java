@@ -86,6 +86,7 @@ public class OblastniKlicKatalogTest {
 		final File slozka = mapa.getParentFile();
 		final OfflineMapy mapy = new OfflineMapy(() -> {});
 		mapy.kontrolaSlozkyNs = 0;
+		mapy.sledovatSlozku = false;
 		try {
 			mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 			final OfflineRenderer pred = pouzij(mapy);
