@@ -68,7 +68,12 @@ public final class PripominkaOptimalizace {
 			vyhodnot(model, optimalizace, stav, zapamatovane);
 			return;
 		}
-		final Thread spocitej = new Thread(() -> vyhodnot(model, optimalizace, optimalizace.stav(), optimalizace.spocitejStare()), "Zastaralé dlaždice cache");
+		final Thread spocitej = new Thread(() -> {
+			final StaraData stare = optimalizace.spocitejStare();
+			if (stare != null) {
+				vyhodnot(model, optimalizace, optimalizace.stav(), stare);
+			}
+		}, "Zastaralé dlaždice cache");
 		spocitej.setPriority(Thread.MIN_PRIORITY);
 		spocitej.setDaemon(true);
 		spocitej.start();

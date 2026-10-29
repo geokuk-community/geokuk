@@ -94,7 +94,7 @@ class PanelOptimalizace extends JPanel {
 			final Thread spocitej = new Thread(() -> {
 				final StaraData stare = optimalizace.spocitejStare();
 				SwingUtilities.invokeLater(() -> {
-					if (faze == Faze.PRIPRAVENO || faze == Faze.MALO_MISTA) {
+					if (stare != null && (faze == Faze.PRIPRAVENO || faze == Faze.MALO_MISTA)) {
 						ukazPrehled(stav, stare);
 					}
 				});

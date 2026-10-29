@@ -523,4 +523,37 @@ public class OptimalizaceDatabazeTest {
 		Assert.assertSame(stav, stav.bezStarych(0));
 		Assert.assertEquals("nejvýš všechny stránky", 0, stav.bezStarych(5000L << 20).zivaData());
 	}
+
+	@Test
+	public void pocitaniZastaralychDlazdicDrziSouborJenPoDobuDavky() throws Exception {
+		naplnSmesnouCache();
+		final AtomicInteger davek = new AtomicInteger();
+		final StaraData stare = StaraData.spocti(soubor, UklidOfflineCache.ponechaneVCache(slozka), 70, () -> false, () -> {
+			davek.incrementAndGet();
+			// Mezi dávkami je soubor volný: zápis dlaždic bez čekání projde.
+			try {
+				final SqlJetDb db = SqlJetDb.open(soubor, true);
+				try {
+					db.setBusyHandler(null);
+					db.beginTransaction(SqlJetTransactionMode.WRITE);
+					db.commit();
+				} finally {
+					db.close();
+				}
+			} catch (final org.tmatesoft.sqljet.core.SqlJetException e) {
+				throw new AssertionError("soubor je mezi dávkami zamčený", e);
+			}
+		});
+		Assert.assertTrue("víc dávek", davek.get() >= 6);
+		Assert.assertEquals(200, stare.dlazdic());
+		Assert.assertEquals(200 * 1000, stare.bajtu());
+	}
+
+	@Test
+	public void pocitaniLzeZrusitMeziDavkami() throws Exception {
+		naplnSmesnouCache();
+		final AtomicInteger davek = new AtomicInteger();
+		Assert.assertNull(StaraData.spocti(soubor, UklidOfflineCache.ponechaneVCache(slozka), 70, () -> davek.get() >= 2, davek::incrementAndGet));
+		Assert.assertEquals(2, davek.get());
+	}
 }

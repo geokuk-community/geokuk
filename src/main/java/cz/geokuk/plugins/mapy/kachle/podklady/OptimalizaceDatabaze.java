@@ -90,6 +90,11 @@ public final class OptimalizaceDatabaze {
 
 	private final KachleDBManager manager;
 
+	/** Drží ho počítání zastaralých dlaždic i optimalizace, aby spolu nebyly. */
+	private final java.util.concurrent.locks.ReentrantLock pocitani = new java.util.concurrent.locks.ReentrantLock();
+
+	private volatile boolean zrusPocitani;
+
 	private Presun presun = (odkud, kam) -> Files.move(odkud, kam, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
 
 	private long pauzaMezipokusy = 1000;
@@ -190,8 +195,10 @@ public final class OptimalizaceDatabaze {
 	}
 
 	/**
-	 * Spočítá zastaralé dlaždice průchodem tabulkou ve vlákně volajícího (v nízké prioritě) a výsledek zapamatuje; platí, dokud se soubory klíčů nezmění.
-	 * Soubor cache se jen čte, zápis dávek na chvíli počká na sdílený zámek.
+	 * Spočítá zastaralé dlaždice po malých dávkách ve vlákně volajícího a výsledek zapamatuje; platí, dokud se soubory klíčů nezmění. Soubor cache se jen čte
+	 * a mezi dávkami je volný, takže čtení ani zápis dlaždic nestojí. Optimalizace počítání zruší a počká na konec dávky.
+	 *
+	 * @return null, když se počítání zrušilo, jiné už běží nebo běží optimalizace
 	 */
 	public StaraData spocitejStare() {
 		final File f = manager.souborCache();
@@ -199,15 +206,32 @@ public final class OptimalizaceDatabaze {
 		if (f == null || ponechat.isEmpty() || !f.isFile()) {
 			return StaraData.ZADNA;
 		}
-		final long zacatek = System.nanoTime();
+		if (!pocitani.tryLock()) {
+			return null;
+		}
 		try {
-			final StaraData stare = StaraData.spocti(f, ponechat);
+			final long zacatek = System.nanoTime();
+			final StaraData stare = StaraData.spocti(f, ponechat, StaraData.DAVKA, () -> zrusPocitani, this::pauzaMeziDavkami);
+			if (stare == null) {
+				return null;
+			}
 			stare.uloz(new File(f.getParentFile(), SOUBOR_STARYCH));
 			log.info("Cache dlaždic: zastaralých dlaždic offline map {} ({} MB), zjištěno za {} ms", stare.dlazdic(), stare.bajtu() >> 20, (System.nanoTime() - zacatek) / 1_000_000);
 			return stare;
 		} catch (final SQLException e) {
 			log.warn("Objem zastaralých dlaždic nejde zjistit: {}", e.toString());
 			return StaraData.ZADNA;
+		} finally {
+			pocitani.unlock();
+		}
+	}
+
+	private void pauzaMeziDavkami() {
+		try {
+			Thread.sleep(StaraData.PAUZA_MS);
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			zrusPocitani = true;
 		}
 	}
 
@@ -223,6 +247,17 @@ public final class OptimalizaceDatabaze {
 		if (stav == null) {
 			throw new OptimalizaceChyba("Cache dlaždic nejde použít, není co optimalizovat.");
 		}
+		zrusPocitani = true;
+		pocitani.lock();
+		try {
+			zrusPocitani = false;
+			return spustBezPocitani(puvodni, stav, prubeh);
+		} finally {
+			pocitani.unlock();
+		}
+	}
+
+	private Vysledek spustBezPocitani(final File puvodni, final StavSouboruCache stav, final Prubeh prubeh) {
 		final Set<String> ponechat = ponechane();
 		final StaraData znama = zapamatovaneStare();
 		final long volne = volneMistoPodSlozkou.applyAsLong(puvodni.getParentFile());

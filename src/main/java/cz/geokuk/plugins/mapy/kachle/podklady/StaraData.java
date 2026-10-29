@@ -6,13 +6,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
 import java.util.zip.CRC32;
 
 import org.sqlite.SQLiteConfig;
@@ -65,27 +66,54 @@ public final class StaraData {
 		}
 	}
 
+	/** Počet řádků jedné dávky; sdílený zámek souboru se drží jen po dobu jedné dávky. */
+	static final int DAVKA = 500;
+
+	/** Pauza mezi dávkami, aby čtení a zápis dlaždic běžely. */
+	static final long PAUZA_MS = 10;
+
 	/**
-	 * Projde tabulku dlaždic jen ke čtení (sdílený zámek, zápis dávek počká) a sečte dlaždice zastaralých klíčů; velikost obrázku se čte z hlavičky záznamu, ne z dat.
+	 * Projde tabulku po dávkách podle rowid, každou v samostatném spojení jen ke čtení, takže soubor je zamčený (sdíleným zámkem) jen po dobu jedné dávky
+	 * a zápis dlaždic nečeká déle. Velikost obrázku se čte z hlavičky záznamu, ne z dat.
+	 *
+	 * @param meziDavkami
+	 *            volá se při uvolněném souboru po každé dávce
+	 * @return null, když počítání zrušil {@code zruseno}
 	 */
-	static StaraData spocti(final File db, final Set<String> ponechat) throws SQLException {
+	static StaraData spocti(final File db, final Set<String> ponechat, final int davka, final BooleanSupplier zruseno, final Runnable meziDavkami) throws SQLException {
 		final String plan = otiskPlanu(ponechat);
-		long dlazdic = 0;
-		long bajtu = 0;
 		final SQLiteConfig config = new SQLiteConfig();
 		config.setReadOnly(true);
 		config.setBusyTimeout(30_000);
-		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db.getAbsolutePath(), config.toProperties());
-				Statement st = c.createStatement();
-				ResultSet r = st.executeQuery("SELECT s, COUNT(*), COALESCE(SUM(length(image)), 0) FROM tiles WHERE s LIKE 'o%' OR s LIKE 't%' GROUP BY s")) {
-			while (r.next()) {
-				if (UklidOfflineCache.jeZastarala(r.getString(1), ponechat)) {
-					dlazdic += r.getLong(2);
-					bajtu += r.getLong(3);
+		final String url = "jdbc:sqlite:" + db.getAbsolutePath();
+		long dlazdic = 0;
+		long bajtu = 0;
+		long posledni = Long.MIN_VALUE;
+		while (true) {
+			if (zruseno.getAsBoolean()) {
+				return null;
+			}
+			int radku = 0;
+			try (Connection c = DriverManager.getConnection(url, config.toProperties()); PreparedStatement st = c.prepareStatement(
+					"SELECT rowid, s, length(image) FROM tiles WHERE rowid > ? ORDER BY rowid LIMIT ?")) {
+				st.setLong(1, posledni);
+				st.setInt(2, davka);
+				try (ResultSet r = st.executeQuery()) {
+					while (r.next()) {
+						radku++;
+						posledni = r.getLong(1);
+						if (UklidOfflineCache.jeZastarala(r.getString(2), ponechat)) {
+							dlazdic++;
+							bajtu += r.getLong(3);
+						}
+					}
 				}
 			}
+			if (radku < davka) {
+				return new StaraData(dlazdic, bajtu, plan);
+			}
+			meziDavkami.run();
 		}
-		return new StaraData(dlazdic, bajtu, plan);
 	}
 
 	void uloz(final File soubor) {
