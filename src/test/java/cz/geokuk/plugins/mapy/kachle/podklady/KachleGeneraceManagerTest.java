@@ -117,4 +117,46 @@ public class KachleGeneraceManagerTest {
 		Assert.assertFalse(UklidOfflineCache.jeOffline("o0000002"));
 		Assert.assertFalse(UklidOfflineCache.jeOffline(null));
 	}
+
+	private boolean cekejNa(final java.util.function.BooleanSupplier podminka) throws Exception {
+		for (int i = 0; i < 200 && !podminka.getAsBoolean(); i++) {
+			Thread.sleep(50);
+		}
+		return podminka.getAsBoolean();
+	}
+
+	@Test
+	public void onlineDlazdiceNalezenaVeStarymSouboruSePovysiDoNoveho() throws Exception {
+		final KachleDBManager stary = new KachleDBManager(holder);
+		Assert.assertTrue(stary.save(Collections.singleton(new ItemToSave(ONLINE, png()))));
+		final KachleDBManager novy = new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_ONLINE);
+		Assert.assertNull(novy.load(ONLINE));
+		Assert.assertNotNull(manager.load(ONLINE));
+		Assert.assertTrue("dlaždice se zapíše do nového souboru", cekejNa(() -> novy.load(ONLINE) != null));
+		Assert.assertNotNull("ve starém zůstává", stary.load(ONLINE));
+	}
+
+	@Test
+	public void offlineDlazdiceSeNepovysuje() throws Exception {
+		final KachleDBManager stary = new KachleDBManager(holder);
+		Assert.assertTrue(stary.save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
+		Assert.assertNotNull(manager.load(OFFLINE, TYP));
+		Thread.sleep(2500);
+		Assert.assertNull(new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_OFFLINE).load(OFFLINE, TYP));
+		Assert.assertNull(new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_ONLINE).load(OFFLINE, TYP));
+	}
+
+	@Test
+	public void dlazdiceKterouNovySouborMaSePovysujeZnovu() throws Exception {
+		final KachleDBManager stary = new KachleDBManager(holder);
+		Assert.assertTrue(stary.save(Collections.singleton(new ItemToSave(ONLINE, png()))));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(ONLINE, png()))));
+		final KachleDBManager novy = new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_ONLINE);
+		final byte[] pred = Files.readAllBytes(soubor(KachleGeneraceManager.SOUBOR_ONLINE).toPath());
+		Assert.assertNotNull(manager.load(ONLINE));
+		Thread.sleep(2500);
+		Assert.assertNotNull(novy.load(ONLINE));
+		novy.pozastav();
+		Assert.assertArrayEquals(pred, Files.readAllBytes(soubor(KachleGeneraceManager.SOUBOR_ONLINE).toPath()));
+	}
 }

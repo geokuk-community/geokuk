@@ -3,15 +3,20 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 import java.awt.Image;
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Cache dlaždic ve více souborech: online a offline dlaždice se zapisují každé do svého souboru, čte se z něj a potom ze starého {@code tiles.sqlite}, do
  * kterého se už nezapisuje (jen ho zmenšuje Optimalizace). Offline dlaždice se poznají podle tvaru typu, viz {@link UklidOfflineCache#jeOffline}.
  */
+@Slf4j
 final class KachleGeneraceManager implements KachleManager {
 
 	static final String SOUBOR_ONLINE = "tiles-online-1.sqlite";
@@ -21,6 +26,28 @@ final class KachleGeneraceManager implements KachleManager {
 	private final KachleDBManager puvodni;
 	private final KachleDBManager online;
 	private final KachleDBManager offline;
+
+	private static final long PRODLEVA_POVYSENI_MS = 2000;
+
+	private static final int POVYSOVANI_DAVKA = 200;
+
+	/** Online dlaždice nalezené ve starém souboru, čekající na zápis do nového. */
+	private final Queue<ItemToSave> povysovane = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+	private final java.util.concurrent.atomic.AtomicBoolean zapisNaplanovan = new java.util.concurrent.atomic.AtomicBoolean();
+
+	private final ScheduledThreadPoolExecutor povysovac = vytvorPovysovac();
+
+	private static ScheduledThreadPoolExecutor vytvorPovysovac() {
+		final ScheduledThreadPoolExecutor e = new ScheduledThreadPoolExecutor(1, r -> {
+			final Thread t = new Thread(r, "Povýšení dlaždic v cache");
+			t.setDaemon(true);
+			t.setPriority(Thread.MIN_PRIORITY);
+			return t;
+		});
+		e.setRemoveOnCancelPolicy(true);
+		return e;
+	}
 
 	KachleGeneraceManager(final KachleCacheFolderHolder holder) {
 		puvodni = new KachleDBManager(holder);
@@ -59,7 +86,36 @@ final class KachleGeneraceManager implements KachleManager {
 		if (obrazek != null || !jePuvodni()) {
 			return obrazek;
 		}
-		return puvodni.load(ki, typ);
+		final byte[] bajty = puvodni.bajty(ki, typ);
+		final Image zeStareho = puvodni.dekoduj(ki, bajty);
+		if (zeStareho != null && !UklidOfflineCache.jeOffline(typ)) {
+			povysit(new ItemToSave(ki, typ, bajty));
+		}
+		return zeStareho;
+	}
+
+	/**
+	 * Online dlaždice nalezená jen ve starém souboru se zapíše do nového, ať přežije jeho smazání; zapisuje se po dávkách na pozadí. Offline dlaždice se
+	 * nepovyšují, vykreslí se znovu.
+	 */
+	private void povysit(final ItemToSave item) {
+		povysovane.add(item);
+		if (povysovane.size() >= KachleDBManager.DAVKA_ZAPISU) {
+			povysovac.execute(this::zapisPovysene);
+		} else if (zapisNaplanovan.compareAndSet(false, true)) {
+			povysovac.schedule(this::zapisPovysene, PRODLEVA_POVYSENI_MS, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	private void zapisPovysene() {
+		zapisNaplanovan.set(false);
+		final List<ItemToSave> davka = new ArrayList<>();
+		for (ItemToSave item = povysovane.poll(); item != null && davka.size() < POVYSOVANI_DAVKA; item = povysovane.poll()) {
+			davka.add(item);
+		}
+		if (!davka.isEmpty() && !online.save(davka)) {
+			log.debug("Povýšení {} dlaždic do nové cache se nepovedlo.", davka.size());
+		}
 	}
 
 	@Override

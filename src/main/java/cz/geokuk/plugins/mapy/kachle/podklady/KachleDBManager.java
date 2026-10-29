@@ -177,7 +177,16 @@ class KachleDBManager implements KachleManager {
 
 	@Override
 	public Image load(final Ka ki, final String typ) {
-		final byte[] data = cti(ki, typ, true);
+		return dekoduj(ki, cti(ki, typ, true));
+	}
+
+	/** Uložené bajty dlaždice, null když není nebo cache nejde číst. */
+	byte[] bajty(final Ka ki, final String typ) {
+		return cti(ki, typ, true);
+	}
+
+	/** Obrázek z uložených bajtů; null, když bajty chybí nebo je dlaždice useknutá. */
+	Image dekoduj(final Ka ki, final byte[] data) {
 		if (data == null) {
 			return null;
 		}
