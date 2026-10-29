@@ -70,8 +70,8 @@ public interface KachleManager {
 	public boolean save(Collection<ItemToSave> itemsToSave);
 
 	/**
-	 * Smaže dlaždice offline mapy se stejným písmenem jako zadané globální klíče (písmeno a 8 šestnáctkových číslic), kromě nich a všechny ve starém tvaru bez oblastní části; vrátí jejich počet. Podklad
-	 * ({@code o}) a překryv ({@code t}) se tak uklízejí každý zvlášť.
+	 * Smaže dlaždice offline mapy se stejným písmenem jako zadané globální klíče (písmeno a 8 šestnáctkových číslic), kromě nich a všechny ve starém tvaru bez oblastní části; vrátí jejich počet, nebo -1, když se úklid nedokončil (cache nejde otevřít, je zaneprázdněná, mazání selhalo)
+	 * a má se zopakovat. Podklad ({@code o}) a překryv ({@code t}) se tak uklízejí každý zvlášť.
 	 */
 	public default int smazOfflineKrome(final Set<String> ponechat) {
 		return 0;
@@ -79,7 +79,7 @@ public interface KachleManager {
 
 	/**
 	 * Smaže dlaždice offline mapy se zadaným globálním klíčem, jejichž typ není ten, který pro ně očekává aktuální sestava souborů (zastaralé po změně
-	 * mapy, vrstvy nebo DEM); vrátí jejich počet.
+	 * mapy, vrstvy nebo DEM); vrátí jejich počet, nebo -1, když se úklid nedokončil.
 	 *
 	 * @param ocekavany
 	 *            typ dlaždice v cache pro aktuální sestavu, viz {@link OblastniKlic#klic}

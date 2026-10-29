@@ -319,6 +319,9 @@ class KachleDBManager implements KachleManager {
 	private static final int DAVKA_MAZANI = 1000;
 
 	/** Rozhoduje o smazání řádku cache. */
+	/** Návratová hodnota úklidu offline dlaždic, který se nedokončil a má se zopakovat. */
+	static final int NEDOKONCENO = -1;
+
 	private interface NaSmazani {
 		boolean smazat(int x, int y, int z, String typ);
 	}
@@ -342,13 +345,14 @@ class KachleDBManager implements KachleManager {
 		final int odlozeniPred = odlozeni;
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
-			return 0;
+			return NEDOKONCENO;
 		}
 		final List<Long> smazat = new ArrayList<>();
+		final StavSouboruCache stavPred = StavSouboruCache.precti(database.getFile());
 		zamek.readLock().lock();
 		try {
 			if (odlozeniPred != odlozeni) {
-				return 0;
+				return NEDOKONCENO;
 			}
 			database.beginTransaction(SqlJetTransactionMode.READ_ONLY);
 			try {
@@ -368,7 +372,7 @@ class KachleDBManager implements KachleManager {
 			}
 		} catch (final SqlJetException e) {
 			log.warn("Staré dlaždice offline mapy nejde najít: {}", e.toString());
-			return 0;
+			return NEDOKONCENO;
 		} finally {
 			zamek.readLock().unlock();
 		}
@@ -378,7 +382,7 @@ class KachleDBManager implements KachleManager {
 				zamek.writeLock().lock();
 				try {
 					if (odlozeniPred != odlozeni || kontroly.containsKey(database.getFile())) {
-						return smazano;
+						return NEDOKONCENO;
 					}
 					int vDavce = 0;
 					database.beginTransaction(SqlJetTransactionMode.WRITE);
@@ -403,11 +407,16 @@ class KachleDBManager implements KachleManager {
 					smazano += vDavce;
 				} catch (final SqlJetException e) {
 					log.warn("Staré dlaždice offline mapy nejde smazat: {}", e.toString());
-					return smazano;
+					return NEDOKONCENO;
 				} finally {
 					zamek.writeLock().unlock();
 				}
 			}
+		}
+		if (smazano > 0) {
+			final StavSouboruCache stavPo = StavSouboruCache.precti(database.getFile());
+			final String uvolneno = stavPred == null || stavPo == null ? "" : String.format(", uvolněno %d MB v souboru", Math.max(0, stavPo.volnych - stavPred.volnych) * stavPo.velikostStranky >> 20);
+			log.info("Úklid cache offline mapy: smazáno {} dlaždic{}", smazano, uvolneno);
 		}
 		return smazano;
 	}
