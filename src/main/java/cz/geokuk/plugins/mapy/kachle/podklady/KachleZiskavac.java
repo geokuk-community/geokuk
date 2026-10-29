@@ -700,8 +700,12 @@ public class KachleZiskavac {
 	void uklidOfflineCache(final OblastniKlic klic, final File symboly) {
 		try {
 			final File slozka = symboly.getParentFile();
-			final Set<String> ponechat = UklidOfflineCache.naplanuj(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita()).uloz();
+			final UklidOfflineCache.Plan plan = UklidOfflineCache.naplanuj(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita());
+			final Set<String> ponechat = plan.uloz();
 			log.info("Cache offline mapy: zůstávají klíče {}", ponechat);
+			if (!plan.zastarale().isEmpty()) {
+				log.info("Cache offline mapy: zastaralé dlaždice zůstávají do optimalizace: klíče {}", plan.zastarale());
+			}
 		} catch (final IOException | RuntimeException e) {
 			log.warn("Soubor klíčů cache offline mapy nejde zapsat: {}", e.toString());
 		}
