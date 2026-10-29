@@ -193,4 +193,29 @@ public class KachleUkladacCasovacTest {
 		ukladej(50);
 		pockej(50);
 	}
+
+	private static ImageReceiver prijemce(final long dulezitost) {
+		return new ImageReceiver() {
+			@Override
+			public void send(final KachloStav kastat) {}
+
+			@Override
+			public long dulezitost() {
+				return dulezitost;
+			}
+		};
+	}
+
+	@Test
+	public void pohybMapouJsouJenPozadavkyNaViditelneDlazdice() {
+		assertTrue(KachleZiskavac.jePohybMapou(new KaOneReq(KACHLE, prijemce(0), Priority.KACHLE)));
+		assertFalse("předvykreslení okolí běží na pozadí", KachleZiskavac.jePohybMapou(new KaOneReq(KACHLE, prijemce(ImageReceiver.NA_POZADI), Priority.KACHLE)));
+		assertFalse("stahování", KachleZiskavac.jePohybMapou(new KaOneReq(KACHLE, prijemce(0), Priority.STAHOVANI)));
+		assertFalse("výchozí důležitost je na pozadí", KachleZiskavac.jePohybMapou(new KaOneReq(KACHLE, kastat -> {}, Priority.KACHLE)));
+	}
+
+	@Test
+	public void strophCekajicichPodleHaldyJeVRozumnemRozsahu() {
+		assertTrue(ziskavac.ukladac.nejviceCekajicich >= 50 && ziskavac.ukladac.nejviceCekajicich <= 100);
+	}
 }

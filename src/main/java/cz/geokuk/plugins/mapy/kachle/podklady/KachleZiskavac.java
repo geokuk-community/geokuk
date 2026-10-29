@@ -378,8 +378,8 @@ public class KachleZiskavac {
 		/** Mapou se nehýbe, když nepřišel požadavek na dlaždici tuto dobu. */
 		long necinnostMs = 1000;
 
-		/** Čekajících dlaždic je tolik, že se ukládá i při pohybu mapou. */
-		int nejviceCekajicich = 400;
+		/** Čekajících dlaždic je tolik, že se ukládá i při pohybu mapou; offline dlaždice čekají nezkomprimované, proto strop podle velikosti haldy. */
+		int nejviceCekajicich = (int) Math.max(MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU, Math.min(100, Runtime.getRuntime().maxMemory() / (8L << 20)));
 
 		/** Hodiny v ms; test je nahrazuje. */
 		LongSupplier hodiny = System::currentTimeMillis;
@@ -631,6 +631,12 @@ public class KachleZiskavac {
 	private KachleManager kachleManager;
 
 	final KachleUkladac ukladac = new KachleUkladac();
+
+	/** Pohyb mapou je požadavek na viditelnou dlaždici; předvykreslení okolí a stahování na pozadí zápis neodkládají. */
+	static boolean jePohybMapou(final KaOneReq req) {
+		final ImageReceiver prijemce = req.getImageReceiver();
+		return req.getPriorita() == Priority.KACHLE && prijemce != null && prijemce.dulezitost() < ImageReceiver.NA_POZADI;
+	}
 
 	/** Kdy (ms) přišel poslední požadavek na dlaždici; zápis dlaždic se při pohybu mapou odkládá. */
 	private volatile long posledniPozadavek;
@@ -1045,7 +1051,9 @@ public class KachleZiskavac {
 		final ImageReceiver imageReceiver = kaoneReq.getImageReceiver();
 		pocitSubmitJednaDlazdice.inc();
 		final Ka kaone = kaoneReq.getKa();
-		posledniPozadavek = ukladac.hodiny.getAsLong();
+		if (jePohybMapou(kaoneReq)) {
+			posledniPozadavek = ukladac.hodiny.getAsLong();
+		}
 		final DiagnosticsData diagnosticsData = aDiagnosticsData.with("kaOne", kaoneReq);
 
 		final Kachlice kachlice = kachlmap.asMap().computeIfAbsent(kaone, k -> new Kachlice(k, dvojiceExekucnichSluzeb, diagnosticsData));
