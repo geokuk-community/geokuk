@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,6 +65,8 @@ public class OfflineMapySledovaniSlozkyTest {
 
 	@Test(timeout = 60000)
 	public void smazanaMapaSeProjevi() throws Exception {
+		// Otevřená mapa se ve Windows maže až po zavření souboru, do té doby ji složka dál ukazuje.
+		Assume.assumeFalse("otevřený soubor jde ve Windows smazat až po zavření", System.getProperty("os.name", "").startsWith("Windows"));
 		OfflineMapyTest.zkopirujMapu(slozka, "druha.map");
 		Assert.assertTrue(pockejNaZmenu(1));
 		Assert.assertTrue(new File(slozka, "druha.map").delete());
