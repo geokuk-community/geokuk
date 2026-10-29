@@ -34,7 +34,7 @@ public class OfflineRendererIdentitaTest {
 		final File f = tema("moje.xml", "<rule e=\"way\" k=\"*\" v=\"*\" cat=\"x\"><line stroke=\"#000000\" stroke-width=\"1.0\"/></rule>\n");
 		final OfflineRenderer.NacteneTema pred = nacti(TemaOfflineMapy.zeSouboru(f, null), 1, 1);
 		Files.write(f.toPath(), (HLAVICKA + MENU + "<rule e=\"way\" k=\"*\" v=\"*\" cat=\"x\"><line stroke=\"#ff0000\" stroke-width=\"2.0\"/></rule>\n</rendertheme>\n").getBytes(StandardCharsets.UTF_8));
-		f.setLastModified(f.lastModified() + 5000);
+		Assert.assertTrue(f.setLastModified(f.lastModified() + 5000));
 		final OfflineRenderer.NacteneTema po = nacti(TemaOfflineMapy.zeSouboru(f, null), 1, 1);
 		Assert.assertNotEquals("změněný soubor má jiný otisk obsahu", pred.otiskPouziteho, po.otiskPouziteho);
 		Assert.assertEquals(OfflineRenderer.identita(pred, false), OfflineRenderer.identita(po, false));
