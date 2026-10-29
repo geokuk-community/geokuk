@@ -32,6 +32,11 @@ final class UklidOfflineCache {
 	static final String SLOZKA_PODKLADU = "offline-temata";
 	static final String SLOZKA_PREKRYVU = "offline-trasy";
 
+	/** Typ dlaždice offline mapy (podkladu {@code o} nebo překryvu {@code t}), ne online zdroje. */
+	static boolean jeOffline(final String typ) {
+		return typ != null && (KLIC.matcher(typ).matches() || TYP.matcher(typ).matches());
+	}
+
 	/** Klíče, jejichž dlaždice v cache zůstávají podle souborů klíčů podkladu a překryvu ve složce cache. */
 	static Set<String> ponechaneVCache(final File cache) throws IOException {
 		final Set<String> klice = new LinkedHashSet<>(ponechane(new File(cache, SLOZKA_PODKLADU)));
