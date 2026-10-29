@@ -170,4 +170,75 @@ public class UklidOfflineCachePriZmeneTest {
 		}
 		Assert.assertEquals(new HashSet<>(Arrays.asList("o00000002", "o000000ff")), UklidOfflineCache.ponechane(slozka));
 	}
+
+	/** Neúspěšné mazání dlaždic nezapíše soubor klíčů, takže se příští úklid zopakuje a nezůstanou sirotci. */
+	@Test
+	public void neuspesneMazaniSeZopakuje() throws Exception {
+		final File slozka = tmp.newFolder("offline-temata");
+		final File cache = tmp.newFolder("cache");
+		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
+		holder.setKachleCacheDir(new Filex(cache, false, true));
+		final KachleDBManager db = new KachleDBManager(holder);
+		final int[] selhani = { 0 };
+		final KachleManager rozbitelny = new KachleManager() {
+			@Override
+			public boolean exists(final Ka ki) {
+				return db.exists(ki);
+			}
+
+			@Override
+			public Image load(final Ka ki) {
+				return db.load(ki);
+			}
+
+			@Override
+			public boolean save(final Collection<ItemToSave> itemsToSave) {
+				return db.save(itemsToSave);
+			}
+
+			@Override
+			public int smazOfflineKrome(final Set<String> ponechat) {
+				if (selhani[0]-- > 0) {
+					return KachleDBManager.NEDOKONCENO;
+				}
+				return db.smazOfflineKrome(ponechat);
+			}
+		};
+		final KachleZiskavac ziskavac = new KachleZiskavac();
+		ziskavac.setKachleManager(rozbitelny);
+		final String varianta = "0123abcd";
+		final File a = new File(slozka, "symboly-0000000a.bin");
+		final File b = new File(slozka, "symboly-0000000b.bin");
+		ziskavac.uklidOfflineCache(new OblastniKlic("o00000001", Collections.emptyList(), null, varianta), a);
+		final List<KachleManager.ItemToSave> davka = new ArrayList<>();
+		for (int i = 0; i < 50; i++) {
+			davka.add(new KachleManager.ItemToSave(misto(i), "o00000001", png()));
+			davka.add(new KachleManager.ItemToSave(misto(i), "o00000002", png()));
+		}
+		Assert.assertTrue(db.save(davka));
+
+		final OblastniKlic nova = new OblastniKlic("o00000002", Collections.emptyList(), null, varianta);
+		selhani[0] = 1;
+		ziskavac.uklidOfflineCache(nova, b);
+		Assert.assertEquals("po selhání se soubor klíčů nezměnil", Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
+		Assert.assertTrue("dlaždice nahrazeného klíče zatím zůstávají", db.exists(misto(0), "o00000001"));
+
+		ziskavac.uklidOfflineCache(nova, b);
+		Assert.assertEquals(Collections.singleton("o00000002"), UklidOfflineCache.ponechane(slozka));
+		for (int i = 0; i < 50; i++) {
+			Assert.assertFalse("sirotek " + i, db.exists(misto(i), "o00000001"));
+			Assert.assertTrue("nový klíč " + i, db.exists(misto(i), "o00000002"));
+		}
+	}
+
+	/** Cache, kterou nejde otevřít, hlásí nedokončený úklid, ne nula smazaných dlaždic. */
+	@Test
+	public void cacheKterouNejdeOtevritHlasiNedokonceniUklidu() throws Exception {
+		final File soubor = tmp.newFile("neni-slozka");
+		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
+		holder.setKachleCacheDir(new Filex(soubor, false, true));
+		final KachleDBManager db = new KachleDBManager(holder);
+		Assert.assertEquals(KachleDBManager.NEDOKONCENO, db.smazOfflineKrome(Collections.singleton("o00000001")));
+		Assert.assertEquals(KachleDBManager.NEDOKONCENO, db.smazOfflineNesedici("o00000001", loc -> "o00000001.00000000"));
+	}
 }

@@ -155,7 +155,13 @@ public class OfflineKachleZiskavacTest {
 		final String klic = r.getKlic();
 		r.skonci();
 		Assert.assertEquals(Collections.singleton(klic), uklizeno.poll(15, TimeUnit.SECONDS));
-		Assert.assertTrue(new File(symboly, UklidOfflineCache.SOUBOR).isFile());
+		// Soubor klíčů se zapisuje až po smazání dlaždic.
+		final File klice = new File(symboly, UklidOfflineCache.SOUBOR);
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+		while (!klice.isFile() && System.nanoTime() < konec) {
+			Thread.sleep(20);
+		}
+		Assert.assertTrue(klice.isFile());
 	}
 
 	@Test

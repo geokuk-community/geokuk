@@ -63,12 +63,61 @@ final class UklidOfflineCache {
 	 * @return klíče, jejichž dlaždice v cache zůstávají
 	 */
 	static Set<String> zaznamenej(final File slozka, final String klic, final File symboly, final String sestava, final String identita) throws IOException {
-		final Path soubor = slozka.toPath().resolve(SOUBOR);
+		return naplanuj(slozka, klic, symboly, sestava, identita).uloz();
+	}
+
+	/** Nový stav souboru klíčů, který se zapíše až {@link #uloz()}, aby se při neúspěšném smazání dlaždic úklid příště zopakoval. */
+	static final class Plan {
+		private final File slozka;
+		private final List<Zaznam> zaznamy;
+
+		private Plan(final File slozka, final List<Zaznam> zaznamy) {
+			this.slozka = slozka;
+			this.zaznamy = zaznamy;
+		}
+
+		/** Klíče, jejichž dlaždice v cache zůstanou. */
+		Set<String> klice() {
+			final Set<String> klice = new LinkedHashSet<>();
+			for (final Zaznam z : zaznamy) {
+				klice.add(z.klic);
+			}
+			return klice;
+		}
+
+		/** Zapíše soubor klíčů a smaže soubory symbolů, které žádný z ponechaných klíčů nepoužívá. */
+		Set<String> uloz() throws IOException {
+			final List<String> radky = new ArrayList<>();
+			for (final Zaznam z : zaznamy) {
+				radky.add(z.klic + ' ' + z.symboly + ' ' + z.sestava + (z.identita == null ? "" : ' ' + z.identita));
+			}
+			Files.createDirectories(slozka.toPath());
+			final Path docasny = slozka.toPath().resolve(SOUBOR + ".tmp");
+			Files.write(docasny, radky, StandardCharsets.UTF_8);
+			Files.move(docasny, slozka.toPath().resolve(SOUBOR), StandardCopyOption.REPLACE_EXISTING);
+
+			final File[] soubory = slozka.listFiles(f -> SYMBOLY.matcher(f.getName()).matches() && zaznamy.stream().noneMatch(z -> z.symboly.equals(f.getName())));
+			if (soubory != null) {
+				for (final File f : soubory) {
+					try {
+						Files.deleteIfExists(f.toPath());
+					} catch (final IOException e) {
+						// Zamčený soubor (Windows) nesmí zabránit úklidu dlaždic.
+						log.debug("Soubor symbolů {} nejde smazat: {}", f, e.toString());
+					}
+				}
+			}
+			return klice();
+		}
+	}
+
+	/** Spočítá, jaké klíče zůstanou po zápisu klíče {@code klic}; nic nezapisuje ani nemaže. Parametry viz {@link #zaznamenej(File, String, File, String, String)}. */
+	static Plan naplanuj(final File slozka, final String klic, final File symboly, final String sestava, final String identita) throws IOException {
 		final List<Zaznam> zaznamy = new ArrayList<>();
 		zaznamy.add(new Zaznam(klic, symboly.getName(), sestava, identita));
 		final List<String> vypadle = new ArrayList<>();
 		boolean ponechanBezIdentity = false;
-		for (final Zaznam z : nacti(soubor)) {
+		for (final Zaznam z : nacti(slozka.toPath().resolve(SOUBOR))) {
 			if (z.klic.equals(klic)) {
 				continue;
 			}
@@ -91,29 +140,7 @@ final class UklidOfflineCache {
 		if (!vypadle.isEmpty()) {
 			log.info("Cache offline mapy: klíče {} se nahrazují novějším {}", vypadle, klic);
 		}
-		final List<String> radky = new ArrayList<>();
-		final Set<String> klice = new LinkedHashSet<>();
-		for (final Zaznam z : zaznamy) {
-			radky.add(z.klic + ' ' + z.symboly + ' ' + z.sestava + (z.identita == null ? "" : ' ' + z.identita));
-			klice.add(z.klic);
-		}
-		Files.createDirectories(slozka.toPath());
-		final Path docasny = slozka.toPath().resolve(SOUBOR + ".tmp");
-		Files.write(docasny, radky, StandardCharsets.UTF_8);
-		Files.move(docasny, soubor, StandardCopyOption.REPLACE_EXISTING);
-
-		final File[] soubory = slozka.listFiles(f -> SYMBOLY.matcher(f.getName()).matches() && zaznamy.stream().noneMatch(z -> z.symboly.equals(f.getName())));
-		if (soubory != null) {
-			for (final File f : soubory) {
-				try {
-					Files.deleteIfExists(f.toPath());
-				} catch (final IOException e) {
-					// Zamčený soubor (Windows) nesmí zabránit úklidu dlaždic.
-					log.debug("Soubor symbolů {} nejde smazat: {}", f, e.toString());
-				}
-			}
-		}
-		return klice;
+		return new Plan(slozka, zaznamy);
 	}
 
 	/** Klíče, jejichž dlaždice v cache zůstávají podle posledního zápisu. */

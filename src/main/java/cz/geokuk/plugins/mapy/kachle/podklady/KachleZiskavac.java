@@ -698,19 +698,34 @@ public class KachleZiskavac {
 			final File slozka = symboly.getParentFile();
 			final Set<String> pred = UklidOfflineCache.ponechane(slozka);
 			final String predSestava = UklidOfflineCache.sestava(slozka, klic.getGlobalni());
-			final Set<String> ponechat = UklidOfflineCache.zaznamenej(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita());
+			final UklidOfflineCache.Plan plan = UklidOfflineCache.naplanuj(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita());
+			final Set<String> ponechat = plan.klice();
 			final boolean jinaSestava = !klic.getSestava().equals(predSestava);
 			if (ponechat.equals(pred) && !jinaSestava) {
+				plan.uloz();
 				return; // dlaždice jiných klíčů smazal už dřívější úklid
 			}
+			// Soubor klíčů se zapíše až po smazání dlaždic: když mazání selže, příští úklid ho zopakuje.
 			final KachleManager km = kachleManager;
 			int smazano = 0;
+			boolean hotovo = km != null;
 			if (km != null) {
-				smazano = ponechat.equals(pred) ? 0 : km.smazOfflineKrome(ponechat);
-				if (jinaSestava) {
-					smazano += km.smazOfflineNesedici(klic.getGlobalni(), klic::klic);
+				if (!ponechat.equals(pred)) {
+					final int n = km.smazOfflineKrome(ponechat);
+					hotovo = n >= 0;
+					smazano += Math.max(0, n);
+				}
+				if (hotovo && jinaSestava) {
+					final int n = km.smazOfflineNesedici(klic.getGlobalni(), klic::klic);
+					hotovo = n >= 0;
+					smazano += Math.max(0, n);
 				}
 			}
+			if (!hotovo) {
+				log.info("Úklid cache offline mapy se nedokončil (smazáno {} dlaždic), zopakuje se při příštím otevření map", smazano);
+				return;
+			}
+			plan.uloz();
 			log.info("Úklid cache offline mapy: zůstávají klíče {}, smazáno {} dlaždic", ponechat, smazano);
 		} catch (final IOException | RuntimeException e) {
 			log.warn("Cache offline mapy nejde uklidit: {}", e.toString());
