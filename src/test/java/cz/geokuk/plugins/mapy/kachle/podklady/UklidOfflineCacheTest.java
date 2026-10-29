@@ -221,4 +221,12 @@ public class UklidOfflineCacheTest {
 		Assert.assertFalse("překryv bez svého klíče", UklidOfflineCache.jeZastarala("t0000000d", java.util.Collections.singleton("o0000000a")));
 		Assert.assertTrue(UklidOfflineCache.jeZastarala("o0000000b", java.util.Collections.singleton("o0000000a")));
 	}
+
+	/** Soubor klíčů s více záznamy, než se ponechává, se čte jen do počtu ponechaných. */
+	@Test
+	public void ponechaneJeNejvicTriKlice() throws Exception {
+		Files.write(new File(slozka, UklidOfflineCache.SOUBOR).toPath(), Arrays.asList("o00000004 symboly-0000000a.bin 00000000 aaaaaaaa", "o00000003 symboly-0000000a.bin 00000000 bbbbbbbb",
+				"o00000002 symboly-0000000a.bin 00000000 cccccccc", "o00000001 symboly-0000000a.bin 00000000 dddddddd"), StandardCharsets.UTF_8);
+		Assert.assertEquals(Arrays.asList("o00000004", "o00000003", "o00000002"), new ArrayList<>(UklidOfflineCache.ponechane(slozka)));
+	}
 }
