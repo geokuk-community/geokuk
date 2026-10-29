@@ -87,4 +87,82 @@ public class KachleWebFrontaPrioritaTest {
 		assertFalse(spustene.contains("zastarala"));
 		zdrzeni.get(4).countDown();
 	}
+
+	/** Stažení dlaždice ze skutečného získávání (Kachlice) jde do prioritní fronty, ne do obyčejné: úloha ve frontě je řazená. */
+	@Test(timeout = 30000)
+	public void stazeniDlazdiceZKachliceJdeDoPrioritniFronty() throws Exception {
+		final KachleZiskavac ziskavac = new KachleZiskavac();
+		ziskavac.inject(new cz.geokuk.core.onoffline.OnofflineModel() {
+			@Override
+			public boolean isOnlineMode() {
+				return true;
+			}
+		});
+		ziskavac.inject(new cz.geokuk.plugins.mapy.kachle.KachleModel() {
+			@Override
+			public boolean isUkladatMapyNaDisk() {
+				return false;
+			}
+		});
+		ziskavac.setKachleManager(new KachleManager() {
+			@Override
+			public boolean exists(final cz.geokuk.plugins.mapy.kachle.data.Ka ki) {
+				return false;
+			}
+
+			@Override
+			public java.awt.Image load(final cz.geokuk.plugins.mapy.kachle.data.Ka ki) {
+				return null;
+			}
+
+			@Override
+			public boolean save(final java.util.Collection<ItemToSave> itemsToSave) {
+				return true;
+			}
+		});
+		final ExecutorService web = ziskavac.vlaknaWebOnline();
+		final int vlaken = KachleZiskavac.NTHREADS_WEB_CORE_ONLINE;
+		final CountDownLatch zdrzeni = new CountDownLatch(1);
+		final CountDownLatch obsazeno = new CountDownLatch(vlaken);
+		for (int i = 0; i < vlaken; i++) {
+			web.execute(() -> {
+				obsazeno.countDown();
+				try {
+					zdrzeni.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			});
+		}
+		assertTrue(obsazeno.await(10, TimeUnit.SECONDS));
+
+		final java.util.concurrent.atomic.AtomicBoolean zastarale = new java.util.concurrent.atomic.AtomicBoolean();
+		final cz.geokuk.plugins.mapy.kachle.data.Ka ka = new cz.geokuk.plugins.mapy.kachle.data.Ka(
+				cz.geokuk.plugins.mapy.kachle.data.KaLoc.ofJZ(new cz.geokuk.core.coordinates.Mou(0x23800000, 0x28100000), 13), cz.geokuk.plugins.mapy.kachle.data.EKaType.OPEN_STREET);
+		ziskavac.ziskejObsah(new KaOneReq(ka, new ImageReceiver() {
+			@Override
+			public void send(final KachloStav kachloStav) {
+			}
+
+			@Override
+			public long dulezitost() {
+				return zastarale.get() ? ImageReceiver.ZASTARALA : 0;
+			}
+		}, Priority.KACHLE), cz.geokuk.plugins.mapy.kachle.data.DiagnosticsData.create(null, null, null));
+
+		try {
+			final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+			while (ziskavac.frontaWebOnline().isEmpty() && System.nanoTime() < konec) {
+				Thread.sleep(5);
+			}
+			assertFalse("stažení čeká ve frontě", ziskavac.frontaWebOnline().isEmpty());
+			for (final Runnable r : ziskavac.frontaWebOnline()) {
+				assertTrue("úloha ve frontě je řazená: " + r, r instanceof PrioritniFronta.Razena);
+			}
+		} finally {
+			// Zastaralá úloha se při výběru zahodí, na síť se nesahá.
+			zastarale.set(true);
+			zdrzeni.countDown();
+		}
+	}
 }

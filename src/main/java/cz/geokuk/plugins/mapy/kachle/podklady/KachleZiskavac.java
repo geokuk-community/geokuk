@@ -997,6 +997,11 @@ public class KachleZiskavac {
 		return exekucniSluzby.get(Priority.KACHLE).web;
 	}
 
+	/** Úlohy čekající na stažení online dlaždic, pro testy. */
+	BlockingQueue<Runnable> frontaWebOnline() {
+		return exekucniSluzby.get(Priority.KACHLE).webQueue;
+	}
+
 	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
 	public Image nahledZPameti(final Ka ka) {
 		final Kachlice kachlice = kachlmap.getIfPresent(ka);
