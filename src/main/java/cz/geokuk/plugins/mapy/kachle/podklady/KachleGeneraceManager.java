@@ -9,30 +9,24 @@ import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 
 /**
- * Cache dlaždic ve více souborech: online a offline dlaždice se zapisují každé do svého souboru, čte se z něj a potom ze starého {@code tiles.sqlite}, do
- * kterého se už nezapisuje (jen ho zmenšuje Optimalizace). Offline dlaždice se poznají podle tvaru typu, viz {@link UklidOfflineCache#jeOffline}.
+ * Cache dlaždic ve více souborech: online dlaždice zůstávají samostatně v původním {@code tiles.sqlite}, offline dlaždice se zapisují do vlastního souboru
+ * {@code tiles-offline-N.sqlite} a čtou se z něj a potom z původního souboru (starší offline dlaždice). Offline dlaždice se poznají podle tvaru typu, viz
+ * {@link UklidOfflineCache#jeOffline}.
  */
 final class KachleGeneraceManager implements KachleManager {
 
-	static final String SOUBOR_ONLINE = "tiles-online-1.sqlite";
 	static final String SOUBOR_OFFLINE = "tiles-offline-1.sqlite";
 
-	/** Starý společný soubor, jen ke čtení. */
+	/** Původní společný soubor: online dlaždice a starší offline dlaždice. */
 	private final KachleDBManager puvodni;
-	private final KachleDBManager online;
 	private final KachleDBManager offline;
 
 	KachleGeneraceManager(final KachleCacheFolderHolder holder) {
 		puvodni = new KachleDBManager(holder);
-		online = new KachleDBManager(holder, SOUBOR_ONLINE);
 		offline = new KachleDBManager(holder, SOUBOR_OFFLINE);
 	}
 
-	private KachleDBManager aktualni(final String typ) {
-		return UklidOfflineCache.jeOffline(typ) ? offline : online;
-	}
-
-	/** Starý soubor se nezakládá: čte se z něj, jen když už je. */
+	/** Původní soubor se kvůli offline dlaždicím nezakládá: čte se z něj, jen když už je. */
 	private boolean jePuvodni() {
 		final File f = puvodni.souborCache();
 		return f != null && f.isFile();
@@ -45,7 +39,10 @@ final class KachleGeneraceManager implements KachleManager {
 
 	@Override
 	public boolean exists(final Ka ki, final String typ) {
-		return aktualni(typ).exists(ki, typ) || jePuvodni() && puvodni.exists(ki, typ);
+		if (!UklidOfflineCache.jeOffline(typ)) {
+			return puvodni.exists(ki, typ);
+		}
+		return offline.exists(ki, typ) || jePuvodni() && puvodni.exists(ki, typ);
 	}
 
 	@Override
@@ -55,26 +52,26 @@ final class KachleGeneraceManager implements KachleManager {
 
 	@Override
 	public Image load(final Ka ki, final String typ) {
-		final Image obrazek = aktualni(typ).load(ki, typ);
-		if (obrazek != null || !jePuvodni()) {
-			return obrazek;
+		if (!UklidOfflineCache.jeOffline(typ)) {
+			return puvodni.load(ki, typ);
 		}
-		return puvodni.load(ki, typ);
+		final Image obrazek = offline.load(ki, typ);
+		return obrazek != null || !jePuvodni() ? obrazek : puvodni.load(ki, typ);
 	}
 
 	@Override
 	public boolean save(final Collection<ItemToSave> itemsToSave) {
-		final List<ItemToSave> pro = new ArrayList<>();
+		final List<ItemToSave> proOffline = new ArrayList<>();
 		final List<ItemToSave> proOnline = new ArrayList<>();
 		for (final ItemToSave item : itemsToSave) {
-			(UklidOfflineCache.jeOffline(item.typ) ? pro : proOnline).add(item);
+			(UklidOfflineCache.jeOffline(item.typ) ? proOffline : proOnline).add(item);
 		}
 		boolean vse = true;
 		if (!proOnline.isEmpty()) {
-			vse = online.save(proOnline);
+			vse = puvodni.save(proOnline);
 		}
-		if (!pro.isEmpty()) {
-			vse &= offline.save(pro);
+		if (!proOffline.isEmpty()) {
+			vse &= offline.save(proOffline);
 		}
 		return vse;
 	}
@@ -90,17 +87,14 @@ final class KachleGeneraceManager implements KachleManager {
 	}
 
 	/** Součet počtů smazaných dlaždic; {@link KachleDBManager#NEDOKONCENO}, když se některý úklid nedokončil. */
-	private static int soucet(final int a, final int b) {
+	static int soucet(final int a, final int b) {
 		return a < 0 || b < 0 ? KachleDBManager.NEDOKONCENO : a + b;
 	}
 
 	@Override
 	public void predotevri() {
-		online.predotevri();
+		puvodni.predotevri();
 		offline.predotevri();
-		if (jePuvodni()) {
-			puvodni.predotevri();
-		}
 	}
 
 	@Override

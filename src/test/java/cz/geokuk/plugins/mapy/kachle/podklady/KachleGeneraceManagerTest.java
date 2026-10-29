@@ -49,62 +49,57 @@ public class KachleGeneraceManagerTest {
 	}
 
 	@Test
-	public void onlineAOfflineDlazdiceJdouKazdaDoSvehoSouboru() throws Exception {
+	public void onlineDlazdiceZustavajiVPuvodnimSouboruOfflineJdouDoSveho() throws Exception {
 		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(ONLINE, png()), new ItemToSave(OFFLINE, TYP, png()))));
-		Assert.assertTrue(soubor(KachleGeneraceManager.SOUBOR_ONLINE).isFile());
+		Assert.assertTrue(soubor("tiles.sqlite").isFile());
 		Assert.assertTrue(soubor(KachleGeneraceManager.SOUBOR_OFFLINE).isFile());
-		Assert.assertFalse("starý soubor se nezakládá", soubor("tiles.sqlite").exists());
+		Assert.assertFalse("nový online soubor neexistuje", soubor("tiles-online-1.sqlite").exists());
 		Assert.assertNotNull(manager.load(ONLINE));
 		Assert.assertNotNull(manager.load(OFFLINE, TYP));
 		Assert.assertTrue(manager.exists(ONLINE));
 		Assert.assertTrue(manager.exists(OFFLINE, TYP));
-		// Každý soubor má jen své dlaždice.
-		final KachleDBManager jenOnline = new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_ONLINE);
+		final KachleDBManager puvodni = new KachleDBManager(holder);
 		final KachleDBManager jenOffline = new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_OFFLINE);
-		Assert.assertNotNull(jenOnline.load(ONLINE));
-		Assert.assertNull(jenOnline.load(OFFLINE, TYP));
+		Assert.assertNotNull(puvodni.load(ONLINE));
+		Assert.assertNull("offline dlaždice v původním souboru není", puvodni.load(OFFLINE, TYP));
 		Assert.assertNotNull(jenOffline.load(OFFLINE, TYP));
 		Assert.assertNull(jenOffline.load(ONLINE));
 	}
 
 	@Test
-	public void dlazdiceZeStarehoSouboruSeCtouAZapisySeDoNehoNedelaji() throws Exception {
-		final KachleDBManager stary = new KachleDBManager(holder);
-		Assert.assertTrue(stary.save(Arrays.asList(new ItemToSave(ONLINE, png()), new ItemToSave(OFFLINE, TYP, png()))));
+	public void starsiOfflineDlazdiceSeCtouZPuvodnihoSouboruAZapisySeDoNehoNedelaji() throws Exception {
+		final KachleDBManager puvodni = new KachleDBManager(holder);
+		Assert.assertTrue(puvodni.save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
 		final byte[] pred = Files.readAllBytes(soubor("tiles.sqlite").toPath());
-		Assert.assertNotNull(manager.load(ONLINE));
 		Assert.assertNotNull(manager.load(OFFLINE, TYP));
-		Assert.assertTrue(manager.exists(ONLINE));
 		Assert.assertTrue(manager.exists(OFFLINE, TYP));
-		final Ka jina = new Ka(KaLoc.ofJZ(new Mou(0x50000000, 0x20000000), 13), EKaType.TURIST_M);
-		Assert.assertNull(manager.load(jina));
-		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(jina, png()))));
-		Assert.assertNotNull(manager.load(jina));
-		Assert.assertNull("nová dlaždice není ve starém souboru", stary.load(jina));
+		final String jiny = "o0000002b.0000ffff";
+		Assert.assertNull(manager.load(OFFLINE, jiny));
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(OFFLINE, jiny, png()))));
+		Assert.assertNotNull(manager.load(OFFLINE, jiny));
+		Assert.assertNull("nová offline dlaždice není v původním souboru", puvodni.load(OFFLINE, jiny));
 		manager.predotevri();
-		stary.pozastav();
-		Assert.assertArrayEquals("starý soubor se nezměnil", pred, Files.readAllBytes(soubor("tiles.sqlite").toPath()));
+		puvodni.pozastav();
+		Assert.assertArrayEquals("původní soubor se nezměnil", pred, Files.readAllBytes(soubor("tiles.sqlite").toPath()));
 	}
 
 	@Test
-	public void novaDlazdiceMaPrednostPredStarou() throws Exception {
-		final KachleDBManager stary = new KachleDBManager(holder);
-		Assert.assertTrue(stary.save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
+	public void novaOfflineDlazdiceMaPrednostPredStarou() throws Exception {
+		Assert.assertTrue(new KachleDBManager(holder).save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
 		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(OFFLINE, TYP, png()))));
 		Assert.assertNotNull(new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_OFFLINE).load(OFFLINE, TYP));
 		Assert.assertNotNull(manager.load(OFFLINE, TYP));
 	}
 
 	@Test
-	public void bezStarehoSouboruSeNezaklada() throws Exception {
-		Assert.assertNull(manager.load(ONLINE));
+	public void bezPuvodnihoSouboruSeKvuliOfflineNezaklada() throws Exception {
+		Assert.assertNull(manager.load(OFFLINE, TYP));
 		Assert.assertFalse(manager.exists(OFFLINE, TYP));
-		manager.predotevri();
 		Assert.assertFalse(soubor("tiles.sqlite").exists());
 	}
 
 	@Test
-	public void optimalizaceSeTykaStarehoSouboru() throws Exception {
+	public void optimalizaceSeTykaPuvodnihoSouboru() throws Exception {
 		Assert.assertNotNull(manager.optimalizace());
 		Assert.assertEquals(soubor("tiles.sqlite"), new KachleDBManager(holder).souborCache());
 	}
@@ -116,5 +111,28 @@ public class KachleGeneraceManagerTest {
 		Assert.assertFalse(UklidOfflineCache.jeOffline("TURIST_M"));
 		Assert.assertFalse(UklidOfflineCache.jeOffline("o0000002"));
 		Assert.assertFalse(UklidOfflineCache.jeOffline(null));
+	}
+
+	@Test
+	public void souctySmazanychDlazdicSeSectouANedokonceniVyhraje() {
+		Assert.assertEquals(0, KachleGeneraceManager.soucet(0, 0));
+		Assert.assertEquals(5, KachleGeneraceManager.soucet(2, 3));
+		Assert.assertEquals(3, KachleGeneraceManager.soucet(3, 0));
+		Assert.assertEquals(3, KachleGeneraceManager.soucet(0, 3));
+		Assert.assertEquals(KachleDBManager.NEDOKONCENO, KachleGeneraceManager.soucet(-1, 3));
+		Assert.assertEquals(KachleDBManager.NEDOKONCENO, KachleGeneraceManager.soucet(3, -1));
+		Assert.assertEquals(KachleDBManager.NEDOKONCENO, KachleGeneraceManager.soucet(-1, -1));
+	}
+
+	@Test
+	public void uklidOfflineDlazdicSeTykaObouSouboru() throws Exception {
+		final String ponechana = "o0000000a.0000ffff";
+		final String stara = "o0000000b.0000ffff";
+		final KachleDBManager puvodni = new KachleDBManager(holder);
+		Assert.assertTrue(puvodni.save(Arrays.asList(new ItemToSave(OFFLINE, stara, png()), new ItemToSave(OFFLINE, ponechana, png()))));
+		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(OFFLINE, stara, png()))));
+		Assert.assertEquals(2, manager.smazOfflineKrome(Collections.singleton("o0000000a")));
+		Assert.assertNotNull(manager.load(OFFLINE, ponechana));
+		Assert.assertNull(manager.load(OFFLINE, stara));
 	}
 }
