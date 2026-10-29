@@ -156,6 +156,19 @@ public class JKachle extends JComponent {
 		return !nahled.isEmpty();
 	}
 
+	/** Dočasný náhled z hotových dlaždic jiného měřítka; dávkové stahování na pozadí ho nepotřebuje. */
+	void pripravNahled(final KachleModel kachleModel, final Priority priorita) {
+		if (priorita == Priority.STAHOVANI) {
+			return;
+		}
+		final KachleZiskavac ziskavac = kachleModel.getZiskavac();
+		final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, ziskavac::nahledZPameti, KACHLE_WIDTH);
+		if (!usadNahled(novyNahled)) {
+			// Z paměti nic není, zkusí se cache na disku; čte se mimo vlákno událostí.
+			ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac));
+		}
+	}
+
 	/** Na pozadí: náhled z hotových dlaždic v paměti nebo v cache, když dlaždice mezitím nedostala obrázek ani náhled a pořád je potřeba. */
 	void doplnNahledZCache(final KachleZiskavac ziskavac) {
 		if (dulezitost() == ImageReceiver.ZASTARALA || maHotovyObrazek()) {
@@ -217,14 +230,7 @@ public class JKachle extends JComponent {
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
-		if (priorita != Priority.STAHOVANI) {
-			final KachleZiskavac ziskavac = kachleModel.getZiskavac();
-			final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, ziskavac::nahledZPameti, KACHLE_WIDTH);
-			if (!usadNahled(novyNahled)) {
-				// Z paměti nic není, zkusí se cache na disku; čte se mimo vlákno událostí.
-				ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac));
-			}
-		}
+		pripravNahled(kachleModel, priorita);
 		final long zadano = System.nanoTime();
 		final KaOneReq req = new KaOneReq(ka, new ImageReceiver() {
 			@Override
