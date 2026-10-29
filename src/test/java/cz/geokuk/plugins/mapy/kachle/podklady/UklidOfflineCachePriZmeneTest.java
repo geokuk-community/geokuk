@@ -24,8 +24,9 @@ public class UklidOfflineCachePriZmeneTest {
 
 	private final List<Set<String>> pruchody = new ArrayList<>();
 
+	/** Úklid po otevření map jen zapíše soubor klíčů; z cache nic nemaže ani neprochází, aby velká cache nezastavila čtení dlaždic. */
 	@Test
-	public void stejneKliceSeNeprochazeji() throws Exception {
+	public void uklidNeprochaziAniNemazeCache() throws Exception {
 		final File slozka = tmp.newFolder("offline-temata");
 		final File a = new File(slozka, "symboly-0000000a.bin");
 		final File b = new File(slozka, "symboly-0000000b.bin");
@@ -48,63 +49,26 @@ public class UklidOfflineCachePriZmeneTest {
 
 			@Override
 			public int smazOfflineKrome(final Set<String> ponechat) {
-				pruchody.add(new HashSet<>(ponechat));
-				return 0;
-			}
-		});
-		ziskavac.uklidOfflineCache(OblastniKlic.bezSouboru("o00000001"), a);
-		ziskavac.uklidOfflineCache(OblastniKlic.bezSouboru("o00000001"), a);
-		ziskavac.uklidOfflineCache(OblastniKlic.bezSouboru("o00000002"), b);
-		ziskavac.uklidOfflineCache(OblastniKlic.bezSouboru("o00000001"), a);
-		ziskavac.uklidOfflineCache(OblastniKlic.bezSouboru("o00000002"), b);
-		Assert.assertEquals(Arrays.asList(Collections.singleton("o00000001"), new HashSet<>(Arrays.asList("o00000001", "o00000002"))), pruchody);
-	}
-
-	/** Změna souborů sestavy při stejných klíčích zamete jen nesedící dlaždice; globální klíče se neprochází. */
-	@Test
-	public void zmenaSestavyZametaNesediciDlazdice() throws Exception {
-		final File slozka = tmp.newFolder("offline-temata");
-		final File a = new File(slozka, "symboly-0000000a.bin");
-		final List<String> zameteno = new ArrayList<>();
-		final KachleZiskavac ziskavac = new KachleZiskavac();
-		ziskavac.setKachleManager(new KachleManager() {
-			@Override
-			public boolean exists(final Ka ki) {
-				return false;
-			}
-
-			@Override
-			public Image load(final Ka ki) {
-				return null;
-			}
-
-			@Override
-			public boolean save(final Collection<ItemToSave> itemsToSave) {
-				return true;
-			}
-
-			@Override
-			public int smazOfflineKrome(final Set<String> ponechat) {
-				pruchody.add(new HashSet<>(ponechat));
+				Assert.fail("úklid nesmí mazat dlaždice z cache");
 				return 0;
 			}
 
 			@Override
-			public int smazOfflineNesedici(final String globalni, final java.util.function.Function<cz.geokuk.plugins.mapy.kachle.data.KaLoc, String> ocekavany) {
-				zameteno.add(globalni);
+			public int smazOfflineNesedici(final String globalni, final java.util.function.Function<KaLoc, String> ocekavany) {
+				Assert.fail("úklid nesmí procházet cache");
 				return 0;
 			}
 		});
 		final org.mapsforge.core.model.BoundingBox kdekoli = new org.mapsforge.core.model.BoundingBox(10, 10, 11, 11);
-		final OblastniKlic jedna = new OblastniKlic("o00000001", Collections.singletonList(new OblastniKlic.Zdroj(kdekoli, "mapa-1")));
-		final OblastniKlic dve = new OblastniKlic("o00000001", Collections.singletonList(new OblastniKlic.Zdroj(kdekoli, "mapa-2")));
+		final OblastniKlic jedna = new OblastniKlic("o00000001", Collections.singletonList(new OblastniKlic.Zdroj(kdekoli, "mapa-1")), null, "aaaaaaaa");
+		final OblastniKlic jinaSestava = new OblastniKlic("o00000001", Collections.singletonList(new OblastniKlic.Zdroj(kdekoli, "mapa-2")), null, "aaaaaaaa");
 		ziskavac.uklidOfflineCache(jedna, a);
-		ziskavac.uklidOfflineCache(jedna, a);
-		ziskavac.uklidOfflineCache(dve, a);
-		ziskavac.uklidOfflineCache(dve, a);
-		ziskavac.uklidOfflineCache(jedna, a);
-		Assert.assertEquals("zametá se při prvním zápisu a při každé změně sestavy", Arrays.asList("o00000001", "o00000001", "o00000001"), zameteno);
-		Assert.assertEquals("globální klíče se neprochází znovu", Collections.singletonList(Collections.singleton("o00000001")), pruchody);
+		ziskavac.uklidOfflineCache(jinaSestava, a);
+		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
+		ziskavac.uklidOfflineCache(new OblastniKlic("o00000002", Collections.emptyList(), null, "aaaaaaaa"), b);
+		Assert.assertEquals("novější verze téže varianty nahradí starší v souboru klíčů", Collections.singleton("o00000002"), UklidOfflineCache.ponechane(slozka));
+		ziskavac.uklidOfflineCache(new OblastniKlic("o00000003", Collections.emptyList(), null, "bbbbbbbb"), b);
+		Assert.assertEquals(new HashSet<>(Arrays.asList("o00000003", "o00000002")), UklidOfflineCache.ponechane(slozka));
 	}
 
 	private static byte[] png() throws Exception {
@@ -117,12 +81,9 @@ public class UklidOfflineCachePriZmeneTest {
 		return new Ka(KaLoc.ofJZ(new Mou(0x40000000 + (i << 19), 0x20000000), 13), EKaType.OFFLINE_MF);
 	}
 
-	/**
-	 * Nová verze téže varianty smaže dlaždice starého klíče, ale dlaždice nového klíče, i ty, které předvykreslení ukládá za běhu úklidu, zůstanou;
-	 * jiná varianta se nedotkne.
-	 */
+	/** Nad skutečnou cache úklid nic nesmaže: dlaždice všech klíčů zůstávají, i když soubor klíčů některé z nich už nezná. */
 	@Test
-	public void novaVerzeVariantySmazeStarouAleNeDlazdiceKterePredvykresleniUkladaZaBehu() throws Exception {
+	public void dlazdiceStarychKlicuZustavajiVCache() throws Exception {
 		final File slozka = tmp.newFolder("offline-temata");
 		final File cache = tmp.newFolder("cache");
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
@@ -130,104 +91,18 @@ public class UklidOfflineCachePriZmeneTest {
 		final KachleDBManager manager = new KachleDBManager(holder);
 		final KachleZiskavac ziskavac = new KachleZiskavac();
 		ziskavac.setKachleManager(manager);
-
-		final String varianta = "0123abcd";
-		final String jinaVarianta = "0123abce";
-		final File a = new File(slozka, "symboly-0000000a.bin");
-		final File j = new File(slozka, "symboly-0000000f.bin");
-		final File b = new File(slozka, "symboly-0000000b.bin");
-		ziskavac.uklidOfflineCache(new OblastniKlic("o000000ff", Collections.emptyList(), null, jinaVarianta), j);
-		ziskavac.uklidOfflineCache(new OblastniKlic("o00000001", Collections.emptyList(), null, varianta), a);
-
-		final int pocet = 300;
 		final List<KachleManager.ItemToSave> davka = new ArrayList<>();
-		for (int i = 0; i < pocet; i++) {
+		for (int i = 0; i < 100; i++) {
 			davka.add(new KachleManager.ItemToSave(misto(i), "o00000001", png()));
-			davka.add(new KachleManager.ItemToSave(misto(i), "o000000ff", png()));
 			davka.add(new KachleManager.ItemToSave(misto(i), "o00000002", png()));
 		}
 		Assert.assertTrue(manager.save(davka));
-
-		// Úklid po aktualizaci tématu běží, zatímco předvykreslení ukládá další dlaždice nového klíče.
-		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
-		final CountDownLatch zacal = new CountDownLatch(1);
-		final Future<?> predvykresleni = vlakno.submit(() -> {
-			zacal.countDown();
-			for (int i = pocet; i < pocet + 100; i++) {
-				manager.save(Collections.singleton(new KachleManager.ItemToSave(misto(i), "o00000002", png())));
-			}
-			return null;
-		});
-		Assert.assertTrue(zacal.await(10, TimeUnit.SECONDS));
-		ziskavac.uklidOfflineCache(new OblastniKlic("o00000002", Collections.emptyList(), null, varianta), b);
-		predvykresleni.get(60, TimeUnit.SECONDS);
-		vlakno.shutdown();
-
-		for (int i = 0; i < pocet + 100; i++) {
-			Assert.assertTrue("nový klíč má dlaždici " + i, manager.exists(misto(i), "o00000002"));
-			Assert.assertEquals("starý klíč téže varianty je pryč " + i, false, manager.exists(misto(i), "o00000001"));
-			Assert.assertEquals("jiná varianta zůstává " + i, i < pocet, manager.exists(misto(i), "o000000ff"));
-		}
-		Assert.assertEquals(new HashSet<>(Arrays.asList("o00000002", "o000000ff")), UklidOfflineCache.ponechane(slozka));
-	}
-
-	/** Neúspěšné mazání dlaždic nezapíše soubor klíčů, takže se příští úklid zopakuje a nezůstanou sirotci. */
-	@Test
-	public void neuspesneMazaniSeZopakuje() throws Exception {
-		final File slozka = tmp.newFolder("offline-temata");
-		final File cache = tmp.newFolder("cache");
-		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
-		holder.setKachleCacheDir(new Filex(cache, false, true));
-		final KachleDBManager db = new KachleDBManager(holder);
-		final int[] selhani = { 0 };
-		final KachleManager rozbitelny = new KachleManager() {
-			@Override
-			public boolean exists(final Ka ki) {
-				return db.exists(ki);
-			}
-
-			@Override
-			public Image load(final Ka ki) {
-				return db.load(ki);
-			}
-
-			@Override
-			public boolean save(final Collection<ItemToSave> itemsToSave) {
-				return db.save(itemsToSave);
-			}
-
-			@Override
-			public int smazOfflineKrome(final Set<String> ponechat) {
-				if (selhani[0]-- > 0) {
-					return KachleDBManager.NEDOKONCENO;
-				}
-				return db.smazOfflineKrome(ponechat);
-			}
-		};
-		final KachleZiskavac ziskavac = new KachleZiskavac();
-		ziskavac.setKachleManager(rozbitelny);
-		final String varianta = "0123abcd";
-		final File a = new File(slozka, "symboly-0000000a.bin");
-		final File b = new File(slozka, "symboly-0000000b.bin");
-		ziskavac.uklidOfflineCache(new OblastniKlic("o00000001", Collections.emptyList(), null, varianta), a);
-		final List<KachleManager.ItemToSave> davka = new ArrayList<>();
-		for (int i = 0; i < 50; i++) {
-			davka.add(new KachleManager.ItemToSave(misto(i), "o00000001", png()));
-			davka.add(new KachleManager.ItemToSave(misto(i), "o00000002", png()));
-		}
-		Assert.assertTrue(db.save(davka));
-
-		final OblastniKlic nova = new OblastniKlic("o00000002", Collections.emptyList(), null, varianta);
-		selhani[0] = 1;
-		ziskavac.uklidOfflineCache(nova, b);
-		Assert.assertEquals("po selhání se soubor klíčů nezměnil", Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
-		Assert.assertTrue("dlaždice nahrazeného klíče zatím zůstávají", db.exists(misto(0), "o00000001"));
-
-		ziskavac.uklidOfflineCache(nova, b);
+		ziskavac.uklidOfflineCache(new OblastniKlic("o00000001", Collections.emptyList(), null, "0123abcd"), new File(slozka, "symboly-0000000a.bin"));
+		ziskavac.uklidOfflineCache(new OblastniKlic("o00000002", Collections.emptyList(), null, "0123abcd"), new File(slozka, "symboly-0000000b.bin"));
 		Assert.assertEquals(Collections.singleton("o00000002"), UklidOfflineCache.ponechane(slozka));
-		for (int i = 0; i < 50; i++) {
-			Assert.assertFalse("sirotek " + i, db.exists(misto(i), "o00000001"));
-			Assert.assertTrue("nový klíč " + i, db.exists(misto(i), "o00000002"));
+		for (int i = 0; i < 100; i++) {
+			Assert.assertTrue("starý klíč zůstává " + i, manager.exists(misto(i), "o00000001"));
+			Assert.assertTrue("nový klíč zůstává " + i, manager.exists(misto(i), "o00000002"));
 		}
 	}
 

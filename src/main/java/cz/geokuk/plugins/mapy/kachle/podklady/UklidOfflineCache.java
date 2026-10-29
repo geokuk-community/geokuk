@@ -70,10 +70,17 @@ final class UklidOfflineCache {
 	static final class Plan {
 		private final File slozka;
 		private final List<Zaznam> zaznamy;
+		private final Set<String> zastarale;
 
-		private Plan(final File slozka, final List<Zaznam> zaznamy) {
+		private Plan(final File slozka, final List<Zaznam> zaznamy, final Set<String> zastarale) {
 			this.slozka = slozka;
 			this.zaznamy = zaznamy;
+			this.zastarale = zastarale;
+		}
+
+		/** Klíče, které dosud soubor klíčů vedl a po zápisu v něm nebudou: jejich dlaždice v cache jsou zastaralé. */
+		Set<String> zastarale() {
+			return zastarale;
 		}
 
 		/** Klíče, jejichž dlaždice v cache zůstanou. */
@@ -115,9 +122,10 @@ final class UklidOfflineCache {
 	static Plan naplanuj(final File slozka, final String klic, final File symboly, final String sestava, final String identita) throws IOException {
 		final List<Zaznam> zaznamy = new ArrayList<>();
 		zaznamy.add(new Zaznam(klic, symboly.getName(), sestava, identita));
+		final List<Zaznam> dosavadni = nacti(slozka.toPath().resolve(SOUBOR));
 		final List<String> vypadle = new ArrayList<>();
 		final Set<Character> ponechanBezIdentity = new HashSet<>();
-		for (final Zaznam z : nacti(slozka.toPath().resolve(SOUBOR))) {
+		for (final Zaznam z : dosavadni) {
 			if (z.klic.equals(klic)) {
 				continue;
 			}
@@ -138,7 +146,13 @@ final class UklidOfflineCache {
 		if (!vypadle.isEmpty()) {
 			log.info("Cache offline mapy: klíče {} se nahrazují novějším {}", vypadle, klic);
 		}
-		return new Plan(slozka, zaznamy);
+		final Set<String> zastarale = new LinkedHashSet<>();
+		for (final Zaznam z : dosavadni) {
+			if (zaznamy.stream().noneMatch(n -> n.klic.equals(z.klic))) {
+				zastarale.add(z.klic);
+			}
+		}
+		return new Plan(slozka, zaznamy, zastarale);
 	}
 
 	/** Klíče, jejichž dlaždice v cache zůstávají podle posledního zápisu. */

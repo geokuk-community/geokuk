@@ -187,4 +187,17 @@ public class UklidOfflineCacheTest {
 		// Zápis překryvu s identitou: jeho bezidentitní záznam se nahradí, podkladový zůstane.
 		Assert.assertEquals(Arrays.asList("t00000002", "o00000001", "o00000a01"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "t00000002", nove, "00000000", VARIANTA_B)));
 	}
+
+	/** Zastaralé jsou klíče, které soubor dosud vedl a po zápisu v něm nebudou: nahrazená verze, vypadlé bezidentitní záznamy i vytlačené stropem tří. */
+	@Test
+	public void planUrciZastaraleKlice() throws Exception {
+		final File s = symboly("0000000a");
+		UklidOfflineCache.zaznamenej(slozka, "o00000001", s, "00000000", VARIANTA_A);
+		UklidOfflineCache.zaznamenej(slozka, "o00000002", s, "00000000", VARIANTA_B);
+		UklidOfflineCache.zaznamenej(slozka, "o00000003", s, "00000000", VARIANTA_C);
+		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.naplanuj(slozka, "o00000004", s, "00000000", VARIANTA_A).zastarale());
+		Assert.assertEquals("nic se neuložilo", Arrays.asList("o00000003", "o00000002", "o00000001"), new ArrayList<>(UklidOfflineCache.ponechane(slozka)));
+		Assert.assertEquals("čtvrtá identita vytlačí nejstarší", Collections.singleton("o00000001"), UklidOfflineCache.naplanuj(slozka, "o00000004", s, "00000000", "dddddddd").zastarale());
+		Assert.assertEquals("znovu zapsaný klíč nic nezastaralí", Collections.emptySet(), UklidOfflineCache.naplanuj(slozka, "o00000003", s, "00000000", VARIANTA_C).zastarale());
+	}
 }
