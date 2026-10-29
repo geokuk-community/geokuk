@@ -157,4 +157,34 @@ public class UklidOfflineCacheTest {
 				"o00000003 symboly-0000000a.bin 0000abcd aaaaaaaa bbbbbbbb"), StandardCharsets.UTF_8);
 		Assert.assertEquals("řádky s nesmyslnou identitou nebo čtvrtým dalším sloupcem se přeskočí", Collections.singleton("o00000001"), UklidOfflineCache.ponechane(slozka));
 	}
+
+	/** Nejčastější cesta migrace: aktuální klíč už v souboru je jako záznam bez identity; dostane identitu a z ostatních zůstane nejnovější. */
+	@Test
+	public void aktualniKlicBezIdentityDostaneIdentituZOstatnichZustaneNejnovejsi() throws Exception {
+		final File a = symboly("0000000a");
+		final File b = symboly("0000000b");
+		final File c = symboly("0000000c");
+		Files.write(new File(slozka, UklidOfflineCache.SOUBOR).toPath(),
+				Arrays.asList("o00000001 symboly-0000000a.bin 0000abcd", "o00000002 symboly-0000000b.bin 0000abcd", "o00000003 symboly-0000000c.bin 0000abcd"), StandardCharsets.UTF_8);
+		Assert.assertEquals(Arrays.asList("o00000001", "o00000002"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000001", a, "0000abcd", VARIANTA_A)));
+		Assert.assertEquals(Arrays.asList("o00000001 symboly-0000000a.bin 0000abcd aaaaaaaa", "o00000002 symboly-0000000b.bin 0000abcd"), radky());
+		Assert.assertTrue(a.isFile() && b.isFile());
+		Assert.assertFalse(c.isFile());
+	}
+
+	/** Podklad a překryv se uklízejí zvlášť: nejnovější záznam bez identity zůstane pro každý z nich, i s jeho soubory symbolů. */
+	@Test
+	public void migraceZachovaNejnovejsiBezIdentityProPodkladIPrekryv() throws Exception {
+		final File o1 = symboly("00000011");
+		final File o2 = symboly("00000012");
+		final File t3 = symboly("00000013");
+		final File nove = symboly("0000000a");
+		Files.write(new File(slozka, UklidOfflineCache.SOUBOR).toPath(),
+				Arrays.asList("o00000a01 symboly-00000011.bin 00000000", "o00000a02 symboly-00000012.bin 00000000", "t00000a03 symboly-00000013.bin 00000000"), StandardCharsets.UTF_8);
+		Assert.assertEquals(Arrays.asList("o00000001", "o00000a01", "t00000a03"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "o00000001", nove, "00000000", VARIANTA_A)));
+		Assert.assertTrue("symboly aktuálního překryvu zůstávají", t3.isFile() && o1.isFile());
+		Assert.assertFalse("druhý starší podklad vypadl", o2.isFile());
+		// Zápis překryvu s identitou: jeho bezidentitní záznam se nahradí, podkladový zůstane.
+		Assert.assertEquals(Arrays.asList("t00000002", "o00000001", "o00000a01"), new ArrayList<>(UklidOfflineCache.zaznamenej(slozka, "t00000002", nove, "00000000", VARIANTA_B)));
+	}
 }

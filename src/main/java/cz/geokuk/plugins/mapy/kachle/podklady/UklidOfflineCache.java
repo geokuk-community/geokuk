@@ -52,7 +52,7 @@ final class UklidOfflineCache {
 
 	/**
 	 * Zapíše klíč jako nejnovější a smaže soubory symbolů, které žádný z ponechaných klíčů nepoužívá. Starší klíče téže varianty ({@code identita}) vypadnou hned, protože
-	 * je z žádné konfigurace už nikdo nevytvoří; ze záznamů bez identity (starší verze programu) zůstane jen nejnovější. Víc než {@link #PONECHAT} klíčů nezůstane.
+	 * je z žádné konfigurace už nikdo nevytvoří; ze záznamů bez identity (starší verze programu) zůstane jen nejnovější podkladu a nejnovější překryvu. Víc než {@link #PONECHAT} klíčů nezůstane.
 	 *
 	 * @param symboly
 	 *            soubor symbolů tématu, ze kterého jsou dlaždice klíče
@@ -116,7 +116,7 @@ final class UklidOfflineCache {
 		final List<Zaznam> zaznamy = new ArrayList<>();
 		zaznamy.add(new Zaznam(klic, symboly.getName(), sestava, identita));
 		final List<String> vypadle = new ArrayList<>();
-		boolean ponechanBezIdentity = false;
+		final Set<Character> ponechanBezIdentity = new HashSet<>();
 		for (final Zaznam z : nacti(slozka.toPath().resolve(SOUBOR))) {
 			if (z.klic.equals(klic)) {
 				continue;
@@ -125,12 +125,10 @@ final class UklidOfflineCache {
 				vypadle.add(z.klic);
 				continue;
 			}
-			if (identita != null && z.identita == null) {
-				if (ponechanBezIdentity) {
-					vypadle.add(z.klic);
-					continue;
-				}
-				ponechanBezIdentity = true;
+			// Podklad (o) a překryv (t) se uklízejí každý zvlášť, proto zůstane nejnovější záznam bez identity pro každý z nich.
+			if (identita != null && z.identita == null && !ponechanBezIdentity.add(z.klic.charAt(0))) {
+				vypadle.add(z.klic);
+				continue;
 			}
 			zaznamy.add(z);
 		}
