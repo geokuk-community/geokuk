@@ -1,0 +1,105 @@
+name: Mutační testy (PIT)
+
+# Nástroj na vyžádání, ne brána. PIT se spouští z příkazové řádky, pom.xml o něm nic neví.
+on:
+  workflow_dispatch:
+    inputs:
+      balicek:
+        description: "Mutované třídy (masky oddělené čárkou), např. cz.geokuk.plugins.mapy.kachle*"
+        default: "cz.geokuk.util.index2d*"
+      testy:
+        description: "Spouštěné testy (masky); prázdné = stejné jako balíček"
+        default: ""
+      vynechane:
+        description: "Testové třídy, které se nespouštějí (masky, náchylné k časování)"
+        default: "*JBlokMapTest*,*Smoke*"
+      matice:
+        description: "fullMutationMatrix: ke každému mutantu všechny zabíjející testy (pomalejší)"
+        type: boolean
+        default: false
+  # Jednorázová zkouška nad malým balíčkem při změně tohoto souboru.
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/mutace.yml"
+
+permissions:
+  contents: read
+
+env:
+  PITEST_VERSION: "1.17.4"
+
+jobs:
+  pit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: PIT
+        env:
+          BALICEK: ${{ inputs.balicek || 'cz.geokuk.util.index2d*' }}
+          TESTY: ${{ inputs.testy }}
+          VYNECHANE: ${{ inputs.vynechane || '*JBlokMapTest*,*Smoke*' }}
+          MATICE: ${{ inputs.matice || 'false' }}
+        run: |
+          xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B \
+            org.pitest:pitest-maven:${PITEST_VERSION}:mutationCoverage \
+            -DtargetClasses="$BALICEK" \
+            -DtargetTests="${TESTY:-$BALICEK}" \
+            -DexcludedTestClasses="$VYNECHANE" \
+            -DfullMutationMatrix="$MATICE" \
+            -DoutputFormats=HTML,XML,CSV \
+            -DtimestampedReports=false \
+            -Dthreads=2
+
+      - name: Souhrn
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import collections, os, xml.etree.ElementTree as ET
+          cesta = "target/pit-reports/mutations.xml"
+          print("## Mutační testy (PIT)\n")
+          print("Balíček: `%s`\n" % os.environ.get("BALICEK", ""))
+          if not os.path.exists(cesta):
+              print("Report nevznikl, viz log kroku PIT.")
+              raise SystemExit
+          stavy = collections.Counter()
+          podle_tridy = collections.defaultdict(collections.Counter)
+          zivi = []
+          for m in ET.parse(cesta).getroot():
+              stav = m.get("status")
+              trida = m.findtext("mutatedClass")
+              stavy[stav] += 1
+              podle_tridy[trida][stav] += 1
+              if stav in ("SURVIVED", "NO_COVERAGE"):
+                  zivi.append((trida, m.findtext("mutatedMethod"), m.findtext("lineNumber"), stav, m.findtext("description")))
+          celkem = sum(stavy.values())
+          zabito = stavy["KILLED"] + stavy["TIMED_OUT"]
+          print("Mutantů %d, zabito %d (%.0f %%), přežilo %d, bez pokrytí %d.\n" % (celkem, zabito, 100.0 * zabito / max(celkem, 1), stavy["SURVIVED"], stavy["NO_COVERAGE"]))
+          print("| Třída | Mutantů | Zabito | Přežilo | Bez pokrytí |\n|---|---:|---:|---:|---:|")
+          for trida, c in sorted(podle_tridy.items(), key=lambda kv: -(kv[1]["SURVIVED"] + kv[1]["NO_COVERAGE"])):
+              print("| `%s` | %d | %d | %d | %d |" % (trida, sum(c.values()), c["KILLED"] + c["TIMED_OUT"], c["SURVIVED"], c["NO_COVERAGE"]))
+          print("\n<details><summary>Přeživší mutanti (prvních 200)</summary>\n")
+          for trida, metoda, radek, stav, popis in zivi[:200]:
+              print("- `%s.%s` ř. %s, %s: %s" % (trida, metoda, radek, stav, popis))
+          print("\n</details>")
+          PY
+        env:
+          BALICEK: ${{ inputs.balicek || 'cz.geokuk.util.index2d*' }}
+
+      - name: Report PIT
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pit-report
+          path: target/pit-reports
+          if-no-files-found: warn
+          retention-days: 14
