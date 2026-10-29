@@ -9,7 +9,12 @@ on:
     branches: [main, "release/**"]
     paths:
       - pom.xml
+      - .mvn/**
+      - mvnw
+      - mvnw.cmd
       - .github/workflows/smoke.yml
+      - src/test/java/cz/geokuk/smoke/**
+      - src/test/java/cz/geokuk/testy/**
 
 permissions:
   contents: read
@@ -39,7 +44,8 @@ jobs:
 
       - name: Smoke test
         if: runner.os == 'Linux'
-        run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify -Dgeokuk.testy.limitSekund=600
+        # U PR běží jednotkové testy už v jobu Build, tady jen smoke.
+        run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify -Dgeokuk.testy.limitSekund=600 ${{ github.event_name == 'pull_request' && '-Dtest=NoSuch -Dsurefire.failIfNoSpecifiedTests=false' || '' }}
 
       # Runner na Windows občas zastaví celou JVM na sekundy; spadlý test se jednou zopakuje a ve výstupu je vidět jako Flakes.
       - name: Smoke test
