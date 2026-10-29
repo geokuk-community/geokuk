@@ -13,6 +13,8 @@ import java.util.function.ToLongFunction;
 public class RegistrStavuZdroju {
 
 	private final Map<File, StavPolozky> polozky = new LinkedHashMap<>();
+	/** Soubory ve stálém pořadí snímku; řadí se jen při změně seznamu, ne při každém posunu postupu. */
+	private List<File> poradi = Collections.emptyList();
 	private volatile StavZdroju snimek = StavZdroju.PRAZDNY;
 	private volatile Map<File, TypZdroje> typy = Collections.emptyMap();
 	private volatile Runnable posluchac = () -> {};
@@ -78,6 +80,7 @@ public class RegistrStavuZdroju {
 				final StavPolozky nova = predtim != null ? predtim.sTypem(noveTypy.get(f)) : new StavPolozky(f, nazev.apply(f), noveTypy.get(f), stav, 0, 0, StavPolozky.NEZNAMO, 0, zap, vypnutyTyp, null);
 				polozky.put(f, nova.sZapnutim(zap).sTypVypnut(vypnutyTyp).s(stav, 0, stav == StavZdroje.CHYBA && predtim != null ? predtim.getChyba() : null).sVelikosti(velikost.applyAsLong(f)));
 			}
+			seradPolozky();
 			obnovSnimek();
 			gen = ++generace;
 		}
@@ -166,10 +169,22 @@ public class RegistrStavuZdroju {
 		posluchac.run();
 	}
 
-	/** Pořadí ve snímku je stálé: podle typu (GPX, GeoGet, GSAK, OpenSAK), pak podle názvu. */
-	private void obnovSnimek() {
+	/** Pořadí ve snímku je stálé: podle typu (GPX, GeoGet, GSAK, OpenSAK), pak podle názvu. Mění se jen ve {@link #prepis}, ostatní změny jsou na místě. */
+	private void seradPolozky() {
 		final List<StavPolozky> seznam = new ArrayList<>(polozky.values());
 		seznam.sort(Comparator.comparing(StavPolozky::getTyp).thenComparing(p -> p.getNazev().toLowerCase(Locale.ROOT)).thenComparing(StavPolozky::getCesta));
+		final List<File> soubory = new ArrayList<>(seznam.size());
+		for (final StavPolozky p : seznam) {
+			soubory.add(p.getSoubor());
+		}
+		poradi = soubory;
+	}
+
+	private void obnovSnimek() {
+		final List<StavPolozky> seznam = new ArrayList<>(poradi.size());
+		for (final File f : poradi) {
+			seznam.add(polozky.get(f));
+		}
 		snimek = new StavZdroju(seznam, problemySlozek);
 	}
 }

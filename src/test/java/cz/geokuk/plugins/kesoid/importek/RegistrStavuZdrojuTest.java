@@ -199,4 +199,30 @@ public class RegistrStavuZdrojuTest {
 		model.start(10, "y").setProgress(5);
 		Assert.assertEquals("bez sledovače se nic nehlásí", -1, posledni[0]);
 	}
+
+	private List<File> poradi() {
+		final List<File> v = new java.util.ArrayList<>();
+		registr.getSnimek().getPolozky().forEach(p -> v.add(p.getSoubor()));
+		return v;
+	}
+
+	/** Pořadí ve snímku (typ, název) zůstává stejné při postupu, dokončení, chybě i přepnutí zapnutí a mění se jen novým skenem. */
+	@Test
+	public void poradiSnimkuSeNemeniPostupemAniPrepnutim() {
+		prepis(b, g, a);
+		final List<File> ocekavane = Arrays.asList(g, a, b);
+		Assert.assertEquals(ocekavane, poradi());
+		registr.zacina(gen, b);
+		registr.postup(gen, b, 10);
+		registr.postup(gen, b, 50);
+		Assert.assertEquals(ocekavane, poradi());
+		registr.hotovo(gen, b, 3, 3);
+		registr.chyba(gen, a, "x");
+		Assert.assertEquals(ocekavane, poradi());
+		registr.prepisZapnuti(f -> f != g, vypnuteTypy::contains);
+		Assert.assertEquals(ocekavane, poradi());
+		Assert.assertEquals(StavZdroje.VYPNUTO, polozka(g).getStav());
+		prepis(a, g);
+		Assert.assertEquals(Arrays.asList(g, a), poradi());
+	}
 }
