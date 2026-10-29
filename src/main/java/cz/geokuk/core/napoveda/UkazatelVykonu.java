@@ -51,10 +51,6 @@ public final class UkazatelVykonu {
 		}
 	}
 
-	static boolean jeZapnuty() {
-		return zapnuty;
-	}
-
 	static String text() {
 		final Vykon.Souhrn mapaMs = Vykon.souhrn(Vykon.Velicina.PREKRESLENI);
 		final Vykon.Souhrn edt = Vykon.souhrn(Vykon.Velicina.EDT);
