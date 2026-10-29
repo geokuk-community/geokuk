@@ -500,7 +500,11 @@ public class KachleZiskavac {
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
 	/** Dávka (i export mapy) smí jít na server s omezením jen ve 2 spojeních, i když má 10 vláken. */
-	private static final SoubehNaHostitele SOUBEH_DAVKY = new SoubehNaHostitele(NTHREADS_WEB_MAXIMUM_BACTH);
+	private volatile SoubehNaHostitele soubehDavky = new SoubehNaHostitele(NTHREADS_WEB_MAXIMUM_BACTH);
+
+	void setSoubehDavky(final SoubehNaHostitele soubehDavky) {
+		this.soubehDavky = soubehDavky;
+	}
 
 	/**
 	 * Vlákna nad core by vznikla až při plné frontě, proto je core rovno maximu a nečinná vlákna zanikají.
@@ -923,7 +927,7 @@ public class KachleZiskavac {
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + url);
 			}
-			final Semaphore soubeh = dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI ? SOUBEH_DAVKY.pro(url.getHost()) : null;
+			final Semaphore soubeh = dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI ? soubehDavky.pro(url.getHost()) : null;
 			if (soubeh != null) {
 				soubeh.acquire();
 			}
