@@ -210,6 +210,18 @@ final class KachleGeneraceManager implements KachleManager {
 		}
 	}
 
+	/** Zavře spojení se všemi soubory; cache dál nepoužívá. Soubor s otevřeným spojením nejde na Windows smazat. */
+	void zavri() {
+		final Sestava s = sestava;
+		if (s != null) {
+			s.aktualni.pozastav();
+			if (s.predchozi != null) {
+				s.predchozi.pozastav();
+			}
+		}
+		puvodni.pozastav();
+	}
+
 	@Override
 	public OptimalizaceDatabaze optimalizace() {
 		return puvodni.optimalizace();
