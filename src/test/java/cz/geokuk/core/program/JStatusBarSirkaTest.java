@@ -6,12 +6,28 @@ import java.lang.reflect.Field;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 /** Ve stavovém řádku užším než všechna pole se žádné pole neořízne ani neskryje a výška nezávisí na datech. */
 public class JStatusBarSirkaTest {
+
+	private javax.swing.LookAndFeel puvodniLaf;
+
+	/** Šířky textů závisí na vzhledu Swingu; jiné testy ho přepínají, proto se tu vždy měří s výchozím Metalem. */
+	@Before
+	public void metal() throws Exception {
+		puvodniLaf = UIManager.getLookAndFeel();
+		UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+	}
+
+	@After
+	public void obnovLaf() throws Exception {
+		UIManager.setLookAndFeel(puvodniLaf);
+	}
 
 	@Test
 	public void vUzkemOkneJeVidetVse() throws Exception {
