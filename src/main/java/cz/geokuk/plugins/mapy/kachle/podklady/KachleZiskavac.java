@@ -491,15 +491,23 @@ public class KachleZiskavac {
 	/** Jak dlouho smí dlaždice čekat ve frontě na řadu, než předběhne ostatní; jinak by ji nepřetržitý posun mohl odsouvat. */
 	static volatile long starnutiNs = TimeUnit.SECONDS.toNanos(2);
 
-	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
+	static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
-	private static final int NTHREADS_WEB_CORE_BATCH = 5;
-
-	private static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
+	static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
 
 	private static final int WEB_QUEUE_SIZE = 100;
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
+
+	/**
+	 * Vlákna nad core by vznikla až při plné frontě, proto je core rovno maximu a nečinná vlákna zanikají.
+	 */
+	static ThreadPoolExecutor vytvorWebBatch() {
+		final ThreadPoolExecutor exec = new ThreadPoolExecutor(NTHREADS_WEB_MAXIMUM_BACTH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE),
+				new ThreadPoolExecutor.CallerRunsPolicy());
+		exec.allowCoreThreadTimeOut(true);
+		return exec;
+	}
 
 	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
@@ -642,7 +650,7 @@ public class KachleZiskavac {
 				// Pro background stahování. Jen jedno vlákno pro disk, krátká fronta a po přetížení nechat na volajícím */
 				new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(BATCH_DISK_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
 				// Pokud bude fornta na web přetížená, vykonává stahování vlákno pro dotahování z disku, čímž se to zpomalí
-				new ThreadPoolExecutor(NTHREADS_WEB_CORE_BATCH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
+				vytvorWebBatch(),
 				// Export vykresluje jedním vláknem, obrazovka má přednost.
 				Executors.newFixedThreadPool(1, vlaknaRenderu("Offline mapa export")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_batch"));
