@@ -68,6 +68,11 @@ public final class StavSouboruCache {
 		return (stranek - volnych) * velikostStranky;
 	}
 
+	/** Stav, jako by dlaždice o daném objemu byly smazané a jejich stránky volné. */
+	public StavSouboruCache bezStarych(final long bajtu) {
+		return bajtu <= 0 ? this : new StavSouboruCache(velikost, velikostStranky, stranek, Math.min(stranek, volnych + bajtu / velikostStranky));
+	}
+
 	public int velikostStranky() {
 		return velikostStranky;
 	}

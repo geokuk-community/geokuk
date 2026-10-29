@@ -10,6 +10,7 @@ import javax.swing.*;
 
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Doporuceni;
+import cz.geokuk.plugins.mapy.kachle.podklady.StaraData;
 import cz.geokuk.plugins.mapy.kachle.podklady.StavSouboruCache;
 
 /** Okno při startu s doporučením optimalizace; neblokuje program a po odpočtu se samo zavře, odpočet stojí, když uživatel čte. */
@@ -67,18 +68,18 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 	BooleanSupplier ctePozastavuje = this::uzivatelCte;
 
 	/** Obsah okna; zvlášť, aby šel nakreslit bez zobrazení. */
-	static JPanel panel(final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final JLabel odpocet, final JButton optimalizovat, final JButton bez) {
+	static JPanel panel(final StavSouboruCache stav, final StaraData stare, final Doporuceni doporuceni, final long volne, final JLabel odpocet, final JButton optimalizovat, final JButton bez) {
 		final JPanel p = new JPanel(new BorderLayout(0, 10));
 		p.setBorder(BorderFactory.createEmptyBorder(14, 16, 12, 16));
-		final JTextArea text = new JTextArea(OptimalizaceTexty.doporuceni(stav, doporuceni == Doporuceni.MALO_MISTA, volne));
+		final JTextArea text = new JTextArea(OptimalizaceTexty.doporuceni(stav, stare, doporuceni == Doporuceni.MALO_MISTA, volne));
 		text.setEditable(false);
 		text.setOpaque(false);
 		text.setLineWrap(true);
 		text.setWrapStyleWord(true);
 		text.setColumns(46);
-		text.setRows(2);
+		text.setRows(3);
 		p.add(text, BorderLayout.CENTER);
-		final boolean kriticky = PripominkaOptimalizace.kriticky(stav);
+		final boolean kriticky = PripominkaOptimalizace.kriticky(stav.bezStarych(stare.bajtu()));
 		odpocet.setFont(odpocet.getFont().deriveFont(Font.PLAIN));
 		odpocet.setForeground(UIManager.getColor("Label.disabledForeground"));
 		odpocet.setToolTipText(OptimalizaceTexty.pripomenuti(kriticky, true));
@@ -95,12 +96,12 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 		return p;
 	}
 
-	private OknoDoporuceniOptimalizace(final Window vlastnik, final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final Volba volba) {
+	private OknoDoporuceniOptimalizace(final Window vlastnik, final StavSouboruCache stav, final StaraData stare, final Doporuceni doporuceni, final long volne, final Volba volba) {
 		super(vlastnik, OptimalizaceTexty.NAZEV, ModalityType.MODELESS);
 		final JLabel popisek = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S));
 		final JButton optimalizovat = new JButton("Optimalizovat");
 		final JButton bez = new JButton("Spustit bez optimalizace");
-		final JPanel panel = panel(stav, doporuceni, volne, popisek, optimalizovat, bez);
+		final JPanel panel = panel(stav, stare, doporuceni, volne, popisek, optimalizovat, bez);
 		setContentPane(panel);
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		casovac = new Timer(1000, e -> {
@@ -151,8 +152,8 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 	}
 
 	/** Zobrazí okno a spustí odpočet; volat ve vlákně Swingu. */
-	public static void zobraz(final Window vlastnik, final StavSouboruCache stav, final Doporuceni doporuceni, final long volne, final Volba volba) {
-		final OknoDoporuceniOptimalizace okno = new OknoDoporuceniOptimalizace(vlastnik, stav, doporuceni, volne, volba);
+	public static void zobraz(final Window vlastnik, final StavSouboruCache stav, final StaraData stare, final Doporuceni doporuceni, final long volne, final Volba volba) {
+		final OknoDoporuceniOptimalizace okno = new OknoDoporuceniOptimalizace(vlastnik, stav, stare, doporuceni, volne, volba);
 		okno.setVisible(true);
 		okno.casovac.start();
 	}

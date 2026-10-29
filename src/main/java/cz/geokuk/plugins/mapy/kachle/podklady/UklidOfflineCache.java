@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,36 @@ final class UklidOfflineCache {
 	private static final Pattern SYMBOLY = Pattern.compile("symboly-[0-9a-f]{8}\\.bin");
 
 	private UklidOfflineCache() {}
+
+	/** Složky se souborem klíčů podkladu a překryvu ve složce cache (viz {@code KachleModel}). */
+	static final String SLOZKA_PODKLADU = "offline-temata";
+	static final String SLOZKA_PREKRYVU = "offline-trasy";
+
+	/** Klíče, jejichž dlaždice v cache zůstávají podle souborů klíčů podkladu a překryvu ve složce cache. */
+	static Set<String> ponechaneVCache(final File cache) throws IOException {
+		final Set<String> klice = new LinkedHashSet<>(ponechane(new File(cache, SLOZKA_PODKLADU)));
+		klice.addAll(ponechane(new File(cache, SLOZKA_PREKRYVU)));
+		return klice;
+	}
+
+	/**
+	 * Dlaždice offline klíče, který v souborech klíčů nezůstal. Online dlaždice a dlaždice podkladu nebo překryvu, o jehož klíčích soubor nic neví, nejsou zastaralé;
+	 * bez ponechaných klíčů není nic zastaralé.
+	 */
+	static boolean jeZastarala(final String typ, final Set<String> ponechat) {
+		if (typ == null || typ.isEmpty()) {
+			return false;
+		}
+		final char predpona = typ.charAt(0);
+		if (ponechat.stream().noneMatch(k -> k.charAt(0) == predpona)) {
+			return false;
+		}
+		final Matcher m = TYP.matcher(typ);
+		if (m.matches()) {
+			return !ponechat.contains(m.group(1));
+		}
+		return KLIC.matcher(typ).matches() && !ponechat.contains(typ);
+	}
 
 	/** Identita varianty dlaždic ve čtvrtém sloupci souboru klíčů, viz {@link OfflineRenderer#identita(OfflineRenderer.NacteneTema, boolean)}. */
 	private static final Pattern IDENTITA = Pattern.compile("[0-9a-f]{8}");

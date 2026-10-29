@@ -3,6 +3,9 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
 
 import org.tmatesoft.sqljet.core.SqlJetErrorCode;
 import org.tmatesoft.sqljet.core.SqlJetException;
@@ -25,6 +28,11 @@ public final class OptimalizaceDatabaze {
 	public static final double PRAH_VOLNYCH = 0.30;
 
 	public static final long PRAH_VELIKOSTI = 200L << 20;
+
+	/** Zastaralé dlaždice offline map stačí k doporučení, i když volných stránek není dost. */
+	public static final long PRAH_STARYCH = 500L << 20;
+
+	private static final String SOUBOR_STARYCH = "stare-dlazdice.txt";
 
 	/** Rezerva na disku navíc k živým datům. */
 	private static final double REZERVA_MISTA = 1.05;
@@ -67,6 +75,11 @@ public final class OptimalizaceDatabaze {
 		void zpracovano(long hotovo, long celkem);
 
 		boolean zruseno();
+
+		/** Objem dosud zkopírovaných a vynechaných (zastaralých) dlaždic v bajtech; volá se těsně před {@link #zpracovano}. */
+		default void objem(final long zkopirovano, final long vynechano) {
+			// Průběh objem nepotřebuje.
+		}
 	}
 
 	/** Přesunutí nového souboru na místo původního. */
@@ -112,10 +125,21 @@ public final class OptimalizaceDatabaze {
 
 	/** Doporučení podle stavu souboru a volného místa na disku (záporné = neznámé, bere se jako dost). */
 	public static Doporuceni posud(final StavSouboruCache stav, final long volneMisto) {
-		if (stav == null || stav.velikost() <= PRAH_VELIKOSTI || stav.podilVolnych() <= PRAH_VOLNYCH) {
+		return posud(stav, StaraData.ZADNA, volneMisto);
+	}
+
+	/**
+	 * Doporučení; zastaralé dlaždice se počítají mezi prázdné stránky, protože optimalizace je vynechá. Samy stačí, když jich je {@link #PRAH_STARYCH}.
+	 */
+	public static Doporuceni posud(final StavSouboruCache stav, final StaraData stare, final long volneMisto) {
+		if (stav == null || stav.velikost() <= PRAH_VELIKOSTI) {
 			return Doporuceni.NENI;
 		}
-		return volneMisto >= 0 && volneMisto < potrebneMisto(stav) ? Doporuceni.MALO_MISTA : Doporuceni.DOPORUCIT;
+		final StavSouboruCache po = stav.bezStarych(stare.bajtu());
+		if (po.podilVolnych() <= PRAH_VOLNYCH && stare.bajtu() < PRAH_STARYCH) {
+			return Doporuceni.NENI;
+		}
+		return volneMisto >= 0 && volneMisto < potrebneMisto(po) ? Doporuceni.MALO_MISTA : Doporuceni.DOPORUCIT;
 	}
 
 	/** Volné místo, které optimalizace potřebuje: živá data s rezervou a bezpečná hranice zápisu do cache. */
@@ -127,6 +151,64 @@ public final class OptimalizaceDatabaze {
 	public static int odhadMinut(final StavSouboruCache stav) {
 		final double gb = stav.zivaData() / (double) (1L << 30);
 		return (int) Math.max(1, Math.ceil(gb * SEKUND_NA_GB / 60));
+	}
+
+	/** Složka cache dlaždic, nebo null. */
+	private File slozkaCache() {
+		final File f = manager.souborCache();
+		return f == null ? null : f.getParentFile();
+	}
+
+	/** Klíče offline dlaždic, které zůstávají; prázdné, když soubory klíčů nejdou přečíst (pak se nic nepovažuje za zastaralé). */
+	private Set<String> ponechane() {
+		final File slozka = slozkaCache();
+		if (slozka == null) {
+			return Collections.emptySet();
+		}
+		try {
+			return UklidOfflineCache.ponechaneVCache(slozka);
+		} catch (final IOException | RuntimeException e) {
+			log.warn("Soubory klíčů offline map nejdou přečíst, zastaralé dlaždice se nevynechají: {}", e.toString());
+			return Collections.emptySet();
+		}
+	}
+
+	/** Zapamatovaný odhad zastaralých dlaždic pro současné soubory klíčů, nebo null, když ještě nebyl spočítán. */
+	public StaraData zapamatovaneStare() {
+		final File slozka = slozkaCache();
+		final File f = manager.souborCache();
+		if (slozka == null || f == null) {
+			return StaraData.ZADNA;
+		}
+		final Set<String> ponechat = ponechane();
+		if (ponechat.isEmpty()) {
+			return StaraData.ZADNA;
+		}
+		final StaraData stare = StaraData.nacti(new File(slozka, SOUBOR_STARYCH), StaraData.otiskPlanu(ponechat));
+		// Odhad většího objemu, než kolik je v souboru, patří k jiné cache.
+		return stare != null && stare.bajtu() <= f.length() ? stare : null;
+	}
+
+	/**
+	 * Spočítá zastaralé dlaždice průchodem tabulkou ve vlákně volajícího (v nízké prioritě) a výsledek zapamatuje; platí, dokud se soubory klíčů nezmění.
+	 * Soubor cache se jen čte, zápis dávek na chvíli počká na sdílený zámek.
+	 */
+	public StaraData spocitejStare() {
+		final File f = manager.souborCache();
+		final Set<String> ponechat = ponechane();
+		if (f == null || ponechat.isEmpty() || !f.isFile()) {
+			return StaraData.ZADNA;
+		}
+		final long zacatek = System.nanoTime();
+		try {
+			final StaraData stare = StaraData.spocti(f, ponechat);
+			stare.uloz(new File(f.getParentFile(), SOUBOR_STARYCH));
+			log.info("Cache dlaždic: zastaralých dlaždic offline map {} ({} MB), zjištěno za {} ms", stare.dlazdic(), stare.bajtu() >> 20, (System.nanoTime() - zacatek) / 1_000_000);
+			return stare;
+		} catch (final SQLException e) {
+			log.warn("Objem zastaralých dlaždic nejde zjistit: {}", e.toString());
+			return StaraData.ZADNA;
+		}
 	}
 
 	/**
@@ -141,27 +223,38 @@ public final class OptimalizaceDatabaze {
 		if (stav == null) {
 			throw new OptimalizaceChyba("Cache dlaždic nejde použít, není co optimalizovat.");
 		}
+		final Set<String> ponechat = ponechane();
+		final StaraData znama = zapamatovaneStare();
 		final long volne = volneMistoPodSlozkou.applyAsLong(puvodni.getParentFile());
-		if (volne < potrebneMisto(stav)) {
-			throw new OptimalizaceChyba(String.format("Na disku chybí místo: je potřeba asi %d MB, volných je %d MB.", potrebneMisto(stav) >> 20, volne >> 20));
+		final long potreba = potrebneMisto(znama == null ? stav : stav.bezStarych(znama.bajtu()));
+		if (volne < potreba) {
+			throw new OptimalizaceChyba(String.format("Na disku chybí místo: je potřeba asi %d MB, volných je %d MB.", potreba >> 20, volne >> 20));
 		}
 		final File nova = new File(puvodni.getPath() + ".new");
 		if (!manager.pozastav()) {
 			throw new OptimalizaceChyba("Cache dlaždic se právě kontroluje po nedokončeném zápisu, zkuste to za chvíli.");
 		}
+		final long zacatek = System.nanoTime();
+		log.info("Optimalizace cache dlaždic: začátek, soubor {}, zastaralých dlaždic podle odhadu {}", stav, znama == null ? "neznámo" : znama.dlazdic() + " (" + (znama.bajtu() >> 20) + " MB)");
 		try {
 			uklid(nova);
 			zkusZamek(puvodni);
-			final boolean dokonceno = zkopiruj(puvodni, nova, prubeh);
-			if (!dokonceno) {
+			final Soucty soucty = zkopiruj(puvodni, nova, ponechat, prubeh);
+			if (soucty == null) {
 				uklid(nova);
+				log.info("Optimalizace cache dlaždic: zrušena po {} s, cache beze změny", (System.nanoTime() - zacatek) / 1_000_000_000L);
 				return Vysledek.ZRUSENO;
 			}
 			overNovou(nova);
 			vymen(nova, puvodni);
+			new StaraData(0, 0, StaraData.otiskPlanu(ponechat)).uloz(new File(puvodni.getParentFile(), SOUBOR_STARYCH));
+			final StavSouboruCache po = StavSouboruCache.precti(puvodni);
+			log.info("Optimalizace cache dlaždic: hotovo za {} s, soubor {} MB -> {} MB, zkopírováno {} dlaždic ({} MB), odstraněno zastaralých {} ({} MB)", (System.nanoTime() - zacatek) / 1_000_000_000L,
+					stav.velikost() >> 20, po == null ? "?" : po.velikost() >> 20, soucty.zkopirovano, soucty.bajtuZkopirovano >> 20, soucty.vynechano, soucty.bajtuVynechano >> 20);
 			return Vysledek.HOTOVO;
 		} catch (final RuntimeException e) {
 			uklid(nova);
+			log.warn("Optimalizace cache dlaždic selhala po {} s: {}", (System.nanoTime() - zacatek) / 1_000_000_000L, e.toString());
 			throw e;
 		} finally {
 			manager.obnov();
@@ -199,8 +292,16 @@ public final class OptimalizaceDatabaze {
 		}
 	}
 
-	/** Kopie v pořadí klíče; false, když ji uživatel zrušil. */
-	static boolean zkopiruj(final File zdroj, final File cil, final Prubeh prubeh) {
+	/** Počty a objem dlaždic kopie. */
+	static final class Soucty {
+		long zkopirovano;
+		long bajtuZkopirovano;
+		long vynechano;
+		long bajtuVynechano;
+	}
+
+	/** Kopie v pořadí klíče bez dlaždic zastaralých klíčů; null, když ji uživatel zrušil. */
+	static Soucty zkopiruj(final File zdroj, final File cil, final Set<String> ponechat, final Prubeh prubeh) {
 		SqlJetDb ze = null;
 		CacheDb do_ = null;
 		try {
@@ -214,16 +315,26 @@ public final class OptimalizaceDatabaze {
 			do_.createTable("CREATE TABLE tiles (x int, y int, z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))");
 			do_.commit();
 			final ISqlJetTable tc = do_.getTable("tiles");
+			final Soucty soucty = new Soucty();
 			long hotovo = 0;
 			do_.beginTransaction(SqlJetTransactionMode.WRITE);
 			while (!radky.eof()) {
-				tc.insertOr(SqlJetConflictAction.REPLACE, radky.getInteger("x"), radky.getInteger("y"), radky.getInteger("z"), radky.getString("s"), radky.getBlobAsArray("image"));
+				final byte[] obraz = radky.getBlobAsArray("image");
+				if (UklidOfflineCache.jeZastarala(radky.getString("s"), ponechat)) {
+					soucty.vynechano++;
+					soucty.bajtuVynechano += obraz == null ? 0 : obraz.length;
+				} else {
+					tc.insertOr(SqlJetConflictAction.REPLACE, radky.getInteger("x"), radky.getInteger("y"), radky.getInteger("z"), radky.getString("s"), obraz);
+					soucty.zkopirovano++;
+					soucty.bajtuZkopirovano += obraz == null ? 0 : obraz.length;
+				}
 				radky.next();
 				if (++hotovo % DAVKA == 0) {
 					do_.commit();
 					if (prubeh.zruseno()) {
-						return false;
+						return null;
 					}
+					prubeh.objem(soucty.bajtuZkopirovano, soucty.bajtuVynechano);
 					prubeh.zpracovano(hotovo, celkem);
 					do_.beginTransaction(SqlJetTransactionMode.WRITE);
 				}
@@ -231,8 +342,9 @@ public final class OptimalizaceDatabaze {
 			do_.commit();
 			radky.close();
 			ze.commit();
+			prubeh.objem(soucty.bajtuZkopirovano, soucty.bajtuVynechano);
 			prubeh.zpracovano(celkem, celkem);
-			return !prubeh.zruseno();
+			return prubeh.zruseno() ? null : soucty;
 		} catch (final SqlJetException e) {
 			throw new OptimalizaceChyba("Cache dlaždic nejde zkopírovat: " + e.getMessage(), e);
 		} finally {
