@@ -95,6 +95,8 @@ public final class OptimalizaceDatabaze {
 
 	private Presun presun = (odkud, kam) -> Files.move(odkud, kam, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
 
+	private Runnable priPocitani = () -> {};
+
 	private long pauzaMezipokusy = 1000;
 
 	private java.util.function.ToLongFunction<File> volneMistoPodSlozkou = File::getUsableSpace;
@@ -109,6 +111,10 @@ public final class OptimalizaceDatabaze {
 
 	void setVolneMisto(final java.util.function.ToLongFunction<File> volne) {
 		volneMistoPodSlozkou = volne;
+	}
+
+	void setPriPocitani(final Runnable priPocitani) {
+		this.priPocitani = priPocitani;
 	}
 
 	void setPauzaMezipokusy(final long ms) {
@@ -209,6 +215,7 @@ public final class OptimalizaceDatabaze {
 		}
 		try {
 			final long zacatek = System.nanoTime();
+			priPocitani.run();
 			final StaraData stare = StaraData.spocti(f, ponechat);
 			stare.uloz(new File(f.getParentFile(), SOUBOR_STARYCH));
 			log.info("Cache dlaždic: zastaralých dlaždic offline map {} ({} MB), zjištěno za {} ms", stare.dlazdic(), stare.bajtu() >> 20, (System.nanoTime() - zacatek) / 1_000_000);

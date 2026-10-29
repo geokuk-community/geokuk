@@ -554,4 +554,39 @@ public class OptimalizaceDatabazeTest {
 		Assert.assertEquals(4, stare.dlazdic());
 		Assert.assertEquals(4L << 20, stare.bajtu(), 1L << 19);
 	}
+
+	@Test(timeout = 60000)
+	public void optimalizacePockaNaPocitaniAProtiPocitaniVraciNull() throws Exception {
+		naplnSmesnouCache();
+		final java.util.concurrent.CountDownLatch pocita = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch pust = new java.util.concurrent.CountDownLatch(1);
+		optimalizace.setPriPocitani(() -> {
+			pocita.countDown();
+			try {
+				pust.await();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		final java.util.concurrent.ExecutorService vlakna = java.util.concurrent.Executors.newFixedThreadPool(3);
+		try {
+			final java.util.concurrent.Future<StaraData> prvni = vlakna.submit(() -> optimalizace.spocitejStare());
+			pocita.await();
+			Assert.assertNull("druhé počítání při běžícím", vlakna.submit(() -> optimalizace.spocitejStare()).get());
+			final java.util.concurrent.Future<Vysledek> optim = vlakna.submit(() -> optimalizace.spust(BEZ_ZRUSENI));
+			try {
+				optim.get(500, TimeUnit.MILLISECONDS);
+				Assert.fail("optimalizace nemá běžet při počítání");
+			} catch (final java.util.concurrent.TimeoutException e) {
+				// čeká na konec počítání
+			}
+			pust.countDown();
+			Assert.assertNotNull(prvni.get());
+			Assert.assertEquals(Vysledek.HOTOVO, optim.get());
+			Assert.assertEquals("odhad po optimalizaci", 0, optimalizace.zapamatovaneStare().bajtu());
+		} finally {
+			pust.countDown();
+			vlakna.shutdownNow();
+		}
+	}
 }
