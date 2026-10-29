@@ -51,6 +51,7 @@ final class KachleGeneraceManager implements KachleManager {
 	private final KachleCacheFolderHolder holder;
 	private final long limitOnline;
 	private final long limitOffline;
+	private final java.util.function.LongSupplier hodiny;
 
 	/** Starý společný soubor, jen ke čtení. */
 	private final KachleDBManager puvodni;
@@ -84,6 +85,11 @@ final class KachleGeneraceManager implements KachleManager {
 	}
 
 	KachleGeneraceManager(final KachleCacheFolderHolder holder, final long limitOnline, final long limitOffline) {
+		this(holder, limitOnline, limitOffline, System::currentTimeMillis);
+	}
+
+	KachleGeneraceManager(final KachleCacheFolderHolder holder, final long limitOnline, final long limitOffline, final java.util.function.LongSupplier hodiny) {
+		this.hodiny = hodiny;
 		this.holder = holder;
 		this.limitOnline = limitOnline;
 		this.limitOffline = limitOffline;
@@ -103,7 +109,7 @@ final class KachleGeneraceManager implements KachleManager {
 			if (s != null && Objects.equals(s.slozka, slozka)) {
 				return s;
 			}
-			final RotaceGeneraci.Stav stav = slozka == null ? new RotaceGeneraci.Stav(1, 1) : RotaceGeneraci.rotuj(slozka, limitOnline, limitOffline);
+			final RotaceGeneraci.Stav stav = slozka == null ? new RotaceGeneraci.Stav(1, 1) : RotaceGeneraci.rotuj(slozka, limitOnline, limitOffline, hodiny.getAsLong(), f -> java.nio.file.Files.deleteIfExists(f.toPath()));
 			s = new Sestava(slozka, role(stav.online, false), role(stav.offline, true));
 			sestava = s;
 			return s;
@@ -179,7 +185,7 @@ final class KachleGeneraceManager implements KachleManager {
 			final byte[] bajty = m.bajty(ki, typ);
 			final Image zeStarsiho = m.dekoduj(ki, bajty);
 			if (zeStarsiho != null) {
-				if (!offline) {
+				if (!offline && limitOnline != RotaceGeneraci.LIMIT_ONLINE) {
 					povysit(role.aktualni, new ItemToSave(ki, typ, bajty));
 				}
 				return zeStarsiho;

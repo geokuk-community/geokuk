@@ -24,11 +24,14 @@ final class RotaceGeneraci {
 	static final String STAV = "generace.txt";
 	static final String STARY_SOUBOR = KachleDBManager.FILE_NAME;
 
-	/** Limit velikosti souboru jedné generace online dlaždic; sítí stažené dlaždice se zahazují nerady. */
-	static final long LIMIT_ONLINE = 500L << 20;
+	/** Online dlaždice se nerotují, takže se nemažou. */
+	static final long LIMIT_ONLINE = Long.MAX_VALUE;
 
 	/** Limit velikosti souboru jedné generace offline dlaždic; vykreslí se znovu. */
 	static final long LIMIT_OFFLINE = 300L << 20;
+
+	/** Soubor změněný v posledních minutách může používat druhá instance programu; nemaže se. */
+	static final long NEDAVNO_MS = 10 * 60_000L;
 
 	private static final Pattern GENERACE = Pattern.compile("tiles-(online|offline)-(\\d+)\\.sqlite");
 
@@ -61,16 +64,14 @@ final class RotaceGeneraci {
 
 	/** Provede rotaci při startu a vrátí čísla aktuálních generací. */
 	static Stav rotuj(final File slozka, final long limitOnline, final long limitOffline) {
-		return rotuj(slozka, limitOnline, limitOffline, f -> Files.deleteIfExists(f.toPath()));
+		return rotuj(slozka, limitOnline, limitOffline, System.currentTimeMillis(), f -> Files.deleteIfExists(f.toPath()));
 	}
 
 	/** Viz {@link #rotuj(File, long, long)}; {@code mazani} smaže soubor a vrátí se bez chyby, i když už není. */
-	static Stav rotuj(final File slozka, final long limitOnline, final long limitOffline, final Mazani mazani) {
-		int online = nejvyssi(slozka, false);
-		int offline = nejvyssi(slozka, true);
+	static Stav rotuj(final File slozka, final long limitOnline, final long limitOffline, final long nyni, final Mazani mazani) {
 		final Stav ulozeny = nacti(new File(slozka, STAV));
-		online = Math.max(online, ulozeny.online);
-		offline = Math.max(offline, ulozeny.offline);
+		final int online = verPouzeBlizkemuStavu(nejvyssi(slozka, false), ulozeny.online);
+		final int offline = verPouzeBlizkemuStavu(nejvyssi(slozka, true), ulozeny.offline);
 		final int onlineNove = jePrilisVelka(new File(slozka, jmeno(false, online)), limitOnline) ? online + 1 : online;
 		final int offlineNove = jePrilisVelka(new File(slozka, jmeno(true, offline)), limitOffline) ? offline + 1 : offline;
 		if (onlineNove != ulozeny.online || offlineNove != ulozeny.offline) {
@@ -82,12 +83,20 @@ final class RotaceGeneraci {
 		if (onlineNove != online || offlineNove != offline) {
 			log.info("Cache dlaždic: rotace generací, online {} -> {}, offline {} -> {}", online, onlineNove, offline, offlineNove);
 		}
-		smazStarsi(slozka, false, onlineNove, mazani);
-		smazStarsi(slozka, true, offlineNove, mazani);
+		smazStarsi(slozka, false, onlineNove, nyni, mazani);
+		smazStarsi(slozka, true, offlineNove, nyni, mazani);
 		if (onlineNove >= 2 && offlineNove >= 2) {
-			smaz(new File(slozka, STARY_SOUBOR), mazani);
+			smaz(new File(slozka, STARY_SOUBOR), nyni, mazani);
 		}
 		return new Stav(onlineNove, offlineNove);
+	}
+
+	/**
+	 * Číslo generace ze stavu platí, jen když je o nejvýš jedna nad nejvyšším existujícím souborem (po rotaci nový soubor ještě nemusí být); vyšší číslo, třeba
+	 * z poškozeného stavu, by jinak smazalo existující generace.
+	 */
+	private static int verPouzeBlizkemuStavu(final int nejvyssiSoubor, final int ulozene) {
+		return ulozene == nejvyssiSoubor + 1 ? ulozene : nejvyssiSoubor;
 	}
 
 	private static boolean jePrilisVelka(final File soubor, final long limit) {
@@ -150,7 +159,7 @@ final class RotaceGeneraci {
 	}
 
 	/** Smaže generace starší než předchozí (číslo menší než aktuální − 1). */
-	private static void smazStarsi(final File slozka, final boolean offline, final int aktualni, final Mazani mazani) {
+	private static void smazStarsi(final File slozka, final boolean offline, final int aktualni, final long nyni, final Mazani mazani) {
 		final String[] jmena = slozka.list();
 		if (jmena == null) {
 			return;
@@ -158,18 +167,27 @@ final class RotaceGeneraci {
 		for (final String jmeno : jmena) {
 			final Matcher m = GENERACE.matcher(jmeno);
 			if (m.matches() && m.group(1).equals(offline ? "offline" : "online") && parse(m.group(2)) < aktualni - 1) {
-				smaz(new File(slozka, jmeno), mazani);
+				smaz(new File(slozka, jmeno), nyni, mazani);
 			}
 		}
 	}
 
-	private static void smaz(final File soubor, final Mazani mazani) {
-		for (final File f : new File[] { soubor, new File(soubor.getPath() + "-journal") }) {
-			try {
-				mazani.smaz(f);
-			} catch (final IOException e) {
-				log.warn("Starý soubor cache dlaždic {} nejde smazat, zkusí se při dalším startu: {}", f, e.toString());
-			}
+	/** Smaže soubor a až potom jeho žurnál; nedávno změněný soubor ani soubor, který nejde smazat, žurnál neztratí. */
+	private static void smaz(final File soubor, final long nyni, final Mazani mazani) {
+		if (soubor.exists() && nyni - soubor.lastModified() < NEDAVNO_MS) {
+			log.info("Soubor cache dlaždic {} se změnil nedávno, smaže se až při dalším startu.", soubor);
+			return;
+		}
+		try {
+			mazani.smaz(soubor);
+		} catch (final IOException e) {
+			log.warn("Starý soubor cache dlaždic {} nejde smazat, zkusí se při dalším startu: {}", soubor, e.toString());
+			return;
+		}
+		try {
+			mazani.smaz(new File(soubor.getPath() + "-journal"));
+		} catch (final IOException e) {
+			log.warn("Žurnál {} nejde smazat: {}", soubor, e.toString());
 		}
 	}
 }

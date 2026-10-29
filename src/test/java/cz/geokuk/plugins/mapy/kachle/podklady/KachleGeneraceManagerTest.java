@@ -26,6 +26,8 @@ public class KachleGeneraceManagerTest {
 	private static final Ka OFFLINE = new Ka(KaLoc.ofJZ(new Mou(0x40000000, 0x20000000), 13), EKaType.OFFLINE_MF);
 	private static final String TYP = "o0000002a.0000ffff";
 
+	private static final java.util.function.LongSupplier POZDE = () -> System.currentTimeMillis() + 3_600_000;
+
 	private File slozka;
 	private KachleCacheFolderHolder holder;
 	private KachleGeneraceManager manager;
@@ -35,7 +37,7 @@ public class KachleGeneraceManagerTest {
 		slozka = tmp.newFolder("cache");
 		holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(slozka, false, true));
-		manager = new KachleGeneraceManager(holder);
+		manager = new KachleGeneraceManager(holder, 1L << 40, 1L << 40);
 	}
 
 	private static byte[] png() throws Exception {
@@ -167,7 +169,7 @@ public class KachleGeneraceManagerTest {
 		Assert.assertTrue(manager.save(Arrays.asList(new ItemToSave(pouzita, png()), new ItemToSave(nepouzita, png()), new ItemToSave(OFFLINE, TYP, png()))));
 		manager.predotevri();
 		// Další start: soubory přesahují limit, generace 1 se stane předchozí.
-		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, 100);
+		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, 100, POZDE);
 		Assert.assertNotNull(druhy.load(pouzita));
 		Assert.assertNotNull("offline z předchozí generace", druhy.load(OFFLINE, TYP));
 		Assert.assertTrue(soubor("tiles-online-1.sqlite").isFile());
@@ -177,7 +179,7 @@ public class KachleGeneraceManagerTest {
 		Assert.assertNull("nepoužitá se nepovýšila", druhaGenerace.load(nepouzita));
 		Assert.assertNotNull("pořád čitelná z předchozí", druhy.load(nepouzita));
 		// Další start: generace 2 je nad limitem, generace 1 se smaže.
-		final KachleGeneraceManager treti = new KachleGeneraceManager(holder, 100, 100);
+		final KachleGeneraceManager treti = new KachleGeneraceManager(holder, 100, 100, POZDE);
 		Assert.assertNotNull(treti.load(pouzita));
 		Assert.assertNull("nepoužitá zmizela s generací 1", treti.load(nepouzita));
 		Assert.assertFalse(soubor("tiles-online-1.sqlite").exists());
@@ -191,9 +193,20 @@ public class KachleGeneraceManagerTest {
 		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(new Ka(KaLoc.ofJZ(new Mou(0x50000000, 0x20000000), 13), EKaType.TURIST_M), png()))));
 		manager.predotevri();
 		// Rotuje jen online (offline soubor existuje, ale je pod limitem 1 GB).
-		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, 1L << 30);
+		final KachleGeneraceManager druhy = new KachleGeneraceManager(holder, 100, 1L << 30, POZDE);
 		Assert.assertNotNull(druhy.load(OFFLINE, TYP));
 		Assert.assertTrue(soubor("tiles.sqlite").isFile());
 		Assert.assertEquals(Arrays.asList("online=2", "offline=1"), Files.readAllLines(soubor("generace.txt").toPath()));
+	}
+
+	@Test
+	public void veVychozimNastaveniSeOnlineDlazdiceNepovysujiANemazou() throws Exception {
+		final KachleDBManager stary = new KachleDBManager(holder);
+		Assert.assertTrue(stary.save(Collections.singleton(new ItemToSave(ONLINE, png()))));
+		final KachleGeneraceManager vychozi = new KachleGeneraceManager(holder);
+		Assert.assertNotNull(vychozi.load(ONLINE));
+		Thread.sleep(2500);
+		Assert.assertNull(new KachleDBManager(holder, KachleGeneraceManager.SOUBOR_ONLINE).load(ONLINE));
+		Assert.assertEquals(Long.MAX_VALUE, RotaceGeneraci.LIMIT_ONLINE);
 	}
 }
