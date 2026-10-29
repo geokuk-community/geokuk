@@ -34,6 +34,32 @@ public class JStatusBarJedenRadekTest {
 		javax.swing.UIManager.setLookAndFeel(puvodniLaf);
 	}
 
+	/** Swing se mimo vlákno událostí nemá používat: rozložení a zúžení zdrojů (revalidate) by běželo souběžně s měřením v testu. */
+	private interface Telo {
+		void spust() throws Exception;
+	}
+
+	private static void naEdt(final Telo telo) throws Exception {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
+				try {
+					telo.spust();
+				} catch (final Exception e) {
+					throw new IllegalStateException(e);
+				}
+			});
+		} catch (final java.lang.reflect.InvocationTargetException e) {
+			Throwable pricina = e.getCause();
+			while (pricina instanceof IllegalStateException && pricina.getCause() instanceof Exception) {
+				pricina = pricina.getCause();
+			}
+			if (pricina instanceof Error) {
+				throw (Error) pricina;
+			}
+			throw (Exception) pricina;
+		}
+	}
+
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
 		f.setAccessible(true);
@@ -81,32 +107,38 @@ public class JStatusBarJedenRadekTest {
 	@Test
 	public void bezMistaSeZdrojeZuziNaZaskrtavatka() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
-		final JStatusBar radek = radekSVsemi();
-		final int jedenRadek = vyska(new JStatusBar(), 5000);
-		final int uzka = sirkaBezNazvuZdroju(radek);
-		final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
-		Assert.assertTrue("názvy zdrojů zabírají místo: " + plna + " × " + uzka, plna > uzka);
-		Assert.assertEquals("šířky: plná " + plna + ", bez názvů " + uzka, jedenRadek, vyska(radek, uzka + 5));
-		Assert.assertTrue(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
-		Assert.assertFalse("popisek Zdroje se skryje", popisekZdrojuVidet(radek));
+		naEdt(() -> {
+			final JStatusBar radek = radekSVsemi();
+			final int jedenRadek = vyska(new JStatusBar(), 5000);
+			final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
+			final int uzka = sirkaBezNazvuZdroju(radek);
+			Assert.assertTrue("názvy zdrojů zabírají místo: " + plna + " × " + uzka, plna > uzka);
+			Assert.assertEquals("šířky: plná " + plna + ", bez názvů " + uzka, jedenRadek, vyska(radek, uzka + 5));
+			Assert.assertTrue(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
+			Assert.assertFalse("popisek Zdroje se skryje", popisekZdrojuVidet(radek));
+		});
 	}
 
 	@Test
 	public void kdyzJeMistoZustanouNazvyZdroju() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
-		final JStatusBar radek = radekSVsemi();
-		final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
-		vyska(radek, plna + 5);
-		Assert.assertFalse(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
-		Assert.assertTrue(popisekZdrojuVidet(radek));
+		naEdt(() -> {
+			final JStatusBar radek = radekSVsemi();
+			final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
+			vyska(radek, plna + 5);
+			Assert.assertFalse(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
+			Assert.assertTrue(popisekZdrojuVidet(radek));
+		});
 	}
 
 	@Test
 	public void vUzkemOkneSeZalomi() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
-		final JStatusBar radek = radekSVsemi();
-		final int jedenRadek = vyska(new JStatusBar(), 5000);
-		Assert.assertTrue(vyska(radek, sirkaBezNazvuZdroju(radek) / 2) > jedenRadek);
+		naEdt(() -> {
+			final JStatusBar radek = radekSVsemi();
+			final int jedenRadek = vyska(new JStatusBar(), 5000);
+			Assert.assertTrue(vyska(radek, sirkaBezNazvuZdroju(radek) / 2) > jedenRadek);
+		});
 	}
 
 	/** Na Full HD (1920 px, okno bez 16 px rámečku) se vejde i řádek se čtyřmi zdroji, výletem a místem pro varování. */
@@ -114,10 +146,12 @@ public class JStatusBarJedenRadekTest {
 	public void naFullHdSeCtyrmiZdrojiJedenRadek() throws Exception {
 		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
 		Assume.assumeTrue("jen Windows (šířky písma)", System.getProperty("os.name", "").startsWith("Windows"));
-		final JStatusBar radek = radekSVsemi();
-		final int jedenRadek = vyska(new JStatusBar(), 5000);
-		final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
-		final int uzka = sirkaBezNazvuZdroju(radek);
-		Assert.assertEquals("šířky: plná " + plna + ", bez názvů " + uzka + ", okno " + (1920 - 16), jedenRadek, vyska(radek, 1920 - 16));
+		naEdt(() -> {
+			final JStatusBar radek = radekSVsemi();
+			final int jedenRadek = vyska(new JStatusBar(), 5000);
+			final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
+			final int uzka = sirkaBezNazvuZdroju(radek);
+			Assert.assertEquals("šířky: plná " + plna + ", bez názvů " + uzka + ", okno " + (1920 - 16), jedenRadek, vyska(radek, 1920 - 16));
+		});
 	}
 }
