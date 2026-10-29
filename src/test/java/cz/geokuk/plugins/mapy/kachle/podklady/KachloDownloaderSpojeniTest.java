@@ -89,4 +89,41 @@ public class KachloDownloaderSpojeniTest {
 			exec.shutdownNow();
 		}
 	}
+
+	@Test(timeout = 20000)
+	public void velkaChybovaOdpovedNeblokujeAConnectionSeZavre() throws Exception {
+		final List<Integer> porty = Collections.synchronizedList(new ArrayList<>());
+		final byte[] velke = new byte[300 * 1024];
+		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server.createContext("/", ex -> {
+			porty.add(ex.getRemoteAddress().getPort());
+			ex.sendResponseHeaders(500, velke.length);
+			try (OutputStream out = ex.getResponseBody()) {
+				out.write(velke);
+			} catch (final java.io.IOException e) {
+				// klient spojení zavřel dřív, než dostal celé tělo
+			}
+		});
+		server.start();
+		for (int i = 0; i < 2; i++) {
+			try {
+				new KachloDownloader().downloadImage(new URL("http://127.0.0.1:" + server.getAddress().getPort() + "/1/2/3.png"));
+				Assert.fail();
+			} catch (final KachloDownloader.ChybaServeru e) {
+				Assert.assertEquals(500, e.getKod());
+			}
+		}
+		Assert.assertEquals(2, new HashSet<>(porty).size());
+	}
+
+	@Test
+	public void osmDavkaSmiNaServerJenDveSpojeni() {
+		final SoubehNaHostitele soubeh = new SoubehNaHostitele(10);
+		Assert.assertEquals(2, soubeh.pro("tile.openstreetmap.org").availablePermits());
+		Assert.assertEquals(2, soubeh.pro("mapy.cz").availablePermits());
+		Assert.assertEquals(2, soubeh.pro("ags.cuzk.gov.cz").availablePermits());
+		Assert.assertEquals(2, soubeh.pro("zbgis.skgeodesy.sk").availablePermits());
+		Assert.assertEquals(10, soubeh.pro("outdoor.tiles.freemap.sk").availablePermits());
+		Assert.assertSame(soubeh.pro("Tile.OpenStreetMap.org"), soubeh.pro("tile.openstreetmap.org"));
+	}
 }

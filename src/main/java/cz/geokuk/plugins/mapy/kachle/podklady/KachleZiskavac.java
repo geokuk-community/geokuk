@@ -499,6 +499,9 @@ public class KachleZiskavac {
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
+	/** Dávka (i export mapy) smí jít na server s omezením jen ve 2 spojeních, i když má 10 vláken. */
+	private static final SoubehNaHostitele SOUBEH_DAVKY = new SoubehNaHostitele(NTHREADS_WEB_MAXIMUM_BACTH);
+
 	/**
 	 * Vlákna nad core by vznikla až při plné frontě, proto je core rovno maximu a nečinná vlákna zanikají.
 	 */
@@ -920,25 +923,35 @@ public class KachleZiskavac {
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + url);
 			}
-			diagnosticsData.send("Web download - start");
-			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
-			ImageWithData imageWithData;
+			final Semaphore soubeh = dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI ? SOUBEH_DAVKY.pro(url.getHost()) : null;
+			if (soubeh != null) {
+				soubeh.acquire();
+			}
 			try {
-				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
-				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
-				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
-				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
-				diagnosticsData.send("Web download - end success");
-				return imageWithData;
-			} catch (final KachloDownloader.ChybaServeru e) {
-				if (!ka.getType().jeMimoUzemi(e.getKod(), ka.getLoc())) {
+				diagnosticsData.send("Web download - start");
+				log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
+				ImageWithData imageWithData;
+				try {
+					imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+					// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
+					ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
+					log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
+					diagnosticsData.send("Web download - end success");
+					return imageWithData;
+				} catch (final KachloDownloader.ChybaServeru e) {
+					if (!ka.getType().jeMimoUzemi(e.getKod(), ka.getLoc())) {
+						throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
+					}
+					mimoUzemi.put(klic, Boolean.TRUE);
+					diagnosticsData.send("Web download - mimo území podkladu");
+					return new ImageWithData(PRAZDNA_MIMO_UZEMI, new byte[0]);
+				} catch (final Exception e) {
 					throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
 				}
-				mimoUzemi.put(klic, Boolean.TRUE);
-				diagnosticsData.send("Web download - mimo území podkladu");
-				return new ImageWithData(PRAZDNA_MIMO_UZEMI, new byte[0]);
-			} catch (final Exception e) {
-				throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
+			} finally {
+				if (soubeh != null) {
+					soubeh.release();
+				}
 			}
 		});
 		return future;

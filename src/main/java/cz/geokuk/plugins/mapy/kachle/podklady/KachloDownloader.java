@@ -29,7 +29,14 @@ public class KachloDownloader {
 	private static final int MAX_DOCTENI_ODPOVEDI = 64 * 1024;
 
 	static {
-		// Výchozí 5 spojení na server je méně než souběh online (5) a dávky (10); musí se nastavit před prvním použitím HTTP.
+		nastavMaxSpojeni();
+	}
+
+	/**
+	 * Výchozí 5 spojení na server je méně než souběh online (5) a dávky (10). JDK ji čte při prvním použití keep-alive cache,
+	 * proto se volá už na začátku programu, před jakýmkoli jiným HTTP (třeba kontrolou aktualizací).
+	 */
+	public static void nastavMaxSpojeni() {
 		if (System.getProperty("http.maxConnections") == null) {
 			System.setProperty("http.maxConnections", String.valueOf(KachleZiskavac.NTHREADS_WEB_CORE_ONLINE + KachleZiskavac.NTHREADS_WEB_MAXIMUM_BACTH));
 		}
