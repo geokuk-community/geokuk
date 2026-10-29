@@ -8,7 +8,9 @@ import java.util.EnumSet;
 import javax.swing.JPanel;
 
 import org.junit.Assert;
+import org.junit.After;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 import cz.geokuk.plugins.kesoid.importek.TypZdroje;
@@ -17,6 +19,20 @@ import cz.geokuk.util.gui.ZalamovaciLayout;
 
 /** Stavový řádek s všemi zdroji, otevřeným výletem a místem pro varování se při Full HD vejde do jednoho řádku; v úzkém okně se zalomí. */
 public class JStatusBarJedenRadekTest {
+
+	private javax.swing.LookAndFeel puvodniLaf;
+
+	/** Šířky textů závisí na vzhledu Swingu; jiné testy ho přepínají, proto se tu vždy měří s výchozím Metalem. */
+	@Before
+	public void metal() throws Exception {
+		puvodniLaf = javax.swing.UIManager.getLookAndFeel();
+		javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+	}
+
+	@After
+	public void obnovLaf() throws Exception {
+		javax.swing.UIManager.setLookAndFeel(puvodniLaf);
+	}
 
 	private static Object pole(final JStatusBar radek, final String jmeno) throws Exception {
 		final Field f = JStatusBar.class.getDeclaredField(jmeno);
@@ -70,7 +86,7 @@ public class JStatusBarJedenRadekTest {
 		final int uzka = sirkaBezNazvuZdroju(radek);
 		final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
 		Assert.assertTrue("názvy zdrojů zabírají místo: " + plna + " × " + uzka, plna > uzka);
-		Assert.assertEquals(jedenRadek, vyska(radek, uzka + 5));
+		Assert.assertEquals("šířky: plná " + plna + ", bez názvů " + uzka, jedenRadek, vyska(radek, uzka + 5));
 		Assert.assertTrue(((JPrepinaceZdroju) pole(radek, "prepinaceZdroju")).isUsporny());
 		Assert.assertFalse("popisek Zdroje se skryje", popisekZdrojuVidet(radek));
 	}
@@ -100,6 +116,8 @@ public class JStatusBarJedenRadekTest {
 		Assume.assumeTrue("jen Windows (šířky písma)", System.getProperty("os.name", "").startsWith("Windows"));
 		final JStatusBar radek = radekSVsemi();
 		final int jedenRadek = vyska(new JStatusBar(), 5000);
-		Assert.assertEquals(jedenRadek, vyska(radek, 1920 - 16));
+		final int plna = ((ZalamovaciLayout) pole(radek, "layout")).sirkaVJednomRadku(radek);
+		final int uzka = sirkaBezNazvuZdroju(radek);
+		Assert.assertEquals("šířky: plná " + plna + ", bez názvů " + uzka + ", okno " + (1920 - 16), jedenRadek, vyska(radek, 1920 - 16));
 	}
 }
