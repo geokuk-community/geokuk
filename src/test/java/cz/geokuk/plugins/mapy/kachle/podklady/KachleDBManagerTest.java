@@ -739,4 +739,86 @@ public class KachleDBManagerTest {
 		Assert.assertTrue(manager.exists(KACHLE));
 		Assert.assertFalse(manager.exists(KACHLE, "o00000001"));
 	}
+
+	private Process spustCtenare() throws Exception {
+		final Process proces = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
+				ZamekCtenareJinehoProgramu.class.getName(), soubor.getPath()).redirectErrorStream(true).start();
+		final java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(proces.getInputStream(), StandardCharsets.UTF_8));
+		for (String radek = vystup.readLine(); !"zamceno".equals(radek); radek = vystup.readLine()) {
+			Assert.assertNotNull("druhý program skončil bez zámku", radek);
+		}
+		return proces;
+	}
+
+	private static void uvolniCtenare(final Process proces) throws Exception {
+		proces.getOutputStream().write('\n');
+		proces.getOutputStream().flush();
+		proces.waitFor(10, TimeUnit.SECONDS);
+		proces.destroyForcibly();
+	}
+
+	/** Zápis, jehož commit zastaví čtenář jiného programu, se vrátí zpět a po uvolnění zámku projde na stejném spojení. */
+	@Test(timeout = 60000)
+	public void zapisZdrzenyCtenaremJinehoProgramuProjdePoUvolneni() throws Exception {
+		ulozKachle();
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertNotNull(manager.load(kachle(1)));
+		final Process ctenar = spustCtenare();
+		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
+		try {
+			final Future<Boolean> zapis = vlakno.submit(() -> manager.save(Collections.singleton(new ItemToSave(kachle(300), png()))));
+			Thread.sleep(300);
+			Assert.assertFalse("zápis čeká na uvolnění zámku", zapis.isDone());
+			uvolniCtenare(ctenar);
+			Assert.assertTrue("zápis po uvolnění zámku projde", zapis.get(30, TimeUnit.SECONDS));
+		} finally {
+			ctenar.destroyForcibly();
+			vlakno.shutdownNow();
+		}
+		Assert.assertNotNull(manager.load(kachle(300)));
+		Assert.assertFalse("zámek jiného programu není poškození cache", new File(soubor.getPath() + ".vadna").exists());
+	}
+
+	/** Trvalý zámek čtenáře: zápis se vzdá, chybu ohlásí jednou a po uvolnění zámku zase funguje. */
+	@Test(timeout = 60000)
+	public void trvalyZamekCtenareZapisVzdaAChybuOhlasi() throws Exception {
+		ulozKachle();
+		manager = new KachleDBManager(manager.folderHolder);
+		Assert.assertNotNull(manager.load(kachle(1)));
+		final Process ctenar = spustCtenare();
+		try {
+			final int chybPred = ChybyVDiagnostice.pocet("Nepodařilo se zapsat dlaždice do databáze");
+			Assert.assertFalse("zápis proti trvalému zámku selže", manager.save(Collections.singleton(new ItemToSave(kachle(300), png()))));
+			Assert.assertEquals("trvalá chyba zápisu se ohlásí", chybPred + 1, ChybyVDiagnostice.pocet("Nepodařilo se zapsat dlaždice do databáze"));
+		} finally {
+			uvolniCtenare(ctenar);
+		}
+		final byte[] data = png();
+		final ExecutorService jineVlakno = Executors.newSingleThreadExecutor();
+		try {
+			Assert.assertTrue("neúspěšný zápis nenechá otevřenou transakci", jineVlakno.submit(() -> manager.save(Collections.singleton(new ItemToSave(kachle(302), data)))).get(30, TimeUnit.SECONDS));
+		} finally {
+			jineVlakno.shutdownNow();
+		}
+		Assert.assertTrue("po uvolnění zámku zápis projde i v původním vlákně", manager.save(Collections.singleton(new ItemToSave(kachle(301), data))));
+		Assert.assertNotNull(manager.load(kachle(301)));
+		Assert.assertNotNull(manager.load(kachle(302)));
+	}
+
+	/** Přerušení vlákna při zápisu zavře kanál souboru; takové spojení se zahodí a další zápis téhož vlákna otevře nové. */
+	@Test(timeout = 60000)
+	public void poPreruseniZapisuSeSpojeniZahodiAPristiZapisProjde() throws Exception {
+		ulozKachle();
+		manager = new KachleDBManager(manager.folderHolder);
+		final byte[] data = png();
+		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(300), data))));
+		Thread.currentThread().interrupt();
+		try {
+			Assert.assertFalse("zápis v přerušeném vlákně selže", manager.save(Collections.singleton(new ItemToSave(kachle(301), data))));
+		} finally {
+			Thread.interrupted();
+		}
+		Assert.assertTrue("další zápis otevře nové spojení", manager.save(Collections.singleton(new ItemToSave(kachle(302), data))));
+		Assert.assertNotNull(manager.load(kachle(302)));
+	}
 }
