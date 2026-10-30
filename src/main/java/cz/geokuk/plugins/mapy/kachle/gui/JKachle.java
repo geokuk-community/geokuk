@@ -148,6 +148,38 @@ public class JKachle extends JComponent {
 		nahled = novy;
 	}
 
+	/** Náhled se ukáže jen místo chybějícího obrázku, který ještě nemá žádný náhled; vrací, zda je teď nějaký náhled. */
+	private synchronized boolean usadNahled(final List<NahledDlazdice> novy) {
+		if (image == null && !jeTamUzCelyObrazek && nahled.isEmpty()) {
+			nahled = novy;
+		}
+		return !nahled.isEmpty();
+	}
+
+	/** Dočasný náhled z hotových dlaždic jiného měřítka; dávkové stahování na pozadí ho nepotřebuje. */
+	void pripravNahled(final KachleModel kachleModel, final Priority priorita) {
+		if (priorita == Priority.STAHOVANI) {
+			return;
+		}
+		final KachleZiskavac ziskavac = kachleModel.getZiskavac();
+		final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, ziskavac::nahledZPameti, KACHLE_WIDTH);
+		if (!usadNahled(novyNahled)) {
+			// Z paměti nic není, zkusí se cache na disku; čte se mimo vlákno událostí.
+			ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac));
+		}
+	}
+
+	/** Na pozadí: náhled z hotových dlaždic v paměti nebo v cache, když dlaždice mezitím nedostala obrázek ani náhled a pořád je potřeba. */
+	void doplnNahledZCache(final KachleZiskavac ziskavac) {
+		if (dulezitost() == ImageReceiver.ZASTARALA || maHotovyObrazek()) {
+			return;
+		}
+		final List<NahledDlazdice> novy = NahledDlazdice.najdi(ka, ziskavac::nahledZPametiNeboCache, KACHLE_WIDTH);
+		if (!novy.isEmpty() && usadNahled(novy)) {
+			repaint();
+		}
+	}
+
 	void prijmi(final KachloStav kastat, final Priority priorita) {
 		if (priorita == Priority.STAHOVANI) {
 			log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
@@ -198,14 +230,7 @@ public class JKachle extends JComponent {
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
-		if (ka.getType().isOffline() && priorita != Priority.STAHOVANI) {
-			final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, kachleModel.getZiskavac()::nahledZPameti, KACHLE_WIDTH);
-			synchronized (this) {
-				if (image == null && nahled.isEmpty()) {
-					nahled = novyNahled;
-				}
-			}
-		}
+		pripravNahled(kachleModel, priorita);
 		final long zadano = System.nanoTime();
 		final KaOneReq req = new KaOneReq(ka, new ImageReceiver() {
 			@Override
