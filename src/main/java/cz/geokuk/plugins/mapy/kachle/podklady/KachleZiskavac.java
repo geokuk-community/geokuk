@@ -751,6 +751,11 @@ public class KachleZiskavac {
 		}
 	}
 
+	/** Mapy pro předvykreslení přehledu, pro testy. */
+	PredvykresleniPrehledu.Mapy mapyProPredvykresleniPrehledu() {
+		return new PrehledOfflineMap();
+	}
+
 	/**
 	 * Spustí předvykreslování přehledových zoomů offline map v nečinnosti; jakýkoli vstup myší nebo klávesnicí ho přeruší. Na jednojádrovém počítači nic
 	 * nedělá.
@@ -841,7 +846,8 @@ public class KachleZiskavac {
 				}
 				final long zacatek = System.nanoTime();
 				final BufferedImage obrazek = r.vyrendruj(loc);
-				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
+				// Přehledové dlaždice jsou velké a zkreslily by p95 a max vykreslení dlaždic na obrazovce.
+				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_PREHLEDU, System.nanoTime() - zacatek);
 				pocitRenderOk.inc();
 				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc), obrazek, null));
 				return true;
