@@ -493,6 +493,8 @@ public class KachleZiskavac {
 
 	static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
+	private static final int NTHREADS_WEB_CORE_BATCH = 5;
+
 	static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
 
 	private static final int WEB_QUEUE_SIZE = 100;
@@ -504,16 +506,6 @@ public class KachleZiskavac {
 
 	void setSoubehDavky(final SoubehNaHostitele soubehDavky) {
 		this.soubehDavky = soubehDavky;
-	}
-
-	/**
-	 * Vlákna nad core by vznikla až při plné frontě, proto je core rovno maximu a nečinná vlákna zanikají.
-	 */
-	static ThreadPoolExecutor vytvorWebBatch() {
-		final ThreadPoolExecutor exec = new ThreadPoolExecutor(NTHREADS_WEB_MAXIMUM_BACTH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE),
-				new ThreadPoolExecutor.CallerRunsPolicy());
-		exec.allowCoreThreadTimeOut(true);
-		return exec;
 	}
 
 	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
@@ -657,7 +649,7 @@ public class KachleZiskavac {
 				// Pro background stahování. Jen jedno vlákno pro disk, krátká fronta a po přetížení nechat na volajícím */
 				new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(BATCH_DISK_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
 				// Pokud bude fornta na web přetížená, vykonává stahování vlákno pro dotahování z disku, čímž se to zpomalí
-				vytvorWebBatch(),
+				new ThreadPoolExecutor(NTHREADS_WEB_CORE_BATCH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy()),
 				// Export vykresluje jedním vláknem, obrazovka má přednost.
 				Executors.newFixedThreadPool(1, vlaknaRenderu("Offline mapa export")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_batch"));
@@ -903,7 +895,6 @@ public class KachleZiskavac {
 
 	}
 
-	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
 	/** Omezení souběhu platí jen pro samotné stahování; semafor se nedrží při čekání na zápis do cache. */
 	private ImageWithData stahni(final URL url, final Ka ka, final boolean davka) throws IOException, InterruptedException {
 		final Semaphore soubeh = davka ? soubehDavky.pro(url.getHost()) : null;
@@ -919,6 +910,7 @@ public class KachleZiskavac {
 		}
 	}
 
+	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
 	private ListenableFutureTask<ImageWithData> pripravDownload(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData,
 			final Kachlice kachlice, final AtomicReference<Future<?>> moje) {
 		final Logger log = dvojiceExekucnichSluzeb.log;

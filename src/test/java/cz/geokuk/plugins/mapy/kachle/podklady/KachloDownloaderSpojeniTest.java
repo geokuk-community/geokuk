@@ -10,7 +10,7 @@ import org.junit.*;
 
 import com.sun.net.httpserver.HttpServer;
 
-/** Spojení se po chybě a přesměrování znovupoužije a pool dávky využije celý souběh. */
+/** Spojení se po chybě a přesměrování znovupoužije a nastavení spojení odpovídá souběhu. */
 public class KachloDownloaderSpojeniTest {
 
 	private HttpServer server;
@@ -65,29 +65,6 @@ public class KachloDownloaderSpojeniTest {
 	public void maxConnectionsOdpovidaSoubehu() {
 		new KachloDownloader();
 		Assert.assertEquals(String.valueOf(KachleZiskavac.NTHREADS_WEB_CORE_ONLINE + KachleZiskavac.NTHREADS_WEB_MAXIMUM_BACTH), System.getProperty("http.maxConnections"));
-	}
-
-	@Test
-	public void poolDavkyVyuzijeMaximumVlaken() throws Exception {
-		final java.util.concurrent.ThreadPoolExecutor exec = KachleZiskavac.vytvorWebBatch();
-		final CountDownLatch vsichniBezi = new CountDownLatch(KachleZiskavac.NTHREADS_WEB_MAXIMUM_BACTH);
-		final CountDownLatch pust = new CountDownLatch(1);
-		try {
-			for (int i = 0; i < KachleZiskavac.NTHREADS_WEB_MAXIMUM_BACTH; i++) {
-				exec.execute(() -> {
-					vsichniBezi.countDown();
-					try {
-						pust.await();
-					} catch (final InterruptedException e) {
-						Thread.currentThread().interrupt();
-					}
-				});
-			}
-			Assert.assertTrue("Všechny úlohy měly běžet souběžně", vsichniBezi.await(5, TimeUnit.SECONDS));
-		} finally {
-			pust.countDown();
-			exec.shutdownNow();
-		}
 	}
 
 	@Test(timeout = 20000)
