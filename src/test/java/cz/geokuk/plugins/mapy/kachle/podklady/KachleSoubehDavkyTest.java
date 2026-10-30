@@ -106,4 +106,27 @@ public class KachleSoubehDavkyTest {
 		}
 		Assert.assertEquals("souběžně se mělo stahovat právě 2", 2, nejvic.get());
 	}
+
+	@Test(timeout = 30000)
+	public void onlineProhlizeniNaOmezenemHostiteliNeniOmezeno() throws Exception {
+		final List<CompletableFuture<KachloStav>> vysledky = new ArrayList<>();
+		for (int i = 0; i < 6; i++) {
+			final Ka ka = new Ka(KaLoc.ofJZ(new Mou(0x40000000 + i * 0x100000, 0x20000000), 12), EKaType.podleJmena("user-davka"));
+			final CompletableFuture<KachloStav> f = new CompletableFuture<>();
+			ziskavac.ziskejObsah(new KaOneReq(ka, f::complete, Priority.KACHLE), DiagnosticsData.create(null, null, null));
+			vysledky.add(f);
+		}
+		for (final CompletableFuture<KachloStav> f : vysledky) {
+			final KachloStav stav = f.get(20, TimeUnit.SECONDS);
+			Assert.assertNull(String.valueOf(stav.getThr()), stav.getThr());
+		}
+		Assert.assertTrue("omezení hostitele se týká jen dávky, souběžně bylo " + nejvic.get(), nejvic.get() > 2);
+	}
+
+	@Test
+	public void vychoziOmezeniDavkyJeProServeryBezHromadnehoStahovani() {
+		final KachleZiskavac vychozi = new KachleZiskavac();
+		Assert.assertEquals(2, vychozi.soubehDavky.pro("tile.openstreetmap.org").availablePermits());
+		Assert.assertNull(vychozi.soubehDavky.pro("freemap.sk"));
+	}
 }
