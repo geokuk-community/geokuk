@@ -584,10 +584,23 @@ public class KachleZiskavac {
 	private final ScheduledExecutorService tikacVelikostiFront = Executors.newSingleThreadScheduledExecutor();
 	private final KachloDownloader downloader = new KachloDownloader();
 
-	/** Dlaždic v paměti je nejvýš pár obrazovek, dál se berou z disku. */
-	private static final int MAX_KACHLI_V_PAMETI = 300;
+	/** Nejméně dlaždic v paměti i při malé haldě. */
+	static final int MIN_KACHLI_V_PAMETI = 300;
+	/** Podíl haldy, který smí zabrat dlaždice v paměti, a jeho horní mez. */
+	private static final double PODIL_HALDY_PRO_KACHLE = 0.25;
+	private static final long MAX_BAJTU_KACHLI_V_PAMETI = 1L << 30;
+	/** Dlaždice 256 × 256 bodů po 4 bajtech. */
+	private static final long BAJTU_NA_KACHLI = 256L * 256 * 4;
 
-	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(MAX_KACHLI_V_PAMETI).softValues().<Ka, Kachlice>removalListener(oznameni -> {
+	/** Kolik dlaždic se drží v paměti: čtvrtina haldy, nejvýš 1 GB, nejméně {@link #MIN_KACHLI_V_PAMETI}. */
+	static int maxKachliVPameti(final long maxHaldaBajtu) {
+		final long bajtu = Math.min((long) (maxHaldaBajtu * PODIL_HALDY_PRO_KACHLE), MAX_BAJTU_KACHLI_V_PAMETI);
+		return (int) Math.max(MIN_KACHLI_V_PAMETI, bajtu / BAJTU_NA_KACHLI);
+	}
+
+	private final int maxKachliVPameti = maxKachliVPameti(Runtime.getRuntime().maxMemory());
+
+	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(maxKachliVPameti).softValues().<Ka, Kachlice>removalListener(oznameni -> {
 		pocitKachlice.dec();
 		if (oznameni.getCause() == RemovalCause.COLLECTED) {
 			pocitMemZameteni.inc();
