@@ -86,6 +86,27 @@ napoj_prazdnou_kopii() {
   echo "soukrome: prázdnou kopii se nepodařilo napojit na větev $VETEV, pracuj s lokální kopií"
 }
 
+# Skilly z poznámek se kopírují do .claude/skills/; skill, který tam už je jinak, se nepřepisuje.
+kopiruj_skilly() {
+  [ -d "$DIR/agent/skills" ] || return 0
+  CIL="$ROOT/.claude/skills"
+  mkdir -p "$CIL" || return 0
+  p=/.claude/skills/
+  grep -qxF "$p" "$ROOT/.git/info/exclude" 2>/dev/null || echo "$p" >> "$ROOT/.git/info/exclude"
+  for cil in "$CIL"/*/; do
+    [ -f "${cil}.soukrome" ] && [ ! -d "$DIR/agent/skills/$(basename "$cil")" ] && rm -rf "$cil"
+  done
+  for zdroj in "$DIR"/agent/skills/*/; do
+    [ -f "${zdroj}SKILL.md" ] || continue
+    nazev=$(basename "$zdroj")
+    if [ -e "$CIL/$nazev" ] && [ ! -f "$CIL/$nazev/.soukrome" ]; then
+      echo "soukrome: skill $nazev už v .claude/skills je, nepřepisuji"
+      continue
+    fi
+    rm -rf "$CIL/$nazev" && cp -R "${zdroj%/}" "$CIL/$nazev" && : > "$CIL/$nazev/.soukrome"
+  done
+}
+
 # Patch ze stdin uloží do poznámek a vypíše, aby neodeslaná práce nezmizela se session.
 zachrana() {
   SOUBOR="$DIR/ZACHRANA-$(date -u +%Y%m%d-%H%M%S)-$1.patch"
@@ -127,6 +148,7 @@ case "${1:-}" in
       git -C "$DIR" config --replace-all credential.helper ""
       git -C "$DIR" config --add credential.helper "$HELPER"
     fi
+    kopiruj_skilly
     [ -f "$DIR/agent/AGENTS.md" ] && cat "$DIR/agent/AGENTS.md"
     ;;
   end)
