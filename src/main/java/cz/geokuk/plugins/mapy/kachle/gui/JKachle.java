@@ -49,6 +49,8 @@ public class JKachle extends JComponent {
 	private final Ka ka;
 
 	private Kanceler kanceler;
+	/** Zobrazení mapy, ke kterému dlaždice patří; jen pro diagnostiku dlaždic. */
+	private volatile DiagnostikaDlazdic.Pohled pohled;
 	private Image image;
 	/** Dočasný výřez dlaždice z jiného měřítka, dokud není vlastní obrázek. */
 	private List<NahledDlazdice> nahled = Collections.emptyList();
@@ -116,6 +118,7 @@ public class JKachle extends JComponent {
 			}
 			chyba = null;
 			jeTamUzCelyObrazek = false;
+			pohled = null;
 		}
 		uzTeNepotrebuju();
 		ziskejObsah(kachleModel, priorita);
@@ -180,6 +183,10 @@ public class JKachle extends JComponent {
 		}
 	}
 
+	void nastavPohled(final DiagnostikaDlazdic.Pohled pohled) {
+		this.pohled = pohled;
+	}
+
 	void prijmi(final KachloStav kastat, final Priority priorita) {
 		if (priorita == Priority.STAHOVANI) {
 			log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
@@ -235,6 +242,9 @@ public class JKachle extends JComponent {
 		final KaOneReq req = new KaOneReq(ka, new ImageReceiver() {
 			@Override
 			public void send(final KachloStav kastat) {
+				if (priorita == Priority.KACHLE) {
+					DiagnostikaDlazdic.dlazdiceHotova(pohled, kastat, zadano);
+				}
 				if (priorita == Priority.KACHLE && kastat.getImg() != null) {
 					Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
 				}
