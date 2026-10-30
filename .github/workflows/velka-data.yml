@@ -71,7 +71,7 @@ jobs:
           [ "$RUNNER_OS" = Linux ] && displej=(xvfb-run -a -s "-screen 0 1400x900x24")
           rc=0
           "${displej[@]}" ./mvnw -B test -Dtest=StahovaniVelkyObjemTest -Dsurefire.failIfNoSpecifiedTests=false \
-            -DargLine="-Dfile.encoding=UTF-8 -Xmx6g" -Dscenare.dlazdic="$DLAZDIC" || rc=$?
+            -DargLine="-Dfile.encoding=UTF-8 -Xmx6g -Dgeokuk.testy.limitSekund=7200" -Dscenare.dlazdic="$DLAZDIC" || rc=$?
           {
             echo "### Postahovat dlaždice na $RUNNER_OS: $DLAZDIC dlaždic"
             grep -h "Tests run" target/surefire-reports/*StahovaniVelkyObjemTest.txt 2>/dev/null || echo "Test se nespustil."
