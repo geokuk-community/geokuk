@@ -491,15 +491,22 @@ public class KachleZiskavac {
 	/** Jak dlouho smí dlaždice čekat ve frontě na řadu, než předběhne ostatní; jinak by ji nepřetržitý posun mohl odsouvat. */
 	static volatile long starnutiNs = TimeUnit.SECONDS.toNanos(2);
 
-	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
+	static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
 	private static final int NTHREADS_WEB_CORE_BATCH = 5;
 
-	private static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
+	static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
 
 	private static final int WEB_QUEUE_SIZE = 100;
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
+
+	/** Dávka (i export mapy) smí jít na server s omezením jen ve 2 spojeních, i když má 10 vláken. */
+	volatile SoubehNaHostitele soubehDavky = new SoubehNaHostitele();
+
+	void setSoubehDavky(final SoubehNaHostitele soubehDavky) {
+		this.soubehDavky = soubehDavky;
+	}
 
 	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
@@ -888,6 +895,21 @@ public class KachleZiskavac {
 
 	}
 
+	/** Omezení souběhu platí jen pro samotné stahování; semafor se nedrží při čekání na zápis do cache. */
+	private ImageWithData stahni(final URL url, final Ka ka, final boolean davka) throws IOException, InterruptedException {
+		final Semaphore soubeh = davka ? soubehDavky.pro(url.getHost()) : null;
+		if (soubeh != null) {
+			soubeh.acquire();
+		}
+		try {
+			return downloader.downloadImage(url, ka.getType().getHlavicky());
+		} finally {
+			if (soubeh != null) {
+				soubeh.release();
+			}
+		}
+	}
+
 	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
 	private ListenableFutureTask<ImageWithData> pripravDownload(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData,
 			final Kachlice kachlice, final AtomicReference<Future<?>> moje) {
@@ -916,7 +938,7 @@ public class KachleZiskavac {
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
 			ImageWithData imageWithData;
 			try {
-				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+				imageWithData = stahni(url, ka, dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI);
 				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
 				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
