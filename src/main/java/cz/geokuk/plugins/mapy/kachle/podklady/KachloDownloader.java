@@ -38,7 +38,7 @@ public class KachloDownloader {
 	 */
 	public static void nastavMaxSpojeni() {
 		if (System.getProperty("http.maxConnections") == null) {
-			System.setProperty("http.maxConnections", String.valueOf(KachleZiskavac.NTHREADS_WEB_CORE_ONLINE + KachleZiskavac.NTHREADS_WEB_MAXIMUM_BACTH));
+			// pokus: maxConnections se nenastavuje
 		}
 	}
 
