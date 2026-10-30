@@ -19,6 +19,8 @@ import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.OfflineMapaChangedEvent;
 import cz.geokuk.plugins.mapy.kachle.data.*;
+import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.plugins.mapy.kachle.podklady.DiagnostikaDlazdic;
 import cz.geokuk.plugins.mapy.kachle.podklady.KaOneReq;
 import cz.geokuk.plugins.mapy.kachle.podklady.Priority;
 import cz.geokuk.util.pocitadla.*;
@@ -197,6 +199,19 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	}
 
 	protected void init(final boolean smimZnovuPouzitKachle) {
+		if (!DiagnostikaDlazdic.zapnuto()) {
+			inicializuj(smimZnovuPouzitKachle);
+			return;
+		}
+		final long zacatek = System.nanoTime();
+		try {
+			inicializuj(smimZnovuPouzitKachle);
+		} finally {
+			DiagnostikaDlazdic.initKachlovniku(nazevKachlovniku, System.nanoTime() - zacatek, getComponentCount());
+		}
+	}
+
+	private void inicializuj(final boolean smimZnovuPouzitKachle) {
 		zrusPredvykresleni();
 		if (!isSoordInitialized()) {
 			return;
@@ -254,7 +269,12 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 			}
 		}
 		seradOdStredu(nove, getWidth(), getHeight());
+		final Mou stred = soord.getMoustred();
+		final DiagnostikaDlazdic.Pohled pohled = priorita == Priority.KACHLE
+				? DiagnostikaDlazdic.novyPohled(nazevKachlovniku, soord.getMoumer(), stred.xx, stred.yy, soord.getMouSize().dxx, soord.getMouSize().dyy, nove.size())
+				: null;
 		for (final JKachle jkachle : nove) {
+			jkachle.nastavPohled(pohled);
 			jkachle.ziskejObsah(kachleModel, priorita);
 		}
 		// System.out.println("mame komponent: " + super.getComponentCount());
