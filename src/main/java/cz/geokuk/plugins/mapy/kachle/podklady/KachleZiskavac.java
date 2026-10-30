@@ -258,7 +258,7 @@ public class KachleZiskavac {
 								if (faze != null) {
 									faze.webZadano(des.webQueue.size());
 								}
-								des.web.execute(future);
+								des.web.execute(new Uloha(future));
 							};
 						} else { // v offline režimu nesmíme downloadovat a musíme poslat prázdný obrázek
 							onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE), "PRÁZDNÁ (offline režim)");
@@ -533,7 +533,7 @@ public class KachleZiskavac {
 	/** Jak dlouho smí dlaždice čekat ve frontě na řadu, než předběhne ostatní; jinak by ji nepřetržitý posun mohl odsouvat. */
 	static volatile long starnutiNs = TimeUnit.SECONDS.toNanos(2);
 
-	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
+	static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
 	private static final int NTHREADS_WEB_CORE_BATCH = 5;
 
@@ -676,7 +676,8 @@ public class KachleZiskavac {
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
-				Priority.KACHLE, new ThreadPoolExecutor(NTHREADS_DISK, NTHREADS_DISK, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE),
+				Priority.KACHLE, new ThreadPoolExecutor(NTHREADS_DISK, NTHREADS_DISK, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()),
+					new ThreadPoolExecutor(NTHREADS_WEB_CORE_ONLINE, NTHREADS_WEB_CORE_ONLINE, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()),
 					new ThreadPoolExecutor(NTHREADS_RENDER, NTHREADS_RENDER, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta(), vlaknaRenderu("Offline mapa")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_online"));
 
@@ -1049,6 +1050,16 @@ public class KachleZiskavac {
 		chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
 		diagnosticsData.send(e.toString());
 		return e;
+	}
+
+	/** Vlákna stahování online dlaždic, pro testy pořadí ve frontě. */
+	ExecutorService vlaknaWebOnline() {
+		return exekucniSluzby.get(Priority.KACHLE).web;
+	}
+
+	/** Úlohy čekající na stažení online dlaždic, pro testy. */
+	BlockingQueue<Runnable> frontaWebOnline() {
+		return exekucniSluzby.get(Priority.KACHLE).webQueue;
 	}
 
 	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
