@@ -904,6 +904,21 @@ public class KachleZiskavac {
 	}
 
 	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
+	/** Omezení souběhu platí jen pro samotné stahování; semafor se nedrží při čekání na zápis do cache. */
+	private ImageWithData stahni(final URL url, final Ka ka, final boolean davka) throws IOException, InterruptedException {
+		final Semaphore soubeh = davka ? soubehDavky.pro(url.getHost()) : null;
+		if (soubeh != null) {
+			soubeh.acquire();
+		}
+		try {
+			return downloader.downloadImage(url, ka.getType().getHlavicky());
+		} finally {
+			if (soubeh != null) {
+				soubeh.release();
+			}
+		}
+	}
+
 	private ListenableFutureTask<ImageWithData> pripravDownload(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData,
 			final Kachlice kachlice, final AtomicReference<Future<?>> moje) {
 		final Logger log = dvojiceExekucnichSluzeb.log;
@@ -927,35 +942,25 @@ public class KachleZiskavac {
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + url);
 			}
-			final Semaphore soubeh = dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI ? soubehDavky.pro(url.getHost()) : null;
-			if (soubeh != null) {
-				soubeh.acquire();
-			}
+			diagnosticsData.send("Web download - start");
+			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
+			ImageWithData imageWithData;
 			try {
-				diagnosticsData.send("Web download - start");
-				log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
-				ImageWithData imageWithData;
-				try {
-					imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
-					// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
-					ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
-					log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
-					diagnosticsData.send("Web download - end success");
-					return imageWithData;
-				} catch (final KachloDownloader.ChybaServeru e) {
-					if (!ka.getType().jeMimoUzemi(e.getKod(), ka.getLoc())) {
-						throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
-					}
-					mimoUzemi.put(klic, Boolean.TRUE);
-					diagnosticsData.send("Web download - mimo území podkladu");
-					return new ImageWithData(PRAZDNA_MIMO_UZEMI, new byte[0]);
-				} catch (final Exception e) {
+				imageWithData = stahni(url, ka, dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI);
+				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
+				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
+				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
+				diagnosticsData.send("Web download - end success");
+				return imageWithData;
+			} catch (final KachloDownloader.ChybaServeru e) {
+				if (!ka.getType().jeMimoUzemi(e.getKod(), ka.getLoc())) {
 					throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
 				}
-			} finally {
-				if (soubeh != null) {
-					soubeh.release();
-				}
+				mimoUzemi.put(klic, Boolean.TRUE);
+				diagnosticsData.send("Web download - mimo území podkladu");
+				return new ImageWithData(PRAZDNA_MIMO_UZEMI, new byte[0]);
+			} catch (final Exception e) {
+				throw zaznamenejChybu(e, url, klic, diagnosticsData, log);
 			}
 		});
 		return future;
