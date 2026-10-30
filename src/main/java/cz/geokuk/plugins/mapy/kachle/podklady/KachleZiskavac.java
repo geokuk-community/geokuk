@@ -305,38 +305,17 @@ public class KachleZiskavac {
 			return null;
 		}
 
-		/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
 		private Image nactiZDisku() throws IOException {
 			if (faze == null) {
-				return nactiZDiskuBezMereni();
+				return nactiZCache(ka);
 			}
 			faze.diskStart();
 			final DiagnostikaDlazdic.Cteni cteni = DiagnostikaDlazdic.zacniCteni();
 			try {
-				return nactiZDiskuBezMereni();
+				return nactiZCache(ka);
 			} finally {
 				DiagnostikaDlazdic.skonciCteni(cteni);
 				faze.diskKonec();
-			}
-		}
-
-		private Image nactiZDiskuBezMereni() throws IOException {
-			if (!ka.getType().isOffline()) {
-				return kachleManager.load(ka);
-			}
-			final OfflineRenderer renderer;
-			try {
-				renderer = offlineMapy(ka.getType()).pouzij();
-			} catch (final IOException e) {
-				return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
-			}
-			try {
-				if (!renderer.pokryva(ka.getLoc())) {
-					return null; // dlaždice mimo mapy se jen vybarví a neukládá
-				}
-				return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
-			} finally {
-				renderer.skonci();
 			}
 		}
 
@@ -1049,6 +1028,59 @@ public class KachleZiskavac {
 		chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
 		diagnosticsData.send(e.toString());
 		return e;
+	}
+
+	/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
+	private Image nactiZCache(final Ka ka) throws IOException {
+		if (!ka.getType().isOffline()) {
+			return kachleManager.load(ka);
+		}
+		final OfflineRenderer renderer;
+		try {
+			renderer = offlineMapy(ka.getType()).pouzij();
+		} catch (final IOException e) {
+			return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
+		}
+		try {
+			if (!renderer.pokryva(ka.getLoc())) {
+				return null; // dlaždice mimo mapy se jen vybarví a neukládá
+			}
+			return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
+		} finally {
+			renderer.skonci();
+		}
+	}
+
+	/**
+	 * Hotový obrázek dlaždice z paměti, jinak z cache na disku (nevykresluje ani nestahuje). Čte z disku, volat jen z vlákna na pozadí, viz
+	 * {@link #naPozadiProNahled}.
+	 */
+	public Image nahledZPametiNeboCache(final Ka ka) {
+		final Image zPameti = nahledZPameti(ka);
+		if (zPameti != null) {
+			return zPameti;
+		}
+		final KachleManager km = kachleManager;
+		if (km == null) {
+			return null;
+		}
+		try {
+			return nactiZCache(ka);
+		} catch (final IOException | RuntimeException e) {
+			log.debug("Náhled dlaždice {} z cache nelze načíst: {}", ka, e.toString());
+			return null;
+		}
+	}
+
+	/** Jedno vlákno pro náhledy z cache; při nahromadění se zahazují nejstarší úlohy, platí poslední zobrazení. */
+	private final ThreadPoolExecutor nahledyZCache = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(NAHLEDY_ZE_CACHE_FRONTA),
+			vlaknaRenderu("Náhled z cache"), new ThreadPoolExecutor.DiscardOldestPolicy());
+
+	private static final int NAHLEDY_ZE_CACHE_FRONTA = 64;
+
+	/** Spustí na pozadí hledání náhledu; nestihnuté úlohy se zahodí. */
+	public void naPozadiProNahled(final Runnable uloha) {
+		nahledyZCache.execute(uloha);
 	}
 
 	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
