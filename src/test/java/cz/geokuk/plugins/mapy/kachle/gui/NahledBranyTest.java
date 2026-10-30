@@ -11,10 +11,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -42,6 +44,9 @@ public class NahledBranyTest {
 
 	@Before
 	public void setUp() {
+		// Mimo první načítání mapy a bez prodlevy; prodleva a první načítání mají vlastní testy.
+		PrvniNacitaniMapy.ukonci();
+		JKachle.prodlevaNahleduZCacheMs = 0;
 		ziskavac = new KachleZiskavac();
 		ziskavac.inject(new OnofflineModel() {
 			@Override
@@ -78,6 +83,12 @@ public class NahledBranyTest {
 				return ziskavac;
 			}
 		};
+	}
+
+	@After
+	public void tearDown() {
+		JKachle.prodlevaNahleduZCacheMs = 150;
+		PrvniNacitaniMapy.obnovProTesty();
 	}
 
 	/** Rodič je po tomto volání v paměťové cache (v režimu bez sítě dostane prázdný obrázek). */
@@ -184,5 +195,44 @@ public class NahledBranyTest {
 		Assert.assertTrue("nejnovější platí", provedene.contains(zadano));
 		Assert.assertFalse("nejstarší se zahodila", provedene.contains(1));
 		Assert.assertTrue("fronta je omezená: " + provedene.size(), provedene.size() <= 64);
+	}
+
+	@Test(timeout = 30000)
+	public void priPrvnimNacitaniMapySeCacheNaDiskuNehleda() throws Exception {
+		PrvniNacitaniMapy.obnovProTesty();
+		Assert.assertTrue("první načítání probíhá", PrvniNacitaniMapy.probiha());
+		disk.put(RODIC, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		final JKachle jkachle = new JKachle(null, KA);
+		jkachle.pripravNahled(model, Priority.KACHLE);
+		pockejNaFrontu();
+		Assert.assertFalse(jkachle.maNahled());
+		Assert.assertEquals("při prvním načítání se disk nečetl", 0, cteniZDisku.get());
+	}
+
+	@Test(timeout = 30000)
+	public void dlazdiceKteraDorazDrivNeZProdlevaSeCacheNehleda() throws Exception {
+		JKachle.prodlevaNahleduZCacheMs = 300;
+		disk.put(RODIC, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		final JKachle jkachle = new JKachle(null, KA);
+		jkachle.pripravNahled(model, Priority.KACHLE);
+		jkachle.prijmi(new KachloStav(new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB)), Priority.KACHLE);
+		Thread.sleep(700);
+		pockejNaFrontu();
+		Assert.assertEquals("dlaždice dorazila před koncem prodlevy, disk se nečetl", 0, cteniZDisku.get());
+		Assert.assertFalse(jkachle.maNahled());
+	}
+
+	@Test(timeout = 30000)
+	public void dlazdiceKtereSeCekaDelePoProdleveDostaneNahledZCache() throws Exception {
+		JKachle.prodlevaNahleduZCacheMs = 200;
+		disk.put(RODIC, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		final JKachle jkachle = new JKachle(null, KA);
+		jkachle.pripravNahled(model, Priority.KACHLE);
+		Assert.assertEquals("hned se disk nečte", 0, cteniZDisku.get());
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+		while (!jkachle.maNahled() && System.nanoTime() < konec) {
+			Thread.sleep(10);
+		}
+		Assert.assertTrue("po prodlevě se náhled objeví", jkachle.maNahled());
 	}
 }
