@@ -63,7 +63,7 @@ jobs:
       - name: Souhrn
         if: always()
         run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import collections, os, xml.etree.ElementTree as ET
           cesta = "target/pit-reports/mutations.xml"
           print("## Mutační testy (PIT)\n")
