@@ -924,7 +924,7 @@ public class KachleZiskavac {
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + url);
 			}
-			final Semaphore soubeh = dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI ? soubehDavky.pro(url.getHost()) : null;
+			final Semaphore soubeh = null; // pokus: bez omezení souběhu
 			if (soubeh != null) {
 				soubeh.acquire();
 			}
