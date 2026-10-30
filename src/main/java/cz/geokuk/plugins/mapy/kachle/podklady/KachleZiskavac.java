@@ -1083,6 +1083,18 @@ public class KachleZiskavac {
 		nahledyZCache.execute(uloha);
 	}
 
+	/** Odkládá hledání náhledu v cache, aby se nehledalo pro dlaždice, které dorazí samy dřív. */
+	private final java.util.concurrent.ScheduledExecutorService odkladNahledu = Executors.newSingleThreadScheduledExecutor(vlaknaRenderu("Odklad náhledu"));
+
+	/** Spustí hledání náhledu na pozadí až za {@code prodlevaMs}; kdo dorazí dřív, hledat nemusí. */
+	public void naPozadiProNahled(final Runnable uloha, final long prodlevaMs) {
+		if (prodlevaMs <= 0) {
+			nahledyZCache.execute(uloha);
+			return;
+		}
+		odkladNahledu.schedule(() -> nahledyZCache.execute(uloha), prodlevaMs, TimeUnit.MILLISECONDS);
+	}
+
 	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
 	public Image nahledZPameti(final Ka ka) {
 		final Kachlice kachlice = kachlmap.getIfPresent(ka);

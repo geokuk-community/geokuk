@@ -9,6 +9,7 @@ import java.util.concurrent.CancellationException;
 
 import javax.swing.JComponent;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Vykon;
@@ -163,6 +164,9 @@ public class JKachle extends JComponent {
 		return !nahled.isEmpty();
 	}
 
+	/** Jak dlouho dlaždice čeká, než se pro ni hledá náhled v cache na disku; rychlé dlaždice ho nepotřebují. */
+	static volatile long prodlevaNahleduZCacheMs = 150;
+
 	/** Dočasný náhled z hotových dlaždic jiného měřítka; dávkové stahování na pozadí ho nepotřebuje. */
 	void pripravNahled(final KachleModel kachleModel, final Priority priorita) {
 		if (priorita == Priority.STAHOVANI) {
@@ -170,9 +174,9 @@ public class JKachle extends JComponent {
 		}
 		final KachleZiskavac ziskavac = kachleModel.getZiskavac();
 		final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, ziskavac::nahledZPameti, KACHLE_WIDTH);
-		if (!usadNahled(novyNahled)) {
-			// Z paměti nic není, zkusí se cache na disku; čte se mimo vlákno událostí.
-			ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac));
+		// Z paměti nic není; cache na disku se zkusí mimo vlákno událostí až po prodlevě a ne při prvním načítání mapy, ať nesoutěží s načítáním dlaždic.
+		if (!usadNahled(novyNahled) && !PrvniNacitaniMapy.probiha()) {
+			ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac), prodlevaNahleduZCacheMs);
 		}
 	}
 
