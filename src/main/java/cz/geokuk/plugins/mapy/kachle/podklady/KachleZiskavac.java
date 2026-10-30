@@ -510,10 +510,7 @@ public class KachleZiskavac {
 	 * Vlákna nad core by vznikla až při plné frontě, proto je core rovno maximu a nečinná vlákna zanikají.
 	 */
 	static ThreadPoolExecutor vytvorWebBatch() {
-		final ThreadPoolExecutor exec = new ThreadPoolExecutor(NTHREADS_WEB_MAXIMUM_BACTH, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE),
-				new ThreadPoolExecutor.CallerRunsPolicy());
-		exec.allowCoreThreadTimeOut(true);
-		return exec;
+		return new ThreadPoolExecutor(NTHREADS_WEB_CORE_ONLINE, NTHREADS_WEB_MAXIMUM_BACTH, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(WEB_QUEUE_SIZE), new ThreadPoolExecutor.CallerRunsPolicy());
 	}
 
 	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
