@@ -82,7 +82,7 @@ public class KachleSoubehDavkyTest {
 				return true;
 			}
 		});
-		ziskavac.setSoubehDavky(new SoubehNaHostitele(10, hostitel -> "127.0.0.1".equals(hostitel) ? 2 : 0));
+		ziskavac.setSoubehDavky(new SoubehNaHostitele(hostitel -> "127.0.0.1".equals(hostitel) ? 2 : 0));
 	}
 
 	@After

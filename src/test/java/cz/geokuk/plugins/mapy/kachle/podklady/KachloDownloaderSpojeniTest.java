@@ -95,12 +95,13 @@ public class KachloDownloaderSpojeniTest {
 
 	@Test
 	public void osmDavkaSmiNaServerJenDveSpojeni() {
-		final SoubehNaHostitele soubeh = new SoubehNaHostitele(10);
+		final SoubehNaHostitele soubeh = new SoubehNaHostitele();
 		Assert.assertEquals(2, soubeh.pro("tile.openstreetmap.org").availablePermits());
 		Assert.assertEquals(2, soubeh.pro("mapy.cz").availablePermits());
 		Assert.assertEquals(2, soubeh.pro("ags.cuzk.gov.cz").availablePermits());
 		Assert.assertEquals(2, soubeh.pro("zbgis.skgeodesy.sk").availablePermits());
-		Assert.assertEquals(10, soubeh.pro("outdoor.tiles.freemap.sk").availablePermits());
+		Assert.assertNull("bez omezení", soubeh.pro("outdoor.tiles.freemap.sk"));
+		Assert.assertNull("bez omezení", soubeh.pro("127.0.0.1"));
 		Assert.assertSame(soubeh.pro("Tile.OpenStreetMap.org"), soubeh.pro("tile.openstreetmap.org"));
 	}
 }

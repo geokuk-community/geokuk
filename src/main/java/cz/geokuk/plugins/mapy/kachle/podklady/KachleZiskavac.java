@@ -502,7 +502,7 @@ public class KachleZiskavac {
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
 
 	/** Dávka (i export mapy) smí jít na server s omezením jen ve 2 spojeních, i když má 10 vláken. */
-	private volatile SoubehNaHostitele soubehDavky = new SoubehNaHostitele(NTHREADS_WEB_MAXIMUM_BACTH);
+	private volatile SoubehNaHostitele soubehDavky = new SoubehNaHostitele();
 
 	void setSoubehDavky(final SoubehNaHostitele soubehDavky) {
 		this.soubehDavky = soubehDavky;
