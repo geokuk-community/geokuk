@@ -995,22 +995,31 @@ public class KachleZiskavac {
 		}
 	}
 
+	/** Rodičovské dlaždice dekódované z cache pro náhledy: sourozenci sdílejí jedno dekódování a i neúspěšné hledání se krátce pamatuje. */
+	private final Cache<Ka, Optional<Image>> nahledyRodicu = CacheBuilder.newBuilder().maximumSize(NAHLEDY_RODICU).expireAfterWrite(java.time.Duration.ofSeconds(10)).softValues().build();
+
+	private static final int NAHLEDY_RODICU = 32;
+
+	/** Náhled z cache na disku jen pro online mapy; u offline map se dlaždice vykreslí rychle a čtení a dekódování by soutěžilo s vykreslováním o procesor. */
+	public boolean lzeNahledZCache(final Ka ka) {
+		return !ka.getType().isOffline();
+	}
+
 	/**
-	 * Hotový obrázek dlaždice z paměti, jinak z cache na disku (nevykresluje ani nestahuje). Čte z disku, volat jen z vlákna na pozadí, viz
-	 * {@link #naPozadiProNahled}.
+	 * Hotový obrázek dlaždice z paměti, u online map jinak z cache na disku (nevykresluje ani nestahuje). Čte z disku, volat jen z vlákna na pozadí, viz
+	 * {@link #naPozadiProNahled}. Rozhodnutí, odkud se náhled bere, je jen tady.
 	 */
 	public Image nahledZPametiNeboCache(final Ka ka) {
 		final Image zPameti = nahledZPameti(ka);
 		if (zPameti != null) {
 			return zPameti;
 		}
-		final KachleManager km = kachleManager;
-		if (km == null) {
+		if (!lzeNahledZCache(ka) || kachleManager == null) {
 			return null;
 		}
 		try {
-			return nactiZCache(ka);
-		} catch (final IOException | RuntimeException e) {
+			return nahledyRodicu.get(ka, () -> Optional.ofNullable(nactiZCache(ka))).orElse(null);
+		} catch (final java.util.concurrent.ExecutionException | RuntimeException e) {
 			log.debug("Náhled dlaždice {} z cache nelze načíst: {}", ka, e.toString());
 			return null;
 		}

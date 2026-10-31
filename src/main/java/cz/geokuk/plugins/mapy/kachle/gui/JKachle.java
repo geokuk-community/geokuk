@@ -156,6 +156,9 @@ public class JKachle extends JComponent {
 		return !nahled.isEmpty();
 	}
 
+	/** Z cache na disku se hledají jen rodiče o tolik úrovní výš (bez čtyř dlaždic z vyššího měřítka). */
+	static final int MAX_UROVNI_Z_CACHE = 2;
+
 	/** Dočasný náhled z hotových dlaždic jiného měřítka; dávkové stahování na pozadí ho nepotřebuje. */
 	void pripravNahled(final KachleModel kachleModel, final Priority priorita) {
 		if (priorita == Priority.STAHOVANI) {
@@ -163,8 +166,8 @@ public class JKachle extends JComponent {
 		}
 		final KachleZiskavac ziskavac = kachleModel.getZiskavac();
 		final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, ziskavac::nahledZPameti, KACHLE_WIDTH);
-		if (!usadNahled(novyNahled)) {
-			// Z paměti nic není, zkusí se cache na disku; čte se mimo vlákno událostí.
+		if (!usadNahled(novyNahled) && ziskavac.lzeNahledZCache(ka)) {
+			// Z paměti nic není, u online map se zkusí cache na disku; čte se mimo vlákno událostí.
 			ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac));
 		}
 	}
@@ -174,7 +177,7 @@ public class JKachle extends JComponent {
 		if (dulezitost() == ImageReceiver.ZASTARALA || maHotovyObrazek()) {
 			return;
 		}
-		final List<NahledDlazdice> novy = NahledDlazdice.najdi(ka, ziskavac::nahledZPametiNeboCache, KACHLE_WIDTH);
+		final List<NahledDlazdice> novy = NahledDlazdice.najdi(ka, ziskavac::nahledZPametiNeboCache, KACHLE_WIDTH, MAX_UROVNI_Z_CACHE, false);
 		if (!novy.isEmpty() && usadNahled(novy)) {
 			repaint();
 		}

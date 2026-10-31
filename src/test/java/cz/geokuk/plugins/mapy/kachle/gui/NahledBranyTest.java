@@ -37,6 +37,7 @@ public class NahledBranyTest {
 
 	private final Map<Ka, Image> disk = new HashMap<>();
 	private final AtomicInteger cteniZDisku = new AtomicInteger();
+	private final Map<Ka, AtomicInteger> cteniKlice = new java.util.concurrent.ConcurrentHashMap<>();
 	private KachleZiskavac ziskavac;
 	private KachleModel model;
 
@@ -64,6 +65,7 @@ public class NahledBranyTest {
 			@Override
 			public Image load(final Ka ki) {
 				cteniZDisku.incrementAndGet();
+				cteniKlice.computeIfAbsent(ki, k -> new AtomicInteger()).incrementAndGet();
 				return disk.get(ki);
 			}
 
@@ -184,5 +186,68 @@ public class NahledBranyTest {
 		Assert.assertTrue("nejnovější platí", provedene.contains(zadano));
 		Assert.assertFalse("nejstarší se zahodila", provedene.contains(1));
 		Assert.assertTrue("fronta je omezená: " + provedene.size(), provedene.size() <= 64);
+	}
+
+	private static Ka sourozenec(final int vpravo, final int nahoru) {
+		return new Ka(LOC.rodic().dite(vpravo, nahoru), EKaType.OPEN_STREET);
+	}
+
+	private int cteni(final Ka ka) {
+		final AtomicInteger n = cteniKlice.get(ka);
+		return n == null ? 0 : n.get();
+	}
+
+	@Test(timeout = 30000)
+	public void offlineDlazdiceNehledajiNaDisku() throws Exception {
+		final Ka offline = new Ka(LOC, EKaType.OFFLINE_MF);
+		final Ka rodicOffline = new Ka(LOC.rodic(), EKaType.OFFLINE_MF);
+		disk.put(rodicOffline, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		Assert.assertFalse(ziskavac.lzeNahledZCache(offline));
+		Assert.assertNull("offline se z disku nečte ani přímo", ziskavac.nahledZPametiNeboCache(rodicOffline));
+		final JKachle jkachle = new JKachle(null, offline);
+		jkachle.pripravNahled(model, Priority.KACHLE);
+		pockejNaFrontu();
+		jkachle.doplnNahledZCache(ziskavac);
+		Assert.assertFalse(jkachle.maNahled());
+		Assert.assertEquals("offline dlaždice nečtou cache na disku", 0, cteniZDisku.get());
+	}
+
+	@Test(timeout = 30000)
+	public void rodicSeDekodujeJednouProVsechnySourozence() throws Exception {
+		disk.put(RODIC, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		for (int v = 0; v <= 1; v++) {
+			for (int n = 0; n <= 1; n++) {
+				final JKachle jkachle = new JKachle(null, sourozenec(v, n));
+				jkachle.doplnNahledZCache(ziskavac);
+				Assert.assertTrue("sourozenec " + v + "," + n + " má náhled", jkachle.maNahled());
+			}
+		}
+		Assert.assertEquals("rodič se z cache načetl a dekódoval jednou", 1, cteni(RODIC));
+	}
+
+	@Test(timeout = 30000)
+	public void chybejiciRodicSeProSourozenceNehledaZnovu() throws Exception {
+		for (int v = 0; v <= 1; v++) {
+			for (int n = 0; n <= 1; n++) {
+				new JKachle(null, sourozenec(v, n)).doplnNahledZCache(ziskavac);
+			}
+		}
+		Assert.assertEquals("rodič i prarodič se hledali jednou, ne pro každého sourozence", 1, cteni(RODIC));
+		Assert.assertEquals(2, cteniZDisku.get());
+	}
+
+	@Test(timeout = 30000)
+	public void zCacheSeHledajiJenRodice() throws Exception {
+		// Dlaždice z vyššího měřítka (děti) ani rodiče o víc než dvě úrovně výš se z disku nečtou.
+		final Ka dite = new Ka(LOC.dite(0, 0), EKaType.OPEN_STREET);
+		final Ka predek3 = new Ka(LOC.rodic().rodic().rodic(), EKaType.OPEN_STREET);
+		disk.put(dite, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		disk.put(predek3, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		final JKachle jkachle = new JKachle(null, KA);
+		jkachle.doplnNahledZCache(ziskavac);
+		Assert.assertFalse(jkachle.maNahled());
+		Assert.assertEquals("dítě se nečetlo", 0, cteni(dite));
+		Assert.assertEquals("třetí předek se nečetl", 0, cteni(predek3));
+		Assert.assertEquals("jen dva rodiče", 2, cteniZDisku.get());
 	}
 }
