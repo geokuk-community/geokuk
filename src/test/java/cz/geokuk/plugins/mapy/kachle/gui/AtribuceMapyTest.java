@@ -2,13 +2,16 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -62,5 +65,20 @@ public class AtribuceMapyTest {
 	public void meritkoMaOmezenouSirku() {
 		assertEquals(960, cz.geokuk.plugins.mrizky.JMeritkoSlide.maximalniSirka(1920));
 		assertEquals(150, cz.geokuk.plugins.mrizky.JMeritkoSlide.maximalniSirka(300));
+	}
+
+	@Test
+	public void zkracenaAtribuceSePocitaJednouAJeNemenna() {
+		final String zneni = "© Freemap Slovakia, © přispěvatelé OpenStreetMap, CC BY 4.0";
+		final List<String> prvni = AtribuceMapy.zkrat(zneni);
+		assertSame(prvni, AtribuceMapy.zkrat(zneni));
+		assertEquals(Arrays.asList("© Freemap Slovakia", "© OpenStreetMap"), prvni);
+		try {
+			prvni.add("x");
+			fail("výsledek se nesmí měnit");
+		} catch (final UnsupportedOperationException e) {
+			// čekané
+		}
+		assertTrue(AtribuceMapy.zkrat(null).isEmpty());
 	}
 }
