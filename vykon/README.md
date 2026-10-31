@@ -5,7 +5,7 @@ Porovná dvě verze GeoKuku na stejných syntetických datech:
 ```sh
 vykon/mer.sh                       # origin/main proti HEAD
 vykon/mer.sh v6.1.0 moje-vetev     # libovolné dva commity, větve nebo tagy
-CO=kresleni vykon/mer.sh           # jen část: db, hint, kresleni, program
+CO=kresleni vykon/mer.sh           # jen část: db, hint, kresleni, program, citace ...
 N=20000 POPIS=5000 vykon/mer.sh    # menší databáze
 ```
 
@@ -67,6 +67,19 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   nová o víc než `START_PRAH` procent (výchozí 15) pomalejší. Workflow porovnává
   s poslední ostrou verzí (tag bez `-beta`) a běží u pull requestů měnících
   `src/main/**`.
+
+- `citace` (jen na vyžádání, jen Linux): `MerStart` spustí program ve stejné JVM
+  s pevným scénářem (offline podklad, `CITACE_MAPY` kopií syntetické mapy, po
+  zobrazení okna pozice na zoomu 15) a po `CITACE_S` sekundách (30) vypíše
+  čítače práce: bajty alokované a CPU čas vláken po skupinách (EDT, Offline mapa,
+  předvykreslení přehledu, příprava offline map, ostatní; z `ThreadMXBean`),
+  CPU procesu mimo Java vlákna (JIT, GC), čas JIT a GC, počítadla programu
+  (`ka*`: dotazy do cache, vykreslené dlaždice), počty z `Vykon` a z JFR (vzorky
+  s `ObrysRaster` a `javax.imageio`, počet kompilací, 15 nejčastějších metod).
+  Běh je omezen `taskset -c 0,1`, `-XX:ActiveProcessorCount=4`, halda 1 GB (G1)
+  a odmítnutá síť. `citace.py` z `CITACE_BEHU` (5) běhů spočte průměr,
+  směrodatnou odchylku a variační koeficient každého čítače. Počet výpočtů
+  `ObrysRaster` a dekódovaných PNG program nepočítá, je z něj jen podíl vzorků JFR.
 
 Harness sahá na balíčkově viditelné API a přes reflexi na pole tříd.
 Když se ve verzi změní, uprav `src/`.
