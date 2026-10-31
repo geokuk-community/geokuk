@@ -2,7 +2,6 @@ package cz.geokuk.core.napoveda;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.LongAdder;
@@ -54,12 +53,12 @@ public final class ZobrazeneDlazdice {
 	public static String text() {
 		final long celkem = celkem();
 		final StringBuilder sb = new StringBuilder("\n");
-		sb.append(String.format(Locale.ROOT, "Zobrazených dlaždic od spuštění: %d (odhad kreditů při načítání z API: %d)\n", celkem, celkem));
+		sb.append("Zobrazených dlaždic od spuštění: ").append(celkem).append(" (odhad kreditů při načítání z API: ").append(celkem).append(")\n");
 		sb.append("  Počítá se každé zobrazení hotové dlaždice z libovolného zdroje; dlaždice zobrazená znovu po zoomu nebo posunu se počítá znovu.\n");
 		final List<Zdroj> razene = new ArrayList<>(ZDROJE.values());
 		razene.sort((a, b) -> Long.compare(b.pocet.sum(), a.pocet.sum()));
 		for (final Zdroj z : razene) {
-			sb.append(String.format(Locale.ROOT, "  %s: %d\n", z.popis, z.pocet.sum()));
+			sb.append("  ").append(z.popis).append(": ").append(z.pocet.sum()).append('\n');
 		}
 		return sb.toString();
 	}
