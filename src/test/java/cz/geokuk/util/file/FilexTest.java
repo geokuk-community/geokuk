@@ -46,4 +46,13 @@ public class FilexTest {
 		Assert.assertEquals(Filex.canonize(new File(koren, "data/gpx")), Filex.zNastaveni(new File("../data/gpx"), false, true, new File(koren, "program")).getFile());
 		Assert.assertEquals(new File("/tmp/jinde").getAbsoluteFile(), Filex.zNastaveni(new File("/tmp/jinde").getAbsoluteFile(), false, true, new File(koren, "program")).getFile());
 	}
+
+	@Test
+	public void efektivniSouborSeKanonizujeJednou() {
+		final Filex f = new Filex(new File("/tmp/a/../b"), false, true);
+		final File prvni = f.getEffectiveFile();
+		Assert.assertSame(prvni, f.getEffectiveFile());
+		Assert.assertEquals(Filex.canonize(new File("/tmp/b")), prvni);
+		Assert.assertEquals(f, new Filex(new File("/tmp/a/../b"), false, true));
+	}
 }
