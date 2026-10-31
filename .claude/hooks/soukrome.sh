@@ -74,6 +74,39 @@ synchronizuj() {
   gp push -q
 }
 
+# Prázdná kopie (git init bez commitů) se napojí na výchozí větev vzdáleného repa; soubory v ní zůstanou.
+napoj_prazdnou_kopii() {
+  git -C "$DIR" remote get-url origin >/dev/null 2>&1 || git -C "$DIR" remote add origin "$POZNAMKY_URL"
+  VETEV=$(gp ls-remote --symref origin HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\([^[:space:]]*\)[[:space:]]*HEAD$|\1|p')
+  VETEV=${VETEV:-main}
+  if gp fetch -q origin "$VETEV" && git -C "$DIR" checkout -q -B "$VETEV" "origin/$VETEV" \
+      && git -C "$DIR" branch -q --set-upstream-to="origin/$VETEV" "$VETEV"; then
+    return 0
+  fi
+  echo "soukrome: prázdnou kopii se nepodařilo napojit na větev $VETEV, pracuj s lokální kopií"
+}
+
+# Skilly z poznámek se kopírují do .claude/skills/; skill, který tam už je jinak, se nepřepisuje.
+kopiruj_skilly() {
+  [ -d "$DIR/agent/skills" ] || return 0
+  CIL="$ROOT/.claude/skills"
+  mkdir -p "$CIL" || return 0
+  p=/.claude/skills/
+  grep -qxF "$p" "$ROOT/.git/info/exclude" 2>/dev/null || echo "$p" >> "$ROOT/.git/info/exclude"
+  for cil in "$CIL"/*/; do
+    [ -f "${cil}.soukrome" ] && [ ! -d "$DIR/agent/skills/$(basename "$cil")" ] && rm -rf "$cil"
+  done
+  for zdroj in "$DIR"/agent/skills/*/; do
+    [ -f "${zdroj}SKILL.md" ] || continue
+    nazev=$(basename "$zdroj")
+    if [ -e "$CIL/$nazev" ] && [ ! -f "$CIL/$nazev/.soukrome" ]; then
+      echo "soukrome: skill $nazev už v .claude/skills je, nepřepisuji"
+      continue
+    fi
+    rm -rf "$CIL/$nazev" && cp -R "${zdroj%/}" "$CIL/$nazev" && : > "$CIL/$nazev/.soukrome"
+  done
+}
+
 # Patch ze stdin uloží do poznámek a vypíše, aby neodeslaná práce nezmizela se session.
 zachrana() {
   SOUBOR="$DIR/ZACHRANA-$(date -u +%Y%m%d-%H%M%S)-$1.patch"
@@ -90,7 +123,9 @@ case "${1:-}" in
       grep -qxF "$p" "$EXCLUDE" 2>/dev/null || echo "$p" >> "$EXCLUDE"
     done
     if [ -d "$DIR/.git" ]; then
-      if ! gp pull -q --rebase --autostash; then
+      if ! git -C "$DIR" rev-parse -q --verify HEAD >/dev/null 2>&1; then
+        napoj_prazdnou_kopii
+      elif ! gp pull -q --rebase --autostash; then
         if zrus_rebase; then
           echo "soukrome: pull má konflikty, lokální změny zůstaly nad starší verzí"
         else
@@ -113,6 +148,7 @@ case "${1:-}" in
       git -C "$DIR" config --replace-all credential.helper ""
       git -C "$DIR" config --add credential.helper "$HELPER"
     fi
+    kopiruj_skilly
     [ -f "$DIR/agent/AGENTS.md" ] && cat "$DIR/agent/AGENTS.md"
     ;;
   end)

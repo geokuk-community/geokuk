@@ -2,15 +2,12 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import javax.swing.JComponent;
 
-import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
@@ -22,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JKachle extends JComponent {
 
-	private static final boolean ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE = false;
 	// Staré mapy.cz. Takto to tam bylo:
 	// (2) ad mapy.cz: jejich vnitřní XY souřadnice jsou odvozeninou UTM souřadnic.
 	// čtverec s nejzápadnějčím bodem ČR je na http://m4.mapserver.mapy.cz/turist/13_79D8000_8250000
@@ -60,25 +56,7 @@ public class JKachle extends JComponent {
 	/** Kdy se chybná dlaždice zkusí znovu; odstup se s každou další chybou zdvojnásobí. */
 	private long dalsiPokus;
 	private int chybVRade;
-	private final Set<DiagnosticsData> diagnosticsDatas = Collections.synchronizedSet(new LinkedHashSet<>());
-
-	private String diagnosticesFazeStr;
 	// Point mou = new Point(); // souřadnice roho
-
-	private static int ordinalIndexOf(final String str, final char c, int n) {
-		int pos = str.indexOf(c, 0);
-		while (n-- > 0 && pos != -1) {
-			pos = str.indexOf(c, pos + 1);
-		}
-		return pos;
-	}
-
-	private static String toHex(final int cc) {
-		String s = Integer.toHexString(cc);
-		s = "00000000".substring(0, 8 - s.length()) + s;
-		s = s.substring(0, 4) + " " + s.substring(4);
-		return s;
-	}
 
 	public JKachle(final JKachlovnik jKachlovnik, final Ka ka) {
 		this.jKachlovnik = jKachlovnik;
@@ -250,14 +228,8 @@ public class JKachle extends JComponent {
 			}
 		}, priorita);
 
-		final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
-			JKachle.this.diagnosticesFazeStr = diagnosticesFazeStr;
-			for (DiagnosticsData dd = diagnosticsData; dd != null; dd = dd.getParent()) {
-				diagnosticsDatas.add(dd);
-			}
-		};
 		final String nazevKachlovniku = jKachlovnik == null ? null : jKachlovnik.nazevKachlovniku;
-		kanceler = kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, nazevKachlovniku, diagListener));
+		kanceler = kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, nazevKachlovniku, null));
 	}
 
 	@Override
@@ -316,44 +288,12 @@ public class JKachle extends JComponent {
 		if (ka.getType().isPrekryv()) {
 			return; // překryv nezakrývá podklad rozpracovanou ani chybnou dlaždicí
 		}
-		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+		if (image == null && chyba != null) {
 			if (nahled.isEmpty()) {
 				g.setColor(Color.GRAY);
 				drawPsanicko(g);
 			}
 			vypisChybu(g);
-		} else if (ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
-			g.setColor(Color.blue);
-			drawPsanicko(g);
-			g.setColor(Color.RED);
-			vypisPozici(g);
-
-			int y = 75;
-			if (diagnosticesFazeStr != null) {
-				g.setColor(Color.MAGENTA);
-				g.drawString(diagnosticesFazeStr, 5, y);
-				y += 15;
-			}
-
-			for (final DiagnosticsData ss : diagnosticsDatas.toArray(new DiagnosticsData[0])) {
-				final Object dato = ss.getDato();
-				if (dato instanceof URL) {
-					final String s = dato.toString();
-					final int index = ordinalIndexOf(s, '/', 2) + 1;
-					g.setColor(Color.YELLOW);
-					g.drawString(s.substring(0, index), 5, y);
-					y += 15;
-					g.drawString(s.substring(index), 10, y);
-				} else if (dato instanceof Throwable) {
-					g.setColor(Color.RED);
-					g.drawString(dato.toString(), 5, y);
-				} else {
-					g.setColor(Color.CYAN);
-					g.drawString((ss.getNazev() == null ? "" : ss.getNazev() + " = ") + dato, 5, y);
-				}
-				y += 15;
-			}
-
 		}
 	}
 
@@ -407,27 +347,6 @@ public class JKachle extends JComponent {
 		g.drawLine(x2, y1, x2, y2);
 		g.drawLine(x1, y1, x2, y2);
 		g.drawLine(x1, y2, x2, y1);
-	}
-
-	private void vypisPozici(final Graphics2D g) {
-		final KaLoc p = ka.getLoc();
-		if (p != null) {
-			final Mou mou = p.getMouSZ(); // souřadnice SZ kachle
-			final int xx = mou.xx;
-			final int yy = mou.yy;
-			g.setColor(Color.WHITE);
-			g.drawString("x = " + toHex(xx), 5, 15);
-			g.drawString("y = " + toHex(yy), 5, 30);
-			g.drawString("z = " + p.getMoumer(), 5, 45);
-
-			final Wgs wgs = mou.toWgs();
-			g.drawString("lat = " + wgs.lat, 100, 15);
-			g.drawString("lon = " + wgs.lon, 100, 30);
-
-			g.drawString("[" + p.getSignedX() + "," + p.getSignedY() + "]", 140, 50);
-			g.drawString("[" + p.getFromSzUnsignedX() + "," + p.getFromSzUnsignedY() + "]", 140, 65);
-
-		}
 	}
 
 }

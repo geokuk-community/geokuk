@@ -11,7 +11,7 @@ public class KaOneReq {
 
 	private final Ka ka;
 
-	private ImageReceiver imageReceiver;
+	private final ImageReceiver imageReceiver;
 
 	private final Priority priorita;
 
@@ -19,13 +19,6 @@ public class KaOneReq {
 		this.ka = ka;
 		this.imageReceiver = imageReceiver;
 		this.priorita = priorita;
-	}
-
-	/**
-	 * Zahodíme tento požadavek a už nebudeme dotahovat
-	 */
-	public void uzToZahod() {
-		imageReceiver = null;
 	}
 
 }
