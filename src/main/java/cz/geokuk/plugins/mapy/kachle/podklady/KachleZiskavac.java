@@ -346,7 +346,7 @@ public class KachleZiskavac {
 			return prijemci;
 		}
 
-		public synchronized void kancluj(final ImageReceiver imageReceiver, final DiagnosticsData diagnosticsData2) {
+		public synchronized void kancluj(final ImageReceiver imageReceiver) {
 			pocitCancelCelkem.inc();
 			if (image != null) {
 				pocitCancelPozde.inc();
@@ -1020,7 +1020,7 @@ public class KachleZiskavac {
 		(kachlice.image == null ? pocitMemMinuti : pocitMemZasah).inc();
 		kachlice.ziskej(imageReceiver);
 		return () -> {
-			kachlice.kancluj(imageReceiver, diagnosticsData);
+			kachlice.kancluj(imageReceiver);
 		};
 	}
 }
