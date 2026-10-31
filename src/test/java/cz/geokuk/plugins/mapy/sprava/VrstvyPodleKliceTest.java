@@ -221,6 +221,7 @@ public class VrstvyPodleKliceTest {
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		katalog = katalogBavorska();
 
+		model.poPrvnimPohledu = () -> true;
 		model.initAndFire();
 		model.pockej();
 		assertEquals("při startu okna se katalog nestahuje", 0, dotazyNaKatalog.get());
