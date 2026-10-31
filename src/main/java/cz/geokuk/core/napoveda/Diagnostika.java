@@ -373,6 +373,7 @@ public final class Diagnostika {
 		}
 		vypis(sb, "Poslední události", udalosti, zaznamu);
 		sb.append(Vykon.text());
+		sb.append(ZobrazeneDlazdice.text());
 		vypisPocitadla(sb);
 		vypis(sb, "Konec logu", konecLogu(LOG, radkuLogu), radkuLogu);
 		return sb.toString();

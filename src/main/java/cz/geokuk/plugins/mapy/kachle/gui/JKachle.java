@@ -9,6 +9,7 @@ import java.util.concurrent.CancellationException;
 import javax.swing.JComponent;
 
 import cz.geokuk.core.napoveda.Vykon;
+import cz.geokuk.core.napoveda.ZobrazeneDlazdice;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -50,6 +51,9 @@ public class JKachle extends JComponent {
 	private List<NahledDlazdice> nahled = Collections.emptyList();
 
 	private boolean jeTamUzCelyObrazek;
+	/** Dlaždice pro obrazovku dostala hotový obrázek a zatím se nezapočítala do počtu zobrazených dlaždic. */
+	private boolean cekaNaZapocteni;
+	private boolean zapoctena;
 
 	/** Chyba posledního získání dlaždice, null když chyba není. */
 	private Throwable chyba;
@@ -182,6 +186,12 @@ public class JKachle extends JComponent {
 				chybVRade++;
 			}
 			jeTamUzCelyObrazek = true;
+			if (kastat.getImg() != null && priorita == Priority.KACHLE) {
+				cekaNaZapocteni = true;
+				if (jeVidet()) {
+					zapocitejZobrazeni();
+				}
+			}
 			ziskanPlnyObrazek(image);
 			if (jKachlovnik != null) {
 				jKachlovnik.kachleZpracovana(this);
@@ -205,8 +215,22 @@ public class JKachle extends JComponent {
 		}
 		final int dx = 2 * getX() + getWidth() - rodic.getWidth();
 		final int dy = 2 * getY() + getHeight() - rodic.getHeight();
-		final boolean vidim = getX() < rodic.getWidth() && getX() + getWidth() > 0 && getY() < rodic.getHeight() && getY() + getHeight() > 0;
+		final boolean vidim = jeVidet();
 		return jKachlovnik.trida() * ImageReceiver.TRIDA + (vidim ? 0 : ImageReceiver.MIMO_VYREZ) + ((long) dx * dx + (long) dy * dy) / 4;
+	}
+
+	/** Dlaždice leží aspoň zčásti ve viditelné oblasti svého rodiče. */
+	private boolean jeVidet() {
+		final Container rodic = getParent();
+		return rodic != null && getX() < rodic.getWidth() && getX() + getWidth() > 0 && getY() < rodic.getHeight() && getY() + getHeight() > 0;
+	}
+
+	/** Započítá zobrazení hotové dlaždice jednou za komponentu; volat pod zámkem dlaždice. */
+	private void zapocitejZobrazeni() {
+		if (cekaNaZapocteni && !zapoctena) {
+			zapoctena = true;
+			ZobrazeneDlazdice.zapocti(ka.getType().name(), ka.getType().getNazev());
+		}
 	}
 
 	/**
@@ -241,6 +265,9 @@ public class JKachle extends JComponent {
 	// Synchronizuje se, prtotže se může během zpracování změnit obrázek ,který se vykresluje
 	protected synchronized void paintComponent(final Graphics aG) {
 		super.paintComponent(aG);
+		if (image != null && jeTamUzCelyObrazek && chyba == null) {
+			zapocitejZobrazeni(); // dlaždice, která dorazila mimo viditelnou oblast, se započítá, až se poprvé nakreslí
+		}
 		// if (true) return;
 		final Graphics2D g = (Graphics2D) aG.create();
 		try {
