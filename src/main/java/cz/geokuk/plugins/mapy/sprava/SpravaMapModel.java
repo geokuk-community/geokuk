@@ -455,12 +455,13 @@ public class SpravaMapModel extends Model0 {
 		});
 	}
 
-	/** Stavy z disku nikdo nepotřebuje k prvnímu pohledu na mapu, přečtou se po něm; kdo je potřebuje dřív, volá {@link #obnovStavy()}. */
+	/** Stavy map z disku nikdo nepotřebuje k prvnímu pohledu na mapu, přečtou se po něm; kdo je potřebuje dřív, volá {@link #obnovStavy()}. Stavy vrstev se čtou hned. */
 	private void obnovStavyPoPrvnimPohledu() {
 		if (poPrvnimPohledu.getAsBoolean()) {
 			obnovStavy();
 			return;
 		}
+		obnovStavyVrstevHned();
 		if (!obnovaPoPohleduCeka.compareAndSet(false, true)) {
 			return;
 		}
@@ -505,26 +506,47 @@ public class SpravaMapModel extends Model0 {
 					zmeny.add(new SpravaMapEvent(ted));
 				}
 			}
-			final File sv = slozkaVrstevNaPozadi();
-			nactiStazenyKatalog(sv);
-			for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
-				final StavVrstvy predtim = stavyVrstev.computeIfAbsent(v.getId(), id -> StavVrstvy.novy(v));
-				if (predtim.isBezi()) {
-					continue;
-				}
-				// Stav z dřívějšího katalogu vrstev se přečte znovu podle nové vrstvy.
-				final StavVrstvy ted = StahovacVrstev.mistniStav(predtim.getVrstva() == v ? predtim : StavVrstvy.novy(v), sv);
-				stavyVrstev.put(v.getId(), ted);
-				if (!ted.toString().equals(predtim.toString())) {
-					zmeny.add(new SpravaVrstevEvent(ted));
-				}
-			}
-			if (zmeny.size() == 1) {
-				odpalovac.accept(zmeny.get(0));
-			} else if (!zmeny.isEmpty()) {
-				odpalovac.accept(new StavyMapEvent());
-			}
+			obnovStavyVrstev(zmeny);
+			ohlasZmeny(zmeny);
 		});
+	}
+
+	/** Stavy vrstev potřebuje hned atribuce mapy (uvádí se jen u vrstev, které máme), proto se čtou i před prvním pohledem. */
+	private void obnovStavyVrstevHned() {
+		kontrola.execute(() -> {
+			if (slozka.get() == null) {
+				return;
+			}
+			final List<Event0<SpravaMapModel>> zmeny = new java.util.ArrayList<>();
+			obnovStavyVrstev(zmeny);
+			ohlasZmeny(zmeny);
+		});
+	}
+
+	/** Jen na vlákně kontroly. */
+	private void obnovStavyVrstev(final List<Event0<SpravaMapModel>> zmeny) {
+		final File sv = slozkaVrstevNaPozadi();
+		nactiStazenyKatalog(sv);
+		for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
+			final StavVrstvy predtim = stavyVrstev.computeIfAbsent(v.getId(), id -> StavVrstvy.novy(v));
+			if (predtim.isBezi()) {
+				continue;
+			}
+			// Stav z dřívějšího katalogu vrstev se přečte znovu podle nové vrstvy.
+			final StavVrstvy ted = StahovacVrstev.mistniStav(predtim.getVrstva() == v ? predtim : StavVrstvy.novy(v), sv);
+			stavyVrstev.put(v.getId(), ted);
+			if (!ted.toString().equals(predtim.toString())) {
+				zmeny.add(new SpravaVrstevEvent(ted));
+			}
+		}
+	}
+
+	private void ohlasZmeny(final List<Event0<SpravaMapModel>> zmeny) {
+		if (zmeny.size() == 1) {
+			odpalovac.accept(zmeny.get(0));
+		} else if (!zmeny.isEmpty()) {
+			odpalovac.accept(new StavyMapEvent());
+		}
 	}
 
 	/** Stáhne mapu do složky offline map. False, když se už nějaká mapa stahuje. */
