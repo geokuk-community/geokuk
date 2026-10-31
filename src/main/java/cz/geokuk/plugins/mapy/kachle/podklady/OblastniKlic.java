@@ -55,7 +55,7 @@ final class OblastniKlic {
 		Zdroj(final BoundingBox rozsah, final String otisk, final PolygonPokryti obrys) {
 			this.rozsah = rozsah;
 			this.otisk = (int) crc(otisk);
-			this.obrys = obrys == null ? null : new ObrysRaster(obrys, BUFFER_OBRYSU);
+			this.obrys = obrys == null ? null : ObrysRaster.pro(obrys, BUFFER_OBRYSU);
 		}
 	}
 
