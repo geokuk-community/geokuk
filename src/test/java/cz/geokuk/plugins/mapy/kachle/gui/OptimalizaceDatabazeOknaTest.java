@@ -238,11 +238,12 @@ public class OptimalizaceDatabazeOknaTest {
 		return null;
 	}
 
+	/** Zobrazí okno a ve stejném průchodu vlákna Swingu zastaví skutečný časovač, aby jeho tik nemohl vstoupit mezi ruční tiky testu. */
 	private static java.awt.Window zobrazOkno(final OknoDoporuceniOptimalizace.Volba v) throws Exception {
 		final StavSouboruCache stav = new StavSouboruCache(1900L << 20, 1024, 1_845_313, 856_789);
-		SwingUtilities.invokeAndWait(() -> OknoDoporuceniOptimalizace.zobraz(null, stav, StaraData.ZADNA, Doporuceni.DOPORUCIT, 100L << 30, v));
 		final java.awt.Window[] okna = new java.awt.Window[1];
 		SwingUtilities.invokeAndWait(() -> {
+			OknoDoporuceniOptimalizace.zobraz(null, stav, StaraData.ZADNA, Doporuceni.DOPORUCIT, 100L << 30, v);
 			for (final java.awt.Window w : java.awt.Window.getWindows()) {
 				if (w.isShowing() && w instanceof JDialog) {
 					okna[0] = w;
@@ -250,15 +251,33 @@ public class OptimalizaceDatabazeOknaTest {
 			}
 			// Fokus a myš závisí na okenním systému (na Xvfb bez správce oken se okno může zaměřit samo); odpočet v testu na nich nesmí záviset.
 			((OknoDoporuceniOptimalizace) okna[0]).ctePozastavuje = () -> false;
+			casovac(okna[0]).stop();
 			okna[0].setLocation(-20000, -20000);
 		});
 		return okna[0];
 	}
 
+	private static javax.swing.Timer casovac(final java.awt.Window okno) {
+		try {
+			final java.lang.reflect.Field f = OknoDoporuceniOptimalizace.class.getDeclaredField("casovac");
+			f.setAccessible(true);
+			return (javax.swing.Timer) f.get(okno);
+		} catch (final ReflectiveOperationException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	/** Skutečný časovač po zobrazení v testu stojí, takže odpočet řídí jen ruční tiky. */
+	@Test
+	public void zobrazenyOknoVTestuNemaBeziciCasovac() throws Exception {
+		Assume.assumeFalse(GraphicsEnvironment.isHeadless());
+		final java.awt.Window okno = zobrazOkno(zaznam(new String[1]));
+		Assert.assertFalse(casovac(okno).isRunning());
+		SwingUtilities.invokeAndWait(() -> hledej(okno, "Spustit bez optimalizace").doClick());
+	}
+
 	private static void tikej(final java.awt.Window okno, final int kolikrat) throws Exception {
-		final java.lang.reflect.Field f = OknoDoporuceniOptimalizace.class.getDeclaredField("casovac");
-		f.setAccessible(true);
-		final javax.swing.Timer casovac = (javax.swing.Timer) f.get(okno);
+		final javax.swing.Timer casovac = casovac(okno);
 		final java.awt.event.ActionListener[] posluchaci = casovac.getActionListeners();
 		SwingUtilities.invokeAndWait(() -> {
 			casovac.stop();

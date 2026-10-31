@@ -49,6 +49,7 @@ public class StahovacSyntetickaMapaTest {
 	private Boolean imageIoCache;
 	private EKaType mapa;
 	private KachleModel kachleModel;
+	private KachleManager kachleManager;
 	private JKachleOflinerDialog dialog;
 
 	@Before
@@ -92,7 +93,7 @@ public class StahovacSyntetickaMapaTest {
 				return true;
 			}
 		});
-		ziskavac.setKachleManager(new KachleManager() {
+		kachleManager = new KachleManager() {
 			@Override
 			public boolean exists(final Ka ki) {
 				return false;
@@ -107,7 +108,8 @@ public class StahovacSyntetickaMapaTest {
 			public boolean save(final Collection<ItemToSave> itemsToSave) {
 				return true;
 			}
-		});
+		};
+		ziskavac.setKachleManager(kachleManager);
 		kachleModel = new KachleModel() {
 			@Override
 			protected MyPreferences currPrefe() {
@@ -116,6 +118,8 @@ public class StahovacSyntetickaMapaTest {
 		};
 		kachleModel.inject(ziskavac);
 		ziskavac.inject(kachleModel);
+		// Model si při injektování dosadí vlastní správu cache (bez složky, zápis i čtení padají); bez tohoto by test nezávisel jen na syntetickém serveru.
+		ziskavac.setKachleManager(kachleManager);
 
 		SwingUtilities.invokeAndWait(() -> {
 			dialog = new JKachleOflinerDialog();

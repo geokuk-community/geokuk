@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -351,9 +352,25 @@ public class KachleZiskavac {
 	 *
 	 */
 	class KachleUkladac {
-		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat. */
+		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat, když se mapou nehýbe. */
 		long casPoKteremSeZahajiUkladaniMs = TimeUnit.SECONDS.toMillis(5);
+
+		/** Při pohybu mapou (nové požadavky na dlaždice) se zápis odkládá, nejdéle takto dlouho od první čekající dlaždice. */
+		long nejdelsiOdlozeniUkladaniMs = TimeUnit.SECONDS.toMillis(15);
+
+		/** Mapou se nehýbe, když nepřišel požadavek na dlaždici tuto dobu. */
+		long necinnostMs = 1000;
+
+		/** Čekajících dlaždic je tolik, že se ukládá i při pohybu mapou; offline dlaždice čekají nezkomprimované, proto strop podle velikosti haldy. */
+		int nejviceCekajicich = (int) Math.max(MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU, Math.min(100, Runtime.getRuntime().maxMemory() / (8L << 20)));
+
+		/** Hodiny v ms; test je nahrazuje. */
+		LongSupplier hodiny = System::currentTimeMillis;
+
 		private final BlockingQueue<Ukladanec> queue = Queues.newLinkedBlockingQueue();
+
+		/** Kdy přišla první z čekajících dlaždic. */
+		private long prvniCekajici;
 
 		ScheduledExecutorService planovacUkladani = Executors.newSingleThreadScheduledExecutor();
 
@@ -365,22 +382,39 @@ public class KachleZiskavac {
 		 * @param ukladanec
 		 */
 		synchronized void zaplanujUlozeni(final Ukladanec ukladanec) {
+			if (queue.isEmpty()) {
+				prvniCekajici = hodiny.getAsLong();
+			}
 			queue.add(ukladanec);
-			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
+			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU && !lzeOdlozit()) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
 				submitChunks();
 			} else if (future == null) { // časovač běží od první čekající dlaždice, další ho neodkládají
-				future = planovacUkladani.schedule(() -> {
-					try {
-						casovacVyprsel();
-					} catch (final RuntimeException e) {
-						log.error("Naplánované ukládání dlaždic na disk selhalo", e);
-					}
-				}, casPoKteremSeZahajiUkladaniMs, TimeUnit.MILLISECONDS);
+				naplanuj(casPoKteremSeZahajiUkladaniMs);
 			}
+		}
+
+		private void naplanuj(final long zaMs) {
+			future = planovacUkladani.schedule(() -> {
+				try {
+					casovacVyprsel();
+				} catch (final RuntimeException e) {
+					log.error("Naplánované ukládání dlaždic na disk selhalo", e);
+				}
+			}, zaMs, TimeUnit.MILLISECONDS);
+		}
+
+		/** Při pohybu mapou se zápis (commit pod zámkem cache) odkládá, ale ne déle než do horního limitu a ne při mnoha čekajících dlaždicích. */
+		private boolean lzeOdlozit() {
+			final long ted = hodiny.getAsLong();
+			return ted - posledniPozadavek < necinnostMs && ted - prvniCekajici < nejdelsiOdlozeniUkladaniMs && queue.size() < nejviceCekajicich;
 		}
 
 		private synchronized void casovacVyprsel() {
 			future = null;
+			if (!queue.isEmpty() && lzeOdlozit()) {
+				naplanuj(Math.min(necinnostMs, nejdelsiOdlozeniUkladaniMs));
+				return;
+			}
 			submitChunks();
 		}
 
@@ -478,11 +512,18 @@ public class KachleZiskavac {
 
 	private static final int NTHREADS_WEB_CORE_BATCH = 5;
 
-	private static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
+	static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
 
 	private static final int WEB_QUEUE_SIZE = 100;
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
+
+	/** Dávka (i export mapy) smí jít na server s omezením jen ve 2 spojeních, i když má 10 vláken. */
+	volatile SoubehNaHostitele soubehDavky = new SoubehNaHostitele();
+
+	void setSoubehDavky(final SoubehNaHostitele soubehDavky) {
+		this.soubehDavky = soubehDavky;
+	}
 
 	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
@@ -593,6 +634,15 @@ public class KachleZiskavac {
 	private KachleManager kachleManager;
 
 	final KachleUkladac ukladac = new KachleUkladac();
+
+	/** Pohyb mapou je požadavek na viditelnou dlaždici; předvykreslení okolí a stahování na pozadí zápis neodkládají. */
+	static boolean jePohybMapou(final KaOneReq req) {
+		final ImageReceiver prijemce = req.getImageReceiver();
+		return req.getPriorita() == Priority.KACHLE && prijemce != null && prijemce.dulezitost() < ImageReceiver.NA_POZADI;
+	}
+
+	/** Kdy (ms) přišel poslední požadavek na dlaždici; zápis dlaždic se při pohybu mapou odkládá. */
+	private volatile long posledniPozadavek;
 
 	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
 	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
@@ -893,6 +943,21 @@ public class KachleZiskavac {
 
 	}
 
+	/** Omezení souběhu platí jen pro samotné stahování; semafor se nedrží při čekání na zápis do cache. */
+	private ImageWithData stahni(final URL url, final Ka ka, final boolean davka) throws IOException, InterruptedException {
+		final Semaphore soubeh = davka ? soubehDavky.pro(url.getHost()) : null;
+		if (soubeh != null) {
+			soubeh.acquire();
+		}
+		try {
+			return downloader.downloadImage(url, ka.getType().getHlavicky());
+		} finally {
+			if (soubeh != null) {
+				soubeh.release();
+			}
+		}
+	}
+
 	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
 	private ListenableFutureTask<ImageWithData> pripravDownload(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData,
 			final Kachlice kachlice, final AtomicReference<Future<?>> moje) {
@@ -921,7 +986,7 @@ public class KachleZiskavac {
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
 			ImageWithData imageWithData;
 			try {
-				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+				imageWithData = stahni(url, ka, dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI);
 				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
 				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
@@ -1085,6 +1150,9 @@ public class KachleZiskavac {
 		final ImageReceiver imageReceiver = kaoneReq.getImageReceiver();
 		pocitSubmitJednaDlazdice.inc();
 		final Ka kaone = kaoneReq.getKa();
+		if (jePohybMapou(kaoneReq)) {
+			posledniPozadavek = ukladac.hodiny.getAsLong();
+		}
 		final DiagnosticsData diagnosticsData = aDiagnosticsData.with("kaOne", kaoneReq);
 
 		final Kachlice kachlice = kachlmap.asMap().computeIfAbsent(kaone, k -> new Kachlice(k, dvojiceExekucnichSluzeb, diagnosticsData));

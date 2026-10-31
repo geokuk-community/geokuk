@@ -37,6 +37,7 @@ public class GeokukMain {
 	private static FileLock zamek;
 
 	public static void main(final String[] args) {
+		cz.geokuk.plugins.mapy.kachle.podklady.KachloDownloader.nastavMaxSpojeni();
 		new GeokukMain().execute(args);
 	}
 
