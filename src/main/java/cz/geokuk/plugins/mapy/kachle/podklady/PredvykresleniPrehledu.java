@@ -76,6 +76,8 @@ final class PredvykresleniPrehledu {
 	/** Nic jiného se nekreslí ani nestahuje. */
 	private final BooleanSupplier volno;
 	private final LongSupplier hodiny;
+	/** Až po prvním pohledu na mapu; do té doby se nečinnost počítá od okamžiku, kdy to platí. */
+	private final BooleanSupplier poPrvnimPohledu;
 
 	private volatile long posledniAktivitaNs;
 
@@ -95,9 +97,14 @@ final class PredvykresleniPrehledu {
 	private boolean zOkoli;
 
 	PredvykresleniPrehledu(final Mapy mapy, final BooleanSupplier volno, final LongSupplier hodiny) {
+		this(mapy, volno, hodiny, () -> true);
+	}
+
+	PredvykresleniPrehledu(final Mapy mapy, final BooleanSupplier volno, final LongSupplier hodiny, final BooleanSupplier poPrvnimPohledu) {
 		this.mapy = mapy;
 		this.volno = volno;
 		this.hodiny = hodiny;
+		this.poPrvnimPohledu = poPrvnimPohledu;
 		posledniAktivitaNs = hodiny.getAsLong();
 	}
 
@@ -112,6 +119,10 @@ final class PredvykresleniPrehledu {
 	}
 
 	boolean jeNecinnost() {
+		if (!poPrvnimPohledu.getAsBoolean()) {
+			posledniAktivitaNs = hodiny.getAsLong();
+			return false;
+		}
 		return hodiny.getAsLong() - posledniAktivitaNs >= NECINNOST_NS && volno.getAsBoolean();
 	}
 

@@ -71,7 +71,8 @@ public class PredvykresleniPrehleduTest {
 		}
 	};
 
-	private final PredvykresleniPrehledu p = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
+	private boolean poPohledu = true;
+	private final PredvykresleniPrehledu p = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas, () -> poPohledu);
 
 	@Before
 	public void setUp() {
@@ -353,5 +354,18 @@ public class PredvykresleniPrehleduTest {
 		cas += 10 * SEKUNDA;
 		p.pracuj();
 		Assert.assertEquals(1, dotazyNaHotovo);
+	}
+
+	@Test
+	public void predPrvnimPohledemSeNekresliAnoPoNemDesetSekundNecinnosti() {
+		poPohledu = false;
+		cas += 120 * SEKUNDA;
+		Assert.assertEquals(0, p.pracuj());
+		poPohledu = true;
+		Assert.assertFalse(p.jeNecinnost());
+		cas += 9 * SEKUNDA;
+		Assert.assertEquals(0, p.pracuj());
+		cas += SEKUNDA;
+		Assert.assertEquals(5, p.pracuj());
 	}
 }
