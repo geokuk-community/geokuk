@@ -8,8 +8,8 @@ import org.mapsforge.core.model.BoundingBox;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
 
-/** Původní pomalejší výpočet rastru, proti kterému se porovnává {@link ObrysRaster}. */
-final class ObrysRasterPuvodni {
+/** Přímočarý referenční výpočet rastru obrysu, se kterým se porovnává {@link ObrysRaster}. */
+final class ObrysRasterReference {
 
 	private static final double BUNKA = 0.01;
 	private static final int NEJVIC_BUNEK = 600;
@@ -22,7 +22,7 @@ final class ObrysRasterPuvodni {
 	/** Součtová tabulka označených buněk, (radku + 1) × (sloupcu + 1). */
 	final int[][] soucty;
 
-	ObrysRasterPuvodni(final PolygonPokryti obrys, final double buffer) {
+	ObrysRasterReference(final PolygonPokryti obrys, final double buffer) {
 		final double rozsah = Math.max(obrys.getSever() - obrys.getJih(), obrys.getVychod() - obrys.getZapad());
 		bunka = Math.max(BUNKA, rozsah / NEJVIC_BUNEK);
 		final int okraj = (int) Math.ceil(buffer / bunka) + 2;

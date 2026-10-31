@@ -27,7 +27,7 @@ public class ObrysRasterTest {
 	}
 
 	@Test
-	public void rozsireniJeStejneJakoPuvodniNaNahodnychMrizkach() {
+	public void rozsireniJeStejneJakoReferenceNaNahodnychMrizkach() {
 		final Random rnd = new Random(42);
 		for (int pokus = 0; pokus < 300; pokus++) {
 			final int radku = 1 + rnd.nextInt(40);
@@ -42,14 +42,14 @@ public class ObrysRasterTest {
 			final int n = rnd.nextInt(50);
 			final boolean[][] ocekavane = new boolean[radku][sloupcu];
 			final boolean[][] skutecne = new boolean[radku][sloupcu];
-			ObrysRasterPuvodni.rozsir(zaklad, ocekavane, n, radku, sloupcu);
+			ObrysRasterReference.rozsir(zaklad, ocekavane, n, radku, sloupcu);
 			ObrysRaster.rozsir(zaklad, skutecne, n, radku, sloupcu);
 			Assert.assertTrue("pokus " + pokus + ", n " + n + ", " + radku + "×" + sloupcu, Arrays.deepEquals(ocekavane, skutecne));
 		}
 	}
 
 	@Test
-	public void rastrJeStejnyJakoPuvodniProVsechnyKatalogoveObrysy() throws Exception {
+	public void rastrJeStejnyJakoReferenceProVsechnyKatalogoveObrysy() throws Exception {
 		final List<Path> obrysy = poly();
 		Assert.assertFalse("v programu jsou obrysy map", obrysy.isEmpty());
 		for (final Path p : obrysy) {
@@ -57,7 +57,7 @@ public class ObrysRasterTest {
 			try (Reader r = Files.newBufferedReader(p, StandardCharsets.US_ASCII)) {
 				obrys = PolygonPokryti.nacti(r);
 			}
-			final int[][] ocekavane = new ObrysRasterPuvodni(obrys, OblastniKlic.BUFFER_OBRYSU).soucty;
+			final int[][] ocekavane = new ObrysRasterReference(obrys, OblastniKlic.BUFFER_OBRYSU).soucty;
 			final int[][] skutecne = soucty(new ObrysRaster(obrys, OblastniKlic.BUFFER_OBRYSU));
 			Assert.assertTrue(p.getFileName().toString(), Arrays.deepEquals(ocekavane, skutecne));
 		}
