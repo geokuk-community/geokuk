@@ -224,4 +224,21 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertNull(stav.getThr());
 		Assert.assertNotNull(stav.getImg());
 	}
+
+	/** Předvykreslení přehledové dlaždice se počítá zvlášť, ať neposouvá p95 a max vykreslení dlaždic na obrazovce. */
+	@Test(timeout = 30000)
+	public void predvykresleniPrehleduSePocitaZvlast() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		cz.geokuk.core.napoveda.Vykon.vynuluj();
+		final OfflineRenderer r = ziskavac.getOfflineMapy().pouzij();
+		final String klic;
+		try {
+			klic = r.getKlic() + '.' + r.getOblastniKlic().getSestava();
+		} finally {
+			r.skonci();
+		}
+		Assert.assertTrue(ziskavac.mapyProPredvykresleniPrehledu().vykresli(OfflineMapyTest.STRED_Z15, klic));
+		Assert.assertEquals("nezapisuje se mezi dlaždice na obrazovce", 0, cz.geokuk.core.napoveda.Vykon.souhrn(cz.geokuk.core.napoveda.Vykon.Velicina.VYKRESLENI_OFFLINE).pocet);
+		Assert.assertEquals(1, cz.geokuk.core.napoveda.Vykon.souhrn(cz.geokuk.core.napoveda.Vykon.Velicina.VYKRESLENI_PREHLEDU).pocet);
+	}
 }
