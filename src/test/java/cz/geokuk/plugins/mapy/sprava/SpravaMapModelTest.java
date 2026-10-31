@@ -221,4 +221,59 @@ public class SpravaMapModelTest {
 		model.pockej();
 		assertTrue(cteniSlozky.get() > pred);
 	}
+
+	private SpravaMapModel modelSMapouVeSlozce(final File slozka) throws Exception {
+		Files.write(new File(slozka, "kukov.map").toPath(), data);
+		final SpravaMapModel model = new SpravaMapModel(StahovacMapyTest.katalog(server));
+		model.nastavProTestMap(() -> slozka, e -> {});
+		model.kontrolaPoPrvnimPohleduMs = 10;
+		return model;
+	}
+
+	@Test
+	public void stavyZeStartuSePrectouAzPoPrvnimPohledu() throws Exception {
+		final File slozka = tmp.newFolder("mapy");
+		final SpravaMapModel model = modelSMapouVeSlozce(slozka);
+		final KatalogovaMapa mapa = model.getKatalog().getMapy().get(0);
+		final boolean[] pohled = { false };
+		model.poPrvnimPohledu = () -> pohled[0];
+
+		model.initAndFire();
+		model.pockej();
+		Thread.sleep(100);
+		model.pockej();
+		assertEquals("před prvním pohledem se disk nečte", Mistni.NEMAME, model.getStav(mapa).getMistni());
+
+		pohled[0] = true;
+		for (int i = 0; i < 200 && model.getStav(mapa).getMistni() != Mistni.MAME; i++) {
+			Thread.sleep(25);
+			model.pockej();
+		}
+		assertEquals("po prvním pohledu se stavy přečtou", Mistni.MAME, model.getStav(mapa).getMistni());
+	}
+
+	@Test
+	public void obnovaNaVyzadaniSePrectePredPrvnimPohledem() throws Exception {
+		final File slozka = tmp.newFolder("mapy");
+		final SpravaMapModel model = modelSMapouVeSlozce(slozka);
+		final KatalogovaMapa mapa = model.getKatalog().getMapy().get(0);
+		model.poPrvnimPohledu = () -> false;
+
+		model.initAndFire();
+		model.obnovStavy();
+		model.pockej();
+		assertEquals(Mistni.MAME, model.getStav(mapa).getMistni());
+	}
+
+	@Test
+	public void poPrvnimPohleduSeStavyPrectouHned() throws Exception {
+		final File slozka = tmp.newFolder("mapy");
+		final SpravaMapModel model = modelSMapouVeSlozce(slozka);
+		final KatalogovaMapa mapa = model.getKatalog().getMapy().get(0);
+		model.poPrvnimPohledu = () -> true;
+
+		model.initAndFire();
+		model.pockej();
+		assertEquals(Mistni.MAME, model.getStav(mapa).getMistni());
+	}
 }
