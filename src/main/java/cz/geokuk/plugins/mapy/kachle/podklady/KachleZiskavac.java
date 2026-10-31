@@ -828,6 +828,40 @@ public class KachleZiskavac {
 		}
 
 		@Override
+		public List<KaLoc> zapamatovanyVzorek(final String klic) {
+			final File slozka = slozkaKlicu();
+			return slozka == null ? null : HotovePredvykresleni.vzorek(slozka, klic);
+		}
+
+		@Override
+		public void zapamatujHotovo(final String klic, final List<KaLoc> vzorek) {
+			final File slozka = slozkaKlicu();
+			if (slozka == null || vzorek.isEmpty()) {
+				return;
+			}
+			try {
+				HotovePredvykresleni.zapis(slozka, klic, vzorek);
+			} catch (final IOException | RuntimeException e) {
+				log.debug("Předvykreslení přehledu nejde zapamatovat: {}", e.toString());
+			}
+		}
+
+		/** Složka se souborem klíčů cache offline mapy; null, když se symboly a klíče neukládají. */
+		private File slozkaKlicu() {
+			try {
+				final OfflineRenderer r = offlineMapy.pouzij();
+				try {
+					final File symboly = r.getSouborSymbolu();
+					return symboly == null ? null : symboly.getParentFile();
+				} finally {
+					r.skonci();
+				}
+			} catch (final IOException | RuntimeException e) {
+				return null;
+			}
+		}
+
+		@Override
 		public boolean jeVCache(final KaLoc loc, final String klic) {
 			final KachleManager km = kachleManager;
 			if (km == null) {
@@ -841,6 +875,28 @@ public class KachleZiskavac {
 			}
 			try {
 				return km.exists(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc));
+			} finally {
+				r.skonci();
+			}
+		}
+
+		@Override
+		public boolean vykresliChybejici(final KaLoc loc, final String klic) throws IOException {
+			final KachleManager km = kachleManager;
+			if (km == null) {
+				return false;
+			}
+			final OfflineRenderer r = offlineMapy.pouzij();
+			try {
+				if (!klic.equals(r.getKlic() + '.' + r.getOblastniKlic().getSestava()) || !r.pokryva(loc) || km.exists(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc))) {
+					return false;
+				}
+				final long zacatek = System.nanoTime();
+				final BufferedImage obrazek = r.vyrendruj(loc);
+				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
+				pocitRenderOk.inc();
+				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc), obrazek, null));
+				return true;
 			} finally {
 				r.skonci();
 			}
