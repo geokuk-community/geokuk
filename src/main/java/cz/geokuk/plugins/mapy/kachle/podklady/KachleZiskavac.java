@@ -24,7 +24,9 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.*;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -664,7 +666,8 @@ public class KachleZiskavac {
 
 	private KachleModel kachleModel;
 
-	private final PredvykresleniPrehledu predvykresleniPrehledu = new PredvykresleniPrehledu(new PrehledOfflineMap(), this::jeVolnoProPredvykresleni, System::nanoTime);
+	private final PredvykresleniPrehledu predvykresleniPrehledu = new PredvykresleniPrehledu(new PrehledOfflineMap(), this::jeVolnoProPredvykresleni, System::nanoTime,
+			KachleZiskavac::jePoPrvnimPohledu);
 
 	/** Úklid cache offline mapy běží v jednom vlákně na pozadí, dlaždice na obrazovce nezdržuje. */
 	private final ExecutorService uklidOfflineCache = Executors.newSingleThreadExecutor(vlaknaRenderu("Úklid cache offline mapy"));
@@ -795,6 +798,11 @@ public class KachleZiskavac {
 	/** Místo, kolem kterého se v nečinnosti předvykreslí z10–12. */
 	public void setPoziceProPredvykresleni(final Wgs pozice) {
 		predvykresleniPrehledu.setPozice(pozice);
+	}
+
+	/** První načítání mapy skončilo a od spuštění programu uplynula doba, po kterou se hlídá start. */
+	static boolean jePoPrvnimPohledu() {
+		return PrvniNacitaniMapy.jeUkonceno() && Diagnostika.dobaBehuMs() >= PrvniNacitaniMapy.LIMIT_MS;
 	}
 
 	/** Mapy se nestahují, nic jiného se nekreslí ani nečte z cache a dlaždice se ukládají na disk. */
