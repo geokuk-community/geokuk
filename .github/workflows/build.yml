@@ -117,12 +117,12 @@ jobs:
             licence
             src/main/resources
 
-      # Přibalená Java: vždy poslední vydaná Temurin 21, ne starší z cache runneru.
-      - name: JDK 21 (Temurin)
+      # POKUS (větev experiment/jdk-aot): přibalená Java je Temurin 25, ať jde vytvořit AOT cache. Program se dál překládá na JDK 21 s release 8.
+      - name: JDK 25 (Temurin)
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
           check-latest: true
 
       - uses: actions/download-artifact@v8
@@ -148,7 +148,7 @@ jobs:
           $java = (Select-String -Path GeoKuk/program/runtime/release -Pattern '^JAVA_VERSION="(.+)"').Matches[0].Groups[1].Value
           $doporucena = (Select-String -Path src/main/resources/java.properties -Pattern '^doporucena=(.+)$').Matches[0].Groups[1].Value.Trim()
           "Přibalená Java $java, doporučená $doporucena" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          if (-not $java.StartsWith("21.")) { throw "Přibalená Java $java není 21" }
+          if (-not $java.StartsWith("25.")) { throw "Přibalená Java $java není 25" }
           if ([version]$java -lt [version]$doporucena) { throw "Přibalená Java $java je starší než doporučená $doporucena" }
           Compress-Archive GeoKuk -DestinationPath GeoKuk-windows.zip
 

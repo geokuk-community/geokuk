@@ -78,6 +78,19 @@ public class CdsTest {
 	}
 
 	@Test
+	public void odJavy25SeVytvariAotCache() {
+		final List<String> p = prepinace("25", a -> true);
+		assertEquals(Cds.KONTROLA, p.get(0));
+		assertTrue(p.get(1), p.get(1).startsWith("-XX:AOTCacheOutput=" + slozka.getPath()));
+	}
+
+	@Test
+	public void hotovouAotCacheJavy25SePouzije() throws IOException {
+		hotovyArchiv(38 * MB);
+		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:AOTCache=" + hotovy().getPath()), prepinace("25", a -> true));
+	}
+
+	@Test
 	public void priPlnemDiskuSeArchivNevytvari() {
 		assertEquals(Collections.emptyList(), Cds.prepinace("21", javaHome, "21.0.5+11", data, jar, zamek, a -> true, TED, () -> Cds.MIN_VOLNE_MISTO_B - 1));
 		assertEquals(2, Cds.prepinace("21", javaHome, "21.0.5+11", data, jar, zamek, a -> true, TED, () -> Cds.MIN_VOLNE_MISTO_B).size());

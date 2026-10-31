@@ -37,6 +37,8 @@ final class Cds {
 	/** Kontrolní součet archivu; bez něj Java archiv s nulami na konci (po výpadku proudu) použije a spadne. */
 	static final String KONTROLA = "-XX:+VerifySharedSpaces";
 	static final int PRVNI_VERZE_JAVY = 19;
+	/** Od Javy 25 se místo dynamického archivu tříd vytváří AOT cache (načtené a nalinkované třídy, profil metod). */
+	static final int PRVNI_VERZE_AOT = 25;
 
 	/** Zkouška, že Java archiv přijme. */
 	interface Overeni {
@@ -63,16 +65,17 @@ final class Cds {
 			if (!Start.lzeZapsat(slozka)) {
 				return prikaz;
 			}
+			final boolean aot = hlavniVerze(verzeJavy) >= PRVNI_VERZE_AOT;
 			final String id = id(jmenoJavy, javaHome, jar);
 			final File hotovy = new File(slozka, PREDPONA_HOTOVEHO + id + PRIPONA);
 			uklid(slozka, hotovy, id, overeni, ted);
 			if (hotovy.isFile()) {
 				prikaz.add(KONTROLA);
-				prikaz.add("-XX:SharedArchiveFile=" + hotovy.getPath());
+				prikaz.add((aot ? "-XX:AOTCache=" : "-XX:SharedArchiveFile=") + hotovy.getPath());
 			} else if (maZakladniArchiv(javaHome) && volneMisto.getAsLong() >= MIN_VOLNE_MISTO_B && !Start.jeZamceno(zamekInstance) && !jeCerstvyRozepsany(slozka, id, ted)) {
 				prikaz.add(KONTROLA);
 				// Archiv vznikne jen v prvním běhu; druhá instance, která hned skončí, dostane vlastní soubor a zůstane nepovýšená.
-				prikaz.add("-XX:ArchiveClassesAtExit=" + new File(slozka, PREDPONA_NOVEHO + id + "-" + UUID.randomUUID() + PRIPONA).getPath());
+				prikaz.add((aot ? "-XX:AOTCacheOutput=" : "-XX:ArchiveClassesAtExit=") + new File(slozka, PREDPONA_NOVEHO + id + "-" + UUID.randomUUID() + PRIPONA).getPath());
 			}
 		} catch (final RuntimeException e) {
 			prikaz.clear();
@@ -94,11 +97,16 @@ final class Cds {
 	}
 
 	static boolean jeJavaDostatecneNova(final String verzeJavy) {
+		return hlavniVerze(verzeJavy) >= PRVNI_VERZE_JAVY;
+	}
+
+	/** Hlavní verze Javy (8, 21, 25), u nečitelného řetězce 0. */
+	static int hlavniVerze(final String verzeJavy) {
 		try {
 			final String[] casti = verzeJavy.split("\\.");
-			return Integer.parseInt("1".equals(casti[0]) && casti.length > 1 ? casti[1] : casti[0]) >= PRVNI_VERZE_JAVY;
+			return Integer.parseInt("1".equals(casti[0]) && casti.length > 1 ? casti[1] : casti[0]);
 		} catch (final RuntimeException e) {
-			return false;
+			return 0;
 		}
 	}
 
