@@ -29,6 +29,8 @@ final class PredvykresleniPrehledu {
 	static final int Z_OKOLI_MIN = 10;
 	static final int Z_OKOLI_MAX = 12;
 	static final double OKRUH_KM = 15;
+	/** Kolik dlaždic přehledu se zapamatuje na ověření, že předvykreslení je dál v cache. */
+	static final int VZOREK = 8;
 	/** Nejvíc nově vykreslených dlaždic okolí na jeden klíč map, aby cache rychle nerostla. */
 	static final int STROP_OKOLI = 300;
 	private static final double KM_NA_STUPEN = 111.2;
@@ -53,6 +55,19 @@ final class PredvykresleniPrehledu {
 		/** Dlaždice už je v cache pod tímto klíčem. */
 		boolean jeVCache(KaLoc loc, String klic);
 
+		/** Dlaždice přehledu, které se při dokončení předvykreslení pod tímto klíčem zapamatovaly (třeba před restartem); null, když nic zapamatováno není. */
+		default List<KaLoc> zapamatovanyVzorek(final String klic) {
+			return null;
+		}
+
+		/** Zapamatuje, že přehledové zoomy pod tímto klíčem jsou předvykresleny, a vzorek jejich dlaždic, podle kterého se to po restartu ověří v cache. */
+		default void zapamatujHotovo(final String klic, final List<KaLoc> vzorek) {}
+
+		/** Vykreslí dlaždici, která v cache chybí; false, když už v cache je, nebo se mezitím změnil klíč či dlaždice není v mapách. */
+		default boolean vykresliChybejici(final KaLoc loc, final String klic) throws IOException {
+			return !jeVCache(loc, klic) && vykresli(loc, klic);
+		}
+
 		/** Vykreslí dlaždici a zařadí ji k uložení; nic nedělá a vrátí false, když se mezitím změnil klíč nebo dlaždice není v mapách. */
 		boolean vykresli(KaLoc loc, String klic) throws IOException;
 	}
@@ -67,6 +82,9 @@ final class PredvykresleniPrehledu {
 	private String klicFronty;
 	private final Deque<KaLoc> fronta = new ArrayDeque<>();
 	private String hotovyKlic;
+	/** Klíč, u kterého se už zjišťovalo, jestli je hotový z dřívějška. */
+	private String zjistenyKlic;
+	private List<KaLoc> dlazdicePrehledu = new ArrayList<>();
 
 	/** Střed zobrazeného výřezu; null, dokud není známý. */
 	private volatile Wgs pozice;
@@ -114,7 +132,7 @@ final class PredvykresleniPrehledu {
 				if (loc == null) {
 					return vykresleno;
 				}
-				if (!mapy.jeVCache(loc, klic) && mapy.vykresli(loc, klic)) {
+				if (mapy.vykresliChybejici(loc, klic)) {
 					vykresleno++;
 					if (zOkoli) {
 						vykreslenoOkoli++;
@@ -130,10 +148,18 @@ final class PredvykresleniPrehledu {
 
 	private KaLoc dalsi(final String klic) throws IOException {
 		zOkoli = false;
+		if (!klic.equals(hotovyKlic) && !klic.equals(zjistenyKlic)) {
+			zjistenyKlic = klic;
+			if (jeHotovoVCache(klic)) {
+				hotovyKlic = klic;
+				log.debug("Přehledové zoomy offline map jsou předvykresleny z dřívějška ({})", klic);
+			}
+		}
 		if (!klic.equals(hotovyKlic)) {
 			if (!klic.equals(klicFronty)) {
 				fronta.clear();
-				fronta.addAll(mapy.dlazdice(Z_MIN, Z_MAX));
+				dlazdicePrehledu = mapy.dlazdice(Z_MIN, Z_MAX);
+				fronta.addAll(dlazdicePrehledu);
 				klicFronty = klic;
 			}
 			final KaLoc loc = fronta.poll();
@@ -141,6 +167,7 @@ final class PredvykresleniPrehledu {
 				return loc;
 			}
 			hotovyKlic = klic;
+			mapy.zapamatujHotovo(klic, vzorek(dlazdicePrehledu));
 			log.info("Přehledové zoomy offline map předvykresleny ({})", klic);
 		}
 		if (!klic.equals(klicOkoli)) {
@@ -159,6 +186,30 @@ final class PredvykresleniPrehledu {
 		}
 		zOkoli = true;
 		return frontaOkoli.poll();
+	}
+
+	/** Zapamatované dokončení platí, jen když jsou v cache všechny zapamatované dlaždice; prázdný, chybějící či nečitelný záznam neplatí. */
+	private boolean jeHotovoVCache(final String klic) {
+		final List<KaLoc> vzorek = mapy.zapamatovanyVzorek(klic);
+		if (vzorek == null || vzorek.isEmpty()) {
+			return false;
+		}
+		for (final KaLoc loc : vzorek) {
+			if (!mapy.jeVCache(loc, klic)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Několik dlaždic rovnoměrně rozložených v přehledu. */
+	static List<KaLoc> vzorek(final List<KaLoc> dlazdice) {
+		final List<KaLoc> vzorek = new ArrayList<>();
+		final int n = Math.min(VZOREK, dlazdice.size());
+		for (int i = 0; i < n; i++) {
+			vzorek.add(dlazdice.get((int) ((long) i * dlazdice.size() / n)));
+		}
+		return vzorek;
 	}
 
 	/** Dlaždice z12 až z10 ve čtverci kolem místa, v každém zoomu od středu. */
