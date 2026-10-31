@@ -53,6 +53,19 @@ final class PredvykresleniPrehledu {
 		/** Dlaždice už je v cache pod tímto klíčem. */
 		boolean jeVCache(KaLoc loc, String klic);
 
+		/** Přehledové zoomy pod tímto klíčem byly předvykresleny už dřív (třeba před restartem). */
+		default boolean jeHotovo(final String klic) {
+			return false;
+		}
+
+		/** Zapamatuje si, že přehledové zoomy pod tímto klíčem jsou předvykresleny. */
+		default void zapisHotovo(final String klic) {}
+
+		/** Vykreslí dlaždici, která v cache chybí; false, když už v cache je, nebo se mezitím změnil klíč či dlaždice není v mapách. */
+		default boolean vykresliChybejici(final KaLoc loc, final String klic) throws IOException {
+			return !jeVCache(loc, klic) && vykresli(loc, klic);
+		}
+
 		/** Vykreslí dlaždici a zařadí ji k uložení; nic nedělá a vrátí false, když se mezitím změnil klíč nebo dlaždice není v mapách. */
 		boolean vykresli(KaLoc loc, String klic) throws IOException;
 	}
@@ -67,6 +80,8 @@ final class PredvykresleniPrehledu {
 	private String klicFronty;
 	private final Deque<KaLoc> fronta = new ArrayDeque<>();
 	private String hotovyKlic;
+	/** Klíč, u kterého se už zjišťovalo, jestli je hotový z dřívějška. */
+	private String zjistenyKlic;
 
 	/** Střed zobrazeného výřezu; null, dokud není známý. */
 	private volatile Wgs pozice;
@@ -114,7 +129,7 @@ final class PredvykresleniPrehledu {
 				if (loc == null) {
 					return vykresleno;
 				}
-				if (!mapy.jeVCache(loc, klic) && mapy.vykresli(loc, klic)) {
+				if (mapy.vykresliChybejici(loc, klic)) {
 					vykresleno++;
 					if (zOkoli) {
 						vykreslenoOkoli++;
@@ -130,6 +145,11 @@ final class PredvykresleniPrehledu {
 
 	private KaLoc dalsi(final String klic) throws IOException {
 		zOkoli = false;
+		if (!klic.equals(hotovyKlic) && !klic.equals(zjistenyKlic) && mapy.jeHotovo(klic)) {
+			hotovyKlic = klic;
+			log.debug("Přehledové zoomy offline map jsou předvykresleny z dřívějška ({})", klic);
+		}
+		zjistenyKlic = klic;
 		if (!klic.equals(hotovyKlic)) {
 			if (!klic.equals(klicFronty)) {
 				fronta.clear();
@@ -141,6 +161,7 @@ final class PredvykresleniPrehledu {
 				return loc;
 			}
 			hotovyKlic = klic;
+			mapy.zapisHotovo(klic);
 			log.info("Přehledové zoomy offline map předvykresleny ({})", klic);
 		}
 		if (!klic.equals(klicOkoli)) {

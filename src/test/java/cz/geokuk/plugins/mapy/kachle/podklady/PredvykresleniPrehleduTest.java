@@ -28,6 +28,8 @@ public class PredvykresleniPrehleduTest {
 	private int sestaveniFronty;
 	private Runnable priVykresleni = () -> {};
 	private boolean vMapach = true;
+	private final Set<String> hotove = new HashSet<>();
+	private int dotazyNaHotovo;
 
 	private final PredvykresleniPrehledu.Mapy mapy = new PredvykresleniPrehledu.Mapy() {
 		@Override
@@ -44,6 +46,17 @@ public class PredvykresleniPrehleduTest {
 		@Override
 		public boolean jeVCache(final KaLoc loc, final String k) {
 			return cache.contains(loc);
+		}
+
+		@Override
+		public boolean jeHotovo(final String k) {
+			dotazyNaHotovo++;
+			return hotove.contains(k);
+		}
+
+		@Override
+		public void zapisHotovo(final String k) {
+			hotove.add(k);
 		}
 
 		@Override
@@ -256,5 +269,40 @@ public class PredvykresleniPrehleduTest {
 		vMapach = true;
 		p.setPozice(new Wgs(50.08, 14.42));
 		Assert.assertEquals(PredvykresleniPrehledu.okoli(new Wgs(50.08, 14.42), PredvykresleniPrehledu.OKRUH_KM).size(), p.pracuj());
+	}
+
+	@Test
+	public void dokonceniSeZapamatujeAPoRestartuSePrehledNeprochazi() {
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals(5, p.pracuj());
+		Assert.assertTrue(hotove.contains(klic));
+
+		final PredvykresleniPrehledu poRestartu = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
+		cache.clear();
+		vykreslene.clear();
+		sestaveniFronty = 0;
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals(0, poRestartu.pracuj());
+		Assert.assertEquals(0, sestaveniFronty);
+		Assert.assertTrue(vykreslene.isEmpty());
+	}
+
+	@Test
+	public void poZmeneSestavyseHotoveZoomyProchazejiZnovu() {
+		cas += 10 * SEKUNDA;
+		p.pracuj();
+		final PredvykresleniPrehledu poRestartu = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
+		klic = "o00000002";
+		cache.clear();
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals(5, poRestartu.pracuj());
+		Assert.assertTrue(hotove.contains("o00000002"));
+	}
+
+	@Test
+	public void hotovostSeZjistujeJednouNaKlic() {
+		cas += 10 * SEKUNDA;
+		p.pracuj();
+		Assert.assertEquals(1, dotazyNaHotovo);
 	}
 }

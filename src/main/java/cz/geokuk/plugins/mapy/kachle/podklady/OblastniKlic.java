@@ -91,7 +91,7 @@ final class OblastniKlic {
 		for (final Zdroj z : this.zdroje) {
 			pridej(crc, z.otisk);
 		}
-		sestava = String.format("%08x", crc.getValue());
+		sestava = hex(crc.getValue());
 	}
 
 	/** Klíč pro mapy bez souborů: oblastní část je prázdná. */
@@ -124,7 +124,7 @@ final class OblastniKlic {
 				pridej(crc, z.otisk);
 			}
 		}
-		return globalni + '.' + String.format("%08x", crc.getValue());
+		return globalni + '.' + hex(crc.getValue());
 	}
 
 	/** Dlaždice zasahuje mimo sjednocený rozsah souborů: tam mapsforge kreslí šedou plochu, která se po změně sjednocení mění. */
@@ -253,6 +253,12 @@ final class OblastniKlic {
 	/** Zdroj pro soubor DEM, jehož obsah nejde rozpoznat: platí pro celý svět. */
 	static Zdroj celySvet(final String druh, final File f) {
 		return soubor(druh, f, SVET, 0);
+	}
+
+	/** Osm malých hexadecimálních číslic; rychlejší než {@code String.format}, volá se pro každou dlaždici. */
+	static String hex(final long hodnota) {
+		final String h = Integer.toHexString((int) hodnota);
+		return "00000000".substring(h.length()) + h;
 	}
 
 	private static void pridej(final CRC32 crc, final int hodnota) {
