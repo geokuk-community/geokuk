@@ -49,6 +49,28 @@ public class NapovedaModelTest {
 	}
 
 	@Test
+	public void kontrolaPoStartuSeZadaAzPoProdlevePakJednou() throws Exception {
+		Diagnostika.setBetaKanal(true);
+		vseobecne().putLong(FPref.NEXT_UPDATE_CHECK_TIMESTAMP_value, 0L);
+		vseobecne().remove("odlozenaVerze");
+		model.zpozdeniKontrolyPoStartuMs(300L);
+		model.zkontrolujNoveAktualizacePoStartu();
+		Assert.assertEquals("hned po startu se nic nezadává", 0, spustene.size());
+		final long konec = System.currentTimeMillis() + 5000L;
+		while (spustene.isEmpty() && System.currentTimeMillis() < konec) {
+			Thread.sleep(20L);
+		}
+		Assert.assertEquals(1, spustene.size());
+		Thread.sleep(400L);
+		Assert.assertEquals("kontrola po startu proběhne jednou", 1, spustene.size());
+	}
+
+	@Test
+	public void kontrolaPoStartuMaRozumnouProdlevu() {
+		Assert.assertTrue(NapovedaModel.ZPOZDENI_KONTROLY_PO_STARTU_MS >= 30_000L && NapovedaModel.ZPOZDENI_KONTROLY_PO_STARTU_MS <= 60_000L);
+	}
+
+	@Test
 	public void rucniKontrolaBehemBeziciNeotevreDruhyDialog() {
 		Diagnostika.setBetaKanal(true);
 		model.zkontrolujNoveAktualizace(true);
