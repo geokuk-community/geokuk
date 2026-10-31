@@ -3,39 +3,68 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 import java.awt.Rectangle;
 
 /**
- * Kdy a kde se ukáže nenápadný proužek načítání: až když se na dlaždice čeká déle než {@link #PRODLEVA_MS}, a zmizí hned po načtení poslední.
+ * Kdy a kde se ukáže nenápadné kolečko načítání: až když se na dlaždice čeká déle než {@link #PRODLEVA_MS}; objeví se a po načtení poslední dlaždice zmizí
+ * plynule.
  */
 final class IndikatorNacitani {
 
 	static final long PRODLEVA_MS = 300;
-	static final long PERIODA_MS = 1400;
-	static final int VYSKA = 3;
-	/** Podíl šířky mapy, který zabírá pohyblivý proužek. */
-	private static final double PODIL_PROUZKU = 0.25;
+	/** Doba jednoho otočení. */
+	static final long PERIODA_MS = 1000;
+	static final long OBJEVENI_MS = 150;
+	static final long ZMIZENI_MS = 250;
+	/** Průměr kolečka a jeho odstup od pravého a horního okraje mapy v bodech. */
+	static final int PRUMER = 22;
+	static final int ODSTUP = 10;
+	/** Úhel viditelného oblouku. */
+	static final int OBLOUK_STUPNU = 270;
 
 	private long cekaOdMs = -1;
+	private long posledniMs = -1;
+	private double pruhlednost;
 
-	/** Zpracuje stav v daném čase; vrací, zda se má proužek kreslit. */
+	/** Zpracuje stav v daném čase; vrací, zda se má kolečko kreslit (i když už mizí). */
 	boolean aktualizuj(final long nyniMs, final int cekajicich) {
+		final boolean ukaz;
 		if (cekajicich <= 0) {
 			cekaOdMs = -1;
-			return false;
+			ukaz = false;
+		} else {
+			if (cekaOdMs < 0) {
+				cekaOdMs = nyniMs;
+			}
+			ukaz = nyniMs - cekaOdMs >= PRODLEVA_MS;
 		}
-		if (cekaOdMs < 0) {
-			cekaOdMs = nyniMs;
+		final long uplynulo = posledniMs < 0 ? 0 : Math.max(0, nyniMs - posledniMs);
+		posledniMs = nyniMs;
+		if (ukaz) {
+			pruhlednost = Math.min(1, pruhlednost + (double) uplynulo / OBJEVENI_MS);
+		} else {
+			pruhlednost = Math.max(0, pruhlednost - (double) uplynulo / ZMIZENI_MS);
 		}
-		return nyniMs - cekaOdMs >= PRODLEVA_MS;
+		if (!beziAnimace()) {
+			posledniMs = -1;
+		}
+		return pruhlednost > 0;
 	}
 
-	boolean cekaSe() {
-		return cekaOdMs >= 0;
+	/** Na dlaždice se čeká, nebo kolečko ještě mizí; jinak není co animovat a časovač má stát. */
+	boolean beziAnimace() {
+		return cekaOdMs >= 0 || pruhlednost > 0;
 	}
 
-	/** Proužek při plynulém posunu zleva doprava, který zajíždí za okraje; výška jen {@link #VYSKA} bodů. */
-	static Rectangle prouzek(final long nyniMs, final int sirka) {
-		final int w = Math.max(1, (int) (sirka * PODIL_PROUZKU));
-		final double faze = (nyniMs % PERIODA_MS) / (double) PERIODA_MS;
-		final int x = (int) (-w + faze * (sirka + w));
-		return new Rectangle(Math.max(0, x), 0, Math.max(0, Math.min(x + w, sirka) - Math.max(0, x)), VYSKA);
+	/** Průhlednost kolečka od 0 (nevidět) do 1 (plně). */
+	double getPruhlednost() {
+		return pruhlednost;
+	}
+
+	/** Úhel začátku oblouku ve stupních, plynule se otáčí po směru hodinových ručiček. */
+	static double uhel(final long nyniMs) {
+		return (nyniMs % PERIODA_MS) * 360.0 / PERIODA_MS;
+	}
+
+	/** Čtverec kolečka vpravo nahoře v mapě širší než {@code sirka}. */
+	static Rectangle ramecek(final int sirka) {
+		return new Rectangle(sirka - ODSTUP - PRUMER, ODSTUP, PRUMER, PRUMER);
 	}
 }
