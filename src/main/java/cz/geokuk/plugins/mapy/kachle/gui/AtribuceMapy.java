@@ -6,7 +6,10 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Atribuce v mapě: jeden zkrácený řádek vpravo dole s ikonou ⓘ, plné znění se ukáže po kliku na ikonu. Bez závislosti na modelech. */
 final class AtribuceMapy {
@@ -35,8 +38,26 @@ final class AtribuceMapy {
 	 * Zkrácená podoba atribuce zdroje: ze znění „© A, © B, licence“ jednotlivá jména bez licenčních dovětků; OpenStreetMap vždy jako „© OpenStreetMap“; text bez „©“ zůstává celý.
 	 */
 	static List<String> zkrat(final String atribuce) {
+		if (atribuce == null) {
+			return Collections.emptyList();
+		}
+		List<String> v = ZKRACENE.get(atribuce);
+		if (v == null) {
+			v = Collections.unmodifiableList(zkratNove(atribuce));
+			if (ZKRACENE.size() < NEJVIC_ZKRACENYCH) {
+				ZKRACENE.put(atribuce, v);
+			}
+		}
+		return v;
+	}
+
+	/** Zkrácené atribuce podle znění; atribucí je málo a zkracuje se při každém překreslení, ne při změně textu. */
+	private static final Map<String, List<String>> ZKRACENE = new ConcurrentHashMap<>();
+	private static final int NEJVIC_ZKRACENYCH = 256;
+
+	private static List<String> zkratNove(final String atribuce) {
 		final List<String> v = new ArrayList<>();
-		if (atribuce == null || atribuce.trim().isEmpty()) {
+		if (atribuce.trim().isEmpty()) {
 			return v;
 		}
 		if (atribuce.contains("Seznam.cz") || atribuce.contains("ČÚZK")) {
