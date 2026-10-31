@@ -25,6 +25,7 @@ public class PodrobnaOfflineMapaTest {
 		slozka = tmp.newFolder("offline-mapy");
 		mapy = new OfflineMapy(() -> {});
 		mapy.kontrolaSlozkyNs = 0;
+		mapy.sledovatSlozku = false;
 		mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 	}
 

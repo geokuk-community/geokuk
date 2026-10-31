@@ -182,6 +182,7 @@ public class VrstvyTematuTest {
 		tema = TemaOfflineMapy.zeSouboru(xml, null);
 		mapy = new OfflineMapy(() -> {});
 		mapy.kontrolaSlozkyNs = 0;
+		mapy.sledovatSlozku = false;
 		mapy.nastav(slozka, tema);
 		final OfflineRenderer r = mapy.pouzij();
 		Assert.assertNull(mapy.getChybaTematu());
