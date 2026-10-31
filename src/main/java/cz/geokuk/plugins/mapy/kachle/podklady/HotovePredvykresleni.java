@@ -83,9 +83,13 @@ final class HotovePredvykresleni {
 			boolean platny = true;
 			for (int i = 1; i < casti.length && platny; i++) {
 				final Matcher m = DLAZDICE.matcher(casti[i]);
-				if (m.matches()) {
-					vzorek.add(KaLoc.ofXyz(Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), Integer.parseInt(m.group(1))));
-				} else {
+				try {
+					if (m.matches()) {
+						vzorek.add(KaLoc.ofXyz(Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), Integer.parseInt(m.group(1))));
+					} else {
+						platny = false;
+					}
+				} catch (final NumberFormatException e) {
 					platny = false;
 				}
 			}
