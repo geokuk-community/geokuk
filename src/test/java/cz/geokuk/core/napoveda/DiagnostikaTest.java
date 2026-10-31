@@ -288,6 +288,42 @@ public class DiagnostikaTest {
 		Assert.assertFalse(text[0], text[0].contains("max 2000.0 ms"));
 	}
 
+	@Test
+	public void oknoJeMenitelneAObsahSeRoztahujeTlacitkaZustanouDole() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JDialog d = DiagnostikaAction.sestav(null);
+			try {
+				Assert.assertTrue("okno jde zvětšovat", d.isResizable());
+				Assert.assertTrue(d.getMinimumSize().width <= DiagnostikaAction.NEJMENSI.width);
+				final JScrollPane posuvnik = najdi(d, JScrollPane.class, p -> true);
+				final JButton zavrit = najdi(d, JButton.class, b -> "Zavřít".equals(b.getText()));
+				d.setSize(700, 500);
+				d.validate();
+				final int sirka = posuvnik.getWidth();
+				final int vyska = posuvnik.getHeight();
+				Assert.assertTrue(sirka > 600 && vyska > 350);
+				d.setSize(1000, 800);
+				d.validate();
+				Assert.assertTrue("text se roztahuje do šířky", posuvnik.getWidth() >= sirka + 250);
+				Assert.assertTrue("text se roztahuje do výšky", posuvnik.getHeight() >= vyska + 250);
+				final java.awt.Container tlacitka = zavrit.getParent();
+				Assert.assertEquals("tlačítka mají stálou výšku", tlacitka.getPreferredSize().height, tlacitka.getHeight());
+				Assert.assertEquals("tlačítka zůstávají dole", d.getContentPane().getHeight(), tlacitka.getY() + tlacitka.getHeight());
+				Assert.assertTrue(najdi(d, JTextArea.class, a -> true).getText().length() > 0);
+			} finally {
+				d.dispose();
+			}
+		});
+	}
+
+	@Test
+	public void vychoziVelikostOknaNepresahnePracovniPlochu() {
+		Assert.assertEquals(new java.awt.Dimension(900, 650), DiagnostikaAction.vychoziVelikost(new java.awt.Rectangle(0, 0, 1920, 1080)));
+		Assert.assertEquals(new java.awt.Dimension(720, 540), DiagnostikaAction.vychoziVelikost(new java.awt.Rectangle(0, 0, 800, 600)));
+		Assert.assertEquals(new java.awt.Dimension(900, 450), DiagnostikaAction.vychoziVelikost(new java.awt.Rectangle(0, 0, 1280, 500)));
+	}
+
 	private static <T extends java.awt.Component> T najdi(final java.awt.Container kde, final Class<T> typ, final java.util.function.Predicate<T> podminka) {
 		for (final java.awt.Component c : kde.getComponents()) {
 			if (typ.isInstance(c) && podminka.test(typ.cast(c))) {
