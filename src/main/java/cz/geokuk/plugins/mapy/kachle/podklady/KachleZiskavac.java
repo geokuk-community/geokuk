@@ -774,19 +774,19 @@ public class KachleZiskavac {
 		}
 
 		@Override
-		public boolean jeHotovo(final String klic) {
+		public List<KaLoc> zapamatovanyVzorek(final String klic) {
 			final File slozka = slozkaKlicu();
-			return slozka != null && HotovePredvykresleni.jeHotovo(slozka, klic);
+			return slozka == null ? null : HotovePredvykresleni.vzorek(slozka, klic);
 		}
 
 		@Override
-		public void zapisHotovo(final String klic) {
+		public void zapamatujHotovo(final String klic, final List<KaLoc> vzorek) {
 			final File slozka = slozkaKlicu();
-			if (slozka == null) {
+			if (slozka == null || vzorek.isEmpty()) {
 				return;
 			}
 			try {
-				HotovePredvykresleni.zapis(slozka, klic);
+				HotovePredvykresleni.zapis(slozka, klic, vzorek);
 			} catch (final IOException | RuntimeException e) {
 				log.debug("Předvykreslení přehledu nejde zapamatovat: {}", e.toString());
 			}
