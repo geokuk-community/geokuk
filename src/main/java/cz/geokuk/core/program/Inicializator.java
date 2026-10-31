@@ -158,6 +158,6 @@ public class Inicializator {
 	}
 
 	public void zkontrolovatAktualizace() {
-		napovedaModel.zkontrolujNoveAktualizace(false);
+		napovedaModel.zkontrolujNoveAktualizacePoStartu();
 	}
 }

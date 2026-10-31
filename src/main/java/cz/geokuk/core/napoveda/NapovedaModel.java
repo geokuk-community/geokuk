@@ -1,6 +1,8 @@
 package cz.geokuk.core.napoveda;
 
 
+import javax.swing.SwingUtilities;
+
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.framework.Model0;
@@ -11,6 +13,10 @@ public class NapovedaModel extends Model0 {
 	static final long DNU_ODKLADU = 7L;
 	private static final String ODLOZENA_VERZE_value = "odlozenaVerze";
 
+	/** Automatická kontrola po startu čeká, ať síť a vykreslení nesoutěží se stavbou okna a prvním pohledem na mapu. */
+	static final long ZPOZDENI_KONTROLY_PO_STARTU_MS = 45_000L;
+
+	private long zpozdeniKontrolyPoStartuMs = ZPOZDENI_KONTROLY_PO_STARTU_MS;
 	private boolean onlineMode;
 	private ZkontrolovatAktualizaceSwingWorker probihajiciKontrola;
 
@@ -35,6 +41,25 @@ public class NapovedaModel extends Model0 {
 		}
 		probihajiciKontrola = new ZkontrolovatAktualizaceSwingWorker(zobrazovatInfoPriSpravneVerzi, this);
 		spust(probihajiciKontrola);
+	}
+
+	/** Jednou po startu: kontrola se zadá až po {@link #ZPOZDENI_KONTROLY_PO_STARTU_MS}, ve vláknu událostí jako dosud. */
+	public void zkontrolujNoveAktualizacePoStartu() {
+		final Thread t = new Thread(() -> {
+			try {
+				Thread.sleep(zpozdeniKontrolyPoStartuMs);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			SwingUtilities.invokeLater(() -> zkontrolujNoveAktualizace(false));
+		}, "Kontrola aktualizace po startu");
+		t.setDaemon(true);
+		t.start();
+	}
+
+	void zpozdeniKontrolyPoStartuMs(final long ms) {
+		zpozdeniKontrolyPoStartuMs = ms;
 	}
 
 	void spust(final ZkontrolovatAktualizaceSwingWorker kontrola) {
