@@ -650,7 +650,9 @@ public class KachleZiskavac {
 		Runtime.getRuntime().addShutdownHook(new Thread(this::dopisNaDisk, "Dopsání dlaždic na disk"));
 	}
 
-	private void dopisNaDisk() {
+	void dopisNaDisk() {
+		// Náhledy z cache při ukončení nikdo nepotřebuje a nesmí číst z cache, kterou se dopisuje.
+		nahledyZCache.shutdownNow();
 		ukladac.submitChunks();
 		execDiskWrite.shutdown();
 		try {
