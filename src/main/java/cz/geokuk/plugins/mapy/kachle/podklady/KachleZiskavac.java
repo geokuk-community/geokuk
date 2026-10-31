@@ -305,38 +305,17 @@ public class KachleZiskavac {
 			return null;
 		}
 
-		/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
 		private Image nactiZDisku() throws IOException {
 			if (faze == null) {
-				return nactiZDiskuBezMereni();
+				return nactiZCache(ka);
 			}
 			faze.diskStart();
 			final DiagnostikaDlazdic.Cteni cteni = DiagnostikaDlazdic.zacniCteni();
 			try {
-				return nactiZDiskuBezMereni();
+				return nactiZCache(ka);
 			} finally {
 				DiagnostikaDlazdic.skonciCteni(cteni);
 				faze.diskKonec();
-			}
-		}
-
-		private Image nactiZDiskuBezMereni() throws IOException {
-			if (!ka.getType().isOffline()) {
-				return kachleManager.load(ka);
-			}
-			final OfflineRenderer renderer;
-			try {
-				renderer = offlineMapy(ka.getType()).pouzij();
-			} catch (final IOException e) {
-				return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
-			}
-			try {
-				if (!renderer.pokryva(ka.getLoc())) {
-					return null; // dlaždice mimo mapy se jen vybarví a neukládá
-				}
-				return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
-			} finally {
-				renderer.skonci();
 			}
 		}
 
@@ -1049,6 +1028,68 @@ public class KachleZiskavac {
 		chybyStahovani.computeIfAbsent(e.getClass().getName(), k -> new OpakovaneChyby("Chyba při stahování dlaždice (" + k + ")")).ohlas(e);
 		diagnosticsData.send(e.toString());
 		return e;
+	}
+
+	/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
+	private Image nactiZCache(final Ka ka) throws IOException {
+		if (!ka.getType().isOffline()) {
+			return kachleManager.load(ka);
+		}
+		final OfflineRenderer renderer;
+		try {
+			renderer = offlineMapy(ka.getType()).pouzij();
+		} catch (final IOException e) {
+			return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
+		}
+		try {
+			if (!renderer.pokryva(ka.getLoc())) {
+				return null; // dlaždice mimo mapy se jen vybarví a neukládá
+			}
+			return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
+		} finally {
+			renderer.skonci();
+		}
+	}
+
+	/** Rodičovské dlaždice dekódované z cache pro náhledy: sourozenci sdílejí jedno dekódování a i neúspěšné hledání se krátce pamatuje. */
+	private final Cache<Ka, Optional<Image>> nahledyRodicu = CacheBuilder.newBuilder().maximumSize(NAHLEDY_RODICU).expireAfterWrite(java.time.Duration.ofSeconds(10)).softValues().build();
+
+	private static final int NAHLEDY_RODICU = 32;
+
+	/** Náhled z cache na disku jen pro online mapy; u offline map se dlaždice vykreslí rychle a čtení a dekódování by soutěžilo s vykreslováním o procesor. */
+	public boolean lzeNahledZCache(final Ka ka) {
+		return !ka.getType().isOffline();
+	}
+
+	/**
+	 * Hotový obrázek dlaždice z paměti, u online map jinak z cache na disku (nevykresluje ani nestahuje). Čte z disku, volat jen z vlákna na pozadí, viz
+	 * {@link #naPozadiProNahled}. Rozhodnutí, odkud se náhled bere, je jen tady.
+	 */
+	public Image nahledZPametiNeboCache(final Ka ka) {
+		final Image zPameti = nahledZPameti(ka);
+		if (zPameti != null) {
+			return zPameti;
+		}
+		if (!lzeNahledZCache(ka) || kachleManager == null) {
+			return null;
+		}
+		try {
+			return nahledyRodicu.get(ka, () -> Optional.ofNullable(nactiZCache(ka))).orElse(null);
+		} catch (final java.util.concurrent.ExecutionException | RuntimeException e) {
+			log.debug("Náhled dlaždice {} z cache nelze načíst: {}", ka, e.toString());
+			return null;
+		}
+	}
+
+	/** Jedno vlákno pro náhledy z cache; při nahromadění se zahazují nejstarší úlohy, platí poslední zobrazení. */
+	private final ThreadPoolExecutor nahledyZCache = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(NAHLEDY_ZE_CACHE_FRONTA),
+			vlaknaRenderu("Náhled z cache"), new ThreadPoolExecutor.DiscardOldestPolicy());
+
+	private static final int NAHLEDY_ZE_CACHE_FRONTA = 64;
+
+	/** Spustí na pozadí hledání náhledu; nestihnuté úlohy se zahodí. */
+	public void naPozadiProNahled(final Runnable uloha) {
+		nahledyZCache.execute(uloha);
 	}
 
 	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
