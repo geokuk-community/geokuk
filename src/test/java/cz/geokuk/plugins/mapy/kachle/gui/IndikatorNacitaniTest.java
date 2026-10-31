@@ -57,11 +57,12 @@ public class IndikatorNacitaniTest {
 		for (long t = 0; t <= 1000; t += 40) {
 			i.aktualizuj(t, 3);
 			Assert.assertTrue("průhlednost neklesá při čekání: " + t, i.getPruhlednost() >= predtim);
-			Assert.assertTrue(t < IndikatorNacitani.PRODLEVA_MS ? i.getPruhlednost() == 0 : true);
+			if (t < IndikatorNacitani.PRODLEVA_MS) {
+				Assert.assertEquals("před prodlevou je kolečko neviditelné: " + t, 0, i.getPruhlednost(), 0);
+			}
 			predtim = i.getPruhlednost();
 		}
 		Assert.assertEquals(1, predtim, 0);
-		i.aktualizuj(IndikatorNacitani.PRODLEVA_MS + 40, 3);
 		final IndikatorNacitani j = new IndikatorNacitani();
 		double nejvetsiSkok = 0;
 		double p = 0;
