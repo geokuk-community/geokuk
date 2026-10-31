@@ -127,13 +127,6 @@ public class Kaputer {
 		return pocetKachliY;
 	}
 
-	public int getVzdalenostKachleOdStredu(final Mou moupoc) {
-		final int mouHranaPul = getMoukrok() / 2;
-		final Mou moustredx = soord.getMoustred();
-		final double hypot = Math.hypot(moupoc.xx + mouHranaPul - moustredx.xx, moupoc.yy + mouHranaPul - moustredx.yy);
-		return (int) hypot;
-	}
-
 	public void pocitani() {
 
 	}

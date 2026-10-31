@@ -71,9 +71,10 @@ jobs:
           [ "$RUNNER_OS" = Linux ] && displej=(xvfb-run -a -s "-screen 0 1400x900x24")
           rc=0
           "${displej[@]}" ./mvnw -B test -Dtest=StahovaniVelkyObjemTest -Dsurefire.failIfNoSpecifiedTests=false \
-            -DargLine="-Dfile.encoding=UTF-8 -Xmx6g" -Dscenare.dlazdic="$DLAZDIC" || rc=$?
+            -DargLine="-Dfile.encoding=UTF-8 -Xmx6g -Dgeokuk.testy.limitSekund=7200" -Dscenare.dlazdic="$DLAZDIC" 2>&1 | tee "$RUNNER_TEMP/postahovat.log" || rc=${PIPESTATUS[0]}
           {
             echo "### Postahovat dlaždice na $RUNNER_OS: $DLAZDIC dlaždic"
+            grep -a -h "dic/s" "$RUNNER_TEMP/postahovat.log" | tail -n 1
             grep -h "Tests run" target/surefire-reports/*StahovaniVelkyObjemTest.txt 2>/dev/null || echo "Test se nespustil."
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$rc"

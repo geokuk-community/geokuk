@@ -25,6 +25,23 @@ public class KachloDownloader {
 	static final int TIMEOUT_CELKEM = 60000;
 	private static final int MAX_PRESMEROVANI = 5;
 
+	/** Víc by se z chybové odpovědi nedočítalo, spojení by se raději zavřelo. */
+	private static final int MAX_DOCTENI_ODPOVEDI = 64 * 1024;
+
+	static {
+		nastavMaxSpojeni();
+	}
+
+	/**
+	 * Výchozí 5 spojení na server je méně než souběh online (5) a dávky (10). JDK ji čte při prvním použití keep-alive cache,
+	 * proto se volá už na začátku programu, před jakýmkoli jiným HTTP (třeba kontrolou aktualizací).
+	 */
+	public static void nastavMaxSpojeni() {
+		if (System.getProperty("http.maxConnections") == null) {
+			System.setProperty("http.maxConnections", String.valueOf(KachleZiskavac.NTHREADS_WEB_CORE_ONLINE + KachleZiskavac.NTHREADS_WEB_MAXIMUM_BACTH));
+		}
+	}
+
 	/** Mapové servery vyžadují User-Agent, který program jednoznačně identifikuje. */
 	static final String USER_AGENT = "Geokuk/" + FConst.VERSION;
 
@@ -92,7 +109,7 @@ public class KachloDownloader {
 		// Řada serverů už http přesměrovává na https.
 		for (int presmerovani = 0; presmerovani < MAX_PRESMEROVANI && kod >= 300 && kod < 400 && conn.getHeaderField("Location") != null; presmerovani++) {
 			final URL kam = new URL(url, conn.getHeaderField("Location"));
-			conn.disconnect();
+			uvolni(conn);
 			if (!"https".equals(kam.getProtocol()) && !kam.getProtocol().equals(url.getProtocol())) {
 				break;
 			}
@@ -101,8 +118,9 @@ public class KachloDownloader {
 			kod = conn.getResponseCode();
 		}
 		if (kod >= 300) {
-			conn.disconnect();
-			throw new ChybaServeru(kod, conn.getResponseMessage());
+			final String zprava = conn.getResponseMessage();
+			uvolni(conn);
+			throw new ChybaServeru(kod, zprava);
 		}
 		final Image img;
 		final byte[] data;
@@ -121,6 +139,35 @@ public class KachloDownloader {
 
 		return imda;
 
+	}
+
+	/** Dočtením a zavřením těla se spojení vrátí do keep-alive cache; disconnect() by zavřelo TCP/TLS. */
+	static void uvolni(final HttpURLConnection conn) {
+		InputStream in = null;
+		try {
+			in = conn.getResponseCode() >= 400 ? conn.getErrorStream() : conn.getInputStream();
+			if (in != null) {
+				final byte[] buf = new byte[4096];
+				int celkem = 0;
+				int n;
+				while (celkem < MAX_DOCTENI_ODPOVEDI && (n = in.read(buf)) >= 0) {
+					celkem += n;
+				}
+				if (celkem >= MAX_DOCTENI_ODPOVEDI) {
+					conn.disconnect();
+				}
+			}
+		} catch (final IOException e) {
+			conn.disconnect();
+		} finally {
+			if (in != null) {
+				try {
+					in.close();
+				} catch (final IOException e) {
+					conn.disconnect();
+				}
+			}
+		}
 	}
 
 	private static HttpURLConnection otevri(final URL url, final Map<String, String> hlavicky) throws IOException {

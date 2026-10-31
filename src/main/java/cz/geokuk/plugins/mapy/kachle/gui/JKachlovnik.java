@@ -58,6 +58,9 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	private PredvykresleniOkoli predvykresleni;
 
+	/** Volá se po každé nové zakázce na dlaždice (posun, zoom, změna podkladu). */
+	private Runnable priNovychDlazdicich = () -> {};
+
 	private transient LogoNacitani logoNacitani;
 
 	// je to jen kvuli garbage collectoru, aby nezrusil, NERUSIT PROMENNU i kdyz zdanlive je to na nic
@@ -179,6 +182,22 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		logoNacitani.kresli(g, getWidth(), getHeight(), oblast, tmave);
 	}
 
+	void setPriNovychDlazdicich(final Runnable priNovychDlazdicich) {
+		this.priNovychDlazdicich = priNovychDlazdicich;
+	}
+
+	/** Dlaždice ve výřezu, které ještě nemají skutečný obrázek ani chybu; jen na vlákně událostí. */
+	int pocetCekajicichViditelnych() {
+		final Rectangle okno = new Rectangle(0, 0, getWidth(), getHeight());
+		int n = 0;
+		for (final Component c : getComponents()) {
+			if (c instanceof JKachle && c.getBounds().intersects(okno) && ((JKachle) c).ceka()) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	protected KachleModel getKachleModel() {
 		return kachleModel;
 	}
@@ -266,6 +285,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 			remove(jka);
 		});
 		pocitKachliVKachlovniku2.set(getComponentCount());
+		priNovychDlazdicich.run();
 		log.trace("Počet komponent (nejspíš kachlí) v kachlovníku: {}", getComponentCount());
 	}
 

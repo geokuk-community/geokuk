@@ -589,11 +589,6 @@ class UtmMgrsWgsConvertor {
 		return Math.pow(a, b);
 	}
 
-	@SuppressWarnings("unused")
-	private double radianToDegree(final double radian) {
-		return radian * 180 / Math.PI;
-	}
-
 	private double SIN(final double value) {
 		return Math.sin(value);
 	}

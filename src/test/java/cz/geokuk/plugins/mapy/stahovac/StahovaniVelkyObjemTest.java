@@ -60,6 +60,8 @@ public class StahovaniVelkyObjemTest {
 	private final MyPreferences pref = MyPreferences.current().node("test-stahovani-velky-objem");
 	private final Collection<String> pozadavky = new ConcurrentLinkedQueue<>();
 	private final AtomicInteger zpozdeniMs = new AtomicInteger();
+	/** Požadavky, které server přijal a ještě na ně neodpověděl. */
+	private final AtomicInteger rozpracovanePozadavky = new AtomicInteger();
 	private HttpServer server;
 	private ExecutorService vlaknaServeru;
 	private Boolean imageIoCache;
@@ -170,17 +172,22 @@ public class StahovaniVelkyObjemTest {
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", ex -> {
 			pozadavky.add(ex.getRequestURI().getPath());
-			final int cekani = zpozdeniMs.get();
-			if (cekani > 0) {
-				try {
-					Thread.sleep(cekani);
-				} catch (final InterruptedException e) {
-					Thread.currentThread().interrupt();
+			rozpracovanePozadavky.incrementAndGet();
+			try {
+				final int cekani = zpozdeniMs.get();
+				if (cekani > 0) {
+					try {
+						Thread.sleep(cekani);
+					} catch (final InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
 				}
+				ex.sendResponseHeaders(200, data.length);
+				ex.getResponseBody().write(data);
+				ex.close();
+			} finally {
+				rozpracovanePozadavky.decrementAndGet();
 			}
-			ex.sendResponseHeaders(200, data.length);
-			ex.getResponseBody().write(data);
-			ex.close();
 		});
 		vlaknaServeru = Executors.newFixedThreadPool(16);
 		server.setExecutor(vlaknaServeru);
@@ -270,9 +277,14 @@ public class StahovaniVelkyObjemTest {
 		davka.zastav("na přání uživatele.");
 		pockej(davka, 10_000);
 		Assert.assertTrue(davka.popis(), davka.popis().startsWith("Zastaveno: na přání uživatele."));
-		// Rozpracované požadavky doběhnou, pak už se nic nežádá.
-		Thread.sleep(1500);
+		// Rozpracované požadavky doběhnou (čeká se na to, ne na čas), pak už se nic nežádá.
+		final long konecDobehu = System.currentTimeMillis() + 30_000;
+		while (rozpracovanePozadavky.get() > 0 && System.currentTimeMillis() < konecDobehu) {
+			Thread.sleep(20);
+		}
+		Assert.assertEquals("rozpracované požadavky nedoběhly", 0, rozpracovanePozadavky.get());
 		final int poZastaveni = pozadavky.size();
+		// Zápornou podmínku („nic dalšího nepřijde“) jde ověřit jen krátkým pozorováním po konecDobehu.
 		Thread.sleep(1500);
 		Assert.assertEquals("po zastavení se žádné další dlaždice nežádají", poZastaveni, pozadavky.size());
 		Assert.assertTrue("zastavení má zastavit, ne počkat na všechny: " + poZastaveni, poZastaveni < ocekavane.size());
