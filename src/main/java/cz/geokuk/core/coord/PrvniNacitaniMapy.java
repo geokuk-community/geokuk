@@ -51,6 +51,11 @@ public final class PrvniNacitaniMapy {
 		return false;
 	}
 
+	/** Jestli první načítání už skončilo; na rozdíl od {@link #probiha()} nic nespouští. */
+	public static synchronized boolean jeUkonceno() {
+		return ukonceno;
+	}
+
 	/** Jestli se vrstvy nad mapou ještě nemají kreslit; po limitu první načítání ukončí. */
 	public static boolean vrstvyCekaji() {
 		synchronized (PrvniNacitaniMapy.class) {
