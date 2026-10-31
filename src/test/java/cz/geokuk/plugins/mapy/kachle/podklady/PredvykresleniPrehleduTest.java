@@ -28,7 +28,7 @@ public class PredvykresleniPrehleduTest {
 	private int sestaveniFronty;
 	private Runnable priVykresleni = () -> {};
 	private boolean vMapach = true;
-	private final Set<String> hotove = new HashSet<>();
+	private final Map<String, List<KaLoc>> hotove = new HashMap<>();
 	private int dotazyNaHotovo;
 
 	private final PredvykresleniPrehledu.Mapy mapy = new PredvykresleniPrehledu.Mapy() {
@@ -49,14 +49,14 @@ public class PredvykresleniPrehleduTest {
 		}
 
 		@Override
-		public boolean jeHotovo(final String k) {
+		public List<KaLoc> zapamatovanyVzorek(final String k) {
 			dotazyNaHotovo++;
-			return hotove.contains(k);
+			return hotove.get(k);
 		}
 
 		@Override
-		public void zapisHotovo(final String k) {
-			hotove.add(k);
+		public void zapamatujHotovo(final String k, final List<KaLoc> vzorek) {
+			hotove.put(k, vzorek);
 		}
 
 		@Override
@@ -276,16 +276,51 @@ public class PredvykresleniPrehleduTest {
 	public void dokonceniSeZapamatujeAPoRestartuSePrehledNeprochazi() {
 		cas += 10 * SEKUNDA;
 		Assert.assertEquals(5, p.pracuj());
-		Assert.assertTrue(hotove.contains(klic));
+		Assert.assertEquals(pokryti, hotove.get(klic));
 
 		final PredvykresleniPrehledu poRestartu = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
-		cache.clear();
 		vykreslene.clear();
 		sestaveniFronty = 0;
 		cas += 10 * SEKUNDA;
 		Assert.assertEquals(0, poRestartu.pracuj());
 		Assert.assertEquals(0, sestaveniFronty);
 		Assert.assertTrue(vykreslene.isEmpty());
+	}
+
+	@Test
+	public void zapamatovaneHotovoBezDlazdicVCachiSeNepouzije() {
+		cas += 10 * SEKUNDA;
+		p.pracuj();
+		final PredvykresleniPrehledu poRestartu = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
+		cache.clear();
+		vykreslene.clear();
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals("cache se mezitím smazala", 5, poRestartu.pracuj());
+	}
+
+	@Test
+	public void staciChybetJednaDlazdiceVzorku() {
+		cas += 10 * SEKUNDA;
+		p.pracuj();
+		final PredvykresleniPrehledu poRestartu = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
+		cache.remove(pokryti.get(3));
+		vykreslene.clear();
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals(1, poRestartu.pracuj());
+		Assert.assertEquals(Arrays.asList(pokryti.get(3)), vykreslene);
+	}
+
+	@Test
+	public void prazdnyNeboChybejiciZaznamNeplati() {
+		hotove.put(klic, new ArrayList<>());
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals("prázdný vzorek nic nedokazuje", 5, p.pracuj());
+
+		final PredvykresleniPrehledu dalsi = new PredvykresleniPrehledu(mapy, () -> volno, () -> cas);
+		hotove.remove(klic);
+		cache.clear();
+		cas += 10 * SEKUNDA;
+		Assert.assertEquals("bez záznamu", 5, dalsi.pracuj());
 	}
 
 	@Test
@@ -297,7 +332,21 @@ public class PredvykresleniPrehleduTest {
 		cache.clear();
 		cas += 10 * SEKUNDA;
 		Assert.assertEquals(5, poRestartu.pracuj());
-		Assert.assertTrue(hotove.contains("o00000002"));
+		Assert.assertTrue(hotove.containsKey("o00000002"));
+	}
+
+	@Test
+	public void vzorekJeRovnomernyAOmezeny() {
+		final List<KaLoc> mnoho = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			mnoho.add(KaLoc.ofXyz(i, 0, 9));
+		}
+		final List<KaLoc> vzorek = PredvykresleniPrehledu.vzorek(mnoho);
+		Assert.assertEquals(PredvykresleniPrehledu.VZOREK, vzorek.size());
+		Assert.assertEquals(mnoho.get(0), vzorek.get(0));
+		Assert.assertTrue(mnoho.indexOf(vzorek.get(vzorek.size() - 1)) > 80);
+		Assert.assertEquals(3, PredvykresleniPrehledu.vzorek(mnoho.subList(0, 3)).size());
+		Assert.assertTrue(PredvykresleniPrehledu.vzorek(new ArrayList<>()).isEmpty());
 	}
 
 	@Test
