@@ -49,10 +49,11 @@ public class FilexTest {
 
 	@Test
 	public void efektivniSouborSeKanonizujeJednou() {
-		final Filex f = new Filex(new File("/tmp/a/../b"), false, true);
+		final File zaklad = new File(System.getProperty("java.io.tmpdir")).getAbsoluteFile();
+		final Filex f = new Filex(new File(zaklad, "a/../b"), false, true);
 		final File prvni = f.getEffectiveFile();
 		Assert.assertSame(prvni, f.getEffectiveFile());
-		Assert.assertEquals(Filex.canonize(new File("/tmp/b")), prvni);
-		Assert.assertEquals(f, new Filex(new File("/tmp/a/../b"), false, true));
+		Assert.assertEquals(Filex.canonize(new File(zaklad, "b")), prvni);
+		Assert.assertEquals(f, new Filex(new File(zaklad, "a/../b"), false, true));
 	}
 }
