@@ -589,4 +589,112 @@ public class OptimalizaceDatabazeTest {
 			vlakna.shutdownNow();
 		}
 	}
+
+	/** Zavolá se těsně po posledním commitu kopie, než se soubor zavře. */
+	private static Prubeh poKopiiZavolej(final Runnable akce) {
+		return new Prubeh() {
+			@Override
+			public void zpracovano(final long hotovo, final long celkem) {
+				if (hotovo == celkem) {
+					akce.run();
+				}
+			}
+
+			@Override
+			public boolean zruseno() {
+				return false;
+			}
+		};
+	}
+
+	/** Dvě stránky za hlavičkou (kořen tabulky a index) dostanou smetí; hlavička zůstane čitelná, takže vadu odhalí až průchod. */
+	private static void poskodKopii(final File nova) {
+		try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(nova, "rw")) {
+			final byte[] smeti = new byte[2 * CacheDb.STRANKA_NOVE];
+			java.util.Arrays.fill(smeti, (byte) 0xFF);
+			raf.seek(CacheDb.STRANKA_NOVE);
+			raf.write(smeti);
+		} catch (final IOException e) {
+			throw new java.io.UncheckedIOException(e);
+		}
+	}
+
+	@Test
+	public void vadnaNovaKopieSeNevymeniAOriginalZustane() throws Exception {
+		Assume.assumeFalse("otevřený soubor jde přepsat jen mimo Windows", System.getProperty("os.name").startsWith("Windows"));
+		vyrobStarouCache(300, 15000);
+		final byte[] pred = Files.readAllBytes(soubor.toPath());
+		final File nova = new File(soubor.getPath() + ".new");
+		final AtomicInteger vymen = new AtomicInteger();
+		optimalizace.setPresun((odkud, kam) -> {
+			vymen.incrementAndGet();
+			Files.move(odkud, kam, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		});
+		try {
+			optimalizace.spust(poKopiiZavolej(() -> poskodKopii(nova)));
+			Assert.fail("vadná kopie se nesmí vyměnit");
+		} catch (final OptimalizaceChyba e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("Nová cache dlaždic nevyšla"));
+		}
+		Assert.assertEquals("výměna se nesmí zkusit", 0, vymen.get());
+		Assert.assertArrayEquals(pred, Files.readAllBytes(soubor.toPath()));
+		Assert.assertFalse(nova.exists());
+		cachePoUdalostiPouzitelna();
+	}
+
+	@Test
+	public void zbylyZurnalPuvodnihoSouboruSePredVymenouSmaze() throws Exception {
+		vyrobStarouCache(300, 15000);
+		final File zurnal = new File(soubor.getPath() + "-journal");
+		final java.util.concurrent.atomic.AtomicBoolean zurnalPriVymene = new java.util.concurrent.atomic.AtomicBoolean(true);
+		optimalizace.setPresun((odkud, kam) -> {
+			zurnalPriVymene.set(zurnal.exists());
+			Files.move(odkud, kam, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		});
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(poKopiiZavolej(() -> {
+			try {
+				Files.write(zurnal.toPath(), new byte[] { 1, 2, 3, 4 });
+			} catch (final IOException e) {
+				throw new java.io.UncheckedIOException(e);
+			}
+		})));
+		Assert.assertFalse("zbylý žurnál by se po výměně použil na nový soubor", zurnalPriVymene.get());
+		Assert.assertEquals(150, pocetRadku(soubor));
+	}
+
+	@Test
+	public void zbylyZurnalNoveKopieSeUklidi() throws Exception {
+		vyrobStarouCache(300, 15000);
+		final File zurnalNove = new File(soubor.getPath() + ".new-journal");
+		Files.write(zurnalNove.toPath(), new byte[] { 1, 2, 3, 4 });
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(BEZ_ZRUSENI));
+		Assert.assertFalse(zurnalNove.exists());
+		Assert.assertEquals(150, pocetRadku(soubor));
+	}
+
+	@Test
+	public void dlouhaKopieHlasiPrubehPoDavkach() throws Exception {
+		vyrobStarouCache(9000, 100);
+		final java.util.List<String> hlaseni = new java.util.ArrayList<>();
+		final long[] objem = new long[2];
+		Assert.assertEquals(Vysledek.HOTOVO, optimalizace.spust(new Prubeh() {
+			@Override
+			public void objem(final long zkopirovano, final long vynechano) {
+				objem[0] = zkopirovano;
+				objem[1] = vynechano;
+			}
+
+			@Override
+			public void zpracovano(final long hotovo, final long celkem) {
+				hlaseni.add(hotovo + "/" + celkem + "@" + objem[0]);
+			}
+
+			@Override
+			public boolean zruseno() {
+				return false;
+			}
+		}));
+		Assert.assertEquals(java.util.Arrays.asList("2000/4500@200000", "4000/4500@400000", "4500/4500@450000"), hlaseni);
+		Assert.assertEquals(4500, pocetRadku(soubor));
+	}
 }
