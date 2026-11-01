@@ -125,7 +125,8 @@
   když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
   aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
   do popředí nepřenáší. Schránku program sleduje jen při zapnuté volbě
-  a jejího obsahu nic neukládá.
+  a její obsah nezapisuje na disk; do logu se může dostat jen rozpoznaný kód
+  kešoidu.
 - Dálkové ovládání: POST /kes přijme i odkaz nebo text s kódem a pokusí se
   přenést okno programu do popředí (parametr focus=ne to vypne); nový příkaz
   POST /popredi se o to pokusí také. Na Windows může systém focus odepřít,
