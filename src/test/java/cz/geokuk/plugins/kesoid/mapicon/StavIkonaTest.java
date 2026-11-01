@@ -180,6 +180,36 @@ public class StavIkonaTest {
 		}
 	}
 
+	private static boolean tmavyObrys(final int argb) {
+		return (argb >>> 24) > 200 && ((argb >> 16) & 0xFF) < 0x60 && ((argb >> 8) & 0xFF) < 0x60 && (argb & 0xFF) < 0x60;
+	}
+
+	/** Šířka značky archivu v pravém dolním rohu: od nejlevějšího pixelu jejího tmavého obrysu k pravému okraji. */
+	private static int sirkaCerveneZnacky(final int velikost) {
+		final BufferedImage a = obraz(StavIkona.archiv(plnyCtverec(velikost), velikost));
+		int nejlevejsi = velikost;
+		for (int y = 0; y < velikost; y++) {
+			for (int x = 0; x < velikost; x++) {
+				if (tmavyObrys(a.getRGB(x, y))) {
+					nejlevejsi = Math.min(nejlevejsi, x);
+					Assert.assertTrue("značka je jen v pravém dolním rohu: " + x + "," + y + " při " + velikost, x >= velikost / 2 && y >= velikost / 2);
+				}
+			}
+		}
+		return velikost - nejlevejsi;
+	}
+
+	@Test
+	public void znackaArchivuSeZmensujeSMensiIkonouAZustavaVRohu() {
+		final int w16 = sirkaCerveneZnacky(16);
+		final int w20 = sirkaCerveneZnacky(20);
+		final int w24 = sirkaCerveneZnacky(24);
+		Assert.assertTrue("16 px: " + w16, w16 > 0 && w16 <= 8);
+		Assert.assertTrue("20 px: " + w20, w20 <= 10);
+		Assert.assertTrue("24 px: " + w24, w24 <= StavIkona.SYMBOL + 1);
+		Assert.assertTrue("značka roste s ikonou: " + w16 + " < " + w20 + " < " + w24, w16 < w20 && w20 < w24);
+	}
+
 	@Test
 	public void ikonaAlelyMaStavoveSymboly() {
 		final IkonBag bag = bagSPlnymCtvercem();
