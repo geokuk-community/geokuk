@@ -140,6 +140,8 @@ public class SledovaniSchrankyTest {
 		};
 		sledovani = sledovani(pocitajici);
 		sledovani.nastav(true);
+		provedFronty();
+		cteni = 0;
 		pocitajici.setContents(new StringSelection("GC19ACP"), null);
 		sledovani.flavorsChanged(null);
 		assertEquals("volající vlákno schránku nečte", 0, cteni);
@@ -155,6 +157,7 @@ public class SledovaniSchrankyTest {
 	@Test
 	public void neaktivniOknoPredaTextAOpakovaniIgnoruje() {
 		sledovani.nastav(true);
+		provedFronty();
 		ohlas("https://coord.info/GCBZJGC");
 		assertEquals(Arrays.asList("https://coord.info/GCBZJGC"), predane);
 		ohlas("https://coord.info/GCBZJGC");
@@ -168,6 +171,7 @@ public class SledovaniSchrankyTest {
 	@Test
 	public void aktivniOknoSchrankuIgnorujeIKdyzPrijdeUdalostNeboTik() {
 		sledovani.nastav(true);
+		provedFronty();
 		aktivni = true;
 		ohlas("GC19ACP");
 		assertTrue("kopírování v programu se neřeší", predane.isEmpty());
@@ -338,6 +342,7 @@ public class SledovaniSchrankyTest {
 	@Test
 	public void praceNaEdtSePoVypnutiNebeAktivaciNespusti() {
 		sledovani.nastav(true);
+		provedFronty();
 		vloz("GC19ACP");
 		sledovani.flavorsChanged(null);
 		new ArrayList<>(pozadi).forEach(Runnable::run);
@@ -349,6 +354,7 @@ public class SledovaniSchrankyTest {
 
 		edt.clear();
 		sledovani.nastav(true);
+		provedFronty();
 		vloz("GCBZJGC");
 		sledovani.flavorsChanged(null);
 		new ArrayList<>(pozadi).forEach(Runnable::run);
@@ -430,6 +436,68 @@ public class SledovaniSchrankyTest {
 		}
 		assertEquals(Arrays.asList("GC19ACP"), predane);
 		assertTrue("kód se zachytí nejpozději po " + SledovaniSchranky.TIKU_PO_VELKEM_TEXTU + " tiknutích, bylo " + tiku, tiku <= SledovaniSchranky.TIKU_PO_VELKEM_TEXTU);
+	}
+
+	@Test
+	public void obsahShodnyJakoPriOdchoduSePoZmeneSchrankyJizNeIgnoruje() {
+		sledovani.nastav(true);
+		aktivni = true;
+		vloz("GC19ACP");
+		aktivni = false;
+		sledovani.oknoSeZmenilo(false);
+		provedFronty();
+		tik.run();
+		provedFronty();
+		assertTrue("obsah z doby odchodu se nepředá", predane.isEmpty());
+
+		vloz("GCBZJGC");
+		tik.run();
+		provedFronty();
+		vloz("GC19ACP");
+		tik.run();
+		provedFronty();
+		assertEquals("po změně schránky se původní obsah zkopírovaný znovu předá", Arrays.asList("GCBZJGC", "GC19ACP"), predane);
+	}
+
+	@Test
+	public void obsahShodnyJakoPriOdchoduSePoZmeneNaTextBezKoduJizNeIgnoruje() {
+		sledovani.nastav(true);
+		aktivni = true;
+		vloz("GC19ACP");
+		aktivni = false;
+		sledovani.oknoSeZmenilo(false);
+		provedFronty();
+		vloz("obyčejná věta bez kódu");
+		tik.run();
+		provedFronty();
+		vloz("GC19ACP");
+		tik.run();
+		provedFronty();
+		assertEquals("text se předá hledání (to kód nenajde), původní obsah znovu", Arrays.asList("obyčejná věta bez kódu", "GC19ACP"), predane);
+	}
+
+	@Test
+	public void zapnutiVolbyPriNeaktivnimOkneHnedSpustiCasovacAZakladniObsah() {
+		vloz("GC19ACP");
+		aktivni = false;
+		sledovani.nastav(true);
+		provedFronty();
+		assertEquals("časovač běží hned, bez změny okna", 1, spusteno);
+		tik.run();
+		provedFronty();
+		assertTrue("obsah z doby zapnutí se nepředá", predane.isEmpty());
+		vloz("GCBZJGC");
+		tik.run();
+		provedFronty();
+		assertEquals(Arrays.asList("GCBZJGC"), predane);
+	}
+
+	@Test
+	public void zapnutiVolbyPriAktivnimOkneCasovacNespousti() {
+		aktivni = true;
+		sledovani.nastav(true);
+		provedFronty();
+		assertEquals(0, spusteno);
 	}
 
 	private int pocetCteni() {
