@@ -12,10 +12,10 @@ Program obsahuje tyto knihovny, každá je pod svou licencí:
 | ANTLR runtime                              | 3.4         | BSD                                        |
 | metadata-extractor                         | 2.21.0      | Apache 2.0                                 |
 | Adobe XMP Core                             | 6.1.11      | BSD 3-Clause                               |
-| Guava, failureaccess                       | 33.4.8, 1.0.3 | Apache 2.0                               |
-| Error Prone annotations                    | 2.36.0      | Apache 2.0                                 |
-| J2ObjC annotations                         | 3.0.0       | Apache 2.0                                 |
-| JSpecify                                   | 1.0.0       | Apache 2.0                                 |
+| Guava, failureaccess                       | 33.7.2, 1.0.3 | Apache 2.0                               |
+| Error Prone annotations                    | 2.50.0      | Apache 2.0                                 |
+| J2ObjC annotations                         | 3.1         | Apache 2.0                                 |
+| JSpecify                                   | 1.0.1       | Apache 2.0                                 |
 | JNA (Java Native Access)                   | 5.14.0      | Apache 2.0 (nebo LGPL 2.1)                 |
 | sqlite-jdbc (s knihovnou SQLite)           | 3.53.4.0    | Apache 2.0, část BSD (Zentus); SQLite je volné dílo |
 | mapsforge (core, map, map-reader, map-awt, themes) | 0.25.0 | LGPL 3 nebo novější (bez §4(d), §4(e)) |
