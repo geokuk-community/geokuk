@@ -359,6 +359,74 @@ public class SledovaniSchrankyTest {
 	}
 
 	@Test
+	public void velkyTextSePriPravidelneKontroleNectePoRaz() {
+		final Clipboard pocitajici = new RucniSchranka("pocitajici") {
+			@Override
+			public Object getData(final DataFlavor flavor) throws UnsupportedFlavorException, java.io.IOException {
+				cteni++;
+				return super.getData(flavor);
+			}
+		};
+		sledovani = sledovani(pocitajici);
+		sledovani.nastav(true);
+		sledovani.oknoSeZmenilo(false);
+		provedFronty();
+		final StringBuilder dlouhy = new StringBuilder("GC19ACP ");
+		while (dlouhy.length() <= SledovaniSchranky.NEJVIC_ZNAKU) {
+			dlouhy.append("x");
+		}
+		pocitajici.setContents(new StringSelection(dlouhy.toString()), null);
+		tik.run();
+		provedFronty();
+		final int cteniPoPrvnim = pocetCteni();
+		tik.run();
+		tik.run();
+		provedFronty();
+		assertEquals("velký text se při dalších tiknutích nečte", cteniPoPrvnim, pocetCteni());
+		assertTrue(predane.isEmpty());
+
+		pocitajici.setContents(new StringSelection("GC19ACP"), null);
+		sledovani.flavorsChanged(null);
+		provedFronty();
+		assertEquals("nový obsah schránky se zase čte", Arrays.asList("GC19ACP"), predane);
+		pocitajici.setContents(new StringSelection("GCAAAAA"), null);
+		tik.run();
+		provedFronty();
+		assertEquals("po změně formátu se pravidelná kontrola obnoví", Arrays.asList("GC19ACP", "GCAAAAA"), predane);
+		predane.remove("GCAAAAA");
+		pocitajici.setContents(new StringSelection(dlouhy.toString()), null);
+		tik.run();
+		provedFronty();
+		aktivni = true;
+		sledovani.oknoSeZmenilo(true);
+		aktivni = false;
+		sledovani.oknoSeZmenilo(false);
+		provedFronty();
+		pocitajici.setContents(new StringSelection("GCBZJGC"), null);
+		tik.run();
+		provedFronty();
+		assertEquals("po návratu do programu se kontrola obnoví", Arrays.asList("GC19ACP", "GCBZJGC"), predane);
+	}
+
+	private int pocetCteni() {
+		return cteni;
+	}
+
+	@Test
+	public void poslouchacOkenSePriOpakovaneUdalostiRegistrujeJednouAOdregistrujeSe() {
+		final java.awt.KeyboardFocusManager manager = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager();
+		final int puvodne = manager.getPropertyChangeListeners("activeWindow").length;
+		final PrejdiNaKesoidZeSchrankyAction akce = new PrejdiNaKesoidZeSchrankyAction();
+		akce.zaregistrujPoslouchaceOken();
+		akce.zaregistrujPoslouchaceOken();
+		assertEquals("druhé zapnutí poslouchač nezdvojí", puvodne + 1, manager.getPropertyChangeListeners("activeWindow").length);
+		akce.odregistrujPoslouchaceOken();
+		assertEquals("jediné odregistrování poslouchač odebere", puvodne, manager.getPropertyChangeListeners("activeWindow").length);
+		akce.odregistrujPoslouchaceOken();
+		assertEquals(puvodne, manager.getPropertyChangeListeners("activeWindow").length);
+	}
+
+	@Test
 	public void akceBezZapnutiNevytvariSledovani() {
 		final PrejdiNaKesoidZeSchrankyAction akce = new PrejdiNaKesoidZeSchrankyAction();
 		akce.onEvent(new SledovaniSchrankyEvent(false));
