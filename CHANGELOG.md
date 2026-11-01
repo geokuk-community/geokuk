@@ -116,11 +116,11 @@
 - Načítání databází OpenSAKu je ověřené i se schématem verze 26.
 - Okno Najdi keš najde kešoid i podle odkazu nebo kódu: jde vložit odkaz
   coord.info, geocaching.com/geocache, cache_details.aspx?wp=, odkaz
-  Opencaching nebo Waymarkingu, nebo holý kód (GC, WM, OC, OP, OZ…), také
-  zastávku Adventure Labu (GCxxxx-N). Když kešoid s takovým ID neexistuje,
-  hledá se zadaný text. Okno je větší (výchozí 950×700, na malé obrazovce
-  nejvýš 90 % plochy), jde měnit a sloupec
-  Id se neořezává.
+  Opencaching nebo Waymarkingu, nebo holý kód (GC, WM, OC; OP, OZ… jen
+  s číslicí), také zastávku Adventure Labu (GCxxxx-N). Když kešoid s takovým
+  ID neexistuje, hledá se zadaný text. Okno je větší (výchozí 950×700,
+  na malé obrazovce nejvýš 90 % plochy), jde měnit a sloupec Id se
+  neořezává.
 - Nová volba v menu Kešoidy „Přejít na kešoid ze schránky“ (výchozí vypnuto):
   když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
   aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
@@ -129,8 +129,9 @@
   kešoidu.
 - Dálkové ovládání: POST /kes přijme i odkaz nebo text s kódem a pokusí se
   přenést okno programu do popředí (parametr focus=ne to vypne); nový příkaz
-  POST /popredi se o to pokusí také. Na Windows může systém focus odepřít,
-  okno se pak jen zviditelní a bliká na hlavním panelu.
+  POST /popredi se o to pokusí také. /kes otevře detail i kešoidu mimo
+  aktuální filtr; focus=ne nezáleží na velikosti písmen. Na Windows může
+  systém focus odepřít, okno se pak jen zviditelní a bliká na hlavním panelu.
 - Aktualizována knihovna Guava (bezpečnostní oprava).
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
