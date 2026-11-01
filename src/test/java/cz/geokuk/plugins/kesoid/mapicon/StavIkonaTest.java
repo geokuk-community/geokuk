@@ -161,6 +161,40 @@ public class StavIkonaTest {
 	}
 
 	@Test
+	public void ikonaAlelyMaVsudeZadanouVelikostVcetneDruhuWaypointu() {
+		final Genom genom = new Genom();
+		final IkonBag bag = new IkonBag(genom) {
+			@Override
+			public Icon seekIkon(final Genotyp genotyp) {
+				return zaklad(32);
+			}
+		};
+		final Alela[] vsechny = { genom.ALELA_hnf, genom.ALELA_fnd, genom.ALELA_own, genom.ALELA_cpt, genom.ALELA_dpl, genom.ALELA_dsbl, genom.ALELA_arch, genom.ALELA_gc, genom.ALELA_mz, genom.ALELA_wp,
+				genom.ALELA_nevyluste, genom.symGen.getVychoziAlela() };
+		for (final int velikost : new int[] { 16, 20 }) {
+			for (final Alela alela : vsechny) {
+				final Icon ikona = StavIkona.ikonaAlely(bag, alela, velikost);
+				Assert.assertEquals(alela.qualName(), velikost, ikona.getIconWidth());
+				Assert.assertEquals(alela.qualName(), velikost, ikona.getIconHeight());
+			}
+		}
+	}
+
+	@Test
+	public void ikonaAlelyMaStavoveSymboly() {
+		final IkonBag bag = bagSPlnymCtvercem();
+		final Genom g = bag.getGenom();
+		final int v = 20;
+		final BufferedImage z = obraz(StavIkona.ikonaAlely(bag, g.ALELA_dsbl, v));
+		Assert.assertTrue("červený zákaz", cervenaCara(z.getRGB(v / 2, 2)));
+		final BufferedImage a = obraz(StavIkona.ikonaAlely(bag, g.ALELA_arch, v));
+		Assert.assertTrue("značka archivu v rohu", viditelne(a.getRGB(v - 1, v - 1)));
+		Assert.assertTrue("dílek skládačky", viditelne(obraz(StavIkona.ikonaAlely(bag, g.ALELA_nevyluste, v)).getRGB(v / 2, v / 2)));
+		final BufferedImage vztah = obraz(StavIkona.ikonaAlely(bag, g.ALELA_hnf, v));
+		Assert.assertFalse("rezerva kolem vztahu", viditelne(vztah.getRGB(0, v / 2)));
+	}
+
+	@Test
 	public void naCtverecZachovaPomerStranACentruje() {
 		final BufferedImage uzka = obraz(StavIkona.naCtverec(zaklad(12), V));
 		Assert.assertEquals(V, uzka.getWidth());
