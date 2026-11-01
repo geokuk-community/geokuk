@@ -121,6 +121,12 @@
   hledá se zadaný text. Okno je větší (výchozí 950×700, na malé obrazovce
   nejvýš 90 % plochy), jde měnit a sloupec
   Id se neořezává.
+- Nová volba v menu Kešoidy „Přejít na kešoid ze schránky“ (výchozí vypnuto):
+  když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
+  aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
+  do popředí nepřenáší. Schránku program sleduje jen při zapnuté volbě
+  a její obsah nezapisuje na disk; do logu se může dostat jen rozpoznaný kód
+  kešoidu.
 - Dálkové ovládání: POST /kes přijme i odkaz nebo text s kódem a pokusí se
   přenést okno programu do popředí (parametr focus=ne to vypne); nový příkaz
   POST /popredi se o to pokusí také. Na Windows může systém focus odepřít,
