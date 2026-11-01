@@ -3,6 +3,10 @@ package cz.geokuk.core.coordinates;
 /**
  * Převod mezi WGS84 a S-JTSK (EPSG:5514): Helmertova transformace na Besselův elipsoid a Krovakovo zobrazení. Hodnoty jsou ve tvaru, v jakém je používá ČÚZK:
  * záporné, {@code y} je osa na západ, {@code x} na jih. Přesnost je v řádu metrů, použitelné jen na území České republiky a okolí.
+ * <p>
+ * Parametry: Besselův elipsoid 1841 (a = 6377397,155 m, e² = 0,006674372230614); zobrazení φc = 49°30', λ0 = 24°50' východně od Greenwiche, azimut osy kužele 30°17'17,3031",
+ * φp = 78°30', k0 = 0,9999; sedmiparametrová transformace z Besselova elipsoidu do WGS84 (pozicový vektor): posun 570,8285 / 85,6769 / 462,8374 m, otočení 4,9984" / 1,5867" / 5,2611",
+ * měřítko 3,5623 ppm.
  */
 public final class SJtsk {
 
