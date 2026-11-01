@@ -31,12 +31,14 @@ import cz.geokuk.core.program.UmisteniProgramu;
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.plugins.kesoid.KodKesoidu;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.mapy.MapyModel;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.util.pocitadla.Pocitadlo;
 import cz.geokuk.util.pocitadla.SpravcePocitadel;
 import cz.geokuk.util.file.Soubory;
+import cz.geokuk.util.gui.PredniOkno;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -50,7 +52,10 @@ import lombok.extern.slf4j.Slf4j;
  * GET  /stav                              verze, střed mapy, měřítko, podklad, počet waypointů
  * POST /pozice?lat=50.08&amp;lon=14.42[&amp;meritko=15]
  * POST /podklad?jmeno=TURIST_M
- * POST /kes?kod=GC12345                   vybere keš a vystředí na ni mapu
+ * POST /kes?kod=GC12345[&amp;focus=ne]      vybere keš a vystředí na ni mapu; kód může být i odkaz nebo text s kódem (coord.info/GC12345,
+ *                                         geocaching.com/geocache/GC12345_nazev…) a okno programu se přenese do popředí, nechceš-li, focus=ne
+ * POST /popredi                           přenese okno programu do popředí a vyžádá mu focus (na Windows ho systém programu z pozadí
+ *                                         nemusí dát: okno se zviditelní, ale bliká na hlavním panelu)
  * POST /prenacti                          znovu načte keše
  * </pre>
  *
@@ -332,7 +337,11 @@ public class DalkoveOvladani {
 				break;
 			case "/kes":
 				vyzadujPost(post);
-				odpovez(ex, 200, naEdt(() -> kes(param.get("kod"))));
+				odpovez(ex, 200, naEdt(() -> kes(param.get("kod"), !"ne".equals(param.get("focus")))));
+				break;
+			case "/popredi":
+				vyzadujPost(post);
+				odpovez(ex, 200, naEdt(DalkoveOvladani::popredi));
 				break;
 			case "/menu":
 				if (post) {
@@ -637,19 +646,43 @@ public class DalkoveOvladani {
 		return stav(false);
 	}
 
-	private String kes(final String kod) {
+	private String kes(final String kod, final boolean predniOkno) {
+		prejdiNaKes(kod, predniOkno, DalkoveOvladani::popredi);
+		return stav(false);
+	}
+
+	/** Vystředí mapu na kešoid podle kódu, odkazu nebo textu s kódem a na žádost přenese okno do popředí; kešoid, který není načtený, je chyba. */
+	void prejdiNaKes(final String kod, final boolean predniOkno, final Runnable popredi) {
 		final KesBag kese = kesoidModel.getVsechnyKesoidy();
-		if (kod == null || kese == null) {
+		final Kesoid k = kese == null ? null : najdiKesoid(kod, kese.getKesoidy());
+		if (k == null) {
 			throw new IllegalArgumentException("keš " + kod + " není načtená");
 		}
-		for (final Kesoid k : kese.getKesoidy()) {
+		poziceModel.setPozice(k.getMainWpt());
+		vyrezModel.vystredovatNaPozici();
+		if (predniOkno) {
+			popredi.run();
+		}
+	}
+
+	/** Kešoid podle kódu, odkazu nebo textu s kódem; nejdřív přesná shoda celého zadání s identifikátorem. */
+	static Kesoid najdiKesoid(final String vstup, final java.util.Collection<Kesoid> kesoidy) {
+		if (vstup == null) {
+			return null;
+		}
+		final String kod = vstup.trim();
+		for (final Kesoid k : kesoidy) {
 			if (kod.equalsIgnoreCase(k.getIdentifier())) {
-				poziceModel.setPozice(k.getMainWpt());
-				vyrezModel.vystredovatNaPozici();
-				return stav(false);
+				return k;
 			}
 		}
-		throw new IllegalArgumentException("keš " + kod + " není načtená");
+		return KodKesoidu.najdi(vstup, kesoidy, Kesoid::getIdentifier);
+	}
+
+	/** Přenese hlavní okno do popředí a vyžádá mu focus; na Windows ho systém programu z pozadí nemusí dát. */
+	private static String popredi() {
+		PredniOkno.predAktivuj(hlavniOkno());
+		return "{\"pozadano\":true}";
 	}
 
 	private static double cislo(final Map<String, String> param, final String jmeno) {
