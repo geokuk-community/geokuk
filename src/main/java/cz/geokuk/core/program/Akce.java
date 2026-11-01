@@ -130,6 +130,7 @@ public class Akce {
 	public final RenderAction renderAction = new RenderAction();
 
 	public final KesoidyOnoffAction kesoidyOnoffAction = new KesoidyOnoffAction();
+	public final PrejdiNaKesoidZeSchrankyAction prejdiNaKesoidZeSchrankyAction = new PrejdiNaKesoidZeSchrankyAction();
 
 	public final NapovedaAction napovedaAction = new NapovedaAction(null);
 	public final ZadatProblemAction zadatProblemAction = new ZadatProblemAction();

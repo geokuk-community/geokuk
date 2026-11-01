@@ -66,6 +66,21 @@ public class PoziceModel extends Model0 implements AfterInjectInit {
 		}
 	}
 
+	/**
+	 * Přejde přímo na daný objekt, třeba kešoid vybraný podle kódu, i když ho zobrazená vrstva neuchopí (je mimo filtr nebo vypnutá). Objekt se tak stane pozicí a
+	 * jeho detail se otevře stejně jako po kliknutí na něj v mapě.
+	 */
+	public void setPoziceNaObjekt(final Uchopenec uchopenec) {
+		if (uchopenec == null) {
+			setPozice(null);
+			return;
+		}
+		if (poziceq.isNoPosition() || poziceq.getPoziceMouable() != uchopenec) {
+			poziceq = new Poziceq(uchopenec);
+			fire(new PoziceChangedEvent(poziceq));
+		}
+	}
+
 	public void souradniceDoClipboardu(final Mouable mouable) {
 		if (mouable == null) {
 			return;
