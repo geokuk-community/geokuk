@@ -97,4 +97,17 @@ public class OdkazyNaMapyTest {
 		assertNotNull(OdkazyNaMapy.cuzk(new Wgs(50, 19.1)));
 		assertNull(OdkazyNaMapy.cuzk(new Wgs(50, 19.101)));
 	}
+
+	/** Tooltip položky říká, na jaký web se otevře, ne název položky nabídky. */
+	@Test
+	public void tooltipNazyvaWebAneNazevPolozky() {
+		final List<OdkazyNaMapy.Odkaz> vsechny = new ArrayList<>(OdkazyNaMapy.hlavni(MISTO));
+		vsechny.addAll(OdkazyNaMapy.dalsi(MISTO, true));
+		final List<String> tooltipy = new ArrayList<>();
+		for (final OdkazyNaMapy.Odkaz o : vsechny) {
+			tooltipy.add((String) new OtevritVMapeAction(o).getValue(javax.swing.Action.SHORT_DESCRIPTION));
+		}
+		assertEquals(Arrays.asList("Otevře místo v prohlížeči na webu Mapy.com.", "Otevře místo v prohlížeči na webu Google Mapy.", "Otevře místo v prohlížeči na webu OpenStreetMap.",
+				"Otevře místo v prohlížeči na webu ČÚZK Geoprohlížeč."), tooltipy);
+	}
 }

@@ -10,13 +10,15 @@ import cz.geokuk.core.coordinates.Wgs;
 /** Odkazy na místo na webech s mapami, které se otevírají v prohlížeči. */
 public final class OdkazyNaMapy {
 
-	/** Odkaz s názvem položky nabídky. */
+	/** Odkaz s názvem položky nabídky a názvem webu, na který vede. */
 	public static final class Odkaz {
 		public final String nazev;
+		public final String web;
 		public final String url;
 
-		Odkaz(final String nazev, final String url) {
+		Odkaz(final String nazev, final String web, final String url) {
 			this.nazev = nazev;
+			this.web = web;
 			this.url = url;
 		}
 	}
@@ -52,8 +54,8 @@ public final class OdkazyNaMapy {
 	/** Odkazy hned v nabídce: Mapy.com a Google Mapy. */
 	public static List<Odkaz> hlavni(final Wgs wgs) {
 		final List<Odkaz> odkazy = new ArrayList<>();
-		odkazy.add(new Odkaz("Otevřít v Mapy.com", mapyCom(wgs)));
-		odkazy.add(new Odkaz("Otevřít v Google Mapách", google(wgs)));
+		odkazy.add(new Odkaz("Otevřít v Mapy.com", "Mapy.com", mapyCom(wgs)));
+		odkazy.add(new Odkaz("Otevřít v Google Mapách", "Google Mapy", google(wgs)));
 		return odkazy;
 	}
 
@@ -61,11 +63,11 @@ public final class OdkazyNaMapy {
 	public static List<Odkaz> dalsi(final Wgs wgs, final boolean sOpenStreetMap) {
 		final List<Odkaz> odkazy = new ArrayList<>();
 		if (sOpenStreetMap) {
-			odkazy.add(new Odkaz("OpenStreetMap", Nominatim.odkazNaMapu(wgs)));
+			odkazy.add(new Odkaz("OpenStreetMap", "OpenStreetMap", Nominatim.odkazNaMapu(wgs)));
 		}
 		final String cuzk = cuzk(wgs);
 		if (cuzk != null) {
-			odkazy.add(new Odkaz("ČÚZK Geoprohlížeč", cuzk));
+			odkazy.add(new Odkaz("ČÚZK Geoprohlížeč", "ČÚZK Geoprohlížeč", cuzk));
 		}
 		return odkazy;
 	}
