@@ -86,4 +86,15 @@ public class HledacTest {
 		assertEquals(1, nalezeno.size());
 		assertEquals("při regulárním výrazu se hledá v textech jako dřív, ne podle kódu", 6, nalezeno.get(0).getPoc());
 	}
+
+	@Test
+	public void zastavkaAdventureLabSeNajdePresneAHoleKodNajdeZaklad() {
+		final Kesoid zaklad = kesoid("GC5PGVC", "Lab GC5PGVC");
+		final Kesoid zastavka = kesoid("GC5PGVC-3", "Lab GC5PGVC-3 zastavka");
+		assertSame(zastavka, hledej("GC5PGVC-3", false, zaklad, zastavka).get(0).getKes());
+		assertSame(zaklad, hledej("GC5PGVC", false, zaklad, zastavka).get(0).getKes());
+		assertEquals(1, hledej("GC5PGVC", false, zaklad, zastavka).size());
+		assertSame("zastávka, která v datech není, najde základ", zaklad, hledej("GC5PGVC-9", false, zaklad, zastavka).get(0).getKes());
+		assertEquals("GC5PGVC-3", hledej("https://example.org/ GC5PGVC-3", false, zaklad, zastavka).get(0).getKdeNalezeno());
+	}
 }

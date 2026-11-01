@@ -180,6 +180,70 @@ public class KodKesoiduTest {
 	}
 
 	@Test
+	public void zastavkyAdventureLabMajiPriponuSPomlckou() {
+		kandidati("GCY90K", "GCY90K");
+		kandidati("GCY90K-2", "GCY90K-2", "GCY90K");
+		kandidati("GC5PGVC-3", "GC5PGVC-3", "GC5PGVC");
+		kandidati("GC5PGVC-0", "GC5PGVC-0", "GC5PGVC");
+		kandidati("GC9ENC1-1", "GC9ENC1-1", "GC9ENC1");
+		kandidati("GC9RY2B-1", "GC9RY2B-1", "GC9RY2B");
+		kandidati("gcy90k-2", "GCY90K-2", "GCY90K");
+		kandidati("GC5PGVC-33", "GC5PGVC-33", "GC5PGVC");
+		kandidati("GC5PGVC-333", "GC5PGVC-333", "GC5PGVC");
+		kandidati("Zastávka (GC5PGVC-3), další GC5PGVC-4.", "GC5PGVC-3", "GC5PGVC", "GC5PGVC-4");
+	}
+
+	@Test
+	public void pomlckaMeziSlovyNicNerozbije() {
+		kandidati("GC5PGVC-3333", "GC5PGVC");
+		kandidati("GC19ACP - název", "GC19ACP");
+		kandidati("GC19ACP-", "GC19ACP");
+		kandidati("GC19ACP-abc", "GC19ACP");
+		kandidati("GC19ACP--3", "GC19ACP");
+		kandidati("-GC19ACP", "GC19ACP");
+		kandidati("keš GC19ACP-název-cache", "GC19ACP");
+		kandidati("-3");
+		kandidati("-");
+	}
+
+	@Test
+	public void najdiZastavkuNejdrivPresnePotomZaklad() {
+		final List<String> data = Arrays.asList("GCY90K", "GCY90K-0", "GCY90K-1", "GCY90K-2", "GC9ENC1-1");
+		assertEquals("GCY90K-2", KodKesoidu.najdi("GCY90K-2", data, s -> s));
+		assertEquals("holý kód najde základní kešoid", "GCY90K", KodKesoidu.najdi("GCY90K", data, s -> s));
+		assertEquals("zastávka, která v datech není, najde základ", "GCY90K", KodKesoidu.najdi("GCY90K-7", data, s -> s));
+		assertEquals("GC9ENC1-1", KodKesoidu.najdi("GC9ENC1-1", data, s -> s));
+		assertNull("základ bez kešoidu v datech není", KodKesoidu.najdi("GC9ENC1", data, s -> s));
+		assertNull(KodKesoidu.najdi("GC9ENC1-2", data, s -> s));
+		assertEquals("GCY90K-0", KodKesoidu.najdi("GCY90K-0", Arrays.asList("GCY90K", "GCY90K-0"), s -> s));
+	}
+
+	@Test
+	public void predponyOpencaching() {
+		for (final String predpona : new String[] { "OC", "OP", "OZ", "OU", "OK", "OB", "OR" }) {
+			kandidati(predpona + "1234", predpona + "1234");
+			kandidati("https://opencaching.cz/" + predpona + "1AB2", predpona + "1AB2");
+			kandidati("https://www.opencaching.cz/viewcache.php?wp=" + predpona + "1AB2", predpona + "1AB2");
+		}
+		kandidati("https://opencaching.pl/viewcache.php?wp=OP86AB", "OP86AB");
+		kandidati("https://opencaching.cz/OZ123A_nazev", "OZ123A");
+		kandidati("OZ12AB", "OZ12AB");
+	}
+
+	@Test
+	public void hraniceCiselnehoIDAZlomkyOdkazu() {
+		kandidati("https://www.geocaching.com/seek/cache_details.aspx?id=1", "GC1");
+		kandidati("https://www.geocaching.com/seek/cache_details.aspx?id=65535", "GCFFFF");
+		kandidati("https://www.geocaching.com/seek/cache_details.aspx?id=65536");
+		kandidati("kod=GC19ACP");
+		kandidati("x?GC19ACP");
+		kandidati("a&amp;GC19ACP");
+		kandidati("(GC19ACP)", "GC19ACP");
+		kandidati("?GC19ACP", "GC19ACP");
+		kandidati("GC19ACP=", "GC19ACP");
+	}
+
+	@Test
 	public void najdiPodleKoduVDatech() {
 		final List<String> data = Arrays.asList("GC19ACP", "GCBZJGC", "OC12345", null, "gcbza31");
 		assertEquals("GCBZJGC", KodKesoidu.najdi("https://coord.info/GCBZJGC_nazev", data, s -> s));

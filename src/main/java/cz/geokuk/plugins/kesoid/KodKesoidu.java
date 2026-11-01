@@ -31,7 +31,9 @@ public final class KodKesoidu {
 	private static final String KONEC = "(?![A-Z0-9])";
 	/** Abeceda GC kódů nemá I, L, O, S, U. */
 	private static final String GC = "(GC[0-9A-HJKMNPQRTV-Z]{1,7})" + KONEC;
-	private static final String OC = "(OC[A-Z0-9]{1,8})" + KONEC;
+	/** Předpony kešoidů sítě Opencaching: Německo OC, Polsko OP, Česko OZ, USA OU, Velká Británie OK, Nizozemsko OB, Rumunsko OR. */
+	private static final String PREDPONY_OC = "OC|OP|OZ|OU|OK|OB|OR";
+	private static final String OC = "((?:" + PREDPONY_OC + ")[A-Z0-9]{1,8})" + KONEC;
 	private static final String WM = "(WM[A-Z0-9]{1,8})" + KONEC;
 	/** Začátek jména serveru: ne uprostřed delšího jména. */
 	private static final String SERVER = "(?<![A-Za-z0-9-])";
@@ -54,10 +56,10 @@ public final class KodKesoidu {
 	private static final Pattern ID_KESE = Pattern.compile(SERVER + "geocaching\\.com/seek/cache_details\\.aspx" + PARAMETR + "id=([0-9]{1,6})(?![0-9])", PRIZNAKY);
 
 	/**
-	 * Holý kód: GC s kódem v abecedě GC, předpona WM, OC, MU a písmena a číslice nebo dvě až tři písmena a číslice; neleží uvnitř slova. Čísla bez písmenné předpony se
-	 * nepřijímají.
+	 * Holý kód: GC s kódem v abecedě GC, předpona WM, MU nebo Opencaching a písmena a číslice, nebo dvě až tři písmena a číslice; neleží uvnitř slova. Čísla bez písmenné
+	 * předpony se nepřijímají. Za kódem smí být přípona {@code -číslo} (jedna až tři číslice), jak se píší zastávky Adventure Lab (GC5PGVC-3).
 	 */
-	private static final Pattern HOLY = Pattern.compile("(?<![A-Za-z0-9])(GC[0-9A-HJKMNPQRTV-Z]{1,7}|(?:WM|OC|MU)[A-Z0-9]{2,8}|[A-Z]{2,3}[0-9]{1,8})(?![A-Za-z0-9])", PRIZNAKY);
+	private static final Pattern HOLY = Pattern.compile("(?<![A-Za-z0-9])(GC[0-9A-HJKMNPQRTV-Z]{1,7}|(?:WM|MU|" + PREDPONY_OC + ")[A-Z0-9]{2,8}|[A-Z]{2,3}[0-9]{1,8})(-[0-9]{1,3})?(?![A-Za-z0-9])", PRIZNAKY);
 
 	private KodKesoidu() {}
 
@@ -94,7 +96,11 @@ public final class KodKesoidu {
 			}
 			final Matcher holy = HOLY.matcher(t);
 			while (holy.find()) {
-				kody.add(holy.group(1).toUpperCase(Locale.ROOT));
+				final String zaklad = holy.group(1).toUpperCase(Locale.ROOT);
+				if (holy.group(2) != null) {
+					kody.add(zaklad + holy.group(2));
+				}
+				kody.add(zaklad);
 			}
 		}
 		return new ArrayList<>(kody);
@@ -102,8 +108,12 @@ public final class KodKesoidu {
 
 	/** GC kód z číselného ID keše; null, když ID převést neumíme. */
 	private static String kodZId(final String cislo) {
-		final int id = Integer.parseInt(cislo);
-		return id < 1 || id > NEJVETSI_ID ? null : "GC" + Integer.toHexString(id).toUpperCase(Locale.ROOT);
+		try {
+			final int id = Integer.parseInt(cislo);
+			return id < 1 || id > NEJVETSI_ID ? null : "GC" + Integer.toHexString(id).toUpperCase(Locale.ROOT);
+		} catch (final NumberFormatException e) {
+			return null;
+		}
 	}
 
 	private static String bezOkrajovychZnaku(final String token) {
@@ -125,7 +135,7 @@ public final class KodKesoidu {
 
 	/**
 	 * Kešoid, jehož identifikátor je některý kód z textu; když jich je víc, ten, který je v seznamu {@link #kandidati} dřív, tedy nejdřív kód z odkazu v pořadí v
-	 * textu a pak holé kódy. Null, když text kód neobsahuje nebo kód v datech není.
+	 * textu a pak holé kódy. U kódu s příponou zastávky ({@code GC5PGVC-3}) je dřív přesná shoda i s příponou, potom základní kešoid ({@code GC5PGVC}). Null, když text kód neobsahuje nebo kód v datech není.
 	 */
 	public static <T> T najdi(final String text, final Collection<? extends T> kesoidy, final Function<? super T, String> identifikator) {
 		final List<String> kandidati = kandidati(text);
