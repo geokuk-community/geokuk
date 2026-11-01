@@ -2,6 +2,8 @@ package cz.geokuk.plugins.geocoding;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -53,8 +55,8 @@ public class OdkazyNaMapyTest {
 	@Test
 	public void cuzkMimoRepublikuSeNenabizi() {
 		assertNull(OdkazyNaMapy.cuzk(new Wgs(48.8566, 2.3522)));
-		final List<OdkazyNaMapy.Odkaz> mimo = OdkazyNaMapy.pro(new Wgs(48.8566, 2.3522));
-		assertEquals(2, mimo.size());
+		final List<OdkazyNaMapy.Odkaz> mimo = OdkazyNaMapy.pro(new Wgs(48.8566, 2.3522), false);
+		assertEquals(2, mimo.size()); // Mapy.com a Google
 		for (final OdkazyNaMapy.Odkaz o : mimo) {
 			assertFalse(o.nazev, o.nazev.contains("ČÚZK"));
 		}
@@ -62,15 +64,25 @@ public class OdkazyNaMapyTest {
 
 	@Test
 	public void poradiOdpovidaPodkladumVNabidceMapy() {
-		final List<OdkazyNaMapy.Odkaz> odkazy = OdkazyNaMapy.pro(MISTO);
-		assertEquals(3, odkazy.size());
-		assertEquals("Mapy.com – Turistická", odkazy.get(0).nazev);
-		assertEquals("ČÚZK Geoprohlížeč", odkazy.get(1).nazev);
-		assertEquals("Google Mapy", odkazy.get(2).nazev);
+		final List<OdkazyNaMapy.Odkaz> odkazy = OdkazyNaMapy.pro(MISTO, true);
+		assertEquals(Arrays.asList("Mapy.com – Turistická", "OpenStreetMap", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy(odkazy));
 		for (final OdkazyNaMapy.Odkaz o : odkazy) {
 			assertTrue(o.url, o.url.startsWith("https://"));
 			assertFalse(o.url, o.url.contains(" "));
 		}
+	}
+
+	@Test
+	public void bezOpenStreetMapKdyzJiNabizejiJinaPolozka() {
+		assertEquals(Arrays.asList("Mapy.com – Turistická", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy(OdkazyNaMapy.pro(MISTO, false)));
+	}
+
+	private static List<String> nazvy(final List<OdkazyNaMapy.Odkaz> odkazy) {
+		final List<String> nazvy = new ArrayList<>();
+		for (final OdkazyNaMapy.Odkaz o : odkazy) {
+			nazvy.add(o.nazev);
+		}
+		return nazvy;
 	}
 
 	/** Hranice obdélníku, ve kterém se ČÚZK nabízí: na hranici ano, těsně za ní ne. */

@@ -70,7 +70,7 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 		final Wgs mistoNabidky = mysJePoblizKrize ? poziceq.getWgs() : pointcur == null ? null : getSoord().transform(pointcur).toWgs();
 		if (mistoNabidky != null) {
 			final JMenu jinaMapa = new JMenu("Otevřít v jiné mapě");
-			for (final OdkazyNaMapy.Odkaz odkaz : OdkazyNaMapy.pro(mistoNabidky)) {
+			for (final OdkazyNaMapy.Odkaz odkaz : OdkazyNaMapy.pro(mistoNabidky, !mysJePoblizKrize)) {
 				jinaMapa.add(new JMenuItem(factory.init(new OtevritVMapeAction(odkaz))));
 			}
 			popupMenu.add(jinaMapa);
