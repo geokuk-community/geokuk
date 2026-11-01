@@ -5,9 +5,21 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Properties;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.junit.Test;
+
+import cz.geokuk.core.coord.PoziceModel;
+import cz.geokuk.core.coord.VyrezModel;
+import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.Kesoid;
+import cz.geokuk.plugins.kesoid.Wpt;
+import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 
 public class DalkoveOvladaniTest {
 
@@ -234,5 +246,91 @@ public class DalkoveOvladaniTest {
 		org.junit.Assume.assumeTrue("root".equals(System.getProperty("user.name")));
 		java.nio.file.Files.setOwner(d, d.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName("nobody"));
 		DalkoveOvladani.overSlozku(d);
+	}
+
+	/** Celá odpověď na GET bez tokenu: stavový řádek a tělo. */
+	private static String odpoved(final int port, final String cesta, final String host) throws IOException {
+		try (Socket s = new Socket(InetAddress.getLoopbackAddress(), port)) {
+			s.getOutputStream().write(("GET " + cesta + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+			s.getOutputStream().flush();
+			final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			final byte[] buf = new byte[1024];
+			for (int n; (n = s.getInputStream().read(buf)) > 0;) {
+				bos.write(buf, 0, n);
+			}
+			return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+		}
+	}
+
+	private static Kesoid kesoid(final String identifier) {
+		final Kesoid k = mock(Kesoid.class);
+		when(k.getIdentifier()).thenReturn(identifier);
+		return k;
+	}
+
+	@Test
+	public void kesSeHledaPodleKoduOdkazuNeboTextuSKodem() {
+		final Kesoid a = kesoid("GC19ACP");
+		final Kesoid b = kesoid("GCBZJGC");
+		final Kesoid bezPredpony = kesoid("12345");
+		final java.util.List<Kesoid> data = Arrays.asList(a, b, bezPredpony);
+		assertSame(a, DalkoveOvladani.najdiKesoid("GC19ACP", data));
+		assertSame("velikost písmen nezáleží a okolní mezery se ořežou", a, DalkoveOvladani.najdiKesoid("  gc19acp \n", data));
+		assertSame("identifikátor bez písmenné předpony se hledá jako dosud", bezPredpony, DalkoveOvladani.najdiKesoid("12345", data));
+		assertSame(b, DalkoveOvladani.najdiKesoid("https://coord.info/GCBZJGC_nazev-cache", data));
+		assertSame(a, DalkoveOvladani.najdiKesoid("https://www.geocaching.com/seek/cache_details.aspx?wp=GC19ACP&log=y", data));
+		assertSame(b, DalkoveOvladani.najdiKesoid("Mrkni na GCBZJGC, je pěkná", data));
+		assertNull(DalkoveOvladani.najdiKesoid("https://coord.info/GCZZZZZ", data));
+		assertNull(DalkoveOvladani.najdiKesoid("obyčejný text", data));
+		assertNull(DalkoveOvladani.najdiKesoid(null, data));
+	}
+
+	@Test
+	public void kesVystredujeMapuAJenNaZadostPrenesOknoDoPopredi() {
+		final Kesoid kes = kesoid("GC19ACP");
+		final Wpt wpt = mock(Wpt.class);
+		when(kes.getMainWpt()).thenReturn(wpt);
+		final KesBag bag = mock(KesBag.class);
+		when(bag.getKesoidy()).thenReturn(Arrays.asList(kes));
+		final KesoidModel kesoidModel = mock(KesoidModel.class);
+		when(kesoidModel.getVsechnyKesoidy()).thenReturn(bag);
+		final PoziceModel pozice = mock(PoziceModel.class);
+		final VyrezModel vyrez = mock(VyrezModel.class);
+		final DalkoveOvladani ovladani = new DalkoveOvladani();
+		ovladani.inject(kesoidModel);
+		ovladani.inject(pozice);
+		ovladani.inject(vyrez);
+		final int[] popredi = { 0 };
+
+		ovladani.prejdiNaKes("https://coord.info/GC19ACP_nazev", true, () -> popredi[0]++);
+		verify(pozice).setPozice(wpt);
+		verify(vyrez).vystredovatNaPozici();
+		assertEquals("na žádost se okno přenese do popředí", 1, popredi[0]);
+
+		ovladani.prejdiNaKes("GC19ACP", false, () -> popredi[0]++);
+		assertEquals("s focus=ne se okno nepřenáší", 1, popredi[0]);
+
+		try {
+			ovladani.prejdiNaKes("GCZZZZZ", true, () -> popredi[0]++);
+			fail("neznámý kešoid je chyba");
+		} catch (final IllegalArgumentException e) {
+			assertTrue(e.getMessage().contains("GCZZZZZ"));
+		}
+		assertEquals("při chybě se okno nepřenáší", 1, popredi[0]);
+	}
+
+	@Test
+	public void popredAKesVyzadujiPostABezTokenuSeNeodmitaji() throws Exception {
+		final DalkoveOvladani ovladani = new DalkoveOvladani();
+		ovladani.spust(0, true);
+		try {
+			final int port = Integer.parseInt(nactiSoubor().getProperty("port"));
+			final String host = "127.0.0.1:" + port;
+			assertTrue(odpoved(port, "/popredi", host).contains("metodou POST"));
+			assertTrue(odpoved(port, "/kes?kod=GC19ACP", host).contains("metodou POST"));
+			assertEquals("webová stránka příkaz nespustí", 403, zavolej(port, "/popredi", null, host, "https://zlo.example"));
+		} finally {
+			ovladani.zastav();
+		}
 	}
 }
