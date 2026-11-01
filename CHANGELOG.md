@@ -98,11 +98,11 @@
 - Fronty dlaždic řadí požadavky podle toho, co je právě vidět: nejdřív hlavní
   mapa a viditelné dlaždice od středu ven; dlaždice, které už na obrazovce
   nejsou, se přeskočí. Online dlaždice se stahují podle téže priority,
-  spojení se znovu používají a počet souběžných stahování na jeden server je
-  omezený.
-- Při posunu a přibližování mapy je méně práce uvolňování paměti (−84 %)
-  a procesor se zatěžuje asi na 0,4 jádra místo 1,7 jádra; 95. percentil času
-  posunu je o 1,1 s kratší (ustálený provoz, párové měření na Windows).
+  spojení se znovu používají a počet souběžných stahování je na serverech
+  s omezením hlídaný.
+- Při posunu offline mapy je v ustáleném provozu méně práce uvolňování paměti
+  (−84 %), procesor se zatěžuje asi na 0,4 jádra místo 1,7 jádra a 95.
+  percentil času posunu je o 1,1 s kratší (párové měření na Windows).
 - Paměťová cache dlaždic se přizpůsobí velikosti haldy. Dokud se dlaždice
   načítá, ukáže se její náhled z jiného měřítka (online z disku, offline
   z paměti). Načítání dlaždic ukazuje malé točící se kolečko vpravo nahoře
@@ -141,8 +141,8 @@
   jen v oblasti kolem ní. Po aktualizaci programu se offline dlaždice
   jednorázově vykreslí znovu.
 - Předkreslování offline map je rychlejší: cache dlaždic zjišťuje, jestli
-  dlaždice existuje, bez načtení obrázku. Obrys map ve Správci offline map se
-  vykreslí jednou. Změna zvýraznění nebo sady ikon
+  dlaždice existuje, bez načtení obrázku. Klíč cache dlaždic počítá obrysy map
+  jednou na obrys. Změna zvýraznění nebo sady ikon
   nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
   v nečinnosti se složky kontrolují řidčeji.
 - Soubor > Optimalizace cache dlaždic… zhutní cache dlaždic a ukáže velikost,
