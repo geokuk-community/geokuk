@@ -182,9 +182,9 @@ public class SledovaniSchrankyTest {
 		akce.onEvent(new KeskyNactenyEvent(bag));
 		assertFalse("text bez kódu", akce.prejdiNa("obyčejná věta"));
 		assertFalse("kód, který v datech není", akce.prejdiNa("https://coord.info/GCZZZZZ"));
-		verify(pozice, never()).setPozice(wpt);
+		verify(pozice, never()).setPoziceNaObjekt(wpt);
 		assertTrue(akce.prejdiNa("https://coord.info/GC19ACP_nazev"));
-		verify(pozice).setPozice(wpt);
+		verify(pozice).setPoziceNaObjekt(wpt);
 		verify(vyrez).vystredovatNaPozici();
 	}
 }

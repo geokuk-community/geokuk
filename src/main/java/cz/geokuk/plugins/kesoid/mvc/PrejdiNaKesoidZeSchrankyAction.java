@@ -69,7 +69,7 @@ public class PrejdiNaKesoidZeSchrankyAction extends ToggleAction0 {
 		if (kesoid == null) {
 			return false;
 		}
-		poziceModel.setPozice(kesoid.getMainWpt());
+		poziceModel.setPoziceNaObjekt(kesoid.getMainWpt());
 		vyrezModel.vystredovatNaPozici();
 		return true;
 	}
