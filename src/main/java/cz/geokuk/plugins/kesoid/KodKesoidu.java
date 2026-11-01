@@ -33,6 +33,8 @@ public final class KodKesoidu {
 	private static final String GC = "(GC[0-9A-HJKMNPQRTV-Z]{1,7})" + KONEC;
 	/** Předpony kešoidů sítě Opencaching: Německo OC, Polsko OP, Česko OZ, USA OU, Velká Británie OK, Nizozemsko OB, Rumunsko OR. */
 	private static final String PREDPONY_OC = "OC|OP|OZ|OU|OK|OB|OR";
+	/** Předpony Opencaching, které jako holé slovo v textu vyžadují aspoň jednu číslici (jinak by je splnila běžná slova: okno, obec, oprava). */
+	private static final String PREDPONY_OC_S_CISLEM = "OP|OZ|OU|OK|OB|OR";
 	private static final String OC = "((?:" + PREDPONY_OC + ")[A-Z0-9]{1,8})" + KONEC;
 	private static final String WM = "(WM[A-Z0-9]{1,8})" + KONEC;
 	/** Začátek jména serveru: ne uprostřed delšího jména. */
@@ -56,10 +58,10 @@ public final class KodKesoidu {
 	private static final Pattern ID_KESE = Pattern.compile(SERVER + "geocaching\\.com/seek/cache_details\\.aspx" + PARAMETR + "id=([0-9]{1,6})(?![0-9])", PRIZNAKY);
 
 	/**
-	 * Holý kód: GC s kódem v abecedě GC, předpona WM, MU nebo Opencaching a písmena a číslice, nebo dvě až tři písmena a číslice; neleží uvnitř slova. Čísla bez písmenné
+	 * Holý kód: GC s kódem v abecedě GC, předpona WM, MU, OC nebo další předpona Opencaching a písmena s aspoň jednou číslicí, nebo dvě až tři písmena a číslice; neleží uvnitř slova. Čísla bez písmenné
 	 * předpony se nepřijímají. Za kódem smí být přípona {@code -číslo} (jedna až tři číslice), jak se píší zastávky Adventure Lab (GC5PGVC-3).
 	 */
-	private static final Pattern HOLY = Pattern.compile("(?<![A-Za-z0-9])(GC[0-9A-HJKMNPQRTV-Z]{1,7}|(?:WM|MU|" + PREDPONY_OC + ")[A-Z0-9]{2,8}|[A-Z]{2,3}[0-9]{1,8})(-[0-9]{1,3})?(?![A-Za-z0-9])", PRIZNAKY);
+	private static final Pattern HOLY = Pattern.compile("(?<![A-Za-z0-9])(GC[0-9A-HJKMNPQRTV-Z]{1,7}|(?:WM|MU|OC)[A-Z0-9]{2,8}|(?=[A-Z0-9]*[0-9])(?:" + PREDPONY_OC_S_CISLEM + ")[A-Z0-9]{2,8}|[A-Z]{2,3}[0-9]{1,8})(-[0-9]{1,3})?(?![A-Za-z0-9])", PRIZNAKY);
 
 	private KodKesoidu() {}
 

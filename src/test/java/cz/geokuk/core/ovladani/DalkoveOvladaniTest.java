@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 
 import static org.mockito.Mockito.mock;
@@ -303,7 +304,7 @@ public class DalkoveOvladaniTest {
 		final int[] popredi = { 0 };
 
 		ovladani.prejdiNaKes("https://coord.info/GC19ACP_nazev", true, () -> popredi[0]++);
-		verify(pozice).setPozice(wpt);
+		verify(pozice).setPoziceNaObjekt(wpt);
 		verify(vyrez).vystredovatNaPozici();
 		assertEquals("na žádost se okno přenese do popředí", 1, popredi[0]);
 
@@ -317,6 +318,17 @@ public class DalkoveOvladaniTest {
 			assertTrue(e.getMessage().contains("GCZZZZZ"));
 		}
 		assertEquals("při chybě se okno nepřenáší", 1, popredi[0]);
+	}
+
+	@Test
+	public void focusSeVypneHodnotouNeBezOhleduNaVelikostPismen() {
+		for (final String hodnota : new String[] { "ne", "NE", "Ne", "false", "FALSE", "0", "no", "off", " ne " }) {
+			assertFalse(hodnota, DalkoveOvladani.predniOkno(Collections.singletonMap("focus", hodnota)));
+		}
+		for (final String hodnota : new String[] { "ano", "1", "true", "" }) {
+			assertTrue(hodnota, DalkoveOvladani.predniOkno(Collections.singletonMap("focus", hodnota)));
+		}
+		assertTrue(DalkoveOvladani.predniOkno(Collections.<String, String>emptyMap()));
 	}
 
 	@Test

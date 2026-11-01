@@ -13,6 +13,7 @@ public class PredniOknoTest {
 	private static final class Zaznam implements PredniOkno.Povrch {
 		final List<String> kroky = new ArrayList<>();
 		boolean ikona;
+		RuntimeException selhaniNahore;
 		RuntimeException selhani;
 
 		@Override
@@ -28,6 +29,9 @@ public class PredniOknoTest {
 		@Override
 		public void nastavVzdyNahore(final boolean nahore) {
 			kroky.add("nahore=" + nahore);
+			if (nahore && selhaniNahore != null) {
+				throw selhaniNahore;
+			}
 		}
 
 		@Override
@@ -70,5 +74,18 @@ public class PredniOknoTest {
 			assertEquals("selhalo", e.getMessage());
 		}
 		assertEquals("okno nesmí zůstat napořád nahoře", "nahore=false", z.kroky.get(z.kroky.size() - 1));
+	}
+
+	@Test
+	public void vzdyNahoreSeVratiIKdyzJehoNastaveniSelze() {
+		final Zaznam z = new Zaznam();
+		z.selhaniNahore = new IllegalStateException("nahoře");
+		try {
+			PredniOkno.predAktivuj(z);
+			fail("výjimka se nemá spolknout");
+		} catch (final IllegalStateException e) {
+			assertEquals("nahoře", e.getMessage());
+		}
+		assertEquals(Arrays.asList("nahore=true", "nahore=false"), z.kroky);
 	}
 }
