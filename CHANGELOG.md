@@ -195,6 +195,9 @@
   zákazem, Archivovaný vyblednutá ikona s červeným křížkem. Ovladače stavů
   keše jsou seskupené za oddělovačem. Všechny ikony na liště kromě druhů
   waypointů jsou stejně velké, Není vyluštěno má ikonu dílku skládačky.
+  Ve Výběru filtru (F2), v dialozích Zvýraznění a Debug ikon a v nabídce
+  Zhasni jsou stejné ikony jako na liště, včetně stavů Disablovaná,
+  Archivovaná a Není vyluštěno.
 - Pojmenované výlety: ve stavovém řádku je jméno aktivního výletu a najetím
   myší na něj se otevře seznam výletů. Výlet lze založit, aktivovat,
   přejmenovat a smazat; aktivní výlet je v souborech lovim.ggt a tedne.ggt.
