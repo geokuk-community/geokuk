@@ -215,6 +215,8 @@ public class Menu extends MenuStrujce {
 		item(akce.implicitniVyberZobrazenychKesi);
 		item(akce.urlToClipboardForGeogetAction);
 		item(akce.urlToListingForGeogetAction);
+		separator();
+		item(akce.prejdiNaKesoidZeSchrankyAction);
 
 		/////////////////////////////////////////////////////
 		JLabel lbl;

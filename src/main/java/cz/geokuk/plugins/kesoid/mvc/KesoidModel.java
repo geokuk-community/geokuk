@@ -72,6 +72,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	private KesFilteringSwingWorker filteringSwingWorker;
 	private ProgressModel progressModel;
 	private Boolean onoff;
+	private boolean sledovatSchranku;
 	private EZobrazeniKesi zobrazeniKesi;
 	private int zvetseniIkonProcent = ZvetseniIkonEvent.VYCHOZI;
 	private volatile List<String> zamceneDatabaze = Collections.emptyList();
@@ -508,6 +509,20 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		fire(new KesoidOnoffEvent(onoff));
 	}
 
+	/** Přejít na kešoid, jehož kód nebo odkaz se objeví ve schránce, když je okno programu neaktivní; výchozí je vypnuto. */
+	public boolean isSledovatSchranku() {
+		return sledovatSchranku;
+	}
+
+	public void setSledovatSchranku(final boolean sledovat) {
+		if (sledovatSchranku == sledovat) {
+			return;
+		}
+		sledovatSchranku = sledovat;
+		currPrefe().node(FPref.KESOID_node).putBoolean(FPref.SLEDOVAT_SCHRANKU_value, sledovat);
+		fire(new SledovaniSchrankyEvent(sledovat));
+	}
+
 	public void setZobrazeniKesi(final EZobrazeniKesi zobrazeniKesi) {
 		if (this.zobrazeniKesi == zobrazeniKesi) {
 			return;
@@ -712,6 +727,8 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
 		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
+		setSledovatSchranku(kesoid.getBoolean(FPref.SLEDOVAT_SCHRANKU_value, false));
+		fire(new SledovaniSchrankyEvent(sledovatSchranku));
 		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
 		zvetseniIkonProcent = ZvetseniIkonEvent.oriznout(kesoid.getInt(FPref.ZVETSENI_IKON_value, ZvetseniIkonEvent.VYCHOZI));
 		fire(new ZvetseniIkonEvent(zvetseniIkonProcent));
