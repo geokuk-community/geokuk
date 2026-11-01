@@ -114,6 +114,7 @@
   2× až 4× podle měření); dlaždice se zapisují po nejvýš 50 a nejpozději 5 s
   po první čekající, při pohybu mapou se zápis odkládá.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 26.
+- Aktualizována knihovna Guava (bezpečnostní oprava).
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
