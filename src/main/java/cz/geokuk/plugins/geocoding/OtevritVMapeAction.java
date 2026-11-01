@@ -15,7 +15,7 @@ public class OtevritVMapeAction extends Action0 {
 
 	public OtevritVMapeAction(final OdkazyNaMapy.Odkaz odkaz) {
 		super(odkaz.nazev);
-		putValue(SHORT_DESCRIPTION, "Otevře místo v prohlížeči na webu " + odkaz.nazev + ".");
+		putValue(SHORT_DESCRIPTION, "Otevře místo v prohlížeči na webu " + odkaz.web + ".");
 		this.url = odkaz.url;
 	}
 

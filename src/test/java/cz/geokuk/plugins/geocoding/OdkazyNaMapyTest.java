@@ -55,26 +55,26 @@ public class OdkazyNaMapyTest {
 	@Test
 	public void cuzkMimoRepublikuSeNenabizi() {
 		assertNull(OdkazyNaMapy.cuzk(new Wgs(48.8566, 2.3522)));
-		final List<OdkazyNaMapy.Odkaz> mimo = OdkazyNaMapy.pro(new Wgs(48.8566, 2.3522), false);
-		assertEquals(2, mimo.size()); // Mapy.com a Google
-		for (final OdkazyNaMapy.Odkaz o : mimo) {
-			assertFalse(o.nazev, o.nazev.contains("ČÚZK"));
-		}
+		assertTrue("mimo ČR nic nezbývá do podnabídky", OdkazyNaMapy.dalsi(new Wgs(48.8566, 2.3522), false).isEmpty());
+		assertEquals(Arrays.asList("OpenStreetMap"), nazvy(OdkazyNaMapy.dalsi(new Wgs(48.8566, 2.3522), true)));
 	}
 
 	@Test
-	public void poradiOdpovidaPodkladumVNabidceMapy() {
-		final List<OdkazyNaMapy.Odkaz> odkazy = OdkazyNaMapy.pro(MISTO, true);
-		assertEquals(Arrays.asList("Mapy.com – Turistická", "OpenStreetMap", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy(odkazy));
-		for (final OdkazyNaMapy.Odkaz o : odkazy) {
+	public void hlavniOdkazyJsouMapyComAGoogle() {
+		final List<OdkazyNaMapy.Odkaz> odkazy = OdkazyNaMapy.hlavni(MISTO);
+		assertEquals(Arrays.asList("Otevřít v Mapy.com", "Otevřít v Google Mapách"), nazvy(odkazy));
+		assertEquals(OdkazyNaMapy.mapyCom(MISTO), odkazy.get(0).url);
+		assertEquals(OdkazyNaMapy.google(MISTO), odkazy.get(1).url);
+	}
+
+	@Test
+	public void dalsiMapyMajiOpenStreetMapJenMimoKrizACuzkVCr() {
+		assertEquals(Arrays.asList("OpenStreetMap", "ČÚZK Geoprohlížeč"), nazvy(OdkazyNaMapy.dalsi(MISTO, true)));
+		assertEquals(Arrays.asList("ČÚZK Geoprohlížeč"), nazvy(OdkazyNaMapy.dalsi(MISTO, false)));
+		for (final OdkazyNaMapy.Odkaz o : OdkazyNaMapy.dalsi(MISTO, true)) {
 			assertTrue(o.url, o.url.startsWith("https://"));
 			assertFalse(o.url, o.url.contains(" "));
 		}
-	}
-
-	@Test
-	public void bezOpenStreetMapKdyzJiNabizejiJinaPolozka() {
-		assertEquals(Arrays.asList("Mapy.com – Turistická", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy(OdkazyNaMapy.pro(MISTO, false)));
 	}
 
 	private static List<String> nazvy(final List<OdkazyNaMapy.Odkaz> odkazy) {
@@ -96,5 +96,18 @@ public class OdkazyNaMapyTest {
 		assertNull(OdkazyNaMapy.cuzk(new Wgs(50, 11.899)));
 		assertNotNull(OdkazyNaMapy.cuzk(new Wgs(50, 19.1)));
 		assertNull(OdkazyNaMapy.cuzk(new Wgs(50, 19.101)));
+	}
+
+	/** Tooltip položky říká, na jaký web se otevře, ne název položky nabídky. */
+	@Test
+	public void tooltipNazyvaWebAneNazevPolozky() {
+		final List<OdkazyNaMapy.Odkaz> vsechny = new ArrayList<>(OdkazyNaMapy.hlavni(MISTO));
+		vsechny.addAll(OdkazyNaMapy.dalsi(MISTO, true));
+		final List<String> tooltipy = new ArrayList<>();
+		for (final OdkazyNaMapy.Odkaz o : vsechny) {
+			tooltipy.add((String) new OtevritVMapeAction(o).getValue(javax.swing.Action.SHORT_DESCRIPTION));
+		}
+		assertEquals(Arrays.asList("Otevře místo v prohlížeči na webu Mapy.com.", "Otevře místo v prohlížeči na webu Google Mapy.", "Otevře místo v prohlížeči na webu OpenStreetMap.",
+				"Otevře místo v prohlížeči na webu ČÚZK Geoprohlížeč."), tooltipy);
 	}
 }

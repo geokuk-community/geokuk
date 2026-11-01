@@ -2,6 +2,7 @@ package cz.geokuk.core.coord;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.*;
 
@@ -69,11 +70,17 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 		}
 		final Wgs mistoNabidky = mysJePoblizKrize ? poziceq.getWgs() : pointcur == null ? null : getSoord().transform(pointcur).toWgs();
 		if (mistoNabidky != null) {
-			final JMenu jinaMapa = new JMenu("Otevřít v jiné mapě");
-			for (final OdkazyNaMapy.Odkaz odkaz : OdkazyNaMapy.pro(mistoNabidky, !mysJePoblizKrize)) {
-				jinaMapa.add(new JMenuItem(factory.init(new OtevritVMapeAction(odkaz))));
+			for (final OdkazyNaMapy.Odkaz odkaz : OdkazyNaMapy.hlavni(mistoNabidky)) {
+				popupMenu.add(new JMenuItem(factory.init(new OtevritVMapeAction(odkaz))));
 			}
-			popupMenu.add(jinaMapa);
+			final List<OdkazyNaMapy.Odkaz> dalsi = OdkazyNaMapy.dalsi(mistoNabidky, !mysJePoblizKrize);
+			if (!dalsi.isEmpty()) {
+				final JMenu dalsiMapy = new JMenu("Další mapy");
+				for (final OdkazyNaMapy.Odkaz odkaz : dalsi) {
+					dalsiMapy.add(new JMenuItem(factory.init(new OtevritVMapeAction(odkaz))));
+				}
+				popupMenu.add(dalsiMapy);
+			}
 		}
 		chain().addPopouItems(popupMenu, ctx);
 	}
