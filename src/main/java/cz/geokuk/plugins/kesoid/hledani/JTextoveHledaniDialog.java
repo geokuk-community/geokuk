@@ -39,6 +39,7 @@ import java.util.ArrayList;
  */
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.util.regex.PatternSyntaxException;
 
@@ -113,8 +114,13 @@ public class JTextoveHledaniDialog extends JMyDialog0 implements AfterInjectInit
 
 	private HledaciSluzba hledaciSluzba;
 
+	/** Výchozí a nejmenší velikost okna; výchozí se omezí na 90 % pracovní plochy. */
+	static final Dimension VYCHOZI_VELIKOST = new Dimension(950, 700);
+	static final Dimension NEJMENSI_VELIKOST = new Dimension(560, 320);
+
 	public JTextoveHledaniDialog() {
 		init();
+		nastavVelikost(VYCHOZI_VELIKOST, NEJMENSI_VELIKOST);
 
 		entryBg = entry.getBackground();
 		entry.getDocument().addDocumentListener(this);
