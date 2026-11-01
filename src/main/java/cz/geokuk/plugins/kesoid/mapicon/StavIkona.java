@@ -28,23 +28,32 @@ public final class StavIkona {
 
 	/** Ikona alely na toolbaru; stav disablovaná a archivovaná a vyluštěnost mají vlastní podobu, ostatní jsou ikony sady, mimo druhy waypointů na stejnou velikost. */
 	public static Icon ikonaToolbaru(final IkonBag bag, final Alela alela) {
+		return ikona(bag, alela, JToolbarOvladaceAlel.VYSKA_IKONY, false);
+	}
+
+	/** Táž ikona jako na toolbaru, ale ve čtverci o dané straně (dialogy a nabídky); i ikony druhů waypointů se srovnají na tuto velikost. */
+	public static Icon ikonaAlely(final IkonBag bag, final Alela alela, final int velikost) {
+		return ikona(bag, alela, velikost, true);
+	}
+
+	private static Icon ikona(final IkonBag bag, final Alela alela, final int velikost, final boolean iDruhy) {
 		final Genom genom = bag.getGenom();
 		final Genotyp vychozi = genom.UNIVERZALNI_DRUH.genotypVychozi();
 		if (alela == genom.ALELA_dsbl) {
-			return zakaz(bag.seekIkon(vychozi), JToolbarOvladaceAlel.VYSKA_IKONY);
+			return zakaz(bag.seekIkon(vychozi), velikost);
 		}
 		if (alela == genom.ALELA_arch) {
-			return archiv(bag.seekIkon(vychozi), JToolbarOvladaceAlel.VYSKA_IKONY);
+			return archiv(bag.seekIkon(vychozi), velikost);
 		}
 		if (alela == genom.ALELA_nevyluste) {
-			return nevyluste(JToolbarOvladaceAlel.VYSKA_IKONY);
+			return nevyluste(velikost);
 		}
 		final Icon ikona = bag.seekIkon(vychozi.with(alela));
 		if (alela.getGen() == genom.symGen) {
-			return ikona;
+			return iDruhy ? naCtverec(ikona, velikost) : ikona;
 		}
 		final boolean vztah = alela == genom.ALELA_hnf || alela == genom.ALELA_fnd || alela == genom.ALELA_own;
-		return naCtverec(ikona, JToolbarOvladaceAlel.VYSKA_IKONY, vztah ? VYPLN_VZTAHU : 1.0);
+		return naCtverec(ikona, velikost, vztah ? VYPLN_VZTAHU : 1.0);
 	}
 
 	/** Ikona vycentrovaná do čtverce o dané straně, menší se zvětší, větší zmenší; poměr stran zůstává. */
@@ -175,7 +184,8 @@ public final class StavIkona {
 			g.setColor(new Color(0x70, 0x70, 0x70));
 			g.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[] { 2f, 2f }, 0f));
 			g.draw(new RoundRectangle2D.Double(1.5, 1.5, velikost - 3, velikost - 3, 5, 5));
-			kresliZnacku(g, velikost - SYMBOL, velikost - SYMBOL, SYMBOL);
+			final double znacka = Math.round(SYMBOL * Math.min(1.0, velikost / 24.0));
+			kresliZnacku(g, velikost - znacka, velikost - znacka, znacka);
 		} finally {
 			g.dispose();
 		}
