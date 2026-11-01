@@ -48,6 +48,8 @@ final class SledovaniSchranky implements FlavorListener {
 	private String zakladni;
 	/** Poslední text, který se předal; opakování téhož textu se ignoruje. */
 	private String posledni;
+	/** Ve schránce je příliš velký text; periodická kontrola ho znovu nečte, dokud se schránka nezmění nebo okno neaktivuje. */
+	private boolean prilisVelky;
 
 	/**
 	 * @param dodavatelSchranky
@@ -78,6 +80,7 @@ final class SledovaniSchranky implements FlavorListener {
 		zapnuto = sledovat;
 		zakladni = null;
 		posledni = null;
+		prilisVelky = false;
 		if (sledovat) {
 			schranka = dodavatelSchranky.get();
 			schranka.addFlavorListener(this);
@@ -101,12 +104,13 @@ final class SledovaniSchranky implements FlavorListener {
 			}
 			posledni = null;
 			zakladni = null;
+			prilisVelky = false;
 			if (aktivni) {
 				zastavCasovac();
 				return;
 			}
 			if (zrusCasovac == null) {
-				zrusCasovac = casovac.opakuj(PERIODA_MS, this::zkontrolujNaPozadi);
+				zrusCasovac = casovac.opakuj(PERIODA_MS, this::periodickaKontrola);
 			}
 		}
 		// Pořadí zajistí jediné vlákno: základ se přečte dřív než jakákoli další kontrola.
@@ -120,6 +124,18 @@ final class SledovaniSchranky implements FlavorListener {
 
 	@Override
 	public void flavorsChanged(final FlavorEvent e) {
+		synchronized (this) {
+			prilisVelky = false;
+		}
+		zkontrolujNaPozadi();
+	}
+
+	private void periodickaKontrola() {
+		synchronized (this) {
+			if (prilisVelky) {
+				return;
+			}
+		}
 		zkontrolujNaPozadi();
 	}
 
@@ -136,7 +152,13 @@ final class SledovaniSchranky implements FlavorListener {
 			return;
 		}
 		final String text = precti();
-		if (text == null || text.trim().isEmpty() || text.length() > NEJVIC_ZNAKU) {
+		if (text != null && text.length() > NEJVIC_ZNAKU) {
+			synchronized (this) {
+				prilisVelky = true;
+			}
+			return;
+		}
+		if (text == null || text.trim().isEmpty()) {
 			return;
 		}
 		synchronized (this) {

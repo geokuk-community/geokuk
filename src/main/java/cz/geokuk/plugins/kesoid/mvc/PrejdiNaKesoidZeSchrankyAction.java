@@ -49,13 +49,30 @@ public class PrejdiNaKesoidZeSchrankyAction extends ToggleAction0 {
 		setSelected(event.isOnoff());
 		if (!event.isOnoff() && sledovaniVytvoreno()) {
 			sledovani().nastav(false);
-			KeyboardFocusManager.getCurrentKeyboardFocusManager().removePropertyChangeListener(ACTIVNI_OKNO, poslouchacOken);
+			odregistrujPoslouchaceOken();
 		} else if (event.isOnoff()) {
 			// Schránka se vytvoří až při zapnutí; při vypnuté volbě se jí program vůbec nedotýká.
 			sledovani().nastav(true);
-			KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener(ACTIVNI_OKNO, poslouchacOken);
+			zaregistrujPoslouchaceOken();
 		}
 	}
+
+	/** Událost o zapnutí může přijít vícekrát (start i změna volby); poslouchač se přidá jen jednou. */
+	synchronized void zaregistrujPoslouchaceOken() {
+		if (!poslouchaOkna) {
+			KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener(ACTIVNI_OKNO, poslouchacOken);
+			poslouchaOkna = true;
+		}
+	}
+
+	synchronized void odregistrujPoslouchaceOken() {
+		if (poslouchaOkna) {
+			KeyboardFocusManager.getCurrentKeyboardFocusManager().removePropertyChangeListener(ACTIVNI_OKNO, poslouchacOken);
+			poslouchaOkna = false;
+		}
+	}
+
+	private boolean poslouchaOkna;
 
 	private static final String ACTIVNI_OKNO = "activeWindow";
 
