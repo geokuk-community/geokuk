@@ -53,7 +53,6 @@ public final class OdkazyNaMapy {
 	public static List<Odkaz> pro(final Wgs wgs) {
 		final List<Odkaz> odkazy = new ArrayList<>();
 		odkazy.add(new Odkaz("Mapy.com – Turistická", mapyCom(wgs)));
-		odkazy.add(new Odkaz("OpenStreetMap", Nominatim.odkazNaMapu(wgs)));
 		final String cuzk = cuzk(wgs);
 		if (cuzk != null) {
 			odkazy.add(new Odkaz("ČÚZK Geoprohlížeč", cuzk));

@@ -55,7 +55,7 @@ public class JPozicovnikSlideTest {
 		for (final Component c : jinaMapa.getMenuComponents()) {
 			nazvy.add(((JMenuItem) c).getText());
 		}
-		Assert.assertEquals(java.util.Arrays.asList("Mapy.com – Turistická", "OpenStreetMap", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy);
+		Assert.assertEquals(java.util.Arrays.asList("Mapy.com – Turistická", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy);
 	}
 
 	/** Bez kříže a bez známé polohy myši se odkazy na další mapy nenabízejí. */

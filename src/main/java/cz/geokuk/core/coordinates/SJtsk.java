@@ -106,7 +106,7 @@ public final class SJtsk {
 	/** Besselův elipsoid do WGS84. */
 	private static double[] helmertBesselNaWgs(final double[] p) {
 		final double m = 1 + MERITKO;
-		return new double[] { DX + m * (p[0] + RZ * p[1] - RY * p[2]), DY + m * (-RZ * p[0] + p[1] + RX * p[2]), DZ + m * (RY * p[0] - RX * p[1] + p[2]) };
+		return new double[] { DX + m * (p[0] - RZ * p[1] + RY * p[2]), DY + m * (RZ * p[0] + p[1] - RX * p[2]), DZ + m * (-RY * p[0] + RX * p[1] + p[2]) };
 	}
 
 	private static double[] besselNaWgs(final double fi, final double lambda) {
