@@ -88,6 +88,10 @@ final class SledovaniSchranky implements FlavorListener {
 		if (sledovat) {
 			schranka = dodavatelSchranky.get();
 			schranka.addFlavorListener(this);
+			if (!oknoJeAktivni.getAsBoolean()) {
+				// Volba se zapnula, když už je program na pozadí: časovač a výchozí obsah schránky jako při odchodu z programu.
+				oknoSeZmenilo(false);
+			}
 		} else {
 			zastavCasovac();
 			if (schranka != null) {
@@ -159,6 +163,12 @@ final class SledovaniSchranky implements FlavorListener {
 			return;
 		}
 		final String text = precti();
+		synchronized (this) {
+			if (text != null && !text.equals(zakladni)) {
+				// Schránka se od odchodu z programu změnila, výchozí obsah už nic neznamená.
+				zakladni = null;
+			}
+		}
 		if (text != null && text.length() > NEJVIC_ZNAKU) {
 			synchronized (this) {
 				prilisVelky = true;
