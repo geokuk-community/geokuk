@@ -231,6 +231,16 @@ public class KodKesoiduTest {
 	}
 
 	@Test
+	public void ceskaSlovaSPredponouOpencachingNejsouKody() {
+		for (final String slovo : new String[] { "okno", "Okno", "obec", "oprava", "orel", "Opice", "ozdoba", "okurka", "OKNO" }) {
+			assertTrue(slovo, KodKesoidu.kandidati(slovo).isEmpty());
+			assertTrue(slovo, KodKesoidu.kandidati("Otevři " + slovo + " a zavři").isEmpty());
+		}
+		kandidati("kód OZ12AB v textu", "OZ12AB");
+		kandidati("OC13A2F", "OC13A2F");
+	}
+
+	@Test
 	public void hraniceCiselnehoIDAZlomkyOdkazu() {
 		kandidati("https://www.geocaching.com/seek/cache_details.aspx?id=1", "GC1");
 		kandidati("https://www.geocaching.com/seek/cache_details.aspx?id=65535", "GCFFFF");

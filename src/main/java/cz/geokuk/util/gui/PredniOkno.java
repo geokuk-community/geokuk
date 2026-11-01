@@ -29,8 +29,8 @@ public final class PredniOkno {
 		if (okno.jeIkonizovane()) {
 			okno.obnov();
 		}
-		okno.nastavVzdyNahore(true);
 		try {
+			okno.nastavVzdyNahore(true);
 			okno.doPopredi();
 			okno.pozadejFocus();
 		} finally {

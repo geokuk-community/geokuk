@@ -181,9 +181,15 @@ Soubor > Dálkové ovládání (nebo parametr `--ovladani[=port]`, výchozí por
 GET  http://127.0.0.1:48321/stav
 POST http://127.0.0.1:48321/pozice?lat=50.08&lon=14.42&meritko=15
 POST http://127.0.0.1:48321/kes?kod=GC12345
+POST http://127.0.0.1:48321/popredi
 POST http://127.0.0.1:48321/podklad?jmeno=TURIST_M
 POST http://127.0.0.1:48321/prenacti
 ```
+
+Příkaz `kes` vystředí mapu na kešoid a otevře jeho detail; kód může být i odkaz nebo
+text s kódem (`https://coord.info/GC12345`). Okno programu se přitom přenese do popředí,
+`&focus=ne` to vypne. Příkaz `popredi` přenese okno do popředí a vyžádá mu focus; Windows
+programu na pozadí focus dát nemusí, pak okno jen bliká na hlavním panelu.
 
 Požadavky z webových stránek program odmítá.
 

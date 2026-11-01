@@ -337,7 +337,7 @@ public class DalkoveOvladani {
 				break;
 			case "/kes":
 				vyzadujPost(post);
-				odpovez(ex, 200, naEdt(() -> kes(param.get("kod"), !"ne".equals(param.get("focus")))));
+				odpovez(ex, 200, naEdt(() -> kes(param.get("kod"), predniOkno(param))));
 				break;
 			case "/popredi":
 				vyzadujPost(post);
@@ -646,6 +646,24 @@ public class DalkoveOvladani {
 		return stav(false);
 	}
 
+	/** Okno se přenáší do popředí, pokud to volající nevypne hodnotou focus=ne (také false, 0, no, off; velikost písmen nezáleží). */
+	static boolean predniOkno(final Map<String, String> param) {
+		final String focus = param.get("focus");
+		if (focus == null) {
+			return true;
+		}
+		switch (focus.trim().toLowerCase(java.util.Locale.ROOT)) {
+		case "ne":
+		case "no":
+		case "false":
+		case "0":
+		case "off":
+			return false;
+		default:
+			return true;
+		}
+	}
+
 	private String kes(final String kod, final boolean predniOkno) {
 		prejdiNaKes(kod, predniOkno, DalkoveOvladani::popredi);
 		return stav(false);
@@ -658,7 +676,7 @@ public class DalkoveOvladani {
 		if (k == null) {
 			throw new IllegalArgumentException("keš " + kod + " není načtená");
 		}
-		poziceModel.setPozice(k.getMainWpt());
+		poziceModel.setPoziceNaObjekt(k.getMainWpt());
 		vyrezModel.vystredovatNaPozici();
 		if (predniOkno) {
 			popredi.run();
