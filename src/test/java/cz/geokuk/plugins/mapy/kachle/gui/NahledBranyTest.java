@@ -134,9 +134,20 @@ public class NahledBranyTest {
 	@Test(timeout = 30000)
 	public void diskSeZkusiKdyzPametNicNedala() throws Exception {
 		disk.put(RODIC, new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB));
+		// Fronta na pozadí je jednovláknová: dokud ji drží tato úloha, hledání náhledu na disku nezačne a test nezávisí na načasování.
+		final CountDownLatch drzi = new CountDownLatch(1);
+		ziskavac.naPozadiProNahled(() -> {
+			try {
+				drzi.await();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
 		final JKachle jkachle = new JKachle(null, KA);
 		jkachle.pripravNahled(model, Priority.KACHLE);
 		Assert.assertFalse("z paměti nic nebylo", jkachle.maNahled());
+		Assert.assertEquals("disk se zatím nečetl", 0, cteniZDisku.get());
+		drzi.countDown();
 		pockejNaFrontu();
 		Assert.assertTrue(jkachle.maNahled());
 		Assert.assertTrue(cteniZDisku.get() > 0);
