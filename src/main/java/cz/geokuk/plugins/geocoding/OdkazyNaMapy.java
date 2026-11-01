@@ -7,7 +7,7 @@ import java.util.Locale;
 import cz.geokuk.core.coordinates.SJtsk;
 import cz.geokuk.core.coordinates.Wgs;
 
-/** Odkazy na místo na webech s mapami, které se otevírají v prohlížeči. Pořadí odpovídá pořadí podkladů v nabídce Mapy. */
+/** Odkazy na místo na webech s mapami, které se otevírají v prohlížeči. */
 public final class OdkazyNaMapy {
 
 	/** Odkaz s názvem položky nabídky. */
@@ -49,10 +49,17 @@ public final class OdkazyNaMapy {
 		return String.format(Locale.ROOT, "https://ags.cuzk.gov.cz/geoprohlizec/mapa.html?xy=%.2f,%.2f&name=", bod.y, bod.x) + NAZEV_ZNACKY + "&b=zm";
 	}
 
-	/** Položky nabídky pro dané místo; ČÚZK jen tam, kde se dá použít, OpenStreetMap jen když ho nabízí jiná položka nabídky ({@code sOpenStreetMap}). */
-	public static List<Odkaz> pro(final Wgs wgs, final boolean sOpenStreetMap) {
+	/** Odkazy hned v nabídce: Mapy.com a Google Mapy. */
+	public static List<Odkaz> hlavni(final Wgs wgs) {
 		final List<Odkaz> odkazy = new ArrayList<>();
-		odkazy.add(new Odkaz("Mapy.com – Turistická", mapyCom(wgs)));
+		odkazy.add(new Odkaz("Otevřít v Mapy.com", mapyCom(wgs)));
+		odkazy.add(new Odkaz("Otevřít v Google Mapách", google(wgs)));
+		return odkazy;
+	}
+
+	/** Odkazy v podnabídce Další mapy; ČÚZK jen tam, kde se dá použít, OpenStreetMap jen když ho nenabízí jiná položka nabídky ({@code sOpenStreetMap}). */
+	public static List<Odkaz> dalsi(final Wgs wgs, final boolean sOpenStreetMap) {
+		final List<Odkaz> odkazy = new ArrayList<>();
 		if (sOpenStreetMap) {
 			odkazy.add(new Odkaz("OpenStreetMap", Nominatim.odkazNaMapu(wgs)));
 		}
@@ -60,7 +67,6 @@ public final class OdkazyNaMapy {
 		if (cuzk != null) {
 			odkazy.add(new Odkaz("ČÚZK Geoprohlížeč", cuzk));
 		}
-		odkazy.add(new Odkaz("Google Mapy", google(wgs)));
 		return odkazy;
 	}
 }

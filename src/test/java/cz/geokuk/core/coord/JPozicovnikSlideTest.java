@@ -39,23 +39,31 @@ public class JPozicovnikSlideTest {
 		slide.addPopouItems(menu, null);
 
 		final List<Object> akce = new ArrayList<>();
-		JMenu jinaMapa = null;
+		JMenu dalsiMapy = null;
+		final List<String> texty = new ArrayList<>();
 		for (final Component c : menu.getComponents()) {
 			if (c instanceof JMenu) {
-				jinaMapa = (JMenu) c;
+				dalsiMapy = (JMenu) c;
 			} else {
 				akce.add(((JMenuItem) c).getAction().getClass());
+				texty.add(((JMenuItem) c).getText());
 			}
 		}
 		Assert.assertEquals(akce.toString(), CenterPoziceAction.class, akce.get(0));
 		Assert.assertEquals(0, slide.getComponentCount());
-		Assert.assertNotNull("odkazy na další mapy u kříže", jinaMapa);
-		Assert.assertEquals("Otevřít v jiné mapě", jinaMapa.getText());
+		Assert.assertTrue(texty.toString(), texty.contains("Otevřít v Mapy.com") && texty.contains("Otevřít v Google Mapách"));
+		Assert.assertTrue("Mapy.com před Google", texty.indexOf("Otevřít v Mapy.com") + 1 == texty.indexOf("Otevřít v Google Mapách"));
+		Assert.assertNotNull("podnabídka Další mapy u kříže", dalsiMapy);
+		Assert.assertEquals("Další mapy", dalsiMapy.getText());
+		Assert.assertEquals("u kříže je OpenStreetMap samostatná položka, v podnabídce ne", java.util.Arrays.asList("ČÚZK Geoprohlížeč"), texty(dalsiMapy));
+	}
+
+	private static List<String> texty(final JMenu menu) {
 		final List<String> nazvy = new ArrayList<>();
-		for (final Component c : jinaMapa.getMenuComponents()) {
+		for (final Component c : menu.getMenuComponents()) {
 			nazvy.add(((JMenuItem) c).getText());
 		}
-		Assert.assertEquals("u kříže je OpenStreetMap jako samostatná položka, v podnabídce ne", java.util.Arrays.asList("Mapy.com – Turistická", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy);
+		return nazvy;
 	}
 
 	/** Bez kříže a bez známé polohy myši se odkazy na další mapy nenabízejí. */
@@ -97,12 +105,9 @@ public class JPozicovnikSlideTest {
 		slide.onEvent(new ZmenaSouradnicMysiEvent(new java.awt.Point(400, 300), null, null));
 		final JPopupMenu menu = new JPopupMenu();
 		slide.addPopouItems(menu, null);
-		Assert.assertEquals(1, menu.getComponentCount());
-		final JMenu jinaMapa = (JMenu) menu.getComponent(0);
-		final List<String> nazvy = new ArrayList<>();
-		for (final Component c : jinaMapa.getMenuComponents()) {
-			nazvy.add(((JMenuItem) c).getText());
-		}
-		Assert.assertEquals(java.util.Arrays.asList("Mapy.com – Turistická", "OpenStreetMap", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy);
+		Assert.assertEquals(3, menu.getComponentCount());
+		Assert.assertEquals("Otevřít v Mapy.com", ((JMenuItem) menu.getComponent(0)).getText());
+		Assert.assertEquals("Otevřít v Google Mapách", ((JMenuItem) menu.getComponent(1)).getText());
+		Assert.assertEquals(java.util.Arrays.asList("OpenStreetMap", "ČÚZK Geoprohlížeč"), texty((JMenu) menu.getComponent(2)));
 	}
 }
