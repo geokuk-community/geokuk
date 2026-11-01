@@ -122,8 +122,9 @@
   na malé obrazovce nejvýš 90 % plochy), jde měnit a sloupec Id se
   neořezává.
 - V nabídce pravého tlačítka na mapě je podnabídka Otevřít v jiné mapě:
-  Mapy.com (Turistická), OpenStreetMap, ČÚZK Geoprohlížeč (jen v ČR) a Google
-  Mapy. Značka se otevře v místě kurzoru, u kříže v místě kříže.
+  Mapy.com (Turistická), OpenStreetMap, ČÚZK Geoprohlížeč (jen v ČR a jejím
+  okolí) a Google Mapy. Značka se otevře v místě kurzoru, u kříže v místě
+  kříže; u kříže zůstává OpenStreetMap samostatnou položkou Na OpenStreetMap….
 - Nová volba v menu Kešoidy „Přejít na kešoid ze schránky“ (výchozí vypnuto):
   když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
   aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
