@@ -87,20 +87,34 @@
   jejího detailu.
 - Start programu je rychlejší: okno se vykreslí před dialogy, panely Mapy
   a Zdroje ve stavovém řádku, katalog offline map a jeho ověření se zpracují
-  až když jsou potřeba, písma a prvky Swingu se připravují na pozadí. Při
-  spuštění bez archivu tříd (jar napřímo) se okno na Windows otevře za 1633 ms
-  místo 1767 ms ve verzi 6.4.3 (−7,6 %, medián z 9 běhů).
+  až když jsou potřeba, písma a prvky Swingu se připravují na pozadí. Stavy
+  Správce offline map se čtou až po prvním pohledu na mapu, zkrácená atribuce
+  zdrojů se počítá jednou a kontrola nové verze programu se zadá až 45 s po
+  startu. Při spuštění bez archivu tříd (jar napřímo) se okno na Windows otevře
+  za 1633 ms místo 1767 ms ve verzi 6.4.3 (−7,6 %, medián z 9 běhů). Práce
+  procesoru v prvních 30 s po startu je zhruba o třetinu menší (−37 %, párové
+  měření na Windows); první zobrazení mapy se nezpomalilo.
 - Spojení s cache dlaždic se otevírá při startu na pozadí.
 - Fronty dlaždic řadí požadavky podle toho, co je právě vidět: nejdřív hlavní
   mapa a viditelné dlaždice od středu ven; dlaždice, které už na obrazovce
-  nejsou, se přeskočí.
+  nejsou, se přeskočí. Online dlaždice se stahují podle téže priority,
+  spojení se znovu používají a počet souběžných stahování je na serverech
+  s omezením hlídaný.
+- Při posunu offline mapy je v ustáleném provozu méně práce uvolňování paměti
+  (−84 %), procesor se zatěžuje asi na 0,4 jádra místo 1,7 jádra a 95.
+  percentil času posunu je o 1,1 s kratší (párové měření na Windows).
+- Paměťová cache dlaždic se přizpůsobí velikosti haldy. Dokud se dlaždice
+  načítá, ukáže se její náhled z jiného měřítka (online z disku, offline
+  z paměti). Načítání dlaždic ukazuje malé točící se kolečko vpravo nahoře
+  v mapě.
 - S Javou 19 a novější si přenosná verze po prvním spuštění uloží archiv tříd
   do složky data/cds (asi 40 MB) a další starty jsou asi o čtvrtinu rychlejší.
   První ukončení po instalaci nebo aktualizaci trvá o několik sekund déle.
 - Čtení dlaždic z cache se při ukládání nových dlaždic méně zdržuje (zhruba
   2× až 4× podle měření); dlaždice se zapisují po nejvýš 50 a nejpozději 5 s
-  po první čekající.
+  po první čekající, při pohybu mapou se zápis odkládá.
 - Načítání databází OpenSAKu je ověřené i se schématem verze 26.
+- Aktualizována knihovna Guava (bezpečnostní oprava).
 - Offline mapa s tématem, které má vrstvy (například paws, Biker,
   Motorider), kreslí jen vrstvy, které má ve výchozím stavu zapnuté autor
   tématu, takže turistické značení je přehlednější. Vzhled offline mapy se
@@ -127,7 +141,8 @@
   jen v oblasti kolem ní. Po aktualizaci programu se offline dlaždice
   jednorázově vykreslí znovu.
 - Předkreslování offline map je rychlejší: cache dlaždic zjišťuje, jestli
-  dlaždice existuje, bez načtení obrázku. Změna zvýraznění nebo sady ikon
+  dlaždice existuje, bez načtení obrázku. Klíč cache dlaždic počítá obrysy map
+  jednou na obrys. Změna zvýraznění nebo sady ikon
   nenačítá znovu všechny zdroje keší. Sken složek nevolá zbytečně disk a
   v nečinnosti se složky kontrolují řidčeji.
 - Soubor > Optimalizace cache dlaždic… zhutní cache dlaždic a ukáže velikost,
@@ -204,7 +219,9 @@
 - Po uspání nebo hibernaci počítače uvádějí Informace pro hlášení chyby
   „Probuzení po N min“ místo dlouhého záseku programu.
 - Informace pro hlášení chyby uvádějí i údaje o offline mapách: téma, soubory
-  map, přehledovou mapu, velikost cache dlaždic a poslední chybu mapy.
+  map, přehledovou mapu, velikost cache dlaždic a poslední chybu mapy,
+  počet zobrazených dlaždic od spuštění a odhad kreditů při načítání z API.
+  Okno je větší a jde měnit.
 - Po načtení keší program nečeká na vykreslení ikon v liště typů keší; ikony
   se doplní hned, jak jsou hotové. Zrychlí to hlavně první start.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu. Okno
@@ -212,7 +229,9 @@
   od používané po nabízenou.
 - Když se s programem chvíli nepracuje, předkreslí offline mapy pro
   oddálená měřítka do cache. Oddálení na celou zemi je pak rychlé i na
-  pomalém počítači; při práci s programem předkreslování počká.
+  pomalém počítači; při práci s programem předkreslování počká. Dokončení
+  si program pamatuje i po restartu a předkreslování začne až po prvním
+  pohledu na mapu.
 - Stejně se v okolí zobrazeného místa připraví předem i offline mapa ve
   středních měřítkách (kraj, okres), takže je jejich první zobrazení rychlejší.
 - Offline mapa se stínováním terénu se při oddálení (celá země, kraj)
