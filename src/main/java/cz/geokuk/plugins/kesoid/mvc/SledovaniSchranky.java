@@ -25,6 +25,8 @@ final class SledovaniSchranky implements FlavorListener {
 
 	/** Delší text není kód ani odkaz; nepředává se dál. */
 	static final int NEJVIC_ZNAKU = 2000;
+	/** Po velkém textu se schránka čte jen každé tolikáté tiknutí časovače. */
+	static final int TIKU_PO_VELKEM_TEXTU = 10;
 
 	/** Jak často se schránka čte, dokud je okno neaktivní. */
 	static final long PERIODA_MS = 1000;
@@ -48,8 +50,9 @@ final class SledovaniSchranky implements FlavorListener {
 	private String zakladni;
 	/** Poslední text, který se předal; opakování téhož textu se ignoruje. */
 	private String posledni;
-	/** Ve schránce je příliš velký text; periodická kontrola ho znovu nečte, dokud se schránka nezmění nebo okno neaktivuje. */
+	/** Ve schránce je příliš velký text; periodická kontrola schránku čte jen zřídka (viz {@link #TIKU_PO_VELKEM_TEXTU}), aby velký text nezatěžoval pozadí. */
 	private boolean prilisVelky;
+	private int tikuOdVelkeho;
 
 	/**
 	 * @param dodavatelSchranky
@@ -81,6 +84,7 @@ final class SledovaniSchranky implements FlavorListener {
 		zakladni = null;
 		posledni = null;
 		prilisVelky = false;
+			tikuOdVelkeho = 0;
 		if (sledovat) {
 			schranka = dodavatelSchranky.get();
 			schranka.addFlavorListener(this);
@@ -105,6 +109,7 @@ final class SledovaniSchranky implements FlavorListener {
 			posledni = null;
 			zakladni = null;
 			prilisVelky = false;
+			tikuOdVelkeho = 0;
 			if (aktivni) {
 				zastavCasovac();
 				return;
@@ -126,15 +131,17 @@ final class SledovaniSchranky implements FlavorListener {
 	public void flavorsChanged(final FlavorEvent e) {
 		synchronized (this) {
 			prilisVelky = false;
+			tikuOdVelkeho = 0;
 		}
 		zkontrolujNaPozadi();
 	}
 
 	private void periodickaKontrola() {
 		synchronized (this) {
-			if (prilisVelky) {
+			if (prilisVelky && ++tikuOdVelkeho < TIKU_PO_VELKEM_TEXTU) {
 				return;
 			}
+			tikuOdVelkeho = 0;
 		}
 		zkontrolujNaPozadi();
 	}
@@ -162,6 +169,7 @@ final class SledovaniSchranky implements FlavorListener {
 			return;
 		}
 		synchronized (this) {
+			prilisVelky = false;
 			if (text.equals(zakladni) || text.equals(posledni)) {
 				return;
 			}

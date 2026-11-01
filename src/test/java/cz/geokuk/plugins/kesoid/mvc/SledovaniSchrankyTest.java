@@ -379,8 +379,9 @@ public class SledovaniSchrankyTest {
 		tik.run();
 		provedFronty();
 		final int cteniPoPrvnim = pocetCteni();
-		tik.run();
-		tik.run();
+		for (int i = 0; i < SledovaniSchranky.TIKU_PO_VELKEM_TEXTU - 2; i++) {
+			tik.run();
+		}
 		provedFronty();
 		assertEquals("velký text se při dalších tiknutích nečte", cteniPoPrvnim, pocetCteni());
 		assertTrue(predane.isEmpty());
@@ -406,6 +407,29 @@ public class SledovaniSchrankyTest {
 		tik.run();
 		provedFronty();
 		assertEquals("po návratu do programu se kontrola obnoví", Arrays.asList("GC19ACP", "GCBZJGC"), predane);
+	}
+
+	@Test
+	public void kodPoVelkemTextuBezUdalostiSeZachytiNejpozdejiPoDesetiTiknutich() {
+		final StringBuilder dlouhy = new StringBuilder("GC19ACP ");
+		while (dlouhy.length() <= SledovaniSchranky.NEJVIC_ZNAKU) {
+			dlouhy.append("x");
+		}
+		sledovani.nastav(true);
+		sledovani.oknoSeZmenilo(false);
+		provedFronty();
+		vloz(dlouhy.toString());
+		tik.run();
+		provedFronty();
+		vloz("GC19ACP");
+		int tiku = 0;
+		while (predane.isEmpty() && tiku < 30) {
+			tik.run();
+			provedFronty();
+			tiku++;
+		}
+		assertEquals(Arrays.asList("GC19ACP"), predane);
+		assertTrue("kód se zachytí nejpozději po " + SledovaniSchranky.TIKU_PO_VELKEM_TEXTU + " tiknutích, bylo " + tiku, tiku <= SledovaniSchranky.TIKU_PO_VELKEM_TEXTU);
 	}
 
 	private int pocetCteni() {
