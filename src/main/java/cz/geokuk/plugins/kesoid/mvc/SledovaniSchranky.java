@@ -25,6 +25,8 @@ final class SledovaniSchranky implements FlavorListener {
 
 	/** Delší text není kód ani odkaz; nepředává se dál. */
 	static final int NEJVIC_ZNAKU = 2000;
+	/** Po velkém textu se schránka čte jen každé tolikáté tiknutí časovače. */
+	static final int TIKU_PO_VELKEM_TEXTU = 10;
 
 	/** Jak často se schránka čte, dokud je okno neaktivní. */
 	static final long PERIODA_MS = 1000;
@@ -48,6 +50,9 @@ final class SledovaniSchranky implements FlavorListener {
 	private String zakladni;
 	/** Poslední text, který se předal; opakování téhož textu se ignoruje. */
 	private String posledni;
+	/** Ve schránce je příliš velký text; periodická kontrola schránku čte jen zřídka (viz {@link #TIKU_PO_VELKEM_TEXTU}), aby velký text nezatěžoval pozadí. */
+	private boolean prilisVelky;
+	private int tikuOdVelkeho;
 
 	/**
 	 * @param dodavatelSchranky
@@ -78,6 +83,8 @@ final class SledovaniSchranky implements FlavorListener {
 		zapnuto = sledovat;
 		zakladni = null;
 		posledni = null;
+		prilisVelky = false;
+			tikuOdVelkeho = 0;
 		if (sledovat) {
 			schranka = dodavatelSchranky.get();
 			schranka.addFlavorListener(this);
@@ -101,12 +108,14 @@ final class SledovaniSchranky implements FlavorListener {
 			}
 			posledni = null;
 			zakladni = null;
+			prilisVelky = false;
+			tikuOdVelkeho = 0;
 			if (aktivni) {
 				zastavCasovac();
 				return;
 			}
 			if (zrusCasovac == null) {
-				zrusCasovac = casovac.opakuj(PERIODA_MS, this::zkontrolujNaPozadi);
+				zrusCasovac = casovac.opakuj(PERIODA_MS, this::periodickaKontrola);
 			}
 		}
 		// Pořadí zajistí jediné vlákno: základ se přečte dřív než jakákoli další kontrola.
@@ -120,6 +129,20 @@ final class SledovaniSchranky implements FlavorListener {
 
 	@Override
 	public void flavorsChanged(final FlavorEvent e) {
+		synchronized (this) {
+			prilisVelky = false;
+			tikuOdVelkeho = 0;
+		}
+		zkontrolujNaPozadi();
+	}
+
+	private void periodickaKontrola() {
+		synchronized (this) {
+			if (prilisVelky && ++tikuOdVelkeho < TIKU_PO_VELKEM_TEXTU) {
+				return;
+			}
+			tikuOdVelkeho = 0;
+		}
 		zkontrolujNaPozadi();
 	}
 
@@ -136,10 +159,17 @@ final class SledovaniSchranky implements FlavorListener {
 			return;
 		}
 		final String text = precti();
-		if (text == null || text.trim().isEmpty() || text.length() > NEJVIC_ZNAKU) {
+		if (text != null && text.length() > NEJVIC_ZNAKU) {
+			synchronized (this) {
+				prilisVelky = true;
+			}
+			return;
+		}
+		if (text == null || text.trim().isEmpty()) {
 			return;
 		}
 		synchronized (this) {
+			prilisVelky = false;
 			if (text.equals(zakladni) || text.equals(posledni)) {
 				return;
 			}
