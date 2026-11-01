@@ -39,10 +39,42 @@ public class JPozicovnikSlideTest {
 		slide.addPopouItems(menu, null);
 
 		final List<Object> akce = new ArrayList<>();
+		JMenu jinaMapa = null;
 		for (final Component c : menu.getComponents()) {
-			akce.add(((JMenuItem) c).getAction().getClass());
+			if (c instanceof JMenu) {
+				jinaMapa = (JMenu) c;
+			} else {
+				akce.add(((JMenuItem) c).getAction().getClass());
+			}
 		}
 		Assert.assertEquals(akce.toString(), CenterPoziceAction.class, akce.get(0));
 		Assert.assertEquals(0, slide.getComponentCount());
+		Assert.assertNotNull("odkazy na další mapy u kříže", jinaMapa);
+		Assert.assertEquals("Otevřít v jiné mapě", jinaMapa.getText());
+		final List<String> nazvy = new ArrayList<>();
+		for (final Component c : jinaMapa.getMenuComponents()) {
+			nazvy.add(((JMenuItem) c).getText());
+		}
+		Assert.assertEquals(java.util.Arrays.asList("Mapy.com – Turistická", "OpenStreetMap", "ČÚZK Geoprohlížeč", "Google Mapy"), nazvy);
+	}
+
+	/** Bez kříže a bez známé polohy myši se odkazy na další mapy nenabízejí. */
+	@Test
+	public void bezPolohyNeniOdkazyNaDalsiMapy() {
+		final JPozicovnikSlide slide = new JPozicovnikSlide();
+		slide.inject(new Factory() {
+			@Override
+			public <T> T init(final T obj) {
+				return obj;
+			}
+
+			@Override
+			public <T> T initNow(final T obj) {
+				return obj;
+			}
+		});
+		final JPopupMenu menu = new JPopupMenu();
+		slide.addPopouItems(menu, null);
+		Assert.assertEquals(0, menu.getComponentCount());
 	}
 }

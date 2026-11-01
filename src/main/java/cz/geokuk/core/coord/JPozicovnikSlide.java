@@ -10,6 +10,8 @@ import cz.geokuk.framework.Factory;
 import cz.geokuk.framework.MouseGestureContext;
 import cz.geokuk.plugins.cesty.akce.PridatDoCestyAction;
 import cz.geokuk.plugins.geocoding.NaOpenStreetMapAction;
+import cz.geokuk.plugins.geocoding.OdkazyNaMapy;
+import cz.geokuk.plugins.geocoding.OtevritVMapeAction;
 import cz.geokuk.util.lang.FUtil;
 
 public class JPozicovnikSlide extends JSingleSlide0 {
@@ -64,6 +66,14 @@ public class JPozicovnikSlide extends JSingleSlide0 {
 			popupMenu.add(new JMenuItem(factory.init(new NaOpenStreetMapAction(wgs))));
 			popupMenu.add(new JMenuItem(factory.init(new SouradniceDoClipboarduAction(wgs))));
 			popupMenu.add(new JMenuItem(factory.init(new OpenStreetViewAction(wgs))));
+		}
+		final Wgs mistoNabidky = mysJePoblizKrize ? poziceq.getWgs() : pointcur == null ? null : getSoord().transform(pointcur).toWgs();
+		if (mistoNabidky != null) {
+			final JMenu jinaMapa = new JMenu("Otevřít v jiné mapě");
+			for (final OdkazyNaMapy.Odkaz odkaz : OdkazyNaMapy.pro(mistoNabidky)) {
+				jinaMapa.add(new JMenuItem(factory.init(new OtevritVMapeAction(odkaz))));
+			}
+			popupMenu.add(jinaMapa);
 		}
 		chain().addPopouItems(popupMenu, ctx);
 	}
