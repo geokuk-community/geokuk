@@ -2,12 +2,12 @@ package cz.geokuk.plugins.kesoidobsazenost;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import cz.geokuk.core.coord.JSingleSlide0;
-import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.MouseGestureContext;
 import cz.geokuk.plugins.kesoid.LimityKresleni;
@@ -15,7 +15,6 @@ import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
 import cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent;
 import cz.geokuk.util.gui.JBarvovyDvojSlider;
-import cz.geokuk.util.index2d.BoundingRect;
 import cz.geokuk.util.index2d.Indexator;
 
 public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegistrationInit {
@@ -49,6 +48,8 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 	private ObsazenostModel obsazenostModel;
 
 	private volatile int limitIkon = LimityKresleni.VYCHOZI_IKON;
+	/** Maska kruhů, znovu použitá mezi kresleními. */
+	private transient BufferedImage maska;
 
 	public JObsazenost() {
 		setOpaque(false);
@@ -108,28 +109,55 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		if (r < MIN_POLOMER) {
 			return;
 		}
-		// obsazenost.setColor(new Color(128,128,128,128));
-		if (prekrocenLimit(iIndexator.count(getSoord().getBoundingRect()), r)) {
+		if (prekrocenLimit(iIndexator.count(getSoord().getBoundingRect()))) {
 			return;
 		}
-		g.setColor(obsazenost.getColor());
-		final BoundingRect boundingRect = oblastKresleni(g, r + 1);
-		// final Area area = new Area();
-		iIndexator.bound(boundingRect).stream().forEach(wpt -> {
-			if (!wpt.obsazujeOblast()) {
-				return;
-			}
-			final Mou mou = wpt.getMou();
-			final Point p = getSoord().transform(mou);
-			g.fillOval(p.x - r, p.y - r, d, d);
-		});
-
-		// g.fill(area);
+		final Rectangle clip = g.getClipBounds();
+		final Rectangle oblast = clip != null ? clip : new Rectangle(getSoord().getDim());
+		if (oblast.isEmpty()) {
+			return;
+		}
+		// Kruhy se kreslí do masky plnou barvou a maska se položí jednou s průhledností, takže překryvy netmavnou.
+		final double sx = Math.abs(g.getTransform().getScaleX());
+		final double sy = Math.abs(g.getTransform().getScaleY());
+		final int w = (int) Math.ceil(oblast.width * sx);
+		final int h = (int) Math.ceil(oblast.height * sy);
+		final BufferedImage m = maska(w, h);
+		final Graphics2D gm = m.createGraphics();
+		try {
+			gm.setComposite(AlphaComposite.Clear);
+			gm.fillRect(0, 0, w, h);
+			gm.setComposite(AlphaComposite.SrcOver);
+			gm.scale(sx, sy);
+			gm.translate(-oblast.x, -oblast.y);
+			final Color barva = obsazenost.getColor();
+			gm.setColor(new Color(barva.getRGB() & 0xFFFFFF));
+			iIndexator.bound(oblastKresleni(g, r + 1)).stream().forEach(wpt -> {
+				if (!wpt.obsazujeOblast()) {
+					return;
+				}
+				final Point p = getSoord().transform(wpt.getMou());
+				gm.fillOval(p.x - r, p.y - r, d, d);
+			});
+		} finally {
+			gm.dispose();
+		}
+		final Composite puvodni = g.getComposite();
+		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, obsazenost.getColor().getAlpha() / 255f));
+		g.drawImage(m, oblast.x, oblast.y, oblast.x + oblast.width, oblast.y + oblast.height, 0, 0, w, h, null);
+		g.setComposite(puvodni);
 	}
 
-	/** Kruhy se nekreslí, když je keší ve výřezu víc než limit ikon nebo když by se kruhy přes sebe jen slévaly. */
-	boolean prekrocenLimit(final int pocet, final int polomer) {
-		return pocet > limitIkon || prilisHuste(pocet, Math.PI * polomer * polomer);
+	/** Kruhy se nekreslí, když je keší ve výřezu víc než limit ikon. */
+	boolean prekrocenLimit(final int pocet) {
+		return pocet > limitIkon;
+	}
+
+	private BufferedImage maska(final int w, final int h) {
+		if (maska == null || maska.getWidth() < w || maska.getHeight() < h) {
+			maska = new BufferedImage(Math.max(w, maska == null ? 0 : maska.getWidth()), Math.max(h, maska == null ? 0 : maska.getHeight()), BufferedImage.TYPE_INT_ARGB);
+		}
+		return maska;
 	}
 
 	/**
