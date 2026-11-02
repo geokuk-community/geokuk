@@ -135,6 +135,7 @@
   turistickou mapu) a Otevřít v Google Mapách; podnabídka Další mapy má
   položky OpenStreetMap, ČÚZK Geoprohlížeč (jen v ČR a jejím okolí) a u kříže
   Otevřít StreetView. Značka se otevře v místě kurzoru, u kříže v místě kříže.
+- Zobrazování kešoidů jde zapnout a vypnout klávesou F5 (menu Kešoidy > Zobrazovat kešoidy).
 - Nová volba v menu Kešoidy „Přejít na kešoid ze schránky“ (výchozí vypnuto):
   když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
   aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
@@ -274,8 +275,13 @@
 - V Soubor > Zobrazení programu jde posuvníkem zvětšit ikony keší na mapě
   (1× až 5× po 0,5) a posuvníkem Mapa (offline) zvětšit písmo, symboly
   a čáry offline mapy až na 200 %.
+- Obsazenost 161 m (F9) je na nové instalaci vypnutá. Její bublina vysvětluje,
+  že kruh má poloměr 161 m a překryv kruhů pravidlo neporušuje; bublina
+  Jednotkových kruhů uvádí poloměr (10 m, 100 m, 1 km…).
 
 ### Opravy
+- Kešoidy > Jednotkové kruhy (Alt+F8) zapnou i zvýrazňovací kruhy, takže se
+  na mapě hned projeví.
 - Mapa je plynulejší při pohybu myši, při tažení bodu cesty, se zvětšenými
   ikonami keší, s popisky keší a se stínovaným reliéfem.
 - Kruhy obsazenosti se při velkém počtu keší ve výřezu nekreslí, mapa pak
