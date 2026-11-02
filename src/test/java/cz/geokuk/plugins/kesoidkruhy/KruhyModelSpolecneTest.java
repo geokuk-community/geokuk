@@ -75,4 +75,19 @@ public class KruhyModelSpolecneTest {
 		Assert.assertTrue(pref.node(FPref.ZVYRAZNOVACI_KRUHY_node).getBoolean(KruhyModel.ZAPNUTO_value, false));
 		Assert.assertTrue("další start vezme společnou volbu", model().getData().isOnoff());
 	}
+
+	/** Změna kruhů uživatelem hned po startu, ještě před určením podkladu, se uloží jako společná volba. */
+	@Test
+	public void zmenaPoStartuBezPodkladuSeUlozi() {
+		final KruhyModel m = model();
+		final KruhySettings d = m.getData();
+		d.setOnoff(true);
+		d.setJednotkovaVelikost(true);
+		m.setData(d);
+		Assert.assertTrue(pref.node(FPref.ZVYRAZNOVACI_KRUHY_node).getBoolean(KruhyModel.ZAPNUTO_value, false));
+		Assert.assertTrue(pref.node(FPref.ZVYRAZNOVACI_KRUHY_node).getBoolean(KruhyModel.JEDNOTKOVE_value, false));
+		m.setPodkladMap(EKaType.OPEN_STREET);
+		Assert.assertTrue(m.getData().isOnoff());
+		Assert.assertTrue(m.getData().isJednotkovaVelikost());
+	}
 }
