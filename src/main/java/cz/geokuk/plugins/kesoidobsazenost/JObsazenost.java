@@ -10,10 +10,8 @@ import javax.swing.event.ChangeListener;
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.MouseGestureContext;
-import cz.geokuk.plugins.kesoid.LimityKresleni;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
-import cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent;
 import cz.geokuk.util.gui.JBarvovyDvojSlider;
 import cz.geokuk.util.index2d.Indexator;
 
@@ -36,6 +34,8 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 	private static final int POLOMER_OBSAZENOSTI = 161;
 	/** Menší kroužky splývají s ikonami keší a obsazenost z nich není poznat. */
 	private static final int MIN_POLOMER = 3;
+	/** Víc kruhů by překreslení mapy zpomalilo pod plynulost. */
+	static final int MAX_KRUHU = 20_000;
 
 	private static final long serialVersionUID = -5858146658366237217L;
 
@@ -47,7 +47,6 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 
 	private ObsazenostModel obsazenostModel;
 
-	private volatile int limitIkon = LimityKresleni.VYCHOZI_IKON;
 	/** Maska kruhů, znovu použitá mezi kresleními. */
 	private transient BufferedImage maska;
 
@@ -79,11 +78,6 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 
 	public void onEvent(final KeskyNactenyEvent event) {
 		iIndexator = event.getVsechny().getIndexator();
-		repaint();
-	}
-
-	public void onEvent(final LimityKresleniEvent event) {
-		limitIkon = event.getLimity().getIkon();
 		repaint();
 	}
 
@@ -148,9 +142,9 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		g.setComposite(puvodni);
 	}
 
-	/** Kruhy se nekreslí, když je keší ve výřezu víc než limit ikon. */
+	/** Kruhy se nekreslí, když je keší ve výřezu víc než {@link #MAX_KRUHU}. */
 	boolean prekrocenLimit(final int pocet) {
-		return pocet > limitIkon;
+		return pocet > MAX_KRUHU;
 	}
 
 	private BufferedImage maska(final int w, final int h) {
