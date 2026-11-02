@@ -63,14 +63,7 @@ public class KlavesoveZkratkyTest {
 		akce.setSelected(true);
 		final javax.swing.JCheckBoxMenuItem polozka = new javax.swing.JCheckBoxMenuItem();
 		akce.join(polozka);
-		final javax.swing.JMenuBar lista = new javax.swing.JMenuBar();
-		final javax.swing.JMenu menu = new javax.swing.JMenu("Kešoidy");
-		menu.add(polozka);
-		lista.add(menu);
-		final javax.swing.JFrame okno = new javax.swing.JFrame();
-		okno.setJMenuBar(lista);
 		try {
-			okno.pack();
 			final KeyStroke f5 = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0);
 			final Object klic = polozka.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(f5);
 			assertTrue("F5 je navázána na položku menu", klic != null);
@@ -79,7 +72,7 @@ public class KlavesoveZkratkyTest {
 			polozka.getActionMap().get(klic).actionPerformed(new java.awt.event.ActionEvent(polozka, java.awt.event.ActionEvent.ACTION_PERFORMED, ""));
 			assertEquals(java.util.Arrays.asList(false, true), nastaveni);
 		} finally {
-			okno.dispose();
+			// nic k uvolnění, položka menu je lehká komponenta bez okna
 		}
 	}
 
