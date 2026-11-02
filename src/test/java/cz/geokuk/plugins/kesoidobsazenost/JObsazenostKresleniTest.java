@@ -161,4 +161,65 @@ public class JObsazenostKresleniTest {
 		Assert.assertEquals(0, img2.getRGB(SIRKA / 2 - 250, VYSKA / 2));
 		Assert.assertNotEquals(0, img2.getRGB(SIRKA / 2 + 250, VYSKA / 2));
 	}
+
+	private JObsazenost slideSKesemi(final int... posuny) {
+		final KesBag bag = new NacteneKese();
+		for (int i = 0; i + 1 < posuny.length; i += 2) {
+			kes(bag, posuny[i], posuny[i + 1], EKesStatus.ACTIVE);
+		}
+		final JObsazenost s = new JObsazenost();
+		s.setSoord(coord);
+		s.onEvent(new ObsazenostPreferencesChangeEvent(nastaveni()));
+		s.onEvent(new KeskyNactenyEvent(bag));
+		return s;
+	}
+
+	/** Kresba do obrázku při zvětšení m, po jednotlivých výřezech (jak je kreslí Swing po dorazení dlaždic). */
+	private static BufferedImage kresli(final JObsazenost s, final double m, final Rectangle... vyrezy) {
+		final BufferedImage img = new BufferedImage((int) Math.ceil(SIRKA * m), (int) Math.ceil(VYSKA * m), BufferedImage.TYPE_INT_ARGB);
+		for (final Rectangle v : vyrezy) {
+			final Graphics2D g = img.createGraphics();
+			g.scale(m, m);
+			g.clip(v);
+			s.paintComponent(g);
+			g.dispose();
+		}
+		return img;
+	}
+
+	/** Výřez mimo počátek okna se nakreslí stejně jako tatáž část celého okna. */
+	@Test
+	public void vyrezMimoPocatekSedi() {
+		final JObsazenost s = slideSKesemi(-60, -40, 70, 50);
+		final Rectangle vyrez = new Rectangle(300, 200, 256, 256);
+		final BufferedImage cele = kresli(s, 1, new Rectangle(0, 0, SIRKA, VYSKA));
+		final BufferedImage cast = kresli(s, 1, vyrez);
+		int obsazenych = 0;
+		for (int y = vyrez.y; y < vyrez.y + vyrez.height; y++) {
+			for (int x = vyrez.x; x < vyrez.x + vyrez.width; x++) {
+				Assert.assertEquals(x + "," + y, cele.getRGB(x, y), cast.getRGB(x, y));
+				obsazenych += cele.getRGB(x, y) != 0 ? 1 : 0;
+			}
+		}
+		Assert.assertTrue("ve výřezu jsou kruhy", obsazenych > 1000);
+	}
+
+	/** Při zlomkovém zvětšení obrazovky se kresba po výřezech shoduje s kresbou celého okna; jednotlivé pixely na okraji oválu může Java2D zaokrouhlit jinak. */
+	@Test
+	public void zlomkoveZvetseniPoVyrezech() {
+		final JObsazenost s = slideSKesemi(-150, -100, 0, 0, 120, 90, 200, -150, -250, 180);
+		final Rectangle[] dily = { new Rectangle(0, 0, 333, VYSKA), new Rectangle(333, 0, 211, 257), new Rectangle(333, 257, 211, VYSKA - 257),
+				new Rectangle(544, 0, SIRKA - 544, VYSKA) };
+		for (final double m : new double[] { 1.25, 1.5 }) {
+			final BufferedImage cele = kresli(s, m, new Rectangle(0, 0, SIRKA, VYSKA));
+			final BufferedImage poDilech = kresli(s, m, dily);
+			int ruznych = 0;
+			for (int y = 0; y < cele.getHeight(); y++) {
+				for (int x = 0; x < cele.getWidth(); x++) {
+					ruznych += cele.getRGB(x, y) != poDilech.getRGB(x, y) ? 1 : 0;
+				}
+			}
+			Assert.assertTrue("zvětšení " + m + ": " + ruznych + " různých pixelů", ruznych <= 3);
+		}
+	}
 }

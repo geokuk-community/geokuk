@@ -2,6 +2,7 @@ package cz.geokuk.plugins.kesoidobsazenost;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import javax.swing.event.ChangeEvent;
@@ -112,18 +113,22 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 			return;
 		}
 		// Kruhy se kreslí do masky plnou barvou a maska se položí jednou s průhledností, takže překryvy netmavnou.
-		final double sx = Math.abs(g.getTransform().getScaleX());
-		final double sy = Math.abs(g.getTransform().getScaleY());
-		final int w = (int) Math.ceil(oblast.width * sx);
-		final int h = (int) Math.ceil(oblast.height * sy);
+		// Maska leží na celých pixelech zařízení, aby kresba po výřezech seděla i při zlomkovém zvětšení obrazovky.
+		final AffineTransform transformace = g.getTransform();
+		final Rectangle pixely = transformace.createTransformedShape(oblast).getBounds();
+		if (pixely.isEmpty()) {
+			return;
+		}
+		final int w = pixely.width;
+		final int h = pixely.height;
 		final BufferedImage m = maska(w, h);
 		final Graphics2D gm = m.createGraphics();
 		try {
 			gm.setComposite(AlphaComposite.Clear);
 			gm.fillRect(0, 0, w, h);
 			gm.setComposite(AlphaComposite.SrcOver);
-			gm.scale(sx, sy);
-			gm.translate(-oblast.x, -oblast.y);
+			gm.translate(-pixely.x, -pixely.y);
+			gm.transform(transformace);
 			final Color barva = obsazenost.getColor();
 			gm.setColor(new Color(barva.getRGB() & 0xFFFFFF));
 			iIndexator.bound(oblastKresleni(g, r + 1)).stream().forEach(wpt -> {
@@ -138,7 +143,9 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 		}
 		final Composite puvodni = g.getComposite();
 		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, obsazenost.getColor().getAlpha() / 255f));
-		g.drawImage(m, oblast.x, oblast.y, oblast.x + oblast.width, oblast.y + oblast.height, 0, 0, w, h, null);
+		g.setTransform(new AffineTransform());
+		g.drawImage(m, pixely.x, pixely.y, pixely.x + w, pixely.y + h, 0, 0, w, h, null);
+		g.setTransform(transformace);
 		g.setComposite(puvodni);
 	}
 
