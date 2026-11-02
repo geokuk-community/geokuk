@@ -48,7 +48,7 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 	private ObsazenostModel obsazenostModel;
 
 	/** Maska kruhů, znovu použitá mezi kresleními. */
-	private transient BufferedImage maska;
+	private BufferedImage maska;
 
 	public JObsazenost() {
 		setOpaque(false);
