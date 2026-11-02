@@ -138,11 +138,11 @@ public class JPrehledSouboru extends JPanel {
 		final JComponent sekceGsak = vytvorSekci(tab1, TypZdroje.GSAK);
 		final JComponent sekceOpensak = vytvorSekci(tab1, TypZdroje.OPENSAK);
 		final JComponent tab2 = createTab();
-		jTabbedPane.addTab("Mapy", null, tab2, "Offline mapy v počítači.");
+		jTabbedPane.addTab("Mapy", null, jenSPosuvnikem(tab2), "Offline mapy v počítači.");
 		final JComponent tab3 = createTab();
-		jTabbedPane.addTab("Rendr", null, tab3, "Výstupní složky pro rendrování.");
+		jTabbedPane.addTab("Rendr", null, jenSPosuvnikem(tab3), "Výstupní složky pro rendrování.");
 		final JComponent tab4 = createTab();
-		jTabbedPane.addTab("Program", null, tab4, "Složky a soubory programu, všechny jsou ve složce s programem.");
+		jTabbedPane.addTab("Program", null, jenSPosuvnikem(tab4), "Složky a soubory programu, všechny jsou ve složce s programem.");
 		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
 		jKesDir = pridejJednuPolozkuproEdit(null, sekceGpx, "Složka s keškami (GPX) získanými z Geogetu nebo jiného programu.", true, false);

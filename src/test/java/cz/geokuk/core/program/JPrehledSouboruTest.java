@@ -67,6 +67,40 @@ public class JPrehledSouboruTest {
 		Assert.assertEquals(2, pocet);
 	}
 
+	/** Na malé obrazovce (třeba 1366×768 při 150 %) se záložky posouvají a řádek s tlačítkem Uložit zůstane vidět. */
+	@Test
+	public void minimalniVyskaPanelujeMalaATlacitkoUlozitJeVOknuVidet() {
+		final JPrehledSouboru panel = new JPrehledSouboru(null);
+		Assert.assertTrue("minimální výška " + panel.getMinimumSize().height, panel.getMinimumSize().height <= 290);
+		Assert.assertTrue(panel.getMinimumSize().height < JUmisteniSouboruDialog.NEJMENSI_VELIKOST.height - 100);
+		for (final java.awt.Dimension okno : new java.awt.Dimension[] { JUmisteniSouboruDialog.NEJMENSI_VELIKOST, new java.awt.Dimension(910, 460) }) {
+			final javax.swing.JFrame f = new javax.swing.JFrame();
+			try {
+				f.add(panel);
+				f.setSize(okno);
+				f.setVisible(true);
+				f.validate();
+				final javax.swing.JButton ulozit = najdiTlacitko(panel, "Uložit");
+				Assert.assertNotNull(ulozit);
+				final java.awt.Point levyHorni = javax.swing.SwingUtilities.convertPoint(ulozit.getParent(), ulozit.getLocation(), f.getContentPane());
+				Assert.assertTrue("Uložit leží uvnitř okna " + okno + ": y=" + levyHorni.y + " h=" + ulozit.getHeight() + " obsah=" + f.getContentPane().getHeight(),
+						levyHorni.y + ulozit.getHeight() <= f.getContentPane().getHeight());
+				Assert.assertTrue(levyHorni.x + ulozit.getWidth() <= f.getContentPane().getWidth());
+			} finally {
+				f.dispose();
+			}
+		}
+	}
+
+	private static javax.swing.JButton najdiTlacitko(final java.awt.Container kde, final String text) {
+		for (final java.awt.Component c : najdi(kde, javax.swing.JButton.class)) {
+			if (text.equals(((javax.swing.JButton) c).getText())) {
+				return (javax.swing.JButton) c;
+			}
+		}
+		return null;
+	}
+
 	@Test
 	public void dialogJeVetsiNezMinimum() {
 		Assert.assertTrue(JUmisteniSouboruDialog.VYCHOZI_VELIKOST.width > JUmisteniSouboruDialog.NEJMENSI_VELIKOST.width);
