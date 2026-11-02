@@ -13,6 +13,9 @@
   Připnutý zástupce může dál chvíli ukazovat starou ikonu, dokud Windows
   neobnoví mezipaměť ikon; pomůže odepnout a znovu připnout zástupce, obnovit
   ikony (ie4uinit.exe -ClearIconCache), restartovat Průzkumník nebo počítač.
+- V nastavení Umístění souborů je u GSAKu odstraněno pole Čas nenálezu
+  (program ho nepoužíval) a volba u GSAKu i OpenSAKu se jmenuje Nové databáze
+  načíst až po vybrání. Uložená nastavení zůstávají platná.
 - Dialog Nápověda > O programu ukazuje nahoře verzi a licenci a pod nimi dvě
   části: původní texty Martina Veverky s odkazem na původní projekt a údaje
   o upravené verzi (GeoKuk community) s odkazy na projekt na GitHubu,
@@ -121,10 +124,15 @@
   ID neexistuje, hledá se zadaný text. Okno je větší (výchozí 950×700,
   na malé obrazovce nejvýš 90 % plochy), jde měnit a sloupec Id se
   neořezává.
+- Typy zdrojů keší jdou zapnout a vypnout klávesami Ctrl+1 (GPX), Ctrl+2
+  (GeoGet), Ctrl+3 (GSAK) a Ctrl+4 (OpenSAK), také z číselné klávesnice;
+  číslo typu je pevné. Zkratky jsou v menu Kešoidy > Zdroje keší a v Přehledu
+  zdrojů.
 - V nabídce pravého tlačítka na mapě jsou položky Otevřít v Mapy.com (otevře
   turistickou mapu) a Otevřít v Google Mapách; podnabídka Další mapy má
   položky OpenStreetMap, ČÚZK Geoprohlížeč (jen v ČR a jejím okolí) a u kříže
   Otevřít StreetView. Značka se otevře v místě kurzoru, u kříže v místě kříže.
+- Zobrazování kešoidů jde zapnout a vypnout klávesou F5 (menu Kešoidy > Zobrazovat kešoidy).
 - Nová volba v menu Kešoidy „Přejít na kešoid ze schránky“ (výchozí vypnuto):
   když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
   aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
@@ -264,8 +272,17 @@
 - V Soubor > Zobrazení programu jde posuvníkem zvětšit ikony keší na mapě
   (1× až 5× po 0,5) a posuvníkem Mapa (offline) zvětšit písmo, symboly
   a čáry offline mapy až na 200 %.
+- Obsazenost 161 m (F9) je na nové instalaci vypnutá. Její bublina vysvětluje,
+  že kruh má poloměr 161 m a překryv kruhů pravidlo neporušuje; bublina
+  Jednotkových kruhů uvádí poloměr (10 m, 100 m, 1 km…).
 
 ### Opravy
+- Kešoidy > Jednotkové kruhy (Alt+F8) zapnou i zvýrazňovací kruhy, takže se
+  na mapě hned projeví.
+- Zvýrazňovací a jednotkové kruhy zůstanou zapnuté i po přepnutí mapového
+  podkladu; velikost a barva kruhů se dál pamatují pro každý podklad. Kdo měl
+  kruhy zapnuté jen u některých podkladů, začne se stavem podkladu, na kterém
+  program po aktualizaci poprvé startuje.
 - Mapa je plynulejší při pohybu myši, při tažení bodu cesty, se zvětšenými
   ikonami keší, s popisky keší a se stínovaným reliéfem.
 - Obsazenost 161 m se kreslí jako jedna plocha jedné barvy, takže překryvy
