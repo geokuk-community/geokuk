@@ -266,6 +266,8 @@
   a čáry offline mapy až na 200 %.
 
 ### Opravy
+- Zvýrazňovací a jednotkové kruhy zůstanou zapnuté i po přepnutí mapového
+  podkladu; velikost a barva kruhů se dál pamatují pro každý podklad.
 - Mapa je plynulejší při pohybu myši, při tažení bodu cesty, se zvětšenými
   ikonami keší, s popisky keší a se stínovaným reliéfem.
 - Kruhy obsazenosti se při velkém počtu keší ve výřezu nekreslí, mapa pak
