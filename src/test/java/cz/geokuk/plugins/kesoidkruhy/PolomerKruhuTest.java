@@ -116,4 +116,17 @@ public class PolomerKruhuTest {
 			pref.removeNode();
 		}
 	}
+
+	@Test
+	public void pixelyZPole() {
+		Assert.assertEquals(0, PolomerKruhu.parsujPixely("0"));
+		Assert.assertEquals(40, PolomerKruhu.parsujPixely("40"));
+		Assert.assertEquals(40, PolomerKruhu.parsujPixely(" 40 px "));
+		Assert.assertEquals(40, PolomerKruhu.parsujPixely("40PX"));
+		Assert.assertEquals(100, PolomerKruhu.parsujPixely("100"));
+		for (final String t : new String[] { null, "", "abc", "-1", "101", "4,5", "40 m", "px", "1e2", "00000" }) {
+			Assert.assertEquals("'" + t + "'", -1, PolomerKruhu.parsujPixely(t));
+		}
+		Assert.assertEquals("20 px", PolomerKruhu.formatPixely(20));
+	}
 }

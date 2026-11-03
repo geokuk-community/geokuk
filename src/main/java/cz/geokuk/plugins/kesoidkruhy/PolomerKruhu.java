@@ -71,6 +71,29 @@ final class PolomerKruhu {
 		return (int) zaokrouhleno;
 	}
 
+	static final int MIN_PIXLU_VELIKOST = 0;
+	static final int MAX_PIXLU_VELIKOST = 100;
+
+	/** Velikost kruhu v pixelech z pole, s volitelným „px“; mimo rozsah nebo nesrozumitelné vrátí -1. */
+	static int parsujPixely(final String text) {
+		if (text == null) {
+			return -1;
+		}
+		String t = text.trim().toLowerCase(CS);
+		if (t.endsWith("px")) {
+			t = t.substring(0, t.length() - 2).trim();
+		}
+		if (!t.matches("\\d{1,4}")) {
+			return -1;
+		}
+		final int px = Integer.parseInt(t);
+		return px > MAX_PIXLU_VELIKOST ? -1 : px;
+	}
+
+	static String formatPixely(final int pixlu) {
+		return pixlu + " px";
+	}
+
 	/** Text do pole: do 999 m v metrech, od 1 km v kilometrech s desetinnou čárkou. */
 	static String format(final int metru) {
 		if (metru < 1000) {

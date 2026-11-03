@@ -5,9 +5,10 @@
 ### Změny
 - V nastavení zvýrazňovacích kruhů je samostatný posuvník Průhlednost vedle
   výběru barvy.
-- Poloměr jednotkových kruhů se nastavuje v metrech: posuvníkem s přednastavenými
-  hodnotami nebo vlastní hodnotou od 1 m do 50 km. Kruh se při přibližování
-  mapy mění plynule.
+- Velikost zvýrazňovacích kruhů se v nastavení volí v pixelech nebo v metrech.
+  Poloměr v metrech se nastavuje posuvníkem s přednastavenými hodnotami nebo
+  vlastní hodnotou od 1 m do 50 km a kruh se při přibližování mapy mění plynule.
+  Velikost v pixelech má vedle posuvníku pole s hodnotou.
 - V menu Mapy je Správce offline map…; Turistické a cyklotrasy a ČÚZK –
   Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
   Průvodce nastavením map… jsou v menu Soubor.
