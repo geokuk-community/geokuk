@@ -3,8 +3,8 @@
 ## 6.5.0
 
 ### Změny
-- V nastavení zvýrazňovacích kruhů je samostatný posuvník Průhlednost vedle
-  výběru barvy.
+- V nastavení zvýrazňovacích kruhů se průhlednost nastavuje samostatným
+  posuvníkem Průhlednost; výběr barvy ji už nenabízí.
 - V menu Mapy je Správce offline map…; Turistické a cyklotrasy a ČÚZK –
   Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
   Průvodce nastavením map… jsou v menu Soubor.

@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoidkruhy;
 import java.awt.Color;
 
 import javax.swing.*;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.event.ChangeListener;
 
 /** Ovládací prvky nastavení zvýrazňovacích kruhů: jednotkovost, velikost, průhlednost a barva. Zapnutí kruhů panel nemění. */
@@ -26,6 +27,7 @@ final class PanelKruhu extends Box {
 		velikostSlider.setToolTipText("Nastavení velikosti zvýrazňovacího kruhu.");
 		pruhlednostSlider.setToolTipText("Průhlednost zvýrazňovacího kruhu: 0 % je plně krycí, 100 % neviditelný.");
 		barvaChooser.setToolTipText("Nastavení barvy zvýrazňovacího kruhu");
+		skryjPruhlednostVChooseru(barvaChooser);
 		jednotkoveKruhy.setToolTipText("Nastavení jednotkovosti kruhů");
 		add(jednotkoveKruhy);
 		add(new JLabel("Velikost kruhů"));
@@ -35,6 +37,18 @@ final class PanelKruhu extends Box {
 		add(pruhlednostSlider);
 		add(Box.createVerticalStrut(10));
 		add(barvaChooser);
+	}
+
+	/** Průhlednost nastavuje jen posuvník Průhlednost, výběr barvy ji nenabízí. */
+	static void skryjPruhlednostVChooseru(final JColorChooser chooser) {
+		for (final AbstractColorChooserPanel panel : chooser.getChooserPanels()) {
+			try {
+				// Od Javy 9; starší výběr barvy ovládání průhlednosti nemá.
+				AbstractColorChooserPanel.class.getMethod("setColorTransparencySelectionEnabled", boolean.class).invoke(panel, false);
+			} catch (final ReflectiveOperationException | RuntimeException e) {
+				// nic k vypnutí
+			}
+		}
 	}
 
 	void inject(final KruhyModel kruhyModel) {
