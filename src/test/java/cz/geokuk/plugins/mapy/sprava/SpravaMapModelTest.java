@@ -186,6 +186,24 @@ public class SpravaMapModelTest {
 		assertTrue(udalosti.get(0) instanceof StavyMapEvent);
 	}
 
+	/** Offline mapy se otevřou rovnou s uloženým katalogem vrstev; načtení na vlákně kontroly ho pak nevymění, takže se mapy neotevírají znovu. */
+	@Test
+	public void ulozenyKatalogVrstevPlatiUzProPrvniOtevreniMap() throws Exception {
+		final File slozka = tmp.newFolder("mapy");
+		final File sv = new File(slozka, SpravaMapModel.SLOZKA_VRSTEV);
+		vrstvaNaDisku(sv, "tourist", 1000, KatalogVrstevTest.SHA);
+		Files.write(new File(sv, SpravaMapModel.SOUBOR_KATALOGU).toPath(), KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("tourist/europe/czech-republic", "tourist",
+				"europe/czech-republic", "map", KatalogVrstevTest.soubor("tourist.map", "tourist.map", 1000, KatalogVrstevTest.SHA), "")).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy());
+		model.nastavProTest(() -> slozka, e -> {});
+		final KatalogVrstev proOtevreni = model.getKatalogVrstevProOtevreni();
+		assertEquals("uložený katalog, ne vestavěný", 1, proOtevreni.getVrstvy().size());
+		model.obnovStavy();
+		model.pockej();
+		assertSame(proOtevreni, model.getKatalogVrstev());
+		assertSame(proOtevreni, model.getKatalogVrstevProOtevreni());
+	}
+
 	/** Žádosti o obnovu stavů, které čekají na vlákně kontroly (třeba při startu), se sloučí do jedné. */
 	@Test(timeout = 60000)
 	public void obnovyStavuCekajiciNaVlaknuSeSlouci() throws Exception {
