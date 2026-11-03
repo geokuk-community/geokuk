@@ -5,6 +5,7 @@ package cz.geokuk.util.gui;
 
 import java.awt.*;
 import java.util.Hashtable;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 
 import javax.swing.*;
@@ -23,19 +24,64 @@ public class JBarvovyDvojSlider extends JPanel {
 	private static final int MAX = 255;
 	/** Mezera mezi bublinkou a posuvníkem. */
 	private static final int MEZERA_BUBLINKY = 8;
-	private static final Font FONT_BUBLINKY = new JLabel().getFont().deriveFont(Font.BOLD, 12f);
 
 	private JSlider iBarvovnik;
 	private JSlider iPruhlednik;
-	private final BublinkaHodnoty bublinkaBarvy = new BublinkaHodnoty(this::prekresliBublinky);
-	private final BublinkaHodnoty bublinkaPruhlednosti = new BublinkaHodnoty(this::prekresliBublinky);
+	private final BublinkaHodnoty bublinkaBarvy;
+	private final BublinkaHodnoty bublinkaPruhlednosti;
+	private final java.util.List<Sledovani> sledovani = new java.util.ArrayList<>();
 	/** Hodnoty se právě nastavují z modelu, bublinka se neukazuje. */
 	private boolean nastavuji;
 	/** Kde se bublinky naposledy kreslily, ve značkách rodiče; překreslí se při dalším kroku animace. */
 	private Rectangle naposledy = new Rectangle();
 
 	public JBarvovyDvojSlider() {
+		this(BublinkaHodnoty::new);
+	}
+
+	/** V testech se bublinky vyrábějí s vlastními hodinami a časovačem. */
+	JBarvovyDvojSlider(final Function<Runnable, BublinkaHodnoty> vyrobaBublinky) {
+		bublinkaBarvy = vyrobaBublinky.apply(this::prekresliBublinky);
+		bublinkaPruhlednosti = vyrobaBublinky.apply(this::prekresliBublinky);
 		initComponents();
+		addHierarchyListener(e -> {
+			if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && !isShowing()) {
+				zrusBublinky();
+			}
+		});
+	}
+
+	@Override
+	public void removeNotify() {
+		zrusBublinky();
+		super.removeNotify();
+	}
+
+	/** Vrstva se skryla nebo zanikla uprostřed tažení, puštění už nepřijde. */
+	void zrusBublinky() {
+		for (final Sledovani s : sledovani) {
+			s.tahne = false;
+			s.bublinka.zrus();
+		}
+	}
+
+	private Font fontBublinky() {
+		final Font f = getFont() != null ? getFont() : new JLabel().getFont();
+		return f.deriveFont(Font.BOLD, 12f);
+	}
+
+	/** Stav tažení jednoho posuvníku. */
+	private static final class Sledovani {
+		final JSlider slider;
+		final BublinkaHodnoty bublinka;
+		boolean tahne;
+		int posledni;
+
+		Sledovani(final JSlider slider, final BublinkaHodnoty bublinka) {
+			this.slider = slider;
+			this.bublinka = bublinka;
+			this.posledni = slider.getValue();
+		}
 	}
 
 	/**
@@ -115,7 +161,7 @@ public class JBarvovyDvojSlider extends JPanel {
 			}
 			final Point p = SwingUtilities.convertPoint(s, 0, 0, vrstva);
 			final int stredY = p.y + polohaJezdce(s.getHeight() - s.getInsets().top - s.getInsets().bottom, okraj(s), s.getValue(), s.getMinimum(), s.getMaximum()) + s.getInsets().top;
-			final Rectangle r = b.kresli(g, FONT_BUBLINKY, p.x - MEZERA_BUBLINKY, stredY);
+			final Rectangle r = b.kresli(g, fontBublinky(), p.x - MEZERA_BUBLINKY, stredY);
 			if (r != null) {
 				souhrn = souhrn == null ? r : souhrn.union(r);
 			}
@@ -155,7 +201,7 @@ public class JBarvovyDvojSlider extends JPanel {
 			return;
 		}
 		final Rectangle oblast = new Rectangle(naposledy);
-		final FontMetrics fm = getFontMetrics(FONT_BUBLINKY);
+		final FontMetrics fm = getFontMetrics(fontBublinky());
 		for (final JSlider s : new JSlider[] { iBarvovnik, iPruhlednik }) {
 			final BublinkaHodnoty b = bublinka(s);
 			if (!b.jeAktivni()) {
@@ -210,9 +256,11 @@ public class JBarvovyDvojSlider extends JPanel {
 
 		add(Box.createRigidArea(new Dimension(0, 20)));
 		add(nadpis("Barva"));
+		add(Box.createRigidArea(new Dimension(0, 8)));
 		add(iBarvovnik);
 		add(Box.createRigidArea(new Dimension(0, 20)));
 		add(nadpis("Průhlednost"));
+		add(Box.createRigidArea(new Dimension(0, 8)));
 		add(iPruhlednik);
 		add(Box.createRigidArea(new Dimension(0, 20)));
 	}
@@ -228,22 +276,28 @@ public class JBarvovyDvojSlider extends JPanel {
 		s.setPaintLabels(true);
 	}
 
-	/** Bublinka se ukazuje při tažení i při změně kolečkem nebo klávesou, ne při nastavení z modelu. */
+	/** Bublinka se ukazuje při tažení i při změně kolečkem nebo klávesou, ne při nastavení z modelu ani při pouhé změně příznaku tažení. */
 	private void sledujBublinku(final JSlider s, final BublinkaHodnoty bublinka, final IntFunction<String> text) {
-		final boolean[] tahne = { false };
+		final Sledovani sl = new Sledovani(s, bublinka);
+		sledovani.add(sl);
 		s.addChangeListener(e -> {
+			final int hodnota = s.getValue();
 			if (nastavuji) {
+				sl.posledni = hodnota;
 				return;
 			}
-			final String t = text.apply(s.getValue());
+			final String t = text.apply(hodnota);
 			if (s.getValueIsAdjusting()) {
-				tahne[0] = true;
+				sl.tahne = true;
+				sl.posledni = hodnota;
 				bublinka.tahne(t);
-			} else if (tahne[0]) {
-				tahne[0] = false;
+			} else if (sl.tahne) {
+				sl.tahne = false;
+				sl.posledni = hodnota;
 				bublinka.tahne(t);
 				bublinka.pust();
-			} else {
+			} else if (hodnota != sl.posledni) {
+				sl.posledni = hodnota;
 				bublinka.dotkni(t);
 			}
 		});

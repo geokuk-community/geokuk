@@ -100,6 +100,13 @@ public final class BublinkaHodnoty {
 		prekresli.run();
 	}
 
+	/** Okamžitě skryje bublinku a zastaví časovač, třeba když se vrstva skryje uprostřed tažení. */
+	public void zrus() {
+		aktivni = false;
+		pusteno = -1;
+		casovac.zastav();
+	}
+
 	/** Posuvník se pustil. */
 	public void pust() {
 		if (aktivni && pusteno < 0) {
