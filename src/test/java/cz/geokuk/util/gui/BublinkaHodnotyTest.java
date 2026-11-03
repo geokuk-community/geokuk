@@ -43,7 +43,7 @@ public class BublinkaHodnotyTest {
 
 	@Test
 	public void casyJsouVeSpolecnychKonstantach() {
-		Assert.assertTrue(BublinkaHodnoty.ZACATEK_MS >= 120 && BublinkaHodnoty.ZACATEK_MS <= 150);
+		Assert.assertEquals(140, BublinkaHodnoty.ZACATEK_MS);
 		Assert.assertEquals(700, BublinkaHodnoty.DRZENI_MS);
 		Assert.assertEquals(300, BublinkaHodnoty.ZANIKNUTI_MS);
 	}
