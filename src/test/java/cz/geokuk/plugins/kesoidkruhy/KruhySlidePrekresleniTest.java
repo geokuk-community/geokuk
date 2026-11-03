@@ -57,10 +57,24 @@ public class KruhySlidePrekresleniTest {
 		return new KruhyPreferencesChangeEvent(s);
 	}
 
+	private static String diag(final JZvyraznovaciKruhySlide s) {
+		try {
+			final java.lang.reflect.Field l = JZvyraznovaciKruhySlide.class.getDeclaredField("limitIkon");
+			l.setAccessible(true);
+			final java.lang.reflect.Field i = JZvyraznovaciKruhySlide.class.getDeclaredField("iIndexator");
+			i.setAccessible(true);
+			final Indexator<?> ind = (Indexator<?>) i.get(s);
+			return "limit=" + l.get(s) + " pocet=" + (ind == null ? "null" : ind.count(s.getSoord().getBoundingRect())) + " dim=" + s.getSoord().getDim() + " vel=" + s.getWidth() + "x" + s.getHeight()
+			        + " bound=" + s.getSoord().getBoundingRect();
+		} catch (final Exception e) {
+			return e.toString();
+		}
+	}
+
 	private static boolean obarveno(final JZvyraznovaciKruhySlide slide, final int dx) {
 		final BufferedImage i = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = i.createGraphics();
-		slide.paint(g);
+		slide.paintComponent(g);
 		g.dispose();
 		return (i.getRGB(400 + dx, 300) >>> 24) != 0;
 	}
@@ -69,12 +83,12 @@ public class KruhySlidePrekresleniTest {
 	public void zmenaNastaveniPrekresliVrstvuAHnedMaNovouVelikost() {
 		final JZvyraznovaciKruhySlide s = slide();
 		s.onEvent(kruhy(true, 20, false));
-		Assert.assertTrue(obarveno(s, 15));
+		Assert.assertTrue(diag(s), obarveno(s, 15));
 		Assert.assertFalse(obarveno(s, 35));
 		prekresleni.set(0);
 		s.onEvent(kruhy(true, 40, false));
 		Assert.assertTrue("vrstva se překreslí", prekresleni.get() > 0);
-		Assert.assertTrue(obarveno(s, 35));
+		Assert.assertTrue(diag(s), obarveno(s, 35));
 	}
 
 	@Test
@@ -87,7 +101,7 @@ public class KruhySlidePrekresleniTest {
 		s.onEvent(kruhy(true, 40, false));
 		Assert.assertTrue(s.isVisible());
 		Assert.assertTrue("po zapnutí se vrstva překreslí", prekresleni.get() > 0);
-		Assert.assertTrue(obarveno(s, 35));
+		Assert.assertTrue(diag(s), obarveno(s, 35));
 	}
 
 	@Test
@@ -102,7 +116,7 @@ public class KruhySlidePrekresleniTest {
 		when(bag.getIndexator()).thenReturn(Indexator.postav(BoundingRect.ALL, Collections.singletonList(wpt), w -> MISTO.xx, w -> MISTO.yy));
 		kopie.onEvent(new KeskyVyfiltrovanyEvent(bag, bag));
 		kopie.onEvent(kruhy(true, 40, false));
-		Assert.assertTrue(obarveno(kopie, 35));
+		Assert.assertTrue(diag(kopie), obarveno(kopie, 35));
 		kopie.onEvent(kruhy(true, 20, false));
 		Assert.assertFalse(obarveno(kopie, 35));
 	}
