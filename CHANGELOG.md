@@ -292,6 +292,8 @@
   Jednotkových kruhů uvádí poloměr (10 m, 100 m, 1 km…).
 
 ### Opravy
+- Turistické a cyklotrasy nad offline mapou se staženou vrstvou tras kreslí jen
+  podklad; prázdný překryv tras se nad ní už nevykresluje.
 - Kešoidy > Jednotkové kruhy (Alt+F8) zapnou i zvýrazňovací kruhy, takže se
   na mapě hned projeví.
 - Zvýrazňovací a jednotkové kruhy zůstanou zapnuté i po přepnutí mapového
