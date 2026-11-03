@@ -11,10 +11,10 @@ import javax.swing.event.ChangeListener;
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.framework.MouseGestureContext;
-import cz.geokuk.plugins.kesoid.ViditelnostSKesoidy;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KeskyNactenyEvent;
 import cz.geokuk.plugins.kesoid.mvc.KesoidOnoffEvent;
+import cz.geokuk.plugins.kesoid.mvc.ViditelnostSKesoidy;
 import cz.geokuk.util.gui.JBarvovyDvojSlider;
 import cz.geokuk.util.index2d.Indexator;
 
@@ -43,7 +43,7 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 	private static final long serialVersionUID = -5858146658366237217L;
 
 	private ObsazenostSettings obsazenost;
-	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy(this);
+	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy();
 
 	private Indexator<Wpt> iIndexator;
 
@@ -86,11 +86,11 @@ public class JObsazenost extends JSingleSlide0 implements AfterEventReceiverRegi
 	}
 
 	public void onEvent(final KesoidOnoffEvent event) {
-		viditelnost.setKesoidy(event.isOnoff());
+		setVisible(viditelnost.setKesoidy(event.isOnoff()));
 	}
 
 	public void onEvent(final ObsazenostOnoffEvent event) {
-		viditelnost.setVlastni(event.isOnoff());
+		setVisible(viditelnost.setVlastni(event.isOnoff()));
 		repaint();
 	}
 
