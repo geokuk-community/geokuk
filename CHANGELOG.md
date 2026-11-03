@@ -3,6 +3,9 @@
 ## 6.5.0
 
 ### Změny
+- Posuvníky kruhů Obsazenost 161 m mají nadpisy Barva a Průhlednost, popisky os
+  (černá, šedá, bílá; průhlednost po 25 %) a při tažení bublinku s aktuální
+  hodnotou, která plynule vyplave a po puštění plynule zmizí.
 - V menu Mapy je Správce offline map…; Turistické a cyklotrasy a ČÚZK –
   Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
   Průvodce nastavením map… jsou v menu Soubor.
