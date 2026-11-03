@@ -294,6 +294,8 @@
 ### Opravy
 - Turistické a cyklotrasy nad offline mapou se staženou vrstvou tras kreslí jen
   podklad; prázdný překryv tras se nad ní už nevykresluje.
+- Po startu bez nového katalogu vrstev se offline mapy se staženými vrstvami
+  otevřou jen jednou, rovnou s obrysy vrstev z uloženého katalogu.
 - Kešoidy > Jednotkové kruhy (Alt+F8) zapnou i zvýrazňovací kruhy, takže se
   na mapě hned projeví.
 - Zvýrazňovací a jednotkové kruhy zůstanou zapnuté i po přepnutí mapového
