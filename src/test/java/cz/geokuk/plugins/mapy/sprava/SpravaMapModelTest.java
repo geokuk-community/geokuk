@@ -204,6 +204,26 @@ public class SpravaMapModelTest {
 		assertSame(proOtevreni, model.getKatalogVrstevProOtevreni());
 	}
 
+	/** Offline mapy i vrstvy tras dostanou uložený katalog vrstev hned při prvním otevření, ještě před kontrolou. */
+	@Test(timeout = 60000)
+	public void ziskavacDostaneUlozenyKatalogVrstevPredKontrolou() throws Exception {
+		assertEquals("offline mapy", 1, ziskavacSUlozenymKatalogem("mapy").getOfflineMapy().getKatalogVrstev().getVrstvy().size());
+		assertEquals("vrstvy tras", 1, ziskavacSUlozenymKatalogem("trasy").getOfflineTrasy().getKatalogVrstev().getVrstvy().size());
+	}
+
+	private cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac ziskavacSUlozenymKatalogem(final String jmeno) throws Exception {
+		final File slozka = tmp.newFolder(jmeno);
+		final File sv = new File(slozka, SpravaMapModel.SLOZKA_VRSTEV);
+		vrstvaNaDisku(sv, "tourist", 1000, KatalogVrstevTest.SHA);
+		Files.write(new File(sv, SpravaMapModel.SOUBOR_KATALOGU).toPath(), KatalogVrstevTest.katalog(KatalogVrstevTest.vrstva("tourist/europe/czech-republic", "tourist",
+				"europe/czech-republic", "map", KatalogVrstevTest.soubor("tourist.map", "tourist.map", 1000, KatalogVrstevTest.SHA), "")).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy());
+		model.nastavProTest(() -> slozka, e -> {});
+		final cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac ziskavac = new cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac();
+		model.inject(ziskavac);
+		return ziskavac;
+	}
+
 	/** Žádosti o obnovu stavů, které čekají na vlákně kontroly (třeba při startu), se sloučí do jedné. */
 	@Test(timeout = 60000)
 	public void obnovyStavuCekajiciNaVlaknuSeSlouci() throws Exception {
