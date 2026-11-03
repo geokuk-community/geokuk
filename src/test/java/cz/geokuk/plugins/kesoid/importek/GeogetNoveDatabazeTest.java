@@ -103,6 +103,7 @@ public class GeogetNoveDatabazeTest {
 		nacitac.setRootDirs(true, null, geoget, null, Collections.emptySet());
 		nacitac.nacti(null, new Genom());
 		Assert.assertEquals(Collections.singletonList(Collections.singleton(cesko)), zarazeno);
+		Assert.assertEquals(Collections.singletonList(Collections.emptySet()), nedostupneVZarazeni);
 	}
 
 	@Test
