@@ -14,7 +14,16 @@ final class PanelKruhu extends Box {
 	final JLabel pruhlednostLabel = new JLabel();
 	final JSlider velikostSlider = new JSlider();
 	final JSlider pruhlednostSlider = new JSlider(0, 100, 0);
-	final JColorChooser barvaChooser = new JColorChooser(Color.WHITE);
+	/** Po každém vytvoření panelů (i po přepnutí vzhledu) se z nich odstraní ovládání průhlednosti. */
+	final JColorChooser barvaChooser = new JColorChooser(Color.WHITE) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void updateUI() {
+			super.updateUI();
+			skryjPruhlednostVChooseru(this);
+		}
+	};
 	final JCheckBox jednotkoveKruhy = new JCheckBox("Jednotkové kruhy");
 
 	private KruhyModel kruhyModel;
@@ -27,7 +36,6 @@ final class PanelKruhu extends Box {
 		velikostSlider.setToolTipText("Nastavení velikosti zvýrazňovacího kruhu.");
 		pruhlednostSlider.setToolTipText("Průhlednost zvýrazňovacího kruhu: 0 % je plně krycí, 100 % neviditelný.");
 		barvaChooser.setToolTipText("Nastavení barvy zvýrazňovacího kruhu");
-		skryjPruhlednostVChooseru(barvaChooser);
 		jednotkoveKruhy.setToolTipText("Nastavení jednotkovosti kruhů");
 		add(jednotkoveKruhy);
 		add(new JLabel("Velikost kruhů"));
