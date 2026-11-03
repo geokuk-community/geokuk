@@ -11,11 +11,11 @@ import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.kesoid.Kepodr;
 import cz.geokuk.plugins.kesoid.LimityKresleni;
+import cz.geokuk.plugins.kesoid.ViditelnostSKesoidy;
 import cz.geokuk.plugins.kesoid.Wpt;
 import cz.geokuk.plugins.kesoid.mvc.KesoidOnoffEvent;
 import cz.geokuk.plugins.kesoid.mvc.KeskyVyfiltrovanyEvent;
 import cz.geokuk.plugins.kesoid.mvc.LimityKresleniEvent;
-import cz.geokuk.plugins.kesoid.mvc.ViditelnostSKesoidy;
 import cz.geokuk.util.index2d.Indexator;
 
 public class JPopiskySlide extends JSingleSlide0 {
@@ -31,7 +31,7 @@ public class JPopiskySlide extends JSingleSlide0 {
 
 	private PopiskyModel popiskyModel;
 
-	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy();
+	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy(this);
 
 	public JPopiskySlide() {
 		setOpaque(false);
@@ -70,12 +70,12 @@ public class JPopiskySlide extends JSingleSlide0 {
 
 	/** Popisky jsou vidět, jen když jsou zapnuté kešoidy i vlastní vypínač popisků; vypínač popisků se zobrazením kešoidů nemění. */
 	public void onEvent(final PopiskyOnoffEvent event) {
-		setVisible(viditelnost.setVlastni(event.isOnoff()));
+		viditelnost.setVlastni(event.isOnoff());
 		repaint();
 	}
 
 	public void onEvent(final KesoidOnoffEvent event) {
-		setVisible(viditelnost.setKesoidy(event.isOnoff()));
+		viditelnost.setKesoidy(event.isOnoff());
 		repaint();
 	}
 
