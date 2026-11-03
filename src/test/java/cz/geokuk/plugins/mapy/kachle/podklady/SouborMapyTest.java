@@ -58,6 +58,7 @@ public class SouborMapyTest {
 		final OfflineMapy mapy = new OfflineMapy(() -> {});
 		try {
 			mapy.kontrolaSlozkyNs = 0;
+			mapy.sledovatSlozku = false;
 			mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 			final OfflineRenderer r = mapy.pouzij();
 			try {
@@ -87,6 +88,7 @@ public class SouborMapyTest {
 		final OfflineMapy mapy = new OfflineMapy(() -> {});
 		try {
 			mapy.kontrolaSlozkyNs = 0;
+			mapy.sledovatSlozku = false;
 			mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 			final OfflineRenderer r = mapy.pouzij();
 			try {

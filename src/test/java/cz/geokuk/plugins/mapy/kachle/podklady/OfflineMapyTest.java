@@ -35,6 +35,7 @@ public class OfflineMapyTest {
 		slozka = tmp.newFolder("offline-mapy");
 		mapy = new OfflineMapy(zmen::incrementAndGet);
 		mapy.kontrolaSlozkyNs = 0;
+		mapy.sledovatSlozku = false; // změny ve složce se zjišťují při každé kontrole, ne podle událostí systému
 		mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 	}
 
@@ -331,6 +332,7 @@ public class OfflineMapyTest {
 		final String sVadnou = klic();
 		Files.delete(vadna.toPath());
 		mapy.kontrolaSlozkyNs = 0;
+		mapy.sledovatSlozku = false;
 		Assert.assertEquals("klíč dlaždic nezávisí na nečitelné mapě", sVadnou, klic());
 	}
 
@@ -507,6 +509,7 @@ public class OfflineMapyTest {
 		mapy.zavri();
 		final OfflineMapy znovu = new OfflineMapy(() -> {});
 		znovu.kontrolaSlozkyNs = 0;
+		znovu.sledovatSlozku = false;
 		znovu.setSlozkaSymbolu(symboly);
 		znovu.nastav(slozka, tema);
 		final OfflineRenderer r = znovu.pouzij();

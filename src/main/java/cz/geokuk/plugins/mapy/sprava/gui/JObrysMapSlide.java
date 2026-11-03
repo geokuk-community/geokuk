@@ -10,6 +10,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
@@ -31,6 +32,7 @@ import cz.geokuk.plugins.mapy.sprava.SpravaMapEvent;
 import cz.geokuk.plugins.mapy.sprava.StavMapy;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.SledovaniSlozky;
 
 /**
  * Obrys území offline map jen tenkou čarou a jen na žádost: trvale do zoomu {@link #NEJVETSI_ZOOM}, když ho uživatel zapnul; obrys mapy, nad jejímž
@@ -75,6 +77,7 @@ public class JObrysMapSlide extends JSingleSlide0 {
 			hlidani.start();
 		} else {
 			hlidani.stop();
+			zavriSledovani();
 		}
 		repaint();
 	}
@@ -132,7 +135,33 @@ public class JObrysMapSlide extends JSingleSlide0 {
 	}
 
 	private File slozkaMap() {
-		return kachleModel == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+		return slozkaMapZdroj.get();
+	}
+
+	/** Složka s mapami; v testech jde nahradit. */
+	transient Supplier<File> slozkaMapZdroj = () -> kachleModel == null ? null : kachleModel.getUmisteniSouboru().getOfflineMapyDir().getEffectiveFile();
+
+	/** Kolikrát se složka skutečně zkontrolovala (čtení otisku). */
+	long kontrol;
+	private transient SledovaniSlozky sledovani;
+
+	/** Změna ve složce podle událostí systému; bez nich se složka neprochází. */
+	private boolean zmenaVeSlozce(final File slozka) {
+		if (slozka == null) {
+			return true;
+		}
+		if (sledovani == null || !sledovani.getKoren().equals(slozka.toPath())) {
+			zavriSledovani();
+			sledovani = new SledovaniSlozky(slozka.toPath(), 1);
+		}
+		return sledovani.zmenaOdPosledniho();
+	}
+
+	private void zavriSledovani() {
+		if (sledovani != null) {
+			sledovani.close();
+			sledovani = null;
+		}
 	}
 
 	public void onEvent(final OfflineMapaChangedEvent event) {
@@ -175,6 +204,10 @@ public class JObrysMapSlide extends JSingleSlide0 {
 			return;
 		}
 		final File slozka = slozkaMap();
+		if (!vynutit && otisk != null && !zmenaVeSlozce(slozka)) {
+			return;
+		}
+		kontrol++;
 		final String predchozi = vynutit ? null : otisk;
 		final BiFunction<File, KatalogMap, List<PolygonPokryti>> cti = ctecka;
 		cteni = new SwingWorker<List<PolygonPokryti>, Void>() {
