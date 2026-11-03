@@ -198,4 +198,35 @@ public class PrioritniFrontaTest {
 			pool.shutdownNow();
 		}
 	}
+
+	/** Dávka čeká na prázdnou frontu online dlaždic a pokračuje hned, jak se vyprázdní, i odebráním zastaralých úloh. */
+	@Test(timeout = 10000)
+	public void cekaniNaPrazdnouSkonciPoVyprazdneni() throws Exception {
+		final PrioritniFronta f = new PrioritniFronta();
+		final Uloha a = new Uloha("a", 1);
+		final Uloha b = new Uloha("b", 2);
+		f.offer(a);
+		f.offer(b);
+		final CountDownLatch dockal = new CountDownLatch(1);
+		final Thread cekajici = new Thread(() -> {
+			try {
+				f.pockejNaPrazdnou();
+				dockal.countDown();
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		cekajici.start();
+		assertSame(a, f.take());
+		assertFalse("ve frontě ještě je úloha", dockal.await(200, TimeUnit.MILLISECONDS));
+		b.poradi = ImageReceiver.ZASTARALA;
+		assertNull(f.poll());
+		assertTrue("fronta je prázdná", dockal.await(2, TimeUnit.SECONDS));
+		cekajici.join();
+	}
+
+	@Test(timeout = 10000)
+	public void cekaniNaPrazdnouHnedSkonciUPrazdne() throws Exception {
+		new PrioritniFronta().pockejNaPrazdnou();
+	}
 }
