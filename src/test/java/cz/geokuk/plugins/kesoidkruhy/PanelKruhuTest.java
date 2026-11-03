@@ -123,4 +123,102 @@ public class PanelKruhuTest {
 		Assert.assertEquals(new KruhySettings().getBarva(), model.getData().getBarva());
 		Assert.assertEquals(70, model.getData().getBarva().getAlpha());
 	}
+
+	@Test
+	public void posuvnikPolomeruNastaviPresetAPole() {
+		panel.jednotkoveKruhy.setSelected(true);
+		panel.polomerSlider.setValue(5);
+		Assert.assertEquals(500, model.getData().getPolomerMetru());
+		Assert.assertEquals("500 m", panel.polomerPole.getText());
+		panel.polomerSlider.setValue(7);
+		Assert.assertEquals(2000, model.getData().getPolomerMetru());
+		Assert.assertEquals("2 km", panel.polomerPole.getText());
+	}
+
+	@Test
+	public void poleNastaviLibovolnouHodnotuAPosuvnikJenNaNejblizsiPozici() {
+		panel.jednotkoveKruhy.setSelected(true);
+		panel.polomerPole.setText("161");
+		panel.potvrdPolomerZPole();
+		Assert.assertEquals(161, model.getData().getPolomerMetru());
+		Assert.assertEquals(4, panel.polomerSlider.getValue());
+		Assert.assertEquals("161 m", panel.polomerPole.getText());
+		panel.polomerPole.setText("1,5 km");
+		panel.polomerPole.postActionEvent();
+		Assert.assertEquals(1500, model.getData().getPolomerMetru());
+		Assert.assertEquals(7, panel.polomerSlider.getValue());
+		Assert.assertEquals("1,5 km", panel.polomerPole.getText());
+	}
+
+	@Test
+	public void neplatnyVstupSeVratiNaPosledniPlatnouHodnotu() {
+		panel.jednotkoveKruhy.setSelected(true);
+		panel.polomerPole.setText("333 m");
+		panel.potvrdPolomerZPole();
+		nastaveno.clear();
+		for (final String t : new String[] { "abc", "0", "99 km", "" }) {
+			panel.polomerPole.setText(t);
+			panel.potvrdPolomerZPole();
+			Assert.assertEquals("333 m", panel.polomerPole.getText());
+		}
+		Assert.assertEquals("neplatný vstup nic nezapsal", 0, nastaveno.size());
+		Assert.assertEquals(333, model.getData().getPolomerMetru());
+	}
+
+	@Test
+	public void zmenaPoleBezZmenyHodnotyNicNezapise() {
+		panel.jednotkoveKruhy.setSelected(true);
+		nastaveno.clear();
+		panel.polomerPole.setText("100 m");
+		panel.potvrdPolomerZPole();
+		panel.polomerPole.setText("0,1 km");
+		panel.potvrdPolomerZPole();
+		Assert.assertEquals(0, nastaveno.size());
+		Assert.assertEquals("100 m", panel.polomerPole.getText());
+	}
+
+	@Test
+	public void jednotkovostRozhodujeKtereOvladaniJeAktivni() {
+		panel.jednotkoveKruhy.setSelected(false);
+		Assert.assertTrue(panel.velikostSlider.isEnabled());
+		Assert.assertFalse(panel.polomerSlider.isEnabled());
+		Assert.assertFalse(panel.polomerPole.isEnabled());
+		panel.jednotkoveKruhy.setSelected(true);
+		Assert.assertFalse(panel.velikostSlider.isEnabled());
+		Assert.assertTrue(panel.polomerSlider.isEnabled());
+		Assert.assertTrue(panel.polomerPole.isEnabled());
+		final KruhySettings d = model.getData();
+		d.setJednotkovaVelikost(false);
+		panel.onEvent(new KruhyPreferencesChangeEvent(d));
+		Assert.assertTrue(panel.velikostSlider.isEnabled());
+		Assert.assertFalse(panel.polomerPole.isEnabled());
+	}
+
+	@Test
+	public void polomerZModeluSeZobrazi() {
+		final KruhySettings d = model.getData();
+		d.setPolomerMetru(333);
+		d.setJednotkovaVelikost(true);
+		model.setData(d);
+		nastaveno.clear();
+		panel.onEvent(new KruhyPreferencesChangeEvent(model.getData()));
+		Assert.assertEquals("333 m", panel.polomerPole.getText());
+		Assert.assertEquals(PolomerKruhu.pozice(333), panel.polomerSlider.getValue());
+		Assert.assertEquals(0, nastaveno.size());
+	}
+
+	@Test
+	public void zmenaPolomeruZachovaZapnuti() {
+		for (final boolean zapnuto : new boolean[] { true, false }) {
+			zapni(zapnuto);
+			panel.jednotkoveKruhy.setSelected(true);
+			panel.polomerSlider.setValue(1);
+			Assert.assertEquals(zapnuto, model.getData().isOnoff());
+			Assert.assertEquals(25, model.getData().getPolomerMetru());
+			panel.polomerPole.setText("42");
+			panel.potvrdPolomerZPole();
+			Assert.assertEquals(zapnuto, model.getData().isOnoff());
+			panel.jednotkoveKruhy.setSelected(false);
+		}
+	}
 }
