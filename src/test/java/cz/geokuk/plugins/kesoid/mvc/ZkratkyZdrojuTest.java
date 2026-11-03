@@ -154,6 +154,39 @@ public class ZkratkyZdrojuTest {
 		assertEquals(java.util.Arrays.asList("typ GPX false"), volani);
 	}
 
+	/** Vypnutý typ, který položky má, se zkratkou i menu zapne; typ, který položky dostane až později, se po události znovu povolí. */
+	@Test
+	public void vypnutyTypSPolozkamiJdeZapnoutAPrazdnyTypSePoPrichoduPolozekPovoli() {
+		final StavyZdrojuProTesty data = StavyZdrojuProTesty.vzorek();
+		data.vypnuteTypy.add(TypZdroje.GSAK);
+		data.prepisZapnuti();
+		final java.util.List<String> volani = new java.util.ArrayList<>();
+		final PrepniZdrojAction gsak = new PrepniZdrojAction(TypZdroje.GSAK);
+		final JCheckBoxMenuItem polozka = new JCheckBoxMenuItem();
+		gsak.join(polozka);
+		gsak.inject(zaznamenavajiciModel(volani));
+
+		// Nejdřív prázdný stav: vypnuto, položky nejsou.
+		gsak.onEvent(new StavZdrojuEvent(StavZdroju.PRAZDNY));
+		assertFalse(gsak.isEnabled());
+		assertFalse(polozka.isEnabled());
+		gsak.prepni();
+		assertTrue(volani.isEmpty());
+
+		// Pak stav s položkami, GSAK vypnutý: akce se znovu povolí a typ jde zapnout zkratkou (prepni) i položkou menu.
+		gsak.onEvent(new StavZdrojuEvent(data.snimek()));
+		assertTrue("vypnutý typ s položkami je povolený", gsak.isEnabled());
+		assertTrue(polozka.isEnabled());
+		assertFalse("typ je vypnutý, položka není zaškrtnutá", polozka.isSelected());
+		gsak.prepni();
+		assertEquals(1, volani.size());
+		assertTrue(volani.get(0), volani.get(0).contains("GSAK") && volani.get(0).endsWith("true"));
+		volani.clear();
+		polozka.doClick();
+		assertEquals("klik na položku menu typ zapne", 1, volani.size());
+		assertTrue(volani.get(0), volani.get(0).contains("GSAK") && volani.get(0).endsWith("true"));
+	}
+
 	/** Zaškrtnutí položky menu Zdroje keší odpovídá stavu typu: zapnutý typ zaškrtnutý, vypnutý ne. */
 	@Test
 	public void zaskrtnutiPolozkyMenuOdpovidaStavuZdroje() {
