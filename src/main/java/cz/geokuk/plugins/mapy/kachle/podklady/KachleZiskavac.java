@@ -1023,11 +1023,15 @@ public class KachleZiskavac {
 	}
 
 	/** Dávka počká, dokud čekají dlaždice, které uživatel právě prohlíží. */
-	private static void pockejNaOnline(final BlockingQueue<Runnable> online) throws InterruptedException {
-		if (!online.isEmpty()) {
-			pocitBrzdeniOfflineKdyzJeOnline.inc();
-			((PrioritniFronta) online).pockejNaPrazdnou();
+	static void pockejNaOnline(final BlockingQueue<Runnable> online) throws InterruptedException {
+		if (online.isEmpty()) {
+			return;
 		}
+		if (!(online instanceof PrioritniFronta)) {
+			throw new IllegalStateException("Fronta online dlaždic není PrioritniFronta: " + online.getClass().getName());
+		}
+		pocitBrzdeniOfflineKdyzJeOnline.inc();
+		((PrioritniFronta) online).pockejNaPrazdnou();
 	}
 
 	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
