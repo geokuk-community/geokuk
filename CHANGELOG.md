@@ -6,6 +6,8 @@
 - Posuvníky kruhů Obsazenost 161 m mají nadpisy Barva a Průhlednost, popisky os
   (černá, šedá, bílá; průhlednost po 25 %) a při tažení bublinku s aktuální
   hodnotou, která plynule vyplave a po puštění plynule zmizí.
+- V nastavení zvýrazňovacích kruhů se průhlednost nastavuje posuvníkem
+  Průhlednost.
 - V menu Mapy je Správce offline map…; Turistické a cyklotrasy a ČÚZK –
   Stínovaný reliéf jsou v bloku Přes mapu. Optimalizace cache dlaždic… a
   Průvodce nastavením map… jsou v menu Soubor.
@@ -295,6 +297,8 @@
   Jednotkových kruhů uvádí poloměr (10 m, 100 m, 1 km…).
 
 ### Opravy
+- Změna velikosti, barvy nebo jednotkovosti v nastavení zvýrazňovacích kruhů
+  kruhy nevypne.
 - Turistické a cyklotrasy nad offline mapou se staženou vrstvou tras kreslí jen
   podklad; prázdný překryv tras se nad ní už nevykresluje.
 - Po startu bez nového katalogu vrstev se offline mapy se staženými vrstvami
