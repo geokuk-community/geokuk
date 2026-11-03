@@ -16,10 +16,6 @@
 - V nastavení Umístění souborů je u GSAKu odstraněno pole Čas nenálezu
   (program ho nepoužíval) a volba u GSAKu i OpenSAKu se jmenuje Nové databáze
   načíst až po vybrání. Uložená nastavení zůstávají platná.
-- Vypnutí zobrazování kešoidů (F5) skryje i popisky kešoidů na mapě a kříž se
-  při vypnutých kešoidech nechytá na kešoidy, které nejsou vidět. Vypínač
-  Popisky na mapě (F12) se tím nemění: po zapnutí kešoidů je vše ve stavu
-  před vypnutím.
 - Klávesa F5 patří zobrazování kešoidů. Uživatelská mapa, která má zkratku F5,
   se při načtení odmítne s hláškou o obsazené zkratce; stačí v jejím souboru
   zkratku změnit nebo smazat. Příklad volné zkratky v hlášce je F4.
@@ -145,8 +141,10 @@
   položky OpenStreetMap, ČÚZK Geoprohlížeč (jen v ČR a jejím okolí) a u kříže
   Otevřít StreetView. Značka se otevře v místě kurzoru, u kříže v místě kříže.
 - Zobrazování kešoidů jde zapnout a vypnout klávesou F5 (menu Kešoidy > Zobrazovat kešoidy).
-  Vypnutí skryje i zvýrazňovací kruhy a obsazenost; po zapnutí se vrátí tak,
-  jak byly nastavené.
+  Vypnutí skryje i zvýrazňovací kruhy, obsazenost a popisky kešoidů; jejich
+  vlastní vypínače (včetně F12 u popisků) se tím nemění, takže se po zapnutí
+  vrátí tak, jak byly nastavené. Při vypnutých kešoidech se kříž nechytá na
+  kešoidy, které nejsou vidět.
 - Nová volba v menu Kešoidy „Přejít na kešoid ze schránky“ (výchozí vypnuto):
   když se do schránky zkopíruje kód kešoidu nebo odkaz s kódem a GeoKuk není
   aktivní okno, mapa se vycentruje na kešoid a otevře se jeho detail; okno se
