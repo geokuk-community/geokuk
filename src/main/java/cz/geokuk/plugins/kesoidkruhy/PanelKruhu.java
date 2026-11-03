@@ -8,6 +8,7 @@ import java.awt.event.FocusEvent;
 import java.util.Hashtable;
 
 import javax.swing.*;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.event.ChangeListener;
 
 /** Ovládací prvky nastavení zvýrazňovacích kruhů: velikost v pixelech nebo v metrech, průhlednost a barva. Zapnutí kruhů panel nemění. */
@@ -53,6 +54,7 @@ final class PanelKruhu extends Box {
 		pruhlednostLabel.setText(textPruhlednosti(0));
 		pruhlednostSlider.setToolTipText("Průhlednost zvýrazňovacího kruhu: 0 % je plně krycí, 100 % neviditelný.");
 		barvaChooser.setToolTipText("Nastavení barvy zvýrazňovacího kruhu");
+		skryjPruhlednostVChooseru(barvaChooser);
 
 		final JPanel volba = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
 		volba.add(new JLabel("Velikost kruhu:"));
@@ -91,6 +93,18 @@ final class PanelKruhu extends Box {
 			popisky.put(i, l);
 		}
 		return popisky;
+	}
+
+	/** Průhlednost nastavuje jen posuvník Průhlednost, výběr barvy ji nenabízí. */
+	static void skryjPruhlednostVChooseru(final JColorChooser chooser) {
+		for (final AbstractColorChooserPanel panel : chooser.getChooserPanels()) {
+			try {
+				// Od Javy 9; starší výběr barvy ovládání průhlednosti nemá.
+				AbstractColorChooserPanel.class.getMethod("setColorTransparencySelectionEnabled", boolean.class).invoke(panel, false);
+			} catch (final ReflectiveOperationException | RuntimeException e) {
+				// nic k vypnutí
+			}
+		}
 	}
 
 	void inject(final KruhyModel kruhyModel) {

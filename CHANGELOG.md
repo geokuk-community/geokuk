@@ -3,8 +3,8 @@
 ## 6.5.0
 
 ### Změny
-- V nastavení zvýrazňovacích kruhů je samostatný posuvník Průhlednost vedle
-  výběru barvy.
+- V nastavení zvýrazňovacích kruhů se průhlednost nastavuje samostatným
+  posuvníkem Průhlednost; výběr barvy ji už nenabízí.
 - Velikost zvýrazňovacích kruhů se v nastavení volí v pixelech nebo v metrech.
   Poloměr v metrech se nastavuje posuvníkem s přednastavenými hodnotami nebo
   vlastní hodnotou od 1 m do 50 km a kruh se při přibližování mapy mění plynule.

@@ -288,4 +288,22 @@ public class PanelKruhuTest {
 		Assert.assertTrue(panel.vPixelech.getToolTipText().contains("na obrazovce"));
 		Assert.assertTrue(panel.vMetrech.getToolTipText().contains("na zemi"));
 	}
+
+	@Test
+	public void vyberBarvyNenabiziPruhlednost() throws Exception {
+		final java.lang.reflect.Method jeZapnuta;
+		try {
+			jeZapnuta = javax.swing.colorchooser.AbstractColorChooserPanel.class.getMethod("isColorTransparencySelectionEnabled");
+		} catch (final NoSuchMethodException e) {
+			Assume.assumeNoException("starší Java výběr barvy bez průhlednosti", e);
+			return;
+		}
+		Assert.assertTrue(panel.barvaChooser.getChooserPanels().length > 1);
+		for (final javax.swing.colorchooser.AbstractColorChooserPanel p : panel.barvaChooser.getChooserPanels()) {
+			if (p.getClass().getSimpleName().contains("Swatch")) {
+				continue; // vzorník průhlednost nemá
+			}
+			Assert.assertEquals(p.getDisplayName(), Boolean.FALSE, jeZapnuta.invoke(p));
+		}
+	}
 }
