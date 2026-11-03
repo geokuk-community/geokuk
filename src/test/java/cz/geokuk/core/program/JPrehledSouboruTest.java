@@ -29,7 +29,7 @@ public class JPrehledSouboruTest {
 				Assert.assertTrue(c.getToolTipText(), c.getToolTipText().contains("„Zdroje:“ ve stavovém řádku") && c.getToolTipText().contains("Soubor &gt; Přehled zdrojů"));
 			}
 		}
-		Assert.assertEquals(2, pocet);
+		Assert.assertEquals(3, pocet);
 	}
 
 	/** Zdroje keší jsou na jedné záložce, každý v rámečku s názvem a klávesovou zkratkou. */
@@ -52,7 +52,7 @@ public class JPrehledSouboruTest {
 		Assert.assertEquals(java.util.Arrays.asList("GPX (Ctrl+1)", "GeoGet (Ctrl+2)", "GSAK (Ctrl+3)", "OpenSAK (Ctrl+4)"), nadpisy);
 	}
 
-	/** Panel složky GSAK a OpenSAK se nesmí zkrátit pod výšku, kterou potřebují přidaná políčka (jinak by se políčka neukázala). */
+	/** Panel složky GeoGet, GSAK a OpenSAK se nesmí zkrátit pod výšku, kterou potřebují přidaná políčka (jinak by se políčka neukázala). */
 	@Test
 	public void panelSlozkyMaMistoProPridanaPolicka() {
 		final JPrehledSouboru panel = new JPrehledSouboru(null);
@@ -64,7 +64,7 @@ public class JPrehledSouboruTest {
 				Assert.assertTrue(rodic.getMaximumSize().height + " < " + rodic.getPreferredSize().height, rodic.getMaximumSize().height >= rodic.getPreferredSize().height);
 			}
 		}
-		Assert.assertEquals(2, pocet);
+		Assert.assertEquals(3, pocet);
 	}
 
 	/** Na malé obrazovce (třeba 1366×768 při 150 %) se záložky posouvají a řádek s tlačítkem Uložit zůstane vidět. */
