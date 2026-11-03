@@ -24,7 +24,16 @@ final class PanelKruhu extends Box {
 	final JTextField polomerPole = new JTextField(9);
 	final JLabel pruhlednostLabel = new JLabel();
 	final JSlider pruhlednostSlider = new JSlider(0, 100, 0);
-	final JColorChooser barvaChooser = new JColorChooser(Color.WHITE);
+	/** Po každém vytvoření panelů (i po přepnutí vzhledu) se z nich odstraní ovládání průhlednosti. */
+	final JColorChooser barvaChooser = new JColorChooser(Color.WHITE) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void updateUI() {
+			super.updateUI();
+			skryjPruhlednostVChooseru(this);
+		}
+	};
 
 	private KruhyModel kruhyModel;
 	/** Ovládací prvky se právě nastavují z modelu, jejich změny se do modelu nevracejí. */
@@ -54,7 +63,6 @@ final class PanelKruhu extends Box {
 		pruhlednostLabel.setText(textPruhlednosti(0));
 		pruhlednostSlider.setToolTipText("Průhlednost zvýrazňovacího kruhu: 0 % je plně krycí, 100 % neviditelný.");
 		barvaChooser.setToolTipText("Nastavení barvy zvýrazňovacího kruhu");
-		skryjPruhlednostVChooseru(barvaChooser);
 
 		final JPanel volba = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
 		volba.add(new JLabel("Velikost kruhu:"));

@@ -63,7 +63,12 @@ final class PolomerKruhu {
 		if (!t.matches("\\d+(\\.\\d+)?")) {
 			return 0;
 		}
-		final double metru = Double.parseDouble(t) * nasobek;
+		final double metru;
+		try {
+			metru = Double.parseDouble(t) * nasobek;
+		} catch (final NumberFormatException e) {
+			return 0;
+		}
 		final long zaokrouhleno = Math.round(metru);
 		if (zaokrouhleno < MIN_METRU || zaokrouhleno > MAX_METRU) {
 			return 0;
@@ -86,8 +91,12 @@ final class PolomerKruhu {
 		if (!t.matches("\\d{1,4}")) {
 			return -1;
 		}
-		final int px = Integer.parseInt(t);
-		return px > MAX_PIXLU_VELIKOST ? -1 : px;
+		try {
+			final int px = Integer.parseInt(t);
+			return px > MAX_PIXLU_VELIKOST ? -1 : px;
+		} catch (final NumberFormatException e) {
+			return -1;
+		}
 	}
 
 	static String formatPixely(final int pixlu) {

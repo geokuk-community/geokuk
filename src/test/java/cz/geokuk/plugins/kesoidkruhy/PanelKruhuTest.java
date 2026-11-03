@@ -289,8 +289,7 @@ public class PanelKruhuTest {
 		Assert.assertTrue(panel.vMetrech.getToolTipText().contains("na zemi"));
 	}
 
-	@Test
-	public void vyberBarvyNenabiziPruhlednost() throws Exception {
+	private void overBezPruhlednosti() throws Exception {
 		final java.lang.reflect.Method jeZapnuta;
 		try {
 			jeZapnuta = javax.swing.colorchooser.AbstractColorChooserPanel.class.getMethod("isColorTransparencySelectionEnabled");
@@ -305,5 +304,19 @@ public class PanelKruhuTest {
 			}
 			Assert.assertEquals(p.getDisplayName(), Boolean.FALSE, jeZapnuta.invoke(p));
 		}
+	}
+
+	@Test
+	public void vyberBarvyNenabiziPruhlednost() throws Exception {
+		overBezPruhlednosti();
+	}
+
+	/** Přepnutí vzhledu za běhu vytvoří panely výběru barvy znovu. */
+	@Test
+	public void vyberBarvyNenabiziPruhlednostAniPoPrepnutiVzhledu() throws Exception {
+		javax.swing.SwingUtilities.updateComponentTreeUI(panel);
+		overBezPruhlednosti();
+		panel.barvaChooser.updateUI();
+		overBezPruhlednosti();
 	}
 }
