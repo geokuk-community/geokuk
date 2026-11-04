@@ -41,12 +41,17 @@ public final class FormatOblasti {
 			final char druh = radek.charAt(0);
 			if (druh == 'C') {
 				if (vnejsi != null) {
-					casti.add(new Cast(vnejsi, diry));
+					casti.add(vytvorCast(vnejsi, diry));
 				}
 				vnejsi = null;
 				diry = new ArrayList<>();
 			} else if (druh == 'O' || druh == 'D') {
-				final Okraj okraj = nactiOkraj(radek.substring(1));
+				final Okraj okraj;
+				try {
+					okraj = nactiOkraj(radek.substring(1));
+				} catch (final IllegalArgumentException e) {
+					throw new IOException(e.getMessage(), e);
+				}
 				if (druh == 'O') {
 					if (vnejsi != null) {
 						throw new IOException("Část má víc vnějších okrajů");
@@ -60,12 +65,24 @@ public final class FormatOblasti {
 			}
 		}
 		if (vnejsi != null) {
-			casti.add(new Cast(vnejsi, diry));
+			casti.add(vytvorCast(vnejsi, diry));
 		}
 		if (casti.isEmpty()) {
 			throw new IOException("Oblast " + h[2] + " nemá žádnou část");
 		}
-		return new OblastPolygony(h[2], h[3], casti);
+		try {
+			return new OblastPolygony(h[2], h[3], casti);
+		} catch (final IllegalArgumentException e) {
+			throw new IOException(e.getMessage(), e);
+		}
+	}
+
+	private static Cast vytvorCast(final Okraj vnejsi, final List<Okraj> diry) throws IOException {
+		try {
+			return new Cast(vnejsi, diry);
+		} catch (final IllegalArgumentException e) {
+			throw new IOException(e.getMessage(), e);
+		}
 	}
 
 	private static Okraj nactiOkraj(final String text) throws IOException {

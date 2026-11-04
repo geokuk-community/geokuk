@@ -1,8 +1,10 @@
 package cz.geokuk.plugins.challenge;
 
+import cz.geokuk.plugins.kesoid.EKesStatus;
 import cz.geokuk.plugins.kesoid.EKesVztah;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.plugins.kesoid.Wpt;
+import cz.geokuk.plugins.kesoid.kind.kes.Kes;
 
 /** Přizpůsobení kešoidu z modelu programu pro výpočet challenge. */
 public final class KesVstup implements VstupKes {
@@ -15,8 +17,11 @@ public final class KesVstup implements VstupKes {
 		this.hlavni = hlavni;
 	}
 
-	/** Null, když kešoid nemá hlavní waypoint se souřadnicemi. */
+	/** Pro challenge se počítají jen keše z gc.com (kód GC…); jiné kešoidy (OC, waymarky, munzee) a kešoidy bez souřadnic dávají null. */
 	public static KesVstup z(final Kesoid kesoid) {
+		if (!(kesoid instanceof Kes) || kesoid.getIdentifier() == null || !kesoid.getIdentifier().startsWith("GC")) {
+			return null;
+		}
 		final Wpt w = kesoid.getMainWpt();
 		return w == null || w.hasEmptyCoords() ? null : new KesVstup(kesoid, w);
 	}
@@ -39,6 +44,16 @@ public final class KesVstup implements VstupKes {
 	@Override
 	public boolean nalezena() {
 		return kesoid.getVztah() == EKesVztah.FOUND;
+	}
+
+	@Override
+	public boolean vlastni() {
+		return kesoid.getVztah() == EKesVztah.OWN;
+	}
+
+	@Override
+	public boolean neaktivni() {
+		return kesoid.getStatus() != EKesStatus.ACTIVE;
 	}
 
 	@Override

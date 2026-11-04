@@ -36,7 +36,10 @@ public final class Geodezie {
 		return 2 * POLOMER_ZEME * Math.asin(Math.min(1, Math.sqrt(h)));
 	}
 
-	/** Počáteční azimut na elipsoidu WGS84 (Vincenty) ve stupních, 0 až méně než 360. Pro shodné body 0. */
+	/**
+	 * Počáteční azimut na elipsoidu WGS84 (Vincenty) ve stupních, 0 až méně než 360. Pro shodné body 0. Iterace nekonverguje u téměř protilehlých bodů (do asi 20 km od
+	 * protinožce); pak vrací {@code NaN} a volající použije kouli s příznakem nejistoty.
+	 */
 	public static double azimutElipsoid(final double lat1, final double lon1, final double lat2, final double lon2) {
 		final double u1 = Math.atan((1 - F) * Math.tan(Math.toRadians(lat1)));
 		final double u2 = Math.atan((1 - F) * Math.tan(Math.toRadians(lat2)));
@@ -46,6 +49,7 @@ public final class Geodezie {
 		final double cosU1 = Math.cos(u1);
 		final double sinU2 = Math.sin(u2);
 		final double cosU2 = Math.cos(u2);
+		boolean konverguje = false;
 		for (int i = 0; i < 100; i++) {
 			final double sinLam = Math.sin(lam);
 			final double cosLam = Math.cos(lam);
@@ -63,8 +67,12 @@ public final class Geodezie {
 			final boolean konec = Math.abs(nova - lam) < 1e-13;
 			lam = nova;
 			if (konec) {
+				konverguje = true;
 				break;
 			}
+		}
+		if (!konverguje) {
+			return Double.NaN;
 		}
 		final double az = Math.atan2(cosU2 * Math.sin(lam), cosU1 * sinU2 - sinU1 * cosU2 * Math.cos(lam));
 		return normalizuj(Math.toDegrees(az));

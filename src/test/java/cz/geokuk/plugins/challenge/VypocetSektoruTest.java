@@ -26,6 +26,8 @@ public class VypocetSektoruTest {
 		boolean nalezena;
 		boolean lab;
 		boolean locationless;
+		boolean vlastni;
+		boolean neaktivni;
 		StavLogu log = StavLogu.NEZNAMY;
 
 		Kes(final String id, final double lat, final double lon, final boolean nalezena) {
@@ -63,6 +65,16 @@ public class VypocetSektoruTest {
 		@Override
 		public boolean locationless() {
 			return locationless;
+		}
+
+		@Override
+		public boolean vlastni() {
+			return vlastni;
+		}
+
+		@Override
+		public boolean neaktivni() {
+			return neaktivni;
 		}
 
 		@Override
@@ -253,5 +265,74 @@ public class VypocetSektoruTest {
 		Assert.assertEquals(98, Geodezie.sektor(azKoule));
 		Assert.assertEquals(98, Geodezie.sektor(azElips));
 		Assert.assertNotEquals(azKoule, azElips, 0.01);
+	}
+
+	private static VysledekSektoru sKandidaty(final List<Kes> kese) {
+		return pgc(kese);
+	}
+
+	@Test
+	public void kandidatemNeniVlastniZakazanaAniArchivovana() {
+		final List<Kes> kese = vsechnySektory(true);
+		kese.set(60, vAzimutu("GC60", 60.5, 20_000, false));
+		final Kes vlastni = vAzimutu("OWN", 60.4, 5_000, false);
+		vlastni.vlastni = true;
+		final Kes neaktivni = vAzimutu("OFF", 60.3, 6_000, false);
+		neaktivni.neaktivni = true;
+		final Kes dobra = vAzimutu("OK", 60.6, 30_000, false);
+		kese.add(vlastni);
+		kese.add(neaktivni);
+		kese.add(dobra);
+		final VysledekSektoru v = sKandidaty(kese);
+		Assert.assertEquals(2, v.kandidati(60).pocet());
+		Assert.assertEquals("GC60", v.kandidati(60).nejblizsiId());
+	}
+
+	@Test
+	public void ignorovanaNenalezenaKesJeKandidatemUPgcAleUStatoruNe() {
+		final List<Kes> kese = vsechnySektory(true);
+		kese.set(70, vAzimutu("GC70", 70.5, 20_000, false));
+		final Set<String> ignorovane = new HashSet<>(Collections.singletonList("GC70"));
+		Assert.assertEquals("GC70", VypocetSektoru.spocti(ZdrojPravidel.PGC, LAT, LON, null, ignorovane, kese).kandidati(70).nejblizsiId());
+		Assert.assertNull(VypocetSektoru.spocti(ZdrojPravidel.STATOR, LAT, LON, null, ignorovane, kese).kandidati(70));
+	}
+
+	@Test
+	public void stredNeplatnyJeChyba() {
+		final double[][] spatne = { { Double.NaN, 14 }, { 50, Double.NaN }, { Double.POSITIVE_INFINITY, 14 }, { 50, Double.NEGATIVE_INFINITY }, { 90.001, 14 }, { -91, 14 }, { 50, 180.5 }, { 50, -181 } };
+		for (final double[] s : spatne) {
+			try {
+				VypocetSektoru.spocti(ZdrojPravidel.PGC, s[0], s[1], null, Collections.<String> emptySet(), vsechnySektory(true));
+				Assert.fail("měl být odmítnut střed " + s[0] + ", " + s[1]);
+			} catch (final IllegalArgumentException e) {
+				Assert.assertTrue(e.getMessage(), e.getMessage().contains("Střed"));
+			}
+			try {
+				Challenge.Stred.souradnice(s[0], s[1]);
+				Assert.fail("měl být odmítnut střed " + s[0] + ", " + s[1]);
+			} catch (final IllegalArgumentException e) {
+				Assert.assertTrue(e.getMessage(), e.getMessage().contains("Střed"));
+			}
+		}
+		VypocetSektoru.spocti(ZdrojPravidel.PGC, 90, 180, null, Collections.<String> emptySet(), vsechnySektory(true));
+		Challenge.Stred.souradnice(-90, -180);
+	}
+
+	@Test
+	public void elipsoidKterySeNesejdeDavaNaN() {
+		Assert.assertTrue(Double.isNaN(Geodezie.azimutElipsoid(50, 14, -50, -166)));
+		Assert.assertTrue(Double.isNaN(Geodezie.azimutElipsoid(0, 0, 0, 179.9)));
+		Assert.assertFalse(Double.isNaN(Geodezie.azimutElipsoid(50, 14, 51, 15)));
+	}
+
+	@Test
+	public void statorUProtinozceSpadneNaKouliSNejistymSektorem() {
+		// Střed 50 N, 14 E; nález téměř v protinožci (tam elipsoid nekonverguje).
+		final Kes protinozec = new Kes("PROTI", -50.0, -166.0, true);
+		final VysledekSektoru v = VypocetSektoru.spocti(ZdrojPravidel.STATOR, 50, 14, null, Collections.<String> emptySet(), Collections.singletonList(protinozec));
+		Assert.assertEquals(1, v.pocetObsazenych());
+		final int s = Geodezie.sektor(Geodezie.azimutKoule(50, 14, -50, -166));
+		Assert.assertTrue(v.jeObsazeny(s));
+		Assert.assertTrue("sektor z náhradní koule je nejistý", v.jeNejisty(s));
 	}
 }

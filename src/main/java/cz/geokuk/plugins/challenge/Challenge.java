@@ -64,6 +64,9 @@ public final class Challenge {
 		}
 
 		public static Stred souradnice(final double lat, final double lon) {
+			if (!VypocetSektoru.jePlatnyStred(lat, lon)) {
+				throw new IllegalArgumentException("Střed mimo rozsah souřadnic: " + lat + ", " + lon);
+			}
 			return new Stred(DruhStredu.SOURADNICE, lat, lon, null);
 		}
 

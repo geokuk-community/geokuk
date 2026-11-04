@@ -134,4 +134,37 @@ public class OblastPolygonyTest {
 		Assert.assertNotEquals("pořadí je součástí verze", s.verze(), obracene.verze());
 		Assert.assertNotEquals(s.verze(), new SjednoceniOblasti(Collections.singletonList(a)).verze());
 	}
+
+	@Test
+	public void okrajPresPolednik180SeNepodporuje() {
+		try {
+			new Okraj(new double[] { 60, 60, 61, 61 }, new double[] { 179, -179, -179, 179 });
+			Assert.fail();
+		} catch (final IllegalArgumentException e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("180"));
+		}
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void bodMimoRozsahSouradnicJeChyba() {
+		new Okraj(new double[] { 50, 50, 91 }, new double[] { 14, 15, 14 });
+	}
+
+	@Test
+	public void castSNejvic256OkrajiSeNactea257NeniPripustne() {
+		final List<Okraj> diry = new ArrayList<>();
+		for (int i = 0; i < OblastPolygony.NEJVIC_OKRAJU - 1; i++) {
+			diry.add(ctverec(50.1 + i * 0.001, 14.1, 50.1005 + i * 0.001, 14.2));
+		}
+		final OblastPolygony o = oblast(new Cast(ctverec(50, 14, 52, 16), diry));
+		Assert.assertTrue(o.obsahuje(50.05, 14.5));
+		Assert.assertFalse("v 256. okraji (díře 255)", o.obsahuje(50.1 + 254 * 0.001 + 0.0002, 14.15));
+		diry.add(ctverec(51, 15, 51.1, 15.1));
+		try {
+			new Cast(ctverec(50, 14, 52, 16), diry);
+			Assert.fail();
+		} catch (final IllegalArgumentException e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("256"));
+		}
+	}
 }

@@ -30,6 +30,9 @@ public final class VypocetSektoru {
 	/** Viz {@link #spocti(ZdrojPravidel, double, double, Oblast, Set, Iterable)}; po zrušení vrací null. */
 	public static VysledekSektoru spocti(final ZdrojPravidel zdroj, final double lat, final double lon, final Oblast oblast, final Set<String> ignorovane,
 			final Iterable<? extends VstupKes> kese, final java.util.function.BooleanSupplier zruseno) {
+		if (!jePlatnyStred(lat, lon)) {
+			throw new IllegalArgumentException("Střed mimo rozsah souřadnic: " + lat + ", " + lon);
+		}
 		final Set<String> ign = zdroj == ZdrojPravidel.STATOR ? ignorovane : Collections.<String> emptySet();
 		final BitSet obsazeneJiste = new BitSet(360);
 		final BitSet obsazeneJakkoli = new BitSet(360);
@@ -56,14 +59,16 @@ public final class VypocetSektoru {
 				final double az = azimut(zdroj, lat, lon, k);
 				final int s = Geodezie.sektor(az);
 				obsazeneJakkoli.set(s);
-				if (Geodezie.jeNejisty(az)) {
+				if (Geodezie.jeNejisty(az) || nahrazenoKouli(zdroj, lat, lon, k)) {
 					final double zlomek = az - Math.floor(az);
 					soused.set(zlomek < 0.5 ? (s + 359) % 360 : (s + 1) % 360);
 				} else {
 					obsazeneJiste.set(s);
 				}
 			} else {
-				nenalezene.add(k);
+				if (!k.vlastni() && !k.neaktivni()) {
+					nenalezene.add(k);
+				}
 			}
 		}
 		for (final VstupKes k : nenalezene) {
@@ -86,6 +91,16 @@ public final class VypocetSektoru {
 		return new VysledekSektoru(obsazeneJakkoli, nejiste, kandidati, nalezu);
 	}
 
+	/** Střed musí být konečné číslo ve rozsahu souřadnic; jinak by sektory vycházely nesmyslně. */
+	static boolean jePlatnyStred(final double lat, final double lon) {
+		return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+	}
+
+	/** Elipsoid nekonvergoval (téměř protinožec), azimut je z koule a sektor je proto nejistý. */
+	private static boolean nahrazenoKouli(final ZdrojPravidel zdroj, final double lat, final double lon, final VstupKes k) {
+		return zdroj == ZdrojPravidel.STATOR && Double.isNaN(Geodezie.azimutElipsoid(lat, lon, k.lat(), k.lon()));
+	}
+
 	private static boolean lzePocitat(final ZdrojPravidel zdroj, final VstupKes k, final Set<String> ignorovane) {
 		if (k.locationless()) {
 			return false;
@@ -97,6 +112,12 @@ public final class VypocetSektoru {
 	}
 
 	private static double azimut(final ZdrojPravidel zdroj, final double lat, final double lon, final VstupKes k) {
-		return zdroj == ZdrojPravidel.PGC ? Geodezie.azimutKoule(lat, lon, k.lat(), k.lon()) : Geodezie.azimutElipsoid(lat, lon, k.lat(), k.lon());
+		if (zdroj == ZdrojPravidel.STATOR) {
+			final double e = Geodezie.azimutElipsoid(lat, lon, k.lat(), k.lon());
+			if (!Double.isNaN(e)) {
+				return e;
+			}
+		}
+		return Geodezie.azimutKoule(lat, lon, k.lat(), k.lon());
 	}
 }

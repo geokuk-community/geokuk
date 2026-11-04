@@ -18,6 +18,16 @@ public interface VstupKes {
 
 	boolean locationless();
 
+	/** Vlastní keš uživatele (nemůže být cílem pro splnění). */
+	default boolean vlastni() {
+		return false;
+	}
+
+	/** Keš je zakázaná nebo archivovaná, nelze ji hledat. */
+	default boolean neaktivni() {
+		return false;
+	}
+
 	/** Má nález na gc.com log Found it, Attended nebo Webcam Photo Taken. */
 	StavLogu logNaGc();
 

@@ -82,4 +82,28 @@ public class FormatOblastiTest {
 		Assert.assertFalse("neplatné označení", p.najdi("../x").isPresent());
 		Assert.assertFalse(p.najdi("").isPresent());
 	}
+
+	@Test
+	public void obrysPresPolednikNeprojdePriNacteni() {
+		try {
+			FormatOblasti.nacti(new StringReader("GKOBL 1 a b\nC\nO 6000000 17900000 0 -35800000 100000 0 0 35800000\n"));
+			Assert.fail();
+		} catch (final IOException e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("180"));
+		}
+	}
+
+	@Test
+	public void castSVic256OkrajiNeprojdePriNacteni() {
+		final StringBuilder sb = new StringBuilder("GKOBL 1 a b\nC\nO 5000000 1400000 100000 0 0 100000 -100000 0\n");
+		for (int i = 0; i < OblastPolygony.NEJVIC_OKRAJU; i++) {
+			sb.append("D 5010000 1410000 1000 0 0 1000 -1000 0\n");
+		}
+		try {
+			FormatOblasti.nacti(new StringReader(sb.toString()));
+			Assert.fail();
+		} catch (final IOException e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("256"));
+		}
+	}
 }

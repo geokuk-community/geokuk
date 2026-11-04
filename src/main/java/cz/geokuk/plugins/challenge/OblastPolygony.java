@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.zip.CRC32;
 
 /**
- * Oblast z jednoho nebo víc mnohoúhelníků (části) s dírami. Bod leží v oblasti, je-li v kterékoli části; v části platí pravidlo sudého počtu průsečíků přes
+ * Oblast z jednoho nebo víc mnohoúhelníků (části) s dírami; okraj nesmí přecházet přes poledník 180° (takový se při vytvoření odmítne). Bod leží v oblasti, je-li v kterékoli části; v části platí pravidlo sudého počtu průsečíků přes
  * vnější okraj i díry. Hrany se pro rychlé hledání roztřídí do pásů podle zeměpisné šířky a obdélník části slouží jako předfiltr.
  */
 public final class OblastPolygony implements Oblast {
@@ -19,6 +19,14 @@ public final class OblastPolygony implements Oblast {
 		public Okraj(final double[] lat, final double[] lon) {
 			if (lat.length != lon.length || lat.length < 3) {
 				throw new IllegalArgumentException("Okraj má mít aspoň 3 body se stejným počtem šířek a délek");
+			}
+			for (int i = 0; i < lat.length; i++) {
+				if (!(lat[i] >= -90 && lat[i] <= 90 && lon[i] >= -180 && lon[i] <= 180)) {
+					throw new IllegalArgumentException("Bod okraje mimo rozsah souřadnic: " + lat[i] + ", " + lon[i]);
+				}
+				if (Math.abs(lon[i] - lon[(i + 1) % lat.length]) > 180) {
+					throw new IllegalArgumentException("Okraj přechází přes poledník 180°, to se nepodporuje");
+				}
 			}
 			this.lat = lat.clone();
 			this.lon = lon.clone();
@@ -42,6 +50,9 @@ public final class OblastPolygony implements Oblast {
 		final List<Okraj> okraje = new ArrayList<>();
 
 		public Cast(final Okraj vnejsi, final List<Okraj> diry) {
+			if (diry.size() + 1 > NEJVIC_OKRAJU) {
+				throw new IllegalArgumentException("Část oblasti má víc než " + NEJVIC_OKRAJU + " okrajů (vnější okraj a díry)");
+			}
 			okraje.add(vnejsi);
 			okraje.addAll(diry);
 		}
@@ -50,6 +61,9 @@ public final class OblastPolygony implements Oblast {
 			return Collections.unmodifiableList(okraje);
 		}
 	}
+
+	/** Nejvíc okrajů (vnější a díry) v jedné části; index okraje se v pásech hran kóduje do horního bajtu. */
+	public static final int NEJVIC_OKRAJU = 256;
 
 	private static final int PASU = 64;
 
