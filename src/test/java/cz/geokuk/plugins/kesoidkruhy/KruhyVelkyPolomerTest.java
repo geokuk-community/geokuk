@@ -289,7 +289,7 @@ public class KruhyVelkyPolomerTest {
 
 	@Test
 	public void rozpoctovaKonstanta() {
-		Assert.assertEquals(25_000_000L, PolomerKruhu.ROZPOCET_PLOCHY);
+		Assert.assertEquals(15_000_000L, PolomerKruhu.ROZPOCET_PLOCHY);
 		Assert.assertEquals(2000, PolomerKruhu.MAX_CASTECNYCH_KRUHU);
 	}
 
@@ -304,11 +304,11 @@ public class KruhyVelkyPolomerTest {
 	@Test
 	public void velkeKruhySeOmezi() {
 		final double fhd = 1920.0 * 1080;
-		Assert.assertEquals("r = 652 px: 1,335 M px, 18 kruhů", 18, PolomerKruhu.limitKruhu(652, fhd));
-		Assert.assertEquals("r = 1305 px: ořezané na výřez 2,07 M px, 12 kruhů", 12, PolomerKruhu.limitKruhu(1305, fhd));
-		Assert.assertEquals("kruh větší než výřez stojí nejvýš plochu výřezu", 12, PolomerKruhu.limitKruhu(100_000, fhd));
+		Assert.assertEquals("r = 652 px: 1,335 M px, 11 kruhů", 11, PolomerKruhu.limitKruhu(652, fhd));
+		Assert.assertEquals("r = 1305 px: ořezané na výřez 2,07 M px, 7 kruhů", 7, PolomerKruhu.limitKruhu(1305, fhd));
+		Assert.assertEquals("kruh větší než výřez stojí nejvýš plochu výřezu", 7, PolomerKruhu.limitKruhu(100_000, fhd));
 		Assert.assertEquals(1, PolomerKruhu.limitKruhu(1000, 1e12, 100));
-		Assert.assertTrue("13 kruhů o r = 652 px se omezí", PolomerKruhu.limitKruhu(652, fhd) < 19);
+		Assert.assertTrue("12 kruhů o r = 652 px se omezí", PolomerKruhu.limitKruhu(652, fhd) < 12);
 	}
 
 	@Test
@@ -503,5 +503,28 @@ public class KruhyVelkyPolomerTest {
 		final int limit = PolomerKruhu.limitKruhu(300, (double) W * H);
 		Assert.assertEquals(300 - limit, s.getVynechanychKruhu());
 		Assert.assertTrue("velké kruhy se omezují výrazně pod tvrdý strop", limit < 300);
+	}
+
+	@Test
+	public void vyberHaldouDavaStejneVzdalenostiJakoUplneRazeni() {
+		final java.util.Random rnd = new java.util.Random(7);
+		final List<int[]> body = new ArrayList<>();
+		for (int k = 0; k < 600; k++) {
+			body.add(new int[] { rnd.nextInt(2000) - 500, rnd.nextInt(1500) - 400 });
+		}
+		final double cx = 640.5;
+		final double cy = 310.25;
+		final List<int[]> vybrane = PolomerKruhu.nejblizsi(body, cx, cy, 37);
+		final List<Double> ocekavane = new ArrayList<>();
+		for (final int[] b : body) {
+			ocekavane.add((b[0] - cx) * (b[0] - cx) + (b[1] - cy) * (b[1] - cy));
+		}
+		java.util.Collections.sort(ocekavane);
+		Assert.assertEquals(37, vybrane.size());
+		for (int k = 0; k < 37; k++) {
+			final int[] b = vybrane.get(k);
+			Assert.assertEquals("pořadí od nejbližšího, " + k, ocekavane.get(k), (b[0] - cx) * (b[0] - cx) + (b[1] - cy) * (b[1] - cy), 1e-9);
+		}
+		Assert.assertEquals("vstup se nemění", 600, body.size());
 	}
 }
