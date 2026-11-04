@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Uložení a načtení vlastních definic challenge, aktivních a zapnutí plánovače do {@link ChallengeUloziste}. Klíče: {@code format}, {@code zapnuto}, {@code aktivni}
- * (názvy po řádcích) a {@code definice.N.klíč} pro každou vlastní definici. Šablony se neukládají, jsou v kódu. Chybná nebo neznámá definice se při načtení přeskočí
+ * (názvy po řádcích) a {@code definice.verze.N.klíč}, {@code verze} pro každou vlastní definici. Šablony se neukládají, jsou v kódu. Chybná nebo neznámá definice se při načtení přeskočí
  * s varováním, aby nastavení nikdy nezabránilo startu programu.
  */
 @Slf4j
@@ -25,8 +25,15 @@ public final class NastaveniChallenge {
 		public final boolean zapnuto;
 		/** Kolik uložených definic se nepodařilo použít. */
 		public final int preskoceno;
+		/** Uložené nastavení je v novějším formátu; nesmí se přepisovat. */
+		public final boolean neznamyFormat;
 
 		Nacteno(final ChallengeSeznam seznam, final boolean zapnuto, final int preskoceno) {
+			this(seznam, zapnuto, preskoceno, false);
+		}
+
+		Nacteno(final ChallengeSeznam seznam, final boolean zapnuto, final int preskoceno, final boolean neznamyFormat) {
+			this.neznamyFormat = neznamyFormat;
 			this.seznam = seznam;
 			this.zapnuto = zapnuto;
 			this.preskoceno = preskoceno;
@@ -35,14 +42,24 @@ public final class NastaveniChallenge {
 
 	private NastaveniChallenge() {}
 
+	/**
+	 * Uloží stav. Nová sada definic se zapíše pod novou verzí a teprve potom se přepne klíč {@code verze}; při chybě zápisu zůstává původní sada beze změny a
+	 * nedopsané klíče se smažou při příštím úspěšném uložení.
+	 */
 	public static void uloz(final ChallengeSeznam seznam, final boolean zapnuto, final ChallengeUloziste uloziste) {
-		for (final String k : new ArrayList<>(uloziste.klice())) {
-			if (k.startsWith(PREDPONA) || k.equals("aktivni") || k.equals("zapnuto") || k.equals("format")) {
-				uloziste.remove(k);
+		final String staraVerze = uloziste.get("verze");
+		final String novaVerze = Integer.toString(cisloVerze(staraVerze) + 1);
+		final Map<String, String> zapis = new java.util.LinkedHashMap<>();
+		int i = 0;
+		for (final Challenge c : seznam.vlastni()) {
+			for (final Map.Entry<String, String> e : c.naMapu().entrySet()) {
+				zapis.put(PREDPONA + novaVerze + "." + i + "." + e.getKey(), e.getValue());
 			}
+			i++;
 		}
-		uloziste.put("format", FORMAT);
-		uloziste.put("zapnuto", Boolean.toString(zapnuto));
+		for (final Map.Entry<String, String> e : zapis.entrySet()) {
+			ChallengeSeznam.zkontrolujUlozitelne(e.getKey(), e.getValue());
+		}
 		final StringBuilder aktivni = new StringBuilder();
 		for (final Challenge c : seznam.aktivni()) {
 			if (aktivni.length() > 0) {
@@ -50,15 +67,31 @@ public final class NastaveniChallenge {
 			}
 			aktivni.append(c.nazev());
 		}
+		ChallengeSeznam.zkontrolujUlozitelne("aktivni", aktivni.toString());
+		for (final Map.Entry<String, String> e : zapis.entrySet()) {
+			uloziste.put(e.getKey(), e.getValue());
+		}
+		uloziste.put("verze", novaVerze);
+		uloziste.put("format", FORMAT);
+		uloziste.put("zapnuto", Boolean.toString(zapnuto));
 		if (aktivni.length() > 0) {
 			uloziste.put("aktivni", aktivni.toString());
+		} else {
+			uloziste.remove("aktivni");
 		}
-		int i = 0;
-		for (final Challenge c : seznam.vlastni()) {
-			for (final Map.Entry<String, String> e : c.naMapu().entrySet()) {
-				uloziste.put(PREDPONA + i + "." + e.getKey(), e.getValue());
+		final String zacatek = PREDPONA + novaVerze + ".";
+		for (final String k : new ArrayList<>(uloziste.klice())) {
+			if (k.startsWith(PREDPONA) && !k.startsWith(zacatek)) {
+				uloziste.remove(k);
 			}
-			i++;
+		}
+	}
+
+	private static int cisloVerze(final String verze) {
+		try {
+			return verze == null ? 0 : Math.max(0, Integer.parseInt(verze));
+		} catch (final NumberFormatException e) {
+			return 0;
 		}
 	}
 
@@ -68,14 +101,15 @@ public final class NastaveniChallenge {
 		final String format = uloziste.get("format");
 		if (format != null && !FORMAT.equals(format)) {
 			log.warn("Nastavení challenge má neznámý formát {}, použijí se výchozí hodnoty", format);
-			return new Nacteno(seznam, false, 0);
+			return new Nacteno(seznam, false, 0, true);
 		}
 		final Map<Integer, Map<String, String>> definice = new TreeMap<>();
+		final String zacatek = PREDPONA + cisloVerze(uloziste.get("verze")) + ".";
 		for (final String k : uloziste.klice()) {
-			if (!k.startsWith(PREDPONA)) {
+			if (!k.startsWith(zacatek)) {
 				continue;
 			}
-			final String zbytek = k.substring(PREDPONA.length());
+			final String zbytek = k.substring(zacatek.length());
 			final int tecka = zbytek.indexOf('.');
 			if (tecka <= 0) {
 				preskoceno++;
@@ -93,7 +127,12 @@ public final class NastaveniChallenge {
 		}
 		for (final Map.Entry<Integer, Map<String, String>> e : definice.entrySet()) {
 			try {
+				final int pred = seznam.vlastni().size();
 				seznam.ulozVlastni(Challenge.zMapy(e.getValue()));
+				if (seznam.vlastni().size() == pred) {
+					log.warn("Uložená definice challenge č. {} má stejný název jako dřívější, nahradila ji", e.getKey());
+					preskoceno++;
+				}
 			} catch (final IllegalArgumentException | ChallengeChyba ex) {
 				log.warn("Uložená definice challenge č. {} se přeskočí: {}", e.getKey(), ex.getMessage());
 				preskoceno++;
