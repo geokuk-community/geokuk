@@ -197,10 +197,11 @@ public final class Predpocet {
 		final List<Path> soubory = new ArrayList<>();
 		try (DirectoryStream<Path> ds = Files.newDirectoryStream(adresar)) {
 			for (final Path p : ds) {
-				final String jmeno = p.getFileName().toString();
-				if (!Files.isRegularFile(p, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+				final Path nazev = p.getFileName();
+				if (nazev == null || !Files.isRegularFile(p, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
 					continue;
 				}
+				final String jmeno = nazev.toString();
 				if (SouborPredpoctu.JMENO_DOCASNE.matcher(jmeno).matches()) {
 					smaz(p);
 				} else if (SouborPredpoctu.JMENO.matcher(jmeno).matches() && SouborPredpoctu.maZnacku(p)) {
