@@ -33,6 +33,19 @@ public class KruhyStavTest {
 	private final List<Event0<?>> udalosti = new ArrayList<>();
 	private final StavVrstevModel stav = new StavVrstevModel();
 
+	private static KesBag bag(final int kesi) {
+		final Wpt bod = mock(Wpt.class);
+		when(bod.getMou()).thenReturn(MISTO);
+		final List<Wpt> wpts = new ArrayList<>();
+		for (int k = 0; k < kesi; k++) {
+			wpts.add(bod);
+		}
+		final Indexator<Wpt> indexator = Indexator.postav(BoundingRect.ALL, wpts, w -> w.getMou().xx, w -> w.getMou().yy);
+		final KesBag bag = mock(KesBag.class);
+		when(bag.getIndexator()).thenReturn(indexator);
+		return bag;
+	}
+
 	private JZvyraznovaciKruhySlide slide(final int zoom, final int kesi) {
 		stav.inject((EventFirer) udalosti::add);
 		final List<Wpt> wpts = new ArrayList<>();
@@ -214,5 +227,26 @@ public class KruhyStavTest {
 		g.dispose();
 		dokonciUdalosti();
 		Assert.assertEquals(0, stav.getStav().getVynechanychKruhu());
+	}
+
+	@Test
+	public void zmenaKreslenychPriStejnemPoctuVynechanychSeHlasiZnovu() throws Exception {
+		final int metru1 = metruProPolomerPx(250);
+		final int metru2 = metruProPolomerPx(200);
+		final int limit1 = limitPro(metru1);
+		final int limit2 = limitPro(metru2);
+		Assert.assertNotEquals(limit1, limit2);
+		final JZvyraznovaciKruhySlide s = slide(17, limit1 + 3);
+		s.onEvent(metry(metru1, true));
+		nakresliCely(s);
+		dokonciUdalosti();
+		Assert.assertEquals(limit1, stav.getStav().getKreslenychKruhu());
+		final KesBag vic = bag(limit2 + 3);
+		s.onEvent(new KeskyVyfiltrovanyEvent(vic, vic));
+		s.onEvent(metry(metru2, true));
+		nakresliCely(s);
+		dokonciUdalosti();
+		Assert.assertEquals("pořád 3 vynechané", 3, stav.getStav().getVynechanychKruhu());
+		Assert.assertEquals("bublina se aktualizovala na nový počet kreslených", limit2, stav.getStav().getKreslenychKruhu());
 	}
 }

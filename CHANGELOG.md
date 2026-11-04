@@ -5,8 +5,8 @@
 ### Změny
 - Když jsou zapnuté kruhy (zvýrazňovací, jednotkové, Obsazenost) a nejsou vidět,
   ve stavovém řádku se ukáže štítek Kruhy skryté; v bublině je u každé vrstvy
-  důvod a co udělat. Když se jednotkové kruhy kreslí jen částečně (nejbližších
-  12 ke středu výřezu), je tam štítek Kruhy omezené. Po zkratkách, jejichž
+  důvod a co udělat. Když se jednotkové kruhy kreslí jen částečně (nejbližší ke
+  středu výřezu), je tam štítek Kruhy omezené. Po zkratkách, jejichž
   výsledek není vidět (F5, F9 při malém přiblížení, Alt+F8, Ctrl+1 až Ctrl+4,
   skryté kruhy), se vlevo dole nad mapou na chvíli ukáže krátká zpráva.
 - Posuvníky kruhů Obsazenost 161 m jsou tenké; při najetí myší, tažení nebo
