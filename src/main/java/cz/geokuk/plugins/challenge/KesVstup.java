@@ -26,6 +26,42 @@ public final class KesVstup implements VstupKes {
 		return w == null || w.hasEmptyCoords() ? null : new KesVstup(kesoid, w);
 	}
 
+	/** Keše z gc.com ze seznamu kešoidů, vytvářené až při průchodu; kešoidy, které se nepočítají, se přeskočí. */
+	public static java.util.Collection<VstupKes> zKesoidu(final java.util.List<? extends Kesoid> kesoidy) {
+		return new java.util.AbstractCollection<VstupKes>() {
+			@Override
+			public java.util.Iterator<VstupKes> iterator() {
+				final java.util.Iterator<? extends Kesoid> it = kesoidy.iterator();
+				return new java.util.Iterator<VstupKes>() {
+					private VstupKes dalsi;
+
+					@Override
+					public boolean hasNext() {
+						while (dalsi == null && it.hasNext()) {
+							dalsi = z(it.next());
+						}
+						return dalsi != null;
+					}
+
+					@Override
+					public VstupKes next() {
+						if (!hasNext()) {
+							throw new java.util.NoSuchElementException();
+						}
+						final VstupKes v = dalsi;
+						dalsi = null;
+						return v;
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				return kesoidy.size();
+			}
+		};
+	}
+
 	@Override
 	public String id() {
 		return kesoid.getIdentifier();
