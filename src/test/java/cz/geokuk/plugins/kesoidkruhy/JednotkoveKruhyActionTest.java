@@ -79,4 +79,14 @@ public class JednotkoveKruhyActionTest {
 		final javax.swing.JDialog d = new JKruhyDialog();
 		Assert.assertEquals("Nastavení kruhů", d.getTitle());
 	}
+
+	@Test
+	public void akceMaZkratkuAltF8AMnemonikuR() {
+		Assert.assertEquals(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F8, java.awt.event.InputEvent.ALT_DOWN_MASK), akce.getValue(javax.swing.Action.ACCELERATOR_KEY));
+		Assert.assertEquals(java.awt.event.KeyEvent.VK_R, akce.getValue(javax.swing.Action.MNEMONIC_KEY));
+		final javax.swing.JCheckBoxMenuItem polozka = new javax.swing.JCheckBoxMenuItem();
+		akce.join(polozka);
+		Assert.assertEquals(javax.swing.KeyStroke.getKeyStroke("alt F8"), polozka.getAccelerator());
+		Assert.assertEquals(java.awt.event.KeyEvent.VK_R, polozka.getMnemonic());
+	}
 }

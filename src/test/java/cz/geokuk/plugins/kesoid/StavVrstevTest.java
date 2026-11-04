@@ -223,4 +223,15 @@ public class StavVrstevTest {
 		final StavVrstev skryto = StavVrstev.prazdny().s(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0);
 		Assert.assertEquals(skryto, skryto.sVynechanymi(5, 12).sVynechanymi(0, 12));
 	}
+
+	@Test
+	public void nazvyVrstevVTooltipuStitku() {
+		Assert.assertEquals("Zvýrazňovací kruhy (F8)", F8.getNazev());
+		Assert.assertEquals("Kruhy v metrech (Alt+F8)", ALT_F8.getNazev());
+		Assert.assertEquals("Obsazenost (F9)", F9.getNazev());
+		final String t = StavVrstev.prazdny().s(ALT_F8, DuvodNekresleni.POLOMER_PRILIS_MALY, 0).tooltip();
+		Assert.assertTrue(t, t.contains("Kruhy v metrech (Alt+F8): poloměr pod 3 px, přibližte mapu"));
+		Assert.assertFalse(t, t.contains("Jednotkové"));
+		Assert.assertTrue(StavVrstev.prazdny().sVynechanymi(2, 7).tooltip().contains("Kruhy v metrech: kresleno jen 7 nejbližších"));
+	}
 }

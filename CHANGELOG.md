@@ -3,8 +3,9 @@
 ## 6.5.0
 
 ### Změny
-- Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km, Kruhy 161 m)
-  a mění se hned po změně nastavení; dialog se jmenuje Nastavení kruhů.
+- Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
+  Kruhy 161 m) a mění se hned po změně nastavení; dialog se jmenuje Nastavení
+  kruhů.
 - Když jsou zapnuté kruhy (zvýrazňovací, v metrech, Obsazenost) a nejsou vidět,
   ve stavovém řádku se ukáže štítek Kruhy skryté; v bublině je u každé vrstvy
   důvod a co udělat. Když se kruhy v metrech kreslí jen částečně (nejbližší ke
@@ -319,7 +320,7 @@
   podklad; prázdný překryv tras se nad ní už nevykresluje.
 - Po startu bez nového katalogu vrstev se offline mapy se staženými vrstvami
   otevřou jen jednou, rovnou s obrysy vrstev z uloženého katalogu.
-- Kešoidy > Kruhy s poloměrem (Alt+F8) zapnou i zvýrazňovací kruhy, takže se
+- Kešoidy > Kruhy v metrech (Alt+F8) zapnou i zvýrazňovací kruhy, takže se
   na mapě hned projeví.
 - Zvýrazňovací kruhy a kruhy v metrech zůstanou zapnuté i po přepnutí mapového
   podkladu; velikost a barva kruhů se dál pamatují pro každý podklad. Kdo měl
