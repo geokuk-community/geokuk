@@ -597,4 +597,125 @@ public class KruhyVelkyPolomerTest {
 		Assert.assertTrue(PolomerKruhu.nejblizsi(body, 0, 0, -3).isEmpty());
 		Assert.assertEquals(1, body.size());
 	}
+
+	// --- paměť výběru kruhů se zneplatní při změně dat, poloměru, hranic i rozměru výřezu ---
+
+	private static KesBag bag(final List<Mou> kese) {
+		final List<Wpt> wpts = new ArrayList<>();
+		for (final Mou m : kese) {
+			wpts.add(wpt(m));
+		}
+		final Indexator<Wpt> indexator = Indexator.postav(BoundingRect.ALL, wpts, w -> w.getMou().xx, w -> w.getMou().yy);
+		final KesBag bag = mock(KesBag.class);
+		when(bag.getIndexator()).thenReturn(indexator);
+		return bag;
+	}
+
+	private static JZvyraznovaciKruhySlide slideV(final int zoom, final List<Mou> kese, final Mou stred, final Dimension dim, final int metru) {
+		final KesBag bag = bag(kese);
+		final JZvyraznovaciKruhySlide s = new JZvyraznovaciKruhySlide();
+		s.setSoord(new Coord(zoom, stred, dim, 0));
+		s.setSize(dim);
+		s.onEvent(new KeskyVyfiltrovanyEvent(bag, bag));
+		s.onEvent(metry(metru));
+		return s;
+	}
+
+	private static void stejneObrazy(final String zprava, final BufferedImage a, final BufferedImage b) {
+		for (int y = 0; y < H; y += 3) {
+			for (int x = 0; x < W; x += 3) {
+				Assert.assertEquals(zprava + " pixel " + x + "," + y, a.getRGB(x, y), b.getRGB(x, y));
+			}
+		}
+	}
+
+	private static boolean ruzneObrazy(final BufferedImage a, final BufferedImage b) {
+		for (int y = 0; y < H; y += 3) {
+			for (int x = 0; x < W; x += 3) {
+				if (a.getRGB(x, y) != b.getRGB(x, y)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static List<Mou> radaKruhu(final JZvyraznovaciKruhySlide ref, final int pocet, final int odstupPx, final int yPx) {
+		final double px = mouNaPixel(ref);
+		final List<Mou> kese = new ArrayList<>();
+		for (int k = 0; k < pocet; k++) {
+			kese.add(new Mou(MISTO.xx + (int) Math.round((k - pocet / 2) * odstupPx * px), MISTO.yy + (int) Math.round(yPx * px)));
+		}
+		return kese;
+	}
+
+	@Test
+	public void novyIndexatorZneplatniVyber() {
+		final JZvyraznovaciKruhySlide ref = slide(17, jedna());
+		final int metru = polomerMetruProPixely(ref, 60);
+		final List<Mou> a = radaKruhu(ref, 10, 40, -100);
+		final List<Mou> b = radaKruhu(ref, 10, 40, 100);
+		final Dimension dim = new Dimension(W, H);
+		final JZvyraznovaciKruhySlide s = slideV(17, a, MISTO, dim, metru);
+		final BufferedImage pred = nakresli(s);
+		final KesBag jina = bag(b);
+		s.onEvent(new KeskyVyfiltrovanyEvent(jina, jina));
+		final BufferedImage po = nakresli(s);
+		Assert.assertTrue("jiná data dávají jiný obraz", ruzneObrazy(pred, po));
+		stejneObrazy("jiný filtr", nakresli(slideV(17, b, MISTO, dim, metru)), po);
+	}
+
+	@Test
+	public void jinyPolomerZneplatniVyber() {
+		final JZvyraznovaciKruhySlide ref = slide(17, jedna());
+		final int metru1 = polomerMetruProPixely(ref, 250);
+		final int metru2 = polomerMetruProPixely(ref, 200);
+		final double fhd = (double) W * H;
+		Assert.assertTrue("s menším poloměrem se smí kreslit víc kruhů", PolomerKruhu.limitKruhu(metru2 * ref.getSoord().getPixluNaMetr(), fhd) > PolomerKruhu.limitKruhu(metru1 * ref.getSoord().getPixluNaMetr(), fhd));
+		final List<Mou> kese = radaKruhu(ref, 100, 7, 0);
+		final Dimension dim = new Dimension(W, H);
+		final JZvyraznovaciKruhySlide s = slideV(17, kese, MISTO, dim, metru1);
+		final BufferedImage pred = nakresli(s);
+		Assert.assertTrue(s.getVynechanychKruhu() > 0);
+		s.onEvent(metry(metru2));
+		final BufferedImage po = nakresli(s);
+		Assert.assertTrue("jiný poloměr dává jiný obraz", ruzneObrazy(pred, po));
+		stejneObrazy("jiný poloměr", nakresli(slideV(17, kese, MISTO, dim, metru2)), po);
+	}
+
+	@Test
+	public void posunHraniceVyrezuZneplatniVyber() {
+		final JZvyraznovaciKruhySlide ref = slide(17, jedna());
+		final int metru = polomerMetruProPixely(ref, 60);
+		final List<Mou> kese = radaKruhu(ref, 12, 30, 0);
+		final Dimension dim = new Dimension(W, H);
+		final JZvyraznovaciKruhySlide s = slideV(17, kese, MISTO, dim, metru);
+		final BufferedImage pred = nakresli(s);
+		final Mou posun = new Mou(MISTO.xx + (int) Math.round(150 * mouNaPixel(ref)), MISTO.yy);
+		s.setSoord(new Coord(17, posun, dim, 0));
+		final BufferedImage po = nakresli(s);
+		Assert.assertTrue("posunutý výřez dává jiný obraz", ruzneObrazy(pred, po));
+		stejneObrazy("posun výřezu", nakresli(slideV(17, kese, posun, dim, metru)), po);
+	}
+
+	@Test
+	public void jinyRozmerVyrezuZneplatniVyber() {
+		final JZvyraznovaciKruhySlide ref = slide(17, jedna());
+		final int metru = polomerMetruProPixely(ref, 60);
+		final List<Mou> kese = radaKruhu(ref, 12, 30, 0);
+		final Dimension velky = new Dimension(W, H);
+		final Dimension maly = new Dimension(W / 2, H / 2);
+		final JZvyraznovaciKruhySlide s = slideV(17, kese, MISTO, velky, metru);
+		final BufferedImage pred = nakresli(s);
+		s.setSoord(new Coord(17, MISTO, maly, 0));
+		s.setSize(maly);
+		final BufferedImage po = nakresli(s);
+		Assert.assertTrue("menší výřez dává jiný obraz", ruzneObrazy(pred, po));
+		stejneObrazy("jiný rozměr", nakresli(slideV(17, kese, MISTO, maly, metru)), po);
+	}
+
+	@Test
+	public void hodnotaHusteHranicePokryti() {
+		Assert.assertEquals(1.5, PolomerKruhu.MAX_POKRYTI_V_METRECH, 0);
+	}
 }
