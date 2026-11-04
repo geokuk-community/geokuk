@@ -37,7 +37,9 @@ public class KesoidyOnoffAction extends ToggleAction0 {
 	@Override
 	protected void onSlectedChange(final boolean nastaveno) {
 		kesoidModel.setOnoff(nastaveno);
-		toast.ukaz(ZpravyZkratek.kesoidy(nastaveno));
+		if (toast != null) {
+			toast.ukaz(ZpravyZkratek.kesoidy(nastaveno));
+		}
 	}
 
 }

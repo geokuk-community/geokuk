@@ -46,7 +46,9 @@ public class KruhyOnoffAction extends ToggleAction0 {
 		final KruhySettings data = model.getData();
 		data.setOnoff(nastaveno);
 		model.setData(data);
-		toast.ukaz(ZpravyZkratek.zvyraznovaciKruhy(nastaveno, stavVrstev.getStav().getSkrytyKruh()));
+		if (toast != null && stavVrstev != null) {
+			toast.ukaz(ZpravyZkratek.zvyraznovaciKruhy(nastaveno, stavVrstev.getStav().getSkrytyKruh()));
+		}
 	}
 
 }

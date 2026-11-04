@@ -53,7 +53,9 @@ public class JednotkoveKruhyAction extends ToggleAction0 {
 			data.setOnoff(true);
 		}
 		model.setData(data);
-		toast.ukaz(ZpravyZkratek.jednotkoveKruhy(onoff, zvyrazneniBylyZapnute, stavVrstev.getStav().getSkrytyKruh()));
+		if (toast != null && stavVrstev != null) {
+			toast.ukaz(ZpravyZkratek.jednotkoveKruhy(onoff, zvyrazneniBylyZapnute, stavVrstev.getStav().getSkrytyKruh()));
+		}
 	}
 
 }
