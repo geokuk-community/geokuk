@@ -98,10 +98,28 @@ public final class ChallengeSeznam {
 		if (n.length() > NEJDELSI_NAZEV) {
 			throw new ChallengeChyba("Název challenge může mít nejvýš " + NEJDELSI_NAZEV + " znaků.");
 		}
-		if (n.indexOf('\n') >= 0 || n.indexOf('\r') >= 0) {
-			throw new ChallengeChyba("Název challenge nesmí obsahovat zalomení řádku.");
+		for (int i = 0; i < n.length(); i++) {
+			if (Character.isISOControl(n.charAt(i))) {
+				throw new ChallengeChyba("Název challenge nesmí obsahovat zalomení řádku ani jiné řídicí znaky.");
+			}
 		}
 		return n;
+	}
+
+	/** Nejdelší uložená hodnota; preference snesou 8192 znaků. */
+	static final int NEJDELSI_HODNOTA = 4000;
+
+	/** Ověří, že jde klíč s hodnotou uložit do preferencí. */
+	static void zkontrolujUlozitelne(final String klic, final String hodnota) {
+		if (klic.length() > 80) {
+			throw new ChallengeChyba("Definice je příliš složitá k uložení.");
+		}
+		if (hodnota.length() > NEJDELSI_HODNOTA) {
+			throw new ChallengeChyba("Definice je příliš rozsáhlá k uložení (nejvýš " + NEJDELSI_HODNOTA + " znaků v jedné položce).");
+		}
+		if (hodnota.indexOf('\0') >= 0) {
+			throw new ChallengeChyba("Definice obsahuje nepovolený znak.");
+		}
 	}
 
 	/**
@@ -114,6 +132,9 @@ public final class ChallengeSeznam {
 			throw new ChallengeChyba("Šablonu „" + najdiSablonu(nazev).nazev() + "“ nejde přepsat, uložte vlastní kopii pod jiným názvem.");
 		}
 		final Challenge ulozena = nazev.equals(definice.nazev()) ? definice : definice.sNazvem(nazev);
+		for (final Map.Entry<String, String> e : ulozena.naMapu().entrySet()) {
+			zkontrolujUlozitelne("definice.999999.99." + e.getKey(), e.getValue());
+		}
 		vlastni.put(klic(nazev), ulozena);
 		return ulozena;
 	}

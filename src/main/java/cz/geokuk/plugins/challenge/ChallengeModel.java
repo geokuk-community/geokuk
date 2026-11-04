@@ -27,6 +27,8 @@ public class ChallengeModel extends Model0 {
 	private final Map<String, StavPredpoctu> stavy = new ConcurrentHashMap<>();
 	private final Map<String, VybranyKandidat> kandidati = new ConcurrentHashMap<>();
 	private volatile String jenKandidatiPro;
+	/** Uložené nastavení je novější nebo nečitelné; nepřepisuje se, aby o něj uživatel nepřišel. */
+	private boolean ukladaniZakazano;
 	private Supplier<ChallengeUloziste> uloziste = () -> new PreferenceUloziste(currPrefe().node(UZEL));
 
 	/** Pro test: úložiště místo preferencí. */
@@ -53,10 +55,12 @@ public class ChallengeModel extends Model0 {
 			final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(uloziste.get());
 			seznam = n.seznam;
 			zapnuto = n.zapnuto;
+			ukladaniZakazano = n.neznamyFormat;
 		} catch (final RuntimeException e) {
-			log.warn("Nastavení challenge nejde načíst, použijí se výchozí hodnoty: {}", e.toString());
+			log.warn("Nastavení challenge nejde načíst, použijí se výchozí hodnoty a ukládání se vypne: {}", e.toString());
 			seznam = new ChallengeSeznam();
 			zapnuto = false;
+			ukladaniZakazano = true;
 		}
 		vysledky.clear();
 		stavy.clear();
@@ -66,6 +70,9 @@ public class ChallengeModel extends Model0 {
 	}
 
 	private void uloz() {
+		if (ukladaniZakazano) {
+			return;
+		}
 		try {
 			NastaveniChallenge.uloz(seznam, zapnuto, uloziste.get());
 		} catch (final RuntimeException e) {
@@ -237,7 +244,7 @@ public class ChallengeModel extends Model0 {
 	/** Uloží výsledek výpočtu aktivní challenge a ohlásí ho; pro neaktivní challenge se zahodí. Z kteréhokoli vlákna. */
 	public void nastavVysledek(final Challenge c, final VysledekSektoru vysledek) {
 		naEdt(() -> {
-			if (!seznam.jeAktivni(c.nazev())) {
+			if (!seznam.jeAktivni(c.nazev()) || !c.equals(seznam.najdi(c.nazev()))) {
 				return;
 			}
 			vysledky.put(klic(c), vysledek);

@@ -317,4 +317,34 @@ public class ChallengeModelTest {
 		Assert.assertTrue(model.vlastni().isEmpty());
 		Assert.assertTrue(model.aktivni().isEmpty());
 	}
+
+	@Test
+	public void novejsiFormatUlozenehoNastaveniSeNeprepisuje() throws Exception {
+		final MapoveUloziste u = new MapoveUloziste();
+		u.put("format", "2");
+		u.put("zapnuto", "true");
+		u.put("budouci", "x");
+		final ChallengeModel m = novyModel(u);
+		m.initAfterInject();
+		final Challenge c = m.ulozVlastni(vlastni("Nová"));
+		m.aktivuj(c);
+		m.setZapnuto(true);
+		Assert.assertEquals("2", u.get("format"));
+		Assert.assertEquals("x", u.get("budouci"));
+		Assert.assertNull(u.get("verze"));
+		Assert.assertNull(u.get("aktivni"));
+	}
+
+	@Test
+	public void vysledekStareDefiniceTehozNazvuSeZahodi() throws Exception {
+		final Challenge stara = model.ulozVlastni(vlastni("Moje"));
+		model.aktivuj(stara);
+		final Challenge nova = model.ulozVlastni(new Challenge("Moje", Typ.SEKTORY_360, Stred.souradnice(51, 15), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.nastavVysledek(stara, vysledek(100));
+		pockejNaEdt();
+		Assert.assertNull(model.vysledek(nova));
+		model.nastavVysledek(nova, vysledek(50));
+		pockejNaEdt();
+		Assert.assertEquals(50, model.vysledek(nova).pocetObsazenych());
+	}
 }

@@ -16,7 +16,7 @@ import cz.geokuk.plugins.challenge.Challenge.ZdrojeNalezu;
 
 public class NastaveniChallengeTest {
 
-	static final class MapoveUloziste implements ChallengeUloziste {
+	static class MapoveUloziste implements ChallengeUloziste {
 		final Map<String, String> m = new LinkedHashMap<>();
 
 		@Override
@@ -103,16 +103,16 @@ public class NastaveniChallengeTest {
 		final ChallengeSeznam s = new ChallengeSeznam();
 		s.ulozVlastni(vlastni("Dobrá", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
 		NastaveniChallenge.uloz(s, true, u);
-		u.put("definice.7.nazev", "Rozbitá");
-		u.put("definice.7.typ", "NEZNAMY");
-		u.put("definice.8.nazev", "Bez dalšího");
-		u.put("definice.x.nazev", "Nečíslovaná");
-		u.put("definice.nazev", "Bez čísla");
-		u.put("definice.9.nazev", "360° of Prague");
-		u.put("definice.9.typ", "SEKTORY_360");
-		u.put("definice.9.zdroj", "PGC");
-		u.put("definice.9.stred", "DOMOV");
-		u.put("definice.9.oblast", "ZADNA");
+		u.put("definice.1.7.nazev", "Rozbitá");
+		u.put("definice.1.7.typ", "NEZNAMY");
+		u.put("definice.1.8.nazev", "Bez dalšího");
+		u.put("definice.1.x.nazev", "Nečíslovaná");
+		u.put("definice.1.nazev", "Bez čísla");
+		u.put("definice.1.9.nazev", "360° of Prague");
+		u.put("definice.1.9.typ", "SEKTORY_360");
+		u.put("definice.1.9.zdroj", "PGC");
+		u.put("definice.1.9.stred", "DOMOV");
+		u.put("definice.1.9.oblast", "ZADNA");
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
 		Assert.assertEquals(1, n.seznam.vlastni().size());
 		Assert.assertEquals("Dobrá", n.seznam.vlastni().get(0).nazev());
@@ -158,11 +158,12 @@ public class NastaveniChallengeTest {
 	@Test
 	public void definiceBezPoleNalezyMaVychoziZapnute() {
 		final MapoveUloziste u = new MapoveUloziste();
-		u.put("definice.0.nazev", "Starší");
-		u.put("definice.0.typ", "SEKTORY_360");
-		u.put("definice.0.zdroj", "PGC");
-		u.put("definice.0.stred", "DOMOV");
-		u.put("definice.0.oblast", "ZADNA");
+		u.put("verze", "1");
+		u.put("definice.1.0.nazev", "Starší");
+		u.put("definice.1.0.typ", "SEKTORY_360");
+		u.put("definice.1.0.zdroj", "PGC");
+		u.put("definice.1.0.stred", "DOMOV");
+		u.put("definice.1.0.oblast", "ZADNA");
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
 		Assert.assertEquals(ZdrojeNalezu.ZAPNUTE, n.seznam.najdi("Starší").nalezy());
 	}
@@ -170,15 +171,83 @@ public class NastaveniChallengeTest {
 	@Test
 	public void poskozenaHodnotaStredu() {
 		final MapoveUloziste u = new MapoveUloziste();
-		u.put("definice.0.nazev", "Rozbitá souřadnice");
-		u.put("definice.0.typ", "SEKTORY_360");
-		u.put("definice.0.zdroj", "PGC");
-		u.put("definice.0.stred", "SOURADNICE");
-		u.put("definice.0.stred.lat", "99");
-		u.put("definice.0.stred.lon", "14");
-		u.put("definice.0.oblast", "ZADNA");
+		u.put("verze", "1");
+		u.put("definice.1.0.nazev", "Rozbitá souřadnice");
+		u.put("definice.1.0.typ", "SEKTORY_360");
+		u.put("definice.1.0.zdroj", "PGC");
+		u.put("definice.1.0.stred", "SOURADNICE");
+		u.put("definice.1.0.stred.lat", "99");
+		u.put("definice.1.0.stred.lon", "14");
+		u.put("definice.1.0.oblast", "ZADNA");
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
 		Assert.assertEquals(0, n.seznam.vlastni().size());
 		Assert.assertEquals(1, n.preskoceno);
+	}
+
+	/** Úložiště, které po zadaném počtu zápisů selže jako preference při nepovolené hodnotě. */
+	private static final class SelhavajiciUloziste extends MapoveUloziste {
+		int zbyva = Integer.MAX_VALUE;
+
+		@Override
+		public void put(final String klic, final String hodnota) {
+			if (zbyva-- <= 0) {
+				throw new IllegalArgumentException("Value too long");
+			}
+			super.put(klic, hodnota);
+		}
+	}
+
+	@Test
+	public void selhaniZapisuUprostredNechaPuvodniDefinice() {
+		final SelhavajiciUloziste u = new SelhavajiciUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.ulozVlastni(vlastni("A", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		s.ulozVlastni(vlastni("B", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		NastaveniChallenge.uloz(s, true, u);
+		s.ulozVlastni(vlastni("C", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		for (int zbyva = 0; zbyva < 40; zbyva += 3) {
+			u.zbyva = zbyva;
+			try {
+				NastaveniChallenge.uloz(s, true, u);
+			} catch (final IllegalArgumentException e) {
+				final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+				Assert.assertEquals("po selhání po " + zbyva + " zápisech", 2, n.seznam.vlastni().size());
+				Assert.assertEquals("A", n.seznam.vlastni().get(0).nazev());
+			}
+		}
+		u.zbyva = Integer.MAX_VALUE;
+		NastaveniChallenge.uloz(s, true, u);
+		Assert.assertEquals(3, NastaveniChallenge.nacti(u).seznam.vlastni().size());
+	}
+
+	@Test
+	public void neznamyFormatSeNactePoznacenyJakoNepriepisovatelny() {
+		final MapoveUloziste u = new MapoveUloziste();
+		u.put("format", "2");
+		u.put("verze", "5");
+		u.put("definice.5.0.nazev", "Z budoucna");
+		Assert.assertTrue(NastaveniChallenge.nacti(u).neznamyFormat);
+	}
+
+	@Test
+	public void nazevSNulovymZnakemAPrilisDlouhaDefiniceSeOdmitnou() {
+		final ChallengeSeznam s = new ChallengeSeznam();
+		try {
+			s.ulozVlastni(vlastni("A\u0000B", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+			Assert.fail();
+		} catch (final ChallengeChyba e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("řídicí"));
+		}
+		final String[] ids = new String[800];
+		for (int i = 0; i < ids.length; i++) {
+			ids[i] = "oblast-" + i;
+		}
+		try {
+			s.ulozVlastni(new Challenge("Velká", Typ.SEKTORY_360, Stred.domov(), OblastDef.sada(ids), ZdrojPravidel.PGC));
+			Assert.fail();
+		} catch (final ChallengeChyba e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("rozsáhlá"));
+		}
+		Assert.assertTrue(s.vlastni().isEmpty());
 	}
 }
