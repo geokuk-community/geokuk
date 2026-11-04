@@ -79,6 +79,12 @@ public final class StavVrstev {
 		return skryte.get(vrstva);
 	}
 
+	/** Skrytá vrstva zvýrazňovacích nebo jednotkových kruhů (nikdy obě), nebo null. */
+	public Skryta getSkrytyKruh() {
+		final Skryta s = skryte.get(VrstvaNadMapou.ZVYRAZNOVACI_KRUHY);
+		return s != null ? s : skryte.get(VrstvaNadMapou.JEDNOTKOVE_KRUHY);
+	}
+
 	public Map<VrstvaNadMapou, Skryta> getSkryte() {
 		return skryte;
 	}

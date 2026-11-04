@@ -500,7 +500,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		stitekSkrytychKruhu.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 		stitekSkrytychKruhu.setVisible(false);
 		add(stitekSkrytychKruhu);
-		layout.rezervuj(stitekSkrytychKruhu);
+		layout.plovouci(stitekSkrytychKruhu);
 		jFilterProgressPanel = createPanel();
 		// jFilterProgress.setVisible(false);
 		// jFilterProgress.setStringPainted(true);
