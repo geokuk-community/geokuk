@@ -50,8 +50,26 @@ final class PolomerKruhu {
 		return nejdalnejsiX * nejdalnejsiX + nejdalnejsiY * nejdalnejsiY <= r * r ? Kresleni.VYPLN_VYREZ : Kresleni.KRUH;
 	}
 
-	/** Nejvíc kruhů, jejichž okraj protíná výřez, které se při jednom kreslení vykreslí; kreslení jednoho velkého kruhu trvá řádově milisekundy. */
-	static final int MAX_CASTECNYCH_KRUHU = 12;
+	/**
+	 * Rozpočet na součet ploch kruhů s hranou ve výřezu, v pixelech. Vyplnění průhledné plochy stojí kolem 10 ns na pixel, takže 25 milionů pixelů je zhruba čtvrt sekundy,
+	 * tedy dvanáct kruhů velkých jako celé okno 1920×1080.
+	 */
+	static final long ROZPOCET_PLOCHY = 25_000_000L;
+	/** Nejvíc kruhů s hranou ve výřezu bez ohledu na plochu; i malý kruh má režii (tvar, průhlednost, bílý okraj). */
+	static final int MAX_CASTECNYCH_KRUHU = 2000;
+
+	/**
+	 * Kolik kruhů o poloměru {@code r} px s hranou ve výřezu se smí nakreslit. Cena kruhu roste s jeho plochou ve výřezu, omezenou plochou výřezu, takže malé kruhy se kreslí
+	 * všechny (až {@link #MAX_CASTECNYCH_KRUHU}) a velké nejvýš pár. Vždy aspoň jeden.
+	 */
+	static int limitKruhu(final double r, final double plochaVyrezu, final long rozpocet) {
+		final double plocha = Math.max(1, Math.min(Math.PI * r * r, plochaVyrezu));
+		return (int) Math.max(1, Math.min(MAX_CASTECNYCH_KRUHU, Math.floor(rozpocet / plocha)));
+	}
+
+	static int limitKruhu(final double r, final double plochaVyrezu) {
+		return limitKruhu(r, plochaVyrezu, ROZPOCET_PLOCHY);
+	}
 
 	/** Nejvýš {@code limit} bodů nejbližších bodu ({@code cx}, {@code cy}), od nejbližšího; při menším počtu všechny beze změny pořadí. */
 	static List<int[]> nejblizsi(final List<int[]> body, final double cx, final double cy, final int limit) {
