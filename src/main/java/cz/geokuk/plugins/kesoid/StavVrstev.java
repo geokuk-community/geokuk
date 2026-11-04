@@ -83,6 +83,10 @@ public final class StavVrstev {
 		return skryte.isEmpty() && vynechano == 0 ? PRAZDNY : new StavVrstev(skryte, vynechano, kresleno);
 	}
 
+	public int getKreslenychKruhu() {
+		return kreslenychKruhu;
+	}
+
 	public int getVynechanychKruhu() {
 		return vynechanychKruhu;
 	}

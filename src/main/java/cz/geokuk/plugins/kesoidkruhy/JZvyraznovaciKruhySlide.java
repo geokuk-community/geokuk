@@ -35,6 +35,9 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	private volatile DuvodNekresleni duvod = DuvodNekresleni.KRESLI;
 	private volatile int vynechanychKruhu;
 	private int hlaseneVynechane;
+	private int hlaseneKreslene;
+	/** Kolik kruhů s hranou ve výřezu se při posledním kreslení opravdu nakreslilo. */
+	private volatile int kresleneKruhu;
 	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy(this);
 	/** Null v kopii pro rendrování: ta o stavu nehlásí. */
 	private StavVrstevModel stavModel;
@@ -112,11 +115,13 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 			return;
 		}
 		final int vynechano = duvod == DuvodNekresleni.KRESLI ? vynechanychKruhu : 0;
-		if (vynechano == hlaseneVynechane) {
+		final int kresleno = vynechano > 0 ? kresleneKruhu : 0;
+		if (vynechano == hlaseneVynechane && kresleno == hlaseneKreslene) {
 			return;
 		}
 		hlaseneVynechane = vynechano;
-		SwingUtilities.invokeLater(() -> stavModel.nahlasVynechane(vynechano, PolomerKruhu.MAX_CASTECNYCH_KRUHU));
+		hlaseneKreslene = kresleno;
+		SwingUtilities.invokeLater(() -> stavModel.nahlasVynechane(vynechano, kresleno));
 	}
 
 	private void kresli(final Graphics aG) {
@@ -202,6 +207,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		stavModel.nahlas(VrstvaNadMapou.JEDNOTKOVE_KRUHY, jednotkove ? d : DuvodNekresleni.KRESLI, limitIkon);
 		if (!jednotkove || d != DuvodNekresleni.KRESLI) {
 			hlaseneVynechane = 0;
+			hlaseneKreslene = 0;
 			stavModel.nahlasVynechane(0, 0);
 		}
 	}
@@ -222,6 +228,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		final int pocet = pocetVeVyrezu();
 		duvod = rozhodni(true, r, pocet, limitIkon, false);
 		vynechanychKruhu = 0;
+		kresleneKruhu = 0;
 		if (duvod != DuvodNekresleni.KRESLI) {
 			return;
 		}
@@ -256,6 +263,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		final int limit = PolomerKruhu.limitKruhu(r, (double) dim.width * dim.height);
 		final List<int[]> kreslene = PolomerKruhu.nejblizsi(castecne, vyrez.x + vyrez.width / 2.0, vyrez.y + vyrez.height / 2.0, limit);
 		vynechanychKruhu = castecne.size() - kreslene.size();
+		kresleneKruhu = kreslene.size();
 		g.setStroke(prerus);
 		for (final int[] p : kreslene) {
 			final java.awt.geom.Ellipse2D.Double kruh = new java.awt.geom.Ellipse2D.Double(p[0] - r, p[1] - r, 2 * r, 2 * r);

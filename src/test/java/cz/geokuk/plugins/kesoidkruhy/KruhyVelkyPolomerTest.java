@@ -481,7 +481,7 @@ public class KruhyVelkyPolomerTest {
 		final JZvyraznovaciKruhySlide s = slideSeMrizkou(100, 26);
 		final BufferedImage i = nakresli(s);
 		Assert.assertEquals(0, s.getVynechanychKruhu());
-		Assert.assertEquals(JZvyraznovaciKruhySlide.Rozhodnuti.KRESLI, s.getDuvod());
+		Assert.assertEquals(DuvodNekresleni.KRESLI, s.getDuvod());
 		Assert.assertTrue("první", obarveno(i, 10, 50));
 		Assert.assertTrue("poslední v řadě", obarveno(i, 10 + 33 * 12, 50 + 0));
 		Assert.assertTrue("druhá řada", obarveno(i, 10, 62));
@@ -527,5 +527,14 @@ public class KruhyVelkyPolomerTest {
 			Assert.assertEquals("pořadí od nejbližšího, " + k, ocekavane.get(k), (b[0] - cx) * (b[0] - cx) + (b[1] - cy) * (b[1] - cy), 1e-9);
 		}
 		Assert.assertEquals("vstup se nemění", 600, body.size());
+	}
+
+	@Test
+	public void nejblizsiSNulovymLimitemVratiPrazdnySeznam() {
+		final List<int[]> body = new ArrayList<>();
+		body.add(new int[] { 1, 1 });
+		Assert.assertTrue(PolomerKruhu.nejblizsi(body, 0, 0, 0).isEmpty());
+		Assert.assertTrue(PolomerKruhu.nejblizsi(body, 0, 0, -3).isEmpty());
+		Assert.assertEquals(1, body.size());
 	}
 }

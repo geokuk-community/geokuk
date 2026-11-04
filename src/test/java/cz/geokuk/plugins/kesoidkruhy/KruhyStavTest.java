@@ -172,13 +172,26 @@ public class KruhyStavTest {
 		g.dispose();
 	}
 
+	/** Poloměr kruhů v metrech a z něj skutečný limit počtu kreslených kruhů v okně. */
+	private int metruProPolomerPx(final int px) {
+		return (int) Math.round(px / slide(17, 1).getSoord().getPixluNaMetr());
+	}
+
+	private int limitPro(final int metru) {
+		return PolomerKruhu.limitKruhu(metru * slide(17, 1).getSoord().getPixluNaMetr(), (double) W * H);
+	}
+
 	@Test
 	public void vynechaneCastecneKruhySeHlasiPoKresleniCelehoVyrezu() throws Exception {
-		final JZvyraznovaciKruhySlide s = slide(17, PolomerKruhu.MAX_CASTECNYCH_KRUHU + 3);
-		s.onEvent(metry((int) Math.round(100 / s.getSoord().getPixluNaMetr()), true));
+		final int metru = metruProPolomerPx(250);
+		final int limit = limitPro(metru);
+		final JZvyraznovaciKruhySlide s = slide(17, limit + 3);
+		s.onEvent(metry(metru, true));
 		nakresliCely(s);
 		dokonciUdalosti();
 		Assert.assertEquals(3, stav.getStav().getVynechanychKruhu());
+		Assert.assertEquals("kresleno je skutečný limit, ne konstanta", limit, stav.getStav().getKreslenychKruhu());
+		Assert.assertTrue(stav.getStav().tooltip(), stav.getStav().tooltip().contains("kresleno jen " + limit + " nejbližších"));
 		Assert.assertTrue(stav.getStav().jeKVideni());
 		Assert.assertFalse(stav.getStav().maSkryte());
 		final int udalostiPred = udalosti.size();
@@ -191,11 +204,12 @@ public class KruhyStavTest {
 
 	@Test
 	public void castecnePrekresleniVynechaneNeoznamuje() throws Exception {
-		final JZvyraznovaciKruhySlide s = slide(17, PolomerKruhu.MAX_CASTECNYCH_KRUHU + 3);
-		s.onEvent(metry((int) Math.round(100 / s.getSoord().getPixluNaMetr()), true));
+		final int metru = metruProPolomerPx(250);
+		final JZvyraznovaciKruhySlide s = slide(17, limitPro(metru) + 3);
+		s.onEvent(metry(metru, true));
 		final java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(W, H, java.awt.image.BufferedImage.TYPE_INT_ARGB);
 		final java.awt.Graphics2D g = i.createGraphics();
-		g.setClip(250, 150, 300, 300);
+		g.setClip(150, 100, 500, 400);
 		s.paintComponent(g);
 		g.dispose();
 		dokonciUdalosti();
