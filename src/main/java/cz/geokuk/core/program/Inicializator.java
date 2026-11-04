@@ -19,6 +19,7 @@ import cz.geokuk.core.profile.ProfileModel;
 import cz.geokuk.core.render.RenderModel;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.cesty.*;
+import cz.geokuk.plugins.challenge.ChallengeModel;
 import cz.geokuk.plugins.geocoding.GeocodingModel;
 import cz.geokuk.plugins.kesoid.KesoidFilterModel;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
@@ -100,6 +101,7 @@ public class Inicializator {
 		napovedaModel = bb.registerSigleton(new NapovedaModel());
 		bb.registerSigleton(new OnofflineModel());
 		bb.registerSigleton(new GeocodingModel());
+		bb.registerSigleton(new ChallengeModel());
 
 		bb.registerSigleton(new HledaciSluzba());
 		bb.registerSigleton(new DiagnostikaMapy());
