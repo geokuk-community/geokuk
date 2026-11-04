@@ -154,12 +154,20 @@ public class ReferencniVypocetTest {
 		final String[] body = BODY.split(";");
 		for (int i = 0; i < body.length; i++) {
 			final String[] c = body[i].split(",");
-			final VypocetSektoruTest.Kes k = new VypocetSektoruTest.Kes("GC" + i, Double.parseDouble(c[0]), Double.parseDouble(c[1]), i < 330);
+			final VypocetSektoruTest.Kes k = new VypocetSektoruTest.Kes("GC" + i, cislo(c[0]), cislo(c[1]), i < 330);
 			k.lab = "1".equals(c[2]);
 			k.locationless = "2".equals(c[2]);
 			v.add(k);
 		}
 		return v;
+	}
+
+	private static double cislo(final String text) {
+		try {
+			return Double.parseDouble(text);
+		} catch (final NumberFormatException e) {
+			throw new AssertionError("Neplatné číslo v referenčních datech: " + text, e);
+		}
 	}
 
 	private static List<Integer> seznam(final int[] pole) {
