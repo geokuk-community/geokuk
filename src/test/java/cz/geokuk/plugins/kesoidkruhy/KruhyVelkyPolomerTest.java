@@ -278,8 +278,8 @@ public class KruhyVelkyPolomerTest {
 	}
 
 	@Test
-	public void limitCastecnychKruhuJeTricet() {
-		Assert.assertEquals(30, PolomerKruhu.MAX_CASTECNYCH_KRUHU);
+	public void limitCastecnychKruhuJeDvanact() {
+		Assert.assertEquals(12, PolomerKruhu.MAX_CASTECNYCH_KRUHU);
 	}
 
 	@Test
@@ -315,7 +315,7 @@ public class KruhyVelkyPolomerTest {
 	}
 
 	@Test
-	public void trictJedenCastecnyKruhSeKresliJenTricetNejblizsich() {
+	public void dvanactJedenCastecnyKruhSeKresliJenDvanactNejblizsich() {
 		final JZvyraznovaciKruhySlide s = slideSCastecnymi(PolomerKruhu.MAX_CASTECNYCH_KRUHU, true);
 		final BufferedImage i = nakresli(s);
 		Assert.assertEquals(1, s.getVynechanychKruhu());
@@ -325,7 +325,7 @@ public class KruhyVelkyPolomerTest {
 	}
 
 	@Test
-	public void tricetCastecnychKruhuSeKresliVsechny() {
+	public void dvanactCastecnychKruhuSeKresliVsechny() {
 		final JZvyraznovaciKruhySlide s = slideSCastecnymi(PolomerKruhu.MAX_CASTECNYCH_KRUHU - 1, true);
 		final BufferedImage i = nakresli(s);
 		Assert.assertEquals(0, s.getVynechanychKruhu());
@@ -375,5 +375,48 @@ public class KruhyVelkyPolomerTest {
 		h.onEvent(pixely(100));
 		nakresli(h);
 		Assert.assertEquals(JZvyraznovaciKruhySlide.Rozhodnuti.PRILIS_HUSTE, h.getDuvod());
+	}
+
+	@Test
+	public void nejblizsiPocitaVzdalenostOdNenulovehoStredu() {
+		final List<int[]> body = new ArrayList<>();
+		for (int k = 0; k < 10; k++) {
+			body.add(new int[] { 500 + 3 * k - 13, 300 + (k % 3) });
+		}
+		body.add(new int[] { 0, 0 });
+		body.add(new int[] { 10, 10 });
+		body.add(new int[] { 500, 0 });
+		body.add(new int[] { 505, 5 });
+		body.add(new int[] { 1000, 600 });
+		final List<int[]> vybrane = PolomerKruhu.nejblizsi(body, 500, 300, 10);
+		Assert.assertEquals(10, vybrane.size());
+		for (final int[] b : vybrane) {
+			Assert.assertEquals("vybrané jsou kolem středu (500, 300): " + b[0] + "," + b[1], 300, b[1], 2);
+			Assert.assertTrue(Math.abs(b[0] - 500) <= 14);
+		}
+	}
+
+	@Test
+	public void vynechanyJeNejvzdalenejsiOdStreduClipuMimoPocatek() {
+		final JZvyraznovaciKruhySlide ref = slide(17, jedna());
+		final int metru = polomerMetruProPixely(ref, 100);
+		final double px = mouNaPixel(ref);
+		final List<Mou> kese = new ArrayList<>();
+		// osa y souřadnic Mou míří nahoru; střed oříznutého výřezu (100, 50, 500, 400) je (350, 250); okno má střed MISTO v (400, 300)
+		for (int k = 0; k < PolomerKruhu.MAX_CASTECNYCH_KRUHU; k++) {
+			kese.add(new Mou(MISTO.xx + (int) Math.round((-50 + k % 3) * px), MISTO.yy + (int) Math.round((50 - k / 3) * px)));
+		}
+		// kruh těsně u levého horního rohu výřezu je od jeho středu nejdál
+		kese.add(new Mou(MISTO.xx + (int) Math.round(-290 * px), MISTO.yy + (int) Math.round(240 * px)));
+		final JZvyraznovaciKruhySlide s = slide(17, kese);
+		s.onEvent(metry(metru));
+		final BufferedImage i = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = i.createGraphics();
+		g.setClip(100, 50, 500, 400);
+		s.paintComponent(g);
+		g.dispose();
+		Assert.assertEquals(1, s.getVynechanychKruhu());
+		Assert.assertFalse("vynechán kruh u rohu výřezu", obarveno(i, 110, 60));
+		Assert.assertTrue("střed výřezu se kreslí", obarveno(i, 350, 250));
 	}
 }

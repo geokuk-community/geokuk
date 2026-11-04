@@ -51,7 +51,7 @@ final class PolomerKruhu {
 	}
 
 	/** Nejvíc kruhů, jejichž okraj protíná výřez, které se při jednom kreslení vykreslí; kreslení jednoho velkého kruhu trvá řádově milisekundy. */
-	static final int MAX_CASTECNYCH_KRUHU = 30;
+	static final int MAX_CASTECNYCH_KRUHU = 12;
 
 	/** Nejvýš {@code limit} bodů nejbližších bodu ({@code cx}, {@code cy}), od nejbližšího; při menším počtu všechny beze změny pořadí. */
 	static List<int[]> nejblizsi(final List<int[]> body, final double cx, final double cy, final int limit) {
