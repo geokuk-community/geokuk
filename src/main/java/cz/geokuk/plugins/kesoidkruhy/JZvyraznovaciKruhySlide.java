@@ -134,7 +134,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 			return;
 		}
 		final int pocet = pocetVeVyrezu();
-		duvod = rozhodni(false, r, pocet, limitIkon, prilisHuste(pocet, Math.PI * r * r));
+		duvod = rozhodni(r, pocet, limitIkon, prilisHuste(pocet, Math.PI * r * r));
 		vynechanychKruhu = 0;
 		if (duvod != DuvodNekresleni.KRESLI) {
 			return;
@@ -155,18 +155,21 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 
 	}
 
-	/**
-	 * Rozhodnutí o kreslení. Počet nad limitem kruhy skrývá vždy. V pixelech je skrývá i příliš velké pokrytí okna, v metrech ne: skutečný poloměr se kreslí bez ohledu na to,
-	 * kolik obrazovky zakryje.
-	 */
-	static DuvodNekresleni rozhodni(final boolean vMetrech, final double polomerPx, final int pocet, final int limitIkon, final boolean prilisHuste) {
+	/** Rozhodnutí o kreslení: kruh pod {@link PolomerKruhu#MIN_PIXLU}, počet nad limitem a příliš velké pokrytí okna kruhy skrývají. */
+	static DuvodNekresleni rozhodni(final double polomerPx, final int pocet, final int limitIkon, final boolean prilisHuste) {
 		if (polomerPx <= 0) {
 			return DuvodNekresleni.POLOMER_PRILIS_MALY;
 		}
 		if (pocet > limitIkon) {
 			return DuvodNekresleni.LIMIT_POCTU;
 		}
-		return !vMetrech && prilisHuste ? DuvodNekresleni.PRILIS_HUSTE : DuvodNekresleni.KRESLI;
+		return prilisHuste ? DuvodNekresleni.PRILIS_HUSTE : DuvodNekresleni.KRESLI;
+	}
+
+	/** Totéž pro kruhy s poloměrem v metrech: při oddálení, kdy jsou malé vůči výřezu a je jich hodně, splynou v souvislou plochu. */
+	private DuvodNekresleni rozhodniVMetrech(final double polomerPx, final int pocet) {
+		final Dimension dim = getSoord().getDim();
+		return rozhodni(polomerPx, pocet, limitIkon, PolomerKruhu.prilisHusteVMetrech(pocet, polomerPx, dim.width, dim.height));
 	}
 
 	/** Počet bodů ve výřezu; platí, dokud se nezmění výřez nebo data. */
@@ -187,10 +190,10 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		}
 		final int pocet = pocetVeVyrezu();
 		if (kruhy.isJednotkovaVelikost()) {
-			return rozhodni(true, PolomerKruhu.pixlu(kruhy.getPolomerMetru(), getSoord().getPixluNaMetr()), pocet, limitIkon, false);
+			return rozhodniVMetrech(PolomerKruhu.pixlu(kruhy.getPolomerMetru(), getSoord().getPixluNaMetr()), pocet);
 		}
 		final int r = kruhy.getVelikost();
-		return r == 0 ? DuvodNekresleni.KRESLI : rozhodni(false, r, pocet, limitIkon, prilisHuste(pocet, Math.PI * r * r));
+		return r == 0 ? DuvodNekresleni.KRESLI : rozhodni(r, pocet, limitIkon, prilisHuste(pocet, Math.PI * r * r));
 	}
 
 	private void prepocitejStav() {
@@ -222,7 +225,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	private void kresliVMetrech(final Graphics2D g) {
 		final double r = PolomerKruhu.pixlu(kruhy.getPolomerMetru(), getSoord().getPixluNaMetr());
 		final int pocet = pocetVeVyrezu();
-		duvod = rozhodni(true, r, pocet, limitIkon, false);
+		duvod = rozhodniVMetrech(r, pocet);
 		vynechanychKruhu = 0;
 		kresleneKruhu = 0;
 		if (duvod != DuvodNekresleni.KRESLI) {
