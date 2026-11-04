@@ -93,18 +93,10 @@ public final class Predpocet {
 		return pocetPrepocitanych;
 	}
 
-	/** Spustí předpočet na pozadí; běžící se zruší. Vrací úlohu, na kterou jde čekat. */
+	/** Spustí předpočet na pozadí a vrátí hned; běžící se zruší a nový začne, až skončí. Vrací úlohu, na kterou jde čekat. */
 	public synchronized Future<?> spust(final Collection<? extends VstupKes> kese) {
-		if (bezi != null && !bezi.isDone()) {
-			zruseno.set(true);
-			try {
-				bezi.get();
-			} catch (final InterruptedException e) {
-				Thread.currentThread().interrupt();
-			} catch (final java.util.concurrent.ExecutionException e) {
-				log.debug("Předchozí předpočet skončil chybou: {}", e.toString());
-			}
-		}
+		// Běžící předpočet se jen požádá o zrušení; nový běh čeká ve frontě vlákna, volající (třeba vlákno Swingu) nečeká.
+		zruseno.set(true);
 		final AtomicBoolean ruseni = new AtomicBoolean();
 		zruseno = ruseni;
 		bezi = vlakno.submit(() -> beh(kese, ruseni));
@@ -175,7 +167,7 @@ public final class Predpocet {
 			}
 			log.info("Předpočet challenge: {} keší, přepočteno {}, za {} ms", celkem, prepocteno, (System.nanoTime() - zacatek) / 1_000_000);
 			ohlas(new StavPredpoctu(StavPredpoctu.Faze.HOTOVO, celkem, celkem, null));
-		} catch (final RuntimeException | OutOfMemoryError e) {
+		} catch (final RuntimeException e) {
 			log.warn("Předpočet challenge selhal: {}", e.toString());
 			ohlas(new StavPredpoctu(StavPredpoctu.Faze.CHYBA, stav.hotovo(), celkem, String.valueOf(e.getMessage() != null ? e.getMessage() : e.toString())));
 		}
@@ -197,12 +189,23 @@ public final class Predpocet {
 		}
 	}
 
-	/** Ponechá nejnovějších několik souborů předpočtu, starší (jiný střed, oblast nebo zdroj) smaže. */
+	/**
+	 * Ponechá nejnovějších několik souborů předpočtu, starší (jiný střed, oblast nebo zdroj) smaže. Maže jen soubory přesného jména předpočtu se značkou a verzí formátu
+	 * na začátku (cizí soubory s podobným jménem zůstanou) a zbylé dočasné soubory; jen v této složce, nerekurzivně, až po úspěšném zápisu nového.
+	 */
 	private void uklid(final Path aktualni) {
 		final List<Path> soubory = new ArrayList<>();
-		try (DirectoryStream<Path> ds = Files.newDirectoryStream(adresar, "challenge-*.bin")) {
+		try (DirectoryStream<Path> ds = Files.newDirectoryStream(adresar)) {
 			for (final Path p : ds) {
-				soubory.add(p);
+				final String jmeno = p.getFileName().toString();
+				if (!Files.isRegularFile(p, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+					continue;
+				}
+				if (SouborPredpoctu.JMENO_DOCASNE.matcher(jmeno).matches()) {
+					smaz(p);
+				} else if (SouborPredpoctu.JMENO.matcher(jmeno).matches() && SouborPredpoctu.maZnacku(p)) {
+					soubory.add(p);
+				}
 			}
 		} catch (final IOException e) {
 			return;
@@ -213,12 +216,16 @@ public final class Predpocet {
 		soubory.sort((a, b) -> Long.compare(cas(b), cas(a)));
 		for (int i = PONECHAT_SOUBORU; i < soubory.size(); i++) {
 			if (!soubory.get(i).equals(aktualni)) {
-				try {
-					Files.deleteIfExists(soubory.get(i));
-				} catch (final IOException e) {
-					log.debug("Starý předpočet {} nejde smazat: {}", soubory.get(i), e.toString());
-				}
+				smaz(soubory.get(i));
 			}
+		}
+	}
+
+	private static void smaz(final Path soubor) {
+		try {
+			Files.deleteIfExists(soubor);
+		} catch (final IOException | RuntimeException e) {
+			log.debug("Starý předpočet {} nejde smazat: {}", soubor, e.toString());
 		}
 	}
 

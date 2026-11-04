@@ -19,11 +19,15 @@ public final class KesVstup implements VstupKes {
 
 	/** Pro challenge se počítají jen keše z gc.com (kód GC…); jiné kešoidy (OC, waymarky, munzee) a kešoidy bez souřadnic dávají null. */
 	public static KesVstup z(final Kesoid kesoid) {
+		return jeVhodny(kesoid) ? new KesVstup(kesoid, kesoid.getMainWpt()) : null;
+	}
+
+	private static boolean jeVhodny(final Kesoid kesoid) {
 		if (!(kesoid instanceof Kes) || kesoid.getIdentifier() == null || !kesoid.getIdentifier().startsWith("GC")) {
-			return null;
+			return false;
 		}
 		final Wpt w = kesoid.getMainWpt();
-		return w == null || w.hasEmptyCoords() ? null : new KesVstup(kesoid, w);
+		return w != null && !w.hasEmptyCoords();
 	}
 
 	/** Keše z gc.com ze seznamu kešoidů, vytvářené až při průchodu; kešoidy, které se nepočítají, se přeskočí. */
@@ -55,9 +59,21 @@ public final class KesVstup implements VstupKes {
 				};
 			}
 
+			private int velikost = -1;
+
+			/** Počet keší, které se projdou; spočítá se jednou při prvním dotazu (seznam se za dobu předpočtu nemění). */
 			@Override
-			public int size() {
-				return kesoidy.size();
+			public synchronized int size() {
+				if (velikost < 0) {
+					int n = 0;
+					for (final Kesoid k : kesoidy) {
+						if (jeVhodny(k)) {
+							n++;
+						}
+					}
+					velikost = n;
+				}
+				return velikost;
 			}
 		};
 	}

@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.challenge;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -345,5 +346,147 @@ public class PredpocetTest {
 			}
 		}
 		Assert.assertEquals("bez omezení jsou všechny v oblasti", 300, vOblasti.get());
+	}
+
+	private static final long STARE = 1_000_000L;
+
+	private void nastavStari(final Path soubor, final int poradi) throws IOException {
+		Files.setLastModifiedTime(soubor, java.nio.file.attribute.FileTime.fromMillis(System.currentTimeMillis() - (100 - poradi) * STARE));
+	}
+
+	private long vlastniSoubory() throws IOException {
+		try (java.util.stream.Stream<Path> s = Files.list(adresar)) {
+			return s.filter(x -> SouborPredpoctu.JMENO.matcher(x.getFileName().toString()).matches() && Files.isRegularFile(x) && SouborPredpoctu.maZnacku(x)).count();
+		}
+	}
+
+	@Test
+	public void uklidMazeJenVlastniNejstarsiSouboryACizinecNechaBeze() throws Exception {
+		final Path cizi1 = adresar.resolve("challenge-moje.bin");
+		final Path cizi2 = adresar.resolve("challenge-0123abcd-5.bin");
+		final Path cizi3 = adresar.resolve("challenge-0123abcd-6.txt");
+		final Path adresarSPodobnymJmenem = adresar.resolve("challenge-aaaaaaaa-1.bin");
+		Files.write(cizi1, "moje poznámky".getBytes(StandardCharsets.UTF_8));
+		Files.write(cizi2, "tohle není předpočet".getBytes(StandardCharsets.UTF_8));
+		Files.write(cizi3, "text".getBytes(StandardCharsets.UTF_8));
+		Files.createDirectories(adresarSPodobnymJmenem);
+		Files.write(adresarSPodobnymJmenem.resolve("uvnitr"), new byte[] { 1 });
+		final Path zbylyDocasny = adresar.resolve("challenge-0123abcd-9.bin.new");
+		Files.write(zbylyDocasny, new byte[] { 1, 2, 3 });
+		for (final Path p : new Path[] { cizi1, cizi2, cizi3 }) {
+			nastavStari(p, 0);
+		}
+		final List<VypocetSektoruTest.Kes> kese = kese(50, 1);
+		final List<Path> vlastni = new ArrayList<>();
+		for (int i = 0; i < 11; i++) {
+			final Predpocet p = predpocet("z" + i, oblast, ZdrojPravidel.PGC, LAT);
+			pockej(p, p.spust(kese));
+			try (java.util.stream.Stream<Path> s = Files.list(adresar)) {
+				s.filter(x -> SouborPredpoctu.JMENO.matcher(x.getFileName().toString()).matches() && Files.isRegularFile(x) && !vlastni.contains(x) && !x.equals(cizi2)).forEach(vlastni::add);
+			}
+			nastavStari(vlastni.get(vlastni.size() - 1), i + 1);
+		}
+		Assert.assertEquals("nejvýš osm vlastních souborů", 8, vlastniSoubory());
+		Assert.assertFalse("nejstarší vlastní zmizel", Files.exists(vlastni.get(0)));
+		Assert.assertTrue("nejnovější zůstal", Files.exists(vlastni.get(vlastni.size() - 1)));
+		Assert.assertTrue(Files.exists(cizi1));
+		Assert.assertEquals("moje poznámky", new String(Files.readAllBytes(cizi1), StandardCharsets.UTF_8));
+		Assert.assertTrue("podobné jméno bez značky zůstane", Files.exists(cizi2));
+		Assert.assertTrue(Files.exists(cizi3));
+		Assert.assertTrue("složka se jménem předpočtu zůstane", Files.isDirectory(adresarSPodobnymJmenem));
+		Assert.assertTrue(Files.exists(adresarSPodobnymJmenem.resolve("uvnitr")));
+		Assert.assertFalse("zbylý dočasný soubor se uklidí", Files.exists(zbylyDocasny));
+	}
+
+	@Test
+	public void uklidNicNemazeKdyzZapisSelze() throws Exception {
+		// Do složky nejde zapsat (je to soubor), vlastní soubory jinde zůstávají; předpočet dobře skončí.
+		final Path soubor = tmp.newFile("soubor-misto-slozky").toPath();
+		final Predpocet p = new Predpocet(soubor, "z1", ZdrojPravidel.PGC, LAT, LON, oblast);
+		otevrene.add(p);
+		pockej(p, p.spust(kese(20, 1)));
+		Assert.assertTrue(Files.isRegularFile(soubor));
+	}
+
+	@Test
+	public void hlavickaSObrimPoctemZaznamuSeZahodiBezAlokace() throws Exception {
+		final String klic = "klic-test";
+		final Path soubor = adresar.resolve("challenge-00000000-1.bin");
+		for (final int pocet : new int[] { 50_000_000, Integer.MAX_VALUE, 20_000_001, 1_000_000 }) {
+			try (java.io.DataOutputStream out = new java.io.DataOutputStream(Files.newOutputStream(soubor))) {
+				out.writeInt(0x474B5043);
+				out.writeInt(1);
+				out.writeUTF(klic);
+				out.writeInt(pocet);
+				out.write(new byte[100]);
+			}
+			Assert.assertNull("počet " + pocet, SouborPredpoctu.nacti(soubor, klic));
+		}
+		try (java.io.DataOutputStream out = new java.io.DataOutputStream(Files.newOutputStream(soubor))) {
+			out.writeInt(0x474B5043);
+			out.writeInt(1);
+			out.writeUTF(klic);
+			out.writeInt(-5);
+		}
+		Assert.assertNull(SouborPredpoctu.nacti(soubor, klic));
+	}
+
+	@Test
+	public void souborSPrebyvajicimiBajtyNeniPlatny() throws Exception {
+		final Tabulka t = new Tabulka(10);
+		t.vloz(SouborPredpoctu.otisk("GC1"), 1, 2, (short) 3);
+		final Path soubor = adresar.resolve("x.bin");
+		SouborPredpoctu.zapis(soubor, "klic-é", t);
+		Assert.assertNotNull("klíč s diakritikou", SouborPredpoctu.nacti(soubor, "klic-é"));
+		Files.write(soubor, java.util.Arrays.copyOf(Files.readAllBytes(soubor), (int) Files.size(soubor) + 3));
+		Assert.assertNull(SouborPredpoctu.nacti(soubor, "klic-é"));
+	}
+
+	@Test
+	public void poskozenaHlavickaNeznemozniDalsiBehy() throws Exception {
+		final List<VypocetSektoruTest.Kes> kese = kese(300, 4);
+		final Predpocet p1 = predpocet("z1", oblast, ZdrojPravidel.PGC, LAT);
+		pockej(p1, p1.spust(kese));
+		final Path soubor = jedinySoubor();
+		final byte[] dobry = Files.readAllBytes(soubor);
+		final byte[] zly = dobry.clone();
+		final int pozicePoctu = 4 + 4 + 2 + (int) (dobry.length - 4 - 4 - 2 - 4 - 300L * 18 - 4);
+		zly[pozicePoctu] = 0x02;
+		zly[pozicePoctu + 1] = (byte) 0xFA;
+		zly[pozicePoctu + 2] = (byte) 0xF0;
+		zly[pozicePoctu + 3] = (byte) 0x80;
+		Files.write(soubor, zly);
+		final Predpocet p2 = predpocet("z1", oblast, ZdrojPravidel.PGC, LAT);
+		pockej(p2, p2.spust(kese));
+		Assert.assertEquals(300, p2.pocetPrepocitanych());
+		final Predpocet p3 = predpocet("z1", oblast, ZdrojPravidel.PGC, LAT);
+		pockej(p3, p3.spust(kese));
+		Assert.assertEquals("příště už z opraveného souboru", 0, p3.pocetPrepocitanych());
+	}
+
+	@Test(timeout = 60000)
+	public void spustNeblokujeVolajicihoAniKdyzPredchoziBeziASekaSeVPosluchaci() throws Exception {
+		final CountDownLatch uvnitr = new CountDownLatch(1);
+		final CountDownLatch pustit = new CountDownLatch(1);
+		final Predpocet p = predpocet("z1", oblast, ZdrojPravidel.PGC, LAT);
+		p.pridejPosluchace(s -> {
+			if (s.faze() == StavPredpoctu.Faze.POCITA) {
+				uvnitr.countDown();
+				try {
+					pustit.await(30, TimeUnit.SECONDS);
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		});
+		final java.util.concurrent.Future<?> prvni = p.spust(kese(100, 1));
+		Assert.assertTrue(uvnitr.await(30, TimeUnit.SECONDS));
+		final long zacatek = System.nanoTime();
+		final java.util.concurrent.Future<?> druhy = p.spust(kese(100, 2));
+		Assert.assertTrue("spust se nesmí zablokovat", (System.nanoTime() - zacatek) / 1_000_000 < 2000);
+		pustit.countDown();
+		druhy.get(30, TimeUnit.SECONDS);
+		Assert.assertTrue(prvni.isDone());
+		Assert.assertEquals(StavPredpoctu.Faze.HOTOVO, p.stav().faze());
 	}
 }

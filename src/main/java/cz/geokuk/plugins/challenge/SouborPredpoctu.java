@@ -23,7 +23,11 @@ final class SouborPredpoctu {
 	private static final int ZNACKA = 0x474B5043; // GKPC
 	private static final int FORMAT = 1;
 	private static final int BAJTU_ZAZNAMU = 8 + 4 + 4 + 2;
-	private static final int NEJVIC_ZAZNAMU = 50_000_000;
+	private static final int NEJVIC_ZAZNAMU = 20_000_000;
+
+	/** Jméno souboru předpočtu; dočasný soubor má navíc {@code .new}. */
+	static final java.util.regex.Pattern JMENO = java.util.regex.Pattern.compile("challenge-[0-9a-f]{8}-\\d+\\.bin");
+	static final java.util.regex.Pattern JMENO_DOCASNE = java.util.regex.Pattern.compile("challenge-[0-9a-f]{8}-\\d+\\.bin\\.new");
 
 	/** Tabulka záznamů s otevřeným adresováním podle otisku kódu keše. */
 	static final class Tabulka {
@@ -139,7 +143,8 @@ final class SouborPredpoctu {
 				return null;
 			}
 			final int pocet = in.readInt();
-			if (pocet < 0 || pocet > NEJVIC_ZAZNAMU || Files.size(soubor) > hlavicka(klic) + (long) pocet * BAJTU_ZAZNAMU + 4) {
+			// Velikost souboru musí odpovídat počtu záznamů, ještě než se pro ně cokoli alokuje; poškozená hlavička tak nemůže vyžádat obří tabulku.
+			if (pocet < 0 || pocet > NEJVIC_ZAZNAMU || Files.size(soubor) != hlavicka(klic) + (long) pocet * BAJTU_ZAZNAMU + 4) {
 				return null;
 			}
 			final Tabulka t = new Tabulka(pocet);
@@ -169,7 +174,26 @@ final class SouborPredpoctu {
 	}
 
 	private static long hlavicka(final String klic) {
-		return 4 + 4 + 2 + klic.getBytes(java.nio.charset.StandardCharsets.UTF_8).length + 4;
+		return 4 + 4 + 2 + delkaUtf(klic) + 4;
+	}
+
+	/** Počet bajtů, které zabere řetězec v {@link DataOutputStream#writeUTF}. */
+	private static long delkaUtf(final String text) {
+		long n = 0;
+		for (int i = 0; i < text.length(); i++) {
+			final char c = text.charAt(i);
+			n += c >= 1 && c <= 0x7F ? 1 : c <= 0x7FF ? 2 : 3;
+		}
+		return n;
+	}
+
+	/** Soubor začíná značkou a verzí formátu předpočtu, tedy je to opravdu soubor, který tento kód zapsal. */
+	static boolean maZnacku(final Path soubor) {
+		try (DataInputStream in = new DataInputStream(Files.newInputStream(soubor))) {
+			return in.readInt() == ZNACKA && in.readInt() == FORMAT;
+		} catch (final IOException e) {
+			return false;
+		}
 	}
 
 	/** Zapíše tabulku přes dočasný soubor a atomické přejmenování, ať poškozený zápis nezničí platný soubor. */
