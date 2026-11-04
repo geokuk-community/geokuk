@@ -7,7 +7,7 @@ public class StavVrstevEvent extends Event0<StavVrstevModel> {
 
 	private final StavVrstev stav;
 
-	StavVrstevEvent(final StavVrstev stav) {
+	public StavVrstevEvent(final StavVrstev stav) {
 		this.stav = stav;
 	}
 
