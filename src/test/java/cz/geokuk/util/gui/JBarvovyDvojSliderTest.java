@@ -433,4 +433,29 @@ public class JBarvovyDvojSliderTest {
 		slider.getBarvovnik().setValueIsAdjusting(false);
 		slider.getPruhlednik().setValueIsAdjusting(false);
 	}
+
+	@Test
+	public void pusteniJednohoZDvouTazenychPosuvnikuLegenduNezhasne() {
+		rodic();
+		final JSlider b = slider.getBarvovnik();
+		final JSlider p = slider.getPruhlednik();
+		b.setValueIsAdjusting(true);
+		b.setValue(b.getValue() > 100 ? b.getValue() - 20 : b.getValue() + 20);
+		p.setValueIsAdjusting(true);
+		p.setValue(p.getValue() > 100 ? p.getValue() - 20 : p.getValue() + 20);
+		cas.addAndGet(BublinkaHodnoty.ZACATEK_MS);
+		legenda().tik();
+		Assert.assertEquals(1f, legenda().viditelnost(), 0f);
+		b.setValueIsAdjusting(false);
+		cas.addAndGet(2 * (BublinkaHodnoty.DRZENI_MS + BublinkaHodnoty.ZANIKNUTI_MS));
+		legenda().tik();
+		Assert.assertEquals("druhý posuvník se pořád táhne", 1f, legenda().viditelnost(), 0f);
+		p.setValueIsAdjusting(false);
+		cas.addAndGet(BublinkaHodnoty.DRZENI_MS - 1);
+		legenda().tik();
+		Assert.assertEquals("po puštění posledního se legenda drží", 1f, legenda().viditelnost(), 0f);
+		cas.addAndGet(BublinkaHodnoty.ZANIKNUTI_MS + 1);
+		legenda().tik();
+		Assert.assertEquals(0f, legenda().viditelnost(), 0f);
+	}
 }

@@ -198,4 +198,21 @@ public class ViditelnostLegendyTest {
 		legenda.fokus(true);
 		Assert.assertEquals(1, spusteni);
 	}
+
+	@Test
+	public void casovacBeziBehemDrzeniAZanikuAPoKonciLegendaZmizi() {
+		legenda.dotyk();
+		ubehne(PLNA);
+		Assert.assertTrue("při držení časovač běží", legenda.casovacBezi());
+		ubehne(BublinkaHodnoty.DRZENI_MS - PLNA);
+		Assert.assertTrue(legenda.casovacBezi());
+		Assert.assertEquals(1f, legenda.viditelnost(), 0f);
+		ubehne(BublinkaHodnoty.ZANIKNUTI_MS / 2);
+		Assert.assertTrue("při zániku časovač běží, aby se legenda plynule ztrácela", legenda.casovacBezi());
+		Assert.assertEquals(0.5f, legenda.viditelnost(), 0.05f);
+		ubehne(BublinkaHodnoty.ZANIKNUTI_MS);
+		Assert.assertFalse("po zániku se časovač zastaví", legenda.casovacBezi());
+		Assert.assertEquals("poslední krok legendu skryje", 0f, legenda.viditelnost(), 0f);
+		Assert.assertFalse(legenda.jeAktivni());
+	}
 }
