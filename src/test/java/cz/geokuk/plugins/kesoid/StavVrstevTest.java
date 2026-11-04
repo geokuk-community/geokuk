@@ -61,7 +61,7 @@ public class StavVrstevTest {
 		Assert.assertEquals(2, t.split("<br/>").length);
 		Assert.assertTrue(t, t.contains("Zvýrazňovací kruhy (F8): příliš husté, přibližte mapu"));
 		Assert.assertTrue(t, t.contains("Obsazenost (F9): nezobrazuje se v tak malém měřítku, přibližte mapu"));
-		Assert.assertFalse(t, t.contains("Jednotkové"));
+		Assert.assertFalse(t, t.contains("Kruhy v metrech"));
 	}
 
 	@Test
@@ -123,7 +123,7 @@ public class StavVrstevTest {
 
 	@Test
 	public void altF8ZapneObojeKdyzF8Nebylo() {
-		Assert.assertEquals("Zapnuté zvýrazňovací i jednotkové kruhy", ZpravyZkratek.jednotkoveKruhy(true, false, null));
+		Assert.assertEquals("Zapnuté zvýrazňovací kruhy s poloměrem v metrech", ZpravyZkratek.jednotkoveKruhy(true, false, null));
 		Assert.assertNull("F8 už svítilo, zapnutí je vidět", ZpravyZkratek.jednotkoveKruhy(true, true, null));
 		Assert.assertNull("vypnutí jednotkových", ZpravyZkratek.jednotkoveKruhy(false, false, null));
 		Assert.assertNull(ZpravyZkratek.jednotkoveKruhy(false, true, skryta(ALT_F8, DuvodNekresleni.PRILIS_HUSTE, 0)));
