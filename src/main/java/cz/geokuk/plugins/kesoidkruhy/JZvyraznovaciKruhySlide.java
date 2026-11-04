@@ -102,16 +102,12 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	@Override
 	public void paintComponent(final Graphics aG) {
 		kresli(aG);
-		hlasVynechane(aG);
+		hlasVynechane();
 	}
 
-	/** Po kreslení celého výřezu oznámí, kolik kruhů se vynechalo; z částečného překreslení (dlaždice) se neoznamuje, počet by byl jen za část výřezu. */
-	private void hlasVynechane(final Graphics g) {
+	/** Po kreslení oznámí, kolik kruhů se vynechalo; počet je vždy za celý výřez, i když se překreslovala jen jeho část. */
+	private void hlasVynechane() {
 		if (stavModel == null || !isSoordInitialized()) {
-			return;
-		}
-		final Rectangle clip = g.getClipBounds();
-		if (clip != null && !clip.contains(new Rectangle(getSoord().getDim()))) {
 			return;
 		}
 		final int vynechano = duvod == DuvodNekresleni.KRESLI ? vynechanychKruhu : 0;
@@ -232,13 +228,60 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		if (duvod != DuvodNekresleni.KRESLI) {
 			return;
 		}
-		final Rectangle clip = g.getClipBounds();
-		final Rectangle vyrez = clip != null ? clip : new Rectangle(getSoord().getDim());
+		// Výběr kruhů vychází vždy z celého výřezu, ne z oříznutí: při překreslení jen části (dlaždice, pás) se tak kreslí táž množina kruhů jako při překreslení celku.
+		final Rectangle vyrez = new Rectangle(getSoord().getDim());
 		if (vyrez.isEmpty()) {
 			return;
 		}
+		final Vyber vyber = vyber(r, vyrez);
+		vynechanychKruhu = vyber.castecnych - vyber.kreslene.size();
+		kresleneKruhu = vyber.kreslene.size();
 		final Color barva = kruhy.getBarva();
 		final Stroke prerus = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1, new float[] { 5.0f, 5.0f }, 0);
+		final Rectangle clip = g.getClipBounds();
+		g.setStroke(prerus);
+		for (final int[] p : vyber.kreslene) {
+			if (clip != null && !clip.intersects(p[0] - r, p[1] - r, 2 * r, 2 * r)) {
+				continue;
+			}
+			final java.awt.geom.Ellipse2D.Double kruh = new java.awt.geom.Ellipse2D.Double(p[0] - r, p[1] - r, 2 * r, 2 * r);
+			g.setColor(barva);
+			g.fill(kruh);
+			g.setColor(Color.WHITE);
+			g.draw(kruh);
+		}
+		if (vyber.pokryvajici > 0) {
+			g.setColor(new Color((barva.getRGB() & 0xFFFFFF) | PolomerKruhu.slozAlfu(barva.getAlpha(), vyber.pokryvajici) << 24, true));
+			g.fillRect(vyrez.x, vyrez.y, vyrez.width, vyrez.height);
+		}
+	}
+
+	/** Které kruhy s poloměrem v metrech se v celém výřezu kreslí; platí, dokud se nezmění výřez, data nebo poloměr. */
+	private static final class Vyber {
+		final Object klic;
+		final List<int[]> kreslene;
+		/** Kolik kruhů výřez celý pokrývá, kreslí se jako jedna plocha. */
+		final int pokryvajici;
+		/** Kolik kruhů mělo hranu ve výřezu, před omezením. */
+		final int castecnych;
+
+		Vyber(final Object klic, final List<int[]> kreslene, final int pokryvajici, final int castecnych) {
+			this.klic = klic;
+			this.kreslene = kreslene;
+			this.pokryvajici = pokryvajici;
+			this.castecnych = castecnych;
+		}
+	}
+
+	private Vyber posledniVyber;
+
+	private Vyber vyber(final double r, final Rectangle vyrez) {
+		final BoundingRect hranice = getSoord().getBoundingRect();
+		final Object klic = Arrays.asList(hranice.xx1, hranice.yy1, hranice.xx2, hranice.yy2, System.identityHashCode(iIndexator), r, vyrez.width, vyrez.height);
+		final Vyber minuly = posledniVyber;
+		if (minuly != null && minuly.klic.equals(klic)) {
+			return minuly;
+		}
 		// Keš mimo výřez má kruh do výřezu zasahovat; okraj je omezen, aby se nepřetekly celá čísla.
 		final int okraj = (int) Math.min(Integer.MAX_VALUE / 4, Math.ceil(r) + 1);
 		final double x2 = vyrez.x + vyrez.width;
@@ -259,23 +302,11 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 			castecne.add(new int[] { p.x, p.y });
 		});
 		// Kruhy s hranou ve výřezu se kreslí po jednom a cena roste s plochou: nejbližší ke středu výřezu se kreslí, dokud se nevyčerpá rozpočet ploch.
-		final Dimension dim = getSoord().getDim();
-		final int limit = PolomerKruhu.limitKruhu(r, (double) dim.width * dim.height);
+		final int limit = PolomerKruhu.limitKruhu(r, (double) vyrez.width * vyrez.height);
 		final List<int[]> kreslene = PolomerKruhu.nejblizsi(castecne, vyrez.x + vyrez.width / 2.0, vyrez.y + vyrez.height / 2.0, limit);
-		vynechanychKruhu = castecne.size() - kreslene.size();
-		kresleneKruhu = kreslene.size();
-		g.setStroke(prerus);
-		for (final int[] p : kreslene) {
-			final java.awt.geom.Ellipse2D.Double kruh = new java.awt.geom.Ellipse2D.Double(p[0] - r, p[1] - r, 2 * r, 2 * r);
-			g.setColor(barva);
-			g.fill(kruh);
-			g.setColor(Color.WHITE);
-			g.draw(kruh);
-		}
-		if (pokryvajici[0] > 0) {
-			g.setColor(new Color((barva.getRGB() & 0xFFFFFF) | PolomerKruhu.slozAlfu(barva.getAlpha(), pokryvajici[0]) << 24, true));
-			g.fillRect(vyrez.x, vyrez.y, vyrez.width, vyrez.height);
-		}
+		final Vyber novy = new Vyber(klic, kreslene, pokryvajici[0], castecne.size());
+		posledniVyber = novy;
+		return novy;
 	}
 
 	/**

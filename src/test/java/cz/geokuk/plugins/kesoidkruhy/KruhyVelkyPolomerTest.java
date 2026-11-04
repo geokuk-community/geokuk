@@ -440,28 +440,49 @@ public class KruhyVelkyPolomerTest {
 		}
 	}
 
-	@Test
-	public void vynechanyJeNejvzdalenejsiOdStreduClipuMimoPocatek() {
+	/** Okno 800×600 s {@code limit} kruhy kolem středu a jedním kruhem těsně u levého horního rohu okna. */
+	private JZvyraznovaciKruhySlide slideSVyberemOdStredu() {
 		final JZvyraznovaciKruhySlide ref = slide(17, jedna());
 		final int metru = polomerMetruProPixely(ref, R_PX);
 		final double px = mouNaPixel(ref);
 		final List<Mou> kese = new ArrayList<>();
-		// osa y souřadnic Mou míří nahoru; střed oříznutého výřezu (100, 50, 500, 400) je (350, 250); okno má střed MISTO v (400, 300)
 		for (int k = 0; k < limitProOkno(); k++) {
-			kese.add(new Mou(MISTO.xx + (int) Math.round((-50 + k % 3) * px), MISTO.yy + (int) Math.round((50 - k / 3) * px)));
+			kese.add(new Mou(MISTO.xx + (int) Math.round((k % 3) * px), MISTO.yy + (int) Math.round((-k / 3 % 3) * px)));
 		}
-		// kruh těsně u levého horního rohu výřezu je od jeho středu nejdál
-		kese.add(new Mou(MISTO.xx + (int) Math.round(-290 * px), MISTO.yy + (int) Math.round(240 * px)));
+		// osa y souřadnic Mou míří nahoru: kruh u levého horního rohu okna je od středu nejdál
+		kese.add(new Mou(MISTO.xx + (int) Math.round(-380 * px), MISTO.yy + (int) Math.round(280 * px)));
 		final JZvyraznovaciKruhySlide s = slide(17, kese);
 		s.onEvent(metry(metru));
-		final BufferedImage i = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
-		final Graphics2D g = i.createGraphics();
-		g.setClip(100, 50, 500, 400);
-		s.paintComponent(g);
-		g.dispose();
+		return s;
+	}
+
+	@Test
+	public void vynechanyJeNejvzdalenejsiOdStreduVyrezu() {
+		final JZvyraznovaciKruhySlide s = slideSVyberemOdStredu();
+		final BufferedImage i = nakresli(s);
 		Assert.assertEquals(1, s.getVynechanychKruhu());
-		Assert.assertFalse("vynechán kruh u rohu výřezu", obarveno(i, 110, 60));
-		Assert.assertTrue("střed výřezu se kreslí", obarveno(i, 350, 250));
+		Assert.assertFalse("vynechán kruh u rohu okna", obarveno(i, 20, 20));
+		Assert.assertTrue("střed okna se kreslí", obarveno(i, W / 2, H / 2));
+	}
+
+	@Test
+	public void vyberNezaviSiNaOriznutiPrekreslovaneCasti() {
+		final JZvyraznovaciKruhySlide s = slideSVyberemOdStredu();
+		final BufferedImage cele = nakresli(s);
+		final BufferedImage poCastech = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+		final int[][] casti = { { 0, 0, 400, 300 }, { 400, 0, 400, 300 }, { 0, 300, 400, 300 }, { 400, 300, 400, 300 }, { 0, 540, 800, 60 } };
+		for (final int[] c : casti) {
+			final Graphics2D g = poCastech.createGraphics();
+			g.setClip(c[0], c[1], c[2], c[3]);
+			s.paintComponent(g);
+			g.dispose();
+		}
+		for (int y = 0; y < H; y += 7) {
+			for (int x = 0; x < W; x += 7) {
+				Assert.assertEquals("pixel " + x + "," + y, cele.getRGB(x, y), poCastech.getRGB(x, y));
+			}
+		}
+		Assert.assertFalse("pás dole se nekreslí jinou množinou kruhů", obarveno(poCastech, 20, 20));
 	}
 
 	private JZvyraznovaciKruhySlide slideSeMrizkou(final int pocet, final int rPx) {
