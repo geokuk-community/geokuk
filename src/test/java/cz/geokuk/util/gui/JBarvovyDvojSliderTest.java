@@ -147,14 +147,49 @@ public class JBarvovyDvojSliderTest {
 	}
 
 	@Test
-	public void textyBublinek() {
-		Assert.assertEquals("Jas 0 %", JBarvovyDvojSlider.textBarvy(0));
-		Assert.assertEquals("Jas 50 %", JBarvovyDvojSlider.textBarvy(128));
-		Assert.assertEquals("Jas 100 %", JBarvovyDvojSlider.textBarvy(255));
-		Assert.assertEquals("Průhlednost 0 %", JBarvovyDvojSlider.textPruhlednosti(255));
-		Assert.assertEquals("Průhlednost 50 %", JBarvovyDvojSlider.textPruhlednosti(128));
-		Assert.assertEquals("Průhlednost 73 %", JBarvovyDvojSlider.textPruhlednosti(70));
-		Assert.assertEquals("Průhlednost 100 %", JBarvovyDvojSlider.textPruhlednosti(0));
+	public void textyBublinekJsouJenCislaSProcenty() {
+		Assert.assertEquals("0 %", JBarvovyDvojSlider.textBarvy(255));
+		Assert.assertEquals("50 %", JBarvovyDvojSlider.textBarvy(128));
+		Assert.assertEquals("100 %", JBarvovyDvojSlider.textBarvy(0));
+		Assert.assertEquals("0 %", JBarvovyDvojSlider.textPruhlednosti(255));
+		Assert.assertEquals("50 %", JBarvovyDvojSlider.textPruhlednosti(128));
+		Assert.assertEquals("73 %", JBarvovyDvojSlider.textPruhlednosti(70));
+		Assert.assertEquals("100 %", JBarvovyDvojSlider.textPruhlednosti(0));
+		for (int v = 0; v <= 255; v++) {
+			Assert.assertTrue(v + ": " + JBarvovyDvojSlider.textBarvy(v), JBarvovyDvojSlider.textBarvy(v).matches("\\d{1,3} %"));
+			Assert.assertTrue(JBarvovyDvojSlider.textPruhlednosti(v).matches("\\d{1,3} %"));
+		}
+	}
+
+	/** Číslo roste od prvního popisku osy (nahoře) k poslednímu (dole), u obou posuvníků stejně. */
+	@Test
+	public void ciselnaHodnotaRosteSmeremOsy() {
+		final List<JBarvovyDvojSlider.Popisek> barva = JBarvovyDvojSlider.osaBarvy();
+		// osa je vykreslena shora: Bílá (hodnota 255) nahoře, Černá (0) dole
+		final JBarvovyDvojSlider.Popisek nahore = barva.get(barva.size() - 1);
+		final JBarvovyDvojSlider.Popisek dole = barva.get(0);
+		Assert.assertEquals("Bílá", nahore.text);
+		Assert.assertEquals("Černá", dole.text);
+		Assert.assertEquals("0 %", JBarvovyDvojSlider.textBarvy(nahore.hodnota));
+		Assert.assertEquals("100 %", JBarvovyDvojSlider.textBarvy(dole.hodnota));
+		final List<JBarvovyDvojSlider.Popisek> pruhlednost = JBarvovyDvojSlider.osaPruhlednosti();
+		Assert.assertEquals("0 %", JBarvovyDvojSlider.textPruhlednosti(pruhlednost.get(0).hodnota));
+		Assert.assertEquals("100 %", JBarvovyDvojSlider.textPruhlednosti(pruhlednost.get(pruhlednost.size() - 1).hodnota));
+		// směrem dolů po ose čísla neklesají
+		int predchozi = -1;
+		for (int v = 255; v >= 0; v--) {
+			final int p = Integer.parseInt(JBarvovyDvojSlider.textBarvy(v).replace(" %", ""));
+			Assert.assertTrue(p >= predchozi);
+			predchozi = p;
+		}
+	}
+
+	@Test
+	public void barvaSeZaokrouhlujeNeOrezava() {
+		Assert.assertEquals("šedá 41 = 83,92 % tmavosti", "84 %", JBarvovyDvojSlider.textBarvy(41));
+		Assert.assertEquals("šedá 40 = 84,31 %", "84 %", JBarvovyDvojSlider.textBarvy(40));
+		Assert.assertEquals("2 %", JBarvovyDvojSlider.textBarvy(250));
+		Assert.assertEquals("98 %", JBarvovyDvojSlider.textBarvy(4));
 	}
 
 	@Test
@@ -162,13 +197,6 @@ public class JBarvovyDvojSliderTest {
 		for (int procent = 0; procent <= 100; procent += 25) {
 			Assert.assertEquals(procent, JBarvovyDvojSlider.pruhlednostProcent(JBarvovyDvojSlider.krytiProPruhlednost(procent)));
 		}
-	}
-
-	@Test
-	public void jasSeZaokrouhlujeNeOrezava() {
-		Assert.assertEquals("šedá 40 = 15,69 %", "Jas 16 %", JBarvovyDvojSlider.textBarvy(40));
-		Assert.assertEquals("Jas 2 %", JBarvovyDvojSlider.textBarvy(4));
-		Assert.assertEquals("Jas 98 %", JBarvovyDvojSlider.textBarvy(250));
 	}
 
 	@Test
@@ -364,7 +392,7 @@ public class JBarvovyDvojSliderTest {
 		final Rectangle r = kresli(rodic, obraz());
 		Assert.assertNotNull(r);
 		final Point osa = SwingUtilities.convertPoint(slider.getPruhlednik(), slider.getPruhlednik().getWidth() / 2, 0, rodic);
-		Assert.assertTrue("bublinka je vlevo od popisků os, ne u osy: " + r + " osa " + osa, r.x < osa.x - 120);
+		Assert.assertTrue("bublinka je vlevo od popisků os, ne u osy: " + r + " osa " + osa, r.x < osa.x - 100);
 		slider.getPruhlednik().setValueIsAdjusting(false);
 	}
 
@@ -390,7 +418,7 @@ public class JBarvovyDvojSliderTest {
 	public void zmenaHodnotyBezTazeniUkazeBublinku() {
 		slider.getBarvovnik().setValue(10);
 		Assert.assertTrue(bublinky.get(0).jeAktivni());
-		Assert.assertEquals("Jas 4 %", bublinky.get(0).getText());
+		Assert.assertEquals("96 %", bublinky.get(0).getText());
 	}
 
 	@Test

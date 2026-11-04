@@ -177,14 +177,18 @@ public class JBarvovyDvojSlider extends JPanel {
 		}
 	}
 
-	/** Jas v procentech; 0 je černá, 100 bílá. */
+	/** Barva v procentech ve směru osy: nahoře je bílá (0 %), dole černá (100 %). */
 	public static String textBarvy(final int hodnota) {
-		return "Jas " + Math.round(hodnota * 100f / MAX) + " %";
+		return barvaProcent(hodnota) + " %";
 	}
 
-	/** Průhlednost v procentech z krytí 0 až 255: 0 % je plně krycí, 100 % neviditelná. */
+	static int barvaProcent(final int hodnota) {
+		return Math.round((MAX - hodnota) * 100f / MAX);
+	}
+
+	/** Průhlednost v procentech z krytí 0 až 255 ve směru osy: nahoře plně krycí (0 %), dole neviditelná (100 %). */
 	public static String textPruhlednosti(final int krytiAlfa) {
-		return "Průhlednost " + pruhlednostProcent(krytiAlfa) + " %";
+		return pruhlednostProcent(krytiAlfa) + " %";
 	}
 
 	static int pruhlednostProcent(final int krytiAlfa) {
