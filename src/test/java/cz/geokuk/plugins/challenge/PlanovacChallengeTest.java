@@ -312,4 +312,71 @@ public class PlanovacChallengeTest {
 		pockej(() -> model.vysledek(c) != null && model.vysledek(c).pocetZapocitanychNalezu() > 0
 				&& model.vysledek(c).pocetZapocitanychNalezu() == VypocetSektoru.spocti(ZdrojPravidel.PGC, LAT, LON, null, Collections.<String> emptySet(), mala).pocetZapocitanychNalezu(), "výsledek z malých dat");
 	}
+
+	@Test
+	public void predpoctyNebeziSoucasne() throws Exception {
+		final java.util.concurrent.atomic.AtomicInteger bezi = new java.util.concurrent.atomic.AtomicInteger();
+		final java.util.concurrent.atomic.AtomicInteger nejvic = new java.util.concurrent.atomic.AtomicInteger();
+		final Oblast o = new OblastPolygony("o1", "v1", Collections.singletonList(new Cast(OblastPolygonyTest.ctverec(49.0, 13.0, 51.0, 15.0), Collections.<Okraj> emptyList())));
+		planovac.zavri();
+		planovac = new PlanovacChallenge(model, id -> {
+			nejvic.accumulateAndGet(bezi.incrementAndGet(), Math::max);
+			try {
+				Thread.sleep(150);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			bezi.decrementAndGet();
+			return Optional.of(o);
+		}, () -> domov, () -> adresar, () -> stredMapy, vystredeno::add, 20);
+		napojNaModel();
+		final Challenge[] c = new Challenge[4];
+		for (int i = 0; i < c.length; i++) {
+			c[i] = model.ulozVlastni(vlastni("C" + i, Stred.souradnice(49.5 + i * 0.1, 14.0), OblastDef.stat("o1")));
+		}
+		planovac.keseNacteny(kese(300, 1));
+		zapni(c);
+		pockej(() -> {
+			for (final Challenge d : c) {
+				if (model.vysledek(d) == null) {
+					return false;
+				}
+			}
+			return true;
+		}, "všechny výsledky");
+		Assert.assertEquals(1, nejvic.get());
+	}
+
+	@Test
+	public void zastaralyBehNepublikujeVysledek() throws Exception {
+		final java.util.concurrent.CountDownLatch uvnitr = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.CountDownLatch pust = new java.util.concurrent.CountDownLatch(1);
+		final java.util.concurrent.atomic.AtomicInteger volani = new java.util.concurrent.atomic.AtomicInteger();
+		final Oblast o = new OblastPolygony("o1", "v1", Collections.singletonList(new Cast(OblastPolygonyTest.ctverec(49.0, 13.0, 51.0, 15.0), Collections.<Okraj> emptyList())));
+		planovac.zavri();
+		planovac = new PlanovacChallenge(model, id -> {
+			if (volani.incrementAndGet() == 1) {
+				uvnitr.countDown();
+				try {
+					pust.await();
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+			return Optional.of(o);
+		}, () -> domov, () -> adresar, () -> stredMapy, vystredeno::add, 20);
+		napojNaModel();
+		final Challenge c = model.ulozVlastni(vlastni("Oblast", Stred.souradnice(50.0, 14.0), OblastDef.stat("o1")));
+		final List<VypocetSektoruTest.Kes> stara = kese(500, 1);
+		final List<VypocetSektoruTest.Kes> nova = kese(700, 2);
+		planovac.keseNacteny(stara);
+		zapni(c);
+		Assert.assertTrue(uvnitr.await(20, java.util.concurrent.TimeUnit.SECONDS));
+		planovac.keseNacteny(nova);
+		pust.countDown();
+		final int ocekavano = VypocetSektoru.spocti(ZdrojPravidel.PGC, 50.0, 14.0, o, Collections.<String> emptySet(), nova).pocetZapocitanychNalezu();
+		pockej(() -> model.vysledek(c) != null && model.vysledek(c).pocetZapocitanychNalezu() == ocekavano, "výsledek z nových dat");
+		Thread.sleep(500);
+		Assert.assertEquals("starý běh nic nepublikoval", 1, pocet(ChallengeZmenenyEvent.Druh.VYSLEDEK));
+	}
 }
