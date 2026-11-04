@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.kesoidkruhy;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /** Poloměr jednotkových kruhů v metrech: přednastavené hodnoty posuvníku, převod z textu a do textu, přepočet na pixely. */
@@ -46,6 +48,25 @@ final class PolomerKruhu {
 		final double nejdalnejsiX = Math.max(Math.abs(x1 - sx), Math.abs(x2 - sx));
 		final double nejdalnejsiY = Math.max(Math.abs(y1 - sy), Math.abs(y2 - sy));
 		return nejdalnejsiX * nejdalnejsiX + nejdalnejsiY * nejdalnejsiY <= r * r ? Kresleni.VYPLN_VYREZ : Kresleni.KRUH;
+	}
+
+	/** Nejvíc kruhů, jejichž okraj protíná výřez, které se při jednom kreslení vykreslí; kreslení jednoho velkého kruhu trvá řádově milisekundy. */
+	static final int MAX_CASTECNYCH_KRUHU = 30;
+
+	/** Nejvýš {@code limit} bodů nejbližších bodu ({@code cx}, {@code cy}), od nejbližšího; při menším počtu všechny beze změny pořadí. */
+	static List<int[]> nejblizsi(final List<int[]> body, final double cx, final double cy, final int limit) {
+		if (body.size() <= limit) {
+			return body;
+		}
+		final List<int[]> kopie = new ArrayList<>(body);
+		kopie.sort((a, b) -> Double.compare(vzdalenost2(a, cx, cy), vzdalenost2(b, cx, cy)));
+		return new ArrayList<>(kopie.subList(0, limit));
+	}
+
+	private static double vzdalenost2(final int[] b, final double cx, final double cy) {
+		final double dx = b[0] - cx;
+		final double dy = b[1] - cy;
+		return dx * dx + dy * dy;
 	}
 
 	/** Výsledná průhlednost, když se přes sebe položí {@code pocet} vrstev stejné barvy s krytím {@code alfa} (0 až 255). */

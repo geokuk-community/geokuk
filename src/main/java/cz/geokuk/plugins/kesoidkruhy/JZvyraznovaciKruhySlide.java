@@ -1,6 +1,8 @@
 package cz.geokuk.plugins.kesoidkruhy;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
@@ -22,6 +24,9 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 
 	private EKaType podklad;
 	private KruhySettings kruhy;
+	/** Poslední rozhodnutí o kreslení a počet vynechaných kruhů; z kreslení, pro vysvětlení, proč kruhy nejsou vidět. */
+	private volatile Rozhodnuti duvod = Rozhodnuti.KRESLI;
+	private volatile int vynechanychKruhu;
 	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy(this);
 
 	public JZvyraznovaciKruhySlide() {
@@ -80,7 +85,9 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 			return;
 		}
 		final int pocet = iIndexator.count(getSoord().getBoundingRect());
-		if (!kreslit(false, r, pocet, limitIkon, prilisHuste(pocet, Math.PI * r * r))) {
+		duvod = rozhodni(false, r, pocet, limitIkon, prilisHuste(pocet, Math.PI * r * r));
+		vynechanychKruhu = 0;
+		if (duvod != Rozhodnuti.KRESLI) {
 			return;
 		}
 
@@ -99,22 +106,42 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 
 	}
 
+	/** Zda se kruhy kreslí, a když ne, proč. */
+	enum Rozhodnuti {
+		KRESLI, LIMIT_POCTU, PRILIS_HUSTE, POLOMER_PRILIS_MALY
+	}
+
 	/**
-	 * Zda se kruhy kreslí. Počet nad limitem je skrývá vždy. V pixelech je skrývá i příliš velké pokrytí okna, v metrech ne: skutečný poloměr se kreslí bez ohledu na to, kolik
-	 * obrazovky zakryje.
+	 * Rozhodnutí o kreslení. Počet nad limitem kruhy skrývá vždy. V pixelech je skrývá i příliš velké pokrytí okna, v metrech ne: skutečný poloměr se kreslí bez ohledu na to,
+	 * kolik obrazovky zakryje.
 	 */
-	static boolean kreslit(final boolean vMetrech, final double polomerPx, final int pocet, final int limitIkon, final boolean prilisHuste) {
-		if (polomerPx <= 0 || pocet > limitIkon) {
-			return false;
+	static Rozhodnuti rozhodni(final boolean vMetrech, final double polomerPx, final int pocet, final int limitIkon, final boolean prilisHuste) {
+		if (polomerPx <= 0) {
+			return Rozhodnuti.POLOMER_PRILIS_MALY;
 		}
-		return vMetrech || !prilisHuste;
+		if (pocet > limitIkon) {
+			return Rozhodnuti.LIMIT_POCTU;
+		}
+		return !vMetrech && prilisHuste ? Rozhodnuti.PRILIS_HUSTE : Rozhodnuti.KRESLI;
+	}
+
+	/** Důvod, proč se kruhy při posledním kreslení nekreslily; KRESLI, když se kreslily. */
+	Rozhodnuti getDuvod() {
+		return duvod;
+	}
+
+	/** Kolik kruhů s hranou ve výřezu se při posledním kreslení vynechalo kvůli {@link PolomerKruhu#MAX_CASTECNYCH_KRUHU}. */
+	int getVynechanychKruhu() {
+		return vynechanychKruhu;
 	}
 
 	/** Kruhy s poloměrem v metrech; okolo kruhů většího než výřez se kreslí jen to, co je ve výřezu. */
 	private void kresliVMetrech(final Graphics2D g) {
 		final double r = PolomerKruhu.pixlu(kruhy.getPolomerMetru(), getSoord().getPixluNaMetr());
 		final int pocet = iIndexator.count(getSoord().getBoundingRect());
-		if (!kreslit(true, r, pocet, limitIkon, false)) {
+		duvod = rozhodni(true, r, pocet, limitIkon, false);
+		vynechanychKruhu = 0;
+		if (duvod != Rozhodnuti.KRESLI) {
 			return;
 		}
 		final Rectangle clip = g.getClipBounds();
@@ -130,6 +157,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		final double y2 = vyrez.y + vyrez.height;
 		// Kruhy, které výřez celý pokrývají, se spojí do jedné plochy se složeným krytím; po jednom by se vyplňovala celá obrazovka pro každou keš.
 		final int[] pokryvajici = { 0 };
+		final List<int[]> castecne = new ArrayList<>();
 		iIndexator.bound(getSoord().transforToBounding(new Rectangle(vyrez.x - okraj, vyrez.y - okraj, vyrez.width + 2 * okraj, vyrez.height + 2 * okraj))).stream().forEach(wpt -> {
 			final Point p = getSoord().transform(wpt.getMou());
 			final PolomerKruhu.Kresleni jak = PolomerKruhu.kresleni(p.x, p.y, r, vyrez.x, vyrez.y, x2, y2);
@@ -140,13 +168,19 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 				pokryvajici[0]++;
 				return;
 			}
-			g.setStroke(prerus);
+			castecne.add(new int[] { p.x, p.y });
+		});
+		// Kruhy s hranou ve výřezu se kreslí po jednom a jeden velký kruh trvá milisekundy: nejbližších ke středu výřezu je nejvýš MAX_CASTECNYCH_KRUHU.
+		final List<int[]> kreslene = PolomerKruhu.nejblizsi(castecne, vyrez.x + vyrez.width / 2.0, vyrez.y + vyrez.height / 2.0, PolomerKruhu.MAX_CASTECNYCH_KRUHU);
+		vynechanychKruhu = castecne.size() - kreslene.size();
+		g.setStroke(prerus);
+		for (final int[] p : kreslene) {
+			final java.awt.geom.Ellipse2D.Double kruh = new java.awt.geom.Ellipse2D.Double(p[0] - r, p[1] - r, 2 * r, 2 * r);
 			g.setColor(barva);
-			final java.awt.geom.Ellipse2D.Double kruh = new java.awt.geom.Ellipse2D.Double(p.x - r, p.y - r, 2 * r, 2 * r);
 			g.fill(kruh);
 			g.setColor(Color.WHITE);
 			g.draw(kruh);
-		});
+		}
 		if (pokryvajici[0] > 0) {
 			g.setColor(new Color((barva.getRGB() & 0xFFFFFF) | PolomerKruhu.slozAlfu(barva.getAlpha(), pokryvajici[0]) << 24, true));
 			g.fillRect(vyrez.x, vyrez.y, vyrez.width, vyrez.height);
