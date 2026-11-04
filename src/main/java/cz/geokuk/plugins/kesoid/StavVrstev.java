@@ -12,6 +12,7 @@ public final class StavVrstev {
 	/** Od tohoto přiblížení se Obsazenost 161 m kreslí (menší kruh než 3 px se nekreslí). */
 	public static final int NEJNIZSI_ZOOM_OBSAZENOSTI = 11;
 	public static final String TEXT_STITKU = "Kruhy skryté";
+	public static final String TEXT_STITKU_OMEZENO = "Kruhy omezené";
 
 	/** Skrytá vrstva: důvod a limit, o který šlo (u limitu počtu). */
 	public static final class Skryta {
@@ -46,12 +47,17 @@ public final class StavVrstev {
 		}
 	}
 
-	private static final StavVrstev PRAZDNY = new StavVrstev(Collections.emptyMap());
+	private static final StavVrstev PRAZDNY = new StavVrstev(Collections.emptyMap(), 0, 0);
 
 	private final Map<VrstvaNadMapou, Skryta> skryte;
+	/** Kolik kruhů s hranou ve výřezu se nekreslí kvůli omezení jejich počtu, a kolik se jich kreslí. */
+	private final int vynechanychKruhu;
+	private final int kreslenychKruhu;
 
-	private StavVrstev(final Map<VrstvaNadMapou, Skryta> skryte) {
+	private StavVrstev(final Map<VrstvaNadMapou, Skryta> skryte, final int vynechanychKruhu, final int kreslenychKruhu) {
 		this.skryte = skryte;
+		this.vynechanychKruhu = vynechanychKruhu;
+		this.kreslenychKruhu = kreslenychKruhu;
 	}
 
 	public static StavVrstev prazdny() {
@@ -67,7 +73,25 @@ public final class StavVrstev {
 		} else {
 			m.put(vrstva, new Skryta(duvod, duvod == DuvodNekresleni.LIMIT_POCTU ? limit : 0));
 		}
-		return m.isEmpty() ? PRAZDNY : new StavVrstev(Collections.unmodifiableMap(m));
+		return nova(Collections.unmodifiableMap(m), vynechanychKruhu, kreslenychKruhu);
+	}
+
+	/** Nový stav s počtem vynechaných a kreslených kruhů; bez vynechaných se kreslené nepamatují. */
+	public StavVrstev sVynechanymi(final int vynechano, final int kresleno) {
+		return vynechano > 0 ? nova(skryte, vynechano, kresleno) : nova(skryte, 0, 0);
+	}
+
+	private static StavVrstev nova(final Map<VrstvaNadMapou, Skryta> skryte, final int vynechano, final int kresleno) {
+		return skryte.isEmpty() && vynechano == 0 ? PRAZDNY : new StavVrstev(skryte, vynechano, kresleno);
+	}
+
+	public int getVynechanychKruhu() {
+		return vynechanychKruhu;
+	}
+
+	/** Má se ukázat štítek: nějaká zapnutá vrstva se nekreslí, nebo se kruhy kreslí jen částečně. */
+	public boolean jeKVideni() {
+		return maSkryte() || vynechanychKruhu > 0;
 	}
 
 	/** Je aspoň jedna zapnutá vrstva skrytá? */
@@ -91,7 +115,7 @@ public final class StavVrstev {
 
 	/** Text štítku ve stavovém řádku. */
 	public String text() {
-		return TEXT_STITKU;
+		return maSkryte() ? TEXT_STITKU : TEXT_STITKU_OMEZENO;
 	}
 
 	/** Tooltip štítku: řádek pro každou skrytou vrstvu s důvodem. */
@@ -104,6 +128,12 @@ public final class StavVrstev {
 			}
 			prvni = false;
 			sb.append(e.getKey().getNazev()).append(": ").append(textDuvodu(e.getKey(), e.getValue().getDuvod(), e.getValue().getLimit()));
+		}
+		if (vynechanychKruhu > 0) {
+			if (!prvni) {
+				sb.append("<br/>");
+			}
+			sb.append("Jednotkové kruhy: kresleno jen ").append(kreslenychKruhu).append(" nejbližších ke středu, přibližte mapu");
 		}
 		return sb.append("</html>").toString();
 	}
@@ -124,12 +154,16 @@ public final class StavVrstev {
 
 	@Override
 	public boolean equals(final Object o) {
-		return o instanceof StavVrstev && skryte.equals(((StavVrstev) o).skryte);
+		if (!(o instanceof StavVrstev)) {
+			return false;
+		}
+		final StavVrstev s = (StavVrstev) o;
+		return skryte.equals(s.skryte) && vynechanychKruhu == s.vynechanychKruhu && kreslenychKruhu == s.kreslenychKruhu;
 	}
 
 	@Override
 	public int hashCode() {
-		return skryte.hashCode();
+		return Objects.hash(skryte, vynechanychKruhu, kreslenychKruhu);
 	}
 
 	@Override

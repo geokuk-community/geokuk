@@ -17,6 +17,16 @@ public class StavVrstevModel extends Model0 {
 		fire(new StavVrstevEvent(novy));
 	}
 
+	/** Kolik kruhů s hranou ve výřezu se vynechalo kvůli omezení jejich počtu; 0, když žádný. */
+	public void nahlasVynechane(final int vynechano, final int kresleno) {
+		final StavVrstev novy = stav.sVynechanymi(vynechano, kresleno);
+		if (novy.equals(stav)) {
+			return;
+		}
+		stav = novy;
+		fire(new StavVrstevEvent(novy));
+	}
+
 	public StavVrstev getStav() {
 		return stav;
 	}

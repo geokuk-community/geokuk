@@ -159,4 +159,46 @@ public class KruhyStavTest {
 		kopie.onVyrezChanged();
 		Assert.assertTrue(udalosti.isEmpty());
 	}
+
+	private static void dokonciUdalosti() throws Exception {
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+		});
+	}
+
+	private void nakresliCely(final JZvyraznovaciKruhySlide s) {
+		final java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(W, H, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = i.createGraphics();
+		s.paintComponent(g);
+		g.dispose();
+	}
+
+	@Test
+	public void vynechaneCastecneKruhySeHlasiPoKresleniCelehoVyrezu() throws Exception {
+		final JZvyraznovaciKruhySlide s = slide(17, PolomerKruhu.MAX_CASTECNYCH_KRUHU + 3);
+		s.onEvent(metry((int) Math.round(100 / s.getSoord().getPixluNaMetr()), true));
+		nakresliCely(s);
+		dokonciUdalosti();
+		Assert.assertEquals(3, stav.getStav().getVynechanychKruhu());
+		Assert.assertTrue(stav.getStav().jeKVideni());
+		Assert.assertFalse(stav.getStav().maSkryte());
+		final int udalostiPred = udalosti.size();
+		nakresliCely(s);
+		dokonciUdalosti();
+		Assert.assertEquals("stejný počet se neoznamuje znovu", udalostiPred, udalosti.size());
+		s.onEvent(pixely(10, true));
+		Assert.assertEquals("přepnutí do pixelů vynechání ruší", 0, stav.getStav().getVynechanychKruhu());
+	}
+
+	@Test
+	public void castecnePrekresleniVynechaneNeoznamuje() throws Exception {
+		final JZvyraznovaciKruhySlide s = slide(17, PolomerKruhu.MAX_CASTECNYCH_KRUHU + 3);
+		s.onEvent(metry((int) Math.round(100 / s.getSoord().getPixluNaMetr()), true));
+		final java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(W, H, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = i.createGraphics();
+		g.setClip(250, 150, 300, 300);
+		s.paintComponent(g);
+		g.dispose();
+		dokonciUdalosti();
+		Assert.assertEquals(0, stav.getStav().getVynechanychKruhu());
+	}
 }

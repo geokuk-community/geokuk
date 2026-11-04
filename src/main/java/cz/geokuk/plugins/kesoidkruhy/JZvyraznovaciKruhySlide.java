@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
 import cz.geokuk.core.coord.JSingleSlide0;
 import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.plugins.kesoid.DuvodNekresleni;
@@ -32,6 +34,7 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 	/** Poslední rozhodnutí o kreslení a počet vynechaných kruhů; z kreslení, pro vysvětlení, proč kruhy nejsou vidět. */
 	private volatile DuvodNekresleni duvod = DuvodNekresleni.KRESLI;
 	private volatile int vynechanychKruhu;
+	private int hlaseneVynechane;
 	private final ViditelnostSKesoidy viditelnost = new ViditelnostSKesoidy(this);
 	/** Null v kopii pro rendrování: ta o stavu nehlásí. */
 	private StavVrstevModel stavModel;
@@ -95,6 +98,28 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 
 	@Override
 	public void paintComponent(final Graphics aG) {
+		kresli(aG);
+		hlasVynechane(aG);
+	}
+
+	/** Po kreslení celého výřezu oznámí, kolik kruhů se vynechalo; z částečného překreslení (dlaždice) se neoznamuje, počet by byl jen za část výřezu. */
+	private void hlasVynechane(final Graphics g) {
+		if (stavModel == null || !isSoordInitialized()) {
+			return;
+		}
+		final Rectangle clip = g.getClipBounds();
+		if (clip != null && !clip.contains(new Rectangle(getSoord().getDim()))) {
+			return;
+		}
+		final int vynechano = duvod == DuvodNekresleni.KRESLI ? vynechanychKruhu : 0;
+		if (vynechano == hlaseneVynechane) {
+			return;
+		}
+		hlaseneVynechane = vynechano;
+		SwingUtilities.invokeLater(() -> stavModel.nahlasVynechane(vynechano, PolomerKruhu.MAX_CASTECNYCH_KRUHU));
+	}
+
+	private void kresli(final Graphics aG) {
 		if (iIndexator == null) {
 			return;
 		}
@@ -175,6 +200,10 @@ public class JZvyraznovaciKruhySlide extends JSingleSlide0 {
 		final DuvodNekresleni d = aktualniDuvod();
 		stavModel.nahlas(VrstvaNadMapou.ZVYRAZNOVACI_KRUHY, jednotkove ? DuvodNekresleni.KRESLI : d, limitIkon);
 		stavModel.nahlas(VrstvaNadMapou.JEDNOTKOVE_KRUHY, jednotkove ? d : DuvodNekresleni.KRESLI, limitIkon);
+		if (!jednotkove || d != DuvodNekresleni.KRESLI) {
+			hlaseneVynechane = 0;
+			stavModel.nahlasVynechane(0, 0);
+		}
 	}
 
 	/** Důvod, proč se kruhy při posledním kreslení nekreslily; KRESLI, když se kreslily. */

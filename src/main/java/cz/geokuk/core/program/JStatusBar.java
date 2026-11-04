@@ -328,8 +328,9 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	public void onEvent(final StavVrstevEvent event) {
 		final StavVrstev stav = event.getStav();
-		stitekSkrytychKruhu.setToolTipText(stav.maSkryte() ? stav.tooltip() : null);
-		stitekSkrytychKruhu.setVisible(stav.maSkryte());
+		stitekSkrytychKruhu.setText(stav.text());
+		stitekSkrytychKruhu.setToolTipText(stav.jeKVideni() ? stav.tooltip() : null);
+		stitekSkrytychKruhu.setVisible(stav.jeKVideni());
 		revalidate();
 	}
 

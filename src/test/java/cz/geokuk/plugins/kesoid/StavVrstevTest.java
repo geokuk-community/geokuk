@@ -188,4 +188,39 @@ public class StavVrstevTest {
 		Assert.assertEquals(238, JToast.stredY(300));
 		Assert.assertEquals(2500, JToast.DRZENI_MS);
 	}
+
+	@Test
+	public void vynechaneKruhyDajiStitekOmezeneATooltip() {
+		final StavVrstev s = StavVrstev.prazdny().sVynechanymi(5, 12);
+		Assert.assertFalse(s.maSkryte());
+		Assert.assertTrue(s.jeKVideni());
+		Assert.assertEquals("Kruhy omezené", s.text());
+		Assert.assertEquals(5, s.getVynechanychKruhu());
+		Assert.assertTrue(s.tooltip(), s.tooltip().contains("kresleno jen 12 nejbližších"));
+		Assert.assertSame("bez vynechaných je stav zase prázdný", StavVrstev.prazdny(), s.sVynechanymi(0, 12));
+		final StavVrstev oboji = s.s(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0);
+		Assert.assertEquals("Kruhy skryté", oboji.text());
+		Assert.assertEquals(2, oboji.tooltip().split("<br/>").length);
+		Assert.assertNotEquals(s, StavVrstev.prazdny().sVynechanymi(6, 12));
+	}
+
+	@Test
+	public void modelHlasiVynechaneJenPriZmene() {
+		final List<Event0<?>> udalosti = new ArrayList<>();
+		final StavVrstevModel m = model(udalosti);
+		m.nahlasVynechane(0, 0);
+		Assert.assertTrue(udalosti.isEmpty());
+		m.nahlasVynechane(3, 12);
+		m.nahlasVynechane(3, 12);
+		Assert.assertEquals(1, udalosti.size());
+		m.nahlasVynechane(0, 0);
+		Assert.assertEquals(2, udalosti.size());
+		Assert.assertFalse(m.getStav().jeKVideni());
+	}
+
+	@Test
+	public void bezVynechanychSeKreslenyPocetNepamatuje() {
+		final StavVrstev skryto = StavVrstev.prazdny().s(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0);
+		Assert.assertEquals(skryto, skryto.sVynechanymi(5, 12).sVynechanymi(0, 12));
+	}
 }

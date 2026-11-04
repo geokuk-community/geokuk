@@ -50,4 +50,33 @@ public class JStatusBarStitekTest {
 		radek.onEvent(new StavVrstevEvent(StavVrstev.prazdny().s(VrstvaNadMapou.OBSAZENOST, DuvodNekresleni.POLOMER_PRILIS_MALY, 0)));
 		Assert.assertEquals("plovoucí štítek nemění šířku řádku", bez, radek.getPreferredSize().width);
 	}
+
+	@Test
+	public void omezeneKruhyDajiStitekOmezene() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JStatusBar radek = new JStatusBar();
+		final JLabel s = stitek(radek);
+		radek.onEvent(new StavVrstevEvent(StavVrstev.prazdny().sVynechanymi(4, 12)));
+		Assert.assertTrue(s.isVisible());
+		Assert.assertEquals("Kruhy omezené", s.getText());
+		Assert.assertTrue(s.getToolTipText().contains("kresleno jen 12 nejbližších"));
+		radek.onEvent(new StavVrstevEvent(StavVrstev.prazdny().s(VrstvaNadMapou.OBSAZENOST, DuvodNekresleni.POLOMER_PRILIS_MALY, 0)));
+		Assert.assertEquals("Kruhy skryté", s.getText());
+		radek.onEvent(new StavVrstevEvent(StavVrstev.prazdny()));
+		Assert.assertFalse(s.isVisible());
+	}
+
+	@Test
+	public void stitekJePlovouciARozlozeniRadkuNaNemZavisi() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		final JStatusBar radek = new JStatusBar();
+		final Field l = JStatusBar.class.getDeclaredField("layout");
+		l.setAccessible(true);
+		final cz.geokuk.util.gui.ZalamovaciLayout layout = (cz.geokuk.util.gui.ZalamovaciLayout) l.get(radek);
+		final int pred = layout.sirkaVJednomRadku(radek);
+		final JLabel s = stitek(radek);
+		s.setPreferredSize(new java.awt.Dimension(900, 20));
+		radek.onEvent(new StavVrstevEvent(StavVrstev.prazdny().s(VrstvaNadMapou.OBSAZENOST, DuvodNekresleni.POLOMER_PRILIS_MALY, 0)));
+		Assert.assertEquals("plovoucí štítek neposouvá ostatní a nezvětšuje řádek", pred, layout.sirkaVJednomRadku(radek));
+	}
 }
