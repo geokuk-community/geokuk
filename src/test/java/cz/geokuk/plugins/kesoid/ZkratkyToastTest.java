@@ -132,7 +132,7 @@ public class ZkratkyToastTest {
 		m.doClick();
 		stav.nahlas(VrstvaNadMapou.OBSAZENOST, DuvodNekresleni.POLOMER_PRILIS_MALY, 0);
 		m.doClick();
-		Assert.assertEquals("Obsazenost se kreslí od zoomu 11", posledni());
+		Assert.assertEquals("Obsazenost se kreslí až po přiblížení mapy", posledni());
 	}
 
 	@Test

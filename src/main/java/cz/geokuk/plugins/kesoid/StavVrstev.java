@@ -9,8 +9,6 @@ import java.util.Objects;
 /** Které zapnuté vrstvy kruhů se právě nekreslí a proč; z toho vzniká štítek ve stavovém řádku. Neměnný. */
 public final class StavVrstev {
 
-	/** Od tohoto přiblížení se Obsazenost 161 m kreslí (menší kruh než 3 px se nekreslí). */
-	public static final int NEJNIZSI_ZOOM_OBSAZENOSTI = 11;
 	public static final String TEXT_STITKU = "Kruhy skryté";
 	public static final String TEXT_STITKU_OMEZENO = "Kruhy omezené";
 
@@ -146,7 +144,7 @@ public final class StavVrstev {
 		case PRILIS_HUSTE:
 			return "příliš husté, přibližte mapu";
 		case POLOMER_PRILIS_MALY:
-			return vrstva == VrstvaNadMapou.OBSAZENOST ? "nezobrazuje se pod zoomem " + NEJNIZSI_ZOOM_OBSAZENOSTI + ", přibližte mapu" : "poloměr pod 3 px, přibližte mapu";
+			return vrstva == VrstvaNadMapou.OBSAZENOST ? "nezobrazuje se v tak malém měřítku, přibližte mapu" : "poloměr pod 3 px, přibližte mapu";
 		default:
 			return "";
 		}

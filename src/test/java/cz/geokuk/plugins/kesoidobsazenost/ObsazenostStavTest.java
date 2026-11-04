@@ -24,6 +24,8 @@ import cz.geokuk.util.index2d.Indexator;
 /** Obsazenost hlásí, proč se zapnutá nekreslí: pod nejnižším zoomem a nad limitem kruhů. */
 public class ObsazenostStavTest {
 
+	/** Při tomto zoomu v Praze je poloměr 161 m právě 3 px. */
+	private static final int HRANICNI_ZOOM = 11;
 	private static final Mou MISTO = new Wgs(50.0755, 14.4378).toMou();
 
 	private final List<Event0<?>> udalosti = new ArrayList<>();
@@ -61,30 +63,30 @@ public class ObsazenostStavTest {
 	}
 
 	@Test
-	public void nejnizsiZoomObsazenostiOdpovidaKonstanteStitku() {
-		Assert.assertEquals(DuvodNekresleni.POLOMER_PRILIS_MALY, vrstva(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI - 1, 1, true).aktualniDuvod());
-		Assert.assertEquals(DuvodNekresleni.KRESLI, vrstva(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI, 1, true).aktualniDuvod());
+	public void nejnizsiZoomObsazenostiJePodTriPixelyPodHranicnimZoomem() {
+		Assert.assertEquals(DuvodNekresleni.POLOMER_PRILIS_MALY, vrstva(HRANICNI_ZOOM - 1, 1, true).aktualniDuvod());
+		Assert.assertEquals(DuvodNekresleni.KRESLI, vrstva(HRANICNI_ZOOM, 1, true).aktualniDuvod());
 	}
 
 	@Test
 	public void podZoomemSeHlasiAPoPriblizeniVyradi() {
-		final JObsazenost o = vrstva(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI - 1, 1, true);
+		final JObsazenost o = vrstva(HRANICNI_ZOOM - 1, 1, true);
 		Assert.assertEquals(DuvodNekresleni.POLOMER_PRILIS_MALY, stav.getStav().get(VrstvaNadMapou.OBSAZENOST).getDuvod());
-		o.setSoord(new Coord(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI, MISTO, new Dimension(800, 600), 0));
+		o.setSoord(new Coord(HRANICNI_ZOOM, MISTO, new Dimension(800, 600), 0));
 		o.onVyrezChanged();
 		Assert.assertFalse(stav.getStav().maSkryte());
 	}
 
 	@Test
 	public void vypnutaObsazenostNicNehlasi() {
-		vrstva(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI - 1, 1, false);
+		vrstva(HRANICNI_ZOOM - 1, 1, false);
 		Assert.assertFalse(stav.getStav().maSkryte());
 		Assert.assertTrue(udalosti.isEmpty());
 	}
 
 	@Test
 	public void kesoidyVypnuteF5NicNehlasi() {
-		final JObsazenost o = vrstva(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI - 1, 1, true);
+		final JObsazenost o = vrstva(HRANICNI_ZOOM - 1, 1, true);
 		Assert.assertTrue(stav.getStav().maSkryte());
 		o.onEvent(new KesoidOnoffEvent(false));
 		Assert.assertFalse(stav.getStav().maSkryte());
@@ -100,10 +102,10 @@ public class ObsazenostStavTest {
 
 	@Test
 	public void kopieProRendrovaniNehlasi() {
-		final JObsazenost o = vrstva(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI, 1, true);
+		final JObsazenost o = vrstva(HRANICNI_ZOOM, 1, true);
 		udalosti.clear();
 		final JObsazenost kopie = (JObsazenost) o.createRenderableSlide();
-		kopie.setSoord(new Coord(StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI - 3, MISTO, new Dimension(800, 600), 0));
+		kopie.setSoord(new Coord(HRANICNI_ZOOM - 3, MISTO, new Dimension(800, 600), 0));
 		kopie.onVyrezChanged();
 		Assert.assertTrue(udalosti.isEmpty());
 	}

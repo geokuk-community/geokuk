@@ -47,7 +47,7 @@ public class StavVrstevTest {
 		Assert.assertTrue(StavVrstev.textDuvodu(F8, DuvodNekresleni.LIMIT_POCTU, 90_000).contains("(limit 90"));
 		Assert.assertEquals("příliš husté, přibližte mapu", StavVrstev.textDuvodu(F8, DuvodNekresleni.PRILIS_HUSTE, 0));
 		Assert.assertEquals("poloměr pod 3 px, přibližte mapu", StavVrstev.textDuvodu(ALT_F8, DuvodNekresleni.POLOMER_PRILIS_MALY, 0));
-		Assert.assertEquals("nezobrazuje se pod zoomem 11, přibližte mapu", StavVrstev.textDuvodu(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0));
+		Assert.assertEquals("nezobrazuje se v tak malém měřítku, přibližte mapu", StavVrstev.textDuvodu(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0));
 		Assert.assertTrue(StavVrstev.textDuvodu(F9, DuvodNekresleni.LIMIT_POCTU, 20_000).contains("limit"));
 		Assert.assertEquals("", StavVrstev.textDuvodu(F8, DuvodNekresleni.KRESLI, 0));
 	}
@@ -60,7 +60,7 @@ public class StavVrstevTest {
 		Assert.assertTrue(t, t.startsWith("<html>") && t.endsWith("</html>"));
 		Assert.assertEquals(2, t.split("<br/>").length);
 		Assert.assertTrue(t, t.contains("Zvýrazňovací kruhy (F8): příliš husté, přibližte mapu"));
-		Assert.assertTrue(t, t.contains("Obsazenost (F9): nezobrazuje se pod zoomem 11, přibližte mapu"));
+		Assert.assertTrue(t, t.contains("Obsazenost (F9): nezobrazuje se v tak malém měřítku, přibližte mapu"));
 		Assert.assertFalse(t, t.contains("Jednotkové"));
 	}
 
@@ -145,7 +145,7 @@ public class StavVrstevTest {
 	public void f9ProZoomPodJedenactCiLimit() {
 		Assert.assertNull(ZpravyZkratek.obsazenost(true, null));
 		Assert.assertNull(ZpravyZkratek.obsazenost(false, skryta(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0)));
-		Assert.assertEquals("Obsazenost se kreslí od zoomu 11", ZpravyZkratek.obsazenost(true, skryta(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0)));
+		Assert.assertEquals("Obsazenost se kreslí až po přiblížení mapy", ZpravyZkratek.obsazenost(true, skryta(F9, DuvodNekresleni.POLOMER_PRILIS_MALY, 0)));
 		final String limit = ZpravyZkratek.obsazenost(true, skryta(F9, DuvodNekresleni.LIMIT_POCTU, 20_000));
 		Assert.assertTrue(limit, limit.startsWith("Obsazenost zapnutá, ale skrytá: příliš mnoho bodů"));
 	}

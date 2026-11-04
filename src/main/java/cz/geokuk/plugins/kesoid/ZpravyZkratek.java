@@ -33,13 +33,13 @@ public final class ZpravyZkratek {
 		return zapnuto ? "Kešoidy zobrazené" : "Kešoidy skryté včetně kruhů, obsazenosti a popisků";
 	}
 
-	/** F9: pod nejnižším zoomem se Obsazenost nekreslí. */
+	/** F9: v příliš malém měřítku se Obsazenost nekreslí. */
 	public static String obsazenost(final boolean zapnuto, final StavVrstev.Skryta skryta) {
 		if (!zapnuto || skryta == null) {
 			return null;
 		}
 		if (skryta.getDuvod() == DuvodNekresleni.POLOMER_PRILIS_MALY) {
-			return "Obsazenost se kreslí od zoomu " + StavVrstev.NEJNIZSI_ZOOM_OBSAZENOSTI;
+			return "Obsazenost se kreslí až po přiblížení mapy";
 		}
 		return zapnuteAleSkryte("Obsazenost zapnutá, ale skrytá", skryta, VrstvaNadMapou.OBSAZENOST);
 	}
