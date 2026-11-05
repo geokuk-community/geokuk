@@ -18,7 +18,9 @@ public class JToast extends JSlide0 {
 	/** Jak dlouho se zpráva drží beze změny. */
 	public static final int DRZENI_MS = 2500;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
-	private final transient BublinkaHodnoty bublinka = new BublinkaHodnoty(this::repaint, DRZENI_MS);
+	private final transient BublinkaHodnoty bublinka = new BublinkaHodnoty(this::prekresliZpravu, DRZENI_MS);
+	/** Kde se zpráva naposledy kreslila; při animaci se překresluje jen tato oblast a oblast nového textu. */
+	private Rectangle naposledy = new Rectangle();
 
 	public JToast() {
 		setOpaque(false);
@@ -77,6 +79,32 @@ public class JToast extends JSlide0 {
 		super.setVisible(visible);
 	}
 
+	/** Písmo zprávy; před zobrazením, kdy komponenta ještě písmo nemá, běžné písmo štítků. */
+	Font font() {
+		final Font zaklad = getFont() != null ? getFont() : javax.swing.UIManager.getFont("Label.font");
+		return zaklad.deriveFont(Font.BOLD);
+	}
+
+	/** Obdélník aktuálního textu zprávy v této vrstvě. */
+	private Rectangle oblastZpravy(final FontMetrics fm) {
+		final Rectangle velikost = PopisekNaMape.hranice(fm, bublinka.getText(), 0, 0);
+		return RozmisteniPrekryvu.zprava(getSize(), new Dimension(velikost.width, velikost.height), prekazky.get());
+	}
+
+	/** Překreslí jen oblast zprávy, ne celou průhlednou vrstvu přes mapu. */
+	private void prekresliZpravu() {
+		final Rectangle oblast = new Rectangle(naposledy);
+		if (!bublinka.getText().isEmpty()) {
+			oblast.add(oblastZpravy(getFontMetrics(font())));
+		}
+		if (oblast.isEmpty()) {
+			repaint();
+			return;
+		}
+		oblast.grow(2, 2);
+		repaint(oblast.x, oblast.y, oblast.width, oblast.height);
+	}
+
 	@Override
 	protected void paintComponent(final Graphics g) {
 		final float v = bublinka.viditelnost();
@@ -84,10 +112,10 @@ public class JToast extends JSlide0 {
 			return;
 		}
 		final Graphics2D g2 = (Graphics2D) g;
-		final Font font = getFont().deriveFont(Font.BOLD);
-		final FontMetrics fm = g2.getFontMetrics(font);
+		final FontMetrics fm = g2.getFontMetrics(font());
 		final Rectangle velikost = PopisekNaMape.hranice(fm, bublinka.getText(), 0, 0);
-		final Rectangle r = RozmisteniPrekryvu.zprava(getSize(), new Dimension(velikost.width, velikost.height), prekazky.get());
-		PopisekNaMape.nakresli(g2, font, zkrat(bublinka.getText(), fm, r.width - (velikost.width - fm.stringWidth(bublinka.getText()))), r.x + r.width, r.y + r.height / 2, v);
+		final Rectangle r = oblastZpravy(fm);
+		final String text = zkrat(bublinka.getText(), fm, r.width - (velikost.width - fm.stringWidth(bublinka.getText())));
+		naposledy = PopisekNaMape.nakresli(g2, font(), text, r.x + r.width, r.y + r.height / 2, v);
 	}
 }
