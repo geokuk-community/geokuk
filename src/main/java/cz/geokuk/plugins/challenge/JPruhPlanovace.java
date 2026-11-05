@@ -47,6 +47,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		dal.setToolTipText("Další chybějící");
 		odznak.setToolTipText("Chybějící sektory");
 		typ.setToolTipText("Typ challenge");
+		typ.setForeground(Color.DARK_GRAY);
 		for (final AbstractButton b : new AbstractButton[] { odznak, kandidati, zpet, dal }) {
 			b.setFocusable(false);
 			b.setMargin(new Insets(0, 2, 0, 2));
