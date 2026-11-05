@@ -174,16 +174,49 @@ public final class GeometrieSektoru {
 
 	/**
 	 * Oblouk kružnice o poloměru {@code metru} od azimutu {@code od} po azimut {@code doAz} ve směru hodinových ručiček; přes sever se přechází (od 359 do 1 má 2°).
-	 * Rozdíl 0 dává jediný bod, rozdíl 360 celou kružnici (první a poslední bod jsou shodné).
+	 * Rozdíl 0 dává jediný bod, nenulový násobek 360 celou kružnici (první a poslední bod jsou shodné), jinak se rozdíl bere v rozsahu od 0 do 360.
+	 * <p>
+	 * Délky bodů jsou v rozsahu -180 až 180, takže oblouk přes 180° (antimeridián) má mezi sousedními body skok téměř 360°; před kreslením ho vyrovná
+	 * {@link #odvinuteDelky(List)}.
 	 */
 	public static List<Bod> oblouk(final double lat, final double lon, final double od, final double doAz, final double metru, final Model model) {
-		final double sirka = doAz - od == 360 ? 360 : azimut360(doAz - od);
+		final double rozdil = doAz - od;
+		double sirka = azimut360(rozdil);
+		if (rozdil != 0 && sirka == 0) {
+			sirka = 360;
+		}
+		if (sirka == 0) {
+			return new ArrayList<>(Collections.singletonList(bod(lat, lon, od, metru, model)));
+		}
 		final int useku = Math.max(1, (int) Math.ceil(sirka / KROK_OBLOUKU - 1e-9));
 		final List<Bod> body = new ArrayList<>(useku + 1);
 		for (int i = 0; i <= useku; i++) {
 			body.add(bod(lat, lon, od + sirka * i / useku, metru, model));
 		}
 		return body;
+	}
+
+	/**
+	 * Vyrovná skoky délky mezi sousedními body: každá další délka se posune o násobek 360°, aby ležela nejvýš 180° od předchozí. Výsledek může mít délky mimo -180 až 180
+	 * (třeba 179,95 a potom 180,05), kreslení pak nevede čáru přes celou mapu; převod na obrazovku s tím musí počítat (mapa se opakuje nebo se bod přesune o 360°).
+	 */
+	public static List<Bod> odvinuteDelky(final List<Bod> body) {
+		final List<Bod> vysledek = new ArrayList<>(body.size());
+		double predchozi = 0;
+		for (int i = 0; i < body.size(); i++) {
+			double lon = body.get(i).lon;
+			if (i > 0) {
+				while (lon - predchozi > 180) {
+					lon -= 360;
+				}
+				while (lon - predchozi < -180) {
+					lon += 360;
+				}
+			}
+			vysledek.add(new Bod(body.get(i).lat, lon));
+			predchozi = lon;
+		}
+		return vysledek;
 	}
 
 	/**
@@ -268,15 +301,21 @@ public final class GeometrieSektoru {
 		return vysledek.jeObsazeny(sektor) ? Stav.SPLNENY : Stav.CHYBI;
 	}
 
-	/** Sektor bodu podle jeho azimutu od středu, nebo -1, když leží blíž než {@code polomerMin} nebo dál než {@code polomerMax} (metry, po kouli). */
+	/**
+	 * Sektor bodu podle jeho azimutu od středu, nebo -1, když je bod ve středu, blíž než {@code polomerMin} nebo dál než {@code polomerMax}. Hranice poloměrů patří
+	 * dovnitř. Vzdálenost i azimut se měří v zadaném modelu (u elipsoidu po elipsoidu, u téměř protilehlých bodů po kouli), stejně jako v {@link #bod}.
+	 */
 	public static int sektorBodu(final double lat, final double lon, final double bodLat, final double bodLon, final double polomerMin, final double polomerMax, final Model model) {
 		zkontrolujStred(lat, lon);
 		zkontrolujPolomery(polomerMin, polomerMax);
 		if (!VypocetSektoru.jePlatnyStred(bodLat, bodLon)) {
 			return -1;
 		}
-		final double vzdalenost = Geodezie.vzdalenostKoule(lat, lon, bodLat, bodLon);
-		if (vzdalenost < polomerMin || vzdalenost > polomerMax) {
+		double vzdalenost = model == Model.ELIPSOID ? Geodezie.vzdalenostElipsoid(lat, lon, bodLat, bodLon) : Double.NaN;
+		if (Double.isNaN(vzdalenost)) {
+			vzdalenost = Geodezie.vzdalenostKoule(lat, lon, bodLat, bodLon);
+		}
+		if (vzdalenost <= 0 || vzdalenost < polomerMin || vzdalenost > polomerMax) {
 			return -1;
 		}
 		double azimut = model == Model.ELIPSOID ? Geodezie.azimutElipsoid(lat, lon, bodLat, bodLon) : Double.NaN;

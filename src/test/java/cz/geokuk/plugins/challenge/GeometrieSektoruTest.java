@@ -289,4 +289,119 @@ public class GeometrieSektoruTest {
 			}
 		}
 	}
+
+	// ---- oblouk: okrajové šířky
+
+	@Test
+	public void obloukBezRozdiluJeJedenBod() {
+		final List<Bod> o = GeometrieSektoru.oblouk(LAT, LON, 10, 10, 5_000, Model.KOULE);
+		Assert.assertEquals(1, o.size());
+		Assert.assertEquals(10, Geodezie.azimutKoule(LAT, LON, o.get(0).lat, o.get(0).lon), 1e-7);
+	}
+
+	@Test
+	public void viceNezJednaKruhVMultipluDavaCelouKruznici() {
+		Assert.assertEquals(361, GeometrieSektoru.oblouk(LAT, LON, 10, 730, 5_000, Model.KOULE).size());
+		Assert.assertEquals(361, GeometrieSektoru.oblouk(LAT, LON, 10, -350, 5_000, Model.KOULE).size());
+		Assert.assertEquals(361, GeometrieSektoru.oblouk(LAT, LON, 0, 360, 5_000, Model.KOULE).size());
+	}
+
+	@Test
+	public void zapornyRozdilSeBereJakoObchazkaPoSmeruHodin() {
+		final List<Bod> o = GeometrieSektoru.oblouk(LAT, LON, 10, 5, 5_000, Model.KOULE);
+		Assert.assertEquals(356, o.size());
+		Assert.assertEquals(0, rozdil(10, Geodezie.azimutKoule(LAT, LON, o.get(0).lat, o.get(0).lon)), 1e-7);
+		Assert.assertEquals(0, rozdil(5, Geodezie.azimutKoule(LAT, LON, o.get(355).lat, o.get(355).lon)), 1e-7);
+		Assert.assertEquals(0, rozdil(190, Geodezie.azimutKoule(LAT, LON, o.get(180).lat, o.get(180).lon)), 1e-7);
+	}
+
+	// ---- antimeridián
+
+	private static double nejvetsiSkokDelky(final List<Bod> body) {
+		double max = 0;
+		for (int i = 1; i < body.size(); i++) {
+			max = Math.max(max, Math.abs(body.get(i).lon - body.get(i - 1).lon));
+		}
+		return max;
+	}
+
+	@Test
+	public void obloukPresAntimeridianMaSkokAOdvinutiHoVyrovna() {
+		final List<Bod> o = GeometrieSektoru.oblouk(0, 179.9, 0, 360, 50_000, Model.KOULE);
+		Assert.assertTrue("skok " + nejvetsiSkokDelky(o), nejvetsiSkokDelky(o) > 300);
+		final List<Bod> v = GeometrieSektoru.odvinuteDelky(o);
+		Assert.assertEquals(o.size(), v.size());
+		Assert.assertTrue("skok " + nejvetsiSkokDelky(v), nejvetsiSkokDelky(v) < 1);
+		double max = -1000;
+		for (final Bod b : v) {
+			max = Math.max(max, b.lon);
+		}
+		Assert.assertTrue("délka přes 180: " + max, max > 180);
+		for (int i = 0; i < o.size(); i++) {
+			Assert.assertEquals(o.get(i).lat, v.get(i).lat, 0);
+			Assert.assertEquals(0, rozdil(o.get(i).lon, v.get(i).lon), 1e-9);
+		}
+	}
+
+	@Test
+	public void odvinutiZapadniStranyAntimeridianuJdeDruhymSmerem() {
+		final List<Bod> o = GeometrieSektoru.oblouk(0, -179.9, 0, 360, 50_000, Model.KOULE);
+		final List<Bod> v = GeometrieSektoru.odvinuteDelky(o);
+		Assert.assertTrue(nejvetsiSkokDelky(v) < 1);
+	}
+
+	@Test
+	public void odvinutiNeMeniSouvisleBodyAZvladaPrazdnySeznam() {
+		final List<Bod> o = GeometrieSektoru.oblouk(LAT, LON, 0, 360, 10_000, Model.KOULE);
+		final List<Bod> v = GeometrieSektoru.odvinuteDelky(o);
+		for (int i = 0; i < o.size(); i++) {
+			Assert.assertEquals(o.get(i).lon, v.get(i).lon, 0);
+		}
+		Assert.assertTrue(GeometrieSektoru.odvinuteDelky(new java.util.ArrayList<Bod>()).isEmpty());
+	}
+
+	// ---- sektorBodu: model, hrana, střed
+
+	@Test
+	public void bodVeStreduNemaSektor() {
+		Assert.assertEquals(-1, GeometrieSektoru.sektorBodu(LAT, LON, LAT, LON, 0, 10_000, Model.KOULE));
+		Assert.assertEquals(-1, GeometrieSektoru.sektorBodu(LAT, LON, LAT, LON, 0, 10_000, Model.ELIPSOID));
+	}
+
+	@Test
+	public void hranicePoloměruPatriDovnitr() {
+		for (final Model m : Model.values()) {
+			final Bod b = GeometrieSektoru.bod(LAT, LON, 100.5, 7_000, m);
+			final double d = m == Model.ELIPSOID ? Geodezie.vzdalenostElipsoid(LAT, LON, b.lat, b.lon) : Geodezie.vzdalenostKoule(LAT, LON, b.lat, b.lon);
+			Assert.assertEquals(m + " dolní hrana", 100, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, d, d + 1, m));
+			Assert.assertEquals(m + " horní hrana", 100, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, d - 1, d, m));
+			Assert.assertEquals(m + " těsně mimo", -1, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, d + 1e-3, d + 1, m));
+			Assert.assertEquals(m + " těsně mimo", -1, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, d - 1, d - 1e-3, m));
+		}
+	}
+
+	@Test
+	public void poloměrSeMeriVModeluBoduNaElipsoidu() {
+		// Na elipsoidu je bod 50 km od středu po kouli jen ~49,91 km, rozdíl asi 86 m.
+		final Bod b = GeometrieSektoru.bod(LAT, LON, 100.5, 50_000, Model.ELIPSOID);
+		Assert.assertEquals(100, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, 49_950, 50_050, Model.ELIPSOID));
+		Assert.assertEquals(-1, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, 49_950, 50_050, Model.KOULE));
+		Assert.assertEquals(-1, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, 0.5, 49_990, Model.ELIPSOID));
+		Assert.assertEquals(100, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, 0.5, 49_990, Model.KOULE));
+	}
+
+	@Test
+	public void azimutSeMeriVModeluSektorBoduRozlisujeKouliAElipsoid() {
+		int rozlisenych = 0;
+		for (int s = 0; s < 360; s++) {
+			final Bod b = GeometrieSektoru.bod(LAT, LON, s + 0.01, 200_000, Model.ELIPSOID);
+			final int koule = Geodezie.sektor(Geodezie.azimutKoule(LAT, LON, b.lat, b.lon));
+			if (koule != s) {
+				rozlisenych++;
+				Assert.assertEquals("elipsoid " + s, s, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, 1_000, 300_000, Model.ELIPSOID));
+				Assert.assertEquals("koule " + s, koule, GeometrieSektoru.sektorBodu(LAT, LON, b.lat, b.lon, 1_000, 300_000, Model.KOULE));
+			}
+		}
+		Assert.assertTrue("žádný bod, kde se koule a elipsoid liší: " + rozlisenych, rozlisenych > 0);
+	}
 }
