@@ -502,6 +502,9 @@ public class KachleZiskavac {
 		// ExecutorService nedekorovanyServisProZjisteni
 	}
 
+	private static final Pocitadlo pocitStavZapsano = new PocitadloRoste("ka62 #zápisů stavu zobrazení", "Kolikrát se zapsal soubor dlaždic posledního zobrazení.");
+	private static final Pocitadlo pocitStavChyba = new PocitadloRoste("ka63 #chyb zápisu stavu zobrazení", "Kolikrát se soubor dlaždic posledního zobrazení nepodařilo zapsat.");
+
 	private static Pocitadlo pocitBrzdeniOfflineKdyzJeOnline = new PocitadloRoste("ka61 #počet brzdení dávkového downloadu",
 			"Počítá, kolikrát dávkové dotahování čekalo, protože běžel online.");
 
@@ -720,6 +723,7 @@ public class KachleZiskavac {
 	void dopisNaDisk() {
 		// Náhledy z cache při ukončení nikdo nepotřebuje a nesmí číst z cache, kterou se dopisuje.
 		nahledyZCache.shutdownNow();
+		stavZobrazeni.shutdownNow();
 		ukladac.submitChunks();
 		execDiskWrite.shutdown();
 		try {
@@ -728,6 +732,125 @@ public class KachleZiskavac {
 			}
 		} catch (final InterruptedException e) {
 			Thread.currentThread().interrupt();
+		}
+		// Až po dopsání dlaždic: stav bere jejich bajty z cache.
+		zapisStavZobrazeni();
+	}
+
+	/** Za jak dlouho po ustálení výřezu se stav zapíše a jak často nejvýš; po pádu programu tak zbude stav nejvýš o minutu starší. */
+	static final long STAV_PO_USTALENI_MS = 10_000;
+	static final long STAV_NEJCASTEJI_MS = 60_000;
+
+	/** Zápis stavu posledního zobrazení na pozadí. */
+	private final ScheduledExecutorService stavZobrazeni = Executors.newSingleThreadScheduledExecutor(vlaknaRenderu("Stav zobrazení"));
+	private ScheduledFuture<?> naplanovanyStav;
+	/** Zápis v nečinnosti a při ukončení se nesmí potkat. */
+	private final Object zamekZapisuStavu = new Object();
+	/** Dlaždice posledního ustáleného výřezu podle třídy kachlovníku (podklad 0, trasy 1), od středu. */
+	private final Map<Integer, List<Ka>> posledniVyrez = new TreeMap<>();
+	private StavZobrazeni.Hlavicka hlavickaVyrezu;
+	private long verzeVyrezu;
+	private long zapsanaVerze;
+	private long posledniZapisStavu = Long.MIN_VALUE / 2;
+
+	/**
+	 * Zapamatuje dlaždice ustáleného výřezu kachlovníku (všechny hotové) pro stav posledního zobrazení a naplánuje jeho zápis. Hlavičku určuje podklad (třída 0).
+	 */
+	public void zapamatujZobrazeni(final int trida, final List<Ka> dlazdice, final String podklad, final int moumer, final int mouX, final int mouY) {
+		synchronized (posledniVyrez) {
+			if (dlazdice.equals(posledniVyrez.get(trida)) && (trida != 0 || hlavickaVyrezu != null && podklad.equals(hlavickaVyrezu.podklad))) {
+				return;
+			}
+			posledniVyrez.put(trida, new ArrayList<>(dlazdice));
+			if (trida == 0) {
+				hlavickaVyrezu = new StavZobrazeni.Hlavicka(0, podklad, moumer, mouX, mouY);
+			}
+			verzeVyrezu++;
+			if (naplanovanyStav != null) {
+				naplanovanyStav.cancel(false);
+			}
+			final long ted = System.currentTimeMillis();
+			final long za = Math.max(STAV_PO_USTALENI_MS, posledniZapisStavu + STAV_NEJCASTEJI_MS - ted);
+			try {
+				naplanovanyStav = stavZobrazeni.schedule(this::zapisStavZobrazeni, za, TimeUnit.MILLISECONDS);
+			} catch (final RejectedExecutionException e) {
+				// program končí, stav zapíše dopsání na disk
+			}
+		}
+	}
+
+	/** Zapíše stav posledního zobrazení, když se od posledního zápisu výřez změnil; nic nemaže ani nezapisuje do cache dlaždic. */
+	void zapisStavZobrazeni() {
+		final StavZobrazeni.Hlavicka h;
+		final List<Ka> dlazdice = new ArrayList<>();
+		final long verze;
+		synchronized (posledniVyrez) {
+			if (hlavickaVyrezu == null || verzeVyrezu == zapsanaVerze) {
+				return;
+			}
+			h = new StavZobrazeni.Hlavicka(System.currentTimeMillis(), hlavickaVyrezu.podklad, hlavickaVyrezu.moumer, hlavickaVyrezu.mouX, hlavickaVyrezu.mouY);
+			// Překryv patří k výřezu podkladu, jen když leží na jeho dlaždicích; vypnutý překryv tak nezůstane z jiného místa.
+			final List<Ka> podklad = posledniVyrez.getOrDefault(0, Collections.emptyList());
+			final Set<KaLoc> mista = new HashSet<>();
+			podklad.forEach(ka -> mista.add(ka.getLoc()));
+			dlazdice.addAll(podklad);
+			posledniVyrez.forEach((trida, seznam) -> {
+				if (trida != 0) {
+					seznam.stream().filter(ka -> mista.contains(ka.getLoc())).forEach(dlazdice::add);
+				}
+			});
+			verze = verzeVyrezu;
+		}
+		final KachleManager km = kachleManager;
+		final KachleModel model = kachleModel;
+		if (km == null || km.slozka() == null || model == null || !model.isUkladatMapyNaDisk() || offlineMapy.isDavka()) {
+			return;
+		}
+		synchronized (zamekZapisuStavu) {
+			final long zacatek = System.nanoTime();
+			final List<StavZobrazeni.Zaznam> zaznamy = new ArrayList<>();
+			long bajtu = 0;
+			for (final Ka ka : dlazdice) {
+				final String typ = typVCache(ka);
+				final byte[] data = typ == null ? null : km.nactiBajty(ka, typ);
+				if (data != null && data.length > 0) {
+					final KaLoc loc = ka.getLoc();
+					zaznamy.add(new StavZobrazeni.Zaznam(ka.getType().name(), loc.getMoumer(), loc.getFromSzUnsignedX(), loc.getFromSzUnsignedY(), typ, data));
+					bajtu += data.length;
+				}
+			}
+			try {
+				final int zapsano = StavZobrazeni.zapis(km.slozka(), h, zaznamy);
+				pocitStavZapsano.inc();
+				log.debug("Stav zobrazení: zapsáno {} z {} dlaždic, {} kB, {} ms", zapsano, dlazdice.size(), bajtu / 1024, (System.nanoTime() - zacatek) / 1_000_000);
+			} catch (final IOException | RuntimeException e) {
+				// Nepovedený zápis se nepočítá: zkusí se znovu při další změně výřezu nebo při ukončení.
+				pocitStavChyba.inc();
+				log.warn("Stav zobrazení se nepodařilo zapsat: {}", e.toString());
+				return;
+			}
+		}
+		synchronized (posledniVyrez) {
+			zapsanaVerze = verze;
+			posledniZapisStavu = System.currentTimeMillis();
+		}
+	}
+
+	/** Typ dlaždice v cache; null, když offline mapy nejdou použít nebo dlaždici nepokrývají. */
+	private String typVCache(final Ka ka) {
+		if (!ka.getType().isOffline()) {
+			return ka.typToString();
+		}
+		final OfflineRenderer renderer;
+		try {
+			renderer = offlineMapy(ka.getType()).pouzij();
+		} catch (final IOException | RuntimeException e) {
+			return null;
+		}
+		try {
+			return renderer.pokryva(ka.getLoc()) ? renderer.getKlicDlazdice(ka.getLoc()) : null;
+		} finally {
+			renderer.skonci();
 		}
 	}
 

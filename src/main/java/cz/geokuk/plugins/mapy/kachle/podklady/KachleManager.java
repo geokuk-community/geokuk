@@ -69,6 +69,16 @@ public interface KachleManager {
 	 */
 	public boolean save(Collection<ItemToSave> itemsToSave);
 
+	/** Bajty obrázku uloženého pod zadaným typem, bez dekódování; null, když tam není nebo úložiště bajty nevydá. */
+	public default byte[] nactiBajty(final Ka ki, final String typ) {
+		return null;
+	}
+
+	/** Složka úložiště, null když žádnou nemá. */
+	public default java.io.File slozka() {
+		return null;
+	}
+
 	/**
 	 * Smaže dlaždice offline mapy se stejným písmenem jako zadané globální klíče (písmeno a 8 šestnáctkových číslic), kromě nich a všechny ve starém tvaru bez oblastní části; vrátí jejich počet, nebo -1, když se úklid nedokončil (cache nejde otevřít, je zaneprázdněná, mazání selhalo)
 	 * a má se zopakovat. Podklad ({@code o}) a překryv ({@code t}) se tak uklízejí každý zvlášť.
