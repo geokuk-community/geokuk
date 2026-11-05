@@ -18,7 +18,9 @@ public class JToast extends JSlide0 {
 	/** Svislý střed zprávy nad spodním okrajem mapy: nad měřítkem, které stojí uprostřed dole. */
 	static final int NAD_DOLNIM_OKRAJEM = 90;
 
-	private final transient BublinkaHodnoty bublinka = new BublinkaHodnoty(this::repaint, DRZENI_MS);
+	private final transient BublinkaHodnoty bublinka = new BublinkaHodnoty(this::prekresliZpravu, DRZENI_MS);
+	/** Kde se zpráva naposledy kreslila; při animaci se překresluje jen tato oblast a oblast nového textu. */
+	private Rectangle naposledy = new Rectangle();
 
 	public JToast() {
 		setOpaque(false);
@@ -61,6 +63,32 @@ public class JToast extends JSlide0 {
 		super.setVisible(visible);
 	}
 
+	/** Písmo zprávy; před zobrazením, kdy komponenta ještě písmo nemá, běžné písmo štítků. */
+	Font font() {
+		final Font zaklad = getFont() != null ? getFont() : javax.swing.UIManager.getFont("Label.font");
+		return zaklad.deriveFont(Font.BOLD);
+	}
+
+	/** Obdélník aktuálního textu zprávy v této vrstvě. */
+	private Rectangle oblastZpravy(final FontMetrics fm) {
+		final Rectangle velikost = PopisekNaMape.hranice(fm, bublinka.getText(), 0, 0);
+		return umisteni(getWidth(), getHeight(), velikost.width, velikost.height);
+	}
+
+	/** Překreslí jen oblast zprávy, ne celou průhlednou vrstvu přes mapu. */
+	private void prekresliZpravu() {
+		final Rectangle oblast = new Rectangle(naposledy);
+		if (!bublinka.getText().isEmpty()) {
+			oblast.add(oblastZpravy(getFontMetrics(font())));
+		}
+		if (oblast.isEmpty()) {
+			repaint();
+			return;
+		}
+		oblast.grow(2, 2);
+		repaint(oblast.x, oblast.y, oblast.width, oblast.height);
+	}
+
 	@Override
 	protected void paintComponent(final Graphics g) {
 		final float v = bublinka.viditelnost();
@@ -68,9 +96,7 @@ public class JToast extends JSlide0 {
 			return;
 		}
 		final Graphics2D g2 = (Graphics2D) g;
-		final Font font = getFont().deriveFont(Font.BOLD);
-		final Rectangle velikost = PopisekNaMape.hranice(g2.getFontMetrics(font), bublinka.getText(), 0, 0);
-		final Rectangle r = umisteni(getWidth(), getHeight(), velikost.width, velikost.height);
-		PopisekNaMape.nakresli(g2, font, bublinka.getText(), r.x + r.width, r.y + r.height / 2, v);
+		final Rectangle r = oblastZpravy(g2.getFontMetrics(font()));
+		naposledy = PopisekNaMape.nakresli(g2, font(), bublinka.getText(), r.x + r.width, r.y + r.height / 2, v);
 	}
 }
