@@ -143,6 +143,15 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		repaint();
 	}
 
+	/** Při odebrání z okna se popup zavře, ať po něm nezůstane globální posluchač myši. */
+	@Override
+	public void removeNotify() {
+		if (otevreno) {
+			zavri();
+		}
+		super.removeNotify();
+	}
+
 	/** Stisk myši mimo popup ho zavře; událost dál normálně pokračuje. Stisk na odznaku nechá na odznaku, ten popup přepíná sám. */
 	void mysKdekoli(final AWTEvent e) {
 		if (e.getID() != MouseEvent.MOUSE_PRESSED || !otevreno || !(e instanceof MouseEvent)) {

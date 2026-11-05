@@ -212,4 +212,34 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse(popup.obsah.dalsi.isEnabled());
 		Assert.assertEquals("100 %", popup.obsah.postup.getString());
 	}
+
+	private static int posluchacuMysi() {
+		return Toolkit.getDefaultToolkit().getAWTEventListeners(AWTEvent.MOUSE_EVENT_MASK).length;
+	}
+
+	/** Otevřený popup má jediný globální posluchač myši a po zavření (i Esc, kliknutím mimo, vypnutím, odebráním z okna) žádný. */
+	@Test
+	public void posluchacMysiJenPoDobuOtevreni() throws Exception {
+		priprav();
+		final int pred = posluchacuMysi();
+		for (int i = 0; i < 3; i++) {
+			popup.prepni();
+			Assert.assertEquals("otevřený", pred + 1, posluchacuMysi());
+			popup.prepni();
+			Assert.assertEquals("zavřený odznakem", pred, posluchacuMysi());
+		}
+		popup.prepni();
+		popup.doLayout();
+		popup.mysKdekoli(stisk(mapa, 1200, 600));
+		Assert.assertEquals("zavřený kliknutím mimo", pred, posluchacuMysi());
+		popup.prepni();
+		model.setZapnuto(false);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("zavřený vypnutím plánovače", pred, posluchacuMysi());
+		model.setZapnuto(true);
+		popup.prepni();
+		popup.removeNotify();
+		Assert.assertFalse(popup.jeOtevreno());
+		Assert.assertEquals("zavřený odebráním z okna", pred, posluchacuMysi());
+	}
 }
