@@ -146,4 +146,62 @@ public class JPruhPlanovaceTest {
 			Assert.assertEquals(String.valueOf(sirka), ocekavano, viditelnych);
 		}
 	}
+
+	private static double jas(final int rgb) {
+		final double[] k = new double[3];
+		for (int i = 0; i < 3; i++) {
+			final double c = ((rgb >> (16 - 8 * i)) & 0xff) / 255.0;
+			k[i] = c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+		}
+		return 0.2126 * k[0] + 0.7152 * k[1] + 0.0722 * k[2];
+	}
+
+	private static double kontrast(final int a, final int b) {
+		final double x = jas(a);
+		final double y = jas(b);
+		return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+	}
+
+	/** Popisek typu je čitelný na podkladu pruhu v každém tématu Metalu, i v tmavém Charcoal. */
+	@Test
+	public void popisekTypuMaDostatecnyKontrastVeVsechTematech() throws Exception {
+		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
+		final javax.swing.plaf.metal.MetalTheme puvodniTema = javax.swing.plaf.metal.MetalLookAndFeel.getCurrentTheme();
+		try {
+			final javax.swing.plaf.metal.MetalTheme[] temata = { new javax.swing.plaf.metal.DefaultMetalTheme(), new javax.swing.plaf.metal.OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
+			for (final javax.swing.plaf.metal.MetalTheme tema : temata) {
+				javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(tema);
+				javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+				final int[] vysledek = new int[1];
+				javax.swing.SwingUtilities.invokeAndWait(() -> {
+					priprav();
+					model.aktivuj(Sablony.cesko360());
+					model.setZapnuto(true);
+					final javax.swing.JPanel root = new javax.swing.JPanel(null);
+					root.setBackground(new java.awt.Color(190, 205, 180));
+					root.setSize(1280, 120);
+					pruh.setBounds(0, 0, 1280, 120);
+					root.add(pruh);
+					pruh.doLayout();
+					final java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(1280, 120, java.awt.image.BufferedImage.TYPE_INT_RGB);
+					final java.awt.Graphics2D g = img.createGraphics();
+					root.paint(g);
+					g.dispose();
+					final Rectangle r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)))[JPruhPlanovace.TYP];
+					final int podklad = img.getRGB(r.x + 1, r.y + 1);
+					double nejvic = 1;
+					for (int y = r.y; y < r.y + r.height; y++) {
+						for (int x = r.x; x < r.x + r.width; x++) {
+							nejvic = Math.max(nejvic, kontrast(podklad, img.getRGB(x, y)));
+						}
+					}
+					vysledek[0] = (int) Math.round(nejvic * 100);
+				});
+				Assert.assertTrue(tema.getName() + ": kontrast textu " + vysledek[0] / 100.0, vysledek[0] >= 450);
+			}
+		} finally {
+			javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(puvodniTema);
+			javax.swing.UIManager.setLookAndFeel(puvodni);
+		}
+	}
 }
