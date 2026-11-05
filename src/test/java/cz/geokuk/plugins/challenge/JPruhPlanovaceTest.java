@@ -5,9 +5,11 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
+import cz.geokuk.core.napoveda.UkazatelVykonu;
 import cz.geokuk.framework.Event0;
 import cz.geokuk.framework.EventFirer;
 import cz.geokuk.framework.RozmisteniPrekryvu;
@@ -67,6 +69,11 @@ public class JPruhPlanovaceTest {
 	private ChallengeModel model;
 	private JPruhPlanovace pruh;
 
+	@After
+	public void uklid() {
+		UkazatelVykonu.setPodPruhem(false);
+	}
+
 	private void priprav() {
 		model = new ChallengeModel();
 		pruh = new JPruhPlanovace();
@@ -95,8 +102,10 @@ public class JPruhPlanovaceTest {
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue(pruh.isVisible());
 		Assert.assertTrue(model.jePruhViditelny());
+		Assert.assertEquals("ukazatel výkonu je pod pruhem", RozmisteniPrekryvu.UKAZATEL_VYKONU, UkazatelVykonu.oblast());
 		model.setZapnuto(false);
 		Assert.assertFalse(pruh.isVisible());
+		Assert.assertEquals("bez pruhu je ukazatel nahoře", RozmisteniPrekryvu.UKAZATEL_VYKONU_BEZ_PRUHU, UkazatelVykonu.oblast());
 		Assert.assertFalse(model.jePruhViditelny());
 	}
 

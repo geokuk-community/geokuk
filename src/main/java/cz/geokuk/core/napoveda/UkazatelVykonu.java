@@ -14,6 +14,7 @@ public final class UkazatelVykonu {
 
 	static final String KLIC = "ukazatelVykonu";
 	/** Kde štítek leží; jeho překreslení se do doby kreslení mapy nepočítá. */
+	/** Štítek je jediný na celý program (jedno okno s mapou), proto i tento stav je společný; nastavuje ho pruh plánovače podle toho, jestli je vidět. */
 	private static volatile boolean podPruhem;
 	private static final Color POZADI = new Color(0, 0, 0, 150);
 
