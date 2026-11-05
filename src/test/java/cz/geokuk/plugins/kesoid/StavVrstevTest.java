@@ -185,7 +185,6 @@ public class StavVrstevTest {
 		toast.setVisible(false);
 		Assert.assertFalse("po skrytí se časovač zastaví", toast.bezi());
 		Assert.assertFalse("zpráva nechytá myš", toast.contains(1, 1));
-		Assert.assertEquals(238, JToast.stredY(300));
 		Assert.assertEquals(2500, JToast.DRZENI_MS);
 	}
 
@@ -247,5 +246,34 @@ public class StavVrstevTest {
 		final String tooltip = skryto.sVynechanymi(3, 2000).tooltip();
 		Assert.assertTrue(tooltip, tooltip.contains("Obsazenost (F9): nezobrazuje se v tak malém měřítku, přibližte mapu"));
 		Assert.assertTrue(tooltip, tooltip.contains("Kruhy v metrech: kresleno jen 2000 nejbližších ke středu"));
+	}
+
+	@Test
+	public void zpravaJeUprostredMapyNadMeritkem() {
+		final java.awt.Rectangle r = JToast.umisteni(1000, 700, 300, 24);
+		Assert.assertEquals("vodorovně na středu", 500, r.x + r.width / 2);
+		Assert.assertEquals(350, r.x);
+		Assert.assertEquals("střed zprávy je 90 px nad dolním okrajem", 700 - 90, r.y + r.height / 2);
+		Assert.assertEquals(300, r.width);
+		Assert.assertEquals(24, r.height);
+		final java.awt.Rectangle sudy = JToast.umisteni(1001, 700, 301, 24);
+		Assert.assertEquals("střed i při lichých rozměrech v rámci pixelu", 500, sudy.x + sudy.width / 2, 1);
+	}
+
+	@Test
+	public void zpravaSeVUzkemOknePosuneKLevemuOkrajiAleNeoriznese() {
+		final java.awt.Rectangle uzke = JToast.umisteni(300, 700, 340, 24);
+		Assert.assertEquals("delší než mapa: začíná na okraji, nezkracuje se zleva", JToast.OKRAJ, uzke.x);
+		final java.awt.Rectangle skoroTesne = JToast.umisteni(350, 700, 340, 24);
+		Assert.assertEquals(JToast.OKRAJ, skoroTesne.x);
+		final java.awt.Rectangle volne = JToast.umisteni(400, 700, 340, 24);
+		Assert.assertEquals(30, volne.x);
+	}
+
+	@Test
+	public void zpravaJeNadMeritkemAVizualneNadStavovymRadkem() {
+		final java.awt.Rectangle r = JToast.umisteni(1280, 656, 330, 24);
+		Assert.assertTrue("nad dolním okrajem mapy, tedy nad stavovým řádkem pod ní", r.y + r.height < 656);
+		Assert.assertTrue("měřítko má nahoře kolem 55 px od dolního okraje: zpráva ho nepřekrývá", r.y + r.height < 656 - 55);
 	}
 }

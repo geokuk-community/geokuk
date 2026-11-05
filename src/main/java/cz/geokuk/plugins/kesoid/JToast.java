@@ -6,16 +6,17 @@ import cz.geokuk.framework.JSlide0;
 import cz.geokuk.util.gui.BublinkaHodnoty;
 import cz.geokuk.util.gui.PopisekNaMape;
 
-/** Krátká zpráva vlevo dole nad mapou; plynule se objeví, drží a zmizí. Myš ani klávesy nezachytává. */
+/** Krátká zpráva uprostřed dole nad měřítkem; plynule se objeví, drží a zmizí. Myš ani klávesy nezachytává. */
 public class JToast extends JSlide0 {
 
 	private static final long serialVersionUID = 1L;
 
 	/** Jak dlouho se zpráva drží beze změny. */
 	public static final int DRZENI_MS = 2500;
-	private static final int ODSAZENI_ZLEVA = 12;
-	/** Svislý střed zprávy nad spodním okrajem; nad měřítkem. */
-	private static final int NAD_DOLNIM_OKRAJEM = 62;
+	/** Nejmenší odstup zprávy od levého a pravého okraje mapy v úzkém okně. */
+	static final int OKRAJ = 12;
+	/** Svislý střed zprávy nad spodním okrajem mapy: nad měřítkem, které stojí uprostřed dole. */
+	static final int NAD_DOLNIM_OKRAJEM = 90;
 
 	private final transient BublinkaHodnoty bublinka = new BublinkaHodnoty(this::repaint, DRZENI_MS);
 
@@ -35,9 +36,10 @@ public class JToast extends JSlide0 {
 		return bublinka.casovacBezi();
 	}
 
-	/** Svislý střed zprávy podle výšky komponenty. */
-	static int stredY(final int vyska) {
-		return vyska - NAD_DOLNIM_OKRAJEM;
+	/** Obdélník zprávy: vodorovně na středu mapy, svisle nad měřítkem; v úzkém okně se zarovná k levému okraji, aby se nezkrátila zleva. */
+	static Rectangle umisteni(final int sirkaMapy, final int vyskaMapy, final int sirkaZpravy, final int vyskaZpravy) {
+		final int x = Math.max(OKRAJ, (sirkaMapy - sirkaZpravy) / 2);
+		return new Rectangle(x, vyskaMapy - NAD_DOLNIM_OKRAJEM - vyskaZpravy / 2, sirkaZpravy, vyskaZpravy);
 	}
 
 	@Override
@@ -67,7 +69,8 @@ public class JToast extends JSlide0 {
 		}
 		final Graphics2D g2 = (Graphics2D) g;
 		final Font font = getFont().deriveFont(Font.BOLD);
-		final int sirka = PopisekNaMape.hranice(g2.getFontMetrics(font), bublinka.getText(), 0, 0).width;
-		PopisekNaMape.nakresli(g2, font, bublinka.getText(), ODSAZENI_ZLEVA + sirka, stredY(getHeight()), v);
+		final Rectangle velikost = PopisekNaMape.hranice(g2.getFontMetrics(font), bublinka.getText(), 0, 0);
+		final Rectangle r = umisteni(getWidth(), getHeight(), velikost.width, velikost.height);
+		PopisekNaMape.nakresli(g2, font, bublinka.getText(), r.x + r.width, r.y + r.height / 2, v);
 	}
 }
