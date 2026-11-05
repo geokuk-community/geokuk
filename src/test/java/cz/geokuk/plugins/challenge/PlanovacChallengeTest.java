@@ -612,4 +612,104 @@ public class PlanovacChallengeTest {
 		Thread.sleep(400);
 		Assert.assertEquals(pred, udalosti.size());
 	}
+
+	// ---- zastaralé výsledky D/T
+
+	/** Keš, jejíž čtení terénu při zapnuté blokaci čeká, dokud ho test nepustí. */
+	private static final class BlokujiciKes extends PolicekKes {
+		private final java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch[]> zamek;
+
+		BlokujiciKes(final java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch[]> zamek) {
+			super("BLOK", 50.02, 14.02, false, 1, 1, null, null, false);
+			this.zamek = zamek;
+		}
+
+		@Override
+		public int teren() {
+			final java.util.concurrent.CountDownLatch[] z = zamek.get();
+			if (z != null) {
+				z[0].countDown();
+				try {
+					z[1].await(20, java.util.concurrent.TimeUnit.SECONDS);
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+			return super.teren();
+		}
+	}
+
+	private long vysledkuDt(final String nazev) {
+		return udalosti.stream().filter(e -> e.druh() == ChallengeZmenenyEvent.Druh.VYSLEDEK && e.challenge().nazev().equals(nazev)).count();
+	}
+
+	private java.util.concurrent.CountDownLatch[] zablokuj(final java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch[]> zamek) {
+		final java.util.concurrent.CountDownLatch[] z = { new java.util.concurrent.CountDownLatch(1), new java.util.concurrent.CountDownLatch(1) };
+		zamek.set(z);
+		return z;
+	}
+
+	private void posunStredu(final double lat, final double lon) throws Exception {
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+			stredMapy = new Wgs(lat, lon);
+			planovac.stredMapyZmenen();
+		});
+	}
+
+	@Test
+	public void zastaralyVypocetDTPoDalsimPosunuNeniVModelu() throws Exception {
+		napojNaModel();
+		final java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch[]> zamek = new java.util.concurrent.atomic.AtomicReference<>();
+		final Challenge c = dtChallenge("DT");
+		final List<VstupKes> data = new ArrayList<>(dtData());
+		data.add(new BlokujiciKes(zamek));
+		planovac.keseNacteny(data);
+		zapni(c);
+		pockej(() -> model.vysledekPolicek(c) != null, "první výsledek");
+		Assert.assertEquals(1, vysledkuDt("DT"));
+		final java.util.concurrent.CountDownLatch[] z = zablokuj(zamek);
+		posunStredu(LAT + 0.05, LON);
+		Assert.assertTrue("přepočet běží a čeká", z[0].await(20, java.util.concurrent.TimeUnit.SECONDS));
+		posunStredu(LAT + 0.10, LON);
+		z[1].countDown();
+		pockej(() -> vysledkuDt("DT") >= 2, "výsledek posledního posunu");
+		Thread.sleep(800);
+		Assert.assertEquals("zastaralý běh nic nepublikoval", 2, vysledkuDt("DT"));
+	}
+
+	@Test
+	public void zavreniPlanovaceBehemVypoctuDTNicNepublikuje() throws Exception {
+		napojNaModel();
+		final java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch[]> zamek = new java.util.concurrent.atomic.AtomicReference<>();
+		final Challenge c = dtChallenge("DT");
+		final List<VstupKes> data = new ArrayList<>(dtData());
+		data.add(new BlokujiciKes(zamek));
+		planovac.keseNacteny(data);
+		zapni(c);
+		pockej(() -> model.vysledekPolicek(c) != null, "první výsledek");
+		final java.util.concurrent.CountDownLatch[] z = zablokuj(zamek);
+		posunStredu(LAT + 0.05, LON);
+		Assert.assertTrue("přepočet běží a čeká", z[0].await(20, java.util.concurrent.TimeUnit.SECONDS));
+		planovac.zavri();
+		z[1].countDown();
+		Thread.sleep(800);
+		Assert.assertEquals("po zavření se nic nepublikuje", 1, vysledkuDt("DT"));
+	}
+
+	@Test
+	public void prahPosunuStreduJeDvaKilometry() throws Exception {
+		napojNaModel();
+		final Challenge c = dtChallenge("DT");
+		planovac.keseNacteny(dtData());
+		zapni(c);
+		pockej(() -> model.vysledekPolicek(c) != null, "první výsledek");
+		final VysledekPolicek prvni = model.vysledekPolicek(c);
+		final GeometrieSektoru.Bod pod = GeometrieSektoru.bod(LAT, LON, 0, 1_990, GeometrieSektoru.Model.KOULE);
+		posunStredu(pod.lat, pod.lon);
+		Thread.sleep(500);
+		Assert.assertSame("posun 1990 m", prvni, model.vysledekPolicek(c));
+		final GeometrieSektoru.Bod nad = GeometrieSektoru.bod(LAT, LON, 0, 2_010, GeometrieSektoru.Model.KOULE);
+		posunStredu(nad.lat, nad.lon);
+		pockej(() -> model.vysledekPolicek(c) != prvni, "přepočet po posunu 2010 m");
+	}
 }

@@ -3,7 +3,7 @@ package cz.geokuk.plugins.challenge;
 import java.time.LocalDate;
 
 /** Testovací keš pro D/T matici i kalendář. */
-final class PolicekKes implements VstupDT, VstupKalendar {
+class PolicekKes implements VstupDT, VstupKalendar {
 
 	final String id;
 	final double lat;
