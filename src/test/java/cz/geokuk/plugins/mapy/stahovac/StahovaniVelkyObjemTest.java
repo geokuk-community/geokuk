@@ -322,6 +322,11 @@ public class StahovaniVelkyObjemTest {
 		Assert.assertEquals("rozpracované požadavky nedoběhly", 0, rozpracovanePozadavky.get());
 		final int poZastaveni = pozadavky.size();
 		Assert.assertEquals("po zastavení se žádné další dlaždice nežádají", poZastaveni, pozadavky.size());
+		// Zastavená dávka další dlaždici nepřijme a její stahování zruší.
+		final AtomicInteger zruseno = new AtomicInteger();
+		Assert.assertFalse("zastavená dávka další dlaždici nezařadí", davka.zarazeno(davka.dlazdice(), zruseno::incrementAndGet));
+		Assert.assertEquals("dlaždice odmítnutá zastavenou dávkou se zruší", 1, zruseno.get());
+		Assert.assertEquals(poZastaveni, pozadavky.size());
 		Assert.assertTrue("zastavení má zastavit, ne počkat na všechny: " + poZastaveni, poZastaveni < ocekavane.size());
 		s.ukonciProgram();
 		final int vCache = radkuVCache();
