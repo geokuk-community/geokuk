@@ -51,4 +51,22 @@ public class DatumyKeseTest {
 			Assert.assertNull(String.valueOf(s), DatumyKese.datum(s, PRAHA));
 		}
 	}
+
+	@Test
+	public void mezeraMistoTAZonaSePrevede() {
+		Assert.assertEquals(LocalDate.of(2024, 3, 6), DatumyKese.datum("2024-03-05 23:30:00+01:00", ZoneId.of("Asia/Tokyo")));
+		Assert.assertEquals(LocalDate.of(2024, 3, 5), DatumyKese.datum("2024-03-05 23:30:00+01:00", ZoneId.of("UTC")));
+		Assert.assertEquals(LocalDate.of(2024, 3, 6), DatumyKese.datum("2024-03-05 23:30:00Z", PRAHA));
+	}
+
+	@Test
+	public void zlomekDelsiNezDevetCisliSeZonouJeNecitelny() {
+		Assert.assertNull(DatumyKese.datum("2026-03-14T23:30:00.1234567890Z", PRAHA));
+		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14T23:30:00.1234567890", PRAHA));
+	}
+
+	@Test
+	public void posunBezDvojteckySeBereJakoBezZony() {
+		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14T23:30:00+0100", ZoneId.of("Asia/Tokyo")));
+	}
 }

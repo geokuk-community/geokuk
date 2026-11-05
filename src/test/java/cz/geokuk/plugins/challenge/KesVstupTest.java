@@ -165,6 +165,18 @@ public class KesVstupTest {
 	}
 
 	@Test
+	public void datumNalezuNenalezeneKeseJeNullIKdyzJeVyplneno() {
+		for (final EKesVztah vztah : new EKesVztah[] { EKesVztah.NORMAL, EKesVztah.OWN }) {
+			final Kes k = kes("GC1", vztah, "Traditional Cache", 50.1, 14.2);
+			k.setFoundTime("2026-03-14");
+			Assert.assertNull(vztah.name(), KesVstup.z(k, ZoneId.of("UTC")).datumNalezu());
+		}
+		final Kes nalezena = kes("GC2", EKesVztah.FOUND, "Geocache Found", 50.1, 14.2);
+		nalezena.setFoundTime("2026-03-14");
+		Assert.assertEquals(LocalDate.of(2026, 3, 14), KesVstup.z(nalezena, ZoneId.of("UTC")).datumNalezu());
+	}
+
+	@Test
 	public void datumZverejneniABezPasma() {
 		final Kes k = kes("GC1", EKesVztah.NORMAL, "Event Cache", 50.1, 14.2);
 		k.setHidden("2026-12-24T23:30:00Z");

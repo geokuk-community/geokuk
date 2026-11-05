@@ -18,6 +18,9 @@ final class DatumyKese {
 	 * @param pasmo
 	 *            pásmo uživatele; má-li hodnota časovou zónu, datum se převede do něj, jinak se vezme datum, jak je zapsáno; null = vždy datum, jak je zapsáno
 	 * @return null, když hodnota chybí nebo nejde přečíst
+	 *
+	 *         Zóna je jen {@code Z} nebo {@code ±hh:mm}; posun {@code +0100} se bere jako zápis bez zóny. Zlomek sekundy delší než 9 číslic se zónou je nečitelný (null), bez zóny
+	 *         se přečte datum. Zdroj, který zapisuje lokální datum jako „…T00:00:00Z“, se v pásmu západně od UTC převede na předchozí den.
 	 */
 	static LocalDate datum(final String hodnota, final ZoneId pasmo) {
 		if (hodnota == null) {
