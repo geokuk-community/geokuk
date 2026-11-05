@@ -510,4 +510,9 @@ public class JKachlovnikPresCele extends JKachlovnik {
 		}
 		return radky;
 	}
+
+	@Override
+	protected boolean pamatovatZobrazeni() {
+		return true;
+	}
 }
