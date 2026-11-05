@@ -247,7 +247,6 @@ public class JBarvovyDvojSlider extends JPanel {
 		final float v = legenda.viditelnost();
 		final Font fontL = fontLegendy();
 		final FontMetrics fmL = g.getFontMetrics(fontL);
-		final int sirkaOsy = sirkaOsy(fmL);
 		final int pravyOkrajPanelu = SwingUtilities.convertPoint(this, getWidth(), 0, kam).x;
 		final Font fontB = fontBublinky();
 		final int vyskaPopisku = fmL.getHeight() + 4;
