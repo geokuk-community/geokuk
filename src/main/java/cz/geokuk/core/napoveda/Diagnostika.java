@@ -470,7 +470,7 @@ public final class Diagnostika {
 
 	/** Adresa; skupina 1 je schéma, 2 adresa bez uživatele a parametrů, 3 parametry za otazníkem, zakódovaným otazníkem nebo středníkem. */
 	private static final java.util.regex.Pattern ADRESA = java.util.regex.Pattern
-			.compile("(?i)((?:https?|ftps?)://)(?:[^\\s/?#\"'@]*+@)?((?:(?!%3F)[^\\s?\"'#;])++)((?:\\?|%3F|;)[^\\s\"']*+)?");
+			.compile("(?i)((?:https?|ftps?)://)(?:[^\\s/?#\"']*@)?((?:(?!%3F)[^\\s?\"'#;])++)((?:[?#;]|%3F)[^\\s\"']*+)?");
 
 	/** Hlášení je veřejné: bez jména uživatele v cestách a bez uživatele, hesla a parametrů v adresách (mohou obsahovat klíč k mapám). */
 	static String soukrome(final String text) {
@@ -491,6 +491,7 @@ public final class Diagnostika {
 				}
 				vzor.append(java.util.regex.Pattern.quote(cast));
 			}
+			vzor.append("(?![\\p{L}\\p{N}_.-])");
 			vysledek = java.util.regex.Pattern.compile(vzor.toString(), windows ? java.util.regex.Pattern.CASE_INSENSITIVE : 0).matcher(vysledek).replaceAll("~");
 		}
 		final java.util.regex.Matcher m = ADRESA.matcher(vysledek);

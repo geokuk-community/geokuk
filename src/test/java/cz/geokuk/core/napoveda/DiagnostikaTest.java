@@ -150,6 +150,10 @@ public class DiagnostikaTest {
 		Assert.assertEquals("https://server.example.org/a%20b?…", Diagnostika.soukrome("https://server.example.org/a%20b?key=TAJNE", "/home/jan", false));
 		Assert.assertEquals("https://server.example.org/app?…", Diagnostika.soukrome("https://server.example.org/app;jsessionid=TAJNE", "/home/jan", false));
 		Assert.assertEquals("ftp://server.example.org/soubor?…", Diagnostika.soukrome("ftp://server.example.org/soubor?token=TAJNE", "/home/jan", false));
+		Assert.assertEquals("https://x.org/a?…", Diagnostika.soukrome("https://x.org/a#frag?key=TAJNE", "/home/jan", false));
+		Assert.assertEquals("https://x.org/cb?…", Diagnostika.soukrome("https://x.org/cb#access_token=TAJNE&state=1", "/home/jan", false));
+		Assert.assertEquals("https://c.org/x", Diagnostika.soukrome("https://a@b@c.org/x", "/home/jan", false));
+		Assert.assertEquals("/home/jan2/x a ~/x", Diagnostika.soukrome("/home/jan2/x a /home/jan/x", "/home/jan", false));
 		Assert.assertEquals("Bez adresy a bez cesty", Diagnostika.soukrome("Bez adresy a bez cesty", "/home/jan", false));
 	}
 
