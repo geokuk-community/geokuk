@@ -74,7 +74,7 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
         run: |
-          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          python - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import glob, os
           print('### Odezva EDT (ms) – ' + os.environ.get('RUNNER_OS', ''))
           print('| scénář | nejdelší | při startu | při přepnutí vzhledu | událostí ≥ 500 ms | pauzy JVM |')
