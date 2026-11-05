@@ -53,7 +53,7 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 
 	/** Měřítko je uprostřed dole a nejvýš na polovině šířky, aby nezasahovalo do rohů (ty mají nejvýš čtvrtinu šířky). */
 	public static int maximalniSirka(final int sirkaMapy) {
-		return sirkaMapy / 2;
+		return cz.geokuk.framework.RozmisteniPrekryvu.maximalniSirkaMeritka(sirkaMapy);
 	}
 
 	@Override

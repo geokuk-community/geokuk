@@ -253,7 +253,7 @@ public class StavVrstevTest {
 		final java.awt.Rectangle r = JToast.umisteni(1000, 700, 300, 24);
 		Assert.assertEquals("vodorovně na středu", 500, r.x + r.width / 2);
 		Assert.assertEquals(350, r.x);
-		Assert.assertEquals("střed zprávy je 90 px nad dolním okrajem", 700 - 90, r.y + r.height / 2);
+		Assert.assertEquals("zpráva stojí 12 px nad oblastí měřítka (60 px od dolního okraje)", 700 - 60 - 12, r.y + r.height);
 		Assert.assertEquals(300, r.width);
 		Assert.assertEquals(24, r.height);
 		final java.awt.Rectangle sudy = JToast.umisteni(1001, 700, 301, 24);
@@ -261,19 +261,27 @@ public class StavVrstevTest {
 	}
 
 	@Test
-	public void zpravaSeVUzkemOknePosuneKLevemuOkrajiAleNeoriznese() {
+	public void zpravaSeVUzkemOknePosuneKLevemuOkrajiAZkratiSe() {
 		final java.awt.Rectangle uzke = JToast.umisteni(300, 700, 340, 24);
-		Assert.assertEquals("delší než mapa: začíná na okraji, nezkracuje se zleva", JToast.OKRAJ, uzke.x);
-		final java.awt.Rectangle skoroTesne = JToast.umisteni(350, 700, 340, 24);
-		Assert.assertEquals(JToast.OKRAJ, skoroTesne.x);
-		final java.awt.Rectangle volne = JToast.umisteni(400, 700, 340, 24);
-		Assert.assertEquals(30, volne.x);
+		Assert.assertEquals("delší než mapa: začíná na okraji, nezkracuje se zleva", cz.geokuk.framework.RozmisteniPrekryvu.OKRAJ_ZPRAVY, uzke.x);
+		Assert.assertEquals("a zkrátí se, aby nezasáhla do pásu legendy", cz.geokuk.framework.RozmisteniPrekryvu.nejvetsiSirkaZpravy(300), uzke.width);
+		final java.awt.Rectangle volne = JToast.umisteni(500, 700, 340, 24);
+		Assert.assertEquals("na pravé straně zůstane pás pro legendu", 500 - 90 - 12 - 340, volne.x);
+		final java.awt.Rectangle stred = JToast.umisteni(800, 700, 340, 24);
+		Assert.assertEquals("kde je místo, je vodorovně uprostřed", 230, stred.x);
 	}
 
 	@Test
-	public void zpravaJeNadMeritkemAVizualneNadStavovymRadkem() {
-		final java.awt.Rectangle r = JToast.umisteni(1280, 656, 330, 24);
-		Assert.assertTrue("nad dolním okrajem mapy, tedy nad stavovým řádkem pod ní", r.y + r.height < 656);
-		Assert.assertTrue("měřítko má nahoře kolem 55 px od dolního okraje: zpráva ho nepřekrývá", r.y + r.height < 656 - 55);
+	public void dlouhyTextSeZkratiTremiTeckami() {
+		final java.awt.image.BufferedImage obraz = new java.awt.image.BufferedImage(1, 1, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = obraz.createGraphics();
+		final java.awt.FontMetrics fm = g.getFontMetrics(new java.awt.Font(java.awt.Font.DIALOG, java.awt.Font.BOLD, 12));
+		g.dispose();
+		final String text = "Zapnuté zvýrazňovací kruhy s poloměrem v metrech";
+		Assert.assertEquals("vejde se", text, JToast.zkrat(text, fm, fm.stringWidth(text)));
+		final String kratky = JToast.zkrat(text, fm, fm.stringWidth(text) - 1);
+		Assert.assertTrue(kratky, kratky.endsWith("…") && kratky.length() < text.length());
+		Assert.assertTrue(fm.stringWidth(kratky) <= fm.stringWidth(text) - 1);
+		Assert.assertEquals("…", JToast.zkrat(text, fm, 3).substring(JToast.zkrat(text, fm, 3).length() - 1));
 	}
 }
