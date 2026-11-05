@@ -114,6 +114,16 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		return r;
 	}
 
+	/** Odznak v souřadnicích mapy dané šířky (pod ním visí popup). */
+	static Rectangle oblastOdznaku(final int sirkaMapy) {
+		return rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy)).width)[ODZNAK];
+	}
+
+	/** Odznak v souřadnicích mapy. */
+	public Rectangle oblastOdznaku() {
+		return oblastOdznaku(getWidth());
+	}
+
 	/** Obdélník pruhu v souřadnicích mapy podle její šířky. */
 	Rectangle oblastPruhu() {
 		return RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(getWidth()));

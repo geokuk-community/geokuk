@@ -62,23 +62,24 @@ public class JPopupPlanovaceTest {
 	@Test
 	public void polohaPodOdznakemUvnitrMapy() {
 		final Dimension pozadovana = new Dimension(420, 330);
-		final Rectangle odznak = JPopupPlanovace.oblastOdznaku(1920);
-		final Rectangle r = JPopupPlanovace.poloha(new Dimension(1920, 1000), pozadovana);
-		Assert.assertEquals("pod pruhem", RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + JPopupPlanovace.POD_PRUHEM, r.y);
-		Assert.assertEquals("kousek před odznakem", odznak.x - JPopupPlanovace.PRED_ODZNAKEM, r.x);
+		final Rectangle odznak = JPruhPlanovace.oblastOdznaku(1920);
+		final Rectangle r = JPopupPlanovace.poloha(new Dimension(1920, 1000), pozadovana, java.util.Collections.<Rectangle> emptyList());
+		Assert.assertEquals("pod pruhem", RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + RozmisteniPrekryvu.POD_PRUHEM, r.y);
+		Assert.assertEquals("kousek před odznakem", odznak.x - RozmisteniPrekryvu.PRED_ODZNAKEM, r.x);
 		Assert.assertEquals(pozadovana, r.getSize());
 		Assert.assertTrue("odznak zůstane vidět nad popupem", odznak.y + odznak.height <= r.y);
 		for (final Dimension m : new Dimension[] { new Dimension(1920, 1000), new Dimension(1280, 700), new Dimension(800, 500), new Dimension(450, 400), new Dimension(400, 300), new Dimension(300, 200) }) {
-			final Rectangle p = JPopupPlanovace.poloha(m, pozadovana);
+			final Rectangle p = JPopupPlanovace.poloha(m, pozadovana, java.util.Collections.<Rectangle> emptyList());
 			final Rectangle uvnitr = new Rectangle(RozmisteniPrekryvu.OKRAJ, 0, m.width - 2 * RozmisteniPrekryvu.OKRAJ, m.height - RozmisteniPrekryvu.OKRAJ);
 			Assert.assertTrue(m + ": " + p, uvnitr.contains(p));
 			Assert.assertFalse(m + ": popup nepřekrývá pruh " + p, p.intersects(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(m.width))));
 		}
-		final Rectangle stredni = JPopupPlanovace.poloha(new Dimension(450, 400), pozadovana);
+		final Rectangle stredni = JPopupPlanovace.poloha(new Dimension(450, 400), pozadovana, java.util.Collections.<Rectangle> emptyList());
 		Assert.assertEquals("když se vedle odznaku nevejde, posune se doleva", 450 - RozmisteniPrekryvu.OKRAJ, stredni.x + stredni.width);
 		Assert.assertEquals(pozadovana.width, stredni.width);
-		Assert.assertEquals("v úzké mapě se zúží", 400 - 2 * RozmisteniPrekryvu.OKRAJ, JPopupPlanovace.poloha(new Dimension(400, 300), pozadovana).width);
-		Assert.assertEquals("v nízké mapě se zkrátí", 300 - r.y - RozmisteniPrekryvu.OKRAJ, JPopupPlanovace.poloha(new Dimension(800, 300), pozadovana).height);
+		Assert.assertEquals("v úzké mapě se zúží", 400 - 2 * RozmisteniPrekryvu.OKRAJ, JPopupPlanovace.poloha(new Dimension(400, 300), pozadovana, java.util.Collections.<Rectangle> emptyList()).width);
+		Assert.assertEquals("v nízké mapě se zkrátí nad měřítkem", RozmisteniPrekryvu.meritko(new Dimension(800, 300)).y - RozmisteniPrekryvu.OKRAJ - r.y,
+				JPopupPlanovace.poloha(new Dimension(800, 300), pozadovana, java.util.Collections.<Rectangle> emptyList()).height);
 	}
 
 	@Test
@@ -117,7 +118,7 @@ public class JPopupPlanovaceTest {
 		final Rectangle o = popup.obsah.getBounds();
 		popup.mysKdekoli(stisk(popup.obsah.souhrn, 2, 2));
 		Assert.assertTrue("klik do popupu", popup.jeOtevreno());
-		final Rectangle odznak = JPopupPlanovace.oblastOdznaku(1280);
+		final Rectangle odznak = JPruhPlanovace.oblastOdznaku(1280);
 		popup.mysKdekoli(stisk(mapa, odznak.x + 2, odznak.y + 2));
 		Assert.assertTrue("stisk na odznaku nechá přepnutí na odznaku", popup.jeOtevreno());
 		popup.mysKdekoli(new MouseEvent(mapa, MouseEvent.MOUSE_RELEASED, 0, 0, 900, 500, 1, false, MouseEvent.BUTTON1));

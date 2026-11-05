@@ -4,7 +4,11 @@ import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -23,10 +27,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	private static final long serialVersionUID = 1L;
 
-	/** Mezera mezi spodním okrajem pruhu a popupem. */
-	static final int POD_PRUHEM = 2;
-	/** O kolik popup přesahuje doleva před odznak. */
-	static final int PRED_ODZNAKEM = 20;
 	static final int RADKU_SEZNAMU = 7;
 
 	final transient Obsah obsah = new Obsah();
@@ -35,6 +35,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	private transient Runnable naNastaveni;
 	private boolean otevreno;
 	private transient AWTEventListener mimo;
+	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
 
 	public JPopupPlanovace() {
 		setOpaque(false);
@@ -71,6 +72,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	public void inject(final PlanovacChallengeSluzba sluzba) {
 		this.sluzba = sluzba;
+	}
+
+	/** Panely v rozích mapy a legenda, do kterých popup nesmí zasahovat (souřadnice mapy). */
+	public void setPrekazky(final Supplier<? extends Collection<Rectangle>> prekazky) {
+		this.prekazky = prekazky;
 	}
 
 	/** Co udělá tlačítko Nastavení…; bez něj je tlačítko nedostupné. */
@@ -148,7 +154,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			return;
 		}
 		final Point p = SwingUtilities.convertPoint(zdroj, me.getPoint(), this);
-		if (oblastOdznaku(getWidth()).contains(p)) {
+		if (JPruhPlanovace.oblastOdznaku(getWidth()).contains(p)) {
 			return;
 		}
 		zavri();
@@ -161,32 +167,18 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	@Override
 	public void doLayout() {
-		obsah.setBounds(poloha(getSize(), obsah.getPreferredSize()));
+		obsah.setBounds(poloha(getSize(), obsah.getPreferredSize(), prekazky.get()));
 	}
 
-	/** Odznak pruhu v souřadnicích mapy. */
-	static Rectangle oblastOdznaku(final int sirkaMapy) {
-		final Rectangle pruh = RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy));
-		return JPruhPlanovace.rozloz(pruh.width)[JPruhPlanovace.ODZNAK];
-	}
-
-	/**
-	 * Obdélník popupu v souřadnicích mapy: pod pruhem, levým okrajem kousek před odznakem. Celý leží v mapě s odstupem {@link RozmisteniPrekryvu#OKRAJ}; když se nevejde do šířky, posune se
-	 * doleva a pak zúží, když se nevejde do výšky, zkrátí se (seznam se posouvá).
-	 */
-	static Rectangle poloha(final Dimension mapa, final Dimension pozadovana) {
-		final int okraj = RozmisteniPrekryvu.OKRAJ;
-		final Rectangle pruh = RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(mapa.width));
-		final Rectangle odznak = oblastOdznaku(mapa.width);
-		final int y = pruh.y + pruh.height + POD_PRUHEM;
-		final int w = Math.max(0, Math.min(pozadovana.width, mapa.width - 2 * okraj));
-		final int x = Math.max(okraj, Math.min(odznak.x - PRED_ODZNAKEM, mapa.width - okraj - w));
-		final int h = Math.max(0, Math.min(pozadovana.height, mapa.height - y - okraj));
-		return new Rectangle(x, y, w, h);
+	/** Popup v souřadnicích mapy, viz {@link RozmisteniPrekryvu#popupPlanovace}; měřítko dole je také překážka. */
+	static Rectangle poloha(final Dimension mapa, final Dimension pozadovana, final Collection<Rectangle> prekazky) {
+		final List<Rectangle> vse = new ArrayList<>(prekazky);
+		vse.add(RozmisteniPrekryvu.meritko(mapa));
+		return RozmisteniPrekryvu.popupPlanovace(mapa, JPruhPlanovace.oblastOdznaku(mapa.width), pozadovana, vse);
 	}
 
 	private Challenge challenge() {
-		final List<Challenge> aktivni = model == null ? java.util.Collections.<Challenge> emptyList() : model.aktivni();
+		final List<Challenge> aktivni = model == null ? Collections.<Challenge> emptyList() : model.aktivni();
 		return aktivni.isEmpty() ? null : aktivni.get(0);
 	}
 
