@@ -14,6 +14,13 @@ Atribuce:      © OpenStreetMap contributors
 Licence:       https://www.openstreetmap.org/copyright
 Podmínky dlaždic: https://operations.osmfoundation.org/policies/tiles/
 
+Mapy.com (Mapy.cz) – Základní, Turistická, Letecká (včetně starších snímků),
+Zeměpisná, Dopravní a Historická mapa
+------------------------------------------------------------------------
+Poskytovatel:  Seznam.cz, a.s.
+Atribuce:      © Seznam.cz, a.s. a další
+Podmínky:      https://developer.mapy.com/terms-and-conditions/
+
 Freemap Slovakia
 ----------------
 Poskytovatel:  Freemap Slovakia (outdoor.tiles.freemap.sk,
@@ -53,23 +60,23 @@ Metainformace poskytovatele o službě:
                https://zbgis.skgeodesy.sk/zbgis/rest/services/Ortofoto/MapServer?f=json
 Služby ZBGIS:  https://www.skgeodesy.sk/geoportal-en/services/web-map-services/wmts/wmts-zbgis
 
-BKG – TopPlusOpen (DE topografická mapa)
-----------------------------------------
-Poskytovatel:  Bundesamt für Kartographie und Geodäsie (BKG)
-               (sgx.geodatenzentrum.de)
+DE topografická mapa (BKG)
+--------------------------
+Poskytovatel:  Bundesamt für Kartographie und Geodäsie (BKG),
+               produkt TopPlusOpen (sgx.geodatenzentrum.de)
 Licence:       Datenlizenz Deutschland – Namensnennung – Version 2.0
                (dl-de/by-2-0), https://www.govdata.de/dl-de/by-2-0
-Atribuce:      © BKG dl-de/by-2-0, Datenquellen:
+Atribuce:      © BKG (rok zobrazení) dl-de/by-2-0, Datenquellen:
                https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html
 
-basemap.at (AT mapa)
+AT mapa (basemap.at)
 --------------------
 Poskytovatel:  basemap.at (maps.wien.gv.at)
 Licence:       Open Government Data Österreich, CC BY 4.0,
                https://creativecommons.org/licenses/by/4.0/
 Atribuce:      Data source: basemap.at (https://basemap.at)
 
-swisstopo (CH topografická mapa)
+CH topografická mapa (swisstopo)
 --------------------------------
 Poskytovatel:  Bundesamt für Landestopografie swisstopo
                (wmts.geo.admin.ch)
