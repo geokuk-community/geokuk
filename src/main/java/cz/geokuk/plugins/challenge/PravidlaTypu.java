@@ -34,7 +34,7 @@ public final class PravidlaTypu {
 		return new PravidlaTypu(lab, zapocitat, maxKandidatu);
 	}
 
-	/** Kolik kandidátů se nejvýš vrátí na jedno políčko; v matici první v pořadí vstupu, v kalendáři s nejbližším datem. */
+	/** Kolik kandidátů se nejvýš vrátí na jedno políčko: v kalendáři s nejbližším datem, při shodě i v matici nejbližších referenčnímu bodu. */
 	public PravidlaTypu sMaxKandidatu(final int max) {
 		if (max < 1) {
 			throw new IllegalArgumentException("Počet kandidátů na políčko musí být alespoň 1: " + max);

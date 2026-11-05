@@ -26,6 +26,12 @@ public class VypocetKalendareTest {
 		boolean lab;
 		boolean locationless;
 		StavLogu log = StavLogu.NEZNAMY;
+		double lat = 50;
+
+		K misto(final double nova) {
+			lat = nova;
+			return this;
+		}
 
 		static K nalez(final LocalDate d) {
 			final K k = new K();
@@ -56,7 +62,7 @@ public class VypocetKalendareTest {
 
 		@Override
 		public double lat() {
-			return 50;
+			return lat;
 		}
 
 		@Override
@@ -111,7 +117,7 @@ public class VypocetKalendareTest {
 	}
 
 	private static VysledekPolicek spocti(final PravidlaKalendare p, final K... k) {
-		return VypocetKalendare.spocti(p, DNES, Arrays.asList(k));
+		return VypocetKalendare.spocti(p, DNES, 50, 14, Arrays.asList(k));
 	}
 
 	private static VysledekPolicek spocti(final K... k) {
@@ -271,7 +277,7 @@ public class VypocetKalendareTest {
 		final List<K> kese = new ArrayList<>();
 		kese.add(K.event("POZDEJI", LocalDate.of(2027, 1, 10)));
 		kese.add(K.event("DRIVE", LocalDate.of(2026, 12, 1)));
-		final VysledekPolicek v = VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, kese);
+		final VysledekPolicek v = VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, 50, 14, kese);
 		final DalsiPolicko d = new DalsiPolicko();
 		Assert.assertEquals("DRIVE", d.dalsi(v, 50, 14).id());
 		Assert.assertEquals("POZDEJI", d.dalsi(v, 50, 14).id());
@@ -308,22 +314,22 @@ public class VypocetKalendareTest {
 
 	@Test(expected = NullPointerException.class)
 	public void nullPravidla() {
-		VypocetKalendare.spocti(null, DNES, new ArrayList<K>());
+		VypocetKalendare.spocti(null, DNES, 50, 14, new ArrayList<K>());
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void nullDnes() {
-		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), null, new ArrayList<K>());
+		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), null, 50, 14, new ArrayList<K>());
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void nullKese() {
-		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, null);
+		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, 50, 14, null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void nullPrvekKesi() {
-		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, Arrays.asList(K.nalez(LocalDate.of(2020, 1, 1)), null));
+		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, 50, 14, Arrays.asList(K.nalez(LocalDate.of(2020, 1, 1)), null));
 	}
 
 	private static List<String> idKandidatu(final VysledekPolicek v) {
@@ -353,5 +359,48 @@ public class VypocetKalendareTest {
 		final PravidlaKalendare p = PravidlaKalendare.vychozi().sTypy(PravidlaTypu.proKalendar().sMaxKandidatu(1));
 		final VysledekPolicek v = spocti(p, K.event("B", LocalDate.of(2026, 12, 24)), K.event("A", LocalDate.of(2026, 12, 24)));
 		Assert.assertEquals(Arrays.asList("B"), idKandidatu(v));
+	}
+
+	@Test
+	public void kandidatiSeStejnymDatemSeOrezouPodleVzdalenostiOdBodu() {
+		final List<K> kese = new ArrayList<>();
+		for (int i = 0; i < 200_000; i++) {
+			kese.add(K.event("GC" + i, LocalDate.of(2026, 12, 24)).misto(50 + i * 0.00005));
+		}
+		final double lat = 50 + 199_999 * 0.00005;
+		final PravidlaKalendare p = PravidlaKalendare.vychozi().sTypy(PravidlaTypu.proKalendar().sMaxKandidatu(3));
+		final VysledekPolicek v = VypocetKalendare.spocti(p, DNES, lat, 14, kese);
+		Assert.assertEquals(Arrays.asList("GC199999", "GC199998", "GC199997"), idKandidatu(v));
+		Assert.assertEquals("GC199999", new DalsiPolicko().dalsi(v, lat, 14).id());
+	}
+
+	@Test
+	public void vyrociSeOrezePodleVzdalenostiOdBodu() {
+		final PravidlaKalendare p = PravidlaKalendare.vychozi().sKandidaty(PravidlaKalendare.Kandidati.EVENTY_A_VYROCI).sTypy(PravidlaTypu.proKalendar().sMaxKandidatu(1));
+		final VysledekPolicek v = VypocetKalendare.spocti(p, DNES, 51, 14,
+				Arrays.asList(K.keska("DALEKO", LocalDate.of(2010, 12, 24)).misto(55), K.keska("BLIZKO", LocalDate.of(2011, 12, 24)).misto(51.01)));
+		Assert.assertEquals(Arrays.asList("BLIZKO"), idKandidatu(v));
+	}
+
+	@Test
+	public void datumMaPrednostPredVzdalenosti() {
+		final PravidlaKalendare p = PravidlaKalendare.vychozi().sTypy(PravidlaTypu.proKalendar().sMaxKandidatu(1));
+		final VysledekPolicek v = VypocetKalendare.spocti(p, DNES, 50, 14,
+				Arrays.asList(K.event("POZDEJI_BLIZKO", LocalDate.of(2027, 12, 24)).misto(50), K.event("DRIVE_DALEKO", LocalDate.of(2026, 12, 24)).misto(55)));
+		Assert.assertEquals(Arrays.asList("DRIVE_DALEKO"), idKandidatu(v));
+	}
+
+	@Test
+	public void referencniBodMimoRozsahJeChyba() {
+		for (final double[] bod : new double[][] { { 90.1, 0 }, { -90.1, 0 }, { 0, 180.1 }, { 0, -180.1 }, { Double.NaN, 0 }, { 0, Double.NaN } }) {
+			try {
+				VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, bod[0], bod[1], new ArrayList<K>());
+				Assert.fail(bod[0] + ", " + bod[1]);
+			} catch (final IllegalArgumentException e) {
+				// očekáváno
+			}
+		}
+		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, 90, 180, new ArrayList<K>());
+		VypocetKalendare.spocti(PravidlaKalendare.vychozi(), DNES, -90, -180, new ArrayList<K>());
 	}
 }

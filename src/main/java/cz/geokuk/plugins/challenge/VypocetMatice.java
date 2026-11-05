@@ -11,14 +11,22 @@ public final class VypocetMatice {
 
 	private VypocetMatice() {}
 
-	/** Prvky {@code kese} nesmí být null. */
-	public static VysledekPolicek spocti(final PravidlaTypu pravidla, final Iterable<? extends VstupDT> kese) {
+	/**
+	 * @param lat
+	 *            referenční bod (třeba střed mapy), ke kterému se vybírají kandidáti; výsledek platí pro něj
+	 * @param kese
+	 *            prvky nesmí být null
+	 */
+	public static VysledekPolicek spocti(final PravidlaTypu pravidla, final double lat, final double lon, final Iterable<? extends VstupDT> kese) {
 		Objects.requireNonNull(pravidla, "pravidla");
 		Objects.requireNonNull(kese, "kese");
+		if (!VypocetSektoru.jePlatnyStred(lat, lon)) {
+			throw new IllegalArgumentException("Bod mimo rozsah souřadnic: " + lat + ", " + lon);
+		}
 		final boolean[][] nalezeno = new boolean[PULEK][PULEK];
-		final List<List<VstupDT>> hledatelne = new ArrayList<>();
-		for (int i = 0; i < PULEK * PULEK; i++) {
-			hledatelne.add(new ArrayList<VstupDT>());
+		final OmezenaFronta[] hledatelne = new OmezenaFronta[PULEK * PULEK];
+		for (int i = 0; i < hledatelne.length; i++) {
+			hledatelne[i] = new OmezenaFronta(pravidla.maxKandidatu());
 		}
 		for (final VstupDT k : kese) {
 			Objects.requireNonNull(k, "keš");
@@ -28,10 +36,7 @@ public final class VypocetMatice {
 			if (PravidlaTypu.platnyNalez(k)) {
 				nalezeno[k.obtiznost()][k.teren()] = true;
 			} else if (PravidlaTypu.hledatelna(k)) {
-				final List<VstupDT> v = hledatelne.get(k.obtiznost() * PULEK + k.teren());
-				if (v.size() < pravidla.maxKandidatu()) {
-					v.add(k);
-				}
+				hledatelne[k.obtiznost() * PULEK + k.teren()].pridej(k, 0, lat, lon);
 			}
 		}
 		final List<String> chybejici = new ArrayList<>();
@@ -43,8 +48,8 @@ public final class VypocetMatice {
 				}
 				final String stitek = stitek(d, t);
 				chybejici.add(stitek);
-				for (final VstupDT k : hledatelne.get(d * PULEK + t)) {
-					kandidati.add(new KandidatPolicka(k.id(), k.lat(), k.lon(), stitek, stitek, null));
+				for (final OmezenaFronta.Kandidat c : hledatelne[d * PULEK + t].serazene()) {
+					kandidati.add(new KandidatPolicka(c.keska.id(), c.keska.lat(), c.keska.lon(), stitek, stitek, null));
 				}
 			}
 		}

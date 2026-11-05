@@ -19,11 +19,18 @@ public class VypocetMaticeTest {
 		boolean lab;
 		boolean locationless;
 		StavLogu log = StavLogu.NEZNAMY;
+		double lat = 50;
+		double lon = 14;
 
 		K(final int d, final int t, final boolean nalezena) {
 			this.d = d;
 			this.t = t;
 			this.nalezena = nalezena;
+		}
+
+		K misto(final double nova) {
+			lat = nova;
+			return this;
 		}
 
 		K id(final String i) {
@@ -38,12 +45,12 @@ public class VypocetMaticeTest {
 
 		@Override
 		public double lat() {
-			return 50;
+			return lat;
 		}
 
 		@Override
 		public double lon() {
-			return 14;
+			return lon;
 		}
 
 		@Override
@@ -88,7 +95,7 @@ public class VypocetMaticeTest {
 	}
 
 	private static VysledekPolicek spocti(final K... k) {
-		return VypocetMatice.spocti(PravidlaTypu.proMatici(), Arrays.asList(k));
+		return VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, Arrays.asList(k));
 	}
 
 	@Test
@@ -124,7 +131,7 @@ public class VypocetMaticeTest {
 				vse.add(new K(d, t, true));
 			}
 		}
-		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici(), vse);
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, vse);
 		Assert.assertEquals(0, v.pocetChybejicich());
 		Assert.assertTrue(v.kandidati().isEmpty());
 	}
@@ -181,10 +188,10 @@ public class VypocetMaticeTest {
 		final K loc = new K(4, 4, true);
 		loc.locationless = true;
 		final List<K> kese = Arrays.asList(lab, loc);
-		Assert.assertEquals(80, VypocetMatice.spocti(PravidlaTypu.proMatici(), kese).pocetChybejicich());
-		Assert.assertEquals(79, VypocetMatice.spocti(PravidlaTypu.proMatici().sLab(true), kese).pocetChybejicich());
-		Assert.assertEquals(81, VypocetMatice.spocti(PravidlaTypu.proMatici().sLocationless(false), kese).pocetChybejicich());
-		Assert.assertEquals(80, VypocetMatice.spocti(PravidlaTypu.proMatici().sLocationless(false).sLab(true), kese).pocetChybejicich());
+		Assert.assertEquals(80, VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, kese).pocetChybejicich());
+		Assert.assertEquals(79, VypocetMatice.spocti(PravidlaTypu.proMatici().sLab(true), 50, 14, kese).pocetChybejicich());
+		Assert.assertEquals(81, VypocetMatice.spocti(PravidlaTypu.proMatici().sLocationless(false), 50, 14, kese).pocetChybejicich());
+		Assert.assertEquals(80, VypocetMatice.spocti(PravidlaTypu.proMatici().sLocationless(false).sLab(true), 50, 14, kese).pocetChybejicich());
 	}
 
 	@Test
@@ -206,8 +213,7 @@ public class VypocetMaticeTest {
 
 	@Test
 	public void kandidatuJeNejvicNaPolickoAVybereSePrvniVPoradi() {
-		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(2),
-				Arrays.asList(new K(2, 2, false).id("A"), new K(2, 2, false).id("B"), new K(2, 2, false).id("C"), new K(3, 3, false).id("D")));
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(2), 50, 14, Arrays.asList(new K(2, 2, false).id("A"), new K(2, 2, false).id("B"), new K(2, 2, false).id("C"), new K(3, 3, false).id("D")));
 		final List<String> id = new ArrayList<>();
 		for (final KandidatPolicka k : v.kandidati()) {
 			id.add(k.id());
@@ -219,7 +225,7 @@ public class VypocetMaticeTest {
 
 	@Test
 	public void kandidatPoOrezuNeniVNalezenemPolicku() {
-		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(1), Arrays.asList(new K(2, 2, false).id("A"), new K(2, 2, true)));
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(1), 50, 14, Arrays.asList(new K(2, 2, false).id("A"), new K(2, 2, true)));
 		Assert.assertTrue(v.kandidati().isEmpty());
 	}
 
@@ -235,16 +241,58 @@ public class VypocetMaticeTest {
 
 	@Test(expected = NullPointerException.class)
 	public void nullPravidla() {
-		VypocetMatice.spocti(null, new ArrayList<K>());
+		VypocetMatice.spocti(null, 50, 14, new ArrayList<K>());
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void nullKese() {
-		VypocetMatice.spocti(PravidlaTypu.proMatici(), null);
+		VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void nullPrvekKesi() {
-		VypocetMatice.spocti(PravidlaTypu.proMatici(), Arrays.asList(new K(1, 1, true), null));
+		VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, Arrays.asList(new K(1, 1, true), null));
+	}
+
+	@Test
+	public void kandidatiVPolickuSeVybiraNejblizsiBoduZVelkehoPoctu() {
+		final List<K> kese = new ArrayList<>();
+		for (int i = 0; i < 200_000; i++) {
+			kese.add(new K(2, 2, false).id("GC" + i).misto(50 + i * 0.00005));
+		}
+		final double lat = 50 + 199_999 * 0.00005;
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(3), lat, 14, kese);
+		final List<String> id = new ArrayList<>();
+		for (final KandidatPolicka k : v.kandidati()) {
+			id.add(k.id());
+		}
+		Assert.assertEquals(Arrays.asList("GC199999", "GC199998", "GC199997"), id);
+		final DalsiPolicko dalsi = new DalsiPolicko();
+		Assert.assertEquals("GC199999", dalsi.dalsi(v, lat, 14).id());
+	}
+
+	@Test
+	public void kandidatiVPolickuJsouSerazeniOdNejblizsiho() {
+		final VysledekPolicek v = spocti(new K(2, 2, false).id("DALEKO").misto(52), new K(2, 2, false).id("BLIZKO").misto(50.1), new K(2, 2, false).id("STREDNI").misto(51));
+		final List<String> id = new ArrayList<>();
+		for (final KandidatPolicka k : v.kandidati()) {
+			id.add(k.id());
+		}
+		Assert.assertEquals(Arrays.asList("BLIZKO", "STREDNI", "DALEKO"), id);
+	}
+
+	@Test
+	public void referencniBodMimoRozsahJeChyba() {
+		final List<K> kese = new ArrayList<>();
+		for (final double[] bod : new double[][] { { 90.1, 0 }, { -90.1, 0 }, { 0, 180.1 }, { 0, -180.1 }, { Double.NaN, 0 }, { 0, Double.NaN } }) {
+			try {
+				VypocetMatice.spocti(PravidlaTypu.proMatici(), bod[0], bod[1], kese);
+				Assert.fail(bod[0] + ", " + bod[1]);
+			} catch (final IllegalArgumentException e) {
+				// očekáváno
+			}
+		}
+		VypocetMatice.spocti(PravidlaTypu.proMatici(), 90, 180, kese);
+		VypocetMatice.spocti(PravidlaTypu.proMatici(), -90, -180, kese);
 	}
 }

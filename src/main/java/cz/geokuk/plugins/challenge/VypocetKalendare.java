@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.PriorityQueue;
 import java.util.Set;
 
 /** Výpočet challenge kalendář: nález v každém dni roku, počítá se podle lokálního data nálezu. */
@@ -31,16 +30,22 @@ public final class VypocetKalendare {
 	/**
 	 * @param dnes
 	 *            dnešní datum v pásmu uživatele; podle něj se počítá „za kolik dní“ a které eventy ještě nenastaly
+	 * @param lat
+	 *            referenční bod (třeba střed mapy); při shodě data se vybírají kandidáti nejblíž němu a výsledek platí pro něj
 	 * @param kese
 	 *            prvky nesmí být null
 	 */
-	public static VysledekPolicek spocti(final PravidlaKalendare pravidla, final LocalDate dnes, final Iterable<? extends VstupKalendar> kese) {
+	public static VysledekPolicek spocti(final PravidlaKalendare pravidla, final LocalDate dnes, final double lat, final double lon,
+			final Iterable<? extends VstupKalendar> kese) {
 		Objects.requireNonNull(pravidla, "pravidla");
 		Objects.requireNonNull(dnes, "dnes");
 		Objects.requireNonNull(kese, "kese");
+		if (!VypocetSektoru.jePlatnyStred(lat, lon)) {
+			throw new IllegalArgumentException("Bod mimo rozsah souřadnic: " + lat + ", " + lon);
+		}
 		final int max = pravidla.typy().maxKandidatu();
 		final Set<MonthDay> nalezene = new HashSet<>();
-		final Map<MonthDay, PriorityQueue<Kandidat>> kandidatiDne = new HashMap<>();
+		final Map<MonthDay, OmezenaFronta> kandidatiDne = new HashMap<>();
 		for (final VstupKalendar k : kese) {
 			Objects.requireNonNull(k, "keš");
 			if (!pravidla.typy().lzePocitat(k)) {
@@ -51,7 +56,7 @@ public final class VypocetKalendare {
 					nalezene.add(MonthDay.from(k.datumNalezu()));
 				}
 			} else if (PravidlaTypu.hledatelna(k) && k.datum() != null) {
-				pridejKandidata(pravidla, dnes, max, k, kandidatiDne);
+				pridejKandidata(pravidla, dnes, max, lat, lon, k, kandidatiDne);
 			}
 		}
 		final List<MonthDay> dny = chybejiciDny(pravidla, dnes, nalezene);
@@ -60,31 +65,19 @@ public final class VypocetKalendare {
 		for (final MonthDay den : dny) {
 			final String stitek = stitek(den, dniDoDalsiho(den, dnes));
 			stitky.add(stitek);
-			final PriorityQueue<Kandidat> fronta = kandidatiDne.get(den);
+			final OmezenaFronta fronta = kandidatiDne.get(den);
 			if (fronta != null) {
-				final List<Kandidat> serazeni = new ArrayList<>(fronta);
-				Collections.sort(serazeni, Comparator.comparingInt((final Kandidat c) -> c.dni).thenComparing(c -> c.k.id()));
-				for (final Kandidat c : serazeni) {
-					kandidati.add(new KandidatPolicka(c.k.id(), c.k.lat(), c.k.lon(), stitek, stitek(den, c.dni), c.dni));
+				for (final OmezenaFronta.Kandidat c : fronta.serazene()) {
+					kandidati.add(new KandidatPolicka(c.keska.id(), c.keska.lat(), c.keska.lon(), stitek, stitek(den, c.dni), c.dni));
 				}
 			}
 		}
 		return new VysledekPolicek(pravidla.pozadovatPrestupny() ? 366 : 365, stitky, kandidati);
 	}
 
-	private static final class Kandidat {
-		final VstupKalendar k;
-		final int dni;
-
-		Kandidat(final VstupKalendar k, final int dni) {
-			this.k = k;
-			this.dni = dni;
-		}
-	}
-
-	/** Do fronty dne se drží nejvýš {@code max} kandidátů s nejbližším datem. */
-	private static void pridejKandidata(final PravidlaKalendare pravidla, final LocalDate dnes, final int max, final VstupKalendar k,
-			final Map<MonthDay, PriorityQueue<Kandidat>> kandidatiDne) {
+	/** Do fronty dne se drží nejvýš {@code max} kandidátů s nejbližším datem, při shodě nejblíž bodu. */
+	private static void pridejKandidata(final PravidlaKalendare pravidla, final LocalDate dnes, final int max, final double lat, final double lon, final VstupKalendar k,
+			final Map<MonthDay, OmezenaFronta> kandidatiDne) {
 		final LocalDate datum = k.datum();
 		final MonthDay den = MonthDay.from(datum);
 		final int dni;
@@ -98,17 +91,12 @@ public final class VypocetKalendare {
 		} else {
 			return;
 		}
-		PriorityQueue<Kandidat> fronta = kandidatiDne.get(den);
+		OmezenaFronta fronta = kandidatiDne.get(den);
 		if (fronta == null) {
-			fronta = new PriorityQueue<>(Comparator.comparingInt((final Kandidat c) -> c.dni).reversed());
+			fronta = new OmezenaFronta(max);
 			kandidatiDne.put(den, fronta);
 		}
-		if (fronta.size() < max) {
-			fronta.add(new Kandidat(k, dni));
-		} else if (dni < fronta.peek().dni) {
-			fronta.poll();
-			fronta.add(new Kandidat(k, dni));
-		}
+		fronta.pridej(k, dni, lat, lon);
 	}
 
 	private static List<MonthDay> chybejiciDny(final PravidlaKalendare pravidla, final LocalDate dnes, final Set<MonthDay> nalezene) {
