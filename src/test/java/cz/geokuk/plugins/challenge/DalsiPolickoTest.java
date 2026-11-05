@@ -12,7 +12,7 @@ public class DalsiPolickoTest {
 	}
 
 	private static KandidatPolicka k(final String id, final double lat, final Integer dni) {
-		return new KandidatPolicka(id, lat, 14, "D1/T1", dni);
+		return new KandidatPolicka(id, lat, 14, "D1/T1", "D1/T1", dni);
 	}
 
 	@Test

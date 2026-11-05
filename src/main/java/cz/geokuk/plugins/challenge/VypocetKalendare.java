@@ -8,8 +8,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.PriorityQueue;
 import java.util.Set;
 
 /** Výpočet challenge kalendář: nález v každém dni roku, počítá se podle lokálního data nálezu. */
@@ -27,11 +31,18 @@ public final class VypocetKalendare {
 	/**
 	 * @param dnes
 	 *            dnešní datum v pásmu uživatele; podle něj se počítá „za kolik dní“ a které eventy ještě nenastaly
+	 * @param kese
+	 *            prvky nesmí být null
 	 */
 	public static VysledekPolicek spocti(final PravidlaKalendare pravidla, final LocalDate dnes, final Iterable<? extends VstupKalendar> kese) {
+		Objects.requireNonNull(pravidla, "pravidla");
+		Objects.requireNonNull(dnes, "dnes");
+		Objects.requireNonNull(kese, "kese");
+		final int max = pravidla.typy().maxKandidatu();
 		final Set<MonthDay> nalezene = new HashSet<>();
-		final List<VstupKalendar> hledatelne = new ArrayList<>();
+		final Map<MonthDay, PriorityQueue<Kandidat>> kandidatiDne = new HashMap<>();
 		for (final VstupKalendar k : kese) {
+			Objects.requireNonNull(k, "keš");
 			if (!pravidla.typy().lzePocitat(k)) {
 				continue;
 			}
@@ -39,36 +50,65 @@ public final class VypocetKalendare {
 				if (k.datumNalezu() != null) {
 					nalezene.add(MonthDay.from(k.datumNalezu()));
 				}
-			} else if (PravidlaTypu.hledatelna(k)) {
-				hledatelne.add(k);
+			} else if (PravidlaTypu.hledatelna(k) && k.datum() != null) {
+				pridejKandidata(pravidla, dnes, max, k, kandidatiDne);
 			}
 		}
 		final List<MonthDay> dny = chybejiciDny(pravidla, dnes, nalezene);
 		final List<String> stitky = new ArrayList<>();
-		for (final MonthDay d : dny) {
-			stitky.add(stitek(d, dniDoDalsiho(d, dnes)));
-		}
 		final List<KandidatPolicka> kandidati = new ArrayList<>();
-		for (final VstupKalendar k : hledatelne) {
-			final LocalDate datum = k.datum();
-			if (datum == null || !dny.contains(MonthDay.from(datum))) {
-				continue;
-			}
-			final MonthDay den = MonthDay.from(datum);
-			final Integer dni;
-			if (k.event()) {
-				if (datum.isBefore(dnes)) {
-					continue;
+		for (final MonthDay den : dny) {
+			final String stitek = stitek(den, dniDoDalsiho(den, dnes));
+			stitky.add(stitek);
+			final PriorityQueue<Kandidat> fronta = kandidatiDne.get(den);
+			if (fronta != null) {
+				final List<Kandidat> serazeni = new ArrayList<>(fronta);
+				Collections.sort(serazeni, Comparator.comparingInt((final Kandidat c) -> c.dni).thenComparing(c -> c.k.id()));
+				for (final Kandidat c : serazeni) {
+					kandidati.add(new KandidatPolicka(c.k.id(), c.k.lat(), c.k.lon(), stitek, stitek(den, c.dni), c.dni));
 				}
-				dni = (int) ChronoUnit.DAYS.between(dnes, datum);
-			} else if (pravidla.kandidati() == PravidlaKalendare.Kandidati.EVENTY_A_VYROCI) {
-				dni = dniDoDalsiho(den, dnes);
-			} else {
-				continue;
 			}
-			kandidati.add(new KandidatPolicka(k.id(), k.lat(), k.lon(), stitek(den, dniDoDalsiho(den, dnes)), dni));
 		}
 		return new VysledekPolicek(pravidla.pozadovatPrestupny() ? 366 : 365, stitky, kandidati);
+	}
+
+	private static final class Kandidat {
+		final VstupKalendar k;
+		final int dni;
+
+		Kandidat(final VstupKalendar k, final int dni) {
+			this.k = k;
+			this.dni = dni;
+		}
+	}
+
+	/** Do fronty dne se drží nejvýš {@code max} kandidátů s nejbližším datem. */
+	private static void pridejKandidata(final PravidlaKalendare pravidla, final LocalDate dnes, final int max, final VstupKalendar k,
+			final Map<MonthDay, PriorityQueue<Kandidat>> kandidatiDne) {
+		final LocalDate datum = k.datum();
+		final MonthDay den = MonthDay.from(datum);
+		final int dni;
+		if (k.event()) {
+			if (datum.isBefore(dnes)) {
+				return;
+			}
+			dni = (int) ChronoUnit.DAYS.between(dnes, datum);
+		} else if (pravidla.kandidati() == PravidlaKalendare.Kandidati.EVENTY_A_VYROCI) {
+			dni = dniDoDalsiho(den, dnes);
+		} else {
+			return;
+		}
+		PriorityQueue<Kandidat> fronta = kandidatiDne.get(den);
+		if (fronta == null) {
+			fronta = new PriorityQueue<>(Comparator.comparingInt((final Kandidat c) -> c.dni).reversed());
+			kandidatiDne.put(den, fronta);
+		}
+		if (fronta.size() < max) {
+			fronta.add(new Kandidat(k, dni));
+		} else if (dni < fronta.peek().dni) {
+			fronta.poll();
+			fronta.add(new Kandidat(k, dni));
+		}
 	}
 
 	private static List<MonthDay> chybejiciDny(final PravidlaKalendare pravidla, final LocalDate dnes, final Set<MonthDay> nalezene) {

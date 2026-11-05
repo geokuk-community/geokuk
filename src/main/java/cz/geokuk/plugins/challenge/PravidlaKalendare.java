@@ -7,7 +7,10 @@ public final class PravidlaKalendare {
 	public enum Kandidati {
 		/** Eventy s datem v chybějícím dni, které ještě nenastaly. */
 		JEN_EVENTY,
-		/** Eventy a ostatní keše, jejichž datum zveřejnění připadá na chybějící den. */
+		/**
+		 * Eventy a ostatní keše, jejichž datum zveřejnění připadá na chybějící den. Nenalezená běžná keš kalendář nezaplní, protože se loguje v den nálezu, ne v den
+		 * zveřejnění; hodí se jen jako nápověda, UI to má říct.
+		 */
 		EVENTY_A_VYROCI
 	}
 

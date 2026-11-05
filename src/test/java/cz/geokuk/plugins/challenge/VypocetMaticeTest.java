@@ -203,4 +203,48 @@ public class VypocetMaticeTest {
 			// očekáváno
 		}
 	}
+
+	@Test
+	public void kandidatuJeNejvicNaPolickoAVybereSePrvniVPoradi() {
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(2),
+				Arrays.asList(new K(2, 2, false).id("A"), new K(2, 2, false).id("B"), new K(2, 2, false).id("C"), new K(3, 3, false).id("D")));
+		final List<String> id = new ArrayList<>();
+		for (final KandidatPolicka k : v.kandidati()) {
+			id.add(k.id());
+		}
+		Assert.assertEquals(Arrays.asList("A", "B", "D"), id);
+		Assert.assertEquals("D2/T2", v.kandidati().get(0).stitek());
+		Assert.assertEquals("D2/T2", v.kandidati().get(0).popis());
+	}
+
+	@Test
+	public void kandidatPoOrezuNeniVNalezenemPolicku() {
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(1), Arrays.asList(new K(2, 2, false).id("A"), new K(2, 2, true)));
+		Assert.assertTrue(v.kandidati().isEmpty());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void maxKandidatuMusiBytKladne() {
+		PravidlaTypu.proMatici().sMaxKandidatu(0);
+	}
+
+	@Test
+	public void maxKandidatuJeJedna() {
+		Assert.assertEquals(1, PravidlaTypu.proMatici().sMaxKandidatu(1).maxKandidatu());
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void nullPravidla() {
+		VypocetMatice.spocti(null, new ArrayList<K>());
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void nullKese() {
+		VypocetMatice.spocti(PravidlaTypu.proMatici(), null);
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void nullPrvekKesi() {
+		VypocetMatice.spocti(PravidlaTypu.proMatici(), Arrays.asList(new K(1, 1, true), null));
+	}
 }

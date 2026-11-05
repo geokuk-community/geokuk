@@ -3,30 +3,47 @@ package cz.geokuk.plugins.challenge;
 /** Které druhy keší se do challenge počítají (nálezy i kandidáti). */
 public final class PravidlaTypu {
 
+	/** Nejvíc kandidátů na jedno políčko, pokud se nenastaví jinak. */
+	public static final int VYCHOZI_MAX_KANDIDATU = 50;
+
 	private final boolean lab;
 	private final boolean locationless;
+	private final int maxKandidatu;
 
-	private PravidlaTypu(final boolean lab, final boolean locationless) {
+	private PravidlaTypu(final boolean lab, final boolean locationless, final int maxKandidatu) {
 		this.lab = lab;
 		this.locationless = locationless;
+		this.maxKandidatu = maxKandidatu;
 	}
 
 	/** D/T matice: Locationless se počítá, Lab nemá D/T. */
 	public static PravidlaTypu proMatici() {
-		return new PravidlaTypu(false, true);
+		return new PravidlaTypu(false, true, VYCHOZI_MAX_KANDIDATU);
 	}
 
 	/** Kalendář: bez Lab a Locationless. */
 	public static PravidlaTypu proKalendar() {
-		return new PravidlaTypu(false, false);
+		return new PravidlaTypu(false, false, VYCHOZI_MAX_KANDIDATU);
 	}
 
 	public PravidlaTypu sLab(final boolean zapocitat) {
-		return new PravidlaTypu(zapocitat, locationless);
+		return new PravidlaTypu(zapocitat, locationless, maxKandidatu);
 	}
 
 	public PravidlaTypu sLocationless(final boolean zapocitat) {
-		return new PravidlaTypu(lab, zapocitat);
+		return new PravidlaTypu(lab, zapocitat, maxKandidatu);
+	}
+
+	/** Kolik kandidátů se nejvýš vrátí na jedno políčko; v matici první v pořadí vstupu, v kalendáři s nejbližším datem. */
+	public PravidlaTypu sMaxKandidatu(final int max) {
+		if (max < 1) {
+			throw new IllegalArgumentException("Počet kandidátů na políčko musí být alespoň 1: " + max);
+		}
+		return new PravidlaTypu(lab, locationless, max);
+	}
+
+	int maxKandidatu() {
+		return maxKandidatu;
 	}
 
 	boolean lzePocitat(final VstupKes k) {
