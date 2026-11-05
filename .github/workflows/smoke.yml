@@ -70,6 +70,7 @@ jobs:
 
       - name: Odezva EDT do souhrnu
         if: always() && runner.os != 'macOS'
+        continue-on-error: true
         shell: bash
         env:
           PYTHONIOENCODING: utf-8
@@ -88,7 +89,7 @@ jobs:
                           p[k.strip()] = v.strip()
               if 'edt.nejdelsiMs' in p:
                   pomalych = sum(1 for k in p if k.startswith('edt.pomala.'))
-                  print('| %s/%s | %s | %s | %s | %d | %s |' % (f.split('/')[-2], os.path.basename(f)[:-11], p['edt.nejdelsiMs'], p.get('edt.startMs', ''), p.get('edt.vzhledMs', ''), pomalych, p.get('edt.pauzyJvm', '')))
+                  print('| %s/%s | %s | %s | %s | %d | %s |' % (os.path.basename(os.path.dirname(f)), os.path.basename(f)[:-11], p['edt.nejdelsiMs'], p.get('edt.startMs', ''), p.get('edt.vzhledMs', ''), pomalych, p.get('edt.pauzyJvm', '')))
           PY
 
       - name: Jednotkové testy
