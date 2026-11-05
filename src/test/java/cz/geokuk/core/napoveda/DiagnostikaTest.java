@@ -143,6 +143,24 @@ public class DiagnostikaTest {
 	}
 
 	@Test
+	public void adresaSVelkymiPismenyUzivatelemHeslemAZakodovanymOtaznikem() {
+		Assert.assertEquals("HTTPS://tile.example.org/1.png?…", Diagnostika.soukrome("HTTPS://tile.example.org/1.png?KEY=TAJNE", "/home/jan", false));
+		Assert.assertEquals("http://server.example.org/a.png", Diagnostika.soukrome("http://uzivatel:heslo@server.example.org/a.png", "/home/jan", false));
+		Assert.assertEquals("https://server.example.org/redirect?…", Diagnostika.soukrome("https://server.example.org/redirect%3Fkey%3DTAJNE", "/home/jan", false));
+		Assert.assertEquals("https://server.example.org/a%20b?…", Diagnostika.soukrome("https://server.example.org/a%20b?key=TAJNE", "/home/jan", false));
+		Assert.assertEquals("https://server.example.org/app?…", Diagnostika.soukrome("https://server.example.org/app;jsessionid=TAJNE", "/home/jan", false));
+		Assert.assertEquals("ftp://server.example.org/soubor?…", Diagnostika.soukrome("ftp://server.example.org/soubor?token=TAJNE", "/home/jan", false));
+		Assert.assertEquals("Bez adresy a bez cesty", Diagnostika.soukrome("Bez adresy a bez cesty", "/home/jan", false));
+	}
+
+	@Test
+	public void domovskaSlozkaNaWindowsBezOhleduNaPismenaALomitka() {
+		final String domov = "C:\\Users\\Jan";
+		Assert.assertEquals("~\\geokuk a ~/geokuk a ~\\x", Diagnostika.soukrome("c:\\users\\jan\\geokuk a C:/Users/Jan/geokuk a C:\\Users\\\\Jan\\x", domov, true));
+		Assert.assertEquals("c:\\users\\jan\\geokuk", Diagnostika.soukrome("c:\\users\\jan\\geokuk", domov, false));
+	}
+
+	@Test
 	public void textPoleVHlasceNeniPopisKomponenty() {
 		final javax.swing.JTextField pole = new javax.swing.JTextField("https://example.org/");
 		Assert.assertEquals("https://example.org/", Diagnostika.textZpravy(pole));
