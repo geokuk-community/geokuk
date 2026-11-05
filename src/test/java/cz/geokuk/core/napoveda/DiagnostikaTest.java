@@ -154,6 +154,10 @@ public class DiagnostikaTest {
 		Assert.assertEquals("https://x.org/cb?…", Diagnostika.soukrome("https://x.org/cb#access_token=TAJNE&state=1", "/home/jan", false));
 		Assert.assertEquals("https://c.org/x", Diagnostika.soukrome("https://a@b@c.org/x", "/home/jan", false));
 		Assert.assertEquals("/home/jan2/x a ~/x", Diagnostika.soukrome("/home/jan2/x a /home/jan/x", "/home/jan", false));
+		Assert.assertEquals("Nelze zapsat do ~.", Diagnostika.soukrome("Nelze zapsat do /home/jan.", "/home/jan", false));
+		Assert.assertEquals("~, ~) a ~/x.txt", Diagnostika.soukrome("/home/jan, /home/jan) a /home/jan/x.txt", "/home/jan", false));
+		Assert.assertEquals("/home/jan.txt a /home/jan-2", Diagnostika.soukrome("/home/jan.txt a /home/jan-2", "/home/jan", false));
+		Assert.assertEquals("Nelze zapsat do ~.", Diagnostika.soukrome("Nelze zapsat do C:\\Users\\Jan.", "C:\\Users\\Jan", true));
 		Assert.assertEquals("Bez adresy a bez cesty", Diagnostika.soukrome("Bez adresy a bez cesty", "/home/jan", false));
 	}
 

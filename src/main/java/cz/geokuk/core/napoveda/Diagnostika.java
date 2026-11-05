@@ -491,7 +491,7 @@ public final class Diagnostika {
 				}
 				vzor.append(java.util.regex.Pattern.quote(cast));
 			}
-			vzor.append("(?![\\p{L}\\p{N}_.-])");
+			vzor.append("(?![\\p{L}\\p{N}_]|[.-][\\p{L}\\p{N}_])");
 			vysledek = java.util.regex.Pattern.compile(vzor.toString(), windows ? java.util.regex.Pattern.CASE_INSENSITIVE : 0).matcher(vysledek).replaceAll("~");
 		}
 		final java.util.regex.Matcher m = ADRESA.matcher(vysledek);
