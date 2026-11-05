@@ -1,0 +1,183 @@
+package cz.geokuk.plugins.challenge;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.AbstractButton;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import cz.geokuk.framework.Event0;
+import cz.geokuk.framework.EventFirer;
+import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
+
+/** Dialog plánovače challenge: seznam, kopie šablony, úprava vlastní definice, zapnutí; potřebuje displej. */
+public class JChallengeDialogTest {
+
+	private ChallengeModel model;
+	private JChallengeDialog dialog;
+
+	@Before
+	public void setUp() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			model = new ChallengeModel();
+			model.inject(new EventFirer() {
+				@Override
+				public void fire(final Event0<?> event) {
+					if (dialog != null) {
+						dialog.onEvent((ChallengeZmenenyEvent) event);
+					}
+				}
+			});
+			final MapoveUloziste u = new MapoveUloziste();
+			model.setUloziste(() -> u);
+			model.initAfterInject();
+			dialog = new JChallengeDialog();
+			dialog.inject(model);
+		});
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		SwingUtilities.invokeAndWait(() -> dialog.dispose());
+	}
+
+	private static <T extends Component> List<T> najdi(final Container c, final Class<T> typ, final List<T> vysledek) {
+		for (final Component k : c.getComponents()) {
+			if (typ.isInstance(k)) {
+				vysledek.add(typ.cast(k));
+			}
+			if (k instanceof Container) {
+				najdi((Container) k, typ, vysledek);
+			}
+		}
+		return vysledek;
+	}
+
+	private AbstractButton tlacitko(final String text) {
+		for (final AbstractButton b : najdi(dialog.getContentPane(), AbstractButton.class, new ArrayList<AbstractButton>())) {
+			if (text.equals(b.getText())) {
+				return b;
+			}
+		}
+		throw new AssertionError("tlačítko " + text);
+	}
+
+	private JTextField pole(final int index) {
+		return najdi(dialog.getContentPane(), JTextField.class, new ArrayList<JTextField>()).get(index);
+	}
+
+	private String chyba() {
+		for (final JLabel l : najdi(dialog.getContentPane(), JLabel.class, new ArrayList<JLabel>())) {
+			if (l.getForeground().getRed() == 180 && l.getForeground().getGreen() == 30) {
+				return l.getText().trim();
+			}
+		}
+		throw new AssertionError("štítek s chybou");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private JList<Challenge> seznam() {
+		return najdi(dialog.getContentPane(), JList.class, new ArrayList<JList>()).get(0);
+	}
+
+	private void naEdt(final Runnable r) throws Exception {
+		SwingUtilities.invokeAndWait(r);
+	}
+
+	@Test
+	public void seznamMaSablonyAPrvniJeVybranaAJenKProhlizeni() throws Exception {
+		naEdt(() -> {
+			Assert.assertEquals(3, dialog.polozky().size());
+			Assert.assertEquals(0, seznam().getSelectedIndex());
+			Assert.assertTrue("šablona se kopíruje", tlacitko("Vytvořit kopii…").isEnabled());
+			Assert.assertFalse("šablonu nejde uložit", tlacitko("Uložit změny").isEnabled());
+			Assert.assertFalse("šablonu nejde smazat", tlacitko("Smazat").isEnabled());
+			Assert.assertFalse("název šablony nejde měnit", pole(0).isEnabled());
+		});
+	}
+
+	@Test
+	public void kopieSablonyJeVybranaAJdeUpravit() throws Exception {
+		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
+			Assert.assertEquals(4, dialog.polozky().size());
+			final Challenge vybrana = seznam().getSelectedValue();
+			Assert.assertEquals("360° od domova (vlastní)", vybrana.nazev());
+			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
+			Assert.assertTrue(tlacitko("Smazat").isEnabled());
+			Assert.assertFalse(tlacitko("Vytvořit kopii…").isEnabled());
+			Assert.assertEquals(1, model.vlastni().size());
+		});
+	}
+
+	@Test
+	public void ulozeniZmeniNazevASouradniceVlastniDefinice() throws Exception {
+		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
+			tlacitko("Souřadnice").doClick();
+			pole(0).setText("Moje 360");
+			pole(1).setText("50,1");
+			pole(2).setText("14,5");
+			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals(chyba(), " ".trim(), chyba());
+			Assert.assertEquals(1, model.vlastni().size());
+			final Challenge c = model.vlastni().get(0);
+			Assert.assertEquals("Moje 360", c.nazev());
+			Assert.assertEquals(Challenge.DruhStredu.SOURADNICE, c.stred().druh());
+			Assert.assertEquals(50.1, c.stred().lat(), 0);
+			Assert.assertEquals(14.5, c.stred().lon(), 0);
+			Assert.assertEquals("po uložení je vybrána přejmenovaná", "Moje 360", seznam().getSelectedValue().nazev());
+			Assert.assertEquals(4, dialog.polozky().size());
+		});
+	}
+
+	@Test
+	public void chybnyVstupSeHlasiAModelSeNezmeni() throws Exception {
+		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
+			final Challenge pred = model.vlastni().get(0);
+			tlacitko("Souřadnice").doClick();
+			pole(1).setText("95");
+			pole(2).setText("14");
+			tlacitko("Uložit změny").doClick();
+			Assert.assertTrue(chyba(), chyba().contains("šířka"));
+			Assert.assertEquals(pred, model.vlastni().get(0));
+			pole(0).setText("");
+			tlacitko("Domov").doClick();
+			tlacitko("Uložit změny").doClick();
+			Assert.assertTrue(chyba(), chyba().contains("název"));
+			Assert.assertEquals(pred, model.vlastni().get(0));
+		});
+	}
+
+	@Test
+	public void zapnutiSeProjeviVModelu() throws Exception {
+		naEdt(() -> {
+			final AbstractButton zapnuto = tlacitko("Zapnuto v plánovači");
+			Assert.assertFalse(model.jeAktivni(seznam().getSelectedValue()));
+			zapnuto.doClick();
+			Assert.assertTrue(model.jeAktivni(Sablony.od360Domova()));
+			zapnuto.doClick();
+			Assert.assertFalse(model.jeAktivni(Sablony.od360Domova()));
+		});
+	}
+
+	@Test
+	public void zmenaVModeluSePromitneDoSeznamu() throws Exception {
+		naEdt(() -> {
+			model.ulozVlastni(new Challenge("Zvenku", Challenge.Typ.SEKTORY_360, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.STATOR));
+			Assert.assertEquals(4, dialog.polozky().size());
+			Assert.assertEquals("Zvenku", dialog.polozky().get(3).nazev());
+		});
+	}
+}

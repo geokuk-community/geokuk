@@ -131,6 +131,7 @@ public class Menu extends MenuStrujce {
 		challenge.setToolTipText("Plánovač challenge: pruh na mapě, další a předchozí chybějící, jen kandidáti.");
 		hlavni.add(challenge);
 		menu = challenge;
+		item(akce.challengeNastaveniAction);
 		item(akce.challengeZapnoutAction);
 		separator();
 		item(akce.challengeDalsiAction);
