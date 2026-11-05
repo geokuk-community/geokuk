@@ -117,6 +117,14 @@ public final class FormatRuian {
 		return Collections.unmodifiableMap(vysledek);
 	}
 
+	private static long cislo(final String text) throws IOException {
+		try {
+			return Long.parseLong(text);
+		} catch (final NumberFormatException e) {
+			throw new IOException("Neplatné číslo: " + text, e);
+		}
+	}
+
 	private static Okraj nactiOkruh(final BufferedReader r, final int n) throws IOException {
 		final double[] lat = new double[n];
 		final double[] lon = new double[n];
@@ -131,8 +139,8 @@ public final class FormatRuian {
 			if (c.length != 2) {
 				throw new IOException("Bod okruhu má mít dvě čísla");
 			}
-			x += Long.parseLong(c[0]);
-			y += Long.parseLong(c[1]);
+			x += cislo(c[0]);
+			y += cislo(c[1]);
 			if (Math.abs(x) > MERITKO_MAX || Math.abs(y) > MERITKO_MAX / 2) {
 				throw new IOException("Bod okruhu mimo rozsah souřadnic");
 			}
