@@ -46,9 +46,14 @@ public class JMeritkoSlide extends JSingleSlide0 implements AfterInjectInit {
 		meritko.setPixluNaMetr(soord.getPixluNaMetr());
 		meritko.setSize(meritko.getPreferredSize());
 		final int x = (soord.getWidth() - meritko.getSize().width) / 2;
-		g.translate(x, soord.getHeight() - meritko.getSize().getHeight() - 20);
+		g.translate(x, soord.getHeight() - meritko.getSize().getHeight() - cz.geokuk.framework.RozmisteniPrekryvu.ODSAZENI_MERITKA);
 		meritko.paintComponent(g);
 
+	}
+
+	/** Výška, kterou měřítko zabírá od spodního okraje mapy: jeho výška s okrajem a odsazení. */
+	int zabranaVyska() {
+		return meritko.getPreferredSize().height + cz.geokuk.framework.RozmisteniPrekryvu.ODSAZENI_MERITKA;
 	}
 
 	/** Měřítko je uprostřed dole a nejvýš na polovině šířky, aby nezasahovalo do rohů (ty mají nejvýš čtvrtinu šířky). */

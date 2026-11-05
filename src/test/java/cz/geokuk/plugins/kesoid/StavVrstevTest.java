@@ -255,7 +255,7 @@ public class StavVrstevTest {
 		final java.awt.Rectangle r = JToast.umisteni(1000, 700, 300, 24);
 		Assert.assertEquals("vodorovně na středu", 500, r.x + r.width / 2);
 		Assert.assertEquals(350, r.x);
-		Assert.assertEquals("zpráva stojí 12 px nad oblastí měřítka (60 px od dolního okraje)", 700 - 60 - 12, r.y + r.height);
+		Assert.assertEquals("zpráva stojí 12 px nad oblastí měřítka", 700 - cz.geokuk.framework.RozmisteniPrekryvu.VYSKA_MERITKA - 12, r.y + r.height);
 		Assert.assertEquals(300, r.width);
 		Assert.assertEquals(24, r.height);
 		final java.awt.Rectangle sudy = JToast.umisteni(1001, 700, 301, 24);
@@ -285,6 +285,8 @@ public class StavVrstevTest {
 		Assert.assertTrue(kratky, kratky.endsWith("…") && kratky.length() < text.length());
 		Assert.assertTrue(fm.stringWidth(kratky) <= fm.stringWidth(text) - 1);
 		Assert.assertEquals("…", JToast.zkrat(text, fm, 3).substring(JToast.zkrat(text, fm, 3).length() - 1));
+		Assert.assertEquals("aspoň jeden znak zůstane i v nejužším místě", "Z…", JToast.zkrat(text, fm, 0));
+		Assert.assertEquals("vejde se přesně", "Zap…", JToast.zkrat(text, fm, fm.stringWidth("Zap…")));
 	}
 
 	@Test

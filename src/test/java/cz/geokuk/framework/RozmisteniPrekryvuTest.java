@@ -211,4 +211,59 @@ public class RozmisteniPrekryvuTest {
 		final Rectangle r2 = RozmisteniPrekryvu.zprava(mapa, z, Arrays.asList(vysoka, nizka));
 		Assert.assertEquals("pořadí překážek nehraje roli", r, r2);
 	}
+
+	@Test
+	public void zpravaSePosunePresDveAZtrojPrekazkyNadSebouZaSebou() {
+		final Dimension mapa = new Dimension(1000, 600);
+		final Dimension z = new Dimension(400, 24);
+		final Rectangle vychozi = RozmisteniPrekryvu.zprava(mapa, z, new ArrayList<Rectangle>());
+		// náhled fotomapy, nad ním legenda; mezi nimi je mezera menší než zpráva s mezerou, takže jeden posun nestačí
+		final Rectangle nahled = new Rectangle(vychozi.x, 470, 300, 130);
+		final Rectangle nad = new Rectangle(vychozi.x, 420, 300, 30);
+		final Rectangle jeste = new Rectangle(vychozi.x, 370, 300, 30);
+		final Rectangle r = RozmisteniPrekryvu.zprava(mapa, z, Arrays.asList(nahled, nad, jeste));
+		Assert.assertEquals(370 - 8 - 24, r.y);
+		for (final Rectangle p : Arrays.asList(nahled, nad, jeste)) {
+			Assert.assertFalse(p.toString(), r.intersects(p));
+		}
+		final Rectangle jen2 = RozmisteniPrekryvu.zprava(mapa, z, Arrays.asList(nahled, nad));
+		Assert.assertEquals(420 - 8 - 24, jen2.y);
+	}
+
+	@Test
+	public void kdyzNadNejvyssiPrekazkouNeniMistoZustaneVychoziPolohaAneSKokemPodNizsi() {
+		final Dimension mapa = new Dimension(1000, 600);
+		final Dimension z = new Dimension(400, 24);
+		final Rectangle vychozi = RozmisteniPrekryvu.zprava(mapa, z, new ArrayList<Rectangle>());
+		final Rectangle vysoka = new Rectangle(vychozi.x, 20, 300, vychozi.y + 10);
+		final Rectangle nizsi = new Rectangle(vychozi.x, 60, 300, 600);
+		Assert.assertEquals(vychozi, RozmisteniPrekryvu.zprava(mapa, z, Arrays.asList(vysoka, nizsi)));
+		Assert.assertEquals(vychozi, RozmisteniPrekryvu.zprava(mapa, z, Arrays.asList(nizsi, vysoka)));
+	}
+
+	@Test
+	public void prekazkyZRohuJsouVSouradnicichPodkladuAJenViditelne() {
+		final JPanel rohy = new JPanel(new CornerLayoutManager());
+		rohy.setSize(1000, 600);
+		final JPanel jz = panel(200, 200, 100, 100, 300, 300);
+		final JPanel jv = panel(300, 250, 100, 100, 600, 400);
+		final JPanel sv = panel(300, 200, 100, 100, 600, 400);
+		final JPanel podklad = new JPanel();
+		rohy.add(jz, ERoh.JZ);
+		rohy.add(jv, ERoh.JV);
+		rohy.add(sv, ERoh.SV);
+		rohy.add(podklad);
+		rohy.doLayout();
+		Assert.assertEquals("podklad vyplňuje kontejner s rohy", new Rectangle(0, 0, 1000, 600), podklad.getBounds());
+		Assert.assertEquals(3, RozmisteniPrekryvu.prekazky(rohy, podklad, false).size());
+		Assert.assertTrue(RozmisteniPrekryvu.prekazky(rohy, podklad, false).contains(jz.getBounds()));
+		Assert.assertTrue(RozmisteniPrekryvu.prekazky(rohy, podklad, false).contains(jv.getBounds()));
+		Assert.assertTrue(RozmisteniPrekryvu.prekazky(rohy, podklad, false).contains(sv.getBounds()));
+		Assert.assertEquals(4, RozmisteniPrekryvu.prekazky(rohy, podklad, true).size());
+		Assert.assertTrue(RozmisteniPrekryvu.prekazky(rohy, podklad, true).contains(RozmisteniPrekryvu.legendaObsazenosti(new Dimension(1000, 600))));
+		jz.setVisible(false);
+		Assert.assertEquals("skrytý panel není překážka", 2, RozmisteniPrekryvu.prekazky(rohy, podklad, false).size());
+		podklad.setBounds(10, 5, 980, 590);
+		Assert.assertTrue("přepočet o polohu podkladu", RozmisteniPrekryvu.prekazky(rohy, podklad, false).contains(new Rectangle(jv.getX() - 10, jv.getY() - 5, jv.getWidth(), jv.getHeight())));
+	}
 }

@@ -1,5 +1,7 @@
 package cz.geokuk.framework;
 
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -36,8 +38,10 @@ public final class RozmisteniPrekryvu {
 	public static final int[] STUPNE_PRUHU = { 267, 178, 106 };
 	/** Ukazatel výkonu leží pod pruhem plánovače. */
 	public static final Rectangle UKAZATEL_VYKONU = new Rectangle(OKRAJ, OKRAJ + VYSKA_PRUHU + 4, 330, 20);
-	/** Výška místa dole pro měřítko včetně stupnice a popisků. */
-	public static final int VYSKA_MERITKA = 60;
+	/** Výška místa dole pro měřítko včetně stupnice, popisků a odsazení od spodního okraje. */
+	public static final int VYSKA_MERITKA = 76;
+	/** Odsazení měřítka od spodního okraje mapy. */
+	public static final int ODSAZENI_MERITKA = 20;
 	/** Největší šířka legendy Obsazenosti od pravého okraje (popisky, nadpis Průhlednost, posuvník). */
 	public static final int SIRKA_LEGENDY = 90;
 	/** Mezera mezi zprávou a tím, nad čím stojí. */
@@ -127,6 +131,25 @@ public final class RozmisteniPrekryvu {
 			r = new Rectangle(r.x, y, r.width, r.height);
 		}
 		return r;
+	}
+
+	/**
+	 * Překážky pro zprávu v souřadnicích podkladu: viditelné panely v rozích kontejneru, který skládá {@link CornerLayoutManager}, a případně legenda. Souřadnice se přepočtou o polohu podkladu,
+	 * takže platí, i kdyby podklad nezačínal v levém horním rohu kontejneru.
+	 */
+	public static List<Rectangle> prekazky(final Container rohy, final Component podklad, final boolean legenda) {
+		final List<Rectangle> prekazky = new ArrayList<>();
+		for (final Component roh : rohy.getComponents()) {
+			if (roh != podklad && roh.isVisible() && !roh.getBounds().isEmpty()) {
+				final Rectangle r = roh.getBounds();
+				r.translate(-podklad.getX(), -podklad.getY());
+				prekazky.add(r);
+			}
+		}
+		if (legenda) {
+			prekazky.add(legendaObsazenosti(podklad.getSize()));
+		}
+		return prekazky;
 	}
 
 	/** Dvojice prvků, jejichž oblasti se protínají; prázdný seznam, když se žádné nekryjí. */
