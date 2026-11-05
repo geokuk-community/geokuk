@@ -199,6 +199,12 @@ public class ChallengeModel extends Model0 {
 		return seznam.aktivni();
 	}
 
+	/** Challenge, kterou ukazuje pruh plánovače a ovládají zkratky: první aktivní; null, když žádná není. */
+	public Challenge hlavni() {
+		final List<Challenge> a = seznam.aktivni();
+		return a.isEmpty() ? null : a.get(0);
+	}
+
 	public boolean jeAktivni(final Challenge c) {
 		return seznam.jeAktivni(c.nazev());
 	}

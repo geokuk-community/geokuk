@@ -152,8 +152,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	private Challenge challenge() {
-		final List<Challenge> aktivni = model == null ? java.util.Collections.<Challenge> emptyList() : model.aktivni();
-		return aktivni.isEmpty() ? null : aktivni.get(0);
+		return model == null ? null : model.hlavni();
 	}
 
 	private void obnov() {
