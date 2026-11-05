@@ -78,8 +78,6 @@
 - Načítání dlaždic ukazuje malé točící se kolečko vpravo nahoře v mapě.
 - Přenosná verze pro Windows z nového zipu vytváří archiv tříd pro další
   starty; první ukončení po instalaci trvá o několik sekund déle.
-- Čtení dlaždic z cache se při ukládání nových dlaždic méně zdržuje (zhruba
-  2× až 4× podle měření).
 - GeoKuk načte databáze OpenSAKu i z jeho nejnovější verze.
 - Okno Najdi keš najde kešoid podle odkazu (coord.info, geocaching.com,
   Opencaching, Waymarking) nebo kódu (GC, WM, OC, OP, OZ…, také zastávku
