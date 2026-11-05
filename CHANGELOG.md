@@ -61,8 +61,8 @@
   ikonou ⓘ.
 - Měřítková lišta je uprostřed dole, má aspoň 4 dílky a na konci délku s
   jednotkou.
-- Databáze GeoGetu se načítá rychleji, nadmořská výška keše se čte až při
-  zobrazení jejího detailu.
+- Nadmořská výška keše z databáze GeoGetu se čte až při zobrazení jejího
+  detailu.
 - Start programu je rychlejší: okno se vykreslí před dialogy a méně potřebné
   části se připravují později. Při spuštění z jar souboru se okno na Windows
   otevře za 1633 ms místo 1767 ms ve verzi 6.4.3 (medián z 9 běhů). Po startu
@@ -76,9 +76,10 @@
 - Paměťová cache dlaždic se přizpůsobí paměti programu.
 - Dokud se dlaždice načítá, ukáže se její náhled z jiného měřítka.
 - Načítání dlaždic ukazuje malé točící se kolečko vpravo nahoře v mapě.
-- Přenosná verze z nového zipu pro Windows startuje od druhého spuštění asi
-  o čtvrtinu rychleji; první ukončení po instalaci trvá o několik sekund déle.
-- Mapa z cache se při ukládání nových dlaždic méně zasekává.
+- Přenosná verze pro Windows z nového zipu vytváří archiv tříd pro další
+  starty; první ukončení po instalaci trvá o několik sekund déle.
+- Čtení dlaždic z cache se při ukládání nových dlaždic méně zdržuje (zhruba
+  2× až 4× podle měření).
 - GeoKuk načte databáze OpenSAKu i z jeho nejnovější verze.
 - Okno Najdi keš najde kešoid podle odkazu (coord.info, geocaching.com,
   Opencaching, Waymarking) nebo kódu (GC, WM, OC, OP, OZ…, také zastávku
@@ -172,8 +173,6 @@
 
 ### Opravy
 - Zvýrazňovací kruhy zůstanou zapnuté i po přepnutí mapového podkladu.
-- Mapa je plynulejší při pohybu myši, při tažení bodu cesty, se zvětšenými
-  ikonami keší a s popisky keší.
 - Obsazenost 161 m se kreslí jako jedna plocha jedné barvy, takže překryvy
   netmavnou; kreslí se při dostatečném přiblížení a nejvýš pro 20 000 keší
   ve výřezu.
