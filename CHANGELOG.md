@@ -11,7 +11,7 @@
   středu výřezu), je tam štítek Kruhy omezené, a když je zároveň něco skryté
   a něco omezené, Kruhy skryté a omezené. Po zkratkách, jejichž výsledek není
   vidět (F5, F9 při malém přiblížení, Alt+F8, Ctrl+1 až Ctrl+4, skryté kruhy),
-  se vlevo dole nad mapou na chvíli ukáže krátká zpráva.
+  se uprostřed dole nad měřítkem na chvíli ukáže krátká zpráva.
 - Posuvníky kruhů Obsazenost 161 m jsou tenké a při najetí myší ukážou popisky
   a aktuální hodnotu.
 - Velikost zvýrazňovacích kruhů se volí v pixelech nebo v metrech (od 1 m do
@@ -159,6 +159,7 @@
   minuty zkusí znovu.
 - Menu Téma offline mapy se otevře hned, i když jsou témata na pomalém disku.
 - Informace pro hlášení chyby rozliší uspání počítače od záseku programu.
+- Informace pro hlášení chyby neobsahují klíče ani hesla z adres v logu.
 - Informace pro hlášení chyby uvádějí údaje o offline mapách, počet zobrazených
   dlaždic od spuštění a odhad kreditů při načítání z API; okno je větší a jde
   měnit.
