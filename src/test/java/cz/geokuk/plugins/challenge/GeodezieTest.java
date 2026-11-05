@@ -101,4 +101,23 @@ public class GeodezieTest {
 		Assert.assertEquals(koule, elipsoid, koule * 0.005);
 		Assert.assertNotEquals(koule, elipsoid, 1);
 	}
+
+	@Test
+	public void azimutyZPrikladuRuian() throws Exception {
+		int radku = 0;
+		try (java.io.BufferedReader r = new java.io.BufferedReader(
+				new java.io.InputStreamReader(GeodezieTest.class.getResourceAsStream("azimuty.txt"), java.nio.charset.StandardCharsets.UTF_8))) {
+			for (String radek = r.readLine(); radek != null; radek = r.readLine()) {
+				if (radek.isEmpty() || radek.startsWith("#")) {
+					continue;
+				}
+				final String[] c = radek.trim().split("\\s+");
+				final double az = Geodezie.azimutKoule(Double.parseDouble(c[0]), Double.parseDouble(c[1]), Double.parseDouble(c[2]), Double.parseDouble(c[3]));
+				Assert.assertEquals(radek, Double.parseDouble(c[4]), az, 0.0006);
+				Assert.assertEquals(radek, Integer.parseInt(c[5]), Geodezie.sektor(az));
+				radku++;
+			}
+		}
+		Assert.assertEquals(7, radku);
+	}
 }
