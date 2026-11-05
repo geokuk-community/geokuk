@@ -104,7 +104,12 @@ public class ChallengeAkceTest {
 		Assert.assertNull(model.hlavni());
 		model.aktivuj(Sablony.cesko360());
 		Assert.assertEquals(Sablony.cesko360(), model.hlavni());
+		final Challenge druha = model.ulozVlastni(new Challenge("Druhá", Challenge.Typ.SEKTORY_360, Challenge.Stred.souradnice(50, 14), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(druha);
+		Assert.assertEquals("první zapnutá, ne poslední", Sablony.cesko360(), model.hlavni());
 		model.deaktivuj(Sablony.cesko360());
+		Assert.assertEquals(druha, model.hlavni());
+		model.deaktivuj(druha);
 		Assert.assertNull(model.hlavni());
 	}
 }
