@@ -23,9 +23,9 @@ import org.junit.*;
 public class SmokeIT {
 
 	private static final File KOREN = new File("target/smoke");
-	private static final long EDT_LIMIT_MS = 3000;
-	private static final long EDT_LIMIT_START_MS = 10_000;
-	private static final long EDT_LIMIT_VZHLED_MS = 10_000;
+	private static final long EDT_LIMIT_MS = 2000;
+	private static final long EDT_LIMIT_START_MS = 4000;
+	private static final long EDT_LIMIT_VZHLED_MS = 3000;
 
 	private FalesnyDlazdicovyServer server;
 	private int pocetWpt;
