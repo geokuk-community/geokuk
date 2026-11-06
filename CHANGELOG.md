@@ -3,9 +3,12 @@
 ## 6.5.0
 
 ### Změny
-- Plánovač challenge (Kešoidy > Challenge): pruh na mapě s počtem chybějících
-  sektorů 360° nebo políček D/T, popup s chybějícími a kandidáty, Další
-  chybějící F4 (Shift+F4 zpět), zobrazení jen kandidátů na mapě.
+- Plánovač challenge (Kešoidy > Challenge): v Plánovači challenge… se vybere
+  challenge (šablony 360° od domova, 360° of the Czech Republic, 360° of
+  Prague a D/T) a zapne se. Pruh vlevo nahoře na mapě ukazuje počet
+  chybějících sektorů 360° nebo políček D/T; po kliknutí na počet se ukáže
+  seznam chybějících a kandidátů. Další chybějící F4 (Shift+F4 zpět),
+  zobrazení jen kandidátů na mapě.
 - Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
   Kruhy 161 m); dialog se jmenuje Nastavení kruhů.
 - Kruhy (Alt+F8) mají pevný poloměr v metrech, výchozí 100 m; mění se v
@@ -33,9 +36,9 @@
   vybrání.
 - Klávesa F5 (Kešoidy > Zobrazovat kešoidy) skryje a zase ukáže kešoidy včetně
   kruhů a popisků.
-- Uživatelská mapa se zkratkou, kterou používá program (F5, Ctrl+1 až Ctrl+4
-  a další) nebo jiná mapa, se odmítne; zkratku v jejím souboru stačí změnit
-  nebo smazat.
+- Uživatelská mapa se zkratkou, kterou používá program (F4, F5, Ctrl+1 až
+  Ctrl+4 a další) nebo jiná mapa, se odmítne; zkratku v jejím souboru stačí
+  změnit nebo smazat.
 - Nápověda > O programu ukazuje verzi, licenci, původní texty Martina Veverky
   a údaje o upravené verzi (GeoKuk community) s odkazy.
 - Při prvním načítání mapy po spuštění je v mapě bílá plocha se slabým logem
