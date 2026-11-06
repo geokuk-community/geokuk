@@ -132,6 +132,37 @@ class Beh:
         return False
 
 
+def konec_souboru(cesta, radku=60):
+    try:
+        with open(cesta, encoding="utf-8", errors="replace") as f:
+            return "".join(f.readlines()[-radku:])
+    except OSError as e:
+        return "(nejde přečíst: %s)" % e
+
+
+def diagnostika(beh):
+    """Při neotevřeném okně vypíše, co se stalo: kód spouštěče, výstup a konec logu."""
+    print("::group::Diagnostika %s (kód spouštěče %s)" % (beh.nazev, beh.proces.poll()))
+    print("--- %s.out (posledních 60 řádků)" % beh.nazev)
+    print(konec_souboru(os.path.join(beh.koren, beh.nazev + ".out")))
+    print("--- geokuk.log (posledních 60 řádků)")
+    print(konec_souboru(beh.log))
+    print("::endgroup::", flush=True)
+
+
+def ukonci_zbytky(koren):
+    """Zabije procesy Javy, které zůstaly viset ve zkoušené složce."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["powershell", "-NoProfile", "-Command",
+                            "Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'java*' -and $_.CommandLine -like '*%s*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" % koren.replace("'", "''")],
+                           timeout=60)
+        else:
+            subprocess.run(["pkill", "-f", koren], timeout=60)
+    except Exception as e:
+        print("Úklid procesů: %s" % e)
+
+
 def pole(stav, klic):
     return str(stav.get(klic)) if isinstance(stav, dict) else "?"
 
@@ -154,6 +185,9 @@ def radky_logu(log, vzor):
 
 
 def main():
+    # Windows má výchozí kódování konzole cp1252, české znaky by skript shodily.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     a = argparse.ArgumentParser()
     a.add_argument("koren")
     a.add_argument("--stary", nargs=2, required=True, metavar=("GEOKUK_JAR", "START_JAR"))
@@ -190,6 +224,7 @@ def main():
     ms = stary.cekej_na_okno(0)
     ocekavej(ms is not None, "stará verze %s otevřela okno" % stara_verze)
     if ms is None:
+        diagnostika(stary)
         return konec()
     ocekavej(stary.pripoj_ovladani(), "stará verze: dálkové ovládání odpovídá")
     stary.volej("POST", "/podklad", jmeno="OFFLINE_MF")
@@ -217,6 +252,7 @@ def main():
         ms = beh.cekej_na_okno(okna_pred)
         ocekavej(ms is not None, "%d. start nové verze otevřel okno" % poradi)
         if ms is None:
+            diagnostika(beh)
             break
         info("| %d. start nové verze: okno za | %d ms |" % (poradi, ms))
         ocekavej(beh.pripoj_ovladani(), "%d. start: dálkové ovládání odpovídá" % poradi)
@@ -260,4 +296,9 @@ def konec():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        kod = main()
+    finally:
+        if len(sys.argv) > 1:
+            ukonci_zbytky(os.path.abspath(os.path.join(sys.argv[1], "GeoKuk")))
+    sys.exit(kod)
