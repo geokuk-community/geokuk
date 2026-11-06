@@ -200,4 +200,14 @@ public class ZkratkyToastTest {
 		akce.setEnabled(false);
 		Assert.assertTrue(vysvetleni.isEnabled());
 	}
+
+	@Test
+	public void horniRadaJeUZapnutehoZdrojeBezNahradniVazby() {
+		final PrepniZdrojAction akce = new PrepniZdrojAction(TypZdroje.GPX);
+		akce.setEnabled(true);
+		final javax.swing.JRootPane koren = new javax.swing.JRootPane();
+		PrepniZdrojAction.navazNumpad(koren, akce);
+		final Object klic = koren.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(cz.geokuk.plugins.kesoid.mvc.ZkratkyZdroju.zkratka(TypZdroje.GPX));
+		Assert.assertFalse("zapnutý zdroj: zkratku zpracuje menu, náhradní vazba je vypnutá", koren.getActionMap().get(klic).isEnabled());
+	}
 }
