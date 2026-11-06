@@ -18,11 +18,11 @@ stahni() {
   local tag="$1" cil="$RUNNER_TEMP/vydani-$1"
   mkdir -p "$cil"
   if [ "$RUNNER_OS" = "Windows" ]; then
-    gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern GeoKuk-windows.zip --dir "$cil" >&2 || return 1
+    gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern GeoKuk-windows.zip --dir "$cil" --clobber >&2 || return 1
     pwsh -NoProfile -Command "Expand-Archive -Path '$cil/GeoKuk-windows.zip' -DestinationPath '$cil' -Force" >&2 || return 1
     echo "--stary $cil/GeoKuk/program/geokuk.jar $cil/GeoKuk/program/start.jar --runtime $cil/GeoKuk/program/runtime"
   else
-    gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern geokuk.jar --pattern start.jar --dir "$cil" >&2 || return 1
+    gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern geokuk.jar --pattern start.jar --dir "$cil" --clobber >&2 || return 1
     echo "--stary $cil/geokuk.jar $cil/start.jar"
   fi
 }
