@@ -180,4 +180,18 @@ public class JChallengeDialogTest {
 			Assert.assertEquals("Zvenku", dialog.polozky().get(3).nazev());
 		});
 	}
+
+	@Test
+	public void ulozeniNadSablonouNicNezmeniAniNehlasi() throws Exception {
+		naEdt(() -> {
+			final AbstractButton uloz = tlacitko("Uložit změny");
+			Assert.assertFalse(uloz.isEnabled());
+			for (final java.awt.event.ActionListener l : uloz.getActionListeners()) {
+				l.actionPerformed(new java.awt.event.ActionEvent(uloz, 0, ""));
+			}
+			Assert.assertTrue("šablona se nepřepíše ani nezkopíruje", model.vlastni().isEmpty());
+			Assert.assertEquals("bez chybové hlášky", "", chyba());
+			Assert.assertEquals(3, dialog.polozky().size());
+		});
+	}
 }
