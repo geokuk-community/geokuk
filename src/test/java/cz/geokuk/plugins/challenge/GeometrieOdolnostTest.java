@@ -57,6 +57,23 @@ public class GeometrieOdolnostTest {
 	}
 
 	@Test
+	public void hranaSRozdilemDelekNad180StupnuSeOdmitneUzOKousekAHraniceSePripousti() {
+		final double[][] spatne = { { -100, 80.0001, -100 }, { -90.25, 90.25, -90.25 }, { -90.5, 90.5, -90.5 }, { -90.5001, 90.5001, -90.5001 }, { -120, 60.5, -120 }, { -179, 179, -179 } };
+		for (final double[] lon : spatne) {
+			try {
+				okraj(new double[] { 0, 1, 2 }, lon);
+				Assert.fail("délky " + Arrays.toString(lon));
+			} catch (final IllegalArgumentException e) {
+				Assert.assertTrue(e.getMessage(), e.getMessage().contains("180"));
+			}
+		}
+		final double[][] dobre = { { -90, 90, -90 }, { -100, 80, -100 }, { -179.5, 0.5, -179.5 }, { 0, 180, 0 }, { -180, 0, -180 } };
+		for (final double[] lon : dobre) {
+			Assert.assertEquals(3, okraj(new double[] { 0, 1, 2 }, lon).pocetBodu());
+		}
+	}
+
+	@Test
 	public void okrajSPrazdnymiNeboNestejnymiPolemiSeOdmitne() {
 		for (final int n : new int[] { 0, 1, 2 }) {
 			try {
