@@ -42,10 +42,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		setLayout(null);
 		kandidati.setIcon(new Trychtyr());
 		kandidati.setText("jen kandidáti");
-		kandidati.setToolTipText("Zobrazit jen kandidáty, kteří zaplní chybějící sektor");
+		kandidati.setToolTipText(popisKandidatu(Challenge.Typ.SEKTORY_360));
 		zpet.setToolTipText("Předchozí chybějící");
 		dal.setToolTipText("Další chybějící");
-		odznak.setToolTipText("Chybějící sektory");
+		odznak.setToolTipText(popisChybejicich(Challenge.Typ.SEKTORY_360));
 		typ.setToolTipText("Typ challenge");
 		typ.setForeground(Color.DARK_GRAY);
 		for (final AbstractButton b : new AbstractButton[] { odznak, kandidati, zpet, dal }) {
@@ -85,6 +85,30 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
 		obnov();
+	}
+
+	/** Co počítá odznak: chybějící sektory, políčka nebo dny podle typu challenge. */
+	static String popisChybejicich(final Challenge.Typ typ) {
+		switch (typ) {
+		case DT_MATICE:
+			return "Chybějící políčka D/T";
+		case KALENDAR:
+			return "Chybějící dny";
+		default:
+			return "Chybějící sektory";
+		}
+	}
+
+	/** Co zůstane na mapě po zapnutí filtru „jen kandidáti“. */
+	static String popisKandidatu(final Challenge.Typ typ) {
+		switch (typ) {
+		case DT_MATICE:
+			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící políčko D/T";
+		case KALENDAR:
+			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící den";
+		default:
+			return "Na mapě zůstanou jen kandidáti, kteří zaplní chybějící sektor";
+		}
 	}
 
 	/**
@@ -163,6 +187,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			odznak.nastav(stav.badge() < 0 ? "…" : Integer.toString(stav.badge()));
 			kandidati.setSelected(stav.jenKandidati());
 			typ.setText(stav.stitekTypu());
+			odznak.setToolTipText(popisChybejicich(stav.typ()));
+			kandidati.setToolTipText(popisKandidatu(stav.typ()));
 		}
 		if (vidim != isVisible()) {
 			setVisible(vidim);
