@@ -75,8 +75,8 @@ public class ChallengeModelTest {
 	@Test
 	public void pocatecniStav() {
 		Assert.assertFalse(model.jeZapnuto());
-		Assert.assertEquals(3, model.sablony().size());
-		Assert.assertEquals(3, model.vsechny().size());
+		Assert.assertEquals(4, model.sablony().size());
+		Assert.assertEquals(4, model.vsechny().size());
 		Assert.assertTrue(model.vlastni().isEmpty());
 		Assert.assertTrue(model.aktivni().isEmpty());
 		Assert.assertEquals(5, model.strop());
@@ -300,7 +300,7 @@ public class ChallengeModelTest {
 		});
 		m.initAfterInject();
 		Assert.assertFalse(m.jeZapnuto());
-		Assert.assertEquals(3, m.vsechny().size());
+		Assert.assertEquals(4, m.vsechny().size());
 		m.setZapnuto(true);
 		Assert.assertTrue("změna se v paměti projeví i bez uložení", m.jeZapnuto());
 	}
@@ -371,5 +371,23 @@ public class ChallengeModelTest {
 		Assert.assertNull(u.get("verze"));
 		Assert.assertNull(u.get("zapnuto"));
 		Assert.assertEquals("x", u.get("budouci"));
+	}
+
+	@Test
+	public void definiceSNeznamymTypemSeUlozenimNesmaze() {
+		final MapoveUloziste u = new MapoveUloziste();
+		u.put("format", "1");
+		u.put("verze", "3");
+		u.put("definice.3.0.nazev", "Budoucí");
+		u.put("definice.3.0.typ", "BUDOUCI_TYP");
+		u.put("definice.3.0.zdroj", "PGC");
+		u.put("definice.3.0.stred", "DOMOV");
+		u.put("definice.3.0.oblast", "ZADNA");
+		final java.util.Map<String, String> pred = new java.util.LinkedHashMap<>(u.m);
+		final ChallengeModel m = novyModel(u);
+		m.initAfterInject();
+		m.ulozVlastni(vlastni("Nová"));
+		m.setZapnuto(true);
+		Assert.assertEquals("uložené nastavení zůstalo beze změny", pred, u.m);
 	}
 }

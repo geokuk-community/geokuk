@@ -49,7 +49,7 @@ public class NastaveniChallengeTest {
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(new MapoveUloziste());
 		Assert.assertFalse(n.zapnuto);
 		Assert.assertEquals(0, n.preskoceno);
-		Assert.assertEquals(3, n.seznam.vsechny().size());
+		Assert.assertEquals(4, n.seznam.vsechny().size());
 		Assert.assertTrue(n.seznam.aktivni().isEmpty());
 	}
 
@@ -151,7 +151,7 @@ public class NastaveniChallengeTest {
 		u.put("zapnuto", "true");
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
 		Assert.assertFalse(n.zapnuto);
-		Assert.assertEquals(3, n.seznam.vsechny().size());
+		Assert.assertEquals(4, n.seznam.vsechny().size());
 		Assert.assertEquals("9", u.get("format"));
 	}
 
@@ -406,5 +406,59 @@ public class NastaveniChallengeTest {
 			Assert.assertTrue(e.getMessage(), e.getMessage().contains("rozsáhlá"));
 			Assert.assertTrue("nic se nezapsalo", u.m.isEmpty());
 		}
+	}
+
+	private static MapoveUloziste sDefinici(final String klic, final String hodnota) {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.ulozVlastni(vlastni("Dobrá", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		NastaveniChallenge.uloz(s, true, u);
+		u.put("definice.1.7.nazev", "Budoucí");
+		u.put("definice.1.7.typ", "SEKTORY_360");
+		u.put("definice.1.7.zdroj", "PGC");
+		u.put("definice.1.7.stred", "DOMOV");
+		u.put("definice.1.7.oblast", "ZADNA");
+		u.put("definice.1.7." + klic, hodnota);
+		return u;
+	}
+
+	@Test
+	public void definiceSNeznamouHodnotouVyctuNeniDoNastaveniPrepsatelna() {
+		for (final String[] kv : new String[][] { { "typ", "BUDOUCI_TYP" }, { "zdroj", "BUDOUCI" }, { "stred", "BUDOUCI" }, { "oblast", "BUDOUCI" }, { "nalezy", "BUDOUCI" } }) {
+			final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(sDefinici(kv[0], kv[1]));
+			Assert.assertTrue(kv[0], n.neznamyFormat);
+			Assert.assertEquals(kv[0], 1, n.preskoceno);
+			Assert.assertEquals("čitelná definice se načte", "Dobrá", n.seznam.vlastni().get(0).nazev());
+		}
+	}
+
+	@Test
+	public void obycejneChybnaDefiniceUkladaniNezakazuje() {
+		for (final String[] kv : new String[][] { { "stred.lat", "abc" }, { "nazev", "" } }) {
+			final MapoveUloziste u = sDefinici(kv[0], kv[1]);
+			u.put("definice.1.7.stred", "SOURADNICE");
+			final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+			Assert.assertFalse(kv[0], n.neznamyFormat);
+			Assert.assertEquals(kv[0], 1, n.preskoceno);
+		}
+	}
+
+	@Test
+	public void kopieSablonyMaticeDTSeUpravenaUlozyANacte() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		final Challenge kopie = s.kopieSablony("Matice D/T");
+		final Challenge upravena = new Challenge(kopie.nazev(), kopie.typ(), Stred.souradnice(49.5, 15.25), OblastDef.zadna(), ZdrojPravidel.STATOR, ZdrojeNalezu.VSECHNY);
+		s.ulozVlastni(upravena);
+		s.aktivuj("Matice D/T");
+		s.aktivuj(upravena.nazev());
+		NastaveniChallenge.uloz(s, true, u);
+		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+		Assert.assertEquals(0, n.preskoceno);
+		Assert.assertFalse(n.neznamyFormat);
+		Assert.assertEquals(Arrays.asList(upravena), n.seznam.vlastni());
+		Assert.assertEquals(Challenge.Typ.DT_MATICE, n.seznam.vlastni().get(0).typ());
+		Assert.assertEquals(Arrays.asList(Sablony.maticeDT(), upravena), n.seznam.aktivni());
+		Assert.assertTrue(n.zapnuto);
 	}
 }

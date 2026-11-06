@@ -60,9 +60,9 @@ public class ZkratkyToastTest {
 		akce.setSelected(true);
 		final JCheckBoxMenuItem m = zapoj(akce);
 		m.doClick();
-		Assert.assertEquals("Kešoidy skryté včetně kruhů, obsazenosti a popisků", posledni());
+		Assert.assertEquals("Kešoidy – Vypnuto, včetně kruhů, obsazenosti a popisků", posledni());
 		m.doClick();
-		Assert.assertEquals("Kešoidy zobrazené", posledni());
+		Assert.assertEquals("Kešoidy – Zapnuto", posledni());
 	}
 
 	@Test
@@ -83,22 +83,36 @@ public class ZkratkyToastTest {
 	}
 
 	@Test
-	public void f8JenKdyzNejsouVideKruhy() {
+	public void f8AkceStavAParametrIKdyzJsouKruhySkryte() {
 		final KruhyOnoffAction akce = new KruhyOnoffAction();
 		akce.inject(kruhyModel(new KruhySettings()));
 		akce.inject(stav);
 		akce.inject(toast);
 		final JCheckBoxMenuItem m = zapoj(akce);
 		m.doClick();
-		Assert.assertNull("kruhy jsou vidět, F8 je zřejmé", posledni());
+		Assert.assertEquals("Zvýrazňovací kruhy – Zapnuto, 20 px", posledni());
 		m.doClick();
+		Assert.assertEquals("Zvýrazňovací kruhy – Vypnuto, 20 px", posledni());
 		stav.nahlas(VrstvaNadMapou.ZVYRAZNOVACI_KRUHY, DuvodNekresleni.PRILIS_HUSTE, 0);
 		m.doClick();
-		Assert.assertEquals("Kruhy zapnuté, ale skryté: příliš husté, přibližte mapu", posledni());
+		Assert.assertEquals("Zvýrazňovací kruhy – Zapnuto, 20 px, ale skryté: příliš husté, přibližte mapu", posledni());
 	}
 
 	@Test
-	public void altF8ZapneObojeKdyzF8NebyloAJinakMlci() {
+	public void f8VMetrechUvedePoloměr() {
+		final KruhySettings s = new KruhySettings();
+		s.setJednotkovaVelikost(true);
+		s.setPolomerMetru(1500);
+		final KruhyOnoffAction akce = new KruhyOnoffAction();
+		akce.inject(kruhyModel(s));
+		akce.inject(stav);
+		akce.inject(toast);
+		zapoj(akce).doClick();
+		Assert.assertEquals("Zvýrazňovací kruhy – Zapnuto, 1,5 km", posledni());
+	}
+
+	@Test
+	public void altF8AkceStavPolomerAZapnutiF8() {
 		final KruhySettings s = new KruhySettings();
 		s.setOnoff(false);
 		final JednotkoveKruhyAction akce = new JednotkoveKruhyAction();
@@ -107,13 +121,12 @@ public class ZkratkyToastTest {
 		akce.inject(toast);
 		final JCheckBoxMenuItem m = zapoj(akce);
 		m.doClick();
-		Assert.assertEquals("Zapnuté zvýrazňovací kruhy s poloměrem v metrech", posledni());
+		Assert.assertEquals("Kruhy v metrech – Zapnuto, 100 m (zapnuly se i zvýrazňovací kruhy)", posledni());
 		Assert.assertTrue(s.isOnoff());
-		zpravy.clear();
 		m.doClick();
-		Assert.assertTrue("vypnutí jednotkových nic nevysvětluje", zpravy.isEmpty());
+		Assert.assertEquals("Kruhy v metrech – Vypnuto, 100 m", posledni());
 		m.doClick();
-		Assert.assertTrue("F8 už svítilo", zpravy.isEmpty());
+		Assert.assertEquals("F8 už svítilo", "Kruhy v metrech – Zapnuto, 100 m", posledni());
 	}
 
 	@Test
@@ -128,11 +141,12 @@ public class ZkratkyToastTest {
 		akce.inject(toast);
 		final JCheckBoxMenuItem m = zapoj(akce);
 		m.doClick();
-		Assert.assertNull(posledni());
+		Assert.assertEquals("Obsazenost – Zapnuto, 161 m", posledni());
 		m.doClick();
+		Assert.assertEquals("Obsazenost – Vypnuto, 161 m", posledni());
 		stav.nahlas(VrstvaNadMapou.OBSAZENOST, DuvodNekresleni.POLOMER_PRILIS_MALY, 0);
 		m.doClick();
-		Assert.assertEquals("Obsazenost se kreslí až po přiblížení mapy", posledni());
+		Assert.assertEquals("Obsazenost – Zapnuto, 161 m, ale kreslí se až po přiblížení mapy", posledni());
 	}
 
 	@Test
@@ -146,10 +160,54 @@ public class ZkratkyToastTest {
 		akce.inject(toast);
 		akce.setEnabled(true);
 		akce.prepni();
-		Assert.assertEquals("Zdroje keší: žádný", posledni());
+		Assert.assertEquals("Zdroj keší " + TypZdroje.values()[2].getNazev() + " – Vypnuto, žádný zdroj keší není zapnutý", posledni());
 		akce.setEnabled(false);
 		zpravy.clear();
 		akce.prepni();
-		Assert.assertTrue("vypnutá akce nic nepřepne, zpráva nemá smysl", zpravy.isEmpty());
+		Assert.assertEquals("vypnutá akce nic nepřepne, ale zkratka řekne proč", "Zdroj keší " + TypZdroje.values()[2].getNazev() + " – nemá načtené soubory", posledni());
+	}
+
+	@Test
+	public void tooltipVypnuteAkceVysvetliProc() {
+		final PrepniZdrojAction akce = new PrepniZdrojAction(TypZdroje.GPX);
+		final String zapnuta = (String) akce.getValue(javax.swing.Action.SHORT_DESCRIPTION);
+		Assert.assertTrue(zapnuta, zapnuta.contains("Ctrl+1"));
+		akce.setEnabled(false);
+		final String vypnuta = (String) akce.getValue(javax.swing.Action.SHORT_DESCRIPTION);
+		Assert.assertEquals("Zdroj GPX nemá žádné načtené soubory. Složku zdroje zkontrolujte v Soubor > Umístění souborů.", vypnuta);
+		akce.setEnabled(true);
+		Assert.assertEquals(zapnuta, akce.getValue(javax.swing.Action.SHORT_DESCRIPTION));
+	}
+
+	@Test
+	public void horniRadaCtrlCisloVysvetliVypnutyZdrojAJinakMlci() {
+		final KesoidModel model = mock(KesoidModel.class);
+		final PrepniZdrojAction akce = new PrepniZdrojAction(TypZdroje.GPX);
+		akce.inject(model);
+		akce.inject(toast);
+		akce.setEnabled(false);
+		final javax.swing.JRootPane koren = new javax.swing.JRootPane();
+		PrepniZdrojAction.navazNumpad(koren, akce);
+		final javax.swing.KeyStroke ctrl1 = cz.geokuk.plugins.kesoid.mvc.ZkratkyZdroju.zkratka(TypZdroje.GPX);
+		final Object klic = koren.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(ctrl1);
+		Assert.assertNotNull("horní řada je u vypnutého zdroje navázaná", klic);
+		final javax.swing.Action vysvetleni = koren.getActionMap().get(klic);
+		Assert.assertTrue(vysvetleni.isEnabled());
+		vysvetleni.actionPerformed(new java.awt.event.ActionEvent(this, 0, ""));
+		Assert.assertEquals("Zdroj keší GPX – nemá načtené soubory", posledni());
+		akce.setEnabled(true);
+		Assert.assertFalse("zapnutý zdroj dostane zkratku z menu, náhradní vazba se vypne", vysvetleni.isEnabled());
+		akce.setEnabled(false);
+		Assert.assertTrue(vysvetleni.isEnabled());
+	}
+
+	@Test
+	public void horniRadaJeUZapnutehoZdrojeBezNahradniVazby() {
+		final PrepniZdrojAction akce = new PrepniZdrojAction(TypZdroje.GPX);
+		akce.setEnabled(true);
+		final javax.swing.JRootPane koren = new javax.swing.JRootPane();
+		PrepniZdrojAction.navazNumpad(koren, akce);
+		final Object klic = koren.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(cz.geokuk.plugins.kesoid.mvc.ZkratkyZdroju.zkratka(TypZdroje.GPX));
+		Assert.assertFalse("zapnutý zdroj: zkratku zpracuje menu, náhradní vazba je vypnutá", koren.getActionMap().get(klic).isEnabled());
 	}
 }
