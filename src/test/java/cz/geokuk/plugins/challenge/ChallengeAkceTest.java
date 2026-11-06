@@ -1,10 +1,13 @@
 package cz.geokuk.plugins.challenge;
 
+import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.Action;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -111,5 +114,74 @@ public class ChallengeAkceTest {
 		Assert.assertEquals(druha, model.hlavni());
 		model.deaktivuj(druha);
 		Assert.assertNull(model.hlavni());
+	}
+
+	private final java.util.List<VybranyKandidat> vystredeno = new java.util.ArrayList<>();
+
+	private PlanovacChallenge planovac() {
+		return new PlanovacChallenge(model, id -> java.util.Optional.empty(), () -> new cz.geokuk.core.coordinates.Wgs(50, 14), () -> java.nio.file.Paths.get("neexistuje"),
+				() -> new cz.geokuk.core.coordinates.Wgs(50.0, 14.0), vystredeno::add);
+	}
+
+	private void priravVysledek() throws Exception {
+		model.aktivuj(Sablony.cesko360());
+		final java.util.List<VysledekSektoru.KandidatKes> kandidati = new java.util.ArrayList<>();
+		kandidati.add(new VysledekSektoru.KandidatKes("GC1", 50.01, 14.0, 10));
+		kandidati.add(new VysledekSektoru.KandidatKes("GC2", 50.20, 14.0, 20));
+		model.nastavVysledek(Sablony.cesko360(), new VysledekSektoru(new java.util.BitSet(360), new java.util.BitSet(360), new VysledekSektoru.Kandidati[360], 0, kandidati));
+		SwingUtilities.invokeAndWait(() -> {});
+	}
+
+	@Test
+	public void prejdiVolaPlanovacSHlavniChallengeAVystredi() throws Exception {
+		priravVysledek();
+		final PlanovacChallenge p = planovac();
+		Assert.assertEquals("GC1", ChallengeAkce.prejdi(model, p, true).id());
+		Assert.assertEquals("GC2", ChallengeAkce.prejdi(model, p, true).id());
+		Assert.assertEquals(2, vystredeno.size());
+		Assert.assertEquals("GC1", ChallengeAkce.prejdi(model, p, false).id());
+		Assert.assertEquals("GC1", vystredeno.get(2).id());
+	}
+
+	@Test
+	public void akceVolajiPlanovacPriStisku() throws Exception {
+		priravVysledek();
+		final PlanovacChallenge p = planovac();
+		dalsi.setPlanovac(() -> p);
+		predchozi.setPlanovac(() -> p);
+		dalsi.actionPerformed(new ActionEvent(this, 0, ""));
+		dalsi.actionPerformed(new ActionEvent(this, 0, ""));
+		Assert.assertEquals(java.util.Arrays.asList("GC1", "GC2"), ids());
+		predchozi.actionPerformed(new ActionEvent(this, 0, ""));
+		Assert.assertEquals(java.util.Arrays.asList("GC1", "GC2", "GC1"), ids());
+	}
+
+	private java.util.List<String> ids() {
+		final java.util.List<String> l = new java.util.ArrayList<>();
+		for (final VybranyKandidat k : vystredeno) {
+			l.add(k.id());
+		}
+		return l;
+	}
+
+	@Test
+	public void bezChallengeBezPlanovaceNeboBezModeluNicNeudelaANespadne() throws Exception {
+		Assert.assertNull("bez aktivní challenge", ChallengeAkce.prejdi(model, planovac(), true));
+		priravVysledek();
+		Assert.assertNull("bez plánovače", ChallengeAkce.prejdi(model, null, true));
+		Assert.assertNull("bez modelu", ChallengeAkce.prejdi(null, planovac(), false));
+		dalsi.actionPerformed(new ActionEvent(this, 0, ""));
+		predchozi.actionPerformed(new ActionEvent(this, 0, ""));
+		Assert.assertTrue("akce bez plánovače nic nevystředí", vystredeno.isEmpty());
+	}
+
+	@Test
+	public void stitekJeCitelnyNaPozadiVsechTemat() {
+		final Color[] pozadi = { new Color(204, 204, 204), new Color(238, 238, 238), new Color(102, 102, 102), Color.WHITE, Color.BLACK, new Color(40, 40, 40) };
+		for (final Color p : pozadi) {
+			Assert.assertTrue(p + ": kontrast " + StitekChallenge.kontrast(StitekChallenge.barva(p), p), StitekChallenge.kontrast(StitekChallenge.barva(p), p) >= 4.5);
+		}
+		Assert.assertEquals("kde stačí, zůstane oranžová", new Color(200, 100, 0), StitekChallenge.barva(Color.BLACK));
+		Assert.assertEquals(new Color(200, 100, 0), StitekChallenge.barva(null));
 	}
 }
