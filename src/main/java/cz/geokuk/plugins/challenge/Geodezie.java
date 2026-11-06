@@ -12,6 +12,9 @@ public final class Geodezie {
 	/** Sektor, jehož azimut leží blíž k hranici celého stupně než tato hodnota, je nejistý. */
 	public static final double NEJISTOTA_STUPNU = 0.05;
 
+	/** Body blíž než tato vzdálenost v metrech (zaokrouhlení u pólů a datové čáry) jsou týž bod a azimut mezi nimi není definován. */
+	static final double STEJNY_BOD_M = 1e-6;
+
 	private static final double A = 6378137.0;
 	private static final double F = 1 / 298.257223563;
 

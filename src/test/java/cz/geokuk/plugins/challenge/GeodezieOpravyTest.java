@@ -51,6 +51,18 @@ public class GeodezieOpravyTest {
 	}
 
 	@Test
+	public void kesNaPoluJeVeStreduBezOhleduNaDelku() {
+		for (final double pol : new double[] { 90, -90 }) {
+			for (final ZdrojPravidel zdroj : ZdrojPravidel.values()) {
+				final VysledekSektoru v = VypocetSektoru.spocti(zdroj, pol, 0, null, Collections.<String> emptySet(),
+						Arrays.<VstupKes> asList(new VypocetSektoruTest.Kes("GC1", pol, 50, true), new VypocetSektoruTest.Kes("GC2", pol, 50, false)));
+				Assert.assertEquals(zdroj + " " + pol, 0, v.pocetObsazenych());
+				Assert.assertTrue(zdroj + " " + pol, v.vsichniKandidati().isEmpty());
+			}
+		}
+	}
+
+	@Test
 	public void kesVBlizkostiStredu() {
 		final VysledekSektoru v = spocti(ZdrojPravidel.PGC, new VypocetSektoruTest.Kes("GC1", 50.001, 14, true));
 		Assert.assertTrue("0° sever", v.jeObsazeny(0));

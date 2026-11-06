@@ -321,7 +321,7 @@ public final class GeometrieSektoru {
 		if (Double.isNaN(vzdalenost)) {
 			vzdalenost = Geodezie.vzdalenostKoule(lat, lon, bodLat, bodLon);
 		}
-		if (vzdalenost <= 0 || vzdalenost < polomerMin - TOLERANCE_POLOMERU || vzdalenost > polomerMax + TOLERANCE_POLOMERU) {
+		if (vzdalenost < Geodezie.STEJNY_BOD_M || vzdalenost < polomerMin - TOLERANCE_POLOMERU || vzdalenost > polomerMax + TOLERANCE_POLOMERU) {
 			return -1;
 		}
 		double azimut = model == Model.ELIPSOID ? Geodezie.azimutElipsoid(lat, lon, bodLat, bodLon) : Double.NaN;
