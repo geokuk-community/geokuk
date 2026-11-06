@@ -9,6 +9,8 @@ import java.awt.Color;
 import java.awt.event.MouseEvent;
 
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
@@ -16,6 +18,11 @@ import cz.geokuk.plugins.kesoid.mvc.KesoidOnoffEvent;
 
 /** Skryté kešoidy (F5) ve stavovém řádku: jantarový podklad počtů, vysvětlení a klik, který kešoidy zobrazí. */
 public class JStatusBarSkryteKesoidyTest {
+
+	@Before
+	public void jenSDisplejem() {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+	}
 
 	private static void klik(final JStatusBar sb) {
 		for (final java.awt.event.MouseListener l : sb.poctyKesiPanel.getMouseListeners()) {
