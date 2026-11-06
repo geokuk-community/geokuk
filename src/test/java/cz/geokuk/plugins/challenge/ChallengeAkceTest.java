@@ -186,24 +186,14 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
-	public void predchoziJeJenUSektoru360() {
-		Assert.assertTrue(ChallengeAkce.lzePredchozi(Sablony.cesko360()));
-		Assert.assertFalse(ChallengeAkce.lzePredchozi(null));
-		final Challenge dt = new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC);
-		Assert.assertFalse(ChallengeAkce.lzePredchozi(dt));
-		Assert.assertFalse(ChallengeAkce.lzePredchozi(new Challenge("K", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC)));
-	}
-
-	@Test
-	public void predchoziAkceJeVypnutaProDtAleDalsiZustava() {
+	public void predchoziAkceJeDostupnaUVsechTypu() {
 		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 		model.aktivuj(dt);
 		model.setZapnuto(true);
 		Assert.assertTrue(dalsi.isEnabled());
+		Assert.assertTrue(predchozi.isEnabled());
+		model.setZapnuto(false);
 		Assert.assertFalse(predchozi.isEnabled());
-		model.aktivuj(Sablony.cesko360());
-		model.setZobrazena(Sablony.cesko360());
-		Assert.assertTrue("po přepnutí na 360° je předchozí zase dostupné", predchozi.isEnabled());
 	}
 
 	@Test
