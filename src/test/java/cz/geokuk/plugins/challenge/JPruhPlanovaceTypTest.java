@@ -19,7 +19,7 @@ public class JPruhPlanovaceTypTest {
 	@Test
 	public void kazdyTypSeVejdeCely() {
 		final Font zaklad = new JLabel().getFont().deriveFont(Font.BOLD, 12f);
-		final int sirka = JPruhPlanovace.rozloz(267)[JPruhPlanovace.TYP].width;
+		final int sirka = JPruhPlanovace.rozloz(cz.geokuk.framework.RozmisteniPrekryvu.PRUH_PLNY_MAX)[JPruhPlanovace.TYP].width;
 		for (final Challenge.Typ t : Challenge.Typ.values()) {
 			final String text = StitkyPruhu.typ(t);
 			final Font f = JPruhPlanovace.pismoNaSirku(zaklad, text, sirka, JPruhPlanovaceTypTest::metriky);

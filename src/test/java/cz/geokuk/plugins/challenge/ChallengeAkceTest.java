@@ -49,10 +49,10 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
-	public void zkratkyJsouF4AShiftF4() {
+	public void zkratkyJsouF4ShiftF4ACtrlF4() {
 		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0), dalsi.getValue(Action.ACCELERATOR_KEY));
 		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.SHIFT_DOWN_MASK), predchozi.getValue(Action.ACCELERATOR_KEY));
-		Assert.assertNull(zapnout.getValue(Action.ACCELERATOR_KEY));
+		Assert.assertEquals("lišta challenge", KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.CTRL_DOWN_MASK), zapnout.getValue(Action.ACCELERATOR_KEY));
 		Assert.assertNull(kandidati.getValue(Action.ACCELERATOR_KEY));
 	}
 
