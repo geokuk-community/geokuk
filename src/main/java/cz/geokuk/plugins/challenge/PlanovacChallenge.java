@@ -216,7 +216,7 @@ public final class PlanovacChallenge {
 			synchronized (this) {
 				dalsi.remove(c.nazev());
 			}
-			model.nastavVysledek(c, vysledek);
+			model.nastavVysledek(c, vysledek, v.lat, v.lon);
 		} finally {
 			p.zavri();
 			if (bezici == p) {
@@ -284,7 +284,7 @@ public final class PlanovacChallenge {
 			}
 			klic = vstupyPolicek.get(c.nazev());
 		}
-		model.nastavVysledekPolicek(c, vysledek.sVstupem(klic));
+		model.nastavVysledekPolicek(c, vysledek.sVstupem(klic), stred.lat, stred.lon);
 		model.nastavStavPredpoctu(c, new StavPredpoctu(StavPredpoctu.Faze.HOTOVO, data.size(), data.size(), null));
 	}
 
@@ -438,6 +438,34 @@ public final class PlanovacChallenge {
 		model.nastavVybranyKandidat(c, vk);
 		vystredit.accept(vk);
 		return vk;
+	}
+
+	/**
+	 * Skok na nejbližšího kandidáta ve světové straně (kužel ±{@value SkokVeSmeru#POLOVINA_KUZELE}° od vybraného kandidáta, jinak od středu mapy): vybere ho v modelu a vystředí na něj mapu. Volat ve
+	 * vlákně Swingu. Už vybraný kandidát se nevybere znovu. Vrací vybraného, nebo null, když v kuželu nikdo není nebo chybí výsledek či střed mapy.
+	 */
+	public VybranyKandidat kandidatVeSmeru(final Challenge c, final SmerSkoku smer) {
+		final VybranyKandidat vybrany = model.vybranyKandidat(c);
+		final String vynechat = vybrany == null ? null : vybrany.id();
+		final Wgs stred = vybrany == null ? stredMapy.get() : null;
+		if (vybrany == null && stred == null) {
+			return null;
+		}
+		final double lat = vybrany == null ? stred.lat : vybrany.lat();
+		final double lon = vybrany == null ? stred.lon : vybrany.lon();
+		final VybranyKandidat k;
+		if (c.typ() == Challenge.Typ.SEKTORY_360) {
+			final VysledekSektoru v = model.vysledek(c);
+			k = v == null ? null : SkokVeSmeru.proSektory(v, lat, lon, smer.azimut(), vynechat);
+		} else {
+			final VysledekPolicek v = model.vysledekPolicek(c);
+			k = v == null ? null : SkokVeSmeru.proPolicka(v, lat, lon, smer.azimut(), vynechat);
+		}
+		if (k != null) {
+			model.nastavVybranyKandidat(c, k);
+			vystredit.accept(k);
+		}
+		return k;
 	}
 
 	/** Zastaví plánovač a uvolní paměť předpočtu. */

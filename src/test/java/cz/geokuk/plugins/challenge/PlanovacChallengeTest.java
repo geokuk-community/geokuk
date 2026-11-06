@@ -582,6 +582,47 @@ public class PlanovacChallengeTest {
 	}
 
 	@Test
+	public void kandidatVeSmeruVybiraVystredujeAVybranehoNevybereZnovu() throws Exception {
+		napojNaModel();
+		final Challenge c = dtChallenge("DT");
+		stredMapy = new Wgs(50.0, 14.0);
+		Assert.assertNull("bez výsledku", planovac.kandidatVeSmeru(c, SmerSkoku.SEVER));
+		planovac.keseNacteny(dtData());
+		zapni(c);
+		pockej(() -> model.vysledekPolicek(c) != null, "výsledek D/T");
+		Assert.assertNull("na jihu nikdo", planovac.kandidatVeSmeru(c, SmerSkoku.JIH));
+		Assert.assertTrue(vystredeno.isEmpty());
+		final VybranyKandidat prvni = planovac.kandidatVeSmeru(c, SmerSkoku.SEVER);
+		Assert.assertEquals("K1", prvni.id());
+		Assert.assertEquals(prvni.id(), vystredeno.get(0).id());
+		pockej(() -> model.vybranyKandidat(c) != null && model.vybranyKandidat(c).id().equals("K1"), "kandidát v modelu");
+		final VybranyKandidat druhy = planovac.kandidatVeSmeru(c, SmerSkoku.SEVER);
+		Assert.assertEquals("K3", druhy.id());
+	}
+
+	@Test
+	public void kandidatVeSmeruProSektory360() throws Exception {
+		napojNaModel();
+		final Challenge c = model.ulozVlastni(vlastni("Domov", Stred.domov(), OblastDef.zadna()));
+		final List<VypocetSektoruTest.Kes> data = new ArrayList<>();
+		for (int s = 0; s < 300; s++) {
+			data.add(VypocetSektoruTest.vAzimutu("N" + s, s + 0.5, 20_000, true));
+		}
+		for (int s = 300; s < 306; s++) {
+			data.add(VypocetSektoruTest.vAzimutu("K" + s, s + 0.5, 10_000 + 5_000 * (s - 300), false));
+		}
+		planovac.keseNacteny(data);
+		zapni(c);
+		pockej(() -> model.vysledek(c) != null, "výsledek");
+		stredMapy = new Wgs(LAT, LON);
+		Assert.assertNull("na východě nikdo", planovac.kandidatVeSmeru(c, SmerSkoku.VYCHOD));
+		final VybranyKandidat k = planovac.kandidatVeSmeru(c, SmerSkoku.ZAPAD);
+		Assert.assertEquals("K300", k.id());
+		Assert.assertEquals(300, k.sektor());
+		Assert.assertEquals(k.id(), vystredeno.get(0).id());
+	}
+
+	@Test
 	public void malyPosunStreduMapyNepocitaZnovuAVelkyAno() throws Exception {
 		napojNaModel();
 		final Challenge dt = dtChallenge("DT");
@@ -727,6 +768,41 @@ public class PlanovacChallengeTest {
 		final VybranyKandidat[] v = new VybranyKandidat[1];
 		javax.swing.SwingUtilities.invokeAndWait(() -> v[0] = zpet ? planovac.predchoziChybejici(c) : planovac.dalsiChybejici(c));
 		return v[0];
+	}
+
+	@Test
+	public void prehledMaStredAStitkyZVypoctuPlanovace() throws Exception {
+		napojNaModel();
+		final Challenge sektory = model.ulozVlastni(vlastni("Sektory", Stred.domov(), OblastDef.zadna()));
+		planovac.keseNacteny(kese(500, 3));
+		zapni(sektory);
+		pockej(() -> model.prehled() != null, "přehled sektorů");
+		PrehledChallenge p = model.prehled();
+		Assert.assertEquals(LAT, p.stredLat(), 0);
+		Assert.assertEquals(LON, p.stredLon(), 0);
+		Assert.assertEquals("domov", p.stredPopis());
+		Assert.assertEquals(360 - model.pocetChybejicich(sektory), p.splneno());
+		final VysledekSektoru.KandidatKes k = model.vysledek(sektory).vsichniKandidati().get(0);
+		Assert.assertEquals(Integer.toString(k.sektor()), p.stitek(k.id()).text());
+		Assert.assertEquals(Geodezie.vzdalenostKoule(LAT, LON, k.lat(), k.lon()), p.stitek(k.id()).vzdalenostM(), 1e-6);
+
+		final Challenge dt = dtChallenge("DT");
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+			model.deaktivuj(sektory);
+			model.aktivuj(dt);
+		});
+		planovac.keseNacteny(dtData());
+		pockej(() -> model.prehled() != null && model.prehled().typ() == Challenge.Typ.DT_MATICE, "přehled D/T");
+		p = model.prehled();
+		Assert.assertEquals("střed mapy", p.stredPopis());
+		Assert.assertEquals(stredMapy.lat, p.stredLat(), 0);
+		Assert.assertEquals(81, p.celkem());
+		Assert.assertEquals("D2,5/T3,5", p.stitek("K1").text());
+		Assert.assertEquals(Geodezie.vzdalenostKoule(stredMapy.lat, stredMapy.lon, 50.01, 14.01), p.stitek("K1").vzdalenostM(), 1e-6);
+		final PrehledChallenge pred = p;
+		posunStredu(LAT + 0.05, LON);
+		pockej(() -> model.prehled() != pred, "nový přehled po přepočtu podle jiného středu");
+		Assert.assertEquals(LAT + 0.05, model.prehled().stredLat(), 0);
 	}
 
 	@Test
