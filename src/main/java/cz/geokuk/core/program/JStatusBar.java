@@ -40,8 +40,8 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 		private boolean skrtnuto = true;
 
-		JSkrtnutaValue(final String prototyp, final String kratkyPrototyp) {
-			super(prototyp, kratkyPrototyp);
+		JSkrtnutaValue(final String prototyp) {
+			super(prototyp);
 		}
 
 		public void setSkrtnuto(final boolean skrtnuto) {
@@ -73,44 +73,15 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 		/** Text nejširšího běžného obsahu, aby šířka pole a tím rozložení řádku nezávisely na datech. */
 		private final String prototyp;
-		/** Kratší prototyp pro úsporný režim; null, když se pole nezužuje. */
-		private final String kratkyPrototyp;
 		private final boolean pevnaSirka;
-		private boolean kratky;
 
 		public JValue(final String prototyp) {
 			this(prototyp, false);
 		}
 
-		/** Pole, které se v úsporném režimu zúží na kratší prototyp; delší text si šířku vezme. */
-		public JValue(final String prototyp, final String kratkyPrototyp) {
-			this.prototyp = prototyp;
-			this.kratkyPrototyp = kratkyPrototyp;
-			this.pevnaSirka = false;
-			setEditable(false);
-			setCursor(FKurzory.TEXTOVY_KURZOR);
-			setMargin(new Insets(0, 5, 0, 0));
-		}
-
-		void setKratky(final boolean kratky) {
-			if (this.kratky != kratky && kratkyPrototyp != null) {
-				this.kratky = kratky;
-				invalidate();
-			}
-		}
-
-		/** Šířka pole, když text vejde do prototypu: plného nebo kratšího. */
-		int sirkaPole(final boolean kratkyPrototypPouzit) {
-			final FontMetrics fm = getFontMetrics(getFont());
-			final Insets ins = getInsets();
-			final String p = kratkyPrototypPouzit && kratkyPrototyp != null ? kratkyPrototyp : prototyp;
-			return sirkaPrototypu(fm, p) + ins.left + ins.right + 1;
-		}
-
 		/** Pole s pevnou šířkou delší text ořízne, celý je v tooltipu. */
 		public JValue(final String prototyp, final boolean pevnaSirka) {
 			this.prototyp = prototyp;
-			this.kratkyPrototyp = null;
 			this.pevnaSirka = pevnaSirka;
 			// setFocusable(false);
 			setEditable(false);
@@ -129,7 +100,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 			final Dimension preferredSize = super.getPreferredSize();
 			final Insets ins = getInsets();
 			final FontMetrics fm = getFontMetrics(getFont());
-			final int sirkaTextuPrototypu = sirkaPrototypu(fm, kratky && kratkyPrototyp != null ? kratkyPrototyp : prototyp);
+			final int sirkaTextuPrototypu = sirkaPrototypu(fm, prototyp);
 			final int sirkaPrototypu = sirkaTextuPrototypu + ins.left + ins.right;
 			// Text, který se vejde do prototypu, šířku nemění (JTextField přidává místo pro kurzor).
 			final boolean vejdeSe = getText() == null || fm.stringWidth(getText()) <= sirkaTextuPrototypu;
@@ -158,14 +129,11 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private static final String SOURADNICE = new Wgs(-88.888, -178.888).toString();
 	private static final String POCTY = "9999999/9999999";
 	private static final String POCET = "999999";
-	/** Prototypy úsporného režimu: počty běžné databáze se vejdou, větší si místo vezmou. */
-	private static final String POCTY_KRATKE = "99999/9999";
-	private static final String POCET_KRATKY = "9999";
-	private static final String VYLET_KRATKY = "999";
 	private static final String OD_POZICE = "Od pozice:";
 	private static final String OD_POZICE_KRATKE = "Od:";
 	/** Mezera mezi buňkami {@link #createPanel()}: počítá se kolem každé viditelné buňky. */
 	private static final int MEZERA_BUNEK = 2;
+	private static final int NEJVYSSI_STUPEN = 3;
 
 	private Mou cur;
 	/** Úhel, pro který je nastavená ikona směru. */
@@ -173,24 +141,24 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	private Poziceq poziceq = new Poziceq();
 	private final JValue souradnice = new JValue(SOURADNICE);
-	private final JValue celkovePoctyVsude = new JValue(POCTY, POCTY_KRATKE);
-	private final JValue filtrovanePocetyVsude = new JValue(POCTY, POCTY_KRATKE);
+	private final JValue celkovePoctyVsude = new JValue(POCTY);
+	private final JValue filtrovanePocetyVsude = new JValue(POCTY);
 
-	private final JSkrtnutaValue celkovePoctyVyrez = new JSkrtnutaValue(POCET, POCET_KRATKY);
-	private final JSkrtnutaValue filtrovanePocetyVyrez = new JSkrtnutaValue(POCET, POCET_KRATKY);
+	private final JSkrtnutaValue celkovePoctyVyrez = new JSkrtnutaValue(POCET);
+	private final JSkrtnutaValue filtrovanePocetyVyrez = new JSkrtnutaValue(POCET);
 	private final JValue vzdalenost = new JValue("9999 km");
 
 	private final JLabel azimutSmer = new JLabel();
 	private final JValue azimutCislo = new JValue("359°");
 
-	private final JValue vyletAno = new JValue("9999", VYLET_KRATKY);
-	private final JValue vyletNe = new JValue("9999", VYLET_KRATKY);
+	private final JValue vyletAno = new JValue("9999");
+	private final JValue vyletNe = new JValue("9999");
 
 	private final JValue souradnicePozice = new JValue(SOURADNICE);
 
 	private final JValue meritkoMapy = new JValue("22");
 
-	/** Šířka podle nejdelšího textu, aby zalamování stavového řádku nezáviselo na zobrazeném limitu; na nejvyšším stupni úspor místo jen pro zobrazené varování. */
+	/** Šířka podle nejdelšího textu, aby zalamování stavového řádku nezáviselo na zobrazeném limitu; na nejvyšším stupni úspor se místo rezervuje jen pro zobrazené varování. */
 	private final JLabel varovaniPoctuPrekrocenych = new JLabel() {
 		private static final long serialVersionUID = 1L;
 
@@ -206,7 +174,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private JPanel odPozice;
 	private final JLabel popisekOdPozice = new JLabel(OD_POZICE);
 	private JPanel poctyKesiPanel;
-	private JPanel vyletyPanel;
+	private JLabel popisekVse;
 
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
 	private JPanel jFilterProgressPanel;
@@ -249,28 +217,27 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		initComponents();
 	}
 
-	/** Stupeň úspor, který je právě použitý: 0 plný řádek, 1 zdroje bez názvů, 2 kratší pole a „Od:“, 3 bez počtů ve výřezu. */
+	/** Stupeň úspor, který je právě použitý: 0 plný řádek, 1 zdroje bez názvů, 2 „Od:“ a bez počtů ve výřezu, 3 navíc bez celkových počtů a bez rezervy pro varování. */
 	private int stupenUspor;
-	private static final int NEJVYSSI_STUPEN = 3;
 
 	/**
-	 * Nevejde-li se řádek do jednoho řádku, ubírá se postupně: zdroje se zúží na zaškrtávátka, pole se zkrátí na běžné velikosti počtů a „Od pozice:“ na „Od:“, nakonec zmizí počty
-	 * ve výřezu. Zalomení zůstává pro opravdu úzké okno. Stupeň se počítá z šířky řádku v plné podobě, takže na stavu zobrazení nezávisí.
+	 * Nevejde-li se řádek do jednoho řádku, ubírá se postupně a jen podle šířky okna, nikdy podle dat, takže se při načtení dat nic nepohne: zdroje se zúží na zaškrtávátka, „Od pozice:“
+	 * se zkrátí a zmizí počty ve výřezu, nakonec zmizí celkové počty a místo pro varování o překročení limitu se rezervuje jen zobrazenému varování. Zalomení zůstává pro opravdu
+	 * úzké okno.
 	 */
 	@Override
 	public void doLayout() {
 		if (getWidth() > 0) {
 			final Insets ins = getInsets();
 			final int dostupna = getWidth() - ins.left - ins.right;
-			final int stupen = vyberStupen(dostupna);
-			if (nastavStupen(stupen)) {
+			if (nastavStupen(vyberStupen(dostupna))) {
 				SwingUtilities.invokeLater(this::revalidate);
 			}
 		}
 		super.doLayout();
 	}
 
-	/** Šířky řádku na jednotlivých stupních úspor, od plné podoby; podle nich se vybere první stupeň, který se vejde. */
+	/** Šířky řádku na jednotlivých stupních úspor; počítají se z plné podoby, takže na právě použitém stupni nezávisí. */
 	int[] sirkyStupnu() {
 		final boolean videtVarovani = varovaniPoctuPrekrocenych.isVisible();
 		final int textVarovani = sirkaTextuVarovani();
@@ -279,40 +246,32 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 			plna += prepinaceZdroju.sirkaNazvu();
 		}
 		if (stupenUspor >= 2) {
-			plna += usporaKratkych() + usporaPopiskuOdPozice();
+			plna += usporaPopiskuOdPozice() + sirkaVyrezu();
 		}
 		if (stupenUspor >= 3) {
-			plna += 2 * (celkovePoctyVyrez.sirkaPole(true) + MEZERA_BUNEK);
+			plna += sirkaCelkovych();
 		}
 		final int[] w = new int[NEJVYSSI_STUPEN + 1];
 		w[0] = plna + sirkaVarovani(0, videtVarovani, textVarovani);
 		w[1] = w[0] - prepinaceZdroju.sirkaNazvu();
-		w[2] = w[1] - usporaKratkych() - usporaPopiskuOdPozice();
-		w[3] = w[2] - 2 * (celkovePoctyVyrez.sirkaPole(true) + MEZERA_BUNEK) - sirkaVarovani(2, videtVarovani, textVarovani) + sirkaVarovani(3, videtVarovani, textVarovani);
+		w[2] = w[1] - usporaPopiskuOdPozice() - sirkaVyrezu();
+		w[3] = w[2] - sirkaCelkovych() - sirkaVarovani(0, videtVarovani, textVarovani) + sirkaVarovani(NEJVYSSI_STUPEN, videtVarovani, textVarovani);
 		return w;
 	}
 
-	/** Šířka textu varování bez rezervy. */
+	/** Šířka štítku s varováním: rezervovaná podle nejdelšího textu, na nejvyšším stupni úspor jen když je varování vidět. */
+	private int sirkaVarovani(final int stupen, final boolean videt, final int sirkaTextu) {
+		if (stupen >= NEJVYSSI_STUPEN) {
+			return videt ? sirkaTextu : 0;
+		}
+		final Insets ins = varovaniPoctuPrekrocenych.getInsets();
+		return Math.max(sirkaTextu, varovaniPoctuPrekrocenych.getFontMetrics(varovaniPoctuPrekrocenych.getFont()).stringWidth(textPrekroceni(false, LimityKresleni.MAX)) + ins.left + ins.right);
+	}
+
 	private int sirkaTextuVarovani() {
 		final Insets ins = varovaniPoctuPrekrocenych.getInsets();
 		final String text = varovaniPoctuPrekrocenych.getText();
 		return varovaniPoctuPrekrocenych.getFontMetrics(varovaniPoctuPrekrocenych.getFont()).stringWidth(text == null ? "" : text) + ins.left + ins.right;
-	}
-
-	private int sirkaVarovani(final int stupen, final boolean videt, final int sirkaTextu) {
-		final Insets ins = varovaniPoctuPrekrocenych.getInsets();
-		if (stupen >= NEJVYSSI_STUPEN) {
-			return videt ? sirkaTextu : 0;
-		}
-		return Math.max(sirkaTextu, varovaniPoctuPrekrocenych.getFontMetrics(varovaniPoctuPrekrocenych.getFont()).stringWidth(textPrekroceni(false, LimityKresleni.MAX)) + ins.left + ins.right);
-	}
-
-	private int usporaKratkych() {
-		int uspora = 0;
-		for (final JValue v : kratkaPole()) {
-			uspora += v.sirkaPole(false) - v.sirkaPole(true);
-		}
-		return uspora;
 	}
 
 	private int usporaPopiskuOdPozice() {
@@ -320,8 +279,14 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		return fm.stringWidth(OD_POZICE) - fm.stringWidth(OD_POZICE_KRATKE);
 	}
 
-	private JValue[] kratkaPole() {
-		return new JValue[] { celkovePoctyVsude, filtrovanePocetyVsude, celkovePoctyVyrez, filtrovanePocetyVyrez, vyletAno, vyletNe };
+	/** Šířka obou počtů ve výřezu včetně mezer. */
+	private int sirkaVyrezu() {
+		return celkovePoctyVyrez.getPreferredSize().width + filtrovanePocetyVyrez.getPreferredSize().width + 2 * MEZERA_BUNEK;
+	}
+
+	/** Šířka popisku „Vše:“ a celkových počtů včetně mezer. */
+	private int sirkaCelkovych() {
+		return popisekVse.getPreferredSize().width + celkovePoctyVsude.getPreferredSize().width + 2 * MEZERA_BUNEK;
 	}
 
 	private int vyberStupen(final int dostupna) {
@@ -341,16 +306,14 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		}
 		stupenUspor = stupen;
 		prepinaceZdroju.setUsporny(stupen >= 1);
-		for (final JValue v : kratkaPole()) {
-			v.setKratky(stupen >= 2);
-		}
 		popisekOdPozice.setText(stupen >= 2 ? OD_POZICE_KRATKE : OD_POZICE);
-		celkovePoctyVyrez.setVisible(stupen < 3);
+		celkovePoctyVyrez.setVisible(stupen < 2);
+		filtrovanePocetyVyrez.setVisible(stupen < 2);
+		popisekVse.setVisible(stupen < 3);
+		celkovePoctyVsude.setVisible(stupen < 3);
 		varovaniPoctuPrekrocenych.invalidate();
-		filtrovanePocetyVyrez.setVisible(stupen < 3);
-		for (final JPanel panel : new JPanel[] { poctyKesiPanel, odPozice, vyletyPanel }) {
-			panel.invalidate();
-		}
+		poctyKesiPanel.invalidate();
+		odPozice.invalidate();
 		return true;
 	}
 
@@ -585,7 +548,8 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		///////////////////////////////
 		final JPanel poctyKesi = createPanel();
 		poctyKesiPanel = poctyKesi;
-		poctyKesi.add(new JLabel("Vše:"));
+		popisekVse = new JLabel("Vše:");
+		poctyKesi.add(popisekVse);
 		poctyKesi.add(celkovePoctyVsude);
 		celkovePoctyVsude.setToolTipText("Počet waypointů celkem / počet kešoidů celkem.");
 
@@ -603,7 +567,6 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		////////////////////////////
 
 		final JPanel vylety = createPanel();
-		vyletyPanel = vylety;
 		// vylety.setBorder(BorderFactory.createEtchedBorder());
 		vylety.add(popisekVyletu);
 		vylety.add(vyletAno);
