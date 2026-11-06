@@ -100,6 +100,9 @@ public final class GeometrieSektoru {
 	/** Bod ve zadané vzdálenosti (m) a azimutu (stupně) od středu. */
 	public static Bod bod(final double lat, final double lon, final double azimut, final double metru, final Model model) {
 		zkontrolujStred(lat, lon);
+		if (Double.isNaN(azimut) || Double.isInfinite(azimut)) {
+			throw new IllegalArgumentException("Azimut není konečné číslo: " + azimut);
+		}
 		if (!(metru >= 0) || Double.isInfinite(metru)) {
 			throw new IllegalArgumentException("Vzdálenost musí být nezáporná: " + metru);
 		}

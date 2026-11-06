@@ -21,7 +21,7 @@ public final class Geodezie {
 	public static double azimutKoule(final double lat1, final double lon1, final double lat2, final double lon2) {
 		final double p1 = Math.toRadians(lat1);
 		final double p2 = Math.toRadians(lat2);
-		final double dl = Math.toRadians(lon2 - lon1);
+		final double dl = Math.toRadians(rozdilDelek(lon1, lon2));
 		final double a = Math.atan2(Math.sin(dl) * Math.cos(p2), Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl));
 		return normalizuj(Math.toDegrees(a));
 	}
@@ -31,7 +31,7 @@ public final class Geodezie {
 		final double p1 = Math.toRadians(lat1);
 		final double p2 = Math.toRadians(lat2);
 		final double dp = p2 - p1;
-		final double dl = Math.toRadians(lon2 - lon1);
+		final double dl = Math.toRadians(rozdilDelek(lon1, lon2));
 		final double h = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
 		return 2 * POLOMER_ZEME * Math.asin(Math.min(1, Math.sqrt(h)));
 	}
@@ -43,7 +43,7 @@ public final class Geodezie {
 	public static double azimutElipsoid(final double lat1, final double lon1, final double lat2, final double lon2) {
 		final double u1 = Math.atan((1 - F) * Math.tan(Math.toRadians(lat1)));
 		final double u2 = Math.atan((1 - F) * Math.tan(Math.toRadians(lat2)));
-		final double velkeL = Math.toRadians(lon2 - lon1);
+		final double velkeL = Math.toRadians(rozdilDelek(lon1, lon2));
 		double lam = velkeL;
 		final double sinU1 = Math.sin(u1);
 		final double cosU1 = Math.cos(u1);
@@ -86,7 +86,7 @@ public final class Geodezie {
 		final double b = (1 - F) * A;
 		final double u1 = Math.atan((1 - F) * Math.tan(Math.toRadians(lat1)));
 		final double u2 = Math.atan((1 - F) * Math.tan(Math.toRadians(lat2)));
-		final double velkeL = Math.toRadians(lon2 - lon1);
+		final double velkeL = Math.toRadians(rozdilDelek(lon1, lon2));
 		double lam = velkeL;
 		final double sinU1 = Math.sin(u1);
 		final double cosU1 = Math.cos(u1);
@@ -127,9 +127,19 @@ public final class Geodezie {
 		return Double.NaN;
 	}
 
-	/** Sektor 0 až 359: azimut uříznutý dolů na celé stupně. */
+	/** Rozdíl délek v rozsahu -180 až 180, takže stejný bod zapsaný s délkou 180 a -180 dává nulový rozdíl. */
+	private static double rozdilDelek(final double lon1, final double lon2) {
+		final double d = lon2 - lon1;
+		return d > 180 || d < -180 ? d - 360 * Math.floor((d + 180) / 360) : d;
+	}
+
+	/** Sektor 0 až 359: azimut uříznutý dolů na celé stupně; azimut mimo 0 až 360 se převede do tohoto rozsahu. */
 	public static int sektor(final double azimut) {
-		return (int) Math.floor(azimut) % 360;
+		if (Double.isNaN(azimut) || Double.isInfinite(azimut)) {
+			throw new IllegalArgumentException("Azimut není konečné číslo: " + azimut);
+		}
+		final double zbytek = Math.floor(azimut) % 360;
+		return (int) (zbytek < 0 ? zbytek + 360 : zbytek);
 	}
 
 	/** Azimut je tak blízko hranici sektoru, že ho drobný rozdíl ve výpočtu nebo v souřadnicích přesune jinam. */
