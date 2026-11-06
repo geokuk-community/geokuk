@@ -71,6 +71,7 @@ public class Akce {
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();
 
+	public final cz.geokuk.plugins.challenge.ChallengeNastaveniAction challengeNastaveniAction = new cz.geokuk.plugins.challenge.ChallengeNastaveniAction();
 	public final cz.geokuk.plugins.challenge.ChallengeZapnoutAction challengeZapnoutAction = new cz.geokuk.plugins.challenge.ChallengeZapnoutAction();
 	public final cz.geokuk.plugins.challenge.ChallengeDalsiAction challengeDalsiAction = new cz.geokuk.plugins.challenge.ChallengeDalsiAction();
 	public final cz.geokuk.plugins.challenge.ChallengePredchoziAction challengePredchoziAction = new cz.geokuk.plugins.challenge.ChallengePredchoziAction();
