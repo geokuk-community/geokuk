@@ -167,6 +167,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	};
 	/** Proč zapnuté kruhy nejsou vidět; jen když nějaká zapnutá vrstva nic nekreslí. */
 	private final JLabel stitekSkrytychKruhu = new JLabel(StavVrstev.TEXT_STITKU);
+	private final JLabel stitekChallenge = new cz.geokuk.plugins.challenge.StitekChallenge("Challenge: jen kandidáti");
 	private JPanel odPozice;
 	JPanel poctyKesiPanel;
 	private final JLabel popisekVse = new JLabel("Vše:");
@@ -352,6 +353,11 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 	public void onEvent(final StavZdrojuEvent event) {
 		prepinaceZdroju.obnov(event.getStav());
+	}
+
+	public void onEvent(final cz.geokuk.plugins.challenge.ChallengeZmenenyEvent event) {
+		stitekChallenge.setVisible(event.getModel().jenKandidatiPro() != null);
+		revalidate();
 	}
 
 	public void onEvent(final StavVrstevEvent event) {
@@ -541,6 +547,11 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		stitekSkrytychKruhu.setVisible(false);
 		add(stitekSkrytychKruhu);
 		layout.plovouci(stitekSkrytychKruhu);
+		stitekChallenge.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+		stitekChallenge.setToolTipText("Na mapě jsou jen keše, které zaplní chybějící sektor challenge.");
+		stitekChallenge.setVisible(false);
+		add(stitekChallenge);
+		layout.plovouci(stitekChallenge);
 		jFilterProgressPanel = createPanel();
 		// jFilterProgress.setVisible(false);
 		// jFilterProgress.setStringPainted(true);
