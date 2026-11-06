@@ -34,6 +34,8 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final JButton uloz = new JButton("Uložit změny");
 	private final JLabel chyba = new JLabel(" ");
 	private boolean plnim;
+	/** Pole formuláře, která mají smysl jen u typu 360°; u D/T se skryjí, protože D/T se počítá z pevných pravidel podle středu mapy. */
+	private final java.util.List<Component> poleSektoru = new java.util.ArrayList<>();
 
 	public JChallengeDialog() {
 		setTitle("Plánovač challenge");
@@ -99,11 +101,17 @@ public class JChallengeDialog extends JMyDialog0 {
 		int r = 0;
 		radek(f, r++, aktivni, null);
 		radek(f, r++, new JLabel("Název"), nazev);
-		radek(f, r++, new JLabel("Pravidla"), pravidla);
-		radek(f, r++, new JLabel("Střed"), stredDomov);
-		radek(f, r++, null, panel(stredSouradnice, new JLabel("šířka"), lat, new JLabel("délka"), lon));
-		radek(f, r++, null, panel(stredListing, kod));
-		radek(f, r++, new JLabel("Oblast"), oblast);
+		final JLabel popisekPravidel = new JLabel("Pravidla");
+		final JLabel popisekStredu = new JLabel("Střed");
+		final JPanel stredSouradnicePanel = panel(stredSouradnice, new JLabel("šířka"), lat, new JLabel("délka"), lon);
+		final JPanel stredListingPanel = panel(stredListing, kod);
+		final JLabel popisekOblasti = new JLabel("Oblast");
+		radek(f, r++, popisekPravidel, pravidla);
+		radek(f, r++, popisekStredu, stredDomov);
+		radek(f, r++, null, stredSouradnicePanel);
+		radek(f, r++, null, stredListingPanel);
+		radek(f, r++, popisekOblasti, oblast);
+		poleSektoru.addAll(java.util.Arrays.asList(popisekPravidel, pravidla, popisekStredu, stredDomov, stredSouradnicePanel, stredListingPanel, popisekOblasti, oblast));
 		radek(f, r++, new JLabel("Nálezy"), nalezy);
 		chyba.setForeground(new Color(180, 30, 30));
 		radek(f, r++, null, chyba);
@@ -159,6 +167,9 @@ public class JChallengeDialog extends JMyDialog0 {
 		seznamModel.clear();
 		Challenge znovu = null;
 		for (final Challenge c : model.vsechny()) {
+			if (!FormularDefinice.jeVNabidce(c)) {
+				continue;
+			}
 			seznamModel.addElement(c);
 			if (c.nazev().equals(klic)) {
 				znovu = c;
@@ -200,6 +211,9 @@ public class JChallengeDialog extends JMyDialog0 {
 				aktivni.setSelected(false);
 				povolStred();
 				return;
+			}
+			for (final Component k : poleSektoru) {
+				k.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
 			}
 			aktivni.setSelected(model != null && model.jeAktivni(c));
 			nazev.setText(c.nazev());

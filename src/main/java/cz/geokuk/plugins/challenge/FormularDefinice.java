@@ -38,6 +38,11 @@ public final class FormularDefinice {
 
 	private FormularDefinice() {}
 
+	/** Typy, které se nabízejí v dialogu: kalendář zatím ne. */
+	public static boolean jeVNabidce(final Challenge c) {
+		return c.typ() != Challenge.Typ.KALENDAR;
+	}
+
 	public static List<Oblast> oblasti() {
 		return Collections.unmodifiableList(Arrays.asList(ZADNA, CESKO, PRAHA));
 	}
@@ -84,6 +89,10 @@ public final class FormularDefinice {
 	 */
 	public static Challenge sestav(final Challenge puvodni, final String nazev, final ZdrojPravidel pravidla, final DruhStredu druhStredu, final String lat, final String lon, final String kod,
 			final Oblast oblast, final ZdrojeNalezu nalezy) {
+		if (puvodni != null && puvodni.typ() == Challenge.Typ.DT_MATICE) {
+			// D/T se počítá z pevných pravidel podle středu mapy: z formuláře se bere jen název a zdroj nálezů, ostatní zůstává, jak bylo.
+			return new Challenge(nazev, Challenge.Typ.DT_MATICE, puvodni.stred(), puvodni.oblast(), puvodni.zdroj(), nalezy);
+		}
 		final Stred stred;
 		switch (druhStredu) {
 		case DOMOV:
@@ -137,6 +146,9 @@ public final class FormularDefinice {
 		default:
 			stred = c.stred().kodListingu();
 			break;
+		}
+		if (c.typ() == Challenge.Typ.DT_MATICE) {
+			return "D/T · matice obtížnost × terén podle keší na mapě";
 		}
 		final String pravidla = c.zdroj() == ZdrojPravidel.PGC ? "Project-GC" : "Stator";
 		return typ(c.typ()) + " · " + pravidla + " · střed: " + stred + " · oblast: " + oblastDefinice(c).popis.toLowerCase(java.util.Locale.ROOT);

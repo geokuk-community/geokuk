@@ -238,4 +238,51 @@ public class JChallengeDialogTest {
 			}
 		});
 	}
+
+	/** Je komponenta viditelná, když by byl dialog zobrazen: viditelná je sama i všichni její rodiče. */
+	private static boolean viditelne(final Component c) {
+		for (Component k = c; k != null; k = k.getParent()) {
+			if (!k.isVisible() && !(k instanceof java.awt.Window)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private Challenge dt(final String nazev) {
+		return new Challenge(nazev, Challenge.Typ.DT_MATICE, Challenge.Stred.souradnice(50, 14), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC);
+	}
+
+	@Test
+	public void dtJdeVDialoguUpravitZapnoutASmazatKalendarSeNenabizi() throws Exception {
+		naEdt(() -> {
+			model.ulozVlastni(dt("Moje DT"));
+			model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			Assert.assertEquals("šablony a D/T, kalendář ne", 4, dialog.polozky().size());
+			for (final Challenge c : dialog.polozky()) {
+				Assert.assertNotEquals(Challenge.Typ.KALENDAR, c.typ());
+			}
+			seznam().setSelectedValue(dialog.polozky().get(3), true);
+			Assert.assertEquals("Moje DT", seznam().getSelectedValue().nazev());
+			Assert.assertTrue("D/T jde uložit", tlacitko("Uložit změny").isEnabled());
+			Assert.assertFalse("pole 360° jsou u D/T skrytá", viditelne(tlacitko("Domov")));
+			Assert.assertFalse(viditelne(tlacitko("Souřadnice")));
+			Assert.assertFalse(viditelne(tlacitko("Keš (kód)")));
+			Assert.assertTrue("název je vidět", viditelne(pole(0)));
+			pole(0).setText("Přejmenované DT");
+			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals(chyba(), "", chyba());
+			final Challenge ulozena = model.vlastni().get(0);
+			Assert.assertEquals("Přejmenované DT", ulozena.nazev());
+			Assert.assertEquals("typ zůstal", Challenge.Typ.DT_MATICE, ulozena.typ());
+			Assert.assertEquals("střed zůstal", Challenge.Stred.souradnice(50, 14), ulozena.stred());
+			final AbstractButton zapnuto = tlacitko("Zapnuto v plánovači");
+			zapnuto.doClick();
+			Assert.assertTrue(model.jeAktivni(ulozena));
+			tlacitko("Vytvořit kopii…");
+			seznam().setSelectedIndex(0);
+			Assert.assertTrue("u šablony 360° jsou pole vidět", viditelne(tlacitko("Domov")));
+			Assert.assertTrue(viditelne(tlacitko("Souřadnice")));
+		});
+	}
 }
