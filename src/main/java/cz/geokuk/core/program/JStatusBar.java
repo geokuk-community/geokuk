@@ -174,8 +174,10 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	private final JLabel stitekChallenge = new cz.geokuk.plugins.challenge.StitekChallenge("Challenge: jen kandidáti");
 	private JPanel odPozice;
 	private final JLabel popisekOdPozice = new JLabel(OD_POZICE);
-	private JPanel poctyKesiPanel;
+	JPanel poctyKesiPanel;
 	private JLabel popisekVse;
+	private final JLabel popisekFiltr = new JLabel("Filtr:");
+	KesoidModel kesoidModel;
 
 	private final Map<Progressor, JProgressBar> jFilterProgressMap = new HashMap<>();
 	private JPanel jFilterProgressPanel;
@@ -324,6 +326,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	}
 
 	public void inject(final KesoidModel kesoidModel) {
+		this.kesoidModel = kesoidModel;
 		prepinaceZdroju.setOvladani(kesoidModel);
 		prepinaceZdroju.obnov(kesoidModel.getStavZdroju());
 		prepinaceZdroju.setPovoleneTypy(JPrepinaceZdroju.povoleneTypy(kesoidModel.getUmisteniSouboruNeboZNastaveni()));
@@ -404,6 +407,29 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	public void onEvent(final KesoidOnoffEvent event) {
 		celkovePoctyVyrez.setSkrtnuto(!event.isOnoff());
 		filtrovanePocetyVyrez.setSkrtnuto(!event.isOnoff());
+		zvyrazniSkryteKesoidy(!event.isOnoff());
+	}
+
+	/** Barva upozornění na skryté kešoidy: tmavý text na jantarovém podkladu je čitelný v každém tématu. */
+	static final java.awt.Color BARVA_SKRYTYCH_KESOIDU = new java.awt.Color(255, 205, 80);
+	static final String TEXT_SKRYTYCH_KESOIDU = "Kešoidy jsou skryté (F5). Klikem je zobrazíte.";
+
+	/** Při skrytých kešoidech jsou počty kešoidů na jantarovém podkladu s vysvětlením; klik kešoidy zobrazí. */
+	private void zvyrazniSkryteKesoidy(final boolean skryte) {
+		poctyKesiPanel.setBackground(skryte ? BARVA_SKRYTYCH_KESOIDU : null);
+		poctyKesiPanel.setToolTipText(skryte ? TEXT_SKRYTYCH_KESOIDU : null);
+		poctyKesiPanel.setCursor(skryte ? java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR) : null);
+		for (final JLabel l : new JLabel[] { popisekVse, popisekFiltr }) {
+			l.setForeground(skryte ? Color.BLACK : null);
+		}
+		poctyKesiPanel.repaint();
+	}
+
+	/** Klik na jantarové počty zobrazí kešoidy. */
+	private void zobrazKesoidy() {
+		if (kesoidModel != null && !kesoidModel.isOnoff()) {
+			kesoidModel.setOnoff(true);
+		}
 	}
 
 	public void onEvent(final PoziceChangedEvent event) {
@@ -555,11 +581,18 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		final JPanel poctyKesi = createPanel();
 		poctyKesiPanel = poctyKesi;
 		popisekVse = new JLabel("Vše:");
+		final java.awt.event.MouseAdapter klikZobrazKesoidy = new java.awt.event.MouseAdapter() {
+			@Override
+			public void mouseClicked(final java.awt.event.MouseEvent e) {
+				zobrazKesoidy();
+			}
+		};
+		poctyKesi.addMouseListener(klikZobrazKesoidy);
 		poctyKesi.add(popisekVse);
 		poctyKesi.add(celkovePoctyVsude);
 		celkovePoctyVsude.setToolTipText("Počet waypointů celkem / počet kešoidů celkem.");
 
-		poctyKesi.add(new JLabel("Filtr:"));
+		poctyKesi.add(popisekFiltr);
 		poctyKesi.add(filtrovanePocetyVsude);
 		filtrovanePocetyVsude.setToolTipText("Počet waypointů po aplikaci filtru / počet kešoidů po aplikaci filtru.");
 
@@ -568,6 +601,9 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 
 		poctyKesi.add(filtrovanePocetyVyrez);
 		filtrovanePocetyVyrez.setToolTipText("Počet všech zobrazených waypointů ve výřezu.");
+		for (final java.awt.Component c : poctyKesi.getComponents()) {
+			c.addMouseListener(klikZobrazKesoidy);
+		}
 		add(poctyKesi);
 
 		////////////////////////////
