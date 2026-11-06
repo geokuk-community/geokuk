@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.SwingUtilities;
 
@@ -197,39 +195,45 @@ public class PrehledChallengeTest {
 	}
 
 	@Test
-	public void barvaJeZPaletyPodleNazvuANezaviSiNaPoradiVSeznamu() throws Exception {
-		final Set<Integer> barvy = new HashSet<>();
-		final List<Challenge> c = new ArrayList<>();
-		for (int i = 0; i < 40; i++) {
-			c.add(model.ulozVlastni(sektory("Definice " + i, Stred.domov())));
+	public void barvaJePodleTypuAVyhrazenaBarvyStavuSeNepouzivaji() {
+		Assert.assertEquals(0x7B3FC4, PaletaChallenge.barva(Typ.SEKTORY_360));
+		Assert.assertEquals(0x1E6FD9, PaletaChallenge.barva(Typ.DT_MATICE));
+		Assert.assertEquals(0xD98200, PaletaChallenge.barva(Typ.KALENDAR));
+		for (final Typ typ : Typ.values()) {
+			final int rgb = PaletaChallenge.barva(typ);
+			final int r = rgb >> 16 & 0xFF;
+			final int g = rgb >> 8 & 0xFF;
+			final int b = rgb & 0xFF;
+			Assert.assertEquals(typ + " bez alfa kanálu", rgb, rgb & 0xFFFFFF);
+			Assert.assertFalse(typ + " není zelená", g >= 0x90 && r < 0x80 && b < 0x80);
+			Assert.assertFalse(typ + " není červená", r >= 0xC0 && g < 0x60 && b < 0x60);
 		}
-		for (final Challenge d : c) {
-			for (final Challenge jina : model.aktivni()) {
-				model.deaktivuj(jina);
-			}
-			model.aktivuj(d);
-			model.nastavVysledek(d, vysledekSektoru(), 50, 14);
-			naEdt();
-			barvy.add(model.prehled().barva());
+		final java.util.Set<Integer> ruzne = new java.util.HashSet<>();
+		for (final Typ typ : Typ.values()) {
+			ruzne.add(PaletaChallenge.barva(typ));
 		}
-		Assert.assertTrue("paleta má víc barev: " + barvy.size(), barvy.size() >= 4 && barvy.size() <= 8);
-		for (final Challenge jina : model.aktivni()) {
-			model.deaktivuj(jina);
-		}
-		model.aktivuj(c.get(5));
-		model.nastavVysledek(c.get(5), vysledekSektoru(), 50, 14);
-		naEdt();
-		final int pred = model.prehled().barva();
-		model.smazVlastni(c.get(0));
-		model.nastavVysledek(c.get(5), vysledekSektoru(), 50, 14);
-		naEdt();
-		Assert.assertEquals("smazání jiné definice barvu nezměnilo", pred, model.prehled().barva());
-		Assert.assertEquals("stejný název, stejná barva i s jinou velikostí písmen a mezerami", barvaPodleNazvu("Definice 5"), barvaPodleNazvu("  DEFINICE 5 "));
-		Assert.assertNotEquals("jiný název většinou jiná barva", barvaPodleNazvu("A"), barvaPodleNazvu("B"));
+		Assert.assertEquals("každý typ má jinou barvu", Typ.values().length, ruzne.size());
 	}
 
-	private int barvaPodleNazvu(final String nazev) {
-		return PrehledChallenge.zeSektoru(sektory(nazev, Stred.domov()), vysledekSektoru(), 0, 0).barva();
+	@Test
+	public void barvaPrehleduJePodleTypuChallengeNezavisleNaNazvu() throws Exception {
+		final Challenge a = model.ulozVlastni(sektory("A", Stred.domov()));
+		model.aktivuj(a);
+		model.nastavVysledek(a, vysledekSektoru(), 50, 14);
+		naEdt();
+		Assert.assertEquals(PaletaChallenge.barva(Typ.SEKTORY_360), model.prehled().barva());
+		model.deaktivuj(a);
+		final Challenge b = model.ulozVlastni(sektory("Úplně jiný název", Stred.souradnice(1, 2)));
+		model.aktivuj(b);
+		model.nastavVysledek(b, vysledekSektoru(), 1, 2);
+		naEdt();
+		Assert.assertEquals("stejný typ, stejná barva", PaletaChallenge.barva(Typ.SEKTORY_360), model.prehled().barva());
+		model.deaktivuj(b);
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, Collections.<String> emptyList(), Collections.<KandidatPolicka> emptyList()), 50, 14);
+		naEdt();
+		Assert.assertEquals(PaletaChallenge.barva(Typ.DT_MATICE), model.prehled().barva());
 	}
 
 	@Test

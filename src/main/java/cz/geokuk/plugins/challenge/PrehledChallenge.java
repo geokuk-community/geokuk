@@ -1,7 +1,5 @@
 package cz.geokuk.plugins.challenge;
 
-import java.util.Locale;
-
 import cz.geokuk.plugins.challenge.Challenge.Typ;
 
 /**
@@ -54,9 +52,9 @@ public final class PrehledChallenge {
 		return challenge.typ();
 	}
 
-	/** Barva 0xRRGGBB z pevné palety podle názvu challenge. */
+	/** Barva 0xRRGGBB podle typu challenge, viz {@link PaletaChallenge}. */
 	public int barva() {
-		return PALETA[Math.floorMod(challenge.nazev().trim().toLowerCase(Locale.ROOT).hashCode(), PALETA.length)];
+		return PaletaChallenge.barva(challenge.typ());
 	}
 
 	/** Kolik sektorů, políček nebo dnů je splněno. */
