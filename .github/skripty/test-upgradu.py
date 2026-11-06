@@ -99,8 +99,8 @@ class Beh:
                 time.sleep(0.2)
         return False
 
-    def volej(self, metoda, cesta, **parametry):
-        url = "http://127.0.0.1:%s%s" % (self.port, cesta)
+    def volej(self, metoda, adresa, **parametry):
+        url = "http://127.0.0.1:%s%s" % (self.port, adresa)
         if parametry:
             url += "?" + urllib.parse.urlencode(parametry)
         pozadavek = urllib.request.Request(url, method=metoda, headers={"Authorization": "Bearer " + self.token})
