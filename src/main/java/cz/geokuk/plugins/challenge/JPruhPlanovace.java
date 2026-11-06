@@ -163,18 +163,16 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	private Challenge challenge() {
-		final List<Challenge> aktivni = model == null ? java.util.Collections.<Challenge> emptyList() : model.aktivni();
-		return aktivni.isEmpty() ? null : aktivni.get(0);
+		return model == null ? null : model.zobrazena();
 	}
 
 	private void obnov() {
-		final boolean vidim = model != null && model.jePruhViditelny();
+		final StavPruhu stav = model == null ? StavPruhu.SKRYTY : model.stavPruhu();
+		final boolean vidim = stav.jeViditelny();
 		if (vidim) {
-			final Challenge c = challenge();
-			final int chybi = model.pocetChybejicich(c);
-			odznak.nastav(chybi < 0 ? "…" : Integer.toString(chybi));
-			kandidati.setSelected(c.equals(model.jenKandidatiPro()));
-			typ.setText("360°");
+			odznak.nastav(stav.badge() < 0 ? "…" : Integer.toString(stav.badge()));
+			kandidati.setSelected(stav.jenKandidati());
+			typ.setText(stav.stitekTypu());
 		}
 		if (vidim != isVisible()) {
 			setVisible(vidim);
@@ -197,15 +195,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	private void prejdi(final boolean dopredu) {
-		final Challenge c = challenge();
-		if (c == null || sluzba == null || sluzba.planovac() == null) {
-			return;
-		}
-		if (dopredu) {
-			sluzba.planovac().dalsiChybejici(c);
-		} else {
-			sluzba.planovac().predchoziChybejici(c);
-		}
+		ChallengeAkce.prejdi(model, sluzba == null ? null : sluzba.planovac(), dopredu);
 	}
 
 	/** Červený odznak s počtem chybějících. */
