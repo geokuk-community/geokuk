@@ -39,9 +39,24 @@ S="$(nativni "$SOUBOR")"
 
 mer() { java -Xmx1g -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "$(nativni "$MER")$SEP$CP" cz.geokuk.plugins.mapy.kachle.podklady.MerSqlite "$@" 2>&1 | grep -v -E "^SLF4J|^Picked up|^[0-9:. ]+\[.*(INFO|DEBUG|WARN)" || true; }
 
+# Spuštění s kódem výsledku, pro kontroly ochrany (mer výsledek zahazuje).
+mer_rc() { java -Xmx1g -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "$(nativni "$MER")$SEP$CP" cz.geokuk.plugins.mapy.kachle.podklady.MerSqlite "$@" >/dev/null 2>&1; }
+
+# Ochrana skutečné cache: samotest (odkaz, kopie bez značky, špatné jméno) musí projít, jinak se nic nespustí.
+if ! mer_rc samotest "$(nativni "$SQLITE_DIR/samotest")"; then
+	echo "Samotest ochrany selhal, měření se nespouští (spusť MerSqlite samotest ručně a podívej se na výstup)." >&2
+	exit 1
+fi
+
 {
 	echo "# Měření SqlJet × sqlite-jdbc $(date '+%Y-%m-%d %H:%M'), $(hostname), $(uname -s), $(java -version 2>&1 | grep -v JAVA_TOOL | head -1)"
 	echo "složka: $SQLITE_DIR, velikost $MB MB, opakování $OPAKOVANI, journal DELETE"
+	if [ -e "$SOUBOR" ] || [ -L "$SOUBOR" ]; then
+		if ! mer_rc overit "$S"; then
+			echo "Soubor $SOUBOR existuje a není měřicí soubor založený tímto nástrojem (nebo je to odkaz); nemažu ho a končím." >&2
+			exit 1
+		fi
+	fi
 	if [ "${SKIP_GEN:-}" != 1 ] || [ ! -f "$SOUBOR" ]; then
 		rm -f "$SOUBOR" "$SOUBOR-journal"
 		mer gen "$S" "$MB"

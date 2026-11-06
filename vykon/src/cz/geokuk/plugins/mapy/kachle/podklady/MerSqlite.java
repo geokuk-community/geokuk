@@ -62,7 +62,9 @@ public final class MerSqlite {
 	}
 
 	static void genSqljet(final File f, final int pocet) throws Exception {
-		f.delete();
+		if (f.exists()) {
+			throw new IllegalStateException("Soubor " + f + " už existuje; nástroj ho nepřepisuje (smaž ho ručně, je-li to měřicí soubor)");
+		}
 		final SqlJetDb db = sqljet(f, true);
 		db.runWriteTransaction(d -> {
 			d.getSchema();
@@ -84,6 +86,9 @@ public final class MerSqlite {
 			db.commit();
 		}
 		db.close();
+		try (Connection c = jdbc(f, null, true); Statement st = c.createStatement()) {
+			st.execute("PRAGMA application_id=" + ZNACKA);
+		}
 	}
 
 	// ---- jdbc
@@ -403,17 +408,111 @@ public final class MerSqlite {
 		}
 	}
 
-	static void zkontrolujSoubor(final File f) {
+	/** Značka v hlavičce souboru ({@code PRAGMA application_id}), kterou zapíše jen {@code gen}; soubor bez ní se nepoužije. */
+	static final int ZNACKA = 0x4D45_5253;
+
+	/**
+	 * Soubor smí být jen {@code mer-sqlite-*.sqlite}, nesmí být (ani žádná jeho nadřazená složka) odkaz ani spojení složek a pro čtení a zápis musí mít značku ze
+	 * {@code gen}. Kopie nebo odkaz na skutečnou cache proto neprojdou.
+	 */
+	static void zkontrolujSoubor(final File f, final boolean musiMitZnacku) throws Exception {
 		if (!f.getName().startsWith("mer-sqlite-") || !f.getName().endsWith(".sqlite")) {
 			throw new IllegalArgumentException("Pracuje jen se souborem mer-sqlite-*.sqlite, ne s " + f + " (skutečná cache se nepoužívá)");
 		}
+		java.nio.file.Path cesta = f.toPath().toAbsolutePath().normalize();
+		while (cesta != null) {
+			if (java.nio.file.Files.exists(cesta, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+				final java.nio.file.attribute.BasicFileAttributes at = java.nio.file.Files.readAttributes(cesta, java.nio.file.attribute.BasicFileAttributes.class,
+						java.nio.file.LinkOption.NOFOLLOW_LINKS);
+				if (at.isSymbolicLink() || at.isOther()) {
+					throw new IllegalArgumentException("Odmítnuto: " + cesta + " je odkaz nebo spojení složek, nástroj pracuje jen s vlastním souborem");
+				}
+			}
+			cesta = cesta.getParent();
+		}
+		if (musiMitZnacku) {
+			if (!f.isFile()) {
+				throw new IllegalArgumentException("Soubor " + f + " neexistuje, nejdřív příkaz gen");
+			}
+			try (Connection c = jdbc(f, null, false); Statement st = c.createStatement(); ResultSet rs = st.executeQuery("PRAGMA application_id")) {
+				if (!rs.next() || rs.getInt(1) != ZNACKA) {
+					throw new IllegalArgumentException("Odmítnuto: " + f + " nemá značku souboru založeného příkazem gen (skutečná cache se nepoužívá)");
+				}
+			}
+		}
+	}
+
+	/** Samotest ochrany: odkaz, kopie bez značky, špatné jméno; vypíše výsledek a skončí chybou, když něco projde. */
+	static void samotest(final File slozka) throws Exception {
+		java.nio.file.Files.createDirectories(slozka.toPath());
+		final File cizi = new File(slozka, "tiles-cizi.sqlite");
+		for (final String n : new String[] { "tiles-cizi.sqlite", "mer-sqlite-kopie.sqlite", "mer-sqlite-vlastni.sqlite", "mer-sqlite-odkaz.sqlite", "tiles-vlastni.sqlite", "odkaz-na-slozku" }) {
+			java.nio.file.Files.deleteIfExists(new File(slozka, n).toPath());
+		}
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + cizi.getPath()); Statement st = c.createStatement()) {
+			st.execute("CREATE TABLE tiles (x int, y int, z int, s varchar(10), image blob, PRIMARY KEY(x, y, z, s))");
+		}
+		final File kopie = new File(slozka, "mer-sqlite-kopie.sqlite");
+		java.nio.file.Files.copy(cizi.toPath(), kopie.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		final File vlastni = new File(slozka, "mer-sqlite-vlastni.sqlite");
+		java.nio.file.Files.deleteIfExists(vlastni.toPath());
+		genSqljet(vlastni, 50);
+		odmitne("špatné jméno", cizi, true);
+		final File prejmenovany = new File(slozka, "tiles-vlastni.sqlite");
+		java.nio.file.Files.copy(vlastni.toPath(), prejmenovany.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		odmitne("soubor se značkou pod cizím jménem", prejmenovany, true);
+		odmitne("kopie bez značky", kopie, true);
+		zkontrolujSoubor(vlastni, true);
+		System.out.println("samotest: vlastní soubor se značkou projde");
+		try {
+			genSqljet(vlastni, 10);
+			throw new IllegalStateException("gen přepsal existující soubor");
+		} catch (final IllegalStateException e) {
+			if (!e.getMessage().contains("už existuje")) {
+				throw e;
+			}
+			System.out.println("samotest: gen existující soubor nepřepíše: ok");
+		}
+		final File odkaz = new File(slozka, "mer-sqlite-odkaz.sqlite");
+		java.nio.file.Files.deleteIfExists(odkaz.toPath());
+		try {
+			java.nio.file.Files.createSymbolicLink(odkaz.toPath(), cizi.toPath().toAbsolutePath());
+			odmitne("odkaz na cizí soubor", odkaz, true);
+			odmitne("odkaz na vlastní soubor", odkaz, false);
+			final File slozkaOdkaz = new File(slozka, "odkaz-na-slozku");
+			java.nio.file.Files.deleteIfExists(slozkaOdkaz.toPath());
+			java.nio.file.Files.createSymbolicLink(slozkaOdkaz.toPath(), slozka.toPath().toAbsolutePath());
+			odmitne("soubor v odkazu na složku", new File(slozkaOdkaz, vlastni.getName()), true);
+			java.nio.file.Files.deleteIfExists(slozkaOdkaz.toPath());
+			java.nio.file.Files.deleteIfExists(odkaz.toPath());
+		} catch (final UnsupportedOperationException | java.io.IOException | SecurityException e) {
+			System.out.println("samotest: odkazy nejde vytvořit (" + e + "), kontrola odkazů přeskočena");
+		}
+		System.out.println("samotest: ochrana funguje");
+	}
+
+	private static void odmitne(final String co, final File f, final boolean znacka) throws Exception {
+		try {
+			zkontrolujSoubor(f, znacka);
+		} catch (final IllegalArgumentException e) {
+			System.out.println("samotest: " + co + ": odmítnuto, ok");
+			return;
+		}
+		throw new IllegalStateException("Ochrana selhala: " + co + " prošlo");
 	}
 
 	public static void main(final String[] a) throws Exception {
 		final String cmd = a[0];
 		final File f = new File(a[1]);
-		zkontrolujSoubor(f);
+		if ("samotest".equals(cmd)) {
+			samotest(f);
+			System.exit(0);
+		}
+		zkontrolujSoubor(f, !"gen".equals(cmd));
 		switch (cmd) {
+		case "overit":
+			System.out.println("měřicí soubor: ok");
+			break;
 		case "gen": {
 			final int mb = Integer.parseInt(a[2]);
 			final int dlazdic = (int) ((long) mb * 1_048_576 / 27_500);
