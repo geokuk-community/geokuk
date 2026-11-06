@@ -86,7 +86,7 @@ public class ChallengeAkceTest {
 	public void jenKandidatiZapneFiltrPrvniAktivniChallengeAVypneHo() {
 		model.aktivuj(Sablony.cesko360());
 		model.setZapnuto(true);
-		Assert.assertEquals(Sablony.cesko360(), model.hlavni());
+		Assert.assertEquals(Sablony.cesko360(), model.zobrazena());
 		kandidati.onSlectedChange(true);
 		Assert.assertEquals(Sablony.cesko360(), model.jenKandidatiPro());
 		Assert.assertTrue(kandidati.isSelected());
@@ -103,17 +103,17 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
-	public void hlavniJePrvniAktivni() {
-		Assert.assertNull(model.hlavni());
+	public void zobrazenaJePrvniAktivni() {
+		Assert.assertNull(model.zobrazena());
 		model.aktivuj(Sablony.cesko360());
-		Assert.assertEquals(Sablony.cesko360(), model.hlavni());
+		Assert.assertEquals(Sablony.cesko360(), model.zobrazena());
 		final Challenge druha = model.ulozVlastni(new Challenge("Druhá", Challenge.Typ.SEKTORY_360, Challenge.Stred.souradnice(50, 14), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 		model.aktivuj(druha);
-		Assert.assertEquals("první zapnutá, ne poslední", Sablony.cesko360(), model.hlavni());
+		Assert.assertEquals("první zapnutá, ne poslední", Sablony.cesko360(), model.zobrazena());
 		model.deaktivuj(Sablony.cesko360());
-		Assert.assertEquals(druha, model.hlavni());
+		Assert.assertEquals(druha, model.zobrazena());
 		model.deaktivuj(druha);
-		Assert.assertNull(model.hlavni());
+		Assert.assertNull(model.zobrazena());
 	}
 
 	private final java.util.List<VybranyKandidat> vystredeno = new java.util.ArrayList<>();
@@ -183,5 +183,37 @@ public class ChallengeAkceTest {
 		}
 		Assert.assertEquals("kde stačí, zůstane oranžová", new Color(200, 100, 0), StitekChallenge.barva(Color.BLACK));
 		Assert.assertEquals(new Color(200, 100, 0), StitekChallenge.barva(null));
+	}
+
+	@Test
+	public void predchoziJeJenUSektoru360() {
+		Assert.assertTrue(ChallengeAkce.lzePredchozi(Sablony.cesko360()));
+		Assert.assertFalse(ChallengeAkce.lzePredchozi(null));
+		final Challenge dt = new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC);
+		Assert.assertFalse(ChallengeAkce.lzePredchozi(dt));
+		Assert.assertFalse(ChallengeAkce.lzePredchozi(new Challenge("K", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC)));
+	}
+
+	@Test
+	public void predchoziAkceJeVypnutaProDtAleDalsiZustava() {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		Assert.assertTrue(dalsi.isEnabled());
+		Assert.assertFalse(predchozi.isEnabled());
+		model.aktivuj(Sablony.cesko360());
+		model.setZobrazena(Sablony.cesko360());
+		Assert.assertTrue("po přepnutí na 360° je předchozí zase dostupné", predchozi.isEnabled());
+	}
+
+	@Test
+	public void akceAFiltrPracujiSChallengeKterouUkazujePruh() throws Exception {
+		model.aktivuj(Sablony.cesko360());
+		model.aktivuj(Sablony.praha360());
+		model.setZapnuto(true);
+		model.setZobrazena(Sablony.praha360());
+		Assert.assertEquals(Sablony.praha360(), model.zobrazena());
+		kandidati.onSlectedChange(true);
+		Assert.assertEquals("filtr patří zobrazené challenge, ne první aktivní", Sablony.praha360(), model.jenKandidatiPro());
 	}
 }
