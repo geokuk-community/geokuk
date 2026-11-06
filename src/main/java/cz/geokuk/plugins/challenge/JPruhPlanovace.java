@@ -342,7 +342,12 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	/** Barva zobrazené challenge, bez ní šedá. */
 	private Color barva() {
 		final Challenge c = challenge();
-		return c == null ? Color.GRAY : StylChallenge.barva(c);
+		return c == null ? Color.GRAY : barva(c);
+	}
+
+	/** Barva challenge v liště: stejná jako její kreslení na mapě, lišta je jeho legendou. */
+	static Color barva(final Challenge c) {
+		return StylChallenge.barva(c);
 	}
 
 	private void obnov() {
@@ -439,7 +444,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(StitkyPruhu.typ(c.typ()) + "   " + c.nazev() + (model.jeSablona(c) ? "   (šablona)" : ""));
 			polozka.setSelected(c.equals(zobrazena));
-			polozka.setIcon(new Tecka(StylChallenge.barva(c)));
+			polozka.setIcon(new Tecka(barva(c)));
 			polozka.addActionListener(e -> vyber(c));
 			skupina.add(polozka);
 			m.add(polozka);
