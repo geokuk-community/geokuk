@@ -13,7 +13,7 @@ import cz.geokuk.framework.JSlide0;
 import cz.geokuk.framework.RozmisteniPrekryvu;
 
 /**
- * Lišta plánovače challenge vlevo nahoře na mapě. Při vypnutém plánovači z ní zůstane jen úchyt, kterým se zapne. Zapnutá nese výběr challenge (barevný chip), počet
+ * Lišta plánovače challenge vlevo nahoře na mapě. Při vypnutém plánovači z ní zůstane jen úchyt, kterým se zapne. Zapnutá nese výběr challenge (typ a ▾, název v tooltipu), počet
  * chybějících, přechod na předchozí a další chybějící, filtr „jen kandidáti“, přepínače kreslení a nastavení. Při malé šířce mapy se zužuje ve třech stupních podle
  * {@link RozmisteniPrekryvu#sirkaPruhu}; mimo svůj obdélník nezachytává myš.
  */
@@ -27,35 +27,36 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private static final int MEZERA_SKUPIN = 8;
 	private static final int VYSKA_PRVKU = 20;
 	private static final int SIRKA_UCHYTU = 26;
-	private static final int SIRKA_TYPU = 44;
+	private static final int SIRKA_VYBERU = 62;
 	private static final int SIRKA_ODZNAKU = 40;
 	private static final int SIRKA_SIPKY = 24;
 	private static final int SIRKA_IKONY = 26;
 	private static final int SIRKA_KANDIDATU = 116, SIRKA_SEKTORU = 84, SIRKA_STITKU = 72, SIRKA_NASTAVENI = 104;
-	private static final int CHIP_PLNY_MAX = 240, CHIP_IKONY_MAX = 130, CHIP_UZKY = 28;
 	private static final Color CERVENA = new Color(200, 40, 40);
-	/** Prodleva, po které se výběr challenge otevře při najetí myší na chip. */
+	private static final javax.swing.border.Border RAMECEK = BorderFactory.createEtchedBorder();
+	static final String TIP_ZPET = "Předchozí chybějící; Shift+šipky skočí na kandidáta ve směru šipky";
+	static final String TIP_DAL = "Další chybějící; Shift+šipky skočí na kandidáta ve směru šipky";
+	/** Prodleva, po které se výběr challenge otevře při najetí myší na jeho tlačítko. */
 	static final int PRODLEVA_VYBERU_MS = 500;
 
 	/** Pořadí prvků v poli z {@link #rozloz}. */
-	static final int UCHYT = 0, TYP = 1, CHIP = 2, ODZNAK = 3, ZPET = 4, DAL = 5, KANDIDATI = 6, SEKTORY = 7, STITKY = 8, NASTAVENI = 9;
-	private static final int POCET = 10;
+	static final int UCHYT = 0, VYBER = 1, ODZNAK = 2, ZPET = 3, DAL = 4, KANDIDATI = 5, SEKTORY = 6, STITKY = 7, NASTAVENI = 8;
+	private static final int POCET = 9;
 
 	/** Stupeň lišty podle její šířky. */
 	enum Stupen {
 		PLNY, IKONY, UZKY;
 
 		static Stupen pro(final int sirkaPruhu) {
-			if (sirkaPruhu >= RozmisteniPrekryvu.PRUH_PLNY_MIN) {
+			if (sirkaPruhu >= RozmisteniPrekryvu.PRUH_PLNY) {
 				return PLNY;
 			}
-			return sirkaPruhu >= RozmisteniPrekryvu.PRUH_IKONY_MIN ? IKONY : UZKY;
+			return sirkaPruhu >= RozmisteniPrekryvu.PRUH_IKONY ? IKONY : UZKY;
 		}
 	}
 
 	private final transient JButton uchyt = new JButton(new Terc());
-	private final transient JLabel typ = new JLabel("360°", SwingConstants.CENTER);
-	private final transient Chip chip = new Chip();
+	private final transient JButton chip = new JButton("▾");
 	private final transient Odznak odznak = new Odznak();
 	private final transient JButton zpet = new JButton(new Sipka(true));
 	private final transient JButton dal = new JButton(new Sipka(false));
@@ -76,17 +77,15 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	public JPruhPlanovace() {
 		setOpaque(false);
 		setLayout(null);
-		uchyt.setToolTipText("Plánovač challenge – zapnout (Ctrl+F4)");
-		zpet.setToolTipText("Předchozí chybějící (Shift+F4)");
-		dal.setToolTipText("Další chybějící (F4)");
+		uchyt.setToolTipText("Plánovač challenge – zapnout");
+		zpet.setToolTipText(TIP_ZPET);
+		dal.setToolTipText(TIP_DAL);
 		odznak.setToolTipText(popisChybejicich(Challenge.Typ.SEKTORY_360));
 		kandidati.setToolTipText(popisKandidatu(Challenge.Typ.SEKTORY_360));
 		sektory.setToolTipText("Sektory na mapě: prstenec, klín chybějícího sektoru a čára ke kandidátovi");
 		stitky.setToolTipText("Štítky u kandidátů: číslo sektoru nebo políčko D/T");
 		nastaveni.setToolTipText("Plánovač challenge… – definice, kopie a úpravy");
 		chip.setToolTipText("Vybrat challenge");
-		typ.setToolTipText("Typ challenge");
-		typ.setForeground(Color.DARK_GRAY);
 		sektory.setSelected(true);
 		stitky.setSelected(true);
 		for (final AbstractButton b : new AbstractButton[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, nastaveni }) {
@@ -94,7 +93,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			b.setMargin(new Insets(0, 2, 0, 2));
 			add(b);
 		}
-		add(typ);
 		uchyt.addActionListener(e -> prepniZapnuti());
 		chip.addActionListener(e -> {
 			prodlevaVyberu.stop();
@@ -198,13 +196,13 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/**
 	 * Obdélníky prvků lišty v souřadnicích mapy pro danou šířku zapnuté lišty, v pořadí {@link #UCHYT} až {@link #NASTAVENI}. Prvek, který se na tomto stupni neukazuje, má
-	 * prázdný obdélník; zbytek šířky dostane chip s názvem challenge.
+	 * prázdný obdélník.
 	 */
 	static Rectangle[] rozloz(final int sirkaPruhu) {
 		final Stupen s = Stupen.pro(sirkaPruhu);
 		final int[] sirky = new int[POCET];
 		sirky[UCHYT] = SIRKA_UCHYTU;
-		sirky[TYP] = s == Stupen.UZKY ? 0 : SIRKA_TYPU;
+		sirky[VYBER] = SIRKA_VYBERU;
 		sirky[ODZNAK] = SIRKA_ODZNAKU;
 		sirky[ZPET] = SIRKA_SIPKY;
 		sirky[DAL] = SIRKA_SIPKY;
@@ -212,22 +210,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		sirky[SEKTORY] = s == Stupen.PLNY ? SIRKA_SEKTORU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
 		sirky[STITKY] = s == Stupen.PLNY ? SIRKA_STITKU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
 		sirky[NASTAVENI] = s == Stupen.PLNY ? SIRKA_NASTAVENI : SIRKA_IKONY;
-		int pevne = 2 * PODSTAVEC;
-		int mezer = 0;
-		for (int i = 0; i < POCET; i++) {
-			if (i != CHIP && sirky[i] > 0) {
-				pevne += sirky[i];
-			}
-		}
-		for (int i = 0; i < POCET; i++) {
-			if (sirky[i] > 0 || i == CHIP) {
-				mezer++;
-			}
-		}
-		final boolean filtry = sirky[KANDIDATI] > 0;
-		final int mezery = (mezer - 1) * MEZERA + (filtry ? 2 : 1) * (MEZERA_SKUPIN - MEZERA);
-		final int maxChip = s == Stupen.PLNY ? CHIP_PLNY_MAX : s == Stupen.IKONY ? CHIP_IKONY_MAX : CHIP_UZKY;
-		sirky[CHIP] = Math.max(CHIP_UZKY, Math.min(maxChip, sirkaPruhu - pevne - mezery));
 		final Rectangle[] r = new Rectangle[POCET];
 		final int y = RozmisteniPrekryvu.OKRAJ + (RozmisteniPrekryvu.VYSKA_PRUHU - VYSKA_PRVKU) / 2;
 		int x = RozmisteniPrekryvu.OKRAJ + PODSTAVEC;
@@ -294,12 +276,11 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		nastavText(sektory, texty ? "Sektory" : "");
 		nastavText(stitky, texty ? "Štítky" : "");
 		nastavText(nastaveni, texty ? "Nastavení…" : "");
-		chip.setUzky(stupen == Stupen.UZKY);
-		typ.setFont(pismoNaSirku(UIManager.getFont("Label.font"), typ.getText(), r[TYP].width, typ::getFontMetrics));
+		chip.setFont(pismoNaSirku(UIManager.getFont("Button.font"), chip.getText(), r[VYBER].width - 8, chip::getFontMetrics));
 	}
 
 	private Component[] prvky() {
-		return new Component[] { uchyt, typ, chip, odznak, zpet, dal, kandidati, sektory, stitky, nastaveni };
+		return new Component[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, nastaveni };
 	}
 
 	private static void nastavText(final AbstractButton b, final String text) {
@@ -308,7 +289,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		}
 	}
 
-	/** Písmo popisku typu: výchozí, a když se text nevejde (Kalendář), menší až do 9 bodů, ať se nezkrátí na „…“. */
+	/** Písmo tlačítka výběru s typem: výchozí, a když se text nevejde, menší až do 9 bodů, ať se nezkrátí na „…“. */
 	static Font pismoNaSirku(final Font zaklad, final String text, final int sirka, final java.util.function.Function<Font, FontMetrics> metriky) {
 		if (zaklad == null || text == null || sirka <= 0) {
 			return zaklad;
@@ -325,11 +306,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		final Rectangle p = oblastPruhu();
 		final Graphics2D g2 = (Graphics2D) g.create();
 		try {
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g2.setColor(new Color(255, 255, 255, 215));
-			g2.fillRoundRect(p.x, p.y, p.width, p.height, 8, 8);
-			g2.setColor(new Color(0, 0, 0, 90));
-			g2.drawRoundRect(p.x, p.y, p.width - 1, p.height - 1, 8, 8);
+			// Stejný blok jako „Zdroje:“ a „Výlet:“ ve stavovém řádku: pozadí a vyrytý rámeček podle skinu.
+			g2.setColor(UIManager.getColor("Panel.background"));
+			g2.fillRect(p.x, p.y, p.width, p.height);
+			RAMECEK.paintBorder(this, g2, p.x, p.y, p.width, p.height);
 		} finally {
 			g2.dispose();
 		}
@@ -340,41 +320,29 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	/** Barva zobrazené challenge, bez ní šedá. */
-	private Color barva() {
-		final Challenge c = challenge();
-		return c == null ? Color.GRAY : barva(c);
-	}
-
-	/** Barva challenge v liště: stejná jako její kreslení na mapě, lišta je jeho legendou. */
-	static Color barva(final Challenge c) {
-		return StylChallenge.barva(c);
+	/** Akcent skinu: proužek zapnutého přepínače. */
+	static Color akcent() {
+		final Color c = javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControlDarkShadow();
+		return c != null ? c : Color.GRAY;
 	}
 
 	private void obnov() {
 		zapnuto = model != null && model.jeZapnuto();
 		final StavPruhu stav = model == null ? StavPruhu.SKRYTY : model.stavPruhu();
 		final boolean maChallenge = stav.jeViditelny();
-		final Color barva = barva();
-		uchyt.setToolTipText(zapnuto ? "Plánovač challenge – vypnout (Ctrl+F4)" : "Plánovač challenge – zapnout (Ctrl+F4)");
-		((Terc) uchyt.getIcon()).barva = barva;
-		chip.nastav(maChallenge ? stav.challenge().nazev() : "Vyberte challenge", maChallenge ? barva : Color.GRAY);
+		uchyt.setToolTipText(zapnuto ? "Plánovač challenge – vypnout" : "Plánovač challenge – zapnout");
+		nastavText(chip, (maChallenge ? stav.stitekTypu() + " " : "") + "▾");
 		chip.setToolTipText(maChallenge ? "Challenge: " + stav.challenge().nazev() + " – vybrat jinou" : "Vybrat challenge");
 		if (maChallenge) {
 			odznak.nastav(stav.badge() < 0 ? "…" : Integer.toString(stav.badge()));
-			typ.setText(stav.stitekTypu());
-			typ.setToolTipText("Typ challenge: " + stav.stitekTypu() + " – " + stav.challenge().nazev());
 			odznak.setToolTipText(popisChybejicich(stav.typ()) + " – " + stav.challenge().nazev());
-			kandidati.setToolTipText(popisKandidatu(stav.typ()));
+			kandidati.setToolTipText(popisKandidatu(stav.typ()) + " (F4)");
 		} else {
 			odznak.nastav("–");
-			typ.setText("");
 		}
 		kandidati.setSelected(maChallenge && stav.jenKandidati());
 		sektory.setSelected(model == null || model.isKresliSektory());
 		stitky.setSelected(model == null || model.isKresliStitky());
-		for (final Prepinac p : new Prepinac[] { kandidati, sektory, stitky }) {
-			p.barva = barva;
-		}
 		for (final AbstractButton b : new AbstractButton[] { odznak, zpet, dal, kandidati, sektory, stitky }) {
 			b.setEnabled(maChallenge);
 		}
@@ -444,7 +412,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(StitkyPruhu.typ(c.typ()) + "   " + c.nazev() + (model.jeSablona(c) ? "   (šablona)" : ""));
 			polozka.setSelected(c.equals(zobrazena));
-			polozka.setIcon(new Tecka(barva(c)));
 			polozka.addActionListener(e -> vyber(c));
 			skupina.add(polozka);
 			m.add(polozka);
@@ -527,68 +494,9 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		return pozadi == null || jas(pozadi) > 0.5 ? new Color(0x202020) : new Color(0xF0F0F0);
 	}
 
-	/** Barevný chip s názvem challenge a šipkou výběru; v nejužším stupni jen barva a šipka. */
-	static final class Chip extends JButton {
-		private static final long serialVersionUID = 1L;
-		private Color barva = Color.GRAY;
-		private String nazev = "";
-		private boolean uzky;
-
-		Chip() {
-			setContentAreaFilled(false);
-			setBorderPainted(false);
-			setHorizontalAlignment(SwingConstants.LEFT);
-			setFont(getFont().deriveFont(Font.BOLD));
-		}
-
-		void nastav(final String nazev, final Color barva) {
-			this.nazev = nazev;
-			this.barva = barva;
-			setForeground(jas(barva) > 0.6 ? Color.BLACK : Color.WHITE);
-			obnovText();
-		}
-
-		void setUzky(final boolean uzky) {
-			if (this.uzky != uzky) {
-				this.uzky = uzky;
-				obnovText();
-			}
-		}
-
-		private void obnovText() {
-			final String t = uzky ? "▾" : nazev + "  ▾";
-			if (!t.equals(getText())) {
-				setText(t);
-			}
-			setHorizontalAlignment(uzky ? SwingConstants.CENTER : SwingConstants.LEFT);
-		}
-
-		Color barva() {
-			return barva;
-		}
-
-		@Override
-		protected void paintComponent(final Graphics g) {
-			final Graphics2D g2 = (Graphics2D) g.create();
-			try {
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(barva);
-				g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
-				// Světlý lem: chip nesplyne s tmavým okolím.
-				g2.setColor(new Color(255, 255, 255, 160));
-				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
-			} finally {
-				g2.dispose();
-			}
-			super.paintComponent(g);
-		}
-	}
-
-	/** Přepínač lišty: text a ikona v barvě podle skutečného pozadí, zapnutý má pod obsahem proužek v barvě challenge. */
+	/** Přepínač lišty: text a ikona v barvě podle skutečného pozadí, zapnutý má pod obsahem proužek v akcentu skinu. */
 	static final class Prepinac extends JToggleButton {
 		private static final long serialVersionUID = 1L;
-		Color barva = Color.GRAY;
-
 		Prepinac(final Icon ikona) {
 			super(ikona);
 			addItemListener(e -> obnovPopredi());
@@ -609,7 +517,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		protected void paintComponent(final Graphics g) {
 			super.paintComponent(g);
 			if (isSelected() && isEnabled()) {
-				g.setColor(barva);
+				g.setColor(akcent());
 				g.fillRect(3, getHeight() - 4, getWidth() - 6, 2);
 			}
 		}
@@ -680,17 +588,14 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		}
 	}
 
-	/** Terč úchytu v barvě challenge. */
+	/** Terč úchytu v barvě popředí tlačítka. */
 	private static final class Terc extends Ikona {
-		Color barva = Color.GRAY;
-
 		Terc() {
 			super(16, 16);
 		}
 
 		@Override
 		void kresli(final Graphics2D g) {
-			g.setColor(barva);
 			g.setStroke(new BasicStroke(1.6f));
 			g.drawOval(1, 1, 13, 13);
 			g.drawOval(4, 4, 7, 7);
@@ -768,37 +673,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			g.setStroke(new BasicStroke(2f));
 			g.drawOval(-4, -4, 8, 8);
-		}
-	}
-
-	/** Barevná tečka u challenge ve výběru. */
-	private static final class Tecka implements Icon {
-		private final Color barva;
-
-		Tecka(final Color barva) {
-			this.barva = barva;
-		}
-
-		@Override
-		public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
-			final Graphics2D g2 = (Graphics2D) g.create();
-			try {
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(barva);
-				g2.fillOval(x + 1, y + 1, 10, 10);
-			} finally {
-				g2.dispose();
-			}
-		}
-
-		@Override
-		public int getIconWidth() {
-			return 12;
-		}
-
-		@Override
-		public int getIconHeight() {
-			return 12;
 		}
 	}
 }

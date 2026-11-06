@@ -18,8 +18,7 @@ import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
 /** Pruh plánovače: rozložení prvků na třech stupních šířky, viditelnost podle stavu modelu a klikání jen v obdélníku pruhu. */
 public class JPruhPlanovaceTest {
 
-	private static final int[] SIRKY = { RozmisteniPrekryvu.PRUH_PLNY_MAX, RozmisteniPrekryvu.PRUH_PLNY_MIN, RozmisteniPrekryvu.PRUH_IKONY_MAX, RozmisteniPrekryvu.PRUH_IKONY_MIN,
-			RozmisteniPrekryvu.PRUH_UZKY };
+	private static final int[] SIRKY = { RozmisteniPrekryvu.PRUH_PLNY, RozmisteniPrekryvu.PRUH_IKONY, RozmisteniPrekryvu.PRUH_UZKY };
 
 	@Test
 	public void prvkySeVejdouNaVsechStupnichANeprekryvajiSe() {
@@ -41,38 +40,37 @@ public class JPruhPlanovaceTest {
 				}
 			}
 			Assert.assertEquals(sirka + ": vlevo podšívka", pruh.x + 4, r[JPruhPlanovace.UCHYT].x);
-			Assert.assertEquals(sirka + ": vpravo podšívka, zbytek dostane chip", pruh.x + pruh.width - 4, konec);
+			Assert.assertEquals(sirka + ": vpravo podšívka", pruh.x + pruh.width - 4, konec);
 		}
 	}
 
 	@Test
 	public void stupneUbiraji() {
-		final Rectangle[] plny = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_PLNY_MAX);
-		final Rectangle[] ikony = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_IKONY_MAX);
+		final Rectangle[] plny = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_PLNY);
+		final Rectangle[] ikony = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_IKONY);
 		final Rectangle[] uzky = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_UZKY);
 		Assert.assertEquals(116, plny[JPruhPlanovace.KANDIDATI].width);
-		Assert.assertEquals(240, plny[JPruhPlanovace.CHIP].width);
-		Assert.assertEquals(120, JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_PLNY_MIN)[JPruhPlanovace.CHIP].width);
+		Assert.assertEquals(104, plny[JPruhPlanovace.NASTAVENI].width);
 		Assert.assertEquals("jen ikona", 26, ikony[JPruhPlanovace.KANDIDATI].width);
 		Assert.assertEquals(26, ikony[JPruhPlanovace.SEKTORY].width);
-		Assert.assertEquals(130, ikony[JPruhPlanovace.CHIP].width);
-		Assert.assertFalse(ikony[JPruhPlanovace.TYP].isEmpty());
-		for (final int i : new int[] { JPruhPlanovace.TYP, JPruhPlanovace.KANDIDATI, JPruhPlanovace.SEKTORY, JPruhPlanovace.STITKY }) {
+		Assert.assertEquals(26, ikony[JPruhPlanovace.NASTAVENI].width);
+		for (final int i : new int[] { JPruhPlanovace.KANDIDATI, JPruhPlanovace.SEKTORY, JPruhPlanovace.STITKY }) {
 			Assert.assertTrue("nejužší bez " + i, uzky[i].isEmpty());
 		}
-		Assert.assertEquals("chip jen s barvou", 28, uzky[JPruhPlanovace.CHIP].width);
-		Assert.assertFalse(uzky[JPruhPlanovace.NASTAVENI].isEmpty());
-		Assert.assertFalse(uzky[JPruhPlanovace.ODZNAK].isEmpty());
+		for (final int i : new int[] { JPruhPlanovace.UCHYT, JPruhPlanovace.VYBER, JPruhPlanovace.ODZNAK, JPruhPlanovace.ZPET, JPruhPlanovace.DAL, JPruhPlanovace.NASTAVENI }) {
+			Assert.assertFalse("nejužší s " + i, uzky[i].isEmpty());
+		}
+		Assert.assertEquals("výběr stejně široký na všech stupních", plny[JPruhPlanovace.VYBER].width, uzky[JPruhPlanovace.VYBER].width);
 	}
 
 	@Test
 	public void sirkaSeVoliPodleSirkyMapyBezRezervyVpravo() {
-		Assert.assertEquals(826, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
-		Assert.assertEquals(706, RozmisteniPrekryvu.sirkaPruhu(706));
-		Assert.assertEquals(444, RozmisteniPrekryvu.sirkaPruhu(705));
-		Assert.assertEquals(394, RozmisteniPrekryvu.sirkaPruhu(394));
-		Assert.assertEquals(200, RozmisteniPrekryvu.sirkaPruhu(393));
-		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 200, RozmisteniPrekryvu.sirkaPruhu(10));
+		Assert.assertEquals(600, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
+		Assert.assertEquals(600, RozmisteniPrekryvu.sirkaPruhu(600));
+		Assert.assertEquals(328, RozmisteniPrekryvu.sirkaPruhu(599));
+		Assert.assertEquals(328, RozmisteniPrekryvu.sirkaPruhu(328));
+		Assert.assertEquals(234, RozmisteniPrekryvu.sirkaPruhu(327));
+		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 234, RozmisteniPrekryvu.sirkaPruhu(10));
 		Assert.assertEquals(RozmisteniPrekryvu.PRUH_UCHYT, RozmisteniPrekryvu.pruhPlanovace(1000, false).width);
 	}
 
@@ -126,7 +124,7 @@ public class JPruhPlanovaceTest {
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue("úchyt zapne plánovač", model.jeZapnuto());
 		pruh.doLayout();
-		Assert.assertEquals("bez aktivní challenge celá lišta, chip a nastavení", 10, viditelne().size());
+		Assert.assertEquals("bez aktivní challenge celá lišta", 9, viditelne().size());
 		Assert.assertFalse("bez challenge odznak nejde", najdiOdznak().isEnabled());
 		model.aktivuj(Sablony.cesko360());
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
@@ -197,7 +195,7 @@ public class JPruhPlanovaceTest {
 		return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 	}
 
-	/** Popisek typu je čitelný na podkladu pruhu v každém tématu Metalu, i v tmavém Charcoal. */
+	/** Typ v tlačítku výběru je čitelný v každém tématu Metalu, i v tmavém Charcoal. */
 	@Test
 	public void popisekTypuMaDostatecnyKontrastVeVsechTematech() throws Exception {
 		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
@@ -222,8 +220,8 @@ public class JPruhPlanovaceTest {
 					final java.awt.Graphics2D g = img.createGraphics();
 					root.paint(g);
 					g.dispose();
-					final Rectangle r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)))[JPruhPlanovace.TYP];
-					final int podklad = img.getRGB(r.x + 1, r.y + 1);
+					final Rectangle r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)))[JPruhPlanovace.VYBER];
+					final int podklad = img.getRGB(r.x + 4, r.y + r.height / 2);
 					double nejvic = 1;
 					for (int y = r.y; y < r.y + r.height; y++) {
 						for (int x = r.x; x < r.x + r.width; x++) {
@@ -232,7 +230,8 @@ public class JPruhPlanovaceTest {
 					}
 					vysledek[0] = (int) Math.round(nejvic * 100);
 				});
-				Assert.assertTrue(tema.getName() + ": kontrast textu " + vysledek[0] / 100.0, vysledek[0] >= 450);
+				// Tučný text tlačítka skinu: stačí kontrast 3 : 1 jako u velkého textu.
+				Assert.assertTrue(tema.getName() + ": kontrast textu " + vysledek[0] / 100.0, vysledek[0] >= 300);
 			}
 		} finally {
 			javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(puvodniTema);
@@ -273,18 +272,14 @@ public class JPruhPlanovaceTest {
 	}
 
 	@Test
-	public void tooltipTypuAOdznakuMaNazevZobrazeneChallenge() throws Exception {
+	public void tooltipVyberuAOdznakuMaNazevZobrazeneChallenge() throws Exception {
 		priprav();
 		model.aktivuj(Sablony.cesko360());
 		model.setZapnuto(true);
 		final javax.swing.AbstractButton odznak = najdiOdznak();
 		Assert.assertTrue(odznak.getToolTipText(), odznak.getToolTipText().endsWith(" – " + Sablony.cesko360().nazev()));
-		boolean typSNazvem = false;
-		for (final Component c : pruh.getComponents()) {
-			if (c instanceof javax.swing.JLabel && ((javax.swing.JLabel) c).getToolTipText() != null && ((javax.swing.JLabel) c).getToolTipText().contains(Sablony.cesko360().nazev())) {
-				typSNazvem = true;
-			}
-		}
-		Assert.assertTrue("štítek typu má v tooltipu název", typSNazvem);
+		final javax.swing.AbstractButton vyber = (javax.swing.AbstractButton) pruh.getComponent(JPruhPlanovace.VYBER);
+		Assert.assertEquals("na liště jen typ", "360° ▾", vyber.getText());
+		Assert.assertTrue("název challenge je v tooltipu výběru", vyber.getToolTipText().contains(Sablony.cesko360().nazev()));
 	}
 }

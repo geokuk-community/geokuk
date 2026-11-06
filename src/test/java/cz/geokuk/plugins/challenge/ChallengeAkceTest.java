@@ -2,7 +2,6 @@ package cz.geokuk.plugins.challenge;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.Action;
@@ -17,7 +16,7 @@ import cz.geokuk.framework.Event0;
 import cz.geokuk.framework.EventFirer;
 import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
 
-/** Akce menu Kešoidy > Challenge: stav z modelu, zkratky F4 a Shift+F4. */
+/** Akce menu Kešoidy > Challenge: stav z modelu, zkratka F4 pro jen kandidáty. */
 public class ChallengeAkceTest {
 
 	private ChallengeModel model;
@@ -49,11 +48,11 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
-	public void zkratkyJsouF4ShiftF4ACtrlF4() {
-		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0), dalsi.getValue(Action.ACCELERATOR_KEY));
-		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.SHIFT_DOWN_MASK), predchozi.getValue(Action.ACCELERATOR_KEY));
-		Assert.assertEquals("lišta challenge", KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.CTRL_DOWN_MASK), zapnout.getValue(Action.ACCELERATOR_KEY));
-		Assert.assertNull(kandidati.getValue(Action.ACCELERATOR_KEY));
+	public void f4PrepinaJenKandidatyDalsiAPredchoziBezZkratky() {
+		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0), kandidati.getValue(Action.ACCELERATOR_KEY));
+		Assert.assertNull(dalsi.getValue(Action.ACCELERATOR_KEY));
+		Assert.assertNull(predchozi.getValue(Action.ACCELERATOR_KEY));
+		Assert.assertNull("lišta jen úchytem a menu", zapnout.getValue(Action.ACCELERATOR_KEY));
 	}
 
 	@Test
@@ -93,6 +92,22 @@ public class ChallengeAkceTest {
 		kandidati.onSlectedChange(false);
 		Assert.assertNull(model.jenKandidatiPro());
 		Assert.assertFalse(kandidati.isSelected());
+	}
+
+	@Test
+	public void f4UkazeZpravuSeStavem() {
+		final java.util.List<String> zpravy = new java.util.ArrayList<>();
+		kandidati.inject(new cz.geokuk.plugins.kesoid.ToastModel() {
+			@Override
+			public void ukaz(final String text) {
+				zpravy.add(text);
+			}
+		});
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		kandidati.onSlectedChange(true);
+		kandidati.onSlectedChange(false);
+		Assert.assertEquals(java.util.Arrays.asList("Challenge: jen kandidáti – Zapnuto", "Challenge: jen kandidáti – Vypnuto"), zpravy);
 	}
 
 	@Test

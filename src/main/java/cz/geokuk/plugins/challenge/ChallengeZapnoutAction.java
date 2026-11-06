@@ -1,10 +1,5 @@
 package cz.geokuk.plugins.challenge;
 
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-
-import javax.swing.KeyStroke;
-
 import cz.geokuk.framework.ToggleAction0;
 
 /** Zapíná a vypíná plánovač challenge: lišta na mapě, při vypnutí zůstane jen úchyt. */
@@ -16,7 +11,6 @@ public class ChallengeZapnoutAction extends ToggleAction0 {
 	public ChallengeZapnoutAction() {
 		super("Lišta challenge");
 		putValue(SHORT_DESCRIPTION, "Zapne plánovač challenge: lišta na mapě s výběrem challenge, počtem chybějících a přechodem na další chybějící.");
-		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.CTRL_DOWN_MASK));
 	}
 
 	public void inject(final ChallengeModel model) {

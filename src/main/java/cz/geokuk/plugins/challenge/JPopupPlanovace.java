@@ -246,8 +246,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final DefaultListModel<String> radky = new DefaultListModel<>();
 		final JList<String> seznam = new JList<>(radky);
 		final JLabel nejiste = new JLabel();
-		final JButton dalsi = new JButton("▶ Další chybějící  F4");
-		final JToggleButton kandidati = new JToggleButton("Zobrazit jen kandidáty");
+		final JButton dalsi = new JButton("▶ Další chybějící");
+		final JToggleButton kandidati = new JToggleButton("Zobrazit jen kandidáty  F4");
 
 		Obsah() {
 			super(new GridBagLayout());

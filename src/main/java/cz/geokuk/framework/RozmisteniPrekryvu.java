@@ -35,8 +35,8 @@ public final class RozmisteniPrekryvu {
 	/** Výška pruhu plánovače; končí na y = 32. */
 	public static final int VYSKA_PRUHU = 28;
 	/** Možné šířky pruhu plánovače od nejširší; užší stupeň se použije, když se širší nevejde. */
-	/** Šířky lišty plánovače podle stupně: plná s texty, s ikonami a nejužší; plná a ikonová se natáhnou do volné šířky až po svou největší. */
-	public static final int PRUH_PLNY_MIN = 706, PRUH_PLNY_MAX = 826, PRUH_IKONY_MIN = 394, PRUH_IKONY_MAX = 444, PRUH_UZKY = 200;
+	/** Šířky lišty plánovače podle stupně: plná s texty, s ikonami a nejužší. */
+	public static final int PRUH_PLNY = 600, PRUH_IKONY = 328, PRUH_UZKY = 234;
 	/** Šířka úchytu, který zůstane z lišty, když je plánovač vypnutý. */
 	public static final int PRUH_UCHYT = 34;
 	/** Ukazatel výkonu leží pod pruhem plánovače, když je pruh vidět. */
@@ -69,13 +69,10 @@ public final class RozmisteniPrekryvu {
 
 	/** Šířka lišty plánovače: nejširší stupeň, který se vejde do volné šířky; nejužší, když se nevejde žádný. */
 	public static int sirkaPruhu(final int volnaSirka) {
-		if (volnaSirka >= PRUH_PLNY_MIN) {
-			return Math.min(volnaSirka, PRUH_PLNY_MAX);
+		if (volnaSirka >= PRUH_PLNY) {
+			return PRUH_PLNY;
 		}
-		if (volnaSirka >= PRUH_IKONY_MIN) {
-			return Math.min(volnaSirka, PRUH_IKONY_MAX);
-		}
-		return PRUH_UZKY;
+		return volnaSirka >= PRUH_IKONY ? PRUH_IKONY : PRUH_UZKY;
 	}
 
 	/** Volná šířka pro pruh plánovače na mapě dané šířky. */
