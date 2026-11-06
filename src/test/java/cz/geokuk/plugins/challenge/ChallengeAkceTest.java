@@ -8,6 +8,7 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +46,12 @@ public class ChallengeAkceTest {
 		dalsi.inject(model);
 		predchozi.inject(model);
 		kandidati.inject(model);
+	}
+
+	/** Plánovač zapisuje vybraného kandidáta ve vlákně Swingu; zápis z testu musí doběhnout, než začne další test. */
+	@After
+	public void pockejNaEdt() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {});
 	}
 
 	@Test
@@ -280,6 +287,8 @@ public class ChallengeAkceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		final PlanovacChallenge p = planovac();
 		Assert.assertEquals("další jde na aktivní challenge", "GC9", ChallengeAkce.prejdi(model, p, true).id());
+		// Vybraného kandidáta zapíše plánovač ve vlákně Swingu; model se dál mění až po něm.
+		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertFalse("filtr ještě není zapnutý", kandidati.isSelected());
 		model.setJenKandidatiPro(Sablony.praha360());
 		Assert.assertTrue("přepínač filtru ukazuje stav aktivní challenge", kandidati.isSelected());
