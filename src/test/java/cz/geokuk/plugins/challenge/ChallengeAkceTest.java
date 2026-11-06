@@ -111,6 +111,29 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
+	public void shiftSipkySkaceNaKandidataAHlasiKdyzZadnyNeni() {
+		final java.util.List<String> zpravy = new java.util.ArrayList<>();
+		final cz.geokuk.plugins.kesoid.ToastModel toast = new cz.geokuk.plugins.kesoid.ToastModel() {
+			@Override
+			public void ukaz(final String text) {
+				zpravy.add(text);
+			}
+		};
+		final int[] klavesy = { KeyEvent.VK_UP, KeyEvent.VK_RIGHT, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT };
+		for (final SmerSkoku smer : SmerSkoku.values()) {
+			final ChallengeSkokAction skok = new ChallengeSkokAction(smer);
+			Assert.assertEquals(KeyStroke.getKeyStroke(klavesy[smer.ordinal()], java.awt.event.InputEvent.SHIFT_DOWN_MASK), skok.getValue(Action.ACCELERATOR_KEY));
+			Assert.assertFalse("bez lišty nejde", skok.isEnabled());
+			skok.inject(model);
+			skok.inject(toast);
+			skok.setPlanovac(() -> null);
+			skok.actionPerformed(null);
+		}
+		Assert.assertEquals(java.util.Arrays.asList("Challenge – žádný kandidát na sever", "Challenge – žádný kandidát na východ", "Challenge – žádný kandidát na jih",
+				"Challenge – žádný kandidát na západ"), zpravy);
+	}
+
+	@Test
 	public void jenKandidatiBezAktivniChallengeNicNezapne() {
 		kandidati.onSlectedChange(true);
 		Assert.assertNull(model.jenKandidatiPro());

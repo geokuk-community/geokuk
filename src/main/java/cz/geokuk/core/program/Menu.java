@@ -139,6 +139,11 @@ public class Menu extends MenuStrujce {
 		item(akce.challengeJenKandidatiAction);
 		item(akce.challengeSektoryAction);
 		item(akce.challengeStitkyAction);
+		separator();
+		item(akce.challengeSkokSever);
+		item(akce.challengeSkokVychod);
+		item(akce.challengeSkokJih);
+		item(akce.challengeSkokZapad);
 		menu = hlavni;
 	}
 

@@ -78,6 +78,10 @@ public class Akce {
 	public final cz.geokuk.plugins.challenge.ChallengeJenKandidatiAction challengeJenKandidatiAction = new cz.geokuk.plugins.challenge.ChallengeJenKandidatiAction();
 	public final cz.geokuk.plugins.challenge.ChallengeSektoryAction challengeSektoryAction = new cz.geokuk.plugins.challenge.ChallengeSektoryAction();
 	public final cz.geokuk.plugins.challenge.ChallengeStitkyAction challengeStitkyAction = new cz.geokuk.plugins.challenge.ChallengeStitkyAction();
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokSever = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.SEVER);
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokVychod = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.VYCHOD);
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokJih = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.JIH);
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokZapad = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.ZAPAD);
 
 	public final MrizkaDdAction mrizkaDdAction = new MrizkaDdAction();
 	public final MrizkaDdMmMmmAction mrizkaDdMmMmmAction = new MrizkaDdMmMmmAction();
