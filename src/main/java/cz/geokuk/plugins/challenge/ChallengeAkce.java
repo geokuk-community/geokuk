@@ -28,7 +28,7 @@ final class ChallengeAkce {
 	 * Skočí na nejbližšího kandidáta zobrazené challenge ve směru (kužel ±45° od vybraného kandidáta, jinak od středu mapy): vybere ho a vystředí na něj mapu. Vrací
 	 * kandidáta, null když žádný není nebo chybí model, plánovač či challenge. Hledání kandidáta ve směru dodá plánovač.
 	 */
-	static VybranyKandidat skoc(final ChallengeModel model, final PlanovacChallenge planovac, final SmerSkoku smer) {
+	static VybranyKandidat skoc(final ChallengeModel model, final PlanovacChallenge planovac, final cz.geokuk.core.coordinates.ESmer smer) {
 		if (model == null || planovac == null || model.zobrazena() == null) {
 			return null;
 		}

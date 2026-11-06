@@ -120,7 +120,7 @@ public class ChallengeAkceTest {
 			}
 		};
 		final int[] klavesy = { KeyEvent.VK_UP, KeyEvent.VK_RIGHT, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT };
-		for (final SmerSkoku smer : SmerSkoku.values()) {
+		for (final cz.geokuk.core.coordinates.ESmer smer : cz.geokuk.core.coordinates.ESmer.values()) {
 			final ChallengeSkokAction skok = new ChallengeSkokAction(smer);
 			Assert.assertEquals(KeyStroke.getKeyStroke(klavesy[smer.ordinal()], java.awt.event.InputEvent.SHIFT_DOWN_MASK), skok.getValue(Action.ACCELERATOR_KEY));
 			Assert.assertFalse("bez lišty nejde", skok.isEnabled());

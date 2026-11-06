@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import javax.swing.KeyStroke;
 
+import cz.geokuk.core.coordinates.ESmer;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.plugins.kesoid.ToastModel;
 import cz.geokuk.plugins.kesoid.ZpravyZkratek;
@@ -15,20 +16,34 @@ import cz.geokuk.plugins.kesoid.ZpravyZkratek;
 public class ChallengeSkokAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
-	private final SmerSkoku smer;
+	private final ESmer smer;
 	private transient ChallengeModel model;
 	private transient ToastModel toast;
 	private transient Supplier<PlanovacChallenge> planovac = () -> null;
 
-	public ChallengeSkokAction(final SmerSkoku smer) {
-		super("Skok na kandidáta " + smer.text());
+	public ChallengeSkokAction(final ESmer smer) {
+		super("Skok na kandidáta " + text(smer));
 		this.smer = smer;
-		putValue(SHORT_DESCRIPTION, "Vybere nejbližšího kandidáta zobrazené challenge " + smer.text() + " a vystředí na něj mapu.");
+		putValue(SHORT_DESCRIPTION, "Vybere nejbližšího kandidáta zobrazené challenge " + text(smer) + " a vystředí na něj mapu.");
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(klavesa(smer), InputEvent.SHIFT_DOWN_MASK));
 		setEnabled(false);
 	}
 
-	static int klavesa(final SmerSkoku smer) {
+	/** „na sever“ a podobně. */
+	static String text(final ESmer smer) {
+		switch (smer) {
+		case SEVER:
+			return "na sever";
+		case VYCHOD:
+			return "na východ";
+		case JIH:
+			return "na jih";
+		default:
+			return "na západ";
+		}
+	}
+
+	static int klavesa(final ESmer smer) {
 		switch (smer) {
 		case SEVER:
 			return KeyEvent.VK_UP;
@@ -65,7 +80,7 @@ public class ChallengeSkokAction extends Action0 {
 	@Override
 	public void actionPerformed(final ActionEvent e) {
 		if (ChallengeAkce.skoc(model, planovac.get(), smer) == null && toast != null) {
-			toast.ukaz(ZpravyZkratek.challengeZadnyKandidat(smer.text()));
+			toast.ukaz(ZpravyZkratek.challengeZadnyKandidat(text(smer)));
 		}
 	}
 }
