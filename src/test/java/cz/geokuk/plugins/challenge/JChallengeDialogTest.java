@@ -101,7 +101,7 @@ public class JChallengeDialogTest {
 	@Test
 	public void seznamMaSablonyAPrvniJeVybranaAJenKProhlizeni() throws Exception {
 		naEdt(() -> {
-			Assert.assertEquals(3, dialog.polozky().size());
+			Assert.assertEquals(4, dialog.polozky().size());
 			Assert.assertEquals(0, seznam().getSelectedIndex());
 			Assert.assertTrue("šablona se kopíruje", tlacitko("Vytvořit kopii…").isEnabled());
 			Assert.assertFalse("šablonu nejde uložit", tlacitko("Uložit změny").isEnabled());
@@ -114,7 +114,7 @@ public class JChallengeDialogTest {
 	public void kopieSablonyJeVybranaAJdeUpravit() throws Exception {
 		naEdt(() -> {
 			tlacitko("Vytvořit kopii…").doClick();
-			Assert.assertEquals(4, dialog.polozky().size());
+			Assert.assertEquals(5, dialog.polozky().size());
 			final Challenge vybrana = seznam().getSelectedValue();
 			Assert.assertEquals("360° od domova (vlastní)", vybrana.nazev());
 			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
@@ -141,7 +141,7 @@ public class JChallengeDialogTest {
 			Assert.assertEquals(50.1, c.stred().lat(), 0);
 			Assert.assertEquals(14.5, c.stred().lon(), 0);
 			Assert.assertEquals("po uložení je vybrána přejmenovaná", "Moje 360", seznam().getSelectedValue().nazev());
-			Assert.assertEquals(4, dialog.polozky().size());
+			Assert.assertEquals(5, dialog.polozky().size());
 		});
 	}
 
@@ -180,8 +180,8 @@ public class JChallengeDialogTest {
 	public void zmenaVModeluSePromitneDoSeznamu() throws Exception {
 		naEdt(() -> {
 			model.ulozVlastni(new Challenge("Zvenku", Challenge.Typ.SEKTORY_360, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.STATOR));
-			Assert.assertEquals(4, dialog.polozky().size());
-			Assert.assertEquals("Zvenku", dialog.polozky().get(3).nazev());
+			Assert.assertEquals(5, dialog.polozky().size());
+			Assert.assertEquals("Zvenku", dialog.polozky().get(4).nazev());
 		});
 	}
 
@@ -195,7 +195,7 @@ public class JChallengeDialogTest {
 			}
 			Assert.assertTrue("šablona se nepřepíše ani nezkopíruje", model.vlastni().isEmpty());
 			Assert.assertEquals("bez chybové hlášky", "", chyba());
-			Assert.assertEquals(3, dialog.polozky().size());
+			Assert.assertEquals(4, dialog.polozky().size());
 		});
 	}
 
@@ -235,8 +235,8 @@ public class JChallengeDialogTest {
 		naEdt(() -> {
 			model.ulozVlastni(dt("Moje DT"));
 			model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
-			Assert.assertEquals("šablony, D/T a kalendář (nedostupný)", 5, dialog.polozky().size());
-			seznam().setSelectedValue(dialog.polozky().get(3), true);
+			Assert.assertEquals("šablony, D/T a kalendář (nedostupný)", 6, dialog.polozky().size());
+			seznam().setSelectedValue(dialog.polozky().get(4), true);
 			Assert.assertEquals("Moje DT", seznam().getSelectedValue().nazev());
 			Assert.assertTrue("D/T jde uložit", tlacitko("Uložit změny").isEnabled());
 			Assert.assertFalse("pole 360° jsou u D/T skrytá", viditelne(tlacitko("Domov")));
@@ -283,6 +283,28 @@ public class JChallengeDialogTest {
 			Assert.assertFalse(model.jeAktivni(kal));
 			Assert.assertFalse("zapnout znovu už ne", zapnuto.isEnabled());
 			Assert.assertTrue("data zůstala", model.vlastni().contains(kal));
+		});
+	}
+
+	@Test
+	public void kopieSablonyMaticeDtJeDtAJdeUpravit() throws Exception {
+		naEdt(() -> {
+			Challenge sablona = null;
+			for (final Challenge c : dialog.polozky()) {
+				if (c.typ() == Challenge.Typ.DT_MATICE) {
+					sablona = c;
+				}
+			}
+			Assert.assertNotNull("šablona D/T je v seznamu", sablona);
+			seznam().setSelectedValue(sablona, true);
+			Assert.assertFalse("šablonu nejde upravit", tlacitko("Uložit změny").isEnabled());
+			tlacitko("Vytvořit kopii…").doClick();
+			final Challenge kopie = seznam().getSelectedValue();
+			Assert.assertEquals(Challenge.Typ.DT_MATICE, kopie.typ());
+			Assert.assertEquals("Matice D/T (vlastní)", kopie.nazev());
+			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
+			tlacitko("Zapnuto v plánovači").doClick();
+			Assert.assertTrue(model.jeAktivni(kopie));
 		});
 	}
 }
