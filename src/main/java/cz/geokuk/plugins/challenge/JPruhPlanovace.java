@@ -153,17 +153,17 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	private Challenge challenge() {
-		return model == null ? null : model.hlavni();
+		return model == null ? null : model.zobrazena();
 	}
 
 	private void obnov() {
-		final boolean vidim = model != null && model.jePruhViditelny();
+		final StavPruhu stav = model == null ? StavPruhu.SKRYTY : model.stavPruhu();
+		final boolean vidim = stav.jeViditelny();
 		if (vidim) {
-			final Challenge c = challenge();
-			final int chybi = model.pocetChybejicich(c);
-			odznak.nastav(chybi < 0 ? "…" : Integer.toString(chybi));
-			kandidati.setSelected(c.equals(model.jenKandidatiPro()));
-			typ.setText("360°");
+			odznak.nastav(stav.badge() < 0 ? "…" : Integer.toString(stav.badge()));
+			kandidati.setSelected(stav.jenKandidati());
+			typ.setText(stav.stitekTypu());
+			zpet.setEnabled(ChallengeAkce.lzePredchozi(stav.challenge()));
 		}
 		if (vidim != isVisible()) {
 			setVisible(vidim);

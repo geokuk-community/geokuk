@@ -105,7 +105,7 @@ public class ChallengeModel extends Model0 {
 
 	/** Pruh plánovače na mapě je vidět, když je plánovač zapnutý a je co ukazovat. */
 	public boolean jePruhViditelny() {
-		return zapnuto && !seznam.aktivni().isEmpty();
+		return zapnuto && zobrazena() != null;
 	}
 
 	public void setZapnuto(final boolean zapnuto) {
@@ -208,12 +208,6 @@ public class ChallengeModel extends Model0 {
 	/** Aktivní challenge v pořadí zapnutí. */
 	public List<Challenge> aktivni() {
 		return seznam.aktivni();
-	}
-
-	/** Challenge, kterou ukazuje pruh plánovače a ovládají zkratky: první aktivní; null, když žádná není. */
-	public Challenge hlavni() {
-		final List<Challenge> a = seznam.aktivni();
-		return a.isEmpty() ? null : a.get(0);
 	}
 
 	public boolean jeAktivni(final Challenge c) {

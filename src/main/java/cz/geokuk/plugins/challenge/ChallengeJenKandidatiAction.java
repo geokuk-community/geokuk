@@ -20,14 +20,14 @@ public class ChallengeJenKandidatiAction extends ToggleAction0 {
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
 		final ChallengeModel m = event.getModel();
-		final Challenge c = m.hlavni();
+		final Challenge c = m.zobrazena();
 		setEnabled(ChallengeAkce.dostupne(m));
 		setSelected(c != null && c.equals(m.jenKandidatiPro()));
 	}
 
 	@Override
 	protected void onSlectedChange(final boolean nastaveno) {
-		final Challenge c = model.hlavni();
+		final Challenge c = model.zobrazena();
 		if (c == null) {
 			setSelected(false);
 			return;
