@@ -18,9 +18,10 @@
   důvod a co udělat. Když se kruhy v metrech kreslí jen částečně (nejbližší ke
   středu výřezu), je tam štítek Kruhy omezené, a když je zároveň něco skryté
   a něco omezené, Kruhy skryté a omezené.
-- Po zkratkách F5 a Ctrl+1 až Ctrl+4 se uprostřed dole nad měřítkem na chvíli
-  ukáže krátká zpráva, co se změnilo; po F8, Alt+F8 a F9, když kruhy nejsou
-  vidět.
+- Po zkratkách F5, F8, Alt+F8, F9 a Ctrl+1 až Ctrl+4 se uprostřed dole nad
+  měřítkem na chvíli ukáže krátká zpráva s názvem akce a stavem, třeba „Zdroj
+  keší GeoGet – Vypnuto“ nebo „Kruhy v metrech – Zapnuto, 100 m“. Když se
+  zapnuté kruhy nekreslí, je v ní i důvod a co udělat.
 - Posuvníky kruhů Obsazenost 161 m jsou tenké a při najetí myší ukážou popisky
   a aktuální hodnotu.
 - Velikost zvýrazňovacích kruhů se volí v pixelech nebo v metrech (od 1 m do
