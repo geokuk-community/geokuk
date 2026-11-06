@@ -3,6 +3,9 @@
 ## 6.5.0
 
 ### Změny
+- Plánovač challenge (Kešoidy > Challenge): pruh na mapě s počtem chybějících
+  sektorů 360° nebo políček D/T, popup s chybějícími a kandidáty, Další
+  chybějící F4 (Shift+F4 zpět), zobrazení jen kandidátů na mapě.
 - Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
   Kruhy 161 m); dialog se jmenuje Nastavení kruhů.
 - Kruhy (Alt+F8) mají pevný poloměr v metrech, výchozí 100 m; mění se v
