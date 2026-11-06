@@ -254,14 +254,11 @@ public class JChallengeDialogTest {
 	}
 
 	@Test
-	public void dtJdeVDialoguUpravitZapnoutASmazatKalendarSeNenabizi() throws Exception {
+	public void dtJdeVDialoguUpravitZapnoutASmazat() throws Exception {
 		naEdt(() -> {
 			model.ulozVlastni(dt("Moje DT"));
 			model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
-			Assert.assertEquals("šablony a D/T, kalendář ne", 4, dialog.polozky().size());
-			for (final Challenge c : dialog.polozky()) {
-				Assert.assertNotEquals(Challenge.Typ.KALENDAR, c.typ());
-			}
+			Assert.assertEquals("šablony, D/T a kalendář (nedostupný)", 5, dialog.polozky().size());
 			seznam().setSelectedValue(dialog.polozky().get(3), true);
 			Assert.assertEquals("Moje DT", seznam().getSelectedValue().nazev());
 			Assert.assertTrue("D/T jde uložit", tlacitko("Uložit změny").isEnabled());
@@ -283,6 +280,32 @@ public class JChallengeDialogTest {
 			seznam().setSelectedIndex(0);
 			Assert.assertTrue("u šablony 360° jsou pole vidět", viditelne(tlacitko("Domov")));
 			Assert.assertTrue(viditelne(tlacitko("Souřadnice")));
+		});
+	}
+
+	private String textPolozky(final Challenge c) {
+		final javax.swing.ListCellRenderer<? super Challenge> r = seznam().getCellRenderer();
+		return ((JLabel) r.getListCellRendererComponent(seznam(), c, 0, false, false)).getText();
+	}
+
+	@Test
+	public void ulozenyKalendarJdeVDialoguJenVypnoutASmazat() throws Exception {
+		naEdt(() -> {
+			final Challenge kal = model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			model.aktivuj(kal);
+			Assert.assertTrue(dialog.polozky().contains(kal));
+			Assert.assertTrue(textPolozky(kal), textPolozky(kal).contains("(nedostupný)"));
+			seznam().setSelectedValue(kal, true);
+			Assert.assertFalse("úpravy ne", tlacitko("Uložit změny").isEnabled());
+			Assert.assertFalse(pole(0).isEnabled());
+			Assert.assertTrue("smazat ano", tlacitko("Smazat").isEnabled());
+			final AbstractButton zapnuto = tlacitko("Zapnuto v plánovači");
+			Assert.assertTrue("vypnout ano", zapnuto.isEnabled());
+			Assert.assertTrue(zapnuto.isSelected());
+			zapnuto.doClick();
+			Assert.assertFalse(model.jeAktivni(kal));
+			Assert.assertFalse("zapnout znovu už ne", zapnuto.isEnabled());
+			Assert.assertTrue("data zůstala", model.vlastni().contains(kal));
 		});
 	}
 }

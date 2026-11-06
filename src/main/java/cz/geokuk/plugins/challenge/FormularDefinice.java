@@ -38,11 +38,6 @@ public final class FormularDefinice {
 
 	private FormularDefinice() {}
 
-	/** Typy, které se nabízejí v dialogu: kalendář zatím ne. */
-	public static boolean jeVNabidce(final Challenge c) {
-		return c.typ() != Challenge.Typ.KALENDAR;
-	}
-
 	public static List<Oblast> oblasti() {
 		return Collections.unmodifiableList(Arrays.asList(ZADNA, CESKO, PRAHA));
 	}

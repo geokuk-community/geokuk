@@ -73,7 +73,7 @@ public class JChallengeDialog extends JMyDialog0 {
 			public Component getListCellRendererComponent(final JList<?> l, final Object v, final int i, final boolean sel, final boolean fokus) {
 				final Challenge c = (Challenge) v;
 				final JLabel s = (JLabel) super.getListCellRendererComponent(l, c.nazev(), i, sel, fokus);
-				s.setText((model != null && model.jeAktivni(c) ? "● " : "   ") + c.nazev() + (model != null && model.jeSablona(c) ? "  (šablona)" : ""));
+				s.setText((model != null && model.jeAktivni(c) ? "● " : "   ") + c.nazev() + (model != null && model.jeSablona(c) ? "  (šablona)" : "") + (model != null && !model.jeVUi(c) ? "  (nedostupný)" : ""));
 				s.setToolTipText(FormularDefinice.souhrn(c));
 				return s;
 			}
@@ -167,9 +167,6 @@ public class JChallengeDialog extends JMyDialog0 {
 		seznamModel.clear();
 		Challenge znovu = null;
 		for (final Challenge c : model.vsechny()) {
-			if (!FormularDefinice.jeVNabidce(c)) {
-				continue;
-			}
 			seznamModel.addElement(c);
 			if (c.nazev().equals(klic)) {
 				znovu = c;
@@ -182,6 +179,11 @@ public class JChallengeDialog extends JMyDialog0 {
 		}
 		seznam.repaint();
 		naplnFormular(seznam.getSelectedValue());
+	}
+
+	/** Typ, který se zatím v rozhraní nenabízí (kalendář uložený z dřívějška): jde jen vypnout a smazat. */
+	private boolean jeNedostupny(final Challenge c) {
+		return c != null && model != null && !model.jeVUi(c);
 	}
 
 	private boolean jeSablona(final Challenge c) {
@@ -199,13 +201,13 @@ public class JChallengeDialog extends JMyDialog0 {
 	private void naplnFormular(final Challenge c) {
 		plnim = true;
 		try {
-			final boolean uprava = c != null && !jeSablona(c);
+			final boolean uprava = c != null && !jeSablona(c) && !jeNedostupny(c);
 			for (final JComponent k : new JComponent[] { nazev, pravidla, stredDomov, stredSouradnice, stredListing, oblast, nalezy, uloz }) {
 				k.setEnabled(uprava);
 			}
-			aktivni.setEnabled(c != null);
+			aktivni.setEnabled(c != null && (!jeNedostupny(c) || model.jeAktivni(c)));
 			kopie.setEnabled(jeSablona(c));
-			smazat.setEnabled(uprava);
+			smazat.setEnabled(c != null && !jeSablona(c));
 			chyba.setText(" ");
 			if (c == null) {
 				aktivni.setSelected(false);
@@ -213,7 +215,7 @@ public class JChallengeDialog extends JMyDialog0 {
 				return;
 			}
 			for (final Component k : poleSektoru) {
-				k.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
+				k.setVisible(c.typ() == Challenge.Typ.SEKTORY_360 || jeNedostupny(c));
 			}
 			aktivni.setSelected(model != null && model.jeAktivni(c));
 			nazev.setText(c.nazev());
@@ -239,6 +241,10 @@ public class JChallengeDialog extends JMyDialog0 {
 		}
 		try {
 			if (aktivni.isSelected()) {
+				if (jeNedostupny(c)) {
+					aktivni.setSelected(false);
+					return;
+				}
 				model.aktivuj(c);
 			} else {
 				model.deaktivuj(c);
@@ -278,7 +284,7 @@ public class JChallengeDialog extends JMyDialog0 {
 
 	private void ulozZmeny() {
 		final Challenge c = seznam.getSelectedValue();
-		if (c == null || jeSablona(c)) {
+		if (c == null || jeSablona(c) || jeNedostupny(c)) {
 			return;
 		}
 		try {

@@ -141,10 +141,4 @@ public class FormularDefiniceTest {
 		Assert.assertEquals(ZdrojPravidel.STATOR, nova.zdroj());
 	}
 
-	@Test
-	public void kalendarSeVDialoguNenabizi() {
-		Assert.assertTrue(FormularDefinice.jeVNabidce(Sablony.cesko360()));
-		Assert.assertTrue(FormularDefinice.jeVNabidce(new Challenge("DT", Challenge.Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)));
-		Assert.assertFalse(FormularDefinice.jeVNabidce(new Challenge("K", Challenge.Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)));
-	}
 }
