@@ -13,8 +13,8 @@ import java.util.Map;
  */
 public final class ChallengeSeznam {
 
-	/** Výchozí strop aktivních challenge najednou; každá drží v paměti předpočet. */
-	public static final int NEJVIC_AKTIVNICH = 5;
+	/** Výchozí strop aktivních challenge najednou: filtry a štítky na mapě patří jedné challenge. */
+	public static final int NEJVIC_AKTIVNICH = 1;
 
 	public static final int NEJDELSI_NAZEV = 80;
 
@@ -152,6 +152,25 @@ public final class ChallengeSeznam {
 		return ulozVlastni(s.sNazvem(nazev));
 	}
 
+	/** Kopie vlastní definice pojmenovaná „název (kopie)“, popř. „(kopie 2)“…; nikdy neaktivní, název nejvýš {@link #NEJDELSI_NAZEV} znaků. */
+	public Challenge kopieVlastni(final String nazevVlastni) {
+		final Challenge v = vlastni.get(klic(nazevVlastni));
+		if (v == null) {
+			throw new ChallengeChyba("Challenge „" + nazevVlastni + "“ neexistuje.");
+		}
+		final String zaklad = v.nazev().replaceFirst(" \\(kopie( \\d+)?\\)$", "");
+		String nazev = nazevKopie(zaklad, " (kopie)");
+		for (int i = 2; najdi(nazev) != null; i++) {
+			nazev = nazevKopie(zaklad, " (kopie " + i + ")");
+		}
+		return ulozVlastni(v.sNazvem(nazev));
+	}
+
+	private static String nazevKopie(final String zaklad, final String koncovka) {
+		final int misto = NEJDELSI_NAZEV - koncovka.length();
+		return (zaklad.length() > misto ? zaklad.substring(0, misto).trim() : zaklad) + koncovka;
+	}
+
 	/** Přejmenuje vlastní definici; aktivita se zachová. */
 	public Challenge prejmenuj(final String stary, final String novy) {
 		final Challenge d = vlastni.get(klic(stary));
@@ -190,20 +209,24 @@ public final class ChallengeSeznam {
 		aktivni.remove(klic(nazev));
 	}
 
-	/** Zapne challenge; zapnutá už zůstane, překročení stropu je chyba s vysvětlením. */
-	public void aktivuj(final String nazev) {
+	/**
+	 * Zapne challenge; zapnutá už zůstane. Je-li aktivních už {@link #strop()}, vypne se nejdéle zapnutá a vrátí se; jinak se vrací null.
+	 */
+	public Challenge aktivuj(final String nazev) {
 		final Challenge d = najdi(nazev);
 		if (d == null) {
 			throw new ChallengeChyba("Challenge „" + nazev + "“ neexistuje.");
 		}
 		final String k = klic(d.nazev());
 		if (aktivni.contains(k)) {
-			return;
+			return null;
 		}
+		Challenge vypnuta = null;
 		if (aktivni.size() >= strop) {
-			throw new ChallengeChyba("Najednou může být aktivních nejvýš " + strop + " challenge. Nejdřív některou vypněte.");
+			vypnuta = najdi(aktivni.remove(0));
 		}
 		aktivni.add(k);
+		return vypnuta;
 	}
 
 	public void deaktivuj(final String nazev) {

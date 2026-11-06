@@ -54,24 +54,25 @@ public class NastaveniChallengeTest {
 	}
 
 	@Test
-	public void ulozeniANacteniVratiVsechnoVcetnePoradiAktivnich() {
+	public void ulozeniANacteniVratiVsechnoAZapneJenPrvniZUlozenychAktivnich() {
 		final MapoveUloziste u = new MapoveUloziste();
-		final ChallengeSeznam s = new ChallengeSeznam();
+		final ChallengeSeznam s = new ChallengeSeznam(Sablony.vse(), 5);
 		s.ulozVlastni(vlastni("Moje A", ZdrojPravidel.STATOR, ZdrojeNalezu.VSECHNY));
 		s.ulozVlastni(vlastni("Moje B", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
-		s.kopieSablony("360° of Prague");
+		s.kopieSablony(Sablony.NAZEV_PRAHA);
 		s.aktivuj("Moje B");
-		s.aktivuj("360° of Prague");
+		s.aktivuj(Sablony.NAZEV_PRAHA);
 		s.aktivuj("Moje A");
 		NastaveniChallenge.uloz(s, true, u);
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
 		Assert.assertTrue(n.zapnuto);
-		Assert.assertEquals(0, n.preskoceno);
+		Assert.assertEquals("dvě další uložené aktivní se nezapnou", 2, n.preskoceno);
 		Assert.assertEquals(s.vlastni(), n.seznam.vlastni());
-		Assert.assertEquals(Arrays.asList("Moje B", "360° of Prague", "Moje A"), Arrays.asList(n.seznam.aktivni().get(0).nazev(), n.seznam.aktivni().get(1).nazev(), n.seznam.aktivni().get(2).nazev()));
+		Assert.assertEquals(Arrays.asList("Moje B"), Arrays.asList(n.seznam.aktivni().get(0).nazev()));
+		Assert.assertEquals(1, n.seznam.aktivni().size());
 		Assert.assertEquals(ZdrojeNalezu.VSECHNY, n.seznam.najdi("Moje A").nalezy());
 		Assert.assertEquals(50.123456789, n.seznam.najdi("Moje A").stred().lat(), 0);
-		Assert.assertFalse("šablony se neukládají", u.m.toString().contains("360° of the Czech Republic"));
+		Assert.assertFalse("šablony se neukládají", u.m.toString().contains(Sablony.NAZEV_CESKO));
 	}
 
 	@Test
@@ -108,7 +109,7 @@ public class NastaveniChallengeTest {
 		u.put("definice.1.8.nazev", "Bez dalšího");
 		u.put("definice.1.x.nazev", "Nečíslovaná");
 		u.put("definice.1.nazev", "Bez čísla");
-		u.put("definice.1.9.nazev", "360° of Prague");
+		u.put("definice.1.9.nazev", Sablony.NAZEV_PRAHA);
 		u.put("definice.1.9.typ", "SEKTORY_360");
 		u.put("definice.1.9.zdroj", "PGC");
 		u.put("definice.1.9.stred", "DOMOV");
@@ -124,24 +125,26 @@ public class NastaveniChallengeTest {
 	public void aktivniKteraNeexistujeSePreskociADuplicityNicNezpusobi() {
 		final MapoveUloziste u = new MapoveUloziste();
 		u.put("format", "1");
-		u.put("aktivni", "360° of Prague\nNeexistuje\n360° of Prague\n\n360° od domova");
+		u.put("aktivni", Sablony.NAZEV_PRAHA + "\nNeexistuje\n" + Sablony.NAZEV_PRAHA + "\n\n360° od domova");
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
-		Assert.assertEquals(2, n.seznam.aktivni().size());
-		Assert.assertEquals(1, n.preskoceno);
+		Assert.assertEquals(1, n.seznam.aktivni().size());
+		Assert.assertEquals("neexistující a druhá aktivní", 2, n.preskoceno);
 	}
 
 	@Test
-	public void aktivniNadStropSePreskociSeZpravou() {
+	public void ulozenoViceAktivnichZapneJenPrvniAOstatniNechaVypnute() {
 		final MapoveUloziste u = new MapoveUloziste();
 		final ChallengeSeznam velky = new ChallengeSeznam(Sablony.vse(), 3);
 		for (int i = 1; i <= 3; i++) {
 			velky.ulozVlastni(vlastni("V" + i, ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
 		}
 		NastaveniChallenge.uloz(velky, false, u);
-		u.put("aktivni", "V1\nV2\nV3\n360° od domova\n360° of Prague\n360° of the Czech Republic");
+		u.put("aktivni", "V1\nV2\nV3\n360° od domova\n" + Sablony.NAZEV_PRAHA + "\n" + Sablony.NAZEV_CESKO);
 		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
 		Assert.assertEquals(ChallengeSeznam.NEJVIC_AKTIVNICH, n.seznam.aktivni().size());
-		Assert.assertEquals(1, n.preskoceno);
+		Assert.assertEquals("V1", n.seznam.aktivni().get(0).nazev());
+		Assert.assertEquals(5, n.preskoceno);
+		Assert.assertEquals("definice zůstaly", 3, n.seznam.vlastni().size());
 	}
 
 	@Test
@@ -343,7 +346,7 @@ public class NastaveniChallengeTest {
 	@Test
 	public void ulozenyStavMaPresneKlicePoradiAktivnichAFormat() {
 		final MapoveUloziste u = new MapoveUloziste();
-		final ChallengeSeznam s = new ChallengeSeznam();
+		final ChallengeSeznam s = new ChallengeSeznam(Sablony.vse(), 5);
 		s.ulozVlastni(vlastni("A", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
 		s.ulozVlastni(vlastni("B", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
 		s.aktivuj("B");
@@ -458,7 +461,60 @@ public class NastaveniChallengeTest {
 		Assert.assertFalse(n.neznamyFormat);
 		Assert.assertEquals(Arrays.asList(upravena), n.seznam.vlastni());
 		Assert.assertEquals(Challenge.Typ.DT_MATICE, n.seznam.vlastni().get(0).typ());
-		Assert.assertEquals(Arrays.asList(Sablony.maticeDT(), upravena), n.seznam.aktivni());
+		Assert.assertEquals("zapnutí upravené kopie vypnulo šablonu", Arrays.asList(upravena), n.seznam.aktivni());
 		Assert.assertTrue(n.zapnuto);
+	}
+
+	@Test
+	public void aktivniSablonyUlozeneSeStarymNazvemSeNactouPodSoucasnym() {
+		final MapoveUloziste u = new MapoveUloziste();
+		u.put("format", "1");
+		u.put("aktivni", "360° of Prague\n360° od domova\n360° of the Czech Republic");
+		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+		Assert.assertEquals(2, n.preskoceno);
+		Assert.assertEquals(Arrays.asList(Sablony.NAZEV_PRAHA), Arrays.asList(n.seznam.aktivni().get(0).nazev()));
+		Assert.assertEquals(1, n.seznam.aktivni().size());
+		NastaveniChallenge.uloz(n.seznam, true, u);
+		Assert.assertTrue(u.get("aktivni").contains(Sablony.NAZEV_PRAHA));
+		Assert.assertEquals(Sablony.NAZEV_PRAHA, u.get("aktivni"));
+	}
+
+	@Test
+	public void staryAnovyNazevTehozSablonyJsouJednaAktivni() {
+		final MapoveUloziste u = new MapoveUloziste();
+		u.put("format", "1");
+		u.put("aktivni", "360° of Prague\n" + Sablony.NAZEV_PRAHA);
+		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+		Assert.assertEquals(1, n.seznam.aktivni().size());
+	}
+
+	@Test
+	public void vlastniKopieSeStarymNazvemZustavaBezeZmeny() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		final Challenge stara = s.ulozVlastni(new Challenge("360° of Prague (vlastní)", Typ.SEKTORY_360, Stred.souradnice(50.0, 14.0), OblastDef.zadna(), ZdrojPravidel.PGC));
+		s.aktivuj(stara.nazev());
+		NastaveniChallenge.uloz(s, true, u);
+		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+		Assert.assertEquals(Arrays.asList(stara), n.seznam.vlastni());
+		Assert.assertEquals(Arrays.asList(stara), n.seznam.aktivni());
+	}
+
+	@Test
+	public void nenabizenaChallengeSeUUlozenychAktivnichPreskociBezChybyAZapneSeDalsi() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam(Sablony.vse(), 5);
+		s.ulozVlastni(new Challenge("Kal", Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		s.ulozVlastni(vlastni("B", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		s.aktivuj("Kal");
+		s.aktivuj("B");
+		NastaveniChallenge.uloz(s, true, u);
+		final NastaveniChallenge.Nacteno vse = NastaveniChallenge.nacti(u);
+		Assert.assertEquals("bez omezení první uložená", "Kal", vse.seznam.aktivni().get(0).nazev());
+		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u, c -> c.typ() != Typ.KALENDAR);
+		Assert.assertEquals(Arrays.asList("B"), Arrays.asList(n.seznam.aktivni().get(0).nazev()));
+		Assert.assertEquals(1, n.seznam.aktivni().size());
+		Assert.assertEquals("nenabízená není chyba", 0, n.preskoceno);
+		Assert.assertNotNull("definice zůstala", n.seznam.najdi("Kal"));
 	}
 }
