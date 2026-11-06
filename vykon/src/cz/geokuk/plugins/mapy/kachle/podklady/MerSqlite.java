@@ -262,7 +262,6 @@ public final class MerSqlite {
 		final ReentrantReadWriteLock zamek = new ReentrantReadWriteLock(true);
 		final AtomicBoolean konec = new AtomicBoolean();
 		final List<Thread> vlakna = new ArrayList<>();
-		final List<long[]> cteniLat = new ArrayList<>();
 		final long[][] lat = new long[ctenaru][];
 		final int[] pocty = new int[ctenaru];
 		for (int v = 0; v < ctenaru; v++) {
