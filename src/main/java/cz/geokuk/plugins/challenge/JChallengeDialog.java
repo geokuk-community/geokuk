@@ -208,7 +208,7 @@ public class JChallengeDialog extends JMyDialog0 {
 				k.setEnabled(uprava);
 			}
 			aktivni.setEnabled(c != null && (!jeNedostupny(c) || model.jeAktivni(c)));
-			kopie.setEnabled(jeSablona(c));
+			kopie.setEnabled(c != null && !jeNedostupny(c));
 			smazat.setEnabled(c != null && !jeSablona(c));
 			chyba.setText(" ");
 			if (c == null) {
@@ -260,9 +260,9 @@ public class JChallengeDialog extends JMyDialog0 {
 
 	private void vytvorKopii() {
 		final Challenge c = seznam.getSelectedValue();
-		if (jeSablona(c)) {
+		if (c != null && !jeNedostupny(c)) {
 			try {
-				obnovSeznam(model.kopieSablony(c));
+				obnovSeznam(jeSablona(c) ? model.kopieSablony(c) : model.kopieVlastni(c));
 			} catch (final ChallengeChyba e) {
 				chyba.setText(e.getMessage());
 			}

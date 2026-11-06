@@ -124,7 +124,7 @@ public class JChallengeDialogTest {
 			Assert.assertEquals("360° od domova (vlastní)", vybrana.nazev());
 			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
 			Assert.assertTrue(tlacitko("Smazat").isEnabled());
-			Assert.assertFalse(tlacitko("Vytvořit kopii…").isEnabled());
+			Assert.assertTrue(tlacitko("Vytvořit kopii…").isEnabled());
 			Assert.assertEquals(1, model.vlastni().size());
 		});
 	}
@@ -360,5 +360,21 @@ public class JChallengeDialogTest {
 				zvetsiPismo(k, meritko);
 			}
 		}
+	}
+
+	@Test
+	public void kopieVlastniChallengeJeVybranaNeaktivniAJdeUpravit() throws Exception {
+		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
+			final Challenge vlastni = seznam().getSelectedValue();
+			Assert.assertTrue("kopii jde vytvořit i z vlastní", tlacitko("Vytvořit kopii…").isEnabled());
+			tlacitko("Vytvořit kopii…").doClick();
+			final Challenge kopie = seznam().getSelectedValue();
+			Assert.assertEquals(vlastni.nazev() + " (kopie)", kopie.nazev());
+			Assert.assertEquals(vlastni.typ(), kopie.typ());
+			Assert.assertFalse(model.jeAktivni(kopie));
+			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
+			Assert.assertEquals(2, model.vlastni().size());
+		});
 	}
 }
