@@ -126,6 +126,19 @@ public class PrehledChallengeTest {
 	}
 
 	@Test
+	public void tentyzVysledekDaTentyzPrehledNovyVysledekNovy() throws Exception {
+		final Challenge c = model.ulozVlastni(sektory("A", Stred.domov()));
+		model.aktivuj(c);
+		model.nastavVysledek(c, vysledekSektoru(), 50.0, 14.0);
+		naEdt();
+		final PrehledChallenge p = model.prehled();
+		Assert.assertSame("tentýž výsledek, tentýž objekt", p, model.prehled());
+		model.nastavVysledek(c, vysledekSektoru(), 50.0, 14.0);
+		naEdt();
+		Assert.assertNotSame("nový výsledek, nový přehled", p, model.prehled());
+	}
+
+	@Test
 	public void prehledSektoruMaBarvuSplnenoStredAStitky() throws Exception {
 		final Challenge c = model.ulozVlastni(sektory("A", Stred.domov()));
 		model.aktivuj(c);

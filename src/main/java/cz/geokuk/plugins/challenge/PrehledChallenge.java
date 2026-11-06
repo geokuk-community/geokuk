@@ -8,9 +8,6 @@ import cz.geokuk.plugins.challenge.Challenge.Typ;
  */
 public final class PrehledChallenge {
 
-	/** Pevná paleta; challenge dostane barvu podle názvu, ne podle pořadí v seznamu, takže se nezmění smazáním jiné. */
-	private static final int[] PALETA = { 0xE41A1C, 0x377EB8, 0x4DAF4A, 0x984EA3, 0xFF7F00, 0x00A6A6, 0xA65628, 0xF781BF };
-
 	private final Challenge challenge;
 	private final Object zdroj;
 	private final VysledekSektoru sektory;
