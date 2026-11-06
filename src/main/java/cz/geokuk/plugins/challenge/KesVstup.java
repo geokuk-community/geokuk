@@ -17,6 +17,7 @@ public final class KesVstup implements VstupKes, VstupDT, VstupKalendar {
 	private final Kesoid kesoid;
 	private final Wpt hlavni;
 	private final ZoneId pasmo;
+	private String typ;
 
 	private KesVstup(final Kesoid kesoid, final Wpt hlavni, final ZoneId pasmo) {
 		this.kesoid = kesoid;
@@ -130,10 +131,13 @@ public final class KesVstup implements VstupKes, VstupDT, VstupKalendar {
 	private static final java.util.Set<String> MIMO_KANDIDATY = new java.util.HashSet<>(java.util.Arrays.asList("gps adventures exhibit", "community celebration event",
 			"lost and found event caches", "giga-event cache"));
 
-	/** Typ keše podle gc.com (hlavní waypoint ho nese v symbolu); u nalezených keší z GeoGetu a GSAKu je symbol „Geocache Found“, takže typ nezná. */
+	/** Typ keše podle gc.com (hlavní waypoint ho nese v symbolu, i u nalezených keší). */
 	private String typ() {
-		final String sym = hlavni.getSym();
-		return sym == null ? "" : sym.trim().toLowerCase(java.util.Locale.ROOT);
+		if (typ == null) {
+			final String sym = hlavni.getSym();
+			typ = sym == null ? "" : sym.trim().toLowerCase(java.util.Locale.ROOT);
+		}
+		return typ;
 	}
 
 	@Override

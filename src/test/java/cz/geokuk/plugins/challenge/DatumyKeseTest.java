@@ -19,6 +19,8 @@ public class DatumyKeseTest {
 		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("  2026-03-14T23:30  ", PRAHA));
 		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("20260314", PRAHA));
 		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("202603142330", PRAHA));
+		Assert.assertEquals("nejdelší čtená číselná podoba", LocalDate.of(2026, 3, 14), DatumyKese.datum("20260314233000", PRAHA));
+		Assert.assertNull("příliš dlouhé", DatumyKese.datum("202603142330000", PRAHA));
 	}
 
 	@Test
@@ -68,5 +70,24 @@ public class DatumyKeseTest {
 	@Test
 	public void posunBezDvojteckySeBereJakoBezZony() {
 		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14T23:30:00+0100", ZoneId.of("Asia/Tokyo")));
+	}
+
+	@Test
+	public void pulnocSZonouZUJeDatumBezPrevodu() {
+		for (final String pasmo : new String[] { "America/New_York", "Pacific/Honolulu", "UTC", "Europe/Prague", "Asia/Tokyo" }) {
+			Assert.assertEquals(pasmo, LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14T00:00:00Z", ZoneId.of(pasmo)));
+		}
+		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14T00:00Z", ZoneId.of("America/New_York")));
+		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14T00:00:00.000Z", ZoneId.of("America/New_York")));
+		Assert.assertEquals(LocalDate.of(2026, 3, 14), DatumyKese.datum("2026-03-14 00:00:00Z", ZoneId.of("America/New_York")));
+	}
+
+	@Test
+	public void jinyCasSZonouZUSePrevadi() {
+		Assert.assertEquals(LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:00:01Z", ZoneId.of("America/New_York")));
+		Assert.assertEquals(LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:01:00Z", ZoneId.of("America/New_York")));
+		Assert.assertEquals(LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:00:00.001Z", ZoneId.of("America/New_York")));
+		Assert.assertEquals("půlnoc s posunem +01:00 je 4. 3. v New Yorku", LocalDate.of(2024, 3, 4), DatumyKese.datum("2024-03-05T00:00:00+01:00", ZoneId.of("America/New_York")));
+		Assert.assertEquals("posun jiný než Z je skutečný okamžik", LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:00:00+02:00", ZoneId.of("UTC")));
 	}
 }
