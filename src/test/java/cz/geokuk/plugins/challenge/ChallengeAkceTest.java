@@ -120,7 +120,7 @@ public class ChallengeAkceTest {
 			}
 		};
 		final int[] klavesy = { KeyEvent.VK_UP, KeyEvent.VK_RIGHT, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT };
-		for (final cz.geokuk.core.coordinates.ESmer smer : cz.geokuk.core.coordinates.ESmer.values()) {
+		for (final SmerSkoku smer : SmerSkoku.values()) {
 			final ChallengeSkokAction skok = new ChallengeSkokAction(smer);
 			Assert.assertEquals(KeyStroke.getKeyStroke(klavesy[smer.ordinal()], java.awt.event.InputEvent.SHIFT_DOWN_MASK), skok.getValue(Action.ACCELERATOR_KEY));
 			Assert.assertFalse("bez lišty nejde", skok.isEnabled());
@@ -177,6 +177,33 @@ public class ChallengeAkceTest {
 		Assert.assertEquals(2, vystredeno.size());
 		Assert.assertEquals("GC1", ChallengeAkce.prejdi(model, p, false).id());
 		Assert.assertEquals("GC1", vystredeno.get(2).id());
+	}
+
+	@Test
+	public void shiftSipkaVyberePlanovacemKandidataVeSmeru() throws Exception {
+		priravVysledek();
+		model.setZapnuto(true);
+		final PlanovacChallenge p = planovac();
+		final java.util.List<String> zpravy = new java.util.ArrayList<>();
+		final cz.geokuk.plugins.kesoid.ToastModel toast = new cz.geokuk.plugins.kesoid.ToastModel() {
+			@Override
+			public void ukaz(final String text) {
+				zpravy.add(text);
+			}
+		};
+		final ChallengeSkokAction sever = new ChallengeSkokAction(SmerSkoku.SEVER);
+		final ChallengeSkokAction jih = new ChallengeSkokAction(SmerSkoku.JIH);
+		for (final ChallengeSkokAction a : new ChallengeSkokAction[] { sever, jih }) {
+			a.inject(model);
+			a.inject(toast);
+			a.setPlanovac(() -> p);
+		}
+		sever.actionPerformed(new ActionEvent(this, 0, ""));
+		Assert.assertEquals("na severu je kandidát, mapa se na něj vystředí", 1, vystredeno.size());
+		Assert.assertTrue("bez zprávy", zpravy.isEmpty());
+		jih.actionPerformed(new ActionEvent(this, 0, ""));
+		Assert.assertEquals("na jihu nikdo", java.util.Collections.singletonList("Challenge – žádný kandidát na jih"), zpravy);
+		Assert.assertEquals(1, vystredeno.size());
 	}
 
 	@Test
