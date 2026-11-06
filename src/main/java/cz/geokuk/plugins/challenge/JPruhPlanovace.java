@@ -170,6 +170,11 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		obnov();
 	}
 
+	/** Sektory (prstenec, klín, čára) má jen challenge 360°. */
+	static boolean maSektory(final Challenge.Typ typ) {
+		return typ == Challenge.Typ.SEKTORY_360;
+	}
+
 	/** Co počítá odznak: chybějící sektory, políčka nebo dny podle typu challenge. */
 	static String popisChybejicich(final Challenge.Typ typ) {
 		switch (typ) {
@@ -321,9 +326,19 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/** Barva zobrazené challenge, bez ní šedá. */
 	/** Akcent skinu: proužek zapnutého přepínače. */
-	static Color akcent() {
-		final Color c = javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControlDarkShadow();
-		return c != null ? c : Color.GRAY;
+	/** Barva skinu, která se od daného pozadí liší nejvíc jasem: zapnutý přepínač se tak nesplete s nedostupným. */
+	static Color akcentNa(final Color pozadi) {
+		final Color[] kandidati = { javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControlDarkShadow(), javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControl(),
+				javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControlHighlight(), javax.swing.plaf.metal.MetalLookAndFeel.getFocusColor() };
+		Color nej = Color.GRAY;
+		double rozdil = -1;
+		for (final Color c : kandidati) {
+			if (c != null && (pozadi == null || Math.abs(jas(c) - jas(pozadi)) > rozdil)) {
+				rozdil = pozadi == null ? 0 : Math.abs(jas(c) - jas(pozadi));
+				nej = c;
+			}
+		}
+		return nej;
 	}
 
 	private void obnov() {
@@ -341,11 +356,12 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			odznak.nastav("–");
 		}
 		kandidati.setSelected(maChallenge && stav.jenKandidati());
-		sektory.setSelected(model == null || model.isKresliSektory());
+		sektory.setSelected((model == null || model.isKresliSektory()) && maChallenge && maSektory(stav.typ()));
 		stitky.setSelected(model == null || model.isKresliStitky());
-		for (final AbstractButton b : new AbstractButton[] { odznak, zpet, dal, kandidati, sektory, stitky }) {
+		for (final AbstractButton b : new AbstractButton[] { odznak, zpet, dal, kandidati, stitky }) {
 			b.setEnabled(maChallenge);
 		}
+		sektory.setEnabled(maChallenge && maSektory(stav.typ()));
 		if (!isVisible()) {
 			setVisible(true);
 		}
@@ -425,7 +441,9 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 				prepniKandidaty();
 			});
 			m.add(k);
-			m.add(prepinacVMenu("Sektory na mapě", model.isKresliSektory(), model::setKresliSektory));
+			final JCheckBoxMenuItem sekt = prepinacVMenu("Sektory na mapě", model.isKresliSektory(), model::setKresliSektory);
+			sekt.setEnabled(sektory.isEnabled());
+			m.add(sekt);
 			m.add(prepinacVMenu("Štítky u kandidátů", model.isKresliStitky(), model::setKresliStitky));
 		}
 		m.addSeparator();
@@ -497,9 +515,11 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	/** Přepínač lišty: text a ikona v barvě podle skutečného pozadí, zapnutý má pod obsahem proužek v akcentu skinu. */
 	static final class Prepinac extends JToggleButton {
 		private static final long serialVersionUID = 1L;
+
 		Prepinac(final Icon ikona) {
 			super(ikona);
 			addItemListener(e -> obnovPopredi());
+			addPropertyChangeListener("enabled", e -> obnovPopredi());
 		}
 
 		@Override
@@ -508,17 +528,32 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			obnovPopredi();
 		}
 
+		/** Pozadí zapnutého přepínače: hlavní barva skinu, aby se zapnutý nespletl s nedostupným. */
+		static Color pozadiZapnuteho() {
+			final Color c = javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControl();
+			return c != null ? c : UIManager.getColor("ToggleButton.select");
+		}
+
+		boolean jeZvyrazneny() {
+			return isSelected() && isEnabled();
+		}
+
 		void obnovPopredi() {
-			final Color pozadi = isSelected() ? UIManager.getColor("ToggleButton.select") : UIManager.getColor("ToggleButton.background");
+			final Color pozadi = jeZvyrazneny() ? pozadiZapnuteho() : UIManager.getColor(isSelected() ? "ToggleButton.select" : "ToggleButton.background");
 			setForeground(popredi(pozadi != null ? pozadi : UIManager.getColor("Panel.background")));
+			setContentAreaFilled(!jeZvyrazneny());
 		}
 
 		@Override
 		protected void paintComponent(final Graphics g) {
+			if (jeZvyrazneny()) {
+				g.setColor(pozadiZapnuteho());
+				g.fillRect(0, 0, getWidth(), getHeight());
+			}
 			super.paintComponent(g);
-			if (isSelected() && isEnabled()) {
-				g.setColor(akcent());
-				g.fillRect(3, getHeight() - 4, getWidth() - 6, 2);
+			if (jeZvyrazneny()) {
+				g.setColor(akcentNa(pozadiZapnuteho()));
+				g.fillRect(3, getHeight() - 5, getWidth() - 6, 3);
 			}
 		}
 	}

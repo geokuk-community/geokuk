@@ -161,6 +161,7 @@ public class JListaPlanovaceTest {
 	@Test
 	public void akcePrepinaceSleduje() {
 		priprav(1280);
+		model.aktivuj(Sablony.cesko360());
 		final ChallengeSektoryAction a = new ChallengeSektoryAction();
 		a.inject(model);
 		model.setKresliSektory(false);
@@ -168,7 +169,63 @@ public class JListaPlanovaceTest {
 		e.setModel(model);
 		a.onEvent(e);
 		Assert.assertFalse(a.isSelected());
-		Assert.assertTrue("zapnutý plánovač", a.isEnabled());
+		Assert.assertTrue("zapnutý plánovač s 360°", a.isEnabled());
+	}
+
+	@Test
+	public void sektoryJsouUDtNedostupne() {
+		priprav(1280);
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		pruh.vyber(dt);
+		final javax.swing.AbstractButton sektory = (javax.swing.AbstractButton) pruh.getComponent(6);
+		final javax.swing.AbstractButton stitky = (javax.swing.AbstractButton) pruh.getComponent(7);
+		Assert.assertFalse("D/T sektory nemá", sektory.isEnabled());
+		Assert.assertFalse("nedostupné Sektory nevypadají zapnuté", sektory.isSelected());
+		Assert.assertTrue("volba v modelu zůstává", model.isKresliSektory());
+		Assert.assertTrue(stitky.isEnabled());
+		final ChallengeSektoryAction a = new ChallengeSektoryAction();
+		final ChallengeZmenenyEvent e = new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.ZOBRAZENA, null);
+		e.setModel(model);
+		a.onEvent(e);
+		Assert.assertFalse("ani v menu", a.isEnabled());
+		pruh.vyber(Sablony.cesko360());
+		Assert.assertTrue(sektory.isEnabled());
+		a.onEvent(e);
+		Assert.assertTrue(a.isEnabled());
+	}
+
+	/** Zapnutý přepínač se pozná od nedostupného: má proužek, který se od jeho pozadí výrazně liší jasem. */
+	@Test
+	public void zapnutyPrepinacSeLisiOdNedostupneho() throws Exception {
+		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
+		final MetalTheme puvodniTema = MetalLookAndFeel.getCurrentTheme();
+		try {
+			for (final MetalTheme t : new MetalTheme[] { new OceanTheme(), new DefaultMetalTheme(), new CharcoalTheme() }) {
+				MetalLookAndFeel.setCurrentTheme(t);
+				UIManager.setLookAndFeel(new MetalLookAndFeel());
+				SwingUtilities.invokeAndWait(() -> {
+					final java.awt.image.BufferedImage[] img = new java.awt.image.BufferedImage[2];
+					for (int i = 0; i < 2; i++) {
+						final JPruhPlanovace.Prepinac p = new JPruhPlanovace.Prepinac(null);
+						p.setText("Sektory");
+						p.setSelected(true);
+						p.setEnabled(i == 0);
+						p.setSize(84, 20);
+						img[i] = new java.awt.image.BufferedImage(84, 20, java.awt.image.BufferedImage.TYPE_INT_RGB);
+						final java.awt.Graphics2D g = img[i].createGraphics();
+						p.paint(g);
+						g.dispose();
+					}
+					final Color zapnuty = new Color(img[0].getRGB(6, 4));
+					Assert.assertNotEquals(t.getName() + ": proužek jen u dostupného", img[0].getRGB(42, 16), img[1].getRGB(42, 16));
+					final Color prouzek = new Color(img[0].getRGB(42, 16));
+					Assert.assertTrue(t.getName() + ": proužek " + prouzek + " na " + zapnuty, Math.abs(JPruhPlanovace.jas(prouzek) - JPruhPlanovace.jas(zapnuty)) > 0.2);
+				});
+			}
+		} finally {
+			MetalLookAndFeel.setCurrentTheme(puvodniTema);
+			UIManager.setLookAndFeel(puvodni);
+		}
 	}
 
 	@Test

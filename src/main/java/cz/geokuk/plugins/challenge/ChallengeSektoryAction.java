@@ -20,7 +20,8 @@ public class ChallengeSektoryAction extends ToggleAction0 {
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
 		final ChallengeModel m = event.getModel();
-		setEnabled(m.jeZapnuto());
+		final Challenge c = m.zobrazena();
+		setEnabled(m.jeZapnuto() && c != null && JPruhPlanovace.maSektory(c.typ()));
 		setSelected(m.isKresliSektory());
 	}
 
