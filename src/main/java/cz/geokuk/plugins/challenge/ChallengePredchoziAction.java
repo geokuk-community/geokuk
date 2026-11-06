@@ -31,7 +31,7 @@ public class ChallengePredchoziAction extends Action0 {
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
-		setEnabled(ChallengeAkce.dostupne(event.getModel()) && ChallengeAkce.lzePredchozi(event.getModel().zobrazena()));
+		setEnabled(ChallengeAkce.dostupne(event.getModel()));
 	}
 
 	/** Plánovač pro testy, kde není celý program. */

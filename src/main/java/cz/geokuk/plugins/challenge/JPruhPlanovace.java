@@ -163,7 +163,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			odznak.nastav(stav.badge() < 0 ? "…" : Integer.toString(stav.badge()));
 			kandidati.setSelected(stav.jenKandidati());
 			typ.setText(stav.stitekTypu());
-			zpet.setEnabled(ChallengeAkce.lzePredchozi(stav.challenge()));
 		}
 		if (vidim != isVisible()) {
 			setVisible(vidim);

@@ -10,11 +10,6 @@ final class ChallengeAkce {
 		return model != null && model.jePruhViditelny();
 	}
 
-	/** Předchozí chybějící umí zatím jen typ 360°. */
-	static boolean lzePredchozi(final Challenge c) {
-		return c != null && c.typ() == Challenge.Typ.SEKTORY_360;
-	}
-
 	/**
 	 * Přejde na další nebo předchozí chybějící u hlavní challenge: vybere kandidáta a vystředí na něj mapu. Bez modelu, plánovače nebo aktivní challenge nedělá nic a vrací null.
 	 */
