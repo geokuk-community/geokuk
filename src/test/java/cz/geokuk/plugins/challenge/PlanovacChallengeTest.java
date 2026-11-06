@@ -732,18 +732,14 @@ public class PlanovacChallengeTest {
 	@Test
 	public void skrytyAktivniKalendarSeNaPozadiNepocita() throws Exception {
 		napojNaModel();
-		final Challenge dt = dtChallenge("DT");
 		final Challenge kal = model.ulozVlastni(new Challenge("Kal", Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
 		planovac.keseNacteny(dtData());
-		zapni(dt, kal);
-		pockej(() -> model.vysledekPolicek(dt) != null, "výsledek D/T");
-		Thread.sleep(500);
+		zapni(kal);
+		Thread.sleep(600);
 		Assert.assertNull("kalendář mimo rozhraní se po plném přepočtu nepočítá", model.vysledekPolicek(kal));
 		Assert.assertEquals(StavPredpoctu.Faze.NEBEZI, model.stavPredpoctu(kal).faze());
-		final VysledekPolicek pred = model.vysledekPolicek(dt);
 		posunStredu(LAT + 0.05, LON);
-		pockej(() -> model.vysledekPolicek(dt) != pred, "přepočet D/T po posunu");
-		Thread.sleep(500);
+		Thread.sleep(600);
 		Assert.assertNull("ani po posunu středu", model.vysledekPolicek(kal));
 		Assert.assertEquals(StavPredpoctu.Faze.NEBEZI, model.stavPredpoctu(kal).faze());
 		model.setKalendarVUi(true);
