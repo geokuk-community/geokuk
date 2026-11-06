@@ -186,15 +186,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	private void prejdi(final boolean dopredu) {
-		final Challenge c = challenge();
-		if (c == null || sluzba == null || sluzba.planovac() == null) {
-			return;
-		}
-		if (dopredu) {
-			sluzba.planovac().dalsiChybejici(c);
-		} else {
-			sluzba.planovac().predchoziChybejici(c);
-		}
+		ChallengeAkce.prejdi(model, sluzba == null ? null : sluzba.planovac(), dopredu);
 	}
 
 	/** Červený odznak s počtem chybějících. */

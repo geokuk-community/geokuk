@@ -2,6 +2,7 @@ package cz.geokuk.plugins.challenge;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.util.function.Supplier;
 
 import javax.swing.KeyStroke;
 
@@ -12,7 +13,7 @@ public class ChallengePredchoziAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
 	private transient ChallengeModel model;
-	private transient PlanovacChallengeSluzba sluzba;
+	private transient Supplier<PlanovacChallenge> planovac = () -> null;
 
 	public ChallengePredchoziAction() {
 		super("Předchozí chybějící");
@@ -26,19 +27,20 @@ public class ChallengePredchoziAction extends Action0 {
 	}
 
 	public void inject(final PlanovacChallengeSluzba sluzba) {
-		this.sluzba = sluzba;
+		planovac = sluzba::planovac;
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
 		setEnabled(ChallengeAkce.dostupne(event.getModel()));
 	}
 
+	/** Plánovač pro testy, kde není celý program. */
+	void setPlanovac(final Supplier<PlanovacChallenge> planovac) {
+		this.planovac = planovac;
+	}
+
 	@Override
 	public void actionPerformed(final ActionEvent e) {
-		final Challenge c = model.hlavni();
-		if (c == null || sluzba.planovac() == null) {
-			return;
-		}
-		sluzba.planovac().predchoziChybejici(c);
+		ChallengeAkce.prejdi(model, planovac.get(), false);
 	}
 }
