@@ -226,4 +226,49 @@ public class ChallengeAkceTest {
 		model.setZobrazena(Sablony.cesko360());
 		Assert.assertFalse("pro první challenge filtr zapnutý není", kandidati.isSelected());
 	}
+
+	private Challenge kalendar() {
+		return model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+	}
+
+	@Test
+	public void ulozenyAktivniKalendarSeNepromitaDoPruhuADtJdeZaNim() {
+		final Challenge kal = kalendar();
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(kal);
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		Assert.assertEquals("kalendář je první aktivní, ale pruh ukazuje D/T", dt, model.zobrazena());
+		Assert.assertTrue(model.jePruhViditelny());
+		Assert.assertEquals(Challenge.Typ.DT_MATICE, model.stavPruhu().typ());
+		Assert.assertEquals("kalendář se nepočítá mezi aktivní v pruhu", 1, model.stavPruhu().pocetAktivnich());
+		Assert.assertTrue(dalsi.isEnabled());
+	}
+
+	@Test
+	public void jenKalendarAktivniPruhNeukazeAAkceJsouVypnute() {
+		final Challenge kal = kalendar();
+		model.aktivuj(kal);
+		model.setZapnuto(true);
+		Assert.assertNull(model.zobrazena());
+		Assert.assertFalse(model.jePruhViditelny());
+		Assert.assertFalse(model.stavPruhu().jeViditelny());
+		Assert.assertFalse(dalsi.isEnabled());
+		Assert.assertTrue("data se nemažou, kalendář zůstává aktivní", model.jeAktivni(kal));
+		try {
+			model.setZobrazena(kal);
+			Assert.fail("kalendář se v pruhu zobrazit nedá");
+		} catch (final ChallengeChyba e) {
+			Assert.assertFalse(e.getMessage().isEmpty());
+		}
+	}
+
+	@Test
+	public void kalendarSeVUiNenabizi() {
+		Assert.assertTrue(model.jeVUi(Sablony.cesko360()));
+		final Challenge kal = kalendar();
+		Assert.assertFalse(model.jeVUi(kal));
+		model.setKalendarVUi(true);
+		Assert.assertTrue("jen pro testy a budoucí vydání", model.jeVUi(kal));
+	}
 }
