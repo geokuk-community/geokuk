@@ -276,6 +276,65 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
+	public void sipkaDoleNezasahujeDoMeritkaVCelemRozsahuSmeru() throws Exception {
+		zobraz(TvarPlanovaceTest.vysledek(), 48.0, 14.0);
+		final Rectangle meritko = cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(W, H));
+		meritko.grow(14, 0);
+		final Coord c = mapa(50.0, 14.0, 13);
+		int poblizLevehoKonce = 0;
+		for (final double lat : new double[] { 49.2, 48.5 }) {
+			for (double lon = 11.0; lon <= 17.0; lon += 0.1) {
+				zobraz(TvarPlanovaceTest.vysledek(), lat, lon);
+				nakresli(nad, c);
+				final Rectangle s = nad.sipka();
+				Assert.assertNotNull("šipka pro " + lat + ", " + lon, s);
+				Assert.assertFalse("šipka a štítek mimo měřítko i s přesahem popisku (" + lat + ", " + lon + "): " + s + " × " + meritko, s.intersects(meritko));
+				if (s.y > H - 120 && Math.abs(s.x + s.width / 2 - meritko.x) < 80) {
+					poblizLevehoKonce++;
+				}
+			}
+		}
+		Assert.assertTrue("zkouška opravdu zasáhla okolí konců měřítka: " + poblizLevehoKonce, poblizLevehoKonce > 0);
+	}
+
+	@Test
+	public void stitkyStreduAVybranehoSektoruNepokryvajiZnackuStredu() throws Exception {
+		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
+		model.nastavVybranyKandidat(model.zobrazena(), new VybranyKandidat("GC1", 50.0005, 14.0004, 150, 100));
+		SwingUtilities.invokeAndWait(() -> {});
+		final Coord c = mapa(50.0, 14.0, 17);
+		nakresli(nad, c);
+		final java.awt.Point s = PixelyMapy.transform(c, PixelyMapy.mou(50.0, 14.0), new java.awt.Point());
+		final Rectangle znacka = new Rectangle(s.x - 12, s.y - 12, 24, 24);
+		int kryji = 0;
+		for (final Rectangle r : nad.obdelnikyStitku()) {
+			if (r.intersects(znacka)) {
+				kryji++;
+				Assert.assertEquals("jen vlastní rezervace značky: " + r, znacka.width, r.width);
+			}
+		}
+		Assert.assertEquals(1, kryji);
+	}
+
+	@Test
+	public void podkladSeStaviMimoEdtADoDokonceniSeNekresli() throws Exception {
+		final List<Runnable> fronta = new ArrayList<>();
+		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
+		pod.setStavba(fronta::add);
+		nad.setStavba(fronta::add);
+		final Coord c = mapa(50.01, 14.0, 14);
+		BufferedImage img = nakresli(nad, c);
+		Assert.assertEquals("podklad se ještě staví", 0, img.getRGB(W / 2, H / 2) >>> 24);
+		Assert.assertEquals("stavba je jedna pro obě vrstvy", 1, fronta.size());
+		SwingUtilities.invokeAndWait(() -> fronta.get(0).run());
+		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {});
+		img = nakresli(nad, c);
+		Assert.assertNotEquals("po dokončení se kreslí", 0, nad.obdelnikyStitku().size());
+		Assert.assertEquals(2, nad.posledniZnacek());
+	}
+
+	@Test
 	public void stitekMaCitelnyTextVeTrechTematech() {
 		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
 		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();

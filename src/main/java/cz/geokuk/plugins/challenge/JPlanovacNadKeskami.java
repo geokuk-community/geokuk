@@ -122,7 +122,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			if (kresliSektory() && t.vybranyPozice != null && t.popisVybraneho != null && t.stred != null) {
 				final Point s = PixelyMapy.transform(c, t.stred, new Point());
 				final Point k = PixelyMapy.transform(c, t.vybranyPozice, new Point());
-				umistiOkoloBodu(g, tucne, t.popisVybraneho, (s.x + k.x) / 2, (s.y + k.y) / 2, 6);
+				umistiOkoloBodu(g, tucne, t.popisVybraneho, k.x, k.y, POLOMER_KROUZKU + 12);
 			}
 			if (kresliStitky()) {
 				kresliKandidaty(g, c, t, pismo);
@@ -150,6 +150,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			g.setFont(tucne);
 			final FontMetrics fm = g.getFontMetrics();
 			g.drawString("S", s.x - fm.stringWidth("S") / 2, s.y + (fm.getAscent() - fm.getDescent()) / 2);
+			zapis(s.x - r - 3, s.y - r - 3, 2 * r + 6, 2 * r + 6);
 			umistiOkoloBodu(g, tucne, TextyKresleni.stred(t.popisStredu), s.x, s.y, r + 4);
 			return;
 		}

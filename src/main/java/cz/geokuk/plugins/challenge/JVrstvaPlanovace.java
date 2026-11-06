@@ -15,7 +15,11 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 
 	private static final long serialVersionUID = 1L;
 
+	/** Popisek „0“ na začátku stupnice měřítka vyčnívá přes okraj jeho oblasti; o tolik se překážka rozšíří na obě strany. */
+	static final int PRESAH_MERITKA = 16;
+
 	protected transient ChallengeModel model;
+	private transient java.util.concurrent.Executor stavba;
 	private transient TvarPlanovace tvar;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
 
@@ -37,7 +41,9 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 	List<Rectangle> prekazky(final int sirka, final int vyska) {
 		final Collection<Rectangle> panely = prekazky.get();
 		final List<Rectangle> l = new ArrayList<>(panely);
-		l.add(cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(sirka, vyska)));
+		final Rectangle meritko = cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(sirka, vyska));
+		meritko.grow(PRESAH_MERITKA, 0);
+		l.add(meritko);
 		l.add(cz.geokuk.framework.RozmisteniPrekryvu.pruhPlanovace(cz.geokuk.framework.RozmisteniPrekryvu.volnaSirkaPruhu(sirka, panely)));
 		l.add(cz.geokuk.framework.RozmisteniPrekryvu.UKAZATEL_VYKONU);
 		return l;
@@ -65,16 +71,21 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 		return model == null || model.isKresliStitky();
 	}
 
-	/** Podklad kreslení pro zobrazenou challenge, nebo null, když se nic nekreslí. */
+	/** Vlákno pro stavbu podkladu mimo EDT; bez něj (výchozí, testy) se staví hned. */
+	public void setStavba(final java.util.concurrent.Executor stavba) {
+		this.stavba = stavba;
+	}
+
+	/** Podklad kreslení pro zobrazenou challenge, nebo null, když se nic nekreslí. Dokud se nový staví, kreslí se předchozí. */
 	TvarPlanovace tvar() {
 		final PrehledChallenge p = model == null || !model.jeZapnuto() ? null : model.prehled();
 		if (p == null) {
 			tvar = null;
 			return null;
 		}
-		final VybranyKandidat v = model.vybranyKandidat(p.challenge());
-		if (tvar == null || tvar.prehled != p || tvar.vybrany != v) {
-			tvar = TvarPlanovace.z(p, v);
+		final TvarPlanovace t = TvarCache.dej(p, model.vybranyKandidat(p.challenge()), stavba, this::repaint);
+		if (t != null) {
+			tvar = t;
 		}
 		return tvar;
 	}

@@ -195,6 +195,13 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			toast.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
 			popupPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
 			planovacNad.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
+			final java.util.concurrent.Executor stavbaPlanovace = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+				final Thread vlakno = new Thread(r, "Podklad plánovače");
+				vlakno.setDaemon(true);
+				return vlakno;
+			});
+			planovacNad.setStavba(stavbaPlanovace);
+			planovacPod.setStavba(stavbaPlanovace);
 			pruhPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
 
 			smrizema.add(pruhPlanovace, 0);
