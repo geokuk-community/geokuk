@@ -462,6 +462,22 @@ public class PlanovacChallengeTest {
 		Assert.assertNull(model.vysledek(c));
 	}
 
+	@Test
+	public void vypocetBeziNaPojmenovanemDemonuSNizsiPriorite() throws Exception {
+		napojNaModel();
+		final List<Thread> vlakna = new CopyOnWriteArrayList<>();
+		planovac.poVytvoreni = p -> vlakna.add(Thread.currentThread());
+		final Challenge c = oblastni(ctverec());
+		planovac.keseNacteny(kese(100, 1));
+		zapni(c);
+		pockej(() -> model.vysledek(c) != null, "výsledek");
+		Assert.assertFalse(vlakna.isEmpty());
+		final Thread t = vlakna.get(0);
+		Assert.assertEquals("Plánovač challenge", t.getName());
+		Assert.assertTrue(t.isDaemon());
+		Assert.assertEquals(Thread.NORM_PRIORITY - 2, t.getPriority());
+	}
+
 	// ---- D/T matice a kalendář
 
 	private Challenge dtChallenge(final String nazev) {
@@ -711,5 +727,48 @@ public class PlanovacChallengeTest {
 		final GeometrieSektoru.Bod nad = GeometrieSektoru.bod(LAT, LON, 0, 2_010, GeometrieSektoru.Model.KOULE);
 		posunStredu(nad.lat, nad.lon);
 		pockej(() -> model.vysledekPolicek(c) != prvni, "přepočet po posunu 2010 m");
+	}
+
+	@Test
+	public void predchoziChybejiciPolickaVraciKPredchozimuAVystredujeSektoryJedouDal() throws Exception {
+		napojNaModel();
+		final Challenge c = dtChallenge("DT");
+		Assert.assertNull("bez výsledku", planovac.predchoziChybejici(c));
+		planovac.keseNacteny(dtData());
+		zapni(c);
+		pockej(() -> model.vysledekPolicek(c) != null, "výsledek D/T");
+		Assert.assertNull("nic nebylo vybráno", planovac.predchoziChybejici(c));
+		final String prvni = planovac.dalsiChybejici(c).id();
+		Assert.assertNull("před prvním nic není", planovac.predchoziChybejici(c));
+		final String druhy = planovac.dalsiChybejici(c).id();
+		Assert.assertNotEquals(prvni, druhy);
+		final int vystredeno = this.vystredeno.size();
+		final VybranyKandidat zpet = planovac.predchoziChybejici(c);
+		Assert.assertEquals(prvni, zpet.id());
+		Assert.assertEquals(-1, zpet.sektor());
+		Assert.assertNotNull(zpet.stitek());
+		Assert.assertEquals("mapa se vystředila", vystredeno + 1, this.vystredeno.size());
+		Assert.assertEquals(prvni, this.vystredeno.get(vystredeno).id());
+		pockej(() -> model.vybranyKandidat(c) != null && model.vybranyKandidat(c).id().equals(prvni), "kandidát v modelu");
+	}
+
+	@Test
+	public void predchoziChybejiciSektoruBezeZmeny() throws Exception {
+		napojNaModel();
+		final Challenge c = model.ulozVlastni(vlastni("Domov", Stred.domov(), OblastDef.zadna()));
+		final List<VypocetSektoruTest.Kes> data = new ArrayList<>();
+		for (int s = 0; s < 358; s++) {
+			data.add(VypocetSektoruTest.vAzimutu("N" + s, s + 0.5, 20_000, true));
+		}
+		data.add(VypocetSektoruTest.vAzimutu("K358", 358.5, 10_000, false));
+		data.add(VypocetSektoruTest.vAzimutu("K359", 359.5, 15_000, false));
+		planovac.keseNacteny(data);
+		zapni(c);
+		pockej(() -> model.vysledek(c) != null, "výsledek");
+		final String prvni = planovac.dalsiChybejici(c).id();
+		final String druhy = planovac.dalsiChybejici(c).id();
+		Assert.assertNotEquals(prvni, druhy);
+		Assert.assertEquals(prvni, planovac.predchoziChybejici(c).id());
+		Assert.assertNull("před prvním nic není", planovac.predchoziChybejici(c));
 	}
 }
