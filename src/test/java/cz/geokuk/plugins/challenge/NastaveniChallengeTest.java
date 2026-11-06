@@ -339,4 +339,107 @@ public class NastaveniChallengeTest {
 		NastaveniChallenge.uloz(s, false, v);
 		Assert.assertEquals("1", v.get("verze"));
 	}
+
+	@Test
+	public void ulozenyStavMaPresneKlicePoradiAktivnichAFormat() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.ulozVlastni(vlastni("A", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		s.ulozVlastni(vlastni("B", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		s.aktivuj("B");
+		s.aktivuj("A");
+		NastaveniChallenge.uloz(s, true, u);
+		Assert.assertEquals("B\nA", u.get("aktivni"));
+		Assert.assertEquals("1", u.get("format"));
+		Assert.assertEquals("true", u.get("zapnuto"));
+		Assert.assertEquals("1", u.get("verze"));
+	}
+
+	@Test
+	public void bezAktivnichSeUlozenySeznamAktivnichSmaze() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.ulozVlastni(vlastni("A", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		s.aktivuj("A");
+		NastaveniChallenge.uloz(s, true, u);
+		Assert.assertNotNull(u.get("aktivni"));
+		s.deaktivuj("A");
+		NastaveniChallenge.uloz(s, false, u);
+		Assert.assertNull(u.get("aktivni"));
+		Assert.assertEquals("false", u.get("zapnuto"));
+		Assert.assertTrue(NastaveniChallenge.nacti(u).seznam.aktivni().isEmpty());
+	}
+
+	@Test
+	public void dveUlozeneDefiniceSeStejnymNazvemSeNactouJakoJednaAJednaSePreskoci() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.ulozVlastni(vlastni("Dvojice", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		NastaveniChallenge.uloz(s, false, u);
+		for (final String k : new java.util.ArrayList<>(u.m.keySet())) {
+			if (k.startsWith("definice.1.0.")) {
+				u.put("definice.1.1." + k.substring("definice.1.0.".length()), u.get(k));
+			}
+		}
+		final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+		Assert.assertEquals(1, n.seznam.vlastni().size());
+		Assert.assertEquals(1, n.preskoceno);
+	}
+
+	@Test
+	public void prilisRozsahlaDefiniceSeNeulozi() {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		final String[] kody = new String[200];
+		for (int i = 0; i < kody.length; i++) {
+			kody[i] = "oblast-s-dlouhym-kodem-" + i;
+		}
+		try {
+			s.ulozVlastni(new Challenge("Velká", Typ.SEKTORY_360, Stred.souradnice(50, 14), OblastDef.sada(kody), ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		} catch (final ChallengeChyba e) {
+			return; // odmítnuto už při uložení definice do seznamu
+		}
+		try {
+			NastaveniChallenge.uloz(s, false, u);
+			Assert.fail();
+		} catch (final ChallengeChyba e) {
+			Assert.assertTrue(e.getMessage(), e.getMessage().contains("rozsáhlá"));
+			Assert.assertTrue("nic se nezapsalo", u.m.isEmpty());
+		}
+	}
+
+	private static MapoveUloziste sDefinici(final String klic, final String hodnota) {
+		final MapoveUloziste u = new MapoveUloziste();
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.ulozVlastni(vlastni("Dobrá", ZdrojPravidel.PGC, ZdrojeNalezu.ZAPNUTE));
+		NastaveniChallenge.uloz(s, true, u);
+		u.put("definice.1.7.nazev", "Budoucí");
+		u.put("definice.1.7.typ", "SEKTORY_360");
+		u.put("definice.1.7.zdroj", "PGC");
+		u.put("definice.1.7.stred", "DOMOV");
+		u.put("definice.1.7.oblast", "ZADNA");
+		u.put("definice.1.7." + klic, hodnota);
+		return u;
+	}
+
+	@Test
+	public void definiceSNeznamouHodnotouVyctuNeniDoNastaveniPrepsatelna() {
+		for (final String[] kv : new String[][] { { "typ", "BUDOUCI_TYP" }, { "zdroj", "BUDOUCI" }, { "stred", "BUDOUCI" }, { "oblast", "BUDOUCI" }, { "nalezy", "BUDOUCI" } }) {
+			final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(sDefinici(kv[0], kv[1]));
+			Assert.assertTrue(kv[0], n.neznamyFormat);
+			Assert.assertEquals(kv[0], 1, n.preskoceno);
+			Assert.assertEquals("čitelná definice se načte", "Dobrá", n.seznam.vlastni().get(0).nazev());
+		}
+	}
+
+	@Test
+	public void obycejneChybnaDefiniceUkladaniNezakazuje() {
+		for (final String[] kv : new String[][] { { "stred.lat", "abc" }, { "nazev", "" } }) {
+			final MapoveUloziste u = sDefinici(kv[0], kv[1]);
+			u.put("definice.1.7.stred", "SOURADNICE");
+			final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(u);
+			Assert.assertFalse(kv[0], n.neznamyFormat);
+			Assert.assertEquals(kv[0], 1, n.preskoceno);
+		}
+	}
 }
