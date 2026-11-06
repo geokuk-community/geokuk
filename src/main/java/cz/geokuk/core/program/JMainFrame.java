@@ -105,6 +105,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 
 			final JComponent popisyKesiNaMape = new JPopiskySlide();
 			final JComponent kesky = new JKesoidySlide(false);
+			final cz.geokuk.plugins.challenge.JPlanovacNadKeskami planovacNad = new cz.geokuk.plugins.challenge.JPlanovacNadKeskami();
+			final cz.geokuk.plugins.challenge.JPlanovacPodKeskami planovacPod = new cz.geokuk.plugins.challenge.JPlanovacPodKeskami();
 			final JComponent pozicovnik = new JPozicovnikSlide();
 			final JComponent zvyraznovaciKruhy = new JZvyraznovaciKruhySlide();
 			final JObsazenost obsazenik = new JObsazenost();
@@ -137,7 +139,9 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			smrizema.add(legendaObsazenosti);
 			smrizema.add(cesty);
 			smrizema.add(popisyKesiNaMape);
+			smrizema.add(planovacNad);
 			smrizema.add(kesky);
+			smrizema.add(planovacPod);
 			smrizema.add(pozicovnik);
 			smrizema.add(zvyraznovaciKruhy);
 			smrizema.add(obsazenik);
@@ -163,6 +167,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(cesty);
 			factory.init(popisyKesiNaMape);
 			factory.init(kesky);
+			factory.init(planovacNad);
+			factory.init(planovacPod);
 			factory.init(pozicovnik);
 			factory.init(zvyraznovaciKruhy);
 			factory.init(obsazenik);
