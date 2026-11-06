@@ -12,6 +12,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ public class JChallengeDialogTest {
 
 	@Before
 	public void setUp() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
 		SwingUtilities.invokeAndWait(() -> {
 			model = new ChallengeModel();
 			model.inject(new EventFirer() {
@@ -48,7 +50,9 @@ public class JChallengeDialogTest {
 
 	@After
 	public void tearDown() throws Exception {
-		SwingUtilities.invokeAndWait(() -> dialog.dispose());
+		if (dialog != null) {
+			SwingUtilities.invokeAndWait(() -> dialog.dispose());
+		}
 	}
 
 	private static <T extends Component> List<T> najdi(final Container c, final Class<T> typ, final List<T> vysledek) {
