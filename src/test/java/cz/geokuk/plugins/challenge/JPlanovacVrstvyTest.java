@@ -119,7 +119,7 @@ public class JPlanovacVrstvyTest {
 	@Test
 	public void bezPrepinaceSektoruSePrstenecNekresli() throws Exception {
 		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
-		pod.setSektory(() -> false);
+		model.setKresliSektory(false);
 		final BufferedImage img = nakresli(pod, mapa(50.0, 14.0, 13));
 		for (int y = 0; y < H; y += 3) {
 			for (int x = 0; x < W; x += 3) {
@@ -191,10 +191,10 @@ public class JPlanovacVrstvyTest {
 	@Test
 	public void bezPrepinaceStitkuSeKandidatiNekresli() throws Exception {
 		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
-		nad.setStitky(() -> false);
+		model.setKresliStitky(false);
 		nakresli(nad, mapa(50.01, 14.0, 14));
 		Assert.assertEquals(0, nad.posledniZnacek());
-		nad.setStitky(() -> true);
+		model.setKresliStitky(true);
 		nakresli(nad, mapa(50.01, 14.0, 14));
 		Assert.assertEquals(2, nad.posledniZnacek());
 	}

@@ -195,6 +195,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			toast.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
 			popupPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
 			planovacNad.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
+			pruhPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
 
 			smrizema.add(pruhPlanovace, 0);
 			smrizema.add(popupPlanovace, 0);

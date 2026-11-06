@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import cz.geokuk.core.coord.JSingleSlide0;
@@ -18,8 +17,6 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 
 	protected transient ChallengeModel model;
 	private transient TvarPlanovace tvar;
-	private transient BooleanSupplier sektory = () -> true;
-	private transient BooleanSupplier stitky = () -> true;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
 
 	JVrstvaPlanovace() {
@@ -31,18 +28,6 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 		this.model = model;
 	}
 
-	/** Zdroj přepínače „Sektory“ (prstenec, klín, čára, štítek sektoru); výchozí zapnuto. */
-	public void setSektory(final BooleanSupplier sektory) {
-		this.sektory = sektory;
-		repaint();
-	}
-
-	/** Zdroj přepínače „Štítky“ (značky a štítky kandidátů); výchozí zapnuto. */
-	public void setStitky(final BooleanSupplier stitky) {
-		this.stitky = stitky;
-		repaint();
-	}
-
 	/** Překážky, kterým se značky vyhýbají: panely v rozích a legenda (viz {@link cz.geokuk.framework.RozmisteniPrekryvu#prekazky}); volá se při kreslení. */
 	public void setPrekazky(final Supplier<? extends Collection<Rectangle>> prekazky) {
 		this.prekazky = prekazky;
@@ -50,9 +35,10 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 
 	/** Překážky na mapě dané velikosti: panely a legenda od správce rozmístění, měřítko, pruh plánovače a ukazatel výkonu. */
 	List<Rectangle> prekazky(final int sirka, final int vyska) {
-		final List<Rectangle> l = new ArrayList<>(prekazky.get());
+		final Collection<Rectangle> panely = prekazky.get();
+		final List<Rectangle> l = new ArrayList<>(panely);
 		l.add(cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(sirka, vyska)));
-		l.add(cz.geokuk.framework.RozmisteniPrekryvu.pruhPlanovace(cz.geokuk.framework.RozmisteniPrekryvu.volnaSirkaPruhu(sirka)));
+		l.add(cz.geokuk.framework.RozmisteniPrekryvu.pruhPlanovace(cz.geokuk.framework.RozmisteniPrekryvu.volnaSirkaPruhu(sirka, panely)));
 		l.add(cz.geokuk.framework.RozmisteniPrekryvu.UKAZATEL_VYKONU);
 		return l;
 	}
@@ -69,12 +55,14 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 	@Override
 	public abstract void paintComponent(java.awt.Graphics g);
 
+	/** Přepínač „Sektory“ v liště; prstenec, klín a čára jsou jen u 360°, jinak se nekreslí vůbec. */
 	boolean kresliSektory() {
-		return sektory.getAsBoolean();
+		return model == null || model.isKresliSektory();
 	}
 
+	/** Přepínač „Štítky“ v liště. */
 	boolean kresliStitky() {
-		return stitky.getAsBoolean();
+		return model == null || model.isKresliStitky();
 	}
 
 	/** Podklad kreslení pro zobrazenou challenge, nebo null, když se nic nekreslí. */

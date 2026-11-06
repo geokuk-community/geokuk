@@ -40,7 +40,7 @@ public final class ZpravyZkratek {
 
 	/** F5. */
 	public static String kesoidy(final boolean zapnuto) {
-		return akceStav("Kešoidy", zapnuto, zapnuto ? null : "včetně kruhů, obsazenosti a popisků");
+		return akceStav("Kešoidy", zapnuto, zapnuto ? null : "včetně kruhů, obsazenosti a popisků (F5 zapne)");
 	}
 
 	/** F9; v příliš malém měřítku se Obsazenost nekreslí; {@code polomer} je poloměr kruhu, třeba „161 m“. */
@@ -60,6 +60,16 @@ public final class ZpravyZkratek {
 		final String akce = "Zdroj keší " + nazevZdroje;
 		final String zprava = stav == StavVyberu.CASTECNE ? akceStav(akce, true, "částečně") : akceStav(akce, stav == StavVyberu.ZAPNUTO, null);
 		return zapnute.isEmpty() ? zprava + ", žádný zdroj keší není zapnutý" : zprava;
+	}
+
+	/** F4: filtr plánovače challenge „jen kandidáti“. */
+	public static String challengeJenKandidati(final boolean zapnuto) {
+		return akceStav("Challenge: jen kandidáti", zapnuto, null);
+	}
+
+	/** Shift+šipka, když ve směru šipky žádný kandidát challenge není; {@code smer} je třeba „na sever“. */
+	public static String challengeZadnyKandidat(final String smer) {
+		return "Challenge – žádný kandidát " + smer;
 	}
 
 	/** Ctrl+1 až Ctrl+4 u zdroje, který nemá žádné načtené soubory a proto jde vypnutý. */
