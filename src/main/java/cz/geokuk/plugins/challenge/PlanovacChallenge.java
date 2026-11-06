@@ -382,6 +382,31 @@ public final class PlanovacChallenge {
 		return vk;
 	}
 
+	/**
+	 * „Předchozí chybějící“: vrátí se k předchozímu vybranému kandidátovi a vystředí na něj mapu; null, když není kam. Ve vlákně Swingu. Zatím jen u sektorů 360°, u D/T a
+	 * kalendáře vrací null.
+	 */
+	public VybranyKandidat predchoziChybejici(final Challenge c) {
+		if (c.typ() != Challenge.Typ.SEKTORY_360) {
+			return null;
+		}
+		final VysledekSektoru v = model.vysledek(c);
+		final Wgs stred = stredMapy.get();
+		if (v == null || stred == null) {
+			return null;
+		}
+		final DalsiChybejici d;
+		synchronized (this) {
+			d = dalsi.get(c.nazev());
+		}
+		final VybranyKandidat k = d == null ? null : d.predchozi(v, stred.lat, stred.lon);
+		if (k != null) {
+			model.nastavVybranyKandidat(c, k);
+			vystredit.accept(k);
+		}
+		return k;
+	}
+
 	/** Zastaví plánovač a uvolní paměť předpočtu. */
 	public synchronized void zavri() {
 		generace.incrementAndGet();
