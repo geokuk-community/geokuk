@@ -194,4 +194,21 @@ public class JChallengeDialogTest {
 			Assert.assertEquals(3, dialog.polozky().size());
 		});
 	}
+
+	@Test
+	public void dialogMaViditelneTlacitkoZavritPodObsahem() throws Exception {
+		naEdt(() -> {
+			dialog.setSize(760, 420);
+			dialog.validate();
+			final AbstractButton zavrit = tlacitko("Zavřít");
+			Assert.assertTrue(zavrit.isShowing() || zavrit.isVisible());
+			Assert.assertTrue("tlačítko má velikost", zavrit.getWidth() > 0 && zavrit.getHeight() > 0);
+			final java.awt.Point p = javax.swing.SwingUtilities.convertPoint(zavrit, 0, 0, dialog.getContentPane());
+			final java.awt.Point uloz = javax.swing.SwingUtilities.convertPoint(tlacitko("Uložit změny"), 0, 0, dialog.getContentPane());
+			Assert.assertTrue("Zavřít je pod formulářem: " + p + " × " + uloz, p.y > uloz.y);
+			Assert.assertTrue("a uvnitř dialogu", p.y + zavrit.getHeight() <= dialog.getContentPane().getHeight());
+			zavrit.doClick();
+			Assert.assertFalse("zavře dialog", dialog.isDisplayable());
+		});
+	}
 }
