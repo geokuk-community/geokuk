@@ -91,4 +91,15 @@ public class TextyPopupuPlanovaceTest {
 		assertEquals("výchozí bod GC12345", TextyPopupuPlanovace.stred(Challenge.Stred.listing("GC12345")));
 		assertEquals("50.08700, 14.42100", TextyPopupuPlanovace.stred(Challenge.Stred.souradnice(50.087, 14.421)));
 	}
+
+	@Test
+	public void policka() {
+		final VysledekPolicek p = new VysledekPolicek(81, Arrays.asList("D1/T1", "D5/T5"), java.util.Collections.emptyList());
+		assertEquals("Splněno 79 z 81, chybí 2", TextyPopupuPlanovace.souhrn(p));
+		assertEquals("98 %", TextyPopupuPlanovace.procenta(p));
+		assertEquals("0 %", TextyPopupuPlanovace.procenta(new VysledekPolicek(0, java.util.Collections.emptyList(), java.util.Collections.emptyList())));
+		assertEquals("Chybějící políčka D/T:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.DT_MATICE));
+		assertEquals("Chybějící dny:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.KALENDAR));
+		assertEquals("Chybějící sektory (podle vzdálenosti nejbližšího kandidáta):", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
+	}
 }

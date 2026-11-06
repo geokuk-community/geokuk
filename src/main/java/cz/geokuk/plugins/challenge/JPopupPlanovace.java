@@ -186,15 +186,20 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		return RozmisteniPrekryvu.popupPlanovace(mapa, JPruhPlanovace.oblastOdznaku(mapa.width), pozadovana, vse);
 	}
 
+	/** Stejná challenge jako v pruhu. */
 	private Challenge challenge() {
-		final List<Challenge> aktivni = model == null ? Collections.<Challenge> emptyList() : model.aktivni();
-		return aktivni.isEmpty() ? null : aktivni.get(0);
+		return model == null ? null : model.zobrazena();
 	}
 
 	void obnov() {
 		final Challenge c = challenge();
 		if (c != null) {
-			obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), c.equals(model.jenKandidatiPro()));
+			final boolean jenKandidati = model.stavPruhu().jenKandidati();
+			if (c.typ() == Challenge.Typ.SEKTORY_360) {
+				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati);
+			} else {
+				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati);
+			}
 		}
 		revalidate();
 		repaint();
@@ -228,6 +233,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JLabel typ = new JLabel();
 		final JLabel stred = new JLabel();
 		final JLabel souhrn = new JLabel();
+		final JLabel nadpisSeznamu = new JLabel(TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
 		final JProgressBar postup = new JProgressBar(0, 360);
 		final DefaultListModel<String> radky = new DefaultListModel<>();
 		final JList<String> seznam = new JList<>(radky);
@@ -266,7 +272,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				add(c, g);
 			}
 			g.gridy++;
-			add(new JLabel("Chybějící sektory (podle vzdálenosti nejbližšího kandidáta):"), g);
+			add(nadpisSeznamu, g);
 			g.gridy++;
 			g.fill = GridBagConstraints.BOTH;
 			g.weighty = 1;
@@ -306,21 +312,32 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			return c != null && c.getRed() * 299 + c.getGreen() * 587 + c.getBlue() * 114 < 128_000;
 		}
 
-		void nastav(final Challenge c, final VysledekSektoru v, final StavPredpoctu stav, final boolean jenKandidati) {
+		/** Společná hlavička; vrátí false, když výsledek ještě není a ukáže se jen průběh. */
+		private boolean zahlavi(final Challenge c, final boolean maVysledek, final StavPredpoctu stav, final boolean jenKandidati) {
 			nadpis.setText(TextyPopupuPlanovace.nadpis(c));
-			typ.setText("Typ: 360°    Pravidla: " + TextyPopupuPlanovace.pravidla(c.zdroj()));
+			typ.setText("Typ: " + StitkyPruhu.typ(c.typ()) + "    Pravidla: " + TextyPopupuPlanovace.pravidla(c.zdroj()));
 			stred.setText("Střed: " + TextyPopupuPlanovace.stred(c.stred()));
+			stred.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
+			nadpisSeznamu.setText(TextyPopupuPlanovace.nadpisSeznamu(c.typ()));
 			kandidati.setSelected(jenKandidati);
 			radky.clear();
-			if (v == null) {
-				souhrn.setText(stav.faze() == StavPredpoctu.Faze.POCITA && stav.celkem() > 0 ? "Počítá se… " + stav.hotovo() + " z " + stav.celkem() + " keší" : "Počítá se…");
-				postup.setValue(0);
-				postup.setString("…");
-				nejiste.setText(" ");
-				dalsi.setEnabled(false);
+			nejiste.setText(" ");
+			if (maVysledek) {
+				return true;
+			}
+			souhrn.setText(stav.faze() == StavPredpoctu.Faze.POCITA && stav.celkem() > 0 ? "Počítá se… " + stav.hotovo() + " z " + stav.celkem() + " keší" : "Počítá se…");
+			postup.setValue(0);
+			postup.setString("…");
+			dalsi.setEnabled(false);
+			return false;
+		}
+
+		void nastav(final Challenge c, final VysledekSektoru v, final StavPredpoctu stav, final boolean jenKandidati) {
+			if (!zahlavi(c, v != null, stav, jenKandidati)) {
 				return;
 			}
 			souhrn.setText(TextyPopupuPlanovace.souhrn(v));
+			postup.setMaximum(360);
 			postup.setValue(v.pocetObsazenych());
 			postup.setString(TextyPopupuPlanovace.procenta(v));
 			for (final int s : TextyPopupuPlanovace.serazeneChybejici(v)) {
@@ -329,6 +346,21 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			final String n = TextyPopupuPlanovace.nejiste(v);
 			nejiste.setText(n.isEmpty() ? " " : n);
 			dalsi.setEnabled(!v.chybejici().isEmpty());
+		}
+
+		/** D/T matice a kalendář: shrnutí a chybějící políčka nebo dny v pořadí z výpočtu. */
+		void nastavPolicka(final Challenge c, final VysledekPolicek p, final StavPredpoctu stav, final boolean jenKandidati) {
+			if (!zahlavi(c, p != null, stav, jenKandidati)) {
+				return;
+			}
+			souhrn.setText(TextyPopupuPlanovace.souhrn(p));
+			postup.setMaximum(Math.max(1, p.celkem()));
+			postup.setValue(p.celkem() - p.pocetChybejicich());
+			postup.setString(TextyPopupuPlanovace.procenta(p));
+			for (final String s : p.stitkyChybejicich()) {
+				radky.addElement(s);
+			}
+			dalsi.setEnabled(p.pocetChybejicich() > 0);
 		}
 	}
 }

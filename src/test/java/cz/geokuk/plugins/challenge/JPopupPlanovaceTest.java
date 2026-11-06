@@ -51,7 +51,7 @@ public class JPopupPlanovaceTest {
 	}
 
 	private void vysledek(final VysledekSektoru v) throws Exception {
-		model.nastavVysledek(aktivni(), v);
+		model.nastavVysledek(aktivni360(), v);
 		SwingUtilities.invokeAndWait(() -> {});
 	}
 
@@ -241,5 +241,92 @@ public class JPopupPlanovaceTest {
 		popup.removeNotify();
 		Assert.assertFalse(popup.jeOtevreno());
 		Assert.assertEquals("zavřený odebráním z okna", pred, posluchacuMysi());
+	}
+
+	private static List<String> radky(final JPopupPlanovace.Obsah o) {
+		final List<String> r = new ArrayList<>();
+		for (int i = 0; i < o.radky.size(); i++) {
+			r.add(o.radky.get(i));
+		}
+		return r;
+	}
+
+	/** Popup ukazuje stejnou challenge jako pruh, i když je aktivních víc. */
+	@Test
+	public void ukazujeChallengeZobrazenouVPruhu() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.praha360());
+		model.setZobrazena(Sablony.praha360());
+		SwingUtilities.invokeAndWait(() -> {});
+		popup.prepni();
+		Assert.assertEquals(TextyPopupuPlanovace.nadpis(Sablony.praha360()), popup.obsah.nadpis.getText());
+		model.setZobrazena(Sablony.cesko360());
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("po přepnutí v pruhu", TextyPopupuPlanovace.nadpis(Sablony.cesko360()), popup.obsah.nadpis.getText());
+	}
+
+	private Challenge aktivujPolicka(final Challenge.Typ typ) throws Exception {
+		final Challenge c = model.ulozVlastni(new Challenge("Test " + typ, typ, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		SwingUtilities.invokeAndWait(() -> {});
+		return c;
+	}
+
+	@Test
+	public void dtMaticeUkazujeChybejiciPolicka() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertEquals("Typ: D/T    Pravidla: PGC", o.typ.getText());
+		Assert.assertTrue("bez výsledku průběh", o.souhrn.getText().startsWith("Počítá se"));
+		Assert.assertFalse(o.dalsi.isEnabled());
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D5/T5"), java.util.Collections.emptyList()));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("Splněno 79 z 81, chybí 2", o.souhrn.getText());
+		Assert.assertEquals(81, o.postup.getMaximum());
+		Assert.assertEquals(79, o.postup.getValue());
+		Assert.assertEquals("98 %", o.postup.getString());
+		Assert.assertEquals("Chybějící políčka D/T:", o.nadpisSeznamu.getText());
+		Assert.assertEquals(java.util.Arrays.asList("D1/T1", "D5/T5"), radky(o));
+		Assert.assertFalse("střed je jen u 360°", o.stred.isVisible());
+		Assert.assertEquals(" ", o.nejiste.getText());
+		Assert.assertTrue(o.dalsi.isEnabled());
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Collections.emptyList(), java.util.Collections.emptyList()));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("Splněno 81 z 81, chybí 0", o.souhrn.getText());
+		Assert.assertFalse("splněná matice nemá kam dál", o.dalsi.isEnabled());
+		Assert.assertEquals(0, o.radky.size());
+	}
+
+	@Test
+	public void kalendarUkazujeChybejiciDnyAPo360SeVratiSektory() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.KALENDAR);
+		model.nastavVysledekPolicek(c, new VysledekPolicek(366, java.util.Arrays.asList("14. 3.", "29. 2."), java.util.Collections.emptyList()));
+		SwingUtilities.invokeAndWait(() -> {});
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertEquals("Typ: Kalendář    Pravidla: PGC", o.typ.getText());
+		Assert.assertEquals("Chybějící dny:", o.nadpisSeznamu.getText());
+		Assert.assertEquals(366, o.postup.getMaximum());
+		Assert.assertEquals(java.util.Arrays.asList("14. 3.", "29. 2."), radky(o));
+		model.setZobrazena(aktivni360());
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47 }, new int[0], new double[][] { { 47, 6200 } }));
+		Assert.assertEquals("Typ: 360°    Pravidla: " + TextyPopupuPlanovace.pravidla(aktivni360().zdroj()), o.typ.getText());
+		Assert.assertEquals(360, o.postup.getMaximum());
+		Assert.assertTrue(o.stred.isVisible());
+		Assert.assertEquals(TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360), o.nadpisSeznamu.getText());
+		Assert.assertEquals(java.util.Collections.singletonList("47°  1 kandidát  nejbližší 6,2 km"), radky(o));
+	}
+
+	private Challenge aktivni360() {
+		for (final Challenge c : model.aktivni()) {
+			if (c.typ() == Challenge.Typ.SEKTORY_360) {
+				return c;
+			}
+		}
+		throw new AssertionError("není aktivní 360°");
 	}
 }

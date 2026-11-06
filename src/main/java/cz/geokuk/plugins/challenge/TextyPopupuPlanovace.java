@@ -43,6 +43,25 @@ final class TextyPopupuPlanovace {
 		return Math.round(v.pocetObsazenych() * 100.0 / 360) + " %";
 	}
 
+	static String souhrn(final VysledekPolicek p) {
+		return "Splněno " + (p.celkem() - p.pocetChybejicich()) + " z " + p.celkem() + ", chybí " + p.pocetChybejicich();
+	}
+
+	static String procenta(final VysledekPolicek p) {
+		return Math.round((p.celkem() - p.pocetChybejicich()) * 100.0 / Math.max(1, p.celkem())) + " %";
+	}
+
+	static String nadpisSeznamu(final Challenge.Typ typ) {
+		switch (typ) {
+		case DT_MATICE:
+			return "Chybějící políčka D/T:";
+		case KALENDAR:
+			return "Chybějící dny:";
+		default:
+			return "Chybějící sektory (podle vzdálenosti nejbližšího kandidáta):";
+		}
+	}
+
 	static String pravidla(final Challenge.ZdrojPravidel z) {
 		return z == Challenge.ZdrojPravidel.STATOR ? "Stator" : "PGC";
 	}
