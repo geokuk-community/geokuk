@@ -114,4 +114,14 @@ public class TvarPlanovaceTest {
 		Assert.assertEquals("Střed: GC56R49", TextyKresleni.stred("GC56R49"));
 		Assert.assertEquals("Střed: domov · 25 km", TextyKresleni.stredMimoVyrez("domov", 25_300));
 	}
+
+	@Test
+	public void souradniceSeZalamujiPresAntimeridianAOmezujiUPolu() {
+		final cz.geokuk.core.coordinates.Mou a = PixelyMapy.mou(10, 190);
+		final cz.geokuk.core.coordinates.Mou b = PixelyMapy.mou(10, -170);
+		Assert.assertEquals(b.xx, a.xx);
+		Assert.assertEquals(b.yy, a.yy);
+		Assert.assertEquals(PixelyMapy.mou(85, 0).yy, PixelyMapy.mou(89.9, 0).yy);
+		Assert.assertEquals(PixelyMapy.mou(-85, 0).yy, PixelyMapy.mou(-90, 0).yy);
+	}
 }

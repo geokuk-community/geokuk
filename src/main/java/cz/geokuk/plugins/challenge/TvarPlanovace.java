@@ -40,7 +40,7 @@ final class TvarPlanovace {
 		final boolean sektory = c.typ() == Challenge.Typ.SEKTORY_360;
 		if (sektory && prehled.maStred()) {
 			stredWgs = new Wgs(prehled.stredLat(), prehled.stredLon());
-			stred = stredWgs.toMou();
+			stred = PixelyMapy.mou(stredWgs.lat, stredWgs.lon);
 			popisStredu = prehled.stredPopis();
 		} else {
 			stredWgs = null;
@@ -54,7 +54,7 @@ final class TvarPlanovace {
 			texty = new String[k.size()];
 			for (int i = 0; i < pozice.length; i++) {
 				final VysledekSektoru.KandidatKes x = k.get(i);
-				pozice[i] = new Wgs(x.lat(), x.lon()).toMou();
+				pozice[i] = PixelyMapy.mou(x.lat(), x.lon());
 				texty[i] = x.text() + "°";
 			}
 		} else {
@@ -63,14 +63,14 @@ final class TvarPlanovace {
 			texty = new String[k.size()];
 			for (int i = 0; i < pozice.length; i++) {
 				final KandidatPolicka x = k.get(i);
-				pozice[i] = new Wgs(x.lat(), x.lon()).toMou();
+				pozice[i] = PixelyMapy.mou(x.lat(), x.lon());
 				texty[i] = x.text();
 			}
 		}
 		if (sektory && vybrany != null && vybrany.sektor() >= 0 && zdroj instanceof VysledekSektoru) {
 			final VysledekSektoru.Kandidati k = ((VysledekSektoru) zdroj).kandidati(vybrany.sektor());
 			vybranySektor = vybrany.sektor();
-			vybranyPozice = new Wgs(vybrany.lat(), vybrany.lon()).toMou();
+			vybranyPozice = PixelyMapy.mou(vybrany.lat(), vybrany.lon());
 			popisVybraneho = TextyKresleni.vybranySektor(vybranySektor, k == null ? 1 : k.pocet(), k == null ? vybrany.vzdalenost() : k.nejblizsiVzdalenost());
 		} else {
 			vybranySektor = -1;

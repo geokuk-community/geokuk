@@ -200,6 +200,82 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
+	public void sipkaSePosunePodMeritkoAPanel() throws Exception {
+		zobraz(TvarPlanovaceTest.vysledek(), 49.0, 14.0);
+		final Rectangle panel = new Rectangle(W - 330, H - 160, 330, 160);
+		nad.setPrekazky(() -> java.util.Collections.singletonList(panel));
+		nakresli(nad, mapa(50.0, 14.0, 13));
+		final Rectangle s = nad.sipka();
+		Assert.assertNotNull(s);
+		Assert.assertFalse("šipka s popiskem není na měřítku: " + s, s.intersects(cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(W, H))));
+		Assert.assertFalse("ani na panelu: " + s, s.intersects(panel));
+		Assert.assertTrue("zůstala v okně", new Rectangle(0, 0, W, H).contains(s));
+	}
+
+	@Test
+	public void kandidatiAStitkyNelezouPodPanelem() throws Exception {
+		final List<VysledekSektoru.KandidatKes> k = new ArrayList<>();
+		for (int i = 0; i < 300; i++) {
+			k.add(new VysledekSektoru.KandidatKes("GC" + i, 50.0 + (i % 20 - 10) * 0.0006, 14.0 + (i / 20 - 7) * 0.0009, 150 + i % 100, 1000, false));
+		}
+		zobraz(new VysledekSektoru(obsazene(0, 100), new BitSet(360), new VysledekSektoru.Kandidati[360], 100, k), 50.0, 14.0);
+		final Coord c = mapa(50.0, 14.0, 15);
+		nakresli(nad, c);
+		final int bezPanelu = nad.posledniZnacek();
+		final Rectangle panel = new Rectangle(W / 2, 0, W / 2, H);
+		nad.setPrekazky(() -> java.util.Collections.singletonList(panel));
+		nakresli(nad, c);
+		Assert.assertTrue("pod panelem se kroužky nekreslí: " + nad.posledniZnacek() + " < " + bezPanelu, nad.posledniZnacek() < bezPanelu);
+		for (final Rectangle r : nad.obdelnikyStitku()) {
+			if (!r.equals(panel) && !cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(W, H)).equals(r) && r.width < 300) {
+				Assert.assertFalse("štítek není pod panelem: " + r, r.intersects(panel) && r.x >= panel.x - 1 && !r.equals(panel));
+			}
+		}
+	}
+
+	@Test
+	public void prstenecAStredPrekracujiAntimeridian() throws Exception {
+		zobraz(new VysledekSektoru(obsazene(0, 180), new BitSet(360), new VysledekSektoru.Kandidati[360], 180, new ArrayList<>()), -17.7, 180.0);
+		final Coord c = mapa(-17.7, 179.99, 13);
+		final BufferedImage img = nakresli(pod, c);
+		final java.awt.Point s = PixelyMapy.transform(c, PixelyMapy.mou(-17.7, 180.0), new java.awt.Point());
+		Assert.assertTrue("východní polovina prstence (za antimeridiánem) je splněná", pixelNaPaprsku(img, s.x, s.y, 90.5, JPlanovacPodKeskami.SPLNENY.getRGB()));
+		Assert.assertTrue("západní polovina prstence chybí", pixelNaPaprsku(img, s.x, s.y, 270.5, JPlanovacPodKeskami.CHYBI.getRGB()));
+		nad.setPrekazky(java.util.Collections::emptyList);
+		nakresli(nad, mapa(-17.7, 178.0, 13));
+		final Rectangle sipka = nad.sipka();
+		Assert.assertNotNull(sipka);
+		Assert.assertTrue("střed leží na východ, šipka je vpravo: " + sipka, sipka.x + sipka.width / 2 > W * 3 / 4);
+		nakresli(nad, mapa(-17.7, -178.0, 13));
+		Assert.assertTrue("a z druhé strany vlevo: " + nad.sipka(), nad.sipka().x + nad.sipka().width / 2 < W / 4);
+	}
+
+	@Test
+	public void klinMaVTretiTematechDostatecnyKontrastKMape() {
+		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
+		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
+		try {
+			for (final javax.swing.plaf.metal.MetalTheme t : temata) {
+				MetalLookAndFeel.setCurrentTheme(t);
+				UIManager.setLookAndFeel(new MetalLookAndFeel());
+				final Color a = AkcentPlanovace.barva();
+				final Color mapa = new Color(0xF1EEE8);
+				final double al = 90 / 255.0;
+				final Color smes = new Color((int) (a.getRed() * al + mapa.getRed() * (1 - al)), (int) (a.getGreen() * al + mapa.getGreen() * (1 - al)), (int) (a.getBlue() * al + mapa.getBlue() * (1 - al)));
+				Assert.assertTrue(t.getName() + " klín proti mapě " + kontrast(smes, mapa), kontrast(smes, mapa) >= 1.5);
+			}
+		} catch (final Exception e) {
+			throw new AssertionError(e);
+		} finally {
+			try {
+				UIManager.setLookAndFeel(puvodni);
+			} catch (final Exception e) {
+				// bez vlivu na test
+			}
+		}
+	}
+
+	@Test
 	public void stitekMaCitelnyTextVeTrechTematech() {
 		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
 		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
