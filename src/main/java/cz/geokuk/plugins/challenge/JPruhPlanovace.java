@@ -145,6 +145,19 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			c[i].setVisible(!r[i].isEmpty());
 		}
 		kandidati.setText(r[KANDIDATI].width >= 100 ? "jen kandidáti" : "");
+		typ.setFont(pismoNaSirku(UIManager.getFont("Label.font"), typ.getText(), r[TYP].width, typ::getFontMetrics));
+	}
+
+	/** Písmo popisku typu: výchozí, a když se text nevejde (Kalendář), menší až do 9 bodů, ať se nezkrátí na „…“. */
+	static Font pismoNaSirku(final Font zaklad, final String text, final int sirka, final java.util.function.Function<Font, FontMetrics> metriky) {
+		if (zaklad == null || text == null || sirka <= 0) {
+			return zaklad;
+		}
+		Font f = zaklad;
+		while (f.getSize2D() > 9f && metriky.apply(f).stringWidth(text) > sirka) {
+			f = f.deriveFont(f.getSize2D() - 0.5f);
+		}
+		return f;
 	}
 
 	@Override
@@ -173,6 +186,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			odznak.nastav(stav.badge() < 0 ? "…" : Integer.toString(stav.badge()));
 			kandidati.setSelected(stav.jenKandidati());
 			typ.setText(stav.stitekTypu());
+			typ.setToolTipText("Typ challenge: " + stav.stitekTypu());
 		}
 		if (vidim != isVisible()) {
 			setVisible(vidim);

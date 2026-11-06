@@ -74,6 +74,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		this.sluzba = sluzba;
 	}
 
+	/** Nastavení… otevře dialog plánovače z menu. */
+	public void inject(final cz.geokuk.core.program.Akce akce) {
+		setNaNastaveni(() -> akce.challengeNastaveniAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "nastaveni")));
+	}
+
 	/** Panely v rozích mapy a legenda, do kterých popup nesmí zasahovat (souřadnice mapy). */
 	public void setPrekazky(final Supplier<? extends Collection<Rectangle>> prekazky) {
 		this.prekazky = prekazky;
@@ -245,7 +250,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			super(new GridBagLayout());
 			setOpaque(true);
 			nadpis.setFont(nadpis.getFont().deriveFont(Font.BOLD));
-			postup.setStringPainted(true);
+			// Procenta jsou ve shrnutí: text přes výplň má v některých vzhledech malý kontrast.
+			postup.setStringPainted(false);
+			postup.setBorderPainted(true);
 			seznam.setVisibleRowCount(RADKU_SEZNAMU);
 			seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			seznam.setPrototypeCellValue("359°  99 kandidátů  nejbližší 99,9 km");
@@ -306,7 +313,17 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			if (nejiste != null) {
 				nejiste.setForeground(jeTmave(pozadi) ? new Color(0xFFD080) : new Color(0x9A5A00));
 			}
+			if (postup != null) {
+				postup.setForeground(jeTmave(pozadi) ? VYPLN_TMAVA : VYPLN_SVETLA);
+				postup.setBackground(jeTmave(pozadi) ? DRAHA_TMAVA : DRAHA_SVETLA);
+			}
 		}
+
+		/** Výplň a dráha ukazatele postupu; barvy vzhledu mají někde výplň skoro stejnou jako dráhu. */
+		static final Color VYPLN_SVETLA = new Color(0x2F6FC0);
+		static final Color DRAHA_SVETLA = new Color(0xE6E6E6);
+		static final Color VYPLN_TMAVA = new Color(0x7FB2F0);
+		static final Color DRAHA_TMAVA = new Color(0x2E2E2E);
 
 		static boolean jeTmave(final Color c) {
 			return c != null && c.getRed() * 299 + c.getGreen() * 587 + c.getBlue() * 114 < 128_000;

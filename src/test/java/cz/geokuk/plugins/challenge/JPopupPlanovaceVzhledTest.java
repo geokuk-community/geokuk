@@ -102,6 +102,7 @@ public class JPopupPlanovaceVzhledTest {
 		final Color pozadi = o.getBackground();
 		Assert.assertEquals(kde + ": pozadí podle vzhledu", UIManager.getColor("Panel.background").getRGB(), pozadi.getRGB());
 		Assert.assertEquals(kde + ": tmavé pozadí", tmavy, JPopupPlanovace.Obsah.jeTmave(pozadi));
+		Assert.assertFalse(kde + ": procenta jsou ve shrnutí, ne přes výplň", o.postup.isStringPainted());
 		final double kontrast = Math.abs(jas(o.nejiste.getForeground()) - jas(pozadi));
 		Assert.assertTrue(kde + ": upozornění čitelné, rozdíl jasu " + kontrast, kontrast > 90);
 		for (final double m : new double[] { 1.0, 1.25, 1.5 }) {
@@ -124,6 +125,12 @@ public class JPopupPlanovaceVzhledTest {
 				}
 			}
 			Assert.assertTrue(k + ": text shrnutí je vidět (" + textu + " bodů)", textu > 40 * m * m);
+			// Ukazatel postupu (77 %): výplň se zřetelně liší od dráhy a přes ni není text.
+			final Rectangle u = SwingUtilities.convertRectangle(o.postup.getParent(), o.postup.getBounds(), o);
+			final int stredY = (int) ((u.y + u.height / 2) * m);
+			final Color vypln = new Color(img.getRGB((int) ((u.x + u.width * 0.3) * m), stredY));
+			final Color draha = new Color(img.getRGB((int) ((u.x + u.width * 0.92) * m), stredY));
+			Assert.assertTrue(k + ": výplň " + vypln + " × dráha " + draha, Math.abs(jas(vypln) - jas(draha)) > 60);
 		}
 	}
 

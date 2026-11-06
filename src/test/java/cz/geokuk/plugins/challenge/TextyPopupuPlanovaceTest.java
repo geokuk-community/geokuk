@@ -65,7 +65,7 @@ public class TextyPopupuPlanovaceTest {
 			chybi[i] = i;
 		}
 		final VysledekSektoru v = vysledek(chybi, new int[0], new double[0][]);
-		assertEquals("Splněno 278 z 360, chybí 82", TextyPopupuPlanovace.souhrn(v));
+		assertEquals("Splněno 278 z 360 (77 %), chybí 82", TextyPopupuPlanovace.souhrn(v));
 		assertEquals("77 %", TextyPopupuPlanovace.procenta(v));
 	}
 
@@ -95,7 +95,7 @@ public class TextyPopupuPlanovaceTest {
 	@Test
 	public void policka() {
 		final VysledekPolicek p = new VysledekPolicek(81, Arrays.asList("D1/T1", "D5/T5"), java.util.Collections.emptyList());
-		assertEquals("Splněno 79 z 81, chybí 2", TextyPopupuPlanovace.souhrn(p));
+		assertEquals("Splněno 79 z 81 (98 %), chybí 2", TextyPopupuPlanovace.souhrn(p));
 		assertEquals("98 %", TextyPopupuPlanovace.procenta(p));
 		assertEquals("0 %", TextyPopupuPlanovace.procenta(new VysledekPolicek(0, java.util.Collections.emptyList(), java.util.Collections.emptyList())));
 		assertEquals("Chybějící políčka D/T:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.DT_MATICE));

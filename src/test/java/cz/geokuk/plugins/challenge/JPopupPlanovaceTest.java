@@ -161,7 +161,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse("bez výsledku není kam jít", o.dalsi.isEnabled());
 		Assert.assertEquals(0, o.radky.size());
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
-		Assert.assertEquals("Splněno 357 z 360, chybí 3", o.souhrn.getText());
+		Assert.assertEquals("Splněno 357 z 360 (99 %), chybí 3", o.souhrn.getText());
 		Assert.assertEquals(357, o.postup.getValue());
 		Assert.assertEquals("99 %", o.postup.getString());
 		final List<String> radky = new ArrayList<>();
@@ -207,7 +207,7 @@ public class JPopupPlanovaceTest {
 		priprav();
 		popup.prepni();
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[0], new int[0], new double[0][]));
-		Assert.assertEquals("Splněno 360 z 360, chybí 0", popup.obsah.souhrn.getText());
+		Assert.assertEquals("Splněno 360 z 360 (100 %), chybí 0", popup.obsah.souhrn.getText());
 		Assert.assertEquals(0, popup.obsah.radky.size());
 		Assert.assertFalse(popup.obsah.dalsi.isEnabled());
 		Assert.assertEquals("100 %", popup.obsah.postup.getString());
@@ -284,7 +284,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse(o.dalsi.isEnabled());
 		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D5/T5"), java.util.Collections.emptyList()));
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("Splněno 79 z 81, chybí 2", o.souhrn.getText());
+		Assert.assertEquals("Splněno 79 z 81 (98 %), chybí 2", o.souhrn.getText());
 		Assert.assertEquals(81, o.postup.getMaximum());
 		Assert.assertEquals(79, o.postup.getValue());
 		Assert.assertEquals("98 %", o.postup.getString());
@@ -295,7 +295,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.dalsi.isEnabled());
 		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Collections.emptyList(), java.util.Collections.emptyList()));
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("Splněno 81 z 81, chybí 0", o.souhrn.getText());
+		Assert.assertEquals("Splněno 81 z 81 (100 %), chybí 0", o.souhrn.getText());
 		Assert.assertFalse("splněná matice nemá kam dál", o.dalsi.isEnabled());
 		Assert.assertEquals(0, o.radky.size());
 	}
@@ -328,5 +328,27 @@ public class JPopupPlanovaceTest {
 			}
 		}
 		throw new AssertionError("není aktivní 360°");
+	}
+
+	/** Nastavení… zavře popup a spustí akci dialogu plánovače z menu (bez displeje a továrny akce skončí výjimkou, ta ukáže, kudy volání šlo). */
+	@Test
+	public void nastaveniSpustiAkciDialogu() throws Exception {
+		priprav();
+		final cz.geokuk.core.program.Akce akce = new cz.geokuk.core.program.Akce();
+		popup.inject(akce);
+		Assert.assertTrue(popup.obsah.nastaveni.isEnabled());
+		popup.prepni();
+		try {
+			popup.obsah.nastaveni.doClick();
+			Assert.fail("akce dialogu se měla spustit");
+		} catch (final RuntimeException e) {
+			// Bez displeje selže už vytvoření dialogu (zásobník vede přes akci), s displejem akce ohlásí chybějící továrnu (zpráva nese třídu akce).
+			boolean akceDialogu = e.getMessage() != null && e.getMessage().contains(ChallengeNastaveniAction.class.getName());
+			for (final StackTraceElement r : e.getStackTrace()) {
+				akceDialogu |= r.getClassName().equals(ChallengeNastaveniAction.class.getName());
+			}
+			Assert.assertTrue("volání prošlo akcí dialogu: " + e, akceDialogu);
+		}
+		Assert.assertFalse("popup se před dialogem zavře", popup.jeOtevreno());
 	}
 }

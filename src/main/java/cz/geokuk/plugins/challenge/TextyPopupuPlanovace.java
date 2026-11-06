@@ -36,7 +36,7 @@ final class TextyPopupuPlanovace {
 
 	static String souhrn(final VysledekSektoru v) {
 		final int splneno = v.pocetObsazenych();
-		return "Splněno " + splneno + " z 360, chybí " + (360 - splneno);
+		return "Splněno " + splneno + " z 360 (" + procenta(v) + "), chybí " + (360 - splneno);
 	}
 
 	static String procenta(final VysledekSektoru v) {
@@ -44,7 +44,7 @@ final class TextyPopupuPlanovace {
 	}
 
 	static String souhrn(final VysledekPolicek p) {
-		return "Splněno " + (p.celkem() - p.pocetChybejicich()) + " z " + p.celkem() + ", chybí " + p.pocetChybejicich();
+		return "Splněno " + (p.celkem() - p.pocetChybejicich()) + " z " + p.celkem() + " (" + procenta(p) + "), chybí " + p.pocetChybejicich();
 	}
 
 	static String procenta(final VysledekPolicek p) {
