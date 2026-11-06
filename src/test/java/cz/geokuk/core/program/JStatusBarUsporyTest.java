@@ -18,6 +18,7 @@ import javax.swing.plaf.metal.MetalTheme;
 import javax.swing.plaf.metal.OceanTheme;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
@@ -59,6 +60,7 @@ public class JStatusBarUsporyTest {
 	}
 
 	private static void vsudy(final Kontrola k) throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
 		final LookAndFeel puvodni = UIManager.getLookAndFeel();
 		final MetalTheme puvodniTema = MetalLookAndFeel.getCurrentTheme();
 		try {
