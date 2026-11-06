@@ -5,10 +5,10 @@
 ### Změny
 - Plánovač challenge (Kešoidy > Challenge): v Plánovači challenge… se vybere
   challenge (šablony 360° od domova, 360° of the Czech Republic, 360° of
-  Prague a D/T) a zapne se. Pruh vlevo nahoře na mapě ukazuje počet
+  Prague a Matice D/T) a zapne se. Pruh vlevo nahoře na mapě ukazuje počet
   chybějících sektorů 360° nebo políček D/T; po kliknutí na počet se ukáže
-  seznam chybějících a kandidátů. Další chybějící F4 (Shift+F4 zpět),
-  zobrazení jen kandidátů na mapě.
+  seznam chybějících sektorů s kandidáty nebo chybějících políček D/T. Další
+  chybějící F4 (Shift+F4 zpět), zobrazení jen kandidátů na mapě.
 - Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
   Kruhy 161 m); dialog se jmenuje Nastavení kruhů.
 - Kruhy (Alt+F8) mají pevný poloměr v metrech, výchozí 100 m; mění se v
@@ -35,6 +35,10 @@
   zkratkou.
 - Zdroje keší GeoGet, GSAK a OpenSAK mají volbu Nové databáze načíst až po
   vybrání.
+- Zdroj keší bez načtených souborů má v menu Kešoidy > Zdroje keší vypnutou
+  položku; bublina u ní a krátká zpráva po Ctrl+1 až Ctrl+4 řeknou, že zdroj
+  nemá načtené soubory a že jeho složku jde zkontrolovat v Soubor > Umístění
+  souborů.
 - Klávesa F5 (Kešoidy > Zobrazovat kešoidy) skryje a zase ukáže kešoidy včetně
   kruhů a popisků.
 - Uživatelská mapa se zkratkou, kterou používá program (F4, F5, Ctrl+1 až
