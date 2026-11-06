@@ -24,6 +24,8 @@ import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
 /** Dialog plánovače challenge: seznam, kopie šablony, úprava vlastní definice, zapnutí; potřebuje displej. */
 public class JChallengeDialogTest {
 
+	private static final int SABLON = Sablony.vse().size();
+
 	private ChallengeModel model;
 	private JChallengeDialog dialog;
 
@@ -106,7 +108,7 @@ public class JChallengeDialogTest {
 	@Test
 	public void seznamMaSablonyAPrvniJeVybranaAJenKProhlizeni() throws Exception {
 		naEdt(() -> {
-			Assert.assertEquals(3, dialog.polozky().size());
+			Assert.assertEquals(SABLON, dialog.polozky().size());
 			Assert.assertEquals(0, seznam().getSelectedIndex());
 			Assert.assertTrue("šablona se kopíruje", tlacitko("Vytvořit kopii…").isEnabled());
 			Assert.assertFalse("šablonu nejde uložit", tlacitko("Uložit změny").isEnabled());
@@ -119,7 +121,7 @@ public class JChallengeDialogTest {
 	public void kopieSablonyJeVybranaAJdeUpravit() throws Exception {
 		naEdt(() -> {
 			tlacitko("Vytvořit kopii…").doClick();
-			Assert.assertEquals(4, dialog.polozky().size());
+			Assert.assertEquals(SABLON + 1, dialog.polozky().size());
 			final Challenge vybrana = seznam().getSelectedValue();
 			Assert.assertEquals("360° od domova (vlastní)", vybrana.nazev());
 			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
@@ -146,7 +148,7 @@ public class JChallengeDialogTest {
 			Assert.assertEquals(50.1, c.stred().lat(), 0);
 			Assert.assertEquals(14.5, c.stred().lon(), 0);
 			Assert.assertEquals("po uložení je vybrána přejmenovaná", "Moje 360", seznam().getSelectedValue().nazev());
-			Assert.assertEquals(4, dialog.polozky().size());
+			Assert.assertEquals(SABLON + 1, dialog.polozky().size());
 		});
 	}
 
@@ -185,8 +187,8 @@ public class JChallengeDialogTest {
 	public void zmenaVModeluSePromitneDoSeznamu() throws Exception {
 		naEdt(() -> {
 			model.ulozVlastni(new Challenge("Zvenku", Challenge.Typ.SEKTORY_360, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.STATOR));
-			Assert.assertEquals(4, dialog.polozky().size());
-			Assert.assertEquals("Zvenku", dialog.polozky().get(3).nazev());
+			Assert.assertEquals(SABLON + 1, dialog.polozky().size());
+			Assert.assertEquals("Zvenku", dialog.polozky().get(SABLON).nazev());
 		});
 	}
 
@@ -200,7 +202,7 @@ public class JChallengeDialogTest {
 			}
 			Assert.assertTrue("šablona se nepřepíše ani nezkopíruje", model.vlastni().isEmpty());
 			Assert.assertEquals("bez chybové hlášky", "", chyba());
-			Assert.assertEquals(3, dialog.polozky().size());
+			Assert.assertEquals(SABLON, dialog.polozky().size());
 		});
 	}
 
@@ -258,8 +260,8 @@ public class JChallengeDialogTest {
 		naEdt(() -> {
 			model.ulozVlastni(dt("Moje DT"));
 			model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
-			Assert.assertEquals("šablony, D/T a kalendář (nedostupný)", 5, dialog.polozky().size());
-			seznam().setSelectedValue(dialog.polozky().get(3), true);
+			Assert.assertEquals("šablony, D/T a kalendář (nedostupný)", SABLON + 2, dialog.polozky().size());
+			seznam().setSelectedValue(dialog.polozky().get(SABLON), true);
 			Assert.assertEquals("Moje DT", seznam().getSelectedValue().nazev());
 			Assert.assertTrue("D/T jde uložit", tlacitko("Uložit změny").isEnabled());
 			Assert.assertFalse("pole 360° jsou u D/T skrytá", viditelne(tlacitko("Domov")));

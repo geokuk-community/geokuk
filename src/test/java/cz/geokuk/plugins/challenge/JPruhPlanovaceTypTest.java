@@ -45,6 +45,7 @@ public class JPruhPlanovaceTypTest {
 		final NastaveniChallengeTest.MapoveUloziste u = new NastaveniChallengeTest.MapoveUloziste();
 		model.setUloziste(() -> u);
 		model.initAfterInject();
+		model.setKalendarVUi(true);
 		pruh.inject(model);
 		pruh.setSize(1920, 1000);
 		final Challenge c = model.ulozVlastni(new Challenge("Kalendář test", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));

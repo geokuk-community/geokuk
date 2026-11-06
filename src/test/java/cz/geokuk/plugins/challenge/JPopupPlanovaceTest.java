@@ -303,6 +303,7 @@ public class JPopupPlanovaceTest {
 	@Test
 	public void kalendarUkazujeChybejiciDnyAPo360SeVratiSektory() throws Exception {
 		priprav();
+		model.setKalendarVUi(true);
 		final Challenge c = aktivujPolicka(Challenge.Typ.KALENDAR);
 		model.nastavVysledekPolicek(c, new VysledekPolicek(366, java.util.Arrays.asList("14. 3.", "29. 2."), java.util.Collections.emptyList()));
 		SwingUtilities.invokeAndWait(() -> {});
