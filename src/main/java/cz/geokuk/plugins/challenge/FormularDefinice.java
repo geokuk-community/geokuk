@@ -80,7 +80,7 @@ public final class FormularDefinice {
 	/**
 	 * Definice z hodnot formuláře. Souřadnice a kód listingu se čtou jen u druhu středu, který je potřebuje. Chybný vstup je {@link ChallengeChyba} se zprávou pro uživatele.
 	 *
-	 * @param puvodni definice, ze které formulář vychází; z ní se přebírá oblast, kterou formulář neumí vyjádřit
+	 * @param puvodni definice, ze které formulář vychází; z ní se přebírá typ a oblast, kterou formulář neumí vyjádřit; bez ní vzniká typ 360°
 	 */
 	public static Challenge sestav(final Challenge puvodni, final String nazev, final ZdrojPravidel pravidla, final DruhStredu druhStredu, final String lat, final String lon, final String kod,
 			final Oblast oblast, final ZdrojeNalezu nalezy) {
@@ -110,7 +110,18 @@ public final class FormularDefinice {
 		} else {
 			def = OblastDef.stat(oblast.id);
 		}
-		return new Challenge(nazev, Challenge.Typ.SEKTORY_360, stred, def, pravidla, nalezy);
+		return new Challenge(nazev, puvodni == null ? Challenge.Typ.SEKTORY_360 : puvodni.typ(), stred, def, pravidla, nalezy);
+	}
+
+	private static String typ(final Challenge.Typ t) {
+		switch (t) {
+		case DT_MATICE:
+			return "D/T";
+		case KALENDAR:
+			return "Kalendář";
+		default:
+			return "360°";
+		}
 	}
 
 	/** Jednořádkový popis definice pro seznam a tooltip. */
@@ -128,6 +139,6 @@ public final class FormularDefinice {
 			break;
 		}
 		final String pravidla = c.zdroj() == ZdrojPravidel.PGC ? "Project-GC" : "Stator";
-		return "360° · " + pravidla + " · střed: " + stred + " · oblast: " + oblastDefinice(c).popis.toLowerCase(java.util.Locale.ROOT);
+		return typ(c.typ()) + " · " + pravidla + " · střed: " + stred + " · oblast: " + oblastDefinice(c).popis.toLowerCase(java.util.Locale.ROOT);
 	}
 }

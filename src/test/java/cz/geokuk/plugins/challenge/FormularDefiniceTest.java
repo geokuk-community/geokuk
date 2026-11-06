@@ -116,4 +116,16 @@ public class FormularDefiniceTest {
 		final Challenge c = FormularDefinice.sestav(null, "X", ZdrojPravidel.STATOR, DruhStredu.SOURADNICE, "50,5", "14,25", null, oblast(null), ZdrojeNalezu.ZAPNUTE);
 		Assert.assertEquals("360° · Stator · střed: 50.50000, 14.25000 · oblast: bez omezení", FormularDefinice.souhrn(c));
 	}
+
+	@Test
+	public void upravaZachovaTypDefinice() {
+		for (final Challenge.Typ typ : Challenge.Typ.values()) {
+			final Challenge puvodni = new Challenge("X", typ, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC);
+			final Challenge nova = FormularDefinice.sestav(puvodni, "Y", ZdrojPravidel.STATOR, DruhStredu.DOMOV, null, null, null, oblast(null), ZdrojeNalezu.ZAPNUTE);
+			Assert.assertEquals(typ, nova.typ());
+		}
+		Assert.assertEquals("nová definice je 360°", Challenge.Typ.SEKTORY_360, sestav(DruhStredu.DOMOV, null, null, null).typ());
+		Assert.assertTrue(FormularDefinice.souhrn(new Challenge("X", Challenge.Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)).startsWith("D/T · "));
+		Assert.assertTrue(FormularDefinice.souhrn(new Challenge("X", Challenge.Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)).startsWith("Kalendář · "));
+	}
 }
