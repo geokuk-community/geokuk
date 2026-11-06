@@ -48,7 +48,7 @@ public class JChallengeDialog extends JMyDialog0 {
 
 	public void inject(final ChallengeModel model) {
 		this.model = model;
-		obnovSeznam(null);
+		obnovSeznam(model.zobrazena());
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {

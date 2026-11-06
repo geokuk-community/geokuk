@@ -90,6 +90,11 @@ public class JChallengeDialogTest {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static Challenge vybrana(final JChallengeDialog d) {
+		return ((JList<Challenge>) najdi(d.getContentPane(), JList.class, new ArrayList<JList>()).get(0)).getSelectedValue();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private JList<Challenge> seznam() {
 		return najdi(dialog.getContentPane(), JList.class, new ArrayList<JList>()).get(0);
 	}
@@ -213,6 +218,24 @@ public class JChallengeDialogTest {
 			Assert.assertTrue("a uvnitř dialogu", p.y + zavrit.getHeight() <= dialog.getContentPane().getHeight());
 			zavrit.doClick();
 			Assert.assertFalse("zavře dialog", dialog.isDisplayable());
+		});
+	}
+
+	@Test
+	public void poOtevreniJeVybranaChallengeZobrazenaVPruhu() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final List<Challenge> vsechny = model.vsechny();
+			final Challenge druha = vsechny.get(1);
+			model.aktivuj(vsechny.get(0));
+			model.aktivuj(druha);
+			model.setZobrazena(druha);
+			final JChallengeDialog novy = new JChallengeDialog();
+			try {
+				novy.inject(model);
+				Assert.assertEquals(druha.nazev(), vybrana(novy).nazev());
+			} finally {
+				novy.dispose();
+			}
 		});
 	}
 }
