@@ -7,7 +7,7 @@ public final class StylChallenge {
 
 	private static final Color SEKTORY = new Color(0x7B3FC4);
 	private static final Color MATICE = new Color(0x1E6FD9);
-	private static final Color KALENDAR = new Color(0xD98200);
+	private static final Color KALENDAR = new Color(0xA05500);
 
 	private StylChallenge() {
 	}
