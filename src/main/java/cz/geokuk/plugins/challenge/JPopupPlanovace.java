@@ -168,7 +168,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			return;
 		}
 		final Point p = SwingUtilities.convertPoint(zdroj, me.getPoint(), this);
-		if (JPruhPlanovace.oblastOdznaku(getWidth()).contains(p)) {
+		if (JPruhPlanovace.oblastOdznaku(getWidth(), prekazky.get()).contains(p)) {
 			return;
 		}
 		zavri();
@@ -188,7 +188,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	static Rectangle poloha(final Dimension mapa, final Dimension pozadovana, final Collection<Rectangle> prekazky) {
 		final List<Rectangle> vse = new ArrayList<>(prekazky);
 		vse.add(RozmisteniPrekryvu.meritko(mapa));
-		return RozmisteniPrekryvu.popupPlanovace(mapa, JPruhPlanovace.oblastOdznaku(mapa.width), pozadovana, vse);
+		return RozmisteniPrekryvu.popupPlanovace(mapa, JPruhPlanovace.oblastOdznaku(mapa.width, prekazky), pozadovana, vse);
 	}
 
 	/** Stejná challenge jako v pruhu. */

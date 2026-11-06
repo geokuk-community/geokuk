@@ -18,16 +18,21 @@ import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
 /** Pruh plánovače: rozložení prvků na třech stupních šířky, viditelnost podle stavu modelu a klikání jen v obdélníku pruhu. */
 public class JPruhPlanovaceTest {
 
+	private static final int[] SIRKY = { RozmisteniPrekryvu.PRUH_PLNY_MAX, RozmisteniPrekryvu.PRUH_PLNY_MIN, RozmisteniPrekryvu.PRUH_IKONY_MAX, RozmisteniPrekryvu.PRUH_IKONY_MIN,
+			RozmisteniPrekryvu.PRUH_UZKY };
+
 	@Test
-	public void prvkyZaplniPruhNaVsechTrechStupnich() {
-		for (final int sirka : RozmisteniPrekryvu.STUPNE_PRUHU) {
+	public void prvkySeVejdouNaVsechStupnichANeprekryvajiSe() {
+		for (final int sirka : SIRKY) {
 			final Rectangle pruh = new Rectangle(RozmisteniPrekryvu.OKRAJ, RozmisteniPrekryvu.OKRAJ, sirka, RozmisteniPrekryvu.VYSKA_PRUHU);
 			final Rectangle[] r = JPruhPlanovace.rozloz(sirka);
 			final List<Rectangle> videt = new ArrayList<>();
+			int konec = 0;
 			for (final Rectangle x : r) {
 				if (!x.isEmpty()) {
 					Assert.assertTrue(sirka + ": " + x, pruh.contains(x));
 					videt.add(x);
+					konec = Math.max(konec, x.x + x.width);
 				}
 			}
 			for (int i = 0; i < videt.size(); i++) {
@@ -35,33 +40,40 @@ public class JPruhPlanovaceTest {
 					Assert.assertFalse(sirka + ": " + videt.get(i) + " × " + videt.get(j), videt.get(i).intersects(videt.get(j)));
 				}
 			}
-			Assert.assertEquals("šipky u pravého okraje s podšívkou", pruh.x + pruh.width - 4, r[JPruhPlanovace.DAL].x + r[JPruhPlanovace.DAL].width);
-			Assert.assertEquals("vlevo podšívka", pruh.x + 4, videt.get(0).x);
+			Assert.assertEquals(sirka + ": vlevo podšívka", pruh.x + 4, r[JPruhPlanovace.UCHYT].x);
+			Assert.assertEquals(sirka + ": vpravo podšívka, zbytek dostane chip", pruh.x + pruh.width - 4, konec);
 		}
 	}
 
 	@Test
 	public void stupneUbiraji() {
-		final Rectangle[] uplny = JPruhPlanovace.rozloz(267);
-		final Rectangle[] stredni = JPruhPlanovace.rozloz(178);
-		final Rectangle[] uzky = JPruhPlanovace.rozloz(106);
-		Assert.assertEquals(111, uplny[JPruhPlanovace.KANDIDATI].width);
-		Assert.assertEquals("jen ikona trychtýře", 22, stredni[JPruhPlanovace.KANDIDATI].width);
-		Assert.assertFalse(stredni[JPruhPlanovace.TYP].isEmpty());
-		Assert.assertTrue(uzky[JPruhPlanovace.TYP].isEmpty());
-		Assert.assertTrue(uzky[JPruhPlanovace.KANDIDATI].isEmpty());
-		Assert.assertEquals("odznak zabere zbytek", 42, uzky[JPruhPlanovace.ODZNAK].width);
-		Assert.assertEquals(24, uzky[JPruhPlanovace.ZPET].width);
+		final Rectangle[] plny = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_PLNY_MAX);
+		final Rectangle[] ikony = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_IKONY_MAX);
+		final Rectangle[] uzky = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_UZKY);
+		Assert.assertEquals(116, plny[JPruhPlanovace.KANDIDATI].width);
+		Assert.assertEquals(240, plny[JPruhPlanovace.CHIP].width);
+		Assert.assertEquals(120, JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_PLNY_MIN)[JPruhPlanovace.CHIP].width);
+		Assert.assertEquals("jen ikona", 26, ikony[JPruhPlanovace.KANDIDATI].width);
+		Assert.assertEquals(26, ikony[JPruhPlanovace.SEKTORY].width);
+		Assert.assertEquals(130, ikony[JPruhPlanovace.CHIP].width);
+		Assert.assertFalse(ikony[JPruhPlanovace.TYP].isEmpty());
+		for (final int i : new int[] { JPruhPlanovace.TYP, JPruhPlanovace.KANDIDATI, JPruhPlanovace.SEKTORY, JPruhPlanovace.STITKY }) {
+			Assert.assertTrue("nejužší bez " + i, uzky[i].isEmpty());
+		}
+		Assert.assertEquals("chip jen s barvou", 28, uzky[JPruhPlanovace.CHIP].width);
+		Assert.assertFalse(uzky[JPruhPlanovace.NASTAVENI].isEmpty());
+		Assert.assertFalse(uzky[JPruhPlanovace.ODZNAK].isEmpty());
 	}
 
 	@Test
 	public void sirkaSeVoliPodleSirkyMapyBezRezervyVpravo() {
-		Assert.assertEquals(267, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
-		Assert.assertEquals(267, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(521)));
-		Assert.assertEquals(178, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(520)));
-		Assert.assertEquals(178, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(432)));
-		Assert.assertEquals(106, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(431)));
-		Assert.assertEquals(106, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(300)));
+		Assert.assertEquals(826, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
+		Assert.assertEquals(706, RozmisteniPrekryvu.sirkaPruhu(706));
+		Assert.assertEquals(444, RozmisteniPrekryvu.sirkaPruhu(705));
+		Assert.assertEquals(394, RozmisteniPrekryvu.sirkaPruhu(394));
+		Assert.assertEquals(200, RozmisteniPrekryvu.sirkaPruhu(393));
+		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 200, RozmisteniPrekryvu.sirkaPruhu(10));
+		Assert.assertEquals(RozmisteniPrekryvu.PRUH_UCHYT, RozmisteniPrekryvu.pruhPlanovace(1000, false).width);
 	}
 
 	private final List<ChallengeZmenenyEvent> udalosti = new ArrayList<>();
@@ -91,22 +103,45 @@ public class JPruhPlanovaceTest {
 		pruh.setSize(1280, 700);
 	}
 
+	private List<Component> viditelne() {
+		final List<Component> v = new ArrayList<>();
+		for (final Component c : pruh.getComponents()) {
+			if (c.isVisible()) {
+				v.add(c);
+			}
+		}
+		return v;
+	}
+
 	@Test
-	public void pruhJeVidetJenKdyzJeZapnutoAJeCoUkazovat() throws Exception {
+	public void vypnutyPlanovacNechaJenUchytZapnutyCelouListu() throws Exception {
 		priprav();
-		Assert.assertFalse(pruh.isVisible());
-		model.setZapnuto(true);
+		pruh.doLayout();
+		Assert.assertTrue("úchyt je vidět i u vypnutého plánovače", pruh.isVisible());
+		Assert.assertEquals(1, viditelne().size());
+		Assert.assertTrue(pruh.contains(10, 10));
+		Assert.assertFalse("za úchytem mapa", pruh.contains(RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.PRUH_UCHYT + 1, 10));
+		Assert.assertEquals("ukazatel výkonu pod úchytem", RozmisteniPrekryvu.UKAZATEL_VYKONU, UkazatelVykonu.oblast());
+		najdiUchyt().doClick();
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertFalse("bez aktivní challenge není co ukázat", pruh.isVisible());
+		Assert.assertTrue("úchyt zapne plánovač", model.jeZapnuto());
+		pruh.doLayout();
+		Assert.assertEquals("bez aktivní challenge celá lišta, chip a nastavení", 10, viditelne().size());
+		Assert.assertFalse("bez challenge odznak nejde", najdiOdznak().isEnabled());
 		model.aktivuj(Sablony.cesko360());
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertTrue(pruh.isVisible());
+		Assert.assertTrue(najdiOdznak().isEnabled());
 		Assert.assertTrue(model.jePruhViditelny());
-		Assert.assertEquals("ukazatel výkonu je pod pruhem", RozmisteniPrekryvu.UKAZATEL_VYKONU, UkazatelVykonu.oblast());
-		model.setZapnuto(false);
-		Assert.assertFalse(pruh.isVisible());
-		Assert.assertEquals("bez pruhu je ukazatel nahoře", RozmisteniPrekryvu.UKAZATEL_VYKONU_BEZ_PRUHU, UkazatelVykonu.oblast());
-		Assert.assertFalse(model.jePruhViditelny());
+		Assert.assertEquals("ukazatel výkonu se nehýbe", RozmisteniPrekryvu.UKAZATEL_VYKONU, UkazatelVykonu.oblast());
+		najdiUchyt().doClick();
+		Assert.assertFalse("úchyt vypne plánovač", model.jeZapnuto());
+		pruh.doLayout();
+		Assert.assertEquals(1, viditelne().size());
+		Assert.assertEquals(RozmisteniPrekryvu.UKAZATEL_VYKONU, UkazatelVykonu.oblast());
+	}
+
+	private javax.swing.AbstractButton najdiUchyt() {
+		return (javax.swing.AbstractButton) pruh.getComponent(0);
 	}
 
 	@Test
@@ -128,7 +163,7 @@ public class JPruhPlanovaceTest {
 		priprav();
 		model.aktivuj(Sablony.cesko360());
 		model.setZapnuto(true);
-		for (final int sirka : new int[] { 1280, 500, 400 }) {
+		for (final int sirka : new int[] { 1280, 700, 400 }) {
 			pruh.setSize(sirka, 700);
 			pruh.doLayout();
 			final Rectangle[] r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(sirka)));

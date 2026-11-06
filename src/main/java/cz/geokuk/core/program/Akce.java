@@ -76,6 +76,8 @@ public class Akce {
 	public final cz.geokuk.plugins.challenge.ChallengeDalsiAction challengeDalsiAction = new cz.geokuk.plugins.challenge.ChallengeDalsiAction();
 	public final cz.geokuk.plugins.challenge.ChallengePredchoziAction challengePredchoziAction = new cz.geokuk.plugins.challenge.ChallengePredchoziAction();
 	public final cz.geokuk.plugins.challenge.ChallengeJenKandidatiAction challengeJenKandidatiAction = new cz.geokuk.plugins.challenge.ChallengeJenKandidatiAction();
+	public final cz.geokuk.plugins.challenge.ChallengeSektoryAction challengeSektoryAction = new cz.geokuk.plugins.challenge.ChallengeSektoryAction();
+	public final cz.geokuk.plugins.challenge.ChallengeStitkyAction challengeStitkyAction = new cz.geokuk.plugins.challenge.ChallengeStitkyAction();
 
 	public final MrizkaDdAction mrizkaDdAction = new MrizkaDdAction();
 	public final MrizkaDdMmMmmAction mrizkaDdMmMmmAction = new MrizkaDdMmMmmAction();
