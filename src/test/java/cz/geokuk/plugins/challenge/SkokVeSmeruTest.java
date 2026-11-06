@@ -212,4 +212,16 @@ public class SkokVeSmeruTest {
 		Assert.assertEquals("na jih", SmerSkoku.JIH.text());
 		Assert.assertEquals("na západ", SmerSkoku.ZAPAD.text());
 	}
+
+	@Test
+	public void presnaHranicePetaCtyricetiStupnuPatriDovnitr() {
+		Assert.assertTrue(SkokVeSmeru.jeVKuzelu(45, 0));
+		Assert.assertTrue(SkokVeSmeru.jeVKuzelu(315, 0));
+		Assert.assertTrue(SkokVeSmeru.jeVKuzelu(135, 90));
+		Assert.assertTrue(SkokVeSmeru.jeVKuzelu(0, 315));
+		Assert.assertEquals(45, SkokVeSmeru.rozdilUhlu(315, 0), 0);
+		Assert.assertFalse(SkokVeSmeru.jeVKuzelu(45.000001, 0));
+		Assert.assertFalse(SkokVeSmeru.jeVKuzelu(314.999999, 0));
+		Assert.assertTrue(SkokVeSmeru.jeVKuzelu(44.999999, 0));
+	}
 }

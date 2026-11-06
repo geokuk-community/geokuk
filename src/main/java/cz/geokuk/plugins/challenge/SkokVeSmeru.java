@@ -47,7 +47,7 @@ public final class SkokVeSmeru {
 			if (d == vzdalenost && !jeLepsiPriShode(idKese, sektorKese)) {
 				return;
 			}
-			if (rozdilUhlu(Geodezie.azimutKoule(lat, lon, latKese, lonKese), smer) > POLOVINA_KUZELE) {
+			if (!jeVKuzelu(Geodezie.azimutKoule(lat, lon, latKese, lonKese), smer)) {
 				return;
 			}
 			id = idKese;
@@ -65,6 +65,11 @@ public final class SkokVeSmeru {
 		private boolean jeLepsiPriShode(final String idKese, final int sektorKese) {
 			return sektorKese < sektor || sektorKese == sektor && idKese.compareTo(id) < 0;
 		}
+	}
+
+	/** Leží azimut keše v kuželu kolem směru? Hranice patří dovnitř. */
+	static boolean jeVKuzelu(final double azimutKese, final double smer) {
+		return rozdilUhlu(azimutKese, smer) <= POLOVINA_KUZELE;
 	}
 
 	/** Úhlový rozdíl dvou azimutů ve stupních, 0 až 180. */
