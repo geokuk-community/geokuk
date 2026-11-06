@@ -85,6 +85,7 @@ public class DatumyKeseTest {
 		Assert.assertEquals(LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:00:01Z", ZoneId.of("America/New_York")));
 		Assert.assertEquals(LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:01:00Z", ZoneId.of("America/New_York")));
 		Assert.assertEquals(LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:00:00.001Z", ZoneId.of("America/New_York")));
+		Assert.assertEquals("půlnoc s posunem +01:00 je 4. 3. v New Yorku", LocalDate.of(2024, 3, 4), DatumyKese.datum("2024-03-05T00:00:00+01:00", ZoneId.of("America/New_York")));
 		Assert.assertEquals("posun jiný než Z je skutečný okamžik", LocalDate.of(2026, 3, 13), DatumyKese.datum("2026-03-14T00:00:00+02:00", ZoneId.of("UTC")));
 	}
 }
