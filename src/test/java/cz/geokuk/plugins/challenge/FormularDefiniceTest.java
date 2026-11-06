@@ -128,4 +128,23 @@ public class FormularDefiniceTest {
 		Assert.assertTrue(FormularDefinice.souhrn(new Challenge("X", Challenge.Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)).startsWith("D/T · "));
 		Assert.assertTrue(FormularDefinice.souhrn(new Challenge("X", Challenge.Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)).startsWith("Kalendář · "));
 	}
+
+	@Test
+	public void dtZFormulareBereJenNazevANalezyOstatniZustane() {
+		final Challenge puvodni = new Challenge("DT", Challenge.Typ.DT_MATICE, Stred.souradnice(50, 14), OblastDef.stat(Sablony.STAT_CESKO), ZdrojPravidel.STATOR);
+		final Challenge nova = FormularDefinice.sestav(puvodni, "Nové DT", ZdrojPravidel.PGC, DruhStredu.LISTING, "xx", "yy", "!!", oblast(null), ZdrojeNalezu.VSECHNY);
+		Assert.assertEquals("Nové DT", nova.nazev());
+		Assert.assertEquals(Challenge.Typ.DT_MATICE, nova.typ());
+		Assert.assertEquals(ZdrojeNalezu.VSECHNY, nova.nalezy());
+		Assert.assertEquals("střed zůstal, formulářové hodnoty se u D/T nečtou", puvodni.stred(), nova.stred());
+		Assert.assertEquals(puvodni.oblast(), nova.oblast());
+		Assert.assertEquals(ZdrojPravidel.STATOR, nova.zdroj());
+	}
+
+	@Test
+	public void kalendarSeVDialoguNenabizi() {
+		Assert.assertTrue(FormularDefinice.jeVNabidce(Sablony.cesko360()));
+		Assert.assertTrue(FormularDefinice.jeVNabidce(new Challenge("DT", Challenge.Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)));
+		Assert.assertFalse(FormularDefinice.jeVNabidce(new Challenge("K", Challenge.Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC)));
+	}
 }
