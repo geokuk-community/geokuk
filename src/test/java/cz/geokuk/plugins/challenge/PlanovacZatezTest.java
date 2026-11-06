@@ -40,6 +40,8 @@ public class PlanovacZatezTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
+	/** Vlákna plánovače, která v JVM žila ještě před vznikem plánovače tohoto testu (po jiných testech). */
+	private java.util.Set<Thread> vlaknaPredTestem;
 	private ChallengeModel model;
 	private PlanovacChallenge planovac;
 	private volatile Wgs stred = A;
@@ -48,6 +50,7 @@ public class PlanovacZatezTest {
 	@Before
 	public void setUp() throws Exception {
 		final Path adresar = tmp.newFolder("predpocet").toPath();
+		vlaknaPredTestem = vlaknaPlanovace();
 		model = new ChallengeModel();
 		model.setUloziste(() -> new MapoveUloziste());
 		model.inject(new EventFirer() {
@@ -187,14 +190,66 @@ public class PlanovacZatezTest {
 		planovac.zavri();
 	}
 
-	private static boolean jeJesteVlakno() {
+	private static java.util.Set<Thread> vlaknaPlanovace() {
+		final java.util.Set<Thread> v = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 		for (final Thread t : Thread.getAllStackTraces().keySet()) {
 			final String n = t.getName();
 			if (t.isAlive() && ("Plánovač challenge".equals(n) || "Odklad plánovače challenge".equals(n) || "Předpočet challenge".equals(n))) {
-				return true;
+				v.add(t);
 			}
 		}
-		return false;
+		return v;
+	}
+
+	/** Žije ještě některé vlákno, které vzniklo až po začátku tohoto testu? */
+	private boolean jeJesteVlakno() {
+		final java.util.Set<Thread> ted = vlaknaPlanovace();
+		ted.removeAll(vlaknaPredTestem);
+		return !ted.isEmpty();
+	}
+
+
+	@Test
+	public void posunStreduZpetPocasPrepoctuNenechaVysledekProStarySteD() throws Exception {
+		final Challenge kal = model.ulozVlastni(new Challenge("Kal", Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		final List<PolicekKes> data = new ArrayList<>();
+		data.add(new PolicekKes("K_A", A.lat + 0.01, A.lon + 0.01, false, 0, 0, null, DNES.plusDays(10), true));
+		data.add(new PolicekKes("K_B", B.lat + 0.01, B.lon + 0.01, false, 0, 0, null, DNES.plusDays(10), true));
+		planovac.keseNacteny(data);
+		naEdt(() -> {
+			model.aktivuj(kal);
+			model.setZapnuto(true);
+		});
+		pockej(() -> prvniKandidatKalendare(kal, "K_A"), "výsledek pro A");
+		final long vysledkuPred = udalostiVysledku();
+		final CountDownLatch zacal = new CountDownLatch(1);
+		final CountDownLatch pust = new CountDownLatch(1);
+		planovac.dnes = () -> {
+			zacal.countDown();
+			try {
+				pust.await(30, TimeUnit.SECONDS);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			return DNES;
+		};
+		stred = B;
+		naEdt(planovac::stredMapyZmenen);
+		Assert.assertTrue("přepočet pro B začal", zacal.await(30, TimeUnit.SECONDS));
+		stred = A;
+		naEdt(planovac::stredMapyZmenen);
+		pust.countDown();
+		pockej(() -> udalostiVysledku() > vysledkuPred, "doběhl přepočet po návratu středu");
+		pockej(() -> prvniKandidatKalendare(kal, "K_A"), "výsledek odpovídá středu mapy A po návratu");
+	}
+
+	private long udalostiVysledku() {
+		return udalosti.stream().filter(e -> e.druh() == ChallengeZmenenyEvent.Druh.VYSLEDEK).count();
+	}
+
+	private boolean prvniKandidatKalendare(final Challenge kal, final String id) {
+		final VysledekPolicek v = model.vysledekPolicek(kal);
+		return v != null && !v.kandidati().isEmpty() && id.equals(v.kandidati().get(0).id());
 	}
 
 	@Test
