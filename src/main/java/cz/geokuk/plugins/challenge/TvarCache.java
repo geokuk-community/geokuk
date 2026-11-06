@@ -37,7 +37,7 @@ final class TvarCache {
 			posledni = p;
 		}
 		if (p.budouci.isDone()) {
-			return p.budouci.getNow(null);
+			return p.budouci.join();
 		}
 		p.budouci.thenRun(() -> SwingUtilities.invokeLater(poHotovo));
 		return null;
