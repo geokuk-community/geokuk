@@ -59,7 +59,10 @@ public class JChallengeDialog extends JMyDialog0 {
 
 	@Override
 	protected void initComponents() {
-		setLayout(new BorderLayout(8, 8));
+		// Dolní panel s tlačítkem Zavřít přidal JMyDialog0 do SOUTH; obsah je proto ve vlastním panelu a rozvržení dialogu se nemění.
+		final JPanel obsah = new JPanel(new BorderLayout(8, 8));
+		obsah.setBorder(BorderFactory.createEmptyBorder(8, 8, 0, 8));
+		add(obsah, BorderLayout.CENTER);
 		seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		seznam.setCellRenderer(new DefaultListCellRenderer() {
 			private static final long serialVersionUID = 1L;
@@ -86,7 +89,7 @@ public class JChallengeDialog extends JMyDialog0 {
 		levaTlacitka.add(kopie);
 		levaTlacitka.add(smazat);
 		levyPanel.add(levaTlacitka, BorderLayout.SOUTH);
-		add(levyPanel, BorderLayout.WEST);
+		obsah.add(levyPanel, BorderLayout.WEST);
 
 		final ButtonGroup skupina = new ButtonGroup();
 		skupina.add(stredDomov);
@@ -107,7 +110,7 @@ public class JChallengeDialog extends JMyDialog0 {
 		radek(f, r++, null, uloz);
 		final JPanel pravyObal = new JPanel(new BorderLayout());
 		pravyObal.add(f, BorderLayout.NORTH);
-		add(pravyObal, BorderLayout.CENTER);
+		obsah.add(pravyObal, BorderLayout.CENTER);
 
 		aktivni.addActionListener(e -> prepniAktivni());
 		kopie.addActionListener(e -> vytvorKopii());

@@ -12,6 +12,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ public class JChallengeDialogTest {
 
 	@Before
 	public void setUp() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
 		SwingUtilities.invokeAndWait(() -> {
 			model = new ChallengeModel();
 			model.inject(new EventFirer() {
@@ -48,7 +50,9 @@ public class JChallengeDialogTest {
 
 	@After
 	public void tearDown() throws Exception {
-		SwingUtilities.invokeAndWait(() -> dialog.dispose());
+		if (dialog != null) {
+			SwingUtilities.invokeAndWait(() -> dialog.dispose());
+		}
 	}
 
 	private static <T extends Component> List<T> najdi(final Container c, final Class<T> typ, final List<T> vysledek) {
@@ -192,6 +196,23 @@ public class JChallengeDialogTest {
 			Assert.assertTrue("šablona se nepřepíše ani nezkopíruje", model.vlastni().isEmpty());
 			Assert.assertEquals("bez chybové hlášky", "", chyba());
 			Assert.assertEquals(3, dialog.polozky().size());
+		});
+	}
+
+	@Test
+	public void dialogMaViditelneTlacitkoZavritPodObsahem() throws Exception {
+		naEdt(() -> {
+			dialog.setSize(760, 420);
+			dialog.validate();
+			final AbstractButton zavrit = tlacitko("Zavřít");
+			Assert.assertTrue(zavrit.isShowing() || zavrit.isVisible());
+			Assert.assertTrue("tlačítko má velikost", zavrit.getWidth() > 0 && zavrit.getHeight() > 0);
+			final java.awt.Point p = javax.swing.SwingUtilities.convertPoint(zavrit, 0, 0, dialog.getContentPane());
+			final java.awt.Point uloz = javax.swing.SwingUtilities.convertPoint(tlacitko("Uložit změny"), 0, 0, dialog.getContentPane());
+			Assert.assertTrue("Zavřít je pod formulářem: " + p + " × " + uloz, p.y > uloz.y);
+			Assert.assertTrue("a uvnitř dialogu", p.y + zavrit.getHeight() <= dialog.getContentPane().getHeight());
+			zavrit.doClick();
+			Assert.assertFalse("zavře dialog", dialog.isDisplayable());
 		});
 	}
 }

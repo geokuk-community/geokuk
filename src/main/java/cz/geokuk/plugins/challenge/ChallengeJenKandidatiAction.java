@@ -10,7 +10,7 @@ public class ChallengeJenKandidatiAction extends ToggleAction0 {
 
 	public ChallengeJenKandidatiAction() {
 		super("Zobrazit jen kandidáty");
-		putValue(SHORT_DESCRIPTION, "Na mapě nechá jen nenalezené keše, které zaplní chybějící sektor.");
+		putValue(SHORT_DESCRIPTION, "Na mapě nechá jen nenalezené keše, které doplní chybějící sektor, políčko nebo den.");
 		setEnabled(false);
 	}
 
