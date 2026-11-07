@@ -65,12 +65,12 @@ public class OkoKesoiduIkonaTest {
 		Assert.assertEquals(20, new OkoKesoiduIkona().getIconWidth());
 	}
 
-	private static BufferedImage nakresli(final boolean zobrazuji, final boolean povoleno, final boolean barevne) {
+	private static BufferedImage nakresli(final boolean zobrazuji, final boolean povoleno) {
 		final JToggleButton b = new JToggleButton();
 		b.setSelected(zobrazuji);
 		b.setEnabled(povoleno);
 		b.setForeground(Color.BLACK);
-		final OkoKesoiduIkona ikona = new OkoKesoiduIkona(barevne);
+		final OkoKesoiduIkona ikona = new OkoKesoiduIkona();
 		final BufferedImage obraz = new BufferedImage(ikona.getIconWidth(), ikona.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
 		final java.awt.Graphics2D g = obraz.createGraphics();
 		ikona.paintIcon(b, g, 0, 0);
@@ -91,22 +91,20 @@ public class OkoKesoiduIkonaTest {
 	}
 
 	@Test
-	public void ikonaMaRozmer20x20AKresliSeVeVsechStavechIVariantach() {
-		for (final boolean barevne : new boolean[] { false, true }) {
-			for (final boolean zobrazuji : new boolean[] { false, true }) {
-				for (final boolean povoleno : new boolean[] { false, true }) {
-					final BufferedImage o = nakresli(zobrazuji, povoleno, barevne);
-					Assert.assertEquals(20, o.getWidth());
-					Assert.assertEquals(20, o.getHeight());
-					Assert.assertTrue("kreslí se: " + zobrazuji + povoleno + barevne, pixelu(o) > 60);
-				}
+	public void ikonaMaRozmer20x20AKresliSeVeVsechStavech() {
+		for (final boolean zobrazuji : new boolean[] { false, true }) {
+			for (final boolean povoleno : new boolean[] { false, true }) {
+				final BufferedImage o = nakresli(zobrazuji, povoleno);
+				Assert.assertEquals(20, o.getWidth());
+				Assert.assertEquals(20, o.getHeight());
+				Assert.assertTrue("kreslí se: " + zobrazuji + povoleno, pixelu(o) > 20);
 			}
 		}
 	}
 
 	@Test
 	public void zakazaneOkoJeSede() {
-		final BufferedImage o = nakresli(true, false, false);
+		final BufferedImage o = nakresli(true, false);
 		for (int y = 0; y < o.getHeight(); y++) {
 			for (int x = 0; x < o.getWidth(); x++) {
 				final int argb = o.getRGB(x, y);
@@ -126,8 +124,8 @@ public class OkoKesoiduIkonaTest {
 
 	@Test
 	public void skryteOkoJeZesvetleneAZobrazeneJeCelistve() {
-		Assert.assertTrue("zobrazené oko má plné pixely", maxAlfa(nakresli(true, true, false), 0, 6) > 250);
-		Assert.assertTrue("skryté oko je vlevo průsvitné", maxAlfa(nakresli(false, true, false), 0, 6) < 200);
+		Assert.assertTrue("zobrazené oko má plné pixely", maxAlfa(nakresli(true, true), 0, 6) > 250);
+		Assert.assertTrue("skryté oko je vlevo průsvitné", maxAlfa(nakresli(false, true), 0, 6) < 200);
 	}
 
 	/** Největší krytí pixelů v levém horním rohu ikony (mimo přeškrtnutí). */
@@ -141,18 +139,54 @@ public class OkoKesoiduIkonaTest {
 		return m;
 	}
 
-	@Test
-	public void barevnaVarianta() {
-		final BufferedImage o = nakresli(true, true, true);
-		int zelenych = 0;
+	private static boolean jeZelena(final int rgb) {
+		return Math.abs(((rgb >> 16) & 0xff) - 10) < 12 && Math.abs(((rgb >> 8) & 0xff) - 200) < 12 && Math.abs((rgb & 0xff) - 10) < 12;
+	}
+
+	private static BufferedImage nakresliSkryte(final JToggleButton b) {
+		b.setSelected(false);
+		final OkoKesoiduIkona ikona = new OkoKesoiduIkona();
+		final BufferedImage obraz = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = obraz.createGraphics();
+		ikona.paintIcon(b, g, 0, 0);
+		g.dispose();
+		return obraz;
+	}
+
+	private static int pixeluBarvy(final BufferedImage o, final java.util.function.IntPredicate p) {
+		int n = 0;
 		for (int y = 0; y < o.getHeight(); y++) {
 			for (int x = 0; x < o.getWidth(); x++) {
-				final int argb = o.getRGB(x, y);
-				if ((argb >>> 24) > 200 && ((argb >> 8) & 0xff) > ((argb) & 0xff) + 80) {
-					zelenych++;
+				if ((o.getRGB(x, y) >>> 24) > 60 && p.test(o.getRGB(x, y))) {
+					n++;
 				}
 			}
 		}
-		Assert.assertTrue("barevné oko má zelenožluté pixely: " + zelenych, zelenych > 20);
+		return n;
+	}
+
+	@Test
+	public void naTmavemTlacitkuJeCaraSvetlejsi() {
+		final JToggleButton tmave = new JToggleButton();
+		tmave.setForeground(Color.WHITE);
+		tmave.setBackground(new Color(40, 40, 40));
+		Assert.assertTrue(pixeluBarvy(nakresliSkryte(tmave), rgb -> ((rgb >> 16) & 0xff) > 240 && ((rgb >> 8) & 0xff) > 100 && ((rgb >> 8) & 0xff) < 125) > 5);
+		final JToggleButton svetle = new JToggleButton();
+		svetle.setForeground(Color.BLACK);
+		svetle.setBackground(new Color(238, 238, 238));
+		Assert.assertEquals(0, pixeluBarvy(nakresliSkryte(svetle), rgb -> ((rgb >> 8) & 0xff) > 100 && ((rgb >> 16) & 0xff) > 240 && ((rgb >> 8) & 0xff) < 125));
+	}
+
+	@Test
+	public void skryteOkoNemaPodkladCaryVBarveTlacitka() {
+		final JToggleButton b = new JToggleButton();
+		b.setForeground(Color.BLACK);
+		b.setBackground(new Color(10, 200, 10));
+		final BufferedImage o = nakresliSkryte(b);
+		Assert.assertEquals("kolem čáry zůstává průhledno, ne barva tlačítka", 0, pixeluBarvy(o, rgb -> jeZelena(rgb)));
+		Assert.assertEquals("a oko je jen částečně krycí", 0, pixeluBarvy(o, rgb -> ((rgb >> 16) & 0xff) < 100 && ((rgb >> 8) & 0xff) < 100 && (rgb & 0xff) < 100 && (rgb >>> 24) > 200));
+		final int zbyva = pixeluBarvy(o, rgb -> ((rgb >> 16) & 0xff) < 100);
+		Assert.assertTrue("pod čárou je oko vyříznuté, zbývá " + zbyva + " z " + pixelu(nakresli(true, true)), zbyva + 12 < pixelu(nakresli(true, true)));
+		Assert.assertTrue("oko zůstalo vedle čáry", pixeluBarvy(nakresliSkryte(b), rgb -> (rgb >>> 24) > 60 && (rgb >>> 24) < 160) > 20);
 	}
 }

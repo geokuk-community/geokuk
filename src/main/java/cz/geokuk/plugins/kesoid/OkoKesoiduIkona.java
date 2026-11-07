@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GradientPaint;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
@@ -31,16 +30,6 @@ public class OkoKesoiduIkona implements Icon {
 
 	private static final Path2D OKO_TVAR = cesta(OKO);
 	private static final Path2D RASY_TVAR = cesta(RASY);
-
-	private final boolean barevne;
-
-	public OkoKesoiduIkona() {
-		this(false);
-	}
-
-	OkoKesoiduIkona(final boolean barevne) {
-		this.barevne = barevne;
-	}
 
 	/** Cesta z podmnožiny SVG (M, L, C, Z, absolutní souřadnice), která stačí pro ikonu programu. */
 	static Path2D cesta(final String d) {
@@ -68,6 +57,11 @@ public class OkoKesoiduIkona implements Icon {
 		return p;
 	}
 
+	/** Barva písma je světlá (tmavé téma), takže červená čára musí být světlejší. */
+	static boolean jeSvetle(final Color c) {
+		return 0.299 * c.getRed() + 0.587 * c.getGreen() + 0.114 * c.getBlue() > 150;
+	}
+
 	@Override
 	public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
 		final boolean zobrazuji = !(c instanceof AbstractButton) || ((AbstractButton) c).isSelected();
@@ -81,30 +75,20 @@ public class OkoKesoiduIkona implements Icon {
 			g2.translate(0, (VELIKOST - 170 * meritko) / 2);
 			g2.scale(meritko, meritko);
 			g2.translate(-OD_X, -OD_Y);
+			final Color barva = povoleno ? c.getForeground() : Color.GRAY;
+			final java.awt.geom.Area oko = new java.awt.geom.Area(RASY_TVAR);
+			oko.add(new java.awt.geom.Area(OKO_TVAR));
+			oko.add(new java.awt.geom.Area(new Ellipse2D.Double(128 - 21, 158.28 - 21, 42, 42)));
+			final java.awt.geom.Line2D.Double cara = new java.awt.geom.Line2D.Double(48, 205, 208, 62);
 			if (!zobrazuji) {
+				oko.subtract(new java.awt.geom.Area(new BasicStroke(46f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(cara)));
 				g2.setComposite(AlphaComposite.SrcOver.derive(0.45f));
 			}
-			final Color barva = povoleno ? c.getForeground() : Color.GRAY;
-			if (barevne && povoleno) {
-				g2.setPaint(new GradientPaint(0, 105, new Color(0xFFD21F), 0, 112, new Color(0xFFB400)));
-				g2.fill(RASY_TVAR);
-				g2.setPaint(new GradientPaint(24, 105, new Color(0x5BD13A), 232, 212, new Color(0xFFB400)));
-				g2.fill(OKO_TVAR);
-				g2.setColor(new Color(0x239C2B));
-				g2.fill(new Ellipse2D.Double(101, 131.28, 54, 54));
-			} else {
-				g2.setColor(barva);
-				g2.fill(RASY_TVAR);
-				g2.fill(OKO_TVAR);
-				g2.fill(new Ellipse2D.Double(128 - 21, 158.28 - 21, 42, 42));
-			}
+			g2.setColor(barva);
+			g2.fill(oko);
 			if (!zobrazuji) {
 				g2.setComposite(AlphaComposite.SrcOver);
-				final java.awt.geom.Line2D.Double cara = new java.awt.geom.Line2D.Double(48, 205, 208, 62);
-				g2.setColor(c.getBackground());
-				g2.setStroke(new BasicStroke(46f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-				g2.draw(cara);
-				g2.setColor(new Color(200, 30, 30));
+				g2.setColor(jeSvetle(c.getForeground()) ? new Color(255, 110, 110) : new Color(200, 30, 30));
 				g2.setStroke(new BasicStroke(26f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 				g2.draw(cara);
 			}
