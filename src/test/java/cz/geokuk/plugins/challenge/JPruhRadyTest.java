@@ -139,6 +139,36 @@ public class JPruhRadyTest {
 		Assert.assertTrue("po uvolnění místa se ukáže", radaVidet());
 	}
 
+	/** Když se rada nevejde, příznak se nezapíše; v širším okně se ukáže a teprve pak zapíše. */
+	@Test
+	public void nevejdeSeTakSeNezapiseAUkazeSePozdeji() throws Exception {
+		final MapoveUloziste u = new MapoveUloziste();
+		start(u, 240);
+		Assert.assertFalse(radaVidet());
+		Assert.assertNull("nevešla se, příznak se nezapíše", u.get("rada.zobrazena"));
+		start(u, 240);
+		Assert.assertFalse(radaVidet());
+		Assert.assertNull("ani při dalším úzkém startu", u.get("rada.zobrazena"));
+		SwingUtilities.invokeAndWait(() -> pruh.setSize(1280, 700));
+		Assert.assertTrue("v širším okně se ukáže", radaVidet());
+		Assert.assertEquals("a zapíše", "true", u.get("rada.zobrazena"));
+		start(u, 1280);
+		Assert.assertFalse("další start už ne", radaVidet());
+	}
+
+	/** Panel v pásu lišty radu odsune; příznak se zapíše, až když se opravdu ukáže. */
+	@Test
+	public void prekazkaOdloziZapis() throws Exception {
+		final MapoveUloziste u = new MapoveUloziste();
+		prekazka = new Rectangle(120, 0, 200, 60);
+		start(u, 1280);
+		Assert.assertFalse(radaVidet());
+		Assert.assertNull(u.get("rada.zobrazena"));
+		prekazka = null;
+		Assert.assertTrue(radaVidet());
+		Assert.assertEquals("true", u.get("rada.zobrazena"));
+	}
+
 	@Test
 	public void predNactenimNastaveniSeNeukaze() throws Exception {
 		final ChallengeModel m = new ChallengeModel();

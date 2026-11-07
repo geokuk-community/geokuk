@@ -394,6 +394,9 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		final Rectangle mistoRady = radaVidet && !zapnuto ? oblastRady() : new Rectangle();
 		rada.setBounds(mistoRady);
 		rada.setVisible(!mistoRady.isEmpty());
+		if (rada.isVisible() && model != null) {
+			model.setRadaZobrazena();
+		}
 		final boolean texty = stupen == Stupen.PLNY;
 		nastavText(kandidati, texty ? "jen kandidáti" : "");
 		nastavText(sektory, texty ? "Sektory" : "");
@@ -462,9 +465,11 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private void obnov() {
 		zapnuto = model != null && model.jeZapnuto();
 		if (model != null && !model.jeRadaZobrazena()) {
-			// Kdo má plánovač zapnutý, ho už zná; ostatním se rada ukáže jednou.
+			// Kdo má plánovač zapnutý, ho už zná; ostatním se rada ukáže jednou (zapamatuje se v doLayout, až se opravdu vejde).
 			radaVidet = !zapnuto;
-			model.setRadaZobrazena();
+			if (zapnuto) {
+				model.setRadaZobrazena();
+			}
 		}
 		if (zapnuto) {
 			radaVidet = false;
