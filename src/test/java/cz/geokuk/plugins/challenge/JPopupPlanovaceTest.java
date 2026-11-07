@@ -375,7 +375,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals(4, o.postup.getValue());
 		Assert.assertEquals(TextyPopupuPlanovace.legendaMatice(3), o.legenda.getText());
 		Assert.assertEquals("1/3", o.matice.nalezyZCile("D1/T1"));
-		popup.vyberPolicko("D1/T1");
+		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D1/T1"));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("Vybrané políčko: D1/T1 – 1 z 3 nálezů, 5 kandidátů", o.nadpisSeznamu.getText());
 	}
