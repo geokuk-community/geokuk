@@ -169,6 +169,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(kesky);
 			factory.init(planovacNad);
 			factory.init(planovacPod);
+			factory.init(new cz.geokuk.plugins.challenge.SledovaniVybraneKese());
 			factory.init(pozicovnik);
 			factory.init(zvyraznovaciKruhy);
 			factory.init(obsazenik);

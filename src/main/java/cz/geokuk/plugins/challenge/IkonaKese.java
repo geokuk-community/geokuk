@@ -26,10 +26,16 @@ final class IkonaKese {
 			return;
 		}
 		final Optional<Wpt> nejblizsi = indexator.bound(new BoundingRect(mou.xx - 2, mou.yy - 2, mou.xx + 2, mou.yy + 2)).locateNearestOne(mou.xx, mou.yy);
-		if (!nejblizsi.isPresent()) {
-			return;
+		if (nejblizsi.isPresent()) {
+			okraje(nejblizsi.get(), meritko, vysledek);
 		}
-		final Sklivec sklivec = nejblizsi.get().getSklivec();
+	}
+
+	/** Totéž pro známou keš; bez hotového sklivce platí odhad. */
+	static void okraje(final Wpt wpt, final double meritko, final int[] vysledek) {
+		vysledek[0] = (int) Math.ceil(NEZNAMA_POLOVINA * meritko);
+		vysledek[1] = 0;
+		final Sklivec sklivec = wpt.getSklivec();
 		if (sklivec == null) {
 			return;
 		}
