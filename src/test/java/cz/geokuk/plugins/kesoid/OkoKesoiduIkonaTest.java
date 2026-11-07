@@ -62,7 +62,7 @@ public class OkoKesoiduIkonaTest {
 	public void ikonaSeKresliVObouStavech() {
 		Assert.assertTrue(nakreslenych(true) > 40);
 		Assert.assertTrue(nakreslenych(false) > nakreslenych(true));
-		Assert.assertEquals(20, new OkoKesoiduIkona().getIconWidth());
+		Assert.assertEquals(16, new OkoKesoiduIkona().getIconWidth());
 	}
 
 	private static BufferedImage nakresli(final boolean zobrazuji, final boolean povoleno) {
@@ -95,8 +95,8 @@ public class OkoKesoiduIkonaTest {
 		for (final boolean zobrazuji : new boolean[] { false, true }) {
 			for (final boolean povoleno : new boolean[] { false, true }) {
 				final BufferedImage o = nakresli(zobrazuji, povoleno);
-				Assert.assertEquals(20, o.getWidth());
-				Assert.assertEquals(20, o.getHeight());
+				Assert.assertEquals(16, o.getWidth());
+				Assert.assertEquals(16, o.getHeight());
 				Assert.assertTrue("kreslí se: " + zobrazuji + povoleno, pixelu(o) > 20);
 			}
 		}
@@ -146,7 +146,7 @@ public class OkoKesoiduIkonaTest {
 	private static BufferedImage nakresliSkryte(final JToggleButton b) {
 		b.setSelected(false);
 		final OkoKesoiduIkona ikona = new OkoKesoiduIkona();
-		final BufferedImage obraz = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+		final BufferedImage obraz = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 		final java.awt.Graphics2D g = obraz.createGraphics();
 		ikona.paintIcon(b, g, 0, 0);
 		g.dispose();
@@ -188,5 +188,35 @@ public class OkoKesoiduIkonaTest {
 		final int zbyva = pixeluBarvy(o, rgb -> ((rgb >> 16) & 0xff) < 100);
 		Assert.assertTrue("pod čárou je oko vyříznuté, zbývá " + zbyva + " z " + pixelu(nakresli(true, true)), zbyva + 12 < pixelu(nakresli(true, true)));
 		Assert.assertTrue("oko zůstalo vedle čáry", pixeluBarvy(nakresliSkryte(b), rgb -> (rgb >>> 24) > 60 && (rgb >>> 24) < 160) > 20);
+	}
+
+	@Test
+	public void tlacitkoOkaMaVelikostTlacitkaTisk() throws Exception {
+		for (final javax.swing.plaf.metal.MetalTheme tema : new javax.swing.plaf.metal.MetalTheme[] { new javax.swing.plaf.metal.OceanTheme(), new javax.swing.plaf.metal.DefaultMetalTheme() }) {
+			final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
+			final javax.swing.plaf.metal.MetalTheme puvodniTema = javax.swing.plaf.metal.MetalLookAndFeel.getCurrentTheme();
+			try {
+				javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(tema);
+				javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+				final javax.swing.JToolBar tb = new javax.swing.JToolBar();
+				final javax.swing.Icon tisk16 = new javax.swing.ImageIcon(new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB));
+				final javax.swing.JButton tisk = tb.add(new javax.swing.AbstractAction("Tisk", tisk16) {
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public void actionPerformed(final java.awt.event.ActionEvent e) {
+						// jen rozměr
+					}
+				});
+				final JToggleButton oko = new JToggleButton(new OkoKesoiduIkona());
+				oko.setFocusable(false);
+				tb.add(oko);
+				Assert.assertEquals(tisk.getPreferredSize(), oko.getPreferredSize());
+				Assert.assertEquals(tisk.getBorder().getBorderInsets(tisk), oko.getBorder().getBorderInsets(oko));
+			} finally {
+				javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(puvodniTema);
+				javax.swing.UIManager.setLookAndFeel(puvodni);
+			}
+		}
 	}
 }
