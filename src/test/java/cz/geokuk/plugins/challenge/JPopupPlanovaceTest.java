@@ -171,6 +171,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("jen sektory s kandidáty, po kružnici", java.util.Arrays.asList("47°  1 kandidát  nejbližší 6,2 km od středu", "213°  2 kandidáti  nejbližší 2,8 km od středu"), radky);
 		Assert.assertEquals("+ 1 sektor bez kandidátů", o.bezKandidatu.getText());
 		Assert.assertTrue(o.nejiste.getText(), o.nejiste.getText().contains("U 1 sektoru leží nalezená keš do 0,05° od hranice"));
+		Assert.assertTrue(o.nejiste.isVisible());
 		Assert.assertTrue(o.dalsi.isEnabled());
 		Assert.assertEquals("▶ Další sektor", o.dalsi.getText());
 		Assert.assertEquals(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360), o.napoveda.getText());
@@ -313,7 +314,8 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals(JMaticeDT.Stav.BEZ_KANDIDATU, o.matice.stav("D5/T5"));
 		Assert.assertEquals(JMaticeDT.Stav.SPLNENO, o.matice.stav("D2/T2"));
 		Assert.assertFalse("střed je jen u 360°", o.stred.isVisible());
-		Assert.assertEquals(" ", o.nejiste.getText());
+		Assert.assertFalse("prázdné upozornění nezabírá místo", o.nejiste.isVisible());
+		Assert.assertFalse(o.omezeniStitku.isVisible());
 		Assert.assertEquals("▶ Další políčko", o.dalsi.getText());
 		Assert.assertFalse("bez kandidátů není kam jít", o.dalsi.isEnabled());
 		Assert.assertFalse(o.vsechnaPolicka.isVisible());
@@ -376,6 +378,18 @@ public class JPopupPlanovaceTest {
 		popup.vyberPolicko("D1/T1");
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("Vybrané políčko: D1/T1 – 1 z 3 nálezů, 5 kandidátů", o.nadpisSeznamu.getText());
+	}
+
+	/** Výběr políčka u 360° nic nezmění: políčka má jen matice D/T. */
+	@Test
+	public void vyberPolickaU360NicNedela() throws Exception {
+		priprav();
+		popup.prepni();
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47 }, new int[0], new double[][] { { 47, 6200 } }));
+		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D1/T1"));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNull(model.vybranePolicko(aktivni360()));
+		Assert.assertNull("filtr se nezapne", model.jenKandidatiPro());
 	}
 
 	/** Klik na políčko matice ho vybere a zapne „jen kandidáti“; F4 pak filtr vypne a výběr nechá; druhý klik výběr zruší. */

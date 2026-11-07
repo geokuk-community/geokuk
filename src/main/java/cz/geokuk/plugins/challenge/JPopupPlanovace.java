@@ -197,6 +197,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	void obnov() {
 		final Challenge c = challenge();
 		obsah.omezeniStitku.setText(model == null ? " " : TextyPopupuPlanovace.omezeniStitku(model.kandidatuVeVyrezu()));
+		// Prázdný řádek by v popupu nechal mezeru nad tlačítky.
+		obsah.omezeniStitku.setVisible(!obsah.omezeniStitku.getText().trim().isEmpty());
 		if (c != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
@@ -450,6 +452,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			bezKandidatu.setText(" ");
 			bezKandidatu.setToolTipText(TextyPopupuPlanovace.tipBezKandidatu(c.typ()));
 			nejiste.setText(" ");
+			nejiste.setVisible(false);
 			if (maVysledek) {
 				return true;
 			}
@@ -489,6 +492,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			bezKandidatu.setText(bez == 0 ? " " : TextyPopupuPlanovace.bezKandidatu(c.typ(), bez));
 			final String n = TextyPopupuPlanovace.nejiste(v);
 			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");
+			nejiste.setVisible(!n.isEmpty());
 			dalsi.setEnabled(polozky.stream().anyMatch(java.util.Objects::nonNull));
 		}
 

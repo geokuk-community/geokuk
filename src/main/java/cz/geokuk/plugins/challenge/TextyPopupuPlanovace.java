@@ -157,11 +157,11 @@ final class TextyPopupuPlanovace {
 	}
 
 	/** Legenda pod maticí D/T. */
-	static final String LEGENDA_MATICE = "✓ splněno · 3 chybí, počet kandidátů · – chybí, bez kandidátů";
+	static final String LEGENDA_MATICE = "✓ splněno · číslo = počet kandidátů · – chybí, bez kandidátů";
 
 	/** Legenda matice s násobností: políčko ukazuje nálezy z cíle, tečka znamená kandidáty. */
 	static String legendaMatice(final int cil) {
-		return "✓ splněno " + cil + "× · 1/" + cil + " nálezů · tečka: má kandidáty";
+		return "✓ splněno " + cil + "× · 1/" + cil + " = nálezy z cíle · tečka = má kandidáty";
 	}
 
 	/** Nápověda pod seznamem chybějících. */
