@@ -11,16 +11,14 @@
 - Plánovač challenge: Shift+šipka skočí na nejbližšího kandidáta ve směru
   šipky. Když tam žádný není, ukáže se o tom krátká zpráva.
 - Plánovač challenge: na mapě je prstenec sektorů se středem, klínem
-  chybějícího sektoru, kandidáti se štítky a čárou ke kandidátovi. Když je
+  vybraného sektoru, kandidáti se štítky a čárou ke kandidátovi. Když je
   střed mimo výřez, ukazuje na něj šipka a po kliknutí na ni se mapa na střed
   přesune.
-- Najednou je aktivní jedna challenge; zapnutí další vypne dosavadní. Kdo měl
-  zapnutou víc, ponechá se jedna a ostatní se vypnou.
+- Zapnutá je vždy jedna challenge; zapnutí další vypne dosavadní.
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
   vytvořit i z vlastní challenge.
-- Šablony 360° se jmenují podle originálních challenge s GC kódem (GC4PCQB –
-  Challenge - 360 degrees of the Czech Republic, GC56R49 – Challenge - 360
-  Degrees of Prague); je tu i šablona Matice D/T.
+- Šablony: 360° od domova, GC4PCQB – Challenge - 360 degrees of the Czech
+  Republic, GC56R49 – Challenge - 360 Degrees of Prague a Matice D/T.
 - Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
   Kruhy 161 m); dialog se jmenuje Nastavení kruhů.
 - Kruhy (Alt+F8) mají pevný poloměr v metrech, výchozí 100 m; mění se v
