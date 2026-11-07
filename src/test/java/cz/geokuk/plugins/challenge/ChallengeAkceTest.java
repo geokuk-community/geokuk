@@ -235,6 +235,27 @@ public class ChallengeAkceTest {
 		Assert.assertEquals(20, model.vybranySektor(Sablony.cesko360()));
 	}
 
+	/** Kandidát v sektoru 0° (přímo na sever): Shift+šipka vybere i sektor 0. */
+	@Test
+	public void skokNaKandidataVSektoruNulaVybereSektorNula() throws Exception {
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		final java.util.BitSet obsazene = new java.util.BitSet(360);
+		obsazene.set(1, 360);
+		final VysledekSektoru.Kandidati[] k = new VysledekSektoru.Kandidati[360];
+		k[0] = new VysledekSektoru.Kandidati(0);
+		k[0].pridej("GC0", 1000);
+		model.nastavVysledek(Sablony.cesko360(),
+				new VysledekSektoru(obsazene, new java.util.BitSet(360), k, 359, java.util.Collections.singletonList(new VysledekSektoru.KandidatKes("GC0", 50.01, 14.0, 0))));
+		SwingUtilities.invokeAndWait(() -> {});
+		final PlanovacChallenge p = planovac();
+		final VybranyKandidat[] v = new VybranyKandidat[1];
+		SwingUtilities.invokeAndWait(() -> v[0] = ChallengeAkce.skoc(model, p, SmerSkoku.SEVER));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("GC0", v[0].id());
+		Assert.assertEquals(0, model.vybranySektor(Sablony.cesko360()));
+	}
+
 	@Test
 	public void nazevATooltipPosunuPodleTypu() {
 		Assert.assertEquals("Další sektor", ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
