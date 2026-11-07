@@ -43,7 +43,7 @@ final class ChallengeAkce {
 	}
 
 	/**
-	 * Skočí na nejbližšího kandidáta zobrazené challenge ve směru (kužel ±45° od vybraného kandidáta, jinak od středu mapy): vybere ho a vystředí na něj mapu. Vrací
+	 * Skočí na nejbližšího kandidáta zobrazené challenge ve směru (kužel ±45° od vybraného kandidáta, jinak od středu mapy): vybere ho i jeho sektor a vystředí na něj mapu. Vrací
 	 * kandidáta, null když žádný není nebo chybí model, plánovač či challenge.
 	 */
 	static VybranyKandidat skoc(final ChallengeModel model, final PlanovacChallenge planovac, final SmerSkoku smer) {
@@ -51,6 +51,10 @@ final class ChallengeAkce {
 			return null;
 		}
 		final Challenge c = model.zobrazena();
-		return c == null ? null : planovac.kandidatVeSmeru(c, smer);
+		final VybranyKandidat k = c == null ? null : planovac.kandidatVeSmeru(c, smer);
+		if (k != null && c.typ() == Challenge.Typ.SEKTORY_360 && k.sektor() >= 0) {
+			model.setVybranySektor(c, k.sektor());
+		}
+		return k;
 	}
 }

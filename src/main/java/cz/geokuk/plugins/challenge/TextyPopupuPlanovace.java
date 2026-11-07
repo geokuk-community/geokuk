@@ -58,7 +58,7 @@ final class TextyPopupuPlanovace {
 		case KALENDAR:
 			return "Chybějící dny:";
 		default:
-			return "Chybějící sektory s kandidáty po kružnici od 0° (jako ◀ ▶):";
+			return "Chybějící sektory s kandidáty od 0° (sever) po směru hodinek, jako ◀ ▶:";
 		}
 	}
 
@@ -126,13 +126,13 @@ final class TextyPopupuPlanovace {
 	/** Nápověda pod seznamem chybějících. */
 	static String napovedaSeznamu(final Challenge.Typ typ) {
 		final String co = typ == Challenge.Typ.DT_MATICE ? "políčko" : "sektor";
-		return "Řádek: zobrazit " + co + " na mapě · ◀ ▶ předchozí / další " + co + " · Shift+šipky: další keš ve směru";
+		return "Řádek: vybrat " + co + " · ◀ ▶ předchozí / další " + co + " · Shift+šipky: keš ve směru a její " + co;
 	}
 
 	/** Tooltip řádku seznamu: klik vybere, druhý klik na vybraný výběr zruší. */
 	static String tipRadku(final Challenge.Typ typ, final boolean vybrany) {
 		final String co = typ == Challenge.Typ.DT_MATICE ? "políčko" : "sektor";
-		return vybrany ? "Klik: zrušit výběr" : "Klik: zobrazit " + co + " na mapě";
+		return vybrany ? "Klik: zrušit výběr" : "Klik: vybrat " + co;
 	}
 
 	private static String tvar(final int n, final String jeden, final String dvaAzCtyri, final String jinak) {

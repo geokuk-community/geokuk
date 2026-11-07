@@ -85,10 +85,10 @@ public class TextyPopupuPlanovaceTest {
 
 	@Test
 	public void napovedaATooltipRadku() {
-		assertEquals("Řádek: zobrazit sektor na mapě · ◀ ▶ předchozí / další sektor · Shift+šipky: další keš ve směru", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
-		assertEquals("Řádek: zobrazit políčko na mapě · ◀ ▶ předchozí / další políčko · Shift+šipky: další keš ve směru", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
-		assertEquals("Klik: zobrazit sektor na mapě", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, false));
-		assertEquals("Klik: zobrazit políčko na mapě", TextyPopupuPlanovace.tipRadku(Challenge.Typ.DT_MATICE, false));
+		assertEquals("Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Shift+šipky: keš ve směru a její sektor", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
+		assertEquals("Řádek: vybrat políčko · ◀ ▶ předchozí / další políčko · Shift+šipky: keš ve směru a její políčko", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
+		assertEquals("Klik: vybrat sektor", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, false));
+		assertEquals("Klik: vybrat políčko", TextyPopupuPlanovace.tipRadku(Challenge.Typ.DT_MATICE, false));
 		assertEquals("Klik: zrušit výběr", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, true));
 		assertEquals("", TextyPopupuPlanovace.bezKandidatu(Challenge.Typ.SEKTORY_360, 0));
 		assertEquals("+ 1 sektor bez kandidátů", TextyPopupuPlanovace.bezKandidatu(Challenge.Typ.SEKTORY_360, 1));
@@ -113,7 +113,7 @@ public class TextyPopupuPlanovaceTest {
 		assertEquals("0 %", TextyPopupuPlanovace.procenta(new VysledekPolicek(0, java.util.Collections.emptyList(), java.util.Collections.emptyList())));
 		assertEquals("Chybějící políčka D/T s kandidáty po řádcích (jako ◀ ▶):", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.DT_MATICE));
 		assertEquals("Chybějící dny:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.KALENDAR));
-		assertEquals("Chybějící sektory s kandidáty po kružnici od 0° (jako ◀ ▶):", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
+		assertEquals("Chybějící sektory s kandidáty od 0° (sever) po směru hodinek, jako ◀ ▶:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
 	}
 
 	@Test
