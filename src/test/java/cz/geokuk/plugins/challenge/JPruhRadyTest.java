@@ -207,7 +207,15 @@ public class JPruhRadyTest {
 					final java.awt.Color text = ((javax.swing.JLabel) pruh.rada.getComponent(0)).getForeground();
 					Assert.assertEquals(t.getName(), javax.swing.UIManager.getColor("ToolTip.foreground").getRGB(), text.getRGB());
 					Assert.assertTrue(t.getName() + " text rady proti pozadí", Math.abs(jas(text) - jas(pozadi)) > 100);
-					Assert.assertEquals(t.getName(), JPruhPlanovace.akcentNa(javax.swing.UIManager.getColor("Panel.background")).getRGB(), popup.obsah.zmenitDomov.getForeground().getRGB());
+					final java.awt.Color pozadiPopupu = javax.swing.UIManager.getColor("Panel.background");
+					final java.awt.Color odkaz = popup.obsah.zmenitDomov.getForeground();
+					Assert.assertEquals(t.getName(), JPopupPlanovace.Obsah.barvaOdkazu(pozadiPopupu, javax.swing.UIManager.getColor("Label.foreground")).getRGB(), odkaz.getRGB());
+					Assert.assertTrue(t.getName() + " odkaz proti pozadí popupu " + odkaz, JPopupPlanovace.Obsah.kontrast(odkaz, pozadiPopupu) >= JPopupPlanovace.Obsah.KONTRAST_ODKAZU);
+					if (JPopupPlanovace.Obsah.jeTmave(pozadiPopupu)) {
+						Assert.assertEquals(t.getName() + " v tmavém skinu barva textu", javax.swing.UIManager.getColor("Label.foreground").getRGB(), odkaz.getRGB());
+					} else {
+						Assert.assertNotEquals(t.getName() + " ve světlém skinu akcent, ne text", javax.swing.UIManager.getColor("Label.foreground").getRGB(), odkaz.getRGB());
+					}
 					Assert.assertTrue("odkaz je podtržený",
 							java.awt.font.TextAttribute.UNDERLINE_ON.equals(popup.obsah.zmenitDomov.getFont().getAttributes().get(java.awt.font.TextAttribute.UNDERLINE)));
 				});

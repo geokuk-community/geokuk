@@ -463,12 +463,41 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		}
 
+		/** Nejmenší kontrastní poměr odkazu proti pozadí (jako u ovládacích prvků). */
+		static final double KONTRAST_ODKAZU = 3.0;
+
+		/** Barva odkazu: ve světlém skinu akcent, když je dost vidět; v tmavém a jinak barva textu. Odkaz odliší podtržení. */
+		static Color barvaOdkazu(final Color pozadi, final Color text) {
+			if (pozadi == null || text == null) {
+				return new Color(JPruhPlanovace.akcentNa(pozadi).getRGB());
+			}
+			final Color akcent = JPruhPlanovace.akcentNa(pozadi);
+			final Color c = !jeTmave(pozadi) && kontrast(akcent, pozadi) >= KONTRAST_ODKAZU ? akcent : text;
+			return new Color(c.getRGB());
+		}
+
+		/** Kontrastní poměr dvou barev podle relativní svítivosti (1 až 21). */
+		static double kontrast(final Color a, final Color b) {
+			final double la = svitivost(a);
+			final double lb = svitivost(b);
+			return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+		}
+
+		private static double svitivost(final Color c) {
+			return 0.2126 * slozka(c.getRed()) + 0.7152 * slozka(c.getGreen()) + 0.0722 * slozka(c.getBlue());
+		}
+
+		private static double slozka(final int v) {
+			final double s = v / 255.0;
+			return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+		}
+
 		/** Rámeček a barva upozornění podle pozadí vzhledu (světlý i tmavý skin). */
 		private void obnovVzhled() {
 			final Color pozadi = UIManager.getColor("Panel.background");
 			if (zmenitDomov != null) {
 				// Vlastní barva a písmo (ne z vzhledu), ať je updateUI tlačítka nepřepíše.
-				zmenitDomov.setForeground(new Color(JPruhPlanovace.akcentNa(pozadi).getRGB()));
+				zmenitDomov.setForeground(barvaOdkazu(pozadi, UIManager.getColor("Label.foreground")));
 				final java.util.Map<java.awt.font.TextAttribute, Object> podtrzeni = new java.util.HashMap<>();
 				podtrzeni.put(java.awt.font.TextAttribute.UNDERLINE, java.awt.font.TextAttribute.UNDERLINE_ON);
 				zmenitDomov.setFont(new Font(UIManager.getFont("Label.font").getAttributes()).deriveFont(podtrzeni));
