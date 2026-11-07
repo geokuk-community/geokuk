@@ -403,18 +403,18 @@ public class JChallengeDialogTest {
 		return ((javax.swing.ListCellRenderer) seznam.getCellRenderer()).getListCellRendererComponent(seznam, seznam.getModel().getElementAt(i), i, false, false);
 	}
 
-	/** Volba pravidel jmenuje věcně koule a elipsoid, ne služby. */
+	/** Volba pravidel jmenuje služby i tvar Země a tooltip vysvětluje rozdíl. */
 	@Test
-	public void volbaPravidelSeJmenujeKouleAElipsoid() throws Exception {
+	public void volbaPravidelMaNazvySluzebAVysvetleni() throws Exception {
 		naEdt(() -> {
 			javax.swing.JComponent pravidla = null;
 			for (final Component k : vsechnyKomponenty(dialog.getContentPane(), new ArrayList<Component>())) {
-				if (k instanceof javax.swing.JComboBox && ((javax.swing.JComboBox<?>) k).getItemCount() == 2 && "Koule".equals(((javax.swing.JComboBox<?>) k).getItemAt(0))) {
+				if (k instanceof javax.swing.JComboBox && ((javax.swing.JComboBox<?>) k).getItemCount() == 2 && "Project-GC (koule)".equals(((javax.swing.JComboBox<?>) k).getItemAt(0))) {
 					pravidla = (javax.swing.JComponent) k;
 				}
 			}
 			Assert.assertNotNull("volba pravidel s položkami Koule a Elipsoid", pravidla);
-			Assert.assertEquals("Elipsoid", ((javax.swing.JComboBox<?>) pravidla).getItemAt(1));
+			Assert.assertEquals("Stator (elipsoid)", ((javax.swing.JComboBox<?>) pravidla).getItemAt(1));
 			Assert.assertTrue(pravidla.getToolTipText(), pravidla.getToolTipText().contains("Elipsoid WGS84"));
 		});
 	}

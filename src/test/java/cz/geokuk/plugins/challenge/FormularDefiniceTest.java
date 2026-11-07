@@ -145,10 +145,10 @@ public class FormularDefiniceTest {
 
 	@Test
 	public void souhrnPopisujePravidlaStredAOblast() {
-		Assert.assertEquals("360° · koule · střed: GC4PCQB · oblast: česká republika", FormularDefinice.souhrn(Sablony.cesko360()));
-		Assert.assertEquals("360° · koule · střed: domov · oblast: bez omezení", FormularDefinice.souhrn(Sablony.od360Domova()));
+		Assert.assertEquals("360° · Project-GC · střed: GC4PCQB · oblast: česká republika", FormularDefinice.souhrn(Sablony.cesko360()));
+		Assert.assertEquals("360° · Project-GC · střed: domov · oblast: bez omezení", FormularDefinice.souhrn(Sablony.od360Domova()));
 		final Challenge c = FormularDefinice.sestav(null, "X", ZdrojPravidel.STATOR, DruhStredu.SOURADNICE, "50,5 14,25", null, oblast(null), ZdrojeNalezu.ZAPNUTE);
-		Assert.assertEquals("360° · elipsoid · střed: N50°30.000 E14°15.000 · oblast: bez omezení", FormularDefinice.souhrn(c));
+		Assert.assertEquals("360° · Stator · střed: N50°30.000 E14°15.000 · oblast: bez omezení", FormularDefinice.souhrn(c));
 	}
 
 	@Test

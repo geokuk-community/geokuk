@@ -173,6 +173,8 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.dalsi.isEnabled());
 		Assert.assertTrue(o.nadpis.getText(), o.nadpis.getText().startsWith("Challenge "));
 		Assert.assertEquals("Typ: 360°    Pravidla: " + TextyPopupuPlanovace.pravidla(aktivni().zdroj()), o.typ.getText());
+		Assert.assertTrue(o.typ.getText(), o.typ.getText().endsWith("Pravidla: Project-GC") || o.typ.getText().endsWith("Pravidla: Stator"));
+		Assert.assertFalse("zkratka PGC se nepíše", o.typ.getText().contains("PGC"));
 	}
 
 	@Test

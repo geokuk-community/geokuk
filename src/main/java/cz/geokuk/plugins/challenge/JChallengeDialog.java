@@ -22,7 +22,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	private final JButton smazat = new JButton("Smazat");
 	private final JTextField nazev = new JTextField(24);
-	private final JComboBox<String> pravidla = new JComboBox<>(new String[] { "Koule", "Elipsoid" });
+	private final JComboBox<String> pravidla = new JComboBox<>(new String[] { "Project-GC (koule)", "Stator (elipsoid)" });
 	private final JRadioButton stredDomov = new JRadioButton("Domov");
 	private final JRadioButton stredSouradnice = new JRadioButton("Souřadnice");
 	private final JRadioButton stredListing = new JRadioButton("Keš (kód)");
