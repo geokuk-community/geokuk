@@ -87,6 +87,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private final JLabel textRady = new JLabel(TEXT_RADY);
 	final JButton zavritRadu = new JButton("✕");
 	private boolean radaVidet;
+	private static final int REZERVA_RADY = 8;
 
 	public JPruhPlanovace() {
 		setOpaque(false);
@@ -192,7 +193,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		final Dimension d = rada.getPreferredSize();
 		final int x = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.PRUH_UCHYT + MEZERA;
 		final int vyska = Math.min(d.height, RozmisteniPrekryvu.VYSKA_PRUHU);
-		final Rectangle r = new Rectangle(x, RozmisteniPrekryvu.OKRAJ + (RozmisteniPrekryvu.VYSKA_PRUHU - vyska) / 2, d.width, vyska);
+		// Rezerva: při zvětšení (125–150 %) je vykreslený text o pár pixelů širší než změřený.
+		final Rectangle r = new Rectangle(x, RozmisteniPrekryvu.OKRAJ + (RozmisteniPrekryvu.VYSKA_PRUHU - vyska) / 2, d.width + REZERVA_RADY, vyska);
 		return r.x + r.width <= RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.volnaSirkaPruhu(getWidth(), prekazky.get()) ? r : new Rectangle(x, r.y, 0, 0);
 	}
 
