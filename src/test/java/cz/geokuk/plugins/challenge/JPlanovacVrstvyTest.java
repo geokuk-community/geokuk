@@ -254,6 +254,7 @@ public class JPlanovacVrstvyTest {
 	public void klinMaVTretiTematechDostatecnyKontrastKMape() {
 		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
 		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
+		final javax.swing.plaf.metal.MetalTheme puvodniTema = MetalLookAndFeel.getCurrentTheme();
 		try {
 			for (final javax.swing.plaf.metal.MetalTheme t : temata) {
 				MetalLookAndFeel.setCurrentTheme(t);
@@ -267,6 +268,7 @@ public class JPlanovacVrstvyTest {
 		} catch (final Exception e) {
 			throw new AssertionError(e);
 		} finally {
+			MetalLookAndFeel.setCurrentTheme(puvodniTema);
 			try {
 				UIManager.setLookAndFeel(puvodni);
 			} catch (final Exception e) {
@@ -338,6 +340,7 @@ public class JPlanovacVrstvyTest {
 	public void stitekMaCitelnyTextVeTrechTematech() {
 		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
 		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
+		final javax.swing.plaf.metal.MetalTheme puvodniTema = MetalLookAndFeel.getCurrentTheme();
 		try {
 			for (final javax.swing.plaf.metal.MetalTheme t : temata) {
 				MetalLookAndFeel.setCurrentTheme(t);
@@ -348,6 +351,7 @@ public class JPlanovacVrstvyTest {
 		} catch (final Exception e) {
 			throw new AssertionError(e);
 		} finally {
+			MetalLookAndFeel.setCurrentTheme(puvodniTema);
 			try {
 				UIManager.setLookAndFeel(puvodni);
 			} catch (final Exception e) {
