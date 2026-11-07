@@ -14,7 +14,7 @@
   vybraného sektoru, kandidáti se štítky a čárou ke kandidátovi. Když je
   střed mimo výřez, ukazuje na něj šipka a po kliknutí na ni se mapa na střed
   přesune.
-- Zapnutá je vždy jedna challenge; zapnutí další vypne dosavadní.
+- Zapnutá může být jen jedna challenge; zapnutí další vypne dosavadní.
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
   vytvořit i z vlastní challenge.
 - Šablony: 360° od domova, GC4PCQB – Challenge - 360 degrees of the Czech
