@@ -462,26 +462,27 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	private void kresliStitekVybraneKese(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font tucne, final VyberZvyrazneni vyber) {
 		if (vyber.kes != null && vyber.sektor >= 0 && kresliSektory()) {
 			final String text = TextyKresleni.sektorVybrane(vyber.sektor, t.prehled);
-			umistiVpravoOdKese(g, c, tucne, text, vyber.kes, false);
+			umistiNadKes(g, c, tucne, text, vyber.kes, false);
 		} else if (vyber.kes != null && vyber.stitek != null && kresliStitky()) {
-			umistiVpravoOdKese(g, c, tucne, vyber.stitek, vyber.kes, true);
+			umistiNadKes(g, c, tucne, vyber.stitek, vyber.kes, true);
 		} else if (vyber.kes == null && vyber.sektor >= 0 && vyber.sektor == t.vybranySektor && t.vybranyPozice != null && t.popisVybraneho != null && t.stred != null && kresliSektory()) {
 			final Point k = PixelyMapy.transform(c, t.vybranyPozice, new Point());
 			umistiOkoloBodu(g, tucne, t.popisVybraneho, k.x, k.y, ODSAZENI_VYBRANEHO, false);
 		}
 	}
 
-	private void umistiVpravoOdKese(final Graphics2D g, final Coord c, final Font f, final String text, final VybranaKes kes, final boolean zvyrazneny) {
+	/** Štítek vybrané keše stojí nad její ikonou, aby nepřekrýval popisek keše vpravo od ikony. */
+	private void umistiNadKes(final Graphics2D g, final Coord c, final Font f, final String text, final VybranaKes kes, final boolean zvyrazneny) {
 		final cz.geokuk.core.coordinates.Mou mou = PixelyMapy.mou(kes.lat(), kes.lon());
 		final Point p = PixelyMapy.transform(c, mou, new Point());
 		if (p.x < 0 || p.y < 0 || p.x > c.getWidth() || p.y > c.getHeight()) {
 			return;
 		}
-		final int[] okraje = new int[2];
+		final int[] okraje = new int[3];
 		IkonaKese.okraje(indexatorKesi, mou, meritkoIkon, okraje);
 		final Dimension d = rozmerStitku(g, f, text);
 		final int mezera = Math.max(MEZERA_STITKU, (int) Math.round(MEZERA_STITKU * meritkoIkon));
-		final Rectangle r = nakresliStitek(g, f, text, p.x + okraje[0] + mezera, p.y + okraje[1] - d.height / 2, AkcentPlanovace.barva(), zvyrazneny);
+		final Rectangle r = nakresliStitek(g, f, text, p.x - d.width / 2, Math.max(0, p.y + okraje[2] - mezera - d.height), AkcentPlanovace.barva(), zvyrazneny);
 		zapis(r.x, r.y, r.width, r.height);
 	}
 

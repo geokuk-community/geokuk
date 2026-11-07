@@ -122,4 +122,43 @@ public class CleniVyberuTest {
 		Assert.assertFalse("jiný výběr", z.jeStejne(t, c, ix, cl, 1.0, new VyberZvyrazneni(101, null, null)));
 		Assert.assertFalse("jiní členové", z.jeStejne(t, c, ix, CleniVyberu.spust(p, ix, v, null, null), 1.0, v));
 	}
+
+	@Test
+	public void jeStejnyPorovnavaPrehledIndexatorAVyber() {
+		final Wpt a = vSektoru100("GC1", 1000);
+		final PrehledChallenge p = prehled(null);
+		final Indexator<Wpt> ix = index(Arrays.asList(a));
+		final VyberZvyrazneni v = new VyberZvyrazneni(100, null, null);
+		final CleniVyberu cl = CleniVyberu.spust(p, ix, v, null, null);
+		Assert.assertTrue(cl.jeStejny(p, ix, v));
+		Assert.assertFalse("jiný přehled", cl.jeStejny(prehled(null), ix, v));
+		Assert.assertFalse("jiný index", cl.jeStejny(p, index(Arrays.asList(a)), v));
+		Assert.assertFalse("jiný výběr", cl.jeStejny(p, ix, new VyberZvyrazneni(101, null, null)));
+	}
+
+	/** Keš v dané vzdálenosti pixelů od středu okna 800 × 600. */
+	private static ZvyrazneniKese zvyrazneniKesiNaPixelu(final int dx, final int dy) {
+		final Coord c = new Coord(14, new Wgs(LAT, LON).toMou(), new Dimension(800, 600), 0);
+		final cz.geokuk.core.coordinates.Mou mou = c.transform(new java.awt.Point(400 + dx, 300 + dy));
+		final Wgs wgs = mou.toWgs();
+		final Wpt umisteny = vSektoru100("GC2", 1000);
+		umisteny.setWgs(wgs);
+		final PrehledChallenge p = prehled(null);
+		final Indexator<Wpt> ix = index(Arrays.asList(umisteny));
+		final int sektor = p.sektorBodu(wgs.lat, wgs.lon);
+		final VyberZvyrazneni v = new VyberZvyrazneni(sektor, null, null);
+		return ZvyrazneniKese.postav(TvarPlanovace.z(p, null), c, ix, CleniVyberu.spust(p, ix, v, null, null), 1.0, v);
+	}
+
+	@Test
+	public void kesNaOkrajiOknaSeBereAzDoOkrajeVyrezu() {
+		Assert.assertEquals(1, zvyrazneniKesiNaPixelu(-400 - 12, 0).pocet);
+		Assert.assertEquals(0, zvyrazneniKesiNaPixelu(-400 - 13, 0).pocet);
+		Assert.assertEquals(1, zvyrazneniKesiNaPixelu(400 + 12, 0).pocet);
+		Assert.assertEquals(0, zvyrazneniKesiNaPixelu(400 + 13, 0).pocet);
+		Assert.assertEquals(1, zvyrazneniKesiNaPixelu(0, -300 - 12).pocet);
+		Assert.assertEquals(0, zvyrazneniKesiNaPixelu(0, -300 - 13).pocet);
+		Assert.assertEquals(1, zvyrazneniKesiNaPixelu(0, 300 + 12).pocet);
+		Assert.assertEquals(0, zvyrazneniKesiNaPixelu(0, 300 + 13).pocet);
+	}
 }

@@ -41,6 +41,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 	private FullScreenAction fullScreenAction;
 	private OknoModel oknoModel;
 	private Menu menux;
+	/** EventManager drží posluchače jen slabě, bez pole by o události přišel. */
+	private cz.geokuk.plugins.challenge.SledovaniVybraneKese sledovaniVybraneKese;
 
 	private List<JSingleSlide0> slideList;
 	private CloseAction closeAction;
@@ -169,7 +171,7 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(kesky);
 			factory.init(planovacNad);
 			factory.init(planovacPod);
-			factory.init(new cz.geokuk.plugins.challenge.SledovaniVybraneKese());
+			sledovaniVybraneKese = factory.init(new cz.geokuk.plugins.challenge.SledovaniVybraneKese());
 			factory.init(pozicovnik);
 			factory.init(zvyraznovaciKruhy);
 			factory.init(obsazenik);

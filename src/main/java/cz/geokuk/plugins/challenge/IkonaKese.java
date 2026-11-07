@@ -18,10 +18,11 @@ final class IkonaKese {
 	private IkonaKese() {
 	}
 
-	/** Pravý okraj ikony vůči bodu keše a svislý střed ikony vůči bodu, ve značkách při daném zvětšení ikon; {@code vysledek[0]} je pravý okraj, {@code vysledek[1]} svislý střed. */
+	/** Pravý okraj ikony vůči bodu keše a svislý střed ikony vůči bodu, ve značkách při daném zvětšení ikon; {@code vysledek[0]} je pravý okraj, {@code vysledek[1]} svislý střed; má-li pole třetí prvek, je v něm horní okraj ikony. */
 	static void okraje(final Indexator<Wpt> indexator, final Mou mou, final double meritko, final int[] vysledek) {
 		vysledek[0] = (int) Math.ceil(NEZNAMA_POLOVINA * meritko);
 		vysledek[1] = 0;
+		nastavNahore(vysledek, -(int) Math.ceil(NEZNAMA_POLOVINA * meritko));
 		if (indexator == null) {
 			return;
 		}
@@ -35,6 +36,7 @@ final class IkonaKese {
 	static void okraje(final Wpt wpt, final double meritko, final int[] vysledek) {
 		vysledek[0] = (int) Math.ceil(NEZNAMA_POLOVINA * meritko);
 		vysledek[1] = 0;
+		nastavNahore(vysledek, -(int) Math.ceil(NEZNAMA_POLOVINA * meritko));
 		final Sklivec sklivec = wpt.getSklivec();
 		if (sklivec == null) {
 			return;
@@ -54,6 +56,13 @@ final class IkonaKese {
 		if (pravy != Integer.MIN_VALUE) {
 			vysledek[0] = pravy;
 			vysledek[1] = nahore + (dole - nahore) / 2;
+			nastavNahore(vysledek, nahore);
+		}
+	}
+
+	private static void nastavNahore(final int[] vysledek, final int nahore) {
+		if (vysledek.length > 2) {
+			vysledek[2] = nahore;
 		}
 	}
 }

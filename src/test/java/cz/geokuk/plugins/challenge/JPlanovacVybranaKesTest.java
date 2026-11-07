@@ -279,11 +279,12 @@ public class JPlanovacVybranaKesTest {
 		final Point p = PixelyMapy.transform(c, vybrana.getMainWpt().getMou(), new Point());
 		Rectangle nahore = null;
 		for (final Rectangle q : nad.obdelnikyStitku()) {
-			if (q.x == p.x + 8 + 2) {
+			if (Math.abs(q.x + q.width / 2 - p.x) <= 1) {
 				nahore = q;
 			}
 		}
-		Assert.assertNotNull("štítek vybrané keše je vpravo od její ikony", nahore);
+		Assert.assertNotNull("štítek vybrané keše je vodorovně na ikoně", nahore);
+		Assert.assertTrue("a celý nad ikonou, aby nepřekrýval popisek vpravo: " + nahore + " u " + p, nahore.y + nahore.height <= p.y - 8 + 1);
 		Assert.assertEquals("štítek vybrané keše má barvy tooltipu", AkcentPlanovace.pozadiStitku().getRGB(), img.getRGB(nahore.x + 3, nahore.y + 2));
 		Assert.assertEquals("Sektor 100° · 1 kandidát · 3,0 km", TextyKresleni.sektorVybrane(100, model.prehled()));
 		Assert.assertEquals("sektor bez kandidátů", "Sektor 7°", TextyKresleni.sektorVybrane(7, model.prehled()));
