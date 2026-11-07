@@ -37,7 +37,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final java.util.List<Component> poleSektoru = new java.util.ArrayList<>();
 
 	public JChallengeDialog() {
-		setTitle("Plánovač challenge");
+		setTitle("Nastavení plánovače challenge");
 		init();
 		nastavVelikost(new Dimension(760, 420), new Dimension(640, 380));
 	}
