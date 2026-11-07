@@ -367,6 +367,32 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void vybranePolickoDtMaStitkyJenSvychKandidatu() throws Exception {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		final Kes a = kesVAzimutu("GC1", 100.5, 2000, 4, 6);
+		final Kes b = kesVAzimutu("GC2", 200.5, 1500, 4, 6);
+		final Kes jina = kesVAzimutu("GC3", 300.5, 1500, 1, 1);
+		final List<KandidatPolicka> kandidati = new ArrayList<>();
+		kandidati.add(new KandidatPolicka("GC1", a.getMainWpt().getWgs().lat, a.getMainWpt().getWgs().lon, "D3/T4", "D3/T4", null, 2000));
+		kandidati.add(new KandidatPolicka("GC2", b.getMainWpt().getWgs().lat, b.getMainWpt().getWgs().lon, "D3/T4", "D3/T4", null, 1500));
+		kandidati.add(new KandidatPolicka("GC3", jina.getMainWpt().getWgs().lat, jina.getMainWpt().getWgs().lon, "D1/T1", "D1/T1", null, 1500));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, Arrays.asList("D3/T4", "D1/T1"), kandidati), STRED_LAT, STRED_LON);
+		SwingUtilities.invokeAndWait(() -> {});
+		nad.setIndexatorKesi(index(a, b, jina));
+		final Coord c = mapa(14);
+		nakresli(nad, c);
+		Assert.assertEquals("bez výběru políčka mají štítky všichni kandidáti", 3, nad.obdelnikyStitkuKandidatu().size());
+		SwingUtilities.invokeAndWait(() -> model.setVybranePolicko(dt, "D3/T4"));
+		nakresli(nad, c);
+		Assert.assertEquals("s vybraným políčkem jen jeho kandidáti", 2, nad.obdelnikyStitkuKandidatu().size());
+		SwingUtilities.invokeAndWait(() -> model.setVybranePolicko(dt, null));
+		nakresli(nad, c);
+		Assert.assertEquals("po zrušení výběru zase všichni", 3, nad.obdelnikyStitkuKandidatu().size());
+	}
+
+	@Test
 	public void stitkuKesiSektoruJeNejvicDveStaNejblizsichKeStrediOkna() throws Exception {
 		zobraz360(250);
 		final Kes[] kese = new Kes[300];
