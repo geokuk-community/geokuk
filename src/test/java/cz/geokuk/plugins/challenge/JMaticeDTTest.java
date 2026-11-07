@@ -38,6 +38,27 @@ public class JMaticeDTTest {
 
 	private final List<String> vybrana = new ArrayList<>();
 
+	@Test
+	public void zahlaviPoPulkach() {
+		final String[] ocekavane = { "1", "1,5", "2", "2,5", "3", "3,5", "4", "4,5", "5" };
+		for (int i = 0; i < ocekavane.length; i++) {
+			Assert.assertEquals(ocekavane[i], JMaticeDT.hodnota(i));
+		}
+	}
+
+	/** Chybějící políčko bez kandidátů má „–“ a nedá se vybrat; plné „50+“. */
+	@Test
+	public void bezKandidatuPomlckaAPlne50Plus() {
+		final JMaticeDT m = matice();
+		Assert.assertEquals(JMaticeDT.Stav.BEZ_KANDIDATU, m.stav("D5/T5"));
+		Assert.assertEquals("D5/T5 – chybí, nemá kandidáty", m.popis("D5/T5"));
+		klikni(m, 8, 8);
+		Assert.assertNull("bez kandidátů nejde vybrat", m.vybrane());
+		Assert.assertTrue(vybrana.isEmpty());
+		Assert.assertEquals("50+", m.pocet("D3/T4"));
+		Assert.assertEquals("D3/T4 – chybí, 50+ kandidátů", m.popis("D3/T4"));
+	}
+
 	private JMaticeDT matice() {
 		final JMaticeDT m = new JMaticeDT();
 		m.nastav(vysledek());

@@ -136,7 +136,7 @@ final class TextyPopupuPlanovace {
 	}
 
 	/** Legenda pod maticí D/T. */
-	static final String LEGENDA_MATICE = "✓ splněno · 3 chybí, počet kandidátů · – chybí, bez kandidátů";
+	static final String LEGENDA_MATICE = "✓ splněno · číslo = počet kandidátů · – chybí, bez kandidátů";
 
 	/** Nápověda pod seznamem chybějících. */
 	static String napovedaSeznamu(final Challenge.Typ typ) {
