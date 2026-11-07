@@ -20,6 +20,7 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 
 	protected transient ChallengeModel model;
 	private transient java.util.concurrent.Executor stavba;
+	private final transient Runnable poHotovo = this::repaint;
 	private transient TvarPlanovace tvar;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
 
@@ -81,11 +82,14 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 		final PrehledChallenge p = model == null || !model.jeZapnuto() ? null : model.prehled();
 		if (p == null) {
 			tvar = null;
+			TvarCache.vymaz();
 			return null;
 		}
-		final TvarPlanovace t = TvarCache.dej(p, model.vybranyKandidat(p.challenge()), stavba, this::repaint);
+		final TvarPlanovace t = TvarCache.dej(p, model.vybranyKandidat(p.challenge()), stavba, poHotovo);
 		if (t != null) {
 			tvar = t;
+		} else if (TvarCache.selhalo()) {
+			tvar = null;
 		}
 		return tvar;
 	}

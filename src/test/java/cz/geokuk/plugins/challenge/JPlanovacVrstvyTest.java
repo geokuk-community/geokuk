@@ -52,6 +52,7 @@ public class JPlanovacVrstvyTest {
 		final MapoveUloziste u = new MapoveUloziste();
 		model.setUloziste(() -> u);
 		model.initAfterInject();
+		TvarCache.vymaz();
 		pod = new JPlanovacPodKeskami();
 		pod.inject(model);
 		nad = new JPlanovacNadKeskami();
@@ -334,6 +335,96 @@ public class JPlanovacVrstvyTest {
 		img = nakresli(nad, c);
 		Assert.assertNotEquals("po dokončení se kreslí", 0, nad.obdelnikyStitku().size());
 		Assert.assertEquals(2, nad.posledniZnacek());
+	}
+
+	@Test
+	public void sipkaNajdeVolneMistoIKdyzJeDoleFotomapaMeritkoADetail() throws Exception {
+		final Rectangle fotomapa = new Rectangle(0, H - 240, 260, 240);
+		final Rectangle detail = new Rectangle(W - 340, H - 430, 340, 430);
+		nad.setPrekazky(() -> java.util.Arrays.asList(fotomapa, detail));
+		final Rectangle meritko = cz.geokuk.framework.RozmisteniPrekryvu.meritko(new Dimension(W, H));
+		meritko.grow(14, 0);
+		final Coord c = mapa(50.0, 14.0, 13);
+		int pocet = 0;
+		for (final double lat : new double[] { 49.0, 49.3, 49.7 }) {
+			for (double lon = 12.5; lon <= 14.2; lon += 0.1) {
+				zobraz(TvarPlanovaceTest.vysledek(), lat, lon);
+				nakresli(nad, c);
+				final Rectangle s = nad.sipka();
+				Assert.assertNotNull(s);
+				pocet++;
+				Assert.assertFalse("šipka a štítek mimo fotomapu (" + lat + ", " + lon + "): " + s, s.intersects(fotomapa));
+				Assert.assertFalse("mimo detail (" + lat + ", " + lon + "): " + s, s.intersects(detail));
+				Assert.assertFalse("mimo měřítko (" + lat + ", " + lon + "): " + s, s.intersects(meritko));
+			}
+		}
+		Assert.assertTrue(pocet > 30);
+	}
+
+	@Test
+	public void selhaniStavbyPodkladuNerozbijeKresleniAZalogujeSeJednou() throws Exception {
+		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
+		nakresli(nad, mapa(50.01, 14.0, 14));
+		Assert.assertEquals("nejdřív se kreslí", 2, nad.posledniZnacek());
+		final List<VysledekSektoru.KandidatKes> k = new ArrayList<>();
+		k.add(null);
+		model.nastavVysledek(model.zobrazena(), new VysledekSektoru(obsazene(0, 100), new BitSet(360), new VysledekSektoru.Kandidati[360], 100, k), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		final BufferedImage img = nakresli(nad, mapa(50.0, 14.0, 14));
+		Assert.assertEquals("po selhání se nekreslí ani předchozí podklad", 0, nad.posledniZnacek());
+		Assert.assertEquals("nic se nekreslí", 0, img.getRGB(W / 2, H / 2) >>> 24);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		nakresli(pod, mapa(50.0, 14.0, 14));
+		Assert.assertTrue(TvarCache.selhalo());
+	}
+
+	@Test
+	public void sipajiciSeVybertaNeprepisujeStarouStavbuAStaraSeZrusi() throws Exception {
+		final List<Runnable> fronta = new ArrayList<>();
+		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
+		final int[] prekresleni = { 0 };
+		final JPlanovacNadKeskami n = new JPlanovacNadKeskami() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void repaint() {
+				prekresleni[0]++;
+			}
+		};
+		n.inject(model);
+		n.setStavba(fronta::add);
+		final Coord c = mapa(50.01, 14.0, 14);
+		nakresli(n, c);
+		nakresli(n, c);
+		nakresli(n, c);
+		Assert.assertEquals("stavba se zadala jednou", 1, fronta.size());
+		model.nastavVybranyKandidat(model.zobrazena(), new VybranyKandidat("GC1", 50.01, 14.0, 150, 1200));
+		SwingUtilities.invokeAndWait(() -> {});
+		nakresli(n, c);
+		Assert.assertEquals("nový stav, nová stavba", 2, fronta.size());
+		final int zrusenychPred = TvarCache.ZRUSENYCH.get();
+		SwingUtilities.invokeAndWait(() -> fronta.get(0).run());
+		SwingUtilities.invokeAndWait(() -> {});
+		nakresli(n, c);
+		Assert.assertEquals("stará stavba se zrušila, nedokončila", zrusenychPred + 1, TvarCache.ZRUSENYCH.get());
+		Assert.assertEquals("zrušená stavba nic neukáže", 0, n.posledniZnacek());
+		SwingUtilities.invokeAndWait(() -> fronta.get(1).run());
+		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {});
+		nakresli(n, c);
+		Assert.assertEquals(2, n.posledniZnacek());
+		Assert.assertEquals("na každou stavbu jedno překreslení, i když se při stavbě kreslilo víckrát", 2, prekresleni[0]);
+	}
+
+	@Test
+	public void poVypnutiPlanovaceSePodkladZapomene() throws Exception {
+		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		Assert.assertFalse(TvarCache.prazdna());
+		model.setZapnuto(false);
+		SwingUtilities.invokeAndWait(() -> {});
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		Assert.assertTrue(TvarCache.prazdna());
 	}
 
 	@Test

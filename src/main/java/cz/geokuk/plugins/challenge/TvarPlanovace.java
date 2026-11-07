@@ -32,7 +32,7 @@ final class TvarPlanovace {
 	private List<GeometrieSektoru.Usek> prstenec;
 	private List<GeometrieSektoru.Bod> klin;
 
-	private TvarPlanovace(final PrehledChallenge prehled, final VybranyKandidat vybrany) {
+	private TvarPlanovace(final PrehledChallenge prehled, final VybranyKandidat vybrany, final java.util.function.BooleanSupplier zruseno) {
 		this.prehled = prehled;
 		this.vybrany = vybrany;
 		final Challenge c = prehled.challenge();
@@ -53,6 +53,7 @@ final class TvarPlanovace {
 			pozice = new Mou[k.size()];
 			texty = new String[k.size()];
 			for (int i = 0; i < pozice.length; i++) {
+				zkontrolujZruseni(i, zruseno);
 				final VysledekSektoru.KandidatKes x = k.get(i);
 				pozice[i] = PixelyMapy.mou(x.lat(), x.lon());
 				texty[i] = x.text() + "°";
@@ -62,6 +63,7 @@ final class TvarPlanovace {
 			pozice = new Mou[k.size()];
 			texty = new String[k.size()];
 			for (int i = 0; i < pozice.length; i++) {
+				zkontrolujZruseni(i, zruseno);
 				final KandidatPolicka x = k.get(i);
 				pozice[i] = PixelyMapy.mou(x.lat(), x.lon());
 				texty[i] = x.text();
@@ -80,7 +82,18 @@ final class TvarPlanovace {
 	}
 
 	static TvarPlanovace z(final PrehledChallenge prehled, final VybranyKandidat vybrany) {
-		return prehled == null ? null : new TvarPlanovace(prehled, vybrany);
+		return z(prehled, vybrany, () -> false);
+	}
+
+	/** Staví se po částech a kontroluje {@code zruseno}; zrušená stavba skončí {@link java.util.concurrent.CancellationException}. */
+	static TvarPlanovace z(final PrehledChallenge prehled, final VybranyKandidat vybrany, final java.util.function.BooleanSupplier zruseno) {
+		return prehled == null ? null : new TvarPlanovace(prehled, vybrany, zruseno);
+	}
+
+	private static void zkontrolujZruseni(final int i, final java.util.function.BooleanSupplier zruseno) {
+		if ((i & 4095) == 0 && zruseno.getAsBoolean()) {
+			throw new java.util.concurrent.CancellationException("Stavba podkladu plánovače byla zrušena.");
+		}
 	}
 
 	/** Poloměr prstence v metrech pro dané měřítko: 1–2–5 × 10^n, ať prstenec zabere asi 0,2 až 0,6 menšího rozměru mapy. */

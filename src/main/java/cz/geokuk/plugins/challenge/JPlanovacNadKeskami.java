@@ -170,34 +170,45 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		dy /= d;
 		final double tx = dx == 0 ? Double.MAX_VALUE : Math.abs((w / 2.0 - OKRAJ_SIPKY) / dx);
 		final double ty = dy == 0 ? Double.MAX_VALUE : Math.abs((h / 2.0 - OKRAJ_SIPKY) / dy);
-		final boolean nahoreDole = ty <= tx;
 		final double k = Math.min(tx, ty);
-		final double x0 = w / 2.0 + dx * k;
-		final double y0 = h / 2.0 + dy * k;
 		final double ang = Math.atan2(dy, dx);
 		final Wgs stredMapy = c.getMoustred().toWgs();
 		final String text = TextyKresleni.stredMimoVyrez(t.popisStredu, Wgs.vzdalenost(stredMapy, t.stredWgs));
 		final Dimension rozmer = rozmerStitku(g, tucne, text);
-		Path2D.Double p = null;
-		Rectangle stitek = null;
-		for (int krok = 0; krok <= 2 * 20; krok++) {
-			final int posun = (krok % 2 == 0 ? 1 : -1) * ((krok + 1) / 2) * 30;
-			final double x = Math.max(OKRAJ_SIPKY, Math.min(w - OKRAJ_SIPKY, x0 + (nahoreDole ? posun : 0)));
-			final double y = Math.max(OKRAJ_SIPKY, Math.min(h - OKRAJ_SIPKY, y0 + (nahoreDole ? 0 : posun)));
+		// Poloha na obvodu okna: nejdřív ve směru středu, jinak nejbližší volná kolem dokola; když žádná není volná, ta s nejmenším překryvem.
+		final double obvodSirka = w - 2.0 * OKRAJ_SIPKY;
+		final double obvodVyska = h - 2.0 * OKRAJ_SIPKY;
+		final double obvod = 2 * (obvodSirka + obvodVyska);
+		final double u0 = parametrObvodu(w / 2.0 + dx * k, h / 2.0 + dy * k, obvodSirka, obvodVyska);
+		Path2D.Double nejlepsiSipka = null;
+		Rectangle nejlepsiStitek = null;
+		double nejmensiPrekryv = Double.MAX_VALUE;
+		for (int krok = 0; krok * KROK_OBVODU <= obvod; krok++) {
+			final double u = u0 + (krok % 2 == 0 ? 1 : -1) * ((krok + 1) / 2) * KROK_OBVODU;
+			final double[] bod = bodObvodu(((u % obvod) + obvod) % obvod, obvodSirka, obvodVyska);
+			final double x = bod[0];
+			final double y = bod[1];
+			double ix = w / 2.0 - x;
+			double iy = h / 2.0 - y;
+			final double il = Math.hypot(ix, iy);
+			ix /= il;
+			iy /= il;
 			final Path2D.Double tr = trojuhelnik(x, y, ang);
-			final double lx = Math.max(6, Math.min(w - rozmer.width - 6, x - dx * (SIPKA_DELKA + rozmer.width / 2.0 + 4) - rozmer.width / 2.0));
-			final double ly = Math.max(6, Math.min(h - rozmer.height - 6, y - dy * (SIPKA_DELKA + rozmer.height / 2.0 + 4) - rozmer.height / 2.0));
+			final double lx = Math.max(6, Math.min(w - rozmer.width - 6, x + ix * (SIPKA_DELKA + rozmer.width / 2.0 + 4) - rozmer.width / 2.0));
+			final double ly = Math.max(6, Math.min(h - rozmer.height - 6, y + iy * (SIPKA_DELKA + rozmer.height / 2.0 + 4) - rozmer.height / 2.0));
 			final Rectangle st = new Rectangle((int) lx, (int) ly, rozmer.width, rozmer.height);
-			if (p == null) {
-				p = tr;
-				stitek = st;
-			}
-			if (!kryjeVNekterou(tr.getBounds()) && !kryjeVNekterou(st)) {
-				p = tr;
-				stitek = st;
-				break;
+			final double prekryv = prekryvSPrekazkami(tr.getBounds()) + prekryvSPrekazkami(st);
+			if (prekryv < nejmensiPrekryv) {
+				nejmensiPrekryv = prekryv;
+				nejlepsiSipka = tr;
+				nejlepsiStitek = st;
+				if (prekryv == 0) {
+					break;
+				}
 			}
 		}
+		final Path2D.Double p = nejlepsiSipka;
+		final Rectangle stitek = nejlepsiStitek;
 		g.setColor(Color.WHITE);
 		g.setStroke(new BasicStroke(3f));
 		g.draw(p);
@@ -206,6 +217,52 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		nakresliStitek(g, tucne, text, stitek.x, stitek.y, akcent);
 		sipka = stitek.union(p.getBounds());
 		sipkaTvar = t;
+	}
+
+	/** Krok, kterým se hledá volná poloha šipky po obvodu okna. */
+	private static final double KROK_OBVODU = 12;
+
+	/** Vzdálenost po obvodu obdélníku (od levého horního rohu po směru hodin) k bodu na obvodu. */
+	private static double parametrObvodu(final double x, final double y, final double sirka, final double vyska) {
+		final double lx = x - OKRAJ_SIPKY;
+		final double ly = y - OKRAJ_SIPKY;
+		final double d = Math.min(Math.min(Math.abs(ly), Math.abs(ly - vyska)), Math.min(Math.abs(lx), Math.abs(lx - sirka)));
+		if (d == Math.abs(ly)) {
+			return Math.max(0, Math.min(sirka, lx));
+		}
+		if (d == Math.abs(lx - sirka)) {
+			return sirka + Math.max(0, Math.min(vyska, ly));
+		}
+		if (d == Math.abs(ly - vyska)) {
+			return sirka + vyska + sirka - Math.max(0, Math.min(sirka, lx));
+		}
+		return 2 * sirka + vyska + vyska - Math.max(0, Math.min(vyska, ly));
+	}
+
+	/** Bod na obvodu obdélníku daný vzdáleností od levého horního rohu po směru hodin. */
+	private static double[] bodObvodu(final double u, final double sirka, final double vyska) {
+		if (u < sirka) {
+			return new double[] { OKRAJ_SIPKY + u, OKRAJ_SIPKY };
+		}
+		if (u < sirka + vyska) {
+			return new double[] { OKRAJ_SIPKY + sirka, OKRAJ_SIPKY + u - sirka };
+		}
+		if (u < 2 * sirka + vyska) {
+			return new double[] { OKRAJ_SIPKY + sirka - (u - sirka - vyska), OKRAJ_SIPKY + vyska };
+		}
+		return new double[] { OKRAJ_SIPKY, OKRAJ_SIPKY + vyska - (u - 2 * sirka - vyska) };
+	}
+
+	/** Součet ploch, kterými obdélník zasahuje do překážek. */
+	private double prekryvSPrekazkami(final Rectangle r) {
+		double suma = 0;
+		for (final Rectangle p : prekazkyKresleni) {
+			final Rectangle i = p.intersection(r);
+			if (!i.isEmpty()) {
+				suma += (double) i.width * i.height;
+			}
+		}
+		return suma;
 	}
 
 	private static final double SIPKA_DELKA = 18;
