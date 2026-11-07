@@ -18,7 +18,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	private transient ChallengeModel model;
 	private final DefaultListModel<Challenge> seznamModel = new DefaultListModel<>();
 	private final JList<Challenge> seznam = new JList<>(seznamModel);
-	private final JCheckBox aktivni = new JCheckBox("Zapnuto v plánovači");
+	private final JCheckBox aktivni = new JCheckBox("Aktivní challenge");
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	private final JButton smazat = new JButton("Smazat");
 	private final JTextField nazev = new JTextField(24);

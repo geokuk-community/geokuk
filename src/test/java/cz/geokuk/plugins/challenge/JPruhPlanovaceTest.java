@@ -50,7 +50,7 @@ public class JPruhPlanovaceTest {
 		final Rectangle[] ikony = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_IKONY);
 		final Rectangle[] uzky = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_UZKY);
 		Assert.assertEquals(124, plny[JPruhPlanovace.KANDIDATI].width);
-		Assert.assertEquals(190, plny[JPruhPlanovace.NASTAVENI].width);
+		Assert.assertEquals(116, plny[JPruhPlanovace.NASTAVENI].width);
 		Assert.assertEquals("odznak s popiskem „chybí 360“", 80, plny[JPruhPlanovace.ODZNAK].width);
 		Assert.assertEquals("jen ikona", 26, ikony[JPruhPlanovace.KANDIDATI].width);
 		Assert.assertEquals(26, ikony[JPruhPlanovace.SEKTORY].width);
@@ -66,9 +66,9 @@ public class JPruhPlanovaceTest {
 
 	@Test
 	public void sirkaSeVoliPodleSirkyMapyBezRezervyVpravo() {
-		Assert.assertEquals(738, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
-		Assert.assertEquals(738, RozmisteniPrekryvu.sirkaPruhu(738));
-		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(737));
+		Assert.assertEquals(664, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
+		Assert.assertEquals(664, RozmisteniPrekryvu.sirkaPruhu(664));
+		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(663));
 		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(368));
 		Assert.assertEquals(274, RozmisteniPrekryvu.sirkaPruhu(367));
 		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 274, RozmisteniPrekryvu.sirkaPruhu(10));
@@ -309,7 +309,7 @@ public class JPruhPlanovaceTest {
 	}
 
 	/**
-	 * Texty tlačítek a odznaku („Nastavení plánovače…“, „chybí 360“) se na plné liště vejdou celé ve všech skinech, s písmem systému i se širokým DejaVu Sans (výchozí na
+	 * Texty tlačítek a odznaku („Nastavení…“, „chybí 360“) se na plné liště vejdou celé ve všech skinech, s písmem systému i se širokým DejaVu Sans (výchozí na
 	 * Linuxu), je-li nainstalované.
 	 */
 	@Test
