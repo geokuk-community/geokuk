@@ -131,6 +131,29 @@ public class JPruhPolickoTest {
 		Assert.assertTrue(tipVyberu().endsWith("vybrané políčko D3/T4"));
 	}
 
+	/** Tlačítko se ukáže, právě když se širší lišta vejde do volné šířky (hranice na pixel). */
+	@Test
+	public void hraniceSirkyProTlacitko() throws Exception {
+		final int presne = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY + JPruhPlanovace.PRIDAVEK_POLICKA;
+		priprav(presne);
+		vyber("D3/T4");
+		Assert.assertTrue("vejde se přesně", policko() != null && policko().isVisible());
+		priprav(presne - 1);
+		vyber("D3/T4");
+		Assert.assertFalse("o pixel méně se nevejde", policko() != null && policko().isVisible());
+	}
+
+	/** Při vypnutém plánovači lišta políčko neukazuje a Esc výběr neruší. */
+	@Test
+	public void escPriVypnutemPlanovaciNic() throws Exception {
+		priprav(1280);
+		vyber("D3/T4");
+		model.setZapnuto(false);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse(esc().isEnabled());
+		Assert.assertEquals("výběr zůstane", "D3/T4", model.vybranePolicko(dt));
+	}
+
 	@Test
 	public void u360AniPoVyberuSektoruNeni() throws Exception {
 		priprav(1280);

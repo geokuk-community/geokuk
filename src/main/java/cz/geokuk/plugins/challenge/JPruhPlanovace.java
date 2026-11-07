@@ -470,7 +470,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 			@Override
 			public boolean isEnabled() {
-				return zapnuto && vybranePolicko != null && !jinyPopupOtevreny.getAsBoolean();
+				return vybranePolicko != null && !jinyPopupOtevreny.getAsBoolean();
 			}
 
 			@Override
