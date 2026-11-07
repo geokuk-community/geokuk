@@ -126,7 +126,7 @@ final class TextyPopupuPlanovace {
 	/** Nápověda pod seznamem chybějících. */
 	static String napovedaSeznamu(final Challenge.Typ typ) {
 		final String co = typ == Challenge.Typ.DT_MATICE ? "políčko" : "sektor";
-		final String skok = typ == Challenge.Typ.DT_MATICE ? "keš ve směru ve vybraném políčku" : "keš ve směru a její sektor";
+		final String skok = typ == Challenge.Typ.DT_MATICE ? "další keš ve směru" : "keš ve směru a její sektor";
 		return "Řádek: vybrat " + co + " · ◀ ▶ předchozí / další " + co + " · Shift+šipky: " + skok;
 	}
 

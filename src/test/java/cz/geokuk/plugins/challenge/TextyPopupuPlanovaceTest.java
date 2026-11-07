@@ -86,7 +86,7 @@ public class TextyPopupuPlanovaceTest {
 	@Test
 	public void napovedaATooltipRadku() {
 		assertEquals("Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Shift+šipky: keš ve směru a její sektor", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
-		assertEquals("Řádek: vybrat políčko · ◀ ▶ předchozí / další políčko · Shift+šipky: keš ve směru ve vybraném políčku", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
+		assertEquals("Řádek: vybrat políčko · ◀ ▶ předchozí / další políčko · Shift+šipky: další keš ve směru", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
 		assertEquals("Klik: vybrat sektor", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, false));
 		assertEquals("Klik: vybrat políčko", TextyPopupuPlanovace.tipRadku(Challenge.Typ.DT_MATICE, false));
 		assertEquals("Klik: zrušit výběr", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, true));
