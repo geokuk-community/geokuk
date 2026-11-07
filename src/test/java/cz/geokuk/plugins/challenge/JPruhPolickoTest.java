@@ -163,6 +163,7 @@ public class JPruhPolickoTest {
 				odznak = (AbstractButton) k;
 			}
 		}
+		Assert.assertNotNull("odznak na liště", odznak);
 		Assert.assertEquals("chybí 239", odznak.getText());
 		Assert.assertEquals("Chybí 239 nálezů v 80 políčkách z 81 – klik ukáže podrobnosti", odznak.getToolTipText());
 	}
