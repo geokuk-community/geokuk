@@ -87,7 +87,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private final JLabel textRady = new JLabel(TEXT_RADY);
 	final JButton zavritRadu = new JButton("✕");
 	private boolean radaVidet;
-	private static final int REZERVA_RADY = 8;
+	static final int REZERVA_RADY = 8;
 
 	public JPruhPlanovace() {
 		setOpaque(false);

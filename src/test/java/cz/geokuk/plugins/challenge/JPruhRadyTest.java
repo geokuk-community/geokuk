@@ -221,4 +221,37 @@ public class JPruhRadyTest {
 	private static double jas(final java.awt.Color c) {
 		return 0.299 * c.getRed() + 0.587 * c.getGreen() + 0.114 * c.getBlue();
 	}
+
+	/** Novější formát nastavení se nepřepisuje: rada se ukáže, příznak se nezapíše (platí jen do konce běhu). */
+	@Test
+	public void priZakazanemUkladaniSePriznakNezapise() throws Exception {
+		final MapoveUloziste u = new MapoveUloziste();
+		u.put("format", "2");
+		start(u, 1280);
+		Assert.assertTrue("rada se ukáže", radaVidet());
+		Assert.assertNull("nastavení novějšího formátu se nepřepisuje", u.get("rada.zobrazena"));
+		Assert.assertTrue("v tomto běhu už platí jako zobrazená", model.jeRadaZobrazena());
+		SwingUtilities.invokeAndWait(() -> pruh.zavritRadu.doClick());
+		SwingUtilities.invokeAndWait(() -> model.setKresliStitky(false));
+		Assert.assertFalse("v témže běhu se nevrátí", radaVidet());
+		Assert.assertEquals("klíče se nemění", new java.util.LinkedHashSet<>(java.util.Arrays.asList("format")), u.klice());
+	}
+
+	/** Šířka rady je změřený obsah a rezerva pro zvětšení; vejde se právě do volné šířky, o 1 px užší mapa už ne. */
+	@Test
+	public void rezervaSirkyRadyAHraniceVolneSirky() throws Exception {
+		start(new MapoveUloziste(), 1280);
+		Assert.assertTrue(radaVidet());
+		final int sirkaObsahu = pruh.rada.getPreferredSize().width;
+		Assert.assertEquals("rezerva pro zvětšení", sirkaObsahu + JPruhPlanovace.REZERVA_RADY, pruh.rada.getWidth());
+		Assert.assertEquals(8, JPruhPlanovace.REZERVA_RADY);
+		final int x = pruh.rada.getX();
+		// Konec rady má padnout přesně na konec volné šířky: OKRAJ + volnaSirkaPruhu(mapa); volná šířka roste s mapou 1:1.
+		final int presne = x + sirkaObsahu + JPruhPlanovace.REZERVA_RADY - RozmisteniPrekryvu.OKRAJ - RozmisteniPrekryvu.volnaSirkaPruhu(0);
+		SwingUtilities.invokeAndWait(() -> pruh.setSize(presne, 700));
+		Assert.assertTrue("vejde se přesně", radaVidet());
+		Assert.assertEquals(RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.volnaSirkaPruhu(presne), pruh.rada.getX() + pruh.rada.getWidth());
+		SwingUtilities.invokeAndWait(() -> pruh.setSize(presne - 1, 700));
+		Assert.assertFalse("o 1 px užší mapa už ne", radaVidet());
+	}
 }

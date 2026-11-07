@@ -151,12 +151,15 @@ public class ChallengeModel extends Model0 {
 		return radaZobrazena;
 	}
 
-	/** Zapamatuje, že rada byla vidět; další start ji už neukáže. */
+	/** Zapamatuje, že rada byla vidět; další start ji už neukáže. Při zakázaném ukládání platí jen do konce běhu. */
 	public void setRadaZobrazena() {
 		if (radaZobrazena) {
 			return;
 		}
 		radaZobrazena = true;
+		if (ukladaniZakazano) {
+			return;
+		}
 		try {
 			uloziste.get().put(RADA_ZOBRAZENA, "true");
 		} catch (final RuntimeException e) {

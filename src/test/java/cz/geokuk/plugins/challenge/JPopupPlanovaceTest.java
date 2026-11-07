@@ -626,4 +626,37 @@ public class JPopupPlanovaceTest {
 		final cz.geokuk.core.coordinates.Wgs w = new cz.geokuk.core.coordinates.Wgs(50.0542, 14.39);
 		Assert.assertEquals("domov " + w, TextyPopupuPlanovace.stredDomov(w));
 	}
+
+	/** Klik se spustí jen u dostupné akce, i kdyby tlačítko zůstalo dostupné (akce se mezitím vypnula bez ohlášení). */
+	@Test
+	public void zmenitDomovNespustiNedostupnouAkci() throws Exception {
+		priprav();
+		aktivujDomov();
+		final int[] spusteno = { 0 };
+		final boolean[] dostupna = { true };
+		final javax.swing.Action akce = new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean isEnabled() {
+				return dostupna[0];
+			}
+
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				spusteno[0]++;
+			}
+		};
+		popup.setZmenaDomova(akce);
+		popup.prepni();
+		Assert.assertTrue(popup.obsah.zmenitDomov.isEnabled());
+		dostupna[0] = false;
+		popup.obsah.zmenitDomov.doClick();
+		Assert.assertEquals("nedostupná akce se nespustí", 0, spusteno[0]);
+		Assert.assertTrue("popup zůstane otevřený", popup.jeOtevreno());
+		dostupna[0] = true;
+		popup.obsah.zmenitDomov.doClick();
+		Assert.assertEquals(1, spusteno[0]);
+		Assert.assertFalse(popup.jeOtevreno());
+	}
 }
