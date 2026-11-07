@@ -25,15 +25,16 @@ import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.MouseGestureContext;
 
 /**
- * Vrstva nad kešemi: značka a štítek středu, u okraje mapy šipka ke středu mimo výřez (klik ho vystředí), kroužky a štítky kandidátů (číslo sektoru, D/T) a štítek vybraného sektoru.
- * Štítky se umisťují hladově bez překryvu, nevešlé se vynechají a kroužky zůstanou.
+ * Vrstva nad kešemi: značka a štítek středu, u okraje mapy šipka ke středu mimo výřez (klik ho vystředí), zvýrazněné štítky kandidátů (číslo sektoru, D/T) a štítek vybraného sektoru.
+ * Štítky se umisťují hladově bez překryvu, nevešlé se vynechají.
  */
 public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final int OKRAJ_SIPKY = 24;
-	private static final int POLOMER_KROUZKU = 7;
+	/** Odstup štítku kandidáta od místa keše, aby nezakrýval její ikonu. */
+	private static final int ODSAZENI_STITKU_KANDIDATA = 8;
 	private static final int OKRAJ_VYREZU = 12;
 
 	private transient VyrezModel vyrezModel;
@@ -121,7 +122,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			kresliStred(g, c, t, tucne);
 			if (kesoidyViditelne() && kresliSektory() && t.vybranyPozice != null && t.popisVybraneho != null && t.stred != null) {
 				final Point k = PixelyMapy.transform(c, t.vybranyPozice, new Point());
-				umistiOkoloBodu(g, tucne, t.popisVybraneho, k.x, k.y, POLOMER_KROUZKU + 12);
+				umistiOkoloBodu(g, tucne, t.popisVybraneho, k.x, k.y, ODSAZENI_STITKU_KANDIDATA + 12, false);
 			}
 			if (kesoidyViditelne() && kresliStitky()) {
 				kresliKandidaty(g, c, t, pismo);
@@ -150,7 +151,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			final FontMetrics fm = g.getFontMetrics();
 			g.drawString("S", s.x - fm.stringWidth("S") / 2, s.y + (fm.getAscent() - fm.getDescent()) / 2);
 			zapis(s.x - r - 3, s.y - r - 3, 2 * r + 6, 2 * r + 6);
-			umistiOkoloBodu(g, tucne, TextyKresleni.stred(t.popisStredu), s.x, s.y, r + 4);
+			umistiOkoloBodu(g, tucne, TextyKresleni.stred(t.popisStredu), s.x, s.y, r + 4, false);
 			return;
 		}
 		kresliSipku(g, c, t, tucne, s, akcent);
@@ -214,7 +215,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		g.draw(p);
 		g.setColor(akcent);
 		g.fill(p);
-		nakresliStitek(g, tucne, text, stitek.x, stitek.y, akcent);
+		nakresliStitek(g, tucne, text, stitek.x, stitek.y, akcent, false);
 		sipka = stitek.union(p.getBounds());
 		sipkaTvar = t;
 	}
@@ -352,29 +353,20 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 
 	private void kresliKandidaty(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font pismo) {
 		final Vyber v = vyber(c, t);
-		final Color akcent = AkcentPlanovace.barva();
-		final int r = POLOMER_KROUZKU;
-		final Rectangle krouzek = new Rectangle();
+		final Rectangle misto = new Rectangle();
 		final boolean[] zobrazit = new boolean[v.pocet];
-		int kresleno = 0;
+		int vybrano = 0;
 		for (int q = 0; q < v.pocet; q++) {
-			krouzek.setBounds(v.x[q] - r - 2, v.y[q] - r - 2, 2 * r + 4, 2 * r + 4);
-			if (kryjeVNekterou(krouzek)) {
-				continue;
+			misto.setBounds(v.x[q] - 3, v.y[q] - 3, 6, 6);
+			if (!kryjeVNekterou(misto)) {
+				zobrazit[q] = true;
+				vybrano++;
 			}
-			zobrazit[q] = true;
-			kresleno++;
-			g.setColor(Color.WHITE);
-			g.setStroke(new BasicStroke(3.6f));
-			g.drawOval(v.x[q] - r, v.y[q] - r, 2 * r, 2 * r);
-			g.setColor(akcent);
-			g.setStroke(new BasicStroke(2.2f));
-			g.drawOval(v.x[q] - r, v.y[q] - r, 2 * r, 2 * r);
 		}
-		posledniZnacek = kresleno;
+		posledniZnacek = vybrano;
 		for (int q = 0; q < v.pocet; q++) {
 			if (zobrazit[q]) {
-				umistiOkoloBodu(g, pismo, t.texty[v.index[q]], v.x[q], v.y[q], POLOMER_KROUZKU + 3);
+				umistiOkoloBodu(g, pismo, t.texty[v.index[q]], v.x[q], v.y[q], ODSAZENI_STITKU_KANDIDATA, true);
 			}
 		}
 	}
@@ -385,13 +377,13 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	}
 
 	/** Zkusí osm poloh kolem bodu a vybere první bez překryvu; jinak štítek vynechá a vrátí false. */
-	private boolean umistiOkoloBodu(final Graphics2D g, final Font f, final String text, final int cx, final int cy, final int od) {
+	private boolean umistiOkoloBodu(final Graphics2D g, final Font f, final String text, final int cx, final int cy, final int od, final boolean zvyrazneny) {
 		final Dimension d = rozmerStitku(g, f, text);
 		final int[][] polohy = { { od, -d.height / 2 }, { -d.width - od, -d.height / 2 }, { -d.width / 2, -od - d.height }, { -d.width / 2, od }, { od, -d.height }, { od, 0 },
 				{ -d.width - od, -d.height }, { -d.width - od, 0 } };
 		for (final int[] p : polohy) {
 			if (pocetObdelniku < ox.length && !kryje(cx + p[0], cy + p[1], d.width, d.height)) {
-				nakresliStitek(g, f, text, cx + p[0], cy + p[1], AkcentPlanovace.barva());
+				nakresliStitek(g, f, text, cx + p[0], cy + p[1], AkcentPlanovace.barva(), zvyrazneny);
 				zapis(cx + p[0], cy + p[1], d.width, d.height);
 				return true;
 			}
@@ -418,12 +410,20 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 	}
 
-	private Rectangle nakresliStitek(final Graphics2D g, final Font f, final String text, final int x, final int y, final Color akcent) {
+	/** Zvýrazněný štítek (kandidát challenge) má výplň v akcentu a bílý text, bez lemu; ostatní štítky barvy a lem tooltipu. */
+	private Rectangle nakresliStitek(final Graphics2D g, final Font f, final String text, final int x, final int y, final Color akcent, final boolean zvyrazneny) {
 		g.setFont(f);
 		final FontMetrics fm = g.getFontMetrics();
 		final int w = fm.stringWidth(text) + 8;
 		final int h = fm.getHeight() + 2;
 		final RoundRectangle2D.Double tvar = new RoundRectangle2D.Double(x, y, w, h, 4, 4);
+		if (zvyrazneny) {
+			g.setColor(akcent);
+			g.fill(tvar);
+			g.setColor(Color.WHITE);
+			g.drawString(text, x + 4, y + 1 + fm.getAscent());
+			return new Rectangle(x, y, w, h);
+		}
 		g.setColor(AkcentPlanovace.pozadiStitku());
 		g.fill(tvar);
 		g.setColor(new Color(255, 255, 255, 190));

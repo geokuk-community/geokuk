@@ -485,6 +485,52 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
+	public void stitekKandidataMaVyplnAkcentuBezKrouzkuAHalaNadIkonou() throws Exception {
+		final List<VysledekSektoru.KandidatKes> k = new ArrayList<>();
+		k.add(new VysledekSektoru.KandidatKes("GC1", 50.0, 14.0, 150, 1000, false));
+		zobraz(new VysledekSektoru(obsazene(0, 100), new BitSet(360), new VysledekSektoru.Kandidati[360], 100, k), 50.01, 14.0);
+		final Coord c = mapa(50.0, 14.0, 16);
+		final BufferedImage img = nakresli(nad, c);
+		final java.awt.Point p = PixelyMapy.transform(c, PixelyMapy.mou(50.0, 14.0), new java.awt.Point());
+		for (int dy = -6; dy <= 6; dy++) {
+			for (int dx = -6; dx <= 6; dx++) {
+				Assert.assertEquals("nad místem keše nic není (kroužek ani halo): " + dx + "," + dy, 0, img.getRGB(p.x + dx, p.y + dy) >>> 24);
+			}
+		}
+		Rectangle stitek = null;
+		for (final Rectangle r : nad.obdelnikyStitku()) {
+			if (r.width < 60 && r.contains(p.x + 40, p.y) == false && r.intersects(new Rectangle(p.x - 60, p.y - 20, 120, 40))) {
+				stitek = r;
+			}
+		}
+		Assert.assertNotNull("štítek kandidáta je u keše", stitek);
+		Assert.assertEquals("výplň štítku je akcent", AkcentPlanovace.barva().getRGB(), img.getRGB(stitek.x + 1, stitek.y + stitek.height / 2));
+	}
+
+	@Test
+	public void bilyTextNaZvyraznenemStitkuMaVeTrechTematechKontrast() {
+		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
+		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
+		final javax.swing.plaf.metal.MetalTheme puvodniTema = MetalLookAndFeel.getCurrentTheme();
+		try {
+			for (final javax.swing.plaf.metal.MetalTheme t : temata) {
+				MetalLookAndFeel.setCurrentTheme(t);
+				UIManager.setLookAndFeel(new MetalLookAndFeel());
+				Assert.assertTrue(t.getName() + " bílý text na akcentu " + kontrast(Color.WHITE, AkcentPlanovace.barva()), kontrast(Color.WHITE, AkcentPlanovace.barva()) >= 4.5);
+			}
+		} catch (final Exception e) {
+			throw new AssertionError(e);
+		} finally {
+			MetalLookAndFeel.setCurrentTheme(puvodniTema);
+			try {
+				UIManager.setLookAndFeel(puvodni);
+			} catch (final Exception e) {
+				// bez vlivu na test
+			}
+		}
+	}
+
+	@Test
 	public void stitekMaCitelnyTextVeTrechTematech() {
 		final javax.swing.plaf.metal.MetalTheme[] temata = { new DefaultMetalTheme(), new OceanTheme(), new cz.geokuk.core.lookandfeel.CharcoalTheme() };
 		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
