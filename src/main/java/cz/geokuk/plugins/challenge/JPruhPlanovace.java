@@ -28,10 +28,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private static final int VYSKA_PRVKU = 20;
 	private static final int SIRKA_UCHYTU = 26;
 	private static final int SIRKA_VYBERU = 62;
-	private static final int SIRKA_ODZNAKU = 76;
+	private static final int SIRKA_ODZNAKU = 80;
 	private static final int SIRKA_SIPKY = 24;
 	private static final int SIRKA_IKONY = 26;
-	private static final int SIRKA_KANDIDATU = 116, SIRKA_SEKTORU = 84, SIRKA_STITKU = 72, SIRKA_NASTAVENI = 170;
+	private static final int SIRKA_KANDIDATU = 124, SIRKA_SEKTORU = 88, SIRKA_STITKU = 72, SIRKA_NASTAVENI = 190;
 	private static final Color CERVENA = new Color(200, 40, 40);
 	private static final javax.swing.border.Border RAMECEK = BorderFactory.createEtchedBorder();
 	static final String TIP_ZPET = "Předchozí chybějící; Shift+šipky skočí na kandidáta ve směru šipky";

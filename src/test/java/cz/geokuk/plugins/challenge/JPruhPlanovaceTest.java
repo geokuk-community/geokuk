@@ -49,9 +49,9 @@ public class JPruhPlanovaceTest {
 		final Rectangle[] plny = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_PLNY);
 		final Rectangle[] ikony = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_IKONY);
 		final Rectangle[] uzky = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_UZKY);
-		Assert.assertEquals(116, plny[JPruhPlanovace.KANDIDATI].width);
-		Assert.assertEquals(170, plny[JPruhPlanovace.NASTAVENI].width);
-		Assert.assertEquals("odznak s popiskem „chybí 360“", 76, plny[JPruhPlanovace.ODZNAK].width);
+		Assert.assertEquals(124, plny[JPruhPlanovace.KANDIDATI].width);
+		Assert.assertEquals(190, plny[JPruhPlanovace.NASTAVENI].width);
+		Assert.assertEquals("odznak s popiskem „chybí 360“", 80, plny[JPruhPlanovace.ODZNAK].width);
 		Assert.assertEquals("jen ikona", 26, ikony[JPruhPlanovace.KANDIDATI].width);
 		Assert.assertEquals(26, ikony[JPruhPlanovace.SEKTORY].width);
 		Assert.assertEquals(26, ikony[JPruhPlanovace.NASTAVENI].width);
@@ -66,12 +66,12 @@ public class JPruhPlanovaceTest {
 
 	@Test
 	public void sirkaSeVoliPodleSirkyMapyBezRezervyVpravo() {
-		Assert.assertEquals(702, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
-		Assert.assertEquals(702, RozmisteniPrekryvu.sirkaPruhu(702));
-		Assert.assertEquals(364, RozmisteniPrekryvu.sirkaPruhu(701));
-		Assert.assertEquals(364, RozmisteniPrekryvu.sirkaPruhu(364));
-		Assert.assertEquals(270, RozmisteniPrekryvu.sirkaPruhu(363));
-		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 270, RozmisteniPrekryvu.sirkaPruhu(10));
+		Assert.assertEquals(738, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
+		Assert.assertEquals(738, RozmisteniPrekryvu.sirkaPruhu(738));
+		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(737));
+		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(368));
+		Assert.assertEquals(274, RozmisteniPrekryvu.sirkaPruhu(367));
+		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 274, RozmisteniPrekryvu.sirkaPruhu(10));
 		Assert.assertEquals(RozmisteniPrekryvu.PRUH_UCHYT, RozmisteniPrekryvu.pruhPlanovace(1000, false).width);
 	}
 
@@ -308,30 +308,45 @@ public class JPruhPlanovaceTest {
 		Assert.assertEquals("Chybí 193 sektorů z 360 – klik ukáže podrobnosti", odznak.getToolTipText());
 	}
 
-	/** Texty tlačítek a odznaku („Nastavení plánovače…“, „chybí 360“) se na plné liště vejdou celé ve všech skinech. */
+	/**
+	 * Texty tlačítek a odznaku („Nastavení plánovače…“, „chybí 360“) se na plné liště vejdou celé ve všech skinech, s písmem systému i se širokým DejaVu Sans (výchozí na
+	 * Linuxu), je-li nainstalované.
+	 */
 	@Test
 	public void textyListySeVejdouVeVsechSkinech() throws Exception {
 		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
 		final javax.swing.plaf.metal.MetalTheme puvodniTema = javax.swing.plaf.metal.MetalLookAndFeel.getCurrentTheme();
+		final List<String> pisma = new java.util.ArrayList<>(java.util.Collections.singletonList((String) null));
+		if (java.util.Arrays.asList(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()).contains("DejaVu Sans")) {
+			pisma.add("DejaVu Sans");
+		}
 		try {
-			for (final javax.swing.plaf.metal.MetalTheme tema : new javax.swing.plaf.metal.MetalTheme[] { new javax.swing.plaf.metal.OceanTheme(), new javax.swing.plaf.metal.DefaultMetalTheme(),
-					new cz.geokuk.core.lookandfeel.CharcoalTheme() }) {
-				javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(tema);
-				javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
-				javax.swing.SwingUtilities.invokeAndWait(() -> {
-					priprav();
-					model.aktivuj(Sablony.cesko360());
-					model.setZapnuto(true);
-					model.nastavVysledek(Sablony.cesko360(), new VysledekSektoru(new java.util.BitSet(360), new java.util.BitSet(360), new VysledekSektoru.Kandidati[360], 0));
-					pruh.doLayout();
-					Assert.assertEquals("chybí 360", najdiOdznak().getText());
-					for (final Component c : pruh.getComponents()) {
-						if (c.isVisible() && c instanceof javax.swing.AbstractButton) {
-							final javax.swing.AbstractButton b = (javax.swing.AbstractButton) c;
-							Assert.assertTrue(tema.getName() + ": „" + b.getText() + "“ " + b.getPreferredSize().width + " > " + b.getWidth(), b.getPreferredSize().width <= b.getWidth());
+			for (final String pismo : pisma) {
+				for (final javax.swing.plaf.metal.MetalTheme tema : new javax.swing.plaf.metal.MetalTheme[] { new javax.swing.plaf.metal.OceanTheme(), new javax.swing.plaf.metal.DefaultMetalTheme(),
+						new cz.geokuk.core.lookandfeel.CharcoalTheme() }) {
+					javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(tema);
+					javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+					if (pismo != null) {
+						for (final String klic : new String[] { "Button.font", "ToggleButton.font", "Label.font" }) {
+							final java.awt.Font f = javax.swing.UIManager.getFont(klic);
+							javax.swing.UIManager.put(klic, new javax.swing.plaf.FontUIResource(pismo, f.getStyle(), f.getSize()));
 						}
 					}
-				});
+					javax.swing.SwingUtilities.invokeAndWait(() -> {
+						priprav();
+						model.aktivuj(Sablony.cesko360());
+						model.setZapnuto(true);
+						model.nastavVysledek(Sablony.cesko360(), new VysledekSektoru(new java.util.BitSet(360), new java.util.BitSet(360), new VysledekSektoru.Kandidati[360], 0));
+						pruh.doLayout();
+						Assert.assertEquals("chybí 360", najdiOdznak().getText());
+						for (final Component c : pruh.getComponents()) {
+							if (c.isVisible() && c instanceof javax.swing.AbstractButton) {
+								final javax.swing.AbstractButton b = (javax.swing.AbstractButton) c;
+								Assert.assertTrue(tema.getName() + " " + b.getFont().getFamily() + ": „" + b.getText() + "“ " + b.getPreferredSize().width + " > " + b.getWidth(), b.getPreferredSize().width <= b.getWidth());
+							}
+						}
+					});
+				}
 			}
 		} finally {
 			javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(puvodniTema);
