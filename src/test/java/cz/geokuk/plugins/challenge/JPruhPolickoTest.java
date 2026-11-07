@@ -149,6 +149,24 @@ public class JPruhPolickoTest {
 		return null;
 	}
 
+	/** S násobností ukazuje odznak chybějící nálezy, ne políčka. */
+	@Test
+	public void odznakSNasobnostiPocitaNalezy() throws Exception {
+		priprav(1280);
+		final Challenge c = model.ulozVlastni(new Challenge("DT3", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC).sOpakovanim(3));
+		model.aktivuj(c);
+		model.nastavVysledekPolicek(c, JPopupPlanovaceTest.nasobny());
+		SwingUtilities.invokeAndWait(() -> {});
+		AbstractButton odznak = null;
+		for (final Component k : pruh.getComponents()) {
+			if (k instanceof AbstractButton && ((AbstractButton) k).getText().startsWith("chybí")) {
+				odznak = (AbstractButton) k;
+			}
+		}
+		Assert.assertEquals("chybí 239", odznak.getText());
+		Assert.assertEquals("Chybí 239 nálezů v 80 políčkách z 81 – klik ukáže podrobnosti", odznak.getToolTipText());
+	}
+
 	@Test
 	public void plnePolickoMa50Plus() {
 		Assert.assertEquals("<html>Zrušit výběr políčka D1/T1 (Esc)<br>na mapě jen jeho kandidáti (50+ kandidátů)</html>", JPruhPlanovace.tipPolicka("D1/T1", 50, true, true));
