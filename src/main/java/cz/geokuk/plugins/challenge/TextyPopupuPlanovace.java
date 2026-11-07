@@ -57,11 +57,11 @@ final class TextyPopupuPlanovace {
 	static String nadpisSeznamu(final Challenge.Typ typ) {
 		switch (typ) {
 		case DT_MATICE:
-			return "Chybějící políčka D/T:";
+			return "Chybějící políčka D/T s kandidáty po řádcích (jako ◀ ▶):";
 		case KALENDAR:
 			return "Chybějící dny:";
 		default:
-			return "Chybějící sektory (podle vzdálenosti nejbližšího kandidáta):";
+			return "Chybějící sektory s kandidáty od 0° (sever) po směru hodinek, jako ◀ ▶:";
 		}
 	}
 
@@ -104,14 +104,52 @@ final class TextyPopupuPlanovace {
 				+ (n == 1 ? "má" : "mají") + " šedý čárkovaný prstenec.";
 	}
 
-	/** Chybějící sektory: s kandidáty od nejbližšího, za nimi sektory bez kandidátů vzestupně. */
-	static List<Integer> serazeneChybejici(final VysledekSektoru v) {
+	/** Chybějící sektory po kružnici od 0°, ve stejném pořadí jako ◀ ▶. */
+	static List<Integer> chybejiciPoKruznici(final VysledekSektoru v) {
 		final List<Integer> s = new ArrayList<>(v.chybejici());
-		s.sort(Comparator.comparingDouble((Integer sektor) -> {
-			final VysledekSektoru.Kandidati k = v.kandidati(sektor);
-			return k == null || k.pocet() == 0 ? Double.MAX_VALUE : k.nejblizsiVzdalenost();
-		}).thenComparingInt(sektor -> sektor));
+		s.sort(Comparator.naturalOrder());
 		return s;
+	}
+
+	/** „+ 140 sektorů bez kandidátů“ pod seznamem; prázdný text, když všechny chybějící mají kandidáty. */
+	static String bezKandidatu(final Challenge.Typ typ, final int n) {
+		if (n == 0) {
+			return "";
+		}
+		final String co = typ == Challenge.Typ.DT_MATICE ? tvar(n, "políčko", "políčka", "políček") : tvar(n, "sektor", "sektory", "sektorů");
+		return "+ " + n + " " + co + " bez kandidátů";
+	}
+
+	/** Tooltip počtu bez kandidátů. */
+	static String tipBezKandidatu(final Challenge.Typ typ) {
+		final String co = typ == Challenge.Typ.DT_MATICE ? "políčka" : "sektory";
+		return "Chybějící " + co + ", které žádná nenalezená keš na mapě nedoplní. Seznam i ◀ ▶ je přeskakují.";
+	}
+
+	/** Řádek nad maticí D/T: vybrané políčko s počtem kandidátů, nebo výzva ke kliknutí. */
+	static String vybranePolicko(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati) {
+		if (stitek == null) {
+			return "Obtížnost × terén – klik na políčko s kandidáty nechá na mapě jen je:";
+		}
+		final String pocet = plne ? kandidatu + "+ kandidátů" : kandidatu(kandidatu);
+		return "Vybrané políčko: " + stitek + " – " + pocet + (jenKandidati ? "" : ", na mapě všechny keše (F4)");
+	}
+
+	/** Legenda pod maticí D/T. */
+	static final String LEGENDA_MATICE = "✓ splněno · číslo = počet kandidátů · – chybí, bez kandidátů";
+
+	/** Nápověda pod seznamem chybějících. */
+	static String napovedaSeznamu(final Challenge.Typ typ) {
+		if (typ == Challenge.Typ.DT_MATICE) {
+			return "Políčko: na mapě jen jeho kandidáti · ◀ ▶ předchozí / další políčko · Shift+šipky: další keš ve směru";
+		}
+		return "Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Shift+šipky: keš ve směru a její sektor";
+	}
+
+	/** Tooltip řádku seznamu: klik vybere, druhý klik na vybraný výběr zruší. */
+	static String tipRadku(final Challenge.Typ typ, final boolean vybrany) {
+		final String co = typ == Challenge.Typ.DT_MATICE ? "políčko" : "sektor";
+		return vybrany ? "Klik: zrušit výběr" : "Klik: vybrat " + co;
 	}
 
 	private static String tvar(final int n, final String jeden, final String dvaAzCtyri, final String jinak) {

@@ -20,7 +20,7 @@ import cz.geokuk.framework.JSlide0;
 import cz.geokuk.framework.RozmisteniPrekryvu;
 
 /**
- * Popup plánovače challenge pod odznakem pruhu: typ a pravidla, shrnutí, chybějící sektory od nejbližšího kandidáta, další chybějící a filtr „jen kandidáti“. Leží ve vrstvě mapy a
+ * Popup plánovače challenge pod odznakem pruhu: typ a pravidla, shrnutí, chybějící sektory po kružnici (klik na řádek vybere sektor), další sektor a filtr „jen kandidáti“. Leží ve vrstvě mapy a
  * myš zachytává jen ve svém obdélníku; zavře se klávesou Esc, kliknutím mimo (klik se přitom neztratí) nebo znovu kliknutím na odznak.
  */
 public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
@@ -31,7 +31,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	final transient Obsah obsah = new Obsah();
 	private transient ChallengeModel model;
-	private transient PlanovacChallengeSluzba sluzba;
 	private transient Runnable naNastaveni;
 	private boolean otevreno;
 	private transient AWTEventListener mimo;
@@ -56,7 +55,10 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				zavri();
 			}
 		});
-		obsah.dalsi.addActionListener(e -> dalsiChybejici());
+		obsah.dalsi.addActionListener(e -> ChallengeAkce.posun(model, true));
+		obsah.setNaKlikRadku(this::klikNaRadek);
+		obsah.matice.setNaVyber(this::vyberPolicko);
+		obsah.vsechnaPolicka.addActionListener(e -> vyberPolicko(null));
 		obsah.kandidati.addActionListener(e -> prepniKandidaty());
 		obsah.nastaveni.addActionListener(e -> {
 			if (naNastaveni != null) {
@@ -68,10 +70,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	public void inject(final ChallengeModel model) {
 		this.model = model;
-	}
-
-	public void inject(final PlanovacChallengeSluzba sluzba) {
-		this.sluzba = sluzba;
 	}
 
 	/** Nastavení… otevře dialog plánovače z menu. */
@@ -199,22 +197,47 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	void obnov() {
 		final Challenge c = challenge();
 		obsah.omezeniStitku.setText(model == null ? " " : TextyPopupuPlanovace.omezeniStitku(model.kandidatuVeVyrezu()));
+		// Prázdný řádek by v popupu nechal mezeru nad tlačítky.
+		obsah.omezeniStitku.setVisible(!obsah.omezeniStitku.getText().trim().isEmpty());
 		if (c != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
-				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati);
+				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
 			} else {
-				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati);
+				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.vybranePolicko(c));
 			}
 		}
 		revalidate();
 		repaint();
 	}
 
-	private void dalsiChybejici() {
+	/** Klik na políčko matice D/T: vybere ho a zapne „jen kandidáti“; null výběr zruší a filtr nechá. */
+	void vyberPolicko(final String stitek) {
 		final Challenge c = challenge();
-		if (c != null && sluzba != null && sluzba.planovac() != null) {
-			sluzba.planovac().dalsiChybejici(c);
+		if (c == null || c.typ() != Challenge.Typ.DT_MATICE) {
+			return;
+		}
+		model.setVybranePolicko(c, stitek);
+		if (stitek != null) {
+			try {
+				model.setJenKandidatiPro(c);
+			} catch (final ChallengeChyba e) {
+				// Neaktivní challenge filtr nedostane; výběr políčka platí.
+			}
+		}
+	}
+
+	/** Klik na řádek s kandidáty vybere jeho sektor nebo políčko; klik na vybraný výběr zruší. Keš se nevybírá a mapa se nevystřeďuje. */
+	void klikNaRadek(final Object polozka) {
+		final Challenge c = challenge();
+		if (c == null || polozka == null) {
+			return;
+		}
+		if (polozka instanceof Integer) {
+			final int s = (Integer) polozka;
+			model.setVybranySektor(c, model.vybranySektor(c) == s ? PosunVyberu.ZADNY_SEKTOR : s);
+		} else if (c.typ() == Challenge.Typ.DT_MATICE) {
+			model.setVybranePolicko(c, polozka.equals(model.vybranePolicko(c)) ? null : (String) polozka);
 		}
 	}
 
@@ -246,9 +269,21 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JProgressBar postup = new JProgressBar(0, 360);
 		final DefaultListModel<String> radky = new DefaultListModel<>();
 		final JList<String> seznam = new JList<>(radky);
+		final JLabel bezKandidatu = new JLabel(" ");
+		final JMaticeDT matice = new JMaticeDT();
+		final JLabel legenda = new JLabel(TextyPopupuPlanovace.LEGENDA_MATICE);
+		final JButton vsechnaPolicka = new JButton("✕ Všechna políčka");
+		private final JScrollPane posuvnik = new JScrollPane(seznam);
+		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
 		final JLabel omezeniStitku = new JLabel(" ");
-		final JButton dalsi = new JButton("▶ Další chybějící");
+		final JButton dalsi = new JButton("▶ " + ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
+		/** Sektor (Integer) nebo štítek políčka (String) každého řádku seznamu, null u řádku, který nejde vybrat (den kalendáře). */
+		final List<Object> polozky = new ArrayList<>();
+		private Challenge.Typ typSeznamu = Challenge.Typ.SEKTORY_360;
+		private int podMysi = -1;
+		private boolean nastavujeSe;
+		private transient java.util.function.Consumer<Object> naKlikRadku = p -> {};
 		final JToggleButton kandidati = new JToggleButton("Zobrazit jen kandidáty  F4");
 
 		Obsah() {
@@ -261,7 +296,49 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			seznam.setVisibleRowCount(RADKU_SEZNAMU);
 			seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			seznam.setPrototypeCellValue("359°  99 kandidátů  nejbližší 99,9 km od středu");
-			for (final AbstractButton b : new AbstractButton[] { nastaveni, dalsi, kandidati }) {
+			seznam.setCellRenderer(new RadekRenderer());
+			final java.awt.event.MouseAdapter mys = new java.awt.event.MouseAdapter() {
+				@Override
+				public void mouseMoved(final MouseEvent e) {
+					najeti(radekNa(e.getPoint()));
+				}
+
+				@Override
+				public void mouseExited(final MouseEvent e) {
+					najeti(-1);
+				}
+
+				@Override
+				public void mouseClicked(final MouseEvent e) {
+					final int i = radekNa(e.getPoint());
+					if (SwingUtilities.isLeftMouseButton(e) && i >= 0 && polozky.get(i) != null) {
+						naKlikRadku.accept(polozky.get(i));
+					}
+				}
+			};
+			seznam.addMouseListener(mys);
+			seznam.addMouseMotionListener(mys);
+			// Výběr v seznamu ukazuje výběr v modelu; mění se jen klikem na řádek.
+			seznam.setSelectionModel(new DefaultListSelectionModel() {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public void setSelectionInterval(final int a, final int b) {
+					if (nastavujeSe) {
+						super.setSelectionInterval(a, b);
+					}
+				}
+
+				@Override
+				public void addSelectionInterval(final int a, final int b) {
+					setSelectionInterval(a, b);
+				}
+			});
+			seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			napoveda.setFont(napoveda.getFont().deriveFont(Font.PLAIN, napoveda.getFont().getSize2D() - 1));
+			legenda.setFont(legenda.getFont().deriveFont(Font.PLAIN, legenda.getFont().getSize2D() - 1));
+			vsechnaPolicka.setToolTipText("Zrušit výběr políčka – na mapě kandidáti všech chybějících políček");
+			for (final AbstractButton b : new AbstractButton[] { nastaveni, dalsi, kandidati, vsechnaPolicka }) {
 				b.setFocusable(false);
 			}
 			final GridBagConstraints g = new GridBagConstraints();
@@ -288,9 +365,18 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			g.gridy++;
 			g.fill = GridBagConstraints.BOTH;
 			g.weighty = 1;
-			add(new JScrollPane(seznam), g);
+			add(posuvnik, g);
+			g.fill = GridBagConstraints.NONE;
+			g.anchor = GridBagConstraints.WEST;
+			add(matice, g);
 			g.weighty = 0;
+			g.gridy++;
+			add(legenda, g);
 			g.fill = GridBagConstraints.HORIZONTAL;
+			g.gridy++;
+			add(bezKandidatu, g);
+			g.gridy++;
+			add(napoveda, g);
 			g.gridy++;
 			add(nejiste, g);
 			g.gridy++;
@@ -300,6 +386,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			tlacitka.add(dalsi);
 			tlacitka.add(Box.createHorizontalStrut(8));
 			tlacitka.add(kandidati);
+			tlacitka.add(Box.createHorizontalStrut(8));
+			tlacitka.add(vsechnaPolicka);
 			g.gridy++;
 			g.insets = new Insets(4, 0, 0, 0);
 			add(tlacitka, g);
@@ -343,12 +431,34 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			stred.setText("Střed: " + TextyPopupuPlanovace.stred(c.stred()));
 			stred.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
 			nadpisSeznamu.setText(TextyPopupuPlanovace.nadpisSeznamu(c.typ()));
+			napoveda.setText(TextyPopupuPlanovace.napovedaSeznamu(c.typ()));
+			napoveda.setVisible(c.typ() != Challenge.Typ.KALENDAR);
+			dalsi.setText("▶ " + ChallengeAkce.nazevPosunu(c.typ(), true));
+			dalsi.setVisible(c.typ() != Challenge.Typ.KALENDAR);
+			typSeznamu = c.typ();
+			final boolean matice = c.typ() == Challenge.Typ.DT_MATICE;
+			posuvnik.setVisible(!matice);
+			this.matice.setVisible(matice);
+			legenda.setVisible(matice);
+			bezKandidatu.setVisible(!matice);
+			vsechnaPolicka.setVisible(false);
+			if (matice) {
+				this.matice.nastav(null);
+			}
 			kandidati.setSelected(jenKandidati);
 			radky.clear();
+			polozky.clear();
+			podMysi = -1;
+			bezKandidatu.setText(" ");
+			bezKandidatu.setToolTipText(TextyPopupuPlanovace.tipBezKandidatu(c.typ()));
 			nejiste.setText(" ");
+			nejiste.setVisible(false);
 			if (maVysledek) {
 				return true;
 			}
+			// Bez výsledku by matice ukázala všechna políčka jako splněná.
+			this.matice.setVisible(false);
+			legenda.setVisible(false);
 			souhrn.setText(stav.faze() == StavPredpoctu.Faze.POCITA && stav.celkem() > 0 ? "Počítá se… " + stav.hotovo() + " z " + stav.celkem() + " keší" : "Počítá se…");
 			postup.setValue(0);
 			postup.setString("…");
@@ -356,7 +466,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			return false;
 		}
 
-		void nastav(final Challenge c, final VysledekSektoru v, final StavPredpoctu stav, final boolean jenKandidati) {
+		void nastav(final Challenge c, final VysledekSektoru v, final StavPredpoctu stav, final boolean jenKandidati, final int vybranySektor) {
 			if (!zahlavi(c, v != null, stav, jenKandidati)) {
 				return;
 			}
@@ -364,16 +474,30 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			postup.setMaximum(360);
 			postup.setValue(v.pocetObsazenych());
 			postup.setString(TextyPopupuPlanovace.procenta(v));
-			for (final int s : TextyPopupuPlanovace.serazeneChybejici(v)) {
-				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, v.kandidati(s)));
+			int vybrany = -1;
+			int bez = 0;
+			for (final int s : TextyPopupuPlanovace.chybejiciPoKruznici(v)) {
+				final VysledekSektoru.Kandidati k = v.kandidati(s);
+				if (k == null || k.pocet() == 0) {
+					bez++;
+					continue;
+				}
+				if (s == vybranySektor) {
+					vybrany = radky.size();
+				}
+				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, k));
+				polozky.add(s);
 			}
+			vyberRadek(vybrany);
+			bezKandidatu.setText(bez == 0 ? " " : TextyPopupuPlanovace.bezKandidatu(c.typ(), bez));
 			final String n = TextyPopupuPlanovace.nejiste(v);
 			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");
-			dalsi.setEnabled(!v.chybejici().isEmpty());
+			nejiste.setVisible(!n.isEmpty());
+			dalsi.setEnabled(polozky.stream().anyMatch(java.util.Objects::nonNull));
 		}
 
 		/** D/T matice a kalendář: shrnutí a chybějící políčka nebo dny v pořadí z výpočtu. */
-		void nastavPolicka(final Challenge c, final VysledekPolicek p, final StavPredpoctu stav, final boolean jenKandidati) {
+		void nastavPolicka(final Challenge c, final VysledekPolicek p, final StavPredpoctu stav, final boolean jenKandidati, final String vybranePolicko) {
 			if (!zahlavi(c, p != null, stav, jenKandidati)) {
 				return;
 			}
@@ -381,10 +505,77 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			postup.setMaximum(Math.max(1, p.celkem()));
 			postup.setValue(p.celkem() - p.pocetChybejicich());
 			postup.setString(TextyPopupuPlanovace.procenta(p));
+			if (c.typ() == Challenge.Typ.DT_MATICE) {
+				matice.nastav(p);
+				matice.setVybrane(vybranePolicko);
+				nadpisSeznamu.setText(TextyPopupuPlanovace.vybranePolicko(vybranePolicko, vybranePolicko == null ? 0 : p.pocetKandidatu(vybranePolicko),
+						vybranePolicko != null && p.jePlne(vybranePolicko), jenKandidati));
+				vsechnaPolicka.setVisible(vybranePolicko != null);
+				dalsi.setEnabled(p.pocetKandidatuPoPolickach().values().stream().anyMatch(n -> n > 0));
+				return;
+			}
 			for (final String s : p.stitkyChybejicich()) {
 				radky.addElement(s);
+				polozky.add(null);
 			}
-			dalsi.setEnabled(p.pocetChybejicich() > 0);
+			dalsi.setEnabled(false);
+		}
+
+		void setNaKlikRadku(final java.util.function.Consumer<Object> naKlikRadku) {
+			this.naKlikRadku = naKlikRadku;
+		}
+
+		private void vyberRadek(final int i) {
+			nastavujeSe = true;
+			try {
+				if (i < 0) {
+					seznam.clearSelection();
+				} else {
+					seznam.setSelectedIndex(i);
+					seznam.ensureIndexIsVisible(i);
+				}
+			} finally {
+				nastavujeSe = false;
+			}
+		}
+
+		private int radekNa(final Point p) {
+			final int i = seznam.locationToIndex(p);
+			return i >= 0 && seznam.getCellBounds(i, i).contains(p) ? i : -1;
+		}
+
+		/** Řádek pod myší, který jde vybrat: ruka, podtržení a tooltip. */
+		private void najeti(final int i) {
+			if (i == podMysi) {
+				return;
+			}
+			podMysi = i;
+			final boolean klikaci = i >= 0 && polozky.get(i) != null;
+			seznam.setCursor(klikaci ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+			seznam.setToolTipText(klikaci ? TextyPopupuPlanovace.tipRadku(typSeznamu, seznam.isSelectedIndex(i)) : null);
+			seznam.repaint();
+		}
+
+		/** Řádek pod myší, který jde vybrat, je podtržený a podbarvený. */
+		private final class RadekRenderer extends DefaultListCellRenderer {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Component getListCellRendererComponent(final JList<?> l, final Object hodnota, final int i, final boolean vybrany, final boolean fokus) {
+				final JLabel r = (JLabel) super.getListCellRendererComponent(l, hodnota, i, vybrany, false);
+				final boolean klikaci = i >= 0 && i < polozky.size() && polozky.get(i) != null;
+				if (klikaci && i == podMysi) {
+					r.setText("<html><u>" + hodnota + "</u></html>");
+					if (!vybrany) {
+						final Color z = UIManager.getColor("List.selectionBackground");
+						final Color b = l.getBackground();
+						if (z != null && b != null) {
+							r.setBackground(new Color((z.getRed() + 3 * b.getRed()) / 4, (z.getGreen() + 3 * b.getGreen()) / 4, (z.getBlue() + 3 * b.getBlue()) / 4));
+						}
+					}
+				}
+				return r;
+			}
 		}
 	}
 }
