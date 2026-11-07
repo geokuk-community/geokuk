@@ -67,11 +67,21 @@ public class JChallengeDialogTest {
 		return vysledek;
 	}
 
+	/** Viditelné tlačítko s textem; „Vytvořit kopii…“ je u seznamu i v radě u šablony. */
 	private AbstractButton tlacitko(final String text) {
+		AbstractButton skryte = null;
 		for (final AbstractButton b : najdi(dialog.getContentPane(), AbstractButton.class, new ArrayList<AbstractButton>())) {
 			if (text.equals(b.getText())) {
-				return b;
+				if (viditelne(b)) {
+					return b;
+				}
+				if (skryte == null) {
+					skryte = b;
+				}
 			}
+		}
+		if (skryte != null) {
+			return skryte;
 		}
 		throw new AssertionError("tlačítko " + text);
 	}
@@ -112,6 +122,23 @@ public class JChallengeDialogTest {
 			Assert.assertFalse("šablonu nejde uložit", tlacitko("Uložit změny").isEnabled());
 			Assert.assertFalse("šablonu nejde smazat", tlacitko("Smazat").isEnabled());
 			Assert.assertFalse("název šablony nejde měnit", pole(0).isEnabled());
+		});
+	}
+
+	/** U šablony rada nad formulářem s vlastním tlačítkem kopie; u vlastní definice rada není. */
+	@Test
+	public void radaUSablonyVytvoriKopii() throws Exception {
+		naEdt(() -> {
+			Assert.assertTrue("rada u šablony", viditelne(dialog.radaSablony));
+			final JLabel text = najdi(dialog.radaSablony, JLabel.class, new ArrayList<JLabel>()).get(0);
+			Assert.assertEquals("Šablonu nelze upravit; vytvořte kopii.", text.getText());
+			final AbstractButton kopie = najdi(dialog.radaSablony, AbstractButton.class, new ArrayList<AbstractButton>()).get(0);
+			Assert.assertEquals("Vytvořit kopii…", kopie.getText());
+			kopie.doClick();
+			Assert.assertEquals(1, model.vlastni().size());
+			Assert.assertEquals("360° od domova (vlastní)", seznam().getSelectedValue().nazev());
+			Assert.assertFalse("u vlastní definice rada není", dialog.radaSablony.isVisible());
+			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
 		});
 	}
 
@@ -311,6 +338,47 @@ public class JChallengeDialogTest {
 			Assert.assertTrue(tlacitko("Uložit změny").isEnabled());
 			tlacitko("Aktivní challenge").doClick();
 			Assert.assertTrue(model.jeAktivni(kopie));
+		});
+	}
+
+	/** „Kolikrát splnit“ je jen u D/T; u šablony jen ke čtení, u kopie se uloží do definice. */
+	@Test
+	public void kolikratSplnitJenUDtAUlozeniDoDefinice() throws Exception {
+		naEdt(() -> {
+			Challenge sablona = null;
+			for (final Challenge c : dialog.polozky()) {
+				if (c.typ() == Challenge.Typ.DT_MATICE) {
+					sablona = c;
+				}
+			}
+			seznam().setSelectedValue(Sablony.od360Domova(), true);
+			Assert.assertFalse("u 360° řádek není", dialog.opakovani.getParent().isVisible());
+			seznam().setSelectedValue(sablona, true);
+			Assert.assertTrue(dialog.opakovani.getParent().isVisible());
+			Assert.assertFalse("šablona jen ke čtení", dialog.opakovani.isEnabled());
+			Assert.assertEquals("šablona: 1×", dialog.popisOpakovani.getText());
+			tlacitko("Vytvořit kopii…").doClick();
+			final Challenge kopie = seznam().getSelectedValue();
+			Assert.assertTrue(dialog.opakovani.isEnabled());
+			Assert.assertEquals("každé políčko 1–9×", dialog.popisOpakovani.getText());
+			dialog.opakovani.setValue(3);
+			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals(3, seznam().getSelectedValue().opakovani());
+			Assert.assertEquals(kopie.nazev(), seznam().getSelectedValue().nazev());
+			Assert.assertEquals(3, dialog.opakovani.getValue());
+		});
+	}
+
+	/** U 360° se „Kolikrát splnit“ neuloží, ani když by číselník měl jinou hodnotu (je skrytý). */
+	@Test
+	public void kolikratSplnitSeU360Neuklada() throws Exception {
+		naEdt(() -> {
+			final Challenge c = model.ulozVlastni(new Challenge("Moje 360", Challenge.Typ.SEKTORY_360, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.STATOR));
+			seznam().setSelectedValue(c, true);
+			dialog.opakovani.setValue(3);
+			tlacitko("Uložit změny").doClick();
+			Assert.assertTrue("bez chyby: " + chyba(), chyba().trim().isEmpty());
+			Assert.assertEquals(1, seznam().getSelectedValue().opakovani());
 		});
 	}
 
