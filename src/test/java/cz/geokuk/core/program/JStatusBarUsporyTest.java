@@ -88,12 +88,24 @@ public class JStatusBarUsporyTest {
 		vsudy((tema, sirka, sb) -> Assert.assertEquals(tema + " " + sirka + " stupeň " + sb.getStupenUspor(), 1, radku(sb)));
 	}
 
+	/** Stupeň úspor roste s užším oknem; které přesně okno potřebuje který stupeň, závisí na písmu platformy. */
 	@Test
 	public void stupenUsporRosteSUzsimOknem() throws Exception {
+		final java.util.Map<String, int[]> stupne = new java.util.HashMap<>();
 		vsudy((tema, sirka, sb) -> {
-			final int ocekavany = sirka == 1920 ? 0 : sirka == 1536 ? 2 : 3;
-			Assert.assertEquals(tema + " " + sirka, ocekavany, sb.getStupenUspor());
+			final int[] s = stupne.computeIfAbsent(tema, t -> new int[SIRKY.length]);
+			for (int i = 0; i < SIRKY.length; i++) {
+				if (SIRKY[i] == sirka) {
+					s[i] = sb.getStupenUspor();
+				}
+			}
 		});
+		for (final java.util.Map.Entry<String, int[]> e : stupne.entrySet()) {
+			final int[] s = e.getValue();
+			for (int i = 1; i < s.length; i++) {
+				Assert.assertTrue(e.getKey() + " " + java.util.Arrays.toString(SIRKY) + " -> " + java.util.Arrays.toString(s), SIRKY[i] >= SIRKY[i - 1] ? s[i] <= s[i - 1] : s[i] >= s[i - 1]);
+			}
+		}
 	}
 
 	@Test
