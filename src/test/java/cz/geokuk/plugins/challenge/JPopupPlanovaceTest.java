@@ -351,17 +351,17 @@ public class JPopupPlanovaceTest {
 		}
 		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4"), k, 50));
 		SwingUtilities.invokeAndWait(() -> {});
-		popup.vyberPolicko("D3/T4");
+		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D3/T4"));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("D3/T4", model.vybranePolicko(c));
 		Assert.assertEquals("klik zapne jen kandidáty", c, model.jenKandidatiPro());
 		Assert.assertEquals("plné políčko", "Vybrané políčko: D3/T4 – 50+ kandidátů", o.nadpisSeznamu.getText());
 		Assert.assertTrue(o.kandidati.isSelected());
-		model.setJenKandidatiPro(null);
+		SwingUtilities.invokeAndWait(() -> model.setJenKandidatiPro(null));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("F4 výběr políčka nechá", "D3/T4", model.vybranePolicko(c));
 		Assert.assertEquals("Vybrané políčko: D3/T4 – 50+ kandidátů, na mapě všechny keše (F4)", o.nadpisSeznamu.getText());
-		popup.vyberPolicko(null);
+		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko(null));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertNull(model.vybranePolicko(c));
 		Assert.assertEquals(TextyPopupuPlanovace.vybranePolicko(null, 0, false, false), o.nadpisSeznamu.getText());
@@ -442,12 +442,12 @@ public class JPopupPlanovaceTest {
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[0], new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
 		final Challenge c = aktivni360();
 		Assert.assertEquals(-1, o.seznam.getSelectedIndex());
-		popup.klikNaRadek(o.polozky.get(1));
+		SwingUtilities.invokeAndWait(() -> popup.klikNaRadek(o.polozky.get(1)));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals(213, model.vybranySektor(c));
 		Assert.assertEquals(1, o.seznam.getSelectedIndex());
 		Assert.assertNull("keš se nevybírá", model.vybranyKandidat(c));
-		popup.klikNaRadek(o.polozky.get(1));
+		SwingUtilities.invokeAndWait(() -> popup.klikNaRadek(o.polozky.get(1)));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("druhý klik výběr zruší", PosunVyberu.ZADNY_SEKTOR, model.vybranySektor(c));
 		Assert.assertEquals(-1, o.seznam.getSelectedIndex());
