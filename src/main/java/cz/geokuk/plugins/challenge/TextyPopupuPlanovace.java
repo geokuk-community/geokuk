@@ -23,10 +23,10 @@ final class TextyPopupuPlanovace {
 		return String.format(Locale.forLanguageTag("cs"), "%.1f km", metru / 1000);
 	}
 
-	/** „213°  5 kandidátů  nejbližší 2,8 km“; bez kandidátů s pomlčkou místo vzdálenosti. */
+	/** „213°  5 kandidátů  nejbližší 2,8 km od středu“; bez kandidátů s pomlčkou místo vzdálenosti. */
 	static String radekSektoru(final int sektor, final VysledekSektoru.Kandidati k) {
 		final int pocet = k == null ? 0 : k.pocet();
-		final String nejblizsi = pocet == 0 ? "–" : "nejbližší " + vzdalenost(k.nejblizsiVzdalenost());
+		final String nejblizsi = pocet == 0 ? "–" : "nejbližší " + vzdalenost(k.nejblizsiVzdalenost()) + " od středu";
 		return sektor + "°  " + kandidatu(pocet) + "  " + nejblizsi;
 	}
 
@@ -54,11 +54,11 @@ final class TextyPopupuPlanovace {
 	static String nadpisSeznamu(final Challenge.Typ typ) {
 		switch (typ) {
 		case DT_MATICE:
-			return "Chybějící políčka D/T:";
+			return "Chybějící políčka D/T s kandidáty po řádcích (jako ◀ ▶):";
 		case KALENDAR:
 			return "Chybějící dny:";
 		default:
-			return "Chybějící sektory (podle vzdálenosti nejbližšího kandidáta):";
+			return "Chybějící sektory s kandidáty po kružnici od 0° (jako ◀ ▶):";
 		}
 	}
 
@@ -85,7 +85,7 @@ final class TextyPopupuPlanovace {
 		}
 	}
 
-	/** Kolik sektorů je na hraně; prázdný text, když žádný. */
+	/** U kolika sektorů leží nalezená keš u hranice se sousedním sektorem; prázdný text, když u žádného. */
 	static String nejiste(final VysledekSektoru v) {
 		int n = 0;
 		for (int s = 0; s < 360; s++) {
@@ -96,18 +96,43 @@ final class TextyPopupuPlanovace {
 		if (n == 0) {
 			return "";
 		}
-		final String sektoru = n + " " + tvar(n, "sektor je", "sektory jsou", "sektorů je");
-		return sektoru + " na hraně (±0,05°), " + (n == 1 ? "počítá se jako nejistý." : "počítají se jako nejisté.");
+		return "U " + n + " " + tvar(n, "sektoru", "sektorů", "sektorů")
+				+ " leží nalezená keš do 0,05° od hranice se sousedním sektorem, takže není jisté, do kterého patří. Na mapě "
+				+ (n == 1 ? "má" : "mají") + " šedý čárkovaný prstenec.";
 	}
 
-	/** Chybějící sektory: s kandidáty od nejbližšího, za nimi sektory bez kandidátů vzestupně. */
-	static List<Integer> serazeneChybejici(final VysledekSektoru v) {
+	/** Chybějící sektory po kružnici od 0°, ve stejném pořadí jako ◀ ▶. */
+	static List<Integer> chybejiciPoKruznici(final VysledekSektoru v) {
 		final List<Integer> s = new ArrayList<>(v.chybejici());
-		s.sort(Comparator.comparingDouble((Integer sektor) -> {
-			final VysledekSektoru.Kandidati k = v.kandidati(sektor);
-			return k == null || k.pocet() == 0 ? Double.MAX_VALUE : k.nejblizsiVzdalenost();
-		}).thenComparingInt(sektor -> sektor));
+		s.sort(Comparator.naturalOrder());
 		return s;
+	}
+
+	/** „+ 140 sektorů bez kandidátů“ pod seznamem; prázdný text, když všechny chybějící mají kandidáty. */
+	static String bezKandidatu(final Challenge.Typ typ, final int n) {
+		if (n == 0) {
+			return "";
+		}
+		final String co = typ == Challenge.Typ.DT_MATICE ? tvar(n, "políčko", "políčka", "políček") : tvar(n, "sektor", "sektory", "sektorů");
+		return "+ " + n + " " + co + " bez kandidátů";
+	}
+
+	/** Tooltip počtu bez kandidátů. */
+	static String tipBezKandidatu(final Challenge.Typ typ) {
+		final String co = typ == Challenge.Typ.DT_MATICE ? "políčka" : "sektory";
+		return "Chybějící " + co + ", které žádná nenalezená keš na mapě nedoplní. Seznam i ◀ ▶ je přeskakují.";
+	}
+
+	/** Nápověda pod seznamem chybějících. */
+	static String napovedaSeznamu(final Challenge.Typ typ) {
+		final String co = typ == Challenge.Typ.DT_MATICE ? "políčko" : "sektor";
+		return "Řádek: zobrazit " + co + " na mapě · ◀ ▶ předchozí / další " + co + " · Shift+šipky: další keš ve směru";
+	}
+
+	/** Tooltip řádku seznamu: klik vybere, druhý klik na vybraný výběr zruší. */
+	static String tipRadku(final Challenge.Typ typ, final boolean vybrany) {
+		final String co = typ == Challenge.Typ.DT_MATICE ? "políčko" : "sektor";
+		return vybrany ? "Klik: zrušit výběr" : "Klik: zobrazit " + co + " na mapě";
 	}
 
 	private static String tvar(final int n, final String jeden, final String dvaAzCtyri, final String jinak) {

@@ -53,7 +53,7 @@ public class TextyPopupuPlanovaceTest {
 	@Test
 	public void radkySektoru() {
 		final VysledekSektoru v = vysledek(new int[] { 213, 305 }, new int[0], new double[][] { { 213, 4000, 2790, 3000, 5000, 6000 } });
-		assertEquals("213°  5 kandidátů  nejbližší 2,8 km", TextyPopupuPlanovace.radekSektoru(213, v.kandidati(213)));
+		assertEquals("213°  5 kandidátů  nejbližší 2,8 km od středu", TextyPopupuPlanovace.radekSektoru(213, v.kandidati(213)));
 		assertEquals("305°  0 kandidátů  –", TextyPopupuPlanovace.radekSektoru(305, v.kandidati(305)));
 		assertEquals("10°  0 kandidátů  –", TextyPopupuPlanovace.radekSektoru(10, null));
 	}
@@ -72,15 +72,28 @@ public class TextyPopupuPlanovaceTest {
 	@Test
 	public void nejisteSektory() {
 		assertEquals("", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[0], new double[0][])));
-		assertEquals("1 sektor je na hraně (±0,05°), počítá se jako nejistý.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 7 }, new double[0][])));
-		assertEquals("3 sektory jsou na hraně (±0,05°), počítají se jako nejisté.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 1, 2, 3 }, new double[0][])));
-		assertEquals("5 sektorů je na hraně (±0,05°), počítají se jako nejisté.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 1, 2, 3, 4, 5 }, new double[0][])));
+		assertEquals("U 1 sektoru leží nalezená keš do 0,05° od hranice se sousedním sektorem, takže není jisté, do kterého patří. Na mapě má šedý čárkovaný prstenec.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 7 }, new double[0][])));
+		assertEquals("U 3 sektorů leží nalezená keš do 0,05° od hranice se sousedním sektorem, takže není jisté, do kterého patří. Na mapě mají šedý čárkovaný prstenec.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 1, 2, 3 }, new double[0][])));
+		assertEquals("U 5 sektorů leží nalezená keš do 0,05° od hranice se sousedním sektorem, takže není jisté, do kterého patří. Na mapě mají šedý čárkovaný prstenec.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 1, 2, 3, 4, 5 }, new double[0][])));
 	}
 
 	@Test
-	public void chybejiciOdNejblizsihoKandidataBezKandidatuNakonec() {
+	public void chybejiciPoKruzniciOdNulyJakoPosun() {
 		final VysledekSektoru v = vysledek(new int[] { 47, 211, 213, 305, 2 }, new int[0], new double[][] { { 213, 2800 }, { 211, 4000 }, { 47, 6200, 9000 } });
-		assertEquals(Arrays.asList(213, 211, 47, 2, 305), TextyPopupuPlanovace.serazeneChybejici(v));
+		assertEquals(Arrays.asList(2, 47, 211, 213, 305), TextyPopupuPlanovace.chybejiciPoKruznici(v));
+	}
+
+	@Test
+	public void napovedaATooltipRadku() {
+		assertEquals("Řádek: zobrazit sektor na mapě · ◀ ▶ předchozí / další sektor · Shift+šipky: další keš ve směru", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
+		assertEquals("Řádek: zobrazit políčko na mapě · ◀ ▶ předchozí / další políčko · Shift+šipky: další keš ve směru", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
+		assertEquals("Klik: zobrazit sektor na mapě", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, false));
+		assertEquals("Klik: zobrazit políčko na mapě", TextyPopupuPlanovace.tipRadku(Challenge.Typ.DT_MATICE, false));
+		assertEquals("Klik: zrušit výběr", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, true));
+		assertEquals("", TextyPopupuPlanovace.bezKandidatu(Challenge.Typ.SEKTORY_360, 0));
+		assertEquals("+ 1 sektor bez kandidátů", TextyPopupuPlanovace.bezKandidatu(Challenge.Typ.SEKTORY_360, 1));
+		assertEquals("+ 140 sektorů bez kandidátů", TextyPopupuPlanovace.bezKandidatu(Challenge.Typ.SEKTORY_360, 140));
+		assertEquals("+ 3 políčka bez kandidátů", TextyPopupuPlanovace.bezKandidatu(Challenge.Typ.DT_MATICE, 3));
 	}
 
 	@Test
@@ -98,9 +111,9 @@ public class TextyPopupuPlanovaceTest {
 		assertEquals("Splněno 79 z 81 (98 %), chybí 2", TextyPopupuPlanovace.souhrn(p));
 		assertEquals("98 %", TextyPopupuPlanovace.procenta(p));
 		assertEquals("0 %", TextyPopupuPlanovace.procenta(new VysledekPolicek(0, java.util.Collections.emptyList(), java.util.Collections.emptyList())));
-		assertEquals("Chybějící políčka D/T:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.DT_MATICE));
+		assertEquals("Chybějící políčka D/T s kandidáty po řádcích (jako ◀ ▶):", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.DT_MATICE));
 		assertEquals("Chybějící dny:", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.KALENDAR));
-		assertEquals("Chybějící sektory (podle vzdálenosti nejbližšího kandidáta):", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
+		assertEquals("Chybějící sektory s kandidáty po kružnici od 0° (jako ◀ ▶):", TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
 	}
 
 	@Test
