@@ -342,6 +342,19 @@ public class JChallengeDialogTest {
 		});
 	}
 
+	/** U 360° se „Kolikrát splnit“ neuloží, ani když by číselník měl jinou hodnotu (je skrytý). */
+	@Test
+	public void kolikratSplnitSeU360Neuklada() throws Exception {
+		naEdt(() -> {
+			final Challenge c = model.ulozVlastni(new Challenge("Moje 360", Challenge.Typ.SEKTORY_360, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.STATOR));
+			seznam().setSelectedValue(c, true);
+			dialog.opakovani.setValue(3);
+			tlacitko("Uložit změny").doClick();
+			Assert.assertTrue("bez chyby: " + chyba(), chyba().trim().isEmpty());
+			Assert.assertEquals(1, seznam().getSelectedValue().opakovani());
+		});
+	}
+
 	@Test
 	public void poOtevreniJeVybranaChallengeZobrazenaVPruhu() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {

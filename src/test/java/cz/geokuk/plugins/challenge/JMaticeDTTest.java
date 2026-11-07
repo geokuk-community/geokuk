@@ -64,11 +64,28 @@ public class JMaticeDTTest {
 		Assert.assertEquals(JMaticeDT.Stav.BEZ_KANDIDATU, m.stav("D5/T5"));
 		Assert.assertEquals("0/3", m.nalezyZCile("D5/T5"));
 		Assert.assertEquals("D5/T5 – 0 nálezů, cíl 3, nemá kandidáty", m.popis("D5/T5"));
+		Assert.assertEquals("nálezy nad cílem se omezí na cíl", "3/3", m.nalezyZCile("D2/T1"));
+		Assert.assertEquals("s násobností i bez kandidátů nálezy, ne pomlčka", "0/3", m.znak("D5/T5"));
+		Assert.assertEquals("1/3", m.znak("D1/T1"));
+		Assert.assertEquals("✓", m.znak("D2/T1"));
+		Assert.assertTrue("tečka u políčka s kandidáty", m.maTecku("D1/T1"));
+		Assert.assertFalse(m.maTecku("D5/T5"));
+		Assert.assertFalse(m.maTecku("D2/T1"));
 		m.setSize(m.getPreferredSize());
 		final java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(m.getWidth(), m.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB);
 		final java.awt.Graphics2D g = img.createGraphics();
 		m.paint(g);
 		g.dispose();
+	}
+
+	/** Bez násobnosti ukazuje políčko počet kandidátů nebo „–“ a nemá tečku. */
+	@Test
+	public void bezNasobnostiPocetAPomlckaBezTecky() {
+		final JMaticeDT m = matice();
+		Assert.assertEquals("3", m.znak("D1/T1"));
+		Assert.assertEquals("–", m.znak("D5/T5"));
+		Assert.assertEquals("✓", m.znak("D2/T2"));
+		Assert.assertFalse("N = 1 bez tečky", m.maTecku("D1/T1"));
 	}
 
 	@Test

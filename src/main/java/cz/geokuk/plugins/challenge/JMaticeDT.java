@@ -140,6 +140,23 @@ public class JMaticeDT extends JComponent {
 		return vysledek != null && vysledek.jePlne(stitek);
 	}
 
+	/** Znak v políčku: „✓“, u N = 1 počet kandidátů nebo „–“, s násobností nálezy z cíle („1/3“). */
+	String znak(final String stitek) {
+		switch (stav(stitek)) {
+		case SPLNENO:
+			return "✓";
+		case BEZ_KANDIDATU:
+			return cil > 1 ? nalezyZCile(stitek) : "–";
+		default:
+			return cil > 1 ? nalezyZCile(stitek) : pocet(stitek);
+		}
+	}
+
+	/** S násobností ukazuje políčko nálezy; kandidáty značí tečka vpravo nahoře. */
+	boolean maTecku(final String stitek) {
+		return cil > 1 && stav(stitek) == Stav.S_KANDIDATY;
+	}
+
 	/** Nálezy políčka z cíle („1/3“), jen s násobností. */
 	String nalezyZCile(final String stitek) {
 		return Math.min(nalezu(stitek), cil) + "/" + cil;
@@ -309,21 +326,19 @@ public class JMaticeDT extends JComponent {
 		Color fg;
 		String znak;
 		Font f = pismo;
+		znak = znak(s);
 		switch (st) {
 		case SPLNENO:
 			bg = smichej(pozadi, text, 0.10);
 			fg = smichej(text, pozadi, 0.35);
-			znak = "✓";
 			break;
 		case BEZ_KANDIDATU:
 			bg = pozadi;
 			fg = smichej(text, pozadi, 0.45);
-			znak = cil > 1 ? nalezyZCile(s) : "–";
 			break;
 		default:
 			bg = UIManager.getColor("Button.background");
 			fg = text;
-			znak = cil > 1 ? nalezyZCile(s) : pocet(s);
 			f = tucne;
 		}
 		if (vyb) {
@@ -354,8 +369,7 @@ public class JMaticeDT extends JComponent {
 		g.setFont(f);
 		g.setColor(fg);
 		stred(g, znak, r);
-		if (cil > 1 && st == Stav.S_KANDIDATY) {
-			// S násobností ukazuje políčko nálezy; kandidáty značí tečka vpravo nahoře.
+		if (maTecku(s)) {
 			g.fillOval(r.x + r.width - 8, r.y + 3, 4, 4);
 		}
 	}
