@@ -64,4 +64,95 @@ public class OkoKesoiduIkonaTest {
 		Assert.assertTrue(nakreslenych(false) > nakreslenych(true));
 		Assert.assertEquals(20, new OkoKesoiduIkona().getIconWidth());
 	}
+
+	private static BufferedImage nakresli(final boolean zobrazuji, final boolean povoleno, final boolean barevne) {
+		final JToggleButton b = new JToggleButton();
+		b.setSelected(zobrazuji);
+		b.setEnabled(povoleno);
+		b.setForeground(Color.BLACK);
+		final OkoKesoiduIkona ikona = new OkoKesoiduIkona(barevne);
+		final BufferedImage obraz = new BufferedImage(ikona.getIconWidth(), ikona.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+		final java.awt.Graphics2D g = obraz.createGraphics();
+		ikona.paintIcon(b, g, 0, 0);
+		g.dispose();
+		return obraz;
+	}
+
+	private static int pixelu(final BufferedImage obraz) {
+		int n = 0;
+		for (int y = 0; y < obraz.getHeight(); y++) {
+			for (int x = 0; x < obraz.getWidth(); x++) {
+				if ((obraz.getRGB(x, y) >>> 24) > 128) {
+					n++;
+				}
+			}
+		}
+		return n;
+	}
+
+	@Test
+	public void ikonaMaRozmer20x20AKresliSeVeVsechStavechIVariantach() {
+		for (final boolean barevne : new boolean[] { false, true }) {
+			for (final boolean zobrazuji : new boolean[] { false, true }) {
+				for (final boolean povoleno : new boolean[] { false, true }) {
+					final BufferedImage o = nakresli(zobrazuji, povoleno, barevne);
+					Assert.assertEquals(20, o.getWidth());
+					Assert.assertEquals(20, o.getHeight());
+					Assert.assertTrue("kreslí se: " + zobrazuji + povoleno + barevne, pixelu(o) > 60);
+				}
+			}
+		}
+	}
+
+	@Test
+	public void zakazaneOkoJeSede() {
+		final BufferedImage o = nakresli(true, false, false);
+		for (int y = 0; y < o.getHeight(); y++) {
+			for (int x = 0; x < o.getWidth(); x++) {
+				final int argb = o.getRGB(x, y);
+				if ((argb >>> 24) > 200) {
+					Assert.assertEquals(128, (argb >> 16) & 0xff, 2);
+				}
+			}
+		}
+	}
+
+	@Test
+	public void cestaZeSvgSeNacteZMoveLineCurveClose() {
+		final java.awt.geom.Rectangle2D r = OkoKesoiduIkona.cesta("M0 0L10 0L10 5Z").getBounds2D();
+		Assert.assertEquals(10, r.getWidth(), 1e-9);
+		Assert.assertEquals(5, r.getHeight(), 1e-9);
+	}
+
+	@Test
+	public void skryteOkoJeZesvetleneAZobrazeneJeCelistve() {
+		Assert.assertTrue("zobrazené oko má plné pixely", maxAlfa(nakresli(true, true, false), 0, 6) > 250);
+		Assert.assertTrue("skryté oko je vlevo průsvitné", maxAlfa(nakresli(false, true, false), 0, 6) < 200);
+	}
+
+	/** Největší krytí pixelů v levém horním rohu ikony (mimo přeškrtnutí). */
+	private static int maxAlfa(final BufferedImage o, final int odX, final int doX) {
+		int m = 0;
+		for (int y = 0; y < 8; y++) {
+			for (int x = odX; x < doX; x++) {
+				m = Math.max(m, o.getRGB(x, y) >>> 24);
+			}
+		}
+		return m;
+	}
+
+	@Test
+	public void barevnaVarianta() {
+		final BufferedImage o = nakresli(true, true, true);
+		int zelenych = 0;
+		for (int y = 0; y < o.getHeight(); y++) {
+			for (int x = 0; x < o.getWidth(); x++) {
+				final int argb = o.getRGB(x, y);
+				if ((argb >>> 24) > 200 && ((argb >> 8) & 0xff) > ((argb) & 0xff) + 80) {
+					zelenych++;
+				}
+			}
+		}
+		Assert.assertTrue("barevné oko má zelenožluté pixely: " + zelenych, zelenych > 20);
+	}
 }
