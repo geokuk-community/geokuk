@@ -278,7 +278,7 @@ public class JPopupPlanovaceTest {
 		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
 		popup.prepni();
 		final JPopupPlanovace.Obsah o = popup.obsah;
-		Assert.assertEquals("Typ: D/T    Pravidla: PGC", o.typ.getText());
+		Assert.assertEquals("Typ: D/T", o.typ.getText());
 		Assert.assertTrue("bez výsledku průběh", o.souhrn.getText().startsWith("Počítá se"));
 		Assert.assertFalse(o.dalsi.isEnabled());
 		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D5/T5"), java.util.Collections.emptyList()));
@@ -308,7 +308,7 @@ public class JPopupPlanovaceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		popup.prepni();
 		final JPopupPlanovace.Obsah o = popup.obsah;
-		Assert.assertEquals("Typ: Kalendář    Pravidla: PGC", o.typ.getText());
+		Assert.assertEquals("Typ: Kalendář", o.typ.getText());
 		Assert.assertEquals("Chybějící dny:", o.nadpisSeznamu.getText());
 		Assert.assertEquals(366, o.postup.getMaximum());
 		Assert.assertEquals(java.util.Arrays.asList("14. 3.", "29. 2."), radky(o));

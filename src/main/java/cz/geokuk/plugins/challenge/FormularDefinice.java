@@ -155,7 +155,7 @@ public final class FormularDefinice {
 		if (c.typ() == Challenge.Typ.DT_MATICE) {
 			return "D/T · matice obtížnost × terén podle keší na mapě";
 		}
-		final String pravidla = c.zdroj() == ZdrojPravidel.PGC ? "Project-GC" : "Stator";
+		final String pravidla = c.zdroj() == ZdrojPravidel.PGC ? "koule" : "elipsoid";
 		return typ(c.typ()) + " · " + pravidla + " · střed: " + stred + " · oblast: " + oblastDefinice(c).popis.toLowerCase(java.util.Locale.ROOT);
 	}
 }
