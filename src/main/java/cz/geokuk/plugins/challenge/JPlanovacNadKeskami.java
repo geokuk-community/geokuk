@@ -69,6 +69,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	private transient volatile double meritkoIkon = 1;
 	/** Keše zvýrazněného sektoru nebo políčka; staví se jednou pro okno a výběr. */
 	private transient ZvyrazneniKese zvyrazneniKese;
+	private transient CleniVyberu cleniVyberu;
 	private final transient java.util.List<Rectangle> stitkyZvyrazneniKresleni = new java.util.ArrayList<>();
 
 	/** Výběr kandidátů ve výřezu pro jeden podklad a jednu polohu mapy; kreslení z něj čte, dokud se nic nezmění. */
@@ -112,6 +113,10 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	}
 
 	/** Štítky keší zvýrazněného sektoru nebo políčka z posledního kreslení. */
+	CleniVyberu cleniVyberu() {
+		return cleniVyberu;
+	}
+
 	java.util.List<Rectangle> obdelnikyStitkuZvyrazneni() {
 		return new java.util.ArrayList<>(stitkyZvyrazneniKresleni);
 	}
@@ -423,9 +428,20 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 		final Indexator<Wpt> indexator = indexatorKesi;
 		final double meritko = meritkoIkon;
+		if (indexator == null) {
+			return;
+		}
+		CleniVyberu cl = cleniVyberu;
+		if (cl == null || !cl.jeStejny(t.prehled, indexator, vyber)) {
+			if (cl != null) {
+				cl.zrus();
+			}
+			cl = CleniVyberu.spust(t.prehled, indexator, vyber, stavba(), poHotovo());
+			cleniVyberu = cl;
+		}
 		ZvyrazneniKese z = zvyrazneniKese;
-		if (z == null || !z.jeStejne(t, c, indexator, meritko, vyber)) {
-			z = ZvyrazneniKese.postav(t, c, indexator, meritko, vyber);
+		if (z == null || !z.jeStejne(t, c, indexator, cl, meritko, vyber)) {
+			z = ZvyrazneniKese.postav(t, c, indexator, cl, meritko, vyber);
 			zvyrazneniKese = z;
 		}
 		final Rectangle misto = new Rectangle();

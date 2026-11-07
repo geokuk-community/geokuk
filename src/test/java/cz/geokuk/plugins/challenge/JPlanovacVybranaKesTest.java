@@ -175,6 +175,79 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void clenoveVyberuSeStaviMimoEdtAAzPoHotovemSeKresli() throws Exception {
+		zobraz360(250);
+		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
+		final Kes stejny = kesVAzimutu("GC2", 100.3, 1200, 3, 3);
+		final java.util.Queue<Runnable> fronta = new java.util.ArrayDeque<>();
+		nad.setStavba(fronta::add);
+		nad.setIndexatorKesi(index(vybrana, stejny));
+		vyber(vybrana);
+		final Coord c = mapa(14);
+		nakresli(nad, c);
+		while (!fronta.isEmpty()) {
+			fronta.poll().run();
+		}
+		nakresli(nad, c);
+		Assert.assertTrue("dokud se členové staví, nekreslí se nic", nad.obdelnikyStitkuZvyrazneni().isEmpty());
+		Assert.assertEquals("stavba čeká na vlákně", 1, fronta.size());
+		fronta.poll().run();
+		nakresli(nad, c);
+		Assert.assertEquals("po dokončení se štítky kreslí", 2, nad.obdelnikyStitkuZvyrazneni().size());
+		Assert.assertTrue("a znovu se nestaví", fronta.isEmpty());
+	}
+
+	@Test
+	public void zmenaVyberuZrusiRozpracovanouStavbuClenu() throws Exception {
+		zobraz360(250);
+		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
+		final Kes jina = kesVAzimutu("GC3", 190.5, 1500, 2, 2);
+		final java.util.Queue<Runnable> fronta = new java.util.ArrayDeque<>();
+		nad.setStavba(fronta::add);
+		nad.setIndexatorKesi(index(vybrana, jina));
+		vyber(vybrana);
+		final Coord c = mapa(14);
+		nakresli(nad, c);
+		while (!fronta.isEmpty()) {
+			fronta.poll().run();
+		}
+		nakresli(nad, c);
+		Assert.assertEquals("členové prvního výběru čekají", 1, fronta.size());
+		final CleniVyberu prvni = nad.cleniVyberu();
+		vyber(jina);
+		nakresli(nad, c);
+		Assert.assertEquals("a nová stavba se zařadí za ni", 2, fronta.size());
+		Assert.assertNotSame(prvni, nad.cleniVyberu());
+		Assert.assertTrue("stará stavba je zrušená", prvni.jeZrusena());
+		fronta.poll().run();
+		fronta.poll().run();
+		nakresli(nad, c);
+		Assert.assertEquals("kreslí se jen členové aktuálního výběru", 1, nad.obdelnikyStitkuZvyrazneni().size());
+	}
+
+	@Test
+	public void zrusenaStavbaClenuNeniDokoncenaAPoHotovoSeNevola() throws Exception {
+		zobraz360(250);
+		final List<Wpt> wpts = new ArrayList<>();
+		for (int i = 0; i < 9000; i++) {
+			wpts.add(kesVAzimutu("GC" + i, 100.5, 1000 + i, 2, 2).getMainWpt());
+		}
+		final Indexator<Wpt> ix = Indexator.postav(BoundingRect.ALL, wpts, w -> w.getMou().xx, w -> w.getMou().yy);
+		final java.util.Queue<Runnable> fronta = new java.util.ArrayDeque<>();
+		final int[] hotovo = new int[1];
+		final VyberZvyrazneni v = new VyberZvyrazneni(100, null, null);
+		final CleniVyberu zrusena = CleniVyberu.spust(model.prehled(), ix, v, fronta::add, () -> hotovo[0]++);
+		zrusena.zrus();
+		fronta.poll().run();
+		Assert.assertNull(zrusena.clenove());
+		Assert.assertEquals(0, hotovo[0]);
+		final CleniVyberu cela = CleniVyberu.spust(model.prehled(), ix, v, fronta::add, () -> hotovo[0]++);
+		fronta.poll().run();
+		Assert.assertEquals(9000, cela.clenove().length);
+		Assert.assertEquals(1, hotovo[0]);
+	}
+
+	@Test
 	public void stitkyMajiJenKeseVybranehoSektoruVpravoOdIkony() throws Exception {
 		zobraz360(250);
 		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);

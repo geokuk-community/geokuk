@@ -97,6 +97,14 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 		this.stavba = stavba;
 	}
 
+	java.util.concurrent.Executor stavba() {
+		return stavba;
+	}
+
+	Runnable poHotovo() {
+		return poHotovo;
+	}
+
 	/** Podklad kreslení pro zobrazenou challenge, nebo null, když se nic nekreslí. Dokud se nový staví, kreslí se předchozí. */
 	TvarPlanovace tvar() {
 		final PrehledChallenge p = model == null || !model.jeZapnuto() ? null : model.prehled();
