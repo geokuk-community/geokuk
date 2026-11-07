@@ -238,7 +238,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 		/** Název challenge může být dlouhý (šablony mají GC kód a anglický název): zkrátí se „…“ a plný je v tooltipu. */
 		final cz.geokuk.util.gui.JZkracenyLabel nadpis = new cz.geokuk.util.gui.JZkracenyLabel(NEJVETSI_SIRKA_NADPISU);
-		final JButton nastaveni = new JButton("Nastavení…");
+		final JButton nastaveni = new JButton("Nastavení plánovače…");
 		final JLabel typ = new JLabel();
 		final JLabel stred = new JLabel();
 		final JLabel souhrn = new JLabel();
@@ -260,7 +260,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			postup.setBorderPainted(true);
 			seznam.setVisibleRowCount(RADKU_SEZNAMU);
 			seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			seznam.setPrototypeCellValue("359°  99 kandidátů  nejbližší 99,9 km");
+			seznam.setPrototypeCellValue("359°  99 kandidátů  nejbližší 99,9 km od středu");
 			for (final AbstractButton b : new AbstractButton[] { nastaveni, dalsi, kandidati }) {
 				b.setFocusable(false);
 			}
@@ -368,7 +368,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, v.kandidati(s)));
 			}
 			final String n = TextyPopupuPlanovace.nejiste(v);
-			nejiste.setText(n.isEmpty() ? " " : n);
+			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");
 			dalsi.setEnabled(!v.chybejici().isEmpty());
 		}
 
