@@ -30,6 +30,8 @@ public class ChallengeModel extends Model0 {
 	private final Map<String, VysledekPolicek> vysledkyPolicek = new ConcurrentHashMap<>();
 	/** Střed (šířka, délka), podle kterého vznikl výsledek; chybí u výsledků zadaných bez středu. */
 	private final Map<String, double[]> stredy = new ConcurrentHashMap<>();
+	/** Oblast, se kterou se počítal výsledek 360°; chybí u výsledků bez omezení oblasti. */
+	private final Map<String, Oblast> oblasti = new ConcurrentHashMap<>();
 	private volatile PrehledChallenge prehled;
 	private final Map<String, StavPredpoctu> stavy = new ConcurrentHashMap<>();
 	private final Map<String, VybranyKandidat> kandidati = new ConcurrentHashMap<>();
@@ -82,6 +84,7 @@ public class ChallengeModel extends Model0 {
 		vysledky.clear();
 		vysledkyPolicek.clear();
 		stredy.clear();
+		oblasti.clear();
 		prehled = null;
 		zobrazena = null;
 		stavy.clear();
@@ -185,6 +188,29 @@ public class ChallengeModel extends Model0 {
 		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
 	}
 
+	private volatile int stitkuNaMape = -1;
+	private volatile int kandidatuVeVyrezu = -1;
+
+	/** Kolik štítků kandidátů vrstva na mapě ukázala z kolika kandidátů ve výřezu; z EDT po kreslení, ohlásí se jen změna. */
+	public void nahlasStitkyNaMape(final int zobrazeno, final int veVyrezu) {
+		if (stitkuNaMape == zobrazeno && kandidatuVeVyrezu == veVyrezu) {
+			return;
+		}
+		stitkuNaMape = zobrazeno;
+		kandidatuVeVyrezu = veVyrezu;
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	/** Kolik štítků kandidátů je na mapě, nebo -1, když se ještě nekreslilo. */
+	public int stitkuNaMape() {
+		return stitkuNaMape;
+	}
+
+	/** Kolik kandidátů bylo při posledním kreslení ve výřezu, nebo -1. */
+	public int kandidatuVeVyrezu() {
+		return kandidatuVeVyrezu;
+	}
+
 	// --- Definice
 
 	public List<Challenge> sablony() {
@@ -210,6 +236,7 @@ public class ChallengeModel extends Model0 {
 		vysledky.remove(klic(c));
 		vysledkyPolicek.remove(klic(c));
 		stredy.remove(klic(c));
+		oblasti.remove(klic(c));
 		stavy.remove(klic(c));
 		kandidati.remove(klic(c));
 		policka.remove(klic(c));
@@ -247,6 +274,7 @@ public class ChallengeModel extends Model0 {
 		prenes(kandidati, staryKlic, klic(nova));
 		prenes(policka, staryKlic, klic(nova));
 		prenes(sektory, staryKlic, klic(nova));
+		oblasti.remove(staryKlic);
 		if (staryKlic.equals(jenKandidatiPro)) {
 			jenKandidatiPro = klic(nova);
 		}
@@ -277,6 +305,7 @@ public class ChallengeModel extends Model0 {
 		vysledky.remove(klic(c));
 		vysledkyPolicek.remove(klic(c));
 		stredy.remove(klic(c));
+		oblasti.remove(klic(c));
 		stavy.remove(klic(c));
 		kandidati.remove(klic(c));
 		policka.remove(klic(c));
@@ -425,11 +454,21 @@ public class ChallengeModel extends Model0 {
 
 	/** Jako {@link #nastavVysledek(Challenge, VysledekSektoru)} se středem challenge, ze kterého se počítalo. */
 	public void nastavVysledek(final Challenge c, final VysledekSektoru vysledek, final double stredLat, final double stredLon) {
+		nastavVysledek(c, vysledek, stredLat, stredLon, null);
+	}
+
+	/** Jako {@link #nastavVysledek(Challenge, VysledekSektoru, double, double)} s oblastí, se kterou se počítalo (null = bez omezení); přehled ji nabízí jako {@link PrehledChallenge#jeVOblasti}. */
+	public void nastavVysledek(final Challenge c, final VysledekSektoru vysledek, final double stredLat, final double stredLon, final Oblast oblast) {
 		naEdt(() -> {
 			if (!seznam.jeAktivni(c.nazev()) || !c.equals(seznam.najdi(c.nazev()))) {
 				return;
 			}
 			stredy.put(klic(c), new double[] { stredLat, stredLon });
+			if (oblast == null) {
+				oblasti.remove(klic(c));
+			} else {
+				oblasti.put(klic(c), oblast);
+			}
 			vysledky.put(klic(c), vysledek);
 			final Integer vybrany = sektory.get(klic(c));
 			final boolean zruseno = vybrany != null && !maKandidaty(vysledek, vybrany);
@@ -538,7 +577,7 @@ public class ChallengeModel extends Model0 {
 			final double[] stred = stredy.get(klic(c));
 			final double lat = stred == null ? Double.NaN : stred[0];
 			final double lon = stred == null ? Double.NaN : stred[1];
-			p = sektory ? PrehledChallenge.zeSektoru(c, (VysledekSektoru) v, lat, lon) : PrehledChallenge.zPolicek(c, (VysledekPolicek) v, lat, lon);
+			p = sektory ? PrehledChallenge.zeSektoru(c, (VysledekSektoru) v, lat, lon, oblasti.get(klic(c))) : PrehledChallenge.zPolicek(c, (VysledekPolicek) v, lat, lon);
 			prehled = p;
 			return p;
 		}
