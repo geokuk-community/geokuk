@@ -21,6 +21,7 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 	protected transient ChallengeModel model;
 	private transient java.util.concurrent.Executor stavba;
 	private volatile boolean kesoidyViditelne = true;
+	private transient volatile long casVyberuModelu;
 	private final transient Runnable poHotovo = this::repaint;
 	private transient TvarPlanovace tvar;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
@@ -62,7 +63,15 @@ abstract class JVrstvaPlanovace extends JSingleSlide0 {
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
+		if (event.druh() == ChallengeZmenenyEvent.Druh.POLICKO) {
+			casVyberuModelu = System.nanoTime();
+		}
 		repaint();
+	}
+
+	/** Co se podle výběru zvýrazňuje; novější je buď keš vybraná programem, nebo sektor či políčko vybrané v plánovači. */
+	VyberZvyrazneni zvyrazneni(final TvarPlanovace t) {
+		return VyberZvyrazneni.vyres(t.prehled, model, casVyberuModelu, t.vybranySektor);
 	}
 
 	@Override
