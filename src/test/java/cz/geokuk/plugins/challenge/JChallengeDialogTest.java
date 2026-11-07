@@ -415,7 +415,7 @@ public class JChallengeDialogTest {
 			}
 			Assert.assertNotNull("volba pravidel s položkami Koule a Elipsoid", pravidla);
 			Assert.assertEquals("Stator (elipsoid)", ((javax.swing.JComboBox<?>) pravidla).getItemAt(1));
-			Assert.assertTrue(pravidla.getToolTipText(), pravidla.getToolTipText().contains("Stator: elipsoid WGS84"));
+			Assert.assertTrue(pravidla.getToolTipText(), pravidla.getToolTipText().contains("Stator: elipsoid WGS84, včetně Lab, bez Locationless.") && !pravidla.getToolTipText().contains("ignorovaných"));
 		});
 	}
 
