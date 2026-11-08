@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.challenge;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
@@ -248,6 +249,21 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void klinMaVidetelnyPasIKdyzJeSektorUzky() throws Exception {
+		zobraz360(250);
+		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
+		nad.setIndexatorKesi(index(vybrana));
+		vyber(vybrana);
+		final Coord c = mapa(14);
+		final BufferedImage img = nakresli(pod, c);
+		final Point osa = naPaprsku(c, 100.5, 150);
+		final Point mimoOsu = new Point(osa.x, osa.y + 3);
+		Assert.assertTrue("pás klínu je široký aspoň několik pixelů, ne jen čára: " + (img.getRGB(mimoOsu.x, mimoOsu.y) >>> 24), (img.getRGB(mimoOsu.x, mimoOsu.y) >>> 24) > 40);
+		Assert.assertTrue("na obě strany", (img.getRGB(osa.x, osa.y - 3) >>> 24) > 40);
+		Assert.assertEquals("a nepokračuje daleko od osy", 0, img.getRGB(osa.x, osa.y + 12) >>> 24);
+	}
+
+	@Test
 	public void stitkyMajiJenKeseVybranehoSektoruVlevoOdIkony() throws Exception {
 		zobraz360(250);
 		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
@@ -363,7 +379,10 @@ public class JPlanovacVybranaKesTest {
 		Assert.assertEquals("D3/T4", model.prehled().stitekPolicka(4, 6));
 		final Point p = PixelyMapy.transform(c, stejna.getMainWpt().getMou(), new Point());
 		final Rectangle r = (nad.obdelnikyStitkuZvyrazneni().get(0).x + nad.obdelnikyStitkuZvyrazneni().get(0).width) == p.x - 10 ? nad.obdelnikyStitkuZvyrazneni().get(0) : nad.obdelnikyStitkuZvyrazneni().get(1);
-		Assert.assertEquals("výplň štítku je akcent", AkcentPlanovace.barva().getRGB(), img.getRGB(r.x + 1, r.y + r.height / 2));
+		Assert.assertEquals("výplň štítku člena je jiná než akcent kandidátů", JPlanovacNadKeskami.BARVA_CLENA.getRGB(), img.getRGB(r.x + 3, r.y + 3));
+		final Color a = AkcentPlanovace.barva();
+		final Color m = JPlanovacNadKeskami.BARVA_CLENA;
+		Assert.assertTrue("člen je výrazně jiné barvy než kandidáti", Math.abs(a.getRed() - m.getRed()) + Math.abs(a.getGreen() - m.getGreen()) + Math.abs(a.getBlue() - m.getBlue()) > 250);
 	}
 
 	@Test

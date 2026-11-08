@@ -54,6 +54,9 @@ public class JPlanovacPodKeskami extends JVrstvaPlanovace {
 		}
 	}
 
+	/** Úzký klín by byl na mapě jen tenká čára; pás této šířky ho dělá vidět. */
+	private static final float SIRKA_PASU_KLINU = 7f;
+
 	private transient Tvary tvary;
 
 	@Override
@@ -76,6 +79,9 @@ public class JPlanovacPodKeskami extends JVrstvaPlanovace {
 			if (v.klin != null) {
 				g.setColor(new Color(a.getRed(), a.getGreen(), a.getBlue(), 90));
 				g.fill(v.klin);
+				g.setColor(new Color(a.getRed(), a.getGreen(), a.getBlue(), 80));
+				g.setStroke(new BasicStroke(SIRKA_PASU_KLINU, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				g.draw(v.klin);
 				g.setColor(new Color(a.getRed(), a.getGreen(), a.getBlue(), 200));
 				g.setStroke(new BasicStroke(1.2f));
 				g.draw(v.klin);
