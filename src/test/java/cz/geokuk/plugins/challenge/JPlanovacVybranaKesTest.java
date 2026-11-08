@@ -264,6 +264,24 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void klinPokracujeZaKruznicIAzZaOkno() throws Exception {
+		zobraz360(250);
+		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
+		nad.setIndexatorKesi(index(vybrana));
+		vyber(vybrana);
+		final Coord blizko = mapa(14);
+		final BufferedImage img = nakresli(pod, blizko);
+		final Point daleko = naPaprsku(blizko, 100.5, 600);
+		Assert.assertTrue("klín dosahuje k okraji okna i za prstenec (600 px od středu): " + daleko, neprazdneKolem(img, daleko.x, daleko.y));
+		// okno 40 km od středu na ose sektoru: klín prochází oknem, střed ani prstenec v něm nejsou
+		final Wgs okno = new Wgs(STRED_LAT + 40_000 * Math.cos(Math.toRadians(100.5)) / 111_000.0, STRED_LON + 40_000 * Math.sin(Math.toRadians(100.5)) / (111_000.0 * Math.cos(Math.toRadians(STRED_LAT))));
+		final Coord vzdalene = new Coord(14, okno.toMou(), new Dimension(W, H), 0);
+		final BufferedImage img2 = nakresli(pod, vzdalene);
+		Assert.assertTrue("vzdálený klín je v okně vidět na ose", neprazdneKolem(img2, W / 2, H / 2));
+		Assert.assertFalse("a mimo osu ne", neprazdneKolem(img2, W / 2, H / 2 - 100));
+	}
+
+	@Test
 	public void stitkyMajiJenKeseVybranehoSektoruVlevoOdIkony() throws Exception {
 		zobraz360(250);
 		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);

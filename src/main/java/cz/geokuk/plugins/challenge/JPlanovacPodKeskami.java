@@ -43,9 +43,13 @@ public class JPlanovacPodKeskami extends JVrstvaPlanovace {
 				useky.add(cesta(coord, u.body(), p, false));
 				stavy.add(u.stav());
 			}
-			final List<GeometrieSektoru.Bod> k = tvar.klin(sektor, polomer);
+			final List<GeometrieSektoru.Bod> k = tvar.klinZaOkno(sektor, tvar.polomerZaOknem(coord));
 			if (!k.isEmpty()) {
-				klin = cesta(coord, k, p, true);
+				final java.awt.geom.Area oriznuty = new java.awt.geom.Area(cesta(coord, k, p, true));
+				oriznuty.intersect(new java.awt.geom.Area(new java.awt.Rectangle(-ZAPAS_OREZU, -ZAPAS_OREZU, coord.getWidth() + 2 * ZAPAS_OREZU, coord.getHeight() + 2 * ZAPAS_OREZU)));
+				if (!oriznuty.isEmpty()) {
+					klin = new java.awt.geom.Path2D.Double(oriznuty);
+				}
 			}
 			stred = PixelyMapy.transform(coord, tvar.stred, new Point());
 			if (tvar.vybranyPozice != null) {
@@ -56,6 +60,8 @@ public class JPlanovacPodKeskami extends JVrstvaPlanovace {
 
 	/** Úzký klín by byl na mapě jen tenká čára; pás této šířky ho dělá vidět. */
 	private static final float SIRKA_PASU_KLINU = 7f;
+	/** Klín se ořízne o kousek větším obdélníkem než okno, ať okraj ořezu není vidět. */
+	private static final int ZAPAS_OREZU = 16;
 
 	private transient Tvary tvary;
 
