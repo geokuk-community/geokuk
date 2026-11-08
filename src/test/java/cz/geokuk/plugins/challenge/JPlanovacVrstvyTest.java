@@ -202,6 +202,43 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
+	public void popisekKruzniceMaTextAPolohuUKruzniceAJenKdyzJeZapnuteSektory() throws Exception {
+		zobrazSKruznici();
+		final Coord c = mapa(50.0, 14.0, 14);
+		nakresli(nad, c);
+		Assert.assertEquals("3,0 km", nad.textPopiskuKruznice());
+		final Rectangle r = nad.popisekKruznice();
+		Assert.assertNotNull(r);
+		final java.awt.Point bod = JPlanovacNadKeskami.nejblizsiBodKruznice(c, TvarCache.dej(model.prehled(), null, null, null));
+		Assert.assertTrue("štítek je těsně u bodu kružnice: " + r + " " + bod, r.contains(bod) || r.intersects(new Rectangle(bod.x - 12, bod.y - 12, 24, 24)));
+		model.setKresliSektory(false);
+		nakresli(nad, c);
+		Assert.assertNull("bez Sektorů žádný popisek", nad.textPopiskuKruznice());
+		Assert.assertNull(nad.popisekKruznice());
+	}
+
+	@Test
+	public void popisekKruzniceNestojiBlizkoOkrajumOkna() {
+		Assert.assertTrue(JPlanovacNadKeskami.jeVOblastiPopisku(64, 70, 1280, 720));
+		Assert.assertFalse("vlevo", JPlanovacNadKeskami.jeVOblastiPopisku(63, 300, 1280, 720));
+		Assert.assertFalse("nahoře (lišta)", JPlanovacNadKeskami.jeVOblastiPopisku(300, 69, 1280, 720));
+		Assert.assertTrue(JPlanovacNadKeskami.jeVOblastiPopisku(1216, 680, 1280, 720));
+		Assert.assertFalse("vpravo", JPlanovacNadKeskami.jeVOblastiPopisku(1217, 300, 1280, 720));
+		Assert.assertFalse("dole (měřítko)", JPlanovacNadKeskami.jeVOblastiPopisku(300, 681, 1280, 720));
+	}
+
+	@Test
+	public void poloměrSeDoTextuStreduDavaJenKdyzKruzniceVOkneNemaPopisek() throws Exception {
+		zobrazSKruznici();
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		Assert.assertTrue("kružnice v okně má vlastní popisek", Double.isNaN(nad.polomerVTextuStredu(mapa(50.0, 14.0, 14), TvarCache.dej(model.prehled(), null, null, null))));
+		final Coord blizko = mapa(50.0, 14.0, 17);
+		Assert.assertEquals("při přiblížení kružnice v okně není, poloměr je v textu středu", 3000, nad.polomerVTextuStredu(blizko, TvarCache.dej(model.prehled(), null, null, null)), 1e-9);
+		model.setKresliSektory(false);
+		Assert.assertTrue("bez Sektorů nic", Double.isNaN(nad.polomerVTextuStredu(blizko, TvarCache.dej(model.prehled(), null, null, null))));
+	}
+
+	@Test
 	public void popisekKruzniceStojiNaKruziciANapisePoloměr() throws Exception {
 		zobrazSKruznici();
 		final Coord c = mapa(50.0, 14.0, 14);
@@ -454,7 +491,7 @@ public class JPlanovacVrstvyTest {
 				final Rectangle s = nad.sipka();
 				Assert.assertNotNull("šipka pro " + lat + ", " + lon, s);
 				Assert.assertFalse("šipka a štítek mimo měřítko i s přesahem popisku (" + lat + ", " + lon + "): " + s + " × " + meritko, s.intersects(meritko));
-				if (s.y > H - 120 && Math.abs(s.x + s.width / 2 - meritko.x) < 80) {
+				if (s.y > H - 120 && Math.abs(s.x + s.width / 2 - meritko.x) < 160) {
 					poblizLevehoKonce++;
 				}
 			}
