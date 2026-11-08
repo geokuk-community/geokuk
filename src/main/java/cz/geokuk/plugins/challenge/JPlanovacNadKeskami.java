@@ -186,6 +186,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 				kresliZvyrazneni(g, c, t, pismo, vyber);
 			}
 			kresliStred(g, c, t, tucne);
+			kresliPopisekKruznice(g, c, t, tucne);
 			if (kesoidyViditelne()) {
 				kresliStitekVybraneKese(g, c, t, tucne, vyber);
 			}
@@ -193,6 +194,40 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		} finally {
 			g.dispose();
 		}
+	}
+
+	/** Popisek poloměru stojí na bodu kružnice nejblíž středu okna, jen když je kružnice v okně vidět. */
+	private void kresliPopisekKruznice(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font tucne) {
+		if (t.stred == null || !kresliSektory() || t.polomerKruznice <= 0) {
+			return;
+		}
+		final Point bod = nejblizsiBodKruznice(c, t);
+		if (bod != null) {
+			umistiOkoloBodu(g, tucne, TextyKresleni.vzdalenost(t.polomerKruznice), bod.x, bod.y, 6, false);
+		}
+	}
+
+	/** Vrchol kružnice v okně nejblíž jeho středu, nebo null, když v okně žádný není. */
+	static Point nejblizsiBodKruznice(final Coord c, final TvarPlanovace t) {
+		final int w = c.getWidth();
+		final int h = c.getHeight();
+		Point nejlepsi = null;
+		double nejmene = Double.MAX_VALUE;
+		final Point p = new Point();
+		for (final GeometrieSektoru.Usek u : t.prstenec(t.polomerKruznice)) {
+			for (final GeometrieSektoru.Bod b : u.body()) {
+				PixelyMapy.transform(c, PixelyMapy.mou(b.lat, b.lon), p);
+				if (p.x < 24 || p.y < 60 || p.x > w - 24 || p.y > h - 24) {
+					continue;
+				}
+				final double d = Math.hypot(p.x - w / 2.0, p.y - h / 2.0);
+				if (d < nejmene) {
+					nejmene = d;
+					nejlepsi = new Point(p);
+				}
+			}
+		}
+		return nejlepsi;
 	}
 
 	private void kresliStred(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font tucne) {

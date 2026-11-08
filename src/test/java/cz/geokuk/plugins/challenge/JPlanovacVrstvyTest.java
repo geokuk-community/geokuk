@@ -132,6 +132,102 @@ public class JPlanovacVrstvyTest {
 		Assert.assertEquals("po zrušení výběru zase všichni", 3, nad.obdelnikyStitkuKandidatu().size());
 	}
 
+	/** Pevná kružnice o poloměru 3 km (jediný kandidát chybějícího sektoru 150). */
+	private void zobrazSKruznici() throws Exception {
+		final java.util.List<VysledekSektoru.KandidatKes> k = new ArrayList<>();
+		k.add(new VysledekSektoru.KandidatKes("GC1", 50.027, 14.0, 150, 3000, false));
+		final VysledekSektoru.Kandidati[] ps = new VysledekSektoru.Kandidati[360];
+		ps[150] = new VysledekSektoru.Kandidati(150);
+		ps[150].pridej("GC1", 3000);
+		final BitSet ob = obsazene(0, 360);
+		ob.clear(150);
+		zobraz(new VysledekSektoru(ob, new BitSet(360), ps, 359, k), 50.0, 14.0);
+	}
+
+	/** Vzdálenost od středu k prvnímu pixelu kružnice ve směru východ. */
+	private static int polomerKruzniceVPixelech(final BufferedImage img, final Coord c) {
+		final java.awt.Point s = c.transform(new Wgs(50.0, 14.0).toMou());
+		for (int r = 4; s.x + r < W; r++) {
+			if ((img.getRGB(s.x + r, s.y) >>> 24) > 100 && img.getRGB(s.x + r, s.y) != 0) {
+				return r;
+			}
+		}
+		return -1;
+	}
+
+	@Test
+	public void kruznicMaPevnyPolomerVMetrechNezavislyNaZoomu() throws Exception {
+		zobrazSKruznici();
+		final Coord z13 = mapa(50.0, 14.0, 13);
+		final Coord z14 = mapa(50.0, 14.0, 14);
+		final int r13 = polomerKruzniceVPixelech(nakresli(pod, z13), z13);
+		final int r14 = polomerKruzniceVPixelech(nakresli(pod, z14), z14);
+		Assert.assertTrue("kružnice je vidět: " + r13, r13 > 100);
+		Assert.assertEquals("po přiblížení o stupeň je dvojnásobná: " + r13 + " → " + r14, 2.0, (double) r14 / r13, 0.05);
+	}
+
+	@Test
+	public void popisekKruzniceStojiNaBoduKruzniceNejblizsimStreduOkna() throws Exception {
+		zobrazSKruznici();
+		final Coord c = mapa(50.0, 14.03, 14);
+		nakresli(nad, c);
+		final TvarPlanovace t = TvarCache.dej(model.prehled(), null, null, null);
+		final java.awt.Point bod = JPlanovacNadKeskami.nejblizsiBodKruznice(c, t);
+		Assert.assertNotNull(bod);
+		final java.awt.Point s = c.transform(new Wgs(50.0, 14.0).toMou());
+		final double polomer = polomerKruzniceVPixelech(nakresli(pod, mapa(50.0, 14.0, 14)), mapa(50.0, 14.0, 14));
+		final double stred = Math.hypot(s.x - W / 2.0, s.y - H / 2.0);
+		Assert.assertEquals("nejbližší bod kružnice je od středu okna jen o rozdíl poloměru a vzdálenosti středu", Math.abs(polomer - stred), Math.hypot(bod.x - W / 2.0, bod.y - H / 2.0), 15);
+	}
+
+	@Test
+	public void kruznicSeKresliPriKazdemZoomuKdyzJeStredVOkne() throws Exception {
+		zobrazSKruznici();
+		for (int zoom = 5; zoom <= 13; zoom++) {
+			final int pixelu = pocetPixelu(nakresli(pod, mapa(50.0, 14.0, zoom)));
+			Assert.assertTrue("zoom " + zoom + ": " + pixelu, pixelu > 5);
+		}
+	}
+
+	private static int pocetPixelu(final BufferedImage img) {
+		int n = 0;
+		for (int y = 0; y < H; y++) {
+			for (int x = 0; x < W; x++) {
+				if ((img.getRGB(x, y) >>> 24) != 0) {
+					n++;
+				}
+			}
+		}
+		return n;
+	}
+
+	@Test
+	public void popisekKruzniceStojiNaKruziciANapisePoloměr() throws Exception {
+		zobrazSKruznici();
+		final Coord c = mapa(50.0, 14.0, 14);
+		nakresli(nad, c);
+		final TvarPlanovace t = TvarCache.dej(model.prehled(), null, null, null);
+		final java.awt.Point bod = JPlanovacNadKeskami.nejblizsiBodKruznice(c, t);
+		Assert.assertNotNull(bod);
+		final java.awt.Point s = c.transform(new Wgs(50.0, 14.0).toMou());
+		final double r = Math.hypot(bod.x - s.x, bod.y - s.y);
+		Assert.assertEquals("bod leží na kružnici", polomerKruzniceVPixelech(nakresli(pod, c), c), r, 120);
+		Assert.assertEquals("3,0 km", TextyKresleni.vzdalenost(t.polomerKruznice));
+		final BufferedImage img = nakresli(nad, c);
+		boolean text = false;
+		for (int dy = -12; dy <= 12 && !text; dy++) {
+			for (int dx = -40; dx <= 40; dx++) {
+				final int x = bod.x + dx;
+				final int y = bod.y + dy;
+				if (x >= 0 && y >= 0 && x < W && y < H && (img.getRGB(x, y) >>> 24) != 0) {
+					text = true;
+					break;
+				}
+			}
+		}
+		Assert.assertTrue("u kružnice je štítek s poloměrem", text);
+	}
+
 	@Test
 	public void prstenecMaSplnenySektorZelenyAChybejiciCerveny() throws Exception {
 		zobraz(new VysledekSektoru(obsazene(0, 180), new BitSet(360), new VysledekSektoru.Kandidati[360], 180, new ArrayList<>()), 50.0, 14.0);
