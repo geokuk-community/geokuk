@@ -398,6 +398,8 @@ public class JPlanovacVybranaKesTest {
 		final Point p = PixelyMapy.transform(c, stejna.getMainWpt().getMou(), new Point());
 		final Rectangle r = (nad.obdelnikyStitkuZvyrazneni().get(0).x + nad.obdelnikyStitkuZvyrazneni().get(0).width) == p.x - 10 ? nad.obdelnikyStitkuZvyrazneni().get(0) : nad.obdelnikyStitkuZvyrazneni().get(1);
 		Assert.assertEquals("výplň štítku člena je jiná než akcent kandidátů", JPlanovacNadKeskami.BARVA_CLENA.getRGB(), img.getRGB(r.x + 3, r.y + 3));
+		final int okraj = img.getRGB(r.x - 1, r.y + r.height / 2);
+		Assert.assertTrue("štítek člena má tmavý vnější okraj proti žluté mapě: " + Integer.toHexString(okraj), (okraj >>> 24) > 100 && ((okraj >> 16) & 0xff) < 140);
 		final Color a = AkcentPlanovace.barva();
 		final Color m = JPlanovacNadKeskami.BARVA_CLENA;
 		Assert.assertTrue("člen je výrazně jiné barvy než kandidáti", Math.abs(a.getRed() - m.getRed()) + Math.abs(a.getGreen() - m.getGreen()) + Math.abs(a.getBlue() - m.getBlue()) > 250);

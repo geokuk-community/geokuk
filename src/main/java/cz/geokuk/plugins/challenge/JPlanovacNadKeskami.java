@@ -564,10 +564,11 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 	}
 
-	/** Zvýrazněný štítek (kandidát challenge) má výplň v akcentu a bílý text, bez lemu; ostatní štítky barvy a lem tooltipu. */
 	/** Plná výplň štítku člena zvýrazněného sektoru nebo políčka; jiná barva než štítky kandidátů, ať je na první pohled vidět, kdo do výběru patří. */
 	static final Color BARVA_CLENA = new Color(0xFFC21A);
 	private static final Color TEXT_CLENA = new Color(0x20190A);
+	/** Tmavý vnější okraj, ať se žlutá výplň neslévá s mapou. */
+	private static final Color OKRAJ_CLENA = new Color(0x4A3000);
 
 	private Rectangle nakresliStitekClena(final Graphics2D g, final Font f, final String text, final int x, final int y) {
 		g.setFont(f.deriveFont(Font.BOLD));
@@ -577,7 +578,10 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		final RoundRectangle2D.Double tvar = new RoundRectangle2D.Double(x, y, w, h, 4, 4);
 		g.setColor(BARVA_CLENA);
 		g.fill(tvar);
-		g.setColor(new Color(255, 255, 255, 230));
+		g.setColor(OKRAJ_CLENA);
+		g.setStroke(new BasicStroke(3.4f));
+		g.draw(tvar);
+		g.setColor(Color.WHITE);
 		g.setStroke(new BasicStroke(1.4f));
 		g.draw(tvar);
 		g.setColor(TEXT_CLENA);
@@ -585,6 +589,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		return new Rectangle(x, y, w, h);
 	}
 
+	/** Zvýrazněný štítek (kandidát challenge) má výplň v akcentu a bílý text, bez lemu; ostatní štítky barvy a lem tooltipu. */
 	private Rectangle nakresliStitek(final Graphics2D g, final Font f, final String text, final int x, final int y, final Color akcent, final boolean zvyrazneny) {
 		g.setFont(f);
 		final FontMetrics fm = g.getFontMetrics();
