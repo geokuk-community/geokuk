@@ -281,6 +281,65 @@ public class JPlanovacVybranaKesTest {
 		Assert.assertFalse("a mimo osu ne", neprazdneKolem(img2, W / 2, H / 2 - 100));
 	}
 
+	/** Klín vybraného sektoru 30 km od středu na jeho ose: okno je v něm a střed ani prstenec v okně nejsou; v Mercatorově mapě u pólu je klín široký, tam se jeho šířka nekontroluje. */
+	private void klinSeVidiVOkneNaOse(final double lat, final double lon, final int sektor, final boolean uzky) throws Exception {
+		final GeometrieSektoru.Bod kandidat = GeometrieSektoru.bod(lat, lon, sektor + 0.5, 3000, GeometrieSektoru.Model.KOULE);
+		final BitSet ob = obsazene();
+		ob.clear(sektor);
+		final VysledekSektoru.Kandidati[] poSektorech = new VysledekSektoru.Kandidati[360];
+		poSektorech[sektor] = new VysledekSektoru.Kandidati(sektor);
+		poSektorech[sektor].pridej("GC1", 3000);
+		final List<VysledekSektoru.KandidatKes> kandidati = new ArrayList<>();
+		kandidati.add(new VysledekSektoru.KandidatKes("GC1", kandidat.lat, kandidat.lon, sektor, 3000, false));
+		final Challenge c = model.ulozVlastni(new Challenge("A", Typ.SEKTORY_360, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.aktivuj(c);
+		model.setZapnuto(true);
+		model.nastavVysledek(c, new VysledekSektoru(ob, new BitSet(360), poSektorech, 359, kandidati), lat, lon);
+		SwingUtilities.invokeAndWait(() -> model.setVybranySektor(c, sektor));
+		final GeometrieSektoru.Bod okno = GeometrieSektoru.bod(lat, lon, sektor + 0.5, 30_000, GeometrieSektoru.Model.KOULE);
+		final Coord coord = new Coord(14, new Wgs(okno.lat, okno.lon).toMou(), new Dimension(W, H), 0);
+		final BufferedImage img = nakresli(pod, coord);
+		Assert.assertTrue("klín je v okně na ose: sektor " + sektor + " u " + lat + "," + lon, neprazdneKolem(img, W / 2, H / 2));
+		if (uzky) {
+			Assert.assertFalse("a mimo osu ne", neprazdneKolem(img, W / 2, H / 2 - 150) && neprazdneKolem(img, W / 2, H / 2 + 150));
+		}
+	}
+
+	@Test
+	public void klinPrechazejiciPresAntimeridianSeVidi() throws Exception {
+		klinSeVidiVOkneNaOse(50.0, 179.95, 90, true);
+	}
+
+	@Test
+	public void klinPrechazejiciPresZapadniAntimeridianSeVidi() throws Exception {
+		klinSeVidiVOkneNaOse(50.0, -179.95, 270, true);
+	}
+
+	@Test
+	public void klinBlizkoSeverniemuPoluSeVidi() throws Exception {
+		klinSeVidiVOkneNaOse(84.5, 14.0, 0, false);
+	}
+
+	@Test
+	public void klinPresPolAOddalenaMapaSeNakresliBezVyjimky() throws Exception {
+		klinSeVidiVOkneNaOse(84.5, 14.0, 0, false);
+		for (final int zoom : new int[] { 2, 3, 5, 8 }) {
+			final BufferedImage img = nakresli(pod, new Coord(zoom, new Wgs(84.5, 14.0).toMou(), new Dimension(W, H), 0));
+			int pixelu = 0;
+			for (int y = 0; y < H; y += 2) {
+				for (int x = 0; x < W; x += 2) {
+					pixelu += img.getRGB(x, y) >>> 24 != 0 ? 1 : 0;
+				}
+			}
+			Assert.assertTrue("klín nebo prstenec se u pólu nakreslil, zoom " + zoom + ": " + pixelu, pixelu > 20);
+		}
+	}
+
+	@Test
+	public void klinBlizkoJiznimuPoluSeVidi() throws Exception {
+		klinSeVidiVOkneNaOse(-84.5, 14.0, 180, false);
+	}
+
 	@Test
 	public void stitkyMajiJenKeseVybranehoSektoruVlevoOdIkony() throws Exception {
 		zobraz360(250);
