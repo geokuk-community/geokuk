@@ -10,10 +10,13 @@
 #             kesoidy (kreslení ikon a teček pro počty v IKONY a TECKY, jen nová verze; ve výchozích není),
 #             paralelne (obě databáze naráz v 1 a 2 vláknech, jen nová verze; ve výchozích není),
 #             offline (vykreslování offline mapy .map, jen nová verze; ve výchozích není),
+#             citace (deterministické čítače práce prvních CITACE_S s po startu, CITACE_BEHU běhů, variační koeficient; jen Linux, ve výchozích není),
 #             výchozí db hint kresleni program
 #   N, POPIS  keší v databázích a délka popisu (100000, 20000)
 #   MAPY, TEMA, MISTO, ZOOMY, VLAKNA  offline mapa: složka s .map (výchozí syntetická testovací mapa), téma,
 #             místo lat,lon, zoomy a počty vláken (výchozí 50.003,14.405, 13,15,17 a 1,2)
+#   CITACE_BEHU, CITACE_S, CITACE_MAPY, CITACE_VERZE  opakování (5), délka scénáře v s (30), počet kopií mapy ve složce offline map (52),
+#             verze pro měření (nova; i stara: "stara nova"). Běh je omezen na jádra CITACE_JADRA (0,1) a ActiveProcessorCount=4.
 #   PRACOVNI  složka pro worktree a databáze (výchozí target/vykon)
 #   VYSTUP    soubor s výsledkem (výchozí PRACOVNI/<stroj>-<datum>.txt)
 set -euo pipefail
@@ -153,6 +156,30 @@ fi
 		# Chybový výstup zůstává vidět: bez něj by špatná cesta k mapám skončila prázdným výsledkem.
 		java -Xmx3g -Djava.awt.headless=true -Dstdout.encoding=UTF-8 -cp "$CP_NOVA" cz.geokuk.plugins.mapy.kachle.podklady.MerOffline slozka="$(nativni "${MAPY:-$REPO/src/test/resources/offline-mapy}")" tema="${TEMA:-}" \
 			symboly="$(nativni "$PRACOVNI/offline-symboly")" lat="${misto%,*}" lon="${misto#*,}" zoomy="${ZOOMY:-13,15,17}" vlakna="${VLAKNA:-1,2}" 2>&1 | grep -v -E " (INFO|DEBUG) |^Picked up JAVA_TOOL_OPTIONS"
+	fi
+	if [[ "$CO" == *citace* && -n "$LINUX" ]]; then
+		echo "## Čítače práce prvních ${CITACE_S:-30} s po startu (${CITACE_BEHU:-5} běhů, offline mapa, jádra ${CITACE_JADRA:-0,1}, ActiveProcessorCount=4, halda 1 GB, síť odmítnuta)"
+		displej=()
+		if [ -n "$LINUX" ] && [ -z "${DISPLAY:-}" ]; then
+			displej=(xvfb-run -a -s "-screen 0 1400x900x24")
+		fi
+		omez=()
+		command -v taskset >/dev/null 2>&1 && omez=(taskset -c "${CITACE_JADRA:-0,1}")
+		for v in ${CITACE_VERZE:-nova}; do
+			cp="$CP_NOVA"
+			[ "$v" = stara ] && cp="$CP_STARA"
+			echo "### $v"
+			soubory=()
+			for i in $(seq 1 "${CITACE_BEHU:-5}"); do
+				f="$PRACOVNI/citace-$v-$i.txt"
+				"${displej[@]}" "${omez[@]}" java -XX:ActiveProcessorCount=4 -Xms1g -Xmx1g -XX:+UseG1GC \
+					-Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=1 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=1 -Dhttp.nonProxyHosts=localhost -Dstdout.encoding=UTF-8 -cp "$cp" cz.geokuk.core.program.MerStart \
+					mapa="$(nativni "${CITACE_MAPA:-$REPO/src/test/resources/offline-mapy/kukov.map}")" sekund="${CITACE_S:-30}" mapy="${CITACE_MAPY:-52}" 2>/dev/null \
+					| grep -E '^(scenar|cpu_ms|alokace_kB|gc|jit|pocitadlo|vykon|jfr|top)[.a-zA-Z0-9_ěščřžýáíéúůťďňĚŠČŘŽÝÁÍÉÚŮ]*=' >"$f" || echo "  (běh $i bez výsledku)"
+				soubory+=("$f")
+			done
+			"$PY" "$(nativni "$SADA/citace.py")" "${soubory[@]}"
+		done
 	fi
 	if [[ "$CO" == *start* ]]; then
 		echo "## Start programu (okno otevřeno, medián ze ${START_BEHU:-7} střídavých běhů, prázdná data)"
