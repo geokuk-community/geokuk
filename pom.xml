@@ -148,9 +148,9 @@
 							<SplashScreen-Image>img/geokuk400.jpg</SplashScreen-Image>
 						</manifestEntries>
 					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
+					<descriptors>
+						<descriptor>src/assembly/fat-jar.xml</descriptor>
+					</descriptors>
 					<appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 			</plugin>
