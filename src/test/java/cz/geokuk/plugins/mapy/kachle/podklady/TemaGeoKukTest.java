@@ -18,6 +18,7 @@ public class TemaGeoKukTest {
 		final OfflineMapy mapy = new OfflineMapy(() -> {});
 		try {
 			mapy.kontrolaSlozkyNs = 0;
+			mapy.sledovatSlozku = false;
 			mapy.nastav(slozka, tema);
 			final OfflineRenderer r = mapy.pouzij();
 			try {

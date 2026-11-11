@@ -169,6 +169,7 @@ public class PredvykresleniPrehleduTest {
 		final OfflineMapy om = new OfflineMapy(() -> {});
 		try {
 			om.kontrolaSlozkyNs = 0;
+			om.sledovatSlozku = false;
 			om.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 			final OfflineRenderer r = om.pouzij();
 			try {
@@ -198,6 +199,7 @@ public class PredvykresleniPrehleduTest {
 		final OfflineMapy om = new OfflineMapy(() -> {});
 		try {
 			om.kontrolaSlozkyNs = 0;
+			om.sledovatSlozku = false;
 			om.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 			final OfflineRenderer r = om.pouzij();
 			try {
