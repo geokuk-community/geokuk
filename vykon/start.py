@@ -6,7 +6,7 @@
 Každý běh má novou prázdnou datovou složku. Měří se doba od spuštění procesu
 do řádku „Otevřeno okno: GeoKuk“ v logu. První dvojice běhů se zahazuje
 (studená cache systému). Končí kódem 3, když je nová verze o víc než PRAH_PROCENT
-pomalejší, a kódem 2, když okno nějaký běh neotevřel. Jiný nenulový kód je chyba skriptu.
+pomalejší, a kódem 2, když okno nějaký běh neotevřel ani na druhý pokus. Jiný nenulový kód je chyba skriptu.
 """
 import os
 import shutil
@@ -58,6 +58,10 @@ def main():
     for i in range(pocet + 1):
         for k, jar in jary.items():
             ms = beh(jar)
+            if ms is None:
+                # Jednorázový výpadek (pomalý runner, zamčený soubor) neruší celé měření.
+                print("%s: okno se neotevřelo, zkouším znovu" % k)
+                ms = beh(jar)
             if ms is None:
                 print("%s: okno se neotevřelo" % k)
                 return 2

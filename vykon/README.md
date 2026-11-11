@@ -64,7 +64,8 @@ Linuxu i na Windows, výsledek je v souhrnu běhu a v artefaktech.
   spustí `geokuk-*.jar` obou verzí střídavě (`START_BEHU`, výchozí 7, první dvojice
   se zahazuje) s prázdnou datovou složkou a změří čas do řádku „Otevřeno okno“
   v logu. Medián a poměr nové verze proti staré; `mer.sh` končí chybou, když je
-  nová o víc než `START_PRAH` procent (výchozí 15) pomalejší. Workflow porovnává
+  nová o víc než `START_PRAH` procent (výchozí 15) pomalejší (kód 3; kód 2 = okno
+  se neotevřelo ani na druhý pokus, jiný nenulový kód je chyba skriptu). Workflow porovnává
   s poslední ostrou verzí (tag bez `-beta`) a běží u pull requestů měnících
   `src/main/**`.
 
