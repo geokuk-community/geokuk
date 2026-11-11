@@ -56,7 +56,7 @@ public class MyPreferencesTest {
 
 		@Override
 		protected AbstractPreferences childSpi(final String name) {
-			return null;
+			return new MockPreferences(this, name);
 		}
 
 		@Override
@@ -249,5 +249,31 @@ public class MyPreferencesTest {
 	public void test_shortStringStorage() {
 		preferences.put("@jhka", "FOOBAR@;\"");
 		assertThat(preferences.get("@jhka", null)).isEqualTo("FOOBAR@;\"");
+	}
+
+	/** Vlastnosti struktury se zjišťují jednou pro třídu a opakované ukládání a čtení dává tytéž hodnoty. */
+	@Test
+	public void strukturaSeOpakovaneUkladaACte() {
+		final cz.geokuk.core.program.OknoUmisteniDto okno = new cz.geokuk.core.program.OknoUmisteniDto();
+		okno.setPozice(new Point(10, 20));
+		okno.setVelikost(new Dimension(800, 600));
+		assertThat(MyPreferences.findProperties(cz.geokuk.core.program.OknoUmisteniDto.class)).isSameAs(MyPreferences.findProperties(cz.geokuk.core.program.OknoUmisteniDto.class));
+		for (int i = 0; i < 3; i++) {
+			okno.setPozice(new Point(10 + i, 20));
+			preferences.putStructure("okno", okno);
+			final cz.geokuk.core.program.OknoUmisteniDto nactene = preferences.getStructure("okno", new cz.geokuk.core.program.OknoUmisteniDto());
+			assertThat(nactene.getPozice()).isEqualTo(new Point(10 + i, 20));
+			assertThat(nactene.getVelikost()).isEqualTo(new Dimension(800, 600));
+		}
+	}
+
+	@Test
+	public void vlastnostiJsouNemenne() {
+		try {
+			MyPreferences.findProperties(cz.geokuk.core.program.OknoUmisteniDto.class).clear();
+			org.junit.Assert.fail("očekáván UnsupportedOperationException");
+		} catch (final UnsupportedOperationException e) {
+			// správně
+		}
 	}
 }
