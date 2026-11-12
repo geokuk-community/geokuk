@@ -75,8 +75,6 @@ public class JPruhPlanovaceTest {
 		Assert.assertEquals(RozmisteniPrekryvu.PRUH_UCHYT, RozmisteniPrekryvu.pruhPlanovace(1000, false).width);
 	}
 
-	private final List<ChallengeZmenenyEvent> udalosti = new ArrayList<>();
-
 	private ChallengeModel model;
 	private JPruhPlanovace pruh;
 
@@ -91,7 +89,6 @@ public class JPruhPlanovaceTest {
 		model.inject(new EventFirer() {
 			@Override
 			public void fire(final Event0<?> event) {
-				udalosti.add((ChallengeZmenenyEvent) event);
 				pruh.onEvent((ChallengeZmenenyEvent) event);
 			}
 		});
