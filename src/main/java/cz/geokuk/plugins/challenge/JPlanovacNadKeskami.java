@@ -84,6 +84,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		/** Pravý okraj ikony a její svislý střed vůči bodu keše. */
 		int[] ikonaVlevo = new int[0];
 		int[] ikonaStredY = new int[0];
+			int[] ikonaNahore = new int[0];
 		int[] index = new int[0];
 		int[] x = new int[0];
 		int[] y = new int[0];
@@ -464,6 +465,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		v.y = new int[kolik];
 		v.ikonaVlevo = new int[kolik];
 		v.ikonaStredY = new int[kolik];
+			v.ikonaNahore = new int[kolik];
 		if (kolik > 0) {
 			final double[] serazene = Arrays.copyOf(vz, n);
 			Arrays.sort(serazene);
@@ -488,6 +490,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 				IkonaKese.okraje(indexator, t.pozice[v.index[q]], meritko, okraje);
 				v.ikonaVlevo[q] = okraje[3];
 				v.ikonaStredY[q] = okraje[1];
+				v.ikonaNahore[q] = okraje[2];
 			}
 			v.pocet = m;
 		}
@@ -574,11 +577,24 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			}
 			final String text = t.texty[v.index[q]];
 			final Dimension d = rozmerStitku(g, pismo, text);
-			final Rectangle r = nakresliStitek(g, pismo, text, v.x[q] + v.ikonaVlevo[q] - mezera - d.width, v.y[q] + v.ikonaStredY[q] - d.height / 2, AkcentPlanovace.barva(), true);
+			final Point poloha = polohaStitkuKandidata(v.x[q], v.y[q], v.ikonaVlevo[q], v.ikonaStredY[q], v.ikonaNahore[q], mezera, d, c.getWidth(), c.getHeight(), prekazkyKresleni);
+			final Rectangle r = nakresliStitek(g, pismo, text, poloha.x, poloha.y, AkcentPlanovace.barva(), true);
 			stitkyKandidatuKresleni.add(r);
 			zobrazeno++;
 		}
 		posledniZnacek = zobrazeno;
+	}
+
+	/** Levý horní roh štítku kandidáta: vlevo od ikony; kdyby přesáhl spodní okraj okna nebo zasáhl překážku (měřítko), stojí nad ikonou. */
+	static Point polohaStitkuKandidata(final int x, final int y, final int ikonaVlevo, final int ikonaStredY, final int ikonaNahore, final int mezera, final Dimension stitek, final int sirkaOkna,
+			final int vyskaOkna, final java.util.List<Rectangle> prekazky) {
+		final Point vlevo = new Point(x + ikonaVlevo - mezera - stitek.width, y + ikonaStredY - stitek.height / 2);
+		boolean kryje = vlevo.y + stitek.height > vyskaOkna;
+		final Rectangle r = new Rectangle(vlevo.x, vlevo.y, stitek.width, stitek.height);
+		for (final Rectangle p : prekazky) {
+			kryje |= p.intersects(r);
+		}
+		return kryje ? new Point(vlevo.x, y + ikonaNahore - mezera - stitek.height) : vlevo;
 	}
 
 	/** Po kreslení oznámí modelu, kolik štítků se ukázalo z kolika kandidátů ve výřezu (popup píše, když se uplatnil strop); jen při změně. */
