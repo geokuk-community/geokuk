@@ -2,8 +2,15 @@ package cz.geokuk.plugins.mapy.stahovac;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.*;
 
@@ -90,5 +97,72 @@ public class DavkaStahovaniTest {
 		davka.zastav("Zastaveno uživatelem.");
 		Assert.assertEquals(1, zruseno.get());
 		Assert.assertEquals(0, davka.pocetRozpracovanych());
+	}
+
+	/**
+	 * Dlaždice rozesílá výsledek pod svým zámkem (Kachlice.onImageLoaded → Dlazdice.send) a její zrušení
+	 * (Kachlice.kancluj) bere týž zámek; zařazení do zastavené dávky ji proto nesmí rušit pod zámkem dávky.
+	 */
+	@Test(timeout = 60_000)
+	public void zruseniPriZarazeniDoZastaveneNeuvaznesVysledkemDlazdice() throws InterruptedException {
+		final Object zamekDlazdice = new Object();
+		final DavkaStahovani davka = new DavkaStahovani(2, () -> {});
+		final DavkaStahovani.Dlazdice rozesilana = davka.dlazdice();
+		davka.zarazeno(rozesilana, Kanceler.EMPTY);
+		davka.zastav("Zastaveno uživatelem.");
+
+		final CountDownLatch rozesilaniDrziZamek = new CountDownLatch(1);
+		final CountDownLatch ruseniZacalo = new CountDownLatch(1);
+		final AtomicInteger zruseno = new AtomicInteger();
+		final AtomicReference<Throwable> chyba = new AtomicReference<>();
+
+		final Thread rozesilani = new Thread(() -> {
+			try {
+				synchronized (zamekDlazdice) {
+					rozesilaniDrziZamek.countDown();
+					Assert.assertTrue(ruseniZacalo.await(30, TimeUnit.SECONDS));
+					rozesilana.send(obrazek());
+				}
+			} catch (final Throwable t) {
+				chyba.set(t);
+			}
+		}, "test-rozesilani-vysledku");
+		final Thread zarazovani = new Thread(() -> {
+			try {
+				Assert.assertTrue(rozesilaniDrziZamek.await(30, TimeUnit.SECONDS));
+				final boolean zarazena = davka.zarazeno(davka.dlazdice(), () -> {
+					ruseniZacalo.countDown();
+					synchronized (zamekDlazdice) {
+						zruseno.incrementAndGet();
+					}
+				});
+				Assert.assertFalse(zarazena);
+			} catch (final Throwable t) {
+				chyba.set(t);
+			}
+		}, "test-zarazovani");
+		rozesilani.setDaemon(true);
+		zarazovani.setDaemon(true);
+		rozesilani.start();
+		zarazovani.start();
+
+		final ThreadMXBean vlakna = ManagementFactory.getThreadMXBean();
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+		while ((rozesilani.isAlive() || zarazovani.isAlive()) && System.nanoTime() < konec) {
+			final long[] uvazla = vlakna.findDeadlockedThreads();
+			if (uvazla != null) {
+				final List<Long> ids = new ArrayList<>();
+				for (final long id : uvazla) {
+					ids.add(id);
+				}
+				Assert.assertFalse("zařazení a rozesílání výsledku dlaždice uvázla na zámcích",
+						ids.contains(rozesilani.getId()) || ids.contains(zarazovani.getId()));
+			}
+			rozesilani.join(10);
+			zarazovani.join(10);
+		}
+		Assert.assertFalse("vlákna nedoběhla", rozesilani.isAlive() || zarazovani.isAlive());
+		Assert.assertNull(String.valueOf(chyba.get()), chyba.get());
+		Assert.assertEquals("dlaždice zastavené dávky se zruší", 1, zruseno.get());
 	}
 }

@@ -236,6 +236,8 @@
 - Menu Téma offline mapy se otevře bez čekání, i když jsou témata na pomalém disku.
 - Po načtení keší program nečeká na vykreslení ikon na liště nástrojů.
 - Velký soubor GPX s HTML popisy keší se načte i na Javě 24 a novější.
+- Mapy > Postahovat dlaždice: program nezamrzne, když se stahování zastaví
+  během zařazování dlaždic.
 
 Obsahuje i všechny opravy z 6.4.3.
 
