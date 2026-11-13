@@ -61,6 +61,9 @@ final class TvarCache {
 					nova.budouci.cancel(false);
 				} catch (final RuntimeException e) {
 					nova.budouci.completeExceptionally(e);
+				} catch (final Error e) {
+					nova.budouci.completeExceptionally(e);
+					throw e;
 				}
 			};
 			if (stavba == null) {
