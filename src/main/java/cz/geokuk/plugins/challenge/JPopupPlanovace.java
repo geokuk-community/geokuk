@@ -223,7 +223,13 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	@Override
 	public void doLayout() {
-		obsah.setBounds(poloha(getSize(), obsah.getPreferredSize(), prekazky.get()));
+		final Dimension pref = obsah.getPreferredSize();
+		Rectangle r = poloha(getSize(), pref, prekazky.get());
+		if (r.height < pref.height) {
+			// Obsah se posouvá a posuvník nesmí ubrat šířku prvkům.
+			r = poloha(getSize(), new Dimension(pref.width + obsah.sirkaPosuvniku(), pref.height), prekazky.get());
+		}
+		obsah.setBounds(r);
 	}
 
 	/** Popup v souřadnicích mapy, viz {@link RozmisteniPrekryvu#popupPlanovace}; měřítko dole je také překážka. */
@@ -334,8 +340,12 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		private transient java.util.function.Consumer<Object> naKlikRadku = p -> {};
 		final JToggleButton kandidati = new JToggleButton("Zobrazit jen kandidáty  F4");
 
+		/** Vlastní obsah; když se popup nevejde na výšku, posouvá se celý a žádná část nezmizí. */
+		private final Telo telo = new Telo();
+		private final JScrollPane posuvnikObsahu = new JScrollPane(telo, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
 		Obsah() {
-			super(new GridBagLayout());
+			super(new BorderLayout());
 			setOpaque(true);
 			nadpis.setFont(nadpis.getFont().deriveFont(Font.BOLD));
 			// Procenta jsou ve shrnutí: text přes výplň má v některých vzhledech malý kontrast.
@@ -395,11 +405,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			g.anchor = GridBagConstraints.WEST;
 			g.insets = new Insets(0, 0, 4, 8);
 			g.weightx = 1;
-			add(nadpis, g);
+			telo.add(nadpis, g);
 			g.gridx = 1;
 			g.weightx = 0;
 			g.insets = new Insets(0, 0, 4, 0);
-			add(nastaveni, g);
+			telo.add(nastaveni, g);
 			g.gridx = 0;
 			g.gridwidth = 2;
 			g.fill = GridBagConstraints.HORIZONTAL;
@@ -411,29 +421,29 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			nastavOdkaz(zmenitDomov);
 			for (final JComponent c : new JComponent[] { typ, radekStredu, souhrn, postup }) {
 				g.gridy++;
-				add(c, g);
+				telo.add(c, g);
 			}
 			g.gridy++;
-			add(nadpisSeznamu, g);
+			telo.add(nadpisSeznamu, g);
 			g.gridy++;
 			g.fill = GridBagConstraints.BOTH;
 			g.weighty = 1;
-			add(posuvnik, g);
+			telo.add(posuvnik, g);
 			g.fill = GridBagConstraints.NONE;
 			g.anchor = GridBagConstraints.WEST;
-			add(matice, g);
+			telo.add(matice, g);
 			g.weighty = 0;
 			g.gridy++;
-			add(legenda, g);
+			telo.add(legenda, g);
 			g.fill = GridBagConstraints.HORIZONTAL;
 			g.gridy++;
-			add(bezKandidatu, g);
+			telo.add(bezKandidatu, g);
 			g.gridy++;
-			add(napoveda, g);
+			telo.add(napoveda, g);
 			g.gridy++;
-			add(nejiste, g);
+			telo.add(nejiste, g);
 			g.gridy++;
-			add(omezeniStitku, g);
+			telo.add(omezeniStitku, g);
 			final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 			tlacitka.setOpaque(false);
 			tlacitka.add(dalsi);
@@ -443,7 +453,14 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			tlacitka.add(vsechnaPolicka);
 			g.gridy++;
 			g.insets = new Insets(4, 0, 0, 0);
-			add(tlacitka, g);
+			telo.add(tlacitka, g);
+			telo.setOpaque(false);
+			posuvnikObsahu.setBorder(null);
+			posuvnikObsahu.setOpaque(false);
+			posuvnikObsahu.getViewport().setOpaque(false);
+			posuvnikObsahu.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+			posuvnikObsahu.getVerticalScrollBar().setUnitIncrement(16);
+			super.add(posuvnikObsahu, BorderLayout.CENTER);
 			obnovVzhled();
 		}
 
@@ -451,6 +468,44 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		public void updateUI() {
 			super.updateUI();
 			obnovVzhled();
+		}
+
+		int sirkaPosuvniku() {
+			return posuvnikObsahu.getVerticalScrollBar().getPreferredSize().width;
+		}
+
+		/** Panel s prvky popupu: výška se při nedostatku místa nezmenšuje pod potřebnou, šířka sleduje okno posuvníku, dokud se do ní prvky vejdou. */
+		private static final class Telo extends JPanel implements Scrollable {
+			private static final long serialVersionUID = 1L;
+
+			Telo() {
+				super(new GridBagLayout());
+			}
+
+			@Override
+			public Dimension getPreferredScrollableViewportSize() {
+				return getPreferredSize();
+			}
+
+			@Override
+			public int getScrollableUnitIncrement(final Rectangle r, final int orientation, final int direction) {
+				return 16;
+			}
+
+			@Override
+			public int getScrollableBlockIncrement(final Rectangle r, final int orientation, final int direction) {
+				return Math.max(16, r.height - 16);
+			}
+
+			@Override
+			public boolean getScrollableTracksViewportWidth() {
+				return getParent() == null || getParent().getWidth() >= getMinimumSize().width;
+			}
+
+			@Override
+			public boolean getScrollableTracksViewportHeight() {
+				return getParent() != null && getParent().getHeight() >= getPreferredSize().height;
+			}
 		}
 
 		/** Tlačítko vzhledu odkazu: bez rámečku, podtržené, v akcentu skinu, s kurzorem ruky. */

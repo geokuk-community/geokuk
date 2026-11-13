@@ -222,6 +222,61 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse(popup.jeOtevreno());
 	}
 
+	private static void rozloz(final Container c) {
+		for (int i = 0; i < 3; i++) {
+			layoutRekurzivne(c);
+		}
+	}
+
+	private static void layoutRekurzivne(final Container c) {
+		c.doLayout();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof Container) {
+				layoutRekurzivne((Container) k);
+			}
+		}
+	}
+
+	/** Překážka pod popupem ho zkrátí; matice a nadpis přitom zůstanou celé a zbytek se posouvá. */
+	@Test
+	public void maticeAHlavickaPriNedostatkuMistaZustanouCele() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D3/T3"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D3/T3", "D3/T3", null)), 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		final Dimension pref = o.getPreferredSize();
+		final int y = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + RozmisteniPrekryvu.POD_PRUHEM;
+		for (final int vyska : new int[] { pref.height - 80, pref.height / 2 }) {
+			final Rectangle detail = new Rectangle(0, y + vyska + RozmisteniPrekryvu.OKRAJ, 1280, 200);
+			popup.setPrekazky(() -> java.util.Collections.singletonList(detail));
+			popup.doLayout();
+			rozloz(o);
+			Assert.assertEquals("popup se zkrátil", vyska, o.getHeight());
+			Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
+			Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
+			Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
+		}
+	}
+
+	@Test
+	public void sektory360PriNedostatkuMistaNechajiNadpisCely() throws Exception {
+		priprav();
+		popup.prepni();
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		final int y = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + RozmisteniPrekryvu.POD_PRUHEM;
+		final Rectangle detail = new Rectangle(0, y + 300 + RozmisteniPrekryvu.OKRAJ, 1280, 200);
+		popup.setPrekazky(() -> java.util.Collections.singletonList(detail));
+		popup.doLayout();
+		rozloz(o);
+		Assert.assertTrue("popup je kratší než obsah", o.getHeight() < o.getPreferredSize().height);
+		Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
+		Assert.assertTrue("seznam je vidět", o.seznam.getHeight() > 0);
+	}
+
 	@Test
 	public void splnenaChallengeNemaKamDal() throws Exception {
 		priprav();
