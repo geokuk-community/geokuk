@@ -9,6 +9,8 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
+import java.util.Arrays;
+import java.util.Iterator;
 
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
@@ -34,18 +36,17 @@ public class OkoKesoiduIkona implements Icon {
 	/** Cesta z podmnožiny SVG (M, L, C, Z, absolutní souřadnice), která stačí pro ikonu programu. */
 	static Path2D cesta(final String d) {
 		final Path2D.Double p = new Path2D.Double(Path2D.WIND_EVEN_ODD);
-		final String[] t = d.replaceAll("([MLCZ])", " $1 ").trim().split("\\s+");
-		int i = 0;
-		while (i < t.length) {
-			switch (t[i++]) {
+		final Iterator<String> t = Arrays.asList(d.replaceAll("([MLCZ])", " $1 ").trim().split("\\s+")).iterator();
+		while (t.hasNext()) {
+			switch (t.next()) {
 			case "M":
-				p.moveTo(Double.parseDouble(t[i++]), Double.parseDouble(t[i++]));
+				p.moveTo(Double.parseDouble(t.next()), Double.parseDouble(t.next()));
 				break;
 			case "L":
-				p.lineTo(Double.parseDouble(t[i++]), Double.parseDouble(t[i++]));
+				p.lineTo(Double.parseDouble(t.next()), Double.parseDouble(t.next()));
 				break;
 			case "C":
-				p.curveTo(Double.parseDouble(t[i++]), Double.parseDouble(t[i++]), Double.parseDouble(t[i++]), Double.parseDouble(t[i++]), Double.parseDouble(t[i++]), Double.parseDouble(t[i++]));
+				p.curveTo(Double.parseDouble(t.next()), Double.parseDouble(t.next()), Double.parseDouble(t.next()), Double.parseDouble(t.next()), Double.parseDouble(t.next()), Double.parseDouble(t.next()));
 				break;
 			case "Z":
 				p.closePath();

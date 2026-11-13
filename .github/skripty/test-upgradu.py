@@ -65,8 +65,9 @@ class Beh:
         except OSError:
             pass
         self.zacatek = time.perf_counter()
-        self.proces = subprocess.Popen([java, "-XX:-UsePerfData", "-jar", os.path.join(koren, "program", "start.jar"), "--ovladani=0", "--ovladani-devel"], cwd=koren,
-                                       stdout=open(os.path.join(koren, nazev + ".out"), "wb"), stderr=subprocess.STDOUT, env=env)
+        with open(os.path.join(koren, nazev + ".out"), "wb") as vystup:
+            self.proces = subprocess.Popen([java, "-XX:-UsePerfData", "-jar", os.path.join(koren, "program", "start.jar"), "--ovladani=0", "--ovladani-devel"], cwd=koren,
+                                           stdout=vystup, stderr=subprocess.STDOUT, env=env)
         self.port = self.token = None
 
     def pocet_oken_v_logu(self):
@@ -92,7 +93,8 @@ class Beh:
         konec = time.time() + 60
         while time.time() < konec:
             try:
-                p = dict(r.split("=", 1) for r in open(self.ovladani, encoding="utf-8").read().splitlines() if "=" in r and not r.startswith("#"))
+                with open(self.ovladani, encoding="utf-8") as f:
+                    p = dict(r.split("=", 1) for r in f.read().splitlines() if "=" in r and not r.startswith("#"))
                 self.port, self.token = p["port"], p["token"]
                 return True
             except (OSError, KeyError):
@@ -314,7 +316,10 @@ def main():
         info("| Zbylé soubory z přípravy po přechodu | %s |" % (", ".join(zustalo) or "žádné se nezachovaly"))
         info("| Nové soubory .vadna/.new/.tmp | %s |" % (", ".join(zbytky) or "žádné"))
         tiles = os.path.join(data, "cache", "tiles.sqlite")
-        hlavicka = open(tiles, "rb").read(16) if os.path.isfile(tiles) else b""
+        hlavicka = b""
+        if os.path.isfile(tiles):
+            with open(tiles, "rb") as f:
+                hlavicka = f.read(16)
         ocekavej(hlavicka == b"SQLite format 3\x00", "po přechodu je tiles.sqlite platná databáze (hlavička %r)" % hlavicka)
     else:
         ocekavej(not zbytky, "po přechodu nevznikly zbytky .vadna/.new/.tmp: %s" % (zbytky or "žádné"))

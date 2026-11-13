@@ -22,8 +22,6 @@ public class UklidOfflineCachePriZmeneTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 
-	private final List<Set<String>> pruchody = new ArrayList<>();
-
 	/** Úklid po otevření map jen zapíše soubor klíčů; z cache nic nemaže ani neprochází, aby velká cache nezastavila čtení dlaždic. */
 	@Test
 	public void uklidNeprochaziAniNemazeCache() throws Exception {

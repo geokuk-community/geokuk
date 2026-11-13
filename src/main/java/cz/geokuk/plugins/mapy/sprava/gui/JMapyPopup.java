@@ -303,10 +303,9 @@ public class JMapyPopup extends JPanel {
 
 	/** Dá fokus poli hledání, nebo když není, samotnému panelu (musí jít z klávesnice ovládat stejně jako myší). */
 	void zaostri() {
-		final JTextField pole = hledat;
-		if (pole != null && pole.isShowing()) {
-			posledniZadostOFokus = pole;
-			pole.requestFocusInWindow();
+		if (hledat.isShowing()) {
+			posledniZadostOFokus = hledat;
+			hledat.requestFocusInWindow();
 			return;
 		}
 		setFocusable(true);
@@ -1611,7 +1610,7 @@ public class JMapyPopup extends JPanel {
 		}
 		for (int i = 0; i < v.length; i++) {
 			if (!pevna[i] && pozadovano[i] > 0) {
-				v[i] = (int) Math.min(pozadovano[i], Math.max(minimum, zbyva * pozadovano[i] / obsah));
+				v[i] = (int) Math.min(pozadovano[i], Math.max(minimum, (long) zbyva * pozadovano[i] / obsah));
 			}
 		}
 		return v;
