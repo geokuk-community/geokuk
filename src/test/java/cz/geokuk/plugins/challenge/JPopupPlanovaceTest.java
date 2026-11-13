@@ -223,6 +223,20 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void chybaVPredpoctuSePropisePlanovaciMistoPocitaSe() throws Exception {
+		priprav();
+		popup.prepni();
+		final String duvod = "Keš GC4PCQB (střed challenge) není v načtených datech.";
+		model.nastavStavPredpoctu(aktivni(), new StavPredpoctu(StavPredpoctu.Faze.CHYBA, 0, 0, duvod));
+		SwingUtilities.invokeAndWait(() -> {});
+		final String text = popup.obsah.souhrn.getText();
+		Assert.assertTrue(text, text.contains(duvod));
+		Assert.assertFalse(text, text.contains("Počítá se"));
+		Assert.assertFalse("bez výsledku se ukáže jen chyba", popup.obsah.matice.isVisible());
+		Assert.assertFalse("bez výsledku se ukáže jen chyba", popup.obsah.postup.isVisible());
+	}
+
+	@Test
 	public void splnenaChallengeNemaKamDal() throws Exception {
 		priprav();
 		popup.prepni();

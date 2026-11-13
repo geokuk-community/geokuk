@@ -261,6 +261,25 @@ public class JPruhPlanovaceTest {
 		Assert.assertEquals("Chybějící sektory – počítá se", odznak.getToolTipText());
 	}
 
+	@Test
+	public void odznakPriChybeUkazeDuvod() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		final String duvod = "Keš GC4PCQB (střed challenge) není v načtených datech.";
+		model.nastavStavPredpoctu(Sablony.cesko360(), new StavPredpoctu(StavPredpoctu.Faze.CHYBA, 0, 0, duvod));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		javax.swing.AbstractButton odznak = null;
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof javax.swing.AbstractButton && ((javax.swing.AbstractButton) c).getText() != null && ((javax.swing.AbstractButton) c).getText().startsWith("chybí ")) {
+				odznak = (javax.swing.AbstractButton) c;
+			}
+		}
+		Assert.assertNotNull(odznak);
+		Assert.assertEquals("chybí ?", odznak.getText());
+		Assert.assertEquals(duvod, odznak.getToolTipText());
+	}
+
 	private javax.swing.AbstractButton najdiOdznak() {
 		for (final Component c : pruh.getComponents()) {
 			if (c instanceof javax.swing.AbstractButton && !(c instanceof javax.swing.JToggleButton) && ((javax.swing.AbstractButton) c).getToolTipText() != null && ((javax.swing.AbstractButton) c).getToolTipText().startsWith("Chyb")) {
