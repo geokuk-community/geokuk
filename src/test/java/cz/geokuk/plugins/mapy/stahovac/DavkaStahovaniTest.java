@@ -105,15 +105,60 @@ public class DavkaStahovaniTest {
 	 */
 	@Test(timeout = 60_000)
 	public void zruseniPriZarazeniDoZastaveneNeuvaznesVysledkemDlazdice() throws InterruptedException {
-		final Object zamekDlazdice = new Object();
 		final DavkaStahovani davka = new DavkaStahovani(2, () -> {});
 		final DavkaStahovani.Dlazdice rozesilana = davka.dlazdice();
 		davka.zarazeno(rozesilana, Kanceler.EMPTY);
 		davka.zastav("Zastaveno uživatelem.");
+		final AtomicInteger zruseno = new AtomicInteger();
+		nesmiUvaznout(rozesilana, (zamekDlazdice, ruseniZacalo) -> {
+			final boolean zarazena = davka.zarazeno(davka.dlazdice(), () -> {
+				ruseniZacalo.countDown();
+				synchronized (zamekDlazdice) {
+					zruseno.incrementAndGet();
+				}
+			});
+			Assert.assertFalse(zarazena);
+		});
+		Assert.assertEquals("dlaždice zastavené dávky se zruší", 1, zruseno.get());
+		Assert.assertEquals("odmítnutá dlaždice se nedrží", 0, davka.pocetRozpracovanych());
+	}
 
+	/** Totéž pro zastavení dávky: rozpracované dlaždice se ruší až mimo zámek dávky. */
+	@Test(timeout = 60_000)
+	public void zastaveniNeuvaznesVysledkemDlazdice() throws InterruptedException {
+		final DavkaStahovani davka = new DavkaStahovani(2, () -> {});
+		final DavkaStahovani.Dlazdice rozesilana = davka.dlazdice();
+		davka.zarazeno(rozesilana, Kanceler.EMPTY);
+		final AtomicInteger zruseno = new AtomicInteger();
+		final AtomicReference<Object> zamek = new AtomicReference<>();
+		final AtomicReference<CountDownLatch> zacatek = new AtomicReference<>();
+		davka.zarazeno(davka.dlazdice(), () -> {
+			zacatek.get().countDown();
+			synchronized (zamek.get()) {
+				zruseno.incrementAndGet();
+			}
+		});
+		nesmiUvaznout(rozesilana, (zamekDlazdice, ruseniZacalo) -> {
+			zamek.set(zamekDlazdice);
+			zacatek.set(ruseniZacalo);
+			davka.zastav("Zastaveno uživatelem.");
+		});
+		Assert.assertEquals("rozpracovaná dlaždice se zruší", 1, zruseno.get());
+		Assert.assertEquals(0, davka.pocetRozpracovanych());
+	}
+
+	private interface Ruseni {
+		void spust(Object zamekDlazdice, CountDownLatch ruseniZacalo) throws Exception;
+	}
+
+	/**
+	 * Jedno vlákno drží zámek dlaždice a čeká, až druhé začne rušit (zrušení bere týž zámek); pak pošle výsledek
+	 * do dávky. Rušení pod zámkem dávky tím uvázne, což hlídá {@link ThreadMXBean#findDeadlockedThreads()}.
+	 */
+	private static void nesmiUvaznout(final DavkaStahovani.Dlazdice rozesilana, final Ruseni ruseni) throws InterruptedException {
+		final Object zamekDlazdice = new Object();
 		final CountDownLatch rozesilaniDrziZamek = new CountDownLatch(1);
 		final CountDownLatch ruseniZacalo = new CountDownLatch(1);
-		final AtomicInteger zruseno = new AtomicInteger();
 		final AtomicReference<Throwable> chyba = new AtomicReference<>();
 
 		final Thread rozesilani = new Thread(() -> {
@@ -127,42 +172,35 @@ public class DavkaStahovaniTest {
 				chyba.set(t);
 			}
 		}, "test-rozesilani-vysledku");
-		final Thread zarazovani = new Thread(() -> {
+		final Thread ruseniVlakno = new Thread(() -> {
 			try {
 				Assert.assertTrue(rozesilaniDrziZamek.await(30, TimeUnit.SECONDS));
-				final boolean zarazena = davka.zarazeno(davka.dlazdice(), () -> {
-					ruseniZacalo.countDown();
-					synchronized (zamekDlazdice) {
-						zruseno.incrementAndGet();
-					}
-				});
-				Assert.assertFalse(zarazena);
+				ruseni.spust(zamekDlazdice, ruseniZacalo);
 			} catch (final Throwable t) {
 				chyba.set(t);
 			}
-		}, "test-zarazovani");
+		}, "test-ruseni");
 		rozesilani.setDaemon(true);
-		zarazovani.setDaemon(true);
+		ruseniVlakno.setDaemon(true);
 		rozesilani.start();
-		zarazovani.start();
+		ruseniVlakno.start();
 
 		final ThreadMXBean vlakna = ManagementFactory.getThreadMXBean();
 		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
-		while ((rozesilani.isAlive() || zarazovani.isAlive()) && System.nanoTime() < konec) {
+		while ((rozesilani.isAlive() || ruseniVlakno.isAlive()) && System.nanoTime() < konec) {
 			final long[] uvazla = vlakna.findDeadlockedThreads();
 			if (uvazla != null) {
 				final List<Long> ids = new ArrayList<>();
 				for (final long id : uvazla) {
 					ids.add(id);
 				}
-				Assert.assertFalse("zařazení a rozesílání výsledku dlaždice uvázla na zámcích",
-						ids.contains(rozesilani.getId()) || ids.contains(zarazovani.getId()));
+				Assert.assertFalse("rušení a rozesílání výsledku dlaždice uvázla na zámcích",
+						ids.contains(rozesilani.getId()) || ids.contains(ruseniVlakno.getId()));
 			}
 			rozesilani.join(10);
-			zarazovani.join(10);
+			ruseniVlakno.join(10);
 		}
-		Assert.assertFalse("vlákna nedoběhla", rozesilani.isAlive() || zarazovani.isAlive());
+		Assert.assertFalse("vlákna nedoběhla", rozesilani.isAlive() || ruseniVlakno.isAlive());
 		Assert.assertNull(String.valueOf(chyba.get()), chyba.get());
-		Assert.assertEquals("dlaždice zastavené dávky se zruší", 1, zruseno.get());
 	}
 }
