@@ -123,32 +123,22 @@ public final class RozmisteniPrekryvu {
 	public static final int POD_PRUHEM = 2;
 	/** O kolik popup plánovače přesahuje doleva před odznak. */
 	public static final int PRED_ODZNAKEM = 20;
-	/** Menší popup už není k užitku; když by se kvůli překážce zmenšil pod tuto mez, překážku překryje. */
-	public static final Dimension NEJMENSI_POPUP = new Dimension(220, 120);
-
 	/**
-	 * Popup plánovače pod pruhem, levým okrajem kousek před odznakem ({@code odznak} v souřadnicích mapy). Leží celý v mapě s odstupem {@link #OKRAJ}. Překážka vedle něj (panel vpravo
-	 * nahoře, legenda) ho posune doleva a pak zúží, překážka pod ním (panely dole, měřítko) ho zkrátí; seznam se pak posouvá. Překážku, kvůli které by byl menší než
-	 * {@link #NEJMENSI_POPUP}, překryje.
+	 * Popup plánovače pod pruhem, levým okrajem kousek před odznakem ({@code odznak} v souřadnicích mapy). Má celou požadovanou velikost, omezenou jen oknem mapy s odstupem
+	 * {@link #OKRAJ}. Překážce vedle něj (panel vpravo nahoře, legenda) se vyhne posunem doleva, když se tím nezmenší; jinak ji překryje, stejně jako překážky pod ním (panely dole,
+	 * náhled, měřítko). Popup se otevírá klikem a zavírá, takže krátké překrytí nevadí.
 	 */
 	public static Rectangle popupPlanovace(final Dimension mapa, final Rectangle odznak, final Dimension pozadovana, final Collection<Rectangle> prekazky) {
 		final int y = OKRAJ + VYSKA_PRUHU + POD_PRUHEM;
-		final int w0 = Math.max(0, Math.min(pozadovana.width, mapa.width - 2 * OKRAJ));
-		Rectangle r = new Rectangle(Math.max(OKRAJ, Math.min(odznak.x - PRED_ODZNAKEM, mapa.width - OKRAJ - w0)), y, w0, Math.max(0, Math.min(pozadovana.height, mapa.height - y - OKRAJ)));
+		final int w = Math.max(0, Math.min(pozadovana.width, mapa.width - 2 * OKRAJ));
+		final int h = Math.max(0, Math.min(pozadovana.height, mapa.height - y - OKRAJ));
+		Rectangle r = new Rectangle(Math.max(OKRAJ, Math.min(odznak.x - PRED_ODZNAKEM, mapa.width - OKRAJ - w)), y, w, h);
 		for (final Rectangle p : prekazky) {
-			if (!p.intersects(r)) {
-				continue;
-			}
-			final Rectangle upraveny;
-			if (p.y <= r.y) {
-				final int pravy = p.x - OKRAJ;
-				final int x = Math.max(OKRAJ, Math.min(r.x, pravy - r.width));
-				upraveny = new Rectangle(x, r.y, Math.min(r.width, pravy - x), r.height);
-			} else {
-				upraveny = new Rectangle(r.x, r.y, r.width, Math.min(r.height, p.y - OKRAJ - r.y));
-			}
-			if (upraveny.width >= Math.min(NEJMENSI_POPUP.width, w0) && upraveny.height >= Math.min(NEJMENSI_POPUP.height, r.height)) {
-				r = upraveny;
+			if (p.intersects(r) && p.y <= r.y) {
+				final int x = p.x - OKRAJ - r.width;
+				if (x >= OKRAJ && x < r.x) {
+					r = new Rectangle(x, r.y, r.width, r.height);
+				}
 			}
 		}
 		return r;
@@ -248,10 +238,10 @@ public final class RozmisteniPrekryvu {
 		return kolize;
 	}
 
-	/** Legenda leží pod panely v pravých rozích a tomu se nebrání; panely ji zakryjí. Otevřený popup plánovače smí na chvíli překrýt ukazatel výkonu a zprávu po zkratce. */
+	/** Legenda leží pod panely v pravých rozích a tomu se nebrání; panely ji zakryjí. Otevřený popup plánovače smí na chvíli překrýt všechno kromě svého pruhu. */
 	static boolean jeDovolenePrekryti(final Prvek a, final Prvek b) {
-		return jePar(a, b, Prvek.LEGENDA_OBSAZENOSTI, Prvek.PANEL_CEST) || jePar(a, b, Prvek.LEGENDA_OBSAZENOSTI, Prvek.DETAIL_KESOIDU) || jePar(a, b, Prvek.POPUP_PLANOVACE, Prvek.UKAZATEL_VYKONU)
-				|| jePar(a, b, Prvek.POPUP_PLANOVACE, Prvek.ZPRAVA);
+		return jePar(a, b, Prvek.LEGENDA_OBSAZENOSTI, Prvek.PANEL_CEST) || jePar(a, b, Prvek.LEGENDA_OBSAZENOSTI, Prvek.DETAIL_KESOIDU)
+				|| (a == Prvek.POPUP_PLANOVACE || b == Prvek.POPUP_PLANOVACE) && a != Prvek.PRUH_PLANOVACE && b != Prvek.PRUH_PLANOVACE;
 	}
 
 	private static boolean jePar(final Prvek a, final Prvek b, final Prvek x, final Prvek y) {

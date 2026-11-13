@@ -78,8 +78,9 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("když se vedle odznaku nevejde, posune se doleva", 450 - RozmisteniPrekryvu.OKRAJ, stredni.x + stredni.width);
 		Assert.assertEquals(pozadovana.width, stredni.width);
 		Assert.assertEquals("v úzké mapě se zúží", 400 - 2 * RozmisteniPrekryvu.OKRAJ, JPopupPlanovace.poloha(new Dimension(400, 300), pozadovana, java.util.Collections.<Rectangle> emptyList()).width);
-		Assert.assertEquals("v nízké mapě se zkrátí nad měřítkem", RozmisteniPrekryvu.meritko(new Dimension(800, 300)).y - RozmisteniPrekryvu.OKRAJ - r.y,
+		Assert.assertEquals("v nízké mapě se zkrátí jen oknem mapy", 300 - RozmisteniPrekryvu.OKRAJ - r.y,
 				JPopupPlanovace.poloha(new Dimension(800, 300), pozadovana, java.util.Collections.<Rectangle> emptyList()).height);
+		Assert.assertEquals("měřítko dole popup nezkrátí", pozadovana.height, JPopupPlanovace.poloha(new Dimension(800, 500), pozadovana, java.util.Collections.<Rectangle> emptyList()).height);
 	}
 
 	@Test
@@ -237,9 +238,9 @@ public class JPopupPlanovaceTest {
 		}
 	}
 
-	/** Překážka pod popupem ho zkrátí; matice a nadpis přitom zůstanou celé a zbytek se posouvá. */
+	/** Překážka (Detail keše, náhled) popup nezkrátí: má plnou velikost a překážku překryje, matice a nadpis jsou celé. */
 	@Test
-	public void maticeAHlavickaPriNedostatkuMistaZustanouCele() throws Exception {
+	public void maticeAHlavickaMajiPlnouVelikostiIPriPrekazceDole() throws Exception {
 		priprav();
 		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
 		popup.prepni();
@@ -249,32 +250,33 @@ public class JPopupPlanovaceTest {
 		final JPopupPlanovace.Obsah o = popup.obsah;
 		final Dimension pref = o.getPreferredSize();
 		final int y = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + RozmisteniPrekryvu.POD_PRUHEM;
-		for (final int vyska : new int[] { pref.height - 80, pref.height / 2 }) {
-			final Rectangle detail = new Rectangle(0, y + vyska + RozmisteniPrekryvu.OKRAJ, 1280, 200);
-			popup.setPrekazky(() -> java.util.Collections.singletonList(detail));
-			popup.doLayout();
-			rozloz(o);
-			Assert.assertEquals("popup se zkrátil", vyska, o.getHeight());
-			Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
-			Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
-			Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
-		}
-	}
-
-	@Test
-	public void sektory360PriNedostatkuMistaNechajiNadpisCely() throws Exception {
-		priprav();
-		popup.prepni();
-		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
-		final JPopupPlanovace.Obsah o = popup.obsah;
-		final int y = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + RozmisteniPrekryvu.POD_PRUHEM;
-		final Rectangle detail = new Rectangle(0, y + 300 + RozmisteniPrekryvu.OKRAJ, 1280, 200);
+		final Rectangle detail = new Rectangle(0, y + pref.height - 80, 1280, 200);
 		popup.setPrekazky(() -> java.util.Collections.singletonList(detail));
 		popup.doLayout();
 		rozloz(o);
-		Assert.assertTrue("popup je kratší než obsah", o.getHeight() < o.getPreferredSize().height);
+		Assert.assertEquals("popup má plnou výšku", pref.height, o.getHeight());
+		Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
+		Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
 		Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
-		Assert.assertTrue("seznam je vidět", o.seznam.getHeight() > 0);
+	}
+
+	/** Když je okno mapy samo nižší než popup, obsah se posouvá a matice a nadpis zůstanou celé. */
+	@Test
+	public void vNizkemOknePopupPosouvaAMaticeZustaneCela() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D3/T3"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D3/T3", "D3/T3", null)), 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		popup.setBounds(0, 0, 1280, 330);
+		popup.doLayout();
+		rozloz(o);
+		Assert.assertTrue("popup je kratší než obsah", o.getHeight() < o.getPreferredSize().height);
+		Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
+		Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
+		Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
 	}
 
 	@Test
