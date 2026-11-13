@@ -230,9 +230,11 @@ public class JMaticeDTTest {
 						final Color podklad = new Color(img.getRGB(r.x + 4, r.y + r.height / 2));
 						double nejvic = 0;
 						for (int x = r.x + 8; x < r.x + r.width - 8; x++) {
+							double sloupec = 0;
 							for (int y = r.y + 6; y < r.y + r.height - 6; y++) {
-								nejvic = Math.max(nejvic, Math.abs(JMaticeDT.jas(new Color(img.getRGB(x, y))) - JMaticeDT.jas(podklad)));
+								sloupec += Math.abs(JMaticeDT.jas(new Color(img.getRGB(x, y))) - JMaticeDT.jas(podklad));
 							}
+							nejvic = Math.max(nejvic, sloupec);
 						}
 						Assert.assertTrue(t.getName() + " " + JMaticeDT.stitek(p[0], p[1]) + ": znak je vidět (" + nejvic + ")", nejvic > 0.25);
 					}

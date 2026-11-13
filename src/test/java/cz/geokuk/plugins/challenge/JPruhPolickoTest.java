@@ -241,13 +241,19 @@ public class JPruhPolickoTest {
 	}
 
 	@Test
-	public void nejdelsiStitekSeVejde() {
-		final javax.swing.JButton b = new javax.swing.JButton("D4,5/T4,5 ✕");
-		b.setMargin(new java.awt.Insets(0, 2, 0, 2));
-		Assert.assertTrue(b.getPreferredSize().width + " > " + JPruhPlanovace.SIRKA_POLICKA, b.getPreferredSize().width <= JPruhPlanovace.SIRKA_POLICKA);
-		if (java.util.Arrays.asList(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()).contains("DejaVu Sans")) {
-			b.setFont(new java.awt.Font("DejaVu Sans", b.getFont().getStyle(), b.getFont().getSize()));
-			Assert.assertTrue("DejaVu Sans: " + b.getPreferredSize().width, b.getPreferredSize().width <= JPruhPlanovace.SIRKA_POLICKA);
+	public void nejdelsiStitekSeVejde() throws Exception {
+		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
+		try {
+			javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+			final javax.swing.JButton b = new javax.swing.JButton("D4,5/T4,5 ✕");
+			b.setMargin(new java.awt.Insets(0, 2, 0, 2));
+			Assert.assertTrue(b.getPreferredSize().width + " > " + JPruhPlanovace.SIRKA_POLICKA, b.getPreferredSize().width <= JPruhPlanovace.SIRKA_POLICKA);
+			if (java.util.Arrays.asList(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()).contains("DejaVu Sans")) {
+				b.setFont(new java.awt.Font("DejaVu Sans", b.getFont().getStyle(), b.getFont().getSize()));
+				Assert.assertTrue("DejaVu Sans: " + b.getPreferredSize().width, b.getPreferredSize().width <= JPruhPlanovace.SIRKA_POLICKA);
+			}
+		} finally {
+			javax.swing.UIManager.setLookAndFeel(puvodni);
 		}
 	}
 }

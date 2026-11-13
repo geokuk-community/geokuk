@@ -385,7 +385,19 @@ public class JPlanovacVrstvyTest {
 		final Coord c = mapa(50.0, 14.0, 16);
 		final BufferedImage img = nakresli(nad, c);
 		final java.awt.Point s = PixelyMapy.transform(c, PixelyMapy.mou(50.0, 14.0), new java.awt.Point());
-		Assert.assertEquals("v průniku štítku kandidáta a štítku středu je vidět štítek středu (kreslí se nad ním)", AkcentPlanovace.pozadiStitku().getRGB(), img.getRGB(s.x + 15, s.y - 5));
+		final Rectangle kandidat = nad.obdelnikyStitkuKandidatu().get(0);
+		final Rectangle stred = nad.obdelnikyStitku().stream().filter(r -> r.contains(s.x + 15, s.y - 5)).findFirst().get();
+		final Rectangle prunik = kandidat.intersection(stred);
+		prunik.grow(-1, -1);
+		Assert.assertFalse("štítky se překrývají", prunik.isEmpty());
+		boolean pozadiStredu = false;
+		for (int x = prunik.x; x < prunik.x + prunik.width; x++) {
+			for (int y = prunik.y; y < prunik.y + prunik.height; y++) {
+				Assert.assertNotEquals("v průniku štítků nesmí být výplň kandidáta (štítek středu se kreslí nad ním)", AkcentPlanovace.barva().getRGB(), img.getRGB(x, y));
+				pozadiStredu |= img.getRGB(x, y) == AkcentPlanovace.pozadiStitku().getRGB();
+			}
+		}
+		Assert.assertTrue("v průniku je vidět pozadí štítku středu", pozadiStredu);
 	}
 
 	@Test
