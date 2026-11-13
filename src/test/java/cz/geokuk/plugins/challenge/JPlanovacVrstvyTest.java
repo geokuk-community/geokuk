@@ -378,14 +378,26 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
-	public void stitkyStreduAVybranehoSektoruLeziNadStitkyKandidatu() throws Exception {
+	public void znackaStreduSeKresliNadStitekKandidataPopisekStreduHoNepreryva() throws Exception {
 		final List<VysledekSektoru.KandidatKes> k = new ArrayList<>();
 		k.add(new VysledekSektoru.KandidatKes("GC1", 50.0, 14.0, 150, 1000, false));
 		zobraz(new VysledekSektoru(obsazene(0, 100), new BitSet(360), new VysledekSektoru.Kandidati[360], 100, k), 50.0, 14.0);
 		final Coord c = mapa(50.0, 14.0, 16);
 		final BufferedImage img = nakresli(nad, c);
 		final java.awt.Point s = PixelyMapy.transform(c, PixelyMapy.mou(50.0, 14.0), new java.awt.Point());
-		Assert.assertEquals("v průniku štítku kandidáta a štítku středu je vidět štítek středu (kreslí se nad ním)", AkcentPlanovace.pozadiStitku().getRGB(), img.getRGB(s.x + 15, s.y - 5));
+		final Rectangle kandidat = nad.obdelnikyStitkuKandidatu().get(0);
+		final int pravyOkraj = kandidat.x + kandidat.width;
+		Assert.assertTrue("pravý okraj štítku kandidáta zasahuje do značky středu (poloměr 11)", pravyOkraj - 1 >= s.x - 11 && pravyOkraj - 1 < s.x);
+		final Color lemZnacky = new Color(img.getRGB(pravyOkraj - 1, s.y));
+		Assert.assertTrue("bílý lem značky středu je nad štítkem kandidáta, ne naopak: " + lemZnacky, lemZnacky.getGreen() >= 240 && lemZnacky.getBlue() >= 240);
+		int popisky = 0;
+		for (final Rectangle q : nad.obdelnikyStitku()) {
+			if (q.x >= s.x + 13 && q.height < 40) {
+				popisky++;
+				Assert.assertFalse("popisek středu nepřekrývá štítek kandidáta", q.intersects(kandidat));
+			}
+		}
+		Assert.assertEquals("právě jeden popisek středu vpravo od značky", 1, popisky);
 	}
 
 	@Test
