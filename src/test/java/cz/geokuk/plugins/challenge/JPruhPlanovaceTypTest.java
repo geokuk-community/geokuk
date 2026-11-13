@@ -26,9 +26,30 @@ public class JPruhPlanovaceTypTest {
 			Assert.assertTrue(text + ": " + metriky(f).stringWidth(text) + " > " + sirka, metriky(f).stringWidth(text) <= sirka);
 			Assert.assertTrue(text + ": písmo aspoň 9 bodů", f.getSize2D() >= 9f);
 		}
-		Assert.assertEquals("360° výchozím písmem", 12f, JPruhPlanovace.pismoNaSirku(zaklad, "360° ▾", sirka, JPruhPlanovaceTypTest::metriky).getSize2D(), 0.01);
-		Assert.assertTrue("Kalendář menším", JPruhPlanovace.pismoNaSirku(zaklad, "Kalendář ▾", sirka, JPruhPlanovaceTypTest::metriky).getSize2D() < 12f);
-		Assert.assertEquals("nejmenší 9 bodů", 9f, JPruhPlanovace.pismoNaSirku(zaklad, "Velmi dlouhý typ challenge", sirka, JPruhPlanovaceTypTest::metriky).getSize2D(), 0.01);
+	}
+
+	/** Metriky s pevnou šířkou znaku (půl velikosti písma), aby výsledek nezávisel na písmu platformy. */
+	private static FontMetrics pevneMetriky(final Font f) {
+		return new FontMetrics(f) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public int stringWidth(final String text) {
+				return (int) Math.ceil(text.length() * getFont().getSize2D() * 0.5);
+			}
+		};
+	}
+
+	/** Zmenšování písma podle šířky: výchozí 12 b, když se vejde; jinak menší, nejméně 9 b. Šířky písmen jsou umělé, takže platí na každém systému. */
+	@Test
+	public void pismoSeZmensujeJenKdyzSeNevejdeAMaNejmeneDevetBodu() {
+		final Font zaklad = new Font(Font.DIALOG, Font.BOLD, 12);
+		final int sirka = JPruhPlanovace.rozloz(cz.geokuk.framework.RozmisteniPrekryvu.PRUH_PLNY)[JPruhPlanovace.VYBER].width - 8;
+		Assert.assertEquals("krátký text výchozím písmem", 12f, JPruhPlanovace.pismoNaSirku(zaklad, "360° ▾", sirka, JPruhPlanovaceTypTest::pevneMetriky).getSize2D(), 0.01);
+		final Font mensi = JPruhPlanovace.pismoNaSirku(zaklad, "Kalendář ▾", sirka, JPruhPlanovaceTypTest::pevneMetriky);
+		Assert.assertTrue("delší text menším písmem: " + mensi.getSize2D(), mensi.getSize2D() < 12f && mensi.getSize2D() >= 9f);
+		Assert.assertTrue("a vejde se", pevneMetriky(mensi).stringWidth("Kalendář ▾") <= sirka);
+		Assert.assertEquals("nejmenší 9 bodů", 9f, JPruhPlanovace.pismoNaSirku(zaklad, "Velmi dlouhý typ challenge", sirka, JPruhPlanovaceTypTest::pevneMetriky).getSize2D(), 0.01);
 	}
 
 	/** Skutečná lišta s Kalendářem: typ v tlačítku výběru se po rozložení vejde celý, název challenge je jen v tooltipu. */
