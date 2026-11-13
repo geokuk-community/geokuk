@@ -239,7 +239,7 @@ public class JMaticeDTTest {
 					// D1/T1 „3“, D1,5/T1,5 „✓“, D5/T5 „–“, vybrané D3/T4 „50+“
 					for (final int[] p : new int[][] { { 0, 0 }, { 1, 1 }, { 8, 8 }, { 4, 6 } }) {
 						final Rectangle r = zvetsi(m.obdelnik(p[0], p[1]));
-						final Color podklad = new Color(img.getRGB(r.x + 4, r.y + r.height / 2));
+						final Color podklad = new Color(img.getRGB(r.x + 6 * ZVETSENI, r.y + r.height / 2));
 						// Největší rozdíl jasu na jednom pixelu: měří barvu znaku proti podkladu, ne to, jak písmo znak rozlije do pixelů.
 						// Součet přes sloupec pixelů by u hrubého znaku prošel i při nepatrném rozdílu barev.
 						double nejvic = 0;
