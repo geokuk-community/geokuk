@@ -229,4 +229,13 @@ public class UklidOfflineCacheTest {
 				"o00000002 symboly-0000000a.bin 00000000 cccccccc", "o00000001 symboly-0000000a.bin 00000000 dddddddd"), StandardCharsets.UTF_8);
 		Assert.assertEquals(Arrays.asList("o00000004", "o00000003", "o00000002"), new ArrayList<>(UklidOfflineCache.ponechane(slozka)));
 	}
+
+	/** Dočasný soubor jiné instance (stejné jméno jako dřív) zápisu klíčů nepřekáží a zůstane nedotčený. */
+	@Test
+	public void ciziDocasnySouborZapisuNeprekazi() throws Exception {
+		final File cizi = new File(slozka, UklidOfflineCache.SOUBOR + ".tmp");
+		Assert.assertTrue(cizi.mkdir());
+		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.zaznamenej(slozka, "o00000001", symboly("0000000a"), "00000000"));
+		Assert.assertTrue(cizi.isDirectory());
+	}
 }

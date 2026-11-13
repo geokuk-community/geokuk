@@ -76,4 +76,14 @@ public class PrehledovaMapaTest {
 	public void mapaJeVJaru() {
 		Assert.assertNotNull(PrehledovaMapa.class.getResource("/offline-mapy/" + PrehledovaMapa.SOUBOR));
 	}
+
+	/** Dočasný soubor jiné instance (stejné jméno jako dřív) zápisu nepřekáží a zůstane nedotčený. */
+	@Test
+	public void ciziDocasnySouborZapisuNeprekazi() throws Exception {
+		final File cizi = new File(slozka, PrehledovaMapa.SOUBOR + ".tmp");
+		Assert.assertTrue(cizi.mkdirs());
+		Assert.assertEquals(PrehledovaMapa.otisk(NOVA), PrehledovaMapa.doplni(slozka, NOVA, null));
+		Assert.assertArrayEquals(NOVA, Files.readAllBytes(mapa.toPath()));
+		Assert.assertTrue(cizi.isDirectory());
+	}
 }
