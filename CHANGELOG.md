@@ -4,19 +4,30 @@
 
 ### Změny
 - Plánovač challenge: lišta vlevo nahoře na mapě. Zapíná se úchytem nebo v
-  Kešoidy > Challenge > Lišta challenge. Má výběr challenge („360° ▾“),
-  odznak s počtem chybějících sektorů nebo políček D/T, tlačítka ◀ ▶ na
-  předchozí a další chybějící, přepínače Jen kandidáti (F4), Sektory a Štítky
-  a Nastavení….
+  Kešoidy > Plánovač challenge > Zapnout plánovač. Má výběr challenge
+  („360° ▾“), odznak s počtem chybějících sektorů nebo políček D/T, tlačítka
+  ◀ ▶, která posouvají výběr na předchozí a další chybějící sektor nebo
+  políčko, přepínače Jen kandidáti (F4), Sektory a Štítky a Nastavení….
 - Plánovač challenge: Shift+šipka skočí na nejbližšího kandidáta ve směru
-  šipky. Když tam žádný není, ukáže se o tom krátká zpráva.
+  šipky a u 360° vybere i jeho sektor. Když tam žádný není, ukáže se o tom
+  krátká zpráva.
 - Plánovač challenge: na mapě je prstenec sektorů se středem, klínem
-  vybraného sektoru, kandidáti se štítky a čárou ke kandidátovi. Když je
-  střed mimo výřez, ukazuje na něj šipka a po kliknutí na ni se mapa na střed
-  přesune.
+  vybraného sektoru, kandidáti se štítky a čárou ke kandidátovi. Kružnice
+  prstence má pevný poloměr v metrech a popisek. Štítky kandidátů a
+  zvýrazněných keší jsou vlevo od ikony keše. Když je střed mimo výřez,
+  ukazuje na něj šipka a po kliknutí na ni se mapa na střed přesune.
+- Plánovač challenge: klik na keš ukáže její sektor nebo políčko D/T a členy
+  vybraného sektoru zvýrazní na mapě.
+- Plánovač challenge: u matice D/T je v popupu klikací matice obtížnost ×
+  terén. Klik na políčko s kandidáty ho vybere, Jen kandidáti pak ukáže jen
+  jeho kandidáty a vybrané políčko je v liště jako „D3/T4 ✕“.
+- Matici D/T jde nastavit, kolikrát se má každé políčko splnit (Kolikrát
+  splnit, 1 až 9); odznak počítá chybějící nálezy a políčko ukazuje například
+  „1/3“.
 - Zapnutá může být jen jedna challenge; zapnutí další vypne dosavadní.
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
-  vytvořit i z vlastní challenge.
+  vytvořit i z vlastní challenge; v popupu plánovače je u středu domov odkaz
+  Změnit domov….
 - Šablony: 360° od domova, GC4PCQB – Challenge - 360 degrees of the Czech
   Republic, GC56R49 – Challenge - 360 Degrees of Prague a Matice D/T.
 - Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
@@ -44,13 +55,13 @@
   GeoGet, GSAK, OpenSAK) jsou na jedné záložce, každý se svou klávesovou
   zkratkou.
 - Zdroje keší GeoGet, GSAK a OpenSAK mají volbu Nové databáze načíst až po
-  vybrání.
+  vybrání; u GSAK a OpenSAK zmizelo pole Čas nenálezu.
 - Zdroj keší bez načtených souborů má v menu Kešoidy > Zdroje keší vypnutou
   položku; bublina u ní a krátká zpráva po Ctrl+1 až Ctrl+4 řeknou, že zdroj
   nemá načtené soubory a že jeho složku jde zkontrolovat v Soubor > Umístění
   souborů.
 - Klávesa F5 (Kešoidy > Zobrazovat kešoidy) skryje a zase ukáže kešoidy včetně
-  kruhů a popisků.
+  kruhů a popisků. Tlačítko v liště má novou ikonu, oko GeoKuku.
 - Když jsou kešoidy skryté (F5), je to vidět: tlačítko v liště to ukazuje,
   počty ve stavovém řádku jsou jantarové (klikem se kešoidy zobrazí) a ve
   Filtru je nad ikonami upozornění, že se filtr na mapě teď neuplatní.
@@ -81,12 +92,11 @@
   verzi stažené mapy nebo vrstvy stáhne tlačítko Aktualizovat.
 - Správce offline map ukáže při stahování odhad zbývajícího času a mapu, která
   se nevejde na disk, nenechá stáhnout.
-- Přerušené stahování program sám až třikrát zkusí znovu a naváže, kde skončilo.
+- Přerušené stahování program sám až třikrát zkusí znovu a naváže, kde skončilo. Když dávka stahování skončí s chybou, ostatní soubory se
+  dostahují a v popupu Mapy je souhrn a tlačítko Zkusit znovu.
 - Tlačítko Stáhnout mapu a vrstvy stáhne mapu, trasy, vrstevnice a stínování
   naráz; Vybrat části… v nabídce na pravé tlačítko u země ukáže souhrn
   s velikostí a volným místem.
-- Země stažená celá i po regionech se ve Správci offline map pozná a program
-  nabídne smazat regiony, nebo celek.
 - Průvodce nastavením map (Soubor > Průvodce nastavením map, při první
   instalaci se otevře sám) vybere podklad a vrstvy, stáhne, co chybí, a přepne
   mapu.
@@ -131,7 +141,8 @@
   filtr, a pokusit se přenést okno GeoKuku do popředí; podrobnosti jsou
   v README.
 - GeoKuk používá novější knihovnu Guava s bezpečnostní opravou.
-- Regiony stažené země jsou ve Správci offline map pod ní.
+- Regiony stažené země jsou ve Správci offline map pod ní. Země stažená celá
+  i po regionech se pozná a program nabídne smazat regiony, nebo celek.
 - Dole ve Správci offline map jsou přepínače Turistické a cyklotrasy a Stínování
   terénu.
 - Když pro zobrazené místo chybí offline mapa, program nabídne její stažení
@@ -139,10 +150,10 @@
 - Po změně jedné offline mapy nebo vrstvy se dlaždice v cache vykreslí znovu
   jen v oblasti kolem ní.
 - Změna zvýraznění nebo sady ikon nenačítá znovu zdroje keší.
-- Soubor > Optimalizace cache dlaždic… zmenší soubor s uloženými dlaždicemi;
-  když je to potřeba, program ji nabídne sám při startu.
-- Optimalizace cache dlaždic odstraní i dlaždice vykreslené starší verzí mapy
-  nebo tématu; dlaždice jiných témat a vrstev zůstávají.
+- Soubor > Optimalizace cache dlaždic… zmenší soubor s uloženými dlaždicemi
+  a odstraní dlaždice vykreslené starší verzí mapy nebo tématu (dlaždice
+  jiných témat a vrstev zůstávají); když je to potřeba, program ji nabídne sám
+  při startu.
 - Nové mapové podklady: DE topografická mapa (BKG), AT mapa (basemap.at)
   a CH topografická mapa (swisstopo); německou a švýcarskou mapu nejde
   hromadně stahovat do cache.
@@ -179,9 +190,8 @@
 - Úsek vedený po cestě se do GPX ukládá se všemi body.
 - Nová instalace začíná offline mapou, když je ve složce offline map podrobná
   mapa, jinak ortofotem ČÚZK; stávajícím uživatelům se podklad nemění.
-- Informace pro hlášení chyby rozliší uspání počítače od záseku programu.
-- Informace pro hlášení chyby neobsahují z adres v logu parametry ani
-  přihlašovací údaje.
+- Informace pro hlášení chyby rozliší uspání počítače od záseku programu a
+  neobsahují z adres v logu parametry ani přihlašovací údaje.
 - Informace pro hlášení chyby uvádějí údaje o offline mapách a počet
   zobrazených dlaždic od spuštění; okno jde měnit.
 - Nápověda > Co je nového ukáže, co přinesly jednotlivé verze programu.
@@ -208,7 +218,9 @@
   i když v ní nepřibyl ani neubyl žádný soubor.
 - Domácí souřadnice z GeoGetu a seznamy výletů se načtou i ze souboru v UTF-16;
   export GeoKuku (.geokuk) ve starším kódování Windows se načte s diakritikou.
+- Poškozený soubor vylety.txt nepřepíše uložené výlety.
 - Zip s kešemi, který má jména souborů ve starším kódování Windows, se načte.
+- OpenSAK: datum nálezu se čte jen z textového sloupce se známým zápisem.
 - Obrázek ikony v neznámém formátu ve vlastní sadě ikon program ohlásí
   a nespadne.
 - Vlastní sada ikon s chybným číslem se načte s výchozí hodnotou.
@@ -221,7 +233,7 @@
 - Offline mapa zkopírovaná do složky za běhu se otevře až po dokopírování
   a mapa v okně se sama obnoví. Mapu, kterou chvíli nešlo číst, program za půl
   minuty zkusí znovu.
-- Menu Téma offline mapy se otevře hned, i když jsou témata na pomalém disku.
+- Menu Téma offline mapy se otevře bez čekání, i když jsou témata na pomalém disku.
 - Po načtení keší program nečeká na vykreslení ikon na liště nástrojů.
 
 Obsahuje i všechny opravy z 6.4.3.
