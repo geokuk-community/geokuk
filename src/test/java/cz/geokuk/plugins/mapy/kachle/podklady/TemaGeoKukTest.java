@@ -123,6 +123,29 @@ public class TemaGeoKukTest {
 		}
 	}
 
+	/** Cesty bez osmc_color (nosiče symbolů značky) se v překryvu nekreslí šedě přes barevné trasy. */
+	@Test
+	public void prekryvNekresliSedouCestuBezBarvyZnaceni() throws Exception {
+		final org.w3c.dom.NodeList bloky = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+				.parse(new org.xml.sax.InputSource(new java.io.StringReader(text("trasy.xml")))).getElementsByTagName("rule");
+		int bezPoradi = 0;
+		for (int i = 0; i < bloky.getLength(); i++) {
+			final org.w3c.dom.Element blok = (org.w3c.dom.Element) bloky.item(i);
+			if (!"osmc_order".equals(blok.getAttribute("k")) || !"~".equals(blok.getAttribute("v"))) {
+				continue;
+			}
+			bezPoradi++;
+			for (final String v : java.util.Arrays.asList("~", "none")) {
+				for (org.w3c.dom.Node d = blok.getFirstChild(); d != null; d = d.getNextSibling()) {
+					if (d instanceof org.w3c.dom.Element && "osmc_color".equals(((org.w3c.dom.Element) d).getAttribute("k"))) {
+						Assert.assertFalse(((org.w3c.dom.Element) d).getAttribute("v"), java.util.Arrays.asList(((org.w3c.dom.Element) d).getAttribute("v").split("\\|")).contains(v));
+					}
+				}
+			}
+		}
+		Assert.assertEquals(3, bezPoradi);
+	}
+
 	/** Překryv kreslí i skály a body z vrstvy tourist; jméno trasy z pole ref jen u turistických tras (ref je jinak třeba číslo silnice). */
 	@Test
 	public void prekryvKresliPrvkyVrstvyTouristAJmenaTras() throws IOException {

@@ -142,7 +142,7 @@ startu založí; jinou složku lze nastavit v Soubor > Umístění souborů na k
 Mapy). Více map ve složce, třeba Česko a Slovensko, se kreslí naráz;
 mapu zkopírovanou do složky za běhu program sám načte. Mapy lze získat
 i z [osm.paws.cz](https://osm.paws.cz/) (česká a slovenská mapa
-s turistickým značením) nebo z [OpenAndroMaps](https://www.openandromaps.org/downloads)
+s turistickým značením) nebo z [OpenAndroMaps](https://www.openandromaps.org/)
 (mapy jsou jen pro soukromé použití).
 
 Data map jsou z OpenStreetMap, © přispěvatelé OpenStreetMap, licence
