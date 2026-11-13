@@ -197,11 +197,22 @@ public class JMaticeDTTest {
 		Assert.assertNull("splněné políčko už vybrané není", m.vybrane());
 	}
 
+	/** Zvětšení při kreslení: i tenký znak (např. „–“) má pak plně pokryté pixely, ať ho písmo platformy rastruje jakkoli. */
+	private static final int ZVETSENI = 3;
+
+	/** Nejmenší kontrast jasu znaku proti podkladu na plně pokrytém pixelu. Nejslabší je ztlumená „–“ ve skinu Charcoal (naměřeno 0,26). */
+	private static final double PRAH_KONTRASTU = 0.2;
+
+	private static Rectangle zvetsi(final Rectangle r) {
+		return new Rectangle(r.x * ZVETSENI, r.y * ZVETSENI, r.width * ZVETSENI, r.height * ZVETSENI);
+	}
+
 	private static BufferedImage vykresli(final JMaticeDT m) {
-		final BufferedImage img = new BufferedImage(m.getWidth(), m.getHeight(), BufferedImage.TYPE_INT_RGB);
+		final BufferedImage img = new BufferedImage(m.getWidth() * ZVETSENI, m.getHeight() * ZVETSENI, BufferedImage.TYPE_INT_RGB);
 		final java.awt.Graphics2D g = img.createGraphics();
 		g.setColor(UIManager.getColor("Panel.background"));
 		g.fillRect(0, 0, img.getWidth(), img.getHeight());
+		g.scale(ZVETSENI, ZVETSENI);
 		m.paint(g);
 		g.dispose();
 		return img;
@@ -220,23 +231,24 @@ public class JMaticeDTTest {
 					final JMaticeDT m = matice();
 					m.setVybrane("D3/T4");
 					final BufferedImage img = vykresli(m);
-					final Rectangle vyb = m.obdelnik(4, 6);
-					final Rectangle jine = m.obdelnik(0, 0);
+					final Rectangle vyb = zvetsi(m.obdelnik(4, 6));
+					final Rectangle jine = zvetsi(m.obdelnik(0, 0));
 					final Color pozadiVyb = new Color(img.getRGB(vyb.x + 5, vyb.y + vyb.height / 2));
 					final Color pozadiJine = new Color(img.getRGB(jine.x + 5, jine.y + jine.height / 2));
 					Assert.assertNotEquals(t.getName() + ": vybrané × nevybrané", pozadiVyb.getRGB(), pozadiJine.getRGB());
+					// D1/T1 „3“, D1,5/T1,5 „✓“, D5/T5 „–“, vybrané D3/T4 „50+“
 					for (final int[] p : new int[][] { { 0, 0 }, { 1, 1 }, { 8, 8 }, { 4, 6 } }) {
-						final Rectangle r = m.obdelnik(p[0], p[1]);
+						final Rectangle r = zvetsi(m.obdelnik(p[0], p[1]));
 						final Color podklad = new Color(img.getRGB(r.x + 4, r.y + r.height / 2));
+						// Největší rozdíl jasu na jednom pixelu: měří barvu znaku proti podkladu, ne to, jak písmo znak rozlije do pixelů.
+						// Součet přes sloupec pixelů by u hrubého znaku prošel i při nepatrném rozdílu barev.
 						double nejvic = 0;
-						for (int x = r.x + 8; x < r.x + r.width - 8; x++) {
-							double sloupec = 0;
-							for (int y = r.y + 6; y < r.y + r.height - 6; y++) {
-								sloupec += Math.abs(JMaticeDT.jas(new Color(img.getRGB(x, y))) - JMaticeDT.jas(podklad));
+						for (int x = r.x + 8 * ZVETSENI; x < r.x + r.width - 8 * ZVETSENI; x++) {
+							for (int y = r.y + 6 * ZVETSENI; y < r.y + r.height - 6 * ZVETSENI; y++) {
+								nejvic = Math.max(nejvic, Math.abs(JMaticeDT.jas(new Color(img.getRGB(x, y))) - JMaticeDT.jas(podklad)));
 							}
-							nejvic = Math.max(nejvic, sloupec);
 						}
-						Assert.assertTrue(t.getName() + " " + JMaticeDT.stitek(p[0], p[1]) + ": znak je vidět (" + nejvic + ")", nejvic > 0.25);
+						Assert.assertTrue(t.getName() + " " + JMaticeDT.stitek(p[0], p[1]) + ": znak je vidět (" + nejvic + ")", nejvic >= PRAH_KONTRASTU);
 					}
 				});
 			}
