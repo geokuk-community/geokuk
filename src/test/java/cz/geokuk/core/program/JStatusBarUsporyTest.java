@@ -143,7 +143,7 @@ public class JStatusBarUsporyTest {
 			for (int s = 1; s < w.length; s++) {
 				Assert.assertTrue(tema + ": stupeň " + s + " je užší než předchozí", w[s] < w[s - 1]);
 			}
-			Assert.assertTrue("plná podoba se vejde na 100 %", w[0] <= 1920);
+			Assert.assertTrue(tema + " " + sirka + ": zvolený stupeň " + sb.getStupenUspor() + " se nevejde", w[sb.getStupenUspor()] <= sirka);
 			Assert.assertTrue("úsporná podoba se vejde na 150 %", w[w.length - 1] <= 1280);
 		});
 	}
