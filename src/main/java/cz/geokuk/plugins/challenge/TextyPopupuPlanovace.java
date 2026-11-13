@@ -114,9 +114,10 @@ final class TextyPopupuPlanovace {
 	static final String TIP_ZMENY_DOMOVA = "Uloží zvolenou pozici na mapě jako domov";
 	static final String TIP_ZMENY_DOMOVA_BEZ_POZICE = "Klikněte na mapu, kde je domov, a pak zvolte Změnit domov…";
 
-	/** Důvod, proč se výsledek nepočítá, zalomený na danou šířku; střed nebo oblast jde změnit v nastavení. */
+	/** Důvod, proč se výsledek nepočítá, zalomený na danou šířku; u chybějící středové keše i co s tím. */
 	static String chyba(final String duvod, final int sirka) {
-		final String text = (duvod == null || duvod.isEmpty() ? "Výsledek nejde spočítat." : duvod) + " Střed nebo oblast změníte v Nastavení plánovače…";
+		final String d = duvod == null || duvod.isEmpty() ? "Výsledek nejde spočítat." : duvod;
+		final String text = d.contains("není v načtených datech") ? d + " Načtěte tuto keš, nebo v Nastavení plánovače… vytvořte kopii se středem Domov či Souřadnice." : d;
 		return "<html><body style='width: " + sirka + "px'>" + text.replace("&", "&amp;").replace("<", "&lt;") + "</body></html>";
 	}
 

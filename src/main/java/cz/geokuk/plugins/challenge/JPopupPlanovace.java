@@ -321,7 +321,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JMaticeDT matice = new JMaticeDT();
 		final JLabel legenda = new JLabel(TextyPopupuPlanovace.LEGENDA_MATICE);
 		final JButton vsechnaPolicka = new JButton("✕ Všechna políčka");
-		private final JScrollPane posuvnik = new JScrollPane(seznam);
+		final JScrollPane posuvnik = new JScrollPane(seznam);
 		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
 		final JLabel omezeniStitku = new JLabel(" ");
