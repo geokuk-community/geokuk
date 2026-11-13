@@ -743,9 +743,10 @@ public class KachleDBManagerTest {
 	private Process spustCtenare() throws Exception {
 		final Process proces = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
 				ZamekCtenareJinehoProgramu.class.getName(), soubor.getPath()).redirectErrorStream(true).start();
-		final java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(proces.getInputStream(), StandardCharsets.UTF_8));
-		for (String radek = vystup.readLine(); !"zamceno".equals(radek); radek = vystup.readLine()) {
-			Assert.assertNotNull("druhý program skončil bez zámku", radek);
+		try (java.io.BufferedReader vystup = new java.io.BufferedReader(new java.io.InputStreamReader(proces.getInputStream(), StandardCharsets.UTF_8))) {
+			for (String radek = vystup.readLine(); !"zamceno".equals(radek); radek = vystup.readLine()) {
+				Assert.assertNotNull("druhý program skončil bez zámku", radek);
+			}
 		}
 		return proces;
 	}

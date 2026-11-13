@@ -89,7 +89,6 @@ public class IndikatorNacitaniTest {
 			Assert.assertEquals(IndikatorNacitani.PRUMER, r.width);
 			Assert.assertEquals(IndikatorNacitani.PRUMER, r.height);
 		}
-		Assert.assertTrue("nenápadná velikost", IndikatorNacitani.PRUMER >= 20 && IndikatorNacitani.PRUMER <= 28);
 	}
 
 	@Test

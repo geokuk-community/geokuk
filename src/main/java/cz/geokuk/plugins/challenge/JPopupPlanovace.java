@@ -243,7 +243,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.omezeniStitku.setText(model == null ? " " : TextyPopupuPlanovace.omezeniStitku(model.kandidatuVeVyrezu()));
 		// Prázdný řádek by v popupu nechal mezeru nad tlačítky.
 		obsah.omezeniStitku.setVisible(!obsah.omezeniStitku.getText().trim().isEmpty());
-		if (c != null) {
+		if (c != null && model != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
 				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));

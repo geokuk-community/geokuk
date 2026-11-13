@@ -240,9 +240,12 @@ public final class MatriceMap {
 	/** Celá země bez vlastní vrstvy daného typu: jedna buňka za vrstvy všech jejích regionů, jen pro tlačítka řádku. */
 	private static Map<Cast, Bunka> souhrnRegionu(final KatalogMap katalog, final KatalogovaMapa m, final Map<Cast, Bunka> bunky, final KatalogVrstev vrstvy,
 			final Function<KatalogovaVrstva, StavVrstvy> stavyVrstev) {
-		final List<KatalogovaMapa> regiony = vrstvy == null || stavyVrstev == null ? Collections.emptyList() : katalog.regiony(m);
 		final Map<Cast, Bunka> souhrn = new EnumMap<>(Cast.class);
-		final Optional<KatalogovaMapa> celek = vrstvy == null || stavyVrstev == null ? Optional.empty() : katalog.celek(m);
+		if (vrstvy == null || stavyVrstev == null) {
+			return souhrn;
+		}
+		final List<KatalogovaMapa> regiony = katalog.regiony(m);
+		final Optional<KatalogovaMapa> celek = katalog.celek(m);
 		for (final Cast c : Cast.values()) {
 			if (c == Cast.MAPA) {
 				continue;

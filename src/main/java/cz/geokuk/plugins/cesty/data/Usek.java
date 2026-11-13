@@ -135,7 +135,10 @@ public class Usek extends Bousek0 {
 	}
 
 	public long computeKvadratVzdalenostiBoduKUsecce(final Mou mou) {
-		final List<Mou> t = mou == null ? null : getTrasa();
+		if (mou == null) {
+			return Long.MAX_VALUE;
+		}
+		final List<Mou> t = getTrasa();
 		if (t != null) {
 			return kvadratVzdalenostiKTrase(t, mou);
 		}
