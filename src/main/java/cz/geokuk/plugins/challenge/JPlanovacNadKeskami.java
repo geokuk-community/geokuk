@@ -84,7 +84,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		/** Pravý okraj ikony a její svislý střed vůči bodu keše. */
 		int[] ikonaVlevo = new int[0];
 		int[] ikonaStredY = new int[0];
-			int[] ikonaNahore = new int[0];
+		int[] ikonaNahore = new int[0];
 		int[] index = new int[0];
 		int[] x = new int[0];
 		int[] y = new int[0];
@@ -465,7 +465,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		v.y = new int[kolik];
 		v.ikonaVlevo = new int[kolik];
 		v.ikonaStredY = new int[kolik];
-			v.ikonaNahore = new int[kolik];
+		v.ikonaNahore = new int[kolik];
 		if (kolik > 0) {
 			final double[] serazene = Arrays.copyOf(vz, n);
 			Arrays.sort(serazene);
