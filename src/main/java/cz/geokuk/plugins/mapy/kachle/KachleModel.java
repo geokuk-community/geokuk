@@ -447,14 +447,17 @@ public class KachleModel extends Model0 {
 
 	/** Atribuce offline mapy: data podle otevřených map (OSM, přehledová mapa z Natural Earth) a téma ze souboru uživatele. */
 	public String getAtribuceOfflineMapy() {
-		final String data = atribuceDat(ziskavac.getOfflineMapy().getNazvyMap());
-		final TemaOfflineMapy tema = getTemaOfflineMapy();
+		return atribuce(atribuceDat(ziskavac.getOfflineMapy().getNazvyMap()), getTemaOfflineMapy(), ziskavac.getOfflineMapy().getChybaTematu());
+	}
+
+	/** Téma, které se nepodařilo načíst ({@code chybaTematu != null}), se označí. */
+	static String atribuce(final String data, final TemaOfflineMapy tema, final String chybaTematu) {
 		if (tema.isVestavene()) {
 			return data;
 		}
 		final String jmeno = tema.getSoubor().getName();
 		final int tecka = jmeno.lastIndexOf('.');
-		return data + ", téma " + (tecka > 0 ? jmeno.substring(0, tecka) : jmeno);
+		return data + ", téma " + (tecka > 0 ? jmeno.substring(0, tecka) : jmeno) + (chybaTematu == null ? "" : " (nenačteno)");
 	}
 
 	static String atribuceDat(final List<String> mapy) {
