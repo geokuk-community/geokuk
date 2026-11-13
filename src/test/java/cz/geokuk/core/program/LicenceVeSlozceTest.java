@@ -36,6 +36,13 @@ public class LicenceVeSlozceTest {
 		Assert.assertEquals(aktualni, text(soubor));
 	}
 
+	@Test
+	public void mapovePodkladyUvadiTemataTretichStran() throws IOException {
+		final File slozka = new File(tmp.getRoot(), "licence");
+		LicenceVeSlozce.doplni(slozka);
+		Assert.assertTrue(text(new File(slozka, "MAPOVE-PODKLADY.txt")).contains("Témata vzhledu od třetích stran"));
+	}
+
 	private static String text(final File soubor) throws IOException {
 		return new String(Files.readAllBytes(soubor.toPath()), StandardCharsets.UTF_8);
 	}

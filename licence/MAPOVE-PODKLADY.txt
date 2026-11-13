@@ -100,6 +100,9 @@ Atribuce:      © přispěvatelé OpenStreetMap
 Licence:       https://www.openstreetmap.org/copyright
 Překryv Turistické a cyklotrasy kreslí trasy z týchž map (data OpenStreetMap
 upravená osm.paws.cz) vlastním tématem GeoKuku, atribuce stejná.
+Témata vzhledu od třetích stran, která si uživatel přidá, se řídí vlastní
+licencí svého autora (může být například nekomerční); atribuci a podmínky
+autora dodržuje ten, kdo téma používá.
 
 Přehledová mapa světa (prehled-svet-ne.map, přibalená v zipu s programem):
 Data:          Natural Earth, https://www.naturalearthdata.com/
