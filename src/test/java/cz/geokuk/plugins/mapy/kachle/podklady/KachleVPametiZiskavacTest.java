@@ -43,6 +43,6 @@ public class KachleVPametiZiskavacTest {
 		final long velikost = cache.size();
 		Assert.assertTrue("v cache je " + velikost + " dlaždic, nejvýš " + ocekavane, velikost <= ocekavane);
 		Assert.assertTrue("v cache je jen " + velikost + " dlaždic, má se vejít skoro " + ocekavane, velikost >= ocekavane * 0.9);
-		Assert.assertEquals(ocekavane * 3, drzene.size());
+		Assert.assertEquals(3L * ocekavane, drzene.size());
 	}
 }

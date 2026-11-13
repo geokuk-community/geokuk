@@ -181,6 +181,14 @@ public class MatriceMapTest {
 		assertEquals(StavBunky.KE_STAZENI, cz.getBunka(Cast.VRSTEVNICE).getStav());
 	}
 
+	@Test
+	public void bezStavuVrstevNeniSouhrnRegionu() {
+		final java.util.List<MatriceMap.Radek> matice = MatriceMap.sestav(KatalogMap.vestaveny(), StavMapy::novy, VrstvyProGui.katalogSpanelsko(), null);
+		final MatriceMap.Radek spanelsko = matice.stream().filter(r -> r.getKlic().equals("europe/spain")).findFirst().get();
+		assertEquals(MatriceMap.StavBunky.NENI, spanelsko.getBunkaNabidky(MatriceMap.Cast.TRASY).getStav());
+		assertEquals(-1L, spanelsko.getBunkaNabidky(MatriceMap.Cast.TRASY).getVelikost());
+	}
+
 	/** Celá země bez vlastní vrstvy: tlačítka dostanou souhrn vrstev regionů, velikost je součet; vlastní buňka celku zůstává prázdná. */
 	@Test
 	public void celekBezVlastniVrstvyMaSouhrnRegionu() {

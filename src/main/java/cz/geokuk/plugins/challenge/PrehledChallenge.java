@@ -1,5 +1,7 @@
 package cz.geokuk.plugins.challenge;
 
+import java.util.Objects;
+
 import cz.geokuk.plugins.challenge.Challenge.Typ;
 
 /**
@@ -33,8 +35,9 @@ public final class PrehledChallenge {
 			this.celkem = 360;
 			this.splneno = sektory.pocetObsazenych();
 		} else {
-			this.celkem = policka.celkemNalezu();
-			this.splneno = policka.splnenoNalezu();
+			final VysledekPolicek p = Objects.requireNonNull(policka);
+			this.celkem = p.celkemNalezu();
+			this.splneno = p.splnenoNalezu();
 		}
 	}
 
