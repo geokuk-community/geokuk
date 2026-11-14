@@ -155,12 +155,29 @@ public class JPruhPolickoTest {
 	}
 
 	@Test
-	public void u360AniPoVyberuSektoruNeni() throws Exception {
+	public void u360JeVybranySektorTlacitkemKtereHoZrusi() throws Exception {
 		priprav(1280);
-		model.aktivuj(Sablony.cesko360());
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200, 5000, 7000, 8000, 9000, 9500 }, { 20, 1000 } }));
 		SwingUtilities.invokeAndWait(() -> {});
 		pruh.doLayout();
-		Assert.assertFalse(policko() != null && policko().isVisible());
+		Assert.assertFalse("bez výběru tlačítko není", policko() != null && policko().isVisible());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final AbstractButton p = policko();
+		Assert.assertNotNull(p);
+		Assert.assertTrue(p.isVisible());
+		Assert.assertEquals("11° ✕", p.getText());
+		Assert.assertTrue(p.getToolTipText(), p.getToolTipText().contains("Sektor 11° · 6 kandidátů · nejbližší 3,2 km od středu"));
+		Assert.assertTrue("Esc výběr zruší", esc().isEnabled());
+		p.doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vybranySektor(c));
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
 	}
 
 	private String tipVyberu() {
