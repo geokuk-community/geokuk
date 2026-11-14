@@ -488,8 +488,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 				odznak.nastav("chybí " + nasobna.chybiNalezu());
 				odznak.setToolTipText(TextyPopupuPlanovace.tipOdznakuNalezu(nasobna));
 			} else {
-				odznak.nastav("chybí " + (stav.badge() < 0 ? "…" : Integer.toString(stav.badge())));
-				odznak.setToolTipText(stav.badge() < 0 ? popisChybejicich(stav.typ()) + " – počítá se" : tipOdznaku(stav.typ(), stav.badge(), celkem(stav.challenge())));
+				odznak.nastav("chybí " + (stav.badge() < 0 ? stav.chyba() != null ? "?" : "…" : Integer.toString(stav.badge())));
+				odznak.setToolTipText(stav.badge() < 0 ? stav.chyba() != null ? stav.chyba() : popisChybejicich(stav.typ()) + " – počítá se" : tipOdznaku(stav.typ(), stav.badge(), celkem(stav.challenge())));
 			}
 			kandidati.setToolTipText(popisKandidatu(stav.typ()) + " (F4)");
 			zpet.setToolTipText(ChallengeAkce.tipPosunu(stav.typ(), false));

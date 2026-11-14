@@ -223,6 +223,29 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void chybaVPredpoctuSePropisePlanovaciMistoPocitaSe() throws Exception {
+		priprav();
+		popup.prepni();
+		final String duvod = "Keš GC4PCQB (střed challenge) není v načtených datech.";
+		model.nastavStavPredpoctu(aktivni(), new StavPredpoctu(StavPredpoctu.Faze.CHYBA, 0, 0, duvod));
+		SwingUtilities.invokeAndWait(() -> {});
+		final String text = popup.obsah.souhrn.getText();
+		Assert.assertTrue(text, text.contains(duvod));
+		Assert.assertFalse(text, text.contains("Počítá se"));
+		Assert.assertFalse("bez výsledku se ukáže jen chyba", popup.obsah.matice.isVisible());
+		Assert.assertTrue(text, text.contains("vytvořte kopii se středem Domov či Souřadnice"));
+		Assert.assertFalse("bez výsledku se ukáže jen chyba", popup.obsah.postup.isVisible());
+		Assert.assertFalse(popup.obsah.nadpisSeznamu.isVisible());
+		Assert.assertFalse(popup.obsah.posuvnik.isVisible());
+		model.nastavStavPredpoctu(aktivni(), new StavPredpoctu(StavPredpoctu.Faze.HOTOVO, 1, 1, null));
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213 }, new int[0], new double[][] { { 213, 2800 }, { 47, 6200 } }));
+		Assert.assertTrue("po chybě se postup vrátí", popup.obsah.postup.isVisible());
+		Assert.assertTrue("po chybě se vrátí nadpis seznamu", popup.obsah.nadpisSeznamu.isVisible());
+		Assert.assertTrue("po chybě se vrátí seznam", popup.obsah.posuvnik.isVisible());
+		Assert.assertTrue(popup.obsah.souhrn.getText(), popup.obsah.souhrn.getText().startsWith("Splněno"));
+	}
+
+	@Test
 	public void splnenaChallengeNemaKamDal() throws Exception {
 		priprav();
 		popup.prepni();

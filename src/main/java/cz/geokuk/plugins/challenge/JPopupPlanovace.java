@@ -321,7 +321,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JMaticeDT matice = new JMaticeDT();
 		final JLabel legenda = new JLabel(TextyPopupuPlanovace.LEGENDA_MATICE);
 		final JButton vsechnaPolicka = new JButton("✕ Všechna políčka");
-		private final JScrollPane posuvnik = new JScrollPane(seznam);
+		final JScrollPane posuvnik = new JScrollPane(seznam);
 		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
 		final JLabel omezeniStitku = new JLabel(" ");
@@ -547,6 +547,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			if (matice) {
 				this.matice.nastav(null);
 			}
+			postup.setVisible(true);
+			nadpisSeznamu.setVisible(true);
 			kandidati.setSelected(jenKandidati);
 			radky.clear();
 			polozky.clear();
@@ -561,7 +563,15 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			// Bez výsledku by matice ukázala všechna políčka jako splněná.
 			this.matice.setVisible(false);
 			legenda.setVisible(false);
-			souhrn.setText(stav.faze() == StavPredpoctu.Faze.POCITA && stav.celkem() > 0 ? "Počítá se… " + stav.hotovo() + " z " + stav.celkem() + " keší" : "Počítá se…");
+			if (stav.faze() == StavPredpoctu.Faze.CHYBA) {
+				souhrn.setText(TextyPopupuPlanovace.chyba(stav.chyba(), NEJVETSI_SIRKA_NADPISU));
+				postup.setVisible(false);
+				nadpisSeznamu.setVisible(false);
+				posuvnik.setVisible(false);
+				napoveda.setVisible(false);
+			} else {
+				souhrn.setText(stav.faze() == StavPredpoctu.Faze.POCITA && stav.celkem() > 0 ? "Počítá se… " + stav.hotovo() + " z " + stav.celkem() + " keší" : "Počítá se…");
+			}
 			postup.setValue(0);
 			postup.setString("…");
 			dalsi.setEnabled(false);
