@@ -81,7 +81,7 @@ final class TextyPopupuPlanovace {
 	}
 
 	/** Dovětek u vybraného sektoru nebo políčka, když na mapě není žádný jeho kandidát. */
-	static final String MIMO_VYREZ = "mimo výřez – ▶ ukáže";
+	static final String MIMO_VYREZ = "mimo výřez – Shift+šipka ukáže nejbližšího kandidáta";
 
 	static String pravidla(final Challenge.ZdrojPravidel z) {
 		return z == Challenge.ZdrojPravidel.STATOR ? "Stator" : "Project-GC";
