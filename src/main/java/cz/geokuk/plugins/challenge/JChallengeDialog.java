@@ -19,8 +19,19 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final DefaultListModel<Challenge> seznamModel = new DefaultListModel<>();
 	private final JList<Challenge> seznam = new JList<>(seznamModel);
 	private final JCheckBox aktivni = new JCheckBox("Aktivní challenge");
-	/** Šířka seznamu, aby se v něm vešel název šablony i s příponami „(aktivní) (šablona)“. */
-	static final int SIRKA_SEZNAMU = 510;
+	/** Šířka formuláře vpravo od seznamu. */
+	private static final int SIRKA_FORMULARE = 470;
+
+	private int sirkaSeznamu;
+
+	/** Šířka seznamu podle písma, aby se v něm vešel název každé šablony i s příponami „(aktivní) (šablona)“; nejvýš 700 px. */
+	static int sirkaSeznamu(final java.awt.FontMetrics fm) {
+		int nejvic = 0;
+		for (final Challenge c : Sablony.vse()) {
+			nejvic = Math.max(nejvic, fm.stringWidth(c.nazev() + "  (aktivní)  (šablona)"));
+		}
+		return Math.max(290, Math.min(700, nejvic + 40));
+	}
 
 	final JLabel typ = new JLabel();
 	private final JButton kopie = new JButton("Vytvořit kopii…");
@@ -51,7 +62,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	public JChallengeDialog() {
 		setTitle("Nastavení plánovače challenge");
 		init();
-		nastavVelikost(new Dimension(980, 500), new Dimension(840, 440));
+		nastavVelikost(new Dimension(sirkaSeznamu + SIRKA_FORMULARE, 500), new Dimension(840, 440));
 	}
 
 	@Override
@@ -84,7 +95,8 @@ public class JChallengeDialog extends JMyDialog0 {
 			}
 		});
 		final JScrollPane levy = new JScrollPane(seznam);
-		levy.setPreferredSize(new Dimension(SIRKA_SEZNAMU, 300));
+		sirkaSeznamu = sirkaSeznamu(seznam.getFontMetrics(seznam.getFont()));
+		levy.setPreferredSize(new Dimension(sirkaSeznamu, 300));
 		final JPanel levyPanel = new JPanel(new BorderLayout(4, 4));
 		levyPanel.add(levy, BorderLayout.CENTER);
 		final JPanel levaTlacitka = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));

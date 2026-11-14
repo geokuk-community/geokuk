@@ -493,10 +493,11 @@ public class JChallengeDialogTest {
 		naEdt(() -> {
 			final JList<Challenge> s = seznam();
 			final java.awt.FontMetrics fm = s.getFontMetrics(s.getFont());
-			final int volno = JChallengeDialog.SIRKA_SEZNAMU - 40;
+			final int sirka = ((javax.swing.JScrollPane) javax.swing.SwingUtilities.getAncestorOfClass(javax.swing.JScrollPane.class, s)).getPreferredSize().width;
+			Assert.assertEquals("šířka seznamu odpovídá písmu", JChallengeDialog.sirkaSeznamu(fm), sirka);
 			for (final Challenge c : Sablony.vse()) {
 				final int potreba = fm.stringWidth(c.nazev() + "  (aktivní)  (šablona)");
-				Assert.assertTrue(c.nazev() + ": " + potreba + " > " + volno, potreba <= volno);
+				Assert.assertTrue(c.nazev() + ": " + potreba + " > " + sirka, potreba <= sirka - 40 || sirka == 700);
 			}
 		});
 	}
