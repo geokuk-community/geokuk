@@ -19,13 +19,14 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final DefaultListModel<Challenge> seznamModel = new DefaultListModel<>();
 	private final JList<Challenge> seznam = new JList<>(seznamModel);
 	private final JCheckBox aktivni = new JCheckBox("Aktivní challenge");
+	final JLabel typ = new JLabel();
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	/** U šablony nad formulářem: proč nejde upravit a tlačítko kopie hned u toho. */
 	final JPanel radaSablony = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 	private final JButton kopieSablony = new JButton("Vytvořit kopii…");
 	private final JButton smazat = new JButton("Smazat");
 	private final JTextField nazev = new JTextField(24);
-	private final JComboBox<String> pravidla = new JComboBox<>(new String[] { "Project-GC (koule)", "Stator (elipsoid)" });
+	private final JComboBox<String> pravidla = new JComboBox<>(new String[] { "Project-GC", "Stator" });
 	private final JRadioButton stredDomov = new JRadioButton("Domov");
 	private final JRadioButton stredSouradnice = new JRadioButton("Souřadnice");
 	private final JRadioButton stredListing = new JRadioButton("Keš (kód)");
@@ -100,8 +101,9 @@ public class JChallengeDialog extends JMyDialog0 {
 		radaSablony.add(kopieSablony);
 		radek(f, r++, radaSablony, null);
 		radek(f, r++, new JLabel("Název"), nazev);
+		radek(f, r++, new JLabel("Typ"), typ);
 		final JLabel popisekPravidel = new JLabel("Pravidla");
-		pravidla.setToolTipText("<html>Project-GC: koule, bez Lab a Locationless, jen nálezy s logem na gc.com.<br>Stator: elipsoid WGS84, včetně Lab, bez Locationless.</html>");
+		pravidla.setToolTipText("<html>Project-GC: bez Lab a Locationless, jen nálezy zalogované na geocaching.com.<br>Stator: přesnější výpočet, včetně Lab keší, bez Locationless.</html>");
 		final JLabel popisekStredu = new JLabel("Střed");
 		final JPanel stredSouradnicePanel = panel(stredSouradnice, souradnice);
 		souradnice.setToolTipText("Např. " + FormularDefinice.UKAZKA_SOURADNIC);
@@ -116,6 +118,7 @@ public class JChallengeDialog extends JMyDialog0 {
 		radek(f, r++, null, stredListingPanel);
 		radek(f, r++, popisekOblasti, oblast);
 		poleSektoru.addAll(java.util.Arrays.asList(popisekPravidel, pravidla, popisekStredu, stredDomov, stredSouradnicePanel, ukazkaSouradnic, stredListingPanel, popisekOblasti, oblast));
+		nalezy.setToolTipText("<html>Ze zapnutých zdrojů: jen nálezy ze zdrojů zapnutých ve stavovém řádku.<br>Ze všech zdrojů: i z vypnutých.</html>");
 		radek(f, r++, new JLabel("Nálezy"), nalezy);
 		final JLabel popisekOpakovani = new JLabel("Kolikrát splnit");
 		final JPanel opakovaniPanel = panel(opakovani, popisOpakovani);
@@ -233,6 +236,7 @@ public class JChallengeDialog extends JMyDialog0 {
 			popisOpakovani.setText(jeSablona(c) ? "šablona: " + c.opakovani() + "×" : "každé políčko 1–" + Challenge.NEJVETSI_OPAKOVANI + "×");
 			aktivni.setSelected(model != null && model.jeAktivni(c));
 			nazev.setText(c.nazev());
+			typ.setText(FormularDefinice.nazevTypu(c.typ()));
 			pravidla.setSelectedIndex(c.zdroj() == ZdrojPravidel.PGC ? 0 : 1);
 			stredDomov.setSelected(c.stred().druh() == DruhStredu.DOMOV);
 			stredSouradnice.setSelected(c.stred().druh() == DruhStredu.SOURADNICE);

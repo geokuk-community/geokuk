@@ -24,7 +24,7 @@ public class TadyJsemDomaAction extends Action0 {
 	private RefbodyModel refbodyModel;
 
 	public TadyJsemDomaAction() {
-		super("Jsem doma...");
+		super("Jsem doma…");
 		putValue(SHORT_DESCRIPTION,
 		        "Nastaví aktuální pozici jako domácí souřadnice." + " Na takto uložená nastavení se dostanete volbou \"Přesunout domů\", od těchto souřadnic se počítá vzdálenost a pozice keší.");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_D);
@@ -42,11 +42,16 @@ public class TadyJsemDomaAction extends Action0 {
 		boolean zapsat = true;
 		if (!VyrezModel.DEFAULTNI_DOMACI_SOURADNICE.equals(stareGc)) {
 			// ještě neukládal, tak se nemusíme ptát
-			zapsat = Dlg.anone("Uložit " + hc + " jako domácí souřadnice a přepsat tak původní " + stareGc + "?");
+			zapsat = Dlg.anone(textDotazu(hc, stareGc));
 		}
 		if (zapsat) {
 			refbodyModel.setHc(hc);
 		}
+	}
+
+	/** Dotaz před přepsáním domova: „Nastavit domov na N50°… E14°…? Dosavadní domov: N49°… E15°…“. */
+	static String textDotazu(final Wgs nove, final Wgs dosavadni) {
+		return "Nastavit domov na " + nove + "? Dosavadní domov: " + dosavadni;
 	}
 
 	public void inject(final RefbodyModel refbodyModel) {
