@@ -51,7 +51,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	public JChallengeDialog() {
 		setTitle("Nastavení plánovače challenge");
 		init();
-		nastavVelikost(new Dimension(980, 420), new Dimension(840, 380));
+		nastavVelikost(new Dimension(980, 500), new Dimension(840, 440));
 	}
 
 	@Override
@@ -99,12 +99,16 @@ public class JChallengeDialog extends JMyDialog0 {
 		skupina.add(stredListing);
 		final JPanel f = new JPanel(new GridBagLayout());
 		int r = 0;
-		radek(f, r++, aktivni, null);
+		final JPanel radekAktivni = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		radekAktivni.add(aktivni);
+		radekAktivni.add(javax.swing.Box.createHorizontalStrut(16));
+		radekAktivni.add(new JLabel("Typ:"));
+		radekAktivni.add(typ);
+		radek(f, r++, radekAktivni, null);
 		radaSablony.add(new JLabel("Šablonu nelze upravit; vytvořte kopii."));
 		radaSablony.add(kopieSablony);
 		radek(f, r++, radaSablony, null);
 		radek(f, r++, new JLabel("Název"), nazev);
-		radek(f, r++, new JLabel("Typ"), typ);
 		final JLabel popisekPravidel = new JLabel("Pravidla");
 		pravidla.setToolTipText("<html>Project-GC: bez Lab a Locationless, jen nálezy zalogované na geocaching.com.<br>Stator: přesnější výpočet, včetně Lab keší, bez Locationless.</html>");
 		final JLabel popisekStredu = new JLabel("Střed");
@@ -131,7 +135,10 @@ public class JChallengeDialog extends JMyDialog0 {
 		radek(f, r++, null, uloz);
 		final JPanel pravyObal = new JPanel(new BorderLayout());
 		pravyObal.add(f, BorderLayout.NORTH);
-		obsah.add(pravyObal, BorderLayout.CENTER);
+		final JScrollPane pravy = new JScrollPane(pravyObal, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		pravy.setBorder(BorderFactory.createEmptyBorder());
+		pravy.getVerticalScrollBar().setUnitIncrement(16);
+		obsah.add(pravy, BorderLayout.CENTER);
 
 		aktivni.addActionListener(e -> prepniAktivni());
 		kopie.addActionListener(e -> vytvorKopii());
