@@ -487,18 +487,10 @@ public class JChallengeDialogTest {
 		});
 	}
 
-	/** Volba Nálezy má tooltip a formulář ukazuje typ vybrané challenge. */
+	/** Formulář ukazuje typ vybrané challenge. */
 	@Test
-	public void formularMaTypANapoveduKNalezum() throws Exception {
+	public void formularUkazujeTyp() throws Exception {
 		naEdt(() -> {
-			javax.swing.JComboBox<?> nalezy = null;
-			for (final Component k : vsechnyKomponenty(dialog.getContentPane(), new ArrayList<Component>())) {
-				if (k instanceof javax.swing.JComboBox && "Ze zapnutých zdrojů".equals(((javax.swing.JComboBox<?>) k).getItemAt(0))) {
-					nalezy = (javax.swing.JComboBox<?>) k;
-				}
-			}
-			Assert.assertNotNull(nalezy);
-			Assert.assertTrue(nalezy.getToolTipText(), nalezy.getToolTipText().contains("zapnutých ve stavovém řádku"));
 			Assert.assertEquals("360°", dialog.typ.getText());
 		});
 	}

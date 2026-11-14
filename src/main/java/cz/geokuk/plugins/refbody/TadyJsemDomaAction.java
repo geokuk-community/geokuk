@@ -26,7 +26,7 @@ public class TadyJsemDomaAction extends Action0 {
 	public TadyJsemDomaAction() {
 		super("Jsem doma…");
 		putValue(SHORT_DESCRIPTION,
-		        "Nastaví aktuální pozici jako domácí souřadnice." + " Na takto uložená nastavení se dostanete volbou \"Přesunout domů\", od těchto souřadnic se počítá vzdálenost a pozice keší.");
+		        "Nastaví aktuální pozici jako domov. Na uložený domov se dostanete volbou \"Přesunout domů\", od něj se počítá vzdálenost a pozice keší.");
 		// putValue(MNEMONIC_KEY, KeyEvent.VK_D);
 
 	}

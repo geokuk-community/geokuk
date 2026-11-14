@@ -9,7 +9,9 @@ public class TadyJsemDomaActionTest {
 
 	@Test
 	public void akceMaNazevSVypustkou() {
-		Assert.assertEquals("Jsem doma…", new TadyJsemDomaAction().getValue(javax.swing.Action.NAME));
+		final TadyJsemDomaAction akce = new TadyJsemDomaAction();
+		Assert.assertEquals("Jsem doma…", akce.getValue(javax.swing.Action.NAME));
+		Assert.assertTrue(String.valueOf(akce.getValue(javax.swing.Action.SHORT_DESCRIPTION)), String.valueOf(akce.getValue(javax.swing.Action.SHORT_DESCRIPTION)).startsWith("Nastaví aktuální pozici jako domov."));
 	}
 
 	@Test

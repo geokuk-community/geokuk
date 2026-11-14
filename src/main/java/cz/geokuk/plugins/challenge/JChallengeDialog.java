@@ -118,7 +118,6 @@ public class JChallengeDialog extends JMyDialog0 {
 		radek(f, r++, null, stredListingPanel);
 		radek(f, r++, popisekOblasti, oblast);
 		poleSektoru.addAll(java.util.Arrays.asList(popisekPravidel, pravidla, popisekStredu, stredDomov, stredSouradnicePanel, ukazkaSouradnic, stredListingPanel, popisekOblasti, oblast));
-		nalezy.setToolTipText("<html>Ze zapnutých zdrojů: jen nálezy ze zdrojů zapnutých ve stavovém řádku.<br>Ze všech zdrojů: i z vypnutých.</html>");
 		radek(f, r++, new JLabel("Nálezy"), nalezy);
 		final JLabel popisekOpakovani = new JLabel("Kolikrát splnit");
 		final JPanel opakovaniPanel = panel(opakovani, popisOpakovani);
