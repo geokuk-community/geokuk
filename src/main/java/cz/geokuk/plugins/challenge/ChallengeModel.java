@@ -252,6 +252,22 @@ public class ChallengeModel extends Model0 {
 		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
 	}
 
+	private volatile int vyberVeVyrezu = -1;
+
+	/** Kolik kandidátů vybraného sektoru nebo políčka leží ve výřezu mapy; -1 bez výběru. Z EDT po kreslení, ohlásí se jen změna. */
+	public void nahlasVyberVeVyrezu(final int kandidatu) {
+		if (vyberVeVyrezu == kandidatu) {
+			return;
+		}
+		vyberVeVyrezu = kandidatu;
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	/** Kolik kandidátů vybraného sektoru nebo políčka bylo při posledním kreslení ve výřezu, nebo -1, když nic není vybráno. */
+	public int vyberVeVyrezu() {
+		return vyberVeVyrezu;
+	}
+
 	/** Kolik štítků kandidátů je na mapě, nebo -1, když se ještě nekreslilo. */
 	public int stitkuNaMape() {
 		return stitkuNaMape;

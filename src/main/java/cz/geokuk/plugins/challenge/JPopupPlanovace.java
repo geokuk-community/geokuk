@@ -251,6 +251,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.omezeniStitku.setVisible(!obsah.omezeniStitku.getText().trim().isEmpty());
 		if (c != null && model != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
+			obsah.vyberMimoVyrez = model.vyberVeVyrezu() == 0;
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
 				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
 			} else {
@@ -320,6 +321,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		private transient Supplier<Wgs> domov = () -> null;
 		final JLabel souhrn = new JLabel();
 		final JLabel nadpisSeznamu = new JLabel(TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
+		/** Vybraný sektor nebo políčko nemá na mapě žádného kandidáta ve výřezu. */
+		boolean vyberMimoVyrez;
+		final JLabel mimoVyrez = new JLabel(TextyPopupuPlanovace.MIMO_VYREZ);
 		final JProgressBar postup = new JProgressBar(0, 360);
 		final DefaultListModel<String> radky = new DefaultListModel<>();
 		final JList<String> seznam = new JList<>(radky);
@@ -425,6 +429,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			g.gridy++;
 			telo.add(nadpisSeznamu, g);
+			g.gridy++;
+			telo.add(mimoVyrez, g);
 			g.gridy++;
 			g.fill = GridBagConstraints.BOTH;
 			g.weighty = 1;
@@ -604,6 +610,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			postup.setVisible(true);
 			nadpisSeznamu.setVisible(true);
+			mimoVyrez.setVisible(false);
 			kandidati.setSelected(jenKandidati);
 			radky.clear();
 			polozky.clear();
@@ -652,7 +659,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				if (s == vybranySektor) {
 					vybrany = radky.size();
 				}
-				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, k));
+				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, k) + (s == vybranySektor && vyberMimoVyrez ? "  " + TextyPopupuPlanovace.MIMO_VYREZ : ""));
 				polozky.add(s);
 			}
 			vyberRadek(vybrany);
@@ -679,6 +686,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 						vybranePolicko != null && p.jePlne(vybranePolicko), jenKandidati, vybranePolicko == null ? 0 : p.pocetNalezu(vybranePolicko), p.cil()));
 				legenda.setText(p.cil() > 1 ? TextyPopupuPlanovace.legendaMatice(p.cil()) : TextyPopupuPlanovace.LEGENDA_MATICE);
 				vsechnaPolicka.setVisible(vybranePolicko != null);
+				mimoVyrez.setVisible(vybranePolicko != null && vyberMimoVyrez);
 				dalsi.setEnabled(p.pocetKandidatuPoPolickach().values().stream().anyMatch(n -> n > 0));
 				return;
 			}
