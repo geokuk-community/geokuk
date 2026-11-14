@@ -249,7 +249,7 @@ public class JPlanovacVrstvyTest {
 		final java.awt.Point s = c.transform(new Wgs(50.0, 14.0).toMou());
 		final double r = Math.hypot(bod.x - s.x, bod.y - s.y);
 		Assert.assertEquals("bod leží na kružnici", polomerKruzniceVPixelech(nakresli(pod, c), c), r, 120);
-		Assert.assertEquals("3,0 km", TextyKresleni.vzdalenost(t.polomerKruznice));
+		Assert.assertEquals("3,0 km", StitkyPruhu.vzdalenost(t.polomerKruznice));
 		final BufferedImage img = nakresli(nad, c);
 		boolean text = false;
 		for (int dy = -12; dy <= 12 && !text; dy++) {

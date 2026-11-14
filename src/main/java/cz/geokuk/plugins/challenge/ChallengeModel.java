@@ -758,7 +758,7 @@ public class ChallengeModel extends Model0 {
 	/** Zapne filtr „jen kandidáti“ pro aktivní challenge, nebo ho vypne (null). Filtr je jen jeden najednou a neukládá se. */
 	public void setJenKandidatiPro(final Challenge c) {
 		if (c != null && !seznam.jeAktivni(c.nazev())) {
-			throw new ChallengeChyba("Filtr „jen kandidáti“ jde zapnout jen pro aktivní challenge.");
+			throw new ChallengeChyba("Filtr „Jen kandidáti“ jde zapnout jen pro aktivní challenge.");
 		}
 		final String nove = c == null ? null : klic(c);
 		if ((nove == null && jenKandidatiPro == null) || (nove != null && nove.equals(jenKandidatiPro))) {

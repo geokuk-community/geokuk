@@ -326,7 +326,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JLabel bezKandidatu = new JLabel(" ");
 		final JMaticeDT matice = new JMaticeDT();
 		final JLabel legenda = new JLabel(TextyPopupuPlanovace.LEGENDA_MATICE);
-		final JButton vsechnaPolicka = new JButton("✕ Všechna políčka");
+		final JButton vsechnaPolicka = new JButton("✕ Zrušit výběr políčka");
 		final JScrollPane posuvnik = new JScrollPane(seznam);
 		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
@@ -338,7 +338,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		private int podMysi = -1;
 		private boolean nastavujeSe;
 		private transient java.util.function.Consumer<Object> naKlikRadku = p -> {};
-		final JToggleButton kandidati = new JToggleButton("Zobrazit jen kandidáty  F4");
+		final JToggleButton kandidati = new JToggleButton("Jen kandidáti  F4");
 
 		/** Vlastní obsah; když se popup nevejde na výšku, posouvá se celý a žádná část nezmizí. */
 		private final Telo telo = new Telo();

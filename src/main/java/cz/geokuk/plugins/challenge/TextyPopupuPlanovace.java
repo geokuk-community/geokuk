@@ -30,18 +30,10 @@ final class TextyPopupuPlanovace {
 		return n + " " + tvar(n, "kandidát", "kandidáti", "kandidátů");
 	}
 
-	/** Vzdálenost na desetiny kilometru, pod kilometr v metrech. */
-	static String vzdalenost(final double metru) {
-		if (metru < 1000) {
-			return Math.round(metru) + " m";
-		}
-		return String.format(Locale.forLanguageTag("cs"), "%.1f km", metru / 1000);
-	}
-
 	/** „213°  5 kandidátů  nejbližší 2,8 km od středu“; bez kandidátů s pomlčkou místo vzdálenosti. */
 	static String radekSektoru(final int sektor, final VysledekSektoru.Kandidati k) {
 		final int pocet = k == null ? 0 : k.pocet();
-		final String nejblizsi = pocet == 0 ? "–" : "nejbližší " + vzdalenost(k.nejblizsiVzdalenost()) + " od středu";
+		final String nejblizsi = pocet == 0 ? "–" : "nejbližší " + StitkyPruhu.vzdalenost(k.nejblizsiVzdalenost()) + " od středu";
 		return sektor + "°  " + kandidatu(pocet) + "  " + nejblizsi;
 	}
 
@@ -60,7 +52,7 @@ final class TextyPopupuPlanovace {
 
 	static String souhrn(final VysledekPolicek p) {
 		if (p.cil() > 1) {
-			return "Splněno " + p.splnenoNalezu() + " z " + p.celkemNalezu() + " nálezů (" + procenta(p) + "); chybí " + nalezu(p.chybiNalezu()) + " " + vPolickach(p.pocetChybejicich());
+			return "Splněno " + p.splnenoNalezu() + " z " + p.celkemNalezu() + " nálezů (" + procenta(p) + "), chybí " + nalezu(p.chybiNalezu()) + " " + vPolickach(p.pocetChybejicich());
 		}
 		return "Splněno " + (p.celkem() - p.pocetChybejicich()) + " z " + p.celkem() + " (" + procenta(p) + "), chybí " + p.pocetChybejicich();
 	}
@@ -72,11 +64,11 @@ final class TextyPopupuPlanovace {
 	static String nadpisSeznamu(final Challenge.Typ typ) {
 		switch (typ) {
 		case DT_MATICE:
-			return "Chybějící políčka D/T s kandidáty po řádcích (jako ◀ ▶):";
+			return "Chybějící políčka D/T s kandidáty (po řádcích, v pořadí ◀ ▶):";
 		case KALENDAR:
 			return "Chybějící dny:";
 		default:
-			return "Chybějící sektory s kandidáty od 0° (sever) po směru hodinek, jako ◀ ▶:";
+			return "Chybějící sektory s kandidáty (od severu po směru hodin, v pořadí ◀ ▶):";
 		}
 	}
 
@@ -97,9 +89,9 @@ final class TextyPopupuPlanovace {
 		case DOMOV:
 			return "domov";
 		case LISTING:
-			return "výchozí bod " + s.kodListingu();
+			return "keš " + s.kodListingu();
 		default:
-			return String.format(Locale.ROOT, "%.5f, %.5f", s.lat(), s.lon());
+			return FormularDefinice.formatSouradnic(s.lat(), s.lon());
 		}
 	}
 
@@ -167,7 +159,7 @@ final class TextyPopupuPlanovace {
 	/** Totéž s násobností: u cíle nad 1 i „1 z 3 nálezů“. */
 	static String vybranePolicko(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati, final int nalezu, final int cil) {
 		if (stitek == null) {
-			return "Obtížnost × terén – klik na políčko s kandidáty nechá na mapě jen je:";
+			return "Obtížnost × terén – klikněte na políčko s číslem a na mapě zůstanou jen jeho kandidáti:";
 		}
 		final String pocet = plne ? kandidatu + "+ kandidátů" : kandidatu(kandidatu);
 		final String nalezy = cil > 1 ? Math.min(nalezu, cil) + " z " + cil + " nálezů, " : "";
@@ -185,9 +177,9 @@ final class TextyPopupuPlanovace {
 	/** Nápověda pod seznamem chybějících. */
 	static String napovedaSeznamu(final Challenge.Typ typ) {
 		if (typ == Challenge.Typ.DT_MATICE) {
-			return "Políčko: na mapě jen jeho kandidáti · ◀ ▶ předchozí / další políčko · Shift+šipky: další keš ve směru";
+			return "Políčko: na mapě jen jeho kandidáti · ◀ ▶ předchozí / další políčko · Shift+šipka: nejbližší kandidát tím směrem";
 		}
-		return "Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Shift+šipky: keš ve směru a její sektor";
+		return "Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Shift+šipka: nejbližší kandidát tím směrem";
 	}
 
 	/** Tooltip řádku seznamu: klik vybere, druhý klik na vybraný výběr zruší. */

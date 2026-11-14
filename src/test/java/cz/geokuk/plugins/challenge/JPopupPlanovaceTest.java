@@ -452,7 +452,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.vsechnaPolicka.isVisible());
 		o.vsechnaPolicka.doClick();
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertNull("✕ Všechna políčka zruší výběr", model.vybranePolicko(c));
+		Assert.assertNull("✕ Zrušit výběr políčka zruší výběr", model.vybranePolicko(c));
 		Assert.assertNull(o.matice.vybrane());
 		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Collections.emptyList(), java.util.Collections.emptyList()));
 		SwingUtilities.invokeAndWait(() -> {});
@@ -490,7 +490,7 @@ public class JPopupPlanovaceTest {
 		final JPopupPlanovace.Obsah o = popup.obsah;
 		model.nastavVysledekPolicek(c, nasobny());
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("Splněno 4 z 243 nálezů (2 %); chybí 239 nálezů v 80 políčkách", o.souhrn.getText());
+		Assert.assertEquals("Splněno 4 z 243 nálezů (2 %), chybí 239 nálezů v 80 políčkách", o.souhrn.getText());
 		Assert.assertEquals(243, o.postup.getMaximum());
 		Assert.assertEquals(4, o.postup.getValue());
 		Assert.assertEquals(TextyPopupuPlanovace.legendaMatice(3), o.legenda.getText());
@@ -709,7 +709,7 @@ public class JPopupPlanovaceTest {
 	public void odkazNaDomovJenUStreduDomov() throws Exception {
 		priprav();
 		popup.prepni();
-		Assert.assertEquals("Střed: výchozí bod GC4PCQB", popup.obsah.stred.getText());
+		Assert.assertEquals("Střed: keš GC4PCQB", popup.obsah.stred.getText());
 		Assert.assertFalse(popup.obsah.zmenitDomov.isVisible());
 	}
 
