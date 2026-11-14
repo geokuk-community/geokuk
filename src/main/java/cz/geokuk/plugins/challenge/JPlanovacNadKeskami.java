@@ -192,6 +192,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 				kresliStitekVybraneKese(g, c, t, tucne, vyber);
 			}
 			nahlasPocty();
+			nahlasVyberVeVyrezu(c, t);
 		} finally {
 			g.dispose();
 		}
@@ -607,6 +608,52 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		hlasenoZobrazeno = zobrazeno;
 		hlasenoVeVyrezu = veVyrezu;
 		SwingUtilities.invokeLater(() -> model.nahlasStitkyNaMape(zobrazeno, veVyrezu));
+	}
+
+	private transient TvarPlanovace vyberTvar;
+	private transient Coord vyberCoord;
+	private int vyberSektor = -1;
+	private String vyberPolicko;
+	private int vyberPocet = -1;
+	private int hlasenoVyber = -1;
+
+	/** Po kreslení oznámí modelu, kolik kandidátů vybraného sektoru nebo políčka je ve výřezu; přepočítá se jen při změně výběru nebo mapy. */
+	private void nahlasVyberVeVyrezu(final Coord c, final TvarPlanovace t) {
+		if (model == null) {
+			return;
+		}
+		final Challenge ch = t.prehled.challenge();
+		final int sektor = t.stitkyPolicek == null ? model.vybranySektor(ch) : -1;
+		final String policko = t.stitkyPolicek == null ? null : model.vybranePolicko(ch);
+		if (vyberTvar != t || vyberCoord == null || !vyberCoord.equals(c) || vyberSektor != sektor || !java.util.Objects.equals(vyberPolicko, policko)) {
+			vyberTvar = t;
+			vyberCoord = c;
+			vyberSektor = sektor;
+			vyberPolicko = policko;
+			vyberPocet = sektor < 0 && policko == null ? -1 : kandidatuVeVyrezu(c, t, sektor, policko);
+		}
+		final int pocet = vyberPocet;
+		if (pocet != hlasenoVyber) {
+			hlasenoVyber = pocet;
+			SwingUtilities.invokeLater(() -> model.nahlasVyberVeVyrezu(pocet));
+		}
+	}
+
+	/** Kolik kandidátů daného sektoru (u 360°) nebo políčka (u D/T) leží v okně mapy. */
+	private static int kandidatuVeVyrezu(final Coord c, final TvarPlanovace t, final int sektor, final String policko) {
+		final String textSektoru = sektor + "°";
+		final Point p = new Point();
+		int n = 0;
+		for (int i = 0; i < t.pozice.length; i++) {
+			if (policko != null ? !policko.equals(t.stitkyPolicek[i]) : !textSektoru.equals(t.texty[i])) {
+				continue;
+			}
+			PixelyMapy.transform(c, t.pozice[i], p);
+			if (p.x >= 0 && p.y >= 0 && p.x <= c.getWidth() && p.y <= c.getHeight()) {
+				n++;
+			}
+		}
+		return n;
 	}
 
 	private Dimension rozmerStitku(final Graphics2D g, final Font f, final String text) {

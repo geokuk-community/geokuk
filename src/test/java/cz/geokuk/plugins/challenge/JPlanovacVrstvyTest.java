@@ -400,6 +400,29 @@ public class JPlanovacVrstvyTest {
 		Assert.assertEquals("právě jeden popisek středu vpravo od značky", 1, popisky);
 	}
 
+	/** Po vybrání sektoru vrstva po kreslení oznámí, zda má jeho kandidát místo ve výřezu; nezávisle na štítcích. */
+	@Test
+	public void vyberMimoVyrezSeOhlasiPoKresleni() throws Exception {
+		final VysledekSektoru.Kandidati[] k = new VysledekSektoru.Kandidati[360];
+		k[150] = new VysledekSektoru.Kandidati(150);
+		k[150].pridej("GC1", 1200);
+		final List<VysledekSektoru.KandidatKes> kandidati = new ArrayList<>();
+		kandidati.add(new VysledekSektoru.KandidatKes("GC1", 50.01, 14.0, 150, 1200, false));
+		zobraz(new VysledekSektoru(new BitSet(360), new BitSet(360), k, 0, kandidati), 50.0, 14.0);
+		model.setKresliStitky(false);
+		nakresli(nad, mapaSKandidaty());
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("bez výběru", -1, model.vyberVeVyrezu());
+		model.setVybranySektor(model.aktivni().get(0), 150);
+		SwingUtilities.invokeAndWait(() -> {});
+		nakresli(nad, mapaSKandidaty());
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("kandidát je ve výřezu", 1, model.vyberVeVyrezu());
+		nakresli(nad, mapa(10.0, 14.0, 14));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("kandidát je daleko od výřezu", 0, model.vyberVeVyrezu());
+	}
+
 	@Test
 	public void bezPrepinaceStitkuSeKandidatiNekresli() throws Exception {
 		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);

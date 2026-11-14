@@ -88,6 +88,9 @@ final class TextyPopupuPlanovace {
 		return String.format(Locale.ROOT, "Štítky na mapě: %d nejbližších z %,d", TvarPlanovace.NEJVIC_ZNACEK, veVyrezu).replace(',', '\u00a0');
 	}
 
+	/** Dovětek u vybraného sektoru nebo políčka, když na mapě není žádný jeho kandidát. */
+	static final String MIMO_VYREZ = "mimo výřez – ▶ ukáže";
+
 	static String pravidla(final Challenge.ZdrojPravidel z) {
 		return z == Challenge.ZdrojPravidel.STATOR ? "Stator" : "Project-GC";
 	}
