@@ -19,6 +19,20 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final DefaultListModel<Challenge> seznamModel = new DefaultListModel<>();
 	private final JList<Challenge> seznam = new JList<>(seznamModel);
 	private final JCheckBox aktivni = new JCheckBox("Aktivní challenge");
+	/** Šířka formuláře vpravo od seznamu. */
+	private static final int SIRKA_FORMULARE = 470;
+
+	private int sirkaSeznamu;
+
+	/** Šířka seznamu podle písma, aby se v něm vešel název každé šablony i s příponami „(aktivní) (šablona)“; nejvýš 700 px. */
+	static int sirkaSeznamu(final java.awt.FontMetrics fm) {
+		int nejvic = 0;
+		for (final Challenge c : Sablony.vse()) {
+			nejvic = Math.max(nejvic, fm.stringWidth(c.nazev() + "  (aktivní)  (šablona)"));
+		}
+		return Math.max(290, Math.min(700, nejvic + 40));
+	}
+
 	final JLabel typ = new JLabel();
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	/** U šablony nad formulářem: proč nejde upravit a tlačítko kopie hned u toho. */
@@ -48,7 +62,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	public JChallengeDialog() {
 		setTitle("Nastavení plánovače challenge");
 		init();
-		nastavVelikost(new Dimension(760, 420), new Dimension(640, 380));
+		nastavVelikost(new Dimension(sirkaSeznamu + SIRKA_FORMULARE, 500), new Dimension(840, 440));
 	}
 
 	@Override
@@ -81,7 +95,8 @@ public class JChallengeDialog extends JMyDialog0 {
 			}
 		});
 		final JScrollPane levy = new JScrollPane(seznam);
-		levy.setPreferredSize(new Dimension(290, 300));
+		sirkaSeznamu = sirkaSeznamu(seznam.getFontMetrics(seznam.getFont()));
+		levy.setPreferredSize(new Dimension(sirkaSeznamu, 300));
 		final JPanel levyPanel = new JPanel(new BorderLayout(4, 4));
 		levyPanel.add(levy, BorderLayout.CENTER);
 		final JPanel levaTlacitka = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
@@ -96,12 +111,16 @@ public class JChallengeDialog extends JMyDialog0 {
 		skupina.add(stredListing);
 		final JPanel f = new JPanel(new GridBagLayout());
 		int r = 0;
-		radek(f, r++, aktivni, null);
+		final JPanel radekAktivni = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		radekAktivni.add(aktivni);
+		radekAktivni.add(javax.swing.Box.createHorizontalStrut(16));
+		radekAktivni.add(new JLabel("Typ:"));
+		radekAktivni.add(typ);
+		radek(f, r++, radekAktivni, null);
 		radaSablony.add(new JLabel("Šablonu nelze upravit; vytvořte kopii."));
 		radaSablony.add(kopieSablony);
 		radek(f, r++, radaSablony, null);
 		radek(f, r++, new JLabel("Název"), nazev);
-		radek(f, r++, new JLabel("Typ"), typ);
 		final JLabel popisekPravidel = new JLabel("Pravidla");
 		pravidla.setToolTipText("<html>Project-GC: bez Lab a Locationless, jen nálezy zalogované na geocaching.com.<br>Stator: přesnější výpočet, včetně Lab keší, bez Locationless.</html>");
 		final JLabel popisekStredu = new JLabel("Střed");
@@ -128,7 +147,10 @@ public class JChallengeDialog extends JMyDialog0 {
 		radek(f, r++, null, uloz);
 		final JPanel pravyObal = new JPanel(new BorderLayout());
 		pravyObal.add(f, BorderLayout.NORTH);
-		obsah.add(pravyObal, BorderLayout.CENTER);
+		final JScrollPane pravy = new JScrollPane(pravyObal, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		pravy.setBorder(BorderFactory.createEmptyBorder());
+		pravy.getVerticalScrollBar().setUnitIncrement(16);
+		obsah.add(pravy, BorderLayout.CENTER);
 
 		aktivni.addActionListener(e -> prepniAktivni());
 		kopie.addActionListener(e -> vytvorKopii());

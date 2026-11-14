@@ -223,6 +223,9 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	/** Stupeň úspor, který je právě použitý: 0 plný řádek, 1 zdroje bez názvů, 2 „Od:“ a bez počtů ve výřezu, 3 navíc bez celkových počtů a bez rezervy pro varování. */
 	private int stupenUspor;
 
+	/** Šířka rodiče při posledním rozložení řádku. */
+	private int sirkaRodicePriRozlozeni = -1;
+
 	/**
 	 * Nevejde-li se řádek do jednoho řádku, ubírá se postupně a jen podle šířky okna, nikdy podle dat, takže se při načtení dat nic nepohne: zdroje se zúží na zaškrtávátka, „Od pozice:“
 	 * se zkrátí a zmizí počty ve výřezu, nakonec zmizí celkové počty a místo pro varování o překročení limitu se rezervuje jen zobrazenému varování. Zalomení zůstává pro opravdu
@@ -236,8 +239,27 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 			if (nastavStupen(vyberStupen(dostupna))) {
 				SwingUtilities.invokeLater(this::revalidate);
 			}
+			sirkaRodicePriRozlozeni = getParent() != null ? getParent().getWidth() : 0;
 		}
 		super.doLayout();
+	}
+
+	/**
+	 * Stupeň úspor se vybere už podle šířky, kterou řádku dá rodič, aby rodič přidělil výšku podle skutečné podoby. Dokud se šířka rodiče od posledního rozložení řádku nezmění, platí stupeň
+	 * z rozložení.
+	 */
+	@Override
+	public Dimension getPreferredSize() {
+		final Container rodic = getParent();
+		if (!isPreferredSizeSet() && rodic != null && rodic.getWidth() > 0 && rodic.getWidth() != sirkaRodicePriRozlozeni) {
+			final Insets insRodice = rodic.getInsets();
+			final Insets ins = getInsets();
+			final int dostupna = rodic.getWidth() - insRodice.left - insRodice.right - ins.left - ins.right;
+			if (dostupna > 0) {
+				nastavStupen(vyberStupen(dostupna));
+			}
+		}
+		return super.getPreferredSize();
 	}
 
 	/** Šířky řádku na jednotlivých stupních úspor; počítají se z plné podoby, takže na právě použitém stupni nezávisí. */

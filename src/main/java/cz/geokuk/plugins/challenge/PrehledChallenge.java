@@ -90,7 +90,7 @@ public final class PrehledChallenge {
 		return stredLon;
 	}
 
-	/** Popis středu pro značku na mapě: „domov“, kód listingu, „zadané souřadnice“; u D/T a kalendáře „střed mapy“. */
+	/** Popis středu pro značku na mapě: „domov“, „keš GC…“, „zadané souřadnice“; u D/T a kalendáře „střed mapy“. */
 	public String stredPopis() {
 		if (challenge.typ() != Typ.SEKTORY_360) {
 			return "střed mapy";
@@ -99,7 +99,7 @@ public final class PrehledChallenge {
 		case DOMOV:
 			return "domov";
 		case LISTING:
-			return challenge.stred().kodListingu();
+			return "keš " + challenge.stred().kodListingu();
 		default:
 			return "zadané souřadnice";
 		}
