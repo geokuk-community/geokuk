@@ -292,7 +292,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		case KALENDAR:
 			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící den";
 		default:
-			return "Na mapě zůstanou jen kandidáti, kteří zaplní chybějící sektor";
+			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící sektor";
 		}
 	}
 
@@ -400,7 +400,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			model.setRadaZobrazena();
 		}
 		final boolean texty = stupen == Stupen.PLNY;
-		nastavText(kandidati, texty ? "jen kandidáti" : "");
+		nastavText(kandidati, texty ? "Jen kandidáti" : "");
 		nastavText(sektory, texty ? "Sektory" : "");
 		nastavText(stitky, texty ? "Štítky" : "");
 		nastavText(nastaveni, texty ? "Nastavení…" : "");
@@ -651,7 +651,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			m.add(prepinacVMenu("Štítky u kandidátů", model.isKresliStitky(), model::setKresliStitky));
 		}
 		m.addSeparator();
-		final JMenuItem kopie = new JMenuItem("Kopírovat vybranou…");
+		final JMenuItem kopie = new JMenuItem("Vytvořit kopii…");
 		kopie.setEnabled(zobrazena != null && model.jeSablona(zobrazena));
 		kopie.setToolTipText("Vlastní kopie vybrané šablony k úpravě v dialogu plánovače");
 		kopie.addActionListener(e -> kopiruj());
