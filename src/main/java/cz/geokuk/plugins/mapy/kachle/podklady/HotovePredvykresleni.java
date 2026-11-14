@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
+import cz.geokuk.util.file.BezpecnyZapis;
 
 /**
  * Klíče offline map, jejichž přehledové zoomy jsou předvykreslené v cache, a u každého vzorek jeho dlaždic (řádek {@code klíč z/x/y z/x/y …}). Soubor leží vedle
@@ -62,9 +62,7 @@ final class HotovePredvykresleni {
 			radky.add(radek.toString());
 		}
 		Files.createDirectories(slozka.toPath());
-		final Path docasny = slozka.toPath().resolve(SOUBOR + ".tmp");
-		Files.write(docasny, radky, StandardCharsets.UTF_8);
-		Files.move(docasny, slozka.toPath().resolve(SOUBOR), StandardCopyOption.REPLACE_EXISTING);
+		BezpecnyZapis.zapisText(new File(slozka, SOUBOR), StandardCharsets.UTF_8, out -> radky.forEach(out::println));
 	}
 
 	/** Neplatný řádek se přeskočí, nečitelný soubor je výjimka. */

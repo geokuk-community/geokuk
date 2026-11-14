@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cz.geokuk.util.file.BezpecnyZapis;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -25,6 +26,8 @@ final class UklidOfflineCache {
 	/** Typ dlaždice v cache: globální klíč a oblastní část, viz {@link OblastniKlic#klic}. */
 	static final Pattern TYP = Pattern.compile("([ot][0-9a-f]{8})\\.[0-9a-f]{8}");
 	private static final Pattern SYMBOLY = Pattern.compile("symboly-[0-9a-f]{8}\\.bin");
+
+	private static final Pattern DOCASNE_SYMBOLY = Pattern.compile(SYMBOLY.pattern() + "\\.[0-9]+\\.tmp");
 
 	private UklidOfflineCache() {}
 
@@ -130,10 +133,9 @@ final class UklidOfflineCache {
 				radky.add(z.klic + ' ' + z.symboly + ' ' + z.sestava + (z.identita == null ? "" : ' ' + z.identita));
 			}
 			Files.createDirectories(slozka.toPath());
-			final Path docasny = slozka.toPath().resolve(SOUBOR + ".tmp");
-			Files.write(docasny, radky, StandardCharsets.UTF_8);
-			Files.move(docasny, slozka.toPath().resolve(SOUBOR), StandardCopyOption.REPLACE_EXISTING);
+			BezpecnyZapis.zapisText(new File(slozka, SOUBOR), StandardCharsets.UTF_8, out -> radky.forEach(out::println));
 
+			BezpecnyZapis.uklidDocasne(slozka, DOCASNE_SYMBOLY);
 			final File[] soubory = slozka.listFiles(f -> SYMBOLY.matcher(f.getName()).matches() && zaznamy.stream().noneMatch(z -> z.symboly.equals(f.getName())));
 			if (soubory != null) {
 				for (final File f : soubory) {
