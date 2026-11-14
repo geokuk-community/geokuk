@@ -84,8 +84,8 @@
   jsou z projektu Osmic (CC0).
 - Vydání obsahuje GeoKuk-tema.zip: téma GeoKuk a GeoKuk – detail pro aplikace
   s mapami ve formátu mapsforge (například c:geo, aDrake).
-- Okno Licence uvádí, že témata vzhledu od třetích stran se řídí licencí svého
-  autora.
+- Okno Licence a použité knihovny uvádí, že témata vzhledu od třetích stran se
+  řídí licencí svého autora.
 - Po aktualizaci programu se offline mapy v cache jednou vykreslí znovu.
 - Správce offline map (menu Mapy nebo blok Mapy ve stavovém řádku) ukazuje
   stažené mapy, jejich obrysy v mapě a odkazy na weby s mapami.
