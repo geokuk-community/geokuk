@@ -379,7 +379,7 @@ public class JPlanovacVybranaKesTest {
 		Assert.assertNotNull("štítek vybrané keše je vodorovně na ikoně", nahore);
 		Assert.assertTrue("a celý nad ikonou, aby nepřekrýval popisek vpravo: " + nahore + " u " + p, nahore.y + nahore.height <= p.y - 8 + 1);
 		Assert.assertEquals("štítek vybrané keše má barvy tooltipu", AkcentPlanovace.pozadiStitku().getRGB(), img.getRGB(nahore.x + 3, nahore.y + 2));
-		Assert.assertEquals("Sektor 100° · 1 kandidát · 3,0 km", TextyKresleni.sektorVybrane(100, model.prehled()));
+		Assert.assertEquals("Sektor 100° · 1 kandidát · nejbližší 3,0 km od středu", TextyKresleni.sektorVybrane(100, model.prehled()));
 		Assert.assertEquals("sektor bez kandidátů", "Sektor 7°", TextyKresleni.sektorVybrane(7, model.prehled()));
 	}
 

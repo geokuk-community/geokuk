@@ -196,9 +196,9 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 				}
 			}
 
-			toast.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
-			popupPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
-			planovacNad.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
+			toast.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
+			popupPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
+			planovacNad.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
 			final java.util.concurrent.Executor stavbaPlanovace = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
 				final Thread vlakno = new Thread(r, "Podklad plánovače");
 				vlakno.setDaemon(true);
@@ -206,14 +206,15 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			});
 			planovacNad.setStavba(stavbaPlanovace);
 			planovacPod.setStavba(stavbaPlanovace);
-			pruhPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible()));
+			pruhPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
 
 			smrizema.add(pruhPlanovace, 0);
-			smrizema.add(popupPlanovace, 0);
 			smrizema.add(mysovani, smrizema.getComponentCount());
 
 			factory.init(smrizema);
 			srohama.add(smrizema);
+			// Popup plánovače leží nad panely v rozích (Detail keše, náhled, cesty), ne pod nimi.
+			srohama.add(popupPlanovace, ERoh.NAD, 0);
 		}
 
 		getContentPane().add(srohama);

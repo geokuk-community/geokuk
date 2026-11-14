@@ -78,8 +78,9 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("když se vedle odznaku nevejde, posune se doleva", 450 - RozmisteniPrekryvu.OKRAJ, stredni.x + stredni.width);
 		Assert.assertEquals(pozadovana.width, stredni.width);
 		Assert.assertEquals("v úzké mapě se zúží", 400 - 2 * RozmisteniPrekryvu.OKRAJ, JPopupPlanovace.poloha(new Dimension(400, 300), pozadovana, java.util.Collections.<Rectangle> emptyList()).width);
-		Assert.assertEquals("v nízké mapě se zkrátí nad měřítkem", RozmisteniPrekryvu.meritko(new Dimension(800, 300)).y - RozmisteniPrekryvu.OKRAJ - r.y,
+		Assert.assertEquals("v nízké mapě se zkrátí jen oknem mapy", 300 - RozmisteniPrekryvu.OKRAJ - r.y,
 				JPopupPlanovace.poloha(new Dimension(800, 300), pozadovana, java.util.Collections.<Rectangle> emptyList()).height);
+		Assert.assertEquals("měřítko dole popup nezkrátí", pozadovana.height, JPopupPlanovace.poloha(new Dimension(800, 500), pozadovana, java.util.Collections.<Rectangle> emptyList()).height);
 	}
 
 	@Test
@@ -220,6 +221,125 @@ public class JPopupPlanovaceTest {
 		popup.obsah.nastaveni.doClick();
 		Assert.assertEquals(1, volano[0]);
 		Assert.assertFalse(popup.jeOtevreno());
+	}
+
+	private static void rozloz(final Container c) {
+		for (int i = 0; i < 3; i++) {
+			layoutRekurzivne(c);
+		}
+	}
+
+	private static void layoutRekurzivne(final Container c) {
+		c.doLayout();
+		for (final Component k : c.getComponents()) {
+			if (k instanceof Container) {
+				layoutRekurzivne((Container) k);
+			}
+		}
+	}
+
+	/** Překážka (Detail keše, náhled) popup nezkrátí: má plnou velikost a překážku překryje, matice a nadpis jsou celé. */
+	@Test
+	public void maticeAHlavickaMajiPlnouVelikostiIPriPrekazceDole() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D3/T3"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D3/T3", "D3/T3", null)), 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		final Dimension pref = o.getPreferredSize();
+		final int y = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.VYSKA_PRUHU + RozmisteniPrekryvu.POD_PRUHEM;
+		final Rectangle detail = new Rectangle(0, y + pref.height - 80, 1280, 200);
+		popup.setPrekazky(() -> java.util.Collections.singletonList(detail));
+		popup.doLayout();
+		rozloz(o);
+		Assert.assertEquals("popup má plnou výšku", pref.height, o.getHeight());
+		Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
+		Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
+		Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
+	}
+
+	/** Když je okno mapy samo nižší než popup, obsah se posouvá a matice a nadpis zůstanou celé. */
+	@Test
+	public void vNizkemOknePopupPosouvaAMaticeZustaneCela() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D3/T3"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D3/T3", "D3/T3", null)), 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		popup.setBounds(0, 0, 1280, 330);
+		popup.doLayout();
+		rozloz(o);
+		Assert.assertTrue("popup je kratší než obsah", o.getHeight() < o.getPreferredSize().height);
+		Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
+		Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
+		Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
+		final javax.swing.JScrollBar svisly = o.posuvnikObsahu.getVerticalScrollBar();
+		Assert.assertTrue("svislý posuvník je vidět", svisly.isVisible());
+		Assert.assertEquals("na začátku je nahoře", 0, o.posuvnikObsahu.getViewport().getViewPosition().y);
+		svisly.setValue(svisly.getMaximum());
+		rozloz(o);
+		Assert.assertTrue("posunutím se obsah posune", o.posuvnikObsahu.getViewport().getViewPosition().y > 0);
+		Assert.assertEquals("a dole je vidět konec obsahu", o.posuvnikObsahu.getViewport().getView().getHeight(), o.posuvnikObsahu.getViewport().getViewPosition().y + o.posuvnikObsahu.getViewport().getHeight());
+	}
+
+	/** Popup v rozvržení srohama leží nad neprůhledným panelem v rohu: klik v překryvu zasáhne popup, ne panel. */
+	@Test
+	public void popupLeziNadPanelemVRohu() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPanel srohama = new JPanel(new cz.geokuk.util.gui.CornerLayoutManager());
+		final JPanel detail = new JPanel();
+		detail.setOpaque(true);
+		detail.setPreferredSize(new Dimension(500, 400));
+		final JPanel podklad = new JPanel();
+		srohama.add(detail, cz.geokuk.util.gui.ERoh.JZ);
+		srohama.add(podklad);
+		srohama.add(popup, cz.geokuk.util.gui.ERoh.NAD, 0);
+		srohama.setSize(1050, 450);
+		popup.setBounds(0, 0, 0, 0);
+		rozloz(srohama);
+		Assert.assertEquals("vrstva NAD pokrývá celý podklad", podklad.getBounds(), popup.getBounds());
+		Assert.assertEquals(new Rectangle(0, 0, 1050, 450), popup.getBounds());
+		final java.util.List<Rectangle> prekazky = RozmisteniPrekryvu.prekazky(srohama, podklad, false, popup);
+		Assert.assertEquals("popup není překážka sám sobě", java.util.Collections.singletonList(detail.getBounds()), prekazky);
+		Assert.assertEquals("bez výjimky by byl překážkou", 2, RozmisteniPrekryvu.prekazky(srohama, podklad, false).size());
+		popup.setPrekazky(() -> java.util.Collections.singletonList(detail.getBounds()));
+		rozloz(srohama);
+		final Rectangle o = popup.obsah.getBounds();
+		final Rectangle d = detail.getBounds();
+		Assert.assertTrue("popup se s Detailem překrývá: " + o + " " + d, o.intersects(d));
+		final Rectangle spolecne = o.intersection(d);
+		final Component cil = srohama.findComponentAt(spolecne.x + spolecne.width / 2, spolecne.y + spolecne.height / 2);
+		Assert.assertNotNull(cil);
+		Assert.assertTrue("v překryvu je popup, ne Detail: " + cil, javax.swing.SwingUtilities.isDescendingFrom(cil, popup));
+		Assert.assertEquals("Detail mimo popup zůstane klikatelný", detail, srohama.findComponentAt(d.x + 2, d.y + d.height - 2));
+	}
+
+	@Test
+	public void chybaVPredpoctuSePropisePlanovaciMistoPocitaSe() throws Exception {
+		priprav();
+		popup.prepni();
+		final String duvod = "Keš GC4PCQB (střed challenge) není v načtených datech.";
+		model.nastavStavPredpoctu(aktivni(), new StavPredpoctu(StavPredpoctu.Faze.CHYBA, 0, 0, duvod));
+		SwingUtilities.invokeAndWait(() -> {});
+		final String text = popup.obsah.souhrn.getText();
+		Assert.assertTrue(text, text.contains(duvod));
+		Assert.assertFalse(text, text.contains("Počítá se"));
+		Assert.assertFalse("bez výsledku se ukáže jen chyba", popup.obsah.matice.isVisible());
+		Assert.assertTrue(text, text.contains("vytvořte kopii se středem Domov či Souřadnice"));
+		Assert.assertFalse("bez výsledku se ukáže jen chyba", popup.obsah.postup.isVisible());
+		Assert.assertFalse(popup.obsah.nadpisSeznamu.isVisible());
+		Assert.assertFalse(popup.obsah.posuvnik.isVisible());
+		model.nastavStavPredpoctu(aktivni(), new StavPredpoctu(StavPredpoctu.Faze.HOTOVO, 1, 1, null));
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213 }, new int[0], new double[][] { { 213, 2800 }, { 47, 6200 } }));
+		Assert.assertTrue("po chybě se postup vrátí", popup.obsah.postup.isVisible());
+		Assert.assertTrue("po chybě se vrátí nadpis seznamu", popup.obsah.nadpisSeznamu.isVisible());
+		Assert.assertTrue("po chybě se vrátí seznam", popup.obsah.posuvnik.isVisible());
+		Assert.assertTrue(popup.obsah.souhrn.getText(), popup.obsah.souhrn.getText().startsWith("Splněno"));
 	}
 
 	@Test

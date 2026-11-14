@@ -133,7 +133,8 @@ public final class FormularDefinice {
 		return new Challenge(nazev, puvodni == null ? Challenge.Typ.SEKTORY_360 : puvodni.typ(), stred, def, pravidla, nalezy).sOpakovanim(opakovani);
 	}
 
-	private static String typ(final Challenge.Typ t) {
+	/** Název typu challenge: „360°“, „D/T“, „Kalendář“. */
+	static String nazevTypu(final Challenge.Typ t) {
 		switch (t) {
 		case DT_MATICE:
 			return "D/T";
@@ -162,6 +163,6 @@ public final class FormularDefinice {
 			return "D/T · matice obtížnost × terén podle keší na mapě";
 		}
 		final String pravidla = c.zdroj() == ZdrojPravidel.PGC ? "Project-GC" : "Stator";
-		return typ(c.typ()) + " · " + pravidla + " · střed: " + stred + " · oblast: " + oblastDefinice(c).popis.toLowerCase(java.util.Locale.ROOT);
+		return nazevTypu(c.typ()) + " · " + pravidla + " · střed: " + stred + " · oblast: " + oblastDefinice(c).popis.toLowerCase(java.util.Locale.ROOT);
 	}
 }

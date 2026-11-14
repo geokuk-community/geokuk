@@ -2,8 +2,21 @@ name: Smoke
 
 on:
   workflow_dispatch:
+    inputs:
+      zkouska_issue:
+        description: "Zkouška issue při červeném nočním běhu: nic nezakládá, jen vypíše text do souhrnu"
+        type: boolean
+        default: false
   schedule:
     - cron: "17 2 * * *"
+  # Po sloučení do main jednou na Linuxu.
+  push:
+    branches: [main]
+    paths:
+      - src/**
+      - pom.xml
+      - .mvn/**
+      - .github/workflows/smoke.yml
   # Změna závislostí může rozbít spuštěný program, i když projdou testy.
   pull_request:
     branches: [main, "release/**"]
@@ -20,7 +33,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: smoke-${{ github.ref }}
+  group: smoke-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -28,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Noční běh a PR jen na Linuxu, Windows a macOS se spouští ručně.
+        # Noční běh, push na main a PR jen na Linuxu, Windows a macOS se spouští ručně.
         os: ${{ github.event_name == 'workflow_dispatch' && fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -44,8 +57,8 @@ jobs:
 
       - name: Smoke test
         if: runner.os == 'Linux'
-        # U PR běží jednotkové testy už v jobu Build, tady jen smoke.
-        run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify -Dgeokuk.testy.limitSekund=600 ${{ github.event_name == 'pull_request' && '-Dtest=NoSuch -Dsurefire.failIfNoSpecifiedTests=false' || '' }}
+        # U PR a pushe na main běží jednotkové testy už v jobu Build, tady jen smoke.
+        run: xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify -Dgeokuk.testy.limitSekund=600 ${{ (github.event_name == 'pull_request' || github.event_name == 'push') &&'-Dtest=NoSuch -Dsurefire.failIfNoSpecifiedTests=false' || '' }}
 
       # Runner na Windows občas zastaví celou JVM na sekundy; spadlý test se jednou zopakuje a ve výstupu je vidět jako Flakes.
       - name: Smoke test
@@ -107,3 +120,53 @@ jobs:
             target/smoke/*/*.png
             target/smoke/*/data/log/
             target/failsafe-reports/
+            target/surefire-reports/
+
+  issue:
+    # Jen noční běh; ruční běh s volbou zkouska_issue jen vypíše text do souhrnu.
+    needs: smoke
+    if: always() && ((github.event_name == 'schedule' && needs.smoke.result == 'failure') || (github.event_name == 'workflow_dispatch' && inputs.zkouska_issue))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      NAZEV: Noční Smoke je červený
+      ZKOUSKA: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Issue s výsledkem
+        run: |
+          BEH="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          mkdir zpravy
+          gh run download "$GITHUB_RUN_ID" -n smoke-Linux -D zpravy || true
+          TESTY=$(python3 -I - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          for f in sorted(glob.glob('zpravy/**/TEST-*.xml', recursive=True)):
+              for t in ET.parse(f).getroot().iter('testcase'):
+                  if any(e.tag in ('failure', 'error') for e in t):
+                      print('- %s.%s' % (t.get('classname', '').split('.')[-1], t.get('name')))
+          PY
+          )
+          {
+            echo "Noční Smoke ($(date -u +%F)) skončil chybou."
+            echo
+            echo "Selhané testy:"
+            if [ -n "$TESTY" ]; then echo "$TESTY"; else echo "- nezjištěno, viz log"; fi
+            echo
+            echo "Běh: $BEH"
+          } > telo.md
+          if [ "$ZKOUSKA" = true ]; then
+            { echo "### Zkouška issue (nic se nezakládá)"; cat telo.md; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          CISLO=$(gh issue list --state open --search "in:title \"$NAZEV\"" --json number,title \
+            --jq ".[] | select(.title == \"$NAZEV\") | .number" | head -1)
+          if [ -n "$CISLO" ]; then
+            gh issue comment "$CISLO" --body-file telo.md
+          else
+            gh issue create --title "$NAZEV" --body-file telo.md
+          fi

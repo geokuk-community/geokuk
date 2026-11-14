@@ -57,18 +57,21 @@ class DavkaStahovani {
 	}
 
 	/** Vrací false, když je dávka zastavená a další dlaždice se už nemají zařazovat. */
-	synchronized boolean zarazeno(final Dlazdice dlazdice, final Kanceler kanceler) {
-		if (duvodZastaveni != null) {
-			kanceler.cancel();
-			return false;
+	boolean zarazeno(final Dlazdice dlazdice, final Kanceler kanceler) {
+		synchronized (this) {
+			if (duvodZastaveni == null) {
+				// Dlaždice z cache bývá hotová dřív, než se zařadí.
+				if (!dlazdice.hotova) {
+					dlazdice.kanceler = kanceler;
+					rozpracovane.add(dlazdice);
+				}
+				zarazeno.incrementAndGet();
+				return true;
+			}
 		}
-		// Dlaždice z cache bývá hotová dřív, než se zařadí.
-		if (!dlazdice.hotova) {
-			dlazdice.kanceler = kanceler;
-			rozpracovane.add(dlazdice);
-		}
-		zarazeno.incrementAndGet();
-		return true;
+		// Mimo zámek dávky: zrušení bere zámek dlaždice, která pod svým zámkem volá Dlazdice.send.
+		kanceler.cancel();
+		return false;
 	}
 
 	/** Počet dlaždic, které dávka drží (zařazené a ještě nedokončené). */

@@ -477,13 +477,21 @@ public class JChallengeDialogTest {
 		naEdt(() -> {
 			javax.swing.JComponent pravidla = null;
 			for (final Component k : vsechnyKomponenty(dialog.getContentPane(), new ArrayList<Component>())) {
-				if (k instanceof javax.swing.JComboBox && ((javax.swing.JComboBox<?>) k).getItemCount() == 2 && "Project-GC (koule)".equals(((javax.swing.JComboBox<?>) k).getItemAt(0))) {
+				if (k instanceof javax.swing.JComboBox && ((javax.swing.JComboBox<?>) k).getItemCount() == 2 && "Project-GC".equals(((javax.swing.JComboBox<?>) k).getItemAt(0))) {
 					pravidla = (javax.swing.JComponent) k;
 				}
 			}
 			Assert.assertNotNull("volba pravidel s položkami Koule a Elipsoid", pravidla);
-			Assert.assertEquals("Stator (elipsoid)", ((javax.swing.JComboBox<?>) pravidla).getItemAt(1));
-			Assert.assertTrue(pravidla.getToolTipText(), pravidla.getToolTipText().contains("Stator: elipsoid WGS84, včetně Lab, bez Locationless.") && !pravidla.getToolTipText().contains("ignorovaných"));
+			Assert.assertEquals("Stator", ((javax.swing.JComboBox<?>) pravidla).getItemAt(1));
+			Assert.assertTrue(pravidla.getToolTipText(), pravidla.getToolTipText().contains("Stator: přesnější výpočet, včetně Lab keší, bez Locationless.") && !pravidla.getToolTipText().contains("elipsoid"));
+		});
+	}
+
+	/** Formulář ukazuje typ vybrané challenge. */
+	@Test
+	public void formularUkazujeTyp() throws Exception {
+		naEdt(() -> {
+			Assert.assertEquals("360°", dialog.typ.getText());
 		});
 	}
 

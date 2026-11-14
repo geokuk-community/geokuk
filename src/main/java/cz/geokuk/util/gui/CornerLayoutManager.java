@@ -20,6 +20,7 @@ public class CornerLayoutManager implements LayoutManager2 {
 	private Component jv;
 
 	private Component podklad;
+	private Component nad;
 
 	/*
 	 * (non-Javadoc)
@@ -44,6 +45,9 @@ public class CornerLayoutManager implements LayoutManager2 {
 				break;
 			case JV:
 				jv = c;
+				break;
+			case NAD:
+				nad = c;
 				break;
 			default:
 				podklad = c;
@@ -110,6 +114,9 @@ public class CornerLayoutManager implements LayoutManager2 {
 		doRohu(jv, dim, -x2, -y2);
 
 		podklad.setBounds(x1, y1, dim.width, dim.height);
+		if (nad != null) {
+			nad.setBounds(x1, y1, dim.width, dim.height);
+		}
 
 	}
 
@@ -164,6 +171,9 @@ public class CornerLayoutManager implements LayoutManager2 {
 		}
 		if (podklad == c) {
 			podklad = null;
+		}
+		if (nad == c) {
+			nad = null;
 		}
 	}
 
