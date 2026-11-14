@@ -300,7 +300,13 @@ public class JPopupPlanovaceTest {
 		srohama.add(podklad);
 		srohama.add(popup, cz.geokuk.util.gui.ERoh.NAD, 0);
 		srohama.setSize(1050, 450);
+		popup.setBounds(0, 0, 0, 0);
 		rozloz(srohama);
+		Assert.assertEquals("vrstva NAD pokrývá celý podklad", podklad.getBounds(), popup.getBounds());
+		Assert.assertEquals(new Rectangle(0, 0, 1050, 450), popup.getBounds());
+		final java.util.List<Rectangle> prekazky = RozmisteniPrekryvu.prekazky(srohama, podklad, false, popup);
+		Assert.assertEquals("popup není překážka sám sobě", java.util.Collections.singletonList(detail.getBounds()), prekazky);
+		Assert.assertEquals("bez výjimky by byl překážkou", 2, RozmisteniPrekryvu.prekazky(srohama, podklad, false).size());
 		popup.setPrekazky(() -> java.util.Collections.singletonList(detail.getBounds()));
 		rozloz(srohama);
 		final Rectangle o = popup.obsah.getBounds();
