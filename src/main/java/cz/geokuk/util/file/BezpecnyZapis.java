@@ -62,7 +62,7 @@ public final class BezpecnyZapis {
 	/** Smaže ve složce dočasné soubory zápisu, které po pádu zůstaly; čerstvé nechá, mohl by je právě zapisovat jiný běh. Jiné soubory se nedotkne. */
 	public static void uklidDocasne(final File slozka, final Pattern jmeno) {
 		final long hranice = System.currentTimeMillis() - DOCASNY_MAX_STARI_MS;
-		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> f.isFile() && jmeno.matcher(f.getName()).matches() && f.lastModified() < hranice);
+		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> jmeno.matcher(f.getName()).matches() && f.isFile() && f.lastModified() < hranice);
 		if (soubory != null) {
 			for (final File f : soubory) {
 				Soubory.smaz(f);
