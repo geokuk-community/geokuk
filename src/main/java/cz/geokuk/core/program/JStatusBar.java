@@ -386,7 +386,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 		revalidate();
 		if (doc.isEmpty()) {
 			jSouborSVyletem.setText(".");
-			jSouborSVyletem.setToolTipText("Výlet není vůbec definován.");
+			jSouborSVyletem.setToolTipText("Cesty nejsou otevřené.");
 			jSouborSVyletemPotrebujeUlozit.setText("");
 		} else {
 			if (doc.getFile() != null) {
@@ -395,7 +395,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 				jSouborSVyletemPotrebujeUlozit.setText(doc.isChanged() ? "*" : "");
 			} else {
 				jSouborSVyletem.setText("-");
-				jSouborSVyletem.setToolTipText("S výletem není spojen žádný soubor.");
+				jSouborSVyletem.setToolTipText("Cesty nejsou uložené v souboru.");
 				jSouborSVyletemPotrebujeUlozit.setText("");
 			}
 		}

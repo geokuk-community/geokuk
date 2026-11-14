@@ -75,7 +75,7 @@ public class Sada {
 	}
 
 	/**
-	 * Vrací sklivec pro daný genotyp s tím, že se hrabe v keši, aby se jednak zvýšila rychnlost, druhak, aby se šetřila paměť
+	 * Vrací sklivec pro daný genotyp s tím, že se hrabe v cache, aby se jednak zvýšila rychnlost, druhak, aby se šetřila paměť
 	 *
 	 * @param genotypx
 	 * @return
