@@ -120,6 +120,7 @@ jobs:
             target/smoke/*/*.png
             target/smoke/*/data/log/
             target/failsafe-reports/
+            target/surefire-reports/
 
   issue:
     # Jen noční běh; ruční běh s volbou zkouska_issue jen vypíše text do souhrnu.
