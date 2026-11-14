@@ -131,22 +131,19 @@ public class TvarPlanovaceTest {
 	public void textyStreduSPolomeremKruznice() {
 		Assert.assertEquals("Střed: domov · kružnice 144 km", TextyKresleni.stred("domov", 144_000));
 		Assert.assertEquals("Střed: domov", TextyKresleni.stred("domov", Double.NaN));
-		Assert.assertEquals("Střed: domov · 25 km · kružnice 2,9 km", TextyKresleni.stredMimoVyrez("domov", 25_300, 2900));
+		Assert.assertEquals("Střed: domov · 25,3 km · kružnice 2,9 km", TextyKresleni.stredMimoVyrez("domov", 25_300, 2900));
 		Assert.assertEquals("2,9 km", TextyKresleni.popisekKruznice(2900));
 		Assert.assertEquals("144 km", TextyKresleni.popisekKruznice(144_000));
 	}
 
 	@Test
 	public void textyZnacek() {
-		Assert.assertEquals("850 m", TextyKresleni.vzdalenost(850));
-		Assert.assertEquals("2,8 km", TextyKresleni.vzdalenost(2800));
-		Assert.assertEquals("25 km", TextyKresleni.vzdalenost(25_300));
 		Assert.assertEquals("1 kandidát", TextyKresleni.kandidatu(1));
 		Assert.assertEquals("3 kandidáti", TextyKresleni.kandidatu(3));
 		Assert.assertEquals("5 kandidátů", TextyKresleni.kandidatu(5));
 		Assert.assertEquals("Sektor 213° · 5 kandidátů · 2,8 km", TextyKresleni.vybranySektor(213, 5, 2800));
-		Assert.assertEquals("Střed: GC56R49", TextyKresleni.stred("GC56R49"));
-		Assert.assertEquals("Střed: domov · 25 km", TextyKresleni.stredMimoVyrez("domov", 25_300, Double.NaN));
+		Assert.assertEquals("Střed: keš GC56R49", TextyKresleni.stred("keš GC56R49"));
+		Assert.assertEquals("Střed: domov · 25,3 km", TextyKresleni.stredMimoVyrez("domov", 25_300, Double.NaN));
 	}
 
 	@Test

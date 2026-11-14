@@ -19,6 +19,9 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final DefaultListModel<Challenge> seznamModel = new DefaultListModel<>();
 	private final JList<Challenge> seznam = new JList<>(seznamModel);
 	private final JCheckBox aktivni = new JCheckBox("Aktivní challenge");
+	/** Šířka seznamu, aby se v něm vešel název šablony i s příponami „(aktivní) (šablona)“. */
+	static final int SIRKA_SEZNAMU = 510;
+
 	final JLabel typ = new JLabel();
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	/** U šablony nad formulářem: proč nejde upravit a tlačítko kopie hned u toho. */
@@ -48,7 +51,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	public JChallengeDialog() {
 		setTitle("Nastavení plánovače challenge");
 		init();
-		nastavVelikost(new Dimension(760, 420), new Dimension(640, 380));
+		nastavVelikost(new Dimension(980, 420), new Dimension(840, 380));
 	}
 
 	@Override
@@ -81,7 +84,7 @@ public class JChallengeDialog extends JMyDialog0 {
 			}
 		});
 		final JScrollPane levy = new JScrollPane(seznam);
-		levy.setPreferredSize(new Dimension(290, 300));
+		levy.setPreferredSize(new Dimension(SIRKA_SEZNAMU, 300));
 		final JPanel levyPanel = new JPanel(new BorderLayout(4, 4));
 		levyPanel.add(levy, BorderLayout.CENTER);
 		final JPanel levaTlacitka = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));

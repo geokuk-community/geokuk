@@ -487,6 +487,20 @@ public class JChallengeDialogTest {
 		});
 	}
 
+	/** Seznam je tak široký, že se v něm vejde název každé šablony i s příponami. */
+	@Test
+	public void seznamUnesePlnyNazevSablonySPriponami() throws Exception {
+		naEdt(() -> {
+			final JList<Challenge> s = seznam();
+			final java.awt.FontMetrics fm = s.getFontMetrics(s.getFont());
+			final int volno = JChallengeDialog.SIRKA_SEZNAMU - 40;
+			for (final Challenge c : Sablony.vse()) {
+				final int potreba = fm.stringWidth(c.nazev() + "  (aktivní)  (šablona)");
+				Assert.assertTrue(c.nazev() + ": " + potreba + " > " + volno, potreba <= volno);
+			}
+		});
+	}
+
 	/** Formulář ukazuje typ vybrané challenge. */
 	@Test
 	public void formularUkazujeTyp() throws Exception {
