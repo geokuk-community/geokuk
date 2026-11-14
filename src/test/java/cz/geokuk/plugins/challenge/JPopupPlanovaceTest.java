@@ -320,6 +320,12 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void nenastavenyDomovVyzveKeZmeneDomova() {
+		final String text = TextyPopupuPlanovace.chyba("Domovské souřadnice nejsou nastavené.", 300);
+		Assert.assertTrue(text, text.contains("Klikněte na mapu na místo domova a zvolte Změnit domov…"));
+	}
+
+	@Test
 	public void chybaVPredpoctuSePropisePlanovaciMistoPocitaSe() throws Exception {
 		priprav();
 		popup.prepni();

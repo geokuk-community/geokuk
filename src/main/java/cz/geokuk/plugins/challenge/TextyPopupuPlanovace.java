@@ -117,7 +117,12 @@ final class TextyPopupuPlanovace {
 	/** Důvod, proč se výsledek nepočítá, zalomený na danou šířku; u chybějící středové keše i co s tím. */
 	static String chyba(final String duvod, final int sirka) {
 		final String d = duvod == null || duvod.isEmpty() ? "Výsledek nejde spočítat." : duvod;
-		final String text = d.contains("není v načtených datech") ? d + " Načtěte tuto keš, nebo v Nastavení plánovače… vytvořte kopii se středem Domov či Souřadnice." : d;
+		String text = d;
+		if (d.contains("není v načtených datech")) {
+			text = d + " Načtěte tuto keš, nebo v Nastavení plánovače… vytvořte kopii se středem Domov či Souřadnice.";
+		} else if (d.equals(ResolverDefinice.DOMOV_NENASTAVEN)) {
+			text = d + " Klikněte na mapu na místo domova a zvolte Změnit domov…";
+		}
 		return "<html><body style='width: " + sirka + "px'>" + text.replace("&", "&amp;").replace("<", "&lt;") + "</body></html>";
 	}
 
