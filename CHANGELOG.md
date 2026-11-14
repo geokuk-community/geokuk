@@ -9,8 +9,8 @@
   ◀ ▶, která posouvají výběr na předchozí a další chybějící sektor nebo
   políčko, přepínače Jen kandidáti (F4), Sektory a Štítky a Nastavení….
 - Plánovač challenge: Shift+šipka skočí na nejbližšího kandidáta ve směru
-  šipky a u 360° vybere i jeho sektor. Když tam žádný není, ukáže se o tom
-  krátká zpráva.
+  šipky, vystředí na něj mapu a u 360° vybere i jeho sektor. Když tam žádný
+  není, ukáže se o tom krátká zpráva.
 - Plánovač challenge: na mapě je prstenec sektorů se středem, klínem
   vybraného sektoru, kandidáti se štítky a čárou ke kandidátovi. Kružnice
   prstence má pevný poloměr v metrech a popisek. Štítky kandidátů a
@@ -30,16 +30,16 @@
   Změnit domov….
 - Šablony: 360° od domova, GC4PCQB – Challenge - 360 degrees of the Czech
   Republic, GC56R49 – Challenge - 360 Degrees of Prague a Matice D/T.
-- Položka Kešoidy > Kruhy (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
+- Položka Kešoidy > Kruhy 100 m (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
   Kruhy 161 m); dialog se jmenuje Nastavení kruhů.
-- Kruhy (Alt+F8) mají pevný poloměr v metrech, výchozí 100 m; mění se v
+- Kruhy v metrech (Alt+F8) mají pevný poloměr, výchozí 100 m; mění se v
   Nastavení kruhů. Zapnou i zvýrazňovací kruhy.
 - Když jsou zapnuté kruhy (zvýrazňovací, v metrech, Obsazenost) a nejsou vidět,
   ve stavovém řádku se ukáže štítek Kruhy skryté; v bublině je u každé vrstvy
   důvod a co udělat. Když se kruhy v metrech kreslí jen částečně (nejbližší ke
   středu výřezu), je tam štítek Kruhy omezené, a když je zároveň něco skryté
   a něco omezené, Kruhy skryté a omezené.
-- Po zkratkách F5, F8, Alt+F8, F9 a Ctrl+1 až Ctrl+4 se uprostřed dole nad
+- Po zkratkách F4, F5, F8, Alt+F8, F9 a Ctrl+1 až Ctrl+4 se uprostřed dole nad
   měřítkem na chvíli ukáže krátká zpráva s názvem akce a stavem, třeba „Zdroj
   keší GeoGet – Vypnuto“ nebo „Kruhy v metrech – Zapnuto, 100 m“. Když se
   zapnuté kruhy nekreslí, je v ní i důvod a co udělat.
@@ -84,6 +84,8 @@
   jsou z projektu Osmic (CC0).
 - Vydání obsahuje GeoKuk-tema.zip: téma GeoKuk a GeoKuk – detail pro aplikace
   s mapami ve formátu mapsforge (například c:geo, aDrake).
+- Okno Licence uvádí, že témata vzhledu od třetích stran se řídí licencí svého
+  autora.
 - Po aktualizaci programu se offline mapy v cache jednou vykreslí znovu.
 - Správce offline map (menu Mapy nebo blok Mapy ve stavovém řádku) ukazuje
   stažené mapy, jejich obrysy v mapě a odkazy na weby s mapami.
@@ -92,8 +94,9 @@
   verzi stažené mapy nebo vrstvy stáhne tlačítko Aktualizovat.
 - Správce offline map ukáže při stahování odhad zbývajícího času a mapu, která
   se nevejde na disk, nenechá stáhnout.
-- Přerušené stahování program sám až třikrát zkusí znovu a naváže, kde skončilo. Když dávka stahování skončí s chybou, ostatní soubory se
-  dostahují a v popupu Mapy je souhrn a tlačítko Zkusit znovu.
+- Přerušené stahování program sám až třikrát zkusí znovu a naváže, kde
+  skončilo. Když dávka stahování skončí s chybou, ostatní soubory se dostahují
+  a v popupu Mapy je souhrn a tlačítko Zkusit znovu.
 - Tlačítko Stáhnout mapu a vrstvy stáhne mapu, trasy, vrstevnice a stínování
   naráz; Vybrat části… v nabídce na pravé tlačítko u země ukáže souhrn
   s velikostí a volným místem.
@@ -140,7 +143,7 @@
 - Dálkové ovládání umí otevřít kešoid podle odkazu nebo kódu, i mimo aktuální
   filtr, a pokusit se přenést okno GeoKuku do popředí; podrobnosti jsou
   v README.
-- GeoKuk používá novější knihovnu Guava s bezpečnostní opravou.
+- Aktualizace knihovny Guava.
 - Regiony stažené země jsou ve Správci offline map pod ní. Země stažená celá
   i po regionech se pozná a program nabídne smazat regiony, nebo celek.
 - Dole ve Správci offline map jsou přepínače Turistické a cyklotrasy a Stínování
@@ -201,8 +204,8 @@
   a písmo, symboly a čáry offline mapy až na 200 %.
 
 ### Opravy
-- Zvýrazňovací kruhy (F8) a Kruhy (Alt+F8) zůstanou zapnuté i po přepnutí
-  mapového podkladu.
+- Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po
+  přepnutí mapového podkladu.
 - Změna velikosti nebo barvy v Nastavení kruhů kruhy nevypne.
 - Obsazenost 161 m se kreslí jako jedna plocha jedné barvy, takže překryvy
   netmavnou; kreslí se při dostatečném přiblížení a nejvýš pro 20 000 keší
@@ -233,7 +236,9 @@
 - Offline mapa zkopírovaná do složky za běhu se otevře až po dokopírování
   a mapa v okně se sama obnoví. Mapu, kterou chvíli nešlo číst, program za půl
   minuty zkusí znovu.
-- Menu Téma offline mapy se otevře bez čekání, i když jsou témata na pomalém disku.
+- Menu Téma offline mapy se otevře bez čekání, i když jsou témata na pomalém
+  disku.
+- Atribuce offline mapy označí téma, které se nepodařilo načíst.
 - Po načtení keší program nečeká na vykreslení ikon na liště nástrojů.
 - Velký soubor GPX s HTML popisy keší se načte i na Javě 24 a novější.
 
