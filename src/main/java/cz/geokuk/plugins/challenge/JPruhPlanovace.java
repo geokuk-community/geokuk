@@ -530,7 +530,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			final int n = v == null ? 0 : v.pocetKandidatu(vybranyStitek);
 			tip = tipPolicka(vybranyStitek, n, v != null && v.jePlne(vybranyStitek), jenKandidati);
 		} else {
-			tip = tipSektoru(model.vybranySektor(c), model.vysledek(c), jenKandidati);
+			tip = tipSektoru(model.vybranySektor(c), model.vysledek(c));
 		}
 		nastavText(policko, vybranyStitek + " ✕");
 		policko.setToolTipText(tip);
@@ -546,10 +546,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	/** Tooltip tlačítka vybraného sektoru: „Sektor 11° · 6 kandidátů · nejbližší 3,2 km od středu“ a jak výběr zrušit. */
-	static String tipSektoru(final int sektor, final VysledekSektoru v, final boolean jenKandidati) {
+	static String tipSektoru(final int sektor, final VysledekSektoru v) {
 		final VysledekSektoru.Kandidati k = v == null ? null : v.kandidati(sektor);
 		final String popis = k == null || k.pocet() == 0 ? "Sektor " + sektor + "°" : TextyKresleni.sektorVybrane(sektor, k);
-		return "<html>" + popis + "<br>Zrušit výběr sektoru (Esc)" + (jenKandidati ? "" : "; F4 ukáže na mapě jen jeho kandidáty") + "</html>";
+		return "<html>" + popis + "<br>Zrušit výběr sektoru (Esc)</html>";
 	}
 
 	/** Esc zruší výběr políčka nebo sektoru, jen když je něco vybráno a žádný popup nečeká na Esc sám. */

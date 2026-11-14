@@ -180,6 +180,18 @@ public class JPruhPolickoTest {
 		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
 	}
 
+	@Test
+	public void tooltipSektoruNeslibujeFiltrF4() {
+		final VysledekSektoru v = TextyPopupuPlanovaceTest.vysledek(new int[] { 0, 11 }, new int[0], new double[][] { { 0, 1500 }, { 11, 3200, 5000 } });
+		final String tip11 = JPruhPlanovace.tipSektoru(11, v);
+		Assert.assertTrue(tip11, tip11.contains("Sektor 11° · 2 kandidáti"));
+		Assert.assertFalse(tip11, tip11.contains("F4"));
+		final String tip0 = JPruhPlanovace.tipSektoru(0, v);
+		Assert.assertTrue(tip0, tip0.contains("Sektor 0° · 1 kandidát"));
+		Assert.assertFalse(tip0, tip0.contains("F4"));
+		Assert.assertEquals("<html>Sektor 7°<br>Zrušit výběr sektoru (Esc)</html>", JPruhPlanovace.tipSektoru(7, null));
+	}
+
 	private String tipVyberu() {
 		for (final Component c : pruh.getComponents()) {
 			if (c instanceof AbstractButton && ((AbstractButton) c).getText().endsWith("▾")) {
