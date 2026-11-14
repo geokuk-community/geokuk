@@ -8,7 +8,7 @@ import cz.geokuk.framework.ToggleAction0;
 import cz.geokuk.plugins.kesoid.ToastModel;
 import cz.geokuk.plugins.kesoid.ZpravyZkratek;
 
-/** Zobrazí jen kandidáty, kteří zaplní chybějící sektor aktivní challenge. */
+/** Zobrazí jen kandidáty, kteří doplní chybějící sektor aktivní challenge. */
 public class ChallengeJenKandidatiAction extends ToggleAction0 {
 
 	private static final long serialVersionUID = 1L;
@@ -16,7 +16,7 @@ public class ChallengeJenKandidatiAction extends ToggleAction0 {
 	private transient ToastModel toast;
 
 	public ChallengeJenKandidatiAction() {
-		super("Zobrazit jen kandidáty");
+		super("Jen kandidáti");
 		putValue(SHORT_DESCRIPTION, "Na mapě nechá jen nenalezené keše, které doplní chybějící sektor, políčko nebo den.");
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0));
 		setEnabled(false);
