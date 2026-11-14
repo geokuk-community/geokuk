@@ -114,7 +114,7 @@ public class ChallengeAkceTest {
 		model.setZapnuto(true);
 		kandidati.onSlectedChange(true);
 		kandidati.onSlectedChange(false);
-		Assert.assertEquals(java.util.Arrays.asList("Plánovač: Jen kandidáti – Zapnuto", "Plánovač: Jen kandidáti – Vypnuto"), zpravy);
+		Assert.assertEquals(java.util.Arrays.asList("Plánovač: jen kandidáti – Zapnuto", "Plánovač: jen kandidáti – Vypnuto"), zpravy);
 	}
 
 	@Test

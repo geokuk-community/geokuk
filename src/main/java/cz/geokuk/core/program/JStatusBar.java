@@ -171,7 +171,7 @@ public class JStatusBar extends JPanel implements AfterInjectInit {
 	};
 	/** Proč zapnuté kruhy nejsou vidět; jen když nějaká zapnutá vrstva nic nekreslí. */
 	private final JLabel stitekSkrytychKruhu = new JLabel(StavVrstev.TEXT_STITKU);
-	private final JLabel stitekChallenge = new cz.geokuk.plugins.challenge.StitekChallenge("Plánovač: Jen kandidáti");
+	private final JLabel stitekChallenge = new cz.geokuk.plugins.challenge.StitekChallenge("Plánovač: jen kandidáti");
 	private JPanel odPozice;
 	private final JLabel popisekOdPozice = new JLabel(OD_POZICE);
 	JPanel poctyKesiPanel;
