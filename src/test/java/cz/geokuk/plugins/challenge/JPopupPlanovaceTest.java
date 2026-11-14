@@ -277,6 +277,40 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("matice má plnou výšku", o.matice.getPreferredSize().height, o.matice.getHeight());
 		Assert.assertEquals("matice má plnou šířku", o.matice.getPreferredSize().width, o.matice.getWidth());
 		Assert.assertTrue("nadpis není zkrácený: " + o.nadpis.getWidth(), o.nadpis.getWidth() >= o.nadpis.getPreferredSize().width);
+		final javax.swing.JScrollBar svisly = o.posuvnikObsahu.getVerticalScrollBar();
+		Assert.assertTrue("svislý posuvník je vidět", svisly.isVisible());
+		Assert.assertEquals("na začátku je nahoře", 0, o.posuvnikObsahu.getViewport().getViewPosition().y);
+		svisly.setValue(svisly.getMaximum());
+		rozloz(o);
+		Assert.assertTrue("posunutím se obsah posune", o.posuvnikObsahu.getViewport().getViewPosition().y > 0);
+		Assert.assertEquals("a dole je vidět konec obsahu", o.posuvnikObsahu.getViewport().getView().getHeight(), o.posuvnikObsahu.getViewport().getViewPosition().y + o.posuvnikObsahu.getViewport().getHeight());
+	}
+
+	/** Popup v rozvržení srohama leží nad neprůhledným panelem v rohu: klik v překryvu zasáhne popup, ne panel. */
+	@Test
+	public void popupLeziNadPanelemVRohu() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPanel srohama = new JPanel(new cz.geokuk.util.gui.CornerLayoutManager());
+		final JPanel detail = new JPanel();
+		detail.setOpaque(true);
+		detail.setPreferredSize(new Dimension(500, 400));
+		final JPanel podklad = new JPanel();
+		srohama.add(detail, cz.geokuk.util.gui.ERoh.JZ);
+		srohama.add(podklad);
+		srohama.add(popup, cz.geokuk.util.gui.ERoh.NAD, 0);
+		srohama.setSize(1050, 450);
+		rozloz(srohama);
+		popup.setPrekazky(() -> java.util.Collections.singletonList(detail.getBounds()));
+		rozloz(srohama);
+		final Rectangle o = popup.obsah.getBounds();
+		final Rectangle d = detail.getBounds();
+		Assert.assertTrue("popup se s Detailem překrývá: " + o + " " + d, o.intersects(d));
+		final Rectangle spolecne = o.intersection(d);
+		final Component cil = srohama.findComponentAt(spolecne.x + spolecne.width / 2, spolecne.y + spolecne.height / 2);
+		Assert.assertNotNull(cil);
+		Assert.assertTrue("v překryvu je popup, ne Detail: " + cil, javax.swing.SwingUtilities.isDescendingFrom(cil, popup));
+		Assert.assertEquals("Detail mimo popup zůstane klikatelný", detail, srohama.findComponentAt(d.x + 2, d.y + d.height - 2));
 	}
 
 	@Test

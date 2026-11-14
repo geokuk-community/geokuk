@@ -342,7 +342,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 		/** Vlastní obsah; když se popup nevejde na výšku, posouvá se celý a žádná část nezmizí. */
 		private final Telo telo = new Telo();
-		private final JScrollPane posuvnikObsahu = new JScrollPane(telo, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		final JScrollPane posuvnikObsahu = new JScrollPane(telo, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
 		Obsah() {
 			super(new BorderLayout());

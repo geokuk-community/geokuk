@@ -126,7 +126,7 @@ public final class RozmisteniPrekryvu {
 	/**
 	 * Popup plánovače pod pruhem, levým okrajem kousek před odznakem ({@code odznak} v souřadnicích mapy). Má celou požadovanou velikost, omezenou jen oknem mapy s odstupem
 	 * {@link #OKRAJ}. Překážce vedle něj (panel vpravo nahoře, legenda) se vyhne posunem doleva, když se tím nezmenší; jinak ji překryje, stejně jako překážky pod ním (panely dole,
-	 * náhled, měřítko). Popup se otevírá klikem a zavírá, takže krátké překrytí nevadí.
+	 * náhled, měřítko). Popup leží nad panely v rozích, takže je překryje, ne naopak; otevírá se klikem a zavírá, takže krátké překrytí nevadí.
 	 */
 	public static Rectangle popupPlanovace(final Dimension mapa, final Rectangle odznak, final Dimension pozadovana, final Collection<Rectangle> prekazky) {
 		final int y = OKRAJ + VYSKA_PRUHU + POD_PRUHEM;
@@ -209,10 +209,11 @@ public final class RozmisteniPrekryvu {
 	 * Překážky pro zprávu v souřadnicích podkladu: viditelné panely v rozích kontejneru, který skládá {@link CornerLayoutManager}, a případně legenda. Souřadnice se přepočtou o polohu podkladu,
 	 * takže platí, i kdyby podklad nezačínal v levém horním rohu kontejneru.
 	 */
-	public static List<Rectangle> prekazky(final Container rohy, final Component podklad, final boolean legenda) {
+	public static List<Rectangle> prekazky(final Container rohy, final Component podklad, final boolean legenda, final Component... krome) {
 		final List<Rectangle> prekazky = new ArrayList<>();
+		final List<Component> vynechane = java.util.Arrays.asList(krome);
 		for (final Component roh : rohy.getComponents()) {
-			if (roh != podklad && roh.isVisible() && !roh.getBounds().isEmpty()) {
+			if (roh != podklad && !vynechane.contains(roh) && roh.isVisible() && !roh.getBounds().isEmpty()) {
 				final Rectangle r = roh.getBounds();
 				r.translate(-podklad.getX(), -podklad.getY());
 				prekazky.add(r);
