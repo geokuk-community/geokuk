@@ -89,4 +89,14 @@ public class HotovePredvykresleniTest {
 		Files.write(soubor().toPath(), Arrays.asList("rozbite", "o00000001.aaaaaaaa 3/4/5"));
 		Assert.assertEquals(Arrays.asList(KaLoc.ofXyz(4, 5, 3)), HotovePredvykresleni.vzorek(tmp.getRoot(), "o00000001.aaaaaaaa"));
 	}
+
+	/** Dočasný soubor jiné instance (stejné jméno jako dřív) zápisu nepřekáží a zůstane nedotčený. */
+	@Test
+	public void ciziDocasnySouborZapisuNeprekazi() throws IOException {
+		final File cizi = new File(tmp.getRoot(), HotovePredvykresleni.SOUBOR + ".tmp");
+		Assert.assertTrue(cizi.mkdir());
+		HotovePredvykresleni.zapis(tmp.getRoot(), "o00000001.aaaaaaaa", VZOREK);
+		Assert.assertEquals(VZOREK, HotovePredvykresleni.vzorek(tmp.getRoot(), "o00000001.aaaaaaaa"));
+		Assert.assertTrue(cizi.isDirectory());
+	}
 }

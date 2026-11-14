@@ -7,6 +7,7 @@ import java.util.zip.CRC32;
 
 import cz.geokuk.framework.MyPreferences;
 import cz.geokuk.plugins.mapy.KachleUmisteniSouboru;
+import cz.geokuk.util.file.BezpecnyZapis;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -78,9 +79,7 @@ public final class PrehledovaMapa {
 	/** Zapíše přes dočasný soubor, aby offline mapa nenačetla napůl zapsanou mapu. */
 	private static void zapis(final File cil, final byte[] mapa) throws IOException {
 		Files.createDirectories(cil.getParentFile().toPath());
-		final Path docasny = new File(cil.getParentFile(), SOUBOR + ".tmp").toPath();
-		Files.write(docasny, mapa);
-		Files.move(docasny, cil.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+		BezpecnyZapis.zapis(cil, out -> out.write(mapa));
 		log.info("Přehledová mapa světa zapsána do {}", cil);
 	}
 

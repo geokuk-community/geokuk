@@ -243,6 +243,9 @@
 - Velký soubor GPX s HTML popisy keší se načte i na Javě 24 a novější.
 - Mapy > Postahovat dlaždice: program nezamrzne, když se stahování zastaví
   během zařazování dlaždic.
+- Offline mapa a její cache se zapisují přes dočasný soubor s jedinečným jménem,
+  takže dvě současně běžící instance si soubory nepoškodí; dočasné soubory
+  zbylé po pádu se při dalším zápisu uklidí.
 
 Obsahuje i všechny opravy z 6.4.3.
 
