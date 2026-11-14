@@ -70,19 +70,22 @@ public class JStatusBarStartTest {
 		overVysku(1050);
 	}
 
+	/** Rodič rozložený jako obsah okna, ale bez okna, aby šířku neomezovala obrazovka. */
 	@Test
 	public void zuzeniOkna() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
-			okno = new JFrame();
-			okno.getContentPane().add(new JPanel(), BorderLayout.CENTER);
+			final JPanel rodic = new JPanel(new BorderLayout());
 			final JStatusBar sb = new JStatusBar();
-			okno.add(sb, BorderLayout.SOUTH);
-			okno.setSize(2400, 675);
-			okno.setVisible(true);
-			Assert.assertEquals("široké okno: stupeň", 0, sb.getStupenUspor());
-			okno.setSize(1050, 675);
-			okno.validate();
-			Assert.assertTrue("úzké okno: stupeň " + sb.getStupenUspor(), sb.getStupenUspor() > 0);
+			rodic.add(new JPanel(), BorderLayout.CENTER);
+			rodic.add(sb, BorderLayout.SOUTH);
+			rodic.setSize(2400, 675);
+			rodic.doLayout();
+			sb.doLayout();
+			Assert.assertEquals("široký rodič: stupeň", 0, sb.getStupenUspor());
+			rodic.setSize(1050, 675);
+			rodic.doLayout();
+			sb.doLayout();
+			Assert.assertTrue("úzký rodič: stupeň " + sb.getStupenUspor(), sb.getStupenUspor() > 0);
 			Assert.assertEquals("výška po zúžení", sb.getPreferredSize().height, sb.getHeight());
 		});
 	}
