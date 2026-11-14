@@ -163,9 +163,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	@Override
 	public void updateUI() {
 		super.updateUI();
-		if (rada != null) {
-			obnovVzhledRady();
-		}
+		obnovVzhledRady();
 	}
 
 	/** Barvy rady jako tooltip vzhledu (vlastní kopie, ať je updateUI rady nepřepíše): odliší se od lišty i od mapy ve světlém i tmavém skinu. */
