@@ -181,4 +181,33 @@ public class BezpecnyZapisTest {
 		Assert.assertEquals("původní", obsah(soubor));
 		Assert.assertEquals("dočasný soubor nesmí zůstat", 1, tmp.getRoot().list().length);
 	}
+
+	private File soubor(final String jmeno, final long stari) throws IOException {
+		final File f = tmp.newFile(jmeno);
+		Assert.assertTrue(f.setLastModified(System.currentTimeMillis() - stari));
+		return f;
+	}
+
+	/** Zápis uklidí dočasné soubory téhož souboru po pádu; čerstvé (jiný běh), cizí jména a složky zůstanou. */
+	@Test
+	public void zapisUklidiOsireleDocasneSoubory() throws Exception {
+		final long den = 24 * 3600_000L;
+		final File osirely = soubor("data.txt.123456789.tmp", den);
+		final File cerstvy = soubor("data.txt.987654321.tmp", 0);
+		final File jinySoubor = soubor("jine.txt.123456789.tmp", den);
+		final File puvodniTmp = soubor("data.txt.tmp", den);
+		final File jinaPripona = soubor("data.txt.123456789.bak", den);
+		final File podobne = soubor("data.txt.12a.tmp", den);
+		final File slozka = tmp.newFolder("data.txt.555.tmp");
+		Assert.assertTrue(slozka.setLastModified(System.currentTimeMillis() - den));
+		final File cil = new File(tmp.getRoot(), "data.txt");
+		BezpecnyZapis.zapisText(cil, StandardCharsets.UTF_8, wrt -> wrt.print("nové"));
+		Assert.assertFalse("osiřelý dočasný soubor se smaže", osirely.exists());
+		Assert.assertTrue("čerstvý může zapisovat jiný běh", cerstvy.exists());
+		for (final File f : new File[] { jinySoubor, puvodniTmp, jinaPripona, podobne }) {
+			Assert.assertTrue("cizí soubor zůstane: " + f.getName(), f.exists());
+		}
+		Assert.assertTrue("složka zůstane", slozka.isDirectory());
+		Assert.assertEquals("nové", obsah(cil));
+	}
 }

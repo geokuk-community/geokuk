@@ -27,6 +27,8 @@ final class UklidOfflineCache {
 	static final Pattern TYP = Pattern.compile("([ot][0-9a-f]{8})\\.[0-9a-f]{8}");
 	private static final Pattern SYMBOLY = Pattern.compile("symboly-[0-9a-f]{8}\\.bin");
 
+	private static final Pattern DOCASNE_SYMBOLY = Pattern.compile(SYMBOLY.pattern() + "\\.[0-9]+\\.tmp");
+
 	private UklidOfflineCache() {}
 
 	/** Složky se souborem klíčů podkladu a překryvu ve složce cache (viz {@code KachleModel}). */
@@ -133,6 +135,7 @@ final class UklidOfflineCache {
 			Files.createDirectories(slozka.toPath());
 			BezpecnyZapis.zapisText(new File(slozka, SOUBOR), StandardCharsets.UTF_8, out -> radky.forEach(out::println));
 
+			BezpecnyZapis.uklidDocasne(slozka, DOCASNE_SYMBOLY);
 			final File[] soubory = slozka.listFiles(f -> SYMBOLY.matcher(f.getName()).matches() && zaznamy.stream().noneMatch(z -> z.symboly.equals(f.getName())));
 			if (soubory != null) {
 				for (final File f : soubory) {

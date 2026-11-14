@@ -238,4 +238,26 @@ public class UklidOfflineCacheTest {
 		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.zaznamenej(slozka, "o00000001", symboly("0000000a"), "00000000"));
 		Assert.assertTrue(cizi.isDirectory());
 	}
+
+	private File docasny(final String jmeno, final long stari) throws Exception {
+		final File f = new File(slozka, jmeno);
+		Files.write(f.toPath(), new byte[] { 1 });
+		Assert.assertTrue(f.setLastModified(System.currentTimeMillis() - stari));
+		return f;
+	}
+
+	/** Uložení klíčů smaže osiřelé dočasné soubory symbolů z dřívějších pádů; čerstvé a cizí zůstanou. */
+	@Test
+	public void ulozeniUklidiOsireleDocasneSymboly() throws Exception {
+		final long den = 24 * 3600_000L;
+		final File osirely = docasny("symboly-0000000f.bin.123456789.tmp", den);
+		final File cerstvy = docasny("symboly-0000000e.bin.987654321.tmp", 0);
+		final File cizi = docasny("jine.bin.123456789.tmp", den);
+		final File puvodniTmp = docasny("symboly-0000000f.bin.tmp", den);
+		UklidOfflineCache.zaznamenej(slozka, "o00000001", symboly("0000000a"), "00000000");
+		Assert.assertFalse(osirely.exists());
+		Assert.assertTrue(cerstvy.exists());
+		Assert.assertTrue(cizi.exists());
+		Assert.assertTrue(puvodniTmp.exists());
+	}
 }

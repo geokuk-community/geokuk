@@ -3,6 +3,7 @@ package cz.geokuk.util.file;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.*;
+import java.util.regex.Pattern;
 
 /**
  * Zápis souboru, po kterém je na disku buď celý nový obsah, nebo nedotčený
@@ -26,6 +27,8 @@ public final class BezpecnyZapis {
 	}
 
 	private static final int POKUSU_PREJMENOVANI = 5;
+	/** Dočasný soubor starší než tato doba je pozůstatek pádu, žádný zápis tak dlouho netrvá. */
+	private static final long DOCASNY_MAX_STARI_MS = 10 * 60_000L;
 
 	static Presun presun = Files::move;
 
@@ -34,6 +37,7 @@ public final class BezpecnyZapis {
 		if (slozka != null && !slozka.isDirectory() && !slozka.mkdirs()) {
 			throw new IOException("Složku " + slozka + " nelze vytvořit.");
 		}
+		uklidDocasne(slozka, jmenoDocasneho(soubor.getName()));
 		final File docasny = File.createTempFile(soubor.getName() + ".", ".tmp", slozka);
 		try {
 			try (FileOutputStream fos = new FileOutputStream(docasny)) {
@@ -47,6 +51,22 @@ public final class BezpecnyZapis {
 		} finally {
 			// po úspěšném přejmenování už dočasný soubor neexistuje
 			Soubory.smaz(docasny);
+		}
+	}
+
+	/** Jméno dočasného souboru zápisu souboru {@code jmeno}, viz {@link File#createTempFile}. */
+	static Pattern jmenoDocasneho(final String jmeno) {
+		return Pattern.compile(Pattern.quote(jmeno) + "\\.[0-9]+\\.tmp");
+	}
+
+	/** Smaže ve složce dočasné soubory zápisu, které po pádu zůstaly; čerstvé nechá, mohl by je právě zapisovat jiný běh. Jiné soubory se nedotkne. */
+	public static void uklidDocasne(final File slozka, final Pattern jmeno) {
+		final long hranice = System.currentTimeMillis() - DOCASNY_MAX_STARI_MS;
+		final File[] soubory = slozka == null ? null : slozka.listFiles(f -> f.isFile() && jmeno.matcher(f.getName()).matches() && f.lastModified() < hranice);
+		if (soubory != null) {
+			for (final File f : soubory) {
+				Soubory.smaz(f);
+			}
 		}
 	}
 
