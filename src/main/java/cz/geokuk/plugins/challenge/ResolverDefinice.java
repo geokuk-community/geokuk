@@ -6,11 +6,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import cz.geokuk.core.coord.VyrezModel;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.challenge.Challenge.DruhOblasti;
 
 /** Z definice udělá to, co potřebuje výpočet: střed, oblast a pravidla; když něco chybí (domov, listing v datech, data oblasti), vrátí důvod místo výjimky. */
 final class ResolverDefinice {
+
+	static final String DOMOV_NENASTAVEN = "Domovské souřadnice nejsou nastavené.";
 
 	/** Výsledek převodu definice. */
 	static final class Vyreseno {
@@ -59,8 +62,8 @@ final class ResolverDefinice {
 		switch (c.stred().druh()) {
 		case DOMOV:
 			final Wgs d = domov.get();
-			if (d == null) {
-				return Vyreseno.neuplne("Domovské souřadnice nejsou nastavené.");
+			if (d == null || VyrezModel.DEFAULTNI_DOMACI_SOURADNICE.equals(d)) {
+				return Vyreseno.neuplne(DOMOV_NENASTAVEN);
 			}
 			lat = d.lat;
 			lon = d.lon;

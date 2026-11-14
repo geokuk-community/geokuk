@@ -55,6 +55,14 @@ public class ResolverDefiniceTest {
 	}
 
 	@Test
+	public void vychoziBodProgramuJeNenastavenyDomov() {
+		domov = cz.geokuk.core.coord.VyrezModel.DEFAULTNI_DOMACI_SOURADNICE;
+		final Vyreseno v = vyres(definice(Stred.domov(), OblastDef.zadna()));
+		Assert.assertFalse(v.jeUplne());
+		Assert.assertEquals("Domovské souřadnice nejsou nastavené.", v.duvod);
+	}
+
+	@Test
 	public void souradniceSePrevezmou() {
 		final Vyreseno v = vyres(definice(Stred.souradnice(49.5, 15.5), OblastDef.zadna()));
 		Assert.assertEquals(49.5, v.lat, 0);
