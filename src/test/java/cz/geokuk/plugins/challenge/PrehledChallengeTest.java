@@ -274,7 +274,7 @@ public class PrehledChallengeTest {
 		model.aktivuj(listing);
 		model.nastavVysledek(listing, vysledekSektoru(), 49.8, 15.4);
 		naEdt();
-		Assert.assertEquals("GC4PCQB", model.prehled().stredPopis());
+		Assert.assertEquals("keš GC4PCQB", model.prehled().stredPopis());
 		final Challenge souradnice = model.ulozVlastni(sektory("S", Stred.souradnice(49, 15)));
 		model.deaktivuj(listing);
 		model.aktivuj(souradnice);
