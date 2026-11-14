@@ -1072,6 +1072,9 @@ public class PlanovacChallengeTest {
 		Assert.assertNotNull(zpet.stitek());
 		Assert.assertEquals("mapa se vystředila", vystredeno + 1, this.vystredeno.size());
 		Assert.assertEquals(prvni, this.vystredeno.get(vystredeno).id());
+		// Výběry z vlákna testu čekají na EDT v pořadí prvni, druhy, prvni; podmínka platí už po první události.
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+		});
 		pockej(() -> model.vybranyKandidat(c) != null && model.vybranyKandidat(c).id().equals(prvni), "kandidát v modelu");
 	}
 
