@@ -69,8 +69,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private final transient Prepinac stitky = new Prepinac(new Stitek());
 	private final transient JButton nastaveni = new JButton(new Ozubene());
 	private final transient JButton policko = new JButton();
-	/** Políčko D/T vybrané v modelu, null když žádné nebo challenge není D/T. */
-	private String vybranePolicko;
+	/** Štítek výběru v modelu: políčko D/T („D3/T4“) nebo sektor 360° („11°“), null když žádný není vybrán. */
+	private String vybranyStitek;
 	private transient java.util.function.BooleanSupplier jinyPopupOtevreny = () -> false;
 	private final transient Timer prodlevaVyberu = new Timer(PRODLEVA_VYBERU_MS, e -> otevriVyber());
 	private transient ChallengeModel model;
@@ -355,7 +355,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/** Tlačítko vybraného políčka je vidět: políčko je vybrané, lišta není nejužší a s tlačítkem se vejde do volné šířky. */
 	private boolean sPolickem() {
-		if (vybranePolicko == null) {
+		if (vybranyStitek == null) {
 			return false;
 		}
 		final int sirka = sirkaListy();
@@ -511,17 +511,30 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		repaint();
 	}
 
-	/** Tlačítko „D3/T4 ✕“: jen u D/T s vybraným políčkem; při vypnutém zobrazení jen kandidátů (F4) zašedlé, ale klikací. */
+	/** Tlačítko „D3/T4 ✕“ nebo „11° ✕“: jen s vybraným políčkem D/T nebo sektorem 360°; při vypnutém zobrazení jen kandidátů (F4) zašedlé, ale klikací. */
 	private void obnovPolicko(final Challenge c, final boolean jenKandidati) {
-		vybranePolicko = c != null && c.typ() == Challenge.Typ.DT_MATICE && model != null ? model.vybranePolicko(c) : null;
-		if (vybranePolicko == null) {
+		vybranyStitek = null;
+		if (c != null && model != null) {
+			if (c.typ() == Challenge.Typ.DT_MATICE) {
+				vybranyStitek = model.vybranePolicko(c);
+			} else if (c.typ() == Challenge.Typ.SEKTORY_360 && model.vybranySektor(c) >= 0) {
+				vybranyStitek = model.vybranySektor(c) + "°";
+			}
+		}
+		if (vybranyStitek == null) {
 			return;
 		}
-		final VysledekPolicek v = model.vysledekPolicek(c);
-		final int n = v == null ? 0 : v.pocetKandidatu(vybranePolicko);
-		nastavText(policko, vybranePolicko + " ✕");
-		policko.setToolTipText(tipPolicka(vybranePolicko, n, v != null && v.jePlne(vybranePolicko), jenKandidati));
-		chip.setToolTipText(chip.getToolTipText() + "; vybrané políčko " + vybranePolicko);
+		final String tip;
+		if (c.typ() == Challenge.Typ.DT_MATICE) {
+			final VysledekPolicek v = model.vysledekPolicek(c);
+			final int n = v == null ? 0 : v.pocetKandidatu(vybranyStitek);
+			tip = tipPolicka(vybranyStitek, n, v != null && v.jePlne(vybranyStitek), jenKandidati);
+		} else {
+			tip = tipSektoru(model.vybranySektor(c), model.vysledek(c));
+		}
+		nastavText(policko, vybranyStitek + " ✕");
+		policko.setToolTipText(tip);
+		chip.setToolTipText(chip.getToolTipText() + (c.typ() == Challenge.Typ.DT_MATICE ? "; vybrané políčko " : "; vybraný sektor ") + vybranyStitek);
 		policko.setForeground(jenKandidati ? UIManager.getColor("Button.foreground") : zasedly());
 	}
 
@@ -532,7 +545,14 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		return "<html>Zrušit výběr políčka " + stitek + " (Esc)<br>" + stav + "</html>";
 	}
 
-	/** Esc zruší výběr políčka, jen když je políčko vybrané a žádný popup nečeká na Esc sám. */
+	/** Tooltip tlačítka vybraného sektoru: „Sektor 11° · 6 kandidátů · nejbližší 3,2 km od středu“ a jak výběr zrušit. */
+	static String tipSektoru(final int sektor, final VysledekSektoru v) {
+		final VysledekSektoru.Kandidati k = v == null ? null : v.kandidati(sektor);
+		final String popis = k == null || k.pocet() == 0 ? "Sektor " + sektor + "°" : TextyKresleni.sektorVybrane(sektor, k);
+		return "<html>" + popis + "<br>Zrušit výběr sektoru (Esc)</html>";
+	}
+
+	/** Esc zruší výběr políčka nebo sektoru, jen když je něco vybráno a žádný popup nečeká na Esc sám. */
 	private void pridejEsc() {
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "zrusPolickoPlanovace");
 		getActionMap().put("zrusPolickoPlanovace", new AbstractAction() {
@@ -540,7 +560,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 			@Override
 			public boolean isEnabled() {
-				return vybranePolicko != null && !jinyPopupOtevreny.getAsBoolean();
+				return vybranyStitek != null && !jinyPopupOtevreny.getAsBoolean();
 			}
 
 			@Override
@@ -569,6 +589,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		final Challenge c = challenge();
 		if (c != null && model != null) {
 			model.setVybranePolicko(c, null);
+			model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
 		}
 	}
 

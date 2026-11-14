@@ -155,12 +155,41 @@ public class JPruhPolickoTest {
 	}
 
 	@Test
-	public void u360AniPoVyberuSektoruNeni() throws Exception {
+	public void u360JeVybranySektorTlacitkemKtereHoZrusi() throws Exception {
 		priprav(1280);
-		model.aktivuj(Sablony.cesko360());
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200, 5000, 7000, 8000, 9000, 9500 }, { 20, 1000 } }));
 		SwingUtilities.invokeAndWait(() -> {});
 		pruh.doLayout();
-		Assert.assertFalse(policko() != null && policko().isVisible());
+		Assert.assertFalse("bez výběru tlačítko není", policko() != null && policko().isVisible());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final AbstractButton p = policko();
+		Assert.assertNotNull(p);
+		Assert.assertTrue(p.isVisible());
+		Assert.assertEquals("11° ✕", p.getText());
+		Assert.assertTrue(p.getToolTipText(), p.getToolTipText().contains("Sektor 11° · 6 kandidátů · nejbližší 3,2 km od středu"));
+		Assert.assertTrue("Esc výběr zruší", esc().isEnabled());
+		p.doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vybranySektor(c));
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void tooltipSektoruNeslibujeFiltrF4() {
+		final VysledekSektoru v = TextyPopupuPlanovaceTest.vysledek(new int[] { 0, 11 }, new int[0], new double[][] { { 0, 1500 }, { 11, 3200, 5000 } });
+		final String tip11 = JPruhPlanovace.tipSektoru(11, v);
+		Assert.assertTrue(tip11, tip11.contains("Sektor 11° · 2 kandidáti"));
+		Assert.assertFalse(tip11, tip11.contains("F4"));
+		final String tip0 = JPruhPlanovace.tipSektoru(0, v);
+		Assert.assertTrue(tip0, tip0.contains("Sektor 0° · 1 kandidát"));
+		Assert.assertFalse(tip0, tip0.contains("F4"));
+		Assert.assertEquals("<html>Sektor 7°<br>Zrušit výběr sektoru (Esc)</html>", JPruhPlanovace.tipSektoru(7, null));
 	}
 
 	private String tipVyberu() {

@@ -21,7 +21,10 @@ final class TextyKresleni {
 	/** Štítek vybrané keše: „Sektor 213° · 5 kandidátů · nejbližší 46 km od středu“, u sektoru bez kandidátů jen „Sektor 213°“. */
 	static String sektorVybrane(final int sektor, final PrehledChallenge prehled) {
 		final Object zdroj = prehled.zdroj();
-		final VysledekSektoru.Kandidati k = zdroj instanceof VysledekSektoru ? ((VysledekSektoru) zdroj).kandidati(sektor) : null;
+		return sektorVybrane(sektor, zdroj instanceof VysledekSektoru ? ((VysledekSektoru) zdroj).kandidati(sektor) : null);
+	}
+
+	static String sektorVybrane(final int sektor, final VysledekSektoru.Kandidati k) {
 		if (k == null || k.pocet() == 0) {
 			return "Sektor " + sektor + "°";
 		}
