@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -34,12 +35,50 @@ public class NalezyViceZdrojuTest {
 	private MultiNacitac nacitac;
 	private KesBag zobrazene;
 	private long hodiny = 1_700_000_000_000L;
+	private final ExecutorService jinyProgram = Executors.newSingleThreadExecutor();
+	private final List<CountDownLatch> zamky = new ArrayList<>();
 
 	@Before
 	public void setUp() throws Exception {
 		gpx = tmp.newFolder("gpx");
 		geoget = tmp.newFolder("geoget");
 		nacitac = new MultiNacitac(model(), new CasyDatZdroju());
+	}
+
+	@After
+	public void uklid() {
+		zamky.forEach(CountDownLatch::countDown);
+		jinyProgram.shutdown();
+	}
+
+	@Test
+	public void nectitelneDatumUJedneKopieNevyhraje() throws Exception {
+		gpx("a.gpx", kes("GC0001", "a", "2019-1-5"), kes("GC0002", "a", "nevím"), kes("GC0003", "a", ""));
+		gpx("b.gpx", kes("GC0001", "b", "2020-01-01"), kes("GC0002", "b", "2020-01-01"), kes("GC0003", "b", null));
+		gpx("c-nejnovejsi.gpx", kes("GC0003", "c", null));
+		nacti();
+		Assert.assertEquals("neúplné datum", "2020-01-01", kes("GC0001").getFountTime());
+		Assert.assertEquals("nečitelné datum", "2020-01-01", kes("GC0002").getFountTime());
+		Assert.assertEquals("nález bez data", EKesVztah.FOUND, kes("GC0003").getVztah());
+		Assert.assertNull(kes("GC0003").getFountTime());
+	}
+
+	@Test(timeout = 60_000)
+	public void novejsiZamcenaDatabazeMaStavZMinula() throws Exception {
+		final File starsi = gpx("a-stary.gpx", kes("GC0001", "stary", "2021-03-04"));
+		final File db = geogetDb("novy.db3", "GC0001", 0);
+		nacti();
+		Assert.assertEquals("novy.db3", kes("GC0001").getAuthor());
+		Assert.assertEquals(EKesVztah.FOUND, kes("GC0001").getVztah());
+		zamkni(db);
+		final long cas = starsi.lastModified();
+		gpx("a-stary.gpx", kes("GC0001", "stary", "2015-06-07"));
+		Assert.assertTrue(starsi.setLastModified(cas - 5_000));
+		nacti();
+		Assert.assertEquals("keš převzatá ze zamčené databáze se nemění", "2021-03-04", kes("GC0001").getFountTime());
+		vypnute.add(starsi);
+		nacti();
+		Assert.assertEquals("převzatá ze zamčené databáze zůstane nalezená", EKesVztah.FOUND, kes("GC0001").getVztah());
 	}
 
 	@Test
@@ -156,6 +195,22 @@ public class NalezyViceZdrojuTest {
 		}
 		dotkniSe(db);
 		return db;
+	}
+
+	private void zamkni(final File db) throws Exception {
+		final CountDownLatch zamceno = new CountDownLatch(1);
+		final CountDownLatch pustit = new CountDownLatch(1);
+		zamky.add(pustit);
+		jinyProgram.submit(() -> {
+			try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
+				s.execute("BEGIN EXCLUSIVE");
+				zamceno.countDown();
+				pustit.await();
+				s.execute("COMMIT");
+			}
+			return null;
+		});
+		zamceno.await();
 	}
 
 	private void dotkniSe(final File f) {
