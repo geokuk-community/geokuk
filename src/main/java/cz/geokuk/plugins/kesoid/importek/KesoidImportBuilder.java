@@ -11,6 +11,7 @@ import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.genetika.Genom;
 import cz.geokuk.plugins.kesoid.kind.GpxToWptContext;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
+import cz.geokuk.plugins.kesoid.kind.kes.Kes;
 import cz.geokuk.plugins.kesoid.mvc.GccomNick;
 import cz.geokuk.util.file.KeFile;
 import cz.geokuk.util.procak.ProcakDispatcher;
@@ -69,6 +70,12 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	/** Názvy přídavných waypointů (parkoviště, finálka …) se opakují, stejný text se drží jednou. */
 	private final Map<String, String> nazvyPridavnych = new HashMap<>();
 	private final Map<File, KliceZdroje.Sberac> kliceZdroju = new HashMap<>();
+	/** Nalezené kopie zahozených duplicit: jméno → nejstarší datum nálezu (může být null). */
+	private final Map<String, String> nalezyDuplicit = new HashMap<>();
+	/** Totéž po zdrojích, aby se nálezy daly příště vrátit, když zdroj s nimi nepůjde přečíst. */
+	private final Map<File, Map<String, String>> nalezyPodleZdroje = new HashMap<>();
+	/** Jména převzatá ze zobrazeného bagu (zamčená databáze); ty kešoidy patří i zobrazenému bagu a nemění se. */
+	private final Set<String> prevzataJmena = new HashSet<>();
 	private volatile KliceZdroje.Sberac sberacKlicu = new KliceZdroje.Sberac();
 
 	public KesoidImportBuilder(final Genom genom, final GccomNick gccomNick, final ProgressModel progressModel, final KesoidPluginManager kesoidPluginManager) {
@@ -110,6 +117,65 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		if (novy) {
 			infoOCurrentnimZdroji.pocetWaypointuBranych++; // tak samozřejmě, že těch braných je také tam
 			gpxWptDispatcher.dispatch(gpxwpt);
+		} else if (GEOCACHE_FOUND.equals(gpxwpt.sym)) {
+			final String datum = gpxwpt.gpxg.found == null ? "" : gpxwpt.gpxg.found;
+			nalezyDuplicit.merge(gpxwpt.name, datum, KesoidImportBuilder::starsiNalez);
+			nalezyPodleZdroje.computeIfAbsent(infoOCurrentnimZdroji.jmenoZdroje.getFile(), f -> new HashMap<>()).merge(gpxwpt.name, datum, KesoidImportBuilder::starsiNalez);
+		}
+	}
+
+	/** Starší ze dvou dat nálezu podle dne (RRRRMMDD na začátku zápisu); nečitelné prohraje. */
+	static String starsiNalez(final String a, final String b) {
+		final String da = denNalezu(a);
+		final String db = denNalezu(b);
+		if (db == null) {
+			return a;
+		}
+		return da == null || db.compareTo(da) < 0 ? b : a;
+	}
+
+	private static String denNalezu(final String datum) {
+		if (datum == null) {
+			return null;
+		}
+		final StringBuilder sb = new StringBuilder(8);
+		for (int i = 0; i < datum.length() && sb.length() < 8; i++) {
+			final char c = datum.charAt(i);
+			if (c >= '0' && c <= '9') {
+				sb.append(c);
+			} else if (c != '-' && c != '.' && c != '/') {
+				break;
+			}
+		}
+		return sb.length() == 8 ? sb.toString() : null;
+	}
+
+	/** Keš je nalezená, když ji jako nalezenou má kterýkoli zdroj; ostatní údaje zůstávají z kopie, která vyhrála duplicitu. */
+	private void sloucNalezy() {
+		if (nalezyDuplicit.isEmpty()) {
+			return;
+		}
+		for (final Usek u : useky) {
+			if (u.skupina != null) {
+				continue;
+			}
+			for (final Wpt wpt : u.wpty) {
+				final Kesoid kesoid = wpt.getKesoid();
+				if (!(kesoid instanceof Kes) || wpt != kesoid.getFirstWpt() || prevzataJmena.contains(wpt.getName())) {
+					continue;
+				}
+				final String nalez = nalezyDuplicit.get(wpt.getName());
+				if (nalez == null) {
+					continue;
+				}
+				final Kes kes = (Kes) kesoid;
+				if (kes.getVztah() == EKesVztah.NORMAL) {
+					kes.setVztahx(EKesVztah.FOUND);
+					kes.setFoundTime(nalez.isEmpty() ? null : nalez);
+				} else if (kes.getVztah() == EKesVztah.FOUND) {
+					kes.setFoundTime(starsiNalez(kes.getFountTime(), nalez));
+				}
+			}
 		}
 	}
 
@@ -155,6 +221,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		usek = null;
 		gpxWptDispatcher.done();
 		nazvyPridavnych.clear();
+		sloucNalezy();
 		final InformaceOZdrojich informaceOZdrojich = informaceOZdrojichBuilder.done();
 //		Progressor progressor = progressModel.start(delkaTasku, "Vytvářím waypointy");
 
@@ -264,6 +331,27 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 		return vysledek;
 	}
 
+	/** Nálezy zahozených duplicit po zdrojích. */
+	public Map<File, Map<String, String>> getNalezyPodleZdroje() {
+		return nalezyPodleZdroje;
+	}
+
+	/**
+	 * Nálezy zahozených duplicit zdroje z minulého načtení: u zamčeného zdroje se znovu sloučí, u zdroje z převzaté skupiny se jen předají dalšímu načtení (keše skupiny je už
+	 * mají).
+	 */
+	void prevezmiNalezy(final File zdroj, final Map<String, String> nalezy, final boolean sloucit) {
+		if (nalezy == null || nalezy.isEmpty()) {
+			return;
+		}
+		nalezyPodleZdroje.put(zdroj, new HashMap<>(nalezy));
+		if (sloucit) {
+			for (final Map.Entry<String, String> e : nalezy.entrySet()) {
+				nalezyDuplicit.merge(e.getKey(), e.getValue(), KesoidImportBuilder::starsiNalez);
+			}
+		}
+	}
+
 	public Map<File, List<Wpt>> getWptyPodleZdroje() {
 		return wptyPodleZdroje;
 	}
@@ -320,6 +408,7 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 			}
 			for (final Wpt wpt : hlavni.getKesoid().getWpts()) {
 				if (jmenaWaypointu.add(wpt.getName())) {
+					prevzataJmena.add(wpt.getName());
 					pridej(wpt);
 					zaznamenejZdroj(infoOCurrentnimZdroji, wpt);
 				}
