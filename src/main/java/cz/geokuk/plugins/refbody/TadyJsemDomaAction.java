@@ -10,6 +10,7 @@ import cz.geokuk.core.coord.VyrezModel;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
+import cz.geokuk.plugins.kesoid.ToastModel;
 
 /**
  * @author Martin Veverka
@@ -19,9 +20,13 @@ public class TadyJsemDomaAction extends Action0 {
 
 	private static final long serialVersionUID = -2882817111560336824L;
 
+	static final String TEXT_DOMOV_NASTAVEN = "Domov nastaven";
+
 	private Wgs hc;
 
 	private RefbodyModel refbodyModel;
+
+	private ToastModel toast;
 
 	public TadyJsemDomaAction() {
 		super("Jsem doma…");
@@ -45,7 +50,15 @@ public class TadyJsemDomaAction extends Action0 {
 			zapsat = Dlg.anone(textDotazu(hc, stareGc));
 		}
 		if (zapsat) {
-			refbodyModel.setHc(hc);
+			ulozDomov();
+		}
+	}
+
+	/** Uloží pozici jako domov a ukáže potvrzení. */
+	void ulozDomov() {
+		refbodyModel.setHc(hc);
+		if (toast != null) {
+			toast.ukaz(TEXT_DOMOV_NASTAVEN);
 		}
 	}
 
@@ -56,6 +69,10 @@ public class TadyJsemDomaAction extends Action0 {
 
 	public void inject(final RefbodyModel refbodyModel) {
 		this.refbodyModel = refbodyModel;
+	}
+
+	public void inject(final ToastModel toast) {
+		this.toast = toast;
 	}
 
 	public void onEvent(final PoziceChangedEvent aEvent) {
