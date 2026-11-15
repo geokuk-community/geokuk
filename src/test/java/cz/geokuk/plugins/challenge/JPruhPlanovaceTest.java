@@ -255,7 +255,7 @@ public class JPruhPlanovaceTest {
 		model.setZapnuto(true);
 		final javax.swing.AbstractButton odznak = najdiOdznak();
 		Assert.assertEquals("bez výsledku", "Chybějící políčka D/T – počítá se", odznak.getToolTipText());
-		Assert.assertEquals("chybí …", odznak.getText());
+		Assert.assertEquals("chybí … ▾", odznak.getText());
 		model.aktivuj(Sablony.cesko360());
 		model.setZobrazena(Sablony.cesko360());
 		Assert.assertEquals("Chybějící sektory – počítá se", odznak.getToolTipText());
@@ -276,8 +276,92 @@ public class JPruhPlanovaceTest {
 			}
 		}
 		Assert.assertNotNull(odznak);
-		Assert.assertEquals("chybí ?", odznak.getText());
+		Assert.assertEquals("chybí ? ▾", odznak.getText());
 		Assert.assertEquals(duvod, odznak.getToolTipText());
+	}
+
+	@Test
+	public void odznakJeTlacitkoSeSipkouAKurzoremRuky() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		model.nastavVysledek(Sablony.cesko360(), TextyPopupuPlanovaceTest.vysledek(new int[] { 10, 20 }, new int[0], new double[][] {}));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.AbstractButton odznak = najdiOdznak();
+		Assert.assertEquals("chybí 2 ▾", odznak.getText());
+		Assert.assertTrue("výplň tlačítka podle skinu", odznak.isContentAreaFilled());
+		Assert.assertTrue("rámeček tlačítka podle skinu", odznak.isBorderPainted());
+		Assert.assertTrue("najetí myší mění vzhled", odznak.isRolloverEnabled());
+		Assert.assertEquals(java.awt.Cursor.HAND_CURSOR, odznak.getCursor().getType());
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof javax.swing.JButton && !(c instanceof javax.swing.JToggleButton) && c != odznak) {
+				Assert.assertEquals("stejná třída vzhledu jako ostatní tlačítka lišty", ((javax.swing.JButton) c).getUI().getClass(), odznak.getUI().getClass());
+			}
+		}
+	}
+
+	@Test
+	public void odznakBezZvyrazneniMaBarvyTlacitka() {
+		Assert.assertNull("výchozí odznak není zvýrazněný barvou", JPruhPlanovace.barvaOdznaku());
+		priprav();
+		final javax.swing.AbstractButton odznak = najdiOdznak();
+		final javax.swing.JButton obycejne = new javax.swing.JButton("x");
+		Assert.assertEquals(obycejne.getBackground(), odznak.getBackground());
+		Assert.assertEquals(obycejne.getForeground(), odznak.getForeground());
+	}
+
+	@Test
+	public void odznakSNejdelsimTextemSeVejdeDoSirky() throws Exception {
+		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
+		javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+		try {
+			odznakSNejdelsimTextem();
+		} finally {
+			javax.swing.UIManager.setLookAndFeel(puvodni);
+		}
+	}
+
+	private void odznakSNejdelsimTextem() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		model.nastavVysledek(Sablony.cesko360(), TextyPopupuPlanovaceTest.vysledek(new int[] { 10, 20 }, new int[0], new double[][] {}));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.AbstractButton odznak = najdiOdznak();
+		odznak.setText("chybí 360 ▾");
+		pruh.doLayout();
+		final java.awt.FontMetrics fm = odznak.getFontMetrics(odznak.getFont());
+		Assert.assertTrue(fm.stringWidth(odznak.getText()) + " v " + odznak.getWidth(), fm.stringWidth(odznak.getText()) + odznak.getInsets().left + odznak.getInsets().right <= odznak.getWidth());
+	}
+
+	private javax.swing.AbstractButton najdiPodleTooltipu(final String predpona) {
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof javax.swing.AbstractButton) {
+				final String tip = ((javax.swing.AbstractButton) c).getToolTipText();
+				if (tip != null && tip.replace("<html>", "").startsWith(predpona)) {
+					return (javax.swing.AbstractButton) c;
+				}
+			}
+		}
+		throw new AssertionError(predpona);
+	}
+
+	@Test
+	public void sipkyPosunuZesednouJenKdyzNeniKamPosunout() throws Exception {
+		priprav();
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Collections.singletonList("D3/T4"), java.util.Collections.<KandidatPolicka> emptyList()));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse("bez kandidátů není kam", najdiPodleTooltipu("Žádné další políčko s kandidáty").isEnabled());
+		Assert.assertFalse(najdiPodleTooltipu("Žádné předchozí políčko s kandidáty").isEnabled());
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Collections.singletonList("D3/T4"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null, 2100))));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.AbstractButton dal = najdiPodleTooltipu("Další políčko: D3/T4 · 1 kandidát, nejbližší 2,1 km · mapa se neposune");
+		Assert.assertTrue("s kandidátem je kam", dal.isEnabled());
+		Assert.assertTrue(najdiPodleTooltipu("Předchozí políčko: D3/T4").isEnabled());
 	}
 
 	private javax.swing.AbstractButton najdiOdznak() {
@@ -320,7 +404,7 @@ public class JPruhPlanovaceTest {
 		b.set(0, 167);
 		javax.swing.SwingUtilities.invokeAndWait(() -> model.nastavVysledek(Sablony.cesko360(), new VysledekSektoru(b, new java.util.BitSet(360), new VysledekSektoru.Kandidati[360], 167)));
 		final javax.swing.AbstractButton odznak = najdiOdznak();
-		Assert.assertEquals("chybí 193", odznak.getText());
+		Assert.assertEquals("chybí 193 ▾", odznak.getText());
 		Assert.assertEquals("Chybí 193 sektorů z 360 – klik ukáže podrobnosti", odznak.getToolTipText());
 	}
 
@@ -356,7 +440,7 @@ public class JPruhPlanovaceTest {
 						model.setZapnuto(true);
 						model.nastavVysledek(Sablony.cesko360(), new VysledekSektoru(new java.util.BitSet(360), new java.util.BitSet(360), new VysledekSektoru.Kandidati[360], 0));
 						pruh.doLayout();
-						Assert.assertEquals("chybí 360", najdiOdznak().getText());
+						Assert.assertEquals("chybí 360 ▾", najdiOdznak().getText());
 						for (final Component c : pruh.getComponents()) {
 							if (c.isVisible() && c instanceof javax.swing.AbstractButton) {
 								final javax.swing.AbstractButton b = (javax.swing.AbstractButton) c;
