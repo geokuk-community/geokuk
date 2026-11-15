@@ -72,6 +72,7 @@ public class MultiNacitac {
 	private final Map<File, String> sledovane = new HashMap<>();
 	/** Waypointy zobrazených databází; keše databáze, kterou jiný program zamkne, se z nich převezmou do dalšího výsledku. */
 	private Map<File, List<Wpt>> zobrazeneWpty = Collections.emptyMap();
+	private Map<File, Map<String, String>> zobrazeneNalezy = Collections.emptyMap();
 	private InformaceOZdrojich zobrazeneInformace;
 	/** Genom, nick a parametry, se kterými se načetly zobrazené keše; keše zamčeného zdroje se převezmou jen při stejném kontextu. */
 	private Object zobrazenyKontext;
@@ -358,6 +359,7 @@ public class MultiNacitac {
 		}
 		zobrazene = nactene;
 		zobrazeneWpty = builder.getWptyPodleZdroje();
+		zobrazeneNalezy = builder.getNalezyPodleZdroje();
 		zobrazeneInformace = bag.getInformaceOZdrojich();
 		zobrazenyKontext = kontext;
 		return bag;
@@ -424,6 +426,7 @@ public class MultiNacitac {
 				final KesBag.Cast hotova = cteni.poradiCasti.get(skupina).equals(skupina.poradiCasti) ? skupina.cast : null;
 				final int[] pocty = skupina.pocty.get(soubor);
 				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1], skupina, hotova);
+				builder.prevezmiNalezy(soubor, zobrazeneNalezy.get(soubor), false);
 				registr.hotovo(generace, soubor, pocty[0], pocty[1]);
 				continue;
 			}
@@ -454,6 +457,7 @@ public class MultiNacitac {
 					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
 					if (kontext.equals(zobrazenyKontext) && !builder.maWaypointyZe(soubor)) {
 						builder.prevezmi(file, zobrazeneWpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
+						builder.prevezmiNalezy(soubor, zobrazeneNalezy.get(soubor), true);
 						cteni.prevzateZamcene.add(soubor);
 					} else {
 						cteni.nelzePrevzit = true;
