@@ -110,6 +110,48 @@ public class JPlanovacVrstvyTest {
 		return false;
 	}
 
+	private Challenge zobrazDt(final int limit, final double... vzdalenostiM) throws Exception {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		final java.util.List<KandidatPolicka> kandidati = new ArrayList<>();
+		for (int i = 0; i < vzdalenostiM.length; i++) {
+			kandidati.add(new KandidatPolicka("GC" + i, 50.001 + i * 0.0001, 14.001, "D3/T4", "D3/T4", null, vzdalenostiM[i]));
+		}
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4"), kandidati, limit), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		return dt;
+	}
+
+	@Test
+	public void dosahKandidatuSeHlasiModeluJenKdyzJePolickoPlneAVyrezHoPresahuje() throws Exception {
+		Assert.assertTrue("před kreslením nic", Double.isNaN(model.dosahPresazeny()));
+		zobrazDt(3, 100, 200, 300);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("plné políčko, výřez je větší než dosah", 300, model.dosahPresazeny(), 1e-9);
+		zobrazDt(50, 100, 200, 300);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("políčko není plné, výčet je úplný", Double.isNaN(model.dosahPresazeny()));
+	}
+
+	@Test
+	public void dosahKandidatuSeNehlasiKdyzVyrezLeziUvnitrDosahu() throws Exception {
+		zobrazDt(3, 50_000, 60_000, 70_000);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("výřez je menší než dosah 70 km", Double.isNaN(model.dosahPresazeny()));
+	}
+
+	@Test
+	public void dosahKandidatuSeNehlasiU360() throws Exception {
+		zobraz(TvarPlanovaceTest.vysledek(), 50.0, 14.0);
+		nakresli(nad, mapaSKandidaty());
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue(Double.isNaN(model.dosahPresazeny()));
+	}
+
 	@Test
 	public void vybranePolickoDtMaStitkyJenSvychKandidatu() throws Exception {
 		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
