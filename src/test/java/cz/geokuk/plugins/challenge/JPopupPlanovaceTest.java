@@ -197,6 +197,21 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void popupPiseODosahuKandidatuJenKdyzHoVyrezPresahuje() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertFalse(o.dosahKandidatu.isVisible());
+		model.nahlasDosahPresazeny(3200);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("Kandidáti spočítáni do 3,2 km od středu mapy – posunutím mapy se dopočítají další", o.dosahKandidatu.getText());
+		Assert.assertTrue(o.dosahKandidatu.isVisible());
+		model.nahlasDosahPresazeny(Double.NaN);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse(o.dosahKandidatu.isVisible());
+	}
+
+	@Test
 	public void jenKandidatiPrepinaFiltrModelu() throws Exception {
 		priprav();
 		popup.prepni();
