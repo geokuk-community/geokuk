@@ -6,6 +6,7 @@ import java.util.List;
 import javax.swing.*;
 
 import cz.geokuk.framework.JMyDialog0;
+import cz.geokuk.util.gui.JPoleSNapovedou;
 import cz.geokuk.plugins.challenge.Challenge.DruhStredu;
 import cz.geokuk.plugins.challenge.Challenge.ZdrojPravidel;
 import cz.geokuk.plugins.challenge.Challenge.ZdrojeNalezu;
@@ -44,7 +45,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final JRadioButton stredDomov = new JRadioButton("Domov");
 	private final JRadioButton stredSouradnice = new JRadioButton("Souřadnice");
 	private final JRadioButton stredListing = new JRadioButton("Keš (kód)");
-	private final JTextField souradnice = new JTextField(20);
+	private final JPoleSNapovedou souradnice = new JPoleSNapovedou(FormularDefinice.UKAZKA_SOURADNIC, 22);
 	private final JTextField kod = new JTextField(9);
 	private final JComboBox<FormularDefinice.Oblast> oblast = new JComboBox<>(FormularDefinice.oblasti().toArray(new FormularDefinice.Oblast[0]));
 	private final JComboBox<String> nalezy = new JComboBox<>(new String[] { "Ze zapnutých zdrojů", "Ze všech zdrojů" });
@@ -125,18 +126,14 @@ public class JChallengeDialog extends JMyDialog0 {
 		pravidla.setToolTipText("<html>Project-GC: bez Lab a Locationless, jen nálezy zalogované na geocaching.com.<br>Stator: přesnější výpočet, včetně Lab keší, bez Locationless.</html>");
 		final JLabel popisekStredu = new JLabel("Střed");
 		final JPanel stredSouradnicePanel = panel(stredSouradnice, souradnice);
-		souradnice.setToolTipText("Např. " + FormularDefinice.UKAZKA_SOURADNIC);
-		final JLabel ukazkaSouradnic = new JLabel("např. " + FormularDefinice.UKAZKA_SOURADNIC);
-		ukazkaSouradnic.setEnabled(false);
 		final JPanel stredListingPanel = panel(stredListing, kod);
 		final JLabel popisekOblasti = new JLabel("Oblast");
 		radek(f, r++, popisekPravidel, pravidla);
 		radek(f, r++, popisekStredu, stredDomov);
 		radek(f, r++, null, stredSouradnicePanel);
-		radek(f, r++, null, ukazkaSouradnic);
 		radek(f, r++, null, stredListingPanel);
 		radek(f, r++, popisekOblasti, oblast);
-		poleSektoru.addAll(java.util.Arrays.asList(popisekPravidel, pravidla, popisekStredu, stredDomov, stredSouradnicePanel, ukazkaSouradnic, stredListingPanel, popisekOblasti, oblast));
+		poleSektoru.addAll(java.util.Arrays.asList(popisekPravidel, pravidla, popisekStredu, stredDomov, stredSouradnicePanel, stredListingPanel, popisekOblasti, oblast));
 		radek(f, r++, new JLabel("Nálezy"), nalezy);
 		final JLabel popisekOpakovani = new JLabel("Kolikrát splnit");
 		final JPanel opakovaniPanel = panel(opakovani, popisOpakovani);
@@ -160,6 +157,8 @@ public class JChallengeDialog extends JMyDialog0 {
 		stredDomov.addActionListener(e -> povolStred());
 		stredSouradnice.addActionListener(e -> povolStred());
 		stredListing.addActionListener(e -> povolStred());
+		prepniStredPriFokusu(souradnice, stredSouradnice);
+		prepniStredPriFokusu(kod, stredListing);
 		naplnFormular(null);
 	}
 
@@ -223,11 +222,31 @@ public class JChallengeDialog extends JMyDialog0 {
 		return c != null && model != null && model.jeSablona(c);
 	}
 
+	/** Pole středu jsou použitelná, kdykoli jde definici upravovat; radio button se přepne až kliknutím nebo přechodem fokusu do pole. */
 	private void povolStred() {
 		final Challenge c = seznam.getSelectedValue();
-		final boolean uprava = c != null && !jeSablona(c);
-		souradnice.setEnabled(uprava && stredSouradnice.isSelected());
-		kod.setEnabled(uprava && stredListing.isSelected());
+		final boolean uprava = c != null && !jeSablona(c) && !jeNedostupny(c);
+		souradnice.setEnabled(uprava);
+		kod.setEnabled(uprava);
+	}
+
+	/** Fokus v poli (klikem nebo Tabem) vybere příslušnou volbu středu. */
+	private void prepniStredPriFokusu(final JTextField pole, final JRadioButton volba) {
+		pole.addFocusListener(new java.awt.event.FocusAdapter() {
+			@Override
+			public void focusGained(final java.awt.event.FocusEvent e) {
+				if (!e.isTemporary()) {
+					vyberStred(volba);
+				}
+			}
+		});
+	}
+
+	void vyberStred(final JRadioButton volba) {
+		if (!plnim && volba.isEnabled() && !volba.isSelected()) {
+			volba.setSelected(true);
+			povolStred();
+		}
 	}
 
 	private void naplnFormular(final Challenge c) {

@@ -28,7 +28,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	private static final long serialVersionUID = 1L;
 
-	static final int RADKU_SEZNAMU = 7;
+	static final int RADKU_SEZNAMU = 11;
 
 	final transient Obsah obsah = new Obsah();
 	private transient ChallengeModel model;

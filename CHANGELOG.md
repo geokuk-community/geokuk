@@ -28,6 +28,9 @@
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
   vytvořit i z vlastní challenge; v popupu plánovače je u středu domov odkaz
   Změnit domov….
+- V dialogu plánovače se kliknutím do pole Souřadnice nebo Keš (kód) vybere
+  příslušná volba středu; formát souřadnic je šedým textem přímo v poli.
+  Popup plánovače je u 360° výchozí výškou stejně vysoký jako u D/T.
 - Šablony: 360° od domova, GC4PCQB – Challenge - 360 degrees of the Czech
   Republic, GC56R49 – Challenge - 360 Degrees of Prague a Matice D/T.
 - Položka Kešoidy > Kruhy 100 m (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
