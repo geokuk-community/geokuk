@@ -312,6 +312,16 @@ public class JPruhPlanovaceTest {
 
 	@Test
 	public void odznakSNejdelsimTextemSeVejdeDoSirky() throws Exception {
+		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
+		javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+		try {
+			odznakSNejdelsimTextem();
+		} finally {
+			javax.swing.UIManager.setLookAndFeel(puvodni);
+		}
+	}
+
+	private void odznakSNejdelsimTextem() throws Exception {
 		priprav();
 		model.aktivuj(Sablony.cesko360());
 		model.setZapnuto(true);
