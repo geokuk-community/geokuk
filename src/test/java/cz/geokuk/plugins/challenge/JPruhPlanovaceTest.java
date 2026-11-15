@@ -334,6 +334,36 @@ public class JPruhPlanovaceTest {
 		Assert.assertTrue(fm.stringWidth(odznak.getText()) + " v " + odznak.getWidth(), fm.stringWidth(odznak.getText()) + odznak.getInsets().left + odznak.getInsets().right <= odznak.getWidth());
 	}
 
+	private javax.swing.AbstractButton najdiPodleTooltipu(final String predpona) {
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof javax.swing.AbstractButton) {
+				final String tip = ((javax.swing.AbstractButton) c).getToolTipText();
+				if (tip != null && tip.replace("<html>", "").startsWith(predpona)) {
+					return (javax.swing.AbstractButton) c;
+				}
+			}
+		}
+		throw new AssertionError(predpona);
+	}
+
+	@Test
+	public void sipkyPosunuZesednouJenKdyzNeniKamPosunout() throws Exception {
+		priprav();
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Collections.singletonList("D3/T4"), java.util.Collections.<KandidatPolicka> emptyList()));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse("bez kandidátů není kam", najdiPodleTooltipu("Žádné další políčko s kandidáty").isEnabled());
+		Assert.assertFalse(najdiPodleTooltipu("Žádné předchozí políčko s kandidáty").isEnabled());
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Collections.singletonList("D3/T4"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null, 2100))));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.AbstractButton dal = najdiPodleTooltipu("Další políčko: D3/T4 · 1 kandidát, nejbližší 2,1 km · mapa se neposune");
+		Assert.assertTrue("s kandidátem je kam", dal.isEnabled());
+		Assert.assertTrue(najdiPodleTooltipu("Předchozí políčko: D3/T4").isEnabled());
+	}
+
 	private javax.swing.AbstractButton najdiOdznak() {
 		for (final Component c : pruh.getComponents()) {
 			if (c instanceof javax.swing.AbstractButton && !(c instanceof javax.swing.JToggleButton) && ((javax.swing.AbstractButton) c).getToolTipText() != null && ((javax.swing.AbstractButton) c).getToolTipText().startsWith("Chyb")) {
