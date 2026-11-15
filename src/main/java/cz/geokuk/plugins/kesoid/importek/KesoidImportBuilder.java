@@ -72,6 +72,8 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 	private final Map<File, KliceZdroje.Sberac> kliceZdroju = new HashMap<>();
 	/** Nalezené kopie zahozených duplicit: jméno → nejstarší datum nálezu (může být null). */
 	private final Map<String, String> nalezyDuplicit = new HashMap<>();
+	/** Totéž po zdrojích, aby se nálezy daly příště vrátit, když zdroj s nimi nepůjde přečíst. */
+	private final Map<File, Map<String, String>> nalezyPodleZdroje = new HashMap<>();
 	/** Jména převzatá ze zobrazeného bagu (zamčená databáze); ty kešoidy patří i zobrazenému bagu a nemění se. */
 	private final Set<String> prevzataJmena = new HashSet<>();
 	private volatile KliceZdroje.Sberac sberacKlicu = new KliceZdroje.Sberac();
@@ -116,7 +118,9 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 			infoOCurrentnimZdroji.pocetWaypointuBranych++; // tak samozřejmě, že těch braných je také tam
 			gpxWptDispatcher.dispatch(gpxwpt);
 		} else if (GEOCACHE_FOUND.equals(gpxwpt.sym)) {
-			nalezyDuplicit.merge(gpxwpt.name, gpxwpt.gpxg.found == null ? "" : gpxwpt.gpxg.found, KesoidImportBuilder::starsiNalez);
+			final String datum = gpxwpt.gpxg.found == null ? "" : gpxwpt.gpxg.found;
+			nalezyDuplicit.merge(gpxwpt.name, datum, KesoidImportBuilder::starsiNalez);
+			nalezyPodleZdroje.computeIfAbsent(infoOCurrentnimZdroji.jmenoZdroje.getFile(), f -> new HashMap<>()).merge(gpxwpt.name, datum, KesoidImportBuilder::starsiNalez);
 		}
 	}
 
@@ -325,6 +329,27 @@ public class KesoidImportBuilder implements IImportBuilder, GpxToWptContext {
 			vysledek.put(e.getKey(), e.getValue().hotovo());
 		}
 		return vysledek;
+	}
+
+	/** Nálezy zahozených duplicit po zdrojích. */
+	public Map<File, Map<String, String>> getNalezyPodleZdroje() {
+		return nalezyPodleZdroje;
+	}
+
+	/**
+	 * Nálezy zahozených duplicit zdroje z minulého načtení: u zamčeného zdroje se znovu sloučí, u zdroje z převzaté skupiny se jen předají dalšímu načtení (keše skupiny je už
+	 * mají).
+	 */
+	void prevezmiNalezy(final File zdroj, final Map<String, String> nalezy, final boolean sloucit) {
+		if (nalezy == null || nalezy.isEmpty()) {
+			return;
+		}
+		nalezyPodleZdroje.put(zdroj, new HashMap<>(nalezy));
+		if (sloucit) {
+			for (final Map.Entry<String, String> e : nalezy.entrySet()) {
+				nalezyDuplicit.merge(e.getKey(), e.getValue(), KesoidImportBuilder::starsiNalez);
+			}
+		}
 	}
 
 	public Map<File, List<Wpt>> getWptyPodleZdroje() {

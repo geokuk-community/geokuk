@@ -81,6 +81,29 @@ public class NalezyViceZdrojuTest {
 		Assert.assertEquals("převzatá ze zamčené databáze zůstane nalezená", EKesVztah.FOUND, kes("GC0001").getVztah());
 	}
 
+	@Test(timeout = 60_000)
+	public void starsiZamcenaDatabazeSNalezemNalezNeztrati() throws Exception {
+		final File db = geogetDb("stary.db3", "GC0001", 20190102);
+		gpx("b-novy.gpx", kes("GC0001", "novy", null));
+		final File jiny = gpx("c-jiny.gpx", kes("GC0009", "jiny", null));
+		nacti();
+		Assert.assertEquals(EKesVztah.FOUND, kes("GC0001").getVztah());
+		nacti();
+		Assert.assertEquals("převzatá skupina", EKesVztah.FOUND, kes("GC0001").getVztah());
+		zamkni(db);
+		gpx("b-novy.gpx", kes("GC0001", "novy2", null));
+		nacti();
+		Assert.assertEquals("novy2", kes("GC0001").getAuthor());
+		Assert.assertEquals("zamčená starší databáze", EKesVztah.FOUND, kes("GC0001").getVztah());
+		Assert.assertEquals("20190102", kes("GC0001").getFountTime());
+		final Kes predtim = kes("GC0001");
+		vypnute.add(jiny);
+		nacti();
+		Assert.assertNotSame("keš se načetla znovu", predtim, kes("GC0001"));
+		Assert.assertEquals("zamčená starší databáze, další načtení", EKesVztah.FOUND, kes("GC0001").getVztah());
+		Assert.assertEquals("20190102", kes("GC0001").getFountTime());
+	}
+
 	@Test
 	public void novejsiBezNalezuStarsiSNalezem() throws Exception {
 		gpx("a-stary.gpx", kes("GC0001", "stary", "2021-03-04"), kes("GC0002", "stary", null));
