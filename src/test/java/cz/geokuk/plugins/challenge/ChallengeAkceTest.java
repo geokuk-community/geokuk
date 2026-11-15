@@ -271,6 +271,68 @@ public class ChallengeAkceTest {
 		Assert.assertEquals(ChallengeAkce.tipPosunu(Challenge.Typ.DT_MATICE, true), dalsi.getValue(Action.SHORT_DESCRIPTION));
 	}
 
+	private Challenge pripravMatici(final java.util.List<KandidatPolicka> kandidati, final String... chybejici) throws Exception {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList(chybejici), kandidati, 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		return dt;
+	}
+
+	private static void kandidati(final java.util.List<KandidatPolicka> k, final String stitek, final int pocet, final double nejblizsiM) {
+		for (int i = 0; i < pocet; i++) {
+			k.add(new KandidatPolicka("GC" + stitek + i, 50, 14, stitek, stitek, null, nejblizsiM + i * 100));
+		}
+	}
+
+	@Test
+	public void tooltipSipekDTUkazeCilAPocet() throws Exception {
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		kandidati(k, "D3/T4", 12, 2100);
+		pripravMatici(k, "D1/T1", "D3/T4");
+		final String dopredu = ChallengeAkce.tipPosunu(model, Challenge.Typ.DT_MATICE, true);
+		Assert.assertEquals("<html>Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune<br>Shift+šipky skočí na kandidáta ve směru šipky</html>", dopredu);
+		Assert.assertEquals("Předchozí políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune", ChallengeAkce.cilPosunu(model, false));
+		Assert.assertEquals("tooltip výběr nemění", null, model.vybranePolicko(model.zobrazena()));
+		Assert.assertTrue(ChallengeAkce.jeKamPosunout(model, true));
+	}
+
+	@Test
+	public void tooltipSipekDTPlnePolickoAJedenKandidat() throws Exception {
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		kandidati(k, "D2/T2", 50, 300);
+		kandidati(k, "D3/T4", 1, 40);
+		pripravMatici(k, "D2/T2", "D3/T4");
+		Assert.assertEquals("Další políčko: D2/T2 · 50+ kandidátů, nejbližší 300 m · mapa se neposune", ChallengeAkce.cilPosunu(model, true));
+		model.setVybranePolicko(model.zobrazena(), "D2/T2");
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("Další políčko: D3/T4 · 1 kandidát, nejbližší 40 m · mapa se neposune", ChallengeAkce.cilPosunu(model, true));
+	}
+
+	@Test
+	public void tooltipSipekDTBezCileASBezVysledku() throws Exception {
+		final Challenge dt = pripravMatici(new java.util.ArrayList<>(), "D1/T1");
+		Assert.assertEquals("Žádné další políčko s kandidáty", ChallengeAkce.cilPosunu(model, true));
+		Assert.assertEquals("Žádné předchozí políčko s kandidáty", ChallengeAkce.cilPosunu(model, false));
+		Assert.assertFalse(ChallengeAkce.jeKamPosunout(model, true));
+		Assert.assertFalse(ChallengeAkce.jeKamPosunout(model, false));
+		model.aktivuj(Sablony.cesko360());
+		model.setZobrazena(Sablony.cesko360());
+		Assert.assertNull("výsledek ještě není", ChallengeAkce.cilPosunu(model, true));
+		Assert.assertTrue("bez výsledku šipky nešednou", ChallengeAkce.jeKamPosunout(model, true));
+		Assert.assertEquals(ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true), ChallengeAkce.tipPosunu(model, Challenge.Typ.SEKTORY_360, true));
+		Assert.assertNotNull(dt);
+	}
+
+	@Test
+	public void tooltipSipek360UkazeSektorAKandidaty() throws Exception {
+		pripravSektory(Sablony.cesko360());
+		Assert.assertEquals("Další sektor: 10° · 1 kandidát, nejbližší 1,0 km od středu", ChallengeAkce.cilPosunu(model, true));
+		Assert.assertEquals("Předchozí sektor: 20° · 1 kandidát, nejbližší 2,0 km od středu", ChallengeAkce.cilPosunu(model, false));
+		Assert.assertEquals(-1, model.vybranySektor(Sablony.cesko360()));
+	}
+
 	@Test
 	public void shiftSipkaVyberePlanovacemKandidataVeSmeru() throws Exception {
 		priravVysledek();

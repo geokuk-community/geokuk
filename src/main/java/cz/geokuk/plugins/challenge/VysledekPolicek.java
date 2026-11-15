@@ -153,6 +153,18 @@ public final class VysledekPolicek {
 		return n == null ? 0 : n;
 	}
 
+	/** Vzdálenost nejbližšího kandidáta políčka od středu výpočtu v metrech; NaN, když políčko kandidáty nemá nebo nenesou vzdálenost. */
+	public double nejblizsiM(final String stitek) {
+		double nejmene = Double.NaN;
+		for (final KandidatPolicka k : kandidati) {
+			final double d = k.vzdalenostM();
+			if (!Double.isNaN(d) && k.stitek().equals(stitek) && (Double.isNaN(nejmene) || d < nejmene)) {
+				nejmene = d;
+			}
+		}
+		return nejmene;
+	}
+
 	/** Políčko má tolik kandidátů, kolik výpočet nejvýš ponechává; skutečný počet nenalezených keší může být větší („50+“). Při neznámém limitu vždy false. */
 	public boolean jePlne(final String stitek) {
 		return limitKandidatu > 0 && pocetKandidatu(stitek) >= limitKandidatu;

@@ -403,6 +403,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		nastavText(stitky, texty ? "Štítky" : "");
 		nastavText(nastaveni, texty ? "Nastavení…" : "");
 		chip.setFont(pismoNaSirku(UIManager.getFont("Button.font"), chip.getText(), r[VYBER].width - 8, chip::getFontMetrics));
+		odznak.setFont(pismoNaSirku(UIManager.getFont("Button.font"), odznak.getText(), r[ODZNAK].width - odznak.getInsets().left - odznak.getInsets().right - 2, odznak::getFontMetrics));
 	}
 
 	private Component[] prvky() {
@@ -490,8 +491,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 				odznak.setToolTipText(stav.badge() < 0 ? stav.chyba() != null ? stav.chyba() : popisChybejicich(stav.typ()) + " – počítá se" : tipOdznaku(stav.typ(), stav.badge(), celkem(stav.challenge())));
 			}
 			kandidati.setToolTipText(popisKandidatu(stav.typ()) + " (F4)");
-			zpet.setToolTipText(ChallengeAkce.tipPosunu(stav.typ(), false));
-			dal.setToolTipText(ChallengeAkce.tipPosunu(stav.typ(), true));
+			zpet.setToolTipText(ChallengeAkce.tipPosunu(model, stav.typ(), false));
+			dal.setToolTipText(ChallengeAkce.tipPosunu(model, stav.typ(), true));
 		} else {
 			odznak.nastav("–");
 		}
@@ -501,6 +502,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		for (final AbstractButton b : new AbstractButton[] { odznak, zpet, dal, kandidati, stitky }) {
 			b.setEnabled(maChallenge);
 		}
+		zpet.setEnabled(maChallenge && ChallengeAkce.jeKamPosunout(model, false));
+		dal.setEnabled(maChallenge && ChallengeAkce.jeKamPosunout(model, true));
 		sektory.setEnabled(maChallenge && maSektory(stav.typ()));
 		obnovPolicko(maChallenge ? stav.challenge() : null, maChallenge && stav.jenKandidati());
 		if (!isVisible()) {
@@ -781,33 +784,40 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		}
 	}
 
-	/** Červený odznak s počtem chybějících. */
+	/**
+	 * Barva odznaku s počtem chybějících; null = neutrální tlačítko podle skinu. Pro zvýraznění vrátit barvu, například {@link #CERVENA}.
+	 */
+	static Color barvaOdznaku() {
+		return null;
+	}
+
+	/** Odznak s počtem chybějících: běžné tlačítko lišty, text končí „▾“ jako výběr challenge, a klik otevře popup. */
 	private static final class Odznak extends JButton {
 		private static final long serialVersionUID = 1L;
 
 		Odznak() {
 			super("…");
-			setContentAreaFilled(false);
-			setBorderPainted(false);
-			setForeground(Color.WHITE);
-			setFont(getFont().deriveFont(Font.BOLD));
-		}
-
-		void nastav(final String text) {
-			setText(text);
+			setRolloverEnabled(true);
+			setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			obnovBarvu();
 		}
 
 		@Override
-		protected void paintComponent(final Graphics g) {
-			final Graphics2D g2 = (Graphics2D) g.create();
-			try {
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(isEnabled() ? CERVENA : Color.GRAY);
-				g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
-			} finally {
-				g2.dispose();
+		public void updateUI() {
+			super.updateUI();
+			obnovBarvu();
+		}
+
+		private void obnovBarvu() {
+			final Color barva = barvaOdznaku();
+			if (barva != null) {
+				setBackground(barva);
+				setForeground(popredi(barva));
 			}
-			super.paintComponent(g);
+		}
+
+		void nastav(final String text) {
+			setText(text + " ▾");
 		}
 	}
 

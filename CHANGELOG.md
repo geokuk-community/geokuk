@@ -24,6 +24,7 @@
 - Matici D/T jde nastavit, kolikrát se má každé políčko splnit (Kolikrát
   splnit, 1 až 9); odznak počítá chybějící nálezy a políčko ukazuje například
   „1/3“.
+- Plánovač challenge: tooltip tlačítek ◀ ▶ říká, kam se výběr posune (například „Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune“), a bez dalšího cíle tlačítko zešedne; odznak s počtem chybějících je tlačítko se šipkou ▾.
 - Zapnutá může být jen jedna challenge; zapnutí další vypne dosavadní.
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
   vytvořit i z vlastní challenge; v popupu plánovače je u středu domov odkaz
