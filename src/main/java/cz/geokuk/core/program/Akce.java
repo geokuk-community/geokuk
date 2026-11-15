@@ -222,9 +222,9 @@ public class Akce {
 				zkratky.put(numpad, "akce " + zdroj.getValue(Action.NAME));
 			}
 		}
-		// Referenční body dostávají Alt+číslo postupně až při sestavení menu.
+		// Pojmenované body dostávají Alt+číslo postupně až při sestavení menu.
 		for (int i = 1; i <= 9; i++) {
-			zkratky.putIfAbsent(KeyStroke.getKeyStroke("alt " + i), "referenční bod");
+			zkratky.putIfAbsent(KeyStroke.getKeyStroke("alt " + i), "pojmenovaný bod");
 		}
 		return zkratky;
 	}

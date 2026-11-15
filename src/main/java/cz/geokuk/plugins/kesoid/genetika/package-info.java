@@ -1,5 +1,5 @@
 /**
- * Balík obsahuje připravený a otestovaný nový engin alel. Jeho zapojování však bude možné až při dlohých zimních večerech.
+ * Balík obsahuje genom, geny, alely a genotyp, kterými se popisují vlastnosti waypointů a skládají ikony.
  *
  * @author Martin Veverka
  */

@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class KachleZiskavac {
 
 	/**
-	 * Objekt zodpovědný za držení jedné kachle a její získání. Je zároveň v mapě jako keš.
+	 * Objekt zodpovědný za držení jedné kachle a její získání. Je zároveň v mapě jako záznam cache.
 	 *
 	 * @author Martin
 	 *
@@ -554,9 +554,9 @@ public class KachleZiskavac {
 			"Kolikrát se podařilo hledanou dlaždici zasáhnout v paměti. Číslo stále roste a mělo by být ve srovnání s ostatními zásahy co největší.");
 
 	private final Pocitadlo pocitMemMinuti = new PocitadloRoste("ka12 MEM cache #minutí",
-			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši nalézt a co se dělo dál není tímto atributem určeno..");
+			"Kolikrát se nepodařilo hledanou dlaždici v paměťové cache nalézt a co se dělo dál není tímto atributem určeno..");
 
-	private final Pocitadlo pocitMemZameteni = new PocitadloRoste("ka13 MEM cache #zametených", "Počet kachlic, které garbage collector zametl pryč a my díky tomu odstranili referenci z keše.");
+	private final Pocitadlo pocitMemZameteni = new PocitadloRoste("ka13 MEM cache #zametených", "Počet kachlic, které garbage collector zametl pryč a my díky tomu odstranili referenci z cache.");
 
 	private final PocitadloRoste pocitDiskLoadSubmit = new PocitadloRoste("ka21 DISK cache #požadovaných",
 			"Kolikrát bylo požadováno číst dlaždici z disku. Obsahuje všechny zásahy, minutí, chyby a také skutečně zknclované čtení");
@@ -565,7 +565,7 @@ public class KachleZiskavac {
 			"Kolikrát se podařilo hledanou dlaždici zasáhnout na disku, tedy naloadovat. Číslo stále roste a mělo by být ve srovnání s ostatními zásahy co největší.");
 
 	private final PocitadloRoste pocitDiskLoadMinuti = new PocitadloRoste("ka23 DISK cache #minutí",
-			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši minout, co se dělo dál není tímto atributem určeno..");
+			"Kolikrát se nepodařilo hledanou dlaždici v paměťové cache minout, co se dělo dál není tímto atributem určeno..");
 
 	final PocitadloRoste pocitDiskLoadError = new PocitadloRoste("ka24 DISK cache #chyb čtení", "Kolikrát selhalo čtení dlaždich z disku.");
 

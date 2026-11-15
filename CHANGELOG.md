@@ -202,6 +202,8 @@
   měřítka a okolí zobrazeného místa do cache; při práci s programem počká.
 - V Soubor > Zobrazení programu jde zvětšit ikony keší na mapě (1× až 5×)
   a písmo, symboly a čáry offline mapy až na 200 %.
+- Sjednocení názvů: druh kešoidu „Fotka“, popisky pojmenovaného bodu a stavového
+  řádku cest.
 
 ### Opravy
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po
