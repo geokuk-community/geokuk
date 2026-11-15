@@ -325,6 +325,80 @@ public class ChallengeAkceTest {
 		Assert.assertNotNull(dt);
 	}
 
+	/** Středem 50, 14; chybí sektory 40, 100, 150, 250, 300 a 330 (330 bez kandidátů), kandidáty mají všechny ostatní z nich. */
+	private Challenge pripravSektorySeStredem() throws Exception {
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZapnuto(true);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 40, 100, 150, 250, 300, 330 }, new int[0],
+				new double[][] { { 40, 1000 }, { 100, 2000 }, { 150, 3000 }, { 250, 4000 }, { 300, 5000 } }), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		return c;
+	}
+
+	private int sektorKese(final Challenge c, final VybranaKes kes) {
+		return model.prehled().sektorBodu(kes.lat(), kes.lon());
+	}
+
+	@Test
+	public void posunJdeOdVybranehoSektoruNahoruDoluAPresKruznici() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		model.setVybranySektor(c, 150);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(250, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(150, model.dalsiSektor(c, false));
+		SwingUtilities.invokeAndWait(() -> {});
+		model.setVybranySektor(c, 300);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("za posledním následuje první", 40, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("před prvním je poslední", 300, model.dalsiSektor(c, false));
+	}
+
+	@Test
+	public void posunJdeOdSektoruVybraneKese() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		final int s = sektorKese(c, kes);
+		Assert.assertTrue("keš leží v některém sektoru: " + s, s >= 0);
+		Assert.assertEquals("výchozí bod je sektor keše", s, model.vychoziSektorPosunu(c));
+		final String dalsi = ChallengeAkce.cilPosunu(model, true);
+		final int ocekavany = nejblizsiSektorSKandidaty(s, true);
+		Assert.assertTrue(dalsi + " má začínat sektorem " + ocekavany, dalsi.startsWith("Další sektor: " + ocekavany + "° "));
+		Assert.assertEquals("tooltip i skutečný posun jdou stejně", ocekavany, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		model.setVybranaKes(kes);
+		Assert.assertEquals("vybraný sektor je novější než keš", ocekavany, model.vychoziSektorPosunu(c));
+	}
+
+	@Test
+	public void posunJdeOdSektoruVybranehoKandidata() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		model.nastavVybranyKandidat(c, new VybranyKandidat("GC2", 50.0, 14.0, 150, 3000));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(250, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		model.setVybranySektor(c, -1);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(100, model.dalsiSektor(c, false));
+	}
+
+	/** Nejbližší sektor s kandidáty po kružnici za {@code od} (vpřed) nebo před ním (zpět). */
+	private static int nejblizsiSektorSKandidaty(final int od, final boolean dopredu) {
+		final int[] sektory = { 40, 100, 150, 250, 300 };
+		for (int i = 1; i <= 360; i++) {
+			final int s = Math.floorMod(od + (dopredu ? i : -i), 360);
+			for (final int x : sektory) {
+				if (x == s) {
+					return s;
+				}
+			}
+		}
+		throw new AssertionError();
+	}
+
 	@Test
 	public void tooltipSipek360UkazeSektorAKandidaty() throws Exception {
 		pripravSektory(Sablony.cesko360());

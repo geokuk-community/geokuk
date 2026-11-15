@@ -110,8 +110,14 @@ public class ChallengeModel extends Model0 {
 	}
 
 	private void ohlas(final ChallengeZmenenyEvent.Druh druh, final Challenge c) {
+		if (druh == ChallengeZmenenyEvent.Druh.POLICKO) {
+			casVyberuSektoruNeboPolicka = System.nanoTime();
+		}
 		fire(new ChallengeZmenenyEvent(druh, c));
 	}
+
+	/** Kdy (podle {@link System#nanoTime}) se naposledy vybral sektor nebo políčko v plánovači; k rozhodnutí, zda je novější výběr keše. */
+	private volatile long casVyberuSektoruNeboPolicka;
 
 	private void naEdt(final Runnable akce) {
 		if (SwingUtilities.isEventDispatchThread()) {
@@ -605,6 +611,19 @@ public class ChallengeModel extends Model0 {
 	}
 
 	/**
+	 * Sektor 0 až 359, od kterého postupují ◀ ▶ u 360°: ten, který je právě zvýrazněný na mapě (sektor vybrané keše, vybraný sektor, jinak sektor vybraného kandidáta), nebo -1, když
+	 * žádný není. Jde o stejný výběr jako {@link VyberZvyrazneni}.
+	 */
+	public int vychoziSektorPosunu(final Challenge c) {
+		final PrehledChallenge p = c.equals(zobrazena()) ? prehled() : null;
+		if (p == null) {
+			return vybranySektor(c);
+		}
+		final VybranyKandidat k = vybranyKandidat(c);
+		return VyberZvyrazneni.vyres(p, this, casVyberuSektoruNeboPolicka, k == null ? PosunVyberu.ZADNY_SEKTOR : k.sektor()).sektor;
+	}
+
+	/**
 	 * Posune výběr u 360° na další (vpřed) nebo předchozí chybějící sektor s kandidáty po kružnici a vrátí ho; -1, když žádný není nebo challenge není 360°. Nevybírá keš
 	 * a nevystřeďuje mapu. Volat ve vlákně Swingu.
 	 */
@@ -613,7 +632,7 @@ public class ChallengeModel extends Model0 {
 		if (v == null) {
 			return PosunVyberu.ZADNY_SEKTOR;
 		}
-		final int novy = PosunVyberu.dalsiSektor(v, vybranySektor(c), dopredu);
+		final int novy = PosunVyberu.dalsiSektor(v, vychoziSektorPosunu(c), dopredu);
 		setVybranySektor(c, novy);
 		return novy;
 	}
