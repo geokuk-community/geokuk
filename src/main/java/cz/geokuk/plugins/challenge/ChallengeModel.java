@@ -252,6 +252,22 @@ public class ChallengeModel extends Model0 {
 		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
 	}
 
+	private volatile double dosahPresazeny = Double.NaN;
+
+	/** Dosah spočítaných kandidátů D/T v metrech, když ho výřez mapy přesahuje, jinak NaN. Z EDT po kreslení, ohlásí se jen změna. */
+	public void nahlasDosahPresazeny(final double metru) {
+		if (Double.compare(dosahPresazeny, metru) == 0) {
+			return;
+		}
+		dosahPresazeny = metru;
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	/** Dosah spočítaných kandidátů D/T v metrech, když ho výřez přesahuje, jinak NaN. */
+	public double dosahPresazeny() {
+		return dosahPresazeny;
+	}
+
 	private volatile int vyberVeVyrezu = -1;
 
 	/** Kolik kandidátů vybraného sektoru nebo políčka leží ve výřezu mapy; -1 bez výběru. Z EDT po kreslení, ohlásí se jen změna. */

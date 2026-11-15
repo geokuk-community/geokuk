@@ -197,6 +197,21 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void popupPiseODosahuKandidatuJenKdyzHoVyrezPresahuje() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertFalse(o.dosahKandidatu.isVisible());
+		model.nahlasDosahPresazeny(3200);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("Kandidáti spočítáni do 3,2 km od středu mapy – posunutím mapy se dopočítají další", o.dosahKandidatu.getText());
+		Assert.assertTrue(o.dosahKandidatu.isVisible());
+		model.nahlasDosahPresazeny(Double.NaN);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse(o.dosahKandidatu.isVisible());
+	}
+
+	@Test
 	public void jenKandidatiPrepinaFiltrModelu() throws Exception {
 		priprav();
 		popup.prepni();
@@ -813,5 +828,20 @@ public class JPopupPlanovaceTest {
 		popup.obsah.zmenitDomov.doClick();
 		Assert.assertEquals(1, spusteno[0]);
 		Assert.assertFalse(popup.jeOtevreno());
+	}
+
+	/** Výchozí výška popupu u 360° je aspoň taková jako u D/T, aby se popup při přepnutí typu zbytečně nezkracoval. */
+	@Test
+	public void vyskaPopupu360NeniMensiNezDT() throws Exception {
+		priprav();
+		popup.prepni();
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
+		final int vyska360 = popup.obsah.getPreferredSize().height;
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D3/T3"),
+				java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D3/T3", "D3/T3", null)), 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		final int vyskaDT = popup.obsah.getPreferredSize().height;
+		Assert.assertTrue("360° " + vyska360 + " px, D/T " + vyskaDT + " px", vyska360 >= vyskaDT);
 	}
 }

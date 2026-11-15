@@ -519,4 +519,63 @@ public class JChallengeDialogTest {
 		}
 		return vysledek;
 	}
+
+	private static void fokus(final JTextField pole) {
+		// Správce fokusu zahazuje události pole, které fokus opravdu nemá; posluchači se volají přímo.
+		final java.awt.event.FocusEvent e = new java.awt.event.FocusEvent(pole, java.awt.event.FocusEvent.FOCUS_GAINED);
+		for (final java.awt.event.FocusListener l : pole.getFocusListeners()) {
+			l.focusGained(e);
+		}
+	}
+
+	/** Přechod fokusu do pole Souřadnice nebo Keš (kód) přepne příslušné radio; uložení pak použije vybranou volbu. */
+	@Test
+	public void fokusVPoliStreduPrepneRadio() throws Exception {
+		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
+			tlacitko("Domov").doClick();
+			Assert.assertTrue("výchozí volba je Domov", tlacitko("Domov").isSelected());
+			Assert.assertTrue("pole jde použít i bez předchozí volby radia", pole(1).isEnabled());
+			fokus(pole(1));
+			Assert.assertTrue(tlacitko("Souřadnice").isSelected());
+			Assert.assertFalse(tlacitko("Domov").isSelected());
+			fokus(pole(2));
+			Assert.assertTrue(tlacitko("Keš (kód)").isSelected());
+			Assert.assertFalse(tlacitko("Souřadnice").isSelected());
+			tlacitko("Domov").doClick();
+			Assert.assertTrue("ruční volba radia funguje dál", tlacitko("Domov").isSelected());
+			fokus(pole(1));
+			pole(1).setText("N50°06.000 E14°30.000");
+			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals(chyba(), 1, model.vlastni().size());
+			Assert.assertEquals(Challenge.DruhStredu.SOURADNICE, model.vlastni().get(0).stred().druh());
+		});
+	}
+
+	/** U šablony jde jen o čtení: fokus v poli nic nepřepne. */
+	@Test
+	public void fokusVPoliSablonyRadioNemeni() throws Exception {
+		naEdt(() -> {
+			final boolean domov = tlacitko("Domov").isSelected();
+			Assert.assertFalse(pole(1).isEnabled());
+			fokus(pole(1));
+			Assert.assertEquals(domov, tlacitko("Domov").isSelected());
+			Assert.assertFalse(tlacitko("Souřadnice").isSelected());
+		});
+	}
+
+	/** Formát souřadnic je šedá nápověda přímo v poli a po zadání textu zmizí. */
+	@Test
+	public void napovedaSouradnicZmiziPoZadaniTextu() throws Exception {
+		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
+			final cz.geokuk.util.gui.JPoleSNapovedou p = (cz.geokuk.util.gui.JPoleSNapovedou) pole(1);
+			Assert.assertEquals(FormularDefinice.UKAZKA_SOURADNIC, p.getNapoveda());
+			Assert.assertTrue(p.ukazujeNapovedu());
+			p.setText("N50°06.000 E14°30.000");
+			Assert.assertFalse(p.ukazujeNapovedu());
+			p.setText("");
+			Assert.assertTrue(p.ukazujeNapovedu());
+		});
+	}
 }

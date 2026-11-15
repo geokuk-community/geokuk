@@ -28,7 +28,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	private static final long serialVersionUID = 1L;
 
-	static final int RADKU_SEZNAMU = 7;
+	static final int RADKU_SEZNAMU = 11;
 
 	final transient Obsah obsah = new Obsah();
 	private transient ChallengeModel model;
@@ -249,6 +249,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.omezeniStitku.setText(model == null ? " " : TextyPopupuPlanovace.omezeniStitku(model.kandidatuVeVyrezu()));
 		// Prázdný řádek by v popupu nechal mezeru nad tlačítky.
 		obsah.omezeniStitku.setVisible(!obsah.omezeniStitku.getText().trim().isEmpty());
+		obsah.dosahKandidatu.setText(model == null ? " " : TextyPopupuPlanovace.dosahKandidatu(model.dosahPresazeny()));
+		obsah.dosahKandidatu.setVisible(!obsah.dosahKandidatu.getText().trim().isEmpty());
 		if (c != null && model != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
 			obsah.vyberMimoVyrez = model.vyberVeVyrezu() == 0;
@@ -335,6 +337,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
 		final JLabel omezeniStitku = new JLabel(" ");
+		final JLabel dosahKandidatu = new JLabel(" ");
 		final JButton dalsi = new JButton("▶ " + ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
 		/** Sektor (Integer) nebo štítek políčka (String) každého řádku seznamu, null u řádku, který nejde vybrat (den kalendáře). */
 		final List<Object> polozky = new ArrayList<>();
@@ -450,6 +453,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			telo.add(nejiste, g);
 			g.gridy++;
 			telo.add(omezeniStitku, g);
+			g.gridy++;
+			telo.add(dosahKandidatu, g);
 			final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 			tlacitka.setOpaque(false);
 			tlacitka.add(dalsi);

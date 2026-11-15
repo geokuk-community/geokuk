@@ -170,6 +170,42 @@ public final class VysledekPolicek {
 		return limitKandidatu > 0 && pocetKandidatu(stitek) >= limitKandidatu;
 	}
 
+	/**
+	 * Vzdálenost od středu výpočtu, do které je výčet kandidátů úplný: nejmenší vzdálenost nejvzdálenějšího kandidáta přes plná políčka ({@link #jePlne}). Když žádné políčko plné není
+	 * (nebo kandidáti nenesou vzdálenost), je výčet úplný všude a vrací {@link Double#POSITIVE_INFINITY}.
+	 */
+	public double dosahM() {
+		final Map<String, Double> nejdal = new HashMap<>();
+		for (final KandidatPolicka k : kandidati) {
+			final double d = k.vzdalenostM();
+			if (!Double.isNaN(d) && jePlne(k.stitek())) {
+				nejdal.merge(k.stitek(), d, Math::max);
+			}
+		}
+		double dosah = Double.POSITIVE_INFINITY;
+		for (final double d : nejdal.values()) {
+			dosah = Math.min(dosah, d);
+		}
+		return dosah;
+	}
+
+	/**
+	 * Dosah ({@link #dosahM()}), pokud některý z rohů výřezu leží od středu výpočtu dál; jinak {@link Double#NaN}. Tedy hodnota jen tehdy, když omezení kandidátů na políčko
+	 * skutečně platí a výřez za ním pokračuje.
+	 */
+	public double dosahPresazenyM(final cz.geokuk.core.coordinates.Wgs stred, final cz.geokuk.core.coordinates.Wgs... rohy) {
+		final double dosah = dosahM();
+		if (Double.isInfinite(dosah) || stred == null) {
+			return Double.NaN;
+		}
+		for (final cz.geokuk.core.coordinates.Wgs roh : rohy) {
+			if (cz.geokuk.core.coordinates.Wgs.vzdalenost(stred, roh) > dosah) {
+				return dosah;
+			}
+		}
+		return Double.NaN;
+	}
+
 	/** Počty kandidátů podle štítků chybějících políček v pořadí {@link #stitkyChybejicich()}; neměnná. */
 	public Map<String, Integer> pocetKandidatuPoPolickach() {
 		Map<String, Integer> m = pocty;

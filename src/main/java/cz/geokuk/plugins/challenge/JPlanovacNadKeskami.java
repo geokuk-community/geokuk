@@ -191,10 +191,41 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			if (kesoidyViditelne()) {
 				kresliStitekVybraneKese(g, c, t, tucne, vyber);
 			}
+			final double dosah = dosahPresazeny(c, t);
+			if (kesoidyViditelne() && kresliStitky() && !Double.isNaN(dosah)) {
+				kresliDosah(g, c, tucne, dosah);
+			}
+			nahlasDosah(dosah);
 			nahlasPocty();
 			nahlasVyberVeVyrezu(c, t);
 		} finally {
 			g.dispose();
+		}
+	}
+
+	/** Dosah spočítaných kandidátů D/T, když ho výřez mapy přesahuje; jinak NaN (360°, úplný výčet, výřez uvnitř dosahu). */
+	private static double dosahPresazeny(final Coord c, final TvarPlanovace t) {
+		final Object zdroj = t.prehled.zdroj();
+		if (!(zdroj instanceof VysledekPolicek) || !t.prehled.maStred()) {
+			return Double.NaN;
+		}
+		return ((VysledekPolicek) zdroj).dosahPresazenyM(new Wgs(t.prehled.stredLat(), t.prehled.stredLon()), c.getMouSZ().toWgs(), c.getMouSV().toWgs(), c.getMouJZ().toWgs(),
+				c.getMouJV().toWgs());
+	}
+
+	/** Řádek u spodního okraje mapy nad měřítkem, vystředěný; kandidáty a štítky mu uhýbají jako překážce. */
+	private void kresliDosah(final Graphics2D g, final Coord c, final Font pismo, final double dosah) {
+		final String text = TextyKresleni.dosahKandidatu(dosah);
+		final Dimension d = rozmerStitku(g, pismo, text);
+		final int x = Math.max(0, (c.getWidth() - d.width) / 2);
+		final int y = Math.max(0, c.getHeight() - OKRAJ_POPISKU_DOLE - d.height);
+		final Rectangle r = nakresliStitek(g, pismo, text, x, y, AkcentPlanovace.barva(), false);
+		zapis(r.x, r.y, r.width, r.height);
+	}
+
+	private void nahlasDosah(final double dosah) {
+		if (model != null) {
+			SwingUtilities.invokeLater(() -> model.nahlasDosahPresazeny(dosah));
 		}
 	}
 

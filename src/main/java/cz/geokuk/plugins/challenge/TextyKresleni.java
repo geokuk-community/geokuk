@@ -50,4 +50,9 @@ final class TextyKresleni {
 	static String popisekKruznice(final double polomerKruznice) {
 		return StitkyPruhu.vzdalenost(polomerKruznice);
 	}
+
+	/** Dovětek, když výřez mapy přesahuje oblast, do které jsou kandidáti D/T spočítáni: „Kandidáti spočítáni do 3,2 km od středu mapy – posunutím mapy se dopočítají další“. */
+	static String dosahKandidatu(final double metru) {
+		return "Kandidáti spočítáni do " + StitkyPruhu.vzdalenost(metru) + " od středu mapy – posunutím mapy se dopočítají další";
+	}
 }

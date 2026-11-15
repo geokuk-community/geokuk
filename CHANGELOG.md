@@ -25,10 +25,14 @@
   splnit, 1 až 9); odznak počítá chybějící nálezy a políčko ukazuje například
   „1/3“.
 - Plánovač challenge: tooltip tlačítek ◀ ▶ říká, kam se výběr posune (například „Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune“), a bez dalšího cíle tlačítko zešedne; odznak s počtem chybějících je tlačítko se šipkou ▾.
+- Plánovač challenge: když výřez mapy přesahuje oblast, pro kterou jsou kandidáti D/T spočítáni, ukáže se na mapě i v popupu dovětek „Kandidáti spočítáni do X km od středu mapy – posunutím mapy se dopočítají další“.
 - Zapnutá může být jen jedna challenge; zapnutí další vypne dosavadní.
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
   vytvořit i z vlastní challenge; v popupu plánovače je u středu domov odkaz
   Změnit domov….
+- V dialogu plánovače se kliknutím do pole Souřadnice nebo Keš (kód) vybere
+  příslušná volba středu; formát souřadnic je šedým textem přímo v poli.
+  Popup plánovače je u 360° výchozí výškou stejně vysoký jako u D/T.
 - Šablony: 360° od domova, GC4PCQB – Challenge - 360 degrees of the Czech
   Republic, GC56R49 – Challenge - 360 Degrees of Prague a Matice D/T.
 - Položka Kešoidy > Kruhy 100 m (Alt+F8) se jmenuje podle poloměru (Kruhy 1 km,
