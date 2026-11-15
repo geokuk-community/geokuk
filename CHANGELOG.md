@@ -206,6 +206,8 @@
   řádku cest.
 
 ### Opravy
+- Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
+  když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po
   přepnutí mapového podkladu.
 - Změna velikosti nebo barvy v Nastavení kruhů kruhy nevypne.
