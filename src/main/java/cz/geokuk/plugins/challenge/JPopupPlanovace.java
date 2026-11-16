@@ -3,6 +3,8 @@ package cz.geokuk.plugins.challenge;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -362,6 +364,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			seznam.setPrototypeCellValue("359°  99 kandidátů  nejbližší 99,9 km od středu");
 			seznam.setCellRenderer(new RadekRenderer());
+			// Seznam si bere šipky s Shiftem a Ctrlem pro rozšíření výběru; ty patří zkratkám plánovače (Shift+←/→, Ctrl+Shift+šipky), seznam má jednoduchý výběr.
+			for (final int kod : new int[] { KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT, KeyEvent.VK_UP, KeyEvent.VK_DOWN }) {
+				seznam.getInputMap().put(KeyStroke.getKeyStroke(kod, InputEvent.SHIFT_DOWN_MASK), "none");
+				seznam.getInputMap().put(KeyStroke.getKeyStroke(kod, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), "none");
+			}
 			final java.awt.event.MouseAdapter mys = new java.awt.event.MouseAdapter() {
 				@Override
 				public void mouseMoved(final MouseEvent e) {

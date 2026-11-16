@@ -220,6 +220,27 @@ public class JMaticeDTTest {
 
 	/** Vybrané políčko má jiné pozadí než nevybrané s kandidáty a znaky jsou vidět ve všech skinech. */
 	@Test
+	public void maticeBerePouzeSipkyBezModifikatoru() {
+		final JMaticeDT m = matice();
+		final java.awt.event.KeyListener[] posluchaci = m.getKeyListeners();
+		Assert.assertTrue(posluchaci.length > 0);
+		for (final int kod : new int[] { KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT, KeyEvent.VK_UP, KeyEvent.VK_DOWN }) {
+			for (final int mod : new int[] { java.awt.event.InputEvent.SHIFT_DOWN_MASK, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK }) {
+				final KeyEvent e = new KeyEvent(m, KeyEvent.KEY_PRESSED, 0, mod, kod, KeyEvent.CHAR_UNDEFINED);
+				for (final java.awt.event.KeyListener l : posluchaci) {
+					l.keyPressed(e);
+				}
+				Assert.assertFalse("šipka " + kod + " s modifikátorem " + mod + " projde ke zkratkám", e.isConsumed());
+			}
+			final KeyEvent holy = new KeyEvent(m, KeyEvent.KEY_PRESSED, 0, 0, kod, KeyEvent.CHAR_UNDEFINED);
+			for (final java.awt.event.KeyListener l : posluchaci) {
+				l.keyPressed(holy);
+			}
+			Assert.assertTrue("šipka " + kod + " bez modifikátoru matice zpracuje", holy.isConsumed());
+		}
+	}
+
+	@Test
 	public void citelneVeVsechSkinech() throws Exception {
 		final javax.swing.LookAndFeel puvodni = UIManager.getLookAndFeel();
 		final MetalTheme puvodniTema = MetalLookAndFeel.getCurrentTheme();

@@ -260,8 +260,8 @@ public class ChallengeAkceTest {
 	public void nazevATooltipPosunuPodleTypu() {
 		Assert.assertEquals("Další sektor", ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
 		Assert.assertEquals("Předchozí políčko", ChallengeAkce.nazevPosunu(Challenge.Typ.DT_MATICE, false));
-		Assert.assertEquals("Další sektor s kandidáty po kružnici; Ctrl+Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true));
-		Assert.assertEquals("Předchozí políčko s kandidáty po řádcích matice; Ctrl+Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.DT_MATICE, false));
+		Assert.assertEquals("Další sektor s kandidáty po kružnici (Shift+→); Ctrl+Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true));
+		Assert.assertEquals("Předchozí políčko s kandidáty po řádcích matice (Shift+←); Ctrl+Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.DT_MATICE, false));
 		Assert.assertEquals("Další sektor", dalsi.getValue(Action.NAME));
 		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 		model.aktivuj(dt);
@@ -292,7 +292,7 @@ public class ChallengeAkceTest {
 		kandidati(k, "D3/T4", 12, 2100);
 		pripravMatici(k, "D1/T1", "D3/T4");
 		final String dopredu = ChallengeAkce.tipPosunu(model, Challenge.Typ.DT_MATICE, true);
-		Assert.assertEquals("<html>Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune<br>Ctrl+Shift+šipky skočí na kandidáta ve směru šipky</html>", dopredu);
+		Assert.assertEquals("<html>Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune<br>Shift+→ · Ctrl+Shift+šipky skočí na kandidáta ve směru šipky</html>", dopredu);
 		Assert.assertEquals("Předchozí políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune", ChallengeAkce.cilPosunu(model, false));
 		Assert.assertEquals("tooltip výběr nemění", null, model.vybranePolicko(model.zobrazena()));
 		Assert.assertTrue(ChallengeAkce.jeKamPosunout(model, true));

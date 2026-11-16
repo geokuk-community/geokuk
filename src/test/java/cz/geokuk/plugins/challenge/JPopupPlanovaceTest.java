@@ -6,10 +6,21 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import cz.geokuk.framework.Event0;
@@ -209,6 +220,61 @@ public class JPopupPlanovaceTest {
 		model.nahlasDosahPresazeny(Double.NaN);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertFalse(o.dosahKandidatu.isVisible());
+	}
+
+	private static final int[] SIPKY = { java.awt.event.KeyEvent.VK_LEFT, java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.KeyEvent.VK_UP, java.awt.event.KeyEvent.VK_DOWN };
+
+	private static java.awt.event.KeyEvent klavesa(final Component zdroj, final int kod, final int modifikatory) {
+		return new java.awt.event.KeyEvent(zdroj, java.awt.event.KeyEvent.KEY_PRESSED, System.currentTimeMillis(), modifikatory, kod, java.awt.event.KeyEvent.CHAR_UNDEFINED);
+	}
+
+	@Test
+	public void seznamPousteSipkySShiftemACtrlemKZkratkamPlanovace() throws Exception {
+		priprav();
+		popup.prepni();
+		final JList<String> seznam = popup.obsah.seznam;
+		final int shift = java.awt.event.InputEvent.SHIFT_DOWN_MASK;
+		for (final int kod : SIPKY) {
+			Assert.assertFalse("Shift+šipka " + kod + " seznam nebere", SwingUtilities.processKeyBindings(klavesa(seznam, kod, shift)));
+			Assert.assertFalse("Ctrl+Shift+šipka " + kod + " seznam nebere", SwingUtilities.processKeyBindings(klavesa(seznam, kod, shift | java.awt.event.InputEvent.CTRL_DOWN_MASK)));
+		}
+		Assert.assertTrue("obyčejné šipky seznam dál bere", SwingUtilities.processKeyBindings(klavesa(seznam, java.awt.event.KeyEvent.VK_DOWN, 0)));
+		Assert.assertTrue("textové pole dál bere Shift+šipky pro výběr textu", SwingUtilities.processKeyBindings(klavesa(new JTextField("abc"), java.awt.event.KeyEvent.VK_RIGHT, shift)));
+	}
+
+	/** Zkratka v menu se spustí i s fokusem v seznamu popupu. */
+	@Test
+	public void zkratkaPlanovaceFungujeSFokusemVSeznamu() throws Exception {
+		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
+		priprav();
+		popup.prepni();
+		final JList<String> seznam = popup.obsah.seznam;
+		final int[] spusteno = new int[1];
+		final JFrame okno = new JFrame();
+		try {
+			final AbstractAction akce = new AbstractAction("Další") {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public void actionPerformed(final ActionEvent e) {
+					spusteno[0]++;
+				}
+			};
+			akce.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+			final JMenuBar lista = new JMenuBar();
+			final JMenu menu = new JMenu("Plánovač");
+			menu.add(new JMenuItem(akce));
+			lista.add(menu);
+			okno.setJMenuBar(lista);
+			okno.getContentPane().add(new JScrollPane(seznam));
+			okno.pack();
+			okno.setVisible(true);
+			final java.awt.event.KeyEvent e = klavesa(seznam, java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.InputEvent.SHIFT_DOWN_MASK);
+			Assert.assertTrue("zkratka byla zpracována", SwingUtilities.processKeyBindings(e));
+			Assert.assertEquals(1, spusteno[0]);
+		} finally {
+			okno.dispose();
+		}
 	}
 
 	@Test
