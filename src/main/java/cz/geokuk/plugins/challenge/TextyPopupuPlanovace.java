@@ -206,9 +206,9 @@ final class TextyPopupuPlanovace {
 	/** Nápověda pod seznamem chybějících. */
 	static String napovedaSeznamu(final Challenge.Typ typ) {
 		if (typ == Challenge.Typ.DT_MATICE) {
-			return "Políčko: na mapě jen jeho kandidáti · ◀ ▶ nebo Shift+←/→: předchozí / další políčko · Ctrl+Shift+šipka: nejbližší kandidát tím směrem";
+			return "Políčko: na mapě jen jeho kandidáti · ◀ ▶ nebo Shift+←/→: předchozí / další políčko · Ctrl+Shift+šipka: nejbližší kandidát tím směrem · F4: jen kandidáti";
 		}
-		return "Řádek: vybrat sektor · ◀ ▶ nebo Shift+←/→: předchozí / další sektor · Ctrl+Shift+šipka: nejbližší kandidát tím směrem";
+		return "Řádek: vybrat sektor · ◀ ▶ nebo Shift+←/→: předchozí / další sektor · Ctrl+Shift+šipka: nejbližší kandidát tím směrem · F4: jen kandidáti";
 	}
 
 	/** Tooltip řádku seznamu: klik vybere, druhý klik na vybraný výběr zruší. */

@@ -334,6 +334,12 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/** Vlastní obsah popupu; barvy a písmo z aktuálního vzhledu. */
 	static final int NEJVETSI_SIRKA_NADPISU = 380;
+	/** Šířka, na kterou se zalamuje nápověda pod maticí nebo seznamem, aby popup nerozšiřovala. */
+	static final int SIRKA_NAPOVEDY = 330;
+
+	static String html(final String text, final int sirka) {
+		return "<html><body style='width: " + sirka + "px'>" + text.replace("&", "&amp;").replace("<", "&lt;") + "</body></html>";
+	}
 
 	static final class Obsah extends JPanel {
 		private static final long serialVersionUID = 1L;
@@ -434,6 +440,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			});
 			seznam.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			napoveda.setFont(napoveda.getFont().deriveFont(Font.PLAIN, napoveda.getFont().getSize2D() - 1));
+			kruznice.setFont(napoveda.getFont());
 			legenda.setFont(legenda.getFont().deriveFont(Font.PLAIN, legenda.getFont().getSize2D() - 1));
 			vsechnaPolicka.setToolTipText("Zrušit výběr políčka – na mapě kandidáti všech chybějících políček");
 			for (final AbstractButton b : new AbstractButton[] { nastaveni, dalsi, kandidati, vsechnaPolicka }) {
@@ -459,7 +466,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			radekStredu.add(Box.createHorizontalStrut(8));
 			radekStredu.add(zmenitDomov);
 			nastavOdkaz(zmenitDomov);
-			for (final JComponent c : new JComponent[] { typ, radekStredu, souhrn, kruznice, postup }) {
+			for (final JComponent c : new JComponent[] { typ, radekStredu, souhrn, postup }) {
 				g.gridy++;
 				telo.add(c, g);
 			}
@@ -480,6 +487,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			g.fill = GridBagConstraints.HORIZONTAL;
 			g.gridy++;
 			telo.add(bezKandidatu, g);
+			g.gridy++;
+			telo.add(kruznice, g);
 			g.gridy++;
 			telo.add(napoveda, g);
 			g.gridy++;
@@ -603,6 +612,14 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			final Color hrana = UIManager.getColor("Separator.foreground");
 			setBorder(new CompoundBorder(new LineBorder(hrana == null ? Color.GRAY : hrana), new EmptyBorder(8, 10, 8, 10)));
+			if (napoveda != null) {
+				final Color text = UIManager.getColor("Label.foreground");
+				final Color p = pozadi == null ? Color.WHITE : pozadi;
+				final Color t = text == null ? Color.BLACK : text;
+				final Color tlumena = new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
+				napoveda.setForeground(tlumena);
+				kruznice.setForeground(tlumena);
+			}
 			if (nejiste != null) {
 				nejiste.setForeground(jeTmave(pozadi) ? new Color(0xFFD080) : new Color(0x9A5A00));
 			}
@@ -632,7 +649,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			stred.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
 			radekStredu.setVisible(stred.isVisible());
 			nadpisSeznamu.setText(TextyPopupuPlanovace.nadpisSeznamu(c.typ()));
-			napoveda.setText(TextyPopupuPlanovace.napovedaSeznamu(c.typ()));
+			napoveda.setText(html(TextyPopupuPlanovace.napovedaSeznamu(c.typ()), SIRKA_NAPOVEDY));
 			napoveda.setVisible(c.typ() != Challenge.Typ.KALENDAR);
 			dalsi.setText("▶ " + ChallengeAkce.nazevPosunu(c.typ(), true));
 			dalsi.setVisible(c.typ() != Challenge.Typ.KALENDAR);
@@ -703,7 +720,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			vyberRadek(vybrany);
 			kruznice.setVisible(!radky.isEmpty());
-			kruznice.setText("<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + TextyPopupuPlanovace.kruznice(TvarPlanovace.polomerKruznice(v)) + "</body></html>");
+			kruznice.setText(html(TextyPopupuPlanovace.kruznice(TvarPlanovace.polomerKruznice(v)), SIRKA_NAPOVEDY));
 			bezKandidatu.setText(bez == 0 ? " " : TextyPopupuPlanovace.bezKandidatu(c.typ(), bez));
 			final String n = TextyPopupuPlanovace.nejiste(v);
 			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");
