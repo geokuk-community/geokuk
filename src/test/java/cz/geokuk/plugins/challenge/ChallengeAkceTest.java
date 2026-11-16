@@ -221,6 +221,22 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
+	public void poSkokuZrusiVyberSektoruIZvyrazneniNaMape() throws Exception {
+		pripravSektorySKesemi();
+		final PlanovacChallenge p = planovac();
+		SwingUtilities.invokeAndWait(() -> ChallengeAkce.skoc(model, p, SmerSkoku.SEVER));
+		SwingUtilities.invokeAndWait(() -> {});
+		final Challenge c = Sablony.cesko360();
+		Assert.assertEquals(10, model.vybranySektor(c));
+		Assert.assertNotNull(model.vybranyKandidat(c));
+		model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(-1, model.vybranySektor(c));
+		Assert.assertNull("kandidát po skoku zvýraznění nedrží", model.vybranyKandidat(c));
+		Assert.assertEquals(-1, model.vychoziSektorPosunu(c));
+	}
+
+	@Test
 	public void skokVeSmeruVybereIJehoSektorAPosunKesNecha() throws Exception {
 		pripravSektorySKesemi();
 		final PlanovacChallenge p = planovac();
@@ -414,6 +430,21 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
+	public void zruseniVyberuSektoruPoSkokuZrusiIZvyrazneni() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		model.nastavVybranyKandidat(c, new VybranyKandidat("GC2", 50.0, 14.0, 150, 3000));
+		model.setVybranySektor(c, 150);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("zvýrazněn je sektor kandidáta", 150, model.vychoziSektorPosunu(c));
+		model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(-1, model.vybranySektor(c));
+		Assert.assertNull("vybraný kandidát držel zvýraznění", model.vybranyKandidat(c));
+		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", -1, model.vychoziSektorPosunu(c));
+		Assert.assertTrue(VyberZvyrazneni.vyres(model.prehled(), model, 0, -1).jeNic());
+	}
+
+	@Test
 	public void posunJdeOdSektoruVybranehoKandidata() throws Exception {
 		final Challenge c = pripravSektorySeStredem();
 		model.nastavVybranyKandidat(c, new VybranyKandidat("GC2", 50.0, 14.0, 150, 3000));
@@ -422,7 +453,8 @@ public class ChallengeAkceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		model.setVybranySektor(c, -1);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals(100, model.dalsiSektor(c, false));
+		Assert.assertEquals("po zrušení výběru není od čeho", -1, model.vychoziSektorPosunu(c));
+		Assert.assertEquals("bez výběru ◀ začíná od posledního sektoru", 300, model.dalsiSektor(c, false));
 	}
 
 	/** Nejbližší sektor s kandidáty po kružnici za {@code od} (vpřed) nebo před ním (zpět). */
