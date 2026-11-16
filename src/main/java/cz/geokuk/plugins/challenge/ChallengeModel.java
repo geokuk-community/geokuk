@@ -116,6 +116,13 @@ public class ChallengeModel extends Model0 {
 		fire(new ChallengeZmenenyEvent(druh, c));
 	}
 
+	/** Vybraný sektor nebo políčko se nemění, ale zvýraznění je teď podle novější vybrané keše: výběr se znovu ohlásí, aby se zvýraznění vrátilo k němu. */
+	private void obnovVyberPrekrytyKesi(final Challenge c) {
+		if (vybranaKes != null && casVyberuKese > casVyberuSektoruNeboPolicka) {
+			ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+		}
+	}
+
 	/** Kdy (podle {@link System#nanoTime}) se naposledy vybral sektor nebo políčko v plánovači; k rozhodnutí, zda je novější výběr keše. */
 	private volatile long casVyberuSektoruNeboPolicka;
 
@@ -515,6 +522,7 @@ public class ChallengeModel extends Model0 {
 				}
 			}
 			if (Objects.equals(stitek, policka.get(klic(c)))) {
+				obnovVyberPrekrytyKesi(c);
 				return;
 			}
 			if (stitek == null) {
@@ -599,6 +607,7 @@ public class ChallengeModel extends Model0 {
 			}
 			final Integer stary = sektory.get(klic(c));
 			if (stary == null ? sektor == PosunVyberu.ZADNY_SEKTOR : stary == sektor) {
+				obnovVyberPrekrytyKesi(c);
 				return;
 			}
 			if (sektor == PosunVyberu.ZADNY_SEKTOR) {

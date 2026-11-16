@@ -374,6 +374,46 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
+	public void posunNeZustaneZaseknutyKdyzJeCilJizVybranyAKesJeNovejsi() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		final int s = sektorKese(c, kes);
+		final int t = nejblizsiSektorSKandidaty(s, true);
+		model.setVybranySektor(c, t);
+		SwingUtilities.invokeAndWait(() -> {});
+		model.setVybranaKes(null);
+		model.setVybranaKes(kes);
+		Assert.assertEquals("klik na keš přebil výběr sektoru", s, model.vychoziSektorPosunu(c));
+		Assert.assertEquals(t, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("po posunu je zvýrazněn cíl, ne sektor keše", t, model.vychoziSektorPosunu(c));
+		Assert.assertEquals("další posun jde dál", nejblizsiSektorSKandidaty(t, true), model.dalsiSektor(c, true));
+	}
+
+	@Test
+	public void posunPolickaNeZustaneZaseknutyKdyzJeCilJizVybranyAKesJeNovejsi() throws Exception {
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		kandidati(k, "D3/T4", 2, 2100);
+		final Challenge dt = pripravMatici(k, "D3/T4");
+		model.setVybranePolicko(dt, "D3/T4");
+		SwingUtilities.invokeAndWait(() -> {});
+		final long pred = model.casVyberuKese();
+		model.setVybranaKes(new VybranaKes("GC9", 50.0, 14.0, 6, 8));
+		Assert.assertTrue(model.casVyberuKese() > pred);
+		final java.util.List<ChallengeZmenenyEvent.Druh> udalosti = new java.util.ArrayList<>();
+		model.inject(new EventFirer() {
+			@Override
+			public void fire(final Event0<?> event) {
+				udalosti.add(((ChallengeZmenenyEvent) event).druh());
+			}
+		});
+		Assert.assertEquals("D3/T4", model.dalsiPolicko(dt, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("výběr se ohlásí i při stejném políčku: " + udalosti, udalosti.contains(ChallengeZmenenyEvent.Druh.POLICKO));
+	}
+
+	@Test
 	public void posunJdeOdSektoruVybranehoKandidata() throws Exception {
 		final Challenge c = pripravSektorySeStredem();
 		model.nastavVybranyKandidat(c, new VybranyKandidat("GC2", 50.0, 14.0, 150, 3000));
