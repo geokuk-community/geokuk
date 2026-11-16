@@ -390,6 +390,58 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
+	public void posunNavazujeNaSektorZrusenekeseDokudHoUzivatelNezrusi() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		final int s = sektorKese(c, kes);
+		model.setVybranaKes(null);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("sektor zrušené keše zůstane výchozím bodem", s, model.vychoziSektorPosunu(c));
+		Assert.assertEquals("a zůstane zvýrazněný", s, VyberZvyrazneni.vyres(model.prehled(), model, 0, -1).sektor);
+		final String dalsi = ChallengeAkce.cilPosunu(model, true);
+		final int ocekavany = nejblizsiSektorSKandidaty(s, true);
+		Assert.assertTrue(dalsi + " má začínat sektorem " + ocekavany, dalsi.startsWith("Další sektor: " + ocekavany + "° "));
+		Assert.assertEquals(ocekavany, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("po zrušení (Esc, „N° ✕“) se nezačíná od zapamatovaného sektoru", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertTrue(VyberZvyrazneni.vyres(model.prehled(), model, 0, -1).jeNic());
+		Assert.assertEquals("začíná se od nuly", 40, model.dalsiSektor(c, true));
+	}
+
+	@Test
+	public void posunPolickaNavazujeNaPolickoZruseneKese() throws Exception {
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		kandidati(k, "D3/T4", 2, 2100);
+		final Challenge dt = pripravMatici(k, "D3/T4");
+		model.setVybranaKes(new VybranaKes("GC9", 50.0, 14.0, 4, 6));
+		model.setVybranaKes(null);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("políčko zrušené keše zůstane zvýrazněné", "D3/T4", model.zvyraznenePolicko(dt));
+		model.setVybranePolicko(dt, null);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNull("po zrušení nic", model.zvyraznenePolicko(dt));
+	}
+
+	@Test
+	public void zrusenyVyberKeseSeUPosunuZapominaJenZruseni() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		final int s = sektorKese(c, kes);
+		model.setVybranaKes(null);
+		model.setVybranySektor(c, 250);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("výslovně vybraný sektor má přednost", 250, model.vychoziSektorPosunu(c));
+		model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNotEquals(s, model.vychoziSektorPosunu(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+	}
+
+	@Test
 	public void posunNeZustaneZaseknutyKdyzJeCilJizVybranyAKesJeNovejsi() throws Exception {
 		final Challenge c = pripravSektorySeStredem();
 		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);

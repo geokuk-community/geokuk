@@ -251,7 +251,9 @@ public class ChallengeModel extends Model0 {
 			final PrehledChallenge p = prehled();
 			final int sektor = p == null ? -1 : p.sektorBodu(kes.lat(), kes.lon());
 			final String policko = p == null ? null : p.stitekPolicka(kes.obtiznostPulek(), kes.terenPulek());
-			stejnyVyberJakoPredchoziKes = (sektor >= 0 || policko != null) && sektor == posledniSektorKese && java.util.Objects.equals(policko, posledniPolickoKese);
+			final String klic = p == null ? null : klic(p.challenge());
+			stejnyVyberJakoPredchoziKes = (sektor >= 0 || policko != null) && Objects.equals(klic, posledniKlicKes) && sektor == posledniSektorKese && Objects.equals(policko, posledniPolickoKese);
+			posledniKlicKes = klic;
 			posledniSektorKese = sektor;
 			posledniPolickoKese = policko;
 		}
@@ -260,9 +262,31 @@ public class ChallengeModel extends Model0 {
 		ohlas(ChallengeZmenenyEvent.Druh.VYBRANA_KES, null);
 	}
 
+	private volatile String posledniKlicKes;
 	private volatile int posledniSektorKese = -1;
 	private volatile String posledniPolickoKese;
 	private volatile boolean stejnyVyberJakoPredchoziKes;
+
+	/**
+	 * Sektor 0 až 359, ve kterém leželo naposledy vybraná keš této challenge, i když už vybraná není; -1, když žádný není nebo ho uživatel zrušil (Esc, „N° ✕“). Zvýraznění
+	 * i posun ◀ ▶ u 360° v něm pokračují.
+	 */
+	public int zapamatovanySektorKese(final Challenge c) {
+		return c != null && klic(c).equals(posledniKlicKes) ? posledniSektorKese : PosunVyberu.ZADNY_SEKTOR;
+	}
+
+	/** Štítek políčka D/T naposledy vybrané keše této challenge, i když už vybraná není; null, když žádné není nebo ho uživatel zrušil. */
+	public String zapamatovanePolickoKese(final Challenge c) {
+		return c != null && klic(c).equals(posledniKlicKes) ? posledniPolickoKese : null;
+	}
+
+	/** Zapomene sektor a políčko naposledy vybrané keše; vrací, zda tam něco bylo. */
+	private boolean zapomenKes() {
+		final boolean bylo = posledniSektorKese >= 0 || posledniPolickoKese != null;
+		posledniSektorKese = -1;
+		posledniPolickoKese = null;
+		return bylo;
+	}
 
 	/** Leží naposledy vybraná keš ve stejném sektoru 360° nebo políčku D/T jako keš vybraná před ní? */
 	public boolean jeStejnyVyberJakoPredchoziKes() {
@@ -538,8 +562,13 @@ public class ChallengeModel extends Model0 {
 					return;
 				}
 			}
+			final boolean zapomenuto = stitek == null && zapomenKes();
 			if (Objects.equals(stitek, policka.get(klic(c)))) {
-				obnovVyberPrekrytyKesi(c);
+				if (zapomenuto) {
+					ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+				} else {
+					obnovVyberPrekrytyKesi(c);
+				}
 				return;
 			}
 			if (stitek == null) {
@@ -623,12 +652,20 @@ public class ChallengeModel extends Model0 {
 				}
 			}
 			final Integer stary = sektory.get(klic(c));
-			if (sektor == PosunVyberu.ZADNY_SEKTOR && kandidati.remove(klic(c)) != null) {
-				// Vybraný kandidát by sektor na mapě zvýrazňoval dál.
-				ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+			boolean zapomenuto = false;
+			if (sektor == PosunVyberu.ZADNY_SEKTOR) {
+				if (kandidati.remove(klic(c)) != null) {
+					// Vybraný kandidát by sektor na mapě zvýrazňoval dál.
+					ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+				}
+				zapomenuto = zapomenKes();
 			}
 			if (stary == null ? sektor == PosunVyberu.ZADNY_SEKTOR : stary == sektor) {
-				obnovVyberPrekrytyKesi(c);
+				if (zapomenuto) {
+					ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+				} else {
+					obnovVyberPrekrytyKesi(c);
+				}
 				return;
 			}
 			if (sektor == PosunVyberu.ZADNY_SEKTOR) {
