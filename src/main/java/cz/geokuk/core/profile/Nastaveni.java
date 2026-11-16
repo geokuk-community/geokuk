@@ -2,8 +2,15 @@ package cz.geokuk.core.profile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -11,13 +18,15 @@ import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.SouborovePreferences;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
+import cz.geokuk.util.file.BezpecnyZapis;
 import cz.geokuk.util.file.Soubory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Nastavení programu v souboru {@link FConst#NASTAVENI_FILE} v datové složce. Při prvním spuštění se jednou převezme nastavení starší verze: ze
  * souboru vedle programu, nebo z Java Preferences (ve Windows registr). Cesty ke složkám a souborům se nepřebírají, platí výchozí složky
- * u programu.
+ * u programu. Výjimkou jsou datové složky GeoGetu a GSAKu, které patří jiným programům, a obsah výletů (lovim.ggt a tedne.ggt), který se
+ * zkopíruje do složky výletů v datové složce.
  */
 @Slf4j
 public final class Nastaveni {
@@ -32,13 +41,36 @@ public final class Nastaveni {
 	static final String ZNACKA_PREVODU = UZEL + "/prevod";
 	private static final int VERZE_PREVODU = 1;
 	static final String VAROVANI_PREVODU = "Nastavení starší verze se nepodařilo převzít, program začíná s výchozím nastavením. Podrobnosti jsou v logu.";
+	/** Složky jiných programů; nemíří do původní složky dat, tak se převezmou. */
+	private static final List<String> SLOZKY_JINYCH_PROGRAMU = Arrays.asList("geogetDataDir", "gsakDataDir");
+	private static final String PRIPONA_AKTIVNI = "_active";
+	private static final String PRIPONA_RELATIVNE = "_relativeToProgram";
+	/** Klíče výletů ve starším nastavení a jména jejich souborů; výchozí umístění starší verze bylo ve složce geokuk v domovské složce. */
+	private static final String[][] VYLETY = { { "anoGgtFile", "lovim.ggt" }, { "neGgtFile", "tedne.ggt" } };
+	private static final String STARA_SLOZKA_DAT = "geokuk";
+	/** Složka výletů v datové složce, stejná jako KesoidUmisteniSouboru.VYLETY_DIR. */
+	private static final String SLOZKA_VYLETU = "vylety";
+	/** Výchozí profil nastavení, viz MyPreferences.current(). */
+	private static final String PROFIL = "current";
+	private static final Map<String, String> JMENA_SLOZEK = new HashMap<>();
+	static {
+		JMENA_SLOZEK.put("geogetDataDir", "GeoGet");
+		JMENA_SLOZEK.put("gsakDataDir", "GSAK");
+	}
+
+	/** Kopie obsahu souboru, v testech podvržitelná. */
+	interface Kopie {
+		void kopiruj(Path zdroj, OutputStream out) throws IOException;
+	}
+
+	static Kopie kopie = Files::copy;
 
 	private static SouborovePreferences koren;
 	private static String varovani;
 
 	public static synchronized SouborovePreferences koren() {
 		if (koren == null) {
-			koren = otevri(FConst.NASTAVENI_FILE, FConst.STARE_NASTAVENI_FILE, true);
+			koren = otevri(FConst.NASTAVENI_FILE, FConst.STARE_NASTAVENI_FILE, true, FConst.HOME_DIR);
 			koren.ulozitPriUkonceni();
 		}
 		return koren;
@@ -55,14 +87,22 @@ public final class Nastaveni {
 	 * Otevře nastavení v souboru. Poškozený soubor nesmí bránit spuštění, proto se odloží stranou a program pokračuje s výchozím nastavením.
 	 */
 	static SouborovePreferences otevri(final File soubor, final File stary, final boolean zRegistru) {
-		return otevri(soubor, stary, zRegistru ? Preferences.userRoot() : null);
+		return otevri(soubor, stary, zRegistru, null);
+	}
+
+	/**
+	 * @param domov
+	 *            domovská složka, ve které měla starší verze výchozí složku dat s výlety; null, když se výlety z výchozího umístění nepřebírají
+	 */
+	static SouborovePreferences otevri(final File soubor, final File stary, final boolean zRegistru, final File domov) {
+		return otevri(soubor, stary, zRegistru ? Preferences.userRoot() : null, domov);
 	}
 
 	/**
 	 * @param registr
 	 *            kořen Java Preferences, ze kterého se převezme nastavení starší verze; null, když se z nich nepřebírá
 	 */
-	static SouborovePreferences otevri(final File soubor, final File stary, final Preferences registr) {
+	static SouborovePreferences otevri(final File soubor, final File stary, final Preferences registr, final File domov) {
 		uklidDocasne(soubor);
 		if (soubor.isFile() && soubor.length() == 0) {
 			// Prázdný soubor (výpadek proudu, antivir) nemá co zachraňovat, platí jako chybějící.
@@ -82,7 +122,7 @@ public final class Nastaveni {
 				return SouborovePreferences.prazdne(odlozeno ? soubor : new File(soubor.getPath() + ".nove"));
 			}
 		}
-		final SouborovePreferences nove = prevezmiStare(soubor, stary, registr);
+		final SouborovePreferences nove = prevezmiStare(soubor, stary, registr, domov);
 		try {
 			nove.ulozHned();
 		} catch (final IOException e) {
@@ -134,14 +174,16 @@ public final class Nastaveni {
 	}
 
 	/** Nové nastavení se sestaví celé z jednoho zdroje; při chybě se zahodí, aby se neuložil jen částečně převzatý stav. */
-	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final Preferences registr) {
+	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final Preferences registr, final File domov) {
+		final File slozkaVyletu = new File(soubor.getAbsoluteFile().getParentFile(), SLOZKA_VYLETU);
 		boolean chyba = false;
 		if (stary != null && stary.isFile()) {
 			try {
+				final Prevod prevod = new Prevod(slozkaVyletu, domov);
 				final SouborovePreferences nacteno = SouborovePreferences.nacti(stary);
 				final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
-				prevezmi(nove, nacteno.node(UZEL));
-				return prevzato(nove, "soubor", stary.toString());
+				prevezmi(nove, nacteno.node(UZEL), prevod);
+				return prevzato(nove, "soubor", stary.toString(), prevod);
 			} catch (final IOException | BackingStoreException | RuntimeException e) {
 				log.warn("Nastavení ze souboru {} nelze převzít", stary, e);
 				chyba = true;
@@ -150,9 +192,10 @@ public final class Nastaveni {
 		if (registr != null) {
 			try {
 				if (registr.nodeExists(UZEL)) {
+					final Prevod prevod = new Prevod(slozkaVyletu, domov);
 					final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
-					prevezmi(nove, registr.node(UZEL));
-					return prevzato(nove, "registr", "Java Preferences");
+					prevezmi(nove, registr.node(UZEL), prevod);
+					return prevzato(nove, "registr", "Java Preferences", prevod);
 				}
 			} catch (final BackingStoreException | RuntimeException e) {
 				log.warn("Nastavení z Java Preferences nelze převzít", e);
@@ -169,10 +212,14 @@ public final class Nastaveni {
 		return nove;
 	}
 
-	private static SouborovePreferences prevzato(final SouborovePreferences nove, final String zdroj, final String popis) throws BackingStoreException {
+	private static SouborovePreferences prevzato(final SouborovePreferences nove, final String zdroj, final String popis, final Prevod prevod)
+			throws BackingStoreException {
 		final int klicu = pocetKlicu(nove.node(UZEL));
 		znacka(nove, zdroj, "ok");
-		log.info("Převod nastavení starší verze z {}: převzato {} hodnot", popis, klicu);
+		final Preferences znacka = nove.node(ZNACKA_PREVODU);
+		znacka.put("prevzato", String.join("; ", prevod.prevzato));
+		znacka.put("neprevzato", String.join("; ", prevod.neprevzato));
+		log.info("Převod nastavení starší verze z {}: převzato {} hodnot; převzato: {}; nepřevzato: {}", popis, klicu, prevod.prevzato, prevod.neprevzato);
 		return nove;
 	}
 
@@ -192,23 +239,131 @@ public final class Nastaveni {
 		return pocet;
 	}
 
-	static void prevezmi(final SouborovePreferences nove, final Preferences zdroj) throws BackingStoreException {
-		final SouborovePreferences uzel = (SouborovePreferences) nove.node(UZEL);
-		uzel.zkopirujZ(zdroj);
-		vynechCesty(uzel);
+	/** Kam se při převodu kopírují výlety a kde byla výchozí složka dat starší verze. */
+	static final class Prevod {
+		final File slozkaVyletu;
+		final File domov;
+		/** Souhrn pro uživatele, bez cest. */
+		final List<String> prevzato = new ArrayList<>();
+		final List<String> neprevzato = new ArrayList<>();
+
+		Prevod(final File slozkaVyletu, final File domov) {
+			this.slozkaVyletu = slozkaVyletu;
+			this.domov = domov;
+		}
 	}
 
-	private static void vynechCesty(final Preferences uzel) throws BackingStoreException {
+	static void prevezmi(final SouborovePreferences nove, final Preferences zdroj, final Prevod prevod) throws BackingStoreException {
+		final SouborovePreferences uzel = (SouborovePreferences) nove.node(UZEL);
+		uzel.zkopirujZ(zdroj);
+		// Výlety se berou z výchozího profilu, se kterým běží i tato verze (jiný profil -Dprefroot se nepoužívá); uzel se jen čte, aby v registru nevznikl prázdný.
+		final String umisteniProfilu = PROFIL + "/" + UMISTENI_SOUBORU;
+		zkopirujVylety(zdroj.nodeExists(umisteniProfilu) ? zdroj.node(umisteniProfilu) : null, prevod);
+		vynechCesty(uzel, prevod);
+	}
+
+	private static void vynechCesty(final Preferences uzel, final Prevod prevod) throws BackingStoreException {
 		if (VYLET.equals(uzel.name())) {
 			uzel.remove(AKTUALNI_SOUBOR);
 		}
 		for (final String dite : uzel.childrenNames()) {
 			if (UMISTENI_SOUBORU.equals(dite)) {
-				uzel.node(dite).removeNode();
+				ponechJenSlozkyJinychProgramu(uzel.node(dite), PROFIL.equals(uzel.name()) ? prevod : null);
 			} else {
-				vynechCesty(uzel.node(dite));
+				vynechCesty(uzel.node(dite), prevod);
 			}
 		}
+	}
+
+	/**
+	 * Ponechá jen absolutní cesty ke složkám jiných programů. Relativní cesta se ve starší verzi počítala od jiné složky programu, tak se
+	 * nepřebírá. Složka, která neexistuje nebo je prázdná, se převezme vypnutá; starší verze měla zapnutou výchozí složku GSAKu pro Windows
+	 * a sama ji vytvořila i na počítačích, kde GSAK není. Síťová složka se při startu nezkoumá, mohla by start zdržet; převezme se, jak byla.
+	 * Uzel bez ponechaných klíčů se smaže.
+	 *
+	 * @param prevod
+	 *            kam zapsat souhrn převzatých složek; null u jiného než výchozího profilu
+	 */
+	private static void ponechJenSlozkyJinychProgramu(final Preferences umisteni, final Prevod prevod) throws BackingStoreException {
+		for (final String klic : umisteni.keys()) {
+			if (!jePrebiranaSlozka(umisteni, klic)) {
+				umisteni.remove(klic);
+			}
+		}
+		for (final String slozka : SLOZKY_JINYCH_PROGRAMU) {
+			final String cesta = umisteni.get(slozka, null);
+			if (cesta != null && !jeSitova(cesta) && jePrazdnaNeboNeni(new File(cesta))) {
+				umisteni.putBoolean(slozka + PRIPONA_AKTIVNI, false);
+			}
+			if (cesta != null && prevod != null) {
+				prevod.prevzato.add(JMENA_SLOZEK.get(slozka) + (umisteni.getBoolean(slozka + PRIPONA_AKTIVNI, true) ? "" : " (vypnuto)"));
+			}
+		}
+		if (umisteni.keys().length == 0 && umisteni.childrenNames().length == 0) {
+			umisteni.removeNode();
+		}
+	}
+
+	private static boolean jeSitova(final String cesta) {
+		return cesta.startsWith("\\\\") || cesta.startsWith("//");
+	}
+
+	private static boolean jePrazdnaNeboNeni(final File slozka) {
+		final String[] obsah = slozka.list();
+		return obsah == null || obsah.length == 0;
+	}
+
+	private static boolean jePrebiranaSlozka(final Preferences umisteni, final String klic) {
+		for (final String slozka : SLOZKY_JINYCH_PROGRAMU) {
+			if (klic.equals(slozka) || klic.equals(slozka + PRIPONA_AKTIVNI) || klic.equals(slozka + PRIPONA_RELATIVNE)) {
+				return jeAbsolutniCesta(umisteni, slozka);
+			}
+		}
+		return false;
+	}
+
+	private static boolean jeAbsolutniCesta(final Preferences umisteni, final String klic) {
+		final String cesta = umisteni.get(klic, null);
+		// Starší verze použila absolutní cestu i se zaškrtnutým „relativně k programu“.
+		return cesta != null && new File(cesta).isAbsolute();
+	}
+
+	/**
+	 * Zkopíruje soubory výletů starší verze do složky výletů. Soubor, který už ve složce výletů je, se nepřepíše; původní soubor zůstane,
+	 * může ho dál používat starší verze nebo GeoGet.
+	 */
+	private static void zkopirujVylety(final Preferences umisteni, final Prevod prevod) {
+		for (final String[] vylet : VYLETY) {
+			final File zdroj = staryVylet(umisteni, vylet[0], vylet[1], prevod.domov);
+			if (zdroj == null || !zdroj.isFile()) {
+				continue;
+			}
+			final File cil = new File(prevod.slozkaVyletu, vylet[1]);
+			if (cil.exists()) {
+				continue;
+			}
+			try {
+				// Po pádu uprostřed nezůstane useknutý výlet, který by příští převod už nepřepsal.
+				BezpecnyZapis.zapis(cil, out -> kopie.kopiruj(zdroj.toPath(), out));
+				prevod.prevzato.add("výlet " + vylet[1]);
+				log.info("Převzat výlet {} do {}", zdroj, cil);
+			} catch (final IOException | RuntimeException e) {
+				prevod.neprevzato.add("výlet " + vylet[1]);
+				log.warn("Výlet {} nelze převzít do {}", zdroj, cil, e);
+			}
+		}
+	}
+
+	/** Soubor výletu podle staršího nastavení; bez klíče platí výchozí umístění starší verze, vypnutý nebo relativní se nepřebírá. */
+	private static File staryVylet(final Preferences umisteni, final String klic, final String jmeno, final File domov) {
+		if (umisteni != null && !umisteni.getBoolean(klic + PRIPONA_AKTIVNI, true)) {
+			return null;
+		}
+		final String cesta = umisteni == null ? null : umisteni.get(klic, null);
+		if (cesta == null) {
+			return domov == null ? null : new File(new File(domov, STARA_SLOZKA_DAT), jmeno);
+		}
+		return jeAbsolutniCesta(umisteni, klic) ? new File(cesta) : null;
 	}
 
 	private Nastaveni() {}
