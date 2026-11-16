@@ -237,4 +237,29 @@ public class SkokVeSmeruTest {
 		Assert.assertNull("v políčku nikdo v kuželu není", SkokVeSmeru.proPolicka(v, "D2/T2", LAT, LON, JIH, null));
 		Assert.assertNull("políčko bez kandidátů", SkokVeSmeru.proPolicka(v, "D9/T9", LAT, LON, SEVER, null));
 	}
+
+	@Test
+	public void nejblizsiSmerUkazeSipkuKterouSkokDojdeKNejblizsimuKandidatovi() {
+		final VysledekPolicek v = vp(kp("A", 100, 2000), kp("B", 10, 3000));
+		final SkokVeSmeru.SmerAVzdalenost n = SkokVeSmeru.nejblizsiSmer(v, null, LAT, LON);
+		Assert.assertEquals(SmerSkoku.VYCHOD, n.smer());
+		Assert.assertEquals(2000, n.vzdalenost(), 1);
+		Assert.assertEquals("A", policka(v, LAT, LON, n.smer().azimut(), null));
+	}
+
+	@Test
+	public void nejblizsiSmerNaHraniciKuzeluBereSeverVychodJihZapad() {
+		final VysledekPolicek v = vp(kp("A", 225, 1000), kp("B", 10, 3000));
+		final SkokVeSmeru.SmerAVzdalenost n = SkokVeSmeru.nejblizsiSmer(v, null, LAT, LON);
+		Assert.assertEquals(SmerSkoku.JIH, n.smer());
+		Assert.assertEquals(1000, n.vzdalenost(), 1);
+	}
+
+	@Test
+	public void nejblizsiSmerBereJenKandidatyPolickaABezNichJeNull() {
+		final VysledekPolicek v = vp(kp("A", 100, 2000));
+		Assert.assertNull(SkokVeSmeru.nejblizsiSmer(v, "D9/T9", LAT, LON));
+		Assert.assertEquals(SmerSkoku.VYCHOD, SkokVeSmeru.nejblizsiSmer(v, "D1/T1", LAT, LON).smer());
+		Assert.assertNull(SkokVeSmeru.nejblizsiSmer(vp(), null, LAT, LON));
+	}
 }

@@ -96,6 +96,14 @@ final class TextyPopupuPlanovace {
 	/** Dovětek u vybraného políčka D/T, když na mapě není žádný jeho kandidát; skok Ctrl+Shift+šipka hledá jen mezi kandidáty vybraného políčka. */
 	static final String MIMO_VYREZ = "mimo výřez – Ctrl+Shift+šipka ukáže nejbližšího kandidáta";
 
+	/** Dovětek u vybraného políčka D/T mimo výřez: kam skočit; bez nejbližšího kandidáta obecný text. */
+	static String mimoVyrez(final SkokVeSmeru.SmerAVzdalenost nejblizsi) {
+		if (nejblizsi == null) {
+			return MIMO_VYREZ;
+		}
+		return "mimo výřez – nejbližší kandidát je " + StitkyPruhu.vzdalenost(nejblizsi.vzdalenost()) + " od středu mapy, Ctrl+Shift+" + nejblizsi.smer().sipka() + " na něj skočí";
+	}
+
 	static String pravidla(final Challenge.ZdrojPravidel z) {
 		return z == Challenge.ZdrojPravidel.STATOR ? "Stator" : "Project-GC";
 	}
