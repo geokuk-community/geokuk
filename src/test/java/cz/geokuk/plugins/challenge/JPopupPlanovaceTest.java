@@ -671,6 +671,12 @@ public class JPopupPlanovaceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		final String vzdalenost = StitkyPruhu.vzdalenost(Geodezie.vzdalenostKoule(50, 14.1, 50, 14));
 		Assert.assertTrue(o.mimoVyrez.getText(), o.mimoVyrez.getText().contains("mimo výřez – nejbližší kandidát je " + vzdalenost + " od středu mapy, Ctrl+Shift+← na něj skočí"));
+		final cz.geokuk.core.coordinates.Wgs[] stred = { new cz.geokuk.core.coordinates.Wgs(50, 14.1) };
+		popup.setStredMapy(() -> stred[0]);
+		stred[0] = new cz.geokuk.core.coordinates.Wgs(50.1, 14);
+		popup.onEvent(new cz.geokuk.core.coord.VyrezChangedEvent(null));
+		final String posunuta = StitkyPruhu.vzdalenost(Geodezie.vzdalenostKoule(50.1, 14, 50, 14));
+		Assert.assertTrue("po posunu mapy nová vzdálenost a šipka: " + o.mimoVyrez.getText(), o.mimoVyrez.getText().contains("je " + posunuta + " od středu mapy, Ctrl+Shift+↓ na něj skočí"));
 		model.nahlasVyberVeVyrezu(3);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertFalse(o.mimoVyrez.isVisible());

@@ -126,6 +126,13 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.zmenitDomov.setToolTipText(lze ? TextyPopupuPlanovace.TIP_ZMENY_DOMOVA : TextyPopupuPlanovace.TIP_ZMENY_DOMOVA_BEZ_POZICE);
 	}
 
+	/** Dovětek „mimo výřez“ s šipkou a vzdáleností se po posunu mapy přepočítá. */
+	public void onEvent(final cz.geokuk.core.coord.VyrezChangedEvent event) {
+		if (otevreno && model != null && model.jePruhViditelny() && obsah.mimoVyrez.isVisible()) {
+			obnov();
+		}
+	}
+
 	public void onEvent(final cz.geokuk.plugins.refbody.DomaciSouradniceSeZmenilyEvent event) {
 		if (otevreno && model != null && model.jePruhViditelny()) {
 			obnov();
