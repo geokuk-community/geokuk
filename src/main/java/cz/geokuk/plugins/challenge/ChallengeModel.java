@@ -725,7 +725,7 @@ public class ChallengeModel extends Model0 {
 		if (v == null) {
 			return null;
 		}
-		final String nove = PosunVyberu.dalsiPolicko(v, vybranePolicko(c), dopredu);
+		final String nove = PosunVyberu.dalsiPolicko(v, zvyraznenePolicko(c), dopredu);
 		if (nove != null) {
 			setVybranePolicko(c, nove);
 		}

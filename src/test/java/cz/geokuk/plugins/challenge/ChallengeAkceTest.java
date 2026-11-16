@@ -426,6 +426,27 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
+	public void posunPolickaJdeOdPolickaVybraneKeseAPoKlikuMimoOdPoslednihoPolicka() throws Exception {
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		kandidati(k, "D1/T1", 2, 1000);
+		kandidati(k, "D3/T4", 2, 2000);
+		kandidati(k, "D5/T5", 2, 3000);
+		final Challenge dt = pripravMatici(k, "D1/T1", "D3/T4", "D5/T5");
+		model.setVybranaKes(new VybranaKes("GC9", 50.0, 14.0, 4, 6));
+		Assert.assertEquals("výchozí bod je políčko vybrané keše", "D3/T4", model.zvyraznenePolicko(dt));
+		Assert.assertTrue(ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D5/T5"));
+		Assert.assertTrue(ChallengeAkce.cilPosunu(model, false).startsWith("Předchozí políčko: D1/T1"));
+		model.setVybranaKes(null);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("po kliku mimo zůstává poslední políčko", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D5/T5"));
+		Assert.assertEquals("D5/T5", model.dalsiPolicko(dt, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		model.setVybranePolicko(dt, null);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("po zrušení se začíná od prvního", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D1/T1"));
+	}
+
+	@Test
 	public void zrusenyVyberKeseSeUPosunuZapominaJenZruseni() throws Exception {
 		final Challenge c = pripravSektorySeStredem();
 		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
