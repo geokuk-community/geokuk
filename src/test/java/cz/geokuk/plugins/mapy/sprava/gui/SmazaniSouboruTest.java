@@ -117,6 +117,47 @@ public class SmazaniSouboruTest {
 		Assert.assertEquals("prázdný seznam se ani neptá", 2, texty.size());
 	}
 
+	/** Zavření map před smazáním čeká na rozdělané otevírání map; EDT na něj čekat nesmí (#823), smaže se, až otevírání doběhne. */
+	@Test(timeout = 20000)
+	public void smazaniNecekaNaEdtNaOteviraniMap() throws Exception {
+		final File slozka = tmp.newFolder("vrstvy3");
+		final File a = vytvor(slozka, "a.map", 10);
+		final cz.geokuk.plugins.mapy.kachle.KachleModel model = new cz.geokuk.plugins.mapy.kachle.KachleModel();
+		final cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac ziskavac = new cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac();
+		model.inject(ziskavac);
+		final JBlokMap[] blok = new JBlokMap[1];
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+			blok[0] = new JBlokMap();
+			blok[0].setZdrojSlozky(() -> slozka);
+			blok[0].potvrzeni = (titulek, text) -> true;
+		});
+		// Jen model se získavačem; celé inject(KachleModel) by chtělo umístění souborů z nastavení.
+		final java.lang.reflect.Field f = JBlokMap.class.getDeclaredField("kachleModel");
+		f.setAccessible(true);
+		f.set(blok[0], model);
+		final java.util.concurrent.CountDownLatch pust = new java.util.concurrent.CountDownLatch(1);
+		final Thread otevirani = cz.geokuk.plugins.mapy.kachle.podklady.OfflineMapyEdtTestPristup.drzZamek(ziskavac.getOfflineMapy(), pust);
+		try {
+			final long start = System.nanoTime();
+			final java.util.concurrent.CountDownLatch hotovo = new java.util.concurrent.CountDownLatch(1);
+			javax.swing.SwingUtilities.invokeLater(() -> {
+				blok[0].smazSPotvrzenim("Smazat testovací", Arrays.asList(a));
+				hotovo.countDown();
+			});
+			final boolean vcas = hotovo.await(1000, java.util.concurrent.TimeUnit.MILLISECONDS);
+			final long ms = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+			System.out.println("#823 měření: smazSPotvrzenim na EDT při drženém zámku trvalo " + (vcas ? ms : ">1000") + " ms");
+			Assert.assertTrue("EDT čeká na zámek otevírání map", vcas && ms < 500);
+			Assert.assertTrue("dokud otevírání neskončí, mapy nejsou zavřené a nemaže se", a.exists());
+		} finally {
+			pust.countDown();
+			otevirani.join();
+		}
+		while (a.exists()) {
+			Thread.sleep(20);
+		}
+	}
+
 	/** Země stažená s jedním regionem: nabídne se jen smazání regionu; celá země až když jsou stažené všechny regiony; vždy jen jedna z kopií. */
 	@Test
 	public void souboryDvojitychMap() throws Exception {
