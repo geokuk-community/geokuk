@@ -334,6 +334,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		private transient Supplier<Wgs> domov = () -> null;
 		transient Supplier<Wgs> stredMapy = () -> null;
 		final JLabel souhrn = new JLabel();
+		final JLabel kruznice = new JLabel(" ");
 		final JLabel nadpisSeznamu = new JLabel(TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
 		/** Vybraný sektor nebo políčko nemá na mapě žádného kandidáta ve výřezu. */
 		boolean vyberMimoVyrez;
@@ -443,7 +444,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			radekStredu.add(Box.createHorizontalStrut(8));
 			radekStredu.add(zmenitDomov);
 			nastavOdkaz(zmenitDomov);
-			for (final JComponent c : new JComponent[] { typ, radekStredu, souhrn, postup }) {
+			for (final JComponent c : new JComponent[] { typ, radekStredu, souhrn, kruznice, postup }) {
 				g.gridy++;
 				telo.add(c, g);
 			}
@@ -641,6 +642,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			bezKandidatu.setToolTipText(TextyPopupuPlanovace.tipBezKandidatu(c.typ()));
 			nejiste.setText(" ");
 			nejiste.setVisible(false);
+			kruznice.setVisible(false);
 			if (maVysledek) {
 				return true;
 			}
@@ -685,6 +687,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				polozky.add(s);
 			}
 			vyberRadek(vybrany);
+			kruznice.setVisible(!radky.isEmpty());
+			kruznice.setText("<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + TextyPopupuPlanovace.kruznice(TvarPlanovace.polomerKruznice(v)) + "</body></html>");
 			bezKandidatu.setText(bez == 0 ? " " : TextyPopupuPlanovace.bezKandidatu(c.typ(), bez));
 			final String n = TextyPopupuPlanovace.nejiste(v);
 			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");

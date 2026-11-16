@@ -468,13 +468,15 @@ public class JBlokMap extends JLabel {
 				|| !popup.sDialogem(() -> potvrzeni.apply(titulek, "Smažou se tyto soubory:\n" + SmazaniSouboru.popis(soubory) + "\nSmazání nejde vrátit."))) {
 			return;
 		}
-		if (kachleModel != null && kachleModel.getZiskavac() != null) {
-			kachleModel.getZiskavac().getOfflineMapy().zavri();
-			kachleModel.getZiskavac().getOfflineTrasy().zavri();
-		}
+		final cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac ziskavac = kachleModel == null ? null : kachleModel.getZiskavac();
 		new SwingWorker<List<File>, Void>() {
 			@Override
 			protected List<File> doInBackground() {
+				// Zavření čeká, až doběhne rozdělané otevírání map (i sekundy), proto až tady mimo EDT.
+				if (ziskavac != null) {
+					ziskavac.getOfflineMapy().zavri();
+					ziskavac.getOfflineTrasy().zavri();
+				}
 				return SmazaniSouboru.smaz(soubory);
 			}
 

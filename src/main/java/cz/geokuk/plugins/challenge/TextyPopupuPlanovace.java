@@ -80,6 +80,11 @@ final class TextyPopupuPlanovace {
 		return String.format(Locale.ROOT, "Štítky na mapě: %d nejbližších z %,d", TvarPlanovace.NEJVIC_ZNACEK, veVyrezu).replace(',', '\u00a0');
 	}
 
+	/** Vysvětlení kružnice na mapě: leží na ní nejvzdálenější z nejbližších kandidátů sektorů v seznamu. */
+	static String kruznice(final double polomer) {
+		return "Kružnice " + StitkyPruhu.vzdalenost(polomer) + " na mapě: uvnitř leží nejbližší kandidáti všech sektorů v seznamu.";
+	}
+
 	/** Dovětek o dosahu spočítaných kandidátů D/T; mezera, když výřez dosah nepřesahuje (NaN). */
 	static String dosahKandidatu(final double metru) {
 		return Double.isNaN(metru) ? " " : TextyKresleni.dosahKandidatu(metru);

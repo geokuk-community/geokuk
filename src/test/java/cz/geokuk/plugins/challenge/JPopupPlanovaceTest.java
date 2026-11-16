@@ -165,6 +165,19 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void kruzniceMaVysvetleniJenSKandidaty() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertFalse("bez výsledku není co vysvětlovat", o.kruznice.isVisible());
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
+		Assert.assertTrue(o.kruznice.isVisible());
+		Assert.assertTrue(o.kruznice.getText(), o.kruznice.getText().contains("Kružnice 6,2 km na mapě: uvnitř leží nejbližší kandidáti všech sektorů v seznamu."));
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] {}));
+		Assert.assertFalse("bez kandidátů kružnice nic neukazuje", o.kruznice.isVisible());
+	}
+
+	@Test
 	public void obsahPodleVysledku() throws Exception {
 		priprav();
 		popup.prepni();

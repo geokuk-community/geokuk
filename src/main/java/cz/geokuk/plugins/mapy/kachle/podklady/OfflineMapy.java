@@ -66,9 +66,11 @@ public class OfflineMapy {
 	private volatile VrstvyTematu vrstvyTematu;
 	/** Čte se i bez zámku pro informace pro hlášení chyby. */
 	private volatile IOException chyba;
+	/** Stínování terénu z DEM dlaždic je zapnuté; mění se z EDT bez zámku jako ostatní nastavení. */
+	private volatile boolean stinovani = true;
+	/** Stínování, podle kterého jsou otevřené mapy; mění se jen v {@link #pouzij()}. */
+	private boolean stinovaniOtevrene;
 	/** Soubory, jejich velikosti a časy, ze kterých je renderer nebo chyba; null = zatím nic. */
-	/** Stínování terénu z DEM dlaždic je zapnuté. */
-	private boolean stinovani = true;
 	private String otiskSlozky;
 	/** Změněný otisk, který se teprve ověřuje: soubor, který se právě kopíruje, se mezi kontrolami mění. */
 	private String otiskZmeny;
@@ -234,10 +236,11 @@ public class OfflineMapy {
 		final double m = meritko;
 		final double pi = pismo;
 		final boolean k = trasyKresliPodklad;
+		final boolean st = stinovani;
 		final cz.geokuk.plugins.mapy.sprava.KatalogMap km = katalog.get();
 		final cz.geokuk.plugins.mapy.sprava.KatalogVrstev kv = katalogVrstev.get();
-		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene || k != trasyKresliPodkladOtevrene || km != katalogOtevreny
-				|| kv != katalogVrstevOtevreny) {
+		if (!Objects.equals(s, slozkaOtevrena) || !t.equals(temaOtevrene) || m != meritkoOtevrene || pi != pismoOtevrene || k != trasyKresliPodkladOtevrene || st != stinovaniOtevrene
+				|| km != katalogOtevreny || kv != katalogVrstevOtevreny) {
 			katalogOtevreny = km;
 			katalogVrstevOtevreny = kv;
 			slozkaOtevrena = s;
@@ -245,6 +248,7 @@ public class OfflineMapy {
 			meritkoOtevrene = m;
 			pismoOtevrene = pi;
 			trasyKresliPodkladOtevrene = k;
+			stinovaniOtevrene = st;
 			otiskSlozky = null;
 		}
 		zkontrolujSlozku(System.nanoTime());
@@ -263,7 +267,7 @@ public class OfflineMapy {
 	 */
 	public synchronized void zkontrolujSlozku() {
 		if (otiskSlozky != null && Objects.equals(slozka, slozkaOtevrena) && tema.equals(temaOtevrene) && meritko == meritkoOtevrene && pismo == pismoOtevrene
-				&& trasyKresliPodklad == trasyKresliPodkladOtevrene && katalog.get() == katalogOtevreny && katalogVrstev.get() == katalogVrstevOtevreny) {
+				&& trasyKresliPodklad == trasyKresliPodkladOtevrene && stinovani == stinovaniOtevrene && katalog.get() == katalogOtevreny && katalogVrstev.get() == katalogVrstevOtevreny) {
 			zkontrolujSlozku(System.nanoTime());
 		}
 	}
@@ -346,7 +350,7 @@ public class OfflineMapy {
 
 	/** DEM dlaždice pro stínování terénu; překryv tras je nepoužívá a uživatel stínování může vypnout. */
 	private List<File> demPouzite() {
-		return prekryv || !stinovani || slozkaOtevrena == null ? Collections.emptyList() : OfflineRenderer.demDlazdice(new File(slozkaOtevrena, SLOZKA_VRSTEV));
+		return prekryv || !stinovaniOtevrene || slozkaOtevrena == null ? Collections.emptyList() : OfflineRenderer.demDlazdice(new File(slozkaOtevrena, SLOZKA_VRSTEV));
 	}
 
 	private String otisk(final List<File> mapy) {
@@ -452,12 +456,9 @@ public class OfflineMapy {
 		}
 	}
 
-	/** Zapne nebo vypne stínování terénu; mapy se otevřou znovu. */
-	public synchronized void setStinovani(final boolean zapnuto) {
-		if (zapnuto != stinovani) {
-			stinovani = zapnuto;
-			otiskSlozky = null;
-		}
+	/** Zapne nebo vypne stínování terénu; mapy se otevřou znovu při dalším {@link #pouzij()}. Neblokuje, lze volat z EDT. */
+	public void setStinovani(final boolean zapnuto) {
+		stinovani = zapnuto;
 	}
 
 	/** Ve složce vrstev jsou DEM dlaždice (soubory .hgt nebo .zip). */
@@ -465,7 +466,7 @@ public class OfflineMapy {
 		return slozkaOfflineMap != null && !OfflineRenderer.demDlazdice(new File(slozkaOfflineMap, SLOZKA_VRSTEV)).isEmpty();
 	}
 
-	/** Zavře mapy; při dalším použití se otevřou znovu. */
+	/** Zavře mapy; při dalším použití se otevřou znovu. Čeká, až doběhne rozdělané otevírání map, nevolat z EDT. */
 	public synchronized void zavri() {
 		zavriRenderer();
 		uvolniTema();

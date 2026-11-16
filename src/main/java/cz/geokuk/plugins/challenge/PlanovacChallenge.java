@@ -58,6 +58,8 @@ public final class PlanovacChallenge {
 
 	/** Dnešní datum pro kalendář; pro test jde nahradit. */
 	Supplier<java.time.LocalDate> dnes = java.time.LocalDate::now;
+	/** Leží poloha ve výřezu mapy? Skok ve směru vychází z vybraného kandidáta jen tehdy, když je vidět. */
+	java.util.function.Predicate<Wgs> veVyrezu = w -> true;
 
 	/** Střed mapy, podle kterého se naposledy začaly počítat D/T a kalendář (i když výpočet ještě běží); podle něj se rozhoduje, zda je potřeba další přepočet. */
 	private volatile Wgs stredPolicek;
@@ -441,18 +443,19 @@ public final class PlanovacChallenge {
 	}
 
 	/**
-	 * Skok na nejbližšího kandidáta ve světové straně (kužel ±{@value SkokVeSmeru#POLOVINA_KUZELE}° od vybraného kandidáta, jinak od středu mapy): vybere ho v modelu a vystředí na něj mapu. Volat ve
-	 * vlákně Swingu. Už vybraný kandidát se nevybere znovu. Vrací vybraného, nebo null, když v kuželu nikdo není nebo chybí výsledek či střed mapy.
+	 * Skok na nejbližšího kandidáta ve světové straně (kužel ±{@value SkokVeSmeru#POLOVINA_KUZELE}° od vybraného kandidáta, když je ve výřezu mapy, jinak od středu mapy): vybere ho v modelu
+	 * a vystředí na něj mapu. Volat ve vlákně Swingu. Už vybraný kandidát se nevybere znovu. Vrací vybraného, nebo null, když v kuželu nikdo není nebo chybí výsledek či střed mapy.
 	 */
 	public VybranyKandidat kandidatVeSmeru(final Challenge c, final SmerSkoku smer) {
 		final VybranyKandidat vybrany = model.vybranyKandidat(c);
-		final String vynechat = vybrany == null ? null : vybrany.id();
-		final Wgs stred = vybrany == null ? stredMapy.get() : null;
-		if (vybrany == null && stred == null) {
+		final boolean odVybraneho = vybrany != null && veVyrezu.test(new Wgs(vybrany.lat(), vybrany.lon()));
+		final String vynechat = odVybraneho ? vybrany.id() : null;
+		final Wgs stred = odVybraneho ? null : stredMapy.get();
+		if (!odVybraneho && stred == null) {
 			return null;
 		}
-		final double lat = vybrany == null ? stred.lat : vybrany.lat();
-		final double lon = vybrany == null ? stred.lon : vybrany.lon();
+		final double lat = odVybraneho ? vybrany.lat() : stred.lat;
+		final double lon = odVybraneho ? vybrany.lon() : stred.lon;
 		final VybranyKandidat k;
 		if (c.typ() == Challenge.Typ.SEKTORY_360) {
 			final VysledekSektoru v = model.vysledek(c);
