@@ -13,9 +13,9 @@ final class TextyKresleni {
 		return pocet + (pocet >= 2 && pocet <= 4 ? " kandidáti" : " kandidátů");
 	}
 
-	/** Štítek vybraného sektoru: „Sektor 213° · 5 kandidátů · 2,8 km“. */
+	/** Štítek vybraného sektoru: „Sektor 213° · 5 kandidátů · nejbližší 2,8 km od středu“. */
 	static String vybranySektor(final int sektor, final int pocet, final double metru) {
-		return "Sektor " + sektor + "° · " + kandidatu(pocet) + (Double.isNaN(metru) ? "" : " · " + StitkyPruhu.vzdalenost(metru));
+		return "Sektor " + sektor + "° · " + kandidatu(pocet) + (Double.isNaN(metru) ? "" : " · nejbližší " + StitkyPruhu.vzdalenost(metru) + " od středu");
 	}
 
 	/** Štítek vybrané keše: „Sektor 213° · 5 kandidátů · nejbližší 46 km od středu“, u sektoru bez kandidátů jen „Sektor 213°“. */

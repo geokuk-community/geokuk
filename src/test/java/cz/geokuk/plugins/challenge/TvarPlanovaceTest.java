@@ -61,6 +61,7 @@ public class TvarPlanovaceTest {
 		Assert.assertEquals(150, t.vybranySektor);
 		Assert.assertNotNull(t.vybranyPozice);
 		Assert.assertTrue(t.popisVybraneho, t.popisVybraneho.startsWith("Sektor 150° · 1 kandidát"));
+		Assert.assertTrue("říká, čeho se vzdálenost týká: " + t.popisVybraneho, t.popisVybraneho.matches("Sektor 150° · 1 kandidát · nejbližší .+ od středu"));
 		Assert.assertFalse(t.klinZaOkno(t.vybranySektor, 2000).isEmpty());
 	}
 
@@ -141,7 +142,7 @@ public class TvarPlanovaceTest {
 		Assert.assertEquals("1 kandidát", TextyKresleni.kandidatu(1));
 		Assert.assertEquals("3 kandidáti", TextyKresleni.kandidatu(3));
 		Assert.assertEquals("5 kandidátů", TextyKresleni.kandidatu(5));
-		Assert.assertEquals("Sektor 213° · 5 kandidátů · 2,8 km", TextyKresleni.vybranySektor(213, 5, 2800));
+		Assert.assertEquals("Sektor 213° · 5 kandidátů · nejbližší 2,8 km od středu", TextyKresleni.vybranySektor(213, 5, 2800));
 		Assert.assertEquals("Střed: keš GC56R49", TextyKresleni.stred("keš GC56R49"));
 		Assert.assertEquals("Střed: domov · 25,3 km", TextyKresleni.stredMimoVyrez("domov", 25_300, Double.NaN));
 	}

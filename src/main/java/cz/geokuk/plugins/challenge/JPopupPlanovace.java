@@ -671,7 +671,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				if (s == vybranySektor) {
 					vybrany = radky.size();
 				}
-				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, k) + (s == vybranySektor && vyberMimoVyrez ? "  " + TextyPopupuPlanovace.MIMO_VYREZ : ""));
+				radky.addElement(TextyPopupuPlanovace.radekSektoru(s, k) + (s == vybranySektor && vyberMimoVyrez ? "  " + TextyPopupuPlanovace.MIMO_VYREZ_SEKTORU : ""));
 				polozky.add(s);
 			}
 			vyberRadek(vybrany);

@@ -628,7 +628,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals(TextyPopupuPlanovace.vybranePolicko(null, 0, false, false), o.nadpisSeznamu.getText());
 	}
 
-	/** Vybraný sektor nebo políčko bez kandidáta ve výřezu má v popupu dovětek „mimo výřez – Ctrl+Shift+šipka ukáže nejbližšího kandidáta“. */
+	/** Vybraný sektor bez kandidáta ve výřezu má v popupu dovětek „mimo výřez“, vybrané políčko D/T „mimo výřez – Ctrl+Shift+šipka ukáže nejbližšího kandidáta“. */
 	@Test
 	public void vyberMimoVyrezMaDovetekVPopupu() throws Exception {
 		priprav();
@@ -637,13 +637,13 @@ public class JPopupPlanovaceTest {
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213 }, new int[0], new double[][] { { 213, 2800 }, { 47, 6200 } }));
 		model.setVybranySektor(aktivni(), 213);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertFalse(radky(o).toString(), radky(o).toString().contains(TextyPopupuPlanovace.MIMO_VYREZ));
+		Assert.assertFalse(radky(o).toString(), radky(o).toString().contains(TextyPopupuPlanovace.MIMO_VYREZ_SEKTORU));
 		model.nahlasVyberVeVyrezu(1);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertFalse("kandidát je ve výřezu", radky(o).toString().contains(TextyPopupuPlanovace.MIMO_VYREZ));
+		Assert.assertFalse("kandidát je ve výřezu", radky(o).toString().contains(TextyPopupuPlanovace.MIMO_VYREZ_SEKTORU));
 		model.nahlasVyberVeVyrezu(0);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals(java.util.Arrays.asList("47°  1 kandidát  nejbližší 6,2 km od středu", "213°  1 kandidát  nejbližší 2,8 km od středu  " + TextyPopupuPlanovace.MIMO_VYREZ), radky(o));
+		Assert.assertEquals(java.util.Arrays.asList("47°  1 kandidát  nejbližší 6,2 km od středu", "213°  1 kandidát  nejbližší 2,8 km od středu  mimo výřez"), radky(o));
 		final Challenge dt = aktivujPolicka(Challenge.Typ.DT_MATICE);
 		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
 		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
