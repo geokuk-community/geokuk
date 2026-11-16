@@ -262,6 +262,32 @@ public class JPruhPlanovaceTest {
 	}
 
 	@Test
+	public void vyberChallengeSeOtevreJenKlikemNeNajetimMysi() throws Exception {
+		org.junit.Assume.assumeFalse(java.awt.GraphicsEnvironment.isHeadless());
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.JFrame okno = new javax.swing.JFrame();
+		try {
+			okno.setUndecorated(true);
+			okno.setContentPane(pruh);
+			okno.setSize(1280, 700);
+			okno.setVisible(true);
+			javax.swing.SwingUtilities.invokeAndWait(() -> pruh.doLayout());
+			final javax.swing.AbstractButton chip = najdiPodleTooltipu("Challenge:");
+			javax.swing.SwingUtilities.invokeAndWait(() -> chip.dispatchEvent(new java.awt.event.MouseEvent(chip, java.awt.event.MouseEvent.MOUSE_ENTERED, System.currentTimeMillis(), 0, 5, 5, 0, false)));
+			Thread.sleep(800);
+			javax.swing.SwingUtilities.invokeAndWait(() -> {});
+			Assert.assertFalse("najetí myší výběr neotevře", pruh.jeVyberOtevreny());
+			javax.swing.SwingUtilities.invokeAndWait(chip::doClick);
+			Assert.assertTrue("klik ho otevře", pruh.jeVyberOtevreny());
+		} finally {
+			okno.dispose();
+		}
+	}
+
+	@Test
 	public void odznakPriChybeUkazeDuvod() throws Exception {
 		priprav();
 		model.aktivuj(Sablony.cesko360());

@@ -2,8 +2,6 @@ package cz.geokuk.plugins.challenge;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 
@@ -38,9 +36,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	static final int PRIDAVEK_POLICKA = SIRKA_POLICKA + MEZERA_SKUPIN;
 	private static final Color CERVENA = new Color(200, 40, 40);
 	private static final javax.swing.border.Border RAMECEK = BorderFactory.createEtchedBorder();
-	/** Prodleva, po které se výběr challenge otevře při najetí myší na jeho tlačítko. */
-	static final int PRODLEVA_VYBERU_MS = 500;
-
 	/** Pořadí prvků v poli z {@link #rozloz}. */
 	static final int UCHYT = 0, VYBER = 1, ODZNAK = 2, ZPET = 3, DAL = 4, KANDIDATI = 5, SEKTORY = 6, STITKY = 7, NASTAVENI = 8, POLICKO = 9;
 	private static final int POCET = 10;
@@ -72,7 +67,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	/** Štítek výběru v modelu: políčko D/T („D3/T4“) nebo sektor 360° („11°“), null když žádný není vybrán. */
 	private String vybranyStitek;
 	private transient java.util.function.BooleanSupplier jinyPopupOtevreny = () -> false;
-	private final transient Timer prodlevaVyberu = new Timer(PRODLEVA_VYBERU_MS, e -> otevriVyber());
 	private transient ChallengeModel model;
 	private transient Runnable naKlikOdznaku;
 	private transient Runnable naNastaveni;
@@ -109,24 +103,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			add(b);
 		}
 		uchyt.addActionListener(e -> prepniZapnuti());
-		chip.addActionListener(e -> {
-			prodlevaVyberu.stop();
-			otevriVyber();
-		});
-		prodlevaVyberu.setRepeats(false);
-		chip.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseEntered(final MouseEvent e) {
-				if (chip.isEnabled() && !jeVyberOtevreny()) {
-					prodlevaVyberu.restart();
-				}
-			}
-
-			@Override
-			public void mouseExited(final MouseEvent e) {
-				prodlevaVyberu.stop();
-			}
-		});
+		chip.addActionListener(e -> otevriVyber());
 		kandidati.addActionListener(e -> prepniKandidaty());
 		sektory.addActionListener(e -> {
 			if (model != null) {
