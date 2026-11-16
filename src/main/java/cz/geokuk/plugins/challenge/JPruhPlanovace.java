@@ -502,8 +502,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		for (final AbstractButton b : new AbstractButton[] { odznak, zpet, dal, kandidati, stitky }) {
 			b.setEnabled(maChallenge);
 		}
-		zpet.setEnabled(maChallenge && ChallengeAkce.jeKamPosunout(model, false));
-		dal.setEnabled(maChallenge && ChallengeAkce.jeKamPosunout(model, true));
+		final boolean bezChyby = maChallenge && stav.chyba() == null;
+		zpet.setEnabled(bezChyby && ChallengeAkce.jeKamPosunout(model, false));
+		dal.setEnabled(bezChyby && ChallengeAkce.jeKamPosunout(model, true));
+		kandidati.setEnabled(bezChyby);
 		sektory.setEnabled(maChallenge && maSektory(stav.typ()));
 		obnovPolicko(maChallenge ? stav.challenge() : null, maChallenge && stav.jenKandidati());
 		if (!isVisible()) {
