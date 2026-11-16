@@ -587,7 +587,7 @@ public class ChallengeAkceTest {
 		model.setJenKandidatiPro(Sablony.praha360());
 		Assert.assertTrue("přepínač filtru ukazuje stav aktivní challenge", kandidati.isSelected());
 		model.aktivuj(Sablony.cesko360());
-		Assert.assertFalse("zapnutí jiné challenge vypne i filtr", kandidati.isSelected());
+		Assert.assertTrue("filtr se přenese na jinou zapnutou challenge", kandidati.isSelected());
 	}
 
 	private Challenge kalendar() {
