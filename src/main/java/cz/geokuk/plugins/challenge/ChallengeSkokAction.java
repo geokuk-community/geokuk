@@ -11,7 +11,7 @@ import cz.geokuk.framework.Action0;
 import cz.geokuk.plugins.kesoid.ToastModel;
 import cz.geokuk.plugins.kesoid.ZpravyZkratek;
 
-/** Skok na kandidáta zobrazené challenge ve směru šipky (Shift+šipka); když tam žádný není, řekne to zpráva po zkratce. */
+/** Skok na kandidáta zobrazené challenge ve směru šipky (Ctrl+Shift+šipka); když tam žádný není, řekne to zpráva po zkratce. */
 public class ChallengeSkokAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
@@ -24,7 +24,7 @@ public class ChallengeSkokAction extends Action0 {
 		super("Skok na kandidáta " + smer.text());
 		this.smer = smer;
 		putValue(SHORT_DESCRIPTION, "Vybere nejbližšího kandidáta zobrazené challenge " + smer.text() + " a vystředí na něj mapu.");
-		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(klavesa(smer), InputEvent.SHIFT_DOWN_MASK));
+		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(klavesa(smer), InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
 		setEnabled(false);
 	}
 

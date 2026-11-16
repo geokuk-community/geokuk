@@ -43,6 +43,30 @@ public class KlavesoveZkratkyTest {
 		assertTrue("Kolize klávesových zkratek:\n" + String.join("\n", kolize), kolize.isEmpty());
 	}
 
+	/** Shift+←/→ jsou ◀ ▶ plánovače, Ctrl+Shift+šipky skok na kandidáta; žádná z nich není u jiné akce programu. */
+	@Test
+	public void sipkyPlanovaceMajiSvojeZkratky() throws Exception {
+		final Akce akce = new Akce();
+		final int shift = java.awt.event.InputEvent.SHIFT_DOWN_MASK;
+		final int ctrlShift = java.awt.event.InputEvent.CTRL_DOWN_MASK | shift;
+		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_LEFT, shift), akce.challengePredchoziAction.getValue(Action.ACCELERATOR_KEY));
+		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_RIGHT, shift), akce.challengeDalsiAction.getValue(Action.ACCELERATOR_KEY));
+		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_UP, ctrlShift), akce.challengeSkokSever.getValue(Action.ACCELERATOR_KEY));
+		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_RIGHT, ctrlShift), akce.challengeSkokVychod.getValue(Action.ACCELERATOR_KEY));
+		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DOWN, ctrlShift), akce.challengeSkokJih.getValue(Action.ACCELERATOR_KEY));
+		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_LEFT, ctrlShift), akce.challengeSkokZapad.getValue(Action.ACCELERATOR_KEY));
+		final Set<String> planovac = new HashSet<>(Arrays.asList("challengePredchoziAction", "challengeDalsiAction", "challengeSkokSever", "challengeSkokVychod", "challengeSkokJih", "challengeSkokZapad"));
+		for (final Field f : Akce.class.getFields()) {
+			final Object hodnota = f.get(akce);
+			if (hodnota instanceof Action && !planovac.contains(f.getName())) {
+				final KeyStroke z = (KeyStroke) ((Action) hodnota).getValue(Action.ACCELERATOR_KEY);
+				if (z != null) {
+					assertTrue(f.getName() + " má zkratku plánovače " + z, (z.getModifiers() & shift) == 0 || z.getKeyCode() < java.awt.event.KeyEvent.VK_LEFT || z.getKeyCode() > java.awt.event.KeyEvent.VK_DOWN);
+				}
+			}
+		}
+	}
+
 	@Test
 	public void zobrazovaniKesoiduMaZkratkuF5() {
 		assertEquals(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0), new Akce().kesoidyOnoffAction.getValue(Action.ACCELERATOR_KEY));

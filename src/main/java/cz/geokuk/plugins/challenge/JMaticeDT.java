@@ -59,7 +59,8 @@ public class JMaticeDT extends JComponent {
 		addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(final KeyEvent e) {
-				if (klavesa(e.getKeyCode())) {
+				// Šipky s Shiftem nebo Ctrlem jsou zkratky plánovače (Shift+←/→, Ctrl+Shift+šipky), matice je nechá projít.
+				if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown() && !e.isMetaDown() && klavesa(e.getKeyCode())) {
 					e.consume();
 				}
 			}

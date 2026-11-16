@@ -1,6 +1,6 @@
 package cz.geokuk.plugins.challenge;
 
-/** Světová strana, kterou se skáče na nejbližšího kandidáta (Shift+šipka). */
+/** Světová strana, kterou se skáče na nejbližšího kandidáta (Ctrl+Shift+šipka). */
 public enum SmerSkoku {
 	SEVER(0, "na sever"), VYCHOD(90, "na východ"), JIH(180, "na jih"), ZAPAD(270, "na západ");
 
