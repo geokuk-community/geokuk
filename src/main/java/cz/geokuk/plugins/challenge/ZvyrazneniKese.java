@@ -46,7 +46,7 @@ final class ZvyrazneniKese {
 	}
 
 	boolean jeStejne(final TvarPlanovace t, final Coord c, final Indexator<Wpt> i, final CleniVyberu cl, final double meritko, final VyberZvyrazneni v) {
-		return tvar == t && coord.equals(c) && indexator == i && clenove == cl && vsichniClenove == (cl == null ? null : cl.clenove()) && meritkoIkon == meritko && vyber.equals(v);
+		return tvar == t && coord.equals(c) && indexator == i && clenove == cl && vsichniClenove == (cl == null ? null : cl.clenove()) && meritkoIkon == meritko && vyber.maStejnyVyberJako(v);
 	}
 
 	/** Ze členů výběru vybere ty ve výřezu. Jednorázově pro dané okno, ne při každém překreslení. */
