@@ -84,7 +84,7 @@ final class ChallengeAkce {
 			if (v == null) {
 				return null;
 			}
-			final int s = PosunVyberu.dalsiSektor(v, model.vybranySektor(c), dopredu);
+			final int s = PosunVyberu.dalsiSektor(v, model.vychoziSektorPosunu(c), dopredu);
 			if (s == PosunVyberu.ZADNY_SEKTOR) {
 				return bezCile(c.typ(), dopredu);
 			}
