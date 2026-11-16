@@ -255,6 +255,9 @@
 - Offline mapa a její cache se zapisují přes dočasný soubor s jedinečným jménem,
   takže dvě současně běžící instance si soubory nepoškodí; dočasné soubory
   zbylé po pádu se při dalším zápisu uklidí.
+- Okno programu se nezasekává, když se po změně tématu, vrstev, stínování nebo
+  umístění offline map otevírají mapy, ani při mazání stažené mapy.
+- Změna zvýraznění nebo sady ikon provedená během načítání ikon se neztratí.
 
 Obsahuje i všechny opravy z 6.4.3.
 

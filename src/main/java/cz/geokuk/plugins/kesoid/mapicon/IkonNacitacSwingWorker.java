@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid.mapicon;
 
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import cz.geokuk.framework.MySwingWorker0;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
@@ -13,12 +14,18 @@ public class IkonNacitacSwingWorker extends MySwingWorker0<IkonBag, Void> {
 
 	private final IkonNacitacLoader ikonNacitac;
 	private final boolean iPrenacti;
-	private final KesoidModel kesoidModel;
+	/** Sada a zvýraznění v okamžiku spuštění, čtené na EDT. */
+	private final ASada sada;
+	private final Zvyrazneni zvyrazneni;
+	/** Dostane na EDT výsledek; null, když se nic nového nenačetlo nebo načtení selhalo. Zavolá se vždy. */
+	private final Consumer<IkonBag> poDokonceni;
 
-	public IkonNacitacSwingWorker(final IkonNacitacLoader multiNacitac, final boolean prenacti, final KesoidModel kesoidModel) {
+	public IkonNacitacSwingWorker(final IkonNacitacLoader multiNacitac, final boolean prenacti, final KesoidModel kesoidModel, final Consumer<IkonBag> poDokonceni) {
 		ikonNacitac = multiNacitac;
 		iPrenacti = prenacti;
-		this.kesoidModel = kesoidModel;
+		this.poDokonceni = poDokonceni;
+		sada = kesoidModel.getJmenoAktualniSadyIkon();
+		zvyrazneni = kesoidModel.getZvyrazneni();
 	}
 
 	/*
@@ -28,8 +35,8 @@ public class IkonNacitacSwingWorker extends MySwingWorker0<IkonBag, Void> {
 	 */
 	@Override
 	protected IkonBag doInBackground() throws Exception {
-		assert kesoidModel.getJmenoAktualniSadyIkon() != null;
-		return ikonNacitac.nacti(iPrenacti, kesoidModel.getJmenoAktualniSadyIkon(), kesoidModel.getZvyrazneni());
+		assert sada != null;
+		return ikonNacitac.nacti(iPrenacti, sada, zvyrazneni);
 	}
 
 	/*
@@ -39,18 +46,14 @@ public class IkonNacitacSwingWorker extends MySwingWorker0<IkonBag, Void> {
 	 */
 	@Override
 	protected void donex() throws InterruptedException, ExecutionException {
-		if (isCancelled()) {
-			return;
+		IkonBag result = null;
+		try {
+			if (!isCancelled()) {
+				result = get(); // null = nedošlo ke změně
+			}
+		} finally {
+			poDokonceni.accept(result);
 		}
-		final IkonBag result = get();
-		if (result == null) {
-			return; // asi zkanclváno
-		}
-		// System.out.printf("Loaded %d caches, %d=%d waypoints: \n",
-		// result.getKesky().size(),
-		// result.getWpts().size(),
-		// result.getIndexator().count(BoundingRect.ALL));
-		kesoidModel.setIkonBag(result);
 	}
 
 }
