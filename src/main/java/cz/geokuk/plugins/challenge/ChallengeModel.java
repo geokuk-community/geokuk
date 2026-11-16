@@ -606,6 +606,10 @@ public class ChallengeModel extends Model0 {
 				}
 			}
 			final Integer stary = sektory.get(klic(c));
+			if (sektor == PosunVyberu.ZADNY_SEKTOR && kandidati.remove(klic(c)) != null) {
+				// Vybraný kandidát by sektor na mapě zvýrazňoval dál.
+				ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+			}
 			if (stary == null ? sektor == PosunVyberu.ZADNY_SEKTOR : stary == sektor) {
 				obnovVyberPrekrytyKesi(c);
 				return;
@@ -624,12 +628,24 @@ public class ChallengeModel extends Model0 {
 	 * žádný není. Jde o stejný výběr jako {@link VyberZvyrazneni}.
 	 */
 	public int vychoziSektorPosunu(final Challenge c) {
+		final VyberZvyrazneni z = zvyrazneni(c);
+		return z == null ? vybranySektor(c) : z.sektor;
+	}
+
+	/** Štítek políčka D/T zvýrazněného na mapě (políčko vybrané keše, jinak vybrané políčko), nebo null. */
+	public String zvyraznenePolicko(final Challenge c) {
+		final VyberZvyrazneni z = zvyrazneni(c);
+		return z == null ? vybranePolicko(c) : z.stitek;
+	}
+
+	/** Zvýraznění zobrazené challenge na mapě; null, když přehled není. */
+	private VyberZvyrazneni zvyrazneni(final Challenge c) {
 		final PrehledChallenge p = c.equals(zobrazena()) ? prehled() : null;
 		if (p == null) {
-			return vybranySektor(c);
+			return null;
 		}
 		final VybranyKandidat k = vybranyKandidat(c);
-		return VyberZvyrazneni.vyres(p, this, casVyberuSektoruNeboPolicka, k == null ? PosunVyberu.ZADNY_SEKTOR : k.sektor()).sektor;
+		return VyberZvyrazneni.vyres(p, this, casVyberuSektoruNeboPolicka, k == null ? PosunVyberu.ZADNY_SEKTOR : k.sektor());
 	}
 
 	/**
