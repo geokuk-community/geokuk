@@ -90,7 +90,7 @@ public class TextyPopupuPlanovaceTest {
 		assertEquals("Řádek: vybrat sektor · ◀ ▶ nebo Shift+←/→: předchozí / další sektor · Ctrl+Shift+šipka: nejbližší kandidát tím směrem", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		assertEquals("Políčko: na mapě jen jeho kandidáti · ◀ ▶ nebo Shift+←/→: předchozí / další políčko · Ctrl+Shift+šipka: nejbližší kandidát tím směrem", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
 		assertEquals("Vybrané políčko: D3/T4 – 5 kandidátů", TextyPopupuPlanovace.vybranePolicko("D3/T4", 5, false, true));
-		assertEquals("Vybrané políčko: D3/T4 – 50+ kandidátů, na mapě všechny keše (F4)", TextyPopupuPlanovace.vybranePolicko("D3/T4", 50, true, false));
+		assertEquals("Vybrané políčko: D3/T4 – 50 nejbližších ke středu mapy, na mapě všechny keše (F4)", TextyPopupuPlanovace.vybranePolicko("D3/T4", 50, true, false));
 		assertEquals("Obtížnost × terén – klikněte na políčko s číslem a na mapě zůstanou jen jeho kandidáti:", TextyPopupuPlanovace.vybranePolicko(null, 0, false, false));
 		assertEquals("Klik: vybrat sektor", TextyPopupuPlanovace.tipRadku(Challenge.Typ.SEKTORY_360, false));
 		assertEquals("Klik: vybrat políčko", TextyPopupuPlanovace.tipRadku(Challenge.Typ.DT_MATICE, false));
