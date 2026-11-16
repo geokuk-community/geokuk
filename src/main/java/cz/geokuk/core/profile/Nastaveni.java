@@ -3,6 +3,7 @@ package cz.geokuk.core.profile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDate;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -27,6 +28,10 @@ public final class Nastaveni {
 	private static final String UMISTENI_SOUBORU = "umisteniSouboru";
 	private static final String VYLET = "vylet";
 	private static final String AKTUALNI_SOUBOR = "aktualniSoubor";
+	/** Značka v novém nastavení, odkud a s jakým výsledkem se převzalo nastavení starší verze. */
+	static final String ZNACKA_PREVODU = UZEL + "/prevod";
+	private static final int VERZE_PREVODU = 1;
+	static final String VAROVANI_PREVODU = "Nastavení starší verze se nepodařilo převzít, program začíná s výchozím nastavením. Podrobnosti jsou v logu.";
 
 	private static SouborovePreferences koren;
 	private static String varovani;
@@ -50,6 +55,14 @@ public final class Nastaveni {
 	 * Otevře nastavení v souboru. Poškozený soubor nesmí bránit spuštění, proto se odloží stranou a program pokračuje s výchozím nastavením.
 	 */
 	static SouborovePreferences otevri(final File soubor, final File stary, final boolean zRegistru) {
+		return otevri(soubor, stary, zRegistru ? Preferences.userRoot() : null);
+	}
+
+	/**
+	 * @param registr
+	 *            kořen Java Preferences, ze kterého se převezme nastavení starší verze; null, když se z nich nepřebírá
+	 */
+	static SouborovePreferences otevri(final File soubor, final File stary, final Preferences registr) {
 		uklidDocasne(soubor);
 		if (soubor.isFile() && soubor.length() == 0) {
 			// Prázdný soubor (výpadek proudu, antivir) nemá co zachraňovat, platí jako chybějící.
@@ -69,7 +82,7 @@ public final class Nastaveni {
 				return SouborovePreferences.prazdne(odlozeno ? soubor : new File(soubor.getPath() + ".nove"));
 			}
 		}
-		final SouborovePreferences nove = prevezmiStare(soubor, stary, zRegistru);
+		final SouborovePreferences nove = prevezmiStare(soubor, stary, registr);
 		try {
 			nove.ulozHned();
 		} catch (final IOException e) {
@@ -120,31 +133,63 @@ public final class Nastaveni {
 		return false;
 	}
 
-	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final boolean zRegistru) {
+	/** Nové nastavení se sestaví celé z jednoho zdroje; při chybě se zahodí, aby se neuložil jen částečně převzatý stav. */
+	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final Preferences registr) {
+		boolean chyba = false;
 		if (stary != null && stary.isFile()) {
 			try {
 				final SouborovePreferences nacteno = SouborovePreferences.nacti(stary);
 				final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
 				prevezmi(nove, nacteno.node(UZEL));
-				log.info("Převzato nastavení ze souboru {}", stary);
-				return nove;
+				return prevzato(nove, "soubor", stary.toString());
 			} catch (final IOException | BackingStoreException | RuntimeException e) {
 				log.warn("Nastavení ze souboru {} nelze převzít", stary, e);
+				chyba = true;
 			}
 		}
-		final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
-		if (zRegistru) {
+		if (registr != null) {
 			try {
-				final Preferences registr = Preferences.userRoot();
 				if (registr.nodeExists(UZEL)) {
+					final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
 					prevezmi(nove, registr.node(UZEL));
-					log.info("Převzato nastavení z Java Preferences");
+					return prevzato(nove, "registr", "Java Preferences");
 				}
 			} catch (final BackingStoreException | RuntimeException e) {
 				log.warn("Nastavení z Java Preferences nelze převzít", e);
+				chyba = true;
 			}
 		}
+		final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
+		if (chyba) {
+			// Značka zůstane i ve výchozím nastavení, aby se stejné selhání neopakovalo při každém spuštění.
+			znacka(nove, "zadny", "chyba");
+			varovani = VAROVANI_PREVODU;
+			log.warn("Převod nastavení starší verze: nic nepřevzato, program začíná s výchozím nastavením");
+		}
 		return nove;
+	}
+
+	private static SouborovePreferences prevzato(final SouborovePreferences nove, final String zdroj, final String popis) throws BackingStoreException {
+		final int klicu = pocetKlicu(nove.node(UZEL));
+		znacka(nove, zdroj, "ok");
+		log.info("Převod nastavení starší verze z {}: převzato {} hodnot", popis, klicu);
+		return nove;
+	}
+
+	private static void znacka(final SouborovePreferences nove, final String zdroj, final String vysledek) {
+		final Preferences znacka = nove.node(ZNACKA_PREVODU);
+		znacka.putInt("verze", VERZE_PREVODU);
+		znacka.put("zdroj", zdroj);
+		znacka.put("vysledek", vysledek);
+		znacka.put("datum", LocalDate.now().toString());
+	}
+
+	private static int pocetKlicu(final Preferences uzel) throws BackingStoreException {
+		int pocet = uzel.keys().length;
+		for (final String dite : uzel.childrenNames()) {
+			pocet += pocetKlicu(uzel.node(dite));
+		}
+		return pocet;
 	}
 
 	static void prevezmi(final SouborovePreferences nove, final Preferences zdroj) throws BackingStoreException {
