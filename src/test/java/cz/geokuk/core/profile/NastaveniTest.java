@@ -362,11 +362,76 @@ public class NastaveniTest {
 		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
 		registr.node("current/umisteniSouboru").put("geogetDataDir", "geoget/data");
 		registr.node("current/umisteniSouboru").putBoolean("geogetDataDir_active", true);
-		registr.node("current/umisteniSouboru").put("gsakDataDir", tmp.getRoot().getAbsolutePath());
-		registr.node("current/umisteniSouboru").putBoolean("gsakDataDir_relativeToProgram", true);
 		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml"));
 		Nastaveni.prevezmi(nove, registr, bezVychozichVyletu());
 		Assert.assertFalse(nove.nodeExists("geokuk/current/umisteniSouboru"));
+	}
+
+	/** Starší verze použila absolutní cestu i se zaškrtnutým „relativně k programu“. */
+	@Test
+	public void absolutniSlozkaSPriznakemRelativnePrevezme() throws Exception {
+		final String geoget = soubor("geoget/data/geoget.db3", "x").getParent();
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		registr.node("current/umisteniSouboru").put("geogetDataDir", geoget);
+		registr.node("current/umisteniSouboru").putBoolean("geogetDataDir_active", true);
+		registr.node("current/umisteniSouboru").putBoolean("geogetDataDir_relativeToProgram", true);
+		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml"));
+		Nastaveni.prevezmi(nove, registr, bezVychozichVyletu());
+		Assert.assertEquals(geoget, nove.node("geokuk/current/umisteniSouboru").get("geogetDataDir", null));
+		Assert.assertTrue(nove.node("geokuk/current/umisteniSouboru").getBoolean("geogetDataDir_active", false));
+	}
+
+	/** Síťová složka se při startu nezkoumá (odpojený disk by start zdržel); převezme se zapnutá, jak byla. */
+	@Test
+	public void sitovaSlozkaSeNezkoumaAPrevezmeSeJakByla() throws Exception {
+		final String sitova = File.separatorChar == '\\' ? "\\\\server\\geoget\\data" : "//server/geoget/data";
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		registr.node("current/umisteniSouboru").put("geogetDataDir", sitova);
+		registr.node("current/umisteniSouboru").putBoolean("geogetDataDir_active", true);
+		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml"));
+		Nastaveni.prevezmi(nove, registr, bezVychozichVyletu());
+		Assert.assertEquals(sitova, nove.node("geokuk/current/umisteniSouboru").get("geogetDataDir", null));
+		Assert.assertTrue(nove.node("geokuk/current/umisteniSouboru").getBoolean("geogetDataDir_active", false));
+	}
+
+	/** Souhrn převodu ve značce jmenuje převzaté složky a výlety, bez cest. */
+	@Test
+	public void souhrnPrevoduVeZnacce() throws Exception {
+		final String geoget = soubor("geoget/data/geoget.db3", "x").getParent();
+		final File lovim = soubor("stara/lovim.ggt", "GC12345\n");
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		final Preferences stare = registr.node("geokuk/current/umisteniSouboru");
+		stare.put("geogetDataDir", geoget);
+		stare.put("gsakDataDir", new File(tmp.getRoot(), "gsak").getAbsolutePath());
+		stare.put("anoGgtFile", lovim.getAbsolutePath());
+		final Preferences znacka = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, registr, null).node(Nastaveni.ZNACKA_PREVODU);
+		Assert.assertEquals("výlet lovim.ggt; GeoGet; GSAK (vypnuto)", znacka.get("prevzato", null));
+		Assert.assertEquals("", znacka.get("neprevzato", null));
+	}
+
+	/** Kopie výletu přerušená uprostřed nenechá useknutý soubor; příští převod ho zkopíruje celý. */
+	@Test
+	public void prerusenaKopieVyletuNenechaUseknutySoubor() throws Exception {
+		final File lovim = soubor("stara/lovim.ggt", "GC12345\nGC6789\n");
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		registr.node("geokuk/current/umisteniSouboru").put("anoGgtFile", lovim.getAbsolutePath());
+		final File cil = new File(tmp.getRoot(), "data/vylety/lovim.ggt");
+		final Nastaveni.Kopie puvodni = Nastaveni.kopie;
+		try {
+			Nastaveni.kopie = (zdroj, out) -> {
+				out.write("GC123".getBytes(StandardCharsets.US_ASCII));
+				out.flush();
+				throw new java.io.IOException("disk odpojen");
+			};
+			final Preferences znacka = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, registr, null).node(Nastaveni.ZNACKA_PREVODU);
+			Assert.assertFalse("useknutý výlet by příští převod nepřepsal", cil.exists());
+			Assert.assertEquals("výlet lovim.ggt", znacka.get("neprevzato", null));
+		} finally {
+			Nastaveni.kopie = puvodni;
+		}
+		Files.delete(new File(tmp.getRoot(), "data/nastaveni.xml").toPath());
+		Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, registr, null);
+		Assert.assertEquals("GC12345\nGC6789\n", obsah(cil));
 	}
 
 	/** Výlety z nastaveného umístění se zkopírují do složky výletů, původní soubory zůstanou. */
@@ -395,10 +460,32 @@ public class NastaveniTest {
 				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map/><node name=\"current\"><map/>"
 				+ "<node name=\"vseobecne\"><map><entry key=\"nick\" value=\"Kačer\"/></map></node>"
 				+ "</node></node></root></preferences>").getBytes(StandardCharsets.UTF_8));
-		// Starší verze uzel umisteniSouboru nemá, dokud uživatel umístění nezmění.
+		// Záložní cesta pro nastavení bez uzlu umisteniSouboru; starší verze ho při startu sama zapisuje (viz test níže).
 		Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), stary, false, domov);
 		Assert.assertEquals("GC11111\n", obsah(new File(tmp.getRoot(), "data/vylety/lovim.ggt")));
 		Assert.assertFalse("chybějící soubor se nevytváří", new File(tmp.getRoot(), "data/vylety/tedne.ggt").exists());
+	}
+
+	/** Stav po prvním spuštění starší verze: uzel umístění je plný výchozích hodnot, výlety ve složce geokuk v domovské složce. */
+	@Test
+	public void vyletySeZkopirujiZVychozihoNastaveniStarsiVerze() throws Exception {
+		final File lovim = soubor("domov/geokuk/lovim.ggt", "GC11111\n");
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		final Preferences stare = registr.node("current/umisteniSouboru");
+		stare.put("anoGgtFile", lovim.getAbsolutePath());
+		stare.putBoolean("anoGgtFile_active", true);
+		stare.putBoolean("anoGgtFile_relativeToProgram", false);
+		stare.put("neGgtFile", new File(lovim.getParentFile(), "tedne.ggt").getAbsolutePath());
+		stare.putBoolean("neGgtFile_active", true);
+		stare.putBoolean("neGgtFile_relativeToProgram", false);
+		stare.put("kesDir", lovim.getParent());
+		stare.putBoolean("kesDir_active", true);
+		final File vylety = new File(tmp.getRoot(), "data/vylety");
+		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml"));
+		Nastaveni.prevezmi(nove, registr, new Nastaveni.Prevod(vylety, null));
+		Assert.assertEquals("GC11111\n", obsah(new File(vylety, "lovim.ggt")));
+		Assert.assertFalse(new File(vylety, "tedne.ggt").exists());
+		Assert.assertFalse(nove.nodeExists("geokuk/current/umisteniSouboru"));
 	}
 
 	/** Výlet, který už ve složce výletů je, se nepřepíše; vypnutý se nepřebírá. */
