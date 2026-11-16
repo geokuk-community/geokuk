@@ -44,7 +44,7 @@ final class ChallengeAkce {
 	/** Tooltip ◀ ▶ podle typu zobrazené challenge. */
 	static String tipPosunu(final Challenge.Typ typ, final boolean dopredu) {
 		final String poradi = typ == Challenge.Typ.DT_MATICE ? " s kandidáty po řádcích matice" : " s kandidáty po kružnici";
-		return nazevPosunu(typ, dopredu) + poradi + " (" + zkratkaPosunu(dopredu) + "); Ctrl+Shift+šipky skočí na kandidáta ve směru šipky";
+		return nazevPosunu(typ, dopredu) + poradi + " (" + zkratkaPosunu(dopredu) + "); Ctrl+Shift+šipka: nejbližší kandidát tím směrem";
 	}
 
 	/**
@@ -63,7 +63,7 @@ final class ChallengeAkce {
 		return k;
 	}
 
-	/** Cíl posunu ◀ ▶ bez změny výběru: „Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune“; null, když výsledek ještě není. */
+	/** Cíl posunu ◀ ▶ bez změny výběru: „Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km od středu mapy · mapa se neposune“; null, když výsledek ještě není. */
 	static String cilPosunu(final ChallengeModel model, final boolean dopredu) {
 		final Challenge c = model == null ? null : model.zobrazena();
 		if (c == null) {
@@ -82,7 +82,7 @@ final class ChallengeAkce {
 			final int pocet = v.pocetKandidatu(stitek);
 			final double nejblizsi = v.nejblizsiM(stitek);
 			return nazev + ": " + stitek + " · " + (v.jePlne(stitek) ? pocet + "+ kandidátů" : TextyPopupuPlanovace.kandidatu(pocet))
-					+ (Double.isNaN(nejblizsi) ? "" : ", nejbližší " + StitkyPruhu.vzdalenost(nejblizsi)) + " · mapa se neposune";
+					+ (Double.isNaN(nejblizsi) ? "" : ", nejbližší " + StitkyPruhu.vzdalenost(nejblizsi) + " od středu mapy") + " · mapa se neposune";
 		}
 		if (c.typ() == Challenge.Typ.SEKTORY_360) {
 			final VysledekSektoru v = model.vysledek(c);
@@ -94,7 +94,7 @@ final class ChallengeAkce {
 				return bezCile(c.typ(), dopredu);
 			}
 			final VysledekSektoru.Kandidati k = v.kandidati(s);
-			return nazev + ": " + s + "° · " + TextyPopupuPlanovace.kandidatu(k.pocet()) + ", nejbližší " + StitkyPruhu.vzdalenost(k.nejblizsiVzdalenost()) + " od středu";
+			return nazev + ": " + s + "° · " + TextyPopupuPlanovace.kandidatu(k.pocet()) + ", nejbližší " + StitkyPruhu.vzdalenost(k.nejblizsiVzdalenost()) + " od středu · mapa se neposune";
 		}
 		return null;
 	}
@@ -111,7 +111,7 @@ final class ChallengeAkce {
 		if (cil == null) {
 			return tipPosunu(typ, dopredu);
 		}
-		return "<html>" + cil.replace("&", "&amp;").replace("<", "&lt;") + "<br>" + zkratkaPosunu(dopredu) + " · Ctrl+Shift+šipky skočí na kandidáta ve směru šipky</html>";
+		return "<html>" + cil.replace("&", "&amp;").replace("<", "&lt;") + "<br>" + "Zkratka " + zkratkaPosunu(dopredu) + " · Ctrl+Shift+šipka: nejbližší kandidát tím směrem</html>";
 	}
 
 	/** Je kam posunout? False jen když výsledek existuje a v daném směru není žádný sektor ani políčko s kandidáty. */
