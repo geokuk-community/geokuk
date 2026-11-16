@@ -682,6 +682,18 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse(o.mimoVyrez.isVisible());
 	}
 
+	/** Popup s nápovědou není širší než bez ní (nezávisle na písmu platformy), jen o malou rezervu. */
+	private static void assertNapovedaNerozsiruje(final String co, final JPopupPlanovace.Obsah o) {
+		final int s = o.getPreferredSize().width;
+		o.napoveda.setVisible(false);
+		o.invalidate();
+		final int bez = o.getPreferredSize().width;
+		o.napoveda.setVisible(true);
+		o.invalidate();
+		Assert.assertTrue(co + ": popup " + s + " px, bez nápovědy " + bez + " px", s <= bez + 30);
+		Assert.assertTrue(co + ": nápověda " + o.napoveda.getPreferredSize() + " je užší než popup " + s, o.napoveda.getPreferredSize().width <= s);
+	}
+
 	/** Nápověda je zalomená na pevnou šířku a popup nerozšiřuje; D/T má pod maticí stejná tlačítka jako 360°. */
 	@Test
 	public void napovedaJeZalomenaAPopupNerozsirujeADtMaStejnaTlacitka() throws Exception {
@@ -689,16 +701,14 @@ public class JPopupPlanovaceTest {
 		popup.prepni();
 		final JPopupPlanovace.Obsah o = popup.obsah;
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
-		Assert.assertTrue("360°: " + o.napoveda.getPreferredSize(), o.napoveda.getPreferredSize().width <= 480);
-		Assert.assertTrue("360°: popup " + o.getPreferredSize(), o.getPreferredSize().width <= 600);
+		assertNapovedaNerozsiruje("360°", o);
 		Assert.assertTrue(o.dalsi.isVisible() && o.kandidati.isVisible());
 		final Challenge dt = aktivujPolicka(Challenge.Typ.DT_MATICE);
 		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
 		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
 		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4"), k, 50), 50.0, 14.0);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertTrue("D/T: " + o.napoveda.getPreferredSize(), o.napoveda.getPreferredSize().width <= 480);
-		Assert.assertTrue("D/T: popup " + o.getPreferredSize(), o.getPreferredSize().width <= 600);
+		assertNapovedaNerozsiruje("D/T", o);
 		Assert.assertTrue("D/T má Další políčko i Jen kandidáti", o.dalsi.isVisible() && o.kandidati.isVisible());
 		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains("F4"));
 	}
