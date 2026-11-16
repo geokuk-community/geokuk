@@ -105,6 +105,40 @@ public final class SkokVeSmeru {
 		return n.vysledek();
 	}
 
+	/** Šipka, kterou skok ukáže nejbližšího kandidáta, a jeho vzdálenost od místa skoku. */
+	public static final class SmerAVzdalenost {
+		private final SmerSkoku smer;
+		private final double vzdalenost;
+
+		SmerAVzdalenost(final SmerSkoku smer, final double vzdalenost) {
+			this.smer = smer;
+			this.vzdalenost = vzdalenost;
+		}
+
+		public SmerSkoku smer() {
+			return smer;
+		}
+
+		public double vzdalenost() {
+			return vzdalenost;
+		}
+	}
+
+	/**
+	 * Šipka, kterou skok z dané polohy ukáže nejbližšího kandidáta políčka (null = všech políček), s jeho vzdáleností; null, když kandidát není. Leží-li nejbližší kandidát
+	 * na hranici dvou kuželů, vyhraje první směr v pořadí sever, východ, jih, západ.
+	 */
+	public static SmerAVzdalenost nejblizsiSmer(final VysledekPolicek vysledek, final String policko, final double lat, final double lon) {
+		SmerAVzdalenost nejlepsi = null;
+		for (final SmerSkoku smer : SmerSkoku.values()) {
+			final VybranyKandidat k = proPolicka(vysledek, policko, lat, lon, smer.azimut(), null);
+			if (k != null && (nejlepsi == null || k.vzdalenost() < nejlepsi.vzdalenost)) {
+				nejlepsi = new SmerAVzdalenost(smer, k.vzdalenost());
+			}
+		}
+		return nejlepsi;
+	}
+
 	/** Kandidát chybějícího políčka D/T (nebo dne kalendáře) ve směru; viz {@link #proSektory}. */
 	public static VybranyKandidat proPolicka(final VysledekPolicek vysledek, final double lat, final double lon, final double azimutSmeru, final String vynechat) {
 		return proPolicka(vysledek, null, lat, lon, azimutSmeru, vynechat);

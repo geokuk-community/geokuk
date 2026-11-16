@@ -153,6 +153,14 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
+	public void dovetekDosahuSeKresliIBezStitku() throws Exception {
+		zobrazDt(3, 100, 200, 300);
+		model.setKresliStitky(false);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		Assert.assertNotNull("bez štítků kandidátů dovětek zůstane", nad.obdelnikDosahu());
+	}
+
+	@Test
 	public void dosahKandidatuSeNehlasiKdyzVyrezLeziUvnitrDosahu() throws Exception {
 		zobrazDt(3, 50_000, 60_000, 70_000);
 		nakresli(nad, mapa(50.0, 14.0, 14));

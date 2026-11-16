@@ -94,6 +94,15 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		setDomov(refbodyModel::getHc);
 	}
 
+	public void inject(final cz.geokuk.core.coord.VyrezModel vyrezModel) {
+		setStredMapy(() -> vyrezModel.getMoord() == null ? null : vyrezModel.getMoord().getMoustred().toWgs());
+	}
+
+	/** Střed mapy pro dovětek „mimo výřez“. */
+	void setStredMapy(final Supplier<Wgs> stredMapy) {
+		obsah.stredMapy = stredMapy;
+	}
+
 	/** Domovské souřadnice pro řádek „Střed: domov …“. */
 	void setDomov(final Supplier<Wgs> domov) {
 		obsah.domov = domov;
@@ -323,6 +332,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JButton zmenitDomov = new JButton("Změnit domov…");
 		private final JPanel radekStredu = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		private transient Supplier<Wgs> domov = () -> null;
+		transient Supplier<Wgs> stredMapy = () -> null;
 		final JLabel souhrn = new JLabel();
 		final JLabel nadpisSeznamu = new JLabel(TextyPopupuPlanovace.nadpisSeznamu(Challenge.Typ.SEKTORY_360));
 		/** Vybraný sektor nebo políčko nemá na mapě žádného kandidáta ve výřezu. */
@@ -699,6 +709,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				legenda.setText(p.cil() > 1 ? TextyPopupuPlanovace.legendaMatice(p.cil()) : TextyPopupuPlanovace.LEGENDA_MATICE);
 				vsechnaPolicka.setVisible(vybranePolicko != null);
 				mimoVyrez.setVisible(vybranePolicko != null && vyberMimoVyrez);
+				if (mimoVyrez.isVisible()) {
+					final Wgs stred = stredMapy.get();
+					mimoVyrez.setText("<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>"
+							+ TextyPopupuPlanovace.mimoVyrez(stred == null ? null : SkokVeSmeru.nejblizsiSmer(p, vybranePolicko, stred.lat, stred.lon)) + "</body></html>");
+				}
 				dalsi.setEnabled(p.pocetKandidatuPoPolickach().values().stream().anyMatch(n -> n > 0));
 				return;
 			}

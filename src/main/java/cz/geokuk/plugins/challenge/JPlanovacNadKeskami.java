@@ -197,7 +197,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 				kresliStitekVybraneKese(g, c, t, tucne, vyber);
 			}
 			final double dosah = dosahPresazeny(c, t);
-			if (kesoidyViditelne() && kresliStitky() && !Double.isNaN(dosah)) {
+			if (kesoidyViditelne() && !Double.isNaN(dosah)) {
 				kresliDosah(g, c, tucne, dosah);
 			}
 			nahlasDosah(dosah);
