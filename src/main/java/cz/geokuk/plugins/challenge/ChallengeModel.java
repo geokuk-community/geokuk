@@ -268,16 +268,46 @@ public class ChallengeModel extends Model0 {
 	private volatile boolean stejnyVyberJakoPredchoziKes;
 
 	/**
-	 * Sektor 0 až 359, ve kterém leželo naposledy vybraná keš této challenge, i když už vybraná není; -1, když žádný není nebo ho uživatel zrušil (Esc, „N° ✕“). Zvýraznění
-	 * i posun ◀ ▶ u 360° v něm pokračují.
+	 * Sektor 0 až 359 posledního zvýraznění této challenge, od kterého postupují ◀ ▶, i když už se na mapě nezvýrazňuje (klik mimo); -1, když žádný není nebo ho uživatel zrušil (Esc,
+	 * „N° ✕“).
 	 */
-	public int zapamatovanySektorKese(final Challenge c) {
+	public int zapamatovanySektor(final Challenge c) {
 		return c != null && klic(c).equals(posledniKlicKes) ? posledniSektorKese : PosunVyberu.ZADNY_SEKTOR;
 	}
 
-	/** Štítek políčka D/T naposledy vybrané keše této challenge, i když už vybraná není; null, když žádné není nebo ho uživatel zrušil. */
-	public String zapamatovanePolickoKese(final Challenge c) {
+	/** Štítek políčka D/T posledního zvýraznění této challenge, od kterého postupují ◀ ▶; null, když žádné není nebo ho uživatel zrušil. */
+	public String zapamatovanePolicko(final Challenge c) {
 		return c != null && klic(c).equals(posledniKlicKes) ? posledniPolickoKese : null;
+	}
+
+	/** Je co zrušit Esc: zvýrazněný sektor nebo políčko, nebo zapamatovaný výchozí bod posunu? */
+	public boolean maZapamatovanyVyber(final Challenge c) {
+		return zapamatovanySektor(c) >= 0 || zapamatovanePolicko(c) != null;
+	}
+
+	/**
+	 * Klik do prázdné mapy: zruší zvýraznění sektoru, políčka a vybraného kandidáta na mapě i v popupu, ale zapamatuje si je jako výchozí bod ◀ ▶. Zruší se až Esc nebo „N° ✕“.
+	 * Volat ve vlákně Swingu.
+	 */
+	public void zrusZvyrazneniKlikemMimo() {
+		final Challenge c = zobrazena();
+		if (c == null) {
+			return;
+		}
+		final int sektor = vychoziSektorPosunu(c);
+		final String policko = vychoziPolickoPosunu(c);
+		final boolean bylo = zvyraznenySektor(c) >= 0 || zvyraznenePolicko(c) != null;
+		posledniKlicKes = klic(c);
+		posledniSektorKese = sektor;
+		posledniPolickoKese = policko;
+		final boolean sektorVybran = sektory.remove(klic(c)) != null;
+		final boolean policko2 = policka.remove(klic(c)) != null;
+		if (kandidati.remove(klic(c)) != null) {
+			ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+		}
+		if (bylo || sektorVybran || policko2) {
+			ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+		}
 	}
 
 	/** Zapomene sektor a políčko naposledy vybrané keše; vrací, zda tam něco bylo. */
@@ -682,8 +712,20 @@ public class ChallengeModel extends Model0 {
 	 * žádný není. Jde o stejný výběr jako {@link VyberZvyrazneni}.
 	 */
 	public int vychoziSektorPosunu(final Challenge c) {
+		final int z = zvyraznenySektor(c);
+		return z >= 0 ? z : zapamatovanySektor(c);
+	}
+
+	/** Sektor 0 až 359 zvýrazněný na mapě právě teď, nebo -1. */
+	public int zvyraznenySektor(final Challenge c) {
 		final VyberZvyrazneni z = zvyrazneni(c);
 		return z == null ? vybranySektor(c) : z.sektor;
+	}
+
+	/** Políčko D/T, od kterého postupují ◀ ▶: zvýrazněné na mapě, jinak zapamatované; null, když žádné není. */
+	public String vychoziPolickoPosunu(final Challenge c) {
+		final String z = zvyraznenePolicko(c);
+		return z != null ? z : zapamatovanePolicko(c);
 	}
 
 	/** Štítek políčka D/T zvýrazněného na mapě (políčko vybrané keše, jinak vybrané políčko), nebo null. */
@@ -725,7 +767,7 @@ public class ChallengeModel extends Model0 {
 		if (v == null) {
 			return null;
 		}
-		final String nove = PosunVyberu.dalsiPolicko(v, zvyraznenePolicko(c), dopredu);
+		final String nove = PosunVyberu.dalsiPolicko(v, vychoziPolickoPosunu(c), dopredu);
 		if (nove != null) {
 			setVybranePolicko(c, nove);
 		}

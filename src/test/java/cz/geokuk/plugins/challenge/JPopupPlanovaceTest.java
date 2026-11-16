@@ -723,10 +723,8 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("zvýraznění se přesune", "D5/T5", o.matice.vybrane());
 		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(null));
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("po kliku mimo zůstává poslední", "D5/T5", o.matice.vybrane());
-		SwingUtilities.invokeAndWait(() -> model.setVybranePolicko(dt, null));
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertNull("Esc a ✕ čistí", o.matice.vybrane());
+		Assert.assertNull("po kliku mimo zvýraznění zmizí", o.matice.vybrane());
+		Assert.assertEquals("ale ◀ ▶ navážou na poslední", "D5/T5", model.vychoziPolickoPosunu(dt));
 	}
 
 	@Test

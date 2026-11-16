@@ -75,7 +75,7 @@ final class ChallengeAkce {
 			if (v == null) {
 				return null;
 			}
-			final String stitek = PosunVyberu.dalsiPolicko(v, model.zvyraznenePolicko(c), dopredu);
+			final String stitek = PosunVyberu.dalsiPolicko(v, model.vychoziPolickoPosunu(c), dopredu);
 			if (stitek == null) {
 				return bezCile(c.typ(), dopredu);
 			}
