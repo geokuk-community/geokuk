@@ -402,23 +402,17 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
-	public void nahoreJeStitekVybraneKeseSPoctemKandidatu() throws Exception {
+	public void nadVybranouKesiNeniDlouhyPopisekSektoru() throws Exception {
 		zobraz360(100);
 		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
 		nad.setIndexatorKesi(index(vybrana));
 		vyber(vybrana);
 		final Coord c = mapa(14);
-		final BufferedImage img = nakresli(nad, c);
+		nakresli(nad, c);
 		final Point p = PixelyMapy.transform(c, vybrana.getMainWpt().getMou(), new Point());
-		Rectangle nahore = null;
 		for (final Rectangle q : nad.obdelnikyStitku()) {
-			if (Math.abs(q.x + q.width / 2 - p.x) <= 1) {
-				nahore = q;
-			}
+			Assert.assertTrue("nad keší žádný popisek: " + q + " u " + p, Math.abs(q.x + q.width / 2 - p.x) > 1);
 		}
-		Assert.assertNotNull("štítek vybrané keše je vodorovně na ikoně", nahore);
-		Assert.assertTrue("a celý nad ikonou, aby nepřekrýval popisek vpravo: " + nahore + " u " + p, nahore.y + nahore.height <= p.y - 8 + 1);
-		Assert.assertEquals("štítek vybrané keše má barvy tooltipu", AkcentPlanovace.pozadiStitku().getRGB(), img.getRGB(nahore.x + 3, nahore.y + 2));
 		Assert.assertEquals("Sektor 100° · 1 kandidát · nejbližší 3,0 km od středu", TextyKresleni.sektorVybrane(100, model.prehled()));
 		Assert.assertEquals("sektor bez kandidátů", "Sektor 7°", TextyKresleni.sektorVybrane(7, model.prehled()));
 	}
