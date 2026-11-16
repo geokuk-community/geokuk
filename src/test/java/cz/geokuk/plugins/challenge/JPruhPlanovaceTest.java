@@ -262,6 +262,19 @@ public class JPruhPlanovaceTest {
 	}
 
 	@Test
+	public void bezVybraneChallengeMaVyberTextVybrat() throws Exception {
+		priprav();
+		model.setZapnuto(true);
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final javax.swing.AbstractButton chip = najdiPodleTooltipu("Vybrat challenge");
+		Assert.assertEquals("Vybrat ▾", chip.getText());
+		model.aktivuj(Sablony.cesko360());
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("s challenge typ a šipka", "360° ▾", chip.getText());
+	}
+
+	@Test
 	public void odznakPriChybeUkazeDuvod() throws Exception {
 		priprav();
 		model.aktivuj(Sablony.cesko360());
