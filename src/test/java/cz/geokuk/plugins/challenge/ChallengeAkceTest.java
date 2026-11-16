@@ -444,7 +444,9 @@ public class ChallengeAkceTest {
 		model.setVybranePolicko(dt, null);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue("po zrušení se začíná od prvního", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D1/T1"));
+	}
 
+	@Test
 	public void shodaSNapredVybranouKesiPlatiJenVJedneChallenge() throws Exception {
 		final Challenge a = pripravSektorySeStredem();
 		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
