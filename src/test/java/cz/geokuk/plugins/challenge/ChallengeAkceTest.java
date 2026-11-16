@@ -444,6 +444,22 @@ public class ChallengeAkceTest {
 		model.setVybranePolicko(dt, null);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue("po zrušení se začíná od prvního", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D1/T1"));
+
+	public void shodaSNapredVybranouKesiPlatiJenVJedneChallenge() throws Exception {
+		final Challenge a = pripravSektorySeStredem();
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		model.setVybranaKes(null);
+		model.setVybranaKes(kes);
+		Assert.assertTrue("ve stejné challenge je to stejný sektor", model.jeStejnyVyberJakoPredchoziKes());
+		model.setVybranaKes(null);
+		final Challenge b = Sablony.praha360();
+		model.aktivuj(b);
+		model.nastavVysledek(b, TextyPopupuPlanovaceTest.vysledek(new int[] { 40, 100 }, new int[0], new double[][] { { 40, 1000 }, { 100, 2000 } }), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("sektor keše je stejný, challenge jiná", model.prehled().sektorBodu(kes.lat(), kes.lon()), sektorKese(a, kes));
+		model.setVybranaKes(kes);
+		Assert.assertFalse("sektory dvou challenge nejsou srovnatelné", model.jeStejnyVyberJakoPredchoziKes());
 	}
 
 	@Test
