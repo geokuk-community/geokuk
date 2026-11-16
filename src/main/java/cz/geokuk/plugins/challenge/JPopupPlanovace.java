@@ -120,8 +120,16 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obnovZmenuDomova();
 	}
 
+	/** Pozice zvolená na mapě; keš (třeba po skoku na kandidáta) se jako domov nenabízí. */
+	private transient cz.geokuk.core.coord.Poziceq pozice;
+
+	public void onEvent(final cz.geokuk.core.coord.PoziceChangedEvent event) {
+		pozice = event.poziceq;
+		obnovZmenuDomova();
+	}
+
 	private void obnovZmenuDomova() {
-		final boolean lze = zmenaDomova != null && zmenaDomova.isEnabled();
+		final boolean lze = zmenaDomova != null && zmenaDomova.isEnabled() && (pozice == null || pozice.getWpt() == null);
 		obsah.zmenitDomov.setEnabled(lze);
 		obsah.zmenitDomov.setToolTipText(lze ? TextyPopupuPlanovace.TIP_ZMENY_DOMOVA : TextyPopupuPlanovace.TIP_ZMENY_DOMOVA_BEZ_POZICE);
 	}
