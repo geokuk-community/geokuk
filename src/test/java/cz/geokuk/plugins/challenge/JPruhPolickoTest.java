@@ -180,6 +180,73 @@ public class JPruhPolickoTest {
 		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
 	}
 
+	private Challenge priprav360SeStredem() throws Exception {
+		priprav(1280);
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200, 5000 }, { 20, 1000 } }), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		return c;
+	}
+
+	@Test
+	public void u360TlacitkoUkazujeSektorZvyraznenyNaMapeKdyzKlikNaKes() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final int sektorKese = model.prehled().sektorBodu(kes.lat(), kes.lon());
+		Assert.assertNotEquals(11, sektorKese);
+		Assert.assertEquals(sektorKese + "° ✕", policko().getText());
+		Assert.assertTrue(policko().getToolTipText(), policko().getToolTipText().startsWith("<html>Sektor " + sektorKese + "°"));
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void u360TlacitkoUkazujeSektorVybranehoKandidataAKliknutiHoZrusi() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.nastavVybranyKandidat(c, new VybranyKandidat("GC20", 50.1, 14.0, 20, 1000));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("20° ✕", policko().getText());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull("vybraný kandidát by sektor zvýrazňoval dál", model.vybranyKandidat(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse(policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void dtTlacitkoUkazujePolickoVybraneKese() throws Exception {
+		priprav(1280);
+		final List<KandidatPolicka> k = new ArrayList<>();
+		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
+		k.add(new KandidatPolicka("GC2", 50, 14, "D5/T5", "D5/T5", null));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4", "D5/T5"), k, 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		vyber("D5/T5");
+		Assert.assertEquals("D5/T5 ✕", policko().getText());
+		model.setVybranaKes(new VybranaKes("GC1", 50.0, 14.0, 4, 6));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("D3/T4 ✕", policko().getText());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull(model.zvyraznenePolicko(dt));
+		Assert.assertFalse(policko() != null && policko().isVisible());
+	}
+
 	@Test
 	public void tooltipSektoruNeslibujeFiltrF4() {
 		final VysledekSektoru v = TextyPopupuPlanovaceTest.vysledek(new int[] { 0, 11 }, new int[0], new double[][] { { 0, 1500 }, { 11, 3200, 5000 } });
