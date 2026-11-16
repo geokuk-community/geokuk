@@ -613,6 +613,21 @@ public class PlanovacChallengeTest {
 	}
 
 	@Test
+	public void kandidatVeSmeruVychaziZeStreduMapyKdyzVybranyKandidatNeniVeVyrezu() throws Exception {
+		napojNaModel();
+		final Challenge c = dtChallenge("DT");
+		stredMapy = new Wgs(50.0, 14.0);
+		planovac.keseNacteny(dtData());
+		zapni(c);
+		pockej(() -> model.vysledekPolicek(c) != null, "výsledek D/T");
+		Assert.assertEquals("K1", planovac.kandidatVeSmeru(c, SmerSkoku.SEVER).id());
+		pockej(() -> model.vybranyKandidat(c) != null && model.vybranyKandidat(c).id().equals("K1"), "kandidát v modelu");
+		stredMapy = new Wgs(50.05, 14.0);
+		planovac.veVyrezu = w -> Math.abs(w.lat - 50.01) > 1;
+		Assert.assertEquals("mapa se posunula, K3 je od středu mapy za K1", "K2", planovac.kandidatVeSmeru(c, SmerSkoku.SEVER).id());
+	}
+
+	@Test
 	public void kandidatVeSmeruProSektory360() throws Exception {
 		napojNaModel();
 		final Challenge c = model.ulozVlastni(vlastni("Domov", Stred.domov(), OblastDef.zadna()));

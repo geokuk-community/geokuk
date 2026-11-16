@@ -58,6 +58,7 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 	@Override
 	public void initAfterInject() {
 		planovac = new PlanovacChallenge(challengeModel, new ZdrojovyPoskytovatelOblasti(), refbodyModel::getHc, this::adresarPredpoctu, this::stredMapy, this::vystredit);
+		planovac.veVyrezu = this::jeVeVyrezu;
 	}
 
 	public PlanovacChallenge planovac() {
@@ -111,6 +112,15 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 
 	private Wgs stredMapy() {
 		return vyrezModel.getMoord() == null ? null : vyrezModel.getMoord().getMoustred().toWgs();
+	}
+
+	private boolean jeVeVyrezu(final Wgs wgs) {
+		final cz.geokuk.core.coord.Coord coord = vyrezModel.getMoord();
+		if (coord == null) {
+			return true;
+		}
+		final java.awt.Point p = PixelyMapy.transform(coord, PixelyMapy.mou(wgs.lat, wgs.lon), new java.awt.Point());
+		return p.x >= 0 && p.y >= 0 && p.x <= coord.getWidth() && p.y <= coord.getHeight();
 	}
 
 	/** Vystředí mapu na vybranou keš; když je keš v datech, nastaví na ni i pozici, jako stávající akce vystředění. */

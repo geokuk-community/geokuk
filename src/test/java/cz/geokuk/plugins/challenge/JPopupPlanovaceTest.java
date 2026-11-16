@@ -165,6 +165,19 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
+	public void kruzniceMaVysvetleniJenSKandidaty() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertFalse("bez výsledku není co vysvětlovat", o.kruznice.isVisible());
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
+		Assert.assertTrue(o.kruznice.isVisible());
+		Assert.assertTrue(o.kruznice.getText(), o.kruznice.getText().contains("Kružnice 6,2 km na mapě: uvnitř leží nejbližší kandidáti všech sektorů v seznamu."));
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] {}));
+		Assert.assertFalse("bez kandidátů kružnice nic neukazuje", o.kruznice.isVisible());
+	}
+
+	@Test
 	public void obsahPodleVysledku() throws Exception {
 		priprav();
 		popup.prepni();
@@ -781,6 +794,7 @@ public class JPopupPlanovaceTest {
 		};
 		final cz.geokuk.plugins.refbody.TadyJsemDomaAction akce = new cz.geokuk.plugins.refbody.TadyJsemDomaAction();
 		final cz.geokuk.core.coord.PoziceModel pozice = new cz.geokuk.core.coord.PoziceModel();
+		java.util.function.Consumer<cz.geokuk.core.coord.PoziceChangedEvent> poslech = e -> {};
 
 		Doma() {
 			akce.inject(refbody);
@@ -789,6 +803,7 @@ public class JPopupPlanovaceTest {
 				public void fire(final Event0<?> event) {
 					if (event instanceof cz.geokuk.core.coord.PoziceChangedEvent) {
 						akce.onEvent((cz.geokuk.core.coord.PoziceChangedEvent) event);
+						poslech.accept((cz.geokuk.core.coord.PoziceChangedEvent) event);
 					}
 				}
 			});
@@ -853,6 +868,29 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals(misto.lon, d.hc[0].lon, 1e-6);
 		d.pozice.clearPozice();
 		Assert.assertFalse("po zrušení pozice zase nedostupný", odkaz.isEnabled());
+	}
+
+	/** Pozice na keši (po skoku na kandidáta, po kliku na keš) není zvolené místo domova; odkaz se nabídne zase po kliknutí do mapy. */
+	@Test
+	public void zmenitDomovNeniDostupnyNaKesi() throws Exception {
+		priprav();
+		final Doma d = new Doma();
+		d.poslech = popup::onEvent;
+		popup.inject(d.refbody);
+		popup.setZmenaDomova(d.akce);
+		aktivujDomov();
+		popup.prepni();
+		final javax.swing.JButton odkaz = popup.obsah.zmenitDomov;
+		d.pozice.setPozice(new cz.geokuk.core.coordinates.Wgs(50.08, 14.42));
+		Assert.assertTrue("místo na mapě", odkaz.isEnabled());
+		final cz.geokuk.plugins.kesoid.Wpt wpt = new cz.geokuk.plugins.kesoid.Wpt();
+		wpt.setWgs(new cz.geokuk.core.coordinates.Wgs(50.09, 14.43));
+		d.pozice.setPoziceNaObjekt(wpt);
+		Assert.assertTrue("akce „Jsem doma“ je s pozicí dostupná", d.akce.isEnabled());
+		Assert.assertFalse("keš není zvolené místo domova", odkaz.isEnabled());
+		Assert.assertEquals(TextyPopupuPlanovace.TIP_ZMENY_DOMOVA_BEZ_POZICE, odkaz.getToolTipText());
+		d.pozice.setPozice(new cz.geokuk.core.coordinates.Wgs(50.1, 14.5));
+		Assert.assertTrue("po kliknutí do mapy zase", odkaz.isEnabled());
 	}
 
 	@Test

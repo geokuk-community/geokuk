@@ -281,6 +281,36 @@ public class JPruhPlanovaceTest {
 	}
 
 	@Test
+	public void vChybovemStavuJsouSipkyAJenKandidatiZasedle() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		model.nastavVysledek(Sablony.cesko360(), TextyPopupuPlanovaceTest.vysledek(new int[] { 10, 20 }, new int[0], new double[][] { { 10, 1000 }, { 20, 2000 } }));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue(najdiPodleTooltipu("Další sektor").isEnabled());
+		Assert.assertTrue(najdiPodleTooltipu("Předchozí sektor").isEnabled());
+		Assert.assertTrue(najdiJenKandidati().isEnabled());
+		model.nastavStavPredpoctu(Sablony.cesko360(), new StavPredpoctu(StavPredpoctu.Faze.CHYBA, 0, 0, "Keš GC4PCQB (střed challenge) není v načtených datech."));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse("bez výsledku není kam", najdiPodleTooltipu("Další sektor").isEnabled());
+		Assert.assertFalse(najdiPodleTooltipu("Předchozí sektor").isEnabled());
+		Assert.assertFalse("není co filtrovat", najdiJenKandidati().isEnabled());
+		model.nastavStavPredpoctu(Sablony.cesko360(), new StavPredpoctu(StavPredpoctu.Faze.HOTOVO, 1, 1, null));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue(najdiPodleTooltipu("Další sektor").isEnabled());
+		Assert.assertTrue(najdiJenKandidati().isEnabled());
+	}
+
+	private javax.swing.AbstractButton najdiJenKandidati() {
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof javax.swing.AbstractButton && ((javax.swing.AbstractButton) c).getToolTipText() != null && ((javax.swing.AbstractButton) c).getToolTipText().endsWith("(F4)")) {
+				return (javax.swing.AbstractButton) c;
+			}
+		}
+		throw new AssertionError("Jen kandidáti");
+	}
+
+	@Test
 	public void odznakJeTlacitkoSeSipkouAKurzoremRuky() throws Exception {
 		priprav();
 		model.aktivuj(Sablony.cesko360());

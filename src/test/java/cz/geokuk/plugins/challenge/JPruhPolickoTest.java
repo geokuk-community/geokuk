@@ -19,7 +19,7 @@ import cz.geokuk.framework.EventFirer;
 import cz.geokuk.framework.RozmisteniPrekryvu;
 import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
 
-/** Tlačítko „D3/T4 ✕“ na liště: jen u D/T s vybraným políčkem, na konci lišty, zašedlé při vypnutém F4, klik i Esc zruší výběr. */
+/** Tlačítko „D3/T4 ✕“ na liště: jen u D/T s vybraným políčkem, na konci lišty, klik i Esc zruší výběr. */
 public class JPruhPolickoTest {
 
 	private ChallengeModel model;
@@ -100,11 +100,11 @@ public class JPruhPolickoTest {
 	}
 
 	@Test
-	public void kliknutiZrusiVyberAPriVypnutemF4JeZasedle() throws Exception {
+	public void kliknutiZrusiVyberAPismoJeVzdyJakoUOstatnichTlacitek() throws Exception {
 		priprav(1280);
 		vyber("D3/T4");
 		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě všechny keše, F4 ukáže jen jeho kandidáty (5 kandidátů)</html>", policko().getToolTipText());
-		Assert.assertNotEquals("zašedlé", UIManager.getColor("Button.foreground"), policko().getForeground());
+		Assert.assertEquals("nevypadá jako vypnuté", UIManager.getColor("Button.foreground"), policko().getForeground());
 		model.setJenKandidatiPro(dt);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě jen jeho kandidáti (5 kandidátů)</html>", policko().getToolTipText());
@@ -178,6 +178,73 @@ public class JPruhPolickoTest {
 		pruh.doLayout();
 		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vybranySektor(c));
 		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	private Challenge priprav360SeStredem() throws Exception {
+		priprav(1280);
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200, 5000 }, { 20, 1000 } }), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		return c;
+	}
+
+	@Test
+	public void u360TlacitkoUkazujeSektorZvyraznenyNaMapeKdyzKlikNaKes() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final int sektorKese = model.prehled().sektorBodu(kes.lat(), kes.lon());
+		Assert.assertNotEquals(11, sektorKese);
+		Assert.assertEquals(sektorKese + "° ✕", policko().getText());
+		Assert.assertTrue(policko().getToolTipText(), policko().getToolTipText().startsWith("<html>Sektor " + sektorKese + "°"));
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void u360TlacitkoUkazujeSektorVybranehoKandidataAKliknutiHoZrusi() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.nastavVybranyKandidat(c, new VybranyKandidat("GC20", 50.1, 14.0, 20, 1000));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("20° ✕", policko().getText());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull("vybraný kandidát by sektor zvýrazňoval dál", model.vybranyKandidat(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse(policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void dtTlacitkoUkazujePolickoVybraneKese() throws Exception {
+		priprav(1280);
+		final List<KandidatPolicka> k = new ArrayList<>();
+		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
+		k.add(new KandidatPolicka("GC2", 50, 14, "D5/T5", "D5/T5", null));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4", "D5/T5"), k, 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		vyber("D5/T5");
+		Assert.assertEquals("D5/T5 ✕", policko().getText());
+		model.setVybranaKes(new VybranaKes("GC1", 50.0, 14.0, 4, 6));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("D3/T4 ✕", policko().getText());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull(model.zvyraznenePolicko(dt));
+		Assert.assertFalse(policko() != null && policko().isVisible());
 	}
 
 	@Test
