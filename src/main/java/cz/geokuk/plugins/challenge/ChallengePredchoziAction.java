@@ -13,6 +13,7 @@ public class ChallengePredchoziAction extends Action0 {
 	public ChallengePredchoziAction() {
 		super(ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, false));
 		putValue(SHORT_DESCRIPTION, ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, false));
+		putValue(ACCELERATOR_KEY, javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_LEFT, java.awt.event.InputEvent.SHIFT_DOWN_MASK));
 		setEnabled(false);
 	}
 

@@ -87,8 +87,8 @@ public class TextyPopupuPlanovaceTest {
 
 	@Test
 	public void napovedaATooltipRadku() {
-		assertEquals("Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Shift+šipka: nejbližší kandidát tím směrem", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
-		assertEquals("Políčko: na mapě jen jeho kandidáti · ◀ ▶ předchozí / další políčko · Shift+šipka: nejbližší kandidát tím směrem", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
+		assertEquals("Řádek: vybrat sektor · ◀ ▶ předchozí / další sektor · Ctrl+Shift+šipka: nejbližší kandidát tím směrem", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
+		assertEquals("Políčko: na mapě jen jeho kandidáti · ◀ ▶ předchozí / další políčko · Ctrl+Shift+šipka: nejbližší kandidát tím směrem", TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.DT_MATICE));
 		assertEquals("Vybrané políčko: D3/T4 – 5 kandidátů", TextyPopupuPlanovace.vybranePolicko("D3/T4", 5, false, true));
 		assertEquals("Vybrané políčko: D3/T4 – 50+ kandidátů, na mapě všechny keše (F4)", TextyPopupuPlanovace.vybranePolicko("D3/T4", 50, true, false));
 		assertEquals("Obtížnost × terén – klikněte na políčko s číslem a na mapě zůstanou jen jeho kandidáti:", TextyPopupuPlanovace.vybranePolicko(null, 0, false, false));

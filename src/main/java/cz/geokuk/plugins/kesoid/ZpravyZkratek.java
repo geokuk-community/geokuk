@@ -67,7 +67,7 @@ public final class ZpravyZkratek {
 		return akceStav("Plánovač: jen kandidáti", zapnuto, null);
 	}
 
-	/** Shift+šipka, když ve směru šipky žádný kandidát challenge není; {@code smer} je třeba „na sever“. */
+	/** Ctrl+Shift+šipka, když ve směru šipky žádný kandidát challenge není; {@code smer} je třeba „na sever“. */
 	public static String challengeZadnyKandidat(final String smer) {
 		return "Plánovač – žádný kandidát " + smer;
 	}

@@ -562,7 +562,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals(TextyPopupuPlanovace.vybranePolicko(null, 0, false, false), o.nadpisSeznamu.getText());
 	}
 
-	/** Vybraný sektor nebo políčko bez kandidáta ve výřezu má v popupu dovětek „mimo výřez – Shift+šipka ukáže nejbližšího kandidáta“. */
+	/** Vybraný sektor nebo políčko bez kandidáta ve výřezu má v popupu dovětek „mimo výřez – Ctrl+Shift+šipka ukáže nejbližšího kandidáta“. */
 	@Test
 	public void vyberMimoVyrezMaDovetekVPopupu() throws Exception {
 		priprav();
@@ -585,7 +585,7 @@ public class JPopupPlanovaceTest {
 		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D3/T4"));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue("nad maticí", o.mimoVyrez.isVisible());
-		Assert.assertEquals("mimo výřez – Shift+šipka ukáže nejbližšího kandidáta", o.mimoVyrez.getText());
+		Assert.assertEquals("mimo výřez – Ctrl+Shift+šipka ukáže nejbližšího kandidáta", o.mimoVyrez.getText());
 		model.nahlasVyberVeVyrezu(3);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertFalse(o.mimoVyrez.isVisible());

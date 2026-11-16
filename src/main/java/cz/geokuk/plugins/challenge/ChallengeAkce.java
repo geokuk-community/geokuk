@@ -39,7 +39,7 @@ final class ChallengeAkce {
 	/** Tooltip ◀ ▶ podle typu zobrazené challenge. */
 	static String tipPosunu(final Challenge.Typ typ, final boolean dopredu) {
 		final String poradi = typ == Challenge.Typ.DT_MATICE ? " s kandidáty po řádcích matice" : " s kandidáty po kružnici";
-		return nazevPosunu(typ, dopredu) + poradi + "; Shift+šipky skočí na kandidáta ve směru šipky";
+		return nazevPosunu(typ, dopredu) + poradi + "; Ctrl+Shift+šipky skočí na kandidáta ve směru šipky";
 	}
 
 	/**
@@ -106,7 +106,7 @@ final class ChallengeAkce {
 		if (cil == null) {
 			return tipPosunu(typ, dopredu);
 		}
-		return "<html>" + cil.replace("&", "&amp;").replace("<", "&lt;") + "<br>Shift+šipky skočí na kandidáta ve směru šipky</html>";
+		return "<html>" + cil.replace("&", "&amp;").replace("<", "&lt;") + "<br>Ctrl+Shift+šipky skočí na kandidáta ve směru šipky</html>";
 	}
 
 	/** Je kam posunout? False jen když výsledek existuje a v daném směru není žádný sektor ani políčko s kandidáty. */

@@ -55,10 +55,10 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
-	public void f4PrepinaJenKandidatyDalsiAPredchoziBezZkratky() {
+	public void f4PrepinaJenKandidatyDalsiAPredchoziMajiShiftSipky() {
 		Assert.assertEquals(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0), kandidati.getValue(Action.ACCELERATOR_KEY));
-		Assert.assertNull(dalsi.getValue(Action.ACCELERATOR_KEY));
-		Assert.assertNull(predchozi.getValue(Action.ACCELERATOR_KEY));
+		Assert.assertEquals("▶ je Shift+→", KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, java.awt.event.InputEvent.SHIFT_DOWN_MASK), dalsi.getValue(Action.ACCELERATOR_KEY));
+		Assert.assertEquals("◀ je Shift+←", KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, java.awt.event.InputEvent.SHIFT_DOWN_MASK), predchozi.getValue(Action.ACCELERATOR_KEY));
 		Assert.assertNull("lišta jen úchytem a menu", zapnout.getValue(Action.ACCELERATOR_KEY));
 	}
 
@@ -118,7 +118,7 @@ public class ChallengeAkceTest {
 	}
 
 	@Test
-	public void shiftSipkySkaceNaKandidataAHlasiKdyzZadnyNeni() {
+	public void ctrlShiftSipkySkaceNaKandidataAHlasiKdyzZadnyNeni() {
 		final java.util.List<String> zpravy = new java.util.ArrayList<>();
 		final cz.geokuk.plugins.kesoid.ToastModel toast = new cz.geokuk.plugins.kesoid.ToastModel() {
 			@Override
@@ -129,7 +129,7 @@ public class ChallengeAkceTest {
 		final int[] klavesy = { KeyEvent.VK_UP, KeyEvent.VK_RIGHT, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT };
 		for (final SmerSkoku smer : SmerSkoku.values()) {
 			final ChallengeSkokAction skok = new ChallengeSkokAction(smer);
-			Assert.assertEquals(KeyStroke.getKeyStroke(klavesy[smer.ordinal()], java.awt.event.InputEvent.SHIFT_DOWN_MASK), skok.getValue(Action.ACCELERATOR_KEY));
+			Assert.assertEquals(KeyStroke.getKeyStroke(klavesy[smer.ordinal()], java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK), skok.getValue(Action.ACCELERATOR_KEY));
 			Assert.assertFalse("bez lišty nejde", skok.isEnabled());
 			skok.inject(model);
 			skok.inject(toast);
@@ -228,14 +228,14 @@ public class ChallengeAkceTest {
 		SwingUtilities.invokeAndWait(() -> k[0] = ChallengeAkce.skoc(model, p, SmerSkoku.SEVER));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("GC10", k[0].id());
-		Assert.assertEquals("Shift+šipka vybere i sektor keše", 10, model.vybranySektor(Sablony.cesko360()));
+		Assert.assertEquals("Ctrl+Shift+šipka vybere i sektor keše", 10, model.vybranySektor(Sablony.cesko360()));
 		Assert.assertEquals("▶ jde z vybraného sektoru dál", "20°", posun(true));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("◀ ▶ vybranou keš nechají", "GC10", model.vybranyKandidat(Sablony.cesko360()).id());
 		Assert.assertEquals(20, model.vybranySektor(Sablony.cesko360()));
 	}
 
-	/** Kandidát v sektoru 0° (přímo na sever): Shift+šipka vybere i sektor 0. */
+	/** Kandidát v sektoru 0° (přímo na sever): Ctrl+Shift+šipka vybere i sektor 0. */
 	@Test
 	public void skokNaKandidataVSektoruNulaVybereSektorNula() throws Exception {
 		model.aktivuj(Sablony.cesko360());
@@ -260,8 +260,8 @@ public class ChallengeAkceTest {
 	public void nazevATooltipPosunuPodleTypu() {
 		Assert.assertEquals("Další sektor", ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
 		Assert.assertEquals("Předchozí políčko", ChallengeAkce.nazevPosunu(Challenge.Typ.DT_MATICE, false));
-		Assert.assertEquals("Další sektor s kandidáty po kružnici; Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true));
-		Assert.assertEquals("Předchozí políčko s kandidáty po řádcích matice; Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.DT_MATICE, false));
+		Assert.assertEquals("Další sektor s kandidáty po kružnici; Ctrl+Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true));
+		Assert.assertEquals("Předchozí políčko s kandidáty po řádcích matice; Ctrl+Shift+šipky skočí na kandidáta ve směru šipky", ChallengeAkce.tipPosunu(Challenge.Typ.DT_MATICE, false));
 		Assert.assertEquals("Další sektor", dalsi.getValue(Action.NAME));
 		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 		model.aktivuj(dt);
@@ -292,7 +292,7 @@ public class ChallengeAkceTest {
 		kandidati(k, "D3/T4", 12, 2100);
 		pripravMatici(k, "D1/T1", "D3/T4");
 		final String dopredu = ChallengeAkce.tipPosunu(model, Challenge.Typ.DT_MATICE, true);
-		Assert.assertEquals("<html>Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune<br>Shift+šipky skočí na kandidáta ve směru šipky</html>", dopredu);
+		Assert.assertEquals("<html>Další políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune<br>Ctrl+Shift+šipky skočí na kandidáta ve směru šipky</html>", dopredu);
 		Assert.assertEquals("Předchozí políčko: D3/T4 · 12 kandidátů, nejbližší 2,1 km · mapa se neposune", ChallengeAkce.cilPosunu(model, false));
 		Assert.assertEquals("tooltip výběr nemění", null, model.vybranePolicko(model.zobrazena()));
 		Assert.assertTrue(ChallengeAkce.jeKamPosunout(model, true));
@@ -331,6 +331,20 @@ public class ChallengeAkceTest {
 		Assert.assertEquals("Další sektor: 10° · 1 kandidát, nejbližší 1,0 km od středu", ChallengeAkce.cilPosunu(model, true));
 		Assert.assertEquals("Předchozí sektor: 20° · 1 kandidát, nejbližší 2,0 km od středu", ChallengeAkce.cilPosunu(model, false));
 		Assert.assertEquals(-1, model.vybranySektor(Sablony.cesko360()));
+	}
+
+	@Test
+	public void zkratkyShiftSipkaPosouvajiStejneJakoTlacitka() throws Exception {
+		pripravSektory(Sablony.cesko360());
+		dalsi.actionPerformed(new ActionEvent(this, 0, ""));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(10, model.vybranySektor(Sablony.cesko360()));
+		dalsi.actionPerformed(new ActionEvent(this, 0, ""));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(20, model.vybranySektor(Sablony.cesko360()));
+		predchozi.actionPerformed(new ActionEvent(this, 0, ""));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(10, model.vybranySektor(Sablony.cesko360()));
 	}
 
 	@Test

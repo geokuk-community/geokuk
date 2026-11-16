@@ -13,6 +13,7 @@ public class ChallengeDalsiAction extends Action0 {
 	public ChallengeDalsiAction() {
 		super(ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
 		putValue(SHORT_DESCRIPTION, ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true));
+		putValue(ACCELERATOR_KEY, javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.InputEvent.SHIFT_DOWN_MASK));
 		setEnabled(false);
 	}
 
