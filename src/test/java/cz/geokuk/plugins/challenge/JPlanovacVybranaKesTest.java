@@ -470,6 +470,50 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void stitkyPoVyberuSektoruVPlanovaciJsouZlutePoKlikuNaKesVJinemSektoru() throws Exception {
+		final Challenge c = zobraz360(100, 250);
+		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
+		final Kes jiny = kesVAzimutu("GC2", 250.5, 1500, 2, 2);
+		nad.setIndexatorKesi(index(vybrana, jiny));
+		final Coord c14 = mapa(14);
+		vyber(vybrana);
+		SwingUtilities.invokeAndWait(() -> model.setVybranySektor(c, 250));
+		nad.onEvent(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.POLICKO, c));
+		final BufferedImage img = nakresli(nad, c14);
+		Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
+		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
+			Assert.assertTrue("výběr z plánovače: žlutý štítek " + r, maZlutouVyplni(img, r));
+		}
+	}
+
+	@Test
+	public void dtKesZJinehoPolickaNezPredchoziMaNeutralniStitek() throws Exception {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, Arrays.asList("D3/T4", "D4/T4"), Collections.<KandidatPolicka> emptyList()), STRED_LAT, STRED_LON);
+		SwingUtilities.invokeAndWait(() -> {});
+		final Kes prvni = kesVAzimutu("GC1", 100.5, 2000, 4, 6);
+		final Kes stejna = kesVAzimutu("GC2", 200.5, 1500, 4, 6);
+		final Kes jina = kesVAzimutu("GC3", 300.5, 1500, 6, 6);
+		nad.setIndexatorKesi(index(prvni, stejna, jina));
+		final Coord c = mapa(14);
+		vyber(prvni);
+		vyber(stejna);
+		BufferedImage img = nakresli(nad, c);
+		Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
+		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
+			Assert.assertTrue("stejné políčko: žlutý štítek " + r, maZlutouVyplni(img, r));
+		}
+		vyber(jina);
+		img = nakresli(nad, c);
+		Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
+		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
+			Assert.assertFalse("jiné políčko: neutrální štítek " + r, maZlutouVyplni(img, r));
+		}
+	}
+
+	@Test
 	public void bezVybraneKeseASektoruSeNicNezvyraznuje() throws Exception {
 		zobraz360(250);
 		nad.setIndexatorKesi(index(kesVAzimutu("GC1", 100.5, 2000, 2, 2)));
