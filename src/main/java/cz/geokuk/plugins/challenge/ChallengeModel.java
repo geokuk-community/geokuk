@@ -612,6 +612,10 @@ public class ChallengeModel extends Model0 {
 			}
 			if (sektor == PosunVyberu.ZADNY_SEKTOR) {
 				sektory.remove(klic(c));
+				// Vybraný kandidát by sektor na mapě zvýrazňoval dál.
+				if (kandidati.remove(klic(c)) != null) {
+					ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+				}
 			} else {
 				sektory.put(klic(c), sektor);
 			}

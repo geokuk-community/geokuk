@@ -42,6 +42,8 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	/** Odstup štítku vybraného sektoru od jeho keše. */
 	private static final int ODSAZENI_VYBRANEHO = 20;
 	private static final int OKRAJ_VYREZU = 12;
+	/** Mezera mezi dovětkem o dosahu a pásem měřítka pod ním. */
+	private static final int MEZERA_DOSAHU = 4;
 
 	private transient VyrezModel vyrezModel;
 	/** Kde se naposledy kreslila šipka ke středu (pro klik), nebo null. */
@@ -58,6 +60,8 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	/** Kolik prvních obdélníků jsou překážky, ne štítky. */
 	private transient int pocetPrekazek;
 	private transient int posledniZnacek;
+	/** Kde se při posledním kreslení ukázal dovětek o dosahu kandidátů, nebo null. */
+	private transient Rectangle obdelnikDosahu;
 	/** Kolik kandidátů bylo při posledním kreslení ve výřezu (před stropem) a kolik se ukázalo; hlásí se modelu pro popup. */
 	private transient int posledniVeVyrezu;
 	private transient int hlasenoZobrazeno = -1;
@@ -157,6 +161,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		sipka = null;
 		posledniZnacek = 0;
 		posledniVeVyrezu = 0;
+		obdelnikDosahu = null;
 		stitkyKandidatuKresleni.clear();
 		stitkyZvyrazneniKresleni.clear();
 		pocetObdelniku = 0;
@@ -213,14 +218,19 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 				c.getMouJV().toWgs());
 	}
 
-	/** Řádek u spodního okraje mapy nad měřítkem, vystředěný; kandidáty a štítky mu uhýbají jako překážce. */
+	/** Řádek u spodního okraje mapy nad pásem měřítka, vystředěný; kandidáty a štítky mu uhýbají jako překážce. */
 	private void kresliDosah(final Graphics2D g, final Coord c, final Font pismo, final double dosah) {
 		final String text = TextyKresleni.dosahKandidatu(dosah);
 		final Dimension d = rozmerStitku(g, pismo, text);
 		final int x = Math.max(0, (c.getWidth() - d.width) / 2);
-		final int y = Math.max(0, c.getHeight() - OKRAJ_POPISKU_DOLE - d.height);
+		final int y = Math.max(0, c.getHeight() - cz.geokuk.framework.RozmisteniPrekryvu.VYSKA_MERITKA - MEZERA_DOSAHU - d.height);
 		final Rectangle r = nakresliStitek(g, pismo, text, x, y, AkcentPlanovace.barva(), false);
 		zapis(r.x, r.y, r.width, r.height);
+		obdelnikDosahu = r;
+	}
+
+	Rectangle obdelnikDosahu() {
+		return obdelnikDosahu;
 	}
 
 	private void nahlasDosah(final double dosah) {
