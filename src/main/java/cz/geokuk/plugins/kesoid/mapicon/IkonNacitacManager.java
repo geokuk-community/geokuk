@@ -18,6 +18,8 @@ public class IkonNacitacManager {
 	private Filex lastThirdParty;
 	private Filex lastMyOwn;
 
+	/** Načítání běží, dokud na EDT neproběhne {@link #poNacteni(IkonBag)}; {@code isDone()} workeru platí už dřív. */
+	private boolean nacita;
 	/** Během běžícího načítání přišel požadavek (třeba jiné zvýraznění nebo sada ikon); načte se, až běžící doběhne. */
 	private boolean cekaDalsi;
 
@@ -43,7 +45,7 @@ public class IkonNacitacManager {
 		if (prenacti || !Objects.equals(lastThirdParty, thirdParty) || !Objects.equals(lastMyOwn, myDir)) {
 			lastMyOwn = myDir;
 			lastThirdParty = thirdParty;
-			if (sw != null && !sw.isDone()) {
+			if (nacita) {
 				// Běžící načítání má staré zvýraznění, sadu nebo složky; po něm se načte znovu (#824).
 				cekaDalsi = true;
 				return;
@@ -56,6 +58,7 @@ public class IkonNacitacManager {
 		// Složky se loaderu mění, jen když nic nenačítá; běžící načítání je čte z jiného vlákna.
 		ikonNacitacLoader.setImage3rdPartyDir(lastThirdParty.isActive() ? lastThirdParty.getEffectiveFile() : null);
 		ikonNacitacLoader.setImageMyDir(lastMyOwn.isActive() ? lastMyOwn.getEffectiveFile() : null);
+		nacita = true;
 		sw = new IkonNacitacSwingWorker(ikonNacitacLoader, prenacti, kesoidModel, this::poNacteni);
 		sw.execute();
 	}
@@ -65,6 +68,7 @@ public class IkonNacitacManager {
 	 * načtení pak načte vše znovu, protože loader si zastaralé načtení pamatuje jako poslední a beze změny složek by nic nevrátil.
 	 */
 	private void poNacteni(final IkonBag vysledek) {
+		nacita = false;
 		if (cekaDalsi) {
 			cekaDalsi = false;
 			spust(true);
@@ -73,4 +77,8 @@ public class IkonNacitacManager {
 		}
 	}
 
+	/** Pro testy: worker už dopočítal, ale {@link #poNacteni(IkonBag)} na EDT ještě neproběhlo. */
+	boolean dopocitanoPredDokoncenim() {
+		return nacita && sw.isDone();
+	}
 }
