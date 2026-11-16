@@ -137,6 +137,22 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
+	public void dovetekDosahuStojiNadPasemMeritkaAUvnitrOkna() throws Exception {
+		zobrazDt(3, 100, 200, 300);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		final Rectangle r = nad.obdelnikDosahu();
+		Assert.assertNotNull("dovětek se kreslí", r);
+		Assert.assertTrue("v okně: " + r, new Rectangle(0, 0, W, H).contains(r));
+		final Rectangle meritko = cz.geokuk.framework.RozmisteniPrekryvu.meritko(new java.awt.Dimension(W, H));
+		meritko.grow(JVrstvaPlanovace.PRESAH_MERITKA, 0);
+		Assert.assertFalse("nepřekrývá měřítko " + meritko + ": " + r, r.intersects(meritko));
+		Assert.assertTrue("těsně nad měřítkem", r.y + r.height <= H - cz.geokuk.framework.RozmisteniPrekryvu.VYSKA_MERITKA);
+		zobrazDt(50, 100, 200, 300);
+		nakresli(nad, mapa(50.0, 14.0, 14));
+		Assert.assertNull("bez ořezání se nekreslí", nad.obdelnikDosahu());
+	}
+
+	@Test
 	public void dosahKandidatuSeNehlasiKdyzVyrezLeziUvnitrDosahu() throws Exception {
 		zobrazDt(3, 50_000, 60_000, 70_000);
 		nakresli(nad, mapa(50.0, 14.0, 14));
