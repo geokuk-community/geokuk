@@ -77,6 +77,11 @@ public class IkonNacitacManager {
 		}
 	}
 
+	/** Pro testy: načítání běží, nebo ještě neproběhlo jeho dokončení na EDT. */
+	boolean nacita() {
+		return nacita;
+	}
+
 	/** Pro testy: worker už dopočítal, ale {@link #poNacteni(IkonBag)} na EDT ještě neproběhlo. */
 	boolean dopocitanoPredDokoncenim() {
 		return nacita && sw.isDone();

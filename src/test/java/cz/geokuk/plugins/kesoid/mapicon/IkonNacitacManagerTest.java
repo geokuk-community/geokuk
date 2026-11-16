@@ -287,4 +287,27 @@ public class IkonNacitacManagerTest {
 			SwingUtilities.invokeAndWait(() -> Thread.currentThread().setUncaughtExceptionHandler(null));
 		}
 	}
+
+	/** Po doběhnutí načítání se další změna zvýraznění načte hned, nečeká na nic. */
+	@Test(timeout = 30000)
+	public void zmenaPoDobehnutiSeNacte() throws Exception {
+		final Model model = novyModel();
+		final ZdrzeneNacitani nacitani = new ZdrzeneNacitani();
+		nacitani.pustVse();
+		final IkonNacitacManager manager = new IkonNacitacManager(model, nacitani);
+		SwingUtilities.invokeAndWait(() -> manager.startLoad(true));
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+		final boolean[] dobehlo = new boolean[1];
+		while (!dobehlo[0] && System.nanoTime() < konec) {
+			Assert.assertTrue(nacitani.bezi.await(10, TimeUnit.SECONDS));
+			SwingUtilities.invokeAndWait(() -> dobehlo[0] = !manager.nacita());
+			Thread.sleep(10);
+		}
+		SwingUtilities.invokeAndWait(() -> {
+			model.zvyrazneni = Zvyrazneni.BEZ;
+			manager.startLoad(true);
+		});
+		pockejNa(nacitani.nacteni, 2);
+		Assert.assertEquals(Arrays.asList("Standard/" + Zvyrazneni.TEREN.getNazev() + "/znovu", "Standard/" + Zvyrazneni.BEZ.getNazev() + "/znovu"), nacitani.nacteni);
+	}
 }
