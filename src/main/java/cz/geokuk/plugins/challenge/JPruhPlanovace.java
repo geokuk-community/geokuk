@@ -514,7 +514,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		repaint();
 	}
 
-	/** Tlačítko „D3/T4 ✕“ nebo „11° ✕“: jen s vybraným políčkem D/T nebo sektorem 360°; při vypnutém zobrazení jen kandidátů (F4) zašedlé, ale klikací. */
+	/** Tlačítko „D3/T4 ✕“ nebo „11° ✕“: jen s vybraným políčkem D/T nebo sektorem 360°. */
 	private void obnovPolicko(final Challenge c, final boolean jenKandidati) {
 		vybranyStitek = null;
 		if (c != null && model != null) {
@@ -538,7 +538,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		nastavText(policko, vybranyStitek + " ✕");
 		policko.setToolTipText(tip);
 		chip.setToolTipText(chip.getToolTipText() + (c.typ() == Challenge.Typ.DT_MATICE ? "; vybrané políčko " : "; vybraný sektor ") + vybranyStitek);
-		policko.setForeground(jenKandidati ? UIManager.getColor("Button.foreground") : zasedly());
+		policko.setForeground(UIManager.getColor("Button.foreground"));
 	}
 
 	/** Tooltip tlačítka vybraného políčka. */
@@ -576,16 +576,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	/** Je otevřený popup, který Esc zavírá (popup plánovače, popupy stavového řádku); Esc pak výběr políčka nezruší. */
 	public void setJinyPopupOtevreny(final java.util.function.BooleanSupplier jinyPopupOtevreny) {
 		this.jinyPopupOtevreny = jinyPopupOtevreny;
-	}
-
-	/** Barva textu mezi textem a pozadím tlačítka: výběr platí, ale filtr je vypnutý. */
-	private static Color zasedly() {
-		final Color t = UIManager.getColor("Button.foreground");
-		final Color p = UIManager.getColor("Button.background");
-		if (t == null || p == null) {
-			return Color.GRAY;
-		}
-		return new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
 	}
 
 	private void zrusPolicko() {

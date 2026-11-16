@@ -19,7 +19,7 @@ import cz.geokuk.framework.EventFirer;
 import cz.geokuk.framework.RozmisteniPrekryvu;
 import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
 
-/** Tlačítko „D3/T4 ✕“ na liště: jen u D/T s vybraným políčkem, na konci lišty, zašedlé při vypnutém F4, klik i Esc zruší výběr. */
+/** Tlačítko „D3/T4 ✕“ na liště: jen u D/T s vybraným políčkem, na konci lišty, klik i Esc zruší výběr. */
 public class JPruhPolickoTest {
 
 	private ChallengeModel model;
@@ -100,11 +100,11 @@ public class JPruhPolickoTest {
 	}
 
 	@Test
-	public void kliknutiZrusiVyberAPriVypnutemF4JeZasedle() throws Exception {
+	public void kliknutiZrusiVyberAPismoJeVzdyJakoUOstatnichTlacitek() throws Exception {
 		priprav(1280);
 		vyber("D3/T4");
 		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě všechny keše, F4 ukáže jen jeho kandidáty (5 kandidátů)</html>", policko().getToolTipText());
-		Assert.assertNotEquals("zašedlé", UIManager.getColor("Button.foreground"), policko().getForeground());
+		Assert.assertEquals("nevypadá jako vypnuté", UIManager.getColor("Button.foreground"), policko().getForeground());
 		model.setJenKandidatiPro(dt);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě jen jeho kandidáti (5 kandidátů)</html>", policko().getToolTipText());
