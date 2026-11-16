@@ -389,7 +389,7 @@ public class JPruhPlanovaceTest {
 		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Collections.singletonList("D3/T4"),
 				java.util.Collections.singletonList(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null, 2100))));
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
-		final javax.swing.AbstractButton dal = najdiPodleTooltipu("Další políčko: D3/T4 · 1 kandidát, nejbližší 2,1 km · mapa se neposune");
+		final javax.swing.AbstractButton dal = najdiPodleTooltipu("Další políčko: D3/T4 · 1 kandidát, nejbližší 2,1 km od středu mapy · mapa se neposune");
 		Assert.assertTrue("s kandidátem je kam", dal.isEnabled());
 		Assert.assertTrue(najdiPodleTooltipu("Předchozí políčko: D3/T4").isEnabled());
 	}
