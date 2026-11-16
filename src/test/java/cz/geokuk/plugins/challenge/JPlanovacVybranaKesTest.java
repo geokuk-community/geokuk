@@ -514,6 +514,35 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void nejistySektorMaNaStitkuZnakPriblizne() throws Exception {
+		final BitSet ob = obsazene();
+		ob.clear(100);
+		final VysledekSektoru.Kandidati[] poSektorech = new VysledekSektoru.Kandidati[360];
+		poSektorech[100] = new VysledekSektoru.Kandidati(100);
+		poSektorech[100].pridej("GC100", 3000);
+		final List<VysledekSektoru.KandidatKes> kandidati = new ArrayList<>();
+		kandidati.add(new VysledekSektoru.KandidatKes("GC100", STRED_LAT + 3000 * Math.cos(Math.toRadians(100.5)) / 111_000.0, STRED_LON + 3000 * Math.sin(Math.toRadians(100.5)) / 71_300.0, 100, 3000, false));
+		final Challenge c = model.ulozVlastni(new Challenge("A", Typ.SEKTORY_360, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.aktivuj(c);
+		model.setZapnuto(true);
+		final BitSet nejiste = new BitSet(360);
+		model.nastavVysledek(c, new VysledekSektoru(ob, nejiste, poSektorech, 359, kandidati), STRED_LAT, STRED_LON);
+		SwingUtilities.invokeAndWait(() -> {});
+		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
+		nad.setIndexatorKesi(index(vybrana));
+		vyber(vybrana);
+		final Coord mapa = mapa(14);
+		nakresli(nad, mapa);
+		final int sirkaJiste = nad.obdelnikyStitkuZvyrazneni().get(0).width;
+		nejiste.set(100);
+		model.nastavVysledek(c, new VysledekSektoru(ob, nejiste, poSektorech, 359, kandidati), STRED_LAT, STRED_LON);
+		SwingUtilities.invokeAndWait(() -> {});
+		nad.onEvent(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.VYSLEDEK, c));
+		nakresli(nad, mapa);
+		Assert.assertTrue("štítek nejistého sektoru je o znak ≈ širší: " + sirkaJiste + " → " + nad.obdelnikyStitkuZvyrazneni().get(0).width, nad.obdelnikyStitkuZvyrazneni().get(0).width > sirkaJiste);
+	}
+
+	@Test
 	public void bezVybraneKeseASektoruSeNicNezvyraznuje() throws Exception {
 		zobraz360(250);
 		nad.setIndexatorKesi(index(kesVAzimutu("GC1", 100.5, 2000, 2, 2)));
