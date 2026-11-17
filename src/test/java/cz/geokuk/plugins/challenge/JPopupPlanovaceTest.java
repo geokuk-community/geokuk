@@ -937,6 +937,45 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue("360° " + vyska360 + " px, D/T " + vyskaDT + " px", vyska360 + REZERVA_VYSKY_POPUPU >= vyskaDT);
 	}
 
+	/** Klik na ◀ ▶, Jen kandidáti, Sektory a Štítky popup nezavře; klik na výběr challenge a do mapy ano. */
+	@Test
+	public void klikNaOvladaniListyPopupNezavre() throws Exception {
+		priprav();
+		final java.util.List<Rectangle> ovladani = JPruhPlanovace.oblastiOvladani(1280, java.util.Collections.<Rectangle> emptyList());
+		Assert.assertEquals("◀ ▶, Jen kandidáti, Sektory, Štítky", 5, ovladani.size());
+		for (final Rectangle r : ovladani) {
+			popup.prepni();
+			popup.doLayout();
+			Assert.assertTrue(popup.jeOtevreno());
+			final MouseEvent klik = stisk(mapa, r.x + r.width / 2, r.y + r.height / 2);
+			popup.mysKdekoli(klik);
+			Assert.assertTrue("klik na ovládací prvek lišty " + r, popup.jeOtevreno());
+			Assert.assertFalse("klik se neztratí", klik.isConsumed());
+			popup.zavri();
+		}
+		popup.prepni();
+		final Rectangle vyber = JPruhPlanovace.rozloz(cz.geokuk.framework.RozmisteniPrekryvu.sirkaPruhu(cz.geokuk.framework.RozmisteniPrekryvu.volnaSirkaPruhu(1280)))[JPruhPlanovace.VYBER];
+		popup.mysKdekoli(stisk(mapa, vyber.x + 2, vyber.y + 2));
+		Assert.assertFalse("klik na výběr challenge popup zavře", popup.jeOtevreno());
+	}
+
+	/** Posun ◀ ▶ (Shift+←/→) a Jen kandidáti (F4) popup nezavírají. */
+	@Test
+	public void posunAFiltrKlavesamiPopupNezavrou() throws Exception {
+		priprav();
+		popup.prepni();
+		ChallengeAkce.posun(model, true);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("posun ◀ ▶", popup.jeOtevreno());
+		model.setKresliSektory(false);
+		model.setKresliStitky(false);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("přepínače Sektory a Štítky", popup.jeOtevreno());
+		model.setJenKandidatiPro(aktivni());
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue("Jen kandidáti (F4)", popup.jeOtevreno());
+	}
+
 	/** Řádek „Každé políčko splnit: ◀ N× ▶“ je jen u matice D/T; hodnota se ukáže hned, uloží se jednou po prodlevě, na hranicích 1 a 9 je šipka nedostupná. */
 	@Test
 	public void nasobnostVPopupuMeniDefiniciSOdkladem() throws Exception {
