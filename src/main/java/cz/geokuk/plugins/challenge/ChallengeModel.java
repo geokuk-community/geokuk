@@ -40,6 +40,8 @@ public class ChallengeModel extends Model0 {
 	/** Vybraný sektor 360° podle klíče challenge; neukládá se. */
 	private final Map<String, Integer> sektory = new ConcurrentHashMap<>();
 	private volatile String jenKandidatiPro;
+	/** Volba uživatele „jen kandidáti“; při přepnutí zobrazené challenge se filtr přenese na novou. */
+	private volatile boolean jenKandidatiVolba;
 	/** Klíč challenge zobrazené v pruhu; neukládá se, bez ní nebo při neaktivní je to první aktivní. */
 	private volatile String zobrazena;
 	/** Uložené nastavení je novější nebo nečitelné; nepřepisuje se, aby o něj uživatel nepřišel. */
@@ -94,6 +96,7 @@ public class ChallengeModel extends Model0 {
 		policka.clear();
 		sektory.clear();
 		jenKandidatiPro = null;
+		jenKandidatiVolba = false;
 		fire(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.NACTENO, null));
 	}
 
@@ -462,6 +465,7 @@ public class ChallengeModel extends Model0 {
 		seznam.smazVlastni(c.nazev());
 		odstranStav(c);
 		uloz();
+		prenesJenKandidati();
 		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, c);
 		if (bylaAktivni) {
 			ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, c);
@@ -509,6 +513,7 @@ public class ChallengeModel extends Model0 {
 			odstranStav(vypnuta);
 		}
 		uloz();
+		prenesJenKandidati();
 		if (vypnuta != null) {
 			ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, vypnuta);
 		}
@@ -522,6 +527,7 @@ public class ChallengeModel extends Model0 {
 		seznam.deaktivuj(c.nazev());
 		odstranStav(c);
 		uloz();
+		prenesJenKandidati();
 		ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, c);
 	}
 
@@ -867,6 +873,7 @@ public class ChallengeModel extends Model0 {
 		final Challenge pred = zobrazena();
 		zobrazena = klic(c);
 		if (pred == null || !klic(pred).equals(klic(c))) {
+			prenesJenKandidati();
 			ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENA, c);
 		}
 	}
@@ -927,12 +934,26 @@ public class ChallengeModel extends Model0 {
 		return seznam.najdi(k);
 	}
 
+	/** Zapnutý filtr „jen kandidáti“ platí pro zobrazenou challenge; při jejím přepnutí se přenese na novou, dokud ho uživatel nevypne. */
+	private void prenesJenKandidati() {
+		if (!jenKandidatiVolba) {
+			return;
+		}
+		final Challenge z = zobrazena();
+		final String nove = z == null ? null : klic(z);
+		if (!Objects.equals(nove, jenKandidatiPro)) {
+			jenKandidatiPro = nove;
+			ohlas(ChallengeZmenenyEvent.Druh.JEN_KANDIDATI, z);
+		}
+	}
+
 	/** Zapne filtr „jen kandidáti“ pro aktivní challenge, nebo ho vypne (null). Filtr je jen jeden najednou a neukládá se. */
 	public void setJenKandidatiPro(final Challenge c) {
 		if (c != null && !seznam.jeAktivni(c.nazev())) {
 			throw new ChallengeChyba("Filtr „Jen kandidáti“ jde zapnout jen pro aktivní challenge.");
 		}
 		final String nove = c == null ? null : klic(c);
+		jenKandidatiVolba = c != null;
 		if ((nove == null && jenKandidatiPro == null) || (nove != null && nove.equals(jenKandidatiPro))) {
 			return;
 		}

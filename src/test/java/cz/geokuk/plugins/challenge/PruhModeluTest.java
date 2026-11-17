@@ -192,7 +192,7 @@ public class PruhModeluTest {
 		model.setJenKandidatiPro(a);
 		Assert.assertTrue(model.stavPruhu().jenKandidati());
 		model.aktivuj(b);
-		Assert.assertFalse("zapnutí jiné challenge vypnulo filtr", model.stavPruhu().jenKandidati());
+		Assert.assertTrue("zapnutí jiné challenge filtr přeneslo", model.stavPruhu().jenKandidati());
 		model.setJenKandidatiPro(b);
 		Assert.assertTrue(model.stavPruhu().jenKandidati());
 		model.nastavStavPredpoctu(b, new StavPredpoctu(StavPredpoctu.Faze.CHYBA, 0, 0, "Keš X (střed challenge) není v načtených datech."));

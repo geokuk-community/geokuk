@@ -313,7 +313,7 @@ public class JPruhPolickoTest {
 
 	@Test
 	public void plnePolickoMa50Plus() {
-		Assert.assertEquals("<html>Zrušit výběr políčka D1/T1 (Esc)<br>na mapě jen jeho kandidáti (50+ kandidátů)</html>", JPruhPlanovace.tipPolicka("D1/T1", 50, true, true));
+		Assert.assertEquals("<html>Zrušit výběr políčka D1/T1 (Esc)<br>na mapě jen jeho kandidáti (50 nejbližších ke středu mapy)</html>", JPruhPlanovace.tipPolicka("D1/T1", 50, true, true));
 	}
 
 	private javax.swing.Action esc() {
