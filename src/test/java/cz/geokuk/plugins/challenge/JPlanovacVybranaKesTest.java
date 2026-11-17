@@ -162,6 +162,39 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void zvyrazneniNezmiziKdyzSePrestavujiClenoveTehozVyberu() throws Exception {
+		zobraz360(250, 20);
+		final Kes vybrana = kesVAzimutu("GC1", 250.5, 2000, 2, 2);
+		final Kes stejny = kesVAzimutu("GC2", 250.3, 1200, 3, 3);
+		final Kes jiny = kesVAzimutu("GC3", 20.5, 1500, 2, 2);
+		final java.util.Queue<Runnable> fronta = new java.util.ArrayDeque<>();
+		nad.setStavba(fronta::add);
+		nad.setIndexatorKesi(index(vybrana, stejny, jiny));
+		vyber(vybrana);
+		final Coord c = mapa(14);
+		nakresli(nad, c);
+		while (!fronta.isEmpty()) {
+			fronta.poll().run();
+		}
+		nakresli(nad, c);
+		while (!fronta.isEmpty()) {
+			fronta.poll().run();
+		}
+		nakresli(nad, c);
+		Assert.assertEquals("členové jsou postavení a kreslí se", 2, nad.obdelnikyStitkuZvyrazneni().size());
+		nad.setIndexatorKesi(index(vybrana, stejny, jiny));
+		nakresli(nad, c);
+		Assert.assertEquals("stavba nové sady čeká na vlákně", 1, fronta.size());
+		Assert.assertEquals("dokud se nová sada staví, zvýraznění nezmizí", 2, nad.obdelnikyStitkuZvyrazneni().size());
+		fronta.poll().run();
+		nakresli(nad, c);
+		Assert.assertEquals(2, nad.obdelnikyStitkuZvyrazneni().size());
+		vyber(jiny);
+		nakresli(nad, c);
+		Assert.assertTrue("jiný sektor nemá kreslit členy předchozího", nad.obdelnikyStitkuZvyrazneni().isEmpty());
+	}
+
+	@Test
 	public void klinSektoruVybraneKeseSeKresliIKdyzKesNeniKandidat() throws Exception {
 		zobraz360(250);
 		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
