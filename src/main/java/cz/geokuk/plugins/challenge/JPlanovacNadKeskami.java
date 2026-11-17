@@ -40,7 +40,6 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	/** Mezera mezi ikonou keše a štítkem kandidáta při zvětšení ikon 1; škáluje se se zvětšením. */
 	private static final int MEZERA_STITKU = 2;
 	/** Odstup štítku vybraného sektoru od jeho keše. */
-	private static final int ODSAZENI_VYBRANEHO = 20;
 	private static final int OKRAJ_VYREZU = 12;
 	/** Mezera mezi dovětkem o dosahu a pásem měřítka pod ním. */
 	private static final int MEZERA_DOSAHU = 4;
@@ -579,14 +578,8 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 	 * Štítek keše, podle které se vybralo, nebo vybraného kandidáta: u 360° „Sektor 213° · 5 kandidátů · 46 km“, u D/T štítek políčka. Kreslí se úplně nahoře.
 	 */
 	private void kresliStitekVybraneKese(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font tucne, final VyberZvyrazneni vyber) {
-		if (vyber.kes != null && vyber.sektor >= 0 && kresliSektory()) {
-			final String text = TextyKresleni.sektorVybrane(vyber.sektor, t.prehled);
-			umistiNadKes(g, c, tucne, text, vyber.kes, false);
-		} else if (vyber.kes != null && vyber.stitek != null && kresliStitky()) {
+		if (vyber.kes != null && vyber.stitek != null && kresliStitky()) {
 			umistiNadKes(g, c, tucne, vyber.stitek, vyber.kes, true);
-		} else if (vyber.kes == null && vyber.sektor >= 0 && vyber.sektor == t.vybranySektor && t.vybranyPozice != null && t.popisVybraneho != null && t.stred != null && kresliSektory()) {
-			final Point k = PixelyMapy.transform(c, t.vybranyPozice, new Point());
-			umistiOkoloBodu(g, tucne, t.popisVybraneho, k.x, k.y, ODSAZENI_VYBRANEHO, false);
 		}
 	}
 

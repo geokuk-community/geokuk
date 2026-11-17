@@ -190,9 +190,14 @@ final class TextyPopupuPlanovace {
 		if (stitek == null) {
 			return "Obtížnost × terén – klikněte na políčko s číslem a na mapě zůstanou jen jeho kandidáti:";
 		}
-		final String pocet = plne ? kandidatu + "+ kandidátů" : kandidatu(kandidatu);
+		final String pocet = plne ? plnyPocet(kandidatu) : kandidatu(kandidatu);
 		final String nalezy = cil > 1 ? Math.min(nalezu, cil) + " z " + cil + " nálezů, " : "";
 		return "Vybrané políčko: " + stitek + " – " + nalezy + pocet + (jenKandidati ? "" : ", na mapě všechny keše (F4)");
+	}
+
+	/** Plné políčko: výpočet ponechává jen nejbližší kandidáty ke středu mapy, může jich být víc. */
+	static String plnyPocet(final int n) {
+		return n + " nejbližších ke středu mapy";
 	}
 
 	/** Legenda pod maticí D/T. */

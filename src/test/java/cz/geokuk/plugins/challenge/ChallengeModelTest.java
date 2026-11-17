@@ -153,7 +153,7 @@ public class ChallengeModelTest {
 	}
 
 	@Test
-	public void zapnutiDalsiChallengeVypneDosavadniSJejimStavemAFiltrem() throws Exception {
+	public void zapnutiDalsiChallengeVypneDosavadniSJejimStavemAPrenesePrepinacJenKandidati() throws Exception {
 		final Challenge a = model.ulozVlastni(vlastni("A"));
 		final Challenge b = model.ulozVlastni(vlastni("B"));
 		model.aktivuj(a);
@@ -166,9 +166,9 @@ public class ChallengeModelTest {
 		Assert.assertEquals(java.util.Arrays.asList(b), model.aktivni());
 		Assert.assertFalse(model.jeAktivni(a));
 		Assert.assertNull("výsledek vypnuté se zahodil", model.vysledek(a));
-		Assert.assertNull("filtr patřil vypnuté", model.jenKandidatiPro());
-		Assert.assertEquals(java.util.Arrays.asList(Druh.JEN_KANDIDATI, Druh.AKTIVNI, Druh.AKTIVNI), druhy());
-		Assert.assertEquals("vypnutá, zapnutá", java.util.Arrays.asList("A", "B"), java.util.Arrays.asList(udalosti.get(1).challenge().nazev(), udalosti.get(2).challenge().nazev()));
+		Assert.assertEquals("filtr se přenese na nově zapnutou", b, model.jenKandidatiPro());
+		Assert.assertEquals(java.util.Arrays.asList(Druh.JEN_KANDIDATI, Druh.JEN_KANDIDATI, Druh.AKTIVNI, Druh.AKTIVNI), druhy());
+		Assert.assertEquals("vypnutá, zapnutá", java.util.Arrays.asList("A", "B"), java.util.Arrays.asList(udalosti.get(2).challenge().nazev(), udalosti.get(3).challenge().nazev()));
 		udalosti.clear();
 		model.aktivuj(b);
 		Assert.assertEquals("zapnutá znovu nic nehlásí", 0, udalosti.size());
@@ -639,6 +639,29 @@ public class ChallengeModelTest {
 	}
 
 	@Test
+	public void filtrJenKandidatiSePriPrepnutiChallengePrenesAZustaneDokudHoUzivatelNevypne() {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		final Challenge s1 = model.ulozVlastni(vlastni("S1"));
+		final Challenge s2 = model.ulozVlastni(vlastni("S2"));
+		model.setKalendarVUi(true);
+		final Challenge kal = model.ulozVlastni(new Challenge("K", Typ.KALENDAR, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.setZapnuto(true);
+		model.aktivuj(dt);
+		model.setJenKandidatiPro(dt);
+		for (final Challenge dalsi : new Challenge[] { s1, kal, s2, dt }) {
+			model.aktivuj(dalsi);
+			Assert.assertEquals("filtr platí i pro " + dalsi.nazev(), dalsi, model.jenKandidatiPro());
+			Assert.assertTrue(model.stavPruhu().jenKandidati());
+		}
+		model.setJenKandidatiPro(null);
+		model.aktivuj(s1);
+		Assert.assertNull("uživatel filtr vypnul, nezapne se sám", model.jenKandidatiPro());
+		model.aktivuj(dt);
+		Assert.assertNull(model.jenKandidatiPro());
+		Assert.assertFalse(model.stavPruhu().jenKandidati());
+	}
+
+	@Test
 	public void filtrJenKandidatiJeJedenAJenProAktivni() {
 		final Challenge a = model.ulozVlastni(vlastni("A"));
 		final Challenge b = model.ulozVlastni(vlastni("B"));
@@ -660,7 +683,7 @@ public class ChallengeModelTest {
 			Assert.assertEquals("A", model.jenKandidatiPro().nazev());
 		}
 		model.deaktivuj(a);
-		Assert.assertNull("vypnutí challenge vypne i filtr", model.jenKandidatiPro());
+		Assert.assertNull("bez challenge není pro koho filtrovat", model.jenKandidatiPro());
 		Assert.assertEquals(java.util.Arrays.asList(Druh.JEN_KANDIDATI, Druh.JEN_KANDIDATI, Druh.AKTIVNI), druhy());
 		model.setJenKandidatiPro(null);
 		Assert.assertEquals("vypnutí vypnutého se neohlásí", 3, udalosti.size());
