@@ -283,7 +283,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
 				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
 			} else {
-				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenePolicko(c));
+				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenePolicko(c), model.poctyVOkne(c));
 			}
 		}
 		revalidate();
@@ -729,7 +729,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		}
 
 		/** D/T matice a kalendář: shrnutí a chybějící políčka nebo dny v pořadí z výpočtu. */
-		void nastavPolicka(final Challenge c, final VysledekPolicek p, final StavPredpoctu stav, final boolean jenKandidati, final String vybranePolicko) {
+		void nastavPolicka(final Challenge c, final VysledekPolicek p, final StavPredpoctu stav, final boolean jenKandidati, final String vybranePolicko,
+				final java.util.Map<String, Integer> vOkne) {
 			if (!zahlavi(c, p != null, stav, jenKandidati)) {
 				return;
 			}
@@ -738,11 +739,12 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			postup.setValue(p.splnenoNalezu());
 			postup.setString(TextyPopupuPlanovace.procenta(p));
 			if (c.typ() == Challenge.Typ.DT_MATICE) {
-				matice.nastav(p);
+				matice.nastav(p, vOkne);
 				matice.setVybrane(vybranePolicko);
 				nadpisSeznamu.setText(TextyPopupuPlanovace.vybranePolicko(vybranePolicko, vybranePolicko == null ? 0 : p.pocetKandidatu(vybranePolicko),
-						vybranePolicko != null && p.jePlne(vybranePolicko), jenKandidati, vybranePolicko == null ? 0 : p.pocetNalezu(vybranePolicko), p.cil()));
-				legenda.setText(p.cil() > 1 ? TextyPopupuPlanovace.legendaMatice(p.cil()) : TextyPopupuPlanovace.LEGENDA_MATICE);
+						vybranePolicko != null && p.jePlne(vybranePolicko), jenKandidati, vybranePolicko == null ? 0 : p.pocetNalezu(vybranePolicko), p.cil(),
+						vybranePolicko == null ? -1 : vOkne.getOrDefault(vybranePolicko, -1)));
+				legenda.setText(p.cil() > 1 ? TextyPopupuPlanovace.legendaMatice(p.cil()) : vOkne.isEmpty() ? TextyPopupuPlanovace.LEGENDA_MATICE : TextyPopupuPlanovace.LEGENDA_MATICE_V_OKNE);
 				vsechnaPolicka.setVisible(vybranePolicko != null);
 				mimoVyrez.setVisible(vybranePolicko != null && vyberMimoVyrez);
 				if (mimoVyrez.isVisible()) {

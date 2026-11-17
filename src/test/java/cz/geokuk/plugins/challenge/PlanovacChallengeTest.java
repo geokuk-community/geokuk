@@ -1112,4 +1112,29 @@ public class PlanovacChallengeTest {
 		Assert.assertEquals(prvni, planovac.predchoziChybejici(c).id());
 		Assert.assertNull("před prvním nic není", planovac.predchoziChybejici(c));
 	}
+
+	/** Počty kandidátů D/T ve výřezu mapy se spočítají po výsledku i po změně výřezu, bez nového průchodu daty. */
+	@Test
+	public void poctyKandidatuVOkneSeMeniSVyrezem() throws Exception {
+		napojNaModel();
+		final java.util.concurrent.atomic.AtomicReference<double[]> okno = new java.util.concurrent.atomic.AtomicReference<>(new double[] { 49.9, 50.05, 13.9, 14.05 });
+		planovac.oknoMapy = okno::get;
+		final Challenge dt = dtChallenge("DT");
+		planovac.keseNacteny(dtData());
+		zapni(dt);
+		final String d3t5 = VypocetMatice.stitek(3, 5);
+		final String d8t8 = VypocetMatice.stitek(8, 8);
+		pockej(() -> !model.poctyVOkne(dt).isEmpty(), "počty v okně");
+		Assert.assertEquals("K1 v okně, K2 mimo", Integer.valueOf(1), model.poctyVOkne(dt).get(d3t5));
+		Assert.assertEquals(Integer.valueOf(1), model.poctyVOkne(dt).get(d8t8));
+		final VysledekPolicek vysledek = model.vysledekPolicek(dt);
+		okno.set(new double[] { 49.9, 50.4, 13.9, 14.4 });
+		javax.swing.SwingUtilities.invokeAndWait(planovac::vyrezZmenen);
+		pockej(() -> Integer.valueOf(2).equals(model.poctyVOkne(dt).get(d3t5)), "větší okno");
+		Assert.assertSame("výsledek se kvůli výřezu nepřepočítal", vysledek, model.vysledekPolicek(dt));
+		okno.set(new double[] { 60, 61, 20, 21 });
+		javax.swing.SwingUtilities.invokeAndWait(planovac::vyrezZmenen);
+		pockej(() -> Integer.valueOf(0).equals(model.poctyVOkne(dt).get(d3t5)), "okno bez kandidátů");
+		Assert.assertEquals("kandidáti mimo okno zůstávají", 2, vysledek.pocetKandidatu(d3t5));
+	}
 }

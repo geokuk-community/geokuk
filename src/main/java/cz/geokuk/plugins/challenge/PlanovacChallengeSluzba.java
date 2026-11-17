@@ -59,6 +59,7 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 	public void initAfterInject() {
 		planovac = new PlanovacChallenge(challengeModel, new ZdrojovyPoskytovatelOblasti(), refbodyModel::getHc, this::adresarPredpoctu, this::stredMapy, this::vystredit);
 		planovac.veVyrezu = this::jeVeVyrezu;
+		planovac.oknoMapy = this::oknoMapy;
 	}
 
 	public PlanovacChallenge planovac() {
@@ -75,6 +76,7 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 
 	public void onEvent(final cz.geokuk.core.coord.VyrezChangedEvent event) {
 		planovac.stredMapyZmenen();
+		planovac.vyrezZmenen();
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
@@ -112,6 +114,17 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 
 	private Wgs stredMapy() {
 		return vyrezModel.getMoord() == null ? null : vyrezModel.getMoord().getMoustred().toWgs();
+	}
+
+	private double[] oknoMapy() {
+		final cz.geokuk.core.coord.Coord coord = vyrezModel.getMoord();
+		if (coord == null) {
+			return null;
+		}
+		final Wgs jz = coord.getMouJZ().toWgs();
+		final Wgs sv = coord.getMouSV().toWgs();
+		// západní a východní délka zůstávají neseřazené, aby okno přes poledník 180° poznal PolohyHledatelnych
+		return new double[] { Math.min(jz.lat, sv.lat), Math.max(jz.lat, sv.lat), jz.lon, sv.lon };
 	}
 
 	private boolean jeVeVyrezu(final Wgs wgs) {

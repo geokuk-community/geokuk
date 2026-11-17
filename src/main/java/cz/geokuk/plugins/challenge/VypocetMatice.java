@@ -28,6 +28,7 @@ public final class VypocetMatice {
 		for (int i = 0; i < hledatelne.length; i++) {
 			hledatelne[i] = new OmezenaFronta(pravidla.maxKandidatu());
 		}
+		final PolohyHledatelnych.Sber polohy = new PolohyHledatelnych.Sber();
 		for (final VstupDT k : kese) {
 			Objects.requireNonNull(k, "keš");
 			if (!jePlatne(k.obtiznost()) || !jePlatne(k.teren()) || !pravidla.lzePocitat(k)) {
@@ -37,23 +38,26 @@ public final class VypocetMatice {
 				nalezu[k.obtiznost() * PULEK + k.teren()]++;
 			} else if (PravidlaTypu.hledatelna(k)) {
 				hledatelne[k.obtiznost() * PULEK + k.teren()].pridej(k, 0, lat, lon);
+				polohy.pridej(k.obtiznost() * PULEK + k.teren(), k.lat(), k.lon());
 			}
 		}
 		final List<String> chybejici = new ArrayList<>();
 		final List<KandidatPolicka> kandidati = new ArrayList<>();
+		final boolean[] chybi = new boolean[PULEK * PULEK];
 		for (int d = 0; d < PULEK; d++) {
 			for (int t = 0; t < PULEK; t++) {
 				if (nalezu[d * PULEK + t] >= pravidla.opakovani()) {
 					continue;
 				}
 				final String stitek = stitek(d, t);
+				chybi[d * PULEK + t] = true;
 				chybejici.add(stitek);
 				for (final OmezenaFronta.Kandidat c : hledatelne[d * PULEK + t].serazene()) {
 					kandidati.add(new KandidatPolicka(c.keska.id(), c.keska.lat(), c.keska.lon(), stitek, stitek, null, c.vzdalenost));
 				}
 			}
 		}
-		return new VysledekPolicek(PULEK * PULEK, chybejici, kandidati, pravidla.maxKandidatu(), pravidla.opakovani(), nalezu);
+		return new VysledekPolicek(PULEK * PULEK, chybejici, kandidati, pravidla.maxKandidatu(), pravidla.opakovani(), nalezu).sPolohami(polohy.jenChybejici(chybi));
 	}
 
 	private static final String[] STITKY = new String[PULEK * PULEK];

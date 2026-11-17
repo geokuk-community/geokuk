@@ -793,4 +793,32 @@ public class ChallengeModelTest {
 		m.setZapnuto(true);
 		Assert.assertEquals("uložené nastavení zůstalo beze změny", pred, u.m);
 	}
+
+	/** Počty ve výřezu platí jen pro výsledek, ze kterého vznikly: pro už neplatný se zahodí a po novém výsledku se nevrací. */
+	@Test
+	public void poctyVOkneSeZahodiProZastaralyVysledek() throws Exception {
+		final Challenge c = dtAktivni("DT");
+		final VysledekPolicek stary = new VysledekPolicek(81, java.util.Arrays.asList("D1/T1"), Collections.<KandidatPolicka> emptyList());
+		final VysledekPolicek novy = new VysledekPolicek(81, java.util.Arrays.asList("D1/T1"), Collections.<KandidatPolicka> emptyList());
+		model.nastavVysledekPolicek(c, stary);
+		pockejNaEdt();
+		model.nastavPoctyVOkne(c, stary, Collections.singletonMap("D1/T1", 3));
+		pockejNaEdt();
+		Assert.assertEquals(Integer.valueOf(3), model.poctyVOkne(c).get("D1/T1"));
+		model.nastavVysledekPolicek(c, novy);
+		pockejNaEdt();
+		Assert.assertTrue("počty starého výsledku se nevracejí", model.poctyVOkne(c).isEmpty());
+		udalosti.clear();
+		model.nastavPoctyVOkne(c, stary, Collections.singletonMap("D1/T1", 7));
+		pockejNaEdt();
+		Assert.assertTrue("počty pro neplatný výsledek se zahodí", model.poctyVOkne(c).isEmpty());
+		Assert.assertTrue("a neohlásí se", druhy().isEmpty());
+		model.nastavPoctyVOkne(c, novy, Collections.singletonMap("D1/T1", 5));
+		pockejNaEdt();
+		Assert.assertEquals(Integer.valueOf(5), model.poctyVOkne(c).get("D1/T1"));
+		Assert.assertEquals(java.util.Arrays.asList(Druh.ZOBRAZENI), druhy());
+		model.nastavPoctyVOkne(c, novy, Collections.singletonMap("D1/T1", 5));
+		pockejNaEdt();
+		Assert.assertEquals("stejné počty se neohlásí znovu", java.util.Arrays.asList(Druh.ZOBRAZENI), druhy());
+	}
 }
