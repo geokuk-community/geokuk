@@ -68,20 +68,11 @@ public class KesoidFilter {
 					}
 				}
 
-				if (kes.getHodnoceni() != Kes.NENI_HODNOCENI) {
-					if (kes.getHodnoceni() < filterDefinition.getPrahHodnoceni()) {
-						return false;
-					}
-				}
-				if (kes.getBestOf() != Kes.NENI_HODNOCENI) {
-					if (kes.getBestOf() < filterDefinition.getPrahBestOf()) {
-						return false;
-					}
-				}
-				if (kes.getFavorit() != Kes.NENI_HODNOCENI) {
-					if (kes.getFavorit() < filterDefinition.getPrahFavorit()) {
-						return false;
-					}
+				// Keš bez hodnoty (NENI_HODNOCENI) nastavený práh nesplní.
+				if (podPrahem(kes.getHodnoceni(), filterDefinition.getPrahHodnoceni())
+						|| podPrahem(kes.getBestOf(), filterDefinition.getPrahBestOf())
+						|| podPrahem(kes.getFavorit(), filterDefinition.getPrahFavorit())) {
+					return false;
 				}
 			}
 			if (vyletModel != null) {
@@ -97,6 +88,10 @@ public class KesoidFilter {
 
 		}
 
+	}
+
+	private static boolean podPrahem(final int hodnota, final int prah) {
+		return prah > 0 && hodnota < prah;
 	}
 
 	private synchronized Set<Alela> nechteneAlely(final Genom genom) {

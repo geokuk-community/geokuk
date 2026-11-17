@@ -27,7 +27,6 @@ final class TvarPlanovace {
 	/** Štítek políčka každého kandidáta; null u sektorů. */
 	final String[] stitkyPolicek;
 	/** Vybraný sektor: štítek, poloha kandidáta a sektor; jinak null / -1. */
-	final String popisVybraneho;
 	final Mou vybranyPozice;
 	final int vybranySektor;
 	/** Poloměr kružnice v metrech; 0, když se nekreslí. */
@@ -80,14 +79,11 @@ final class TvarPlanovace {
 			}
 		}
 		if (sektory && vybrany != null && vybrany.sektor() >= 0 && zdroj instanceof VysledekSektoru) {
-			final VysledekSektoru.Kandidati k = ((VysledekSektoru) zdroj).kandidati(vybrany.sektor());
 			vybranySektor = vybrany.sektor();
 			vybranyPozice = PixelyMapy.mou(vybrany.lat(), vybrany.lon());
-			popisVybraneho = TextyKresleni.vybranySektor(vybranySektor, k == null ? 1 : k.pocet(), k == null ? vybrany.vzdalenost() : k.nejblizsiVzdalenost());
 		} else {
 			vybranySektor = -1;
 			vybranyPozice = null;
-			popisVybraneho = null;
 		}
 	}
 
