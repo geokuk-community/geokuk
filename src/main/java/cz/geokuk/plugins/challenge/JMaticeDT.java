@@ -177,7 +177,7 @@ public class JMaticeDT extends JComponent {
 				return nalezy + ", nemá kandidáty";
 			default:
 				final int n = pocty.getOrDefault(stitek, 0);
-				return nalezy + ", " + (jePlne(stitek) ? n + "+ kandidátů" : TextyPopupuPlanovace.kandidatu(n));
+				return nalezy + ", " + (jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(n) : TextyPopupuPlanovace.kandidatu(n));
 			}
 		}
 		switch (stav(stitek)) {
@@ -187,7 +187,7 @@ public class JMaticeDT extends JComponent {
 			return stitek + " – chybí, nemá kandidáty";
 		default:
 			final int n = pocty.getOrDefault(stitek, 0);
-			return stitek + " – chybí, " + (jePlne(stitek) ? n + "+ kandidátů" : TextyPopupuPlanovace.kandidatu(n));
+			return stitek + " – chybí, " + (jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(n) : TextyPopupuPlanovace.kandidatu(n));
 		}
 	}
 

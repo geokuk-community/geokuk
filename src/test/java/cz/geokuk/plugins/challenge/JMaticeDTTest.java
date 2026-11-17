@@ -106,7 +106,7 @@ public class JMaticeDTTest {
 		Assert.assertNull("bez kandidátů nejde vybrat", m.vybrane());
 		Assert.assertTrue(vybrana.isEmpty());
 		Assert.assertEquals("50+", m.pocet("D3/T4"));
-		Assert.assertEquals("D3/T4 – chybí, 50+ kandidátů", m.popis("D3/T4"));
+		Assert.assertEquals("D3/T4 – chybí, 50 nejbližších ke středu mapy", m.popis("D3/T4"));
 	}
 
 	private JMaticeDT matice() {
@@ -138,7 +138,7 @@ public class JMaticeDTTest {
 		Assert.assertEquals("3", m.pocet("D1/T1"));
 		Assert.assertEquals("plné políčko", "50+", m.pocet("D3/T4"));
 		Assert.assertEquals("D1/T1 – chybí, 3 kandidáti", m.popis("D1/T1"));
-		Assert.assertEquals("D3/T4 – chybí, 50+ kandidátů", m.popis("D3/T4"));
+		Assert.assertEquals("D3/T4 – chybí, 50 nejbližších ke středu mapy", m.popis("D3/T4"));
 		Assert.assertEquals("D5/T5 – chybí, nemá kandidáty", m.popis("D5/T5"));
 		Assert.assertEquals("D2/T2 – splněno", m.popis("D2/T2"));
 		Assert.assertEquals("tooltip pod myší", "D1/T1 – chybí, 3 kandidáti", m.getToolTipText(klik(m, 0, 0)));
