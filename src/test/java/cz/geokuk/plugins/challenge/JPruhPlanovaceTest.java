@@ -50,15 +50,13 @@ public class JPruhPlanovaceTest {
 		final Rectangle[] ikony = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_IKONY);
 		final Rectangle[] uzky = JPruhPlanovace.rozloz(RozmisteniPrekryvu.PRUH_UZKY);
 		Assert.assertEquals(124, plny[JPruhPlanovace.KANDIDATI].width);
-		Assert.assertEquals(116, plny[JPruhPlanovace.NASTAVENI].width);
 		Assert.assertEquals("odznak s popiskem „chybí 360“", 80, plny[JPruhPlanovace.ODZNAK].width);
 		Assert.assertEquals("jen ikona", 26, ikony[JPruhPlanovace.KANDIDATI].width);
 		Assert.assertEquals(26, ikony[JPruhPlanovace.SEKTORY].width);
-		Assert.assertEquals(26, ikony[JPruhPlanovace.NASTAVENI].width);
 		for (final int i : new int[] { JPruhPlanovace.KANDIDATI, JPruhPlanovace.SEKTORY, JPruhPlanovace.STITKY }) {
 			Assert.assertTrue("nejužší bez " + i, uzky[i].isEmpty());
 		}
-		for (final int i : new int[] { JPruhPlanovace.UCHYT, JPruhPlanovace.VYBER, JPruhPlanovace.ODZNAK, JPruhPlanovace.ZPET, JPruhPlanovace.DAL, JPruhPlanovace.NASTAVENI }) {
+		for (final int i : new int[] { JPruhPlanovace.UCHYT, JPruhPlanovace.VYBER, JPruhPlanovace.ODZNAK, JPruhPlanovace.ZPET, JPruhPlanovace.DAL }) {
 			Assert.assertFalse("nejužší s " + i, uzky[i].isEmpty());
 		}
 		Assert.assertEquals("výběr stejně široký na všech stupních", plny[JPruhPlanovace.VYBER].width, uzky[JPruhPlanovace.VYBER].width);
@@ -66,12 +64,12 @@ public class JPruhPlanovaceTest {
 
 	@Test
 	public void sirkaSeVoliPodleSirkyMapyBezRezervyVpravo() {
-		Assert.assertEquals(664, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
-		Assert.assertEquals(664, RozmisteniPrekryvu.sirkaPruhu(664));
-		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(663));
-		Assert.assertEquals(368, RozmisteniPrekryvu.sirkaPruhu(368));
-		Assert.assertEquals(274, RozmisteniPrekryvu.sirkaPruhu(367));
-		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 274, RozmisteniPrekryvu.sirkaPruhu(10));
+		Assert.assertEquals(540, RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)));
+		Assert.assertEquals(540, RozmisteniPrekryvu.sirkaPruhu(540));
+		Assert.assertEquals(334, RozmisteniPrekryvu.sirkaPruhu(539));
+		Assert.assertEquals(334, RozmisteniPrekryvu.sirkaPruhu(334));
+		Assert.assertEquals(240, RozmisteniPrekryvu.sirkaPruhu(333));
+		Assert.assertEquals("užší nevejde nic, zůstane nejužší", 240, RozmisteniPrekryvu.sirkaPruhu(10));
 		Assert.assertEquals(RozmisteniPrekryvu.PRUH_UCHYT, RozmisteniPrekryvu.pruhPlanovace(1000, false).width);
 	}
 
@@ -122,7 +120,7 @@ public class JPruhPlanovaceTest {
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue("úchyt zapne plánovač", model.jeZapnuto());
 		pruh.doLayout();
-		Assert.assertEquals("bez aktivní challenge celá lišta", 9, viditelne().size());
+		Assert.assertEquals("bez aktivní challenge celá lišta", 8, viditelne().size());
 		Assert.assertFalse("bez challenge odznak nejde", najdiOdznak().isEnabled());
 		model.aktivuj(Sablony.cesko360());
 		javax.swing.SwingUtilities.invokeAndWait(() -> {});
@@ -586,6 +584,22 @@ public class JPruhPlanovaceTest {
 			}
 			javax.swing.plaf.metal.MetalLookAndFeel.setCurrentTheme(puvodniTema);
 			javax.swing.UIManager.setLookAndFeel(puvodni);
+		}
+	}
+
+	/** Lišta nemá tlačítko Nastavení…; dialog plánovače se otevírá z popupu a z menu výběru challenge. */
+	@Test
+	public void listaNemaTlacitkoNastaveni() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		javax.swing.SwingUtilities.invokeAndWait(() -> pruh.doLayout());
+		for (final java.awt.Component k : pruh.getComponents()) {
+			if (k instanceof javax.swing.AbstractButton) {
+				final javax.swing.AbstractButton b = (javax.swing.AbstractButton) k;
+				Assert.assertFalse("tooltip " + b.getToolTipText(), b.getToolTipText() != null && b.getToolTipText().startsWith("Nastavení plánovače"));
+				Assert.assertFalse("text " + b.getText(), b.getText() != null && b.getText().startsWith("Nastavení"));
+			}
 		}
 	}
 }

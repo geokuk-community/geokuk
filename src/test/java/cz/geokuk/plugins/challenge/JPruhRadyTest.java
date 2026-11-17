@@ -187,13 +187,12 @@ public class JPruhRadyTest {
 		Assert.assertFalse(radaVidet());
 	}
 
-	/** Po přepnutí skinu má rada barvy tooltipu nového skinu, odkaz „Změnit domov…“ akcent nového skinu; text a pozadí rady se liší. */
+	/** Po přepnutí skinu má rada barvy tooltipu nového skinu, text a pozadí rady se liší. */
 	@Test
-	public void barvyRadyAOdkazuSlediSkin() throws Exception {
+	public void barvyRadySlediSkin() throws Exception {
 		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
 		final javax.swing.plaf.metal.MetalTheme puvodniTema = javax.swing.plaf.metal.MetalLookAndFeel.getCurrentTheme();
 		start(new MapoveUloziste(), 1280);
-		final JPopupPlanovace popup = new JPopupPlanovace();
 		try {
 			for (final javax.swing.plaf.metal.MetalTheme t : new javax.swing.plaf.metal.MetalTheme[] { new javax.swing.plaf.metal.OceanTheme(), new javax.swing.plaf.metal.DefaultMetalTheme(),
 					new cz.geokuk.core.lookandfeel.CharcoalTheme() }) {
@@ -201,23 +200,11 @@ public class JPruhRadyTest {
 				javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
 				SwingUtilities.invokeAndWait(() -> {
 					SwingUtilities.updateComponentTreeUI(pruh);
-					SwingUtilities.updateComponentTreeUI(popup);
 					final java.awt.Color pozadi = javax.swing.UIManager.getColor("ToolTip.background");
 					Assert.assertEquals(t.getName(), pozadi.getRGB(), pruh.rada.getBackground().getRGB());
 					final java.awt.Color text = ((javax.swing.JLabel) pruh.rada.getComponent(0)).getForeground();
 					Assert.assertEquals(t.getName(), javax.swing.UIManager.getColor("ToolTip.foreground").getRGB(), text.getRGB());
 					Assert.assertTrue(t.getName() + " text rady proti pozadí", Math.abs(jas(text) - jas(pozadi)) > 100);
-					final java.awt.Color pozadiPopupu = javax.swing.UIManager.getColor("Panel.background");
-					final java.awt.Color odkaz = popup.obsah.zmenitDomov.getForeground();
-					Assert.assertEquals(t.getName(), JPopupPlanovace.Obsah.barvaOdkazu(pozadiPopupu, javax.swing.UIManager.getColor("Label.foreground")).getRGB(), odkaz.getRGB());
-					Assert.assertTrue(t.getName() + " odkaz proti pozadí popupu " + odkaz, JPopupPlanovace.Obsah.kontrast(odkaz, pozadiPopupu) >= JPopupPlanovace.Obsah.KONTRAST_ODKAZU);
-					if (JPopupPlanovace.Obsah.jeTmave(pozadiPopupu)) {
-						Assert.assertEquals(t.getName() + " v tmavém skinu barva textu", javax.swing.UIManager.getColor("Label.foreground").getRGB(), odkaz.getRGB());
-					} else {
-						Assert.assertNotEquals(t.getName() + " ve světlém skinu akcent, ne text", javax.swing.UIManager.getColor("Label.foreground").getRGB(), odkaz.getRGB());
-					}
-					Assert.assertTrue("odkaz je podtržený",
-							java.awt.font.TextAttribute.UNDERLINE_ON.equals(popup.obsah.zmenitDomov.getFont().getAttributes().get(java.awt.font.TextAttribute.UNDERLINE)));
 				});
 			}
 		} finally {

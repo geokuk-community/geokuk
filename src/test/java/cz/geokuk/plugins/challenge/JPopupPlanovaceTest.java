@@ -416,7 +416,7 @@ public class JPopupPlanovaceTest {
 	@Test
 	public void nenastavenyDomovVyzveKeZmeneDomova() {
 		final String text = TextyPopupuPlanovace.chyba("Domovské souřadnice nejsou nastavené.", 300);
-		Assert.assertTrue(text, text.contains("Klikněte na mapu na místo domova a zvolte Změnit domov…"));
+		Assert.assertTrue(text, text.contains("Klikněte na mapu na místo domova a zvolte Soubor > Jsem doma…"));
 	}
 
 	@Test
@@ -884,9 +884,9 @@ public class JPopupPlanovaceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 	}
 
-	/** U středu „domov“ jsou souřadnice domova a odkaz Změnit domov…; bez nastaveného domova to řádek řekne. */
+	/** U středu „domov“ jsou souřadnice domova; bez nastaveného domova to řádek řekne. */
 	@Test
-	public void stredDomovUkazeSouradniceAOdkaz() throws Exception {
+	public void stredDomovUkazeSouradnice() throws Exception {
 		priprav();
 		final Doma d = new Doma();
 		popup.inject(d.refbody);
@@ -894,70 +894,21 @@ public class JPopupPlanovaceTest {
 		popup.prepni();
 		final JPopupPlanovace.Obsah o = popup.obsah;
 		Assert.assertEquals("Střed: domov není nastavený", o.stred.getText());
-		Assert.assertTrue(o.zmenitDomov.isVisible());
-		Assert.assertEquals("Změnit domov…", o.zmenitDomov.getText());
+		Assert.assertFalse("odkaz Změnit domov… v popupu není", maTlacitko(o, "Změnit domov…"));
+		Assert.assertTrue("Nastavení plánovače… v popupu zůstává", maTlacitko(o, "Nastavení plánovače…"));
 		d.hc[0] = new cz.geokuk.core.coordinates.Wgs(50.0542, 14.39);
 		popup.onEvent(new cz.geokuk.plugins.refbody.DomaciSouradniceSeZmenilyEvent(d.hc[0]));
 		Assert.assertEquals("Střed: domov " + d.hc[0], o.stred.getText());
 		Assert.assertTrue(o.stred.getText(), o.stred.getText().startsWith("Střed: domov N50°"));
 	}
 
-	/** U středu z listingu odkaz na domov není; u D/T není celý řádek středu. */
-	@Test
-	public void odkazNaDomovJenUStreduDomov() throws Exception {
-		priprav();
-		popup.prepni();
-		Assert.assertEquals("Střed: keš GC4PCQB", popup.obsah.stred.getText());
-		Assert.assertFalse(popup.obsah.zmenitDomov.isVisible());
-	}
-
-	/** Změnit domov… je dostupný jen s pozicí na mapě (jinak tooltip řekne, co udělat); klik zavře popup a uloží pozici jako domov akcí „Jsem doma“. */
-	@Test
-	public void zmenitDomovUloziPoziciAkciJsemDoma() throws Exception {
-		priprav();
-		final Doma d = new Doma();
-		popup.inject(d.refbody);
-		popup.setZmenaDomova(d.akce);
-		aktivujDomov();
-		popup.prepni();
-		final javax.swing.JButton odkaz = popup.obsah.zmenitDomov;
-		Assert.assertFalse("bez pozice nedostupný", odkaz.isEnabled());
-		Assert.assertEquals(TextyPopupuPlanovace.TIP_ZMENY_DOMOVA_BEZ_POZICE, odkaz.getToolTipText());
-		odkaz.doClick();
-		Assert.assertTrue("nedostupný odkaz nic neudělá", popup.jeOtevreno());
-		final cz.geokuk.core.coordinates.Wgs misto = new cz.geokuk.core.coordinates.Wgs(50.08, 14.42);
-		d.pozice.setPozice(misto);
-		Assert.assertTrue("s pozicí dostupný", odkaz.isEnabled());
-		Assert.assertEquals(TextyPopupuPlanovace.TIP_ZMENY_DOMOVA, odkaz.getToolTipText());
-		odkaz.doClick();
-		Assert.assertFalse("klik zavře popup", popup.jeOtevreno());
-		Assert.assertEquals(misto.lat, d.hc[0].lat, 1e-6);
-		Assert.assertEquals(misto.lon, d.hc[0].lon, 1e-6);
-		d.pozice.clearPozice();
-		Assert.assertFalse("po zrušení pozice zase nedostupný", odkaz.isEnabled());
-	}
-
-	/** Pozice na keši (po skoku na kandidáta, po kliku na keš) není zvolené místo domova; odkaz se nabídne zase po kliknutí do mapy. */
-	@Test
-	public void zmenitDomovNeniDostupnyNaKesi() throws Exception {
-		priprav();
-		final Doma d = new Doma();
-		d.poslech = popup::onEvent;
-		popup.inject(d.refbody);
-		popup.setZmenaDomova(d.akce);
-		aktivujDomov();
-		popup.prepni();
-		final javax.swing.JButton odkaz = popup.obsah.zmenitDomov;
-		d.pozice.setPozice(new cz.geokuk.core.coordinates.Wgs(50.08, 14.42));
-		Assert.assertTrue("místo na mapě", odkaz.isEnabled());
-		final cz.geokuk.plugins.kesoid.Wpt wpt = new cz.geokuk.plugins.kesoid.Wpt();
-		wpt.setWgs(new cz.geokuk.core.coordinates.Wgs(50.09, 14.43));
-		d.pozice.setPoziceNaObjekt(wpt);
-		Assert.assertTrue("akce „Jsem doma“ je s pozicí dostupná", d.akce.isEnabled());
-		Assert.assertFalse("keš není zvolené místo domova", odkaz.isEnabled());
-		Assert.assertEquals(TextyPopupuPlanovace.TIP_ZMENY_DOMOVA_BEZ_POZICE, odkaz.getToolTipText());
-		d.pozice.setPozice(new cz.geokuk.core.coordinates.Wgs(50.1, 14.5));
-		Assert.assertTrue("po kliknutí do mapy zase", odkaz.isEnabled());
+	private static boolean maTlacitko(final java.awt.Container c, final String text) {
+		for (final java.awt.Component k : c.getComponents()) {
+			if (k instanceof javax.swing.AbstractButton && text.equals(((javax.swing.AbstractButton) k).getText()) || k instanceof java.awt.Container && maTlacitko((java.awt.Container) k, text)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Test
@@ -966,39 +917,6 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("domov není nastavený", TextyPopupuPlanovace.stredDomov(cz.geokuk.core.coord.VyrezModel.DEFAULTNI_DOMACI_SOURADNICE));
 		final cz.geokuk.core.coordinates.Wgs w = new cz.geokuk.core.coordinates.Wgs(50.0542, 14.39);
 		Assert.assertEquals("domov " + w, TextyPopupuPlanovace.stredDomov(w));
-	}
-
-	/** Klik se spustí jen u dostupné akce, i kdyby tlačítko zůstalo dostupné (akce se mezitím vypnula bez ohlášení). */
-	@Test
-	public void zmenitDomovNespustiNedostupnouAkci() throws Exception {
-		priprav();
-		aktivujDomov();
-		final int[] spusteno = { 0 };
-		final boolean[] dostupna = { true };
-		final javax.swing.Action akce = new javax.swing.AbstractAction() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public boolean isEnabled() {
-				return dostupna[0];
-			}
-
-			@Override
-			public void actionPerformed(final ActionEvent e) {
-				spusteno[0]++;
-			}
-		};
-		popup.setZmenaDomova(akce);
-		popup.prepni();
-		Assert.assertTrue(popup.obsah.zmenitDomov.isEnabled());
-		dostupna[0] = false;
-		popup.obsah.zmenitDomov.doClick();
-		Assert.assertEquals("nedostupná akce se nespustí", 0, spusteno[0]);
-		Assert.assertTrue("popup zůstane otevřený", popup.jeOtevreno());
-		dostupna[0] = true;
-		popup.obsah.zmenitDomov.doClick();
-		Assert.assertEquals(1, spusteno[0]);
-		Assert.assertFalse(popup.jeOtevreno());
 	}
 
 	/** Výchozí výška popupu u 360° je aspoň taková jako u D/T, aby se popup při přepnutí typu zbytečně nezkracoval. */
