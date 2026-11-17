@@ -403,7 +403,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		nastavText(stitky, texty ? "Štítky" : "");
 		nastavText(nastaveni, texty ? "Nastavení…" : "");
 		chip.setFont(pismoNaSirku(UIManager.getFont("Button.font"), chip.getText(), r[VYBER].width - 8, chip::getFontMetrics));
-		odznak.setFont(pismoNaSirku(UIManager.getFont("Button.font"), odznak.getText(), r[ODZNAK].width - odznak.getInsets().left - odznak.getInsets().right - 2, odznak::getFontMetrics));
+		odznak.setFont(pismoNaSirku(UIManager.getFont("Button.font"), VZOREK_ODZNAKU, r[ODZNAK].width - odznak.getInsets().left - odznak.getInsets().right - 2, odznak::getFontMetrics));
 	}
 
 	private Component[] prvky() {
@@ -485,9 +485,18 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			if (nasobna != null && nasobna.cil() > 1) {
 				// S násobností odznak počítá chybějící nálezy, ne políčka.
 				odznak.nastav("chybí " + nasobna.chybiNalezu());
+				odznak.setForeground(UIManager.getColor("Button.foreground"));
 				odznak.setToolTipText(TextyPopupuPlanovace.tipOdznakuNalezu(nasobna));
 			} else {
-				odznak.nastav("chybí " + (stav.badge() < 0 ? stav.chyba() != null ? "?" : "…" : Integer.toString(stav.badge())));
+				if (stav.badge() >= 0) {
+					posledniOdznakKlic = klicChallenge(stav.challenge());
+					posledniOdznak = stav.badge();
+				}
+				final boolean pocita = stav.badge() < 0 && stav.chyba() == null;
+				final String cislo = stav.badge() >= 0 ? Integer.toString(stav.badge())
+						: stav.chyba() != null ? "?" : posledniOdznak >= 0 && klicChallenge(stav.challenge()).equals(posledniOdznakKlic) ? Integer.toString(posledniOdznak) : "–";
+				odznak.nastav("chybí " + cislo);
+				odznak.setForeground(pocita ? zasedlyText() : UIManager.getColor("Button.foreground"));
 				odznak.setToolTipText(stav.badge() < 0 ? stav.chyba() != null ? stav.chyba() : popisChybejicich(stav.typ()) + " – počítá se" : tipOdznaku(stav.typ(), stav.badge(), celkem(stav.challenge())));
 			}
 			kandidati.setToolTipText(popisKandidatu(stav.typ()) + " (F4)");
@@ -495,6 +504,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			dal.setToolTipText(ChallengeAkce.tipPosunu(model, stav.typ(), true));
 		} else {
 			odznak.nastav("–");
+			odznak.setForeground(UIManager.getColor("Button.foreground"));
 		}
 		kandidati.setSelected(maChallenge && stav.jenKandidati());
 		sektory.setSelected((model == null || model.isKresliSektory()) && maChallenge && maSektory(stav.typ()));
@@ -782,6 +792,26 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	static Color barvaOdznaku() {
 		return null;
 	}
+
+	private transient String posledniOdznakKlic;
+	private transient int posledniOdznak = -1;
+
+	private static String klicChallenge(final Challenge c) {
+		return c.nazev();
+	}
+
+	/** Text během výpočtu: mezi popředím a pozadím tlačítka. */
+	private static Color zasedlyText() {
+		final Color t = UIManager.getColor("Button.foreground");
+		final Color p = UIManager.getColor("Button.background");
+		if (t == null || p == null) {
+			return Color.GRAY;
+		}
+		return new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
+	}
+
+	/** Nejširší text odznaku; písmo se řídí jím, ať se při změně počtu nemění velikost ani šířka. */
+	static final String VZOREK_ODZNAKU = "chybí 9999 ▾";
 
 	/** Odznak s počtem chybějících: běžné tlačítko lišty, text končí „▾“ jako výběr challenge, a klik otevře popup. */
 	private static final class Odznak extends JButton {
