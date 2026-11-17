@@ -120,6 +120,11 @@ public final class PrehledChallenge {
 		return GeometrieSektoru.sektorBodu(stredLat, stredLon, lat, lon, 0, BEZ_OMEZENI_M, model);
 	}
 
+	/** U 360°: bod leží do {@link Geodezie#NEJISTOTA_STUPNU} od hranice svého sektoru (azimut ve stejném modelu jako výpočet); jinak false. Nealokuje. */
+	public boolean jeNejistyBod(final double lat, final double lon) {
+		return sektory != null && VypocetSektoru.jeNejistyBod(challenge.zdroj(), stredLat, stredLon, lat, lon);
+	}
+
 	/**
 	 * Bod leží v oblasti, se kterou se challenge počítala; bez omezení oblasti (a u challenge s políčky) vždy true. Je to test bodu v oblasti, ne konstantní operace, takže ho
 	 * volat jen pro keše, které nás zajímají. Nealokuje.

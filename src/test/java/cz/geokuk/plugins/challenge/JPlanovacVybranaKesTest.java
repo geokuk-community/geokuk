@@ -499,7 +499,7 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
-	public void nejistySektorMaNaStitkuZnakPriblizne() throws Exception {
+	public void znakPribliznePodleAzimutuKeseNeStavuSektoru() throws Exception {
 		final BitSet ob = obsazene();
 		ob.clear(100);
 		final VysledekSektoru.Kandidati[] poSektorech = new VysledekSektoru.Kandidati[360];
@@ -513,18 +513,30 @@ public class JPlanovacVybranaKesTest {
 		final BitSet nejiste = new BitSet(360);
 		model.nastavVysledek(c, new VysledekSektoru(ob, nejiste, poSektorech, 359, kandidati), STRED_LAT, STRED_LON);
 		SwingUtilities.invokeAndWait(() -> {});
-		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
-		nad.setIndexatorKesi(index(vybrana));
-		vyber(vybrana);
 		final Coord mapa = mapa(14);
+		final VypocetSektoruTest.Kes bodUprostred = VypocetSektoruTest.vAzimutu("A", 100.5, 2000, false);
+		final Kes uprostred = kes("GC1", bodUprostred.lat(), bodUprostred.lon(), 2, 2);
+		nad.setIndexatorKesi(index(uprostred));
+		vyber(uprostred);
 		nakresli(nad, mapa);
 		final int sirkaJiste = nad.obdelnikyStitkuZvyrazneni().get(0).width;
+		// Sektor je nejistý (chybí vedle nálezu u hranice), keš uprostřed sektoru ale ≈ nemá.
 		nejiste.set(100);
 		model.nastavVysledek(c, new VysledekSektoru(ob, nejiste, poSektorech, 359, kandidati), STRED_LAT, STRED_LON);
 		SwingUtilities.invokeAndWait(() -> {});
 		nad.onEvent(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.VYSLEDEK, c));
 		nakresli(nad, mapa);
-		Assert.assertTrue("štítek nejistého sektoru je o znak ≈ širší: " + sirkaJiste + " → " + nad.obdelnikyStitkuZvyrazneni().get(0).width, nad.obdelnikyStitkuZvyrazneni().get(0).width > sirkaJiste);
+		Assert.assertEquals("keš uprostřed nejistého sektoru je bez ≈", sirkaJiste, nad.obdelnikyStitkuZvyrazneni().get(0).width);
+		// Keš do 0,05° od hranice svého sektoru ≈ má, i když sektor sám nejistý není.
+		nejiste.clear(100);
+		model.nastavVysledek(c, new VysledekSektoru(ob, nejiste, poSektorech, 359, kandidati), STRED_LAT, STRED_LON);
+		SwingUtilities.invokeAndWait(() -> {});
+		final VypocetSektoruTest.Kes bodUHranice = VypocetSektoruTest.vAzimutu("B", 100.02, 2000, false);
+		final Kes uHranice = kes("GC2", bodUHranice.lat(), bodUHranice.lon(), 2, 2);
+		nad.setIndexatorKesi(index(uHranice));
+		vyber(uHranice);
+		nakresli(nad, mapa);
+		Assert.assertTrue("keš u hranice má štítek o znak ≈ širší: " + sirkaJiste + " → " + nad.obdelnikyStitkuZvyrazneni().get(0).width, nad.obdelnikyStitkuZvyrazneni().get(0).width > sirkaJiste);
 	}
 
 	@Test

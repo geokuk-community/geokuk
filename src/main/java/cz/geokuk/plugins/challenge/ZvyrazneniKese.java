@@ -21,7 +21,7 @@ final class ZvyrazneniKese {
 		}
 	}
 
-	/** Text štítku nejistého sektoru: „≈41°“; keš leží do 0,05° od hranice, takže není jisté, do kterého sektoru patří. */
+	/** Text štítku keše u hranice sektoru: „≈41°“; keš leží do 0,05° od hranice, takže není jisté, do kterého sektoru patří. */
 	private static final String[] TEXTY_NEJISTE = new String[360];
 
 	static {
@@ -101,8 +101,6 @@ final class ZvyrazneniKese {
 		z.ikonaStredY = new int[kolik];
 		z.text = new String[kolik];
 		final int[] okraje = new int[4];
-		final Object zdroj = t.prehled.zdroj();
-		final boolean nejisty = vyber.sektor >= 0 && zdroj instanceof VysledekSektoru && ((VysledekSektoru) zdroj).jeNejisty(vyber.sektor);
 		for (int q = 0; q < kolik; q++) {
 			final int i = poradi[q];
 			z.x[q] = xs[i];
@@ -110,7 +108,8 @@ final class ZvyrazneniKese {
 			IkonaKese.okraje(wpts[i], meritko, okraje);
 			z.ikonaVlevo[q] = okraje[3];
 			z.ikonaStredY[q] = okraje[1];
-			z.text[q] = vyber.sektor >= 0 ? nejisty ? TEXTY_NEJISTE[vyber.sektor] : TEXTY_SEKTORU[vyber.sektor] : vyber.stitek;
+			z.text[q] = vyber.sektor < 0 ? vyber.stitek
+					: t.prehled.jeNejistyBod(wpts[i].getWgs().lat, wpts[i].getWgs().lon) ? TEXTY_NEJISTE[vyber.sektor] : TEXTY_SEKTORU[vyber.sektor];
 		}
 		return z;
 	}
