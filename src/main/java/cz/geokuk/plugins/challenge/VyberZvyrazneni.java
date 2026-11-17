@@ -41,7 +41,14 @@ final class VyberZvyrazneni {
 				}
 			}
 			final int s = model.vybranySektor(c);
-			return s >= 0 ? new VyberZvyrazneni(s, null, null) : sektorKandidata >= 0 ? new VyberZvyrazneni(sektorKandidata, null, null) : NIC;
+			if (s >= 0) {
+				return new VyberZvyrazneni(s, null, null);
+			}
+			if (sektorKandidata >= 0) {
+				return new VyberZvyrazneni(sektorKandidata, null, null);
+			}
+			final int zapamatovany = model.zapamatovanySektorKese(c);
+			return zapamatovany >= 0 ? new VyberZvyrazneni(zapamatovany, null, null) : NIC;
 		}
 		case DT_MATICE: {
 			if (kesNovejsi) {
@@ -51,7 +58,11 @@ final class VyberZvyrazneni {
 				}
 			}
 			final String s = model.vybranePolicko(c);
-			return s != null ? new VyberZvyrazneni(-1, s, null) : NIC;
+			if (s != null) {
+				return new VyberZvyrazneni(-1, s, null);
+			}
+			final String zapamatovane = model.zapamatovanePolickoKese(c);
+			return zapamatovane != null ? new VyberZvyrazneni(-1, zapamatovane, null) : NIC;
 		}
 		default:
 			return NIC;
