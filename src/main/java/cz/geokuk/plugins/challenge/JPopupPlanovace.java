@@ -283,7 +283,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
 				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
 			} else {
-				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.vybranePolicko(c));
+				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenePolicko(c));
 			}
 		}
 		revalidate();
