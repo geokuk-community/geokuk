@@ -973,7 +973,6 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue("Jen kandidáti (F4)", popup.jeOtevreno());
 	}
 
-	@Test
 	/** Řádek „Každé políčko splnit: ◀ N× ▶“ je jen u matice D/T; hodnota se ukáže hned, uloží se jednou po prodlevě, na hranicích 1 a 9 je šipka nedostupná. */
 	@Test
 	public void nasobnostVPopupuMeniDefiniciSOdkladem() throws Exception {
