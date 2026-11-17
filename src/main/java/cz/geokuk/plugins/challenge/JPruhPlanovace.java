@@ -545,7 +545,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/** Tooltip tlačítka vybraného políčka. */
 	static String tipPolicka(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati) {
-		final String pocet = plne ? kandidatu + "+ kandidátů" : TextyPopupuPlanovace.kandidatu(kandidatu);
+		final String pocet = plne ? TextyPopupuPlanovace.plnyPocet(kandidatu) : TextyPopupuPlanovace.kandidatu(kandidatu);
 		final String stav = jenKandidati ? "na mapě jen jeho kandidáti (" + pocet + ")" : "na mapě všechny keše, F4 ukáže jen jeho kandidáty (" + pocet + ")";
 		return "<html>Zrušit výběr políčka " + stitek + " (Esc)<br>" + stav + "</html>";
 	}

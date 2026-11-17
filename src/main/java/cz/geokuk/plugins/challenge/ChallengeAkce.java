@@ -81,8 +81,8 @@ final class ChallengeAkce {
 			}
 			final int pocet = v.pocetKandidatu(stitek);
 			final double nejblizsi = v.nejblizsiM(stitek);
-			return nazev + ": " + stitek + " · " + (v.jePlne(stitek) ? pocet + "+ kandidátů" : TextyPopupuPlanovace.kandidatu(pocet))
-					+ (Double.isNaN(nejblizsi) ? "" : ", nejbližší " + StitkyPruhu.vzdalenost(nejblizsi) + " od středu mapy") + " · mapa se neposune";
+			return nazev + ": " + stitek + " · " + (v.jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(pocet) : TextyPopupuPlanovace.kandidatu(pocet))
+					+ (Double.isNaN(nejblizsi) || v.jePlne(stitek) ? "" : ", nejbližší " + StitkyPruhu.vzdalenost(nejblizsi) + " od středu mapy") + " · mapa se neposune";
 		}
 		if (c.typ() == Challenge.Typ.SEKTORY_360) {
 			final VysledekSektoru v = model.vysledek(c);

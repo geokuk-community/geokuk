@@ -320,7 +320,7 @@ public class ChallengeAkceTest {
 		kandidati(k, "D2/T2", 50, 300);
 		kandidati(k, "D3/T4", 1, 40);
 		pripravMatici(k, "D2/T2", "D3/T4");
-		Assert.assertEquals("Další políčko: D2/T2 · 50+ kandidátů, nejbližší 300 m od středu mapy · mapa se neposune", ChallengeAkce.cilPosunu(model, true));
+		Assert.assertEquals("Další políčko: D2/T2 · 50 nejbližších ke středu mapy · mapa se neposune", ChallengeAkce.cilPosunu(model, true));
 		model.setVybranePolicko(model.zobrazena(), "D2/T2");
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("Další políčko: D3/T4 · 1 kandidát, nejbližší 40 m od středu mapy · mapa se neposune", ChallengeAkce.cilPosunu(model, true));
