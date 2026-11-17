@@ -14,7 +14,7 @@
   není, ukáže se o tom krátká zpráva.
 - Plánovač challenge: na mapě je prstenec sektorů se středem, klínem
   vybraného sektoru, kandidáti se štítky a čárou ke kandidátovi. Kružnice
-  prstence má pevný poloměr v metrech a popisek. Štítky kandidátů a
+  prstence má pevný poloměr v metrech; ten je i v popupu plánovače. Štítky kandidátů a
   zvýrazněných keší jsou vlevo od ikony keše. Když je střed mimo výřez,
   ukazuje na něj šipka a po kliknutí na ni se mapa na střed přesune.
 - Plánovač challenge: klik na keš ukáže její sektor nebo políčko D/T a členy

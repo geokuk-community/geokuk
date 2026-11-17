@@ -191,7 +191,6 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 				kresliZvyrazneni(g, c, t, pismo, vyber);
 			}
 			kresliStred(g, c, t, tucne);
-			kresliPopisekKruznice(g, c, t, tucne);
 			final double dosah = dosahPresazeny(c, t);
 			if (kesoidyViditelne() && !Double.isNaN(dosah)) {
 				kresliDosah(g, c, tucne, dosah);
@@ -235,7 +234,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 	}
 
-	/** Okraje okna, ke kterým se popisek kružnice nepřibližuje: po stranách, nahoře kvůli liště a dole kvůli měřítku. */
+	/** Okraje okna, ke kterým se bod kružnice nebere v úvahu: po stranách, nahoře kvůli liště a dole kvůli měřítku. */
 	static final int OKRAJ_POPISKU_BOK = 64;
 	static final int OKRAJ_POPISKU_NAHORE = 70;
 	static final int OKRAJ_POPISKU_DOLE = 40;
@@ -244,37 +243,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		return x >= OKRAJ_POPISKU_BOK && y >= OKRAJ_POPISKU_NAHORE && x <= w - OKRAJ_POPISKU_BOK && y <= h - OKRAJ_POPISKU_DOLE;
 	}
 
-	private transient String textPopiskuKruznice;
-	private transient Rectangle popisekKruznice;
-
-	String textPopiskuKruznice() {
-		return textPopiskuKruznice;
-	}
-
-	Rectangle popisekKruznice() {
-		return popisekKruznice;
-	}
-
-	/** Popisek poloměru stojí na bodě kružnice nejblíž středu okna, jen když je kružnice v okně vidět. */
-	private void kresliPopisekKruznice(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font tucne) {
-		textPopiskuKruznice = null;
-		popisekKruznice = null;
-		if (t.stred == null || !kresliSektory() || t.polomerKruznice <= 0) {
-			return;
-		}
-		final Point bod = nejblizsiBodKruznice(c, t);
-		if (bod != null) {
-			final String text = TextyKresleni.popisekKruznice(t.polomerKruznice);
-			final int pocet = pocetObdelniku;
-			umistiOkoloBodu(g, tucne, text, bod.x, bod.y, 6, false);
-			if (pocetObdelniku > pocet) {
-				textPopiskuKruznice = text;
-				popisekKruznice = new Rectangle(ox[pocet], oy[pocet], ow[pocet], oh[pocet]);
-			}
-		}
-	}
-
-	/** Poloměr kružnice do textu středu, když kružnice v okně nemá popisek; jinak NaN. */
+	/** Poloměr kružnice do textu středu, když kružnice v okně není vidět; jinak NaN. */
 	double polomerVTextuStredu(final Coord c, final TvarPlanovace t) {
 		return kresliSektory() && t.polomerKruznice > 0 && nejblizsiBodKruznice(c, t) == null ? t.polomerKruznice : Double.NaN;
 	}
@@ -561,8 +530,6 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 		final Rectangle misto = new Rectangle();
 		final int mezera = Math.max(MEZERA_STITKU, (int) Math.round(MEZERA_STITKU * meritko));
-		// Štítky po výběru keše jsou žluté, jen když keš leží ve stejném sektoru nebo políčku jako předchozí vybraná; jinak neutrální.
-		final boolean stejny = vyber.kes == null || model == null || model.jeStejnyVyberJakoPredchoziKes();
 		for (int q = 0; q < z.pocet; q++) {
 			misto.setBounds(z.x[q] - 3, z.y[q] - 3, 6, 6);
 			if (kryjeVNekterou(misto)) {
@@ -571,7 +538,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			final Dimension d = rozmerStitku(g, pismo.deriveFont(Font.BOLD), z.text[q]);
 			final int sx = z.x[q] + z.ikonaVlevo[q] - mezera - d.width;
 			final int sy = z.y[q] + z.ikonaStredY[q] - d.height / 2;
-			stitkyZvyrazneniKresleni.add(stejny ? nakresliStitekClena(g, pismo, z.text[q], sx, sy) : nakresliStitek(g, pismo.deriveFont(Font.BOLD), z.text[q], sx, sy, AkcentPlanovace.barva(), false));
+			stitkyZvyrazneniKresleni.add(nakresliStitekClena(g, pismo, z.text[q], sx, sy));
 		}
 	}
 

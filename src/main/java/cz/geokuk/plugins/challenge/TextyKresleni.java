@@ -41,11 +41,6 @@ final class TextyKresleni {
 		return stred(popis) + " · " + StitkyPruhu.vzdalenost(metru) + (Double.isNaN(polomerKruznice) ? "" : " · kružnice " + StitkyPruhu.vzdalenost(polomerKruznice));
 	}
 
-	/** Popisek na kružnici: „2,9 km“. */
-	static String popisekKruznice(final double polomerKruznice) {
-		return StitkyPruhu.vzdalenost(polomerKruznice);
-	}
-
 	/** Dovětek, když výřez mapy přesahuje oblast, do které jsou kandidáti D/T spočítáni: „Kandidáti spočítáni do 3,2 km od středu mapy – posunutím mapy se dopočítají další“. */
 	static String dosahKandidatu(final double metru) {
 		return "Kandidáti spočítáni do " + StitkyPruhu.vzdalenost(metru) + " od středu mapy – posunutím mapy se dopočítají další";

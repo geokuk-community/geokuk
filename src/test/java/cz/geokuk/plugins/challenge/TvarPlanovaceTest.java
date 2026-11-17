@@ -130,8 +130,6 @@ public class TvarPlanovaceTest {
 		Assert.assertEquals("Střed: domov · kružnice 144 km", TextyKresleni.stred("domov", 144_000));
 		Assert.assertEquals("Střed: domov", TextyKresleni.stred("domov", Double.NaN));
 		Assert.assertEquals("Střed: domov · 25,3 km · kružnice 2,9 km", TextyKresleni.stredMimoVyrez("domov", 25_300, 2900));
-		Assert.assertEquals("2,9 km", TextyKresleni.popisekKruznice(2900));
-		Assert.assertEquals("144 km", TextyKresleni.popisekKruznice(144_000));
 	}
 
 	@Test
