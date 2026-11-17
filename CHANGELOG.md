@@ -7,7 +7,7 @@
   Kešoidy > Plánovač challenge > Zapnout plánovač. Má výběr challenge
   („360° ▾“), odznak s počtem chybějících sektorů nebo políček D/T, tlačítka
   ◀ ▶, která posouvají výběr na předchozí a další chybějící sektor nebo
-  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Sektory a Štítky. Nastavení plánovače se otevře z popupu
+  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Štítky a u 360° Sektory. Nastavení plánovače se otevře z popupu
   plánovače, z menu výběru challenge a z menu Kešoidy > Plánovač challenge.
 - Plánovač challenge: Ctrl+Shift+šipka skočí na nejbližšího kandidáta ve směru
   šipky, vystředí na něj mapu a u 360° vybere i jeho sektor. Když tam žádný
