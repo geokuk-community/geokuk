@@ -211,6 +211,8 @@
   řádku cest.
 
 ### Opravy
+- Nastavený práh hodnocení, BestOf nebo favoritů ve filtru skryje i keše,
+  které tuto hodnotu nemají.
 - Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
   když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po
