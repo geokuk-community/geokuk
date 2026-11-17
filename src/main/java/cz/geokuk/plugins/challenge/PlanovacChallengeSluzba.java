@@ -123,7 +123,8 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 		}
 		final Wgs jz = coord.getMouJZ().toWgs();
 		final Wgs sv = coord.getMouSV().toWgs();
-		return new double[] { Math.min(jz.lat, sv.lat), Math.max(jz.lat, sv.lat), Math.min(jz.lon, sv.lon), Math.max(jz.lon, sv.lon) };
+		// západní a východní délka zůstávají neseřazené, aby okno přes poledník 180° poznal PolohyHledatelnych
+		return new double[] { Math.min(jz.lat, sv.lat), Math.max(jz.lat, sv.lat), jz.lon, sv.lon };
 	}
 
 	private boolean jeVeVyrezu(final Wgs wgs) {
