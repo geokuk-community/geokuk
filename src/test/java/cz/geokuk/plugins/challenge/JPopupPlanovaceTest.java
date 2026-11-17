@@ -629,12 +629,12 @@ public class JPopupPlanovaceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("D3/T4", model.vybranePolicko(c));
 		Assert.assertEquals("klik zapne jen kandidáty", c, model.jenKandidatiPro());
-		Assert.assertEquals("plné políčko", "Vybrané políčko: D3/T4 – 50+ kandidátů", o.nadpisSeznamu.getText());
+		Assert.assertEquals("plné políčko", "Vybrané políčko: D3/T4 – 50 nejbližších ke středu mapy", o.nadpisSeznamu.getText());
 		Assert.assertTrue(o.kandidati.isSelected());
 		SwingUtilities.invokeAndWait(() -> model.setJenKandidatiPro(null));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("F4 výběr políčka nechá", "D3/T4", model.vybranePolicko(c));
-		Assert.assertEquals("Vybrané políčko: D3/T4 – 50+ kandidátů, na mapě všechny keše (F4)", o.nadpisSeznamu.getText());
+		Assert.assertEquals("Vybrané políčko: D3/T4 – 50 nejbližších ke středu mapy, na mapě všechny keše (F4)", o.nadpisSeznamu.getText());
 		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko(null));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertNull(model.vybranePolicko(c));

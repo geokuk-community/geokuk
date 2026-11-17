@@ -69,16 +69,23 @@ public class KesoidFilterTest {
 		final FilterDefinition d = definice(false, false);
 		d.setPrahHodnoceni(90);
 		final Set<String> z = zobrazene(d);
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222", "GC4444")), z);
+		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222")), z);
 	}
 
 	@Test
-	public void kesBezHodnoceniPrahyNeskryji() {
+	public void kesBezHodnotyNastavenyPrahNesplni() {
 		final FilterDefinition d = definice(false, false);
-		d.setPrahHodnoceni(90);
-		d.setPrahBestOf(5);
-		d.setPrahFavorit(20);
-		Assert.assertTrue(zobrazene(d).contains("GC4444"));
+		Assert.assertTrue("bez prahů je vidět", zobrazene(d).contains("GC4444"));
+		d.setPrahHodnoceni(1);
+		Assert.assertFalse("hodnocení", zobrazene(d).contains("GC4444"));
+		d.setPrahHodnoceni(0);
+		d.setPrahBestOf(1);
+		Assert.assertFalse("BestOf", zobrazene(d).contains("GC4444"));
+		d.setPrahBestOf(0);
+		d.setPrahFavorit(1);
+		Assert.assertFalse("favority", zobrazene(d).contains("GC4444"));
+		d.setPrahFavorit(0);
+		Assert.assertTrue("po vynulování prahů je zase vidět", zobrazene(d).contains("GC4444"));
 	}
 
 	@Test
@@ -89,7 +96,7 @@ public class KesoidFilterTest {
 		Assert.assertTrue(zobrazene(d).contains("GC1111"));
 		d.setPrahBestOf(0);
 		d.setPrahFavorit(20);
-		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222", "GC4444")), zobrazene(d));
+		Assert.assertEquals(new TreeSet<>(Arrays.asList("GC2222", "FI2222", "PK2222")), zobrazene(d));
 	}
 
 	@Test
