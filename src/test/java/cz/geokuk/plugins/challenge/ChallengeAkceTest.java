@@ -474,7 +474,7 @@ public class ChallengeAkceTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		model.setVybranePolicko(dt, null);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertFalse("Esc maže i paměť", model.maZapamatovanyVyber(dt));
+		Assert.assertFalse("zrušení výběru políčka v popupu paměť maže", model.maZapamatovanyVyber(dt));
 		Assert.assertTrue("▶ jde od prvního políčka", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D1/T1"));
 	}
 
@@ -497,7 +497,7 @@ public class ChallengeAkceTest {
 		model.zrusZvyrazneniKlikemMimo();
 		model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("Esc maže i paměť", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertEquals("zrušení výběru políčka v popupu paměť maže", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
 		Assert.assertEquals(40, model.dalsiSektor(c, true));
 	}
 

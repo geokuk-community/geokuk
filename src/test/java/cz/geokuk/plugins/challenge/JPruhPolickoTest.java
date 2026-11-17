@@ -245,7 +245,8 @@ public class JPruhPolickoTest {
 		policko().doClick();
 		SwingUtilities.invokeAndWait(() -> {});
 		pruh.doLayout();
-		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("sektor zůstane výchozím bodem ◀ ▶", sektorKese, model.vychoziSektorPosunu(c));
 		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
 	}
 
@@ -260,7 +261,8 @@ public class JPruhPolickoTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		pruh.doLayout();
 		Assert.assertNull("vybraný kandidát by sektor zvýrazňoval dál", model.vybranyKandidat(c));
-		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("sektor zůstane výchozím bodem ◀ ▶", 20, model.vychoziSektorPosunu(c));
 		Assert.assertFalse(policko() != null && policko().isVisible());
 	}
 
@@ -358,23 +360,59 @@ public class JPruhPolickoTest {
 		return pruh.getActionMap().get(pruh.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(javax.swing.KeyStroke.getKeyStroke("ESCAPE")));
 	}
 
-	@Test
-	public void escPoKlikuMimoZrusiZapamatovanyVyberAPotomUzNepatriListe() throws Exception {
-		final Challenge c = priprav360SeStredem();
-		Assert.assertFalse("bez výběru a paměti Esc nepatří liště", esc().isEnabled());
-		model.setVybranySektor(c, 11);
-		SwingUtilities.invokeAndWait(() -> {});
-		model.zrusZvyrazneniKlikemMimo();
-		SwingUtilities.invokeAndWait(() -> {});
-		pruh.doLayout();
-		Assert.assertFalse("zvýraznění zmizelo, tlačítko není", policko() != null && policko().isVisible());
-		Assert.assertTrue(model.maZapamatovanyVyber(c));
-		Assert.assertTrue("Esc zruší zapamatovaný výchozí bod", esc().isEnabled());
+	private void stisknutiEsc() throws Exception {
 		esc().actionPerformed(new java.awt.event.ActionEvent(pruh, java.awt.event.ActionEvent.ACTION_PERFORMED, "esc"));
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertFalse("paměť je pryč", model.maZapamatovanyVyber(c));
-		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
-		Assert.assertFalse("a Esc liště zase nepatří", esc().isEnabled());
+		pruh.doLayout();
+	}
+
+	@Test
+	public void escJakoKlikMimoZrusiZvyrazneniAlePamatujeSektorProSipky() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		Assert.assertFalse("bez výběru Esc nepatří liště", esc().isEnabled());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertTrue(esc().isEnabled());
+		stisknutiEsc();
+		Assert.assertFalse("„11° ✕“ zmizelo", policko() != null && policko().isVisible());
+		Assert.assertEquals("na mapě nic", PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("paměť zůstala", 11, model.zapamatovanySektor(c));
+		Assert.assertFalse("a Esc liště nepatří, nic nezvýrazňuje", esc().isEnabled());
+		Assert.assertEquals("první ▶ znovu zvýrazní 11°", "11°", ChallengeAkce.posun(model, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(11, model.zvyraznenySektor(c));
+		Assert.assertEquals("druhý ▶ jde dál", "20°", ChallengeAkce.posun(model, true));
+	}
+
+	@Test
+	public void escJakoKlikMimoZrusiVyberPolickaAlePamatujeHoProSipky() throws Exception {
+		priprav(1280);
+		vyber("D3/T4");
+		Assert.assertTrue(esc().isEnabled());
+		stisknutiEsc();
+		Assert.assertFalse("„D3/T4 ✕“ zmizelo", policko() != null && policko().isVisible());
+		Assert.assertNull(model.vybranePolicko(dt));
+		Assert.assertEquals("D3/T4", model.zapamatovanePolicko(dt));
+		Assert.assertEquals("první ◀ ▶ znovu zvýrazní D3/T4", "D3/T4", ChallengeAkce.posun(model, false));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("D3/T4", model.zvyraznenePolicko(dt));
+	}
+
+	@Test
+	public void prepnutiChallengeSmazePametPosunu() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		stisknutiEsc();
+		Assert.assertEquals(11, model.zapamatovanySektor(c));
+		model.aktivuj(dt);
+		SwingUtilities.invokeAndWait(() -> {});
+		model.aktivuj(c);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("paměť po přepnutí zmizela", PosunVyberu.ZADNY_SEKTOR, model.zapamatovanySektor(c));
+		Assert.assertFalse(model.maZapamatovanyVyber(c));
 	}
 
 	@Test

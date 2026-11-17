@@ -566,8 +566,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 			@Override
 			public boolean isEnabled() {
-				final Challenge c = challenge();
-				return (vybranyStitek != null || c != null && model != null && model.maZapamatovanyVyber(c)) && !jinyPopupOtevreny.getAsBoolean();
+				return vybranyStitek != null && !jinyPopupOtevreny.getAsBoolean();
 			}
 
 			@Override
@@ -585,8 +584,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private void zrusPolicko() {
 		final Challenge c = challenge();
 		if (c != null && model != null) {
-			model.setVybranePolicko(c, null);
-			model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+			model.zrusZvyrazneniKlikemMimo();
 		}
 	}
 

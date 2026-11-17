@@ -269,8 +269,8 @@ public class ChallengeModel extends Model0 {
 	private volatile String posledniPolickoKese;
 
 	/**
-	 * Sektor 0 až 359 posledního zvýraznění této challenge, od kterého postupují ◀ ▶, i když už se na mapě nezvýrazňuje (klik mimo); -1, když žádný není nebo ho uživatel zrušil (Esc,
-	 * „N° ✕“).
+	 * Sektor 0 až 359 posledního zvýraznění této challenge, od kterého postupují ◀ ▶, i když už se na mapě nezvýrazňuje (klik mimo, Esc, „N° ✕“); -1, když žádný není. Smaže se
+	 * přepnutím zobrazené challenge nebo zrušením výběru sektoru v popupu.
 	 */
 	public int zapamatovanySektor(final Challenge c) {
 		return c != null && klic(c).equals(posledniKlicKes) ? posledniSektorKese : PosunVyberu.ZADNY_SEKTOR;
@@ -281,13 +281,13 @@ public class ChallengeModel extends Model0 {
 		return c != null && klic(c).equals(posledniKlicKes) ? posledniPolickoKese : null;
 	}
 
-	/** Je co zrušit Esc: zvýrazněný sektor nebo políčko, nebo zapamatovaný výchozí bod posunu? */
+	/** Je zapamatovaný sektor nebo políčko, od kterého by postoupil první ◀ ▶? */
 	public boolean maZapamatovanyVyber(final Challenge c) {
 		return zapamatovanySektor(c) >= 0 || zapamatovanePolicko(c) != null;
 	}
 
 	/**
-	 * Klik do prázdné mapy: zruší zvýraznění sektoru, políčka a vybraného kandidáta na mapě i v popupu, ale zapamatuje si je jako výchozí bod ◀ ▶. Zruší se až Esc nebo „N° ✕“.
+	 * Klik do prázdné mapy, Esc a „N° ✕“: zruší zvýraznění sektoru, políčka a vybraného kandidáta na mapě i v popupu, ale zapamatuje si je jako výchozí bod ◀ ▶.
 	 * Volat ve vlákně Swingu.
 	 */
 	public void zrusZvyrazneniKlikemMimo() {
@@ -495,6 +495,11 @@ public class ChallengeModel extends Model0 {
 		kandidati.remove(klic(c));
 		policka.remove(klic(c));
 		sektory.remove(klic(c));
+		if (klic(c).equals(posledniKlicKes)) {
+			posledniKlicKes = null;
+			posledniSektorKese = -1;
+			posledniPolickoKese = null;
+		}
 		if (klic(c).equals(jenKandidatiPro)) {
 			jenKandidatiPro = null;
 			ohlas(ChallengeZmenenyEvent.Druh.JEN_KANDIDATI, null);
@@ -941,6 +946,9 @@ public class ChallengeModel extends Model0 {
 		final Challenge pred = zobrazena();
 		zobrazena = klic(c);
 		if (pred == null || !klic(pred).equals(klic(c))) {
+			posledniKlicKes = null;
+			posledniSektorKese = -1;
+			posledniPolickoKese = null;
 			prenesJenKandidati();
 			ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENA, c);
 		}
