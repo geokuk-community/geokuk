@@ -352,31 +352,22 @@ public class JPlanovacVybranaKesTest {
 		return false;
 	}
 
+	/** Štítky vybrané keše a jejího sektoru jsou vždy žluté, ať jde o první výběr, stejný nebo jiný sektor než předchozí keš; nikdy neutrální barva skinu. */
 	@Test
-	public void stitekJeZlutyJenKdyzJdeOStejnySektorJakoPredchoziVybranaKes() throws Exception {
+	public void stitkySektoruVybraneKeseJsouVzdyZlute() throws Exception {
 		zobraz360(250);
 		final Kes prvni = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
 		final Kes stejny = kesVAzimutu("GC2", 100.3, 1200, 3, 3);
 		final Kes jiny = kesVAzimutu("GC3", 190.5, 1500, 2, 2);
 		nad.setIndexatorKesi(index(prvni, stejny, jiny));
 		final Coord c = mapa(14);
-		vyber(prvni);
-		BufferedImage img = nakresli(nad, c);
-		Assert.assertFalse("první výběr nemá předchozí, štítky jsou neutrální", nad.obdelnikyStitkuZvyrazneni().isEmpty());
-		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
-			Assert.assertFalse("neutrální štítek: " + r, maZlutouVyplni(img, r));
-		}
-		vyber(stejny);
-		img = nakresli(nad, c);
-		Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
-		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
-			Assert.assertTrue("stejný sektor jako předchozí keš: žlutý štítek " + r, maZlutouVyplni(img, r));
-		}
-		vyber(jiny);
-		img = nakresli(nad, c);
-		Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
-		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
-			Assert.assertFalse("jiný sektor než předchozí keš: neutrální štítek " + r, maZlutouVyplni(img, r));
+		for (final Kes k : new Kes[] { prvni, stejny, jiny }) {
+			vyber(k);
+			final BufferedImage img = nakresli(nad, c);
+			Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
+			for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
+				Assert.assertTrue(k.getIdentifier() + ": žlutý štítek " + r, maZlutouVyplni(img, r));
+			}
 		}
 	}
 
@@ -481,7 +472,7 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
-	public void dtKesZJinehoPolickaNezPredchoziMaNeutralniStitek() throws Exception {
+	public void dtStitkyVybraneKeseJsouVzdyZlute() throws Exception {
 		final Challenge dt = model.ulozVlastni(new Challenge("DT", Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
 		model.aktivuj(dt);
 		model.setZapnuto(true);
@@ -503,7 +494,7 @@ public class JPlanovacVybranaKesTest {
 		img = nakresli(nad, c);
 		Assert.assertFalse(nad.obdelnikyStitkuZvyrazneni().isEmpty());
 		for (final Rectangle r : nad.obdelnikyStitkuZvyrazneni()) {
-			Assert.assertFalse("jiné políčko: neutrální štítek " + r, maZlutouVyplni(img, r));
+			Assert.assertTrue("jiné políčko: žlutý štítek " + r, maZlutouVyplni(img, r));
 		}
 	}
 
