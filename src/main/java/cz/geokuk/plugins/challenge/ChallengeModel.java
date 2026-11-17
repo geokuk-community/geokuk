@@ -255,7 +255,6 @@ public class ChallengeModel extends Model0 {
 			final int sektor = p == null ? -1 : p.sektorBodu(kes.lat(), kes.lon());
 			final String policko = p == null ? null : p.stitekPolicka(kes.obtiznostPulek(), kes.terenPulek());
 			final String klic = p == null ? null : klic(p.challenge());
-			stejnyVyberJakoPredchoziKes = (sektor >= 0 || policko != null) && Objects.equals(klic, posledniKlicKes) && sektor == posledniSektorKese && Objects.equals(policko, posledniPolickoKese);
 			posledniKlicKes = klic;
 			posledniSektorKese = sektor;
 			posledniPolickoKese = policko;
@@ -268,7 +267,6 @@ public class ChallengeModel extends Model0 {
 	private volatile String posledniKlicKes;
 	private volatile int posledniSektorKese = -1;
 	private volatile String posledniPolickoKese;
-	private volatile boolean stejnyVyberJakoPredchoziKes;
 
 	/**
 	 * Sektor 0 až 359 posledního zvýraznění této challenge, od kterého postupují ◀ ▶, i když už se na mapě nezvýrazňuje (klik mimo); -1, když žádný není nebo ho uživatel zrušil (Esc,
@@ -319,11 +317,6 @@ public class ChallengeModel extends Model0 {
 		posledniSektorKese = -1;
 		posledniPolickoKese = null;
 		return bylo;
-	}
-
-	/** Leží naposledy vybraná keš ve stejném sektoru 360° nebo políčku D/T jako keš vybraná před ní? */
-	public boolean jeStejnyVyberJakoPredchoziKes() {
-		return stejnyVyberJakoPredchoziKes;
 	}
 
 	private volatile int stitkuNaMape = -1;

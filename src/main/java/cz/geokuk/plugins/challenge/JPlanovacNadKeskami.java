@@ -530,8 +530,6 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 		final Rectangle misto = new Rectangle();
 		final int mezera = Math.max(MEZERA_STITKU, (int) Math.round(MEZERA_STITKU * meritko));
-		// Štítky po výběru keše jsou žluté, jen když keš leží ve stejném sektoru nebo políčku jako předchozí vybraná; jinak neutrální.
-		final boolean stejny = vyber.kes == null || model == null || model.jeStejnyVyberJakoPredchoziKes();
 		for (int q = 0; q < z.pocet; q++) {
 			misto.setBounds(z.x[q] - 3, z.y[q] - 3, 6, 6);
 			if (kryjeVNekterou(misto)) {
@@ -540,7 +538,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			final Dimension d = rozmerStitku(g, pismo.deriveFont(Font.BOLD), z.text[q]);
 			final int sx = z.x[q] + z.ikonaVlevo[q] - mezera - d.width;
 			final int sy = z.y[q] + z.ikonaStredY[q] - d.height / 2;
-			stitkyZvyrazneniKresleni.add(stejny ? nakresliStitekClena(g, pismo, z.text[q], sx, sy) : nakresliStitek(g, pismo.deriveFont(Font.BOLD), z.text[q], sx, sy, AkcentPlanovace.barva(), false));
+			stitkyZvyrazneniKresleni.add(nakresliStitekClena(g, pismo, z.text[q], sx, sy));
 		}
 	}
 
