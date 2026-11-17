@@ -211,6 +211,8 @@
   řádku cest.
 
 ### Opravy
+- Nastavený práh hodnocení, BestOf nebo favoritů ve filtru skryje i keše,
+  které tuto hodnotu nemají.
 - Po přechodu z verze 5.2 zůstane vybraná mapa OpenStreetMap, ortofoto
   nebo topografická mapa ČÚZK; mapa, kterou tato verze nemá, se nahradí
   výchozí mapou.
