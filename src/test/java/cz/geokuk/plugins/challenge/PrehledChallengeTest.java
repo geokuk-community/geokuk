@@ -160,6 +160,40 @@ public class PrehledChallengeTest {
 	}
 
 	@Test
+	public void nejistotaBoduSediSNejistotouKeseVeVypoctu() {
+		final java.util.Random r = new java.util.Random(7);
+		for (final ZdrojPravidel zdroj : new ZdrojPravidel[] { ZdrojPravidel.PGC, ZdrojPravidel.STATOR }) {
+			final Challenge c = new Challenge("S", Typ.SEKTORY_360, Stred.souradnice(50, 14), OblastDef.zadna(), zdroj);
+			final PrehledChallenge p = PrehledChallenge.zeSektoru(c, vysledekSektoru(), 50, 14);
+			final VypocetSektoru.Klasifikator klasifikator = VypocetSektoru.primy(zdroj, 50, 14, null);
+			int nejistych = 0;
+			for (int i = 0; i < 4000; i++) {
+				// Polovina bodů těsně kolem hranice stupně, aby se nejistota opravdu zkoušela.
+				final double azimut = r.nextInt(360) + (i % 2 == 0 ? (r.nextDouble() - 0.5) * 0.2 : r.nextDouble());
+				final VypocetSektoruTest.Kes k = VypocetSektoruTest.vAzimutu("X", azimut, 500 + r.nextDouble() * 50_000, false);
+				final boolean vypocet = klasifikator.klasifikuj(k).nejistota() != VypocetSektoru.Klasifikace.BEZ_NEJISTOTY;
+				Assert.assertEquals(zdroj + " " + k.lat() + ", " + k.lon(), vypocet, p.jeNejistyBod(k.lat(), k.lon()));
+				if (vypocet) {
+					nejistych++;
+				}
+			}
+			Assert.assertTrue("zkoušely se i nejisté body: " + nejistych, nejistych > 200);
+		}
+	}
+
+	@Test
+	public void nejistotaBoduNezavisiNaStavuSektoru() {
+		// Sektor 151 je ve výsledku nejistý; bod uprostřed sektoru přesto nejistý není, bod u hranice ano.
+		final PrehledChallenge p = PrehledChallenge.zeSektoru(sektory("S", Stred.souradnice(50, 14)), vysledekSektoru(), 50, 14);
+		final VypocetSektoruTest.Kes uprostred = VypocetSektoruTest.vAzimutu("A", 151.5, 2500, false);
+		final VypocetSektoruTest.Kes uHranice = VypocetSektoruTest.vAzimutu("B", 151.03, 2500, false);
+		Assert.assertFalse(p.jeNejistyBod(uprostred.lat(), uprostred.lon()));
+		Assert.assertTrue(p.jeNejistyBod(uHranice.lat(), uHranice.lon()));
+		Assert.assertFalse("D/T nemá sektory", PrehledChallenge.zPolicek(dt("D"), VypocetMatice.spocti(PravidlaTypu.proMatici(), 50.0, 14.0, new ArrayList<VstupDT>()), 50, 14)
+				.jeNejistyBod(uHranice.lat(), uHranice.lon()));
+	}
+
+	@Test
 	public void sektorBoduVraciMinusJednaKdyzNeniCoSpocitat() {
 		final PrehledChallenge p = PrehledChallenge.zeSektoru(sektory("S", Stred.souradnice(50, 14)), vysledekSektoru(), 50, 14);
 		Assert.assertEquals("severně od středu", 0, p.sektorBodu(50.1, 14));

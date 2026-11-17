@@ -108,9 +108,9 @@ public final class VypocetSektoru {
 			if (oblast != null && !oblast.obsahuje(k.lat(), k.lon())) {
 				return Klasifikace.mimoOblast();
 			}
-			final double az = azimut(zdroj, lat, lon, k);
+			final double az = azimut(zdroj, lat, lon, k.lat(), k.lon());
 			final int s = Geodezie.sektor(az);
-			if (Geodezie.jeNejisty(az) || nahrazenoKouli(zdroj, lat, lon, k)) {
+			if (jeNejistyAzimut(zdroj, lat, lon, k.lat(), k.lon(), az)) {
 				final double zlomek = az - Math.floor(az);
 				return Klasifikace.vOblasti(s, zlomek < 0.5 ? Klasifikace.NEJISTY_DOLU : Klasifikace.NEJISTY_NAHORU);
 			}
@@ -191,9 +191,18 @@ public final class VypocetSektoru {
 		return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 	}
 
+	/** Bod leží tak blízko hranice sektoru, že může patřit do sousedního (stejně jako nejistota keše ve výpočtu). */
+	static boolean jeNejistyBod(final ZdrojPravidel zdroj, final double lat, final double lon, final double bodLat, final double bodLon) {
+		return jeNejistyAzimut(zdroj, lat, lon, bodLat, bodLon, azimut(zdroj, lat, lon, bodLat, bodLon));
+	}
+
+	private static boolean jeNejistyAzimut(final ZdrojPravidel zdroj, final double lat, final double lon, final double bodLat, final double bodLon, final double az) {
+		return Geodezie.jeNejisty(az) || nahrazenoKouli(zdroj, lat, lon, bodLat, bodLon);
+	}
+
 	/** Elipsoid nekonvergoval (téměř protinožec), azimut je z koule a sektor je proto nejistý. */
-	private static boolean nahrazenoKouli(final ZdrojPravidel zdroj, final double lat, final double lon, final VstupKes k) {
-		return zdroj == ZdrojPravidel.STATOR && Double.isNaN(Geodezie.azimutElipsoid(lat, lon, k.lat(), k.lon()));
+	private static boolean nahrazenoKouli(final ZdrojPravidel zdroj, final double lat, final double lon, final double bodLat, final double bodLon) {
+		return zdroj == ZdrojPravidel.STATOR && Double.isNaN(Geodezie.azimutElipsoid(lat, lon, bodLat, bodLon));
 	}
 
 	private static boolean lzePocitat(final ZdrojPravidel zdroj, final VstupKes k, final Set<String> ignorovane) {
@@ -206,13 +215,13 @@ public final class VypocetSektoru {
 		return !ignorovane.contains(k.id());
 	}
 
-	private static double azimut(final ZdrojPravidel zdroj, final double lat, final double lon, final VstupKes k) {
+	private static double azimut(final ZdrojPravidel zdroj, final double lat, final double lon, final double bodLat, final double bodLon) {
 		if (zdroj == ZdrojPravidel.STATOR) {
-			final double e = Geodezie.azimutElipsoid(lat, lon, k.lat(), k.lon());
+			final double e = Geodezie.azimutElipsoid(lat, lon, bodLat, bodLon);
 			if (!Double.isNaN(e)) {
 				return e;
 			}
 		}
-		return Geodezie.azimutKoule(lat, lon, k.lat(), k.lon());
+		return Geodezie.azimutKoule(lat, lon, bodLat, bodLon);
 	}
 }
