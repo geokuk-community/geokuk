@@ -127,7 +127,7 @@ public class NasobnostSablonyTest {
 		NastaveniChallenge.uloz(NastaveniChallenge.nacti(uloziste).seznam, false, uloziste);
 		Assert.assertEquals("zůstane", uloziste.get("jineNastaveni"));
 		Assert.assertEquals("5", uloziste.get(klic));
-		Assert.assertNull("klíč neexistující šablony se uklidí", uloziste.get("opakovani.neexistuje"));
+		Assert.assertEquals("klíč šablony, kterou tato verze nezná, zůstane", "3", uloziste.get("opakovani.neexistuje"));
 	}
 
 	/** Starší verze čte jen definice.* a format; klíč opakovani.* nezná a jejich zápis ho nesmaže ani nezmění definice. */
@@ -185,6 +185,32 @@ public class NasobnostSablonyTest {
 		udalosti.clear();
 		Assert.assertEquals(nova, model.nastavOpakovani(nova, 2));
 		Assert.assertTrue("stejná hodnota nic neohlásí", udalosti.isEmpty());
+	}
+
+	/** Klíč známé šablony se po návratu na jedničku smaže, klíč neznámé šablony (třeba z novější verze) ne. */
+	@Test
+	public void ulozeniNesmazeNasobnostNeznameSablony() {
+		uloziste.put("opakovani.budouci sablona", "4");
+		final ChallengeSeznam s = new ChallengeSeznam();
+		s.nastavNasobnostSablony(MATICE, 3);
+		NastaveniChallenge.uloz(s, false, uloziste);
+		s.nastavNasobnostSablony(MATICE, 1);
+		NastaveniChallenge.uloz(s, false, uloziste);
+		Assert.assertEquals("4", uloziste.get("opakovani.budouci sablona"));
+		Assert.assertNull("známá šablona s jedničkou klíč nemá", uloziste.get("opakovani." + MATICE.toLowerCase(java.util.Locale.ROOT)));
+	}
+
+	@Test
+	public void smazanouVlastniChallengeNasobnostNevrati() throws Exception {
+		final Challenge vlastni = model.ulozVlastni(Sablony.maticeDT().sNazvem("Moje D/T"));
+		model.smazVlastni(vlastni);
+		try {
+			model.nastavOpakovani(vlastni, 2);
+			Assert.fail("smazaná challenge se nevrací");
+		} catch (final ChallengeChyba e) {
+			// očekáváno
+		}
+		Assert.assertTrue(model.vsechny().stream().noneMatch(c -> c.nazev().equals("Moje D/T")));
 	}
 
 	@Test

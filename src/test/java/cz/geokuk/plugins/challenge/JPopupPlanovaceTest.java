@@ -1041,8 +1041,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("hodnota se ukáže hned", "3×", o.nasobnostHodnota.getText());
 		Assert.assertEquals("uložení až po prodlevě", 1, aktivni().opakovani());
 		Assert.assertEquals(0, ulozeno[0]);
-		Thread.sleep(JPopupPlanovace.ODKLAD_NASOBNOSTI_MS + 400);
-		SwingUtilities.invokeAndWait(() -> {});
+		cekej(() -> aktivni().opakovani() == 3, "uložení po prodlevě");
 		Assert.assertEquals(3, aktivni().opakovani());
 		Assert.assertEquals("rychlé klikání dá jedno uložení", 1, ulozeno[0]);
 		Assert.assertEquals("3×", o.nasobnostHodnota.getText());
@@ -1053,6 +1052,48 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse(o.nasobnostPlus.isEnabled());
 		Assert.assertTrue(o.nasobnostMin.isEnabled());
 		Assert.assertEquals(c.nazev(), aktivni().nazev());
+	}
+
+	private static void cekej(final java.util.function.BooleanSupplier podminka, final String co) throws Exception {
+		final long konec = System.currentTimeMillis() + 5000;
+		while (!podminka.getAsBoolean()) {
+			if (System.currentTimeMillis() > konec) {
+				Assert.fail("nedočkalo se: " + co);
+			}
+			SwingUtilities.invokeAndWait(() -> {});
+			Thread.sleep(20);
+		}
+	}
+
+	/** Čekající změna se uloží k challenge, na které se kliklo, i když se mezitím zobrazí jiná matice D/T. */
+	@Test
+	public void nasobnostSeUlozikChallengeNaKterouSeKliklo() throws Exception {
+		priprav();
+		final Challenge prvni = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		final Challenge druha = model.ulozVlastni(new Challenge("Druhá D/T", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		popup.prepni();
+		popup.obsah.nasobnostPlus.doClick();
+		model.aktivuj(druha);
+		model.setZobrazena(druha);
+		SwingUtilities.invokeAndWait(() -> {});
+		cekej(() -> model.vsechny().stream().anyMatch(c -> c.nazev().equals(prvni.nazev()) && c.opakovani() == 2), "uložení k první challenge");
+		Assert.assertEquals("druhá challenge beze změny", 1, model.vsechny().stream().filter(c -> c.nazev().equals(druha.nazev())).findFirst().get().opakovani());
+	}
+
+	/** Kliknutí na jinou matici D/T hned uloží čekající změnu té předchozí a druhá se řídí svou hodnotou. */
+	@Test
+	public void kliknutiNaJinouMaticiUlozicekajiciZmenuPredchozi() throws Exception {
+		priprav();
+		final Challenge prvni = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		final Challenge druha = model.ulozVlastni(new Challenge("Druhá D/T", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC).sOpakovanim(4));
+		popup.prepni();
+		popup.obsah.nasobnostPlus.doClick();
+		model.aktivuj(druha);
+		model.setZobrazena(druha);
+		SwingUtilities.invokeAndWait(() -> {});
+		popup.obsah.nasobnostMin.doClick();
+		Assert.assertEquals("změna první uložena hned", 2, model.vsechny().stream().filter(c -> c.nazev().equals(prvni.nazev())).findFirst().get().opakovani());
+		cekej(() -> model.vsechny().stream().anyMatch(c -> c.nazev().equals(druha.nazev()) && c.opakovani() == 3), "druhá 4 → 3");
 	}
 
 	@Test

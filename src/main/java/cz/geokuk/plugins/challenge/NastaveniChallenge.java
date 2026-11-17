@@ -84,7 +84,8 @@ public final class NastaveniChallenge {
 			uloziste.put(e.getKey(), e.getValue());
 		}
 		for (final String k : new ArrayList<>(uloziste.klice())) {
-			if (k.startsWith(PREDPONA_NASOBNOSTI) && !nasobnosti.containsKey(k)) {
+			// Smaže se jen násobnost šablony, kterou tato verze zná; klíče neznámých šablon (třeba z novější verze) zůstanou.
+			if (k.startsWith(PREDPONA_NASOBNOSTI) && !nasobnosti.containsKey(k) && seznam.jeSablona(k.substring(PREDPONA_NASOBNOSTI.length()))) {
 				uloziste.remove(k);
 			}
 		}

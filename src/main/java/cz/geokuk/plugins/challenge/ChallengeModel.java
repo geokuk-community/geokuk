@@ -425,7 +425,10 @@ public class ChallengeModel extends Model0 {
 			throw new ChallengeChyba("Opakování jde nastavit jen u matice D/T.");
 		}
 		final Challenge dosavadni = seznam.najdi(c.nazev());
-		if (dosavadni != null && dosavadni.opakovani() == kolikrat) {
+		if (dosavadni == null) {
+			throw new ChallengeChyba("Challenge „" + c.nazev() + "“ neexistuje.");
+		}
+		if (dosavadni.opakovani() == kolikrat) {
 			return dosavadni;
 		}
 		final Challenge nova = seznam.jeSablona(c.nazev()) ? seznam.nastavNasobnostSablony(c.nazev(), kolikrat) : seznam.ulozVlastni(c.sOpakovanim(kolikrat));

@@ -271,6 +271,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	static final int ODKLAD_NASOBNOSTI_MS = 300;
 	private final transient javax.swing.Timer casovacNasobnosti = new javax.swing.Timer(ODKLAD_NASOBNOSTI_MS, e -> ulozNasobnost());
 	private int cekajiciNasobnost;
+	/** Challenge, ke které patří čekající násobnost; uloží se k ní, i kdyby se mezitím zobrazila jiná. */
+	private transient Challenge cekajiciChallenge;
 
 	{
 		casovacNasobnosti.setRepeats(false);
@@ -282,14 +284,20 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		if (c == null || model == null || c.typ() != Challenge.Typ.DT_MATICE) {
 			return;
 		}
+		if (casovacNasobnosti.isRunning() && !cekajiciChallenge.nazev().equals(c.nazev())) {
+			// Mezitím se zobrazila jiná challenge: čekající změna té předchozí se uloží hned.
+			casovacNasobnosti.stop();
+			ulozNasobnost();
+		}
 		final int zaklad = casovacNasobnosti.isRunning() ? cekajiciNasobnost : c.opakovani();
+		cekajiciChallenge = c;
 		cekajiciNasobnost = Math.max(1, Math.min(Challenge.NEJVETSI_OPAKOVANI, zaklad + delta));
 		obsah.nastavNasobnost(cekajiciNasobnost);
 		casovacNasobnosti.restart();
 	}
 
 	private void ulozNasobnost() {
-		final Challenge c = challenge();
+		final Challenge c = cekajiciChallenge;
 		if (c == null || model == null || c.typ() != Challenge.Typ.DT_MATICE) {
 			return;
 		}
