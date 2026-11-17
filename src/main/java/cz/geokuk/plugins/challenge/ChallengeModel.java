@@ -250,9 +250,26 @@ public class ChallengeModel extends Model0 {
 		if (java.util.Objects.equals(vybranaKes, kes)) {
 			return;
 		}
+		if (kes != null) {
+			final PrehledChallenge p = prehled();
+			final int sektor = p == null ? -1 : p.sektorBodu(kes.lat(), kes.lon());
+			final String policko = p == null ? null : p.stitekPolicka(kes.obtiznostPulek(), kes.terenPulek());
+			stejnyVyberJakoPredchoziKes = (sektor >= 0 || policko != null) && sektor == posledniSektorKese && java.util.Objects.equals(policko, posledniPolickoKese);
+			posledniSektorKese = sektor;
+			posledniPolickoKese = policko;
+		}
 		vybranaKes = kes;
 		casVyberuKese = System.nanoTime();
 		ohlas(ChallengeZmenenyEvent.Druh.VYBRANA_KES, null);
+	}
+
+	private volatile int posledniSektorKese = -1;
+	private volatile String posledniPolickoKese;
+	private volatile boolean stejnyVyberJakoPredchoziKes;
+
+	/** Leží naposledy vybraná keš ve stejném sektoru 360° nebo políčku D/T jako keš vybraná před ní? */
+	public boolean jeStejnyVyberJakoPredchoziKes() {
+		return stejnyVyberJakoPredchoziKes;
 	}
 
 	private volatile int stitkuNaMape = -1;
