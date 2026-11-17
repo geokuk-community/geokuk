@@ -233,7 +233,7 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
-	public void popisekKruzniceStojiNaBoduKruzniceNejblizsimStreduOkna() throws Exception {
+	public void nejblizsiBodKruzniceLeziNejblizeStreduOkna() throws Exception {
 		zobrazSKruznici();
 		final Coord c = mapa(50.0, 14.03, 14);
 		nakresli(nad, c);
@@ -268,23 +268,7 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
-	public void popisekKruzniceMaTextAPolohuUKruzniceAJenKdyzJeZapnuteSektory() throws Exception {
-		zobrazSKruznici();
-		final Coord c = mapa(50.0, 14.0, 14);
-		nakresli(nad, c);
-		Assert.assertEquals("3,0 km", nad.textPopiskuKruznice());
-		final Rectangle r = nad.popisekKruznice();
-		Assert.assertNotNull(r);
-		final java.awt.Point bod = JPlanovacNadKeskami.nejblizsiBodKruznice(c, TvarCache.dej(model.prehled(), null, null, null));
-		Assert.assertTrue("štítek je těsně u bodu kružnice: " + r + " " + bod, r.contains(bod) || r.intersects(new Rectangle(bod.x - 12, bod.y - 12, 24, 24)));
-		model.setKresliSektory(false);
-		nakresli(nad, c);
-		Assert.assertNull("bez Sektorů žádný popisek", nad.textPopiskuKruznice());
-		Assert.assertNull(nad.popisekKruznice());
-	}
-
-	@Test
-	public void popisekKruzniceNestojiBlizkoOkrajumOkna() {
+	public void bodKruzniceNeniBlizkoOkrajumOkna() {
 		Assert.assertTrue(JPlanovacNadKeskami.jeVOblastiPopisku(64, 70, 1280, 720));
 		Assert.assertFalse("vlevo", JPlanovacNadKeskami.jeVOblastiPopisku(63, 300, 1280, 720));
 		Assert.assertFalse("nahoře (lišta)", JPlanovacNadKeskami.jeVOblastiPopisku(300, 69, 1280, 720));
@@ -294,41 +278,35 @@ public class JPlanovacVrstvyTest {
 	}
 
 	@Test
-	public void poloměrSeDoTextuStreduDavaJenKdyzKruzniceVOkneNemaPopisek() throws Exception {
+	public void poloměrSeDoTextuStreduDavaJenKdyzKruzniceNeniVOkneVidet() throws Exception {
 		zobrazSKruznici();
 		nakresli(nad, mapa(50.0, 14.0, 14));
-		Assert.assertTrue("kružnice v okně má vlastní popisek", Double.isNaN(nad.polomerVTextuStredu(mapa(50.0, 14.0, 14), TvarCache.dej(model.prehled(), null, null, null))));
+		Assert.assertTrue("kružnice v okně je vidět, poloměr se do textu středu nedává", Double.isNaN(nad.polomerVTextuStredu(mapa(50.0, 14.0, 14), TvarCache.dej(model.prehled(), null, null, null))));
 		final Coord blizko = mapa(50.0, 14.0, 17);
 		Assert.assertEquals("při přiblížení kružnice v okně není, poloměr je v textu středu", 3000, nad.polomerVTextuStredu(blizko, TvarCache.dej(model.prehled(), null, null, null)), 1e-9);
 		model.setKresliSektory(false);
 		Assert.assertTrue("bez Sektorů nic", Double.isNaN(nad.polomerVTextuStredu(blizko, TvarCache.dej(model.prehled(), null, null, null))));
 	}
 
+	/** Poloměr kružnice se na mapě u kružnice nepíše, aby se nekryl se štítky sektorů; nad keškami u kružnice nic není. */
 	@Test
-	public void popisekKruzniceStojiNaKruziciANapisePoloměr() throws Exception {
+	public void uKruzniceVOkneSePoloměrNepise() throws Exception {
 		zobrazSKruznici();
 		final Coord c = mapa(50.0, 14.0, 14);
-		nakresli(nad, c);
 		final TvarPlanovace t = TvarCache.dej(model.prehled(), null, null, null);
 		final java.awt.Point bod = JPlanovacNadKeskami.nejblizsiBodKruznice(c, t);
 		Assert.assertNotNull(bod);
-		final java.awt.Point s = c.transform(new Wgs(50.0, 14.0).toMou());
-		final double r = Math.hypot(bod.x - s.x, bod.y - s.y);
-		Assert.assertEquals("bod leží na kružnici", polomerKruzniceVPixelech(nakresli(pod, c), c), r, 120);
 		Assert.assertEquals("3,0 km", StitkyPruhu.vzdalenost(t.polomerKruznice));
 		final BufferedImage img = nakresli(nad, c);
-		boolean text = false;
-		for (int dy = -12; dy <= 12 && !text; dy++) {
+		for (int dy = -12; dy <= 12; dy++) {
 			for (int dx = -40; dx <= 40; dx++) {
 				final int x = bod.x + dx;
 				final int y = bod.y + dy;
-				if (x >= 0 && y >= 0 && x < W && y < H && (img.getRGB(x, y) >>> 24) != 0) {
-					text = true;
-					break;
+				if (x >= 0 && y >= 0 && x < W && y < H) {
+					Assert.assertEquals("u kružnice nic nekreslí (" + x + "," + y + ")", 0, img.getRGB(x, y) >>> 24);
 				}
 			}
 		}
-		Assert.assertTrue("u kružnice je štítek s poloměrem", text);
 	}
 
 	@Test
