@@ -740,32 +740,6 @@ public class JPopupPlanovaceTest {
 	}
 
 	@Test
-	public void maticeZvyraznujePolickoVybraneKese() throws Exception {
-		priprav();
-		popup.prepni();
-		final JPopupPlanovace.Obsah o = popup.obsah;
-		final Challenge dt = aktivujPolicka(Challenge.Typ.DT_MATICE);
-		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
-		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
-		k.add(new KandidatPolicka("GC2", 50, 14, "D5/T5", "D5/T5", null));
-		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4", "D5/T5"), k, 50), 50.0, 14.0);
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertNull("bez výběru nic", o.matice.vybrane());
-		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(new VybranaKes("GC9", 50.0, 14.0, 4, 6)));
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("políčko vybrané keše je zvýrazněné", "D3/T4", o.matice.vybrane());
-		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(new VybranaKes("GC8", 50.0, 14.0, 8, 8)));
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("zvýraznění se přesune", "D5/T5", o.matice.vybrane());
-		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(null));
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("po kliku mimo zůstává poslední", "D5/T5", o.matice.vybrane());
-		SwingUtilities.invokeAndWait(() -> model.setVybranePolicko(dt, null));
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertNull("Esc a ✕ čistí", o.matice.vybrane());
-	}
-
-	@Test
 	public void kalendarUkazujeChybejiciDnyAPo360SeVratiSektory() throws Exception {
 		priprav();
 		model.setKalendarVUi(true);

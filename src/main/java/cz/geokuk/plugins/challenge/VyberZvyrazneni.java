@@ -69,6 +69,11 @@ final class VyberZvyrazneni {
 		}
 	}
 
+	/** Je to stejný sektor nebo políčko, bez ohledu na to, podle které keše se vybralo? Členové a štítky se při překlikávání po keších téhož výběru nestaví znovu. */
+	boolean maStejnyVyberJako(final VyberZvyrazneni v) {
+		return sektor == v.sektor && java.util.Objects.equals(stitek, v.stitek);
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (!(o instanceof VyberZvyrazneni)) {
