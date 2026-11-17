@@ -537,6 +537,44 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
+	public void dtPrekliknutiNaKesStejnehoPolickaNezhasnePrekresliAVybranaKesMaJedenStitek() throws Exception {
+		final Challenge dt = model.ulozVlastni(new Challenge("DT", Typ.DT_MATICE, Stred.domov(), OblastDef.zadna(), ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		final Kes a = kesVAzimutu("GC1", 100.5, 2000, 4, 6);
+		final Kes b = kesVAzimutu("GC2", 200.5, 1500, 4, 6);
+		final Wgs wa = a.getMainWpt().getWgs();
+		final Wgs wb = b.getMainWpt().getWgs();
+		final java.util.List<KandidatPolicka> kandidati = new java.util.ArrayList<>();
+		kandidati.add(new KandidatPolicka("GC1", wa.lat, wa.lon, "D3/T4", "D3/T4", null, 2000));
+		kandidati.add(new KandidatPolicka("GC2", wb.lat, wb.lon, "D3/T4", "D3/T4", null, 1500));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, Arrays.asList("D3/T4"), kandidati), STRED_LAT, STRED_LON);
+		SwingUtilities.invokeAndWait(() -> {});
+		final java.util.Queue<Runnable> fronta = new java.util.ArrayDeque<>();
+		nad.setStavba(fronta::add);
+		nad.setIndexatorKesi(index(a, b));
+		final Coord c = mapa(14);
+		vyber(a);
+		for (int i = 0; i < 3; i++) {
+			nakresli(nad, c);
+			while (!fronta.isEmpty()) {
+				fronta.poll().run();
+			}
+		}
+		nakresli(nad, c);
+		Assert.assertEquals("členové políčka mají štítek", 2, nad.obdelnikyStitkuZvyrazneni().size());
+		vyber(b);
+		nakresli(nad, c);
+		Assert.assertEquals("štítky členů se nezhasnou ani nestaví znovu", 2, nad.obdelnikyStitkuZvyrazneni().size());
+		Assert.assertTrue("stavba se nespouští znovu", fronta.isEmpty());
+		Assert.assertEquals("vybraná keš nemá druhý štítek kandidáta, jen ten druhý", 1, nad.obdelnikyStitkuKandidatu().size());
+		final Point pb = PixelyMapy.transform(c, b.getMainWpt().getMou(), new Point());
+		for (final Rectangle q : nad.obdelnikyStitkuKandidatu()) {
+			Assert.assertFalse("u vybrané keše není štítek kandidáta: " + q, q.contains(pb.x - 20, pb.y) || q.contains(pb.x, pb.y - 12));
+		}
+	}
+
+	@Test
 	public void bezVybraneKeseASektoruSeNicNezvyraznuje() throws Exception {
 		zobraz360(250);
 		nad.setIndexatorKesi(index(kesVAzimutu("GC1", 100.5, 2000, 2, 2)));

@@ -187,14 +187,11 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			// Pořadí kreslení: nejdřív štítky kandidátů, nad nimi střed a vybraný sektor, aby byly vždy čitelné.
 			final VyberZvyrazneni vyber = zvyrazneni(t);
 			if (kesoidyViditelne() && kresliStitky()) {
-				kresliKandidaty(g, c, t, pismo);
+				kresliKandidaty(g, c, t, pismo, vyber.kes);
 				kresliZvyrazneni(g, c, t, pismo, vyber);
 			}
 			kresliStred(g, c, t, tucne);
 			kresliPopisekKruznice(g, c, t, tucne);
-			if (kesoidyViditelne()) {
-				kresliStitekVybraneKese(g, c, t, tucne, vyber);
-			}
 			final double dosah = dosahPresazeny(c, t);
 			if (kesoidyViditelne() && !Double.isNaN(dosah)) {
 				kresliDosah(g, c, tucne, dosah);
@@ -578,40 +575,18 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 		}
 	}
 
-	/**
-	 * Štítek keše, podle které se vybralo, nebo vybraného kandidáta: u 360° „Sektor 213° · 5 kandidátů · 46 km“, u D/T štítek políčka. Kreslí se úplně nahoře.
-	 */
-	private void kresliStitekVybraneKese(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font tucne, final VyberZvyrazneni vyber) {
-		if (vyber.kes != null && vyber.stitek != null && kresliStitky()) {
-			umistiNadKes(g, c, tucne, vyber.stitek, vyber.kes, true);
-		}
-	}
-
-	/** Štítek vybrané keše stojí nad její ikonou, aby nepřekrýval popisek keše vpravo od ikony. */
-	private void umistiNadKes(final Graphics2D g, final Coord c, final Font f, final String text, final VybranaKes kes, final boolean zvyrazneny) {
-		final cz.geokuk.core.coordinates.Mou mou = PixelyMapy.mou(kes.lat(), kes.lon());
-		final Point p = PixelyMapy.transform(c, mou, new Point());
-		if (p.x < 0 || p.y < 0 || p.x > c.getWidth() || p.y > c.getHeight()) {
-			return;
-		}
-		final int[] okraje = new int[3];
-		IkonaKese.okraje(indexatorKesi, mou, meritkoIkon, okraje);
-		final Dimension d = rozmerStitku(g, f, text);
-		final int mezera = Math.max(MEZERA_STITKU, (int) Math.round(MEZERA_STITKU * meritkoIkon));
-		final Rectangle r = nakresliStitek(g, f, text, p.x - d.width / 2, Math.max(0, p.y + okraje[2] - mezera - d.height), AkcentPlanovace.barva(), zvyrazneny);
-		zapis(r.x, r.y, r.width, r.height);
-	}
-
 	/** Štítek kandidáta stojí vždy těsně vpravo od své ikony, bez vyhýbání ostatním štítkům; ve hustotě se slévají. */
-	private void kresliKandidaty(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font pismo) {
+	private void kresliKandidaty(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font pismo, final VybranaKes vybrana) {
 		final Vyber v = vyber(c, t);
+		// Vybraná keš má jediný štítek, ve stylu výběru; štítek kandidáta pod ním by byl druhý.
+		final Point pv = vybrana == null ? null : PixelyMapy.transform(c, PixelyMapy.mou(vybrana.lat(), vybrana.lon()), new Point());
 		posledniVeVyrezu = v.veVyrezu;
 		final Rectangle misto = new Rectangle();
 		final int mezera = Math.max(MEZERA_STITKU, (int) Math.round(MEZERA_STITKU * v.meritkoIkon));
 		int zobrazeno = 0;
 		for (int q = 0; q < v.pocet; q++) {
 			misto.setBounds(v.x[q] - 3, v.y[q] - 3, 6, 6);
-			if (kryjeVNekterou(misto)) {
+			if (kryjeVNekterou(misto) || pv != null && Math.abs(v.x[q] - pv.x) <= 2 && Math.abs(v.y[q] - pv.y) <= 2) {
 				continue;
 			}
 			final String text = t.texty[v.index[q]];

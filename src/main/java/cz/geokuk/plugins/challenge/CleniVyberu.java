@@ -47,7 +47,7 @@ final class CleniVyberu {
 	}
 
 	boolean jeStejny(final PrehledChallenge p, final Indexator<Wpt> i, final VyberZvyrazneni v) {
-		return prehled == p && indexator == i && vyber.equals(v);
+		return prehled == p && indexator == i && vyber.maStejnyVyberJako(v);
 	}
 
 	/** Seznam členů, nebo null, dokud se staví. */
