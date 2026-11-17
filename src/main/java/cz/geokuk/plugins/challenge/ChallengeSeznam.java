@@ -20,6 +20,8 @@ public final class ChallengeSeznam {
 
 	private final List<Challenge> sablony;
 	private final Map<String, Challenge> vlastni = new LinkedHashMap<>();
+	/** Uživatelova násobnost šablon matice D/T (klíč názvu → 2 až 9); šablona v kódu zůstává beze změny. */
+	private final Map<String, Integer> nasobnostSablon = new LinkedHashMap<>();
 	private final List<String> aktivni = new ArrayList<>();
 	private final int strop;
 
@@ -35,7 +37,7 @@ public final class ChallengeSeznam {
 		this.strop = strop;
 	}
 
-	private static String klic(final String nazev) {
+	static String klic(final String nazev) {
 		return nazev.trim().toLowerCase(Locale.ROOT);
 	}
 
@@ -43,8 +45,45 @@ public final class ChallengeSeznam {
 		return strop;
 	}
 
+	/** Šablony s uživatelovou násobností. */
 	public List<Challenge> sablony() {
-		return sablony;
+		final List<Challenge> v = new ArrayList<>();
+		for (final Challenge s : sablony) {
+			v.add(sSouctasnouNasobnosti(s));
+		}
+		return Collections.unmodifiableList(v);
+	}
+
+	private Challenge sSouctasnouNasobnosti(final Challenge s) {
+		final Integer n = nasobnostSablon.get(klic(s.nazev()));
+		return n == null ? s : s.sOpakovanim(n);
+	}
+
+	/** Uživatelova násobnost šablon, které ji mají nastavenou (klíč názvu → 2 až 9). */
+	public Map<String, Integer> nasobnostiSablon() {
+		return Collections.unmodifiableMap(new LinkedHashMap<>(nasobnostSablon));
+	}
+
+	/**
+	 * Nastaví, kolikrát se má splnit každé políčko šablony matice D/T; šablona sama se nemění, jde o nastavení uživatele. Jednička nastavení zruší. Šablona, která není matice D/T,
+	 * nebo číslo mimo 1 až {@link Challenge#NEJVETSI_OPAKOVANI} je {@link ChallengeChyba}.
+	 */
+	public Challenge nastavNasobnostSablony(final String nazev, final int kolikrat) {
+		final Challenge s = najdiSablonu(nazev);
+		if (s == null) {
+			throw new ChallengeChyba("Šablona „" + nazev + "“ neexistuje.");
+		}
+		if (s.typ() != Challenge.Typ.DT_MATICE) {
+			throw new ChallengeChyba("Opakování jde nastavit jen u matice D/T.");
+		}
+		final Challenge nova = s.sOpakovanim(kolikrat);
+		final String k = klic(s.nazev());
+		if (kolikrat == 1) {
+			nasobnostSablon.remove(k);
+		} else {
+			nasobnostSablon.put(k, kolikrat);
+		}
+		return nova;
 	}
 
 	public List<Challenge> vlastni() {
@@ -53,7 +92,7 @@ public final class ChallengeSeznam {
 
 	/** Šablony a potom vlastní definice. */
 	public List<Challenge> vsechny() {
-		final List<Challenge> v = new ArrayList<>(sablony);
+		final List<Challenge> v = new ArrayList<>(sablony());
 		v.addAll(vlastni.values());
 		return Collections.unmodifiableList(v);
 	}
@@ -65,7 +104,7 @@ public final class ChallengeSeznam {
 	private Challenge najdiSablonu(final String nazev) {
 		for (final Challenge s : sablony) {
 			if (klic(s.nazev()).equals(klic(nazev))) {
-				return s;
+				return sSouctasnouNasobnosti(s);
 			}
 		}
 		return null;
