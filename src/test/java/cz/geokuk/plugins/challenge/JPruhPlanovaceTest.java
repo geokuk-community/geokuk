@@ -602,4 +602,26 @@ public class JPruhPlanovaceTest {
 			}
 		}
 	}
+
+	/** Menu výběru challenge ▾ má položku Nastavení plánovače…, která otevře dialog. */
+	@Test
+	public void menuVyberuChallengeMaNastaveniPlanovace() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		final int[] otevreno = { 0 };
+		pruh.setNaNastaveni(() -> otevreno[0]++);
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
+			final javax.swing.JPopupMenu menu = pruh.sestavVyber();
+			javax.swing.JMenuItem polozka = null;
+			for (final java.awt.Component k : menu.getComponents()) {
+				if (k instanceof javax.swing.JMenuItem && "Nastavení plánovače…".equals(((javax.swing.JMenuItem) k).getText())) {
+					polozka = (javax.swing.JMenuItem) k;
+				}
+			}
+			Assert.assertNotNull("položka Nastavení plánovače… v menu výběru", polozka);
+			polozka.doClick();
+		});
+		Assert.assertEquals(1, otevreno[0]);
+	}
 }
