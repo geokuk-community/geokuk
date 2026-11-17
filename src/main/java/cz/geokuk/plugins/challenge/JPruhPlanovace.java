@@ -55,7 +55,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	}
 
 	private final transient JButton uchyt = new JButton(new Terc());
-	private final transient JButton chip = new JButton("▾");
+	private final transient JButton chip = new JButton("Vybrat ▾");
 	private final transient Odznak odznak = new Odznak();
 	private final transient JButton zpet = new JButton(new Sipka(true));
 	private final transient JButton dal = new JButton(new Sipka(false));
@@ -455,7 +455,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		final StavPruhu stav = model == null ? StavPruhu.SKRYTY : model.stavPruhu();
 		final boolean maChallenge = stav.jeViditelny();
 		uchyt.setToolTipText(zapnuto ? TIP_UCHYTU_VYPNOUT : TIP_UCHYTU_ZAPNOUT);
-		nastavText(chip, (maChallenge ? stav.stitekTypu() + " " : "") + "▾");
+		nastavText(chip, (maChallenge ? stav.stitekTypu() + " " : "Vybrat ") + "▾");
 		chip.setToolTipText(maChallenge ? "Challenge: " + stav.challenge().nazev() + " – vybrat jinou" : "Vybrat challenge");
 		if (maChallenge) {
 			final VysledekPolicek nasobna = stav.typ() == Challenge.Typ.DT_MATICE && model != null ? model.vysledekPolicek(stav.challenge()) : null;
