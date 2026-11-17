@@ -268,7 +268,7 @@ public class JChallengeDialogTest {
 		naEdt(() -> {
 			model.ulozVlastni(dt("Moje DT"));
 			model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
-			Assert.assertEquals("šablony, D/T a kalendář (nedostupný)", 6, dialog.polozky().size());
+			Assert.assertEquals("šablony, D/T a kalendář (nedostupná)", 6, dialog.polozky().size());
 			seznam().setSelectedValue(dialog.polozky().get(4), true);
 			Assert.assertEquals("Moje DT", seznam().getSelectedValue().nazev());
 			Assert.assertTrue("D/T jde uložit", tlacitko("Uložit změny").isEnabled());
@@ -295,7 +295,7 @@ public class JChallengeDialogTest {
 
 	private String textPolozky(final Challenge c) {
 		final javax.swing.ListCellRenderer<? super Challenge> r = seznam().getCellRenderer();
-		return ((JLabel) r.getListCellRendererComponent(seznam(), c, 0, false, false)).getText();
+		return PolozkaChallengeRenderer.plnyText((JLabel) r.getListCellRendererComponent(seznam(), c, 0, false, false));
 	}
 
 	@Test
@@ -304,7 +304,7 @@ public class JChallengeDialogTest {
 			final Challenge kal = model.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 			model.aktivuj(kal);
 			Assert.assertTrue(dialog.polozky().contains(kal));
-			Assert.assertTrue(textPolozky(kal), textPolozky(kal).contains("(nedostupný)"));
+			Assert.assertTrue(textPolozky(kal), textPolozky(kal).contains("(nedostupná)"));
 			seznam().setSelectedValue(kal, true);
 			Assert.assertFalse("úpravy ne", tlacitko("Uložit změny").isEnabled());
 			Assert.assertFalse(pole(0).isEnabled());
@@ -461,7 +461,7 @@ public class JChallengeDialogTest {
 				final JLabel l = (JLabel) vykresli(seznam, i);
 				l.setSize(sirka, l.getPreferredSize().height);
 				Assert.assertEquals("položka " + i, 1, l.getPreferredSize().width);
-				Assert.assertTrue(l.getText(), l.getText().contains("(šablona)"));
+				Assert.assertTrue(PolozkaChallengeRenderer.plnyText(l), PolozkaChallengeRenderer.plnyText(l).contains("(šablona)"));
 			}
 		});
 	}
@@ -496,7 +496,7 @@ public class JChallengeDialogTest {
 			final int sirka = ((javax.swing.JScrollPane) javax.swing.SwingUtilities.getAncestorOfClass(javax.swing.JScrollPane.class, s)).getPreferredSize().width;
 			Assert.assertEquals("šířka seznamu odpovídá písmu", JChallengeDialog.sirkaSeznamu(fm), sirka);
 			for (final Challenge c : Sablony.vse()) {
-				final int potreba = fm.stringWidth(c.nazev() + "  (aktivní)  (šablona)");
+				final int potreba = fm.stringWidth(PolozkaChallengeRenderer.ZAPNUTA + "  " + c.nazev() + "  (šablona)");
 				Assert.assertTrue(c.nazev() + ": " + potreba + " > " + sirka, potreba <= sirka - 40 || sirka == 700);
 			}
 		});
