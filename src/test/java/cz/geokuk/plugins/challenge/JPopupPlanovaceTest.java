@@ -919,7 +919,10 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("domov " + w, TextyPopupuPlanovace.stredDomov(w));
 	}
 
-	/** Výchozí výška popupu u 360° je aspoň taková jako u D/T, aby se popup při přepnutí typu zbytečně nezkracoval. */
+	/** Rezerva v pixelech, o kterou smí být výška popupu u 360° menší než u D/T; výšku řádků určuje písmo, takže se liší podle platformy. */
+	private static final int REZERVA_VYSKY_POPUPU = 8;
+
+	/** Výchozí výška popupu u 360° je (až na malou rezervu) taková jako u D/T, aby se popup při přepnutí typu zbytečně nezkracoval. */
 	@Test
 	public void vyskaPopupu360NeniMensiNezDT() throws Exception {
 		priprav();
@@ -931,7 +934,7 @@ public class JPopupPlanovaceTest {
 				java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D3/T3", "D3/T3", null)), 50));
 		SwingUtilities.invokeAndWait(() -> {});
 		final int vyskaDT = popup.obsah.getPreferredSize().height;
-		Assert.assertTrue("360° " + vyska360 + " px, D/T " + vyskaDT + " px", vyska360 >= vyskaDT);
+		Assert.assertTrue("360° " + vyska360 + " px, D/T " + vyskaDT + " px", vyska360 + REZERVA_VYSKY_POPUPU >= vyskaDT);
 	}
 
 	/** Řádek „Každé políčko splnit: ◀ N× ▶“ je jen u matice D/T; hodnota se ukáže hned, uloží se jednou po prodlevě, na hranicích 1 a 9 je šipka nedostupná. */
