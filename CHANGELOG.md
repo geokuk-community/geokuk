@@ -209,6 +209,9 @@
   a písmo, symboly a čáry offline mapy až na 200 %.
 - Sjednocení názvů: druh kešoidu „Fotka“, popisky pojmenovaného bodu a stavového
   řádku cest.
+- Plánovač challenge 360°: štítek keše, která leží do 0,05° od hranice
+  sektoru, má před číslem sektoru znak ≈ (není jisté, do kterého sektoru
+  patří).
 
 ### Opravy
 - Nastavený práh hodnocení, BestOf nebo favoritů ve filtru skryje i keše,
