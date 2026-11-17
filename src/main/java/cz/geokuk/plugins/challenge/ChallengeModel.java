@@ -806,9 +806,30 @@ public class ChallengeModel extends Model0 {
 		if (v == null) {
 			return PosunVyberu.ZADNY_SEKTOR;
 		}
-		final int novy = PosunVyberu.dalsiSektor(v, vychoziSektorPosunu(c), dopredu);
+		final int novy = cilSektoruPosunu(c, v, dopredu);
 		setVybranySektor(c, novy);
 		return novy;
+	}
+
+	/**
+	 * Cíl posunu ◀ ▶ u 360°: když na mapě nic není zvýrazněné a zůstal zapamatovaný sektor (po kliku mimo), je to on sám, jinak další sektor s kandidáty od výchozího bodu; -1, když
+	 * žádný není.
+	 */
+	int cilSektoruPosunu(final Challenge c, final VysledekSektoru v, final boolean dopredu) {
+		final int pamet = zvyraznenySektor(c) < 0 ? zapamatovanySektor(c) : PosunVyberu.ZADNY_SEKTOR;
+		if (pamet >= 0 && maKandidaty(v, pamet)) {
+			return pamet;
+		}
+		return PosunVyberu.dalsiSektor(v, vychoziSektorPosunu(c), dopredu);
+	}
+
+	/** Totéž pro políčko D/T: po kliku mimo je cílem prvního posunu zapamatované políčko; null, když žádné není. */
+	String cilPolickaPosunu(final Challenge c, final VysledekPolicek v, final boolean dopredu) {
+		final String pamet = zvyraznenePolicko(c) == null ? zapamatovanePolicko(c) : null;
+		if (pamet != null && v.pocetKandidatu(pamet) > 0) {
+			return pamet;
+		}
+		return PosunVyberu.dalsiPolicko(v, vychoziPolickoPosunu(c), dopredu);
 	}
 
 	/**
@@ -820,7 +841,7 @@ public class ChallengeModel extends Model0 {
 		if (v == null) {
 			return null;
 		}
-		final String nove = PosunVyberu.dalsiPolicko(v, vychoziPolickoPosunu(c), dopredu);
+		final String nove = cilPolickaPosunu(c, v, dopredu);
 		if (nove != null) {
 			setVybranePolicko(c, nove);
 		}
