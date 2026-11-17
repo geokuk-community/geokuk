@@ -440,4 +440,34 @@ public class VypocetMaticeTest {
 		}
 		Assert.assertEquals(1, new VysledekPolicek(81, new ArrayList<String>(), new ArrayList<KandidatPolicka>(), 50, 1, new int[81]).cil());
 	}
+
+	/** Počet ve výřezu je přesný výčet hledatelných keší chybějících políček, nezávislý na limitu kandidátů; nalezené a splněná políčka se nepočítají. */
+	@Test
+	public void pocetVOkneJePresnyVycetHledatelnychKesiChybejicichPolicek() {
+		final List<K> vse = new ArrayList<>();
+		for (int i = 0; i < 7; i++) {
+			vse.add(new K(2, 2, false).id("A" + i).misto(50.0 + i * 0.1));
+		}
+		vse.add(new K(3, 3, false).id("B").misto(50.2));
+		vse.add(new K(4, 4, true).id("C").misto(50.2));
+		vse.add(new K(4, 4, false).id("D").misto(50.2));
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici().sMaxKandidatu(2), 50, 14, vse);
+		Assert.assertEquals("limit kandidátů drží jen 2", 2, v.pocetKandidatu(VypocetMatice.stitek(2, 2)));
+		final java.util.Map<String, Integer> vOkne = v.pocetVOkne(50.05, 50.45, 13, 15);
+		Assert.assertEquals("A1 až A4 (50,1; 50,2; 50,3; 50,4)", Integer.valueOf(4), vOkne.get(VypocetMatice.stitek(2, 2)));
+		Assert.assertEquals(Integer.valueOf(1), vOkne.get(VypocetMatice.stitek(3, 3)));
+		Assert.assertFalse("splněné políčko nemá počet", vOkne.containsKey(VypocetMatice.stitek(4, 4)));
+		Assert.assertEquals("okno bez keší", Integer.valueOf(0), v.pocetVOkne(10, 11, 10, 11).get(VypocetMatice.stitek(2, 2)));
+		Assert.assertEquals("hranice patří do okna", Integer.valueOf(1), v.pocetVOkne(50.2, 50.2, 14, 14).get(VypocetMatice.stitek(3, 3)));
+		Assert.assertEquals("okno přes poledník 180°", Integer.valueOf(1), VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, Arrays.asList(new K(1, 1, false).id("Z"))).pocetVOkne(49, 51, 170, 20).get(VypocetMatice.stitek(1, 1)));
+	}
+
+	/** Výsledek označený vstupem polohy zachová. */
+	@Test
+	public void polohyPrezijiSVstupem() {
+		final VysledekPolicek v = VypocetMatice.spocti(PravidlaTypu.proMatici(), 50, 14, Arrays.asList(new K(2, 2, false).id("A")));
+		Assert.assertTrue(v.sVstupem(new Object()).maPolohy());
+		Assert.assertEquals(Integer.valueOf(1), v.sVstupem(new Object()).pocetVOkne(49, 51, 13, 15).get(VypocetMatice.stitek(2, 2)));
+		Assert.assertTrue("ručně sestavený výsledek polohy nenese", new VysledekPolicek(81, Arrays.asList("D1/T1"), new ArrayList<KandidatPolicka>()).pocetVOkne(0, 90, 0, 90).isEmpty());
+	}
 }

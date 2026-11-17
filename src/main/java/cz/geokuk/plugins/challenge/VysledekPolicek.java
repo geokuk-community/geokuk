@@ -20,6 +20,8 @@ public final class VysledekPolicek {
 	/** Počty nálezů po políčkách matice v pořadí {@link VypocetMatice#stitek(int, int)}; null, když výsledek počty nenese. */
 	private final int[] nalezu;
 	private final int splnenoNalezu;
+	/** Polohy hledatelných keší chybějících políček pro počet ve výřezu; null, když je výsledek nenese. */
+	private final PolohyHledatelnych polohy;
 
 	VysledekPolicek(final int celkem, final List<String> chybejici, final List<KandidatPolicka> kandidati) {
 		this(celkem, chybejici, kandidati, 0);
@@ -27,7 +29,7 @@ public final class VysledekPolicek {
 
 	/** {@code limitKandidatu}: nejvíc kandidátů na políčko, které výpočet ponechal; 0 = neznámý. */
 	VysledekPolicek(final int celkem, final List<String> chybejici, final List<KandidatPolicka> kandidati, final int limitKandidatu) {
-		this(celkem, chybejici, kandidati, null, limitKandidatu, 1, null);
+		this(celkem, chybejici, kandidati, null, limitKandidatu, 1, null, null);
 	}
 
 	/**
@@ -37,15 +39,16 @@ public final class VysledekPolicek {
 	 *            počet nálezů každého ze 81 políček v pořadí {@link VypocetMatice#stitek(int, int)}; políčko s počtem pod {@code cil} je chybějící
 	 */
 	VysledekPolicek(final int celkem, final List<String> chybejici, final List<KandidatPolicka> kandidati, final int limitKandidatu, final int cil, final int[] nalezu) {
-		this(celkem, chybejici, kandidati, null, limitKandidatu, cil, nalezu);
+		this(celkem, chybejici, kandidati, null, limitKandidatu, cil, nalezu, null);
 	}
 
 	private VysledekPolicek(final int celkem, final List<String> chybejici, final List<KandidatPolicka> kandidati, final Object vstup, final int limitKandidatu, final int cil,
-			final int[] nalezu) {
+			final int[] nalezu, final PolohyHledatelnych polohy) {
 		if (cil < 1) {
 			throw new IllegalArgumentException("Cíl musí být alespoň 1: " + cil);
 		}
 		this.cil = cil;
+		this.polohy = polohy;
 		this.nalezu = nalezu == null ? null : nalezu.clone();
 		int splneno = 0;
 		if (nalezu == null) {
@@ -68,7 +71,34 @@ public final class VysledekPolicek {
 	 * pokračuje v kole; výsledek bez označení je vlastním vstupem.
 	 */
 	VysledekPolicek sVstupem(final Object klic) {
-		return new VysledekPolicek(celkem, stitky, kandidati, Objects.requireNonNull(klic, "klic"), limitKandidatu, cil, nalezu);
+		return new VysledekPolicek(celkem, stitky, kandidati, Objects.requireNonNull(klic, "klic"), limitKandidatu, cil, nalezu, polohy);
+	}
+
+	VysledekPolicek sPolohami(final PolohyHledatelnych nove) {
+		return new VysledekPolicek(celkem, stitky, kandidati, vstup == this ? null : vstup, limitKandidatu, cil, nalezu, nove);
+	}
+
+	/**
+	 * Počet hledatelných keší každého chybějícího políčka v obdélníku (třeba výřezu mapy); štítek → počet. Prázdná mapa, když výsledek polohy nenese. Počítá se jedním průchodem polohami, ne
+	 * daty.
+	 */
+	Map<String, Integer> pocetVOkne(final double minLat, final double maxLat, final double minLon, final double maxLon) {
+		final Map<String, Integer> m = new HashMap<>();
+		if (polohy == null) {
+			return m;
+		}
+		final int[] n = polohy.vOkne(minLat, maxLat, minLon, maxLon);
+		for (final String s : stitky) {
+			final int i = VypocetMatice.indexStitku(s);
+			if (i >= 0) {
+				m.put(s, n[i]);
+			}
+		}
+		return m;
+	}
+
+	boolean maPolohy() {
+		return polohy != null;
 	}
 
 	Object vstup() {

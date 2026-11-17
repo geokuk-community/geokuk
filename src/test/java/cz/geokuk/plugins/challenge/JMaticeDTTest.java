@@ -278,4 +278,21 @@ public class JMaticeDTTest {
 			UIManager.setLookAndFeel(puvodni);
 		}
 	}
+
+	/** Počty ve výřezu mapy nahradí počty kandidátů: přesné číslo, „0↗“ pro políčko jen s kandidáty mimo okno, tooltip s „v okně“. */
+	@Test
+	public void maticeUkazujePocetVOkneAZeroSeSipkou() {
+		final JMaticeDT m = matice();
+		final java.util.Map<String, Integer> vOkne = new java.util.HashMap<>();
+		vOkne.put("D1/T1", 0);
+		vOkne.put("D3/T4", 132);
+		m.nastav(vysledek(), vOkne);
+		Assert.assertEquals("0↗", m.znak("D1/T1"));
+		Assert.assertEquals("132", m.znak("D3/T4"));
+		Assert.assertEquals("políčko s kandidáty mimo okno jde dál vybrat", JMaticeDT.Stav.S_KANDIDATY, m.stav("D1/T1"));
+		Assert.assertEquals("D3/T4 – chybí, 132 kandidátů v okně", m.popis("D3/T4"));
+		Assert.assertEquals("D1/T1 – chybí, žádný kandidát v okně", m.popis("D1/T1"));
+		m.nastav(vysledek());
+		Assert.assertEquals("bez počtů v okně dál počet kandidátů", "3", m.znak("D1/T1"));
+	}
 }

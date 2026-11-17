@@ -578,6 +578,39 @@ public class ChallengeModel extends Model0 {
 		});
 	}
 
+	private static final class PoctyVOkne {
+		final VysledekPolicek vysledek;
+		final Map<String, Integer> pocty;
+
+		PoctyVOkne(final VysledekPolicek vysledek, final Map<String, Integer> pocty) {
+			this.vysledek = vysledek;
+			this.pocty = pocty;
+		}
+	}
+
+	private final Map<String, PoctyVOkne> poctyVOkne = new ConcurrentHashMap<>();
+
+	/** Počty kandidátů ve výřezu mapy po políčkách D/T pro {@code vysledek}; z jiného vlákna. Ohlásí se jen změna a jen pro stále platný výsledek. */
+	public void nastavPoctyVOkne(final Challenge c, final VysledekPolicek vysledek, final Map<String, Integer> pocty) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev()) || vysledkyPolicek.get(klic(c)) != vysledek) {
+				return;
+			}
+			final PoctyVOkne dosavadni = poctyVOkne.get(klic(c));
+			if (dosavadni != null && dosavadni.vysledek == vysledek && dosavadni.pocty.equals(pocty)) {
+				return;
+			}
+			poctyVOkne.put(klic(c), new PoctyVOkne(vysledek, pocty));
+			ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, c);
+		});
+	}
+
+	/** Počty kandidátů ve výřezu mapy po políčkách D/T pro aktuální výsledek; prázdná mapa, dokud nejsou spočítané. */
+	public Map<String, Integer> poctyVOkne(final Challenge c) {
+		final PoctyVOkne p = poctyVOkne.get(klic(c));
+		return p != null && p.vysledek == vysledkyPolicek.get(klic(c)) ? p.pocty : java.util.Collections.<String, Integer> emptyMap();
+	}
+
 	/** Štítek vybraného políčka D/T matice (například „D4/T1“); null = všechna políčka. */
 	public String vybranePolicko(final Challenge c) {
 		return policka.get(klic(c));

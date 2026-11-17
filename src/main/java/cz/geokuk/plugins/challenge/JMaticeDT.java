@@ -33,6 +33,7 @@ public class JMaticeDT extends JComponent {
 
 	private final Set<String> chybejici = new HashSet<>();
 	private final Map<String, Integer> pocty = new HashMap<>();
+	private Map<String, Integer> vOkne = java.util.Collections.emptyMap();
 	private transient VysledekPolicek vysledek;
 	/** Kolikrát splnit každé políčko (násobnost); 1 = jednou. */
 	private int cil = 1;
@@ -74,9 +75,15 @@ public class JMaticeDT extends JComponent {
 
 	/** Data z výsledku: chybějící políčka a počty kandidátů po štítcích. */
 	public void nastav(final VysledekPolicek v) {
+		nastav(v, java.util.Collections.<String, Integer> emptyMap());
+	}
+
+	/** Totéž s počty kandidátů ve výřezu mapy; políčko, které v nich je, ukazuje počet v okně místo počtu spočítaných kandidátů. */
+	public void nastav(final VysledekPolicek v, final java.util.Map<String, Integer> vOkne) {
 		chybejici.clear();
 		pocty.clear();
 		vysledek = v;
+		this.vOkne = vOkne;
 		cil = v == null ? 1 : Math.max(1, v.cil());
 		if (v != null) {
 			chybejici.addAll(v.stitkyChybejicich());
@@ -131,8 +138,12 @@ public class JMaticeDT extends JComponent {
 		return pocty.getOrDefault(stitek, 0) > 0 ? Stav.S_KANDIDATY : Stav.BEZ_KANDIDATU;
 	}
 
-	/** Počet kandidátů jako text: plné políčko „50+“. */
+	/** Počet kandidátů jako text: ve výřezu přesně („0↗“ = jen mimo okno), jinak plné políčko „50+“. */
 	String pocet(final String stitek) {
+		final Integer vokne = vOkne.get(stitek);
+		if (vokne != null) {
+			return vokne == 0 ? "0↗" : String.valueOf(vokne);
+		}
 		final int n = pocty.getOrDefault(stitek, 0);
 		return jePlne(stitek) ? n + "+" : String.valueOf(n);
 	}
@@ -176,8 +187,7 @@ public class JMaticeDT extends JComponent {
 			case BEZ_KANDIDATU:
 				return nalezy + ", nemá kandidáty";
 			default:
-				final int n = pocty.getOrDefault(stitek, 0);
-				return nalezy + ", " + (jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(n) : TextyPopupuPlanovace.kandidatu(n));
+				return nalezy + ", " + kandidati(stitek);
 			}
 		}
 		switch (stav(stitek)) {
@@ -186,9 +196,17 @@ public class JMaticeDT extends JComponent {
 		case BEZ_KANDIDATU:
 			return stitek + " – chybí, nemá kandidáty";
 		default:
-			final int n = pocty.getOrDefault(stitek, 0);
-			return stitek + " – chybí, " + (jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(n) : TextyPopupuPlanovace.kandidatu(n));
+			return stitek + " – chybí, " + kandidati(stitek);
 		}
+	}
+
+	private String kandidati(final String stitek) {
+		final Integer vokne = vOkne.get(stitek);
+		if (vokne != null) {
+			return TextyPopupuPlanovace.kandidatuVOkne(vokne);
+		}
+		final int n = pocty.getOrDefault(stitek, 0);
+		return jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(n) : TextyPopupuPlanovace.kandidatu(n);
 	}
 
 	private void prepni(final int d, final int t) {

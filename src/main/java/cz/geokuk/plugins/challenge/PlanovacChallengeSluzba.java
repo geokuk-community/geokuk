@@ -59,6 +59,7 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 	public void initAfterInject() {
 		planovac = new PlanovacChallenge(challengeModel, new ZdrojovyPoskytovatelOblasti(), refbodyModel::getHc, this::adresarPredpoctu, this::stredMapy, this::vystredit);
 		planovac.veVyrezu = this::jeVeVyrezu;
+		planovac.oknoMapy = this::oknoMapy;
 	}
 
 	public PlanovacChallenge planovac() {
@@ -75,6 +76,7 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 
 	public void onEvent(final cz.geokuk.core.coord.VyrezChangedEvent event) {
 		planovac.stredMapyZmenen();
+		planovac.vyrezZmenen();
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
@@ -112,6 +114,16 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 
 	private Wgs stredMapy() {
 		return vyrezModel.getMoord() == null ? null : vyrezModel.getMoord().getMoustred().toWgs();
+	}
+
+	private double[] oknoMapy() {
+		final cz.geokuk.core.coord.Coord coord = vyrezModel.getMoord();
+		if (coord == null) {
+			return null;
+		}
+		final Wgs jz = coord.getMouJZ().toWgs();
+		final Wgs sv = coord.getMouSV().toWgs();
+		return new double[] { Math.min(jz.lat, sv.lat), Math.max(jz.lat, sv.lat), Math.min(jz.lon, sv.lon), Math.max(jz.lon, sv.lon) };
 	}
 
 	private boolean jeVeVyrezu(final Wgs wgs) {

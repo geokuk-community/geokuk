@@ -187,12 +187,22 @@ final class TextyPopupuPlanovace {
 
 	/** Totéž s násobností: u cíle nad 1 i „1 z 3 nálezů“. */
 	static String vybranePolicko(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati, final int nalezu, final int cil) {
+		return vybranePolicko(stitek, kandidatu, plne, jenKandidati, nalezu, cil, -1);
+	}
+
+	/** Totéž s počtem kandidátů ve výřezu mapy ({@code vOkne} záporné = neznámý). */
+	static String vybranePolicko(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati, final int nalezu, final int cil, final int vOkne) {
 		if (stitek == null) {
 			return "Obtížnost × terén – klikněte na políčko s číslem a na mapě zůstanou jen jeho kandidáti:";
 		}
-		final String pocet = plne ? plnyPocet(kandidatu) : kandidatu(kandidatu);
+		final String pocet = vOkne >= 0 ? kandidatuVOkne(vOkne) + (plne ? ", v seznamu " + plnyPocet(kandidatu) : "") : plne ? plnyPocet(kandidatu) : kandidatu(kandidatu);
 		final String nalezy = cil > 1 ? Math.min(nalezu, cil) + " z " + cil + " nálezů, " : "";
 		return "Vybrané políčko: " + stitek + " – " + nalezy + pocet + (jenKandidati ? "" : ", na mapě všechny keše (F4)");
+	}
+
+	/** Počet kandidátů ve výřezu mapy: „132 kandidátů v okně“, bez nich „žádný kandidát v okně“. */
+	static String kandidatuVOkne(final int n) {
+		return n == 0 ? "žádný kandidát v okně" : kandidatu(n) + " v okně";
 	}
 
 	/** Plné políčko: výpočet ponechává jen nejbližší kandidáty ke středu mapy, může jich být víc. */
@@ -202,6 +212,9 @@ final class TextyPopupuPlanovace {
 
 	/** Legenda pod maticí D/T. */
 	static final String LEGENDA_MATICE = "✓ splněno · číslo = počet kandidátů · – chybí, bez kandidátů";
+
+	/** Legenda matice, když čísla ukazují kandidáty ve výřezu mapy. */
+	static final String LEGENDA_MATICE_V_OKNE = "✓ splněno · číslo = kandidátů v okně · – chybí, bez kandidátů";
 
 	/** Legenda matice s násobností: políčko ukazuje nálezy z cíle, tečka znamená kandidáty. */
 	static String legendaMatice(final int cil) {

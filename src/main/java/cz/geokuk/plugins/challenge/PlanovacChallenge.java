@@ -60,6 +60,9 @@ public final class PlanovacChallenge {
 	Supplier<java.time.LocalDate> dnes = java.time.LocalDate::now;
 	/** Leží poloha ve výřezu mapy? Skok ve směru vychází z vybraného kandidáta jen tehdy, když je vidět. */
 	java.util.function.Predicate<Wgs> veVyrezu = w -> true;
+	/** Obdélník výřezu mapy {minLat, maxLat, minLon, maxLon}; null, když výřez není znám. */
+	volatile Supplier<double[]> oknoMapy = () -> null;
+	private ScheduledFuture<?> naplanovanoOkno;
 
 	/** Střed mapy, podle kterého se naposledy začaly počítat D/T a kalendář (i když výpočet ještě běží); podle něj se rozhoduje, zda je potřeba další přepočet. */
 	private volatile Wgs stredPolicek;
@@ -286,7 +289,9 @@ public final class PlanovacChallenge {
 			}
 			klic = vstupyPolicek.get(c.nazev());
 		}
-		model.nastavVysledekPolicek(c, vysledek.sVstupem(klic), stred.lat, stred.lon);
+		final VysledekPolicek hotovy = vysledek.sVstupem(klic);
+		model.nastavVysledekPolicek(c, hotovy, stred.lat, stred.lon);
+		spoctiPoctyVOkne(c, hotovy);
 		model.nastavStavPredpoctu(c, new StavPredpoctu(StavPredpoctu.Faze.HOTOVO, data.size(), data.size(), null));
 	}
 
@@ -306,6 +311,40 @@ public final class PlanovacChallenge {
 				return;
 			}
 		}
+	}
+
+	/** Výřez mapy se změnil: počty kandidátů D/T ve výřezu se po odkladu přepočítají z uložených poloh, data se neprochází. Volat ve vlákně Swingu. */
+	public synchronized void vyrezZmenen() {
+		if (planovac.isShutdown()) {
+			return;
+		}
+		if (naplanovanoOkno != null) {
+			naplanovanoOkno.cancel(false);
+		}
+		naplanovanoOkno = planovac.schedule(() -> vykon.execute(this::spoctiPoctyVOkne), odklad, TimeUnit.MILLISECONDS);
+	}
+
+	private void spoctiPoctyVOkne() {
+		try {
+			if (!model.jeZapnuto()) {
+				return;
+			}
+			for (final Challenge c : model.aktivni()) {
+				if (c.typ() == Challenge.Typ.DT_MATICE && model.jeVUi(c)) {
+					spoctiPoctyVOkne(c, model.vysledekPolicek(c));
+				}
+			}
+		} catch (final RuntimeException e) {
+			log.warn("Počty kandidátů ve výřezu se nepodařilo spočítat: {}", e.toString());
+		}
+	}
+
+	private void spoctiPoctyVOkne(final Challenge c, final VysledekPolicek vysledek) {
+		final double[] okno = oknoMapy.get();
+		if (okno == null || vysledek == null || !vysledek.maPolohy()) {
+			return;
+		}
+		model.nastavPoctyVOkne(c, vysledek, vysledek.pocetVOkne(okno[0], okno[1], okno[2], okno[3]));
 	}
 
 	private synchronized void naplanujPolicka() {
