@@ -25,11 +25,11 @@ public class JChallengeDialog extends JMyDialog0 {
 
 	private int sirkaSeznamu;
 
-	/** Šířka seznamu podle písma, aby se v něm vešel název každé šablony i s příponami „(aktivní) (šablona)“; nejvýš 700 px. */
+	/** Šířka seznamu podle písma, aby se v něm vešel název každé šablony se značkou a příponou „(šablona)“; nejvýš 700 px. */
 	static int sirkaSeznamu(final java.awt.FontMetrics fm) {
 		int nejvic = 0;
 		for (final Challenge c : Sablony.vse()) {
-			nejvic = Math.max(nejvic, fm.stringWidth(c.nazev() + "  (aktivní)  (šablona)"));
+			nejvic = Math.max(nejvic, fm.stringWidth(PolozkaChallengeRenderer.ZAPNUTA + "  " + c.nazev() + "  (šablona)"));
 		}
 		return Math.max(290, Math.min(700, nejvic + 40));
 	}

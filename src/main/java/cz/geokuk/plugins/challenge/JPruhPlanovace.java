@@ -626,7 +626,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			if (!model.jeVUi(c)) {
 				continue;
 			}
-			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(c.nazev() + (model.jeSablona(c) ? "   (šablona)" : ""));
+			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(c.nazev() + (model.jeSablona(c) ? "  (šablona)" : ""));
 			polozka.setSelected(c.equals(zobrazena));
 			polozka.addActionListener(e -> vyber(c));
 			skupina.add(polozka);
