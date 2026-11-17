@@ -127,6 +127,13 @@ final class TextyPopupuPlanovace {
 		return "domov " + domov;
 	}
 
+	static final String NASOBNOST = "Každé políčko splnit:";
+
+	/** Tooltip šipky ◀ ▶: na kolik se násobnost změní. */
+	static String nasobnostTip(final int n) {
+		return "Každé políčko splnit " + n + "× – matice se přepočítá";
+	}
+
 	/** Důvod, proč se výsledek nepočítá, zalomený na danou šířku; u chybějící středové keše i co s tím. */
 	static String chyba(final String duvod, final int sirka) {
 		final String d = duvod == null || duvod.isEmpty() ? "Výsledek nejde spočítat." : duvod;
