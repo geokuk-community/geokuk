@@ -398,7 +398,8 @@ public class ChallengeAkceTest {
 		model.setVybranaKes(null);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("sektor zrušené keše zůstane výchozím bodem", s, model.vychoziSektorPosunu(c));
-		Assert.assertEquals("a zůstane zvýrazněný", s, VyberZvyrazneni.vyres(model.prehled(), model, 0, -1).sektor);
+		Assert.assertTrue("na mapě se po kliku mimo nezvýrazňuje", VyberZvyrazneni.vyres(model.prehled(), model, 0, -1).jeNic());
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
 		final String dalsi = ChallengeAkce.cilPosunu(model, true);
 		final int ocekavany = nejblizsiSektorSKandidaty(s, true);
 		Assert.assertTrue(dalsi + " má začínat sektorem " + ocekavany, dalsi.startsWith("Další sektor: " + ocekavany + "° "));
@@ -419,10 +420,11 @@ public class ChallengeAkceTest {
 		model.setVybranaKes(new VybranaKes("GC9", 50.0, 14.0, 4, 6));
 		model.setVybranaKes(null);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("políčko zrušené keše zůstane zvýrazněné", "D3/T4", model.zvyraznenePolicko(dt));
+		Assert.assertNull("na mapě se po kliku mimo nezvýrazňuje", model.zvyraznenePolicko(dt));
+		Assert.assertEquals("ale je výchozím bodem posunu", "D3/T4", model.vychoziPolickoPosunu(dt));
 		model.setVybranePolicko(dt, null);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertNull("po zrušení nic", model.zvyraznenePolicko(dt));
+		Assert.assertNull("po zrušení nic", model.vychoziPolickoPosunu(dt));
 	}
 
 	@Test
@@ -444,6 +446,68 @@ public class ChallengeAkceTest {
 		model.setVybranePolicko(dt, null);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertTrue("po zrušení se začíná od prvního", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D1/T1"));
+	}
+
+	@Test
+	public void klikMimoZrusiZvyrazneniVybranehoPolickaAleZapamatujeHoProPosun() throws Exception {
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		kandidati(k, "D1/T1", 2, 1000);
+		kandidati(k, "D3/T4", 2, 2000);
+		kandidati(k, "D5/T5", 2, 3000);
+		final Challenge dt = pripravMatici(k, "D1/T1", "D3/T4", "D5/T5");
+		model.setVybranePolicko(dt, "D3/T4");
+		SwingUtilities.invokeAndWait(() -> {});
+		model.zrusZvyrazneniKlikemMimo();
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNull("zvýraznění pryč", model.zvyraznenePolicko(dt));
+		Assert.assertNull("i vybrané políčko", model.vybranePolicko(dt));
+		Assert.assertTrue(model.maZapamatovanyVyber(dt));
+		Assert.assertTrue("▶ jde od D3/T4", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D5/T5"));
+		model.setVybranePolicko(dt, null);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse("Esc maže i paměť", model.maZapamatovanyVyber(dt));
+		Assert.assertTrue("▶ jde od prvního políčka", ChallengeAkce.cilPosunu(model, true).startsWith("Další políčko: D1/T1"));
+	}
+
+	@Test
+	public void klikMimoZrusiZvyrazneniVybranehoSektoruAleZapamatujeHoProPosun() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		model.setVybranySektor(c, 150);
+		SwingUtilities.invokeAndWait(() -> {});
+		model.zrusZvyrazneniKlikemMimo();
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("výchozí bod zůstal", 150, model.vychoziSektorPosunu(c));
+		Assert.assertEquals(250, model.dalsiSektor(c, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		model.zrusZvyrazneniKlikemMimo();
+		model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("Esc maže i paměť", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertEquals(40, model.dalsiSektor(c, true));
+	}
+
+	@Test
+	public void klikDoPrazdneMapyJakoZmenaPoziceZrusiZvyrazneniAleZapamatujeSektor() throws Exception {
+		final Challenge c = pripravSektorySeStredem();
+		final SledovaniVybraneKese sledovani = new SledovaniVybraneKese();
+		sledovani.inject(model);
+		final cz.geokuk.core.coord.PoziceModel pozice = new cz.geokuk.core.coord.PoziceModel();
+		pozice.inject(new EventFirer() {
+			@Override
+			public void fire(final Event0<?> event) {
+				if (event instanceof cz.geokuk.core.coord.PoziceChangedEvent) {
+					sledovani.onEvent((cz.geokuk.core.coord.PoziceChangedEvent) event);
+				}
+			}
+		});
+		model.setVybranySektor(c, 150);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(150, model.zvyraznenySektor(c));
+		pozice.setPozice(new cz.geokuk.core.coordinates.Wgs(50.2, 14.3));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("klik mimo zvýraznění zrušil", PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("a sektor se pamatuje", 150, model.vychoziSektorPosunu(c));
 	}
 
 	@Test

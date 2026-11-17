@@ -509,8 +509,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		if (c != null && model != null) {
 			if (c.typ() == Challenge.Typ.DT_MATICE) {
 				vybranyStitek = model.zvyraznenePolicko(c);
-			} else if (c.typ() == Challenge.Typ.SEKTORY_360 && model.vychoziSektorPosunu(c) >= 0) {
-				vybranyStitek = model.vychoziSektorPosunu(c) + "°";
+			} else if (c.typ() == Challenge.Typ.SEKTORY_360 && model.zvyraznenySektor(c) >= 0) {
+				vybranyStitek = model.zvyraznenySektor(c) + "°";
 			}
 		}
 		if (vybranyStitek == null) {
@@ -522,7 +522,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			final int n = v == null ? 0 : v.pocetKandidatu(vybranyStitek);
 			tip = tipPolicka(vybranyStitek, n, v != null && v.jePlne(vybranyStitek), jenKandidati);
 		} else {
-			tip = tipSektoru(model.vychoziSektorPosunu(c), model.vysledek(c));
+			tip = tipSektoru(model.zvyraznenySektor(c), model.vysledek(c));
 		}
 		nastavText(policko, vybranyStitek + " ✕");
 		policko.setToolTipText(tip);
@@ -552,7 +552,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 			@Override
 			public boolean isEnabled() {
-				return vybranyStitek != null && !jinyPopupOtevreny.getAsBoolean();
+				final Challenge c = challenge();
+				return (vybranyStitek != null || c != null && model != null && model.maZapamatovanyVyber(c)) && !jinyPopupOtevreny.getAsBoolean();
 			}
 
 			@Override

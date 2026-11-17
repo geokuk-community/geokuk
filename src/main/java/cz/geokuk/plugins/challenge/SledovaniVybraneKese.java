@@ -18,7 +18,11 @@ public class SledovaniVybraneKese {
 
 	public void onEvent(final PoziceChangedEvent event) {
 		if (model != null) {
-			model.setVybranaKes(zWpt(event.poziceq.getWpt()));
+			final VybranaKes kes = zWpt(event.poziceq.getWpt());
+			model.setVybranaKes(kes);
+			if (kes == null) {
+				model.zrusZvyrazneniKlikemMimo();
+			}
 		}
 	}
 

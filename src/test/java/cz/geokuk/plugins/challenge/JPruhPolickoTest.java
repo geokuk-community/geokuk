@@ -321,6 +321,25 @@ public class JPruhPolickoTest {
 	}
 
 	@Test
+	public void escPoKlikuMimoZrusiZapamatovanyVyberAPotomUzNepatriListe() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		Assert.assertFalse("bez výběru a paměti Esc nepatří liště", esc().isEnabled());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		model.zrusZvyrazneniKlikemMimo();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertFalse("zvýraznění zmizelo, tlačítko není", policko() != null && policko().isVisible());
+		Assert.assertTrue(model.maZapamatovanyVyber(c));
+		Assert.assertTrue("Esc zruší zapamatovaný výchozí bod", esc().isEnabled());
+		esc().actionPerformed(new java.awt.event.ActionEvent(pruh, java.awt.event.ActionEvent.ACTION_PERFORMED, "esc"));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse("paměť je pryč", model.maZapamatovanyVyber(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse("a Esc liště zase nepatří", esc().isEnabled());
+	}
+
+	@Test
 	public void escZrusiVyberJenBezJinehoPopupu() throws Exception {
 		priprav(1280);
 		Assert.assertFalse("bez výběru Esc nepatří liště", esc().isEnabled());
