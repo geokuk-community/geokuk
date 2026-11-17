@@ -1,7 +1,10 @@
 package cz.geokuk.plugins.mapy;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Supplier;
 
 import cz.geokuk.core.program.FPref;
 import cz.geokuk.core.program.PrehledovaMapa;
@@ -10,6 +13,14 @@ import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 
 public class MapyModel extends Model0 {
+
+	/** Jména map verze 5.2, které mají obdobu mezi vestavěnými mapami; mapy Mapy.cz se jmenují stejně jako vestavěné. */
+	private static final Map<String, EKaType> PODKLADY_5_2 = new HashMap<>();
+	static {
+		PODKLADY_5_2.put("osm", EKaType.OPEN_STREET);
+		PODKLADY_5_2.put("cuzksat", EKaType.CUZK_ORTO);
+		PODKLADY_5_2.put("cuzktop", EKaType.CUZK_ZTM);
+	}
 
 	private EKaType podklad;
 	private boolean prvniSpusteni;
@@ -40,8 +51,19 @@ public class MapyModel extends Model0 {
 	protected void initAndFire() {
 		final String ulozeny = currPrefe().node(FPref.NODE_KTERE_MAPY_node).get(FPref.VALUE_MAPOVE_PODKLADY_value, null);
 		prvniSpusteni = ulozeny == null;
-		final EKaType podklad = ulozeny == null ? vychoziPodklad(KachleModel.offlineMapyDir(currPrefe()).getEffectiveFile()) : EKaType.podleJmena(ulozeny);
-		setPodklad(podklad == null ? EKaType.TURIST_M : podklad);
+		setPodklad(podkladPriStartu(ulozeny, () -> KachleModel.offlineMapyDir(currPrefe()).getEffectiveFile()));
+	}
+
+	/** Podklad při startu: uložený, jinak (nová instalace nebo mapa, kterou tato verze nezná) výchozí. */
+	static EKaType podkladPriStartu(final String ulozeny, final Supplier<File> slozkaOfflineMap) {
+		final EKaType podklad = ulozeny == null ? null : ulozenyPodklad(ulozeny);
+		return podklad != null ? podklad : vychoziPodklad(slozkaOfflineMap.get());
+	}
+
+	/** Uložený podklad podle jména, i jména mapy ze starší verze; null, když takový podklad není. */
+	static EKaType ulozenyPodklad(final String ulozeny) {
+		final EKaType podklad = EKaType.podleJmena(ulozeny);
+		return podklad != null ? podklad : PODKLADY_5_2.get(ulozeny);
 	}
 
 	/** Podklad nové instalace: offline mapa, když je ve složce podrobná mapa (ne jen přehledová mapa světa), jinak ortofoto ČÚZK. */
