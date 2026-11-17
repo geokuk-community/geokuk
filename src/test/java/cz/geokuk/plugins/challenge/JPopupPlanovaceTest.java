@@ -199,7 +199,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.nejiste.isVisible());
 		Assert.assertTrue(o.dalsi.isEnabled());
 		Assert.assertEquals("▶ Další sektor", o.dalsi.getText());
-		Assert.assertEquals(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360), o.napoveda.getText());
+		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360)));
 		Assert.assertFalse("nadpis je jen název challenge", o.nadpis.getText().startsWith("Challenge "));
 		Assert.assertEquals("Typ: 360°    Pravidla: " + TextyPopupuPlanovace.pravidla(aktivni().zdroj()), o.typ.getText());
 		Assert.assertTrue(o.typ.getText(), o.typ.getText().endsWith("Pravidla: Project-GC") || o.typ.getText().endsWith("Pravidla: Stator"));
@@ -680,6 +680,63 @@ public class JPopupPlanovaceTest {
 		model.nahlasVyberVeVyrezu(3);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertFalse(o.mimoVyrez.isVisible());
+	}
+
+	/** Popup s nápovědou není širší než bez ní (nezávisle na písmu platformy), jen o malou rezervu. */
+	private static void assertNapovedaNerozsiruje(final String co, final JPopupPlanovace.Obsah o) {
+		final int s = o.getPreferredSize().width;
+		o.napoveda.setVisible(false);
+		o.invalidate();
+		final int bez = o.getPreferredSize().width;
+		o.napoveda.setVisible(true);
+		o.invalidate();
+		Assert.assertTrue(co + ": popup " + s + " px, bez nápovědy " + bez + " px", s <= bez + 30);
+		Assert.assertTrue(co + ": nápověda " + o.napoveda.getPreferredSize() + " je užší než popup " + s, o.napoveda.getPreferredSize().width <= s);
+	}
+
+	/** Nápověda je zalomená na pevnou šířku a popup nerozšiřuje; D/T má pod maticí stejná tlačítka jako 360°. */
+	@Test
+	public void napovedaJeZalomenaAPopupNerozsirujeADtMaStejnaTlacitka() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
+		assertNapovedaNerozsiruje("360°", o);
+		Assert.assertTrue(o.dalsi.isVisible() && o.kandidati.isVisible());
+		final Challenge dt = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4"), k, 50), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		assertNapovedaNerozsiruje("D/T", o);
+		Assert.assertTrue("D/T má Další políčko i Jen kandidáti", o.dalsi.isVisible() && o.kandidati.isVisible());
+		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains("F4"));
+	}
+
+	@Test
+	public void maticeZvyraznujePolickoVybraneKese() throws Exception {
+		priprav();
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		final Challenge dt = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
+		k.add(new KandidatPolicka("GC2", 50, 14, "D5/T5", "D5/T5", null));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4", "D5/T5"), k, 50), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNull("bez výběru nic", o.matice.vybrane());
+		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(new VybranaKes("GC9", 50.0, 14.0, 4, 6)));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("políčko vybrané keše je zvýrazněné", "D3/T4", o.matice.vybrane());
+		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(new VybranaKes("GC8", 50.0, 14.0, 8, 8)));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("zvýraznění se přesune", "D5/T5", o.matice.vybrane());
+		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(null));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("po kliku mimo zůstává poslední", "D5/T5", o.matice.vybrane());
+		SwingUtilities.invokeAndWait(() -> model.setVybranePolicko(dt, null));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNull("Esc a ✕ čistí", o.matice.vybrane());
 	}
 
 	@Test
