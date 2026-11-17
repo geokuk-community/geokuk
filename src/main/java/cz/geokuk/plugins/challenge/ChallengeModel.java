@@ -416,6 +416,24 @@ public class ChallengeModel extends Model0 {
 		return c;
 	}
 
+	/**
+	 * Nastaví, kolikrát se má splnit každé políčko matice D/T: u vlastní challenge změní definici, u šablony uloží nastavení uživatele (šablona v kódu zůstává). Dosavadní výsledek a výběr
+	 * se nemažou, stará matice zůstane do nového přepočtu; výsledek spočítaný pro jinou násobnost se zahodí.
+	 */
+	public Challenge nastavOpakovani(final Challenge c, final int kolikrat) {
+		if (c.typ() != Challenge.Typ.DT_MATICE) {
+			throw new ChallengeChyba("Opakování jde nastavit jen u matice D/T.");
+		}
+		final Challenge dosavadni = seznam.najdi(c.nazev());
+		if (dosavadni != null && dosavadni.opakovani() == kolikrat) {
+			return dosavadni;
+		}
+		final Challenge nova = seznam.jeSablona(c.nazev()) ? seznam.nastavNasobnostSablony(c.nazev(), kolikrat) : seznam.ulozVlastni(c.sOpakovanim(kolikrat));
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, nova);
+		return nova;
+	}
+
 	/** Vlastní kopie šablony k úpravě. */
 	public Challenge kopieSablony(final Challenge sablona) {
 		final Challenge c = seznam.kopieSablony(sablona.nazev());

@@ -72,6 +72,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				zmenaDomova.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "zmenitDomov"));
 			}
 		});
+		obsah.nasobnostMin.addActionListener(e -> zmenNasobnost(-1));
+		obsah.nasobnostPlus.addActionListener(e -> zmenNasobnost(1));
 		obsah.nastaveni.addActionListener(e -> {
 			if (naNastaveni != null) {
 				zavri();
@@ -265,6 +267,39 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		return RozmisteniPrekryvu.popupPlanovace(mapa, JPruhPlanovace.oblastOdznaku(mapa.width, prekazky), pozadovana, vse);
 	}
 
+	/** Prodleva, po které se násobnost uloží; rychlé klikání na ◀ ▶ dá jedno uložení a jeden přepočet. */
+	static final int ODKLAD_NASOBNOSTI_MS = 300;
+	private final transient javax.swing.Timer casovacNasobnosti = new javax.swing.Timer(ODKLAD_NASOBNOSTI_MS, e -> ulozNasobnost());
+	private int cekajiciNasobnost;
+
+	{
+		casovacNasobnosti.setRepeats(false);
+	}
+
+	/** ◀ ▶ u řádku „Každé políčko splnit“: hodnota se ukáže hned, uloží se po krátké prodlevě. */
+	private void zmenNasobnost(final int delta) {
+		final Challenge c = challenge();
+		if (c == null || model == null || c.typ() != Challenge.Typ.DT_MATICE) {
+			return;
+		}
+		final int zaklad = casovacNasobnosti.isRunning() ? cekajiciNasobnost : c.opakovani();
+		cekajiciNasobnost = Math.max(1, Math.min(Challenge.NEJVETSI_OPAKOVANI, zaklad + delta));
+		obsah.nastavNasobnost(cekajiciNasobnost);
+		casovacNasobnosti.restart();
+	}
+
+	private void ulozNasobnost() {
+		final Challenge c = challenge();
+		if (c == null || model == null || c.typ() != Challenge.Typ.DT_MATICE) {
+			return;
+		}
+		try {
+			model.nastavOpakovani(c, cekajiciNasobnost);
+		} catch (final ChallengeChyba e) {
+			obnov();
+		}
+	}
+
 	/** Stejná challenge jako v pruhu. */
 	private Challenge challenge() {
 		return model == null ? null : model.zobrazena();
@@ -284,6 +319,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
 			} else {
 				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenePolicko(c), model.poctyVOkne(c));
+				if (!casovacNasobnosti.isRunning()) {
+					obsah.nastavNasobnost(c.opakovani());
+				}
 			}
 		}
 		revalidate();
@@ -348,6 +386,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final cz.geokuk.util.gui.JZkracenyLabel nadpis = new cz.geokuk.util.gui.JZkracenyLabel(NEJVETSI_SIRKA_NADPISU);
 		final JButton nastaveni = new JButton("Nastavení plánovače…");
 		final JLabel typ = new JLabel();
+		/** Řádek „Každé políčko splnit: ◀ N× ▶“ jen u matice D/T. */
+		final JButton nasobnostMin = new JButton("◀");
+		final JButton nasobnostPlus = new JButton("▶");
+		final JLabel nasobnostHodnota = new JLabel("1×");
+		private final JPanel radekNasobnosti = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		final JLabel stred = new JLabel();
 		/** Odkaz u středu „domov“: uloží zvolenou pozici na mapě jako domov. */
 		final JButton zmenitDomov = new JButton("Změnit domov…");
@@ -466,7 +509,16 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			radekStredu.add(Box.createHorizontalStrut(8));
 			radekStredu.add(zmenitDomov);
 			nastavOdkaz(zmenitDomov);
-			for (final JComponent c : new JComponent[] { typ, radekStredu, souhrn, postup }) {
+			radekNasobnosti.setOpaque(false);
+			radekNasobnosti.add(new JLabel(TextyPopupuPlanovace.NASOBNOST));
+			radekNasobnosti.add(nasobnostMin);
+			radekNasobnosti.add(nasobnostHodnota);
+			radekNasobnosti.add(nasobnostPlus);
+			for (final JButton b : new JButton[] { nasobnostMin, nasobnostPlus }) {
+				b.setFocusable(false);
+				b.setMargin(new Insets(0, 4, 0, 4));
+			}
+			for (final JComponent c : new JComponent[] { typ, radekNasobnosti, radekStredu, souhrn, postup }) {
 				g.gridy++;
 				telo.add(c, g);
 			}
@@ -639,6 +691,15 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			return c != null && c.getRed() * 299 + c.getGreen() * 587 + c.getBlue() * 114 < 128_000;
 		}
 
+		/** Řádek násobnosti ukáže počet; u hranic 1 a 9 je příslušná šipka nedostupná. */
+		void nastavNasobnost(final int n) {
+			nasobnostHodnota.setText(n + "×");
+			nasobnostMin.setEnabled(n > 1);
+			nasobnostPlus.setEnabled(n < Challenge.NEJVETSI_OPAKOVANI);
+			nasobnostMin.setToolTipText(n > 1 ? TextyPopupuPlanovace.nasobnostTip(n - 1) : null);
+			nasobnostPlus.setToolTipText(n < Challenge.NEJVETSI_OPAKOVANI ? TextyPopupuPlanovace.nasobnostTip(n + 1) : null);
+		}
+
 		/** Společná hlavička; vrátí false, když výsledek ještě není a ukáže se jen průběh. */
 		private boolean zahlavi(final Challenge c, final boolean maVysledek, final StavPredpoctu stav, final boolean jenKandidati) {
 			nadpis.setPlnyText(TextyPopupuPlanovace.nadpis(c));
@@ -646,6 +707,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			final boolean doma = c.stred().druh() == Challenge.DruhStredu.DOMOV;
 			stred.setText("Střed: " + (doma ? TextyPopupuPlanovace.stredDomov(domov.get()) : TextyPopupuPlanovace.stred(c.stred())));
 			zmenitDomov.setVisible(doma);
+			radekNasobnosti.setVisible(c.typ() == Challenge.Typ.DT_MATICE);
 			stred.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
 			radekStredu.setVisible(stred.isVisible());
 			nadpisSeznamu.setText(TextyPopupuPlanovace.nadpisSeznamu(c.typ()));

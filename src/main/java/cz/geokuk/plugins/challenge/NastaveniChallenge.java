@@ -18,6 +18,8 @@ public final class NastaveniChallenge {
 
 	private static final String FORMAT = "1";
 	private static final String PREDPONA = "definice.";
+	/** Uživatelova násobnost šablony: {@code opakovani.<název šablony malými písmeny>} = 2 až 9; bez klíče platí násobnost šablony. */
+	private static final String PREDPONA_NASOBNOSTI = "opakovani.";
 
 	/** Načtený stav. */
 	public static final class Nacteno {
@@ -68,8 +70,23 @@ public final class NastaveniChallenge {
 			aktivni.append(c.nazev());
 		}
 		ChallengeSeznam.zkontrolujUlozitelne("aktivni", aktivni.toString());
+		final Map<String, String> nasobnosti = new java.util.LinkedHashMap<>();
+		for (final Map.Entry<String, Integer> e : seznam.nasobnostiSablon().entrySet()) {
+			nasobnosti.put(PREDPONA_NASOBNOSTI + e.getKey(), Integer.toString(e.getValue()));
+		}
+		for (final Map.Entry<String, String> e : nasobnosti.entrySet()) {
+			ChallengeSeznam.zkontrolujUlozitelne(e.getKey(), e.getValue());
+		}
 		for (final Map.Entry<String, String> e : zapis.entrySet()) {
 			uloziste.put(e.getKey(), e.getValue());
+		}
+		for (final Map.Entry<String, String> e : nasobnosti.entrySet()) {
+			uloziste.put(e.getKey(), e.getValue());
+		}
+		for (final String k : new ArrayList<>(uloziste.klice())) {
+			if (k.startsWith(PREDPONA_NASOBNOSTI) && !nasobnosti.containsKey(k)) {
+				uloziste.remove(k);
+			}
 		}
 		uloziste.put("verze", novaVerze);
 		uloziste.put("format", FORMAT);
@@ -165,6 +182,18 @@ public final class NastaveniChallenge {
 				log.warn("Uložená definice challenge č. {} se přeskočí: {}", e.getKey(), ex.getMessage());
 				preskoceno++;
 				neznamaHodnota |= ex instanceof NeznamaHodnota;
+			}
+		}
+		for (final String k : uloziste.klice()) {
+			if (!k.startsWith(PREDPONA_NASOBNOSTI)) {
+				continue;
+			}
+			final String hodnota = uloziste.get(k);
+			try {
+				final int n = hodnota == null ? 1 : Integer.parseInt(hodnota.trim());
+				seznam.nastavNasobnostSablony(k.substring(PREDPONA_NASOBNOSTI.length()), n);
+			} catch (final NumberFormatException | ChallengeChyba ex) {
+				log.warn("Uložená násobnost šablony „{}“ se ignoruje: {}", k, hodnota);
 			}
 		}
 		final String aktivni = uloziste.get("aktivni");

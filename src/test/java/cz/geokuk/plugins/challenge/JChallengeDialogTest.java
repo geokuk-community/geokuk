@@ -355,8 +355,15 @@ public class JChallengeDialogTest {
 			Assert.assertFalse("u 360° řádek není", dialog.opakovani.getParent().isVisible());
 			seznam().setSelectedValue(sablona, true);
 			Assert.assertTrue(dialog.opakovani.getParent().isVisible());
-			Assert.assertFalse("šablona jen ke čtení", dialog.opakovani.isEnabled());
-			Assert.assertEquals("šablona: 1×", dialog.popisOpakovani.getText());
+			Assert.assertTrue("násobnost šablony je nastavení uživatele", dialog.opakovani.isEnabled());
+			Assert.assertEquals("vaše nastavení, šablona má 1×", dialog.popisOpakovani.getText());
+			dialog.opakovani.setValue(2);
+			Assert.assertEquals("změna šablony platí hned", 2, seznam().getSelectedValue().opakovani());
+			Assert.assertEquals("šablona se nepřejmenuje ani nestane vlastní", sablona.nazev(), seznam().getSelectedValue().nazev());
+			Assert.assertEquals(2, dialog.opakovani.getValue());
+			dialog.opakovani.setValue(1);
+			Assert.assertEquals(1, seznam().getSelectedValue().opakovani());
+			Assert.assertFalse("ostatní pole šablony zůstávají jen ke čtení", pole(0).isEnabled());
 			tlacitko("Vytvořit kopii…").doClick();
 			final Challenge kopie = seznam().getSelectedValue();
 			Assert.assertTrue(dialog.opakovani.isEnabled());

@@ -1015,4 +1015,50 @@ public class JPopupPlanovaceTest {
 		final int vyskaDT = popup.obsah.getPreferredSize().height;
 		Assert.assertTrue("360° " + vyska360 + " px, D/T " + vyskaDT + " px", vyska360 >= vyskaDT);
 	}
+
+	/** Řádek „Každé políčko splnit: ◀ N× ▶“ je jen u matice D/T; hodnota se ukáže hned, uloží se jednou po prodlevě, na hranicích 1 a 9 je šipka nedostupná. */
+	@Test
+	public void nasobnostVPopupuMeniDefiniciSOdkladem() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertTrue(o.nasobnostMin.isShowing() || o.nasobnostMin.getParent().isVisible());
+		Assert.assertEquals("1×", o.nasobnostHodnota.getText());
+		Assert.assertFalse("pod 1 to nejde", o.nasobnostMin.isEnabled());
+		final int[] ulozeno = { 0 };
+		model.inject(new EventFirer() {
+			@Override
+			public void fire(final Event0<?> event) {
+				if (((ChallengeZmenenyEvent) event).druh() == ChallengeZmenenyEvent.Druh.DEFINICE) {
+					ulozeno[0]++;
+				}
+				popup.onEvent((ChallengeZmenenyEvent) event);
+			}
+		});
+		o.nasobnostPlus.doClick();
+		o.nasobnostPlus.doClick();
+		Assert.assertEquals("hodnota se ukáže hned", "3×", o.nasobnostHodnota.getText());
+		Assert.assertEquals("uložení až po prodlevě", 1, aktivni().opakovani());
+		Assert.assertEquals(0, ulozeno[0]);
+		Thread.sleep(JPopupPlanovace.ODKLAD_NASOBNOSTI_MS + 400);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(3, aktivni().opakovani());
+		Assert.assertEquals("rychlé klikání dá jedno uložení", 1, ulozeno[0]);
+		Assert.assertEquals("3×", o.nasobnostHodnota.getText());
+		for (int i = 0; i < 10; i++) {
+			o.nasobnostPlus.doClick();
+		}
+		Assert.assertEquals("nejvýš " + Challenge.NEJVETSI_OPAKOVANI, Challenge.NEJVETSI_OPAKOVANI + "×", o.nasobnostHodnota.getText());
+		Assert.assertFalse(o.nasobnostPlus.isEnabled());
+		Assert.assertTrue(o.nasobnostMin.isEnabled());
+		Assert.assertEquals(c.nazev(), aktivni().nazev());
+	}
+
+	@Test
+	public void nasobnostSeUSektoruNeukazuje() throws Exception {
+		priprav();
+		popup.prepni();
+		Assert.assertFalse(popup.obsah.nasobnostMin.getParent().isVisible());
+	}
 }

@@ -154,6 +154,7 @@ public class JChallengeDialog extends JMyDialog0 {
 		kopieSablony.addActionListener(e -> vytvorKopii());
 		smazat.addActionListener(e -> smaz());
 		uloz.addActionListener(e -> ulozZmeny());
+		opakovani.addChangeListener(e -> nasobnostSablony());
 		stredDomov.addActionListener(e -> povolStred());
 		stredSouradnice.addActionListener(e -> povolStred());
 		stredListing.addActionListener(e -> povolStred());
@@ -218,6 +219,29 @@ public class JChallengeDialog extends JMyDialog0 {
 		return c != null && model != null && !model.jeVUi(c);
 	}
 
+	/** Násobnost šablony matice D/T je nastavení uživatele a platí hned; šablona sama se nemění. */
+	private void nasobnostSablony() {
+		final Challenge c = seznam.getSelectedValue();
+		if (plnim || c == null || model == null || !jeSablona(c) || c.typ() != Challenge.Typ.DT_MATICE) {
+			return;
+		}
+		try {
+			model.nastavOpakovani(c, (Integer) opakovani.getValue());
+		} catch (final ChallengeChyba ex) {
+			chyba.setText(ex.getMessage());
+		}
+	}
+
+	/** Kolikrát se má splnit políčko podle šablony v kódu. */
+	private static int nasobnostSablony(final Challenge c) {
+		for (final Challenge s : Sablony.vse()) {
+			if (s.nazev().equalsIgnoreCase(c.nazev())) {
+				return s.opakovani();
+			}
+		}
+		return 1;
+	}
+
 	private boolean jeSablona(final Challenge c) {
 		return c != null && model != null && model.jeSablona(c);
 	}
@@ -256,6 +280,7 @@ public class JChallengeDialog extends JMyDialog0 {
 			for (final JComponent k : new JComponent[] { nazev, pravidla, stredDomov, stredSouradnice, stredListing, oblast, nalezy, opakovani, uloz }) {
 				k.setEnabled(uprava);
 			}
+			opakovani.setEnabled(uprava || c != null && jeSablona(c) && c.typ() == Challenge.Typ.DT_MATICE);
 			aktivni.setEnabled(c != null && (!jeNedostupny(c) || model.jeAktivni(c)));
 			kopie.setEnabled(c != null && !jeNedostupny(c));
 			smazat.setEnabled(c != null && !jeSablona(c));
@@ -273,7 +298,7 @@ public class JChallengeDialog extends JMyDialog0 {
 				k.setVisible(c.typ() == Challenge.Typ.DT_MATICE);
 			}
 			opakovani.setValue(c.opakovani());
-			popisOpakovani.setText(jeSablona(c) ? "šablona: " + c.opakovani() + "×" : "každé políčko 1–" + Challenge.NEJVETSI_OPAKOVANI + "×");
+			popisOpakovani.setText(jeSablona(c) ? "vaše nastavení, šablona má " + nasobnostSablony(c) + "×" : "každé políčko 1–" + Challenge.NEJVETSI_OPAKOVANI + "×");
 			aktivni.setSelected(model != null && model.jeAktivni(c));
 			nazev.setText(c.nazev());
 			typ.setText(FormularDefinice.nazevTypu(c.typ()));
