@@ -735,13 +735,13 @@ public class JPlanovacVrstvyTest {
 		final Coord c = mapa(50.005, 14.0, 14);
 		final java.awt.Point s = PixelyMapy.transform(c, PixelyMapy.mou(50.0, 14.0), new java.awt.Point());
 		nakresli(nad, c);
-		final int obdelniku = nad.obdelnikyStitku().size();
 		Assert.assertEquals("kandidáti jsou vidět", 1, nad.posledniZnacek() > 0 ? 1 : 0);
+		Assert.assertFalse("štítek kandidáta je vidět", nad.obdelnikyStitkuKandidatu().isEmpty());
 		nad.onEvent(new cz.geokuk.plugins.kesoid.mvc.KesoidOnoffEvent(false));
 		final BufferedImage img = nakresli(nad, c);
 		Assert.assertEquals("žádné kroužky kandidátů", 0, nad.posledniZnacek());
 		final int pocetSkryte = nad.obdelnikyStitku().size();
-		Assert.assertTrue("kandidáti odpadli: " + pocetSkryte + " < " + obdelniku, pocetSkryte < obdelniku);
+		Assert.assertTrue("štítky kandidátů odpadly", nad.obdelnikyStitkuKandidatu().isEmpty());
 		model.nastavVybranyKandidat(model.zobrazena(), null);
 		SwingUtilities.invokeAndWait(() -> {});
 		nakresli(nad, c);

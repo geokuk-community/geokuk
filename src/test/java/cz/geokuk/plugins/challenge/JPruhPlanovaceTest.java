@@ -255,7 +255,7 @@ public class JPruhPlanovaceTest {
 		model.setZapnuto(true);
 		final javax.swing.AbstractButton odznak = najdiOdznak();
 		Assert.assertEquals("bez výsledku", "Chybějící políčka D/T – počítá se", odznak.getToolTipText());
-		Assert.assertEquals("chybí … ▾", odznak.getText());
+		Assert.assertEquals("chybí – ▾", odznak.getText());
 		model.aktivuj(Sablony.cesko360());
 		model.setZobrazena(Sablony.cesko360());
 		Assert.assertEquals("Chybějící sektory – počítá se", odznak.getToolTipText());
@@ -285,6 +285,66 @@ public class JPruhPlanovaceTest {
 		} finally {
 			okno.dispose();
 		}
+	}
+
+	@Test
+	public void pismoOdznakuSeNemeniSePoctemChybejicich() throws Exception {
+		priprav();
+		model.aktivuj(Sablony.cesko360());
+		model.setZapnuto(true);
+		final javax.swing.AbstractButton odznak = najdiOdznak();
+		final java.awt.Font puvodni = javax.swing.UIManager.getFont("Button.font");
+		try {
+			for (float velikost = 9.5f; velikost <= 16f; velikost += 0.5f) {
+				javax.swing.UIManager.put("Button.font", puvodni.deriveFont(velikost));
+				float prvni = -1;
+				for (final int n : new int[] { -1, 5, 57, 360, 1234 }) {
+					if (n < 0) {
+						model.nastavStavPredpoctu(Sablony.cesko360(), StavPredpoctu.NEBEZI);
+					} else {
+						final int[] chybi = new int[Math.min(n, 360)];
+						for (int i = 0; i < chybi.length; i++) {
+							chybi[i] = i;
+						}
+						model.nastavVysledek(Sablony.cesko360(), TextyPopupuPlanovaceTest.vysledek(chybi, new int[0], new double[][] {}));
+					}
+					javax.swing.SwingUtilities.invokeAndWait(() -> {});
+					pruh.doLayout();
+					if (prvni < 0) {
+						prvni = odznak.getFont().getSize2D();
+					}
+					Assert.assertEquals("písmo tlačítka " + velikost + " pt, odznak '" + odznak.getText() + "'", prvni, odznak.getFont().getSize2D(), 0.01f);
+				}
+			}
+		} finally {
+			javax.swing.UIManager.put("Button.font", puvodni);
+		}
+	}
+
+	@Test
+	public void behemVypoctuJeCisloZasedleAUNoveChallengePomlcka() throws Exception {
+		priprav();
+		final Challenge a = Sablony.cesko360();
+		model.aktivuj(a);
+		model.setZapnuto(true);
+		model.nastavVysledek(a, TextyPopupuPlanovaceTest.vysledek(new int[] { 10, 20 }, new int[0], new double[][] {}));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		final javax.swing.AbstractButton odznak = najdiOdznak();
+		Assert.assertEquals("chybí 2 ▾", odznak.getText());
+		final java.awt.Color normalni = odznak.getForeground();
+		model.nastavStavPredpoctu(a, StavPredpoctu.NEBEZI);
+		model.ulozVlastni(new Challenge("Jiná", Challenge.Typ.SEKTORY_360, Challenge.Stred.souradnice(50, 14), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertTrue(odznak.getText(), odznak.getText().startsWith("chybí "));
+		final Challenge b = model.ulozVlastni(new Challenge("B", Challenge.Typ.SEKTORY_360, Challenge.Stred.souradnice(51, 14), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(b);
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("nová challenge, výsledek se počítá", "chybí – ▾", odznak.getText());
+		Assert.assertNotEquals("zašedlé", normalni, odznak.getForeground());
+		model.nastavVysledek(b, TextyPopupuPlanovaceTest.vysledek(new int[] { 7 }, new int[0], new double[][] {}));
+		javax.swing.SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("chybí 1 ▾", odznak.getText());
+		Assert.assertEquals(normalni, odznak.getForeground());
 	}
 
 	@Test
