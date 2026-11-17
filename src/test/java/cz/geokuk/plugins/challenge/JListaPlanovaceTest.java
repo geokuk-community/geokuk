@@ -268,4 +268,18 @@ public class JListaPlanovaceTest {
 			UIManager.setLookAndFeel(puvodni);
 		}
 	}
+
+	/** Šablona má v menu výběru příponu se dvěma mezerami, stejně jako v seznamu dialogu. */
+	@Test
+	public void sablonaMaVMenuVyberuPriponuSeDvemaMezerami() {
+		priprav(1280);
+		boolean nalezeno = false;
+		for (final JRadioButtonMenuItem p : challenge(pruh.sestavVyber())) {
+			if (p.getText().startsWith(Sablony.cesko360().nazev())) {
+				Assert.assertEquals(Sablony.cesko360().nazev() + "  (šablona)", p.getText());
+				nalezeno = true;
+			}
+		}
+		Assert.assertTrue(nalezeno);
+	}
 }

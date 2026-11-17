@@ -37,11 +37,15 @@ public class PolozkaChallengeRendererTest {
 	}
 
 	private static JLabel polozka(final ChallengeModel m, final Challenge c, final int sirkaSeznamu) {
+		return polozka(m, c, sirkaSeznamu, false);
+	}
+
+	private static JLabel polozka(final ChallengeModel m, final Challenge c, final int sirkaSeznamu, final boolean vybrana) {
 		final DefaultListModel<Challenge> lm = new DefaultListModel<>();
 		lm.addElement(c);
 		final JList<Challenge> l = new JList<>(lm);
 		l.setSize(sirkaSeznamu, 300);
-		return (JLabel) new PolozkaChallengeRenderer(() -> m).getListCellRendererComponent(l, c, 0, false, false);
+		return (JLabel) new PolozkaChallengeRenderer(() -> m).getListCellRendererComponent(l, c, 0, vybrana, false);
 	}
 
 	@Test
@@ -150,5 +154,51 @@ public class PolozkaChallengeRendererTest {
 		final ChallengeModel m = model();
 		final Challenge kal = m.ulozVlastni(new Challenge("Kal", Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 		Assert.assertTrue(PolozkaChallengeRenderer.plnyText(polozka(m, kal, 400)), PolozkaChallengeRenderer.plnyText(polozka(m, kal, 400)).endsWith("(nedostupná)"));
+	}
+
+	/** Na vybrané řádce má přípona barvu výběru, ne šedou, která by na pozadí výběru splynula. */
+	@Test
+	public void priponaVybraneRadkyMaBarvuVyberu() {
+		final Object puvodni = UIManager.get("Label.disabledForeground");
+		try {
+			UIManager.put("Label.disabledForeground", java.awt.Color.RED);
+			final ChallengeModel m = model();
+			final JLabel s = polozka(m, Sablony.cesko360(), 400, true);
+			s.setSize(400, 24);
+			final BufferedImage obraz = new BufferedImage(400, 24, BufferedImage.TYPE_INT_ARGB);
+			final Graphics2D g = obraz.createGraphics();
+			s.paint(g);
+			final FontMetrics fm = g.getFontMetrics(s.getFont());
+			g.dispose();
+			final int hranice = s.getInsets().left + fm.stringWidth(s.getText());
+			final int pozadi = s.getBackground().getRGB();
+			int cervena = 0;
+			int jina = 0;
+			for (int y = 0; y < 24; y++) {
+				for (int x = hranice; x < 400; x++) {
+					final int rgb = obraz.getRGB(x, y);
+					if (((rgb >> 16) & 0xff) > 150 && ((rgb >> 8) & 0xff) < 100 && (rgb & 0xff) < 100) {
+						cervena++;
+					} else if (rgb != pozadi) {
+						jina++;
+					}
+				}
+			}
+			Assert.assertEquals("přípona vybrané řádky není šedá", 0, cervena);
+			Assert.assertTrue("přípona je vykreslená barvou výběru", jina > 10);
+		} finally {
+			UIManager.put("Label.disabledForeground", puvodni);
+		}
+	}
+
+	/** Když je šablona zároveň nedostupná, je „(šablona)“ před „(nedostupná)“. */
+	@Test
+	public void priponySablonaPredNedostupna() {
+		final ChallengeModel m = model();
+		final Challenge nedostupnaSablona = new Challenge(Sablony.maticeDT().nazev(), Challenge.Typ.KALENDAR, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC);
+		Assert.assertTrue(m.jeSablona(nedostupnaSablona));
+		Assert.assertFalse(m.jeVUi(nedostupnaSablona));
+		final String text = PolozkaChallengeRenderer.plnyText(polozka(m, nedostupnaSablona, 600));
+		Assert.assertTrue(text, text.endsWith("  (šablona)  (nedostupná)"));
 	}
 }
