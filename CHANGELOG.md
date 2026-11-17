@@ -7,7 +7,8 @@
   Kešoidy > Plánovač challenge > Zapnout plánovač. Má výběr challenge
   („360° ▾“), odznak s počtem chybějících sektorů nebo políček D/T, tlačítka
   ◀ ▶, která posouvají výběr na předchozí a další chybějící sektor nebo
-  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Sektory a Štítky a Nastavení….
+  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Sektory a Štítky. Nastavení plánovače se otevře z popupu
+  plánovače, z menu výběru challenge a z menu Kešoidy > Plánovač challenge.
 - Plánovač challenge: Ctrl+Shift+šipka skočí na nejbližšího kandidáta ve směru
   šipky, vystředí na něj mapu a u 360° vybere i jeho sektor. Když tam žádný
   není, ukáže se o tom krátká zpráva.
@@ -28,8 +29,7 @@
 - Plánovač challenge: když výřez mapy přesahuje oblast, pro kterou jsou kandidáti D/T spočítáni, ukáže se na mapě i v popupu dovětek „Kandidáti spočítáni do X km od středu mapy – posunutím mapy se dopočítají další“.
 - Zapnutá může být jen jedna challenge; zapnutí další vypne dosavadní.
 - V dialogu plánovače se střed zadává jedním polem souřadnic a kopii jde
-  vytvořit i z vlastní challenge; v popupu plánovače je u středu domov odkaz
-  Změnit domov….
+  vytvořit i z vlastní challenge; domov se mění v Soubor > Jsem doma….
 - V dialogu plánovače se kliknutím do pole Souřadnice nebo Keš (kód) vybere
   příslušná volba středu; formát souřadnic je šedým textem přímo v poli.
   Popup plánovače je u 360° výchozí výškou stejně vysoký jako u D/T.

@@ -29,7 +29,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private static final int SIRKA_ODZNAKU = 80;
 	private static final int SIRKA_SIPKY = 24;
 	private static final int SIRKA_IKONY = 26;
-	private static final int SIRKA_KANDIDATU = 124, SIRKA_SEKTORU = 88, SIRKA_STITKU = 72, SIRKA_NASTAVENI = 116;
+	private static final int SIRKA_KANDIDATU = 124, SIRKA_SEKTORU = 88, SIRKA_STITKU = 72;
 	/** Tlačítko vybraného políčka D/T; vejde se i „D4,5/T4,5 ✕“. */
 	static final int SIRKA_POLICKA = 92;
 	/** O kolik je lišta s tlačítkem vybraného políčka širší (tlačítko a mezera skupiny před ním). */
@@ -37,10 +37,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private static final Color CERVENA = new Color(200, 40, 40);
 	private static final javax.swing.border.Border RAMECEK = BorderFactory.createEtchedBorder();
 	/** Pořadí prvků v poli z {@link #rozloz}. */
-	static final int UCHYT = 0, VYBER = 1, ODZNAK = 2, ZPET = 3, DAL = 4, KANDIDATI = 5, SEKTORY = 6, STITKY = 7, NASTAVENI = 8, POLICKO = 9;
-	private static final int POCET = 10;
+	static final int UCHYT = 0, VYBER = 1, ODZNAK = 2, ZPET = 3, DAL = 4, KANDIDATI = 5, SEKTORY = 6, STITKY = 7, POLICKO = 8;
+	private static final int POCET = 9;
 	/** Pořadí prvků zleva: vybrané políčko je poslední, ať ostatní prvky při výběru a zrušení nepoposkočí. */
-	private static final int[] ZLEVA = { UCHYT, VYBER, ODZNAK, ZPET, DAL, KANDIDATI, SEKTORY, STITKY, NASTAVENI, POLICKO };
+	private static final int[] ZLEVA = { UCHYT, VYBER, ODZNAK, ZPET, DAL, KANDIDATI, SEKTORY, STITKY, POLICKO };
 
 	/** Stupeň lišty podle její šířky. */
 	enum Stupen {
@@ -62,7 +62,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private final transient Prepinac kandidati = new Prepinac(new Trychtyr());
 	private final transient Prepinac sektory = new Prepinac(new Klin());
 	private final transient Prepinac stitky = new Prepinac(new Stitek());
-	private final transient JButton nastaveni = new JButton(new Ozubene());
 	private final transient JButton policko = new JButton();
 	/** Štítek výběru v modelu: políčko D/T („D3/T4“) nebo sektor 360° („11°“), null když žádný není vybrán. */
 	private String vybranyStitek;
@@ -93,11 +92,10 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		kandidati.setToolTipText(popisKandidatu(Challenge.Typ.SEKTORY_360));
 		sektory.setToolTipText("Sektory na mapě: prstenec, klín sektoru vybraného kandidáta a čára k němu");
 		stitky.setToolTipText("Štítky u kandidátů: číslo sektoru nebo políčko D/T");
-		nastaveni.setToolTipText(TIP_NASTAVENI);
 		chip.setToolTipText("Vybrat challenge");
 		sektory.setSelected(true);
 		stitky.setSelected(true);
-		for (final AbstractButton b : new AbstractButton[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, nastaveni, policko }) {
+		for (final AbstractButton b : new AbstractButton[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, policko }) {
 			b.setFocusable(false);
 			b.setMargin(new Insets(0, 2, 0, 2));
 			add(b);
@@ -124,7 +122,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 				naKlikOdznaku.run();
 			}
 		});
-		nastaveni.addActionListener(e -> otevriNastaveni());
 		textRady.setToolTipText(TIP_UCHYTU_ZAPNOUT);
 		zavritRadu.setToolTipText("Zavřít radu");
 		zavritRadu.setFocusable(false);
@@ -213,7 +210,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	static final String TIP_UCHYTU_ZAPNOUT = "<html><b>Plánovač challenge</b> – zapnout<br>Ukáže, které sektory nebo políčka challenge vám chybí,<br>a na mapě keše, které je doplní. Menu Kešoidy › Plánovač challenge.</html>";
 	static final String TIP_UCHYTU_VYPNOUT = "<html><b>Plánovač challenge</b> – vypnout</html>";
-	static final String TIP_NASTAVENI = "Nastavení plánovače… – seznam challenge, výběr aktivní, kopie šablon a úprava vlastních";
 
 	/** Kolik políček challenge má: 360 sektorů, u políček podle výsledku. */
 	private int celkem(final Challenge c) {
@@ -291,7 +287,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		sirky[KANDIDATI] = s == Stupen.PLNY ? SIRKA_KANDIDATU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
 		sirky[SEKTORY] = s == Stupen.PLNY ? SIRKA_SEKTORU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
 		sirky[STITKY] = s == Stupen.PLNY ? SIRKA_STITKU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
-		sirky[NASTAVENI] = s == Stupen.PLNY ? SIRKA_NASTAVENI : SIRKA_IKONY;
 		sirky[POLICKO] = sPolickem && s != Stupen.UZKY ? SIRKA_POLICKA : 0;
 		final Rectangle[] r = new Rectangle[POCET];
 		final int y = RozmisteniPrekryvu.OKRAJ + (RozmisteniPrekryvu.VYSKA_PRUHU - VYSKA_PRVKU) / 2;
@@ -301,7 +296,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 				r[i] = new Rectangle(x, y, 0, 0);
 				continue;
 			}
-			if (i == KANDIDATI || i == NASTAVENI || i == POLICKO) {
+			if (i == KANDIDATI || i == POLICKO) {
 				x += MEZERA_SKUPIN - MEZERA;
 			}
 			r[i] = new Rectangle(x, y, sirky[i], VYSKA_PRVKU);
@@ -378,13 +373,12 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		nastavText(kandidati, texty ? "Jen kandidáti" : "");
 		nastavText(sektory, texty ? "Sektory" : "");
 		nastavText(stitky, texty ? "Štítky" : "");
-		nastavText(nastaveni, texty ? "Nastavení…" : "");
 		chip.setFont(pismoNaSirku(UIManager.getFont("Button.font"), chip.getText(), r[VYBER].width - 8, chip::getFontMetrics));
 		odznak.setFont(pismoNaSirku(UIManager.getFont("Button.font"), VZOREK_ODZNAKU, r[ODZNAK].width - odznak.getInsets().left - odznak.getInsets().right - 2, odznak::getFontMetrics));
 	}
 
 	private Component[] prvky() {
-		return new Component[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, nastaveni, policko };
+		return new Component[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, policko };
 	}
 
 	private static void nastavText(final AbstractButton b, final String text) {
@@ -632,7 +626,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			if (!model.jeVUi(c)) {
 				continue;
 			}
-			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(c.nazev() + (model.jeSablona(c) ? "   (šablona)" : ""));
+			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(c.nazev() + (model.jeSablona(c) ? "  (šablona)" : ""));
 			polozka.setSelected(c.equals(zobrazena));
 			polozka.addActionListener(e -> vyber(c));
 			skupina.add(polozka);

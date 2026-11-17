@@ -35,9 +35,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	final transient Obsah obsah = new Obsah();
 	private transient ChallengeModel model;
 	private transient Runnable naNastaveni;
-	/** Akce, která uloží zvolenou pozici na mapě jako domov. */
-	private transient Action zmenaDomova;
-	private final transient java.beans.PropertyChangeListener dostupnostZmenyDomova = e -> obnovZmenuDomova();
 	private boolean otevreno;
 	private transient AWTEventListener mimo;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
@@ -66,12 +63,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.matice.setNaVyber(this::vyberPolicko);
 		obsah.vsechnaPolicka.addActionListener(e -> vyberPolicko(null));
 		obsah.kandidati.addActionListener(e -> prepniKandidaty());
-		obsah.zmenitDomov.addActionListener(e -> {
-			if (zmenaDomova != null && zmenaDomova.isEnabled()) {
-				zavri();
-				zmenaDomova.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "zmenitDomov"));
-			}
-		});
 		obsah.nasobnostMin.addActionListener(e -> zmenNasobnost(-1));
 		obsah.nasobnostPlus.addActionListener(e -> zmenNasobnost(1));
 		obsah.nastaveni.addActionListener(e -> {
@@ -86,10 +77,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		this.model = model;
 	}
 
-	/** Nastavení… otevře dialog plánovače z menu; Změnit domov… uloží pozici jako domov. */
+	/** Nastavení… otevře dialog plánovače z menu. */
 	public void inject(final cz.geokuk.core.program.Akce akce) {
 		setNaNastaveni(() -> akce.challengeNastaveniAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "nastaveni")));
-		setZmenaDomova(akce.tadyJsemDomaAction);
 	}
 
 	public void inject(final cz.geokuk.plugins.refbody.RefbodyModel refbodyModel) {
@@ -108,32 +98,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	/** Domovské souřadnice pro řádek „Střed: domov …“. */
 	void setDomov(final Supplier<Wgs> domov) {
 		obsah.domov = domov;
-	}
-
-	/** Co udělá odkaz „Změnit domov…“; je dostupný, jen když je dostupná akce. */
-	void setZmenaDomova(final Action akce) {
-		if (zmenaDomova != null) {
-			zmenaDomova.removePropertyChangeListener(dostupnostZmenyDomova);
-		}
-		zmenaDomova = akce;
-		if (akce != null) {
-			akce.addPropertyChangeListener(dostupnostZmenyDomova);
-		}
-		obnovZmenuDomova();
-	}
-
-	/** Pozice zvolená na mapě; keš (třeba po skoku na kandidáta) se jako domov nenabízí. */
-	private transient cz.geokuk.core.coord.Poziceq pozice;
-
-	public void onEvent(final cz.geokuk.core.coord.PoziceChangedEvent event) {
-		pozice = event.poziceq;
-		obnovZmenuDomova();
-	}
-
-	private void obnovZmenuDomova() {
-		final boolean lze = zmenaDomova != null && zmenaDomova.isEnabled() && (pozice == null || pozice.getWpt() == null);
-		obsah.zmenitDomov.setEnabled(lze);
-		obsah.zmenitDomov.setToolTipText(lze ? TextyPopupuPlanovace.TIP_ZMENY_DOMOVA : TextyPopupuPlanovace.TIP_ZMENY_DOMOVA_BEZ_POZICE);
 	}
 
 	/** Dovětek „mimo výřez“ s šipkou a vzdáleností se po posunu mapy přepočítá. */
@@ -400,8 +364,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JLabel nasobnostHodnota = new JLabel("1×");
 		private final JPanel radekNasobnosti = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		final JLabel stred = new JLabel();
-		/** Odkaz u středu „domov“: uloží zvolenou pozici na mapě jako domov. */
-		final JButton zmenitDomov = new JButton("Změnit domov…");
 		private final JPanel radekStredu = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		private transient Supplier<Wgs> domov = () -> null;
 		transient Supplier<Wgs> stredMapy = () -> null;
@@ -514,9 +476,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			g.insets = new Insets(0, 0, 4, 0);
 			radekStredu.setOpaque(false);
 			radekStredu.add(stred);
-			radekStredu.add(Box.createHorizontalStrut(8));
-			radekStredu.add(zmenitDomov);
-			nastavOdkaz(zmenitDomov);
 			radekNasobnosti.setOpaque(false);
 			radekNasobnosti.add(new JLabel(TextyPopupuPlanovace.NASOBNOST));
 			radekNasobnosti.add(nasobnostMin);
@@ -621,55 +580,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 		}
 
-		/** Tlačítko vzhledu odkazu: bez rámečku, podtržené, v akcentu skinu, s kurzorem ruky. */
-		private static void nastavOdkaz(final JButton b) {
-			b.setFocusable(false);
-			b.setBorderPainted(false);
-			b.setContentAreaFilled(false);
-			b.setMargin(new Insets(0, 0, 0, 0));
-			b.setBorder(BorderFactory.createEmptyBorder());
-			b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		}
-
-		/** Nejmenší kontrastní poměr odkazu proti pozadí (jako u ovládacích prvků). */
-		static final double KONTRAST_ODKAZU = 3.0;
-
-		/** Barva odkazu: ve světlém skinu akcent, když je dost vidět; v tmavém a jinak barva textu. Odkaz odliší podtržení. */
-		static Color barvaOdkazu(final Color pozadi, final Color text) {
-			if (pozadi == null || text == null) {
-				return new Color(JPruhPlanovace.akcentNa(pozadi).getRGB());
-			}
-			final Color akcent = JPruhPlanovace.akcentNa(pozadi);
-			final Color c = !jeTmave(pozadi) && kontrast(akcent, pozadi) >= KONTRAST_ODKAZU ? akcent : text;
-			return new Color(c.getRGB());
-		}
-
-		/** Kontrastní poměr dvou barev podle relativní svítivosti (1 až 21). */
-		static double kontrast(final Color a, final Color b) {
-			final double la = svitivost(a);
-			final double lb = svitivost(b);
-			return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-		}
-
-		private static double svitivost(final Color c) {
-			return 0.2126 * slozka(c.getRed()) + 0.7152 * slozka(c.getGreen()) + 0.0722 * slozka(c.getBlue());
-		}
-
-		private static double slozka(final int v) {
-			final double s = v / 255.0;
-			return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-		}
-
 		/** Rámeček a barva upozornění podle pozadí vzhledu (světlý i tmavý skin). */
 		private void obnovVzhled() {
 			final Color pozadi = UIManager.getColor("Panel.background");
-			if (zmenitDomov != null) {
-				// Vlastní barva a písmo (ne z vzhledu), ať je updateUI tlačítka nepřepíše.
-				zmenitDomov.setForeground(barvaOdkazu(pozadi, UIManager.getColor("Label.foreground")));
-				final java.util.Map<java.awt.font.TextAttribute, Object> podtrzeni = new java.util.HashMap<>();
-				podtrzeni.put(java.awt.font.TextAttribute.UNDERLINE, java.awt.font.TextAttribute.UNDERLINE_ON);
-				zmenitDomov.setFont(new Font(UIManager.getFont("Label.font").getAttributes()).deriveFont(podtrzeni));
-			}
 			final Color hrana = UIManager.getColor("Separator.foreground");
 			setBorder(new CompoundBorder(new LineBorder(hrana == null ? Color.GRAY : hrana), new EmptyBorder(8, 10, 8, 10)));
 			if (napoveda != null) {
@@ -714,7 +627,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			typ.setText("Typ: " + StitkyPruhu.typ(c.typ()) + (c.typ() == Challenge.Typ.SEKTORY_360 ? "    Pravidla: " + TextyPopupuPlanovace.pravidla(c.zdroj()) : ""));
 			final boolean doma = c.stred().druh() == Challenge.DruhStredu.DOMOV;
 			stred.setText("Střed: " + (doma ? TextyPopupuPlanovace.stredDomov(domov.get()) : TextyPopupuPlanovace.stred(c.stred())));
-			zmenitDomov.setVisible(doma);
 			radekNasobnosti.setVisible(c.typ() == Challenge.Typ.DT_MATICE);
 			stred.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
 			radekStredu.setVisible(stred.isVisible());

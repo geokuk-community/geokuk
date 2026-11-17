@@ -90,7 +90,7 @@ public class JPruhPolickoTest {
 				Assert.assertEquals("prvek " + i + " drží pozici", b[i], s[i]);
 				Assert.assertFalse("tlačítko nezakrývá prvek " + i, s[i].intersects(s[JPruhPlanovace.POLICKO]));
 			}
-			Assert.assertTrue("za Nastavením", s[JPruhPlanovace.POLICKO].x > s[JPruhPlanovace.NASTAVENI].x + s[JPruhPlanovace.NASTAVENI].width);
+			Assert.assertTrue("za Štítky", s[JPruhPlanovace.POLICKO].x > s[JPruhPlanovace.STITKY].x + s[JPruhPlanovace.STITKY].width);
 			Assert.assertTrue("vejde se do širší lišty", s[JPruhPlanovace.POLICKO].x + s[JPruhPlanovace.POLICKO].width <= RozmisteniPrekryvu.OKRAJ + sirka + JPruhPlanovace.PRIDAVEK_POLICKA);
 		}
 		final Rectangle[] r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)), true);
