@@ -283,6 +283,7 @@ public class JPruhPlanovaceTest {
 			javax.swing.SwingUtilities.invokeAndWait(chip::doClick);
 			Assert.assertTrue("klik ho otevře", pruh.jeVyberOtevreny());
 		} finally {
+			javax.swing.SwingUtilities.invokeAndWait(() -> javax.swing.MenuSelectionManager.defaultManager().clearSelectedPath());
 			okno.dispose();
 		}
 	}
