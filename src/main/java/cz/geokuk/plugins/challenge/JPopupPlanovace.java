@@ -208,7 +208,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		if (JPruhPlanovace.oblastOdznaku(getWidth(), prekazky.get()).contains(p)) {
 			return;
 		}
-		for (final Rectangle ovladani : JPruhPlanovace.oblastiOvladani(getWidth(), prekazky.get())) {
+		final Challenge zobrazena = model == null ? null : model.zobrazena();
+		for (final Rectangle ovladani : JPruhPlanovace.oblastiOvladani(getWidth(), prekazky.get(), zobrazena == null || JPruhPlanovace.maSektory(zobrazena.typ()))) {
 			if (ovladani.contains(p)) {
 				return;
 			}

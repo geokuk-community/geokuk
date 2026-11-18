@@ -959,6 +959,19 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse("klik na výběr challenge popup zavře", popup.jeOtevreno());
 	}
 
+	/** U challenge bez sektorů tlačítko Sektory v liště není, takže klik na jeho bývalé místo je klik do mapy. */
+	@Test
+	public void bezSektoruNemaListaOblastSektoru() {
+		final java.util.List<Rectangle> s = JPruhPlanovace.oblastiOvladani(1280, java.util.Collections.<Rectangle> emptyList(), true);
+		final java.util.List<Rectangle> bez = JPruhPlanovace.oblastiOvladani(1280, java.util.Collections.<Rectangle> emptyList(), false);
+		Assert.assertEquals(5, s.size());
+		Assert.assertEquals("◀ ▶, Jen kandidáti, Štítky", 4, bez.size());
+		final Rectangle sektory = JPruhPlanovace.rozloz(cz.geokuk.framework.RozmisteniPrekryvu.PRUH_PLNY)[JPruhPlanovace.SEKTORY];
+		for (final Rectangle r : bez) {
+			Assert.assertFalse(r + " nesmí zasahovat do místa Sektorů", r.intersects(sektory));
+		}
+	}
+
 	/** Posun ◀ ▶ (Shift+←/→) a Jen kandidáti (F4) popup nezavírají. */
 	@Test
 	public void posunAFiltrKlavesamiPopupNezavrou() throws Exception {

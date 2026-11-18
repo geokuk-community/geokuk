@@ -325,7 +325,12 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/** Ovládací prvky lišty, na které klik nezavře popup souhrnu: ◀ ▶, Jen kandidáti, Sektory a Štítky; v souřadnicích mapy dané šířky s překážkami vpravo. */
 	static java.util.List<Rectangle> oblastiOvladani(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky) {
-		final Rectangle[] r = rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width);
+		return oblastiOvladani(sirkaMapy, prekazky, true);
+	}
+
+	/** Totéž; bez tlačítka Sektory (challenge bez sektorů) v liště žádná oblast Sektorů není. */
+	static java.util.List<Rectangle> oblastiOvladani(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky, final boolean sSektory) {
+		final Rectangle[] r = rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width, false, sSektory);
 		final java.util.List<Rectangle> v = new java.util.ArrayList<>();
 		for (final int i : new int[] { ZPET, DAL, KANDIDATI, SEKTORY, STITKY }) {
 			if (!r[i].isEmpty()) {
