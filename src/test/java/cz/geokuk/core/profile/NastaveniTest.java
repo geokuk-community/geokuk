@@ -2,7 +2,10 @@ package cz.geokuk.core.profile;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
+import java.util.prefs.AbstractPreferences;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import org.junit.*;
@@ -14,6 +17,12 @@ public class NastaveniTest {
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
+
+	@Before
+	@After
+	public void zahodVarovani() {
+		Nastaveni.prevzitVarovani();
+	}
 
 	@Test
 	public void zapsaneNastaveniSeNacte() throws Exception {
@@ -52,6 +61,163 @@ public class NastaveniTest {
 		final SouborovePreferences koren = Nastaveni.otevri(soubor, stary, false);
 		Assert.assertEquals("Kačer", koren.node("geokuk/current/vseobecne").get("nick", null));
 		Assert.assertTrue("převzaté nastavení se hned uloží", soubor.isFile());
+		Assert.assertEquals("soubor", koren.node(Nastaveni.ZNACKA_PREVODU).get("zdroj", null));
+		Assert.assertEquals("ok", koren.node(Nastaveni.ZNACKA_PREVODU).get("vysledek", null));
+		Assert.assertNull(Nastaveni.prevzitVarovani());
+	}
+
+	/** Starší nastavení nejde přečíst: uživatel dostane varování a značka zabrání opakování stejného selhání. */
+	@Test
+	public void nectitelnyStarySouborVarujeAZapiseZnacku() throws Exception {
+		final File stary = tmp.newFile("geokuk-preferences.xml");
+		Files.write(stary.toPath(), "<preferences><root ".getBytes(StandardCharsets.UTF_8));
+		final File soubor = new File(tmp.getRoot(), "data/nastaveni.xml");
+		Nastaveni.otevri(soubor, stary, false);
+		Assert.assertEquals(Nastaveni.VAROVANI_PREVODU, Nastaveni.prevzitVarovani());
+		final SouborovePreferences ulozene = SouborovePreferences.nacti(soubor);
+		Assert.assertEquals("chyba", ulozene.node(Nastaveni.ZNACKA_PREVODU).get("vysledek", null));
+		Nastaveni.otevri(soubor, stary, false);
+		Assert.assertNull("podruhé se převod nezkouší", Nastaveni.prevzitVarovani());
+	}
+
+	/** Chyba uprostřed čtení registru: částečně převzaté nastavení se neuloží. */
+	@Test
+	public void chybaUprostredRegistruNeuloziCastecnyStav() throws Exception {
+		final File soubor = new File(tmp.getRoot(), "data/nastaveni.xml");
+		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, new PadajiciPreferences());
+		Assert.assertEquals(Nastaveni.VAROVANI_PREVODU, Nastaveni.prevzitVarovani());
+		final SouborovePreferences ulozene = SouborovePreferences.nacti(soubor);
+		Assert.assertNull("nic z částečně přečteného zdroje", ulozene.node("geokuk").get("lastModified", null));
+		Assert.assertFalse(ulozene.nodeExists("geokuk/current"));
+		Assert.assertEquals("chyba", ulozene.node(Nastaveni.ZNACKA_PREVODU).get("vysledek", null));
+		Assert.assertEquals("zadny", koren.node(Nastaveni.ZNACKA_PREVODU).get("zdroj", null));
+	}
+
+	/** Úspěšný převod z registru zapíše značku bez cest. */
+	@Test
+	public void prevodZRegistruZapiseZnacku() throws Exception {
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		registr.node("geokuk/current/vzhled").put("lookAndFeel", "Metal");
+		final SouborovePreferences koren = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, registr);
+		Assert.assertEquals("Metal", koren.node("geokuk/current/vzhled").get("lookAndFeel", null));
+		final Preferences znacka = koren.node(Nastaveni.ZNACKA_PREVODU);
+		Assert.assertEquals("registr", znacka.get("zdroj", null));
+		Assert.assertEquals("ok", znacka.get("vysledek", null));
+		Assert.assertEquals(1, znacka.getInt("verze", 0));
+		Assert.assertNull(Nastaveni.prevzitVarovani());
+	}
+
+	/** Bez staršího nastavení se značka nezapisuje. */
+	@Test
+	public void bezStarsihoNastaveniNeniZnacka() throws Exception {
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		final SouborovePreferences koren = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, registr);
+		Assert.assertFalse(koren.nodeExists(Nastaveni.ZNACKA_PREVODU));
+		Assert.assertNull(Nastaveni.prevzitVarovani());
+	}
+
+	/** Dlouhá hodnota rozdělená do pokračovacích klíčů a zapsaný null se převezmou beze změny. */
+	@Test
+	public void pokracovaciKliceANullSePrevezmou() throws Exception {
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		final Preferences stare = registr.node("geokuk/current/kesoid");
+		stare.put("blokovaneZdroje", "a");
+		stare.put("blokovaneZdroje;cont0", "b");
+		stare.put("blokovaneZdroje;cont1", "c");
+		stare.put("nic", "<{<[NULL]>}>");
+		final Preferences nove = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, registr).node("geokuk/current/kesoid");
+		Assert.assertEquals("a", nove.get("blokovaneZdroje", null));
+		Assert.assertEquals("b", nove.get("blokovaneZdroje;cont0", null));
+		Assert.assertEquals("c", nove.get("blokovaneZdroje;cont1", null));
+		Assert.assertEquals("<{<[NULL]>}>", nove.get("nic", null));
+	}
+
+	/** Převod zdroj jen čte: soubor ani strom registru se nezmění, nevznikne v nich nový uzel. */
+	@Test
+	public void zdrojPrevoduZustaneBezeZmeny() throws Exception {
+		final File stary = tmp.newFile("geokuk-preferences.xml");
+		final byte[] obsahStareho = ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+				+ "<!DOCTYPE preferences SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
+				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map/>"
+				+ "<node name=\"current\"><map/><node name=\"umisteniSouboru\"><map><entry key=\"kesDir\" value=\"C:\\Users\\Kacer\\geokuk\"/></map></node>"
+				+ "</node></node></root></preferences>").getBytes(StandardCharsets.UTF_8);
+		Files.write(stary.toPath(), obsahStareho);
+		Assert.assertTrue(stary.setLastModified(1_000_000_000_000L));
+		Nastaveni.otevri(new File(tmp.getRoot(), "a/nastaveni.xml"), stary, false);
+		Assert.assertArrayEquals(obsahStareho, Files.readAllBytes(stary.toPath()));
+		Assert.assertEquals(1_000_000_000_000L, stary.lastModified());
+
+		final SouborovePreferences registr = SouborovePreferences.prazdne(new File(tmp.getRoot(), "registr.xml"));
+		registr.node("geokuk/current/umisteniSouboru").put("kesDir", "C:\\Users\\Kacer\\geokuk");
+		registr.node("geokuk/current/vylet").put("aktualniSoubor", "a.gpx");
+		final String pred = export(registr);
+		Nastaveni.otevri(new File(tmp.getRoot(), "b/nastaveni.xml"), null, registr);
+		Assert.assertEquals(pred, export(registr));
+		Assert.assertFalse(new File(tmp.getRoot(), "registr.xml").exists());
+	}
+
+	private static String export(final Preferences p) throws Exception {
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		p.exportSubtree(out);
+		return new String(out.toByteArray(), StandardCharsets.UTF_8);
+	}
+
+	/** Registr, jehož čtení selže uprostřed podstromu geokuk. */
+	private static final class PadajiciPreferences extends AbstractPreferences {
+		private final int hloubka;
+
+		PadajiciPreferences() {
+			this(null, "", 0);
+		}
+
+		private PadajiciPreferences(final PadajiciPreferences rodic, final String jmeno, final int hloubka) {
+			super(rodic, jmeno);
+			this.hloubka = hloubka;
+		}
+
+		@Override
+		protected String[] keysSpi() throws BackingStoreException {
+			if (hloubka == 2) {
+				throw new BackingStoreException("čtení selhalo");
+			}
+			return hloubka == 1 ? new String[] { "lastModified" } : new String[0];
+		}
+
+		@Override
+		protected String getSpi(final String klic) {
+			return "1";
+		}
+
+		@Override
+		protected String[] childrenNamesSpi() {
+			return hloubka == 0 ? new String[] { "geokuk" } : hloubka == 1 ? new String[] { "current" } : new String[0];
+		}
+
+		@Override
+		protected AbstractPreferences childSpi(final String jmeno) {
+			return new PadajiciPreferences(this, jmeno, hloubka + 1);
+		}
+
+		@Override
+		protected void putSpi(final String klic, final String hodnota) {
+			throw new UnsupportedOperationException("zdroj se jen čte");
+		}
+
+		@Override
+		protected void removeSpi(final String klic) {
+			throw new UnsupportedOperationException("zdroj se jen čte");
+		}
+
+		@Override
+		protected void removeNodeSpi() {
+			throw new UnsupportedOperationException("zdroj se jen čte");
+		}
+
+		@Override
+		protected void syncSpi() {}
+
+		@Override
+		protected void flushSpi() {}
 	}
 
 	@Test
