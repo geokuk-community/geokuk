@@ -191,7 +191,10 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		super.removeNotify();
 	}
 
-	/** Stisk myši mimo popup ho zavře; událost dál normálně pokračuje. Stisk na odznaku nechá na odznaku, ten popup přepíná sám. */
+	/**
+	 * Stisk myši mimo popup ho zavře; událost dál normálně pokračuje. Stisk na odznaku nechá na odznaku, ten popup přepíná sám; stisk na ◀ ▶, Jen kandidáti, Sektory a Štítky ho nechá otevřený a
+	 * akci provede lišta.
+	 */
 	void mysKdekoli(final AWTEvent e) {
 		if (e.getID() != MouseEvent.MOUSE_PRESSED || !otevreno || !(e instanceof MouseEvent)) {
 			return;
@@ -204,6 +207,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final Point p = SwingUtilities.convertPoint(zdroj, me.getPoint(), this);
 		if (JPruhPlanovace.oblastOdznaku(getWidth(), prekazky.get()).contains(p)) {
 			return;
+		}
+		for (final Rectangle ovladani : JPruhPlanovace.oblastiOvladani(getWidth(), prekazky.get())) {
+			if (ovladani.contains(p)) {
+				return;
+			}
 		}
 		zavri();
 	}

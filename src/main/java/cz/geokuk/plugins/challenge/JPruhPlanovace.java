@@ -323,6 +323,18 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		return rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width)[ODZNAK];
 	}
 
+	/** Ovládací prvky lišty, na které klik nezavře popup souhrnu: ◀ ▶, Jen kandidáti, Sektory a Štítky; v souřadnicích mapy dané šířky s překážkami vpravo. */
+	static java.util.List<Rectangle> oblastiOvladani(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky) {
+		final Rectangle[] r = rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width);
+		final java.util.List<Rectangle> v = new java.util.ArrayList<>();
+		for (final int i : new int[] { ZPET, DAL, KANDIDATI, SEKTORY, STITKY }) {
+			if (!r[i].isEmpty()) {
+				v.add(r[i]);
+			}
+		}
+		return v;
+	}
+
 	/** Odznak v souřadnicích mapy dané šířky bez překážek. */
 	static Rectangle oblastOdznaku(final int sirkaMapy) {
 		return oblastOdznaku(sirkaMapy, java.util.Collections.emptyList());
