@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.kesoid;
 
 import java.util.Set;
+import java.util.function.Predicate;
 
 import cz.geokuk.plugins.kesoid.genetika.*;
 import cz.geokuk.plugins.kesoid.kind.kes.Kes;
@@ -17,11 +18,22 @@ public class KesoidFilter {
 
 	private Set<Alela> nechteneAlely;
 
+	/** Další podmínka, která se přidává ke všem ostatním (plánovač challenge: jen kandidáti); null = žádná. */
+	private Predicate<Kesoid> doplnkovy;
+
+	public KesoidFilter doplnkovy(final Predicate<Kesoid> doplnkovy) {
+		this.doplnkovy = doplnkovy;
+		return this;
+	}
+
 	private final IndexMap<Genotyp, Boolean> uzFiltrovane  = new IndexMap<>();
 
 
 	public boolean isFiltered(final Wpt aWpt) {
 		try {
+			if (doplnkovy != null && !doplnkovy.test(aWpt.getKesoid())) {
+				return false;
+			}
 			final Genotyp genotyp = aWpt.getGenotyp();
 			final Genom genom = genotyp.getGenom();
 			if (jmenaNechtenychAlel != null) {
@@ -56,20 +68,11 @@ public class KesoidFilter {
 					}
 				}
 
-				if (kes.getHodnoceni() != Kes.NENI_HODNOCENI) {
-					if (kes.getHodnoceni() < filterDefinition.getPrahHodnoceni()) {
-						return false;
-					}
-				}
-				if (kes.getBestOf() != Kes.NENI_HODNOCENI) {
-					if (kes.getBestOf() < filterDefinition.getPrahBestOf()) {
-						return false;
-					}
-				}
-				if (kes.getFavorit() != Kes.NENI_HODNOCENI) {
-					if (kes.getFavorit() < filterDefinition.getPrahFavorit()) {
-						return false;
-					}
+				// Keš bez hodnoty (NENI_HODNOCENI) nastavený práh nesplní.
+				if (podPrahem(kes.getHodnoceni(), filterDefinition.getPrahHodnoceni())
+						|| podPrahem(kes.getBestOf(), filterDefinition.getPrahBestOf())
+						|| podPrahem(kes.getFavorit(), filterDefinition.getPrahFavorit())) {
+					return false;
 				}
 			}
 			if (vyletModel != null) {
@@ -85,6 +88,10 @@ public class KesoidFilter {
 
 		}
 
+	}
+
+	private static boolean podPrahem(final int hodnota, final int prah) {
+		return prah > 0 && hodnota < prah;
 	}
 
 	private synchronized Set<Alela> nechteneAlely(final Genom genom) {

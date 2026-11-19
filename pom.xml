@@ -35,6 +35,12 @@
 				<targetPath>licence</targetPath>
 			</resource>
 			<resource>
+				<directory>${project.basedir}/distribuce/windows</directory>
+				<includes>
+					<include>geokuk.ico</include>
+				</includes>
+			</resource>
+			<resource>
 				<directory>${project.basedir}/distribuce/offline-mapy</directory>
 				<targetPath>offline-mapy</targetPath>
 			</resource>
@@ -97,7 +103,7 @@
 					<properties>
 						<property>
 							<name>listener</name>
-							<value>cz.geokuk.testy.NezachyceneVyjimky</value>
+							<value>cz.geokuk.testy.NezachyceneVyjimky,cz.geokuk.testy.ZabranaZaseknuti</value>
 						</property>
 					</properties>
 				</configuration>
@@ -183,7 +189,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>33.4.8-jre</version>
+			<version>33.7.2-jre</version>
 		</dependency>
 
 		<dependency>
@@ -288,6 +294,13 @@
 								<smoke.testClasses>${project.build.testOutputDirectory}</smoke.testClasses>
 							</systemPropertyVariables>
 							<argLine>-Dfile.encoding=UTF-8</argLine>
+							<useModulePath>false</useModulePath>
+							<properties>
+								<property>
+									<name>listener</name>
+									<value>cz.geokuk.testy.ZabranaZaseknuti</value>
+								</property>
+							</properties>
 						</configuration>
 					</plugin>
 				</plugins>

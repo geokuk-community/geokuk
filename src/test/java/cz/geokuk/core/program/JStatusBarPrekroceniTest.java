@@ -9,8 +9,8 @@ public class JStatusBarPrekroceniTest {
 
 	@Test
 	public void textPodleDruhuLimitu() {
-		assertEquals("Limit 90 000 waypointů", JStatusBar.textPrekroceni(false, 90_000));
-		assertEquals("Limit 300 000 teček", JStatusBar.textPrekroceni(true, 300_000));
+		assertEquals("Max. 90 000 bodů", JStatusBar.textPrekroceni(false, 90_000));
+		assertEquals("Max. 300 000 teček", JStatusBar.textPrekroceni(true, 300_000));
 	}
 
 	@Test

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 256 256" width="256" height="256">
+<title>GeoKuk – ikona (256 px, upravitelná)</title>
+<defs>
+<linearGradient id="poz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B4045"/><stop offset="1" stop-color="#1E2124"/></linearGradient>
+<linearGradient id="oko" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5BD13A"/><stop offset="0.55" stop-color="#C8E62A"/><stop offset="1" stop-color="#FFB400"/></linearGradient>
+<linearGradient id="rasy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD21F"/><stop offset="1" stop-color="#FFB400"/></linearGradient>
+<radialGradient id="pup" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#7BE35A"/><stop offset="1" stop-color="#239C2B"/></radialGradient>
+</defs>
+<rect id="dlazdice" inkscape:label="dlaždice" width="256" height="256" rx="48" fill="url(#poz)"/>
+<g id="oko-a-rasy" inkscape:label="oko + řasy">
+  <path id="rasy" inkscape:label="řasy" fill="url(#rasy)" d="M210.94 107.63L227.71 82.76C230.49 78.64 236.08 77.55 240.21 80.33C244.33 83.11 245.41 88.71 242.63 92.83L225.86 117.7C223.08 121.82 217.49 122.91 213.36 120.13C209.24 117.35 208.16 111.75 210.94 107.63ZM30.14 117.7L13.37 92.83C10.59 88.71 11.67 83.11 15.79 80.33C19.92 77.55 25.51 78.64 28.29 82.76L45.06 107.63C47.84 111.75 46.76 117.35 42.64 120.13C38.51 122.91 32.92 121.82 30.14 117.7ZM119 85.03L119 55.03C119 50.06 123.03 46.03 128 46.03C132.97 46.03 137 50.06 137 55.03L137 85.03C137 90 132.97 94.03 128 94.03C123.03 94.03 119 90 119 85.03Z"/>
+  <path id="oko" inkscape:label="oko" fill="url(#oko)" d="M23.92 154.87C24.3 154.06 24.82 153.29 25.47 152.6C51.82 123.88 89.02 107.53 128 107.53C166.98 107.53 204.18 123.88 230.53 152.6C231.18 153.29 231.7 154.06 232.08 154.87C232.67 156.1 232.96 157.42 232.96 158.75C232.96 160.97 232.14 163.18 230.53 164.9C204.18 193.62 166.98 209.97 128 209.97C89.02 209.97 51.82 193.62 25.47 164.9C24.82 164.21 24.3 163.44 23.92 162.63C22.74 160.17 22.75 157.31 23.92 154.87ZM128 191.97C159.11 191.97 188.92 180.01 211.35 158.75C188.92 137.49 159.11 125.53 128 125.53C96.89 125.53 67.08 137.49 44.65 158.75C67.08 180.01 96.89 191.97 128 191.97Z"/>
+  <path id="panenka" inkscape:label="panenka" fill="url(#pup)" d="M156 158.75C156 174.21 143.46 186.75 128 186.75C112.54 186.75 100 174.21 100 158.75C100 143.29 112.54 130.75 128 130.75C143.46 130.75 156 143.29 156 158.75Z"/>
+  <circle id="odlesk" cx="117.92" cy="148.67" r="7.28" fill="#FFFFFF" fill-opacity="0.55"/>
+</g>
+</svg>

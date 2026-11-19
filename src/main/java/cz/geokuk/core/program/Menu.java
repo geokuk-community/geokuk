@@ -11,6 +11,7 @@ import cz.geokuk.plugins.kesoid.kind.kes.*;
 import cz.geokuk.plugins.kesoid.mapicon.JMenuIkony;
 import cz.geokuk.plugins.kesoid.mapicon.JMenuZvyrazneni;
 import cz.geokuk.plugins.kesoid.mvc.JVybiracVyletu;
+import cz.geokuk.plugins.kesoid.mvc.PrepniZdrojAction;
 import cz.geokuk.plugins.mapy.MapyAction0;
 import cz.geokuk.plugins.mapy.PodkladAction;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -54,32 +55,40 @@ public class Menu extends MenuStrujce {
 				if (!uzivatelske && ((PodkladAction) mapoakce1).getPodklad().isUzivatelska()) {
 					uzivatelske = true;
 					separator();
-					final JMenuItem nadpis = new JMenuItem("Uživatelské mapy");
-					nadpis.setEnabled(false);
-					menu.add(nadpis);
+					hlavicka("Uživatelské mapy");
 				}
 				item(mapoakce1, mapPodkladButtonGroup);
 			}
 		}
-		item(akce.offlineMapyAction);
-		menu.add(new JTemaOfflineMapyMenu(kachleModel));
+		if (menu.getMenuComponentCount() > 0) {
+			separator();
+		}
+		hlavicka("Přes mapu");
 		item(akce.prekryvTrasAction);
 		item(akce.reliefCuzkAction);
 
 		separator();
-		item(akce.pruvodceMapAction);
+		item(akce.offlineMapyAction);
+		menu.add(new JTemaOfflineMapyMenu(kachleModel));
 		separator();
-
 	}
 
-	@Override
-	protected void makeMenu() {
+	/** Neaktivní položka s nadpisem skupiny položek. */
+	private void hlavicka(final String text) {
+		final JMenuItem nadpis = new JMenuItem(text);
+		nadpis.setEnabled(false);
+		menu.add(nadpis);
+	}
 
+	/** Menu Soubor: práce se soubory, nastavením a údržbou dat programu. */
+	void sestavMenuSoubor() {
 		menu("Soubor", "Práce se soubory a nastaveními.");
 		menu.setMnemonic(KeyEvent.VK_S);
 
 		item(akce.informaceoZdrojichAction);
 		item(akce.umisteniSouboruAction);
+		item(akce.pruvodceMapAction);
+		item(akce.optimalizaceDatabazeAction);
 		separator();
 		item(akce.nickEditAction);
 		item(akce.tadyJsemDomaAction);
@@ -99,6 +108,68 @@ public class Menu extends MenuStrujce {
 		item(akce.fullScreenAction);
 		separator();
 		item(akce.closeAction);
+	}
+
+	/** Podnabídka Zdroje keší: zapnutí a vypnutí typů zdrojů klávesami Ctrl+číslo, na číselné klávesnici také. */
+	private void sestavSubmenuZdroju() {
+		final JMenu hlavni = menu;
+		final JMenu zdroje = new JMenu("Zdroje keší");
+		zdroje.setToolTipText("Zapne nebo vypne načítání typu zdroje; zkratky Ctrl+1 až Ctrl+4.");
+		hlavni.add(zdroje);
+		menu = zdroje;
+		final PrepniZdrojAction[] vsechny = { akce.prepniZdrojGpxAction, akce.prepniZdrojGeogetAction, akce.prepniZdrojGsakAction, akce.prepniZdrojOpensakAction };
+		for (final PrepniZdrojAction zdroj : vsechny) {
+			item(zdroj);
+		}
+		PrepniZdrojAction.navazNumpad(jMainFrame.getRootPane(), vsechny);
+		menu = hlavni;
+	}
+
+	private void sestavSubmenuChallenge() {
+		final JMenu hlavni = menu;
+		final JMenu challenge = new JMenu("Plánovač challenge");
+		challenge.setToolTipText("Ukáže, které sektory nebo políčka challenge vám chybí, a na mapě keše, které je doplní.");
+		hlavni.add(challenge);
+		menu = challenge;
+		item(akce.challengeZapnoutAction);
+		separator();
+		item(akce.challengeNastaveniAction);
+		item(akce.challengeDalsiAction);
+		item(akce.challengePredchoziAction);
+		item(akce.challengeJenKandidatiAction);
+		item(akce.challengeSektoryAction);
+		item(akce.challengeStitkyAction);
+		separator();
+		item(akce.challengeSkokSever);
+		item(akce.challengeSkokVychod);
+		item(akce.challengeSkokJih);
+		item(akce.challengeSkokZapad);
+		menu = hlavni;
+	}
+
+	/** Menu Mapy: podklady, překryvy, správce offline map, pohyb po mapě a volby ukládání map. */
+	void sestavMenuMapy() {
+		// Ovládat mapy
+		menu("Mapy", "Řízení zobrazení součástí map");
+		menu.setMnemonic(KeyEvent.VK_M);
+
+		makeMapSubmenuPart(akce);
+
+		item(akce.priblizMapuAction);
+		item(akce.oddalMapuAction);
+		item(akce.nastavMapuCeskaAction);
+		item(akce.zobrazVsechnyKeseAction);
+
+		separator();
+		item(akce.onlineModeAction);
+		item(akce.ukladatMapyNaDiskAction);
+		item(akce.kachleOflinerAction);
+	}
+
+	@Override
+	protected void makeMenu() {
+
+		sestavMenuSoubor();
 
 		// Jít
 		menu("Jít", "Přesun aktuálního bodu a mapy na zadané místo.");
@@ -141,22 +212,7 @@ public class Menu extends MenuStrujce {
 		item(akce.posouvejSipkamiRychleJIH);
 		item(akce.posouvejSipkamiRychleZAPAD);
 
-		// Ovládat mapy
-		menu("Mapy", "Řízení zobrazení součástí map");
-		menu.setMnemonic(KeyEvent.VK_M);
-
-		makeMapSubmenuPart(akce);
-
-		item(akce.priblizMapuAction);
-		item(akce.oddalMapuAction);
-		item(akce.nastavMapuCeskaAction);
-		item(akce.zobrazVsechnyKeseAction);
-
-		separator();
-		item(akce.onlineModeAction);
-		item(akce.ukladatMapyNaDiskAction);
-		item(akce.optimalizaceDatabazeAction);
-		item(akce.kachleOflinerAction);
+		sestavMenuMapy();
 
 		// Ovládání zobrazení keší
 		menu("Kešoidy", "Řízení zobrazení keší a waypointů.");
@@ -164,6 +220,12 @@ public class Menu extends MenuStrujce {
 		// ////////////////////////////// keškový filtr
 		item(akce.kesoidyOnoffAction);
 		item(akce.filtrIkonyAction);
+		final javax.swing.JToggleButton kesoidyTlacitko = new javax.swing.JToggleButton(new cz.geokuk.plugins.kesoid.OkoKesoiduIkona());
+		kesoidyTlacitko.setFocusable(false);
+		akce.kesoidyOnoffAction.join(kesoidyTlacitko);
+		kesoidyTlacitko.setHideActionText(true);
+		kesoidyTlacitko.setIcon(new cz.geokuk.plugins.kesoid.OkoKesoiduIkona());
+		tb.add(kesoidyTlacitko);
 		tb.add(akce.filtrIkonyAction).setFocusable(false);
 		tb.add(akce.renderAction).setFocusable(false);
 
@@ -174,6 +236,8 @@ public class Menu extends MenuStrujce {
 		item(akce.zobrazeniKesiTeckyAction, zobrazeniKesi);
 		item(akce.limityKresleniAction);
 		menu.add(factory.init(new JMenuZvyrazneni()));
+		separator();
+		sestavSubmenuZdroju();
 		separator();
 		item(akce.popiskyOnoffAction);
 		item(akce.popiskyNastavParametryAction);
@@ -194,9 +258,13 @@ public class Menu extends MenuStrujce {
 		item(akce.nastavParametryZvyraznovacichKruhuAction);
 
 		separator();
+		sestavSubmenuChallenge();
+		separator();
 		item(akce.implicitniVyberZobrazenychKesi);
 		item(akce.urlToClipboardForGeogetAction);
 		item(akce.urlToListingForGeogetAction);
+		separator();
+		item(akce.prejdiNaKesoidZeSchrankyAction);
 
 		/////////////////////////////////////////////////////
 		JLabel lbl;

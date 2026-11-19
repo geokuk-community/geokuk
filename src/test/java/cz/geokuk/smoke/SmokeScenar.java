@@ -124,17 +124,30 @@ public class SmokeScenar {
 		});
 
 		cekej("hlavní okno", 60_000, () -> najdiHlavniOkno() != null);
+		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
 		if (Arrays.asList(kroky).contains("lista") || Arrays.asList(kroky).contains("obnova")) {
 			naEdt(() -> {
-				vychoziPolohy = polohyListy();
 				try {
 					cestyPriStartu = ((Component) pole(statusBar(), "cesty")).isVisible();
 				} catch (final ReflectiveOperationException e) {
 					throw new IllegalStateException(e);
 				}
 			});
+			// Stupeň úspor se volí při rozložení řádku a výška řádku se mu přizpůsobí až v dalším kroku.
+			cekej("ustálený stavový řádek", 30_000, () -> {
+				try {
+					naEdt(() -> {
+						final JStatusBar radek = statusBar();
+						if (radek != null && radek.getHeight() == radek.getPreferredSize().height) {
+							vychoziPolohy = polohyListy();
+						}
+					});
+				} catch (final Exception e) {
+					throw new IllegalStateException(e);
+				}
+				return vychoziPolohy != null;
+			});
 		}
-		zprava.setProperty("start.oknoMs", String.valueOf(System.currentTimeMillis() - start));
 		naEdt(() -> {
 			final Rectangle obrazovka = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
 			final Rectangle okno = najdiHlavniOkno().getBounds();

@@ -23,6 +23,41 @@ public class DiagnostikaTest {
 	public TemporaryFolder tmp = new TemporaryFolder();
 
 	@Test
+	public void udalostMaCasHodinyMinutySekundy() {
+		Diagnostika.zaznamenej("znacka-casu");
+		Assert.assertTrue(Diagnostika.text().matches("(?s).*\\n\\d{2}:\\d{2}:\\d{2} znacka-casu\\n.*"));
+	}
+
+	@Test
+	public void udalostiZVicevlaken() throws Exception {
+		final List<Thread> vlakna = new ArrayList<>();
+		final List<Throwable> chyby = Collections.synchronizedList(new ArrayList<>());
+		for (int v = 0; v < 8; v++) {
+			final int cislo = v;
+			final Thread vlakno = new Thread(() -> {
+				try {
+					for (int i = 0; i < 50; i++) {
+						Diagnostika.zaznamenej("souběh " + cislo + "/" + i);
+					}
+				} catch (final Throwable e) {
+					chyby.add(e);
+				}
+			});
+			vlakna.add(vlakno);
+			vlakno.start();
+		}
+		for (final Thread vlakno : vlakna) {
+			vlakno.join();
+		}
+		Assert.assertEquals(Collections.emptyList(), chyby);
+		for (final String radek : Diagnostika.text().split("\\n")) {
+			if (radek.contains(" souběh ")) {
+				Assert.assertTrue(radek, radek.matches("\\d{2}:\\d{2}:\\d{2} souběh \\d/\\d+"));
+			}
+		}
+	}
+
+	@Test
 	public void textObsahujeVerziAUdalosti() {
 		Diagnostika.zaznamenej("první");
 		Diagnostika.zaznamenejChybu("chyba stahování");
@@ -86,6 +121,15 @@ public class DiagnostikaTest {
 	}
 
 	@Test
+	public void konecLoguBezParametruAdres() throws Exception {
+		final File log = tmp.newFile("geokuk-url.log");
+		Files.write(log.toPath(), Arrays.asList("Chyba https://tile.example.org/1/2/3.png?apikey=TAJNE&x=1 při stahování"), StandardCharsets.UTF_8);
+		final String radek = Diagnostika.konecLogu(log, 3).getFirst();
+		Assert.assertFalse(radek, radek.contains("TAJNE"));
+		Assert.assertEquals("Chyba https://tile.example.org/1/2/3.png?… při stahování", radek);
+	}
+
+	@Test
 	public void chybejiciLogJePrazdny() {
 		Assert.assertTrue(Diagnostika.konecLogu(new File(tmp.getRoot(), "neni.log"), 3).isEmpty());
 	}
@@ -96,6 +140,32 @@ public class DiagnostikaTest {
 		Assert.assertFalse(text, text.contains(FConst.HOME_DIR.getAbsolutePath()));
 		Assert.assertFalse(text, text.contains("TAJNE"));
 		Assert.assertTrue(text, text.contains("https://tile.example.org/1/2/3.png?…"));
+	}
+
+	@Test
+	public void adresaSVelkymiPismenyUzivatelemHeslemAZakodovanymOtaznikem() {
+		Assert.assertEquals("HTTPS://tile.example.org/1.png?…", Diagnostika.soukrome("HTTPS://tile.example.org/1.png?KEY=TAJNE", "/home/jan", false));
+		Assert.assertEquals("http://server.example.org/a.png", Diagnostika.soukrome("http://uzivatel:heslo@server.example.org/a.png", "/home/jan", false));
+		Assert.assertEquals("https://server.example.org/redirect?…", Diagnostika.soukrome("https://server.example.org/redirect%3Fkey%3DTAJNE", "/home/jan", false));
+		Assert.assertEquals("https://server.example.org/a%20b?…", Diagnostika.soukrome("https://server.example.org/a%20b?key=TAJNE", "/home/jan", false));
+		Assert.assertEquals("https://server.example.org/app?…", Diagnostika.soukrome("https://server.example.org/app;jsessionid=TAJNE", "/home/jan", false));
+		Assert.assertEquals("ftp://server.example.org/soubor?…", Diagnostika.soukrome("ftp://server.example.org/soubor?token=TAJNE", "/home/jan", false));
+		Assert.assertEquals("https://x.org/a?…", Diagnostika.soukrome("https://x.org/a#frag?key=TAJNE", "/home/jan", false));
+		Assert.assertEquals("https://x.org/cb?…", Diagnostika.soukrome("https://x.org/cb#access_token=TAJNE&state=1", "/home/jan", false));
+		Assert.assertEquals("https://c.org/x", Diagnostika.soukrome("https://a@b@c.org/x", "/home/jan", false));
+		Assert.assertEquals("/home/jan2/x a ~/x", Diagnostika.soukrome("/home/jan2/x a /home/jan/x", "/home/jan", false));
+		Assert.assertEquals("Nelze zapsat do ~.", Diagnostika.soukrome("Nelze zapsat do /home/jan.", "/home/jan", false));
+		Assert.assertEquals("~, ~) a ~/x.txt", Diagnostika.soukrome("/home/jan, /home/jan) a /home/jan/x.txt", "/home/jan", false));
+		Assert.assertEquals("/home/jan.txt a /home/jan-2", Diagnostika.soukrome("/home/jan.txt a /home/jan-2", "/home/jan", false));
+		Assert.assertEquals("Nelze zapsat do ~.", Diagnostika.soukrome("Nelze zapsat do C:\\Users\\Jan.", "C:\\Users\\Jan", true));
+		Assert.assertEquals("Bez adresy a bez cesty", Diagnostika.soukrome("Bez adresy a bez cesty", "/home/jan", false));
+	}
+
+	@Test
+	public void domovskaSlozkaNaWindowsBezOhleduNaPismenaALomitka() {
+		final String domov = "C:\\Users\\Jan";
+		Assert.assertEquals("~\\geokuk a ~/geokuk a ~\\x", Diagnostika.soukrome("c:\\users\\jan\\geokuk a C:/Users/Jan/geokuk a C:\\Users\\\\Jan\\x", domov, true));
+		Assert.assertEquals("c:\\users\\jan\\geokuk", Diagnostika.soukrome("c:\\users\\jan\\geokuk", domov, false));
 	}
 
 	@Test
@@ -251,6 +321,42 @@ public class DiagnostikaTest {
 		Assert.assertTrue("záznam před vynulováním zmizel", Vykon.souhrn(Vykon.Velicina.EDT).max < 1000);
 		Assert.assertTrue(text[0], text[0].contains("Měření výkonu vynulováno"));
 		Assert.assertFalse(text[0], text[0].contains("max 2000.0 ms"));
+	}
+
+	@Test
+	public void oknoJeMenitelneAObsahSeRoztahujeTlacitkaZustanouDole() throws Exception {
+		Assume.assumeFalse("bez displeje", GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(() -> {
+			final JDialog d = DiagnostikaAction.sestav(null);
+			try {
+				Assert.assertTrue("okno jde zvětšovat", d.isResizable());
+				Assert.assertTrue(d.getMinimumSize().width <= DiagnostikaAction.NEJMENSI.width);
+				final JScrollPane posuvnik = najdi(d, JScrollPane.class, p -> true);
+				final JButton zavrit = najdi(d, JButton.class, b -> "Zavřít".equals(b.getText()));
+				d.setSize(700, 500);
+				d.validate();
+				final int sirka = posuvnik.getWidth();
+				final int vyska = posuvnik.getHeight();
+				Assert.assertTrue(sirka > 600 && vyska > 350);
+				d.setSize(1000, 800);
+				d.validate();
+				Assert.assertTrue("text se roztahuje do šířky", posuvnik.getWidth() >= sirka + 250);
+				Assert.assertTrue("text se roztahuje do výšky", posuvnik.getHeight() >= vyska + 250);
+				final java.awt.Container tlacitka = zavrit.getParent();
+				Assert.assertEquals("tlačítka mají stálou výšku", tlacitka.getPreferredSize().height, tlacitka.getHeight());
+				Assert.assertEquals("tlačítka zůstávají dole", d.getContentPane().getHeight(), tlacitka.getY() + tlacitka.getHeight());
+				Assert.assertTrue(najdi(d, JTextArea.class, a -> true).getText().length() > 0);
+			} finally {
+				d.dispose();
+			}
+		});
+	}
+
+	@Test
+	public void vychoziVelikostOknaNepresahnePracovniPlochu() {
+		Assert.assertEquals(new java.awt.Dimension(900, 650), DiagnostikaAction.vychoziVelikost(new java.awt.Rectangle(0, 0, 1920, 1080)));
+		Assert.assertEquals(new java.awt.Dimension(720, 540), DiagnostikaAction.vychoziVelikost(new java.awt.Rectangle(0, 0, 800, 600)));
+		Assert.assertEquals(new java.awt.Dimension(900, 450), DiagnostikaAction.vychoziVelikost(new java.awt.Rectangle(0, 0, 1280, 500)));
 	}
 
 	private static <T extends java.awt.Component> T najdi(final java.awt.Container kde, final Class<T> typ, final java.util.function.Predicate<T> podminka) {

@@ -10,6 +10,8 @@ public class Filex {
 	private final File file;
 	private final boolean relativeToProgram;
 	private final boolean active;
+	/** Výsledek {@link #getEffectiveFile()}; objekt je neměnný a složka programu se za běhu nemění, takže se kanonizuje jednou. */
+	private volatile File efektivni;
 
 	/**
 	 * Kanonizuj danou cestu. Pokud je cesta relativní, nejdříve ji zabsolutni.
@@ -150,7 +152,12 @@ public class Filex {
 	}
 
 	public File getEffectiveFile() {
-		return efektivni(file, FConst.KOREN);
+		File e = efektivni;
+		if (e == null) {
+			e = efektivni(file, FConst.KOREN);
+			efektivni = e;
+		}
+		return e;
 	}
 
 	/** Cesta uložená v nastavení; relativní cestu zapsala starší verze, která ji počítala od složky programu, převede se proto na absolutní, ať míří tam co dřív. */

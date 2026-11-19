@@ -18,6 +18,11 @@ public class JKachlovnikTras extends JKachlovnik {
 	/** Podklad pod trasami, podle něj se rozhoduje o atribuci. */
 	private EKaType podklad;
 
+	@Override
+	int trida() {
+		return 1;
+	}
+
 	public JKachlovnikTras() {
 		super("Kachlovník tras", Priority.KACHLE);
 		setVisible(false);

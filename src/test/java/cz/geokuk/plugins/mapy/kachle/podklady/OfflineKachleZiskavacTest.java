@@ -145,7 +145,7 @@ public class OfflineKachleZiskavacTest {
 		Assert.assertSame(zDisku, ziskej().getImg());
 	}
 
-	/** Po otevření mapy s novým klíčem se z cache uklidí dlaždice a symboly starých klíčů. */
+	/** Po otevření mapy s novým klíčem se zapíše soubor klíčů a uklidí symboly starých klíčů; dlaždice se z cache nemažou. */
 	@Test(timeout = 30000)
 	public void poOtevreniSeUkliziCache() throws Exception {
 		final File symboly = tmp.newFolder("offline-temata");
@@ -154,8 +154,16 @@ public class OfflineKachleZiskavacTest {
 		final OfflineRenderer r = ziskavac.getOfflineMapy().pouzij();
 		final String klic = r.getKlic();
 		r.skonci();
-		Assert.assertEquals(Collections.singleton(klic), uklizeno.poll(15, TimeUnit.SECONDS));
-		Assert.assertTrue(new File(symboly, UklidOfflineCache.SOUBOR).isFile());
+		// Soubor klíčů se zapisuje až po smazání dlaždic.
+		final File klice = new File(symboly, UklidOfflineCache.SOUBOR);
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+		while (!klice.isFile() && System.nanoTime() < konec) {
+			Thread.sleep(20);
+		}
+		Assert.assertTrue(klice.isFile());
+		Assert.assertEquals(Collections.singletonList(klic + " " + r.getSouborSymbolu().getName() + " " + r.getOblastniKlic().getSestava() + " " + r.getOblastniKlic().getIdentita()),
+				java.nio.file.Files.readAllLines(klice.toPath(), java.nio.charset.StandardCharsets.UTF_8));
+		Assert.assertTrue("dlaždice se při úklidu z cache nemažou", uklizeno.isEmpty());
 	}
 
 	@Test
@@ -215,5 +223,22 @@ public class OfflineKachleZiskavacTest {
 		final KachloStav stav = ziskej();
 		Assert.assertNull(stav.getThr());
 		Assert.assertNotNull(stav.getImg());
+	}
+
+	/** Předvykreslení přehledové dlaždice se počítá zvlášť, ať neposouvá p95 a max vykreslení dlaždic na obrazovce. */
+	@Test(timeout = 30000)
+	public void predvykresleniPrehleduSePocitaZvlast() throws Exception {
+		OfflineMapyTest.zkopirujMapu(slozka, "kukov.map");
+		cz.geokuk.core.napoveda.Vykon.vynuluj();
+		final OfflineRenderer r = ziskavac.getOfflineMapy().pouzij();
+		final String klic;
+		try {
+			klic = r.getKlic() + '.' + r.getOblastniKlic().getSestava();
+		} finally {
+			r.skonci();
+		}
+		Assert.assertTrue(ziskavac.mapyProPredvykresleniPrehledu().vykresli(OfflineMapyTest.STRED_Z15, klic));
+		Assert.assertEquals("nezapisuje se mezi dlaždice na obrazovce", 0, cz.geokuk.core.napoveda.Vykon.souhrn(cz.geokuk.core.napoveda.Vykon.Velicina.VYKRESLENI_OFFLINE).pocet);
+		Assert.assertEquals(1, cz.geokuk.core.napoveda.Vykon.souhrn(cz.geokuk.core.napoveda.Vykon.Velicina.VYKRESLENI_PREHLEDU).pocet);
 	}
 }

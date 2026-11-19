@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -23,6 +24,8 @@ import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Event0;
 import cz.geokuk.framework.Model0;
@@ -96,6 +99,16 @@ public class SpravaMapModel extends Model0 {
 	long[] prodlevyOpakovaniMs = { 5_000, 15_000, 30_000 };
 	/** Čas posledního nepovedeného samočinného stažení katalogu, jen na vlákně kontroly; null = žádné. */
 	private Long posledniPokusKatalogu;
+	/** Za jak dlouho po dokončení startu okna se poprvé ověří katalog vrstev; do té doby stavba okna nesoutěží o procesor a hlavní vlákno se sítí. */
+	long zpozdeniPoStartuMs = TimeUnit.SECONDS.toMillis(3);
+	volatile boolean startDokoncen;
+	/** První pohled na mapu proběhl; do té doby se stavy map z disku při startu a při změně složky jen odkládají. */
+	BooleanSupplier poPrvnimPohledu = () -> PrvniNacitaniMapy.jeUkonceno() && Diagnostika.dobaBehuMs() >= PrvniNacitaniMapy.LIMIT_MS;
+	long kontrolaPoPrvnimPohleduMs = TimeUnit.SECONDS.toMillis(1);
+	/** Stavy čekají na první pohled; otevření nabídky nebo dialogu je přečte hned. */
+	private final AtomicBoolean obnovaPoPohleduCeka = new AtomicBoolean();
+	/** Obnova stavů už čeká na vlákně kontroly; další žádosti se s ní sloučí, přečte aktuální stav. */
+	private final AtomicBoolean obnovaStavuCeka = new AtomicBoolean();
 
 	/** Požádá blok Mapy ve stavovém řádku, aby otevřel panel offline map s fokusem. */
 	public void otevriPanel() {
@@ -141,8 +154,8 @@ public class SpravaMapModel extends Model0 {
 
 	/** Offline mapy dostanou živé katalogy, podle kterých se katalogovým mapám a vrstvám přiřadí obrys; po změně katalogu se otevřou znovu. */
 	public void inject(final KachleZiskavac ziskavac) {
-		ziskavac.getOfflineMapy().setKatalogy(this::getKatalog, this::getKatalogVrstev);
-		ziskavac.getOfflineTrasy().setKatalogy(this::getKatalog, this::getKatalogVrstev);
+		ziskavac.getOfflineMapy().setKatalogy(this::getKatalog, this::getKatalogVrstevProOtevreni);
+		ziskavac.getOfflineTrasy().setKatalogy(this::getKatalog, this::getKatalogVrstevProOtevreni);
 	}
 
 	/** Pro testy: složka a odpalování událostí bez Swingu. */
@@ -170,16 +183,16 @@ public class SpravaMapModel extends Model0 {
 
 	@Override
 	protected void initAndFire() {
-		obnovStavy();
+		obnovStavyPoPrvnimPohledu();
 		obnovKatalogVrstevKdyzJeStary();
 	}
 
 	public void onEvent(final OfflineMapaChangedEvent event) {
-		obnovStavy();
+		obnovStavyPoPrvnimPohledu();
 	}
 
 	public void onEvent(final KachleUmisteniSouboruChangedEvent event) {
-		obnovStavy();
+		obnovStavyPoPrvnimPohledu();
 		obnovKatalogVrstevKdyzJeStary();
 	}
 
@@ -202,6 +215,18 @@ public class SpravaMapModel extends Model0 {
 	public KatalogVrstev getKatalogVrstev() {
 		final KatalogVrstev k = stazenyKatalog;
 		return k != null ? k : katalogVrstev.get();
+	}
+
+	/**
+	 * Katalog vrstev pro otevření offline map: uložený katalog se načte už před prvním otevřením, jinak by se mapy po jeho načtení na vlákně kontroly
+	 * otevřely znovu. Nevolat z EDT.
+	 */
+	KatalogVrstev getKatalogVrstevProOtevreni() {
+		final File s = slozka.get();
+		if (s != null && stazenyKatalogZ == null) {
+			nactiStazenyKatalog(new File(s, SLOZKA_VRSTEV));
+		}
+		return getKatalogVrstev();
 	}
 
 	/**
@@ -232,6 +257,32 @@ public class SpravaMapModel extends Model0 {
 	 * zůstane poslední kopie (nebo vestavěný katalog) a uživatel nic nevidí; další pokus nejdřív za {@link #opakovaniKataloguNs}.
 	 */
 	public void obnovKatalogVrstevKdyzJeStary() {
+		if (startDokoncen) {
+			obnovKatalogVrstevPodminene(false);
+		}
+	}
+
+	/** Okno je zobrazené a start dokončený: po {@link #zpozdeniPoStartuMs} se poprvé ověří katalog vrstev, dřív se samočinně nestahuje. */
+	public void poStartu() {
+		if (zpozdeniPoStartuMs <= 0) {
+			dokonciStart();
+			return;
+		}
+		final Thread t = new Thread(() -> {
+			try {
+				Thread.sleep(zpozdeniPoStartuMs);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			dokonciStart();
+		}, "Katalog vrstev po startu");
+		t.setDaemon(true);
+		t.start();
+	}
+
+	private void dokonciStart() {
+		startDokoncen = true;
 		obnovKatalogVrstevPodminene(false);
 	}
 
@@ -297,8 +348,8 @@ public class SpravaMapModel extends Model0 {
 		return true;
 	}
 
-	/** Kopie staženého katalogu ve složce vrstev; čte se jednou pro každou složku. Volá se na vlákně kontroly. */
-	private void nactiStazenyKatalog(final File sv) {
+	/** Kopie staženého katalogu ve složce vrstev; čte se jednou pro každou složku, na vlákně kontroly nebo před prvním otevřením offline map. */
+	private synchronized void nactiStazenyKatalog(final File sv) {
 		if (sv.equals(stazenyKatalogZ)) {
 			return;
 		}
@@ -319,7 +370,7 @@ public class SpravaMapModel extends Model0 {
 		odpalovac.accept(new KatalogVrstevEvent(getKatalogVrstev(), null));
 	}
 
-	private void zmenKatalogVrstev(final KatalogVrstev k, final File z) {
+	private synchronized void zmenKatalogVrstev(final KatalogVrstev k, final File z) {
 		stazenyKatalog = k;
 		stazenyKatalogZ = z;
 	}
@@ -416,9 +467,41 @@ public class SpravaMapModel extends Model0 {
 		});
 	}
 
+	/** Stavy map z disku nikdo nepotřebuje k prvnímu pohledu na mapu, přečtou se po něm; kdo je potřebuje dřív, volá {@link #obnovStavy()}. Stavy vrstev se čtou hned. */
+	private void obnovStavyPoPrvnimPohledu() {
+		if (poPrvnimPohledu.getAsBoolean()) {
+			obnovStavy();
+			return;
+		}
+		obnovStavyVrstevHned();
+		if (!obnovaPoPohleduCeka.compareAndSet(false, true)) {
+			return;
+		}
+		final Thread t = new Thread(() -> {
+			try {
+				while (obnovaPoPohleduCeka.get() && !poPrvnimPohledu.getAsBoolean()) {
+					Thread.sleep(kontrolaPoPrvnimPohleduMs);
+				}
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			if (obnovaPoPohleduCeka.getAndSet(false)) {
+				obnovStavy();
+			}
+		}, "Stavy map po prvním pohledu");
+		t.setDaemon(true);
+		t.start();
+	}
+
 	/** Přečte stav všech katalogových map z disku (bez sítě); jedna změna přijde svou událostí, víc změn jednou {@link StavyMapEvent}. */
 	public void obnovStavy() {
+		obnovaPoPohleduCeka.set(false);
+		if (!obnovaStavuCeka.compareAndSet(false, true)) {
+			return;
+		}
 		kontrola.execute(() -> {
+			obnovaStavuCeka.set(false);
 			final File s = slozka.get();
 			if (s == null) {
 				return;
@@ -435,26 +518,47 @@ public class SpravaMapModel extends Model0 {
 					zmeny.add(new SpravaMapEvent(ted));
 				}
 			}
-			final File sv = slozkaVrstevNaPozadi();
-			nactiStazenyKatalog(sv);
-			for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
-				final StavVrstvy predtim = stavyVrstev.computeIfAbsent(v.getId(), id -> StavVrstvy.novy(v));
-				if (predtim.isBezi()) {
-					continue;
-				}
-				// Stav z dřívějšího katalogu vrstev se přečte znovu podle nové vrstvy.
-				final StavVrstvy ted = StahovacVrstev.mistniStav(predtim.getVrstva() == v ? predtim : StavVrstvy.novy(v), sv);
-				stavyVrstev.put(v.getId(), ted);
-				if (!ted.toString().equals(predtim.toString())) {
-					zmeny.add(new SpravaVrstevEvent(ted));
-				}
-			}
-			if (zmeny.size() == 1) {
-				odpalovac.accept(zmeny.get(0));
-			} else if (!zmeny.isEmpty()) {
-				odpalovac.accept(new StavyMapEvent());
-			}
+			obnovStavyVrstev(zmeny);
+			ohlasZmeny(zmeny);
 		});
+	}
+
+	/** Stavy vrstev potřebuje hned atribuce mapy (uvádí se jen u vrstev, které máme), proto se čtou i před prvním pohledem. */
+	private void obnovStavyVrstevHned() {
+		kontrola.execute(() -> {
+			if (slozka.get() == null) {
+				return;
+			}
+			final List<Event0<SpravaMapModel>> zmeny = new java.util.ArrayList<>();
+			obnovStavyVrstev(zmeny);
+			ohlasZmeny(zmeny);
+		});
+	}
+
+	/** Jen na vlákně kontroly. */
+	private void obnovStavyVrstev(final List<Event0<SpravaMapModel>> zmeny) {
+		final File sv = slozkaVrstevNaPozadi();
+		nactiStazenyKatalog(sv);
+		for (final KatalogovaVrstva v : getKatalogVrstev().getVrstvy()) {
+			final StavVrstvy predtim = stavyVrstev.computeIfAbsent(v.getId(), id -> StavVrstvy.novy(v));
+			if (predtim.isBezi()) {
+				continue;
+			}
+			// Stav z dřívějšího katalogu vrstev se přečte znovu podle nové vrstvy.
+			final StavVrstvy ted = StahovacVrstev.mistniStav(predtim.getVrstva() == v ? predtim : StavVrstvy.novy(v), sv);
+			stavyVrstev.put(v.getId(), ted);
+			if (!ted.toString().equals(predtim.toString())) {
+				zmeny.add(new SpravaVrstevEvent(ted));
+			}
+		}
+	}
+
+	private void ohlasZmeny(final List<Event0<SpravaMapModel>> zmeny) {
+		if (zmeny.size() == 1) {
+			odpalovac.accept(zmeny.get(0));
+		} else if (!zmeny.isEmpty()) {
+			odpalovac.accept(new StavyMapEvent());
+		}
 	}
 
 	/** Stáhne mapu do složky offline map. False, když se už nějaká mapa stahuje. */

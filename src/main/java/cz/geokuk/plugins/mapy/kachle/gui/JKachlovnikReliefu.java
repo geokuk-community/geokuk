@@ -15,6 +15,11 @@ public class JKachlovnikReliefu extends JKachlovnik {
 
 	private boolean viditelny;
 
+	@Override
+	int trida() {
+		return 1;
+	}
+
 	public JKachlovnikReliefu() {
 		super("Kachlovník reliéfu", Priority.KACHLE);
 		setVisible(false);

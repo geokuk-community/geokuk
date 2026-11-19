@@ -14,6 +14,7 @@ import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.plugins.kesoid.KesBag;
 import cz.geokuk.plugins.kesoid.genetika.Alela;
 import cz.geokuk.plugins.kesoid.mapicon.IkonBag;
+import cz.geokuk.plugins.kesoid.mapicon.StavIkona;
 
 /**
  * @author Martin Veverka
@@ -97,7 +98,7 @@ public class ZhasniKeseUrciteAlelyAction extends Action0 implements AfterEventRe
 	@Override
 	public void initAfterEventReceiverRegistration() {
 		super.putValue(NAME, sestavJmeno());
-		super.putValue(SMALL_ICON, new PreskrtnutaIkona(ikonBag.seekIkon(ikonBag.getGenom().UNIVERZALNI_DRUH.genotypVychozi().with(alela))));
+		super.putValue(SMALL_ICON, new PreskrtnutaIkona(StavIkona.ikonaAlely(ikonBag, alela, 16)));
 		super.putValue(SHORT_DESCRIPTION, "Zhasne waypointy daného typu.");
 
 	}

@@ -12,6 +12,11 @@ public class JKachlovnikDoRohu extends JKachlovnik {
 	}
 
 	@Override
+	int trida() {
+		return 2;
+	}
+
+	@Override
 	public void setKachloType(final EKaType aKachloSet) {
 		// nehezké takto přepsat metodu
 		super.setKachloType(EKaType.OPHOTO_M);

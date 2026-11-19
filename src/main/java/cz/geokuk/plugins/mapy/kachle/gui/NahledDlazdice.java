@@ -43,9 +43,17 @@ final class NahledDlazdice {
 	 *            velikost dlaždice v logických bodech
 	 */
 	static List<NahledDlazdice> najdi(final Ka ka, final Function<Ka, Image> hledej, final int velikost) {
+		return najdi(ka, hledej, velikost, MAX_UROVNI_NAHORU, true);
+	}
+
+	/**
+	 * Jako {@link #najdi(Ka, Function, int)}, ale nejvýš {@code maxUrovni} úrovní nahoru a čtyři dlaždice z vyššího měřítka jen když je {@code sDetmi}; pro hledání, které něco stojí
+	 * (čtení z disku).
+	 */
+	static List<NahledDlazdice> najdi(final Ka ka, final Function<Ka, Image> hledej, final int velikost, final int maxUrovni, final boolean sDetmi) {
 		final KaLoc loc = ka.getLoc();
 		KaLoc rodic = loc;
-		for (int uroven = 1; uroven <= MAX_UROVNI_NAHORU; uroven++) {
+		for (int uroven = 1; uroven <= maxUrovni; uroven++) {
 			rodic = rodic.rodic();
 			if (rodic == null) {
 				break;
@@ -60,7 +68,7 @@ final class NahledDlazdice {
 				return Collections.singletonList(new NahledDlazdice(img, ix * w / n, iy * h / n, (ix + 1) * w / n, (iy + 1) * h / n, 0, 0, velikost, velikost));
 			}
 		}
-		if (loc.getMoumer() < 1) {
+		if (!sDetmi || loc.getMoumer() < 1) {
 			return Collections.emptyList();
 		}
 		final List<NahledDlazdice> deti = new ArrayList<>(4);

@@ -72,6 +72,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	private KesFilteringSwingWorker filteringSwingWorker;
 	private ProgressModel progressModel;
 	private Boolean onoff;
+	private boolean sledovatSchranku;
 	private EZobrazeniKesi zobrazeniKesi;
 	private int zvetseniIkonProcent = ZvetseniIkonEvent.VYCHOZI;
 	private volatile List<String> zamceneDatabaze = Collections.emptyList();
@@ -164,7 +165,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	}
 
 	/**
-	 * Databáze GSAKu z aktuálního prohledání. Při „Načítat až po vybrání“ se databáze, kterou GeoKuk při minulém prohledání neviděl, nenačte, dokud ji uživatel nevybere.
+	 * Databáze GSAKu z aktuálního prohledání. Při volbě „Nové databáze načíst až po vybrání“ se databáze, kterou GeoKuk při minulém prohledání neviděl, nenačte, dokud ji uživatel nevybere.
 	 */
 	public void zaradGsakDatabaze(final Set<File> databaze) {
 		zaradGsakDatabaze(databaze, Collections.emptySet());
@@ -172,7 +173,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 	/** Známé databáze v nedostupných složkách zůstanou známé. */
 	public void zaradGsakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
-		zaradDatabaze(FPref.ZNAME_GSAK_DATABAZE_value, () -> getGsakParametryNacitani().isNacistVsechnyDatabaze(), databaze, nedostupne);
+		zaradDatabaze(FPref.ZNAME_GSAK_DATABAZE_value, () -> getGsakParametryNacitani().isNoveDatabazeHned(), databaze, nedostupne);
 	}
 
 	/** Databáze OpenSAKu z aktuálního prohledání, „Načítat až po vybrání“ stejně jako u GSAKu. */
@@ -181,7 +182,16 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	}
 
 	public void zaradOpensakDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
-		zaradDatabaze(FPref.ZNAME_OPENSAK_DATABAZE_value, () -> getGsakParametryNacitani().isNacistVsechnyDatabazeOpensaku(), databaze, nedostupne);
+		zaradDatabaze(FPref.ZNAME_OPENSAK_DATABAZE_value, () -> getGsakParametryNacitani().isNoveDatabazeOpensakuHned(), databaze, nedostupne);
+	}
+
+	/** Databáze GeoGetu (soubory .db3) z aktuálního prohledání, „Načítat až po vybrání“ stejně jako u GSAKu. */
+	public void zaradGeogetDatabaze(final Set<File> databaze) {
+		zaradGeogetDatabaze(databaze, Collections.emptySet());
+	}
+
+	public void zaradGeogetDatabaze(final Set<File> databaze, final Set<File> nedostupne) {
+		zaradDatabaze(FPref.ZNAME_GEOGET_DATABAZE_value, () -> getGsakParametryNacitani().isNoveDatabazeGeogetuHned(), databaze, nedostupne);
 	}
 
 	private synchronized void zaradDatabaze(final String klicZnamych, final java.util.function.BooleanSupplier nacistVsechny, final Set<File> databaze, final Set<File> nedostupne) {
@@ -499,6 +509,11 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		zmenZapnute(nicVybrano ? soubory : Collections.<File>emptyList(), Collections.<File>emptyList(), typy);
 	}
 
+	/** Zobrazují se kešoidy (F5)? Dokud není nastaveno, ano. */
+	public boolean isOnoff() {
+		return onoff == null || onoff;
+	}
+
 	public void setOnoff(final boolean onoff) {
 		if (this.onoff != null && this.onoff == onoff) {
 			return;
@@ -506,6 +521,20 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		this.onoff = onoff;
 		currPrefe().node(FPref.KESOID_node).putBoolean(FPref.KESOID_VISIBLE_value, onoff);
 		fire(new KesoidOnoffEvent(onoff));
+	}
+
+	/** Přejít na kešoid, jehož kód nebo odkaz se objeví ve schránce, když je okno programu neaktivní; výchozí je vypnuto. */
+	public boolean isSledovatSchranku() {
+		return sledovatSchranku;
+	}
+
+	public void setSledovatSchranku(final boolean sledovat) {
+		if (sledovatSchranku == sledovat) {
+			return;
+		}
+		sledovatSchranku = sledovat;
+		currPrefe().node(FPref.KESOID_node).putBoolean(FPref.SLEDOVAT_SCHRANKU_value, sledovat);
+		fire(new SledovaniSchrankyEvent(sledovat));
 	}
 
 	public void setZobrazeniKesi(final EZobrazeniKesi zobrazeniKesi) {
@@ -622,9 +651,10 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		gsakParametryNacitani = aGsakParametryNacitani;
 		final MyPreferences pref = currPrefe().node(FPref.GSAK_node);
 		pref.putStringSet(FPref.GSAK_CAS_NALEZU_value, aGsakParametryNacitani.getCasNalezu());
-		pref.putStringSet(FPref.GSAK_CAS_NENALEZU_value, aGsakParametryNacitani.getCasNenalezu());
-		pref.putBoolean(FPref.GSAK_NACITAT_VSECHNO, aGsakParametryNacitani.isNacistVsechnyDatabaze());
-		currPrefe().node(FPref.OPENSAK_node).putBoolean(FPref.GSAK_NACITAT_VSECHNO, aGsakParametryNacitani.isNacistVsechnyDatabazeOpensaku());
+		pref.remove(FPref.GSAK_CAS_NENALEZU_value);
+		pref.putBoolean(FPref.NOVE_DATABAZE_HNED_value, aGsakParametryNacitani.isNoveDatabazeHned());
+		currPrefe().node(FPref.OPENSAK_node).putBoolean(FPref.NOVE_DATABAZE_HNED_value, aGsakParametryNacitani.isNoveDatabazeOpensakuHned());
+		currPrefe().node(FPref.GEOGET_node).putBoolean(FPref.NOVE_DATABAZE_HNED_value, aGsakParametryNacitani.isNoveDatabazeGeogetuHned());
 		fire(new GsakParametryNacitaniChangedEvent(gsakParametryNacitani));
 	}
 
@@ -661,6 +691,15 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		vsechny = vsechnyKesoidy;
 		spustFiltrovani();
 		fire(new KeskyNactenyEvent(vsechnyKesoidy));
+	}
+
+	/** Nastaví další podmínku, kterou musí kešoid splnit kromě filtru; null ji zruší. Při změně se spustí filtrování; stejná podmínka (podle equals) nic nedělá. */
+	public void setDoplnkovyFiltr(final java.util.function.Predicate<Kesoid> doplnkovyFiltr) {
+		if (Objects.equals(doplnkovyFiltr, filter.getDoplnkovyFiltr())) {
+			return;
+		}
+		filter.setDoplnkovyFiltr(doplnkovyFiltr);
+		spustFiltrovani();
 	}
 
 	public void spustFiltrovani() {
@@ -712,6 +751,8 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 		final MyPreferences kesoid = currPrefe().node(FPref.KESOID_node);
 		setOnoff(kesoid.getBoolean(FPref.KESOID_VISIBLE_value, true));
+		setSledovatSchranku(kesoid.getBoolean(FPref.SLEDOVAT_SCHRANKU_value, false));
+		fire(new SledovaniSchrankyEvent(sledovatSchranku));
 		setZobrazeniKesi(kesoid.getEnum(FPref.ZOBRAZENI_KESI_value, EZobrazeniKesi.AUTOMATICKY, EZobrazeniKesi.class));
 		zvetseniIkonProcent = ZvetseniIkonEvent.oriznout(kesoid.getInt(FPref.ZVETSENI_IKON_value, ZvetseniIkonEvent.VYCHOZI));
 		fire(new ZvetseniIkonEvent(zvetseniIkonProcent));
@@ -739,13 +780,13 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		return u;
 	}
 
-	private GsakParametryNacitani loadGsakParametryNacitani() {
+	GsakParametryNacitani loadGsakParametryNacitani() {
 		final GsakParametryNacitani g = new GsakParametryNacitani();
 		final MyPreferences pref = currPrefe().node(FPref.GSAK_node);
 		g.setCasNalezu(pref.getStringList(FPref.GSAK_CAS_NALEZU_value, Arrays.asList("UserData")));
-		g.setCasNenalezu(pref.getStringList(FPref.GSAK_CAS_NENALEZU_value, Arrays.asList("UserData")));
-		g.setNacistVsechnyDatabaze(pref.getBoolean(FPref.GSAK_NACITAT_VSECHNO, true));
-		g.setNacistVsechnyDatabazeOpensaku(currPrefe().node(FPref.OPENSAK_node).getBoolean(FPref.GSAK_NACITAT_VSECHNO, true));
+		g.setNoveDatabazeHned(pref.getBoolean(FPref.NOVE_DATABAZE_HNED_value, true));
+		g.setNoveDatabazeOpensakuHned(currPrefe().node(FPref.OPENSAK_node).getBoolean(FPref.NOVE_DATABAZE_HNED_value, true));
+		g.setNoveDatabazeGeogetuHned(currPrefe().node(FPref.GEOGET_node).getBoolean(FPref.NOVE_DATABAZE_HNED_value, true));
 		return g;
 	}
 

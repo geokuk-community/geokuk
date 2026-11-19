@@ -123,6 +123,27 @@ public class VrstvyPodleKliceTest {
 		assertSame(trasy, k.podleCesty("europe/germany/bayern.tourist.map").get());
 	}
 
+	/** Atribuce mapy uvádí jen vrstvy, které máme; jejich stav se proto čte i před prvním pohledem na mapu. */
+	@Test
+	public void stavVrstevProAtribuciSeCteHnedAStavyMapAzPoPohledu() throws Exception {
+		final KatalogVrstev k = KatalogVrstev.nacti(katalogBavorska(), KatalogVrstevTest.mapy());
+		final KatalogovaVrstva trasy = k.vrstva("europe/germany/bayern", Typ.TRASY).get();
+		final File mapy = tmp.newFolder("offline-mapy");
+		final StahovacVrstev stahovac = new StahovacVrstev(new StahovacMapy("GeoKuk/test", () -> {
+		}));
+		final StavVrstvy stazena = stahovac.stahni(StavVrstvy.novy(trasy), new File(mapy, "layers"), () -> false, x -> {
+		});
+		assertEquals(Mistni.MAME, stazena.getMistni());
+
+		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), k);
+		model.nastavProTest(() -> mapy, e -> {
+		});
+		model.poPrvnimPohledu = () -> false;
+		model.initAndFire();
+		model.pockej();
+		assertEquals("vrstva, kterou máme, má před prvním pohledem stav pro atribuci", Mistni.MAME, model.getStav(trasy).getMistni());
+	}
+
 	@Test
 	public void souboryVrstevNajdouJenVrstvy() throws IOException {
 		final File slozka = tmp.newFolder("vrstvy");
@@ -174,6 +195,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, udalosti::add);
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		assertEquals("vestavěný je prázdný", 0, model.getKatalogVrstev().getVrstvy().size());
@@ -220,7 +242,13 @@ public class VrstvyPodleKliceTest {
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		katalog = katalogBavorska();
 
+		model.poPrvnimPohledu = () -> true;
 		model.initAndFire();
+		model.pockej();
+		assertEquals("při startu okna se katalog nestahuje", 0, dotazyNaKatalog.get());
+		assertEquals(0, model.getKatalogVrstev().getVrstvy().size());
+		model.zpozdeniPoStartuMs = 0;
+		model.poStartu();
 		model.pockej();
 		assertEquals(2, model.getKatalogVrstev().getVrstvy().size());
 		assertNull(posledni(udalosti).getChyba());
@@ -259,6 +287,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, udalosti::add);
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		katalog = katalogBavorska();
@@ -300,6 +329,7 @@ public class VrstvyPodleKliceTest {
 		final File mapy = tmp.newFolder("offline-mapy");
 		final List<Event0<SpravaMapModel>> udalosti = new CopyOnWriteArrayList<>();
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, udalosti::add);
 		model.urlKataloguVrstev = URI.create(zaklad() + "latest/layers.json");
 		katalog = katalogBavorska();
@@ -341,6 +371,7 @@ public class VrstvyPodleKliceTest {
 		Files.write(new File(stara, "czech-republic.tourist.map").toPath(), new byte[] { 1 });
 		Files.write(new File(mapy, "vrstvy/vrstvy.json").toPath(), "{}".getBytes(StandardCharsets.US_ASCII));
 		final SpravaMapModel model = new SpravaMapModel(KatalogVrstevTest.mapy(), KatalogVrstev.vestaveny());
+		model.startDokoncen = true;
 		model.nastavProTest(() -> mapy, e -> {
 		});
 		model.obnovStavy();

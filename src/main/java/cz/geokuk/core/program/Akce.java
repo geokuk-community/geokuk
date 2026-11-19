@@ -23,6 +23,7 @@ import cz.geokuk.plugins.cesty.akce.soubor.*;
 import cz.geokuk.plugins.geocoding.GeocodingAdrAction;
 import cz.geokuk.plugins.kesoid.EZobrazeniKesi;
 import cz.geokuk.plugins.kesoid.filtr.FiltrIkonyAction;
+import cz.geokuk.plugins.kesoid.importek.TypZdroje;
 import cz.geokuk.plugins.kesoid.kind.kes.JenDoTerenuUNenalezenychAction;
 import cz.geokuk.plugins.kesoid.kind.kes.JenFinalUNalezenychAction;
 import cz.geokuk.plugins.kesoid.mapicon.*;
@@ -69,6 +70,18 @@ public class Akce {
 	public final JednotkoveKruhyAction jednotkoveKruhyAction = new JednotkoveKruhyAction();
 	public final NastavParametryZvyraznovacichKruhuAction nastavParametryZvyraznovacichKruhuAction = new NastavParametryZvyraznovacichKruhuAction();
 	public final ObsazenostOnoffAction obsazenostOnoffAction = new ObsazenostOnoffAction();
+
+	public final cz.geokuk.plugins.challenge.ChallengeNastaveniAction challengeNastaveniAction = new cz.geokuk.plugins.challenge.ChallengeNastaveniAction();
+	public final cz.geokuk.plugins.challenge.ChallengeZapnoutAction challengeZapnoutAction = new cz.geokuk.plugins.challenge.ChallengeZapnoutAction();
+	public final cz.geokuk.plugins.challenge.ChallengeDalsiAction challengeDalsiAction = new cz.geokuk.plugins.challenge.ChallengeDalsiAction();
+	public final cz.geokuk.plugins.challenge.ChallengePredchoziAction challengePredchoziAction = new cz.geokuk.plugins.challenge.ChallengePredchoziAction();
+	public final cz.geokuk.plugins.challenge.ChallengeJenKandidatiAction challengeJenKandidatiAction = new cz.geokuk.plugins.challenge.ChallengeJenKandidatiAction();
+	public final cz.geokuk.plugins.challenge.ChallengeSektoryAction challengeSektoryAction = new cz.geokuk.plugins.challenge.ChallengeSektoryAction();
+	public final cz.geokuk.plugins.challenge.ChallengeStitkyAction challengeStitkyAction = new cz.geokuk.plugins.challenge.ChallengeStitkyAction();
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokSever = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.SEVER);
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokVychod = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.VYCHOD);
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokJih = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.JIH);
+	public final cz.geokuk.plugins.challenge.ChallengeSkokAction challengeSkokZapad = new cz.geokuk.plugins.challenge.ChallengeSkokAction(cz.geokuk.plugins.challenge.SmerSkoku.ZAPAD);
 
 	public final MrizkaDdAction mrizkaDdAction = new MrizkaDdAction();
 	public final MrizkaDdMmMmmAction mrizkaDdMmMmmAction = new MrizkaDdMmMmmAction();
@@ -130,6 +143,11 @@ public class Akce {
 	public final RenderAction renderAction = new RenderAction();
 
 	public final KesoidyOnoffAction kesoidyOnoffAction = new KesoidyOnoffAction();
+	public final PrepniZdrojAction prepniZdrojGpxAction = new PrepniZdrojAction(TypZdroje.GPX);
+	public final PrepniZdrojAction prepniZdrojGeogetAction = new PrepniZdrojAction(TypZdroje.GEOGET);
+	public final PrepniZdrojAction prepniZdrojGsakAction = new PrepniZdrojAction(TypZdroje.GSAK);
+	public final PrepniZdrojAction prepniZdrojOpensakAction = new PrepniZdrojAction(TypZdroje.OPENSAK);
+	public final PrejdiNaKesoidZeSchrankyAction prejdiNaKesoidZeSchrankyAction = new PrejdiNaKesoidZeSchrankyAction();
 
 	public final NapovedaAction napovedaAction = new NapovedaAction(null);
 	public final ZadatProblemAction zadatProblemAction = new ZadatProblemAction();
@@ -198,9 +216,15 @@ public class Akce {
 				throw new IllegalStateException(e);
 			}
 		}
-		// Referenční body dostávají Alt+číslo postupně až při sestavení menu.
+		for (final PrepniZdrojAction zdroj : new PrepniZdrojAction[] { prepniZdrojGpxAction, prepniZdrojGeogetAction, prepniZdrojGsakAction, prepniZdrojOpensakAction }) {
+			final KeyStroke numpad = ZkratkyZdroju.zkratkaNumpad(zdroj.getTyp());
+			if (numpad != null) {
+				zkratky.put(numpad, "akce " + zdroj.getValue(Action.NAME));
+			}
+		}
+		// Pojmenované body dostávají Alt+číslo postupně až při sestavení menu.
 		for (int i = 1; i <= 9; i++) {
-			zkratky.putIfAbsent(KeyStroke.getKeyStroke("alt " + i), "referenční bod");
+			zkratky.putIfAbsent(KeyStroke.getKeyStroke("alt " + i), "pojmenovaný bod");
 		}
 		return zkratky;
 	}

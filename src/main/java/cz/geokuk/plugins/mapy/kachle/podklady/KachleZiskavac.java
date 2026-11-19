@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -19,10 +20,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalCause;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.*;
 
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.core.napoveda.Diagnostika;
 import cz.geokuk.core.napoveda.Vykon;
 import cz.geokuk.core.onoffline.OnofflineModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
@@ -47,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class KachleZiskavac {
 
 	/**
-	 * Objekt zodpovědný za držení jedné kachle a její získání. Je zároveň v mapě jako keš.
+	 * Objekt zodpovědný za držení jedné kachle a její získání. Je zároveň v mapě jako záznam cache.
 	 *
 	 * @author Martin
 	 *
@@ -72,6 +76,8 @@ public class KachleZiskavac {
 		/** Stahování už posílá požadavek na server: při zrušení doběhne, aby se tatáž dlaždice nestahovala dvakrát. */
 		private volatile boolean stahujeSe;
 		private final List<ImageReceiver> irs = new ArrayList<ImageReceiver>();
+		/** Kopie {@link #irs} pro výpočet pořadí ve frontách, který nesmí brát zámek dlaždice. */
+		private volatile ImageReceiver[] prijemciProRazeni = new ImageReceiver[0];
 
 		public Kachlice(final Ka ka, final DvojiceExekucnichSluzeb des, final DiagnosticsData diagnosticsData) {
 			super();
@@ -80,6 +86,74 @@ public class KachleZiskavac {
 			this.diagnosticsData = diagnosticsData;
 			pocitKachlice.inc();
 			//System.out.println("Vytvořena kachlice pro: " + ka);
+		}
+
+		private void obnovPrijemceProRazeni() {
+			prijemciProRazeni = irs.toArray(new ImageReceiver[0]);
+		}
+
+		/** Naléhavost nejnaléhavějšího příjemce, {@link ImageReceiver#ZASTARALA}, když dlaždici nikdo nechce. Bez zámků, volá ji fronta úloh. */
+		long dulezitost() {
+			long nejlepsi = ImageReceiver.ZASTARALA;
+			for (final ImageReceiver ir : prijemciProRazeni) {
+				nejlepsi = Math.min(nejlepsi, ir.dulezitost());
+			}
+			return nejlepsi;
+		}
+
+		/** Úloha vyřazená z fronty jako zastaralá: příjemci, které už nikdo nechce, se odeberou; kdo se mezitím přihlásil, dostane úlohu znovu. */
+		void zahodUlohu(final Future<?> uloha) {
+			final Runnable spust;
+			synchronized (this) {
+				uloha.cancel(false);
+				irs.removeIf(ir -> ir.dulezitost() == ImageReceiver.ZASTARALA);
+				obnovPrijemceProRazeni();
+				if (futura != uloha) {
+					return;
+				}
+				futura = null;
+				spust = irs.isEmpty() ? null : zahajNacteni();
+			}
+			if (spust != null) {
+				spust.run();
+			}
+		}
+
+		/** Úloha čekající ve frontě disku nebo vykreslování; pořadí se vyhodnotí až při výběru podle toho, co uživatel vidí. */
+		final class Uloha implements PrioritniFronta.Razena {
+			private final Runnable telo;
+			private final Future<?> budouci;
+			private final long zadano = System.nanoTime();
+
+			<F extends Runnable & Future<?>> Uloha(final F telo) {
+				this.telo = telo;
+				this.budouci = telo;
+			}
+
+			@Override
+			public void run() {
+				telo.run();
+			}
+
+			@Override
+			public long poradi(final long tedNs) {
+				final long zakladni = dulezitost();
+				if (zakladni == ImageReceiver.ZASTARALA) {
+					return ImageReceiver.ZASTARALA;
+				}
+				final long cekani = tedNs - zadano;
+				if (zakladni >= ImageReceiver.NA_POZADI || cekani <= starnutiNs) {
+					return zakladni;
+				}
+				// Co čeká příliš dlouho, jde před ostatní, nejstarší první; dlaždice mimo výřez tím předbíhají jen ostatní mimo výřez ve své třídě a dlaždice na pozadí se neposouvají.
+				final boolean mimoVyrez = zakladni % ImageReceiver.TRIDA >= ImageReceiver.MIMO_VYREZ;
+				return mimoVyrez ? zakladni - cekani : -cekani;
+			}
+
+			@Override
+			public void zahod() {
+				zahodUlohu(budouci);
+			}
 		}
 
 		synchronized Image getImage() {
@@ -102,135 +176,123 @@ public class KachleZiskavac {
 				// Když už ho máme, tak nás nic nezajímá, ani ho nemusíme zaregistrovávat do seznamu
 				ir.send(new KachloStav(image));
 				return null;
-			} else {
-				irs.add(ir);
-				if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
-					pocitDiskLoadSubmit.inc();
-					final ListenableFutureTask<Image> future = ListenableFutureTask.create(this::nactiZDisku);
-					futura = future;
+			}
+			irs.add(ir);
+			obnovPrijemceProRazeni();
+			return zahajNacteni();
+		}
 
-					Futures.addCallback(future, new FutureCallback<Image>() {
+		/** Když se dlaždice právě nezískává, zadá čtení z disku; úlohu vrací ke spuštění mimo zámek. */
+		private Runnable zahajNacteni() {
+			if (futura == null) { // nic se nezískává, začíná nutnost získat tu potvoru
+				pocitDiskLoadSubmit.inc();
+				final ListenableFutureTask<Image> future = ListenableFutureTask.create(this::nactiZDisku);
+				futura = future;
 
-						@Override
-						public void onSuccess(final Image img) { // čtení u disku
-							if (img != null) {
-								pocitDiskLoadZasah.inc();
-								onImageLoaded(img);
-							} else {
-								pocitDiskLoadMinuti.inc();
-								pocitDownloadWebSubmit.inc();
-								submitDownload();
-							}
+				Futures.addCallback(future, new FutureCallback<Image>() {
 
+					@Override
+					public void onSuccess(final Image img) { // čtení u disku
+						if (img != null) {
+							pocitDiskLoadZasah.inc();
+							onImageLoaded(img);
+						} else {
+							pocitDiskLoadMinuti.inc();
+							pocitDownloadWebSubmit.inc();
+							submitDownload();
 						}
 
-						@Override
-						public void onFailure(final Throwable t) { // čtení z disku
-							if (!(t instanceof CancellationException)) { // když nebylo kanclováno, při kanclování se nespoští download
-								pocitDiskLoadError.inc();
-								submitDownload();
-							}
+					}
+
+					@Override
+					public void onFailure(final Throwable t) { // čtení z disku
+						if (!(t instanceof CancellationException)) { // když nebylo kanclováno, při kanclování se nespoští download
+							pocitDiskLoadError.inc();
+							submitDownload();
 						}
+					}
 
-						private void submitDownload() {
-							final Runnable spust;
-							synchronized (Kachlice.this) {
-								if (futura != future) {
-									return; // čtení z disku bylo mezitím zrušeno
-								}
-								futura = null;
-								if (irs.isEmpty()) {
-									return;
-								}
-								spust = spustDownload();
+					private void submitDownload() {
+						final Runnable spust;
+						synchronized (Kachlice.this) {
+							if (futura != future) {
+								return; // čtení z disku bylo mezitím zrušeno
 							}
-							if (spust != null) {
-								spust.run();
+							futura = null;
+							if (irs.isEmpty()) {
+								return;
 							}
+							spust = spustDownload();
 						}
-
-						private Runnable spustDownload() {
-							if (ka.getType().isOffline()) {
-								return spustRender();
-							} else if (onofflineModel.isOnlineMode()) {
-								final AtomicReference<Future<?>> moje = new AtomicReference<>();
-								final ListenableFutureTask<ImageWithData> future = pripravDownload(ka, des, diagnosticsData, Kachlice.this, moje);
-								moje.set(future);
-								futura = future;
-								Futures.addCallback(future, new FutureCallback<ImageWithData>() {
-
-									@Override
-									public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
-										pocitDownloadWebOk.inc();
-										onImageLoaded(imageWithData.getImg());
-									}
-
-									@Override
-									public void onFailure(final Throwable t) { // čtení z webu
-										if (t instanceof CancellationException) {
-											return; // zrušilo se, protože dlaždici už nikdo nechce; příjemci nového požadavku čekají na jiné získání
-										}
-										pocitDownloadWebError.inc();
-										onImageFailure(t);
-									}
-								}, MoreExecutors.directExecutor());
-								// Až po zaregistrování: při plné frontě poběží úloha hned ve volajícím vlákně a musí už být „moje“.
-								return () -> des.web.execute(future);
-							} else { // v offline režimu nesmíme downloadovat a musíme poslat prázdný obrázek
-								onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE));
-								return null;
-							}
+						if (spust != null) {
+							spust.run();
 						}
+					}
 
-						private Runnable spustRender() {
+					private Runnable spustDownload() {
+						if (ka.getType().isOffline()) {
+							return spustRender();
+						} else if (onofflineModel.isOnlineMode()) {
 							final AtomicReference<Future<?>> moje = new AtomicReference<>();
-							final ListenableFutureTask<BufferedImage> future = pripravRender(ka, des, diagnosticsData, Kachlice.this, moje);
+							final ListenableFutureTask<ImageWithData> future = pripravDownload(ka, des, diagnosticsData, Kachlice.this, moje);
 							moje.set(future);
 							futura = future;
-							Futures.addCallback(future, new FutureCallback<BufferedImage>() {
+							Futures.addCallback(future, new FutureCallback<ImageWithData>() {
 
 								@Override
-								public void onSuccess(final BufferedImage obrazek) {
-									onImageLoaded(obrazek);
+								public void onSuccess(final ImageWithData imageWithData) { // čtení z webu
+									pocitDownloadWebOk.inc();
+									onImageLoaded(imageWithData.getImg());
 								}
 
 								@Override
-								public void onFailure(final Throwable t) {
+								public void onFailure(final Throwable t) { // čtení z webu
 									if (t instanceof CancellationException) {
-										return;
+										return; // zrušilo se, protože dlaždici už nikdo nechce; příjemci nového požadavku čekají na jiné získání
 									}
+									pocitDownloadWebError.inc();
 									onImageFailure(t);
 								}
 							}, MoreExecutors.directExecutor());
-							return () -> des.render.execute(future);
+							// Až po zaregistrování: při plné frontě poběží úloha hned ve volajícím vlákně a musí už být „moje“.
+							return () -> des.web.execute(new Uloha(future));
+						} else { // v offline režimu nesmíme downloadovat a musíme poslat prázdný obrázek
+							onImageLoaded(downloader.fejkovyObrazek(EPraznyObrazek.OFFLINE));
+							return null;
 						}
+					}
 
-					}, MoreExecutors.directExecutor());
-					return () -> des.disk.execute(future);
-				}
-				return null;
+					private Runnable spustRender() {
+						final AtomicReference<Future<?>> moje = new AtomicReference<>();
+						final ListenableFutureTask<BufferedImage> future = pripravRender(ka, des, diagnosticsData, Kachlice.this, moje);
+						moje.set(future);
+						futura = future;
+						Futures.addCallback(future, new FutureCallback<BufferedImage>() {
+
+							@Override
+							public void onSuccess(final BufferedImage obrazek) {
+								onImageLoaded(obrazek);
+							}
+
+							@Override
+							public void onFailure(final Throwable t) {
+								if (t instanceof CancellationException) {
+									return;
+								}
+								onImageFailure(t);
+							}
+						}, MoreExecutors.directExecutor());
+						return () -> des.render.execute(new Uloha(future));
+					}
+
+				}, MoreExecutors.directExecutor());
+				return () -> des.disk.execute(new Uloha(future));
 			}
+			return null;
 		}
 
-		/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
 		private Image nactiZDisku() throws IOException {
-			if (!ka.getType().isOffline()) {
-				return kachleManager.load(ka);
-			}
-			final OfflineRenderer renderer;
-			try {
-				renderer = offlineMapy(ka.getType()).pouzij();
-			} catch (final IOException e) {
-				return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
-			}
-			try {
-				if (!renderer.pokryva(ka.getLoc())) {
-					return null; // dlaždice mimo mapy se jen vybarví a neukládá
-				}
-				return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
-			} finally {
-				renderer.skonci();
-			}
+			return nactiZCache(ka);
 		}
 
 		/** Stahování začne posílat požadavek na server, jen když je pořád aktuální a někdo dlaždici chce. */
@@ -266,23 +328,17 @@ public class KachleZiskavac {
 		private List<ImageReceiver> odeberPrijemce() {
 			final List<ImageReceiver> prijemci = new ArrayList<>(irs);
 			irs.clear();
+			obnovPrijemceProRazeni();
 			return prijemci;
 		}
 
-		@Override
-		protected void finalize() {
-			if (image != null) {
-				pocitMemZameteni.inc();
-			}
-			pocitKachlice.dec();
-		}
-
-		public synchronized void kancluj(final ImageReceiver imageReceiver, final DiagnosticsData diagnosticsData2) {
+		public synchronized void kancluj(final ImageReceiver imageReceiver) {
 			pocitCancelCelkem.inc();
 			if (image != null) {
 				pocitCancelPozde.inc();
 			}
 			irs.remove(imageReceiver); // už nechce, tak mu nebudeme nic říkat
+			obnovPrijemceProRazeni();
 			if (irs.isEmpty() && futura != null && !stahujeSe) {
 				// Bez přerušení vlákna: přerušení zavře kanál souboru diskové cache.
 				futura.cancel(false);
@@ -298,9 +354,25 @@ public class KachleZiskavac {
 	 *
 	 */
 	class KachleUkladac {
-		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat. */
+		/** Nejdéle za tuto dobu od první čekající dlaždice se začne ukládat, když se mapou nehýbe. */
 		long casPoKteremSeZahajiUkladaniMs = TimeUnit.SECONDS.toMillis(5);
+
+		/** Při pohybu mapou (nové požadavky na dlaždice) se zápis odkládá, nejdéle takto dlouho od první čekající dlaždice. */
+		long nejdelsiOdlozeniUkladaniMs = TimeUnit.SECONDS.toMillis(15);
+
+		/** Mapou se nehýbe, když nepřišel požadavek na dlaždici tuto dobu. */
+		long necinnostMs = 1000;
+
+		/** Čekajících dlaždic je tolik, že se ukládá i při pohybu mapou; offline dlaždice čekají nezkomprimované, proto strop podle velikosti haldy. */
+		int nejviceCekajicich = (int) Math.max(MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU, Math.min(100, Runtime.getRuntime().maxMemory() / (8L << 20)));
+
+		/** Hodiny v ms; test je nahrazuje. */
+		LongSupplier hodiny = System::currentTimeMillis;
+
 		private final BlockingQueue<Ukladanec> queue = Queues.newLinkedBlockingQueue();
+
+		/** Kdy přišla první z čekajících dlaždic. */
+		private long prvniCekajici;
 
 		ScheduledExecutorService planovacUkladani = Executors.newSingleThreadScheduledExecutor();
 
@@ -312,22 +384,39 @@ public class KachleZiskavac {
 		 * @param ukladanec
 		 */
 		synchronized void zaplanujUlozeni(final Ukladanec ukladanec) {
+			if (queue.isEmpty()) {
+				prvniCekajici = hodiny.getAsLong();
+			}
 			queue.add(ukladanec);
-			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
+			if (queue.size() >= MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU && !lzeOdlozit()) { // jakmile je toho dost, ukládá se hned a není nutno plánovat
 				submitChunks();
 			} else if (future == null) { // časovač běží od první čekající dlaždice, další ho neodkládají
-				future = planovacUkladani.schedule(() -> {
-					try {
-						casovacVyprsel();
-					} catch (final RuntimeException e) {
-						log.error("Naplánované ukládání dlaždic na disk selhalo", e);
-					}
-				}, casPoKteremSeZahajiUkladaniMs, TimeUnit.MILLISECONDS);
+				naplanuj(casPoKteremSeZahajiUkladaniMs);
 			}
+		}
+
+		private void naplanuj(final long zaMs) {
+			future = planovacUkladani.schedule(() -> {
+				try {
+					casovacVyprsel();
+				} catch (final RuntimeException e) {
+					log.error("Naplánované ukládání dlaždic na disk selhalo", e);
+				}
+			}, zaMs, TimeUnit.MILLISECONDS);
+		}
+
+		/** Při pohybu mapou se zápis (commit pod zámkem cache) odkládá, ale ne déle než do horního limitu a ne při mnoha čekajících dlaždicích. */
+		private boolean lzeOdlozit() {
+			final long ted = hodiny.getAsLong();
+			return ted - posledniPozadavek < necinnostMs && ted - prvniCekajici < nejdelsiOdlozeniUkladaniMs && queue.size() < nejviceCekajicich;
 		}
 
 		private synchronized void casovacVyprsel() {
 			future = null;
+			if (!queue.isEmpty() && lzeOdlozit()) {
+				naplanuj(Math.min(necinnostMs, nejdelsiOdlozeniUkladaniMs));
+				return;
+			}
 			submitChunks();
 		}
 
@@ -414,19 +503,29 @@ public class KachleZiskavac {
 	}
 
 	private static Pocitadlo pocitBrzdeniOfflineKdyzJeOnline = new PocitadloRoste("ka61 #počet brzdení dávkového downloadu",
-			"Počítá, kolikrát se o 100 ms zbrzdilo dávkové dotahování, protože běžel online.");
+			"Počítá, kolikrát dávkové dotahování čekalo, protože běžel online.");
 
 	private static final int MAXIMALNI_POCET_UKLADANYCH_KACHLI_V_JEDNOM_CHUNKU = 50;
 
-	private static final int NTHREADS_WEB_CORE_ONLINE = 5;
+	/** Jak dlouho smí dlaždice čekat ve frontě na řadu, než předběhne ostatní; jinak by ji nepřetržitý posun mohl odsouvat. */
+	static volatile long starnutiNs = TimeUnit.SECONDS.toNanos(2);
+
+	static final int NTHREADS_WEB_CORE_ONLINE = 5;
 
 	private static final int NTHREADS_WEB_CORE_BATCH = 5;
 
-	private static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
+	static final int NTHREADS_WEB_MAXIMUM_BACTH = 10;
 
 	private static final int WEB_QUEUE_SIZE = 100;
 
 	private static final int BATCH_DISK_QUEUE_SIZE = 100;
+
+	/** Dávka (i export mapy) smí jít na server s omezením jen ve 2 spojeních, i když má 10 vláken. */
+	volatile SoubehNaHostitele soubehDavky = new SoubehNaHostitele();
+
+	void setSoubehDavky(final SoubehNaHostitele soubehDavky) {
+		this.soubehDavky = soubehDavky;
+	}
 
 	/** Jedno jádro zůstane oknu, nad 6 vláken vykreslování skoro nezrychlí. */
 	static final int NTHREADS_RENDER = pocetVlakenRenderu(Runtime.getRuntime().availableProcessors());
@@ -455,9 +554,9 @@ public class KachleZiskavac {
 			"Kolikrát se podařilo hledanou dlaždici zasáhnout v paměti. Číslo stále roste a mělo by být ve srovnání s ostatními zásahy co největší.");
 
 	private final Pocitadlo pocitMemMinuti = new PocitadloRoste("ka12 MEM cache #minutí",
-			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši nalézt a co se dělo dál není tímto atributem určeno..");
+			"Kolikrát se nepodařilo hledanou dlaždici v paměťové cache nalézt a co se dělo dál není tímto atributem určeno..");
 
-	private final Pocitadlo pocitMemZameteni = new PocitadloRoste("ka13 MEM cache #zametených", "Počet obrázků, které garbage collector zametrl pryč a my díky tomu odstranili referenci z keše.");
+	private final Pocitadlo pocitMemZameteni = new PocitadloRoste("ka13 MEM cache #zametených", "Počet kachlic, které garbage collector zametl pryč a my díky tomu odstranili referenci z cache.");
 
 	private final PocitadloRoste pocitDiskLoadSubmit = new PocitadloRoste("ka21 DISK cache #požadovaných",
 			"Kolikrát bylo požadováno číst dlaždici z disku. Obsahuje všechny zásahy, minutí, chyby a také skutečně zknclované čtení");
@@ -466,7 +565,7 @@ public class KachleZiskavac {
 			"Kolikrát se podařilo hledanou dlaždici zasáhnout na disku, tedy naloadovat. Číslo stále roste a mělo by být ve srovnání s ostatními zásahy co největší.");
 
 	private final PocitadloRoste pocitDiskLoadMinuti = new PocitadloRoste("ka23 DISK cache #minutí",
-			"Kolikrát se nepodařilo hledanou dlaždici v paměťové keši minout, co se dělo dál není tímto atributem určeno..");
+			"Kolikrát se nepodařilo hledanou dlaždici v paměťové cache minout, co se dělo dál není tímto atributem určeno..");
 
 	final PocitadloRoste pocitDiskLoadError = new PocitadloRoste("ka24 DISK cache #chyb čtení", "Kolikrát selhalo čtení dlaždich z disku.");
 
@@ -501,7 +600,7 @@ public class KachleZiskavac {
 	private final PocitadloNula pocitVelikostWebFrontyBatch = new PocitadloNula("ka3 veliksot fronty čtení z webu (batch)", "Kolik je ve frontě požadavků na čtení dlaždic z webu.");
 	private final PocitadloNula pocitVelikostZapisoveFronty = new PocitadloNula("ka3 veliksot fronty zápisu na disk", "Kolik bloků dlaždic je ještě ve frontě a čeká na zápis na disk.");
 
-	private final PocitadloMalo pocitKachlice = new PocitadloMalo("#kachlic",
+	final PocitadloMalo pocitKachlice = new PocitadloMalo("#kachlic",
 			"Počet tzv. kachlic, což je objekt určený k řízení získávání kachle z disku, z webu a pak ukládání. Kachlice také reprezentují MEM cache");
 
 	private final EnumMap<Priority, DvojiceExekucnichSluzeb> exekucniSluzby = new EnumMap<>(Priority.class);
@@ -511,14 +610,41 @@ public class KachleZiskavac {
 	private final ScheduledExecutorService tikacVelikostiFront = Executors.newSingleThreadScheduledExecutor();
 	private final KachloDownloader downloader = new KachloDownloader();
 
-	/** Dlaždic v paměti je nejvýš pár obrazovek, dál se berou z disku. */
-	private static final int MAX_KACHLI_V_PAMETI = 300;
+	/** Nejméně dlaždic v paměti i při malé haldě. */
+	static final int MIN_KACHLI_V_PAMETI = 300;
+	/** Podíl haldy, který smí zabrat dlaždice v paměti, a jeho horní mez. */
+	private static final double PODIL_HALDY_PRO_KACHLE = 0.25;
+	private static final long MAX_BAJTU_KACHLI_V_PAMETI = 1L << 30;
+	/** Dlaždice 256 × 256 bodů po 4 bajtech. */
+	private static final long BAJTU_NA_KACHLI = 256L * 256 * 4;
 
-	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(MAX_KACHLI_V_PAMETI).softValues().build();
+	/** Kolik dlaždic se drží v paměti: čtvrtina haldy, nejvýš 1 GB, nejméně {@link #MIN_KACHLI_V_PAMETI}. */
+	static int maxKachliVPameti(final long maxHaldaBajtu) {
+		final long bajtu = Math.min((long) (maxHaldaBajtu * PODIL_HALDY_PRO_KACHLE), MAX_BAJTU_KACHLI_V_PAMETI);
+		return (int) Math.max(MIN_KACHLI_V_PAMETI, bajtu / BAJTU_NA_KACHLI);
+	}
+
+	private final int maxKachliVPameti = maxKachliVPameti(Runtime.getRuntime().maxMemory());
+
+	private final Cache<Ka, Kachlice> kachlmap = CacheBuilder.newBuilder().maximumSize(maxKachliVPameti).softValues().<Ka, Kachlice>removalListener(oznameni -> {
+		pocitKachlice.dec();
+		if (oznameni.getCause() == RemovalCause.COLLECTED) {
+			pocitMemZameteni.inc();
+		}
+	}).build();
 
 	private KachleManager kachleManager;
 
 	final KachleUkladac ukladac = new KachleUkladac();
+
+	/** Pohyb mapou je požadavek na viditelnou dlaždici; předvykreslení okolí a stahování na pozadí zápis neodkládají. */
+	static boolean jePohybMapou(final KaOneReq req) {
+		final ImageReceiver prijemce = req.getImageReceiver();
+		return req.getPriorita() == Priority.KACHLE && prijemce != null && prijemce.dulezitost() < ImageReceiver.NA_POZADI;
+	}
+
+	/** Kdy (ms) přišel poslední požadavek na dlaždici; zápis dlaždic se při pohybu mapou odkládá. */
+	private volatile long posledniPozadavek;
 
 	/** Bez sítě selže každá dlaždice, hlásí se proto souhrnně podle druhu chyby. */
 	private final Map<String, OpakovaneChyby> chybyStahovani = new ConcurrentHashMap<>();
@@ -527,7 +653,7 @@ public class KachleZiskavac {
 	static final Image PRAZDNA_MIMO_UZEMI = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
 	static final BufferedImage PRAZDNY_PREKRYV = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
 	/** Dlaždice, které se nedávno nepodařilo stáhnout; jinak by se při každém překreslení stahovaly znovu. */
-	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).maximumSize(10_000).build();
+	private final Cache<String, Boolean> nedavnoNestazene = CacheBuilder.newBuilder().expireAfterWrite(java.time.Duration.ofSeconds(30)).maximumSize(10_000).build();
 
 	private OnofflineModel onofflineModel;
 
@@ -540,7 +666,8 @@ public class KachleZiskavac {
 
 	private KachleModel kachleModel;
 
-	private final PredvykresleniPrehledu predvykresleniPrehledu = new PredvykresleniPrehledu(new PrehledOfflineMap(), this::jeVolnoProPredvykresleni, System::nanoTime);
+	private final PredvykresleniPrehledu predvykresleniPrehledu = new PredvykresleniPrehledu(new PrehledOfflineMap(), this::jeVolnoProPredvykresleni, System::nanoTime,
+			KachleZiskavac::jePoPrvnimPohledu);
 
 	/** Úklid cache offline mapy běží v jednom vlákně na pozadí, dlaždice na obrazovce nezdržuje. */
 	private final ExecutorService uklidOfflineCache = Executors.newSingleThreadExecutor(vlaknaRenderu("Úklid cache offline mapy"));
@@ -556,7 +683,9 @@ public class KachleZiskavac {
 
 		final DvojiceExekucnichSluzeb dvojiceOnline = new DvojiceExekucnichSluzeb(
 				// Fronta je pro oonline přístup neomezená, protože nemůžeme nijak blokovat rsponsivnost UI */
-				Priority.KACHLE, Executors.newFixedThreadPool(NTHREADS_DISK), Executors.newFixedThreadPool(NTHREADS_WEB_CORE_ONLINE), Executors.newFixedThreadPool(NTHREADS_RENDER, vlaknaRenderu("Offline mapa")),
+				Priority.KACHLE, new ThreadPoolExecutor(NTHREADS_DISK, NTHREADS_DISK, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()),
+					new ThreadPoolExecutor(NTHREADS_WEB_CORE_ONLINE, NTHREADS_WEB_CORE_ONLINE, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta()),
+					new ThreadPoolExecutor(NTHREADS_RENDER, NTHREADS_RENDER, 0L, TimeUnit.MILLISECONDS, new PrioritniFronta(), vlaknaRenderu("Offline mapa")),
 				LoggerFactory.getLogger(KachleZiskavac.class.getSimpleName() + "_online"));
 
 		final DvojiceExekucnichSluzeb dvojiceBatch = new DvojiceExekucnichSluzeb(Priority.STAHOVANI,
@@ -588,7 +717,9 @@ public class KachleZiskavac {
 		Runtime.getRuntime().addShutdownHook(new Thread(this::dopisNaDisk, "Dopsání dlaždic na disk"));
 	}
 
-	private void dopisNaDisk() {
+	void dopisNaDisk() {
+		// Náhledy z cache při ukončení nikdo nepotřebuje a nesmí číst z cache, kterou se dopisuje.
+		nahledyZCache.shutdownNow();
 		ukladac.submitChunks();
 		execDiskWrite.shutdown();
 		try {
@@ -614,28 +745,27 @@ public class KachleZiskavac {
 		return true;
 	}
 
+	/**
+	 * Zapíše klíč do souboru klíčů a smaže soubory symbolů, které už nikdo nepoužívá. Dlaždice klíčů, které v souboru nezůstaly, se z cache automaticky nemažou:
+	 * průchod a mazání ve velké cache by na dlouho zastavily čtení dlaždic.
+	 */
 	void uklidOfflineCache(final OblastniKlic klic, final File symboly) {
 		try {
 			final File slozka = symboly.getParentFile();
-			final Set<String> pred = UklidOfflineCache.ponechane(slozka);
-			final String predSestava = UklidOfflineCache.sestava(slozka, klic.getGlobalni());
-			final Set<String> ponechat = UklidOfflineCache.zaznamenej(slozka, klic.getGlobalni(), symboly, klic.getSestava());
-			final boolean jinaSestava = !klic.getSestava().equals(predSestava);
-			if (ponechat.equals(pred) && !jinaSestava) {
-				return; // dlaždice jiných klíčů smazal už dřívější úklid
+			final UklidOfflineCache.Plan plan = UklidOfflineCache.naplanuj(slozka, klic.getGlobalni(), symboly, klic.getSestava(), klic.getIdentita());
+			final Set<String> ponechat = plan.uloz();
+			log.info("Cache offline mapy: zůstávají klíče {}", ponechat);
+			if (!plan.zastarale().isEmpty()) {
+				log.info("Cache offline mapy: zastaralé dlaždice zůstávají do optimalizace: klíče {}", plan.zastarale());
 			}
-			final KachleManager km = kachleManager;
-			int smazano = 0;
-			if (km != null) {
-				smazano = ponechat.equals(pred) ? 0 : km.smazOfflineKrome(ponechat);
-				if (jinaSestava) {
-					smazano += km.smazOfflineNesedici(klic.getGlobalni(), klic::klic);
-				}
-			}
-			log.info("Úklid cache offline mapy: zůstávají klíče {}, smazáno {} dlaždic", ponechat, smazano);
 		} catch (final IOException | RuntimeException e) {
-			log.warn("Cache offline mapy nejde uklidit: {}", e.toString());
+			log.warn("Soubor klíčů cache offline mapy nejde zapsat: {}", e.toString());
 		}
+	}
+
+	/** Mapy pro předvykreslení přehledu, pro testy. */
+	PredvykresleniPrehledu.Mapy mapyProPredvykresleniPrehledu() {
+		return new PrehledOfflineMap();
 	}
 
 	/**
@@ -670,6 +800,11 @@ public class KachleZiskavac {
 		predvykresleniPrehledu.setPozice(pozice);
 	}
 
+	/** První načítání mapy skončilo a od spuštění programu uplynula doba, po kterou se hlídá start. */
+	static boolean jePoPrvnimPohledu() {
+		return PrvniNacitaniMapy.jeUkonceno() && Diagnostika.dobaBehuMs() >= PrvniNacitaniMapy.LIMIT_MS;
+	}
+
 	/** Mapy se nestahují, nic jiného se nekreslí ani nečte z cache a dlaždice se ukládají na disk. */
 	boolean jeVolnoProPredvykresleni() {
 		final KachleModel km = kachleModel;
@@ -701,6 +836,40 @@ public class KachleZiskavac {
 		}
 
 		@Override
+		public List<KaLoc> zapamatovanyVzorek(final String klic) {
+			final File slozka = slozkaKlicu();
+			return slozka == null ? null : HotovePredvykresleni.vzorek(slozka, klic);
+		}
+
+		@Override
+		public void zapamatujHotovo(final String klic, final List<KaLoc> vzorek) {
+			final File slozka = slozkaKlicu();
+			if (slozka == null || vzorek.isEmpty()) {
+				return;
+			}
+			try {
+				HotovePredvykresleni.zapis(slozka, klic, vzorek);
+			} catch (final IOException | RuntimeException e) {
+				log.debug("Předvykreslení přehledu nejde zapamatovat: {}", e.toString());
+			}
+		}
+
+		/** Složka se souborem klíčů cache offline mapy; null, když se symboly a klíče neukládají. */
+		private File slozkaKlicu() {
+			try {
+				final OfflineRenderer r = offlineMapy.pouzij();
+				try {
+					final File symboly = r.getSouborSymbolu();
+					return symboly == null ? null : symboly.getParentFile();
+				} finally {
+					r.skonci();
+				}
+			} catch (final IOException | RuntimeException e) {
+				return null;
+			}
+		}
+
+		@Override
 		public boolean jeVCache(final KaLoc loc, final String klic) {
 			final KachleManager km = kachleManager;
 			if (km == null) {
@@ -720,6 +889,28 @@ public class KachleZiskavac {
 		}
 
 		@Override
+		public boolean vykresliChybejici(final KaLoc loc, final String klic) throws IOException {
+			final KachleManager km = kachleManager;
+			if (km == null) {
+				return false;
+			}
+			final OfflineRenderer r = offlineMapy.pouzij();
+			try {
+				if (!klic.equals(r.getKlic() + '.' + r.getOblastniKlic().getSestava()) || !r.pokryva(loc) || km.exists(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc))) {
+					return false;
+				}
+				final long zacatek = System.nanoTime();
+				final BufferedImage obrazek = r.vyrendruj(loc);
+				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
+				pocitRenderOk.inc();
+				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc), obrazek, null));
+				return true;
+			} finally {
+				r.skonci();
+			}
+		}
+
+		@Override
 		public boolean vykresli(final KaLoc loc, final String klic) throws IOException {
 			final OfflineRenderer r = offlineMapy.pouzij();
 			try {
@@ -728,7 +919,8 @@ public class KachleZiskavac {
 				}
 				final long zacatek = System.nanoTime();
 				final BufferedImage obrazek = r.vyrendruj(loc);
-				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_OFFLINE, System.nanoTime() - zacatek);
+				// Přehledové dlaždice jsou velké a zkreslily by p95 a max vykreslení dlaždic na obrazovce.
+				Vykon.zaznamenej(Vykon.Velicina.VYKRESLENI_PREHLEDU, System.nanoTime() - zacatek);
 				pocitRenderOk.inc();
 				ukladac.zaplanujUlozeni(new Ukladanec(new Ka(loc, EKaType.OFFLINE_MF), r.getKlicDlazdice(loc), obrazek, null));
 				return true;
@@ -767,6 +959,23 @@ public class KachleZiskavac {
 		priZmeneOfflineMapy = priZmene;
 	}
 
+	/**
+	 * Otevření spojení s cache stojí stovky ms a drží zámek cache; proto se dělá hned po nastavení složky cache na pozadí ve všech vláknech, která z cache čtou nebo do ní
+	 * zapisují.
+	 */
+	public void predotevriCache() {
+		final KachleManager km = kachleManager;
+		if (km == null) {
+			return;
+		}
+		final DvojiceExekucnichSluzeb online = exekucniSluzby.get(Priority.KACHLE);
+		// Pool zakládá vlákno pro každou z prvních úloh, i když jiné vlákno čeká, takže každé vlákno čtení dostane jednu.
+		for (int i = 0; i < NTHREADS_DISK; i++) {
+			online.disk.execute(km::predotevri);
+		}
+		execDiskWrite.execute(km::predotevri);
+	}
+
 	public void inject(final KachleModel kachleModel) {
 		this.kachleModel = kachleModel;
 	}
@@ -798,6 +1007,33 @@ public class KachleZiskavac {
 
 	}
 
+	/** Omezení souběhu platí jen pro samotné stahování; semafor se nedrží při čekání na zápis do cache. */
+	private ImageWithData stahni(final URL url, final Ka ka, final boolean davka) throws IOException, InterruptedException {
+		final Semaphore soubeh = davka ? soubehDavky.pro(url.getHost()) : null;
+		if (soubeh != null) {
+			soubeh.acquire();
+		}
+		try {
+			return downloader.downloadImage(url, ka.getType().getHlavicky());
+		} finally {
+			if (soubeh != null) {
+				soubeh.release();
+			}
+		}
+	}
+
+	/** Dávka počká, dokud čekají dlaždice, které uživatel právě prohlíží. */
+	static void pockejNaOnline(final BlockingQueue<Runnable> online) throws InterruptedException {
+		if (online.isEmpty()) {
+			return;
+		}
+		if (!(online instanceof PrioritniFronta)) {
+			throw new IllegalStateException("Fronta online dlaždic není PrioritniFronta: " + online.getClass().getName());
+		}
+		pocitBrzdeniOfflineKdyzJeOnline.inc();
+		((PrioritniFronta) online).pockejNaPrazdnou();
+	}
+
 	/** Úloha stažení dlaždice; spouští ji volající, až ji zaregistruje. */
 	private ListenableFutureTask<ImageWithData> pripravDownload(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData,
 			final Kachlice kachlice, final AtomicReference<Future<?>> moje) {
@@ -808,9 +1044,8 @@ public class KachleZiskavac {
 
 			// Pokud stahujeme backgroundově a jsou nějaké požadavny na online kachle, tak ty online mají absolutní přednost,
 			// backgroundy brzíme.
-			while (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI && exekucniSluzby.get(Priority.KACHLE).webQueue.size() > 0) {
-				pocitBrzdeniOfflineKdyzJeOnline.inc();
-				Thread.sleep(100);
+			if (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI) {
+				pockejNaOnline(exekucniSluzby.get(Priority.KACHLE).webQueue);
 			}
 			final String klic = url.toExternalForm();
 			if (mimoUzemi.getIfPresent(klic) != null) {
@@ -826,7 +1061,7 @@ public class KachleZiskavac {
 			log.debug("DOWNLOAD START: \"{}\" | {}", url, diagnosticsData);
 			ImageWithData imageWithData;
 			try {
-				imageWithData = downloader.downloadImage(url, ka.getType().getHlavicky());
+				imageWithData = stahni(url, ka, dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI);
 				// Ukládá se hned, i když byl požadavek mezitím zrušen: stažená data by se jinak zahodila a stahovala znovu.
 				ukladac.zaplanujUlozeni(new Ukladanec(ka, imageWithData.getData(), kachlice));
 				log.debug("DOWNLOAD END  : \"{}\" | {}", url, diagnosticsData);
@@ -850,9 +1085,8 @@ public class KachleZiskavac {
 	private ListenableFutureTask<BufferedImage> pripravRender(final Ka ka, final DvojiceExekucnichSluzeb dvojiceExekucnichSluzeb, final DiagnosticsData diagnosticsData,
 			final Kachlice kachlice, final AtomicReference<Future<?>> moje) {
 		return ListenableFutureTask.create(() -> {
-			while (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI && exekucniSluzby.get(Priority.KACHLE).renderQueue.size() > 0) {
-				pocitBrzdeniOfflineKdyzJeOnline.inc();
-				Thread.sleep(100);
+			if (dvojiceExekucnichSluzeb.priority == Priority.STAHOVANI) {
+				pockejNaOnline(exekucniSluzby.get(Priority.KACHLE).renderQueue);
 			}
 			if (!kachlice.zahajStahovani(moje)) {
 				throw new CancellationException("Dlaždici už nikdo nechce: " + ka);
@@ -901,6 +1135,78 @@ public class KachleZiskavac {
 		return e;
 	}
 
+	/** Dlaždice offline mapy se hledá v cache pod klíčem aktuálních map a tématu. */
+	private Image nactiZCache(final Ka ka) throws IOException {
+		if (!ka.getType().isOffline()) {
+			return kachleManager.load(ka);
+		}
+		final OfflineRenderer renderer;
+		try {
+			renderer = offlineMapy(ka.getType()).pouzij();
+		} catch (final IOException e) {
+			return null; // mapy nejdou otevřít; chybu ukáže a započítá vykreslení
+		}
+		try {
+			if (!renderer.pokryva(ka.getLoc())) {
+				return null; // dlaždice mimo mapy se jen vybarví a neukládá
+			}
+			return kachleManager.load(ka, renderer.getKlicDlazdice(ka.getLoc()));
+		} finally {
+			renderer.skonci();
+		}
+	}
+
+	/** Rodičovské dlaždice dekódované z cache pro náhledy: sourozenci sdílejí jedno dekódování a i neúspěšné hledání se krátce pamatuje. */
+	private final Cache<Ka, Optional<Image>> nahledyRodicu = CacheBuilder.newBuilder().maximumSize(NAHLEDY_RODICU).expireAfterWrite(java.time.Duration.ofSeconds(10)).softValues().build();
+
+	private static final int NAHLEDY_RODICU = 32;
+
+	/** Náhled z cache na disku jen pro online mapy; u offline map se dlaždice vykreslí rychle a čtení a dekódování by soutěžilo s vykreslováním o procesor. */
+	public boolean lzeNahledZCache(final Ka ka) {
+		return !ka.getType().isOffline();
+	}
+
+	/**
+	 * Hotový obrázek dlaždice z paměti, u online map jinak z cache na disku (nevykresluje ani nestahuje). Čte z disku, volat jen z vlákna na pozadí, viz
+	 * {@link #naPozadiProNahled}. Rozhodnutí, odkud se náhled bere, je jen tady.
+	 */
+	public Image nahledZPametiNeboCache(final Ka ka) {
+		final Image zPameti = nahledZPameti(ka);
+		if (zPameti != null) {
+			return zPameti;
+		}
+		if (!lzeNahledZCache(ka) || kachleManager == null) {
+			return null;
+		}
+		try {
+			return nahledyRodicu.get(ka, () -> Optional.ofNullable(nactiZCache(ka))).orElse(null);
+		} catch (final java.util.concurrent.ExecutionException | RuntimeException e) {
+			log.debug("Náhled dlaždice {} z cache nelze načíst: {}", ka, e.toString());
+			return null;
+		}
+	}
+
+	/** Jedno vlákno pro náhledy z cache; při nahromadění se zahazují nejstarší úlohy, platí poslední zobrazení. */
+	private final ThreadPoolExecutor nahledyZCache = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(NAHLEDY_ZE_CACHE_FRONTA),
+			vlaknaRenderu("Náhled z cache"), new ThreadPoolExecutor.DiscardOldestPolicy());
+
+	private static final int NAHLEDY_ZE_CACHE_FRONTA = 64;
+
+	/** Spustí na pozadí hledání náhledu; nestihnuté úlohy se zahodí. */
+	public void naPozadiProNahled(final Runnable uloha) {
+		nahledyZCache.execute(uloha);
+	}
+
+	/** Vlákna stahování online dlaždic, pro testy pořadí ve frontě. */
+	ExecutorService vlaknaWebOnline() {
+		return exekucniSluzby.get(Priority.KACHLE).web;
+	}
+
+	/** Úlohy čekající na stažení online dlaždic, pro testy. */
+	BlockingQueue<Runnable> frontaWebOnline() {
+		return exekucniSluzby.get(Priority.KACHLE).webQueue;
+	}
+
 	/** Hotový obrázek dlaždice, když je už v paměťové cache; jinak null. Nic nespouští. */
 	public Image nahledZPameti(final Ka ka) {
 		final Kachlice kachlice = kachlmap.getIfPresent(ka);
@@ -918,13 +1224,16 @@ public class KachleZiskavac {
 		final ImageReceiver imageReceiver = kaoneReq.getImageReceiver();
 		pocitSubmitJednaDlazdice.inc();
 		final Ka kaone = kaoneReq.getKa();
+		if (jePohybMapou(kaoneReq)) {
+			posledniPozadavek = ukladac.hodiny.getAsLong();
+		}
 		final DiagnosticsData diagnosticsData = aDiagnosticsData.with("kaOne", kaoneReq);
 
 		final Kachlice kachlice = kachlmap.asMap().computeIfAbsent(kaone, k -> new Kachlice(k, dvojiceExekucnichSluzeb, diagnosticsData));
 		(kachlice.image == null ? pocitMemMinuti : pocitMemZasah).inc();
 		kachlice.ziskej(imageReceiver);
 		return () -> {
-			kachlice.kancluj(imageReceiver, diagnosticsData);
+			kachlice.kancluj(imageReceiver);
 		};
 	}
 }

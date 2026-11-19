@@ -24,7 +24,7 @@ public class NaKonkretniBodAction extends Action0 {
 	public NaKonkretniBodAction(final String kam, final Wgs wgs) {
 		super(kam);
 		this.wgs = wgs;
-		putValue(SHORT_DESCRIPTION, "Přesune mapu na referenční bod: \" " + kam + "\"");
+		putValue(SHORT_DESCRIPTION, "Přesune mapu na pojmenovaný bod: \" " + kam + "\"");
 		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("alt " + ++citac));
 	}
 

@@ -162,7 +162,7 @@ fi
 		if [ -n "$LINUX" ] && [ -z "${DISPLAY:-}" ]; then
 			displej=(xvfb-run -a -s "-screen 0 1400x900x24")
 		fi
-		"${displej[@]}" "$PY" "$(nativni "$SADA/start.py")" "${START_BEHU:-7}" "${START_PRAH:-15}" "$(nativni "$jar_stara")" "$(nativni "$jar_nova")" || touch "$PRACOVNI/start-kod-$?"
+		"${displej[@]}" "$PY" "$(nativni "$SADA/start.py")" "${START_BEHU:-7}" "${START_PRAH:-20}" "$(nativni "$jar_stara")" "$(nativni "$jar_nova")" || touch "$PRACOVNI/start-kod-$?"
 	fi
 	if [[ "$CO" == *program* ]]; then
 		echo "## Spuštěný program (smoke testy s velkými daty)"

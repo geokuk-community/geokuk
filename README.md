@@ -126,12 +126,23 @@ souboru do `data/mapy` a upravujte ji až tam.
 
 Podklad Mapy > Offline mapa (klávesa V) kreslí mapu v počítači
 z vektorových map ve formátu mapsforge (soubory `.map`), bez internetu.
-Soubory `.map` dejte do složky `data/offline-mapy` (program ji při startu
-založí; jinou složku lze nastavit v Soubor > Umístění souborů na kartě
+
+Mapy zemí a regionů Evropy a k nim turistické trasy, vrstevnice a stínování
+terénu stáhnete přímo v GeoKuku: v menu Mapy > Správce offline map… nebo
+v bloku Mapy vpravo dole ve stavovém řádku. Při první instalaci se otevře
+Soubor > Průvodce nastavením map, který vybere podklad a vrstvy a stáhne, co
+chybí. Mapy ke stažení jsou z [download.mapsforge.org](https://download.mapsforge.org/).
+
+Seznam vrstev (trasy, vrstevnice, stínování) si program stahuje z projektu
+[geokuk-maps](https://github.com/geokuk-community/geokuk-maps) na GitHubu,
+nejvýš jednou za hodinu; dotaz nese jen verzi programu, ne nick ani jiné osobní údaje.
+
+Vlastní soubory `.map` dejte do složky `data/offline-mapy` (program ji při
+startu založí; jinou složku lze nastavit v Soubor > Umístění souborů na kartě
 Mapy). Více map ve složce, třeba Česko a Slovensko, se kreslí naráz;
-mapu zkopírovanou do složky za běhu program sám načte. Mapy si stáhnete
-například z [osm.paws.cz](https://osm.paws.cz/) (česká a slovenská mapa
-s turistickým značením) nebo z [OpenAndroMaps](https://www.openandromaps.org/downloads)
+mapu zkopírovanou do složky za běhu program sám načte. Mapy lze získat
+i z [osm.paws.cz](https://osm.paws.cz/) (česká a slovenská mapa
+s turistickým značením) nebo z [OpenAndroMaps](https://www.openandromaps.org/)
 (mapy jsou jen pro soukromé použití).
 
 Data map jsou z OpenStreetMap, © přispěvatelé OpenStreetMap, licence
@@ -162,7 +173,7 @@ Snímky ukazují offline mapu z dat OpenStreetMap (mapsforge) s vlastními
 vrstvami GeoKuku (turistické a cyklotrasy, vrstevnice, stínování terénu)
 a vlastním vzhledem, tématem GeoKuk: trasy v barvách značení, keše jako
 ikony, v menším měřítku jako barevné tečky. Trasu výletu jde vést po
-cestách, panel Cesta ukazuje její délku a body.
+cestách, panel cesty ukazuje její délku a body.
 
 ![Přehled kraje s keškami jako tečkami](docs/geokuk-z12.png)
 
@@ -181,9 +192,15 @@ Soubor > Dálkové ovládání (nebo parametr `--ovladani[=port]`, výchozí por
 GET  http://127.0.0.1:48321/stav
 POST http://127.0.0.1:48321/pozice?lat=50.08&lon=14.42&meritko=15
 POST http://127.0.0.1:48321/kes?kod=GC12345
+POST http://127.0.0.1:48321/popredi
 POST http://127.0.0.1:48321/podklad?jmeno=TURIST_M
 POST http://127.0.0.1:48321/prenacti
 ```
+
+Příkaz `kes` vystředí mapu na kešoid a otevře jeho detail; kód může být i odkaz nebo
+text s kódem (`https://coord.info/GC12345`). Okno programu se přitom přenese do popředí,
+`&focus=ne` to vypne. Příkaz `popredi` přenese okno do popředí a vyžádá mu focus; Windows
+programu na pozadí focus dát nemusí, pak okno jen bliká na hlavním panelu.
 
 Požadavky z webových stránek program odmítá.
 

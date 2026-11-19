@@ -3,7 +3,6 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,6 +26,7 @@ import org.mapsforge.map.awt.graphics.AwtPaintSPameti;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+import cz.geokuk.util.file.BezpecnyZapis;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -91,8 +91,9 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 		}
 		try {
 			Files.createDirectories(soubor.getParentFile().toPath());
-			final File docasny = new File(soubor.getPath() + ".tmp");
-			try (FileOutputStream proud = new FileOutputStream(docasny); DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(proud)))) {
+			BezpecnyZapis.zapis(soubor, proud -> {
+				final GZIPOutputStream gzip = new GZIPOutputStream(proud);
+				final DataOutputStream out = new DataOutputStream(new BufferedOutputStream(gzip));
 				final Map<String, BufferedImage> kopie = new java.util.HashMap<>(svg);
 				out.writeInt(VERZE_SOUBORU);
 				out.writeInt(kopie.size());
@@ -107,8 +108,9 @@ final class GrafikaOfflineMapy implements GraphicFactory {
 						out.writeInt(p);
 					}
 				}
-			}
-			Files.move(docasny.toPath(), soubor.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				out.flush();
+				gzip.finish();
+			});
 		} catch (final IOException e) {
 			log.debug("Symboly tématu nejde uložit do {}: {}", soubor, e.toString());
 		}

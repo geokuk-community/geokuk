@@ -2,16 +2,14 @@ package cz.geokuk.plugins.mapy.kachle.gui;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import javax.swing.JComponent;
 
-import cz.geokuk.core.coordinates.Mou;
-import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.napoveda.Vykon;
+import cz.geokuk.core.napoveda.ZobrazeneDlazdice;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.data.*;
 import cz.geokuk.plugins.mapy.kachle.podklady.*;
@@ -22,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JKachle extends JComponent {
 
-	private static final boolean ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE = false;
 	// Staré mapy.cz. Takto to tam bylo:
 	// (2) ad mapy.cz: jejich vnitřní XY souřadnice jsou odvozeninou UTM souřadnic.
 	// čtverec s nejzápadnějčím bodem ČR je na http://m4.mapserver.mapy.cz/turist/13_79D8000_8250000
@@ -44,7 +41,6 @@ public class JKachle extends JComponent {
 	static final long PRVNI_POKUS_PO_CHYBE_MS = 15_000;
 	private static final long POSLEDNI_POKUS_PO_CHYBE_MS = 300_000;
 
-	private static final PocitadloMalo pocitJKAchle = new PocitadloMalo("#JKachle", "Počet kompomnent JKachle přes hlavní okno, okno v rohu, rendry, stahování, prostě všude.");
 	private final JKachlovnik jKachlovnik;
 	// private static int cictac;
 	private final Ka ka;
@@ -55,38 +51,21 @@ public class JKachle extends JComponent {
 	private List<NahledDlazdice> nahled = Collections.emptyList();
 
 	private boolean jeTamUzCelyObrazek;
+	/** Dlaždice pro obrazovku dostala hotový obrázek a zatím se nezapočítala do počtu zobrazených dlaždic. */
+	private boolean cekaNaZapocteni;
+	private boolean zapoctena;
 
 	/** Chyba posledního získání dlaždice, null když chyba není. */
 	private Throwable chyba;
 	/** Kdy se chybná dlaždice zkusí znovu; odstup se s každou další chybou zdvojnásobí. */
 	private long dalsiPokus;
 	private int chybVRade;
-	private final Set<DiagnosticsData> diagnosticsDatas = Collections.synchronizedSet(new LinkedHashSet<>());
-
-	private String diagnosticesFazeStr;
 	// Point mou = new Point(); // souřadnice roho
-
-	private static int ordinalIndexOf(final String str, final char c, int n) {
-		int pos = str.indexOf(c, 0);
-		while (n-- > 0 && pos != -1) {
-			pos = str.indexOf(c, pos + 1);
-		}
-		return pos;
-	}
-
-	private static String toHex(final int cc) {
-		String s = Integer.toHexString(cc);
-		s = "00000000".substring(0, 8 - s.length()) + s;
-		s = s.substring(0, 4) + " " + s.substring(4);
-		return s;
-	}
 
 	public JKachle(final JKachlovnik jKachlovnik, final Ka ka) {
 		this.jKachlovnik = jKachlovnik;
 		this.ka = ka;
 		setSize(KACHLE_WIDTH, KACHLE_HEIGHT);
-		pocitJKAchle.inc();
-
 	}
 
 	public KaLoc getKaLoc() {
@@ -96,6 +75,16 @@ public class JKachle extends JComponent {
 	/** Dlaždice, na kterou se ještě čeká: nemá obrázek ani dočasný výřez a nezjistila se u ní chyba. */
 	synchronized boolean cekaNaObrazek() {
 		return image == null && nahled.isEmpty() && chyba == null;
+	}
+
+	/** Čeká se na skutečný obrázek: ne hotová a ne chybná, i když zatím ukazuje náhled. */
+	synchronized boolean ceka() {
+		return !jeTamUzCelyObrazek && chyba == null;
+	}
+
+	/** Dlaždice se skutečným obrázkem: ne čekající, ne s pouhým náhledem a ne chybná. */
+	synchronized boolean maHotovyObrazek() {
+		return image != null && jeTamUzCelyObrazek && chyba == null;
 	}
 
 	public boolean jeTamUzCelyObrazek() {
@@ -146,6 +135,41 @@ public class JKachle extends JComponent {
 		nahled = novy;
 	}
 
+	/** Náhled se ukáže jen místo chybějícího obrázku, který ještě nemá žádný náhled; vrací, zda je teď nějaký náhled. */
+	private synchronized boolean usadNahled(final List<NahledDlazdice> novy) {
+		if (image == null && !jeTamUzCelyObrazek && nahled.isEmpty()) {
+			nahled = novy;
+		}
+		return !nahled.isEmpty();
+	}
+
+	/** Z cache na disku se hledají jen rodiče o tolik úrovní výš (bez čtyř dlaždic z vyššího měřítka). */
+	static final int MAX_UROVNI_Z_CACHE = 2;
+
+	/** Dočasný náhled z hotových dlaždic jiného měřítka; dávkové stahování na pozadí ho nepotřebuje. */
+	void pripravNahled(final KachleModel kachleModel, final Priority priorita) {
+		if (priorita == Priority.STAHOVANI) {
+			return;
+		}
+		final KachleZiskavac ziskavac = kachleModel.getZiskavac();
+		final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, ziskavac::nahledZPameti, KACHLE_WIDTH);
+		if (!usadNahled(novyNahled) && ziskavac.lzeNahledZCache(ka)) {
+			// Z paměti nic není, u online map se zkusí cache na disku; čte se mimo vlákno událostí.
+			ziskavac.naPozadiProNahled(() -> doplnNahledZCache(ziskavac));
+		}
+	}
+
+	/** Na pozadí: náhled z hotových dlaždic v paměti nebo v cache, když dlaždice mezitím nedostala obrázek ani náhled a pořád je potřeba. */
+	void doplnNahledZCache(final KachleZiskavac ziskavac) {
+		if (dulezitost() == ImageReceiver.ZASTARALA || maHotovyObrazek()) {
+			return;
+		}
+		final List<NahledDlazdice> novy = NahledDlazdice.najdi(ka, ziskavac::nahledZPametiNeboCache, KACHLE_WIDTH, MAX_UROVNI_Z_CACHE, false);
+		if (!novy.isEmpty() && usadNahled(novy)) {
+			repaint();
+		}
+	}
+
 	void prijmi(final KachloStav kastat, final Priority priorita) {
 		if (priorita == Priority.STAHOVANI) {
 			log.debug("Získán obsah: {} {}", ka, kastat.getImg() != null ? "ANO" : kastat.getThr().getMessage());
@@ -162,6 +186,12 @@ public class JKachle extends JComponent {
 				chybVRade++;
 			}
 			jeTamUzCelyObrazek = true;
+			if (kastat.getImg() != null && priorita == Priority.KACHLE) {
+				cekaNaZapocteni = true;
+				if (jeVidet()) {
+					zapocitejZobrazeni();
+				}
+			}
 			ziskanPlnyObrazek(image);
 			if (jKachlovnik != null) {
 				jKachlovnik.kachleZpracovana(this);
@@ -172,48 +202,72 @@ public class JKachle extends JComponent {
 	}
 
 	/**
+	 * Naléhavost dlaždice pro fronty: viditelné před neviditelnými, od středu ven; {@link ImageReceiver#ZASTARALA}, když už v kachlovníku není. Volá se z vláken
+	 * front bez zámků dlaždice, proto jen čte hodnoty komponenty.
+	 */
+	long dulezitost() {
+		final Container rodic = getParent();
+		if (jKachlovnik == null) {
+			return 0;
+		}
+		if (rodic == null) {
+			return ImageReceiver.ZASTARALA;
+		}
+		final int dx = 2 * getX() + getWidth() - rodic.getWidth();
+		final int dy = 2 * getY() + getHeight() - rodic.getHeight();
+		final boolean vidim = jeVidet();
+		return jKachlovnik.trida() * ImageReceiver.TRIDA + (vidim ? 0 : ImageReceiver.MIMO_VYREZ) + ((long) dx * dx + (long) dy * dy) / 4;
+	}
+
+	/** Dlaždice leží aspoň zčásti ve viditelné oblasti svého rodiče. */
+	private boolean jeVidet() {
+		final Container rodic = getParent();
+		return rodic != null && getX() < rodic.getWidth() && getX() + getWidth() > 0 && getY() < rodic.getHeight() && getY() + getHeight() > 0;
+	}
+
+	/** Započítá zobrazení hotové dlaždice jednou za komponentu; volat pod zámkem dlaždice. */
+	private void zapocitejZobrazeni() {
+		if (cekaNaZapocteni && !zapoctena) {
+			zapoctena = true;
+			ZobrazeneDlazdice.zapocti(ka.getType().name(), ka.getType().getNazev());
+		}
+	}
+
+	/**
 	 * Získá obsah
 	 *
 	 * @param kachleModel
 	 * @param priorita
 	 */
 	public void ziskejObsah(final KachleModel kachleModel, final Priority priorita) {
-		if (ka.getType().isOffline() && priorita != Priority.STAHOVANI) {
-			final List<NahledDlazdice> novyNahled = NahledDlazdice.najdi(ka, kachleModel.getZiskavac()::nahledZPameti, KACHLE_WIDTH);
-			synchronized (this) {
-				if (image == null && nahled.isEmpty()) {
-					nahled = novyNahled;
-				}
-			}
-		}
+		pripravNahled(kachleModel, priorita);
 		final long zadano = System.nanoTime();
-		final KaOneReq req = new KaOneReq(ka, kastat -> {
-			if (priorita == Priority.KACHLE && kastat.getImg() != null) {
-				Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
+		final KaOneReq req = new KaOneReq(ka, new ImageReceiver() {
+			@Override
+			public void send(final KachloStav kastat) {
+				if (priorita == Priority.KACHLE && kastat.getImg() != null) {
+					Vykon.zaznamenej(ka.getType().isOffline() ? Vykon.Velicina.DLAZDICE_OFFLINE : Vykon.Velicina.DLAZDICE_ONLINE, System.nanoTime() - zadano);
+				}
+				prijmi(kastat, priorita);
 			}
-			prijmi(kastat, priorita);
+
+			@Override
+			public long dulezitost() {
+				return priorita == Priority.KACHLE ? JKachle.this.dulezitost() : NA_POZADI;
+			}
 		}, priorita);
 
-		final DiagnosticsData.Listener diagListener = (diagnosticsData, diagnosticesFazeStr) -> {
-			JKachle.this.diagnosticesFazeStr = diagnosticesFazeStr;
-			for (DiagnosticsData dd = diagnosticsData; dd != null; dd = dd.getParent()) {
-				diagnosticsDatas.add(dd);
-			}
-		};
 		final String nazevKachlovniku = jKachlovnik == null ? null : jKachlovnik.nazevKachlovniku;
-		kanceler = kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, nazevKachlovniku, diagListener));
-	}
-
-	@Override
-	protected void finalize() throws Throwable {
-		super.finalize();
-		pocitJKAchle.dec();
+		kanceler = kachleModel.getZiskavac().ziskejObsah(req, DiagnosticsData.create(null, nazevKachlovniku, null));
 	}
 
 	@Override
 	// Synchronizuje se, prtotže se může během zpracování změnit obrázek ,který se vykresluje
 	protected synchronized void paintComponent(final Graphics aG) {
 		super.paintComponent(aG);
+		if (image != null && jeTamUzCelyObrazek && chyba == null) {
+			zapocitejZobrazeni(); // dlaždice, která dorazila mimo viditelnou oblast, se započítá, až se poprvé nakreslí
+		}
 		// if (true) return;
 		final Graphics2D g = (Graphics2D) aG.create();
 		try {
@@ -266,44 +320,12 @@ public class JKachle extends JComponent {
 		if (ka.getType().isPrekryv()) {
 			return; // překryv nezakrývá podklad rozpracovanou ani chybnou dlaždicí
 		}
-		if (image == null && chyba != null && !ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
+		if (image == null && chyba != null) {
 			if (nahled.isEmpty()) {
 				g.setColor(Color.GRAY);
 				drawPsanicko(g);
 			}
 			vypisChybu(g);
-		} else if (ZOBRAZOVAT_NA_KACHLICH_DIAGNOSTICKE_INFORMACE) {
-			g.setColor(Color.blue);
-			drawPsanicko(g);
-			g.setColor(Color.RED);
-			vypisPozici(g);
-
-			int y = 75;
-			if (diagnosticesFazeStr != null) {
-				g.setColor(Color.MAGENTA);
-				g.drawString(diagnosticesFazeStr, 5, y);
-				y += 15;
-			}
-
-			for (final DiagnosticsData ss : diagnosticsDatas.toArray(new DiagnosticsData[0])) {
-				final Object dato = ss.getDato();
-				if (dato instanceof URL) {
-					final String s = dato.toString();
-					final int index = ordinalIndexOf(s, '/', 2) + 1;
-					g.setColor(Color.YELLOW);
-					g.drawString(s.substring(0, index), 5, y);
-					y += 15;
-					g.drawString(s.substring(index), 10, y);
-				} else if (dato instanceof Throwable) {
-					g.setColor(Color.RED);
-					g.drawString(dato.toString(), 5, y);
-				} else {
-					g.setColor(Color.CYAN);
-					g.drawString((ss.getNazev() == null ? "" : ss.getNazev() + " = ") + dato, 5, y);
-				}
-				y += 15;
-			}
-
 		}
 	}
 
@@ -357,27 +379,6 @@ public class JKachle extends JComponent {
 		g.drawLine(x2, y1, x2, y2);
 		g.drawLine(x1, y1, x2, y2);
 		g.drawLine(x1, y2, x2, y1);
-	}
-
-	private void vypisPozici(final Graphics2D g) {
-		final KaLoc p = ka.getLoc();
-		if (p != null) {
-			final Mou mou = p.getMouSZ(); // souřadnice SZ kachle
-			final int xx = mou.xx;
-			final int yy = mou.yy;
-			g.setColor(Color.WHITE);
-			g.drawString("x = " + toHex(xx), 5, 15);
-			g.drawString("y = " + toHex(yy), 5, 30);
-			g.drawString("z = " + p.getMoumer(), 5, 45);
-
-			final Wgs wgs = mou.toWgs();
-			g.drawString("lat = " + wgs.lat, 100, 15);
-			g.drawString("lon = " + wgs.lon, 100, 30);
-
-			g.drawString("[" + p.getSignedX() + "," + p.getSignedY() + "]", 140, 50);
-			g.drawString("[" + p.getFromSzUnsignedX() + "," + p.getFromSzUnsignedY() + "]", 140, 65);
-
-		}
 	}
 
 }

@@ -37,7 +37,7 @@ public class JMapyPopup extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	static final String NADPIS = "Offline mapy";
+	static final String NADPIS = "Správce offline map";
 	static final String VE_SLOZCE = TextyMap.STAZENE_MAPY;
 	static final String ZADNA_MAPA = TextyMap.ZADNA_MAPA;
 	static final String PRO_MISTO = TextyMap.PRO_TOTO_MISTO;
@@ -297,20 +297,24 @@ public class JMapyPopup extends JPanel {
 
 	/** Fokus je kdekoli v panelu, třeba po otevření z menu: panel nezmizí odjetím myši, dokud fokus neodejde (Esc, klik jinam). */
 	boolean maFokus() {
-		final java.awt.Component vlastnik = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+		final java.awt.Component vlastnik = spravceFokusu.get().getFocusOwner();
 		return vlastnik != null && SwingUtilities.isDescendingFrom(vlastnik, this);
 	}
 
 	/** Dá fokus poli hledání, nebo když není, samotnému panelu (musí jít z klávesnice ovládat stejně jako myší). */
 	void zaostri() {
-		final JTextField pole = hledat;
-		if (pole != null && pole.isShowing()) {
-			pole.requestFocusInWindow();
+		if (hledat.isShowing()) {
+			posledniZadostOFokus = hledat;
+			hledat.requestFocusInWindow();
 			return;
 		}
 		setFocusable(true);
+		posledniZadostOFokus = this;
 		requestFocusInWindow();
 	}
+
+	/** Komponenta, které {@link #zaostri()} naposledy požádala o fokus; test podle ní ověří chování, aniž by záviselo na skutečném fokusu okenního systému. */
+	transient java.awt.Component posledniZadostOFokus;
 
 	/** Obsah se změnil: popup se znovu zobrazí a píše-li uživatel, vrátí se mu fokus do pole. */
 	private void zmenaObsahu() {
@@ -610,6 +614,10 @@ public class JMapyPopup extends JPanel {
 		obrys.setSelected(zapnuty);
 	}
 
+	boolean isObrysZapnuty() {
+		return obrys.isSelected();
+	}
+
 	/** Ve složce vrstev jsou DEM dlaždice: popup nabídne přepínač stínování terénu. */
 	public void setStinovaniDostupne(final boolean dostupne) {
 		if (dostupne != stinovaniDostupne) {
@@ -628,8 +636,7 @@ public class JMapyPopup extends JPanel {
 	public void obnov(final List<RadekMapy> nove) {
 		odhad.zapomenKrome(stahovane(nove));
 		// Regiony země, která se právě stáhla celá, už jsou navíc: ve Všech mapách se sbalí.
-		final Set<String> stazeneCelky = celky(nove, true);
-		if (rozbalene.removeIf(z -> nabizeneCelky.contains(z) && stazeneCelky.contains(z))) {
+		if (sbalStazene(rozbalene, nabizeneCelky, nove)) {
 			ulozRozbalene.accept(ROZBALENE_VSECHNY, new HashSet<>(rozbalene));
 		}
 		nabizeneCelky = celky(nove, false);
@@ -680,6 +687,17 @@ public class JMapyPopup extends JPanel {
 			return;
 		}
 		prestavPopup();
+	}
+
+	/** Ze země, která byla nabízená a podle nových řádků je už stažená celá, odebere rozbalení Všech map; vrací, jestli se něco změnilo. */
+	static boolean sbalStazene(final Set<String> rozbalene, final Set<String> nabizene, final List<RadekMapy> nove) {
+		final Set<String> stazene = celky(nove, true);
+		return rozbalene.removeIf(z -> nabizene.contains(z) && stazene.contains(z));
+	}
+
+	/** Názvy zemí, které blok Mapy nabízí ke stažení podle řádků. */
+	static Set<String> nabizene(final List<RadekMapy> radky) {
+		return celky(radky, false);
 	}
 
 	/** Názvy celých zemí z katalogu, které jsou (nebo nejsou) ve složce. */
@@ -1592,7 +1610,7 @@ public class JMapyPopup extends JPanel {
 		}
 		for (int i = 0; i < v.length; i++) {
 			if (!pevna[i] && pozadovano[i] > 0) {
-				v[i] = (int) Math.min(pozadovano[i], Math.max(minimum, zbyva * pozadovano[i] / obsah));
+				v[i] = (int) Math.min(pozadovano[i], Math.max(minimum, (long) zbyva * pozadovano[i] / obsah));
 			}
 		}
 		return v;

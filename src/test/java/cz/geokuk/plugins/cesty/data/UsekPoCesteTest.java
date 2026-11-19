@@ -74,6 +74,11 @@ public class UsekPoCesteTest {
 	}
 
 	@Test
+	public void bezBoduJeVzdalenostKUsecceNekonecna() {
+		assertEquals(Long.MAX_VALUE, prvni().computeKvadratVzdalenostiBoduKUsecce(null));
+	}
+
+	@Test
 	public void usekSeNajdeUTrasyNeUSpojnice() {
 		updator.setTyp(prvni(), TypUseku.PO_CESTE);
 		spocitej(prvni(), A, X, B);

@@ -72,6 +72,7 @@ public class MultiNacitac {
 	private final Map<File, String> sledovane = new HashMap<>();
 	/** Waypointy zobrazených databází; keše databáze, kterou jiný program zamkne, se z nich převezmou do dalšího výsledku. */
 	private Map<File, List<Wpt>> zobrazeneWpty = Collections.emptyMap();
+	private Map<File, Map<String, String>> zobrazeneNalezy = Collections.emptyMap();
 	private InformaceOZdrojich zobrazeneInformace;
 	/** Genom, nick a parametry, se kterými se načetly zobrazené keše; keše zamčeného zdroje se převezmou jen při stejném kontextu. */
 	private Object zobrazenyKontext;
@@ -221,6 +222,10 @@ public class MultiNacitac {
 		if (gsak == null || !nedostupne.contains(gsak)) {
 			kesoidModel.zaradGsakDatabaze(databaze(list, GSAK_ROOTDIR_DEF), nedostupne);
 		}
+		final File geoget = geogetDir;
+		if (geoget == null || !nedostupne.contains(geoget)) {
+			kesoidModel.zaradGeogetDatabaze(databaze(list, FILE_NAME_REGEX_GEOGET_DIR), nedostupne);
+		}
 		final File opensak = opensakDir;
 		if (opensak == null || !nedostupne.contains(opensak)) {
 			kesoidModel.zaradOpensakDatabaze(databaze(list, OPENSAK_ROOTDIR_DEF), nedostupne);
@@ -354,6 +359,7 @@ public class MultiNacitac {
 		}
 		zobrazene = nactene;
 		zobrazeneWpty = builder.getWptyPodleZdroje();
+		zobrazeneNalezy = builder.getNalezyPodleZdroje();
 		zobrazeneInformace = bag.getInformaceOZdrojich();
 		zobrazenyKontext = kontext;
 		return bag;
@@ -420,6 +426,7 @@ public class MultiNacitac {
 				final KesBag.Cast hotova = cteni.poradiCasti.get(skupina).equals(skupina.poradiCasti) ? skupina.cast : null;
 				final int[] pocty = skupina.pocty.get(soubor);
 				builder.prevezmiZeSkupiny(file, skupina.wpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), pocty[0], pocty[1], skupina, hotova);
+				builder.prevezmiNalezy(soubor, zobrazeneNalezy.get(soubor), false);
 				registr.hotovo(generace, soubor, pocty[0], pocty[1]);
 				continue;
 			}
@@ -450,6 +457,7 @@ public class MultiNacitac {
 					// Zamčená uprostřed čtení by měla v builderu část nových keší, ty se se starými míchat nesmí.
 					if (kontext.equals(zobrazenyKontext) && !builder.maWaypointyZe(soubor)) {
 						builder.prevezmi(file, zobrazeneWpty.getOrDefault(soubor, Collections.<Wpt> emptyList()), zobrazeneInformace == null ? null : zobrazeneInformace.get(file));
+						builder.prevezmiNalezy(soubor, zobrazeneNalezy.get(soubor), true);
 						cteni.prevzateZamcene.add(soubor);
 					} else {
 						cteni.nelzePrevzit = true;
@@ -604,8 +612,7 @@ public class MultiNacitac {
 				pluginy.add(p.getClass().getName());
 			}
 		}
-		return Arrays.asList(genom, nick == null ? null : nick.name, nick == null ? null : nick.id, gsak == null ? null : gsak.getCasNalezu(), gsak == null ? null : gsak.getCasNenalezu(),
-				pluginy);
+		return Arrays.asList(genom, nick == null ? null : nick.name, nick == null ? null : nick.id, gsak == null ? null : gsak.getCasNalezu(), pluginy);
 	}
 
 	/** Skupiny z minulého dokončeného načtení, jejichž členům se nic nezměnilo: zapnuté, stejný soubor, nezamčené, stejný kontext. */

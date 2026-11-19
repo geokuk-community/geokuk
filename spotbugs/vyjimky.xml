@@ -86,7 +86,6 @@
 			<And><Class name="cz.geokuk.plugins.geocoding.GeocodingModel"/><Or><Field name="hledaciSluzba"/><Field name="referencniBod"/></Or></And>
 			<And><Class name="cz.geokuk.plugins.kesoid.genetika.Gen"/><Or><Field name="locked"/><Field name="grupy"/></Or></And>
 			<And><Class name="cz.geokuk.plugins.mapy.kachle.podklady.KachleZiskavac$Kachlice"/><Field name="image"/></And>
-			<And><Class name="cz.geokuk.util.file.TPumpReaderToWriter"/><Field name="iIsFinished"/></And>
 		</Or>
 		<Bug pattern="IS2_INCONSISTENT_SYNC"/>
 	</Match>

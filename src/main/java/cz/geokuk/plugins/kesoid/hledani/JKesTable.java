@@ -36,6 +36,8 @@ package cz.geokuk.plugins.kesoid.hledani;
  */
 
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import cz.geokuk.plugins.kesoid.Ikonizer;
 import cz.geokuk.plugins.kesoid.Kesoid;
@@ -250,28 +253,59 @@ public class JKesTable extends JPanel {
 
 	}
 
+	/** Rezerva kolem textu sloupce: okraje buňky a záhlaví. */
+	static final int PODLOZENI = 16;
+	static final int SIRKA_IKONY = 16;
+	/** Nejdelší tvary identifikátoru: zastávka Adventure Lab, např. GC5PGVC-3. */
+	static final String VZOREK_ID = "GCXXXXXXX-999";
+	static final String VZOREK_VZDALENOSTI = "9999.9";
+
+	/** Šířka sloupce, do které se vejde záhlaví i nejširší hodnota (text nebo ikona), s rezervou. */
+	static int sirkaSloupce(final FontMetrics zahlavi, final String nazev, final FontMetrics bunky, final String vzorek, final int ikona) {
+		final int hodnota = vzorek == null ? 0 : bunky.stringWidth(vzorek);
+		return Math.max(zahlavi.stringWidth(nazev), Math.max(hodnota, ikona)) + PODLOZENI;
+	}
+
+	private static void pevnaSirka(final TableColumn sloupec, final int sirka) {
+		sloupec.setMinWidth(sirka);
+		sloupec.setPreferredWidth(sirka);
+		sloupec.setMaxWidth(sirka);
+		sloupec.setResizable(false);
+	}
+
+	/**
+	 * Krátké sloupce mají pevnou šířku podle písma tabulky, takže se jim neořezává záhlaví ani hodnota při žádném měřítku obrazovky; sloupec Id se vejde i
+	 * nejdelší tvar a při zmenšení okna se zužují jen Jméno a Autor.
+	 */
 	private void nastavVlastnostiSLoupcu() {
-		TableColumn column;
-		column = table.getColumnModel().getColumn(0);
-		column.setMaxWidth(25);
-		column.setResizable(false);
+		final FontMetrics zahlavi = table.getTableHeader().getFontMetrics(table.getTableHeader().getFont());
+		final FontMetrics bunky = table.getFontMetrics(table.getFont());
+		final FontMetrics tucne = table.getFontMetrics(table.getFont().deriveFont(Font.BOLD));
+		final TableColumnModel sloupce = table.getColumnModel();
 
-		column = table.getColumnModel().getColumn(1);
-		column.setMaxWidth(55);
-		column.setResizable(false);
+		pevnaSirka(sloupce.getColumn(0), sirkaSloupce(zahlavi, "Typ", bunky, null, SIRKA_IKONY));
+		pevnaSirka(sloupce.getColumn(1), sirkaSloupce(zahlavi, "Vzdálenost", bunky, VZOREK_VZDALENOSTI, 0));
+		pevnaSirka(sloupce.getColumn(2), sirkaSloupce(zahlavi, "Azimut", bunky, null, SIRKA_IKONY));
 
-		column = table.getColumnModel().getColumn(2);
-		column.setMaxWidth(25);
+		final TableColumn id = sloupce.getColumn(3);
+		final int sirkaId = sirkaSloupce(zahlavi, "Id", tucne, VZOREK_ID, 0);
+		id.setMinWidth(sirkaId);
+		id.setPreferredWidth(sirkaId);
+		id.setMaxWidth(sirkaId * 2);
+		id.setResizable(true);
 
-		column = table.getColumnModel().getColumn(3);
-		column.setMaxWidth(100);
-		column.setResizable(true);
+		final TableColumn jmeno = sloupce.getColumn(4);
+		jmeno.setMinWidth(80);
+		jmeno.setPreferredWidth(400);
 
-		column = table.getColumnModel().getColumn(4);
-		column.setPreferredWidth(400);
+		final TableColumn autor = sloupce.getColumn(5);
+		autor.setMinWidth(60);
+		autor.setPreferredWidth(100);
+	}
 
-		column = table.getColumnModel().getColumn(5);
-		column.setPreferredWidth(100);
+	/** Pro testy: model sloupců tabulky. */
+	TableColumnModel getColumnModel() {
+		return table.getColumnModel();
 	}
 
 }

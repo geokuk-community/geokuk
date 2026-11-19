@@ -14,6 +14,7 @@ public class FPref {
 	public static final String CASY_DAT_ZDROJU_value = "casyDatZdroju";
 	public static final String ZNAME_GSAK_DATABAZE_value = "znameGsakDatabaze";
 	public static final String ZNAME_OPENSAK_DATABAZE_value = "znameOpensakDatabaze";
+	public static final String ZNAME_GEOGET_DATABAZE_value = "znameGeogetDatabaze";
 	public static final String DOMACI_SOURADNICE_node = "domacisouradnice";
 	public static final String GEOCACHING_COM_NICK_value = "geocachingComNick";
 	public static final String GEOCACHING_COM_NICK_ID_value = "geocachingComNickId";
@@ -43,6 +44,7 @@ public class FPref {
 	public static final String KESOID_POPISKY_node = "kesoid/popisky";
 	public static final String KESOID_VISIBLE_value = "visible";
 	public static final String ZOBRAZENI_KESI_value = "zobrazeni";
+	public static final String SLEDOVAT_SCHRANKU_value = "sledovatSchranku";
 	public static final String ZVETSENI_IKON_value = "zvetseniIkon";
 	public static final String LIMIT_IKON_value = "limitIkon";
 	public static final String LIMIT_TECEK_value = "limitTecek";
@@ -90,8 +92,12 @@ public class FPref {
 	// Specifická nastavení pro GSAK:
 	public static final String GSAK_node = "gsak";
 	public static final String GSAK_CAS_NALEZU_value = "casNalezu";
+	/** Zrušené nastavení Čas nenálezu; při uložení nastavení se ze starších profilů odstraní. */
 	public static final String GSAK_CAS_NENALEZU_value = "casNenalezu";
-	public static final String GSAK_NACITAT_VSECHNO = "nacitatHnedVsechnyDatabaze";
+	/** Klíč je stejný v uzlech {@link #GSAK_node}, {@link #OPENSAK_node} a {@link #GEOGET_node}; true (výchozí) = nové databáze se načtou hned, false = čekají na výběr v tabulce zdrojů. */
+	public static final String NOVE_DATABAZE_HNED_value = "nacitatHnedVsechnyDatabaze";
 
 	public static final String OPENSAK_node = "opensak";
+
+	public static final String GEOGET_node = "geoget";
 }

@@ -12,6 +12,7 @@ import com.google.common.collect.LinkedListMultimap;
 
 import cz.geokuk.core.coord.Coord;
 import cz.geokuk.core.coord.JSingleSlide0;
+import cz.geokuk.core.coord.PrvniNacitaniMapy;
 import cz.geokuk.core.onoffline.OnofflineModelChangeEvent;
 import cz.geokuk.framework.AfterEventReceiverRegistrationInit;
 import cz.geokuk.plugins.mapy.ZmenaMapNastalaEvent;
@@ -56,6 +57,9 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 	private final javax.swing.Timer opakovaniChybnych = new javax.swing.Timer((int) JKachle.PRVNI_POKUS_PO_CHYBE_MS, e -> zkusZnovuChybne());
 
 	private PredvykresleniOkoli predvykresleni;
+
+	/** Volá se po každé nové zakázce na dlaždice (posun, zoom, změna podkladu). */
+	private Runnable priNovychDlazdicich = () -> {};
 
 	private transient LogoNacitani logoNacitani;
 
@@ -132,10 +136,28 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	private void kresliLogoNacitani(final Graphics2D g) {
 		final Path2D.Float cekajici = new Path2D.Float(Path2D.WIND_NON_ZERO);
+		int dlazdic = 0;
+		int hotovych = 0;
+		boolean chyba = false;
 		for (final Component c : getComponents()) {
-			if (c instanceof JKachle && ((JKachle) c).cekaNaObrazek()) {
-				cekajici.append(c.getBounds(), false);
+			if (c instanceof JKachle) {
+				final JKachle dlazdice = (JKachle) c;
+				dlazdic++;
+				if (dlazdice.maHotovyObrazek()) {
+					hotovych++;
+				}
+				if (dlazdice.cekaNaObrazek()) {
+					cekajici.append(c.getBounds(), false);
+				} else if (dlazdice.jeChybna()) {
+					chyba = true;
+				}
 			}
+		}
+		// Logo patří jen k prvnímu načítání mapy; po úplném načtení výřezu nebo první chybě už se neukáže.
+		if (dlazdic > 0 && (chyba || cekajici.getCurrentPoint() == null)) {
+			PrvniNacitaniMapy.ukonci();
+		} else if (PrvniNacitaniMapy.jeDostNactenych(hotovych, dlazdic)) {
+			PrvniNacitaniMapy.zobrazVrstvy();
 		}
 		if (cekajici.getCurrentPoint() == null) {
 			return;
@@ -150,10 +172,30 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		} finally {
 			g2.dispose();
 		}
+		if (!PrvniNacitaniMapy.probiha()) {
+			return;
+		}
 		if (logoNacitani == null) {
 			logoNacitani = new LogoNacitani();
+			PrvniNacitaniMapy.prekresliPoUkonceni(this);
 		}
-		logoNacitani.kresli(g, getWidth(), getHeight(), oblast);
+		logoNacitani.kresli(g, getWidth(), getHeight(), oblast, tmave);
+	}
+
+	void setPriNovychDlazdicich(final Runnable priNovychDlazdicich) {
+		this.priNovychDlazdicich = priNovychDlazdicich;
+	}
+
+	/** Dlaždice ve výřezu, které ještě nemají skutečný obrázek ani chybu; jen na vlákně událostí. */
+	int pocetCekajicichViditelnych() {
+		final Rectangle okno = new Rectangle(0, 0, getWidth(), getHeight());
+		int n = 0;
+		for (final Component c : getComponents()) {
+			if (c instanceof JKachle && c.getBounds().intersects(okno) && ((JKachle) c).ceka()) {
+				n++;
+			}
+		}
+		return n;
 	}
 
 	protected KachleModel getKachleModel() {
@@ -162,6 +204,11 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 
 	protected EKaType getKachloType() {
 		return katype;
+	}
+
+	/** Třída pořadí ve frontách: menší jde dřív, hlavní mapa před překryvem. */
+	int trida() {
+		return 0;
 	}
 
 	protected JKachle createJKachle(final Ka ka) {
@@ -238,6 +285,7 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 			remove(jka);
 		});
 		pocitKachliVKachlovniku2.set(getComponentCount());
+		priNovychDlazdicich.run();
 		log.trace("Počet komponent (nejspíš kachlí) v kachlovníku: {}", getComponentCount());
 	}
 

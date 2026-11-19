@@ -19,10 +19,14 @@ import cz.geokuk.core.profile.ProfileModel;
 import cz.geokuk.core.render.RenderModel;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.cesty.*;
+import cz.geokuk.plugins.challenge.ChallengeModel;
+import cz.geokuk.plugins.challenge.PlanovacChallengeSluzba;
 import cz.geokuk.plugins.geocoding.GeocodingModel;
 import cz.geokuk.plugins.kesoid.KesoidFilterModel;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
+import cz.geokuk.plugins.kesoid.StavVrstevModel;
+import cz.geokuk.plugins.kesoid.ToastModel;
 import cz.geokuk.plugins.kesoidkruhy.KruhyModel;
 import cz.geokuk.plugins.kesoidobsazenost.ObsazenostModel;
 import cz.geokuk.plugins.kesoidpopisky.PopiskyModel;
@@ -47,6 +51,7 @@ public class Inicializator {
 
 	private final MainFrameHolder mainFrameHolder = new MainFrameHolder();
 	private NapovedaModel napovedaModel;
+	private SpravaMapModel spravaMapModel;
 	private DalkoveOvladani dalkoveOvladani;
 	private Akce akce;
 
@@ -70,6 +75,8 @@ public class Inicializator {
 		bb.registerSigleton(new PopiskyModel());
 		bb.registerSigleton(new KruhyModel());
 		bb.registerSigleton(new ObsazenostModel());
+		bb.registerSigleton(new StavVrstevModel());
+		bb.registerSigleton(new ToastModel());
 
 		bb.registerSigleton(new MrizkaModel("Dd", false));
 		bb.registerSigleton(new MrizkaModel("DdMmMmm", false));
@@ -81,7 +88,7 @@ public class Inicializator {
 
 		bb.registerSigleton(new RefbodyModel());
 		bb.registerSigleton(new KachleModel());
-		bb.registerSigleton(new SpravaMapModel());
+		spravaMapModel = bb.registerSigleton(new SpravaMapModel());
 		bb.registerSigleton(new KachloDownloader());
 
 		bb.registerSigleton(new MapyModel());
@@ -95,6 +102,8 @@ public class Inicializator {
 		napovedaModel = bb.registerSigleton(new NapovedaModel());
 		bb.registerSigleton(new OnofflineModel());
 		bb.registerSigleton(new GeocodingModel());
+		bb.registerSigleton(new ChallengeModel());
+		bb.registerSigleton(new PlanovacChallengeSluzba());
 
 		bb.registerSigleton(new HledaciSluzba());
 		bb.registerSigleton(new DiagnostikaMapy());
@@ -151,7 +160,12 @@ public class Inicializator {
 		akce.pruvodceMapAction.nabidniPriPrvnimSpusteni(automatizace);
 	}
 
+	/** Okno je zobrazené, spustí se věci, které nemají zdržovat jeho stavbu. */
+	public void poStartu() {
+		spravaMapModel.poStartu();
+	}
+
 	public void zkontrolovatAktualizace() {
-		napovedaModel.zkontrolujNoveAktualizace(false);
+		napovedaModel.zkontrolujNoveAktualizacePoStartu();
 	}
 }

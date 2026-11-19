@@ -275,6 +275,15 @@ public final class EKaType {
 		return isUzivatelska() ? hromadne : this != OPEN_STREET && this != CUZK_ORTO && this != CUZK_ZTM && this != RELIEF_CUZK && this != SK_ZBGIS_ORTO && !(urlBuilder instanceof MapyCzUrlBuilder);
 	}
 
+	/** Souběh dávkového stahování z jednoho serveru, kde je hromadné stahování nežádoucí; OpenStreetMap povoluje 2 spojení. */
+	public static final int SOUBEH_DAVKY_OMEZENY = 2;
+
+	/** Nejvíc souběžných dávkových stahování ze serveru, 0 bez omezení. */
+	public static int omezeniSoubehuDavky(final String hostitel) {
+		final String h = hostitel.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");
+		return jeServerBezHromadnehoStahovani(h) || h.endsWith("cuzk.gov.cz") || h.endsWith("skgeodesy.sk") ? SOUBEH_DAVKY_OMEZENY : 0;
+	}
+
 	static boolean jeServerBezHromadnehoStahovani(final String hostitel) {
 		// Koncová tečka plně kvalifikovaného jména adresu nemění.
 		final String h = hostitel.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");

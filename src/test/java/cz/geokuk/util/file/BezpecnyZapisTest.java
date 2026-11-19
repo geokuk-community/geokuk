@@ -181,4 +181,53 @@ public class BezpecnyZapisTest {
 		Assert.assertEquals("původní", obsah(soubor));
 		Assert.assertEquals("dočasný soubor nesmí zůstat", 1, tmp.getRoot().list().length);
 	}
+
+	private File soubor(final String jmeno, final long stari) throws IOException {
+		final File f = tmp.newFile(jmeno);
+		Assert.assertTrue(f.setLastModified(System.currentTimeMillis() - stari));
+		return f;
+	}
+
+	/** Zápis uklidí dočasné soubory téhož souboru po pádu; čerstvé (jiný běh), cizí jména a složky zůstanou. */
+	@Test
+	public void zapisUklidiOsireleDocasneSoubory() throws Exception {
+		final long den = 24 * 3600_000L;
+		final File osirely = soubor("data.txt.123456789.tmp", den);
+		final File cerstvy = soubor("data.txt.987654321.tmp", 0);
+		final File jinySoubor = soubor("jine.txt.123456789.tmp", den);
+		final File puvodniTmp = soubor("data.txt.tmp", den);
+		final File jinaPripona = soubor("data.txt.123456789.bak", den);
+		final File podobne = soubor("data.txt.12a.tmp", den);
+		final File jinaTecka = soubor("dataXtxt.1.tmp", den);
+		final File predpona = soubor("xdata.txt.1.tmp", den);
+		final File pripona = soubor("data.txt.1.tmp.bak", den);
+		final File mladsi = soubor("data.txt.11.tmp", 9 * 60_000L);
+		final File starsi = soubor("data.txt.12.tmp", 11 * 60_000L);
+		final File slozka = tmp.newFolder("data.txt.555.tmp");
+		Assert.assertTrue(slozka.setLastModified(System.currentTimeMillis() - den));
+		final File cil = new File(tmp.getRoot(), "data.txt");
+		BezpecnyZapis.zapisText(cil, StandardCharsets.UTF_8, wrt -> wrt.print("nové"));
+		Assert.assertFalse("osiřelý dočasný soubor se smaže", osirely.exists());
+		Assert.assertTrue("čerstvý může zapisovat jiný běh", cerstvy.exists());
+		Assert.assertTrue("mladší než 10 minut zůstane", mladsi.exists());
+		Assert.assertFalse("starší než 10 minut se smaže", starsi.exists());
+		for (final File f : new File[] { jinySoubor, puvodniTmp, jinaPripona, podobne, jinaTecka, predpona, pripona }) {
+			Assert.assertTrue("cizí soubor zůstane: " + f.getName(), f.exists());
+		}
+		Assert.assertTrue("složka zůstane", slozka.isDirectory());
+		Assert.assertEquals("nové", obsah(cil));
+	}
+
+	/** Jméno cíle s metaznaky regulárního výrazu se bere doslova: uklidí se jen jeho dočasné soubory a zápis neselže. */
+	@Test
+	public void uklidBereJmenoCileDoslova() throws Exception {
+		final long den = 24 * 3600_000L;
+		final File osirely = soubor("data[1].txt.5.tmp", den);
+		final File jiny = soubor("data1.txt.5.tmp", den);
+		final File cil = new File(tmp.getRoot(), "data[1].txt");
+		BezpecnyZapis.zapisText(cil, StandardCharsets.UTF_8, wrt -> wrt.print("nové"));
+		Assert.assertFalse(osirely.exists());
+		Assert.assertTrue(jiny.exists());
+		Assert.assertEquals("nové", obsah(cil));
+	}
 }

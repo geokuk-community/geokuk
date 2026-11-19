@@ -32,6 +32,11 @@ public class NacitacGpx extends NacitacInputStream0 {
 	private static String GROUNSPEAK_NAMESPACE_1_0 = "http://www.groundspeak.com/cache/1/0";
 	private static String GROUNSPEAK_NAMESPACE_1_0_1 = "http://www.groundspeak.com/cache/1/0/1";
 	private static String GROUNSPEAK_NAMESPACE_1_0_2 = "http://www.groundspeak.com/cache/1/0/2";
+	static final String LIMIT_VELIKOSTI_ODKAZU = "jdk.xml.maxGeneralEntitySizeLimit";
+	static final String LIMIT_CELKEM_ODKAZU = "jdk.xml.totalEntitySizeLimit";
+	/** Strop počtu znaků z odkazů v celém souboru; shodný s výchozí hodnotou Javy 21. */
+	static final int MAX_ODKAZU = 50_000_000;
+
 	private static final String GEOKUK_NAMESPACE = "http://geokuk.cz/gpx/1";
 	private static Set<String> GPXG_NAMESPACES = Sets.newHashSet("https://www.geoget.cz/GpxExtensions/v2", "http://geoget.ararat.cz/GpxExtensions/v2");
 
@@ -210,12 +215,24 @@ public class NacitacGpx extends NacitacInputStream0 {
 		}
 	}
 
+	/** Do limitů JDK se počítají i odkazy &lt; &gt; &amp; v textu, sčítané přes celý soubor; velké GPX s HTML popisy je překročí. */
+	private static void nastavLimityOdkazu(final XMLInputFactory inputFactory) {
+		for (final String vlastnost : new String[] { LIMIT_VELIKOSTI_ODKAZU, LIMIT_CELKEM_ODKAZU }) {
+			try {
+				inputFactory.setProperty(vlastnost, MAX_ODKAZU);
+			} catch (final IllegalArgumentException e) {
+				// Jiná implementace StAX tuto vlastnost nezná.
+			}
+		}
+	}
+
 	@Override
 	public void nacti(final InputStream istm, final String name, final IImportBuilder builder, final Future<?> future) throws FactoryConfigurationError, IOException {
 		final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 		// GPX nepotřebuje DTD ani externí entity; s nimi by soubor mohl číst jiné soubory nebo volat URL.
 		inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
 		inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		nastavLimityOdkazu(inputFactory);
 		XMLStreamReader reader;
 		try {
 			reader = inputFactory.createXMLStreamReader(istm);

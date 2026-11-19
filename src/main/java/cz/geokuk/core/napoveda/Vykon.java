@@ -30,7 +30,7 @@ public final class Vykon {
 
 	public enum Velicina {
 		PREKRESLENI("Překreslení mapy"), EDT("Událost na EDT"), DLAZDICE_ONLINE("Získání dlaždice online"), DLAZDICE_OFFLINE("Získání dlaždice offline"),
-		VYKRESLENI_OFFLINE("Vykreslení offline dlaždice");
+		VYKRESLENI_OFFLINE("Vykreslení offline dlaždice"), VYKRESLENI_PREHLEDU("Předvykreslení přehledové dlaždice");
 
 		final String popis;
 

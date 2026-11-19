@@ -45,7 +45,7 @@ public class Genom {
 	public final Alela ALELA_gc = GEN_druhKesoidu.alela("gc").displayName("Keš");
 	public final Alela ALELA_wm = GEN_druhKesoidu.alela("wm").displayName("Waymark");
 	public final Alela ALELA_mz = GEN_druhKesoidu.alela("mz").displayName("Munzee");
-	public final Alela ALELA_pic = GEN_druhKesoidu.alela("pic").displayName("Obrázek");
+	public final Alela ALELA_pic = GEN_druhKesoidu.alela("pic").displayName("Fotka");
 	public final Alela ALELA_gb = GEN_druhKesoidu.alela("gb").displayName("Český geodetický bod");
 	public final Alela ALELA_wp = GEN_druhKesoidu.alela("wp").displayName("Obecný waypoint");
 

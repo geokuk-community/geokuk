@@ -15,6 +15,8 @@ import cz.geokuk.util.lang.FString;
 public abstract class JVyberIkon0 extends Box {
 
 	private static final long serialVersionUID = -6496737194139718970L;
+	/** Strana ikon alel v dialogu; stejné ikony jako na toolbaru (výška 24), jen menší. */
+	static final int VELIKOST_IKONY = 20;
 	private JComponent jvyber1;
 	private JComponent jvyber2;
 	private final boolean iOdskrtnutiVybira;
@@ -180,9 +182,7 @@ public abstract class JVyberIkon0 extends Box {
 	}
 
 	private Icon najdiIkonu(final Alela alela, final IkonBag bag) {
-		final Genotyp genotypProAlelu = bag.getGenom().UNIVERZALNI_DRUH.genotypVychozi().with(alela);
-		// genotypProAlelu.put(bag.getGenom().ALELA_H);
-		return bag.seekIkon(genotypProAlelu);
+		return StavIkona.ikonaAlely(bag, alela, VELIKOST_IKONY);
 	}
 
 }

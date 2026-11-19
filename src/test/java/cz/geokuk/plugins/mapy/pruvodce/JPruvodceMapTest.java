@@ -251,4 +251,9 @@ public class JPruvodceMapTest {
 			d.dispose();
 		});
 	}
+
+	@Test
+	public void napovedaOdkazujeNaMenuSoubor() {
+		Assert.assertEquals("Výběr jde později změnit: Soubor > Průvodce nastavením map.", JPruvodceMap.NAPOVEDA_ZMENA_VYBERU);
+	}
 }

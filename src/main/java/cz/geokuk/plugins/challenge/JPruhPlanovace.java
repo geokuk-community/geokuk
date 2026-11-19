@@ -1,0 +1,952 @@
+package cz.geokuk.plugins.challenge;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+
+import javax.swing.*;
+
+import cz.geokuk.core.napoveda.UkazatelVykonu;
+import cz.geokuk.framework.AfterInjectInit;
+import cz.geokuk.framework.JSlide0;
+import cz.geokuk.framework.RozmisteniPrekryvu;
+
+/**
+ * Lišta plánovače challenge vlevo nahoře na mapě. Při vypnutém plánovači z ní zůstane jen úchyt, kterým se zapne. Zapnutá nese výběr challenge (typ a ▾, název v tooltipu), počet
+ * chybějících, přechod na předchozí a další chybějící, filtr „jen kandidáti“, přepínače kreslení a nastavení. Při malé šířce mapy se zužuje ve třech stupních podle
+ * {@link RozmisteniPrekryvu#sirkaPruhu}; mimo svůj obdélník nezachytává myš.
+ */
+public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
+
+	private static final long serialVersionUID = 1L;
+
+	private static final int PODSTAVEC = 4;
+	private static final int MEZERA = 4;
+	/** Větší mezera mezi skupinami (výběr a pohyb, filtry, nastavení). */
+	private static final int MEZERA_SKUPIN = 8;
+	private static final int VYSKA_PRVKU = 20;
+	private static final int SIRKA_UCHYTU = 26;
+	private static final int SIRKA_VYBERU = 62;
+	private static final int SIRKA_ODZNAKU = 80;
+	private static final int SIRKA_SIPKY = 24;
+	private static final int SIRKA_IKONY = 26;
+	private static final int SIRKA_KANDIDATU = 124, SIRKA_SEKTORU = 88, SIRKA_STITKU = 72;
+	/** Tlačítko vybraného políčka D/T; vejde se i „D4,5/T4,5 ✕“. */
+	static final int SIRKA_POLICKA = 92;
+	/** O kolik je lišta s tlačítkem vybraného políčka širší (tlačítko a mezera skupiny před ním). */
+	static final int PRIDAVEK_POLICKA = SIRKA_POLICKA + MEZERA_SKUPIN;
+	private static final Color CERVENA = new Color(200, 40, 40);
+	private static final javax.swing.border.Border RAMECEK = BorderFactory.createEtchedBorder();
+	/** Pořadí prvků v poli z {@link #rozloz}. */
+	static final int UCHYT = 0, VYBER = 1, ODZNAK = 2, ZPET = 3, DAL = 4, KANDIDATI = 5, SEKTORY = 6, STITKY = 7, POLICKO = 8;
+	private static final int POCET = 9;
+	/** Pořadí prvků zleva: vybrané políčko je poslední, ať ostatní prvky při výběru a zrušení nepoposkočí. */
+	private static final int[] ZLEVA = { UCHYT, VYBER, ODZNAK, ZPET, DAL, KANDIDATI, SEKTORY, STITKY, POLICKO };
+
+	/** Stupeň lišty podle její šířky. */
+	enum Stupen {
+		PLNY, IKONY, UZKY;
+
+		static Stupen pro(final int sirkaPruhu) {
+			if (sirkaPruhu >= RozmisteniPrekryvu.PRUH_PLNY) {
+				return PLNY;
+			}
+			return sirkaPruhu >= RozmisteniPrekryvu.PRUH_IKONY ? IKONY : UZKY;
+		}
+	}
+
+	private final transient JButton uchyt = new JButton(new Terc());
+	private final transient JButton chip = new JButton("Vybrat ▾");
+	private final transient Odznak odznak = new Odznak();
+	private final transient JButton zpet = new JButton(new Sipka(true));
+	private final transient JButton dal = new JButton(new Sipka(false));
+	private final transient Prepinac kandidati = new Prepinac(new Trychtyr());
+	private final transient Prepinac sektory = new Prepinac(new Klin());
+	private final transient Prepinac stitky = new Prepinac(new Stitek());
+	private final transient JButton policko = new JButton();
+	/** Štítek výběru v modelu: políčko D/T („D3/T4“) nebo sektor 360° („11°“), null když žádný není vybrán. */
+	private String vybranyStitek;
+	private transient java.util.function.BooleanSupplier jinyPopupOtevreny = () -> false;
+	private transient ChallengeModel model;
+	private transient Runnable naKlikOdznaku;
+	private transient Runnable naNastaveni;
+	private transient JPopupMenu vyber;
+	private transient java.util.function.Supplier<? extends java.util.Collection<Rectangle>> prekazky = java.util.Collections::emptyList;
+	private Stupen stupen = Stupen.PLNY;
+	private boolean zapnuto;
+	/** Text jednorázové rady vedle vypnutého úchytu. */
+	static final String TEXT_RADY = "◀ Plánovač challenge: ukáže, co vám v challenge chybí";
+	/** Rada vedle vypnutého úchytu: ukáže se jednou, při prvním startu s vypnutým plánovačem. */
+	final JPanel rada = new JPanel(new BorderLayout(4, 0));
+	private final JLabel textRady = new JLabel(TEXT_RADY);
+	final JButton zavritRadu = new JButton("✕");
+	private boolean radaVidet;
+	static final int REZERVA_RADY = 8;
+
+	public JPruhPlanovace() {
+		setOpaque(false);
+		setLayout(null);
+		uchyt.setToolTipText(TIP_UCHYTU_ZAPNOUT);
+		zpet.setToolTipText(ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, false));
+		dal.setToolTipText(ChallengeAkce.tipPosunu(Challenge.Typ.SEKTORY_360, true));
+		odznak.setToolTipText(popisChybejicich(Challenge.Typ.SEKTORY_360));
+		kandidati.setToolTipText(popisKandidatu(Challenge.Typ.SEKTORY_360));
+		sektory.setToolTipText("Sektory na mapě: prstenec, klín sektoru vybraného kandidáta a čára k němu");
+		stitky.setToolTipText("Štítky u kandidátů: číslo sektoru nebo políčko D/T");
+		chip.setToolTipText("Vybrat challenge");
+		sektory.setSelected(true);
+		stitky.setSelected(true);
+		for (final AbstractButton b : new AbstractButton[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, policko }) {
+			b.setFocusable(false);
+			b.setMargin(new Insets(0, 2, 0, 2));
+			add(b);
+		}
+		uchyt.addActionListener(e -> prepniZapnuti());
+		chip.addActionListener(e -> otevriVyber());
+		kandidati.addActionListener(e -> prepniKandidaty());
+		sektory.addActionListener(e -> {
+			if (model != null) {
+				model.setKresliSektory(sektory.isSelected());
+			}
+		});
+		stitky.addActionListener(e -> {
+			if (model != null) {
+				model.setKresliStitky(stitky.isSelected());
+			}
+		});
+		policko.addActionListener(e -> zrusPolicko());
+		pridejEsc();
+		zpet.addActionListener(e -> prejdi(false));
+		dal.addActionListener(e -> prejdi(true));
+		odznak.addActionListener(e -> {
+			if (naKlikOdznaku != null) {
+				naKlikOdznaku.run();
+			}
+		});
+		textRady.setToolTipText(TIP_UCHYTU_ZAPNOUT);
+		zavritRadu.setToolTipText("Zavřít radu");
+		zavritRadu.setFocusable(false);
+		zavritRadu.setMargin(new Insets(0, 4, 0, 4));
+		zavritRadu.addActionListener(e -> skryjRadu());
+		rada.add(textRady, BorderLayout.CENTER);
+		rada.add(zavritRadu, BorderLayout.EAST);
+		rada.setVisible(false);
+		obnovVzhledRady();
+		add(rada);
+	}
+
+	@Override
+	public void updateUI() {
+		super.updateUI();
+		obnovVzhledRady();
+	}
+
+	/** Barvy rady jako tooltip vzhledu (vlastní kopie, ať je updateUI rady nepřepíše): odliší se od lišty i od mapy ve světlém i tmavém skinu. */
+	private void obnovVzhledRady() {
+		final Color pozadi = kopie(UIManager.getColor("ToolTip.background"));
+		final Color popredi = kopie(UIManager.getColor("ToolTip.foreground"));
+		rada.setOpaque(true);
+		rada.setBackground(pozadi);
+		textRady.setForeground(popredi);
+		rada.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(popredi == null ? Color.GRAY : popredi), BorderFactory.createEmptyBorder(1, 6, 1, 2)));
+	}
+
+	private static Color kopie(final Color c) {
+		return c == null ? null : new Color(c.getRGB(), true);
+	}
+
+	private void skryjRadu() {
+		radaVidet = false;
+		revalidate();
+		repaint();
+	}
+
+	/** Obdélník rady vpravo od vypnutého úchytu ve výšce lišty, nebo prázdný, když se nevejde. */
+	Rectangle oblastRady() {
+		final Dimension d = rada.getPreferredSize();
+		final int x = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.PRUH_UCHYT + MEZERA;
+		final int vyska = Math.min(d.height, RozmisteniPrekryvu.VYSKA_PRUHU);
+		// Rezerva: při zvětšení (125–150 %) je vykreslený text o pár pixelů širší než změřený.
+		final Rectangle r = new Rectangle(x, RozmisteniPrekryvu.OKRAJ + (RozmisteniPrekryvu.VYSKA_PRUHU - vyska) / 2, d.width + REZERVA_RADY, vyska);
+		return r.x + r.width <= RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.volnaSirkaPruhu(getWidth(), prekazky.get()) ? r : new Rectangle(x, r.y, 0, 0);
+	}
+
+	public void inject(final ChallengeModel model) {
+		this.model = model;
+	}
+
+	/** Nastavení otevírá dialog plánovače přes jeho akci. */
+	public void inject(final cz.geokuk.core.program.Akce akce) {
+		setNaNastaveni(() -> akce.challengeNastaveniAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "nastaveni")));
+	}
+
+	/** Co se stane po kliknutí na odznak (popup s podrobnostmi). */
+	public void setNaKlikOdznaku(final Runnable naKlikOdznaku) {
+		this.naKlikOdznaku = naKlikOdznaku;
+	}
+
+	/** Panely a legenda na mapě, před kterými lišta končí. */
+	public void setPrekazky(final java.util.function.Supplier<? extends java.util.Collection<Rectangle>> prekazky) {
+		this.prekazky = prekazky;
+	}
+
+	/** Co otevře Nastavení… a Plánovač challenge… (dialog plánovače). */
+	public void setNaNastaveni(final Runnable naNastaveni) {
+		this.naNastaveni = naNastaveni;
+	}
+
+	@Override
+	public void initAfterInject() {
+		obnov();
+	}
+
+	public void onEvent(final ChallengeZmenenyEvent event) {
+		obnov();
+	}
+
+	/** Sektory (prstenec, klín, čára) má jen challenge 360°. */
+	static boolean maSektory(final Challenge.Typ typ) {
+		return typ == Challenge.Typ.SEKTORY_360;
+	}
+
+	static final String TIP_UCHYTU_ZAPNOUT = "<html><b>Plánovač challenge</b> – zapnout<br>Ukáže, které sektory nebo políčka challenge vám chybí,<br>a na mapě keše, které je doplní. Menu Kešoidy › Plánovač challenge.</html>";
+	static final String TIP_UCHYTU_VYPNOUT = "<html><b>Plánovač challenge</b> – vypnout</html>";
+
+	/** Kolik políček challenge má: 360 sektorů, u políček podle výsledku. */
+	private int celkem(final Challenge c) {
+		if (c.typ() == Challenge.Typ.SEKTORY_360) {
+			return 360;
+		}
+		final VysledekPolicek v = model == null ? null : model.vysledekPolicek(c);
+		return v == null ? 0 : v.celkem();
+	}
+
+	/** Tooltip odznaku: „Chybí 193 sektorů z 360 – klik ukáže podrobnosti“. */
+	static String tipOdznaku(final Challenge.Typ typ, final int chybi, final int celkem) {
+		final String co;
+		switch (typ) {
+		case DT_MATICE:
+			co = tvar(chybi, "políčko", "políčka", "políček");
+			break;
+		case KALENDAR:
+			co = tvar(chybi, "den", "dny", "dní");
+			break;
+		default:
+			co = tvar(chybi, "sektor", "sektory", "sektorů");
+		}
+		return "Chybí " + chybi + " " + co + (celkem > 0 ? " z " + celkem : "") + " – klik ukáže podrobnosti";
+	}
+
+	private static String tvar(final int n, final String jeden, final String dvaAzCtyri, final String jinak) {
+		if (n == 1) {
+			return jeden;
+		}
+		return n >= 2 && n <= 4 ? dvaAzCtyri : jinak;
+	}
+
+	/** Co počítá odznak: chybějící sektory, políčka nebo dny podle typu challenge. */
+	static String popisChybejicich(final Challenge.Typ typ) {
+		switch (typ) {
+		case DT_MATICE:
+			return "Chybějící políčka D/T";
+		case KALENDAR:
+			return "Chybějící dny";
+		default:
+			return "Chybějící sektory";
+		}
+	}
+
+	/** Co zůstane na mapě po zapnutí filtru „jen kandidáti“. */
+	static String popisKandidatu(final Challenge.Typ typ) {
+		switch (typ) {
+		case DT_MATICE:
+			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící políčko D/T";
+		case KALENDAR:
+			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící den";
+		default:
+			return "Na mapě zůstanou jen kandidáti, kteří doplní chybějící sektor";
+		}
+	}
+
+	/**
+	 * Obdélníky prvků lišty v souřadnicích mapy pro danou šířku zapnuté lišty, v pořadí {@link #UCHYT} až {@link #POLICKO}. Prvek, který se na tomto stupni neukazuje, má
+	 * prázdný obdélník.
+	 */
+	static Rectangle[] rozloz(final int sirkaPruhu) {
+		return rozloz(sirkaPruhu, false);
+	}
+
+	/** Totéž s tlačítkem vybraného políčka na konci lišty; {@code sirkaPruhu} je šířka lišty bez něj. */
+	static Rectangle[] rozloz(final int sirkaPruhu, final boolean sPolickem) {
+		final Stupen s = Stupen.pro(sirkaPruhu);
+		final int[] sirky = new int[POCET];
+		sirky[UCHYT] = SIRKA_UCHYTU;
+		sirky[VYBER] = SIRKA_VYBERU;
+		sirky[ODZNAK] = SIRKA_ODZNAKU;
+		sirky[ZPET] = SIRKA_SIPKY;
+		sirky[DAL] = SIRKA_SIPKY;
+		sirky[KANDIDATI] = s == Stupen.PLNY ? SIRKA_KANDIDATU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
+		sirky[SEKTORY] = s == Stupen.PLNY ? SIRKA_SEKTORU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
+		sirky[STITKY] = s == Stupen.PLNY ? SIRKA_STITKU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
+		sirky[POLICKO] = sPolickem && s != Stupen.UZKY ? SIRKA_POLICKA : 0;
+		final Rectangle[] r = new Rectangle[POCET];
+		final int y = RozmisteniPrekryvu.OKRAJ + (RozmisteniPrekryvu.VYSKA_PRUHU - VYSKA_PRVKU) / 2;
+		int x = RozmisteniPrekryvu.OKRAJ + PODSTAVEC;
+		for (final int i : ZLEVA) {
+			if (sirky[i] == 0) {
+				r[i] = new Rectangle(x, y, 0, 0);
+				continue;
+			}
+			if (i == KANDIDATI || i == POLICKO) {
+				x += MEZERA_SKUPIN - MEZERA;
+			}
+			r[i] = new Rectangle(x, y, sirky[i], VYSKA_PRVKU);
+			x += sirky[i] + MEZERA;
+		}
+		return r;
+	}
+
+	/** Odznak v souřadnicích mapy dané šířky s danými překážkami vpravo (pod ním visí popup). */
+	static Rectangle oblastOdznaku(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky) {
+		return rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width)[ODZNAK];
+	}
+
+	/** Ovládací prvky lišty, na které klik nezavře popup souhrnu: ◀ ▶, Jen kandidáti, Sektory a Štítky; v souřadnicích mapy dané šířky s překážkami vpravo. */
+	static java.util.List<Rectangle> oblastiOvladani(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky) {
+		final Rectangle[] r = rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width);
+		final java.util.List<Rectangle> v = new java.util.ArrayList<>();
+		for (final int i : new int[] { ZPET, DAL, KANDIDATI, SEKTORY, STITKY }) {
+			if (!r[i].isEmpty()) {
+				v.add(r[i]);
+			}
+		}
+		return v;
+	}
+
+	/** Odznak v souřadnicích mapy dané šířky bez překážek. */
+	static Rectangle oblastOdznaku(final int sirkaMapy) {
+		return oblastOdznaku(sirkaMapy, java.util.Collections.emptyList());
+	}
+
+	/** Odznak v souřadnicích mapy. */
+	public Rectangle oblastOdznaku() {
+		return oblastOdznaku(getWidth(), prekazky.get());
+	}
+
+	/** Šířka zapnuté lišty v souřadnicích mapy bez tlačítka vybraného políčka. */
+	private int sirkaListy() {
+		return RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(getWidth(), prekazky.get()));
+	}
+
+	/** Tlačítko vybraného políčka je vidět: políčko je vybrané, lišta není nejužší a s tlačítkem se vejde do volné šířky. */
+	private boolean sPolickem() {
+		if (vybranyStitek == null) {
+			return false;
+		}
+		final int sirka = sirkaListy();
+		return Stupen.pro(sirka) != Stupen.UZKY && sirka + PRIDAVEK_POLICKA <= RozmisteniPrekryvu.volnaSirkaPruhu(getWidth(), prekazky.get());
+	}
+
+	/** Šířka zapnuté lišty včetně tlačítka vybraného políčka, je-li vidět. */
+	private int sirkaListySPolickem() {
+		return sirkaListy() + (sPolickem() ? PRIDAVEK_POLICKA : 0);
+	}
+
+	/** Obdélník lišty (zapnuté) nebo úchytu (vypnuté) v souřadnicích mapy. */
+	Rectangle oblastPruhu() {
+		final Rectangle r = RozmisteniPrekryvu.pruhPlanovace(0, zapnuto);
+		if (zapnuto) {
+			r.width = sirkaListySPolickem();
+		}
+		return r;
+	}
+
+	@Override
+	public boolean contains(final int x, final int y) {
+		return isVisible() && (oblastPruhu().contains(x, y) || rada.isVisible() && rada.getBounds().contains(x, y));
+	}
+
+	@Override
+	public void doLayout() {
+		final int sirka = sirkaListy();
+		final Rectangle[] r = rozloz(sirka, sPolickem());
+		final Component[] c = prvky();
+		stupen = Stupen.pro(sirka);
+		for (int i = 0; i < c.length; i++) {
+			c[i].setBounds(r[i]);
+			c[i].setVisible(i == UCHYT || (zapnuto && !r[i].isEmpty()));
+		}
+		final Rectangle mistoRady = radaVidet && !zapnuto ? oblastRady() : new Rectangle();
+		rada.setBounds(mistoRady);
+		rada.setVisible(!mistoRady.isEmpty());
+		if (rada.isVisible() && model != null) {
+			model.setRadaZobrazena();
+		}
+		final boolean texty = stupen == Stupen.PLNY;
+		nastavText(kandidati, texty ? "Jen kandidáti" : "");
+		nastavText(sektory, texty ? "Sektory" : "");
+		nastavText(stitky, texty ? "Štítky" : "");
+		chip.setFont(pismoNaSirku(UIManager.getFont("Button.font"), chip.getText(), r[VYBER].width - 8, chip::getFontMetrics));
+		odznak.setFont(pismoNaSirku(UIManager.getFont("Button.font"), VZOREK_ODZNAKU, r[ODZNAK].width - odznak.getInsets().left - odznak.getInsets().right - 2, odznak::getFontMetrics));
+	}
+
+	private Component[] prvky() {
+		return new Component[] { uchyt, chip, odznak, zpet, dal, kandidati, sektory, stitky, policko };
+	}
+
+	private static void nastavText(final AbstractButton b, final String text) {
+		if (!text.equals(b.getText())) {
+			b.setText(text);
+		}
+	}
+
+	/** Písmo tlačítka výběru s typem: výchozí, a když se text nevejde, menší až do 9 bodů, ať se nezkrátí na „…“. */
+	static Font pismoNaSirku(final Font zaklad, final String text, final int sirka, final java.util.function.Function<Font, FontMetrics> metriky) {
+		if (zaklad == null || text == null || sirka <= 0) {
+			return zaklad;
+		}
+		Font f = zaklad;
+		while (f.getSize2D() > 9f && metriky.apply(f).stringWidth(text) > sirka) {
+			f = f.deriveFont(f.getSize2D() - 0.5f);
+		}
+		return f;
+	}
+
+	@Override
+	protected void paintComponent(final Graphics g) {
+		final Rectangle p = oblastPruhu();
+		final Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			// Stejný blok jako „Zdroje:“ a „Výlet:“ ve stavovém řádku: pozadí a vyrytý rámeček podle skinu.
+			g2.setColor(UIManager.getColor("Panel.background"));
+			g2.fillRect(p.x, p.y, p.width, p.height);
+			RAMECEK.paintBorder(this, g2, p.x, p.y, p.width, p.height);
+		} finally {
+			g2.dispose();
+		}
+	}
+
+	private Challenge challenge() {
+		return model == null ? null : model.zobrazena();
+	}
+
+	/** Barva zobrazené challenge, bez ní šedá. */
+	/** Akcent skinu: proužek zapnutého přepínače. */
+	/** Barva skinu, která se od daného pozadí liší nejvíc jasem: zapnutý přepínač se tak nesplete s nedostupným. */
+	static Color akcentNa(final Color pozadi) {
+		final Color[] kandidati = { javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControlDarkShadow(), javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControl(),
+				javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControlHighlight(), javax.swing.plaf.metal.MetalLookAndFeel.getFocusColor() };
+		Color nej = Color.GRAY;
+		double rozdil = -1;
+		for (final Color c : kandidati) {
+			if (c != null && (pozadi == null || Math.abs(jas(c) - jas(pozadi)) > rozdil)) {
+				rozdil = pozadi == null ? 0 : Math.abs(jas(c) - jas(pozadi));
+				nej = c;
+			}
+		}
+		return nej;
+	}
+
+	private void obnov() {
+		zapnuto = model != null && model.jeZapnuto();
+		if (model != null && !model.jeRadaZobrazena()) {
+			// Kdo má plánovač zapnutý, ho už zná; ostatním se rada ukáže jednou (zapamatuje se v doLayout, až se opravdu vejde).
+			radaVidet = !zapnuto;
+			if (zapnuto) {
+				model.setRadaZobrazena();
+			}
+		}
+		if (zapnuto) {
+			radaVidet = false;
+		}
+		final StavPruhu stav = model == null ? StavPruhu.SKRYTY : model.stavPruhu();
+		final boolean maChallenge = stav.jeViditelny();
+		uchyt.setToolTipText(zapnuto ? TIP_UCHYTU_VYPNOUT : TIP_UCHYTU_ZAPNOUT);
+		nastavText(chip, (maChallenge ? stav.stitekTypu() + " " : "Vybrat ") + "▾");
+		chip.setToolTipText(maChallenge ? "Challenge: " + stav.challenge().nazev() + " – vybrat jinou" : "Vybrat challenge");
+		if (maChallenge) {
+			final VysledekPolicek nasobna = stav.typ() == Challenge.Typ.DT_MATICE && model != null ? model.vysledekPolicek(stav.challenge()) : null;
+			if (nasobna != null && nasobna.cil() > 1) {
+				// S násobností odznak počítá chybějící nálezy, ne políčka.
+				odznak.nastav("chybí " + nasobna.chybiNalezu());
+				odznak.setForeground(UIManager.getColor("Button.foreground"));
+				odznak.setToolTipText(TextyPopupuPlanovace.tipOdznakuNalezu(nasobna));
+			} else {
+				if (stav.badge() >= 0) {
+					posledniOdznakKlic = klicChallenge(stav.challenge());
+					posledniOdznak = stav.badge();
+				}
+				final boolean pocita = stav.badge() < 0 && stav.chyba() == null;
+				final String cislo = stav.badge() >= 0 ? Integer.toString(stav.badge())
+						: stav.chyba() != null ? "?" : posledniOdznak >= 0 && klicChallenge(stav.challenge()).equals(posledniOdznakKlic) ? Integer.toString(posledniOdznak) : "–";
+				odznak.nastav("chybí " + cislo);
+				odznak.setForeground(pocita ? zasedlyText() : UIManager.getColor("Button.foreground"));
+				odznak.setToolTipText(stav.badge() < 0 ? stav.chyba() != null ? stav.chyba() : popisChybejicich(stav.typ()) + " – počítá se" : tipOdznaku(stav.typ(), stav.badge(), celkem(stav.challenge())));
+			}
+			kandidati.setToolTipText(popisKandidatu(stav.typ()) + " (F4)");
+			zpet.setToolTipText(ChallengeAkce.tipPosunu(model, stav.typ(), false));
+			dal.setToolTipText(ChallengeAkce.tipPosunu(model, stav.typ(), true));
+		} else {
+			odznak.nastav("–");
+			odznak.setForeground(UIManager.getColor("Button.foreground"));
+		}
+		kandidati.setSelected(maChallenge && stav.jenKandidati());
+		sektory.setSelected((model == null || model.isKresliSektory()) && maChallenge && maSektory(stav.typ()));
+		stitky.setSelected(model == null || model.isKresliStitky());
+		for (final AbstractButton b : new AbstractButton[] { odznak, zpet, dal, kandidati, stitky }) {
+			b.setEnabled(maChallenge);
+		}
+		final boolean bezChyby = maChallenge && stav.chyba() == null;
+		zpet.setEnabled(bezChyby && ChallengeAkce.jeKamPosunout(model, false));
+		dal.setEnabled(bezChyby && ChallengeAkce.jeKamPosunout(model, true));
+		kandidati.setEnabled(bezChyby);
+		sektory.setEnabled(maChallenge && maSektory(stav.typ()));
+		obnovPolicko(maChallenge ? stav.challenge() : null, maChallenge && stav.jenKandidati());
+		if (!isVisible()) {
+			setVisible(true);
+		}
+		UkazatelVykonu.setPodPruhem(true);
+		revalidate();
+		repaint();
+	}
+
+	/** Tlačítko „D3/T4 ✕“ nebo „11° ✕“: jen s vybraným políčkem D/T nebo sektorem 360°. */
+	private void obnovPolicko(final Challenge c, final boolean jenKandidati) {
+		vybranyStitek = null;
+		if (c != null && model != null) {
+			if (c.typ() == Challenge.Typ.DT_MATICE) {
+				vybranyStitek = model.zvyraznenePolicko(c);
+			} else if (c.typ() == Challenge.Typ.SEKTORY_360 && model.zvyraznenySektor(c) >= 0) {
+				vybranyStitek = model.zvyraznenySektor(c) + "°";
+			}
+		}
+		if (vybranyStitek == null) {
+			return;
+		}
+		final String tip;
+		if (c.typ() == Challenge.Typ.DT_MATICE) {
+			final VysledekPolicek v = model.vysledekPolicek(c);
+			final int n = v == null ? 0 : v.pocetKandidatu(vybranyStitek);
+			tip = tipPolicka(vybranyStitek, n, v != null && v.jePlne(vybranyStitek), jenKandidati);
+		} else {
+			tip = tipSektoru(model.zvyraznenySektor(c), model.vysledek(c));
+		}
+		nastavText(policko, vybranyStitek + " ✕");
+		policko.setToolTipText(tip);
+		chip.setToolTipText(chip.getToolTipText() + (c.typ() == Challenge.Typ.DT_MATICE ? "; vybrané políčko " : "; vybraný sektor ") + vybranyStitek);
+		policko.setForeground(UIManager.getColor("Button.foreground"));
+	}
+
+	/** Tooltip tlačítka vybraného políčka. */
+	static String tipPolicka(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati) {
+		final String pocet = plne ? TextyPopupuPlanovace.plnyPocet(kandidatu) : TextyPopupuPlanovace.kandidatu(kandidatu);
+		final String stav = jenKandidati ? "na mapě jen jeho kandidáti (" + pocet + ")" : "na mapě všechny keše, F4 ukáže jen jeho kandidáty (" + pocet + ")";
+		return "<html>Zrušit výběr políčka " + stitek + " (Esc)<br>" + stav + "</html>";
+	}
+
+	/** Tooltip tlačítka vybraného sektoru: „Sektor 11° · 6 kandidátů · nejbližší 3,2 km od středu“ a jak výběr zrušit. */
+	static String tipSektoru(final int sektor, final VysledekSektoru v) {
+		final VysledekSektoru.Kandidati k = v == null ? null : v.kandidati(sektor);
+		final String popis = k == null || k.pocet() == 0 ? "Sektor " + sektor + "°" : TextyKresleni.sektorVybrane(sektor, k);
+		return "<html>" + popis + "<br>Zrušit výběr sektoru (Esc)</html>";
+	}
+
+	/** Esc zruší výběr políčka nebo sektoru, jen když je něco vybráno a žádný popup nečeká na Esc sám. */
+	private void pridejEsc() {
+		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "zrusPolickoPlanovace");
+		getActionMap().put("zrusPolickoPlanovace", new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean isEnabled() {
+				final Challenge c = challenge();
+				return (vybranyStitek != null || c != null && model != null && model.maZapamatovanyVyber(c)) && !jinyPopupOtevreny.getAsBoolean();
+			}
+
+			@Override
+			public void actionPerformed(final java.awt.event.ActionEvent e) {
+				zrusPolicko();
+			}
+		});
+	}
+
+	/** Je otevřený popup, který Esc zavírá (popup plánovače, popupy stavového řádku); Esc pak výběr políčka nezruší. */
+	public void setJinyPopupOtevreny(final java.util.function.BooleanSupplier jinyPopupOtevreny) {
+		this.jinyPopupOtevreny = jinyPopupOtevreny;
+	}
+
+	private void zrusPolicko() {
+		final Challenge c = challenge();
+		if (c != null && model != null) {
+			model.setVybranePolicko(c, null);
+			model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+		}
+	}
+
+	private void prepniZapnuti() {
+		if (model == null) {
+			return;
+		}
+		final boolean zapnout = !model.jeZapnuto();
+		model.setZapnuto(zapnout);
+		if (zapnout && model.zobrazena() == null) {
+			SwingUtilities.invokeLater(this::otevriVyber);
+		}
+	}
+
+	private void prepniKandidaty() {
+		final Challenge c = challenge();
+		if (c == null) {
+			return;
+		}
+		try {
+			model.setJenKandidatiPro(kandidati.isSelected() ? c : null);
+		} catch (final ChallengeChyba e) {
+			kandidati.setSelected(false);
+		}
+	}
+
+	private void prejdi(final boolean dopredu) {
+		ChallengeAkce.posun(model, dopredu);
+	}
+
+	private void otevriNastaveni() {
+		if (vyber != null) {
+			vyber.setVisible(false);
+		}
+		if (naNastaveni != null) {
+			naNastaveni.run();
+		}
+	}
+
+	boolean jeVyberOtevreny() {
+		return vyber != null && vyber.isVisible();
+	}
+
+	/** Výběr challenge pod chipem: jediná aktivní (přepínač), v nejužším stupni i přepínače kreslení, kopie a dialog plánovače. */
+	JPopupMenu sestavVyber() {
+		final JPopupMenu m = new JPopupMenu();
+		if (model == null) {
+			return m;
+		}
+		final JLabel nadpis = new JLabel("Challenge:");
+		nadpis.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+		nadpis.setFont(nadpis.getFont().deriveFont(Font.BOLD));
+		m.add(nadpis);
+		final ButtonGroup skupina = new ButtonGroup();
+		final Challenge zobrazena = model.zobrazena();
+		for (final Challenge c : model.vsechny()) {
+			if (!model.jeVUi(c)) {
+				continue;
+			}
+			final JRadioButtonMenuItem polozka = new JRadioButtonMenuItem(c.nazev() + (model.jeSablona(c) ? "  (šablona)" : ""));
+			polozka.setSelected(c.equals(zobrazena));
+			polozka.addActionListener(e -> vyber(c));
+			skupina.add(polozka);
+			m.add(polozka);
+		}
+		if (stupen == Stupen.UZKY) {
+			m.addSeparator();
+			final JCheckBoxMenuItem k = new JCheckBoxMenuItem("Jen kandidáti", kandidati.isSelected());
+			k.setEnabled(kandidati.isEnabled());
+			k.addActionListener(e -> {
+				kandidati.setSelected(k.isSelected());
+				prepniKandidaty();
+			});
+			m.add(k);
+			final JCheckBoxMenuItem sekt = prepinacVMenu("Sektory na mapě", model.isKresliSektory(), model::setKresliSektory);
+			sekt.setEnabled(sektory.isEnabled());
+			m.add(sekt);
+			m.add(prepinacVMenu("Štítky u kandidátů", model.isKresliStitky(), model::setKresliStitky));
+		}
+		m.addSeparator();
+		final JMenuItem kopie = new JMenuItem("Vytvořit kopii…");
+		kopie.setEnabled(zobrazena != null && model.jeSablona(zobrazena));
+		kopie.setToolTipText("Vlastní kopie vybrané šablony k úpravě v dialogu plánovače");
+		kopie.addActionListener(e -> kopiruj());
+		m.add(kopie);
+		final JMenuItem planovac = new JMenuItem("Nastavení plánovače…", new Ozubene());
+		planovac.addActionListener(e -> otevriNastaveni());
+		m.add(planovac);
+		return m;
+	}
+
+	private static JCheckBoxMenuItem prepinacVMenu(final String text, final boolean stav, final java.util.function.Consumer<Boolean> nastav) {
+		final JCheckBoxMenuItem p = new JCheckBoxMenuItem(text, stav);
+		p.addActionListener(e -> nastav.accept(p.isSelected()));
+		return p;
+	}
+
+	private void otevriVyber() {
+		if (!zapnuto || !isShowing() || jeVyberOtevreny()) {
+			return;
+		}
+		vyber = sestavVyber();
+		vyber.show(this, chip.getX(), chip.getY() + chip.getHeight() + 2);
+	}
+
+	/** Udělá z challenge jedinou aktivní a zobrazí ji v liště. */
+	void vyber(final Challenge c) {
+		try {
+			for (final Challenge a : model.aktivni()) {
+				if (!a.equals(c)) {
+					model.deaktivuj(a);
+				}
+			}
+			if (!model.jeAktivni(c)) {
+				model.aktivuj(c);
+			}
+			model.setZobrazena(c);
+		} catch (final ChallengeChyba e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Plánovač challenge", JOptionPane.WARNING_MESSAGE);
+		}
+	}
+
+	private void kopiruj() {
+		final Challenge z = model.zobrazena();
+		if (z == null || !model.jeSablona(z)) {
+			return;
+		}
+		try {
+			vyber(model.kopieSablony(z));
+			otevriNastaveni();
+		} catch (final ChallengeChyba e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Plánovač challenge", JOptionPane.WARNING_MESSAGE);
+		}
+	}
+
+	/** Jas barvy 0 až 1. */
+	static double jas(final Color c) {
+		return (c.getRed() * 299 + c.getGreen() * 587 + c.getBlue() * 114) / 255000.0;
+	}
+
+	/** Barva textu a ikony na daném pozadí: tmavá na světlém, světlá na tmavém. */
+	static Color popredi(final Color pozadi) {
+		return pozadi == null || jas(pozadi) > 0.5 ? new Color(0x202020) : new Color(0xF0F0F0);
+	}
+
+	/** Přepínač lišty: text a ikona v barvě podle skutečného pozadí, zapnutý má pod obsahem proužek v akcentu skinu. */
+	static final class Prepinac extends JToggleButton {
+		private static final long serialVersionUID = 1L;
+
+		Prepinac(final Icon ikona) {
+			super(ikona);
+			addItemListener(e -> obnovPopredi());
+			addPropertyChangeListener("enabled", e -> obnovPopredi());
+		}
+
+		@Override
+		public void updateUI() {
+			super.updateUI();
+			obnovPopredi();
+		}
+
+		/** Pozadí zapnutého přepínače: hlavní barva skinu, aby se zapnutý nespletl s nedostupným. */
+		static Color pozadiZapnuteho() {
+			final Color c = javax.swing.plaf.metal.MetalLookAndFeel.getPrimaryControl();
+			return c != null ? c : UIManager.getColor("ToggleButton.select");
+		}
+
+		boolean jeZvyrazneny() {
+			return isSelected() && isEnabled();
+		}
+
+		void obnovPopredi() {
+			final Color pozadi = jeZvyrazneny() ? pozadiZapnuteho() : UIManager.getColor(isSelected() ? "ToggleButton.select" : "ToggleButton.background");
+			setForeground(popredi(pozadi != null ? pozadi : UIManager.getColor("Panel.background")));
+			setContentAreaFilled(!jeZvyrazneny());
+		}
+
+		@Override
+		protected void paintComponent(final Graphics g) {
+			if (jeZvyrazneny()) {
+				g.setColor(pozadiZapnuteho());
+				g.fillRect(0, 0, getWidth(), getHeight());
+			}
+			super.paintComponent(g);
+			if (jeZvyrazneny()) {
+				g.setColor(akcentNa(pozadiZapnuteho()));
+				g.fillRect(3, getHeight() - 5, getWidth() - 6, 3);
+			}
+		}
+	}
+
+	/**
+	 * Barva odznaku s počtem chybějících; null = neutrální tlačítko podle skinu. Pro zvýraznění vrátit barvu, například {@link #CERVENA}.
+	 */
+	static Color barvaOdznaku() {
+		return null;
+	}
+
+	private transient String posledniOdznakKlic;
+	private transient int posledniOdznak = -1;
+
+	private static String klicChallenge(final Challenge c) {
+		return c.nazev();
+	}
+
+	/** Text během výpočtu: mezi popředím a pozadím tlačítka. */
+	private static Color zasedlyText() {
+		final Color t = UIManager.getColor("Button.foreground");
+		final Color p = UIManager.getColor("Button.background");
+		if (t == null || p == null) {
+			return Color.GRAY;
+		}
+		return new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
+	}
+
+	/** Nejširší text odznaku; písmo se řídí jím, ať se při změně počtu nemění velikost ani šířka. */
+	static final String VZOREK_ODZNAKU = "chybí 9999 ▾";
+
+	/** Odznak s počtem chybějících: běžné tlačítko lišty, text končí „▾“ jako výběr challenge, a klik otevře popup. */
+	private static final class Odznak extends JButton {
+		private static final long serialVersionUID = 1L;
+
+		Odznak() {
+			super("…");
+			setRolloverEnabled(true);
+			setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			obnovBarvu();
+		}
+
+		@Override
+		public void updateUI() {
+			super.updateUI();
+			obnovBarvu();
+		}
+
+		private void obnovBarvu() {
+			final Color barva = barvaOdznaku();
+			if (barva != null) {
+				setBackground(barva);
+				setForeground(popredi(barva));
+			}
+		}
+
+		void nastav(final String text) {
+			setText(text + " ▾");
+		}
+	}
+
+	/** Základ ikon lišty: vyhlazené kreslení barvou popředí tlačítka (šedou, je-li nedostupné). */
+	private abstract static class Ikona implements Icon {
+		private final int w, h;
+
+		Ikona(final int w, final int h) {
+			this.w = w;
+			this.h = h;
+		}
+
+		@Override
+		public final void paintIcon(final Component c, final Graphics g, final int x, final int y) {
+			final Graphics2D g2 = (Graphics2D) g.create();
+			try {
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.translate(x, y);
+				g2.setColor(c.isEnabled() ? c.getForeground() : Color.GRAY);
+				kresli(g2);
+			} finally {
+				g2.dispose();
+			}
+		}
+
+		abstract void kresli(Graphics2D g);
+
+		@Override
+		public int getIconWidth() {
+			return w;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return h;
+		}
+	}
+
+	/** Terč úchytu v barvě popředí tlačítka. */
+	private static final class Terc extends Ikona {
+		Terc() {
+			super(16, 16);
+		}
+
+		@Override
+		void kresli(final Graphics2D g) {
+			g.setStroke(new BasicStroke(1.6f));
+			g.drawOval(1, 1, 13, 13);
+			g.drawOval(4, 4, 7, 7);
+			g.fillOval(7, 7, 2, 2);
+		}
+	}
+
+	/** Trojúhelníková šipka doleva nebo doprava. */
+	private static final class Sipka extends Ikona {
+		private final boolean doleva;
+
+		Sipka(final boolean doleva) {
+			super(8, 10);
+			this.doleva = doleva;
+		}
+
+		@Override
+		void kresli(final Graphics2D g) {
+			final int[] xs = doleva ? new int[] { 8, 0, 8 } : new int[] { 0, 8, 0 };
+			g.fillPolygon(xs, new int[] { 0, 5, 10 }, 3);
+		}
+	}
+
+	/** Ikona trychtýře filtru. */
+	private static final class Trychtyr extends Ikona {
+		Trychtyr() {
+			super(12, 12);
+		}
+
+		@Override
+		void kresli(final Graphics2D g) {
+			g.fillPolygon(new int[] { 0, 12, 7, 7, 5, 5 }, new int[] { 0, 0, 6, 11, 11, 6 }, 6);
+		}
+	}
+
+	/** Ikona klínu sektoru. */
+	private static final class Klin extends Ikona {
+		Klin() {
+			super(14, 14);
+		}
+
+		@Override
+		void kresli(final Graphics2D g) {
+			g.setStroke(new BasicStroke(1.3f));
+			g.draw(new java.awt.geom.Arc2D.Double(-12, 1, 26, 26, 20, 50, java.awt.geom.Arc2D.PIE));
+		}
+	}
+
+	/** Ikona štítku. */
+	private static final class Stitek extends Ikona {
+		Stitek() {
+			super(14, 14);
+		}
+
+		@Override
+		void kresli(final Graphics2D g) {
+			g.setStroke(new BasicStroke(1.3f));
+			g.drawPolygon(new int[] { 1, 9, 13, 9, 1 }, new int[] { 3, 3, 7, 11, 11 }, 5);
+			g.fillOval(3, 6, 2, 2);
+		}
+	}
+
+	/** Ikona ozubeného kola nastavení. */
+	static final class Ozubene extends Ikona {
+		Ozubene() {
+			super(14, 14);
+		}
+
+		@Override
+		void kresli(final Graphics2D g) {
+			g.translate(7, 7);
+			for (int i = 0; i < 8; i++) {
+				g.fillRect(-1, -7, 2, 3);
+				g.rotate(Math.PI / 4);
+			}
+			g.setStroke(new BasicStroke(2f));
+			g.drawOval(-4, -4, 8, 8);
+		}
+	}
+}

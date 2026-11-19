@@ -2,8 +2,13 @@ package cz.geokuk.plugins.mapy.kachle.podklady;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.mapsforge.core.model.BoundingBox;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
@@ -25,6 +30,14 @@ final class ObrysRaster {
 	/** Součtová tabulka označených buněk, (radku + 1) × (sloupcu + 1). */
 	private final int[][] soucty;
 
+	/** Rastry katalogových obrysů; raster je po výpočtu neměnný a stejný obrys se počítal při každém otevření map. */
+	private static final Cache<PolygonPokryti, ConcurrentMap<Double, ObrysRaster>> PAMET = CacheBuilder.newBuilder().weakKeys().softValues().build();
+
+	/** Raster obrysu s bufferem; pro tentýž objekt obrysu se počítá jednou. */
+	static ObrysRaster pro(final PolygonPokryti obrys, final double buffer) {
+		return PAMET.asMap().computeIfAbsent(obrys, o -> new ConcurrentHashMap<>()).computeIfAbsent(buffer, b -> new ObrysRaster(obrys, b));
+	}
+
 	ObrysRaster(final PolygonPokryti obrys, final double buffer) {
 		final double rozsah = Math.max(obrys.getSever() - obrys.getJih(), obrys.getVychod() - obrys.getZapad());
 		bunka = Math.max(BUNKA, rozsah / NEJVIC_BUNEK);
@@ -43,7 +56,7 @@ final class ObrysRaster {
 			hrana(kruh, zaklad);
 		}
 		final int n = (int) Math.ceil(buffer / bunka) + 1;
-		rozsir(zaklad, znaceno, n);
+		rozsir(zaklad, znaceno, n, radku, sloupcu);
 		soucty = new int[radku + 1][sloupcu + 1];
 		for (int r = 0; r < radku; r++) {
 			for (int s = 0; s < sloupcu; s++) {
@@ -112,24 +125,54 @@ final class ObrysRaster {
 		}
 	}
 
-	/** Rozšíří označené buňky o {@code n} buněk na všechny strany (po osách zvlášť). */
-	private void rozsir(final boolean[][] zaklad, final boolean[][] cil, final int n) {
+	/**
+	 * Rozšíří označené buňky o {@code n} buněk na všechny strany (po osách zvlášť). Každá osa se projde dvakrát po řádcích a drží si jen vzdálenost k poslednímu
+	 * označenému, takže práce nezávisí na {@code n}.
+	 */
+	static void rozsir(final boolean[][] zaklad, final boolean[][] cil, final int n, final int radku, final int sloupcu) {
 		final boolean[][] pomocne = new boolean[radku][sloupcu];
 		for (int r = 0; r < radku; r++) {
+			final boolean[] z = zaklad[r];
+			final boolean[] p = pomocne[r];
+			int posledni = Integer.MIN_VALUE / 2;
 			for (int s = 0; s < sloupcu; s++) {
-				if (zaklad[r][s]) {
-					for (int k = Math.max(0, s - n); k <= Math.min(sloupcu - 1, s + n); k++) {
-						pomocne[r][k] = true;
-					}
+				if (z[s]) {
+					posledni = s;
+				}
+				p[s] = s - posledni <= n;
+			}
+			posledni = Integer.MAX_VALUE / 2;
+			for (int s = sloupcu - 1; s >= 0; s--) {
+				if (z[s]) {
+					posledni = s;
+				}
+				if (posledni - s <= n) {
+					p[s] = true;
 				}
 			}
 		}
+		final int[] posledniRadek = new int[sloupcu];
+		Arrays.fill(posledniRadek, Integer.MIN_VALUE / 2);
 		for (int r = 0; r < radku; r++) {
+			final boolean[] p = pomocne[r];
+			final boolean[] c = cil[r];
 			for (int s = 0; s < sloupcu; s++) {
-				if (pomocne[r][s]) {
-					for (int k = Math.max(0, r - n); k <= Math.min(radku - 1, r + n); k++) {
-						cil[k][s] = true;
-					}
+				if (p[s]) {
+					posledniRadek[s] = r;
+				}
+				c[s] = r - posledniRadek[s] <= n;
+			}
+		}
+		Arrays.fill(posledniRadek, Integer.MAX_VALUE / 2);
+		for (int r = radku - 1; r >= 0; r--) {
+			final boolean[] p = pomocne[r];
+			final boolean[] c = cil[r];
+			for (int s = 0; s < sloupcu; s++) {
+				if (p[s]) {
+					posledniRadek[s] = r;
+				}
+				if (posledniRadek[s] - r <= n) {
+					c[s] = true;
 				}
 			}
 		}

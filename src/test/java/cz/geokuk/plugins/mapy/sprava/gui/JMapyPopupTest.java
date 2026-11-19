@@ -2757,4 +2757,9 @@ public class JMapyPopupTest {
 			Assert.assertTrue(tooltip, tooltip.contains("volných jen 95 MB"));
 		});
 	}
+
+	@org.junit.Test
+	public void nadpisPopupuJeSpravceOfflineMap() {
+		org.junit.Assert.assertEquals("Správce offline map", JMapyPopup.NADPIS);
+	}
 }

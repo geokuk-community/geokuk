@@ -1,0 +1,230 @@
+package cz.geokuk.plugins.challenge;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Uložení a načtení vlastních definic challenge, aktivních a zapnutí plánovače do {@link ChallengeUloziste}. Klíče: {@code format}, {@code zapnuto}, {@code aktivni}
+ * (názvy po řádcích) a {@code definice.verze.N.klíč}, {@code verze} pro každou vlastní definici. Šablony se neukládají, jsou v kódu. Chybná nebo neznámá definice se při načtení přeskočí
+ * s varováním, aby nastavení nikdy nezabránilo startu programu.
+ */
+@Slf4j
+public final class NastaveniChallenge {
+
+	private static final String FORMAT = "1";
+	private static final String PREDPONA = "definice.";
+	/** Uživatelova násobnost šablony: {@code opakovani.<název šablony malými písmeny>} = 2 až 9; bez klíče platí násobnost šablony. */
+	private static final String PREDPONA_NASOBNOSTI = "opakovani.";
+
+	/** Načtený stav. */
+	public static final class Nacteno {
+		public final ChallengeSeznam seznam;
+		public final boolean zapnuto;
+		/** Kolik uložených definic se nepodařilo použít. */
+		public final int preskoceno;
+		/** Uložené nastavení je v novějším formátu nebo má definici s hodnotou, kterou tento program nezná; nesmí se přepisovat. */
+		public final boolean neznamyFormat;
+
+		Nacteno(final ChallengeSeznam seznam, final boolean zapnuto, final int preskoceno) {
+			this(seznam, zapnuto, preskoceno, false);
+		}
+
+		Nacteno(final ChallengeSeznam seznam, final boolean zapnuto, final int preskoceno, final boolean neznamyFormat) {
+			this.neznamyFormat = neznamyFormat;
+			this.seznam = seznam;
+			this.zapnuto = zapnuto;
+			this.preskoceno = preskoceno;
+		}
+	}
+
+	private NastaveniChallenge() {}
+
+	/**
+	 * Uloží stav. Nová sada definic se zapíše pod novou verzí a teprve potom se přepne klíč {@code verze}; při chybě zápisu zůstává původní sada beze změny a
+	 * nedopsané klíče se smažou při příštím úspěšném uložení.
+	 */
+	public static void uloz(final ChallengeSeznam seznam, final boolean zapnuto, final ChallengeUloziste uloziste) {
+		final String staraVerze = uloziste.get("verze");
+		final String novaVerze = Long.toString(nejvyssiVerze(uloziste, cisloVerze(staraVerze)) + 1);
+		final Map<String, String> zapis = new java.util.LinkedHashMap<>();
+		int i = 0;
+		for (final Challenge c : seznam.vlastni()) {
+			for (final Map.Entry<String, String> e : c.naMapu().entrySet()) {
+				zapis.put(PREDPONA + novaVerze + "." + i + "." + e.getKey(), e.getValue());
+			}
+			i++;
+		}
+		for (final Map.Entry<String, String> e : zapis.entrySet()) {
+			ChallengeSeznam.zkontrolujUlozitelne(e.getKey(), e.getValue());
+		}
+		final StringBuilder aktivni = new StringBuilder();
+		for (final Challenge c : seznam.aktivni()) {
+			if (aktivni.length() > 0) {
+				aktivni.append('\n');
+			}
+			aktivni.append(c.nazev());
+		}
+		ChallengeSeznam.zkontrolujUlozitelne("aktivni", aktivni.toString());
+		final Map<String, String> nasobnosti = new java.util.LinkedHashMap<>();
+		for (final Map.Entry<String, Integer> e : seznam.nasobnostiSablon().entrySet()) {
+			nasobnosti.put(PREDPONA_NASOBNOSTI + e.getKey(), Integer.toString(e.getValue()));
+		}
+		for (final Map.Entry<String, String> e : nasobnosti.entrySet()) {
+			ChallengeSeznam.zkontrolujUlozitelne(e.getKey(), e.getValue());
+		}
+		for (final Map.Entry<String, String> e : zapis.entrySet()) {
+			uloziste.put(e.getKey(), e.getValue());
+		}
+		for (final Map.Entry<String, String> e : nasobnosti.entrySet()) {
+			uloziste.put(e.getKey(), e.getValue());
+		}
+		for (final String k : new ArrayList<>(uloziste.klice())) {
+			// Smaže se jen násobnost šablony, kterou tato verze zná; klíče neznámých šablon (třeba z novější verze) zůstanou.
+			if (k.startsWith(PREDPONA_NASOBNOSTI) && !nasobnosti.containsKey(k) && seznam.jeSablona(k.substring(PREDPONA_NASOBNOSTI.length()))) {
+				uloziste.remove(k);
+			}
+		}
+		uloziste.put("verze", novaVerze);
+		uloziste.put("format", FORMAT);
+		uloziste.put("zapnuto", Boolean.toString(zapnuto));
+		if (aktivni.length() > 0) {
+			uloziste.put("aktivni", aktivni.toString());
+		} else {
+			uloziste.remove("aktivni");
+		}
+		final String zacatek = PREDPONA + novaVerze + ".";
+		for (final String k : new ArrayList<>(uloziste.klice())) {
+			if (k.startsWith(PREDPONA) && !k.startsWith(zacatek)) {
+				uloziste.remove(k);
+			}
+		}
+	}
+
+	/** Nejvyšší verze, pod kterou už něco leží, ať dvě instance nezapisují do stejné sady. */
+	private static long nejvyssiVerze(final ChallengeUloziste uloziste, final long vychozi) {
+		long nejvyssi = vychozi;
+		for (final String k : uloziste.klice()) {
+			if (!k.startsWith(PREDPONA)) {
+				continue;
+			}
+			final int tecka = k.indexOf('.', PREDPONA.length());
+			if (tecka > PREDPONA.length()) {
+				nejvyssi = Math.max(nejvyssi, cisloVerze(k.substring(PREDPONA.length(), tecka)));
+			}
+		}
+		return nejvyssi;
+	}
+
+	/** Větší číslo než tohle bere jako neplatné, ať +1 nepřeteče. */
+	private static final long NEJVYSSI_VERZE = 1_000_000_000_000_000L;
+
+	private static long cisloVerze(final String verze) {
+		try {
+			final long v = verze == null ? 0 : Long.parseLong(verze);
+			return v < 0 || v > NEJVYSSI_VERZE ? 0 : v;
+		} catch (final NumberFormatException e) {
+			return 0;
+		}
+	}
+
+	public static Nacteno nacti(final ChallengeUloziste uloziste) {
+		return nacti(uloziste, c -> true);
+	}
+
+	/**
+	 * Načte uložený stav. Z uložených aktivních se zapne prvních {@link ChallengeSeznam#strop()} z těch, které {@code nabizena} přijme (třeba bez těch, které se v rozhraní
+	 * nenabízejí); ostatní zůstanou vypnuté, definice se nemění.
+	 */
+	public static Nacteno nacti(final ChallengeUloziste uloziste, final java.util.function.Predicate<Challenge> nabizena) {
+		final ChallengeSeznam seznam = new ChallengeSeznam();
+		int preskoceno = 0;
+		final String format = uloziste.get("format");
+		if (format != null && !FORMAT.equals(format)) {
+			log.warn("Nastavení challenge má neznámý formát {}, použijí se výchozí hodnoty", format);
+			return new Nacteno(seznam, false, 0, true);
+		}
+		boolean neznamaHodnota = false;
+		final Map<Integer, Map<String, String>> definice = new TreeMap<>();
+		final String zacatek = PREDPONA + cisloVerze(uloziste.get("verze")) + ".";
+		for (final String k : uloziste.klice()) {
+			if (!k.startsWith(zacatek)) {
+				continue;
+			}
+			final String zbytek = k.substring(zacatek.length());
+			final int tecka = zbytek.indexOf('.');
+			if (tecka <= 0) {
+				preskoceno++;
+				continue;
+			}
+			try {
+				final int cislo = Integer.parseInt(zbytek.substring(0, tecka));
+				final String hodnota = uloziste.get(k);
+				if (hodnota != null) {
+					definice.computeIfAbsent(cislo, x -> new TreeMap<>()).put(zbytek.substring(tecka + 1), hodnota);
+				}
+			} catch (final NumberFormatException e) {
+				preskoceno++;
+			}
+		}
+		for (final Map.Entry<Integer, Map<String, String>> e : definice.entrySet()) {
+			try {
+				final int pred = seznam.vlastni().size();
+				seznam.ulozVlastni(Challenge.zMapy(e.getValue()));
+				if (seznam.vlastni().size() == pred) {
+					log.warn("Uložená definice challenge č. {} má stejný název jako dřívější, nahradila ji", e.getKey());
+					preskoceno++;
+				}
+			} catch (final IllegalArgumentException | ChallengeChyba ex) {
+				log.warn("Uložená definice challenge č. {} se přeskočí: {}", e.getKey(), ex.getMessage());
+				preskoceno++;
+				neznamaHodnota |= ex instanceof NeznamaHodnota;
+			}
+		}
+		for (final String k : uloziste.klice()) {
+			if (!k.startsWith(PREDPONA_NASOBNOSTI)) {
+				continue;
+			}
+			final String hodnota = uloziste.get(k);
+			try {
+				final int n = hodnota == null ? 1 : Integer.parseInt(hodnota.trim());
+				seznam.nastavNasobnostSablony(k.substring(PREDPONA_NASOBNOSTI.length()), n);
+			} catch (final NumberFormatException | ChallengeChyba ex) {
+				log.warn("Uložená násobnost šablony „{}“ se ignoruje: {}", k, hodnota);
+			}
+		}
+		final String aktivni = uloziste.get("aktivni");
+		final Set<String> videne = new HashSet<>();
+		if (aktivni != null) {
+			for (final String nazev : aktivni.split("\n")) {
+				if (nazev.isEmpty() || !videne.add(nazev)) {
+					continue;
+				}
+				try {
+					final String soucasny = Sablony.soucasnyNazev(nazev);
+					if (seznam.jeAktivni(soucasny)) {
+						continue;
+					}
+					final Challenge c = seznam.najdi(soucasny);
+					if (c != null && !nabizena.test(c)) {
+						continue;
+					}
+					if (seznam.aktivni().size() >= seznam.strop()) {
+						log.info("Aktivní challenge „{}“ se nezapne, najednou jich může být nejvýš {}.", nazev, seznam.strop());
+						preskoceno++;
+						continue;
+					}
+					seznam.aktivuj(soucasny);
+				} catch (final ChallengeChyba ex) {
+					log.warn("Aktivní challenge „{}“ se přeskočí: {}", nazev, ex.getMessage());
+					preskoceno++;
+				}
+			}
+		}
+		return new Nacteno(seznam, Boolean.parseBoolean(uloziste.get("zapnuto")), preskoceno, neznamaHodnota);
+	}
+}

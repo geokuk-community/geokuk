@@ -136,6 +136,23 @@ public class CdsTest {
 	}
 
 	@Test
+	public void zakladniArchivNaWindowsJeVBinServer() throws IOException {
+		assertTrue(new File(javaHome, "lib/server/classes.jsa").delete());
+		assertFalse(Cds.maZakladniArchiv(javaHome));
+		new File(javaHome, "bin/server").mkdirs();
+		velky(new File(javaHome, "bin/server/classes.jsa"), 13 * MB, 0);
+		assertTrue(Cds.maZakladniArchiv(javaHome));
+		assertEquals(2, prepinace().size());
+	}
+
+	@Test
+	public void zakladniArchivBezCoopsStaci() throws IOException {
+		assertTrue(new File(javaHome, "lib/server/classes.jsa").delete());
+		velky(new File(javaHome, "lib/server/classes_nocoops.jsa"), 13 * MB, 0);
+		assertTrue(Cds.maZakladniArchiv(javaHome));
+	}
+
+	@Test
 	public void hotovyArchivSePouzije() throws IOException {
 		hotovyArchiv(38 * MB);
 		assertEquals(Arrays.asList(Cds.KONTROLA, "-XX:SharedArchiveFile=" + hotovy().getPath()), prepinace());

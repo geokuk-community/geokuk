@@ -274,4 +274,37 @@ public class NacitacGpxTest {
 		final String gpx = GPX_GEOGET.replace("<gpx ", "<!DOCTYPE gpx SYSTEM \"http://127.0.0.1:9/gpx.dtd\">\n<gpx ");
 		Assert.assertEquals("GC12345", nacti(gpx).waypointy.get(0).name);
 	}
+
+	/** Java 24+ omezuje odkazy &lt; &gt; &amp; v celém souboru na 100 000; omezení se tu napodobí systémovými vlastnostmi. */
+	@Test
+	public void gpxSMnohaOdkazyVTextu() throws Exception {
+		final int kesi = 50;
+		final int odkazuNaKes = 4_000;
+		final String popis = String.join("", Collections.nCopies(odkazuNaKes / 2, "&lt;b&gt;"));
+		final StringBuilder gpx = new StringBuilder("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<gpx version=\"1.0\" xmlns=\"http://www.topografix.com/GPX/1/0\">\n");
+		for (int i = 0; i < kesi; i++) {
+			gpx.append(" <wpt lat=\"50.0\" lon=\"14.0\"><name>GC").append(i).append("</name><desc>").append(popis).append("</desc></wpt>\n");
+		}
+		gpx.append("</gpx>\n");
+
+		final String[] vlastnosti = { NacitacGpx.LIMIT_VELIKOSTI_ODKAZU, NacitacGpx.LIMIT_CELKEM_ODKAZU };
+		final String[] puvodni = new String[vlastnosti.length];
+		for (int i = 0; i < vlastnosti.length; i++) {
+			puvodni[i] = System.getProperty(vlastnosti[i]);
+			System.setProperty(vlastnosti[i], "100000");
+		}
+		try {
+			final Zaznam zaznam = nacti(gpx.toString());
+			Assert.assertEquals(kesi, zaznam.waypointy.size());
+			Assert.assertEquals(popis.replace("&lt;", "<").replace("&gt;", ">"), zaznam.waypointy.get(kesi - 1).desc);
+		} finally {
+			for (int i = 0; i < vlastnosti.length; i++) {
+				if (puvodni[i] == null) {
+					System.clearProperty(vlastnosti[i]);
+				} else {
+					System.setProperty(vlastnosti[i], puvodni[i]);
+				}
+			}
+		}
+	}
 }

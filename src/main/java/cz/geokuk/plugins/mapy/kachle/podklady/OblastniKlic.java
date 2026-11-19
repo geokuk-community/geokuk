@@ -55,13 +55,14 @@ final class OblastniKlic {
 		Zdroj(final BoundingBox rozsah, final String otisk, final PolygonPokryti obrys) {
 			this.rozsah = rozsah;
 			this.otisk = (int) crc(otisk);
-			this.obrys = obrys == null ? null : new ObrysRaster(obrys, BUFFER_OBRYSU);
+			this.obrys = obrys == null ? null : ObrysRaster.pro(obrys, BUFFER_OBRYSU);
 		}
 	}
 
 	private final String globalni;
 	private final List<Zdroj> zdroje;
 	private final String sestava;
+	private final String identita;
 	/** Sjednocený rozsah všech otevřených map a vrstev; dlaždice, která z něj vyčnívá, má mimo něj šedou plochu, takže závisí na celé sestavě. Null = neznámý. */
 	private final BoundingBox sjednoceni;
 
@@ -74,6 +75,15 @@ final class OblastniKlic {
 	}
 
 	OblastniKlic(final String globalni, final List<Zdroj> zdroje, final BoundingBox sjednoceni) {
+		this(globalni, zdroje, sjednoceni, null);
+	}
+
+	/**
+	 * @param identita
+	 *            varianta dlaždic bez obsahu souborů tématu, viz {@link OfflineRenderer#identita(OfflineRenderer.NacteneTema, boolean)}; null = neznámá
+	 */
+	OblastniKlic(final String globalni, final List<Zdroj> zdroje, final BoundingBox sjednoceni, final String identita) {
+		this.identita = identita;
 		this.sjednoceni = sjednoceni;
 		this.globalni = globalni;
 		this.zdroje = Collections.unmodifiableList(new ArrayList<>(zdroje));
@@ -81,7 +91,7 @@ final class OblastniKlic {
 		for (final Zdroj z : this.zdroje) {
 			pridej(crc, z.otisk);
 		}
-		sestava = String.format("%08x", crc.getValue());
+		sestava = hex(crc.getValue());
 	}
 
 	/** Klíč pro mapy bez souborů: oblastní část je prázdná. */
@@ -92,6 +102,11 @@ final class OblastniKlic {
 	/** Globální část klíče, tj. klíč tématu a měřítka bez souborů. */
 	String getGlobalni() {
 		return globalni;
+	}
+
+	/** Varianta dlaždic (téma, vrstvy, velikost, písmo) bez obsahu souborů; null, když není známa. */
+	String getIdentita() {
+		return identita;
 	}
 
 	/** Otisk všech souborů sestavy, mění se při jakékoli změně některého z nich. */
@@ -109,7 +124,7 @@ final class OblastniKlic {
 				pridej(crc, z.otisk);
 			}
 		}
-		return globalni + '.' + String.format("%08x", crc.getValue());
+		return globalni + '.' + hex(crc.getValue());
 	}
 
 	/** Dlaždice zasahuje mimo sjednocený rozsah souborů: tam mapsforge kreslí šedou plochu, která se po změně sjednocení mění. */
@@ -238,6 +253,12 @@ final class OblastniKlic {
 	/** Zdroj pro soubor DEM, jehož obsah nejde rozpoznat: platí pro celý svět. */
 	static Zdroj celySvet(final String druh, final File f) {
 		return soubor(druh, f, SVET, 0);
+	}
+
+	/** Osm malých hexadecimálních číslic; rychlejší než {@code String.format}, volá se pro každou dlaždici. */
+	static String hex(final long hodnota) {
+		final String h = Integer.toHexString((int) hodnota);
+		return "00000000".substring(h.length()) + h;
 	}
 
 	private static void pridej(final CRC32 crc, final int hodnota) {

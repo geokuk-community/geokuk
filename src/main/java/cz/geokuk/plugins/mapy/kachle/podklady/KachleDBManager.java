@@ -22,8 +22,10 @@ import org.tmatesoft.sqljet.core.SqlJetTransactionMode;
 import org.tmatesoft.sqljet.core.schema.SqlJetConflictAction;
 import org.tmatesoft.sqljet.core.table.*;
 
+import cz.geokuk.core.coordinates.Mou;
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
+import cz.geokuk.plugins.mapy.kachle.data.EKaType;
 import cz.geokuk.plugins.mapy.kachle.data.Ka;
 import cz.geokuk.plugins.mapy.kachle.data.KaLoc;
 import cz.geokuk.util.file.Soubory;
@@ -135,6 +137,19 @@ class KachleDBManager implements KachleManager {
 	@Override
 	public boolean exists(final Ka ki) {
 		return exists(ki, ki.typToString());
+	}
+
+	/** Dlaždice, která v cache nikdy není; dotaz na ni otevře spojení a zavede třídy SqlJet. */
+	private static final Ka PROBA = new Ka(KaLoc.ofJZ(new Mou(0, 0), 16), EKaType.TURIST_M);
+
+	/** Otevře spojení volajícího vlákna s cache a udělá první dotaz, ať ho nezaplatí první dlaždice na obrazovce. */
+	@Override
+	public void predotevri() {
+		try {
+			cti(PROBA, PROBA.typToString(), false);
+		} catch (final RuntimeException e) {
+			log.debug("Cache dlaždic se nepodařilo otevřít předem: {}", e.toString());
+		}
 	}
 
 	/** Jen najde klíč, obrázek nečte ani nedekóduje. */
@@ -304,6 +319,9 @@ class KachleDBManager implements KachleManager {
 	private static final int DAVKA_MAZANI = 1000;
 
 	/** Rozhoduje o smazání řádku cache. */
+	/** Návratová hodnota úklidu offline dlaždic, který se nedokončil a má se zopakovat. */
+	static final int NEDOKONCENO = -1;
+
 	private interface NaSmazani {
 		boolean smazat(int x, int y, int z, String typ);
 	}
@@ -327,13 +345,14 @@ class KachleDBManager implements KachleManager {
 		final int odlozeniPred = odlozeni;
 		final SqlJetDb database = getDatabaseConnection();
 		if (database == null) {
-			return 0;
+			return NEDOKONCENO;
 		}
 		final List<Long> smazat = new ArrayList<>();
+		final StavSouboruCache stavPred = StavSouboruCache.precti(database.getFile());
 		zamek.readLock().lock();
 		try {
 			if (odlozeniPred != odlozeni) {
-				return 0;
+				return NEDOKONCENO;
 			}
 			database.beginTransaction(SqlJetTransactionMode.READ_ONLY);
 			try {
@@ -353,7 +372,7 @@ class KachleDBManager implements KachleManager {
 			}
 		} catch (final SqlJetException e) {
 			log.warn("Staré dlaždice offline mapy nejde najít: {}", e.toString());
-			return 0;
+			return NEDOKONCENO;
 		} finally {
 			zamek.readLock().unlock();
 		}
@@ -363,7 +382,7 @@ class KachleDBManager implements KachleManager {
 				zamek.writeLock().lock();
 				try {
 					if (odlozeniPred != odlozeni || kontroly.containsKey(database.getFile())) {
-						return smazano;
+						return NEDOKONCENO;
 					}
 					int vDavce = 0;
 					database.beginTransaction(SqlJetTransactionMode.WRITE);
@@ -388,11 +407,16 @@ class KachleDBManager implements KachleManager {
 					smazano += vDavce;
 				} catch (final SqlJetException e) {
 					log.warn("Staré dlaždice offline mapy nejde smazat: {}", e.toString());
-					return smazano;
+					return NEDOKONCENO;
 				} finally {
 					zamek.writeLock().unlock();
 				}
 			}
+		}
+		if (smazano > 0) {
+			final StavSouboruCache stavPo = StavSouboruCache.precti(database.getFile());
+			final String uvolneno = stavPred == null || stavPo == null ? "" : String.format(", uvolněno %d MB v souboru", Math.max(0, stavPo.volnych - stavPred.volnych) * stavPo.velikostStranky >> 20);
+			log.info("Úklid cache offline mapy: smazáno {} dlaždic{}", smazano, uvolneno);
 		}
 		return smazano;
 	}

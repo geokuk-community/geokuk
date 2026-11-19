@@ -1,5 +1,6 @@
 package cz.geokuk.plugins.mapy.sprava.gui;
 
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.*;
@@ -17,6 +18,55 @@ public class JBlokMapTest {
 
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
+
+	/** Obsah popupu se při startu neskládá; vznikne při prvním použití a dostane řádky i obrys, které blok mezitím dostal. */
+	@Test
+	public void obsahPopupuVznikneAzPriPouziti() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			Assert.assertFalse("při startu jen ikona bloku", blok.isObsahVytvoren());
+			final List<RadekMapy> radky = veSlozce(null);
+			blok.obnov(radky);
+			blok.onEvent(new cz.geokuk.plugins.mapy.kachle.ObrysPokrytiEvent(true));
+			Assert.assertFalse("změny stavu popup nevytváří", blok.isObsahVytvoren());
+			final JMapyPopup obsah = blok.getObsah();
+			Assert.assertTrue(blok.isObsahVytvoren());
+			Assert.assertEquals(radky, obsah.getRadky());
+			Assert.assertTrue("obrys zapnutý před vytvořením popupu", obsah.isObrysZapnuty());
+			Assert.assertSame(obsah, blok.getObsah());
+		});
+	}
+
+	/** Najetí myší popup vytvoří, aby byl při otevření hotový. */
+	@Test
+	public void najetiMysiVytvoriObsah() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final JBlokMap blok = new JBlokMap();
+			for (final java.awt.event.MouseListener l : blok.getMouseListeners()) {
+				l.mouseEntered(new MouseEvent(blok, MouseEvent.MOUSE_ENTERED, 0, 0, 1, 1, 0, false));
+			}
+			Assert.assertTrue(blok.isObsahVytvoren());
+			blok.removeNotify();
+		});
+	}
+
+	/** Země, která se mezitím stáhla celá, se ve Všech mapách sbalí, i když popup ještě nevznikl. */
+	@Test
+	public void stazenaZemeSeSbaliBezPopupu() throws Exception {
+		final java.util.Set<String> puvodni = JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY);
+		try {
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, new java.util.HashSet<>(java.util.Arrays.asList("Rakousko", "Německo")));
+			SwingUtilities.invokeAndWait(() -> {
+				final JBlokMap blok = new JBlokMap();
+				blok.obnov(Collections.singletonList(RadekMapy.katalogova("at", "Rakousko", RadekMapy.Stav.NEMAME).build()));
+				blok.obnov(Collections.singletonList(RadekMapy.katalogova("at", "Rakousko", RadekMapy.Stav.AKTUALNI).veSlozce(true).build()));
+				Assert.assertFalse(blok.isObsahVytvoren());
+			});
+			Assert.assertEquals(Collections.singleton("Německo"), JBlokMap.nactiRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY));
+		} finally {
+			JBlokMap.ulozRozbaleneZeme(JMapyPopup.ROZBALENE_VSECHNY, puvodni);
+		}
+	}
 
 	/** Procenta při stahování nesmí blok rozšířit, jinak poskočí Výlety a Zdroje. */
 	@Test
@@ -289,7 +339,16 @@ public class JBlokMapTest {
 		}
 	}
 
-	/** Mapy > Offline mapy… otevře panel, i když myš nad blokem nikdy nebyla. */
+	private static java.awt.KeyboardFocusManager spravceSFokusem(final java.awt.Component vlastnik) {
+		return new java.awt.DefaultKeyboardFocusManager() {
+			@Override
+			public java.awt.Component getFocusOwner() {
+				return vlastnik;
+			}
+		};
+	}
+
+	/** Mapy > Správce offline map… otevře panel, i když myš nad blokem nikdy nebyla. */
 	@Test(timeout = 30000)
 	public void udalostZMenuOtevrePanel() throws Exception {
 		Assume.assumeFalse("bez displeje", java.awt.GraphicsEnvironment.isHeadless());
@@ -324,16 +383,22 @@ public class JBlokMapTest {
 				}
 			}
 			Assert.assertTrue("panel otevřený z menu", videt);
-			boolean drzi = false;
-			while (System.currentTimeMillis() < konec && !drzi) {
-				final boolean[] d = new boolean[1];
-				SwingUtilities.invokeAndWait(() -> d[0] = blok[0].getObsah().isHledaniAktivni());
-				drzi = d[0];
-				if (!drzi) {
-					Thread.sleep(50);
+			// Skutečný fokus závisí na okenním systému (na macOS runneru nemusí okno fokus dostat); ověřuje se, o co panel požádal a že fokus v něm panel drží otevřený.
+			SwingUtilities.invokeAndWait(() -> {
+				final JMapyPopup panel = blok[0].getObsah();
+				final java.awt.Component cil = panel.posledniZadostOFokus;
+				Assert.assertNotNull("panel z menu si o fokus řekl", cil);
+				Assert.assertTrue(SwingUtilities.isDescendingFrom(cil, panel));
+				final java.util.function.Supplier<java.awt.KeyboardFocusManager> puvodni = panel.spravceFokusu;
+				try {
+					panel.spravceFokusu = () -> spravceSFokusem(cil);
+					Assert.assertTrue("s fokusem z menu panel nezavře odjetí myši", panel.isHledaniAktivni());
+					panel.spravceFokusu = () -> spravceSFokusem(null);
+					Assert.assertFalse("bez fokusu ho zavře", panel.isHledaniAktivni());
+				} finally {
+					panel.spravceFokusu = puvodni;
 				}
-			}
-			Assert.assertTrue("s fokusem z menu panel nezavře odjetí myši", drzi);
+			});
 		} finally {
 			SwingUtilities.invokeAndWait(() -> {
 				blok[0].zavri();

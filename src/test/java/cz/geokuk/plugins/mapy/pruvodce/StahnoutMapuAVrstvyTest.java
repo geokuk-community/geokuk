@@ -94,4 +94,9 @@ public class StahnoutMapuAVrstvyTest {
 		final PlanPruvodce mapa = PlanPruvodce.sestavVse(CZ, Collections.singletonList(CZ), EnumSet.of(MatriceMap.Cast.MAPA), m);
 		assertTrue(StahnoutMapuAVrstvy.textDotazu(mapa), StahnoutMapuAVrstvy.textDotazu(mapa).startsWith("Opravdu stáhnout 1 mapu, "));
 	}
+
+	@Test
+	public void dialogMaTitulekSpravceOfflineMap() {
+		assertEquals("Správce offline map", StahnoutMapuAVrstvy.TITULEK);
+	}
 }

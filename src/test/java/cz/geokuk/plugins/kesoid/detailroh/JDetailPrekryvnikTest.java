@@ -48,11 +48,14 @@ public class JDetailPrekryvnikTest {
 		RepaintManager.setCurrentManager(zaznam);
 		detail = new JDetailPrekryvnik();
 		detail.setSize(new Dimension(200, 200));
+		// Změna velikosti se zpracuje na EDT později a mění souřadnice detailu; počkat na ni (i na to, co po ní na EDT případně přibude), ať se nezapočítá do
+		// pohybu myši, a pozici nastavit až potom a také na EDT, aby se souřadnice neměnily ze dvou vláken najednou.
+		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {});
 		final Constructor<PoziceChangedEvent> k = PoziceChangedEvent.class.getDeclaredConstructor(Poziceq.class);
 		k.setAccessible(true);
-		detail.onEvent(k.newInstance(new Poziceq(new Wgs(50.08, 14.42))));
-		// Změna velikosti se zpracuje na EDT později; počkat na ni, ať se nezapočítá do pohybu myši.
-		SwingUtilities.invokeAndWait(() -> {});
+		final PoziceChangedEvent pozice = k.newInstance(new Poziceq(new Wgs(50.08, 14.42)));
+		SwingUtilities.invokeAndWait(() -> detail.onEvent(pozice));
 		zaznam.oblasti.clear();
 	}
 
@@ -77,11 +80,17 @@ public class JDetailPrekryvnikTest {
 		detail.onEvent(new ZmenaSouradnicMysiEvent(new java.awt.Point(i, i), w.toMou(), null));
 	}
 
+	/**
+	 * Událost změny velikosti detailu se zpracuje na EDT a mění souřadnice, ze kterých vychází i pohyb myši; vlákno testu s ní nesmí běžet souběžně, jinak se
+	 * přepsanými souřadnicemi detail překreslí. Celý pohyb myši proto jde na EDT.
+	 */
 	@Test
-	public void sPoziciSePohybMysiNepreklresluje() {
-		for (int i = 0; i < 100; i++) {
-			mys(i);
-		}
+	public void sPoziciSePohybMysiNepreklresluje() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			for (int i = 0; i < 100; i++) {
+				mys(i);
+			}
+		});
 		Assert.assertTrue(zaznam.oblasti.toString(), zaznam.oblasti.isEmpty());
 	}
 

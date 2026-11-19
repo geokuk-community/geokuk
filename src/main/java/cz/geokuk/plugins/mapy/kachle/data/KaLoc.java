@@ -57,12 +57,6 @@ public class KaLoc {
 		return new KaLoc(ksx * 2 + vpravo, ksy * 2 + nahoru, moumer + 1);
 	}
 
-	private static int maskuj(final int a, final int bitu) {
-		final int m = (1 << bitu) - 1;
-		return (a & 1 << bitu - 1) != 0 ? a | ~m : a & m;
-
-	}
-
 	/**
 	 * @param moumer
 	 *            měřítko

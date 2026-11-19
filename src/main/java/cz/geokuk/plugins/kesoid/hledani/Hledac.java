@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import cz.geokuk.core.hledani.Hledac0;
 import cz.geokuk.core.hledani.HledaciPodminka0;
 import cz.geokuk.plugins.kesoid.KesBag;
+import cz.geokuk.plugins.kesoid.KodKesoidu;
 import cz.geokuk.plugins.kesoid.Kesoid;
 import cz.geokuk.util.lang.FUtil;
 
@@ -80,9 +81,31 @@ public class Hledac extends Hledac0<Nalezenec> {
 		this.kesBag = kesBag;
 	}
 
+	/** Kešoid, jehož kód je v textu (kód nebo odkaz); null, když text kód neobsahuje nebo takový kešoid v datech není. */
+	static Nalezenec presnaShoda(final String text, final List<Kesoid> kesoidy) {
+		final Kesoid kesoid = KodKesoidu.najdi(text, kesoidy, Kesoid::getIdentifier);
+		if (kesoid == null) {
+			return null;
+		}
+		final Nalezenec nal = new Nalezenec();
+		nal.setKes(kesoid);
+		nal.setKdeNalezeno(kesoid.getIdentifier());
+		nal.setPoc(0);
+		nal.setKon(kesoid.getIdentifier().length());
+		return nal;
+	}
+
 	@Override
 	public List<Nalezenec> hledej(final HledaciPodminka0 podm) {
 		log.debug("Hledání v {} kešoidech: {}", kesBag.getKesoidy().size(), podm.getVzorek());
+		if (!((HledaciPodminka) podm).isRegularniVyraz()) {
+			final Nalezenec presny = presnaShoda(podm.getVzorek(), kesBag.getKesoidy());
+			if (presny != null) {
+				final List<Nalezenec> jeden = new ArrayList<>();
+				jeden.add(presny);
+				return jeden;
+			}
+		}
 		final Porovnavac poro = new Porovnavac(podm.getVzorek(), ((HledaciPodminka) podm).isRegularniVyraz());
 		final List<Nalezenec> list = new ArrayList<>();
 		for (final Kesoid kesoid : kesBag.getKesoidy()) {

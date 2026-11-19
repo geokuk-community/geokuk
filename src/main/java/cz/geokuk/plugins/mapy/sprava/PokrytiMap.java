@@ -84,7 +84,7 @@ public final class PokrytiMap {
 				continue;
 			}
 			final Optional<KatalogovaMapa> zKatalogu = katalog.podleSouboru(soubor.getName());
-			final boolean pokryva = zKatalogu.isPresent() ? zKatalogu.get().getPokryti().obsahuje(bod) : hlavicka.obsahuje(bod.lat, bod.lon);
+			final boolean pokryva = zKatalogu.isPresent() ? zKatalogu.get().pokryva(bod.lat, bod.lon) : hlavicka.obsahuje(bod.lat, bod.lon);
 			if (pokryva) {
 				vysledek.add(soubor);
 			}

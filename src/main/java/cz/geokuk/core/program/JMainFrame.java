@@ -14,6 +14,7 @@ import cz.geokuk.core.render.JRenderSlide;
 import cz.geokuk.framework.*;
 import cz.geokuk.img.ImageLoader;
 import cz.geokuk.plugins.cesty.JCestySlide;
+import cz.geokuk.plugins.kesoid.JToast;
 import cz.geokuk.plugins.cesty.JPanelCesty;
 import cz.geokuk.plugins.kesoid.JKesoidySlide;
 import cz.geokuk.plugins.kesoid.detail.JKesoidDetailContainer;
@@ -40,6 +41,8 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 	private FullScreenAction fullScreenAction;
 	private OknoModel oknoModel;
 	private Menu menux;
+	/** EventManager drží posluchače jen slabě, bez pole by o události přišel. */
+	private cz.geokuk.plugins.challenge.SledovaniVybraneKese sledovaniVybraneKese;
 
 	private List<JSingleSlide0> slideList;
 	private CloseAction closeAction;
@@ -66,6 +69,9 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 		imgs.add(ImageLoader.seekResImage("geokuk32.png", 32, 32));
 		imgs.add(ImageLoader.seekResImage("geokuk16.png", 16, 16));
 		imgs.add(ImageLoader.seekResImage("geokuk48.png", 48, 48));
+		imgs.add(ImageLoader.seekResImage("geokuk64.png", 64, 64));
+		imgs.add(ImageLoader.seekResImage("geokuk128.png", 128, 128));
+		imgs.add(ImageLoader.seekResImage("geokuk256.png", 256, 256));
 		setIconImages(imgs);
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -101,18 +107,28 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 
 			final JComponent popisyKesiNaMape = new JPopiskySlide();
 			final JComponent kesky = new JKesoidySlide(false);
+			final cz.geokuk.plugins.challenge.JPlanovacNadKeskami planovacNad = new cz.geokuk.plugins.challenge.JPlanovacNadKeskami();
+			final cz.geokuk.plugins.challenge.JPlanovacPodKeskami planovacPod = new cz.geokuk.plugins.challenge.JPlanovacPodKeskami();
 			final JComponent pozicovnik = new JPozicovnikSlide();
 			final JComponent zvyraznovaciKruhy = new JZvyraznovaciKruhySlide();
-			final JComponent obsazenik = new JObsazenost();
+			final JObsazenost obsazenik = new JObsazenost();
+			final JComponent legendaObsazenosti = new cz.geokuk.plugins.kesoidobsazenost.JLegendaObsazenosti(obsazenik);
+			final JToast toast = new JToast();
+			final cz.geokuk.plugins.challenge.JPruhPlanovace pruhPlanovace = new cz.geokuk.plugins.challenge.JPruhPlanovace();
+			final cz.geokuk.plugins.challenge.JPopupPlanovace popupPlanovace = new cz.geokuk.plugins.challenge.JPopupPlanovace();
+			pruhPlanovace.setNaKlikOdznaku(popupPlanovace::prepni);
+			pruhPlanovace.setJinyPopupOtevreny(() -> popupPlanovace.jeOtevreno() || cz.geokuk.util.gui.PopupNadBlokem.jeNejakyOtevreny());
 			final JKachlovnikPresCele kachlovnik = new JKachlovnikPresCele();
 			final JComponent odkazRady = new JOdkazRadySlide(kachlovnik);
-			final JComponent kachlovnikTras = new JKachlovnikTras();
-			final JComponent kachlovnikReliefu = new cz.geokuk.plugins.mapy.kachle.gui.JKachlovnikReliefu();
+			final JKachlovnik kachlovnikTras = new JKachlovnikTras();
+			final JKachlovnik kachlovnikReliefu = new cz.geokuk.plugins.mapy.kachle.gui.JKachlovnikReliefu();
 			final JComponent obrysMap = new JObrysMapSlide();
+			final JComponent indikatorNacitani = new JIndikatorNacitaniSlide(kachlovnik, kachlovnikTras, kachlovnikReliefu);
 			final JComponent pozadi = new JSlidePozadi();
 
 			smrizema.add(mysovani);
 			smrizema.add(odkazRady);
+			smrizema.add(indikatorNacitani);
 			smrizema.add(renderSlide);
 			smrizema.add(zoomovaciObdelnik);
 			smrizema.add(meritkovnik);
@@ -122,9 +138,13 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			smrizema.add(mrizkaUtm);
 			// smrizema.add(mrizkaS42);
 			// smrizema.add(mrizkaJtsk);
+			smrizema.add(toast);
+			smrizema.add(legendaObsazenosti);
 			smrizema.add(cesty);
 			smrizema.add(popisyKesiNaMape);
+			smrizema.add(planovacNad);
 			smrizema.add(kesky);
+			smrizema.add(planovacPod);
 			smrizema.add(pozicovnik);
 			smrizema.add(zvyraznovaciKruhy);
 			smrizema.add(obsazenik);
@@ -150,9 +170,15 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 			factory.init(cesty);
 			factory.init(popisyKesiNaMape);
 			factory.init(kesky);
+			factory.init(planovacNad);
+			factory.init(planovacPod);
+			sledovaniVybraneKese = factory.init(new cz.geokuk.plugins.challenge.SledovaniVybraneKese());
 			factory.init(pozicovnik);
 			factory.init(zvyraznovaciKruhy);
 			factory.init(obsazenik);
+			factory.init(toast);
+			factory.init(pruhPlanovace);
+			factory.init(popupPlanovace);
 			factory.init(obrysMap);
 			factory.init(kachlovnikTras);
 			factory.init(kachlovnikReliefu);
@@ -170,10 +196,25 @@ public class JMainFrame extends JFrame implements SlideListProvider {
 				}
 			}
 
+			toast.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
+			popupPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
+			planovacNad.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
+			final java.util.concurrent.Executor stavbaPlanovace = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+				final Thread vlakno = new Thread(r, "Podklad plánovače");
+				vlakno.setDaemon(true);
+				return vlakno;
+			});
+			planovacNad.setStavba(stavbaPlanovace);
+			planovacPod.setStavba(stavbaPlanovace);
+			pruhPlanovace.setPrekazky(() -> RozmisteniPrekryvu.prekazky(srohama, smrizema, obsazenik.isVisible(), popupPlanovace));
+
+			smrizema.add(pruhPlanovace, 0);
 			smrizema.add(mysovani, smrizema.getComponentCount());
 
 			factory.init(smrizema);
 			srohama.add(smrizema);
+			// Popup plánovače leží nad panely v rozích (Detail keše, náhled, cesty), ne pod nimi.
+			srohama.add(popupPlanovace, ERoh.NAD, 0);
 		}
 
 		getContentPane().add(srohama);

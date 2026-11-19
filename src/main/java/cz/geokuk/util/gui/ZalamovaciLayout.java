@@ -67,6 +67,19 @@ public class ZalamovaciLayout implements LayoutManager {
 		}
 	}
 
+	/** Šířka všech komponent vedle sebe v jednom řádku, bez plovoucích. */
+	public int sirkaVJednomRadku(final Container parent) {
+		synchronized (parent.getTreeLock()) {
+			int sirka = sirkaPraveho(parent);
+			for (final Component c : parent.getComponents()) {
+				if (zabiraMisto(c) && !plovouci.contains(c) && c != pravy) {
+					sirka += c.getPreferredSize().width;
+				}
+			}
+			return sirka;
+		}
+	}
+
 	@Override
 	public Dimension minimumLayoutSize(final Container parent) {
 		return preferredLayoutSize(parent);

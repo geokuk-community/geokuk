@@ -1,0 +1,1010 @@
+package cz.geokuk.plugins.challenge;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
+import javax.swing.SwingUtilities;
+
+import cz.geokuk.framework.Model0;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Stav plánovače challenge pro rozhraní: zapnuto, seznam definic (šablony ke čtení a vlastní), aktivní challenge (nejvýš {@link ChallengeSeznam#strop()}), výsledky
+ * výpočtu, stav předpočtu, filtr „jen kandidáti“ a vybraný kandidát. Změny definic, aktivních a zapnutí se ukládají do nastavení. Metody měnící definice, aktivní
+ * a zapnutí volat z vlákna Swingu; {@code nastav…} pro výsledky, stav předpočtu a kandidáta jsou bezpečné z kteréhokoli vlákna a změnu ohlásí ve vlákně Swingu.
+ */
+@Slf4j
+public class ChallengeModel extends Model0 {
+
+	private static final String UZEL = "challenge";
+
+	private ChallengeSeznam seznam = new ChallengeSeznam();
+	private boolean zapnuto;
+	private boolean kresliSektory = true;
+	private boolean kresliStitky = true;
+	private final Map<String, VysledekSektoru> vysledky = new ConcurrentHashMap<>();
+	private final Map<String, VysledekPolicek> vysledkyPolicek = new ConcurrentHashMap<>();
+	/** Střed (šířka, délka), podle kterého vznikl výsledek; chybí u výsledků zadaných bez středu. */
+	private final Map<String, double[]> stredy = new ConcurrentHashMap<>();
+	/** Oblast, se kterou se počítal výsledek 360°; chybí u výsledků bez omezení oblasti. */
+	private final Map<String, Oblast> oblasti = new ConcurrentHashMap<>();
+	private volatile PrehledChallenge prehled;
+	private final Map<String, StavPredpoctu> stavy = new ConcurrentHashMap<>();
+	private final Map<String, VybranyKandidat> kandidati = new ConcurrentHashMap<>();
+	/** Štítek vybraného políčka D/T podle klíče challenge; neukládá se. */
+	private final Map<String, String> policka = new ConcurrentHashMap<>();
+	/** Vybraný sektor 360° podle klíče challenge; neukládá se. */
+	private final Map<String, Integer> sektory = new ConcurrentHashMap<>();
+	private volatile String jenKandidatiPro;
+	/** Volba uživatele „jen kandidáti“; při přepnutí zobrazené challenge se filtr přenese na novou. */
+	private volatile boolean jenKandidatiVolba;
+	/** Klíč challenge zobrazené v pruhu; neukládá se, bez ní nebo při neaktivní je to první aktivní. */
+	private volatile String zobrazena;
+	/** Uložené nastavení je novější nebo nečitelné; nepřepisuje se, aby o něj uživatel nepřišel. */
+	private boolean ukladaniZakazano;
+	private Supplier<ChallengeUloziste> uloziste = () -> new PreferenceUloziste(currPrefe().node(UZEL));
+
+	/** Pro test: úložiště místo preferencí. */
+	void setUloziste(final Supplier<ChallengeUloziste> uloziste) {
+		this.uloziste = uloziste;
+	}
+
+	private static String klic(final Challenge c) {
+		return c.nazev().trim().toLowerCase(Locale.ROOT);
+	}
+
+	@Override
+	protected void initAndFire() {
+		nactiNastaveni();
+	}
+
+	@Override
+	protected void reloadPreferences() {
+		nactiNastaveni();
+	}
+
+	private void nactiNastaveni() {
+		try {
+			final NastaveniChallenge.Nacteno n = NastaveniChallenge.nacti(uloziste.get(), this::jeVUi);
+			seznam = n.seznam;
+			zapnuto = n.zapnuto;
+			ukladaniZakazano = n.neznamyFormat;
+			kresliSektory = nactiPrepinac(KRESLI_SEKTORY);
+			kresliStitky = nactiPrepinac(KRESLI_STITKY);
+			radaZobrazena = "true".equals(uloziste.get().get(RADA_ZOBRAZENA));
+		} catch (final RuntimeException e) {
+			log.warn("Nastavení challenge nejde načíst, použijí se výchozí hodnoty a ukládání se vypne: {}", e.toString());
+			seznam = new ChallengeSeznam();
+			zapnuto = false;
+			ukladaniZakazano = true;
+			kresliSektory = true;
+			kresliStitky = true;
+			radaZobrazena = true;
+		}
+		vysledky.clear();
+		vysledkyPolicek.clear();
+		stredy.clear();
+		oblasti.clear();
+		prehled = null;
+		zobrazena = null;
+		stavy.clear();
+		kandidati.clear();
+		policka.clear();
+		sektory.clear();
+		jenKandidatiPro = null;
+		jenKandidatiVolba = false;
+		fire(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.NACTENO, null));
+	}
+
+	private void uloz() {
+		if (ukladaniZakazano) {
+			log.info("Nastavení challenge se nepřepisuje, je novější nebo obsahuje definici, které tento program nerozumí");
+			return;
+		}
+		try {
+			NastaveniChallenge.uloz(seznam, zapnuto, uloziste.get());
+		} catch (final RuntimeException e) {
+			log.warn("Nastavení challenge nejde uložit: {}", e.toString());
+		}
+	}
+
+	private void ohlas(final ChallengeZmenenyEvent.Druh druh, final Challenge c) {
+		if (druh == ChallengeZmenenyEvent.Druh.POLICKO) {
+			casVyberuSektoruNeboPolicka = System.nanoTime();
+		}
+		fire(new ChallengeZmenenyEvent(druh, c));
+	}
+
+	/** Vybraný sektor nebo políčko se nemění, ale zvýraznění je teď podle novější vybrané keše: výběr se znovu ohlásí, aby se zvýraznění vrátilo k němu. */
+	private void obnovVyberPrekrytyKesi(final Challenge c) {
+		if (vybranaKes != null && casVyberuKese > casVyberuSektoruNeboPolicka) {
+			ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+		}
+	}
+
+	/** Kdy (podle {@link System#nanoTime}) se naposledy vybral sektor nebo políčko v plánovači; k rozhodnutí, zda je novější výběr keše. */
+	private volatile long casVyberuSektoruNeboPolicka;
+
+	private void naEdt(final Runnable akce) {
+		if (SwingUtilities.isEventDispatchThread()) {
+			akce.run();
+		} else {
+			SwingUtilities.invokeLater(akce);
+		}
+	}
+
+	// --- Zapnutí
+
+	public boolean jeZapnuto() {
+		return zapnuto;
+	}
+
+	/** Pruh plánovače na mapě je vidět, když je plánovač zapnutý a je co ukazovat. */
+	public boolean jePruhViditelny() {
+		return zapnuto && zobrazena() != null;
+	}
+
+	public void setZapnuto(final boolean zapnuto) {
+		if (this.zapnuto == zapnuto) {
+			return;
+		}
+		this.zapnuto = zapnuto;
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.ZAPNUTO, null);
+	}
+
+	// --- Jednorázová rada u úchytu
+
+	private static final String RADA_ZOBRAZENA = "rada.zobrazena";
+	/** Rada u úchytu už byla vidět; do načtení nastavení platí, ať se neukáže předčasně. */
+	private volatile boolean radaZobrazena = true;
+
+	public boolean jeRadaZobrazena() {
+		return radaZobrazena;
+	}
+
+	/** Zapamatuje, že rada byla vidět; další start ji už neukáže. Při zakázaném ukládání platí jen do konce běhu. */
+	public void setRadaZobrazena() {
+		if (radaZobrazena) {
+			return;
+		}
+		radaZobrazena = true;
+		if (ukladaniZakazano) {
+			return;
+		}
+		try {
+			uloziste.get().put(RADA_ZOBRAZENA, "true");
+		} catch (final RuntimeException e) {
+			log.warn("Nastavení challenge nejde uložit: {}", e.toString());
+		}
+	}
+
+	// --- Kreslení na mapě
+
+	private static final String KRESLI_SEKTORY = "kresli.sektory";
+	private static final String KRESLI_STITKY = "kresli.stitky";
+
+	/** Přepínač kreslení; chybí-li v nastavení, je zapnutý. */
+	private boolean nactiPrepinac(final String klic) {
+		return !"false".equals(uloziste.get().get(klic));
+	}
+
+	private void ulozPrepinac(final String klic, final boolean hodnota) {
+		if (ukladaniZakazano) {
+			return;
+		}
+		try {
+			uloziste.get().put(klic, Boolean.toString(hodnota));
+		} catch (final RuntimeException e) {
+			log.warn("Nastavení challenge nejde uložit: {}", e.toString());
+		}
+	}
+
+	/** Kreslí se u zobrazené challenge sektory (prstenec, klín, čára)? */
+	public boolean isKresliSektory() {
+		return kresliSektory;
+	}
+
+	public void setKresliSektory(final boolean kresli) {
+		if (kresliSektory == kresli) {
+			return;
+		}
+		kresliSektory = kresli;
+		ulozPrepinac(KRESLI_SEKTORY, kresli);
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	/** Kreslí se u kandidátů štítky (číslo sektoru, políčko D/T)? */
+	public boolean isKresliStitky() {
+		return kresliStitky;
+	}
+
+	public void setKresliStitky(final boolean kresli) {
+		if (kresliStitky == kresli) {
+			return;
+		}
+		kresliStitky = kresli;
+		ulozPrepinac(KRESLI_STITKY, kresli);
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	private volatile VybranaKes vybranaKes;
+	private volatile long casVyberuKese;
+
+	/** Keš z gc.com, kterou program vybral, nebo null. */
+	public VybranaKes vybranaKes() {
+		return vybranaKes;
+	}
+
+	/** Kdy (podle {@link System#nanoTime}) se naposledy změnila vybraná keš; pro rozhodnutí, co je novější, výběr keše, nebo sektoru či políčka. */
+	public long casVyberuKese() {
+		return casVyberuKese;
+	}
+
+	/** Program vybral keš (null = žádná z gc.com); ve vlákně Swingu. Ohlásí se jen změna. */
+	public void setVybranaKes(final VybranaKes kes) {
+		if (java.util.Objects.equals(vybranaKes, kes)) {
+			return;
+		}
+		if (kes != null) {
+			final PrehledChallenge p = prehled();
+			final int sektor = p == null ? -1 : p.sektorBodu(kes.lat(), kes.lon());
+			final String policko = p == null ? null : p.stitekPolicka(kes.obtiznostPulek(), kes.terenPulek());
+			final String klic = p == null ? null : klic(p.challenge());
+			posledniKlicKes = klic;
+			posledniSektorKese = sektor;
+			posledniPolickoKese = policko;
+		}
+		vybranaKes = kes;
+		casVyberuKese = System.nanoTime();
+		ohlas(ChallengeZmenenyEvent.Druh.VYBRANA_KES, null);
+	}
+
+	private volatile String posledniKlicKes;
+	private volatile int posledniSektorKese = -1;
+	private volatile String posledniPolickoKese;
+
+	/**
+	 * Sektor 0 až 359 posledního zvýraznění této challenge, od kterého postupují ◀ ▶, i když už se na mapě nezvýrazňuje (klik mimo); -1, když žádný není nebo ho uživatel zrušil (Esc,
+	 * „N° ✕“).
+	 */
+	public int zapamatovanySektor(final Challenge c) {
+		return c != null && klic(c).equals(posledniKlicKes) ? posledniSektorKese : PosunVyberu.ZADNY_SEKTOR;
+	}
+
+	/** Štítek políčka D/T posledního zvýraznění této challenge, od kterého postupují ◀ ▶; null, když žádné není nebo ho uživatel zrušil. */
+	public String zapamatovanePolicko(final Challenge c) {
+		return c != null && klic(c).equals(posledniKlicKes) ? posledniPolickoKese : null;
+	}
+
+	/** Je co zrušit Esc: zvýrazněný sektor nebo políčko, nebo zapamatovaný výchozí bod posunu? */
+	public boolean maZapamatovanyVyber(final Challenge c) {
+		return zapamatovanySektor(c) >= 0 || zapamatovanePolicko(c) != null;
+	}
+
+	/**
+	 * Klik do prázdné mapy: zruší zvýraznění sektoru, políčka a vybraného kandidáta na mapě i v popupu, ale zapamatuje si je jako výchozí bod ◀ ▶. Zruší se až Esc nebo „N° ✕“.
+	 * Volat ve vlákně Swingu.
+	 */
+	public void zrusZvyrazneniKlikemMimo() {
+		final Challenge c = zobrazena();
+		if (c == null) {
+			return;
+		}
+		final int sektor = vychoziSektorPosunu(c);
+		final String policko = vychoziPolickoPosunu(c);
+		final boolean bylo = zvyraznenySektor(c) >= 0 || zvyraznenePolicko(c) != null;
+		posledniKlicKes = klic(c);
+		posledniSektorKese = sektor;
+		posledniPolickoKese = policko;
+		final boolean sektorVybran = sektory.remove(klic(c)) != null;
+		final boolean policko2 = policka.remove(klic(c)) != null;
+		if (kandidati.remove(klic(c)) != null) {
+			ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+		}
+		if (bylo || sektorVybran || policko2) {
+			ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+		}
+	}
+
+	/** Zapomene sektor a políčko naposledy vybrané keše; vrací, zda tam něco bylo. */
+	private boolean zapomenKes() {
+		final boolean bylo = posledniSektorKese >= 0 || posledniPolickoKese != null;
+		posledniSektorKese = -1;
+		posledniPolickoKese = null;
+		return bylo;
+	}
+
+	private volatile int stitkuNaMape = -1;
+	private volatile int kandidatuVeVyrezu = -1;
+
+	/** Kolik štítků kandidátů vrstva na mapě ukázala z kolika kandidátů ve výřezu; z EDT po kreslení, ohlásí se jen změna. */
+	public void nahlasStitkyNaMape(final int zobrazeno, final int veVyrezu) {
+		if (stitkuNaMape == zobrazeno && kandidatuVeVyrezu == veVyrezu) {
+			return;
+		}
+		stitkuNaMape = zobrazeno;
+		kandidatuVeVyrezu = veVyrezu;
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	private volatile double dosahPresazeny = Double.NaN;
+
+	/** Dosah spočítaných kandidátů D/T v metrech, když ho výřez mapy přesahuje, jinak NaN. Z EDT po kreslení, ohlásí se jen změna. */
+	public void nahlasDosahPresazeny(final double metru) {
+		if (Double.compare(dosahPresazeny, metru) == 0) {
+			return;
+		}
+		dosahPresazeny = metru;
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	/** Dosah spočítaných kandidátů D/T v metrech, když ho výřez přesahuje, jinak NaN. */
+	public double dosahPresazeny() {
+		return dosahPresazeny;
+	}
+
+	private volatile int vyberVeVyrezu = -1;
+
+	/** Kolik kandidátů vybraného sektoru nebo políčka leží ve výřezu mapy; -1 bez výběru. Z EDT po kreslení, ohlásí se jen změna. */
+	public void nahlasVyberVeVyrezu(final int kandidatu) {
+		if (vyberVeVyrezu == kandidatu) {
+			return;
+		}
+		vyberVeVyrezu = kandidatu;
+		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
+	}
+
+	/** Kolik kandidátů vybraného sektoru nebo políčka bylo při posledním kreslení ve výřezu, nebo -1, když nic není vybráno. */
+	public int vyberVeVyrezu() {
+		return vyberVeVyrezu;
+	}
+
+	/** Kolik štítků kandidátů je na mapě, nebo -1, když se ještě nekreslilo. */
+	public int stitkuNaMape() {
+		return stitkuNaMape;
+	}
+
+	/** Kolik kandidátů bylo při posledním kreslení ve výřezu, nebo -1. */
+	public int kandidatuVeVyrezu() {
+		return kandidatuVeVyrezu;
+	}
+
+	// --- Definice
+
+	public List<Challenge> sablony() {
+		return seznam.sablony();
+	}
+
+	public List<Challenge> vlastni() {
+		return seznam.vlastni();
+	}
+
+	/** Šablony a potom vlastní definice. */
+	public List<Challenge> vsechny() {
+		return seznam.vsechny();
+	}
+
+	public boolean jeSablona(final Challenge c) {
+		return seznam.jeSablona(c.nazev());
+	}
+
+	/** Uloží novou nebo upravenou vlastní definici; šablonu přepsat nejde ({@link ChallengeChyba}), uloží se její kopie. */
+	public Challenge ulozVlastni(final Challenge definice) {
+		final Challenge c = seznam.ulozVlastni(definice);
+		vysledky.remove(klic(c));
+		vysledkyPolicek.remove(klic(c));
+		stredy.remove(klic(c));
+		oblasti.remove(klic(c));
+		stavy.remove(klic(c));
+		kandidati.remove(klic(c));
+		policka.remove(klic(c));
+		sektory.remove(klic(c));
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, c);
+		return c;
+	}
+
+	/**
+	 * Nastaví, kolikrát se má splnit každé políčko matice D/T: u vlastní challenge změní definici, u šablony uloží nastavení uživatele (šablona v kódu zůstává). Dosavadní výsledek a výběr
+	 * se nemažou, stará matice zůstane do nového přepočtu; výsledek spočítaný pro jinou násobnost se zahodí.
+	 */
+	public Challenge nastavOpakovani(final Challenge c, final int kolikrat) {
+		if (c.typ() != Challenge.Typ.DT_MATICE) {
+			throw new ChallengeChyba("Opakování jde nastavit jen u matice D/T.");
+		}
+		final Challenge dosavadni = seznam.najdi(c.nazev());
+		if (dosavadni == null) {
+			throw new ChallengeChyba("Challenge „" + c.nazev() + "“ neexistuje.");
+		}
+		if (dosavadni.opakovani() == kolikrat) {
+			return dosavadni;
+		}
+		final Challenge nova = seznam.jeSablona(c.nazev()) ? seznam.nastavNasobnostSablony(c.nazev(), kolikrat) : seznam.ulozVlastni(c.sOpakovanim(kolikrat));
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, nova);
+		return nova;
+	}
+
+	/** Vlastní kopie šablony k úpravě. */
+	public Challenge kopieSablony(final Challenge sablona) {
+		final Challenge c = seznam.kopieSablony(sablona.nazev());
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, c);
+		return c;
+	}
+
+	/** Kopie vlastní challenge („název (kopie)“), neaktivní; stejný typ, střed, oblast, pravidla i zdroje nálezů. */
+	public Challenge kopieVlastni(final Challenge puvodni) {
+		final Challenge c = seznam.kopieVlastni(puvodni.nazev());
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, c);
+		return c;
+	}
+
+	public Challenge prejmenuj(final Challenge c, final String novyNazev) {
+		final String staryKlic = klic(c);
+		final Challenge nova = seznam.prejmenuj(c.nazev(), novyNazev);
+		prenes(vysledky, staryKlic, klic(nova));
+		prenes(vysledkyPolicek, staryKlic, klic(nova));
+		if (staryKlic.equals(zobrazena)) {
+			zobrazena = klic(nova);
+		}
+		prenes(stavy, staryKlic, klic(nova));
+		prenes(kandidati, staryKlic, klic(nova));
+		prenes(policka, staryKlic, klic(nova));
+		prenes(sektory, staryKlic, klic(nova));
+		oblasti.remove(staryKlic);
+		if (staryKlic.equals(jenKandidatiPro)) {
+			jenKandidatiPro = klic(nova);
+		}
+		uloz();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, nova);
+		return nova;
+	}
+
+	private static <V> void prenes(final Map<String, V> m, final String z, final String na) {
+		final V v = m.remove(z);
+		if (v != null) {
+			m.put(na, v);
+		}
+	}
+
+	public void smazVlastni(final Challenge c) {
+		final boolean bylaAktivni = seznam.jeAktivni(c.nazev());
+		seznam.smazVlastni(c.nazev());
+		odstranStav(c);
+		uloz();
+		prenesJenKandidati();
+		ohlas(ChallengeZmenenyEvent.Druh.DEFINICE, c);
+		if (bylaAktivni) {
+			ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, c);
+		}
+	}
+
+	private void odstranStav(final Challenge c) {
+		vysledky.remove(klic(c));
+		vysledkyPolicek.remove(klic(c));
+		stredy.remove(klic(c));
+		oblasti.remove(klic(c));
+		stavy.remove(klic(c));
+		kandidati.remove(klic(c));
+		policka.remove(klic(c));
+		sektory.remove(klic(c));
+		if (klic(c).equals(jenKandidatiPro)) {
+			jenKandidatiPro = null;
+			ohlas(ChallengeZmenenyEvent.Druh.JEN_KANDIDATI, null);
+		}
+	}
+
+	// --- Aktivní
+
+	/** Aktivní challenge v pořadí zapnutí. */
+	public List<Challenge> aktivni() {
+		return seznam.aktivni();
+	}
+
+	public boolean jeAktivni(final Challenge c) {
+		return seznam.jeAktivni(c.nazev());
+	}
+
+	/** Nejvíc aktivních challenge najednou; zapnutí další vypne nejdéle zapnutou. */
+	public int strop() {
+		return seznam.strop();
+	}
+
+	/** Zapne challenge; je-li už aktivních {@link #strop()}, vypne se dosavadní (i s jeho filtrem „jen kandidáti“). */
+	public void aktivuj(final Challenge c) {
+		if (seznam.jeAktivni(c.nazev())) {
+			return;
+		}
+		final Challenge vypnuta = seznam.aktivuj(c.nazev());
+		if (vypnuta != null) {
+			odstranStav(vypnuta);
+		}
+		uloz();
+		prenesJenKandidati();
+		if (vypnuta != null) {
+			ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, vypnuta);
+		}
+		ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, c);
+	}
+
+	public void deaktivuj(final Challenge c) {
+		if (!seznam.jeAktivni(c.nazev())) {
+			return;
+		}
+		seznam.deaktivuj(c.nazev());
+		odstranStav(c);
+		uloz();
+		prenesJenKandidati();
+		ohlas(ChallengeZmenenyEvent.Druh.AKTIVNI, c);
+	}
+
+	// --- Výsledky (plánovač)
+
+	/** Poslední výsledek výpočtu, nebo null, dokud není. */
+	public VysledekSektoru vysledek(final Challenge c) {
+		return vysledky.get(klic(c));
+	}
+
+	/** Počet chybějících sektorů, políček nebo dnů podle typu, nebo -1, dokud výsledek není. */
+	public int pocetChybejicich(final Challenge c) {
+		if (c.typ() == Challenge.Typ.SEKTORY_360) {
+			final VysledekSektoru v = vysledek(c);
+			return v == null ? -1 : 360 - v.pocetObsazenych();
+		}
+		final VysledekPolicek p = vysledekPolicek(c);
+		return p == null ? -1 : p.pocetChybejicich();
+	}
+
+	/** Poslední výsledek D/T matice nebo kalendáře, nebo null, dokud není. */
+	public VysledekPolicek vysledekPolicek(final Challenge c) {
+		return vysledkyPolicek.get(klic(c));
+	}
+
+	/** Uloží výsledek D/T matice nebo kalendáře aktivní challenge a ohlásí ho; pro neaktivní nebo změněnou definici se zahodí. Z kteréhokoli vlákna. */
+	public void nastavVysledekPolicek(final Challenge c, final VysledekPolicek vysledek) {
+		nastavVysledekPolicek(c, vysledek, Double.NaN, Double.NaN);
+	}
+
+	/** Jako {@link #nastavVysledekPolicek(Challenge, VysledekPolicek)} se středem, podle kterého se počítalo (střed mapy). */
+	public void nastavVysledekPolicek(final Challenge c, final VysledekPolicek vysledek, final double stredLat, final double stredLon) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev()) || !c.equals(seznam.najdi(c.nazev()))) {
+				return;
+			}
+			stredy.put(klic(c), new double[] { stredLat, stredLon });
+			vysledkyPolicek.put(klic(c), vysledek);
+			final String vybrane = policka.get(klic(c));
+			final boolean zruseno = vybrane != null && vysledek.pocetKandidatu(vybrane) == 0;
+			if (zruseno) {
+				policka.remove(klic(c));
+			}
+			ohlas(ChallengeZmenenyEvent.Druh.VYSLEDEK, c);
+			if (zruseno) {
+				ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+			}
+		});
+	}
+
+	private static final class PoctyVOkne {
+		final VysledekPolicek vysledek;
+		final Map<String, Integer> pocty;
+
+		PoctyVOkne(final VysledekPolicek vysledek, final Map<String, Integer> pocty) {
+			this.vysledek = vysledek;
+			this.pocty = pocty;
+		}
+	}
+
+	private final Map<String, PoctyVOkne> poctyVOkne = new ConcurrentHashMap<>();
+
+	/** Počty kandidátů ve výřezu mapy po políčkách D/T pro {@code vysledek}; z jiného vlákna. Ohlásí se jen změna a jen pro stále platný výsledek. */
+	public void nastavPoctyVOkne(final Challenge c, final VysledekPolicek vysledek, final Map<String, Integer> pocty) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev()) || vysledkyPolicek.get(klic(c)) != vysledek) {
+				return;
+			}
+			final PoctyVOkne dosavadni = poctyVOkne.get(klic(c));
+			if (dosavadni != null && dosavadni.vysledek == vysledek && dosavadni.pocty.equals(pocty)) {
+				return;
+			}
+			poctyVOkne.put(klic(c), new PoctyVOkne(vysledek, pocty));
+			ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, c);
+		});
+	}
+
+	/** Počty kandidátů ve výřezu mapy po políčkách D/T pro aktuální výsledek; prázdná mapa, dokud nejsou spočítané. */
+	public Map<String, Integer> poctyVOkne(final Challenge c) {
+		final PoctyVOkne p = poctyVOkne.get(klic(c));
+		return p != null && p.vysledek == vysledkyPolicek.get(klic(c)) ? p.pocty : java.util.Collections.<String, Integer> emptyMap();
+	}
+
+	/** Štítek vybraného políčka D/T matice (například „D4/T1“); null = všechna políčka. */
+	public String vybranePolicko(final Challenge c) {
+		return policka.get(klic(c));
+	}
+
+	/**
+	 * Vybere políčko D/T matice aktivní challenge (null = všechna). Vybrat lze jen chybějící políčko, které má podle posledního výsledku kandidáty; jiné se ignoruje. Vybraný kandidát mimo
+	 * nové políčko se zruší. Z kteréhokoli vlákna.
+	 */
+	public void setVybranePolicko(final Challenge c, final String stitek) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev()) || c.typ() != Challenge.Typ.DT_MATICE) {
+				return;
+			}
+			if (stitek != null) {
+				final VysledekPolicek v = vysledkyPolicek.get(klic(c));
+				if (v == null || v.pocetKandidatu(stitek) == 0) {
+					return;
+				}
+			}
+			final boolean zapomenuto = stitek == null && zapomenKes();
+			if (Objects.equals(stitek, policka.get(klic(c)))) {
+				if (zapomenuto) {
+					ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+				} else {
+					obnovVyberPrekrytyKesi(c);
+				}
+				return;
+			}
+			if (stitek == null) {
+				policka.remove(klic(c));
+			} else {
+				policka.put(klic(c), stitek);
+				final VybranyKandidat vybrany = kandidati.get(klic(c));
+				if (vybrany != null && !stitek.equals(vybrany.stitek())) {
+					kandidati.remove(klic(c));
+					ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+				}
+			}
+			ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+		});
+	}
+
+	public StavPredpoctu stavPredpoctu(final Challenge c) {
+		final StavPredpoctu s = stavy.get(klic(c));
+		return s == null ? StavPredpoctu.NEBEZI : s;
+	}
+
+	/** Uloží výsledek výpočtu aktivní challenge a ohlásí ho; pro neaktivní challenge se zahodí. Z kteréhokoli vlákna. */
+	public void nastavVysledek(final Challenge c, final VysledekSektoru vysledek) {
+		nastavVysledek(c, vysledek, Double.NaN, Double.NaN);
+	}
+
+	/** Jako {@link #nastavVysledek(Challenge, VysledekSektoru)} se středem challenge, ze kterého se počítalo. */
+	public void nastavVysledek(final Challenge c, final VysledekSektoru vysledek, final double stredLat, final double stredLon) {
+		nastavVysledek(c, vysledek, stredLat, stredLon, null);
+	}
+
+	/** Jako {@link #nastavVysledek(Challenge, VysledekSektoru, double, double)} s oblastí, se kterou se počítalo (null = bez omezení); přehled ji nabízí jako {@link PrehledChallenge#jeVOblasti}. */
+	public void nastavVysledek(final Challenge c, final VysledekSektoru vysledek, final double stredLat, final double stredLon, final Oblast oblast) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev()) || !c.equals(seznam.najdi(c.nazev()))) {
+				return;
+			}
+			stredy.put(klic(c), new double[] { stredLat, stredLon });
+			if (oblast == null) {
+				oblasti.remove(klic(c));
+			} else {
+				oblasti.put(klic(c), oblast);
+			}
+			vysledky.put(klic(c), vysledek);
+			final Integer vybrany = sektory.get(klic(c));
+			final boolean zruseno = vybrany != null && !maKandidaty(vysledek, vybrany);
+			if (zruseno) {
+				sektory.remove(klic(c));
+			}
+			ohlas(ChallengeZmenenyEvent.Druh.VYSLEDEK, c);
+			if (zruseno) {
+				ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+			}
+		});
+	}
+
+	private static boolean maKandidaty(final VysledekSektoru v, final int sektor) {
+		final VysledekSektoru.Kandidati k = v.kandidati(sektor);
+		return k != null && k.pocet() > 0;
+	}
+
+	/** Vybraný sektor 0 až 359 aktivní 360° challenge, nebo -1, když žádný není vybrán. */
+	public int vybranySektor(final Challenge c) {
+		final Integer s = sektory.get(klic(c));
+		return s == null ? PosunVyberu.ZADNY_SEKTOR : s;
+	}
+
+	/**
+	 * Vybere sektor aktivní 360° challenge (-1 = žádný). Vybrat lze jen chybějící sektor, který má podle posledního výsledku kandidáty; jiný se ignoruje. Ohlásí se stejnou
+	 * událostí jako výběr políčka. Z kteréhokoli vlákna.
+	 */
+	public void setVybranySektor(final Challenge c, final int sektor) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev()) || c.typ() != Challenge.Typ.SEKTORY_360) {
+				return;
+			}
+			if (sektor != PosunVyberu.ZADNY_SEKTOR) {
+				final VysledekSektoru v = vysledky.get(klic(c));
+				if (sektor < 0 || sektor > 359 || v == null || !maKandidaty(v, sektor)) {
+					return;
+				}
+			}
+			final Integer stary = sektory.get(klic(c));
+			boolean zapomenuto = false;
+			if (sektor == PosunVyberu.ZADNY_SEKTOR) {
+				if (kandidati.remove(klic(c)) != null) {
+					// Vybraný kandidát by sektor na mapě zvýrazňoval dál.
+					ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+				}
+				zapomenuto = zapomenKes();
+			}
+			if (stary == null ? sektor == PosunVyberu.ZADNY_SEKTOR : stary == sektor) {
+				if (zapomenuto) {
+					ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+				} else {
+					obnovVyberPrekrytyKesi(c);
+				}
+				return;
+			}
+			if (sektor == PosunVyberu.ZADNY_SEKTOR) {
+				sektory.remove(klic(c));
+			} else {
+				sektory.put(klic(c), sektor);
+			}
+			ohlas(ChallengeZmenenyEvent.Druh.POLICKO, c);
+		});
+	}
+
+	/**
+	 * Sektor 0 až 359, od kterého postupují ◀ ▶ u 360°: ten, který je právě zvýrazněný na mapě (sektor vybrané keše, vybraný sektor, jinak sektor vybraného kandidáta), nebo -1, když
+	 * žádný není. Jde o stejný výběr jako {@link VyberZvyrazneni}.
+	 */
+	public int vychoziSektorPosunu(final Challenge c) {
+		final int z = zvyraznenySektor(c);
+		return z >= 0 ? z : zapamatovanySektor(c);
+	}
+
+	/** Sektor 0 až 359 zvýrazněný na mapě právě teď, nebo -1. */
+	public int zvyraznenySektor(final Challenge c) {
+		final VyberZvyrazneni z = zvyrazneni(c);
+		return z == null ? vybranySektor(c) : z.sektor;
+	}
+
+	/** Políčko D/T, od kterého postupují ◀ ▶: zvýrazněné na mapě, jinak zapamatované; null, když žádné není. */
+	public String vychoziPolickoPosunu(final Challenge c) {
+		final String z = zvyraznenePolicko(c);
+		return z != null ? z : zapamatovanePolicko(c);
+	}
+
+	/** Štítek políčka D/T zvýrazněného na mapě (políčko vybrané keše, jinak vybrané políčko), nebo null. */
+	public String zvyraznenePolicko(final Challenge c) {
+		final VyberZvyrazneni z = zvyrazneni(c);
+		return z == null ? vybranePolicko(c) : z.stitek;
+	}
+
+	/** Zvýraznění zobrazené challenge na mapě; null, když přehled není. */
+	private VyberZvyrazneni zvyrazneni(final Challenge c) {
+		final PrehledChallenge p = c.equals(zobrazena()) ? prehled() : null;
+		if (p == null) {
+			return null;
+		}
+		final VybranyKandidat k = vybranyKandidat(c);
+		return VyberZvyrazneni.vyres(p, this, casVyberuSektoruNeboPolicka, k == null ? PosunVyberu.ZADNY_SEKTOR : k.sektor());
+	}
+
+	/**
+	 * Posune výběr u 360° na další (vpřed) nebo předchozí chybějící sektor s kandidáty po kružnici a vrátí ho; -1, když žádný není nebo challenge není 360°. Nevybírá keš
+	 * a nevystřeďuje mapu. Volat ve vlákně Swingu.
+	 */
+	public int dalsiSektor(final Challenge c, final boolean dopredu) {
+		final VysledekSektoru v = c.typ() == Challenge.Typ.SEKTORY_360 ? vysledky.get(klic(c)) : null;
+		if (v == null) {
+			return PosunVyberu.ZADNY_SEKTOR;
+		}
+		final int novy = PosunVyberu.dalsiSektor(v, vychoziSektorPosunu(c), dopredu);
+		setVybranySektor(c, novy);
+		return novy;
+	}
+
+	/**
+	 * Posune výběr u matice D/T na další (vpřed) nebo předchozí chybějící políčko s kandidáty po řádcích a vrátí jeho štítek; null, když žádné není nebo challenge není matice.
+	 * Nevybírá keš a nevystřeďuje mapu. Volat ve vlákně Swingu.
+	 */
+	public String dalsiPolicko(final Challenge c, final boolean dopredu) {
+		final VysledekPolicek v = c.typ() == Challenge.Typ.DT_MATICE ? vysledkyPolicek.get(klic(c)) : null;
+		if (v == null) {
+			return null;
+		}
+		final String nove = PosunVyberu.dalsiPolicko(v, vychoziPolickoPosunu(c), dopredu);
+		if (nove != null) {
+			setVybranePolicko(c, nove);
+		}
+		return nove;
+	}
+
+	/**
+	 * Přehled zobrazené (jediné aktivní) challenge pro štítky keší na mapě, nebo null, když žádná není aktivní, nemá výsledek nebo se v rozhraní neukazuje. Pro tentýž výsledek
+	 * vrací tentýž objekt, nový výsledek dá nový přehled.
+	 */
+	public PrehledChallenge prehled() {
+		final Challenge c = zobrazena();
+		if (c == null) {
+			return null;
+		}
+		final boolean sektory = c.typ() == Challenge.Typ.SEKTORY_360;
+		final Object v = sektory ? vysledky.get(klic(c)) : vysledkyPolicek.get(klic(c));
+		if (v == null) {
+			return null;
+		}
+		PrehledChallenge p = prehled;
+		if (p != null && p.zdroj() == v && p.challenge().equals(c)) {
+			return p;
+		}
+		synchronized (stredy) {
+			p = prehled;
+			if (p != null && p.zdroj() == v && p.challenge().equals(c)) {
+				return p;
+			}
+			final double[] stred = stredy.get(klic(c));
+			final double lat = stred == null ? Double.NaN : stred[0];
+			final double lon = stred == null ? Double.NaN : stred[1];
+			p = sektory ? PrehledChallenge.zeSektoru(c, (VysledekSektoru) v, lat, lon, oblasti.get(klic(c))) : PrehledChallenge.zPolicek(c, (VysledekPolicek) v, lat, lon);
+			prehled = p;
+			return p;
+		}
+	}
+
+	/** Uloží stav předpočtu aktivní challenge a ohlásí ho. Z kteréhokoli vlákna. */
+	public void nastavStavPredpoctu(final Challenge c, final StavPredpoctu stav) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev())) {
+				return;
+			}
+			stavy.put(klic(c), stav);
+			ohlas(ChallengeZmenenyEvent.Druh.PREDPOCET, c);
+		});
+	}
+
+	// --- Pruh na mapě
+
+	/** Challenge zobrazená v pruhu: vybraná {@link #setZobrazena}, je-li aktivní, jinak první aktivní, nebo null. */
+	public Challenge zobrazena() {
+		final String k = zobrazena;
+		if (k != null && seznam.jeAktivni(k)) {
+			final Challenge c = seznam.najdi(k);
+			if (jeVUi(c)) {
+				return c;
+			}
+		}
+		for (final Challenge c : seznam.aktivni()) {
+			if (jeVUi(c)) {
+				return c;
+			}
+		}
+		return null;
+	}
+
+	/** Kalendář se v rozhraní zatím neukazuje (pruh, popup, nabídka v dialogu), i když je uložený a aktivní z dřívějška; zapnout ho jde jen v testech. */
+	private volatile boolean kalendarVUi;
+
+	public void setKalendarVUi(final boolean kalendarVUi) {
+		this.kalendarVUi = kalendarVUi;
+	}
+
+	/** Typy, které se v rozhraní nabízejí a ukazují v pruhu a popupu. */
+	public boolean jeVUi(final Challenge c) {
+		return kalendarVUi || c.typ() != Challenge.Typ.KALENDAR;
+	}
+
+	/** Počet aktivních challenge, které se v rozhraní ukazují. */
+	private int pocetAktivnichVUi() {
+		int n = 0;
+		for (final Challenge c : seznam.aktivni()) {
+			if (jeVUi(c)) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** Přepne pruh na jinou aktivní challenge. */
+	public void setZobrazena(final Challenge c) {
+		if (!seznam.jeAktivni(c.nazev()) || !jeVUi(c)) {
+			throw new ChallengeChyba("V pruhu jde zobrazit jen aktivní challenge.");
+		}
+		final Challenge pred = zobrazena();
+		zobrazena = klic(c);
+		if (pred == null || !klic(pred).equals(klic(c))) {
+			prenesJenKandidati();
+			ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENA, c);
+		}
+	}
+
+	/** Co má pruh právě ukazovat; {@link StavPruhu#SKRYTY}, když je plánovač vypnutý nebo žádná challenge není aktivní. */
+	public StavPruhu stavPruhu() {
+		final Challenge c = zobrazena();
+		if (!zapnuto || c == null) {
+			return StavPruhu.SKRYTY;
+		}
+		final VybranyKandidat k = vybranyKandidat(c);
+		final StavPredpoctu stav = stavPredpoctu(c);
+		final String chyba = stav.faze() == StavPredpoctu.Faze.CHYBA ? stav.chyba() : null;
+		final Challenge filtr = jenKandidatiPro();
+		return new StavPruhu(true, c, pocetAktivnichVUi(), pocetChybejicich(c), stitekKandidata(c, k), k, filtr != null && klic(filtr).equals(klic(c)), chyba);
+	}
+
+	private String stitekKandidata(final Challenge c, final VybranyKandidat k) {
+		if (k == null) {
+			return null;
+		}
+		if (c.typ() != Challenge.Typ.SEKTORY_360) {
+			return k.stitek();
+		}
+		final VysledekSektoru v = vysledek(c);
+		final VysledekSektoru.Kandidati kand = v == null ? null : v.kandidati(k.sektor());
+		return StitkyPruhu.sektor(k.sektor(), kand == null ? 0 : kand.pocet(), k.vzdalenost());
+	}
+
+	// --- Kandidáti
+
+	/** Vybraný kandidát („další chybějící“) pro challenge, nebo null. */
+	public VybranyKandidat vybranyKandidat(final Challenge c) {
+		return kandidati.get(klic(c));
+	}
+
+	/** Uloží vybraného kandidáta aktivní challenge (null = žádný) a ohlásí ho. Z kteréhokoli vlákna. */
+	public void nastavVybranyKandidat(final Challenge c, final VybranyKandidat kandidat) {
+		naEdt(() -> {
+			if (!seznam.jeAktivni(c.nazev())) {
+				return;
+			}
+			if (kandidat == null) {
+				kandidati.remove(klic(c));
+			} else {
+				kandidati.put(klic(c), kandidat);
+			}
+			ohlas(ChallengeZmenenyEvent.Druh.KANDIDAT, c);
+		});
+	}
+
+	/** Challenge, pro kterou je zapnutý filtr „jen kandidáti“ (zobrazit jen nenalezené keše, které zaplní chybějící sektor); null = filtr vypnutý. */
+	public Challenge jenKandidatiPro() {
+		final String k = jenKandidatiPro;
+		if (k == null) {
+			return null;
+		}
+		return seznam.najdi(k);
+	}
+
+	/** Zapnutý filtr „jen kandidáti“ platí pro zobrazenou challenge; při jejím přepnutí se přenese na novou, dokud ho uživatel nevypne. */
+	private void prenesJenKandidati() {
+		if (!jenKandidatiVolba) {
+			return;
+		}
+		final Challenge z = zobrazena();
+		final String nove = z == null ? null : klic(z);
+		if (!Objects.equals(nove, jenKandidatiPro)) {
+			jenKandidatiPro = nove;
+			ohlas(ChallengeZmenenyEvent.Druh.JEN_KANDIDATI, z);
+		}
+	}
+
+	/** Zapne filtr „jen kandidáti“ pro aktivní challenge, nebo ho vypne (null). Filtr je jen jeden najednou a neukládá se. */
+	public void setJenKandidatiPro(final Challenge c) {
+		if (c != null && !seznam.jeAktivni(c.nazev())) {
+			throw new ChallengeChyba("Filtr „Jen kandidáti“ jde zapnout jen pro aktivní challenge.");
+		}
+		final String nove = c == null ? null : klic(c);
+		jenKandidatiVolba = c != null;
+		if ((nove == null && jenKandidatiPro == null) || (nove != null && nove.equals(jenKandidatiPro))) {
+			return;
+		}
+		jenKandidatiPro = nove;
+		ohlas(ChallengeZmenenyEvent.Druh.JEN_KANDIDATI, c);
+	}
+}

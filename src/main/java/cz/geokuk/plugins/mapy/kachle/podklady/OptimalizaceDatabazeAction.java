@@ -8,7 +8,7 @@ import cz.geokuk.framework.Dlg;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.gui.DialogOptimalizace;
 
-/** Mapy > Optimalizace databáze…: zhutní soubor s cache dlaždic. */
+/** Soubor > Optimalizace cache dlaždic…: zhutní soubor s cache dlaždic. */
 public class OptimalizaceDatabazeAction extends Action0 {
 
 	private static final long serialVersionUID = 1L;
@@ -16,9 +16,9 @@ public class OptimalizaceDatabazeAction extends Action0 {
 	private KachleModel kachleModel;
 
 	public OptimalizaceDatabazeAction() {
-		super("Optimalizace databáze…");
+		super("Optimalizace cache dlaždic…");
 		putValue(SHORT_DESCRIPTION, "Zmenší a zrychlí soubor s uloženými dlaždicemi map.");
-		putValue(MNEMONIC_KEY, KeyEvent.VK_D);
+		putValue(MNEMONIC_KEY, KeyEvent.VK_C);
 	}
 
 	public void inject(final KachleModel kachleModel) {

@@ -7,7 +7,7 @@ import javax.swing.WindowConstants;
 
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 
-/** Modální dialog Optimalizace databáze; za běhu jde zavřít jen tlačítkem Zrušit. */
+/** Modální dialog Optimalizace cache dlaždic; za běhu jde zavřít jen tlačítkem Zrušit. */
 public class DialogOptimalizace extends JDialog {
 
 	private static final long serialVersionUID = 1L;

@@ -5,7 +5,8 @@ import java.awt.event.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.swing.*;
@@ -69,6 +70,11 @@ public final class Diagnostika {
 		return betaKanal() ? verze + " · beta kanál" : verze;
 	}
 
+	/** Milisekundy od spuštění programu. */
+	public static long dobaBehuMs() {
+		return System.currentTimeMillis() - START;
+	}
+
 	/** Časová značka kroku startu do logu: milisekundy od načtení diagnostiky (začátek startu programu). */
 	public static void znackaStartu(final String krok) {
 		log.info("Start: {} za {} ms", krok, System.currentTimeMillis() - START);
@@ -122,13 +128,18 @@ public final class Diagnostika {
 	}
 
 	private static void pridej(final Deque<String> seznam, final String text) {
-		final String radek = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " " + soukrome(text);
+		final String radek = Cas.FORMAT.format(LocalTime.now()) + " " + soukrome(text);
 		synchronized (seznam) {
 			seznam.addLast(radek);
 			if (seznam.size() > MAX_ZAZNAMU) {
 				seznam.removeFirst();
 			}
 		}
+	}
+
+	/** Formátovač vzniká až při první události, ne při načtení třídy. */
+	private static final class Cas {
+		static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 	}
 
 	/** Zaznamenává kliknutí na tlačítka a otevírání a zavírání oken. Položky menu sleduje {@link #sledujMenu(JMenuBar)}. */
@@ -362,6 +373,7 @@ public final class Diagnostika {
 		}
 		vypis(sb, "Poslední události", udalosti, zaznamu);
 		sb.append(Vykon.text());
+		sb.append(ZobrazeneDlazdice.text());
 		vypisPocitadla(sb);
 		vypis(sb, "Konec logu", konecLogu(LOG, radkuLogu), radkuLogu);
 		return sb.toString();
@@ -438,11 +450,10 @@ public final class Diagnostika {
 		if (!soubor.isFile()) {
 			return konec;
 		}
-		final String domov = FConst.HOME_DIR.getAbsolutePath();
 		try (BufferedReader reader = Files.newBufferedReader(soubor.toPath(), StandardCharsets.UTF_8)) {
 			String radek;
 			while ((radek = reader.readLine()) != null) {
-				konec.addLast(radek.replace(domov, "~"));
+				konec.addLast(soukrome(radek));
 				if (konec.size() > radku) {
 					konec.removeFirst();
 				}
@@ -457,9 +468,38 @@ public final class Diagnostika {
 		return b ? "ano" : "ne";
 	}
 
-	/** Hlášení je veřejné: bez jména uživatele v cestách a bez parametrů v adresách (mohou obsahovat klíč k mapám). */
+	/** Adresa; skupina 1 je schéma, 2 adresa bez uživatele a parametrů, 3 parametry za otazníkem, zakódovaným otazníkem nebo středníkem. */
+	private static final java.util.regex.Pattern ADRESA = java.util.regex.Pattern
+			.compile("(?i)((?:https?|ftps?)://)(?:[^\\s/?#\"']*@)?((?:(?!%3F)[^\\s?\"'#;])++)((?:[?#;]|%3F)[^\\s\"']*+)?");
+
+	/** Hlášení je veřejné: bez jména uživatele v cestách a bez uživatele, hesla a parametrů v adresách (mohou obsahovat klíč k mapám). */
 	static String soukrome(final String text) {
-		return text == null ? null : text.replace(FConst.HOME_DIR.getAbsolutePath(), "~").replaceAll("(https?://[^\\s?\"']++)\\?[^\\s\"']*+", "$1?…");
+		return soukrome(text, FConst.HOME_DIR.getAbsolutePath(), File.separatorChar == '\\');
+	}
+
+	static String soukrome(final String text, final String domov, final boolean windows) {
+		if (text == null) {
+			return null;
+		}
+		String vysledek = text;
+		if (!domov.isEmpty()) {
+			// Na Windows záleží na velikosti písmen a lomítka mohou být obě.
+			final StringBuilder vzor = new StringBuilder();
+			for (final String cast : domov.split("[\\\\/]+", -1)) {
+				if (vzor.length() > 0) {
+					vzor.append("[\\\\/]+");
+				}
+				vzor.append(java.util.regex.Pattern.quote(cast));
+			}
+			vzor.append("(?![\\p{L}\\p{N}_]|[.-][\\p{L}\\p{N}_])");
+			vysledek = java.util.regex.Pattern.compile(vzor.toString(), windows ? java.util.regex.Pattern.CASE_INSENSITIVE : 0).matcher(vysledek).replaceAll("~");
+		}
+		final java.util.regex.Matcher m = ADRESA.matcher(vysledek);
+		final StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(m.group(1) + m.group(2) + (m.group(3) == null ? "" : "?…")));
+		}
+		return m.appendTail(sb).toString();
 	}
 
 	/** Domovskou složku zkrátí na ~, ať text neobsahuje jméno uživatele. */

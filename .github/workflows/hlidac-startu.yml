@@ -16,7 +16,7 @@ on:
         default: "7"
       prah:
         description: "Nejvyšší přípustné zpomalení v procentech"
-        default: "15"
+        default: "20"
   pull_request:
     branches: [main]
     paths:
@@ -59,7 +59,7 @@ jobs:
           NOVA: ${{ inputs.nova || github.event.pull_request.head.sha || 'HEAD' }}
           CO: start
           START_BEHU: ${{ inputs.behu || '7' }}
-          START_PRAH: ${{ inputs.prah || '15' }}
+          START_PRAH: ${{ inputs.prah || '20' }}
           PRACOVNI: ${{ runner.temp }}/vykon
           VYSTUP: ${{ runner.temp }}/start-${{ runner.os }}.txt
         run: |

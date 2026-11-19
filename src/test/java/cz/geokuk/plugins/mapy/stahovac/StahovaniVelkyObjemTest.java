@@ -60,6 +60,8 @@ public class StahovaniVelkyObjemTest {
 	private final MyPreferences pref = MyPreferences.current().node("test-stahovani-velky-objem");
 	private final Collection<String> pozadavky = new ConcurrentLinkedQueue<>();
 	private final AtomicInteger zpozdeniMs = new AtomicInteger();
+	/** Požadavky, které server přijal a ještě na ně neodpověděl. */
+	private final AtomicInteger rozpracovanePozadavky = new AtomicInteger();
 	private HttpServer server;
 	private ExecutorService vlaknaServeru;
 	private Boolean imageIoCache;
@@ -138,6 +140,46 @@ public class StahovaniVelkyObjemTest {
 			return davka;
 		}
 
+		/** Čeká, až skončí zařazování dlaždic a ve frontách a vláknech stahování nic nezbývá; teprve potom je počet požadavků na serveru konečný. */
+		void pockejNaKlientaBezPrace(final long limitMs) throws Exception {
+			final Field f = KachleZiskavac.class.getDeclaredField("exekucniSluzby");
+			f.setAccessible(true);
+			final Collection<?> sluzby = ((Map<?, ?>) f.get(ziskavac)).values();
+			final long konec = System.currentTimeMillis() + limitMs;
+			while (System.currentTimeMillis() < konec) {
+				if (zarazovaniBezi() || !jsouNecinne(sluzby)) {
+					Thread.sleep(5);
+					continue;
+				}
+				// Nečinnost ve dvou po sobě jdoucích kontrolách: dlaždice mezi frontou a vláknem by první kontrolu mohla minout.
+				Thread.sleep(5);
+				if (!zarazovaniBezi() && jsouNecinne(sluzby)) {
+					return;
+				}
+			}
+			Assert.fail("klient stahování nedoběhl do " + limitMs + " ms");
+		}
+
+		private boolean zarazovaniBezi() {
+			for (final Thread t : Thread.getAllStackTraces().keySet()) {
+				if ("pro-offline".equals(t.getName()) && t.isAlive()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private boolean jsouNecinne(final Collection<?> sluzby) throws Exception {
+			for (final Object o : sluzby) {
+				final Method m = o.getClass().getDeclaredMethod("jeNecinna");
+				m.setAccessible(true);
+				if (!(Boolean) m.invoke(o)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		/** Jako při ukončení programu: co čeká na zápis, se dopíše na disk. */
 		void ukonciProgram() throws Exception {
 			final Method m = KachleZiskavac.class.getDeclaredMethod("dopisNaDisk");
@@ -170,17 +212,22 @@ public class StahovaniVelkyObjemTest {
 		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", ex -> {
 			pozadavky.add(ex.getRequestURI().getPath());
-			final int cekani = zpozdeniMs.get();
-			if (cekani > 0) {
-				try {
-					Thread.sleep(cekani);
-				} catch (final InterruptedException e) {
-					Thread.currentThread().interrupt();
+			rozpracovanePozadavky.incrementAndGet();
+			try {
+				final int cekani = zpozdeniMs.get();
+				if (cekani > 0) {
+					try {
+						Thread.sleep(cekani);
+					} catch (final InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
 				}
+				ex.sendResponseHeaders(200, data.length);
+				ex.getResponseBody().write(data);
+				ex.close();
+			} finally {
+				rozpracovanePozadavky.decrementAndGet();
 			}
-			ex.sendResponseHeaders(200, data.length);
-			ex.getResponseBody().write(data);
-			ex.close();
 		});
 		vlaknaServeru = Executors.newFixedThreadPool(16);
 		server.setExecutor(vlaknaServeru);
@@ -270,11 +317,16 @@ public class StahovaniVelkyObjemTest {
 		davka.zastav("na přání uživatele.");
 		pockej(davka, 10_000);
 		Assert.assertTrue(davka.popis(), davka.popis().startsWith("Zastaveno: na přání uživatele."));
-		// Rozpracované požadavky doběhnou, pak už se nic nežádá.
-		Thread.sleep(1500);
+		// Požadavek už vyslaný klientem může na server dorazit i po zastavení; pak už se nic nežádá, až když zařazování skončilo a vlákna stahování jsou nečinná.
+		s.pockejNaKlientaBezPrace(30_000);
+		Assert.assertEquals("rozpracované požadavky nedoběhly", 0, rozpracovanePozadavky.get());
 		final int poZastaveni = pozadavky.size();
-		Thread.sleep(1500);
 		Assert.assertEquals("po zastavení se žádné další dlaždice nežádají", poZastaveni, pozadavky.size());
+		// Zastavená dávka další dlaždici nepřijme a její stahování zruší.
+		final AtomicInteger zruseno = new AtomicInteger();
+		Assert.assertFalse("zastavená dávka další dlaždici nezařadí", davka.zarazeno(davka.dlazdice(), zruseno::incrementAndGet));
+		Assert.assertEquals("dlaždice odmítnutá zastavenou dávkou se zruší", 1, zruseno.get());
+		Assert.assertEquals(poZastaveni, pozadavky.size());
 		Assert.assertTrue("zastavení má zastavit, ne počkat na všechny: " + poZastaveni, poZastaveni < ocekavane.size());
 		s.ukonciProgram();
 		final int vCache = radkuVCache();

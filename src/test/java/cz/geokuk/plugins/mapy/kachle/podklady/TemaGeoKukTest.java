@@ -123,6 +123,29 @@ public class TemaGeoKukTest {
 		}
 	}
 
+	/** Cesty bez osmc_color (nosiče symbolů značky) se v překryvu nekreslí šedě přes barevné trasy. */
+	@Test
+	public void prekryvNekresliSedouCestuBezBarvyZnaceni() throws Exception {
+		final org.w3c.dom.NodeList bloky = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+				.parse(new org.xml.sax.InputSource(new java.io.StringReader(text("trasy.xml")))).getElementsByTagName("rule");
+		int bezPoradi = 0;
+		for (int i = 0; i < bloky.getLength(); i++) {
+			final org.w3c.dom.Element blok = (org.w3c.dom.Element) bloky.item(i);
+			if (!"osmc_order".equals(blok.getAttribute("k")) || !"~".equals(blok.getAttribute("v"))) {
+				continue;
+			}
+			bezPoradi++;
+			for (final String v : java.util.Arrays.asList("~", "none")) {
+				for (org.w3c.dom.Node d = blok.getFirstChild(); d != null; d = d.getNextSibling()) {
+					if (d instanceof org.w3c.dom.Element && "osmc_color".equals(((org.w3c.dom.Element) d).getAttribute("k"))) {
+						Assert.assertFalse(((org.w3c.dom.Element) d).getAttribute("v"), java.util.Arrays.asList(((org.w3c.dom.Element) d).getAttribute("v").split("\\|")).contains(v));
+					}
+				}
+			}
+		}
+		Assert.assertEquals(3, bezPoradi);
+	}
+
 	/** Překryv kreslí i skály a body z vrstvy tourist; jméno trasy z pole ref jen u turistických tras (ref je jinak třeba číslo silnice). */
 	@Test
 	public void prekryvKresliPrvkyVrstvyTouristAJmenaTras() throws IOException {
@@ -174,5 +197,20 @@ public class TemaGeoKukTest {
 		final String xml = text();
 		Assert.assertTrue(xml.contains("<pathText display=\"always\" fill=\"#4F7FB8\" font-size=\"11\""));
 		Assert.assertTrue(xml.contains("<pathText display=\"always\" fill=\"#4F7FB8\" font-size=\"10\""));
+	}
+
+	/** Státní hranici nepřekryje stínování terénu; pás leží pod turistickými trasami a tenká čára hranice je i nad nimi. */
+	@Test
+	public void statniHraniceNadStinovanimAJadroNadTrasami() throws IOException {
+		for (final String zdroj : new String[] { "geokuk/GeoKuk.xml", "geokuk/GeoKuk_detail.xml" }) {
+			final String xml = text(zdroj);
+			final String hranice = "<rule e=\"way\" k=\"admin_level\" v=\"2\"";
+			final int pas = xml.indexOf(hranice);
+			final int nadTrasami = xml.indexOf(hranice, pas + 1);
+			Assert.assertTrue(zdroj, pas > xml.lastIndexOf("<hillshading "));
+			Assert.assertTrue(zdroj, pas < xml.indexOf("k=\"fmrelhikingred\""));
+			Assert.assertTrue(zdroj, nadTrasami > xml.lastIndexOf("k=\"fmrelhikingred\""));
+			Assert.assertEquals(zdroj, -1, xml.indexOf(hranice, nadTrasami + 1));
+		}
 	}
 }

@@ -291,4 +291,11 @@ public class OblastniKlicTest {
 		Assert.assertNull("větší soubor", OblastniKlic.platnyObrys(p, new BoundingBox(45, 10, 58, 28)));
 		Assert.assertNull(OblastniKlic.platnyObrys(null, new BoundingBox(48.99, 14.07, 55.23, 24.15)));
 	}
+
+	@org.junit.Test
+	public void hexJeStejnyJakoStringFormat() {
+		for (final long h : new long[] { 0L, 1L, 15L, 255L, 0xabcdefL, 0x0fffffffL, 0x80000000L, 0xdeadbeefL, 0xffffffffL }) {
+			org.junit.Assert.assertEquals(String.format("%08x", h), OblastniKlic.hex(h));
+		}
+	}
 }

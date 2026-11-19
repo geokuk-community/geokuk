@@ -111,6 +111,21 @@ public abstract class JMyDialog0 extends JDialog {
 		return new Rectangle(obrazovka.x + okraje.left, obrazovka.y + okraje.top, obrazovka.width - okraje.left - okraje.right, obrazovka.height - okraje.top - okraje.bottom);
 	}
 
+	/** Největší velikost okna, aby nepřesáhlo pracovní plochu: zadaná velikost, nejvýš 90 % plochy v každém směru. */
+	public static Dimension omezNaPlochu(final Dimension zadana, final Rectangle plocha) {
+		return new Dimension(Math.min(zadana.width, plocha.width * 9 / 10), Math.min(zadana.height, plocha.height * 9 / 10));
+	}
+
+	/** Změní velikost už sestaveného okna, vystředí ho na vlastníka a udrží celé v pracovní ploše. */
+	protected final void nastavVelikost(final Dimension vychozi, final Dimension nejmensi) {
+		final Rectangle plocha = pracovniPlocha(frame.getGraphicsConfiguration());
+		setMinimumSize(new Dimension(Math.min(nejmensi.width, plocha.width), Math.min(nejmensi.height, plocha.height)));
+		setSize(omezNaPlochu(vychozi, plocha));
+		setLocationRelativeTo(frame);
+		final Point p = getLocation();
+		setLocation(Math.max(plocha.x, Math.min(p.x, plocha.x + plocha.width - getWidth())), Math.max(plocha.y, Math.min(p.y, plocha.y + plocha.height - getHeight())));
+	}
+
 	private void odregistrujUdalosti(final Component comp) {
 		eventManager.unregister(comp);
 		if (comp instanceof Container) {

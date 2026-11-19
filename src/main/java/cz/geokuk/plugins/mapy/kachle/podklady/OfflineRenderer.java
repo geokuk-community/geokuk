@@ -52,14 +52,16 @@ final class OfflineRenderer {
 		final String otiskPozadovaneho;
 		/** Otisk skutečně použitého tématu a jeho vrstev pro klíč cache. */
 		final String otiskPouziteho;
+		/** Která varianta tématu to je (zdroj, výběr vrstev, velikost dlaždice, písmo), bez obsahu souborů: jiná verze téže varianty nahrazuje starší v cache. */
+		final String identita;
 		/** Proč se nepoužilo zvolené téma, null když se použilo. */
 		final String chyba;
 		/** Nabídka vrstev použitého tématu, null když ji nemá. */
 		final XmlRenderThemeStyleMenu menu;
 		final long nacitaniMs;
 
-		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final double pismo, final String otiskPozadovaneho, final String otiskPouziteho, final String chyba,
-				final XmlRenderThemeStyleMenu menu, final long start) {
+		private NacteneTema(final RenderThemeFuture future, final DisplayModel displayModel, final GraphicFactory grafika, final double meritko, final double pismo, final String otiskPozadovaneho, final String otiskPouziteho, final String identita,
+				final String chyba, final XmlRenderThemeStyleMenu menu, final long start) {
 			this.future = future;
 			this.displayModel = displayModel;
 			this.grafika = grafika;
@@ -67,6 +69,7 @@ final class OfflineRenderer {
 			this.pismo = pismo;
 			this.otiskPozadovaneho = otiskPozadovaneho;
 			this.otiskPouziteho = otiskPouziteho;
+			this.identita = identita;
 			this.chyba = chyba;
 			this.menu = menu;
 			nacitaniMs = (System.nanoTime() - start) / 1_000_000;
@@ -236,7 +239,7 @@ final class OfflineRenderer {
 		}
 		final HillsRenderConfig kopce = prekryv ? null : kopce(slozkaDem, tema.grafika, zdroje);
 		final String globalni = prekryv ? klicPrekryvu(otisk.toString()) : klic(otisk.toString());
-		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, new OblastniKlic(globalni, zdroje, data.boundingBox()), prekryv, kopce, zakladni, vrstev);
+		final OfflineRenderer r = new OfflineRenderer(data, Collections.unmodifiableList(pokryti), tema, new OblastniKlic(globalni, zdroje, data.boundingBox(), identita(tema, prekryv)), prekryv, kopce, zakladni, vrstev);
 		r.preskoceno = prvniChyba == null ? null : prvniChyba.getMessage();
 		return r;
 	}
@@ -316,7 +319,7 @@ final class OfflineRenderer {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, tema));
 			final TemaOfflineMapy.VyberVrstev vrstvy = new TemaOfflineMapy.VyberVrstev(tema.getVrstvy());
 			final RenderThemeFuture future = nactiTema(tema, displayModel, grafika, vrstvy);
-			final NacteneTema nactene = new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(tema, vrstvy), null, vrstvy.getMenu(), start);
+			final NacteneTema nactene = new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(tema, vrstvy), identita(tema, vrstvy, displayModel, pismo), null, vrstvy.getMenu(), start);
 			grafika.uloz();
 			log.info("Téma offline mapy {} načteno za {} ms", tema, nactene.nacitaniMs);
 			return nactene;
@@ -325,8 +328,20 @@ final class OfflineRenderer {
 			final GrafikaOfflineMapy grafika = new GrafikaOfflineMapy(souborSymbolu(slozkaSymbolu, TemaOfflineMapy.VYCHOZI));
 			final TemaOfflineMapy.VyberVrstev vrstvy = new TemaOfflineMapy.VyberVrstev(VolbaVrstev.AUTOR);
 			final RenderThemeFuture future = nactiTema(TemaOfflineMapy.VYCHOZI, displayModel, grafika, vrstvy);
-			return new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(TemaOfflineMapy.VYCHOZI, vrstvy), e.getMessage(), null, start);
+			return new NacteneTema(future, displayModel, grafika, meritko, pismo, tema.otisk(), otiskSVrstvami(TemaOfflineMapy.VYCHOZI, vrstvy), identita(TemaOfflineMapy.VYCHOZI, vrstvy, displayModel, pismo), e.getMessage(), null, start);
 		}
+	}
+
+	/** Varianta tématu bez obsahu jeho souborů: zdroj, zvolené vrstvy, velikost dlaždice a písmo. */
+	private static String identita(final TemaOfflineMapy tema, final TemaOfflineMapy.VyberVrstev vrstvy, final DisplayModel displayModel, final double pismo) {
+		return tema.naText() + '|' + (vrstvy.getPopis() == null ? "" : vrstvy.getPopis()) + '|' + displayModel.getTileSize() + '|' + pismo;
+	}
+
+	/** Identita varianty dlaždic v cache: téma, velikost, písmo a podklad × překryv; osm šestnáctkových číslic do souboru klíčů. */
+	static String identita(final NacteneTema tema, final boolean prekryv) {
+		final CRC32 crc = new CRC32();
+		crc.update(((prekryv ? "t|" : "o|") + tema.identita).getBytes(StandardCharsets.UTF_8));
+		return String.format("%08x", crc.getValue());
 	}
 
 	private static String otiskSVrstvami(final TemaOfflineMapy tema, final TemaOfflineMapy.VyberVrstev vrstvy) {

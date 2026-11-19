@@ -1,4 +1,4 @@
-verze 26
+verze 28
 attributes attribute_id
 attributes cache_id
 attributes id
@@ -31,11 +31,13 @@ caches guid
 caches hidden_date
 caches id
 caches imported_at
+caches is_owner
 caches last_found_date
 caches last_four_logs
 caches last_gpx_update
 caches last_log_date
 caches last_updated
+caches last_user_update
 caches latitude
 caches location_basis
 caches location_dataset
@@ -46,6 +48,8 @@ caches log_count
 caches long_desc_html
 caches long_description
 caches longitude
+caches macro_flag
+caches macro_sort
 caches name
 caches owner_id
 caches owner_name
@@ -56,6 +60,7 @@ caches short_desc_html
 caches short_description
 caches source_file
 caches state
+caches symbol
 caches terrain
 caches trackable_count
 caches url
@@ -87,6 +92,7 @@ trackables tracking_code
 user_notes cache_id
 user_notes corrected_lat
 user_notes corrected_lon
+user_notes corrected_source
 user_notes id
 user_notes is_corrected
 user_notes note

@@ -37,6 +37,7 @@ public class GeokukMain {
 	private static FileLock zamek;
 
 	public static void main(final String[] args) {
+		cz.geokuk.plugins.mapy.kachle.podklady.KachloDownloader.nastavMaxSpojeni();
 		new GeokukMain().execute(args);
 	}
 
@@ -112,6 +113,7 @@ public class GeokukMain {
 	private void dokonciStart(final Inicializator inicializator, final Integer portOvladani, final boolean vyvojoveOvladani) {
 		Diagnostika.znackaStartu("dokončení startu");
 		SwingUtilities.invokeLater(KontrolaUmisteni::zkontroluj);
+		IkonaProgramu.aktualizujVeSlozceProgramuNaPozadi();
 		VytvoritZastupceAction.aktualizujZastupceVeSlozce();
 		new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
 		new Thread(PrehledovaMapa::doplnPriStartu, "Přehledová mapa").start();
@@ -125,6 +127,7 @@ public class GeokukMain {
 			inicializator.spustDalkoveOvladani(0, true);
 		}
 		inicializator.zkontrolovatAktualizace();
+		inicializator.poStartu();
 		Diagnostika.znackaStartu("start dokončen");
 	}
 

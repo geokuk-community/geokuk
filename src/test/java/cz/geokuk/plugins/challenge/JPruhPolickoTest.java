@@ -1,0 +1,374 @@
+package cz.geokuk.plugins.challenge;
+
+import java.awt.Component;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.AbstractButton;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
+
+import cz.geokuk.core.napoveda.UkazatelVykonu;
+import cz.geokuk.framework.Event0;
+import cz.geokuk.framework.EventFirer;
+import cz.geokuk.framework.RozmisteniPrekryvu;
+import cz.geokuk.plugins.challenge.NastaveniChallengeTest.MapoveUloziste;
+
+/** Tlačítko „D3/T4 ✕“ na liště: jen u D/T s vybraným políčkem, na konci lišty, klik i Esc zruší výběr. */
+public class JPruhPolickoTest {
+
+	private ChallengeModel model;
+	private JPruhPlanovace pruh;
+	private Challenge dt;
+
+	@After
+	public void uklid() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {});
+		UkazatelVykonu.setPodPruhem(false);
+	}
+
+	private void priprav(final int sirka) throws Exception {
+		model = new ChallengeModel();
+		pruh = new JPruhPlanovace();
+		model.inject(new EventFirer() {
+			@Override
+			public void fire(final Event0<?> event) {
+				pruh.onEvent((ChallengeZmenenyEvent) event);
+			}
+		});
+		final MapoveUloziste u = new MapoveUloziste();
+		model.setUloziste(() -> u);
+		model.initAfterInject();
+		pruh.inject(model);
+		pruh.setSize(sirka, 700);
+		dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+		model.aktivuj(dt);
+		model.setZapnuto(true);
+		final List<KandidatPolicka> k = new ArrayList<>();
+		for (int i = 0; i < 5; i++) {
+			k.add(new KandidatPolicka("GC" + i, 50, 14, "D3/T4", "D3/T4", null));
+		}
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4", "D5/T5"), k, 50));
+		SwingUtilities.invokeAndWait(() -> {});
+	}
+
+	private void vyber(final String stitek) throws Exception {
+		model.setVybranePolicko(dt, stitek);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+	}
+
+	private AbstractButton policko() {
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof AbstractButton && ((AbstractButton) c).getText().endsWith("✕")) {
+				return (AbstractButton) c;
+			}
+		}
+		return null;
+	}
+
+	@Test
+	public void vybranePolickoNaKonciListyOstatniPrvkyDrziPozici() throws Exception {
+		priprav(1280);
+		pruh.doLayout();
+		final int bez = pruh.oblastPruhu().width;
+		Assert.assertNull("bez výběru tlačítko není", policko());
+		vyber("D3/T4");
+		final AbstractButton p = policko();
+		Assert.assertNotNull(p);
+		Assert.assertTrue(p.isVisible());
+		Assert.assertEquals("D3/T4 ✕", p.getText());
+		for (final int sirka : new int[] { RozmisteniPrekryvu.PRUH_PLNY, RozmisteniPrekryvu.PRUH_IKONY }) {
+			final Rectangle[] s = JPruhPlanovace.rozloz(sirka, true);
+			final Rectangle[] b = JPruhPlanovace.rozloz(sirka, false);
+			for (int i = 0; i < JPruhPlanovace.POLICKO; i++) {
+				Assert.assertEquals("prvek " + i + " drží pozici", b[i], s[i]);
+				Assert.assertFalse("tlačítko nezakrývá prvek " + i, s[i].intersects(s[JPruhPlanovace.POLICKO]));
+			}
+			Assert.assertTrue("za Štítky", s[JPruhPlanovace.POLICKO].x > s[JPruhPlanovace.STITKY].x + s[JPruhPlanovace.STITKY].width);
+			Assert.assertTrue("vejde se do širší lišty", s[JPruhPlanovace.POLICKO].x + s[JPruhPlanovace.POLICKO].width <= RozmisteniPrekryvu.OKRAJ + sirka + JPruhPlanovace.PRIDAVEK_POLICKA);
+		}
+		final Rectangle[] r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)), true);
+		Assert.assertEquals(r[JPruhPlanovace.POLICKO], p.getBounds());
+		Assert.assertEquals("lišta je o tlačítko širší, jen doprava", bez + JPruhPlanovace.PRIDAVEK_POLICKA, pruh.oblastPruhu().width);
+		Assert.assertEquals(RozmisteniPrekryvu.OKRAJ, pruh.oblastPruhu().x);
+	}
+
+	@Test
+	public void kliknutiZrusiVyberAPismoJeVzdyJakoUOstatnichTlacitek() throws Exception {
+		priprav(1280);
+		vyber("D3/T4");
+		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě všechny keše, F4 ukáže jen jeho kandidáty (5 kandidátů)</html>", policko().getToolTipText());
+		Assert.assertEquals("nevypadá jako vypnuté", UIManager.getColor("Button.foreground"), policko().getForeground());
+		model.setJenKandidatiPro(dt);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě jen jeho kandidáti (5 kandidátů)</html>", policko().getToolTipText());
+		Assert.assertEquals(UIManager.getColor("Button.foreground"), policko().getForeground());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull(model.vybranePolicko(dt));
+		Assert.assertEquals("filtr zůstane", dt, model.jenKandidatiPro());
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void vNejuzsimStupniANaUzkeMapeTlacitkoNeni() throws Exception {
+		priprav(RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_UZKY + 50);
+		vyber("D3/T4");
+		Assert.assertFalse("nejužší stupeň bez tlačítka", policko() != null && policko().isVisible());
+		Assert.assertTrue("výběr je vidět v tooltipu výběru challenge", tipVyberu().endsWith("vybrané políčko D3/T4"));
+		Assert.assertEquals("lišta bez tlačítka", RozmisteniPrekryvu.PRUH_UZKY, pruh.oblastPruhu().width);
+		priprav(RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY + 10);
+		vyber("D3/T4");
+		Assert.assertFalse("s tlačítkem by se plná lišta nevešla", policko() != null && policko().isVisible());
+		Assert.assertEquals(RozmisteniPrekryvu.PRUH_PLNY, pruh.oblastPruhu().width);
+		Assert.assertTrue(tipVyberu().endsWith("vybrané políčko D3/T4"));
+	}
+
+	/** Tlačítko se ukáže, právě když se širší lišta vejde do volné šířky (hranice na pixel). */
+	@Test
+	public void hraniceSirkyProTlacitko() throws Exception {
+		final int presne = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY + JPruhPlanovace.PRIDAVEK_POLICKA;
+		priprav(presne);
+		vyber("D3/T4");
+		Assert.assertTrue("vejde se přesně", policko() != null && policko().isVisible());
+		priprav(presne - 1);
+		vyber("D3/T4");
+		Assert.assertFalse("o pixel méně se nevejde", policko() != null && policko().isVisible());
+	}
+
+	/** Při vypnutém plánovači lišta políčko neukazuje a Esc výběr neruší. */
+	@Test
+	public void escPriVypnutemPlanovaciNic() throws Exception {
+		priprav(1280);
+		vyber("D3/T4");
+		model.setZapnuto(false);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse(esc().isEnabled());
+		Assert.assertEquals("výběr zůstane", "D3/T4", model.vybranePolicko(dt));
+	}
+
+	@Test
+	public void u360JeVybranySektorTlacitkemKtereHoZrusi() throws Exception {
+		priprav(1280);
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200, 5000, 7000, 8000, 9000, 9500 }, { 20, 1000 } }));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertFalse("bez výběru tlačítko není", policko() != null && policko().isVisible());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final AbstractButton p = policko();
+		Assert.assertNotNull(p);
+		Assert.assertTrue(p.isVisible());
+		Assert.assertEquals("11° ✕", p.getText());
+		Assert.assertTrue(p.getToolTipText(), p.getToolTipText().contains("Sektor 11° · 6 kandidátů · nejbližší 3,2 km od středu"));
+		Assert.assertTrue("Esc výběr zruší", esc().isEnabled());
+		p.doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vybranySektor(c));
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	private Challenge priprav360SeStredem() throws Exception {
+		priprav(1280);
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200, 5000 }, { 20, 1000 } }), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		return c;
+	}
+
+	@Test
+	public void u360TlacitkoUkazujeSektorZvyraznenyNaMapeKdyzKlikNaKes() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		final VybranaKes kes = new VybranaKes("GC1", 50.0, 14.5, -1, -1);
+		model.setVybranaKes(kes);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		final int sektorKese = model.prehled().sektorBodu(kes.lat(), kes.lon());
+		Assert.assertNotEquals(11, sektorKese);
+		Assert.assertEquals(sektorKese + "° ✕", policko().getText());
+		Assert.assertTrue(policko().getToolTipText(), policko().getToolTipText().startsWith("<html>Sektor " + sektorKese + "°"));
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void u360TlacitkoUkazujeSektorVybranehoKandidataAKliknutiHoZrusi() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.nastavVybranyKandidat(c, new VybranyKandidat("GC20", 50.1, 14.0, 20, 1000));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("20° ✕", policko().getText());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull("vybraný kandidát by sektor zvýrazňoval dál", model.vybranyKandidat(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse(policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void dtTlacitkoUkazujePolickoVybraneKese() throws Exception {
+		priprav(1280);
+		final List<KandidatPolicka> k = new ArrayList<>();
+		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
+		k.add(new KandidatPolicka("GC2", 50, 14, "D5/T5", "D5/T5", null));
+		model.nastavVysledekPolicek(dt, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4", "D5/T5"), k, 50));
+		SwingUtilities.invokeAndWait(() -> {});
+		vyber("D5/T5");
+		Assert.assertEquals("D5/T5 ✕", policko().getText());
+		model.setVybranaKes(new VybranaKes("GC1", 50.0, 14.0, 4, 6));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("D3/T4 ✕", policko().getText());
+		policko().doClick();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertNull(model.zvyraznenePolicko(dt));
+		Assert.assertFalse(policko() != null && policko().isVisible());
+	}
+
+	@Test
+	public void tooltipSektoruNeslibujeFiltrF4() {
+		final VysledekSektoru v = TextyPopupuPlanovaceTest.vysledek(new int[] { 0, 11 }, new int[0], new double[][] { { 0, 1500 }, { 11, 3200, 5000 } });
+		final String tip11 = JPruhPlanovace.tipSektoru(11, v);
+		Assert.assertTrue(tip11, tip11.contains("Sektor 11° · 2 kandidáti"));
+		Assert.assertFalse(tip11, tip11.contains("F4"));
+		final String tip0 = JPruhPlanovace.tipSektoru(0, v);
+		Assert.assertTrue(tip0, tip0.contains("Sektor 0° · 1 kandidát"));
+		Assert.assertFalse(tip0, tip0.contains("F4"));
+		Assert.assertEquals("<html>Sektor 7°<br>Zrušit výběr sektoru (Esc)</html>", JPruhPlanovace.tipSektoru(7, null));
+	}
+
+	private String tipVyberu() {
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof AbstractButton && ((AbstractButton) c).getText().endsWith("▾")) {
+				return ((AbstractButton) c).getToolTipText();
+			}
+		}
+		return null;
+	}
+
+	/** S násobností ukazuje odznak chybějící nálezy, ne políčka. */
+	@Test
+	public void odznakSNasobnostiPocitaNalezy() throws Exception {
+		priprav(1280);
+		final Challenge c = model.ulozVlastni(new Challenge("DT3", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC).sOpakovanim(3));
+		model.aktivuj(c);
+		model.nastavVysledekPolicek(c, JPopupPlanovaceTest.nasobny());
+		SwingUtilities.invokeAndWait(() -> {});
+		AbstractButton odznak = null;
+		for (final Component k : pruh.getComponents()) {
+			if (k instanceof AbstractButton && ((AbstractButton) k).getText().startsWith("chybí")) {
+				odznak = (AbstractButton) k;
+			}
+		}
+		Assert.assertNotNull("odznak na liště", odznak);
+		Assert.assertEquals("chybí 239 ▾", odznak.getText());
+		Assert.assertEquals("Chybí 239 nálezů v 80 políčkách z 81 – klik ukáže podrobnosti", odznak.getToolTipText());
+	}
+
+	/** Práh násobnosti: už při N = 2 počítá odznak nálezy. */
+	@Test
+	public void odznakSNasobnostiDvaPocitaNalezy() throws Exception {
+		priprav(1280);
+		final Challenge c = model.ulozVlastni(new Challenge("DT2", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC).sOpakovanim(2));
+		model.aktivuj(c);
+		final int[] nalezu = new int[81];
+		nalezu[0] = 1;
+		final java.util.List<String> chybi = new java.util.ArrayList<>();
+		for (int i = 0; i < 81; i++) {
+			chybi.add(VypocetMatice.stitek(i / 9, i % 9));
+		}
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, chybi, java.util.Collections.<KandidatPolicka> emptyList(), 50, 2, nalezu));
+		SwingUtilities.invokeAndWait(() -> {});
+		AbstractButton odznak = null;
+		for (final Component k : pruh.getComponents()) {
+			if (k instanceof AbstractButton && ((AbstractButton) k).getText().startsWith("chybí")) {
+				odznak = (AbstractButton) k;
+			}
+		}
+		Assert.assertNotNull("odznak na liště", odznak);
+		Assert.assertEquals("81 × 2 − 1 nález", "chybí 161 ▾", odznak.getText());
+	}
+
+	@Test
+	public void plnePolickoMa50Plus() {
+		Assert.assertEquals("<html>Zrušit výběr políčka D1/T1 (Esc)<br>na mapě jen jeho kandidáti (50 nejbližších ke středu mapy)</html>", JPruhPlanovace.tipPolicka("D1/T1", 50, true, true));
+	}
+
+	private javax.swing.Action esc() {
+		return pruh.getActionMap().get(pruh.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(javax.swing.KeyStroke.getKeyStroke("ESCAPE")));
+	}
+
+	@Test
+	public void escPoKlikuMimoZrusiZapamatovanyVyberAPotomUzNepatriListe() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		Assert.assertFalse("bez výběru a paměti Esc nepatří liště", esc().isEnabled());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		model.zrusZvyrazneniKlikemMimo();
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertFalse("zvýraznění zmizelo, tlačítko není", policko() != null && policko().isVisible());
+		Assert.assertTrue(model.maZapamatovanyVyber(c));
+		Assert.assertTrue("Esc zruší zapamatovaný výchozí bod", esc().isEnabled());
+		esc().actionPerformed(new java.awt.event.ActionEvent(pruh, java.awt.event.ActionEvent.ACTION_PERFORMED, "esc"));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertFalse("paměť je pryč", model.maZapamatovanyVyber(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertFalse("a Esc liště zase nepatří", esc().isEnabled());
+	}
+
+	@Test
+	public void escZrusiVyberJenBezJinehoPopupu() throws Exception {
+		priprav(1280);
+		Assert.assertFalse("bez výběru Esc nepatří liště", esc().isEnabled());
+		vyber("D3/T4");
+		final boolean[] popup = { true };
+		pruh.setJinyPopupOtevreny(() -> popup[0]);
+		Assert.assertFalse("otevřený popup zavře Esc sám", esc().isEnabled());
+		popup[0] = false;
+		Assert.assertTrue(esc().isEnabled());
+		esc().actionPerformed(new java.awt.event.ActionEvent(pruh, 0, ""));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertNull(model.vybranePolicko(dt));
+		Assert.assertFalse(esc().isEnabled());
+	}
+
+	@Test
+	public void nejdelsiStitekSeVejde() throws Exception {
+		final javax.swing.LookAndFeel puvodni = javax.swing.UIManager.getLookAndFeel();
+		try {
+			javax.swing.UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
+			final javax.swing.JButton b = new javax.swing.JButton("D4,5/T4,5 ✕");
+			b.setMargin(new java.awt.Insets(0, 2, 0, 2));
+			Assert.assertTrue(b.getPreferredSize().width + " > " + JPruhPlanovace.SIRKA_POLICKA, b.getPreferredSize().width <= JPruhPlanovace.SIRKA_POLICKA);
+			if (java.util.Arrays.asList(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()).contains("DejaVu Sans")) {
+				b.setFont(new java.awt.Font("DejaVu Sans", b.getFont().getStyle(), b.getFont().getSize()));
+				Assert.assertTrue("DejaVu Sans: " + b.getPreferredSize().width, b.getPreferredSize().width <= JPruhPlanovace.SIRKA_POLICKA);
+			}
+		} finally {
+			javax.swing.UIManager.setLookAndFeel(puvodni);
+		}
+	}
+}
