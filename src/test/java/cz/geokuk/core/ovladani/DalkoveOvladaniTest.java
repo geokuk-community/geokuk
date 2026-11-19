@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
@@ -62,7 +63,7 @@ public class DalkoveOvladaniTest {
 
 	@Test
 	public void bezVyvojoveCastiNeniTokenAniSoubor() throws Exception {
-		DalkoveOvladani.SOUBOR.delete();
+		Files.deleteIfExists(DalkoveOvladani.SOUBOR.toPath());
 		final DalkoveOvladani ovladani = new DalkoveOvladani();
 		ovladani.spust(0);
 		try {

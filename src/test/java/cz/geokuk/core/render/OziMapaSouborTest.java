@@ -5,6 +5,7 @@ import java.awt.Point;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.*;
 
@@ -102,9 +103,9 @@ public class OziMapaSouborTest {
 			Assert.assertEquals(892, nacteny.getHeight());
 			Assert.assertTrue(soubor.isFile());
 		} finally {
-			obrazek.delete();
-			soubor.delete();
-			dir.delete();
+			Files.deleteIfExists(obrazek.toPath());
+			Files.deleteIfExists(soubor.toPath());
+			Files.deleteIfExists(dir.toPath());
 		}
 	}
 

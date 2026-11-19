@@ -27,7 +27,7 @@ public class NacitacInputStream0Test {
 
 		@Override
 		protected void nacti(final InputStream aIstm, final String name, final IImportBuilder builder, final Future<?> future) throws IOException {
-			aIstm.read();
+			assertThat(aIstm.read()).isAtLeast(0);
 		}
 
 		@Override

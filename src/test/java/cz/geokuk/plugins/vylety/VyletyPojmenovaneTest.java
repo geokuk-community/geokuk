@@ -47,7 +47,7 @@ public class VyletyPojmenovaneTest {
 	}
 
 	private static void zapis(final File f, final String... kody) throws Exception {
-		f.getParentFile().mkdirs();
+		Files.createDirectories(f.getParentFile().toPath());
 		Files.write(f.toPath(), Arrays.asList(kody), StandardCharsets.UTF_8);
 	}
 

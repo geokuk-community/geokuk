@@ -63,7 +63,7 @@ public class SlouceneDemTest {
 	}
 
 	private static void zip(final File zip, final String jmeno, final byte[] data) throws IOException {
-		zip.getParentFile().mkdirs();
+		Files.createDirectories(zip.getParentFile().toPath());
 		try (ZipOutputStream z = new ZipOutputStream(new FileOutputStream(zip))) {
 			z.putNextEntry(new ZipEntry(jmeno));
 			z.write(data);
@@ -117,7 +117,7 @@ public class SlouceneDemTest {
 		Assert.assertArrayEquals(stin(new DemFileFS(celySoubor)).bytes, stin(d.get(0)).bytes);
 		// jen jedna země by na druhé straně hranice nestínovala
 		final File jenCesko = new File(tmp.getRoot(), "jen/N50E014.hgt");
-		jenCesko.getParentFile().mkdirs();
+		Files.createDirectories(jenCesko.getParentFile().toPath());
 		Files.write(jenCesko.toPath(), hgt(orizni(cely, true)));
 		Assert.assertFalse(java.util.Arrays.equals(stin(new DemFileFS(celySoubor)).bytes, stin(new DemFileFS(jenCesko)).bytes));
 	}

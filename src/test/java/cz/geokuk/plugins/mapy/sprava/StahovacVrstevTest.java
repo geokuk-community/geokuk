@@ -173,7 +173,11 @@ public class StahovacVrstevTest {
 			throw new IllegalArgumentException(jmeno);
 		}
 		final File f = new File(slozka, PREDPONA + m.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_-]", "-") + m.group(2) + m.group(3));
-		f.getParentFile().mkdirs();
+		try {
+			Files.createDirectories(f.getParentFile().toPath());
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
 		return f;
 	}
 

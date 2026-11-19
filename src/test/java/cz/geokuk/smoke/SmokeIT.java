@@ -122,7 +122,7 @@ public class SmokeIT {
 		final byte[] smeti = new byte[20_000];
 		new Random(2).nextBytes(smeti);
 		final File cache = new File(adresar, "data/cache/tiles.sqlite");
-		cache.getParentFile().mkdirs();
+		Files.createDirectories(cache.getParentFile().toPath());
 		Files.write(cache.toPath(), smeti);
 		new File(adresar, "data/vylety").mkdirs();
 		Files.write(new File(adresar, "data/vylety/lovim.ggt").toPath(), Arrays.copyOf(smeti, 3000));
@@ -248,7 +248,7 @@ public class SmokeIT {
 		final File nastaveni = new File(adresar, "data/nastaveni.xml");
 		Files.delete(nastaveni.toPath());
 		final File prefs = new File(adresar, "prefs/.java/.userPrefs/geokuk/current/vseobecne/prefs.xml");
-		prefs.getParentFile().mkdirs();
+		Files.createDirectories(prefs.getParentFile().toPath());
 		Files.write(prefs.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!DOCTYPE map SYSTEM \"http://java.sun.com/dtd/preferences.dtd\">\n"
 				+ "<map MAP_XML_VERSION=\"1.0\">\n  <entry key=\"smokePrevzato\" value=\"ano\"/>\n</map>\n").getBytes(StandardCharsets.UTF_8));
 		final Properties zprava = spust(adresar, "prevzeti", "meritka");
@@ -514,7 +514,7 @@ public class SmokeIT {
 		final File adresar = pripravAdresar(beh, 0);
 		final File slozka = new File(adresar, "home/" + beh);
 		final File db = new File(slozka, soubor);
-		db.getParentFile().mkdirs();
+		Files.createDirectories(db.getParentFile().toPath());
 		final long zacatek = System.currentTimeMillis();
 		final int wpt = databaze.zapis(db, Integer.getInteger("smoke.db.kesi", 200_000), Integer.getInteger("smoke.db.wpt", 200_000));
 		final long vyroba = System.currentTimeMillis() - zacatek;
@@ -593,8 +593,8 @@ public class SmokeIT {
 		final File pracovni = new File(adresar, "pracovni");
 		new File(adresar, "data/gpx").mkdirs();
 		pocetWpt = SyntetickeKese.zapis(new File(adresar, "data/gpx/kese.gpx"), kesi, 50.08, 14.42, kesi > 3000 ? 1.0 : 0.05);
-		new File(adresar, "tmp").mkdirs();
-		pracovni.mkdirs();
+		Files.createDirectories(new File(adresar, "tmp").toPath());
+		Files.createDirectories(pracovni.toPath());
 		final String mapy = "nazev=" + SmokeScenar.MAPA + "\n" //
 				+ "url=" + server.getUrl() + "\n" //
 				+ "max=18\n" //
@@ -766,13 +766,13 @@ public class SmokeIT {
 		return Long.parseLong(hodnota);
 	}
 
-	private static void smaz(final File f) {
+	private static void smaz(final File f) throws IOException {
 		final File[] deti = f.listFiles();
 		if (deti != null) {
 			for (final File d : deti) {
 				smaz(d);
 			}
 		}
-		f.delete();
+		Files.deleteIfExists(f.toPath());
 	}
 }

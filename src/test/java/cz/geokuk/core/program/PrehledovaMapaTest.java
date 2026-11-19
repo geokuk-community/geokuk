@@ -40,7 +40,7 @@ public class PrehledovaMapaTest {
 
 	@Test
 	public void starsiNahradi() throws Exception {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		Files.write(mapa.toPath(), STARA);
 		Assert.assertEquals(PrehledovaMapa.otisk(NOVA), PrehledovaMapa.doplni(slozka, NOVA, PrehledovaMapa.otisk(STARA)));
 		Assert.assertArrayEquals(NOVA, Files.readAllBytes(mapa.toPath()));
@@ -49,7 +49,7 @@ public class PrehledovaMapaTest {
 	/** Mapa ze zipu starší verze, než si program začal otisk pamatovat. */
 	@Test
 	public void starsiBezOtiskuNahradi() throws Exception {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		Files.write(mapa.toPath(), STARA);
 		Assert.assertEquals(PrehledovaMapa.otisk(NOVA), PrehledovaMapa.doplni(slozka, NOVA, null));
 		Assert.assertArrayEquals(NOVA, Files.readAllBytes(mapa.toPath()));
@@ -57,7 +57,7 @@ public class PrehledovaMapaTest {
 
 	@Test
 	public void stejnaZeZipuJenZapamatuje() throws Exception {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		Files.write(mapa.toPath(), NOVA);
 		Assert.assertEquals(PrehledovaMapa.otisk(NOVA), PrehledovaMapa.doplni(slozka, NOVA, null));
 		Assert.assertNull(PrehledovaMapa.doplni(slozka, NOVA, PrehledovaMapa.otisk(NOVA)));
@@ -65,7 +65,7 @@ public class PrehledovaMapaTest {
 
 	@Test
 	public void vlastniSouborUzivateleNecha() throws Exception {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final byte[] vlastni = "moje mapa".getBytes(StandardCharsets.UTF_8);
 		Files.write(mapa.toPath(), vlastni);
 		Assert.assertNull(PrehledovaMapa.doplni(slozka, NOVA, PrehledovaMapa.otisk(STARA)));

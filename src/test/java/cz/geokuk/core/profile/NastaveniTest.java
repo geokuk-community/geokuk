@@ -97,7 +97,7 @@ public class NastaveniTest {
 		Files.write(soubor.toPath(), puvodni);
 		// Neprázdná složka .vadne: soubor se nepodaří přejmenovat.
 		final File vadne = tmp.newFolder("nastaveni.xml.vadne");
-		new File(vadne, "x").createNewFile();
+		Files.write(new File(vadne, "x").toPath(), new byte[0]);
 		final SouborovePreferences koren = Nastaveni.otevri(soubor, null, false);
 		final String varovani = Nastaveni.prevzitVarovani();
 		Assert.assertTrue(varovani.contains("beze změny"));

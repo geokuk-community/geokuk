@@ -1,5 +1,6 @@
 package cz.geokuk.core.program;
 
+import java.nio.file.Files;
 import java.util.logging.Logger;
 
 import org.junit.Assert;
@@ -64,8 +65,8 @@ public class GeokukMainTest {
 			Assert.assertFalse(GeokukMain.uzBezi(prvni, soubor));
 		} finally {
 			prvni.channel().close();
-			soubor.delete();
-			slozka.delete();
+			Files.deleteIfExists(soubor.toPath());
+			Files.deleteIfExists(slozka.toPath());
 		}
 	}
 
@@ -75,7 +76,7 @@ public class GeokukMainTest {
 		try {
 			Assert.assertFalse(GeokukMain.uzBezi(null, new java.io.File(soubor, cz.geokuk.start.Start.ZAMEK)));
 		} finally {
-			soubor.delete();
+			Files.deleteIfExists(soubor.toPath());
 		}
 	}
 

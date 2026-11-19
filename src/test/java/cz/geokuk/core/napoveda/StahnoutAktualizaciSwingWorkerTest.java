@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.security.MessageDigest;
 
@@ -254,7 +255,7 @@ public class StahnoutAktualizaciSwingWorkerTest {
 	public void starePartSeUklidi() throws Exception {
 		instaluj("geokuk.jar.123.part", "stary");
 		instaluj("start.jar.456.part", "cerstvy");
-		new File(instalace, "geokuk.jar.123.part").setLastModified(System.currentTimeMillis() - 2L * 60 * 60 * 1000);
+		Files.setLastModifiedTime(new File(instalace, "geokuk.jar.123.part").toPath(), FileTime.fromMillis(System.currentTimeMillis() - 2L * 60 * 60 * 1000));
 		StahnoutAktualizaciSwingWorker.stahni(release.toURI().toString(), instalace);
 		Assert.assertFalse(new File(instalace, "geokuk.jar.123.part").exists());
 		Assert.assertTrue(new File(instalace, "start.jar.456.part").exists());
