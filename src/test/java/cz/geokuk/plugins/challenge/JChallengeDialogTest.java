@@ -408,6 +408,7 @@ public class JChallengeDialogTest {
 					sablona = c;
 				}
 			}
+			Assert.assertNotNull("šablona D/T je v seznamu", sablona);
 			seznam().setSelectedValue(Sablony.od360Domova(), true);
 			Assert.assertFalse("u 360° řádek není", dialog.opakovani.getParent().isVisible());
 			seznam().setSelectedValue(sablona, true);

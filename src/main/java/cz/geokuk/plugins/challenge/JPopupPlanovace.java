@@ -363,6 +363,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	static final class Obsah extends JPanel {
 		private static final long serialVersionUID = 1L;
 
+		/** Konstruktor nadtřídy volá {@link #updateUI()} dřív, než se inicializují pole této třídy; barvy se nastavují až po sestavení. */
+		private boolean postaveno;
+
 		/** Název challenge může být dlouhý (šablony mají GC kód a anglický název): zkrátí se „…“ a plný je v tooltipu. */
 		final cz.geokuk.util.gui.JZkracenyLabel nadpis = new cz.geokuk.util.gui.JZkracenyLabel(NEJVETSI_SIRKA_NADPISU);
 		final JButton nastaveni = new JButton("Nastavení plánovače…");
@@ -542,6 +545,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			posuvnikObsahu.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 			posuvnikObsahu.getVerticalScrollBar().setUnitIncrement(16);
 			super.add(posuvnikObsahu, BorderLayout.CENTER);
+			postaveno = true;
 			obnovVzhled();
 		}
 
@@ -594,21 +598,18 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			final Color pozadi = UIManager.getColor("Panel.background");
 			final Color hrana = UIManager.getColor("Separator.foreground");
 			setBorder(new CompoundBorder(new LineBorder(hrana == null ? Color.GRAY : hrana), new EmptyBorder(8, 10, 8, 10)));
-			if (napoveda != null) {
-				final Color text = UIManager.getColor("Label.foreground");
-				final Color p = pozadi == null ? Color.WHITE : pozadi;
-				final Color t = text == null ? Color.BLACK : text;
-				final Color tlumena = new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
-				napoveda.setForeground(tlumena);
-				kruznice.setForeground(tlumena);
+			if (!postaveno) {
+				return;
 			}
-			if (nejiste != null) {
-				nejiste.setForeground(jeTmave(pozadi) ? new Color(0xFFD080) : new Color(0x9A5A00));
-			}
-			if (postup != null) {
-				postup.setForeground(jeTmave(pozadi) ? VYPLN_TMAVA : VYPLN_SVETLA);
-				postup.setBackground(jeTmave(pozadi) ? DRAHA_TMAVA : DRAHA_SVETLA);
-			}
+			final Color text = UIManager.getColor("Label.foreground");
+			final Color p = pozadi == null ? Color.WHITE : pozadi;
+			final Color t = text == null ? Color.BLACK : text;
+			final Color tlumena = new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
+			napoveda.setForeground(tlumena);
+			kruznice.setForeground(tlumena);
+			nejiste.setForeground(jeTmave(pozadi) ? new Color(0xFFD080) : new Color(0x9A5A00));
+			postup.setForeground(jeTmave(pozadi) ? VYPLN_TMAVA : VYPLN_SVETLA);
+			postup.setBackground(jeTmave(pozadi) ? DRAHA_TMAVA : DRAHA_SVETLA);
 		}
 
 		/** Výplň a dráha ukazatele postupu; barvy vzhledu mají někde výplň skoro stejnou jako dráhu. */
