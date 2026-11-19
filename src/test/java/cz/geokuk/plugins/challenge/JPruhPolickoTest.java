@@ -103,11 +103,11 @@ public class JPruhPolickoTest {
 	public void kliknutiZrusiVyberAPismoJeVzdyJakoUOstatnichTlacitek() throws Exception {
 		priprav(1280);
 		vyber("D3/T4");
-		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě všechny keše, F4 ukáže jen jeho kandidáty (5 kandidátů)</html>", policko().getToolTipText());
+		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě jsou zvýrazněné jeho keše (5 kandidátů)</html>", policko().getToolTipText());
 		Assert.assertEquals("nevypadá jako vypnuté", UIManager.getColor("Button.foreground"), policko().getForeground());
 		model.setJenKandidatiPro(dt);
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě jen jeho kandidáti (5 kandidátů)</html>", policko().getToolTipText());
+		Assert.assertEquals("<html>Zrušit výběr políčka D3/T4 (Esc)<br>na mapě jsou zvýrazněné jeho keše (5 kandidátů)</html>", policko().getToolTipText());
 		Assert.assertEquals(UIManager.getColor("Button.foreground"), policko().getForeground());
 		policko().doClick();
 		SwingUtilities.invokeAndWait(() -> {});
@@ -353,7 +353,7 @@ public class JPruhPolickoTest {
 
 	@Test
 	public void plnePolickoMa50Plus() {
-		Assert.assertEquals("<html>Zrušit výběr políčka D1/T1 (Esc)<br>na mapě jen jeho kandidáti (50 nejbližších ke středu mapy)</html>", JPruhPlanovace.tipPolicka("D1/T1", 50, true, true));
+		Assert.assertEquals("<html>Zrušit výběr políčka D1/T1 (Esc)<br>na mapě jsou zvýrazněné jeho keše (50 nejbližších ke středu mapy)</html>", JPruhPlanovace.tipPolicka("D1/T1", 50, true, true));
 	}
 
 	private javax.swing.Action esc() {

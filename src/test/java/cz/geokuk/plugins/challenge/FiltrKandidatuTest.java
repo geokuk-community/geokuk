@@ -96,7 +96,7 @@ public class FiltrKandidatuTest {
 	}
 
 	@Test
-	public void vybranePolickoZuziFiltrNaKandidatyPolickaAZruseniHoVrati() throws Exception {
+	public void vybranePolickoFiltrNezuziJakoVybranySektorU360() throws Exception {
 		final Challenge dt = model.ulozVlastni(new Challenge("DT", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
 		model.aktivuj(dt);
 		final List<KandidatPolicka> k = new ArrayList<>();
@@ -109,14 +109,9 @@ public class FiltrKandidatuTest {
 		model.setVybranePolicko(dt, "D3/T4");
 		SwingUtilities.invokeAndWait(() -> {});
 		final FiltrKandidatu f = FiltrKandidatu.pro(model, dt);
-		Assert.assertEquals(2, f.pocet());
+		Assert.assertEquals("výběr políčka všechny kandidáty nezúží", 3, f.pocet());
 		Assert.assertTrue(f.test(kes("GC1AAA")));
-		Assert.assertTrue(f.test(kes("gc2bbb")));
-		Assert.assertFalse("jiné políčko", f.test(kes("GC3CCC")));
-		model.setVybranePolicko(dt, "D4/T1");
-		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertTrue(FiltrKandidatu.pro(model, dt).test(kes("GC3CCC")));
-		Assert.assertFalse(FiltrKandidatu.pro(model, dt).test(kes("GC1AAA")));
+		Assert.assertTrue("i kandidát jiného políčka", f.test(kes("GC3CCC")));
 		model.setVybranePolicko(dt, null);
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals(3, FiltrKandidatu.pro(model, dt).pocet());

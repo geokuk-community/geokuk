@@ -349,7 +349,7 @@ Plánovač pomáhá plnit challenge keše: z nálezů spočítá, co chybí, a z
 | **Políčko** | Jedna kombinace obtížnosti a terénu matice D/T („D3/T4“), případně den kalendáře. | `VysledekPolicek`, `JMaticeDT` |
 | **Násobnost (Kolikrát splnit)** | Kolikrát se má každé políčko matice D/T splnit (1 až 9). | `ChallengeSeznam`, `VypocetMatice` |
 | **Kandidát** | Nenalezená keš, která by doplnila chybějící sektor nebo políčko. | `VysledekSektoru.Kandidati`, `KandidatPolicka`, `VybranyKandidat` |
-| **Jen kandidáti** | Filtr (F4), který na mapě nechá jen kandidáty, po výběru sektoru nebo políčka jen jeho kandidáty. | `FiltrKandidatu`, `ChallengeJenKandidatiAction` |
+| **Jen kandidáti** | Filtr (F4), který na mapě nechá jen kandidáty; vybraný sektor nebo políčko jejich keše jen zvýrazní. | `FiltrKandidatu`, `ChallengeJenKandidatiAction` |
 | **Lišta (pruh) plánovače** | Lišta vlevo nahoře na mapě: výběr challenge, odznak s počtem chybějících, tlačítka ◀ ▶, přepínače Jen kandidáti, Sektory a Štítky. Vypnutá se smrskne na úchyt. | `JPruhPlanovace`, `StavPruhu`, `ChallengeZapnoutAction` |
 | **Odznak** | Tlačítko v liště s počtem chybějících sektorů nebo políček; otevírá popup plánovače. | `JPruhPlanovace`, `JPopupPlanovace` |
 | **Prstenec sektorů** | Kresba na mapě u 360°: kružnice kolem středu se stavem sektorů, klín vybraného sektoru a čára ke kandidátovi. | `JPlanovacPodKeskami`, `TvarPlanovace` |

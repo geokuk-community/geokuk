@@ -295,6 +295,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.dosahKandidatu.setVisible(!obsah.dosahKandidatu.getText().trim().isEmpty());
 		if (c != null && model != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
+			obsah.dalsi.setToolTipText(ChallengeAkce.tipPosunu(model, c.typ(), true));
 			obsah.vyberMimoVyrez = model.vyberVeVyrezu() == 0;
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
 				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
@@ -309,20 +310,13 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		repaint();
 	}
 
-	/** Klik na políčko matice D/T: vybere ho a zapne „jen kandidáti“; null výběr zruší a filtr nechá. */
+	/** Klik na políčko matice D/T: vybere ho, jeho keše se zvýrazní; filtr „jen kandidáti“ zůstává na volbě uživatele. null výběr zruší. */
 	void vyberPolicko(final String stitek) {
 		final Challenge c = challenge();
 		if (c == null || c.typ() != Challenge.Typ.DT_MATICE) {
 			return;
 		}
 		model.setVybranePolicko(c, stitek);
-		if (stitek != null) {
-			try {
-				model.setJenKandidatiPro(c);
-			} catch (final ChallengeChyba e) {
-				// Neaktivní challenge filtr nedostane; výběr políčka platí.
-			}
-		}
 	}
 
 	/** Klik na řádek s kandidáty vybere jeho sektor nebo políčko; klik na vybraný výběr zruší. Keš se nevybírá a mapa se nevystřeďuje. */
@@ -391,20 +385,20 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JLabel bezKandidatu = new JLabel(" ");
 		final JMaticeDT matice = new JMaticeDT();
 		final JLabel legenda = new JLabel(TextyPopupuPlanovace.LEGENDA_MATICE);
-		final JButton vsechnaPolicka = new JButton("✕ Zrušit výběr políčka");
+		final JButton vsechnaPolicka = new JButton("✕ Zrušit výběr");
 		final JScrollPane posuvnik = new JScrollPane(seznam);
 		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
 		final JLabel omezeniStitku = new JLabel(" ");
 		final JLabel dosahKandidatu = new JLabel(" ");
-		final JButton dalsi = new JButton("▶ " + ChallengeAkce.nazevPosunu(Challenge.Typ.SEKTORY_360, true));
+		final JButton dalsi = new JButton("▶ Další");
 		/** Sektor (Integer) nebo štítek políčka (String) každého řádku seznamu, null u řádku, který nejde vybrat (den kalendáře). */
 		final List<Object> polozky = new ArrayList<>();
 		private Challenge.Typ typSeznamu = Challenge.Typ.SEKTORY_360;
 		private int podMysi = -1;
 		private boolean nastavujeSe;
 		private transient java.util.function.Consumer<Object> naKlikRadku = p -> {};
-		final JToggleButton kandidati = new JToggleButton("Jen kandidáti  F4");
+		final JToggleButton kandidati = new JToggleButton("Jen kandidáti");
 
 		/** Vlastní obsah; když se popup nevejde na výšku, posouvá se celý a žádná část nezmizí. */
 		private final Telo telo = new Telo();
@@ -470,6 +464,11 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			vsechnaPolicka.setToolTipText("Zrušit výběr políčka – na mapě kandidáti všech chybějících políček");
 			for (final AbstractButton b : new AbstractButton[] { nastaveni, dalsi, kandidati, vsechnaPolicka }) {
 				b.setFocusable(false);
+			}
+			kandidati.setToolTipText("Na mapě jen kandidáti (F4)");
+			for (final AbstractButton b : new AbstractButton[] { dalsi, kandidati, vsechnaPolicka }) {
+				b.setMargin(new Insets(1, 6, 1, 6));
+				b.setFont(b.getFont().deriveFont(Font.PLAIN, b.getFont().getSize2D() - 1));
 			}
 			final GridBagConstraints g = new GridBagConstraints();
 			g.gridx = 0;
@@ -643,7 +642,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			nadpisSeznamu.setText(TextyPopupuPlanovace.nadpisSeznamu(c.typ()));
 			napoveda.setText(html(TextyPopupuPlanovace.napovedaSeznamu(c.typ()), SIRKA_NAPOVEDY));
 			napoveda.setVisible(c.typ() != Challenge.Typ.KALENDAR);
-			dalsi.setText("▶ " + ChallengeAkce.nazevPosunu(c.typ(), true));
 			dalsi.setVisible(c.typ() != Challenge.Typ.KALENDAR);
 			typSeznamu = c.typ();
 			final boolean matice = c.typ() == Challenge.Typ.DT_MATICE;

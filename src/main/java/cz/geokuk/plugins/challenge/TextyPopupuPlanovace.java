@@ -64,11 +64,11 @@ final class TextyPopupuPlanovace {
 	static String nadpisSeznamu(final Challenge.Typ typ) {
 		switch (typ) {
 		case DT_MATICE:
-			return "Chybějící políčka D/T s kandidáty (po řádcích, v pořadí ◀ ▶):";
+			return "Chybějící políčka D/T s kandidáty (po řádcích):";
 		case KALENDAR:
 			return "Chybějící dny:";
 		default:
-			return "Chybějící sektory s kandidáty (od severu po směru hodin, v pořadí ◀ ▶):";
+			return "Chybějící sektory s kandidáty (od severu po směru hodin):";
 		}
 	}
 
@@ -82,7 +82,7 @@ final class TextyPopupuPlanovace {
 
 	/** Vysvětlení kružnice na mapě: leží na ní nejvzdálenější z nejbližších kandidátů sektorů v seznamu. */
 	static String kruznice(final double polomer) {
-		return "Kružnice " + StitkyPruhu.vzdalenost(polomer) + " na mapě: uvnitř leží nejbližší kandidáti všech sektorů v seznamu.";
+		return "Kružnice " + StitkyPruhu.vzdalenost(polomer) + ": uvnitř leží nejbližší kandidáti všech sektorů v seznamu.";
 	}
 
 	/** Dovětek o dosahu spočítaných kandidátů D/T; mezera, když výřez dosah nepřesahuje (NaN). */
@@ -157,9 +157,7 @@ final class TextyPopupuPlanovace {
 		if (n == 0) {
 			return "";
 		}
-		return "U " + n + " " + tvar(n, "sektoru", "sektorů", "sektorů")
-				+ " leží nalezená keš do 0,05° od hranice se sousedním sektorem, takže není jisté, do kterého patří. Na mapě "
-				+ (n == 1 ? "má" : "mají") + " šedý čárkovaný prstenec.";
+		return "U " + n + " " + tvar(n, "sektoru", "sektorů", "sektorů") + " je nalezená keš těsně u hranice, takže není jisté, do kterého sektoru patří. Na mapě to značí šedý čárkovaný úsek prstence a u keše štítek ≈.";
 	}
 
 	/** Chybějící sektory po kružnici od 0°, ve stejném pořadí jako ◀ ▶. */
@@ -197,11 +195,11 @@ final class TextyPopupuPlanovace {
 	/** Totéž s počtem kandidátů ve výřezu mapy ({@code vOkne} záporné = neznámý). */
 	static String vybranePolicko(final String stitek, final int kandidatu, final boolean plne, final boolean jenKandidati, final int nalezu, final int cil, final int vOkne) {
 		if (stitek == null) {
-			return "Obtížnost × terén – klikněte na políčko s číslem a na mapě zůstanou jen jeho kandidáti:";
+			return "Obtížnost × terén – klikněte na políčko s číslem, na mapě se zvýrazní jeho keše:";
 		}
 		final String pocet = vOkne >= 0 ? kandidatuVOkne(vOkne) + (plne ? ", v seznamu " + plnyPocet(kandidatu) : "") : plne ? plnyPocet(kandidatu) : kandidatu(kandidatu);
 		final String nalezy = cil > 1 ? Math.min(nalezu, cil) + " z " + cil + " nálezů, " : "";
-		return "Vybrané políčko: " + stitek + " – " + nalezy + pocet + (jenKandidati ? "" : ", na mapě všechny keše (F4)");
+		return "Vybrané políčko: " + stitek + " – " + nalezy + pocet;
 	}
 
 	/** Počet kandidátů ve výřezu mapy: „132 kandidátů v okně“, bez nich „žádný kandidát v okně“. */
@@ -227,10 +225,7 @@ final class TextyPopupuPlanovace {
 
 	/** Nápověda pod seznamem chybějících. */
 	static String napovedaSeznamu(final Challenge.Typ typ) {
-		if (typ == Challenge.Typ.DT_MATICE) {
-			return "Políčko: na mapě jen jeho kandidáti · ◀ ▶ nebo Shift+←/→: předchozí / další políčko · Ctrl+Shift+šipka: nejbližší kandidát tím směrem · F4: jen kandidáti";
-		}
-		return "Řádek: vybrat sektor · ◀ ▶ nebo Shift+←/→: předchozí / další sektor · Ctrl+Shift+šipka: nejbližší kandidát tím směrem · F4: jen kandidáti";
+		return "Shift+←/→ předchozí / další · Ctrl+Shift+šipka nejbližší kandidát · F4 jen kandidáti";
 	}
 
 	/** Tooltip řádku seznamu: klik vybere, druhý klik na vybraný výběr zruší. */
