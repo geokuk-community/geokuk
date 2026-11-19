@@ -21,7 +21,7 @@
   vybraného sektoru zvýrazní na mapě.
 - Plánovač challenge: u matice D/T je v popupu klikací matice obtížnost ×
   terén. Klik na políčko s kandidáty ho vybere a zvýrazní jeho keše na mapě
-  (ostatní kandidáti zůstávají), Jen kandidáti (F4) ukáže jen jeho kandidáty
+  (ostatní kandidáti zůstávají), Jen kandidáti (F4) ukáže všechny kandidáty
   a vybrané políčko je v liště jako „D3/T4 ✕“.
 - Matici D/T jde nastavit, kolikrát se má každé políčko splnit (Kolikrát
   splnit, 1 až 9); odznak počítá chybějící nálezy a políčko ukazuje například
