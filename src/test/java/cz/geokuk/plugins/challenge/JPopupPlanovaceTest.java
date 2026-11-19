@@ -172,7 +172,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse("bez výsledku není co vysvětlovat", o.kruznice.isVisible());
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] { { 213, 2800, 3000 }, { 47, 6200 } }));
 		Assert.assertTrue(o.kruznice.isVisible());
-		Assert.assertTrue(o.kruznice.getText(), o.kruznice.getText().contains("Kružnice 6,2 km na mapě: uvnitř leží nejbližší kandidáti všech sektorů v seznamu."));
+		Assert.assertTrue(o.kruznice.getText(), o.kruznice.getText().contains("Kružnice 6,2 km: uvnitř leží nejbližší kandidáti všech sektorů v seznamu."));
 		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213, 305 }, new int[] { 213 }, new double[][] {}));
 		Assert.assertFalse("bez kandidátů kružnice nic neukazuje", o.kruznice.isVisible());
 	}
@@ -195,10 +195,10 @@ public class JPopupPlanovaceTest {
 		}
 		Assert.assertEquals("jen sektory s kandidáty, po kružnici", java.util.Arrays.asList("47°  1 kandidát  nejbližší 6,2 km od středu", "213°  2 kandidáti  nejbližší 2,8 km od středu"), radky);
 		Assert.assertEquals("+ 1 sektor bez kandidátů", o.bezKandidatu.getText());
-		Assert.assertTrue(o.nejiste.getText(), o.nejiste.getText().contains("U 1 sektoru leží nalezená keš do 0,05° od hranice"));
+		Assert.assertTrue(o.nejiste.getText(), o.nejiste.getText().contains("U 1 sektoru je nalezená keš těsně u hranice"));
 		Assert.assertTrue(o.nejiste.isVisible());
 		Assert.assertTrue(o.dalsi.isEnabled());
-		Assert.assertEquals("▶ Další sektor", o.dalsi.getText());
+		Assert.assertEquals("▶ Další", o.dalsi.getText());
 		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360)));
 		Assert.assertFalse("nadpis je jen název challenge", o.nadpis.getText().startsWith("Challenge "));
 		Assert.assertEquals("Typ: 360°    Pravidla: " + TextyPopupuPlanovace.pravidla(aktivni().zdroj()), o.typ.getText());
@@ -536,7 +536,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertFalse("střed je jen u 360°", o.stred.isVisible());
 		Assert.assertFalse("prázdné upozornění nezabírá místo", o.nejiste.isVisible());
 		Assert.assertFalse(o.omezeniStitku.isVisible());
-		Assert.assertEquals("▶ Další políčko", o.dalsi.getText());
+		Assert.assertEquals("▶ Další", o.dalsi.getText());
 		Assert.assertFalse("bez kandidátů není kam jít", o.dalsi.isEnabled());
 		Assert.assertFalse(o.vsechnaPolicka.isVisible());
 		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D1/T1", "D5/T5"), java.util.Collections.singletonList(new KandidatPolicka("GC5", 50, 14, "D5/T5", "D5/T5", null)), 50));
@@ -548,7 +548,7 @@ public class JPopupPlanovaceTest {
 		Assert.assertEquals("▶ vybere políčko s kandidáty", "D5/T5", model.vybranePolicko(c));
 		Assert.assertEquals("D5/T5", o.matice.vybrane());
 		Assert.assertNull("▶ filtr nezapíná", model.jenKandidatiPro());
-		Assert.assertEquals("Vybrané políčko: D5/T5 – 1 kandidát, na mapě všechny keše (F4)", o.nadpisSeznamu.getText());
+		Assert.assertEquals("Vybrané políčko: D5/T5 – 1 kandidát", o.nadpisSeznamu.getText());
 		Assert.assertTrue(o.vsechnaPolicka.isVisible());
 		o.vsechnaPolicka.doClick();
 		SwingUtilities.invokeAndWait(() -> {});
@@ -612,9 +612,29 @@ public class JPopupPlanovaceTest {
 		Assert.assertNull("filtr se nezapne", model.jenKandidatiPro());
 	}
 
-	/** Klik na políčko matice ho vybere a zapne „jen kandidáti“; F4 pak filtr vypne a výběr nechá; druhý klik výběr zruší. */
+	/** Tlačítka dole jsou stručná; zkratky a cíl posunu jsou v tooltipu. */
 	@Test
-	public void klikNaPolickoMaticeVyberePolickoAZapneFiltr() throws Exception {
+	public void tlacitkaDoleJsouStrucnaSeZkratkamiVTooltipu() throws Exception {
+		priprav();
+		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
+		popup.prepni();
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		final java.util.List<KandidatPolicka> k = new java.util.ArrayList<>();
+		k.add(new KandidatPolicka("GC1", 50, 14, "D3/T4", "D3/T4", null));
+		model.nastavVysledekPolicek(c, new VysledekPolicek(81, java.util.Arrays.asList("D3/T4"), k, 50));
+		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D3/T4"));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("▶ Další", o.dalsi.getText());
+		Assert.assertEquals("Jen kandidáti", o.kandidati.getText());
+		Assert.assertEquals("✕ Zrušit výběr", o.vsechnaPolicka.getText());
+		Assert.assertTrue(o.dalsi.getToolTipText(), o.dalsi.getToolTipText().contains("Shift+→"));
+		Assert.assertEquals("Na mapě jen kandidáti (F4)", o.kandidati.getToolTipText());
+		Assert.assertFalse("nápověda je jeden řádek zkratek", o.napoveda.getText().contains("Řádek:") || o.napoveda.getText().contains("Políčko:"));
+	}
+
+	/** Klik na políčko matice ho vybere a filtr „jen kandidáti“ nezapne; volba F4 je na uživateli; druhý klik výběr zruší. */
+	@Test
+	public void klikNaPolickoMaticeVyberePolickoABezZapnutiFiltru() throws Exception {
 		priprav();
 		final Challenge c = aktivujPolicka(Challenge.Typ.DT_MATICE);
 		popup.prepni();
@@ -628,16 +648,17 @@ public class JPopupPlanovaceTest {
 		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D3/T4"));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertEquals("D3/T4", model.vybranePolicko(c));
-		Assert.assertEquals("klik zapne jen kandidáty", c, model.jenKandidatiPro());
+		Assert.assertNull("klik filtr nezapne", model.jenKandidatiPro());
+		Assert.assertFalse(o.kandidati.isSelected());
 		Assert.assertEquals("plné políčko", "Vybrané políčko: D3/T4 – 50 nejbližších ke středu mapy", o.nadpisSeznamu.getText());
-		Assert.assertTrue(o.kandidati.isSelected());
-		SwingUtilities.invokeAndWait(() -> model.setJenKandidatiPro(null));
+		SwingUtilities.invokeAndWait(() -> model.setJenKandidatiPro(c));
+		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko("D3/T4"));
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertEquals("F4 výběr políčka nechá", "D3/T4", model.vybranePolicko(c));
-		Assert.assertEquals("Vybrané políčko: D3/T4 – 50 nejbližších ke středu mapy, na mapě všechny keše (F4)", o.nadpisSeznamu.getText());
+		Assert.assertEquals("zapnutý filtr zůstane", c, model.jenKandidatiPro());
 		SwingUtilities.invokeAndWait(() -> popup.vyberPolicko(null));
 		SwingUtilities.invokeAndWait(() -> {});
 		Assert.assertNull(model.vybranePolicko(c));
+		Assert.assertEquals("filtr volí uživatel", c, model.jenKandidatiPro());
 		Assert.assertEquals(TextyPopupuPlanovace.vybranePolicko(null, 0, false, false), o.nadpisSeznamu.getText());
 	}
 
