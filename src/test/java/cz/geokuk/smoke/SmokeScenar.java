@@ -598,7 +598,11 @@ public class SmokeScenar {
 			return null;
 		}
 		final File f = new File(System.getProperty("java.io.tmpdir"), "smoke-vylet.gpx");
-		Files.deleteIfExists(f.toPath());
+		try {
+			Files.deleteIfExists(f.toPath());
+		} catch (final IOException e) {
+			System.err.println("Nejde smazat " + f + ": " + e);
+		}
 		final Process p = new ProcessBuilder("mkfifo", f.getAbsolutePath()).inheritIO().start();
 		return p.waitFor() == 0 ? f : null;
 	}

@@ -766,13 +766,17 @@ public class SmokeIT {
 		return Long.parseLong(hodnota);
 	}
 
-	private static void smaz(final File f) throws IOException {
+	private static void smaz(final File f) {
 		final File[] deti = f.listFiles();
 		if (deti != null) {
 			for (final File d : deti) {
 				smaz(d);
 			}
 		}
-		Files.deleteIfExists(f.toPath());
+		try {
+			Files.deleteIfExists(f.toPath());
+		} catch (final IOException e) {
+			System.err.println("Nejde smazat " + f + ": " + e);
+		}
 	}
 }

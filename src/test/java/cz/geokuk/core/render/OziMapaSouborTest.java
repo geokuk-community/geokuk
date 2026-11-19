@@ -2,6 +2,7 @@ package cz.geokuk.core.render;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -103,9 +104,21 @@ public class OziMapaSouborTest {
 			Assert.assertEquals(892, nacteny.getHeight());
 			Assert.assertTrue(soubor.isFile());
 		} finally {
-			Files.deleteIfExists(obrazek.toPath());
-			Files.deleteIfExists(soubor.toPath());
-			Files.deleteIfExists(dir.toPath());
+			try {
+				Files.deleteIfExists(obrazek.toPath());
+			} catch (final IOException e) {
+				System.err.println("Nejde smazat " + obrazek + ": " + e);
+			}
+			try {
+				Files.deleteIfExists(soubor.toPath());
+			} catch (final IOException e) {
+				System.err.println("Nejde smazat " + soubor + ": " + e);
+			}
+			try {
+				Files.deleteIfExists(dir.toPath());
+			} catch (final IOException e) {
+				System.err.println("Nejde smazat " + dir + ": " + e);
+			}
 		}
 	}
 
