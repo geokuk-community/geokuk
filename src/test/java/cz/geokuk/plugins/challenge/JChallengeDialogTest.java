@@ -113,6 +113,63 @@ public class JChallengeDialogTest {
 		SwingUtilities.invokeAndWait(r);
 	}
 
+	private void mys(final int radek, final int x, final int id) {
+		final JList<Challenge> l = seznam();
+		l.setSize(300, 400);
+		final java.awt.Rectangle r = l.getCellBounds(radek, radek);
+		l.dispatchEvent(new java.awt.event.MouseEvent(l, id, System.currentTimeMillis(), 0, x, r.y + r.height / 2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+	}
+
+	private void klik(final int radek, final int x) {
+		mys(radek, x, java.awt.event.MouseEvent.MOUSE_PRESSED);
+		mys(radek, x, java.awt.event.MouseEvent.MOUSE_RELEASED);
+		mys(radek, x, java.awt.event.MouseEvent.MOUSE_CLICKED);
+	}
+
+	@Test
+	public void klikNaZnackuZapneAVypneChallengeABezVyberuRadku() throws Exception {
+		naEdt(() -> {
+			final Challenge b = dialog.polozky().get(1);
+			Assert.assertEquals(0, seznam().getSelectedIndex());
+			Assert.assertFalse(model.jeAktivni(b));
+			klik(1, 4);
+			Assert.assertTrue("klik na ○ zapne", model.jeAktivni(b));
+			Assert.assertEquals("řádek se nevybral", 0, seznam().getSelectedIndex());
+			klik(1, 4);
+			Assert.assertFalse("klik na ● vypne", model.jeAktivni(b));
+			Assert.assertEquals(0, seznam().getSelectedIndex());
+		});
+	}
+
+	@Test
+	public void klikNaZnackuPrepneAktivniChallengeJakoRadio() throws Exception {
+		naEdt(() -> {
+			final Challenge a = dialog.polozky().get(0);
+			final Challenge b = dialog.polozky().get(1);
+			klik(0, 4);
+			Assert.assertTrue(model.jeAktivni(a));
+			Assert.assertTrue("zaškrtávátko vybraného řádku to sleduje", zaskrtavatko().isSelected());
+			klik(1, 4);
+			Assert.assertTrue(model.jeAktivni(b));
+			Assert.assertFalse("dosud aktivní se vypne", model.jeAktivni(a));
+			Assert.assertFalse(zaskrtavatko().isSelected());
+		});
+	}
+
+	@Test
+	public void klikNaTextRadekJenVybereAAktivaceSeNemeni() throws Exception {
+		naEdt(() -> {
+			final Challenge b = dialog.polozky().get(1);
+			klik(1, 120);
+			Assert.assertEquals("řádek se vybral", 1, seznam().getSelectedIndex());
+			Assert.assertFalse("aktivace se nezměnila", model.jeAktivni(b));
+		});
+	}
+
+	private javax.swing.JCheckBox zaskrtavatko() {
+		return najdi(dialog.getContentPane(), javax.swing.JCheckBox.class, new ArrayList<javax.swing.JCheckBox>()).stream().filter(c -> "Aktivní challenge".equals(c.getText())).findFirst().get();
+	}
+
 	@Test
 	public void seznamMaSablonyAPrvniJeVybranaAJenKProhlizeni() throws Exception {
 		naEdt(() -> {

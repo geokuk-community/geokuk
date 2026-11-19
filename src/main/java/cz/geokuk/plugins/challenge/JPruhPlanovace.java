@@ -40,7 +40,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	static final int UCHYT = 0, VYBER = 1, ODZNAK = 2, ZPET = 3, DAL = 4, KANDIDATI = 5, SEKTORY = 6, STITKY = 7, POLICKO = 8;
 	private static final int POCET = 9;
 	/** Pořadí prvků zleva: vybrané políčko je poslední, ať ostatní prvky při výběru a zrušení nepoposkočí. */
-	private static final int[] ZLEVA = { UCHYT, VYBER, ODZNAK, ZPET, DAL, KANDIDATI, SEKTORY, STITKY, POLICKO };
+	private static final int[] ZLEVA = { UCHYT, VYBER, ODZNAK, ZPET, DAL, KANDIDATI, STITKY, SEKTORY, POLICKO };
 
 	/** Stupeň lišty podle její šířky. */
 	enum Stupen {
@@ -62,6 +62,8 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private final transient Prepinac kandidati = new Prepinac(new Trychtyr());
 	private final transient Prepinac sektory = new Prepinac(new Klin());
 	private final transient Prepinac stitky = new Prepinac(new Stitek());
+	/** Tlačítko Sektory je v liště, jen když zobrazená challenge má sektory (nebo žádná není vybraná). */
+	private boolean sektoryVidet = true;
 	private final transient JButton policko = new JButton();
 	/** Štítek výběru v modelu: políčko D/T („D3/T4“) nebo sektor 360° („11°“), null když žádný není vybrán. */
 	private String vybranyStitek;
@@ -275,8 +277,19 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		return rozloz(sirkaPruhu, false);
 	}
 
-	/** Totéž s tlačítkem vybraného políčka na konci lišty; {@code sirkaPruhu} je šířka lišty bez něj. */
+	/** Totéž s tlačítkem vybraného políčka na konci lišty. */
 	static Rectangle[] rozloz(final int sirkaPruhu, final boolean sPolickem) {
+		return rozloz(sirkaPruhu, sPolickem, true);
+	}
+
+	/** O kolik je lišta bez tlačítka Sektory užší než s ním (tlačítko a mezera za ním). */
+	static int ubytekBezSektoru(final int sirkaPruhu) {
+		final Stupen s = Stupen.pro(sirkaPruhu);
+		return s == Stupen.PLNY ? SIRKA_SEKTORU + MEZERA : s == Stupen.IKONY ? SIRKA_IKONY + MEZERA : 0;
+	}
+
+	/** Totéž s tlačítkem Sektory nebo bez něj; {@code sirkaPruhu} je šířka lišty s Sektory a bez tlačítka vybraného políčka. */
+	static Rectangle[] rozloz(final int sirkaPruhu, final boolean sPolickem, final boolean sSektory) {
 		final Stupen s = Stupen.pro(sirkaPruhu);
 		final int[] sirky = new int[POCET];
 		sirky[UCHYT] = SIRKA_UCHYTU;
@@ -285,7 +298,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		sirky[ZPET] = SIRKA_SIPKY;
 		sirky[DAL] = SIRKA_SIPKY;
 		sirky[KANDIDATI] = s == Stupen.PLNY ? SIRKA_KANDIDATU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
-		sirky[SEKTORY] = s == Stupen.PLNY ? SIRKA_SEKTORU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
+		sirky[SEKTORY] = !sSektory ? 0 : s == Stupen.PLNY ? SIRKA_SEKTORU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
 		sirky[STITKY] = s == Stupen.PLNY ? SIRKA_STITKU : s == Stupen.IKONY ? SIRKA_IKONY : 0;
 		sirky[POLICKO] = sPolickem && s != Stupen.UZKY ? SIRKA_POLICKA : 0;
 		final Rectangle[] r = new Rectangle[POCET];
@@ -312,7 +325,12 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	/** Ovládací prvky lišty, na které klik nezavře popup souhrnu: ◀ ▶, Jen kandidáti, Sektory a Štítky; v souřadnicích mapy dané šířky s překážkami vpravo. */
 	static java.util.List<Rectangle> oblastiOvladani(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky) {
-		final Rectangle[] r = rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width);
+		return oblastiOvladani(sirkaMapy, prekazky, true);
+	}
+
+	/** Totéž; bez tlačítka Sektory (challenge bez sektorů) v liště žádná oblast Sektorů není. */
+	static java.util.List<Rectangle> oblastiOvladani(final int sirkaMapy, final java.util.Collection<Rectangle> prekazky, final boolean sSektory) {
+		final Rectangle[] r = rozloz(RozmisteniPrekryvu.pruhPlanovace(RozmisteniPrekryvu.volnaSirkaPruhu(sirkaMapy, prekazky)).width, false, sSektory);
 		final java.util.List<Rectangle> v = new java.util.ArrayList<>();
 		for (final int i : new int[] { ZPET, DAL, KANDIDATI, SEKTORY, STITKY }) {
 			if (!r[i].isEmpty()) {
@@ -343,12 +361,18 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			return false;
 		}
 		final int sirka = sirkaListy();
-		return Stupen.pro(sirka) != Stupen.UZKY && sirka + PRIDAVEK_POLICKA <= RozmisteniPrekryvu.volnaSirkaPruhu(getWidth(), prekazky.get());
+		return Stupen.pro(sirka) != Stupen.UZKY && sirkaListyBezPolicka() + PRIDAVEK_POLICKA <= RozmisteniPrekryvu.volnaSirkaPruhu(getWidth(), prekazky.get());
+	}
+
+	/** Skutečná šířka zapnuté lišty bez tlačítka vybraného políčka: bez tlačítka Sektory je užší. */
+	private int sirkaListyBezPolicka() {
+		final int sirka = sirkaListy();
+		return sektoryVidet ? sirka : sirka - ubytekBezSektoru(sirka);
 	}
 
 	/** Šířka zapnuté lišty včetně tlačítka vybraného políčka, je-li vidět. */
 	private int sirkaListySPolickem() {
-		return sirkaListy() + (sPolickem() ? PRIDAVEK_POLICKA : 0);
+		return sirkaListyBezPolicka() + (sPolickem() ? PRIDAVEK_POLICKA : 0);
 	}
 
 	/** Obdélník lišty (zapnuté) nebo úchytu (vypnuté) v souřadnicích mapy. */
@@ -368,7 +392,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	@Override
 	public void doLayout() {
 		final int sirka = sirkaListy();
-		final Rectangle[] r = rozloz(sirka, sPolickem());
+		final Rectangle[] r = rozloz(sirka, sPolickem(), sektoryVidet);
 		final Component[] c = prvky();
 		stupen = Stupen.pro(sirka);
 		for (int i = 0; i < c.length; i++) {
@@ -489,6 +513,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			odznak.nastav("–");
 			odznak.setForeground(UIManager.getColor("Button.foreground"));
 		}
+		sektoryVidet = !maChallenge || maSektory(stav.typ());
 		kandidati.setSelected(maChallenge && stav.jenKandidati());
 		sektory.setSelected((model == null || model.isKresliSektory()) && maChallenge && maSektory(stav.typ()));
 		stitky.setSelected(model == null || model.isKresliStitky());
@@ -558,8 +583,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 			@Override
 			public boolean isEnabled() {
-				final Challenge c = challenge();
-				return (vybranyStitek != null || c != null && model != null && model.maZapamatovanyVyber(c)) && !jinyPopupOtevreny.getAsBoolean();
+				return vybranyStitek != null && !jinyPopupOtevreny.getAsBoolean();
 			}
 
 			@Override
@@ -577,8 +601,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private void zrusPolicko() {
 		final Challenge c = challenge();
 		if (c != null && model != null) {
-			model.setVybranePolicko(c, null);
-			model.setVybranySektor(c, PosunVyberu.ZADNY_SEKTOR);
+			model.zrusZvyrazneniKlikemMimo();
 		}
 	}
 

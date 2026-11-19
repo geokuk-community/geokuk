@@ -84,16 +84,16 @@ public class JPruhPolickoTest {
 		Assert.assertTrue(p.isVisible());
 		Assert.assertEquals("D3/T4 ✕", p.getText());
 		for (final int sirka : new int[] { RozmisteniPrekryvu.PRUH_PLNY, RozmisteniPrekryvu.PRUH_IKONY }) {
-			final Rectangle[] s = JPruhPlanovace.rozloz(sirka, true);
-			final Rectangle[] b = JPruhPlanovace.rozloz(sirka, false);
+			final Rectangle[] s = JPruhPlanovace.rozloz(sirka, true, false);
+			final Rectangle[] b = JPruhPlanovace.rozloz(sirka, false, false);
 			for (int i = 0; i < JPruhPlanovace.POLICKO; i++) {
 				Assert.assertEquals("prvek " + i + " drží pozici", b[i], s[i]);
 				Assert.assertFalse("tlačítko nezakrývá prvek " + i, s[i].intersects(s[JPruhPlanovace.POLICKO]));
 			}
 			Assert.assertTrue("za Štítky", s[JPruhPlanovace.POLICKO].x > s[JPruhPlanovace.STITKY].x + s[JPruhPlanovace.STITKY].width);
-			Assert.assertTrue("vejde se do širší lišty", s[JPruhPlanovace.POLICKO].x + s[JPruhPlanovace.POLICKO].width <= RozmisteniPrekryvu.OKRAJ + sirka + JPruhPlanovace.PRIDAVEK_POLICKA);
+			Assert.assertTrue("vejde se do širší lišty", s[JPruhPlanovace.POLICKO].x + s[JPruhPlanovace.POLICKO].width <= RozmisteniPrekryvu.OKRAJ + sirka - JPruhPlanovace.ubytekBezSektoru(sirka) + JPruhPlanovace.PRIDAVEK_POLICKA);
 		}
-		final Rectangle[] r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)), true);
+		final Rectangle[] r = JPruhPlanovace.rozloz(RozmisteniPrekryvu.sirkaPruhu(RozmisteniPrekryvu.volnaSirkaPruhu(1280)), true, false);
 		Assert.assertEquals(r[JPruhPlanovace.POLICKO], p.getBounds());
 		Assert.assertEquals("lišta je o tlačítko širší, jen doprava", bez + JPruhPlanovace.PRIDAVEK_POLICKA, pruh.oblastPruhu().width);
 		Assert.assertEquals(RozmisteniPrekryvu.OKRAJ, pruh.oblastPruhu().x);
@@ -124,17 +124,17 @@ public class JPruhPolickoTest {
 		Assert.assertFalse("nejužší stupeň bez tlačítka", policko() != null && policko().isVisible());
 		Assert.assertTrue("výběr je vidět v tooltipu výběru challenge", tipVyberu().endsWith("vybrané políčko D3/T4"));
 		Assert.assertEquals("lišta bez tlačítka", RozmisteniPrekryvu.PRUH_UZKY, pruh.oblastPruhu().width);
-		priprav(RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY + 10);
+		priprav(RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY + 5);
 		vyber("D3/T4");
 		Assert.assertFalse("s tlačítkem by se plná lišta nevešla", policko() != null && policko().isVisible());
-		Assert.assertEquals(RozmisteniPrekryvu.PRUH_PLNY, pruh.oblastPruhu().width);
+		Assert.assertEquals(RozmisteniPrekryvu.PRUH_PLNY - JPruhPlanovace.ubytekBezSektoru(RozmisteniPrekryvu.PRUH_PLNY), pruh.oblastPruhu().width);
 		Assert.assertTrue(tipVyberu().endsWith("vybrané políčko D3/T4"));
 	}
 
 	/** Tlačítko se ukáže, právě když se širší lišta vejde do volné šířky (hranice na pixel). */
 	@Test
 	public void hraniceSirkyProTlacitko() throws Exception {
-		final int presne = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY + JPruhPlanovace.PRIDAVEK_POLICKA;
+		final int presne = RozmisteniPrekryvu.OKRAJ + RozmisteniPrekryvu.REZERVA_VPRAVO + RozmisteniPrekryvu.PRUH_PLNY - JPruhPlanovace.ubytekBezSektoru(RozmisteniPrekryvu.PRUH_PLNY) + JPruhPlanovace.PRIDAVEK_POLICKA;
 		priprav(presne);
 		vyber("D3/T4");
 		Assert.assertTrue("vejde se přesně", policko() != null && policko().isVisible());
@@ -180,6 +180,44 @@ public class JPruhPolickoTest {
 		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
 	}
 
+	private AbstractButton podleTooltipu(final String predpona) {
+		for (final Component c : pruh.getComponents()) {
+			if (c instanceof AbstractButton && ((AbstractButton) c).getToolTipText() != null && ((AbstractButton) c).getToolTipText().startsWith(predpona)) {
+				return (AbstractButton) c;
+			}
+		}
+		return null;
+	}
+
+	@Test
+	public void stitkyJsouPredSektory() {
+		for (final int sirka : new int[] { RozmisteniPrekryvu.PRUH_PLNY, RozmisteniPrekryvu.PRUH_IKONY }) {
+			final Rectangle[] r = JPruhPlanovace.rozloz(sirka);
+			Assert.assertTrue(sirka + ": Štítky před Sektory", r[JPruhPlanovace.STITKY].x + r[JPruhPlanovace.STITKY].width <= r[JPruhPlanovace.SEKTORY].x);
+			Assert.assertTrue(sirka + ": Sektory za Jen kandidáty", r[JPruhPlanovace.KANDIDATI].x < r[JPruhPlanovace.STITKY].x);
+		}
+	}
+
+	@Test
+	public void uDTTlacitkoSektoryZmiziZListyU360Zustava() throws Exception {
+		priprav(1280);
+		pruh.doLayout();
+		final int sirkaDT = pruh.oblastPruhu().width;
+		Assert.assertEquals("D/T lišta je užší o Sektory", RozmisteniPrekryvu.PRUH_PLNY - JPruhPlanovace.ubytekBezSektoru(RozmisteniPrekryvu.PRUH_PLNY), sirkaDT);
+		Assert.assertFalse("u D/T Sektory nejsou", podleTooltipu("Sektory na mapě").isVisible());
+		Assert.assertTrue("Štítky jsou", podleTooltipu("Štítky u kandidátů").isVisible());
+		final Challenge c = Sablony.cesko360();
+		model.aktivuj(c);
+		model.setZobrazena(c);
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 11, 20 }, new int[0], new double[][] { { 11, 3200 }, { 20, 1000 } }));
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertEquals("u 360° plná lišta", RozmisteniPrekryvu.PRUH_PLNY, pruh.oblastPruhu().width);
+		final AbstractButton sektory = podleTooltipu("Sektory na mapě");
+		Assert.assertTrue("u 360° Sektory jsou", sektory.isVisible());
+		Assert.assertTrue("Štítky před Sektory", podleTooltipu("Štítky u kandidátů").getX() < sektory.getX());
+	}
+
 	private Challenge priprav360SeStredem() throws Exception {
 		priprav(1280);
 		final Challenge c = Sablony.cesko360();
@@ -207,7 +245,8 @@ public class JPruhPolickoTest {
 		policko().doClick();
 		SwingUtilities.invokeAndWait(() -> {});
 		pruh.doLayout();
-		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertEquals("na mapě nic nezůstane zvýrazněné", PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("sektor zůstane výchozím bodem ◀ ▶", sektorKese, model.vychoziSektorPosunu(c));
 		Assert.assertFalse("tlačítko zmizí", policko() != null && policko().isVisible());
 	}
 
@@ -222,7 +261,8 @@ public class JPruhPolickoTest {
 		SwingUtilities.invokeAndWait(() -> {});
 		pruh.doLayout();
 		Assert.assertNull("vybraný kandidát by sektor zvýrazňoval dál", model.vybranyKandidat(c));
-		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("sektor zůstane výchozím bodem ◀ ▶", 20, model.vychoziSektorPosunu(c));
 		Assert.assertFalse(policko() != null && policko().isVisible());
 	}
 
@@ -320,23 +360,59 @@ public class JPruhPolickoTest {
 		return pruh.getActionMap().get(pruh.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).get(javax.swing.KeyStroke.getKeyStroke("ESCAPE")));
 	}
 
-	@Test
-	public void escPoKlikuMimoZrusiZapamatovanyVyberAPotomUzNepatriListe() throws Exception {
-		final Challenge c = priprav360SeStredem();
-		Assert.assertFalse("bez výběru a paměti Esc nepatří liště", esc().isEnabled());
-		model.setVybranySektor(c, 11);
-		SwingUtilities.invokeAndWait(() -> {});
-		model.zrusZvyrazneniKlikemMimo();
-		SwingUtilities.invokeAndWait(() -> {});
-		pruh.doLayout();
-		Assert.assertFalse("zvýraznění zmizelo, tlačítko není", policko() != null && policko().isVisible());
-		Assert.assertTrue(model.maZapamatovanyVyber(c));
-		Assert.assertTrue("Esc zruší zapamatovaný výchozí bod", esc().isEnabled());
+	private void stisknutiEsc() throws Exception {
 		esc().actionPerformed(new java.awt.event.ActionEvent(pruh, java.awt.event.ActionEvent.ACTION_PERFORMED, "esc"));
 		SwingUtilities.invokeAndWait(() -> {});
-		Assert.assertFalse("paměť je pryč", model.maZapamatovanyVyber(c));
-		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vychoziSektorPosunu(c));
-		Assert.assertFalse("a Esc liště zase nepatří", esc().isEnabled());
+		pruh.doLayout();
+	}
+
+	@Test
+	public void escJakoKlikMimoZrusiZvyrazneniAlePamatujeSektorProSipky() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		Assert.assertFalse("bez výběru Esc nepatří liště", esc().isEnabled());
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		Assert.assertTrue(esc().isEnabled());
+		stisknutiEsc();
+		Assert.assertFalse("„11° ✕“ zmizelo", policko() != null && policko().isVisible());
+		Assert.assertEquals("na mapě nic", PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals("paměť zůstala", 11, model.zapamatovanySektor(c));
+		Assert.assertFalse("a Esc liště nepatří, nic nezvýrazňuje", esc().isEnabled());
+		Assert.assertEquals("první ▶ znovu zvýrazní 11°", "11°", ChallengeAkce.posun(model, true));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals(11, model.zvyraznenySektor(c));
+		Assert.assertEquals("druhý ▶ jde dál", "20°", ChallengeAkce.posun(model, true));
+	}
+
+	@Test
+	public void escJakoKlikMimoZrusiVyberPolickaAlePamatujeHoProSipky() throws Exception {
+		priprav(1280);
+		vyber("D3/T4");
+		Assert.assertTrue(esc().isEnabled());
+		stisknutiEsc();
+		Assert.assertFalse("„D3/T4 ✕“ zmizelo", policko() != null && policko().isVisible());
+		Assert.assertNull(model.vybranePolicko(dt));
+		Assert.assertEquals("D3/T4", model.zapamatovanePolicko(dt));
+		Assert.assertEquals("první ◀ ▶ znovu zvýrazní D3/T4", "D3/T4", ChallengeAkce.posun(model, false));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("D3/T4", model.zvyraznenePolicko(dt));
+	}
+
+	@Test
+	public void prepnutiChallengeSmazePametPosunu() throws Exception {
+		final Challenge c = priprav360SeStredem();
+		model.setVybranySektor(c, 11);
+		SwingUtilities.invokeAndWait(() -> {});
+		pruh.doLayout();
+		stisknutiEsc();
+		Assert.assertEquals(11, model.zapamatovanySektor(c));
+		model.aktivuj(dt);
+		SwingUtilities.invokeAndWait(() -> {});
+		model.aktivuj(c);
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("paměť po přepnutí zmizela", PosunVyberu.ZADNY_SEKTOR, model.zapamatovanySektor(c));
+		Assert.assertFalse(model.maZapamatovanyVyber(c));
 	}
 
 	@Test

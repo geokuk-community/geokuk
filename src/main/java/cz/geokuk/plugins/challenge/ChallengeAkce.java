@@ -75,13 +75,14 @@ final class ChallengeAkce {
 			if (v == null) {
 				return null;
 			}
-			final String stitek = PosunVyberu.dalsiPolicko(v, model.vychoziPolickoPosunu(c), dopredu);
+			final String stitek = model.cilPolickaPosunu(c, v, dopredu);
 			if (stitek == null) {
 				return bezCile(c.typ(), dopredu);
 			}
 			final int pocet = v.pocetKandidatu(stitek);
 			final double nejblizsi = v.nejblizsiM(stitek);
-			return nazev + ": " + stitek + " · " + (v.jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(pocet) : TextyPopupuPlanovace.kandidatu(pocet))
+			final boolean znovu = model.zvyraznenePolicko(c) == null && stitek.equals(model.zapamatovanePolicko(c));
+			return (znovu ? "Znovu ukázat políčko" : nazev) + ": " + stitek + " · " + (v.jePlne(stitek) ? TextyPopupuPlanovace.plnyPocet(pocet) : TextyPopupuPlanovace.kandidatu(pocet))
 					+ (Double.isNaN(nejblizsi) || v.jePlne(stitek) ? "" : ", nejbližší " + StitkyPruhu.vzdalenost(nejblizsi) + " od středu mapy") + " · mapa se neposune";
 		}
 		if (c.typ() == Challenge.Typ.SEKTORY_360) {
@@ -89,12 +90,13 @@ final class ChallengeAkce {
 			if (v == null) {
 				return null;
 			}
-			final int s = PosunVyberu.dalsiSektor(v, model.vychoziSektorPosunu(c), dopredu);
+			final int s = model.cilSektoruPosunu(c, v, dopredu);
 			if (s == PosunVyberu.ZADNY_SEKTOR) {
 				return bezCile(c.typ(), dopredu);
 			}
 			final VysledekSektoru.Kandidati k = v.kandidati(s);
-			return nazev + ": " + s + "° · " + TextyPopupuPlanovace.kandidatu(k.pocet()) + ", nejbližší " + StitkyPruhu.vzdalenost(k.nejblizsiVzdalenost()) + " od středu · mapa se neposune";
+			final boolean znovu = model.zvyraznenySektor(c) < 0 && s == model.zapamatovanySektor(c);
+			return (znovu ? "Znovu ukázat sektor" : nazev) + ": " + s + "° · " + TextyPopupuPlanovace.kandidatu(k.pocet()) + ", nejbližší " + StitkyPruhu.vzdalenost(k.nejblizsiVzdalenost()) + " od středu · mapa se neposune";
 		}
 		return null;
 	}

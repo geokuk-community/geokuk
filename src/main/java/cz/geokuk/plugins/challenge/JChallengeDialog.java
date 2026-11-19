@@ -18,7 +18,31 @@ public class JChallengeDialog extends JMyDialog0 {
 
 	private transient ChallengeModel model;
 	private final DefaultListModel<Challenge> seznamModel = new DefaultListModel<>();
-	private final JList<Challenge> seznam = new JList<>(seznamModel);
+	private final JList<Challenge> seznam = new JList<Challenge>(seznamModel) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected void processMouseEvent(final java.awt.event.MouseEvent e) {
+			final Challenge c = challengeNaZnacce(e.getPoint());
+			if (c == null) {
+				super.processMouseEvent(e);
+			} else if (e.getID() == java.awt.event.MouseEvent.MOUSE_PRESSED && javax.swing.SwingUtilities.isLeftMouseButton(e)) {
+				prepniChallenge(c, !model.jeAktivni(c));
+			}
+		}
+
+		@Override
+		protected void processMouseMotionEvent(final java.awt.event.MouseEvent e) {
+			setCursor(challengeNaZnacce(e.getPoint()) != null ? java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR) : java.awt.Cursor.getDefaultCursor());
+			super.processMouseMotionEvent(e);
+		}
+
+		@Override
+		public String getToolTipText(final java.awt.event.MouseEvent e) {
+			final Challenge c = challengeNaZnacce(e.getPoint());
+			return c == null ? super.getToolTipText(e) : model.jeAktivni(c) ? "Vypnout" : "Zapnout";
+		}
+	};
 	private final JCheckBox aktivni = new JCheckBox("Aktivní challenge");
 	/** Šířka formuláře vpravo od seznamu. */
 	private static final int SIRKA_FORMULARE = 470;
@@ -321,10 +345,24 @@ public class JChallengeDialog extends JMyDialog0 {
 		if (plnim || c == null) {
 			return;
 		}
+		prepniChallenge(c, aktivni.isSelected());
+	}
+
+	/** Challenge pod značkou ● nebo ○ na začátku řádku seznamu, jinak null. */
+	private Challenge challengeNaZnacce(final java.awt.Point bod) {
+		final int i = seznam.locationToIndex(bod);
+		if (model == null || i < 0 || !seznam.getCellBounds(i, i).contains(bod)) {
+			return null;
+		}
+		final java.awt.FontMetrics fm = seznam.getFontMetrics(seznam.getFont());
+		return bod.x < fm.stringWidth(PolozkaChallengeRenderer.ZAPNUTA + "  ") + 6 ? seznamModel.getElementAt(i) : null;
+	}
+
+	/** Zapne nebo vypne challenge, stejně jako zaškrtávátko Aktivní challenge; zapnutí vypne dosud aktivní. */
+	private void prepniChallenge(final Challenge c, final boolean zapnout) {
 		try {
-			if (aktivni.isSelected()) {
+			if (zapnout) {
 				if (jeNedostupny(c)) {
-					aktivni.setSelected(false);
 					return;
 				}
 				model.aktivuj(c);
@@ -333,9 +371,10 @@ public class JChallengeDialog extends JMyDialog0 {
 			}
 			chyba.setText(" ");
 		} catch (final ChallengeChyba e) {
-			aktivni.setSelected(model.jeAktivni(c));
 			chyba.setText(e.getMessage());
 		}
+		final Challenge vybrana = seznam.getSelectedValue();
+		aktivni.setSelected(vybrana != null && model.jeAktivni(vybrana));
 		seznam.repaint();
 	}
 
