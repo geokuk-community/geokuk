@@ -27,13 +27,16 @@ public class Ukladanec {
 	/**
 	 * Image držíme jen proto, aby před tím, než je kachle uložena na disk nedošlo k odstranění z paměti přes GC a pak se program nepokoušel data získávat z disku ještě před uložením.
 	 */
+	@ToString.Exclude
 	private final byte[] rawData;
 
 	/** Vykreslená dlaždice, která se do PNG převede až při ukládání; null, když jsou data hotová. */
 	@Getter(AccessLevel.NONE)
+	@ToString.Exclude
 	private final RenderedImage obrazek;
 
 	@Getter(AccessLevel.NONE)
+	@ToString.Exclude
 	private final Kachlice __dummy__;
 
 	public Ukladanec(final Ka ka, final byte[] data, final Kachlice kachlice) {
