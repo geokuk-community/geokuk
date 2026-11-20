@@ -61,6 +61,18 @@ public class KachleDBManagerTest {
 	}
 
 	@Test
+	public void spravceSJinymSouboremPiseJenDoNej() throws Exception {
+		final KachleDBManager jiny = new KachleDBManager(manager.folderHolder, "tiles-jina.sqlite");
+		Assert.assertTrue(jiny.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
+		Assert.assertNotNull(jiny.load(KACHLE));
+		Assert.assertTrue(new File(slozka, "tiles-jina.sqlite").isFile());
+		Assert.assertEquals(new File(slozka, "tiles-jina.sqlite"), jiny.souborCache());
+		Assert.assertFalse("výchozí soubor se nezakládá", soubor.exists());
+		Assert.assertNull("výchozí správce dlaždici nevidí", manager.load(KACHLE));
+		Assert.assertEquals(soubor, manager.souborCache());
+	}
+
+	@Test
 	public void ulozeniANacteniPodTypem() throws Exception {
 		final Ka offline = new Ka(KACHLE.getLoc(), EKaType.OFFLINE_MF);
 		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(offline, "o0000002a", png()))));
