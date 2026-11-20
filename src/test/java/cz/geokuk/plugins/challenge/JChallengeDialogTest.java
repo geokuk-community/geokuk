@@ -405,7 +405,8 @@ public class JChallengeDialogTest {
 		});
 	}
 
-	public void kolikratSplnitJenUDtAPlatiHnedUSabloAiUVlastniBezUlozit() throws Exception {
+	@Test
+	public void kolikratSplnitJenUDtAPlatiHnedUSablonyIVlastniBezUlozit() throws Exception {
 		naEdt(() -> {
 			Challenge sablona = null;
 			for (final Challenge c : dialog.polozky()) {
@@ -456,6 +457,34 @@ public class JChallengeDialogTest {
 			}
 		}
 		throw new AssertionError("není " + nazev);
+	}
+
+	/** Násobnost čekající na odklad se při přepnutí řádku uloží do původní challenge, ne do té, na kterou se přepnulo. */
+	@Test
+	public void kolikratSplnitPriPrepnutiRadkuPatriPuvodniChallenge() throws Exception {
+		naEdt(() -> {
+			final Challenge a = model.ulozVlastni(new Challenge("DT A", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			final Challenge b = model.ulozVlastni(new Challenge("DT B", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			seznam().setSelectedValue(a, true);
+			dialog.opakovani.setValue(5);
+			seznam().setSelectedValue(b, true);
+			Assert.assertEquals("původní challenge má novou násobnost", 5, opakovaniVModelu("DT A"));
+			Assert.assertEquals("druhá se nezměnila", 1, opakovaniVModelu("DT B"));
+			Assert.assertEquals("číselník ukazuje hodnotu nově vybrané", 1, dialog.opakovani.getValue());
+		});
+	}
+
+	/** Změna násobnosti a hned Uložit změny: násobnost se uloží. */
+	@Test
+	public void kolikratSplnitHnedPoZmeneUlozitZmenyUlozi() throws Exception {
+		naEdt(() -> {
+			final Challenge a = model.ulozVlastni(new Challenge("DT A", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			seznam().setSelectedValue(a, true);
+			dialog.opakovani.setValue(6);
+			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals("násobnost je uložená", 6, opakovaniVModelu("DT A"));
+			Assert.assertEquals(6, dialog.opakovani.getValue());
+		});
 	}
 
 	/** Násobnost se po změně číselníku uloží sama po krátkém odkladu (časovač). */
