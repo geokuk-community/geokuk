@@ -132,6 +132,7 @@ public class FiltrKandidatuTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void sluzbaPromitneFiltrDoFiltruKesiAZrusiHo() throws Exception {
+		model.setZapnuto(true);
 		model.aktivuj(Sablony.cesko360());
 		vysledek360("GC1AAA");
 		sluzba.obnovFiltrKandidatu();
@@ -148,6 +149,28 @@ public class FiltrKandidatuTest {
 		Assert.assertNull("filtr zrušen", volani.get(2));
 	}
 
+	/** Po vypnutí plánovače filtr na mapě nezůstane; po zapnutí se vrátí podle volby uživatele. */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void vypnutiPlanovaceZrusiFiltrNaMapeAZapnutiHoVrati() throws Exception {
+		model.setZapnuto(true);
+		model.aktivuj(Sablony.cesko360());
+		vysledek360("GC1AAA");
+		model.setJenKandidatiPro(Sablony.cesko360());
+		sluzba.onEvent(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.JEN_KANDIDATI, Sablony.cesko360()));
+		model.setZapnuto(false);
+		sluzba.onEvent(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.ZAPNUTO, null));
+		model.setZapnuto(true);
+		sluzba.onEvent(new ChallengeZmenenyEvent(ChallengeZmenenyEvent.Druh.ZAPNUTO, null));
+		final ArgumentCaptor<java.util.function.Predicate<Kesoid>> zachyceny = ArgumentCaptor.forClass(java.util.function.Predicate.class);
+		verify(kesoidModel, times(3)).setDoplnkovyFiltr(zachyceny.capture());
+		final List<java.util.function.Predicate<Kesoid>> volani = zachyceny.getAllValues();
+		Assert.assertTrue("filtr zapnutý", volani.get(0).test(kes("GC1AAA")));
+		Assert.assertNull("plánovač vypnutý: bez filtru", volani.get(1));
+		Assert.assertTrue("plánovač znovu zapnutý: filtr podle volby", volani.get(2).test(kes("GC1AAA")));
+		Assert.assertFalse(volani.get(2).test(kes("GC2BBB")));
+	}
+
 	@Test
 	public void bezVysledkuSluzbaNefiltruje() {
 		model.aktivuj(Sablony.cesko360());
@@ -158,12 +181,13 @@ public class FiltrKandidatuTest {
 
 	@Test
 	public void filtrSeObnovujeJenPriUdalostechKtereMuMeniVstup() {
+		model.setZapnuto(true);
 		model.aktivuj(Sablony.cesko360());
 		model.setJenKandidatiPro(Sablony.cesko360());
 		for (final ChallengeZmenenyEvent.Druh druh : ChallengeZmenenyEvent.Druh.values()) {
 			org.mockito.Mockito.clearInvocations(kesoidModel);
 			sluzba.onEvent(new ChallengeZmenenyEvent(druh, Sablony.cesko360()));
-			final boolean obnovuje = druh == ChallengeZmenenyEvent.Druh.JEN_KANDIDATI || druh == ChallengeZmenenyEvent.Druh.POLICKO || druh == ChallengeZmenenyEvent.Druh.VYSLEDEK || druh == ChallengeZmenenyEvent.Druh.AKTIVNI
+			final boolean obnovuje = druh == ChallengeZmenenyEvent.Druh.ZAPNUTO || druh == ChallengeZmenenyEvent.Druh.JEN_KANDIDATI || druh == ChallengeZmenenyEvent.Druh.POLICKO || druh == ChallengeZmenenyEvent.Druh.VYSLEDEK || druh == ChallengeZmenenyEvent.Druh.AKTIVNI
 					|| druh == ChallengeZmenenyEvent.Druh.DEFINICE || druh == ChallengeZmenenyEvent.Druh.NACTENO;
 			verify(kesoidModel, times(obnovuje ? 1 : 0)).setDoplnkovyFiltr(null);
 		}
