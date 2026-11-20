@@ -11,6 +11,7 @@ KOREN je prázdná složka, ve které vznikne GeoKuk/{program,data}. Postup:
 Výsledek jde do výstupu a do souhrnu běhu; končí kódem 1, když se něco nepovedlo.
 """
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -60,10 +61,8 @@ class Beh:
         self.data = os.path.join(koren, "data")
         self.log = os.path.join(self.data, "log", "geokuk.log")
         self.ovladani = os.path.join(self.data, "ovladani.properties")
-        try:
+        with contextlib.suppress(OSError):
             os.remove(self.ovladani)
-        except OSError:
-            pass
         self.zacatek = time.perf_counter()
         with open(os.path.join(koren, nazev + ".out"), "wb") as vystup:
             self.proces = subprocess.Popen([java, "-XX:-UsePerfData", "-jar", os.path.join(koren, "program", "start.jar"), "--ovladani=0", "--ovladani-devel"], cwd=koren,
