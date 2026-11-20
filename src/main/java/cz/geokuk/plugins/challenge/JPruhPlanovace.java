@@ -60,6 +60,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 	private final transient JButton zpet = new JButton(new Sipka(true));
 	private final transient JButton dal = new JButton(new Sipka(false));
 	private final transient Prepinac kandidati = new Prepinac(new Trychtyr());
+	private transient cz.geokuk.core.coord.PoziceModel poziceModel;
 	private final transient Prepinac sektory = new Prepinac(new Klin());
 	private final transient Prepinac stitky = new Prepinac(new Stitek());
 	/** Tlačítko Sektory je v liště, jen když zobrazená challenge má sektory (nebo žádná není vybraná). */
@@ -174,6 +175,11 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 
 	public void inject(final ChallengeModel model) {
 		this.model = model;
+	}
+
+	/** Esc a „N° ✕“ zruší i pozici programu, takže další klik na tutéž keš ji vybere znovu. */
+	public void inject(final cz.geokuk.core.coord.PoziceModel poziceModel) {
+		this.poziceModel = poziceModel;
 	}
 
 	/** Nastavení otevírá dialog plánovače přes jeho akci. */
@@ -601,6 +607,9 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		final Challenge c = challenge();
 		if (c != null && model != null) {
 			model.zrusZvyrazneniKlikemMimo();
+			if (poziceModel != null) {
+				poziceModel.setPozice(null);
+			}
 		}
 	}
 
