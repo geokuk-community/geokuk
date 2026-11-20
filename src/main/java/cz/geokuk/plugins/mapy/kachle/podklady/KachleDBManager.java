@@ -188,6 +188,17 @@ class KachleDBManager implements KachleManager {
 		}
 	}
 
+	@Override
+	public byte[] nactiBajty(final Ka ki, final String typ) {
+		return cti(ki, typ, true);
+	}
+
+	@Override
+	public File slozka() {
+		final cz.geokuk.util.file.Filex slozka = folderHolder.getKachleCacheFolder();
+		return slozka == null ? null : slozka.getEffectiveFile();
+	}
+
 	/** Bajty obrázku, bez {@code obrazek} jen prázdné pole, když dlaždice existuje; null, když není nebo cache nejde číst. */
 	private byte[] cti(final Ka ki, final String typ, final boolean obrazek) {
 		final int odlozeniPred = odlozeni;

@@ -68,6 +68,10 @@ public class JKachle extends JComponent {
 		setSize(KACHLE_WIDTH, KACHLE_HEIGHT);
 	}
 
+	Ka getKa() {
+		return ka;
+	}
+
 	public KaLoc getKaLoc() {
 		return ka.getLoc();
 	}
