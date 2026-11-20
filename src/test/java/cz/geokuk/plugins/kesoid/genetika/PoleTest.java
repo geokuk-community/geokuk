@@ -32,12 +32,12 @@ public class PoleTest {
 		final IndexMap<Cislo, Long> pole = new IndexMap<>();
 		pole.put(c(0), 42l);
 		pole.put(c(16), 17l);
-		Assert.assertEquals(new Long(42l), pole.get(c(0)));
+		Assert.assertEquals(Long.valueOf(42L), pole.get(c(0)));
 		Assert.assertNull(pole.get(c(5)));
-		Assert.assertEquals(new Long(17l), pole.get(c(16)));
+		Assert.assertEquals(Long.valueOf(17L), pole.get(c(16)));
 		Assert.assertNull(pole.get(c(176)));
 		pole.put(c(16), 317l);
-		Assert.assertEquals(new Long(317l), pole.get(c(16)));
+		Assert.assertEquals(Long.valueOf(317L), pole.get(c(16)));
 		pole.put(c(16), null);
 		Assert.assertNull(pole.get(c(16)));
 
