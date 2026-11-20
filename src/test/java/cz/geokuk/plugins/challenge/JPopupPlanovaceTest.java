@@ -717,6 +717,29 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains("F4"));
 	}
 
+	/** Popup 360° označí sektor zvýrazněný na mapě (třeba podle vybrané keše), ne jen vybraný v seznamu; klik na označený řádek ho zruší jako u D/T. */
+	@Test
+	public void popup360OznaciSektorZvyraznenyKesiAKlikNaRadekHoZrusi() throws Exception {
+		priprav();
+		popup.prepni();
+		final Challenge c = aktivni360();
+		model.nastavVysledek(c, TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 100 }, new int[0], new double[][] { { 47, 6200 }, { 100, 3000 } }), 50.0, 14.0);
+		SwingUtilities.invokeAndWait(() -> {});
+		final double a = Math.toRadians(100.5);
+		final double lat = 50.0 + 3000 * Math.cos(a) / 111_000.0;
+		final double lon = 14.0 + 3000 * Math.sin(a) / 71_300.0;
+		SwingUtilities.invokeAndWait(() -> model.setVybranaKes(new VybranaKes("GC1", lat, lon, -1, -1)));
+		SwingUtilities.invokeAndWait(() -> {});
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		Assert.assertEquals("sektor keše je zvýrazněný, ne vybraný v seznamu", 100, model.zvyraznenySektor(c));
+		Assert.assertEquals(PosunVyberu.ZADNY_SEKTOR, model.vybranySektor(c));
+		Assert.assertEquals("řádek zvýrazněného sektoru je označený", 1, o.seznam.getSelectedIndex());
+		SwingUtilities.invokeAndWait(() -> popup.klikNaRadek(o.polozky.get(1)));
+		SwingUtilities.invokeAndWait(() -> {});
+		Assert.assertEquals("klik na označený řádek zvýraznění zruší", PosunVyberu.ZADNY_SEKTOR, model.zvyraznenySektor(c));
+		Assert.assertEquals(-1, o.seznam.getSelectedIndex());
+	}
+
 	@Test
 	public void maticeZvyraznujePolickoVybraneKese() throws Exception {
 		priprav();

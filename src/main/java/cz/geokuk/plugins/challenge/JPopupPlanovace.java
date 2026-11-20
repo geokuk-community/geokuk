@@ -270,7 +270,7 @@ public class JPopupPlanovace extends JSlide0 {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
 			obsah.vyberMimoVyrez = model.vyberVeVyrezu() == 0;
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
-				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
+				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenySektor(c));
 			} else {
 				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenePolicko(c), model.poctyVOkne(c));
 				if (!casovacNasobnosti.isRunning()) {
@@ -299,9 +299,9 @@ public class JPopupPlanovace extends JSlide0 {
 		}
 		if (polozka instanceof Integer) {
 			final int s = (Integer) polozka;
-			model.setVybranySektor(c, model.vybranySektor(c) == s ? PosunVyberu.ZADNY_SEKTOR : s);
+			model.setVybranySektor(c, model.zvyraznenySektor(c) == s ? PosunVyberu.ZADNY_SEKTOR : s);
 		} else if (c.typ() == Challenge.Typ.DT_MATICE) {
-			model.setVybranePolicko(c, polozka.equals(model.vybranePolicko(c)) ? null : (String) polozka);
+			model.setVybranePolicko(c, polozka.equals(model.zvyraznenePolicko(c)) ? null : (String) polozka);
 		}
 	}
 
