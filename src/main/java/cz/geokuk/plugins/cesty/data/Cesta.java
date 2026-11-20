@@ -578,7 +578,7 @@ public class Cesta implements Iterable<Bousek0> {
 		setStart(cesta.getStart());
 		setCil(cesta.getCil());
 		cesta.clear();
-		log.debug(System.identityHashCode(this) + ": prijmyBodyZJine() " + System.identityHashCode(cesta) + start + " " + cil);
+		log.debug("{}: prijmyBodyZJine() {} {} {}", System.identityHashCode(this), System.identityHashCode(cesta), System.identityHashCode(start), System.identityHashCode(cil));
 		napojBouskyNaTutoCestu();
 	}
 
