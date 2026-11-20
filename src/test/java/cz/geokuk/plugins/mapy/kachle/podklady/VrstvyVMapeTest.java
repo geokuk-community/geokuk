@@ -26,6 +26,7 @@ public class VrstvyVMapeTest {
 		slozka = tmp.newFolder("offline-mapy");
 		mapy = new OfflineMapy(() -> {});
 		mapy.kontrolaSlozkyNs = 0;
+		mapy.sledovatSlozku = false;
 		mapy.nastav(slozka, TemaOfflineMapy.VYCHOZI);
 	}
 
@@ -144,6 +145,7 @@ public class VrstvyVMapeTest {
 		final OfflineMapy trasy = new OfflineMapy(() -> {}, true);
 		try {
 			trasy.kontrolaSlozkyNs = 0;
+			trasy.sledovatSlozku = false;
 			trasy.nastav(slozka, TemaOfflineMapy.TRASY);
 			final OfflineRenderer r0 = trasy.pouzij();
 			r0.skonci();

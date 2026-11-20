@@ -186,4 +186,35 @@ public class JObrysMapSlideTest {
 		Files.write(new File(slozka, "czech-republic.map").toPath(), new byte[20]);
 		Assert.assertNotEquals(sMapou, SouboryMap.otisk(slozka));
 	}
+
+	/** Hlídání složky při nečinnosti složku neprochází, nový soubor s mapou ano. */
+	@Test(timeout = 30000)
+	public void hlidaniSlozkyBezZmenyNeprochazi() throws Exception {
+		final File slozka = tmp.getRoot();
+		final JObrysMapSlide[] s = new JObrysMapSlide[1];
+		SwingUtilities.invokeAndWait(() -> {
+			s[0] = new JObrysMapSlide();
+			s[0].slozkaMapZdroj = () -> slozka;
+			s[0].ctecka = (sl, katalog) -> Collections.emptyList();
+			s[0].onEvent(new ObrysPokrytiEvent(true));
+		});
+		dokonciCteni(s[0]);
+		SwingUtilities.invokeAndWait(() -> s[0].nacti(false));
+		dokonciCteni(s[0]);
+		final long kontrol = s[0].kontrol;
+		for (int i = 0; i < 20; i++) {
+			SwingUtilities.invokeAndWait(() -> s[0].nacti(false));
+		}
+		dokonciCteni(s[0]);
+		Assert.assertEquals("bez změny se složka nekontroluje", kontrol, s[0].kontrol);
+		Files.write(new File(slozka, "czech-republic.map").toPath(), new byte[10]);
+		final long konec = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+		while (s[0].kontrol == kontrol && System.nanoTime() < konec) {
+			SwingUtilities.invokeAndWait(() -> s[0].nacti(false));
+			Thread.sleep(20);
+		}
+		Assert.assertTrue("nová mapa vyvolá kontrolu", s[0].kontrol > kontrol);
+		dokonciCteni(s[0]);
+		SwingUtilities.invokeAndWait(() -> s[0].setVisible(false));
+	}
 }

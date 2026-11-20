@@ -32,6 +32,7 @@ public class PrekryvVrstvyTrasTest {
 		Assert.assertTrue(vrstvy.mkdirs());
 		trasy = new OfflineMapy(() -> {}, true);
 		trasy.kontrolaSlozkyNs = 0;
+		trasy.sledovatSlozku = false;
 		trasy.nastav(slozka, TemaOfflineMapy.TRASY);
 	}
 

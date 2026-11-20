@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import cz.geokuk.core.coordinates.Wgs;
+import cz.geokuk.util.file.SledovaniSlozky;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -278,6 +279,11 @@ public class OfflineMapy {
 			return;
 		}
 		posledniKontrola = ted;
+		// Dokud se nic neověřuje ani nezkouší znovu a systém nehlásí změnu, složka se neprochází.
+		if (otiskSlozky != null && otiskZmeny == null && !opakovat && sledovatSlozku && !zmenaVeSlozce()) {
+			return;
+		}
+		pruchodu++;
 		final List<File> mapy = prekryv ? mapyPrekryvu(slozkaOtevrena, trasyKresliPodkladOtevrene) : mapyVeSlozce(slozkaOtevrena);
 		final String otisk = otisk(mapy);
 		if (otiskSlozky == null) {
@@ -301,6 +307,38 @@ public class OfflineMapy {
 			if (opakovat && ted - opakovatOd >= 0) {
 				otevri(mapy, ted, false);
 			}
+		}
+	}
+
+	/** Počet kontrol složky, při kterých se složka skutečně prošla. */
+	long pruchodu;
+	/** Hlídat složku událostmi systému; bez toho se prochází při každé kontrole. */
+	boolean sledovatSlozku = true;
+	private SledovaniSlozky sledovani;
+
+	/** Hloubka procházení složky vrstev v {@link cz.geokuk.plugins.mapy.sprava.SouboryVrstev} včetně složky vrstev. */
+	private static final int HLOUBKA_PREKRYVU = 9;
+
+	private boolean zmenaVeSlozce() {
+		final File s = slozkaOtevrena;
+		if (s == null) {
+			return true;
+		}
+		final int hloubka = prekryv ? HLOUBKA_PREKRYVU : 1;
+		if (sledovani == null || !sledovani.getKoren().equals(s.toPath()) || sledovaniHloubka != hloubka) {
+			zavriSledovani();
+			sledovani = new SledovaniSlozky(s.toPath(), hloubka);
+			sledovaniHloubka = hloubka;
+		}
+		return sledovani.zmenaOdPosledniho();
+	}
+
+	private int sledovaniHloubka;
+
+	private void zavriSledovani() {
+		if (sledovani != null) {
+			sledovani.close();
+			sledovani = null;
 		}
 	}
 
@@ -470,6 +508,7 @@ public class OfflineMapy {
 	public synchronized void zavri() {
 		zavriRenderer();
 		uvolniTema();
+		zavriSledovani();
 		otiskSlozky = null;
 		otiskZmeny = null;
 		opakovat = false;
