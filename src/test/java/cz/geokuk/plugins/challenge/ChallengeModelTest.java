@@ -156,6 +156,7 @@ public class ChallengeModelTest {
 	public void zapnutiDalsiChallengeVypneDosavadniSJejimStavemAPrenesePrepinacJenKandidati() throws Exception {
 		final Challenge a = model.ulozVlastni(vlastni("A"));
 		final Challenge b = model.ulozVlastni(vlastni("B"));
+		model.setZapnuto(true);
 		model.aktivuj(a);
 		model.nastavVysledek(a, vysledek(100));
 		// Výsledek se do modelu zapíše ve vlákně Swingu; než se zapne další challenge, musí tam být.
@@ -662,6 +663,21 @@ public class ChallengeModelTest {
 	}
 
 	@Test
+	public void filtrJenKandidatiSeKdyzJePlanovacVypnutyNepouzijeAPoZapnutiPlatiZnovu() {
+		final Challenge a = model.ulozVlastni(vlastni("A"));
+		model.setZapnuto(true);
+		model.aktivuj(a);
+		model.setJenKandidatiPro(a);
+		Assert.assertEquals(a, model.jenKandidatiPro());
+		model.setZapnuto(false);
+		Assert.assertNull("vypnutý plánovač filtr nepoužívá", model.jenKandidatiPro());
+		Assert.assertFalse(model.stavPruhu().jenKandidati());
+		model.setZapnuto(true);
+		Assert.assertEquals("volba uživatele se zachovala", a, model.jenKandidatiPro());
+		Assert.assertTrue(model.stavPruhu().jenKandidati());
+	}
+
+	@Test
 	public void filtrJenKandidatiJeJedenAJenProAktivni() {
 		final Challenge a = model.ulozVlastni(vlastni("A"));
 		final Challenge b = model.ulozVlastni(vlastni("B"));
@@ -671,6 +687,7 @@ public class ChallengeModelTest {
 		} catch (final ChallengeChyba e) {
 			Assert.assertTrue(e.getMessage(), e.getMessage().contains("aktivní"));
 		}
+		model.setZapnuto(true);
 		model.aktivuj(a);
 		udalosti.clear();
 		model.setJenKandidatiPro(a);

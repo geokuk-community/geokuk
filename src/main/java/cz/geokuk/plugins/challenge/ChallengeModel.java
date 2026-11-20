@@ -1001,10 +1001,13 @@ public class ChallengeModel extends Model0 {
 		});
 	}
 
-	/** Challenge, pro kterou je zapnutý filtr „jen kandidáti“ (zobrazit jen nenalezené keše, které zaplní chybějící sektor); null = filtr vypnutý. */
+	/**
+	 * Challenge, pro kterou je zapnutý filtr „jen kandidáti“ (zobrazit jen nenalezené keše, které zaplní chybějící sektor); null = filtr vypnutý. Při vypnutém plánovači se filtr
+	 * nepoužije, volba uživatele se zachová a po zapnutí plánovače platí znovu.
+	 */
 	public Challenge jenKandidatiPro() {
 		final String k = jenKandidatiPro;
-		if (k == null) {
+		if (k == null || !zapnuto) {
 			return null;
 		}
 		return seznam.najdi(k);

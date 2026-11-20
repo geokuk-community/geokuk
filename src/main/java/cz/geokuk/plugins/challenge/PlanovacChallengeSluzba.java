@@ -84,6 +84,7 @@ public class PlanovacChallengeSluzba implements AfterInjectInit {
 			planovac.modelZmenen(event);
 		}
 		switch (event.druh()) {
+		case ZAPNUTO:
 		case JEN_KANDIDATI:
 		case POLICKO:
 		case VYSLEDEK:
