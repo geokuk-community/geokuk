@@ -67,7 +67,7 @@ public class MultiNacitacTest {
 	}
 
 	private static void zapis(final File f, final String obsah) throws IOException {
-		f.getParentFile().mkdirs();
+		Files.createDirectories(f.getParentFile().toPath());
 		Files.write(f.toPath(), obsah.getBytes(StandardCharsets.UTF_8));
 	}
 

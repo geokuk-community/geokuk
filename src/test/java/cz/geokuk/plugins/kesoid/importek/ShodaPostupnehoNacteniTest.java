@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -92,7 +93,7 @@ public class ShodaPostupnehoNacteniTest {
 	public void priShodeCasuRozhodneCesta() throws Exception {
 		final File b = gpxKesi("b.gpx", "b", "GC0001");
 		final File a = gpxKesi("a.gpx", "a", "GC0001");
-		a.setLastModified(b.lastModified());
+		Files.setLastModifiedTime(a.toPath(), FileTime.fromMillis(b.lastModified()));
 		Assert.assertEquals("a", zdrojKese(nacti(), "GC0001"));
 		vypnute.add(a);
 		nacti();
@@ -304,7 +305,7 @@ public class ShodaPostupnehoNacteniTest {
 				denik.append(", změň ").append(f.getName());
 			} else if (op == 6) {
 				final File g = zdroje.get(r.nextInt(zdroje.size()));
-				g.setLastModified(f.lastModified());
+				Files.setLastModifiedTime(g.toPath(), FileTime.fromMillis(f.lastModified()));
 				denik.append(", stejný čas ").append(g.getName()).append(" jako ").append(f.getName());
 			} else if (op == 7) {
 				vypnute.clear();

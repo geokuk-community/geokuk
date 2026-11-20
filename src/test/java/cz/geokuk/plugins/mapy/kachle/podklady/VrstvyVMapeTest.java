@@ -34,9 +34,9 @@ public class VrstvyVMapeTest {
 		mapy.zavri();
 	}
 
-	private File vrstvy() {
+	private File vrstvy() throws IOException {
 		final File v = new File(slozka, OfflineMapy.SLOZKA_VRSTEV);
-		v.mkdirs();
+		Files.createDirectories(v.toPath());
 		return v;
 	}
 

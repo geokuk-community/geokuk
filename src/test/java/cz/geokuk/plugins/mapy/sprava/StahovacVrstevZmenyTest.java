@@ -136,7 +136,7 @@ public class StahovacVrstevZmenyTest {
 	/** Rozpracovaná část: prvních {@code kolik} bajtů {@code obsah} a info jako po přerušeném stahování. */
 	private void rozpracuj(final KatalogovaVrstva v, final int index, final byte[] obsah, final int kolik, final String etag) throws IOException {
 		final KatalogovaVrstva.Soubor so = v.getSoubory().get(index);
-		StahovacVrstev.rozpracovany(slozka, so).getParentFile().mkdirs();
+		Files.createDirectories(StahovacVrstev.rozpracovany(slozka, so).getParentFile().toPath());
 		Files.write(StahovacVrstev.rozpracovany(slozka, so).toPath(), Arrays.copyOf(obsah, kolik));
 		final StahovacMapy.Info i = new StahovacMapy.Info();
 		i.url = so.getUrly().get(0).toString();
@@ -243,7 +243,7 @@ public class StahovacVrstevZmenyTest {
 		data.put("a.zip", nahodna(100_000, 1));
 		data.put("b.zip", nahodna(50_000, 2));
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final byte[] staraA = nahodna(90_000, 3);
 		final byte[] staraB = nahodna(45_000, 4);
 		Files.write(naDisku("a.zip").toPath(), staraA);
@@ -277,7 +277,7 @@ public class StahovacVrstevZmenyTest {
 		data.put("a.zip", nahodna(100_000, 1));
 		data.put("b.zip", nahodna(50_000, 2));
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final byte[] staraA = nahodna(90_000, 3);
 		Files.write(naDisku("a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
 		rozpracuj(v, 0, data.get("a.zip"), 100_000, "\"v-1\"");
@@ -299,7 +299,7 @@ public class StahovacVrstevZmenyTest {
 	public void stejnaVelikostJinyObsahSeNestahne() throws IOException {
 		data.put("a.zip", nahodna(100_000, 1));
 		final KatalogovaVrstva v = vrstva("a.zip");
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		Files.write(naDisku("a.zip").toPath(), new byte[100_000]);
 		assertEquals(StavVrstvy.Mistni.JINA_VERZE, StahovacVrstev.mistniStav(StavVrstvy.novy(v), slozka).getMistni());
 		final StavVrstvy s = stahni(v);
@@ -328,7 +328,7 @@ public class StahovacVrstevZmenyTest {
 		data.put("b.zip", nahodna(50_000, 2));
 		data.put("c.zip", nahodna(30_000, 3));
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip", "c.zip");
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		for (int i = 0; i < 3; i++) {
 			final KatalogovaVrstva.Soubor so = v.getSoubory().get(i);
 			rozpracuj(v, i, data.get(so.getNazev()), (int) so.getVelikost(), "\"v-1\"");
@@ -352,7 +352,7 @@ public class StahovacVrstevZmenyTest {
 		data.put("a.zip", nahodna(100_000, 1));
 		data.put("b.zip", nahodna(50_000, 2));
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final byte[] staraA = nahodna(90_000, 3);
 		final byte[] staraB = nahodna(45_000, 4);
 		Files.write(naDisku("a.zip" + StahovacVrstev.PRIPONA_STARA).toPath(), staraA);
@@ -372,7 +372,7 @@ public class StahovacVrstevZmenyTest {
 		data.put("a.zip", nahodna(100_000, 1));
 		data.put("b.zip", nahodna(50_000, 2));
 		final KatalogovaVrstva v = vrstva("a.zip", "b.zip");
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final byte[] staraA = nahodna(100_000, 3);
 		Files.write(naDisku("a.zip").toPath(), staraA);
 		Files.write(naDisku("b.zip").toPath(), nahodna(50_000, 4));

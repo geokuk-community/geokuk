@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -52,8 +53,8 @@ public class CdsTest {
 		return f;
 	}
 
-	private File hotovy() {
-		slozka.mkdirs();
+	private File hotovy() throws IOException {
+		Files.createDirectories(slozka.toPath());
 		return new File(slozka, Cds.PREDPONA_HOTOVEHO + id + Cds.PRIPONA);
 	}
 
@@ -65,7 +66,7 @@ public class CdsTest {
 	}
 
 	private File nove(final String koncovka, final long velikost, final long stari) throws IOException {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		return velky(new File(slozka, Cds.PREDPONA_NOVEHO + id + "-" + koncovka + Cds.PRIPONA), velikost, TED - stari);
 	}
 
@@ -91,7 +92,7 @@ public class CdsTest {
 
 	@Test
 	public void archivJenProCteniSeSmaze() throws IOException {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final File stary = velky(new File(slozka, Cds.PREDPONA_HOTOVEHO + "21.0.1-1-2-3" + Cds.PRIPONA), 30 * MB, 0);
 		assertTrue(stary.setWritable(false));
 		prepinace();
@@ -116,7 +117,7 @@ public class CdsTest {
 	}
 
 	@Test
-	public void bezArchivuSeVytvoriVRozepsanemSouboru() {
+	public void bezArchivuSeVytvoriVRozepsanemSouboru() throws IOException {
 		final List<String> p = prepinace();
 		assertEquals(2, p.size());
 		assertEquals(Cds.KONTROLA, p.get(0));
@@ -186,7 +187,7 @@ public class CdsTest {
 
 	@Test
 	public void maleNebPoskozeneArchivSeSmazeAVytvoriSeZnovu() throws IOException {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		hotovyArchiv(8);
 		final List<String> p = prepinace();
 		assertFalse(hotovy().exists());
@@ -224,7 +225,7 @@ public class CdsTest {
 
 	@Test
 	public void archivyStareVerzeSeMazouCiziSouboryNe() throws IOException {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final File stary = velky(new File(slozka, Cds.PREDPONA_HOTOVEHO + "21.0.1-1-2-3" + Cds.PRIPONA), 30 * MB, 0);
 		final File cizi = new File(slozka, "poznamka.txt");
 		assertTrue(cizi.createNewFile());
@@ -293,7 +294,7 @@ public class CdsTest {
 
 	@Test
 	public void rozepsanyArchivJinehoJaruSePovysiNeniAleSmaze() throws IOException {
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		final File cizi = velky(new File(slozka, Cds.PREDPONA_NOVEHO + "21.0.1-1-2-3-abc" + Cds.PRIPONA), 30 * MB, TED - 120_000);
 		final List<File> overovane = new ArrayList<>();
 		prepinace("21", a -> overovane.add(a));

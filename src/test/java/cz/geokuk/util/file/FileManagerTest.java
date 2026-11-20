@@ -8,6 +8,7 @@ import java.lang.management.OperatingSystemMXBean;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+import java.nio.file.attribute.FileTime;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,7 +33,7 @@ public class FileManagerTest {
 	public void kopiePrenesObsahACas() throws Exception {
 		final File zdroj = tmp.newFile("a.txt");
 		Files.write(zdroj.toPath(), "obsah".getBytes(StandardCharsets.UTF_8));
-		zdroj.setLastModified(1_000_000_000_000L);
+		Files.setLastModifiedTime(zdroj.toPath(), FileTime.fromMillis(1_000_000_000_000L));
 		final File cil = new File(tmp.getRoot(), "b.txt");
 		FileManager.getInstance(2).copyFileToFile(zdroj, cil);
 		assertThat(new String(Files.readAllBytes(cil.toPath()), StandardCharsets.UTF_8)).isEqualTo("obsah");

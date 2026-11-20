@@ -458,7 +458,7 @@ public class SmokeScenar {
 	private static void zmenProstredi() throws IOException {
 		// Pod obyčejným souborem složku nevytvoří nikdo, ani root.
 		final File odpojeny = new File(System.getProperty("java.io.tmpdir"), "odpojeny-disk");
-		odpojeny.createNewFile();
+		Files.write(odpojeny.toPath(), new byte[0]);
 		final OknoUmisteniDto okno = new OknoUmisteniDto();
 		okno.setPozice(new Point(3000, 2000));
 		okno.setVelikost(new Dimension(1200, 800));
@@ -560,7 +560,11 @@ public class SmokeScenar {
 			u.setAnoGgtFile(puvodni.getAnoGgtFile());
 			u.setNeGgtFile(puvodni.getNeGgtFile());
 			for (final String jmeno : new String[] { "geoget", "gsak", "opensak" }) {
-				new File(koren, jmeno).mkdirs();
+				try {
+					Files.createDirectories(new File(koren, jmeno).toPath());
+				} catch (final IOException e) {
+					throw new UncheckedIOException(e);
+				}
 			}
 			u.setGeogetDataDir(new Filex(new File(koren, "geoget"), false, true));
 			u.setGsakDataDir(new Filex(new File(koren, "gsak"), false, true));
@@ -594,7 +598,11 @@ public class SmokeScenar {
 			return null;
 		}
 		final File f = new File(System.getProperty("java.io.tmpdir"), "smoke-vylet.gpx");
-		f.delete();
+		try {
+			Files.deleteIfExists(f.toPath());
+		} catch (final IOException e) {
+			System.err.println("Nejde smazat " + f + ": " + e);
+		}
 		final Process p = new ProcessBuilder("mkfifo", f.getAbsolutePath()).inheritIO().start();
 		return p.waitFor() == 0 ? f : null;
 	}

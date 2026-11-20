@@ -69,7 +69,7 @@ public class NacitaniGpxSouboruTest {
 	}
 
 	private File zapis(final File f, final byte[] obsah) throws IOException {
-		f.getParentFile().mkdirs();
+		Files.createDirectories(f.getParentFile().toPath());
 		Files.write(f.toPath(), obsah);
 		return f;
 	}

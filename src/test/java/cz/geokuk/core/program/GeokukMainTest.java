@@ -1,5 +1,7 @@
 package cz.geokuk.core.program;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.logging.Logger;
 
 import org.junit.Assert;
@@ -64,8 +66,16 @@ public class GeokukMainTest {
 			Assert.assertFalse(GeokukMain.uzBezi(prvni, soubor));
 		} finally {
 			prvni.channel().close();
-			soubor.delete();
-			slozka.delete();
+			try {
+				Files.deleteIfExists(soubor.toPath());
+			} catch (final IOException e) {
+				System.err.println("Nejde smazat " + soubor + ": " + e);
+			}
+			try {
+				Files.deleteIfExists(slozka.toPath());
+			} catch (final IOException e) {
+				System.err.println("Nejde smazat " + slozka + ": " + e);
+			}
 		}
 	}
 
@@ -75,7 +85,11 @@ public class GeokukMainTest {
 		try {
 			Assert.assertFalse(GeokukMain.uzBezi(null, new java.io.File(soubor, cz.geokuk.start.Start.ZAMEK)));
 		} finally {
-			soubor.delete();
+			try {
+				Files.deleteIfExists(soubor.toPath());
+			} catch (final IOException e) {
+				System.err.println("Nejde smazat " + soubor + ": " + e);
+			}
 		}
 	}
 

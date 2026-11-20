@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 
 import org.junit.*;
@@ -61,7 +62,7 @@ public class RozepsanyGpxTest {
 	private void zapis(final byte[] obsah, final long zmenen) throws Exception {
 		final File f = new File(gpx, "kesky.gpx");
 		Files.write(f.toPath(), obsah);
-		f.setLastModified(zmenen);
+		Files.setLastModifiedTime(f.toPath(), FileTime.fromMillis(zmenen));
 	}
 
 	private KesBag nacti() throws Exception {
@@ -150,7 +151,7 @@ public class RozepsanyGpxTest {
 		Assert.assertEquals(Collections.emptyList(), hlaseni);
 		Assert.assertEquals(StavZdroje.CEKA_NA_ZAPIS, stavSouboru());
 
-		new File(gpx, "kesky.gpx").setLastModified(System.currentTimeMillis() - 60_000);
+		Files.setLastModifiedTime(new File(gpx, "kesky.gpx").toPath(), FileTime.fromMillis(System.currentTimeMillis() - 60_000));
 		nacti();
 		Assert.assertEquals(hlaseni.toString(), 1, hlaseni.size());
 		Assert.assertTrue(hlaseni.get(0), hlaseni.get(0).startsWith("DISPLAY"));

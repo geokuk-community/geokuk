@@ -50,7 +50,7 @@ public class UzivatelskeMapyTest {
 
 	private File slozka(final String... souboryAObsah) throws Exception {
 		final File slozka = new File(tmp.getRoot(), UzivatelskeMapy.SLOZKA);
-		slozka.mkdirs();
+		Files.createDirectories(slozka.toPath());
 		for (int i = 0; i + 1 < souboryAObsah.length; i += 2) {
 			Files.write(new File(slozka, souboryAObsah[i]).toPath(), souboryAObsah[i + 1].getBytes(StandardCharsets.UTF_8));
 		}

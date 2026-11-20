@@ -58,12 +58,12 @@ public class ProgressorInputStreamTest {
 		final Zaznam z = new Zaznam();
 		try (InputStream in = new ProgressorInputStream(z, "test", new ByteArrayInputStream(new byte[100]))) {
 			assertThat(z.max).isEqualTo(100);
-			in.read();
-			in.read(new byte[9]);
+			assertThat(in.read()).isEqualTo(0);
+			assertThat(in.read(new byte[9])).isEqualTo(9);
 			assertThat(z.posledni).isEqualTo(10);
-			in.skip(40);
+			assertThat(in.skip(40)).isEqualTo(40);
 			assertThat(z.posledni).isEqualTo(50);
-			in.read(new byte[100], 0, 100);
+			assertThat(in.read(new byte[100], 0, 100)).isEqualTo(50);
 			assertThat(z.posledni).isEqualTo(100);
 		}
 		assertThat(z.ukoncen).isTrue();
@@ -73,9 +73,9 @@ public class ProgressorInputStreamTest {
 	public void resetVratiPrubeh() throws Exception {
 		final Zaznam z = new Zaznam();
 		try (InputStream in = new ProgressorInputStream(z, "test", new ByteArrayInputStream(new byte[100]))) {
-			in.read(new byte[20]);
+			assertThat(in.read(new byte[20])).isEqualTo(20);
 			in.mark(100);
-			in.read(new byte[30]);
+			assertThat(in.read(new byte[30])).isEqualTo(30);
 			in.reset();
 			assertThat(z.posledni).isEqualTo(20);
 		}
@@ -102,10 +102,10 @@ public class ProgressorInputStreamTest {
 			}
 		};
 		try (InputStream in = new ProgressorInputStream(z, "test", obri)) {
-			in.skip(3_000_000_000L);
+			assertThat(in.skip(3_000_000_000L)).isEqualTo(3_000_000_000L);
 			assertThat(z.posledni).isAtLeast(0);
-			in.skip(1_500_000_000L);
-			in.skip(1_500_000_000L);
+			assertThat(in.skip(1_500_000_000L)).isEqualTo(1_500_000_000L);
+			assertThat(in.skip(1_500_000_000L)).isEqualTo(1_500_000_000L);
 			assertThat(z.posledni).isEqualTo(Integer.MAX_VALUE);
 		}
 	}

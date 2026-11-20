@@ -46,7 +46,7 @@ public class SmazaniSouboruTest {
 		final KatalogovaVrstva trasy = katalog.podleId("tourist/europe/czech-republic").get();
 		final String cesta = trasy.getSoubory().get(0).getCesta();
 		final String vrstevnice = katalog.podleId("contours/europe/czech-republic").get().getSoubory().get(0).getCesta();
-		new File(slozka, cesta).getParentFile().mkdirs();
+		Files.createDirectories(new File(slozka, cesta).getParentFile().toPath());
 		final File[] vytvorene = { vytvor(slozka, cesta, 100), vytvor(slozka, cesta + ".sha256", 64), vytvor(slozka, cesta + ".stahuje", 10),
 				vytvor(slozka, cesta + ".stahuje.info", 10), vytvor(slozka, cesta + ".stara", 10) };
 		vytvor(slozka, vrstevnice, 100);
@@ -65,7 +65,7 @@ public class SmazaniSouboruTest {
 	public void souboryVrstvyVcetneStarsiVerze() throws Exception {
 		final File slozka = tmp.newFolder("layers");
 		final KatalogovaVrstva trasy = VrstvyProGui.katalogCesko().podleId("tourist/europe/czech-republic").get();
-		new File(slozka, "europe").mkdirs();
+		Files.createDirectories(new File(slozka, "europe").toPath());
 		final File stara = vytvor(slozka, "europe/czech-republic.routes.map", 100);
 		final File soucet = vytvor(slozka, "europe/czech-republic.routes.map.sha256", 64);
 		vytvor(slozka, "europe/slovakia.routes.map", 100);

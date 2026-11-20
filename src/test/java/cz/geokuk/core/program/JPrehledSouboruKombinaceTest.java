@@ -1,6 +1,7 @@
 package cz.geokuk.core.program;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.*;
 
 import org.junit.Assert;
@@ -39,7 +40,7 @@ public class JPrehledSouboruKombinaceTest {
 			}
 			// Jiný program: složka neexistuje. Vlastní složka: nejde založit, protože místo nadřazené složky je soubor.
 			final File rodic = new File(koren, "soubor");
-			rodic.createNewFile();
+			Files.write(rodic.toPath(), new byte[0]);
 			cesty.put(vadna, JINE_PROGRAMY.contains(vadna) ? new File(koren, "neni/" + vadna) : new File(rodic, vadna));
 			final JPrehledSouboru panel = panel(cesty, Collections.emptySet());
 			try {

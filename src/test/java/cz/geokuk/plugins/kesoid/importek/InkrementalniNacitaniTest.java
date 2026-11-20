@@ -3,6 +3,7 @@ package cz.geokuk.plugins.kesoid.importek;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.sql.*;
 import java.util.*;
 
@@ -233,7 +234,7 @@ public class InkrementalniNacitaniTest {
 		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db); Statement s = c.createStatement()) {
 			s.execute(insertKese(kod));
 		}
-		db.setLastModified(System.currentTimeMillis() + 5000);
+		Files.setLastModifiedTime(db.toPath(), FileTime.fromMillis(System.currentTimeMillis() + 5000));
 	}
 
 	private void zapisGpx(final String jmeno, final String... kody) throws Exception {

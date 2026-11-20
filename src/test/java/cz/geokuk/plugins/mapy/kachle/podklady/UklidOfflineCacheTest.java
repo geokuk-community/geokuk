@@ -23,7 +23,7 @@ public class UklidOfflineCacheTest {
 
 	private File symboly(final String crc) throws Exception {
 		final File f = new File(slozka, "symboly-" + crc + ".bin");
-		f.createNewFile();
+		Files.write(f.toPath(), new byte[0]);
 		return f;
 	}
 
@@ -32,7 +32,7 @@ public class UklidOfflineCacheTest {
 		final File a = symboly("0000000a");
 		final File stary = symboly("0000000f");
 		final File jiny = new File(slozka, "jiny.bin");
-		jiny.createNewFile();
+		Files.write(jiny.toPath(), new byte[0]);
 		Assert.assertEquals(Collections.singleton("o00000001"), UklidOfflineCache.zaznamenej(slozka, "o00000001", a, "00000000"));
 		final File b = symboly("0000000b");
 		UklidOfflineCache.zaznamenej(slozka, "o00000002", b, "00000000");

@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+import java.nio.file.Files;
 import javax.imageio.ImageIO;
 
 import org.junit.Assert;
@@ -25,7 +26,7 @@ final class GoldenSnimek {
 	static void porovnej(final String jmeno, final BufferedImage skutecny) throws IOException {
 		final File etalon = new File(ETALONY, jmeno + ".png");
 		if (Boolean.getBoolean("golden.prepsat")) {
-			ETALONY.mkdirs();
+			Files.createDirectories(ETALONY.toPath());
 			ImageIO.write(skutecny, "png", etalon);
 			return;
 		}
@@ -33,7 +34,7 @@ final class GoldenSnimek {
 		final BufferedImage ocekavany = ImageIO.read(etalon);
 		final String rozdil = rozdil(ocekavany, skutecny);
 		if (rozdil != null) {
-			VYSTUPY.mkdirs();
+			Files.createDirectories(VYSTUPY.toPath());
 			ImageIO.write(skutecny, "png", new File(VYSTUPY, jmeno + "-skutecny.png"));
 			ImageIO.write(mapaRozdilu(ocekavany, skutecny), "png", new File(VYSTUPY, jmeno + "-rozdil.png"));
 			Assert.fail(jmeno + ": " + rozdil + " (skutečný obrázek a rozdíl v " + VYSTUPY + ")");
