@@ -194,7 +194,7 @@ public class JPopupPlanovaceTest {
 		}
 		Assert.assertEquals("jen sektory s kandidáty, po kružnici", java.util.Arrays.asList("47°  1 kandidát  nejbližší 6,2 km od středu", "213°  2 kandidáti  nejbližší 2,8 km od středu"), radky);
 		Assert.assertEquals("+ 1 sektor bez kandidátů", o.bezKandidatu.getText());
-		Assert.assertTrue(o.nejiste.getText(), o.nejiste.getText().contains("U 1 sektoru je nalezená keš těsně u hranice"));
+		Assert.assertTrue(o.nejiste.getText(), o.nejiste.getText().equals("„≈213°“ u keše: leží těsně u hranice sektoru."));
 		Assert.assertTrue(o.nejiste.isVisible());
 		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360)));
 		Assert.assertFalse("nadpis je jen název challenge", o.nadpis.getText().startsWith("Challenge "));

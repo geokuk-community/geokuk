@@ -417,6 +417,7 @@ public class JPopupPlanovace extends JSlide0 {
 			napoveda.setFont(napoveda.getFont().deriveFont(Font.PLAIN, napoveda.getFont().getSize2D() - 1));
 			kruznice.setFont(napoveda.getFont());
 			legenda.setFont(legenda.getFont().deriveFont(Font.PLAIN, legenda.getFont().getSize2D() - 1));
+			nejiste.setFont(legenda.getFont());
 			final GridBagConstraints g = new GridBagConstraints();
 			g.gridx = 0;
 			g.gridy = 0;
@@ -537,7 +538,7 @@ public class JPopupPlanovace extends JSlide0 {
 			final Color tlumena = new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
 			napoveda.setForeground(tlumena);
 			kruznice.setForeground(tlumena);
-			nejiste.setForeground(jeTmave(pozadi) ? new Color(0xFFD080) : new Color(0x9A5A00));
+			nejiste.setForeground(tlumena);
 			postup.setForeground(jeTmave(pozadi) ? VYPLN_TMAVA : VYPLN_SVETLA);
 			postup.setBackground(jeTmave(pozadi) ? DRAHA_TMAVA : DRAHA_SVETLA);
 		}
@@ -641,7 +642,7 @@ public class JPopupPlanovace extends JSlide0 {
 			kruznice.setText(html(TextyPopupuPlanovace.kruznice(TvarPlanovace.polomerKruznice(v)), SIRKA_NAPOVEDY));
 			bezKandidatu.setText(bez == 0 ? " " : TextyPopupuPlanovace.bezKandidatu(c.typ(), bez));
 			final String n = TextyPopupuPlanovace.nejiste(v);
-			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");
+			nejiste.setText(n.isEmpty() ? " " : n);
 			nejiste.setVisible(!n.isEmpty());
 		}
 

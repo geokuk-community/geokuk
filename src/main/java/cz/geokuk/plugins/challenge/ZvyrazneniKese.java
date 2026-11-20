@@ -30,6 +30,11 @@ final class ZvyrazneniKese {
 		}
 	}
 
+	/** Text štítku keše u hranice sektoru 0 až 359 jako na mapě. */
+	static String textNejiste(final int sektor) {
+		return TEXTY_NEJISTE[sektor];
+	}
+
 	final TvarPlanovace tvar;
 	final Coord coord;
 	final Indexator<Wpt> indexator;

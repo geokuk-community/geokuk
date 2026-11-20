@@ -72,11 +72,11 @@ public class TextyPopupuPlanovaceTest {
 	}
 
 	@Test
-	public void nejisteSektory() {
+	public void nejisteSektoryMajiLegenduStitkuPodlePrvnihoNejistehoSektoru() {
 		assertEquals("", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[0], new double[0][])));
-		assertEquals("U 1 sektoru je nalezená keš těsně u hranice, takže není jisté, do kterého sektoru patří. Na mapě to značí šedý čárkovaný úsek prstence a u keše štítek ≈.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 7 }, new double[0][])));
-		assertEquals("U 3 sektorů je nalezená keš těsně u hranice, takže není jisté, do kterého sektoru patří. Na mapě to značí šedý čárkovaný úsek prstence a u keše štítek ≈.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 1, 2, 3 }, new double[0][])));
-		assertEquals("U 5 sektorů je nalezená keš těsně u hranice, takže není jisté, do kterého sektoru patří. Na mapě to značí šedý čárkovaný úsek prstence a u keše štítek ≈.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 1, 2, 3, 4, 5 }, new double[0][])));
+		assertEquals("„≈7°“ u keše: leží těsně u hranice sektoru.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 7 }, new double[0][])));
+		assertEquals("první nejistý sektor", "„≈41°“ u keše: leží těsně u hranice sektoru.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 200, 41, 300 }, new double[0][])));
+		assertEquals("text je stejný jako štítek na mapě", "„" + ZvyrazneniKese.textNejiste(41) + "“ u keše: leží těsně u hranice sektoru.", TextyPopupuPlanovace.nejiste(vysledek(new int[] { 1 }, new int[] { 41 }, new double[0][])));
 	}
 
 	@Test
