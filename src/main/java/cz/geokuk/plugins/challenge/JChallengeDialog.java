@@ -62,7 +62,6 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	/** U šablony nad formulářem: proč nejde upravit a tlačítko kopie hned u toho. */
 	final JPanel radaSablony = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-	private final JButton kopieSablony = new JButton("Vytvořit kopii…");
 	private final JButton smazat = new JButton("Smazat");
 	private final JTextField nazev = new JTextField(24);
 	private final JComboBox<String> pravidla = new JComboBox<>(new String[] { "Project-GC", "Stator" });
@@ -143,7 +142,6 @@ public class JChallengeDialog extends JMyDialog0 {
 		radekAktivni.add(typ);
 		radek(f, r++, radekAktivni, null);
 		radaSablony.add(new JLabel("Šablonu nelze upravit; vytvořte kopii."));
-		radaSablony.add(kopieSablony);
 		radek(f, r++, radaSablony, null);
 		radek(f, r++, new JLabel("Název"), nazev);
 		final JLabel popisekPravidel = new JLabel("Pravidla");
@@ -175,7 +173,6 @@ public class JChallengeDialog extends JMyDialog0 {
 
 		aktivni.addActionListener(e -> prepniAktivni());
 		kopie.addActionListener(e -> vytvorKopii());
-		kopieSablony.addActionListener(e -> vytvorKopii());
 		smazat.addActionListener(e -> smaz());
 		uloz.addActionListener(e -> ulozZmeny());
 		opakovani.addChangeListener(e -> nasobnostSablony());

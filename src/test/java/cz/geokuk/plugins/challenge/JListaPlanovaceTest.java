@@ -109,17 +109,11 @@ public class JListaPlanovaceTest {
 	}
 
 	@Test
-	public void kopieSablonyJeAktivniAOtevreDialog() {
+	public void menuVyberuNemaVytvoritKopiiAMaNastaveni() {
 		priprav(1280);
 		model.aktivuj(Sablony.cesko360());
-		final JMenuItem kopie = polozka(pruh.sestavVyber(), "Vytvořit kopii…");
-		Assert.assertTrue(kopie.isEnabled());
-		kopie.doClick();
-		Assert.assertEquals(1, model.vlastni().size());
-		Assert.assertEquals("kopie je zobrazená", model.vlastni().get(0), model.zobrazena());
-		Assert.assertEquals(1, model.aktivni().size());
-		Assert.assertEquals("otevře se dialog", 1, nastaveni);
-		Assert.assertFalse("vlastní definici kopírovat nejde, upravuje se v dialogu", polozka(pruh.sestavVyber(), "Vytvořit kopii…").isEnabled());
+		Assert.assertNull("kopie šablony je jen v dialogu", polozka(pruh.sestavVyber(), "Vytvořit kopii…"));
+		Assert.assertNotNull(polozka(pruh.sestavVyber(), "Nastavení plánovače…"));
 	}
 
 	@Test

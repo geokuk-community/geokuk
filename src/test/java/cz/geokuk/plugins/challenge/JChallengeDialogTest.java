@@ -182,16 +182,15 @@ public class JChallengeDialogTest {
 		});
 	}
 
-	/** U šablony rada nad formulářem s vlastním tlačítkem kopie; u vlastní definice rada není. */
+	/** U šablony je nad formulářem rada; kopii dělá tlačítko pod seznamem; u vlastní definice rada není. */
 	@Test
 	public void radaUSablonyVytvoriKopii() throws Exception {
 		naEdt(() -> {
 			Assert.assertTrue("rada u šablony", viditelne(dialog.radaSablony));
 			final JLabel text = najdi(dialog.radaSablony, JLabel.class, new ArrayList<JLabel>()).get(0);
 			Assert.assertEquals("Šablonu nelze upravit; vytvořte kopii.", text.getText());
-			final AbstractButton kopie = najdi(dialog.radaSablony, AbstractButton.class, new ArrayList<AbstractButton>()).get(0);
-			Assert.assertEquals("Vytvořit kopii…", kopie.getText());
-			kopie.doClick();
+			Assert.assertTrue("rada nemá vlastní tlačítko, kopie je tlačítko pod seznamem", najdi(dialog.radaSablony, AbstractButton.class, new ArrayList<AbstractButton>()).isEmpty());
+			tlacitko("Vytvořit kopii…").doClick();
 			Assert.assertEquals(1, model.vlastni().size());
 			Assert.assertEquals("360° od domova (vlastní)", seznam().getSelectedValue().nazev());
 			Assert.assertFalse("u vlastní definice rada není", dialog.radaSablony.isVisible());

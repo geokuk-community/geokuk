@@ -681,11 +681,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			m.add(prepinacVMenu("Štítky u kandidátů", model.isKresliStitky(), model::setKresliStitky));
 		}
 		m.addSeparator();
-		final JMenuItem kopie = new JMenuItem("Vytvořit kopii…");
-		kopie.setEnabled(zobrazena != null && model.jeSablona(zobrazena));
-		kopie.setToolTipText("Vlastní kopie vybrané šablony k úpravě v dialogu plánovače");
-		kopie.addActionListener(e -> kopiruj());
-		m.add(kopie);
 		final JMenuItem planovac = new JMenuItem("Nastavení plánovače…", new Ozubene());
 		planovac.addActionListener(e -> otevriNastaveni());
 		m.add(planovac);
@@ -718,19 +713,6 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 				model.aktivuj(c);
 			}
 			model.setZobrazena(c);
-		} catch (final ChallengeChyba e) {
-			JOptionPane.showMessageDialog(this, e.getMessage(), "Plánovač challenge", JOptionPane.WARNING_MESSAGE);
-		}
-	}
-
-	private void kopiruj() {
-		final Challenge z = model.zobrazena();
-		if (z == null || !model.jeSablona(z)) {
-			return;
-		}
-		try {
-			vyber(model.kopieSablony(z));
-			otevriNastaveni();
 		} catch (final ChallengeChyba e) {
 			JOptionPane.showMessageDialog(this, e.getMessage(), "Plánovač challenge", JOptionPane.WARNING_MESSAGE);
 		}
