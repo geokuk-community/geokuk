@@ -7,8 +7,8 @@
   Kešoidy > Plánovač challenge > Zapnout plánovač. Má výběr challenge
   („360° ▾“), odznak s počtem chybějících sektorů nebo políček D/T, tlačítka
   ◀ ▶, která posouvají výběr na předchozí a další chybějící sektor nebo
-  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Štítky a u 360° Sektory. Nastavení plánovače se otevře z popupu
-  plánovače, z menu výběru challenge a z menu Kešoidy > Plánovač challenge.
+  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Štítky a u 360° Sektory. Nastavení plánovače se otevře z menu
+  výběru challenge a z menu Kešoidy > Plánovač challenge.
 - Plánovač challenge: Ctrl+Shift+šipka skočí na nejbližšího kandidáta ve směru
   šipky, vystředí na něj mapu a u 360° vybere i jeho sektor. Když tam žádný
   není, ukáže se o tom krátká zpráva.
@@ -120,7 +120,6 @@
 - Dlaždice se načítají podle toho, co je vidět: nejdřív hlavní mapa a viditelné
   dlaždice od středu ven, ostatní se přeskočí. Online dlaždice se stahují podle
   téže priority.
-- Posun a přibližování offline mapy méně zatěžují procesor.
 - Paměťová cache dlaždic se přizpůsobí paměti programu.
 - Dokud se dlaždice načítá, ukáže se její náhled z jiného měřítka.
 - Načítání dlaždic ukazuje malé točící se kolečko vpravo nahoře v mapě.

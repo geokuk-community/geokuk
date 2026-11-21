@@ -62,7 +62,6 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final JButton kopie = new JButton("Vytvořit kopii…");
 	/** U šablony nad formulářem: proč nejde upravit a tlačítko kopie hned u toho. */
 	final JPanel radaSablony = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-	private final JButton kopieSablony = new JButton("Vytvořit kopii…");
 	private final JButton smazat = new JButton("Smazat");
 	private final JTextField nazev = new JTextField(24);
 	private final JComboBox<String> pravidla = new JComboBox<>(new String[] { "Project-GC", "Stator" });
@@ -75,7 +74,10 @@ public class JChallengeDialog extends JMyDialog0 {
 	private final JComboBox<String> nalezy = new JComboBox<>(new String[] { "Ze zapnutých zdrojů", "Ze všech zdrojů" });
 	/** Kolikrát splnit každé políčko matice D/T. */
 	final JSpinner opakovani = new JSpinner(new SpinnerNumberModel(1, 1, Challenge.NEJVETSI_OPAKOVANI, 1));
-	final JLabel popisOpakovani = new JLabel();
+	/** Odklad uložení násobnosti po poslední změně číselníku, stejný jako u ◀ N× ▶ v popupu. */
+	private final Timer casovacNasobnosti = new Timer(JPopupPlanovace.ODKLAD_NASOBNOSTI_MS, e -> ulozNasobnost());
+	private transient Challenge cekajiciChallenge;
+	private boolean ukladamNasobnost;
 	/** Pole „Kolikrát splnit“ jen u D/T. */
 	private final java.util.List<Component> poleMatice = new java.util.ArrayList<>();
 	private final JButton uloz = new JButton("Uložit změny");
@@ -101,6 +103,9 @@ public class JChallengeDialog extends JMyDialog0 {
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
+		if (ukladamNasobnost) {
+			return;
+		}
 		if (event.druh() == ChallengeZmenenyEvent.Druh.DEFINICE || event.druh() == ChallengeZmenenyEvent.Druh.AKTIVNI || event.druh() == ChallengeZmenenyEvent.Druh.NACTENO) {
 			obnovSeznam(seznam.getSelectedValue());
 		}
@@ -116,6 +121,7 @@ public class JChallengeDialog extends JMyDialog0 {
 		seznam.setCellRenderer(new PolozkaChallengeRenderer(() -> model));
 		seznam.addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting()) {
+				uloziCekajiciNasobnost();
 				naplnFormular(seznam.getSelectedValue());
 			}
 		});
@@ -138,13 +144,16 @@ public class JChallengeDialog extends JMyDialog0 {
 		int r = 0;
 		final JPanel radekAktivni = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		radekAktivni.add(aktivni);
-		radekAktivni.add(javax.swing.Box.createHorizontalStrut(16));
-		radekAktivni.add(new JLabel("Typ:"));
-		radekAktivni.add(typ);
+		final JLabel popisekOpakovani = new JLabel("Kolikrát splnit");
+		final Component rozestup = javax.swing.Box.createHorizontalStrut(16);
+		radekAktivni.add(rozestup);
+		radekAktivni.add(popisekOpakovani);
+		radekAktivni.add(opakovani);
+		poleMatice.addAll(java.util.Arrays.asList(rozestup, popisekOpakovani, opakovani));
 		radek(f, r++, radekAktivni, null);
-		radaSablony.add(new JLabel("Šablonu nelze upravit; vytvořte kopii."));
-		radaSablony.add(kopieSablony);
+		radaSablony.add(new JLabel("Definici šablony nelze měnit, pro úpravu vytvořte kopii."));
 		radek(f, r++, radaSablony, null);
+		radek(f, r++, new JLabel("Typ"), typ);
 		radek(f, r++, new JLabel("Název"), nazev);
 		final JLabel popisekPravidel = new JLabel("Pravidla");
 		pravidla.setToolTipText("<html>Project-GC: bez Lab a Locationless, jen nálezy zalogované na geocaching.com.<br>Stator: přesnější výpočet, včetně Lab keší, bez Locationless.</html>");
@@ -159,10 +168,6 @@ public class JChallengeDialog extends JMyDialog0 {
 		radek(f, r++, popisekOblasti, oblast);
 		poleSektoru.addAll(java.util.Arrays.asList(popisekPravidel, pravidla, popisekStredu, stredDomov, stredSouradnicePanel, stredListingPanel, popisekOblasti, oblast));
 		radek(f, r++, new JLabel("Nálezy"), nalezy);
-		final JLabel popisekOpakovani = new JLabel("Kolikrát splnit");
-		final JPanel opakovaniPanel = panel(opakovani, popisOpakovani);
-		radek(f, r++, popisekOpakovani, opakovaniPanel);
-		poleMatice.addAll(java.util.Arrays.asList(popisekOpakovani, opakovaniPanel));
 		chyba.setForeground(new Color(180, 30, 30));
 		radek(f, r++, null, chyba);
 		radek(f, r++, null, uloz);
@@ -175,10 +180,16 @@ public class JChallengeDialog extends JMyDialog0 {
 
 		aktivni.addActionListener(e -> prepniAktivni());
 		kopie.addActionListener(e -> vytvorKopii());
-		kopieSablony.addActionListener(e -> vytvorKopii());
 		smazat.addActionListener(e -> smaz());
 		uloz.addActionListener(e -> ulozZmeny());
-		opakovani.addChangeListener(e -> nasobnostSablony());
+		opakovani.addChangeListener(e -> zmenaNasobnosti());
+		casovacNasobnosti.setRepeats(false);
+		addComponentListener(new java.awt.event.ComponentAdapter() {
+			@Override
+			public void componentHidden(final java.awt.event.ComponentEvent e) {
+				uloziCekajiciNasobnost();
+			}
+		});
 		stredDomov.addActionListener(e -> povolStred());
 		stredSouradnice.addActionListener(e -> povolStred());
 		stredListing.addActionListener(e -> povolStred());
@@ -243,16 +254,42 @@ public class JChallengeDialog extends JMyDialog0 {
 		return c != null && model != null && !model.jeVUi(c);
 	}
 
-	/** Násobnost šablony matice D/T je nastavení uživatele a platí hned; šablona sama se nemění. */
-	private void nasobnostSablony() {
+	/** Násobnost matice D/T platí hned (po krátkém odkladu) u šablony i vlastní challenge, bez Uložit změny; šablona sama se nemění. */
+	private void zmenaNasobnosti() {
 		final Challenge c = seznam.getSelectedValue();
-		if (plnim || c == null || model == null || !jeSablona(c) || c.typ() != Challenge.Typ.DT_MATICE) {
+		if (plnim || c == null || model == null || jeNedostupny(c) || c.typ() != Challenge.Typ.DT_MATICE) {
 			return;
 		}
+		cekajiciChallenge = c;
+		casovacNasobnosti.restart();
+	}
+
+	/** Uloží násobnost čekající na odklad hned (při přepnutí řádku, uložení a zavření dialogu; v testech místo čekání na časovač). */
+	void uloziCekajiciNasobnost() {
+		if (casovacNasobnosti.isRunning()) {
+			casovacNasobnosti.stop();
+			ulozNasobnost();
+		}
+	}
+
+	private void ulozNasobnost() {
+		final Challenge c = cekajiciChallenge;
+		cekajiciChallenge = null;
+		if (c == null || model == null) {
+			return;
+		}
+		ukladamNasobnost = true;
 		try {
-			model.nastavOpakovani(c, (Integer) opakovani.getValue());
+			final Challenge nova = model.nastavOpakovani(c, (Integer) opakovani.getValue());
+			for (int i = 0; i < seznamModel.size(); i++) {
+				if (seznamModel.get(i).nazev().equals(c.nazev())) {
+					seznamModel.set(i, nova);
+				}
+			}
 		} catch (final ChallengeChyba ex) {
 			chyba.setText(ex.getMessage());
+		} finally {
+			ukladamNasobnost = false;
 		}
 	}
 
@@ -305,6 +342,7 @@ public class JChallengeDialog extends JMyDialog0 {
 				k.setEnabled(uprava);
 			}
 			opakovani.setEnabled(uprava || c != null && jeSablona(c) && c.typ() == Challenge.Typ.DT_MATICE);
+			uloz.setVisible(!jeSablona(c));
 			aktivni.setEnabled(c != null && (!jeNedostupny(c) || model.jeAktivni(c)));
 			kopie.setEnabled(c != null && !jeNedostupny(c));
 			smazat.setEnabled(c != null && !jeSablona(c));
@@ -322,7 +360,7 @@ public class JChallengeDialog extends JMyDialog0 {
 				k.setVisible(c.typ() == Challenge.Typ.DT_MATICE);
 			}
 			opakovani.setValue(c.opakovani());
-			popisOpakovani.setText(jeSablona(c) ? "vaše nastavení, šablona má " + nasobnostSablony(c) + "×" : "každé políčko 1–" + Challenge.NEJVETSI_OPAKOVANI + "×");
+			opakovani.setToolTipText(jeSablona(c) ? "Šablona počítá " + nasobnostSablony(c) + "×" : null);
 			aktivni.setSelected(model != null && model.jeAktivni(c));
 			nazev.setText(c.nazev());
 			typ.setText(FormularDefinice.nazevTypu(c.typ()));
@@ -404,6 +442,7 @@ public class JChallengeDialog extends JMyDialog0 {
 	}
 
 	private void ulozZmeny() {
+		uloziCekajiciNasobnost();
 		final Challenge c = seznam.getSelectedValue();
 		if (c == null || jeSablona(c) || jeNedostupny(c)) {
 			return;

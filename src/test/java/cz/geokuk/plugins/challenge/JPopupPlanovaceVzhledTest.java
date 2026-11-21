@@ -104,7 +104,7 @@ public class JPopupPlanovaceVzhledTest {
 		Assert.assertEquals(kde + ": tmavé pozadí", tmavy, JPopupPlanovace.Obsah.jeTmave(pozadi));
 		Assert.assertFalse(kde + ": procenta jsou ve shrnutí, ne přes výplň", o.postup.isStringPainted());
 		final double kontrast = Math.abs(jas(o.nejiste.getForeground()) - jas(pozadi));
-		Assert.assertTrue(kde + ": upozornění čitelné, rozdíl jasu " + kontrast, kontrast > 90);
+		Assert.assertTrue(kde + ": legenda štítku čitelná (šedá jako ostatní vedlejší texty), rozdíl jasu " + kontrast, kontrast > 40);
 		for (final double m : new double[] { 1.0, 1.25, 1.5 }) {
 			final BufferedImage img = vykresli(o, m);
 			final String k = kde + " " + Math.round(m * 100) + " %";
@@ -157,6 +157,6 @@ public class JPopupPlanovaceVzhledTest {
 		vzhled(new CharcoalTheme());
 		SwingUtilities.updateComponentTreeUI(o);
 		Assert.assertTrue(JPopupPlanovace.Obsah.jeTmave(o.getBackground()));
-		Assert.assertNotEquals("barva upozornění podle pozadí", svetla, o.nejiste.getForeground());
+		Assert.assertNotEquals("barva legendy podle pozadí", svetla, o.nejiste.getForeground());
 	}
 }

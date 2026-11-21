@@ -146,18 +146,14 @@ final class TextyPopupuPlanovace {
 		return "<html><body style='width: " + sirka + "px'>" + text.replace("&", "&amp;").replace("<", "&lt;") + "</body></html>";
 	}
 
-	/** U kolika sektorů leží nalezená keš u hranice se sousedním sektorem; prázdný text, když u žádného. */
+	/** Legenda štítku „≈41°“ u keše na mapě podle prvního nejistého sektoru (nalezená keš těsně u hranice); prázdný text, když žádný není. */
 	static String nejiste(final VysledekSektoru v) {
-		int n = 0;
 		for (int s = 0; s < 360; s++) {
 			if (v.jeNejisty(s)) {
-				n++;
+				return "„" + ZvyrazneniKese.textNejiste(s) + "“ u keše: leží těsně u hranice sektoru.";
 			}
 		}
-		if (n == 0) {
-			return "";
-		}
-		return "U " + n + " " + tvar(n, "sektoru", "sektorů", "sektorů") + " je nalezená keš těsně u hranice, takže není jisté, do kterého sektoru patří. Na mapě to značí šedý čárkovaný úsek prstence a u keše štítek ≈.";
+		return "";
 	}
 
 	/** Chybějící sektory po kružnici od 0°, ve stejném pořadí jako ◀ ▶. */
