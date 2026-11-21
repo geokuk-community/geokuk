@@ -221,6 +221,8 @@
   výchozí mapou.
 - Když se nastavení starší verze nepodaří převzít, program na to upozorní
   a začne s výchozím nastavením místo částečně převzatého.
+- Při přechodu ze starší verze se převezmou složky GeoGetu a GSAKu a zkopírují
+  se výlety; složka, která neexistuje nebo je prázdná, se převezme vypnutá.
 - Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
   když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po
