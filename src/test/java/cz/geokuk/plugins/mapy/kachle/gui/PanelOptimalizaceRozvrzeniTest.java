@@ -23,22 +23,29 @@ public class PanelOptimalizaceRozvrzeniTest {
 
 	@Test
 	public void prubehNemeniVelikostPaneluAVejdeSe() throws Exception {
-		for (final float meritko : new float[] { 1f, 1.25f, 1.5f }) {
-			try {
-				SwingUtilities.invokeAndWait(() -> over(meritko));
-			} catch (final InvocationTargetException e) {
-				if (e.getCause() instanceof Error) {
-					throw (Error) e.getCause();
+		for (final boolean neproporcionalni : new boolean[] { false, true }) {
+			for (final float meritko : new float[] { 1f, 1.25f, 1.5f }) {
+				try {
+					SwingUtilities.invokeAndWait(() -> over(meritko, neproporcionalni));
+				} catch (final InvocationTargetException e) {
+					if (e.getCause() instanceof Error) {
+						throw (Error) e.getCause();
+					}
+					throw new AssertionError(e.getCause());
 				}
-				throw new AssertionError(e.getCause());
 			}
 		}
 	}
 
-	private static void over(final float meritko) {
-		final Object puvodni = UIManager.get("TextArea.font");
-		final Font pismo = UIManager.getFont("TextArea.font");
-		UIManager.put("TextArea.font", new FontUIResource(pismo.deriveFont(pismo.getSize2D() * meritko)));
+	/** S {@code neproporcionalni} má JTextArea neproporcionální písmo Monospaced 13 jako ve vzhledu Windows. */
+	private static void over(final float meritko, final boolean neproporcionalni) {
+		final Object puvodniTextu = UIManager.get("TextArea.font");
+		final Object puvodniPopisku = UIManager.get("Label.font");
+		final Font textu = neproporcionalni ? new Font(Font.MONOSPACED, Font.PLAIN, 13) : UIManager.getFont("TextArea.font");
+		final Font popisku = UIManager.getFont("Label.font");
+		UIManager.put("TextArea.font", new FontUIResource(textu.deriveFont(textu.getSize2D() * meritko)));
+		UIManager.put("Label.font", new FontUIResource(popisku.deriveFont(popisku.getSize2D() * meritko)));
+		final String popis = meritko + (neproporcionalni ? " Monospaced: " : ": ");
 		try {
 			final PanelOptimalizace panel = new PanelOptimalizace(null, () -> {});
 			panel.nastav(PanelOptimalizace.Faze.BEZI, "Probíhá optimalizace, může to chvíli trvat.");
@@ -46,13 +53,21 @@ public class PanelOptimalizaceRozvrzeniTest {
 			panel.setSize(zabaleno);
 			for (final String text : PRUBEHY) {
 				panel.ukazPrubeh(text);
-				Assert.assertEquals(meritko + ": " + text, zabaleno, panel.getPreferredSize());
-				rozvrhni(panel);
 				final JTextArea zprava = zprava(panel, text);
-				Assert.assertTrue(meritko + ": " + text, zprava.getPreferredSize().height <= zprava.getHeight());
+				// Bez okna by preferovaná velikost zůstala v mezipaměti.
+				zprava.invalidate();
+				Assert.assertEquals(popis + text, zabaleno, panel.getPreferredSize());
+				rozvrhni(panel);
+				Assert.assertTrue(popis + text, zprava.getPreferredSize().width <= zprava.getWidth());
+				Assert.assertTrue(popis + text, zprava.getPreferredSize().height <= zprava.getHeight());
+				// Okno může být širší kvůli ostatním textům; zaručená je jen šířka podle počtu sloupců.
+				final int vyska = zprava.getHeight();
+				zprava.setSize(zprava.getColumns() * zprava.getFontMetrics(zprava.getFont()).charWidth('m') + zprava.getInsets().left + zprava.getInsets().right, vyska);
+				Assert.assertTrue(popis + "v nejužším okně: " + text, zprava.getPreferredSize().height <= vyska);
 			}
 		} finally {
-			UIManager.put("TextArea.font", puvodni);
+			UIManager.put("TextArea.font", puvodniTextu);
+			UIManager.put("Label.font", puvodniPopisku);
 		}
 	}
 
