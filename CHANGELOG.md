@@ -216,10 +216,13 @@
 - Plánovač challenge 360°: štítek keše, která leží do 0,05° od hranice
   sektoru, má před číslem sektoru znak ≈ (není jisté, do kterého sektoru
   patří).
+- Z lišty zmizely filtry Hodnocení a BestOf. Česká hodnocení keší se od
+  roku 2013 nevyplňují, takže by filtr skryl všechny novější keše. Práh
+  uložený starší verzí se už neuplatní. Hodnoty u starších keší zůstávají
+  v detailu keše, filtr podle favoritů zůstává.
 
 ### Opravy
-- Nastavený práh hodnocení, BestOf nebo favoritů ve filtru skryje i keše,
-  které tuto hodnotu nemají.
+- Nastavený práh favoritů ve filtru skryje i keše, které favority nemají.
 - Po přechodu z verze 5.2 zůstane vybraná mapa OpenStreetMap, ortofoto
   nebo topografická mapa ČÚZK; mapa, kterou tato verze nemá, se nahradí
   výchozí mapou.
