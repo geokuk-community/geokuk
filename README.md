@@ -93,7 +93,8 @@ Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 a�
 Nastavení se při prvním spuštění převezme samo, včetně složek GeoGetu
 a GSAKu (složka, která neexistuje nebo je prázdná, se převezme vypnutá,
 zapnout ji jde v Soubor > Umístění souborů). Výlety `lovim.ggt`
-a `tedne.ggt` se zkopírují do `data\vylety`. Ostatní složky se
+a `tedne.ggt` se zkopírují do `data\vylety` (výlety na síťové cestě je
+potřeba zkopírovat ručně). Ostatní složky se
 nepřebírají: keše se čtou ze složky `data\gpx` a výstupy rendru jdou do
 `data\render`. Data starší verze zůstanou beze změny ve složce
 `%USERPROFILE%\geokuk` (na Linuxu a macOS `~/geokuk`), GeoKuk je odtud
