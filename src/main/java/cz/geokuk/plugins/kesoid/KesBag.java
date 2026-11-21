@@ -46,8 +46,6 @@ public class KesBag {
 	private Indexator<Wpt> indexator;
 
 
-	private int maximalniBestOf = 0;
-	private int maximalniHodnoceni;
 	private int maximalniFavorit;
 	private final Genom genom;
 
@@ -67,7 +65,7 @@ public class KesBag {
 		Set<Kesoid> kesoidy;
 		List<Kesoid> seznamKesoidu;
 		int pocetWpt;
-		int maxBestOf, maxHodnoceni, maxFavorit;
+		int maxFavorit;
 
 		Skupina(final Cast hotova) {
 			this.hotova = hotova;
@@ -81,13 +79,11 @@ public class KesBag {
 	public static final class Cast {
 		final int pocetWpt;
 		final List<Kesoid> kesoidy;
-		final int maxBestOf, maxHodnoceni, maxFavorit;
+		final int maxFavorit;
 
 		Cast(final Skupina s) {
 			pocetWpt = s.pocetWpt;
 			kesoidy = s.seznamKesoidu;
-			maxBestOf = s.maxBestOf;
-			maxHodnoceni = s.maxHodnoceni;
 			maxFavorit = s.maxFavorit;
 		}
 
@@ -133,16 +129,12 @@ public class KesBag {
 			skupina.pocetWpt++;
 			if (kesoid instanceof Kes) {
 				final Kes kes = (Kes) kesoid;
-				skupina.maxBestOf = Math.max(skupina.maxBestOf, kes.getBestOf());
-				skupina.maxHodnoceni = Math.max(skupina.maxHodnoceni, kes.getHodnoceni());
 				skupina.maxFavorit = Math.max(skupina.maxFavorit, kes.getFavorit());
 			}
 		} else {
 			kesoidyset.add(kesoid);
 			if (kesoid instanceof Kes) {
 				final Kes kes = (Kes) kesoid;
-				maximalniBestOf = Math.max(maximalniBestOf, kes.getBestOf());
-				maximalniHodnoceni = Math.max(maximalniHodnoceni, kes.getHodnoceni());
 				maximalniFavorit = Math.max(maximalniFavorit, kes.getFavorit());
 			}
 		}
@@ -196,16 +188,12 @@ public class KesBag {
 		for (final Skupina s : skupiny.values()) {
 			if (s.hotova != null) {
 				kesoidy.addAll(s.hotova.kesoidy);
-				maximalniBestOf = Math.max(maximalniBestOf, s.hotova.maxBestOf);
-				maximalniHodnoceni = Math.max(maximalniHodnoceni, s.hotova.maxHodnoceni);
 				maximalniFavorit = Math.max(maximalniFavorit, s.hotova.maxFavorit);
 			} else {
 				// Množina se po dokončení nedrží, část si nese jen seznam.
 				s.seznamKesoidu = new ArrayList<>(s.kesoidy);
 				s.kesoidy = null;
 				kesoidy.addAll(s.seznamKesoidu);
-				maximalniBestOf = Math.max(maximalniBestOf, s.maxBestOf);
-				maximalniHodnoceni = Math.max(maximalniHodnoceni, s.maxHodnoceni);
 				maximalniFavorit = Math.max(maximalniFavorit, s.maxFavorit);
 			}
 		}
@@ -248,19 +236,8 @@ public class KesBag {
 		return kesoidy;
 	}
 
-	/**
-	 * @return the maximalniBestOf
-	 */
-	public int getMaximalniBestOf() {
-		return maximalniBestOf;
-	}
-
 	public int getMaximalniFavorit() {
 		return maximalniFavorit;
-	}
-
-	public int getMaximalniHodnoceni() {
-		return maximalniHodnoceni;
 	}
 
 	/**

@@ -69,9 +69,7 @@ public class KesoidFilter {
 				}
 
 				// Keš bez hodnoty (NENI_HODNOCENI) nastavený práh nesplní.
-				if (podPrahem(kes.getHodnoceni(), filterDefinition.getPrahHodnoceni())
-						|| podPrahem(kes.getBestOf(), filterDefinition.getPrahBestOf())
-						|| podPrahem(kes.getFavorit(), filterDefinition.getPrahFavorit())) {
+				if (podPrahem(kes.getFavorit(), filterDefinition.getPrahFavorit())) {
 					return false;
 				}
 			}
