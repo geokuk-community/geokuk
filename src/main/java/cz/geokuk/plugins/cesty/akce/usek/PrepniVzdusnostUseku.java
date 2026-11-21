@@ -1,6 +1,7 @@
 package cz.geokuk.plugins.cesty.akce.usek;
 
 import cz.geokuk.core.coordinates.Mou;
+import cz.geokuk.plugins.cesty.data.TypUseku;
 import cz.geokuk.plugins.cesty.data.Usek;
 
 public class PrepniVzdusnostUseku extends UsekAction0 {
@@ -20,7 +21,8 @@ public class PrepniVzdusnostUseku extends UsekAction0 {
 	protected void nastavJmenoAkce(final Usek usek, final Mou mou) {
 		final String dalkas = usek.dalkaHtml();
 		if (usek.isVzdusny()) {
-			putValue(NAME, "<html>Přepni úsek " + dalkas + " na běžný");
+			final boolean poCeste = cestyModel.getTypNovychUseku() == TypUseku.PO_CESTE;
+			putValue(NAME, "<html>Přepni úsek " + dalkas + (poCeste ? " na úsek po cestě" : " na rovný"));
 			putValue(SHORT_DESCRIPTION,
 			        "Vybraný vzdušný úsek přepne podle volby Nové úseky na úsek po cestě (plná čára), nebo rovný (čárkovaná čára). Sousední segmenty cesty se spojí a úsek se započítá do délky cesty.");
 		} else {
