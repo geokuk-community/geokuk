@@ -257,21 +257,27 @@ spustit pro Linux i Windows.
 
 ### Vydání
 
+Vydání se spouští jen ručním během workflow Build. Push tagu `v*` vydání
+nezaloží.
+
 1. Ruční běh workflow Smoke na větvi, ze které se vydává, doběhne zeleně.
 2. Ruční běh workflow Build na stejné větvi s vyplněnou `verze`
-   (beta `X.Y.Z-beta.N`, stabilní verze `X.Y.Z`). Stabilní verze jde
-   vydat jen z `main` nebo z `release/X.Y.x` stejné řady, beta z `main`
-   nebo z `release/*`.
+   (beta `X.Y.Z-beta.N`, stabilní verze `X.Y.Z`). Vydávat jde z `main`,
+   z `release/X.Y.x` jen verzi řady té větve.
 3. Job `kontrola-vydani` před schválením ověří, že tag ani vydání s touto
    verzí ještě neexistují, že Smoke prošel na stejném commitu na Linuxu,
    Windows i macOS, že `CHANGELOG.md` má neprázdný oddíl `## X.Y.Z`
-   (popis vydání) a `pom.xml` verzi `X.Y.Z` a že commit leží na povolené
-   větvi. Výsledek je v souhrnu běhu. Když kontrola selže, vydání se ke
+   (popis vydání) a `pom.xml` verzi `X.Y.Z` a že commit leží na větvi
+   běhu. Výsledek je v souhrnu běhu. Když kontrola selže, vydání se ke
    schválení nedostane.
 4. Správce schválí prostředí `release` (Review deployments). Job `release`
-   založí tag a vydání se soubory ke stažení.
+   založí tag na sestaveném commitu a vydání se soubory ke stažení.
 5. Ověření vydání: soubory, kontrolní součty, popis a příznak předběžné
    verze.
+
+Prostředí `release` má v nastavení repozitáře povinné schválení
+a Deployment branches jen `main` a `release/**`, takže vydání poběží jen
+z kódu chráněných větví.
 
 ## Licence
 

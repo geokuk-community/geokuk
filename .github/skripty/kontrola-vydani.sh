@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Kontroly před schválením vydání. Vstup z prostředí: TAG (v<verze>), GITHUB_SHA, GITHUB_REF,
-# GITHUB_REF_TYPE, GH_REPO; větve repozitáře jako refs/remotes/origin/*.
+# Kontroly před schválením vydání z ručního běhu Build. Vstup z prostředí: TAG (v<verze>),
+# GITHUB_SHA, GITHUB_REF, GH_REPO; větve repozitáře jako refs/remotes/origin/*.
 set -uo pipefail
 
 SOUHRN="${GITHUB_STEP_SUMMARY:-/dev/null}"
@@ -26,27 +26,22 @@ api() {
   return 1
 }
 
-VERZE="${TAG#v}"
-ZAKLAD="${VERZE%%-*}"
-
-# 1. Verze a tag
-if ! printf '%s\n' "$VERZE" | grep -qxE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || [ "$TAG" != "v$VERZE" ]; then
-  chyba "Verze" "Tag $TAG nemá tvar vX.Y.Z nebo vX.Y.Z-beta.N."
-  printf '### Kontrola vydání %s\n\n| | kontrola | výsledek |\n|---|---|---|\n%s' "$TAG" "$RADKY" >> "$SOUHRN"
+# Hodnota přichází z formuláře, do hlášek a dotazů smí jen po kontrole celého řetězce.
+if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+  chyba "Verze" "Verze $(printf '%s' "$TAG" | tr -c '0-9A-Za-z.-' '?') nemá tvar X.Y.Z nebo X.Y.Z-beta.N."
+  printf '### Kontrola vydání\n\n| | kontrola | výsledek |\n|---|---|---|\n%s' "$RADKY" >> "$SOUHRN"
   exit 1
 fi
+VERZE="${TAG#v}"
+ZAKLAD="${VERZE%%-*}"
 ok "Verze" "$VERZE, tag $TAG"
 
-if [ "$GITHUB_REF_TYPE" = tag ]; then
-  ok "Tag" "vydání spuštěno tagem $TAG"
-else
-  ODPOVED=$(api "repos/$GH_REPO/git/ref/tags/$TAG"); RC=$?
-  case $RC in
-    4) ok "Tag" "$TAG zatím neexistuje" ;;
-    0) chyba "Tag" "Tag $TAG už existuje, zvol další číslo verze." ;;
-    *) chyba "Tag" "Dotaz na tag $TAG selhal: $ODPOVED" ;;
-  esac
-fi
+ODPOVED=$(api "repos/$GH_REPO/git/ref/tags/$TAG"); RC=$?
+case $RC in
+  4) ok "Tag" "$TAG zatím neexistuje" ;;
+  0) chyba "Tag" "Tag $TAG už existuje, zvol další číslo verze." ;;
+  *) chyba "Tag" "Dotaz na tag $TAG selhal: $ODPOVED" ;;
+esac
 
 # Bez práva zápisu vrací seznam jen publikovaná vydání, koncepty se v něm neukážou.
 if ODPOVED=$(api --paginate "repos/$GH_REPO/releases?per_page=100"); then
@@ -65,8 +60,8 @@ SMOKE=""
 if ODPOVED=$(api "repos/$GH_REPO/actions/workflows/smoke.yml/runs?head_sha=$GITHUB_SHA&event=workflow_dispatch&status=success&per_page=100"); then
   for BEH in $(printf '%s' "$ODPOVED" | jq -r '.workflow_runs[] | select(.conclusion == "success") | .id'); do
     JOBY=$(api "repos/$GH_REPO/actions/runs/$BEH/jobs?per_page=100") || continue
-    POCET=$(printf '%s' "$JOBY" | jq '[.jobs[] | select(.conclusion == "success") | .labels[]
-      | select(. == "ubuntu-latest" or . == "windows-latest" or . == "macos-latest")] | unique | length')
+    POCET=$(printf '%s' "$JOBY" | jq '[.jobs[] | select(.conclusion == "success") | .name
+      | select(. == "smoke (ubuntu-latest)" or . == "smoke (windows-latest)" or . == "smoke (macos-latest)")] | unique | length')
     if [ "$POCET" = 3 ]; then SMOKE="$BEH"; break; fi
   done
   if [ -n "$SMOKE" ]; then
@@ -93,35 +88,21 @@ else
   chyba "pom.xml" "Verze v pom.xml je $POM, vydání $VERZE potřebuje $ZAKLAD."
 fi
 
-# 4. Větev: stabilní jen z main nebo release/X.Y.x téže řady, beta z main nebo release/*;
-# ruční běh na release/* jen s verzí řady té větve.
+# 4. Větev: z main, nebo z release/X.Y.x řady vydávané verze.
 RADA="${ZAKLAD%.*}"
+ZDROJ="${GITHUB_REF#refs/heads/}"
 case "$GITHUB_REF" in
-  refs/heads/*) ZDROJ="${GITHUB_REF#refs/heads/}" ;;
-  *) ZDROJ="" ;;
+  refs/heads/main | "refs/heads/release/$RADA.x")
+    if git merge-base --is-ancestor "$GITHUB_SHA" "refs/remotes/origin/$ZDROJ" 2>/dev/null; then
+      ok "Větev" "commit ${GITHUB_SHA::7} leží na $ZDROJ"
+    else
+      chyba "Větev" "Commit ${GITHUB_SHA::7} neleží na větvi $ZDROJ."
+    fi ;;
+  refs/heads/release/*)
+    chyba "Větev" "Verze $VERZE nepatří na větev $ZDROJ, z release/* jde vydat jen verze řady té větve." ;;
+  *)
+    chyba "Větev" "Vydání jde spustit jen z main nebo z release/X.Y.x, ne z $GITHUB_REF." ;;
 esac
-VETVE=""
-POVOLENE=""
-for V in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin/main refs/remotes/origin/release); do
-  git merge-base --is-ancestor "$GITHUB_SHA" "refs/remotes/origin/$V" 2>/dev/null || continue
-  VETVE="$VETVE $V"
-  if [ -n "$ZDROJ" ] && [ "$V" != "$ZDROJ" ]; then continue; fi
-  case "$V" in
-    main | "release/$RADA.x") POVOLENE="$POVOLENE $V" ;;
-    release/*) [ -z "$ZDROJ" ] && [ "$VERZE" != "$ZAKLAD" ] && POVOLENE="$POVOLENE $V" ;;
-  esac
-done
-if [ -z "$VETVE" ]; then
-  chyba "Větev" "Commit ${GITHUB_SHA::7} neleží na main ani na release/*, vydání se nesestaví."
-elif [ -z "$POVOLENE" ]; then
-  if [ -n "$ZDROJ" ]; then
-    chyba "Větev" "Verze $VERZE nepatří na větev $ZDROJ, z release/* jde vydat jen verze řady té větve."
-  else
-    chyba "Větev" "Stabilní verze $VERZE se vydává jen z main nebo z release/$RADA.x, commit leží na:$VETVE."
-  fi
-else
-  ok "Větev" "commit ${GITHUB_SHA::7} leží na:$POVOLENE"
-fi
 
 printf '### Kontrola vydání %s\n\n| | kontrola | výsledek |\n|---|---|---|\n%s' "$TAG" "$RADKY" >> "$SOUHRN"
-[ "$CHYB" = 0 ] || { echo "::error::Kontrola vydání $TAG: $CHYB chyb, vydání se nedostane ke schválení."; exit 1; }
+[ "$CHYB" = 0 ] || { echo "::error::Kontrola vydání $TAG neprošla (počet chyb: $CHYB), vydání se nedostane ke schválení."; exit 1; }
