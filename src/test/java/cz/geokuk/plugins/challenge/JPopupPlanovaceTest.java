@@ -1004,12 +1004,12 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.nasobnostMin.isShowing() || o.nasobnostMin.getParent().isVisible());
 		Assert.assertEquals("1×", o.nasobnostHodnota.getText());
 		Assert.assertFalse("pod 1 to nejde", o.nasobnostMin.isEnabled());
-		final int[] ulozeno = { 0 };
+		final java.util.concurrent.atomic.AtomicInteger ulozeno = new java.util.concurrent.atomic.AtomicInteger();
 		model.inject(new EventFirer() {
 			@Override
 			public void fire(final Event0<?> event) {
 				if (((ChallengeZmenenyEvent) event).druh() == ChallengeZmenenyEvent.Druh.DEFINICE) {
-					ulozeno[0]++;
+					ulozeno.incrementAndGet();
 				}
 				popup.onEvent((ChallengeZmenenyEvent) event);
 			}
@@ -1018,10 +1018,11 @@ public class JPopupPlanovaceTest {
 		o.nasobnostPlus.doClick();
 		Assert.assertEquals("hodnota se ukáže hned", "3×", o.nasobnostHodnota.getText());
 		Assert.assertEquals("uložení až po prodlevě", 1, aktivni().opakovani());
-		Assert.assertEquals(0, ulozeno[0]);
-		cekej(() -> aktivni().opakovani() == 3, "uložení po prodlevě");
+		Assert.assertEquals(0, ulozeno.get());
+		// Model mění stav dřív, než ohlásí DEFINICE: čeká se na ohlášení, ne na hodnotu.
+		cekej(() -> ulozeno.get() >= 1, "uložení po prodlevě");
 		Assert.assertEquals(3, aktivni().opakovani());
-		Assert.assertEquals("rychlé klikání dá jedno uložení", 1, ulozeno[0]);
+		Assert.assertEquals("rychlé klikání dá jedno uložení", 1, ulozeno.get());
 		Assert.assertEquals("3×", o.nasobnostHodnota.getText());
 		for (int i = 0; i < 10; i++) {
 			o.nasobnostPlus.doClick();
