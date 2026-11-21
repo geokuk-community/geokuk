@@ -222,7 +222,12 @@
 - Když se nastavení starší verze nepodaří převzít, program na to upozorní
   a začne s výchozím nastavením místo částečně převzatého.
 - Při přechodu ze starší verze se převezmou složky GeoGetu a GSAKu a zkopírují
-  se výlety; složka, která neexistuje nebo je prázdná, se převezme vypnutá.
+  se výlety; složka, která neexistuje nebo je prázdná, se nepřevezme.
+- Při prvním spuštění program najde datovou složku GeoGetu, GSAKu a OpenSAKu
+  v obvyklých umístěních (u GeoGetu i podle geogetboot.ini) a zdroj zapne
+  jen s poslední použitou databází; ostatní databáze jdou zapnout v tabulce
+  zdrojů. Uložené nastavení se nemění.
+- Zkratka Ctrl+1 až Ctrl+4 u vypnutého zdroje řekne, kde ho zapnout.
 - Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
   když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po

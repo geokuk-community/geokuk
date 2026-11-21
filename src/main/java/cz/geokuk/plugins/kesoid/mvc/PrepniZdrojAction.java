@@ -68,7 +68,9 @@ public class PrepniZdrojAction extends ToggleAction0 {
 		if (!isEnabled()) {
 			// Vypnutý zdroj nemá co přepnout; zkratka, která by jinak mlčela, vysvětlí proč.
 			if (toast != null) {
-				toast.ukaz(ZpravyZkratek.zdrojBezSouboru(typ.getNazev()));
+				final KesoidUmisteniSouboru u = kesoidModel == null ? null : kesoidModel.getUmisteniSouboru();
+				final boolean vypnuty = u != null && !JPrepinaceZdroju.povoleneTypy(u).contains(typ);
+				toast.ukaz(vypnuty ? ZpravyZkratek.zdrojVypnuty(typ.getNazev()) : ZpravyZkratek.zdrojBezSouboru(typ.getNazev()));
 			}
 			return;
 		}

@@ -374,30 +374,28 @@ public class NastaveniTest {
 		Assert.assertNull(umisteni.get("kesDir_active", null));
 	}
 
-	/** Starší verze měla zapnutou výchozí složku GSAKu pro Windows i tam, kde GSAK není; převezme se vypnutá. */
+	/** Starší verze měla zapnutou výchozí složku GSAKu pro Windows i tam, kde GSAK není; nepřebírá se, složku najde detekce zdrojů. */
 	@Test
-	public void neexistujiciSlozkaSePrevezmeVypnuta() throws Exception {
+	public void neexistujiciSlozkaSeNeprevezme() throws Exception {
 		final String gsak = new File(tmp.getRoot(), "AppData/Roaming/gsak/data").getAbsolutePath();
 		final SouborovePreferences registr = SouborovePreferences.vPameti();
 		registr.node("current/umisteniSouboru").put("gsakDataDir", gsak);
 		registr.node("current/umisteniSouboru").putBoolean("gsakDataDir_active", true);
 		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml"));
 		Nastaveni.prevezmi(nove, registr, bezVychozichVyletu());
-		Assert.assertEquals("cesta zůstane, uživatel ji může zapnout, až složka bude", gsak, nove.node("geokuk/current/umisteniSouboru").get("gsakDataDir", null));
-		Assert.assertFalse(nove.node("geokuk/current/umisteniSouboru").getBoolean("gsakDataDir_active", true));
+		Assert.assertFalse(nove.nodeExists("geokuk/current/umisteniSouboru"));
 	}
 
-	/** Starší verze výchozí složku GSAKu sama vytvořila prázdnou; převezme se vypnutá. */
+	/** Starší verze výchozí složku GSAKu sama vytvořila prázdnou; nepřebírá se. */
 	@Test
-	public void prazdnaSlozkaSePrevezmeVypnuta() throws Exception {
+	public void prazdnaSlozkaSeNeprevezme() throws Exception {
 		final String gsak = tmp.newFolder("AppData", "Roaming", "gsak", "data").getAbsolutePath();
 		final SouborovePreferences registr = SouborovePreferences.vPameti();
 		registr.node("current/umisteniSouboru").put("gsakDataDir", gsak);
 		registr.node("current/umisteniSouboru").putBoolean("gsakDataDir_active", true);
 		final SouborovePreferences nove = SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml"));
 		Nastaveni.prevezmi(nove, registr, bezVychozichVyletu());
-		Assert.assertEquals(gsak, nove.node("geokuk/current/umisteniSouboru").get("gsakDataDir", null));
-		Assert.assertFalse(nove.node("geokuk/current/umisteniSouboru").getBoolean("gsakDataDir_active", true));
+		Assert.assertFalse(nove.nodeExists("geokuk/current/umisteniSouboru"));
 	}
 
 	/** Relativní cesta se ve starší verzi počítala od jiné složky programu. */
@@ -449,8 +447,8 @@ public class NastaveniTest {
 		stare.put("gsakDataDir", new File(tmp.getRoot(), "gsak").getAbsolutePath());
 		stare.put("anoGgtFile", lovim.getAbsolutePath());
 		final Preferences znacka = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, () -> registr, null).node(Nastaveni.ZNACKA_PREVODU);
-		Assert.assertEquals("GeoGet; GSAK (vypnuto); výlet lovim.ggt", znacka.get("prevzato", null));
-		Assert.assertEquals("", znacka.get("neprevzato", null));
+		Assert.assertEquals("GeoGet; výlet lovim.ggt", znacka.get("prevzato", null));
+		Assert.assertEquals("GSAK (složka neexistuje nebo je prázdná)", znacka.get("neprevzato", null));
 	}
 
 	/** Bez uzlu umístění ve zdroji v něm převod žádný uzel nezaloží; ve Windows by vznikl klíč v registru. */

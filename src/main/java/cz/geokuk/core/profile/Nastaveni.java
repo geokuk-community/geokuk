@@ -290,8 +290,9 @@ public final class Nastaveni {
 
 	/**
 	 * Ponechá jen absolutní cesty ke složkám jiných programů. Relativní cesta se ve starší verzi počítala od jiné složky programu, tak se
-	 * nepřebírá. Složka, která neexistuje nebo je prázdná, se převezme vypnutá; starší verze měla zapnutou výchozí složku GSAKu pro Windows
-	 * a sama ji vytvořila i na počítačích, kde GSAK není. Síťová složka se při startu nezkoumá, mohla by start zdržet; převezme se, jak byla.
+	 * nepřebírá. Složka, která neexistuje nebo je prázdná, se nepřebírá a najde ji detekce zdrojů; starší verze měla zapnutou výchozí složku
+	 * GSAKu pro Windows a sama ji vytvořila i na počítačích, kde GSAK není. Síťová složka se při startu nezkoumá, mohla by start zdržet;
+	 * převezme se, jak byla.
 	 * Uzel bez ponechaných klíčů se smaže.
 	 *
 	 * @param prevod
@@ -306,7 +307,13 @@ public final class Nastaveni {
 		for (final String slozka : SLOZKY_JINYCH_PROGRAMU) {
 			final String cesta = umisteni.get(slozka, null);
 			if (cesta != null && !jeSitova(cesta) && jePrazdnaNeboNeni(new File(cesta))) {
-				umisteni.putBoolean(slozka + PRIPONA_AKTIVNI, false);
+				umisteni.remove(slozka);
+				umisteni.remove(slozka + PRIPONA_AKTIVNI);
+				umisteni.remove(slozka + PRIPONA_RELATIVNE);
+				if (prevod != null) {
+					prevod.neprevzato.add(JMENA_SLOZEK.get(slozka) + " (složka neexistuje nebo je prázdná)");
+				}
+				continue;
 			}
 			if (cesta != null && prevod != null) {
 				prevod.prevzato.add(JMENA_SLOZEK.get(slozka) + (umisteni.getBoolean(slozka + PRIPONA_AKTIVNI, true) ? "" : " (vypnuto)"));

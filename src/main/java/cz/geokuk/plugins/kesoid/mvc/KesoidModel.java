@@ -18,6 +18,7 @@ import cz.geokuk.framework.*;
 import cz.geokuk.plugins.kesoid.*;
 import cz.geokuk.plugins.kesoid.filtr.FilterDefinitionChangedEvent;
 import cz.geokuk.plugins.kesoid.genetika.QualAlelaNames;
+import cz.geokuk.plugins.kesoid.importek.DetekceZdroju;
 import cz.geokuk.plugins.kesoid.importek.InformaceOZdrojich;
 import cz.geokuk.plugins.kesoid.importek.RegistrStavuZdroju;
 import cz.geokuk.plugins.kesoid.importek.StavPolozky;
@@ -746,6 +747,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		nactiZvyrazneni();
 		// fire(new GccomNickChangedEvent(gccomNick));
 		// loadUmisteniSouboru();
+		detekujZdroje(prostrediDetekce.get());
 		setGsakParametryNacitani(loadGsakParametryNacitani());
 		setUmisteniSouboru(loadUmisteniSouboru());
 
@@ -763,6 +765,36 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	private void fajruj() {
 		fire(new FilterDefinitionChangedEvent(filter.getFilterDefinition(), filter.getJmenaNechtenychAlel(), jmenaAlelNaToolbaru));
 		spustFiltrovani();
+	}
+
+	/** Prostředí, ve kterém se hledají datové složky jiných programů; testy ho nahrazují. */
+	static java.util.function.Supplier<DetekceZdroju.Prostredi> prostrediDetekce = DetekceZdroju.Prostredi::systemove;
+
+	/**
+	 * Datové složky GeoGetu, GSAKu a OpenSAKu, které v nastavení ještě nejsou (první spuštění). Nalezený zdroj se zapne jen s poslední
+	 * použitou databází, ostatní databáze čekají na výběr v tabulce zdrojů; bez poslední databáze není vybraná žádná.
+	 */
+	void detekujZdroje(final DetekceZdroju.Prostredi prostredi) {
+		final MyPreferences umisteni = currPrefe().node(FPref.UMISTENI_SOUBORU_node);
+		detekujZdroj(umisteni, FPref.GEOGET_DATA_DIR_value, FPref.GEOGET_node, FPref.ZNAME_GEOGET_DATABAZE_value, () -> DetekceZdroju.geoget(prostredi));
+		detekujZdroj(umisteni, FPref.GSAK_DATA_DIR_value, FPref.GSAK_node, FPref.ZNAME_GSAK_DATABAZE_value, () -> DetekceZdroju.gsak(prostredi));
+		detekujZdroj(umisteni, FPref.OPENSAK_DATA_DIR_value, FPref.OPENSAK_node, FPref.ZNAME_OPENSAK_DATABAZE_value, () -> DetekceZdroju.opensak(prostredi));
+	}
+
+	private void detekujZdroj(final MyPreferences umisteni, final String klicSlozky, final String uzelZdroje, final String klicZnamych,
+			final java.util.function.Supplier<DetekceZdroju.Nalez> hledani) {
+		if (umisteni.get(klicSlozky, null) != null) {
+			return;
+		}
+		final DetekceZdroju.Nalez nalez = hledani.get();
+		if (nalez == null) {
+			return;
+		}
+		final File databaze = nalez.getPosledniDatabaze();
+		currPrefe().node(uzelZdroje).putBoolean(FPref.NOVE_DATABAZE_HNED_value, false);
+		currPrefe().node(FPref.KESOID_node).putFileCollection(klicZnamych, databaze == null ? Collections.emptySet() : Collections.singleton(databaze));
+		umisteni.putFilex(klicSlozky, new Filex(nalez.getSlozka(), false, true));
+		log.info("Nalezena datová složka {} {}, poslední databáze {}", klicSlozky, nalez.getSlozka(), databaze);
 	}
 
 	private KesoidUmisteniSouboru loadUmisteniSouboru() {
