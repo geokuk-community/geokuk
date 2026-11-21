@@ -21,17 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: ${{ github.ref_type == 'tag' && '0' || '1' }}
-
-      - name: Tag musí ležet na main nebo release
-        if: github.ref_type == 'tag'
-        run: |
-          for V in $(git for-each-ref --format='%(refname)' refs/remotes/origin/main refs/remotes/origin/release); do
-            git merge-base --is-ancestor "$GITHUB_SHA" "$V" && exit 0
-          done
-          echo "::error::Commit tagu $GITHUB_REF_NAME ($GITHUB_SHA) není na větvi main ani release/*, vydání se nesestaví."
-          exit 1
 
       - name: JDK 21 (Temurin)
         uses: actions/setup-java@v6
@@ -47,7 +36,7 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             VERZE="${GITHUB_REF_NAME#v}"
           elif [ -n "$VSTUP" ]; then
-            echo "$VSTUP" | grep -qxE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || { echo "Neplatná verze: $VSTUP"; exit 1; }
+            [[ $VSTUP =~ ^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]] || { echo "::error::Neplatná verze, platný tvar je X.Y.Z nebo X.Y.Z-beta.N."; exit 1; }
             case "$GITHUB_REF" in
               refs/heads/release/*)
                 PREDPONA="${GITHUB_REF_NAME#release/}"; PREDPONA="${PREDPONA%x}"
@@ -180,9 +169,28 @@ jobs:
           name: geokuk-windows
           path: GeoKuk-windows.zip
 
+  # Kontroly před schválením vydání; když selže, job release se ke schválení nedostane.
+  kontrola-vydani:
+    if: github.event_name == 'workflow_dispatch' && inputs.verze != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Kontrola vydání
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: v${{ inputs.verze }}
+        run: .github/skripty/kontrola-vydani.sh
+
   release:
-    if: startsWith(github.ref, 'refs/tags/v') || (inputs.verze != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')))
-    needs: [build, testy-windows, windows]
+    if: github.event_name == 'workflow_dispatch' && inputs.verze != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+    needs: [kontrola-vydani, build, testy-windows, windows]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -190,7 +198,7 @@ jobs:
       id-token: write
       attestations: write
     env:
-      TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', inputs.verze) }}
+      TAG: v${{ inputs.verze }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -231,7 +239,7 @@ jobs:
           cat popis.md
 
       # Release je neměnný, soubory jdou nahrát jen do konceptu před publikováním.
-      # Při ručním vydání vznikne tag na sestaveném commitu až publikováním.
+      # Tag vzniká předem na sestaveném commitu; když mezitím vznikl jinde, založení selže.
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -253,8 +261,17 @@ jobs:
               PRIZNAK="--latest=false"
             fi
           fi
-          if [ "$GITHUB_REF_TYPE" = tag ]; then CIL="--verify-tag"; else CIL="--target $GITHUB_SHA"; fi
+          if ODPOVED=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" 2>&1) || ! printf '%s' "$ODPOVED" | grep -q 'HTTP 404'; then
+            echo "::error::Tag $TAG už existuje nebo dotaz na něj selhal, vydání se nezaloží: $ODPOVED"
+            exit 1
+          fi
+          gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" > /dev/null
+          SHA_TAGU=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha)
+          if [ "$SHA_TAGU" != "$GITHUB_SHA" ]; then
+            echo "::error::Tag $TAG ukazuje na $SHA_TAGU, ne na sestavený commit $GITHUB_SHA."
+            exit 1
+          fi
           gh release create "$TAG" geokuk.jar geokuk.jar.sha256 start.jar start.jar.sha256 \
             GeoKuk-windows.zip GeoKuk-windows.zip.sha256 GeoKuk-tema.zip GeoKuk-tema.zip.sha256 java.properties \
-            --draft $CIL --title "$TAG" --notes-file popis.md $PRIZNAK
+            --draft --verify-tag --title "$TAG" --notes-file popis.md $PRIZNAK
           gh release edit "$TAG" --draft=false $PRIZNAK
