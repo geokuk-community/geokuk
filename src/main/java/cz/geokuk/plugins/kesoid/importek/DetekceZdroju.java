@@ -274,7 +274,7 @@ public final class DetekceZdroju {
 		bootstrapy.add(bootstrapOpensaku(p));
 		if (p.jeWindows()) {
 			final File[] balicky = p.slozka("LOCALAPPDATA", "AppData/Local").toPath().resolve("Packages").toFile()
-					.listFiles(f -> f.isDirectory() && f.getName().startsWith("AgreeDK.OpenSAK_"));
+					.listFiles(f -> f.getName().startsWith("AgreeDK.OpenSAK_") && f.isDirectory());
 			if (balicky != null) {
 				for (final File balicek : balicky) {
 					bootstrapy.add(new File(balicek, "LocalCache/Roaming/opensak/bootstrap.json"));

@@ -118,6 +118,22 @@ public class DetekceZdrojuNastaveniTest {
 		Assert.assertNull(koren.node(FPref.GSAK_node).get(FPref.NOVE_DATABAZE_HNED_value, null));
 	}
 
+	/** Chyba při hledání (neplatná cesta v nastavení jiného programu) zastaví jen detekci, ne start. */
+	@Test
+	public void chybaPriHledaniNezastaviStart() throws Exception {
+		final Map<String, String> vadne = new HashMap<String, String>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String get(final Object klic) {
+				throw new IllegalArgumentException("neplatná cesta");
+			}
+		};
+		model.detekujZdroje(new DetekceZdroju.Prostredi("Windows 11", tmp.getRoot(), vadne));
+		Assert.assertNull(koren.node(FPref.UMISTENI_SOUBORU_node).get(FPref.GEOGET_DATA_DIR_value, null));
+		Assert.assertNull(koren.node(FPref.UMISTENI_SOUBORU_node).get(FPref.OPENSAK_DATA_DIR_value, null));
+	}
+
 	private boolean nacte(final File f) {
 		return model.maSeNacist(new KeFile(new FileAndTime(f, 0), new Root(f.getParentFile(), new Root.Def(1, null, null))));
 	}

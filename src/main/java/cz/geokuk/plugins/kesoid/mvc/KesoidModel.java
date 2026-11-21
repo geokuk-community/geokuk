@@ -825,7 +825,14 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		if (umisteni.get(klicSlozky, null) != null) {
 			return;
 		}
-		final DetekceZdroju.Nalez nalez = hledani.get();
+		final DetekceZdroju.Nalez nalez;
+		try {
+			nalez = hledani.get();
+		} catch (final RuntimeException e) {
+			// Neobvyklá cesta v nastavení jiného programu nesmí zastavit start.
+			log.warn("Hledání datové složky {} selhalo", klicSlozky, e);
+			return;
+		}
 		if (nalez == null) {
 			return;
 		}
