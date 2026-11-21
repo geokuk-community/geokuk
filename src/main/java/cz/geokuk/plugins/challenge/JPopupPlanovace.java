@@ -18,15 +18,14 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 import cz.geokuk.core.coordinates.Wgs;
-import cz.geokuk.framework.AfterInjectInit;
 import cz.geokuk.framework.JSlide0;
 import cz.geokuk.framework.RozmisteniPrekryvu;
 
 /**
- * Popup plánovače challenge pod odznakem pruhu: typ a pravidla, shrnutí, chybějící sektory po kružnici (klik na řádek vybere sektor), další sektor a filtr „jen kandidáti“. Leží ve vrstvě mapy a
+ * Popup plánovače challenge pod odznakem pruhu: název, pravidla a střed, shrnutí a chybějící sektory po kružnici (klik na řádek vybere sektor) nebo matice D/T. Leží ve vrstvě mapy a
  * myš zachytává jen ve svém obdélníku; zavře se klávesou Esc, kliknutím mimo (klik se přitom neztratí) nebo znovu kliknutím na odznak.
  */
-public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
+public class JPopupPlanovace extends JSlide0 {
 
 	private static final long serialVersionUID = 1L;
 
@@ -34,7 +33,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 	final transient Obsah obsah = new Obsah();
 	private transient ChallengeModel model;
-	private transient Runnable naNastaveni;
 	private boolean otevreno;
 	private transient AWTEventListener mimo;
 	private transient Supplier<? extends Collection<Rectangle>> prekazky = Collections::emptyList;
@@ -58,28 +56,14 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 				zavri();
 			}
 		});
-		obsah.dalsi.addActionListener(e -> ChallengeAkce.posun(model, true));
 		obsah.setNaKlikRadku(this::klikNaRadek);
 		obsah.matice.setNaVyber(this::vyberPolicko);
-		obsah.vsechnaPolicka.addActionListener(e -> vyberPolicko(null));
-		obsah.kandidati.addActionListener(e -> prepniKandidaty());
 		obsah.nasobnostMin.addActionListener(e -> zmenNasobnost(-1));
 		obsah.nasobnostPlus.addActionListener(e -> zmenNasobnost(1));
-		obsah.nastaveni.addActionListener(e -> {
-			if (naNastaveni != null) {
-				zavri();
-				naNastaveni.run();
-			}
-		});
 	}
 
 	public void inject(final ChallengeModel model) {
 		this.model = model;
-	}
-
-	/** Nastavení… otevře dialog plánovače z menu. */
-	public void inject(final cz.geokuk.core.program.Akce akce) {
-		setNaNastaveni(() -> akce.challengeNastaveniAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "nastaveni")));
 	}
 
 	public void inject(final cz.geokuk.plugins.refbody.RefbodyModel refbodyModel) {
@@ -116,17 +100,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 	/** Panely v rozích mapy a legenda, do kterých popup nesmí zasahovat (souřadnice mapy). */
 	public void setPrekazky(final Supplier<? extends Collection<Rectangle>> prekazky) {
 		this.prekazky = prekazky;
-	}
-
-	/** Co udělá tlačítko Nastavení…; bez něj je tlačítko nedostupné. */
-	public void setNaNastaveni(final Runnable naNastaveni) {
-		this.naNastaveni = naNastaveni;
-		obsah.nastaveni.setEnabled(naNastaveni != null);
-	}
-
-	@Override
-	public void initAfterInject() {
-		obsah.nastaveni.setEnabled(naNastaveni != null);
 	}
 
 	public void onEvent(final ChallengeZmenenyEvent event) {
@@ -295,10 +268,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		obsah.dosahKandidatu.setVisible(!obsah.dosahKandidatu.getText().trim().isEmpty());
 		if (c != null && model != null) {
 			final boolean jenKandidati = model.stavPruhu().jenKandidati();
-			obsah.dalsi.setToolTipText(ChallengeAkce.tipPosunu(model, c.typ(), true));
 			obsah.vyberMimoVyrez = model.vyberVeVyrezu() == 0;
 			if (c.typ() == Challenge.Typ.SEKTORY_360) {
-				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.vybranySektor(c));
+				obsah.nastav(c, model.vysledek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenySektor(c));
 			} else {
 				obsah.nastavPolicka(c, model.vysledekPolicek(c), model.stavPredpoctu(c), jenKandidati, model.zvyraznenePolicko(c), model.poctyVOkne(c));
 				if (!casovacNasobnosti.isRunning()) {
@@ -327,21 +299,9 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		}
 		if (polozka instanceof Integer) {
 			final int s = (Integer) polozka;
-			model.setVybranySektor(c, model.vybranySektor(c) == s ? PosunVyberu.ZADNY_SEKTOR : s);
+			model.setVybranySektor(c, model.zvyraznenySektor(c) == s ? PosunVyberu.ZADNY_SEKTOR : s);
 		} else if (c.typ() == Challenge.Typ.DT_MATICE) {
-			model.setVybranePolicko(c, polozka.equals(model.vybranePolicko(c)) ? null : (String) polozka);
-		}
-	}
-
-	private void prepniKandidaty() {
-		final Challenge c = challenge();
-		if (c == null) {
-			return;
-		}
-		try {
-			model.setJenKandidatiPro(obsah.kandidati.isSelected() ? c : null);
-		} catch (final ChallengeChyba e) {
-			obsah.kandidati.setSelected(false);
+			model.setVybranePolicko(c, polozka.equals(model.zvyraznenePolicko(c)) ? null : (String) polozka);
 		}
 	}
 
@@ -362,7 +322,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 
 		/** Název challenge může být dlouhý (šablony mají GC kód a anglický název): zkrátí se „…“ a plný je v tooltipu. */
 		final cz.geokuk.util.gui.JZkracenyLabel nadpis = new cz.geokuk.util.gui.JZkracenyLabel(NEJVETSI_SIRKA_NADPISU);
-		final JButton nastaveni = new JButton("Nastavení plánovače…");
 		final JLabel typ = new JLabel();
 		/** Řádek „Každé políčko splnit: ◀ N× ▶“ jen u matice D/T. */
 		final JButton nasobnostMin = new JButton("◀");
@@ -385,20 +344,17 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		final JLabel bezKandidatu = new JLabel(" ");
 		final JMaticeDT matice = new JMaticeDT();
 		final JLabel legenda = new JLabel(TextyPopupuPlanovace.LEGENDA_MATICE);
-		final JButton vsechnaPolicka = new JButton("✕ Zrušit výběr");
 		final JScrollPane posuvnik = new JScrollPane(seznam);
 		final JLabel napoveda = new JLabel(TextyPopupuPlanovace.napovedaSeznamu(Challenge.Typ.SEKTORY_360));
 		final JLabel nejiste = new JLabel();
 		final JLabel omezeniStitku = new JLabel(" ");
 		final JLabel dosahKandidatu = new JLabel(" ");
-		final JButton dalsi = new JButton("▶ Další");
 		/** Sektor (Integer) nebo štítek políčka (String) každého řádku seznamu, null u řádku, který nejde vybrat (den kalendáře). */
 		final List<Object> polozky = new ArrayList<>();
 		private Challenge.Typ typSeznamu = Challenge.Typ.SEKTORY_360;
 		private int podMysi = -1;
 		private boolean nastavujeSe;
 		private transient java.util.function.Consumer<Object> naKlikRadku = p -> {};
-		final JToggleButton kandidati = new JToggleButton("Jen kandidáti");
 
 		/** Vlastní obsah; když se popup nevejde na výšku, posouvá se celý a žádná část nezmizí. */
 		private final Telo telo = new Telo();
@@ -461,30 +417,16 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			napoveda.setFont(napoveda.getFont().deriveFont(Font.PLAIN, napoveda.getFont().getSize2D() - 1));
 			kruznice.setFont(napoveda.getFont());
 			legenda.setFont(legenda.getFont().deriveFont(Font.PLAIN, legenda.getFont().getSize2D() - 1));
-			vsechnaPolicka.setToolTipText("Zrušit výběr políčka – na mapě kandidáti všech chybějících políček");
-			for (final AbstractButton b : new AbstractButton[] { nastaveni, dalsi, kandidati, vsechnaPolicka }) {
-				b.setFocusable(false);
-			}
-			kandidati.setToolTipText("Na mapě jen kandidáti (F4)");
-			for (final AbstractButton b : new AbstractButton[] { dalsi, kandidati, vsechnaPolicka }) {
-				b.setMargin(new Insets(1, 6, 1, 6));
-				b.setFont(b.getFont().deriveFont(Font.PLAIN, b.getFont().getSize2D() - 1));
-			}
+			nejiste.setFont(legenda.getFont());
 			final GridBagConstraints g = new GridBagConstraints();
 			g.gridx = 0;
 			g.gridy = 0;
 			g.anchor = GridBagConstraints.WEST;
-			g.insets = new Insets(0, 0, 4, 8);
 			g.weightx = 1;
-			telo.add(nadpis, g);
-			g.gridx = 1;
-			g.weightx = 0;
-			g.insets = new Insets(0, 0, 4, 0);
-			telo.add(nastaveni, g);
-			g.gridx = 0;
 			g.gridwidth = 2;
 			g.fill = GridBagConstraints.HORIZONTAL;
 			g.insets = new Insets(0, 0, 4, 0);
+			telo.add(nadpis, g);
 			radekStredu.setOpaque(false);
 			radekStredu.add(stred);
 			radekNasobnosti.setOpaque(false);
@@ -527,16 +469,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			telo.add(omezeniStitku, g);
 			g.gridy++;
 			telo.add(dosahKandidatu, g);
-			final JPanel tlacitka = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-			tlacitka.setOpaque(false);
-			tlacitka.add(dalsi);
-			tlacitka.add(Box.createHorizontalStrut(8));
-			tlacitka.add(kandidati);
-			tlacitka.add(Box.createHorizontalStrut(8));
-			tlacitka.add(vsechnaPolicka);
-			g.gridy++;
-			g.insets = new Insets(4, 0, 0, 0);
-			telo.add(tlacitka, g);
 			telo.setOpaque(false);
 			posuvnikObsahu.setBorder(null);
 			posuvnikObsahu.setOpaque(false);
@@ -606,7 +538,7 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			final Color tlumena = new Color((t.getRed() + p.getRed()) / 2, (t.getGreen() + p.getGreen()) / 2, (t.getBlue() + p.getBlue()) / 2);
 			napoveda.setForeground(tlumena);
 			kruznice.setForeground(tlumena);
-			nejiste.setForeground(jeTmave(pozadi) ? new Color(0xFFD080) : new Color(0x9A5A00));
+			nejiste.setForeground(tlumena);
 			postup.setForeground(jeTmave(pozadi) ? VYPLN_TMAVA : VYPLN_SVETLA);
 			postup.setBackground(jeTmave(pozadi) ? DRAHA_TMAVA : DRAHA_SVETLA);
 		}
@@ -633,7 +565,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 		/** Společná hlavička; vrátí false, když výsledek ještě není a ukáže se jen průběh. */
 		private boolean zahlavi(final Challenge c, final boolean maVysledek, final StavPredpoctu stav, final boolean jenKandidati) {
 			nadpis.setPlnyText(TextyPopupuPlanovace.nadpis(c));
-			typ.setText("Typ: " + StitkyPruhu.typ(c.typ()) + (c.typ() == Challenge.Typ.SEKTORY_360 ? "    Pravidla: " + TextyPopupuPlanovace.pravidla(c.zdroj()) : ""));
+			typ.setText("Pravidla: " + TextyPopupuPlanovace.pravidla(c.zdroj()));
+			typ.setVisible(c.typ() == Challenge.Typ.SEKTORY_360);
 			final boolean doma = c.stred().druh() == Challenge.DruhStredu.DOMOV;
 			stred.setText("Střed: " + (doma ? TextyPopupuPlanovace.stredDomov(domov.get()) : TextyPopupuPlanovace.stred(c.stred())));
 			radekNasobnosti.setVisible(c.typ() == Challenge.Typ.DT_MATICE);
@@ -642,21 +575,18 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			nadpisSeznamu.setText(TextyPopupuPlanovace.nadpisSeznamu(c.typ()));
 			napoveda.setText(html(TextyPopupuPlanovace.napovedaSeznamu(c.typ()), SIRKA_NAPOVEDY));
 			napoveda.setVisible(c.typ() != Challenge.Typ.KALENDAR);
-			dalsi.setVisible(c.typ() != Challenge.Typ.KALENDAR);
 			typSeznamu = c.typ();
 			final boolean matice = c.typ() == Challenge.Typ.DT_MATICE;
 			posuvnik.setVisible(!matice);
 			this.matice.setVisible(matice);
 			legenda.setVisible(matice);
 			bezKandidatu.setVisible(!matice);
-			vsechnaPolicka.setVisible(false);
 			if (matice) {
 				this.matice.nastav(null);
 			}
 			postup.setVisible(true);
 			nadpisSeznamu.setVisible(true);
 			mimoVyrez.setVisible(false);
-			kandidati.setSelected(jenKandidati);
 			radky.clear();
 			polozky.clear();
 			podMysi = -1;
@@ -682,7 +612,6 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			}
 			postup.setValue(0);
 			postup.setString("…");
-			dalsi.setEnabled(false);
 			return false;
 		}
 
@@ -713,9 +642,8 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 			kruznice.setText(html(TextyPopupuPlanovace.kruznice(TvarPlanovace.polomerKruznice(v)), SIRKA_NAPOVEDY));
 			bezKandidatu.setText(bez == 0 ? " " : TextyPopupuPlanovace.bezKandidatu(c.typ(), bez));
 			final String n = TextyPopupuPlanovace.nejiste(v);
-			nejiste.setText(n.isEmpty() ? " " : "<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>" + n + "</body></html>");
+			nejiste.setText(n.isEmpty() ? " " : n);
 			nejiste.setVisible(!n.isEmpty());
-			dalsi.setEnabled(polozky.stream().anyMatch(java.util.Objects::nonNull));
 		}
 
 		/** D/T matice a kalendář: shrnutí a chybějící políčka nebo dny v pořadí z výpočtu. */
@@ -735,21 +663,18 @@ public class JPopupPlanovace extends JSlide0 implements AfterInjectInit {
 						vybranePolicko != null && p.jePlne(vybranePolicko), jenKandidati, vybranePolicko == null ? 0 : p.pocetNalezu(vybranePolicko), p.cil(),
 						vybranePolicko == null ? -1 : vOkne.getOrDefault(vybranePolicko, -1)));
 				legenda.setText(p.cil() > 1 ? TextyPopupuPlanovace.legendaMatice(p.cil()) : vOkne.isEmpty() ? TextyPopupuPlanovace.LEGENDA_MATICE : TextyPopupuPlanovace.LEGENDA_MATICE_V_OKNE);
-				vsechnaPolicka.setVisible(vybranePolicko != null);
 				mimoVyrez.setVisible(vybranePolicko != null && vyberMimoVyrez);
 				if (mimoVyrez.isVisible()) {
 					final Wgs stred = stredMapy.get();
 					mimoVyrez.setText("<html><body style='width: " + NEJVETSI_SIRKA_NADPISU + "px'>"
 							+ TextyPopupuPlanovace.mimoVyrez(stred == null ? null : SkokVeSmeru.nejblizsiSmer(p, vybranePolicko, stred.lat, stred.lon)) + "</body></html>");
 				}
-				dalsi.setEnabled(p.pocetKandidatuPoPolickach().values().stream().anyMatch(n -> n > 0));
 				return;
 			}
 			for (final String s : p.stitkyChybejicich()) {
 				radky.addElement(s);
 				polozky.add(null);
 			}
-			dalsi.setEnabled(false);
 		}
 
 		void setNaKlikRadku(final java.util.function.Consumer<Object> naKlikRadku) {

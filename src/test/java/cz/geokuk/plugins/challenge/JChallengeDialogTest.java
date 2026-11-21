@@ -8,6 +8,7 @@ import java.util.List;
 import javax.swing.AbstractButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
@@ -87,7 +88,13 @@ public class JChallengeDialogTest {
 	}
 
 	private JTextField pole(final int index) {
-		return najdi(dialog.getContentPane(), JTextField.class, new ArrayList<JTextField>()).get(index);
+		final List<JTextField> pole = new ArrayList<>();
+		for (final JTextField t : najdi(dialog.getContentPane(), JTextField.class, new ArrayList<JTextField>())) {
+			if (!(t.getParent() instanceof JSpinner.DefaultEditor)) {
+				pole.add(t);
+			}
+		}
+		return pole.get(index);
 	}
 
 	private String chyba() {
@@ -182,16 +189,15 @@ public class JChallengeDialogTest {
 		});
 	}
 
-	/** U šablony rada nad formulářem s vlastním tlačítkem kopie; u vlastní definice rada není. */
+	/** U šablony je nad formulářem rada; kopii dělá tlačítko pod seznamem; u vlastní definice rada není. */
 	@Test
 	public void radaUSablonyVytvoriKopii() throws Exception {
 		naEdt(() -> {
 			Assert.assertTrue("rada u šablony", viditelne(dialog.radaSablony));
 			final JLabel text = najdi(dialog.radaSablony, JLabel.class, new ArrayList<JLabel>()).get(0);
-			Assert.assertEquals("Šablonu nelze upravit; vytvořte kopii.", text.getText());
-			final AbstractButton kopie = najdi(dialog.radaSablony, AbstractButton.class, new ArrayList<AbstractButton>()).get(0);
-			Assert.assertEquals("Vytvořit kopii…", kopie.getText());
-			kopie.doClick();
+			Assert.assertEquals("Definici šablony nelze měnit, pro úpravu vytvořte kopii.", text.getText());
+			Assert.assertTrue("rada nemá vlastní tlačítko, kopie je tlačítko pod seznamem", najdi(dialog.radaSablony, AbstractButton.class, new ArrayList<AbstractButton>()).isEmpty());
+			tlacitko("Vytvořit kopii…").doClick();
 			Assert.assertEquals(1, model.vlastni().size());
 			Assert.assertEquals("360° od domova (vlastní)", seznam().getSelectedValue().nazev());
 			Assert.assertFalse("u vlastní definice rada není", dialog.radaSablony.isVisible());
@@ -292,6 +298,7 @@ public class JChallengeDialogTest {
 	@Test
 	public void dialogMaViditelneTlacitkoZavritPodObsahem() throws Exception {
 		naEdt(() -> {
+			tlacitko("Vytvořit kopii…").doClick();
 			dialog.setSize(760, 420);
 			dialog.validate();
 			final AbstractButton zavrit = tlacitko("Zavřít");
@@ -398,9 +405,8 @@ public class JChallengeDialogTest {
 		});
 	}
 
-	/** „Kolikrát splnit“ je jen u D/T; u šablony jen ke čtení, u kopie se uloží do definice. */
 	@Test
-	public void kolikratSplnitJenUDtAUlozeniDoDefinice() throws Exception {
+	public void kolikratSplnitJenUDtAPlatiHnedUSablonyIVlastniBezUlozit() throws Exception {
 		naEdt(() -> {
 			Challenge sablona = null;
 			for (final Challenge c : dialog.polozky()) {
@@ -410,28 +416,101 @@ public class JChallengeDialogTest {
 			}
 			Assert.assertNotNull("šablona D/T je v seznamu", sablona);
 			seznam().setSelectedValue(Sablony.od360Domova(), true);
-			Assert.assertFalse("u 360° řádek není", dialog.opakovani.getParent().isVisible());
+			Assert.assertFalse("u 360° číselník není", dialog.opakovani.isVisible());
 			seznam().setSelectedValue(sablona, true);
-			Assert.assertTrue(dialog.opakovani.getParent().isVisible());
+			Assert.assertTrue(dialog.opakovani.isVisible());
+			Assert.assertTrue("číselník je v prvním řádku vedle Aktivní challenge", dialog.opakovani.getParent() == najdi(dialog.getContentPane(), javax.swing.JCheckBox.class, new ArrayList<javax.swing.JCheckBox>()).get(0).getParent());
 			Assert.assertTrue("násobnost šablony je nastavení uživatele", dialog.opakovani.isEnabled());
-			Assert.assertEquals("vaše nastavení, šablona má 1×", dialog.popisOpakovani.getText());
+			Assert.assertEquals("výchozí hodnota šablony v tooltipu", "Šablona počítá 1×", dialog.opakovani.getToolTipText());
+			Assert.assertFalse("u šablony Uložit změny není vidět", tlacitko("Uložit změny").isVisible());
 			dialog.opakovani.setValue(2);
+			dialog.uloziCekajiciNasobnost();
 			Assert.assertEquals("změna šablony platí hned", 2, seznam().getSelectedValue().opakovani());
 			Assert.assertEquals("šablona se nepřejmenuje ani nestane vlastní", sablona.nazev(), seznam().getSelectedValue().nazev());
 			Assert.assertEquals(2, dialog.opakovani.getValue());
 			dialog.opakovani.setValue(1);
+			dialog.uloziCekajiciNasobnost();
 			Assert.assertEquals(1, seznam().getSelectedValue().opakovani());
 			Assert.assertFalse("ostatní pole šablony zůstávají jen ke čtení", pole(0).isEnabled());
 			tlacitko("Vytvořit kopii…").doClick();
 			final Challenge kopie = seznam().getSelectedValue();
 			Assert.assertTrue(dialog.opakovani.isEnabled());
-			Assert.assertEquals("každé políčko 1–9×", dialog.popisOpakovani.getText());
+			Assert.assertNull("u vlastní challenge bez tooltipu", dialog.opakovani.getToolTipText());
+			Assert.assertTrue("u vlastní je Uložit změny", tlacitko("Uložit změny").isVisible());
+			pole(0).setText("Upravený název");
 			dialog.opakovani.setValue(3);
+			dialog.uloziCekajiciNasobnost();
+			Assert.assertEquals("násobnost vlastní platí bez Uložit", 3, model.vlastni().get(0).opakovani());
+			Assert.assertEquals("rozpracovaný název zůstal", "Upravený název", pole(0).getText());
 			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals("Uložit násobnost nevrátí", 3, model.vlastni().get(0).opakovani());
 			Assert.assertEquals(3, seznam().getSelectedValue().opakovani());
-			Assert.assertEquals(kopie.nazev(), seznam().getSelectedValue().nazev());
 			Assert.assertEquals(3, dialog.opakovani.getValue());
+			Assert.assertNotNull(kopie);
 		});
+	}
+
+	private int opakovaniVModelu(final String nazev) {
+		for (final Challenge c : model.vsechny()) {
+			if (c.nazev().equals(nazev)) {
+				return c.opakovani();
+			}
+		}
+		throw new AssertionError("není " + nazev);
+	}
+
+	/** Násobnost čekající na odklad se při přepnutí řádku uloží do původní challenge, ne do té, na kterou se přepnulo. */
+	@Test
+	public void kolikratSplnitPriPrepnutiRadkuPatriPuvodniChallenge() throws Exception {
+		naEdt(() -> {
+			final Challenge a = model.ulozVlastni(new Challenge("DT A", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			final Challenge b = model.ulozVlastni(new Challenge("DT B", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			seznam().setSelectedValue(a, true);
+			dialog.opakovani.setValue(5);
+			seznam().setSelectedValue(b, true);
+			Assert.assertEquals("původní challenge má novou násobnost", 5, opakovaniVModelu("DT A"));
+			Assert.assertEquals("druhá se nezměnila", 1, opakovaniVModelu("DT B"));
+			Assert.assertEquals("číselník ukazuje hodnotu nově vybrané", 1, dialog.opakovani.getValue());
+		});
+	}
+
+	/** Změna násobnosti a hned Uložit změny: násobnost se uloží. */
+	@Test
+	public void kolikratSplnitHnedPoZmeneUlozitZmenyUlozi() throws Exception {
+		naEdt(() -> {
+			final Challenge a = model.ulozVlastni(new Challenge("DT A", Challenge.Typ.DT_MATICE, Challenge.Stred.domov(), Challenge.OblastDef.zadna(), Challenge.ZdrojPravidel.PGC));
+			seznam().setSelectedValue(a, true);
+			dialog.opakovani.setValue(6);
+			tlacitko("Uložit změny").doClick();
+			Assert.assertEquals("násobnost je uložená", 6, opakovaniVModelu("DT A"));
+			Assert.assertEquals(6, dialog.opakovani.getValue());
+		});
+	}
+
+	/** Násobnost se po změně číselníku uloží sama po krátkém odkladu (časovač). */
+	@Test
+	public void kolikratSplnitSeUlozySamoPoOdkladu() throws Exception {
+		naEdt(() -> {
+			Challenge sablona = null;
+			for (final Challenge c : dialog.polozky()) {
+				if (c.typ() == Challenge.Typ.DT_MATICE) {
+					sablona = c;
+				}
+			}
+			seznam().setSelectedValue(sablona, true);
+			dialog.opakovani.setValue(4);
+			Assert.assertEquals("hned po změně se ještě neuložilo", 1, opakovaniVModelu(sablona.nazev()));
+		});
+		final long konec = System.currentTimeMillis() + 5000;
+		while (System.currentTimeMillis() < konec) {
+			final int[] hodnota = new int[1];
+			SwingUtilities.invokeAndWait(() -> hodnota[0] = seznam().getSelectedValue().opakovani());
+			if (hodnota[0] == 4) {
+				return;
+			}
+			Thread.sleep(50);
+		}
+		Assert.fail("násobnost se po odkladu neuložila");
 	}
 
 	/** U 360° se „Kolikrát splnit“ neuloží, ani když by číselník měl jinou hodnotu (je skrytý). */
