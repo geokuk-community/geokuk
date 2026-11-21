@@ -453,6 +453,68 @@ public class NastaveniTest {
 		Assert.assertEquals("", znacka.get("neprevzato", null));
 	}
 
+	/** Bez uzlu umístění ve zdroji v něm převod žádný uzel nezaloží; ve Windows by vznikl klíč v registru. */
+	@Test
+	public void registrBezUmisteniZustaneBezUzluUmisteni() throws Exception {
+		final SouborovePreferences registr = SouborovePreferences.vPameti();
+		registr.node("geokuk/current/vzhled").put("lookAndFeel", "Metal");
+		Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, () -> registr, tmp.newFolder("domov"));
+		Assert.assertFalse(registr.nodeExists("geokuk/current/umisteniSouboru"));
+	}
+
+	/** Souhrn jmenuje jen složky, které ve starším nastavení byly. */
+	@Test
+	public void souhrnJmenujeJenNastaveneSlozky() throws Exception {
+		final String gsak = soubor("gsak/data/Default/sqlite.db3", "x").getParentFile().getParent();
+		final SouborovePreferences registr = SouborovePreferences.vPameti();
+		registr.node("geokuk/current/umisteniSouboru").put("gsakDataDir", gsak);
+		final Preferences znacka = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, () -> registr, null).node(Nastaveni.ZNACKA_PREVODU);
+		Assert.assertEquals("GSAK", znacka.get("prevzato", null));
+	}
+
+	/** Výlet na síťové cestě se při startu nezkoumá ani nekopíruje, souhrn to uvede. */
+	@Test
+	public void vyletNaSitiSeNeprevezme() throws Exception {
+		final SouborovePreferences registr = SouborovePreferences.vPameti();
+		registr.node("geokuk/current/umisteniSouboru").put("anoGgtFile", "\\\\server\\geokuk\\lovim.ggt");
+		registr.node("geokuk/current/umisteniSouboru").put("neGgtFile", "//server/geokuk/tedne.ggt");
+		final Nastaveni.Kopie puvodni = Nastaveni.kopie;
+		try {
+			Nastaveni.kopie = (zdroj, out) -> {
+				throw new AssertionError("síťový výlet se nekopíruje: " + zdroj);
+			};
+			final Preferences znacka = Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, () -> registr, null).node(Nastaveni.ZNACKA_PREVODU);
+			Assert.assertEquals("výlet lovim.ggt (síťová cesta); výlet tedne.ggt (síťová cesta)", znacka.get("neprevzato", null));
+		} finally {
+			Nastaveni.kopie = puvodni;
+		}
+	}
+
+	/** Výlety se kopírují ze zdroje, ze kterého se převzalo nastavení, a až po jeho úspěšném převzetí. */
+	@Test
+	public void vyletyZeStejnehoZdrojeJakoNastaveni() throws Exception {
+		final File zeSouboru = soubor("soubor/lovim.ggt", "GCSOUBOR\n");
+		final File zRegistru = soubor("registr/lovim.ggt", "GCREGISTR\n");
+		final File stary = tmp.newFile("geokuk-preferences.xml");
+		Files.write(stary.toPath(), ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+				+ "<preferences EXTERNAL_XML_VERSION=\"1.0\"><root type=\"user\"><map/><node name=\"geokuk\"><map/><node name=\"current\"><map/>"
+				+ "<node name=\"umisteniSouboru\"><map><entry key=\"anoGgtFile\" value=\"" + zeSouboru.getAbsolutePath() + "\"/></map></node>"
+				+ "</node></node></root></preferences>").getBytes(StandardCharsets.UTF_8));
+		final SouborovePreferences registr = SouborovePreferences.vPameti();
+		registr.node("geokuk/current/umisteniSouboru").put("anoGgtFile", zRegistru.getAbsolutePath());
+		Nastaveni.otevri(new File(tmp.getRoot(), "a/nastaveni.xml"), stary, () -> registr, null);
+		Assert.assertEquals("GCSOUBOR\n", obsah(new File(tmp.getRoot(), "a/vylety/lovim.ggt")));
+
+		Files.write(stary.toPath(), "<preferences><root ".getBytes(StandardCharsets.UTF_8));
+		final Preferences znacka = Nastaveni.otevri(new File(tmp.getRoot(), "b/nastaveni.xml"), stary, () -> registr, null).node(Nastaveni.ZNACKA_PREVODU);
+		Assert.assertEquals("registr", znacka.get("zdroj", null));
+		Assert.assertEquals("GCREGISTR\n", obsah(new File(tmp.getRoot(), "b/vylety/lovim.ggt")));
+		Nastaveni.prevzitVarovani();
+
+		Nastaveni.otevri(new File(tmp.getRoot(), "c/nastaveni.xml"), null, PadajiciPreferences::new, null);
+		Assert.assertFalse("bez převzatého nastavení se výlety nekopírují", new File(tmp.getRoot(), "c/vylety").exists());
+	}
+
 	/** Kopie výletu přerušená uprostřed nenechá useknutý soubor; příští převod ho zkopíruje celý. */
 	@Test
 	public void prerusenaKopieVyletuNenechaUseknutySoubor() throws Exception {

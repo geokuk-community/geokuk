@@ -341,9 +341,14 @@ public final class Nastaveni {
 		return cesta != null && new File(cesta).isAbsolute();
 	}
 
-	/** Zapamatuje si soubory výletů starší verze. */
+	/** Zapamatuje si soubory výletů starší verze; síťová cesta se při startu nezkoumá, mohla by start zdržet. */
 	private static void najdiVylety(final Preferences umisteni, final Prevod prevod) {
 		for (final String[] vylet : VYLETY) {
+			final String cesta = umisteni == null ? null : umisteni.get(vylet[0], null);
+			if (cesta != null && jeSitova(cesta)) {
+				prevod.neprevzato.add("výlet " + vylet[1] + " (síťová cesta)");
+				continue;
+			}
 			final File zdroj = staryVylet(umisteni, vylet[0], vylet[1], prevod.domov);
 			if (zdroj != null) {
 				prevod.vylety.put(vylet[1], zdroj);
