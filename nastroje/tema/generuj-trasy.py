@@ -9,7 +9,7 @@ JINA_BARVA = "#707070"
 # Posun čáry podle pořadí souběžné trasy (násobek kroku), střídavě na obě strany.
 PORADI = [("ord_1", 0), ("ord_2", 1), ("ord_3", -1), ("ord_4", 2), ("ord_5", -2), ("ord_6", 3), ("ord_7", -3), ("ord_8", 4), ("ord_9", -4)]
 # (zoom-min, zoom-max, šířka čáry, šířka lemu, krok posunu), šířky v bodech obrazovky bez škálování zoomem.
-PASMA = [(10, 12, 1.6, 3.0, 2.2), (13, 14, 2.4, 4.2, 3.0), (15, 22, 3.2, 5.4, 4.0)]
+PASMA = [(10, 12, 1.3, 2.6, 2.2), (13, 14, 1.9, 3.4, 3.0), (15, 22, 2.6, 4.4, 4.0)]
 LEM = "#B0FFFFFF"
 CYKLO = [("ncn|icn", "#C000B0", 1.0), ("~|lcn|rcn", "#E040D0", 0.8)]
 

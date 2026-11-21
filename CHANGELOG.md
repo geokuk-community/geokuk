@@ -84,6 +84,11 @@
   dlaždic výřezu.
 - Offline mapy se kreslí tématem GeoKuk; původní téma je v Mapy > Téma
   offline mapy jako Mapsforge (původní).
+- Vylepšený vzhled offline mapy: šedá čerchovaná státní hranice, světlé louky
+  a pole, silnice odlišené šířkou a lemem podle třídy, jemnější železnice, méně
+  ikon ve městech, výraznější stínování terénu, tenčí turistické trasy
+  a světlejší zástavba. Vykreslené offline dlaždice se po aktualizaci vykreslí
+  znovu.
 - Varianta GeoKuk – detail v Mapy > Téma offline mapy ukazuje ve větších
   měřítkách další body pro orientaci (posedy, krmelce, stoly, ohniště, kameny,
   bunkry a další); parkoviště a zastávky ukáže o úroveň přiblížení dřív. Ikony
