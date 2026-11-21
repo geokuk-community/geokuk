@@ -54,6 +54,7 @@ public class PanelOptimalizaceRozvrzeniTest {
 			for (final String text : PRUBEHY) {
 				panel.ukazPrubeh(text);
 				final JTextArea zprava = zprava(panel, text);
+				Assert.assertEquals(popis + "styl písma", Font.PLAIN, zprava.getFont().getStyle());
 				// Bez okna by preferovaná velikost zůstala v mezipaměti.
 				zprava.invalidate();
 				Assert.assertEquals(popis + text, zabaleno, panel.getPreferredSize());

@@ -48,7 +48,7 @@ class PanelOptimalizace extends JPanel {
 		zprava.setWrapStyleWord(true);
 		zprava.setColumns(40);
 		// Písmo popisku jako zbytek okna; písmo JTextArea je v některých vzhledech neproporcionální a širší.
-		zprava.setFont(UIManager.getFont("Label.font"));
+		zprava.setFont(UIManager.getFont("Label.font").deriveFont(Font.PLAIN));
 		final JPanel stred = new JPanel();
 		stred.setLayout(new BoxLayout(stred, BoxLayout.Y_AXIS));
 		for (final JComponent c : new JComponent[] { uvod, prehled, prubeh, zprava }) {
