@@ -154,15 +154,19 @@ public final class DetekceZdroju {
 		return false;
 	}
 
-	/** Poslední databáze GeoGetu podle geoget.ini v datové složce (oddíl [geoget], klíč lastDB, jméno bez přípony). */
+	/**
+	 * Databáze, kterou GeoGet otevře při startu, podle geoget.ini v datové složce: oddíl [geoget], lastDBmode 1 = poslední použitá (klíč lastDB,
+	 * jméno bez přípony), jinak výchozí databáze geoget.
+	 */
 	static File posledniDatabazeGeogetu(final File slozka) {
 		final File ini = new File(slozka, "geoget.ini");
 		if (!ini.isFile()) {
 			return null;
 		}
 		try {
-			final String jmeno = IniFile.read(ini).get("geoget", "lastDB");
-			if (jmeno == null || jmeno.isEmpty() || jmeno.contains("/") || jmeno.contains("\\")) {
+			final IniFile nastaveni = IniFile.read(ini);
+			final String jmeno = "1".equals(nastaveni.get("geoget", "lastDBmode")) ? nastaveni.get("geoget", "lastDB") : "geoget";
+			if (jmeno == null || jmeno.isEmpty() || jmeno.contains("/") || jmeno.contains("\\") || jmeno.equals("..")) {
 				return null;
 			}
 			return existujici(new File(slozka, jmeno.toLowerCase().endsWith(".db3") ? jmeno : jmeno + ".db3"));
@@ -204,10 +208,32 @@ public final class DetekceZdroju {
 		return false;
 	}
 
+	/**
+	 * Poslední otevřená databáze GSAKu: gsak.ini ve složce nad datovou složkou si při zavření hlavního okna pamatuje její jméno (oddíl
+	 * [TfmOffline], klíč lblDbase.Caption); databáze je podsložka se souborem sqlite.db3.
+	 */
+	static File posledniDatabazeGsaku(final File slozka) {
+		final File rodic = slozka.getParentFile();
+		final File ini = rodic == null ? null : new File(rodic, "gsak.ini");
+		if (ini == null || !ini.isFile()) {
+			return null;
+		}
+		try {
+			final String jmeno = IniFile.read(ini).get("TfmOffline", "lblDbase.Caption");
+			if (jmeno == null || jmeno.isEmpty() || jmeno.contains("/") || jmeno.contains("\\") || jmeno.equals("..")) {
+				return null;
+			}
+			return existujici(new File(new File(slozka, jmeno), "sqlite.db3"));
+		} catch (final IOException | RuntimeException e) {
+			log.warn("Soubor {} nejde přečíst", ini, e);
+			return null;
+		}
+	}
+
 	public static Nalez gsak(final Prostredi p) {
 		for (final File slozka : kandidatiGsaku(p)) {
 			if (maDatabazeGsaku(slozka)) {
-				return nalez(slozka, null);
+				return nalez(slozka, posledniDatabazeGsaku(slozka));
 			}
 		}
 		return null;
@@ -242,11 +268,29 @@ public final class DetekceZdroju {
 		return slozky;
 	}
 
+	/** Instalace z Microsoft Store má bootstrap.json ve virtualizované složce balíčku, kterou jiný program vidí jen tam. */
+	static List<File> bootstrapyOpensaku(final Prostredi p) {
+		final List<File> bootstrapy = new ArrayList<>();
+		bootstrapy.add(bootstrapOpensaku(p));
+		if (p.jeWindows()) {
+			final File[] balicky = p.slozka("LOCALAPPDATA", "AppData/Local").toPath().resolve("Packages").toFile()
+					.listFiles(f -> f.isDirectory() && f.getName().startsWith("AgreeDK.OpenSAK_"));
+			if (balicky != null) {
+				for (final File balicek : balicky) {
+					bootstrapy.add(new File(balicek, "LocalCache/Roaming/opensak/bootstrap.json"));
+				}
+			}
+		}
+		return bootstrapy;
+	}
+
 	static List<File> slozkyInstalaceOpensaku(final Prostredi p) {
 		final Set<File> slozky = new LinkedHashSet<>();
-		final String instalace = jsonText(bootstrapOpensaku(p), "install_dir");
-		if (instalace != null) {
-			slozky.add(new File(instalace));
+		for (final File bootstrap : bootstrapyOpensaku(p)) {
+			final String instalace = jsonText(bootstrap, "install_dir");
+			if (instalace != null) {
+				slozky.add(new File(rozbal(instalace, p)));
+			}
 		}
 		slozky.addAll(vychoziSlozkyOpensaku(p));
 		return new ArrayList<>(slozky);
@@ -287,8 +331,21 @@ public final class DetekceZdroju {
 	// ---------------------------------------------------------------- společné
 
 	private static Nalez nalez(final File slozka, final File databaze) {
-		final File s = Filex.canonize(slozka.getAbsoluteFile());
-		return new Nalez(s, databaze == null ? null : new File(s, databaze.getName()));
+		return new Nalez(Filex.canonize(slozka.getAbsoluteFile()), databaze == null ? null : Filex.canonize(databaze.getAbsoluteFile()));
+	}
+
+	private static final Pattern PROMENNA = Pattern.compile("%([^%]+)%");
+
+	/** Rozbalí proměnné prostředí ve tvaru %JMENO%; neznámá zůstane, jak je. */
+	static String rozbal(final String cesta, final Prostredi p) {
+		final Matcher m = PROMENNA.matcher(cesta);
+		final StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			final String hodnota = p.promenna(m.group(1));
+			m.appendReplacement(sb, Matcher.quoteReplacement(hodnota == null ? m.group() : hodnota));
+		}
+		m.appendTail(sb);
+		return sb.toString();
 	}
 
 	private static File existujici(final File soubor) {

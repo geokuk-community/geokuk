@@ -81,8 +81,8 @@ GeoKuk
 Keše načte GeoKuk ze souborů GPX, `.geokuk` a zip ve složce `data\gpx`;
 načítání z databáze GeoGetu, GSAKu nebo OpenSAKu a jinou složku s kešemi
 zapnete v Soubor > Umístění souborů. Při prvním spuštění GeoKuk sám
-najde datovou složku GeoGetu (`%APPDATA%\GeoGet`, složka podle
-`geogetboot.ini` nebo přenosná instalace v `C:\GeoGet`), GSAKu
+najde datovou složku GeoGetu (podle `geogetboot.ini` v `C:\GeoGet`
+nebo v `Program Files`, jinak `%APPDATA%\GeoGet`), GSAKu
 (`%APPDATA%\gsak\data`) a OpenSAKu a zapne v ní jen databázi, se kterou
 program naposledy pracoval (když ji nejde zjistit, nezapne žádnou);
 další databáze zapnete v přehledu zdrojů

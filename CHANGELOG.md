@@ -212,6 +212,15 @@
 - Plánovač challenge 360°: štítek keše, která leží do 0,05° od hranice
   sektoru, má před číslem sektoru znak ≈ (není jisté, do kterého sektoru
   patří).
+- Při prvním spuštění program najde datovou složku GeoGetu, GSAKu a OpenSAKu
+  v obvyklých umístěních (u GeoGetu i podle geogetboot.ini) a zdroj zapne
+  jen s poslední použitou databází, když ji jde zjistit, jinak bez vybrané
+  databáze; ostatní databáze jdou zapnout v tabulce zdrojů. Uložené
+  nastavení se nemění.
+- Zkratka Ctrl+1 až Ctrl+4 u vypnutého zdroje řekne, kde ho zapnout.
+- Zdroj s volbou „Nové databáze načíst až po vybrání“, který nemá vybranou
+  žádnou databázi, se zkratkou ani kliknutím na typ nezapne se všemi
+  databázemi; program řekne, kde databázi vybrat.
 
 ### Opravy
 - Nastavený práh hodnocení, BestOf nebo favoritů ve filtru skryje i keše,
@@ -223,14 +232,6 @@
   a začne s výchozím nastavením místo částečně převzatého.
 - Při přechodu ze starší verze se převezmou složky GeoGetu a GSAKu a zkopírují
   se výlety; složka, která neexistuje nebo je prázdná, se nepřevezme.
-- Při prvním spuštění program najde datovou složku GeoGetu, GSAKu a OpenSAKu
-  v obvyklých umístěních (u GeoGetu i podle geogetboot.ini) a zdroj zapne
-  jen s poslední použitou databází; ostatní databáze jdou zapnout v tabulce
-  zdrojů. Uložené nastavení se nemění.
-- Zkratka Ctrl+1 až Ctrl+4 u vypnutého zdroje řekne, kde ho zapnout.
-- Zdroj s volbou „Nové databáze načíst až po vybrání“, který nemá vybranou
-  žádnou databázi, se zkratkou ani kliknutím na typ nezapne se všemi
-  databázemi; program řekne, kde databázi vybrat.
 - Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
   když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po

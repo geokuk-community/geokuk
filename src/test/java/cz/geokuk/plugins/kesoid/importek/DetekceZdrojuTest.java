@@ -93,7 +93,7 @@ public class DetekceZdrojuTest {
 	@Test
 	public void neexistujiciPosledniDatabazeNeniVybrana() throws Exception {
 		soubor("domov/AppData/Roaming/GeoGet/geoget.db3", "x");
-		soubor("domov/AppData/Roaming/GeoGet/geoget.ini", "[geoget]\r\nlastDB=smazana\r\n");
+		soubor("domov/AppData/Roaming/GeoGet/geoget.ini", "[geoget]\r\nlastDB=smazana\r\nlastDBmode=1\r\n");
 		final DetekceZdroju.Nalez n = DetekceZdroju.geoget(windows());
 		Assert.assertNotNull(n);
 		Assert.assertNull(n.getPosledniDatabaze());
@@ -103,8 +103,31 @@ public class DetekceZdrojuTest {
 	public void posledniDatabazeSDiakritikou() throws Exception {
 		org.junit.Assume.assumeTrue("souborový systém umí jména s diakritikou", java.nio.charset.Charset.forName(System.getProperty("sun.jnu.encoding", "UTF-8")).newEncoder().canEncode("Výlet"));
 		final File db = soubor("domov/AppData/Roaming/GeoGet/Výlet.db3", "x");
-		soubor("domov/AppData/Roaming/GeoGet/geoget.ini", "\uFEFF[geoget]\r\nlastDB=Výlet\r\n");
+		soubor("domov/AppData/Roaming/GeoGet/geoget.ini", "\uFEFF[geoget]\r\nlastDB=Výlet\r\nlastDBmode=1\r\n");
 		Assert.assertEquals(kanon(db), DetekceZdroju.geoget(windows()).getPosledniDatabaze());
+	}
+
+	@Test
+	public void geogetVeVychozimRezimuOteviraDatabaziGeoget() throws Exception {
+		final File db = soubor("c/GeoGet/data/geoget.db3", "x");
+		soubor("c/GeoGet/data/PL.db3", "x");
+		soubor("c/GeoGet/geogetboot.ini", "[boot]\r\ndatadir=.\\data\r\n");
+		soubor("c/GeoGet/data/geoget.ini", "[geoget]\r\nlastDB=PL\r\nlastDBmode=0\r\n");
+		Assert.assertEquals(kanon(db), DetekceZdroju.geoget(windows()).getPosledniDatabaze());
+		soubor("c/GeoGet/data/geoget.ini", "[geoget]\r\nlastDB=PL\r\n");
+		Assert.assertEquals("bez lastDBmode výchozí databáze", kanon(db), DetekceZdroju.geoget(windows()).getPosledniDatabaze());
+		soubor("c/GeoGet/data/geoget.ini", "[geoget]\r\nlastDB=PL\r\nlastDBmode=1\r\n");
+		Assert.assertEquals(kanon(new File(db.getParentFile(), "PL.db3")), DetekceZdroju.geoget(windows()).getPosledniDatabaze());
+	}
+
+	@Test
+	public void lastDBSCestouSeNebere() throws Exception {
+		soubor("domov/AppData/Roaming/GeoGet/geoget.db3", "x");
+		soubor("domov/AppData/jinde.db3", "x");
+		for (final String jmeno : new String[] { "../../jinde", "..\\..\\jinde", ".." }) {
+			soubor("domov/AppData/Roaming/GeoGet/geoget.ini", "[geoget]\r\nlastDB=" + jmeno + "\r\nlastDBmode=1\r\n");
+			Assert.assertNull(jmeno, DetekceZdroju.geoget(windows()).getPosledniDatabaze());
+		}
 	}
 
 	@Test
@@ -120,6 +143,20 @@ public class DetekceZdrojuTest {
 		final File db = soubor("domov/AppData/Roaming/gsak/data/Default/sqlite.db3", "x");
 		final DetekceZdroju.Nalez n = DetekceZdroju.gsak(windows());
 		Assert.assertEquals(kanon(db.getParentFile().getParentFile()), n.getSlozka());
+	}
+
+	@Test
+	public void gsakPosledniDatabazeZGsakIni() throws Exception {
+		soubor("domov/AppData/Roaming/gsak/data/Default/sqlite.db3", "x");
+		final File db = soubor("domov/AppData/Roaming/gsak/data/GeoKukTest/sqlite.db3", "x");
+		tmp.newFolder("domov", "AppData", "Roaming", "gsak", "data", "GrabbedImages");
+		final File ini = new File(domov, "AppData/Roaming/gsak/gsak.ini");
+		Files.write(ini.toPath(), "[TfmMain]\r\nlblX.Caption=Referenční\r\n[TfmOffline]\r\nlblDbase.Caption=GeoKukTest\r\n".getBytes(cz.geokuk.util.file.TextovySoubor.CP1250));
+		Assert.assertEquals(kanon(db), DetekceZdroju.gsak(windows()).getPosledniDatabaze());
+		Files.write(ini.toPath(), "[TfmOffline]\r\nlblDbase.Caption=GrabbedImages\r\n".getBytes(StandardCharsets.US_ASCII));
+		Assert.assertNull("podsložka bez sqlite.db3 není databáze", DetekceZdroju.gsak(windows()).getPosledniDatabaze());
+		Files.write(ini.toPath(), "[TfmOffline]\r\nlblDbase.Caption=..\\..\r\n".getBytes(StandardCharsets.US_ASCII));
+		Assert.assertNull(DetekceZdroju.gsak(windows()).getPosledniDatabaze());
 	}
 
 	@Test
@@ -163,6 +200,17 @@ public class DetekceZdrojuTest {
 		soubor("domov/Documents/opensak/opensak.json", "{\"databases.active\": \"" + json(db.getAbsolutePath()) + "\"}");
 		final DetekceZdroju.Nalez n = DetekceZdroju.opensak(windows());
 		Assert.assertEquals(kanon(db), n.getPosledniDatabaze());
+	}
+
+	/** Instalace z Microsoft Store: bootstrap.json je ve virtualizované složce balíčku a může obsahovat proměnnou prostředí. */
+	@Test
+	public void opensakZMicrosoftStorePresBalicek() throws Exception {
+		final File db = soubor("jinde/opensak/Default.db", "x");
+		promenne.put("LOCALAPPDATA", new File(domov, "AppData/Local").getPath());
+		promenne.put("JINDE", new File(tmp.getRoot(), "jinde").getPath());
+		soubor("domov/AppData/Local/Packages/AgreeDK.OpenSAK_8wekyb3d8bbwe/LocalCache/Roaming/opensak/bootstrap.json", "{\"install_dir\": \"%JINDE%" + json(File.separator) + "opensak\"}");
+		soubor("jinde/opensak/opensak.json", "{\"databases.active\": \"" + json(db.getAbsolutePath()) + "\"}");
+		Assert.assertEquals(kanon(db), DetekceZdroju.opensak(windows()).getPosledniDatabaze());
 	}
 
 	@Test
