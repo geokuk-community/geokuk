@@ -106,8 +106,8 @@ public class JPrepinaceZdroju extends JPanel {
 				}
 				if (JTabulkaZdroju.jenTato(e)) {
 					ovladani.setNacitatJenTyp(typ);
-				} else {
-					JTabulkaZdroju.klikTyp(stav, typ, ovladani);
+				} else if (!JTabulkaZdroju.klikTyp(stav, typ, ovladani)) {
+					zaskrtavatko.setSelected(false);
 				}
 			});
 			final JLabel ikona = new JLabel(IkonyZdroju.prazdna()) {

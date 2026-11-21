@@ -210,6 +210,18 @@ public class JTabulkaZdrojuTest {
 		Assert.assertEquals(Arrays.asList("typ GEOGET false", "typ GEOGET false", "typ GEOGET true", "vseVTypu GEOGET true"), ovladani.volani);
 	}
 
+	/** Bez vybrané databáze a s volbou „Nové databáze načíst až po vybrání“ klik na typ všechny databáze nezapne. */
+	@Test
+	public void typBezVyberuSVolbouAzPoVybraniNezapneVse() {
+		ovladani.azPoVybrani.add(TypZdroje.GEOGET);
+		data.vypnute.add(data.snimek().getPolozky(TypZdroje.GEOGET).get(0).getSoubor());
+		data.vypnute.add(data.snimek().getPolozky(TypZdroje.GEOGET).get(1).getSoubor());
+		data.vypnuteTypy.add(TypZdroje.GEOGET);
+		data.prepisZapnuti();
+		Assert.assertFalse(JTabulkaZdroju.klikTyp(data.snimek(), TypZdroje.GEOGET, ovladani));
+		Assert.assertEquals(Arrays.asList("zadnaVybrana GEOGET"), ovladani.volani);
+	}
+
 	@Test
 	public void vseZapnoutAVypnout() {
 		final JTabulkaZdroju uplna = tabulka(null);

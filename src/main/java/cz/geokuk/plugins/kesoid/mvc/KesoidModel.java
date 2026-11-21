@@ -72,6 +72,7 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 	private final IkonNacitacManager ikonNacitacLoaderManager = new IkonNacitacManager(this);
 	private KesFilteringSwingWorker filteringSwingWorker;
 	private ProgressModel progressModel;
+	private ToastModel toast;
 	private Boolean onoff;
 	private boolean sledovatSchranku;
 	private EZobrazeniKesi zobrazeniKesi;
@@ -155,6 +156,10 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 
 	public void inject(final KesoidFilterModel filter) {
 		this.filter = filter;
+	}
+
+	public void inject(final ToastModel toast) {
+		this.toast = toast;
 	}
 
 	public void inject(final ProgressModel progressModel) {
@@ -492,6 +497,31 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		zmenZapnute(nacitat ? jedna : Collections.<File>emptyList(), nacitat ? Collections.<File>emptyList() : jedna, Collections.<TypZdroje, Boolean>emptyMap());
 	}
 
+	@Override
+	public boolean isNacitatAzPoVybrani(final TypZdroje typ) {
+		final GsakParametryNacitani g = getGsakParametryNacitani();
+		if (g == null) {
+			return false;
+		}
+		switch (typ) {
+		case GEOGET:
+			return !g.isNoveDatabazeGeogetuHned();
+		case GSAK:
+			return !g.isNoveDatabazeHned();
+		case OPENSAK:
+			return !g.isNoveDatabazeOpensakuHned();
+		default:
+			return false;
+		}
+	}
+
+	@Override
+	public void zadnaVybranaDatabaze(final TypZdroje typ) {
+		if (toast != null) {
+			toast.ukaz(ZpravyZkratek.zdrojBezVybraneDatabaze(typ.getNazev()));
+		}
+	}
+
 	/** Zapne typ a z jeho položek nechá vybranou jen tuto. */
 	public void setNacitatJenPolozku(final TypZdroje typ, final File soubor) {
 		final List<File> ostatni = new ArrayList<>(getRegistrStavuZdroju().getSoubory(typ));
@@ -507,6 +537,10 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		}
 		final List<File> soubory = getRegistrStavuZdroju().getSoubory(typ);
 		final boolean nicVybrano = soubory.stream().noneMatch(this::jeZdrojZapnut);
+		if (nicVybrano && !soubory.isEmpty() && isNacitatAzPoVybrani(typ)) {
+			zadnaVybranaDatabaze(typ);
+			return;
+		}
 		zmenZapnute(nicVybrano ? soubory : Collections.<File>emptyList(), Collections.<File>emptyList(), typy);
 	}
 
@@ -747,7 +781,9 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		nactiZvyrazneni();
 		// fire(new GccomNickChangedEvent(gccomNick));
 		// loadUmisteniSouboru();
-		detekujZdroje(prostrediDetekce.get());
+		if (!"false".equals(System.getProperty(VLASTNOST_DETEKCE_ZDROJU))) {
+			detekujZdroje(prostrediDetekce.get());
+		}
 		setGsakParametryNacitani(loadGsakParametryNacitani());
 		setUmisteniSouboru(loadUmisteniSouboru());
 
@@ -766,6 +802,9 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 		fire(new FilterDefinitionChangedEvent(filter.getFilterDefinition(), filter.getJmenaNechtenychAlel(), jmenaAlelNaToolbaru));
 		spustFiltrovani();
 	}
+
+	/** Systémová vlastnost; hodnota false vypne detekci zdrojů (testy a Smoke, aby nenačetly data z počítače). */
+	public static final String VLASTNOST_DETEKCE_ZDROJU = "geokuk.detekceZdroju";
 
 	/** Prostředí, ve kterém se hledají datové složky jiných programů; testy ho nahrazují. */
 	static java.util.function.Supplier<DetekceZdroju.Prostredi> prostrediDetekce = DetekceZdroju.Prostredi::systemove;

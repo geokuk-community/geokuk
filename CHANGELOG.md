@@ -228,6 +228,9 @@
   jen s poslední použitou databází; ostatní databáze jdou zapnout v tabulce
   zdrojů. Uložené nastavení se nemění.
 - Zkratka Ctrl+1 až Ctrl+4 u vypnutého zdroje řekne, kde ho zapnout.
+- Zdroj s volbou „Nové databáze načíst až po vybrání“, který nemá vybranou
+  žádnou databázi, se zkratkou ani kliknutím na typ nezapne se všemi
+  databázemi; program řekne, kde databázi vybrat.
 - Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
   když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po

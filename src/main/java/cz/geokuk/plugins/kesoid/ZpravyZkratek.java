@@ -81,4 +81,9 @@ public final class ZpravyZkratek {
 	public static String zdrojVypnuty(final String nazevZdroje) {
 		return "Zdroj keší " + nazevZdroje + " – vypnutý, zapnete ho v Soubor > Umístění souborů";
 	}
+
+	/** Zapnutí typu, který nemá vybranou žádnou databázi a všechny se zapnout nemají. */
+	public static String zdrojBezVybraneDatabaze(final String nazevZdroje) {
+		return "Zdroj keší " + nazevZdroje + " – žádná databáze není vybraná, vyberte ji v Soubor > Přehled zdrojů";
+	}
 }
