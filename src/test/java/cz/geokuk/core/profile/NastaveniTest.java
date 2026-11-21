@@ -597,10 +597,10 @@ public class NastaveniTest {
 		final File vylety = new File(tmp.getRoot(), "data/vylety");
 		final File existujici = soubor("data/vylety/lovim.ggt", "GCNOVY\n");
 		final SouborovePreferences registr = SouborovePreferences.vPameti();
-		registr.node("current/umisteniSouboru").put("anoGgtFile", soubor("stara/lovim.ggt", "GCSTARY\n").getAbsolutePath());
-		registr.node("current/umisteniSouboru").put("neGgtFile", soubor("stara/tedne.ggt", "GCX\n").getAbsolutePath());
-		registr.node("current/umisteniSouboru").putBoolean("neGgtFile_active", false);
-		Nastaveni.prevezmi(SouborovePreferences.prazdne(new File(tmp.getRoot(), "data/nastaveni.xml")), registr, new Nastaveni.Prevod(vylety, null));
+		registr.node("geokuk/current/umisteniSouboru").put("anoGgtFile", soubor("stara/lovim.ggt", "GCSTARY\n").getAbsolutePath());
+		registr.node("geokuk/current/umisteniSouboru").put("neGgtFile", soubor("stara/tedne.ggt", "GCX\n").getAbsolutePath());
+		registr.node("geokuk/current/umisteniSouboru").putBoolean("neGgtFile_active", false);
+		Nastaveni.otevri(new File(tmp.getRoot(), "data/nastaveni.xml"), null, () -> registr, null);
 		Assert.assertEquals("GCNOVY\n", obsah(existujici));
 		Assert.assertFalse(new File(vylety, "tedne.ggt").exists());
 	}
