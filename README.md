@@ -35,8 +35,8 @@ složku přesunete, spusťte nejdřív znovu `GeoKuk-prvni-spusteni.cmd`,
 zástupce ve složce i jeho kopie na ploše a v nabídce Start se opraví.
 Do té doby zástupce hlásí chybu „Unable to access jarfile“.
 
-Když GeoKuk najde novou verzi, nabídne ji. Po volbě Stáhnout novou
-verzi ji stáhne a nabídne restart; jinak se nainstaluje při příštím
+Když GeoKuk najde novou verzi, nabídne ji. Po volbě Aktualizovat
+ji stáhne a nabídne restart; jinak se nainstaluje při příštím
 spuštění. Javu aktualizuje nový zip. Rozbalte ho
 tam, kam ten první (třeba do `C:\`), přes stávající složku `GeoKuk`;
 data a nastavení zůstanou.
