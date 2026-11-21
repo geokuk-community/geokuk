@@ -717,6 +717,28 @@ public class JPopupPlanovaceTest {
 		Assert.assertTrue(o.napoveda.getText(), o.napoveda.getText().contains("F4"));
 	}
 
+	/** Řádek pod myší se podtrhne písmem, ne HTML: text i šířka řádku zůstanou stejné (HTML by sloučilo dvojité mezery). */
+	@Test
+	public void radekPodMysiMaStejnyTextASirkuAJenPodtrzeni() throws Exception {
+		priprav();
+		popup.prepni();
+		vysledek(TextyPopupuPlanovaceTest.vysledek(new int[] { 47, 213 }, new int[0], new double[][] { { 213, 2800 }, { 47, 6200 } }));
+		final JPopupPlanovace.Obsah o = popup.obsah;
+		o.seznam.setSize(420, 200);
+		final java.awt.Rectangle radek = o.seznam.getCellBounds(0, 0);
+		final javax.swing.JLabel bez = (javax.swing.JLabel) o.seznam.getCellRenderer().getListCellRendererComponent(o.seznam, o.radky.get(0), 0, false, false);
+		final String textBez = bez.getText();
+		final int sirkaBez = bez.getPreferredSize().width;
+		Assert.assertTrue("text má dvojité mezery: " + textBez, textBez.contains("°  "));
+		Assert.assertNull("bez myši bez podtržení", bez.getFont().getAttributes().get(java.awt.font.TextAttribute.UNDERLINE));
+		o.seznam.dispatchEvent(new MouseEvent(o.seznam, MouseEvent.MOUSE_MOVED, 0, 0, radek.x + 5, radek.y + radek.height / 2, 0, false));
+		final javax.swing.JLabel pod = (javax.swing.JLabel) o.seznam.getCellRenderer().getListCellRendererComponent(o.seznam, o.radky.get(0), 0, false, false);
+		Assert.assertEquals("text se nemění", textBez, pod.getText());
+		Assert.assertEquals("šířka se nemění", sirkaBez, pod.getPreferredSize().width);
+		Assert.assertEquals("řádek je podtržený", java.awt.font.TextAttribute.UNDERLINE_ON, pod.getFont().getAttributes().get(java.awt.font.TextAttribute.UNDERLINE));
+		Assert.assertFalse("bez HTML", pod.getText().startsWith("<html>"));
+	}
+
 	/** Popup 360° označí sektor zvýrazněný na mapě (třeba podle vybrané keše), ne jen vybraný v seznamu; klik na označený řádek ho zruší jako u D/T. */
 	@Test
 	public void popup360OznaciSektorZvyraznenyKesiAKlikNaRadekHoZrusi() throws Exception {

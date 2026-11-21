@@ -721,7 +721,9 @@ public class JPopupPlanovace extends JSlide0 {
 				final JLabel r = (JLabel) super.getListCellRendererComponent(l, hodnota, i, vybrany, false);
 				final boolean klikaci = i >= 0 && i < polozky.size() && polozky.get(i) != null;
 				if (klikaci && i == podMysi) {
-					r.setText("<html><u>" + hodnota + "</u></html>");
+					final java.util.Map<java.awt.font.TextAttribute, Object> atributy = new java.util.HashMap<>(r.getFont().getAttributes());
+					atributy.put(java.awt.font.TextAttribute.UNDERLINE, java.awt.font.TextAttribute.UNDERLINE_ON);
+					r.setFont(r.getFont().deriveFont(atributy));
 					if (!vybrany) {
 						final Color z = UIManager.getColor("List.selectionBackground");
 						final Color b = l.getBackground();
