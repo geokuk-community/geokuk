@@ -2,6 +2,7 @@ package cz.geokuk.framework;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.AbstractPreferences;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class SouborovePreferences extends AbstractPreferences {
 
 	private static final long ODLOZENI_ZAPISU_MS = 2000;
+	private static final AtomicInteger NAPLANOVANE_ZAPISY = new AtomicInteger();
 
 	/** Soubor a odložený zápis, společné pro celý strom. */
 	private static final class Uloziste {
@@ -47,10 +49,11 @@ public final class SouborovePreferences extends AbstractPreferences {
 
 		synchronized void zmeneno() {
 			zmeneno = true;
-			if (naplanovano) {
+			if (naplanovano || soubor == null) {
 				return;
 			}
 			naplanovano = true;
+			NAPLANOVANE_ZAPISY.incrementAndGet();
 			if (casovac == null) {
 				casovac = new Timer("Zápis nastavení", true);
 			}
@@ -64,12 +67,17 @@ public final class SouborovePreferences extends AbstractPreferences {
 						uloz(false);
 					} catch (final IOException | RuntimeException e) {
 						// ohlásí se v uloz, časovač musí přežít
+					} finally {
+						NAPLANOVANE_ZAPISY.decrementAndGet();
 					}
 				}
 			}, ODLOZENI_ZAPISU_MS);
 		}
 
 		void uloz(final boolean vzdy) throws IOException {
+			if (soubor == null) {
+				return;
+			}
 			synchronized (zapisuje) {
 				synchronized (this) {
 					if (!zmeneno && !vzdy) {
@@ -104,6 +112,16 @@ public final class SouborovePreferences extends AbstractPreferences {
 	/** Prázdné nastavení, které se zapisuje do daného souboru. */
 	public static SouborovePreferences prazdne(final File soubor) {
 		return new SouborovePreferences(soubor);
+	}
+
+	/** Počet odložených zápisů všech stromů, které ještě neproběhly; pro testy. */
+	public static int naplanovanychZapisu() {
+		return NAPLANOVANE_ZAPISY.get();
+	}
+
+	/** Nastavení jen v paměti, nikam se nezapisuje. */
+	public static SouborovePreferences vPameti() {
+		return new SouborovePreferences((File) null);
 	}
 
 	/** Nastavení načtené ze souboru ve formátu exportu Java Preferences. */

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDate;
+import java.util.function.Supplier;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -55,14 +56,15 @@ public final class Nastaveni {
 	 * Otevře nastavení v souboru. Poškozený soubor nesmí bránit spuštění, proto se odloží stranou a program pokračuje s výchozím nastavením.
 	 */
 	static SouborovePreferences otevri(final File soubor, final File stary, final boolean zRegistru) {
-		return otevri(soubor, stary, zRegistru ? Preferences.userRoot() : null);
+		return otevri(soubor, stary, zRegistru ? Preferences::userRoot : null);
 	}
 
 	/**
 	 * @param registr
-	 *            kořen Java Preferences, ze kterého se převezme nastavení starší verze; null, když se z nich nepřebírá
+	 *            kořen Java Preferences, ze kterého se převezme nastavení starší verze; null, když se z nich nepřebírá. Volá se, jen když se
+	 *            opravdu převádí: ve Windows {@link Preferences#userRoot()} založí klíč v registru.
 	 */
-	static SouborovePreferences otevri(final File soubor, final File stary, final Preferences registr) {
+	static SouborovePreferences otevri(final File soubor, final File stary, final Supplier<Preferences> registr) {
 		uklidDocasne(soubor);
 		if (soubor.isFile() && soubor.length() == 0) {
 			// Prázdný soubor (výpadek proudu, antivir) nemá co zachraňovat, platí jako chybějící.
@@ -133,15 +135,16 @@ public final class Nastaveni {
 		return false;
 	}
 
-	/** Nové nastavení se sestaví celé z jednoho zdroje; při chybě se zahodí, aby se neuložil jen částečně převzatý stav. */
-	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final Preferences registr) {
+	/**
+	 * Nové nastavení se sestaví celé z jednoho zdroje. Převod běží v paměti a do nastavení se souborem se přenese až po úspěchu, aby se
+	 * neuložil jen částečně převzatý stav.
+	 */
+	private static SouborovePreferences prevezmiStare(final File soubor, final File stary, final Supplier<Preferences> registr) {
 		boolean chyba = false;
 		if (stary != null && stary.isFile()) {
 			try {
 				final SouborovePreferences nacteno = SouborovePreferences.nacti(stary);
-				final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
-				prevezmi(nove, nacteno.node(UZEL));
-				return prevzato(nove, "soubor", stary.toString());
+				return prevzato(soubor, prevedVPameti(nacteno.node(UZEL)), "soubor", stary.toString());
 			} catch (final IOException | BackingStoreException | RuntimeException e) {
 				log.warn("Nastavení ze souboru {} nelze převzít", stary, e);
 				chyba = true;
@@ -149,10 +152,9 @@ public final class Nastaveni {
 		}
 		if (registr != null) {
 			try {
-				if (registr.nodeExists(UZEL)) {
-					final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
-					prevezmi(nove, registr.node(UZEL));
-					return prevzato(nove, "registr", "Java Preferences");
+				final Preferences koren = registr.get();
+				if (koren.nodeExists(UZEL)) {
+					return prevzato(soubor, prevedVPameti(koren.node(UZEL)), "registr", "Java Preferences");
 				}
 			} catch (final BackingStoreException | RuntimeException e) {
 				log.warn("Nastavení z Java Preferences nelze převzít", e);
@@ -169,7 +171,16 @@ public final class Nastaveni {
 		return nove;
 	}
 
-	private static SouborovePreferences prevzato(final SouborovePreferences nove, final String zdroj, final String popis) throws BackingStoreException {
+	private static SouborovePreferences prevedVPameti(final Preferences zdroj) throws BackingStoreException {
+		final SouborovePreferences prevedeno = SouborovePreferences.vPameti();
+		prevezmi(prevedeno, zdroj);
+		return prevedeno;
+	}
+
+	private static SouborovePreferences prevzato(final File soubor, final SouborovePreferences prevedeno, final String zdroj, final String popis)
+			throws BackingStoreException {
+		final SouborovePreferences nove = SouborovePreferences.prazdne(soubor);
+		nove.zkopirujZ(prevedeno);
 		final int klicu = pocetKlicu(nove.node(UZEL));
 		znacka(nove, zdroj, "ok");
 		log.info("Převod nastavení starší verze z {}: převzato {} hodnot", popis, klicu);
