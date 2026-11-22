@@ -45,7 +45,7 @@ public class KachleDBManagerTest {
 		soubor = new File(slozka, "tiles.sqlite");
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(slozka, false, true));
-		manager = new KachleDBManager(holder);
+		manager = new TichyKachleDBManager(holder);
 	}
 
 	private static byte[] png() throws Exception {
@@ -186,7 +186,7 @@ public class KachleDBManagerTest {
 				db.close();
 			}
 			Files.write(soubor.toPath(), obsah.getBytes(StandardCharsets.UTF_8));
-			manager = new KachleDBManager(manager.folderHolder);
+			manager = new TichyKachleDBManager(manager.folderHolder);
 			Assert.assertNull(manager.load(KACHLE));
 		}
 		Assert.assertEquals("třetí", new String(Files.readAllBytes(vadna.toPath()), StandardCharsets.UTF_8));
@@ -288,30 +288,35 @@ public class KachleDBManagerTest {
 
 	@Test
 	public void doNezapisovatelneSlozkyCacheNezaklada() throws Exception {
-		manager = new KachleDBManager(manager.folderHolder) {
+		final TichyKachleDBManager tichy = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			boolean lzeZapsat(final File s) {
 				return false;
 			}
 		};
+		manager = tichy;
 		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(KACHLE, png()))));
 		Assert.assertNull(manager.load(KACHLE));
 		Assert.assertFalse("cache se nezaložila", soubor.exists());
+		Assert.assertEquals("uživatel je upozorněn jednou", 1, tichy.zaznamenanaUpozorneni.size());
+		Assert.assertTrue(tichy.zaznamenanaUpozorneni.get(0), tichy.zaznamenanaUpozorneni.get(0).contains("nelze zapisovat"));
 	}
 
 	@Test
 	public void nezapisovatelnouSlozkuZkusiPoChvileZnovu() throws Exception {
 		final int[] zkousek = new int[1];
-		manager = new KachleDBManager(manager.folderHolder) {
+		final TichyKachleDBManager tichy = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			boolean lzeZapsat(final File s) {
 				zkousek[0]++;
 				return false;
 			}
 		};
+		manager = tichy;
 		Assert.assertNull(manager.load(KACHLE));
 		Assert.assertNull(manager.load(KACHLE));
 		Assert.assertEquals("výsledek zkoušky platí chvíli", 1, zkousek[0]);
+		Assert.assertEquals("opakovaný pokus uživatele znovu neupozorní", 1, tichy.zaznamenanaUpozorneni.size());
 	}
 
 	@Test
@@ -395,7 +400,7 @@ public class KachleDBManagerTest {
 	@Test(timeout = 60000)
 	public void kontrolaSlozkyPriCteniNezablokujeZapis() throws Exception {
 		final java.util.concurrent.CountDownLatch vKontrole = new java.util.concurrent.CountDownLatch(1);
-		manager = new KachleDBManager(manager.folderHolder) {
+		manager = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			boolean lzeZapsat(final File s) {
 				if ("ctenar".equals(Thread.currentThread().getName())) {
@@ -457,7 +462,7 @@ public class KachleDBManagerTest {
 		for (final SqlJetDb db : manager.connections.values()) {
 			db.close();
 		}
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
 		try {
 			nactiPrerusene(vlakno);
@@ -477,7 +482,7 @@ public class KachleDBManagerTest {
 			for (final SqlJetDb db : manager.connections.values()) {
 				db.close();
 			}
-			manager = new KachleDBManager(manager.folderHolder);
+			manager = new TichyKachleDBManager(manager.folderHolder);
 			new File(soubor.getPath() + ".vadna").delete();
 			Files.write(soubor.toPath(), smeti);
 			final ExecutorService vlakna = Executors.newFixedThreadPool(8);
@@ -506,7 +511,7 @@ public class KachleDBManagerTest {
 	@Test
 	public void priNedostatkuMistaNezapisuje() throws Exception {
 		final long[] volne = { KachleDBManager.MIN_VOLNE_MISTO / 2 };
-		manager = new KachleDBManager(manager.folderHolder) {
+		manager = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			long volneMisto(final File slozka) {
 				return volne[0];
@@ -523,7 +528,7 @@ public class KachleDBManagerTest {
 	@Test
 	public void prahVolnehoMistaJeStoMegabajtu() throws Exception {
 		final long[] volne = { 99L << 20 };
-		manager = new KachleDBManager(manager.folderHolder) {
+		manager = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			long volneMisto(final File slozka) {
 				return volne[0];
@@ -541,7 +546,7 @@ public class KachleDBManagerTest {
 	@Test
 	public void naNedostatekMistaUpozorniJednou() throws Exception {
 		final int[] upozorneni = { 0 };
-		manager = new KachleDBManager(manager.folderHolder) {
+		manager = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			long volneMisto(final File slozka) {
 				return 0;
@@ -562,7 +567,7 @@ public class KachleDBManagerTest {
 	@Test
 	public void poskozeniPriZapisuCacheOdlozi() throws Exception {
 		poskodStranku(2);
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		Assert.assertFalse(manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
 		Assert.assertTrue("poškozená cache se odloží", new File(soubor.getPath() + ".vadna").isFile());
 		Assert.assertTrue("nová cache funguje", manager.save(Collections.singleton(new ItemToSave(kachle(5), png()))));
@@ -573,7 +578,7 @@ public class KachleDBManagerTest {
 	@Test
 	public void chybaStarehoSpojeniNeodloziNovouCache() throws Exception {
 		poskodStranku(2);
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		final int pred = manager.odlozeni;
 		Assert.assertNull(manager.load(kachle(1)));
 		Assert.assertTrue(new File(soubor.getPath() + ".vadna").isFile());
@@ -586,7 +591,7 @@ public class KachleDBManagerTest {
 	@Test
 	public void poskozeniPriCteniCacheOdlozi() throws Exception {
 		poskodStranku(2);
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		for (int i = 0; i < 200; i++) {
 			Assert.assertNull("dlaždice z poškozené cache se stáhne znovu", manager.load(kachle(i)));
 		}
@@ -600,7 +605,7 @@ public class KachleDBManagerTest {
 	public void poPaduSeCacheZkontroluje() throws Exception {
 		poskodStranku(-1);
 		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		// Hledání dlaždice mimo cache poslední stránku nečte, poškození najde jen kontrola.
 		Assert.assertNull(manager.load(KACHLE_MIMO));
 		Assert.assertTrue("zápis počká na kontrolu a jde do nové cache", manager.save(Collections.singleton(new ItemToSave(kachle(1), png()))));
@@ -615,7 +620,7 @@ public class KachleDBManagerTest {
 		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
 		final CountDownLatch kontrolaZacala = new CountDownLatch(1);
 		final CountDownLatch pustKontrolu = new CountDownLatch(1);
-		manager = new KachleDBManager(manager.folderHolder) {
+		manager = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			void projdi(final SqlJetDb database) throws SqlJetException {
 				kontrolaZacala.countDown();
@@ -650,7 +655,7 @@ public class KachleDBManagerTest {
 	public void kontrolaPoPaduZdravouCacheNeodlozi() throws Exception {
 		ulozKachle();
 		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		Assert.assertNotNull(manager.load(kachle(150)));
 		Assert.assertFalse(new File(soubor.getPath() + ".vadna").exists());
 	}
@@ -659,7 +664,7 @@ public class KachleDBManagerTest {
 	@Test(timeout = 60000)
 	public void zamekJinehoProgramuJeJenChybejiciDlazdice() throws Exception {
 		ulozKachle();
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		Assert.assertNotNull(manager.load(kachle(1)));
 		final Process jiny = new ProcessBuilder(new File(System.getProperty("java.home"), "bin/java").getPath(), "-cp", System.getProperty("java.class.path"),
 				ZamekJinehoProgramu.class.getName(), soubor.getPath()).redirectErrorStream(true).start();
@@ -687,7 +692,7 @@ public class KachleDBManagerTest {
 	public void nespustenaKontrolaNeblokujeZapis() throws Exception {
 		ulozKachle();
 		Files.write(new File(soubor.getPath() + "-journal").toPath(), new byte[0]);
-		manager = new KachleDBManager(manager.folderHolder) {
+		manager = new TichyKachleDBManager(manager.folderHolder) {
 			@Override
 			void spustVlakno(final Runnable kontrola) {
 				throw new OutOfMemoryError("unable to create native thread");
@@ -762,7 +767,7 @@ public class KachleDBManagerTest {
 	@Test(timeout = 60000)
 	public void zapisZdrzenyCtenaremJinehoProgramuProjdePoUvolneni() throws Exception {
 		ulozKachle();
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		Assert.assertNotNull(manager.load(kachle(1)));
 		final Process ctenar = spustCtenare();
 		final ExecutorService vlakno = Executors.newSingleThreadExecutor();
@@ -784,7 +789,7 @@ public class KachleDBManagerTest {
 	@Test(timeout = 60000)
 	public void trvalyZamekCtenareZapisVzdaAChybuOhlasi() throws Exception {
 		ulozKachle();
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		Assert.assertNotNull(manager.load(kachle(1)));
 		final Process ctenar = spustCtenare();
 		try {
@@ -810,7 +815,7 @@ public class KachleDBManagerTest {
 	@Test(timeout = 60000)
 	public void poPreruseniZapisuSeSpojeniZahodiAPristiZapisProjde() throws Exception {
 		ulozKachle();
-		manager = new KachleDBManager(manager.folderHolder);
+		manager = new TichyKachleDBManager(manager.folderHolder);
 		final byte[] data = png();
 		Assert.assertTrue(manager.save(Collections.singleton(new ItemToSave(kachle(300), data))));
 		Thread.currentThread().interrupt();

@@ -47,7 +47,7 @@ public class OptimalizaceDatabazeTest {
 		soubor = new File(slozka, "tiles.sqlite");
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(slozka, false, true));
-		manager = new KachleDBManager(holder);
+		manager = new TichyKachleDBManager(holder);
 		optimalizace = manager.optimalizace();
 		optimalizace.setPauzaMezipokusy(0);
 	}

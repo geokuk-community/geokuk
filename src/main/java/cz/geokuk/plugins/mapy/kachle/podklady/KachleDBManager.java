@@ -552,10 +552,8 @@ class KachleDBManager implements KachleManager {
 
 	void upozorniNaMisto(final File slozka, final long volne) {
 		log.warn("Na disku se složkou cache dlaždic {} zbývá {} MB, dlaždice se do cache neukládají.", slozka, volne >> 20);
-		if (!GraphicsEnvironment.isHeadless()) {
-			SwingUtilities.invokeLater(() -> Dlg.upozorneni("Na disku se složkou " + slozka + " dochází místo, mapy se přestaly ukládat do cache.\n"
-					+ "Po uvolnění místa se začnou ukládat znovu."));
-		}
+		upozorni("Na disku se složkou " + slozka + " dochází místo, mapy se přestaly ukládat do cache.\n"
+				+ "Po uvolnění místa se začnou ukládat znovu.");
 	}
 
 	/** Volné místo v bajtech, záporné, když ho systém nezjistí. */
@@ -738,7 +736,14 @@ class KachleDBManager implements KachleManager {
 			return;
 		}
 		uzivatelUpozornen = true;
-		SwingUtilities.invokeLater(() -> Dlg.upozorneni("Do složky " + slozka + " nelze zapisovat, mapy se budou pokaždé stahovat znovu."));
+		upozorni("Do složky " + slozka + " nelze zapisovat, mapy se budou pokaždé stahovat znovu.");
+	}
+
+	/** Upozornění uživateli dialogem; testy ho přepisují, aby jim při běhu s displejem nevyskakovala okna. */
+	void upozorni(final String text) {
+		if (!GraphicsEnvironment.isHeadless()) {
+			SwingUtilities.invokeLater(() -> Dlg.upozorneni(text));
+		}
 	}
 
 	boolean lzeZapsat(final File slozka) {
@@ -831,8 +836,8 @@ class KachleDBManager implements KachleManager {
 		chybyOtevreni.ohlas(e);
 		if (++neuspesnychOtevreniZaSebou == 3 && !uzivatelUpozornen) {
 			uzivatelUpozornen = true;
-			SwingUtilities.invokeLater(() -> Dlg.upozorneni("Cache dlaždic ve složce " + f.getParent() + " nejde použít, mapy se budou pokaždé stahovat znovu.\n"
-					+ "Zkontrolujte disk a práva ke složce, cache můžete i smazat."));
+			upozorni("Cache dlaždic ve složce " + f.getParent() + " nejde použít, mapy se budou pokaždé stahovat znovu.\n"
+					+ "Zkontrolujte disk a práva ke složce, cache můžete i smazat.");
 		}
 	}
 
