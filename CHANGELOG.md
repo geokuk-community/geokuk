@@ -96,7 +96,8 @@
 - Vydání obsahuje téma GeoKuk a GeoKuk – detail pro aplikace s mapami ve formátu
   mapsforge (například c:geo, aDrake): GeoKuk-tema.zip k mapám GeoKuku (základní
   mapa z download.mapsforge.org s vrstvami GeoKuku) a GeoKuk-tema-PAWS.zip
-  k mapám s turistickými a cyklotrasami v tagech osmc_*.
+  k mapám s turistickými a cyklotrasami v tagech osmc_* (například mapy
+  z osm.paws.cz).
 - Okno Licence a použité knihovny uvádí, že témata vzhledu od třetích stran se
   řídí licencí svého autora.
 - Po aktualizaci programu se offline mapy v cache jednou vykreslí znovu.

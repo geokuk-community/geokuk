@@ -7,7 +7,7 @@
 - `VYSTUP/GeoKuk-tema.zip`: téma pro aplikace s mapami mapsforge (c:geo, aDrake) k mapám GeoKuku: základní mapa
   z download.mapsforge.org a vrstvy GeoKuku (`.tourist.map` s trasami v tagech `fmrel*` a body, `.contours.map`),
   soubor vydání,
-- `VYSTUP/GeoKuk-tema-PAWS.zip`: totéž téma k mapám s trasami v tagech `osmc_*`, soubor vydání.
+- `VYSTUP/GeoKuk-tema-PAWS.zip`: totéž téma k mapám s trasami v tagech `osmc_*` (například mapy z osm.paws.cz), soubor vydání.
 
 Oba zipy mají stejná pravidla kromě tras, zdroje jsou v nich relativně (`file:`) a stínování terénu kreslí aplikace,
 která ho umí. Skript ověří, že každý zip kreslí trasy jen z jedné sady tagů. Načtení zipů tak, jak je čtou aplikace

@@ -17,7 +17,7 @@ a cyklotrasy:
   .contours.map vrstevnice.
   Aplikace musí umět kreslit více mapových souborů najednou.
 - GeoKuk-tema-PAWS.zip: k mapám, které mají turistické a cyklotrasy přímo
-  v mapovém souboru v tagech osmc_*.
+  v mapovém souboru v tagech osmc_*, například mapy z osm.paws.cz.
 Se špatným zipem se trasy nekreslí, zbytek mapy ano.
 
 Stínování terénu kreslí aplikace, která ho umí a má výšková data (soubory
