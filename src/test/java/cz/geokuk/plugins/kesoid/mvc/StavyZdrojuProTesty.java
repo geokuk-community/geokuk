@@ -54,6 +54,17 @@ final class StavyZdrojuProTesty {
 	/** Zaznamenává volání ovládání. */
 	static final class Zaznam implements OvladaniZdroju {
 		final List<String> volani = new ArrayList<>();
+		final java.util.Set<TypZdroje> azPoVybrani = java.util.EnumSet.noneOf(TypZdroje.class);
+
+		@Override
+		public boolean isNacitatAzPoVybrani(final TypZdroje typ) {
+			return azPoVybrani.contains(typ);
+		}
+
+		@Override
+		public void zadnaVybranaDatabaze(final TypZdroje typ) {
+			volani.add("zadnaVybrana " + typ);
+		}
 
 		@Override
 		public void setNacitatTyp(final TypZdroje typ, final boolean nacitat) {

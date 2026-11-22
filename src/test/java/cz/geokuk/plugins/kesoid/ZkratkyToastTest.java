@@ -168,6 +168,28 @@ public class ZkratkyToastTest {
 	}
 
 	@Test
+	public void zkratkaRozlisiVypnutyZdrojOdZdrojeBezSouboru() {
+		final KesoidModel model = mock(KesoidModel.class);
+		final cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru u = new cz.geokuk.plugins.kesoid.mvc.KesoidUmisteniSouboru();
+		u.setKesDir(new cz.geokuk.util.file.Filex(new java.io.File("gpx"), false, true));
+		u.setGsakDataDir(new cz.geokuk.util.file.Filex(new java.io.File("gsak"), false, false));
+		u.setGeogetDataDir(new cz.geokuk.util.file.Filex(new java.io.File("geoget"), false, true));
+		when(model.getUmisteniSouboru()).thenReturn(u);
+		final PrepniZdrojAction gsak = new PrepniZdrojAction(TypZdroje.GSAK);
+		gsak.inject(model);
+		gsak.inject(toast);
+		gsak.setEnabled(false);
+		gsak.prepni();
+		Assert.assertEquals("Zdroj keší GSAK – vypnutý, zapnete ho v Soubor > Umístění souborů", posledni());
+		final PrepniZdrojAction geoget = new PrepniZdrojAction(TypZdroje.GEOGET);
+		geoget.inject(model);
+		geoget.inject(toast);
+		geoget.setEnabled(false);
+		geoget.prepni();
+		Assert.assertEquals("Zdroj keší " + TypZdroje.GEOGET.getNazev() + " – nemá načtené soubory", posledni());
+	}
+
+	@Test
 	public void tooltipVypnuteAkceVysvetliProc() {
 		final PrepniZdrojAction akce = new PrepniZdrojAction(TypZdroje.GPX);
 		final String zapnuta = (String) akce.getValue(javax.swing.Action.SHORT_DESCRIPTION);

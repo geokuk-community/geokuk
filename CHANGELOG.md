@@ -220,12 +220,25 @@
   roku 2013 nevyplňují, takže by filtr skryl všechny novější keše. Práh
   uložený starší verzí se už neuplatní. Hodnoty u starších keší zůstávají
   v detailu keše, filtr podle favoritů zůstává.
+- Při prvním spuštění program najde datovou složku GeoGetu, GSAKu a OpenSAKu
+  v obvyklých umístěních (u GeoGetu i podle geogetboot.ini) a zdroj zapne
+  jen s poslední použitou databází, když ji jde zjistit, jinak bez vybrané
+  databáze; ostatní databáze jdou zapnout v tabulce zdrojů. Uložené
+  nastavení se nemění.
+- Zkratka Ctrl+1 až Ctrl+4 u vypnutého zdroje řekne, kde ho zapnout.
+- Zdroj s volbou „Nové databáze načíst až po vybrání“, který nemá vybranou
+  žádnou databázi, se zkratkou ani kliknutím na typ nezapne se všemi
+  databázemi; program řekne, kde databázi vybrat.
 
 ### Opravy
 - Nastavený práh favoritů ve filtru skryje i keše, které favority nemají.
 - Po přechodu z verze 5.2 zůstane vybraná mapa OpenStreetMap, ortofoto
   nebo topografická mapa ČÚZK; mapa, kterou tato verze nemá, se nahradí
   výchozí mapou.
+- Když se nastavení starší verze nepodaří převzít, program na to upozorní
+  a začne s výchozím nastavením místo částečně převzatého.
+- Při přechodu ze starší verze se převezmou složky GeoGetu a GSAKu a zkopírují
+  se výlety; složka, která neexistuje nebo je prázdná, se nepřevezme.
 - Keš, která je ve více databázích nebo souborech, se ukáže jako nalezená,
   když ji jako nalezenou má kterýkoli z nich, i s datem nálezu.
 - Zvýrazňovací kruhy (F8) a Kruhy v metrech (Alt+F8) zůstanou zapnuté i po

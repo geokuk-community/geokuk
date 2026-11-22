@@ -20,4 +20,12 @@ public interface OvladaniZdroju {
 
 	/** Zapne typ (bez výběru se všemi položkami) a ostatní typy vypne. */
 	void setNacitatJenTyp(TypZdroje typ);
+
+	/** Typ s volbou „Nové databáze načíst až po vybrání“: bez vybrané databáze se nezapínají všechny. */
+	default boolean isNacitatAzPoVybrani(final TypZdroje typ) {
+		return false;
+	}
+
+	/** Uživatel zapnul typ, který nemá vybranou žádnou databázi a všechny se zapnout nemají. */
+	default void zadnaVybranaDatabaze(final TypZdroje typ) {}
 }

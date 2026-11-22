@@ -64,6 +64,17 @@ public class SouborovePreferencesTest {
 	}
 
 	@Test
+	public void nastaveniVPametiNeplanujeZapis() throws Exception {
+		final int pred = SouborovePreferences.naplanovanychZapisu();
+		final SouborovePreferences p = SouborovePreferences.vPameti();
+		p.node("a/b").put("k", "v");
+		p.ulozHned();
+		assertThat(p.node("a/b").get("k", null)).isEqualTo("v");
+		assertThat(p.getSoubor()).isNull();
+		assertThat(SouborovePreferences.naplanovanychZapisu()).isAtMost(pred);
+	}
+
+	@Test
 	public void odlozenyZapisPrezijeVyjimkuZaBehu() throws Exception {
 		final File soubor = new File(tmp.getRoot(), "nastaveni.xml");
 		final SouborovePreferences pref = SouborovePreferences.prazdne(soubor);

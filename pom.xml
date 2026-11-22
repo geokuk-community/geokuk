@@ -99,6 +99,7 @@
 				<configuration>
 					<systemPropertyVariables>
 						<geokuk.data>${project.build.directory}/test-data</geokuk.data>
+						<geokuk.detekceZdroju>false</geokuk.detekceZdroju>
 					</systemPropertyVariables>
 					<properties>
 						<property>

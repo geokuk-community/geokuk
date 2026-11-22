@@ -620,6 +620,8 @@ public class SmokeIT {
 		prikaz.add("-Djava.io.tmpdir=" + new File(adresar, "tmp"));
 		prikaz.add("-Djava.util.prefs.userRoot=" + new File(adresar, "prefs"));
 		prikaz.add("-Dgeokuk.data=" + new File(adresar, "data"));
+		// Scénáře nesmí načíst GeoGet, GSAK ani OpenSAK testera.
+		prikaz.add("-D" + cz.geokuk.plugins.kesoid.mvc.KesoidModel.VLASTNOST_DETEKCE_ZDROJU + "=false");
 		// Vestavěné mapy (Mapy.cz po http) jdou přes falešný server jako proxy.
 		prikaz.add("-Dhttp.proxyHost=127.0.0.1");
 		prikaz.add("-Dhttp.proxyPort=" + proxyPort);

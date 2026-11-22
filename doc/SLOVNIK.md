@@ -217,6 +217,7 @@ Vzdálenost a azimut se počítají ze tří různých míst:
 | **Kořen zdrojů** | Místo, odkud se zdroje skenují. Jsou čtyři: složka s GPX (rekurzivně: geokuk, gpx, zip, jpg…), GeoGet (`*.db3`), GSAK (`sqlite.db3`), OpenSAK (`*.db`). | `Root`, `Root.Def`, `MultiNacitac` |
 | **Blokovaný zdroj** | Zdroj, který uživatel vyřadil z načítání, i s celým podstromem. | `KesoidModel.blokovaneZdroje` |
 | **Načítat až po vybrání** | Volba zdrojů GeoGet, GSAK a OpenSAK: nová databáze se nenačte, dokud ji uživatel nezapne v tabulce zdrojů. | `FPref.NOVE_DATABAZE_HNED_value` v uzlech `GSAK_node`, `OPENSAK_node`, `GEOGET_node` |
+| **Detekce zdrojů** | Při prvním spuštění (složka zdroje v nastavení chybí) hledání datové složky GeoGetu, GSAKu a OpenSAKu v obvyklých umístěních a v jejich souborech nastavení; nalezený zdroj se zapne jen s poslední použitou databází a s volbou Načítat až po vybrání. | `DetekceZdroju`, `KesoidModel.detekujZdroje` |
 | **Načítač** | Importér jednoho formátu: GPX, DB GeoGetu, DB GSAKu, DB OpenSAKu, metadata fotek, vlastní formát Geokuku. | `Nacitac*`, `GeogetLoader`, `GsakDbLoader`, `OpensakDbLoader` |
 | **Procák** | Zpracovatel jednoho GPX waypointu do kešoidu. Procáky jednotlivých pluginů jsou řetězené. | `Procak`, `*GpxWptProcak`, `ProcakDispatcher` |
 | **GeoGet rozšíření** | Data z `<gpxg:GeogetExtension>` a z databází GeoGetu a GSAKu: nalezení, flag ručního přidání, hodnocení, BestOf, favority, známka, výška, kraj, okres, uživatelské tagy `geokuk_*`. | `Gpxg` |

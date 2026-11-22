@@ -331,14 +331,20 @@ public class JTabulkaZdroju extends JPanel {
 	 * Klik na zaškrtávátko typu: zapnutý i částečně zapnutý typ se vypne (výběr položek zůstane), vypnutý se zapne s dřívějším výběrem; když žádná položka vybraná není,
 	 * zapnou se všechny.
 	 */
-	static void klikTyp(final StavZdroju stav, final TypZdroje typ, final OvladaniZdroju ovladani) {
+	/** @return false, když se nic nezměnilo: typ bez vybrané databáze s volbou „Nové databáze načíst až po vybrání“ */
+	static boolean klikTyp(final StavZdroju stav, final TypZdroje typ, final OvladaniZdroju ovladani) {
 		if (stav.getStavVyberuTypu(typ) != StavVyberu.VYPNUTO) {
 			ovladani.setNacitatTyp(typ, false);
 		} else if (stav.getPolozky(typ).stream().anyMatch(StavPolozky::isZapnuto)) {
 			ovladani.setNacitatTyp(typ, true);
+		} else if (ovladani.isNacitatAzPoVybrani(typ)) {
+			// Zapnout naráz všechny databáze může u velkých dat vyčerpat paměť; uživatel vybere, které chce.
+			ovladani.zadnaVybranaDatabaze(typ);
+			return false;
 		} else {
 			ovladani.setNacitatVseVTypu(typ, true);
 		}
+		return true;
 	}
 
 	/** Název typu a v závorce jeho zkratka, třeba „GSAK (Ctrl+3)“. */

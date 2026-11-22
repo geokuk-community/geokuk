@@ -79,8 +79,14 @@ GeoKuk
 ```
 
 Keše načte GeoKuk ze souborů GPX, `.geokuk` a zip ve složce `data\gpx`;
-načítání z databáze GeoGetu nebo GSAKu a jinou složku s kešemi zapnete
-v Soubor > Umístění souborů. Cesta uvnitř složky GeoKuk se tam ukazuje
+načítání z databáze GeoGetu, GSAKu nebo OpenSAKu a jinou složku s kešemi
+zapnete v Soubor > Umístění souborů. Při prvním spuštění GeoKuk sám
+najde datovou složku GeoGetu (podle `geogetboot.ini` v `C:\GeoGet`
+nebo v `Program Files`, jinak `%APPDATA%\GeoGet`), GSAKu
+(`%APPDATA%\gsak\data`) a OpenSAKu a zapne v ní jen databázi, se kterou
+program naposledy pracoval (když ji nejde zjistit, nezapne žádnou);
+další databáze zapnete v přehledu zdrojů
+(Soubor > Přehled zdrojů). Cesta uvnitř složky GeoKuk se tam ukazuje
 jako `${GeoKuk}/data/gpx` a při přesunu nebo přejmenování složky se
 posune s ní, pod polem je výsledná cesta. Cesta mimo složku GeoKuk
 zůstává pevná.
@@ -90,10 +96,13 @@ Paměť pro program zvolí spouštěč podle počítače (polovina paměti, 1 a�
 
 ### Přechod ze starší verze
 
-Nastavení se při prvním spuštění převezme samo, kromě umístění složek:
-keše se čtou ze složky `data\gpx`, výstupy rendru jdou do `data\render`
-a načítání z GeoGetu a GSAKu je vypnuté, zapnout ho jde v Soubor >
-Umístění souborů. Data starší verze zůstanou beze změny ve složce
+Nastavení se při prvním spuštění převezme samo, včetně složek GeoGetu
+a GSAKu (složka, která neexistuje nebo je prázdná, se nepřevezme
+a GeoKuk datovou složku hledá sám jako při nové instalaci). Výlety `lovim.ggt`
+a `tedne.ggt` se zkopírují do `data\vylety` (výlety na síťové cestě je
+potřeba zkopírovat ručně). Ostatní složky se
+nepřebírají: keše se čtou ze složky `data\gpx` a výstupy rendru jdou do
+`data\render`. Data starší verze zůstanou beze změny ve složce
 `%USERPROFILE%\geokuk` (na Linuxu a macOS `~/geokuk`), GeoKuk je odtud
 nečte. Co chcete dál používat, zkopírujte do složky `data`:
 
@@ -101,7 +110,6 @@ nečte. Co chcete dál používat, zkopírujte do složky `data`:
   starší verze) do `data\gpx`, nebo jejich složku nastavte v Soubor >
   Umístění souborů (relativní cesta, třeba `data\gpx`, se počítá od
   složky GeoKuk),
-- výlety `lovim.ggt` a `tedne.ggt` do `data\vylety`,
 - cesty ze složky `cesty` do `data\cesty`,
 - vlastní ikony z `imagesMy` do `data\ikony\moje` a ikony od jiných
   z `images3rdParty` do `data\ikony\ostatni`,
