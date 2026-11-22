@@ -2749,6 +2749,38 @@ public class JMapyPopupTest {
 				Assert.assertFalse("ani Vybrat části…", vybrat.isEnabled());
 				Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, vybrat.getToolTipText());
 			}
+			davka[0] = false;
+			p.obnov(radky);
+			Assert.assertTrue("po dávce znovu jde", tlacitkoRadku(p, "Česko", "Stáhnout vrstvy (25 MB)").isEnabled());
+			Assert.assertTrue(vybratCasti(p).stream().allMatch(javax.swing.JMenuItem::isEnabled));
+		});
+	}
+
+	/** Dvě souběžné vrstvy (plno) bez dávky: Stáhnout vrstvy u dalších regionů je vypnuté s důvodem, jinak povolené. */
+	@Test
+	public void plneSoubezneVrstvyVypnouStahnoutVrstvy() throws Exception {
+		final KatalogMap katalog = KatalogMap.vestaveny();
+		final java.util.function.Function<Integer, List<RadekMapy>> radky = bezi -> RadkyMap.sestav(katalog,
+				m -> StavMapyProGui.stav(m, m.getId().startsWith("europe/germany/") ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1,
+						null),
+				Collections.emptyList(), null, VrstvyProGui.katalogNemeckoPoRegionech(),
+				v -> VrstvyProGui.stav(v, StavVrstvy.Mistni.NEMAME,
+						v.getId().startsWith("tourist/") && (bezi > 0 && v.getId().endsWith("/bayern") || bezi > 1 && v.getId().endsWith("/sachsen")) ? StavMapy.Faze.STAHUJE
+								: StavMapy.Faze.NIC,
+						0, null));
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam());
+			p.obnov(radky.apply(1));
+			final java.util.function.Supplier<List<JButton>> stahnoutVrstvy = () -> tlacitka(p).stream().filter(b -> b.getText().startsWith("Stáhnout vrstvy (")).collect(
+					java.util.stream.Collectors.toList());
+			Assert.assertTrue("jedna vrstva limit nenaplní", stahnoutVrstvy.get().stream().anyMatch(JButton::isEnabled));
+			p.obnov(radky.apply(2));
+			Assert.assertFalse(stahnoutVrstvy.get().isEmpty());
+			for (final JButton b : stahnoutVrstvy.get()) {
+				Assert.assertFalse("plno souběžných vrstev", b.isEnabled());
+				Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, b.getToolTipText());
+			}
 		});
 	}
 

@@ -84,6 +84,8 @@ public final class SpousteniPruvodce {
 			return;
 		}
 		spustCasovac(beh);
+		// Popup Mapy hned vypne tlačítka dalších dávek, aby druhý klik nespustil novou dávku místo této.
+		poZmene.run();
 	}
 
 	private static void spustCasovac(final BehPruvodce beh) {
