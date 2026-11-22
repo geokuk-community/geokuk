@@ -68,7 +68,7 @@ public class JMapyPopup extends JPanel {
 	static final String OTEVRIT_SLOZKU = TextyMap.OTEVRIT_SLOZKU;
 	static final String BEHEM_STAHOVANI_NEJDE_MAZAT = "Během stahování nejde mazat.";
 	static final String STAHUJE_SE_JINA = "Najednou se stahuje jen jedna mapa.";
-	static final String BEZI_STAHOVANI = "Až se dokončí běžící stahování.";
+	static final String BEZI_STAHOVANI = NabidkaRadku.AZ_SE_DOKONCI;
 	static final String VSE_AKTUALNI = "Vše aktuální";
 	static final String KONTROLA_SELHALA = "Kontrola se nepovedla";
 
@@ -118,6 +118,8 @@ public class JMapyPopup extends JPanel {
 	/** Kolik se ještě dostahuje z běžících stahování; to místo se z volného odečítá. */
 	private long rozdelano;
 	private boolean vrstvyPlne;
+	/** Stahovač nic dalšího nepřijme: plno souběžných vrstev, nebo běží dávka z průvodce. */
+	private boolean zaneprazdneno;
 
 	/** Delší popis (třeba text chyby) se zkrátí, celý je v tooltipu. */
 	static final int SIRKA_POPISU = 176;
@@ -901,7 +903,7 @@ public class JMapyPopup extends JPanel {
 		if (r.matice == null || r.vlastni || r.bunka(MatriceMap.Cast.MAPA) == null) {
 			return null;
 		}
-		final NabidkaRadku n = NabidkaRadku.pro(r::bunkaNabidky, new NabidkaRadku.Okolnosti(volneMisto < 0 ? -1 : Math.max(0, volneMisto - rozdelano), beziNazev));
+		final NabidkaRadku n = NabidkaRadku.pro(r::bunkaNabidky, new NabidkaRadku.Okolnosti(volneMisto < 0 ? -1 : Math.max(0, volneMisto - rozdelano), beziNazev, zaneprazdneno));
 		return r.vCeleZemi && !r.bunka(MatriceMap.Cast.MAPA).jeStazeno() ? n.zakazanoVCeleZemi() : n;
 	}
 
@@ -933,6 +935,7 @@ public class JMapyPopup extends JPanel {
 		beziNazev = radky.stream().filter(r -> r.stav == RadekMapy.Stav.STAHUJE && !r.kontroluje).map(r -> r.nazev).findFirst().orElse(null);
 		rozdelano = zbyvaStahnout(radky);
 		vrstvyPlne = radky.stream().mapToInt(r -> r.bezicVrstvy().size()).sum() >= SpravaMapModel.SOUBEZNE_VRSTVY;
+		zaneprazdneno = vrstvyPlne || ovladani != null && ovladani.beziDavka();
 	}
 
 	private PlanPruvodce planDostahnout() {
@@ -1167,8 +1170,8 @@ public class JMapyPopup extends JPanel {
 			final PlanPruvodce dostahnout = planDostahnout();
 			vrstvy.setVisible(!dostahnout.jeHotovo());
 			vrstvy.setText(String.format(Locale.ROOT, DOSTAHNOUT_VRSTVY, RadekMapy.velikost(dostahnout.getCelkovaVelikost())));
-			vrstvy.setToolTipText(cokoliBezi ? BEZI_STAHOVANI : TextyMap.STAHNOUT_VRSTVY_KE_STAZENYM_TIP);
-			vrstvy.setEnabled(!cokoliBezi);
+			vrstvy.setToolTipText(cokoliBezi || zaneprazdneno ? BEZI_STAHOVANI : TextyMap.STAHNOUT_VRSTVY_KE_STAZENYM_TIP);
+			vrstvy.setEnabled(!cokoliBezi && !zaneprazdneno);
 		});
 		akceHlavicky.add(vrstvy);
 		akceHlavicky.add(odkaz(OTEVRIT_SLOZKU, e -> {

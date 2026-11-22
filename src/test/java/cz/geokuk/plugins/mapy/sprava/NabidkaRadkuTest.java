@@ -170,6 +170,20 @@ public class NabidkaRadkuTest {
 		Assert.assertEquals("text zůstává stálý", "Stáhnout mapu (606 MB)", n.getMapa().getText());
 	}
 
+	/** Stahovač nepřijme další dávku (plno souběžných vrstev, běží dávka): mapa a vrstvy jsou vypnuté s důvodem, samotná mapa jde stáhnout dál. */
+	@Test
+	public void zaneprazdnenyStahovacVypneMapuAVrstvy() {
+		final NabidkaRadku n = nabidka(new Okolnosti(-1, null, true), mapa(StavBunky.KE_STAZENI), trasy(StavBunky.KE_STAZENI));
+		Assert.assertTrue("mapa má vlastní stahovač", n.getMapa().isPovoleno());
+		Assert.assertFalse(n.getVrstvy().isPovoleno());
+		Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, n.getVrstvy().getTooltip());
+		Assert.assertEquals("text zůstává stálý", "Stáhnout mapu a vrstvy (631 MB)", n.getVrstvy().getText());
+		final NabidkaRadku a = nabidka(new Okolnosti(-1, null, true), mapa(StavBunky.STAZENO), trasy(StavBunky.NOVEJSI));
+		Assert.assertFalse(a.getVrstvy().isPovoleno());
+		Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, a.getVrstvy().getTooltip());
+		Assert.assertTrue("bez zaneprázdnění jde", nabidka(new Okolnosti(-1, null, false), mapa(StavBunky.STAZENO), trasy(StavBunky.NOVEJSI)).getVrstvy().isPovoleno());
+	}
+
 	@Test
 	public void chybejiciMaPrednostPredNovejsi() {
 		final NabidkaRadku n = nabidka(mapa(StavBunky.NOVEJSI), trasy(StavBunky.KE_STAZENI), vrstevnice(StavBunky.STAZENO), stinovani(StavBunky.STAZENO));

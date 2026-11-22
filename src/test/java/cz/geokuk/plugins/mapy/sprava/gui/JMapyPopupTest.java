@@ -20,6 +20,7 @@ import org.junit.rules.TemporaryFolder;
 import cz.geokuk.core.coordinates.Wgs;
 import cz.geokuk.core.program.PrehledovaMapa;
 import cz.geokuk.plugins.mapy.sprava.KatalogMap;
+import cz.geokuk.plugins.mapy.sprava.NabidkaRadku;
 import cz.geokuk.plugins.mapy.sprava.PolygonPokryti;
 import cz.geokuk.plugins.mapy.sprava.StavMapy;
 import cz.geokuk.plugins.mapy.sprava.StavMapyProGui;
@@ -59,7 +60,7 @@ public class JMapyPopupTest {
 		return tlacitka(c).stream().filter(b -> text.equals(b.getText())).findFirst().orElse(null);
 	}
 
-	private static final class Zaznam implements OvladaniMap {
+	private static class Zaznam implements OvladaniMap {
 		final List<String> volani = new ArrayList<>();
 
 		@Override
@@ -2713,6 +2714,35 @@ public class JMapyPopupTest {
 			Assert.assertEquals(1, zmen[0]);
 			p.obnov(radky.apply("Server neodpovídá, spojení se přerušilo"));
 			Assert.assertEquals("beze změny velikosti nic", 1, zmen[0]);
+		});
+	}
+
+	/** Během dávky stahování (nebo s plnými souběžnými vrstvami) je Stáhnout vrstvy vypnuté s důvodem; nová dávka by běžící nahradila. */
+	@Test
+	public void beziciDavkaVypneStahnoutVrstvy() throws Exception {
+		final List<RadekMapy> radky = RadkyMap.sestav(KatalogMap.vestaveny(),
+				m -> StavMapyProGui.stav(m, m.getId().equals("europe/czech-republic") ? StavMapy.Mistni.MAME : StavMapy.Mistni.NEMAME, StavMapy.Server.NEZNAMY, StavMapy.Faze.NIC, 0, -1,
+						null),
+				Collections.emptyList(), null, VrstvyProGui.katalogCesko(),
+				v -> VrstvyProGui.stav(v, v.getId().startsWith("tourist") ? StavVrstvy.Mistni.NEMAME : StavVrstvy.Mistni.MAME, StavMapy.Faze.NIC, 0, null));
+		final boolean[] davka = { false };
+		SwingUtilities.invokeAndWait(() -> {
+			final JMapyPopup p = new JMapyPopup();
+			p.setOvladani(new Zaznam() {
+				@Override
+				public boolean beziDavka() {
+					return davka[0];
+				}
+			});
+			p.obnov(radky);
+			Assert.assertTrue(tlacitkoRadku(p, "Česko", "Stáhnout vrstvy (25 MB)").isEnabled());
+			davka[0] = true;
+			p.obnov(radky);
+			final JButton odkaz = tlacitkoRadku(p, "Česko", "Stáhnout vrstvy (25 MB)");
+			Assert.assertFalse("během dávky nejde", odkaz.isEnabled());
+			Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, odkaz.getToolTipText());
+			final JButton keStazenym = tlacitka(p).stream().filter(b -> b.getText().startsWith("Stáhnout vrstvy ke všem")).findFirst().get();
+			Assert.assertFalse("ani dávka ke všem staženým", keStazenym.isEnabled());
 		});
 	}
 

@@ -27,6 +27,11 @@ public interface OvladaniMap {
 	default java.util.List<String> souhrnDavky() {
 		return java.util.Collections.emptyList();
 	}
+	/** Běží dávka stahování (mapa a vrstvy, průvodce); další dávka by ji nahradila. */
+	default boolean beziDavka() {
+		return false;
+	}
+
 	/** Zkusí znovu jen to, co v dávce selhalo. */
 	default void zkusZnovuDavku() {}
 	default void zavriSouhrnDavky() {}

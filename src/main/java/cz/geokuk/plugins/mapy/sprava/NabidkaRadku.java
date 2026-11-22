@@ -79,12 +79,22 @@ public final class NabidkaRadku {
 
 		private final long volneMisto;
 		private final String bezici;
+		/** Stahovač nic dalšího nepřijme (plno souběžných vrstev, běží dávka), i když se žádná mapa nestahuje. */
+		private final boolean zaneprazdneno;
 
 		public Okolnosti(final long volneMisto, final String bezici) {
+			this(volneMisto, bezici, false);
+		}
+
+		public Okolnosti(final long volneMisto, final String bezici, final boolean zaneprazdneno) {
 			this.volneMisto = volneMisto;
 			this.bezici = bezici;
+			this.zaneprazdneno = zaneprazdneno;
 		}
 	}
+
+	/** Tooltip tlačítka, které během běžícího stahování nejde použít. */
+	public static final String AZ_SE_DOKONCI = "Až se dokončí běžící stahování.";
 
 	/** Tooltip vypnutých tlačítek u regionu stažené země. */
 	public static final String V_CELE_ZEME_NEJDE = "Pro stažení jednotlivých oblastí nejdřív smažte celou zemi";
@@ -152,15 +162,15 @@ public final class NabidkaRadku {
 		case STAZENO:
 			return new Pozice(Druh.HOTOVO, "✔ Mapa stažená", null, 0, null, false);
 		case NOVEJSI:
-			return tlacitko("Aktualizovat mapu", m.getVelikost(), null, Rezim.AKTUALIZOVAT, ok);
+			return tlacitko("Aktualizovat mapu", m.getVelikost(), null, Rezim.AKTUALIZOVAT, false, ok);
 		case CHYBA:
-			return tlacitko("Zkusit znovu", zbyva(m), m.getChyba(), Rezim.STAHNOUT, ok);
+			return tlacitko("Zkusit znovu", zbyva(m), m.getChyba(), Rezim.STAHNOUT, false, ok);
 		case KE_STAZENI:
 		default:
 			if (m.getStazeno() > 0) {
-				return tlacitko("Dokončit stažení", zbyva(m), null, Rezim.STAHNOUT, ok);
+				return tlacitko("Dokončit stažení", zbyva(m), null, Rezim.STAHNOUT, false, ok);
 			}
-			return tlacitko("Stáhnout mapu", m.getVelikost(), null, Rezim.STAHNOUT, ok);
+			return tlacitko("Stáhnout mapu", m.getVelikost(), null, Rezim.STAHNOUT, false, ok);
 		}
 	}
 
@@ -177,10 +187,10 @@ public final class NabidkaRadku {
 		}
 		if (chybi) {
 			final long velikost = vse.stream().filter(b -> b.getStav() == StavBunky.KE_STAZENI || b.getStav() == StavBunky.CHYBA).mapToLong(PomocnikVelikosti::zbyva).sum();
-			return tlacitko(m.getStav() == StavBunky.STAZENO ? "Stáhnout vrstvy" : "Stáhnout mapu a vrstvy", velikost, seznam(vse, Rezim.STAHNOUT), Rezim.STAHNOUT, ok);
+			return tlacitko(m.getStav() == StavBunky.STAZENO ? "Stáhnout vrstvy" : "Stáhnout mapu a vrstvy", velikost, seznam(vse, Rezim.STAHNOUT), Rezim.STAHNOUT, true, ok);
 		}
 		final long velikost = vse.stream().filter(b -> b.getStav() == StavBunky.NOVEJSI).mapToLong(b -> Math.max(0, b.getVelikost())).sum();
-		return tlacitko("Aktualizovat mapu a vrstvy", velikost, seznam(vse, Rezim.AKTUALIZOVAT), Rezim.STAHNOUT_A_AKTUALIZOVAT, ok);
+		return tlacitko("Aktualizovat mapu a vrstvy", velikost, seznam(vse, Rezim.AKTUALIZOVAT), Rezim.STAHNOUT_A_AKTUALIZOVAT, true, ok);
 	}
 
 	private static String seznam(final List<Bunka> vse, final Rezim rezim) {
@@ -208,10 +218,14 @@ public final class NabidkaRadku {
 		}
 	}
 
-	private static Pozice tlacitko(final String text, final long velikost, final String tooltip, final Rezim rezim, final Okolnosti ok) {
+	/** Tlačítko pozice; {@code davka} = spouští dávku mapy a vrstev, kterou zaneprázdněný stahovač nepřijme. */
+	private static Pozice tlacitko(final String text, final long velikost, final String tooltip, final Rezim rezim, final boolean davka, final Okolnosti ok) {
 		final String popis = velikost > 0 ? text + " (" + velikost(velikost) + ")" : text;
 		if (ok.bezici != null) {
 			return new Pozice(Druh.TLACITKO, popis, "Až se dokončí stahování mapy " + ok.bezici + ".", velikost, rezim, false);
+		}
+		if (davka && ok.zaneprazdneno) {
+			return new Pozice(Druh.TLACITKO, popis, AZ_SE_DOKONCI, velikost, rezim, false);
 		}
 		if (ok.volneMisto >= 0 && velikost > ok.volneMisto) {
 			return new Pozice(Druh.TLACITKO, popis, "Na disku je volných jen " + velikost(ok.volneMisto) + ", potřeba asi " + velikost(velikost) + ".", velikost, rezim, false);
