@@ -222,8 +222,6 @@
   v detailu keše, filtr podle favoritů zůstává.
 
 ### Opravy
-- Filtr podle výletu (Bez vynechaných, Jen lovené) platí i po přepnutí
-  výletu a po vypnutí a zapnutí zdroje keší.
 - Nastavený práh favoritů ve filtru skryje i keše, které favority nemají.
 - Po přechodu z verze 5.2 zůstane vybraná mapa OpenStreetMap, ortofoto
   nebo topografická mapa ČÚZK; mapa, kterou tato verze nemá, se nahradí
@@ -275,6 +273,8 @@
 - Okno programu se nezasekává, když se po změně tématu, vrstev, stínování nebo
   umístění offline map otevírají mapy, ani při mazání stažené mapy.
 - Změna zvýraznění nebo sady ikon provedená během načítání ikon se neztratí.
+- Filtr podle výletu (Bez vynechaných, Jen lovené) platí i po přepnutí
+  výletu a po vypnutí a zapnutí zdroje keší.
 
 Obsahuje i všechny opravy z 6.4.3.
 
