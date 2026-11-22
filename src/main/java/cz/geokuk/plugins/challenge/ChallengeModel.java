@@ -153,6 +153,9 @@ public class ChallengeModel extends Model0 {
 			return;
 		}
 		this.zapnuto = zapnuto;
+		if (zapnuto) {
+			zmenaChallenge();
+		}
 		uloz();
 		ohlas(ChallengeZmenenyEvent.Druh.ZAPNUTO, null);
 	}
@@ -245,9 +248,21 @@ public class ChallengeModel extends Model0 {
 		return casVyberuKese;
 	}
 
-	/** Program vybral keš (null = žádná z gc.com); ve vlákně Swingu. Ohlásí se jen změna. */
+	/** Kdy (podle {@link System#nanoTime}) se zapnul plánovač nebo změnila zobrazená challenge; keš vybraná dřív sektor ani políčko nevybírá. */
+	private volatile long casZmenyChallenge;
+
+	/** Keš byla vybrána po zapnutí plánovače a po poslední změně zobrazené challenge. */
+	boolean jeKesVybranaPoZmeneChallenge() {
+		return vybranaKes != null && casVyberuKese > casZmenyChallenge;
+	}
+
+	private void zmenaChallenge() {
+		casZmenyChallenge = System.nanoTime();
+	}
+
+	/** Program vybral keš (null = žádná z gc.com); ve vlákně Swingu. Ohlásí se jen změna; stejná keš po zapnutí plánovače nebo změně challenge se bere jako nový výběr. */
 	public void setVybranaKes(final VybranaKes kes) {
-		if (java.util.Objects.equals(vybranaKes, kes)) {
+		if (java.util.Objects.equals(vybranaKes, kes) && (kes == null || jeKesVybranaPoZmeneChallenge())) {
 			return;
 		}
 		if (kes != null) {
@@ -531,6 +546,7 @@ public class ChallengeModel extends Model0 {
 		if (vypnuta != null) {
 			odstranStav(vypnuta);
 		}
+		zmenaChallenge();
 		uloz();
 		prenesJenKandidati();
 		if (vypnuta != null) {
@@ -946,6 +962,7 @@ public class ChallengeModel extends Model0 {
 		final Challenge pred = zobrazena();
 		zobrazena = klic(c);
 		if (pred == null || !klic(pred).equals(klic(c))) {
+			zmenaChallenge();
 			posledniKlicKes = null;
 			posledniSektorKese = -1;
 			posledniPolickoKese = null;

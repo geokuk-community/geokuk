@@ -26,12 +26,12 @@ final class VyberZvyrazneni {
 
 	/**
 	 * Výběr podle toho, co se změnilo naposledy: keš, kterou vybral program, nebo sektor či políčko z modelu (◀ ▶, seznam v popupu). U 360° bez nich platí sektor vybraného
-	 * kandidáta {@code sektorKandidata}. Keš mimo challenge (nemá sektor nebo políčko) se přeskočí.
+	 * kandidáta {@code sektorKandidata}. Keš mimo challenge (nemá sektor nebo políčko) a keš vybraná před zapnutím plánovače nebo změnou challenge se přeskočí.
 	 */
 	static VyberZvyrazneni vyres(final PrehledChallenge prehled, final ChallengeModel model, final long casVyberuModelu, final int sektorKandidata) {
 		final Challenge c = prehled.challenge();
 		final VybranaKes kes = model.vybranaKes();
-		final boolean kesNovejsi = kes != null && model.casVyberuKese() > casVyberuModelu;
+		final boolean kesNovejsi = model.jeKesVybranaPoZmeneChallenge() && model.casVyberuKese() > casVyberuModelu;
 		switch (c.typ()) {
 		case SEKTORY_360: {
 			if (kesNovejsi) {
