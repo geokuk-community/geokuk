@@ -43,6 +43,8 @@ class PanelOptimalizace extends JPanel {
 		setBorder(BorderFactory.createEmptyBorder(14, 16, 12, 16));
 		prehled.setOpaque(false);
 		zprava.setEditable(false);
+		// Text zprávy je popisek: bez fokusu se nekreslí kurzor a fokus zůstane na tlačítkách.
+		zprava.setFocusable(false);
 		zprava.setOpaque(false);
 		zprava.setLineWrap(true);
 		zprava.setWrapStyleWord(true);
