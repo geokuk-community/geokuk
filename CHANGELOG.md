@@ -93,8 +93,10 @@
   měřítkách další body pro orientaci (posedy, krmelce, stoly, ohniště, kameny,
   bunkry a další); parkoviště a zastávky ukáže o úroveň přiblížení dřív. Ikony
   jsou z projektu Osmic (CC0).
-- Vydání obsahuje GeoKuk-tema.zip: téma GeoKuk a GeoKuk – detail pro aplikace
-  s mapami ve formátu mapsforge (například c:geo, aDrake).
+- Vydání obsahuje téma GeoKuk a GeoKuk – detail pro aplikace s mapami ve formátu
+  mapsforge (například c:geo, aDrake): GeoKuk-tema.zip k mapám GeoKuku (základní
+  mapa z download.mapsforge.org s vrstvami GeoKuku) a GeoKuk-tema-PAWS.zip
+  k mapám s turistickými a cyklotrasami v tagech osmc_*.
 - Okno Licence a použité knihovny uvádí, že témata vzhledu od třetích stran se
   řídí licencí svého autora.
 - Po aktualizaci programu se offline mapy v cache jednou vykreslí znovu.
