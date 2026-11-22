@@ -82,6 +82,20 @@ public class NabidkyPoStartuTest {
 	}
 
 	@Test
+	public void dalsiNabidkaPoZavreniPredchoziCekaPauzu() {
+		nabidky.pridej(nabidka("průvodce"));
+		nabidky.pridej(nabidka("zástupce"));
+		Assert.assertEquals(Arrays.asList("průvodce"), ukazane);
+		nabidky.tik();
+		nyni += NabidkyPoStartu.PAUZA_MS;
+		nabidky.tik();
+		Assert.assertEquals(Arrays.asList("průvodce", "zástupce"), ukazane);
+		nyni += NabidkyPoStartu.PAUZA_MS;
+		nabidky.pridej(nabidka("aktualizace"));
+		Assert.assertEquals("po pauze zase hned", Arrays.asList("průvodce", "zástupce", "aktualizace"), ukazane);
+	}
+
+	@Test
 	public void bezOkenNicNeblokuje() {
 		Assert.assertFalse(java.awt.GraphicsEnvironment.isHeadless() && NabidkyPoStartu.jeOtevrenoBlokujiciOkno());
 	}

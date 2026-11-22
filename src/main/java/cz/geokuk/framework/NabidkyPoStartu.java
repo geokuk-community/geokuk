@@ -30,6 +30,7 @@ public final class NabidkyPoStartu {
 	private final Deque<Runnable> fronta = new ArrayDeque<>();
 	private Timer casovac;
 	private long volnoOd = -1;
+	private long konecPosledni = -1;
 	private boolean ukazuje;
 
 	NabidkyPoStartu(final BooleanSupplier blokovano, final LongSupplier hodiny, final boolean sCasovacem) {
@@ -53,7 +54,7 @@ public final class NabidkyPoStartu {
 
 	void pridej(final Runnable nabidka) {
 		fronta.add(nabidka);
-		if (fronta.size() == 1 && !ukazuje && !blokovano.getAsBoolean()) {
+		if (fronta.size() == 1 && !ukazuje && !blokovano.getAsBoolean() && (konecPosledni < 0 || hodiny.getAsLong() - konecPosledni >= PAUZA_MS)) {
 			ukazDalsi();
 			return;
 		}
@@ -96,6 +97,7 @@ public final class NabidkyPoStartu {
 			nabidka.run();
 		} finally {
 			ukazuje = false;
+			konecPosledni = hodiny.getAsLong();
 		}
 		if (fronta.isEmpty()) {
 			zastavCasovac();

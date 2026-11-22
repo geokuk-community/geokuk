@@ -230,6 +230,9 @@
 - Zdroj s volbou „Nové databáze načíst až po vybrání“, který nemá vybranou
   žádnou databázi, se zkratkou ani kliknutím na typ nezapne se všemi
   databázemi; program řekne, kde databázi vybrat.
+- Okna, která program při startu nabídne sám (nová verze, optimalizace cache,
+  průvodce map, zástupce), se ukazují po jednom a nepřekryjí otevřené okno ani
+  běžící optimalizaci.
 
 ### Opravy
 - Zastávka Adventure Labu s kódem jako GCH6E5-0 se načte jako keš, ne jako

@@ -117,8 +117,12 @@ public class GeokukMain {
 		VytvoritZastupceAction.aktualizujZastupceVeSlozce();
 		new Thread(LicenceVeSlozce::doplnPriStartu, "Licence").start();
 		new Thread(PrehledovaMapa::doplnPriStartu, "Přehledová mapa").start();
-		VytvoritZastupceAction.nabidniStart(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless());
-		SwingUtilities.invokeLater(() -> inicializator.nabidniPruvodceMap(portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless()));
+		final boolean automatizace = portOvladani != null || vyvojoveOvladani || GraphicsEnvironment.isHeadless();
+		// Průvodce map je při první instalaci důležitější než zástupce, nabídne se první.
+		SwingUtilities.invokeLater(() -> {
+			inicializator.nabidniPruvodceMap(automatizace);
+			VytvoritZastupceAction.nabidniStart(automatizace);
+		});
 		if (portOvladani != null) {
 			inicializator.spustDalkoveOvladani(portOvladani, vyvojoveOvladani);
 		} else if (DalkoveOvladani.jeZapnuteVNastaveni()) {

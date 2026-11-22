@@ -162,7 +162,6 @@ public class VytvoritZastupceAction extends Action0 {
 				pref.put(NABIDKA_START_value, "ne");
 			}
 		});
-		NabidkyPoStartu.blokuje(dialog);
 		NabidkyPoStartu.ukaz(() -> dialog.setVisible(true));
 	}
 
