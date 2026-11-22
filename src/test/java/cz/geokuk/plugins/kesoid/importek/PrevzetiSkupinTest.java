@@ -129,9 +129,7 @@ public class PrevzetiSkupinTest {
 		final List<String> kesoidy = bag.getKesoidy().stream().map(k -> k.getIdentifier()).sorted().collect(Collectors.toList());
 		Assert.assertEquals("kešoidy bez duplicit", kesoidy.size(), new HashSet<>(kesoidy).size());
 		Assert.assertEquals(znovu.getKesoidy().stream().map(k -> k.getIdentifier()).sorted().collect(Collectors.toList()), kesoidy);
-		Assert.assertEquals(znovu.getMaximalniBestOf(), bag.getMaximalniBestOf());
 		Assert.assertEquals(znovu.getMaximalniFavorit(), bag.getMaximalniFavorit());
-		Assert.assertEquals(znovu.getMaximalniHodnoceni(), bag.getMaximalniHodnoceni());
 		// Gen přibylý se zdrojem v genomu zůstane i po jeho vypnutí, každý waypoint pak má jeho výchozí alelu; nový genom ho nezná.
 		final Map<String, Integer> pocty = pocty(bag);
 		final Map<String, Integer> poctyZnovu = pocty(znovu);

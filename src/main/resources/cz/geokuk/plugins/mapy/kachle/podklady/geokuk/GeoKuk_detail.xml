@@ -49,10 +49,16 @@
         </rule>
     </rule>
 
-    <rule e="way" k="landuse|natural" v="meadow|grassland" zoom-min="13">
-        <area fill="#D6EBBC" stroke="#D6EBBC" stroke-width="0.1" />
+    <rule e="way" k="landuse|natural" v="meadow|grassland" zoom-min="12" zoom-max="14">
+        <area fill="#F1F3E1" stroke="#F1F3E1" stroke-width="0.1" />
     </rule>
-    <rule e="way" k="landuse" v="field|farm|farmland|orchard|vineyard" zoom-min="13">
+    <rule e="way" k="landuse|natural" v="meadow|grassland" zoom-min="15">
+        <area fill="#EEF1DC" stroke="#EEF1DC" stroke-width="0.1" />
+    </rule>
+    <rule e="way" k="landuse" v="field|farm|farmland|orchard|vineyard" zoom-min="12" zoom-max="14">
+        <area fill="#FAF8EC" />
+    </rule>
+    <rule e="way" k="landuse" v="field|farm|farmland|orchard|vineyard" zoom-min="15">
         <area fill="#F4F1DF" />
     </rule>
     <rule e="way" k="natural" v="marsh|wetland|mud" zoom-min="13">
@@ -80,8 +86,8 @@
         <area fill="#BBE9FCE6" stroke="#E9FCE6" stroke-width="0.1" />
     </rule>
     <rule e="way" k="natural" v="cliff" zoom-min="15">
-        <line stroke="#6F6A5E" stroke-width="0.6" stroke-linecap="butt" />
-        <lineSymbol src="file:symbols/cliff.svg" repeat="true" repeat-gap="14" repeat-start="5" rotate="true" symbol-width="8" symbol-height="16" />
+        <line stroke="#857F72" stroke-width="0.5" stroke-linecap="butt" />
+        <lineSymbol src="file:symbols/cliff.svg" repeat="true" repeat-gap="14" repeat-start="5" rotate="true" symbol-width="6" symbol-height="12" />
     </rule>
     <rule e="way" k="natural" v="scree" zoom-min="14">
         <area fill="#BBF5F5F5" stroke="#F5F5F5" stroke-width="0.1" />
@@ -134,8 +140,17 @@
         <pathText k="ele" font-size="9" font-style="bold" fill="#A87848" stroke="#FFFFFF" stroke-width="1.5" />
     </rule>
     <!--#/VRSTEVNICE#-->
+    <rule e="way" k="landuse" v="residential" zoom-min="12" zoom-max="13">
+        <area fill="#E8DCC4" />
+    </rule>
     <rule e="way" k="landuse" v="residential" zoom-min="14">
-        <area fill="#E6EAE3D6" />
+        <area fill="#EDE4D1" />
+    </rule>
+    <rule e="way" k="landuse" v="retail|commercial" zoom-min="12" zoom-max="13">
+        <area fill="#E3D4B8" />
+    </rule>
+    <rule e="way" k="landuse" v="industrial|railway|garages|brownfield|construction" zoom-min="12" zoom-max="13">
+        <area fill="#DDD8D3" />
     </rule>
     <rule e="way" k="landuse" v="retail" zoom-min="14">
         <area fill="#BBF0CCF0" stroke="#E4E4E4" stroke-width="0.2" />
@@ -409,8 +424,11 @@
 
 
     <!-- hillshading -->
-    <hillshading zoom-min="9" zoom-max="13" magnitude="95" />
-    <hillshading zoom-min="14" zoom-max="17" magnitude="68" />
+    <hillshading zoom-min="9" zoom-max="11" magnitude="95" />
+    <hillshading zoom-min="12" zoom-max="13" magnitude="102" />
+    <hillshading zoom-min="14" zoom-max="16" magnitude="78" />
+    <hillshading zoom-min="17" zoom-max="17" magnitude="68" />
+    <hillshading zoom-min="18" zoom-max="22" magnitude="50" />
 
     <!-- státní hranice: nad stínováním terénu, pod turistickými trasami -->
     <rule e="way" k="admin_level" v="2">
@@ -419,19 +437,19 @@
             <line stroke="#9E5A9E" stroke-dasharray="6, 2, 1, 2" stroke-width="1" />
         </rule>
         <rule e="any" k="*" v="*" zoom-min="10" zoom-max="11">
-            <line scale="none" stroke="#90E8B4E6" stroke-linecap="butt" stroke-width="6" />
-            <line scale="none" stroke="#B0FFFFFF" stroke-width="3.2" />
-            <line scale="none" stroke="#8E4A8E" stroke-dasharray="10, 3, 2, 3" stroke-width="1.6" />
+            <line scale="none" stroke="#40707070" stroke-linecap="butt" stroke-width="7" />
+            <line scale="none" stroke="#B0FFFFFF" stroke-linecap="butt" stroke-width="4" />
+            <line scale="none" stroke="#505050" stroke-dasharray="10, 3, 2, 3" stroke-linecap="butt" stroke-width="1.6" />
         </rule>
         <rule e="any" k="*" v="*" zoom-min="12" zoom-max="13">
-            <line scale="none" stroke="#88E8B4E6" stroke-linecap="butt" stroke-width="8" />
-            <line scale="none" stroke="#B0FFFFFF" stroke-width="3.6" />
-            <line scale="none" stroke="#8E4A8E" stroke-dasharray="12, 3, 2, 3" stroke-width="1.8" />
+            <line scale="none" stroke="#40707070" stroke-linecap="butt" stroke-width="9" />
+            <line scale="none" stroke="#B0FFFFFF" stroke-linecap="butt" stroke-width="4.4" />
+            <line scale="none" stroke="#4A4A4A" stroke-dasharray="12, 3, 2, 3" stroke-linecap="butt" stroke-width="1.8" />
         </rule>
         <rule e="any" k="*" v="*" zoom-min="14">
-            <line scale="none" stroke="#80E8B4E6" stroke-linecap="butt" stroke-width="12" />
-            <line scale="none" stroke="#B0FFFFFF" stroke-width="4" />
-            <line scale="none" stroke="#8E4A8E" stroke-dasharray="14, 4, 2, 4" stroke-width="2" />
+            <line scale="none" stroke="#40707070" stroke-linecap="butt" stroke-width="12" />
+            <line scale="none" stroke="#B0FFFFFF" stroke-linecap="butt" stroke-width="5" />
+            <line scale="none" stroke="#444444" stroke-dasharray="14, 4, 2, 4" stroke-linecap="butt" stroke-width="2.2" />
         </rule>
     </rule>
 
@@ -452,7 +470,7 @@
                 stroke-width="0.7" />
         </rule>
         <rule e="node" k="waterway" v="weir" zoom-min="16">
-            <symbol symbol-height="20" src="jar:symbols/water/weir.svg" />
+            <symbol symbol-height="16" src="jar:symbols/water/weir.svg" />
         </rule>
         <rule e="way" k="waterway" v="dam" zoom-min="14">
             <line stroke="#333333" stroke-width="1" />
@@ -462,7 +480,7 @@
             </rule>
         </rule>
         <rule e="way" k="building" v="*">
-            <area fill="#EADCC6" stroke="#D2C3A8" stroke-width="0.2" />
+            <area fill="#E2D6BF" stroke="#C9BCA2" stroke-width="0.2" />
         </rule>
         <rule e="way" k="landuse|area" v="~">
             <rule e="way" k="amenity|tourism|railway|shop|information"
@@ -601,21 +619,38 @@
                     <line stroke="#E040D0" stroke-width="1.0" stroke-dasharray="5,3" stroke-linecap="butt" />
                 </rule>
                 <rule e="way" k="highway"
-                    v="road|pedestrian|unclassified|residential|living_street">
+                    v="road|pedestrian|unclassified|residential|living_street" zoom-min="14">
                     <line stroke="#C6BFB1" stroke-width="1.6" />
                 </rule>
                 <rule e="way" k="highway" v="construction">
                     <line stroke="#60888888" stroke-width="1.8" />
                 </rule>
-                <rule e="way" k="highway"
-                    v="secondary_link|primary_link|trunk_link|motorway_link|secondary|primary|trunk">
-                    <line stroke="#C99A5B" stroke-width="2.0" />
+                <rule e="way" k="highway" v="trunk|trunk_link" zoom-max="13">
+                    <line scale="none" stroke="#B8692C" stroke-width="4.2" />
+                </rule>
+                <rule e="way" k="highway" v="trunk|trunk_link" zoom-min="14">
+                    <line stroke="#B8692C" stroke-width="2.6" />
+                </rule>
+                <rule e="way" k="highway" v="primary|primary_link" zoom-max="13">
+                    <line scale="none" stroke="#BF7A38" stroke-width="3.8" />
+                </rule>
+                <rule e="way" k="highway" v="primary|primary_link" zoom-min="14">
+                    <line stroke="#BF7A38" stroke-width="2.4" />
+                </rule>
+                <rule e="way" k="highway" v="secondary|secondary_link|motorway_link" zoom-max="13">
+                    <line scale="none" stroke="#C2A04A" stroke-width="3.2" />
+                </rule>
+                <rule e="way" k="highway" v="secondary|secondary_link|motorway_link" zoom-min="14">
+                    <line stroke="#C2A04A" stroke-width="2.0" />
                 </rule>
                 <rule e="way" k="highway" v="tertiary|tertiary_link" zoom-min="11">
                     <line stroke="#D2BE96" stroke-width="1.7" />
                 </rule>
-                <rule e="way" k="highway" v="motorway">
-                    <line stroke="#4E9348" stroke-width="2.5" />
+                <rule e="way" k="highway" v="motorway" zoom-max="13">
+                    <line scale="none" stroke="#3F7D3A" stroke-width="4.6" />
+                </rule>
+                <rule e="way" k="highway" v="motorway" zoom-min="14">
+                    <line stroke="#3F7D3A" stroke-width="3.0" />
                 </rule>
             </rule>
         </rule>
@@ -684,7 +719,10 @@
             <rule e="way" k="highway" v="pedestrian">
                 <line stroke="#E3E3E3" stroke-width="1.3" />
             </rule>
-            <rule e="way" k="highway" v="unclassified|residential|living_street|road">
+            <rule e="way" k="highway" v="unclassified|residential|living_street|road" zoom-max="13">
+                <line scale="none" stroke="#FBF6EC" stroke-width="1.0" />
+            </rule>
+            <rule e="way" k="highway" v="unclassified|residential|living_street|road" zoom-min="14">
                 <line stroke="#FFFFFF" stroke-width="1.3" />
             </rule>
             <rule e="way" k="highway" v="tertiary|tertiary_link" zoom-min="11">
@@ -702,45 +740,57 @@
             <rule e="way" k="highway" v="motorway_link">
                 <line stroke="#A8D79A" stroke-width="1.5" />
             </rule>
-            <rule e="way" k="highway" v="secondary">
-                <line stroke="#FACB68" stroke-width="1.5" />
+            <rule e="way" k="highway" v="secondary" zoom-max="13">
+                <line scale="none" stroke="#FAD66A" stroke-width="2.2" />
             </rule>
-            <rule e="way" k="highway" v="primary">
-                <line stroke="#F7B15C" stroke-width="1.5" />
+            <rule e="way" k="highway" v="secondary" zoom-min="14">
+                <line stroke="#FAD66A" stroke-width="1.5" />
             </rule>
-            <rule e="way" k="highway" v="trunk">
-                <line stroke="#EFA550" stroke-width="1.5" />
+            <rule e="way" k="highway" v="primary" zoom-max="13">
+                <line scale="none" stroke="#F5A552" stroke-width="2.6" />
             </rule>
-            <rule e="way" k="highway" v="motorway">
-                <line stroke="#7FC46E" stroke-width="1.7" />
+            <rule e="way" k="highway" v="primary" zoom-min="14">
+                <line stroke="#F5A552" stroke-width="1.8" />
+            </rule>
+            <rule e="way" k="highway" v="trunk" zoom-max="13">
+                <line scale="none" stroke="#EC8E3E" stroke-width="3.0" />
+            </rule>
+            <rule e="way" k="highway" v="trunk" zoom-min="14">
+                <line stroke="#EC8E3E" stroke-width="2.0" />
+            </rule>
+            <rule e="way" k="highway" v="motorway" zoom-max="13">
+                <line scale="none" stroke="#74BE62" stroke-width="3.2" />
+            </rule>
+            <rule e="way" k="highway" v="motorway" zoom-min="14">
+                <line stroke="#74BE62" stroke-width="2.2" />
             </rule>
         </rule>
     </rule>
 
     <!-- turistické značení (tagy fmrel*, z vlastní mapy tras) – kresleno pod popisky -->
 <rule e="way" k="*" v="*" zoom-min="12" zoom-max="12">
- <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="3.0" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="1.6" stroke-linecap="round" scale="none" dy="0"/></rule>
- <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="3.0" stroke-linecap="round" scale="none" dy="2.0"/><line stroke="#0A50E0" stroke-width="1.6" stroke-linecap="round" scale="none" dy="2.0"/></rule>
- <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="3.0" stroke-linecap="round" scale="none" dy="-2.0"/><line stroke="#00A020" stroke-width="1.6" stroke-linecap="round" scale="none" dy="-2.0"/></rule>
- <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="3.0" stroke-linecap="round" scale="none" dy="4.0"/><line stroke="#F5C400" stroke-width="1.6" stroke-linecap="round" scale="none" dy="4.0"/></rule>
+ <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="2.6" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="1.3" stroke-linecap="round" scale="none" dy="0"/></rule>
+ <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="2.6" stroke-linecap="round" scale="none" dy="2.0"/><line stroke="#0A50E0" stroke-width="1.3" stroke-linecap="round" scale="none" dy="2.0"/></rule>
+ <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="2.6" stroke-linecap="round" scale="none" dy="-2.0"/><line stroke="#00A020" stroke-width="1.3" stroke-linecap="round" scale="none" dy="-2.0"/></rule>
+ <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="2.6" stroke-linecap="round" scale="none" dy="4.0"/><line stroke="#F5C400" stroke-width="1.3" stroke-linecap="round" scale="none" dy="4.0"/></rule>
 </rule>
 <rule e="way" k="*" v="*" zoom-min="13" zoom-max="14">
- <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="2.2" stroke-linecap="round" scale="none" dy="0"/></rule>
- <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="2.6"/><line stroke="#0A50E0" stroke-width="2.2" stroke-linecap="round" scale="none" dy="2.6"/></rule>
- <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="-2.6"/><line stroke="#00A020" stroke-width="2.2" stroke-linecap="round" scale="none" dy="-2.6"/></rule>
- <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="5.2"/><line stroke="#F5C400" stroke-width="2.2" stroke-linecap="round" scale="none" dy="5.2"/></rule>
+ <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="3.4" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="1.8" stroke-linecap="round" scale="none" dy="0"/></rule>
+ <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="3.4" stroke-linecap="round" scale="none" dy="2.6"/><line stroke="#0A50E0" stroke-width="1.8" stroke-linecap="round" scale="none" dy="2.6"/></rule>
+ <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="3.4" stroke-linecap="round" scale="none" dy="-2.6"/><line stroke="#00A020" stroke-width="1.8" stroke-linecap="round" scale="none" dy="-2.6"/></rule>
+ <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="3.4" stroke-linecap="round" scale="none" dy="5.2"/><line stroke="#F5C400" stroke-width="1.8" stroke-linecap="round" scale="none" dy="5.2"/></rule>
 </rule>
 <rule e="way" k="*" v="*" zoom-min="15" zoom-max="15">
- <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="4.8" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="2.8" stroke-linecap="round" scale="none" dy="0"/></rule>
- <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="4.8" stroke-linecap="round" scale="none" dy="3.2"/><line stroke="#0A50E0" stroke-width="2.8" stroke-linecap="round" scale="none" dy="3.2"/></rule>
- <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="4.8" stroke-linecap="round" scale="none" dy="-3.2"/><line stroke="#00A020" stroke-width="2.8" stroke-linecap="round" scale="none" dy="-3.2"/></rule>
- <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="4.8" stroke-linecap="round" scale="none" dy="6.4"/><line stroke="#F5C400" stroke-width="2.8" stroke-linecap="round" scale="none" dy="6.4"/></rule>
+ <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="2.3" stroke-linecap="round" scale="none" dy="0"/></rule>
+ <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="3.2"/><line stroke="#0A50E0" stroke-width="2.3" stroke-linecap="round" scale="none" dy="3.2"/></rule>
+ <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="-3.2"/><line stroke="#00A020" stroke-width="2.3" stroke-linecap="round" scale="none" dy="-3.2"/></rule>
+ <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="4.0" stroke-linecap="round" scale="none" dy="6.4"/><line stroke="#F5C400" stroke-width="2.3" stroke-linecap="round" scale="none" dy="6.4"/></rule>
 </rule>
 <rule e="way" k="*" v="*" zoom-min="16" zoom-max="22">
- <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="5.6" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="3.4" stroke-linecap="round" scale="none" dy="0"/></rule>
- <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="5.6" stroke-linecap="round" scale="none" dy="3.8"/><line stroke="#0A50E0" stroke-width="3.4" stroke-linecap="round" scale="none" dy="3.8"/></rule>
- <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="5.6" stroke-linecap="round" scale="none" dy="-3.8"/><line stroke="#00A020" stroke-width="3.4" stroke-linecap="round" scale="none" dy="-3.8"/></rule>
- <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="5.6" stroke-linecap="round" scale="none" dy="7.6"/><line stroke="#F5C400" stroke-width="3.4" stroke-linecap="round" scale="none" dy="7.6"/></rule>
+ <rule e="way" k="fmrelhikingred" v="*"><line stroke="#E8FFFFFF" stroke-width="4.6" stroke-linecap="round" scale="none" dy="0"/><line stroke="#E00000" stroke-width="2.8" stroke-linecap="round" scale="none" dy="0"/></rule>
+ <rule e="way" k="fmrelhikingblue" v="*"><line stroke="#E8FFFFFF" stroke-width="4.6" stroke-linecap="round" scale="none" dy="3.8"/><line stroke="#0A50E0" stroke-width="2.8" stroke-linecap="round" scale="none" dy="3.8"/></rule>
+ <rule e="way" k="fmrelhikinggreen" v="*"><line stroke="#E8FFFFFF" stroke-width="4.6" stroke-linecap="round" scale="none" dy="-3.8"/><line stroke="#00A020" stroke-width="2.8" stroke-linecap="round" scale="none" dy="-3.8"/></rule>
+ <rule e="way" k="fmrelhikingyellow" v="*"><line stroke="#E8FFFFFF" stroke-width="4.6" stroke-linecap="round" scale="none" dy="7.6"/><line stroke="#F5C400" stroke-width="2.8" stroke-linecap="round" scale="none" dy="7.6"/></rule>
 </rule>
     <!-- cyklotrasy (tagy fmrelbicycle*) -->
 <rule e="way" k="*" v="*" zoom-min="12" zoom-max="13">
@@ -812,7 +862,7 @@
 </rule>
     <!-- státní hranice viditelná i přes turistické trasy -->
     <rule e="way" k="admin_level" v="2" zoom-min="12">
-        <line scale="none" stroke="#C08E4A8E" stroke-dasharray="12, 3, 2, 3" stroke-width="1.2" />
+        <line scale="none" stroke="#B0444444" stroke-dasharray="12, 3, 2, 3" stroke-linecap="butt" stroke-width="1.2" />
     </rule>
     <!-- highway captions etc. -->
     <rule e="way" k="tunnel" v="~|no|false">
@@ -832,13 +882,19 @@
             <pathText fill="#2A2A2A" font-size="12" font-style="bold" k="name" priority="-6"
                 stroke="#FFFFFF" stroke-width="2.0" />
         </rule>
+        <rule e="any" k="highway" v="trunk|primary" zoom-min="13" zoom-max="13">
+            <rule e="way" k="name" v="~">
+                <pathText fill="#6A4A10" font-size="12" font-style="bold" k="ref" priority="-5"
+                    stroke="#FFFFFF" stroke-width="2.6" />
+            </rule>
+        </rule>
         <rule e="any" k="highway" v="trunk|primary|secondary" zoom-min="14">
             <rule e="way" k="name" v="~">
                 <pathText fill="#606060" font-size="14" font-style="bold" k="ref" priority="-5"
                     stroke="#FFFFFF" stroke-width="3.0" />
             </rule>
         </rule>
-        <rule e="any" k="highway" v="motorway" zoom-min="13">
+        <rule e="any" k="highway" v="motorway" zoom-min="12">
             <pathText fill="#FFFFFF" font-size="10" font-style="bold" k="ref" priority="-4"
                 stroke="#4E9348" stroke-width="2.5" />
         </rule>
@@ -871,15 +927,15 @@
 
     <!-- aeroway symbols and captions -->
     <rule e="node" k="aeroway" v="helipad" zoom-min="14">
-        <symbol symbol-height="20" id="helipad" src="jar:symbols/transport/helicopter.svg" />
-        <rule e="any" k="*" v="*" zoom-min="17">
+        <symbol symbol-height="16" id="helipad" src="jar:symbols/transport/helicopter.svg" />
+        <rule e="any" k="*" v="*" zoom-min="18">
             <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                 priority="-20" stroke="#FFFFFF" stroke-width="2.0" symbol-id="helipad" />
         </rule>
     </rule>
     <rule e="node" k="aeroway" v="aerodrome|airport" zoom-min="13">
-        <symbol symbol-height="20" id="airport" src="jar:symbols/transport/airport2.svg" />
-        <rule e="any" k="*" v="*" zoom-min="17">
+        <symbol symbol-height="16" id="airport" src="jar:symbols/transport/airport2.svg" />
+        <rule e="any" k="*" v="*" zoom-min="18">
             <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                 priority="-10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="airport" />
         </rule>
@@ -983,7 +1039,11 @@
                 <line stroke="#333333" stroke-dasharray="12,12" stroke-linecap="butt"
                     stroke-width="0.25" />
             </rule>
-            <rule e="way" k="railway" v="rail">
+            <rule e="way" k="railway" v="rail" zoom-max="14">
+                <line scale="none" stroke="#7A7A7A" stroke-linecap="butt" stroke-width="2.4" />
+                <line scale="none" stroke="#F4F4F4" stroke-dasharray="7,7" stroke-linecap="butt" stroke-width="1.2" />
+            </rule>
+            <rule e="way" k="railway" v="rail" zoom-min="15">
                 <line stroke="#333333" stroke-linecap="butt" stroke-width="0.55" />
                 <line stroke="#E6E6E6" stroke-linecap="butt" stroke-width="0.4" />
                 <line stroke="#333333" stroke-dasharray="15,15" stroke-linecap="butt"
@@ -1097,14 +1157,14 @@
     <!-- natural -->
     <rule e="any" k="*" v="*">
         <rule e="node" k="natural" v="cave_entrance" zoom-min="14">
-            <symbol symbol-height="20" display="always" id="cave" src="jar:symbols/poi/cave.svg" />
+            <symbol symbol-height="16" display="always" id="cave" src="jar:symbols/poi/cave.svg" />
             <rule e="any" k="*" v="*" zoom-min="16">
                 <caption fill="#666666" font-size="12" font-style="bold" k="name" priority="10"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="cave" />
             </rule>
         </rule>
         <rule e="node" k="natural" v="volcano" zoom-min="11">
-            <symbol symbol-height="20" id="volcano" src="jar:symbols/volcano.svg" />
+            <symbol symbol-height="16" id="volcano" src="jar:symbols/volcano.svg" />
             <caption fill="#000000" font-size="14" font-style="bold" k="name" position="above"
                 stroke="#FFFFFF" stroke-width="2.0" symbol-id="volcano" />
             <rule e="any" k="*" v="*" zoom-min="14">
@@ -1114,7 +1174,7 @@
         </rule>
         <rule e="node" k="natural" v="peak" zoom-min="13">
             <rule e="node" k="name" v="*">
-                <symbol symbol-height="20" display="always" id="peak" src="jar:symbols/peak.svg" />
+                <symbol symbol-height="16" display="always" id="peak" src="jar:symbols/peak.svg" />
                 <caption fill="#4E4030" font-size="11" font-style="italic" k="name" position="above"
                     priority="8" stroke="#FFFFFF" stroke-width="1.5" symbol-id="peak" />
                 <caption fill="#7A6A52" font-size="10" font-style="normal" k="ele" position="below"
@@ -1123,18 +1183,18 @@
         </rule>
         <rule e="node" k="natural" v="peak" zoom-min="15">
             <rule e="node" k="name" v="~">
-                <symbol symbol-height="20" src="jar:symbols/peak.svg" />
+                <symbol symbol-height="16" src="jar:symbols/peak.svg" />
             </rule>
         </rule>
         <rule e="any" k="mountain_pass" v="yes" zoom-min="14">
-            <symbol symbol-height="20" display="always" id="pass" src="jar:symbols/poi/mountain_pass.svg" />
+            <symbol symbol-height="16" display="always" id="pass" src="jar:symbols/poi/mountain_pass.svg" />
             <rule e="any" k="*" v="*" zoom-min="15">
                 <caption fill="#666666" font-size="12" font-style="bold" k="ele" position="above"
                     priority="10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="pass" />
             </rule>
         </rule>
         <rule e="any" k="natural" v="saddle" zoom-min="14">
-            <symbol symbol-height="20" display="always" id="saddle" src="jar:symbols/poi/mountain_pass.svg" />
+            <symbol symbol-height="16" display="always" id="saddle" src="jar:symbols/poi/mountain_pass.svg" />
             <caption fill="#666666" font-size="12" font-style="bold" k="name" priority="10"
                 stroke="#FFFFFF" stroke-width="2.0" symbol-id="saddle" />
             <rule e="any" k="*" v="*" zoom-min="15">
@@ -1147,91 +1207,95 @@
     <!-- emergency -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="amenity|building" v="hospital|clinic" zoom-min="15">
-            <symbol symbol-height="20" id="hospital" src="jar:symbols/health/hospital.svg" />
-            <rule e="any" k="*" v="*" zoom-min="17">
+            <symbol symbol-height="16" id="hospital" src="jar:symbols/health/hospital.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#DA0092" font-size="12" font-style="bold" k="name" position="above"
                     priority="10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="hospital" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="pharmacy" zoom-min="18">
-            <symbol symbol-height="20" id="pharmacy" src="jar:symbols/health/pharmacy.svg" />
+            <symbol symbol-height="16" id="pharmacy" src="jar:symbols/health/pharmacy.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#DA0092" font-size="12" font-style="bold" k="name" position="above"
                     priority="10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="pharmacy" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="doctors" zoom-min="18">
-            <symbol symbol-height="20" id="doctors" src="jar:symbols/health/doctors2.svg" />
+            <symbol symbol-height="16" id="doctors" src="jar:symbols/health/doctors2.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#DA0092" font-size="12" font-style="bold" k="name" position="above"
                     priority="10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="doctors" />
             </rule>
         </rule>
         <rule e="any" k="amenity|building" v="embassy" zoom-min="17">
-            <symbol symbol-height="20" id="embassy" src="jar:symbols/poi/embassy2.svg" />
-            <caption fill="#666666" font-size="12" font-style="bold" k="name" priority="10"
-                stroke="#FFFFFF" stroke-width="2.0" symbol-id="embassy" />
+            <symbol symbol-height="16" id="embassy" src="jar:symbols/poi/embassy2.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
+                <caption fill="#666666" font-size="12" font-style="bold" k="name" priority="10"
+                    stroke="#FFFFFF" stroke-width="2.0" symbol-id="embassy" />
+            </rule>
         </rule>
-        <rule e="any" k="amenity" v="shelter" zoom-min="14">
-            <symbol symbol-height="20" display="always" id="shelter" src="jar:symbols/accommodation/shelter2.svg" />
-            <caption fill="#0092DA" font-size="12" font-style="bold" k="name" priority="10"
-                stroke="#FFFFFF" stroke-width="2.0" symbol-id="shelter" />
+        <rule e="any" k="amenity" v="shelter" zoom-min="15">
+            <symbol symbol-height="16" id="shelter" src="jar:symbols/accommodation/shelter2.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
+                <caption fill="#0092DA" font-size="12" font-style="bold" k="name" priority="10"
+                    stroke="#FFFFFF" stroke-width="2.0" symbol-id="shelter" />
+            </rule>
         </rule>
         <rule e="any" k="amenity" v="police" zoom-min="17">
-            <symbol symbol-height="20" src="jar:symbols/amenity/police2.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/police2.svg" />
         </rule>
         <rule e="any" k="amenity|building" v="fire_station" zoom-min="17">
-            <symbol symbol-height="20" src="jar:symbols/amenity/firestation3.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/firestation3.svg" />
         </rule>
     </rule>
 
     <!-- accommodation -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="tourism" v="alpine_hut" zoom-min="12">
-            <symbol symbol-height="20" display="always" id="alpine-hut" src="jar:symbols/accommodation/alpinehut.svg" />
+            <symbol symbol-height="16" display="always" id="alpine-hut" src="jar:symbols/accommodation/alpinehut.svg" />
             <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                 stroke-width="2.0" symbol-id="alpine-hut" />
             <caption fill="#0092DA" font-size="12" font-style="bold" k="ele" stroke="#FFFFFF"
                 stroke-width="2.0" symbol-id="alpine-hut" />
         </rule>
         <rule e="any" k="tourism" v="camp_site" zoom-min="13">
-            <symbol symbol-height="20" id="camping" src="jar:symbols/accommodation/camping.svg" />
-            <rule e="node" k="*" v="*" zoom-min="17">
+            <symbol symbol-height="16" id="camping" src="jar:symbols/accommodation/camping.svg" />
+            <rule e="node" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="camping" />
             </rule>
-            <rule e="way" k="*" v="*" zoom-min="16">
+            <rule e="way" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="camping" />
             </rule>
         </rule>
         <rule e="any" k="tourism" v="caravan_site" zoom-min="13">
-            <symbol symbol-height="20" id="caravan-site" src="jar:symbols/accommodation/caravan_park.svg" />
-            <rule e="node" k="*" v="*" zoom-min="17">
+            <symbol symbol-height="16" id="caravan-site" src="jar:symbols/accommodation/caravan_park.svg" />
+            <rule e="node" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="caravan-site" />
             </rule>
-            <rule e="way" k="*" v="*" zoom-min="16">
+            <rule e="way" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="caravan-site" />
             </rule>
         </rule>
         <rule e="any" k="tourism" v="hostel" zoom-min="18">
-            <symbol symbol-height="20" id="hostel" src="jar:symbols/accommodation/hostel.svg" />
+            <symbol symbol-height="16" id="hostel" src="jar:symbols/accommodation/hostel.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2" symbol-id="hostel" />
             </rule>
         </rule>
         <rule e="any" k="tourism|building" v="hotel|guest_house|motel" zoom-min="18">
-            <symbol symbol-height="20" id="hotel" src="jar:symbols/accommodation/hotel2.svg" />
+            <symbol symbol-height="16" id="hotel" src="jar:symbols/accommodation/hotel2.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption display="never" fill="#0092DA" font-size="12" font-style="bold" k="name"
                     stroke="#FFFFFF" stroke-width="2" symbol-id="hotel" />
             </rule>
         </rule>
         <rule e="any" k="tourism" v="chalet" zoom-min="18">
-            <symbol symbol-height="20" id="chalet" src="jar:symbols/accommodation/chalet.svg" />
+            <symbol symbol-height="16" id="chalet" src="jar:symbols/accommodation/chalet.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2" symbol-id="chalet" />
@@ -1242,43 +1306,43 @@
     <!-- public transport -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="railway" v="station" zoom-min="13">
-            <symbol symbol-height="20" id="train-station" src="jar:symbols/transport/train_station2.svg" />
-            <rule e="any" k="*" v="*" zoom-min="15">
+            <symbol symbol-height="16" id="train-station" src="jar:symbols/transport/train_station2.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     priority="20" stroke="#FFFFFF" stroke-width="2.0" symbol-id="train-station" />
             </rule>
         </rule>
         <rule e="any" k="building" v="train_station" zoom-min="13">
-            <symbol symbol-height="20" id="train-station2" src="jar:symbols/transport/train_station2.svg" />
-            <rule e="any" k="*" v="*" zoom-min="15">
+            <symbol symbol-height="16" id="train-station2" src="jar:symbols/transport/train_station2.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     priority="20" stroke="#FFFFFF" stroke-width="2.0" symbol-id="train-station2" />
             </rule>
         </rule>
         <rule e="node" k="station" v="light_rail|subway" zoom-min="14">
-            <symbol symbol-height="20" id="train-station3" src="jar:symbols/transport/train_station2.svg" />
-            <rule e="any" k="*" v="*" zoom-min="16">
+            <symbol symbol-height="16" id="train-station3" src="jar:symbols/transport/train_station2.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     priority="20" stroke="#FFFFFF" stroke-width="2.0" symbol-id="train-station3" />
             </rule>
         </rule>
         <rule e="node" k="railway" v="halt|tram_stop" zoom-min="16">
-            <symbol symbol-height="20" id="tram-stop" src="jar:symbols/transport/tram_stop.svg" />
-            <rule e="any" k="*" v="*" zoom-min="16">
+            <symbol symbol-height="16" id="tram-stop" src="jar:symbols/transport/tram_stop.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     priority="10" stroke="#FFFFFF" stroke-width="2.0" symbol-id="tram-stop" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="bus_station" zoom-min="18">
-            <symbol symbol-height="20" id="bus-station" src="jar:symbols/transport/bus_station.svg" />
+            <symbol symbol-height="16" id="bus-station" src="jar:symbols/transport/bus_station.svg" />
             <rule e="any" k="*" v="*" zoom-min="15">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="bus-station" />
             </rule>
         </rule>
         <rule e="node" k="highway" v="bus_stop" zoom-min="17">
-            <symbol symbol-height="20" id="bus-stop" position="below_left" src="jar:symbols/transport/bus_stop.svg" />
-            <rule e="any" k="*" v="*" zoom-min="16">
+            <symbol symbol-height="16" id="bus-stop" position="below_left" src="jar:symbols/transport/bus_stop.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="bus-stop" />
             </rule>
@@ -1288,171 +1352,171 @@
     <!-- food -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="amenity" v="restaurant" zoom-min="18">
-            <symbol symbol-height="20" id="restaurant" src="jar:symbols/food/restaurant.svg" />
+            <symbol symbol-height="16" id="restaurant" src="jar:symbols/food/restaurant.svg" />
             <rule e="node" k="*" v="*" zoom-min="17">
                 <caption fill="#734A08" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="restaurant" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="fast_food" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/food/fastfood.svg" />
+            <symbol symbol-height="16" src="jar:symbols/food/fastfood.svg" />
         </rule>
         <rule e="any" k="amenity" v="biergarten" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/food/biergarten.svg" />
+            <symbol symbol-height="16" src="jar:symbols/food/biergarten.svg" />
         </rule>
         <rule e="any" k="amenity" v="cafe" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/food/cafe.svg" />
+            <symbol symbol-height="16" src="jar:symbols/food/cafe.svg" />
         </rule>
         <rule e="any" k="amenity" v="pub|bar" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/food/bar.svg" />
+            <symbol symbol-height="16" src="jar:symbols/food/bar.svg" />
         </rule>
     </rule>
 
     <!-- shopping -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="shop" v="supermarket|department_store|mall" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/supermarket.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/supermarket.svg" />
         </rule>
         <rule e="any" k="shop" v="convenience|general|kiosk" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/convenience.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/convenience.svg" />
         </rule>
         <rule e="any" k="shop" v="bakery" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/bakery.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/bakery.svg" />
         </rule>
         <rule e="any" k="amenity" v="fuel" zoom-min="18">
-            <symbol symbol-height="20" id="fuel" src="jar:symbols/transport/fuel.svg" />
+            <symbol symbol-height="16" id="fuel" src="jar:symbols/transport/fuel.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="fuel" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="marketplace" zoom-min="18">
-            <symbol symbol-height="20" id="marketplace" src="jar:symbols/shopping/marketplace.svg" />
+            <symbol symbol-height="16" id="marketplace" src="jar:symbols/shopping/marketplace.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#AC39AC" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="marketplace" />
             </rule>
         </rule>
         <rule e="any" k="shop" v="doityourself|hardware|houseware" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/diy.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/diy.svg" />
         </rule>
         <rule e="any" k="shop" v="bicycle" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/bicycle.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/bicycle.svg" />
         </rule>
         <rule e="any" k="shop" v="organic|farm|greengrocer|cheese" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/greengrocer.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/greengrocer.svg" />
         </rule>
         <rule e="any" k="shop" v="butcher|seafood|deli" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/butcher.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/butcher.svg" />
         </rule>
         <rule e="any" k="shop" v="laundry|dry_cleaning" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/laundrette.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/laundrette.svg" />
         </rule>
         <rule e="any" k="shop" v="beverages|alcohol" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/alcohol.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/alcohol.svg" />
         </rule>
         <rule e="any" k="shop" v="books|newsagent" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/book.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/book.svg" />
         </rule>
         <rule e="any" k="shop" v="car|car_repair|car_parts|motorcycle" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/shopping/car_repair.svg" />
+            <symbol symbol-height="16" src="jar:symbols/shopping/car_repair.svg" />
         </rule>
     </rule>
 
     <!-- amenity -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="amenity" v="drinking_water" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/food/drinkingtap.svg" />
+            <symbol symbol-height="16" src="jar:symbols/food/drinkingtap.svg" />
         </rule>
         <rule e="any" k="amenity" v="toilets" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/amenity/toilets.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/toilets.svg" />
         </rule>
         <rule e="any" k="tourism" v="picnic_site" zoom-min="15">
-            <symbol symbol-height="20" src="jar:symbols/tourist/picnic.svg" />
+            <symbol symbol-height="16" src="jar:symbols/tourist/picnic.svg" />
         </rule>
         <rule e="node" k="amenity" v="bench" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/bench.svg" />
+            <symbol symbol-height="16" src="jar:symbols/bench.svg" />
         </rule>
         <rule e="any" k="amenity" v="atm" zoom-min="18">
-            <symbol symbol-height="20" id="atm" src="jar:symbols/money/atm2.svg" />
+            <symbol symbol-height="16" id="atm" src="jar:symbols/money/atm2.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#666666" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="atm" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="bank" zoom-min="18">
-            <symbol symbol-height="20" id="bank" src="jar:symbols/money/bank2.svg" />
+            <symbol symbol-height="16" id="bank" src="jar:symbols/money/bank2.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#666666" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="bank" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="post_box" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/amenity/post_box.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/post_box.svg" />
         </rule>
         <rule e="any" k="amenity" v="post_office" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/amenity/post_office.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/post_office.svg" />
         </rule>
         <rule e="any" k="amenity" v="telephone" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/amenity/telephone.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/telephone.svg" />
         </rule>
         <rule e="any" k="amenity" v="recycling" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/amenity/recycling.svg" />
+            <symbol symbol-height="16" src="jar:symbols/amenity/recycling.svg" />
         </rule>
         <rule e="any" k="amenity" v="fountain" zoom-min="18">
             <rule e="any" k="drinking_water" v="yes">
-                <symbol symbol-height="20" src="jar:symbols/food/drinkingtap.svg" />
+                <symbol symbol-height="16" src="jar:symbols/food/drinkingtap.svg" />
             </rule>
             <rule e="any" k="*" v="*">
-                <symbol symbol-height="20" src="jar:symbols/amenity/fountain2.svg" />
+                <symbol symbol-height="16" src="jar:symbols/amenity/fountain2.svg" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="cinema" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/tourist/cinema2.svg" />
+            <symbol symbol-height="16" src="jar:symbols/tourist/cinema2.svg" />
         </rule>
         <rule e="any" k="amenity" v="bicycle_rental" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/transport/rental_bicycle.svg" />
+            <symbol symbol-height="16" src="jar:symbols/transport/rental_bicycle.svg" />
         </rule>
         <rule e="any" k="leisure" v="playground" zoom-min="18">
-            <symbol symbol-height="20" id="playground" src="jar:symbols/amenity/playground.svg" />
+            <symbol symbol-height="16" id="playground" src="jar:symbols/amenity/playground.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#39AC39" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="playground" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="kindergarten" zoom-min="18">
-            <symbol symbol-height="20" id="nursery" src="jar:symbols/education/nursery3.svg" />
+            <symbol symbol-height="16" id="nursery" src="jar:symbols/education/nursery3.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#39AC39" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="nursery" />
             </rule>
         </rule>
         <rule e="any" k="amenity|building" v="library" zoom-min="18">
-            <symbol symbol-height="20" id="library" src="jar:symbols/amenity/library.svg" />
+            <symbol symbol-height="16" id="library" src="jar:symbols/amenity/library.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#39AC39" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="library" />
             </rule>
         </rule>
         <rule e="any" k="amenity|building" v="school" zoom-min="18">
-            <symbol symbol-height="20" id="school" src="jar:symbols/education/school.svg" />
+            <symbol symbol-height="16" id="school" src="jar:symbols/education/school.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#39AC39" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="school" />
             </rule>
         </rule>
         <rule e="any" k="amenity" v="theatre" zoom-min="18">
-            <symbol symbol-height="20" id="theatre" src="jar:symbols/tourist/theatre.svg" />
+            <symbol symbol-height="16" id="theatre" src="jar:symbols/tourist/theatre.svg" />
             <rule e="any" k="*" v="*" zoom-min="17">
                 <caption fill="#734A08" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="theatre" />
             </rule>
         </rule>
         <rule e="any" k="amenity|building" v="university|college" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/education/university.svg" />
+            <symbol symbol-height="16" src="jar:symbols/education/university.svg" />
         </rule>
         <rule e="any" k="leisure" v="slipway" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/transport/slipway.svg" />
+            <symbol symbol-height="16" src="jar:symbols/transport/slipway.svg" />
         </rule>
     </rule>
 
@@ -1460,20 +1524,20 @@
     <rule e="any" k="*" v="*">
         <rule e="any" k="amenity" v="parking" zoom-min="17">
             <rule e="any" k="access" v="private">
-                <symbol symbol-height="20" src="jar:symbols/transport/parking_private.svg" />
+                <symbol symbol-height="16" src="jar:symbols/transport/parking_private.svg" />
             </rule>
             <rule e="any" k="*" v="*">
-                <symbol symbol-height="20" position="below_right" src="jar:symbols/transport/parking.svg" />
+                <symbol symbol-height="16" position="below_right" src="jar:symbols/transport/parking.svg" />
             </rule>
         </rule>
         <rule e="node" k="highway" v="traffic_signals" zoom-min="17">
-            <symbol symbol-height="20" src="jar:symbols/transport/traffic_lights.svg" />
+            <symbol symbol-height="16" src="jar:symbols/transport/traffic_lights.svg" />
         </rule>
     </rule>
     <!-- tourism & POI -->
     <rule e="any" k="*" v="*">
         <rule e="node" k="tourism" v="viewpoint" zoom-min="15">
-            <symbol symbol-height="20" display="always" id="viewpoint" src="jar:symbols/tourist/view_point.svg" />
+            <symbol symbol-height="16" display="always" id="viewpoint" src="jar:symbols/tourist/view_point.svg" />
             <rule e="any" k="natural" v="~" zoom-min="17">
                 <caption fill="#734A08" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                     stroke-width="2.0" symbol-id="viewpoint" />
@@ -1482,76 +1546,78 @@
             </rule>
         </rule>
         <rule e="any" k="tourism" v="attraction" zoom-min="17">
-            <symbol symbol-height="20" id="attraction" src="jar:symbols/tourist/attraction.svg" />
+            <symbol symbol-height="16" id="attraction" src="jar:symbols/tourist/attraction.svg" />
             <caption fill="#734A08" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
                 stroke-width="2.0" symbol-id="attraction" />
         </rule>
         <rule e="any" k="tourism" v="information" zoom-min="16">
-            <symbol symbol-height="18" display="always" position="above_right" src="file:symbols/informace.svg" />
+            <symbol symbol-height="15" display="always" position="above_right" src="file:symbols/informace.svg" />
         </rule>
         <!-- informační prvky z vrstvy tourist (v základní mapě je tourism=information až od z17, tabule a mapy jsou už od z13) -->
         <rule e="node" k="information" v="board" zoom-min="15">
-            <symbol symbol-height="18" display="always" position="above_right" src="file:symbols/informace.svg" />
+            <symbol symbol-height="15" display="always" position="above_right" src="file:symbols/informace.svg" />
         </rule>
         <rule e="node" k="information" v="map|office|terminal" zoom-min="16">
-            <symbol symbol-height="18" display="always" position="above_right" src="file:symbols/informace.svg" />
+            <symbol symbol-height="15" display="always" position="above_right" src="file:symbols/informace.svg" />
         </rule>
         <rule e="any" k="tourism" v="zoo" zoom-min="15">
-            <symbol symbol-height="20" src="jar:symbols/tourist/zoo.svg" />
+            <symbol symbol-height="16" src="jar:symbols/tourist/zoo.svg" />
         </rule>
         <rule e="any" k="tourism|building" v="museum" zoom-min="16">
-            <symbol symbol-height="20" id="museum" src="jar:symbols/tourist/museum.svg" />
-            <caption fill="#734A08" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
-                stroke-width="2.0" symbol-id="museum" />
+            <symbol symbol-height="16" id="museum" src="jar:symbols/tourist/museum.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
+                <caption fill="#734A08" font-size="12" font-style="bold" k="name" stroke="#FFFFFF"
+                    stroke-width="2.0" symbol-id="museum" />
+            </rule>
         </rule>
-        <rule e="any" k="historic" v="castle" zoom-min="14" zoom-max="16">
-            <symbol symbol-height="20" src="jar:symbols/tourist/castle2.svg" />
+        <rule e="any" k="historic" v="castle" zoom-min="15" zoom-max="16">
+            <symbol symbol-height="16" src="jar:symbols/tourist/castle2.svg" />
         </rule>
         <rule e="any" k="historic" v="castle" zoom-min="17">
-            <symbol symbol-height="20" display="always" src="jar:symbols/tourist/castle2.svg" />
+            <symbol symbol-height="16" display="always" src="jar:symbols/tourist/castle2.svg" />
         </rule>
         <rule e="any" k="building" v="castle" zoom-min="18">
-            <symbol symbol-height="20" display="always" src="jar:symbols/tourist/castle2.svg" />
+            <symbol symbol-height="16" display="always" src="jar:symbols/tourist/castle2.svg" />
         </rule>
         <rule e="any" k="historic|building" v="ruins" zoom-min="14">
-            <symbol symbol-height="20" display="always" src="jar:symbols/tourist/ruin.svg" />
+            <symbol symbol-height="16" display="always" src="jar:symbols/tourist/ruin.svg" />
         </rule>
         <rule e="any" k="historic" v="monument" zoom-min="15">
-            <symbol symbol-height="20" display="always" src="jar:symbols/tourist/monument.svg" />
+            <symbol symbol-height="16" display="always" src="jar:symbols/tourist/monument.svg" />
         </rule>
         <rule e="any" k="historic" v="memorial" zoom-min="19">
-            <symbol symbol-height="20" src="jar:symbols/tourist/memorial.svg" />
+            <symbol symbol-height="16" src="jar:symbols/tourist/memorial.svg" />
         </rule>
         <rule e="any" k="historic" v="archaeological_site" zoom-min="15">
-            <symbol symbol-height="20" display="always" src="jar:symbols/tourist/archaeological2.svg" />
+            <symbol symbol-height="16" display="always" src="jar:symbols/tourist/archaeological2.svg" />
         </rule>
         <rule e="any" k="historic|building" v="ruins|castle|monument" zoom-min="17">
             <caption fill="#734a08" font-size="12" font-style="bold" k="name" position="above"
                 stroke="#FFFFFF" stroke-width="2.0" symbol-id="museum" />
         </rule>
         <rule e="node" k="man_made" v="windmill" zoom-min="14">
-            <symbol symbol-height="20" src="jar:symbols/tourist/windmill.svg" />
+            <symbol symbol-height="16" src="jar:symbols/tourist/windmill.svg" />
         </rule>
         <rule e="node" k="man_made" v="lighthouse" zoom-min="14">
-            <symbol symbol-height="20" id="lighthouse" src="jar:symbols/transport/lighthouse.svg" />
-            <rule e="any" k="*" v="*" zoom-min="17">
+            <symbol symbol-height="16" id="lighthouse" src="jar:symbols/transport/lighthouse.svg" />
+            <rule e="any" k="*" v="*" zoom-min="18">
                 <caption fill="#0092DA" font-size="12" font-style="bold" k="name" position="above"
                     stroke="#FFFFFF" stroke-width="2.0" symbol-id="lighthouse" />
             </rule>
         </rule>
         <rule e="any" k="building" v="church|cathedral|chapel" zoom-min="17">
-            <symbol symbol-height="20" src="jar:symbols/place_of_worship/christian.svg" />
+            <symbol symbol-height="16" src="jar:symbols/place_of_worship/christian.svg" />
         </rule>
         <rule e="any" k="amenity" v="place_of_worship" zoom-min="18">
             <rule e="any" k="religion" v="buddhist">
-                <symbol symbol-height="20" id="buddhist" src="jar:symbols/place_of_worship/buddhist.svg" />
+                <symbol symbol-height="16" id="buddhist" src="jar:symbols/place_of_worship/buddhist.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0" symbol-id="buddhist" />
                 </rule>
             </rule>
             <rule e="any" k="religion" v="christian">
-                <symbol symbol-height="20" id="christian" src="jar:symbols/place_of_worship/christian.svg" />
+                <symbol symbol-height="16" id="christian" src="jar:symbols/place_of_worship/christian.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0"
@@ -1559,35 +1625,35 @@
                 </rule>
             </rule>
             <rule e="any" k="religion" v="hindu">
-                <symbol symbol-height="20" id="hindu" src="jar:symbols/place_of_worship/hindu.svg" />
+                <symbol symbol-height="16" id="hindu" src="jar:symbols/place_of_worship/hindu.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0" symbol-id="hindu" />
                 </rule>
             </rule>
             <rule e="any" k="religion" v="jewish">
-                <symbol symbol-height="20" id="jewish" src="jar:symbols/place_of_worship/jewish.svg" />
+                <symbol symbol-height="16" id="jewish" src="jar:symbols/place_of_worship/jewish.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0" symbol-id="jewish" />
                 </rule>
             </rule>
             <rule e="any" k="religion" v="muslim">
-                <symbol symbol-height="20" id="muslim" src="jar:symbols/place_of_worship/islamic.svg" />
+                <symbol symbol-height="16" id="muslim" src="jar:symbols/place_of_worship/islamic.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0" symbol-id="muslim" />
                 </rule>
             </rule>
             <rule e="any" k="religion" v="shinto">
-                <symbol symbol-height="20" id="shinto" src="jar:symbols/place_of_worship/shinto.svg" />
+                <symbol symbol-height="16" id="shinto" src="jar:symbols/place_of_worship/shinto.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0" symbol-id="shinto" />
                 </rule>
             </rule>
             <rule e="any" k="religion" v="~|*">
-                <symbol symbol-height="20" id="religion-unknown" src="jar:symbols/place_of_worship/unknown.svg" />
+                <symbol symbol-height="16" id="religion-unknown" src="jar:symbols/place_of_worship/unknown.svg" />
                 <rule e="any" k="*" v="*" zoom-min="17">
                     <caption fill="#666666" font-size="12" font-style="bold" k="name"
                         position="above" stroke="#FFFFFF" stroke-width="2.0"
@@ -1601,60 +1667,60 @@
     <!-- sports -->
     <rule e="any" k="*" v="*">
         <rule e="any" k="leisure" v="water_park" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/swimming_outdoor.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/swimming_outdoor.svg" />
         </rule>
         <rule e="way" k="leisure" v="~" zoom-min="15">
             <rule e="way" k="sport" v="swimming">
-                <symbol symbol-height="20" src="jar:symbols/sport/swimming_outdoor.svg" />
+                <symbol symbol-height="16" src="jar:symbols/sport/swimming_outdoor.svg" />
             </rule>
         </rule>
         <rule e="node" k="sport" v="swimming" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/swimming_outdoor.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/swimming_outdoor.svg" />
         </rule>
         <rule e="any" k="sport" v="soccer" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/soccer.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/soccer.svg" />
         </rule>
         <rule e="any" k="sport" v="tennis" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/tennis.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/tennis.svg" />
         </rule>
         <rule e="any" k="sport|leisure" v="golf|golf_course" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/golf.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/golf.svg" />
         </rule>
         <rule e="any" k="sport" v="shooting" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/shooting.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/shooting.svg" />
         </rule>
         <rule e="any" k="leisure" v="stadium" zoom-min="18">
-            <symbol symbol-height="20" src="jar:symbols/sport/stadium.svg" />
+            <symbol symbol-height="16" src="jar:symbols/sport/stadium.svg" />
         </rule>
     </rule>
 
 
     <!-- railway -->
     <rule e="node" k="railway" v="crossing" zoom-min="15">
-        <symbol symbol-height="20" src="jar:symbols/railway-crossing-small.svg" />
+        <symbol symbol-height="16" src="jar:symbols/railway-crossing-small.svg" />
     </rule>
     <rule e="node" k="railway" v="level_crossing" zoom-min="15">
-        <symbol symbol-height="20" src="jar:symbols/railway-crossing.svg" />
+        <symbol symbol-height="16" src="jar:symbols/railway-crossing.svg" />
     </rule>
     <!-- barriers -->
     <rule e="any" k="barrier" v="*" zoom-min="17">
         <rule e="node" k="barrier" v="bollard">
-            <symbol symbol-height="20" src="jar:symbols/barrier/bollard.svg" />
+            <symbol symbol-height="16" src="jar:symbols/barrier/bollard.svg" />
         </rule>
         <rule e="node" k="barrier" v="lift_gate|chain">
-            <symbol symbol-height="20" src="jar:symbols/barrier/lift_gate.svg" />
+            <symbol symbol-height="16" src="jar:symbols/barrier/lift_gate.svg" />
         </rule>
         <rule e="node" k="barrier" v="stile">
-            <symbol symbol-height="20" src="jar:symbols/barrier/stile.svg" />
+            <symbol symbol-height="16" src="jar:symbols/barrier/stile.svg" />
         </rule>
         <rule e="node" k="barrier" v="cycle_barrier">
-            <symbol symbol-height="20" src="jar:symbols/barrier/cycle_barrier.svg" />
+            <symbol symbol-height="16" src="jar:symbols/barrier/cycle_barrier.svg" />
         </rule>
         <rule e="node" k="barrier" v="gate">
-            <symbol symbol-height="20" src="jar:symbols/barrier/gate.svg" />
+            <symbol symbol-height="16" src="jar:symbols/barrier/gate.svg" />
         </rule>
         <rule e="any" k="barrier" v="block">
-            <symbol symbol-height="20" src="jar:symbols/barrier/blocks.svg" />
+            <symbol symbol-height="16" src="jar:symbols/barrier/blocks.svg" />
         </rule>
     </rule>
 
@@ -1701,32 +1767,32 @@
 
     <!-- prameny, rozhledny, boží muka, rozcestníky, vodopády -->
     <rule e="node" k="natural" v="spring" zoom-min="15">
-        <symbol symbol-height="20" display="always" src="file:symbols/spring.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/spring.svg" />
         <rule e="node" k="*" v="*" zoom-min="17">
             <caption fill="#2F7CC4" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
         </rule>
     </rule>
     <rule e="node" k="tower:type" v="observation" zoom-min="13">
-        <symbol symbol-height="20" display="always" src="file:symbols/tower.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/tower.svg" />
         <rule e="node" k="*" v="*" zoom-min="15">
             <caption fill="#734A08" font-size="11" font-style="bold" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
         </rule>
     </rule>
     <rule e="node" k="historic" v="wayside_cross|wayside_shrine" zoom-min="15">
-        <symbol symbol-height="20" display="always" src="file:symbols/cross.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/cross.svg" />
     </rule>
     <rule e="node" k="man_made" v="cross" zoom-min="15">
-        <symbol symbol-height="20" display="always" src="file:symbols/cross.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/cross.svg" />
     </rule>
-    <rule e="node" k="information" v="guidepost" zoom-min="14">
-        <symbol symbol-height="20" display="always" position="above_left" src="file:symbols/guidepost.svg" />
-        <rule e="node" k="*" v="*" zoom-min="17">
+    <rule e="node" k="information" v="guidepost" zoom-min="15">
+        <symbol symbol-height="16" display="always" position="above_left" src="file:symbols/guidepost.svg" />
+        <rule e="node" k="*" v="*" zoom-min="18">
             <caption fill="#734A08" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
         </rule>
     </rule>
     <rule e="node" k="waterway" v="waterfall" zoom-min="14">
-        <symbol symbol-height="20" display="always" src="file:symbols/waterfall.svg" />
-        <rule e="node" k="*" v="*" zoom-min="16">
+        <symbol symbol-height="16" display="always" src="file:symbols/waterfall.svg" />
+        <rule e="node" k="*" v="*" zoom-min="18">
             <caption fill="#2F7CC4" font-size="10" font-style="normal" k="name" position="below" stroke="#FFFFFF" stroke-width="2.0" />
         </rule>
     </rule>
@@ -1739,54 +1805,54 @@
          Ikony: Osmic (https://github.com/gmgeo/osmic, gmgeo a přispěvatelé), CC0. -->
     <!-- posed, krmelec, stůl, ohniště -->
     <rule e="node" k="amenity" v="hunting_stand" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/hunting-stand-18.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/hunting-stand-18.svg" />
     </rule>
     <rule e="node" k="amenity" v="feeding_place" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/game-feeding-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/game-feeding-16.svg" />
     </rule>
     <rule e="node" k="leisure" v="picnic_table" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/table-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/table-16.svg" />
     </rule>
     <rule e="node" k="leisure" v="firepit" zoom-min="18">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/fire-18.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/fire-18.svg" />
     </rule>
     <!-- zastávka a parkoviště (z16) o zoom dřív než v základu (z17) (příjezd ke keši) -->
     <rule e="node" k="highway" v="bus_stop" zoom-min="16" zoom-max="16">
-        <symbol symbol-height="20" position="below_left" src="file:symbols/osmic/bus-16.svg" />
+        <symbol symbol-height="16" position="below_left" src="file:symbols/osmic/bus-16.svg" />
     </rule>
     <rule e="any" k="amenity" v="parking" zoom-min="16" zoom-max="16">
         <rule e="any" k="access" v="~|yes|public|customers|permissive">
-            <symbol symbol-height="20" position="below_right" src="file:symbols/osmic/parking-car-18.svg" />
+            <symbol symbol-height="16" position="below_right" src="file:symbols/osmic/parking-car-18.svg" />
         </rule>
     </rule>
     <!-- hospoda u stezky o zoom dřív, pamětní místo o zoom dřív -->
     <rule e="any" k="amenity" v="pub" zoom-min="17" zoom-max="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/pub-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/pub-16.svg" />
     </rule>
     <rule e="any" k="historic" v="memorial" zoom-min="18" zoom-max="18">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/memorial-18.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/memorial-18.svg" />
     </rule>
     <!-- orientační body v terénu: kameny, skalky a umělecká díla (data vrstvy tourist od z14 a z13) -->
     <rule e="node" k="natural" v="stone" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/stone-18.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/stone-18.svg" />
     </rule>
     <rule e="node" k="natural" v="rock" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/rock-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/rock-16.svg" />
     </rule>
     <rule e="node" k="tourism" v="artwork" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/artwork-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/artwork-16.svg" />
     </rule>
     <!-- důlní, vojenské a technické orientační objekty -->
     <rule e="node" k="man_made" v="adit|mineshaft" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/adit-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/adit-16.svg" />
     </rule>
     <rule e="any" k="military|building" v="bunker" zoom-min="16">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/pillbox-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/pillbox-16.svg" />
     </rule>
     <rule e="any" k="man_made" v="water_tower" zoom-min="16">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/water-tower-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/water-tower-16.svg" />
     </rule>
     <rule e="node" k="man_made" v="mast" zoom-min="17">
-        <symbol symbol-height="20" display="always" src="file:symbols/osmic/mast-16.svg" />
+        <symbol symbol-height="16" display="always" src="file:symbols/osmic/mast-16.svg" />
     </rule>
 </rendertheme>

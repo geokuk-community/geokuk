@@ -218,7 +218,7 @@ public class ChallengeModel extends Model0 {
 		ohlas(ChallengeZmenenyEvent.Druh.ZOBRAZENI, null);
 	}
 
-	/** Kreslí se u kandidátů štítky (číslo sektoru, políčko D/T)? */
+	/** Kreslí se štítky plánovače na mapě (kandidáti, keše vybraného sektoru nebo políčka, střed)? */
 	public boolean isKresliStitky() {
 		return kresliStitky;
 	}

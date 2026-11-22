@@ -2,15 +2,15 @@ package cz.geokuk.plugins.challenge;
 
 import cz.geokuk.framework.ToggleAction0;
 
-/** Přepínač kreslení na mapě: Štítky u kandidátů. */
+/** Přepínač kreslení na mapě: Štítky na mapě. */
 public class ChallengeStitkyAction extends ToggleAction0 {
 
 	private static final long serialVersionUID = 1L;
 	private transient ChallengeModel model;
 
 	public ChallengeStitkyAction() {
-		super("Štítky u kandidátů");
-		putValue(SHORT_DESCRIPTION, "Kreslí u kandidátů štítek s číslem sektoru nebo políčkem D/T.");
+		super("Štítky na mapě");
+		putValue(SHORT_DESCRIPTION, "Kreslí štítky kandidátů, keší vybraného sektoru nebo políčka a středu challenge.");
 		setSelected(true);
 	}
 

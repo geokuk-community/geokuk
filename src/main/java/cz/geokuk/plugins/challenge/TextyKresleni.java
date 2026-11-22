@@ -26,6 +26,11 @@ final class TextyKresleni {
 		return "Sektor " + sektor + "° · " + kandidatu(k.pocet()) + (Double.isNaN(k.nejblizsiVzdalenost()) ? "" : " · nejbližší " + StitkyPruhu.vzdalenost(k.nejblizsiVzdalenost()) + " od středu");
 	}
 
+	/** Řádek v detailu keše: „Sektor 213°“, u keše do 0,05° od hranice sektoru „Sektor ≈213°“ jako na štítku. */
+	static String sektorDetailu(final int sektor, final boolean nejisty) {
+		return "Sektor " + (nejisty ? "≈" : "") + sektor + "°";
+	}
+
 	/** Štítek středu: „Střed: domov“, „Střed: GC56R49“. */
 	static String stred(final String popis) {
 		return "Střed: " + popis;

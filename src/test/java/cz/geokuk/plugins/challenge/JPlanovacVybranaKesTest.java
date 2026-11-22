@@ -660,16 +660,30 @@ public class JPlanovacVybranaKesTest {
 	}
 
 	@Test
-	public void bezPrepinaceSektoryNejsouStitkySektoruAleDTStitkyZustavaji() throws Exception {
+	public void stitkySektoruVybraneKeseNezavisiNaPrepinaciSektory() throws Exception {
 		zobraz360(250);
 		final Kes vybrana = kesVAzimutu("GC1", 100.5, 2000, 2, 2);
-		nad.setIndexatorKesi(index(vybrana));
+		final Kes clen = kesVAzimutu("GC2", 100.3, 1200, 3, 3);
+		nad.setIndexatorKesi(index(vybrana, clen));
 		vyber(vybrana);
 		model.setKresliSektory(false);
 		nakresli(nad, mapa(14));
-		Assert.assertEquals("sektorové štítky patří k Sektorům", 0, nad.obdelnikyStitkuZvyrazneni().size());
+		Assert.assertEquals("vybraná keš a člen jejího sektoru mají štítek i bez Sektorů", 2, nad.obdelnikyStitkuZvyrazneni().size());
 		model.setKresliSektory(true);
 		nakresli(nad, mapa(14));
-		Assert.assertEquals(1, nad.obdelnikyStitkuZvyrazneni().size());
+		Assert.assertEquals(2, nad.obdelnikyStitkuZvyrazneni().size());
+	}
+
+	@Test
+	public void bezStitkuNemaStredStitekAleZnackaZustane() throws Exception {
+		zobraz360(250);
+		nad.setIndexatorKesi(index());
+		model.setKresliStitky(true);
+		nakresli(nad, mapa(14));
+		final int seStitky = nad.obdelnikyStitku().size();
+		model.setKresliStitky(false);
+		final BufferedImage img = nakresli(nad, mapa(14));
+		Assert.assertEquals("bez Štítků zmizí jen štítek středu", seStitky - 1, nad.obdelnikyStitku().size());
+		Assert.assertTrue("značka středu zůstane", neprazdneKolem(img, W / 2, H / 2));
 	}
 }

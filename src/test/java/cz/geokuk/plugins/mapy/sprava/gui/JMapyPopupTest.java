@@ -1764,7 +1764,9 @@ public class JMapyPopupTest {
 		Assert.assertArrayEquals("stažené celé, ke stažení zbytek", new int[] { 400, 0, 160 }, JMapyPopup.rozdelVyskyPrednostne(new int[] { 400, 0, 5000 }, 560, 80));
 		Assert.assertArrayEquals("ke stažení aspoň minimum", new int[] { 452, 80, 80 }, JMapyPopup.rozdelVyskyPrednostne(new int[] { 2000, 300, 5000 }, 600, 80));
 		final JMapyPopup bezOkna = new JMapyPopup();
-		Assert.assertTrue("rozpočet bez znalosti okna je rozumný", bezOkna.rozpocetSekci() >= 260 && bezOkna.rozpocetSekci() <= 850);
+		// Bez okna se rozpočet řídí výškou obrazovky, bez displeje 1000 px; pevná mez by selhávala na vysokých monitorech.
+		final int rozpocet = bezOkna.rozpocetSekci();
+		Assert.assertTrue("rozpočet bez znalosti okna je rozumný: " + rozpocet, rozpocet >= JMapyPopup.MIN_ROZPOCET && rozpocet <= Math.max(JMapyPopup.MIN_ROZPOCET, JMapyPopup.obrazovka() * 85 / 100));
 	}
 
 	/** Mapa z oddílu Pro toto místo není ještě jednou v seznamu map ke stažení. */
