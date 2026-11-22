@@ -6,6 +6,8 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main, "release/**"]
+  # Fronta slučování: build nad main + PR těsně před sloučením.
+  merge_group:
   workflow_dispatch:
     inputs:
       verze:

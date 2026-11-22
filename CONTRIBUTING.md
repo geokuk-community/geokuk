@@ -25,7 +25,9 @@ Ve Windows místo `./mvnw` použijte `.\mvnw.cmd`.
 - Větev založte od aktuálního `main`, jeden pull request = jedna věc.
 - Oprava chyby má mít test, který bez opravy neprojde.
 - Všechny testy musí projít. Pull request sloučí správci, až na něm
-  projde workflow Build.
+  projde workflow Build. Slučuje se přes frontu slučování: Build se
+  ještě jednou spustí nad aktuálním `main` s pull requestem a do `main`
+  se změna dostane, jen když projde.
 - Texty v programu, komentáře a popisy commitů píšeme česky
   s diakritikou, zdrojové soubory jsou v UTF-8.
 - V popisu pull requestu uveďte, co se mění, proč, jak jste to ověřili,
