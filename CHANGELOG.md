@@ -98,6 +98,8 @@
   mapa z download.mapsforge.org s vrstvami GeoKuku) a GeoKuk-tema-PAWS.zip
   k mapám s turistickými a cyklotrasami v tagech osmc_* (například mapy
   z osm.paws.cz).
+- Vydání obsahuje GeoKuk-macos.dmg: GeoKuk s přibalenou Javou pro Macy
+  s Apple Silicon i s procesorem Intel (macOS 11 a novější).
 - Okno Licence a použité knihovny uvádí, že témata vzhledu od třetích stran se
   řídí licencí svého autora.
 - Po aktualizaci programu se offline mapy v cache jednou vykreslí znovu.
