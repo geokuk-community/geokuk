@@ -44,7 +44,7 @@ class KachleDBManager implements KachleManager {
 	/**
 	 * The name of the SQLite file
 	 */
-	private static final String FILE_NAME = "tiles.sqlite";
+	static final String FILE_NAME = "tiles.sqlite";
 
 	/**
 	 * The name of the table with tiles
@@ -72,6 +72,9 @@ class KachleDBManager implements KachleManager {
 	 * The DB file.
 	 */
 	final KachleCacheFolderHolder folderHolder;
+
+	/** Jméno souboru cache ve složce cache. */
+	private final String nazevSouboru;
 
 	private final OpakovaneChyby chybyCteni = new OpakovaneChyby("Nepodařilo se přečíst dlaždici z databáze");
 
@@ -127,8 +130,14 @@ class KachleDBManager implements KachleManager {
 	 * Constructs a new instance of the DB Manager.
 	 */
 	public KachleDBManager(final KachleCacheFolderHolder holder) {
+		this(holder, FILE_NAME);
+	}
+
+	/** Správce cache v souboru {@code nazevSouboru} ve složce cache. */
+	KachleDBManager(final KachleCacheFolderHolder holder, final String nazevSouboru) {
 		log.trace("Constructor " + Thread.currentThread().getName());
 		folderHolder = holder;
+		this.nazevSouboru = nazevSouboru;
 	}
 
 	/**
@@ -572,7 +581,7 @@ class KachleDBManager implements KachleManager {
 	/** Soubor cache podle aktuálního umístění; null, když umístění není známé. */
 	File souborCache() {
 		final cz.geokuk.util.file.Filex slozka = folderHolder.getKachleCacheFolder();
-		return slozka == null ? null : new File(slozka.getEffectiveFile(), FILE_NAME);
+		return slozka == null ? null : new File(slozka.getEffectiveFile(), nazevSouboru);
 	}
 
 	/**
@@ -659,7 +668,7 @@ class KachleDBManager implements KachleManager {
 		if (!lzePouzit(folder)) {
 			return null; // dlaždice zůstanou jen v paměti
 		}
-		final File f = new File(folder, FILE_NAME);
+		final File f = new File(folder, nazevSouboru);
 		final AbstractMap.SimpleImmutableEntry<Thread, File> mapKey = new AbstractMap.SimpleImmutableEntry<>(t, f);
 
 		if (connections.containsKey(mapKey)) {
