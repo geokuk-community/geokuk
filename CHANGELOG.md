@@ -188,7 +188,8 @@
 - Cesty mají azurovou barvu, vybraná cesta tmavý lem. Úseky vedené po cestě
   jsou plnou čarou, rovné čárkovaně a vzdušné tečkovaně.
 - Panel cesty vpravo nahoře v mapě ukazuje délku vybrané cesty, počet bodů
-  a keší a vzdušné úseky; vypnout jde křížkem nebo v Cesty > Panel cesty.
+  a keší a vzdušné úseky. Ve výchozím stavu je zapnutý, vypnout jde křížkem
+  nebo v Cesty > Panel cesty.
 - Mapy > ČÚZK – Stínovaný reliéf: jemné stínování terénu České republiky přes
   jakoukoli mapu, i v Tisknout/Rendrovat…; jen s připojením k internetu, od
   podrobnějšího měřítka.
