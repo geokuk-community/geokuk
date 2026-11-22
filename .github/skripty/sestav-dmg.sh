@@ -1,6 +1,7 @@
 #!/bin/sh
 # Sestaví GeoKuk-macos.dmg: GeoKuk.app se dvěma přibalenými Javami (Apple Silicon a Intel), spouštěč vybere tu pro procesor Macu.
-# Spouští se z kořene repozitáře na macOS (jlink x64 Javy běží pod Rosettou):
+# Spouští se z kořene repozitáře na macOS (jlink x64 Javy běží pod Rosettou), okno dmg rozmístí dmgbuild 1.6.7
+# (pip install dmgbuild==1.6.7, jiný než v PATH jde zadat proměnnou DMGBUILD):
 #   .github/skripty/sestav-dmg.sh <složka s geokuk.jar a start.jar> <JDK 21 arm64> <JDK 21 x64> <výstupní dmg>
 set -eu
 JARY=$1
@@ -69,9 +70,11 @@ cp LICENSE licence/* "$APP/Contents/Resources/licence/"
 
 # Aplikace se nepodepisuje: bez účtu Apple Developer by šlo jen o podpis ad-hoc a ten by aktualizace geokuk.jar uvnitř balíku porušila.
 cp distribuce/macos/CTIMNE.txt "$OBSAH/"
-ln -s /Applications "$OBSAH/Aplikace"
 rm -f "$DMG"
-# lzma: o čtvrtinu menší než zlib, otevře ho macOS 10.15 a novější.
-hdiutil create -volname GeoKuk -srcfolder "$OBSAH" -fs HFS+ -format ULMO "$DMG"
+# Okno dmg: pozadí se šipkou do Aplikací, rozmístění ikon a formát jsou v dmg-nastaveni.py.
+"${DMGBUILD:-dmgbuild}" -s distribuce/macos/dmg-nastaveni.py \
+	-D app="$APP" -D ctimne="$OBSAH/CTIMNE.txt" \
+	-D pozadi="$PWD/distribuce/macos/dmg-pozadi.png" -D ikona="$APP/Contents/Resources/geokuk.icns" \
+	GeoKuk "$DMG"
 echo "Sestaven $DMG, GeoKuk $VERZE, Java $JAVA"
 [ -z "${GITHUB_STEP_SUMMARY:-}" ] || echo "Přibalená Java pro macOS $JAVA (arm64 i x64), doporučená $DOPORUCENA" >> "$GITHUB_STEP_SUMMARY"

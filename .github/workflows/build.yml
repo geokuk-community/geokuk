@@ -228,11 +228,17 @@ jobs:
         with:
           name: geokuk-jar
 
+      # dmgbuild 2 vytváří obraz přes diskutil image, který je až v macOS 26.
+      - name: dmgbuild
+        run: |
+          python3 -m venv "$RUNNER_TEMP/dmgbuild"
+          "$RUNNER_TEMP/dmgbuild/bin/pip" install -q dmgbuild==1.6.7
+
       - name: Dmg s přibalenou Javou
         env:
           JDK_ARM64: ${{ steps.jdk-arm64.outputs.path }}
           JDK_X64: ${{ steps.jdk-x64.outputs.path }}
-        run: .github/skripty/sestav-dmg.sh . "$JDK_ARM64" "$JDK_X64" GeoKuk-macos.dmg
+        run: DMGBUILD="$RUNNER_TEMP/dmgbuild/bin/dmgbuild" .github/skripty/sestav-dmg.sh . "$JDK_ARM64" "$JDK_X64" GeoKuk-macos.dmg
 
       - name: Zkouška dmg
         run: .github/skripty/test-dmg.sh GeoKuk-macos.dmg

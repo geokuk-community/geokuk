@@ -30,6 +30,14 @@ Do `grafika/vystup/` vzniknou:
 | `geokuk-logo.png` | `src/main/resources/img/` (logo při načítání mapy, 400 × 400) |
 | `geokuk400.jpg` | `src/main/resources/img/` (úvodní obrázek) |
 
+Pozadí okna dmg pro macOS (šipka do Aplikací a rada k prvnímu spuštění) kreslí zvlášť `generator/dmg-pozadi.py`, jen na macOS (písmo SF) a s Pillow:
+
+```sh
+python3 -I grafika/generator/dmg-pozadi.py distribuce/macos
+```
+
+Vznikne `dmg-pozadi.png` a `dmg-pozadi@2x.png`. Souřadnice ikon musí odpovídat `distribuce/macos/dmg-nastaveni.py`.
+
 Kontrola proti souborům v repozitáři: `python3 -I grafika/generator/porovnej.py .` (z kořene repozitáře). Se stejnou verzí Chromia a Pillow vyjdou soubory bajtově stejně, jinak se porovnají po pixelech.
 
 ## Úpravy

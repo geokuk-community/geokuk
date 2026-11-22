@@ -281,7 +281,8 @@ ve vývoji.
 Stačí JDK 21, výsledek je v `target/`. Zip pro Windows s přibalenou Javou
 staví workflow Build na Windows runneru, dmg pro macOS na macOS runneru.
 Na Macu jde dmg sestavit i ručně z `geokuk.jar` a `start.jar` (přejmenovaných
-z `target/`) a z JDK 21 Temurin pro arm64 a x64, x64 potřebuje Rosettu:
+z `target/`) a z JDK 21 Temurin pro arm64 a x64, x64 potřebuje Rosettu. Okno
+dmg rozmístí `dmgbuild` 1.6.7 (`pip install dmgbuild==1.6.7`):
 
 ```sh
 .github/skripty/sestav-dmg.sh <složka s jary> <JDK arm64> <JDK x64> GeoKuk-macos.dmg

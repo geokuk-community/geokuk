@@ -59,6 +59,9 @@ for f in "$C/MacOS/GeoKuk" "$C/Info.plist" "$C/PkgInfo" "$C/Resources/geokuk.icn
 done
 [ -x "$C/MacOS/GeoKuk" ] || chyba "Spouštěč GeoKuk.app není spustitelný"
 [ "$(readlink "$MNT/Aplikace")" = /Applications ] || chyba "V dmg chybí odkaz Aplikace"
+# Okno dmg: rozmístění ikon v .DS_Store, pozadí se šipkou do Aplikací.
+[ -f "$MNT/.DS_Store" ] || chyba "V dmg chybí .DS_Store s rozmístěním okna"
+ls "$MNT"/.background.* >/dev/null 2>&1 || chyba "V dmg chybí pozadí okna"
 [ "$(lipo -archs "$C/Resources/program/runtime-arm64/bin/java")" = arm64 ] || chyba "runtime-arm64 není pro arm64"
 [ "$(lipo -archs "$C/Resources/program/runtime-x64/bin/java")" = x86_64 ] || chyba "runtime-x64 není pro x86_64"
 VERZE=$(unzip -p "$C/Resources/program/geokuk.jar" META-INF/MANIFEST.MF | tr -d '\r' | sed -n 's/^Geokuk-Version: //p')
@@ -72,7 +75,7 @@ mkdir -p "$G"
 ditto "$MNT/GeoKuk.app" "$G/GeoKuk.app"
 P="$G/GeoKuk.app/Contents/Resources/program"
 nastaveni "$G/data"
-open "$G/GeoKuk.app"
+open -n "$G/GeoKuk.app"
 if PID=$(cekej "$P/geokuk.jar" "$G/data"); then
 	PRIKAZ=$(ps -o command= -p "$PID")
 	case "$PRIKAZ" in "$P/$NATIVNI/bin/java "*) ;; *) chyba "GeoKuk neběží v $NATIVNI: $PRIKAZ" ;; esac
@@ -103,7 +106,7 @@ if [ "${CI:-}" = true ]; then
 	else
 		ditto "$MNT/GeoKuk.app" /Applications/GeoKuk.app
 		nastaveni "$HOME/GeoKuk/data"
-		open /Applications/GeoKuk.app
+		open -n /Applications/GeoKuk.app
 		if PID=$(cekej /Applications/GeoKuk.app/Contents/Resources/program/geokuk.jar "$HOME/GeoKuk/data"); then
 			[ -f "$HOME/GeoKuk/data/bezi.lock" ] || chyba "V ~/GeoKuk/data chybí bezi.lock"
 			[ ! -e /Applications/data ] || chyba "GeoKuk v Aplikacích založil /Applications/data"
@@ -116,7 +119,7 @@ if [ "${CI:-}" = true ]; then
 fi
 
 echo "== Spuštění přímo z dmg se odmítne"
-open "$MNT/GeoKuk.app"
+open -n "$MNT/GeoKuk.app"
 # Nový dmg macOS při prvním spuštění teprve zaregistruje, spouštěč se může objevit až po chvíli.
 HLASKA=""
 for _ in $(seq 1 30); do
