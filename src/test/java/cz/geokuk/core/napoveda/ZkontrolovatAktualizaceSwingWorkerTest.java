@@ -111,4 +111,11 @@ public class ZkontrolovatAktualizaceSwingWorkerTest {
 		Assert.assertTrue(odkaz.isFocusable());
 		Assert.assertTrue(odkaz.getText().contains("6.5.0"));
 	}
+
+	@Test
+	public void rucniKontrolaUkazeVysledekHned() {
+		final boolean[] ukazano = { false };
+		new ZkontrolovatAktualizaceSwingWorker(true, new NapovedaModel()).predej(() -> ukazano[0] = true);
+		Assert.assertTrue(ukazano[0]);
+	}
 }
