@@ -141,6 +141,15 @@ public class StartTest {
 		final File domov = tmp.newFolder("domov");
 		Assert.assertEquals(new File(domov, "GeoKuk"), Start.koren(aplikace(new File(domov, "Applications")), domov));
 		Assert.assertEquals(new File(domov, "GeoKuk"), Start.koren(aplikace(new File(domov, "Applications/Mapy")), domov));
+		Assert.assertFalse(Start.vAplikacich(new File(domov, "GeoKuk"), domov));
+		Assert.assertFalse(Start.vAplikacich(new File(domov, "Applications2"), domov));
+	}
+
+	@Test
+	public void systemovaSlozkaAplikace() {
+		// Ve Windows je z /Applications cesta C:\Applications, systémová složka Aplikace je jen v macOS.
+		Assume.assumeTrue(File.separatorChar == '/');
+		final File domov = new File("/Users/kacer");
 		Assert.assertTrue(Start.vAplikacich(new File("/Applications"), domov));
 		Assert.assertTrue(Start.vAplikacich(new File("/applications/Utilities"), domov));
 		Assert.assertFalse(Start.vAplikacich(new File("/Applications2"), domov));
