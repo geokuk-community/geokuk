@@ -76,4 +76,9 @@ public class JKachlovnikTras extends JKachlovnik {
 	static boolean potrebujeAtribuci(final EKaType podklad) {
 		return podklad != null && !podklad.isOffline() && !podklad.getAtribuce().contains("OpenStreetMap");
 	}
+
+	@Override
+	protected boolean pamatovatZobrazeni() {
+		return true;
+	}
 }

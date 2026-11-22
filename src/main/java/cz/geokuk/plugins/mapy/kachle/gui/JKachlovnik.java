@@ -302,9 +302,49 @@ public abstract class JKachlovnik extends JSingleSlide0 implements AfterEventRec
 		if (jKachle.jeChybna()) {
 			EventQueue.invokeLater(opakovaniChybnych::start);
 		}
+		if (pamatovatZobrazeni()) {
+			EventQueue.invokeLater(this::moznaZapamatovatZobrazeni);
+		}
 		if (katype != null && katype.isOffline() && priorita == Priority.KACHLE && PredvykresleniOkoli.jeVhodne(Runtime.getRuntime().availableProcessors())) {
 			EventQueue.invokeLater(this::moznaPredvykreslit);
 		}
+	}
+
+	/** Dlaždice kachlovníku se ukládají do stavu posledního zobrazení. */
+	protected boolean pamatovatZobrazeni() {
+		return false;
+	}
+
+	/** Když na žádnou dlaždici výřezu už nečeká, předá hotové dlaždice od středu do stavu posledního zobrazení. */
+	private void moznaZapamatovatZobrazeni() {
+		final KachleModel km = kachleModel;
+		if (katype == null || km == null || !isSoordInitialized() || getSoord() == null) {
+			return;
+		}
+		final List<Ka> dlazdice = hotoveVyrezu(getComponents(), getWidth(), getHeight());
+		if (dlazdice == null || dlazdice.isEmpty()) {
+			return;
+		}
+		final Coord soord = getSoord();
+		km.getZiskavac().zapamatujZobrazeni(trida(), dlazdice, katype.name(), soord.getMoumer(), soord.getMoustred().xx, soord.getMoustred().yy);
+	}
+
+	/** Dlaždice s hotovým obrázkem od středu; null, dokud se na některou dlaždici čeká. Chybné se vynechají. */
+	static List<Ka> hotoveVyrezu(final Component[] komponenty, final int sirka, final int vyska) {
+		final List<JKachle> hotove = new ArrayList<>();
+		for (final Component c : komponenty) {
+			final JKachle k = (JKachle) c;
+			if (k.ceka()) {
+				return null;
+			}
+			if (k.maHotovyObrazek()) {
+				hotove.add(k);
+			}
+		}
+		seradOdStredu(hotove, sirka, vyska);
+		final List<Ka> dlazdice = new ArrayList<>(hotove.size());
+		hotove.forEach(k -> dlazdice.add(k.getKa()));
+		return dlazdice;
 	}
 
 	private void zrusPredvykresleni() {
