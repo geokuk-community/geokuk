@@ -28,6 +28,7 @@ import cz.geokuk.plugins.kesoid.importek.MultiNacitacLoaderManager;
 import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mapicon.*;
 import cz.geokuk.plugins.vylety.EVylet;
+import cz.geokuk.plugins.vylety.VyletChangeEvent;
 import cz.geokuk.util.exception.EExceptionSeverity;
 import cz.geokuk.util.exception.FExceptionDumper;
 import cz.geokuk.util.file.Filex;
@@ -346,6 +347,17 @@ public class KesoidModel extends Model0 implements OvladaniZdroju {
 			fire(new JmenoAktualniSadyIkonChangeEvent(jmenoAktualniSadyIkon));
 		}
 		setJmenaNefenotypovanychAlel(currPrefe().node(FPref.MAPICON_FENOTYP_node).getQualAlelaNames(jmenoSady, QualAlelaNames.EMPTY));
+	}
+
+	/** Po načtení nebo přepnutí výletu se filtr podle výletu přepočítá. */
+	public void onEvent(final VyletChangeEvent event) {
+		poZmeneVyletu(event.isVelkaZmena());
+	}
+
+	void poZmeneVyletu(final boolean velkaZmena) {
+		if (velkaZmena && filter.getFilterDefinition().getPrahVyletu() != EVylet.NE) {
+			spustFiltrovani();
+		}
 	}
 
 	public void onEvent(final KeskyNactenyEvent aEvent) {
