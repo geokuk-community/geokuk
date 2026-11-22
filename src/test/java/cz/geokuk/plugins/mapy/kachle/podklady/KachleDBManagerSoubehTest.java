@@ -49,7 +49,7 @@ public class KachleDBManagerSoubehTest {
 		final File slozka = tmp.newFolder("cache");
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(slozka, false, true));
-		final KachleDBManager manager = new KachleDBManager(holder);
+		final KachleDBManager manager = new TichyKachleDBManager(holder);
 		final List<ItemToSave> pocatek = new ArrayList<>();
 		for (int i = 0; i < ULOZENYCH; i++) {
 			pocatek.add(new ItemToSave(ka(i), png[i % VZORU]));
@@ -113,7 +113,7 @@ public class KachleDBManagerSoubehTest {
 	public void velkaDavkaSeZapisePoCastech() throws Exception {
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(tmp.newFolder("cache2"), false, true));
-		final KachleDBManager manager = new KachleDBManager(holder);
+		final KachleDBManager manager = new TichyKachleDBManager(holder);
 		final int pocet = 3 * KachleDBManager.DAVKA_ZAPISU + 7;
 		final List<ItemToSave> davka = new ArrayList<>();
 		for (int i = 0; i < pocet; i++) {
