@@ -1,4 +1,6 @@
 name: Build
+# Prázdný název = výchozí název běhu podle události.
+run-name: ${{ inputs.verze && format('Vydání {0} (spustil {1})', inputs.verze, github.triggering_actor) || '' }}
 
 on:
   push:
@@ -188,13 +190,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: v${{ inputs.verze }}
+          SPUSTIL: ${{ github.triggering_actor }}
         run: .github/skripty/kontrola-vydani.sh
 
   release:
     if: github.event_name == 'workflow_dispatch' && inputs.verze != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
     needs: [kontrola-vydani, build, testy-windows, windows]
     runs-on: ubuntu-latest
-    environment: release
+    environment:
+      name: release
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ inputs.verze }}
     permissions:
       contents: write
       id-token: write
@@ -202,6 +207,11 @@ jobs:
     env:
       TAG: v${{ inputs.verze }}
     steps:
+      - name: Verze do souhrnu
+        env:
+          SPUSTIL: ${{ github.triggering_actor }}
+        run: echo "### Vydání ${TAG#v} (spustil $SPUSTIL)" >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@v7
         with:
           sparse-checkout: |

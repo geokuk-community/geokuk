@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Kontroly před schválením vydání z ručního běhu Build. Vstup z prostředí: TAG (v<verze>),
-# GITHUB_SHA, GITHUB_REF, GH_REPO; větve repozitáře jako refs/remotes/origin/*.
+# GITHUB_SHA, GITHUB_REF, GH_REPO, SPUSTIL (kdo běh spustil); větve repozitáře jako refs/remotes/origin/*.
 set -uo pipefail
 
 SOUHRN="${GITHUB_STEP_SUMMARY:-/dev/null}"
@@ -104,5 +104,5 @@ case "$GITHUB_REF" in
     chyba "Větev" "Vydání jde spustit jen z main nebo z release/X.Y.x, ne z $GITHUB_REF." ;;
 esac
 
-printf '### Kontrola vydání %s\n\n| | kontrola | výsledek |\n|---|---|---|\n%s' "$TAG" "$RADKY" >> "$SOUHRN"
+printf '### Kontrola vydání %s (spustil %s)\n\n| | kontrola | výsledek |\n|---|---|---|\n%s' "$VERZE" "${SPUSTIL:-?}" "$RADKY" >> "$SOUHRN"
 [ "$CHYB" = 0 ] || { echo "::error::Kontrola vydání $TAG neprošla (počet chyb: $CHYB), vydání se nedostane ke schválení."; exit 1; }
