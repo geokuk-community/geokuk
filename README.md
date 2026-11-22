@@ -35,8 +35,8 @@ složku přesunete, spusťte nejdřív znovu `GeoKuk-prvni-spusteni.cmd`,
 zástupce ve složce i jeho kopie na ploše a v nabídce Start se opraví.
 Do té doby zástupce hlásí chybu „Unable to access jarfile“.
 
-Když GeoKuk najde novou verzi, nabídne ji. Po volbě Stáhnout novou
-verzi ji stáhne a nabídne restart; jinak se nainstaluje při příštím
+Když GeoKuk najde novou verzi, nabídne ji. Po volbě Aktualizovat
+ji stáhne a nabídne restart; jinak se nainstaluje při příštím
 spuštění. Javu aktualizuje nový zip. Rozbalte ho
 tam, kam ten první (třeba do `C:\`), přes stávající složku `GeoKuk`;
 data a nastavení zůstanou.
@@ -254,6 +254,30 @@ xvfb-run -a -s "-screen 0 1400x900x24" ./mvnw -B -P smoke verify
 
 Na GitHubu běží workflow Smoke každou noc na Linuxu, ručně ho jde
 spustit pro Linux i Windows.
+
+### Vydání
+
+Vydání se spouští jen ručním během workflow Build. Push tagu `v*` vydání
+nezaloží.
+
+1. Ruční běh workflow Smoke na větvi, ze které se vydává, doběhne zeleně.
+2. Ruční běh workflow Build na stejné větvi s vyplněnou `verze`
+   (beta `X.Y.Z-beta.N`, stabilní verze `X.Y.Z`). Vydávat jde z `main`,
+   z `release/X.Y.x` jen verzi řady té větve.
+3. Job `kontrola-vydani` před schválením ověří, že tag ani vydání s touto
+   verzí ještě neexistují, že Smoke prošel na stejném commitu na Linuxu,
+   Windows i macOS, že `CHANGELOG.md` má neprázdný oddíl `## X.Y.Z`
+   (popis vydání) a `pom.xml` verzi `X.Y.Z` a že commit leží na větvi
+   běhu. Výsledek je v souhrnu běhu. Když kontrola selže, vydání se ke
+   schválení nedostane.
+4. Správce schválí prostředí `release` (Review deployments). Job `release`
+   založí tag na sestaveném commitu a vydání se soubory ke stažení.
+5. Ověření vydání: soubory, kontrolní součty, popis a příznak předběžné
+   verze.
+
+Prostředí `release` má v nastavení repozitáře povinné schválení
+a Deployment branches jen `main` a `release/**`, takže vydání poběží jen
+z kódu chráněných větví.
 
 ## Licence
 

@@ -19,6 +19,9 @@ class PanelOptimalizace extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
+	/** Řádků vyhrazených textu průběhu, aby se okno za běhu nemuselo zvětšovat. */
+	static final int RADKU_PRUBEHU = 3;
+
 	enum Faze {
 		PRIPRAVENO, MALO_MISTA, NELZE, BEZI, HOTOVO, CHYBA
 	}
@@ -44,6 +47,8 @@ class PanelOptimalizace extends JPanel {
 		zprava.setLineWrap(true);
 		zprava.setWrapStyleWord(true);
 		zprava.setColumns(40);
+		// Písmo popisku jako zbytek okna; písmo JTextArea je v některých vzhledech neproporcionální a širší.
+		zprava.setFont(UIManager.getFont("Label.font").deriveFont(Font.PLAIN));
 		final JPanel stred = new JPanel();
 		stred.setLayout(new BoxLayout(stred, BoxLayout.Y_AXIS));
 		for (final JComponent c : new JComponent[] { uvod, prehled, prubeh, zprava }) {
@@ -138,6 +143,7 @@ class PanelOptimalizace extends JPanel {
 
 	void nastav(final Faze nova, final String text) {
 		faze = nova;
+		zprava.setRows(nova == Faze.BEZI ? RADKU_PRUBEHU : 0);
 		zprava.setText(text);
 		zprava.setVisible(!text.isEmpty());
 		prubeh.setVisible(nova == Faze.BEZI);
@@ -151,6 +157,11 @@ class PanelOptimalizace extends JPanel {
 		if (okno != null) {
 			okno.pack();
 		}
+	}
+
+	/** Text průběhu za běhu; okno se kvůli němu znovu nebalí, text se vejde do vyhrazených řádků. */
+	void ukazPrubeh(final String text) {
+		zprava.setText(text);
 	}
 
 	/** Spustí optimalizaci na pozadí; cache je po dobu běhu zavřená. */
@@ -190,7 +201,7 @@ class PanelOptimalizace extends JPanel {
 				final long[] posledni = chunks.get(chunks.size() - 1);
 				prubeh.setIndeterminate(false);
 				prubeh.setValue(posledni[1] == 0 ? 0 : (int) (posledni[0] * 100 / posledni[1]));
-				zprava.setText(OptimalizaceTexty.prubeh(posledni[0], posledni[1], posledni[2], posledni[3], System.currentTimeMillis() - zacatek));
+				ukazPrubeh(OptimalizaceTexty.prubeh(posledni[0], posledni[1], posledni[2], posledni[3], System.currentTimeMillis() - zacatek));
 			}
 
 			@Override

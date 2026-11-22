@@ -7,7 +7,7 @@
   Kešoidy > Plánovač challenge > Zapnout plánovač. Má výběr challenge
   („360° ▾“), odznak s počtem chybějících sektorů nebo políček D/T, tlačítka
   ◀ ▶, která posouvají výběr na předchozí a další chybějící sektor nebo
-  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Štítky a u 360° Sektory. Nastavení plánovače se otevře z menu
+  políčko (Shift+← a Shift+→), přepínače Jen kandidáti (F4), Štítky (štítky keší a středu) a u 360° Sektory (prstenec a klín sektoru). Nastavení plánovače se otevře z menu
   výběru challenge a z menu Kešoidy > Plánovač challenge.
 - Plánovač challenge: Ctrl+Shift+šipka skočí na nejbližšího kandidáta ve směru
   šipky, vystředí na něj mapu a u 360° vybere i jeho sektor. Když tam žádný
@@ -18,7 +18,7 @@
   zvýrazněných keší jsou vlevo od ikony keše. Když je střed mimo výřez,
   ukazuje na něj šipka a po kliknutí na ni se mapa na střed přesune.
 - Plánovač challenge: klik na keš ukáže její sektor nebo políčko D/T a členy
-  vybraného sektoru zvýrazní na mapě.
+  vybraného sektoru zvýrazní na mapě. U 360° je sektor keše i v detailu keše.
 - Plánovač challenge: u matice D/T je v popupu klikací matice obtížnost ×
   terén. Klik na políčko s kandidáty ho vybere a zvýrazní jeho keše na mapě
   (ostatní kandidáti zůstávají), Jen kandidáti (F4) ukáže všechny kandidáty
@@ -84,6 +84,10 @@
   dlaždic výřezu.
 - Offline mapy se kreslí tématem GeoKuk; původní téma je v Mapy > Téma
   offline mapy jako Mapsforge (původní).
+- Vylepšený vzhled offline mapy: šedá čerchovaná státní hranice, světlé louky
+  a pole, silnice odlišené šířkou a lemem podle třídy, jemnější železnice,
+  menší ikony a méně popisků bodů, výraznější stínování terénu, tenčí turistické
+  trasy a béžová zástavba.
 - Varianta GeoKuk – detail v Mapy > Téma offline mapy ukazuje ve větších
   měřítkách další body pro orientaci (posedy, krmelce, stoly, ohniště, kameny,
   bunkry a další); parkoviště a zastávky ukáže o úroveň přiblížení dřív. Ikony
@@ -209,13 +213,16 @@
   a písmo, symboly a čáry offline mapy až na 200 %.
 - Sjednocení názvů: druh kešoidu „Fotka“, popisky pojmenovaného bodu a stavového
   řádku cest.
-- Plánovač challenge 360°: štítek keše, která leží do 0,05° od hranice
-  sektoru, má před číslem sektoru znak ≈ (není jisté, do kterého sektoru
-  patří).
+- Plánovač challenge 360°: u keše, která leží do 0,05° od hranice sektoru,
+  mají štítek i detail keše před číslem sektoru znak ≈ (není jisté, do kterého
+  sektoru patří).
+- Z lišty zmizely filtry Hodnocení a BestOf. Česká hodnocení keší se od
+  roku 2013 nevyplňují, takže by filtr skryl všechny novější keše. Práh
+  uložený starší verzí se už neuplatní. Hodnoty u starších keší zůstávají
+  v detailu keše, filtr podle favoritů zůstává.
 
 ### Opravy
-- Nastavený práh hodnocení, BestOf nebo favoritů ve filtru skryje i keše,
-  které tuto hodnotu nemají.
+- Nastavený práh favoritů ve filtru skryje i keše, které favority nemají.
 - Po přechodu z verze 5.2 zůstane vybraná mapa OpenStreetMap, ortofoto
   nebo topografická mapa ČÚZK; mapa, kterou tato verze nemá, se nahradí
   výchozí mapou.

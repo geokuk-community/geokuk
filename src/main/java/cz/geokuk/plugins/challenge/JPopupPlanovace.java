@@ -29,7 +29,8 @@ public class JPopupPlanovace extends JSlide0 {
 
 	private static final long serialVersionUID = 1L;
 
-	static final int RADKU_SEZNAMU = 11;
+	/** Aspoň tolik, aby popup u 360° nebyl nižší než u D/T; výška řádku závisí na písmu, proto řádek rezervy (na macOS chyběl 1 px). */
+	static final int RADKU_SEZNAMU = 12;
 
 	final transient Obsah obsah = new Obsah();
 	private transient ChallengeModel model;
