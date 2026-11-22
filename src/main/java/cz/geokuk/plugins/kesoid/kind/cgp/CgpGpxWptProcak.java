@@ -301,7 +301,21 @@ public class CgpGpxWptProcak implements GpxWptProcak {
 
 	private boolean isCzechGeodeticPoint(final GpxWpt gpxWpt) {
 		// TODO: Je špatné rozpoznávat geokeše podle prefixu GC - jsou systémy (Geocaching.su, OpenCaching, ...) které tento prefix nemají a přitom to jsou keše! [2016-04-09, Bohusz]
-		return gpxWpt.groundspeak != null && (gpxWpt.name.startsWith(GC) && gpxWpt.name.length() == 8 || maPrefixBodu(gpxWpt.name) || "DATAZ".equals(gpxWpt.groundspeak.owner));
+		return gpxWpt.groundspeak != null && (jeKodPseudokese(gpxWpt.name) || maPrefixBodu(gpxWpt.name) || "DATAZ".equals(gpxWpt.groundspeak.owner));
+	}
+
+	/** Pseudokeš geodetického bodu má kód GC a šest písmen nebo číslic; zastávka Adventure Labu (GCH6E5-0) má stejnou délku, ale s pomlčkou. */
+	static boolean jeKodPseudokese(final String name) {
+		if (!name.startsWith(GC) || name.length() != 8) {
+			return false;
+		}
+		for (int i = GC.length(); i < name.length(); i++) {
+			final char z = name.charAt(i);
+			if (!(z >= 'A' && z <= 'Z' || z >= 'a' && z <= 'z' || z >= '0' && z <= '9')) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 
