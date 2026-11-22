@@ -191,12 +191,48 @@ public class TemaGeoKukTest {
 		Assert.assertNull(TemaOfflineMapy.GEOKUK.getAtribuce());
 	}
 
-	/** Názvy vodních toků se vykreslí i při kolizi s názvy ulic. */
+	/** Názvy vodních toků se kreslí, ale při kolizi ustoupí bodům a ostatním popiskům (záporná priorita). */
 	@Test
-	public void nazvyVodnichTokuSeVzdyKresli() throws IOException {
+	public void nazvyVodnichTokuUstoupiBodum() throws IOException {
 		final String xml = text();
-		Assert.assertTrue(xml.contains("<pathText display=\"always\" fill=\"#4F7FB8\" font-size=\"11\""));
-		Assert.assertTrue(xml.contains("<pathText display=\"always\" fill=\"#4F7FB8\" font-size=\"10\""));
+		final java.util.regex.Matcher m = java.util.regex.Pattern.compile("<pathText fill=\"#4F7FB8\"[^>]*priority=\"(-?\\d+)\"").matcher(xml);
+		int pocet = 0;
+		while (m.find()) {
+			Assert.assertTrue(m.group(), Integer.parseInt(m.group(1)) < 0);
+			pocet++;
+		}
+		Assert.assertEquals("řeky a potoky", 2, pocet);
+	}
+
+	/** Nic se nekreslí přes jiné prvky: žádný prvek tématu nemá display="always", o kolizích rozhodují priority. */
+	@Test
+	public void zadnyPrvekSeNekresliPresJine() throws IOException {
+		for (final String zdroj : new String[] { "geokuk/GeoKuk.xml", "geokuk/GeoKuk_detail.xml", "trasy.xml" }) {
+			Assert.assertFalse(zdroj, text(zdroj).contains("display=\"always\""));
+		}
+	}
+
+	/** Každý druh důležitého bodu (priorita od 10) má vlastní prioritu, takže o vítězi kolize rozhoduje téma, ne pořadí v rendereru. */
+	@Test
+	public void dulezityBodyMajiJedinecnePriority() throws IOException {
+		for (final String zdroj : new String[] { "geokuk/GeoKuk.xml", "geokuk/GeoKuk_detail.xml" }) {
+			final java.util.Map<String, Integer> podleSymbolu = new java.util.HashMap<>();
+			final java.util.Map<Integer, String> podlePriority = new java.util.HashMap<>();
+			final java.util.regex.Matcher m = java.util.regex.Pattern.compile("<symbol\\b[^>]*>").matcher(text(zdroj));
+			while (m.find()) {
+				final java.util.regex.Matcher p = java.util.regex.Pattern.compile("priority=\"(-?\\d+)\"").matcher(m.group());
+				final java.util.regex.Matcher src = java.util.regex.Pattern.compile("src=\"([^\"]+)\"").matcher(m.group());
+				if (!p.find() || !src.find() || Integer.parseInt(p.group(1)) < 10) {
+					continue;
+				}
+				final int priorita = Integer.parseInt(p.group(1));
+				final Integer dosud = podleSymbolu.put(src.group(1), priorita);
+				Assert.assertTrue(zdroj + ": " + src.group(1), dosud == null || dosud == priorita);
+				final String jiny = podlePriority.put(priorita, src.group(1));
+				Assert.assertTrue(zdroj + ": priorita " + priorita + " u " + jiny + " i " + src.group(1), jiny == null || jiny.equals(src.group(1)));
+			}
+			Assert.assertTrue(zdroj, podleSymbolu.size() >= 15);
+		}
 	}
 
 	/** Státní hranici nepřekryje stínování terénu; pás leží pod turistickými trasami a tenká čára hranice je i nad nimi. */

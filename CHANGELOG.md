@@ -87,7 +87,8 @@
 - Vylepšený vzhled offline mapy: šedá čerchovaná státní hranice, světlé louky
   a pole, silnice odlišené šířkou a lemem podle třídy, jemnější železnice,
   menší ikony a méně popisků bodů, výraznější stínování terénu, tenčí turistické
-  trasy a béžová zástavba.
+  trasy a béžová zástavba. Symboly bodů se nepřekrývají a důležité body pro
+  turistiku nemizí.
 - Varianta GeoKuk – detail v Mapy > Téma offline mapy ukazuje ve větších
   měřítkách další body pro orientaci (posedy, krmelce, stoly, ohniště, kameny,
   bunkry a další); parkoviště a zastávky ukáže o úroveň přiblížení dřív. Ikony
