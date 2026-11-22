@@ -292,7 +292,9 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 			final FontMetrics fm = g.getFontMetrics();
 			g.drawString("S", s.x - fm.stringWidth("S") / 2, s.y + (fm.getAscent() - fm.getDescent()) / 2);
 			zapis(s.x - r - 3, s.y - r - 3, 2 * r + 6, 2 * r + 6);
-			umistiOkoloBodu(g, tucne, TextyKresleni.stred(t.popisStredu, polomerVTextuStredu(c, t)), s.x, s.y, r + 4, false);
+			if (kresliStitky()) {
+				umistiOkoloBodu(g, tucne, TextyKresleni.stred(t.popisStredu, polomerVTextuStredu(c, t)), s.x, s.y, r + 4, false);
+			}
 			return;
 		}
 		kresliSipku(g, c, t, tucne, s, akcent);
@@ -509,7 +511,7 @@ public class JPlanovacNadKeskami extends JVrstvaPlanovace {
 
 	/** Štítky keší zvýrazněného sektoru nebo políčka: výplň v akcentu, vždy těsně vlevo od ikony, nad štítky kandidátů. */
 	private void kresliZvyrazneni(final Graphics2D g, final Coord c, final TvarPlanovace t, final Font pismo, final VyberZvyrazneni vyber) {
-		if (vyber.jeNic() || vyber.sektor >= 0 && !kresliSektory()) {
+		if (vyber.jeNic()) {
 			return;
 		}
 		final Indexator<Wpt> indexator = indexatorKesi;

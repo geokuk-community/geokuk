@@ -1551,7 +1551,7 @@ public class JMapyPopup extends JPanel {
 		return Math.max(MIN_ROZPOCET, dostupna > 0 ? dostupna * 90 / 100 - pevnaVyska - OKRAJ_POPUPU : obrazovka() * 85 / 100 - pevnaVyska);
 	}
 
-	private static int obrazovka() {
+	static int obrazovka() {
 		return GraphicsEnvironment.isHeadless() ? 1000 : Toolkit.getDefaultToolkit().getScreenSize().height;
 	}
 

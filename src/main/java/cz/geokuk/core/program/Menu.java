@@ -269,12 +269,6 @@ public class Menu extends MenuStrujce {
 		/////////////////////////////////////////////////////
 		JLabel lbl;
 
-		final JVybiracHodnoceni jVybiracHodnoceni = factory.init(new JVybiracHodnoceni());
-		tb.add(jVybiracHodnoceni);
-
-		final JVybiracBestOf jVybiraceBestOf = factory.init(new JVybiracBestOf());
-		tb.add(jVybiraceBestOf);
-
 		final JVybiracFavorit jVybiraceFavorit = factory.init(new JVybiracFavorit());
 		tb.add(jVybiraceFavorit);
 

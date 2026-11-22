@@ -75,6 +75,13 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 
 	private KesoidPluginManager kesoidPluginManager;
 
+	private DoplnekDetailuKese doplnek;
+	private final JLabel jDoplnek = new JLabel();
+
+	{
+		jDoplnek.setVisible(false);
+	}
+
 	static String formatuj(final String s, final EKesStatus status) {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("<html>");
@@ -143,6 +150,13 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		}
 	}
 
+	public void onEvent(final DoplnekDetailuEvent event) {
+		doplnek = event.getDoplnek();
+		if (wpt != null) {
+			naplnDoplnek();
+		}
+	}
+
 	public void onEvent(final IkonyNactenyEvent event) {
 		ikonBag = event.getBag();
 
@@ -204,10 +218,28 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		}
 		jAzimut.setIcon(azimut(kesoid.getMainWpt()));
 		jVzdalenost.setText(vzdalenost(kesoid.getMainWpt()));
+		naplnDoplnek();
 
 		// jNoFirstWpt.setVisible(wpt != kesoid.getFirstWpt());
 		// kesoid.getKesoidKind().getDetail().setVisible(true);
 
+	}
+
+	/** Ukáže řádek doplňku k waypointu bez zbytku detailu (testy). */
+	void ukazDoplnek(final Wpt w) {
+		wpt = w;
+		naplnDoplnek();
+	}
+
+	/** Řádek doplňku (testy). */
+	JLabel radekDoplnku() {
+		return jDoplnek;
+	}
+
+	private void naplnDoplnek() {
+		final String text = doplnek == null ? null : doplnek.radek(wpt);
+		jDoplnek.setText(text);
+		jDoplnek.setVisible(text != null);
 	}
 
 	private Icon azimut(final Wpt wpt) {
@@ -311,6 +343,13 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 			box8.add(Box.createGlue());
 			box8.add(box9);
 			hlav.add(box8);
+		}
+
+		{
+			final Box box10 = Box.createHorizontalBox();
+			box10.add(jDoplnek);
+			box10.add(Box.createGlue());
+			hlav.add(box10);
 		}
 
 		jDetailyKesoidu = kesoidPluginManager.createKesoidDetails();

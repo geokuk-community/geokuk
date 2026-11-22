@@ -36,8 +36,8 @@ def sestav(trasy, nazvy):
     return spolecne.replace('    <!--#DATA-TRASY#-->', trasy.rstrip('\n')).replace('    <!--#DATA-NAZVY#-->', nazvy.rstrip('\n'))
 
 
-IKONA_VYSKA = 20      # jednotná výška ikon bodů (px); šířka podle poměru stran SVG
-IKONA_VYJIMKY = {'informace.svg': 18}   # ikony s jinou výškou
+IKONA_VYSKA = 16      # jednotná výška ikon bodů (px); šířka podle poměru stran SVG
+IKONA_VYJIMKY = {'informace.svg': 15}   # ikony s jinou výškou
 
 def velikost_ikon(xml):
     """Ikony bodů (<symbol>) dostanou jednotnou výšku; šířka se řídí poměrem stran."""

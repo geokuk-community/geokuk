@@ -312,6 +312,7 @@ Ikona waypointu je fenotyp: skládá se z vrstev podle alel genotypu.
 | **Překryvník** | Kontejner skládající slidy přes sebe. | `JPrekryvnik` |
 | **Překryvník s rohama** | Kořen hlavního okna: mapa přes celou plochu a v rozích plovoucí panely (JZ detail v rohu, JV informace o keši, SV panel cesty). | `JSRohamaPrekryvnik`, `CornerLayoutManager` |
 | **Rozmístění překryvů** | Jediné místo, kde se rozhoduje, kam na mapě smí který překryvný prvek (pruh plánovače, ukazatel výkonu, krátká zpráva, měřítko, panely v rozích). | `RozmisteniPrekryvu` |
+| **Detail keše** | Panel vpravo dole s údaji kešoidu na pozici (kód, název, vzdálenost a azimut od domova, D/T…). Jiný modul do něj může doplnit řádek (doplněk detailu), plánovač 360° tak ukazuje sektor keše. | `JKesoidDetailContainer`, `JKesDetail`, `DoplnekDetailuKese`, `DoplnekDetailuModel` |
 | **Detail v rohu** | Malá mapa vlevo dole s pevným moumerem 17 a ortofotem, centrovaná na pozici. Při kreslení cest sleduje kurzor. | `JDetailPrekryvnik`, `JKachlovnikDoRohu` |
 | **Myšování** | Nejvyšší průhledný slide, který chytá myš a klávesy. | `JPresCeleMysovani`, `JDetailMysovani` |
 | **Popisky** | Texty u waypointů podle šablony (Ctrl+F12). | `plugins/kesoidpopisky` |

@@ -20,6 +20,7 @@ import cz.geokuk.core.render.RenderModel;
 import cz.geokuk.framework.*;
 import cz.geokuk.plugins.cesty.*;
 import cz.geokuk.plugins.challenge.ChallengeModel;
+import cz.geokuk.plugins.challenge.DoplnekDetailuSektoru;
 import cz.geokuk.plugins.challenge.PlanovacChallengeSluzba;
 import cz.geokuk.plugins.geocoding.GeocodingModel;
 import cz.geokuk.plugins.kesoid.KesoidFilterModel;
@@ -27,6 +28,7 @@ import cz.geokuk.plugins.kesoid.kind.KesoidPluginManager;
 import cz.geokuk.plugins.kesoid.mvc.KesoidModel;
 import cz.geokuk.plugins.kesoid.StavVrstevModel;
 import cz.geokuk.plugins.kesoid.ToastModel;
+import cz.geokuk.plugins.kesoid.detail.DoplnekDetailuModel;
 import cz.geokuk.plugins.kesoidkruhy.KruhyModel;
 import cz.geokuk.plugins.kesoidobsazenost.ObsazenostModel;
 import cz.geokuk.plugins.kesoidpopisky.PopiskyModel;
@@ -77,6 +79,7 @@ public class Inicializator {
 		bb.registerSigleton(new ObsazenostModel());
 		bb.registerSigleton(new StavVrstevModel());
 		bb.registerSigleton(new ToastModel());
+		bb.registerSigleton(new DoplnekDetailuModel());
 
 		bb.registerSigleton(new MrizkaModel("Dd", false));
 		bb.registerSigleton(new MrizkaModel("DdMmMmm", false));
@@ -104,6 +107,7 @@ public class Inicializator {
 		bb.registerSigleton(new GeocodingModel());
 		bb.registerSigleton(new ChallengeModel());
 		bb.registerSigleton(new PlanovacChallengeSluzba());
+		bb.registerSigleton(new DoplnekDetailuSektoru());
 
 		bb.registerSigleton(new HledaciSluzba());
 		bb.registerSigleton(new DiagnostikaMapy());
