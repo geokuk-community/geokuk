@@ -222,6 +222,8 @@
   v detailu keše, filtr podle favoritů zůstává.
 
 ### Opravy
+- Zastávka Adventure Labu s kódem jako GCH6E5-0 se načte jako keš, ne jako
+  geodetický bod.
 - Nastavený práh favoritů ve filtru skryje i keše, které favority nemají.
 - Po přechodu z verze 5.2 zůstane vybraná mapa OpenStreetMap, ortofoto
   nebo topografická mapa ČÚZK; mapa, kterou tato verze nemá, se nahradí
