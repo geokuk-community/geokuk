@@ -227,11 +227,6 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		jDoplnek.setVisible(text != null);
 	}
 
-	/** Řádek doplněný jiným modulem, null když se neukazuje. */
-	String textDoplnku() {
-		return jDoplnek.isVisible() ? jDoplnek.getText() : null;
-	}
-
 	private Icon azimut(final Wpt wpt) {
 		return Ikonizer.findSmerIcon(refbodyModel.getHc().azimut(wpt.getWgs()));
 	}
