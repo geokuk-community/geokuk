@@ -61,7 +61,9 @@ jobs:
           R=src/main/resources/cz/geokuk/plugins/mapy/kachle/podklady
           diff -r "$R/geokuk" target/tema/geokuk
           diff "$R/trasy.xml" target/tema/trasy.xml
-          mv target/tema/GeoKuk-tema.zip target/GeoKuk-tema.zip
+          mv target/tema/GeoKuk-tema.zip target/tema/GeoKuk-tema-PAWS.zip target/
+          # Zipy se načtou tak, jak je čtou aplikace (ZipXmlThemeResourceProvider).
+          ./mvnw -B -o surefire:test -Dtest=TemaZipTest -Dgeokuk.tema.zip=target -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Pokrytí testy
         if: always()
@@ -90,6 +92,7 @@ jobs:
             target/geokuk.jar
             target/start.jar
             target/GeoKuk-tema.zip
+            target/GeoKuk-tema-PAWS.zip
 
   testy-windows:
     runs-on: windows-latest
@@ -306,7 +309,7 @@ jobs:
         run: |
           unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${TAG#v}"
           cp src/main/resources/java.properties java.properties
-          for f in geokuk.jar start.jar GeoKuk-windows.zip GeoKuk-macos.dmg GeoKuk-tema.zip; do sha256sum "$f" > "$f.sha256"; done
+          for f in geokuk.jar start.jar GeoKuk-windows.zip GeoKuk-macos.dmg GeoKuk-tema.zip GeoKuk-tema-PAWS.zip; do sha256sum "$f" > "$f.sha256"; done
 
       - uses: actions/attest-build-provenance@v4
         with:
@@ -316,6 +319,7 @@ jobs:
             GeoKuk-windows.zip
             GeoKuk-macos.dmg
             GeoKuk-tema.zip
+            GeoKuk-tema-PAWS.zip
             java.properties
 
       # Popis vydání je oddíl CHANGELOG.md pro verzi bez přípony (6.0.1-beta.3 → 6.0.1).
@@ -360,6 +364,6 @@ jobs:
             exit 1
           fi
           gh release create "$TAG" geokuk.jar geokuk.jar.sha256 start.jar start.jar.sha256 \
-            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 GeoKuk-macos.dmg GeoKuk-macos.dmg.sha256 GeoKuk-tema.zip GeoKuk-tema.zip.sha256 java.properties \
+            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 GeoKuk-macos.dmg GeoKuk-macos.dmg.sha256 GeoKuk-tema.zip GeoKuk-tema.zip.sha256 GeoKuk-tema-PAWS.zip GeoKuk-tema-PAWS.zip.sha256 java.properties \
             --draft --verify-tag --title "$TAG" --notes-file popis.md $PRIZNAK
           gh release edit "$TAG" --draft=false $PRIZNAK

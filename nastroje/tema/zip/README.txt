@@ -5,11 +5,29 @@ GeoKuk.xml         základní téma
 GeoKuk_detail.xml  téma s dalšími body od většího přiblížení
 symbols/, patterns/  symboly a vzorky obou témat
 
+Který zip k jakým mapám
+Téma vyšlo ve dvou zipech, které se liší jen tím, odkud kreslí turistické
+a cyklotrasy:
+- GeoKuk-tema.zip: k mapám GeoKuku. Základní mapa je z download.mapsforge.org
+  (například europe/czech-republic.map), k ní se jako další mapové soubory
+  přidají vrstvy GeoKuku z https://github.com/geokuk-community/geokuk-maps/releases
+  (stahuje je i Správce offline map v programu GeoKuk):
+  .tourist.map  turistické a cyklotrasy, jejich jména, skály a body
+                pro orientaci (rozcestníky, posedy, kameny),
+  .contours.map vrstevnice.
+  Aplikace musí umět kreslit více mapových souborů najednou.
+- GeoKuk-tema-PAWS.zip: k mapám, které mají turistické a cyklotrasy přímo
+  v mapovém souboru v tagech osmc_*, například mapy z osm.paws.cz.
+Se špatným zipem se trasy nekreslí, zbytek mapy ano.
+
+Stínování terénu kreslí aplikace, která ho umí a má výšková data (soubory
+.hgt, ve vrstvách GeoKuku jako .dem.zip). V c:geo se zapíná v nastavení
+offline map spolu se složkou pro výšková data.
+
 Zip rozbalte nebo vložte do složky témat aplikace podle jejího návodu.
 c:geo: zip vložte do složky cgeo/maps/_themes/, nebo jeho obsah rozbalte
 do složky cgeo/maps/_themes/geokuk/. Po novém spuštění c:geo je téma
 v nabídce motivů mapy.
-Turistické a cyklotrasy se kreslí z tagů osmc_* v mapovém souboru.
 Téma neobsahuje mapová data; atribuci dat zobrazuje aplikace.
 
 Licence
