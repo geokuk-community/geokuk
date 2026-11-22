@@ -135,7 +135,8 @@ public class GeokukMain {
 	static String textZalohy() {
 		return "Novou verzi GeoKuku se nepodařilo správně nainstalovat, proto se spustila předchozí verze. Můžete s ní normálně pracovat.\n"
 				+ "Novou verzi nainstalujte znovu přes Nápověda > Zkontrolovat aktualizace.\n"
-				+ "Když to nepomůže, stáhněte zip s programem z " + FConst.WEB_PAGE_URL + "/releases/latest a rozbalte ho přes složku s programem. Data a nastavení zůstanou.";
+				+ "Když to nepomůže, stáhněte " + UmisteniProgramu.balik() + " s programem z " + FConst.WEB_PAGE_URL + "/releases/latest a " + UmisteniProgramu.jakNovyBalik()
+				+ ". Data a nastavení zůstanou.";
 	}
 
 	/** Zámek; když ho jiná instance pustila mezi pokusem a kontrolou, zkusí se ještě jednou. */

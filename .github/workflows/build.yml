@@ -188,9 +188,74 @@ jobs:
           TAG: v${{ inputs.verze }}
         run: .github/skripty/kontrola-vydani.sh
 
+  # Balík pro macOS: jedna aplikace pro Apple Silicon i Intel se dvěma přibalenými Javami z Temurinu, spouštěč vybere tu pro procesor.
+  macos:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            distribuce/macos
+            .github/skripty
+            licence
+            src/main/resources
+
+      # jlink a zkouška Javy pro Intel běží na Apple Silicon pod Rosettou.
+      - name: Rosetta
+        run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+
+      # Přibalená Java: vždy poslední vydaná Temurin 21, ne starší z cache runneru.
+      - name: JDK 21 pro Intel (Temurin)
+        id: jdk-x64
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          architecture: x64
+          check-latest: true
+
+      - name: JDK 21 pro Apple Silicon (Temurin)
+        id: jdk-arm64
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          architecture: aarch64
+          check-latest: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: geokuk-jar
+
+      - name: Dmg s přibalenou Javou
+        env:
+          JDK_ARM64: ${{ steps.jdk-arm64.outputs.path }}
+          JDK_X64: ${{ steps.jdk-x64.outputs.path }}
+        run: .github/skripty/sestav-dmg.sh . "$JDK_ARM64" "$JDK_X64" GeoKuk-macos.dmg
+
+      - name: Zkouška dmg
+        run: .github/skripty/test-dmg.sh GeoKuk-macos.dmg
+
+      - name: Logy zkoušky dmg
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: zkouska-dmg
+          path: |
+            ${{ runner.temp }}/zkouska-dmg.*/prenosna/GeoKuk/data/log/
+            ~/GeoKuk/data/log/
+          if-no-files-found: ignore
+
+      - name: Dmg jako artefakt
+        uses: actions/upload-artifact@v7
+        with:
+          name: geokuk-macos
+          path: GeoKuk-macos.dmg
+
   release:
     if: github.event_name == 'workflow_dispatch' && inputs.verze != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
-    needs: [kontrola-vydani, build, testy-windows, windows]
+    needs: [kontrola-vydani, build, testy-windows, windows, macos]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -215,11 +280,15 @@ jobs:
         with:
           name: geokuk-windows
 
+      - uses: actions/download-artifact@v8
+        with:
+          name: geokuk-macos
+
       - name: Soubory pro stažení a aktualizaci
         run: |
           unzip -p geokuk.jar META-INF/MANIFEST.MF | tr -d "\r" | grep -qxF "Geokuk-Version: ${TAG#v}"
           cp src/main/resources/java.properties java.properties
-          for f in geokuk.jar start.jar GeoKuk-windows.zip GeoKuk-tema.zip; do sha256sum "$f" > "$f.sha256"; done
+          for f in geokuk.jar start.jar GeoKuk-windows.zip GeoKuk-macos.dmg GeoKuk-tema.zip; do sha256sum "$f" > "$f.sha256"; done
 
       - uses: actions/attest-build-provenance@v4
         with:
@@ -227,6 +296,7 @@ jobs:
             geokuk.jar
             start.jar
             GeoKuk-windows.zip
+            GeoKuk-macos.dmg
             GeoKuk-tema.zip
             java.properties
 
@@ -272,6 +342,6 @@ jobs:
             exit 1
           fi
           gh release create "$TAG" geokuk.jar geokuk.jar.sha256 start.jar start.jar.sha256 \
-            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 GeoKuk-tema.zip GeoKuk-tema.zip.sha256 java.properties \
+            GeoKuk-windows.zip GeoKuk-windows.zip.sha256 GeoKuk-macos.dmg GeoKuk-macos.dmg.sha256 GeoKuk-tema.zip GeoKuk-tema.zip.sha256 java.properties \
             --draft --verify-tag --title "$TAG" --notes-file popis.md $PRIZNAK
           gh release edit "$TAG" --draft=false $PRIZNAK

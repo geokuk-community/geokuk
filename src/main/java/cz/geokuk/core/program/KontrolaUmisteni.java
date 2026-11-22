@@ -21,9 +21,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class KontrolaUmisteni {
 
-	static final String DOPORUCENE_UMISTENI = "C:\\GeoKuk";
+	static final String DOPORUCENE_UMISTENI = UmisteniProgramu.APLIKACE_MAC ? "~/GeoKuk" : "C:\\GeoKuk";
 
-	private static final Pattern SYNCHRONIZOVANA = Pattern.compile("(?i)onedrive.*|dropbox|google ?drive|my drive|můj disk|icloud ?drive.*");
+	/** Ve Windows jména složek služeb, v macOS i složky v ~/Library (iCloud Drive, ~/Library/CloudStorage/GoogleDrive-…). */
+	private static final Pattern SYNCHRONIZOVANA = Pattern.compile("(?i)onedrive.*|dropbox|google ?drive|googledrive-.*|my drive|můj disk|icloud ?drive.*|mobile documents|com~apple~clouddocs");
 	private static final String UPOZORNENO_SYNC_value = "upozornenoSynchronizovana";
 	private static final String UPOZORNENO_JAVA_value = "upozornenoJava";
 
@@ -52,11 +53,15 @@ public final class KontrolaUmisteni {
 		final String doporucena = VerzeJavy.vlastni().getProperty("doporucena");
 		if (VerzeJavy.jePribalena() && VerzeJavy.jeStarsi(VerzeJavy.aktualni(), doporucena) && !doporucena.equals(pref.get(UPOZORNENO_JAVA_value, null))) {
 			pref.put(UPOZORNENO_JAVA_value, doporucena);
-			Dlg.info("Je k dispozici nový zip s programem GeoKuk s novější Javou (" + doporucena + ", přibalená je " + VerzeJavy.aktualni() + ").\n"
-					+ "Program funguje dál a aktualizuje se i se stávající Javou. Novou Javu získáte, když nový zip\n"
-					+ "stáhnete z " + FConst.WEB_PAGE_URL + "/releases/latest a rozbalíte přes složku s programem.\n"
-					+ "Data a nastavení zůstanou.", "Nová Java");
+			Dlg.info(textNoveJavy(doporucena, VerzeJavy.aktualni()), "Nová Java");
 		}
+	}
+
+	static String textNoveJavy(final String doporucena, final String pribalena) {
+		final String balik = UmisteniProgramu.balik();
+		return "Je k dispozici nový " + balik + " s programem GeoKuk s novější Javou (" + doporucena + ", přibalená je " + pribalena + ").\n"
+				+ "Program funguje dál a aktualizuje se i se stávající Javou. Novou Javu získáte, když nový " + balik + "\n"
+				+ "stáhnete z " + FConst.WEB_PAGE_URL + "/releases/latest a " + UmisteniProgramu.jakNovyBalik() + ".\n" + "Data a nastavení zůstanou.";
 	}
 
 	/** Prázdné složky, kam uživatel dává vlastní soubory, ať je najde. */
@@ -111,7 +116,7 @@ public final class KontrolaUmisteni {
 				if (male.startsWith("dropbox")) {
 					return "Dropbox";
 				}
-				if (male.startsWith("icloud")) {
+				if (male.startsWith("icloud") || male.equals("mobile documents") || male.startsWith("com~apple")) {
 					return "iCloud";
 				}
 				return "Google Disk";

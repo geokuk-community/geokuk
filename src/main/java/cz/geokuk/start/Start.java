@@ -36,6 +36,8 @@ public final class Start {
 	static final String JAR = "geokuk.jar";
 	/** Podsložka přenosného GeoKuku s programem a Javou, vedle ní je složka data. */
 	public static final String SLOZKA_PROGRAMU = "program";
+	/** Složka s daty GeoKuku pro macOS nainstalovaného do Aplikací, v domovské složce uživatele. */
+	public static final String SLOZKA_V_DOMOVE = "GeoKuk";
 	static final long MB = 1024L * 1024;
 	static final int MIN_PAMET_MB = 1024;
 	static final int MAX_PAMET_MB = 3072;
@@ -66,11 +68,16 @@ public final class Start {
 				chyba("GeoKuk se neukončil, novou verzi nejde spustit.\nUkončete GeoKuk a spusťte ho znovu.");
 				return;
 			}
+			if (aplikaceMac(adresar) != null && !lzeZapsat(new File(koren(adresar), "data"))) {
+				chyba(NELZE_ZAPSAT_MAC);
+				return;
+			}
 			final File jar = vyberJar(adresar, Start::vymenJar);
 			if (jar == null) {
 				chyba(new File(adresar, JAR + ".new").isFile()
 						? "Novou verzi GeoKuku se nepodařilo nainstalovat.\nZavřete GeoKuk, pokud ještě běží, a spusťte ho znovu."
-						: "Ve složce " + adresar + " chybí soubor " + JAR + ".\nRozbalte znovu celý zip s programem GeoKuk.");
+						: "Ve složce " + adresar + " chybí soubor " + JAR + ".\n"
+								+ (aplikaceMac(adresar) != null ? "Přetáhněte znovu GeoKuk.app z dmg s programem GeoKuk." : "Rozbalte znovu celý zip s programem GeoKuk."));
 				return;
 			}
 			final List<String> prikaz = new ArrayList<>();
@@ -81,6 +88,7 @@ public final class Start {
 			pridejGrafiku(prikaz, new File(data, "nastaveni.xml"));
 			pridejDocasnouSlozku(prikaz, data);
 			prikaz.add("-XX:-UsePerfData");
+			pridejMac(prikaz, adresar);
 			pridejVraceniPameti(prikaz, System.getProperty("java.specification.version"));
 			pridejZalohu(prikaz, adresar, jar);
 			prikaz.addAll(Cds.prepinace(System.getProperty("java.specification.version"), new File(System.getProperty("java.home")), System.getProperty("java.runtime.version", "java"), data, jar,
@@ -92,6 +100,26 @@ public final class Start {
 			new ProcessBuilder(prikaz).directory(adresar).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.appendTo(nic)).start();
 		} catch (final Exception e) {
 			chyba("GeoKuk se nepodařilo spustit:\n" + e);
+		}
+	}
+
+	/** Spuštění z dmg nebo z dočasné kopie, kterou macOS pouští nepřesunutou nepodepsanou aplikaci (App Translocation). */
+	static final String NELZE_ZAPSAT_MAC = "GeoKuk běží z místa, kam nejde zapisovat: přímo z dmg,\n"
+			+ "nebo ho macOS spustil z dočasné kopie, protože aplikace ještě nebyla přesunuta.\n\n"
+			+ "Přetáhněte GeoKuk.app ve Finderu do složky Aplikace (data budou v ~/GeoKuk/data),\n"
+			+ "nebo do vlastní složky, třeba ~/GeoKuk (přenosná verze, data budou vedle aplikace).\n"
+			+ "Pak ho spusťte odtud.";
+
+	/** GeoKuk z balíku pro macOS: v Docku jméno a ikona aplikace místo „java“, spouštěč totiž pouští GeoKuk jako další proces. */
+	static void pridejMac(final List<String> prikaz, final File adresar) {
+		if (aplikaceMac(adresar) == null) {
+			return;
+		}
+		prikaz.add("-Xdock:name=GeoKuk");
+		prikaz.add("-Dapple.awt.application.name=GeoKuk");
+		final File ikona = new File(adresar.getParentFile(), "geokuk.icns");
+		if (ikona.isFile()) {
+			prikaz.add("-Xdock:icon=" + ikona.getPath());
 		}
 	}
 
@@ -139,10 +167,39 @@ public final class Start {
 		return umisteni.isFile() ? umisteni.getParentFile() : new File("").getAbsoluteFile();
 	}
 
-	/** Složka, kterou uživatel vidí: nad podsložkou program přenosného GeoKuku, jinak složka programu. */
+	/**
+	 * Složka, kterou uživatel vidí: nad podsložkou program přenosného GeoKuku, jinak složka programu. U balíku pro macOS složka s {@code GeoKuk.app}, v Aplikacích
+	 * {@code ~/GeoKuk}.
+	 */
 	public static File koren(final File adresarProgramu) {
+		return koren(adresarProgramu, new File(System.getProperty("user.home", "")));
+	}
+
+	static File koren(final File adresarProgramu, final File domov) {
+		final File aplikace = aplikaceMac(adresarProgramu);
+		if (aplikace != null) {
+			final File slozka = aplikace.getParentFile();
+			return slozka == null || vAplikacich(slozka, domov) ? new File(domov, SLOZKA_V_DOMOVE) : slozka;
+		}
 		final File nad = adresarProgramu.getParentFile();
 		return nad != null && SLOZKA_PROGRAMU.equalsIgnoreCase(adresarProgramu.getName()) && new File(adresarProgramu, "start.jar").isFile() ? nad : adresarProgramu;
+	}
+
+	/** Balík {@code *.app}, když program běží z jeho {@code Contents/Resources/program}, jinak null. */
+	public static File aplikaceMac(final File adresarProgramu) {
+		if (!SLOZKA_PROGRAMU.equals(adresarProgramu.getName()) || !new File(adresarProgramu, "start.jar").isFile()) {
+			return null;
+		}
+		final File resources = adresarProgramu.getParentFile();
+		final File contents = resources == null ? null : resources.getParentFile();
+		final File aplikace = contents == null ? null : contents.getParentFile();
+		return aplikace != null && "Resources".equals(resources.getName()) && "Contents".equals(contents.getName()) && aplikace.getName().endsWith(".app") ? aplikace : null;
+	}
+
+	/** Složka Aplikace systému nebo uživatele, i její podsložky. Souborový systém Macu nerozlišuje velikost písmen. */
+	static boolean vAplikacich(final File slozka, final File domov) {
+		final String cesta = slozka.getAbsolutePath().toLowerCase(java.util.Locale.ROOT) + "/";
+		return cesta.startsWith("/applications/") || cesta.startsWith(new File(domov, "Applications").getAbsolutePath().toLowerCase(java.util.Locale.ROOT) + "/");
 	}
 
 	/** Zamkne zámek běžícího programu na celou dobu běhu, nebo vrátí null, když ho drží jiná instance. */
