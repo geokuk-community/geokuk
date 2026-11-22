@@ -198,8 +198,13 @@ public final class Start {
 
 	/** Složka Aplikace systému nebo uživatele, i její podsložky. Souborový systém Macu nerozlišuje velikost písmen. */
 	static boolean vAplikacich(final File slozka, final File domov) {
-		final String cesta = slozka.getAbsolutePath().toLowerCase(java.util.Locale.ROOT) + "/";
-		return cesta.startsWith("/applications/") || cesta.startsWith(new File(domov, "Applications").getAbsolutePath().toLowerCase(java.util.Locale.ROOT) + "/");
+		final String cesta = proPorovnani(slozka);
+		return cesta.startsWith("/applications/") || cesta.startsWith(proPorovnani(new File(domov, "Applications")));
+	}
+
+	/** Absolutní cesta malými písmeny s oddělovačem {@code /} a lomítkem na konci (testy běží i ve Windows). */
+	private static String proPorovnani(final File slozka) {
+		return slozka.getAbsolutePath().replace(File.separatorChar, '/').toLowerCase(java.util.Locale.ROOT) + "/";
 	}
 
 	/** Zamkne zámek běžícího programu na celou dobu běhu, nebo vrátí null, když ho drží jiná instance. */
