@@ -232,7 +232,7 @@ public class JListaPlanovaceTest {
 		Assert.assertTrue(s instanceof JCheckBoxMenuItem);
 		s.doClick();
 		Assert.assertFalse(model.isKresliSektory());
-		Assert.assertNotNull(polozka(m, "Štítky u kandidátů"));
+		Assert.assertNotNull(polozka(m, "Štítky na mapě"));
 		Assert.assertNotNull(polozka(m, "Jen kandidáti"));
 		priprav(1280);
 		Assert.assertNull("v širší liště jsou přepínače v liště", polozka(pruh.sestavVyber(), "Sektory na mapě"));

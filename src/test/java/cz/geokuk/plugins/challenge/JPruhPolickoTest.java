@@ -205,7 +205,7 @@ public class JPruhPolickoTest {
 		final int sirkaDT = pruh.oblastPruhu().width;
 		Assert.assertEquals("D/T lišta je užší o Sektory", RozmisteniPrekryvu.PRUH_PLNY - JPruhPlanovace.ubytekBezSektoru(RozmisteniPrekryvu.PRUH_PLNY), sirkaDT);
 		Assert.assertFalse("u D/T Sektory nejsou", podleTooltipu("Sektory na mapě").isVisible());
-		Assert.assertTrue("Štítky jsou", podleTooltipu("Štítky u kandidátů").isVisible());
+		Assert.assertTrue("Štítky jsou", podleTooltipu("Štítky na mapě").isVisible());
 		final Challenge c = Sablony.cesko360();
 		model.aktivuj(c);
 		model.setZobrazena(c);
@@ -215,7 +215,7 @@ public class JPruhPolickoTest {
 		Assert.assertEquals("u 360° plná lišta", RozmisteniPrekryvu.PRUH_PLNY, pruh.oblastPruhu().width);
 		final AbstractButton sektory = podleTooltipu("Sektory na mapě");
 		Assert.assertTrue("u 360° Sektory jsou", sektory.isVisible());
-		Assert.assertTrue("Štítky před Sektory", podleTooltipu("Štítky u kandidátů").getX() < sektory.getX());
+		Assert.assertTrue("Štítky před Sektory", podleTooltipu("Štítky na mapě").getX() < sektory.getX());
 	}
 
 	private Challenge priprav360SeStredem() throws Exception {

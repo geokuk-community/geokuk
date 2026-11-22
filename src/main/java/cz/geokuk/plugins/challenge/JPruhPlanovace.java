@@ -94,7 +94,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 		odznak.setToolTipText(popisChybejicich(Challenge.Typ.SEKTORY_360));
 		kandidati.setToolTipText(popisKandidatu(Challenge.Typ.SEKTORY_360));
 		sektory.setToolTipText("Sektory na mapě: prstenec, klín sektoru vybraného kandidáta a čára k němu");
-		stitky.setToolTipText("Štítky u kandidátů: číslo sektoru nebo políčko D/T");
+		stitky.setToolTipText("Štítky na mapě: u kandidátů, keší vybraného sektoru nebo políčka a u středu");
 		chip.setToolTipText("Vybrat challenge");
 		sektory.setSelected(true);
 		stitky.setSelected(true);
@@ -687,7 +687,7 @@ public class JPruhPlanovace extends JSlide0 implements AfterInjectInit {
 			final JCheckBoxMenuItem sekt = prepinacVMenu("Sektory na mapě", model.isKresliSektory(), model::setKresliSektory);
 			sekt.setEnabled(sektory.isEnabled());
 			m.add(sekt);
-			m.add(prepinacVMenu("Štítky u kandidátů", model.isKresliStitky(), model::setKresliStitky));
+			m.add(prepinacVMenu("Štítky na mapě", model.isKresliStitky(), model::setKresliStitky));
 		}
 		m.addSeparator();
 		final JMenuItem planovac = new JMenuItem("Nastavení plánovače…", new Ozubene());
