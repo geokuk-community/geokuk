@@ -76,7 +76,11 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 	private KesoidPluginManager kesoidPluginManager;
 
 	private DoplnekDetailuKese doplnek;
-	private JLabel jDoplnek;
+	private final JLabel jDoplnek = new JLabel();
+
+	{
+		jDoplnek.setVisible(false);
+	}
 
 	static String formatuj(final String s, final EKesStatus status) {
 		final StringBuilder sb = new StringBuilder();
@@ -148,7 +152,7 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 
 	public void onEvent(final DoplnekDetailuEvent event) {
 		doplnek = event.getDoplnek();
-		if (jDoplnek != null && wpt != null) {
+		if (wpt != null) {
 			naplnDoplnek();
 		}
 	}
@@ -221,6 +225,17 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 
 	}
 
+	/** Ukáže řádek doplňku k waypointu bez zbytku detailu (testy). */
+	void ukazDoplnek(final Wpt w) {
+		wpt = w;
+		naplnDoplnek();
+	}
+
+	/** Řádek doplňku (testy). */
+	JLabel radekDoplnku() {
+		return jDoplnek;
+	}
+
 	private void naplnDoplnek() {
 		final String text = doplnek == null ? null : doplnek.radek(wpt);
 		jDoplnek.setText(text);
@@ -251,8 +266,6 @@ public class JKesoidDetailContainer extends JPanel implements AfterInjectInit {
 		jElevation.setToolTipText("Nadmořská výška");
 
 		jRucnePridany = new JLabel();
-		jDoplnek = new JLabel();
-		jDoplnek.setVisible(false);
 
 		jOtevriUrl = new JSmallPictureButton();
 
