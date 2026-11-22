@@ -37,6 +37,20 @@ public class PanelOptimalizaceRozvrzeniTest {
 		}
 	}
 
+	/** Text průběhu je popisek: nebere fokus, takže se v něm nekreslí kurzor. */
+	@Test
+	public void textPrubehuNebereFokusANemaKurzor() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			final PanelOptimalizace panel = new PanelOptimalizace(null, () -> {});
+			final String text = "Probíhá optimalizace, může to chvíli trvat.";
+			panel.nastav(PanelOptimalizace.Faze.BEZI, text);
+			final JTextArea zprava = zprava(panel, text);
+			Assert.assertFalse(zprava.isFocusable());
+			Assert.assertFalse(zprava.requestFocusInWindow());
+			Assert.assertFalse(zprava.getCaret().isVisible());
+		});
+	}
+
 	/** S {@code neproporcionalni} má JTextArea neproporcionální písmo Monospaced 13 jako ve vzhledu Windows. */
 	private static void over(final float meritko, final boolean neproporcionalni) {
 		final Object puvodniTextu = UIManager.get("TextArea.font");
