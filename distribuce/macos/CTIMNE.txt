@@ -1,0 +1,32 @@
+﻿GeoKuk – plánování geovýletů na českých mapách
+https://github.com/geokuk-community/geokuk
+
+GeoKuk se neinstaluje, stačí ho přetáhnout. Funguje na Macích s Apple
+Silicon (M1 a novějších) i s procesorem Intel, potřebuje macOS 11 nebo novější.
+
+Kam GeoKuk dát:
+
+- Do složky Aplikace: přetáhněte GeoKuk.app na Aplikace. Všechno, co si
+  GeoKuk ukládá, bude ve složce GeoKuk ve vaší domovské složce (~/GeoKuk/data).
+- Jako přenosnou verzi do vlastní složky, třeba ~/GeoKuk: data budou ve
+  složce data vedle GeoKuk.app a celou složku jde přesunout i s daty,
+  stejně jako přenosnou verzi pro Windows.
+
+Složku s GeoKukem ani jeho data nedávejte na iCloud Drive (ani do Plochy
+a Dokumentů, když je iCloud synchronizuje), Dropbox, OneDrive nebo Google
+Disk. Cache map a nastavení se mění při každém spuštění a synchronizace
+může soubory, které program právě používá, poškodit.
+
+GeoKuk nespouštějte přímo z dmg, nejdřív ho přetáhněte.
+
+První spuštění: GeoKuk není podepsaný u Applu, macOS proto při prvním
+spuštění ohlásí, že aplikaci nelze ověřit. Zavřete hlášení, otevřete
+Nastavení systému > Soukromí a zabezpečení, dole u GeoKuku zvolte
+Přesto otevřít a potvrďte. Dál se GeoKuk spouští normálně. Na starších
+macOS stačí na GeoKuk.app kliknout se stisknutou klávesou Control a zvolit
+Otevřít.
+
+Nové verze program sám nabídne a po stažení nainstaluje. Novou Javu
+přinese nový dmg: GeoKuk.app z něj přetáhněte přes stávající aplikaci.
+Data a nastavení zůstanou. Když aplikaci přesunete mezi Aplikacemi
+a vlastní složkou, data zůstanou na původním místě, přesuňte je ručně.

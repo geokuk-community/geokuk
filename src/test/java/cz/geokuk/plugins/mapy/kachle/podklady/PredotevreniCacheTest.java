@@ -26,7 +26,7 @@ public class PredotevreniCacheTest {
 	private KachleDBManager manager(final File slozka) {
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(slozka, false, true));
-		return new KachleDBManager(holder);
+		return new TichyKachleDBManager(holder);
 	}
 
 	@Test

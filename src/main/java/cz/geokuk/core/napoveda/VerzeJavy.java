@@ -13,11 +13,16 @@ public final class VerzeJavy {
 
 	private VerzeJavy() {}
 
-	/** Program běží v Javě přibalené v přenosné verzi. */
+	/** Program běží v Javě přibalené v přenosné verzi ({@code runtime}, v balíku pro macOS {@code runtime-arm64} a {@code runtime-x64}). */
 	public static boolean jePribalena() {
-		final File runtime = new File(FConst.JAR_DIR, "runtime");
+		return FConst.JAR_DIR_EXISTUJE && jePribalena(new File(System.getProperty("java.home")), FConst.JAR_DIR);
+	}
+
+	static boolean jePribalena(final File javaHome, final File adresarProgramu) {
 		try {
-			return FConst.JAR_DIR_EXISTUJE && new File(System.getProperty("java.home")).getCanonicalFile().equals(runtime.getCanonicalFile());
+			final File home = javaHome.getCanonicalFile();
+			return home.getParentFile() != null && home.getParentFile().equals(adresarProgramu.getCanonicalFile())
+					&& (home.getName().equals("runtime") || home.getName().startsWith("runtime-"));
 		} catch (final IOException e) {
 			return false;
 		}

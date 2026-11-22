@@ -12,7 +12,7 @@
 ## Stažení
 
 Aktuální verze je v [Releases](https://github.com/geokuk-community/geokuk/releases).
-GeoKuk se neinstaluje: rozbalí se do složky a spouští se z ní. Všechno,
+GeoKuk se neinstaluje: rozbalí se do složky (na Macu se přetáhne) a spouští se z ní. Všechno,
 co si program ukládá, je ve složce `data` vedle něj, takže rozhoduje jen to,
 odkud ho spustíte. Složku s programem můžete přesunout nebo zkopírovat
 i s daty a nastavením.
@@ -41,14 +41,45 @@ spuštění. Javu aktualizuje nový zip. Rozbalte ho
 tam, kam ten první (třeba do `C:\`), přes stávající složku `GeoKuk`;
 data a nastavení zůstanou.
 
-### Linux a macOS
+### macOS
+
+Stáhněte `GeoKuk-macos.dmg`, otevřete ho a přetáhněte `GeoKuk.app`.
+Jeden balík funguje na Macích s Apple Silicon (M1 a novějších) i
+s procesorem Intel, potřeba je macOS 11 nebo novější. Java je
+přibalená, žádnou jinou není potřeba instalovat.
+
+- Do složky Aplikace: data budou ve složce `GeoKuk` v domovské složce
+  (`~/GeoKuk/data`).
+- Do vlastní složky, třeba `~/GeoKuk` (přenosná verze): data budou ve
+  složce `data` vedle `GeoKuk.app` a celou složku jde přesunout i
+  s daty, stejně jako ve Windows.
+
+Přímo z dmg se GeoKuk nespustí, nejdřív ho přetáhněte. Složku
+s programem ani data nedávejte na iCloud Drive (ani do Plochy
+a Dokumentů, když je iCloud synchronizuje), Dropbox, OneDrive nebo
+Google Disk.
+
+GeoKuk není podepsaný u Applu. Při prvním spuštění macOS ohlásí, že
+aplikaci nelze ověřit; zavřete hlášení, v Nastavení systému > Soukromí
+a zabezpečení zvolte u GeoKuku Přesto otevřít a potvrďte. Na macOS 14
+a starších stačí na `GeoKuk.app` kliknout se stisknutou klávesou
+Control a zvolit Otevřít.
+
+Aktualizace funguje jako ve Windows: po volbě Aktualizovat GeoKuk novou
+verzi stáhne a nabídne restart. Když do aplikace nesmíte zapisovat
+(GeoKuk v Aplikacích u uživatele bez práv správce), otevře se stránka
+ke stažení. Javu aktualizuje nový dmg: `GeoKuk.app` z něj přetáhněte
+přes stávající aplikaci, data a nastavení zůstanou.
+
+### Linux
 
 Stáhněte `geokuk.jar` do vlastní složky a spusťte ho `java -jar geokuk.jar`
-(potřeba je Java 8 nebo novější). Když GeoKuk najde novou verzi,
+(potřeba je Java 8 nebo novější). Funguje tak i na macOS s vlastní Javou.
+Když GeoKuk najde novou verzi,
 nabídne ji. Po volbě Aktualizovat nahradí `geokuk.jar`
 (předchozí zůstane jako `geokuk.jar.bak`) a nová verze se spustí při
 příštím spuštění. Paměť programu a restart po aktualizaci jsou jen
-v zipu pro Windows; paměť jde zadat parametrem Javy, třeba
+v balících pro Windows a macOS; paměť jde zadat parametrem Javy, třeba
 `java -Xmx2g -jar geokuk.jar`.
 
 ### Složka s programem
@@ -77,6 +108,11 @@ GeoKuk
     ├── render
     └── log                      log a chybová hlášení
 ```
+
+Na Macu je místo `GeoKuk-prvni-spusteni.cmd` a podsložky `program`
+aplikace `GeoKuk.app` (program a Java pro Apple Silicon i Intel jsou
+v `GeoKuk.app/Contents/Resources/program`). Složka `data` je vedle ní,
+u aplikace ve složce Aplikace v `~/GeoKuk/data`.
 
 Keše načte GeoKuk ze souborů GPX, `.geokuk` a zip ve složce `data\gpx`;
 načítání z databáze GeoGetu, GSAKu nebo OpenSAKu a jinou složku s kešemi
@@ -251,7 +287,15 @@ ve vývoji.
 ```
 
 Stačí JDK 21, výsledek je v `target/`. Zip pro Windows s přibalenou Javou
-staví workflow Build na Windows runneru.
+staví workflow Build na Windows runneru, dmg pro macOS na macOS runneru.
+Na Macu jde dmg sestavit i ručně z `geokuk.jar` a `start.jar` (přejmenovaných
+z `target/`) a z JDK 21 Temurin pro arm64 a x64, x64 potřebuje Rosettu. Okno
+dmg rozmístí `dmgbuild` 1.6.7 (`pip install dmgbuild==1.6.7`):
+
+```sh
+.github/skripty/sestav-dmg.sh <složka s jary> <JDK arm64> <JDK x64> GeoKuk-macos.dmg
+.github/skripty/test-dmg.sh GeoKuk-macos.dmg
+```
 
 Smoke test celého programu nad falešným mapovým serverem (projde mapu,
 menu a otevřené dialogy) potřebuje displej, na Linuxu třeba přes xvfb:

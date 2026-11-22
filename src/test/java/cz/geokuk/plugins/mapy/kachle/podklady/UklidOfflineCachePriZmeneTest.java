@@ -86,7 +86,7 @@ public class UklidOfflineCachePriZmeneTest {
 		final File cache = tmp.newFolder("cache");
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(cache, false, true));
-		final KachleDBManager manager = new KachleDBManager(holder);
+		final KachleDBManager manager = new TichyKachleDBManager(holder);
 		final KachleZiskavac ziskavac = new KachleZiskavac();
 		ziskavac.setKachleManager(manager);
 		final List<KachleManager.ItemToSave> davka = new ArrayList<>();
@@ -110,7 +110,7 @@ public class UklidOfflineCachePriZmeneTest {
 		final File soubor = tmp.newFile("neni-slozka");
 		final KachleCacheFolderHolder holder = new KachleCacheFolderHolder();
 		holder.setKachleCacheDir(new Filex(soubor, false, true));
-		final KachleDBManager db = new KachleDBManager(holder);
+		final KachleDBManager db = new TichyKachleDBManager(holder);
 		Assert.assertEquals(KachleDBManager.NEDOKONCENO, db.smazOfflineKrome(Collections.singleton("o00000001")));
 		Assert.assertEquals(KachleDBManager.NEDOKONCENO, db.smazOfflineNesedici("o00000001", loc -> "o00000001.00000000"));
 	}

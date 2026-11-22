@@ -119,6 +119,69 @@ public class StartTest {
 		Assert.assertEquals(jinde, Start.koren(jinde));
 	}
 
+	/** Složka program uvnitř {@code <slozka>/GeoKuk.app/Contents/Resources}. */
+	private File aplikace(final File slozka) throws Exception {
+		final File program = new File(slozka, "GeoKuk.app/Contents/Resources/program");
+		Assert.assertTrue(program.mkdirs());
+		zapis(new File(program, "start.jar"), "start");
+		return program;
+	}
+
+	@Test
+	public void korenAplikaceMacJeSlozkaSAplikaci() throws Exception {
+		final File slozka = tmp.newFolder("Mapy", "GeoKuk");
+		final File domov = tmp.newFolder("domov");
+		final File program = aplikace(slozka);
+		Assert.assertEquals(new File(slozka, "GeoKuk.app"), Start.aplikaceMac(program));
+		Assert.assertEquals(slozka, Start.koren(program, domov));
+	}
+
+	@Test
+	public void korenAplikaceMacVAplikacichJeVDomove() throws Exception {
+		final File domov = tmp.newFolder("domov");
+		Assert.assertEquals(new File(domov, "GeoKuk"), Start.koren(aplikace(new File(domov, "Applications")), domov));
+		Assert.assertEquals(new File(domov, "GeoKuk"), Start.koren(aplikace(new File(domov, "Applications/Mapy")), domov));
+		Assert.assertFalse(Start.vAplikacich(new File(domov, "GeoKuk"), domov));
+		Assert.assertFalse(Start.vAplikacich(new File(domov, "Applications2"), domov));
+	}
+
+	@Test
+	public void systemovaSlozkaAplikace() {
+		// Ve Windows je z /Applications cesta C:\Applications, systémová složka Aplikace je jen v macOS.
+		Assume.assumeTrue(File.separatorChar == '/');
+		final File domov = new File("/Users/kacer");
+		Assert.assertTrue(Start.vAplikacich(new File("/Applications"), domov));
+		Assert.assertTrue(Start.vAplikacich(new File("/applications/Utilities"), domov));
+		Assert.assertFalse(Start.vAplikacich(new File("/Applications2"), domov));
+		Assert.assertFalse(Start.vAplikacich(new File("/Users/kacer/GeoKuk"), domov));
+	}
+
+	@Test
+	public void bezBalikuNeniAplikaceMac() throws Exception {
+		final File program = tmp.newFolder("GeoKuk", "program");
+		zapis(new File(program, "start.jar"), "start");
+		Assert.assertNull(Start.aplikaceMac(program));
+		final File bezStartu = tmp.newFolder("Jiny.app", "Contents", "Resources", "program");
+		Assert.assertNull(Start.aplikaceMac(bezStartu));
+		final File neniApp = tmp.newFolder("Jiny", "Contents", "Resources", "program");
+		zapis(new File(neniApp, "start.jar"), "start");
+		Assert.assertNull(Start.aplikaceMac(neniApp));
+	}
+
+	@Test
+	public void aplikaceMacMaVDockuJmenoAIkonu() throws Exception {
+		final File program = aplikace(tmp.getRoot());
+		zapis(new File(program.getParentFile(), "geokuk.icns"), "ikona");
+		final List<String> prikaz = new ArrayList<>();
+		Start.pridejMac(prikaz, program);
+		Assert.assertEquals(Arrays.asList("-Xdock:name=GeoKuk", "-Dapple.awt.application.name=GeoKuk", "-Xdock:icon=" + new File(program.getParentFile(), "geokuk.icns").getPath()), prikaz);
+		final List<String> windows = new ArrayList<>();
+		final File prenosna = tmp.newFolder("GeoKuk", "program");
+		zapis(new File(prenosna, "start.jar"), "start");
+		Start.pridejMac(windows, prenosna);
+		Assert.assertTrue(windows.isEmpty());
+	}
+
 	@Test
 	public void cekaNaUkonceniBeziciInstance() throws Exception {
 		final File zamek = new File(tmp.getRoot(), "data/" + Start.ZAMEK);
