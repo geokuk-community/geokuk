@@ -729,7 +729,7 @@ class KachleDBManager implements KachleManager {
 
 	/** Na nezapisovatelnou složku data už upozorňuje kontrola umístění programu. */
 	private synchronized void upozorniNaZapis(final File slozka) {
-		if (uzivatelUpozornen || GraphicsEnvironment.isHeadless()) {
+		if (uzivatelUpozornen) {
 			return;
 		}
 		if (slozka.toPath().toAbsolutePath().startsWith(FConst.DATA_DIR.toPath().toAbsolutePath()) && !lzeZapsat(FConst.DATA_DIR)) {
