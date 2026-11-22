@@ -1,0 +1,18 @@
+#!/bin/sh
+# Spustí GeoKuk s přibalenou Javou pro procesor Macu: Apple Silicon (arm64) nebo Intel (x64).
+cd "$(dirname "$0")/../Resources/program" || exit 1
+# Absolutní cesta, ať je v seznamu procesů vidět, odkud GeoKuk běží.
+PROGRAM=$(pwd -P)
+# hw.optional.arm64 je 1 na Apple Silicon i v procesu pod Rosettou, Java pak poběží nativně.
+if [ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = 1 ]; then
+	RUNTIME=runtime-arm64
+else
+	RUNTIME=runtime-x64
+fi
+# Starší macOS přidávají při spuštění z Finderu parametr -psn_…, GeoKuk by ho bral jako soubor.
+for a; do
+	shift
+	case "$a" in -psn_*) ;; *) set -- "$@" "$a" ;; esac
+done
+# Spouštěč jen připraví a spustí GeoKuk, v Docku se neukazuje.
+exec "$PROGRAM/$RUNTIME/bin/java" -XX:-UsePerfData -Dapple.awt.UIElement=true -jar "$PROGRAM/start.jar" "$@"

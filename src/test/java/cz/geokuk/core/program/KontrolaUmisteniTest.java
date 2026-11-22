@@ -33,6 +33,21 @@ public class KontrolaUmisteniTest {
 	}
 
 	@Test
+	public void poznaSynchronizovaneSlozkyMacu() {
+		Assert.assertEquals("iCloud", KontrolaUmisteni.synchronizovanaSluzba(new File("/Users/kacer/Library/Mobile Documents/com~apple~CloudDocs/GeoKuk"), NIC));
+		Assert.assertEquals("OneDrive", KontrolaUmisteni.synchronizovanaSluzba(new File("/Users/kacer/Library/CloudStorage/OneDrive-Osobní/GeoKuk"), NIC));
+		Assert.assertEquals("Google Disk", KontrolaUmisteni.synchronizovanaSluzba(new File("/Users/kacer/Library/CloudStorage/GoogleDrive-kacer@example.com/GeoKuk"), NIC));
+		Assert.assertNull(KontrolaUmisteni.synchronizovanaSluzba(new File("/Users/kacer/GeoKuk"), NIC));
+	}
+
+	@Test
+	public void textNoveJavyMimoMac() {
+		Assert.assertTrue(KontrolaUmisteni.textNoveJavy("21.0.9", "21.0.8").contains("nový zip"));
+		Assert.assertTrue(UmisteniProgramu.jakNovyBalik(true).contains("GeoKuk.app"));
+		Assert.assertTrue(UmisteniProgramu.jakNovyBalik(false).contains("rozbalte"));
+	}
+
+	@Test
 	public void pripraviSlozkuUzivatelskychMap() {
 		final File mapy = UzivatelskeMapy.slozka();
 		mapy.delete();

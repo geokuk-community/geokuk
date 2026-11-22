@@ -21,8 +21,10 @@ import java.util.jar.Manifest;
 import javax.swing.JOptionPane;
 
 import cz.geokuk.core.program.FConst;
+import cz.geokuk.core.program.UmisteniProgramu;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MySwingWorker0;
+import cz.geokuk.start.Start;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -93,9 +95,12 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		return System.getProperty("os.name", "").startsWith("Windows");
 	}
 
-	/** Ve Windows jar vymění jen spouštěč přenosné verze. */
+	/**
+	 * Ve Windows jar vymění jen spouštěč přenosné verze. Do nezapisovatelné složky (GeoKuk.app v Aplikacích u uživatele bez práv správce) se nainstalovat nedá, pak se
+	 * nabídne stránka ke stažení.
+	 */
 	static boolean lzeInstalovat() {
-		return FConst.JAR_DIR_EXISTUJE && (prenosna(FConst.JAR_DIR) || !windows());
+		return FConst.JAR_DIR_EXISTUJE && (prenosna(FConst.JAR_DIR) || !windows()) && Start.lzeZapsat(FConst.JAR_DIR);
 	}
 
 	static void stahni(final String zakladUrl, final File adresar) throws IOException {
@@ -312,8 +317,8 @@ public class StahnoutAktualizaciSwingWorker extends MySwingWorker0<Void, Void> {
 		} catch (final ExecutionException e) {
 			if (e.getCause() instanceof YNovaJava) {
 				Diagnostika.zaznamenej("Verze " + verze + " potřebuje novější Javu");
-				Dlg.info(e.getCause().getMessage() + "\nStáhněte nový zip s programem GeoKuk z " + FConst.RELEASE_TAG_URL + verze
-						+ "\na rozbalte ho přes stávající složku s programem, data a nastavení zůstanou.", "Aktualizace");
+				Dlg.info(e.getCause().getMessage() + "\nStáhněte nový " + UmisteniProgramu.balik() + " s programem GeoKuk z " + FConst.RELEASE_TAG_URL + verze
+						+ "\na " + UmisteniProgramu.jakNovyBalik() + ", data a nastavení zůstanou.", "Aktualizace");
 				return;
 			}
 			log.error("Stažení aktualizace selhalo.", e.getCause());

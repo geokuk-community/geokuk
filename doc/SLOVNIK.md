@@ -363,7 +363,7 @@ Plánovač pomáhá plnit challenge keše: z nálezů spočítá, co chybí, a z
 
 | Pojem | Význam | V kódu |
 |---|---|---|
-| **Přenosný GeoKuk** | Program se neinstaluje. Vše, co si ukládá, je ve složce `data` vedle něj a složku jde přesunout i s daty. Zip pro Windows má program a Javu v podsložce `program`. | `UmisteniProgramu`, `FConst.DATA_DIR`, `KontrolaUmisteni` |
+| **Přenosný GeoKuk** | Program se neinstaluje. Vše, co si ukládá, je ve složce `data` vedle něj a složku jde přesunout i s daty. Zip pro Windows má program a Javu v podsložce `program`. Balík pro macOS je `GeoKuk.app` s podsložkou `Contents/Resources/program` a Javou pro Apple Silicon i Intel (`runtime-arm64`, `runtime-x64`); data jsou vedle `GeoKuk.app`, u aplikace ve složce Aplikace v `~/GeoKuk/data`. | `UmisteniProgramu`, `FConst.DATA_DIR`, `KontrolaUmisteni`, `Start.koren`, `Start.aplikaceMac` |
 | **Složka data** | `nastaveni.xml`, `mapy`, `mapy-priklady`, `cache`, `offline-mapy`, `gpx`, `cesty`, `ikony` (`moje`, `ostatni`), `vylety`, `render`, `log`. Data verze 5.x ve složce `~/geokuk` program nečte. | `FConst`, `KesoidUmisteniSouboru`, `KachleUmisteniSouboru`, `RenderUmisteniSouboru` |
 | **Soubor nastavení** | `data/nastaveni.xml` ve formátu exportu Java Preferences. Při prvním spuštění se jednou převezme nastavení starší verze z registru nebo ze souboru `geokuk-preferences.xml`. | `Nastaveni`, `SouborovePreferences` |
 | **Značka kořene** | `${GeoKuk}` na začátku uložené cesty: cesta uvnitř složky programu, která se při přesunu složky posune s ní. | `MyPreferences.ZNACKA_KORENE`, `Filex` |
