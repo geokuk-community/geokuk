@@ -8,6 +8,7 @@ import java.util.function.BooleanSupplier;
 
 import javax.swing.*;
 
+import cz.geokuk.framework.NabidkyPoStartu;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Doporuceni;
 import cz.geokuk.plugins.mapy.kachle.podklady.StaraData;
@@ -98,6 +99,7 @@ public class OknoDoporuceniOptimalizace extends JDialog {
 
 	private OknoDoporuceniOptimalizace(final Window vlastnik, final StavSouboruCache stav, final StaraData stare, final Doporuceni doporuceni, final long volne, final Volba volba) {
 		super(vlastnik, OptimalizaceTexty.NAZEV, ModalityType.MODELESS);
+		NabidkyPoStartu.blokuje(this);
 		final JLabel popisek = new JLabel(OptimalizaceTexty.odpocet(ODPOCET_S));
 		final JButton optimalizovat = new JButton("Optimalizovat");
 		final JButton bez = new JButton("Spustit bez optimalizace");

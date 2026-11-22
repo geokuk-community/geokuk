@@ -393,6 +393,7 @@ Plánovač pomáhá plnit challenge keše: z nálezů spočítá, co chybí, a z
 | `framework`: `MyPreferences`, `Prefe`, `@Preferenceble`, `SouborovePreferences` | Nastavení přes rozhraní Java Preferences, uložené v souboru `data/nastaveni.xml` (ne v registru Windows), struktury přes JavaBeans. Soubor otevírá `core/profile/Nastaveni`. Jména klíčů drží `core/program/FPref`. |
 | `util/file`: `Filex`, `BezpecnyZapis`, `Soubory`, `TextovySoubor` | Cesta s příznakem, zda je relativní ke složce programu a zda je aktivní. Zápis souboru přes dočasný soubor a přejmenování. Čtení textu s rozpoznáním kódování. |
 | `framework/Dlg` | Dialogy ano/ne, chyba, info, přepsat soubor. |
+| `framework/NabidkyPoStartu` | Okna, která program otevře sám (nová verze, doporučení optimalizace, průvodce map, zástupce): po jednom, až není otevřené modální ani blokující okno, a po pauze 3 s. |
 | `util/gui`: `CornerLayoutManager`, `ERoh` | Layout: podklad přes celou plochu a komponenty v rozích. |
 | `util/exception`: `AExcId`, `FExceptionDumper`, `JErrorDialog` | Výjimky s identifikátorem, dump do složky `data/log/chyby`, dialog „Přehled problémů“. |
 | `core/program/JServiceFrame` | Servisní okno s počítadly (menu „Servis…“). |

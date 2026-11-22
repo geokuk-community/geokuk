@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.SwingUtilities;
 
 import cz.geokuk.framework.Dlg;
+import cz.geokuk.framework.NabidkyPoStartu;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze;
 import cz.geokuk.plugins.mapy.kachle.podklady.OptimalizaceDatabaze.Doporuceni;
@@ -87,7 +88,7 @@ public final class PripominkaOptimalizace {
 			return;
 		}
 		final StavSouboruCache po = stav.bezStarych(stare.bajtu());
-		SwingUtilities.invokeLater(() -> OknoDoporuceniOptimalizace.zobraz(Dlg.parentFrame(), stav, stare, doporuceni, volne, new OknoDoporuceniOptimalizace.Volba() {
+		SwingUtilities.invokeLater(() -> NabidkyPoStartu.ukaz(() -> OknoDoporuceniOptimalizace.zobraz(Dlg.parentFrame(), stav, stare, doporuceni, volne, new OknoDoporuceniOptimalizace.Volba() {
 			@Override
 			public void optimalizovat() {
 				DialogOptimalizace.zobraz(Dlg.parentFrame(), optimalizace, true);
@@ -102,7 +103,7 @@ public final class PripominkaOptimalizace {
 			public void vyprseni() {
 				model.odlozOptimalizaci(System.currentTimeMillis() + odlozeniMs(po, true), po.podilVolnych());
 			}
-		}));
+		})));
 	}
 
 	private PripominkaOptimalizace() {}

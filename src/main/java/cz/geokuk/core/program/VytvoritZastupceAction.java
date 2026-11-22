@@ -11,6 +11,7 @@ import javax.swing.*;
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.framework.NabidkyPoStartu;
 import lombok.extern.slf4j.Slf4j;
 
 /** Vytvoří zástupce přenosného GeoKuku v nabídce Start nebo na ploše Windows. */
@@ -161,7 +162,7 @@ public class VytvoritZastupceAction extends Action0 {
 				pref.put(NABIDKA_START_value, "ne");
 			}
 		});
-		dialog.setVisible(true);
+		NabidkyPoStartu.ukaz(() -> dialog.setVisible(true));
 	}
 
 	@Override

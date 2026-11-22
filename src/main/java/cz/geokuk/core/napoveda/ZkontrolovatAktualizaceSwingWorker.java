@@ -14,6 +14,7 @@ import javax.swing.*;
 import cz.geokuk.core.program.FConst;
 import cz.geokuk.framework.Dlg;
 import cz.geokuk.framework.MySwingWorker0;
+import cz.geokuk.framework.NabidkyPoStartu;
 import cz.geokuk.util.process.BrowserOpener;
 import lombok.extern.slf4j.Slf4j;
 
@@ -131,15 +132,25 @@ public class ZkontrolovatAktualizaceSwingWorker extends MySwingWorker0<String, V
 
 	@Override
 	protected void donex() throws Exception {
+		final String lastVersion;
 		try {
-			ukazVysledek();
+			lastVersion = get();
 		} finally {
 			napovedaModel.kontrolaSkoncila(this);
 		}
+		predej(() -> ukazVysledek(lastVersion));
 	}
 
-	private void ukazVysledek() throws Exception {
-		final String lastVersion = get();
+	/** Ruční kontrola ukáže výsledek hned; automatická nepřekryje otevřené okno ani rozběhnutou optimalizaci. */
+	void predej(final Runnable ukazani) {
+		if (zobrazitDialogPriPosledniVerzi) {
+			ukazani.run();
+		} else {
+			NabidkyPoStartu.ukaz(ukazani);
+		}
+	}
+
+	private void ukazVysledek(final String lastVersion) {
 		if (jeZastarala()) {
 			log.info("Kontrola aktualizací pro jiný beta kanál, výsledek se neukáže: " + lastVersion);
 		} else if (FConst.I_AM_IN_DEVELOPMENT_ENVIRONMENT) {

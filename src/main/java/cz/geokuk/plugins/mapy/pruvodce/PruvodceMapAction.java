@@ -8,6 +8,7 @@ import javax.swing.JOptionPane;
 
 import cz.geokuk.framework.Action0;
 import cz.geokuk.framework.MyPreferences;
+import cz.geokuk.framework.NabidkyPoStartu;
 import cz.geokuk.plugins.mapy.MapyModel;
 import cz.geokuk.plugins.mapy.kachle.KachleModel;
 import cz.geokuk.plugins.mapy.sprava.SpravaMapModel;
@@ -53,7 +54,7 @@ public class PruvodceMapAction extends Action0 {
 			pref.putBoolean(VIDEL, true);
 		}
 		if (otevrit) {
-			actionPerformed(null);
+			NabidkyPoStartu.ukaz(() -> actionPerformed(null));
 		}
 	}
 
