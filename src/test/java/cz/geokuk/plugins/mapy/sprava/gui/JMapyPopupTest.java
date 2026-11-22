@@ -2736,6 +2736,8 @@ public class JMapyPopupTest {
 			});
 			p.obnov(radky);
 			Assert.assertTrue(tlacitkoRadku(p, "Česko", "Stáhnout vrstvy (25 MB)").isEnabled());
+			Assert.assertFalse(vybratCasti(p).isEmpty());
+			Assert.assertTrue(vybratCasti(p).stream().allMatch(javax.swing.JMenuItem::isEnabled));
 			davka[0] = true;
 			p.obnov(radky);
 			final JButton odkaz = tlacitkoRadku(p, "Česko", "Stáhnout vrstvy (25 MB)");
@@ -2743,6 +2745,10 @@ public class JMapyPopupTest {
 			Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, odkaz.getToolTipText());
 			final JButton keStazenym = tlacitka(p).stream().filter(b -> b.getText().startsWith("Stáhnout vrstvy ke všem")).findFirst().get();
 			Assert.assertFalse("ani dávka ke všem staženým", keStazenym.isEnabled());
+			for (final javax.swing.JMenuItem vybrat : vybratCasti(p)) {
+				Assert.assertFalse("ani Vybrat části…", vybrat.isEnabled());
+				Assert.assertEquals(NabidkaRadku.AZ_SE_DOKONCI, vybrat.getToolTipText());
+			}
 		});
 	}
 

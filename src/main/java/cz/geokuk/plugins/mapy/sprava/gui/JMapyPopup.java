@@ -1811,8 +1811,8 @@ public class JMapyPopup extends JPanel {
 			}
 		});
 		nastavANechNaMiste(() -> {
-			vybrat.setToolTipText(cokoliBezi ? BEZI_STAHOVANI : "Vybere, co z mapy, tras, vrstevnic a stínování se k zemi stáhne.");
-			vybrat.setEnabled(!cokoliBezi);
+			vybrat.setToolTipText(cokoliBezi || zaneprazdneno ? BEZI_STAHOVANI : "Vybere, co z mapy, tras, vrstevnic a stínování se k zemi stáhne.");
+			vybrat.setEnabled(!cokoliBezi && !zaneprazdneno);
 		});
 		final JPopupMenu menu = new JPopupMenu();
 		menu.add(vybrat);
