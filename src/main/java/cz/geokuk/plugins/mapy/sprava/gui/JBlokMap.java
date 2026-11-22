@@ -227,6 +227,11 @@ public class JBlokMap extends JLabel {
 			}
 
 			@Override
+			public boolean beziDavka() {
+				return cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.bezi();
+			}
+
+			@Override
 			public void zkusZnovuDavku() {
 				cz.geokuk.plugins.mapy.pruvodce.SpousteniPruvodce.zkusZnovu();
 			}
