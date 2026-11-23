@@ -1,17 +1,23 @@
-"""sestav-tema.py JAR VYSTUP
+"""sestav-tema.py JAR VYSTUP [--zvys-verzi]
 Ze společného zdroje vzhledu GeoKuk (zdroj/geokuk-spolecne.xml + bloky dat) vyrobí:
   VYSTUP/geokuk/GeoKuk.xml, GeoKuk_detail.xml (+ symbols/)  vestavěná témata, trasy z vrstvy GeoKuku (fmrel*), zdroje jar: z programu
   VYSTUP/trasy.xml                                          překryv Turistické a cyklotrasy (podklady/trasy.xml v programu)
   VYSTUP/GeoKuk-tema.zip                                    téma pro aplikace s mapami mapsforge (c:geo, aDrake) k mapám GeoKuku:
                                                             základ z download.mapsforge.org a vrstvy GeoKuku (fmrel*), zdroje file:
   VYSTUP/GeoKuk-tema-PAWS.zip                               totéž pro mapy s trasami v tagech osmc_*, zdroje file:
-Symboly jar:symbols a jar:patterns se berou z JAR (geokuk.jar, složka assets/), vlastní symboly z resources programu."""
-import os, re, subprocess, sys, tempfile, zipfile
+Symboly jar:symbols a jar:patterns se berou z JAR (geokuk.jar, složka assets/), vlastní symboly z resources programu.
+Oba zipy mají společnou verzi z VERZE. Když se obsah zipů liší od otisku ve VERZE, skript skončí chybou;
+--zvys-verzi nastaví verzi o jednu vyšší než na origin/main a zapíše nový otisk."""
+import hashlib, os, re, subprocess, sys, tempfile, zipfile
 D = os.path.dirname(os.path.abspath(__file__))
 Z = os.path.join(D, 'zdroj')
 KOREN = os.path.join(D, '..', '..')
 SYMBOLY = os.path.join(KOREN, 'src', 'main', 'resources', 'cz', 'geokuk', 'plugins', 'mapy', 'kachle', 'podklady', 'geokuk')
-jar, vystup = sys.argv[1], sys.argv[2]
+argumenty = [a for a in sys.argv[1:] if a != '--zvys-verzi']
+zvys_verzi = len(argumenty) < len(sys.argv) - 1
+jar, vystup = argumenty
+SOUBOR_VERZE = os.path.join(D, 'VERZE')
+ZASTUPCE_VERZE = '#VERZE#'
 
 def bajty(p):
     with open(p, 'rb') as f:
@@ -82,10 +88,13 @@ HLAVICKY = {
 
 def pro_aplikace(xml, varianta):
     """Téma pro aplikace: hlavička s původem a všechny zdroje relativně vedle tématu."""
-    xml = xml.replace('<?xml version="1.0" encoding="UTF-8"?>', '<?xml version="1.0" encoding="UTF-8"?>\n<!-- %s -->' % HLAVICKY[varianta], 1)
+    hlavicka = '%s Verze tématu: %s.' % (HLAVICKY[varianta], ZASTUPCE_VERZE)
+    xml = xml.replace('<?xml version="1.0" encoding="UTF-8"?>', '<?xml version="1.0" encoding="UTF-8"?>\n<!-- %s -->' % hlavicka, 1)
     return xml.replace('src="jar:', 'src="file:')
 
 zipy = {'GeoKuk-tema.zip': ('vrstvy', vrstvy), 'GeoKuk-tema-PAWS.zip': ('paws', paws)}
+PRO_MAPY = {'vrstvy': 'geokuk-maps', 'paws': 'osmc'}
+pro_mapy = {jm: PRO_MAPY[v] for jm, (v, _) in zipy.items()}
 zipy = {jm: (pro_aplikace(xml, v), pro_aplikace(s_detailem(xml), v)) for jm, (v, xml) in zipy.items()}
 # Každý zip kreslí trasy jen z jedné sady tagů, aby se na mapě nekreslily dvakrát.
 for jm, (zakl, det) in zipy.items():
@@ -115,14 +124,41 @@ for typ, c in zdroje(geokuk_detail):
     if typ == 'file':   # vlastní symboly vedle tématu
         d = os.path.join(vystup, 'geokuk', c); os.makedirs(os.path.dirname(d), exist_ok=True); zapis(d, obsah(c))
 
-def zapis_zip(zip_cesta, zakl, det):
-    """Zip se stálým časem souborů, aby stejný zdroj dal stejný zip; vrací názvy souborů v zipu."""
-    soubory = {'GeoKuk.xml': zakl.encode('utf-8'), 'GeoKuk_detail.xml': det.encode('utf-8'),
-               'README.txt': bajty(os.path.join(D, 'zip', 'README.txt')),
+def soubory_zipu(zakl, det, pro):
+    """Obsah zipu se zástupcem místo čísla verze."""
+    readme = bajty(os.path.join(D, 'zip', 'README.txt')).decode('utf-8').replace('\n\n', '\n\nVerze tématu: %s\n\n' % ZASTUPCE_VERZE, 1)
+    soubory = {'GeoKuk.xml': zakl, 'GeoKuk_detail.xml': det, 'README.txt': readme,
+               'tema.json': '{"version": %s, "for": "%s"}\n' % (ZASTUPCE_VERZE, pro),
                'LICENSE-GPL-3.0.txt': bajty(os.path.join(KOREN, 'LICENSE')),
                'LICENSE-LGPL-3.0.txt': bajty(os.path.join(KOREN, 'licence', 'LGPL-3.0.txt'))}
     for typ, c in zdroje(zakl + det):
         soubory[c] = obsah(c)
+    return {jm: d.encode('utf-8') if isinstance(d, str) else d for jm, d in soubory.items()}
+
+def otisk(obsahy):
+    """sha256 obsahu všech zipů se zástupcem místo verze: stejný zdroj dá stejný otisk."""
+    h = hashlib.sha256()
+    for jm in sorted(obsahy):
+        for soubor in sorted(obsahy[jm]):
+            d = obsahy[jm][soubor]
+            h.update(('%s/%s %d\n' % (jm, soubor, len(d))).encode('utf-8') + d)
+    return h.hexdigest()
+
+def cti_verzi(text):
+    hodnoty = dict(l.split('=', 1) for l in text.splitlines() if l and not l.startswith('#'))
+    return int(hodnoty['verze']), hodnoty['otisk']
+
+def verze_na_main():
+    try:
+        text = subprocess.check_output(['git', '-C', KOREN, 'show', 'origin/main:nastroje/tema/VERZE'], stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return cti_verzi(text.decode('utf-8'))[0]
+
+def zapis_zip(zip_cesta, soubory, verze):
+    """Zip se stálým časem souborů, aby stejný zdroj dal stejný zip; vrací názvy souborů v zipu."""
+    zastupce = ZASTUPCE_VERZE.encode('utf-8')
+    soubory = {jm: d.replace(zastupce, str(verze).encode('utf-8')) if jm.endswith(('.xml', '.txt', '.json')) else d for jm, d in soubory.items()}
     with zipfile.ZipFile(zip_cesta, 'w', zipfile.ZIP_DEFLATED) as z:
         for jm in sorted(soubory):
             z.writestr(zipfile.ZipInfo(jm, (1980, 1, 1, 0, 0, 0)), soubory[jm], zipfile.ZIP_DEFLATED)
@@ -133,8 +169,17 @@ def zapis_zip(zip_cesta, zakl, det):
             assert not chybi, '%s: v zipu chybí %s' % (jm, chybi)
     return v_zipu
 
-for jm, (zakl, det) in zipy.items():
-    v_zipu = zapis_zip(os.path.join(vystup, jm), zakl, det)
+obsahy = {jm: soubory_zipu(zakl, det, pro_mapy[jm]) for jm, (zakl, det) in zipy.items()}
+novy_otisk = otisk(obsahy)
+verze, ulozeny_otisk = cti_verzi(bajty(SOUBOR_VERZE).decode('utf-8'))
+if zvys_verzi and novy_otisk != ulozeny_otisk:
+    na_main = verze_na_main()
+    verze = (na_main if na_main is not None else verze) + 1
+    zapis(SOUBOR_VERZE, ('# Verze tématu pro aplikace (GeoKuk-tema.zip, GeoKuk-tema-PAWS.zip) a otisk obsahu zipů, zapisuje\n'
+                         '# python3 nastroje/tema/sestav-tema.py JAR VYSTUP --zvys-verzi\nverze=%d\notisk=%s\n' % (verze, novy_otisk)).encode('utf-8'))
+    ulozeny_otisk = novy_otisk
+for jm in zipy:
+    zapis_zip(os.path.join(vystup, jm), obsahy[jm], verze)
 
 # Překryv tras: trasy z tagů osmc_*, pak data GeoKuku, prvky vrstvy tourist a jména tras; symboly vestavěného tématu ze složky geokuk/.
 with tempfile.TemporaryDirectory() as d:
@@ -147,4 +192,7 @@ trasy = (trasy[:-len(konec)] + '<!-- Trasy, skály a body ze stažené vrstvy to
 trasy = trasy.replace('src="file:symbols/', 'src="file:geokuk/symbols/')
 zapis(os.path.join(vystup, 'trasy.xml'), trasy.encode('utf-8'))
 print('GeoKuk.xml %d B; ' % len(geokuk.encode('utf-8'))
-      + '; '.join('%s %d B' % (jm, os.path.getsize(os.path.join(vystup, jm))) for jm in sorted(zipy)))
+      + '; '.join('%s %d B' % (jm, os.path.getsize(os.path.join(vystup, jm))) for jm in sorted(zipy)) + '; verze tématu %d' % verze)
+if novy_otisk != ulozeny_otisk:
+    sys.exit('Téma se změnilo: zvyš verzi v nastroje/tema/VERZE a aktualizuj otisk (příkaz '
+             'python3 nastroje/tema/sestav-tema.py target/geokuk.jar target/tema --zvys-verzi).')
