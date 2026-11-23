@@ -11,7 +11,7 @@ Geokuk má vlastní terminologii. Část pojmů je převzatá z geocachingu, č�
 
 Při psaní nového kódu, komentářů, issues i commitů používejte pojmy přesně v tomto významu. Když zavádíte nový pojem, doplňte ho sem.
 
-Dokument vznikl pro GeoKuk 5.2.0 a byl upraven pro stav forku geokuk-community k commitu `c4b81fc3` (11/2026).
+Dokument vznikl pro GeoKuk 5.2.0 a byl upraven pro stav forku geokuk-community k commitu `93d780de` (11/2026).
 
 ---
 
@@ -32,7 +32,7 @@ Doplňující pravidla:
 - **Identifikátory bez diakritiky** (`Usek`, `Ukladanec`, `obtiznost`). Komentáře, javadoc a texty UI s diakritikou.
 - **Komentáře a javadoc česky.** Starší anglické javadocy pocházejí od přispěvatelů a nemusí se přepisovat.
 - **Doménový model je česky i tam, kde data přicházejí z cizího formátu.** Parser GPX čte `difficulty` a `terrain`, keš je má uložené jako obtížnost a terén.
-- **Jeden pojem, jeden název.** Synonyma v kódu nepoužívat. Pozor zvlášť na kachle × dlaždice (kapitola 7).
+- **Jeden pojem, jeden název.** Synonyma v kódu nepoužívat. Pozor zvlášť na kachle × dlaždice: v textech UI a v novém kódu se kachli říká „dlaždice“, stávající kód se hromadně nepřejmenovává (kapitola 7, bod 1).
 - **Nový doménový pojem** se tvoří česky. Klidně jako neologismus (kapitola 2.3), hlavně ať je jednoznačný. Pak ho doplňte do tohoto slovníku.
 
 ### Turboware (tw)
@@ -47,17 +47,18 @@ Kód vznikal od roku 2009 a podílelo se na něm víc lidí, proto pravidla nejs
 
 | Oblast | Dodržení | Odchylky |
 |---|---|---|
-| `util/lang` | vysoké | žádné |
+| `util/lang` | vysoké | identifikátory s diakritikou v `FThrowable` (`poskládejŘetězVýjimek`) |
 | `util/exception`, `util/process` | částečné | česky `OtevreniSlozky`. `FExceptionDumper` a `MyExceptionHandler` importují `core`, `BrowserOpener` a `JErrorDialog` `framework` |
 | `util/file` | částečné | neprůhledné zkratky `KeFile`, `LamUrl`. Česky: `Soubory`, `BezpecnyZapis`, `TextovySoubor`, `Resourcy`. `Filex` importuje `core.program.FConst` |
 | `util/gui` | částečné | česky: `JBarvovyDvojSlider`, `MenuStrujce`, `MouseKonecListener`, `ERoh` a většina tříd z verzí 6.x (`BublinkaHodnoty`, `PopisekNaMape`, `ZkraceniTextu`, `ZalamovaciLayout`…) |
-| `util/index2d` (quadtree) | smíšené | `Ctverecnik`, `Splitenec`, `Indexator` vedle `Node`, `Sheet`, `BoundingRect` |
+| `util/index2d` (quadtree) | smíšené | `Ctverecnik`, `Splitenec`, `Indexator` vedle `Node`, `Sheet`, `BoundingRect`; metoda s diakritikou `rozčtvrť` |
 | `util/pocitadla` | česky | celý balík, přitom jde o obecné diagnostické metriky |
 | `util/procak` | česky | `Procak`, `ProcakDispatcher`: obecný řetěz zpracovatelů |
 | `framework` | smíšené | česky: `JPrekryvnik`, `JSlidePozadi`, `Onoff`, `Prefe`, `Dlg`, `FKurzory`, `SouborovePreferences`, `RozmisteniPrekryvu`. **Doména ve frameworku**: `PodkladMapSpecificModel0` (mapový podklad), `JPresCelePrekryvnik` (závisí na `core.coord` a `core.napoveda`), `JSlide0` a `MySlideListener` (závisí na `plugins.kesoid.Wpt`) |
 | `api/mapicon` | vysoké | `Imagant` (česky), navíc importuje `plugins.kesoid.Repaintanger` |
 | doména: cesty, výlety, kachle, genetika, mřížky, popisky | vysoké | |
-| doména: kód z verzí 6.x (challenge, offline mapy, správa map, zdroje keší, dálkové ovládání) | vysoké | česky jsou i obecné pomocné třídy (`JsonCteni`, `OmezenaFronta`, `PrioritniFronta`); slovo „dlaždice“ ve významu kachle (kapitola 7) |
+| doména: kód z verzí 6.x (challenge, offline mapy, správa map, zdroje keší, dálkové ovládání) | vysoké | česky jsou i obecné pomocné třídy (`JsonCteni`, `OmezenaFronta`, `PrioritniFronta`) |
+| doména: import kešoidů | smíšené | identifikátory s diakritikou v `InformaceOZdrojich` (`setřepáníNevětvenýchCest`) a `GsakDbLoader` (`parametryNačítání`, `čítač`) |
 | doména: druhy kešoidů `plugins/kesoid/kind/*` | nízké | anglicky `Waymark`, `Munzee`, `Photo`, `SimpleWaypoint`, `CzechGeodeticPoint`; balíky `kind`, `data`, `detail`, `mvc`, `mapicon` |
 | doména: render | smíšené | `RenderModel`, `RenderSettings`, `RenderParams` vedle `Rendrovadlo`, `EStavRendrovani` |
 | doména: nastavení pluginů | smíšené | `KruhySettings`, `PopiskySettings`, `ObsazenostSettings` |
@@ -154,9 +155,9 @@ Vzdálenost a azimut se počítají ze tří různých míst:
 
 | Pojem | Význam | V kódu |
 |---|---|---|
-| **Kachle** | Čtvercový obrázek mapy (256 px) v pevné mřížce podle moumeru: stažený z mapového serveru, nebo vykreslený z offline mapy. Získává se, ukládá do cache, zobrazuje. Podle původního slovníku **to není dlaždice**; texty UI a kód z verzí 6.x jí ale říkají „dlaždice“ (kapitola 7, bod 1). | `Ka`, `JKachle`, `plugins/mapy/kachle` |
+| **Kachle** | Čtvercový obrázek mapy (256 px) v pevné mřížce podle moumeru: stažený z mapového serveru, nebo vykreslený z offline mapy. Získává se, ukládá do cache, zobrazuje. V textech UI a v novém kódu se jí říká **dlaždice**. Stávající kód ji jmenuje kachle (`Ka`, `JKachle`, `KachleZiskavac`, `plugins/mapy/kachle`…) a hromadně se nepřejmenovává, proto je kachle dál platný pojem pro čtení kódu (kapitola 7, bod 1). Není to dlaždice renderu. | `Ka`, `JKachle`, `plugins/mapy/kachle` |
 | **Lokace kachle** | Moumer a souřadnice kachle v mřížce. | `KaLoc` |
-| **Podklad** | Mapový zdroj kachlí, který uživatel volí v menu Mapy (OSM, mapy.cz, ortofoto, offline mapa…). Od 11/2019 je podklad totéž co typ kachle. Skládání vrstev (dekorace, popisky) bylo tehdy zrušeno. Podklady jsou vestavěné (konstanty v kódu) a uživatelské. | `EKaType`, `MapyModel.podklad`, `PodkladAction` |
+| **Podklad** | Mapový zdroj kachlí, který uživatel volí v menu Mapy (OSM, mapy.cz, ortofoto, offline mapa…). Od 11/2019 je podklad totéž co typ kachle. Skládání vrstev (dekorace, popisky) bylo tehdy zrušeno; výjimkou jsou překryvy. Podklady jsou vestavěné (konstanty v kódu) a uživatelské. V textech pro uživatele se podkladu říká „mapa“ (kapitola 7, bod 22). | `EKaType`, `MapyModel.podklad`, `PodkladAction` |
 | **Id podkladu** | Jméno podkladu (`BASE_M`, `OFFLINE_MF`…, u uživatelské mapy `user-` a označení). Je zároveň klíčem v cache dlaždic, ukládá se jako vybraný podklad a podle něj se ukládá nastavení podle podkladu, takže jeho přejmenování osiří uložené kachle i nastavení. | `EKaType.name()`, `Ka.typToString()` |
 | **Uživatelská mapa** | Vlastní podklad uživatele: soubor `<označení>.mapa` ve složce `data/mapy` s vlastnostmi `nazev`, `url` (vzor s `{z}`, `{x}`, `{y}`), `zkratka`, `atribuce`, `hromadne`, `hlavicka.*`… V menu Mapy je ve skupině „Uživatelské mapy“. Ukázky jsou v `priklady/mapy`. JSON s definicemi podkladů z verze 5.2.0 fork nemá. | `UzivatelskeMapy`, `UzivatelskyUrlBuilder`, `EKaType.isUzivatelska()` |
 | **Překryv** | Průhledné kachle kreslené přes podklad: „ČÚZK – Stínovaný reliéf“ (online, WMS) a „Turistické a cyklotrasy“ (z offline map). Není to podklad. | `EKaType.RELIEF_CUZK`, `EKaType.TRASY`, `JKachlovnikReliefu`, `JKachlovnikTras`, `ReliefCuzkAction`, `PrekryvTrasAction` |
@@ -165,6 +166,7 @@ Vzdálenost a azimut se počítají ze tří různých míst:
 | **Téma offline mapy** | Vzhled offline mapy (menu Mapy > Téma offline mapy): vestavěné (GeoKuk, GeoKuk – detail, Mapsforge (původní)), nebo soubor uživatele `.xml` či `.zip` ve složce offline map. | `TemaOfflineMapy`, `JTemaOfflineMapyMenu` |
 | **Vrstva tématu** | Přepínatelná část tématu offline mapy; téma může mít víc stylů a v každém vrstvy (Mapy > Téma offline mapy > Vrstvy tématu). Ukládají se jen odchylky od výběru autora tématu. | `VrstvyTematu`, `VolbaVrstev` |
 | **Vrstva k mapě** | Data stahovaná k offline mapě: turistické a cyklotrasy, vrstevnice, výškový model pro stínování terénu. | `KatalogovaVrstva`, `KatalogVrstev`, `SouboryVrstev`, `StinovaniTerenu` |
+| **Soubor DEM** | Soubor výškového modelu (`.hgt`, i zabalený v `.zip`) pro jeden stupeň zeměpisné šířky a délky; z něj se počítá stínování terénu offline mapy. V komentářích se mu místy říká „DEM dlaždice“. Není to kachle ani dlaždice renderu, v textech a novém kódu se mu proto říká soubor DEM. | `SlouceneDem`, `StinovaniTerenu`, `OfflineRenderer` |
 | **Přehledová mapa** | Hrubá mapa světa `prehled-svet-ne.map` (Natural Earth) přibalená v zipu; dává data jen tam, kde není podrobná mapa. | `PrehledovaMapa`, `SouborMapy` |
 | **Správce offline map** | Popup (menu Mapy > Správce offline map…, blok Mapy ve stavovém řádku) se staženými mapami, mapami pro zobrazené místo a mapami ke stažení i s vrstvami. Obrys mapy se ukazuje v mapě. | `plugins/mapy/sprava`, `SpravaMapModel`, `JMapyPopup`, `JBlokMap`, `OfflineMapyAction`, `JObrysMapSlide` |
 | **Katalog map** | Seznam offline map zemí a regionů ke stažení (vestavěný `katalog-map.json`) a katalog vrstev (`layers.json` z projektu geokuk-maps). | `KatalogMap`, `KatalogovaMapa`, `MatriceMap`, `StahovacMapy`, `StahovacVrstev` |
@@ -188,7 +190,7 @@ Vzdálenost a azimut se počítají ze tří různých míst:
 | **Rendrovadlo** | Jádro renderování do obrázku. | `Rendrovadlo` |
 | **Měřítko renderu** | Moumer, ve kterém se renderuje. Liší se od moumeru výřezu a určuje velikost výstupu. | `renderedMoumer` |
 | **Ořezávací obdélník** | Rámeček oblasti renderu zobrazený na mapě během přípravy renderu. | `JRenderSlide` |
-| **Dlaždice** | Díl, na který se rozdělí renderovaný výstup kvůli limitu velikosti (KMZ). Podle původního slovníku **to není kachle**; ve forku se tak ale běžně říká i kachli (kapitola 7, bod 1). | `DlazdicovaMetrika`, `kmzMaxDlazdiceX` |
+| **Dlaždice renderu** | Díl, na který se rozdělí renderovaný výstup kvůli limitu velikosti (KMZ). **Není to kachle.** Samotné slovo „dlaždice“ znamená v textech UI a v novém kódu kachli, proto se díl renderu mimo `core/render` vždy upřesňuje („dlaždice renderu“). Názvy v `core/render` se nemění (kapitola 7, bod 1). | `DlazdicovaMetrika`, `kmzMaxDlazdiceX` |
 | **Kalibrační bod** | Dvojice pixel ↔ WGS zapisovaná do `.map` souboru pro OziExplorer. | `JKalibrBoduSpinner`, `RenderSettings` |
 | **Papírové měřítko** | Poměr 1:N pro tisk, z něj se počítá DPI. | `RenderSettings.papiroveMeritko` |
 | **Papírová metrika** | Volba formátu papíru (A0…) a orientace pro tisk, odvozená z papírového měřítka. | `PapirovaMetrika` |
@@ -292,7 +294,7 @@ Ikona waypointu je fenotyp: skládá se z vrstev podle alel genotypu.
 | **Bod cesty** | Vrchol cesty. Může být navázán na waypoint. | `Bod` |
 | **Připíchnutí bodu** | Navázání bodu cesty na waypoint: při kreslení přichycením, po načtení podle souřadnic. | `CestyZperzistentnovac.pripniNaWayponty` |
 | **Úsek** | Spojnice dvou bodů cesty. Má typ: rovný, po cestě, nebo vzdušný. | `Usek`, `TypUseku`, `NastavTypUsekuAction` |
-| **Úsek po cestě** | Úsek vedený po cestách a pěšinách z offline mapy (pěší trasa bez internetu). Kreslí se plnou čarou, rovný čárkovaně. Trasa se hledá na pozadí a do GPX se ukládá se všemi body. | `TypUseku.PO_CESTE`, `plugins/cesty/routovani`, `Routovac`, `TrasyUseku`, `Trasa` |
+| **Úsek po cestě** | Úsek vedený po cestách a pěšinách z offline mapy (pěší trasa bez internetu). Kreslí se plnou čarou, rovný čárkovaně. Trasa se hledá na pozadí a do GPX se ukládá se všemi body; v textech pro uživatele „trasa po cestách“. | `TypUseku.PO_CESTE`, `plugins/cesty/routovani`, `Routovac`, `TrasyUseku`, `Trasa` |
 | **Vzdušný úsek** | Úsek, který se nepočítá do délky cesty, kreslí se tečkovaně a v GPX rozděluje cestu na samostatné `trkseg`. Představuje přesun, který se nejde. | `TypUseku.VZDUSNY`, `Usek.isVzdusny()`, `PrepniVzdusnostUseku` |
 | **Segment** | Souvislá část cesty mezi vzdušnými úseky, v GPX `trkseg`. | `Bod.isNaHraniciSegmentu` |
 | **Bousek** | Bod nebo úsek (bod + úsek), společný předek. | `Bousek0` |
@@ -507,7 +509,7 @@ Na tato místa si dejte pozor. Při úpravách kódu nebo textů UI je dobré je
    - **Dlaždice ve významu původního slovníku** (díl renderu) zůstává v `core/render`: `DlazdicovaMetrika`, `DlazdicovaMetrikaXY`, `JNastavovacVelikostiDlazdic`, `kmzMaxDlazdiceX`.
    - U mapsforge se „dlaždice“ říká i jeho vlastním dlaždicím (`Tile`), které se s kachlí kryjí.
 
-   Která z obou podob má platit, není rozhodnuto; tento bod jen zaznamenává stav.
+   Platí pravidlo z `AGENTS.md` (Pravidla pojmenování): „**Fork v textech UI a v novém kódu říká kachli „dlaždice“**.“ Stávající kód se hromadně nepřejmenovává („Neprovádět hromadné přeformátování ani přejmenování mimo rozsah úkolu.“), názvy s kachlí (`Ka`, `KachleZiskavac`, `plugins/mapy/kachle`…) proto zůstávají. Díl renderu se mimo `core/render` upřesňuje jako „dlaždice renderu“, soubor `.hgt` je soubor DEM (kapitola 3.2).
 2. **`EVylet` má dvě role:** stav kešoidu ve výletu a práh filtru. Jeho `toString()` vrací texty filtru, takže stav NE se zobrazí jako „Všechny“. Filtr porovnává `ordinal()`, který se ukládá do nastavení, proto se pořadí konstant nesmí měnit.
 3. **Výlet × dokument cest.** Dokument cest se v kódu a místy v UI nazývá „výlet“ (`FPref.VYLET_node`, „Můj výlet.gpx“). Stavový řádek už říká „cesty“. Soubor `lovim.ggt` má dvě role: výlet ANO v `data/vylety/` a výchozí cíl exportu cest v adresáři GeoGetu.
 4. **Referenční bod × pojmenovaný bod.** Referenční bod je „pozice, jinak střed výřezu“. Balíček s domovem a pojmenovanými body se ale jmenuje `refbody`. Tooltip pojmenovaného bodu už říká „pojmenovaný bod“.
@@ -520,7 +522,7 @@ Na tato místa si dejte pozor. Při úpravách kódu nebo textů UI je dobré je
 11. **`OpenStreetViewAction`** otevírá Google Street View.
 12. **`EKaType`** má prefix výčtu, ale je to třída: vedle vestavěných konstant vrací `values()` i uživatelské mapy načtené za běhu.
 13. **Offline.** Tři různé věci: online/offline režim (`OnofflineModel`, smí se na síť), offline mapa (podklad z map `.map`) a offliner (hromadné stažení kachlí online podkladu do cache).
-14. **Vrstva.** Slide mapového okna, vrstva tématu offline mapy (`VrstvyTematu`), vrstva stahovaná k offline mapě (trasy, vrstevnice, stínování; `KatalogovaVrstva`) a vrstva kruhů nad mapou (`VrstvaNadMapou`).
+14. **Vrstva.** Slide mapového okna, vrstva skla ikon (`Vrstva`), vrstva tématu offline mapy (`VrstvyTematu`), vrstva stahovaná k offline mapě (trasy, vrstevnice, stínování; `KatalogovaVrstva`) a vrstva kruhů nad mapou (`VrstvaNadMapou`). V kódu i textech vždy s upřesněním, o kterou jde.
 15. **Zvýraznění.** Zvýrazňovací kruhy (`plugins/kesoidkruhy`), zvýraznění keše barevným čtvercem (`Zvyrazneni`), zvýraznění sektoru nebo políčka v plánovači (`VyberZvyrazneni`, `ZvyrazneniKese`) a obrys mapy ve správci (`ZvyrazneniMapyEvent`).
 16. **Zdroj.** Zdroj keší (soubor, databáze; `TypZdroje`), zdroje map v atribuci a v plánovači `ZdrojPravidel` a `ZdrojeNalezu`.
 17. **Střed.** Střed výřezu (`moustred`) × střed challenge (`Challenge.Stred`).
@@ -528,6 +530,11 @@ Na tato místa si dejte pozor. Při úpravách kódu nebo textů UI je dobré je
 19. **Kruhy v metrech × jednotkové kruhy.** UI říká „Kruhy v metrech“ (a položku jmenuje podle poloměru), kód `JednotkoveKruhy`.
 20. **Lišta × pruh plánovače.** UI a CHANGELOG říkají „lišta“, kód `JPruhPlanovace`, `StavPruhu`.
 21. **Aktivní.** Aktivní výlet (`VyletModel`), aktivní (zapnutá) challenge (`ChallengeModel`) a aktivní složka v Umístění souborů (`Filex`).
+22. **Podklad × mapa.** Kód a slovník říkají podklad, texty pro uživatele mapa (menu Mapy, „Uživatelské mapy“, „vybraná mapa“). „Mapa“ je navíc soubor offline mapy `.map` (správce offline map: „Stažené mapy“) a soubor uživatelské mapy `.mapa`; „offline mapa“ je podklad i jeden soubor `.map`. Slovo „podklad“ má ještě dva jiné významy: kresba plánovače pod kešemi (vlákno a hlášky „Podklad plánovače“, `TvarPlanovace`) a barva pozadí popisku („Barva podkladu“).
+23. **Cesta.** Cesta jako lomená čára přes body (`Cesta`), cesty a pěšiny v offline mapě, po kterých vede úsek po cestě, a cesta k souboru (proměnné `cesta` typu `Path` nebo `File`, hláška „neplatnou cestu souboru“).
+24. **Trasa.** Výsledek hledání úseku po cestě (`Trasa`, `TrasyUseku`, v textech „trasa po cestách“), turistické a cyklotrasy (překryv) a trasa v GPX (`trk`, `rte`). Popisek akce `PrepniVzdusnostUseku` říká „trasa“ i samotné cestě a s pojmy kapitoly 3.6 nesouhlasí: „běžný“ úsek „plnou čarou“, vzdušný „přerušovanou čarou“. Kód kreslí plnou čarou úsek po cestě, rovný úsek čárkovaně a vzdušný tečkovaně (`Malovadlo`).
+25. **Databáze.** Databáze jiného programu jako zdroj keší (GeoGet, GSAK, OpenSAK; „Nové databáze načíst až po vybrání“) × cache dlaždic, které hlášky `KachleDBManager` říkají „databáze dlaždic“ a jejíž údržba se v kódu jmenuje `OptimalizaceDatabaze` (v menu „Optimalizace cache dlaždic…“). V textech pro uživatele je pro cache lepší „cache dlaždic“.
+26. **Keš × kešoid v textech.** Menu se jmenuje Kešoidy, popisky akcí ale často říkají „keše“ i tam, kde jde o všechny kešoidy (`ZobrazVsechnyKeseAction`: „všechny keše, které filtr zobrazuje“).
 
 ---
 
@@ -550,6 +557,7 @@ Hodí se při hledání v kódu: když hledáte „Groundspeak“, konstanta se 
 | `PreferencebleProperty` atd. | Preferenceable |
 | `BeanBag.registerSigleton` | registerSingleton |
 | `JKachleOflinerDialog`, `KachleOflinerAction` | Offliner |
+| `Sada.getBigiestIconInsets` | getBiggestIconInsets |
 
 ---
 
