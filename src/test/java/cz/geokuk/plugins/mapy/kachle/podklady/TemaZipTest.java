@@ -94,13 +94,16 @@ public class TemaZipTest {
 		}
 	}
 
-	/** Oba zipy nesou společnou verzi tématu v tema.json, README.txt a hlavičce obou témat; tema.json říká, k jakým mapám zip je. */
+	/** Oba zipy nesou společnou verzi tématu v tema.json v kořeni zipu, README.txt a hlavičce obou témat; tema.json říká, k jakým mapám zip je. */
 	@Test
 	public void zipyNesouVerziTematu() throws Exception {
 		final String verze = verze();
 		for (final String[] zip : new String[][] { { "GeoKuk-tema.zip", "geokuk-maps" }, { "GeoKuk-tema-PAWS.zip", "osmc" } }) {
 			try (ZipFile z = new ZipFile(zip(zip[0]))) {
-				Assert.assertEquals(zip[0], "{\"version\": " + verze + ", \"for\": \"" + zip[1] + "\"}\n", soubor(z, "tema.json"));
+				// tema.json je v kořeni zipu vedle GeoKuk.xml; version je celé číslo od 1, nebo řetězec RRRR.MM.DD.
+				final String json = soubor(z, "tema.json");
+				Assert.assertTrue(zip[0] + ": " + json, json.matches("\\{\"version\": ([1-9][0-9]*|\"[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\"), \"for\": \"[a-z-]+\"\\}\n"));
+				Assert.assertEquals(zip[0], "{\"version\": " + verze + ", \"for\": \"" + zip[1] + "\"}\n", json);
 				Assert.assertTrue(zip[0], soubor(z, "README.txt").contains("\nVerze tématu: " + verze + "\n"));
 				for (final String tema : new String[] { "GeoKuk.xml", "GeoKuk_detail.xml" }) {
 					Assert.assertTrue(zip[0] + "/" + tema, soubor(z, tema).contains(" Verze tématu: " + verze + ". -->"));
