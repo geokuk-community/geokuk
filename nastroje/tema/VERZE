@@ -1,0 +1,4 @@
+# Verze tématu pro aplikace (GeoKuk-tema.zip, GeoKuk-tema-PAWS.zip) a otisk obsahu zipů, zapisuje
+# python3 nastroje/tema/sestav-tema.py JAR VYSTUP --zvys-verzi
+verze=1
+otisk=5a4730e8a45512269e908557314a933ad0689c664a5aceaf51ed66cc906b77ff
